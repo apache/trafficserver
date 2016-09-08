@@ -61,6 +61,16 @@ ParentConsistentHash::~ParentConsistentHash()
   delete chash[SECONDARY];
 }
 
+void
+ParentConsistentHash::getPathHash_Helper(char *buffer, int size, const char *tmp, int len)
+{
+  int slen;
+  int max = size - 1;
+  slen    = (len > max) ? max : len;
+  strncpy(buffer, tmp, slen);
+  buffer[slen] = 0;
+}
+
 uint64_t
 ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 {
@@ -68,25 +78,21 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
   int len;
   URL *url = hrdata->hdr->url_get();
   char buffer[1024];
-  int slen     = 0;
   int num_dirs = 0;
 
   // Use over-ride URL from HttpTransact::State's cache_info.parent_selection_url, if present.
   URL *ps_url = NULL;
-  Debug("parent_select", "ParentConsistentHash::%s() hrdata->cache_info_parent_selection_url = 0x%lx", __func__,
-        (unsigned long int)hrdata->cache_info_parent_selection_url);
+  Debug("parent_select", "hrdata->cache_info_parent_selection_url = %p", hrdata->cache_info_parent_selection_url);
   if (hrdata->cache_info_parent_selection_url) {
     ps_url = *(hrdata->cache_info_parent_selection_url);
-    Debug("parent_select", "ParentConsistentHash::%s() ps_url = 0x%lx", __func__, (unsigned long int)ps_url);
+    Debug("parent_select", "ps_url = %p", ps_url);
     if (ps_url) {
       tmp = ps_url->string_get_ref(&len);
       if (tmp && len > 0) {
         // Print the over-ride URL
         if (is_debug_tag_set("parent_select")) {
-          slen = (len > 1023) ? 1023 : len;
-          strncpy(buffer, tmp, slen);
-          buffer[slen] = 0;
-          Debug("parent_select", "ParentConsistentHash::%s() Using Over-Ride String='%s'.", __func__, buffer);
+          getPathHash_Helper(buffer, 1024, tmp, len);
+          Debug("parent_select", "Using Over-Ride String='%s'.", buffer);
         }
         h->update(tmp, len);
         goto done;
@@ -102,10 +108,8 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
   if (tmp && len > 0) {
     // Print Original Path
     if (is_debug_tag_set("parent_select")) {
-      slen = (len > 1023) ? 1023 : len;
-      strncpy(buffer, tmp, slen);
-      buffer[slen] = 0;
-      Debug("parent_select", "ParentConsistentHash::%s() Original Path='%s'.", __func__, buffer);
+      getPathHash_Helper(buffer, 1024, tmp, len);
+      Debug("parent_select", "Original Path='%s'.", buffer);
     }
 
     // Process max_dirs directive.
@@ -146,10 +150,8 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 
     // Print Post max_dirs Path
     if (is_debug_tag_set("parent_select")) {
-      slen = (len > 1023) ? 1023 : len;
-      strncpy(buffer, tmp, slen);
-      buffer[slen] = 0;
-      Debug("parent_select", "ParentConsistentHash::%s() Post-MD Path='%s'.", __func__, buffer);
+      getPathHash_Helper(buffer, 1024, tmp, len);
+      Debug("parent_select", "Post-maxdirs Path='%s'.", buffer);
     }
 
     if (ignore_fname || max_dirs != 0) {
@@ -164,10 +166,8 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 
     // Print Post fname Path
     if (is_debug_tag_set("parent_select")) {
-      slen = (len > 1023) ? 1023 : len;
-      strncpy(buffer, tmp, slen);
-      buffer[slen] = 0;
-      Debug("parent_select", "ParentConsistentHash::%s() Post-FN Path='%s'.", __func__, buffer);
+      getPathHash_Helper(buffer, 1024, tmp, len);
+      Debug("parent_select", "Post-fname Path='%s'.", buffer);
     }
 
     h->update(tmp, len);
@@ -179,10 +179,8 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
       h->update("?", 1);
       h->update(tmp, len);
       if (is_debug_tag_set("parent_select")) {
-        slen = (len > 1023) ? 1023 : len;
-        strncpy(buffer, tmp, slen);
-        buffer[slen] = 0;
-        Debug("parent_select", "ParentConsistentHash::%s() Added query arguments to hash. Query='%s'.", __func__, buffer);
+        getPathHash_Helper(buffer, 1024, tmp, len);
+        Debug("parent_select", "Query='%s'.", buffer);
       }
     }
   }
