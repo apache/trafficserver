@@ -4968,34 +4968,30 @@ HttpSM::do_http_server_open(bool raw)
     connect_action_handle = sslNetProcessor.connect_re(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // addr + port
                                                        &opt);
-  } else {
-    if (t_state.method != HTTP_WKSIDX_CONNECT) {
-      DebugSM("http", "calling netProcessor.connect_re");
-      connect_action_handle = netProcessor.connect_re(this,                                 // state machine
-                                                      &t_state.current.server->dst_addr.sa, // addr + port
-                                                      &opt);
+  } else if (t_state.method != HTTP_WKSIDX_CONNECT) {
+    DebugSM("http", "calling netProcessor.connect_re");
+    connect_action_handle = netProcessor.connect_re(this,                                 // state machine
+                                                    &t_state.current.server->dst_addr.sa, // addr + port
+                                                    &opt);
+  } else { // CONNECT method
+    // Setup the timeouts
+    // Set the inactivity timeout to the connect timeout so that we
+    //   we fail this server if it doesn't start sending the response
+    //   header
+    MgmtInt connect_timeout;
+    if (t_state.current.server == &t_state.parent_info) {
+      connect_timeout = t_state.http_config_param->parent_connect_timeout;
     } else {
-      // Setup the timeouts
-      // Set the inactivity timeout to the connect timeout so that we
-      //   we fail this server if it doesn't start sending the response
-      //   header
-      MgmtInt connect_timeout;
-      if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
-        connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
-      } else if (t_state.current.server == &t_state.parent_info) {
-        connect_timeout = t_state.http_config_param->parent_connect_timeout;
+      if (t_state.pCongestionEntry != NULL) {
+        connect_timeout = t_state.pCongestionEntry->connect_timeout();
       } else {
-        if (t_state.pCongestionEntry != NULL) {
-          connect_timeout = t_state.pCongestionEntry->connect_timeout();
-        } else {
-          connect_timeout = t_state.txn_conf->connect_attempts_timeout;
-        }
+        connect_timeout = t_state.txn_conf->connect_attempts_timeout;
       }
-      DebugSM("http", "calling netProcessor.connect_s");
-      connect_action_handle = netProcessor.connect_s(this,                                 // state machine
-                                                     &t_state.current.server->dst_addr.sa, // addr + port
-                                                     connect_timeout, &opt);
     }
+    DebugSM("http", "calling netProcessor.connect_s");
+    connect_action_handle = netProcessor.connect_s(this,                                 // state machine
+                                                   &t_state.current.server->dst_addr.sa, // addr + port
+                                                   connect_timeout, &opt);
   }
 
   if (connect_action_handle != ACTION_RESULT_DONE) {
