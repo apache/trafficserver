@@ -170,6 +170,72 @@ test_parsing()
     CHECK_EQ(p.getTokens()[2], "true");
   }
 
+  /* backslash-escape */
+  {
+    ParserTest p("add-header foo \\ \\=\\<\\>\\\"\\#\\\\");
+    CHECK_EQ(p.getTokens().size(), 3);
+    CHECK_EQ(p.getTokens()[0], "add-header");
+    CHECK_EQ(p.getTokens()[1], "foo");
+    CHECK_EQ(p.getTokens()[2], " =<>\"#\\");
+  }
+
+  {
+    ParserTest p("add-header foo \\<bar\\>");
+    CHECK_EQ(p.getTokens().size(), 3);
+    CHECK_EQ(p.getTokens()[0], "add-header");
+    CHECK_EQ(p.getTokens()[1], "foo");
+    CHECK_EQ(p.getTokens()[2], "<bar>");
+  }
+
+  {
+    ParserTest p("add-header foo \\bar\\");
+    CHECK_EQ(p.getTokens().size(), 3);
+    CHECK_EQ(p.getTokens()[0], "add-header");
+    CHECK_EQ(p.getTokens()[1], "foo");
+    CHECK_EQ(p.getTokens()[2], "bar");
+  }
+
+  {
+    ParserTest p("add-header foo \"bar\"");
+    CHECK_EQ(p.getTokens().size(), 3);
+    CHECK_EQ(p.getTokens()[0], "add-header");
+    CHECK_EQ(p.getTokens()[1], "foo");
+    CHECK_EQ(p.getTokens()[2], "bar");
+  }
+
+  {
+    ParserTest p("add-header foo \"\\\"bar\\\"\"");
+    CHECK_EQ(p.getTokens().size(), 3);
+    CHECK_EQ(p.getTokens()[0], "add-header");
+    CHECK_EQ(p.getTokens()[1], "foo");
+    CHECK_EQ(p.getTokens()[2], "\"bar\"");
+  }
+
+  {
+    ParserTest p("add-header foo \"\\\"\\\\\\\"bar\\\\\\\"\\\"\"");
+    CHECK_EQ(p.getTokens().size(), 3);
+    CHECK_EQ(p.getTokens()[0], "add-header");
+    CHECK_EQ(p.getTokens()[1], "foo");
+    CHECK_EQ(p.getTokens()[2], "\"\\\"bar\\\"\"");
+  }
+
+  {
+    ParserTest p("add-header Public-Key-Pins \"max-age=3000; pin-sha256=\\\"d6qzRu9zOECb90Uez27xWltNsj0e1Md7GkYYkVoZWmM=\\\"\"");
+    CHECK_EQ(p.getTokens().size(), 3);
+    CHECK_EQ(p.getTokens()[0], "add-header");
+    CHECK_EQ(p.getTokens()[1], "Public-Key-Pins");
+    CHECK_EQ(p.getTokens()[2], "max-age=3000; pin-sha256=\"d6qzRu9zOECb90Uez27xWltNsj0e1Md7GkYYkVoZWmM=\"");
+  }
+
+  {
+    ParserTest p(
+      "add-header Public-Key-Pins max-age\\=3000;\\ pin-sha256\\=\\\"d6qzRu9zOECb90Uez27xWltNsj0e1Md7GkYYkVoZWmM\\=\\\"");
+    CHECK_EQ(p.getTokens().size(), 3);
+    CHECK_EQ(p.getTokens()[0], "add-header");
+    CHECK_EQ(p.getTokens()[1], "Public-Key-Pins");
+    CHECK_EQ(p.getTokens()[2], "max-age=3000; pin-sha256=\"d6qzRu9zOECb90Uez27xWltNsj0e1Md7GkYYkVoZWmM=\"");
+  }
+
   /*
    * test some failure scenarios
    */
