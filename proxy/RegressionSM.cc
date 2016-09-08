@@ -223,7 +223,7 @@ Lretry:
   pending_action = eventProcessor.schedule_in(this, REGRESSION_SM_RETRY);
 }
 
-RegressionSM::RegressionSM(const RegressionSM &ao)
+RegressionSM::RegressionSM(const RegressionSM &ao) : Continuation(ao)
 {
   RegressionSM &o = *(RegressionSM *)&ao;
 
@@ -268,7 +268,7 @@ struct ReRegressionSM : public RegressionSM {
   {
     return new ReRegressionSM(*this);
   }
-  ReRegressionSM(const ReRegressionSM &o) { t = o.t; }
+  ReRegressionSM(const ReRegressionSM &o) : RegressionSM(o) { t = o.t; }
 };
 
 REGRESSION_TEST(RegressionSM)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)

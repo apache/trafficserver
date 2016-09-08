@@ -89,7 +89,8 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const LogFile &copy)
-  : m_file_format(copy.m_file_format),
+  : RefCountObj(copy),
+    m_file_format(copy.m_file_format),
     m_name(ats_strdup(copy.m_name)),
     m_header(ats_strdup(copy.m_header)),
     m_signature(copy.m_signature),
