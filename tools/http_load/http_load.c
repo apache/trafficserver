@@ -1178,9 +1178,8 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
 
     if (!RAND_status()) {
       unsigned char bytes[1024];
-      int i;
-      for (i     = 0; i < sizeof(bytes); ++i)
-        bytes[i] = random() % 0xff;
+      for (size_t i = 0; i < sizeof(bytes); ++i)
+        bytes[i]    = random() % 0xff;
       RAND_seed(bytes, sizeof(bytes));
     }
     flags = fcntl(connections[cnum].conn_fd, F_GETFL, 0);

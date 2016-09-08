@@ -324,13 +324,14 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
         key   = luaL_checklstring(L, -1, &key_len);
         value = luaL_checklstring(L, -2, &value_len);
 
-        if (key_len == TS_MIME_LEN_CONTENT_LENGTH && !strncasecmp(TS_MIME_FIELD_CONTENT_LENGTH, key, key_len)) { // Content-Length
+        if ((int)key_len == TS_MIME_LEN_CONTENT_LENGTH &&
+            !strncasecmp(TS_MIME_FIELD_CONTENT_LENGTH, key, key_len)) { // Content-Length
           cl = 1;
 
-        } else if (key_len == TS_MIME_LEN_HOST && !strncasecmp(TS_MIME_FIELD_HOST, key, key_len)) { // Host
+        } else if ((int)key_len == TS_MIME_LEN_HOST && !strncasecmp(TS_MIME_FIELD_HOST, key, key_len)) { // Host
           ht = 1;
 
-        } else if (key_len == TS_MIME_LEN_USER_AGENT && !strncasecmp(TS_MIME_FIELD_USER_AGENT, key, key_len)) { // User-Agent
+        } else if ((int)key_len == TS_MIME_LEN_USER_AGENT && !strncasecmp(TS_MIME_FIELD_USER_AGENT, key, key_len)) { // User-Agent
           ua = 1;
         }
 

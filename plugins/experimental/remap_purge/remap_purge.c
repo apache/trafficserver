@@ -146,7 +146,7 @@ on_send_response_header(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge)
 
     TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_OK);
     TSHttpHdrReasonSet(bufp, hdr_loc, "OK", 2);
-    TSHttpTxnErrorBodySet(txnp, TSstrdup(response), len >= sizeof(response) ? sizeof(response) - 1 : len, NULL);
+    TSHttpTxnErrorBodySet(txnp, TSstrdup(response), len >= (int)sizeof(response) ? (int)sizeof(response) - 1 : len, NULL);
 
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
