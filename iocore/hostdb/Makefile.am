@@ -34,8 +34,6 @@ libinkhostdb_a_SOURCES = \
   HostDB.cc \
   I_HostDB.h \
   I_HostDBProcessor.h \
-  I_SplitDNS.h \
-  I_SplitDNSProcessor.h \
   Inline.cc \
   P_HostDB.h \
   P_HostDBProcessor.h \
