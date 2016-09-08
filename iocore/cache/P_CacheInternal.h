@@ -148,6 +148,16 @@ enum {
   cache_directory_sync_count_stat,
   cache_directory_sync_time_stat,
   cache_directory_sync_bytes_stat,
+  /* AIO read/write error counters */
+  cache_span_errors_read_stat,
+  cache_span_errors_write_stat,
+  /* Span related gauges. A span "moves" from "online" (errors==0)
+   * to "failing" (errors > 0 && errors < proxy.config.cache.max_disk_errors)
+   * to "offline"(errors >= proxy.config.cache.max_disk_errors.
+   * "failing" + "offline" + "online" = total number of spans */
+  cache_span_offline_stat,
+  cache_span_online_stat,
+  cache_span_failing_stat,
   cache_stat_count
 };
 

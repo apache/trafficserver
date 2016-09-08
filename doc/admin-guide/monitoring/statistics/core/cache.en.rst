@@ -199,6 +199,34 @@ Cache
 .. ts:stat:: global proxy.process.cache.write.failure integer
 .. ts:stat:: global proxy.process.cache.write_per_sec float
 .. ts:stat:: global proxy.process.cache.write.success integer
+
+.. ts:stat:: global proxy.process.cache.span.errors.read integer
+
+   The number of span read errors (counter).
+
+.. ts:stat:: global proxy.process.cache.span.errors.write integer
+
+   The number of span write errors (counter).
+
+.. ts:stat:: global proxy.process.cache.span.failing integer
+
+   The number of failing spans (gauge) - errors > 0 && errors < `proxy.config.cache.max_disk_errors`.
+
+   `proxy.process.cache.span.failing` + `proxy.process.cache.span.offline` + `proxy.process.cache.span.online` = total number of spans.
+
+.. ts:stat:: global proxy.process.cache.span.offline integer
+
+   The number of offline spans (gauge) - errors >= `proxy.config.cache.max_disk_errors`.
+
+   `proxy.process.cache.span.failing` + `proxy.process.cache.span.offline` + `proxy.process.cache.span.online` = total number of spans.
+
+.. ts:stat:: global proxy.process.cache.span.online integer
+
+   The number of online spans (gauge) - errors == 0.
+
+   `proxy.process.cache.span.failing` + `proxy.process.cache.span.offline` + `proxy.process.cache.span.online` = total number of spans.
+
+
 .. ts:stat:: global proxy.process.http.background_fill_bytes_aborted_stat integer
    :ungathered:
 
