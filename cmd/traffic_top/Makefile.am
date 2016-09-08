@@ -22,7 +22,8 @@ AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/mgmt/api/include \
-  @CURL_CFLAGS@
+  @CURL_CFLAGS@ \
+  @CURSES_CFLAGS@
 
 AM_LDFLAGS = \
   @EXTRA_CXX_LDFLAGS@ \
@@ -36,7 +37,8 @@ traffic_top_SOURCES = traffic_top.cc
 traffic_top_LDADD = \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @CURL_LIBS@ @CURSES_LIB@
+  @CURL_LIBS@ \
+  @CURSES_LIBS@
 
 endif
 
