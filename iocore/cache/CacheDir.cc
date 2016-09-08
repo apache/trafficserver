@@ -547,8 +547,9 @@ Lagain:
           e = dir_delete_entry(e, p, s, d);
           continue;
         }
-      } else
+      } else {
         DDebug("dir_probe_tag", "tag mismatch %p %X vs expected %X", e, dir_tag(e), key->slice32(3));
+      }
     Lcont:
       p = e;
       e = next_dir(e, seg);
