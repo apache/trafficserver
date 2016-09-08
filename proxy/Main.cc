@@ -1994,7 +1994,7 @@ mgmt_storage_device_cmd_callback(void *data, char *arg, int len)
     switch (cmd) {
     case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:
       Debug("server", "Marking %.*s offline", len, arg);
-      cacheProcessor.mark_storage_offline(d);
+      cacheProcessor.mark_storage_offline(d, /* admin */ true);
       break;
     }
   }

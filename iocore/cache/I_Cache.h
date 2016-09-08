@@ -115,7 +115,7 @@ struct CacheProcessor : public Processor {
 
       @note This is what is called if a disk is disabled due to I/O errors.
   */
-  bool mark_storage_offline(CacheDisk *d);
+  bool mark_storage_offline(CacheDisk *d, bool admin = false);
 
   /** Find the storage for a @a path.
       If @a len is 0 then @a path is presumed null terminated.
