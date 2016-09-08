@@ -646,7 +646,7 @@ AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_POST_REMAP:
     // Ignore internal requests since we generated them.
-    if (TSHttpTxnIsInternal(txn) == TS_SUCCESS) {
+    if (TSHttpTxnIsInternal(txn)) {
       // All our internal requests *must* hit the origin since it is the
       // agent that needs to make the authorization decision. We can't
       // allow that to be cached. Note that this only affects the remap

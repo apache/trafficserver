@@ -543,7 +543,7 @@ ConditionCookie::eval(const Resources &res)
 bool
 ConditionInternalTxn::eval(const Resources &res)
 {
-  bool ret = (TSHttpTxnIsInternal(res.txnp) == TS_SUCCESS);
+  bool ret = (0 != TSHttpTxnIsInternal(res.txnp));
 
   TSDebug(PLUGIN_NAME, "Evaluating INTERNAL-TRANSACTION() -> %d", ret);
   return ret;
