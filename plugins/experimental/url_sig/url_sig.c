@@ -308,7 +308,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   int keyindex      = -1;
   int cmp_res;
   int rval;
-  int i                = 0;
+  unsigned int i       = 0;
   int j                = 0;
   unsigned int sig_len = 0;
 

@@ -124,24 +124,24 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
 }
 
 #define APPEND(a) my_state->output_bytes += stats_add_data_to_resp_buffer(a, my_state)
-#define APPEND_STAT(a, fmt, v)                                              \
-  do {                                                                      \
-    char b[256];                                                            \
-    if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) \
-      APPEND(b);                                                            \
+#define APPEND_STAT(a, fmt, v)                                                   \
+  do {                                                                           \
+    char b[256];                                                                 \
+    if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < (int)sizeof(b)) \
+      APPEND(b);                                                                 \
   } while (0)
-#define APPEND_STAT_NUMERIC(a, fmt, v)                                          \
-  do {                                                                          \
-    char b[256];                                                                \
-    if (integer_counters) {                                                     \
-      if (snprintf(b, sizeof(b), "\"%s\": " fmt ",\n", a, v) < sizeof(b)) {     \
-        APPEND(b);                                                              \
-      }                                                                         \
-    } else {                                                                    \
-      if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) { \
-        APPEND(b);                                                              \
-      }                                                                         \
-    }                                                                           \
+#define APPEND_STAT_NUMERIC(a, fmt, v)                                               \
+  do {                                                                               \
+    char b[256];                                                                     \
+    if (integer_counters) {                                                          \
+      if (snprintf(b, sizeof(b), "\"%s\": " fmt ",\n", a, v) < (int)sizeof(b)) {     \
+        APPEND(b);                                                                   \
+      }                                                                              \
+    } else {                                                                         \
+      if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < (int)sizeof(b)) { \
+        APPEND(b);                                                                   \
+      }                                                                              \
+    }                                                                                \
   } while (0)
 
 // This wraps uint64_t values to the int64_t range to fit into a Java long. Java 8 has an unsigned long which
