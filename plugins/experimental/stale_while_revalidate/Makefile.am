@@ -23,4 +23,4 @@ stale_while_revalidate_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 include $(top_srcdir)/build/tidy.mk
 
 tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+	$(CC_Clang_Tidy)
