@@ -131,7 +131,8 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
 }
 
 LogObject::LogObject(LogObject &rhs)
-  : m_basename(ats_strdup(rhs.m_basename)),
+  : RefCountObj(rhs),
+    m_basename(ats_strdup(rhs.m_basename)),
     m_filename(ats_strdup(rhs.m_filename)),
     m_alt_filename(ats_strdup(rhs.m_alt_filename)),
     m_flags(rhs.m_flags),
