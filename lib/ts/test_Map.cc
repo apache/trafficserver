@@ -90,8 +90,9 @@ test_TSHashTable()
   else
     ink_assert(!"Did not find expected value");
 
-  if (!loc)
+  if (!loc) {
     ; // compiler check.
+  }
 
   ink_assert(!(t.find(N / 2 | 1).isValid()));
 
