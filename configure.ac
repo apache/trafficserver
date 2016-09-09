@@ -535,8 +535,7 @@ AX_COMPILER_VENDOR
 CFLAGS="${_ts_saved_CFLAGS}"
 CXXFLAGS="${_ts_saved_CXXFLAGS}"
 
-# All compilers we support have 'gnu99' as an available C standard
-TS_ADDTO(CFLAGS, [-std=gnu99])
+TS_ADDTO(CFLAGS, [-std=c11])
 TS_ADDTO(CXXFLAGS, [-std=c++11])
 
 dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
