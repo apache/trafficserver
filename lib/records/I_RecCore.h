@@ -169,10 +169,6 @@ int RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
-// Values with names that have this prefix are exempted from being considered "unrecognized".
-const char REC_PLUGIN_CONFIG_NAME_PREFIX[] = "proxy.config.plugin.";
-static const size_t REC_PLUGIN_CONFIG_NAME_PREFIX_LEN = sizeof(REC_PLUGIN_CONFIG_NAME_PREFIX)-1;
-
 typedef void (*RecLookupCallback)(const RecRecord *, void *);
 
 int RecLookupRecord(const char *name, RecLookupCallback callback, void *data, bool lock = true);

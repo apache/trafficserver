@@ -16,50 +16,38 @@
 
 .. include:: ../../../common.defs
 
-TSRecordType
-************
+TSStatSync
+*****************
 
 Synopsis
 ========
 
-`#include <ts/apidefs.h>`
+`#include <ts/ts.h>`
 
-.. c:type:: TSRecordDataType
+.. c:type:: TSStatSync
 
 Enum typedef.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_NULL
+.. c:member:: TSStatSync TS_STAT_SYNC_SUM
 
-   No data type. Used to as an invalid initialization value.
+   Values should add be summed.
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_INT
+.. c:member:: TSStatSync TS_STAT_SYNC_COUNT
 
-   An integer.
+   Values should be added together.
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_FLOAT
+.. c:member:: TSStatSync TS_STAT_SYNC_AVG
 
-    Floating point.
-    
-.. c:member:: TSRecordType TS_RECORDDATATYPE_STRING
+   Values should be arithmetically averaged.
 
-   A string.
+.. c:member:: TSStatSync TS_STAT_SYNC_TIMEAVG
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_COUNTER
-
-   A counter which has a count and a sum.
-
-.. c:member:: TSRecordType TS_RECORDDATATYPE_STAT_CONST
-
-   A value that is unchangeable.
-
-.. c:member:: TSRecordType TS_RECORDDATATYPE_STAT_FX
-
-   Unknown.
+   Values should be arithmetically averaged over a time period.
 
 Description
 ===========
 
-This data type describes the data stored in a management value such as a configuration value or a statistic value.
+The level of persistence for a statistic value.

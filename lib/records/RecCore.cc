@@ -514,18 +514,6 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
   return REC_ERR_OKAY;
 }
 
-void
-RecLookupIterateRecords(std::function<void(RecRecord const *)> f)
-{
-  int num_records = g_num_records; // cache
-  for (int i = 0; i < num_records; i++) {
-    RecRecord *r = &(g_records[i]);
-    rec_mutex_acquire(&(r->lock));
-    f(r);
-    rec_mutex_release(&(r->lock));
-  }
-}
-
 int
 RecGetRecordType(const char *name, RecT *rec_type, bool lock)
 {
