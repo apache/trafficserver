@@ -61,14 +61,14 @@ ParentConsistentHash::~ParentConsistentHash()
   delete chash[SECONDARY];
 }
 
-void
-ParentConsistentHash::getPathHash_Helper(char *buffer, int size, const char *tmp, int len)
+static void
+getPathHash_Helper(char *buffer, int size, const char *tmp, int len)
 {
   int slen;
   int max = size - 1;
-  slen    = (len > max) ? max : len;
+  slen    = MIN(max, len);
   strncpy(buffer, tmp, slen);
-  buffer[slen] = 0;
+  buffer[slen] = '\0';
 }
 
 uint64_t
@@ -91,11 +91,12 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
       if (tmp && len > 0) {
         // Print the over-ride URL
         if (is_debug_tag_set("parent_select")) {
-          getPathHash_Helper(buffer, 1024, tmp, len);
+          getPathHash_Helper(buffer, sizeof(buffer), tmp, len);
           Debug("parent_select", "Using Over-Ride String='%s'.", buffer);
         }
         h->update(tmp, len);
-        goto done;
+        h->final();
+        return h->get();
       }
     }
   }
@@ -106,13 +107,13 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
   tmp = url->path_get(&len);
 
   if (tmp && len > 0) {
-    // Print Original Path
+    // Print the Original path.
     if (is_debug_tag_set("parent_select")) {
-      getPathHash_Helper(buffer, 1024, tmp, len);
+      getPathHash_Helper(buffer, sizeof(buffer), tmp, len);
       Debug("parent_select", "Original Path='%s'.", buffer);
     }
 
-    // Process max_dirs directive.
+    // Process the 'maxdirs' directive.
     if (max_dirs != 0) {
       // Determine number of directory components in the path.
       // NOTE: Leading '/' is gone already.
@@ -148,44 +149,50 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
       }
     }
 
-    // Print Post max_dirs Path
+    // Print the post 'maxdirs' path.
     if (is_debug_tag_set("parent_select")) {
-      getPathHash_Helper(buffer, 1024, tmp, len);
+      getPathHash_Helper(buffer, sizeof(buffer), tmp, len);
       Debug("parent_select", "Post-maxdirs Path='%s'.", buffer);
     }
 
+    // Process the 'fname' directive.
+    // The file name (if any) is filtered out if set to ignore the file name or max_dirs was non-zero.
+    // The file name (if any) consists of the characters at the end of the path beyond the final '/'.
+    // The length of the path string (to be passed to the hash generator) is shortened to accomplish the filtering.
     if (ignore_fname || max_dirs != 0) {
-      int x = len - 1;
-      for (; x >= 0; x--) {
-        char c = tmp[x];
-        if (c == '/')
+      for (int x = len - 1; x >= 0; x--) {
+        if (tmp[x] == '/') {
+          len = x + 1;
           break;
+        }
       }
-      len = x + 1;
     }
 
-    // Print Post fname Path
+    // Print the post 'fname' path.
     if (is_debug_tag_set("parent_select")) {
-      getPathHash_Helper(buffer, 1024, tmp, len);
+      getPathHash_Helper(buffer, sizeof(buffer), tmp, len);
       Debug("parent_select", "Post-fname Path='%s'.", buffer);
     }
 
     h->update(tmp, len);
   }
 
+  // Process the 'qstring' directive.
+  // The query string (if any) is not used if set to ignore the query string or set to ignore the file name or
+  // max_dirs is non-zero.
   if (!ignore_query && !ignore_fname && max_dirs == 0) {
     tmp = url->query_get(&len);
     if (tmp) {
       h->update("?", 1);
       h->update(tmp, len);
+      // Print the query string if used.
       if (is_debug_tag_set("parent_select")) {
-        getPathHash_Helper(buffer, 1024, tmp, len);
+        getPathHash_Helper(buffer, sizeof(buffer), tmp, len);
         Debug("parent_select", "Query='%s'.", buffer);
       }
     }
   }
 
-done:
   h->final();
 
   return h->get();

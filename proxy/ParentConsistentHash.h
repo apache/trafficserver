@@ -49,9 +49,6 @@ class ParentConsistentHash : public ParentSelectionStrategy
   bool ignore_fname;
   int max_dirs;
 
-private:
-  void getPathHash_Helper(char *buffer, int size, const char *tmp, int len);
-
 public:
   static const int PRIMARY   = 0;
   static const int SECONDARY = 1;
