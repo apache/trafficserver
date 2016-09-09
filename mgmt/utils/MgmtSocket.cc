@@ -232,7 +232,7 @@ mgmt_write_timeout(int fd, int sec, int usec)
   timeout.tv_sec  = sec;
   timeout.tv_usec = usec;
 
-  if (fd < 0 || fd >= FD_SETSIZE) {
+  if (fd < 0 || fd >= (int)FD_SETSIZE) {
     errno = EBADF;
     return -1;
   }
@@ -271,7 +271,7 @@ mgmt_read_timeout(int fd, int sec, int usec)
   timeout.tv_sec  = sec;
   timeout.tv_usec = usec;
 
-  if (fd < 0 || fd >= FD_SETSIZE) {
+  if (fd < 0 || fd >= (int)FD_SETSIZE) {
     errno = EBADF;
     return -1;
   }
