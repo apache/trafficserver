@@ -61,23 +61,12 @@ ParentConsistentHash::~ParentConsistentHash()
   delete chash[SECONDARY];
 }
 
-static void
-getPathHash_Helper(char *buffer, int size, const char *tmp, int len)
-{
-  int slen;
-  int max = size - 1;
-  slen    = MIN(max, len);
-  strncpy(buffer, tmp, slen);
-  buffer[slen] = '\0';
-}
-
 uint64_t
 ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 {
   const char *tmp = NULL;
   int len;
-  URL *url = hrdata->hdr->url_get();
-  char buffer[1024];
+  URL *url     = hrdata->hdr->url_get();
   int num_dirs = 0;
 
   // Use over-ride URL from HttpTransact::State's cache_info.parent_selection_url, if present.
@@ -90,10 +79,7 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
       tmp = ps_url->string_get_ref(&len);
       if (tmp && len > 0) {
         // Print the over-ride URL
-        if (is_debug_tag_set("parent_select")) {
-          getPathHash_Helper(buffer, sizeof(buffer), tmp, len);
-          Debug("parent_select", "Using Over-Ride String='%s'.", buffer);
-        }
+        Debug("parent_select", "Using Over-Ride String='%.*s'.", len, tmp);
         h->update(tmp, len);
         h->final();
         return h->get();
@@ -108,10 +94,7 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 
   if (tmp && len > 0) {
     // Print the Original path.
-    if (is_debug_tag_set("parent_select")) {
-      getPathHash_Helper(buffer, sizeof(buffer), tmp, len);
-      Debug("parent_select", "Original Path='%s'.", buffer);
-    }
+    Debug("parent_select", "Original Path='%.*s'.", len, tmp);
 
     // Process the 'maxdirs' directive.
     if (max_dirs != 0) {
@@ -150,10 +133,7 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
     }
 
     // Print the post 'maxdirs' path.
-    if (is_debug_tag_set("parent_select")) {
-      getPathHash_Helper(buffer, sizeof(buffer), tmp, len);
-      Debug("parent_select", "Post-maxdirs Path='%s'.", buffer);
-    }
+    Debug("parent_select", "Post-maxdirs Path='%.*s'.", len, tmp);
 
     // Process the 'fname' directive.
     // The file name (if any) is filtered out if set to ignore the file name or max_dirs was non-zero.
@@ -169,10 +149,7 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
     }
 
     // Print the post 'fname' path.
-    if (is_debug_tag_set("parent_select")) {
-      getPathHash_Helper(buffer, sizeof(buffer), tmp, len);
-      Debug("parent_select", "Post-fname Path='%s'.", buffer);
-    }
+    Debug("parent_select", "Post-fname Path='%.*s'.", len, tmp);
 
     h->update(tmp, len);
   }
@@ -186,10 +163,7 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
       h->update("?", 1);
       h->update(tmp, len);
       // Print the query string if used.
-      if (is_debug_tag_set("parent_select")) {
-        getPathHash_Helper(buffer, sizeof(buffer), tmp, len);
-        Debug("parent_select", "Query='%s'.", buffer);
-      }
+      Debug("parent_select", "Query='%.*s'.", len, tmp);
     }
   }
 
