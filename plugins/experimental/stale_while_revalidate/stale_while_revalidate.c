@@ -499,6 +499,13 @@ fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 }
 
 static int
+is_swr_transaction(TSHttpTxn txn)
+{
+  const char *tag = TSHttpTxnPluginTagGet(txn);
+  return tag && strcmp(tag, PLUGIN_NAME) == 0;
+}
+
+static int
 main_plugin(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txn = (TSHttpTxn)edata;
@@ -507,15 +514,14 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
   StateInfo *state;
   TSMBuffer buf;
   TSMLoc loc, warn_loc;
-  TSHttpStatus http_status;
   config_t *plugin_config;
 
   switch (event) {
-  // Is this the proper event?
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
 
-    if (TSHttpTxnIsInternal(txn) != TS_SUCCESS) {
-      TSDebug(PLUGIN_NAME, "External Request");
+    if (is_swr_transaction(txn)) {
+      TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
+    } else {
       state = TSmalloc(sizeof(StateInfo));
       memset(state, 0, sizeof(StateInfo));
 
@@ -525,14 +531,8 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
 
       TSHttpTxnArgSet(txn, state->plugin_config->txn_slot, (void *)state);
       TSHttpTxnHookAdd(txn, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
-    } else {
-      TSDebug(PLUGIN_NAME, "Internal Request"); // This is insufficient if there are other plugins using TSHttpConnect
-      TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH, TS_SERVER_SESSION_SHARING_MATCH_NONE);
-      // TSHttpTxnHookAdd(txn, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
-      TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
-      // This might be needed in 3.2.0 to fix a timeout issue
-      // TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN, 5);
-      // TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT, 5);
+
+      TSDebug(PLUGIN_NAME, "tracking state %p from txn %p for %s", state, txn, state->req_info->effective_url);
     }
 
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
@@ -574,27 +574,24 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
             TSTextLogObjectWrite(state->plugin_config->log_info.object, "stale-while-revalidate: %d - %d < %d + %d %s",
                                  (int)state->txn_start, (int)chi->date, (int)chi->max_age, (int)chi->stale_while_revalidate,
                                  state->req_info->effective_url);
-// lookup async
 
-#if (TS_VERSION_NUMBER >= 3003000)
           TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, 1);
-#endif
-          // Set warning header
-          TSHttpTxnHookAdd(txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
+          TSHttpTxnCacheLookupStatusSet(txn, TS_CACHE_LOOKUP_HIT_FRESH);
 
           TSDebug(PLUGIN_NAME, "set state as async");
           state->async_req = true;
-          TSHttpTxnCacheLookupStatusSet(txn, TS_CACHE_LOOKUP_HIT_FRESH);
-          // TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+
+          // Set warning header
+          TSHttpTxnHookAdd(txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
+
           fetch_cont = TSContCreate(fetch_resource, TSMutexCreate());
           TSContDataSet(fetch_cont, (void *)state);
           TSContSchedule(fetch_cont, 0, TS_THREAD_POOL_NET);
           TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
         } else if ((state->txn_start - chi->date) < (chi->max_age + chi->stale_on_error)) {
           TSDebug(PLUGIN_NAME, "Looks like we can return fresh data on 500 error");
-#if (TS_VERSION_NUMBER >= 3003000)
           TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, 1);
-#endif
+
           // lookup sync
           state->async_req = false;
           state->txn       = txn;
@@ -635,18 +632,27 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    // In this continuation we only hook responses for background
+    // requests that we issued ourselves. If the origin went away,
+    // we don't want to replace a stale cache object with an error.
+    TSAssert(is_swr_transaction(txn));
+
     if (TS_SUCCESS == TSHttpTxnServerRespGet(txn, &buf, &loc)) {
-      http_status = TSHttpHdrStatusGet(buf, loc);
-      if ((http_status == 500) || ((http_status >= 502) && (http_status <= 504))) { // 500, 502, 503, or 504
-        TSDebug(PLUGIN_NAME, "Set non-cachable");
-#if (TS_VERSION_NUMBER >= 3003000)
+      switch (TSHttpHdrStatusGet(buf, loc)) {
+      case TS_HTTP_STATUS_INTERNAL_SERVER_ERROR:
+      case TS_HTTP_STATUS_BAD_GATEWAY:
+      case TS_HTTP_STATUS_SERVICE_UNAVAILABLE:
+      case TS_HTTP_STATUS_GATEWAY_TIMEOUT:
+        TSDebug(PLUGIN_NAME, "marking background request no-store");
         TSHttpTxnServerRespNoStoreSet(txn, 1);
-#else
-        TSHttpTxnServerRespNoStore(txn);
-#endif
+        break;
+      default:
+        break;
       }
+
       TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
     }
+
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     break;
 
