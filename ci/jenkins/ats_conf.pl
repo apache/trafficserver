@@ -70,7 +70,7 @@ $recedit->set(conf => "proxy.config.http.accept_no_activity_timeout", val => "30
 # DNS / HostDB
 $recedit->set(conf => "proxy.config.hostdb.size", val => "1000");
 $recedit->set(conf => "proxy.config.hostdb.storage_size", val => "1M");
-$recedit->set(conf => "proxy.config.cache.hostdb.sync_frequency",  val => "1800");
+$recedit->set(conf => "proxy.config.cache.hostdb.sync_frequency",  val => "0");
 
 # Logging
 $recedit->set(conf => "proxy.config.log.logging_enabled", val => "3");
