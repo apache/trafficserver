@@ -170,6 +170,36 @@ public:
   /////////////////////////////////////////////////////////////////
   UnixNetVConnection();
 
+  int
+  populate_protocol(char const **results, int n) const
+  {
+    int retval = 0;
+    if (n > 0) {
+      results[retval++] = options.get_proto_string();
+      if (n > 1) {
+        results[retval++] = options.get_family_string();
+      }
+    }
+    return retval;
+  }
+
+  const char *
+  protocol_contains(const char *tag) const
+  {
+    const char *retval   = NULL;
+    unsigned int tag_len = strlen(tag);
+    const char *test_tag = options.get_proto_string();
+    if (strncmp(tag, test_tag, tag_len) == 0) {
+      retval = test_tag;
+    } else {
+      test_tag = options.get_family_string();
+      if (strncmp(tag, test_tag, tag_len) == 0) {
+        retval = test_tag;
+      }
+    }
+    return retval;
+  }
+
 private:
   UnixNetVConnection(const NetVConnection &);
   UnixNetVConnection &operator=(const NetVConnection &);

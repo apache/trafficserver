@@ -1968,6 +1968,9 @@ REGRESSION_TEST(SDK_API_TSContSchedule)(RegressionTest *test, int /* atype ATS_U
 //                    TSHttpTxnClientRespGet
 //                    TSHttpTxnServerReqGet
 //                    TSHttpTxnServerRespGet
+//                    TSHttpTxnNextHopAddrGet
+//                    TSHttpTxnClientProtocolStackGet
+//                    TSHttpTxnClientProtocolStackContains
 //////////////////////////////////////////////////////////////////////////////
 
 #define HTTP_HOOK_TEST_REQUEST_ID 1
@@ -1988,6 +1991,8 @@ typedef struct {
   bool test_server_req_get;
   bool test_server_resp_get;
   bool test_next_hop_ip_get;
+  bool test_client_protocol_stack_get;
+  bool test_client_protocol_stack_contains;
 
   unsigned int magic;
 } SocketTest;
@@ -2016,6 +2021,66 @@ checkHttpTxnClientIPGet(SocketTest *test, void *data)
     test->test_client_ip_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnClientIPGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected %.8x got %.8x]", actual_ip,
                ip);
+  }
+  return TS_EVENT_CONTINUE;
+}
+
+// This func is called by us from mytest_handler to check for TSHttpTxnClientProtocolStackGet
+static int
+checkHttpTxnClientProtocolStackGet(SocketTest *test, void *data)
+{
+  TSHttpTxn txnp = (TSHttpTxn)data;
+  char const *results[10];
+  int count = 0;
+  TSHttpTxnClientProtocolStackGet(txnp, 10, results, &count);
+  // Should return results[0] = "http/1.0", results[1] = "tcp", results[2] = "ipv4"
+  test->test_client_protocol_stack_get = true;
+  if (count != 3) {
+    test->test_client_protocol_stack_get = false;
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackGet", "TestCase1", TC_FAIL, "count should be 3 is %d", count);
+  } else if (strcmp(results[0], "http/1.0") != 0) {
+    test->test_client_protocol_stack_get = false;
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackGet", "TestCase1", TC_FAIL, "results[0] should be http/1.0 is %s",
+               results[0]);
+  } else if (strcmp(results[1], "tcp") != 0) {
+    test->test_client_protocol_stack_get = false;
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackGet", "TestCase1", TC_FAIL, "results[1] should be tcp is %s",
+               results[1]);
+  } else if (strcmp(results[2], "ipv4") != 0) {
+    test->test_client_protocol_stack_get = false;
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackGet", "TestCase1", TC_FAIL, "results[2] should be ipv4 is %s",
+               results[2]);
+  } else {
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackGet", "TestCase1", TC_PASS, "ok stack_size=%d", count);
+  }
+  return TS_EVENT_CONTINUE;
+}
+
+// This func is called by us from mytest_handler to check for TSHttpTxnClientProtocolStackContains
+static int
+checkHttpTxnClientProtocolStackContains(SocketTest *test, void *data)
+{
+  TSHttpTxn txnp                            = (TSHttpTxn)data;
+  const char *ret_tag                       = TSHttpTxnClientProtocolStackContains(txnp, "tcp");
+  test->test_client_protocol_stack_contains = true;
+  if (ret_tag) {
+    const char *normalized_tag = TSNormalizedProtocolTag("tcp");
+    if (normalized_tag != ret_tag) {
+      SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackContains", "TestCase1", TC_FAIL,
+                 "contains tcp, but normalized tag is wrong");
+    } else {
+      SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackContains", "TestCase1", TC_PASS, "ok tcp");
+    }
+  } else {
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackContains", "TestCase1", TC_FAIL, "missing tcp");
+    test->test_client_protocol_stack_contains = false;
+  }
+  ret_tag = TSHttpTxnClientProtocolStackContains(txnp, "udp");
+  if (!ret_tag) {
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackContains", "TestCase2", TC_PASS, "ok no udp");
+  } else {
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientProtocolStackContains", "TestCase2", TC_FAIL, "faulty udp report");
+    test->test_client_protocol_stack_contains = false;
   }
   return TS_EVENT_CONTINUE;
 }
@@ -2315,6 +2380,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
 
     checkHttpTxnServerReqGet(test, data);
     checkHttpTxnNextHopIPGet(test, data);
+    checkHttpTxnClientProtocolStackContains(test, data);
+    checkHttpTxnClientProtocolStackGet(test, data);
 
     TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 16;

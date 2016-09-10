@@ -1512,3 +1512,54 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   SSL_set_ex_data(this->ssl, get_ssl_client_data_index(), this);
   return EVENT_DONE;
 }
+
+const char *
+SSLNetVConnection::map_tls_protocol_to_tag(char const *proto_string) const
+{
+  const char *retval    = NULL;
+  const char *ssl_proto = getSSLProtocol();
+  if (ssl_proto && strncmp(ssl_proto, "TLSv1", 5) == 0) {
+    if (ssl_proto[5] == '\0') {
+      retval = TS_PROTO_TAG_TLS_1_0;
+    } else if (ssl_proto[5] == '.') {
+      if (ssl_proto[6] == '1' && ssl_proto[7] == '\0') {
+        retval = TS_PROTO_TAG_TLS_1_1;
+      } else if (ssl_proto[6] == '2' && ssl_proto[7] == '\0') {
+        retval = TS_PROTO_TAG_TLS_1_2;
+      } else if (ssl_proto[6] == '3' && ssl_proto[7] == '\0') {
+        retval = TS_PROTO_TAG_TLS_1_3;
+      }
+    }
+  }
+  return retval;
+}
+
+int
+SSLNetVConnection::populate_protocol(char const **results, int n) const
+{
+  int retval = 0;
+  if (n > 0) {
+    results[0] = map_tls_protocol_to_tag(getSSLProtocol());
+    if (results[0] != NULL) {
+      retval++;
+    }
+    if (n > retval) {
+      retval += super::populate_protocol(results + retval, n - retval);
+    }
+  }
+  return retval;
+}
+
+const char *
+SSLNetVConnection::protocol_contains(const char *tag) const
+{
+  const char *retval   = NULL;
+  const char *tls_tag  = map_tls_protocol_to_tag(getSSLProtocol());
+  unsigned int tag_len = strlen(tag);
+  if (tag_len <= strlen(tls_tag) && strncmp(tag, tls_tag, tag_len) == 0) {
+    retval = tls_tag;
+  } else {
+    retval = super::protocol_contains(tag);
+  }
+  return retval;
+}
