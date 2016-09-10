@@ -7940,3 +7940,50 @@ HttpSM::is_redirect_required()
   }
   return redirect_required;
 }
+
+// Fill in the client protocols used.  Return the number of entries returned
+int
+HttpSM::populate_client_protocol(const char **result, int n) const
+{
+  int retval = 0;
+  if (n > 0) {
+    const char *proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
+    if (proto) {
+      result[0] = proto;
+      retval    = 1;
+      if (n > retval && ua_session) {
+        retval += ua_session->populate_protocol(result + retval, n - retval);
+      }
+    }
+  }
+  return retval;
+}
+
+// Look for a specific protocol
+const char *
+HttpSM::client_protocol_contains(const char *tag_prefix) const
+{
+  const char *retval = NULL;
+  const char *proto  = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
+  if (proto) {
+    unsigned int tag_prefix_len = strlen(tag_prefix);
+    if (tag_prefix_len <= strlen(proto) && strncmp(tag_prefix, proto, tag_prefix_len) == 0) {
+      retval = proto;
+    } else if (ua_session) {
+      retval = ua_session->protocol_contains(tag_prefix);
+    }
+  }
+  return retval;
+}
+
+const char *
+HttpSM::find_proto_string(HTTPVersion version) const
+{
+  if (version == HTTPVersion(1, 1)) {
+    return TS_PROTO_TAG_HTTP_1_1;
+  } else if (version == HTTPVersion(1, 0)) {
+    return TS_PROTO_TAG_HTTP_1_0;
+  } else {
+    return NULL;
+  }
+}

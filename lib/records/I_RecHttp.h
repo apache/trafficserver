@@ -136,6 +136,8 @@ extern SessionProtocolSet HTTP2_PROTOCOL_SET;
 extern SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 extern SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
 
+const char *RecNormalizeProtoTag(const char *tag);
+
 /** Registered session protocol names.
 
     We do this to avoid lots of string compares. By normalizing the

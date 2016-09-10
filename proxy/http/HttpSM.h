@@ -263,6 +263,10 @@ public:
   bool is_private();
   bool is_redirect_required();
 
+  int populate_client_protocol(const char **result, int n) const;
+  const char *client_protocol_contains(const char *tag_prefix) const;
+  const char *find_proto_string(HTTPVersion version) const;
+
   int64_t sm_id;
   unsigned int magic;
 

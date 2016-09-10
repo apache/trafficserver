@@ -252,6 +252,9 @@ public:
     return ssl ? SSL_get_cipher_name(ssl) : NULL;
   }
 
+  int populate_protocol(char const **results, int n) const;
+  const char *protocol_contains(const char *tag) const;
+
   /**
    * Populate the current object based on the socket information in in the
    * con parameter and the ssl object in the arg parameter
@@ -270,6 +273,8 @@ public:
 private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection &operator=(const SSLNetVConnection &);
+
+  const char *map_tls_protocol_to_tag(char const *proto_string) const;
 
   bool sslHandShakeComplete;
   bool sslClientConnection;

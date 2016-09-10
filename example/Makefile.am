@@ -33,6 +33,7 @@ plugins = \
   null-transform.la \
   output-header.la \
   protocol.la \
+  protocol-stack.la \
   psi.la \
   query-remap.la \
   remap.la \
@@ -68,6 +69,7 @@ lifecycle_plugin_la_SOURCES = lifecycle-plugin/lifecycle-plugin.c
 null_transform_la_SOURCES = null-transform/null-transform.c
 output_header_la_SOURCES = output-header/output-header.c
 protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
+protocol_stack_la_SOURCES = protocol-stack/protocol-stack.cc
 psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
 query_remap_la_SOURCES = query-remap/query-remap.c
 remap_header_add_la_SOURCES = remap_header_add/remap_header_add.cc

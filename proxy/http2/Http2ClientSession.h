@@ -243,6 +243,33 @@ public:
     return "http/2";
   }
 
+  virtual int
+  populate_protocol(char const **result, int size) const
+  {
+    int retval = 0;
+    if (size > 0) {
+      result[0] = TS_PROTO_TAG_HTTP_2_0;
+      retval    = 1;
+      if (size > 1) {
+        retval += super::populate_protocol(result + 1, size - 1);
+      }
+    }
+    return retval;
+  }
+
+  virtual const char *
+  protocol_contains(const char *tag_prefix) const
+  {
+    const char *retval   = NULL;
+    unsigned int tag_len = strlen(tag_prefix);
+    if (tag_len <= strlen(TS_PROTO_TAG_HTTP_2_0) && strncmp(tag_prefix, TS_PROTO_TAG_HTTP_2_0, tag_len) == 0) {
+      retval = TS_PROTO_TAG_HTTP_2_0;
+    } else {
+      retval = super::protocol_contains(tag_prefix);
+    }
+    return retval;
+  }
+
 private:
   Http2ClientSession(Http2ClientSession &);                  // noncopyable
   Http2ClientSession &operator=(const Http2ClientSession &); // noncopyable

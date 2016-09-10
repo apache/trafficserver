@@ -207,6 +207,10 @@ struct NetVCOptions {
     return *this;
   }
 
+  const char *get_family_string() const;
+
+  const char *get_proto_string() const;
+
   /// @name Debugging
   //@{
   /// Convert @a s to its string equivalent.
@@ -564,6 +568,18 @@ public:
   set_is_transparent(bool state = true)
   {
     is_transparent = state;
+  }
+
+  virtual int
+  populate_protocol(char const **results, int n) const
+  {
+    return 0;
+  }
+
+  virtual const char *
+  protocol_contains(const char *tag) const
+  {
+    return NULL;
   }
 
 private:
