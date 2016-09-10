@@ -189,7 +189,8 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
   proxy_launch_outstanding  = false;
   mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
   proxy_running             = 0;
-  RecSetRecordInt("proxy.node.proxy_running", 0, REC_SOURCE_DEFAULT);
+
+  RecRegisterStatInt(RECT_NODE, "proxy.node.proxy_running", 0, RECP_NON_PERSISTENT);
 
   virt_map = NULL;
 
