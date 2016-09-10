@@ -1685,14 +1685,17 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // on a thread changes require special consideration to allow
   // minimal Cache Clustering functionality.
   //////////////////////////////////////////////////////////////////////
-  RecInt cluster_type;
   cache_clustering_enabled = 0;
+
+#if TS_USE_CLUSTERING
+  RecInt cluster_type;
 
   if (RecGetRecordInt("proxy.local.cluster.type", &cluster_type) == REC_ERR_OKAY) {
     if (cluster_type == 1) {
       cache_clustering_enabled = 1;
     }
   }
+#endif
   Note("cache clustering %s", cache_clustering_enabled ? "enabled" : "disabled");
 
   num_of_net_threads = adjust_num_of_net_threads(num_of_net_threads);

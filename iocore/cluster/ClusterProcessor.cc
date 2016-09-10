@@ -294,7 +294,7 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
   ClusterMachine *m;
   m = this_cluster->current_configuration()->find(ip, token->ip_created);
 #else
-  ClusterMachine *m = this_cluster->current_configuration()->find(token->ip_created);
+  ClusterMachine *m        = this_cluster->current_configuration()->find(token->ip_created);
 #endif
   if (!m)
     return NULL;
@@ -620,8 +620,10 @@ ClusterProcessor::init()
   REC_ReadConfigInteger(cluster_packet_tos, "proxy.config.cluster.sock_packet_tos");
   REC_EstablishStaticConfigInt32(RPC_only_CacheCluster, "proxy.config.cluster.rpc_cache_cluster");
 
+#if TS_USE_CLUSTERING
   int cluster_type = 0;
   REC_ReadConfigInteger(cluster_type, "proxy.local.cluster.type");
+#endif
 
   create_this_cluster_machine();
   // Cluster API Initializations
@@ -640,6 +642,7 @@ ClusterProcessor::init()
 
   memset(channel_dummy_output, 0, sizeof(channel_dummy_output));
 
+#if TS_USE_CLUSTERING
   if (cluster_type == 1) {
     cache_clustering_enabled = 1;
     Note("cache clustering enabled");
@@ -648,6 +651,11 @@ ClusterProcessor::init()
     cache_clustering_enabled = 0;
     Note("cache clustering disabled");
   }
+#else
+  cache_clustering_enabled = 0;
+  Note("cache clustering disabled");
+#endif // TS_USE_CLUSTERING
+
   return 0;
 }
 

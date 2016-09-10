@@ -178,14 +178,3 @@ CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
 # ToDo: Undocumented
 CONFIG proxy.config.dump_mem_info_frequency INT 0
 CONFIG proxy.config.http.slow.log.threshold INT 0
-
-##############################################################################
-# Cluster Subsystem. Docs:
-#    https://docs.trafficserver.apache.org/records.config#cluster
-##############################################################################
-LOCAL proxy.local.cluster.type INT 3
-CONFIG proxy.config.cluster.ethernet_interface STRING @default_loopback_iface@
-CONFIG proxy.config.cluster.cluster_port INT 8086
-CONFIG proxy.config.cluster.rsport INT 8088
-CONFIG proxy.config.cluster.mcport INT 8089
-CONFIG proxy.config.cluster.mc_group_addr STRING 224.0.1.37
