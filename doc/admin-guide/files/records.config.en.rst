@@ -2664,6 +2664,24 @@ Logging Configuration
 
    The number of seconds between collation server connection retries.
 
+.. ts:cv:: CONFIG proxy.config.log.collation_host_timeout INT 86390
+
+   The number of seconds before inactivity time-out events for the host side.
+   This setting over-rides the default set with proxy.config.net.default_inactivity_timeout
+   for log collation connections.
+
+   The default is set for 10s less on the host side to help prevent any possible race
+   conditions. If the host disconnects first, the client will see the disconnect
+   before its own time-out and re-connect automatically. If the client does not see
+   the disconnect, i.e., connection is "locked-up" for some reason, it will disconnect
+   when it reaches its own time-out and then re-connect automatically.
+
+.. ts:cv:: CONFIG proxy.config.log.collation_client_timeout INT 86400
+
+   The number of seconds before inactivity time-out events for the client side.
+   This setting over-rides the default set with proxy.config.net.default_inactivity_timeout
+   for log collation connections.
+
 .. ts:cv:: CONFIG proxy.config.log.rolling_enabled INT 1
    :reloadable:
 

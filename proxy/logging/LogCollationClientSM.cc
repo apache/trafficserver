@@ -266,9 +266,11 @@ LogCollationClientSM::client_auth(int event, VIO * /* vio ATS_UNUSED */)
 
     return client_send(LOG_COLL_EVENT_SWITCH, NULL);
 
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR: {
-    Debug("log-coll", "[%d]client::client_auth - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]client::client_auth - TIMEOUT|EOS|ERROR", m_id);
     int64_t read_avail = m_auth_reader->read_avail();
 
     if (read_avail > 0) {
@@ -449,9 +451,11 @@ LogCollationClientSM::client_idle(int event, void * /* data ATS_UNUSED */)
     m_client_state = LOG_COLL_CLIENT_IDLE;
     return EVENT_CONT;
 
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
-    Debug("log-coll", "[%d]client::client_idle - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]client::client_idle - TIMEOUT|EOS|ERROR", m_id);
     return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
 
   default:
@@ -516,6 +520,8 @@ LogCollationClientSM::client_init(int event, void * /* data ATS_UNUSED */)
 int
 LogCollationClientSM::client_open(int event, NetVConnection *net_vc)
 {
+  RecInt rec_timeout;
+  int timeout = 86400;
   ip_port_text_buffer ipb;
   Debug("log-coll", "[%d]client::client_open", m_id);
 
@@ -546,6 +552,12 @@ LogCollationClientSM::client_open(int event, NetVConnection *net_vc)
 
     ink_assert(net_vc != NULL);
     m_host_vc = net_vc;
+
+    // assign an explicit inactivity timeout so that it will not get the default value later
+    if (RecGetRecordInt("proxy.config.log.collation_client_timeout", &rec_timeout) == REC_ERR_OKAY) {
+      timeout = rec_timeout;
+    }
+    m_host_vc->set_inactivity_timeout(HRTIME_SECONDS(timeout));
 
     // setup a client reader just for detecting a host disconnnect
     // (iocore should call back this function with and EOS/ERROR)
@@ -663,9 +675,11 @@ LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
     // switch back to client_send
     return client_send(LOG_COLL_EVENT_SWITCH, NULL);
 
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR: {
-    Debug("log-coll", "[%d]client::client_send - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]client::client_send - TIMEOUT|EOS|ERROR", m_id);
     int64_t read_avail = m_send_reader->read_avail();
 
     if (read_avail > 0) {
