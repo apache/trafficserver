@@ -30,7 +30,6 @@
 #include "ts/ink_platform.h"
 #include <dlfcn.h>
 #include "Main.h"
-#include "Error.h"
 #include "P_EventSystem.h"
 #include "P_Cache.h"
 #include "ProxyConfig.h"

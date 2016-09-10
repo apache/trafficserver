@@ -62,7 +62,6 @@
 #include "HttpConfig.h"
 #include "HttpCompat.h"
 #include "HttpTransact.h"
-#include "Error.h"
 #include "Main.h"
 #include "ts/RawHashTable.h"
 

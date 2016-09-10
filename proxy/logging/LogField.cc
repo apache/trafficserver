@@ -29,7 +29,6 @@
  ***************************************************************************/
 #include "ts/ink_platform.h"
 
-#include "Error.h"
 #include "LogUtils.h"
 #include "LogField.h"
 #include "LogBuffer.h"

@@ -29,7 +29,6 @@
 #include "time.h"
 #include "HTTP.h"
 #include "HttpCompat.h"
-#include "Error.h"
 #include "ts/InkErrno.h"
 
 ClassAllocator<CacheLookupHttpConfig> CacheLookupHttpConfigAllocator("CacheLookupHttpConfigAllocator");

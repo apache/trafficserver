@@ -26,7 +26,6 @@
 #include "ParentRoundRobin.h"
 #include "ControlMatcher.h"
 #include "Main.h"
-#include "Error.h"
 #include "ProxyConfig.h"
 #include "HTTP.h"
 #include "HttpTransact.h"

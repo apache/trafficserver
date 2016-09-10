@@ -56,7 +56,6 @@ extern "C" int plock(int);
 
 #include "Main.h"
 #include "ts/signals.h"
-#include "Error.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 #include "P_UDPNet.h"
@@ -908,7 +907,7 @@ check_fd_limit()
   if (fds_throttle > fds_limit + THROTTLE_FD_HEADROOM) {
     int new_fds_throttle = fds_limit - THROTTLE_FD_HEADROOM;
     if (new_fds_throttle < 1) {
-      MachineFatal("too few file descritors (%d) available", fds_limit);
+      ink_abort("too few file descriptors (%d) available", fds_limit);
     }
     char msg[256];
     snprintf(msg, sizeof(msg), "connection throttle too high, "

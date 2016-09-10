@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Error.h"
 #include "P_EventSystem.h"
 #include "LogField.h"
 #include "LogFilter.h"

@@ -36,8 +36,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "Error.h"
-
 #include "P_EventSystem.h"
 #include "I_Machine.h"
 #include "LogSock.h"

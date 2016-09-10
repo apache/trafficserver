@@ -24,7 +24,6 @@
 #include "ts/ink_config.h"
 #include "P_Net.h"
 #include "Main.h"
-#include "Error.h"
 #include "HttpConfig.h"
 #include "HttpSessionAccept.h"
 #include "ReverseProxy.h"
