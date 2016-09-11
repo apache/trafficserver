@@ -6169,6 +6169,10 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 {
   bool is_msg_buf_present;
 
+  if (!ua_session->m_active) {
+    return;
+  }
+
   if (t_state.internal_msg_buffer) {
     is_msg_buf_present = true;
     ink_assert(t_state.internal_msg_buffer_size > 0);
@@ -6254,7 +6258,11 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
   tunnel.add_consumer(ua_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
 
   ua_entry->in_tunnel = true;
-  tunnel.tunnel_run(p);
+
+  // Only actually try to do this on live sessions.
+  if (ua_session->m_active) {
+      tunnel.tunnel_run(p);
+  }
 }
 
 // int HttpSM::find_http_resp_buffer_size(int cl)
