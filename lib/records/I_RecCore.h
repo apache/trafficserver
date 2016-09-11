@@ -30,6 +30,7 @@
 #include "I_RecAlarms.h"
 #include "I_RecSignals.h"
 #include "I_RecEvents.h"
+#include <functional>
 
 struct RecRecord;
 
@@ -168,7 +169,6 @@ int RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
-
 typedef void (*RecLookupCallback)(const RecRecord *, void *);
 
 int RecLookupRecord(const char *name, RecLookupCallback callback, void *data, bool lock = true);
@@ -203,6 +203,9 @@ RecSignalManager(int id, const char *str)
 
 // Format a message, and send it to the manager and to the Warning diagnostic.
 void RecSignalWarning(int sig, const char *fmt, ...) TS_PRINTFLIKE(2, 3);
+
+/// Generate a warning if any configuration name/value is not registered.
+void RecConfigWarnIfUnregistered();
 
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)

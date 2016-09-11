@@ -16,50 +16,30 @@
 
 .. include:: ../../../common.defs
 
-TSRecordType
-************
+TSStatPersistence
+*****************
 
 Synopsis
 ========
 
-`#include <ts/apidefs.h>`
+`#include <ts/ts.h>`
 
-.. c:type:: TSRecordDataType
+.. c:type:: TSStatPersistence
 
 Enum typedef.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_NULL
+.. c:member:: TSStatPersistence TS_STAT_PERSISTENT
 
-   No data type. Used to as an invalid initialization value.
+   The statistic value should be preserved across :program:`traffic_server` restarts.
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_INT
+.. c:member:: TSStatPersistence TS_STAT_NON_PERSISTENT
 
-   An integer.
-
-.. c:member:: TSRecordType TS_RECORDDATATYPE_FLOAT
-
-    Floating point.
-    
-.. c:member:: TSRecordType TS_RECORDDATATYPE_STRING
-
-   A string.
-
-.. c:member:: TSRecordType TS_RECORDDATATYPE_COUNTER
-
-   A counter which has a count and a sum.
-
-.. c:member:: TSRecordType TS_RECORDDATATYPE_STAT_CONST
-
-   A value that is unchangeable.
-
-.. c:member:: TSRecordType TS_RECORDDATATYPE_STAT_FX
-
-   Unknown.
+   The statistic value should not be preserved across process restarts.
 
 Description
 ===========
 
-This data type describes the data stored in a management value such as a configuration value or a statistic value.
+The level of persistence for a statistic value.
