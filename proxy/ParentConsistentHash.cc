@@ -21,7 +21,6 @@
   limitations under the License.
  */
 #include "ParentConsistentHash.h"
-#include "ts/Diags.h"
 
 ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 {
@@ -68,24 +67,6 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
   int len;
   URL *url     = hrdata->hdr->url_get();
   int num_dirs = 0;
-
-  // Use over-ride URL from HttpTransact::State's cache_info.parent_selection_url, if present.
-  URL *ps_url = NULL;
-  Debug("parent_select", "hrdata->cache_info_parent_selection_url = %p", hrdata->cache_info_parent_selection_url);
-  if (hrdata->cache_info_parent_selection_url) {
-    ps_url = *(hrdata->cache_info_parent_selection_url);
-    Debug("parent_select", "ps_url = %p", ps_url);
-    if (ps_url) {
-      tmp = ps_url->string_get_ref(&len);
-      if (tmp && len > 0) {
-        // Print the over-ride URL
-        Debug("parent_select", "Using Over-Ride String='%.*s'.", len, tmp);
-        h->update(tmp, len);
-        h->final();
-        return h->get();
-      }
-    }
-  }
 
   // Always hash on '/' because paths returned by ATS are always stripped of it
   h->update("/", 1);

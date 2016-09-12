@@ -932,41 +932,6 @@ ts.http.set_cache_lookup_url
 
 `TOP <#ts-lua-plugin>`_
 
-ts.http.get_parent_selection_url
---------------------------------
-**syntax:** *ts.http.get_parent_selection_url()*
-
-**context:** do_global_cache_lookup_complete
-
-**description:** This function can be used to get the parent selection url for the client request.
-
-Here is an example
-
-::
-
-    function cache_lookup()
-        ts.http.set_parent_selection_url('http://bad.com/bad.html')
-        local cache = ts.http.get_parent_selection_url()
-        ts.debug(cache)
-    end
-
-    function do_remap()
-        ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
-        return 0
-    end
-
-`TOP <#ts-lua-plugin>`_
-
-ts.http.set_parent_selection_url
---------------------------------
-**syntax:** *ts.http.set_parent_selection_url()*
-
-**context:** do_global_cache_lookup_complete
-
-**description:** This function can be used to set the parent selection url for the client request.
-
-`TOP <#ts-lua-plugin>`_
-
 ts.http.set_server_resp_no_store
 --------------------------------
 **syntax:** *ts.http.set_server_resp_no_store(status)*

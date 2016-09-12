@@ -77,8 +77,6 @@ static int ts_lua_http_set_cache_lookup_status(lua_State *L);
 static int ts_lua_http_set_cache_url(lua_State *L);
 static int ts_lua_http_get_cache_lookup_url(lua_State *L);
 static int ts_lua_http_set_cache_lookup_url(lua_State *L);
-static int ts_lua_http_get_parent_selection_url(lua_State *L);
-static int ts_lua_http_set_parent_selection_url(lua_State *L);
 static int ts_lua_http_set_server_resp_no_store(lua_State *L);
 
 static void ts_lua_inject_cache_lookup_result_variables(lua_State *L);
@@ -145,12 +143,6 @@ ts_lua_inject_http_cache_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_set_cache_lookup_url);
   lua_setfield(L, -2, "set_cache_lookup_url");
-
-  lua_pushcfunction(L, ts_lua_http_get_parent_selection_url);
-  lua_setfield(L, -2, "get_parent_selection_url");
-
-  lua_pushcfunction(L, ts_lua_http_set_parent_selection_url);
-  lua_setfield(L, -2, "set_parent_selection_url");
 
   lua_pushcfunction(L, ts_lua_http_set_server_resp_no_store);
   lua_setfield(L, -2, "set_server_resp_no_store");
@@ -376,78 +368,6 @@ ts_lua_http_set_cache_lookup_url(lua_State *L)
       TSDebug(TS_LUA_DEBUG_TAG, "Set cache lookup URL");
     } else {
       TSError("[ts_lua] Failed to set cache lookup URL");
-    }
-  }
-
-  return 0;
-}
-
-static int
-ts_lua_http_get_parent_selection_url(lua_State *L)
-{
-  char output[TS_LUA_MAX_URL_LENGTH];
-  int output_len;
-  TSMLoc url = TS_NULL_MLOC;
-  char *str  = NULL;
-  int len;
-
-  ts_lua_http_ctx *http_ctx;
-
-  GET_HTTP_CONTEXT(http_ctx, L);
-
-  if (TSUrlCreate(http_ctx->client_request_bufp, &url) != TS_SUCCESS) {
-    lua_pushnil(L);
-    goto done;
-  }
-
-  if (TSHttpTxnParentSelectionUrlGet(http_ctx->txnp, http_ctx->client_request_bufp, url) != TS_SUCCESS) {
-    lua_pushnil(L);
-    goto done;
-  }
-
-  str = TSUrlStringGet(http_ctx->client_request_bufp, url, &len);
-
-  output_len = snprintf(output, TS_LUA_MAX_URL_LENGTH, "%.*s", len, str);
-  if (output_len >= TS_LUA_MAX_URL_LENGTH) {
-    lua_pushlstring(L, output, TS_LUA_MAX_URL_LENGTH - 1);
-  } else {
-    lua_pushlstring(L, output, output_len);
-  }
-
-done:
-  if (url != TS_NULL_MLOC) {
-    TSHandleMLocRelease(http_ctx->client_request_bufp, TS_NULL_MLOC, url);
-  }
-
-  if (str != NULL) {
-    TSfree(str);
-  }
-
-  return 1;
-}
-
-static int
-ts_lua_http_set_parent_selection_url(lua_State *L)
-{
-  const char *url;
-  size_t url_len;
-
-  ts_lua_http_ctx *http_ctx;
-
-  GET_HTTP_CONTEXT(http_ctx, L);
-
-  url = luaL_checklstring(L, 1, &url_len);
-
-  if (url && url_len) {
-    const char *start = url;
-    const char *end   = url + url_len;
-    TSMLoc new_url_loc;
-    if (TSUrlCreate(http_ctx->client_request_bufp, &new_url_loc) == TS_SUCCESS &&
-        TSUrlParse(http_ctx->client_request_bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
-        TSHttpTxnParentSelectionUrlSet(http_ctx->txnp, http_ctx->client_request_bufp, new_url_loc) == TS_SUCCESS) {
-      TSDebug(TS_LUA_DEBUG_TAG, "Set parent selection URL");
-    } else {
-      TSError("[ts_lua] Failed to set parent selection URL");
     }
   }
 
