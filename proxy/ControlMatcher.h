@@ -96,6 +96,7 @@
 #include "ts/ink_defs.h"
 #include "HTTP.h"
 #include "ts/Regex.h"
+#include "URL.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -136,7 +137,16 @@ public:
   inkcoreapi sockaddr const *get_ip();
   inkcoreapi sockaddr const *get_client_ip();
 
-  HttpRequestData() : hdr(NULL), hostname_str(NULL), api_info(NULL), xact_start(0), incoming_port(0), tag(NULL), internal_txn(false)
+  HttpRequestData()
+    : hdr(NULL),
+      hostname_str(NULL),
+      api_info(NULL),
+      xact_start(0),
+      incoming_port(0),
+      tag(NULL),
+      internal_txn(false),
+      cache_info_lookup_url(NULL),
+      cache_info_parent_selection_url(NULL)
   {
     ink_zero(src_ip);
     ink_zero(dest_ip);
@@ -151,6 +161,8 @@ public:
   uint16_t incoming_port;
   char *tag;
   bool internal_txn;
+  URL **cache_info_lookup_url;
+  URL **cache_info_parent_selection_url;
 };
 
 template <class Data, class Result> class UrlMatcher
