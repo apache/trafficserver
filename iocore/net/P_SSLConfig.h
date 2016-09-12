@@ -86,6 +86,13 @@ struct SSLConfigParams : public ConfigInfo {
   long ssl_ctx_options;
   long ssl_client_ctx_protocols;
 
+  bool hpkp_enabled;
+  bool hpkp_report_only;
+  bool hpkp_include_subdomains;
+  long hpkp_max_age;
+  char *hpkp_pins;
+  char *hpkp_report_uri;
+
   static int ssl_maxrecord;
   static bool ssl_allow_client_renegotiation;
 

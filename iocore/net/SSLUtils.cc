@@ -70,6 +70,16 @@
 #define SSL_SESSION_TICKET_KEY_FILE_TAG "ticket_key_name"
 #define SSL_KEY_DIALOG "ssl_key_dialog"
 #define SSL_CERT_SEPARATE_DELIM ','
+#define SSL_HPKP_ENABLED_TAG "hpkp_enabled"
+#define SSL_HPKP_PINS_TAG "hpkp_pins"
+#define SSL_HPKP_REPORT_ONLY_TAG "hpkp_report_only"
+#define SSL_HPKP_REPORT_URI_TAG "hpkp_report_uri"
+#define SSL_HPKP_MAX_AGE_TAG "hpkp_max_age"
+#define SSL_HPKP_INCLUDE_SUBDOMAINS_TAG "hpkp_include_subdomains"
+#define SSL_HPKP_MAX_HEADER_VALUE_LEN 1024
+#define SSL_HPKP_MAX_PIN_SIZE 45
+#define SSL_HPKP_PIN_DIRECTIVE_NAME_LEN 15
+#define SSL_HPKP_PINS_DELIM ','
 
 // openssl version must be 0.9.4 or greater
 #if (OPENSSL_VERSION_NUMBER < 0x00090400L)
@@ -103,13 +113,18 @@ typedef SSL_METHOD *ink_ssl_method_t;
    * ssl_key_dialog - Private key dialog
    */
 struct ssl_user_config {
-  ssl_user_config() : opt(SSLCertContext::OPT_NONE)
+  ssl_user_config()
+    : hpkp_enabled(-1), hpkp_report_only(-1), hpkp_include_subdomains(-1), hpkp_max_age(-1), opt(SSLCertContext::OPT_NONE)
   {
     REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
     REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
     Debug("ssl", "ticket  key filename %s", (const char *)ticket_key_filename);
   }
   int session_ticket_enabled;
+  int hpkp_enabled;
+  int hpkp_report_only;
+  int hpkp_include_subdomains;
+  int hpkp_max_age;
   ats_scoped_str addr;
   ats_scoped_str cert;
   ats_scoped_str first_cert;
@@ -117,6 +132,8 @@ struct ssl_user_config {
   ats_scoped_str key;
   ats_scoped_str ticket_key_filename;
   ats_scoped_str dialog;
+  ats_scoped_str hpkp_pins;
+  ats_scoped_str hpkp_report_uri;
   SSLCertContext::Option opt;
 };
 
@@ -355,6 +372,11 @@ set_context_cert(SSL *ssl)
     cc = lookup->find(ip);
     if (cc && cc->ctx)
       ctx = cc->ctx;
+  }
+
+  if (cc && cc->hpkp) {
+    netvc->hpkp = (HPKP *)ats_malloc(sizeof(HPKP));
+    memcpy(netvc->hpkp, cc->hpkp, sizeof(HPKP));
   }
 
   if (ctx != NULL) {
@@ -640,6 +662,51 @@ fail:
   (void)ticket_key_path;
   return NULL;
 #endif /* HAVE_OPENSSL_SESSION_TICKETS */
+}
+
+static HPKP *
+ssl_context_enable_hpkp(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings)
+{
+  // Overwrite HPKP settings if settings are written in ssl_multicert.config
+  int hpkp_report_only =
+    sslMultCertSettings.hpkp_report_only >= 0 ? sslMultCertSettings.hpkp_report_only : params->hpkp_report_only;
+  int hpkp_max_age            = sslMultCertSettings.hpkp_max_age >= 0 ? sslMultCertSettings.hpkp_max_age : params->hpkp_max_age;
+  int hpkp_include_subdomains = sslMultCertSettings.hpkp_include_subdomains >= 0 ? sslMultCertSettings.hpkp_include_subdomains :
+                                                                                   params->hpkp_include_subdomains;
+  const char *hpkp_pins       = sslMultCertSettings.hpkp_pins ? sslMultCertSettings.hpkp_pins : params->hpkp_pins;
+  const char *hpkp_report_uri = sslMultCertSettings.hpkp_report_uri ? sslMultCertSettings.hpkp_report_uri : params->hpkp_report_uri;
+
+  // Build HPKP header value
+  char buf[SSL_HPKP_MAX_HEADER_VALUE_LEN];
+  int length = 0;
+
+  length += snprintf(buf, SSL_HPKP_MAX_HEADER_VALUE_LEN, "max-age=%" PRId32 "", hpkp_max_age);
+
+  if (hpkp_include_subdomains) {
+    const char include_subdomains_directive[] = "; includeSubDomains";
+    memcpy(buf + length, include_subdomains_directive, sizeof(include_subdomains_directive));
+    length += sizeof(include_subdomains_directive) - 1;
+  }
+
+  if (hpkp_report_uri) {
+    length += snprintf(buf + length, sizeof(buf) - length, "; report_uri=\"%s\"", hpkp_report_uri);
+  }
+
+  SimpleTokenizer pins(hpkp_pins, SSL_HPKP_PINS_DELIM);
+  char *pin = NULL;
+  while ((pin = pins.getNext()) != NULL &&
+         length < SSL_HPKP_MAX_HEADER_VALUE_LEN - SSL_HPKP_MAX_PIN_SIZE - SSL_HPKP_PIN_DIRECTIVE_NAME_LEN) {
+    length += snprintf(buf + length, sizeof(buf) - length, "; pin-sha256=\"%s\"", pin);
+  }
+
+  Debug("ssl_hpkp", "%s", buf);
+
+  HPKP *hpkp = (HPKP *)ats_malloc(sizeof(HPKP));
+  memcpy(hpkp->header_value, buf, SSL_HPKP_MAX_HEADER_VALUE_LEN);
+  hpkp->header_value_len = length;
+  hpkp->report_only      = hpkp_report_only;
+
+  return hpkp;
 }
 
 struct passphrase_cb_userdata {
@@ -1870,6 +1937,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   Vec<X509 *> cert_list;
   SSL_CTX *ctx                   = SSLInitServerContext(params, sslMultCertSettings, cert_list);
   ssl_ticket_key_block *keyblock = NULL;
+  HPKP *hpkp                     = NULL;
   bool inserted                  = false;
 
   if (!ctx) {
@@ -1895,10 +1963,17 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     keyblock = ssl_context_enable_tickets(ctx, NULL);
   }
 
+  // Generate HPKP header if hpkp is enabled.
+  if (sslMultCertSettings.hpkp_enabled >= 0 ? sslMultCertSettings.hpkp_enabled : params->hpkp_enabled) {
+    hpkp = ssl_context_enable_hpkp(params, sslMultCertSettings);
+  }
+
+  SSLCertContext cc = SSLCertContext(ctx, sslMultCertSettings.opt, keyblock, hpkp);
+
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (sslMultCertSettings.addr) {
     if (strcmp(sslMultCertSettings.addr, "*") == 0) {
-      if (lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
+      if (lookup->insert(sslMultCertSettings.addr, cc) >= 0) {
         inserted            = true;
         lookup->ssl_default = ctx;
         ssl_set_handshake_callbacks(ctx);
@@ -1908,7 +1983,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
 
       if (ats_ip_pton(sslMultCertSettings.addr, &ep) == 0) {
         Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certname);
-        if (lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
+        if (lookup->insert(ep, cc) >= 0) {
           inserted = true;
         }
       } else {
@@ -1956,7 +2031,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   // refcounting or alternate way of avoiding double frees.
   Debug("ssl", "importing SNI names from %s", (const char *)certname);
   for (unsigned i = 0; i < cert_list.length(); ++i) {
-    if (ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), cert_list[i], certname)) {
+    if (ssl_index_certificate(lookup, cc, cert_list[i], certname)) {
       inserted = true;
     }
   }
@@ -2020,6 +2095,31 @@ ssl_extract_certificate(const matcher_line *line_info, ssl_user_config &sslMultC
     if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
       sslMultCertSettings.dialog = ats_strdup(value);
     }
+
+    if (strcasecmp(label, SSL_HPKP_ENABLED_TAG) == 0) {
+      sslMultCertSettings.hpkp_enabled = atoi(value);
+    }
+
+    if (strcasecmp(label, SSL_HPKP_PINS_TAG) == 0) {
+      sslMultCertSettings.hpkp_pins = ats_strdup(value);
+    }
+
+    if (strcasecmp(label, SSL_HPKP_REPORT_ONLY_TAG) == 0) {
+      sslMultCertSettings.hpkp_report_only = atoi(value);
+    }
+
+    if (strcasecmp(label, SSL_HPKP_REPORT_URI_TAG) == 0) {
+      sslMultCertSettings.hpkp_report_uri = ats_strdup(value);
+    }
+
+    if (strcasecmp(label, SSL_HPKP_MAX_AGE_TAG) == 0) {
+      sslMultCertSettings.hpkp_max_age = atoi(value);
+    }
+
+    if (strcasecmp(label, SSL_HPKP_INCLUDE_SUBDOMAINS_TAG) == 0) {
+      sslMultCertSettings.hpkp_include_subdomains = atoi(value);
+    }
+
     if (strcasecmp(label, SSL_ACTION_TAG) == 0) {
       if (strcasecmp(SSL_ACTION_TUNNEL_TAG, value) == 0) {
         sslMultCertSettings.opt = SSLCertContext::OPT_TUNNEL;

@@ -793,6 +793,7 @@ SSLNetVConnection::SSLNetVConnection()
     sslLastWriteTime(0),
     sslTotalBytesSent(0),
     hookOpRequested(SSL_HOOK_OP_DEFAULT),
+    hpkp(NULL),
     sslHandShakeComplete(false),
     sslClientConnection(false),
     sslClientRenegotiationAbort(false),
@@ -904,6 +905,8 @@ SSLNetVConnection::free(EThread *t)
   free_handshake_buffers();
   sslTrace = false;
 
+  ats_free(hpkp);
+
   if (from_accept_thread) {
     sslNetVCAllocator.free(this);
   } else {
@@ -928,6 +931,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       int namelen = sizeof(ip);
       safe_getsockname(this->get_socket(), &ip.sa, &namelen);
       SSLCertContext *cc = lookup->find(ip);
+
       if (is_debug_tag_set("ssl")) {
         IpEndpoint src, dst;
         ip_port_text_buffer ipb1, ipb2;
@@ -949,6 +953,11 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         SSL_free(this->ssl);
         this->ssl = NULL;
         return EVENT_DONE;
+      }
+
+      if (cc && cc->hpkp) {
+        this->hpkp = (HPKP *)ats_malloc(sizeof(HPKP));
+        memcpy(this->hpkp, cc->hpkp, sizeof(HPKP));
       }
 
       // Attach the default SSL_CTX to this SSL session. The default context is never going to be able

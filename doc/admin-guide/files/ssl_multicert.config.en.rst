@@ -131,6 +131,24 @@ ssl_key_dialog=builtin|"exec:/path/to/program [args]" (optional)
       program runs a security check to ensure that the system is not
       compromised by an attacker before providing the pass phrase.
 
+hpkp_enabled=1|0 (optional)
+  Overwrite :ts:cv:`proxy.config.ssl.hpkp.enabled`.
+
+hpkp_report_only=1|0 (optional)
+  Overwrite :ts:cv:`proxy.config.ssl.hpkp.report_only`.
+
+hpkp_include_subdomains=1|0 (optional)
+  Overwrite :ts:cv:`proxy.config.ssl.hpkp.include_subdomains`.
+
+hpkp_max_age=MAXAGE (optional)
+  Overwrite :ts:cv:`proxy.config.ssl.hpkp.max_age`.
+
+hpkp_pins=PIN[,PIN ...] (optional)
+  Overwrite :ts:cv:`proxy.config.ssl.hpkp.pins`.
+
+hpkp_report_uri=URI (optional)
+  Overwrite :ts:cv:`proxy.config.ssl.hpkp.report_uri`.
+
 Certificate Selection
 =====================
 

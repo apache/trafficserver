@@ -46,7 +46,7 @@
 
   /ericb
 */
-
+// clang-format off
 static const char *_hdrtoken_strs[] = {
   // MIME Field names
   "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
@@ -70,7 +70,7 @@ static const char *_hdrtoken_strs[] = {
   "Newsgroups",   // NNTP
   "Organization", // NNTP
   "Path",         // NNTP
-  "Pragma", "Proxy-Authenticate", "Proxy-Authorization", "Proxy-Connection", "Public", "Range",
+  "Pragma", "Proxy-Authenticate", "Proxy-Authorization", "Proxy-Connection", "Public-Key-Pins-Report-Only", "Public-Key-Pins", "Public", "Range",
   "References", // NNTP
   "Referer",
   "Reply-To", // NNTP
@@ -108,6 +108,7 @@ static const char *_hdrtoken_strs[] = {
 
   // Header extensions
   "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue"};
+// clang-format on
 
 static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {{"file", HDRTOKEN_TYPE_SCHEME},
                                                                  {"ftp", HDRTOKEN_TYPE_SCHEME},
@@ -209,6 +210,8 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Proxy-Authorization", MIME_SLOTID_NONE, MIME_PRESENCE_PROXY_AUTHORIZATION, (HTIF_HOPBYHOP | HTIF_PROXYAUTH)},
   {"Proxy-Connection", MIME_SLOTID_PROXY_CONNECTION, MIME_PRESENCE_PROXY_CONNECTION, (HTIF_COMMAS | HTIF_MULTVALS | HTIF_HOPBYHOP)},
   {"Public", MIME_SLOTID_NONE, MIME_PRESENCE_PUBLIC, (HTIF_COMMAS | HTIF_MULTVALS)},
+  {"Public-Key-Pins", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
+  {"Public-Key-Pins-Report-Only", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Range", MIME_SLOTID_RANGE, MIME_PRESENCE_RANGE, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"References", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Referer", MIME_SLOTID_NONE, MIME_PRESENCE_REFERER, HTIF_NONE},
@@ -287,7 +290,7 @@ hdrtoken_hash(const unsigned char *string, unsigned int length)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-
+// clang-format off
 static const char *_hdrtoken_commonly_tokenized_strs[] = {
   // MIME Field names
   "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
@@ -311,7 +314,7 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "Newsgroups",   // NNTP
   "Organization", // NNTP
   "Path",         // NNTP
-  "Pragma", "Proxy-Authenticate", "Proxy-Authorization", "Proxy-Connection", "Public", "Range",
+  "Pragma", "Proxy-Authenticate", "Proxy-Authorization", "Proxy-Connection", "Public-Key-Pins-Report-Only", "Public-Key-Pins", "Public", "Range",
   "References", // NNTP
   "Referer",
   "Reply-To", // NNTP
@@ -349,7 +352,7 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
 
   // Header extensions
   "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue"};
-
+// clang-format on
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

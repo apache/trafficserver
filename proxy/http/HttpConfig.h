@@ -384,6 +384,7 @@ struct OverridableHttpConfigParams {
       anonymize_insert_client_ip(1),
       proxy_response_server_enabled(1),
       proxy_response_hsts_include_subdomains(0),
+      proxy_response_hpkp_enabled(0),
       insert_squid_x_forwarded_for(1),
       send_http11_requests(1),
       cache_http(1),
@@ -507,6 +508,8 @@ struct OverridableHttpConfigParams {
 
   MgmtByte proxy_response_server_enabled;
   MgmtByte proxy_response_hsts_include_subdomains;
+
+  MgmtByte proxy_response_hpkp_enabled;
 
   /////////////////////
   // X-Forwarded-For //

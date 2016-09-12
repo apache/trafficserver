@@ -904,6 +904,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.proxy_response_hsts_max_age, "proxy.config.ssl.hsts_max_age");
   HttpEstablishStaticConfigByte(c.oride.proxy_response_hsts_include_subdomains, "proxy.config.ssl.hsts_include_subdomains");
 
+  HttpEstablishStaticConfigByte(c.oride.proxy_response_hpkp_enabled, "proxy.config.ssl.hpkp.enabled");
+
   HttpEstablishStaticConfigStringAlloc(c.proxy_request_via_string, "proxy.config.http.request_via_str");
   c.proxy_request_via_string_len = -1;
   HttpEstablishStaticConfigStringAlloc(c.proxy_response_via_string, "proxy.config.http.response_via_str");
@@ -1177,6 +1179,8 @@ HttpConfig::reconfigure()
   params->proxy_response_via_string_len     = (params->proxy_response_via_string) ? strlen(params->proxy_response_via_string) : 0;
   params->oride.proxy_response_hsts_max_age = m_master.oride.proxy_response_hsts_max_age;
   params->oride.proxy_response_hsts_include_subdomains = m_master.oride.proxy_response_hsts_include_subdomains;
+
+  params->oride.proxy_response_hpkp_enabled = m_master.oride.proxy_response_hpkp_enabled;
 
   params->oride.keep_alive_enabled_in       = INT_TO_BOOL(m_master.oride.keep_alive_enabled_in);
   params->oride.keep_alive_enabled_out      = INT_TO_BOOL(m_master.oride.keep_alive_enabled_out);

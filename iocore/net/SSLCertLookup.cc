@@ -167,6 +167,7 @@ SSLCertContext::release()
     keyblock = NULL;
   }
 
+  ats_free(hpkp);
   SSLReleaseContext(ctx);
   ctx = NULL;
 }

@@ -36,6 +36,7 @@
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
+#include "P_SSLCertLookup.h"
 #include "ts/apidefs.h"
 
 #include <openssl/ssl.h>
@@ -266,6 +267,8 @@ public:
 
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested;
+
+  HPKP *hpkp;
 
 private:
   SSLNetVConnection(const SSLNetVConnection &);
