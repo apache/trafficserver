@@ -407,6 +407,8 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
         if (method_wksidx != -1) {
           match = rp->standard_method_lookup[method_wksidx];
         } else if (!rp->nonstandard_methods.empty()) {
+          match = false;
+        } else {  
           int method_str_len;
           const char *method_str = s->hdr_info.client_request.method_get(&method_str_len);
           match                  = rp->nonstandard_methods.count(std::string(method_str, method_str_len));
