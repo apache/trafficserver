@@ -45,7 +45,8 @@ public:
       header_blocks(NULL),
       header_blocks_length(0),
       request_header_length(0),
-      end_stream(false),
+      recv_end_stream(false),
+      send_end_stream(false),
       sent_request_header(false),
       response_header_done(false),
       request_sent(false),
@@ -190,7 +191,8 @@ public:
                                   // Padding or other fields)
   uint32_t request_header_length; // total length of payload (include Padding
                                   // and other fields)
-  bool end_stream;
+  bool recv_end_stream;
+  bool send_end_stream;
 
   bool sent_request_header;
   bool response_header_done;
