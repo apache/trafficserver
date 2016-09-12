@@ -2055,9 +2055,12 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
 
   // load the global ticket key for later use
   REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
-  ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
-  global_default_keyblock = ssl_create_ticket_keyblock(ticket_key_path); // this function just returns a keyblock
-
+  if (ticket_key_filename != NULL) {
+    ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
+    global_default_keyblock = ssl_create_ticket_keyblock(ticket_key_path); // this function just returns a keyblock
+  } else {
+    global_default_keyblock = ssl_create_ticket_keyblock(NULL); // this function just returns a keyblock
+  }
   Note("loading SSL certificate configuration from %s", params->configFilePath);
 
   if (params->configFilePath) {
