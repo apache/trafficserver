@@ -1294,6 +1294,73 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   sleep(1);
   RE(verify(result, PARENT_FAIL, NULL, 80), 177);
 
+  // Test 178 -- Parent Consistent Hash Selection (qstring, fname, maxdirs)
+  const char *rabbit = "http://i.am.rabbit.net/a/b/c/d/e/index.html?f=1&g=2";
+  tbl[0]             = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80;fluffy:80 "
+    "round_robin=consistent_hash ");
+  ST(178);
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  request->hdr->url_set(rabbit, strlen(rabbit));
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 178);
+
+  // Test 179
+  tbl[0] = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80;fluffy:80 "
+    "round_robin=consistent_hash qstring=ignore");
+  ST(179);
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  request->hdr->url_set(rabbit, strlen(rabbit));
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 179);
+
+  // Test 180
+  tbl[0] = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80;fluffy:80 "
+    "round_robin=consistent_hash fname=ignore");
+  ST(180);
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  request->hdr->url_set(rabbit, strlen(rabbit));
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 180);
+
+  // Test 181
+  tbl[0] = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80;fluffy:80 "
+    "round_robin=consistent_hash maxdirs=3");
+  ST(181);
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  request->hdr->url_set(rabbit, strlen(rabbit));
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 181);
+
+  // Test 182
+  tbl[0] = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80;fluffy:80 "
+    "round_robin=consistent_hash maxdirs=-2");
+  ST(182);
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  request->hdr->url_set(rabbit, strlen(rabbit));
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 182);
+
+  // Clean-Up and Results Summary
   delete request;
   delete result;
   delete params;
