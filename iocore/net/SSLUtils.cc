@@ -2053,14 +2053,16 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
 
   const matcher_tags sslCertTags = {NULL, NULL, NULL, NULL, NULL, NULL, false};
 
-  // load the global ticket key for later use
+  // Load the global ticket key for later use.
   REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
+
   if (ticket_key_filename != NULL) {
     ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
-    global_default_keyblock = ssl_create_ticket_keyblock(ticket_key_path); // this function just returns a keyblock
+    global_default_keyblock = ssl_create_ticket_keyblock(ticket_key_path);
   } else {
-    global_default_keyblock = ssl_create_ticket_keyblock(NULL); // this function just returns a keyblock
+    global_default_keyblock = ssl_create_ticket_keyblock(NULL);
   }
+
   Note("loading SSL certificate configuration from %s", params->configFilePath);
 
   if (params->configFilePath) {
@@ -2072,16 +2074,17 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
     return false;
   }
 
-  // elevate/allow file access to root read only files/certs
+  // Optionally elevate/allow file access to read root-only
+  // certificates. The destructor will drop privilege for us.
   uint32_t elevate_setting = 0;
   REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
-  ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0); // destructor will demote for us
+  ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
 
   line = tokLine(file_buf, &tok_state);
   while (line != NULL) {
     line_num++;
 
-    // skip all blank spaces at beginning of line
+    // Skip all blank spaces at beginning of line.
     while (*line && isspace(*line)) {
       line++;
     }
@@ -2116,6 +2119,7 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
       return false;
     }
   }
+
   return true;
 }
 
