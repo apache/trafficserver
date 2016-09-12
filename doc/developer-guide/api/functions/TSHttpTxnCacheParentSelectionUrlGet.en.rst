@@ -45,7 +45,7 @@ various filtering options that may be applied to the normal URL
 used since it is assumed that custom filtering has already been
 performed prior to explicitly setting the over-ride URL
 
-:func:`TSHttpTxnCacheParentSelectionUrlSet` will set the over-ride URL.  
+:func:`TSHttpTxnCacheParentSelectionUrlSet` will set the over-ride URL.
 
 :func:`TSHttpTxnCacheParentSelectionUrlGet` will get the over-ride URL.
 

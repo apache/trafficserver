@@ -222,7 +222,7 @@ The following list shows the possible actions and their allowed values.
 ``qstring``
     One of the following values:
 
-    -  ``consider`` - Use the query string when finding a parent.
+    -  ``consider`` - Use the query string when finding a parent (default).
     -  ``ignore`` - Do not consider the query string when finding a parent.
 
 .. _parent-config-format-fname:
@@ -230,7 +230,7 @@ The following list shows the possible actions and their allowed values.
 ``fname``
     One of the following values:
 
-    - ``consider`` - Use the file name string when finding a parent.
+    - ``consider`` - Use the file name string when finding a parent (default).
     - ``ignore`` - Do not consider the file name string when finding a parent.
 
     NOTE: If set to ``ignore`` then this forces ``qstring=ignore``.
@@ -254,7 +254,7 @@ The following list shows the possible actions and their allowed values.
 
         +--+ /
         !
-        +--+ PATH from_path_get() and consists of:
+        +--+ PATH from path_get() and consists of:
         !  !
         !  +-- DIRECTORIES
         !  +-- FILE NAME                    [ not included if maxdirs !=0 or fname = ignore ]

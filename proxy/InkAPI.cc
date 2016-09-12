@@ -5783,9 +5783,8 @@ TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
     l_url->copy(&u);
   }
 
-  Debug("parent_select", "TSHttpTxnParentSelectionUrlSet() parent_selection_url : addr = 0x%lx val = 0x%lx",
-        (long unsigned int)&(sm->t_state.cache_info.parent_selection_url),
-        (long unsigned int)sm->t_state.cache_info.parent_selection_url);
+  Debug("parent_select", "TSHttpTxnParentSelectionUrlSet() parent_selection_url : addr = %p val = %p",
+        &(sm->t_state.cache_info.parent_selection_url), sm->t_state.cache_info.parent_selection_url);
 
   return TS_SUCCESS;
 }

@@ -101,27 +101,29 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
       // Determine number of directory components in the path.
       // NOTE: Leading '/' is gone already.
       for (int x = 0; x < len; x++) {
-        if (tmp[x] == '/')
+        if (tmp[x] == '/') {
           num_dirs++;
+        }
       }
       // If max_dirs positive , include directory components from the left up to max_dirs.
       // If max_dirs negative , include directory components from the left up to num_dirs - ( abs(max_dirs) - 1 ).
       int limit = 0;
-      if (max_dirs > 0)
+      if (max_dirs > 0) {
         limit = max_dirs;
-      else if (max_dirs < 0) {
+      } else if (max_dirs < 0) {
         int md = abs(max_dirs) - 1;
-        if (md < num_dirs)
+        if (md < num_dirs) {
           limit = num_dirs - md;
-        else
+        } else {
           limit = 0;
+        }
       }
       if (limit > 0) {
-        int x     = 0;
         int count = 0;
-        for (; x < len; x++) {
-          if (tmp[x] == '/')
+        for (int x = 0; x < len; x++) {
+          if (tmp[x] == '/') {
             count++;
+          }
           if (count == limit) {
             len = x + 1;
             break;
