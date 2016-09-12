@@ -1906,6 +1906,7 @@ AC_CONFIG_FILES([
   plugins/experimental/epic/Makefile
   plugins/experimental/escalate/Makefile
   plugins/experimental/geoip_acl/Makefile
+  plugins/experimental/header_freq/Makefile
   plugins/experimental/header_normalize/Makefile
   plugins/experimental/hipes/Makefile
   plugins/experimental/hook-trace/Makefile
