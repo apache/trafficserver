@@ -107,56 +107,59 @@ static const char *_hdrtoken_strs[] = {
   "CONNECT", "DELETE", "GET", "POST", "HEAD", "ICP_QUERY", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
 
   // Header extensions
-  "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue"};
+  "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue",
+};
 
-static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {{"file", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"ftp", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"gopher", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"http", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"https", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"mailto", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"news", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"nntp", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"prospero", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"telnet", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"tunnel", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"wais", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"pnm", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"rtsp", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"rtspu", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"mms", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"mmsu", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"mmst", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"wss", HDRTOKEN_TYPE_SCHEME},
-                                                                 {"ws", HDRTOKEN_TYPE_SCHEME},
+static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
+  {"file", HDRTOKEN_TYPE_SCHEME},
+  {"ftp", HDRTOKEN_TYPE_SCHEME},
+  {"gopher", HDRTOKEN_TYPE_SCHEME},
+  {"http", HDRTOKEN_TYPE_SCHEME},
+  {"https", HDRTOKEN_TYPE_SCHEME},
+  {"mailto", HDRTOKEN_TYPE_SCHEME},
+  {"news", HDRTOKEN_TYPE_SCHEME},
+  {"nntp", HDRTOKEN_TYPE_SCHEME},
+  {"prospero", HDRTOKEN_TYPE_SCHEME},
+  {"telnet", HDRTOKEN_TYPE_SCHEME},
+  {"tunnel", HDRTOKEN_TYPE_SCHEME},
+  {"wais", HDRTOKEN_TYPE_SCHEME},
+  {"pnm", HDRTOKEN_TYPE_SCHEME},
+  {"rtsp", HDRTOKEN_TYPE_SCHEME},
+  {"rtspu", HDRTOKEN_TYPE_SCHEME},
+  {"mms", HDRTOKEN_TYPE_SCHEME},
+  {"mmsu", HDRTOKEN_TYPE_SCHEME},
+  {"mmst", HDRTOKEN_TYPE_SCHEME},
+  {"wss", HDRTOKEN_TYPE_SCHEME},
+  {"ws", HDRTOKEN_TYPE_SCHEME},
 
-                                                                 {"CONNECT", HDRTOKEN_TYPE_METHOD},
-                                                                 {"DELETE", HDRTOKEN_TYPE_METHOD},
-                                                                 {"GET", HDRTOKEN_TYPE_METHOD},
-                                                                 {"HEAD", HDRTOKEN_TYPE_METHOD},
-                                                                 {"ICP_QUERY", HDRTOKEN_TYPE_METHOD},
-                                                                 {"OPTIONS", HDRTOKEN_TYPE_METHOD},
-                                                                 {"POST", HDRTOKEN_TYPE_METHOD},
-                                                                 {"PURGE", HDRTOKEN_TYPE_METHOD},
-                                                                 {"PUT", HDRTOKEN_TYPE_METHOD},
-                                                                 {"TRACE", HDRTOKEN_TYPE_METHOD},
-                                                                 {"PUSH", HDRTOKEN_TYPE_METHOD},
+  {"CONNECT", HDRTOKEN_TYPE_METHOD},
+  {"DELETE", HDRTOKEN_TYPE_METHOD},
+  {"GET", HDRTOKEN_TYPE_METHOD},
+  {"HEAD", HDRTOKEN_TYPE_METHOD},
+  {"ICP_QUERY", HDRTOKEN_TYPE_METHOD},
+  {"OPTIONS", HDRTOKEN_TYPE_METHOD},
+  {"POST", HDRTOKEN_TYPE_METHOD},
+  {"PURGE", HDRTOKEN_TYPE_METHOD},
+  {"PUT", HDRTOKEN_TYPE_METHOD},
+  {"TRACE", HDRTOKEN_TYPE_METHOD},
+  {"PUSH", HDRTOKEN_TYPE_METHOD},
 
-                                                                 {"max-age", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"max-stale", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"min-fresh", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"must-revalidate", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"no-cache", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"no-store", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"no-transform", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"only-if-cached", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"private", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"proxy-revalidate", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"public", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"s-maxage", HDRTOKEN_TYPE_CACHE_CONTROL},
-                                                                 {"need-revalidate-once", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"max-age", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"max-stale", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"min-fresh", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"must-revalidate", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"no-cache", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"no-store", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"no-transform", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"only-if-cached", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"private", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"proxy-revalidate", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"public", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"s-maxage", HDRTOKEN_TYPE_CACHE_CONTROL},
+  {"need-revalidate-once", HDRTOKEN_TYPE_CACHE_CONTROL},
 
-                                                                 {(char *)NULL, (HdrTokenType)0}};
+  {(char *)NULL, (HdrTokenType)0},
+};
 
 static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Accept", MIME_SLOTID_ACCEPT, MIME_PRESENCE_ACCEPT, (HTIF_COMMAS | HTIF_MULTVALS)},
@@ -233,7 +236,8 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"X-Forwarded-For", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Sec-WebSocket-Key", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Sec-WebSocket-Version", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
-  {NULL, 0, 0, 0}};
+  {NULL, 0, 0, 0},
+};
 
 const char *_hdrtoken_strs_heap_f = NULL; // storage first byte
 const char *_hdrtoken_strs_heap_l = NULL; // storage last byte
@@ -348,7 +352,8 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "CONNECT", "DELETE", "GET", "POST", "HEAD", "ICP_QUERY", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
 
   // Header extensions
-  "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue"};
+  "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue",
+};
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
