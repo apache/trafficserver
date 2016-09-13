@@ -46,8 +46,7 @@ public:
     // 6.5.2.  Defined SETTINGS Parameters. These should generally not be
     // modified,
     // only if the protocol changes should these change.
-    settings[indexof(HTTP2_SETTINGS_ENABLE_PUSH)] = 0; // Disabled for now
-
+    settings[indexof(HTTP2_SETTINGS_ENABLE_PUSH)]            = HTTP2_ENABLE_PUSH;
     settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = HTTP2_MAX_CONCURRENT_STREAMS;
     settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = HTTP2_INITIAL_WINDOW_SIZE;
     settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = HTTP2_MAX_FRAME_SIZE;
@@ -118,8 +117,10 @@ public:
       client_rwnd(HTTP2_INITIAL_WINDOW_SIZE),
       server_rwnd(Http2::initial_window_size),
       stream_list(),
-      latest_streamid(0),
-      client_streams_count(0),
+      latest_streamid_in(0),
+      latest_streamid_out(0),
+      client_streams_in_count(0),
+      client_streams_out_count(0),
       total_client_streams_count(0),
       continued_stream_id(0),
       _scheduled(false),
@@ -179,9 +180,15 @@ public:
   void update_initial_rwnd(Http2WindowSize new_size);
 
   Http2StreamId
-  get_latest_stream_id() const
+  get_latest_stream_id_in() const
   {
-    return latest_streamid;
+    return latest_streamid_in;
+  }
+
+  Http2StreamId
+  get_latest_stream_id_out() const
+  {
+    return latest_streamid_out;
   }
 
   // Continuated header decoding
@@ -204,7 +211,7 @@ public:
   uint32_t
   get_client_stream_count() const
   {
-    return client_streams_count;
+    return client_streams_in_count;
   }
 
   // Connection level window size
@@ -216,6 +223,7 @@ public:
   void send_data_frames(Http2Stream *stream);
   Http2SendADataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(Http2Stream *stream);
+  void send_push_promise_frame(Http2Stream *stream, URL &url);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_settings_frame(const Http2ConnectionSettings &new_settings);
   void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data);
@@ -234,6 +242,16 @@ public:
     return recursion > 0;
   }
 
+  bool
+  is_valid_streamid(Http2StreamId id) const
+  {
+    if (http2_is_client_streamid(id)) {
+      return id <= get_latest_stream_id_in();
+    } else {
+      return id <= get_latest_stream_id_out();
+    }
+  }
+
 private:
   Http2ConnectionState(const Http2ConnectionState &);            // noncopyable
   Http2ConnectionState &operator=(const Http2ConnectionState &); // noncopyable
@@ -242,15 +260,20 @@ private:
 
   // NOTE: 'stream_list' has only active streams.
   //   If given Stream Identifier is not found in stream_list and it is less
-  //   than or equal to latest_streamid, the state of Stream
+  //   than or equal to latest_streamid_in, the state of Stream
   //   is CLOSED.
   //   If given Stream Identifier is not found in stream_list and it is greater
-  //   than latest_streamid, the state of Stream is IDLE.
+  //   than latest_streamid_in, the state of Stream is IDLE.
   DLL<Http2Stream> stream_list;
-  Http2StreamId latest_streamid;
+  Http2StreamId latest_streamid_in;
+  Http2StreamId latest_streamid_out;
 
   // Counter for current active streams which is started by client
-  uint32_t client_streams_count;
+  uint32_t client_streams_in_count;
+
+  // Counter for current acive streams which is started by server
+  uint32_t client_streams_out_count;
+
   // Counter for current active streams and streams in the process of shutting down
   uint32_t total_client_streams_count;
 

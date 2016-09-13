@@ -155,6 +155,12 @@ public:
                                       trailing_header);
   }
 
+  void
+  set_request_headers(HTTPHdr &h2_headers)
+  {
+    _req_header.copy(&h2_headers);
+  }
+
   // Check entire DATA payload length if content-length: header is exist
   void
   increment_data_length(uint64_t length)
@@ -180,6 +186,7 @@ public:
   void reenable(VIO *vio);
   virtual void transaction_done();
   void send_response_body();
+  void push_promise(URL &url);
 
   // Stream level window size
   ssize_t client_rwnd, server_rwnd;
@@ -235,7 +242,8 @@ public:
   bool
   is_client_state_writeable()
   {
-    return _state == HTTP2_STREAM_STATE_OPEN || _state == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+    return _state == HTTP2_STREAM_STATE_OPEN || _state == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE ||
+           HTTP2_STREAM_STATE_RESERVED_LOCAL;
   }
 
 private:
