@@ -157,7 +157,7 @@ union RecData {
 struct RecRawStat {
   int64_t sum;
   int64_t count;
-  // XXX - these will waist some space because they are only needed for the globals
+  // XXX - these will waste some space because they are only needed for the globals
   // this is a fix for bug TS-162, so I am trying to do as few code changes as
   // possible, this should be revisted -bcall
   int64_t last_sum;   // value from the last global sync
