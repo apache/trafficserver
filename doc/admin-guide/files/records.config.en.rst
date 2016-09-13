@@ -2936,21 +2936,6 @@ SSL Termination
          allowed to access |TS|.
    ===== ======================================================================
 
-.. ts:cv:: CONFIG proxy.config.ssl.number.threads INT -1
-
-   Sets the number of SSL threads to use, this defaults to 0 (autoconfigure).
-
-   ======== ===================================================================
-   Value    Description
-   ======== ===================================================================
-   ``0``    Autoconfigure. This will allow |TS| to determine the appropriate
-            number of threads
-   ``-1``   Disable. This makes ``ET_NET`` threads behave like ``ET_SSL``
-            threads. Note that this does not disable SSL, it simply allows
-            another thread pool to assist in SSL tasks without dedicated SSL
-            threads.
-   >\ ``0`` Use a non-zero number of dedicated SSL threads.
-   ======== ===================================================================
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
 
