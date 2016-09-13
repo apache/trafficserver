@@ -315,7 +315,6 @@ class TestKeepAliveOriginConnOutHTTPS(helpers.EnvironmentCase, OriginMinMaxMixin
         # set only one ET_NET thread (so we don't have to worry about the per-thread pools causing issues)
         cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.limit'] = 1
         cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.autoconfig'] = 0
-        cls.configs['records.config']['CONFIG']['proxy.config.ssl.number.threads'] = -1
 
         # Timeouts
         cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_no_activity_timeout_out'] = 1
@@ -396,7 +395,6 @@ class TestKeepAliveOutHTTPS(helpers.EnvironmentCase, BasicTestsOutMixin, Timeout
         # set only one ET_NET thread (so we don't have to worry about the per-thread pools causing issues)
         cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.limit'] = 1
         cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.autoconfig'] = 0
-        cls.configs['records.config']['CONFIG']['proxy.config.ssl.number.threads'] = -1
 
         # Timeouts
         cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_no_activity_timeout_out'] = 10
