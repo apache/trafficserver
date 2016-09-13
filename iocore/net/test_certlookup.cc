@@ -88,7 +88,7 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
 
   // Basic hostname cases.
   box.check(lookup.find("www.foo.com")->ctx == foo, "host lookup for www.foo.com");
-  box.check(lookup.find("www.bar.com")->ctx == all_com, "host lookup for www.bar.com");
+  box.check(lookup.find("www.bar.com") == NULL, "www.bar.com won't match *.com because we only match one level");
   box.check(lookup.find("www.bar.net") == NULL, "host lookup for www.bar.net");
 
   // Make sure cases are lowered

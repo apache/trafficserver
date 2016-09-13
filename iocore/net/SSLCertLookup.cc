@@ -120,8 +120,10 @@ private:
     LINK(ContextRef, link); ///< Require by @c Trie
   };
 
-  /// Items tored by wildcard name
-  Trie<ContextRef> wildcards;
+  /// We can only match one layer with the wildcards
+  /// This table stores the wildcarded subdomain
+  InkHashTable *wilddomains;
+
   /// Contexts stored by IP address or FQDN
   InkHashTable *hostnames;
   /// List for cleanup.
@@ -296,7 +298,8 @@ reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1
   return ptr;
 }
 
-SSLContextStorage::SSLContextStorage() : wildcards(), hostnames(ink_hash_table_create(InkHashTableKeyType_String))
+SSLContextStorage::SSLContextStorage()
+  : wilddomains(ink_hash_table_create(InkHashTableKeyType_String)), hostnames(ink_hash_table_create(InkHashTableKeyType_String))
 {
 }
 
@@ -346,48 +349,28 @@ int
 SSLContextStorage::insert(const char *name, int idx)
 {
   ats_wildcard_matcher wildcard;
-  bool inserted = false;
+  InkHashTableValue value;
+  char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
+  make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
 
-  if (wildcard.match(name)) {
-    // We turn wildcards into the reverse DNS form, then insert them into the trie
-    // so that we can do a longest match lookup.
-    char namebuf[TS_MAX_HOST_NAME_LEN + 1];
-    char *reversed;
-    ats_scoped_obj<ContextRef> ref;
-
-    reversed = reverse_dns_name(name + 1, namebuf);
-    if (!reversed) {
-      Error("wildcard name '%s' is too long", name);
-      return -1;
-    }
-
-    ref         = new ContextRef(idx);
-    int ref_idx = (*ref).idx;
-    inserted    = this->wildcards.Insert(reversed, ref, 0 /* rank */, -1 /* keylen */);
-    if (!inserted) {
-      ContextRef *found;
-
-      // We fail to insert, so the longest wildcard match search should return the full match value.
-      found = this->wildcards.Search(reversed);
-      // Fail even if we are reinserting the exact same value
-      // Otherwise we cannot detect and recover from a double insert
-      // into the references array
-      if (found != NULL) {
-        Warning("previously indexed wildcard certificate for '%s' as '%s', cannot index it with SSL_CTX #%d now", name, reversed,
-                idx);
-      }
-      idx = -1;
+  if (wildcard.match(lower_case_name)) {
+    // Strip the wildcard and store the subdomain
+    const char *subdomain = index(lower_case_name, '*');
+    if (subdomain && subdomain[1] == '.') {
+      subdomain += 2; // Move beyond the '.'
     } else {
-      ref.release(); // it's the hands of the Trie now, forget it and move on.
+      subdomain = NULL;
     }
-
-    Debug("ssl", "%s wildcard certificate for '%s' as '%s' with SSL_CTX %p [%d]", idx >= 0 ? "index" : "failed to index", name,
-          reversed, this->ctx_store[ref_idx].ctx, ref_idx);
+    if (subdomain) {
+      if (ink_hash_table_lookup(this->wilddomains, subdomain, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
+        Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", lower_case_name, value, idx);
+        idx = -1;
+      } else {
+        ink_hash_table_insert(this->wilddomains, subdomain, reinterpret_cast<void *>(static_cast<intptr_t>(idx)));
+        Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, this->ctx_store[idx].ctx, idx);
+      }
+    }
   } else {
-    InkHashTableValue value;
-    char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
-    make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
-
     if (ink_hash_table_lookup(this->hostnames, lower_case_name, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
       Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", lower_case_name, value, idx);
       idx = -1;
@@ -404,6 +387,7 @@ SSLContextStorage::lookup(const char *name) const
 {
   InkHashTableValue value;
 
+  // First look for an exact name match
   if (ink_hash_table_lookup(const_cast<InkHashTable *>(this->hostnames), name, &value)) {
     return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
   }
@@ -414,24 +398,14 @@ SSLContextStorage::lookup(const char *name) const
     return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
   }
 
-  if (!this->wildcards.Empty()) {
-    char namebuf[TS_MAX_HOST_NAME_LEN + 1];
-    char *reversed;
-    ContextRef *ref;
-
-    reversed = reverse_dns_name(name, namebuf);
-    if (!reversed) {
-      Error("failed to reverse hostname name '%s' is too long", name);
-      return NULL;
-    }
-
-    Debug("ssl", "attempting wildcard match for %s", reversed);
-    ref = this->wildcards.Search(reversed);
-    if (ref) {
-      return &(this->ctx_store[ref->idx]);
+  // Then strip off the top domain name and look for a wildcard domain match
+  const char *subdomain = index(name, '.');
+  if (subdomain) {
+    ++subdomain; // Move beyond the '.'
+    if (ink_hash_table_lookup(const_cast<InkHashTable *>(this->wilddomains), subdomain, &value)) {
+      return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
     }
   }
-
   return NULL;
 }
 
