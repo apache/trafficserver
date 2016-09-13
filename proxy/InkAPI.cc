@@ -6948,13 +6948,20 @@ TSStatIntSet(int the_stat, TSMgmtInt value)
 TSReturnCode
 TSStatFindName(const char *name, int *idp)
 {
+  int id;
+
   sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
 
-  if (RecGetRecordOrderAndId(name, NULL, idp) == REC_ERR_OKAY) {
-    return TS_SUCCESS;
+  if (RecGetRecordOrderAndId(name, NULL, &id) != REC_ERR_OKAY) {
+    return TS_ERROR;
   }
 
-  return TS_ERROR;
+  if (RecGetGlobalRawStatPtr(api_rsb, id) == NULL) {
+    return TS_ERROR;
+  }
+
+  *idp = id;
+  return TS_SUCCESS;
 }
 
 /**************************    Stats API    ****************************/
