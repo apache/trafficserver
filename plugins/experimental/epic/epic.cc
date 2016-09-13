@@ -149,7 +149,6 @@ static const std::set<std::string> epic_gauges = {
   "proxy.node.http.user_agent_xacts_per_second",
   "proxy.node.log.bytes_received_from_network_avg_10s",
   "proxy.node.log.bytes_sent_to_network_avg_10s",
-  "proxy.node.num_processes",
   "proxy.node.origin_server_total_bytes_avg_10s",
   "proxy.node.proxy_running",
   "proxy.node.restarts.manager.start_time",
