@@ -184,6 +184,26 @@ public:
     return get_netvc() == NULL;
   }
 
+  virtual int
+  populate_protocol(char const **result, int size) const
+  {
+    int retval = 0;
+    if (get_netvc()) {
+      retval += this->get_netvc()->populate_protocol(result, size);
+    }
+    return retval;
+  }
+
+  virtual const char *
+  protocol_contains(const char *tag_prefix) const
+  {
+    const char *retval = NULL;
+    if (get_netvc()) {
+      retval = this->get_netvc()->protocol_contains(tag_prefix);
+    }
+    return retval;
+  }
+
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so that we can make the best
   // use of internal alignment padding.

@@ -9193,3 +9193,64 @@ TSHttpTxnIdGet(TSHttpTxn txnp)
 
   return (uint64_t)sm->sm_id;
 }
+
+// Return information about the protocols used by the client
+TSReturnCode
+TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, char const **result, int *actual)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(n == 0 || result != NULL);
+  HttpSM *sm = (HttpSM *)txnp;
+  int count  = 0;
+  if (sm) {
+    count = sm->populate_client_protocol(result, n);
+  }
+  if (actual) {
+    *actual = count;
+  }
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, char const **result, int *actual)
+{
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+  sdk_assert(n == 0 || result != NULL);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  int count              = 0;
+  if (cs) {
+    count = cs->populate_protocol(result, n);
+  }
+  if (actual) {
+    *actual = count;
+  }
+  return TS_SUCCESS;
+}
+
+char const *
+TSNormalizedProtocolTag(char const *tag)
+{
+  return RecNormalizeProtoTag(tag);
+}
+
+char const *
+TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, char const *tag)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *)txnp;
+  return sm->client_protocol_contains(tag);
+}
+
+char const *
+TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, char const *tag)
+{
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  return cs->protocol_contains(tag);
+}
+
+char const *
+TSRegisterProtocolTag(char const *tag)
+{
+  return NULL;
+}

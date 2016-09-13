@@ -2419,6 +2419,16 @@ tsapi const TSUuid TSProcessUuidGet(void);
 */
 tsapi const char *TSHttpTxnPluginTagGet(TSHttpTxn txnp);
 
+/*
+ * Return information about the client protocols
+ */
+tsapi TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, char const **result, int *actual);
+tsapi TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, char const **result, int *actual);
+tsapi char const *TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, char const *tag);
+tsapi char const *TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, char const *tag);
+tsapi char const *TSNormalizedProtocolTag(char const *tag);
+tsapi char const *TSRegisterProtocolTag(char const *tag);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

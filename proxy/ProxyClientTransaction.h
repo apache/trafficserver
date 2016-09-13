@@ -226,6 +226,26 @@ public:
     return restart_immediate;
   }
 
+  virtual int
+  populate_protocol(char const **result, int size) const
+  {
+    int retval = 0;
+    if (parent) {
+      retval = parent->populate_protocol(result, size);
+    }
+    return retval;
+  }
+  virtual const char *
+  protocol_contains(const char *tag_prefix) const
+  {
+    const char *retval = NULL;
+    if (parent) {
+      retval = parent->protocol_contains(tag_prefix);
+    }
+    return retval;
+  }
+
+protected:
 protected:
   ProxyClientSession *parent;
   HttpSM *current_reader;
