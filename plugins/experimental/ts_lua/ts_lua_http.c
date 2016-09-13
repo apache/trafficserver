@@ -444,16 +444,12 @@ ts_lua_http_resp_cache_untransformed(lua_State *L)
 static int
 ts_lua_http_is_internal_request(lua_State *L)
 {
-  TSReturnCode ret;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
-  ret = TSHttpTxnIsInternal(http_ctx->txnp);
-
-  if (ret == TS_SUCCESS) {
+  if (TSHttpTxnIsInternal(http_ctx->txnp)) {
     lua_pushnumber(L, 1);
-
   } else {
     lua_pushnumber(L, 0);
   }

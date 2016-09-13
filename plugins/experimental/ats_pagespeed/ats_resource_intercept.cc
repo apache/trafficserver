@@ -238,7 +238,7 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
   // This is because I realised too late that the intercepts
   // are able to outlive the transaction, which I hacked
   // to work.
-  if (TSHttpIsInternalRequest(txn) == TS_SUCCESS) {
+  if (TSHttpTxnIsInternal(txn)) {
     ats_ctx_destroy(ctx);
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;

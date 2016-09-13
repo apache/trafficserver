@@ -26,8 +26,8 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSReturnCode TSHttpTxnIsInternal(TSHttpTxn txnp)
-.. function:: TSReturnCode TSHttpSsnIsInternal(TSHttpSsn ssnp)
+.. function:: int TSHttpTxnIsInternal(TSHttpTxn txnp)
+.. function:: int TSHttpSsnIsInternal(TSHttpSsn ssnp)
 
 Description
 ===========
@@ -41,8 +41,8 @@ was originated within Traffic Server.
 Return Values
 =============
 
-Both these APIs returns a :type:`TSReturnCode`, indicating whether the
-object was internal (:data:`TS_SUCCESS`) or not (:data:`TS_ERROR`).
+Both these APIs return a :type:`int`, indicating whether the
+request was internal (:data:`1`) or not (:data:`0`).
 
 Examples
 ========

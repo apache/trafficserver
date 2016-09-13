@@ -204,7 +204,7 @@ Transaction::setStatusCode(HttpStatus code)
 bool
 Transaction::isInternalRequest() const
 {
-  return TSHttpTxnIsInternal(state_->txn_) == TS_SUCCESS;
+  return (0 != TSHttpTxnIsInternal(state_->txn_));
 }
 
 void *

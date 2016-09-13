@@ -1357,7 +1357,7 @@ isCacheObjTransformable(TSHttpTxn txnp, bool *intercept_header, bool *head_only)
 static bool
 isInterceptRequest(TSHttpTxn txnp)
 {
-  if (TSHttpTxnIsInternal(txnp) != TS_SUCCESS) {
+  if (!TSHttpTxnIsInternal(txnp)) {
     TSDebug(DEBUG_TAG, "[%s] Skipping external request", __FUNCTION__);
     return false;
   }
