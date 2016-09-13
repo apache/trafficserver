@@ -32,7 +32,6 @@ $recedit->set(conf => "proxy.config.http.server_ports", val => "80 80:ipv6 443:s
 # Threads
 $recedit->set(conf => "proxy.config.exec_thread.autoconfig", val => "0");
 $recedit->set(conf => "proxy.config.exec_thread.limit", val => "4");
-$recedit->set(conf => "proxy.config.ssl.number.threads", val => "8");
 $recedit->set(conf => "proxy.config.cache.threads_per_disk", val => "8");
 $recedit->set(conf => "proxy.config.accept_threads", val => "0");
 $recedit->set(conf => "proxy.config.exec_thread.affinity", val => "1");
