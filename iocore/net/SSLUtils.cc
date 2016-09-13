@@ -1628,12 +1628,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
       memset(static_cast<void *>(&ud), 0, sizeof(ud));
     }
 
-    if (!sslMultCertSettings->cert) {
-      if (sslMultCertSettings->opt != SSLCertContext::OPT_TUNNEL) {
-        Warning("No ssl_cert_name specified and no tunnel action set");
-        goto fail;
-      }
-    } else if (sslMultCertSettings->cert) {
+    if (sslMultCertSettings->cert) {
       SimpleTokenizer cert_tok((const char *)sslMultCertSettings->cert, SSL_CERT_SEPARATE_DELIM);
       SimpleTokenizer key_tok((sslMultCertSettings->key ? (const char *)sslMultCertSettings->key : ""), SSL_CERT_SEPARATE_DELIM);
 
@@ -2102,7 +2097,12 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
                          line_num, errPtr);
       } else {
         if (ssl_extract_certificate(&line_info, sslMultiCertSettings)) {
-          ssl_store_ssl_context(params, lookup, &sslMultiCertSettings);
+          // There must be a certificate specified unless the tunnel action is set
+          if (sslMultiCertSettings.cert || sslMultiCertSettings.opt != SSLCertContext::OPT_TUNNEL) {
+            ssl_store_ssl_context(params, lookup, &sslMultiCertSettings);
+          } else {
+            Warning("No ssl_cert_name specified and no tunnel action set");
+          }
         }
       }
     }
