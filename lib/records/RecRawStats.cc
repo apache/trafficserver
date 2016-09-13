@@ -223,14 +223,18 @@ RecAllocateRawStatBlock(int num_stats)
   if ((ethr_stat_offset = eventProcessor.allocate(num_stats * sizeof(RecRawStat))) == -1) {
     return NULL;
   }
+
   // create the raw-stat-block structure
   rsb = (RecRawStatBlock *)ats_malloc(sizeof(RecRawStatBlock));
   memset(rsb, 0, sizeof(RecRawStatBlock));
-  rsb->ethr_stat_offset = ethr_stat_offset;
-  rsb->global           = (RecRawStat **)ats_malloc(num_stats * sizeof(RecRawStat *));
+
+  rsb->global = (RecRawStat **)ats_malloc(num_stats * sizeof(RecRawStat *));
   memset(rsb->global, 0, num_stats * sizeof(RecRawStat *));
-  rsb->num_stats = 0;
-  rsb->max_stats = num_stats;
+
+  rsb->num_stats        = 0;
+  rsb->max_stats        = num_stats;
+  rsb->ethr_stat_offset = ethr_stat_offset;
+
   ink_mutex_init(&(rsb->mutex), "net stat mutex");
   return rsb;
 }
@@ -258,6 +262,7 @@ _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDa
     err = REC_ERR_FAIL;
     goto Ldone;
   }
+
   r->rsb_id = id; // This is the index within the RSB raw block for this stat, used for lookups by name.
   if (i_am_the_record_owner(r->rec_type)) {
     r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;
@@ -340,12 +345,14 @@ RecRawStatSyncHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Rec
   raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
+
   if (total.count == 0) {
     r = 0.0f;
   } else {
     r = (float)((double)total.sum / (double)total.count);
     r = r / (float)(HRTIME_SECOND);
   }
+
   RecDataSetFromFloat(data_type, data, r);
   return REC_ERR_OKAY;
 }
@@ -360,11 +367,13 @@ RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, RecDa
   raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
+
   if (total.count == 0) {
     r = 0.0f;
   } else {
     r = (float)((double)total.sum / 1000);
   }
+
   RecDataSetFromFloat(data_type, data, r);
   return REC_ERR_OKAY;
 }
@@ -379,24 +388,16 @@ RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Re
   raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
+
   if (total.count == 0) {
     r = 0.0f;
   } else {
     r = (float)((double)total.sum / (double)total.count);
     r = r / (float)(HRTIME_MSECOND);
   }
+
   RecDataSetFromFloat(data_type, data, r);
   return REC_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// RecIncrRawStatXXX
-//-------------------------------------------------------------------------
-int
-RecIncrRawStatBlock(RecRawStatBlock * /* rsb ATS_UNUSED */, EThread * /* ethread ATS_UNUSED */,
-                    RecRawStat * /* stat_array ATS_UNUSED */)
-{
-  return REC_ERR_FAIL;
 }
 
 //-------------------------------------------------------------------------
@@ -416,12 +417,6 @@ RecSetRawStatCount(RecRawStatBlock *rsb, int id, int64_t data)
   raw_stat_clear_count(rsb, id);
   ink_atomic_swap(&(rsb->global[id]->count), data);
   return REC_ERR_OKAY;
-}
-
-int
-RecSetRawStatBlock(RecRawStatBlock * /* rsb ATS_UNUSED */, RecRawStat * /* stat_array ATS_UNUSED */)
-{
-  return REC_ERR_FAIL;
 }
 
 //-------------------------------------------------------------------------
@@ -538,21 +533,30 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
   RecRecord *r;
 
   ink_rwlock_rdlock(&g_records_rwlock);
+
   if (ink_hash_table_lookup(g_records_ht, name, (void **)&r)) {
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_STAT(r->rec_type)) {
-      if (!(r->stat_meta.sync_cb)) {
-        r->stat_meta.sync_rsb                                        = rsb;
-        r->stat_meta.sync_id                                         = id;
-        r->stat_meta.sync_cb                                         = sync_cb;
-        r->stat_meta.sync_rsb->global[r->stat_meta.sync_id]->version = r->version;
-        err                                                          = REC_ERR_OKAY;
-      } else {
-        ink_release_assert(false); // We shouldn't register CBs twice...
+      if (r->stat_meta.sync_cb) {
+        // We shouldn't register sync callbacks twice...
+        Fatal("attempted to register %s twice", name);
       }
+
+      RecRawStat *raw;
+
+      r->stat_meta.sync_rsb = rsb;
+      r->stat_meta.sync_id  = id;
+      r->stat_meta.sync_cb  = sync_cb;
+
+      raw = RecGetGlobalRawStatPtr(r->stat_meta.sync_rsb, r->stat_meta.sync_id);
+
+      raw->version = r->version;
+
+      err = REC_ERR_OKAY;
     }
     rec_mutex_release(&(r->lock));
   }
+
   ink_rwlock_unlock(&g_records_rwlock);
 
   return err;
