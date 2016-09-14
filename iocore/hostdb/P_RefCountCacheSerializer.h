@@ -92,11 +92,11 @@ RefCountCacheSerializer<C>::RefCountCacheSerializer(Continuation *acont, C *cc, 
     total_size(0),
     rsb(cc->get_rsb())
 {
-  eventProcessor.schedule_imm(this, ET_TASK);
   this->tmp_filename = this->filename + ".syncing"; // TODO tmp file extension configurable?
 
   Debug("refcountcache", "started serializer %p", this);
   SET_HANDLER(&RefCountCacheSerializer::initialize_storage);
+  eventProcessor.schedule_imm(this, ET_TASK);
 }
 
 template <class C> RefCountCacheSerializer<C>::~RefCountCacheSerializer()
