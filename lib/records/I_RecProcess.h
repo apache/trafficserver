@@ -84,11 +84,9 @@ int RecRawStatUpdateSum(RecRawStatBlock *rsb, int id);
 inline int RecIncrRawStat(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr = 1);
 inline int RecIncrRawStatSum(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr = 1);
 inline int RecIncrRawStatCount(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr = 1);
-int RecIncrRawStatBlock(RecRawStatBlock *rsb, EThread *ethread, RecRawStat *stat_array);
 
 int RecSetRawStatSum(RecRawStatBlock *rsb, int id, int64_t data);
 int RecSetRawStatCount(RecRawStatBlock *rsb, int id, int64_t data);
-int RecSetRawStatBlock(RecRawStatBlock *rsb, RecRawStat *stat_array);
 
 int RecGetRawStatSum(RecRawStatBlock *rsb, int id, int64_t *data);
 int RecGetRawStatCount(RecRawStatBlock *rsb, int id, int64_t *data);

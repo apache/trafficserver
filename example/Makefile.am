@@ -32,8 +32,8 @@ plugins = \
   lifecycle-plugin.la \
   null-transform.la \
   output-header.la \
-  protocol.la \
   protocol-stack.la \
+  protocol.la \
   psi.la \
   query-remap.la \
   remap.la \
@@ -45,6 +45,7 @@ plugins = \
   ssl-preaccept.la \
   ssl-sni-whitelist.la \
   ssl-sni.la \
+  statistic.la \
   thread-1.la \
   txn-data-sink.la \
   server-push.la \
@@ -82,6 +83,7 @@ server_transform_la_SOURCES = server-transform/server-transform.c
 ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc
 ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc
 ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc
+statistic_la_SOURCES = statistic/statistic.cc
 thread_1_la_SOURCES = thread-1/thread-1.c
 txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
 version_la_SOURCES = version/version.c

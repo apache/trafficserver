@@ -22,42 +22,23 @@
 Adding Statistics
 *****************
 
-This chapter describes how to add statistics to your plugins. Statistics
-can be coupled or uncoupled. *Coupled* statistics are quantities that
-are related and must therefore be updated together. The Traffic Server
-API statistics functions add your plugin's statistics to the Traffic
-Server statistics system. You can view your plugin statistics as you
-would any other |TS| statistic, using :program:`traffic_ctl`.
+This chapter describes how to add statistics to your plugins.  The
+|TS| statistics API functions add your plugin's statistics so you
+can view your plugin statistics as you would any other |TS| statistic,
+using :program:`traffic_ctl` or the c:func:`TSRecordDump` API.
 
-Uncoupled Statistics
-====================
+A statistic is an opaque object referred to by an integral handle
+returned by c:func:`TSStatCreate`. Only integer statistics are
+supported, so the :arg:`type` argument to c:func:`TSStatCreate` must
+be c:data:`TS_RECORDDATATYPE_INT`.
 
-A statistic is an object of type ``TSStat``. The value of the statistic
-is of type ``TSStatType``. The possible ``TSStatTypes`` are:
+The following example shows how to add custom statistics to your
+plugin. Typically, you would attempt to find the statistic by name
+before creating is. This technique is useful if you want to increment
+a statistic from multiple plugins. Once you have a handle to the
+statistic, set the value with c:func:`TSStatIntSet`, and increment it with
+c:func:`TSStatIntIncrement` or c:func:`TSStatIntDecrement`.
 
--  ``TSSTAT_TYPE_INT64``
-
--  ``TSSTAT_TYPE_FLOAT``
-
-There is *no* ``TSSTAT_TYPE_INT32``.
-
-To add uncoupled statistics, follow the steps below:
-
-1. Declare your statistic as a global variable in your plugin. For
-   example:
-
-   .. code-block:: c
-
-      static TSStat my_statistic;
-
-2. In ``TSPluginInit``, create new statistics using ``TSStatCreate``.
-   When you create a new statistic, you need to give it an "external"
-   name that :program:`traffic_ctl` uses to access the statistic.
-   For example:
-
-   .. code-block:: c
-
-      my_statistic = TSStatCreate ("my.statistic", TSSTAT_TYPE_INT64);
-
-3. Modify (increment, decrement, or other modification) your statistic
-   in plugin functions.
+.. literalinclude:: ../../../example/statistic/statistic.cc
+   :language: c
+   :lines: 30-
