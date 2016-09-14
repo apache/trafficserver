@@ -561,7 +561,9 @@ deny:
 
 /* ********* Allow ********* */
 allow:
-  app_qry = getAppQueryString(query, strlen(query));
+  if (query != NULL) {
+    app_qry = getAppQueryString(query, strlen(query));
+  }
 
   TSfree(url);
   /* drop the query string so we can cache-hit */
