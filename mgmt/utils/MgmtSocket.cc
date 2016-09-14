@@ -42,15 +42,27 @@
 bool
 mgmt_transient_error()
 {
-  bool transient = false;
-  transient      = (errno == EINTR);
+  switch (errno) {
+  case EINTR:
+  case EAGAIN:
+
 #ifdef ENOMEM
-  transient = transient || (errno == ENOMEM);
+  case ENOMEM:
 #endif
+
 #ifdef ENOBUF
-  transient = transient || (errno == ENOBUF);
+  case ENOBUF:
 #endif
-  return transient;
+
+#if defined(EWOULDBLOCK) && (EWOULDBLOCK != EAGAIN)
+  case EWOULDBLOCK:
+#endif
+
+    return true;
+
+  default:
+    return false;
+  }
 }
 
 //-------------------------------------------------------------------------
