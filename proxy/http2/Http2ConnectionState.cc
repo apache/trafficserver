@@ -658,7 +658,7 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     stream->client_rwnd += size;
     ssize_t wnd = min(cstate.client_rwnd, stream->client_rwnd);
 
-    if (stream->get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && wnd > 0) {
+    if (!stream->is_closed() && stream->get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && wnd > 0) {
       stream->send_response_body();
     }
   }
@@ -948,7 +948,7 @@ Http2ConnectionState::restart_streams()
 
   while (s) {
     Http2Stream *next = s->link.next;
-    if (s->get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && min(this->client_rwnd, s->client_rwnd) > 0) {
+    if (!s->is_closed() && s->get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && min(this->client_rwnd, s->client_rwnd) > 0) {
       s->send_response_body();
     }
     s = next;

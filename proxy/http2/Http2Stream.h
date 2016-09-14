@@ -240,10 +240,16 @@ public:
   void clear_timers();
   void clear_io_events();
   bool
-  is_client_state_writeable()
+  is_client_state_writeable() const
   {
     return _state == HTTP2_STREAM_STATE_OPEN || _state == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE ||
            HTTP2_STREAM_STATE_RESERVED_LOCAL;
+  }
+
+  bool
+  is_closed() const
+  {
+    return closed;
   }
 
 private:
