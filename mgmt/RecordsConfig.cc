@@ -1348,8 +1348,6 @@ static const RecordElement RecordsConfig[] =
   //#
   //# Add NODE       Records Here
   //##############################################################################
-  {RECT_NODE, "proxy.node.num_processes", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_NODE, "proxy.node.hostname_FQ", RECD_STRING, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_NODE, "proxy.node.hostname", RECD_STRING, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
