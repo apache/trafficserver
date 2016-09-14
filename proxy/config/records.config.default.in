@@ -20,7 +20,7 @@ CONFIG proxy.config.exec_thread.affinity INT 1
 # Specify server addresses and ports to bind for HTTP and HTTPS. Docs:
 #    https://docs.trafficserver.apache.org/records.config#proxy.config.http.server_ports
 ##############################################################################
-CONFIG proxy.config.http.server_ports STRING 8080
+CONFIG proxy.config.http.server_ports STRING 8080 8080:ipv6
 
 ##############################################################################
 # Via: headers. Docs:
