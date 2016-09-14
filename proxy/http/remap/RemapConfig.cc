@@ -868,8 +868,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   ats_free(parv[1]); // toURL
 
   if (res != TS_SUCCESS) {
-    snprintf(errbuf, errbufsize, "Failed to create instance for plugin \"%s\": %s", c,
-             tmpbuf[0] ? tmpbuf : "Unknown plugin error");
+    snprintf(errbuf, errbufsize, "Failed to create instance for plugin \"%s\": %s", c, tmpbuf[0] ? tmpbuf : "Unknown plugin error");
     return -8;
   }
 
