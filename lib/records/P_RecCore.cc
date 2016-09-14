@@ -805,6 +805,32 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
   return update_type;
 }
 
+static RecErrT
+reset_stat_record(RecRecord *rec)
+{
+  RecErrT err;
+
+  if (i_am_the_record_owner(rec->rec_type)) {
+    rec_mutex_acquire(&(rec->lock));
+    ++(rec->version);
+    err = RecDataSet(rec->data_type, &(rec->data), &(rec->data_default)) ? REC_ERR_OKAY : REC_ERR_FAIL;
+    rec_mutex_release(&(rec->lock));
+  } else {
+    RecRecord r2;
+
+    RecRecordInit(&r2);
+    r2.rec_type  = rec->rec_type;
+    r2.name      = rec->name;
+    r2.data_type = rec->data_type;
+    r2.data      = rec->data_default;
+
+    err = send_reset_message(&r2);
+    RecRecordFree(&r2);
+  }
+
+  return err;
+}
+
 //------------------------------------------------------------------------
 // RecResetStatRecord
 //------------------------------------------------------------------------
@@ -812,29 +838,10 @@ RecErrT
 RecResetStatRecord(const char *name)
 {
   RecRecord *r1 = NULL;
-  RecErrT err   = REC_ERR_OKAY;
+  RecErrT err   = REC_ERR_FAIL;
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **)&r1)) {
-    if (i_am_the_record_owner(r1->rec_type)) {
-      rec_mutex_acquire(&(r1->lock));
-      ++(r1->version);
-      RecDataSet(r1->data_type, &(r1->data), &(r1->data_default));
-      rec_mutex_release(&(r1->lock));
-      err = REC_ERR_OKAY;
-    } else {
-      RecRecord r2;
-
-      RecRecordInit(&r2);
-      r2.rec_type  = r1->rec_type;
-      r2.name      = r1->name;
-      r2.data_type = r1->data_type;
-      r2.data      = r1->data_default;
-
-      err = send_reset_message(&r2);
-      RecRecordFree(&r2);
-    }
-  } else {
-    err = REC_ERR_FAIL;
+    err = reset_stat_record(r1);
   }
 
   return err;
@@ -855,29 +862,21 @@ RecResetStatRecord(RecT type, bool all)
   for (i = 0; i < num_records; i++) {
     RecRecord *r1 = &(g_records[i]);
 
-    if (REC_TYPE_IS_STAT(r1->rec_type) && ((type == RECT_NULL) || (r1->rec_type == type)) &&
-        (all || (r1->stat_meta.persist_type != RECP_NON_PERSISTENT)) && (r1->data_type != RECD_STRING)) {
-      if (i_am_the_record_owner(r1->rec_type)) {
-        rec_mutex_acquire(&(r1->lock));
-        ++(r1->version);
-        if (!RecDataSet(r1->data_type, &(r1->data), &(r1->data_default))) {
-          err = REC_ERR_FAIL;
-        }
-        rec_mutex_release(&(r1->lock));
-      } else {
-        RecRecord r2;
+    if (REC_TYPE_IS_STAT(r1->rec_type)) {
+      continue;
+    }
 
-        RecRecordInit(&r2);
-        r2.rec_type  = r1->rec_type;
-        r2.name      = r1->name;
-        r2.data_type = r1->data_type;
-        r2.data      = r1->data_default;
+    if (r1->data_type == RECD_STRING) {
+      continue;
+    }
 
-        err = send_reset_message(&r2);
-        RecRecordFree(&r2);
+    if (((type == RECT_NULL) || (r1->rec_type == type)) && (all || (r1->stat_meta.persist_type != RECP_NON_PERSISTENT))) {
+      if (reset_stat_record(r1) != REC_ERR_OKAY) {
+        err = REC_ERR_FAIL;
       }
     }
   }
+
   return err;
 }
 

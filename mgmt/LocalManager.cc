@@ -120,7 +120,7 @@ LocalManager::clearStats(const char *name)
   //   stats getting cleared by progation of clearing the
   //   cluster stats
   //
-  if (name) {
+  if (name && *name) {
     RecResetStatRecord(name);
   } else {
     RecResetStatRecord(RECT_NULL, true);
