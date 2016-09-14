@@ -325,6 +325,7 @@ SSLContextStorage::~SSLContextStorage()
   }
 
   ink_hash_table_destroy(this->hostnames);
+  ink_hash_table_destroy(this->wilddomains);
 }
 
 int
