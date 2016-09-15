@@ -364,26 +364,8 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   our_ip = oip;
 
   /* Get the cluster type */
-  cluster_type = CLUSTER_INVALID;
-  RecInt rec_int;
+  cluster_type = NO_CLUSTER;
 
-  rec_err      = RecGetRecordInt("proxy.local.cluster.type", &rec_int);
-  cluster_type = (MgmtClusterType)rec_int;
-  found        = (rec_err == REC_ERR_OKAY);
-  ink_assert(found);
-
-  switch (cluster_type) {
-  case FULL_CLUSTER:
-  case MGMT_CLUSTER:
-  case NO_CLUSTER:
-    break;
-  case CLUSTER_INVALID:
-  default:
-    mgmt_log("[ClusterCom::ClusterCom] Invalid cluster type.  "
-             "Defaulting to full clustering\n");
-    cluster_type = FULL_CLUSTER;
-    break;
-  }
   /* Get the cluster config file name + path */
   RecString cluster_file;
 
