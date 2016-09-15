@@ -68,7 +68,8 @@ startProcessManager(void *arg)
   return ret;
 } /* End startProcessManager */
 
-ProcessManager::ProcessManager(bool rlm) : BaseManager(), require_lm(rlm), local_manager_sockfd(0), cbtable(NULL)
+ProcessManager::ProcessManager(bool rlm)
+  : BaseManager(), require_lm(rlm), local_manager_sockfd(0), cbtable(NULL), max_msgs_in_a_row(1)
 {
   mgmt_signal_queue = create_queue();
 
@@ -83,7 +84,8 @@ void
 ProcessManager::reconfigure()
 {
   bool found;
-  timeout = REC_readInteger("proxy.config.process_manager.timeout", &found);
+  max_msgs_in_a_row = MAX_MSGS_IN_A_ROW;
+  timeout           = REC_readInteger("proxy.config.process_manager.timeout", &found);
   ink_assert(found);
 
   return;
@@ -226,7 +228,7 @@ ProcessManager::pollLMConnection()
 
   // Avoid getting stuck enqueuing too many requests in a row, limit to MAX_MSGS_IN_A_ROW.
   int count;
-  for (count = 0; count < MAX_MSGS_IN_A_ROW; ++count) {
+  for (count = 0; count < max_msgs_in_a_row; ++count) {
     int num;
 
     num = mgmt_read_timeout(local_manager_sockfd, 1 /* sec */, 0 /* usec */);
@@ -262,7 +264,7 @@ ProcessManager::pollLMConnection()
     }
   }
 
-  Debug("pmgmt", "[ProcessManager::pollLMConnection] enqueued %d of max %d messages in a row", count, MAX_MSGS_IN_A_ROW);
+  Debug("pmgmt", "[ProcessManager::pollLMConnection] enqueued %d of max %d messages in a row", count, max_msgs_in_a_row);
 } /* End ProcessManager::pollLMConnection */
 
 void
