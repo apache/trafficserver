@@ -600,7 +600,6 @@ config_reload_records()
   struct stat stat_buf;
   static time_t last_mod = 0;
   char log_filename[PATH_NAME_MAX];
-  int tmp_int;
 
   ats_scoped_str bindir;
   ats_scoped_str logdir;
@@ -656,9 +655,6 @@ config_reload_records()
   // TS-1075 : auto-port ::connect DoS on high traffic linux systems
   config_read_int("proxy.config.cop.source_port", &source_port, true);
 #endif
-
-  config_read_int("proxy.local.cluster.type", &tmp_int);
-  cluster_type = static_cast<MgmtClusterType>(tmp_int);
 
   if (stdout_flag) {
     config_read_string("proxy.config.syslog_facility", syslog_fac_str, sizeof(syslog_fac_str), true);
