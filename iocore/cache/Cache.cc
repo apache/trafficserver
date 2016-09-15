@@ -2000,6 +2000,13 @@ CacheProcessor::mark_storage_offline(CacheDisk *d ///< Target disk
   uint64_t total_dir_delete   = 0;
   uint64_t used_dir_delete    = 0;
 
+  /* Don't mark it again, it will invalidate the stats! */
+  if (!d->online) {
+    return this->has_online_storage();
+  }
+
+  d->online = false;
+
   if (!DISK_BAD(d))
     SET_DISK_BAD(d);
 
@@ -2052,7 +2059,7 @@ CacheProcessor::has_online_storage() const
 {
   CacheDisk **dptr = gdisks;
   for (int disk_no = 0; disk_no < gndisks; ++disk_no, ++dptr) {
-    if (!DISK_BAD(*dptr))
+    if (!DISK_BAD(*dptr) && (*dptr)->online)
       return true;
   }
   return false;
