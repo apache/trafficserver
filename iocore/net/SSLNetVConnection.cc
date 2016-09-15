@@ -57,12 +57,6 @@ void SSL_set_rbio(SSL *ssl, BIO *rbio);
 #define SSL_WRITE_WOULD_BLOCK 10
 #define SSL_WAIT_FOR_HOOK 11
 
-#ifndef UIO_MAXIOV
-#define NET_MAX_IOV 16 // UIO_MAXIOV shall be at least 16 1003.1g (5.4.1.1)
-#else
-#define NET_MAX_IOV UIO_MAXIOV
-#endif
-
 ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 
 namespace

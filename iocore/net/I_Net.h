@@ -45,6 +45,12 @@
 #include "I_EventSystem.h"
 #include <netinet/in.h>
 
+#ifndef UIO_MAXIOV
+#define NET_MAX_IOV 16 // UIO_MAXIOV shall be at least 16 1003.1g (5.4.1.1)
+#else
+#define NET_MAX_IOV UIO_MAXIOV
+#endif
+
 #define NET_SYSTEM_MODULE_MAJOR_VERSION 1
 #define NET_SYSTEM_MODULE_MINOR_VERSION 0
 #define NET_SYSTEM_MODULE_VERSION \
