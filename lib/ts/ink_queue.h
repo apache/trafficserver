@@ -85,20 +85,21 @@ void ink_queue_load_64(void *dst, void *src);
 // lock, use INK_QUEUE_LD to read safely.
 typedef union {
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
-  struct {
-    void *pointer;
-    int32_t version;
-  } s;
-  int64_t data;
+  typedef int32_t version_type;
+  typedef int64_t data_type;
 #elif TS_HAS_128BIT_CAS
+  typedef int64_t version_type;
+  typedef __int128_t data_type;
+#else
+  typedef int64_t data_type;
+#endif
+
   struct {
     void *pointer;
-    int64_t version;
+    version_type version;
   } s;
-  __int128_t data;
-#else
-  int64_t data;
-#endif
+
+  data_type data;
 } head_p;
 
 /*
