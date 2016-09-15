@@ -29,12 +29,6 @@
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 
-#ifndef UIO_MAXIOV
-#define NET_MAX_IOV 16 // UIO_MAXIOV shall be at least 16 1003.1g (5.4.1.1)
-#else
-#define NET_MAX_IOV UIO_MAXIOV
-#endif
-
 // Global
 ClassAllocator<UnixNetVConnection> netVCAllocator("netVCAllocator");
 
@@ -112,12 +106,13 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
     vc->active_timeout = NULL;
   }
 #else
-  vc->next_inactivity_timeout_at   = 0;
-  vc->next_activity_timeout_at     = 0;
+  vc->next_inactivity_timeout_at = 0;
+  vc->next_activity_timeout_at   = 0;
 #endif
-  vc->inactivity_timeout_in = 0;
 
-  vc->active_timeout_in = 0;
+  vc->inactivity_timeout_in = 0;
+  vc->active_timeout_in     = 0;
+
   if (nh) {
     nh->open_list.remove(vc);
     nh->cop_list.remove(vc);
