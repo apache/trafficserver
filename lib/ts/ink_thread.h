@@ -150,14 +150,12 @@ ink_thread_create(void *(*f)(void *), void *a, int detached = 0, size_t stacksiz
   }
 
   ret = pthread_create(&t, &attr, f, a);
-  ink_assert(ret == 0);
+  if (ret != 0) {
+    ink_abort("pthread_create() failed: %s (%d)", strerror(ret), ret);
+  }
   pthread_attr_destroy(&attr);
 
-  /**
-   * Fix for INKqa10118.
-   * If the thread has not been created successfully return 0.
-   */
-  return ret ? (ink_thread)0 : t;
+  return t;
 }
 
 static inline void
