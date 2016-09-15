@@ -670,6 +670,17 @@ sdk_sanity_check_mutex(Ptr<ProxyMutex> &m)
   return m ? TS_SUCCESS : TS_ERROR;
 }
 
+// Plugin metric IDs index the plugin RSB, so bounds check against that.
+static TSReturnCode
+sdk_sanity_check_stat_id(int id)
+{
+  if (id < 0 || id >= api_rsb->max_stats) {
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
 /**
   The function checks if the buffer is Modifiable and returns true if
   it is modifiable, else returns false.
@@ -6919,30 +6930,33 @@ TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence 
 }
 
 void
-TSStatIntIncrement(int the_stat, TSMgmtInt amount)
+TSStatIntIncrement(int id, TSMgmtInt amount)
 {
-  RecIncrRawStat(api_rsb, NULL, the_stat, amount);
+  sdk_assert(sdk_sanity_check_stat_id(id));
+  RecIncrRawStat(api_rsb, NULL, id, amount);
 }
 
 void
-TSStatIntDecrement(int the_stat, TSMgmtInt amount)
+TSStatIntDecrement(int id, TSMgmtInt amount)
 {
-  RecDecrRawStat(api_rsb, NULL, the_stat, amount);
+  RecDecrRawStat(api_rsb, NULL, id, amount);
 }
 
 TSMgmtInt
-TSStatIntGet(int the_stat)
+TSStatIntGet(int id)
 {
   TSMgmtInt value;
 
-  RecGetGlobalRawStatSum(api_rsb, the_stat, &value);
+  sdk_assert(sdk_sanity_check_stat_id(id));
+  RecGetGlobalRawStatSum(api_rsb, id, &value);
   return value;
 }
 
 void
-TSStatIntSet(int the_stat, TSMgmtInt value)
+TSStatIntSet(int id, TSMgmtInt value)
 {
-  RecSetGlobalRawStatSum(api_rsb, the_stat, value);
+  sdk_assert(sdk_sanity_check_stat_id(id));
+  RecSetGlobalRawStatSum(api_rsb, id, value);
 }
 
 TSReturnCode
