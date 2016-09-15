@@ -49,6 +49,7 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
     id = TSStatCreate(name, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     if (id == TS_ERROR) {
       TSError("%s: failed to register '%s'", PLUGIN_NAME, name);
+      return;
     }
   }
 
