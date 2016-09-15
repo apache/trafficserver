@@ -97,6 +97,7 @@ struct CacheDisk : public Continuation {
   int num_errors;
   int cleared;
   bool read_only_p;
+  bool online; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
 
   // Extra configuration values
   int forced_volume_num;           ///< Volume number for this disk.
@@ -119,6 +120,7 @@ struct CacheDisk : public Continuation {
       num_errors(0),
       cleared(0),
       read_only_p(false),
+      online(true),
       forced_volume_num(-1)
   {
   }
