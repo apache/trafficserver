@@ -1143,12 +1143,11 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   }
 
   int signal_event;
-  Event **signal_timeout;
   Continuation *reader_cont     = NULL;
   Continuation *writer_cont     = NULL;
   ink_hrtime *signal_timeout_at = NULL;
   Event *t                      = NULL;
-  signal_timeout                = &t;
+  Event **signal_timeout        = &t;
 
 #ifdef INACTIVITY_TIMEOUT
   if (e == inactivity_timeout) {
@@ -1408,4 +1407,28 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     }
     return netvc;
   }
+}
+
+void
+UnixNetVConnection::add_to_keep_alive_queue()
+{
+  nh->add_to_keep_alive_queue(this);
+}
+
+void
+UnixNetVConnection::remove_from_keep_alive_queue()
+{
+  nh->remove_from_keep_alive_queue(this);
+}
+
+bool
+UnixNetVConnection::add_to_active_queue()
+{
+  return nh->add_to_active_queue(this);
+}
+
+void
+UnixNetVConnection::remove_from_active_queue()
+{
+  nh->remove_from_active_queue(this);
 }
