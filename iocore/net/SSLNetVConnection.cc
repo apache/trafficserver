@@ -968,6 +968,17 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
   case SSL_EVENT_CLIENT:
     if (this->ssl == NULL) {
       this->ssl = make_ssl_connection(ssl_NetProcessor.client_ctx, this);
+
+#if TS_USE_TLS_SNI
+      if (this->options.sni_servername) {
+        if (SSL_set_tlsext_host_name(this->ssl, this->options.sni_servername)) {
+          Debug("ssl", "using SNI name '%s' for client handshake", this->options.sni_servername.get());
+        } else {
+          Debug("ssl.error", "failed to set SNI name '%s' for client handshake", this->options.sni_servername.get());
+          SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
+        }
+      }
+#endif
     }
 
     if (this->ssl == NULL) {
@@ -1209,17 +1220,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 int
 SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
-#if TS_USE_TLS_SNI
-  if (options.sni_servername) {
-    if (SSL_set_tlsext_host_name(ssl, options.sni_servername)) {
-      Debug("ssl", "using SNI name '%s' for client handshake", options.sni_servername.get());
-    } else {
-      Debug("ssl.error", "failed to set SNI name '%s' for client handshake", options.sni_servername.get());
-      SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
-    }
-  }
-#endif
-
   SSL_set_ex_data(ssl, get_ssl_client_data_index(), this);
   ssl_error_t ssl_error = SSLConnect(ssl);
   bool trace            = getSSLTrace();
