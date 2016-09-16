@@ -1374,12 +1374,14 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     // We're already there!
     return this;
   }
+
   Connection hold_con;
   hold_con.move(this->con);
   SSLNetVConnection *sslvc = dynamic_cast<SSLNetVConnection *>(this);
-  SSL *save_ssl            = (sslvc) ? sslvc->ssl : NULL;
+
+  SSL *save_ssl = (sslvc) ? sslvc->ssl : NULL;
   if (save_ssl) {
-    SSL_set_ex_data(sslvc->ssl, get_ssl_client_data_index(), NULL);
+    SSLNetVCDetach(sslvc->ssl);
     sslvc->ssl = NULL;
   }
 

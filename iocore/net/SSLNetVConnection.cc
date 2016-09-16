@@ -152,7 +152,7 @@ make_ssl_connection(SSL_CTX *ctx, SSLNetVConnection *netvc)
       SSL_set_bio(ssl, rbio, wbio);
     }
 
-    SSL_set_app_data(ssl, netvc);
+    SSLNetVCAttach(ssl, netvc);
   }
 
   return ssl;
@@ -912,6 +912,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
     // net_activity will not be triggered until after the handshake
     set_inactivity_timeout(HRTIME_SECONDS(SSLConfigParams::ssl_handshake_timeout_in));
   }
+
   switch (event) {
   case SSL_EVENT_SERVER:
     if (this->ssl == NULL) {
@@ -1007,6 +1008,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       // the previous hook yet.
       curHook = curHook->next();
     }
+
     if (SSL_HOOKS_INVOKE == sslPreAcceptHookState) {
       if (0 == curHook) { // no hooks left, we're done
         sslPreAcceptHookState = SSL_HOOKS_DONE;
@@ -1220,10 +1222,12 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 int
 SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
-  SSL_set_ex_data(ssl, get_ssl_client_data_index(), this);
-  ssl_error_t ssl_error = SSLConnect(ssl);
-  bool trace            = getSSLTrace();
+  bool trace = getSSLTrace();
+  ssl_error_t ssl_error;
 
+  ink_assert(SSLNetVCAccess(ssl) == this);
+
+  ssl_error = SSLConnect(ssl);
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (is_debug_tag_set("ssl")) {
@@ -1318,7 +1322,7 @@ SSLNetVConnection::registerNextProtocolSet(const SSLNextProtocolSet *s)
 int
 SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen, void * /*arg ATS_UNUSED */)
 {
-  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   ink_release_assert(netvc != NULL);
 
@@ -1336,7 +1340,7 @@ int
 SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen,
                                         const unsigned char *in ATS_UNUSED, unsigned inlen ATS_UNUSED, void *)
 {
-  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   const unsigned char *npn = NULL;
   unsigned npnsz           = 0;
 
@@ -1499,7 +1503,8 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
 
   this->sslHandShakeComplete = true;
   this->sslClientConnection  = true;
-  SSL_set_ex_data(this->ssl, get_ssl_client_data_index(), this);
+
+  SSLNetVCAttach(this->ssl, this);
   return EVENT_DONE;
 }
 
