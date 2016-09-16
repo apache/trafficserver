@@ -193,7 +193,6 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
   int64_t nread          = 0;
 
   bool trace = sslvc->getSSLTrace();
-  Debug("ssl", "trace=%s", trace ? "TRUE" : "FALSE");
 
   bytes_read = 0;
   while (sslErr == SSL_ERROR_NONE) {
@@ -659,7 +658,6 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
   }
 
   bool trace = getSSLTrace();
-  Debug("ssl", "trace=%s", trace ? "TRUE" : "FALSE");
 
   do {
     // What is remaining left in the next block?
@@ -949,6 +947,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       // to negotiate a SSL session, but it's enough to trampoline us into the SNI callback where we
       // can select the right server certificate.
       this->ssl = make_ssl_connection(lookup->defaultContext(), this);
+
 #if !(TS_USE_TLS_SNI)
       // set SSL trace
       if (SSLConfigParams::ssl_wire_trace_enabled) {
@@ -1055,7 +1054,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   ssl_error_t ssl_error = SSLAccept(ssl);
   bool trace            = getSSLTrace();
-  Debug("ssl", "trace=%s", trace ? "TRUE" : "FALSE");
 
   if (ssl_error != SSL_ERROR_NONE) {
     err = errno;
@@ -1220,13 +1218,11 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
       SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
     }
   }
-
 #endif
 
   SSL_set_ex_data(ssl, get_ssl_client_data_index(), this);
   ssl_error_t ssl_error = SSLConnect(ssl);
   bool trace            = getSSLTrace();
-  Debug("ssl", "trace=%s", trace ? "TRUE" : "FALSE");
 
   switch (ssl_error) {
   case SSL_ERROR_NONE:
