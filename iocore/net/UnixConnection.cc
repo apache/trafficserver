@@ -388,27 +388,3 @@ Connection::apply_options(NetVCOptions const &opt)
   }
 #endif
 }
-
-void
-UnixNetVConnection::add_to_keep_alive_queue()
-{
-  nh->add_to_keep_alive_queue(this);
-}
-
-void
-UnixNetVConnection::remove_from_keep_alive_queue()
-{
-  nh->remove_from_keep_alive_queue(this);
-}
-
-bool
-UnixNetVConnection::add_to_active_queue()
-{
-  return nh->add_to_active_queue(this);
-}
-
-void
-UnixNetVConnection::remove_from_active_queue()
-{
-  nh->remove_from_active_queue(this);
-}
