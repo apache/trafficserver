@@ -6932,7 +6932,7 @@ TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence 
 void
 TSStatIntIncrement(int id, TSMgmtInt amount)
 {
-  sdk_assert(sdk_sanity_check_stat_id(id));
+  sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
   RecIncrRawStat(api_rsb, NULL, id, amount);
 }
 
@@ -6947,7 +6947,7 @@ TSStatIntGet(int id)
 {
   TSMgmtInt value;
 
-  sdk_assert(sdk_sanity_check_stat_id(id));
+  sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
   RecGetGlobalRawStatSum(api_rsb, id, &value);
   return value;
 }
@@ -6955,7 +6955,7 @@ TSStatIntGet(int id)
 void
 TSStatIntSet(int id, TSMgmtInt value)
 {
-  sdk_assert(sdk_sanity_check_stat_id(id));
+  sdk_assert(sdk_sanity_check_stat_id(id) == TS_SUCCESS);
   RecSetGlobalRawStatSum(api_rsb, id, value);
 }
 
