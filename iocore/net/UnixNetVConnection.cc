@@ -1261,6 +1261,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   // If this is getting called from the TS API, then we are wiring up a file descriptor
   // provided by the caller. In that case, we know that the socket is already connected.
   if (fd == NO_FD) {
+    // Due to multi-threads system, the fd returned from con.open() may exceed the limitation of check_net_throttle().
     res = con.open(options);
     if (res != 0) {
       goto fail;
@@ -1278,14 +1279,24 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     con.is_bound     = true;
   }
 
+  if (check_emergency_throttle(con)) {
+    // The `con' could be closed if there is hyper emergency
+    if (con.fd == NO_FD) {
+      // We need to decrement the stat because close_UnixNetVConnection only decrements with a valid connection descriptor.
+      NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
+      // Set errno force to EMFILE (reached limit for open file descriptors)
+      errno = EMFILE;
+      res   = -errno;
+      goto fail;
+    }
+  }
+
   // Must connect after EventIO::Start() to avoid a race condition
   // when edge triggering is used.
   if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
-    lerrno = errno;
-    Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
-    action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)0); // 0 == res
-    free(t);
-    return CONNECT_FAILURE;
+    res = -errno;
+    Debug("iocore_net", "connectUp : Failed to add to epoll list : %s", strerror(errno));
+    goto fail;
   }
 
   if (fd == NO_FD) {
@@ -1294,8 +1305,6 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
       goto fail;
     }
   }
-
-  check_emergency_throttle(con);
 
   // start up next round immediately
 

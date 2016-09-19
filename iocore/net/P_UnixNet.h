@@ -264,13 +264,13 @@ check_shedding_warning()
   }
 }
 
-TS_INLINE int
+TS_INLINE bool
 emergency_throttle(ink_hrtime now)
 {
-  return emergency_throttle_time > now;
+  return (bool)(emergency_throttle_time > now);
 }
 
-TS_INLINE int
+TS_INLINE bool
 check_net_throttle(ThrottleType t, ink_hrtime now)
 {
   int connections = net_connections_to_throttle(t);
@@ -305,7 +305,7 @@ check_throttle_warning()
 // descriptors.  Close the connection immediately, the upper levels
 // will recover.
 //
-TS_INLINE int
+TS_INLINE bool
 check_emergency_throttle(Connection &con)
 {
   int fd        = con.fd;
