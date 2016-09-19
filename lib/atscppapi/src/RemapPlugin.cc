@@ -68,5 +68,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
 RemapPlugin::RemapPlugin(void **instance_handle)
 {
+  utils::internal::initTransactionManagement();
   *instance_handle = static_cast<void *>(this);
 }
