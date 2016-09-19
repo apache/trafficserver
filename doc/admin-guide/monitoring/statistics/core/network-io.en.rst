@@ -60,6 +60,9 @@ Network I/O
 .. ts:stat:: global proxy.process.net.connections_currently_open integer
    :type: counter
 
+Number of connections currently open.  Includes both connections from client to ATS and from ATS to origin.
+Used by :ts:cv:`proxy.config.net.connections_throttle` to determine when to throttle new connections.
+
 .. ts:stat:: global proxy.process.net.default_inactivity_timeout_applied integer
 .. ts:stat:: global proxy.process.net.dynamic_keep_alive_timeout_in_count integer
 .. ts:stat:: global proxy.process.net.dynamic_keep_alive_timeout_in_total integer
@@ -75,3 +78,12 @@ Network I/O
    :type: counter
    :unit: bytes
 
+.. ts:stat:: global proxy.process.net.connections_throttled_in integer
+   :type: counter
+
+Number of connections from client that have been throttled due to being over the  :ts:cv:`proxy.config.net.connections_throttle` limit.
+
+.. ts:stat:: global proxy.process.net.connections_throttled_out integer
+   :type: counter
+
+Number of connections to origin that have been throttled due to being over the  :ts:cv:`proxy.config.net.connections_throttle` limit.

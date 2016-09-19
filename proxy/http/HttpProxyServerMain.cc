@@ -115,6 +115,7 @@ make_net_accept_options(const HttpProxyPort &port, unsigned nthreads)
   net.accept_threads = nthreads;
 
   net.f_inbound_transparent = port.m_inbound_transparent_p;
+  net.f_no_throttle         = port.m_no_throttle;
   net.ip_family             = port.m_family;
   net.local_port            = port.m_port;
 

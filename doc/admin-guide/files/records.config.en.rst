@@ -674,6 +674,7 @@ HTTP Engine
    tr-in                       Inbound transparent.
    tr-out                      Outbound transparent.
    tr-pass                     Pass through enabled.
+   no-throttle                 Port should not be throttled
    =========== =============== ========================================
 
 *number*
@@ -722,6 +723,8 @@ tr-out
 tr-pass
    Transparent pass through. This option is useful only for inbound transparent proxy ports. If the parsing of the expected HTTP header fails, then the transaction is switched to a blind tunnel instead of generating an error response to the client. It effectively enables :ts:cv:`proxy.config.http.use_client_target_addr` for the transaction as there is no other place to obtain the origin server address.
 
+no-throttle
+   Do not throttle requests that come to this port even when  the  :ts:cv:`proxy.config.net.connections_throttle` limit is reached.
 ip-in
    Set the local IP address for the port. This is the address to which clients will connect. This forces the IP address family for the port. The ``ipv4`` or ``ipv6`` can be used but it is optional and is an error for it to disagree with the IP address family of this value. An IPv6 address **must** be enclosed in square brackets. If this option is omitted :ts:cv:`proxy.local.incoming_ip_to_bind` is used.
 
