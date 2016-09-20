@@ -523,8 +523,9 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   }
 
   // check for errors
-  if (r <= 0) { // if the socket was not ready,add to WaitList
-    if (r == -EAGAIN || r == -ENOTCONN) {
+  if (r <= 0) {
+    // If the socket was not ready, add it to the wait list.
+    if (r == -EAGAIN || r == -ENOTCONN || -r == EINPROGRESS) {
       NET_INCREMENT_DYN_STAT(net_calls_to_write_nodata_stat);
       if ((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
         vc->write.triggered = 0;
@@ -990,7 +991,24 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
 
     ink_assert(niov > 0);
     ink_assert(niov <= countof(tiovec));
-    r = socketManager.writev(con.fd, &tiovec[0], niov);
+
+    // If the platform doesn't support TCP Fast Open, verify that we
+    // correctly disabled support in the socket option configuration.
+    ink_assert(MSG_FASTOPEN != 0 || this->options.f_tcp_fastopen == false);
+
+    if (this->options.f_tcp_fastopen && this->write.vio.ndone == 0) {
+      struct msghdr msg;
+
+      ink_zero(msg);
+      msg.msg_name    = const_cast<sockaddr *>(this->get_remote_addr());
+      msg.msg_namelen = ats_ip_size(this->get_remote_addr());
+      msg.msg_iov     = &tiovec[0];
+      msg.msg_iovlen  = niov;
+
+      r = socketManager.sendmsg(con.fd, &msg, MSG_FASTOPEN);
+    } else {
+      r = socketManager.writev(con.fd, &tiovec[0], niov);
+    }
 
     if (origin_trace) {
       char origin_trace_ip[INET6_ADDRSTRLEN];

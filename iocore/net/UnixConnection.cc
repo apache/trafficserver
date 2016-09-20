@@ -324,7 +324,14 @@ Connection::connect(sockaddr const *target, NetVCOptions const &opt)
 
   cleaner<Connection> cleanup(this, &Connection::_cleanup); // mark for close until we succeed.
 
-  res = ::connect(fd, &this->addr.sa, ats_ip_size(&this->addr.sa));
+  if (opt.f_tcp_fastopen && !opt.f_blocking_connect) {
+    // TCP Fast Open is (effectively) a non-blocking connect, so set the
+    // return value we would see in that case.
+    errno = EINPROGRESS;
+    res   = -1;
+  } else {
+    res = ::connect(fd, &this->addr.sa, ats_ip_size(&this->addr.sa));
+  }
 
   // It's only really an error if either the connect was blocking
   // or it wasn't blocking and the error was other than EINPROGRESS.
