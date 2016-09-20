@@ -267,6 +267,14 @@ NetAccept::do_blocking_accept(EThread *t)
       return -1;
     }
 
+    // The con.fd may exceed the limitation of check_net_throttle() because we do blocking accept here.
+    if (check_emergency_throttle(con)) {
+      // The `con' could be closed if there is hyper emergency
+      if (con.fd == NO_FD) {
+        return 0;
+      }
+    }
+
     // Use 'NULL' to Bypass thread allocator
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(NULL);
     if (unlikely(!vc || shutdown_event_system == true)) {
@@ -279,8 +287,6 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->apply_options();
     vc->from_accept_thread = true;
     vc->id                 = net_next_connection_number();
-
-    check_emergency_throttle(con);
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->submit_time = now;
