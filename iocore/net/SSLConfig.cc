@@ -64,12 +64,19 @@ char *SSLConfigParams::ssl_wire_trace_server_name = NULL;
 
 static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
 
+// Check if the ticket_key callback #define is available, and if so, enable session tickets.
+#ifdef SSL_CTX_set_tlsext_ticket_key_cb
+
+#define HAVE_OPENSSL_SESSION_TICKETS 1
+
+#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
+
 SSLConfigParams::SSLConfigParams()
 {
   serverCertPathOnly = serverCertChainFilename = configFilePath = serverCACertFilename = serverCACertPath = clientCertPath =
     clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
-      NULL;
-
+      ticket_key_filename                                                                                     = NULL;
+  default_global_keyblock                                                                                     = NULL;
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 
   ssl_ctx_options               = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
@@ -105,6 +112,8 @@ SSLConfigParams::cleanup()
   ats_free_null(client_cipherSuite);
   ats_free_null(dhparamsFile);
   ats_free_null(ssl_wire_trace_ip);
+  ats_free_null(ticket_key_filename);
+  ticket_block_free(default_global_keyblock);
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 }
@@ -242,6 +251,16 @@ SSLConfigParams::initialize()
   set_paths_helper(CACertRelativePath, ssl_server_ca_cert_filename, &serverCACertPath, &serverCACertFilename);
   ats_free(ssl_server_ca_cert_filename);
   ats_free(CACertRelativePath);
+
+#if HAVE_OPENSSL_SESSION_TICKETS
+  REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
+  if (this->ticket_key_filename != NULL) {
+    ats_scoped_str ticket_key_path(Layout::relative_to(this->serverCertPathOnly, this->ticket_key_filename));
+    default_global_keyblock = ssl_create_ticket_keyblock(ticket_key_path);
+  } else {
+    default_global_keyblock = ssl_create_ticket_keyblock(NULL);
+  }
+#endif
 
   // SSL session cache configurations
   REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");

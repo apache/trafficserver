@@ -28,9 +28,17 @@
 #include "P_SSLConfig.h"
 #include "I_EventSystem.h"
 #include "ts/I_Layout.h"
+#include "ts/MatcherUtils.h"
 #include "ts/Regex.h"
 #include "ts/Trie.h"
 #include "ts/TestBox.h"
+
+// Check if the ticket_key callback #define is available, and if so, enable session tickets.
+#ifdef SSL_CTX_set_tlsext_ticket_key_cb
+
+#define HAVE_OPENSSL_SESSION_TICKETS 1
+
+#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 struct SSLAddressLookupKey {
   explicit SSLAddressLookupKey(const IpEndpoint &ip) : sep(0)
@@ -160,7 +168,69 @@ ticket_block_alloc(unsigned count)
 
   return ptr;
 }
+ssl_ticket_key_block *
+ticket_block_create(char *ticket_key_data, int ticket_key_len)
+{
+  ssl_ticket_key_block *keyblock = NULL;
+  unsigned num_ticket_keys       = ticket_key_len / sizeof(ssl_ticket_key_t);
+  if (num_ticket_keys == 0) {
+    Error("SSL session ticket key is too short (>= 48 bytes are required)");
+    goto fail;
+  }
 
+  keyblock = ticket_block_alloc(num_ticket_keys);
+
+  // Slurp all the keys in the ticket key file. We will encrypt with the first key, and decrypt
+  // with any key (for rotation purposes).
+  for (unsigned i = 0; i < num_ticket_keys; ++i) {
+    const char *data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
+
+    memcpy(keyblock->keys[i].key_name, data, sizeof(keyblock->keys[i].key_name));
+    memcpy(keyblock->keys[i].hmac_secret, data + sizeof(keyblock->keys[i].key_name), sizeof(keyblock->keys[i].hmac_secret));
+    memcpy(keyblock->keys[i].aes_key, data + sizeof(keyblock->keys[i].key_name) + sizeof(keyblock->keys[i].hmac_secret),
+           sizeof(keyblock->keys[i].aes_key));
+  }
+
+  return keyblock;
+
+fail:
+  ticket_block_free(keyblock);
+  return NULL;
+}
+
+ssl_ticket_key_block *
+ssl_create_ticket_keyblock(const char *ticket_key_path)
+{
+#if HAVE_OPENSSL_SESSION_TICKETS
+  ats_scoped_str ticket_key_data;
+  int ticket_key_len;
+  ssl_ticket_key_block *keyblock = NULL;
+
+  if (ticket_key_path != NULL) {
+    ticket_key_data = readIntoBuffer(ticket_key_path, __func__, &ticket_key_len);
+    if (!ticket_key_data) {
+      Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
+      goto fail;
+    }
+    keyblock = ticket_block_create(ticket_key_data, ticket_key_len);
+  } else {
+    // Generate a random ticket key
+    ssl_ticket_key_t key;
+    RAND_bytes(reinterpret_cast<unsigned char *>(&key), sizeof(key));
+    keyblock = ticket_block_create(reinterpret_cast<char *>(&key), sizeof(key));
+  }
+
+  return keyblock;
+
+fail:
+  ticket_block_free(keyblock);
+  return NULL;
+
+#else  /* !HAVE_OPENSSL_SESSION_TICKETS */
+  (void)ticket_key_path;
+  return NULL;
+#endif /* HAVE_OPENSSL_SESSION_TICKETS */
+}
 void
 SSLCertContext::release()
 {
