@@ -5440,7 +5440,6 @@ TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp)
   if (vc == NULL) {
     return 0;
   }
-
   return vc->get_local_addr();
 }
 sockaddr const *

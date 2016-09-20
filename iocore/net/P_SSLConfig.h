@@ -34,9 +34,11 @@
 #include "ProxyConfig.h"
 #include "SSLSessionCache.h"
 #include "ts/ink_inet.h"
+#include <openssl/rand.h>
+#include "P_SSLCertLookup.h"
 
 struct SSLCertLookup;
-
+struct ssl_ticket_key_block;
 /////////////////////////////////////////////////////////////
 //
 // struct SSLConfigParams
@@ -67,6 +69,8 @@ struct SSLConfigParams : public ConfigInfo {
   char *dhparamsFile;
   char *cipherSuite;
   char *client_cipherSuite;
+  char *ticket_key_filename;
+  ssl_ticket_key_block *default_global_keyblock;
   int configExitOnLoadError;
   int clientCertLevel;
   int verify_depth;

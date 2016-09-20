@@ -40,7 +40,6 @@ struct ssl_ticket_key_block {
   unsigned num_keys;
   ssl_ticket_key_t keys[];
 };
-
 /** A certificate context.
 
     This holds data about a certificate and how it is used by the SSL logic. Current this is mainly
@@ -110,5 +109,6 @@ struct SSLCertLookup : public ConfigInfo {
 
 void ticket_block_free(void *ptr);
 ssl_ticket_key_block *ticket_block_alloc(unsigned count);
-
+ssl_ticket_key_block *ticket_block_create(char *ticket_key_data, int ticket_key_len);
+ssl_ticket_key_block *ssl_create_ticket_keyblock(const char *ticket_key_path);
 #endif /* __P_SSLCERTLOOKUP_H__ */

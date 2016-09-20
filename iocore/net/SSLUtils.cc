@@ -133,8 +133,7 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 #endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 #if HAVE_OPENSSL_SESSION_TICKETS
-static int ssl_session_ticket_index                  = -1;
-static ssl_ticket_key_block *global_default_keyblock = NULL;
+static int ssl_session_ticket_index = -1;
 #endif
 
 static int ssl_vc_index = -1;
@@ -562,70 +561,15 @@ ssl_context_enable_ecdh(SSL_CTX *ctx)
 }
 
 static ssl_ticket_key_block *
-ssl_create_ticket_keyblock(const char *ticket_key_path)
-{
-#if HAVE_OPENSSL_SESSION_TICKETS
-  ats_scoped_str ticket_key_data;
-  int ticket_key_len;
-  unsigned num_ticket_keys;
-  ssl_ticket_key_block *keyblock = NULL;
-
-  if (ticket_key_path != NULL) {
-    ticket_key_data = readIntoBuffer(ticket_key_path, __func__, &ticket_key_len);
-    if (!ticket_key_data) {
-      Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
-      goto fail;
-    }
-  } else {
-    // Generate a random ticket key
-    ticket_key_len  = 48;
-    ticket_key_data = (char *)ats_malloc(ticket_key_len);
-    char *tmp_ptr   = ticket_key_data;
-    RAND_bytes(reinterpret_cast<unsigned char *>(tmp_ptr), ticket_key_len);
-  }
-
-  num_ticket_keys = ticket_key_len / sizeof(ssl_ticket_key_t);
-  if (num_ticket_keys == 0) {
-    Error("SSL session ticket key from %s is too short (>= 48 bytes are required)", (const char *)ticket_key_path);
-    goto fail;
-  }
-
-  // Increase the stats.
-  if (ssl_rsb != NULL) { // ssl_rsb is not initialized during the first run.
-    SSL_INCREMENT_DYN_STAT(ssl_total_ticket_keys_renewed_stat);
-  }
-
-  keyblock = ticket_block_alloc(num_ticket_keys);
-
-  // Slurp all the keys in the ticket key file. We will encrypt with the first key, and decrypt
-  // with any key (for rotation purposes).
-  for (unsigned i = 0; i < num_ticket_keys; ++i) {
-    const char *data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
-
-    memcpy(keyblock->keys[i].key_name, data, sizeof(keyblock->keys[i].key_name));
-    memcpy(keyblock->keys[i].hmac_secret, data + sizeof(keyblock->keys[i].key_name), sizeof(keyblock->keys[i].hmac_secret));
-    memcpy(keyblock->keys[i].aes_key, data + sizeof(keyblock->keys[i].key_name) + sizeof(keyblock->keys[i].hmac_secret),
-           sizeof(keyblock->keys[i].aes_key));
-  }
-
-  return keyblock;
-
-fail:
-  ticket_block_free(keyblock);
-  return NULL;
-
-#else  /* !HAVE_OPENSSL_SESSION_TICKETS */
-  (void)ticket_key_path;
-  return NULL;
-#endif /* HAVE_OPENSSL_SESSION_TICKETS */
-}
-
-static ssl_ticket_key_block *
 ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 {
 #if HAVE_OPENSSL_SESSION_TICKETS
   ssl_ticket_key_block *keyblock = NULL;
   keyblock                       = ssl_create_ticket_keyblock(ticket_key_path);
+  // Increase the stats.
+  if (ssl_rsb != NULL) { // ssl_rsb is not initialized during the first run.
+    SSL_INCREMENT_DYN_STAT(ssl_total_ticket_keys_renewed_stat);
+  }
   // Setting the callback can only fail if OpenSSL does not recognize the
   // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
   // so that we don't leave a ticket_key pointer attached if it fails.
@@ -2054,21 +1998,10 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
   char *tok_state = NULL;
   char *line      = NULL;
   ats_scoped_str file_buf;
-  ats_scoped_str ticket_key_filename;
   unsigned line_num = 0;
   matcher_line line_info;
 
   const matcher_tags sslCertTags = {NULL, NULL, NULL, NULL, NULL, NULL, false};
-
-  // Load the global ticket key for later use.
-  REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
-
-  if (ticket_key_filename != NULL) {
-    ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
-    global_default_keyblock = ssl_create_ticket_keyblock(ticket_key_path);
-  } else {
-    global_default_keyblock = ssl_create_ticket_keyblock(NULL);
-  }
 
   Note("loading SSL certificate configuration from %s", params->configFilePath);
 
@@ -2153,6 +2086,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
                             int enc)
 {
   SSLCertificateConfig::scoped_config lookup;
+  SSLConfig::scoped_config params;
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   // Get the IP address to look up the keyblock
@@ -2163,7 +2097,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   ssl_ticket_key_block *keyblock = NULL;
   if (cc == NULL || cc->keyblock == NULL) {
     // Try the default
-    keyblock = global_default_keyblock;
+    keyblock = params->default_global_keyblock;
   } else {
     keyblock = cc->keyblock;
   }
