@@ -432,10 +432,11 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   if (!vc->getSSLHandShakeComplete()) {
     int err, ret;
 
-    if (vc->getSSLClientConnection())
+    if (vc->getSSLClientConnection()) {
       ret = vc->sslStartHandShake(SSL_EVENT_CLIENT, err);
-    else
+    } else {
       ret = vc->sslStartHandShake(SSL_EVENT_SERVER, err);
+    }
 
     if (ret == EVENT_ERROR) {
       vc->write.triggered = 0;
@@ -450,17 +451,22 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       write_reschedule(nh, vc);
     } else if (ret == EVENT_DONE) {
       vc->write.triggered = 1;
-      if (vc->write.enabled)
+      if (vc->write.enabled) {
         nh->write_ready_list.in_or_enqueue(vc);
-    } else
+      }
+    } else {
       write_reschedule(nh, vc);
+    }
+
     return;
   }
+
   // If it is not enabled,add to WaitList.
   if (!s->enabled || s->vio.op != VIO::WRITE) {
     write_disable(nh, vc);
     return;
   }
+
   // If there is nothing to do, disable
   int64_t ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
@@ -471,10 +477,12 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   MIOBufferAccessor &buf = s->vio.buffer;
   ink_assert(buf.writer());
 
-  // Calculate amount to write
+  // Calculate the amount to write.
   int64_t towrite = buf.reader()->read_avail();
-  if (towrite > ntodo)
-    towrite     = ntodo;
+  if (towrite > ntodo) {
+    towrite = ntodo;
+  }
+
   int signalled = 0;
 
   // signal write ready to allow user to fill the buffer
@@ -482,17 +490,22 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     if (write_signal_and_update(VC_EVENT_WRITE_READY, vc) != EVENT_CONT) {
       return;
     }
+
     ntodo = s->vio.ntodo();
     if (ntodo <= 0) {
       write_disable(nh, vc);
       return;
     }
+
     signalled = 1;
+
     // Recalculate amount to write
     towrite = buf.reader()->read_avail();
-    if (towrite > ntodo)
+    if (towrite > ntodo) {
       towrite = ntodo;
+    }
   }
+
   // if there is nothing to do, disable
   ink_assert(towrite >= 0);
   if (towrite <= 0) {
@@ -518,18 +531,22 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         nh->write_ready_list.remove(vc);
         write_reschedule(nh, vc);
       }
+
       if ((needs & EVENTIO_READ) == EVENTIO_READ) {
         vc->read.triggered = 0;
         nh->read_ready_list.remove(vc);
         read_reschedule(nh, vc);
       }
+
       return;
     }
+
     if (!r || r == -ECONNRESET) {
       vc->write.triggered = 0;
       write_signal_done(VC_EVENT_EOS, nh, vc);
       return;
     }
+
     vc->write.triggered = 0;
     write_signal_error(nh, vc, (int)-total_written);
     return;
@@ -537,16 +554,19 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     int wbe_event = vc->write_buffer_empty_event; // save so we can clear if needed.
 
     // If the empty write buffer trap is set, clear it.
-    if (!(buf.reader()->is_read_avail_more_than(0)))
+    if (!(buf.reader()->is_read_avail_more_than(0))) {
       vc->write_buffer_empty_event = 0;
+    }
 
     net_activity(vc, thread);
+
     // If there are no more bytes to write, signal write complete,
     ink_assert(ntodo >= 0);
     if (s->vio.ntodo() <= 0) {
       write_signal_done(VC_EVENT_WRITE_COMPLETE, nh, vc);
       return;
     }
+
     int e = 0;
     if (!signalled) {
       e = VC_EVENT_WRITE_READY;
@@ -555,6 +575,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       // had a write buffer trap and cleared it, so we need to send it now.
       e = wbe_event;
     }
+
     if (e) {
       if (write_signal_and_update(e, vc) != EVENT_CONT) {
         return;
@@ -579,6 +600,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     if ((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
       write_reschedule(nh, vc);
     }
+
     return;
   }
 }
@@ -940,29 +962,32 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
     IOVec tiovec[NET_MAX_IOV];
     unsigned niov = 0;
     try_to_write  = 0;
-    while (niov < NET_MAX_IOV) {
-      // check if we have done this block
-      int64_t l = tmp_reader->block_read_avail();
-      if (l <= 0)
-        break;
-      char *current_block = tmp_reader->start();
 
-      // check if to amount to write exceeds that in this buffer
+    while (niov < NET_MAX_IOV) {
       int64_t wavail = towrite - total_written;
-      if (l > wavail) {
-        l = wavail;
+      int64_t len    = tmp_reader->block_read_avail();
+
+      // Check if we have done this block.
+      if (len <= 0) {
+        break;
       }
 
-      if (!l) {
+      // Check if the amount to write exceeds that in this buffer.
+      if (len > wavail) {
+        len = wavail;
+      }
+
+      if (len == 0) {
         break;
       }
 
       // build an iov entry
-      tiovec[niov].iov_len = l;
-      try_to_write += l;
-      tiovec[niov].iov_base = current_block;
+      tiovec[niov].iov_len  = len;
+      tiovec[niov].iov_base = tmp_reader->start();
       niov++;
-      tmp_reader->consume(l);
+
+      try_to_write += len;
+      tmp_reader->consume(len);
     }
 
     ink_assert(niov > 0);
@@ -985,6 +1010,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
                  strerror(errno));
       }
     }
+
     if (r > 0) {
       buf.reader()->consume(r);
       total_written += r;
