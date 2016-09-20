@@ -142,6 +142,9 @@ struct NetVCOptions {
   /// Make socket block on connect (default: @c false)
   bool f_blocking_connect;
 
+  // Use TCP Fast Open on this socket. The connect(2) call will be omitted.
+  bool f_tcp_fastopen = false;
+
   /// Control use of SOCKS.
   /// Set to @c NO_SOCKS to disable use of SOCKS. Otherwise SOCKS is
   /// used if available.

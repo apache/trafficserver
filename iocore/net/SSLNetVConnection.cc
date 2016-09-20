@@ -28,6 +28,7 @@
 #include "P_SSLUtils.h"
 #include "InkAPIInternal.h" // Added to include the ssl_hook definitions
 #include "P_SSLConfig.h"
+#include "BIO_fastopen.h"
 #include "Log.h"
 
 #include <climits>
@@ -143,7 +144,14 @@ make_ssl_connection(SSL_CTX *ctx, SSLNetVConnection *netvc)
 
     // Only set up the bio stuff for the server side
     if (netvc->get_context() == NET_VCONNECTION_OUT) {
-      SSL_set_fd(ssl, netvc->get_socket());
+      BIO *bio = BIO_new(const_cast<BIO_METHOD *>(BIO_s_fastopen()));
+      BIO_set_fd(bio, netvc->get_socket(), BIO_NOCLOSE);
+
+      if (netvc->options.f_tcp_fastopen) {
+        BIO_set_conn_address(bio, netvc->get_remote_addr());
+      }
+
+      SSL_set_bio(ssl, bio, bio);
     } else {
       netvc->initialize_handshake_buffers();
       BIO *rbio = BIO_new(BIO_s_mem());

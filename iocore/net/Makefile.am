@@ -50,6 +50,8 @@ test_certlookup_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a
 
 libinknet_a_SOURCES = \
+  BIO_fastopen.cc \
+  BIO_fastopen.h \
   Connection.cc \
   I_Net.h \
   I_NetProcessor.h \

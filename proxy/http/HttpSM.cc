@@ -4961,13 +4961,22 @@ HttpSM::do_http_server_open(bool raw)
     }
   }
 
+  // draft-stenberg-httpbis-tcp recommends only enabling TFO on safe, indempotent methods or
+  // those with intervening protocol layers (eg. TLS).
+  if (scheme_to_use == URL_WKSIDX_HTTPS || t_state.method == HTTP_WKSIDX_CONNECT || t_state.method == HTTP_WKSIDX_DELETE ||
+      t_state.method == HTTP_WKSIDX_GET || t_state.method == HTTP_WKSIDX_HEAD || t_state.method == HTTP_WKSIDX_PUT) {
+    opt.f_tcp_fastopen = (t_state.txn_conf->sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN);
+  }
+
   if (scheme_to_use == URL_WKSIDX_HTTPS) {
     DebugSM("http", "calling sslNetProcessor.connect_re");
+
     int len          = 0;
     const char *host = t_state.hdr_info.server_request.host_get(&len);
     if (host && len > 0) {
       opt.set_sni_servername(host, len);
     }
+
     connect_action_handle = sslNetProcessor.connect_re(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // addr + port
                                                        &opt);
@@ -4976,21 +4985,23 @@ HttpSM::do_http_server_open(bool raw)
     connect_action_handle = netProcessor.connect_re(this,                                 // state machine
                                                     &t_state.current.server->dst_addr.sa, // addr + port
                                                     &opt);
-  } else { // CONNECT method
-    // Setup the timeouts
-    // Set the inactivity timeout to the connect timeout so that we
-    //   we fail this server if it doesn't start sending the response
-    //   header
+  } else {
+    // CONNECT method
     MgmtInt connect_timeout;
+
+    ink_assert(t_state.method == HTTP_WKSIDX_CONNECT);
+
+    // Set the inactivity timeout to the connect timeout so that we
+    // we fail this server if it doesn't start sending the response
+    // header
     if (t_state.current.server == &t_state.parent_info) {
       connect_timeout = t_state.http_config_param->parent_connect_timeout;
+    } else if (t_state.pCongestionEntry != NULL) {
+      connect_timeout = t_state.pCongestionEntry->connect_timeout();
     } else {
-      if (t_state.pCongestionEntry != NULL) {
-        connect_timeout = t_state.pCongestionEntry->connect_timeout();
-      } else {
-        connect_timeout = t_state.txn_conf->connect_attempts_timeout;
-      }
+      connect_timeout = t_state.txn_conf->connect_attempts_timeout;
     }
+
     DebugSM("http", "calling netProcessor.connect_s");
     connect_action_handle = netProcessor.connect_s(this,                                 // state machine
                                                    &t_state.current.server->dst_addr.sa, // addr + port

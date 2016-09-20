@@ -1231,9 +1231,15 @@ HttpConfig::reconfigure()
 
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
   params->oride.sock_send_buffer_size_out = m_master.oride.sock_send_buffer_size_out;
-  params->oride.sock_option_flag_out      = m_master.oride.sock_option_flag_out;
   params->oride.sock_packet_mark_out      = m_master.oride.sock_packet_mark_out;
   params->oride.sock_packet_tos_out       = m_master.oride.sock_packet_tos_out;
+  params->oride.sock_option_flag_out      = m_master.oride.sock_option_flag_out;
+
+  // Clear the TCP Fast Open option if it is not supported on this host.
+  if ((params->oride.sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !SocketManager::fastopen_supported()) {
+    Status("disabling unsupported TCP Fast Open flag on proxy.config.net.sock_option_flag_out");
+    params->oride.sock_option_flag_out &= ~NetVCOptions::SOCK_OPT_TCP_FAST_OPEN;
+  }
 
   params->oride.fwd_proxy_auth_to_parent = INT_TO_BOOL(m_master.oride.fwd_proxy_auth_to_parent);
 
