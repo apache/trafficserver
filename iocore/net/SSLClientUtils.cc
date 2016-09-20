@@ -35,14 +35,6 @@ typedef const SSL_METHOD *ink_ssl_method_t;
 typedef SSL_METHOD *ink_ssl_method_t;
 #endif
 
-static int ssl_client_data_index = 0;
-
-int
-get_ssl_client_data_index()
-{
-  return ssl_client_data_index;
-}
-
 int
 verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
@@ -50,6 +42,7 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
   int depth;
   int err;
   SSL *ssl;
+  SSLNetVConnection *netvc;
 
   SSLDebug("Entered verify cb");
   depth = X509_STORE_CTX_get_error_depth(ctx);
@@ -61,16 +54,17 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     SSLDebug("verify error:num=%d:%s:depth=%d", err, X509_verify_cert_error_string(err), depth);
     return preverify_ok;
   }
+
   if (depth != 0) {
     // Not server cert....
     return preverify_ok;
   }
-  /*
-   * Retrieve the pointer to the SSL of the connection currently treated
-   * and the application specific data stored into the SSL object.
-   */
-  ssl                      = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
-  SSLNetVConnection *netvc = static_cast<SSLNetVConnection *>(SSL_get_ex_data(ssl, ssl_client_data_index));
+
+  // Retrieve the pointer to the SSL of the connection currently treated
+  // and the application specific data stored into the SSL object.
+  ssl   = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  netvc = SSLNetVCAccess(ssl);
+
   if (netvc != NULL) {
     // Match SNI if present
     if (netvc->options.sni_servername) {
@@ -169,10 +163,6 @@ SSLInitClientContext(const SSLConfigParams *params)
       goto fail;
     }
   }
-
-  // Reserve an application data index for SSL verify callback. Since it's always called within the NetVC
-  // context there's no need for allocating - we can simply save a ptr to the NetVC
-  ssl_client_data_index = SSL_get_ex_new_index(0, (void *)"NetVC index", NULL, NULL, NULL);
 
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(client_ctx, false);

@@ -136,6 +136,8 @@ static int ssl_session_ticket_index                  = -1;
 static ssl_ticket_key_block *global_default_keyblock = NULL;
 #endif
 
+static int ssl_vc_index = -1;
+
 static ink_mutex *mutex_buf      = NULL;
 static bool open_ssl_initialized = false;
 
@@ -256,7 +258,7 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
       session = NULL;
 #endif
     } else {
-      SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+      SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
       SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
       netvc->setSSLSessionCacheHit(true);
     }
@@ -312,7 +314,7 @@ set_context_cert(SSL *ssl)
   SSLCertContext *cc = NULL;
   SSLCertificateConfig::scoped_config lookup;
   const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   bool found               = true;
   int retval               = 1;
 
@@ -388,7 +390,7 @@ done:
 static int
 ssl_cert_callback(SSL *ssl, void * /*arg*/)
 {
-  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   bool reenabled;
   int retval = 1;
 
@@ -416,7 +418,7 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
 static int
 ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
-  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   bool reenabled;
   int retval = 1;
 
@@ -955,6 +957,10 @@ SSLInitializeLibrary()
   ssl_stapling_ex_init();
 #endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
+  // Reserve an application data index so that we can attach
+  // the SSLNetVConnection to the SSL session.
+  ssl_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", NULL, NULL, NULL);
+
   open_ssl_initialized = true;
 }
 
@@ -1490,7 +1496,7 @@ static void
 ssl_callback_info(const SSL *ssl, int where, int ret)
 {
   Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
-  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
       SSLConfigParams::ssl_allow_client_renegotiation == false) {
@@ -2143,7 +2149,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
                             int enc)
 {
   SSLCertificateConfig::scoped_config lookup;
-  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   // Get the IP address to look up the keyblock
   IpEndpoint ip;
@@ -2182,7 +2188,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
         if (i != 0) // The number of tickets decrypted with "older" keys.
           SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_old_key_stat);
 
-        SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+        SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
         netvc->setSSLSessionCacheHit(true);
         // When we decrypt with an "older" key, encrypt the ticket again with the most recent key.
         return (i == 0) ? 1 : 2;
@@ -2203,6 +2209,29 @@ SSLReleaseContext(SSL_CTX *ctx)
 {
   // SSL_CTX_free() does nothing if ctx in NULL, so there's no need to check.
   SSL_CTX_free(ctx);
+}
+
+void
+SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc)
+{
+  SSL_set_ex_data(ssl, ssl_vc_index, vc);
+}
+
+void
+SSLNetVCDetach(SSL *ssl)
+{
+  SSL_set_ex_data(ssl, ssl_vc_index, NULL);
+}
+
+SSLNetVConnection *
+SSLNetVCAccess(const SSL *ssl)
+{
+  SSLNetVConnection *netvc;
+  netvc = static_cast<SSLNetVConnection *>(SSL_get_ex_data(ssl, ssl_vc_index));
+
+  ink_assert(dynamic_cast<SSLNetVConnection *>(static_cast<NetVConnection *>(SSL_get_ex_data(ssl, ssl_vc_index))));
+
+  return netvc;
 }
 
 ssl_error_t
