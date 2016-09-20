@@ -3405,12 +3405,18 @@ Sockets
         TCP_NODELAY  (1)
         SO_KEEPALIVE (2)
         SO_LINGER (4) - with a timeout of 0 seconds
+        TCP_FASTOPEN (8)
 
 .. note::
 
    This is a bitmask and you need to decide what bits to set.  Therefore,
    you must set the value to ``3`` if you want to enable nodelay and
    keepalive options above.
+
+.. note::
+
+   To allow TCP Fast Open for client sockets on Linux, bit 2 of
+   the ``net.ipv4.tcp_fastopen`` sysctl must be set.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_out INT 0
    :overridable:
@@ -3431,6 +3437,7 @@ Sockets
         TCP_NODELAY  (1)
         SO_KEEPALIVE (2)
         SO_LINGER (4) - with a timeout of 0 seconds
+        TCP_FASTOPEN (8)
 
 .. note::
 
@@ -3442,6 +3449,11 @@ Sockets
    to 0. This is useful when Traffic Server and the origin server
    are co-located and large numbers of sockets are retained
    in the TIME_WAIT state.
+
+.. note::
+
+   To allow TCP Fast Open for server sockets on Linux, bit 1 of
+   the ``net.ipv4.tcp_fastopen`` sysctl must be set.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_mss_in INT 0
 

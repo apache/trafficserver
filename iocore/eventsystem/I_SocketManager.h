@@ -45,6 +45,14 @@
 #define SOCK_CLOEXEC O_CLOEXEC
 #endif
 
+#ifndef MSG_FASTOPEN
+#if defined(linux)
+#define MSG_FASTOPEN 0x20000000
+#else
+#define MSG_FASTOPEN 0
+#endif
+#endif
+
 #define DEFAULT_OPEN_MODE 0644
 
 class Thread;
@@ -56,6 +64,9 @@ extern int net_config_poll_timeout;
  */
 struct SocketManager {
   SocketManager();
+
+  // Test whether TCP Fast Open is supported on this host.
+  static bool fastopen_supported();
 
   // result is the socket or -errno
   SOCKET socket(int domain = AF_INET, int type = SOCK_STREAM, int protocol = 0);
@@ -89,23 +100,27 @@ struct SocketManager {
   int ftruncate(int fildes, off_t length);
   int lockf(int fildes, int function, off_t size);
   int poll(struct pollfd *fds, unsigned long nfds, int timeout);
+
 #if TS_USE_EPOLL
   int epoll_create(int size);
   int epoll_close(int eps);
   int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
   int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout = net_config_poll_timeout);
 #endif
+
 #if TS_USE_KQUEUE
   int kqueue();
   int kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eventlist, int nevents,
              const struct timespec *timeout);
 #endif
+
 #if TS_USE_PORT
   int port_create();
   int port_associate(int port, int fd, uintptr_t obj, int events, void *user);
   int port_dissociate(int port, int fd, uintptr_t obj);
   int port_getn(int port, port_event_t *list, uint_t max, uint_t *nget, timespec_t *timeout);
 #endif
+
   int shutdown(int s, int how);
   int dup(int s);
 
