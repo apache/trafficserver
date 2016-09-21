@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "I_Net.h"
+#include "P_Net.h"
 #include "I_SocketManager.h"
 #include "ts/ink_assert.h"
 
@@ -64,10 +64,16 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
     // On the first write only, make a TFO request if TFO is enabled.
     // The best documentation on the behavior of the Linux API is in
     // RFC 7413. If we get EINPROGRESS it means that the SYN has been
-    // sent without data dn we sshould retry.
+    // sent without data and we should retry.
     const sockaddr *dst = reinterpret_cast<const sockaddr *>(bio->ptr);
+    ProxyMutex *mutex   = this_ethread()->mutex.get();
+
+    NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
 
     err = socketManager.sendto(bio->num, (void *)in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
+    if (err < 0) {
+      NET_INCREMENT_DYN_STAT(net_fastopen_failures_stat);
+    }
 
     bio->ptr = NULL;
   } else {
