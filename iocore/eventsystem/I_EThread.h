@@ -40,9 +40,6 @@
 // instead.
 #define MUTEX_RETRY_DELAY HRTIME_MSECONDS(20)
 
-/** Maximum number of accept events per thread. */
-#define MAX_ACCEPT_EVENTS 20
-
 struct DiskHandler;
 struct EventIO;
 
@@ -294,9 +291,6 @@ public:
 
   EThread **ethreads_to_be_signalled;
   int n_ethreads_to_be_signalled;
-
-  Event *accept_event[MAX_ACCEPT_EVENTS];
-  int main_accept_index;
 
   int id;
   unsigned int event_types;
