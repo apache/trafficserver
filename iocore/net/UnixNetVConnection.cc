@@ -1006,6 +1006,10 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
       msg.msg_iovlen  = niov;
 
       r = socketManager.sendmsg(con.fd, &msg, MSG_FASTOPEN);
+      if (r < 0) {
+        NET_INCREMENT_DYN_STAT(net_fastopen_failures_stat);
+      }
+
     } else {
       r = socketManager.writev(con.fd, &tiovec[0], niov);
     }
