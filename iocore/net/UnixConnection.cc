@@ -325,6 +325,10 @@ Connection::connect(sockaddr const *target, NetVCOptions const &opt)
   cleaner<Connection> cleanup(this, &Connection::_cleanup); // mark for close until we succeed.
 
   if (opt.f_tcp_fastopen && !opt.f_blocking_connect) {
+    ProxyMutex *mutex = this_ethread()->mutex.get();
+
+    NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
+
     // TCP Fast Open is (effectively) a non-blocking connect, so set the
     // return value we would see in that case.
     errno = EINPROGRESS;
