@@ -237,7 +237,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 #endif // TS_USE_HWLOC
 
     // Start our new thread with our new stack.
-    tid   = all_ethreads[i]->start(thr_name, stacksize, NULL, stack);
+    tid   = all_ethreads[i]->start(thr_name, stacksize, NULL, NULL, stack);
     stack = NULL;
 
 #if TS_USE_HWLOC
