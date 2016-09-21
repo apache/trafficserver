@@ -162,10 +162,7 @@ CfgContextGet(CfgContext *ctx)
   RuleList *rule_list = NULL;
   CfgEleObj *ele      = NULL;
 
-  ink_assert(ctx);
-  if (!ctx) {
-    return TS_ERR_PARAMS;
-  }
+  ink_release_assert(ctx);
 
   // get copy of the file
   ret = ReadFile(ctx->getFilename(), &old_text, &size, &ver);
