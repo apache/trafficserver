@@ -15,84 +15,28 @@
    specific language governing permissions and limitations
    under the License.
 
-.. include:: ../../../common.defs
+.. include:: ../../common.defs
 
-.. _admin-monitoring-logging-managing:
+.. _admin-logging-rotation-retention:
 
-Managing Logs
-*************
+Log Rotation and Retention
+**************************
 
-|TS| enables you to control where event log files are located and how much
-space they can consume. Additionally, you can specify how to handle low disk
-space in the logging directory.
+Logging is a nearly indispensable part of any networked service, but especially
+with high traffic installations care needs to be taken to ensure that log files
+don't exhaust storage space and cause maintenance or outage nightmares.
 
-Choosing the Logging Directory
-==============================
+|TS| provides a two-pronged solution: log rotation (also called log rolling) to
+keep individual logs as manageable in size as possible for easier ingestion and
+analysis by humans and other programs, and log retention to keep logs from
+using more space than available and necessary.
 
-By default, Traffic Server writes all event log files in the ``logs``
-directory located in the directory where you installed |TS|. To change this
-location, adjust the value of :ts:cv:`proxy.config.log.logfile_dir` in
-:file:`records.config`. You will need to either restart |TS| or run the
-command :option:`traffic_ctl config reload` for changes to take effect.
+This section covers both features.
 
-Controlling Logging Space
-=========================
+.. _admin-logging-rotation:
 
-|TS| enables you to control the amount of disk space that the logging directory
-can consume. This allows the system to operate smoothly within a specified
-space window for a long period of time.  After you establish a space limit,
-|TS| continues to monitor the space in the logging directory. When the free
-space dwindles to the headroom limit, it enters a low space state and takes the
-following actions:
-
--  If the autodelete option (discussed in `Rolling Logs`_) is enabled, then
-   |TS| identifies previously-rolled log files (log files with the ``.old``
-   extension). It starts deleting files one by one, beginning with the oldest
-   file, until it emerges from the low state. |TS| logs a record of all deleted
-   files in the system error log.
-
--  If the autodelete option is disabled or there are not enough old log files
-   to delete for the system to emerge from its low space state, then |TS|
-   issues a warning and continues logging until space is exhausted. When
-   available space is consumed, event logging stops. |TS| resumes event logging
-   when enough space becomes available for it to exit the low space state. To
-   make space available, either explicitly increase the logging space limit or
-   remove files from the logging directory manually.
-
-You can run a :manpage:`cron(8)` script in conjunction with |TS| to
-automatically remove old log files from the logging directory before |TS|
-enters the low space state. Relocate the old log files to a temporary
-partition, where you can run a variety of log analysis scripts. Following
-analysis, either compress the logs and move to an archive location, or simply
-delete them.
-
-|TS| periodically checks the amount of log space used against both
-the log space allocation configured by
-:ts:cv:`proxy.config.log.max_space_mb_for_logs` and the actual
-amount of space available on the disk partition. The used log space
-is calculated by summing the size of all files present in the logging
-directory and is published in the
-:ts:stat:`proxy.process.log.log_files_space_used` metric. The
-:ts:cv:`proxy.config.log.max_space_mb_headroom` configuration
-variable specifies an amount of headroom that is subtracted from
-the log space allocation. This can be tuned to reduce the risk of
-completely filling the disk partition.
-
-Setting Log File Management Options
------------------------------------
-
-To set log management options, follow the steps below:
-
-#. In the :file:`records.config` file, edit the following variables
-
-   -  :ts:cv:`proxy.config.log.max_space_mb_for_logs`
-   -  :ts:cv:`proxy.config.log.max_space_mb_headroom`
-
-#. Run the command :option:`traffic_ctl config reload` to apply the configuration
-   changes.
-
-Rolling Logs
-============
+Rotation Options
+================
 
 |TS| provides automatic log file rolling. At specific intervals during the day
 or when log files reach a certain size, |TS| closes its current set of log
@@ -104,7 +48,7 @@ every six hours, and adjusting from there.
 
 Log file rolling offers the following benefits:
 
--  It defines an consistent interval over which log analysis can be performed.
+-  It defines a consistent interval over which log analysis can be performed.
 
 -  It keeps any single log file from becoming too large and helps to
    keep the logging system within the specified space limits.
@@ -121,9 +65,10 @@ to easily identify log files. When |TS| rolls a log file, it saves and closes
 the old file before it starts a new file. |TS| renames the old file to include
 the following information:
 
--  The format of the file (such as ``squid.log``).
+-  The original log file's name (such as ``access.log``).
 
--  The hostname of the |TS| that generated the log file.
+-  The hostname of the |TS| node that generated the log file (useful in |TS|
+   clusters and log collation configurations).
 
 -  Two timestamps separated by a hyphen (``-``). The first timestamp is
    a *lower bound* for the timestamp of the first record in the log
@@ -155,11 +100,9 @@ Format Description                                  Sample
 ``%S`` The second in two-digit format, from 00-59.  36
 ====== ============================================ ======
 
-.. XXX can %S ever be 60, on account of leap seconds, or does ATS have leap-second related issues that otherwise interfere?
-
 The following is an example of a rolled log filename: ::
 
-     squid.log.mymachine.20110912.12h00m00s-20000913.12h00m00s.old
+     access.log.mymachine.20110912.12h00m00s-20000913.12h00m00s.old
 
 The logging system buffers log records before writing them to disk. When
 a log file is rolled, the log buffer might be partially full. If it is,
@@ -170,13 +113,13 @@ timestamp will be a lower bound for the timestamp of the first entry.
 For example, suppose logs are rolled every three hours, and the first
 rolled log file is: ::
 
-    squid.log.mymachine.20110912.12h00m00s-19980912.03h00m00s.old
+    access.log.mymachine.20110912.12h00m00s-19980912.03h00m00s.old
 
 If the lower bound for the first entry in the log buffer at 3:00:00 is
 2:59:47, then the next log file will have the following timestamp when
 rolled: ::
 
-    squid.log.mymachine.20110912.02h59m47s-19980912.06h00m00s.old
+    access.log.mymachine.20110912.02h59m47s-19980912.06h00m00s.old
 
 The contents of a log file are always between the two timestamps. Log
 files do not contain overlapping entries, even if successive timestamps
@@ -227,39 +170,68 @@ they reach a certain size, adjust the following settings in
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
-You can fine-tune log file rolling settings for a custom log file in the
+You can fine-tune log file rolling settings for individual log files in the
 ``log.*`` specification in :file:`logging.config`. The custom log file uses the
 rolling settings provided in the relevant ``log`` function call, which override
 the default settings you specify in Traffic Manager or :file:`records.config`
 described above.
 
-.. _admin-monitoring-logging-host-split:
+.. _admin-logging-retention:
 
-Separating Logs by Origin
-=========================
+Retention Options
+=================
 
-The default :file:`log_hosts.config` file is located in the |TS| ``config``
-directory. To record HTTP transactions for different origin servers in separate
-log files, you must specify the hostname of each origin server on a separate
-line in :file:`log_hosts.config`. For example, if you specify the keyword
-``sports``, then Traffic Server records all HTTP transactions from
-``sports.yahoo.com`` and ``www.foxsports.com`` in a log file called
-``squid-sports.log`` (if the Squid format is enabled).
+|TS| enables you to control the amount of disk space that the logging directory
+can consume. This allows the system to operate smoothly within a specified
+space window for a long period of time.  After you establish a space limit,
+|TS| continues to monitor the space in the logging directory. When the free
+space dwindles to the headroom limit, it enters a low space state and takes the
+following actions:
 
-.. important::
+-  If the autodelete option is enabled, then |TS| identifies previously-rolled
+   log files (log files with the ``.old`` extension). It starts deleting files
+   one by one, beginning with the oldest file, until it emerges from the low
+   state. |TS| logs a record of all deleted files in the system error log.
 
-   If |TS| is clustered and you enable log file collation, then you
-   should use the same :file:`log_hosts.config` file on every |TS| node in the
-   cluster.
+-  If the autodelete option is disabled or there are not enough old log files
+   to delete for the system to emerge from its low space state, then |TS|
+   issues a warning and continues logging until the allocated log space is
+   exhausted (which, if configured appropriately, will be well before your
+   actual filesystem space is fully consumed and causes additional problems).
+   At this point, event logging stops even though proxy traffic is still served
+   without client-visible interruption. |TS| resumes event logging when enough
+   space becomes available for it to exit the low space state. To make space
+   available, either explicitly increase the logging space limit or remove
+   files from the logging directory manually.
 
-To edit the log hosts list:
+You can run a :manpage:`cron(8)` script in conjunction with |TS| to
+automatically remove old log files from the logging directory before |TS|
+enters the low space state. Relocate the old log files to a temporary
+partition, where you can run a variety of log analysis scripts. Following
+analysis, either compress the logs and move to an archive location, or simply
+delete them.
 
-#. Enter the hostname of each origin server on a separate line in
-   :file:`log_hosts.config`. ::
+|TS| periodically checks the amount of log space used against both the log
+space allocation configured by :ts:cv:`proxy.config.log.max_space_mb_for_logs`
+and the actual amount of space available on the disk partition. The used log
+space is calculated by summing the size of all files present in the logging
+directory and is published in the
+:ts:stat:`proxy.process.log.log_files_space_used` metric. The
+:ts:cv:`proxy.config.log.max_space_mb_headroom` configuration variable
+specifies an amount of headroom that is subtracted from the log space
+allocation. This can be tuned to reduce the risk of completely filling the disk
+partition.
 
-       webserver1
-       webserver2
-       webserver3
+Setting Log File Management Options
+-----------------------------------
 
-#. Run the command :option:`traffic_ctl config reload` to apply the changes.
+To set log management options, follow the steps below:
+
+#. In the :file:`records.config` file, edit the following variables
+
+   -  :ts:cv:`proxy.config.log.max_space_mb_for_logs`
+   -  :ts:cv:`proxy.config.log.max_space_mb_headroom`
+
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
+   changes.
 

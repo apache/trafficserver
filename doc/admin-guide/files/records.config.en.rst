@@ -231,7 +231,7 @@ System Variables
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
    The facility used to record system log files. Refer to
-   :ref:`admin-monitoring-logging-understanding` for more in-depth discussion
+   :ref:`admin-logging-understanding` for more in-depth discussion
    of the contents and interpretations of log files.
 
 .. ts:cv:: CONFIG proxy.config.cop.core_signal INT 0
@@ -2534,7 +2534,7 @@ Logging Configuration
    ``3``    Dull logging (errors and transactions).
    ======== ===================================================================
 
-   Refer to :ref:`admin-monitoring-logging` for more information on event logging.
+   Refer to :ref:`admin-logging` for more information on event logging.
 
 .. ts:cv:: CONFIG proxy.config.log.max_secs_per_buffer INT 5
    :reloadable:
@@ -2633,7 +2633,8 @@ Logging Configuration
    ===== ======================================================================
 
    For information on sending custom formats to the collation server,
-   refer to :ref:`admin-monitoring-logging-formats` and :file:`logging.config`.
+   refer to :ref:`admin-logging-collating-custom-formats` and
+   :file:`logging.config`.
 
 .. note::
 

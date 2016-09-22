@@ -20,7 +20,7 @@
 .. _admin-guide:
 
 Administrator's Guide
-**********************
+*********************
 
 Table of Contents:
 
@@ -34,6 +34,7 @@ Table of Contents:
    security/index.en
    storage/index.en
    plugins/index.en
+   logging/index.en
    monitoring/index.en
    configuring-traffic-server.en
    performance/index.en

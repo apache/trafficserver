@@ -15,21 +15,20 @@
    specific language governing permissions and limitations
    under the License.
 
-.. include:: ../../../common.defs
+.. include:: ../../common.defs
 
-.. _admin-monitoring-logging-pipes:
+.. _admin-logging-filters:
 
-ASCII Log Pipes
-***************
+Log Filters
+***********
 
-In addition to ``ASCII`` and ``BINARY`` file modes for custom log formats, |TS|
-can output log entries in ``ASCII_PIPE`` mode. This mode writes the log entries
-to a UNIX named pipe (a buffer in memory). Other processes may read from this
-named pipe using standard I/O functions.
+Filters, configured in :file:`logging.config` allow you to create rules which
+may be applied to log definitions, limiting the entries included in the log
+output. This may be useful if your |TS| nodes receive many events which you
+have no need to log or analyze, or you wish to establish separate logs with
+their own rotation policies to more rapidly perform log analysis for a subset
+of events.
 
-The advantage of this mode is that |TS| does not need to write the entries to
-disk, which frees disk space and bandwidth for other tasks. When the buffer is
-full, |TS| drops log entries and issues an error message indicating how many
-entries were dropped. Because |TS| only writes complete log entries to the
-pipe, only full records are dropped.
-
+Configuration options are covered in detail in the
+:ref:`admin-custom-logs-filters` section of :file:`logging.config`, so this
+page is currently left as a reference to the feature's existence.
