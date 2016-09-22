@@ -117,11 +117,10 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
-    ats_ip_copy(&vc->server_addr, &vc->con.addr);
-    vc->mutex   = new_ProxyMutex();
-    vc->action_ = *na->action_;
+    vc->mutex       = new_ProxyMutex();
+    vc->action_     = *na->action_;
     vc->set_is_transparent(na->server.f_inbound_transparent);
-    vc->closed = 0;
+    vc->set_context(NET_VCONNECTION_IN);
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
 
     if (e->ethread->is_event_type(na->etype))
@@ -284,26 +283,22 @@ NetAccept::do_blocking_accept(EThread *t)
     // Use 'NULL' to Bypass thread allocator
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(NULL);
     if (unlikely(!vc || shutdown_event_system == true)) {
-      con.close();
       return -1;
     }
-
-    vc->con                 = con;
-    vc->id                  = net_next_connection_number();
-    vc->from_accept_thread  = true;
-    vc->options.packet_mark = packet_mark;
-    vc->options.packet_tos  = packet_tos;
-
-    vc->apply_options();
 
     check_emergency_throttle(con);
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+    vc->id = net_next_connection_number();
+    vc->con.move(con);
     vc->submit_time = now;
-    ats_ip_copy(&vc->server_addr, &vc->con.addr);
+    vc->mutex       = new_ProxyMutex();
+    vc->action_     = *action_;
     vc->set_is_transparent(server.f_inbound_transparent);
-    vc->mutex   = new_ProxyMutex();
-    vc->action_ = *action_;
+    vc->options.packet_mark = packet_mark;
+    vc->options.packet_tos  = packet_tos;
+    vc->apply_options();
+    vc->set_context(NET_VCONNECTION_IN);
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
     // eventProcessor.schedule_imm(vc, getEtype());
     eventProcessor.schedule_imm_signal(vc, etype);
@@ -408,21 +403,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
         safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int));
         Debug("socket", "::acceptFastEvent: setsockopt() SO_KEEPALIVE on socket");
       }
-
-      vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
-      if (!vc) {
-        con.close();
-        goto Ldone;
-      }
-
-      vc->con = con;
-
-      vc->options.packet_mark = packet_mark;
-      vc->options.packet_tos  = packet_tos;
-      vc->apply_options();
     } else {
       res = fd;
     }
+    // check return value from accept()
     if (res < 0) {
       res = -errno;
       if (res == -EAGAIN || res == -ECONNABORTED
@@ -440,18 +424,27 @@ NetAccept::acceptFastEvent(int event, void *ep)
       goto Lerror;
     }
 
+    vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
+    if (!vc) {
+      goto Ldone;
+    }
+
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
-
+    vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
-    ats_ip_copy(&vc->server_addr, &vc->con.addr);
+    vc->mutex       = new_ProxyMutex();
+    // no need to set vc->action_
     vc->set_is_transparent(server.f_inbound_transparent);
-    vc->mutex  = new_ProxyMutex();
-    vc->thread = e->ethread;
-
-    vc->nh = get_NetHandler(e->ethread);
-
+    vc->options.packet_mark = packet_mark;
+    vc->options.packet_tos  = packet_tos;
+    vc->apply_options();
+    vc->set_context(NET_VCONNECTION_IN);
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::mainEvent);
+
+    // set thread and nh as acceptEvent does
+    vc->thread = e->ethread;
+    vc->nh     = get_NetHandler(e->ethread);
 
     if (vc->ep.start(pd, vc, EVENTIO_READ | EVENTIO_WRITE) < 0) {
       Warning("[NetAccept::acceptFastEvent]: Error in inserting fd[%d] in kevent\n", vc->con.fd);

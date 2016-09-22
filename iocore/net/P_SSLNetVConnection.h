@@ -109,18 +109,6 @@ public:
     sslHandShakeComplete = state;
   }
 
-  virtual bool
-  getSSLClientConnection() const
-  {
-    return sslClientConnection;
-  }
-
-  virtual void
-  setSSLClientConnection(bool state)
-  {
-    sslClientConnection = state;
-  }
-
   void
   setSSLSessionCacheHit(bool state)
   {
@@ -277,7 +265,6 @@ private:
   const char *map_tls_protocol_to_tag(char const *proto_string) const;
 
   bool sslHandShakeComplete;
-  bool sslClientConnection;
   bool sslClientRenegotiationAbort;
   bool sslSessionCacheHit;
   MIOBuffer *handShakeBuffer;

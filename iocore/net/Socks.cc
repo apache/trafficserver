@@ -160,7 +160,7 @@ SocksEntry::free()
       netVConnection->do_io_read(this, 0, 0);
       netVConnection->do_io_write(this, 0, 0);
       netVConnection->action_ = action_; // assign the original continuation
-      ats_ip_copy(&netVConnection->server_addr, &server_addr);
+      netVConnection->con.setRemote(&server_addr.sa);
       Debug("Socks", "Sent success to HTTP");
       NET_INCREMENT_DYN_STAT(socks_connections_successful_stat);
       action_.continuation->handleEvent(NET_EVENT_OPEN, netVConnection);
