@@ -900,7 +900,7 @@ check_fd_limit()
 {
   int fds_throttle = -1;
   REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
-  if (fds_throttle > fds_limit + THROTTLE_FD_HEADROOM) {
+  if (fds_throttle > fds_limit - THROTTLE_FD_HEADROOM) {
     int new_fds_throttle = fds_limit - THROTTLE_FD_HEADROOM;
     if (new_fds_throttle < 1)
       MachineFatal("too few file descritors (%d) available", fds_limit);
@@ -1028,7 +1028,7 @@ adjust_sys_settings(void)
   REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
 
   if (getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-    if (fds_throttle > (int)(lim.rlim_cur + THROTTLE_FD_HEADROOM)) {
+    if (fds_throttle > (int)(lim.rlim_cur - THROTTLE_FD_HEADROOM)) {
       lim.rlim_cur = (lim.rlim_max = (rlim_t)fds_throttle);
       if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
         fds_limit = (int)lim.rlim_cur;
