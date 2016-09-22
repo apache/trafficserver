@@ -39,11 +39,24 @@ The Parent Selection consistent hash feature selects among multiple
 parent caches based on hashing a URL (the HTTP request header URL).
 
 These API functions allow an over-ride URL to be defined such that the
-over-ride URL is hashed instead of the normal URL. In addition, the
-various filtering options that may be applied to the normal URL
-(fname, maxdirs, and qstring) are NOT applied when the over-ride is
-used since it is assumed that custom filtering has already been
-performed prior to explicitly setting the over-ride URL
+over-ride URL is hashed instead of the normal (header request) URL. In
+addition, any filtering options that may be applied to the normal URL
+(such as qstring) are NOT applied to the over-ride URL since it is
+assumed that custom filtering has already been performed prior to
+explicitly setting the over-ride URL.
+
+Note that the normal URL is only hashed on the path and query string
+portion (optionally excluded with the qstring option). However, the
+over-ride URL is hashed on the entire URL string as returned by
+URL::string_get_ref(). This includes the scheme and hostname such as
+"http://hostname" which occur prior to the path.
+
+If the non-path URL elements should not be hashed in a meaningful
+manner, then they should be normalized to some value (if they are
+required in a valid URL) or excluded (if they are optional) when
+generating the over-ride URL. For example, since the over-ride URL is
+arbitrary, the URL scheme and hostname can simply be set to
+"fake://fake.fake" when creating the over-ride URL.
 
 :func:`TSHttpTxnCacheParentSelectionUrlSet` will set the over-ride URL.
 
