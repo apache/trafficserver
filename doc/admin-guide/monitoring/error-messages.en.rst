@@ -62,7 +62,7 @@ Process Warnings
 
 ``Log format symbol <symbol name> not found``
    Custom log format references a field symbol that does not exist.
-   Refer to :ref:`admin-monitoring-logging-formats`.
+   Refer to :ref:`admin-logging-formats`.
 
 ``Missing field for field marker``
    Error reading a log buffer.
@@ -125,7 +125,7 @@ Alarm Messages
 
 ``Traffic Server failed to parse line <line number> of the logging config file <filename>``
    Check your custom log configuration file; there could be syntax
-   errors. Refer to :ref:`custom-logging-fields` for correct custom log format fields.
+   errors. Refer to :ref:`admin-logging-fields` for correct custom log format fields.
 
 ``vip_config binary is not setuid root, manager will be unable to enable virtual ip addresses``
    The :program:`traffic_manager` process is not able to set virtual IP
@@ -158,7 +158,7 @@ look for a file named ``apache_cache#read_error`` in the template table. This ca
 out error message sets or, because this variable is overridable, to select an error message set
 based on data in the transaction.
 
-The text for an error message is processed as if it were a :ref:`custom logging format <custom-logging-fields>` which
+The text for an error message is processed as if it were a :ref:`admin-logging-fields` which
 enables customization by values present in the transaction for which the error occurred.
 
 The following table lists the hard-coded Traffic Server HTTP messages,

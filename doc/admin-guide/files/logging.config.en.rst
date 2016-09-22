@@ -92,7 +92,7 @@ Format Specification
 The format specification provided as the required ``Format`` entry of the table
 passed to the format function is a simple string, containing whatever mixture
 of logging field variables and literal characters meet your needs. Logging
-fields are discussed in great detail in the :ref:`custom-logging-fields`
+fields are discussed in great detail in the :ref:`admin-logging-fields`
 section.
 
 Flexible enough to not only emulate the logging formats of most other proxy and
@@ -104,8 +104,8 @@ too simple format shown earlier, the following format string::
 
     '%<cqtq>'
 
-Defines a format in which nothing but the value of the logging field
-:ref:`cqtq` is interpolated for each event's entry in the log. We could include
+Defines a format in which nothing but the value of the logging field :ref:`cqtq
+<cqtq>` is interpolated for each event's entry in the log. We could include
 some literal characters in the log output by updating the format specification
 as so::
 
@@ -137,7 +137,7 @@ header. Other stages of the event lifecycle have similar logging fields:
 (proxy responses).
 
 You will find a complete listing of the available fields in
-:ref:`custom-logging-fields`.
+:ref:`admin-logging-fields`.
 
 Aggregation Interval
 ~~~~~~~~~~~~~~~~~~~~
@@ -149,7 +149,7 @@ interval do not behave like regular logs, with a single line for every event.
 Instead, they emit a single line only every *interval*\ -seconds.
 
 These types of logs are described in more detail in
-:ref:`admin-monitoring-logging-summary-logs`.
+:ref:`admin-logging-type-summary`.
 
 Formats have no interval by default, and will generate event-based logs unless
 given one.
@@ -187,7 +187,7 @@ Filter Fields
 ~~~~~~~~~~~~~
 
 The log fields have already been discussed in the `Formats`_ section above. For
-a reference to the available log field names, see :ref:`custom-logging-fields`.
+a reference to the available log field names, see :ref:`admin-logging-fields`.
 Unlike with the log format specification, you do not wrap the log field names
 in any additional markup.
 
@@ -264,7 +264,7 @@ log.pipe(table)
 There is no need to capture the return values of these functions. Which type of
 logging output you choose depends largely on how you intend to process the logs
 with other tools, and a discussion of the merits of each is covered elsewhere,
-in :ref:`admin-logging-binary-v-ascii`.
+in :ref:`admin-logging-ascii-v-binary`.
 
 The following subsections cover the contents of the table which should be
 passed when creating your logging object. Only ``Filename`` and ``Format`` are
@@ -298,8 +298,8 @@ Filters             array of    The optional list of filter objects which
 CollationHosts      array of    If present, one or more strings specifying the
                     strings     log collation hosts to which logs should be
                                 delivered, each in the form of "<ip>:<port>".
-                                :ref:`admin-monitoring-logging-log-collation`
-                                for more information.
+                                :ref:`admin-logging-collation` for more
+                                information.
 =================== =========== ===============================================
 
 Enabling log rolling may be done globally in :file:`records.config`, or on a

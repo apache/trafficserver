@@ -15,12 +15,27 @@
    specific language governing permissions and limitations
    under the License.
 
-.. include:: ../../../common.defs
+.. include:: ../../common.defs
 
-Event Log Builder
-*****************
+.. _admin-logging:
 
-If you need any assistance building your event log, you can try out our
-`online log builder <http://trafficserver.apache.org/logbuilder/>`_. This is a
-work in progress, so any comments, critique or suggestions are most welcome.
+Logging
+*******
+
+|TS| generates log files that contain information about every request it
+receives and every error it detects. This chapter will examine the various
+logging features: from how to configure logging destinations, defining custom
+logging formats, establishing logfile rotation, and more. Common configuration
+scenarios are also provided.
+
+.. toctree::
+   :maxdepth: 2
+
+   understanding.en
+   destinations.en
+   formatting.en
+   cache-results.en
+   rotation.en
+   filters.en
+   examples.en
 
