@@ -85,6 +85,8 @@ static const RecordElement RecordsConfig[] =
   ,                             // needed by traffic_cop
   {RECT_CONFIG, "proxy.config.cop.init_sleep_time", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-900]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.cop.active_health_checks", RECD_INT, "3", RECU_NULL, RR_NULL, RECC_NULL, "[0-3]", RECA_NULL}
+  ,
   //# 0 = disable (seconds)
   {RECT_CONFIG, "proxy.config.dump_mem_info_frequency", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,

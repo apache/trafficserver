@@ -262,6 +262,22 @@ System Variables
    this applies only during startup of Traffic Server and does not apply to the run
    time heartbeat checking.
 
+.. ts:cv:: CONFIG proxy.config.cop.active_health_checks INT 3
+
+   Specifies which, if any, of :program:`traffic_server` and
+   :program:`traffic_manager` that :program:`traffic_cop` is allowed to kill
+   in the event of failed health checks. The possible values are:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` :program:`traffic_cop` is not allowed to kill any processes.
+   ``1`` Only :program:`traffic_manager` can be killed on failed health checks.
+   ``2`` Only :program:`traffic_server` can be killed on failed health checks.
+   ``3`` :program:`traffic_server` and :program:`traffic_manager` can be killed
+         on failures (default).
+   ===== ======================================================================
+
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
    The name and location of the file that contains warnings, status messages, and error messages produced by the Traffic Server
