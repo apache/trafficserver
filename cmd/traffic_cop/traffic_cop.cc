@@ -609,7 +609,7 @@ config_reload_records()
   struct stat stat_buf;
   static time_t last_mod = 0;
   char log_filename[PATH_NAME_MAX];
-  int tmp;
+  int tmp_int = 3;
 
   ats_scoped_str bindir;
   ats_scoped_str logdir;
@@ -661,12 +661,12 @@ config_reload_records()
   config_read_int("proxy.config.cluster.rsport", &rs_port, true);
   config_read_int("proxy.config.cop.init_sleep_time", &init_sleep_time, true);
 
-  config_read_int("proxy.config.cop.active_health_checks", &tmp, true);
+  config_read_int("proxy.config.cop.active_health_checks", &tmp_int, true);
   // 0 == No servers are killed
   // 1 == Only traffic_manager can be killed on failure
   // 2 == Only traffic_server can be killed on failure
   // 3 == Any failing healthchecks can cause restarts (default)
-  switch (tmp) {
+  switch (tmp_int) {
   case 0:
     active_health_checks = COP_KILL_NONE;
     break;
