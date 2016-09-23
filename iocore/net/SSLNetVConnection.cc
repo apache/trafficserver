@@ -968,6 +968,11 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
     if (this->ssl == NULL) {
       this->ssl = make_ssl_connection(ssl_NetProcessor.client_ctx, this);
 
+      if (this->ssl == NULL) {
+        SSLErrorVC(this, "failed to create SSL client session");
+        return EVENT_ERROR;
+      }
+
 #if TS_USE_TLS_SNI
       if (this->options.sni_servername) {
         if (SSL_set_tlsext_host_name(this->ssl, this->options.sni_servername)) {
@@ -978,11 +983,6 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         }
       }
 #endif
-    }
-
-    if (this->ssl == NULL) {
-      SSLErrorVC(this, "failed to create SSL client session");
-      return EVENT_ERROR;
     }
 
     return sslClientHandShakeEvent(err);
