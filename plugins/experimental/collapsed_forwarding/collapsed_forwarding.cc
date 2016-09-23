@@ -309,5 +309,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   TSHttpTxnHookAdd(rh, TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
   TSHttpTxnHookAdd(rh, TS_HTTP_OS_DNS_HOOK, cont);
 
-  return TSREMAP_DID_REMAP;
+  return TSREMAP_NO_REMAP;
+}
+
+void
+TSRemapDeleteInstance(void *ih)
+{
+  // To resolve run time error
 }
