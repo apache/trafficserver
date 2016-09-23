@@ -262,7 +262,8 @@ DiagsConfig::RegisterDiagConfig()
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.emergency", "SL", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
 }
 
-DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *actions, bool use_records) : diags_log(NULL)
+DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const char *tags, const char *actions, bool use_records)
+  : diags_log(NULL)
 {
   char diags_logpath[PATH_NAME_MAX];
   ats_scoped_str logpath;
@@ -277,7 +278,7 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
   ////////////////////////////////////////////////////////////////////
 
   if (!use_records) {
-    diags = new Diags(tags, actions, NULL);
+    diags = new Diags(prefix_string, tags, actions, NULL);
     config_diags_norecords();
     return;
   }
@@ -305,7 +306,7 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
 
   // Set up diags, FILE streams are opened in Diags constructor
   diags_log = new BaseLogFile(diags_logpath);
-  diags     = new Diags(tags, actions, diags_log);
+  diags     = new Diags(prefix_string, tags, actions, diags_log);
   diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
   diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
 
