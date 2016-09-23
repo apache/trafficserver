@@ -61,6 +61,9 @@ if [ -s "$patch_file" ] ; then
     exit 1
 fi
 
+echo "This commit complies with the current clang-format indentation rules."
+echo
+
 # Cleanup before exit
 rm -f "$patch_file"
 exit 0
