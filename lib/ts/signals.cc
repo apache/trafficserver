@@ -116,7 +116,7 @@ check_signal_thread(void *ptr)
 void
 signal_start_check_thread(signal_handler_t handler)
 {
-  ink_thread_create(check_signal_thread, (void *)handler);
+  ink_thread_create(check_signal_thread, (void *)handler, 0, 0, NULL);
 }
 
 bool
