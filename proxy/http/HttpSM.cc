@@ -768,10 +768,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   case PARSE_DONE:
     DebugSM("http", "[%" PRId64 "] done parsing client request header", sm_id);
 
-    if (ua_session->m_active == false) {
-      ua_session->m_active = true;
-      HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
-    }
+    ua_session->set_session_active();
 
     if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1) &&
         (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
