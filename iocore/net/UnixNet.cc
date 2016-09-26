@@ -263,7 +263,8 @@ NetHandler::NetHandler()
     max_connections_active_in(0),
     inactive_threashold_in(0),
     transaction_no_activity_timeout_in(0),
-    keep_alive_no_activity_timeout_in(0)
+    keep_alive_no_activity_timeout_in(0),
+    default_inactivity_timeout(0)
 {
   SET_HANDLER((NetContHandler)&NetHandler::startNetEvent);
 }
