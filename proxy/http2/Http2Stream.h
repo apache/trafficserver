@@ -50,6 +50,7 @@ public:
       sent_request_header(false),
       response_header_done(false),
       request_sent(false),
+      is_first_transaction_flag(false),
       response_reader(NULL),
       request_reader(NULL),
       request_buffer(CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX),
@@ -204,6 +205,7 @@ public:
   bool sent_request_header;
   bool response_header_done;
   bool request_sent;
+  bool is_first_transaction_flag;
 
   HTTPHdr response_header;
   IOBufferReader *response_reader;
@@ -250,6 +252,12 @@ public:
   is_closed() const
   {
     return closed;
+  }
+
+  bool
+  is_first_transaction() const
+  {
+    return is_first_transaction_flag;
   }
 
 private:
