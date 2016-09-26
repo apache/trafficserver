@@ -212,7 +212,7 @@ public:
   virtual int
   get_transact_count() const
   {
-    return (int)con_id;
+    return connection_state.get_stream_requests();
   }
   virtual void
   release(ProxyClientTransaction *trans)

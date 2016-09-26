@@ -526,7 +526,7 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
   ua_session = client_vc;
 
   // Collect log & stats information
-  client_tcp_reused         = (1 < ua_session->get_transact_count());
+  client_tcp_reused         = !(ua_session->is_first_transaction());
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
   if (ssl_vc != NULL) {
     client_connection_is_ssl = true;
