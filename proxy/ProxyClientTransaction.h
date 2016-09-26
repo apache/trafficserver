@@ -59,6 +59,12 @@ public:
     return parent ? parent->get_transact_count() : 0;
   }
 
+  virtual bool
+  is_first_transaction() const
+  {
+    return get_transact_count() == 1;
+  }
+
   // Ask your session if this is allowed
   bool
   is_transparent_passthrough_allowed()

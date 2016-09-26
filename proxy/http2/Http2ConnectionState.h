@@ -119,6 +119,7 @@ public:
       stream_list(),
       latest_streamid_in(0),
       latest_streamid_out(0),
+      stream_requests(0),
       client_streams_in_count(0),
       client_streams_out_count(0),
       total_client_streams_count(0),
@@ -189,6 +190,18 @@ public:
   get_latest_stream_id_out() const
   {
     return latest_streamid_out;
+  }
+
+  int
+  get_stream_requests() const
+  {
+    return stream_requests;
+  }
+
+  void
+  increment_stream_requests()
+  {
+    stream_requests++;
   }
 
   // Continuated header decoding
@@ -267,6 +280,7 @@ private:
   DLL<Http2Stream> stream_list;
   Http2StreamId latest_streamid_in;
   Http2StreamId latest_streamid_out;
+  int stream_requests;
 
   // Counter for current active streams which is started by client
   uint32_t client_streams_in_count;
