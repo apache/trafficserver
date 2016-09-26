@@ -27,7 +27,8 @@
 
 #define DebugHttpTxn(fmt, ...) DebugSsn(this, "http_txn", fmt, __VA_ARGS__)
 
-ProxyClientTransaction::ProxyClientTransaction() : VConnection(NULL), parent(NULL), current_reader(NULL), restart_immediate(false)
+ProxyClientTransaction::ProxyClientTransaction()
+  : VConnection(NULL), parent(NULL), current_reader(NULL), sm_reader(NULL), host_res_style(HOST_RES_NONE), restart_immediate(false)
 {
 }
 
