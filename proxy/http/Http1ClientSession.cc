@@ -249,10 +249,7 @@ Http1ClientSession::do_io_close(int alerrno)
   if (read_state == HCS_CLOSED)
     return; // Don't double call session close
   if (read_state == HCS_ACTIVE_READER) {
-    if (trans.m_active) {
-      trans.m_active = false;
-      HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
-    }
+    clear_session_active();
   }
 
   // Prevent double closing
@@ -506,10 +503,8 @@ Http1ClientSession::attach_server_session(HttpServerSession *ssession, bool tran
     ink_assert(ssession->get_netvc() != this->get_netvc());
 
     // handling potential keep-alive here
-    if (trans.m_active) {
-      trans.m_active = false;
-      HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
-    }
+    clear_session_active();
+
     // Since this our slave, issue an IO to detect a close and
     //  have it call the client session back.  This IO also prevent
     //  the server net conneciton from calling back a dead sm
