@@ -145,8 +145,7 @@ private:
   Thread &operator=(const Thread &);
 
 public:
-  ink_thread start(const char *name, size_t stacksize = DEFAULT_STACKSIZE, ThreadFunction f = NULL, void *a = NULL,
-                   void *stack = NULL);
+  ink_thread start(const char *name, size_t stacksize, ThreadFunction f, void *a, void *stack);
 
   virtual void
   execute()

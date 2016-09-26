@@ -55,7 +55,7 @@ EventProcessor::spawn_event_threads(int n_threads, const char *et_name, size_t s
   n_threads_for_type[new_thread_group_id] = n_threads;
   for (i = 0; i < n_threads; i++) {
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[%s %d]", et_name, i);
-    eventthread[new_thread_group_id][i]->start(thr_name, stacksize);
+    eventthread[new_thread_group_id][i]->start(thr_name, stacksize, NULL, NULL, NULL);
   }
 
   n_thread_groups++;
@@ -273,7 +273,7 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
   e->ethread               = all_dthreads[n_dthreads];
   e->mutex = e->continuation->mutex = all_dthreads[n_dthreads]->mutex;
   n_dthreads++;
-  e->ethread->start(thr_name, stacksize);
+  e->ethread->start(thr_name, stacksize, NULL, NULL, NULL);
 
   return e;
 }
