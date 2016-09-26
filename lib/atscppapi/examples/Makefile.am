@@ -39,6 +39,7 @@ plugins = \
 	StatExample.la \
 	TimeoutExamplePlugin.la \
 	TransactionHookPlugin.la \
+	WebSocket.la \
 	boom.la \
 	intercept.la
 
@@ -74,6 +75,7 @@ ServerResponse_la_SOURCES = serverresponse/ServerResponse.cc
 StatExample_la_SOURCES = stat_example/StatExample.cc
 TimeoutExamplePlugin_la_SOURCES = timeout_example/TimeoutExamplePlugin.cc
 TransactionHookPlugin_la_SOURCES = transactionhook/TransactionHookPlugin.cc
+WebSocket_la_SOURCES = websocket/WebSocket.cc websocket/WSBuffer.cc
 boom_la_SOURCES = boom/boom.cc
 intercept_la_SOURCES = intercept/intercept.cc
 
@@ -97,6 +99,7 @@ ServerResponse_la_LIBADD = $(libatscppai)
 StatExample_la_LIBADD = $(libatscppai)
 TimeoutExamplePlugin_la_LIBADD = $(libatscppai)
 TransactionHookPlugin_la_LIBADD = $(libatscppai)
+WebSocket_la_LIBADD = $(libatscppai)
 boom_la_LIBADD = $(libatscppai)
 intercept_la_LIBADD = $(libatscppai)
 
