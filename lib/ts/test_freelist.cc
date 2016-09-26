@@ -74,7 +74,7 @@ main(int /* argc ATS_UNUSED */, char * /*argv ATS_UNUSED */ [])
 
   for (i = 0; i < NTHREADS; i++) {
     fprintf(stderr, "Create thread %d\n", i);
-    ink_thread_create(test, (void *)((intptr_t)i));
+    ink_thread_create(test, (void *)((intptr_t)i), 0, 0, NULL);
   }
 
   test((void *)NTHREADS);

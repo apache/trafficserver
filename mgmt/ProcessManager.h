@@ -62,7 +62,7 @@ public:
   void
   start()
   {
-    ink_thread_create(startProcessManager, 0);
+    ink_thread_create(startProcessManager, NULL, 0, 0, NULL);
   }
 
   void

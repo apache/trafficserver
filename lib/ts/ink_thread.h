@@ -128,7 +128,7 @@ ink_thread_key_delete(ink_thread_key key)
 }
 
 static inline ink_thread
-ink_thread_create(void *(*f)(void *), void *a, int detached = 0, size_t stacksize = 0, void *stack = NULL)
+ink_thread_create(void *(*f)(void *), void *a, int detached, size_t stacksize, void *stack)
 {
   ink_thread t;
   int ret;

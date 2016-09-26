@@ -129,7 +129,7 @@ TSThreadCreate(TSThreadFunc func, void *data)
   thread->func = func;
   thread->data = data;
 
-  if (!(ink_thread_create(ink_thread_trampoline, (void *)thread, 1))) {
+  if (!(ink_thread_create(ink_thread_trampoline, (void *)thread, 1, 0, NULL))) {
     return (TSThread)NULL;
   }
 
