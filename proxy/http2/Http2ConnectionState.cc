@@ -1017,6 +1017,12 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
   if (stream) {
     --total_client_streams_count;
   }
+
+  // If the number of clients is 0, then mark the connection as inactive
+  if (total_client_streams_count == 0 && ua_session) {
+    ua_session->clear_session_active();
+  }
+
   if (ua_session && fini_received && total_client_streams_count == 0) {
     // We were shutting down, go ahead and terminate the session
     ua_session->destroy();

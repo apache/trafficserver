@@ -204,6 +204,9 @@ public:
     return retval;
   }
 
+  void set_session_active();
+  void clear_session_active();
+
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so that we can make the best
   // use of internal alignment padding.
@@ -228,6 +231,12 @@ private:
   ProxyClientSession &operator=(const ProxyClientSession &); // noncopyable
 
   void handle_api_return(int event);
+
+  // for DI. An active connection is one that a request has
+  // been successfully parsed (PARSE_DONE) and it remains to
+  // be active until the transaction goes through or the client
+  // aborts.
+  bool m_active;
 
   friend void TSHttpSsnDebugSet(TSHttpSsn, int);
 };

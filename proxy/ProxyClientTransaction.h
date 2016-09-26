@@ -109,11 +109,21 @@ public:
     return parent->has_hooks();
   }
 
-  // for DI. An active connection is one that a request has
-  // been successfully parsed (PARSE_DONE) and it remains to
-  // be active until the transaction goes through or the client
-  // aborts.
-  bool m_active;
+  virtual void
+  set_session_active()
+  {
+    if (parent) {
+      parent->set_session_active();
+    }
+  }
+
+  virtual void
+  clear_session_active()
+  {
+    if (parent) {
+      parent->clear_session_active();
+    }
+  }
 
   /// DNS resolution preferences.
   HostResStyle
