@@ -688,7 +688,7 @@ main(int argc, const char **argv)
   // can keep a consistent euid when create mgmtapi/eventapi unix
   // sockets in mgmt_synthetic_main thread.
   //
-  synthThrId = ink_thread_create(mgmt_synthetic_main, NULL); /* Spin web agent thread */
+  synthThrId = ink_thread_create(mgmt_synthetic_main, NULL, 0, 0, NULL); /* Spin web agent thread */
   Debug("lm", "Created Web Agent thread (%" PRId64 ")", (int64_t)synthThrId);
 
   // Setup the API and event sockets
@@ -717,8 +717,8 @@ main(int argc, const char **argv)
   }
 
   umask(oldmask);
-  ink_thread_create(ts_ctrl_main, &mgmtapiFD);
-  ink_thread_create(event_callback_main, &eventapiFD);
+  ink_thread_create(ts_ctrl_main, &mgmtapiFD, 0, 0, NULL);
+  ink_thread_create(event_callback_main, &eventapiFD, 0, 0, NULL);
 
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");

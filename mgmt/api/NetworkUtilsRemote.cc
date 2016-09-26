@@ -231,7 +231,7 @@ reconnect()
 
   // relaunch a new event thread since socket_fd changed
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
-    ts_event_thread = ink_thread_create(event_poll_thread_main, &event_socket_fd);
+    ts_event_thread = ink_thread_create(event_poll_thread_main, &event_socket_fd, 0, 0, NULL);
     // reregister the callbacks on the TM side for this new client connection
     if (remote_event_callbacks) {
       err = send_register_all_callbacks(event_socket_fd, remote_event_callbacks);
@@ -645,7 +645,7 @@ event_poll_thread_main(void *arg)
     event->description = desc;
 
     // got event notice; spawn new thread to handle the event's callback functions
-    ink_thread_create(event_callback_thread, (void *)event);
+    ink_thread_create(event_callback_thread, (void *)event, 0, 0, NULL);
   }
 
   ink_thread_exit(NULL);

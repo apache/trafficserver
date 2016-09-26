@@ -444,8 +444,8 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   mismatchLog = ink_hash_table_create(InkHashTableKeyType_String);
 
   if (cluster_type != NO_CLUSTER) {
-    ink_thread_create(drainIncomingChannel_broadcast, this); /* Spin drainer thread */
-    ink_thread_create(drainIncomingChannel, this);           /* Spin drainer thread */
+    ink_thread_create(drainIncomingChannel_broadcast, this, 0, 0, NULL); /* Spin drainer thread */
+    ink_thread_create(drainIncomingChannel, this, 0, 0, NULL);           /* Spin drainer thread */
   }
   return;
 } /* End ClusterCom::ClusterCom */

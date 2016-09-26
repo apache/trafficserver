@@ -226,7 +226,7 @@ Init(const char *socket_path, TSInitOptionT options)
 
   // if connected, create event thread that listens for events from TM
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
-    ts_event_thread = ink_thread_create(event_poll_thread_main, &event_socket_fd);
+    ts_event_thread = ink_thread_create(event_poll_thread_main, &event_socket_fd, 0, 0, NULL);
   } else {
     ts_event_thread = static_cast<ink_thread>(NULL);
   }
@@ -236,7 +236,7 @@ END:
   // create thread that periodically checks the socket connection
   // with TM alive - reconnects if not alive
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_SOCK_TESTS)) {
-    ts_test_thread = ink_thread_create(socket_test_thread, NULL);
+    ts_test_thread = ink_thread_create(socket_test_thread, NULL, 0, 0, NULL);
   } else {
     ts_test_thread = static_cast<ink_thread>(NULL);
   }
