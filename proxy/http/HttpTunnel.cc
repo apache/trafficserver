@@ -1198,8 +1198,6 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
 
   Debug("http_redirect", "[HttpTunnel::producer_handler] enable_redirection: [%d %d %d] event: %d", p->alive == true,
         sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event);
-  ink_assert(p->alive == true || event == HTTP_TUNNEL_EVENT_PRECOMPLETE || event == VC_EVENT_EOS || sm->enable_redirection ||
-             (p->self_consumer && p->self_consumer->alive == true));
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -1255,14 +1253,16 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case HTTP_TUNNEL_EVENT_CONSUMER_DETACH:
-    p->alive      = false;
-    p->bytes_read = p->read_vio->ndone;
-    // Interesting tunnel event, call SM
-    jump_point = p->vc_handler;
-    (sm->*jump_point)(event, p);
-    sm_callback = true;
-    // Failure case anyway
-    p->update_state_if_not_set(HTTP_SM_POST_UA_FAIL);
+    if (p->alive) {
+      p->alive      = false;
+      p->bytes_read = p->read_vio->ndone;
+      // Interesting tunnel event, call SM
+      jump_point = p->vc_handler;
+      (sm->*jump_point)(event, p);
+      sm_callback = true;
+      // Failure case anyway
+      p->update_state_if_not_set(HTTP_SM_POST_UA_FAIL);
+    }
     break;
 
   case VC_EVENT_WRITE_READY:
