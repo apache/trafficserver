@@ -15,7 +15,7 @@
    permissions and limitations under the License.
 
 
-.. include:: ../../common.defs
+.. include:: ../../../common.defs
 
 .. default-domain:: c
 
@@ -104,7 +104,7 @@ The example below is excerpted from `example/protocol-stack/protocol-stack.cc`
 in the Traffic Server source distribution. It demonstrates how to
 use :func:`TSHttpTxnClientProtocolStackGet` and :func:`TSHttpTxnClientProtocolStackContains`
 
-.. literalinclude:: ../../../example/protocol-stack/protocol-stack.cc
+.. literalinclude:: ../../../../example/protocol-stack/protocol-stack.cc
   :language: c
   :lines: 31-46
 
