@@ -91,7 +91,7 @@ init_diags(const char *bdt, const char *bat)
   char diags_logpath[500];
   strcpy(diags_logpath, DIAGS_LOG_FILE);
 
-  diags = new Diags(bdt, bat, new BaseLogFile(diags_logpath));
+  diags = new Diags("test", bdt, bat, new BaseLogFile(diags_logpath));
   Status("opened %s", diags_logpath);
 
   reconfigure_diags();

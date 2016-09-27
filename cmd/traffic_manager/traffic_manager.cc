@@ -496,11 +496,10 @@ main(int argc, const char **argv)
 
   // Bootstrap the Diags facility so that we can use it while starting
   //  up the manager
-  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, false);
+  diagsConfig = new DiagsConfig("Manager", DIAGS_LOG_FILENAME, debug_tags, action_tags, false);
   diags       = diagsConfig->diags;
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
-  diags->prefix_str = "Manager ";
 
   RecLocalInit();
   LibRecordsConfigInit();
@@ -542,10 +541,9 @@ main(int argc, const char **argv)
   }
   // INKqa11968: need to set up callbacks and diags data structures
   // using configuration in records.config
-  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, true);
+  diagsConfig = new DiagsConfig("Manager", DIAGS_LOG_FILENAME, debug_tags, action_tags, true);
   diags       = diagsConfig->diags;
   RecSetDiags(diags);
-  diags->prefix_str = "Manager ";
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
 
