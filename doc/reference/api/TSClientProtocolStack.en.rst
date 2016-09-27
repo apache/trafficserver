@@ -15,7 +15,7 @@
    permissions and limitations under the License.
 
 
-.. include:: ../../../common.defs
+.. include:: ../../common.defs
 
 .. default-domain:: c
 
@@ -27,11 +27,9 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, char const** 
-result, int* actual)
+.. function:: TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, char const** result, int* actual)
 
-.. function:: TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, char const** 
-result, int* actual)
+.. function:: TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, char const** result, int* actual)
 
 .. function:: char const* TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp)
 
