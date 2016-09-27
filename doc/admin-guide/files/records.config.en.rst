@@ -2388,14 +2388,14 @@ HostDB
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.hostdb.timeout INT 1440
-   :units: minutes
+   :units: seconds
    :reloadable:
 
-   Internal time to live value for host DB entries, **in minutes**.
+   Internal time to live value for host DB entries in seconds.
 
-   See :ts:cv:`proxy.config.hostdb.ttl_mode` for when this value is used.
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+   See :ts:cv:`proxy.config.hostdb.ttl_mode` for when this value
+   is used.  See :ref:`admin-performance-timeouts` for more discussion
+   on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.fail.timeout INT 0
 
