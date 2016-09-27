@@ -364,13 +364,16 @@ SSLNetVConnection::read_raw_data()
         b = b->next;
       }
 
-      if (niov == 1) {
-        r = socketManager.read(this->con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
-      } else {
+      // If there was no room to write into the buffer then skip the read
+      if (niov > 0) {
         r = socketManager.readv(this->con.fd, &tiovec[0], niov);
+
+        NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
+        total_read += rattempted;
+      } else { // No more space to write, break out
+        r = 0;
+        break;
       }
-      NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
-      total_read += rattempted;
     } while (rattempted && r == rattempted && total_read < toread);
 
     // if we have already moved some bytes successfully, summarize in r

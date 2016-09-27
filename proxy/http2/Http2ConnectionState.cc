@@ -793,6 +793,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Finalize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_FINI: {
+    ink_assert(this->fini_received == false);
     this->fini_received = true;
     cleanup_streams();
     SET_HANDLER(&Http2ConnectionState::state_closed);
@@ -937,8 +938,8 @@ Http2ConnectionState::cleanup_streams()
     this->delete_stream(s);
     s = next;
   }
+  ink_assert(stream_list.head == NULL);
 
-  client_streams_count = 0;
   if (!is_state_closed()) {
     ua_session->get_netvc()->add_to_keep_alive_queue();
   }
@@ -947,6 +948,13 @@ Http2ConnectionState::cleanup_streams()
 void
 Http2ConnectionState::delete_stream(Http2Stream *stream)
 {
+  // If stream has already been removed from the list, just go on
+  if (!stream_list.in(stream)) {
+    return;
+  }
+
+  DebugHttp2Stream(ua_session, stream->get_id(), "Delete stream");
+
   if (Http2::stream_priority_enabled) {
     DependencyTree::Node *node = stream->priority_node;
     if (node != NULL && node->active) {
@@ -956,25 +964,24 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 
   stream_list.remove(stream);
   stream->initiating_close();
-
-  ink_assert(client_streams_count > 0);
-  --client_streams_count;
-
-  if (client_streams_count == 0 && ua_session) {
-    ua_session->get_netvc()->add_to_keep_alive_queue();
-  }
 }
 
 void
 Http2ConnectionState::release_stream(Http2Stream *stream)
 {
+  // Update stream counts
   if (stream) {
     --total_client_streams_count;
+    stream_list.remove(stream);
   }
 
   // If the number of clients is 0, then mark the connection as inactive
   if (total_client_streams_count == 0 && ua_session) {
     ua_session->clear_session_active();
+    if (ua_session->get_netvc()) {
+      ua_session->get_netvc()->add_to_keep_alive_queue();
+      ua_session->get_netvc()->cancel_active_timeout();
+    }
   }
 
   if (ua_session && fini_received && total_client_streams_count == 0) {
@@ -1125,7 +1132,11 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 void
 Http2ConnectionState::send_data_frames(Http2Stream *stream)
 {
-  if (stream->get_state() == HTTP2_STREAM_STATE_CLOSED) {
+  // To follow RFC 7540 must not send more frames other than priority on
+  // a closed stream.  So we return without sending
+  if (stream->get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL || stream->get_state() == HTTP2_STREAM_STATE_CLOSED) {
+    DebugSsn(this->ua_session, "http2_cs", "Shutdown half closed local stream %d", stream->get_id());
+    this->delete_stream(stream);
     return;
   }
 
