@@ -45,17 +45,18 @@ Plugins that are considered stable are installed by default in |TS| releases.
 .. toctree::
    :hidden:
 
-   AuthProxy <authproxy.en>
    AWS S3 Authentication <s3_auth.en>
+   AuthProxy <authproxy.en>
    Background Fetch <background_fetch.en>
    Configuration Remap <conf_remap.en>
    ESI <esi.en>
-   Generator <generator.en>
    GZip <gzip.en>
+   Generator <generator.en>
    Header Rewrite <header_rewrite.en>
    Health Checks <healthchecks.en>
    Regex Remap <regex_remap.en>
    Regex Revalidate <regex_revalidate.en>
+   Remap Purge <remap_purge.en>
    Stats over HTTP <stats_over_http.en>
    TCPInfo <tcpinfo.en>
    XDebug <xdebug.en>
@@ -186,6 +187,10 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`MySQL Remap <mysql_remap.en>`
    Allows dynamic remaps from a MySQL database.
 
+:doc:`Remap Purge <remap_purge.en>`
+   This remap plugin allows the administrator to easily setup remotely
+   controlled ``PURGE`` for the content of an entire remap rule.
+
 :doc:`Signed URLs <url_sig.en>`
    Adds support for verifying URL signatures for incoming requests to either deny or redirect access.
 
@@ -194,6 +199,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Stale While Revalidate <stale_while_revalidate.en>`
    :deprecated:
+
    Refresh content asynchronously while serving stale data.
 
 :doc:`TS Lua <ts_lua.en>`
