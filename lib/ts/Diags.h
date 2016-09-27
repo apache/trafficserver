@@ -110,7 +110,7 @@ struct DiagsConfigState {
 class Diags
 {
 public:
-  Diags(const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log);
+  Diags(const char *prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log);
   ~Diags();
 
   BaseLogFile *diags_log;
@@ -121,7 +121,6 @@ public:
   volatile DiagsConfigState config;
   DiagsShowLocation show_location;
   DiagsCleanupFunc cleanup_func;
-  const char *prefix_str;
 
   ///////////////////////////
   // conditional debugging //
@@ -221,6 +220,7 @@ public:
   const char *base_action_tags; // internal copy of default action tags
 
 private:
+  const char *prefix_str;
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
   DFA *activated_tags[2];           // 1 table for debug, 1 for action
 
