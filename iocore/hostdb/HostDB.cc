@@ -1084,15 +1084,17 @@ HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around
     case TTL_OBEY:
       break;
     case TTL_IGNORE:
-      ttl_seconds = hostdb_ip_timeout_interval * 60;
+      ttl_seconds = hostdb_ip_timeout_interval;
       break;
     case TTL_MIN:
-      if (hostdb_ip_timeout_interval * 60 < ttl_seconds)
-        ttl_seconds = hostdb_ip_timeout_interval * 60;
+      if (hostdb_ip_timeout_interval < ttl_seconds) {
+        ttl_seconds = hostdb_ip_timeout_interval;
+      }
       break;
     case TTL_MAX:
-      if (hostdb_ip_timeout_interval * 60 > ttl_seconds)
-        ttl_seconds = hostdb_ip_timeout_interval * 60;
+      if (hostdb_ip_timeout_interval > ttl_seconds) {
+        ttl_seconds = hostdb_ip_timeout_interval;
+      }
       break;
     }
     HOSTDB_SUM_DYN_STAT(hostdb_ttl_stat, ttl_seconds);
