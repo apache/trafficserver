@@ -216,7 +216,7 @@ deprecated
 
    \:ts\:cv\:\`custom.variable\`
       :reloadable:
-      :metric: minutes
+      :units: minutes
       :deprecated:
 
 If you need to refer to another configuration variable in the documentation, you

@@ -301,13 +301,13 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_interval_sec INT 3600
    :reloadable:
-   :metric: seconds
+   :units: seconds
 
    Specifies how often the output log is rolled, in seconds. The timer starts on Traffic Server bootup.
 
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_size_mb INT 100
    :reloadable:
-   :metric: megabytes
+   :units: megabytes
 
    Specifies at what size to roll the output log at.
 
@@ -1475,14 +1475,14 @@ Congestion Control
    Transaction buffering / flow control is enabled if this is set to a non-zero value. Otherwise no flow control is done.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.high_water INT 0
-   :metric: bytes
+   :units: bytes
    :overridable:
 
    The high water mark for transaction buffer control. External source I/O is halted when the total buffer space in use
    by the transaction exceeds this value.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.low_water INT 0
-   :metric: bytes
+   :units: bytes
    :overridable:
 
    The low water mark for transaction buffer control. External source I/O is resumed when the total buffer space in use
@@ -1958,7 +1958,7 @@ Cache Control
    By default, the feature is off (set to 0).
 
 .. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_size_limit INT 0
-   :metric: bytes
+   :units: bytes
 
    Limit the size of objects that are hit evacuated.
 
@@ -2336,7 +2336,7 @@ HostDB
 ======
 
 .. ts:cv:: CONFIG proxy.config.hostdb.lookup_timeout INT 30
-   :metric: seconds
+   :units: seconds
    :reloadable:
 
    Time to wait for a DNS response in seconds.
@@ -2344,7 +2344,7 @@ HostDB
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.serve_stale_for INT
-   :metric: seconds
+   :units: seconds
    :reloadable:
 
    The number of seconds for which to use a stale NS record while initiating a
@@ -2353,7 +2353,7 @@ HostDB
    If not set then stale records are not served.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.max_size INT 10737418240
-   :metric: bytes
+   :units: bytes
 
    The maximum amount of space (in bytes) allocated to ``hostdb``.
    Setting this value to ``-1`` will disable size limit enforcement.
@@ -2388,7 +2388,7 @@ HostDB
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.hostdb.timeout INT 1440
-   :metric: minutes
+   :units: minutes
    :reloadable:
 
    Internal time to live value for host DB entries, **in minutes**.
@@ -2443,7 +2443,7 @@ HostDB
    check and the file will be treated as modified.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.host_file.interval INT 86400
-   :metric: seconds
+   :units: seconds
    :reloadable:
 
    Set the file changed check timer for :ts:cv:`proxy.config.hostdb.host_file.path`.
@@ -2558,7 +2558,7 @@ Logging Configuration
    The maximum amount of time before data in the buffer is flushed to disk.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_logs INT 25000
-   :metric: megabytes
+   :units: megabytes
    :reloadable:
 
    The amount of space allocated to the logging directory (in MB).
@@ -2577,7 +2577,7 @@ Logging Configuration
    for maximum allowed log space.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_orphan_logs INT 25
-   :metric: megabytes
+   :units: megabytes
    :reloadable:
 
    The amount of space allocated to the logging directory (in MB) if this node is acting as a collation client.
@@ -2590,7 +2590,7 @@ Logging Configuration
    when you enable full remote logging, and bump to the same size as proxy.config.log.max_space_mb_for_logs.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_headroom INT 1000
-   :metric: megabytes
+   :units: megabytes
    :reloadable:
 
    The tolerance for the log space limit (in megabytes). If the variable :ts:cv:`proxy.config.log.auto_delete_rolled_files` is set to ``1``
@@ -2760,13 +2760,13 @@ Logging Configuration
 
 .. ts:cv:: CONFIG proxy.config.log.periodic_tasks_interval INT 5
    :reloadable:
-   :metric: seconds
+   :units: seconds
 
    How often Traffic Server executes log related periodic tasks, in seconds
 
 .. ts:cv:: CONFIG proxy.config.http.slow.log.threshold INT 0
    :reloadable:
-   :metric: milliseconds
+   :units: milliseconds
 
    If set to a non-zero value :arg:`N` then any connection that takes longer than :arg:`N` milliseconds from accept to
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
@@ -2858,13 +2858,13 @@ Diagnostic Logging Configuration
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_interval_sec INT 3600
    :reloadable:
-   :metric: seconds
+   :units: seconds
 
    Specifies how often the diagnostics log is rolled, in seconds. The timer starts on Traffic Server bootup.
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_size_mb INT 100
    :reloadable:
-   :metric: megabytes
+   :units: megabytes
 
    Specifies at what size to roll the diagnostics log at.
 
