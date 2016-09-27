@@ -30,6 +30,8 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
   parents[PRIMARY]   = parent_record->parents;
   parents[SECONDARY] = parent_record->secondary_parents;
   ignore_query       = parent_record->ignore_query;
+  ignore_fname       = parent_record->ignore_fname;
+  max_dirs           = parent_record->max_dirs;
   ink_zero(foundParents);
 
   chash[PRIMARY] = new ATSConsistentHash();
@@ -63,7 +65,8 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 {
   const char *tmp = NULL;
   int len;
-  URL *url = hrdata->hdr->url_get();
+  URL *url     = hrdata->hdr->url_get();
+  int num_dirs = 0;
 
   // Use over-ride URL from HttpTransact::State's cache_info.parent_selection_url, if present.
   URL *ps_url = NULL;
@@ -87,15 +90,81 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
   h->update("/", 1);
 
   tmp = url->path_get(&len);
-  if (tmp) {
+
+  if (tmp && len > 0) {
+    // Print the Original path.
+    Debug("parent_select", "Original Path='%.*s'.", len, tmp);
+
+    // Process the 'maxdirs' directive.
+    if (max_dirs != 0) {
+      // Determine number of directory components in the path.
+      // NOTE: Leading '/' is gone already.
+      for (int x = 0; x < len; x++) {
+        if (tmp[x] == '/') {
+          num_dirs++;
+        }
+      }
+      // If max_dirs positive , include directory components from the left up to max_dirs.
+      // If max_dirs negative , include directory components from the left up to num_dirs - ( abs(max_dirs) - 1 ).
+      int limit = 0;
+      if (max_dirs > 0) {
+        limit = max_dirs;
+      } else if (max_dirs < 0) {
+        int md = abs(max_dirs) - 1;
+        if (md < num_dirs) {
+          limit = num_dirs - md;
+        } else {
+          limit = 0;
+        }
+      }
+      if (limit > 0) {
+        int count = 0;
+        for (int x = 0; x < len; x++) {
+          if (tmp[x] == '/') {
+            count++;
+          }
+          if (count == limit) {
+            len = x + 1;
+            break;
+          }
+        }
+      } else {
+        len = 0;
+      }
+    }
+
+    // Print the post 'maxdirs' path.
+    Debug("parent_select", "Post-maxdirs Path='%.*s'.", len, tmp);
+
+    // Process the 'fname' directive.
+    // The file name (if any) is filtered out if set to ignore the file name or max_dirs was non-zero.
+    // The file name (if any) consists of the characters at the end of the path beyond the final '/'.
+    // The length of the path string (to be passed to the hash generator) is shortened to accomplish the filtering.
+    if (ignore_fname || max_dirs != 0) {
+      for (int x = len - 1; x >= 0; x--) {
+        if (tmp[x] == '/') {
+          len = x + 1;
+          break;
+        }
+      }
+    }
+
+    // Print the post 'fname' path.
+    Debug("parent_select", "Post-fname Path='%.*s'.", len, tmp);
+
     h->update(tmp, len);
   }
 
-  if (!ignore_query) {
+  // Process the 'qstring' directive.
+  // The query string (if any) is not used if set to ignore the query string or set to ignore the file name or
+  // max_dirs is non-zero.
+  if (!ignore_query && !ignore_fname && max_dirs == 0) {
     tmp = url->query_get(&len);
     if (tmp) {
       h->update("?", 1);
       h->update(tmp, len);
+      // Print the query string if used.
+      Debug("parent_select", "Query='%.*s'.", len, tmp);
     }
   }
 

@@ -487,6 +487,8 @@ ParentRecord::DefaultInit(char *val)
 
   this->go_direct       = true;
   this->ignore_query    = false;
+  this->ignore_fname    = false;
+  this->max_dirs        = 0;
   this->scheme          = NULL;
   this->parent_is_proxy = true;
   errPtr                = ProcessParents(val, true);
@@ -571,6 +573,18 @@ ParentRecord::Init(matcher_line *line_info)
         this->ignore_query = false;
       }
       used = true;
+    } else if (strcasecmp(label, "fname") == 0) {
+      // fname=ignore | consider
+      if (strcasecmp(val, "ignore") == 0) {
+        this->ignore_fname = true;
+      } else {
+        this->ignore_fname = false;
+      }
+      used = true;
+    } else if (strcasecmp(label, "maxdirs") == 0) {
+      // maxdirs=<int> maximum number of directories to include in hash
+      this->max_dirs = atoi(val);
+      used           = true;
     } else if (strcasecmp(label, "parent_is_proxy") == 0) {
       if (strcasecmp(val, "false") == 0) {
         parent_is_proxy = false;
@@ -1282,6 +1296,73 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   sleep(1);
   RE(verify(result, PARENT_FAIL, NULL, 80), 177);
 
+  // Test 178 -- Parent Consistent Hash Selection (qstring, fname, maxdirs)
+  const char *rabbit = "http://i.am.rabbit.net/a/b/c/d/e/index.html?f=1&g=2";
+  tbl[0]             = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80;fluffy:80 "
+    "round_robin=consistent_hash ");
+  ST(178);
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  request->hdr->url_set(rabbit, strlen(rabbit));
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 178);
+
+  // Test 179
+  tbl[0] = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80;fluffy:80 "
+    "round_robin=consistent_hash qstring=ignore");
+  ST(179);
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  request->hdr->url_set(rabbit, strlen(rabbit));
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 179);
+
+  // Test 180
+  tbl[0] = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80;fluffy:80 "
+    "round_robin=consistent_hash fname=ignore");
+  ST(180);
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  request->hdr->url_set(rabbit, strlen(rabbit));
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 180);
+
+  // Test 181
+  tbl[0] = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80;fluffy:80 "
+    "round_robin=consistent_hash maxdirs=3");
+  ST(181);
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  request->hdr->url_set(rabbit, strlen(rabbit));
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 181);
+
+  // Test 182
+  tbl[0] = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80;fluffy:80 "
+    "round_robin=consistent_hash maxdirs=-2");
+  ST(182);
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  request->hdr->url_set(rabbit, strlen(rabbit));
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 182);
+
+  // Clean-Up and Results Summary
   delete request;
   delete result;
   delete params;
