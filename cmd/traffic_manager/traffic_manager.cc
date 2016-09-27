@@ -81,7 +81,7 @@ static AppVersionInfo appVersionInfo; // Build info for this application
 static inkcoreapi DiagsConfig *diagsConfig;
 static char debug_tags[1024]  = "";
 static char action_tags[1024] = "";
-static bool proxy_off         = false;
+static int proxy_off          = false;
 static char bind_stdout[512]  = "";
 static char bind_stderr[512]  = "";
 
@@ -436,7 +436,7 @@ main(int argc, const char **argv)
   char *proxy_port   = 0;
   int proxy_backdoor = -1;
   char *group_addr = NULL, *tsArgs = NULL;
-  bool disable_syslog = false;
+  int disable_syslog = false;
   char userToRunAs[MAX_LOGIN + 1];
   RecInt fds_throttle = -1;
   time_t ticker;
