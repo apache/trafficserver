@@ -209,7 +209,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 
   init_system(true);
   initialize_process_manager();
-  diagsConfig = new DiagsConfig(logfile, error_tags, action_tags);
+  diagsConfig = new DiagsConfig(pgm_name, logfile, error_tags, action_tags);
   diags       = diagsConfig->diags;
 }
 
@@ -237,7 +237,7 @@ init_log_standalone_basic(const char *pgm_name)
 
   init_system(false);
   const bool use_records = false;
-  diagsConfig            = new DiagsConfig(logfile, error_tags, action_tags, use_records);
+  diagsConfig            = new DiagsConfig(pgm_name, logfile, error_tags, action_tags, use_records);
   diags                  = diagsConfig->diags;
   // set stdin/stdout to be unbuffered
   //

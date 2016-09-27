@@ -100,7 +100,7 @@ vprintline(FILE *fp, char (&buffer)[Size], va_list ap)
 //
 //////////////////////////////////////////////////////////////////////////////
 
-Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
+Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLogFile *_diags_log)
   : diags_log(NULL),
     stdout_log(NULL),
     stderr_log(NULL),
@@ -128,6 +128,11 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
   config.enabled[DiagsTagType_Debug]  = (base_debug_tags != NULL);
   config.enabled[DiagsTagType_Action] = (base_action_tags != NULL);
   diags_on_for_plugins                = config.enabled[DiagsTagType_Debug];
+  prefix_str                          = prefix_string;
+
+  // The caller must always provide a non-empty prefix.
+  ink_release_assert(prefix_str);
+  ink_release_assert(*prefix_str);
 
   for (i = 0; i < DiagsLevel_Count; i++) {
     config.outputs[i].to_stdout   = false;
@@ -143,17 +148,12 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
   stdout_log->open_file(); // should never fail
   stderr_log->open_file(); // should never fail
 
-  if (setup_diagslog(_diags_log)) {
-    diags_log = _diags_log;
-  }
-
   //////////////////////////////////////////////////////////////////
   // start off with empty tag tables, will build in reconfigure() //
   //////////////////////////////////////////////////////////////////
 
   activated_tags[DiagsTagType_Debug]  = NULL;
   activated_tags[DiagsTagType_Action] = NULL;
-  prefix_str                          = "";
 
   outputlog_rolling_enabled  = RollingEnabledValues::NO_ROLLING;
   outputlog_rolling_interval = -1;
@@ -164,6 +164,10 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
 
   outputlog_time_last_roll = time(0);
   diagslog_time_last_roll  = time(0);
+
+  if (setup_diagslog(_diags_log)) {
+    diags_log = _diags_log;
+  }
 }
 
 Diags::~Diags()
@@ -254,6 +258,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 
   for (s = level_name(diags_level); *s; *end_of_format++ = *s++)
     ;
+
   *end_of_format++ = ':';
   *end_of_format++ = ' ';
 
@@ -298,19 +303,26 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   tp               = ink_gettimeofday();
   time_t cur_clock = (time_t)tp.tv_sec;
   buffer           = ink_ctime_r(&cur_clock, timestamp_buf);
+
   snprintf(&(timestamp_buf[19]), (sizeof(timestamp_buf) - 20), ".%03d", (int)(tp.tv_usec / 1000));
 
   d    = format_buf_w_ts;
   *d++ = '[';
+
   for (int i = 4; buffer[i]; i++)
     *d++ = buffer[i];
-  *d++   = ']';
-  *d++   = ' ';
+
+  *d++ = ']';
+  *d++ = ' ';
 
   for (int k = 0; prefix_str[k]; k++)
     *d++ = prefix_str[k];
+
+  *d++ = ' ';
+
   for (s = format_buf; *s; *d++ = *s++)
     ;
+
   *d++ = NUL;
 
   //////////////////////////////////////
