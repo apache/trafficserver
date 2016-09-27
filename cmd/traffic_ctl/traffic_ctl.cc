@@ -230,7 +230,7 @@ main(int argc, const char **argv)
   };
 
   BaseLogFile *base_log_file = new BaseLogFile("stderr");
-  diags                      = new Diags("" /* tags */, "" /* actions */, base_log_file);
+  diags                      = new Diags(program_name, "" /* tags */, "" /* actions */, base_log_file);
 
   // Process command line arguments and dump into variables
   if (!CtrlProcessArguments(argc, argv, argument_descriptions, countof(argument_descriptions))) {
