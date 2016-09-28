@@ -59,8 +59,7 @@ ink_mutex debug_cs_list_mutex;
 ClassAllocator<Http1ClientSession> http1ClientSessionAllocator("http1ClientSessionAllocator");
 
 Http1ClientSession::Http1ClientSession()
-  : con_id(0),
-    client_vc(NULL),
+  : client_vc(NULL),
     magic(HTTP_CS_MAGIC_DEAD),
     transact_count(0),
     tcp_init_cwnd_set(false),

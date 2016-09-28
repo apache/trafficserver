@@ -185,7 +185,6 @@ private:
     HCS_CLOSED,
   };
 
-  int64_t con_id;
   NetVConnection *client_vc;
   int magic;
   int transact_count;
