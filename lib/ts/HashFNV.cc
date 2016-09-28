@@ -18,9 +18,10 @@ ATSHash32FNV1a::ATSHash32FNV1a(void)
   this->clear();
 }
 
-void
+bool
 ATSHash32FNV1a::final(void)
 {
+  return true;
 }
 
 uint32_t
@@ -29,10 +30,11 @@ ATSHash32FNV1a::get(void) const
   return hval;
 }
 
-void
+bool
 ATSHash32FNV1a::clear(void)
 {
   hval = FNV_INIT_32;
+  return true;
 }
 
 // FNV-1a 64bit
@@ -40,9 +42,11 @@ ATSHash64FNV1a::ATSHash64FNV1a(void)
 {
   this->clear();
 }
-void
+
+bool
 ATSHash64FNV1a::final(void)
 {
+  return true;
 }
 
 uint64_t
@@ -51,8 +55,9 @@ ATSHash64FNV1a::get(void) const
   return hval;
 }
 
-void
+bool
 ATSHash64FNV1a::clear(void)
 {
   hval = FNV_INIT_64;
+  return true;
 }

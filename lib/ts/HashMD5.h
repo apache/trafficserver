@@ -27,11 +27,11 @@
 
 struct ATSHashMD5 : ATSHash {
   ATSHashMD5(void);
-  void update(const void *data, size_t len);
-  void final(void);
+  bool update(const void *data, size_t len);
+  bool final(void);
   const void *get(void) const;
   size_t size(void) const;
-  void clear(void);
+  bool clear(void);
   ~ATSHashMD5();
 
 private:

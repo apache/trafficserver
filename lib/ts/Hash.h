@@ -27,9 +27,9 @@
 #include <ctype.h>
 
 struct ATSHashBase {
-  virtual void update(const void *, size_t) = 0;
-  virtual void final(void) = 0;
-  virtual void clear(void) = 0;
+  virtual bool update(const void *, size_t) = 0;
+  virtual bool final(void) = 0;
+  virtual bool clear(void) = 0;
   virtual ~ATSHashBase();
 };
 
