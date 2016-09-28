@@ -21,29 +21,32 @@
 
 #include "ts/HashMD5.h"
 
-ATSHashMD5::ATSHashMD5(void)
+ATSHashMD5::ATSHashMD5(void) : md_len(0), finalized(false)
 {
   ctx = EVP_MD_CTX_create();
-  EVP_DigestInit(ctx, EVP_md5());
-  md_len    = 0;
-  finalized = false;
+  EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
 }
 
-void
+bool
 ATSHashMD5::update(const void *data, size_t len)
 {
   if (!finalized) {
-    EVP_DigestUpdate(ctx, data, len);
+    return (EVP_DigestUpdate(ctx, data, len) == 1);
   }
+  return false;
 }
 
-void
+bool
 ATSHashMD5::final(void)
 {
+  bool ret = false;
   if (!finalized) {
-    EVP_DigestFinal_ex(ctx, md_value, &md_len);
-    finalized = true;
+    ret = (EVP_DigestFinal_ex(ctx, md_value, &md_len) == 1);
+    if (ret) {
+      finalized = true;
+    }
   }
+  return ret;
 }
 
 const void *
@@ -62,14 +65,19 @@ ATSHashMD5::size(void) const
   return EVP_MD_CTX_size(ctx);
 }
 
-void
+bool
 ATSHashMD5::clear(void)
 {
-  EVP_MD_CTX_destroy(ctx);
-  ctx = EVP_MD_CTX_create();
-  EVP_DigestInit(ctx, EVP_md5());
-  md_len    = 0;
-  finalized = false;
+  bool ret;
+  ret = (EVP_MD_CTX_cleanup(ctx) == 1);
+  if (ret) {
+    ret = (EVP_DigestInit_ex(ctx, EVP_md5(), NULL) == 1);
+    if (ret) {
+      md_len    = 0;
+      finalized = false;
+    }
+  }
+  return ret;
 }
 
 ATSHashMD5::~ATSHashMD5()

@@ -34,23 +34,23 @@
 struct ATSHash32FNV1a : ATSHash32 {
   ATSHash32FNV1a(void);
 
-  template <typename Transform> void update(const void *data, size_t len, Transform xfrm);
-  void
+  template <typename Transform> bool update(const void *data, size_t len, Transform xfrm);
+  bool
   update(const void *data, size_t len)
   {
-    update(data, len, ATSHash::nullxfrm());
+    return update(data, len, ATSHash::nullxfrm());
   }
 
-  void final(void);
+  bool final(void);
   uint32_t get(void) const;
-  void clear(void);
+  bool clear(void);
 
 private:
   uint32_t hval;
 };
 
 template <typename Transform>
-void
+bool
 ATSHash32FNV1a::update(const void *data, size_t len, Transform xfrm)
 {
   uint8_t *bp = (uint8_t *)data;
@@ -60,28 +60,29 @@ ATSHash32FNV1a::update(const void *data, size_t len, Transform xfrm)
     hval ^= (uint32_t)xfrm(*bp);
     hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
   }
+  return true;
 }
 
 struct ATSHash64FNV1a : ATSHash64 {
   ATSHash64FNV1a(void);
 
-  template <typename Transform> void update(const void *data, size_t len, Transform xfrm);
-  void
+  template <typename Transform> bool update(const void *data, size_t len, Transform xfrm);
+  bool
   update(const void *data, size_t len)
   {
-    update(data, len, ATSHash::nullxfrm());
+    return update(data, len, ATSHash::nullxfrm());
   }
 
-  void final(void);
+  bool final(void);
   uint64_t get(void) const;
-  void clear(void);
+  bool clear(void);
 
 private:
   uint64_t hval;
 };
 
 template <typename Transform>
-void
+bool
 ATSHash64FNV1a::update(const void *data, size_t len, Transform xfrm)
 {
   uint8_t *bp = (uint8_t *)data;
@@ -91,6 +92,7 @@ ATSHash64FNV1a::update(const void *data, size_t len, Transform xfrm)
     hval ^= (uint64_t)xfrm(*bp);
     hval += (hval << 1) + (hval << 4) + (hval << 5) + (hval << 7) + (hval << 8) + (hval << 40);
   }
+  return true;
 }
 
 #endif
