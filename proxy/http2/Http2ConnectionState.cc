@@ -807,9 +807,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     send_data_frames_depends_on_priority();
     _scheduled = false;
-
-    return 0;
-  }
+  } break;
 
   // Parse received HTTP/2 frames
   case HTTP2_SESSION_EVENT_RECV: {
