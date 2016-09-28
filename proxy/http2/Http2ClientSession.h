@@ -285,7 +285,6 @@ private:
   // if there are multiple frames ready on the wire
   int state_process_frame_read(int event, VIO *vio, bool inside_frame);
 
-  int64_t con_id;
   int64_t total_write_len;
   SessionHandler session_handler;
   NetVConnection *client_vc;
