@@ -313,7 +313,8 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     this->do_io_close();
-    return 0;
+    retval = 0;
+    break;
 
   case VC_EVENT_WRITE_READY:
     retval = 0;
