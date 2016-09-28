@@ -996,7 +996,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
     // correctly disabled support in the socket option configuration.
     ink_assert(MSG_FASTOPEN != 0 || this->options.f_tcp_fastopen == false);
 
-    if (this->options.f_tcp_fastopen && this->write.vio.ndone == 0) {
+    if (!this->con.is_connected && this->options.f_tcp_fastopen) {
       struct msghdr msg;
 
       ink_zero(msg);
@@ -1005,9 +1005,16 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
       msg.msg_iov     = &tiovec[0];
       msg.msg_iovlen  = niov;
 
+      NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
+
       r = socketManager.sendmsg(con.fd, &msg, MSG_FASTOPEN);
       if (r < 0) {
-        NET_INCREMENT_DYN_STAT(net_fastopen_failures_stat);
+        if (r == -EINPROGRESS || r == -EWOULDBLOCK) {
+          this->con.is_connected = true;
+        }
+      } else {
+        NET_INCREMENT_DYN_STAT(net_fastopen_successes_stat);
+        this->con.is_connected = true;
       }
 
     } else {

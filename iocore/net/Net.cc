@@ -71,7 +71,7 @@ register_net_stats()
     {"proxy.process.net.read_bytes", net_read_bytes_stat},
     {"proxy.process.net.write_bytes", net_write_bytes_stat},
     {"proxy.process.net.fastopen_out.attempts", net_fastopen_attempts_stat},
-    {"proxy.process.net.fastopen_out.failures", net_fastopen_failures_stat},
+    {"proxy.process.net.fastopen_out.successes", net_fastopen_successes_stat},
     {"proxy.process.socks.connections_successful", socks_connections_successful_stat},
     {"proxy.process.socks.connections_unsuccessful", socks_connections_unsuccessful_stat},
   };
