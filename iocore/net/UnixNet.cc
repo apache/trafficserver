@@ -34,8 +34,6 @@ ink_hrtime last_transient_accept_error;
 extern "C" void fd_reify(struct ev_loop *);
 
 #ifndef INACTIVITY_TIMEOUT
-int update_cop_config(const char *name, RecDataT data_type, RecData data, void *cookie);
-
 // INKqa10496
 // One Inactivity cop runs on each thread once every second and
 // loops through the list of NetVCs and calls the timeouts
