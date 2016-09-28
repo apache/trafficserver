@@ -47,7 +47,7 @@
 --
 -- integer(NAME, FUNC), counter(NAME, FUNC), float(NAME, FUNC)
 --    These global functions register a metric of the corresponding name. Each
---    registered metric will be periodically recalculated by evaluating the 
+--    registered metric will be periodically recalculated by evaluating the
 --    given function.
 --
 --    The scope of a metric is derived from the name. 'proxy.cluster.*' metrics
@@ -1562,9 +1562,4 @@ integer 'proxy.cluster.log.bytes_received_from_network_avg_10s' [[
 
 counter 'proxy.process.ssl.total_success_handshake_count' [[
   return proxy.process.ssl.total_success_handshake_count_in
-]]
-
-counter 'proxy.process.net.fastopen_out.success' [[
-  return proxy.process.net.fastopen_out.attempts -
-    proxy.process.net.fastopen_out.failures
 ]]

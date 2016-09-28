@@ -71,8 +71,8 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
     NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
 
     err = socketManager.sendto(bio->num, (void *)in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
-    if (err < 0) {
-      NET_INCREMENT_DYN_STAT(net_fastopen_failures_stat);
+    if (err >= 0) {
+      NET_INCREMENT_DYN_STAT(net_fastopen_successes_stat);
     }
 
     bio->ptr = NULL;
