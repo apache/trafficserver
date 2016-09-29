@@ -709,6 +709,14 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
 
+    // client response can be changed within a transaction
+    // (e.g. due to the follow redirect feature). So, clearing the pointers
+    // to allow API(s) to fetch the pointers again when it re-enters the hook
+    if (http_ctx->client_response_hdrp != NULL) {
+      TSHandleMLocRelease(http_ctx->client_response_bufp, TS_NULL_MLOC, http_ctx->client_response_hdrp);
+      http_ctx->client_response_hdrp = NULL;
+    }
+
     lua_getglobal(L, TS_LUA_FUNCTION_SEND_RESPONSE);
 
     if (lua_type(L, -1) == LUA_TFUNCTION) {
