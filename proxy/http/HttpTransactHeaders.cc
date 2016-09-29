@@ -813,31 +813,15 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   }
 
   char *incoming_via = s->via_string;
-  int scheme         = s->next_hop_scheme;
 
-  ink_assert(scheme >= 0);
+  ink_assert(s->state_machine);
 
-  if (s->state_machine->ua_session && (!strncmp(s->state_machine->ua_session->get_protocol_string(), "http/2", 6))) { //if http/2
-    memcpy(via_string, "http/2 ", 7);
-    via_string += 7;
-  } else { //if http/1.1 or older
-    int scheme_len   = hdrtoken_index_to_length(scheme);
-    int32_t hversion = header->version_get().m_version;
-
-    memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
-    via_string += scheme_len;
-
-    // Common case (I hope?)
-    if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
-      memcpy(via_string, "/1.1 ", 5);
-      via_string += 5;
-    } else {
-      *via_string++ = '/';
-      *via_string++ = '0' + HTTP_MAJOR(hversion);
-      *via_string++ = '.';
-      *via_string++ = '0' + HTTP_MINOR(hversion);
-      *via_string++ = ' ';
-    }
+  char const *proto_buf[10];
+  int retval = s->state_machine->populate_client_protocol(proto_buf, 10);
+  for (int i = 0; i < retval; i++) {
+    memcpy(via_string, proto_buf[i], strlen(proto_buf[i]));
+    via_string += strlen(proto_buf[i]);
+    *via_string++ = ' ';
   }
 
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
