@@ -346,6 +346,55 @@ public:
   }
 };
 
+class MemoryLimit : public Continuation
+{
+public:
+  MemoryLimit() : Continuation(new_ProxyMutex()), _memory_limit(0) { SET_HANDLER(&MemoryLimit::periodic); }
+  ~MemoryLimit() { mutex = NULL; }
+  int
+  periodic(int event, Event *e)
+  {
+    if (event == EVENT_IMMEDIATE) {
+      // rescheduled from periodic to immediate event
+      // this is the indication to terminate
+      delete this;
+      return EVENT_DONE;
+    }
+    if (_memory_limit == 0) {
+      // first time it has been run
+      _memory_limit = REC_ConfigReadInteger("proxy.config.memory.max_usage");
+      _memory_limit = _memory_limit >> 10; // divide by 1024
+    }
+    if (_memory_limit > 0) {
+      if (getrusage(RUSAGE_SELF, &_usage) == 0) {
+        Debug("server", "memory usage - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
+        if (_usage.ru_maxrss > _memory_limit) {
+          if (net_memory_throttle == false) {
+            net_memory_throttle = true;
+            Debug("server", "memory usage exceeded limit - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
+          }
+        } else {
+          if (net_memory_throttle == true) {
+            net_memory_throttle = false;
+            Debug("server", "memory usage under limit - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
+          }
+        }
+      }
+    } else {
+      // this feature has not be enabled
+      Debug("server", "limiting connections based on memory usage has been disabled");
+      e->cancel();
+      delete this;
+      return EVENT_DONE;
+    }
+    return EVENT_CONT;
+  }
+
+private:
+  int64_t _memory_limit;
+  struct rusage _usage;
+};
+
 static int
 init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecData data, void * /* cookie ATS_UNUSED */)
 {
@@ -1730,6 +1779,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
+  eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND, ET_TASK);
   REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, NULL);
   init_memory_tracker(NULL, RECD_NULL, RecData(), NULL);
 
