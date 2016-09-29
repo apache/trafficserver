@@ -110,6 +110,8 @@ static const RecordElement RecordsConfig[] =
   //# 0 = disable
   {RECT_CONFIG, "proxy.config.res_track_memory", RECD_INT, "0", RECU_NULL, RR_REQUIRED, RECC_NULL,  "[0-2]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.memory.max_usage", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
   //##############################################################################
   //# Traffic Server system settings
   //##############################################################################
