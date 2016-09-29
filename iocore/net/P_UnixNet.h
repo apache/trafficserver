@@ -124,6 +124,7 @@ extern ink_hrtime last_throttle_warning;
 extern ink_hrtime last_shedding_warning;
 extern ink_hrtime emergency_throttle_time;
 extern int net_connections_throttle;
+extern bool net_memory_throttle;
 extern int fds_throttle;
 extern int fds_limit;
 extern ink_hrtime last_transient_accept_error;
@@ -141,7 +142,6 @@ extern int http_accept_port_number;
 #define TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY HRTIME_HOURS(24)
 
 // also the 'throttle connect headroom'
-#define THROTTLE_AT_ONCE 5
 #define EMERGENCY_THROTTLE 16
 #define HYPER_EMERGENCY_THROTTLE 6
 

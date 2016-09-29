@@ -39,39 +39,6 @@ safe_delay(int msec)
 }
 
 //
-// Send the throttling message to up to THROTTLE_AT_ONCE connections,
-// delaying to let some of the current connections complete
-//
-static int
-send_throttle_message(NetAccept *na)
-{
-  struct pollfd afd;
-  Connection con[100];
-  char dummy_read_request[4096];
-
-  afd.fd     = na->server.fd;
-  afd.events = POLLIN;
-
-  int n = 0;
-  while (check_net_throttle(ACCEPT, Thread::get_hrtime()) && n < THROTTLE_AT_ONCE - 1 && (socketManager.poll(&afd, 1, 0) > 0)) {
-    int res = 0;
-    if ((res = na->server.accept(&con[n])) < 0)
-      return res;
-    n++;
-  }
-  safe_delay(net_throttle_delay / 2);
-  int i = 0;
-  for (i = 0; i < n; i++) {
-    socketManager.read(con[i].fd, dummy_read_request, 4096);
-    socketManager.write(con[i].fd, unix_netProcessor.throttle_error_message, strlen(unix_netProcessor.throttle_error_message));
-  }
-  safe_delay(net_throttle_delay / 2);
-  for (i = 0; i < n; i++)
-    con[i].close();
-  return 0;
-}
-
-//
 // General case network connection accept code
 //
 int
@@ -256,20 +223,7 @@ NetAccept::do_blocking_accept(EThread *t)
   do {
     ink_hrtime now = Thread::get_hrtime();
 
-    // Throttle accepts
-
-    while (!opt.backdoor && check_net_throttle(ACCEPT, now)) {
-      check_throttle_warning();
-      if (!unix_netProcessor.throttle_error_message) {
-        safe_delay(net_throttle_delay);
-      } else if (send_throttle_message(this) < 0) {
-        goto Lerror;
-      }
-      now = Thread::get_hrtime();
-    }
-
     if ((res = server.accept(&con)) < 0) {
-    Lerror:
       int seriousness = accept_error_seriousness(res);
       if (seriousness >= 0) { // not so bad
         if (!seriousness)     // bad enough to warn about
@@ -283,6 +237,14 @@ NetAccept::do_blocking_accept(EThread *t)
         Warning("accept thread received fatal error: errno = %d", errno);
       }
       return -1;
+    }
+
+    // Throttle accepts
+    if (!backdoor && (check_net_throttle(ACCEPT, now) || net_memory_throttle)) {
+      Debug("net_accept", "Too many connections or too much memory used, throttling");
+      check_throttle_warning();
+      con.close();
+      continue;
     }
 
     // The con.fd may exceed the limitation of check_net_throttle() because we do blocking accept here.

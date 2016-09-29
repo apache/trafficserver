@@ -45,7 +45,6 @@ public:
 
   virtual int start(int number_of_net_threads, size_t stacksize);
 
-  char *throttle_error_message;
   Event *accept_thread_event;
 
   // offsets for per thread data structures
