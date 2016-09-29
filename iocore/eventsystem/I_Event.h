@@ -111,16 +111,16 @@ class EThread;
 
   <b>Remarks</b>
 
-  When reschedulling an event through any of the Event class
-  schedulling fuctions, state machines must not make these calls
+  When rescheduling an event through any of the Event class
+  scheduling functions, state machines must not make these calls
   in other thread other than the one that called them back. They
   also must have acquired the continuation's lock before calling
-  any of the schedulling functions.
+  any of the scheduling functions.
 
-  The rules for cancelling an event are the same as those for
+  The rules for canceling an event are the same as those for
   actions:
 
-  The canceller of an event must be the state machine that will be
+  The canceler of an event must be the state machine that will be
   called back by the task and that state machine's lock must be
   held while calling cancel. Any reference to that event object
   (ie. pointer) held by the state machine must not be used after
@@ -138,7 +138,7 @@ class EThread;
 
   Time values:
 
-  The schedulling functions use a time parameter typed as ink_hrtime
+  The scheduling functions use a time parameter typed as ink_hrtime
   for specifying the timeouts or periods. This is a nanosecond value
   supported by libts and you should use the time functions and
   macros defined in ink_hrtime.h.
