@@ -6791,17 +6791,12 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
   // doing an accept at any time?
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
+  opt = make_net_accept_options(NULL, accept_threads);
+
   // If it's not IPv6, force to IPv4.
   opt.ip_family       = domain == AF_INET6 ? AF_INET6 : AF_INET;
-  opt.accept_threads  = accept_threads;
   opt.local_port      = port;
   opt.frequent_accept = false;
-
-  REC_ReadConfigInteger(opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
-  REC_ReadConfigInteger(opt.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
-  REC_ReadConfigInteger(opt.sockopt_flags, "proxy.config.net.sock_option_flag_in");
-  REC_ReadConfigInteger(opt.packet_mark, "proxy.config.net.sock_packet_mark_in");
-  REC_ReadConfigInteger(opt.packet_tos, "proxy.config.net.sock_packet_tos_in");
 
   INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
   return reinterpret_cast<TSAction>(netProcessor.accept(i, opt));
@@ -8973,7 +8968,7 @@ TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 {
   Action *action      = NULL;
   HttpProxyPort *port = (HttpProxyPort *)descp;
-  NetProcessor::AcceptOptions net(make_net_accept_options(*port, 0 /* nthreads */));
+  NetProcessor::AcceptOptions net(make_net_accept_options(port, 0 /* nthreads */));
 
   if (port->isSSL()) {
     action = sslNetProcessor.main_accept((INKContInternal *)contp, port->m_fd, net);
@@ -8993,7 +8988,7 @@ TSPluginDescriptorAccept(TSCont contp)
   for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
     HttpProxyPort &port = proxy_ports[i];
     if (port.isPlugin()) {
-      NetProcessor::AcceptOptions net(make_net_accept_options(port, 0 /* nthreads */));
+      NetProcessor::AcceptOptions net(make_net_accept_options(&port, 0 /* nthreads */));
       action = netProcessor.main_accept((INKContInternal *)contp, port.m_fd, net);
     }
   }

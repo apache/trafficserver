@@ -40,7 +40,7 @@ public:
   Action *connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *options = NULL);
   Action *connect(Continuation *cont, UnixNetVConnection **vc, sockaddr const *target, NetVCOptions *opt = NULL);
 
-  virtual NetAccept *createNetAccept();
+  virtual NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt);
   virtual NetVConnection *allocate_vc(EThread *t);
 
   virtual int start(int number_of_net_threads, size_t stacksize);

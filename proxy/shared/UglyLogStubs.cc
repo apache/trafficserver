@@ -116,7 +116,7 @@ LogCollationClientSM::send(LogBuffer * /* log_buffer ATS_UNUSED */)
 }
 
 NetAccept *
-UnixNetProcessor::createNetAccept()
+UnixNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {
   ink_release_assert(false);
   return NULL;

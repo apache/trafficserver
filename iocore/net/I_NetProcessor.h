@@ -86,6 +86,8 @@ public:
     uint32_t packet_mark;
     uint32_t packet_tos;
 
+    int tfo_queue_length;
+
     /** Transparency on client (user agent) connection.
         @internal This is irrelevant at a socket level (since inbound
         transparency must be set up when the listen socket is created)
