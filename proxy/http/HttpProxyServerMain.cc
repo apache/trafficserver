@@ -108,22 +108,34 @@ Vec<HttpProxyAcceptor> HttpProxyAcceptors;
 
 // Called from InkAPI.cc
 NetProcessor::AcceptOptions
-make_net_accept_options(const HttpProxyPort &port, unsigned nthreads)
+make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
 {
   NetProcessor::AcceptOptions net;
 
   net.accept_threads = nthreads;
 
-  net.f_inbound_transparent = port.m_inbound_transparent_p;
-  net.ip_family             = port.m_family;
-  net.local_port            = port.m_port;
+  REC_ReadConfigInteger(net.packet_mark, "proxy.config.net.sock_packet_mark_in");
+  REC_ReadConfigInteger(net.packet_tos, "proxy.config.net.sock_packet_tos_in");
+  REC_ReadConfigInteger(net.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
+  REC_ReadConfigInteger(net.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
+  REC_ReadConfigInteger(net.sockopt_flags, "proxy.config.net.sock_option_flag_in");
 
-  if (port.m_inbound_ip.isValid()) {
-    net.local_ip = port.m_inbound_ip;
-  } else if (AF_INET6 == port.m_family && HttpConfig::m_master.inbound_ip6.isIp6()) {
-    net.local_ip = HttpConfig::m_master.inbound_ip6;
-  } else if (AF_INET == port.m_family && HttpConfig::m_master.inbound_ip4.isIp4()) {
-    net.local_ip = HttpConfig::m_master.inbound_ip4;
+#ifdef TCP_FASTOPEN
+  REC_ReadConfigInteger(net.tfo_queue_length, "proxy.config.net.sock_option_tfo_queue_size_in");
+#endif
+
+  if (port) {
+    net.f_inbound_transparent = port->m_inbound_transparent_p;
+    net.ip_family             = port->m_family;
+    net.local_port            = port->m_port;
+
+    if (port->m_inbound_ip.isValid()) {
+      net.local_ip = port->m_inbound_ip;
+    } else if (AF_INET6 == port->m_family && HttpConfig::m_master.inbound_ip6.isIp6()) {
+      net.local_ip = HttpConfig::m_master.inbound_ip6;
+    } else if (AF_INET == port->m_family && HttpConfig::m_master.inbound_ip4.isIp4()) {
+      net.local_ip = HttpConfig::m_master.inbound_ip4;
+    }
   }
 
   return net;
@@ -135,11 +147,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   NetProcessor::AcceptOptions &net_opt = acceptor._net_opt;
   HttpSessionAccept::Options accept_opt;
 
-  net_opt = make_net_accept_options(port, nthreads);
-  REC_ReadConfigInteger(net_opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
-  REC_ReadConfigInteger(net_opt.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
-  REC_ReadConfigInteger(net_opt.packet_mark, "proxy.config.net.sock_packet_mark_in");
-  REC_ReadConfigInteger(net_opt.packet_tos, "proxy.config.net.sock_packet_tos_in");
+  net_opt = make_net_accept_options(&port, nthreads);
 
   accept_opt.f_outbound_transparent = port.m_outbound_transparent_p;
   accept_opt.transport_type         = port.m_type;
