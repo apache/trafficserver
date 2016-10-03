@@ -199,6 +199,7 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
       for (auto it = options.begin(); it < options.end(); ++it) {
         ink_strlcat(tsArgs, " ", sizeof(tsArgs));
         ink_strlcat(tsArgs, static_cast<const char*>(*it), sizeof(tsArgs));
+        free(*it);
       }
     }
 

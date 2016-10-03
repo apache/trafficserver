@@ -866,6 +866,11 @@ main(int argc, const char **argv)
     }
   }
 
+  // Delete the proxy options we saved for CoreAPI.
+  // This probably isn't needed b/c the process dies here...
+  for (auto it = callback_proxy_options.begin(); it < callback_proxy_options.end(); ++it)
+    free(*it);
+
   if (binding) {
     metrics_binding_destroy(*binding);
     delete binding;
