@@ -27,6 +27,7 @@
 #include "ts/ink_sock.h"
 #include "ts/ink_args.h"
 #include "ts/ink_syslog.h"
+#include <vector>
 
 #include "WebMgmtUtils.h"
 #include "WebOverview.h"
@@ -64,6 +65,9 @@
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 #define DIAGS_LOG_FILENAME "manager.log"
+
+// Used to pass traffic_server options to the RPC API
+extern std::function<void(std::vector<char*>&)> proxy_options_callback;  // declared in CoreAPI.cc
 
 // These globals are still referenced directly by management API.
 LocalManager *lmgmt = NULL;
@@ -445,6 +449,8 @@ main(int argc, const char **argv)
   int binding_version      = 0;
   BindingInstance *binding = NULL;
 
+  std::vector<char*> callback_proxy_options;
+
   ArgumentDescription argument_descriptions[] = {
     {"proxyOff", '-', "Disable proxy", "F", &proxy_off, NULL, NULL},
     {"aconfPort", '-', "Autoconf port", "I", &aconf_port_arg, "MGMT_ACONF_PORT", NULL},
@@ -619,6 +625,9 @@ main(int argc, const char **argv)
   // we must pass in bind_stdout and bind_stderr values to TS
   // we do it so TS is able to create BaseLogFiles for each value
   if (*bind_stdout != 0) {
+    callback_proxy_options.push_back(ats_strdup(TM_OPT_BIND_STDOUT));
+    callback_proxy_options.push_back(ats_strdup(bind_stdout));
+
     size_t l = strlen(lmgmt->proxy_options);
     size_t n = 3                            /* " --" */
                + sizeof(TM_OPT_BIND_STDOUT) /* nul accounted for here */
@@ -629,6 +638,9 @@ main(int argc, const char **argv)
   }
 
   if (*bind_stderr != 0) {
+    callback_proxy_options.push_back(ats_strdup(TM_OPT_BIND_STDERR));
+    callback_proxy_options.push_back(ats_strdup(bind_stderr));
+
     size_t l = strlen(lmgmt->proxy_options);
     size_t n = 3                            /* space dash dash */
                + sizeof(TM_OPT_BIND_STDERR) /* nul accounted for here */
@@ -636,6 +648,16 @@ main(int argc, const char **argv)
                + strlen(bind_stderr);
     lmgmt->proxy_options = static_cast<char *>(ats_realloc(lmgmt->proxy_options, n + l));
     snprintf(lmgmt->proxy_options + l, n, " --%s %s", TM_OPT_BIND_STDERR, bind_stderr);
+  }
+
+  // If there exist proxy options we want CoreAPI to have, we set the callback
+  // to a lambda that will pass the options
+  if (callback_proxy_options.size() > 0) {
+    proxy_options_callback = [&callback_proxy_options](std::vector<char*> &opts) {
+      for (auto it = callback_proxy_options.begin(); it < callback_proxy_options.end(); ++it) {
+        opts.push_back(ats_strdup(*it));
+      }
+    };
   }
 
   if (proxy_port) {

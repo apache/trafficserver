@@ -41,6 +41,7 @@
 #include "ts/Diags.h"
 #include "ts/ink_hash_table.h"
 #include "ExpandingArray.h"
+#include <vector>
 //#include "I_AccCrypto.h"
 
 #include "CoreAPI.h"
@@ -52,6 +53,9 @@
 
 // global variable
 CallbackTable *local_event_callbacks;
+
+// Used to get any proxy options that traffic_manager might want to tack on
+std::function<void(std::vector<char*>&)> proxy_options_callback;
 
 extern FileManager *configFiles; // global in traffic_manager
 
@@ -184,11 +188,25 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
       ink_strlcat(tsArgs, " -k", sizeof(tsArgs));
     }
 
-    if (strlen(tsArgs) > 0) { /* Passed command line args for proxy */
-      ats_free(lmgmt->proxy_options);
-      lmgmt->proxy_options = ats_strdup(tsArgs);
-      mgmt_log("[ProxyStateSet] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
+    // If we've been provided an options callback, then we call the callback and
+    // put all the extra options we receive into tsArgs
+    //
+    // proxy_options_callback is given to us by traffic_manager
+    if (proxy_options_callback) {
+      std::vector<char*> options;
+      proxy_options_callback(options);
+
+      for (auto it = options.begin(); it < options.end(); ++it) {
+        ink_strlcat(tsArgs, " ", sizeof(tsArgs));
+        ink_strlcat(tsArgs, static_cast<const char*>(*it), sizeof(tsArgs));
+      }
     }
+
+    // We always want to delete the previous run's proxy_options
+    // because we to repopulate with the most up to date options each TS restart
+    ats_free(lmgmt->proxy_options);
+    lmgmt->proxy_options = ats_strdup(tsArgs);
+    mgmt_log("[ProxyStateSet] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
 
     lmgmt->run_proxy = true;
     lmgmt->listenForProxy();
