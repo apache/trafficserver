@@ -100,6 +100,7 @@ struct OOB_callback : public Continuation {
 class UnixNetVConnection : public NetVConnection
 {
 public:
+  virtual const int64_t outstanding();
   virtual VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
   virtual VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
 

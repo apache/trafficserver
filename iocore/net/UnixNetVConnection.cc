@@ -632,6 +632,19 @@ UnixNetVConnection::get_data(int id, void *data)
   }
 }
 
+const int64_t
+UnixNetVConnection::outstanding()
+{
+  int n;
+  int ret = ioctl(this->get_socket(), TIOCOUTQ, &n);
+  // if there was an error (such as ioctl doesn't support this call on this platform) then
+  // we return -1
+  if (ret == -1) {
+    return ret;
+  }
+  return n;
+}
+
 VIO *
 UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {

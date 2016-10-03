@@ -5313,9 +5313,6 @@ HttpSM::handle_post_failure()
     tunnel.deallocate_buffers();
     tunnel.reset();
     // Server died
-    vc_table.cleanup_entry(server_entry);
-    server_entry          = NULL;
-    server_session        = NULL;
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
     call_transact_and_set_next_state(HttpTransact::HandleResponse);
   }
@@ -5477,9 +5474,6 @@ HttpSM::handle_server_setup_error(int event, void *data)
 
   // Closedown server connection and deallocate buffers
   ink_assert(server_entry->in_tunnel == false);
-  vc_table.cleanup_entry(server_entry);
-  server_entry   = NULL;
-  server_session = NULL;
 
   // if we are waiting on a plugin callout for
   //   HTTP_API_SEND_REQUEST_HDR defer calling transact until
