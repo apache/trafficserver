@@ -37,6 +37,7 @@
 #include "FileManager.h"
 #include "ts/I_Layout.h"
 #include "ts/I_Version.h"
+#include "ts/TextBuffer.h"
 #include "DiagsConfig.h"
 #include "HTTP.h"
 #include "CoreAPI.h"
@@ -610,32 +611,26 @@ main(int argc, const char **argv)
 
   /* Update cmd line overrides/environmental overrides/etc */
   if (tsArgs) { /* Passed command line args for proxy */
-    ats_free(lmgmt->proxy_options);
-    lmgmt->proxy_options = tsArgs;
-    mgmt_log("[main] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
+    lmgmt->proxy_options = ats_strdup(tsArgs);
   }
 
-  // we must pass in bind_stdout and bind_stderr values to TS
-  // we do it so TS is able to create BaseLogFiles for each value
-  if (*bind_stdout != 0) {
-    size_t l = strlen(lmgmt->proxy_options);
-    size_t n = 3                            /* " --" */
-               + sizeof(TM_OPT_BIND_STDOUT) /* nul accounted for here */
-               + 1                          /* space */
-               + strlen(bind_stdout);
-    lmgmt->proxy_options = static_cast<char *>(ats_realloc(lmgmt->proxy_options, n + l));
-    snprintf(lmgmt->proxy_options + l, n, " --%s %s", TM_OPT_BIND_STDOUT, bind_stdout);
+  // TS needs to be started up with the same outputlog bindings each time,
+  // so we append the outputlog location to the persistent proxy options
+  //
+  // TS needs them to be able to create BaseLogFiles for each value
+  textBuffer args(1024);
+
+  if (*bind_stdout) {
+    const char *space = args.empty() ? "" : " ";
+    args.format("%s%s %s", space, "--" TM_OPT_BIND_STDOUT, bind_stdout);
   }
 
-  if (*bind_stderr != 0) {
-    size_t l = strlen(lmgmt->proxy_options);
-    size_t n = 3                            /* space dash dash */
-               + sizeof(TM_OPT_BIND_STDERR) /* nul accounted for here */
-               + 1                          /* space */
-               + strlen(bind_stderr);
-    lmgmt->proxy_options = static_cast<char *>(ats_realloc(lmgmt->proxy_options, n + l));
-    snprintf(lmgmt->proxy_options + l, n, " --%s %s", TM_OPT_BIND_STDERR, bind_stderr);
+  if (*bind_stderr) {
+    const char *space = args.empty() ? "" : " ";
+    args.format("%s%s %s", space, "--" TM_OPT_BIND_STDERR, bind_stderr);
   }
+
+  lmgmt->proxy_options = args.release();
 
   if (proxy_port) {
     HttpProxyPort::loadValue(lmgmt->m_proxy_ports, proxy_port);
@@ -812,7 +807,7 @@ main(int argc, const char **argv)
       } else {
         sleep_time = 1;
       }
-      if (lmgmt->startProxy()) {
+      if (ProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_NONE) == TS_ERR_OKAY) {
         just_started = 0;
         sleep_time   = 0;
       } else {
