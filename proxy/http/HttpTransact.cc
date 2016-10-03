@@ -6534,16 +6534,25 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 // bool HttpTransact::is_request_retryable
 //
 // In the general case once bytes have been sent on the wire the request cannot be retried.
-// The reason we cannot retry is that the rfc2616 does not make any gaurantees about the
+// The reason we cannot retry is that the rfc2616 does not make any guarantees about the
 // retry-ability of a request. In fact in the reverse proxy case it is quite common for GET
-// requests on the origin to fire tracking events etc. So, as a proxy once we have sent bytes
-// on the wire to the server we cannot gaurantee that the request is safe to redispatch to another server.
+// requests on the origin to fire tracking events etc. So, as a proxy, once bytes have been ACKd
+// by the server we cannot guarantee that the request is safe to retry or redispatch to another server.
+// This is distinction of "ACKd" vs "sent" is intended, and has reason. In the case of a
+// new origin connection there is little difference, as the chance of a RST between setup
+// and the first set of bytes is relatively small. This distinction is more apparent in the
+// case where the origin connection is a KA session. In this case, the session may not have
+// been used for a long time. In that case, we'll immediately queue up session to send to the
+// origin, without any idea of the state of the connection. If the origin is dead (or the connection
+// is broken for some other reason) we'll immediately get a RST back. In that case-- since no
+// bytes where ACKd by the remote end, we can retry/redispatch the request.
 //
 bool
 HttpTransact::is_request_retryable(State *s)
 {
   // If there was no error establishing the connection (and we sent bytes)-- we cannot retry
-  if (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0) {
+  if (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0 &&
+      s->state_machine->get_server_session()->get_netvc()->outstanding() != s->state_machine->server_request_hdr_bytes) {
     return false;
   }
 
