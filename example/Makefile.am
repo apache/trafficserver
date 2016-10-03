@@ -32,6 +32,7 @@ plugins = \
   lifecycle-plugin.la \
   null-transform.la \
   output-header.la \
+  passthru.la \
   protocol-stack.la \
   protocol.la \
   psi.la \
@@ -41,6 +42,7 @@ plugins = \
   replace-header.la \
   response-header-1.la \
   secure-link.la \
+  server-push.la \
   server-transform.la \
   ssl-preaccept.la \
   ssl-sni-whitelist.la \
@@ -48,7 +50,6 @@ plugins = \
   statistic.la \
   thread-1.la \
   txn-data-sink.la \
-  server-push.la \
   version.la
 
 if BUILD_EXAMPLE_PLUGINS
@@ -70,6 +71,7 @@ intercept_la_SOURCES = intercept/intercept.cc
 lifecycle_plugin_la_SOURCES = lifecycle-plugin/lifecycle-plugin.c
 null_transform_la_SOURCES = null-transform/null-transform.c
 output_header_la_SOURCES = output-header/output-header.c
+passthru_la_SOURCES = passthru/passthru.cc
 protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
 protocol_stack_la_SOURCES = protocol-stack/protocol-stack.cc
 psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
@@ -79,6 +81,7 @@ remap_la_SOURCES = remap/remap.cc
 replace_header_la_SOURCES = replace-header/replace-header.c
 response_header_1_la_SOURCES = response-header-1/response-header-1.c
 secure_link_la_SOURCES = secure-link/secure-link.c
+server_push_la_SOURCES = server-push/server-push.c
 server_transform_la_SOURCES = server-transform/server-transform.c
 ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc
 ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc
@@ -87,7 +90,6 @@ statistic_la_SOURCES = statistic/statistic.cc
 thread_1_la_SOURCES = thread-1/thread-1.c
 txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
 version_la_SOURCES = version/version.c
-server_push_la_SOURCES = server-push/server-push.c
 
 # The following examples do not build:
 #
