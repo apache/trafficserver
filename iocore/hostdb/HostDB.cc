@@ -312,39 +312,41 @@ HostDBCache::start(int flags)
     Fatal("proxy.config.hostdb.max_size must be a non-zero number");
   }
 
-  // If proxy.config.hostdb.storage_path is not set, use the local state dir. If it is set to
-  // a relative path, make it relative to the prefix.
-  if (storage_path[0] == '\0') {
-    ats_scoped_str rundir(RecConfigReadRuntimeDir());
-    ink_strlcpy(storage_path, rundir, sizeof(storage_path));
-  } else if (storage_path[0] != '/') {
-    Layout::relative_to(storage_path, sizeof(storage_path), Layout::get()->prefix, storage_path);
-  }
-
-  Debug("hostdb", "Storage path is %s", storage_path);
-
-  if (access(storage_path, W_OK | R_OK) == -1) {
-    Warning("Unable to access() directory '%s': %d, %s", storage_path, errno, strerror(errno));
-    Warning("Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir'");
-  }
-
-  // Combine the path and name
-  char full_path[2 * PATH_NAME_MAX];
-  ink_filepath_make(full_path, 2 * PATH_NAME_MAX, storage_path, hostdb_filename);
-
-  Debug("hostdb", "Opening %s, partitions=%d storage_size=%" PRIu64 " items=%d", full_path, hostdb_partitions, hostdb_max_size,
-        hostdb_max_count);
+  // Setup the ref-counted cache (this must be done regardless of syncing or not).
   this->refcountcache = new RefCountCache<HostDBInfo>(hostdb_partitions, hostdb_max_size, hostdb_max_count, HostDBInfo::version(),
                                                       "proxy.process.hostdb.cache.");
-  int load_ret = LoadRefCountCacheFromPath<HostDBInfo>(*this->refcountcache, storage_path, full_path, HostDBInfo::unmarshall);
-  if (load_ret != 0) {
-    Warning("Error loading cache from %s: %d", full_path, load_ret);
-  }
 
   //
-  // Sync HostDB, if we've asked for it.
+  // Load and sync HostDB, if we've asked for it.
   //
   if (hostdb_sync_frequency > 0) {
+    // If proxy.config.hostdb.storage_path is not set, use the local state dir. If it is set to
+    // a relative path, make it relative to the prefix.
+    if (storage_path[0] == '\0') {
+      ats_scoped_str rundir(RecConfigReadRuntimeDir());
+      ink_strlcpy(storage_path, rundir, sizeof(storage_path));
+    } else if (storage_path[0] != '/') {
+      Layout::relative_to(storage_path, sizeof(storage_path), Layout::get()->prefix, storage_path);
+    }
+
+    Debug("hostdb", "Storage path is %s", storage_path);
+
+    if (access(storage_path, W_OK | R_OK) == -1) {
+      Warning("Unable to access() directory '%s': %d, %s", storage_path, errno, strerror(errno));
+      Warning("Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir'");
+    }
+
+    // Combine the path and name
+    char full_path[2 * PATH_NAME_MAX];
+    ink_filepath_make(full_path, 2 * PATH_NAME_MAX, storage_path, hostdb_filename);
+
+    Debug("hostdb", "Opening %s, partitions=%d storage_size=%" PRIu64 " items=%d", full_path, hostdb_partitions, hostdb_max_size,
+          hostdb_max_count);
+    int load_ret = LoadRefCountCacheFromPath<HostDBInfo>(*this->refcountcache, storage_path, full_path, HostDBInfo::unmarshall);
+    if (load_ret != 0) {
+      Warning("Error loading cache from %s: %d", full_path, load_ret);
+    }
+
     eventProcessor.schedule_imm(new HostDBSync(hostdb_sync_frequency, storage_path, full_path), ET_TASK);
   }
 
