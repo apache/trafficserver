@@ -384,16 +384,21 @@ LocalManager::pollMgmtProcessServer()
   int num;
   struct timeval timeout;
   fd_set fdlist;
-#if TS_HAS_WCCP
-  int wccp_fd = wccp_cache.getSocket();
-#endif
 
   while (1) {
-    // poll only
+#if TS_HAS_WCCP
+    int wccp_fd = wccp_cache.getSocket();
+#endif
+
     timeout.tv_sec  = process_server_timeout_secs;
     timeout.tv_usec = process_server_timeout_msecs * 1000;
+
     FD_ZERO(&fdlist);
-    FD_SET(process_server_sockfd, &fdlist);
+
+    if (process_server_sockfd != ts::NO_FD) {
+      FD_SET(process_server_sockfd, &fdlist);
+    }
+
     if (watched_process_fd != ts::NO_FD) {
       FD_SET(watched_process_fd, &fdlist);
     }
@@ -406,20 +411,36 @@ LocalManager::pollMgmtProcessServer()
       time_t wccp_wait = wccp_cache.waitTime();
       if (wccp_wait < process_server_timeout_secs)
         timeout.tv_sec = wccp_wait;
-      FD_SET(wccp_cache.getSocket(), &fdlist);
+
+      if (wccp_fd != ts::NO_FD) {
+        FD_SET(wccp_fd, &fdlist);
+      }
     }
 #endif
 
     num = mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &timeout);
-    if (num == 0) { /* Have nothing */
-      break;
-    } else if (num > 0) { /* Have something */
+
+    switch (num) {
+    case 0:
+      // Timed out, nothing to do.
+      return;
+    case -1:
+      if (mgmt_transient_error()) {
+        continue;
+      }
+
+      mgmt_log("[LocalManager::pollMgmtProcessServer] select failed: %s (%d)\n", ::strerror(errno), errno);
+      return;
+
+    default:
+
 #if TS_HAS_WCCP
       if (wccp_fd != ts::NO_FD && FD_ISSET(wccp_fd, &fdlist)) {
         wccp_cache.handleMessage();
         --num;
       }
 #endif
+
       if (FD_ISSET(process_server_sockfd, &fdlist)) { /* New connection */
         struct sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
@@ -456,6 +477,7 @@ LocalManager::pollMgmtProcessServer()
         } else if (res < 0) {
           mgmt_fatal(0, "[LocalManager::pollMgmtProcessServer] Error in read (errno: %d)\n", -res);
         }
+
         // handle EOF
         if (res == 0) {
           int estatus;
@@ -488,10 +510,8 @@ LocalManager::pollMgmtProcessServer()
 
         num--;
       }
-      ink_assert(num == 0); /* Invariant */
 
-    } else if (num < 0) { /* Error */
-      mgmt_log("[LocalManager::pollMgmtProcessServer] select failed or was interrupted (%d)\n", errno);
+      ink_assert(num == 0); /* Invariant */
     }
   }
 }
