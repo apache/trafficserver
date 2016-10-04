@@ -81,10 +81,9 @@ struct PassthruIO {
   {
     TSReleaseAssert(this->vio == NULL);
 
-    TSReleaseAssert((this->iobuf = TSIOBufferCreate()));
-    TSReleaseAssert((this->reader = TSIOBufferReaderAlloc(this->iobuf)));
-
-    this->vio = TSVConnRead(vconn, contp, this->iobuf, INT64_MAX);
+    this->iobuf  = TSIOBufferCreate();
+    this->reader = TSIOBufferReaderAlloc(this->iobuf);
+    this->vio    = TSVConnRead(vconn, contp, this->iobuf, INT64_MAX);
   }
 
   // Start a write operation.
@@ -93,10 +92,9 @@ struct PassthruIO {
   {
     TSReleaseAssert(this->vio == NULL);
 
-    TSReleaseAssert((this->iobuf = TSIOBufferCreate()));
-    TSReleaseAssert((this->reader = TSIOBufferReaderAlloc(this->iobuf)));
-
-    this->vio = TSVConnWrite(vconn, contp, this->reader, INT64_MAX);
+    this->iobuf  = TSIOBufferCreate();
+    this->reader = TSIOBufferReaderAlloc(this->iobuf);
+    this->vio    = TSVConnWrite(vconn, contp, this->reader, INT64_MAX);
   }
 
   // Transfer data from this IO object to the target IO object.
@@ -205,6 +203,8 @@ PassthruSessionEvent(TSCont cont, TSEvent event, void *edata)
     // On the first read, wire up the internal transfer to the server.
     if (sp->server.vconn == nullptr) {
       sp->server.vconn = TSHttpConnectWithPluginId(TSNetVConnRemoteAddrGet(sp->client.vconn), PLUGIN_NAME, 0);
+
+      TSReleaseAssert(sp->server.vconn != nullptr);
 
       // Start the server end of the IO before we write any data.
       sp->server.readio.read(sp->server.vconn, sp->contp);
@@ -324,7 +324,7 @@ PassthruListen()
   TSDebug(PLUGIN_NAME, "listening on port '%s'", ports);
   TSfree(ports);
 
-  TSReleaseAssert(cont = TSContCreate(PassthruAccept, nullptr));
+  cont = TSContCreate(PassthruAccept, nullptr);
   return TSPortDescriptorAccept(descriptor, cont);
 }
 
@@ -339,14 +339,18 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
     };
   // clang-format on
 
+  TSReturnCode status;
+
   TSMgmtStringCreate(TS_RECORDTYPE_CONFIG, "config.plugin.passthru.server_ports", const_cast<char *>(""),
                      TS_RECORDUPDATE_RESTART_TS, TS_RECORDCHECK_NULL, nullptr /* check_regex */, TS_RECORDACCESS_NULL);
 
   // Start listening on the configured port.
-  TSReleaseAssert(PassthruListen() == TS_SUCCESS);
+  status = PassthruListen();
+  TSReleaseAssert(status == TS_SUCCESS);
 
   // Now that succeded, we can register.
-  TSReleaseAssert(TSPluginRegister(&info) == TS_SUCCESS);
+  status = TSPluginRegister(&info);
+  TSReleaseAssert(status == TS_SUCCESS);
 }
 
 // vim: set sw=2 ts=2 sts=2 et:
