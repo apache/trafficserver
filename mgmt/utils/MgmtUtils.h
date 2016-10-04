@@ -39,8 +39,6 @@
 
 #include "P_RecCore.h"
 
-void mgmt_blockAllSigs();
-
 int mgmt_readline(int fd, char *buf, int maxlen);
 int mgmt_writeline(int fd, const char *data, int nbytes);
 

@@ -209,19 +209,6 @@ mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
 }
 
 void
-mgmt_blockAllSigs()
-{
-#if !defined(linux)
-  // Start by blocking all signals
-  sigset_t allSigs; // Set of all signals
-  sigfillset(&allSigs);
-  if (ink_thread_sigsetmask(SIG_SETMASK, &allSigs, NULL) < 0) {
-    perror("ink_thread_sigsetmask");
-  }
-#endif
-}
-
-void
 mgmt_log(const char *message_format, ...)
 {
   va_list ap;
