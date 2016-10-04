@@ -2379,6 +2379,12 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
     case MIME_PARSE_AFTER:
       // After a LF. Might be the end or a continuation.
       if (ParseRules::is_ws(*raw_input_c)) {
+        char *unfold = const_cast<char *>(raw_input_c - 1);
+
+        *unfold-- = ' ';
+        if (ParseRules::is_cr(*unfold)) {
+          *unfold = ' ';
+        }
         S->m_state = MIME_PARSE_INSIDE; // back inside the field.
       } else {
         S->m_state = MIME_PARSE_BEFORE; // field terminated.
