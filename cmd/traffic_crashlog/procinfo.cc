@@ -50,20 +50,38 @@ procfd_readlink(pid_t pid, const char *fname)
   return resolved.release();
 }
 
-bool
-crashlog_write_regions(FILE *fp, const crashlog_target &target)
+// Suck in a file from /proc/$PID and write it out with the given label.
+static bool
+write_procfd_file(const char *filename, const char *label, FILE *fp, const crashlog_target &target)
 {
   ats_scoped_fd fd;
   textBuffer text(0);
-
-  fd = procfd_open(target.pid, "maps");
+  fd = procfd_open(target.pid, filename);
   if (fd != -1) {
     text.slurp(fd);
     text.chomp();
-    fprintf(fp, "Memory Regions:\n%.*s\n", (int)text.spaceUsed(), text.bufPtr());
+    fprintf(fp, "%s:\n%.*s\n", label, (int)text.spaceUsed(), text.bufPtr());
   }
 
   return !text.empty();
+}
+
+bool
+crashlog_write_regions(FILE *fp, const crashlog_target &target)
+{
+  return write_procfd_file("maps", "Memory Regions", fp, target);
+}
+
+bool
+crashlog_write_procstatus(FILE *fp, const crashlog_target &target)
+{
+  return write_procfd_file("status", "Process Status", fp, target);
+}
+
+bool
+crashlog_write_proclimits(FILE *fp, const crashlog_target &target)
+{
+  return write_procfd_file("limits", "Process Limits", fp, target);
 }
 
 bool
@@ -121,23 +139,6 @@ crashlog_write_datime(FILE *fp, const crashlog_target &target)
   strftime(buf, sizeof(buf), "%a, %d %b %Y %T %z", &target.timestamp);
   fprintf(fp, LABELFMT "%s\n", "Date:", buf);
   return true;
-}
-
-bool
-crashlog_write_procstatus(FILE *fp, const crashlog_target &target)
-{
-  ats_scoped_fd fd;
-  textBuffer text(0);
-
-  fd = procfd_open(target.pid, "status");
-  if (fd != -1) {
-    text.slurp(fd);
-    text.chomp();
-
-    fprintf(fp, "Process Status:\n%s\n", text.bufPtr());
-  }
-
-  return !text.empty();
 }
 
 bool
