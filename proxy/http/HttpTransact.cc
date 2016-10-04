@@ -8291,6 +8291,10 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   // After the body factory is called, a new "body" is allocated, and we must replace it. It is
   // unfortunate that there's no way to avoid this fabrication even when there is no substitutions...
   s->free_internal_msg_buffer();
+  if (len == 0) {
+    // If the file is empty, we may have a malloc(1) buffer. Release it.
+    new_msg = (char *)ats_free_null(new_msg);
+  }
   s->internal_msg_buffer                     = new_msg;
   s->internal_msg_buffer_size                = len;
   s->internal_msg_buffer_fast_allocator_size = -1;
