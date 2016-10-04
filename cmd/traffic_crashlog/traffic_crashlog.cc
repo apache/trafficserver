@@ -205,6 +205,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   crashlog_write_procstatus(fp, target);
 
   fprintf(fp, "\n");
+  crashlog_write_proclimits(fp, target);
+
+  fprintf(fp, "\n");
   crashlog_write_regions(fp, target);
 
   fprintf(fp, "\n");
