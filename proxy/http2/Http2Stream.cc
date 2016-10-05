@@ -329,8 +329,6 @@ Http2Stream::do_io_close(int /* flags */)
       // Wee will be removed at send_data_frames or closing connection phase
       static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
     }
-    // Check to see if the stream is in the closed state
-    ink_assert(get_state() == HTTP2_STREAM_STATE_CLOSED || get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE);
 
     clear_timers();
     clear_io_events();
