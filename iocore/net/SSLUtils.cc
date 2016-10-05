@@ -109,6 +109,7 @@ struct ssl_user_config {
     REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
     Debug("ssl", "ticket  key filename %s", (const char *)ticket_key_filename);
   }
+
   int session_ticket_enabled;
   ats_scoped_str addr;
   ats_scoped_str cert;
@@ -559,6 +560,7 @@ ssl_context_enable_ecdh(SSL_CTX *ctx)
 
   return ctx;
 }
+
 static ssl_ticket_key_block *
 ssl_create_ticket_keyblock(const char *ticket_key_path)
 {
@@ -617,6 +619,7 @@ fail:
   return NULL;
 #endif /* HAVE_OPENSSL_SESSION_TICKETS */
 }
+
 static ssl_ticket_key_block *
 ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 {
@@ -843,6 +846,7 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_timeout_stat, timeouts);
   return RecRawStatSyncCount(name, data_type, data, rsb, id);
 }
+
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
 void *
 ssl_malloc(size_t size, const char * /*filename */, int /*lineno*/)
