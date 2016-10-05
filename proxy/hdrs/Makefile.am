@@ -76,7 +76,6 @@ test_mime_LDADD = -L. -lhdrs \
 test_mime_SOURCES = test_mime.cc
 
 #test_UNUSED_SOURCES = \
-#  test_header.cc \
 #  test_urlhash.cc
 
 tidy-local: $(libhdrs_a_SOURCES)
