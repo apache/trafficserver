@@ -75,5 +75,4 @@ test_mime_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 test_mime_SOURCES = test_mime.cc
 
 #test_UNUSED_SOURCES = \
-#  test_header.cc \
 #  test_urlhash.cc
