@@ -7177,10 +7177,9 @@ HttpSM::set_next_state()
   case HttpTransact::SM_ACTION_DNS_LOOKUP: {
     sockaddr const *addr;
 
-    if ((strncmp(t_state.dns_info.lookup_name, "127.0.0.1", 9) == 0 || strncmp(t_state.dns_info.lookup_name, "::1", 3) == 0) &&
-        ats_ip_pton(t_state.dns_info.lookup_name, t_state.host_db_info.ip()) == 0) {
-      // If it's 127.0.0.1 or ::1 don't bother with hostdb
-      DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for %s because it's loopback",
+    if (ats_ip_pton(t_state.dns_info.lookup_name, t_state.host_db_info.ip()) == 0) {
+      // If it's an ip address don't bother with hostdb
+      DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for %s because it's an ip address",
               t_state.dns_info.lookup_name);
       t_state.dns_info.lookup_success = true;
       call_transact_and_set_next_state(NULL);
