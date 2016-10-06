@@ -166,7 +166,7 @@ public:
   {
     va_list ap;
     va_start(ap, fmt);
-    print_va(NULL, level, loc, fmt, ap);
+    print_va(tag, level, loc, fmt, ap);
     va_end(ap);
   }
 
@@ -178,7 +178,7 @@ public:
     if (on(tag)) {
       va_list ap;
       va_start(ap, fmt);
-      print_va(NULL, level, loc, fmt, ap);
+      print_va(tag, level, loc, fmt, ap);
       va_end(ap);
     }
   }
@@ -187,7 +187,7 @@ public:
   log_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap)
   {
     if (on(tag)) {
-      print_va(NULL, level, loc, fmt, ap);
+      print_va(tag, level, loc, fmt, ap);
     }
   }
 
