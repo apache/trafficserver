@@ -558,7 +558,8 @@ HttpTransact::BadRequest(State *s)
 void
 HttpTransact::HandleBlindTunnel(State *s)
 {
-  bool inbound_transparent_p = s->state_machine->ua_session->get_netvc()->get_is_transparent();
+  NetVConnection *vc         = s->state_machine->ua_session->get_netvc();
+  bool inbound_transparent_p = vc->get_is_transparent();
   URL u;
   // IpEndpoint dest_addr;
   // ip_text_buffer new_host;
@@ -580,10 +581,10 @@ HttpTransact::HandleBlindTunnel(State *s)
   s->hdr_info.client_request.version_set(ver);
 
   char new_host[INET6_ADDRSTRLEN];
-  ats_ip_ntop(s->state_machine->ua_session->get_netvc()->get_local_addr(), new_host, sizeof(new_host));
+  ats_ip_ntop(vc->get_local_addr(), new_host, sizeof(new_host));
 
   s->hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
-  s->hdr_info.client_request.url_get()->port_set(s->state_machine->ua_session->get_netvc()->get_local_port());
+  s->hdr_info.client_request.url_get()->port_set(vc->get_local_port());
 
   // Initialize the state vars necessary to sending error responses
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
@@ -918,7 +919,7 @@ HttpTransact::EndRemapRequest(State *s)
 done:
   // We now set the active-timeout again, since it might have been changed as part of the remap rules.
   if (s->state_machine->ua_session) {
-    s->state_machine->ua_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(s->txn_conf->transaction_active_timeout_in));
+    s->state_machine->ua_session->set_active_timeout(HRTIME_SECONDS(s->txn_conf->transaction_active_timeout_in));
   }
 
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
@@ -5643,13 +5644,14 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->client_info.proxy_connect_hdr = true;
   }
 
-  if (s->state_machine->ua_session) {
-    s->request_data.incoming_port = s->state_machine->ua_session->get_netvc()->get_local_port();
-    s->request_data.internal_txn  = s->state_machine->ua_session->get_netvc()->get_is_internal_request();
-  }
   NetVConnection *vc = NULL;
   if (s->state_machine->ua_session) {
     vc = s->state_machine->ua_session->get_netvc();
+  }
+
+  if (vc) {
+    s->request_data.incoming_port = vc->get_local_port();
+    s->request_data.internal_txn  = vc->get_is_internal_request();
   }
   // If this is an internal request, never keep alive
   if (!s->txn_conf->keep_alive_enabled_in || (vc && vc->get_is_internal_request()) ||
@@ -5733,11 +5735,8 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   s->request_data.hostname_str = s->arena.str_store(host_name, host_len);
   ats_ip_copy(&s->request_data.src_ip, &s->client_info.src_addr);
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
-  if (s->state_machine->ua_session) {
-    NetVConnection *netvc = s->state_machine->ua_session->get_netvc();
-    if (netvc) {
-      s->request_data.incoming_port = netvc->get_local_port();
-    }
+  if (vc) {
+    s->request_data.incoming_port = vc->get_local_port();
   }
   s->request_data.xact_start = s->client_request_time;
   s->request_data.api_info   = &s->api_info;

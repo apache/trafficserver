@@ -1632,8 +1632,8 @@ HttpSM::handle_api_return()
           DebugSM("http_websocket",
                   "(client session) Setting websocket active timeout=%" PRId64 "s and inactive timeout=%" PRId64 "s",
                   t_state.txn_conf->websocket_active_timeout, t_state.txn_conf->websocket_inactive_timeout);
-          ua_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->websocket_active_timeout));
-          ua_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->websocket_inactive_timeout));
+          ua_session->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->websocket_active_timeout));
+          ua_session->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->websocket_inactive_timeout));
         }
 
         if (server_session) {
@@ -5778,12 +5778,6 @@ HttpSM::attach_server_session(HttpServerSession *s)
     return;
   }
 
-  if (ua_session) {
-    NetVConnection *server_vc = s->get_netvc();
-    NetVConnection *ua_vc     = ua_session->get_netvc();
-    ink_release_assert(server_vc->thread == ua_vc->thread);
-  }
-
   // Set the mutex so that we have something to update
   //   stats with
   server_session->mutex = this->mutex;
@@ -5802,7 +5796,10 @@ HttpSM::attach_server_session(HttpServerSession *s)
   UnixNetVConnection *server_vc = dynamic_cast<UnixNetVConnection *>(server_session->get_netvc());
   UnixNetVConnection *client_vc = (UnixNetVConnection *)(ua_session->get_netvc());
   SSLNetVConnection *ssl_vc     = dynamic_cast<SSLNetVConnection *>(client_vc);
-  bool associated_connection    = false;
+
+  // Verifying that the user agent and server sessions/transactions are operating on the same thread.
+  ink_release_assert(!server_vc || !client_vc || server_vc->thread == client_vc->thread);
+  bool associated_connection = false;
   if (server_vc) { // if server_vc isn't a PluginVC
     if (ssl_vc) {  // if incoming connection is SSL
       bool client_trace = ssl_vc->getSSLTrace();
@@ -7251,13 +7248,7 @@ HttpSM::set_next_state()
       // sending its request and for this reason, the inactivity timeout
       // cannot be cancelled.
       if (ua_session && !t_state.hdr_info.request_content_length) {
-        NetVConnection *vc = ua_session->get_netvc();
-        if (vc) {
-          ua_session->cancel_inactivity_timeout();
-        } else {
-          terminate_sm = true;
-          return; // Give up if there is no session netvc
-        }
+        ua_session->cancel_inactivity_timeout();
       } else if (!ua_session) {
         terminate_sm = true;
         return; // Give up if there is no session
