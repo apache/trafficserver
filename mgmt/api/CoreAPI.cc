@@ -51,7 +51,7 @@
 #include "ts/ink_cap.h"
 
 // global variable
-CallbackTable *local_event_callbacks;
+static CallbackTable *local_event_callbacks;
 
 extern FileManager *configFiles; // global in traffic_manager
 
