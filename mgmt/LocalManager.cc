@@ -43,12 +43,14 @@ void
 LocalManager::mgmtCleanup()
 {
   close_socket(process_server_sockfd);
+  process_server_sockfd = ts::NO_FD;
 
   // fix me for librecords
 
   if (virt_map) {
     virt_map->rl_downAddrs(); // We are bailing done need to worry about table
   }
+
   closelog();
   return;
 }
@@ -441,7 +443,7 @@ LocalManager::pollMgmtProcessServer()
       }
 #endif
 
-      if (FD_ISSET(process_server_sockfd, &fdlist)) { /* New connection */
+      if (process_server_sockfd != ts::NO_FD && FD_ISSET(process_server_sockfd, &fdlist)) { /* New connection */
         struct sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
         int new_sockfd      = mgmt_accept(process_server_sockfd, (struct sockaddr *)&clientAddr, &clientLen);
