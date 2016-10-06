@@ -64,6 +64,7 @@ enum ParentRR_t {
   P_STRICT_ROUND_ROBIN,
   P_HASH_ROUND_ROBIN,
   P_CONSISTENT_HASH,
+  P_LATCHED_ROUND_ROBIN,
 };
 
 enum ParentRetry_t {

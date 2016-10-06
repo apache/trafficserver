@@ -543,6 +543,8 @@ ParentRecord::Init(matcher_line *line_info)
         round_robin = P_NO_ROUND_ROBIN;
       } else if (strcasecmp(val, "consistent_hash") == 0) {
         round_robin = P_CONSISTENT_HASH;
+      } else if (strcasecmp(val, "latched") == 0) {
+        round_robin = P_LATCHED_ROUND_ROBIN;
       } else {
         round_robin = P_NO_ROUND_ROBIN;
         errPtr      = "invalid argument to round_robin directive";
@@ -681,6 +683,7 @@ ParentRecord::Init(matcher_line *line_info)
   case P_NO_ROUND_ROBIN:
   case P_STRICT_ROUND_ROBIN:
   case P_HASH_ROUND_ROBIN:
+  case P_LATCHED_ROUND_ROBIN:
     TSDebug("parent_select", "allocating ParentRoundRobin() lookup strategy.");
     selection_strategy = new ParentRoundRobin(this, round_robin);
     break;
@@ -1281,6 +1284,69 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   FP;
   sleep(1);
   RE(verify(result, PARENT_FAIL, NULL, 80), 177);
+
+  // Test 178
+  tbl[0] = '\0';
+  ST(178);
+  T("dest_domain=rabbit.net parent=fuzzy:80|1.0;fluffy:80|1.0;furry:80|1.0;frisky:80|1.0 "
+    "round_robin=latched go_direct=false\n");
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 178);
+
+  params->markParentDown(result); // fuzzy is down
+
+  // Test 179
+  ST(179);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 179);
+
+  params->markParentDown(result); // fluffy is down
+
+  // Test 180
+  ST(180);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 180);
+
+  params->markParentDown(result); // furry is down
+
+  // Test 181
+  ST(181);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 181);
+
+  params->markParentDown(result); // frisky is down and we should be back on fuzzy.
+
+  // Test 182
+  ST(182);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_FAIL, NULL, 80), 182);
+
+  // wait long enough so that fuzzy is retryable.
+  sleep(params->policy.ParentRetryTime - 1);
+
+  // Test 183
+  ST(183);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 183);
 
   delete request;
   delete result;

@@ -207,6 +207,13 @@ The following list shows the possible actions and their allowed values.
        The other traffic is unaffected. Once the downed parent becomes
        available, the traffic distribution returns to the pre-down
        state.
+    - ``latched`` - The first parent in the list is marked as primary and is 
+      always chosen until connection errors cause it to be marked down.  When 
+      this occurs the next parent in the list then becomes primary.  The primary
+      will wrap back to the first parent in the list when it is the last parent
+      in the list and is marked down due to a connection error.  Newly chosen
+      primary parents marked as unavailable will then be restored if the failure
+      retry time has elapsed and the transaction using the primary succeeds.
 
 .. _parent-config-format-go-direct:
 

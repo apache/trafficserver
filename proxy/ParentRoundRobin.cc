@@ -25,6 +25,7 @@
 ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _round_robin_type)
 {
   round_robin_type = _round_robin_type;
+  latched_parent   = 0;
 
   if (is_debug_tag_set("parent_select")) {
     switch (round_robin_type) {
@@ -36,6 +37,9 @@ ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _roun
       break;
     case P_HASH_ROUND_ROBIN:
       Debug("parent_select", "Using a round robin parent selection strategy of type P_HASH_ROUND_ROBIN.");
+      break;
+    case P_LATCHED_ROUND_ROBIN:
+      Debug("parent_select", "Using a round robin parent selection strategy of type P_LATCHED_ROUND_ROBIN.");
       break;
     default:
       // should never see this, there is a problem if you do.
@@ -97,13 +101,16 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       case P_NO_ROUND_ROBIN:
         cur_index = result->start_parent = 0;
         break;
+      case P_LATCHED_ROUND_ROBIN:
+        cur_index = result->start_parent = latched_parent;
+        break;
       default:
         ink_release_assert(0);
       }
     }
   } else {
     // Move to next parent due to failure
-    cur_index = (result->last_parent + 1) % result->rec->num_parents;
+    latched_parent = cur_index = (result->last_parent + 1) % result->rec->num_parents;
 
     // Check to see if we have wrapped around
     if ((unsigned int)cur_index == result->start_parent) {
@@ -158,7 +165,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       Debug("parent_select", "Chosen parent = %s.%d", result->hostname, result->port);
       return;
     }
-    cur_index = (cur_index + 1) % result->rec->num_parents;
+    latched_parent = cur_index = (cur_index + 1) % result->rec->num_parents;
   } while ((unsigned int)cur_index != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {

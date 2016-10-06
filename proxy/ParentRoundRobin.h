@@ -35,6 +35,7 @@
 class ParentRoundRobin : public ParentSelectionStrategy
 {
   ParentRR_t round_robin_type;
+  int latched_parent;
 
 public:
   ParentRoundRobin(ParentRecord *_parent_record, ParentRR_t _round_robin_type);
