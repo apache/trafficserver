@@ -118,7 +118,7 @@ is obtained from ``input_vio`` by :c:func:`TSVIONBytesGet`.
 
 When a vconnection calls back its user to indicate that it wants more
 data (or when some other condition has occurred), it issues a call to
-``TSContCall``. It passes the ``TSVIO`` describing the operation as the
+:c:func:`TSContCall`. It passes the ``TSVIO`` describing the operation as the
 data parameter, and one of the values below as the event parameter.
 
 ``TS_EVENT_ERROR``
@@ -164,7 +164,7 @@ For example: the null transform plugin's transformation receives
 events from the downstream vconnection as a result of the call to
 :c:func:`TSVConnWrite`.
 
-After using a vconnection, the user must call ``TSVConnClose`` or
+After using a vconnection, the user must call :c:func:`TSVConnClose` or
 :c:func:`TSVConnAbort`. While both calls indicate that the vconnection can
 destroy itself, :c:func:`TSVConnAbort` should be used when the connection is
 being closed abnormally. After a call to :c:func:`TSVConnClose` or
