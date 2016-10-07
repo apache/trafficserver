@@ -3605,28 +3605,8 @@ HttpTransact::handle_response_from_parent(State *s)
     break;
   default: {
     LookingUp_t next_lookup = UNDEFINED_LOOKUP;
-    DebugTxn("http_trans", "[hrfp] connection not alive");
-    SET_VIA_STRING(VIA_DETAIL_PP_CONNECT, VIA_DETAIL_PP_FAILURE);
 
-    ink_assert(s->hdr_info.server_request.valid());
-
-    s->current.server->connect_result = ENOTCONN;
-    s->state_machine->do_hostdb_update_if_necessary();
-
-    char addrbuf[INET6_ADDRSTRLEN];
-    DebugTxn("http_trans", "[%d] failed to connect to parent %s", s->current.attempts,
-             ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
-
-    // If the request is not retryable, just give up!
-    if (!is_request_retryable(s)) {
-      s->parent_params->markParentDown(&s->parent_result);
-      s->parent_result.result = PARENT_FAIL;
-      handle_parent_died(s);
-      return;
-    }
-
-    // try a simple retry if we received a simple retryable response from the parent.
-    if (s->current.retry_type == PARENT_RETRY_SIMPLE || s->current.retry_type == PARENT_RETRY_UNAVAILABLE_SERVER) {
+    if (s->current.state == PARENT_ORIGIN_RETRY) {
       if (s->current.retry_type == PARENT_RETRY_SIMPLE) {
         if (s->current.simple_retry_attempts >= s->parent_result.max_retries(PARENT_RETRY_SIMPLE)) {
           DebugTxn("http_trans", "PARENT_RETRY_SIMPLE: retried all parents, send error to client.");
@@ -3637,7 +3617,7 @@ HttpTransact::handle_response_from_parent(State *s)
           s->current.retry_type = PARENT_RETRY_NONE;
           next_lookup           = find_server_and_update_current_info(s);
         }
-      } else { // try unavailable server retry if we have a unavailable server retry response from the parent.
+      } else if (s->current.retry_type == PARENT_RETRY_UNAVAILABLE_SERVER) {
         if (s->current.unavailable_server_retry_attempts >= s->parent_result.max_retries(PARENT_RETRY_UNAVAILABLE_SERVER)) {
           DebugTxn("http_trans", "PARENT_RETRY_UNAVAILABLE_SERVER: retried all parents, send error to client.");
           s->current.retry_type = PARENT_RETRY_NONE;
@@ -3649,37 +3629,59 @@ HttpTransact::handle_response_from_parent(State *s)
           next_lookup = find_server_and_update_current_info(s);
         }
       }
-    } else if (s->current.attempts < s->txn_conf->parent_connect_attempts) {
-      s->current.attempts++;
+    } else {
+      DebugTxn("http_trans", "[hrfp] connection not alive");
+      SET_VIA_STRING(VIA_DETAIL_PP_CONNECT, VIA_DETAIL_PP_FAILURE);
 
-      // Are we done with this particular parent?
-      if ((s->current.attempts - 1) % s->http_config_param->per_parent_connect_attempts != 0) {
-        // No we are not done with this parent so retry
-        s->next_action = how_to_open_connection(s);
-        DebugTxn("http_trans", "%s Retrying parent for attempt %d, max %" PRId64, "[handle_response_from_parent]",
-                 s->current.attempts, s->http_config_param->per_parent_connect_attempts);
+      ink_assert(s->hdr_info.server_request.valid());
+
+      s->current.server->connect_result = ENOTCONN;
+      s->state_machine->do_hostdb_update_if_necessary();
+
+      char addrbuf[INET6_ADDRSTRLEN];
+      DebugTxn("http_trans", "[%d] failed to connect to parent %s", s->current.attempts,
+               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
+
+      // If the request is not retryable, just give up!
+      if (!is_request_retryable(s)) {
+        s->parent_params->markParentDown(&s->parent_result);
+        s->parent_result.result = PARENT_FAIL;
+        handle_parent_died(s);
         return;
-      } else {
-        DebugTxn("http_trans", "%s %d per parent attempts exhausted", "[handle_response_from_parent]", s->current.attempts);
+      }
 
-        // Only mark the parent down if we failed to connect
-        //  to the parent otherwise slow origin servers cause
-        //  us to mark the parent down
+      if (s->current.attempts < s->txn_conf->parent_connect_attempts) {
+        s->current.attempts++;
+
+        // Are we done with this particular parent?
+        if ((s->current.attempts - 1) % s->http_config_param->per_parent_connect_attempts != 0) {
+          // No we are not done with this parent so retry
+          s->next_action = how_to_open_connection(s);
+          DebugTxn("http_trans", "%s Retrying parent for attempt %d, max %" PRId64, "[handle_response_from_parent]",
+                   s->current.attempts, s->http_config_param->per_parent_connect_attempts);
+          return;
+        } else {
+          DebugTxn("http_trans", "%s %d per parent attempts exhausted", "[handle_response_from_parent]", s->current.attempts);
+
+          // Only mark the parent down if we failed to connect
+          //  to the parent otherwise slow origin servers cause
+          //  us to mark the parent down
+          if (s->current.state == CONNECTION_ERROR) {
+            s->parent_params->markParentDown(&s->parent_result);
+          }
+          // We are done so look for another parent if any
+          next_lookup = find_server_and_update_current_info(s);
+        }
+      } else {
+        // Done trying parents... fail over to origin server if that is
+        //   appropriate
+        DebugTxn("http_trans", "[handle_response_from_parent] Error. No more retries.");
         if (s->current.state == CONNECTION_ERROR) {
           s->parent_params->markParentDown(&s->parent_result);
         }
-        // We are done so look for another parent if any
-        next_lookup = find_server_and_update_current_info(s);
+        s->parent_result.result = PARENT_FAIL;
+        next_lookup             = find_server_and_update_current_info(s);
       }
-    } else {
-      // Done trying parents... fail over to origin server if that is
-      //   appropriate
-      DebugTxn("http_trans", "[handle_response_from_parent] Error. No more retries.");
-      if (s->current.state == CONNECTION_ERROR) {
-        s->parent_params->markParentDown(&s->parent_result);
-      }
-      s->parent_result.result = PARENT_FAIL;
-      next_lookup             = find_server_and_update_current_info(s);
     }
 
     // We have either tried to find a new parent or failed over to the
