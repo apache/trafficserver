@@ -49,6 +49,13 @@ public:
 
   virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
 
+  virtual NetVConnection *get_netvc() const = 0;
+  virtual void release_netvc()              = 0;
+
+  virtual int get_transact_count() const = 0;
+
+  virtual const char *get_protocol_string() const = 0;
+
   virtual void
   ssn_hook_append(TSHttpHookID id, INKContInternal *cont)
   {
@@ -60,9 +67,6 @@ public:
   {
     this->api_hooks.prepend(id, cont);
   }
-
-  virtual NetVConnection *get_netvc() const = 0;
-  virtual void release_netvc()              = 0;
 
   APIHook *
   ssn_hook_get(TSHttpHookID id) const
@@ -106,32 +110,27 @@ public:
   // Initiate an API hook invocation.
   void do_api_callout(TSHttpHookID id);
 
-  static int64_t next_connection_id();
-  virtual int get_transact_count() const = 0;
-
-  // Override if your session protocol allows this
+  // Override if your session protocol allows this.
   virtual bool
-  is_transparent_passthrough_allowed()
+  is_transparent_passthrough_allowed() const
   {
     return false;
   }
 
-  // Override if your session protocol cares
+  // Override if your session protocol cares.
   virtual void
   set_half_close_flag(bool flag)
   {
   }
+
   virtual bool
   get_half_close_flag() const
   {
     return false;
   }
 
-  // Indicate we are done with a transaction
+  // Indicate we are done with a transaction.
   virtual void release(ProxyClientTransaction *trans) = 0;
-
-  /// acl record - cache IpAllow::match() call
-  const AclRecord *acl_record;
 
   int64_t
   connection_id() const
@@ -150,33 +149,26 @@ public:
     return NULL;
   }
 
-  /// DNS resolution preferences.
-  HostResStyle host_res_style;
-
-  virtual int state_api_callout(int event, void *edata);
-
   TSHttpHookID
   get_hookid() const
   {
     return api_hookid;
   }
 
-  ink_hrtime ssn_start_time;
-  ink_hrtime ssn_last_txn_time;
-
   virtual void
   set_active_timeout(ink_hrtime timeout_in)
   {
   }
+
   virtual void
   set_inactivity_timeout(ink_hrtime timeout_in)
   {
   }
+
   virtual void
   cancel_inactivity_timeout()
   {
   }
-  virtual const char *get_protocol_string() const = 0;
 
   bool
   is_client_closed() const
@@ -188,9 +180,11 @@ public:
   populate_protocol(char const **result, int size) const
   {
     int retval = 0;
+
     if (get_netvc()) {
       retval += this->get_netvc()->populate_protocol(result, size);
     }
+
     return retval;
   }
 
@@ -198,39 +192,52 @@ public:
   protocol_contains(const char *tag_prefix) const
   {
     const char *retval = NULL;
+
     if (get_netvc()) {
       retval = this->get_netvc()->protocol_contains(tag_prefix);
     }
+
     return retval;
   }
 
   void set_session_active();
   void clear_session_active();
 
+  static int64_t next_connection_id();
+
+  /// acl record - cache IpAllow::match() call
+  const AclRecord *acl_record;
+
+  /// DNS resolution preferences.
+  HostResStyle host_res_style;
+
+  ink_hrtime ssn_start_time;
+  ink_hrtime ssn_last_txn_time;
+
 protected:
-  // XXX Consider using a bitwise flags variable for the following flags, so that we can make the best
-  // use of internal alignment padding.
+  // XXX Consider using a bitwise flags variable for the following flags, so
+  // that we can make the best use of internal alignment padding.
 
   // Session specific debug flag.
   bool debug_on;
   bool hooks_on;
-
-  int64_t con_id;
-
-  Event *schedule_event;
   bool in_destroy;
 
+  int64_t con_id;
+  Event *schedule_event;
+
 private:
+  ProxyClientSession(ProxyClientSession &);                  // noncopyable
+  ProxyClientSession &operator=(const ProxyClientSession &); // noncopyable
+
+  void handle_api_return(int event);
+  int state_api_callout(int event, void *edata);
+
   APIHookScope api_scope;
   TSHttpHookID api_hookid;
   APIHook *api_current;
   HttpAPIHooks api_hooks;
   void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
-
-  ProxyClientSession(ProxyClientSession &);                  // noncopyable
-  ProxyClientSession &operator=(const ProxyClientSession &); // noncopyable
-
-  void handle_api_return(int event);
 
   // for DI. An active connection is one that a request has
   // been successfully parsed (PARSE_DONE) and it remains to

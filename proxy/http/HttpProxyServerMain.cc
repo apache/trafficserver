@@ -223,10 +223,12 @@ init_HttpProxyServer(int n_accept_threads)
   init_reverse_proxy();
   httpSessionManager.init();
   http_pages_init();
+
 #ifdef USE_HTTP_DEBUG_LISTS
   ink_mutex_init(&debug_sm_list_mutex, "HttpSM Debug List");
   ink_mutex_init(&debug_cs_list_mutex, "HttpCS Debug List");
 #endif
+
   // DI's request to disable/reenable ICP on the fly
   icp_dynamic_enabled = 1;
 

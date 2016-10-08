@@ -28,7 +28,7 @@
 static int64_t next_cs_id = 0;
 
 ProxyClientSession::ProxyClientSession()
-  : VConnection(NULL), acl_record(NULL), host_res_style(HOST_RES_IPV4), debug_on(false), hooks_on(true), con_id(0), m_active(false)
+  : VConnection(NULL), acl_record(NULL), host_res_style(HOST_RES_IPV4), debug_on(false), hooks_on(true), in_destroy(false), con_id(0), m_active(false)
 {
   ink_zero(this->user_args);
 }

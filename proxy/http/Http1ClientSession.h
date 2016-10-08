@@ -41,12 +41,12 @@
 #include "ProxyClientSession.h"
 #include "Http1ClientTransaction.h"
 
+#ifdef USE_HTTP_DEBUG_LISTS
 extern ink_mutex debug_cs_list_mutex;
+#endif
 
 class HttpSM;
 class HttpServerSession;
-
-class SecurityContext;
 
 class Http1ClientSession : public ProxyClientSession
 {
@@ -79,17 +79,20 @@ public:
   set_half_close_flag(bool flag)
   {
     half_close = flag;
-  };
+  }
+
   bool
   get_half_close_flag() const
   {
     return half_close;
-  };
+  }
+
   virtual NetVConnection *
   get_netvc() const
   {
     return client_vc;
-  };
+  }
+
   virtual void
   release_netvc()
   {
@@ -110,7 +113,7 @@ public:
   }
 
   virtual bool
-  is_outbound_transparent()
+  is_outbound_transparent() const
   {
     return f_outbound_transparent;
   }
@@ -123,11 +126,13 @@ public:
   {
     return outbound_port;
   }
+
   virtual IpAddr
   get_outbound_ip4() const
   {
     return outbound_ip4;
   }
+
   virtual IpAddr
   get_outbound_ip6() const
   {
@@ -148,12 +153,14 @@ public:
     if (client_vc)
       client_vc->set_active_timeout(timeout_in);
   }
+
   void
   set_inactivity_timeout(ink_hrtime timeout_in)
   {
     if (client_vc)
       client_vc->set_inactivity_timeout(timeout_in);
   }
+
   void
   cancel_inactivity_timeout()
   {

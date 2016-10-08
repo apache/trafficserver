@@ -51,10 +51,14 @@ enum {
   HTTP_CS_MAGIC_DEAD  = 0xDEADF00D,
 };
 
+#ifdef USE_HTTP_DEBUG_LISTS
+
 // We have debugging list that we can use to find stuck
 //  client sessions
 DList(Http1ClientSession, debug_link) debug_cs_list;
 ink_mutex debug_cs_list_mutex;
+
+#endif /* USE_HTTP_DEBUG_LISTS */
 
 ClassAllocator<Http1ClientSession> http1ClientSessionAllocator("http1ClientSessionAllocator");
 
