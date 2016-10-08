@@ -61,6 +61,7 @@ if [ ! -e ${FORMAT} -o ! -e ${ROOT}/${PACKAGE} ] ; then
 d5558924377a6ad5799956cec5b37d4e421e2156  ${ARCHIVE}
 EOF
   ${SHASUM} -c ${ROOT}/sha1
+  chmod +x ${FORMAT}
 fi
 
 
