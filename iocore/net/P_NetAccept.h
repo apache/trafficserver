@@ -85,7 +85,6 @@ struct NetAccept : public Continuation {
   AcceptFunctionPtr accept_fn;
   int ifd;
   Ptr<NetAcceptAction> action_;
-  UnixNetVConnection *epoll_vc; // only storage for epoll events
   EventIO ep;
 
   NetProcessor::AcceptOptions opt;
