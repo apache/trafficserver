@@ -74,6 +74,10 @@ REGRESSION_TEST(PriorityQueue_1)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
   pq->pop();
   box.check(pq->top() == NULL, "top should be NULL");
+
+  delete pq;
+  delete a;
+  delete entry_a;
 }
 
 // Increase weight
@@ -107,6 +111,16 @@ REGRESSION_TEST(PriorityQueue_2)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->update(entry_b, true);
 
   box.check(pq->top() == entry_c, "top should be entry_c");
+
+  delete pq;
+
+  delete a;
+  delete b;
+  delete c;
+
+  delete entry_a;
+  delete entry_b;
+  delete entry_c;
 }
 
 // Decrease weight
@@ -140,6 +154,16 @@ REGRESSION_TEST(PriorityQueue_3)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->update(entry_c, false);
 
   box.check(pq->top() == entry_c, "top should be entry_c");
+
+  delete pq;
+
+  delete a;
+  delete b;
+  delete c;
+
+  delete entry_a;
+  delete entry_b;
+  delete entry_c;
 }
 
 // Push, top, and pop 9 entries
@@ -200,6 +224,28 @@ REGRESSION_TEST(PriorityQueue_4)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->pop();
 
   box.check(pq->top() == NULL, "top should be NULL");
+
+  delete pq;
+
+  delete a;
+  delete b;
+  delete c;
+  delete d;
+  delete e;
+  delete f;
+  delete g;
+  delete h;
+  delete i;
+
+  delete entry_a;
+  delete entry_b;
+  delete entry_c;
+  delete entry_d;
+  delete entry_e;
+  delete entry_f;
+  delete entry_g;
+  delete entry_h;
+  delete entry_i;
 }
 
 // // Push, top, pop, and update 9 entries
@@ -276,6 +322,28 @@ REGRESSION_TEST(PriorityQueue_5)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->pop();
 
   box.check(pq->top() == NULL, "top should be NULL");
+
+  delete pq;
+
+  delete a;
+  delete b;
+  delete c;
+  delete d;
+  delete e;
+  delete f;
+  delete g;
+  delete h;
+  delete i;
+
+  delete entry_a;
+  delete entry_b;
+  delete entry_c;
+  delete entry_d;
+  delete entry_e;
+  delete entry_f;
+  delete entry_g;
+  delete entry_h;
+  delete entry_i;
 }
 
 // Test erase method
@@ -306,4 +374,14 @@ REGRESSION_TEST(PriorityQueue_6)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->erase(entry_b);
   box.check(pq->top() == NULL, "top should be NULL");
   box.check(pq->empty(), "should be empty");
+
+  delete pq;
+
+  delete a;
+  delete b;
+  delete c;
+
+  delete entry_a;
+  delete entry_b;
+  delete entry_c;
 }
