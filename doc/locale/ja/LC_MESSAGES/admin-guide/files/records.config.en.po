@@ -3305,8 +3305,7 @@ msgstr ""
 #: ../../../admin-guide/files/records.config.en.rst:2052
 msgid ""
 "How often |TS| checks for an early refresh, during the period before the "
-"document stale time. The interval specified must be in seconds. See the "
-"section on :ref:`fuzzy-revalidation` for more details."
+"document stale time. The interval specified must be in seconds."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2061
