@@ -2072,22 +2072,31 @@ Heuristic Expiration
    aging factor is applied, the final maximum age calculated will never be
    higher than the value in this variable.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.time INT 240
+.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.time INT 0
    :deprecated:
    :reloadable:
    :overridable:
 
    How often |TS| checks for an early refresh, during the period before the
-   document stale time. The interval specified must be in seconds. See the
-   section on :ref:`fuzzy-revalidation` for more details.
+   document stale time. The interval specified must be in seconds.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.005
+.. note::
+
+   Previous versions of Apache Traffic Server defaulted this to 240s. This
+   feature is deprecated as of ATS v6.2.0.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.0
    :deprecated:
    :reloadable:
    :overridable:
 
    The probability that a refresh is made on a document during the fuzz time
    specified in :ts:cv:`proxy.config.http.cache.fuzz.time`.
+
+.. note::
+
+   Previous versions of Apache Traffic Server defaulted this to 0.005 (0.5%).
+   This feature is deprecated as of ATS v6.2.0
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.min_time INT 0
    :deprecated:
