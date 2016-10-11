@@ -1001,10 +1001,11 @@ PluginVCCore::~PluginVCCore()
 }
 
 PluginVCCore *
-PluginVCCore::alloc()
+PluginVCCore::alloc(Continuation *acceptor)
 {
   PluginVCCore *pvc = new PluginVCCore;
   pvc->init();
+  pvc->connect_to = acceptor;
   return pvc;
 }
 
@@ -1065,20 +1066,10 @@ PluginVCCore::destroy()
   delete this;
 }
 
-void
-PluginVCCore::set_accept_cont(Continuation *c)
-{
-  connect_to = c;
-  // FIX ME - must return action
-}
-
 PluginVC *
 PluginVCCore::connect()
 {
-  // Make sure there is another end to connect to
-  if (connect_to == NULL) {
-    return NULL;
-  }
+  ink_release_assert(connect_to != NULL);
 
   connected = true;
   state_send_accept(EVENT_IMMEDIATE, NULL);
@@ -1089,10 +1080,7 @@ PluginVCCore::connect()
 Action *
 PluginVCCore::connect_re(Continuation *c)
 {
-  // Make sure there is another end to connect to
-  if (connect_to == NULL) {
-    return NULL;
-  }
+  ink_release_assert(connect_to != NULL);
 
   EThread *my_thread = this_ethread();
   MUTEX_TAKE_LOCK(this->mutex, my_thread);
@@ -1294,8 +1282,7 @@ PVCTestDriver::run_next_test()
 
   NetVCTest *p       = new NetVCTest;
   NetVCTest *a       = new NetVCTest;
-  PluginVCCore *core = PluginVCCore::alloc();
-  core->set_accept_cont(p);
+  PluginVCCore *core = PluginVCCore::alloc(p);
 
   p->init_test(NET_VC_TEST_PASSIVE, this, NULL, r, &netvc_tests_def[p_index], "PluginVC", "pvc_test_detail");
   PluginVC *a_vc = core->connect();
