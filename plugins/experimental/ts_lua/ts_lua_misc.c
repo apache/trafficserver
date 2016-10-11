@@ -18,6 +18,7 @@
 
 #include "ts_lua_util.h"
 
+static int ts_lua_get_process_id(lua_State *L);
 static int ts_lua_get_now_time(lua_State *L);
 static int ts_lua_debug(lua_State *L);
 static int ts_lua_error(lua_State *L);
@@ -33,6 +34,10 @@ static void ts_lua_inject_misc_variables(lua_State *L);
 void
 ts_lua_inject_misc_api(lua_State *L)
 {
+  /* ts.process_id() */
+  lua_pushcfunction(L, ts_lua_get_process_id);
+  lua_setfield(L, -2, "process_id");
+
   /* ts.now() */
   lua_pushcfunction(L, ts_lua_get_now_time);
   lua_setfield(L, -2, "now");
@@ -63,6 +68,20 @@ ts_lua_inject_misc_variables(lua_State *L)
   lua_setglobal(L, "TS_LUA_THREAD_POOL_NET");
   lua_pushinteger(L, TS_THREAD_POOL_TASK);
   lua_setglobal(L, "TS_LUA_THREAD_POOL_TASK");
+}
+
+static int
+ts_lua_get_process_id(lua_State *L)
+{
+  const char *s;
+  TSUuid process = TSProcessUuidGet();
+  if (process) {
+    s = TSUuidStringGet(process);
+  } else {
+    s = "";
+  }
+  lua_pushstring(L, s);
+  return 1;
 }
 
 static int
