@@ -267,10 +267,12 @@ Http2Stream::do_io_close(int /* flags */)
       // Make sure any trailing end of stream frames are sent
       // Ourselve will be removed at send_data_frames or closing connection phase
       static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
+
+      // Make sure the stream is deleted at this point since next step is self destroy.
+      this->delete_stream();
     }
+
     parent = NULL;
-    // Check to see if the stream is in the closed state
-    ink_assert(get_state() == HTTP2_STREAM_STATE_CLOSED);
 
     clear_timers();
     clear_io_events();
@@ -559,6 +561,14 @@ Http2Stream::reenable(VIO *vio)
 }
 
 void
+Http2Stream::delete_stream()
+{
+  if (parent) {
+    static_cast<Http2ClientSession *>(parent)->connection_state.delete_stream(this);
+  }
+}
+
+void
 Http2Stream::destroy()
 {
   Debug("http2_stream", "Destroy stream %d. Sent %d bytes", this->_id, this->bytes_sent);
@@ -591,6 +601,14 @@ Http2Stream::destroy()
   }
   chunked_handler.clear();
   super::destroy();
+
+  // Current Http2ConnectionState implementation uses a memory pool for instantiating streams and DLL<> stream_list for storing
+  // active streams. Destroying a stream before deleting it from stream_list and then creating a new one + reusing the same chunk
+  // from the memory pool right away always leads to destroying the DLL structure (deadlocks, inconsistencies).
+  // The following is meant as a safety net since the consequences are disastrous. Until the design/implementation changes it seems
+  // less error prone to (double) delete before destroying (noop if already deleted).
+  this->delete_stream();
+
   THREAD_FREE(this, http2StreamAllocator, this_ethread());
 }
 

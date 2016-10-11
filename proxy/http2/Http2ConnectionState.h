@@ -223,6 +223,12 @@ private:
 
   unsigned _adjust_concurrent_stream();
 
+  // The following is to make sure stream_list and client_stream_count are updated together (in sync)
+  // with important asserts and checks to avoid breaking of DLL<> internal structure.
+  void add_to_active_streams(Http2Stream *stream);
+  void rm_from_active_streams(Http2Stream *stream);
+  bool deleted_from_active_streams(Http2Stream *stream);
+
   // NOTE: 'stream_list' has only active streams.
   //   If given Stream Identifier is not found in stream_list and it is less
   //   than or equal to latest_streamid, the state of Stream

@@ -265,9 +265,13 @@ template <class C, class L>
 inline void
 DLL<C, L>::push(C *e)
 {
+  ink_assert(NULL != e);
+  ink_assert(!in(e));
+
   if (head)
     prev(head) = e;
   next(e)      = head;
+  prev(e)      = NULL;
   head         = e;
 }
 
@@ -275,6 +279,8 @@ template <class C, class L>
 inline void
 DLL<C, L>::remove(C *e)
 {
+  ink_assert(NULL != e);
+
   if (!head)
     return;
   if (e == head)

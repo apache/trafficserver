@@ -233,6 +233,8 @@ public:
 
 private:
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
+  void delete_stream();
+
   HTTPParser http_parser;
   ink_hrtime _start_time;
   EThread *_thread;
