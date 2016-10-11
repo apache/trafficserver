@@ -110,7 +110,7 @@ PriorityQueue<T, Comp>::pop()
     return;
   }
 
-  _v[0] = _v[_v.length() - 1];
+  _swap(0, _v.length() - 1);
   _v.pop();
   _bubble_down(0);
 }
@@ -123,11 +123,16 @@ PriorityQueue<T, Comp>::erase(PriorityQueueEntry<T> *entry)
     return;
   }
 
-  _v[entry->index] = _v[_v.length() - 1];
-  _v.pop();
-  _bubble_down(entry->index);
-  if (!empty()) {
-    _bubble_up(entry->index);
+  ink_release_assert(entry->index < _v.length());
+  const uint32_t original_index = entry->index;
+  if (original_index != (_v.length() - 1)) {
+    // Move the erased item to the end to be popped off
+    _swap(original_index, _v.length() - 1);
+    _v.pop();
+    _bubble_down(original_index);
+    _bubble_up(original_index);
+  } else { // Otherwise, we are already at the end, just pop
+    _v.pop();
   }
 }
 
