@@ -2029,6 +2029,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.allocator.hugepages", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.allocator.dontdump_iobuffers", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
+  ,
 
   //############
   //#
