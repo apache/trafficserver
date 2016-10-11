@@ -2122,6 +2122,8 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
       t_state.dns_info.os_addr_style  = HttpTransact::DNSLookupInfo::OS_ADDR_TRY_CLIENT;
       t_state.dns_info.lookup_success = true;
       // Leave ret unassigned, so we don't overwrite the host_db_info
+    } else {
+      use_client_addr = false; // No client addr to use
     }
   }
 
