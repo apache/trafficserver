@@ -1102,14 +1102,19 @@ PluginVCCore::connect_re(Continuation *c)
 int
 PluginVCCore::state_send_accept_failed(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
-
-  if (lock.is_locked()) {
+  if (connect_to->mutex == NULL) {
     connect_to->handleEvent(NET_EVENT_ACCEPT_FAILED, NULL);
     destroy();
   } else {
-    SET_HANDLER(&PluginVCCore::state_send_accept_failed);
-    eventProcessor.schedule_in(this, PVC_LOCK_RETRY_TIME);
+    MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
+
+    if (lock.is_locked()) {
+      connect_to->handleEvent(NET_EVENT_ACCEPT_FAILED, NULL);
+      destroy();
+    } else {
+      SET_HANDLER(&PluginVCCore::state_send_accept_failed);
+      eventProcessor.schedule_in(this, PVC_LOCK_RETRY_TIME);
+    }
   }
 
   return 0;
@@ -1118,13 +1123,17 @@ PluginVCCore::state_send_accept_failed(int /* event ATS_UNUSED */, void * /* dat
 int
 PluginVCCore::state_send_accept(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
-
-  if (lock.is_locked()) {
+  if (connect_to->mutex == NULL) {
     connect_to->handleEvent(NET_EVENT_ACCEPT, &passive_vc);
   } else {
-    SET_HANDLER(&PluginVCCore::state_send_accept);
-    eventProcessor.schedule_in(this, PVC_LOCK_RETRY_TIME);
+    MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
+
+    if (lock.is_locked()) {
+      connect_to->handleEvent(NET_EVENT_ACCEPT, &passive_vc);
+    } else {
+      SET_HANDLER(&PluginVCCore::state_send_accept);
+      eventProcessor.schedule_in(this, PVC_LOCK_RETRY_TIME);
+    }
   }
 
   return 0;

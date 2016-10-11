@@ -40,7 +40,7 @@
 #include "http2/Http2SessionAccept.h"
 
 HttpSessionAccept *plugin_http_accept             = NULL;
-HttpSessionAccept *plugin_http_transparent_accept = 0;
+HttpSessionAccept *plugin_http_transparent_accept = NULL;
 
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
 static Ptr<ProxyMutex> ssl_plugin_mutex;
@@ -245,16 +245,16 @@ init_HttpProxyServer(int n_accept_threads)
   //   port but without going through the operating system
   //
   if (plugin_http_accept == NULL) {
-    plugin_http_accept        = new HttpSessionAccept;
-    plugin_http_accept->mutex = new_ProxyMutex();
+    plugin_http_accept = new HttpSessionAccept();
   }
+
   // Same as plugin_http_accept except outbound transparent.
   if (!plugin_http_transparent_accept) {
     HttpSessionAccept::Options ha_opt;
     ha_opt.setOutboundTransparent(true);
-    plugin_http_transparent_accept        = new HttpSessionAccept(ha_opt);
-    plugin_http_transparent_accept->mutex = new_ProxyMutex();
+    plugin_http_transparent_accept = new HttpSessionAccept(ha_opt);
   }
+
   if (!ssl_plugin_mutex) {
     ssl_plugin_mutex = new_ProxyMutex();
   }
