@@ -131,6 +131,22 @@ is always available within lua script. This package can be introduced into Lua l
 
 `TOP <#ts-lua-plugin>`_
 
+ts.process_id
+-------------
+**syntax:** *val = ts.process_id()*
+
+**context:** global
+
+**description:** This function returns the global process id.
+
+Here is an example:
+
+::
+
+    local pid = ts.process_id()  -- a436bae6-082c-4805-86af-78a5916c4a91
+
+`TOP <#ts-lua-plugin>`_
+
 ts.now
 ------
 **syntax:** *val = ts.now()*
@@ -2097,6 +2113,26 @@ Here is an example:
     end
 
 This function is usually called in do_global_read_request function
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.id
+----------
+**syntax:** *ts.http.id()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to tell id of a transaction
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local id = ts.http.id()
+        ts.debug(id)
+        return 0
+    end
 
 `TOP <#ts-lua-plugin>`_
 

@@ -86,6 +86,7 @@ static void ts_lua_inject_cache_lookup_result_variables(lua_State *L);
 static int ts_lua_http_resp_cache_transformed(lua_State *L);
 static int ts_lua_http_resp_cache_untransformed(lua_State *L);
 
+static int ts_lua_http_get_id(lua_State *L);
 static int ts_lua_http_is_internal_request(lua_State *L);
 static int ts_lua_http_skip_remapping_set(lua_State *L);
 static int ts_lua_http_transaction_count(lua_State *L);
@@ -186,6 +187,9 @@ ts_lua_inject_http_resp_transform_api(lua_State *L)
 static void
 ts_lua_inject_http_misc_api(lua_State *L)
 {
+  lua_pushcfunction(L, ts_lua_http_get_id);
+  lua_setfield(L, -2, "id");
+
   lua_pushcfunction(L, ts_lua_http_is_internal_request);
   lua_setfield(L, -2, "is_internal_request");
 
@@ -519,6 +523,19 @@ ts_lua_http_resp_cache_untransformed(lua_State *L)
   TSHttpTxnUntransformedRespCache(http_ctx->txnp, action);
 
   return 0;
+}
+
+static int
+ts_lua_http_get_id(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  uint64_t id = TSHttpTxnIdGet(http_ctx->txnp);
+  lua_pushnumber(L, id);
+
+  return 1;
 }
 
 static int
