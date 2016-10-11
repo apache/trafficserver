@@ -664,12 +664,6 @@ sdk_sanity_check_null_ptr(void *ptr)
   return TS_SUCCESS;
 }
 
-static TSReturnCode
-sdk_sanity_check_mutex(Ptr<ProxyMutex> &m)
-{
-  return m ? TS_SUCCESS : TS_ERROR;
-}
-
 // Plugin metric IDs index the plugin RSB, so bounds check against that.
 static TSReturnCode
 sdk_sanity_check_stat_id(int id)
@@ -6651,33 +6645,25 @@ TSTransformOutputVConnGet(TSVConn connp)
 void
 TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
 {
+  HttpSM *http_sm = (HttpSM *)txnp;
+
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
-  HttpSM *http_sm    = (HttpSM *)txnp;
-  INKContInternal *i = (INKContInternal *)contp;
-
-  // Must have a mutex
-  sdk_assert(sdk_sanity_check_mutex(i->mutex) == TS_SUCCESS);
-
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_SERVER;
-  http_sm->plugin_tunnel      = PluginVCCore::alloc(i);
+  http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp);
 }
 
 void
 TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
 {
+  HttpSM *http_sm = (HttpSM *)txnp;
+
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
-  HttpSM *http_sm    = (HttpSM *)txnp;
-  INKContInternal *i = (INKContInternal *)contp;
-
-  // Must have a mutex
-  sdk_assert(sdk_sanity_check_mutex(i->mutex) == TS_SUCCESS);
-
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_INTERCEPT;
-  http_sm->plugin_tunnel      = PluginVCCore::alloc(i);
+  http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp);
 }
 
 // The API below require timer values as TSHRTime parameters
