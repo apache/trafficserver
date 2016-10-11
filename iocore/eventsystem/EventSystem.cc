@@ -35,6 +35,7 @@ ink_event_system_init(ModuleVersion v)
 {
   ink_release_assert(!checkModuleVersion(v, EVENT_SYSTEM_MODULE_VERSION));
   int config_max_iobuffer_size = DEFAULT_MAX_BUFFER_SIZE;
+  int iobuffer_advice          = 0;
 
   // For backwards compatability make sure to allow thread_freelist_size
   // This needs to change in 6.0
@@ -51,5 +52,15 @@ ink_event_system_init(ModuleVersion v)
   if (default_large_iobuffer_size > max_iobuffer_size) {
     default_large_iobuffer_size = max_iobuffer_size;
   }
-  init_buffer_allocators();
+
+#ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
+  RecBool dont_dump_enabled = true;
+  RecGetRecordBool("proxy.config.allocator.dontdump_iobuffers", &dont_dump_enabled, false);
+
+  if (dont_dump_enabled) {
+    iobuffer_advice |= MADV_DONTDUMP;
+  }
+#endif
+
+  init_buffer_allocators(iobuffer_advice);
 }

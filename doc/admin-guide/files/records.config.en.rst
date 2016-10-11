@@ -3547,6 +3547,12 @@ Sockets
    For more information on the implications of enabling huge pages, see
    `Wikipedia <http://en.wikipedia.org/wiki/Page_%28computer_memory%29#Page_size_trade-off>_`.
 
+.. ts:cv:: CONFIG proxy.config.allocator.dontdump_iobuffers INT 1
+
+  Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported
+  platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP 
+  with madvise() on linux platforms that support MADV_DONTDUMP.  Enabled by default.
+
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
 
    Turn on or off support for HTTP proxying. This is rarely used, the one

@@ -125,7 +125,7 @@ enum AllocType {
 
 inkcoreapi extern Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
-void init_buffer_allocators();
+void init_buffer_allocators(int iobuffer_advice);
 
 /**
   A reference counted wrapper around fast allocated or malloced memory.
