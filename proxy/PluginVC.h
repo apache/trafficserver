@@ -196,9 +196,9 @@ public:
   PluginVCCore();
   ~PluginVCCore();
 
-  static PluginVCCore *alloc();
-  void init();
-  void set_accept_cont(Continuation *c);
+  // Allocate a PluginVCCore object, passing the continuation which
+  // will receive NET_EVENT_ACCEPT to accept the new session.
+  static PluginVCCore *alloc(Continuation *acceptor);
 
   int state_send_accept(int event, void *data);
   int state_send_accept_failed(int event, void *data);
@@ -241,6 +241,7 @@ public:
   PluginVC passive_vc;
 
 private:
+  void init();
   void destroy();
 
   Continuation *connect_to;

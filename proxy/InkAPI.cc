@@ -6345,12 +6345,11 @@ TSHttpConnectWithPluginId(sockaddr const *addr, char const *tag, int64_t id)
   sdk_assert(ats_ip_port_cast(addr));
 
   if (plugin_http_accept) {
-    PluginVCCore *new_pvc = PluginVCCore::alloc();
+    PluginVCCore *new_pvc = PluginVCCore::alloc(plugin_http_accept);
 
     new_pvc->set_active_addr(addr);
     new_pvc->set_plugin_id(id);
     new_pvc->set_plugin_tag(tag);
-    new_pvc->set_accept_cont(plugin_http_accept);
 
     PluginVC *return_vc = new_pvc->connect();
 
@@ -6385,14 +6384,13 @@ TSHttpConnectTransparent(sockaddr const *client_addr, sockaddr const *server_add
   sdk_assert(ats_ip_port_cast(server_addr));
 
   if (plugin_http_transparent_accept) {
-    PluginVCCore *new_pvc = PluginVCCore::alloc();
+    PluginVCCore *new_pvc = PluginVCCore::alloc(plugin_http_transparent_accept);
 
     // set active address expects host ordering and the above casts do not
     // swap when it is required
     new_pvc->set_active_addr(client_addr);
     new_pvc->set_passive_addr(server_addr);
     new_pvc->set_transparent(true, true);
-    new_pvc->set_accept_cont(plugin_http_transparent_accept);
 
     PluginVC *return_vc = new_pvc->connect();
 
@@ -6663,8 +6661,7 @@ TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_mutex(i->mutex) == TS_SUCCESS);
 
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_SERVER;
-  http_sm->plugin_tunnel      = PluginVCCore::alloc();
-  http_sm->plugin_tunnel->set_accept_cont(i);
+  http_sm->plugin_tunnel      = PluginVCCore::alloc(i);
 }
 
 void
@@ -6680,8 +6677,7 @@ TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_mutex(i->mutex) == TS_SUCCESS);
 
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_INTERCEPT;
-  http_sm->plugin_tunnel      = PluginVCCore::alloc();
-  http_sm->plugin_tunnel->set_accept_cont(i);
+  http_sm->plugin_tunnel      = PluginVCCore::alloc(i);
 }
 
 // The API below require timer values as TSHRTime parameters
