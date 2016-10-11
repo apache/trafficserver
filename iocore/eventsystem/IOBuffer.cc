@@ -38,6 +38,7 @@ inkcoreapi ClassAllocator<IOBufferBlock> ioBlockAllocator("ioBlockAllocator", DE
 int64_t default_large_iobuffer_size = DEFAULT_LARGE_BUFFER_SIZE;
 int64_t default_small_iobuffer_size = DEFAULT_SMALL_BUFFER_SIZE;
 int64_t max_iobuffer_size           = DEFAULT_BUFFER_SIZES - 1;
+int iobuffer_advice                 = 0;
 
 //
 // Initialization
@@ -46,11 +47,6 @@ void
 init_buffer_allocators()
 {
   char *name;
-  int advice = 0;
-
-#ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
-  advice = MADV_DONTDUMP;
-#endif
 
   for (int i = 0; i < DEFAULT_BUFFER_SIZES; i++) {
     int64_t s = DEFAULT_BUFFER_BASE_SIZE * (((int64_t)1) << i);
@@ -61,7 +57,7 @@ init_buffer_allocators()
 
     name = new char[64];
     snprintf(name, 64, "ioBufAllocator[%d]", i);
-    ioBufAllocator[i].re_init(name, s, n, a, advice);
+    ioBufAllocator[i].re_init(name, s, n, a, iobuffer_advice);
   }
 }
 

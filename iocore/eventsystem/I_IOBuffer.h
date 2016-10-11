@@ -58,6 +58,7 @@ class VIO;
 inkcoreapi extern int64_t max_iobuffer_size;
 extern int64_t default_small_iobuffer_size;
 extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
+extern int iobuffer_advice;
 
 #if !defined(TRACK_BUFFER_USER)
 #define TRACK_BUFFER_USER 1

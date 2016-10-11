@@ -45,9 +45,21 @@ ink_event_system_init(ModuleVersion v)
   REC_ReadConfigInteger(config_max_iobuffer_size, "proxy.config.io.max_buffer_size");
 
   max_iobuffer_size = buffer_size_to_index(config_max_iobuffer_size, DEFAULT_BUFFER_SIZES - 1);
-  if (default_small_iobuffer_size > max_iobuffer_size)
+  if (default_small_iobuffer_size > max_iobuffer_size) {
     default_small_iobuffer_size = max_iobuffer_size;
-  if (default_large_iobuffer_size > max_iobuffer_size)
+  }
+  if (default_large_iobuffer_size > max_iobuffer_size) {
     default_large_iobuffer_size = max_iobuffer_size;
+  }
+
+#ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
+  RecBool dont_dump_enabled = true;
+  RecGetRecordBool("proxy.config.allocator.dontdump_iobuffers", &dont_dump_enabled, false);
+
+  if (dont_dump_enabled) {
+    iobuffer_advice |= MADV_DONTDUMP;
+  }
+#endif
+
   init_buffer_allocators();
 }
