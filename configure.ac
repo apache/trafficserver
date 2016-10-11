@@ -1091,6 +1091,7 @@ dnl Linux has pthread symbol stubss in both libc and libpthread, so it's importa
 dnl specifically for pthread_yield() here. In addition, ASAN hijacks pthread_create() so
 dnl we can't use that anymore.
 AC_SEARCH_LIBS([pthread_yield], [pthread], [], [])
+AC_CHECK_FUNCS([pthread_mutexattr_settype])
 
 dnl XXX The following check incorrectly causes the build to succeed
 dnl on Darwin. We should be using AC_SEARCH_LIBS, but rest_init is

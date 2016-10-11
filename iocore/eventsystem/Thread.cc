@@ -44,7 +44,14 @@ Thread::Thread()
 {
   mutex = new_ProxyMutex();
   MUTEX_TAKE_LOCK(mutex, (EThread *)this);
-  mutex->nthread_holding = THREAD_MUTEX_THREAD_HOLDING;
+  mutex->nthread_holding += THREAD_MUTEX_THREAD_HOLDING;
+}
+
+Thread::~Thread()
+{
+  ink_release_assert(mutex->thread_holding == (EThread *)this);
+  mutex->nthread_holding -= THREAD_MUTEX_THREAD_HOLDING;
+  MUTEX_UNTAKE_LOCK(mutex, (EThread *)this);
 }
 
 static void
