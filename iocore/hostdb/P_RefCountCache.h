@@ -444,7 +444,10 @@ RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items
 // Deconstruct the class
 template <class C> RefCountCache<C>::~RefCountCache()
 {
-  delete this->partitions;
+  for (unsigned int i = 0; i < num_partitions; i++) {
+    delete this->partitions[i];
+  }
+  num_partitions = 0;
 }
 
 template <class C>
