@@ -97,29 +97,16 @@ struct PassthruIO {
     this->vio    = TSVConnWrite(vconn, contp, this->reader, INT64_MAX);
   }
 
-  // Transfer data from this IO object to the target IO object.
+  // Transfer data from this IO object to the target IO object. We use
+  // TSIOBufferCopy to move the data without actually duplicating it.
   int64_t
   transfer_to(PassthruIO &to)
   {
-    TSIOBufferBlock block;
     int64_t consumed = 0;
+    int64_t avail    = TSIOBufferReaderAvail(this->reader);
 
-    for (block = TSIOBufferReaderStart(this->reader); block; block = TSIOBufferBlockNext(block)) {
-      int64_t remain = 0;
-      const char *bytes;
-
-      bytes = TSIOBufferBlockReadStart(block, this->reader, &remain);
-      while (bytes && remain) {
-        int64_t nwritten;
-
-        nwritten = TSIOBufferWrite(to.iobuf, bytes, remain);
-        remain -= nwritten;
-        bytes += nwritten;
-        consumed += nwritten;
-      }
-    }
-
-    if (consumed) {
+    if (avail) {
+      consumed = TSIOBufferCopy(to.iobuf, this->reader, avail, 0 /* offset */);
       TSIOBufferReaderConsume(this->reader, consumed);
     }
 
@@ -268,6 +255,7 @@ PassthruSessionEvent(TSCont cont, TSEvent event, void *edata)
 
       if (TSIOBufferReaderAvail(sp->server.readio.reader) > 0) {
         sp->server.readio.transfer_to(sp->client.writeio);
+        TSVIOReenable(sp->client.writeio.vio);
       }
 
       TSVConnClose(sp->server.vconn);
