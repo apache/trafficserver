@@ -122,13 +122,7 @@ remove_event_client(EventClientT *client, InkHashTable *table)
 TSMgmtError
 init_mgmt_events()
 {
-  int ret;
-
-  ret = ink_mutex_init(&mgmt_events_lock, "mgmt_event_notice");
-
-  if (ret) {
-    return TS_ERR_SYS_CALL;
-  }
+  ink_mutex_init(&mgmt_events_lock, "mgmt_event_notice");
 
   // initialize queue
   mgmt_events = create_queue();

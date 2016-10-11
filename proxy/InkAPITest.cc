@@ -1279,6 +1279,11 @@ REGRESSION_TEST(SDK_API_TSThread)(RegressionTest *test, int /* atype ATS_UNUSED 
   } else {
     SDK_RPRINT(test, "TSThreadCreate", "TestCase1", TC_PASS, "ok");
   }
+
+  if (created_thread != nullptr) {
+    TSThreadWait(created_thread);
+    TSThreadDestroy(created_thread);
+  }
 }
 
 //////////////////////////////////////////////

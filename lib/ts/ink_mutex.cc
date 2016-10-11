@@ -27,7 +27,21 @@
 #include <cstdio>
 #include "ts/ink_mutex.h"
 
-// Define the _g_mattr first to avoid static initialization order fiasco.
-x_pthread_mutexattr_t _g_mattr;
-
 ink_mutex __global_death = PTHREAD_MUTEX_INITIALIZER;
+
+x_pthread_mutexattr_t::x_pthread_mutexattr_t()
+{
+  pthread_mutexattr_init(&attr);
+#ifndef POSIX_THREAD_10031c
+  pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+#endif
+
+#if DEBUG && HAVE_PTHREAD_MUTEXATTR_SETTYPE
+  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+#endif
+}
+
+x_pthread_mutexattr_t::~x_pthread_mutexattr_t()
+{
+  pthread_mutexattr_destroy(&attr);
+}
