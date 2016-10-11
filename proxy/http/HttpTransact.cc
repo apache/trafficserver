@@ -7435,7 +7435,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 
   // Fuzz the freshness to prevent too many revalidates to popular
   //  documents at the same time
-  if (s->txn_conf->freshness_fuzz_time >= 0) {
+  if ((s->txn_conf->freshness_fuzz_time > 0) && (s->txn_conf->freshness_fuzz_prob > 0.0)) {
     fresh_limit = fresh_limit - calculate_freshness_fuzz(s, fresh_limit);
     fresh_limit = max(0, fresh_limit);
     fresh_limit = min((int)s->txn_conf->cache_guaranteed_max_lifetime, fresh_limit);
