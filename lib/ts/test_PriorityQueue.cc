@@ -384,6 +384,81 @@ REGRESSION_TEST(PriorityQueue_6)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   delete entry_a;
   delete entry_b;
   delete entry_c;
+
+  PQ *pq2 = new PQ();
+
+  N *w = new N(10, "W");
+  N *x = new N(20, "X");
+  N *y = new N(30, "Y");
+  N *z = new N(40, "Z");
+
+  Entry *entry_w = new Entry(w);
+  Entry *entry_x = new Entry(x);
+  Entry *entry_y = new Entry(y);
+  Entry *entry_z = new Entry(z);
+
+  pq2->push(entry_z);
+  pq2->push(entry_y);
+  pq2->push(entry_x);
+  pq2->push(entry_w);
+
+  box.check(pq2->top() == entry_w, "top should be entry_w 1");
+  pq2->erase(entry_x);
+  box.check(pq2->top() == entry_w, "top should be entry_w 2");
+  // The following two cases should test that erase preserves the index
+  pq2->erase(entry_y);
+  box.check(pq2->top() == entry_w, "top should be entry_w 3");
+  pq2->erase(entry_z);
+  box.check(pq2->top() == entry_w, "top should be entry_w 4");
+
+  delete pq2;
+
+  delete w;
+  delete x;
+  delete y;
+  delete z;
+
+  delete entry_w;
+  delete entry_x;
+  delete entry_y;
+  delete entry_z;
+}
+
+// Test erase and pop method to ensure the index entries are updated (TS-4915)
+REGRESSION_TEST(PriorityQueue_7)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  PQ *pq2 = new PQ();
+
+  N *x = new N(20, "X");
+  N *y = new N(30, "Y");
+  N *z = new N(40, "Z");
+
+  Entry *entry_x = new Entry(x);
+  Entry *entry_y = new Entry(y);
+  Entry *entry_z = new Entry(z);
+
+  pq2->push(entry_z);
+  pq2->push(entry_y);
+  pq2->push(entry_x);
+
+  box.check(pq2->top() == entry_x, "top should be entry_x");
+  pq2->pop();
+  box.check(pq2->top() == entry_y, "top should be entry_y");
+  pq2->erase(entry_y);
+  box.check(pq2->top() == entry_z, "top should be entry_z");
+
+  delete pq2;
+
+  delete x;
+  delete y;
+  delete z;
+
+  delete entry_x;
+  delete entry_y;
+  delete entry_z;
 }
 
 int
