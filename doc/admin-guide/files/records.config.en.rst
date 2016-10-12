@@ -1130,13 +1130,6 @@ ip-resolve
    Controls wether new POST requests re-use keep-alive sessions (``1``) or
    create new connections per request (``0``).
 
-.. ts:cv:: CONFIG proxy.config.http.accept_encoding_filter_enabled INT 0
-
-   Enables (``1``) or disables (``0``) additional handling of ``Accept-encoding``
-   header on incoming requests based on the ``User-Agent`` header, to account
-   for known deficiencies in legacy browsers which mis-report the encodings
-   they are able to accept.
-
 .. ts:cv:: CONFIG proxy.config.http.disallow_post_100_continue INT 0
 
    Allows you to return a 405 Method Not Supported with Posts also

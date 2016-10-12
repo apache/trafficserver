@@ -402,7 +402,6 @@ struct OverridableHttpConfigParams {
       insert_response_via_string(0),
       doc_in_cache_skip_dns(1),
       flow_control_enabled(0),
-      accept_encoding_filter_enabled(0),
       normalize_ae_gzip(0),
       srv_enabled(0),
       cache_open_write_fail_action(0),
@@ -542,11 +541,6 @@ struct OverridableHttpConfigParams {
   //////////////////////
   MgmtByte doc_in_cache_skip_dns;
   MgmtByte flow_control_enabled;
-
-  ////////////////////////////////////////////////////////
-  // HTTP Accept-Encoding filtering based on User-Agent //
-  ////////////////////////////////////////////////////////
-  MgmtByte accept_encoding_filter_enabled;
 
   ////////////////////////////////
   // Optimize gzip alternates   //
@@ -821,39 +815,6 @@ private:
 
 /////////////////////////////////////////////////////////////
 //
-// class HttpUserAgent_RegxEntry
-//
-// configuration entry for specific User-Agent
-// Created at startup time only and never changed
-// The main purpose of the User-Agent filtering is to find "bad" user agents
-// and modify Accept-Encoding to prevent compression for such "bad" guys
-/////////////////////////////////////////////////////////////
-
-class HttpUserAgent_RegxEntry
-{
-public:
-  typedef enum { // for more details, please see comments in "ae_ua.config" file
-    STRTYPE_UNKNOWN = 0,
-    STRTYPE_SUBSTR_CASE,  /* .substring, .string */
-    STRTYPE_SUBSTR_NCASE, /* .substring_ncase, .string_ncase */
-    STRTYPE_REGEXP        /* .regexp POSIX regular expression */
-  } StrType;
-
-  HttpUserAgent_RegxEntry *next;
-  int user_agent_str_size;
-  char *user_agent_str;
-  bool regx_valid;
-  StrType stype;
-  pcre *regx;
-
-  HttpUserAgent_RegxEntry();
-  ~HttpUserAgent_RegxEntry();
-
-  bool create(char *refexp_str = NULL, char *errmsgbuf = NULL, int errmsgbuf_size = 0);
-};
-
-/////////////////////////////////////////////////////////////
-//
 // class HttpConfig
 //
 /////////////////////////////////////////////////////////////
@@ -879,7 +840,6 @@ public:
 public:
   static int m_id;
   static HttpConfigParams m_master;
-  static HttpUserAgent_RegxEntry *user_agent_list;
 };
 
 // DI's request to disable ICP on the fly

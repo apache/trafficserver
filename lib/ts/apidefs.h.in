@@ -717,7 +717,6 @@ typedef enum {
   TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE,
   TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED,
   TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME,
-  TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED,
   TS_CONFIG_SSL_HSTS_MAX_AGE,
   TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS,
   TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME,
@@ -1153,7 +1152,6 @@ extern tsapi const char *const TS_PROTO_TAG_TCP;
 extern tsapi const char *const TS_PROTO_TAG_UDP;
 extern tsapi const char *const TS_PROTO_TAG_IPV4;
 extern tsapi const char *const TS_PROTO_TAG_IPV6;
-
 
 /* --------------------------------------------------------------------------
    MLoc Constants */
