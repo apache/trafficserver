@@ -8942,7 +8942,7 @@ TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 {
   Action *action      = NULL;
   HttpProxyPort *port = (HttpProxyPort *)descp;
-  NetProcessor::AcceptOptions net(make_net_accept_options(port, 0 /* nthreads */));
+  NetProcessor::AcceptOptions net(make_net_accept_options(port, -1 /* nthreads */));
 
   if (port->isSSL()) {
     action = sslNetProcessor.main_accept((INKContInternal *)contp, port->m_fd, net);
@@ -8962,7 +8962,7 @@ TSPluginDescriptorAccept(TSCont contp)
   for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
     HttpProxyPort &port = proxy_ports[i];
     if (port.isPlugin()) {
-      NetProcessor::AcceptOptions net(make_net_accept_options(&port, 0 /* nthreads */));
+      NetProcessor::AcceptOptions net(make_net_accept_options(&port, -1 /* nthreads */));
       action = netProcessor.main_accept((INKContInternal *)contp, port.m_fd, net);
     }
   }
