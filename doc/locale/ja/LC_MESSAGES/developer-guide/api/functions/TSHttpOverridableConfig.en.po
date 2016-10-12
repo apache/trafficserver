@@ -388,10 +388,6 @@ msgstr ""
 msgid ":ts:cv:`proxy.config.http.negative_revalidating_lifetime`"
 msgstr ""
 
-#: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:143
-msgid ":ts:cv:`proxy.config.http.accept_encoding_filter_enabled`"
-msgstr ""
-
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:144
 msgid ":ts:cv:`proxy.config.http.cache.range.write`"
 msgstr ""
