@@ -2106,7 +2106,7 @@ msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:1121
 msgid ""
-"Controls wether new POST requests re-use keep-alive sessions (``1``) or "
+"Controls whether new POST requests re-use keep-alive sessions (``1``) or "
 "create new connections per request (``0``)."
 msgstr ""
 

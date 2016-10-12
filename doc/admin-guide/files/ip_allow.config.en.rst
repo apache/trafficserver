@@ -44,7 +44,7 @@ specified client(s) to access the Traffic Server proxy cache. Multiple
 method keywords can be specified (method=GET method=HEAD), or multiple
 methods can be separated by an '\|' (method=GET\|HEAD). The method
 keyword is optional and it is defaulted to ALL. This supports ANY string
-as the HTTP method, meaning no validation is done to check wether it
+as the HTTP method, meaning no validation is done to check whether it
 is a valid HTTP method. This allows you to create filters for any method
 that your origin may require, this is especially useful if you use newer
 methods that aren't know to trafficserver (such as PROPFIND) or if your

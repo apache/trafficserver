@@ -37,7 +37,7 @@ class KAHandler(SocketServer.BaseRequestHandler):
     /parts/sleep_time/close
         parts: number of parts to send
         sleep_time: time between parts
-        close: bool wether to close properly
+        close: bool whether to close properly
     """
 
     def handle(self):

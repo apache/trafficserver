@@ -1127,7 +1127,7 @@ ip-resolve
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_post_out  INT 1
    :overridable:
 
-   Controls wether new POST requests re-use keep-alive sessions (``1``) or
+   Controls whether new POST requests re-use keep-alive sessions (``1``) or
    create new connections per request (``0``).
 
 .. ts:cv:: CONFIG proxy.config.http.accept_encoding_filter_enabled INT 0
