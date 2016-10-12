@@ -120,7 +120,6 @@ static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolSt
 ////////////////////////////////////////////////////////////////
 int HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
-HttpUserAgent_RegxEntry *HttpConfig::user_agent_list = NULL;
 
 static volatile int http_config_changes = 1;
 static HttpConfigCont *http_config_cont = NULL;
@@ -1346,8 +1345,6 @@ HttpConfig::reconfigure()
   params->referer_format_redirect = INT_TO_BOOL(m_master.referer_format_redirect);
 
   params->strict_uri_parsing = INT_TO_BOOL(m_master.strict_uri_parsing);
-
-  params->oride.accept_encoding_filter_enabled = INT_TO_BOOL(m_master.oride.accept_encoding_filter_enabled);
 
   params->oride.down_server_timeout    = m_master.oride.down_server_timeout;
   params->oride.client_abort_threshold = m_master.oride.client_abort_threshold;

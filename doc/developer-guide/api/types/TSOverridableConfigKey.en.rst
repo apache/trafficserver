@@ -189,8 +189,6 @@ Enumeration Members
 
 .. c:member:: TSOverridableConfigKey TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME
 
-.. c:member:: TSOverridableConfigKey TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED
-
 .. c:member:: TSOverridableConfigKey TS_CONFIG_SSL_HSTS_MAX_AGE
 
 .. c:member:: TSOverridableConfigKey TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS

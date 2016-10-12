@@ -7988,9 +7988,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->negative_revalidating_lifetime;
     break;
-  case TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED:
-    ret = &overridableHttpConfig->accept_encoding_filter_enabled;
-    break;
   case TS_CONFIG_SSL_HSTS_MAX_AGE:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->proxy_response_hsts_max_age;
@@ -8703,11 +8700,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 
   case 48:
     switch (name[length - 1]) {
-    case 'd':
-      if (!strncmp(name, "proxy.config.http.accept_encoding_filter_enabled", length)) {
-        cnf = TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED;
-      }
-      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.ignore_client_cc_max_age", length)) {
         cnf = TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE;
