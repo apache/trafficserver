@@ -5622,10 +5622,17 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->request_data.incoming_port = vc->get_local_port();
     s->request_data.internal_txn  = vc->get_is_internal_request();
   }
+
   // If this is an internal request, never keep alive
-  if (!s->txn_conf->keep_alive_enabled_in || (vc && vc->get_is_internal_request()) ||
-      (s->state_machine->ua_session && s->state_machine->ua_session->ignore_keep_alive())) {
+  if (!s->txn_conf->keep_alive_enabled_in || (s->state_machine->ua_session && s->state_machine->ua_session->ignore_keep_alive())) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+  } else if (vc && vc->get_is_internal_request()) {
+    // Following the trail of JIRAs back from TS-4960, there can be issues with
+    // EOS event delivery when using keepalive on internal PluginVC session. As
+    // an interim measure, if proxy.config.http.keepalive_internal_vc is set,
+    // we will obey the incoming transaction's keepalive request.
+    s->client_info.keep_alive =
+      s->http_config_param->keepalive_internal_vc ? incoming_request->keep_alive_get() : HTTP_NO_KEEPALIVE;
   } else {
     s->client_info.keep_alive = incoming_request->keep_alive_get();
   }
