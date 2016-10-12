@@ -344,8 +344,10 @@ void
 Http2Stream::transaction_done()
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  if (cross_thread_event != NULL)
+  if (cross_thread_event) {
     cross_thread_event->cancel();
+    cross_thread_event = NULL;
+  }
 
   if (!closed)
     do_io_close(); // Make sure we've been closed.  If we didn't close the parent session better still be open
@@ -354,8 +356,7 @@ Http2Stream::transaction_done()
 
   if (closed) {
     // Safe to initiate SSN_CLOSE if this is the last stream
-    if (cross_thread_event)
-      cross_thread_event->cancel();
+    ink_assert(cross_thread_event == NULL);
     // Schedule the destroy to occur after we unwind here.  IF we call directly, may delete with reference on the stack.
     cross_thread_event = this->get_thread()->schedule_imm(this, VC_EVENT_EOS, NULL);
   }

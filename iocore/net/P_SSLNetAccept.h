@@ -51,8 +51,7 @@ struct SSLNetAccept : public NetAccept {
   virtual NetProcessor *getNetProcessor() const;
   virtual NetAccept *clone() const;
 
-  SSLNetAccept(){};
-
-  virtual ~SSLNetAccept(){};
+  SSLNetAccept(const NetProcessor::AcceptOptions &opt);
+  virtual ~SSLNetAccept();
 };
 #endif

@@ -92,9 +92,9 @@ SSLNetProcessor::start(int, size_t stacksize)
 }
 
 NetAccept *
-SSLNetProcessor::createNetAccept()
+SSLNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {
-  return (NetAccept *)new SSLNetAccept;
+  return (NetAccept *)new SSLNetAccept(opt);
 }
 
 NetVConnection *

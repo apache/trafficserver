@@ -568,7 +568,8 @@ HttpTransact::BadRequest(State *s)
 void
 HttpTransact::HandleBlindTunnel(State *s)
 {
-  bool inbound_transparent_p = s->state_machine->ua_session->get_netvc()->get_is_transparent();
+  NetVConnection *vc         = s->state_machine->ua_session->get_netvc();
+  bool inbound_transparent_p = vc->get_is_transparent();
   URL u;
   // IpEndpoint dest_addr;
   // ip_text_buffer new_host;
@@ -590,10 +591,10 @@ HttpTransact::HandleBlindTunnel(State *s)
   s->hdr_info.client_request.version_set(ver);
 
   char new_host[INET6_ADDRSTRLEN];
-  ats_ip_ntop(s->state_machine->ua_session->get_netvc()->get_local_addr(), new_host, sizeof(new_host));
+  ats_ip_ntop(vc->get_local_addr(), new_host, sizeof(new_host));
 
   s->hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
-  s->hdr_info.client_request.url_get()->port_set(s->state_machine->ua_session->get_netvc()->get_local_port());
+  s->hdr_info.client_request.url_get()->port_set(vc->get_local_port());
 
   // Initialize the state vars necessary to sending error responses
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
@@ -935,7 +936,7 @@ HttpTransact::EndRemapRequest(State *s)
 done:
   // We now set the active-timeout again, since it might have been changed as part of the remap rules.
   if (s->state_machine->ua_session) {
-    s->state_machine->ua_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(s->txn_conf->transaction_active_timeout_in));
+    s->state_machine->ua_session->set_active_timeout(HRTIME_SECONDS(s->txn_conf->transaction_active_timeout_in));
   }
 
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
@@ -5705,13 +5706,14 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->client_info.proxy_connect_hdr = true;
   }
 
-  if (s->state_machine->ua_session) {
-    s->request_data.incoming_port = s->state_machine->ua_session->get_netvc()->get_local_port();
-    s->request_data.internal_txn  = s->state_machine->ua_session->get_netvc()->get_is_internal_request();
-  }
   NetVConnection *vc = NULL;
   if (s->state_machine->ua_session) {
     vc = s->state_machine->ua_session->get_netvc();
+  }
+
+  if (vc) {
+    s->request_data.incoming_port = vc->get_local_port();
+    s->request_data.internal_txn  = vc->get_is_internal_request();
   }
   // If this is an internal request, never keep alive
   if (!s->txn_conf->keep_alive_enabled_in || (vc && vc->get_is_internal_request()) ||
@@ -5795,11 +5797,8 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   s->request_data.hostname_str = s->arena.str_store(host_name, host_len);
   ats_ip_copy(&s->request_data.src_ip, &s->client_info.src_addr);
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
-  if (s->state_machine->ua_session) {
-    NetVConnection *netvc = s->state_machine->ua_session->get_netvc();
-    if (netvc) {
-      s->request_data.incoming_port = netvc->get_local_port();
-    }
+  if (vc) {
+    s->request_data.incoming_port = vc->get_local_port();
   }
   s->request_data.xact_start                      = s->client_request_time;
   s->request_data.api_info                        = &s->api_info;
@@ -6534,16 +6533,25 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 // bool HttpTransact::is_request_retryable
 //
 // In the general case once bytes have been sent on the wire the request cannot be retried.
-// The reason we cannot retry is that the rfc2616 does not make any gaurantees about the
+// The reason we cannot retry is that the rfc2616 does not make any guarantees about the
 // retry-ability of a request. In fact in the reverse proxy case it is quite common for GET
-// requests on the origin to fire tracking events etc. So, as a proxy once we have sent bytes
-// on the wire to the server we cannot gaurantee that the request is safe to redispatch to another server.
+// requests on the origin to fire tracking events etc. So, as a proxy, once bytes have been ACKd
+// by the server we cannot guarantee that the request is safe to retry or redispatch to another server.
+// This is distinction of "ACKd" vs "sent" is intended, and has reason. In the case of a
+// new origin connection there is little difference, as the chance of a RST between setup
+// and the first set of bytes is relatively small. This distinction is more apparent in the
+// case where the origin connection is a KA session. In this case, the session may not have
+// been used for a long time. In that case, we'll immediately queue up session to send to the
+// origin, without any idea of the state of the connection. If the origin is dead (or the connection
+// is broken for some other reason) we'll immediately get a RST back. In that case-- since no
+// bytes where ACKd by the remote end, we can retry/redispatch the request.
 //
 bool
 HttpTransact::is_request_retryable(State *s)
 {
   // If there was no error establishing the connection (and we sent bytes)-- we cannot retry
-  if (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0) {
+  if (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0 &&
+      s->state_machine->get_server_session()->get_netvc()->outstanding() != s->state_machine->server_request_hdr_bytes) {
     return false;
   }
 

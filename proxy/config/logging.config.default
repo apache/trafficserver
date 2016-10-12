@@ -14,7 +14,7 @@
 --  Create a filter object that drops logs matching the filter string.
 --
 -- filter.wipe(string)
---  Create a filter object that wipes the log fields specified in the filter string.
+--  Create a filter object that wipes (read: removes) the log fields specified in the filter string.
 --
 -- log.ascii(table)
 --  Creates an ASCII logging object.
@@ -40,7 +40,7 @@
 --      single collation host, which is equivalent to providing an array
 --      containing a single string.
 --
---      If multiple entries are give, multiple collation hosts are configured
+--      If multiple entries are given, multiple collation hosts are configured
 --      and each log entry will be forwarded to every host.
 --
 --      If an entry is an array of strings, this defines a collation host
