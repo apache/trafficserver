@@ -8231,34 +8231,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
       }
     }
   }
-  if (status_code == HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED && s->method == HTTP_WKSIDX_CONNECT &&
-      s->hdr_info.client_response.presence(MIME_PRESENCE_PROXY_CONNECTION)) {
-    int has_ua_msie = 0;
-    int user_agent_value_len, slen;
-    const char *user_agent_value, *c, *e;
 
-    user_agent_value = s->hdr_info.client_request.value_get(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT, &user_agent_value_len);
-    if (user_agent_value && user_agent_value_len >= 4) {
-      c = user_agent_value;
-      e = c + user_agent_value_len - 4;
-      while (1) {
-        slen = (int)(e - c);
-        c    = (const char *)memchr(c, 'M', slen);
-        if (c == NULL || (e - c) < 3) {
-          break;
-        }
-        if ((c[1] == 'S') && (c[2] == 'I') && (c[3] == 'E')) {
-          has_ua_msie = 1;
-          break;
-        }
-        c++;
-      }
-    }
-
-    if (has_ua_msie) {
-      s->hdr_info.client_response.value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
-    }
-  }
   // Add a bunch of headers to make sure that caches between
   // the Traffic Server and the client do not cache the error
   // page.
