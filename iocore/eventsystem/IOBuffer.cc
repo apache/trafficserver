@@ -46,10 +46,13 @@ void
 init_buffer_allocators()
 {
   char *name;
-  int advice = 0;
 
-#ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
-  advice = MADV_DONTDUMP;
+#if defined(HAVE_POSIX_MADVISE)
+  int advice = POSIX_MADV_NORMAL;
+#elif defined(MADV_DONTDUMP)
+  int advice = MADV_DONTDUMP;
+#else
+  int advice = MADV_NORMAL;
 #endif
 
   for (int i = 0; i < DEFAULT_BUFFER_SIZES; i++) {
