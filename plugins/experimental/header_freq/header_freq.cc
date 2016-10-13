@@ -24,40 +24,37 @@
 
 #include <iostream>
 #include <map>
-#include <sstream>
+#include <fstream>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
 #include <ts/ts.h>
 
+namespace
+{
 // plugin registration info
-static char plugin_name[]   = "header_freq";
-static char vendor_name[]   = "Apache Software Foundation";
-static char support_email[] = "dev@trafficserver.apache.org";
+char PLUGIN_NAME[]   = "header_freq";
+char VENDOR_NAME[]   = "Apache Software Foundation";
+char SUPPORT_EMAIL[] = "dev@trafficserver.apache.org";
 
 // debug messages during one-time initialization
-static const char DEBUG_TAG_INIT[] = "header_freq.init";
+const char DEBUG_TAG_INIT[] = "header_freq.init";
 
 // debug messages in continuation callbacks
-static const char DEBUG_TAG_HOOK[] = "header_freq.hook";
+const char DEBUG_TAG_HOOK[] = "header_freq.hook";
 
 // maps from header name to # of times encountered
-static std::map<std::string, unsigned int> client_freq;
-static std::map<std::string, unsigned int> origin_freq;
+std::map<std::string, unsigned int> client_freq;
+std::map<std::string, unsigned int> origin_freq;
 
 // for traffic_ctl, name is a convenient identifier
-static const char *ctl_tag = plugin_name;
-static const char *ctl_log = "log"; // log all data
+const char *ctl_tag              = PLUGIN_NAME;
+const char CONTROL_MSG_LOG[]     = "log"; // log all data
+const size_t CONTROL_MSG_LOG_LEN = sizeof(CONTROL_MSG_LOG) - 1;
 
-/**
- * Logs the data collected, first the client, and then
- * the origin headers.
- */
-static void
-log_frequencies()
+void
+Log_Data(std::ostream &ss)
 {
-  std::stringstream ss("");
-
   ss << std::endl << std::string(100, '+') << std::endl;
 
   ss << "CLIENT HEADERS" << std::endl;
@@ -73,7 +70,42 @@ log_frequencies()
   }
 
   ss << std::string(100, '+') << std::endl;
-  std::cout << ss.str() << std::endl;
+}
+
+/**
+ * Logs the data collected, first the client, and then
+ * the origin headers.
+ */
+int
+CB_Command_Log(TSCont contp, TSEvent event, void *edata)
+{
+  std::string *command = static_cast<std::string *>(TSContDataGet(contp));
+  std::string::size_type colon_idx;
+
+  if (std::string::npos != (colon_idx = command->find(':'))) {
+    std::string path = command->substr(colon_idx + 1);
+    // The length of the data can include a trailing null, clip it.
+    if (path.length() > 0 && path.back() == '\0')
+      path.pop_back();
+    if (path.length() > 0) {
+      std::ofstream out;
+      out.open(path, std::ios::out | std::ios::app);
+      if (out.is_open()) {
+        Log_Data(out);
+      } else {
+        TSError("[%s] Failed to open file '%s' for logging", PLUGIN_NAME, path.c_str());
+      }
+    } else {
+      TSError("[%s] Invalid (zero length) file name for logging", PLUGIN_NAME);
+    }
+  } else {
+    Log_Data(std::cout);
+  }
+
+  // cleanup.
+  delete command;
+  TSContDestroy(contp);
+  return TS_SUCCESS;
 }
 
 /**
@@ -89,22 +121,18 @@ count_all_headers(TSMBuffer &bufp, TSMLoc &hdr_loc, std::map<std::string, unsign
   TSDebug(DEBUG_TAG_HOOK, "%d headers found", n_headers);
 
   // iterate through all headers
-  for (int i = 0; i < n_headers; ++i) {
-    if (hdr == NULL)
-      break;
-    next_hdr = TSMimeHdrFieldNext(bufp, hdr_loc, hdr);
+  for (int i = 0; i < n_headers && nullptr != hdr; ++i) {
     int hdr_len;
     const char *hdr_name = TSMimeHdrFieldNameGet(bufp, hdr_loc, hdr, &hdr_len);
-
-    std::string str = std::string(hdr_name, hdr_len);
+    std::string str      = std::string(hdr_name, hdr_len);
 
     // make case-insensitive by converting to lowercase
-    for (auto &c : str) {
+    for (auto &c : str)
       c = tolower(c);
-    }
 
     ++map[str];
 
+    next_hdr = TSMimeHdrFieldNext(bufp, hdr_loc, hdr);
     TSHandleMLocRelease(bufp, hdr_loc, hdr);
     hdr = next_hdr;
   }
@@ -116,7 +144,7 @@ count_all_headers(TSMBuffer &bufp, TSMLoc &hdr_loc, std::map<std::string, unsign
  * Continuation callback. Invoked to count headers on READ_REQUEST_HDR and
  * SEND_RESPONSE_HDR hooks and to log through traffic_ctl's LIFECYCLE_MSG.
  */
-static int
+int
 handle_hook(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp;
@@ -131,7 +159,7 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
     txnp = reinterpret_cast<TSHttpTxn>(edata);
     // get the client request so we can loop through the headers
     if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-      TSError("(%s) could not get request headers", plugin_name);
+      TSError("[%s] could not get request headers", PLUGIN_NAME);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
       ret_val = -1;
       break;
@@ -145,7 +173,7 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
     // get the response so we can loop through the headers
     txnp = reinterpret_cast<TSHttpTxn>(edata);
     if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-      TSError("(%s) could not get response headers", plugin_name);
+      TSError("[%s] could not get response headers", PLUGIN_NAME);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
       ret_val = -2;
       break;
@@ -153,20 +181,23 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
     count_all_headers(bufp, hdr_loc, origin_freq);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   } break;
-  case TS_EVENT_LIFECYCLE_MSG: {
-    TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_LIFECYCLE_MSG");
-    TSPluginMsg *msgp = reinterpret_cast<TSPluginMsg *>(edata);
+  case TS_EVENT_LIFECYCLE_MSG: // Handle external command
+  {
+    TSPluginMsg *msgp = static_cast<TSPluginMsg *>(edata);
 
-    if (strcmp(ctl_tag, msgp->tag)) {
-      TSDebug(DEBUG_TAG_HOOK, "tag %s does not concern us", msgp->tag);
-      break;
+    if (0 == strcasecmp(ctl_tag, msgp->tag)) {
+      // identify the command
+      if (msgp->data_size >= CONTROL_MSG_LOG_LEN &&
+          0 == strncasecmp(CONTROL_MSG_LOG, static_cast<char const *>(msgp->data), CONTROL_MSG_LOG_LEN)) {
+        TSDebug(DEBUG_TAG_HOOK, "Scheduled execution of '%s' command", CONTROL_MSG_LOG);
+        TSCont c = TSContCreate(CB_Command_Log, TSMutexCreate());
+        TSContDataSet(c, new std::string(static_cast<char const *>(msgp->data), msgp->data_size));
+        TSContSchedule(c, 0, TS_THREAD_POOL_TASK);
+      } else {
+        TSError("[%s] Unknown command '%.*s'", PLUGIN_NAME, static_cast<int>(msgp->data_size),
+                static_cast<char const *>(msgp->data));
+      }
     }
-
-    // identify the command
-    if (strncmp(ctl_log, reinterpret_cast<const char *>(msgp->data), strlen(ctl_log)) == 0) {
-      log_frequencies();
-    }
-
   } break;
   // do nothing in any of the other states
   default:
@@ -176,28 +207,24 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
   return ret_val;
 }
 
-/**
- * Entry point for the plugin.
- */
+} // namespace
+
+/// Registration entry point for plugin.
 void
 TSPluginInit(int argc, const char *argv[])
 {
   TSDebug(DEBUG_TAG_INIT, "initializing plugin");
 
-  TSPluginRegistrationInfo info;
-
-  info.plugin_name   = plugin_name;
-  info.vendor_name   = vendor_name;
-  info.support_email = support_email;
+  TSPluginRegistrationInfo info = {PLUGIN_NAME, VENDOR_NAME, SUPPORT_EMAIL};
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s](%s) Plugin registration failed. \n", plugin_name, __FUNCTION__);
+    TSError("[%s](%s) Plugin registration failed. \n", PLUGIN_NAME, __FUNCTION__);
   }
 
   TSCont contp = TSContCreate(handle_hook, TSMutexCreate());
   if (contp == NULL) {
     // Continuation initialization failed. Unrecoverable, report and exit.
-    TSError("(%s)[%s] could not create continuation", plugin_name, __FUNCTION__);
+    TSError("[%s](%s) could not create continuation", PLUGIN_NAME, __FUNCTION__);
     abort();
   } else {
     // Continuation initialization succeeded
