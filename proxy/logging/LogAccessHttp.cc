@@ -932,6 +932,16 @@ LogAccessHttp::marshal_proxy_finish_status_code(char *buf)
   return INK_MIN_ALIGN;
 }
 
+int
+LogAccessHttp::marshal_proxy_retry_count(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_http_sm->t_state.current.attempts);
+  }
+
+  return INK_MIN_ALIGN;
+}
+
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
 int

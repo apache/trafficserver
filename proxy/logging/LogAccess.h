@@ -207,6 +207,7 @@ public:
   inkcoreapi virtual int marshal_proxy_resp_header_len(char *);    // INT
   inkcoreapi virtual int marshal_proxy_finish_status_code(char *); // INT
   inkcoreapi virtual int marshal_cache_result_code(char *);        // INT
+  inkcoreapi virtual int marshal_proxy_retry_count(char *);        // INT
   inkcoreapi virtual int marshal_proxy_host_port(char *);          // INT
   inkcoreapi virtual int marshal_cache_hit_miss(char *);           // INT
 
