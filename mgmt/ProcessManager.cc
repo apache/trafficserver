@@ -54,6 +54,9 @@ startProcessManager(void *arg)
     pmgmt->initLMConnection();
   }
 
+  if (pmgmt->init)
+    pmgmt->init();
+
   for (;;) {
     if (unlikely(shutdown_event_system == true)) {
       return NULL;
