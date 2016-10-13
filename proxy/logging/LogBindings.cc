@@ -27,6 +27,8 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 
+#include "ts/TestBox.h"
+
 static int
 refcount_object_new(lua_State *L, const char *type_name, RefCountObj *obj)
 {
@@ -130,13 +132,17 @@ create_wipe_filter_object(lua_State *L)
 }
 
 static LogHost *
-make_log_host(LogHost *parent, LogObject *log, const char *spec)
+make_log_host(LogHost *parent, LogObject *log, const char *s)
 {
   ats_scoped_obj<LogHost> lh;
 
+  // set_name_or_ipstr() silently mmodifies its argument, so make
+  // a copy to avoid writing into memory owned by the Lua VM.
+  std::string spec(s);
+
   lh = new LogHost(log->get_full_filename(), log->get_signature());
-  if (!lh->set_name_or_ipstr(spec)) {
-    Error("invalid collation host specification '%s'", spec);
+  if (!lh->set_name_or_ipstr(spec.c_str())) {
+    Error("invalid collation host specification '%s'", s);
     return NULL;
   }
 
@@ -148,7 +154,7 @@ make_log_host(LogHost *parent, LogObject *log, const char *spec)
       last = last->failover_link.next;
     }
 
-    Debug("lua", "added failover host %p to %p for %s", lh.get(), last, spec);
+    Debug("lua", "added failover host %p to %p for %s", lh.get(), last, s);
     last->failover_link.next = lh.release();
     return parent;
   }
@@ -172,6 +178,7 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
 
   if (lua_istable(L, value)) {
     lua_scoped_stack saved(L);
+
     int count   = luaL_getn(L, value);
     LogHost *lh = NULL;
 
@@ -182,23 +189,29 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
 
       // We allow one level of array nesting to represent failover hosts. Puke if
       // a nested array contains anything other than strings.
-      if (!top && !lua_isstring(L, value)) {
-        luaL_error(L, "bad type, expected 'string' but found '%s'", lua_typename(L, lua_type(L, value)));
+      if (!top && !lua_isstring(L, -1)) {
+        luaL_error(L, "bad type, expected 'string' but found '%s'", lua_typename(L, lua_type(L, -1)));
       }
 
-      if (lua_isstring(L, value)) {
-        LogHost *tmp = make_log_host(top ? NULL : lh, log, lua_tostring(L, -1));
-        if (tmp) {
-          lh = tmp;
-        }
-      } else if (lua_istable(L, value)) {
+      switch (lua_type(L, -1)) {
+      case LUA_TSTRING:
+        // This is a collation host address. Add it as a peer host if
+        // we are on the top level, or as a failover host if we are
+        // in a nested array.
+        lh = make_log_host(top ? NULL : lh, log, lua_tostring(L, -1));
+        break;
+
+      case LUA_TTABLE:
+        // Recurse to construct a failover group from a nested array.
         if (!log_object_add_hosts(L, log, -1, false /* nested */)) {
           lua_pop(L, 1); // Pop the element.
-
           return false;
         }
-      } else {
-        luaL_error(L, "bad type, expected 'string' or 'array' but found '%s'", lua_typename(L, lua_type(L, value)));
+
+        break;
+
+      default:
+        luaL_error(L, "bad type, expected 'string' or 'array' but found '%s'", lua_typename(L, lua_type(L, -1)));
       }
 
       // If this is the top level array, then each entry is a LogHost. For nested arrays, we aggregate
@@ -211,7 +224,10 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
       lua_pop(L, 1); // Pop the element.
     }
 
+    // Attach the log host to this log object. lh will only be non-null if we
+    // are dealing with a nested array of failover hosts.
     log->add_loghost(lh, false /* take ownership */);
+    return true;
   }
 
   return false;
@@ -342,6 +358,10 @@ create_log_object(lua_State *L, const char *name, LogFileFormat which)
 
   lua_pop(L, 1);
 
+  if (is_debug_tag_set("log-config")) {
+    log->display(stderr);
+  }
+
   // Now the object is complete, give it to the object manager.
   conf->log_object_manager.manage_object(log.get());
 
@@ -419,4 +439,71 @@ MakeLogBindings(BindingInstance &binding, LogConfig *conf)
   binding.attach_ptr("log.config", conf);
 
   return true;
+}
+
+EXCLUSIVE_REGRESSION_TEST(LogConfig_CollationHosts)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+
+  LogConfig config;
+  BindingInstance binding;
+
+  const char single[] = R"LUA(
+    log.ascii {
+      Format = "%<chi>",
+      Filename = "one-collation-host",
+      CollationHosts = "127.0.0.1:8080",
+    }
+  )LUA";
+
+  const char multi[] = R"LUA(
+    log.ascii {
+      Format = "%<chi>",
+      Filename = "many-collation-hosts",
+      CollationHosts = { "127.0.0.1:8080", "127.0.0.1:8081" },
+    }
+  )LUA";
+
+  const char failover[] = R"LUA(
+    log.ascii {
+      Format = "%<chi>",
+      Filename = "many-collation-failover",
+      CollationHosts =  {
+        { '127.0.0.1:8080', '127.0.0.1:8081' },
+        { '127.0.0.2:8080', '127.0.0.2:8081' },
+        { '127.0.0.3:8080', '127.0.0.3:8081' },
+      }
+    }
+  )LUA";
+
+  const char combined[] = R"LUA(
+    log.ascii {
+      Format = "%<chi>",
+      Filename = "mixed-collation-failover",
+      CollationHosts =  {
+        { '127.0.0.1:8080', '127.0.0.1:8081' },
+        { '127.0.0.2:8080', '127.0.0.2:8081' },
+        { '127.0.0.3:8080', '127.0.0.3:8081' },
+        '127.0.0.4:8080',
+        '127.0.0.5:8080',
+      }
+    }
+  )LUA";
+
+  (void)single;
+  (void)multi;
+  (void)failover;
+  (void)combined;
+
+  box = REGRESSION_TEST_PASSED;
+
+  box.check(binding.construct(), "construct Lua binding instance");
+  box.check(MakeLogBindings(binding, &config), "load Lua log configuration API");
+
+  box.check(binding.eval(single), "configuring a single log host");
+  box.check(binding.eval(multi), "configuring multiple log hosts");
+  box.check(binding.eval(failover), "configuring a multiple hosts with failover");
+  box.check(binding.eval(combined), "configuring a multiple hosts some with failover");
+
+  config.display(stderr);
 }
