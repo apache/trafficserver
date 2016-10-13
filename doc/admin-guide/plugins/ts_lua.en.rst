@@ -131,9 +131,9 @@ is always available within lua script. This package can be introduced into Lua l
 
 `TOP <#ts-lua-plugin>`_
 
-ts.process_id
--------------
-**syntax:** *val = ts.process_id()*
+ts.process.uuid
+---------------
+**syntax:** *val = ts.process.uuid()*
 
 **context:** global
 
@@ -143,7 +143,7 @@ Here is an example:
 
 ::
 
-    local pid = ts.process_id()  -- a436bae6-082c-4805-86af-78a5916c4a91
+    local pid = ts.process.uuid()  -- a436bae6-082c-4805-86af-78a5916c4a91
 
 `TOP <#ts-lua-plugin>`_
 

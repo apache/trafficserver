@@ -34,9 +34,13 @@ static void ts_lua_inject_misc_variables(lua_State *L);
 void
 ts_lua_inject_misc_api(lua_State *L)
 {
-  /* ts.process_id() */
+  lua_newtable(L);
+
+  /* ts.process.uuid() */
   lua_pushcfunction(L, ts_lua_get_process_id);
-  lua_setfield(L, -2, "process_id");
+  lua_setfield(L, -2, "uuid");
+
+  lua_setfield(L, -2, "process");
 
   /* ts.now() */
   lua_pushcfunction(L, ts_lua_get_now_time);
@@ -78,7 +82,7 @@ ts_lua_get_process_id(lua_State *L)
   if (process) {
     s = TSUuidStringGet(process);
   } else {
-    s = "";
+    return luaL_error(L, "not able to get process uuid");
   }
   lua_pushstring(L, s);
   return 1;
