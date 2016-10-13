@@ -38,6 +38,9 @@ struct BindingInstance {
   // Import a Lua file.
   bool require(const char *path);
 
+  // Eval a chunk of Lua code.
+  bool eval(const char *chunk);
+
   // Bind values to the specified global name. If the name contains '.'
   // separators, intermediate tables are constucted and the value is bound
   // to the final path component.

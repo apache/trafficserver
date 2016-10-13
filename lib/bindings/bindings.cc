@@ -250,6 +250,21 @@ BindingInstance::require(const char *path)
   return true;
 }
 
+bool
+BindingInstance::eval(const char *chunk)
+{
+  ink_release_assert(this->lua != NULL);
+
+  if (luaL_dostring(this->lua, chunk) != 0) {
+    const char *w = lua_tostring(this->lua, -1);
+    Warning("%s", w);
+    lua_pop(this->lua, 1);
+    return false;
+  }
+
+  return true;
+}
+
 BindingInstance *
 BindingInstance::self(lua_State *lua)
 {
