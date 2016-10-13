@@ -1224,12 +1224,18 @@ HttpConfig::reconfigure()
 
   params->oride.connect_attempts_max_retries             = m_master.oride.connect_attempts_max_retries;
   params->oride.connect_attempts_max_retries_dead_server = m_master.oride.connect_attempts_max_retries_dead_server;
-  params->oride.connect_attempts_rr_retries              = m_master.oride.connect_attempts_rr_retries;
-  params->oride.connect_attempts_timeout                 = m_master.oride.connect_attempts_timeout;
-  params->oride.post_connect_attempts_timeout            = m_master.oride.post_connect_attempts_timeout;
-  params->oride.parent_connect_attempts                  = m_master.oride.parent_connect_attempts;
-  params->per_parent_connect_attempts                    = m_master.per_parent_connect_attempts;
-  params->parent_connect_timeout                         = m_master.parent_connect_timeout;
+  if (m_master.oride.connect_attempts_rr_retries >= params->oride.connect_attempts_max_retries) {
+    Warning("connect_attempts_rr_retries (%d) is greater than connect_attempts_max_retries (%d), this means requests will never "
+            "redispatch "
+            "to another server",
+            m_master.oride.connect_attempts_rr_retries, params->oride.connect_attempts_max_retries);
+  }
+  params->oride.connect_attempts_rr_retries   = m_master.oride.connect_attempts_rr_retries;
+  params->oride.connect_attempts_timeout      = m_master.oride.connect_attempts_timeout;
+  params->oride.post_connect_attempts_timeout = m_master.oride.post_connect_attempts_timeout;
+  params->oride.parent_connect_attempts       = m_master.oride.parent_connect_attempts;
+  params->per_parent_connect_attempts         = m_master.per_parent_connect_attempts;
+  params->parent_connect_timeout              = m_master.parent_connect_timeout;
 
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
   params->oride.sock_send_buffer_size_out = m_master.oride.sock_send_buffer_size_out;
