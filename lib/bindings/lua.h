@@ -89,6 +89,7 @@ struct lua_scoped_stack {
   push_value(int value)
   {
     lua_pushvalue(L, value);
+    nvals++;
   }
 
 private:
