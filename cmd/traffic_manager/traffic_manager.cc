@@ -616,38 +616,27 @@ main(int argc, const char **argv)
   RecLocalStart(configFiles);
 
   /* Update cmd line overrides/environmental overrides/etc */
-  if (tsArgs) { /* Passed command line args for proxy */
-    ats_free(lmgmt->proxy_options);
-    lmgmt->proxy_options = tsArgs;
-    mgmt_log("[main] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
-  }
+  if (tsArgs)  /* Passed command line args for proxy */
+    callback_proxy_options.push_back(ats_strdup(tsArgs));
 
-  // we must pass in bind_stdout and bind_stderr values to TS
-  // we do it so TS is able to create BaseLogFiles for each value
+  // we must give bind_stdout and bind_stderr values to callback_proxy_options
+  // so LocalManager can start up TS with the correct options
+  //
+  // TS needs them to be able to create BaseLogFiles for each value
   if (*bind_stdout != 0) {
-    callback_proxy_options.push_back(ats_strdup(TM_OPT_BIND_STDOUT));
+    char *bind_stdout_opt = new char[strlen("--") + strlen(TM_OPT_BIND_STDOUT)];
+    strcpy(bind_stdout_opt, "--");
+    strcat(bind_stdout_opt, TM_OPT_BIND_STDOUT);
+    callback_proxy_options.push_back(bind_stdout_opt);
     callback_proxy_options.push_back(ats_strdup(bind_stdout));
-
-    size_t l = strlen(lmgmt->proxy_options);
-    size_t n = 3                            /* " --" */
-               + sizeof(TM_OPT_BIND_STDOUT) /* nul accounted for here */
-               + 1                          /* space */
-               + strlen(bind_stdout);
-    lmgmt->proxy_options = static_cast<char *>(ats_realloc(lmgmt->proxy_options, n + l));
-    snprintf(lmgmt->proxy_options + l, n, " --%s %s", TM_OPT_BIND_STDOUT, bind_stdout);
   }
 
   if (*bind_stderr != 0) {
-    callback_proxy_options.push_back(ats_strdup(TM_OPT_BIND_STDERR));
+    char *bind_stderr_opt = new char[strlen("--") + strlen(TM_OPT_BIND_STDERR)];
+    strcpy(bind_stderr_opt, "--");
+    strcat(bind_stderr_opt, TM_OPT_BIND_STDERR);
+    callback_proxy_options.push_back(bind_stderr_opt);
     callback_proxy_options.push_back(ats_strdup(bind_stderr));
-
-    size_t l = strlen(lmgmt->proxy_options);
-    size_t n = 3                            /* space dash dash */
-               + sizeof(TM_OPT_BIND_STDERR) /* nul accounted for here */
-               + 1                          /* space */
-               + strlen(bind_stderr);
-    lmgmt->proxy_options = static_cast<char *>(ats_realloc(lmgmt->proxy_options, n + l));
-    snprintf(lmgmt->proxy_options + l, n, " --%s %s", TM_OPT_BIND_STDERR, bind_stderr);
   }
 
   // If there exist proxy options we want CoreAPI to have, we set the callback
@@ -835,10 +824,11 @@ main(int argc, const char **argv)
       } else {
         sleep_time = 1;
       }
-      if (lmgmt->startProxy()) {
+      if (ProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_NONE) == TS_ERR_OKAY) {
         just_started = 0;
         sleep_time   = 0;
       } else {
+        mgmt_log("in ProxyStateSet else branch");
         just_started++;
       }
     } else { /* Give the proxy a chance to fire up */
