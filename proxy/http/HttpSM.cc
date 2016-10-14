@@ -5394,7 +5394,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
   //  to figure out that things have gone to hell
 
   if (tunnel.is_tunnel_active()) {
-    ink_assert(server_entry->read_vio == data);
+    ink_assert(server_entry->read_vio == data || server_entry->write_vio == data);
     DebugSM("http", "[%" PRId64 "] [handle_server_setup_error] "
                     "forwarding event %s to post tunnel",
             sm_id, HttpDebugNames::get_event_name(event));
