@@ -53,7 +53,7 @@ and perform the following::
 Using the plugin
 ----------------
 
-This plugin functions as a per remap plugin, and it takes two optional
+This plugin can function as a per remap plugin or a global plugin, and it takes two optional
 arguments for specifying the delay between successive retries and a max
 number of retries.
 
@@ -61,6 +61,12 @@ To activate the plugin in per remap mode, in :file:`remap.config`, simply append
 below to the specific remap line::
 
   @plugin=collapsed_forwarding.so @pparam=--delay=<delay> @pparam=--retries=<retries>
+
+To activate the plugin globally, in :file:`plugin.config`, add the following line::
+
+  collapsed_forwarding.so --delay=<delay> --retries=<retries>
+
+If the plugin is enabled both globally and per remap, Traffic Server will issue an error on startup.
 
 Functionality
 -------------
