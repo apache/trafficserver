@@ -321,9 +321,9 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
 {
   // clang-format off
     TSPluginRegistrationInfo info = {
-        const_cast<char*>(PLUGIN_NAME),
-        const_cast<char*>("Apache Software Foundation"),
-        const_cast<char*>("dev@trafficserver.apache.org"),
+        PLUGIN_NAME,
+        "Apache Software Foundation",
+        "dev@trafficserver.apache.org",
     };
   // clang-format on
 

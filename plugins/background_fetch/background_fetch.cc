@@ -555,9 +555,9 @@ TSPluginInit(int argc, const char *argv[])
                                           {const_cast<char *>("config"), required_argument, NULL, 'c'},
                                           {NULL, no_argument, NULL, '\0'}};
 
-  info.plugin_name   = (char *)PLUGIN_NAME;
-  info.vendor_name   = (char *)"Apache Software Foundation";
-  info.support_email = (char *)"dev@trafficserver.apache.org";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError("[%s] Plugin registration failed.", PLUGIN_NAME);

@@ -436,9 +436,10 @@ setup_request(TSCont contp, TSHttpTxn txnp)
 
         TSMBuffer urlBuf = TSMBufferCreate();
         TSMLoc urlLoc;
+        const char *spot = start; // avoid ugly casting, start isn't used again.
 
         TSUrlCreate(urlBuf, &urlLoc);
-        if (TSUrlParse(urlBuf, urlLoc, (const char **)&start, end) != TS_PARSE_DONE ||
+        if (TSUrlParse(urlBuf, urlLoc, &spot, end) != TS_PARSE_DONE ||
             TSCacheKeyDigestFromUrlSet(cstate->key_to_delete, urlLoc) != TS_SUCCESS) {
           TSError("[cache-scan] CacheKeyDigestFromUrlSet failed");
           TSCacheKeyDestroy(cstate->key_to_delete);

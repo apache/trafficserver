@@ -789,7 +789,7 @@ TSPluginInit(int argc, const char *argv[])
 
   TSCont management_contp = TSContCreate(management_update, NULL);
   // fixme: never freed. there is no shutdown event?
-  char *p = (char *)TSmalloc(config_path.size() + 1);
+  char *p = static_cast<char*>(TSmalloc(config_path.size() + 1));
   strcpy(p, config_path.c_str());
   TSContDataSet(management_contp, (void *)p);
   TSMgmtUpdateRegister(management_contp, TAG);

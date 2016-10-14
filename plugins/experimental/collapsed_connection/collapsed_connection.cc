@@ -1116,9 +1116,9 @@ TSPluginInit(int argc, const char *argv[])
   TSMgmtInt http_cache = 0;
   TSCont contp         = NULL;
 
-  info.plugin_name   = const_cast<char *>(PLUGIN_NAME);
-  info.vendor_name   = const_cast<char *>(PLUGIN_VENDOR);
-  info.support_email = const_cast<char *>(PLUGIN_SUPPORT);
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = PLUGIN_VENDOR;
+  info.support_email = PLUGIN_SUPPORT;
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError("[collapsed_connection] Plugin registration failed");

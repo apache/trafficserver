@@ -1148,9 +1148,9 @@ RegisterPlugin()
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = (char *)"ats_pagespeed";
-  info.vendor_name   = (char *)"Apache Software Foundation";
-  info.support_email = (char *)"dev@trafficserver.apache.org";
+  info.plugin_name   = "ats_pagespeed";
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[ats_pagespeed] Failed to register");

@@ -132,7 +132,7 @@ init_hidden_header_name()
     fatal("failed to get server name");
   } else {
     int hidden_header_name_len                 = strlen("x-accept-encoding-") + strlen(result);
-    hidden_header_name                         = (char *)TSmalloc(hidden_header_name_len + 1);
+    hidden_header_name                         = TSmalloc(hidden_header_name_len + 1);
     hidden_header_name[hidden_header_name_len] = 0;
     sprintf(hidden_header_name, "x-accept-encoding-%s", result);
   }
@@ -144,9 +144,9 @@ register_plugin()
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = (char *)"gzip";
-  info.vendor_name   = (char *)"Apache";
-  info.support_email = (char *)"dev@trafficserver.apache.org";
+  info.plugin_name   = "gzip";
+  info.vendor_name   = "Apache";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     return 0;
@@ -157,7 +157,7 @@ register_plugin()
 const char *
 load_dictionary(const char *preload_file)
 {
-  char *dict   = (char *)malloc(800000);
+  char *dict   = malloc(800000);
   uLong dictId = adler32(0L, Z_NULL, 0);
   uLong *adler = &dictId;
 
@@ -169,7 +169,7 @@ load_dictionary(const char *preload_file)
     fatal("gzip-transform: ERROR: Unable to open dict file %s", preload_file);
   }
 
-  /* dict = (char *) calloc(8000, sizeof(char)); */
+  /* dict =  calloc(8000, sizeof(char)); */
 
   i = 0;
   while (!feof(fp)) {

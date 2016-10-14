@@ -962,7 +962,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   int match_len        = 0;
   char *match_buf;
 
-  match_buf = (char *)alloca(req_url.url_len + 32);
+  match_buf = static_cast<char *>(alloca(req_url.url_len + 32));
 
   if (ri->method) { // Prepend the URI path or URL with the HTTP method
     TSMBuffer mBuf;
@@ -1068,7 +1068,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       if (new_len > 0) {
         char *dest;
 
-        dest     = (char *)alloca(new_len + 8);
+        dest     = static_cast<char *>(alloca(new_len + 8));
         dest_len = re->substitute(dest, match_buf, ovector, lengths, txnp, rri, &req_url, lowercase_substitutions);
 
         TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less", new_len);

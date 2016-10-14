@@ -186,9 +186,9 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
   my_bool reconnect = 1;
 
-  info.plugin_name   = const_cast<char *>(PLUGIN_NAME);
-  info.vendor_name   = const_cast<char *>("Apache Software Foundation");
-  info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[mysql_remap] Plugin registration failed.");
@@ -232,7 +232,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  data->query = (char *)TSmalloc(QSIZE * sizeof(char)); // TODO: malloc smarter sizes
+  data->query = TSmalloc(QSIZE * sizeof(char)); // TODO: malloc smarter sizes
 
   TSDebug(PLUGIN_NAME, "h: %s; u: %s; p: %s; p:%d; d:%s", host, username, password, port, db);
   TSCont cont = TSContCreate(mysql_remap, TSMutexCreate());

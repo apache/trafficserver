@@ -18,7 +18,7 @@
 
 #include "mp4_common.h"
 
-static char *ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, size_t *val_len);
+static const char *ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, size_t *val_len);
 static int mp4_handler(TSCont contp, TSEvent event, void *edata);
 static void mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp);
 static void mp4_read_response(Mp4Context *mc, TSHttpTxn txnp);
@@ -477,7 +477,7 @@ mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete)
   return ret;
 }
 
-static char *
+static const char *
 ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, size_t *val_len)
 {
   const char *p, *last;
@@ -486,14 +486,14 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
   *val_len = 0;
 
   if (!param || !param_len) {
-    return NULL;
+    return nullptr;
   }
 
   p    = param;
   last = p + param_len;
 
   for (; p < last; p++) {
-    p = (char *)memmem(p, last - p, key, key_len);
+    p = static_cast<const char *>(memmem(p, last - p, key, key_len));
 
     if (p == NULL) {
       return NULL;
@@ -502,7 +502,7 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
     if ((p == param || *(p - 1) == '&') && *(p + key_len) == '=') {
       val = p + key_len + 1;
 
-      p = (char *)memchr(p, '&', last - p);
+      p = static_cast<const char *>(memchr(p, '&', last - p));
 
       if (p == NULL) {
         p = param + param_len;
@@ -510,9 +510,9 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
 
       *val_len = p - val;
 
-      return (char *)val;
+      return val;
     }
   }
 
-  return NULL;
+  return nullptr;
 }

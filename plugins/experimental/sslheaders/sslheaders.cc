@@ -217,9 +217,9 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
   SslHdrInstance *hdr;
 
-  info.plugin_name   = (char *)"sslheaders";
-  info.vendor_name   = (char *)"Apache Software Foundation";
-  info.support_email = (char *)"dev@trafficserver.apache.org";
+  info.plugin_name   = "sslheaders";
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     SslHdrError("plugin registration failed");

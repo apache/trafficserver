@@ -65,7 +65,7 @@
 #include <netdb.h>
 #include <map>
 
-static const char *DEBUG_TAG = (char *)"collapsed_forwarding";
+static const char *DEBUG_TAG = "collapsed_forwarding";
 
 static const char *LOCATION_HEADER      = "Location";
 static const char *REDIRECT_REASON      = "See Other";
