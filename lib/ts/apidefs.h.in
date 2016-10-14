@@ -105,13 +105,13 @@ extern "C" {
 
  */
 typedef struct {
-  char *plugin_name;
-  char *vendor_name;
-  char *support_email;
+  const char *plugin_name;
+  const char *vendor_name;
+  const char *support_email;
 } TSPluginRegistrationInfo;
 
 typedef struct {
-  char const *tag;  ///< Message tag (null terminated).
+  const char *tag;  ///< Message tag (null terminated).
   void const *data; ///< Message data (payload)
   size_t data_size; ///< Amount of message data.
 } TSPluginMsg;
