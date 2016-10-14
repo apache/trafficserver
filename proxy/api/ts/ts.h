@@ -161,7 +161,7 @@ int TSTrafficServerVersionGetPatch(void);
     @return TS_ERROR if the plugin registration failed.
 
  */
-tsapi TSReturnCode TSPluginRegister(TSPluginRegistrationInfo *plugin_info);
+tsapi TSReturnCode TSPluginRegister(const TSPluginRegistrationInfo *plugin_info);
 
 /* --------------------------------------------------------------------------
    Files */
