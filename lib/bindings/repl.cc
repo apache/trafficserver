@@ -37,7 +37,7 @@ repl(BindingInstance &binding)
     char *line;
 
     line = readline("> ");
-    if (line == NULL) {
+    if (line == nullptr) {
       exit(0);
     }
 

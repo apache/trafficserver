@@ -119,8 +119,8 @@ static inline size_t __attribute__((const)) ats_pagesize(void)
 /* Some convenience wrappers around strdup() functionality */
 char *_xstrdup(const char *str, int length, const char *path);
 
-#define ats_strdup(p) _xstrdup((p), -1, NULL)
-#define ats_strndup(p, n) _xstrdup((p), n, NULL)
+#define ats_strdup(p) _xstrdup((p), -1, nullptr)
+#define ats_strndup(p, n) _xstrdup((p), n, nullptr)
 
 #ifdef __cplusplus
 }
@@ -390,7 +390,7 @@ struct SCOPED_MALLOC_TRAITS {
   static T *
   initValue()
   {
-    return NULL;
+    return nullptr;
   }
   static bool
   isValid(T *t)
@@ -412,7 +412,7 @@ struct SCOPED_OBJECT_TRAITS {
   static T *
   initValue()
   {
-    return NULL;
+    return nullptr;
   }
   static bool
   isValid(T *t)

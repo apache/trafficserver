@@ -46,7 +46,7 @@
    -------------------------------------------------------------- */
 static const char modulePrefix[] = "[SplitDNS]";
 
-ConfigUpdateHandler<SplitDNSConfig> *SplitDNSConfig::splitDNSUpdate = NULL;
+ConfigUpdateHandler<SplitDNSConfig> *SplitDNSConfig::splitDNSUpdate = nullptr;
 
 static ClassAllocator<DNSRequestData> DNSReqAllocator("DNSRequestDataAllocator");
 
@@ -54,7 +54,7 @@ static ClassAllocator<DNSRequestData> DNSReqAllocator("DNSRequestDataAllocator")
    used by a lot of protocols. We do not have dest ip in most
    cases.
    -------------------------------------------------------------- */
-const matcher_tags sdns_dest_tags = {"dest_host", "dest_domain", NULL, "url_regex", "url", NULL, true};
+const matcher_tags sdns_dest_tags = {"dest_host", "dest_domain", nullptr, "url_regex", "url", nullptr, true};
 
 /* --------------------------------------------------------------
    config Callback Prototypes
@@ -74,14 +74,14 @@ Ptr<ProxyMutex> SplitDNSConfig::dnsHandler_mutex;
 /* --------------------------------------------------------------
    SplitDNSResult::SplitDNSResult()
    -------------------------------------------------------------- */
-inline SplitDNSResult::SplitDNSResult() : r(DNS_SRVR_UNDEFINED), m_line_number(0), m_rec(0), m_wrap_around(false)
+inline SplitDNSResult::SplitDNSResult() : r(DNS_SRVR_UNDEFINED), m_line_number(0), m_rec(nullptr), m_wrap_around(false)
 {
 }
 
 /* --------------------------------------------------------------
    SplitDNS::SplitDNS()
    -------------------------------------------------------------- */
-SplitDNS::SplitDNS() : m_DNSSrvrTable(NULL), m_SplitDNSlEnable(0), m_bEnableFastPath(false), m_pxLeafArray(NULL), m_numEle(0)
+SplitDNS::SplitDNS() : m_DNSSrvrTable(nullptr), m_SplitDNSlEnable(0), m_bEnableFastPath(false), m_pxLeafArray(nullptr), m_numEle(0)
 {
 }
 
@@ -139,15 +139,15 @@ SplitDNSConfig::reconfigure()
   params->m_DNSSrvrTable    = new DNS_table("proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags);
 
   params->m_numEle = params->m_DNSSrvrTable->getEntryCount();
-  if (0 == params->m_DNSSrvrTable || (0 == params->m_numEle)) {
+  if (nullptr == params->m_DNSSrvrTable || (0 == params->m_numEle)) {
     Warning("No NAMEDs provided! Disabling SplitDNS");
     gsplit_dns_enabled = 0;
     delete params;
     return;
   }
 
-  if (0 != params->m_DNSSrvrTable->getHostMatcher() && 0 == params->m_DNSSrvrTable->getReMatcher() &&
-      0 == params->m_DNSSrvrTable->getIPMatcher() && 4 >= params->m_numEle) {
+  if (nullptr != params->m_DNSSrvrTable->getHostMatcher() && nullptr == params->m_DNSSrvrTable->getReMatcher() &&
+      nullptr == params->m_DNSSrvrTable->getIPMatcher() && 4 >= params->m_numEle) {
     HostLookup *pxHL          = params->m_DNSSrvrTable->getHostMatcher()->getHLookup();
     params->m_pxLeafArray     = (void *)pxHL->getLArray();
     params->m_bEnableFastPath = true;
@@ -196,7 +196,7 @@ SplitDNS::getDNSRecord(const char *hostname)
   }
 
   Debug("splitdns", "Fail to match a valid splitdns rule, fallback to default dns resolver");
-  return NULL;
+  return nullptr;
 }
 
 /* --------------------------------------------------------------
@@ -215,7 +215,7 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
     return;
   }
 
-  result->m_rec         = NULL;
+  result->m_rec         = nullptr;
   result->m_line_number = 0xffffffff;
   result->m_wrap_around = false;
 
@@ -223,9 +223,9 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
      the 'alleged' fast path ...
      --------------------------- */
   if (m_bEnableFastPath) {
-    SplitDNSRecord *data_ptr = 0;
+    SplitDNSRecord *data_ptr = nullptr;
     char *pHost              = (char *)rdata->get_host();
-    if (0 == pHost) {
+    if (nullptr == pHost) {
       Warning("SplitDNS: No host to match !");
       return;
     }
@@ -233,7 +233,7 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
     int len        = strlen(pHost);
     HostLeaf *pxHL = (HostLeaf *)m_pxLeafArray;
     for (int i = 0; i < m_numEle; i++) {
-      if (0 == pxHL)
+      if (nullptr == pxHL)
         break;
 
       if (false == pxHL[i].isNot && pxHL[i].len > len)
@@ -260,7 +260,7 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
   }
 
   rec = result->m_rec;
-  if (rec == NULL) {
+  if (rec == nullptr) {
     result->r = DNS_SRVR_UNDEFINED;
     return;
   } else {
@@ -315,7 +315,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
     current = pTok[i];
     tmp     = (char *)strchr(current, ':');
     // coverity[secure_coding]
-    if (tmp != NULL && sscanf(tmp + 1, "%d", &port) != 1) {
+    if (tmp != nullptr && sscanf(tmp + 1, "%d", &port) != 1) {
       return "Malformed DNS port";
     }
 
@@ -356,7 +356,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
   }
 
   m_dnsSrvr_cnt = numTok;
-  return NULL;
+  return nullptr;
 }
 
 /* --------------------------------------------------------------
@@ -384,7 +384,7 @@ SplitDNSRecord::ProcessDefDomain(char *val)
     m_servers.x_def_domain[len] = '\0';
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /* --------------------------------------------------------------
@@ -396,7 +396,7 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
   Tokenizer pTok(",; \t\r");
   int numTok;
   int cnt = 0, sz = 0;
-  char *pSp = 0;
+  char *pSp = nullptr;
   const char *current;
 
   numTok = pTok.Initialize(val, SHARE_TOKS);
@@ -419,7 +419,7 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
   }
 
   m_domain_srch_list = numTok;
-  return NULL;
+  return nullptr;
 }
 
 /* --------------------------------------------------------------
@@ -431,7 +431,7 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
 config_parse_error
 SplitDNSRecord::Init(matcher_line *line_info)
 {
-  const char *errPtr = NULL;
+  const char *errPtr = nullptr;
   const char *tmp;
   char *label;
   char *val;
@@ -441,33 +441,33 @@ SplitDNSRecord::Init(matcher_line *line_info)
     label = line_info->line[0][i];
     val   = line_info->line[1][i];
 
-    if (label == NULL) {
+    if (label == nullptr) {
       continue;
     }
 
     if (strcasecmp(label, "def_domain") == 0) {
-      if (NULL != (errPtr = ProcessDefDomain(val))) {
+      if (nullptr != (errPtr = ProcessDefDomain(val))) {
         return config_parse_error("%s %s at line %d", modulePrefix, errPtr, line_num);
       }
-      line_info->line[0][i] = NULL;
+      line_info->line[0][i] = nullptr;
       line_info->num_el--;
       continue;
     }
 
     if (strcasecmp(label, "search_list") == 0) {
-      if (NULL != (errPtr = ProcessDomainSrchList(val))) {
+      if (nullptr != (errPtr = ProcessDomainSrchList(val))) {
         return config_parse_error("%s %s at line %d", modulePrefix, errPtr, line_num);
       }
-      line_info->line[0][i] = NULL;
+      line_info->line[0][i] = nullptr;
       line_info->num_el--;
       continue;
     }
 
     if (strcasecmp(label, "named") == 0) {
-      if (NULL != (errPtr = ProcessDNSHosts(val))) {
+      if (nullptr != (errPtr = ProcessDNSHosts(val))) {
         return config_parse_error("%s %s at line %d", modulePrefix, errPtr, line_num);
       }
-      line_info->line[0][i] = NULL;
+      line_info->line[0][i] = nullptr;
       line_info->num_el--;
       continue;
     }
@@ -482,7 +482,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
 
   memset(res, 0, sizeof(ts_imp_res_state));
   if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_dnsSrvr_cnt, dns_search, m_servers.x_def_domain,
-                          m_servers.x_domain_srch_list, NULL))) {
+                          m_servers.x_domain_srch_list, nullptr))) {
     char ab[INET6_ADDRPORTSTRLEN];
     return config_parse_error("Failed to build res record for the servers %s ...",
                               ats_ip_ntop(&m_servers.x_server_ip[0].sa, ab, sizeof ab));
@@ -502,7 +502,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
      ----------------------------------------------------- */
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
-    if (tmp != NULL) {
+    if (tmp != nullptr) {
       return config_parse_error("%s %s at line %d in splitdns.config", modulePrefix, tmp, line_num);
     }
   }

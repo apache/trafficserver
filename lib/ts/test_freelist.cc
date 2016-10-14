@@ -27,7 +27,7 @@
 #include "ts/ink_queue.h"
 
 #define NTHREADS 64
-InkFreeList *flist = NULL;
+InkFreeList *flist = nullptr;
 
 void *
 test(void *d)
@@ -37,7 +37,7 @@ test(void *d)
 
   id = (intptr_t)d;
 
-  time_t start = time(NULL);
+  time_t start = time(nullptr);
   int count    = 0;
   for (;;) {
     m1 = ink_freelist_new(flist);
@@ -59,8 +59,8 @@ test(void *d)
     ink_freelist_free(flist, m3);
 
     // break out of the test if we have run more then 60 seconds
-    if (++count % 1000 == 0 && (start + 60) < time(NULL)) {
-      return NULL;
+    if (++count % 1000 == 0 && (start + 60) < time(nullptr)) {
+      return nullptr;
     }
   }
 }
@@ -74,7 +74,7 @@ main(int /* argc ATS_UNUSED */, char * /*argv ATS_UNUSED */ [])
 
   for (i = 0; i < NTHREADS; i++) {
     fprintf(stderr, "Create thread %d\n", i);
-    ink_thread_create(test, (void *)((intptr_t)i), 0, 0, NULL);
+    ink_thread_create(test, (void *)((intptr_t)i), 0, 0, nullptr);
   }
 
   test((void *)NTHREADS);

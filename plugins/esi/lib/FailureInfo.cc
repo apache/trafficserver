@@ -31,7 +31,7 @@ void
 FailureInfo::registerSuccFail(bool isSuccess)
 {
   struct timeval currTime, result;
-  gettimeofday(&currTime, NULL);
+  gettimeofday(&currTime, nullptr);
   timersub(&currTime, &_start, &result);
 
   if ((result.tv_sec * 1000000 + result.tv_usec) > (WINDOW_SIZE * 1000)) {
@@ -50,7 +50,7 @@ FailureInfo::registerSuccFail(bool isSuccess)
       _debugLog(_debug_tag, "[%s] current average over window is %lf", __FUNCTION__, _avgOverWindow);
     }
 
-    gettimeofday(&_start, NULL);
+    gettimeofday(&_start, nullptr);
   }
 
   if (isSuccess) {

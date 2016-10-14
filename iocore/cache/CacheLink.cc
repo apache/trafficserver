@@ -27,7 +27,7 @@ Action *
 Cache::link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
-    cont->handleEvent(CACHE_EVENT_LINK_FAILED, 0);
+    cont->handleEvent(CACHE_EVENT_LINK_FAILED, nullptr);
     return ACTION_RESULT_DONE;
   }
 
@@ -63,9 +63,9 @@ CacheVC::linkWrite(int event, Event * /* e ATS_UNUSED */)
   if (_action.cancelled)
     goto Ldone;
   if (io.ok())
-    _action.continuation->handleEvent(CACHE_EVENT_LINK, NULL);
+    _action.continuation->handleEvent(CACHE_EVENT_LINK, nullptr);
   else
-    _action.continuation->handleEvent(CACHE_EVENT_LINK_FAILED, NULL);
+    _action.continuation->handleEvent(CACHE_EVENT_LINK_FAILED, nullptr);
 Ldone:
   return free_CacheVC(this);
 }
@@ -74,7 +74,7 @@ Action *
 Cache::deref(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
-    cont->handleEvent(CACHE_EVENT_DEREF_FAILED, 0);
+    cont->handleEvent(CACHE_EVENT_DEREF_FAILED, nullptr);
     return ACTION_RESULT_DONE;
   }
 
@@ -82,8 +82,8 @@ Cache::deref(Continuation *cont, const CacheKey *key, CacheFragType type, const 
 
   Vol *vol = key_to_vol(key, hostname, host_len);
   Dir result;
-  Dir *last_collision = NULL;
-  CacheVC *c          = NULL;
+  Dir *last_collision = nullptr;
+  CacheVC *c          = nullptr;
   {
     MUTEX_TRY_LOCK(lock, vol->mutex, cont->mutex->thread_holding);
     if (lock.is_locked()) {
@@ -114,7 +114,7 @@ Cache::deref(Continuation *cont, const CacheKey *key, CacheFragType type, const 
     }
   }
 Lcallreturn:
-  if (c->handleEvent(AIO_EVENT_DONE, 0) == EVENT_DONE)
+  if (c->handleEvent(AIO_EVENT_DONE, nullptr) == EVENT_DONE)
     return ACTION_RESULT_DONE;
   else
     return &c->_action;
@@ -123,7 +123,7 @@ Lcallreturn:
 int
 CacheVC::derefRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  Doc *doc = NULL;
+  Doc *doc = nullptr;
 
   cancel_trigger();
   set_io_not_in_progress();
@@ -134,7 +134,7 @@ CacheVC::derefRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if ((int)io.aio_result != (int)io.aiocb.aio_nbytes)
     goto Ldone;
   if (!dir_agg_valid(vol, &dir)) {
-    last_collision = NULL;
+    last_collision = nullptr;
     goto Lcollision;
   }
   doc = (Doc *)buf->data();
@@ -163,5 +163,5 @@ Ldone:
   _action.continuation->handleEvent(CACHE_EVENT_DEREF_FAILED, (void *)-ECACHE_NO_DOC);
   return free_CacheVC(this);
 Lcallreturn:
-  return handleEvent(AIO_EVENT_DONE, 0); // hopefully a tail call
+  return handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
 }

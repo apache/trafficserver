@@ -60,7 +60,7 @@ drainIncomingChannel_broadcast(void *arg)
   ClusterCom *ccom = (ClusterCom *)arg;
 
   time_t t;
-  time_t last_multicast_receive_time = time(NULL);
+  time_t last_multicast_receive_time = time(nullptr);
 
   /* Avert race condition, thread spun during constructor */
   while (lmgmt->ccom != ccom || !lmgmt->ccom->init) {
@@ -81,9 +81,9 @@ drainIncomingChannel_broadcast(void *arg)
     if (ccom->cluster_type != NO_CLUSTER) {
       nevents = mgmt_read_timeout(ccom->receive_fd, ccom->mc_poll_timeout /* secs */, 0 /* usecs */);
       if (nevents > 0) {
-        last_multicast_receive_time = time(NULL); // valid multicast msg
+        last_multicast_receive_time = time(nullptr); // valid multicast msg
       } else {
-        t = time(NULL);
+        t = time(nullptr);
         if ((t - last_multicast_receive_time) > ccom->mc_poll_timeout) {
           // Timeout on multicast receive channel, reset channel.
           if (ccom->receive_fd > 0) {
@@ -107,7 +107,7 @@ drainIncomingChannel_broadcast(void *arg)
     }
   }
 
-  return NULL;
+  return nullptr;
 } /* End drainIncomingChannel */
 
 /*
@@ -259,7 +259,7 @@ drainIncomingChannel(void *arg)
           bool stat = false;
           char fname[1024];
           version_t ver;
-          textBuffer *buff = NULL;
+          textBuffer *buff = nullptr;
           Rollback *rb;
 
           /* Get the file and blast it back */
@@ -322,7 +322,7 @@ drainIncomingChannel(void *arg)
     }
   }
 
-  return NULL;
+  return nullptr;
 } /* End drainIncomingChannel */
 
 /*
@@ -400,7 +400,7 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
 
   /* Grab the proxy cluster port */
   cluster_port = REC_readInteger("proxy.config.cluster.cluster_port", &found);
-  RecRegisterConfigUpdateCb("proxy.config.cluster.cluster_port", cluster_com_port_watcher, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.cluster.cluster_port", cluster_com_port_watcher, nullptr);
 
   if (!(strlen(group) < (MAX_MC_GROUP_LEN - 1))) {
     mgmt_fatal(0, "[ClusterCom::ClusterCom] mc group length too large!\n");
@@ -431,7 +431,7 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   ink_assert(found);
 
   /* Launch time */
-  startup_time = time(NULL);
+  startup_time = time(nullptr);
 
   /* Timeout before broadcasting virtual ip information */
   startup_timeout = REC_readInteger("proxy.config.cluster.startup_timeout", &found);
@@ -444,8 +444,8 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   mismatchLog = ink_hash_table_create(InkHashTableKeyType_String);
 
   if (cluster_type != NO_CLUSTER) {
-    ink_thread_create(drainIncomingChannel_broadcast, this, 0, 0, NULL); /* Spin drainer thread */
-    ink_thread_create(drainIncomingChannel, this, 0, 0, NULL);           /* Spin drainer thread */
+    ink_thread_create(drainIncomingChannel_broadcast, this, 0, 0, nullptr); /* Spin drainer thread */
+    ink_thread_create(drainIncomingChannel, this, 0, 0, nullptr);           /* Spin drainer thread */
   }
   return;
 } /* End ClusterCom::ClusterCom */
@@ -460,7 +460,7 @@ ClusterCom::checkPeers(time_t *ticker)
 {
   static int number_of_nodes = -1;
   bool signal_alarm          = false;
-  time_t t                   = time(NULL);
+  time_t t                   = time(nullptr);
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
@@ -484,7 +484,7 @@ ClusterCom::checkPeers(time_t *ticker)
      * table out from underneath you.
      */
     ink_mutex_acquire(&(mutex)); /* Grab cluster lock */
-    for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != NULL;
+    for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != nullptr;
          entry = ink_hash_table_iterator_next(peers, &iterator_state)) {
       ClusterPeerInfo *tmp = (ClusterPeerInfo *)ink_hash_table_entry_value(peers, entry);
       if ((idle_since = t - tmp->idle_ticks) > peer_timeout) {
@@ -529,7 +529,7 @@ ClusterCom::checkPeers(time_t *ticker)
       for (int c = 0; c <= 1; c++) {
         bool flag = false; /* Used to mark first loop on second pass */
 
-        for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != NULL;
+        for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != nullptr;
              entry = ink_hash_table_iterator_next(peers, &iterator_state)) {
           char str_number[80];
           char *key            = (char *)ink_hash_table_entry_key(peers, entry);
@@ -625,7 +625,7 @@ ClusterCom::checkPeers(time_t *ticker)
   // fix me -- what does aggregated_node_data do?
 
   ink_mutex_acquire(&(mutex)); /* Grab the cluster lock */
-  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(peers, &iterator_state)) {
     ClusterPeerInfo *tmp = (ClusterPeerInfo *)ink_hash_table_entry_value(peers, entry);
 
@@ -652,7 +652,7 @@ ClusterCom::generateClusterDelta(void)
   }
 
   ink_mutex_acquire(&(mutex));
-  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(peers, &iterator_state)) {
     ClusterPeerInfo *tmp = (ClusterPeerInfo *)ink_hash_table_entry_value(peers, entry);
 
@@ -692,12 +692,12 @@ ClusterCom::handleMultiCastMessage(char *message)
 
   ++MultiCastMessages;
 
-  t              = time(NULL); /* Get current time for determining most recent changes */
+  t              = time(nullptr); /* Get current time for determining most recent changes */
   our_wall_clock = t;
 
   /* Grab the ip address, we need to know this so that we only complain
      once about a cluster name or traffic server version mismatch */
-  if ((line = strtok_r(message, "\n", &last)) == NULL) {
+  if ((line = strtok_r(message, "\n", &last)) == nullptr) {
     goto Lbogus; /* IP of sender */
   }
 
@@ -714,7 +714,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Make sure this is a message for the cluster we belong to */
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
+  if ((line = strtok_r(nullptr, "\n", &last)) == nullptr) {
     goto Lbogus; /* ClusterName of sender */
   }
 
@@ -729,7 +729,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Make sure this a message from a Traffic Server of the same version */
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
+  if ((line = strtok_r(nullptr, "\n", &last)) == nullptr) {
     goto Lbogus; /* TS version of sender */
   }
 
@@ -740,7 +740,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Figure out what type of message this is */
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
+  if ((line = strtok_r(nullptr, "\n", &last)) == nullptr) {
     goto Lbogus;
   }
   if (strcmp("type: files", line) == 0) { /* Config Files report */
@@ -760,7 +760,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Check OS and version info */
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
+  if ((line = strtok_r(nullptr, "\n", &last)) == nullptr) {
     goto Lbogus; /* OS of sender */
   }
   if (!strstr(line, "os: ") || !strstr(line, sys_name)) {
@@ -774,7 +774,7 @@ ClusterCom::handleMultiCastMessage(char *message)
           line, sys_name, sys_release);
   }
 
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
+  if ((line = strtok_r(nullptr, "\n", &last)) == nullptr) {
     goto Lbogus; /* OS-Version of sender */
   }
   if (!strstr(line, "rel: ") || !strstr(line, sys_release)) {
@@ -788,7 +788,7 @@ ClusterCom::handleMultiCastMessage(char *message)
           line, sys_name, sys_release);
   }
 
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
+  if ((line = strtok_r(nullptr, "\n", &last)) == nullptr) {
     goto Lbogus; /* Hostname of sender */
   }
   if (strlen(line) >= sizeof(hostname) || sscanf(line, "hostname: %s", hostname) != 1) {
@@ -796,7 +796,7 @@ ClusterCom::handleMultiCastMessage(char *message)
     return;
   }
 
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
+  if ((line = strtok_r(nullptr, "\n", &last)) == nullptr) {
     goto Lbogus; /* mc_port of sender */
   }
   if (sscanf(line, "port: %d", &peer_cluster_port) != 1) {
@@ -804,7 +804,7 @@ ClusterCom::handleMultiCastMessage(char *message)
     return;
   }
 
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
+  if ((line = strtok_r(nullptr, "\n", &last)) == nullptr) {
     goto Lbogus; /* rs_port of sender */
   }
   if (sscanf(line, "ccomport: %d", &ccom_port) != 1) {
@@ -813,7 +813,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Their wall clock time and last config change time */
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
+  if ((line = strtok_r(nullptr, "\n", &last)) == nullptr) {
     goto Lbogus;
   }
   int64_t tt;
@@ -901,14 +901,14 @@ void
 ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo *peer)
 {
   char *line;
-  RecRecords *rec_ptr = NULL;
+  RecRecords *rec_ptr = nullptr;
   int tmp_id          = -1;
   RecDataT tmp_type   = RECD_NULL;
-  RecRecord *rec      = NULL;
+  RecRecord *rec      = nullptr;
 
   /* Loop over records, updating peer copy(summed later) */
   rec_ptr = &(peer->node_rec_data);
-  for (int i = 0; (line = strtok_r(NULL, "\n", &last)) && i < rec_ptr->num_recs; i++) {
+  for (int i = 0; (line = strtok_r(nullptr, "\n", &last)) && i < rec_ptr->num_recs; i++) {
     tmp_id   = -1;
     tmp_type = RECD_NULL;
     rec      = &(rec_ptr->recs[i]);
@@ -919,7 +919,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo *peer)
     case RECD_COUNTER: {
       RecInt tmp_msg_val = -1;
       tmp_id             = ink_atoi(line);
-      char *v2 = strchr(line, ':'), *v3 = NULL;
+      char *v2 = strchr(line, ':'), *v3 = nullptr;
       if (v2) {
         tmp_type = (RecDataT)ink_atoi(v2 + 1);
         v3       = strchr(v2 + 1, ':');
@@ -963,7 +963,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo *peer)
     }
     case RECD_STRING: { /* String stats not supported for cluster passing */
       int ccons;
-      char *tmp_msg_val = NULL;
+      char *tmp_msg_val = nullptr;
 
       // the types specified are all have a defined constant size
       // coverity[secure_coding]
@@ -980,7 +980,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo *peer)
 
       if (strcmp(tmp_msg_val, "NULL") == 0 && rec->data.rec_string) {
         ats_free(rec->data.rec_string);
-        rec->data.rec_string = NULL;
+        rec->data.rec_string = nullptr;
       } else if (!(strcmp(tmp_msg_val, "NULL") == 0)) {
         ats_free(rec->data.rec_string);
         rec->data.rec_string = (RecString)ats_strdup(tmp_msg_val);
@@ -1085,7 +1085,7 @@ insert_locals(textBuffer *rec_cfg_new, textBuffer *rec_cfg, MgmtHashTable *local
         // value; keep track that we accessed this LOCAL already;
         // later, we need to iterate through all of our un-accessed
         // LOCALs and add them to the bottom of the remote config
-        local_access_ht->mgmt_hash_table_insert(name, 0);
+        local_access_ht->mgmt_hash_table_insert(name, nullptr);
       } else {
         // LOCAL didn't exist in our config, don't merge into the
         // remote config
@@ -1097,13 +1097,14 @@ insert_locals(textBuffer *rec_cfg_new, textBuffer *rec_cfg, MgmtHashTable *local
     rec_cfg_new->copyFrom("\n", strlen("\n"));
   }
   // remove any of our accessed LOCALs from local_ht
-  for (hte = local_access_ht->mgmt_hash_table_iterator_first(&htis); hte != NULL;
+  for (hte = local_access_ht->mgmt_hash_table_iterator_first(&htis); hte != nullptr;
        hte = local_access_ht->mgmt_hash_table_iterator_next(&htis)) {
     name = (char *)local_access_ht->mgmt_hash_table_entry_key(hte);
     local_ht->mgmt_hash_table_delete(name);
   }
   // add our un-accessed LOCALs to the remote config
-  for (hte = local_ht->mgmt_hash_table_iterator_first(&htis); hte != NULL; hte = local_ht->mgmt_hash_table_iterator_next(&htis)) {
+  for (hte = local_ht->mgmt_hash_table_iterator_first(&htis); hte != nullptr;
+       hte = local_ht->mgmt_hash_table_iterator_next(&htis)) {
     line = (char *)local_ht->mgmt_hash_table_entry_value(hte);
     rec_cfg_new->copyFrom(line, strlen(line));
     rec_cfg_new->copyFrom("\n", strlen("\n"));
@@ -1131,7 +1132,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
   InkHashTableValue hash_value;
   bool file_update_failure;
 
-  while ((line = strtok_r(NULL, "\n", &last))) {
+  while ((line = strtok_r(nullptr, "\n", &last))) {
     Rollback *rb;
 
     file_update_failure = false;
@@ -1187,7 +1188,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
             if (!insert_locals(reply_new, reply, our_locals_ht)) {
               file_update_failure = true;
               delete reply_new;
-              reply_new = 0;
+              reply_new = nullptr;
             } else {
               delete reply;
               reply = reply_new;
@@ -1219,7 +1220,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
 
   ink_mutex_acquire(&(mutex)); /* Grab cluster lock to access hash table */
   if (ink_hash_table_lookup(peers, (InkHashTableKey)ip, &hash_value) != 0) {
-    ((ClusterPeerInfo *)hash_value)->manager_idle_ticks = time(NULL);
+    ((ClusterPeerInfo *)hash_value)->manager_idle_ticks = time(nullptr);
     if (((ClusterPeerInfo *)hash_value)->manager_alive < 0) {
       Note("marking manager on node %s as up", ip);
     }
@@ -1241,7 +1242,7 @@ ClusterCom::handleMultiCastAlarmPacket(char *last, char *ip)
 
   /* Allows us to expire stale alarms */
   lmgmt->alarm_keeper->resetSeenFlag(ip);
-  while ((line = strtok_r(NULL, "\n", &last))) {
+  while ((line = strtok_r(nullptr, "\n", &last))) {
     int ccons;
     alarm_t a;
     char *desc;
@@ -1282,7 +1283,7 @@ ClusterCom::handleMultiCastVMapPacket(char *last, char *ip)
   lmgmt->virt_map->rl_resetSeenFlag(ip); /* Ala alarms */
   ink_mutex_release(&(mutex));
 
-  while ((line = strtok_r(NULL, "\n", &last))) {
+  while ((line = strtok_r(nullptr, "\n", &last))) {
     char vaddr[80];
 
     if (strcmp(line, "virt: none") == 0) {
@@ -1324,7 +1325,7 @@ ClusterCom::sendSharedData(bool send_proxy_heart_beat)
     return true;
   }
 
-  now = time(NULL);
+  now = time(nullptr);
   if (now == -1) {
     // The time call failed
     last_shared_send = 0;
@@ -1436,8 +1437,8 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
   ink_release_assert(running_sum < max);
 
   /* Current time stamp, for xntp like synching */
-  if (time(NULL) > 0) {
-    snprintf(tmp, sizeof(tmp), "time: %" PRId64 "\n", (int64_t)time(NULL));
+  if (time(nullptr) > 0) {
+    snprintf(tmp, sizeof(tmp), "time: %" PRId64 "\n", (int64_t)time(nullptr));
     ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
     running_sum += strlen(tmp);
   } else {
@@ -1538,7 +1539,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
   buff  = configFiles->filesManaged();
   files = buff->bufPtr();
   line  = strtok_r(files, "\n", &last);
-  if (line == NULL) {
+  if (line == nullptr) {
     delete buff;
     return;
   }
@@ -1576,7 +1577,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
     } else {
       mgmt_elog(0, "[ClusterCom::constructSharedFilePacket] Invalid base name? '%s'\n", line);
     }
-  } while ((line = strtok_r(NULL, "\n", &last)));
+  } while ((line = strtok_r(nullptr, "\n", &last)));
 
   delete buff;
   return;
@@ -1790,7 +1791,7 @@ ClusterCom::sendClusterMessage(int msg_type, const char *args)
   }
 
   ink_mutex_acquire(&(mutex)); /* Grab cluster lock */
-  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(peers, &iterator_state)) {
     ClusterPeerInfo *tmp = (ClusterPeerInfo *)ink_hash_table_entry_value(peers, entry);
 
@@ -2073,7 +2074,7 @@ ClusterCom::isMaster()
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(peers, &iterator_state)) {
     ClusterPeerInfo *pinfo = (ClusterPeerInfo *)ink_hash_table_entry_value(peers, entry);
 
@@ -2107,7 +2108,7 @@ ClusterCom::lowestPeer(int *no)
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(peers, &iterator_state)) {
     ClusterPeerInfo *tmp = (ClusterPeerInfo *)ink_hash_table_entry_value(peers, entry);
     if (tmp->num_virt_addrs == -1) {
@@ -2180,7 +2181,7 @@ ClusterCom::highestPeer(int *no)
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(peers, &iterator_state)) {
     ClusterPeerInfo *tmp = (ClusterPeerInfo *)ink_hash_table_entry_value(peers, entry);
     if (tmp->num_virt_addrs == -1) {
@@ -2220,7 +2221,7 @@ checkBackDoor(int req_fd, char *message)
     ink_mutex_acquire(&(lmgmt->ccom->mutex));
     tmp_msg = "\nLocal Map (virtual-ip):\n-----------------------\n";
     mgmt_writeline(req_fd, tmp_msg, strlen(tmp_msg));
-    for (entry = ink_hash_table_iterator_first(lmgmt->virt_map->our_map, &iterator_state); entry != NULL;
+    for (entry = ink_hash_table_iterator_first(lmgmt->virt_map->our_map, &iterator_state); entry != nullptr;
          entry = ink_hash_table_iterator_next(lmgmt->virt_map->our_map, &iterator_state)) {
       char *tmp = (char *)ink_hash_table_entry_key(lmgmt->virt_map->our_map, entry);
       mgmt_writeline(req_fd, tmp, strlen(tmp));
@@ -2235,7 +2236,7 @@ checkBackDoor(int req_fd, char *message)
     map_empty = true;
     tmp_msg   = "\nPeer Map (virtual-ip real-ip):\n------------------------------\n";
     mgmt_writeline(req_fd, tmp_msg, strlen(tmp_msg));
-    for (entry = ink_hash_table_iterator_first(lmgmt->virt_map->ext_map, &iterator_state); entry != NULL;
+    for (entry = ink_hash_table_iterator_first(lmgmt->virt_map->ext_map, &iterator_state); entry != nullptr;
          entry = ink_hash_table_iterator_next(lmgmt->virt_map->ext_map, &iterator_state)) {
       char *tmp = (char *)ink_hash_table_entry_key(lmgmt->virt_map->ext_map, entry);
       mgmt_writeline(req_fd, tmp, strlen(tmp));
@@ -2322,7 +2323,7 @@ checkBackDoor(int req_fd, char *message)
 
     ink_mutex_acquire(&(lmgmt->ccom->mutex));
 
-    for (entry = ink_hash_table_iterator_first(lmgmt->ccom->peers, &iterator_state); entry != NULL;
+    for (entry = ink_hash_table_iterator_first(lmgmt->ccom->peers, &iterator_state); entry != nullptr;
          entry = ink_hash_table_iterator_next(lmgmt->ccom->peers, &iterator_state)) {
       const char *tmp_msg;
       char ip_addr[80];
@@ -2388,7 +2389,7 @@ checkBackDoor(int req_fd, char *message)
     return true;
   } else if (strstr(message, "cluster: ")) {
     int msg_type;
-    char *args = NULL;
+    char *args = nullptr;
 
     if (strstr(message, "cluster: shutdown_manager")) {
       msg_type = CLUSTER_MSG_SHUTDOWN_MANAGER;

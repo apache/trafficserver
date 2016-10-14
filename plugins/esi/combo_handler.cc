@@ -74,7 +74,7 @@ struct ClientRequest {
   StringList file_urls;
   bool gzip_accepted;
   string defaultBucket; // default Bucket will be set to HOST header
-  ClientRequest() : status(TS_HTTP_STATUS_OK), client_addr(NULL), gzip_accepted(false), defaultBucket("l"){};
+  ClientRequest() : status(TS_HTTP_STATUS_OK), client_addr(nullptr), gzip_accepted(false), defaultBucket("l"){};
 };
 
 struct InterceptData {
@@ -86,7 +86,7 @@ struct InterceptData {
     TSIOBuffer buffer;
     TSIOBufferReader reader;
 
-    IoHandle() : vio(0), buffer(0), reader(0){};
+    IoHandle() : vio(nullptr), buffer(nullptr), reader(nullptr){};
 
     ~IoHandle()
     {
@@ -115,15 +115,15 @@ struct InterceptData {
   string gzipped_data;
 
   InterceptData(TSCont cont)
-    : net_vc(0),
+    : net_vc(nullptr),
       contp(cont),
       input(),
       output(),
-      req_hdr_bufp(0),
-      req_hdr_loc(0),
+      req_hdr_bufp(nullptr),
+      req_hdr_loc(nullptr),
       req_hdr_parsed(false),
       initialized(false),
-      fetcher(0),
+      fetcher(nullptr),
       read_complete(false),
       write_complete(false)
   {
@@ -164,7 +164,7 @@ InterceptData::init(TSVConn vconn)
 void
 InterceptData::setupWrite()
 {
-  TSAssert(output.buffer == 0);
+  TSAssert(output.buffer == nullptr);
   output.buffer = TSIOBufferCreate();
   output.reader = TSIOBufferReaderAlloc(output.buffer);
   output.vio    = TSVConnWrite(net_vc, contp, output.reader, INT64_MAX);
@@ -243,9 +243,9 @@ TSPluginInit(int argc, const char *argv[])
     LOG_DEBUG("WhiteList: %s", HEADER_WHITELIST[i].c_str());
   }
 
-  TSReleaseAssert(pthread_key_create(&threadKey, NULL) == 0);
+  TSReleaseAssert(pthread_key_create(&threadKey, nullptr) == 0);
 
-  TSCont rrh_contp = TSContCreate(handleReadRequestHeader, NULL);
+  TSCont rrh_contp = TSContCreate(handleReadRequestHeader, nullptr);
   if (!rrh_contp) {
     LOG_ERROR("Could not create read request header continuation");
     return;
@@ -440,9 +440,9 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
   int colon_pos       = -1;
   string file_url("http://localhost/");
   size_t file_base_url_size      = file_url.size();
-  const char *common_prefix      = 0;
+  const char *common_prefix      = nullptr;
   int common_prefix_size         = 0;
-  const char *common_prefix_path = 0;
+  const char *common_prefix_path = nullptr;
   int common_prefix_path_size    = 0;
 
   for (int i = 0; i <= query_len; ++i) {
@@ -686,7 +686,7 @@ readInterceptRequest(InterceptData &int_data)
     int64_t data_len;
     const char *data;
     TSIOBufferBlock block = TSIOBufferReaderStart(int_data.input.reader);
-    while (block != NULL) {
+    while (block != nullptr) {
       data               = TSIOBufferBlockReadStart(block, int_data.input.reader, &data_len);
       const char *endptr = data + data_len;
       if (TSHttpHdrParseReq(int_data.http_parser, int_data.req_hdr_bufp, int_data.req_hdr_loc, &data, endptr) == TS_PARSE_DONE) {
@@ -1048,7 +1048,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
-  *ih = NULL;
+  *ih = nullptr;
 
   TSDebug(DEBUG_TAG, "%s Remap Instance for '%s' created", DEBUG_TAG, argv[0]);
   return TS_SUCCESS;

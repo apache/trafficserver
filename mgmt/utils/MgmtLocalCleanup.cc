@@ -27,7 +27,7 @@
 void
 mgmt_cleanup()
 {
-  if (lmgmt != NULL) {
+  if (lmgmt != nullptr) {
     lmgmt->mgmtShutdown();
   }
 }

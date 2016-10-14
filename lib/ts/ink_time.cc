@@ -57,7 +57,7 @@ ink_microseconds(int which)
 
   switch (which) {
   case MICRO_REAL:
-    gettimeofday(&tp, NULL);
+    gettimeofday(&tp, nullptr);
     break;
   case MICRO_USER:
     getrusage(RUSAGE_SELF, &ru);
@@ -87,7 +87,7 @@ ink_time_wall_seconds()
 {
   struct timeval s_val;
 
-  gettimeofday(&s_val, 0);
+  gettimeofday(&s_val, nullptr);
   return ((double)s_val.tv_sec + 0.000001 * s_val.tv_usec);
 } /* End ink_time_wall_seconds */
 
@@ -114,7 +114,7 @@ cftime_replacement(char *s, int maxsize, const char *format, const time_t *clock
 {
   struct tm tm;
 
-  ink_assert(ink_localtime_r(clock, &tm) != NULL);
+  ink_assert(ink_localtime_r(clock, &tm) != nullptr);
 
   return strftime(s, maxsize, format, &tm);
 }

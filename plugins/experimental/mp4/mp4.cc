@@ -50,7 +50,7 @@ TSRemapNewInstance(int argc, char ** /* argv ATS_UNUSED */, void **ih, char *err
     snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Argument should be removed");
   }
 
-  *ih = NULL;
+  *ih = nullptr;
   return TS_SUCCESS;
 }
 
@@ -84,7 +84,7 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
   // check suffix
   path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
 
-  if (path == NULL || path_len <= 4) {
+  if (path == nullptr || path_len <= 4) {
     return TSREMAP_NO_REMAP;
 
   } else if (strncasecmp(path + path_len - 4, ".mp4", 4) != 0) {
@@ -95,7 +95,7 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
   query = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &query_len);
 
   val = ts_arg(query, query_len, "start", sizeof("start") - 1, &val_len);
-  if (val != NULL) {
+  if (val != nullptr) {
     ret = sscanf(val, "%f", &start);
     if (ret != 1) {
       start = 0;
@@ -107,7 +107,7 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
 
   } else if (start < 0) {
     TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
-    TSHttpTxnErrorBodySet(rh, TSstrdup("Invalid request."), sizeof("Invalid request.") - 1, NULL);
+    TSHttpTxnErrorBodySet(rh, TSstrdup("Invalid request."), sizeof("Invalid request.") - 1, nullptr);
   }
 
   // reset args
@@ -140,7 +140,7 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
   }
 
   mc    = new Mp4Context(start);
-  contp = TSContCreate(mp4_handler, NULL);
+  contp = TSContCreate(mp4_handler, nullptr);
   TSContDataSet(contp, mc);
 
   TSHttpTxnHookAdd(rh, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, contp);
@@ -450,7 +450,7 @@ mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete)
   avail = TSIOBufferReaderAvail(mtc->dup_reader);
   blk   = TSIOBufferReaderStart(mtc->dup_reader);
 
-  while (blk != NULL) {
+  while (blk != nullptr) {
     data = TSIOBufferBlockReadStart(blk, mtc->dup_reader, &bytes);
     if (bytes > 0) {
       TSIOBufferWrite(mm->meta_buffer, data, bytes);
@@ -471,7 +471,7 @@ mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete)
 
   if (ret != 0) {
     TSIOBufferReaderFree(mtc->dup_reader);
-    mtc->dup_reader = NULL;
+    mtc->dup_reader = nullptr;
   }
 
   return ret;
@@ -486,7 +486,7 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
   *val_len = 0;
 
   if (!param || !param_len) {
-    return NULL;
+    return nullptr;
   }
 
   p    = param;
@@ -495,8 +495,8 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
   for (; p < last; p++) {
     p = (char *)memmem(p, last - p, key, key_len);
 
-    if (p == NULL) {
-      return NULL;
+    if (p == nullptr) {
+      return nullptr;
     }
 
     if ((p == param || *(p - 1) == '&') && *(p + key_len) == '=') {
@@ -504,7 +504,7 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
 
       p = (char *)memchr(p, '&', last - p);
 
-      if (p == NULL) {
+      if (p == nullptr) {
         p = param + param_len;
       }
 
@@ -514,5 +514,5 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
     }
   }
 
-  return NULL;
+  return nullptr;
 }

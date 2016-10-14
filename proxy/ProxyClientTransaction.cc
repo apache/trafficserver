@@ -28,19 +28,24 @@
 #define DebugHttpTxn(fmt, ...) DebugSsn(this, "http_txn", fmt, __VA_ARGS__)
 
 ProxyClientTransaction::ProxyClientTransaction()
-  : VConnection(NULL), parent(NULL), current_reader(NULL), sm_reader(NULL), host_res_style(HOST_RES_NONE), restart_immediate(false)
+  : VConnection(nullptr),
+    parent(nullptr),
+    current_reader(nullptr),
+    sm_reader(nullptr),
+    host_res_style(HOST_RES_NONE),
+    restart_immediate(false)
 {
 }
 
 void
 ProxyClientTransaction::new_transaction()
 {
-  ink_assert(current_reader == NULL);
+  ink_assert(current_reader == nullptr);
 
   // Defensive programming, make sure nothing persists across
   // connection re-use
 
-  ink_release_assert(parent != NULL);
+  ink_release_assert(parent != nullptr);
   current_reader = HttpSM::allocate();
   current_reader->init();
   DebugHttpTxn("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", parent->connection_id(),
@@ -77,8 +82,8 @@ void
 ProxyClientTransaction::destroy()
 {
   if (current_reader) {
-    current_reader->ua_session = NULL;
-    current_reader             = NULL;
+    current_reader->ua_session = nullptr;
+    current_reader             = nullptr;
   }
   this->mutex.clear();
 }
@@ -95,5 +100,5 @@ ProxyClientTransaction::adjust_thread(Continuation *cont, int event, void *data)
       vc->thread = this_thread;
     }
   }
-  return NULL;
+  return nullptr;
 }

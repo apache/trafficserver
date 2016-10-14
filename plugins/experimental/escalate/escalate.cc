@@ -53,7 +53,7 @@ struct EscalationState {
 
   EscalationState() : use_pristine(false)
   {
-    cont = TSContCreate(EscalateResponse, NULL);
+    cont = TSContCreate(EscalateResponse, nullptr);
     TSContDataSet(cont, this);
   }
 
@@ -68,7 +68,7 @@ struct EscalationState {
 char *
 MakeEscalateUrl(TSMBuffer mbuf, TSMLoc url, const char *host, size_t host_len, int &url_len)
 {
-  char *url_str = NULL;
+  char *url_str = nullptr;
 
   // Update the request URL with the new Host to try.
   TSUrlHostSet(mbuf, url, host, host_len);
@@ -90,7 +90,7 @@ EscalateResponse(TSCont cont, TSEvent event, void *edata)
   TSMBuffer mbuf;
   TSMLoc hdrp, url;
   TSHttpStatus status;
-  char *url_str = NULL;
+  char *url_str = nullptr;
   int url_len, tries;
 
   TSAssert(event == TS_EVENT_HTTP_READ_RESPONSE_HDR);
@@ -171,7 +171,7 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
     } else {
       // Each token should be a status code then a URL, separated by ':'.
       sep = strchr(argv[i], ':');
-      if (sep == NULL) {
+      if (sep == nullptr) {
         snprintf(errbuf, errbuf_size, "malformed status:target config: %s", argv[i]);
         goto fail;
       }
@@ -191,8 +191,8 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
         TSDebug(PLUGIN_NAME, "Creating Redirect rule with Host = %s", sep);
       }
 
-      for (token = strtok_r(argv[i], ",", &save); token; token = strtok_r(NULL, ",", &save)) {
-        unsigned status = strtol(token, NULL, 10);
+      for (token = strtok_r(argv[i], ",", &save); token; token = strtok_r(nullptr, ",", &save)) {
+        unsigned status = strtol(token, nullptr, 10);
 
         if (status < 100 || status > 599) {
           snprintf(errbuf, errbuf_size, "invalid status code: %.*s", (int)std::distance(argv[i], sep), argv[i]);

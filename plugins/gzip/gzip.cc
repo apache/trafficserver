@@ -50,11 +50,11 @@ using namespace Gzip;
 
 const int ZLIB_COMPRESSION_LEVEL = 6;
 const char *global_hidden_header_name;
-const char *dictionary = NULL;
+const char *dictionary = nullptr;
 
 // Current global configuration, and the previous one (for cleanup)
-Configuration *cur_config  = NULL;
-Configuration *prev_config = NULL;
+Configuration *cur_config  = nullptr;
+Configuration *prev_config = nullptr;
 
 static GzipData *
 gzip_data_alloc(int compression_type)
@@ -63,9 +63,9 @@ gzip_data_alloc(int compression_type)
   int err;
 
   data                    = (GzipData *)TSmalloc(sizeof(GzipData));
-  data->downstream_vio    = NULL;
-  data->downstream_buffer = NULL;
-  data->downstream_reader = NULL;
+  data->downstream_vio    = nullptr;
+  data->downstream_buffer = nullptr;
+  data->downstream_reader = nullptr;
   data->downstream_length = 0;
   data->state             = transform_state_initialized;
   data->compression_type  = compression_type;
@@ -77,7 +77,7 @@ gzip_data_alloc(int compression_type)
   data->zstrm.total_out   = 0;
   data->zstrm.zalloc      = gzip_alloc;
   data->zstrm.zfree       = gzip_free;
-  data->zstrm.opaque      = (voidpf)0;
+  data->zstrm.opaque      = (voidpf) nullptr;
   data->zstrm.data_type   = Z_ASCII;
 
   int window_bits = (compression_type == COMPRESSION_TYPE_GZIP) ? WINDOW_BITS_GZIP : WINDOW_BITS_DEFLATE;
@@ -601,14 +601,14 @@ find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc 
 {
   TSMLoc fieldp    = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
   int strl         = 0;
-  const char *strv = NULL;
+  const char *strv = nullptr;
   HostConfiguration *host_configuration;
 
   if (fieldp) {
     strv = TSMimeHdrFieldValueStringGet(bufp, locp, fieldp, -1, &strl);
     TSHandleMLocRelease(bufp, locp, fieldp);
   }
-  if (config == NULL) {
+  if (config == nullptr) {
     host_configuration = cur_config->find(strv, strl);
   } else {
     host_configuration = config->find(strv, strl);
@@ -627,7 +627,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     // os: the accept encoding header needs to be restored..
     // otherwise the next request won't get a cache hit on this
-    if (hc != NULL) {
+    if (hc != nullptr) {
       info("reading response headers");
       if (hc->remove_accept_encoding()) {
         TSMBuffer req_buf;
@@ -646,7 +646,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:
-    if (hc != NULL) {
+    if (hc != nullptr) {
       info("preparing send request headers");
       if (hc->remove_accept_encoding()) {
         TSMBuffer req_buf;
@@ -665,7 +665,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     int obj_status;
 
     if (TS_ERROR != TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) && (TS_CACHE_LOOKUP_HIT_FRESH == obj_status)) {
-      if (hc != NULL) {
+      if (hc != nullptr) {
         info("handling compression of cached object");
         if (gzip_transformable(txnp, false, hc, &compress_type)) {
           gzip_transform_add(txnp, hc, compress_type);
@@ -710,8 +710,8 @@ handle_gzip_request(TSHttpTxn txnp, Configuration *config)
   HostConfiguration *hc;
 
   if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
-    if (config == NULL) {
-      hc = find_host_configuration(txnp, req_buf, req_loc, NULL); // Get a lease on the global config
+    if (config == nullptr) {
+      hc = find_host_configuration(txnp, req_buf, req_loc, nullptr); // Get a lease on the global config
     } else {
       hc = find_host_configuration(txnp, req_buf, req_loc, config); // Get a lease on the local config passed through doRemap
     }
@@ -730,7 +730,7 @@ handle_gzip_request(TSHttpTxn txnp, Configuration *config)
     }
 
     if (allowed) {
-      TSCont transform_contp = TSContCreate(transform_plugin, NULL);
+      TSCont transform_contp = TSContCreate(transform_plugin, nullptr);
 
       TSContDataSet(transform_contp, (void *)hc);
 
@@ -753,7 +753,7 @@ transform_global_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     // Handle gzip request and use the global configs
-    handle_gzip_request(txnp, NULL);
+    handle_gzip_request(txnp, nullptr);
     break;
 
   default:
@@ -798,7 +798,7 @@ management_update(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  const char *config_path = NULL;
+  const char *config_path = nullptr;
 
   if (argc > 2) {
     fatal("the gzip plugin does not accept more than 1 plugin argument");
@@ -813,7 +813,7 @@ TSPluginInit(int argc, const char *argv[])
   info("TSPluginInit %s", argv[0]);
   global_hidden_header_name = init_hidden_header_name();
 
-  TSCont management_contp = TSContCreate(management_update, NULL);
+  TSCont management_contp = TSContCreate(management_update, nullptr);
 
   // Make sure the global configuration is properly loaded and reloaded on changes
   TSContDataSet(management_contp, (void *)config_path);
@@ -821,7 +821,7 @@ TSPluginInit(int argc, const char *argv[])
   load_global_configuration(management_contp);
 
   // Setup the global hook, main entry point for kicking off the plugin
-  TSCont transform_global_contp = TSContCreate(transform_global_plugin, NULL);
+  TSCont transform_global_contp = TSContCreate(transform_global_plugin, nullptr);
 
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, transform_global_contp);
   info("loaded");
@@ -854,7 +854,7 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
   info("Instantiating a new gzip plugin remap rule");
   info("Reading gzip config from file = %s", argv[2]);
 
-  const char *config_path = NULL;
+  const char *config_path = nullptr;
 
   if (argc > 4) {
     fatal("The gzip plugin does not accept more than one plugin argument");
@@ -881,7 +881,7 @@ TSRemapDeleteInstance(void *instance)
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
-  if (NULL == instance) {
+  if (nullptr == instance) {
     info("No Rules configured, falling back to default");
   } else {
     info("Remap Rules configured for gzip");

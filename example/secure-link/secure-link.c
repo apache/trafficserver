@@ -103,10 +103,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   MD5_Init(&ctx);
   MD5_Update(&ctx, sli->secret, strlen(sli->secret));
   MD5_Update(&ctx, ip, strlen(ip));
-  if (path)
+  if (path) {
     MD5_Update(&ctx, path, strlen(path));
-  if (expire)
+  }
+  if (expire) {
     MD5_Update(&ctx, expire, strlen(expire));
+  }
   MD5_Final(md, &ctx);
   for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
     sprintf(&hash[i * 2], "%02x", md[i]);

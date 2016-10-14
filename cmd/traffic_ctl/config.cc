@@ -166,7 +166,7 @@ rec_labelof(int rec_class)
   case RECT_LOCAL:
     return "LOCAL";
   default:
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -194,7 +194,7 @@ config_get(unsigned argc, const char **argv)
 {
   int recfmt                       = 0;
   const ArgumentDescription opts[] = {
-    {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
+    {"records", '-', "Emit output in records.config format", "F", &recfmt, nullptr, nullptr},
   };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments < 1) {
@@ -222,7 +222,7 @@ config_get(unsigned argc, const char **argv)
 static int
 config_describe(unsigned argc, const char **argv)
 {
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments < 1) {
+  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments < 1) {
     return CtrlCommandUsage("config describe RECORD [RECORD ...]");
   }
 
@@ -269,7 +269,7 @@ config_set(unsigned argc, const char **argv)
   TSMgmtError error;
   TSActionNeedT action;
 
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 2) {
+  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 2) {
     return CtrlCommandUsage("config set RECORD VALUE");
   }
 
@@ -303,7 +303,7 @@ config_match(unsigned argc, const char **argv)
 {
   int recfmt                       = 0;
   const ArgumentDescription opts[] = {
-    {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
+    {"records", '-', "Emit output in records.config format", "F", &recfmt, nullptr, nullptr},
   };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments < 1) {
@@ -336,7 +336,7 @@ config_match(unsigned argc, const char **argv)
 static int
 config_reload(unsigned argc, const char **argv)
 {
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 0) {
+  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 0) {
     return CtrlCommandUsage("config reload");
   }
 
@@ -352,7 +352,7 @@ config_reload(unsigned argc, const char **argv)
 static int
 config_status(unsigned argc, const char **argv)
 {
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 0) {
+  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 0) {
     return CtrlCommandUsage("config status");
   }
 
@@ -395,7 +395,7 @@ config_defaults(unsigned argc, const char **argv)
 {
   int recfmt                       = 0;
   const ArgumentDescription opts[] = {
-    {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
+    {"records", '-', "Emit output in records.config format", "F", &recfmt, nullptr, nullptr},
   };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
@@ -432,7 +432,7 @@ config_diff(unsigned argc, const char **argv)
 {
   int recfmt                       = 0;
   const ArgumentDescription opts[] = {
-    {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
+    {"records", '-', "Emit output in records.config format", "F", &recfmt, nullptr, nullptr},
   };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {

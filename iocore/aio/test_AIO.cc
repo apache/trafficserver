@@ -396,7 +396,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   int i;
 
   Layout::create();
-  init_diags("", NULL);
+  init_diags("", nullptr);
   RecProcessInit(RECM_STAND_ALONE);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(ink_number_of_processors());
@@ -416,7 +416,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
 
   RecProcessStart();
   ink_aio_init(AIO_MODULE_VERSION);
-  srand48(time(NULL));
+  srand48(time(nullptr));
   printf("input file %s\n", argv[1]);
   if (!read_config(argv[1]))
     exit(1);

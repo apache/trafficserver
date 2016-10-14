@@ -26,7 +26,7 @@
 static int
 storage_offline(unsigned argc, const char **argv)
 {
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments == 0) {
+  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments == 0) {
     return CtrlCommandUsage("storage offline DEVICE [DEVICE ...]");
   }
 

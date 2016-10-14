@@ -52,7 +52,7 @@ ssl_netvc_cast(int event, void *edata)
     ptr.vio = static_cast<VIO *>(edata);
     return dynamic_cast<SSLNetVConnection *>(ptr.vio->vc_server);
   default:
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -76,7 +76,7 @@ struct SSLNextProtocolTrampoline : public Continuation {
 
     vio   = static_cast<VIO *>(edata);
     netvc = dynamic_cast<SSLNetVConnection *>(vio->vc_server);
-    ink_assert(netvc != NULL);
+    ink_assert(netvc != nullptr);
 
     switch (event) {
     case VC_EVENT_EOS:
@@ -84,7 +84,7 @@ struct SSLNextProtocolTrampoline : public Continuation {
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
       // Cancel the read before we have a chance to delete the continuation
-      netvc->do_io_read(NULL, 0, NULL);
+      netvc->do_io_read(nullptr, 0, nullptr);
       netvc->do_io(VIO::CLOSE);
       delete this;
       return EVENT_ERROR;
@@ -97,10 +97,10 @@ struct SSLNextProtocolTrampoline : public Continuation {
     // Cancel the action, so later timeouts and errors don't try to
     // send the event to the Accept object.  After this point, the accept
     // object does not care.
-    netvc->set_action(NULL);
+    netvc->set_action(nullptr);
 
     // Cancel the read before we have a chance to delete the continuation
-    netvc->do_io_read(NULL, 0, NULL);
+    netvc->do_io_read(nullptr, 0, nullptr);
     plugin = netvc->endpoint();
     if (plugin) {
       send_plugin_event(plugin, NET_EVENT_ACCEPT, netvc);
@@ -128,7 +128,7 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
 
   switch (event) {
   case NET_EVENT_ACCEPT:
-    ink_release_assert(netvc != NULL);
+    ink_release_assert(netvc != nullptr);
 
     netvc->setTransparentPassThrough(transparent_passthrough);
 
@@ -165,7 +165,7 @@ SSLNextProtocolAccept::unregisterEndpoint(const char *protocol, Continuation *ha
 }
 
 SSLNextProtocolAccept::SSLNextProtocolAccept(Continuation *ep, bool transparent_passthrough)
-  : SessionAccept(NULL), buffer(new_empty_MIOBuffer()), endpoint(ep), transparent_passthrough(transparent_passthrough)
+  : SessionAccept(nullptr), buffer(new_empty_MIOBuffer()), endpoint(ep), transparent_passthrough(transparent_passthrough)
 {
   SET_HANDLER(&SSLNextProtocolAccept::mainEvent);
 }

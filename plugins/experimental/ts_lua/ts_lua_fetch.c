@@ -63,8 +63,9 @@ ts_lua_fetch(lua_State *L)
   ts_lua_fetch_multi_info *fmi;
 
   ci = ts_lua_get_cont_info(L);
-  if (ci == NULL)
+  if (ci == NULL) {
     return 0;
+  }
 
   n = lua_gettop(L);
   if (n < 1) {
@@ -126,8 +127,9 @@ ts_lua_fetch_multi(lua_State *L)
   ts_lua_fetch_multi_info *fmi;
 
   ci = ts_lua_get_cont_info(L);
-  if (ci == NULL)
+  if (ci == NULL) {
     return 0;
+  }
 
   if (lua_gettop(L) < 1) {
     return luaL_error(L, "'ts.fetch_mutli' requires one parameter");
@@ -526,8 +528,9 @@ ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 
   fmi->done++;
 
-  if (fmi->done != fmi->total)
+  if (fmi->done != fmi->total) {
     return 0;
+  }
 
   // all finish
   TSMutexLock(lmutex);
@@ -559,8 +562,9 @@ ts_lua_destroy_fetch_multi_info(ts_lua_fetch_multi_info *fmi)
   int i;
   ts_lua_fetch_info *fi;
 
-  if (fmi == NULL)
+  if (fmi == NULL) {
     return;
+  }
 
   for (i = 0; i < fmi->total; i++) {
     fi = &fmi->fiv[i];
@@ -590,8 +594,9 @@ ts_lua_fetch_multi_cleanup(ts_lua_async_item *ai)
 {
   ts_lua_fetch_multi_info *fmi;
 
-  if (ai->deleted)
+  if (ai->deleted) {
     return 0;
+  }
 
   if (ai->data) {
     fmi = (ts_lua_fetch_multi_info *)ai->data;

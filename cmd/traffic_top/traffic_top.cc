@@ -221,7 +221,7 @@ help(const string &host, const string &version)
 
   while (1) {
     clear();
-    time_t now       = time(NULL);
+    time_t now       = time(nullptr);
     struct tm *nowtm = localtime(&now);
     char timeBuf[32];
     strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", nowtm);
@@ -401,7 +401,7 @@ main(int argc, char **argv)
 
   string url = "";
   if (optind >= argc) {
-    if (TS_ERR_OKAY != TSInit(NULL, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS))) {
+    if (TS_ERR_OKAY != TSInit(nullptr, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS))) {
       fprintf(stderr, "Error: missing URL on command line or error connecting to the local manager\n");
       usage();
     }
@@ -424,7 +424,7 @@ main(int argc, char **argv)
   init_pair(colorPair::blue, COLOR_BLUE, COLOR_BLACK);
   init_pair(colorPair::cyan, COLOR_CYAN, COLOR_BLACK);
   init_pair(colorPair::border, COLOR_WHITE, COLOR_BLUE);
-  //  mvchgat(0, 0, -1, A_BLINK, 1, NULL);
+  //  mvchgat(0, 0, -1, A_BLINK, 1, nullptr);
 
   enum Page {
     MAIN_PAGE,
@@ -438,7 +438,7 @@ main(int argc, char **argv)
     attron(A_BOLD);
 
     string version;
-    time_t now       = time(NULL);
+    time_t now       = time(nullptr);
     struct tm *nowtm = localtime(&now);
     char timeBuf[32];
     strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", nowtm);

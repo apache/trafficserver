@@ -123,10 +123,10 @@ struct Connection {
   }
 
   int setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING, unsigned char mc_ttl = 1,
-                    bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation *c = NULL);
+                    bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation *c = nullptr);
 
-  int setup_mc_receive(sockaddr const *from, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING, Connection *sendchan = NULL,
-                       Continuation *c = NULL);
+  int setup_mc_receive(sockaddr const *from, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING,
+                       Connection *sendchan = nullptr, Continuation *c = nullptr);
 
   int close(); // 0 on success, -errno on failure
 

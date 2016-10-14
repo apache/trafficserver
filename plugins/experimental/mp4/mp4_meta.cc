@@ -21,32 +21,32 @@
 static mp4_atom_handler mp4_atoms[] = {{"ftyp", &Mp4Meta::mp4_read_ftyp_atom},
                                        {"moov", &Mp4Meta::mp4_read_moov_atom},
                                        {"mdat", &Mp4Meta::mp4_read_mdat_atom},
-                                       {NULL, NULL}};
+                                       {nullptr, nullptr}};
 
 static mp4_atom_handler mp4_moov_atoms[] = {{"mvhd", &Mp4Meta::mp4_read_mvhd_atom},
                                             {"trak", &Mp4Meta::mp4_read_trak_atom},
                                             {"cmov", &Mp4Meta::mp4_read_cmov_atom},
-                                            {NULL, NULL}};
+                                            {nullptr, nullptr}};
 
 static mp4_atom_handler mp4_trak_atoms[] = {{"tkhd", &Mp4Meta::mp4_read_tkhd_atom},
                                             {"mdia", &Mp4Meta::mp4_read_mdia_atom},
-                                            {NULL, NULL}};
+                                            {nullptr, nullptr}};
 
 static mp4_atom_handler mp4_mdia_atoms[] = {{"mdhd", &Mp4Meta::mp4_read_mdhd_atom},
                                             {"hdlr", &Mp4Meta::mp4_read_hdlr_atom},
                                             {"minf", &Mp4Meta::mp4_read_minf_atom},
-                                            {NULL, NULL}};
+                                            {nullptr, nullptr}};
 
 static mp4_atom_handler mp4_minf_atoms[] = {{"vmhd", &Mp4Meta::mp4_read_vmhd_atom},
                                             {"smhd", &Mp4Meta::mp4_read_smhd_atom},
                                             {"dinf", &Mp4Meta::mp4_read_dinf_atom},
                                             {"stbl", &Mp4Meta::mp4_read_stbl_atom},
-                                            {NULL, NULL}};
+                                            {nullptr, nullptr}};
 
 static mp4_atom_handler mp4_stbl_atoms[] = {
   {"stsd", &Mp4Meta::mp4_read_stsd_atom}, {"stts", &Mp4Meta::mp4_read_stts_atom}, {"stss", &Mp4Meta::mp4_read_stss_atom},
   {"ctts", &Mp4Meta::mp4_read_ctts_atom}, {"stsc", &Mp4Meta::mp4_read_stsc_atom}, {"stsz", &Mp4Meta::mp4_read_stsz_atom},
-  {"stco", &Mp4Meta::mp4_read_stco_atom}, {"co64", &Mp4Meta::mp4_read_co64_atom}, {NULL, NULL}};
+  {"stco", &Mp4Meta::mp4_read_stco_atom}, {"co64", &Mp4Meta::mp4_read_co64_atom}, {nullptr, nullptr}};
 
 static void mp4_reader_set_32value(TSIOBufferReader readerp, int64_t offset, uint32_t n);
 static void mp4_reader_set_64value(TSIOBufferReader readerp, int64_t offset, uint64_t n);
@@ -113,7 +113,7 @@ Mp4Meta::post_process_meta()
     return -1;
   }
 
-  if (mdat_atom.buffer == NULL) {
+  if (mdat_atom.buffer == nullptr) {
     return -1;
   }
 
@@ -437,7 +437,7 @@ Mp4Meta::mp4_read_moov_atom(int64_t atom_header_size, int64_t atom_data_size)
   int64_t atom_size;
   int ret;
 
-  if (mdat_atom.buffer != NULL) { // not reasonable for streaming media
+  if (mdat_atom.buffer != nullptr) { // not reasonable for streaming media
     return -1;
   }
 
@@ -1018,7 +1018,7 @@ Mp4Meta::mp4_update_stts_atom(Mp4Trak *trak)
   int64_t atom_size;
   TSIOBufferReader readerp;
 
-  if (trak->atoms[MP4_STTS_DATA].buffer == NULL) {
+  if (trak->atoms[MP4_STTS_DATA].buffer == nullptr) {
     return -1;
   }
 
@@ -1107,7 +1107,7 @@ Mp4Meta::mp4_update_stss_atom(Mp4Trak *trak)
   uint32_t i, j, entries, sample, start_sample, left;
   TSIOBufferReader readerp;
 
-  if (trak->atoms[MP4_STSS_DATA].buffer == NULL) {
+  if (trak->atoms[MP4_STSS_DATA].buffer == nullptr) {
     return 0;
   }
 
@@ -1162,7 +1162,7 @@ Mp4Meta::mp4_update_ctts_atom(Mp4Trak *trak)
   uint32_t count;
   TSIOBufferReader readerp;
 
-  if (trak->atoms[MP4_CTTS_DATA].buffer == NULL) {
+  if (trak->atoms[MP4_CTTS_DATA].buffer == nullptr) {
     return 0;
   }
 
@@ -1188,15 +1188,15 @@ Mp4Meta::mp4_update_ctts_atom(Mp4Trak *trak)
     TSIOBufferReaderFree(trak->atoms[MP4_CTTS_ATOM].reader);
     TSIOBufferDestroy(trak->atoms[MP4_CTTS_ATOM].buffer);
 
-    trak->atoms[MP4_CTTS_ATOM].buffer = NULL;
-    trak->atoms[MP4_CTTS_ATOM].reader = NULL;
+    trak->atoms[MP4_CTTS_ATOM].buffer = nullptr;
+    trak->atoms[MP4_CTTS_ATOM].reader = nullptr;
   }
 
   TSIOBufferReaderFree(trak->atoms[MP4_CTTS_DATA].reader);
   TSIOBufferDestroy(trak->atoms[MP4_CTTS_DATA].buffer);
 
-  trak->atoms[MP4_CTTS_DATA].reader = NULL;
-  trak->atoms[MP4_CTTS_DATA].buffer = NULL;
+  trak->atoms[MP4_CTTS_DATA].reader = nullptr;
+  trak->atoms[MP4_CTTS_DATA].buffer = nullptr;
 
   TSIOBufferReaderFree(readerp);
   return 0;
@@ -1225,7 +1225,7 @@ Mp4Meta::mp4_update_stsc_atom(Mp4Trak *trak)
   mp4_stsc_entry *first;
   TSIOBufferReader readerp;
 
-  if (trak->atoms[MP4_STSC_DATA].buffer == NULL) {
+  if (trak->atoms[MP4_STSC_DATA].buffer == nullptr) {
     return -1;
   }
 
@@ -1336,7 +1336,7 @@ Mp4Meta::mp4_update_stsz_atom(Mp4Trak *trak)
   uint32_t pass;
   TSIOBufferReader readerp;
 
-  if (trak->atoms[MP4_STSZ_DATA].buffer == NULL) {
+  if (trak->atoms[MP4_STSZ_DATA].buffer == nullptr) {
     return 0;
   }
 
@@ -1375,7 +1375,7 @@ Mp4Meta::mp4_update_co64_atom(Mp4Trak *trak)
   int64_t atom_size, avail, pass;
   TSIOBufferReader readerp;
 
-  if (trak->atoms[MP4_CO64_DATA].buffer == NULL) {
+  if (trak->atoms[MP4_CO64_DATA].buffer == nullptr) {
     return -1;
   }
 
@@ -1408,7 +1408,7 @@ Mp4Meta::mp4_update_stco_atom(Mp4Trak *trak)
   uint32_t pass;
   TSIOBufferReader readerp;
 
-  if (trak->atoms[MP4_STCO_DATA].buffer == NULL) {
+  if (trak->atoms[MP4_STCO_DATA].buffer == nullptr) {
     return -1;
   }
 
@@ -1557,7 +1557,7 @@ Mp4Meta::mp4_find_key_sample(uint32_t start_sample, Mp4Trak *trak)
   uint32_t sample, prev_sample, entries;
   TSIOBufferReader readerp;
 
-  if (trak->atoms[MP4_STSS_DATA].buffer == NULL) {
+  if (trak->atoms[MP4_STSS_DATA].buffer == nullptr) {
     return start_sample;
   }
 

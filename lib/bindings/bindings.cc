@@ -32,7 +32,7 @@ is_indexable(lua_State *L, int index)
   return lua_istable(L, index) || lua_isuserdata(L, index);
 }
 
-BindingInstance::BindingInstance() : lua(NULL)
+BindingInstance::BindingInstance() : lua(nullptr)
 {
 }
 
@@ -53,7 +53,7 @@ void *
 BindingInstance::retrieve_ptr(const char *name)
 {
   auto ptr = this->attachments.find(name);
-  return (ptr == this->attachments.end()) ? NULL : ptr->second;
+  return (ptr == this->attachments.end()) ? nullptr : ptr->second;
 }
 
 bool
@@ -221,7 +221,7 @@ BindingInstance::bind_value(const char *name, int value)
 bool
 BindingInstance::construct()
 {
-  ink_release_assert(this->lua == NULL);
+  ink_release_assert(this->lua == nullptr);
 
   if ((this->lua = luaL_newstate())) {
     luaL_openlibs(this->lua);
@@ -239,7 +239,7 @@ BindingInstance::construct()
 bool
 BindingInstance::require(const char *path)
 {
-  ink_release_assert(this->lua != NULL);
+  ink_release_assert(this->lua != nullptr);
 
   if (luaL_dofile(this->lua, path) != 0) {
     Warning("%s", lua_tostring(this->lua, -1));
@@ -273,7 +273,7 @@ BindingInstance::self(lua_State *lua)
   lua_getfield(lua, LUA_REGISTRYINDEX, selfkey);
   binding = (BindingInstance *)lua_touserdata(lua, -1);
 
-  ink_release_assert(binding != NULL);
+  ink_release_assert(binding != nullptr);
   ink_release_assert(binding->lua == lua);
 
   lua_pop(lua, 1);
@@ -323,7 +323,7 @@ BindingInstance::register_metatable(lua_State *lua, const char *name, const luaL
   // Pop one of those copies and assign it to __index field on the 1st metatable
   lua_setfield(lua, -2, "__index");
   // register functions in the metatable
-  luaL_register(lua, NULL, metatable);
+  luaL_register(lua, nullptr, metatable);
 
   lua_pop(lua, 1); /* drop metatable */
 

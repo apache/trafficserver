@@ -120,7 +120,7 @@ TSListDequeue(TSList l)
 {
   ink_assert(l);
   if (!l || queue_is_empty((LLQ *)l)) {
-    return NULL;
+    return nullptr;
   }
 
   return dequeue((LLQ *)l);
@@ -227,7 +227,7 @@ TSIpAddrListDequeue(TSIpAddrList ip_addrl)
 {
   ink_assert(ip_addrl);
   if (!ip_addrl || queue_is_empty((LLQ *)ip_addrl)) {
-    return NULL;
+    return nullptr;
   }
 
   return (TSIpAddrEle *)dequeue((LLQ *)ip_addrl);
@@ -334,7 +334,7 @@ TSPortListDequeue(TSPortList portl)
 {
   ink_assert(portl);
   if (!portl || queue_is_empty((LLQ *)portl)) {
-    return NULL;
+    return nullptr;
   }
 
   return (TSPortEle *)dequeue((LLQ *)portl);
@@ -440,7 +440,7 @@ TSDomainListDequeue(TSDomainList domainl)
 {
   ink_assert(domainl);
   if (!domainl || queue_is_empty((LLQ *)domainl)) {
-    return NULL;
+    return nullptr;
   }
 
   return (TSDomain *)dequeue((LLQ *)domainl);
@@ -542,7 +542,7 @@ TSStringListDequeue(TSStringList strl)
 {
   ink_assert(strl);
   if (!strl || queue_is_empty((LLQ *)strl)) {
-    return NULL;
+    return nullptr;
   }
 
   return (char *)dequeue((LLQ *)strl);
@@ -642,7 +642,7 @@ TSIntListDequeue(TSIntList intl)
 {
   ink_assert(intl);
   if (!intl || queue_is_empty((LLQ *)intl)) {
-    return NULL;
+    return nullptr;
   }
 
   return (int *)dequeue((LLQ *)intl);
@@ -695,15 +695,15 @@ void
 init_pdss_format(TSPdSsFormat &info)
 {
   info.pd_type              = TS_PD_UNDEFINED;
-  info.pd_val               = NULL;
+  info.pd_val               = nullptr;
   info.sec_spec.active      = 0;
   info.sec_spec.time.hour_a = 0;
   info.sec_spec.time.min_a  = 0;
   info.sec_spec.time.hour_b = 0;
   info.sec_spec.time.min_b  = 0;
   info.sec_spec.src_ip      = TS_INVALID_IP_ADDR;
-  info.sec_spec.prefix      = NULL;
-  info.sec_spec.suffix      = NULL;
+  info.sec_spec.prefix      = nullptr;
+  info.sec_spec.suffix      = nullptr;
   info.sec_spec.port        = TS_INVALID_PORT;
   info.sec_spec.method      = TS_METHOD_UNDEFINED;
   info.sec_spec.scheme      = TS_SCHEME_UNDEFINED;
@@ -716,8 +716,8 @@ TSEventCreate(void)
   TSMgmtEvent *event = (TSMgmtEvent *)ats_malloc(sizeof(TSMgmtEvent));
 
   event->id          = -1;
-  event->name        = NULL;
-  event->description = NULL;
+  event->name        = nullptr;
+  event->description = nullptr;
   event->priority    = TS_EVENT_PRIORITY_UNDEFINED;
 
   return event;
@@ -739,7 +739,7 @@ TSRecordEleCreate(void)
 {
   TSRecordEle *ele = (TSRecordEle *)ats_malloc(sizeof(TSRecordEle));
 
-  ele->rec_name = NULL;
+  ele->rec_name = nullptr;
   ele->rec_type = TS_REC_UNDEFINED;
 
   return ele;
@@ -809,7 +809,7 @@ TSDomainCreate()
 {
   TSDomain *ele = (TSDomain *)ats_malloc(sizeof(TSDomain));
 
-  ele->domain_val = NULL;
+  ele->domain_val = nullptr;
   ele->port       = TS_INVALID_PORT;
 
   return ele;
@@ -836,9 +836,9 @@ TSSspecCreate(void)
   (sec_spec->time).hour_b = 0;
   (sec_spec->time).min_b  = 0;
   sec_spec->src_ip        = TS_INVALID_IP_ADDR;
-  sec_spec->prefix        = NULL;
-  sec_spec->suffix        = NULL;
-  sec_spec->port          = NULL;
+  sec_spec->prefix        = nullptr;
+  sec_spec->suffix        = nullptr;
+  sec_spec->port          = nullptr;
   sec_spec->method        = TS_METHOD_UNDEFINED;
   sec_spec->scheme        = TS_SCHEME_UNDEFINED;
   return sec_spec;
@@ -865,7 +865,7 @@ TSPdSsFormatCreate(void)
 
   /* should set default values here */
   ele->pd_type = TS_PD_UNDEFINED;
-  ele->pd_val  = NULL;
+  ele->pd_val  = nullptr;
 
   ele->sec_spec.active        = 0;
   (ele->sec_spec.time).hour_a = -1;
@@ -873,9 +873,9 @@ TSPdSsFormatCreate(void)
   (ele->sec_spec.time).hour_b = -1;
   (ele->sec_spec.time).min_b  = -1;
   ele->sec_spec.src_ip        = TS_INVALID_IP_ADDR;
-  ele->sec_spec.prefix        = NULL;
-  ele->sec_spec.suffix        = NULL;
-  ele->sec_spec.port          = NULL;
+  ele->sec_spec.prefix        = nullptr;
+  ele->sec_spec.suffix        = nullptr;
+  ele->sec_spec.port          = nullptr;
   ele->sec_spec.method        = TS_METHOD_UNDEFINED;
   ele->sec_spec.scheme        = TS_SCHEME_UNDEFINED;
 
@@ -905,7 +905,7 @@ TSCacheEleCreate(TSRuleTypeT type)
   if (type != TS_CACHE_NEVER && type != TS_CACHE_IGNORE_NO_CACHE && type != TS_CACHE_CLUSTER_CACHE_LOCAL &&
       type != TS_CACHE_IGNORE_CLIENT_NO_CACHE && type != TS_CACHE_IGNORE_SERVER_NO_CACHE && type != TS_CACHE_PIN_IN_CACHE &&
       type != TS_CACHE_REVALIDATE && type != TS_CACHE_TTL_IN_CACHE && type != TS_CACHE_AUTH_CONTENT && type != TS_TYPE_UNDEFINED) {
-    return NULL; // invalid type
+    return nullptr; // invalid type
   }
 
   ele = (TSCacheEle *)ats_malloc(sizeof(TSCacheEle));
@@ -948,8 +948,8 @@ TSCongestionEleCreate()
   ele->cfg_ele.error = TS_ERR_OKAY;
   // init_pdss_format(ele->congestion_info);
   ele->pd_type                 = TS_PD_UNDEFINED;
-  ele->pd_val                  = NULL;
-  ele->prefix                  = NULL;
+  ele->pd_val                  = nullptr;
+  ele->prefix                  = nullptr;
   ele->port                    = TS_INVALID_PORT;
   ele->scheme                  = TS_HTTP_CONGEST_PER_IP;
   ele->max_connection_failures = 5;
@@ -990,7 +990,7 @@ TSHostingEleCreate()
   ele->cfg_ele.type  = TS_HOSTING;
   ele->cfg_ele.error = TS_ERR_OKAY;
   ele->pd_type       = TS_PD_UNDEFINED;
-  ele->pd_val        = NULL;
+  ele->pd_val        = nullptr;
   ele->volumes       = TS_INVALID_LIST;
 
   return ele;
@@ -1020,7 +1020,7 @@ TSIcpEleCreate()
   /* set defaults */
   ele->cfg_ele.type      = TS_ICP;
   ele->cfg_ele.error     = TS_ERR_OKAY;
-  ele->peer_hostname     = NULL;
+  ele->peer_hostname     = nullptr;
   ele->peer_host_ip_addr = TS_INVALID_IP_ADDR;
   ele->peer_type         = TS_ICP_UNDEFINED;
   ele->peer_proxy_port   = TS_INVALID_PORT;
@@ -1081,7 +1081,7 @@ TSParentProxyEleCreate(TSRuleTypeT type)
   TSParentProxyEle *ele;
 
   if (type != TS_PP_PARENT && type != TS_PP_GO_DIRECT && type != TS_TYPE_UNDEFINED) {
-    return NULL;
+    return nullptr;
   }
 
   ele = (TSParentProxyEle *)ats_malloc(sizeof(TSParentProxyEle));
@@ -1145,7 +1145,7 @@ TSPluginEleCreate()
 
   ele->cfg_ele.type  = TS_PLUGIN;
   ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->name          = NULL;
+  ele->name          = nullptr;
   ele->args          = TS_INVALID_LIST;
 
   return ele;
@@ -1174,7 +1174,7 @@ TSRemapEleCreate(TSRuleTypeT type)
 
   if (type != TS_REMAP_MAP && type != TS_REMAP_REVERSE_MAP && type != TS_REMAP_REDIRECT && type != TS_REMAP_REDIRECT_TEMP &&
       type != TS_TYPE_UNDEFINED) {
-    return NULL;
+    return nullptr;
   }
 
   ele                   = (TSRemapEle *)ats_malloc(sizeof(TSRemapEle));
@@ -1182,13 +1182,13 @@ TSRemapEleCreate(TSRuleTypeT type)
   ele->cfg_ele.error    = TS_ERR_OKAY;
   ele->map              = true;
   ele->from_scheme      = TS_SCHEME_UNDEFINED;
-  ele->from_host        = NULL;
+  ele->from_host        = nullptr;
   ele->from_port        = TS_INVALID_PORT;
-  ele->from_path_prefix = NULL;
+  ele->from_path_prefix = nullptr;
   ele->to_scheme        = TS_SCHEME_UNDEFINED;
-  ele->to_host          = NULL;
+  ele->to_host          = nullptr;
   ele->to_port          = TS_INVALID_PORT;
-  ele->to_path_prefix   = NULL;
+  ele->to_path_prefix   = nullptr;
 
   return ele;
 }
@@ -1219,8 +1219,8 @@ TSSocksEleCreate(TSRuleTypeT type)
   ele->dest_ip_addr  = TS_INVALID_IP_ADDR;
   ele->socks_servers = TS_INVALID_LIST;
   ele->rr            = TS_RR_NONE;
-  ele->username      = NULL;
-  ele->password      = NULL;
+  ele->username      = nullptr;
+  ele->password      = nullptr;
 
   return ele;
 }
@@ -1255,9 +1255,9 @@ TSSplitDnsEleCreate()
   ele->cfg_ele.type      = TS_SPLIT_DNS;
   ele->cfg_ele.error     = TS_ERR_OKAY;
   ele->pd_type           = TS_PD_UNDEFINED;
-  ele->pd_val            = NULL;
+  ele->pd_val            = nullptr;
   ele->dns_servers_addrs = TS_INVALID_LIST;
-  ele->def_domain        = NULL;
+  ele->def_domain        = nullptr;
   ele->search_list       = TS_INVALID_LIST;
 
   return ele;
@@ -1290,7 +1290,7 @@ TSStorageEleCreate()
 
   ele->cfg_ele.type  = TS_STORAGE;
   ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->pathname      = NULL;
+  ele->pathname      = nullptr;
   ele->size          = -1;
 
   return ele;
@@ -1316,7 +1316,7 @@ TSVirtIpAddrEleCreate()
 
   ele->cfg_ele.type  = TS_VADDRS;
   ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->intr          = NULL;
+  ele->intr          = nullptr;
   ele->sub_intr      = -1;
   ele->ip_addr       = TS_INVALID_IP_ADDR;
 
@@ -1671,7 +1671,7 @@ TSProxyBacktraceGet(unsigned options, TSString *trace)
     return TS_ERR_PARAMS;
   }
 
-  if (trace == NULL) {
+  if (trace == nullptr) {
     return TS_ERR_PARAMS;
   }
 
@@ -1752,7 +1752,7 @@ char *
 TSGetErrorMessage(TSMgmtError err_id)
 {
   char msg[1024]; // need to define a MAX_ERR_MSG_SIZE???
-  char *err_msg = NULL;
+  char *err_msg = nullptr;
 
   switch (err_id) {
   case TS_ERR_OKAY:
@@ -1851,8 +1851,8 @@ tsapi TSMgmtError
 TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout)
 {
   int hFD        = -1;
-  char *httpHost = NULL;
-  char *httpPath = NULL;
+  char *httpHost = nullptr;
+  char *httpPath = nullptr;
   int httpPort   = HTTP_PORT;
   int bufsize    = URL_BUFSIZE;
   char buffer[URL_BUFSIZE];

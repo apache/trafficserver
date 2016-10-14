@@ -74,7 +74,7 @@ ats_hugepage_init(int enabled)
 
   fp = fopen(MEMINFO_PATH, "r");
 
-  if (fp == NULL) {
+  if (fp == nullptr) {
     Debug(DEBUG_TAG "_init", "Cannot open file %s", MEMINFO_PATH);
     return;
   }
@@ -115,11 +115,11 @@ ats_alloc_hugepage(size_t s)
 
   size = INK_ALIGN(s, ats_hugepage_size());
 
-  mem = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+  mem = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
 
   if (mem == MAP_FAILED) {
     Debug(DEBUG_TAG, "Could not allocate hugepages size = %zu", size);
-    return NULL;
+    return nullptr;
   }
 
   Debug(DEBUG_TAG, "Request/Allocation (%zu/%zu) {%p}", s, size, mem);
@@ -127,7 +127,7 @@ ats_alloc_hugepage(size_t s)
 #else
   (void)s;
   Debug(DEBUG_TAG, "MAP_HUGETLB not defined");
-  return NULL;
+  return nullptr;
 #endif
 }
 

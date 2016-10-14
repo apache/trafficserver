@@ -20,18 +20,18 @@
 bool
 regexHelper::setRegexMatch(const std::string &s)
 {
-  const char *errorComp  = NULL;
-  const char *errorStudy = NULL;
+  const char *errorComp  = nullptr;
+  const char *errorStudy = nullptr;
   int erroffset;
 
   regexString = s;
-  regex       = pcre_compile(regexString.c_str(), 0, &errorComp, &erroffset, NULL);
+  regex       = pcre_compile(regexString.c_str(), 0, &errorComp, &erroffset, nullptr);
 
-  if (regex == NULL) {
+  if (regex == nullptr) {
     return false;
   }
   regexExtra = pcre_study(regex, 0, &errorStudy);
-  if ((regexExtra == NULL) && (errorStudy != 0)) {
+  if ((regexExtra == nullptr) && (errorStudy != nullptr)) {
     return false;
   }
   if (pcre_fullinfo(regex, regexExtra, PCRE_INFO_CAPTURECOUNT, &regexCcount) != 0) {

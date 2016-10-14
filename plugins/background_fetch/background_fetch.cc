@@ -106,7 +106,7 @@ public:
   }
 
 private:
-  BgFetchState() : _log(NULL), _lock(TSMutexCreate()) {}
+  BgFetchState() : _log(nullptr), _lock(TSMutexCreate()) {}
   BgFetchState(BgFetchState const &);   // Don't Implement
   void operator=(BgFetchState const &); // Don't implement
 
@@ -123,15 +123,15 @@ struct BgFetchData {
   BgFetchData()
     : hdr_loc(TS_NULL_MLOC),
       url_loc(TS_NULL_MLOC),
-      vc(NULL),
-      req_io_buf(NULL),
-      resp_io_buf(NULL),
-      req_io_buf_reader(NULL),
-      resp_io_buf_reader(NULL),
-      r_vio(NULL),
-      w_vio(NULL),
+      vc(nullptr),
+      req_io_buf(nullptr),
+      resp_io_buf(nullptr),
+      req_io_buf_reader(nullptr),
+      resp_io_buf_reader(nullptr),
+      r_vio(nullptr),
+      w_vio(nullptr),
       _bytes(0),
-      _cont(NULL)
+      _cont(nullptr)
   {
     mbuf = TSMBufferCreate();
     memset(&client_ip, 0, sizeof(client_ip));
@@ -147,7 +147,7 @@ struct BgFetchData {
     if (vc) {
       TSError("[%s] Destroyed BgFetchDATA while VC was alive", PLUGIN_NAME);
       TSVConnClose(vc);
-      vc = NULL;
+      vc = nullptr;
     }
 
     // If we got schedule, also clean that up
@@ -155,7 +155,7 @@ struct BgFetchData {
       releaseUrl();
 
       TSContDestroy(_cont);
-      _cont = NULL;
+      _cont = nullptr;
       TSIOBufferReaderFree(req_io_buf_reader);
       TSIOBufferDestroy(req_io_buf);
       TSIOBufferReaderFree(resp_io_buf_reader);
@@ -247,7 +247,7 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
       if (TS_SUCCESS == TSUrlClone(mbuf, request, p_url, &url_loc)) {
         TSMLoc c_url = TS_NULL_MLOC;
         int len;
-        char *url = NULL;
+        char *url = nullptr;
 
         // Get the cache key URL (for now), since this has better lookup behavior when using
         // e.g. the cachekey plugin.
@@ -293,7 +293,7 @@ static int cont_bg_fetch(TSCont contp, TSEvent event, void *edata);
 void
 BgFetchData::schedule()
 {
-  TSAssert(NULL == _cont);
+  TSAssert(nullptr == _cont);
 
   // Setup the continuation
   _cont = TSContCreate(cont_bg_fetch, TSMutexCreate());
@@ -381,8 +381,8 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     }
 
     // Setup the NetVC for background fetch
-    TSAssert(NULL == data->vc);
-    if ((data->vc = TSHttpConnect((sockaddr *)&data->client_ip)) != NULL) {
+    TSAssert(nullptr == data->vc);
+    if ((data->vc = TSHttpConnect((sockaddr *)&data->client_ip)) != nullptr) {
       TSHttpHdrPrint(data->mbuf, data->hdr_loc, data->req_io_buf);
       // We never send a body with the request. ToDo: Do we ever need to support that ?
       TSIOBufferWrite(data->req_io_buf, "\r\n", 2);
@@ -428,7 +428,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     data->log(event);
 
     // Close, release and cleanup
-    data->vc = NULL;
+    data->vc = nullptr;
     delete data;
     break;
 
@@ -457,7 +457,7 @@ cont_check_cacheable(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
       // Temporarily change the response status to 200 OK, so we can reevaluate cacheability.
       TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_OK);
-      bool cacheable = TSHttpTxnIsCacheable(txnp, NULL, response);
+      bool cacheable = TSHttpTxnIsCacheable(txnp, nullptr, response);
       TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_PARTIAL_CONTENT);
 
       TSDebug(PLUGIN_NAME, "Testing: request / response is cacheable?");
@@ -503,7 +503,7 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
   TSHttpTxn txnp        = static_cast<TSHttpTxn>(edata);
   BgFetchConfig *config = static_cast<BgFetchConfig *>(TSContDataGet(contp));
 
-  if (NULL == config) {
+  if (nullptr == config) {
     // something seriously wrong..
     TSError("[%s] Can't get configurations", PLUGIN_NAME);
   } else {
@@ -521,7 +521,7 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
           TSDebug(PLUGIN_NAME, "Testing: response is 206?");
           if (TS_HTTP_STATUS_PARTIAL_CONTENT == TSHttpHdrStatusGet(response, resp_hdr)) {
             // Everything looks good so far, add a TXN hook for SEND_RESPONSE_HDR
-            TSCont contp = TSContCreate(cont_check_cacheable, NULL);
+            TSCont contp = TSContCreate(cont_check_cacheable, nullptr);
 
             TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
           }
@@ -551,9 +551,9 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  static const struct option longopt[] = {{const_cast<char *>("log"), required_argument, NULL, 'l'},
-                                          {const_cast<char *>("config"), required_argument, NULL, 'c'},
-                                          {NULL, no_argument, NULL, '\0'}};
+  static const struct option longopt[] = {{const_cast<char *>("log"), required_argument, nullptr, 'l'},
+                                          {const_cast<char *>("config"), required_argument, nullptr, 'c'},
+                                          {nullptr, no_argument, nullptr, '\0'}};
 
   info.plugin_name   = (char *)PLUGIN_NAME;
   info.vendor_name   = (char *)"Apache Software Foundation";
@@ -563,13 +563,13 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
   }
 
-  TSCont cont = TSContCreate(cont_handle_response, NULL);
+  TSCont cont = TSContCreate(cont_handle_response, nullptr);
 
   gConfig = new BgFetchConfig(cont);
   gConfig->acquire(); // Inc refcount, although this global config should never go out of scope
 
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "lc", longopt, NULL);
+    int opt = getopt_long(argc, (char *const *)argv, "lc", longopt, nullptr);
 
     switch (opt) {
     case 'l':
@@ -620,7 +620,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
-  TSCont cont           = TSContCreate(cont_handle_response, NULL);
+  TSCont cont           = TSContCreate(cont_handle_response, nullptr);
   BgFetchConfig *config = new BgFetchConfig(cont);
 
   config->acquire(); // Inc refcount
@@ -650,7 +650,7 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 {
-  if (NULL == ih) {
+  if (nullptr == ih) {
     return TSREMAP_NO_REMAP;
   }
 

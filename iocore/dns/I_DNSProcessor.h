@@ -103,7 +103,7 @@ struct DNSProcessor : public Processor {
 
   // DNS lookup
   //   calls: cont->handleEvent( DNS_EVENT_LOOKUP, HostEnt *ent) on success
-  //          cont->handleEvent( DNS_EVENT_LOOKUP, NULL) on failure
+  //          cont->handleEvent( DNS_EVENT_LOOKUP, nullptr) on failure
   // NOTE: the HostEnt *block is freed when the function returns
   //
 

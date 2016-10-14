@@ -174,7 +174,7 @@ public:
 
   */
 
-  inkcoreapi Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *options = NULL);
+  inkcoreapi Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *options = nullptr);
 
   /**
     Open a NetVConnection for connection oriented I/O. This call
@@ -195,7 +195,7 @@ public:
     @see connect_re()
 
   */
-  Action *connect_s(Continuation *cont, sockaddr const *addr, int timeout = NET_CONNECT_TIMEOUT, NetVCOptions *opts = NULL);
+  Action *connect_s(Continuation *cont, sockaddr const *addr, int timeout = NET_CONNECT_TIMEOUT, NetVCOptions *opts = nullptr);
 
   /**
     Starts the Netprocessor. This has to be called before doing any

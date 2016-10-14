@@ -39,8 +39,8 @@
 #include "ProtocolProbeSessionAccept.h"
 #include "http2/Http2SessionAccept.h"
 
-HttpSessionAccept *plugin_http_accept             = NULL;
-HttpSessionAccept *plugin_http_transparent_accept = NULL;
+HttpSessionAccept *plugin_http_accept             = nullptr;
+HttpSessionAccept *plugin_http_transparent_accept = nullptr;
 
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
 static Ptr<ProxyMutex> ssl_plugin_mutex;
@@ -92,7 +92,7 @@ struct HttpProxyAcceptor {
   NetProcessor::AcceptOptions _net_opt;
 
   /// Default constructor.
-  HttpProxyAcceptor() : _accept(0) {}
+  HttpProxyAcceptor() : _accept(nullptr) {}
 };
 
 /** Global acceptors.
@@ -175,7 +175,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   // XXX the protocol probe should be a configuration option.
 
   ProtocolProbeSessionAccept *probe = new ProtocolProbeSessionAccept();
-  HttpSessionAccept *http           = 0; // don't allocate this unless it will be used.
+  HttpSessionAccept *http           = nullptr; // don't allocate this unless it will be used.
 
   if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
     http = new HttpSessionAccept(accept_opt);
@@ -244,7 +244,7 @@ init_HttpProxyServer(int n_accept_threads)
   //   The equivalent of the connecting to localhost on the  proxy
   //   port but without going through the operating system
   //
-  if (plugin_http_accept == NULL) {
+  if (plugin_http_accept == nullptr) {
     plugin_http_accept = new HttpSessionAccept();
   }
 
@@ -282,11 +282,11 @@ start_HttpProxyServer()
     HttpProxyAcceptor &acceptor = HttpProxyAcceptors[i];
     HttpProxyPort &port         = proxy_ports[i];
     if (port.isSSL()) {
-      if (NULL == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
+      if (nullptr == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
       }
     } else if (!port.isPlugin()) {
-      if (NULL == netProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
+      if (nullptr == netProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
       }
     }
@@ -303,7 +303,7 @@ start_HttpProxyServer()
   // Alert plugins that connections will be accepted.
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_READY_HOOK);
   while (hook) {
-    hook->invoke(TS_EVENT_LIFECYCLE_PORTS_READY, NULL);
+    hook->invoke(TS_EVENT_LIFECYCLE_PORTS_READY, nullptr);
     hook = hook->next();
   }
 }

@@ -42,8 +42,8 @@ reconfigure_diags()
 
 
   // initial value set to 0 or 1 based on command line tags
-  c.enabled[DiagsTagType_Debug] = (diags->base_debug_tags != NULL);
-  c.enabled[DiagsTagType_Action] = (diags->base_action_tags != NULL);
+  c.enabled[DiagsTagType_Debug] = (diags->base_debug_tags != nullptr);
+  c.enabled[DiagsTagType_Action] = (diags->base_action_tags != nullptr);
 
   c.enabled[DiagsTagType_Debug] = 1;
   c.enabled[DiagsTagType_Action] = 1;

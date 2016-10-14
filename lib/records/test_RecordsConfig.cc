@@ -30,21 +30,21 @@
 void
 RecordsConfigRegister()
 {
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_2a", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_2b", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_3a", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_3b", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_4a", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_4b", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_2a", nullptr, RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_2b", nullptr, RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_3a", nullptr, RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_3b", nullptr, RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_4a", nullptr, RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_4b", nullptr, RECU_DYNAMIC, RECC_NULL, nullptr);
 
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.cb_test_1", "cb_test_1__original", RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.cb_test_2", "cb_test_2__original", RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_1", "cb_test_1__original", RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_2", "cb_test_2__original", RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_3", "cb_test_3__original", RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.link_test_1", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigFloat(RECT_CONFIG, "proxy.config.link_test_2", 0.0f, RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigCounter(RECT_CONFIG, "proxy.config.link_test_3", 0, RECU_DYNAMIC, RECC_NULL, NULL);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.cb_test_1", "cb_test_1__original", RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.cb_test_2", "cb_test_2__original", RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_1", "cb_test_1__original", RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_2", "cb_test_2__original", RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_3", "cb_test_3__original", RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.link_test_1", 0, RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigFloat(RECT_CONFIG, "proxy.config.link_test_2", 0.0f, RECU_DYNAMIC, RECC_NULL, nullptr);
+  RecRegisterConfigCounter(RECT_CONFIG, "proxy.config.link_test_3", 0, RECU_DYNAMIC, RECC_NULL, nullptr);
 
   // NODE
   RecRegisterStatString(RECT_NODE, "proxy.node.cb_test_1", "cb_test_1__original", RECP_NON_PERSISTENT);

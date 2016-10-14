@@ -166,7 +166,7 @@ TS_INLINE void
 EThread::free_event(Event *e)
 {
   ink_assert(!e->in_the_priority_queue && !e->in_the_prot_queue);
-  e->mutex = NULL;
+  e->mutex = nullptr;
   EVENT_FREE(e, eventAllocator, this);
 }
 

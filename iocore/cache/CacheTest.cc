@@ -33,13 +33,13 @@ CacheTestSM::CacheTestSM(RegressionTest *t, const char *name)
   : RegressionSM(t),
     start_memcpy_on_clone(0),
     cache_test_name(name),
-    timeout(0),
-    cache_action(0),
+    timeout(nullptr),
+    cache_action(nullptr),
     start_time(0),
-    cache_vc(0),
-    cvio(0),
-    buffer(0),
-    buffer_reader(0),
+    cache_vc(nullptr),
+    cvio(nullptr),
+    buffer(nullptr),
+    buffer_reader(nullptr),
     total_size(0),
     nbytes(-1),
     repeat_count(0),
@@ -93,13 +93,13 @@ CacheTestSM::event_handler(int event, void *data)
     cancel_timeout();
     if (cache_action) {
       cache_action->cancel();
-      cache_action = 0;
+      cache_action = nullptr;
     }
     if (cache_vc) {
       cache_vc->do_io_close();
-      cache_vc = 0;
+      cache_vc = nullptr;
     }
-    cvio = 0;
+    cvio = nullptr;
     make_request();
     return EVENT_DONE;
 
@@ -110,7 +110,7 @@ CacheTestSM::event_handler(int event, void *data)
   case CACHE_EVENT_OPEN_READ:
     initial_event = event;
     cancel_timeout();
-    cache_action  = 0;
+    cache_action  = nullptr;
     cache_vc      = (CacheVConnection *)data;
     buffer        = new_empty_MIOBuffer();
     buffer_reader = buffer->alloc_reader();
@@ -141,7 +141,7 @@ CacheTestSM::event_handler(int event, void *data)
   case CACHE_EVENT_OPEN_WRITE:
     initial_event = event;
     cancel_timeout();
-    cache_action  = 0;
+    cache_action  = nullptr;
     cache_vc      = (CacheVConnection *)data;
     buffer        = new_empty_MIOBuffer();
     buffer_reader = buffer->alloc_reader();
@@ -198,7 +198,7 @@ CacheTestSM::event_handler(int event, void *data)
 
 Lcancel_next:
   cancel_timeout();
-  cache_action = 0;
+  cache_action = nullptr;
   goto Lnext;
 Lclose_error_next:
   cache_vc->do_io_close(1);
@@ -206,14 +206,14 @@ Lclose_error_next:
 Lclose_next:
   cache_vc->do_io_close();
 Lclose_next_internal:
-  cache_vc = 0;
+  cache_vc = nullptr;
   if (buffer_reader) {
     buffer->dealloc_reader(buffer_reader);
-    buffer_reader = 0;
+    buffer_reader = nullptr;
   }
   if (buffer) {
     free_MIOBuffer(buffer);
-    buffer = 0;
+    buffer = nullptr;
   }
 Lnext:
   if (check_result(event) && repeat_count) {
@@ -353,7 +353,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
            {
              cacheProcessor.open_write(this, &key, false, CACHE_FRAG_TYPE_NONE, 100, CACHE_WRITE_OPT_OVERWRITE_SYNC);
            } int open_write_callout() {
-             CacheTestHeader *h = 0;
+             CacheTestHeader *h = nullptr;
              int hlen           = 0;
              if (cache_vc->get_header((void **)&h, &hlen) < 0)
                return -1;
@@ -371,7 +371,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   replace_test.content_salt         = 1;
 
   CACHE_SM(t, replace_read_test, { cacheProcessor.open_read(this, &key, false); } int open_read_callout() {
-    CacheTestHeader *h = 0;
+    CacheTestHeader *h = nullptr;
     int hlen           = 0;
     if (cache_vc->get_header((void **)&h, &hlen) < 0)
       return -1;
@@ -415,7 +415,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
       replace_read_test.clone(),
       large_write_test.clone(),
       pread_test.clone(),
-      NULL_PTR)
+      nullptr)
   ->run(pstatus);
   // clang-format on
 
@@ -460,12 +460,12 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
     MD5Context().hash_immediate(vols[i].hash_id, buff, strlen(buff));
   }
 
-  hr1.vol_hash_table = 0;
+  hr1.vol_hash_table = nullptr;
   hr1.vols           = vol_ptrs;
   hr1.num_vols       = MAX_VOLS;
   build_vol_hash_table(&hr1);
 
-  hr2.vol_hash_table = 0;
+  hr2.vol_hash_table = nullptr;
   hr2.vols           = vol_ptrs;
   hr2.num_vols       = MAX_VOLS;
 
@@ -495,8 +495,8 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
           to + from, VOL_HASH_TABLE_SIZE, to, from, then, now, now - then, to - from);
   *pstatus = REGRESSION_TEST_PASSED;
 
-  hr1.vols = 0;
-  hr2.vols = 0;
+  hr1.vols = nullptr;
+  hr2.vols = nullptr;
 }
 
 static double zipf_alpha        = 1.2;
@@ -504,7 +504,7 @@ static int64_t zipf_bucket_size = 1;
 
 #define ZIPF_SIZE (1 << 20)
 
-static double *zipf_table = NULL;
+static double *zipf_table = nullptr;
 
 static void
 build_zipf()

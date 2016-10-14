@@ -160,7 +160,7 @@ public:
     @param amutex Lock to be set for this Continuation.
 
   */
-  Continuation(ProxyMutex *amutex = NULL);
+  Continuation(ProxyMutex *amutex = nullptr);
   Continuation(Ptr<ProxyMutex> &amutex);
 };
 
@@ -193,9 +193,9 @@ public:
 #endif
 
 inline Continuation::Continuation(Ptr<ProxyMutex> &amutex)
-  : handler(NULL),
+  : handler(nullptr),
 #ifdef DEBUG
-    handler_name(NULL),
+    handler_name(nullptr),
 #endif
     mutex(amutex)
 {
@@ -204,9 +204,9 @@ inline Continuation::Continuation(Ptr<ProxyMutex> &amutex)
 }
 
 inline Continuation::Continuation(ProxyMutex *amutex)
-  : handler(NULL),
+  : handler(nullptr),
 #ifdef DEBUG
-    handler_name(NULL),
+    handler_name(nullptr),
 #endif
     mutex(amutex)
 {

@@ -25,7 +25,7 @@
 ATSHashMD5::ATSHashMD5(void) : md_len(0), finalized(false)
 {
   ctx     = EVP_MD_CTX_create();
-  int ret = EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
+  int ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
   ink_assert(ret == 1);
 }
 
@@ -54,7 +54,7 @@ ATSHashMD5::get(void) const
   if (finalized) {
     return (void *)md_value;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -69,7 +69,7 @@ ATSHashMD5::clear(void)
 {
   int ret = EVP_MD_CTX_cleanup(ctx);
   ink_assert(ret == 1);
-  ret = EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
+  ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
   ink_assert(ret == 1);
   md_len    = 0;
   finalized = false;

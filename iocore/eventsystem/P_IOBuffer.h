@@ -71,8 +71,8 @@ index_to_buffer_size(int64_t idx)
 TS_INLINE IOBufferBlock *
 iobufferblock_clone(IOBufferBlock *src, int64_t offset, int64_t len)
 {
-  IOBufferBlock *start_buf   = NULL;
-  IOBufferBlock *current_buf = NULL;
+  IOBufferBlock *start_buf   = nullptr;
+  IOBufferBlock *current_buf = nullptr;
 
   while (src && len >= 0) {
     char *start       = src->_start;
@@ -416,7 +416,7 @@ IOBufferBlock::alloc(int64_t i)
 TS_INLINE void
 IOBufferBlock::clear()
 {
-  data = NULL;
+  data = nullptr;
 
   IOBufferBlock *p = next.get();
   while (p) {
@@ -436,7 +436,7 @@ IOBufferBlock::clear()
   // because we already manually did that.
   next.detach();
 
-  _buf_end = _end = _start = NULL;
+  _buf_end = _end = _start = nullptr;
 }
 
 TS_INLINE IOBufferBlock *
@@ -707,9 +707,9 @@ TS_INLINE char &IOBufferReader::operator[](int64_t i)
 TS_INLINE void
 IOBufferReader::clear()
 {
-  accessor     = NULL;
-  block        = NULL;
-  mbuf         = NULL;
+  accessor     = nullptr;
+  block        = nullptr;
+  mbuf         = nullptr;
   start_offset = 0;
   size_limit   = INT64_MAX;
 }
@@ -746,7 +746,7 @@ TS_INLINE
 MIOBuffer::MIOBuffer(void *b, int64_t bufsize, int64_t aWater_mark)
 {
 #ifdef TRACK_BUFFER_USER
-  _location = NULL;
+  _location = nullptr;
 #endif
   set(b, bufsize);
   water_mark = aWater_mark;
@@ -760,7 +760,7 @@ MIOBuffer::MIOBuffer(int64_t default_size_index)
   clear();
   size_index = default_size_index;
 #ifdef TRACK_BUFFER_USER
-  _location = NULL;
+  _location = nullptr;
 #endif
   return;
 }
@@ -770,7 +770,7 @@ MIOBuffer::MIOBuffer()
 {
   clear();
 #ifdef TRACK_BUFFER_USER
-  _location = NULL;
+  _location = nullptr;
 #endif
   return;
 }
@@ -778,7 +778,7 @@ MIOBuffer::MIOBuffer()
 TS_INLINE
 MIOBuffer::~MIOBuffer()
 {
-  _writer = NULL;
+  _writer = nullptr;
   dealloc_all_readers();
 }
 
@@ -800,7 +800,7 @@ new_MIOBuffer_internal(
 TS_INLINE void
 free_MIOBuffer(MIOBuffer *mio)
 {
-  mio->_writer = NULL;
+  mio->_writer = nullptr;
   mio->dealloc_all_readers();
   THREAD_FREE(mio, ioAllocator, this_thread());
 }
@@ -834,7 +834,7 @@ MIOBuffer::alloc_accessor(MIOBufferAccessor *anAccessor)
     if (!readers[i].allocated())
       break;
 
-  // TODO refactor code to return NULL at some point
+  // TODO refactor code to return nullptr at some point
   ink_release_assert(i < MAX_MIOBUFFER_READERS);
 
   IOBufferReader *e = &readers[i];
@@ -853,13 +853,13 @@ MIOBuffer::alloc_reader()
     if (!readers[i].allocated())
       break;
 
-  // TODO refactor code to return NULL at some point
+  // TODO refactor code to return nullptr at some point
   ink_release_assert(i < MAX_MIOBUFFER_READERS);
 
   IOBufferReader *e = &readers[i];
   e->mbuf           = this;
   e->reset();
-  e->accessor = NULL;
+  e->accessor = nullptr;
 
   return e;
 }
@@ -877,12 +877,12 @@ MIOBuffer::clone_reader(IOBufferReader *r)
     if (!readers[i].allocated())
       break;
 
-  // TODO refactor code to return NULL at some point
+  // TODO refactor code to return nullptr at some point
   ink_release_assert(i < MAX_MIOBUFFER_READERS);
 
   IOBufferReader *e = &readers[i];
   e->mbuf           = this;
-  e->accessor       = NULL;
+  e->accessor       = nullptr;
   e->block          = r->block;
   e->start_offset   = r->start_offset;
   e->size_limit     = r->size_limit;
@@ -1182,7 +1182,7 @@ MIOBufferAccessor::reader_for(MIOBuffer *abuf)
   if (abuf)
     entry = mbuf->alloc_accessor(this);
   else
-    entry = NULL;
+    entry = nullptr;
 }
 
 TS_INLINE void
@@ -1199,7 +1199,7 @@ TS_INLINE void
 MIOBufferAccessor::writer_for(MIOBuffer *abuf)
 {
   mbuf  = abuf;
-  entry = NULL;
+  entry = nullptr;
 }
 
 TS_INLINE

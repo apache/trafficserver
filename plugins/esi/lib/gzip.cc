@@ -141,7 +141,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
   zstrm.zalloc   = Z_NULL;
   zstrm.zfree    = Z_NULL;
   zstrm.opaque   = Z_NULL;
-  zstrm.next_in  = 0;
+  zstrm.next_in  = nullptr;
   zstrm.avail_in = 0;
   if (inflateInit2(&zstrm, -MAX_WBITS) != Z_OK) {
     Utils::ERROR_LOG("[%s] inflateInit2 failed!", __FUNCTION__);

@@ -55,7 +55,7 @@ template <class T> struct CacheArray {
 template <class T>
 TS_INLINE
 CacheArray<T>::CacheArray(const T *val, int initial_size)
-  : data(NULL), default_val(val), size(0), pos(-1)
+  : data(nullptr), default_val(val), size(0), pos(-1)
 {
   if (initial_size > 0) {
     int i = 1;
@@ -125,7 +125,7 @@ CacheArray<T>::detach()
   T *d;
 
   d    = data;
-  data = NULL;
+  data = nullptr;
 
   return d;
 }
@@ -145,7 +145,7 @@ CacheArray<T>::clear()
     if (data != fast_data) {
       delete[] data;
     }
-    data = NULL;
+    data = nullptr;
   }
 
   size = 0;

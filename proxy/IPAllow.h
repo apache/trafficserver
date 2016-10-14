@@ -158,7 +158,7 @@ IpAllow::match(sockaddr const *ip) const
   if (_map.contains(ip, &raw)) {
     return static_cast<AclRecord *>(raw);
   }
-  return NULL;
+  return nullptr;
 }
 
 #endif

@@ -128,7 +128,7 @@ CacheObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   char *pd_str, *time_str;
@@ -138,7 +138,7 @@ CacheObj::formatEleToRule()
   pd_str = pdest_sspec_to_string(m_ele->cache_info.pd_type, m_ele->cache_info.pd_val, &(m_ele->cache_info.sec_spec));
   if (!pd_str) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
   ink_strlcat(buf, pd_str, sizeof(buf));
   ats_free(pd_str);
@@ -354,7 +354,7 @@ CongestionObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   char buf[MAX_BUF_SIZE];
@@ -545,7 +545,7 @@ HostingObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   char *list_str;
@@ -752,7 +752,7 @@ IcpObj::formatEleToRule()
 
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   memset(buf, 0, MAX_RULE_SIZE);
@@ -930,7 +930,7 @@ IpAllowObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
     ;
   }
 
@@ -1024,7 +1024,7 @@ ParentProxyObj::ParentProxyObj(TokenList *tokens)
 
   tok = tokens->first();
   tok = tokens_to_pdss_format(tokens, tok, &(m_ele->parent_info));
-  if (tok == NULL) {
+  if (tok == nullptr) {
     goto FORMAT_ERR;
   }
   // search parent and round_robin action tags
@@ -1100,7 +1100,7 @@ ParentProxyObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   char *pd_str, *list_str;
@@ -1109,7 +1109,7 @@ ParentProxyObj::formatEleToRule()
 
   pd_str = pdest_sspec_to_string(m_ele->parent_info.pd_type, m_ele->parent_info.pd_val, &(m_ele->parent_info.sec_spec));
   if (!pd_str) {
-    return NULL;
+    return nullptr;
   }
   ink_strlcat(buf, pd_str, sizeof(buf));
   ats_free(pd_str);
@@ -1137,7 +1137,7 @@ ParentProxyObj::formatEleToRule()
     }
   }
 
-  if (m_ele->proxy_list != NULL) {
+  if (m_ele->proxy_list != nullptr) {
     // include space delimiter if not already exist
     if (!isspace(buf[strlen(buf) - 1])) {
       ink_strlcat(buf, " ", sizeof(buf));
@@ -1285,7 +1285,7 @@ VolumeObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   char buf[MAX_RULE_SIZE];
@@ -1422,7 +1422,7 @@ PluginObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   char *list_str;
@@ -1621,7 +1621,7 @@ RemapObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   char buf[MAX_RULE_SIZE];
@@ -1802,7 +1802,7 @@ SocksObj::SocksObj(TokenList *tokens)
   tok = tokens->first();
   if (strcmp(tok->name, "no_socks") == 0) { // no-socks rule; TS_SOCKS_BYPASS
 
-    if (m_ele->ip_addrs != NULL) {
+    if (m_ele->ip_addrs != nullptr) {
       goto FORMAT_ERR;
     }
     m_ele->ip_addrs = string_to_ip_addr_list(tok->value, ",");
@@ -1877,20 +1877,20 @@ SocksObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
   char buf[MAX_RULE_SIZE];
   memset(buf, 0, MAX_RULE_SIZE);
 
-  if (m_ele->ip_addrs != NULL) { // TS_SOCKS_BYPASS rule
+  if (m_ele->ip_addrs != nullptr) { // TS_SOCKS_BYPASS rule
     char *str_list = ip_addr_list_to_string((LLQ *)m_ele->ip_addrs, ",");
     if (str_list) {
       snprintf(buf, sizeof(buf), "no_socks %s", str_list);
       ats_free(str_list);
     } else {
-      return NULL; // invalid ip_addr_list
+      return nullptr; // invalid ip_addr_list
     }
-  } else if (m_ele->username != NULL) { // TS_SOCKS_AUTH rule
+  } else if (m_ele->username != nullptr) { // TS_SOCKS_AUTH rule
     snprintf(buf, sizeof(buf), "auth u %s %s", m_ele->username, m_ele->password);
   } else { // TS_SOCKS_MULTIPLE rule
     // destination ip
@@ -1900,11 +1900,11 @@ SocksObj::formatEleToRule()
       ink_strlcat(buf, ip_str, sizeof(buf));
       ats_free(ip_str);
     } else {
-      return NULL; // invalid IP
+      return nullptr; // invalid IP
     }
 
     // parent server list
-    if (m_ele->socks_servers != NULL) {
+    if (m_ele->socks_servers != nullptr) {
       // include space delimiter if not already exist
       if (!isspace(buf[strlen(buf) - 1])) {
         ink_strlcat(buf, " ", sizeof(buf));
@@ -1916,7 +1916,7 @@ SocksObj::formatEleToRule()
         ink_strlcat(buf, "\"", sizeof(buf));
         ats_free(list_str);
       } else {
-        return NULL; // invalid list
+        return nullptr; // invalid list
       }
     }
     // round-robin, if specified
@@ -1965,7 +1965,7 @@ SocksObj::isValid()
     }
     break;
   case TS_SOCKS_AUTH:
-    if (m_ele->username == NULL || m_ele->password == NULL || m_ele->ip_addrs || m_ele->dest_ip_addr) {
+    if (m_ele->username == nullptr || m_ele->password == nullptr || m_ele->ip_addrs || m_ele->dest_ip_addr) {
       m_valid = false;
     } else {
       m_valid = true;
@@ -2027,47 +2027,47 @@ SplitDnsObj::SplitDnsObj(TokenList *tokens)
   tok = tokens->first();
   while (tok) {
     if (!strcmp(tok->name, "dest_domain")) {
-      if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
+      if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != nullptr) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_DOMAIN;
       m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "dest_host") == 0) {
-      if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
+      if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != nullptr) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_HOST;
       m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "url_regex") == 0) {
-      if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
+      if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != nullptr) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_URL_REGEX;
       m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "url") == 0) {
-      if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
+      if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != nullptr) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_URL;
       m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "named") == 0) {
-      if ((m_ele->dns_servers_addrs != NULL) || (!tok->value)) {
+      if ((m_ele->dns_servers_addrs != nullptr) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->dns_servers_addrs = (TSDomainList)string_to_domain_list(tok->value, "; ");
     } else if (strcmp(tok->name, "def_domain") == 0) {
-      if ((m_ele->def_domain != NULL) || (!tok->value)) {
+      if ((m_ele->def_domain != nullptr) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->def_domain = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "search_list") == 0) {
-      if ((m_ele->search_list != NULL) || (!tok->value)) {
+      if ((m_ele->search_list != nullptr) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
@@ -2096,7 +2096,7 @@ SplitDnsObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   char buf[MAX_RULE_SIZE];
@@ -2287,7 +2287,7 @@ StorageObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   char buf[MAX_RULE_SIZE];
@@ -2354,21 +2354,21 @@ VirtIpAddrObj::VirtIpAddrObj(TokenList *tokens)
   }
   // IP Address
   tok = tokens->first();
-  if (tok->value != NULL) {
+  if (tok->value != nullptr) {
     goto FORMAT_ERR;
   }
   m_ele->ip_addr = string_to_ip_addr(tok->name);
 
   // Device
   tok = tokens->next(tok);
-  if (tok->value != NULL) {
+  if (tok->value != nullptr) {
     goto FORMAT_ERR;
   }
   m_ele->intr = ats_strdup(tok->name);
 
   // Subinterface
   tok = tokens->next(tok);
-  if (tok->value != NULL) {
+  if (tok->value != nullptr) {
     goto FORMAT_ERR;
   }
   m_ele->sub_intr = ink_atoi(tok->name); // ERROR: can't convert?
@@ -2390,7 +2390,7 @@ VirtIpAddrObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;
+    return nullptr;
   }
 
   char *ip_str;
@@ -2456,7 +2456,7 @@ CfgContext::~CfgContext()
 TSMgmtError
 CfgContext::addEle(CfgEleObj *ele)
 {
-  ink_assert(ele != NULL);
+  ink_assert(ele != nullptr);
   m_eles.enqueue(ele); // enqueue CfgEleObj at end of Queue
   return TS_ERR_OKAY;
 }
@@ -2464,7 +2464,7 @@ CfgContext::addEle(CfgEleObj *ele)
 TSMgmtError
 CfgContext::removeEle(CfgEleObj *ele)
 {
-  ink_assert(ele != NULL);
+  ink_assert(ele != nullptr);
   m_eles.remove(ele);
   delete ele;
 
@@ -2474,7 +2474,7 @@ CfgContext::removeEle(CfgEleObj *ele)
 TSMgmtError
 CfgContext::insertEle(CfgEleObj *ele, CfgEleObj *after_ele)
 {
-  ink_assert(ele != NULL && after_ele != NULL);
+  ink_assert(ele != nullptr && after_ele != nullptr);
   m_eles.insert(ele, after_ele);
 
   return TS_ERR_OKAY;
@@ -2484,7 +2484,7 @@ CfgContext::insertEle(CfgEleObj *ele, CfgEleObj *after_ele)
 TSMgmtError
 CfgContext::pushEle(CfgEleObj *ele)
 {
-  ink_assert(ele != NULL);
+  ink_assert(ele != nullptr);
   m_eles.push(ele);
 
   return TS_ERR_OKAY;

@@ -210,14 +210,14 @@ BoomResponseRegistry::populate_error_responses(const std::string &base_directory
   // Iterate over files in the base directory.
   // Filename (sans the .html suffix) becomes the entry to the
   // registry lookup table
-  DIR *pDIR = NULL;
+  DIR *pDIR = nullptr;
   struct dirent *entry;
 
   pDIR = opendir(base_error_directory_.c_str());
-  if (pDIR != NULL) {
+  if (pDIR != nullptr) {
     while (true) {
       entry = readdir(pDIR);
-      if (entry == NULL)
+      if (entry == nullptr)
         break;
 
       if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {

@@ -122,7 +122,7 @@ int HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
 
 static volatile int http_config_changes = 1;
-static HttpConfigCont *http_config_cont = NULL;
+static HttpConfigCont *http_config_cont = nullptr;
 
 HttpConfigCont::HttpConfigCont() : Continuation(new_ProxyMutex())
 {
@@ -871,7 +871,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigStringAlloc(c.proxy_hostname, "proxy.config.proxy_name");
   c.proxy_hostname_len = -1;
 
-  if (c.proxy_hostname == NULL) {
+  if (c.proxy_hostname == nullptr) {
     c.proxy_hostname    = (char *)ats_malloc(sizeof(char));
     c.proxy_hostname[0] = '\0';
   }
@@ -1114,9 +1114,9 @@ HttpConfig::startup()
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
   c.cluster_time_delta = 0;
-  RegisterMgmtCallback(MGMT_EVENT_HTTP_CLUSTER_DELTA, cluster_delta_cb, NULL);
+  RegisterMgmtCallback(MGMT_EVENT_HTTP_CLUSTER_DELTA, cluster_delta_cb, nullptr);
 
-  http_config_cont->handleEvent(EVENT_NONE, NULL);
+  http_config_cont->handleEvent(EVENT_NONE, nullptr);
 
   return;
 }
@@ -1408,7 +1408,7 @@ HttpConfig::acquire()
   if (m_id != 0) {
     return (HttpConfigParams *)configProcessor.get(m_id);
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -1431,24 +1431,24 @@ HttpConfig::release(HttpConfigParams *params)
 HttpConfigPortRange *
 HttpConfig::parse_ports_list(char *ports_string)
 {
-  HttpConfigPortRange *ports_list = 0;
+  HttpConfigPortRange *ports_list = nullptr;
 
   if (!ports_string) {
-    return (0);
+    return (nullptr);
   }
 
   if (strchr(ports_string, '*')) {
     ports_list       = new HttpConfigPortRange;
     ports_list->low  = -1;
     ports_list->high = -1;
-    ports_list->next = NULL;
+    ports_list->next = nullptr;
   } else {
     HttpConfigPortRange *pr, *prev;
     char *start;
     char *end;
 
-    pr   = NULL;
-    prev = NULL;
+    pr   = nullptr;
+    prev = nullptr;
 
     start = ports_string;
 
@@ -1471,7 +1471,7 @@ HttpConfig::parse_ports_list(char *ports_string)
       pr       = new HttpConfigPortRange;
       pr->low  = atoi(start);
       pr->high = pr->low;
-      pr->next = NULL;
+      pr->next = nullptr;
 
       if (prev) {
         prev->next = pr;
@@ -1525,7 +1525,7 @@ HttpConfig::cluster_delta_cb(void * /* opaque_token ATS_UNUSED */, char *data_ra
   old = ink_atomic_swap(&HttpConfig::m_master.cluster_time_delta, delta32);
   Debug("http_trans", "Cluster time delta moving from %d to %d", old, delta32);
 
-  return NULL;
+  return nullptr;
 }
 
 volatile int32_t icp_dynamic_enabled;

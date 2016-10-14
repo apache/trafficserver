@@ -60,7 +60,7 @@ handleTransactionPluginEvents(TSCont cont, TSEvent event, void *edata)
 TransactionPlugin::TransactionPlugin(Transaction &transaction)
 {
   state_        = new TransactionPluginState(static_cast<TSHttpTxn>(transaction.getAtsHandle()));
-  TSMutex mutex = NULL;
+  TSMutex mutex = nullptr;
   state_->cont_ = TSContCreate(handleTransactionPluginEvents, mutex);
   TSContDataSet(state_->cont_, static_cast<void *>(this));
   LOG_DEBUG("Creating new TransactionPlugin=%p tshttptxn=%p, cont=%p", this, state_->ats_txn_handle_, state_->cont_);

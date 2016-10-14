@@ -36,7 +36,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   RecModeT mode_type = RECM_STAND_ALONE;
 
   Layout::create();
-  init_diags("", NULL);
+  init_diags("", nullptr);
   RecProcessInit(mode_type);
 
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);

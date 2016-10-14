@@ -42,7 +42,7 @@ ClassAllocator<HttpUpdateSM> httpUpdateSMAllocator("httpUpdateSMAllocator");
     Debug("http", "[%" PRId64 "] [%s, %s]", sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
   }
 
-HttpUpdateSM::HttpUpdateSM() : cb_occured(false), cb_cont(NULL), cb_action(), cb_event(HTTP_SCH_UPDATE_EVENT_ERROR)
+HttpUpdateSM::HttpUpdateSM() : cb_occured(false), cb_cont(nullptr), cb_action(), cb_event(HTTP_SCH_UPDATE_EVENT_ERROR)
 {
 }
 
@@ -50,7 +50,7 @@ void
 HttpUpdateSM::destroy()
 {
   cleanup();
-  cb_action = NULL;
+  cb_action = nullptr;
   httpUpdateSMAllocator.free(this);
 }
 
@@ -87,7 +87,7 @@ HttpUpdateSM::start_scheduled_update(Continuation *cont, HTTPHdr *request)
   //   stack, do this by calling througth the main handler
   //   so the sm will be properly terminated
   this->default_handler = &HttpUpdateSM::state_add_to_list;
-  this->handleEvent(EVENT_NONE, NULL);
+  this->handleEvent(EVENT_NONE, nullptr);
 
   if (cb_occured == 0) {
     return &cb_action;
@@ -127,7 +127,7 @@ HttpUpdateSM::handle_api_return()
                     "transform since result is not cached",
             sm_id);
       HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
-      ink_release_assert(c != NULL);
+      ink_release_assert(c != nullptr);
 
       if (tunnel.is_tunnel_active()) {
         default_handler = &HttpUpdateSM::tunnel_handler;
@@ -215,10 +215,10 @@ HttpUpdateSM::kill_this_async_hook(int event, void * /* data ATS_UNUSED */)
 
   if (!cb_action.cancelled) {
     Debug("http", "[%" PRId64 "] [HttpUpdateSM] calling back user with event %s", sm_id, HttpDebugNames::get_event_name(cb_event));
-    cb_cont->handleEvent(cb_event, NULL);
+    cb_cont->handleEvent(cb_event, nullptr);
   }
 
   cb_occured = true;
 
-  return HttpSM::kill_this_async_hook(EVENT_NONE, NULL);
+  return HttpSM::kill_this_async_hook(EVENT_NONE, nullptr);
 }

@@ -57,15 +57,17 @@ free_cfg(struct config *cfg)
   TSError("[url_sig] Cleaning up...");
   TSfree(cfg->err_url);
 
-  if (cfg->regex_extra)
+  if (cfg->regex_extra) {
 #ifndef PCRE_STUDY_JIT_COMPILE
     pcre_free(cfg->regex_extra);
 #else
     pcre_free_study(cfg->regex_extra);
 #endif
+  }
 
-  if (cfg->regex)
+  if (cfg->regex) {
     pcre_free(cfg->regex);
+  }
 
   TSfree(cfg);
 }
@@ -121,8 +123,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   while (fgets(line, sizeof(line), file) != NULL) {
     TSDebug(PLUGIN_NAME, "LINE: %s (%d)", line, (int)strlen(line));
     line_no++;
-    if (line[0] == '#' || strlen(line) <= 1)
+    if (line[0] == '#' || strlen(line) <= 1) {
       continue;
+    }
     char *pos = strchr(line, '=');
     if (pos == NULL) {
       TSError("[url_sig] Error parsing line %d of file %s (%s).", line_no, config_file, line);
@@ -130,8 +133,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     }
     *pos        = '\0';
     char *value = pos + 1;
-    while (isspace(*value)) // remove whitespace
+    while (isspace(*value)) { // remove whitespace
       value++;
+    }
     pos = strchr(value, '\n'); // remove the new line, terminate the string
     if (pos != NULL) {
       *pos = '\0';
@@ -167,12 +171,14 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         cfg->err_status = atoi(value);
       }
       value += 3;
-      while (isspace(*value))
+      while (isspace(*value)) {
         value++;
-      if (cfg->err_status == TS_HTTP_STATUS_MOVED_TEMPORARILY)
+      }
+      if (cfg->err_status == TS_HTTP_STATUS_MOVED_TEMPORARILY) {
         cfg->err_url = TSstrndup(value, strlen(value));
-      else
+      } else {
         cfg->err_url = NULL;
+      }
     } else if (strncmp(line, "excl_regex", 10) == 0) {
       // compile and study regex
       const char *errptr;
@@ -275,15 +281,17 @@ getAppQueryString(char *query_string, int query_length)
       done = 1;
       if (*(p - 1) == '&') {
         *(p - 1) = '\0';
-      } else
+      } else {
         (*p = '\0');
+      }
       break;
     default:
       p = strchr(p, '&');
-      if (p == NULL)
+      if (p == NULL) {
         done = 1;
-      else
+      } else {
         p++;
+      }
       break;
     }
   } while (!done);
@@ -482,8 +490,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       strcpy(signed_part + strlen(signed_part), "/");
     }
     if (parts[j + 1] == '0' ||
-        parts[j + 1] == '1') // This remembers the last part, meaning, if there are no more valid letters in parts
-      j++;                   // will keep repeating the value of the last one
+        parts[j + 1] == '1') { // This remembers the last part, meaning, if there are no more valid letters in parts
+      j++;                     // will keep repeating the value of the last one
+    }
     part = strtok_r(NULL, "/", &p);
   }
 

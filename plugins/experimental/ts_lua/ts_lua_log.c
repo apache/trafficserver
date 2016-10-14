@@ -106,8 +106,9 @@ ts_lua_inject_log_object_destroy_api(lua_State *L)
 static int
 ts_lua_log_object_destroy(lua_State *L ATS_UNUSED)
 {
-  if (TSTextLogObjectDestroy(log) != TS_SUCCESS)
+  if (TSTextLogObjectDestroy(log) != TS_SUCCESS) {
     TSError("[ts_lua][%s] TSTextLogObjectDestroy error!", __FUNCTION__);
+  }
 
   return 0;
 }

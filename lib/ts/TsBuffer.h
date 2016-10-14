@@ -224,7 +224,7 @@ struct ConstBuffer {
 
   /** Find a character.
       @return A pointer to the first occurrence of @a c in @a this
-      or @c NULL if @a c is not found.
+      or @c nullptr if @a c is not found.
   */
   char const *find(char c) const;
 
@@ -287,7 +287,7 @@ struct ConstBuffer {
 // ----------------------------------------------------------
 // Inline implementations.
 
-inline Buffer::Buffer() : _ptr(NULL), _size(0)
+inline Buffer::Buffer() : _ptr(nullptr), _size(0)
 {
 }
 inline Buffer::Buffer(char *ptr, size_t n) : _ptr(ptr), _size(n)
@@ -359,7 +359,7 @@ Buffer::size() const
   return _size;
 }
 
-inline ConstBuffer::ConstBuffer() : _ptr(NULL), _size(0)
+inline ConstBuffer::ConstBuffer() : _ptr(nullptr), _size(0)
 {
 }
 inline ConstBuffer::ConstBuffer(char const *ptr, size_t n) : _ptr(ptr), _size(n)

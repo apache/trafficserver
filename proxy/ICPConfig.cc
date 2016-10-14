@@ -137,7 +137,7 @@ int
 AtomicLock::Lock()
 {
   EThread *et = this_ethread();
-  ink_assert(et != NULL);
+  ink_assert(et != nullptr);
   return MUTEX_TAKE_TRY_LOCK(_mutex, et);
 }
 
@@ -145,7 +145,7 @@ int
 AtomicLock::HaveLock()
 {
   EThread *et = this_ethread();
-  ink_assert(et != NULL);
+  ink_assert(et != nullptr);
   return (_mutex->thread_holding == et);
 }
 
@@ -153,7 +153,7 @@ void
 AtomicLock::Unlock()
 {
   EThread *et = this_ethread();
-  ink_assert(et != NULL);
+  ink_assert(et != nullptr);
   MUTEX_UNTAKE_LOCK(_mutex, et);
 }
 
@@ -320,18 +320,18 @@ int
 PeerConfigData::GetHostIPByName(char *hostname, IpAddr &rip)
 {
   // Short circuit NULL hostname case
-  if (0 == hostname || 0 == *hostname) {
+  if (nullptr == hostname || 0 == *hostname) {
     return 1; // Unable to map to IP address
   }
 
   addrinfo hints;
   addrinfo *ai;
-  sockaddr const *best = 0;
+  sockaddr const *best = nullptr;
 
   ink_zero(hints);
   hints.ai_family = AF_UNSPEC;
   hints.ai_flags  = AI_ADDRCONFIG;
-  if (0 == getaddrinfo(hostname, 0, &hints, &ai)) {
+  if (0 == getaddrinfo(hostname, nullptr, &hints, &ai)) {
     for (addrinfo *spot = ai; spot; spot = spot->ai_next) {
       // If current address is valid, and either we don't have one yet
       // or this address is less than our current, set it as current.
@@ -573,7 +573,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   //
   // Build pathname to "icp.config" and open file
   //
-  ink_release_assert(filename != NULL);
+  ink_release_assert(filename != nullptr);
 
   ats_scoped_str config_path(Layout::get()->relative_to(Layout::get()->sysconfdir, filename));
   int fd = open(config_path, O_RDONLY);
@@ -640,7 +640,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     if ('\n' == *last) {
       --last; // back over trailing LF.
     }
-    if (NULL == strchr(" ;:|,", *last)) {
+    if (nullptr == strchr(" ;:|,", *last)) {
       RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, invalid separator [value %d]", *last);
       error = 1;
       break;
@@ -649,7 +649,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
 
     n_colons = 0;
     p        = cur;
-    while (0 != (p = next_field(p, fs))) {
+    while (nullptr != (p = next_field(p, fs))) {
       ++p;
       ++n_colons;
     }
@@ -821,7 +821,14 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
 // Class Peer member functions (abstract base class)
 //-------------------------------------------------------
 Peer::Peer(PeerType_t t, ICPProcessor *icpPr, bool dynamic_peer)
-  : buf(NULL), notFirstRead(0), readAction(NULL), writeAction(NULL), _type(t), _next(0), _ICPpr(icpPr), _state(PEER_UP)
+  : buf(nullptr),
+    notFirstRead(0),
+    readAction(nullptr),
+    writeAction(nullptr),
+    _type(t),
+    _next(nullptr),
+    _ICPpr(icpPr),
+    _state(PEER_UP)
 {
   notFirstRead = 0;
   if (dynamic_peer) {
@@ -1045,7 +1052,7 @@ MultiCastPeer::SendMsg_re(Continuation *cont, void *token, struct msghdr *msg, s
     // Send to MultiCast group member (UniCast)
     Peer *p = FindMultiCastChild(IpAddr(to), ats_ip_port_host_order(to));
     ink_assert(p);
-    a = ((ParentSiblingPeer *)p)->SendMsg_re(cont, token, msg, 0);
+    a = ((ParentSiblingPeer *)p)->SendMsg_re(cont, token, msg, nullptr);
   } else {
     // Send to MultiCast group
     msg->msg_name    = (caddr_t)&_send_chan.addr;
@@ -1174,7 +1181,7 @@ MultiCastPeer::FindMultiCastChild(IpAddr const &addr, uint16_t port)
       curP = curP->GetNext();
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //-------------------------------------------------------------------------
@@ -1182,14 +1189,14 @@ MultiCastPeer::FindMultiCastChild(IpAddr const &addr, uint16_t port)
 //      Look for TS ICP configuration changes by periodically looking.
 //-------------------------------------------------------------------------
 typedef int (ICPPeriodicCont::*ICPPeriodicContHandler)(int, void *);
-PeriodicCont::PeriodicCont(ICPProcessor *icpP) : Continuation(0), _ICPpr(icpP)
+PeriodicCont::PeriodicCont(ICPProcessor *icpP) : Continuation(nullptr), _ICPpr(icpP)
 {
   mutex = new_ProxyMutex();
 }
 
 PeriodicCont::~PeriodicCont()
 {
-  mutex = 0;
+  mutex = nullptr;
 }
 
 //-----------------------------------------

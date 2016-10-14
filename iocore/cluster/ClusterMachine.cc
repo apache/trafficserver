@@ -33,8 +33,8 @@
 #include "ts/I_Layout.h"
 extern int num_of_cluster_threads;
 
-MachineList *machines_config = NULL;
-MachineList *cluster_config  = NULL;
+MachineList *machines_config = nullptr;
+MachineList *cluster_config  = nullptr;
 
 ProxyMutex *the_cluster_config_mutex;
 
@@ -76,7 +76,7 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
     rr_count(0),
     msg_proto_major(0),
     msg_proto_minor(0),
-    clusterHandlers(0)
+    clusterHandlers(nullptr)
 {
   ProxyMutex *mutex = this_ethread()->mutex.get();
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_MACHINES_ALLOCATED_STAT);
@@ -128,7 +128,7 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
     ink_gethostbyaddr_r_data data;
     struct hostent *r = ink_gethostbyaddr_r((char *)&ip, sizeof(int), AF_INET, &data);
 
-    if (r == NULL) {
+    if (r == nullptr) {
       Alias32 x;
       memcpy(&x.u32, &ip, sizeof(x.u32));
       Debug("machine_debug", "unable to reverse DNS %u.%u.%u.%u: %d", x.byte[0], x.byte[1], x.byte[2], x.byte[3], data.herrno);
@@ -181,7 +181,7 @@ struct MachineTimeoutContinuation : public Continuation {
     return EVENT_DONE;
   }
 
-  MachineTimeoutContinuation(ClusterMachine *am) : Continuation(NULL), m(am)
+  MachineTimeoutContinuation(ClusterMachine *am) : Continuation(nullptr), m(am)
   {
     SET_HANDLER((McTimeoutContHandler)&MachineTimeoutContinuation::dieEvent);
   }
@@ -210,7 +210,7 @@ read_MachineList(const char *filename, int afd)
   int n = -1, i = 0, ln = 0;
   ats_scoped_obj<MachineList> l;
   ink_assert(filename || (afd != -1));
-  ats_scoped_str path(RecConfigReadConfigPath(NULL, filename));
+  ats_scoped_str path(RecConfigReadConfigPath(nullptr, filename));
   ats_scoped_fd sfd;
 
   int fd = ((afd != -1) ? afd : sfd = open(path, O_RDONLY));
@@ -225,7 +225,7 @@ read_MachineList(const char *filename, int afd)
           l    = (MachineList *)operator new(sizeof(MachineList) + (n - 1) * sizeof(MachineListElement));
           l->n = 0;
         } else {
-          l = NULL;
+          l = nullptr;
         }
         continue;
       }
@@ -238,7 +238,7 @@ read_MachineList(const char *filename, int afd)
         if (-1 == (int)l->machine[i].ip) {
           if (afd == -1) {
             Warning("read machine list failure, bad ip, line %d", ln);
-            return NULL;
+            return nullptr;
           } else {
             char s[256];
             snprintf(s, sizeof s, "bad ip, line %d", ln);
@@ -254,7 +254,7 @@ read_MachineList(const char *filename, int afd)
       Lfail:
         if (afd == -1) {
           Warning("read machine list failure, bad port, line %d", ln);
-          return NULL;
+          return nullptr;
         } else {
           char s[256];
           snprintf(s, sizeof s, "bad port, line %d", ln);
@@ -264,21 +264,21 @@ read_MachineList(const char *filename, int afd)
     }
   } else {
     Warning("read machine list failure, open failed");
-    return NULL;
+    return nullptr;
   }
 
   if (n >= 0) {
     if (i != n) {
       if (afd == -1) {
         Warning("read machine list failure, length mismatch");
-        return NULL;
+        return nullptr;
       } else
         return (MachineList *)ats_strdup("number of machines does not match length of list\n");
     }
   }
 
   if (afd != -1) {
-    return (MachineList *)NULL;
+    return (MachineList *)nullptr;
   }
 
   return l.release();

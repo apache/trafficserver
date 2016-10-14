@@ -186,7 +186,7 @@ public:
   bool
   is_open()
   {
-    return (m_fp != NULL);
+    return (m_fp != nullptr);
   }
   off_t
   get_size_bytes() const

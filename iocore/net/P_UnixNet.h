@@ -402,7 +402,7 @@ read_disable(NetHandler *nh, UnixNetVConnection *vc)
   if (vc->inactivity_timeout) {
     if (!vc->write.enabled) {
       vc->inactivity_timeout->cancel_action();
-      vc->inactivity_timeout = NULL;
+      vc->inactivity_timeout = nullptr;
     }
   }
 #else
@@ -423,7 +423,7 @@ write_disable(NetHandler *nh, UnixNetVConnection *vc)
   if (vc->inactivity_timeout) {
     if (!vc->read.enabled) {
       vc->inactivity_timeout->cancel_action();
-      vc->inactivity_timeout = NULL;
+      vc->inactivity_timeout = nullptr;
     }
   }
 #else
@@ -505,7 +505,7 @@ EventIO::start(EventLoop l, int afd, Continuation *c, int e)
     EV_SET(&ev[n++], fd, EVFILT_READ, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   if (e & EVENTIO_WRITE)
     EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
-  return kevent(l->kqueue_fd, &ev[0], n, NULL, 0, NULL);
+  return kevent(l->kqueue_fd, &ev[0], n, nullptr, 0, nullptr);
 #endif
 #if TS_USE_PORT
   events     = e;
@@ -557,7 +557,7 @@ EventIO::modify(int e)
   }
   events = ee;
   if (n)
-    return kevent(event_loop->kqueue_fd, &ev[0], n, NULL, 0, NULL);
+    return kevent(event_loop->kqueue_fd, &ev[0], n, nullptr, 0, nullptr);
   else
     return 0;
 #endif
@@ -608,7 +608,7 @@ EventIO::refresh(int e)
   if (e & EVENTIO_WRITE)
     EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   if (n)
-    return kevent(event_loop->kqueue_fd, &ev[0], n, NULL, 0, NULL);
+    return kevent(event_loop->kqueue_fd, &ev[0], n, nullptr, 0, nullptr);
   else
     return 0;
 #endif
@@ -652,7 +652,7 @@ EventIO::stop()
     Debug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval < 0 ? strerror(errno) : "ok",
           event_loop->port_fd, PORT_SOURCE_FD, fd);
 #endif
-    event_loop = NULL;
+    event_loop = nullptr;
     return retval;
   }
   return 0;

@@ -37,7 +37,7 @@ REGRESSION_TEST(Ptr_detach)(RegressionTest *t, int /* atype ATS_UNUSED */, int *
   Ptr<PtrObject> p1 = make_ptr(new PtrObject(&alive));
   PtrObject *p2     = p1.detach();
 
-  box.check(p1.get() == NULL, "Ptr<T>::detach NULLs the stored pointer");
+  box.check(p1.get() == nullptr, "Ptr<T>::detach NULLs the stored pointer");
   box.check(p2->refcount() == 1, "Ptr<T>::detach preserves the refcount");
 
   // Note that there's no symmetric reattach.
@@ -55,12 +55,12 @@ REGRESSION_TEST(Ptr_clear)(RegressionTest *t, int /* atype ATS_UNUSED */, int *p
   Ptr<PtrObject> p1 = make_ptr(new PtrObject(&alive));
   box.check(alive == 1, "we have a live object");
   p1.clear();
-  box.check(p1.get() == NULL, "Ptr<T>::clear NULLs the pointer");
+  box.check(p1.get() == nullptr, "Ptr<T>::clear NULLs the pointer");
   box.check(alive == 0, "Ptr<T>::clear drops the refcount");
 
   p1 = make_ptr(new PtrObject(&alive));
   box.check(alive == 1, "we have a live object");
-  p1 = 0;
+  p1 = nullptr;
   box.check(alive == 0, "assigning NULL drops the refcount");
 }
 

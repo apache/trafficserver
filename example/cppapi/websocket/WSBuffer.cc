@@ -160,7 +160,7 @@ WSBuffer::ws_digest(std::string const &key)
   EVP_MD_CTX digest;
   EVP_MD_CTX_init(&digest);
 
-  if (!EVP_DigestInit_ex(&digest, EVP_sha1(), NULL)) {
+  if (!EVP_DigestInit_ex(&digest, EVP_sha1(), nullptr)) {
     EVP_MD_CTX_cleanup(&digest);
     return "init-failed";
   }

@@ -41,14 +41,14 @@ TSCont gNocacheCont;
 // Note that all options for all policies has to go here. Not particularly pretty...
 //
 static const struct option longopt[] = {
-  {const_cast<char *>("policy"), required_argument, NULL, 'p'},
+  {const_cast<char *>("policy"), required_argument, nullptr, 'p'},
   // This is for both Chance and LRU (optional) policy
-  {const_cast<char *>("sample"), required_argument, NULL, 's'},
+  {const_cast<char *>("sample"), required_argument, nullptr, 's'},
   // For the LRU policy
-  {const_cast<char *>("buckets"), required_argument, NULL, 'b'},
-  {const_cast<char *>("hits"), required_argument, NULL, 'h'},
+  {const_cast<char *>("buckets"), required_argument, nullptr, 'b'},
+  {const_cast<char *>("hits"), required_argument, nullptr, 'h'},
   // EOF
-  {NULL, no_argument, NULL, '\0'},
+  {nullptr, no_argument, nullptr, '\0'},
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -61,13 +61,13 @@ public:
   {
     // This doesn't have to be perfect, since this is just chance sampling.
     // coverity[dont_call]
-    srand48((long)time(NULL));
+    srand48((long)time(nullptr));
   }
 
   void
   setSample(char *s)
   {
-    _sample = strtof(s, NULL) / 100.0;
+    _sample = strtof(s, nullptr) / 100.0;
   }
 
   float
@@ -213,7 +213,7 @@ public:
   {
     switch (opt) {
     case 'b':
-      _buckets = static_cast<unsigned>(strtol(optarg, NULL, 10));
+      _buckets = static_cast<unsigned>(strtol(optarg, nullptr, 10));
       if (_buckets < MINIMUM_BUCKET_SIZE) {
         TSError("%s: Enforcing minimum LRU bucket size of %d", PLUGIN_NAME, MINIMUM_BUCKET_SIZE);
         TSDebug(PLUGIN_NAME, "Enforcing minimum bucket size of %d", MINIMUM_BUCKET_SIZE);
@@ -221,7 +221,7 @@ public:
       }
       break;
     case 'h':
-      _hits = static_cast<unsigned>(strtol(optarg, NULL, 10));
+      _hits = static_cast<unsigned>(strtol(optarg, nullptr, 10));
       break;
     default:
       // All other options are unsupported for this policy
@@ -230,7 +230,7 @@ public:
 
     // This doesn't have to be perfect, since this is just chance sampling.
     // coverity[dont_call]
-    srand48((long)time(NULL) ^ (long)getpid() ^ (long)getppid());
+    srand48((long)time(nullptr) ^ (long)getpid() ^ (long)getppid());
 
     return true;
   }
@@ -240,7 +240,7 @@ public:
   {
     LRUHash hash;
     LRUMap::iterator map_it;
-    char *url   = NULL;
+    char *url   = nullptr;
     int url_len = 0;
     bool ret    = false;
     TSMBuffer request;
@@ -339,7 +339,7 @@ private:
 class PromotionConfig
 {
 public:
-  PromotionConfig() : _policy(NULL) {}
+  PromotionConfig() : _policy(nullptr) {}
   ~PromotionConfig() { delete _policy; }
   PromotionPolicy *
   getPolicy() const
@@ -352,7 +352,7 @@ public:
   factory(int argc, char *argv[])
   {
     while (true) {
-      int opt = getopt_long(argc, (char *const *)argv, "psbh", longopt, NULL);
+      int opt = getopt_long(argc, (char *const *)argv, "psbh", longopt, nullptr);
 
       if (opt == -1) {
         break;
@@ -377,7 +377,7 @@ public:
             if (!_policy->parseOption(opt, optarg)) {
               TSError("[%s] The specified policy (%s) does not support the -%c option", PLUGIN_NAME, _policy->policyName(), opt);
               delete _policy;
-              _policy = NULL;
+              _policy = nullptr;
               return false;
             }
           }
@@ -479,7 +479,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  gNocacheCont = TSContCreate(cont_nocache_response, NULL);
+  gNocacheCont = TSContCreate(cont_nocache_response, nullptr);
 
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
   return TS_SUCCESS; /* success */
@@ -493,7 +493,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
   --argc;
   ++argv;
   if (config->factory(argc, argv)) {
-    TSCont contp = TSContCreate(cont_handle_policy, NULL);
+    TSCont contp = TSContCreate(cont_handle_policy, nullptr);
 
     TSContDataSet(contp, static_cast<void *>(config));
     *ih = static_cast<void *>(contp);
@@ -521,7 +521,7 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* ATS_UNUSED rri */)
 {
-  if (NULL == ih) {
+  if (nullptr == ih) {
     TSDebug(PLUGIN_NAME, "No promotion rules configured, this is probably a plugin bug");
   } else {
     TSCont contp = static_cast<TSCont>(ih);

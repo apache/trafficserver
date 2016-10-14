@@ -37,7 +37,7 @@ typedef ControlMatcher<ParentRecord, ParentResult> P_table;
 
 // Global Vars for Parent Selection
 static const char modulePrefix[]                             = "[ParentSelection]";
-static ConfigUpdateHandler<ParentConfig> *parentConfigUpdate = NULL;
+static ConfigUpdateHandler<ParentConfig> *parentConfigUpdate = nullptr;
 
 // Config var names
 static const char *file_var      = "proxy.config.http.parent_proxy.file";
@@ -79,9 +79,9 @@ ParentSelectionPolicy::ParentSelectionPolicy()
   FailThreshold = fail_threshold;
 }
 
-ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_parent_table), DefaultParent(NULL), policy()
+ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_parent_table), DefaultParent(nullptr), policy()
 {
-  char *default_val = NULL;
+  char *default_val = nullptr;
 
   // Handle default parent
   REC_ReadConfigStringAlloc(default_val, default_var);
@@ -92,7 +92,7 @@ ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_p
 bool
 ParentConfigParams::apiParentExists(HttpRequestData *rdata)
 {
-  return (rdata->api_info && rdata->api_info->parent_proxy_name != NULL && rdata->api_info->parent_proxy_port > 0);
+  return (rdata->api_info && rdata->api_info->parent_proxy_name != nullptr && rdata->api_info->parent_proxy_port > 0);
 }
 
 void
@@ -130,11 +130,11 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
   tablePtr->Match(rdata, result);
   rec = result->rec;
 
-  if (rec == NULL) {
+  if (rec == nullptr) {
     // No parents were found
     //
     // If there is a default parent, use it
-    if (defaultPtr != NULL) {
+    if (defaultPtr != nullptr) {
       rec = result->rec = defaultPtr;
     } else {
       result->result = PARENT_DIRECT;
@@ -265,13 +265,13 @@ ParentConfig::startup()
 void
 ParentConfig::reconfigure()
 {
-  ParentConfigParams *params = NULL;
+  ParentConfigParams *params = nullptr;
 
   // Allocate parent table
   P_table *pTable = new P_table(file_var, modulePrefix, &http_dest_tags);
 
   params = new ParentConfigParams(pTable);
-  ink_assert(params != NULL);
+  ink_assert(params != nullptr);
 
   m_id = configProcessor.set(m_id, params);
 
@@ -291,7 +291,7 @@ ParentConfig::print()
 
   printf("Parent Selection Config\n");
   printf("\tEnabled %d\tRetryTime %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime);
-  if (params->DefaultParent == NULL) {
+  if (params->DefaultParent == nullptr) {
     printf("\tNo Default Parent\n");
   } else {
     printf("\tDefault Parent:\n");
@@ -308,7 +308,7 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
   Tokenizer pTok(", \t\r");
   int numTok = 0, c;
 
-  if (val == NULL) {
+  if (val == nullptr) {
     Warning("UnavailableServerResponseCodes - unavailable_server_retry_responses is null loading default 503 code.");
     codes.push_back(HTTP_STATUS_SERVICE_UNAVAILABLE);
     return;
@@ -346,16 +346,16 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
 {
   Tokenizer pTok(",; \t\r");
   int numTok          = 0;
-  const char *current = NULL;
+  const char *current = nullptr;
   int port            = 0;
-  char *tmp = NULL, *tmp2 = NULL;
-  const char *errPtr = NULL;
+  char *tmp = nullptr, *tmp2 = nullptr;
+  const char *errPtr = nullptr;
   float weight       = 1.0;
 
-  if (parents != NULL && isPrimary == true) {
+  if (parents != nullptr && isPrimary == true) {
     return "Can not specify more than one set of parents";
   }
-  if (secondary_parents != NULL && isPrimary == false) {
+  if (secondary_parents != nullptr && isPrimary == false) {
     return "Can not specify more than one set of secondary parents";
   }
 
@@ -379,7 +379,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
     // Find the parent port
     tmp = (char *)strchr(current, ':');
 
-    if (tmp == NULL) {
+    if (tmp == nullptr) {
       errPtr = "No parent port specified";
       goto MERROR;
     }
@@ -459,11 +459,11 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
     num_secondary_parents = numTok;
   }
 
-  return NULL;
+  return nullptr;
 
 MERROR:
   ats_free(parents);
-  parents = NULL;
+  parents = nullptr;
 
   return errPtr;
 }
@@ -487,11 +487,11 @@ ParentRecord::DefaultInit(char *val)
 
   this->go_direct       = true;
   this->ignore_query    = false;
-  this->scheme          = NULL;
+  this->scheme          = nullptr;
   this->parent_is_proxy = true;
   errPtr                = ProcessParents(val, true);
 
-  if (errPtr != NULL) {
+  if (errPtr != nullptr) {
     errBuf = (char *)ats_malloc(1024);
     snprintf(errBuf, 1024, "%s %s for default parent proxy", modulePrefix, errPtr);
     SignalError(errBuf, alarmAlready);
@@ -514,7 +514,7 @@ ParentRecord::DefaultInit(char *val)
 config_parse_error
 ParentRecord::Init(matcher_line *line_info)
 {
-  const char *errPtr = NULL;
+  const char *errPtr = nullptr;
   const char *tmp;
   char *label;
   char *val;
@@ -523,14 +523,14 @@ ParentRecord::Init(matcher_line *line_info)
   char buf[128];
 
   this->line_num = line_info->line_num;
-  this->scheme   = NULL;
+  this->scheme   = nullptr;
 
   for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
     used  = false;
     label = line_info->line[0][i];
     val   = line_info->line[1][i];
 
-    if (label == NULL) {
+    if (label == nullptr) {
       continue;
     }
 
@@ -593,7 +593,7 @@ ParentRecord::Init(matcher_line *line_info)
         errPtr = "invalid argument to parent_retry directive.";
       }
       used = true;
-    } else if (strcasecmp(label, "unavailable_server_retry_responses") == 0 && unavailable_server_retry_responses == NULL) {
+    } else if (strcasecmp(label, "unavailable_server_retry_responses") == 0 && unavailable_server_retry_responses == nullptr) {
       unavailable_server_retry_responses = new UnavailableServerResponseCodes(val);
       used                               = true;
     } else if (strcasecmp(label, "max_simple_retries") == 0) {
@@ -618,13 +618,13 @@ ParentRecord::Init(matcher_line *line_info)
       }
     }
     // Report errors generated by ProcessParents();
-    if (errPtr != NULL) {
+    if (errPtr != nullptr) {
       return config_parse_error("%s %s at line %d", modulePrefix, errPtr, line_num);
     }
 
     if (used == true) {
       // Consume the label/value pair we used
-      line_info->line[0][i] = NULL;
+      line_info->line[0][i] = nullptr;
       line_info->num_el--;
     }
   }
@@ -634,39 +634,39 @@ ParentRecord::Init(matcher_line *line_info)
     if (parent_retry > 0) {
       Warning("%s disabling parent_retry on line %d because parent_is_proxy is true", modulePrefix, line_num);
       parent_retry = PARENT_RETRY_NONE;
-      if (unavailable_server_retry_responses != NULL) {
+      if (unavailable_server_retry_responses != nullptr) {
         delete unavailable_server_retry_responses;
-        unavailable_server_retry_responses = NULL;
+        unavailable_server_retry_responses = nullptr;
       }
     }
   } else {
     // delete unavailable_server_retry_responses if unavailable_server_retry is not enabled.
-    if (unavailable_server_retry_responses != NULL && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+    if (unavailable_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
       Warning("%s ignoring unavailable_server_retry_responses directive on line %d, as unavailable_server_retry is not enabled.",
               modulePrefix, line_num);
       delete unavailable_server_retry_responses;
-      unavailable_server_retry_responses = NULL;
-    } else if (unavailable_server_retry_responses == NULL && (parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+      unavailable_server_retry_responses = nullptr;
+    } else if (unavailable_server_retry_responses == nullptr && (parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
       // initialize UnavailableServerResponseCodes to the default value if unavailable_server_retry is enabled.
       Warning("%s initializing UnavailableServerResponseCodes on line %d to 503 default.", modulePrefix, line_num);
-      unavailable_server_retry_responses = new UnavailableServerResponseCodes(NULL);
+      unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
     }
   }
 
-  if (this->parents == NULL && go_direct == false) {
+  if (this->parents == nullptr && go_direct == false) {
     return config_parse_error("%s No parent specified in parent.config at line %d", modulePrefix, line_num);
   }
   // Process any modifiers to the directive, if they exist
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
 
-    if (tmp != NULL) {
+    if (tmp != nullptr) {
       return config_parse_error("%s %s at line %d in parent.config", modulePrefix, tmp, line_num);
     }
     // record SCHEME modifier if present.
     // NULL if not present
     this->scheme = this->getSchemeModText();
-    if (this->scheme != NULL) {
+    if (this->scheme != nullptr) {
       // update parent entries' schemes
       for (int j = 0; j < num_parents; j++) {
         this->parents[j].scheme = this->scheme;
@@ -746,8 +746,8 @@ createDefaultParent(char *val)
 {
   ParentRecord *newRec;
 
-  if (val == NULL || *val == '\0') {
-    return NULL;
+  if (val == nullptr || *val == '\0') {
+    return nullptr;
   }
 
   newRec = new ParentRecord;
@@ -755,7 +755,7 @@ createDefaultParent(char *val)
     return newRec;
   } else {
     delete newRec;
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -806,17 +806,17 @@ setup_socks_servers(ParentRecord *rec_arr, int len)
 void
 SocksServerConfig::reconfigure()
 {
-  char *default_val = NULL;
+  char *default_val = nullptr;
   int retry_time    = 30;
   int fail_threshold;
 
-  ParentConfigParams *params = NULL;
+  ParentConfigParams *params = nullptr;
 
   // Allocate parent table
   P_table *pTable = new P_table("proxy.config.socks.socks_config_file", "[Socks Server Selection]", &socks_server_tags);
 
   params = new ParentConfigParams(pTable);
-  ink_assert(params != NULL);
+  ink_assert(params != nullptr);
 
   // Handle default parent
   REC_ReadConfigStringAlloc(default_val, "proxy.config.socks.default_servers");
@@ -856,7 +856,7 @@ SocksServerConfig::print()
 
   printf("Parent Selection Config for Socks Server\n");
   printf("\tEnabled %d\tRetryTime %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime);
-  if (params->DefaultParent == NULL) {
+  if (params->DefaultParent == nullptr) {
     printf("\tNo Default Parent\n");
   } else {
     printf("\tDefault Parent:\n");
@@ -902,13 +902,13 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // first, set everything up
   *pstatus = REGRESSION_TEST_INPROGRESS;
   ParentConfig config;
-  P_table *ParentTable       = NULL;
-  ParentConfigParams *params = NULL;
+  P_table *ParentTable       = nullptr;
+  ParentConfigParams *params = nullptr;
   passes = fails = 0;
   config.startup();
   char tbl[2048];
-  HttpRequestData *request = NULL;
-  ParentResult *result     = NULL;
+  HttpRequestData *request = nullptr;
+  ParentResult *result     = nullptr;
 
 #define T(x)                          \
   do {                                \
@@ -1200,7 +1200,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     REINIT;
     br(request, "i.am.rabbit.net");
     FP;
-    RE(verify(result, PARENT_DIRECT, 0, 0), i);
+    RE(verify(result, PARENT_DIRECT, nullptr, 0), i);
   }
 
   // sleep(5); // parents should come back up; they don't
@@ -1283,7 +1283,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_FAIL, NULL, 80), 177);
+  RE(verify(result, PARENT_FAIL, nullptr, 80), 177);
 
   // Test 178
   tbl[0] = '\0';
@@ -1335,7 +1335,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.rabbit.net");
   FP;
   sleep(1);
-  RE(verify(result, PARENT_FAIL, NULL, 80), 182);
+  RE(verify(result, PARENT_FAIL, nullptr, 80), 182);
 
   // wait long enough so that fuzzy is retryable.
   sleep(params->policy.ParentRetryTime - 1);
@@ -1373,7 +1373,7 @@ br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip)
   h->hdr = new HTTPHdr();
   h->hdr->create(HTTP_TYPE_REQUEST);
   h->hostname_str = (char *)ats_strdup(os_hostname);
-  h->xact_start   = time(NULL);
+  h->xact_start   = time(nullptr);
   ink_zero(h->src_ip);
   ink_zero(h->dest_ip);
   ats_ip_copy(&h->dest_ip.sa, dest_ip);

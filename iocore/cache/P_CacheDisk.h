@@ -58,7 +58,7 @@ struct DiskVolBlockQueue {
   int new_block; /* whether an existing vol or a new one */
   LINK(DiskVolBlockQueue, link);
 
-  DiskVolBlockQueue() : b(NULL), new_block(0) {}
+  DiskVolBlockQueue() : b(nullptr), new_block(0) {}
 };
 
 struct DiskVol {
@@ -105,8 +105,8 @@ struct CacheDisk : public Continuation {
 
   CacheDisk()
     : Continuation(new_ProxyMutex()),
-      header(NULL),
-      path(NULL),
+      header(nullptr),
+      path(nullptr),
       header_len(0),
       len(0),
       start(0),
@@ -115,8 +115,8 @@ struct CacheDisk : public Continuation {
       fd(-1),
       free_space(0),
       wasted_space(0),
-      disk_vols(NULL),
-      free_blocks(NULL),
+      disk_vols(nullptr),
+      free_blocks(nullptr),
       num_errors(0),
       cleared(0),
       read_only_p(false),

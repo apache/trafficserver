@@ -233,7 +233,7 @@ public:
     return *this;
   }
   /// Remove the first element of the list.
-  /// @return A poiner to the removed item, or @c NULL if the list was empty.
+  /// @return A poiner to the removed item, or @c nullptr if the list was empty.
   T *
   takeHead()
   {
@@ -252,7 +252,7 @@ public:
     return zret;
   }
   /// Remove the last element of the list.
-  /// @return A poiner to the removed item, or @c NULL if the list was empty.
+  /// @return A poiner to the removed item, or @c nullptr if the list was empty.
   T *
   takeTail()
   {

@@ -173,13 +173,13 @@ REGRESSION_TEST(Http2DependencyTree_4)(RegressionTest *t, int /* atype ATS_UNUSE
 
   Tree::Node *node_a = tree->find(1);
 
-  box.check(tree->top() == NULL, "top should be NULL");
+  box.check(tree->top() == nullptr, "top should be NULL");
 
   tree->activate(node_a);
   box.check(tree->top() == node_a, "top should be A");
 
   tree->deactivate(node_a, 0);
-  box.check(tree->top() == NULL, "top should be NULL");
+  box.check(tree->top() == nullptr, "top should be NULL");
 
   delete tree;
 }
@@ -207,7 +207,7 @@ REGRESSION_TEST(Http2DependencyTree_5)(RegressionTest *t, int /* atype ATS_UNUSE
   Tree::Node *node_a = tree->find(3);
   Tree::Node *node_b = tree->find(5);
 
-  box.check(tree->top() == NULL, "top should be NULL");
+  box.check(tree->top() == nullptr, "top should be NULL");
 
   tree->activate(node_a);
   tree->activate(node_b);
@@ -361,7 +361,7 @@ REGRESSION_TEST(Http2DependencyTree_Chrome_51)(RegressionTest *t, int /* atype A
 
   for (int i = 0; i < 9; ++i) {
     Tree::Node *node = tree->top();
-    if (node != NULL) {
+    if (node != nullptr) {
       oss << node->t->c_str();
 
       tree->deactivate(node, 16384);
@@ -377,7 +377,7 @@ REGRESSION_TEST(Http2DependencyTree_Chrome_51)(RegressionTest *t, int /* atype A
 
   for (int i = 0; i < 9; ++i) {
     Tree::Node *node = tree->top();
-    if (node != NULL) {
+    if (node != nullptr) {
       oss << node->t->c_str();
 
       tree->deactivate(node, 16384);
@@ -421,28 +421,28 @@ REGRESSION_TEST(Http2DependencyTree_remove_1)(RegressionTest *t, int /* atype AT
   tree->activate(node_b);
   tree->activate(node_c);
 
-  Tree::Node *top_node = NULL;
+  Tree::Node *top_node = nullptr;
 
   // Deactivate A and try to remove
   top_node = tree->top();
   box.check(top_node == node_a, "Top node should be node_a");
   tree->deactivate(node_a, 16);
   tree->remove(node_a);
-  box.check(tree->find(3) == NULL, "Node A should be removed");
+  box.check(tree->find(3) == nullptr, "Node A should be removed");
 
   // Deactivate B and try to remove
   top_node = tree->top();
   box.check(top_node == node_b, "Top node should be node_b");
   tree->deactivate(node_b, 16);
   tree->remove(node_b);
-  box.check(tree->find(5) == NULL, "Node B should be removed");
+  box.check(tree->find(5) == nullptr, "Node B should be removed");
 
   // Deactivate C and try to remove
   top_node = tree->top();
   box.check(top_node == node_c, "Top node should be node_c");
   tree->deactivate(node_c, 16);
   tree->remove(node_c);
-  box.check(tree->find(7) == NULL, "Node C should be removed");
+  box.check(tree->find(7) == nullptr, "Node C should be removed");
 
   delete tree;
 }
@@ -490,10 +490,10 @@ REGRESSION_TEST(Http2DependencyTree_remove_2)(RegressionTest *t, int /* atype AT
   tree->deactivate(node_b, 16384);
   tree->remove(node_b);
 
-  box.check(tree->top() == NULL, "Top node should be NULL");
-  box.check(tree->find(3) == NULL, "Tree should be empty");
-  box.check(tree->find(5) == NULL, "Tree should be empty");
-  box.check(tree->find(7) == NULL, "Tree should be empty");
+  box.check(tree->top() == nullptr, "Top node should be NULL");
+  box.check(tree->find(3) == nullptr, "Tree should be empty");
+  box.check(tree->find(5) == nullptr, "Tree should be empty");
+  box.check(tree->find(7) == nullptr, "Tree should be empty");
 
   delete tree;
 }

@@ -1265,12 +1265,12 @@ public:
     size_t m_distance; ///< How many values in the chain we've gone past to get here.
 
     /// Default constructor - empty location.
-    Location() : m_value(NULL), m_bucket(NULL), m_id(0), m_distance(0) {}
+    Location() : m_value(nullptr), m_bucket(NULL), m_id(0), m_distance(0) {}
     /// Check for location being valid (referencing a value).
     bool
     isValid() const
     {
-      return NULL != m_value;
+      return nullptr != m_value;
     }
 
     /// Automatically cast to a @c Value* for convenience.
@@ -1306,7 +1306,7 @@ public:
 
   /** Standard iterator for walking the table.
       This iterates over all elements.
-      @internal Iterator is @a end if @a m_value is @c NULL.
+      @internal Iterator is @a end if @a m_value is @c nullptr.
    */
   struct iterator {
     Value *m_value;   ///< Current location.
@@ -1486,8 +1486,8 @@ TSHashTable<H>::end()
 template <typename H> typename TSHashTable<H>::iterator &TSHashTable<H>::iterator::operator++()
 {
   if (m_value) {
-    if (NULL == (m_value = ListHead::next(m_value))) {        // end of bucket, next bucket.
-      if (NULL != (m_bucket = BucketChain::next(m_bucket))) { // found non-empty next bucket.
+    if (nullptr == (m_value = ListHead::next(m_value))) {        // end of bucket, next bucket.
+      if (nullptr != (m_bucket = BucketChain::next(m_bucket))) { // found non-empty next bucket.
         m_value = m_bucket->m_chain.head;
         ink_assert(m_value); // if bucket is in chain, must be non-empty.
       }

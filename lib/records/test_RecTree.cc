@@ -27,7 +27,7 @@
 int
 main(int argc, char **argv)
 {
-  RecTree *new_rec_tree = new RecTree(NULL);
+  RecTree *new_rec_tree = new RecTree(nullptr);
 
   new_rec_tree->rec_tree_insert("proxy.process.librecords.first_child");
   printf("\n");

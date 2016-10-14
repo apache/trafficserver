@@ -44,11 +44,11 @@ create_logger_path()
   ats_scoped_str fullpath;
 
   if (RecGetRecordString_Xmalloc("proxy.config.crash_log_helper", &name) != REC_ERR_OKAY) {
-    return NULL;
+    return nullptr;
   }
 
   // Take an absolute path as it is ...
-  if (name == NULL || *name == '/') {
+  if (name == nullptr || *name == '/') {
     return name;
   }
 

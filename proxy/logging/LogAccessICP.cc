@@ -44,7 +44,7 @@
 
 LogAccessICP::LogAccessICP(ICPlog *icp_log) : m_icp_log(icp_log)
 {
-  ink_assert(m_icp_log != NULL);
+  ink_assert(m_icp_log != nullptr);
 }
 
 /*-------------------------------------------------------------------------
@@ -101,7 +101,7 @@ LogAccessICP::marshal_client_auth_user_name(char *buf)
 int
 LogAccessICP::marshal_client_req_text(char *buf)
 {
-  int len = marshal_client_req_http_method(NULL) + marshal_client_req_url(NULL) + marshal_client_req_http_version(NULL);
+  int len = marshal_client_req_http_method(nullptr) + marshal_client_req_url(nullptr) + marshal_client_req_http_version(nullptr);
 
   if (buf) {
     int offset = 0;

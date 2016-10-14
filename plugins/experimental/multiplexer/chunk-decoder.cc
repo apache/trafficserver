@@ -45,7 +45,7 @@ ChunkDecoder::parseSizeCharacter(const char a)
 int
 ChunkDecoder::parseSize(const char *p, const int64_t s)
 {
-  assert(p != NULL);
+  assert(p != nullptr);
   assert(s > 0);
   int length = 0;
   while (state_ != State::kData && *p != '\0' && length < s) {
@@ -100,7 +100,7 @@ ChunkDecoder::isSizeState(void) const
 int
 ChunkDecoder::decode(const TSIOBufferReader &r)
 {
-  assert(r != NULL);
+  assert(r != nullptr);
 
   if (state_ == State::kEnd) {
     return 0;
@@ -118,9 +118,9 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
   TSIOBufferBlock block = TSIOBufferReaderStart(r);
 
   if (isSizeState()) {
-    while (block != NULL && size_ == 0) {
+    while (block != nullptr && size_ == 0) {
       const char *p = TSIOBufferBlockReadStart(block, r, &size);
-      assert(p != NULL);
+      assert(p != nullptr);
       const int i = parseSize(p, size);
       size -= i;
       TSIOBufferReaderConsume(r, i);
@@ -137,10 +137,10 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
 
   int length = 0;
 
-  while (block != NULL && state_ == State::kData) {
+  while (block != nullptr && state_ == State::kData) {
     assert(size_ > 0);
     const char *p = TSIOBufferBlockReadStart(block, r, &size);
-    if (p != NULL) {
+    if (p != nullptr) {
       if (size > size_) {
         length += size_;
         size_  = 0;

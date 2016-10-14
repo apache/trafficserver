@@ -201,7 +201,7 @@ public:
   void schedule_every(ink_hrtime aperiod, int callback_event = EVENT_INTERVAL);
 
   // inherited from Action::cancel
-  // virtual void cancel(Continuation * c = NULL);
+  // virtual void cancel(Continuation * c = nullptr);
 
   void free();
 
@@ -276,7 +276,7 @@ extern ClassAllocator<Event> eventAllocator;
 
 #define EVENT_ALLOC(_a, _t) THREAD_ALLOC(_a, _t)
 #define EVENT_FREE(_p, _a, _t) \
-  _p->mutex = NULL;            \
+  _p->mutex = nullptr;         \
   if (_p->globally_allocated)  \
     ::_a.free(_p);             \
   else                         \

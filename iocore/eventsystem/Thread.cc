@@ -83,7 +83,7 @@ spawn_thread_internal(void *a)
   else
     p->me->execute();
   ats_free(a);
-  return NULL;
+  return nullptr;
 }
 
 ink_thread

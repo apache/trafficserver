@@ -58,10 +58,10 @@
 #define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 
 // Log global objects
-inkcoreapi LogObject *Log::error_log = NULL;
+inkcoreapi LogObject *Log::error_log = nullptr;
 LogFieldList Log::global_field_list;
-LogFormat *Log::global_scrap_format = NULL;
-LogObject *Log::global_scrap_object = NULL;
+LogFormat *Log::global_scrap_format = nullptr;
+LogObject *Log::global_scrap_object = nullptr;
 Log::LoggingMode Log::logging_mode  = LOG_MODE_NONE;
 
 // Flush thread stuff
@@ -83,7 +83,7 @@ bool Log::logging_mode_changed        = false;
 uint32_t Log::periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
 
 // Hash table for LogField symbols
-InkHashTable *Log::field_symbol_hash = 0;
+InkHashTable *Log::field_symbol_hash = nullptr;
 
 RecRawStatBlock *log_rsb;
 
@@ -94,7 +94,7 @@ RecRawStatBlock *log_rsb;
   to be changed (as the result of a manager callback).
   -------------------------------------------------------------------------*/
 
-LogConfig *Log::config       = NULL;
+LogConfig *Log::config       = nullptr;
 static unsigned log_configid = 0;
 
 // Downcast from a Ptr<LogFieldAliasTable> to a Ptr<LogFieldAliasMap>.
@@ -108,12 +108,12 @@ void
 Log::change_configuration()
 {
   LogConfig *prev       = Log::config;
-  LogConfig *new_config = NULL;
+  LogConfig *new_config = nullptr;
 
   Debug("log-config", "Changing configuration ...");
 
   new_config = new LogConfig;
-  ink_assert(new_config != NULL);
+  ink_assert(new_config != nullptr);
   new_config->read_configuration_variables();
 
   // grab the _APImutex so we can transfer the api objects to
@@ -278,7 +278,7 @@ struct LoggingPreprocContinuation : public Continuation {
     return 0;
   }
 
-  LoggingPreprocContinuation(int idx) : Continuation(NULL), m_idx(idx) { SET_HANDLER(&LoggingPreprocContinuation::mainEvent); }
+  LoggingPreprocContinuation(int idx) : Continuation(nullptr), m_idx(idx) { SET_HANDLER(&LoggingPreprocContinuation::mainEvent); }
 };
 
 struct LoggingFlushContinuation : public Continuation {
@@ -291,18 +291,18 @@ struct LoggingFlushContinuation : public Continuation {
     return 0;
   }
 
-  LoggingFlushContinuation(int idx) : Continuation(NULL), m_idx(idx) { SET_HANDLER(&LoggingFlushContinuation::mainEvent); }
+  LoggingFlushContinuation(int idx) : Continuation(nullptr), m_idx(idx) { SET_HANDLER(&LoggingFlushContinuation::mainEvent); }
 };
 
 struct LoggingCollateContinuation : public Continuation {
   int
   mainEvent(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    Log::collate_thread_main(NULL);
+    Log::collate_thread_main(nullptr);
     return 0;
   }
 
-  LoggingCollateContinuation() : Continuation(NULL) { SET_HANDLER(&LoggingCollateContinuation::mainEvent); }
+  LoggingCollateContinuation() : Continuation(nullptr) { SET_HANDLER(&LoggingCollateContinuation::mainEvent); }
 };
 
 /*-------------------------------------------------------------------------
@@ -890,7 +890,7 @@ Log::init(int flags)
 
   // create the configuration object
   config = new LogConfig();
-  ink_assert(config != NULL);
+  ink_assert(config != nullptr);
 
   log_configid = configProcessor.set(log_configid, config);
 
@@ -928,7 +928,7 @@ Log::init(int flags)
         periodic_tasks_interval = static_cast<uint32_t>(pti);
       }
 
-      REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, NULL);
+      REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
     }
   }
 
@@ -936,9 +936,9 @@ Log::init(int flags)
   // be able to handle a logging mode change
   //
   if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
-    REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, NULL);
+    REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
 
-    REC_RegisterConfigUpdateFunc("proxy.local.log.collation_mode", &Log::handle_logging_mode_change, NULL);
+    REC_RegisterConfigUpdateFunc("proxy.local.log.collation_mode", &Log::handle_logging_mode_change, nullptr);
 
     // Clear any stat values that need to be reset on startup
     //
@@ -977,7 +977,7 @@ Log::init_when_enabled()
     //
     global_scrap_format = MakeTextLogFormat();
     global_scrap_object =
-      new LogObject(global_scrap_format, Log::config->logfile_dir, "scrapfile.log", LOG_FILE_BINARY, NULL,
+      new LogObject(global_scrap_format, Log::config->logfile_dir, "scrapfile.log", LOG_FILE_BINARY, nullptr,
                     Log::config->rolling_enabled, Log::config->collation_preproc_threads, Log::config->rolling_interval_sec,
                     Log::config->rolling_offset_hr, Log::config->rolling_size_mb);
 
@@ -1044,7 +1044,7 @@ Log::access(LogAccess *lad)
   }
 
   ink_assert(init_status & FULLY_INITIALIZED);
-  ink_assert(lad != NULL);
+  ink_assert(lad != nullptr);
 
   int ret;
   static long sample = 1;
@@ -1108,8 +1108,8 @@ Log::va_error(const char *format, va_list ap)
   ProxyMutex *mutex = this_ethread()->mutex.get();
 
   if (error_log) {
-    ink_assert(format != NULL);
-    ret_val = error_log->va_log(NULL, format, ap);
+    ink_assert(format != nullptr);
+    ret_val = error_log->va_log(nullptr, format, ap);
 
     switch (ret_val) {
     case Log::LOG_OK:
@@ -1203,7 +1203,7 @@ Log::preproc_thread_main(void *args)
 
   while (true) {
     if (unlikely(shutdown_event_system == true)) {
-      return NULL;
+      return nullptr;
     }
     size_t buffers_preproced = 0;
     LogConfig *current       = (LogConfig *)configProcessor.get(log_configid);
@@ -1229,7 +1229,7 @@ Log::preproc_thread_main(void *args)
 
   /* NOTREACHED */
   Log::preproc_notify[idx].unlock();
-  return NULL;
+  return nullptr;
 }
 
 void *
@@ -1246,7 +1246,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
 
   while (true) {
     if (unlikely(shutdown_event_system == true)) {
-      return NULL;
+      return nullptr;
     }
     fdata = (LogFlushData *)ink_atomiclist_popall(flush_data_list);
 
@@ -1260,7 +1260,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     // process each flush data
     //
     while ((fdata = invert_link.pop())) {
-      char *buf         = NULL;
+      char *buf         = nullptr;
       int bytes_written = 0;
       LogFile *logfile  = fdata->m_logfile.get();
 
@@ -1346,7 +1346,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
 
   /* NOTREACHED */
   Log::flush_notify->unlock();
-  return NULL;
+  return nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -1372,7 +1372,7 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
   Log::collate_notify.lock();
 
   while (true) {
-    ink_assert(Log::config != NULL);
+    ink_assert(Log::config != nullptr);
 
     // wait on the collation condition variable until we're sure that
     // we're a collation host.  The while loop guards against spurious
@@ -1388,7 +1388,7 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
     //
     Debug("log-sock", "collation thread starting, creating LogSock");
     sock = new LogSock(LogSock::LS_CONST_CLUSTER_MAX_MACHINES);
-    ink_assert(sock != NULL);
+    ink_assert(sock != nullptr);
 
     if (sock->listen(Log::config->collation_port) != 0) {
       LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, "Collation server error; could not listen on port %d",
@@ -1461,7 +1461,7 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
 
   /* NOTREACHED */
   Log::collate_notify.unlock();
-  return NULL;
+  return nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -1477,7 +1477,7 @@ LogObject *
 Log::match_logobject(LogBufferHeader *header)
 {
   if (!header) {
-    return NULL;
+    return nullptr;
   }
 
   LogObject *obj;
@@ -1493,7 +1493,7 @@ Log::match_logobject(LogBufferHeader *header)
                                     LOG_FILE_BINARY :
                                     (header->log_object_flags & LogObject::WRITES_TO_PIPE ? LOG_FILE_PIPE : LOG_FILE_ASCII);
 
-      obj = new LogObject(&fmt, Log::config->logfile_dir, header->log_filename(), file_format, NULL,
+      obj = new LogObject(&fmt, Log::config->logfile_dir, header->log_filename(), file_format, nullptr,
                           (Log::RollingEnabledValues)Log::config->rolling_enabled, Log::config->collation_preproc_threads,
                           Log::config->rolling_interval_sec, Log::config->rolling_offset_hr, Log::config->rolling_size_mb, true);
 
@@ -1504,7 +1504,7 @@ Log::match_logobject(LogBufferHeader *header)
         // delete the object and return NULL
         //
         delete obj;
-        obj = NULL;
+        obj = nullptr;
       }
     }
   }

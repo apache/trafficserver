@@ -68,7 +68,7 @@ struct socks_conf_struct {
       server_connect_timeout(0),
       socks_timeout(100),
       default_version(5),
-      user_name_n_passwd(NULL),
+      user_name_n_passwd(nullptr),
       user_name_n_passwd_len(0),
       per_server_connection_attempts(1),
       connection_attempts(0),
@@ -144,14 +144,14 @@ struct SocksEntry : public Continuation {
   void free();
 
   SocksEntry()
-    : Continuation(NULL),
+    : Continuation(nullptr),
       netVConnection(0),
       nattempts(0),
       lerrno(0),
       timeout(0),
       version(5),
       write_done(false),
-      auth_handler(NULL),
+      auth_handler(nullptr),
       socks_cmd(NORMAL_SOCKS)
   {
     memset(&target_addr, 0, sizeof(target_addr));

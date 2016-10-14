@@ -35,7 +35,7 @@ template <typename T> class Trie
 {
 public:
   Trie() { m_root.Clear(); }
-  // will return false for duplicates; key should be NULL-terminated
+  // will return false for duplicates; key should be nullptr-terminated
   // if key_len is defaulted to -1
   bool Insert(const char *key, T *value, int rank, int key_len = -1);
 
@@ -64,7 +64,7 @@ private:
     void
     Clear()
     {
-      value    = NULL;
+      value    = nullptr;
       occupied = false;
       rank     = 0;
       ink_zero(children);
@@ -80,7 +80,7 @@ private:
     AllocateChild(char index)
     {
       Node *&child = children[static_cast<unsigned char>(index)];
-      ink_assert(child == NULL);
+      ink_assert(child == nullptr);
       child = static_cast<Node *>(ats_malloc(sizeof(Node)));
       child->Clear();
       return child;
@@ -195,7 +195,7 @@ Trie<T>::Search(const char *key, int key_len /* = -1 */) const
     return found_node->value;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 template <typename T>
@@ -218,7 +218,7 @@ void
 Trie<T>::Clear()
 {
   T *iter;
-  while (NULL != (iter = m_value_list.pop()))
+  while (nullptr != (iter = m_value_list.pop()))
     delete iter;
 
   _Clear(&m_root);

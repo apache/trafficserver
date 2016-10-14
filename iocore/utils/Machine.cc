@@ -32,7 +32,7 @@
 #endif
 
 // Singleton
-Machine *Machine::_instance = NULL;
+Machine *Machine::_instance = nullptr;
 
 Machine *
 Machine::instance()
@@ -50,7 +50,7 @@ Machine::init(char const *name, sockaddr const *ip)
 }
 
 Machine::Machine(char const *the_hostname, sockaddr const *addr)
-  : hostname(0), hostname_len(0), ip_string_len(0), ip_hex_string_len(0)
+  : hostname(nullptr), hostname_len(0), ip_string_len(0), ip_hex_string_len(0)
 {
   char localhost[1024];
   int status; // return for system calls.
@@ -62,7 +62,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
   ink_zero(ip6);
 
   uuid.initialize(TS_UUID_V4);
-  ink_release_assert(NULL != uuid.getString()); // The Process UUID must be available on startup
+  ink_release_assert(nullptr != uuid.getString()); // The Process UUID must be available on startup
 
   localhost[sizeof(localhost) - 1] = 0; // ensure termination.
 
@@ -74,7 +74,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
     hostname = ats_strdup(the_hostname);
 
 #if HAVE_IFADDRS_H
-    ifaddrs *ifa_addrs = 0;
+    ifaddrs *ifa_addrs = nullptr;
     status             = getifaddrs(&ifa_addrs);
 #else
     int s = socket(AF_INET, SOCK_DGRAM, 0);
@@ -183,7 +183,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
       ats_ip_copy(&ip6, addr);
     }
 
-    status = getnameinfo(addr, ats_ip_size(addr), localhost, sizeof(localhost) - 1, 0, 0, 0); // no flags
+    status = getnameinfo(addr, ats_ip_size(addr), localhost, sizeof(localhost) - 1, nullptr, 0, 0); // no flags
 
     if (0 != status) {
       ip_text_buffer ipbuff;

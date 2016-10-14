@@ -28,12 +28,12 @@
 #include "ts/ink_string.h"
 #include "ts/I_Layout.h"
 
-static Layout *layout = NULL;
+static Layout *layout = nullptr;
 
 Layout *
 Layout::get()
 {
-  if (layout == NULL) {
+  if (layout == nullptr) {
     ink_assert("need to call create_default_layout before accessing"
                "default_layout()");
   }
@@ -43,7 +43,7 @@ Layout::get()
 void
 Layout::create(const char *prefix)
 {
-  if (layout == NULL) {
+  if (layout == nullptr) {
     layout = new Layout(prefix);
   }
 }
@@ -64,7 +64,7 @@ layout_relative(const char *root, const char *file)
       // TODO: Make some pretty errors.
       ink_error("Cannot merge '%s' with '%s' error=%d\n", file, root, err);
     }
-    return NULL;
+    return nullptr;
   }
   return ats_strdup(path);
 }

@@ -55,7 +55,7 @@ typedef ControlMatcher<CacheControlRecord, CacheControlResult> CC_table;
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
-CC_table *CacheControlTable = NULL;
+CC_table *CacheControlTable = nullptr;
 
 void
 CC_delete_table()
@@ -79,7 +79,7 @@ struct CC_FreerContinuation : public Continuation {
     delete this;
     return EVENT_DONE;
   }
-  CC_FreerContinuation(CC_table *ap) : Continuation(NULL), p(ap)
+  CC_FreerContinuation(CC_table *ap) : Continuation(nullptr), p(ap)
   {
     SET_HANDLER((CC_FreerContHandler)&CC_FreerContinuation::freeEvent);
   }
@@ -127,10 +127,10 @@ ip_rule_in_CacheControlTable()
 void
 initCacheControl()
 {
-  ink_assert(CacheControlTable == NULL);
+  ink_assert(CacheControlTable == nullptr);
   reconfig_mutex    = new_ProxyMutex();
   CacheControlTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
-  REC_RegisterConfigUpdateFunc("proxy.config.cache.control.filename", cacheControlFile_CB, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.cache.control.filename", cacheControlFile_CB, nullptr);
 }
 
 // void reloadCacheControl()
@@ -180,7 +180,7 @@ getClusterCacheLocal(URL *url)
   CacheControlResult result;
   HTTPHdr req_hdr;
 
-  req_hdr.create(HTTP_TYPE_REQUEST, NULL);
+  req_hdr.create(HTTP_TYPE_REQUEST, nullptr);
   req_hdr.url_set(url);
   rdata.hdr = &req_hdr;
   CacheControlTable->Match(&rdata, &result);
@@ -269,7 +269,7 @@ CacheControlRecord::Init(matcher_line *line_info)
     }
 
     if (strcasecmp(label, TWEAK_CACHE_RESPONSES_TO_COOKIES) == 0) {
-      char *ptr = 0;
+      char *ptr = nullptr;
       int v     = strtol(val, &ptr, 0);
       if (!ptr || v < 0 || v > 4) {
         return config_parse_error("Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES " must be an integer in the range 0..4");
@@ -281,7 +281,7 @@ CacheControlRecord::Init(matcher_line *line_info)
 
     // Clip pair if used.
     if (used) {
-      line_info->line[0][i] = 0;
+      line_info->line[0][i] = nullptr;
       --(line_info->num_el);
     }
   }
@@ -291,7 +291,7 @@ CacheControlRecord::Init(matcher_line *line_info)
     label = line_info->line[0][i];
     val   = line_info->line[1][i];
 
-    if (label == NULL) {
+    if (label == nullptr) {
       continue;
     }
 
@@ -332,7 +332,7 @@ CacheControlRecord::Init(matcher_line *line_info)
       // Process the time argument for the remaining directives
       if (d_found == true) {
         tmp = processDurationString(val, &time_in);
-        if (tmp == NULL) {
+        if (tmp == nullptr) {
           this->time_arg = time_in;
 
         } else {
@@ -343,7 +343,7 @@ CacheControlRecord::Init(matcher_line *line_info)
 
     if (d_found == true) {
       // Consume the label/value pair we used
-      line_info->line[0][i] = NULL;
+      line_info->line[0][i] = nullptr;
       line_info->num_el--;
       break;
     }
@@ -356,7 +356,7 @@ CacheControlRecord::Init(matcher_line *line_info)
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
 
-    if (tmp != NULL) {
+    if (tmp != nullptr) {
       return config_parse_error("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
     }
   }

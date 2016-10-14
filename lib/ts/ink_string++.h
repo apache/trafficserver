@@ -47,29 +47,29 @@ struct Str {
   struct Str *next; // next in list
   struct Str *prev; // prev in list
 
-  Str() : str(NULL), len(0), next(NULL), prev(NULL) {}
+  Str() : str(nullptr), len(0), next(NULL), prev(NULL) {}
   Str(char *s)
   {
     str  = s;
     len  = strlen(s);
-    next = NULL;
-    prev = NULL;
+    next = nullptr;
+    prev = nullptr;
   }
   Str(char *s, int l)
   {
     str  = s;
     len  = l;
-    next = NULL;
-    prev = NULL;
+    next = nullptr;
+    prev = nullptr;
   }
 
   void
   clean()
   {
-    str  = NULL;
+    str  = nullptr;
     len  = 0;
-    next = NULL;
-    prev = NULL;
+    next = nullptr;
+    prev = nullptr;
   }
 
   void
@@ -148,11 +148,11 @@ StrList::init()
 {
   count           = 0;
   cells_allocated = 0;
-  head = tail      = NULL;
+  head = tail      = nullptr;
   base_heap_size   = STRLIST_BASE_HEAP_SIZE;
   base_heap_used   = 0;
-  overflow_first   = NULL;
-  overflow_current = NULL;
+  overflow_first   = nullptr;
+  overflow_current = nullptr;
 }
 
 inline void
@@ -185,14 +185,14 @@ StrList::base_heap_alloc(int size)
     base_heap_used += size;
     return ((void *)p);
   } else
-    return (NULL);
+    return (nullptr);
 }
 
 inline void *
 StrList::alloc(int size)
 {
   void *p = base_heap_alloc(size);
-  if (p == NULL)
+  if (p == nullptr)
     p = overflow_heap_alloc(size);
   return (p);
 }
@@ -219,22 +219,22 @@ StrList::get_idx(int i)
 {
   Str *s;
 
-  for (s = head; ((s != NULL) && i); s = s->next, i--)
+  for (s = head; ((s != nullptr) && i); s = s->next, i--)
     ;
-  return ((i == 0) ? s : NULL);
+  return ((i == 0) ? s : nullptr);
 }
 
 inline void
 StrList::append(Str *str)
 {
-  // do nothing if str is NULL to avoid pointer chasing below
-  if (str == NULL)
+  // do nothing if str is nullptr to avoid pointer chasing below
+  if (str == nullptr)
     return;
   ++count;
-  str->next = NULL;
+  str->next = nullptr;
   str->prev = tail;
 
-  if (tail == NULL) {
+  if (tail == nullptr) {
     head = tail = str;
   } else {
     tail->next = str;
@@ -245,13 +245,13 @@ StrList::append(Str *str)
 inline void
 StrList::prepend(Str *str)
 {
-  if (str == NULL)
+  if (str == nullptr)
     return;
   ++count;
   str->next = head;
-  str->prev = NULL;
+  str->prev = nullptr;
 
-  if (tail == NULL) {
+  if (tail == nullptr) {
     head = tail = str;
   } else {
     head->prev = str;
@@ -262,7 +262,7 @@ StrList::prepend(Str *str)
 inline void
 StrList::add_after(Str *prev, Str *str)
 {
-  if (str == NULL || prev == NULL)
+  if (str == nullptr || prev == NULL)
     return;
   ++count;
   str->next  = prev->next;
@@ -275,7 +275,7 @@ StrList::add_after(Str *prev, Str *str)
 inline void
 StrList::detach(Str *str)
 {
-  if (str == NULL)
+  if (str == nullptr)
     return;
   --count;
 

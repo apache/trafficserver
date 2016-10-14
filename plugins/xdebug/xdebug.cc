@@ -28,7 +28,7 @@
 static struct {
   const char *str;
   int len;
-} xDebugHeader = {NULL, 0};
+} xDebugHeader = {nullptr, 0};
 
 enum {
   XHEADER_X_CACHE_KEY      = 0x0004u,
@@ -39,7 +39,7 @@ enum {
 };
 
 static int XArgIndex             = 0;
-static TSCont XInjectHeadersCont = NULL;
+static TSCont XInjectHeadersCont = nullptr;
 
 // Return the length of a string literal.
 template <int N>
@@ -91,7 +91,7 @@ InjectCacheKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   struct {
     char *ptr;
     int len;
-  } strval = {NULL, 0};
+  } strval = {nullptr, 0};
 
   TSDebug("xdebug", "attempting to inject X-Cache-Key header");
 
@@ -104,7 +104,7 @@ InjectCacheKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   }
 
   strval.ptr = TSUrlStringGet(buffer, url, &strval.len);
-  if (strval.ptr == NULL || strval.len == 0) {
+  if (strval.ptr == nullptr || strval.len == 0) {
     goto done;
   }
 
@@ -325,7 +325,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
       int vsize;
 
       value = TSMimeHdrFieldValueStringGet(buffer, hdr, field, i, &vsize);
-      if (value == NULL || vsize == 0) {
+      if (value == nullptr || vsize == 0) {
         continue;
       }
 
@@ -381,8 +381,8 @@ done:
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  static const struct option longopt[] = {{const_cast<char *>("header"), required_argument, NULL, 'h'},
-                                          {NULL, no_argument, NULL, '\0'}};
+  static const struct option longopt[] = {{const_cast<char *>("header"), required_argument, nullptr, 'h'},
+                                          {nullptr, no_argument, nullptr, '\0'}};
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = (char *)"xdebug";
@@ -395,7 +395,7 @@ TSPluginInit(int argc, const char *argv[])
 
   // Parse the arguments
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
+    int opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
 
     switch (opt) {
     case 'h':
@@ -408,15 +408,15 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
-  if (NULL == xDebugHeader.str) {
+  if (nullptr == xDebugHeader.str) {
     xDebugHeader.str = TSstrdup("X-Debug"); // We malloc this, for consistency for future plugin unload events
   }
   xDebugHeader.len = strlen(xDebugHeader.str);
 
   // Setup the global hook
   TSReleaseAssert(TSHttpArgIndexReserve("xdebug", "xdebug header requests", &XArgIndex) == TS_SUCCESS);
-  TSReleaseAssert(XInjectHeadersCont = TSContCreate(XInjectResponseHeaders, NULL));
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(XScanRequestHeaders, NULL));
+  TSReleaseAssert(XInjectHeadersCont = TSContCreate(XInjectResponseHeaders, nullptr));
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(XScanRequestHeaders, nullptr));
 }
 
 // vim: set ts=2 sw=2 et :

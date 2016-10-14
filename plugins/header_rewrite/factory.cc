@@ -30,7 +30,7 @@
 Operator *
 operator_factory(const std::string &op)
 {
-  Operator *o = NULL;
+  Operator *o = nullptr;
 
   if (op == "rm-header") {
     o = new OperatorRMHeader();
@@ -68,7 +68,7 @@ operator_factory(const std::string &op)
     o = new OperatorSetDebug();
   } else {
     TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());
-    return NULL;
+    return nullptr;
   }
 
   return o;
@@ -77,7 +77,7 @@ operator_factory(const std::string &op)
 Condition *
 condition_factory(const std::string &cond)
 {
-  Condition *c = NULL;
+  Condition *c = nullptr;
   std::string c_name, c_qual;
   std::string::size_type pos = cond.find_first_of(':');
 
@@ -139,7 +139,7 @@ condition_factory(const std::string &cond)
     c = new ConditionId();
   } else {
     TSError("[%s] Unknown condition: %s", PLUGIN_NAME, c_name.c_str());
-    return NULL;
+    return nullptr;
   }
 
   if (c_qual != "") {

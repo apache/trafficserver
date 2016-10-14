@@ -63,20 +63,20 @@ public:
 
 static int plugin_init_counter = 0;               /* remap plugin initialization counter */
 static pthread_mutex_t remap_plugin_global_mutex; /* remap plugin global mutex */
-remap_entry *remap_entry::active_list = 0;
+remap_entry *remap_entry::active_list = nullptr;
 pthread_mutex_t remap_entry::mutex; /* remap_entry class mutex */
 
 /* ----------------------- remap_entry::remap_entry ------------------------ */
-remap_entry::remap_entry(int _argc, char *_argv[]) : next(NULL), argc(0), argv(NULL)
+remap_entry::remap_entry(int _argc, char *_argv[]) : next(nullptr), argc(0), argv(nullptr)
 {
   int i;
 
-  if (_argc > 0 && _argv && (argv = (char **)TSmalloc(sizeof(char *) * (_argc + 1))) != 0) {
+  if (_argc > 0 && _argv && (argv = (char **)TSmalloc(sizeof(char *) * (_argc + 1))) != nullptr) {
     argc = _argc;
     for (i = 0; i < argc; i++) {
       argv[i] = TSstrdup(_argv[i]);
     }
-    argv[i] = NULL;
+    argv[i] = nullptr;
   }
 }
 
@@ -173,8 +173,8 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
                                     (api_info->tsremap_version >> 16), (api_info->tsremap_version & 0xffff));
     }
 
-    if (pthread_mutex_init(&remap_plugin_global_mutex, 0) ||
-        pthread_mutex_init(&remap_entry::mutex, 0)) { /* pthread_mutex_init - always returns 0. :) - impossible error */
+    if (pthread_mutex_init(&remap_plugin_global_mutex, nullptr) ||
+        pthread_mutex_init(&remap_entry::mutex, nullptr)) { /* pthread_mutex_init - always returns 0. :) - impossible error */
       return store_my_error_message(TS_ERROR, errbuf, errbuf_size, "[TSRemapInit] - Mutex initialization error");
     }
     plugin_init_counter++;
@@ -289,12 +289,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   if ((cfield = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_DATE, -1)) != TS_NULL_MLOC) {
     fprintf(stderr, "We have \"Date\" header in request\n");
-    value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, -1, NULL);
+    value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, -1, nullptr);
     fprintf(stderr, "Header value: %s\n", value);
   }
   if ((cfield = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, "MyHeader", sizeof("MyHeader") - 1)) != TS_NULL_MLOC) {
     fprintf(stderr, "We have \"MyHeader\" header in request\n");
-    value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, -1, NULL);
+    value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, -1, nullptr);
     fprintf(stderr, "Header value: %s\n", value);
   }
 
@@ -312,7 +312,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     size_t len = snprintf(tmp, 255, "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n",
                           my_local_counter, TS_HTTP_STATUS_CONTINUE + my_local_counter);
     TSHttpTxnSetHttpRetStatus((TSHttpTxn)rh, (TSHttpStatus)((int)TS_HTTP_STATUS_CONTINUE + my_local_counter));
-    TSHttpTxnErrorBodySet((TSHttpTxn)rh, tmp, len, NULL); // Defaults to text/html
+    TSHttpTxnErrorBodySet((TSHttpTxn)rh, tmp, len, nullptr); // Defaults to text/html
     my_local_counter++;
   }
   // hardcoded case for remapping

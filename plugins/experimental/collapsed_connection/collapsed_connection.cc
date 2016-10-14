@@ -130,9 +130,9 @@ initConfig(const char *fn)
   CcPluginConfig *config    = static_cast<CcPluginConfig *>(TSmalloc(sizeof(CcPluginConfig)));
 
   // Default config
-  if (NULL == plugin_data || NULL == plugin_data->global_config) {
+  if (nullptr == plugin_data || nullptr == plugin_data->global_config) {
     config->enabled                = true;
-    config->required_header        = NULL;
+    config->required_header        = nullptr;
     config->insert_lock_retry_time = DEFAULT_INSERT_LOCK_RETRY_TIME;
     config->max_lock_retry_timeout = DEFAULT_MAX_LOCK_RETRY_TIMEOUT;
     config->keep_pass_record_time  = DEFAULT_KEEP_PASS_RECORD_TIME;
@@ -147,7 +147,7 @@ initConfig(const char *fn)
     config->keep_pass_record_time  = global_config->keep_pass_record_time;
   }
 
-  if (NULL != fn) {
+  if (nullptr != fn) {
     if (1 == strlen(fn)) {
       if (0 == strcmp("0", fn)) {
         config->enabled = false;
@@ -163,10 +163,10 @@ initConfig(const char *fn)
       CcConfigKey name;
       TSRecordDataType type, expected_type;
 
-      if (NULL == (file = TSfopen(fn, "r"))) {
+      if (nullptr == (file = TSfopen(fn, "r"))) {
         TSError("[collapsed_connection] Could not open config file %s", fn);
       } else {
-        while (NULL != TSfgets(file, buf, sizeof(buf))) {
+        while (nullptr != TSfgets(file, buf, sizeof(buf))) {
           char *ln, *tok;
           char *s = buf;
 
@@ -186,13 +186,13 @@ initConfig(const char *fn)
             continue;
           }
           // Find the configuration name
-          tok = strtok_r(NULL, " \t", &ln);
+          tok = strtok_r(nullptr, " \t", &ln);
           if (CcHttpTxnConfigFind(tok, -1, &name, &expected_type) != TS_SUCCESS) {
             TSError("[collapsed_connection] File %s, line %d: no records.config name given", fn, line_num);
             continue;
           }
           // Find the type (INT or STRING only)
-          tok = strtok_r(NULL, " \t", &ln);
+          tok = strtok_r(nullptr, " \t", &ln);
           if (TS_RECORDDATATYPE_NULL == (type = str_to_datatype(tok))) {
             TSError("[collapsed_connection] File %s, line %d: only INT and STRING types supported", fn, line_num);
             continue;
@@ -208,7 +208,7 @@ initConfig(const char *fn)
               ++ln;
             }
             if ('\0' == *ln) {
-              tok = NULL;
+              tok = nullptr;
             } else {
               tok = ln;
               while (*ln != '\0') {
@@ -222,7 +222,7 @@ initConfig(const char *fn)
               *ln = '\0';
             }
           } else {
-            tok = NULL;
+            tok = nullptr;
           }
           if (!tok) {
             TSError("[collapsed_connection] File %s, line %d: the configuration must provide a value", fn, line_num);
@@ -231,26 +231,26 @@ initConfig(const char *fn)
           // Now store the new config
           switch (name) {
           case CcRequiredHeader:
-            if (NULL != config->required_header) {
+            if (nullptr != config->required_header) {
               TSfree(config->required_header);
             }
             if (4 == strlen(tok) && 0 == strcmp(tok, "NULL")) {
-              config->required_header = NULL;
+              config->required_header = nullptr;
             } else {
               config->required_header = TSstrdup(tok);
             }
             break;
           case CcEnabled:
-            config->enabled = strtoll(tok, NULL, 10);
+            config->enabled = strtoll(tok, nullptr, 10);
             break;
           case CcInsertLockRetryTime:
-            config->insert_lock_retry_time = strtoll(tok, NULL, 10);
+            config->insert_lock_retry_time = strtoll(tok, nullptr, 10);
             break;
           case CcMaxLockRetryTimeout:
-            config->max_lock_retry_timeout = strtoll(tok, NULL, 10);
+            config->max_lock_retry_timeout = strtoll(tok, nullptr, 10);
             break;
           case CcKeepPassRecordTime:
-            config->keep_pass_record_time = strtoll(tok, NULL, 10);
+            config->keep_pass_record_time = strtoll(tok, nullptr, 10);
             break;
           default:
             break;
@@ -542,7 +542,7 @@ getCacheUrlHashKey(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc /* hdr_loc ATS_UNUSED 
 {
   TSMLoc url_loc = TS_NULL_MLOC;
   int url_len;
-  char *url         = NULL;
+  char *url         = nullptr;
   uint32_t hash_key = 0;
 
   if (TS_SUCCESS != TSUrlCreate(bufp, &url_loc)) {
@@ -583,12 +583,12 @@ isResponseCacheable(TSMBuffer bufp, TSMLoc hdr_loc)
   bool found_expire = false;
   TSMLoc field_loc  = TS_NULL_MLOC;
 
-  if (0 != (field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_EXPIRES, TS_MIME_LEN_EXPIRES))) {
+  if (nullptr != (field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_EXPIRES, TS_MIME_LEN_EXPIRES))) {
     found_expire = true;
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
   }
 
-  if (0 != (field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL))) {
+  if (nullptr != (field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL))) {
     int field_cnt = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
 
     for (int i = 0; i < field_cnt; i++) {
@@ -631,9 +631,9 @@ retryCacheUrlLock(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata 
 {
   TryLockData *data = reinterpret_cast<TryLockData *>(TSContDataGet(contp));
   TSDebug(PLUGIN_NAME, "[%" PRIu64 "] event = %d retry", data->txn_data->seq_id, data->event);
-  collapsedConnectionMainHandler(NULL, data->event, data->txn_data->txnp);
+  collapsedConnectionMainHandler(nullptr, data->event, data->txn_data->txnp);
   TSfree(data);
-  TSContDataSet(contp, NULL);
+  TSContDataSet(contp, nullptr);
   TSContDestroy(contp);
 
   return 0;
@@ -651,7 +651,7 @@ retryCacheUrlLock(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata 
 static void
 addMutexRetry(CcTxnData *txn_data, TSEvent event, TSHRTime timeout)
 {
-  TSCont contp      = TSContCreate(retryCacheUrlLock, NULL);
+  TSCont contp      = TSContCreate(retryCacheUrlLock, nullptr);
   TryLockData *data = static_cast<TryLockData *>(TSmalloc(sizeof(TryLockData)));
 
   data->event    = event;
@@ -675,15 +675,15 @@ static CcTxnData *
 getCcTxnData(TSHttpTxn txnp, bool create, bool remap)
 {
   CcPluginData *plugin_data = getCcPlugin();
-  CcTxnData *txn_data       = NULL;
+  CcTxnData *txn_data       = nullptr;
 
   txn_data = reinterpret_cast<CcTxnData *>(TSHttpTxnArgGet(txnp, plugin_data->txn_slot));
-  if (NULL == txn_data && true == create) {
+  if (nullptr == txn_data && true == create) {
     txn_data            = static_cast<CcTxnData *>(TSmalloc(sizeof(CcTxnData)));
     txn_data->config    = plugin_data->global_config;
     txn_data->seq_id    = plugin_data->seq_id++;
     txn_data->txnp      = txnp;
-    txn_data->contp     = NULL;
+    txn_data->contp     = nullptr;
     txn_data->hash_key  = 0;
     txn_data->cc_state  = CC_NONE;
     txn_data->wait_time = 0;
@@ -712,11 +712,11 @@ freeCcTxnData(CcTxnData *txn_data)
   CcPluginData *plugin_data = getCcPlugin();
 
   if (txn_data->contp) {
-    TSContDataSet(txn_data->contp, NULL);
+    TSContDataSet(txn_data->contp, nullptr);
     TSContDestroy(txn_data->contp);
   }
   if (txn_data->txnp) {
-    TSHttpTxnArgSet(txn_data->txnp, plugin_data->txn_slot, NULL);
+    TSHttpTxnArgSet(txn_data->txnp, plugin_data->txn_slot, nullptr);
     TSHttpTxnReenable(txn_data->txnp, TS_EVENT_HTTP_CONTINUE);
   }
   TSDebug(PLUGIN_NAME, "[%" PRIu64 "] txn_data released", txn_data->seq_id);
@@ -739,10 +739,10 @@ lookupAndTryLockCacheUrl(CcTxnData *txn_data, TSEvent event)
 
   if (0 == txn_data->hash_key) {
     // New request, check is GET method and gen hash_key
-    TSMBuffer bufp = (TSMBuffer)NULL;
+    TSMBuffer bufp = (TSMBuffer) nullptr;
     TSMLoc hdr_loc = TS_NULL_MLOC;
     int method_len;
-    const char *method = NULL;
+    const char *method = nullptr;
 
     if (TS_SUCCESS != TSHttpTxnClientReqGet(txn_data->txnp, &bufp, &hdr_loc)) {
       TSDebug(PLUGIN_NAME, "unable to get client request");
@@ -794,7 +794,7 @@ lookupAndTryLockCacheUrl(CcTxnData *txn_data, TSEvent event)
   } else if (CC_INSERT == ret) {
     if (!txn_data->contp) {
       // txn contp is already created from remap, but only global contp for global hook
-      txn_data->contp = TSContCreate(collapsedConnectionMainHandler, NULL);
+      txn_data->contp = TSContCreate(collapsedConnectionMainHandler, nullptr);
     }
     txn_data->cc_state = ret;
     TSHttpTxnHookAdd(txn_data->txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_data->contp);
@@ -821,7 +821,7 @@ lookupAndTryLockCacheUrl(CcTxnData *txn_data, TSEvent event)
 static TSReturnCode
 testResponseCacheable(CcTxnData *txn_data)
 {
-  TSMBuffer bufp = (TSMBuffer)NULL;
+  TSMBuffer bufp = (TSMBuffer) nullptr;
   TSMLoc hdr_loc = TS_NULL_MLOC;
   TSHttpStatus resp_status;
 
@@ -909,7 +909,7 @@ collapsedConnectionMainHandler(TSCont /* contp ATS_UNUSED */, TSEvent event, voi
   TSHttpTxn txnp      = reinterpret_cast<TSHttpTxn>(edata);
   CcTxnData *txn_data = getCcTxnData(txnp, TS_EVENT_HTTP_POST_REMAP == event, false);
 
-  if (NULL != txn_data) {
+  if (nullptr != txn_data) {
     TSDebug(PLUGIN_NAME, "[%" PRIu64 "], event = %d, txn_data-> hash_key = %u, cc_state = %d", txn_data->seq_id, event,
             txn_data->hash_key, txn_data->cc_state);
 
@@ -938,7 +938,7 @@ collapsedConnectionMainHandler(TSCont /* contp ATS_UNUSED */, TSEvent event, voi
     case TS_EVENT_HTTP_TXN_CLOSE:
       if (CC_DONE == txn_data->cc_state) {
         freeCcTxnData(txn_data);
-        txn_data = NULL;
+        txn_data = nullptr;
         TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       } else if (CC_PASS == txn_data->cc_state || CC_PASSED == txn_data->cc_state) {
         // keep pass sentinel for config->keep_pass_record_time
@@ -947,7 +947,7 @@ collapsedConnectionMainHandler(TSCont /* contp ATS_UNUSED */, TSEvent event, voi
             addMutexRetry(txn_data, event, 0);
           } else {
             freeCcTxnData(txn_data);
-            txn_data = NULL;
+            txn_data = nullptr;
           }
         } else {
           txn_data->cc_state = CC_REMOVE;
@@ -983,16 +983,16 @@ collapsedConnectionMainHandler(TSCont /* contp ATS_UNUSED */, TSEvent event, voi
 static CcPluginData *
 getCcPlugin()
 {
-  static CcPluginData *data = NULL;
+  static CcPluginData *data = nullptr;
 
-  if (NULL == data) {
+  if (nullptr == data) {
     TSMgmtInt read_while_writer = 0;
     data                        = static_cast<CcPluginData *>(TSmalloc(sizeof(CcPluginData)));
     data->mutex                 = TSMutexCreate();
     data->active_hash_map       = new UintMap();
     data->keep_pass_list        = new UsecList();
     data->seq_id                = 0;
-    data->global_config         = NULL;
+    data->global_config         = nullptr;
     TSHttpArgIndexReserve(PLUGIN_NAME, "reserve txn_data slot", &(data->txn_slot));
 
     if (TS_SUCCESS == TSMgmtIntGet("proxy.config.cache.enable_read_while_writer", &read_while_writer) && read_while_writer > 0) {
@@ -1056,7 +1056,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *, int)
   if (argc > 2) {
     *ih = static_cast<CcPluginConfig *>(initConfig(argv[2]));
   } else {
-    *ih = static_cast<CcPluginConfig *>(initConfig(NULL));
+    *ih = static_cast<CcPluginConfig *>(initConfig(nullptr));
   }
 
   return TS_SUCCESS;
@@ -1067,7 +1067,7 @@ TSRemapDeleteInstance(void *ih)
 {
   CcPluginConfig *config = static_cast<CcPluginConfig *>(ih);
 
-  if (NULL != config->required_header) {
+  if (nullptr != config->required_header) {
     TSfree(config->required_header);
   }
 
@@ -1088,14 +1088,14 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
 
   if (!plugin_data->global_config || !plugin_data->global_config->enabled) {
     if (txn_data->config->enabled) {
-      TSCont contp = TSContCreate(collapsedConnectionMainHandler, NULL);
+      TSCont contp = TSContCreate(collapsedConnectionMainHandler, nullptr);
       TSHttpTxnHookAdd(txnp, TS_HTTP_POST_REMAP_HOOK, contp);
 
       txn_data->contp = contp;
       TSHttpTxnArgSet(txnp, plugin_data->txn_slot, txn_data);
     } else {
       // global & remap were both disabled
-      txn_data->txnp = NULL;
+      txn_data->txnp = nullptr;
       freeCcTxnData(txn_data);
     }
   } else {
@@ -1114,7 +1114,7 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
   TSMgmtInt http_cache = 0;
-  TSCont contp         = NULL;
+  TSCont contp         = nullptr;
 
   info.plugin_name   = const_cast<char *>(PLUGIN_NAME);
   info.vendor_name   = const_cast<char *>(PLUGIN_VENDOR);
@@ -1130,7 +1130,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  if (!(contp = TSContCreate(collapsedConnectionMainHandler, NULL))) {
+  if (!(contp = TSContCreate(collapsedConnectionMainHandler, nullptr))) {
     TSError("[collapsed_connection] Could not create continuation");
     return;
   }
@@ -1139,7 +1139,7 @@ TSPluginInit(int argc, const char *argv[])
   if (argc > 1) {
     plugin_data->global_config = initConfig(argv[1]);
   } else {
-    plugin_data->global_config = initConfig(NULL);
+    plugin_data->global_config = initConfig(nullptr);
   }
 
   if (plugin_data->global_config->enabled) {

@@ -131,7 +131,7 @@ check_field_configured(TSHttpTxn txnp, const char *field_name, const char *cfg_v
           TSDebug(PLUGIN_NAME, "invalid field");
         } else {
           TSDebug(PLUGIN_NAME, "comparing with %s", cfg_val);
-          if (NULL != strstr(val_str, cfg_val)) {
+          if (nullptr != strstr(val_str, cfg_val)) {
             hdr_found = true;
           }
         }
@@ -163,7 +163,7 @@ BgFetchRule::bgFetchAllowed(TSHttpTxn txnp) const
   bool allow_bg_fetch = true;
 
   // We could do this recursively, but following the linked list is probably more efficient.
-  for (const BgFetchRule *r = this; NULL != r; r = r->_next) {
+  for (const BgFetchRule *r = this; nullptr != r; r = r->_next) {
     if (check_field_configured(txnp, r->_field, r->_value)) {
       TSDebug(PLUGIN_NAME, "found field match %s, exclude %d", r->_field, (int)r->_exclude);
       allow_bg_fetch = !r->_exclude;

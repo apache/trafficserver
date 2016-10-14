@@ -279,8 +279,9 @@ ts_lua_escape_uri(lua_State *L)
   }
 
   src = (u_char *)luaL_checklstring(L, 1, &len);
-  if (len == 0)
+  if (len == 0) {
     return 1;
+  }
 
   dlen = TS_LUA_MAX_STR_LENGTH;
   dst  = lua_newuserdata(L, dlen);
@@ -311,8 +312,9 @@ ts_lua_unescape_uri(lua_State *L)
   }
 
   src = (u_char *)luaL_checklstring(L, 1, &len);
-  if (len == 0)
+  if (len == 0) {
     return 1;
+  }
 
   /* the unescaped string can only be smaller */
   dlen = len;

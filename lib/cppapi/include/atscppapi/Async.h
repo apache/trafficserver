@@ -129,13 +129,13 @@ public:
   disable()
   {
     ScopedSharedMutexLock scopedLock(dispatch_mutex_);
-    event_receiver_ = NULL;
+    event_receiver_ = nullptr;
   }
 
   bool
   isEnabled()
   {
-    return (event_receiver_ != NULL);
+    return (event_receiver_ != nullptr);
   }
 
   /**
@@ -177,7 +177,7 @@ public:
   ~AsyncReceiverPromise()
   {
     ScopedSharedMutexLock scopedLock(dispatch_controller_->dispatch_mutex_);
-    dispatch_controller_->event_receiver_ = NULL;
+    dispatch_controller_->event_receiver_ = nullptr;
   }
 
 protected:
@@ -223,7 +223,7 @@ public:
    * @param mutex The mutex that is locked during the dispatch of the async event complete.
    *              One will be created if nothing is passed in. Transaction plugins should use
    *              TransactionPlugin::getMutex() here and global plugins can pass an appropriate
-   *              or NULL mutex.
+   *              or nullptr mutex.
    */
   template <typename AsyncProviderType>
   static void

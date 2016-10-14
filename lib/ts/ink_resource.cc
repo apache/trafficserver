@@ -39,7 +39,7 @@ ink_mutex ResourceTracker::resourceLock = PTHREAD_MUTEX_INITIALIZER;
 class Resource
 {
 public:
-  Resource() : _incrementCount(0), _decrementCount(0), _value(0), _symbol(NULL) { _name[0] = '\0'; }
+  Resource() : _incrementCount(0), _decrementCount(0), _value(0), _symbol(nullptr) { _name[0] = '\0'; }
   void increment(const int64_t size);
   int64_t
   getValue() const
@@ -119,7 +119,7 @@ void
 ResourceTracker::increment(const void *symbol, const int64_t size, const char *name)
 {
   Resource &resource = lookup((const char *)symbol);
-  if (resource.getSymbol() == NULL && name != NULL) {
+  if (resource.getSymbol() == nullptr && name != nullptr) {
     resource.setName(symbol, name);
     resource.setSymbol(symbol);
   }
@@ -129,7 +129,7 @@ ResourceTracker::increment(const void *symbol, const int64_t size, const char *n
 Resource &
 ResourceTracker::lookup(const char *name)
 {
-  Resource *resource = NULL;
+  Resource *resource = nullptr;
   ink_mutex_acquire(&resourceLock);
   std::map<const char *, Resource *>::iterator it = _resourceMap.find(name);
   if (it != _resourceMap.end()) {
@@ -140,7 +140,7 @@ ResourceTracker::lookup(const char *name)
     _resourceMap[name] = resource;
   }
   ink_mutex_release(&resourceLock);
-  ink_release_assert(resource != NULL);
+  ink_release_assert(resource != nullptr);
   return *resource;
 }
 

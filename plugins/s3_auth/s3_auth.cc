@@ -48,9 +48,9 @@ int event_handler(TSCont, TSEvent, void *); // Forward declaration
 class S3Config
 {
 public:
-  S3Config() : _secret(NULL), _secret_len(0), _keyid(NULL), _keyid_len(0), _virt_host(false), _version(2), _cont(NULL)
+  S3Config() : _secret(nullptr), _secret_len(0), _keyid(nullptr), _keyid_len(0), _virt_host(false), _version(2), _cont(nullptr)
   {
-    _cont = TSContCreate(event_handler, NULL);
+    _cont = TSContCreate(event_handler, nullptr);
     TSContDataSet(_cont, static_cast<void *>(this));
   }
 
@@ -119,7 +119,7 @@ public:
   void
   set_version(const char *s)
   {
-    _version = strtol(s, NULL, 10);
+    _version = strtol(s, nullptr, 10);
   }
 
   // Parse configs from an external file
@@ -160,12 +160,12 @@ S3Config::parse_config(const char *config)
     char line[512]; // These are long lines ...
     FILE *file = fopen(config, "r");
 
-    if (NULL == file) {
+    if (nullptr == file) {
       TSError("[%s] unable to open %s", PLUGIN_NAME, config);
       return false;
     }
 
-    while (fgets(line, sizeof(line), file) != NULL) {
+    while (fgets(line, sizeof(line), file) != nullptr) {
       char *pos1, *pos2;
 
       // Skip leading white spaces
@@ -213,7 +213,7 @@ S3Config::parse_config(const char *config)
 class S3Request
 {
 public:
-  S3Request(TSHttpTxn txnp) : _txnp(txnp), _bufp(NULL), _hdr_loc(TS_NULL_MLOC), _url_loc(TS_NULL_MLOC) {}
+  S3Request(TSHttpTxn txnp) : _txnp(txnp), _bufp(nullptr), _hdr_loc(TS_NULL_MLOC), _url_loc(TS_NULL_MLOC) {}
   ~S3Request()
   {
     TSHandleMLocRelease(_bufp, _hdr_loc, _url_loc);
@@ -266,7 +266,7 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
       TSHandleMLocRelease(_bufp, _hdr_loc, field_loc);
     }
   } else {
-    TSMLoc tmp = NULL;
+    TSMLoc tmp = nullptr;
     bool first = true;
 
     while (field_loc) {
@@ -328,16 +328,17 @@ S3Request::authorize(S3Config *s3)
   TSHttpStatus status = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   TSMLoc host_loc = TS_NULL_MLOC, md5_loc = TS_NULL_MLOC, contype_loc = TS_NULL_MLOC;
   int method_len = 0, path_len = 0, param_len = 0, host_len = 0, con_md5_len = 0, con_type_len = 0, date_len = 0;
-  const char *method = NULL, *path = NULL, *param = NULL, *host = NULL, *con_md5 = NULL, *con_type = NULL, *host_endp = NULL;
+  const char *method = nullptr, *path = nullptr, *param = nullptr, *host = nullptr, *con_md5 = nullptr, *con_type = nullptr,
+             *host_endp = nullptr;
   char date[128]; // Plenty of space for a Date value
-  time_t now = time(NULL);
+  time_t now = time(nullptr);
   struct tm now_tm;
 
   // Start with some request resources we need
-  if (NULL == (method = TSHttpHdrMethodGet(_bufp, _hdr_loc, &method_len))) {
+  if (nullptr == (method = TSHttpHdrMethodGet(_bufp, _hdr_loc, &method_len))) {
     return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   }
-  if (NULL == (path = TSUrlPathGet(_bufp, _url_loc, &path_len))) {
+  if (nullptr == (path = TSUrlPathGet(_bufp, _url_loc, &path_len))) {
     return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   }
 
@@ -345,7 +346,7 @@ S3Request::authorize(S3Config *s3)
   param = TSUrlHttpParamsGet(_bufp, _url_loc, &param_len);
 
   // Next, setup the Date: header, it's required.
-  if (NULL == gmtime_r(&now, &now_tm)) {
+  if (nullptr == gmtime_r(&now, &now_tm)) {
     return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   }
   if ((date_len = strftime(date, sizeof(date) - 1, DATE_FMT, &now_tm)) <= 0) {
@@ -423,7 +424,7 @@ S3Request::authorize(S3Config *s3)
   char hmac_b64[SHA_DIGEST_LENGTH * 2];
 
   HMAC_CTX_init(&ctx);
-  HMAC_Init_ex(&ctx, s3->secret(), s3->secret_len(), EVP_sha1(), NULL);
+  HMAC_Init_ex(&ctx, s3->secret(), s3->secret_len(), EVP_sha1(), nullptr);
   HMAC_Update(&ctx, (unsigned char *)method, method_len);
   HMAC_Update(&ctx, (unsigned char *)"\n", 1);
   HMAC_Update(&ctx, (unsigned char *)con_md5, con_md5_len);
@@ -519,9 +520,12 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("access_key"), required_argument, NULL, 'a'}, {const_cast<char *>("config"), required_argument, NULL, 'c'},
-    {const_cast<char *>("secret_key"), required_argument, NULL, 's'}, {const_cast<char *>("version"), required_argument, NULL, 'v'},
-    {const_cast<char *>("virtual_host"), no_argument, NULL, 'h'},     {NULL, no_argument, NULL, '\0'},
+    {const_cast<char *>("access_key"), required_argument, nullptr, 'a'},
+    {const_cast<char *>("config"), required_argument, nullptr, 'c'},
+    {const_cast<char *>("secret_key"), required_argument, nullptr, 's'},
+    {const_cast<char *>("version"), required_argument, nullptr, 'v'},
+    {const_cast<char *>("virtual_host"), no_argument, nullptr, 'h'},
+    {nullptr, no_argument, nullptr, '\0'},
   };
 
   S3Config *s3 = new S3Config();
@@ -532,7 +536,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   ++argv;
 
   while (true) {
-    int opt = getopt_long(argc, static_cast<char *const *>(argv), "", longopt, NULL);
+    int opt = getopt_long(argc, static_cast<char *const *>(argv), "", longopt, nullptr);
 
     switch (opt) {
     case 'c':
@@ -561,7 +565,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   if (!s3->valid()) {
     TSError("[%s] requires both shared and AWS secret configuration", PLUGIN_NAME);
     delete s3;
-    *ih = NULL;
+    *ih = nullptr;
     return TS_ERROR;
   }
 

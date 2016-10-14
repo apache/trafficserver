@@ -221,7 +221,7 @@ RecAllocateRawStatBlock(int num_stats)
 
   // allocate thread-local raw-stat memory
   if ((ethr_stat_offset = eventProcessor.allocate(num_stats * sizeof(RecRawStat))) == -1) {
-    return NULL;
+    return nullptr;
   }
 
   // create the raw-stat-block structure
@@ -258,7 +258,7 @@ _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDa
   memset(&data_default, 0, sizeof(RecData));
 
   // register the record
-  if ((r = RecRegisterStat(rec_type, name, data_type, data_default, persist_type)) == NULL) {
+  if ((r = RecRegisterStat(rec_type, name, data_type, data_default, persist_type)) == nullptr) {
     err = REC_ERR_FAIL;
     goto Ldone;
   }
@@ -596,7 +596,7 @@ int
 RecRawStatUpdateSum(RecRawStatBlock *rsb, int id)
 {
   RecRawStat *raw = rsb->global[id];
-  if (NULL != raw) {
+  if (nullptr != raw) {
     RecRecord *r = reinterpret_cast<RecRecord *>(reinterpret_cast<char *>(raw) -
                                                  (reinterpret_cast<char *>(&reinterpret_cast<RecRecord *>(0)->stat_meta) -
                                                   reinterpret_cast<char *>(reinterpret_cast<RecRecord *>(0))));

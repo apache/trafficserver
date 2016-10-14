@@ -41,7 +41,7 @@ enum RecErrT {
 //-------------------------------------------------------------------------
 // Types
 //-------------------------------------------------------------------------
-#define RecStringNull NULL
+#define RecStringNull nullptr
 
 typedef int64_t RecInt;
 typedef float RecFloat;

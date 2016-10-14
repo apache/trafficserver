@@ -58,7 +58,7 @@ static const int convert_table_size = sizeof(convert_table) / sizeof(syslog_fac)
 int
 facility_string_to_int(const char *str)
 {
-  if (str == NULL) {
+  if (str == nullptr) {
     return -1;
   }
   // Loop Through to see if the string has a valid conversion

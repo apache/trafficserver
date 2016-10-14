@@ -86,7 +86,7 @@ public:
     this->meta = RefCountCacheItemMeta(key, size, expire_time);
   };
   // Need a no-argument constructor to use the classAllocator
-  RefCountCacheHashEntry() : item(Ptr<RefCountObj>()), expiry_entry(NULL), meta(0, 0) {}
+  RefCountCacheHashEntry() : item(Ptr<RefCountObj>()), expiry_entry(nullptr), meta(0, 0) {}
   // make these values comparable -- so we can sort them
   bool
   operator<(const RefCountCacheHashEntry &v2) const
@@ -126,7 +126,7 @@ struct RefCountCacheHashing {
 template <class C> class RefCountCachePartition
 {
 public:
-  RefCountCachePartition(unsigned int part_num, uint64_t max_size, unsigned int max_items, RecRawStatBlock *rsb = NULL);
+  RefCountCachePartition(unsigned int part_num, uint64_t max_size, unsigned int max_items, RecRawStatBlock *rsb = nullptr);
   Ptr<C> get(uint64_t key);
   void put(uint64_t key, C *item, int size = 0, int expire_time = 0);
   void erase(uint64_t key, ink_time_t expiry_time = -1);
@@ -240,12 +240,12 @@ RefCountCachePartition<C>::erase(uint64_t key, ink_time_t expiry_time)
     this->metric_inc(refcountcache_current_items_stat, -1);
 
     // remove from expiry queue
-    if (l.m_value->expiry_entry != NULL) {
+    if (l.m_value->expiry_entry != nullptr) {
       Debug("refcountcache", "partition %d deleting item from expiry_queue idx=%d\n", this->part_num,
             l.m_value->expiry_entry->index);
       this->expiry_queue.erase(l.m_value->expiry_entry);
       expiryQueueEntry.free(l.m_value->expiry_entry);
-      l.m_value->expiry_entry = NULL; // To avoid the destruction of `l` calling the destructor again-- and causing issues
+      l.m_value->expiry_entry = nullptr; // To avoid the destruction of `l` calling the destructor again-- and causing issues
     }
     // Since the Value is actually RefCountObj-- when this gets deleted normally it calls the wrong
     // `free` method, this forces the delete/decr to happen with the right type
@@ -286,7 +286,7 @@ RefCountCachePartition<C>::make_space_for(unsigned int size)
   while (this->is_full() || (size > 0 && this->size + size > this->max_size)) {
     PriorityQueueEntry<RefCountCacheHashEntry *> *top_item = expiry_queue.top();
     // if there is nothing in the expiry queue, then we can't make space
-    if (top_item == NULL) {
+    if (top_item == nullptr) {
       return false;
     }
 
@@ -398,7 +398,7 @@ private:
 template <class C>
 RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items, VersionNumber object_version,
                                 std::string metrics_prefix)
-  : header(RefCountCacheHeader(object_version)), rsb(NULL)
+  : header(RefCountCacheHeader(object_version)), rsb(nullptr)
 {
   this->max_size       = size;
   this->max_items      = items;
@@ -542,7 +542,7 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, std::string dirn
                           CacheEntryType *(*load_func)(char *, unsigned int))
 {
   // If we have no load method, then we can't load anything so lets just stop right here
-  if (load_func == NULL) {
+  if (load_func == nullptr) {
     return -1; // TODO: some specific error code
   }
 
@@ -579,7 +579,7 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, std::string dirn
     }
 
     CacheEntryType *newItem = load_func((char *)&buf, tmpValue.size);
-    if (newItem != NULL) {
+    if (newItem != nullptr) {
       cache.put(tmpValue.key, newItem, tmpValue.size - sizeof(CacheEntryType));
     }
   };

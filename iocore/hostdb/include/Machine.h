@@ -71,7 +71,7 @@ struct Machine : Server {
   Link<Machine> link;
 
   // default for localhost
-  Machine(char *hostname = NULL, unsigned int ip = 0, int acluster_port = 0);
+  Machine(char *hostname = nullptr, unsigned int ip = 0, int acluster_port = 0);
   ~Machine();
 
   // Cluster message protocol version
@@ -97,7 +97,7 @@ struct MachineList {
     for (int i = 0; i < n; i++)
       if (machine[i].ip == ip && (!port || machine[i].port == port))
         return &machine[i];
-    return NULL;
+    return nullptr;
   }
 };
 

@@ -35,9 +35,9 @@
 #include "P_RecCore.h"
 #include "ts/I_Layout.h"
 
-const char *g_rec_config_fpath         = NULL;
-LLQ *g_rec_config_contents_llq         = NULL;
-InkHashTable *g_rec_config_contents_ht = NULL;
+const char *g_rec_config_fpath         = nullptr;
+LLQ *g_rec_config_contents_llq         = nullptr;
+InkHashTable *g_rec_config_contents_ht = nullptr;
 ink_mutex g_rec_config_lock;
 
 //-------------------------------------------------------------------------
@@ -46,7 +46,7 @@ ink_mutex g_rec_config_lock;
 void
 RecConfigFileInit(void)
 {
-  ink_mutex_init(&g_rec_config_lock, NULL);
+  ink_mutex_init(&g_rec_config_lock, nullptr);
   g_rec_config_contents_llq = create_queue();
   g_rec_config_contents_ht  = ink_hash_table_create(InkHashTableKeyType_String);
 }
@@ -62,7 +62,7 @@ RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
   int bytes_read;
 
   if (file && file_buf && file_size) {
-    *file_buf  = 0;
+    *file_buf  = nullptr;
     *file_size = 0;
     if ((h_file = RecFileOpenR(file)) != REC_HANDLE_INVALID) {
       *file_size = RecFileGetSize(h_file);
@@ -72,7 +72,7 @@ RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
         err                     = REC_ERR_OKAY;
       } else {
         ats_free(*file_buf);
-        *file_buf  = 0;
+        *file_buf  = nullptr;
         *file_size = 0;
       }
       RecFileClose(h_file);
@@ -89,7 +89,7 @@ const char *
 RecConfigOverrideFromEnvironment(const char *name, const char *value)
 {
   ats_scoped_str envname(ats_strdup(name));
-  const char *envval = NULL;
+  const char *envval = nullptr;
 
   // Munge foo.bar.config into FOO_BAR_CONFIG.
   for (char *c = envname; *c != '\0'; ++c) {
@@ -170,8 +170,8 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
       goto L_next_line;
     }
 
-    name_str      = strtok_r(NULL, " \t", &ln);
-    data_type_str = strtok_r(NULL, " \t", &ln);
+    name_str      = strtok_r(nullptr, " \t", &ln);
+    data_type_str = strtok_r(nullptr, " \t", &ln);
 
     // extract the string data (a little bit tricker since it can have spaces)
     if (ln) {
@@ -185,7 +185,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
         ln++;
       }
       if (*ln == '\0') {
-        data_str = NULL;
+        data_str = nullptr;
       } else {
         data_str = ln;
         while (*ln != '\0') {
@@ -199,7 +199,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
         *ln = '\0';
       }
     } else {
-      data_str = NULL;
+      data_str = nullptr;
     }
 
     // check for errors
@@ -247,7 +247,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
     cfe->entry_type = RECE_RECORD;
     cfe->entry      = ats_strdup(name_str);
     enqueue(g_rec_config_contents_llq, (void *)cfe);
-    ink_hash_table_insert(g_rec_config_contents_ht, name_str, NULL);
+    ink_hash_table_insert(g_rec_config_contents_ht, name_str, nullptr);
     goto L_done;
 
   L_next_line:

@@ -198,7 +198,7 @@ struct NetVCOptions {
     if (name && len && ats_ip_pton(ts::ConstBuffer(name, len), &ip) != 0) {
       sni_servername = ats_strndup(name, len);
     } else {
-      sni_servername = NULL;
+      sni_servername = nullptr;
     }
     return *this;
   }
@@ -207,7 +207,7 @@ struct NetVCOptions {
   operator=(self const &that)
   {
     if (&that != this) {
-      sni_servername = NULL; // release any current name.
+      sni_servername = nullptr; // release any current name.
       memcpy(this, &that, sizeof(self));
       if (that.sni_servername) {
         sni_servername.release(); // otherwise we'll free the source string.
@@ -456,7 +456,7 @@ public:
       The action continuation will be called with an event if there is no pending I/O operation
       to receive the event.
 
-      Pass @c NULL to disable.
+      Pass @c nullptr to disable.
 
       @internal Subclasses should implement this if they support actions. This abstract class does
       not. If the subclass doesn't have an action this method is silently ignored.
@@ -618,7 +618,7 @@ public:
   virtual const char *
   protocol_contains(const char *tag) const
   {
-    return NULL;
+    return nullptr;
   }
 
 private:
@@ -642,9 +642,9 @@ protected:
 };
 
 inline NetVConnection::NetVConnection()
-  : VConnection(NULL),
+  : VConnection(nullptr),
     attributes(0),
-    thread(NULL),
+    thread(nullptr),
     got_local_addr(0),
     got_remote_addr(0),
     is_internal_request(false),

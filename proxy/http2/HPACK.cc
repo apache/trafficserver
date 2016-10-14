@@ -429,14 +429,14 @@ encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, siz
 {
   uint8_t *p       = buf_start;
   bool use_huffman = true;
-  char *data       = NULL;
+  char *data       = nullptr;
   int64_t data_len = 0;
 
   // TODO Choose whether to use Huffman encoding wisely
 
   if (use_huffman && value_len) {
     data = static_cast<char *>(ats_malloc(value_len * 4));
-    if (data == NULL) {
+    if (data == nullptr) {
       return -1;
     }
     data_len = huffman_encode(reinterpret_cast<uint8_t *>(data), reinterpret_cast<const uint8_t *>(value), value_len);
@@ -769,7 +769,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   if (index) {
     indexing_table.get_header_field(index, header);
   } else {
-    char *name_str        = NULL;
+    char *name_str        = nullptr;
     uint32_t name_str_len = 0;
 
     len = decode_string(arena, &name_str, name_str_len, p, buf_end);
@@ -791,7 +791,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   }
 
   // Decode header field value
-  char *value_str        = NULL;
+  char *value_str        = nullptr;
   uint32_t value_str_len = 0;
 
   len = decode_string(arena, &value_str, value_str_len, p, buf_end);
@@ -917,7 +917,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
     }
 
     // Store to HdrHeap
-    mime_hdr_field_attach(hh->m_fields_impl, field, 1, NULL);
+    mime_hdr_field_attach(hh->m_fields_impl, field, 1, nullptr);
   }
   // Parsing all headers is done
   if (has_http2_violation) {
@@ -937,7 +937,7 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
   ink_assert(http_hdr_type_get(hdr->m_http) != HTTP_TYPE_UNKNOWN);
 
   MIMEFieldIter field_iter;
-  for (MIMEField *field = hdr->iter_get_first(&field_iter); field != NULL; field = hdr->iter_get_next(&field_iter)) {
+  for (MIMEField *field = hdr->iter_get_first(&field_iter); field != nullptr; field = hdr->iter_get_next(&field_iter)) {
     HpackFieldType field_type;
     MIMEFieldWrapper header(field, hdr->m_heap, hdr->m_http->m_fields_impl);
     int name_len;

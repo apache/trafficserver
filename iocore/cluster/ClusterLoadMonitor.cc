@@ -39,10 +39,10 @@ int ClusterLoadMonitor::cf_cluster_load_clear_duration;
 int ClusterLoadMonitor::cf_cluster_load_exceed_duration;
 
 ClusterLoadMonitor::ClusterLoadMonitor(ClusterHandler *ch)
-  : Continuation(0),
+  : Continuation(nullptr),
     ch(ch),
     ping_history_buf_head(0),
-    periodic_action(0),
+    periodic_action(nullptr),
     cluster_overloaded(0),
     cancel_periodic(0),
     cluster_load_msg_sequence_number(0),
@@ -109,11 +109,11 @@ ClusterLoadMonitor::~ClusterLoadMonitor()
   ink_release_assert(!periodic_action);
   if (ping_response_buckets) {
     ats_free(ping_response_buckets);
-    ping_response_buckets = 0;
+    ping_response_buckets = nullptr;
   }
   if (ping_response_history_buf) {
     ats_free(ping_response_history_buf);
-    ping_response_history_buf = 0;
+    ping_response_history_buf = nullptr;
   }
 }
 
@@ -281,7 +281,7 @@ ClusterLoadMonitor::cluster_load_periodic(int /* event ATS_UNUSED */, Event * /*
 
   if (cancel_periodic) {
     periodic_action->cancel();
-    periodic_action = 0;
+    periodic_action = nullptr;
     return EVENT_DONE;
   }
 

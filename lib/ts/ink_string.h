@@ -130,7 +130,7 @@ ptr_len_str(const char *p1, int l1, const char *str)
 {
   if (str && str[0]) {
     int str_index           = 0;
-    const char *match_start = NULL;
+    const char *match_start = nullptr;
 
     while (l1 > 0) {
       if (*p1 == str[str_index]) {
@@ -154,7 +154,7 @@ ptr_len_str(const char *p1, int l1, const char *str)
       l1--;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 // int ptr_len_ncmp(const char* p1, int l1, const char* str, int n) {
@@ -299,7 +299,7 @@ ptr_len_pbrk(const char *p1, int l1, const char *str)
     l1--;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 // Specialized "itoa", that is optimized for small integers, and use snprintf() otherwise.

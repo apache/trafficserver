@@ -82,8 +82,8 @@ static Node *
 make_huffman_tree_node()
 {
   Node *n       = static_cast<Node *>(ats_malloc(sizeof(Node)));
-  n->left       = NULL;
-  n->right      = NULL;
+  n->left       = nullptr;
+  n->right      = nullptr;
   n->ascii_code = '\0';
   n->leaf_node  = false;
   return n;

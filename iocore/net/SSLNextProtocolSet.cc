@@ -48,10 +48,10 @@ create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_ty
   const SSLNextProtocolSet::NextProtocolEndpoint *ep;
   unsigned char *advertised;
 
-  *npn = NULL;
+  *npn = nullptr;
   *len = 0;
 
-  for (ep = endpoints.head; ep != NULL; ep = endpoints.next(ep)) {
+  for (ep = endpoints.head; ep != nullptr; ep = endpoints.next(ep)) {
     ink_release_assert((strlen(ep->protocol) > 0));
     *len += (strlen(ep->protocol) + 1);
   }
@@ -61,7 +61,7 @@ create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_ty
     goto fail;
   }
 
-  for (ep = endpoints.head; ep != NULL; ep = endpoints.next(ep)) {
+  for (ep = endpoints.head; ep != nullptr; ep = endpoints.next(ep)) {
     Debug("ssl", "advertising protocol %s", ep->protocol);
     advertised = append_protocol(ep->protocol, advertised);
   }
@@ -70,7 +70,7 @@ create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_ty
 
 fail:
   ats_free(*npn);
-  *npn = NULL;
+  *npn = nullptr;
   *len = 0;
   return false;
 }
@@ -102,7 +102,7 @@ SSLNextProtocolSet::registerEndpoint(const char *proto, Continuation *ep)
 
     if (npn) {
       ats_free(npn);
-      npn   = NULL;
+      npn   = nullptr;
       npnsz = 0;
     }
 
@@ -132,16 +132,16 @@ SSLNextProtocolSet::unregisterEndpoint(const char *proto, Continuation *ep)
 Continuation *
 SSLNextProtocolSet::findEndpoint(const unsigned char *proto, unsigned len) const
 {
-  for (const NextProtocolEndpoint *ep = this->endpoints.head; ep != NULL; ep = this->endpoints.next(ep)) {
+  for (const NextProtocolEndpoint *ep = this->endpoints.head; ep != nullptr; ep = this->endpoints.next(ep)) {
     size_t sz = strlen(ep->protocol);
     if (sz == len && memcmp(ep->protocol, proto, len) == 0) {
       return ep->endpoint;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
-SSLNextProtocolSet::SSLNextProtocolSet() : npn(0), npnsz(0)
+SSLNextProtocolSet::SSLNextProtocolSet() : npn(nullptr), npnsz(0)
 {
 }
 

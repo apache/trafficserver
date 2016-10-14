@@ -65,10 +65,10 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
   ssl   = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   netvc = SSLNetVCAccess(ssl);
 
-  if (netvc != NULL) {
+  if (netvc != nullptr) {
     // Match SNI if present
     if (netvc->options.sni_servername) {
-      char *matched_name = NULL;
+      char *matched_name = nullptr;
       if (validate_hostname(cert, reinterpret_cast<unsigned char *>(netvc->options.sni_servername.get()), false, &matched_name)) {
         SSLDebug("Hostname %s verified OK, matched %s", netvc->options.sni_servername.get(), matched_name);
         ats_free(matched_name);
@@ -80,7 +80,7 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     else {
       char buff[INET6_ADDRSTRLEN];
       ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
-      if (validate_hostname(cert, reinterpret_cast<unsigned char *>(buff), true, NULL)) {
+      if (validate_hostname(cert, reinterpret_cast<unsigned char *>(buff), true, nullptr)) {
         SSLDebug("IP %s verified OK", buff);
         return preverify_ok;
       }
@@ -94,9 +94,9 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 SSL_CTX *
 SSLInitClientContext(const SSLConfigParams *params)
 {
-  ink_ssl_method_t meth = NULL;
-  SSL_CTX *client_ctx   = NULL;
-  char *clientKeyPtr    = NULL;
+  ink_ssl_method_t meth = nullptr;
+  SSL_CTX *client_ctx   = nullptr;
+  char *clientKeyPtr    = nullptr;
 
   // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
   // to do the seeding of the PRNG for us. This is the case for all platforms that
@@ -115,7 +115,7 @@ SSLInitClientContext(const SSLConfigParams *params)
   if (params->ssl_client_ctx_protocols) {
     SSL_CTX_set_options(client_ctx, params->ssl_client_ctx_protocols);
   }
-  if (params->client_cipherSuite != NULL) {
+  if (params->client_cipherSuite != nullptr) {
     if (!SSL_CTX_set_cipher_list(client_ctx, params->client_cipherSuite)) {
       SSLError("invalid client cipher suite in records.config");
       goto fail;
@@ -125,11 +125,11 @@ SSLInitClientContext(const SSLConfigParams *params)
   // if no path is given for the client private key,
   // assume it is contained in the client certificate file.
   clientKeyPtr = params->clientKeyPath;
-  if (clientKeyPtr == NULL) {
+  if (clientKeyPtr == nullptr) {
     clientKeyPtr = params->clientCertPath;
   }
 
-  if (params->clientCertPath != 0) {
+  if (params->clientCertPath != nullptr) {
     if (!SSL_CTX_use_certificate_chain_file(client_ctx, params->clientCertPath)) {
       SSLError("failed to load client certificate from %s", params->clientCertPath);
       goto fail;
@@ -150,7 +150,7 @@ SSLInitClientContext(const SSLConfigParams *params)
     SSL_CTX_set_verify(client_ctx, SSL_VERIFY_PEER, verify_callback);
     SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
 
-    if (params->clientCACertFilename != NULL || params->clientCACertPath != NULL) {
+    if (params->clientCACertFilename != nullptr || params->clientCACertPath != nullptr) {
       if (!SSL_CTX_load_verify_locations(client_ctx, params->clientCACertFilename, params->clientCACertPath)) {
         SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)", params->clientCACertFilename,
                  params->clientCACertPath);

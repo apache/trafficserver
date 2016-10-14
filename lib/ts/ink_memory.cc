@@ -44,19 +44,19 @@
 void *
 ats_malloc(size_t size)
 {
-  void *ptr = NULL;
+  void *ptr = nullptr;
 
   /*
    * There's some nasty code in libts that expects
    * a MALLOC of a zero-sized item to work properly. Rather
-   * than allocate any space, we simply return a NULL to make
+   * than allocate any space, we simply return a nullptr to make
    * certain they die quickly & don't trash things.
    */
 
   // Useful for tracing bad mallocs
   // ink_stack_trace_dump();
   if (likely(size > 0)) {
-    if (unlikely((ptr = malloc(size)) == NULL)) {
+    if (unlikely((ptr = malloc(size)) == nullptr)) {
       ink_abort("couldn't allocate %zu bytes", size);
     }
   }
@@ -67,7 +67,7 @@ void *
 ats_calloc(size_t nelem, size_t elsize)
 {
   void *ptr = calloc(nelem, elsize);
-  if (unlikely(ptr == NULL)) {
+  if (unlikely(ptr == nullptr)) {
     ink_abort("couldn't allocate %zu %zu byte elements", nelem, elsize);
   }
   return ptr;
@@ -77,7 +77,7 @@ void *
 ats_realloc(void *ptr, size_t size)
 {
   void *newptr = realloc(ptr, size);
-  if (unlikely(newptr == NULL)) {
+  if (unlikely(newptr == nullptr)) {
     ink_abort("couldn't reallocate %zu bytes", size);
   }
   return newptr;
@@ -112,7 +112,7 @@ ats_memalign(size_t alignment, size_t size)
   }
 #else
   ptr = memalign(alignment, size);
-  if (unlikely(ptr == NULL)) {
+  if (unlikely(ptr == nullptr)) {
     ink_abort("couldn't allocate %zu bytes at alignment %zu", size, alignment);
   }
 #endif
@@ -122,16 +122,16 @@ ats_memalign(size_t alignment, size_t size)
 void
 ats_free(void *ptr)
 {
-  if (likely(ptr != NULL))
+  if (likely(ptr != nullptr))
     free(ptr);
 } /* End ats_free */
 
 void *
 ats_free_null(void *ptr)
 {
-  if (likely(ptr != NULL))
+  if (likely(ptr != nullptr))
     free(ptr);
-  return NULL;
+  return nullptr;
 } /* End ats_free_null */
 
 void
@@ -243,7 +243,7 @@ ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_s
 void
 ats_track_free(void *ptr, uint64_t *stat)
 {
-  if (ptr == NULL) {
+  if (ptr == nullptr) {
     return;
   }
 
@@ -275,5 +275,5 @@ _xstrdup(const char *str, int length, const char * /* path ATS_UNUSED */)
     }
     return newstr;
   }
-  return NULL;
+  return nullptr;
 }

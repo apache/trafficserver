@@ -36,8 +36,8 @@
 
 textBuffer::textBuffer(int size)
 {
-  bufferStart = NULL;
-  nextAdd     = NULL;
+  bufferStart = nullptr;
+  nextAdd     = nullptr;
   currentSize = spaceLeft = 0;
   if (size > 0) {
     // Insitute a minimum size
@@ -63,7 +63,7 @@ textBuffer::release()
 {
   char *ret = bufferStart;
 
-  bufferStart = nextAdd = NULL;
+  bufferStart = nextAdd = nullptr;
   currentSize = spaceLeft = 0;
 
   return ret;
@@ -77,7 +77,7 @@ textBuffer::release()
 void
 textBuffer::reUse()
 {
-  if (bufferStart != NULL) {
+  if (bufferStart != nullptr) {
     nextAdd    = bufferStart;
     spaceLeft  = currentSize - 1;
     nextAdd[0] = '\0';
@@ -135,7 +135,7 @@ textBuffer::enlargeBuffer(unsigned N)
     addedSize = newSize - currentSize;
 
     newSpace = (char *)ats_realloc(bufferStart, newSize);
-    if (newSpace != NULL) {
+    if (newSpace != nullptr) {
       nextAdd     = newSpace + (unsigned)(nextAdd - bufferStart);
       bufferStart = newSpace;
       spaceLeft += addedSize;

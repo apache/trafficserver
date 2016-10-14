@@ -38,8 +38,9 @@ IOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length)
       n += need;
     }
 
-    if (length == 0)
+    if (length == 0) {
       break;
+    }
 
     blk = TSIOBufferBlockNext(blk);
   }

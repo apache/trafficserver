@@ -174,11 +174,11 @@ RegexAcl::compile(const std::string &str, const char *filename, int lineno)
   int erroffset;
 
   _regex_s = str;
-  _rex     = pcre_compile(_regex_s.c_str(), 0, &error, &erroffset, NULL);
+  _rex     = pcre_compile(_regex_s.c_str(), 0, &error, &erroffset, nullptr);
 
-  if (NULL != _rex) {
+  if (nullptr != _rex) {
     _extra = pcre_study(_rex, 0, &error);
-    if ((NULL == _extra) && error && (*error != 0)) {
+    if ((nullptr == _extra) && error && (*error != 0)) {
       TSError("[%s] Failed to study regular expression in %s:line %d at offset %d: %s", PLUGIN_NAME, filename, lineno, erroffset,
               error);
       return false;
@@ -194,7 +194,7 @@ RegexAcl::compile(const std::string &str, const char *filename, int lineno)
 void
 RegexAcl::append(RegexAcl *ra)
 {
-  if (NULL == _next) {
+  if (nullptr == _next) {
     _next = ra;
   } else {
     RegexAcl *cur = _next;
@@ -230,14 +230,14 @@ CountryAcl::read_regex(const char *fn, int &tokens)
   f.open(fn, std::ios::in);
   if (f.is_open()) {
     std::string line;
-    RegexAcl *acl = NULL;
+    RegexAcl *acl = nullptr;
 
     while (!f.eof()) {
       getline(f, line);
       ++lineno;
       acl = new RegexAcl(new CountryAcl());
       if (acl->parse_line(fn, line, lineno, tokens)) {
-        if (NULL == _regexes) {
+        if (nullptr == _regexes) {
           _regexes = acl;
         } else {
           _regexes->append(acl);
@@ -263,7 +263,7 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
   // If there are regex rules, they take priority first. If a regex matches, we will
   // honor it's eval() rule. If no regexes matches, fall back on the default (which is
   // "allow" if nothing else is specified).
-  if (NULL != _regexes) {
+  if (nullptr != _regexes) {
     RegexAcl *acl = _regexes;
     int path_len;
     const char *path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);

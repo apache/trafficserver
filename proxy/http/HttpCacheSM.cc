@@ -45,14 +45,14 @@
 
 #define REMEMBER(e, r) master_sm->add_history_entry(__FILE__ ":" _REMEMBER(__LINE__), e, r);
 
-HttpCacheAction::HttpCacheAction() : sm(NULL)
+HttpCacheAction::HttpCacheAction() : sm(nullptr)
 {
 }
 
 void
 HttpCacheAction::cancel(Continuation *c)
 {
-  ink_assert(c == NULL || c == sm->master_sm);
+  ink_assert(c == nullptr || c == sm->master_sm);
   ink_assert(this->cancelled == 0);
 
   this->cancelled = 1;
@@ -62,24 +62,24 @@ HttpCacheAction::cancel(Continuation *c)
 }
 
 HttpCacheSM::HttpCacheSM()
-  : Continuation(NULL),
-    cache_read_vc(NULL),
-    cache_write_vc(NULL),
+  : Continuation(nullptr),
+    cache_read_vc(nullptr),
+    cache_write_vc(nullptr),
     read_locked(false),
     write_locked(false),
     readwhilewrite_inprogress(false),
-    master_sm(NULL),
-    pending_action(NULL),
+    master_sm(nullptr),
+    pending_action(nullptr),
     captive_action(),
     open_read_cb(false),
     open_write_cb(false),
     open_read_tries(0),
-    read_request_hdr(NULL),
-    read_config(NULL),
+    read_request_hdr(nullptr),
+    read_config(nullptr),
     read_pin_in_cache(0),
     retry_write(true),
     open_write_tries(0),
-    lookup_url(NULL),
+    lookup_url(nullptr),
     lookup_max_recursive(0),
     current_lookup_level(0)
 {
@@ -117,12 +117,12 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
 {
   STATE_ENTER(&HttpCacheSM::state_cache_open_read, event);
   ink_assert(captive_action.cancelled == 0);
-  pending_action = NULL;
+  pending_action = nullptr;
 
   switch (event) {
   case CACHE_EVENT_OPEN_READ:
     HTTP_INCREMENT_DYN_STAT(http_current_cache_connections_stat);
-    ink_assert((cache_read_vc == NULL) || master_sm->t_state.redirect_info.redirect_in_process);
+    ink_assert((cache_read_vc == nullptr) || master_sm->t_state.redirect_info.redirect_in_process);
     if (cache_read_vc) {
       // redirect follow in progress, close the previous cache_read_vc
       close_read();
@@ -176,12 +176,12 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(&HttpCacheSM::state_cache_open_write, event);
   ink_assert(captive_action.cancelled == 0);
-  pending_action = NULL;
+  pending_action = nullptr;
 
   switch (event) {
   case CACHE_EVENT_OPEN_WRITE:
     HTTP_INCREMENT_DYN_STAT(http_current_cache_connections_stat);
-    ink_assert(cache_write_vc == NULL);
+    ink_assert(cache_write_vc == nullptr);
     cache_write_vc = (CacheVConnection *)data;
     open_write_cb  = true;
     master_sm->handleEvent(event, data);
@@ -227,7 +227,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
 void
 HttpCacheSM::do_schedule_in()
 {
-  ink_assert(pending_action == NULL);
+  ink_assert(pending_action == nullptr);
   Action *action_handle =
     mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(master_sm->t_state.txn_conf->cache_open_read_retry_time));
 
@@ -242,7 +242,7 @@ Action *
 HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
 {
   open_read_tries++;
-  ink_assert(pending_action == NULL);
+  ink_assert(pending_action == nullptr);
   if (write_locked) {
     open_read_cb = false;
   } else {
@@ -263,7 +263,7 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   if (open_read_cb == true) {
     return ACTION_RESULT_DONE;
   } else {
-    ink_assert(pending_action != NULL || write_locked == true);
+    ink_assert(pending_action != nullptr || write_locked == true);
     return &captive_action;
   }
 }
@@ -278,7 +278,7 @@ HttpCacheSM::open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, CacheLoo
   read_request_hdr  = hdr;
   read_config       = params;
   read_pin_in_cache = pin_in_cache;
-  ink_assert(pending_action == NULL);
+  ink_assert(pending_action == nullptr);
   SET_HANDLER(&HttpCacheSM::state_cache_open_read);
 
   lookup_max_recursive++;
@@ -312,8 +312,8 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
                         bool retry, bool allow_multiple)
 {
   SET_HANDLER(&HttpCacheSM::state_cache_open_write);
-  ink_assert(pending_action == NULL);
-  ink_assert((cache_write_vc == NULL) || master_sm->t_state.redirect_info.redirect_in_process);
+  ink_assert(pending_action == nullptr);
+  ink_assert((cache_write_vc == nullptr) || master_sm->t_state.redirect_info.redirect_in_process);
   // INKqa12119
   open_write_cb = false;
   open_write_tries++;
@@ -323,7 +323,7 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   //  a lookup on
   // this is no longer true for multiple cache lookup
   // ink_assert(url == lookup_url || lookup_url == NULL);
-  ink_assert(request == read_request_hdr || read_request_hdr == NULL);
+  ink_assert(request == read_request_hdr || read_request_hdr == nullptr);
   this->lookup_url       = url;
   this->read_request_hdr = request;
   cache_key              = *key;
@@ -354,7 +354,7 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   if (open_write_cb == true) {
     return ACTION_RESULT_DONE;
   } else {
-    ink_assert(pending_action != NULL);
+    ink_assert(pending_action != nullptr);
     return &captive_action;
   }
 }

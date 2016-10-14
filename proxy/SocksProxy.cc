@@ -58,15 +58,15 @@ struct SocksProxy : public Continuation {
 
   SocksProxy()
     : Continuation(),
-      clientVC(0),
-      clientVIO(0),
-      buf(0),
-      timeout(0),
-      auth_handler(0),
+      clientVC(nullptr),
+      clientVIO(nullptr),
+      buf(nullptr),
+      timeout(nullptr),
+      auth_handler(nullptr),
       version(0),
       state(SOCKS_INIT),
       recursion(0),
-      pending_action(NULL)
+      pending_action(nullptr)
   {
   }
   ~SocksProxy() {}
@@ -120,7 +120,7 @@ SocksProxy::free()
     free_MIOBuffer(buf);
   }
 
-  mutex = NULL;
+  mutex = nullptr;
 
   socksProxyAllocator.free(this);
 }
@@ -182,7 +182,7 @@ SocksProxy::mainEvent(int event, void *data)
     Debug("SocksProxy", "Oops! We should never get Read_Complete.");
   // FALLTHROUGH
   case VC_EVENT_READ_READY: {
-    unsigned char *port_ptr = 0;
+    unsigned char *port_ptr = nullptr;
 
     ret = EVENT_CONT;
     vio = (VIO *)data;
@@ -247,7 +247,7 @@ SocksProxy::mainEvent(int event, void *data)
             if (n_read_avail >= req_len) {
               port_ptr                  = &p[req_len - 2];
               clientVC->socks_addr.type = p[3];
-              auth_handler              = NULL;
+              auth_handler              = nullptr;
               reader->consume(req_len);
               ret = EVENT_DONE;
             }
@@ -263,7 +263,7 @@ SocksProxy::mainEvent(int event, void *data)
 
     if (ret == EVENT_DONE) {
       timeout->cancel(this);
-      timeout = 0;
+      timeout = nullptr;
 
       if (auth_handler) {
         /* disable further reads */
@@ -306,7 +306,7 @@ SocksProxy::mainEvent(int event, void *data)
           if (clientVC->socks_addr.type != SOCKS_ATYPE_IPV4) {
             // We dont support other kinds of addresses for tunnelling
             // if this is a hostname we could do host look up here
-            mainEvent(NET_EVENT_OPEN_FAILED, NULL);
+            mainEvent(NET_EVENT_OPEN_FAILED, nullptr);
             break;
           }
 
@@ -327,7 +327,7 @@ SocksProxy::mainEvent(int event, void *data)
 
           Action *action = netProcessor.connect_re(this, ats_ip_sa_cast(&addr), &vc_options);
           if (action != ACTION_RESULT_DONE) {
-            ink_assert(pending_action == NULL);
+            ink_assert(pending_action == nullptr);
             pending_action = action;
           }
         }
@@ -338,7 +338,7 @@ SocksProxy::mainEvent(int event, void *data)
   }
 
   case NET_EVENT_OPEN: {
-    pending_action = NULL;
+    pending_action = nullptr;
     ink_assert(state == SERVER_TUNNEL);
     Debug("SocksProxy", "open to Socks server succeeded");
 
@@ -348,25 +348,25 @@ SocksProxy::mainEvent(int event, void *data)
     OneWayTunnel *c_to_s = OneWayTunnel::OneWayTunnel_alloc();
     OneWayTunnel *s_to_c = OneWayTunnel::OneWayTunnel_alloc();
 
-    c_to_s->init(clientVC, serverVC, NULL, clientVIO, reader);
-    s_to_c->init(serverVC, clientVC, /*aCont = */ NULL, 0 /*best guess */, c_to_s->mutex.get());
+    c_to_s->init(clientVC, serverVC, nullptr, clientVIO, reader);
+    s_to_c->init(serverVC, clientVC, /*aCont = */ nullptr, 0 /*best guess */, c_to_s->mutex.get());
 
     OneWayTunnel::SetupTwoWayTunnel(c_to_s, s_to_c);
 
-    buf   = 0; // do not free buf. Tunnel will do that.
+    buf   = nullptr; // do not free buf. Tunnel will do that.
     state = ALL_DONE;
     break;
   }
 
   case NET_EVENT_OPEN_FAILED:
-    pending_action = NULL;
+    pending_action = nullptr;
     sendResp(false);
     state = RESP_TO_CLIENT;
     Debug("SocksProxy", "open to Socks server failed");
     break;
 
   case EVENT_INTERVAL:
-    timeout = 0;
+    timeout = nullptr;
     Debug("SocksProxy", "SocksProxy timeout, state = %d", state);
     state = SOCKS_ERROR;
     break;
@@ -396,7 +396,7 @@ SocksProxy::mainEvent(int event, void *data)
     if (clientVC) {
       Debug("SocksProxy", "Closing clientVC on error");
       clientVC->do_io_close();
-      clientVC = NULL;
+      clientVC = nullptr;
     }
 
     state = ALL_DONE;
@@ -508,7 +508,7 @@ struct SocksAccepter : public Continuation {
   }
 
   // There is no state used we dont need a mutex
-  SocksAccepter() : Continuation(NULL) { SET_HANDLER((SocksAccepterHandler)&SocksAccepter::mainEvent); }
+  SocksAccepter() : Continuation(nullptr) { SET_HANDLER((SocksAccepterHandler)&SocksAccepter::mainEvent); }
 };
 
 void
@@ -552,7 +552,7 @@ socks5ServerAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
   // FALLTHROUGH
   case SOCKS_AUTH_WRITE_COMPLETE:
     // nothing to do
-    *h_ptr = NULL;
+    *h_ptr = nullptr;
     break;
 
   default:

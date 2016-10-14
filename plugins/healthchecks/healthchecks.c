@@ -125,8 +125,9 @@ static HCDirEntry *
 find_direntry(const char *dname, HCDirEntry *dir)
 {
   while (dir) {
-    if (!strncmp(dname, dir->dname, MAX_PATH_LEN))
+    if (!strncmp(dname, dir->dname, MAX_PATH_LEN)) {
       return dir;
+    }
     dir = dir->_next;
   }
   return NULL;
@@ -153,11 +154,12 @@ setup_watchers(int fd)
       memset(dir, 0, sizeof(HCDirEntry));
       strncpy(dir->dname, dname, MAX_PATH_LEN - 1);
       dir->wd = inotify_add_watch(fd, dname, IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_ATTRIB);
-      if (!head_dir)
+      if (!head_dir) {
         head_dir = dir;
-      else
+      } else {
         last_dir->_next = dir;
-      last_dir          = dir;
+      }
+      last_dir = dir;
     }
     conf->dir = dir;
     conf      = conf->_next;
@@ -197,10 +199,11 @@ hc_thread(void *data ATS_UNUSED)
     while (fdata) {
       if (now.tv_sec > fdata->remove) {
         /* Now drop off the "tail" from the freelist */
-        if (fdata_prev)
+        if (fdata_prev) {
           fdata_prev->_next = NULL;
-        else
+        } else {
           fl_head = NULL;
+        }
 
         /* free() everything in the "tail" */
         do {
@@ -333,16 +336,18 @@ parse_configs(const char *fname)
         if (strlen(str) > 0) {
           switch (state) {
           case 0:
-            if ('/' == *str)
+            if ('/' == *str) {
               ++str;
+            }
             strncpy(finfo->path, str, PATH_NAME_MAX - 1);
             finfo->p_len = strlen(finfo->path);
             break;
           case 1:
             strncpy(finfo->fname, str, MAX_PATH_LEN - 1);
             finfo->basename = strrchr(finfo->fname, '/');
-            if (finfo->basename)
+            if (finfo->basename) {
               ++(finfo->basename);
+            }
             break;
           case 2:
             mime = str;
@@ -449,10 +454,11 @@ hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
 
     len = snprintf(buf, sizeof(buf) - 1, "Content-Length: %d\r\n\r\n", my_state->data->b_len);
     my_state->output_bytes += add_data_to_resp(buf, len, my_state);
-    if (my_state->data->b_len > 0)
+    if (my_state->data->b_len > 0) {
       my_state->output_bytes += add_data_to_resp(my_state->data->body, my_state->data->b_len, my_state);
-    else
+    } else {
       my_state->output_bytes += add_data_to_resp("\r\n", 2, my_state);
+    }
     TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
     TSVIOReenable(my_state->write_vio);
   } else if (TS_EVENT_VCONN_WRITE_COMPLETE) {
@@ -510,8 +516,9 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
     const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
 
     /* Short circuit the / path, common case, and we won't allow healthecks on / */
-    if (!path || !path_len)
+    if (!path || !path_len) {
       goto cleanup;
+    }
 
     while (info) {
       if (info->p_len == path_len && !memcmp(info->path, path, path_len)) {
@@ -521,8 +528,9 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
       info = info->_next;
     }
 
-    if (!info)
+    if (!info) {
       goto cleanup;
+    }
 
     TSSkipRemappingSet(txnp, 1); /* not strictly necessary, but speed is everything these days */
 
@@ -537,10 +545,12 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
   }
 
 cleanup:
-  if (url_loc)
+  if (url_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, url_loc);
-  if (hdr_loc)
+  }
+  if (hdr_loc) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
+  }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 

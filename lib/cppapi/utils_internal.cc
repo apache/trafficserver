@@ -100,7 +100,7 @@ setupTransactionManagement()
   // Reserve a transaction slot
   TSAssert(TS_SUCCESS == TSHttpArgIndexReserve("atscppapi", "ATS CPP API", &TRANSACTION_STORAGE_INDEX));
   // We must always have a cleanup handler available
-  TSMutex mutex = NULL;
+  TSMutex mutex = nullptr;
   TSCont cont   = TSContCreate(handleTransactionEvents, mutex);
   TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, cont);
@@ -244,7 +244,7 @@ utils::internal::consumeFromTSIOBufferReader(TSIOBufferReader reader)
       int64_t data_len;
       const char *char_data;
       TSIOBufferBlock block = TSIOBufferReaderStart(reader);
-      while (block != NULL) {
+      while (block != nullptr) {
         char_data = TSIOBufferBlockReadStart(block, reader, &data_len);
         str.append(char_data, data_len);
         consumed += data_len;

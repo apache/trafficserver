@@ -66,7 +66,7 @@ GlobalPlugin::GlobalPlugin(bool ignore_internal_transactions)
 {
   utils::internal::initTransactionManagement();
   state_        = new GlobalPluginState(this, ignore_internal_transactions);
-  TSMutex mutex = NULL;
+  TSMutex mutex = nullptr;
   state_->cont_ = TSContCreate(handleGlobalPluginEvents, mutex);
   TSContDataSet(state_->cont_, static_cast<void *>(state_));
 }

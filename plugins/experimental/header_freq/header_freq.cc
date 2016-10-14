@@ -222,7 +222,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   TSCont contp = TSContCreate(handle_hook, TSMutexCreate());
-  if (contp == NULL) {
+  if (contp == nullptr) {
     // Continuation initialization failed. Unrecoverable, report and exit.
     TSError("[%s](%s) could not create continuation", PLUGIN_NAME, __FUNCTION__);
     abort();

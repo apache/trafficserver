@@ -40,7 +40,7 @@ namespace ts { namespace config {
 Buffer const detail::NULL_BUFFER;
 ConstBuffer const detail::NULL_CONST_BUFFER;
 detail::ValueItem detail::ValueTableImpl::NULL_ITEM(VoidValue);
-detail::PseudoBool::Type const detail::PseudoBool::FALSE = 0;
+detail::PseudoBool::Type const detail::PseudoBool::FALSE = nullptr;
 detail::PseudoBool::Type const detail::PseudoBool::TRUE = &detail::PseudoBool::operator !;
 // This should not be called, it is used only as a pointer value.
 bool detail::PseudoBool::operator ! () const { return false; }
@@ -300,7 +300,7 @@ Path::Parser::parse(ConstBuffer *cbuff) {
   if (!zret.isOK()) {
     zret = ERROR;
     if (cbuff) cbuff->set(_c - 1, 1);
-    _c = 0;
+    _c = nullptr;
     _input.reset();
   } else if (S_INIT == state) {
     zret = EOP;

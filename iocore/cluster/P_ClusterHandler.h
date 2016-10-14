@@ -154,7 +154,7 @@ struct invoke_remote_data_args {
   enum {
     MagicNo = 0x04141998,
   };
-  invoke_remote_data_args() : magicno(MagicNo), msg_oc(NULL), data_oc(NULL), dest_channel(0) {}
+  invoke_remote_data_args() : magicno(MagicNo), msg_oc(nullptr), data_oc(nullptr), dest_channel(0) {}
 };
 
 //
@@ -317,8 +317,8 @@ struct ClusterMsg {
     return cksum;
   }
   ClusterMsg()
-    : descriptor(NULL),
-      iob_descriptor_block(NULL),
+    : descriptor(nullptr),
+      iob_descriptor_block(nullptr),
       count(0),
       control_bytes(0),
       descriptor_cksum(0),
@@ -419,7 +419,7 @@ struct ClusterHandlerBase : public Continuation {
   int min_priority;
   Event *trigger_event;
 
-  ClusterHandlerBase() : Continuation(NULL), read_vcs(NULL), write_vcs(NULL), cur_vcs(0), min_priority(1) {}
+  ClusterHandlerBase() : Continuation(nullptr), read_vcs(nullptr), write_vcs(NULL), cur_vcs(0), min_priority(1) {}
 };
 
 struct ClusterHandler : public ClusterHandlerBase {
@@ -639,7 +639,7 @@ struct ClusterHandler : public ClusterHandlerBase {
   void free_locks(bool read_flag, int i = CLUSTER_FREE_ALL_LOCKS);
   bool get_read_locks();
   bool get_write_locks();
-  int zombify(Event *e = NULL); // optional event to use
+  int zombify(Event *e = nullptr); // optional event to use
 
   int connectClusterEvent(int event, Event *e);
   int startClusterEvent(int event, Event *e);

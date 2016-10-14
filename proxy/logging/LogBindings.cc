@@ -66,7 +66,7 @@ refcount_object_get(lua_State *L, int index, const char *type_name)
   ptr = (RefCountObj **)luaL_checkudata(L, index, type_name);
   if (!ptr) {
     luaL_typerror(L, index, type_name);
-    return NULL; // Not reached, since luaL_typerror throws.
+    return nullptr; // Not reached, since luaL_typerror throws.
   }
 
   return dynamic_cast<T *>(*ptr);
@@ -80,9 +80,9 @@ create_format_object(lua_State *L)
 
   BindingInstance::typecheck(L, "format", LUA_TTABLE, LUA_TNONE);
   interval = lua_getfield<lua_Integer>(L, -1, "Interval", 0);
-  format   = lua_getfield<const char *>(L, -1, "Format", NULL);
+  format   = lua_getfield<const char *>(L, -1, "Format", nullptr);
 
-  if (format == NULL) {
+  if (format == nullptr) {
     luaL_error(L, "missing 'Format' argument");
   }
 
@@ -105,7 +105,7 @@ create_filter_object(lua_State *L, const char *name, LogFilter::Action action)
   // directly, we don't need filter names or a global filter container.
 
   filter = LogFilter::parse("lua", action, condition);
-  if (filter == NULL) {
+  if (filter == nullptr) {
     // NOTE: Not really a return since luaL_error throws.
     return (luaL_error(L, "invalid filter condition '%s'", condition));
   }
@@ -143,14 +143,14 @@ make_log_host(LogHost *parent, LogObject *log, const char *s)
   lh = new LogHost(log->get_full_filename(), log->get_signature());
   if (!lh->set_name_or_ipstr(spec.c_str())) {
     Error("invalid collation host specification '%s'", s);
-    return NULL;
+    return nullptr;
   }
 
   if (parent) {
     // If we already have a LogHost, this is a failover host, so append
     // it to the end of the failover list.
     LogHost *last = parent;
-    while (last->failover_link.next != NULL) {
+    while (last->failover_link.next != nullptr) {
       last = last->failover_link.next;
     }
 
@@ -172,7 +172,7 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
 
   // A single host.
   if (lua_isstring(L, value)) {
-    log->add_loghost(make_log_host(NULL, log, lua_tostring(L, value)), false /* take ownership */);
+    log->add_loghost(make_log_host(nullptr, log, lua_tostring(L, value)), false /* take ownership */);
     return true;
   }
 
@@ -180,7 +180,7 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
     lua_scoped_stack saved(L);
 
     int count   = luaL_getn(L, value);
-    LogHost *lh = NULL;
+    LogHost *lh = nullptr;
 
     saved.push_value(value); // Push the table to -1.
 
@@ -198,7 +198,7 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
         // This is a collation host address. Add it as a peer host if
         // we are on the top level, or as a failover host if we are
         // in a nested array.
-        lh = make_log_host(top ? NULL : lh, log, lua_tostring(L, -1));
+        lh = make_log_host(top ? nullptr : lh, log, lua_tostring(L, -1));
         break;
 
       case LUA_TTABLE:
@@ -218,7 +218,7 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
       // the hosts into a flattened failover group.
       if (top) {
         log->add_loghost(lh, false /* take ownership */);
-        lh = NULL;
+        lh = nullptr;
       }
 
       lua_pop(L, 1); // Pop the element.
@@ -270,7 +270,7 @@ log_object_add_filters(lua_State *L, LogObject *log, int value)
 
       lua_pop(L, 1); // Pop the element.
 
-      if (filter == NULL) {
+      if (filter == nullptr) {
         return false;
       }
     }
@@ -297,8 +297,8 @@ create_log_object(lua_State *L, const char *name, LogFileFormat which)
 
   BindingInstance::typecheck(L, name, LUA_TTABLE, LUA_TNONE);
 
-  filename = lua_getfield<const char *>(L, -1, "Filename", NULL);
-  header   = lua_getfield<const char *>(L, -1, "Header", NULL);
+  filename = lua_getfield<const char *>(L, -1, "Filename", nullptr);
+  header   = lua_getfield<const char *>(L, -1, "Header", nullptr);
   rolling  = lua_getfield<lua_Integer>(L, -1, "RollingEnabled", conf->rolling_enabled);
   interval = lua_getfield<lua_Integer>(L, -1, "RollingIntervalSec", conf->rolling_interval_sec);
   offset   = lua_getfield<lua_Integer>(L, -1, "RollingOffsetHr", conf->rolling_offset_hr);
@@ -321,7 +321,7 @@ create_log_object(lua_State *L, const char *name, LogFileFormat which)
     luaL_error(L, "missing or invalid 'Format' argument");
   }
 
-  if (filename == NULL) {
+  if (filename == nullptr) {
     luaL_error(L, "missing 'Filename' argument");
   }
 
@@ -392,7 +392,7 @@ bool
 MakeLogBindings(BindingInstance &binding, LogConfig *conf)
 {
   static const luaL_reg metatable[] = {
-    {"__gc", refcount_object_gc}, {0, 0},
+    {"__gc", refcount_object_gc}, {nullptr, nullptr},
   };
 
   // Register the logging object API.

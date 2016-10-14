@@ -88,7 +88,7 @@ static const ink_freelist_ops malloc_ops   = {malloc_new, malloc_free, malloc_bu
 static const ink_freelist_ops freelist_ops = {freelist_new, freelist_free, freelist_bulkfree};
 static const ink_freelist_ops *default_ops = &freelist_ops;
 
-static ink_freelist_list *freelists                  = NULL;
+static ink_freelist_list *freelists                  = nullptr;
 static const ink_freelist_ops *freelist_freelist_ops = default_ops;
 
 const InkFreeListOps *
@@ -196,9 +196,9 @@ freelist_new(InkFreeList *f)
 
   do {
     INK_QUEUE_LD(item, f->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == NULL) {
+    if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
       uint32_t i;
-      void *newp        = NULL;
+      void *newp        = nullptr;
       size_t alloc_size = f->chunk_size * f->type_size;
       size_t alignment  = 0;
 
@@ -207,7 +207,7 @@ freelist_new(InkFreeList *f)
         newp      = ats_alloc_hugepage(alloc_size);
       }
 
-      if (newp == NULL) {
+      if (newp == nullptr) {
         alignment = ats_pagesize();
         newp      = ats_memalign(alignment, INK_ALIGN(alloc_size, alignment));
       }
@@ -252,7 +252,7 @@ freelist_new(InkFreeList *f)
 static void *
 malloc_new(InkFreeList *f)
 {
-  void *newp = NULL;
+  void *newp = nullptr;
 
   if (f->alignment)
     newp = ats_memalign(f->alignment, f->type_size);
@@ -265,7 +265,7 @@ malloc_new(InkFreeList *f)
 void
 ink_freelist_free(InkFreeList *f, void *item)
 {
-  if (likely(item != NULL)) {
+  if (likely(item != nullptr)) {
     ink_assert(f->used != 0);
     freelist_freelist_ops->fl_free(f, item);
     ink_atomic_decrement((int *)&f->used, 1);
@@ -407,7 +407,7 @@ void
 ink_freelists_dump_baselinerel(FILE *f)
 {
   ink_freelist_list *fll;
-  if (f == NULL)
+  if (f == nullptr)
     f = stderr;
 
   fprintf(f, "     allocated      |       in-use       |  count  | type size  |   free list name\n");
@@ -432,7 +432,7 @@ void
 ink_freelists_dump(FILE *f)
 {
   ink_freelist_list *fll;
-  if (f == NULL)
+  if (f == nullptr)
     f = stderr;
 
   fprintf(f, "     Allocated      |        In-Use      | Type Size  |   Free List Name\n");
@@ -469,14 +469,14 @@ ink_atomiclist_pop(InkAtomicList *l)
   int result = 0;
   do {
     INK_QUEUE_LD(item, l->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == NULL)
-      return NULL;
+    if (TO_PTR(FREELIST_POINTER(item)) == nullptr)
+      return nullptr;
     SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset), FREELIST_VERSION(item) + 1);
     result = ink_atomic_cas(&l->head.data, item.data, next.data);
   } while (result == 0);
   {
     void *ret = TO_PTR(FREELIST_POINTER(item));
-    *ADDRESS_OF_NEXT(ret, l->offset) = NULL;
+    *ADDRESS_OF_NEXT(ret, l->offset) = nullptr;
     return ret;
   }
 }
@@ -489,9 +489,9 @@ ink_atomiclist_popall(InkAtomicList *l)
   int result = 0;
   do {
     INK_QUEUE_LD(item, l->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == NULL)
-      return NULL;
-    SET_FREELIST_POINTER_VERSION(next, FROM_PTR(NULL), FREELIST_VERSION(item) + 1);
+    if (TO_PTR(FREELIST_POINTER(item)) == nullptr)
+      return nullptr;
+    SET_FREELIST_POINTER_VERSION(next, FROM_PTR(nullptr), FREELIST_VERSION(item) + 1);
     result = ink_atomic_cas(&l->head.data, item.data, next.data);
   } while (result == 0);
   {
@@ -514,7 +514,7 @@ ink_atomiclist_push(InkAtomicList *l, void *item)
   head_p head;
   head_p item_pair;
   int result       = 0;
-  volatile void *h = NULL;
+  volatile void *h = nullptr;
   do {
     INK_QUEUE_LD(head, l->head);
     h            = FREELIST_POINTER(head);
@@ -532,7 +532,7 @@ void *
 ink_atomiclist_remove(InkAtomicList *l, void *item)
 {
   head_p head;
-  void *prev       = NULL;
+  void *prev       = nullptr;
   void **addr_next = ADDRESS_OF_NEXT(item, l->offset);
   void *item_next  = *addr_next;
   int result       = 0;
@@ -547,7 +547,7 @@ ink_atomiclist_remove(InkAtomicList *l, void *item)
     result = ink_atomic_cas(&l->head.data, head.data, next.data);
 
     if (result) {
-      *addr_next = NULL;
+      *addr_next = nullptr;
       return item;
     }
     INK_QUEUE_LD(head, l->head);
@@ -564,9 +564,9 @@ ink_atomiclist_remove(InkAtomicList *l, void *item)
     if (prev == item) {
       ink_assert(prev_prev != item_next);
       *prev_adr_of_next = item_next;
-      *addr_next        = NULL;
+      *addr_next        = nullptr;
       return item;
     }
   }
-  return NULL;
+  return nullptr;
 }

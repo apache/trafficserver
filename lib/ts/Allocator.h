@@ -77,7 +77,7 @@ public:
     ink_freelist_free_bulk(this->fl, head, tail, num_item);
   }
 
-  Allocator() { fl = NULL; }
+  Allocator() { fl = nullptr; }
   /**
     Creates a new allocator.
 
@@ -218,8 +218,8 @@ public:
     int frames = backtrace(callstack, 3);
     C *ptr     = ClassAllocator<C>::alloc();
 
-    const void *symbol = NULL;
-    if (frames == 3 && callstack[2] != NULL) {
+    const void *symbol = nullptr;
+    if (frames == 3 && callstack[2] != nullptr) {
       symbol = callstack[2];
     }
 
@@ -238,7 +238,7 @@ public:
     ink_mutex_acquire(&trackerLock);
     std::map<void *, const void *>::iterator it = reverse_lookup.find(ptr);
     if (it != reverse_lookup.end()) {
-      tracker.increment((const void *)it->second, (int64_t)sizeof(C) * -1, NULL);
+      tracker.increment((const void *)it->second, (int64_t)sizeof(C) * -1, nullptr);
       reverse_lookup.erase(it);
     }
     ink_mutex_release(&trackerLock);

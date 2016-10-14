@@ -81,7 +81,7 @@ RecErrT RecReadStatsFile();
 RecErrT RecSyncStatsFile();
 RecErrT RecReadConfigFile(bool inc_version);
 RecErrT RecWriteConfigFile(textBuffer *tb);
-RecErrT RecSyncConfigToTB(textBuffer *tb, bool *inc_version = NULL);
+RecErrT RecSyncConfigToTB(textBuffer *tb, bool *inc_version = nullptr);
 
 //-------------------------------------------------------------------------
 // Misc

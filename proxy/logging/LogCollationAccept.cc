@@ -36,7 +36,7 @@
 // LogCollationAccept::LogCollationAccept
 //-------------------------------------------------------------------------
 
-LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port), m_pending_event(NULL)
+LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port), m_pending_event(nullptr)
 {
   NetProcessor::AcceptOptions opt;
   SET_HANDLER((LogCollationAcceptHandler)&LogCollationAccept::accept_event);
@@ -49,7 +49,7 @@ LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()
   opt.ip_family      = AF_INET;
   opt.accept_threads = 0;
   m_accept_action    = netProcessor.accept(this, opt);
-  ink_assert(NULL != m_accept_action);
+  ink_assert(nullptr != m_accept_action);
 }
 
 //-------------------------------------------------------------------------
@@ -63,7 +63,7 @@ LogCollationAccept::~LogCollationAccept()
   // stop the netProcessor
   if (m_accept_action) {
     m_accept_action->cancel();
-    m_accept_action = NULL;
+    m_accept_action = nullptr;
 
     Debug("log-collation", "closing Log::collation_accept_file_descriptor "
                            "(%d)",

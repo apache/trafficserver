@@ -94,7 +94,7 @@ public:
    * and the value can be a std::shared_ptr to any type that extends ContextValue.
    * @param key the key to search for.
    * @return Shared pointer that is correctly initialized if the
-   *         value existed. It should be checked with .get() != NULL before use.
+   *         value existed. It should be checked with .get() != nullptr before use.
    */
   std::shared_ptr<ContextValue> getContextValue(const std::string &key);
 

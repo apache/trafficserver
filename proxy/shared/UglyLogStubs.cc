@@ -57,7 +57,7 @@ UDPConnection::Release()
 }
 
 #include "InkAPIInternal.h"
-ConfigUpdateCbTable *global_config_cbs = NULL;
+ConfigUpdateCbTable *global_config_cbs = nullptr;
 
 void
 ConfigUpdateCbTable::invoke(const char * /* name ATS_UNUSED */)
@@ -72,11 +72,11 @@ Machine *
 Machine::instance()
 {
   ink_release_assert(false);
-  return NULL;
+  return nullptr;
 }
 
 #include "LogCollationAccept.h"
-LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port), m_pending_event(NULL)
+LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port), m_pending_event(nullptr)
 {
 }
 LogCollationAccept::~LogCollationAccept()
@@ -86,18 +86,18 @@ LogCollationAccept::~LogCollationAccept()
 #include "LogCollationClientSM.h"
 LogCollationClientSM::LogCollationClientSM(LogHost *log_host)
   : Continuation(new_ProxyMutex()),
-    m_host_vc(NULL),
-    m_host_vio(NULL),
-    m_auth_buffer(NULL),
-    m_auth_reader(NULL),
-    m_send_buffer(NULL),
-    m_send_reader(NULL),
-    m_pending_action(NULL),
-    m_pending_event(NULL),
-    m_abort_vio(NULL),
-    m_abort_buffer(NULL),
-    m_buffer_send_list(NULL),
-    m_buffer_in_iocore(NULL),
+    m_host_vc(nullptr),
+    m_host_vio(nullptr),
+    m_auth_buffer(nullptr),
+    m_auth_reader(nullptr),
+    m_send_buffer(nullptr),
+    m_send_reader(nullptr),
+    m_pending_action(nullptr),
+    m_pending_event(nullptr),
+    m_abort_vio(nullptr),
+    m_abort_buffer(nullptr),
+    m_buffer_send_list(nullptr),
+    m_buffer_in_iocore(nullptr),
     m_flow(LOG_COLL_FLOW_ALLOW),
     m_log_host(log_host),
     m_id(0)
@@ -119,7 +119,7 @@ NetAccept *
 UnixNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {
   ink_release_assert(false);
-  return NULL;
+  return nullptr;
 }
 
 // TODO: The following was necessary only for Solaris, should examine more.
@@ -167,7 +167,7 @@ Action *
 NetProcessor::accept(Continuation * /* cont ATS_UNUSED */, AcceptOptions const & /* opt ATS_UNUSED */)
 {
   ink_release_assert(false);
-  return NULL;
+  return nullptr;
 }
 
 Action *
@@ -175,7 +175,7 @@ NetProcessor::main_accept(Continuation * /* cont ATS_UNUSED */, SOCKET /* fd ATS
                           AcceptOptions const & /* opt ATS_UNUSED */)
 {
   ink_release_assert(false);
-  return NULL;
+  return nullptr;
 }
 
 Action *
@@ -183,14 +183,14 @@ UnixNetProcessor::accept_internal(Continuation * /* cont ATS_UNUSED */, int /* f
                                   AcceptOptions const & /* opt ATS_UNUSED */)
 {
   ink_release_assert(false);
-  return NULL;
+  return nullptr;
 }
 
 NetVConnection *
 UnixNetProcessor::allocate_vc(EThread *)
 {
   ink_release_assert(false);
-  return NULL;
+  return nullptr;
 }
 
 // For Intel ICC

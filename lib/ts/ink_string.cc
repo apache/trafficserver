@@ -48,7 +48,7 @@ ink_memcpy_until_char(char *dst, char *src, unsigned int n, unsigned char c)
 
   This routine concatenates a variable number of strings into the buffer
   <dest>, returning the pointer to <dest>.  The sequence of strings must end
-  with NULL.
+  with nullptr.
 
  *---------------------------------------------------------------------------*/
 
@@ -64,7 +64,7 @@ ink_string_concatenate_strings(char *dest, ...)
 
   while (1) {
     s = va_arg(ap, char *);
-    if (s == NULL)
+    if (s == nullptr)
       break;
 
     while (*s)
@@ -81,7 +81,7 @@ ink_string_concatenate_strings(char *dest, ...)
 
   This routine concatenates a variable number of strings into the buffer
   <dest>, returning the pointer to <dest>.  The sequence of strings must end
-  with NULL.  A NUL will always be placed after <dest>, and no more than
+  with nullptr.  A NUL will always be placed after <dest>, and no more than
   <n> - 1 characters will ever be written to <dest>.
 
  *---------------------------------------------------------------------------*/
@@ -98,7 +98,7 @@ ink_string_concatenate_strings_n(char *dest, int n, ...)
 
   while (n > 1) {
     s = va_arg(ap, char *);
-    if (s == NULL)
+    if (s == nullptr)
       break;
     while (*s && (n > 1)) {
       *d++ = *s++;
@@ -126,8 +126,8 @@ ink_string_append(char *dest, char *src, int n)
 {
   char *d, *s, *last_valid_char;
 
-  ink_assert(src != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(src != nullptr);
+  ink_assert(dest != nullptr);
   ink_assert(n >= 0);
 
   if (n == 0)

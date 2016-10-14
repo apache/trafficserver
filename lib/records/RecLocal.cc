@@ -80,7 +80,7 @@ sync_thr(void *data)
 
     if (!disabled && RecSyncConfigToTB(tb, &inc_version) == REC_ERR_OKAY) {
       bool written = false;
-      Rollback *rb = NULL;
+      Rollback *rb = nullptr;
 
       if (configFiles->getRollbackObj(REC_CONFIG_FILE, &rb)) {
         if (inc_version) {
@@ -111,7 +111,7 @@ sync_thr(void *data)
     usleep(REC_REMOTE_SYNC_INTERVAL_MS * 1000);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //-------------------------------------------------------------------------
@@ -141,7 +141,7 @@ config_update_thr(void * /* data */)
 
     usleep(REC_CONFIG_UPDATE_INTERVAL_MS * 1000);
   }
-  return NULL;
+  return nullptr;
 }
 
 //-------------------------------------------------------------------------
@@ -151,7 +151,7 @@ void
 RecMessageInit()
 {
   ink_assert(g_mode_type != RECM_NULL);
-  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, RecMessageRecvThis, NULL);
+  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, RecMessageRecvThis, nullptr);
   message_initialized_p = true;
 }
 
@@ -179,7 +179,7 @@ RecLocalInit(Diags *_diags)
      return REC_ERR_FAIL;
      }
 
-     if (RecMessageRegisterRecvCb(recv_message_cb, NULL)) {
+     if (RecMessageRegisterRecvCb(recv_message_cb, nullptr)) {
      return REC_ERR_FAIL;
      }
    */
@@ -201,7 +201,7 @@ RecLocalInitMessage()
   }
 
   RecMessageInit();
-  if (RecMessageRegisterRecvCb(recv_message_cb, NULL)) {
+  if (RecMessageRegisterRecvCb(recv_message_cb, nullptr)) {
     return REC_ERR_FAIL;
   }
 
@@ -216,8 +216,8 @@ RecLocalInitMessage()
 int
 RecLocalStart(FileManager *configFiles)
 {
-  ink_thread_create(sync_thr, configFiles, 0, 0, NULL);
-  ink_thread_create(config_update_thr, NULL, 0, 0, NULL);
+  ink_thread_create(sync_thr, configFiles, 0, 0, nullptr);
+  ink_thread_create(config_update_thr, nullptr, 0, 0, nullptr);
   return REC_ERR_OKAY;
 }
 

@@ -32,7 +32,7 @@ class FileManager;
 // Initialization
 //-------------------------------------------------------------------------
 
-int RecLocalInit(Diags *diags = NULL);
+int RecLocalInit(Diags *diags = nullptr);
 int RecLocalInitMessage();
 int RecLocalStart(FileManager *);
 

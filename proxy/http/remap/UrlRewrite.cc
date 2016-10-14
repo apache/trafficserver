@@ -57,8 +57,8 @@ UrlRewrite::UrlRewrite()
   : nohost_rules(0),
     reverse_proxy(0),
     mgmt_synthetic_port(0),
-    ts_name(NULL),
-    http_default_redirect_url(NULL),
+    ts_name(nullptr),
+    http_default_redirect_url(nullptr),
     num_rules_forward(0),
     num_rules_reverse(0),
     num_rules_redirect_permanent(0),
@@ -69,7 +69,7 @@ UrlRewrite::UrlRewrite()
   ats_scoped_str config_file_path;
 
   forward_mappings.hash_lookup = reverse_mappings.hash_lookup = permanent_redirects.hash_lookup = temporary_redirects.hash_lookup =
-    forward_mappings_with_recv_port.hash_lookup                                                 = NULL;
+    forward_mappings_with_recv_port.hash_lookup                                                 = nullptr;
 
   config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", "remap.config");
   if (!config_file_path) {
@@ -78,17 +78,17 @@ UrlRewrite::UrlRewrite()
     return;
   }
 
-  this->ts_name = NULL;
+  this->ts_name = nullptr;
   REC_ReadConfigStringAlloc(this->ts_name, "proxy.config.proxy_name");
-  if (this->ts_name == NULL) {
+  if (this->ts_name == nullptr) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to read proxy.config.proxy_name");
     Warning("%s Unable to determine proxy name.  Incorrect redirects could be generated", modulePrefix);
     this->ts_name = ats_strdup("");
   }
 
-  this->http_default_redirect_url = NULL;
+  this->http_default_redirect_url = nullptr;
   REC_ReadConfigStringAlloc(this->http_default_redirect_url, "proxy.config.http.referer_default_redirect");
-  if (this->http_default_redirect_url == NULL) {
+  if (this->http_default_redirect_url == nullptr) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to read proxy.config.http.referer_default_redirect");
     Warning("%s Unable to determine default redirect url for \"referer\" filter.", modulePrefix);
     this->http_default_redirect_url = ats_strdup("http://www.apache.org");
@@ -146,11 +146,11 @@ UrlRewrite::SetupBackdoorMapping()
 
   url_mapping *mapping = new url_mapping;
 
-  mapping->fromURL.create(NULL);
+  mapping->fromURL.create(nullptr);
   mapping->fromURL.parse(from_url, sizeof(from_url) - 1);
   mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
 
-  mapping->toUrl.create(NULL);
+  mapping->toUrl.create(nullptr);
   mapping->toUrl.parse(to_url, sizeof(to_url) - 1);
 
   return mapping;
@@ -164,9 +164,9 @@ UrlRewrite::_destroyTable(InkHashTable *h_table)
   InkHashTableIteratorState ht_iter;
   UrlMappingPathIndex *item;
 
-  if (h_table != NULL) { // Iterate over the hash tabel freeing up the all the url_mappings
+  if (h_table != nullptr) { // Iterate over the hash tabel freeing up the all the url_mappings
     //   contained with in
-    for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != NULL;) {
+    for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != nullptr;) {
       item = (UrlMappingPathIndex *)ink_hash_table_entry_value(h_table, ht_entry);
       delete item;
       ht_entry = ink_hash_table_iterator_next(h_table, &ht_iter);
@@ -198,7 +198,7 @@ UrlRewrite::Print()
   printf("  Forward Mapping With Recv Port Table with %d entries\n", num_rules_forward_with_recv_port);
   PrintStore(forward_mappings_with_recv_port);
 
-  if (http_default_redirect_url != NULL) {
+  if (http_default_redirect_url != nullptr) {
     printf("  Referer filter default redirect URL: \"%s\"\n", http_default_redirect_url);
   }
 }
@@ -207,12 +207,12 @@ UrlRewrite::Print()
 void
 UrlRewrite::PrintStore(MappingsStore &store)
 {
-  if (store.hash_lookup != NULL) {
+  if (store.hash_lookup != nullptr) {
     InkHashTableEntry *ht_entry;
     InkHashTableIteratorState ht_iter;
     UrlMappingPathIndex *value;
 
-    for (ht_entry = ink_hash_table_iterator_first(store.hash_lookup, &ht_iter); ht_entry != NULL;) {
+    for (ht_entry = ink_hash_table_iterator_first(store.hash_lookup, &ht_iter); ht_entry != nullptr;) {
       value = (UrlMappingPathIndex *)ink_hash_table_entry_value(store.hash_lookup, ht_entry);
       value->Print();
       ht_entry = ink_hash_table_iterator_next(store.hash_lookup, &ht_iter);
@@ -234,7 +234,7 @@ url_mapping *
 UrlRewrite::_tableLookup(InkHashTable *h_table, URL *request_url, int request_port, char *request_host, int request_host_len)
 {
   UrlMappingPathIndex *ht_entry;
-  url_mapping *um = NULL;
+  url_mapping *um = nullptr;
   int ht_result;
 
   ht_result = ink_hash_table_lookup(h_table, request_host, (void **)&ht_entry);
@@ -358,11 +358,11 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
   for (i = 0; i < N_URL_HEADERS; ++i) {
     location_hdr = response_header->value_get(url_headers[i].field, url_headers[i].len, &loc_length);
 
-    if (location_hdr == NULL) {
+    if (location_hdr == nullptr) {
       continue;
     }
 
-    location_url.create(NULL);
+    location_url.create(nullptr);
     location_url.parse(location_hdr, loc_length);
 
     host = location_url.host_get(&host_len);
@@ -490,7 +490,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
 {
   URL *request_url;
   mapping_type mappingType;
-  const char *host = NULL;
+  const char *host = nullptr;
   int host_len = 0, request_port = 0;
   bool prt, trt; // existence of permanent and temporary redirect tables, respectively
 
@@ -505,7 +505,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
   //  occurs, make sure that we have both a valid request
   //  header and a valid URL
   //
-  if (request_header == NULL) {
+  if (request_header == nullptr) {
     Debug("url_rewrite", "request_header was invalid.  UrlRewrite::Remap_redirect bailing out.");
     return NONE;
   }
@@ -530,7 +530,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
 
     const char *tmp = (const char *)memchr(host_hdr, ':', host_hdr_len);
 
-    if (tmp == NULL) {
+    if (tmp == nullptr) {
       host_len = host_hdr_len;
     } else {
       host_len     = tmp - host_hdr;
@@ -569,7 +569,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
 
     // Make a copy of the request url so that we can munge it
     //   for the redirect
-    redirect_url->create(NULL);
+    redirect_url->create(nullptr);
     redirect_url->copy(request_url);
 
     // Perform the actual URL rewrite
@@ -747,7 +747,7 @@ UrlRewrite::TableInsert(InkHashTable *h_table, url_mapping *mapping, const char 
   // Insert the new_mapping into hash table
   if (ink_hash_table_lookup(h_table, src_host, (void **)&ht_contents)) {
     // There is already a path index for this host
-    if (ht_contents == NULL) {
+    if (ht_contents == nullptr) {
       // why should this happen?
       Warning("Found entry cannot be null!");
       return false;
@@ -789,7 +789,7 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url, int reques
   bool retval          = false;
   int rank_ceiling     = -1;
   url_mapping *mapping = _tableLookup(mappings.hash_lookup, request_url, request_port, request_host_lower, request_host_len);
-  if (mapping != NULL) {
+  if (mapping != nullptr) {
     rank_ceiling = mapping->getRank();
     Debug("url_rewrite", "Found 'simple' mapping with rank %d", rank_ceiling);
     mapping_container.set(mapping);
@@ -941,7 +941,7 @@ void
 UrlRewrite::_destroyList(RegexMappingList &mappings)
 {
   RegexMapping *list_iter;
-  while ((list_iter = mappings.pop()) != NULL) {
+  while ((list_iter = mappings.pop()) != nullptr) {
     delete list_iter->url_map;
     if (list_iter->to_url_host_template) {
       ats_free(list_iter->to_url_host_template);

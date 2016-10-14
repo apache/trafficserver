@@ -42,9 +42,9 @@ struct atscppapi::RequestState : noncopyable {
   HttpVersion version_;
   bool destroy_buf_;
   RequestState()
-    : hdr_buf_(NULL),
-      hdr_loc_(NULL),
-      url_loc_(NULL),
+    : hdr_buf_(nullptr),
+      hdr_loc_(nullptr),
+      url_loc_(nullptr),
       method_(HTTP_METHOD_UNKNOWN),
       version_(HTTP_VERSION_UNKNOWN),
       destroy_buf_(false)
@@ -80,7 +80,7 @@ Request::Request(const string &url_str, HttpMethod method, HttpVersion version)
       state_->url_.init(state_->hdr_buf_, state_->url_loc_);
     }
   } else {
-    state_->url_loc_ = NULL;
+    state_->url_loc_ = nullptr;
     LOG_ERROR("Could not create URL field; hdr_buf %p", state_->hdr_buf_);
   }
 }
@@ -95,7 +95,7 @@ Request::init(void *hdr_buf, void *hdr_loc)
   state_->hdr_buf_ = static_cast<TSMBuffer>(hdr_buf);
   state_->hdr_loc_ = static_cast<TSMLoc>(hdr_loc);
   state_->headers_.reset(state_->hdr_buf_, state_->hdr_loc_);
-  state_->url_loc_ = NULL;
+  state_->url_loc_ = nullptr;
   TSHttpHdrUrlGet(state_->hdr_buf_, state_->hdr_loc_, &state_->url_loc_);
   if (!state_->url_loc_) {
     LOG_ERROR("TSHttpHdrUrlGet returned a null url loc, hdr_buf=%p, hdr_loc=%p", state_->hdr_buf_, state_->hdr_loc_);
@@ -108,10 +108,10 @@ Request::init(void *hdr_buf, void *hdr_loc)
 void
 Request::reset()
 {
-  state_->hdr_buf_ = NULL;
-  state_->hdr_loc_ = NULL;
-  state_->headers_.reset(NULL, NULL);
-  state_->url_loc_ = NULL;
+  state_->hdr_buf_ = nullptr;
+  state_->hdr_loc_ = nullptr;
+  state_->headers_.reset(nullptr, nullptr);
+  state_->url_loc_ = nullptr;
   LOG_DEBUG("Reset request %p", this);
 }
 
@@ -183,7 +183,7 @@ Request::~Request()
     if (state_->destroy_buf_) {
       // usually, hdr_loc is the parent of url_loc, but we created this url_loc "directly" in hdr_buf,
       // so we use null as parent loc in this case
-      TSMLoc null_parent_loc = NULL;
+      TSMLoc null_parent_loc = nullptr;
       TSHandleMLocRelease(state_->hdr_buf_, null_parent_loc, state_->url_loc_);
       TSMBufferDestroy(state_->hdr_buf_);
     } else {

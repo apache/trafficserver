@@ -43,7 +43,7 @@
 static AppVersionInfo appVersionInfo;
 
 struct VIA {
-  VIA(const char *t) : title(t), next(NULL) { memset(viaData, 0, sizeof(viaData)); }
+  VIA(const char *t) : title(t), next(nullptr) { memset(viaData, 0, sizeof(viaData)); }
   ~VIA() { delete next; }
   const char *title;
   const char *viaData[128];
@@ -110,7 +110,7 @@ detailViaLookup(char flag)
     viaTable->viaData[(unsigned char)'F'] = "connection open failed";
     break;
   default:
-    viaTable = NULL;
+    viaTable = nullptr;
     fprintf(stderr, "%s: %s: %c\n", appVersionInfo.AppStr, "Invalid VIA header character", flag);
     break;
   }
@@ -180,7 +180,7 @@ standardViaLookup(char flag)
     viaTable->viaData[(unsigned char)' '] = "unknown";
     break;
   default:
-    viaTable = NULL;
+    viaTable = nullptr;
     fprintf(stderr, "%s: %s: %c\n", appVersionInfo.AppStr, "Invalid VIA header character", flag);
     break;
   }
@@ -192,8 +192,8 @@ standardViaLookup(char flag)
 static void
 printViaHeader(const char *header)
 {
-  VIA *viaTable = NULL;
-  VIA *viaEntry = NULL;
+  VIA *viaTable = nullptr;
+  VIA *viaEntry = nullptr;
   bool isDetail = false;
 
   printf("Via Header Details:\n");
@@ -262,7 +262,7 @@ static TSMgmtError
 filterViaHeader()
 {
   const pcre *compiledReg;
-  const pcre_extra *extraReg = NULL;
+  const pcre_extra *extraReg = nullptr;
   int subStringVector[SUBSTRING_VECTOR_COUNT];
   const char *err;
   int errOffset;
@@ -274,9 +274,9 @@ filterViaHeader()
   char viaHeader[1024];
 
   // Compile PCRE via header pattern
-  compiledReg = pcre_compile(viaPattern, 0, &err, &errOffset, NULL);
+  compiledReg = pcre_compile(viaPattern, 0, &err, &errOffset, nullptr);
 
-  if (compiledReg == NULL) {
+  if (compiledReg == nullptr) {
     printf("PCRE regex compilation failed with error %s at offset %d\n", err, errOffset);
     return TS_ERR_FAIL;
   }

@@ -40,13 +40,13 @@ ClassAllocator<HttpServerSession> httpServerSessionAllocator("httpServerSessionA
 void
 HttpServerSession::destroy()
 {
-  ink_release_assert(server_vc == NULL);
+  ink_release_assert(server_vc == nullptr);
   ink_assert(read_buffer);
   ink_assert(server_trans_stat == 0);
   magic = HTTP_SS_MAGIC_DEAD;
   if (read_buffer) {
     free_MIOBuffer(read_buffer);
-    read_buffer = NULL;
+    read_buffer = nullptr;
   }
 
   mutex.clear();
@@ -60,7 +60,7 @@ HttpServerSession::destroy()
 void
 HttpServerSession::new_connection(NetVConnection *new_vc)
 {
-  ink_assert(new_vc != NULL);
+  ink_assert(new_vc != nullptr);
   server_vc = new_vc;
 
   // Used to do e.g. mutex = new_vc->thread->mutex; when per-thread pools enabled
@@ -75,7 +75,7 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
   // Check to see if we are limiting the number of connections
   // per host
   if (enable_origin_connection_limiting == true) {
-    if (connection_count == NULL) {
+    if (connection_count == nullptr) {
       connection_count = ConnectionCount::getInstance();
     }
     connection_count->incrementCount(get_server_ip(), hostname_hash, sharing_match);
@@ -151,7 +151,7 @@ HttpServerSession::do_io_close(int alerrno)
   if (server_vc) {
     server_vc->do_io_close(alerrno);
   }
-  server_vc = NULL;
+  server_vc = nullptr;
 
   if (to_parent_proxy) {
     HTTP_DECREMENT_DYN_STAT(http_current_parent_proxy_connections_stat);
@@ -183,8 +183,8 @@ HttpServerSession::release()
   }
 
   // Make sure the vios for the current SM are cleared
-  server_vc->do_io_read(NULL, 0, NULL);
-  server_vc->do_io_write(NULL, 0, NULL);
+  server_vc->do_io_read(nullptr, 0, nullptr);
+  server_vc->do_io_write(nullptr, 0, nullptr);
 
   HSMresult_t r = httpSessionManager.release_session(this);
 

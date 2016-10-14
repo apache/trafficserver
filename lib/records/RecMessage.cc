@@ -32,8 +32,8 @@
 #include "P_RecCore.h"
 #include "ts/I_Layout.h"
 
-static RecMessageRecvCb g_recv_cb = NULL;
-static void *g_recv_cookie        = NULL;
+static RecMessageRecvCb g_recv_cb = nullptr;
+static void *g_recv_cookie        = nullptr;
 
 //-------------------------------------------------------------------------
 // RecMessageAlloc
@@ -165,7 +165,7 @@ RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record
   itr->ele_hdr = (RecMessageEleHdr *)((char *)msg + msg->o_start);
   itr->next    = 1;
 
-  return RecMessageUnmarshalNext(msg, NULL, record);
+  return RecMessageUnmarshalNext(msg, nullptr, record);
 }
 
 //-------------------------------------------------------------------------
@@ -178,7 +178,7 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
   RecMessageEleHdr *eh;
   RecRecord *r;
 
-  if (itr == NULL) {
+  if (itr == nullptr) {
     if (msg->entries == 0) {
       return REC_ERR_FAIL;
     } else {
@@ -248,7 +248,7 @@ RecMessageRecvThis(void * /* cookie */, char *data_raw, int /* data_len */)
 {
   RecMessage *msg = (RecMessage *)data_raw;
   g_recv_cb(msg, msg->msg_type, g_recv_cookie);
-  return NULL;
+  return nullptr;
 }
 
 //-------------------------------------------------------------------------
@@ -259,7 +259,7 @@ RecMessage *
 RecMessageReadFromDisk(const char *fpath)
 {
   RecMessageHdr msg_hdr;
-  RecMessage *msg = NULL;
+  RecMessage *msg = nullptr;
   RecHandle h_file;
   int bytes_read;
 
@@ -279,7 +279,7 @@ RecMessageReadFromDisk(const char *fpath)
 
 Lerror:
   ats_free(msg);
-  msg = NULL;
+  msg = nullptr;
 
 Ldone:
   if (h_file != REC_HANDLE_INVALID) {

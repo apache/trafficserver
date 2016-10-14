@@ -89,7 +89,7 @@ StatPagesManager::handle_http(Continuation *cont, HTTPHdr *header)
     }
   }
 
-  cont->handleEvent(STAT_PAGE_FAILURE, 0);
+  cont->handleEvent(STAT_PAGE_FAILURE, nullptr);
   return ACTION_RESULT_DONE;
 }
 
@@ -105,7 +105,7 @@ StatPagesManager::is_stat_page(URL *url)
   const char *h = url->host_get(&length);
   char host[MAXDNAME + 1];
 
-  if (h == NULL || length < 2 || length > MAXDNAME) {
+  if (h == nullptr || length < 2 || length > MAXDNAME) {
     return false;
   }
 
@@ -127,7 +127,7 @@ StatPagesManager::is_cache_inspector_page(URL *url)
   const char *h = url->host_get(&length);
   char host[MAXDNAME + 1];
 
-  if (h == NULL || length < 2 || length > MAXDNAME) {
+  if (h == nullptr || length < 2 || length > MAXDNAME) {
     return false;
   }
 
@@ -146,7 +146,7 @@ void
 BaseStatPagesHandler::resp_clear()
 {
   ats_free(response);
-  response        = NULL;
+  response        = nullptr;
   response_size   = 0;
   response_length = 0;
 }

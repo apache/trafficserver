@@ -46,7 +46,7 @@ struct SContData {
     TSVIO vio;
     TSIOBuffer buffer;
     TSIOBufferReader reader;
-    IoHandle() : vio(0), buffer(0), reader(0){};
+    IoHandle() : vio(nullptr), buffer(nullptr), reader(nullptr){};
     ~IoHandle()
     {
       if (reader) {
@@ -70,14 +70,14 @@ struct SContData {
   bool initialized;
 
   SContData(TSCont cont)
-    : net_vc(0),
+    : net_vc(nullptr),
       contp(cont),
       input(),
       output(),
       body(""),
       req_content_len(0),
-      req_hdr_bufp(0),
-      req_hdr_loc(0),
+      req_hdr_bufp(nullptr),
+      req_hdr_loc(nullptr),
       req_hdr_parsed(false),
       initialized(false)
   {
@@ -127,7 +127,7 @@ SContData::init(TSVConn vconn)
 void
 SContData::setupWrite()
 {
-  TSAssert(output.buffer == 0);
+  TSAssert(output.buffer == nullptr);
   output.buffer = TSIOBufferCreate();
   output.reader = TSIOBufferReaderAlloc(output.buffer);
   output.vio    = TSVConnWrite(net_vc, contp, output.reader, INT_MAX);
@@ -149,7 +149,7 @@ handleRead(SContData *cont_data, bool &read_complete)
     int64_t data_len;
     const char *data;
     TSIOBufferBlock block = TSIOBufferReaderStart(cont_data->input.reader);
-    while (block != NULL) {
+    while (block != nullptr) {
       data = TSIOBufferBlockReadStart(block, cont_data->input.reader, &data_len);
       if (!cont_data->req_hdr_parsed) {
         const char *endptr = data + data_len;

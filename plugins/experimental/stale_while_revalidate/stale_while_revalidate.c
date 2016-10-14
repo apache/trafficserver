@@ -564,16 +564,18 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
         // Get headers
         chi = get_cached_header_info(txn);
 
-        if (state->plugin_config->stale_if_error_override > chi->stale_on_error)
+        if (state->plugin_config->stale_if_error_override > chi->stale_on_error) {
           chi->stale_on_error = state->plugin_config->stale_if_error_override;
+        }
 
         if ((state->txn_start - chi->date) < (chi->max_age + chi->stale_while_revalidate)) {
           TSDebug(PLUGIN_NAME, "Looks like we can return fresh info and validate in the background");
           if (state->plugin_config->log_info.object &&
-              (state->plugin_config->log_info.all || state->plugin_config->log_info.stale_while_revalidate))
+              (state->plugin_config->log_info.all || state->plugin_config->log_info.stale_while_revalidate)) {
             TSTextLogObjectWrite(state->plugin_config->log_info.object, "stale-while-revalidate: %d - %d < %d + %d %s",
                                  (int)state->txn_start, (int)chi->date, (int)chi->max_age, (int)chi->stale_while_revalidate,
                                  state->req_info->effective_url);
+          }
 
           TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, 1);
           TSHttpTxnCacheLookupStatusSet(txn, TS_CACHE_LOOKUP_HIT_FRESH);
@@ -735,8 +737,9 @@ TSPluginInit(int argc, const char *argv[])
       }
     }
 
-    if (plugin_config->log_info.all || plugin_config->log_info.stale_while_revalidate || plugin_config->log_info.stale_if_error)
+    if (plugin_config->log_info.all || plugin_config->log_info.stale_while_revalidate || plugin_config->log_info.stale_if_error) {
       TSTextLogObjectCreate(plugin_config->log_info.filename, TS_LOG_MODE_ADD_TIMESTAMP, &(plugin_config->log_info.object));
+    }
   }
 
   // proxy.config.http.insert_age_in_response

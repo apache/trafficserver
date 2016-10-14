@@ -90,24 +90,28 @@ init_invalidate_t(invalidate_t *i)
 static void
 free_invalidate_t(invalidate_t *i)
 {
-  if (i->regex_extra)
+  if (i->regex_extra) {
 #ifndef PCRE_STUDY_JIT_COMPILE
     pcre_free(i->regex_extra);
 #else
     pcre_free_study(i->regex_extra);
 #endif
-  if (i->regex)
+  }
+  if (i->regex) {
     pcre_free(i->regex);
-  if (i->regex_text)
+  }
+  if (i->regex_text) {
     pcre_free_substring(i->regex_text);
+  }
   TSfree(i);
 }
 
 static void
 free_invalidate_t_list(invalidate_t *i)
 {
-  if (i->next)
+  if (i->next) {
     free_invalidate_t_list(i->next);
+  }
   free_invalidate_t(i);
 }
 
@@ -124,12 +128,15 @@ init_plugin_state_t(plugin_state_t *pstate)
 static void
 free_plugin_state_t(plugin_state_t *pstate)
 {
-  if (pstate->invalidate_list)
+  if (pstate->invalidate_list) {
     free_invalidate_t_list(pstate->invalidate_list);
-  if (pstate->config_file)
+  }
+  if (pstate->config_file) {
     TSfree(pstate->config_file);
-  if (pstate->log)
+  }
+  if (pstate->log) {
     TSTextLogObjectDestroy(pstate->log);
+  }
   TSfree(pstate);
 }
 
@@ -223,8 +230,9 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     path_len = strlen(TSConfigDirGet()) + strlen(pstate->config_file) + 2;
     path     = alloca(path_len);
     snprintf(path, path_len, "%s/%s", TSConfigDirGet(), pstate->config_file);
-  } else
+  } else {
     path = pstate->config_file;
+  }
   if (stat(path, &s) < 0) {
     TSDebug(LOG_PREFIX, "Could not stat %s", path);
     return false;
@@ -270,10 +278,11 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
                 free_invalidate_t(i);
                 i = NULL;
                 break;
-              } else if (!iptr->next)
+              } else if (!iptr->next) {
                 break;
-              else
+              } else {
                 iptr = iptr->next;
+              }
             }
             if (i) {
               iptr->next = i;
@@ -281,15 +290,17 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
             }
           }
         }
-      } else
+      } else {
         TSDebug(LOG_PREFIX, "Skipping line %d", ln);
+      }
     }
     pcre_free(config_re);
     fclose(fs);
     pstate->last_load = s.st_mtime;
     return true;
-  } else
+  } else {
     TSDebug(LOG_PREFIX, "File mod time is not newer: %d >= %d", (int)pstate->last_load, (int)s.st_mtime);
+  }
   return false;
 }
 
@@ -299,20 +310,23 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
   invalidate_t *iptr;
 
   TSDebug(LOG_PREFIX, "Current config:");
-  if (pstate->log)
+  if (pstate->log) {
     TSTextLogObjectWrite(pstate->log, "Current config:");
+  }
   if (i) {
     iptr = i;
     while (iptr) {
       TSDebug(LOG_PREFIX, "%s epoch: %d expiry: %d", iptr->regex_text, (int)iptr->epoch, (int)iptr->expiry);
-      if (pstate->log)
+      if (pstate->log) {
         TSTextLogObjectWrite(pstate->log, "%s epoch: %d expiry: %d", iptr->regex_text, (int)iptr->epoch, (int)iptr->expiry);
+      }
       iptr = iptr->next;
     }
   } else {
     TSDebug(LOG_PREFIX, "EMPTY");
-    if (pstate->log)
+    if (pstate->log) {
       TSTextLogObjectWrite(pstate->log, "EMPTY");
+    }
   }
 }
 
@@ -354,8 +368,9 @@ config_handler(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     }
   } else {
     TSDebug(LOG_PREFIX, "No Changes");
-    if (i)
+    if (i) {
       free_invalidate_t_list(i);
+    }
   }
 
   TSContSchedule(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
@@ -405,19 +420,22 @@ main_handler(TSCont cont, TSEvent event, void *edata)
             now  = time(NULL);
           }
           if ((difftime(iptr->epoch, date) >= 0) && (difftime(iptr->expiry, now) >= 0)) {
-            if (!url)
+            if (!url) {
               url = TSHttpTxnEffectiveUrlStringGet(txn, &url_len);
+            }
             if (pcre_exec(iptr->regex, iptr->regex_extra, url, url_len, 0, 0, NULL, 0) >= 0) {
               TSHttpTxnCacheLookupStatusSet(txn, TS_CACHE_LOOKUP_HIT_STALE);
               iptr = NULL;
               TSDebug(LOG_PREFIX, "Forced revalidate - %.*s", url_len, url);
             }
           }
-          if (iptr)
+          if (iptr) {
             iptr = iptr->next;
+          }
         }
-        if (url)
+        if (url) {
           TSfree(url);
+        }
       }
     }
     break;
@@ -492,9 +510,9 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  if (!load_config(pstate, &iptr))
+  if (!load_config(pstate, &iptr)) {
     TSDebug(LOG_PREFIX, "Problem loading config from file %s", pstate->config_file);
-  else {
+  } else {
     pstate->invalidate_list = iptr;
     list_config(pstate, iptr);
   }
@@ -508,8 +526,9 @@ TSPluginInit(int argc, const char *argv[])
 
     free_plugin_state_t(pstate);
     return;
-  } else
+  } else {
     TSDebug(LOG_PREFIX, "Plugin registration succeeded.");
+  }
 
   if (!check_ts_version()) {
     TSError("[regex_revalidate] Plugin requires Traffic Server %d.%d.%d", TS_VERSION_MAJOR, TS_VERSION_MINOR, TS_VERSION_MICRO);

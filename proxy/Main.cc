@@ -162,8 +162,8 @@ static char bind_stderr[512]    = DEFAULT_BIND_STDERR;
 static char error_tags[1024]               = "";
 static char action_tags[1024]              = "";
 static int show_statistics                 = 0;
-static inkcoreapi DiagsConfig *diagsConfig = NULL;
-HttpBodyFactory *body_factory              = NULL;
+static inkcoreapi DiagsConfig *diagsConfig = nullptr;
+HttpBodyFactory *body_factory              = nullptr;
 
 static int accept_mss             = 0;
 static int cmd_line_dprintf_level = 0;  // default debug output level from ink_dprintf function
@@ -181,43 +181,43 @@ static volatile int delay_listen_for_cache_p = 0;
 AppVersionInfo appVersionInfo; // Build info for this application
 
 static const ArgumentDescription argument_descriptions[] = {
-  {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", NULL},
-  {"cluster_threads", 'Z', "Number of Cluster Threads", "I", &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", NULL},
-  {"udp_threads", 'U', "Number of UDP Threads", "I", &num_of_udp_threads, "PROXY_UDP_THREADS", NULL},
-  {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads, "PROXY_ACCEPT_THREAD", NULL},
-  {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done, "PROXY_ACCEPT_TILL_DONE", NULL},
-  {"httpport", 'p', "Port descriptor for HTTP Accept", "S*", &http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", NULL},
-  {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number, "PROXY_CLUSTER_PORT", NULL},
-  {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level, "PROXY_DPRINTF_LEVEL", NULL},
-  {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, "PROXY_DPRINTF_LEVEL", NULL},
+  {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", nullptr},
+  {"cluster_threads", 'Z', "Number of Cluster Threads", "I", &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", nullptr},
+  {"udp_threads", 'U', "Number of UDP Threads", "I", &num_of_udp_threads, "PROXY_UDP_THREADS", nullptr},
+  {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads, "PROXY_ACCEPT_THREAD", nullptr},
+  {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done, "PROXY_ACCEPT_TILL_DONE", nullptr},
+  {"httpport", 'p', "Port descriptor for HTTP Accept", "S*", &http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", nullptr},
+  {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number, "PROXY_CLUSTER_PORT", nullptr},
+  {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level, "PROXY_DPRINTF_LEVEL", nullptr},
+  {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, "PROXY_DPRINTF_LEVEL", nullptr},
 
 #if TS_HAS_TESTS
-  {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},
-  {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
-  {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", NULL},
+  {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", nullptr},
+  {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", nullptr},
+  {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", nullptr},
 #endif // TS_HAS_TESTS
 
 #if TS_USE_DIAGS
-  {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags, "PROXY_DEBUG_TAGS", NULL},
-  {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags, "PROXY_BEHAVIOR_TAGS", NULL},
+  {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags, "PROXY_DEBUG_TAGS", nullptr},
+  {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags, "PROXY_BEHAVIOR_TAGS", nullptr},
 #endif
 
-  {"interval", 'i', "Statistics Interval", "I", &show_statistics, "PROXY_STATS_INTERVAL", NULL},
-  {"remote_management", 'M', "Remote Management", "T", &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", NULL},
+  {"interval", 'i', "Statistics Interval", "I", &show_statistics, "PROXY_STATS_INTERVAL", nullptr},
+  {"remote_management", 'M', "Remote Management", "T", &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", nullptr},
   {"command", 'C', "Maintenance Command to Execute\n"
                    "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, help",
-   "S511", &command_string, "PROXY_COMMAND_STRING", NULL},
-  {"conf_dir", 'D', "config dir to verify", "S511", &conf_dir, "PROXY_SYS_CONFIG_DIR", NULL},
-  {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", NULL},
-  {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", NULL},
-  {"bind_stdout", '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", NULL},
-  {"bind_stderr", '-', "Regular file to bind stderr to", "S512", &bind_stderr, "PROXY_BIND_STDERR", NULL},
+   "S511", &command_string, "PROXY_COMMAND_STRING", nullptr},
+  {"conf_dir", 'D', "config dir to verify", "S511", &conf_dir, "PROXY_SYS_CONFIG_DIR", nullptr},
+  {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", nullptr},
+  {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", nullptr},
+  {"bind_stdout", '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", nullptr},
+  {"bind_stderr", '-', "Regular file to bind stderr to", "S512", &bind_stderr, "PROXY_BIND_STDERR", nullptr},
 #if defined(linux)
   {"read_core", 'c', "Read Core file", "S255", &core_file, NULL, NULL},
 #endif
 
-  {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, NULL, NULL},
-  {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, NULL, NULL},
+  {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, nullptr, nullptr},
+  {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 
@@ -229,7 +229,7 @@ public:
 
   SignalContinuation() : Continuation(new_ProxyMutex())
   {
-    end = snap = 0;
+    end = snap = nullptr;
     SET_HANDLER(&SignalContinuation::periodic);
   }
 
@@ -289,7 +289,7 @@ public:
     baseline_taken = 0;
   }
 
-  ~TrackerContinuation() { mutex = NULL; }
+  ~TrackerContinuation() { mutex = nullptr; }
   int
   periodic(int event, Event * /* e ATS_UNUSED */)
   {
@@ -398,12 +398,12 @@ private:
 static int
 init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecData data, void * /* cookie ATS_UNUSED */)
 {
-  static Event *tracker_event = NULL;
+  static Event *tracker_event = nullptr;
   Event *preE;
   int dump_mem_info_frequency = 0;
 
   // set tracker_event to NULL, and return previous value
-  preE = ink_atomic_swap(&tracker_event, static_cast<Event *>(NULL));
+  preE = ink_atomic_swap(&tracker_event, static_cast<Event *>(nullptr));
 
   if (config_var) {
     dump_mem_info_frequency = data.rec_int;
@@ -593,7 +593,7 @@ cmd_list(char * /* cmd ATS_UNUSED */)
 
   Note("Cache Storage:");
   Store tStore;
-  if (tStore.read_config() != NULL) {
+  if (tStore.read_config() != nullptr) {
     Note("config read failure");
     return CMD_FAILED;
   } else {
@@ -641,13 +641,13 @@ CB_After_Cache_Init()
     start_HttpProxyServer();
   }
 
-  time_t cache_ready_at = time(NULL);
+  time_t cache_ready_at = time(nullptr);
   RecSetRecordInt("proxy.node.restarts.proxy.cache_ready_time", cache_ready_at, REC_SOURCE_DEFAULT);
 
   // Alert the plugins the cache is initialized.
   hook = lifecycle_hooks->get(TS_LIFECYCLE_CACHE_READY_HOOK);
   while (hook) {
-    hook->invoke(TS_EVENT_LIFECYCLE_CACHE_READY, NULL);
+    hook->invoke(TS_EVENT_LIFECYCLE_CACHE_READY, nullptr);
     hook = hook->next();
   }
 }
@@ -923,7 +923,7 @@ find_cmd_index(const char *p)
       if ((len == lenp) && !strncasecmp(p, l, len)) {
         return c;
       }
-      l = s ? s + 1 : 0;
+      l = s ? s + 1 : nullptr;
     }
   }
   return -1;
@@ -1043,8 +1043,8 @@ init_core_size()
   } else {
     RecData rec_temp;
     rec_temp.rec_int = coreSize;
-    set_core_size(NULL, RECD_INT, rec_temp, NULL);
-    found = (REC_RegisterConfigUpdateFunc("proxy.config.core_limit", set_core_size, NULL) == REC_ERR_OKAY);
+    set_core_size(nullptr, RECD_INT, rec_temp, nullptr);
+    found = (REC_RegisterConfigUpdateFunc("proxy.config.core_limit", set_core_size, nullptr) == REC_ERR_OKAY);
 
     ink_assert(found);
   }
@@ -1217,7 +1217,7 @@ struct ShowStats : public Continuation {
     return EVENT_CONT;
   }
   ShowStats()
-    : Continuation(NULL),
+    : Continuation(nullptr),
       cycle(0),
       last_cc(0),
       last_rb(0),
@@ -1697,7 +1697,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   } else if (HttpConfig::m_master.inbound_ip6.isValid()) {
     machine_addr.assign(HttpConfig::m_master.inbound_ip6);
   }
-  Machine::init(0, &machine_addr.sa);
+  Machine::init(nullptr, &machine_addr.sa);
 
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.uuid", (char *)Machine::instance()->uuid.getString(),
                         RECP_NON_PERSISTENT);
@@ -1780,8 +1780,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
   eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND, ET_TASK);
-  REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, NULL);
-  init_memory_tracker(NULL, RECD_NULL, RecData(), NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
+  init_memory_tracker(NULL, RECD_NULL, RecData(), nullptr);
 
   // log initialization moved down
 
@@ -1890,7 +1890,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       // call the ready hooks before we start accepting connections.
       APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK);
       while (hook) {
-        hook->invoke(TS_EVENT_LIFECYCLE_PORTS_INITIALIZED, NULL);
+        hook->invoke(TS_EVENT_LIFECYCLE_PORTS_INITIALIZED, nullptr);
         hook = hook->next();
       }
 
@@ -1924,15 +1924,15 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       start_SocksProxy(netProcessor.socks_conf_stuff->accept_port);
     }
 
-    pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, NULL);
-    pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, mgmt_restart_shutdown_callback, NULL);
+    pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, nullptr);
+    pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, mgmt_restart_shutdown_callback, nullptr);
 
     // Callback for various storage commands. These all go to the same function so we
     // pass the event code along so it can do the right thing. We cast that to <int> first
     // just to be safe because the value is a #define, not a typed value.
     pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, mgmt_storage_device_cmd_callback,
                                 reinterpret_cast<void *>(static_cast<int>(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE)));
-    pmgmt->registerMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, mgmt_lifecycle_msg_callback, NULL);
+    pmgmt->registerMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, mgmt_lifecycle_msg_callback, nullptr);
 
     ink_set_thread_name("[TS_MAIN]");
 
@@ -1979,7 +1979,7 @@ static void *
 mgmt_restart_shutdown_callback(void *, char *, int /* data_len ATS_UNUSED */)
 {
   sync_cache_dir_on_shutdown();
-  return NULL;
+  return nullptr;
 }
 
 static void *
@@ -1998,7 +1998,7 @@ mgmt_storage_device_cmd_callback(void *data, char *arg, int len)
       break;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static void *
@@ -2023,7 +2023,7 @@ mgmt_lifecycle_msg_callback(void *, char *data, int len)
       hook = hook->next();
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static void

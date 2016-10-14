@@ -43,7 +43,7 @@ procfd_readlink(pid_t pid, const char *fname)
   nbytes = readlink(path, resolved, MAXPATHLEN);
   if (nbytes == -1) {
     Note("readlink failed with %s", strerror(errno));
-    return NULL;
+    return nullptr;
   }
 
   resolved[nbytes] = '\0';
@@ -144,7 +144,7 @@ crashlog_write_datime(FILE *fp, const crashlog_target &target)
 bool
 crashlog_write_backtrace(FILE *fp, const crashlog_target &)
 {
-  TSString trace = NULL;
+  TSString trace = nullptr;
   TSMgmtError mgmterr;
 
   // NOTE: sometimes we can't get a backtrace because the ptrace attach will fail with

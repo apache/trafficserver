@@ -434,19 +434,19 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     int scheme_len, authority_len, path_len, method_len;
 
     // Get values of :scheme, :authority and :path to assemble requested URL
-    if ((field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME)) != NULL && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME)) != nullptr && field->value_is_valid()) {
       scheme = field->value_get(&scheme_len);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
-    if ((field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY)) != NULL && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY)) != nullptr && field->value_is_valid()) {
       authority = field->value_get(&authority_len);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
-    if ((field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH)) != NULL && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH)) != nullptr && field->value_is_valid()) {
       path = field->value_get(&path_len);
     } else {
       return PARSE_RESULT_ERROR;
@@ -466,7 +466,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     arena.str_free(url);
 
     // Get value of :method
-    if ((field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD)) != NULL && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD)) != nullptr && field->value_is_valid()) {
       method = field->value_get(&method_len);
 
       int method_wks_idx = hdrtoken_tokenize(method, method_len);
@@ -494,7 +494,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     int status_len;
     const char *status;
 
-    if ((field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS)) != NULL) {
+    if ((field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS)) != nullptr) {
       status = field->value_get(&status_len);
       headers->status_set(http_parse_status(status, status + status_len));
     } else {
@@ -507,7 +507,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 
   // Check validity of all names and values
   MIMEFieldIter iter;
-  for (const MIMEField *field = headers->iter_get_first(&iter); field != NULL; field = headers->iter_get_next(&iter)) {
+  for (const MIMEField *field = headers->iter_get_first(&iter); field != nullptr; field = headers->iter_get_next(&iter)) {
     if (!field->name_is_valid() || !field->value_is_valid()) {
       return PARSE_RESULT_ERROR;
     }
@@ -574,7 +574,7 @@ http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
   // Copy headers
   // Intermediaries SHOULD remove connection-specific header fields.
   MIMEFieldIter field_iter;
-  for (MIMEField *field = headers->iter_get_first(&field_iter); field != NULL; field = headers->iter_get_next(&field_iter)) {
+  for (MIMEField *field = headers->iter_get_first(&field_iter); field != nullptr; field = headers->iter_get_next(&field_iter)) {
     const char *name;
     int name_len;
     const char *value;
@@ -643,7 +643,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (is_trailing_header) {
     expected_pseudo_header_count = 0;
   }
-  for (field = hdr->iter_get_first(&iter); field != NULL; field = hdr->iter_get_next(&iter)) {
+  for (field = hdr->iter_get_first(&iter); field != nullptr; field = hdr->iter_get_next(&iter)) {
     value = field->name_get(&len);
     // Pseudo headers must appear before regular headers
     if (len && value[0] == ':') {
@@ -667,7 +667,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 
   // rfc7540,sec8.1.2.2: Any message containing connection-specific header
   // fields MUST be treated as malformed
-  if (hdr->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != NULL) {
+  if (hdr->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != nullptr) {
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
 
@@ -700,11 +700,11 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (!is_trailing_header) {
     // Check pseudo headers
     if (hdr->fields_count() >= 4) {
-      if (hdr->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME) == NULL ||
-          hdr->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD) == NULL ||
-          hdr->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH) == NULL ||
-          hdr->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY) == NULL ||
-          hdr->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS) != NULL) {
+      if (hdr->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME) == nullptr ||
+          hdr->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD) == nullptr ||
+          hdr->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH) == nullptr ||
+          hdr->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY) == nullptr ||
+          hdr->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS) != nullptr) {
         // Decoded header field is invalid
         return HTTP2_ERROR_PROTOCOL_ERROR;
       }

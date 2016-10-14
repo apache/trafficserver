@@ -105,7 +105,7 @@ struct HeaderFieldValueIteratorState : noncopyable {
   TSMLoc hdr_loc_;
   TSMLoc field_loc_;
   int index_;
-  HeaderFieldValueIteratorState() : hdr_buf_(NULL), hdr_loc_(NULL), field_loc_(NULL), index_(0) {}
+  HeaderFieldValueIteratorState() : hdr_buf_(nullptr), hdr_loc_(nullptr), field_loc_(nullptr), index_(0) {}
   void
   reset(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc field_loc, int index)
   {
@@ -490,7 +490,7 @@ struct HeadersState : noncopyable {
     hdr_buf_ = bufp;
     hdr_loc_ = hdr_loc;
   }
-  ~HeadersState() { reset(NULL, NULL); }
+  ~HeadersState() { reset(nullptr, nullptr); }
 };
 
 Headers::Headers()

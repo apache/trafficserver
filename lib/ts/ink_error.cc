@@ -115,7 +115,7 @@ ink_pwarning(const char *message_format, ...)
   va_start(ap, message_format);
   errno_string = strerror(errno);
   snprintf(extended_format, sizeof(extended_format) - 1, "WARNING: %s <last errno = %d (%s)>", message_format, errno,
-           (errno_string == NULL ? "unknown" : errno_string));
+           (errno_string == nullptr ? "unknown" : errno_string));
   extended_format[sizeof(extended_format) - 1] = 0;
   vsnprintf(message, sizeof(message) - 1, extended_format, ap);
   message[sizeof(message) - 1] = 0;

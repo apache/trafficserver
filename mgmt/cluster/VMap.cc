@@ -69,11 +69,11 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
 
   our_ip               = ip;
   num_interfaces       = 0;
-  id_map               = NULL;
+  id_map               = nullptr;
   interface_realip_map = ink_hash_table_create(InkHashTableKeyType_String);
   our_map              = ink_hash_table_create(InkHashTableKeyType_String);
   ext_map              = ink_hash_table_create(InkHashTableKeyType_String);
-  addr_list            = NULL;
+  addr_list            = nullptr;
   num_addrs            = 0;
   num_nics             = 0;
 
@@ -121,7 +121,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
     // INKqa06739
     // Fetch the list of network interfaces
     // . from Stevens, Unix Network Prog., pg 434-435
-    ifbuf   = 0;
+    ifbuf   = nullptr;
     lastlen = 0;
     len     = 128 * sizeof(struct ifreq); // initial buffer size guess
     for (;;) {
@@ -197,14 +197,14 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
     close(tmp_socket);
   }
 
-  RecRegisterConfigUpdateCb("proxy.config.vmap.enabled", vmapEnableHandler, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.vmap.enabled", vmapEnableHandler, nullptr);
 
   down_up_timeout = REC_readInteger("proxy.config.vmap.down_up_timeout", &found);
   addr_list_fname = REC_readString("proxy.config.vmap.addr_file", &found);
   lt_readAListFile(addr_list_fname);
 
   map_change_thresh = 10;
-  last_map_change   = time(NULL);
+  last_map_change   = time(nullptr);
 
   return;
 
@@ -235,14 +235,14 @@ void
 VMap::lt_runGambit()
 {
   int i, no = 0;
-  char vaddr[80], raddr[80], *conf_addr = NULL;
+  char vaddr[80], raddr[80], *conf_addr = nullptr;
   bool init = false;
   struct in_addr virtual_addr, real_addr;
 
   if (!enabled) {
     return;
   }
-  if (!((time(NULL) - lmgmt->ccom->startup_time) > lmgmt->ccom->startup_timeout)) {
+  if (!((time(nullptr) - lmgmt->ccom->startup_time) > lmgmt->ccom->startup_timeout)) {
     return;
   }
   if (num_addrs == 0) {
@@ -306,7 +306,7 @@ VMap::lt_readAListFile(const char *fname)
   char tmp_addr[1024], tmp_interface[1024];
   FILE *fin;
   char tmp_id[1024];
-  ats_scoped_str vaddr_path(RecConfigReadConfigPath(NULL, fname));
+  ats_scoped_str vaddr_path(RecConfigReadConfigPath(nullptr, fname));
 
   if (!(fin = fopen(vaddr_path, "r"))) {
     mgmt_log("[VMap::lt_readAListFile] Unable to open file: %s, addr list unchanged\n", (const char *)vaddr_path);
@@ -333,7 +333,7 @@ VMap::lt_readAListFile(const char *fname)
   if (num_addrs) {
     addr_list = (unsigned long *)ats_malloc(sizeof(unsigned long) * num_addrs);
   } else { /* Handle the case where there are no addrs in the file */
-    addr_list = NULL;
+    addr_list = nullptr;
     fclose(fin);
     ink_mutex_release(mutex);
     return;
@@ -394,7 +394,7 @@ VMap::rl_resetSeenFlag(char *ip)
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
     char *key = (char *)ink_hash_table_entry_key(ext_map, entry);
     bool *tmp = (bool *)ink_hash_table_entry_value(ext_map, entry);
@@ -417,7 +417,7 @@ VMap::rl_clearUnSeen(char *ip)
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
     char *key = (char *)ink_hash_table_entry_key(ext_map, entry);
     bool *tmp = (bool *)ink_hash_table_entry_value(ext_map, entry);
@@ -507,7 +507,7 @@ VMap::rl_map(char *virt_ip, char *real_ip)
 
   if (!real_ip) {
     mgmt_elog(0, "[VMap::rl_map] no real ip associated with virtual ip %s, mapping to local\n", buf);
-    last_map_change = time(NULL);
+    last_map_change = time(nullptr);
   }
   ink_hash_table_insert(tmp, buf, (void *)entry);
   return true;
@@ -533,7 +533,7 @@ VMap::rl_unmap(char *virt_ip, char *real_ip)
   }
 
   if (!real_ip) {
-    last_map_change = time(NULL);
+    last_map_change = time(nullptr);
   }
   ink_hash_table_delete(tmp, buf);
   ats_free(hash_value);
@@ -549,17 +549,17 @@ VMap::rl_unmap(char *virt_ip, char *real_ip)
 char *
 VMap::rl_checkConflict(char *virt_ip)
 {
-  char *key       = NULL;
+  char *key       = nullptr;
   bool in_our_map = false, in_ext_map = false;
   InkHashTableValue hash_value;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  if ((time(NULL) - last_map_change) < map_change_thresh) {
-    return NULL;
+  if ((time(nullptr) - last_map_change) < map_change_thresh) {
+    return nullptr;
   }
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); (entry != NULL && !in_ext_map);
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); (entry != nullptr && !in_ext_map);
        entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
     key = (char *)ink_hash_table_entry_key(ext_map, entry);
     if (strstr(key, virt_ip)) {
@@ -574,7 +574,7 @@ VMap::rl_checkConflict(char *virt_ip)
   if (in_our_map && in_ext_map) {
     char *buf, buf2[80];
 
-    if ((buf = strstr(key, " ")) != NULL) {
+    if ((buf = strstr(key, " ")) != nullptr) {
       buf++;
       ink_strlcpy(buf2, buf, sizeof(buf2));
     } else {
@@ -582,7 +582,7 @@ VMap::rl_checkConflict(char *virt_ip)
     }
     return ats_strdup(buf2);
   }
-  return NULL;
+  return nullptr;
 } /* End VMap::rl_checkConflict */
 
 /*
@@ -598,7 +598,7 @@ VMap::rl_checkGlobConflict(char *virt_ip)
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); (entry != NULL && !in_ext_map);
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); (entry != nullptr && !in_ext_map);
        entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
     char *key = (char *)ink_hash_table_entry_key(ext_map, entry);
     if (strstr(key, virt_ip)) {
@@ -694,7 +694,7 @@ VMap::rl_boundAddr(char *virt_ip)
     return 1;
   }
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
     char *key = (char *)ink_hash_table_entry_key(ext_map, entry);
 
@@ -721,13 +721,13 @@ VMap::rl_boundTo(char *virt_ip)
     return our_ip;
   }
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
     char *key = (char *)ink_hash_table_entry_key(ext_map, entry);
 
     if (strstr(key, virt_ip)) {
       char *buf, buf2[80];
-      if ((buf = strstr(key, " ")) != NULL) {
+      if ((buf = strstr(key, " ")) != nullptr) {
         buf++;
         ink_strlcpy(buf2, buf, sizeof(buf2));
       } else {
@@ -768,7 +768,7 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
   bsum = n;
 
   ink_mutex_acquire(mutex);
-  for (entry = ink_hash_table_iterator_first(our_map, &iterator_state); (entry != NULL && n < max);
+  for (entry = ink_hash_table_iterator_first(our_map, &iterator_state); (entry != nullptr && n < max);
        entry = ink_hash_table_iterator_next(our_map, &iterator_state)) {
     char buf[1024];
     char *key = (char *)ink_hash_table_entry_key(our_map, entry);
@@ -831,7 +831,7 @@ VMap::downOurAddrs()
   InkHashTableIteratorState iterator_state;
 
   ink_mutex_acquire(mutex);
-  for (entry = ink_hash_table_iterator_first(our_map, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(our_map, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(our_map, &iterator_state)) {
     some_address_mapped = true;
   }

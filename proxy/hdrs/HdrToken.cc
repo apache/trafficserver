@@ -158,7 +158,7 @@ static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"s-maxage", HDRTOKEN_TYPE_CACHE_CONTROL},
   {"need-revalidate-once", HDRTOKEN_TYPE_CACHE_CONTROL},
 
-  {(char *)NULL, (HdrTokenType)0},
+  {(char *)nullptr, (HdrTokenType)0},
 };
 
 static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
@@ -236,11 +236,11 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"X-Forwarded-For", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Sec-WebSocket-Key", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Sec-WebSocket-Version", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
-  {NULL, 0, 0, 0},
+  {nullptr, 0, 0, 0},
 };
 
-const char *_hdrtoken_strs_heap_f = NULL; // storage first byte
-const char *_hdrtoken_strs_heap_l = NULL; // storage last byte
+const char *_hdrtoken_strs_heap_f = nullptr; // storage first byte
+const char *_hdrtoken_strs_heap_l = nullptr; // storage last byte
 
 int hdrtoken_num_wks = SIZEOF(_hdrtoken_strs); // # of well-known strings
 
@@ -251,7 +251,7 @@ int32_t hdrtoken_str_slotids[SIZEOF(_hdrtoken_strs)];          // wks_idx -> slo
 uint64_t hdrtoken_str_masks[SIZEOF(_hdrtoken_strs)];           // wks_idx -> presence mask
 uint32_t hdrtoken_str_flags[SIZEOF(_hdrtoken_strs)];           // wks_idx -> flags
 
-DFA *hdrtoken_strs_dfa = NULL;
+DFA *hdrtoken_strs_dfa = nullptr;
 
 /***********************************************************************
  *                                                                     *
@@ -450,7 +450,7 @@ hdrtoken_init()
       prefix.wks_idx         = i;
       prefix.wks_length      = hdrtoken_str_lengths[i];
       prefix.wks_token_type  = HDRTOKEN_TYPE_OTHER; // default, can override later
-      prefix.wks_info.name   = NULL;                // default, can override later
+      prefix.wks_info.name   = nullptr;             // default, can override later
       prefix.wks_info.slotid = MIME_SLOTID_NONE;    // default, can override later
       prefix.wks_info.mask   = TOK_64_CONST(0);     // default, can override later
       prefix.wks_info.flags  = MIME_FLAGS_MULTVALS; // default, can override later
@@ -467,7 +467,7 @@ hdrtoken_init()
     }
 
     // Set the token types for certain tokens
-    for (i = 0; _hdrtoken_strs_type_initializers[i].name != NULL; i++) {
+    for (i = 0; _hdrtoken_strs_type_initializers[i].name != nullptr; i++) {
       int wks_idx;
       HdrTokenHeapPrefix *prefix;
 
@@ -481,7 +481,7 @@ hdrtoken_init()
     }
 
     // Set special data for field names
-    for (i = 0; _hdrtoken_strs_field_initializers[i].name != NULL; i++) {
+    for (i = 0; _hdrtoken_strs_field_initializers[i].name != nullptr; i++) {
       int wks_idx;
       HdrTokenHeapPrefix *prefix;
 
@@ -525,7 +525,7 @@ hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_strin
     if (wks_idx >= 0) {
       *wks_string_out = hdrtoken_index_to_wks(wks_idx);
     } else {
-      *wks_string_out = NULL;
+      *wks_string_out = nullptr;
     }
   }
   // printf("hdrtoken_tokenize_dfa(%d,*s) - return %d\n",string_len,string,wks_idx);
@@ -542,7 +542,7 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
   int wks_idx;
   HdrTokenHashBucket *bucket;
 
-  ink_assert(string != NULL);
+  ink_assert(string != nullptr);
 
   if (hdrtoken_is_wks(string)) {
     wks_idx = hdrtoken_wks_to_index(string);
@@ -556,7 +556,7 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
   uint32_t slot = hash_to_slot(hash);
 
   bucket = &(hdrtoken_hash_table[slot]);
-  if ((bucket->wks != NULL) && (bucket->hash == hash) && (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
+  if ((bucket->wks != nullptr) && (bucket->hash == hash) && (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
     wks_idx = hdrtoken_wks_to_index(bucket->wks);
     if (wks_string_out) {
       *wks_string_out = bucket->wks;
@@ -574,7 +574,7 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
 const char *
 hdrtoken_string_to_wks(const char *string)
 {
-  const char *wks = NULL;
+  const char *wks = nullptr;
   hdrtoken_tokenize(string, (int)strlen(string), &wks);
   return wks;
 }
@@ -585,7 +585,7 @@ hdrtoken_string_to_wks(const char *string)
 const char *
 hdrtoken_string_to_wks(const char *string, int length)
 {
-  const char *wks = NULL;
+  const char *wks = nullptr;
   hdrtoken_tokenize(string, length, &wks);
   return wks;
 }

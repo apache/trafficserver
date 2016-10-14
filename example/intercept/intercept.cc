@@ -74,7 +74,7 @@ struct InterceptIOChannel {
   TSIOBuffer iobuf;
   TSIOBufferReader reader;
 
-  InterceptIOChannel() : vio(NULL), iobuf(NULL), reader(NULL) {}
+  InterceptIOChannel() : vio(nullptr), iobuf(nullptr), reader(nullptr) {}
   ~InterceptIOChannel()
   {
     if (this->reader) {
@@ -89,7 +89,7 @@ struct InterceptIOChannel {
   void
   read(TSVConn vc, TSCont contp)
   {
-    TSReleaseAssert(this->vio == NULL);
+    TSReleaseAssert(this->vio == nullptr);
     TSReleaseAssert((this->iobuf = TSIOBufferCreate()));
     TSReleaseAssert((this->reader = TSIOBufferReaderAlloc(this->iobuf)));
 
@@ -99,7 +99,7 @@ struct InterceptIOChannel {
   void
   write(TSVConn vc, TSCont contp)
   {
-    TSReleaseAssert(this->vio == NULL);
+    TSReleaseAssert(this->vio == nullptr);
     TSReleaseAssert((this->iobuf = TSIOBufferCreate()));
     TSReleaseAssert((this->reader = TSIOBufferReaderAlloc(this->iobuf)));
 
@@ -120,8 +120,8 @@ struct InterceptIO {
     if (this->vc) {
       TSVConnClose(this->vc);
     }
-    this->vc         = NULL;
-    this->readio.vio = this->writeio.vio = NULL;
+    this->vc         = nullptr;
+    this->readio.vio = this->writeio.vio = nullptr;
   }
 };
 
@@ -135,7 +135,7 @@ struct InterceptState {
   InterceptIO client; // Server intercept VC state.
   InterceptIO server; // Intercept origin VC state.
 
-  InterceptState() : txn(NULL) {}
+  InterceptState() : txn(nullptr) {}
   ~InterceptState() {}
 };
 
@@ -171,9 +171,9 @@ InterceptProxySideVC(const InterceptState *istate, TSVConn vc)
 static bool
 InterceptAttemptDestroy(InterceptState *istate, TSCont contp)
 {
-  if (istate->server.vc == NULL && istate->client.vc == NULL) {
+  if (istate->server.vc == nullptr && istate->client.vc == nullptr) {
     VDEBUG("destroying server intercept state istate=%p contp=%p", istate, contp);
-    TSContDataSet(contp, NULL); // Force a crash if we get additional events.
+    TSContDataSet(contp, nullptr); // Force a crash if we get additional events.
     TSContDestroy(contp);
     delete istate;
     return true;
@@ -315,7 +315,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
       return TS_EVENT_NONE;
     }
 
-    if ((istate->server.vc = TSVConnFdCreate(fd)) == NULL) {
+    if ((istate->server.vc = TSVConnFdCreate(fd)) == nullptr) {
       VDEBUG("TSVconnFdCreate() failed");
       TSVConnAbort(arg.vc, TS_VC_CLOSE_ABORT);
 
@@ -388,12 +388,12 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     VDEBUG("reading vio=%p vc=%p, istate=%p is bound to client vc=%p and server vc=%p", arg.vio, TSVIOVConnGet(arg.vio),
            cdata.istate, cdata.istate->client.vc, cdata.istate->server.vc);
 
-    if (to->vc == NULL) {
+    if (to->vc == nullptr) {
       VDEBUG("closing %s vc=%p", InterceptProxySide(cdata.istate, from), from->vc);
       from->close();
     }
 
-    if (from->vc == NULL) {
+    if (from->vc == nullptr) {
       VDEBUG("closing %s vc=%p", InterceptProxySide(cdata.istate, to), to->vc);
       to->close();
     }
@@ -431,7 +431,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
 
     // If the other side is closed, close this side too, but only if there
     // we have drained the write buffer.
-    if (from->vc == NULL) {
+    if (from->vc == nullptr) {
       VDEBUG("closing %s vc=%p with %" PRId64 " bytes to left", InterceptProxySide(cdata.istate, to), to->vc,
              TSIOBufferReaderAvail(to->writeio.reader));
       if (TSIOBufferReaderAvail(to->writeio.reader) == 0) {
@@ -548,8 +548,8 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
 
   // XXX accept hostname and port arguments
 
-  TxnHook       = InterceptContCreate(InterceptTxnHook, NULL, NULL);
-  InterceptHook = InterceptContCreate(InterceptInterceptionHook, NULL, NULL);
+  TxnHook       = InterceptContCreate(InterceptTxnHook, nullptr, nullptr);
+  InterceptHook = InterceptContCreate(InterceptInterceptionHook, nullptr, nullptr);
 
   // Wait until after the cache lookup to decide whether to
   // intercept a request. For cache hits we will never intercept.

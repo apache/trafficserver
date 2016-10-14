@@ -80,7 +80,7 @@ struct SSLAddressLookupKey {
   }
 
 private:
-  char key[(TS_IP6_SIZE * 2) /* hex addr */ + 1 /* dot */ + 4 /* port */ + 1 /* NULL */];
+  char key[(TS_IP6_SIZE * 2) /* hex addr */ + 1 /* dot */ + 4 /* port */ + 1 /* nullptr */];
   unsigned char sep; // offset of address/port separator
 };
 
@@ -236,14 +236,14 @@ SSLCertContext::release()
 {
   if (keyblock) {
     ticket_block_free(keyblock);
-    keyblock = NULL;
+    keyblock = nullptr;
   }
 
   SSLReleaseContext(ctx);
-  ctx = NULL;
+  ctx = nullptr;
 }
 
-SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(NULL), is_valid(true)
+SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(nullptr), is_valid(true)
 {
 }
 
@@ -275,7 +275,7 @@ SSLCertLookup::find(const IpEndpoint &address) const
     return this->ssl_storage->lookup(key.get());
   }
 
-  return NULL;
+  return nullptr;
 }
 
 int
@@ -349,7 +349,7 @@ reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1
     ssize_t remain = ptr - reversed;
 
     if (remain < (len + 1)) {
-      return NULL;
+      return nullptr;
     }
 
     ptr -= len;
@@ -386,7 +386,7 @@ SSLContextStorage::~SSLContextStorage()
   // First sort the array so we can efficiently detect duplicates
   // and avoid the double free
   this->ctx_store.qsort(SSLCtxCompare);
-  SSL_CTX *last_ctx = NULL;
+  SSL_CTX *last_ctx = nullptr;
   for (unsigned i = 0; i < this->ctx_store.length(); ++i) {
     if (this->ctx_store[i].ctx != last_ctx) {
       last_ctx = this->ctx_store[i].ctx;
@@ -430,7 +430,7 @@ SSLContextStorage::insert(const char *name, int idx)
     if (subdomain && subdomain[1] == '.') {
       subdomain += 2; // Move beyond the '.'
     } else {
-      subdomain = NULL;
+      subdomain = nullptr;
     }
     if (subdomain) {
       if (ink_hash_table_lookup(this->wilddomains, subdomain, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
@@ -477,7 +477,7 @@ SSLContextStorage::lookup(const char *name) const
       return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 #if TS_HAS_TESTS

@@ -70,18 +70,18 @@ struct ShowCache : public ShowCont {
       vol_index(0),
       seg_index(0),
       scan_flag(scan_type_lookup),
-      cache_vc(0),
-      buffer(0),
-      buffer_reader(0),
+      cache_vc(nullptr),
+      buffer(nullptr),
+      buffer_reader(nullptr),
       content_length(0),
-      cvio(0)
+      cvio(nullptr)
   {
     urlstrs_index = 0;
     linecount     = 0;
     int query_len;
     char query[4096];
     char unescapedQuery[sizeof(query)];
-    show_cache_urlstrs = NULL;
+    show_cache_urlstrs = nullptr;
     URL *u             = h->url_get();
 
     // process the query string
@@ -317,15 +317,15 @@ ShowCache::handleCacheEvent(int event, Event *e)
 
     if (buffer_reader) {
       buffer->dealloc_reader(buffer_reader);
-      buffer_reader = 0;
+      buffer_reader = nullptr;
     }
     if (buffer) {
       free_MIOBuffer(buffer);
-      buffer = 0;
+      buffer = nullptr;
     }
-    cvio = 0;
+    cvio = nullptr;
     cache_vc->do_io_close(-1);
-    cache_vc = 0;
+    cache_vc = nullptr;
     return complete(event, e);
   }
   case CACHE_EVENT_OPEN_READ: {
@@ -441,7 +441,7 @@ ShowCache::lookup_url(int event, Event *e)
 
   snprintf(header_str, sizeof(header_str), "<font color=red>%s</font>", show_cache_urlstrs[0]);
   CHECK_SHOW(begin(header_str));
-  url.create(NULL);
+  url.create(nullptr);
   const char *s;
   s = show_cache_urlstrs[0];
   url.parse(&s, s + strlen(s));
@@ -457,7 +457,7 @@ ShowCache::lookup_url(int event, Event *e)
   if (lookup_result == ACTION_RESULT_DONE)
     return EVENT_DONE; // callback complete
   else if (lookup_result == ACTION_IO_ERROR) {
-    handleEvent(CACHE_EVENT_OPEN_READ_FAILED, 0);
+    handleEvent(CACHE_EVENT_OPEN_READ_FAILED, nullptr);
     return EVENT_DONE; // callback complete
   } else
     return EVENT_CONT; // callback pending, will be a cluster read.
@@ -478,7 +478,7 @@ ShowCache::delete_url(int event, Event *e)
     CHECK_SHOW(show("</TABLE></B>\n"));
     return complete(event, e);
   }
-  url.create(NULL);
+  url.create(nullptr);
   const char *s;
   s = show_cache_urlstrs[urlstrs_index];
   CHECK_SHOW(show("<TR><TD>%s</TD>", s));
@@ -601,12 +601,12 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
     for (unsigned s = 0; show_cache_urlstrs[s][0] != '\0'; s++) {
       const char *error;
       int erroffset;
-      pcre *preq = pcre_compile(show_cache_urlstrs[s], 0, &error, &erroffset, NULL);
+      pcre *preq = pcre_compile(show_cache_urlstrs[s], 0, &error, &erroffset, nullptr);
 
       Debug("cache_inspector", "matching url '%s' '%s' with regex '%s'", m, xx, show_cache_urlstrs[s]);
 
       if (preq) {
-        int r = pcre_exec(preq, NULL, xx, ib, 0, 0, NULL, 0);
+        int r = pcre_exec(preq, nullptr, xx, ib, 0, 0, nullptr, 0);
 
         pcre_free(preq);
         if (r != -1) {

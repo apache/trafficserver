@@ -51,7 +51,7 @@ namespace io
   uint64_t
   IO::copy(const std::string &s) const
   {
-    assert(buffer != NULL);
+    assert(buffer != nullptr);
     const uint64_t size = TSIOBufferWrite(buffer, s.data(), s.size());
     assert(size == s.size());
     return size;
@@ -60,7 +60,7 @@ namespace io
   int64_t
   IO::consume(void) const
   {
-    assert(reader != NULL);
+    assert(reader != nullptr);
     const int64_t available = TSIOBufferReaderAvail(reader);
     if (available > 0) {
       TSIOBufferReaderConsume(reader, available);
@@ -71,8 +71,8 @@ namespace io
   int64_t
   IO::done(void) const
   {
-    assert(vio != NULL);
-    assert(reader != NULL);
+    assert(vio != nullptr);
+    assert(reader != nullptr);
     const int64_t d = TSIOBufferReaderAvail(reader) + TSVIONDoneGet(vio);
     TSVIONDoneSet(vio, d);
     return d;
@@ -80,26 +80,26 @@ namespace io
 
   WriteOperation::~WriteOperation()
   {
-    assert(mutex_ != NULL);
+    assert(mutex_ != nullptr);
     const Lock lock(mutex_);
     TSDebug(PLUGIN_TAG, "~WriteOperation");
 
-    vio_ = NULL;
+    vio_ = nullptr;
 
-    if (action_ != NULL) {
+    if (action_ != nullptr) {
       TSActionCancel(action_);
     }
 
-    assert(reader_ != NULL);
+    assert(reader_ != nullptr);
     TSIOBufferReaderFree(reader_);
 
-    assert(buffer_ != NULL);
+    assert(buffer_ != nullptr);
     TSIOBufferDestroy(buffer_);
 
-    assert(continuation_ != NULL);
+    assert(continuation_ != nullptr);
     TSContDestroy(continuation_);
 
-    assert(vconnection_ != NULL);
+    assert(vconnection_ != nullptr);
     TSVConnShutdown(vconnection_, 0, 1);
   }
 
@@ -107,24 +107,24 @@ namespace io
     : vconnection_(v),
       buffer_(TSIOBufferCreate()),
       reader_(TSIOBufferReaderAlloc(buffer_)),
-      mutex_(m != NULL ? m : TSMutexCreate()),
+      mutex_(m != nullptr ? m : TSMutexCreate()),
       continuation_(TSContCreate(WriteOperation::Handle, mutex_)),
       vio_(TSVConnWrite(v, continuation_, reader_, std::numeric_limits<int64_t>::max())),
-      action_(NULL),
+      action_(nullptr),
       timeout_(t),
       bytes_(0),
       reenable_(true)
   {
-    assert(vconnection_ != NULL);
-    assert(buffer_ != NULL);
-    assert(reader_ != NULL);
-    assert(mutex_ != NULL);
-    assert(continuation_ != NULL);
-    assert(vio_ != NULL);
+    assert(vconnection_ != nullptr);
+    assert(buffer_ != nullptr);
+    assert(reader_ != nullptr);
+    assert(mutex_ != nullptr);
+    assert(continuation_ != nullptr);
+    assert(vio_ != nullptr);
 
     if (timeout_ > 0) {
       action_ = TSContSchedule(continuation_, timeout_, TS_THREAD_POOL_DEFAULT);
-      assert(action_ != NULL);
+      assert(action_ != nullptr);
     }
   }
 
@@ -134,37 +134,37 @@ namespace io
     assert(mutex_);
     const Lock lock(mutex_);
     bytes_ += b;
-    if (vio_ != NULL && TSVIOContGet(vio_) != NULL) {
+    if (vio_ != nullptr && TSVIOContGet(vio_) != nullptr) {
       if (reenable_) {
         TSVIOReenable(vio_);
         reenable_ = false;
       }
     } else {
-      vio_ = NULL;
+      vio_ = nullptr;
     }
   }
 
   int
   WriteOperation::Handle(const TSCont c, const TSEvent e, void *d)
   {
-    assert(c != NULL);
+    assert(c != nullptr);
     WriteOperationPointer *const p = static_cast<WriteOperationPointer *>(TSContDataGet(c));
 
     if (TS_EVENT_VCONN_WRITE_COMPLETE == e) {
       TSDebug(PLUGIN_TAG, "TS_EVENT_VCONN_WRITE_COMPLETE");
-      if (p != NULL) {
-        TSContDataSet(c, NULL);
+      if (p != nullptr) {
+        TSContDataSet(c, nullptr);
         delete p;
       }
       return TS_SUCCESS;
     }
 
-    assert(p != NULL);
+    assert(p != nullptr);
     assert(*p);
     WriteOperation &operation = **p;
     assert(operation.continuation_ == c);
-    assert(operation.vconnection_ != NULL);
-    assert(d != NULL);
+    assert(operation.vconnection_ != nullptr);
+    assert(d != nullptr);
     assert(TS_EVENT_ERROR == e || TS_EVENT_TIMEOUT == e || TS_EVENT_VCONN_WRITE_READY == e);
 
     switch (e) {
@@ -177,8 +177,8 @@ namespace io
 
     handle_error:
       operation.close();
-      assert(operation.action_ != NULL);
-      operation.action_ = NULL;
+      assert(operation.action_ != nullptr);
+      operation.action_ = nullptr;
       /*
       TSContDataSet(c, NULL);
       delete p;
@@ -201,9 +201,9 @@ namespace io
   WriteOperation::Create(const TSVConn v, const TSMutex m, const size_t t)
   {
     WriteOperation *const operation = new WriteOperation(v, m, t);
-    assert(operation != NULL);
+    assert(operation != nullptr);
     WriteOperationPointer *const pointer = new WriteOperationPointer(operation);
-    assert(pointer != NULL);
+    assert(pointer != nullptr);
     TSContDataSet(operation->continuation_, pointer);
 
 #ifndef NDEBUG
@@ -220,7 +220,7 @@ namespace io
   WriteOperation &
   WriteOperation::operator<<(const TSIOBufferReader r)
   {
-    assert(r != NULL);
+    assert(r != nullptr);
     process(TSIOBufferCopy(buffer_, r, TSIOBufferReaderAvail(r), 0));
     return *this;
   }
@@ -228,7 +228,7 @@ namespace io
   WriteOperation &
   WriteOperation::operator<<(const ReaderSize &r)
   {
-    assert(r.reader != NULL);
+    assert(r.reader != nullptr);
     process(TSIOBufferCopy(buffer_, r.reader, r.size, r.offset));
     return *this;
   }
@@ -236,7 +236,7 @@ namespace io
   WriteOperation &
   WriteOperation::operator<<(const ReaderOffset &r)
   {
-    assert(r.reader != NULL);
+    assert(r.reader != nullptr);
     process(TSIOBufferCopy(buffer_, r.reader, TSIOBufferReaderAvail(r.reader), r.offset));
     return *this;
   }
@@ -244,7 +244,7 @@ namespace io
   WriteOperation &
   WriteOperation::operator<<(const char *const s)
   {
-    assert(s != NULL);
+    assert(s != nullptr);
     process(TSIOBufferWrite(buffer_, s, strlen(s)));
     return *this;
   }
@@ -259,21 +259,21 @@ namespace io
   void
   WriteOperation::close(void)
   {
-    assert(mutex_ != NULL);
+    assert(mutex_ != nullptr);
     const Lock lock(mutex_);
-    if (vio_ != NULL && TSVIOContGet(vio_) != NULL) {
+    if (vio_ != nullptr && TSVIOContGet(vio_) != nullptr) {
       TSVIONBytesSet(vio_, bytes_);
       TSVIOReenable(vio_);
     }
-    vio_ = NULL;
+    vio_ = nullptr;
   }
 
   void
   WriteOperation::abort(void)
   {
-    assert(mutex_ != NULL);
+    assert(mutex_ != nullptr);
     const Lock lock(mutex_);
-    vio_ = NULL;
+    vio_ = nullptr;
   }
 
   IOSink::~IOSink()
@@ -295,10 +295,10 @@ namespace io
       return;
     }
 
-    assert(operation->mutex_ != NULL);
+    assert(operation->mutex_ != nullptr);
     const Lock lock(operation->mutex_);
 
-    assert(operation->buffer_ != NULL);
+    assert(operation->buffer_ != nullptr);
     const Node::Result result = data_->process(operation->buffer_);
     operation->bytes_ += result.first;
     operation->process();
@@ -316,8 +316,8 @@ namespace io
       return Lock();
     }
 
-    assert(operation != NULL);
-    assert(operation->mutex_ != NULL);
+    assert(operation != nullptr);
+    assert(operation->mutex_ != nullptr);
 
     return Lock(operation->mutex_);
   }
@@ -334,7 +334,7 @@ namespace io
   BufferNode &
   BufferNode::operator<<(const TSIOBufferReader r)
   {
-    assert(r != NULL);
+    assert(r != nullptr);
     TSIOBufferCopy(buffer_, r, TSIOBufferReaderAvail(r), 0);
     return *this;
   }
@@ -342,7 +342,7 @@ namespace io
   BufferNode &
   BufferNode::operator<<(const ReaderSize &r)
   {
-    assert(r.reader != NULL);
+    assert(r.reader != nullptr);
     TSIOBufferCopy(buffer_, r.reader, r.size, r.offset);
     return *this;
   }
@@ -350,7 +350,7 @@ namespace io
   BufferNode &
   BufferNode::operator<<(const ReaderOffset &r)
   {
-    assert(r.reader != NULL);
+    assert(r.reader != nullptr);
     TSIOBufferCopy(buffer_, r.reader, TSIOBufferReaderAvail(r.reader), r.offset);
     return *this;
   }
@@ -358,7 +358,7 @@ namespace io
   BufferNode &
   BufferNode::operator<<(const char *const s)
   {
-    assert(s != NULL);
+    assert(s != nullptr);
     TSIOBufferWrite(buffer_, s, strlen(s));
     return *this;
   }
@@ -373,9 +373,9 @@ namespace io
   Node::Result
   BufferNode::process(const TSIOBuffer b)
   {
-    assert(b != NULL);
-    assert(buffer_ != NULL);
-    assert(reader_ != NULL);
+    assert(b != nullptr);
+    assert(buffer_ != nullptr);
+    assert(reader_ != nullptr);
     const size_t available = TSIOBufferReaderAvail(reader_);
     const size_t copied    = TSIOBufferCopy(b, reader_, available, 0);
     assert(copied == available);
@@ -387,7 +387,7 @@ namespace io
   Node::Result
   StringNode::process(const TSIOBuffer b)
   {
-    assert(b != NULL);
+    assert(b != nullptr);
     const size_t copied = TSIOBufferWrite(b, string_.data(), string_.size());
     assert(copied == string_.size());
     return Node::Result(copied, true);
@@ -436,7 +436,7 @@ namespace io
   Node::Result
   Data::process(const TSIOBuffer b)
   {
-    assert(b != NULL);
+    assert(b != nullptr);
     int64_t length = 0;
 
     const Nodes::iterator begin = nodes_.begin(), end = nodes_.end();
@@ -444,7 +444,7 @@ namespace io
     Nodes::iterator it = begin;
 
     for (; it != end; ++it) {
-      assert(*it != NULL);
+      assert(*it != nullptr);
       const Node::Result result = (*it)->process(b);
       length += result.first;
       if (!result.second || !it->unique()) {
@@ -459,7 +459,7 @@ namespace io
       nodes_.erase(begin, it);
       if (it != end) {
         Data *data = dynamic_cast<Data *>(it->get());
-        while (data != NULL) {
+        while (data != nullptr) {
           // TSDebug(PLUGIN_TAG, "new first");
           data->first_ = true;
           if (data->nodes_.empty()) {

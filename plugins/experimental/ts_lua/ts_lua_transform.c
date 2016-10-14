@@ -140,8 +140,9 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
       n = 2;
     }
 
-    if (towrite == 0)
+    if (towrite == 0) {
       break;
+    }
 
     blk   = TSIOBufferReaderStart(transform_ctx->reserved.reader);
     start = TSIOBufferBlockReadStart(blk, transform_ctx->reserved.reader, &blk_len);
@@ -219,11 +220,13 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
 
   TSMutexUnlock(mtxp);
 
-  if (eos && !transform_ctx->output.vio)
+  if (eos && !transform_ctx->output.vio) {
     transform_ctx->output.vio = TSVConnWrite(output_conn, contp, transform_ctx->output.reader, 0);
+  }
 
-  if (write_down || eos)
+  if (write_down || eos) {
     TSVIOReenable(transform_ctx->output.vio);
+  }
 
   if (toread > input_avail) { // upstream not finished.
     if (eos) {

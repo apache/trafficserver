@@ -32,7 +32,7 @@ RuleSet::append(RuleSet *rule)
 {
   RuleSet *tmp = this;
 
-  TSReleaseAssert(rule->next == NULL);
+  TSReleaseAssert(rule->next == nullptr);
 
   while (tmp->next) {
     tmp = tmp->next;
@@ -45,7 +45,7 @@ RuleSet::add_condition(Parser &p, const char *filename, int lineno)
 {
   Condition *c = condition_factory(p.get_op());
 
-  if (NULL != c) {
+  if (nullptr != c) {
     TSDebug(PLUGIN_NAME, "   Adding condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
     c->initialize(p);
     if (!c->set_hook(_hook)) {
@@ -53,7 +53,7 @@ RuleSet::add_condition(Parser &p, const char *filename, int lineno)
               TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
       return false;
     }
-    if (NULL == _cond) {
+    if (nullptr == _cond) {
       _cond = c;
     } else {
       _cond->append(c);
@@ -74,7 +74,7 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
 {
   Operator *o = operator_factory(p.get_op());
 
-  if (NULL != o) {
+  if (nullptr != o) {
     // TODO: This should be extended to show both the "argument" and the "value" (if both are used)
     TSDebug(PLUGIN_NAME, "   Adding operator: %s(%s)", p.get_op().c_str(), p.get_arg().c_str());
     o->initialize(p);
@@ -83,7 +83,7 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
               TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
       return false;
     }
-    if (NULL == _oper) {
+    if (nullptr == _oper) {
       _oper = o;
     } else {
       _oper->append(o);

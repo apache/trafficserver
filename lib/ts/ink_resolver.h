@@ -266,8 +266,8 @@ struct ts_imp_res_state {
 };
 typedef ts_imp_res_state *ink_res_state;
 
-int ink_res_init(ink_res_state, IpEndpoint const *pHostList, size_t pHostListSize, int dnsSearch, const char *pDefDomain = NULL,
-                 const char *pSearchList = NULL, const char *pResolvConf = NULL);
+int ink_res_init(ink_res_state, IpEndpoint const *pHostList, size_t pHostListSize, int dnsSearch, const char *pDefDomain = nullptr,
+                 const char *pSearchList = nullptr, const char *pResolvConf = NULL);
 
 int ink_res_mkquery(ink_res_state, int, const char *, int, int, const unsigned char *, int, const unsigned char *, unsigned char *,
                     int);

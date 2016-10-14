@@ -179,7 +179,7 @@ HttpProxyPort *
 HttpProxyPort::findHttp(Group const &ports, uint16_t family)
 {
   bool check_family_p = ats_is_ip(family);
-  self *zret          = 0;
+  self *zret          = nullptr;
   for (int i = 0, n = ports.length(); i < n && !zret; ++i) {
     HttpProxyPort &p = ports[i];
     if (p.m_port &&                               // has a valid port
@@ -195,7 +195,7 @@ HttpProxyPort::findHttp(Group const &ports, uint16_t family)
 const char *
 HttpProxyPort::checkPrefix(const char *src, char const *prefix, size_t prefix_len)
 {
-  const char *zret = 0;
+  const char *zret = nullptr;
   if (0 == strncasecmp(prefix, src, prefix_len)) {
     src += prefix_len;
     if ('-' == *src || '=' == *src) {
@@ -271,7 +271,7 @@ HttpProxyPort::processOptions(const char *opts)
   memcpy(text, opts, opts_len);
 
   // Split the copy in to tokens.
-  char *token = 0;
+  char *token = nullptr;
   for (char *spot = text; *spot; ++spot) {
     if (bracket_p) {
       if (']' == *spot) {
@@ -279,7 +279,7 @@ HttpProxyPort::processOptions(const char *opts)
       }
     } else if (':' == *spot) {
       *spot = 0;
-      token = 0;
+      token = nullptr;
     } else {
       if (!token) {
         token = spot;
@@ -309,7 +309,7 @@ HttpProxyPort::processOptions(const char *opts)
         m_port = port;
         zret   = true;
       }
-    } else if (0 != (value = this->checkPrefix(item, OPT_FD_PREFIX, OPT_FD_PREFIX_LEN))) {
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_FD_PREFIX, OPT_FD_PREFIX_LEN))) {
       char *ptr; // tmp for syntax check.
       int fd = strtoul(value, &ptr, 10);
       if (ptr == value) {
@@ -318,13 +318,13 @@ HttpProxyPort::processOptions(const char *opts)
         m_fd = fd;
         zret = true;
       }
-    } else if (0 != (value = this->checkPrefix(item, OPT_INBOUND_IP_PREFIX, OPT_INBOUND_IP_PREFIX_LEN))) {
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_INBOUND_IP_PREFIX, OPT_INBOUND_IP_PREFIX_LEN))) {
       if (0 == ip.load(value)) {
         m_inbound_ip = ip;
       } else {
         Warning("Invalid IP address value '%s' in port descriptor '%s'", item, opts);
       }
-    } else if (0 != (value = this->checkPrefix(item, OPT_OUTBOUND_IP_PREFIX, OPT_OUTBOUND_IP_PREFIX_LEN))) {
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_OUTBOUND_IP_PREFIX, OPT_OUTBOUND_IP_PREFIX_LEN))) {
       if (0 == ip.load(value)) {
         this->outboundIp(ip.family()) = ip;
       } else {
@@ -369,10 +369,10 @@ HttpProxyPort::processOptions(const char *opts)
 #else
       Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 #endif
-    } else if (0 != (value = this->checkPrefix(item, OPT_HOST_RES_PREFIX, OPT_HOST_RES_PREFIX_LEN))) {
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_HOST_RES_PREFIX, OPT_HOST_RES_PREFIX_LEN))) {
       this->processFamilyPreference(value);
       host_res_set_p = true;
-    } else if (0 != (value = this->checkPrefix(item, OPT_PROTO_PREFIX, OPT_PROTO_PREFIX_LEN))) {
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_PROTO_PREFIX, OPT_PROTO_PREFIX_LEN))) {
       this->processSessionProtocolPreference(value);
       sp_set_p = true;
     } else {
@@ -651,12 +651,13 @@ ts_session_protocol_well_known_name_indices_init()
 const char *
 RecNormalizeProtoTag(const char *tag)
 {
-  const char *retval = NULL;
   InkHashTableValue value;
+
   if (ink_hash_table_lookup(TSProtoTags, tag, &value)) {
-    retval = reinterpret_cast<const char *>(value);
+    return reinterpret_cast<const char *>(value);
   }
-  return retval;
+
+  return nullptr;
 }
 
 SessionProtocolNameRegistry::SessionProtocolNameRegistry() : m_n(0)
@@ -719,5 +720,5 @@ SessionProtocolNameRegistry::indexFor(const char *name) const
 const char *
 SessionProtocolNameRegistry::nameFor(int idx) const
 {
-  return 0 <= idx && idx < static_cast<int>(m_n) ? m_names[idx] : 0;
+  return 0 <= idx && idx < static_cast<int>(m_n) ? m_names[idx] : nullptr;
 }

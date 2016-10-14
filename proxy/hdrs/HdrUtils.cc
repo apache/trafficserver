@@ -51,8 +51,8 @@ RETRY:
 
   cur       = m_csv_start;
   end       = m_value_start + m_value_len;
-  last_data = NULL;
-  csv_start = NULL;
+  last_data = nullptr;
+  csv_start = nullptr;
 
   if (cur >= end) {
     goto done;
