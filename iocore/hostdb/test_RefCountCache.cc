@@ -70,7 +70,7 @@ public:
   unmarshall(char *buf, unsigned int size)
   {
     if (size < sizeof(ExampleStruct)) {
-      return NULL;
+      return nullptr;
     }
     ExampleStruct *ret = ExampleStruct::alloc(size - sizeof(ExampleStruct));
     memcpy((void *)ret, buf, size);
@@ -97,7 +97,7 @@ fillCache(RefCountCache<ExampleStruct> *cache, int start, int end)
     tmp->idx         = i;
     tmp->name_offset = sizeof(ExampleStruct);
     memcpy(tmp->name(), name.c_str(), name.size());
-    // NULL terminate the string
+    // nullptr terminate the string
     *(tmp->name() + name.size()) = '\0';
 
     // Print out the struct we put in there
@@ -113,7 +113,7 @@ verifyCache(RefCountCache<ExampleStruct> *cache, int start, int end)
   for (int i = start; i < end; i++) {
     Ptr<ExampleStruct> ccitem = cache->get(i);
     ExampleStruct *tmp        = ccitem.get();
-    if (tmp == NULL) {
+    if (tmp == nullptr) {
       // printf("ExampleStruct %d missing, skipping\n", i);
       continue;
     }
@@ -174,7 +174,7 @@ testRefcounting()
   ret |= tmp->refcount() != 2;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
   // verify that it still isn't in there
-  ret |= cache->get(1).get() != NULL;
+  ret |= cache->get(1).get() != nullptr;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
   ret |= tmpAfter.get()->idx != 1;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
@@ -209,7 +209,7 @@ test()
   // Initialize IOBufAllocator
   RecModeT mode_type = RECM_STAND_ALONE;
   Layout::create();
-  init_diags("", NULL);
+  init_diags("", nullptr);
   RecProcessInit(mode_type);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
 
@@ -267,7 +267,7 @@ test()
   // Delete a single item
   cache->erase(1);
   // verify that it still isn't in there
-  ret |= cache->get(1).get() != NULL;
+  ret |= cache->get(1).get() != nullptr;
   ret |= ccitem.get()->idx != 1;
   printf("ret=%d\n", ret);
 

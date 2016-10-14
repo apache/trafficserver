@@ -39,7 +39,7 @@ signal_check_handler(int signal, signal_handler_t handler)
   struct sigaction oact;
   void *sigact;
 
-  ink_release_assert(sigaction(signal, NULL, &oact) == 0);
+  ink_release_assert(sigaction(signal, nullptr, &oact) == 0);
   if (handler == (signal_handler_t)SIG_DFL || handler == (signal_handler_t)SIG_IGN) {
     sigact = (void *)oact.sa_handler;
   } else {
@@ -77,12 +77,12 @@ set_signal(int signo, signal_handler_t handler)
 {
   struct sigaction act;
 
-  act.sa_handler   = NULL;
+  act.sa_handler   = nullptr;
   act.sa_sigaction = handler;
   act.sa_flags     = SA_SIGINFO;
   sigemptyset(&(act.sa_mask));
 
-  ink_release_assert(sigaction(signo, &act, NULL) == 0);
+  ink_release_assert(sigaction(signo, &act, nullptr) == 0);
 }
 
 // Reset a signal handler to the default handler.
@@ -95,7 +95,7 @@ signal_reset_default(int signo)
   act.sa_flags   = SA_NODEFER | SA_ONSTACK | SA_RESETHAND;
   sigemptyset(&(act.sa_mask));
 
-  ink_release_assert(sigaction(signo, &act, NULL) == 0);
+  ink_release_assert(sigaction(signo, &act, nullptr) == 0);
 }
 
 //
@@ -110,13 +110,13 @@ check_signal_thread(void *ptr)
     check_signals(handler);
     sleep(2);
   }
-  return NULL;
+  return nullptr;
 }
 
 void
 signal_start_check_thread(signal_handler_t handler)
 {
-  ink_thread_create(check_signal_thread, (void *)handler, 0, 0, NULL);
+  ink_thread_create(check_signal_thread, (void *)handler, 0, 0, nullptr);
 }
 
 bool
@@ -125,7 +125,7 @@ signal_is_masked(int signo)
   sigset_t current;
 
   sigemptyset(&current);
-  if (ink_thread_sigsetmask(SIG_SETMASK, NULL /* oldset */, &current) == 0) {
+  if (ink_thread_sigsetmask(SIG_SETMASK, nullptr /* oldset */, &current) == 0) {
     return sigismember(&current, signo) == 1;
   }
 
@@ -206,7 +206,7 @@ signal_register_default_handler(signal_handler_t handler)
   sigset_t sigsToBlock;
 
   sigemptyset(&sigsToBlock);
-  ink_thread_sigsetmask(SIG_SETMASK, &sigsToBlock, NULL);
+  ink_thread_sigsetmask(SIG_SETMASK, &sigsToBlock, nullptr);
 
   // SIGPIPE is just annoying to handle,we never care about it
   signal(SIGPIPE, SIG_IGN);

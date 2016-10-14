@@ -113,7 +113,7 @@ struct IOChannel {
   TSIOBuffer iobuf;
   TSIOBufferReader reader;
 
-  IOChannel() : vio(NULL), iobuf(TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K)), reader(TSIOBufferReaderAlloc(iobuf)) {}
+  IOChannel() : vio(nullptr), iobuf(TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K)), reader(TSIOBufferReaderAlloc(iobuf)) {}
   ~IOChannel()
   {
     if (this->reader) {
@@ -306,7 +306,7 @@ GeneratorWriteResponseHeader(GeneratorRequest *grq, TSCont contp)
 
     snprintf(buf, sizeof(buf), "max-age=%u, public", grq->maxage);
     HeaderFieldStringSet(response, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, buf);
-    HeaderFieldDateSet(response, TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED, time(NULL));
+    HeaderFieldDateSet(response, TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED, time(nullptr));
   } else {
     HeaderFieldStringSet(response, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, "private");
   }
@@ -465,7 +465,7 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata)
       int64_t nbytes;
 
       ptr = TSIOBufferBlockReadStart(blk, cdata.grq->readio.reader, &nbytes);
-      if (ptr == NULL || nbytes == 0) {
+      if (ptr == nullptr || nbytes == 0) {
         continue;
       }
 
@@ -628,7 +628,7 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
 static void
 GeneratorInitialize(void)
 {
-  TxnHook = TSContCreate(GeneratorTxnHook, NULL);
+  TxnHook = TSContCreate(GeneratorTxnHook, nullptr);
   memset(GeneratorData, 'x', sizeof(GeneratorData));
 
   if (TSStatFindName("generator.response_bytes", &StatCountBytes) == TS_ERROR) {
@@ -679,7 +679,7 @@ TSReturnCode
 TSRemapNewInstance(int /* argc */, char * /* argv */ [], void **ih, char * /* errbuf ATS_UNUSED */,
                    int /* errbuf_size ATS_UNUSED */)
 {
-  *ih = NULL;
+  *ih = nullptr;
   return TS_SUCCESS;
 }
 

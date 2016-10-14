@@ -32,7 +32,7 @@
  *   free callers from allocating the memory.
  ***************************************************************************/
 
-Token::Token() : name(NULL), value(NULL)
+Token::Token() : name(nullptr), value(nullptr)
 {
 }
 
@@ -59,7 +59,7 @@ Token::setValue(const char *str)
   char *str_copy = (char *)strtrim(str);
   // Can't use ats_strdup after strtrim?
   //  value = ats_strdup(str);
-  ink_assert(value == NULL);
+  ink_assert(value == nullptr);
   if (str_copy) {
     size_t len = strlen(str_copy);
     value      = (char *)ats_malloc(sizeof(char) * (BUFSIZ));
@@ -76,7 +76,7 @@ Token::appendValue(const char *str)
   char *str_copy        = (char *)strtrim(str);
   static bool firstTime = true;
 
-  if (value == NULL) {
+  if (value == nullptr) {
     setValue(str_copy);
   } else {
     if (!firstTime) {
@@ -91,9 +91,9 @@ Token::appendValue(const char *str)
 void
 Token::Print()
 {
-  ink_assert(name != NULL);
+  ink_assert(name != nullptr);
   printf(" (%s", name);
-  if (value != NULL) {
+  if (value != nullptr) {
     printf(", %s", value);
   }
   printf("),");
@@ -112,7 +112,7 @@ TokenList::TokenList() : length(0)
 
 TokenList::~TokenList()
 {
-  Token *token = NULL;
+  Token *token = nullptr;
 
   while ((token = dequeue())) {
     delete (token);
@@ -139,28 +139,33 @@ TokenList::Print()
  ***************************************************************************/
 
 Rule::Rule()
-  : tokenList(NULL), m_filetype(TS_FNAME_UNDEFINED), m_filename(NULL), m_ruleStr(NULL), m_comment(NULL), m_errorHint(NULL)
+  : tokenList(nullptr),
+    m_filetype(TS_FNAME_UNDEFINED),
+    m_filename(nullptr),
+    m_ruleStr(nullptr),
+    m_comment(nullptr),
+    m_errorHint(nullptr)
 {
 }
 
 void
 Rule::setRuleStr(const char *str)
 {
-  ink_assert(m_comment == NULL);
+  ink_assert(m_comment == nullptr);
   m_ruleStr = ats_strdup(str);
 }
 
 void
 Rule::setComment(const char *str)
 {
-  ink_assert(m_comment == NULL);
+  ink_assert(m_comment == nullptr);
   m_comment = ats_strdup(str);
 }
 
 void
 Rule::setErrorHint(const char *str)
 {
-  ink_assert(m_errorHint == NULL);
+  ink_assert(m_errorHint == nullptr);
   m_errorHint = ats_strdup(str);
 }
 
@@ -218,7 +223,7 @@ Rule::parse(const char *const_rule, TSFileNameT filetype)
   case TS_FNAME_VADDRS: /* vaddrs.config */
     return vaddrsParse(rule);
   default:
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -232,7 +237,7 @@ Rule::arm_securityParse(char *rule)
   ruleTok.Initialize(rule);
   tok_iter_state ruleTok_state;
   const char *tokenStr   = ruleTok.iterFirst(&ruleTok_state);
-  Token *token           = (Token *)NULL;
+  Token *token           = (Token *)nullptr;
   TokenList *m_tokenList = new TokenList();
 
   // ASSUMPTIONS:
@@ -243,20 +248,20 @@ Rule::arm_securityParse(char *rule)
     // If 1st element is non-digit, it is a value
     if (!ParseRules::is_digit(tokenStr[0])) {
       // it is a name
-      if (token != (Token *)NULL) {
+      if (token != (Token *)nullptr) {
         // We have a token that hasn't been enqueue, enqueue it
         m_tokenList->enqueue(token);
       }
 
       token = new Token();      // Create a new token
       token->setName(tokenStr); // Set token Name
-    } else if (token != (Token *)NULL) {
+    } else if (token != (Token *)nullptr) {
       // it is a value or part of a value
       token->appendValue(tokenStr); // ISA port# or IP; append to value
     }
   }
 
-  if (token != (Token *)NULL) { // Enqueue the last token -- we haven't done it yet.
+  if (token != (Token *)nullptr) { // Enqueue the last token -- we haven't done it yet.
     m_tokenList->enqueue(token);
   }
 
@@ -276,27 +281,27 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
   int numRuleTok = ruleTok.Initialize(rule);
   tok_iter_state ruleTok_state;
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token         = NULL;
+  Token *token         = nullptr;
   bool insideQuote     = false;
   const char *newStr;
 
   // Sanity Check -- number of token
   if (numRuleTok < minNumToken) {
     setErrorHint("Expecting more space delimited tokens!");
-    return NULL;
+    return nullptr;
   }
   if (numRuleTok > maxNumToken) {
     setErrorHint("Expecting less space delimited tokens!");
-    return NULL;
+    return nullptr;
   }
   // Sanity Check -- no space before or after '='
   if (strstr(rule, " =")) {
     setErrorHint("Expected space before '='");
-    return NULL;
+    return nullptr;
   }
   if (strstr(rule, "= ")) {
     setErrorHint("Expected space after '='");
-    return NULL;
+    return nullptr;
   }
 
   TokenList *m_tokenList = new TokenList();
@@ -312,7 +317,7 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
       if (numSubRuleTok < 2) {
         setErrorHint("'=' is expected in space-delimited token");
         delete m_tokenList;
-        return NULL;
+        return nullptr;
       }
 
       token = new Token();
@@ -352,7 +357,7 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
       if (insideQuote) {
         //              printf("enqueue\n");
         m_tokenList->enqueue(token);
-        token       = NULL; // transfered ownership of token to the token list
+        token       = nullptr; // transfered ownership of token to the token list
         insideQuote = false;
       } else {
         insideQuote = true;
@@ -402,12 +407,12 @@ Rule::icpParse(char *rule, unsigned short minNumToken, unsigned short maxNumToke
   // Sanity Check -- number of token
   if (numRuleTok < minNumToken) {
     setErrorHint("Expecting more ':' delimited tokens!");
-    return NULL;
+    return nullptr;
   }
   if (numRuleTok > maxNumToken + 1 ||
       (numRuleTok == maxNumToken + 1 && strspn(ruleTok[maxNumToken], " ") != strlen(ruleTok[maxNumToken]))) {
     setErrorHint("Expecting less ':' delimited tokens!");
-    return NULL;
+    return nullptr;
   }
 
   m_tokenList = new TokenList();
@@ -438,7 +443,7 @@ Rule::ip_allowParse(char *rule)
 TokenList *
 Rule::logsParse(char * /* rule ATS_UNUSED */)
 {
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -448,7 +453,7 @@ TokenList *
 Rule::log_hostsParse(char *rule)
 {
   if (strstr(rule, " ")) {
-    return NULL;
+    return nullptr;
   }
 
   Token *token           = new Token();
@@ -512,7 +517,7 @@ Rule::remapParse(char *rule)
 
   if ((numRuleTok != 3) && (numRuleTok != 4)) {
     setErrorHint("Expecting exactly 4 space delimited tokens");
-    return NULL;
+    return nullptr;
   }
 
   Token *token;
@@ -550,13 +555,13 @@ Rule::socksParse(char *rule)
   int numRuleTok = ruleTok.Initialize(rule);
   tok_iter_state ruleTok_state;
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token         = NULL;
+  Token *token         = nullptr;
   bool insideQuote     = false;
   const char *newStr;
 
   if (numRuleTok < 2) {
     setErrorHint("Expecting at least 2 space delimited tokens");
-    return NULL;
+    return nullptr;
   }
 
   TokenList *m_tokenList = new TokenList();
@@ -601,7 +606,7 @@ Rule::socksParse(char *rule)
         if (numSubRuleTok < 2) {
           setErrorHint("'=' is expected in space-delimited token");
           delete m_tokenList;
-          return NULL;
+          return nullptr;
         }
 
         token = new Token();
@@ -625,7 +630,7 @@ Rule::socksParse(char *rule)
           //          printf("!insideQuote: %s\n", subtoken);
           token->setValue(newStr);
           m_tokenList->enqueue(token);
-          token = NULL; // transfered ownership of token to the token list
+          token = nullptr; // transfered ownership of token to the token list
         } else {
           //          printf("insideQuote: %s\n", subtoken);
           //          printf("%s 1\n", subtoken);
@@ -642,7 +647,7 @@ Rule::socksParse(char *rule)
         if (insideQuote) {
           //              printf("enqueue\n");
           m_tokenList->enqueue(token);
-          token       = NULL; // transfered ownership of token to the token list
+          token       = nullptr; // transfered ownership of token to the token list
           insideQuote = false;
         } else {
           insideQuote = true;
@@ -665,27 +670,27 @@ Rule::splitdnsParse(char *rule)
   int numRuleTok = ruleTok.Initialize(rule);
   tok_iter_state ruleTok_state;
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token         = NULL;
+  Token *token         = nullptr;
   bool insideQuote     = false;
   const char *newStr;
 
   // Sanity Check -- number of token
   if (numRuleTok < 0) {
     setErrorHint("Expecting more space delimited tokens!");
-    return NULL;
+    return nullptr;
   }
   if (numRuleTok > 10) {
     setErrorHint("Expecting less space delimited tokens!");
-    return NULL;
+    return nullptr;
   }
   // Sanity Check -- no space before or after '='
   if (strstr(rule, " =")) {
     setErrorHint("Expected space before '='");
-    return NULL;
+    return nullptr;
   }
   if (strstr(rule, "= ")) {
     setErrorHint("Expected space after '='");
-    return NULL;
+    return nullptr;
   }
 
   TokenList *m_tokenList = new TokenList();
@@ -701,7 +706,7 @@ Rule::splitdnsParse(char *rule)
       if (numSubRuleTok < 2) {
         setErrorHint("'=' is expected in space-delimited token");
         delete m_tokenList;
-        return NULL;
+        return nullptr;
       }
 
       token = new Token();
@@ -714,7 +719,7 @@ Rule::splitdnsParse(char *rule)
       if (!insideQuote) {
         token->setValue(newStr);
         m_tokenList->enqueue(token);
-        token = NULL; // transfered ownership of token to the token list
+        token = nullptr; // transfered ownership of token to the token list
       } else {
         //          printf("%s 1\n", subtoken);
         token->appendValue(newStr);
@@ -730,7 +735,7 @@ Rule::splitdnsParse(char *rule)
       if (insideQuote) {
         //              printf("enqueue\n");
         m_tokenList->enqueue(token);
-        token       = NULL; // transfered ownership of token to the token list
+        token       = nullptr; // transfered ownership of token to the token list
         insideQuote = false;
       } else {
         insideQuote = true;
@@ -759,7 +764,7 @@ Rule::updateParse(char *rule)
   // sixth token must be all white spaces
   if (numRuleTok < 5 || numRuleTok > 6 || (numRuleTok == 6 && strspn(ruleTok[5], " ") != strlen(ruleTok[5]))) {
     setErrorHint("Expecting exactly 5 '\' delimited tokens");
-    return NULL;
+    return nullptr;
   }
 
   Token *token;
@@ -815,7 +820,7 @@ Rule::storageParse(char *rule)
 
   if ((numRuleTok != 1) && (numRuleTok != 2)) {
     setErrorHint("Expecting one or two tokens");
-    return NULL;
+    return nullptr;
   }
 
   Token *token;
@@ -860,7 +865,7 @@ Rule::inQuote(const char *str)
  *   continue parsing each rule.
  *   NOTE: a rule that spans more than one line would be a problem in here.
  ***************************************************************************/
-RuleList::RuleList() : length(0), m_filename(NULL)
+RuleList::RuleList() : length(0), m_filename(nullptr)
 {
   m_filetype = TS_FNAME_UNDEFINED;
 }
@@ -869,7 +874,7 @@ RuleList::~RuleList()
 {
   ats_free(m_filename);
 
-  Rule *rule = NULL;
+  Rule *rule = nullptr;
   while ((rule = dequeue())) {
     delete rule;
   }

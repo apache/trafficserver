@@ -53,7 +53,7 @@ DiagsConfig::reconfigure_diags()
     {"proxy.config.diags.output.status", DL_Status},       {"proxy.config.diags.output.note", DL_Note},
     {"proxy.config.diags.output.warning", DL_Warning},     {"proxy.config.diags.output.error", DL_Error},
     {"proxy.config.diags.output.fatal", DL_Fatal},         {"proxy.config.diags.output.alert", DL_Alert},
-    {"proxy.config.diags.output.emergency", DL_Emergency}, {NULL, DL_Undefined},
+    {"proxy.config.diags.output.emergency", DL_Emergency}, {nullptr, DL_Undefined},
   };
 
   if (!callbacks_established) {
@@ -66,8 +66,8 @@ DiagsConfig::reconfigure_diags()
   all_found = true;
 
   // initial value set to 0 or 1 based on command line tags
-  c.enabled[DiagsTagType_Debug]  = (diags->base_debug_tags != NULL);
-  c.enabled[DiagsTagType_Action] = (diags->base_action_tags != NULL);
+  c.enabled[DiagsTagType_Debug]  = (diags->base_debug_tags != nullptr);
+  c.enabled[DiagsTagType_Action] = (diags->base_action_tags != nullptr);
 
   // enabled if records.config set
 
@@ -108,11 +108,11 @@ DiagsConfig::reconfigure_diags()
   }
 
   p         = REC_readString("proxy.config.diags.debug.tags", &found);
-  dt        = (found ? p : NULL); // NOTE: needs to be freed
+  dt        = (found ? p : nullptr); // NOTE: needs to be freed
   all_found = all_found && found;
 
   p         = REC_readString("proxy.config.diags.action.tags", &found);
-  at        = (found ? p : NULL); // NOTE: needs to be freed
+  at        = (found ? p : nullptr); // NOTE: needs to be freed
   all_found = all_found && found;
 
   ///////////////////////////////////////////////////////////////////
@@ -246,30 +246,31 @@ DiagsConfig::config_diags_norecords()
 void
 DiagsConfig::RegisterDiagConfig()
 {
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.debug.enabled", 0, RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.debug.tags", "", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.action.enabled", 0, RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.action.tags", "", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.show_location", 1, RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.diag", "L", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.debug", "L", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.status", "L", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.note", "L", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.warning", "L", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.error", "SL", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.fatal", "SL", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.alert", "L", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.emergency", "SL", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
+  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.debug.enabled", 0, RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.debug.tags", "", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.action.enabled", 0, RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.action.tags", "", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.show_location", 1, RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.diag", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.debug", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.status", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.note", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.warning", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.error", "SL", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.fatal", "SL", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.alert", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.emergency", "SL", RECU_NULL, RECC_NULL, nullptr,
+                          REC_SOURCE_DEFAULT);
 }
 
 DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const char *tags, const char *actions, bool use_records)
-  : diags_log(NULL)
+  : diags_log(nullptr)
 {
   char diags_logpath[PATH_NAME_MAX];
   ats_scoped_str logpath;
 
   callbacks_established = false;
-  diags                 = NULL;
+  diags                 = nullptr;
 
   ////////////////////////////////////////////////////////////////////
   //  If we aren't using the manager records for configuation       //
@@ -278,7 +279,7 @@ DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const 
   ////////////////////////////////////////////////////////////////////
 
   if (!use_records) {
-    diags = new Diags(prefix_string, tags, actions, NULL);
+    diags = new Diags(prefix_string, tags, actions, nullptr);
     config_diags_norecords();
     return;
   }
@@ -336,7 +337,7 @@ DiagsConfig::register_diags_callbacks()
     "proxy.config.diags.action.tags",    "proxy.config.diags.show_location",    "proxy.config.diags.output.diag",
     "proxy.config.diags.output.debug",   "proxy.config.diags.output.status",    "proxy.config.diags.output.note",
     "proxy.config.diags.output.warning", "proxy.config.diags.output.error",     "proxy.config.diags.output.fatal",
-    "proxy.config.diags.output.alert",   "proxy.config.diags.output.emergency", NULL,
+    "proxy.config.diags.output.alert",   "proxy.config.diags.output.emergency", nullptr,
   };
 
   bool total_status = true;
@@ -345,7 +346,7 @@ DiagsConfig::register_diags_callbacks()
   void *o = (void *)this;
 
   // set triggers to call same callback for any diag config change
-  for (i = 0; config_record_names[i] != NULL; i++) {
+  for (i = 0; config_record_names[i] != nullptr; i++) {
     status = (REC_RegisterConfigUpdateFunc(config_record_names[i], diags_config_callback, o) == REC_ERR_OKAY);
     if (!status) {
       Warning("couldn't register variable '%s', is records.config up to date?", config_record_names[i]);

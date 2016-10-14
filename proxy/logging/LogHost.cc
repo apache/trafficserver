@@ -57,7 +57,7 @@ make_orphan_logfile(LogHost *lh, const char *filename)
 
   // XXX should check for conflicts with orphan filename
 
-  Ptr<LogFile> orphan(new LogFile(name_buf, NULL, LOG_FILE_ASCII, lh->signature()));
+  Ptr<LogFile> orphan(new LogFile(name_buf, nullptr, LOG_FILE_ASCII, lh->signature()));
 
   ats_free(name_buf);
   return orphan;
@@ -71,12 +71,12 @@ LogHost::LogHost(const char *object_filename, uint64_t object_signature)
   : m_object_filename(ats_strdup(object_filename)),
     m_object_signature(object_signature),
     m_port(0),
-    m_name(NULL),
-    m_sock(NULL),
+    m_name(nullptr),
+    m_sock(nullptr),
     m_sock_fd(-1),
     m_connected(false),
-    m_orphan_file(NULL),
-    m_log_collation_client_sm(NULL)
+    m_orphan_file(nullptr),
+    m_log_collation_client_sm(nullptr)
 {
   ink_zero(m_ip);
   ink_zero(m_ipstr);
@@ -88,11 +88,11 @@ LogHost::LogHost(const LogHost &rhs)
     m_ip(rhs.m_ip),
     m_port(0),
     m_name(ats_strdup(rhs.m_name)),
-    m_sock(NULL),
+    m_sock(nullptr),
     m_sock_fd(-1),
     m_connected(false),
-    m_orphan_file(NULL),
-    m_log_collation_client_sm(NULL)
+    m_orphan_file(nullptr),
+    m_log_collation_client_sm(nullptr)
 {
   memcpy(m_ipstr, rhs.m_ipstr, sizeof(m_ipstr));
   m_orphan_file = make_orphan_logfile(this, m_object_filename);
@@ -209,9 +209,9 @@ LogHost::connect()
 
   disconnect(); // make sure connection members are initialized
 
-  if (m_sock == NULL) {
+  if (m_sock == nullptr) {
     m_sock = new LogSock();
-    ink_assert(m_sock != NULL);
+    ink_assert(m_sock != nullptr);
   }
   m_sock_fd = m_sock->connect(&target.sa);
   if (m_sock_fd < 0) {
@@ -238,7 +238,7 @@ LogHost::disconnect()
   }
   if (m_log_collation_client_sm) {
     delete m_log_collation_client_sm;
-    m_log_collation_client_sm = NULL;
+    m_log_collation_client_sm = nullptr;
   }
   m_connected = false;
 }
@@ -252,12 +252,12 @@ LogHost::preproc_and_try_delete(LogBuffer *lb)
 {
   int ret = -1;
 
-  if (lb == NULL) {
+  if (lb == nullptr) {
     Note("Cannot write LogBuffer to LogHost %s; LogBuffer is NULL", name());
     return -1;
   }
   LogBufferHeader *buffer_header = lb->header();
-  if (buffer_header == NULL) {
+  if (buffer_header == nullptr) {
     Note("Cannot write LogBuffer to LogHost %s; LogBufferHeader is NULL", name());
     goto done;
   }
@@ -267,9 +267,9 @@ LogHost::preproc_and_try_delete(LogBuffer *lb)
   }
 
   // create a new collation client if necessary
-  if (m_log_collation_client_sm == NULL) {
+  if (m_log_collation_client_sm == nullptr) {
     m_log_collation_client_sm = new LogCollationClientSM(this);
-    ink_assert(m_log_collation_client_sm != NULL);
+    ink_assert(m_log_collation_client_sm != nullptr);
   }
 
   // send log_buffer;
@@ -332,8 +332,8 @@ LogHost::clear()
   ink_zero(m_ip);
   m_port = 0;
   ink_zero(m_ipstr);
-  m_name      = NULL;
-  m_sock      = NULL;
+  m_name      = nullptr;
+  m_sock      = nullptr;
   m_sock_fd   = -1;
   m_connected = false;
 }
@@ -375,7 +375,7 @@ LogHostList::~LogHostList()
 void
 LogHostList::add(LogHost *object, bool copy)
 {
-  ink_assert(object != NULL);
+  ink_assert(object != nullptr);
   if (copy) {
     m_host_list.enqueue(new LogHost(*object));
   } else {
@@ -408,7 +408,7 @@ LogHostList::preproc_and_try_delete(LogBuffer *lb)
   int ret;
   unsigned nr_host, nr;
   bool need_orphan        = true;
-  LogHost *available_host = NULL;
+  LogHost *available_host = nullptr;
 
   ink_release_assert(lb->m_references == 0);
 
@@ -458,7 +458,7 @@ LogHostList::operator==(LogHostList &rhs)
         break;
       }
     }
-    if (rhs_host == NULL) {
+    if (rhs_host == nullptr) {
       return false;
     }
   }

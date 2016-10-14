@@ -26,7 +26,7 @@
 #include "I_Machine.h"
 #include "../IPAllow.h"
 
-Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(NULL), options(_o)
+Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)
 {
   SET_HANDLER(&Http2SessionAccept::mainEvent);
 }
@@ -66,11 +66,11 @@ Http2SessionAccept::mainEvent(int event, void *data)
 {
   NetVConnection *netvc;
   ink_release_assert(event == NET_EVENT_ACCEPT || event == EVENT_ERROR);
-  ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != 0) : (1));
+  ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != nullptr) : (1));
 
   if (event == NET_EVENT_ACCEPT) {
     netvc = static_cast<NetVConnection *>(data);
-    if (!this->accept(netvc, NULL, NULL)) {
+    if (!this->accept(netvc, nullptr, nullptr)) {
       netvc->do_io_close();
     }
     return EVENT_CONT;

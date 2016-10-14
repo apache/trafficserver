@@ -36,7 +36,7 @@
 using ts::detail::RBNode;
 
 /* Session Cache */
-SSLSessionCache::SSLSessionCache() : session_bucket(NULL), nbuckets(SSLConfigParams::session_cache_number_buckets)
+SSLSessionCache::SSLSessionCache() : session_bucket(nullptr), nbuckets(SSLConfigParams::session_cache_number_buckets)
 {
   Debug("ssl.session_cache", "Created new ssl session cache %p with %zu buckets each with size max size %zu", this, nbuckets,
         SSLConfigParams::session_cache_max_bucket_size);
@@ -104,7 +104,7 @@ SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess)
 void
 SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
 {
-  size_t len = i2d_SSL_SESSION(sess, NULL); // make sure we're not going to need more than SSL_MAX_SESSION_SIZE bytes
+  size_t len = i2d_SSL_SESSION(sess, nullptr); // make sure we're not going to need more than SSL_MAX_SESSION_SIZE bytes
   /* do not cache a session that's too big. */
   if (len > (size_t)SSL_MAX_SESSION_SIZE) {
     Debug("ssl.session_cache", "Unable to save SSL session because size of %zd exceeds the max of %d", len, SSL_MAX_SESSION_SIZE);
@@ -172,7 +172,7 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess)
   while (node) {
     if (node->session_id == id) {
       const unsigned char *loc = reinterpret_cast<const unsigned char *>(node->asn1_data->data());
-      *sess                    = d2i_SSL_SESSION(NULL, &loc, node->len_asn1_data);
+      *sess                    = d2i_SSL_SESSION(nullptr, &loc, node->len_asn1_data);
 
       return true;
     }

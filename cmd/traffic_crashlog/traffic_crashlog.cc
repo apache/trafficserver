@@ -34,7 +34,7 @@
 static int syslog_mode    = false;
 static int debug_mode     = false;
 static int wait_mode      = false;
-static char *host_triplet = NULL;
+static char *host_triplet = nullptr;
 static int target_pid     = getppid();
 
 // If pid_t is not sizeof(int), we will have to jiggle argument parsing.
@@ -42,18 +42,18 @@ extern char __pid_size_static_assert[sizeof(pid_t) == sizeof(int) ? 0 : -1];
 
 static AppVersionInfo appVersionInfo;
 static const ArgumentDescription argument_descriptions[] = {
-  {"target", '-', "Target process ID", "I", &target_pid, NULL, NULL},
-  {"host", '-', "Host triplet for the process being logged", "S*", &host_triplet, NULL, NULL},
-  {"wait", '-', "Stop until signalled at startup", "F", &wait_mode, NULL, NULL},
-  {"syslog", '-', "Syslog after writing a crash log", "F", &syslog_mode, NULL, NULL},
-  {"debug", '-', "Enable debugging mode", "F", &debug_mode, NULL, NULL},
+  {"target", '-', "Target process ID", "I", &target_pid, nullptr, nullptr},
+  {"host", '-', "Host triplet for the process being logged", "S*", &host_triplet, nullptr, nullptr},
+  {"wait", '-', "Stop until signalled at startup", "F", &wait_mode, nullptr, nullptr},
+  {"syslog", '-', "Syslog after writing a crash log", "F", &syslog_mode, nullptr, nullptr},
+  {"debug", '-', "Enable debugging mode", "F", &debug_mode, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 
 static struct tm
 timestamp()
 {
-  time_t now = time(NULL);
+  time_t now = time(nullptr);
   struct tm tm;
 
   localtime_r(&now, &tm);
@@ -80,7 +80,7 @@ crashlog_open(const char *path)
   int fd;
 
   fd = open(path, O_WRONLY | O_TRUNC | O_CREAT, 0400);
-  return (fd == -1) ? NULL : fdopen(fd, "w");
+  return (fd == -1) ? nullptr : fdopen(fd, "w");
 }
 
 int
@@ -118,7 +118,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 
   Layout::create();
-  RecProcessInit(RECM_STAND_ALONE, NULL /* diags */);
+  RecProcessInit(RECM_STAND_ALONE, nullptr /* diags */);
   LibRecordsConfigInit();
 
   if (syslog_mode) {
@@ -148,7 +148,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   Note("crashlog started, target=%ld, debug=%s syslog=%s, uid=%ld euid=%ld", (long)target_pid, debug_mode ? "true" : "false",
        syslog_mode ? "true" : "false", (long)getuid(), (long)geteuid());
 
-  mgmterr = TSInit(NULL, (TSInitOptionT)(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
+  mgmterr = TSInit(nullptr, (TSInitOptionT)(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
   if (mgmterr != TS_ERR_OKAY) {
     char *msg = TSGetErrorMessage(mgmterr);
     Warning("failed to intialize management API: %s", msg);
@@ -179,7 +179,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   logname = crashlog_name();
 
   fp = debug_mode ? stdout : crashlog_open(logname);
-  if (fp == NULL) {
+  if (fp == nullptr) {
     Error("failed to create '%s': %s", logname, strerror(errno));
     return 1;
   }

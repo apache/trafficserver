@@ -49,7 +49,7 @@
 TSReturnCode
 sdk_sanity_check_mutex(TSMutex mutex)
 {
-  if (mutex == NULL) {
+  if (mutex == nullptr) {
     return TS_ERROR;
   }
 
@@ -68,7 +68,7 @@ sdk_sanity_check_mutex(TSMutex mutex)
 TSReturnCode
 sdk_sanity_check_hostlookup_structure(TSHostLookupResult data)
 {
-  if (data == NULL) {
+  if (data == nullptr) {
     return TS_ERROR;
   }
 
@@ -78,7 +78,7 @@ sdk_sanity_check_hostlookup_structure(TSHostLookupResult data)
 TSReturnCode
 sdk_sanity_check_iocore_structure(void *data)
 {
-  if (data == NULL) {
+  if (data == nullptr) {
     return TS_ERROR;
   }
 
@@ -129,8 +129,8 @@ TSThreadCreate(TSThreadFunc func, void *data)
   thread->func = func;
   thread->data = data;
 
-  if (!(ink_thread_create(ink_thread_trampoline, (void *)thread, 1, 0, NULL))) {
-    return (TSThread)NULL;
+  if (!(ink_thread_create(ink_thread_trampoline, (void *)thread, 1, 0, nullptr))) {
+    return (TSThread) nullptr;
   }
 
   return (TSThread)thread;
@@ -144,8 +144,8 @@ TSThreadInit()
   thread = new INKThreadInternal;
 
 #ifdef DEBUG
-  if (thread == NULL) {
-    return (TSThread)NULL;
+  if (thread == nullptr) {
+    return (TSThread) nullptr;
   }
 #endif
 
@@ -478,7 +478,7 @@ INKUDPPacketDestroy(INKUDPPacket packet)
 INKUDPPacket
 INKUDPPacketGet(INKUDPacketQueue queuep)
 {
-  if (queuep != NULL) {
+  if (queuep != nullptr) {
     UDPPacket *packet;
     Queue<UDPPacket> *qp = (Queue<UDPPacket> *)queuep;
 
@@ -486,7 +486,7 @@ INKUDPPacketGet(INKUDPacketQueue queuep)
     return (packet);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /* Buffers */

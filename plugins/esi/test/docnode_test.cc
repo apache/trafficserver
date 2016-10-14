@@ -153,7 +153,7 @@ pthread_key_t threadKey;
 int
 main()
 {
-  pthread_key_create(&threadKey, NULL);
+  pthread_key_create(&threadKey, nullptr);
   Utils::init(&Debug, &Error);
 
   {
@@ -174,7 +174,7 @@ main()
     checkNodeList1(node_list2);
 
     DocNodeList node_list3;
-    assert(node_list3.unpack(0, 90) == false);
+    assert(node_list3.unpack(nullptr, 90) == false);
     assert(node_list3.unpack(packed.data(), 3) == false);
     *(reinterpret_cast<int *>(&packed[0])) = -1;
     assert(node_list3.unpack(packed) == true);

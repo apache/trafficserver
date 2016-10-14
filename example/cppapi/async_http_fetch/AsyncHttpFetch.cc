@@ -54,7 +54,7 @@ class DelayedAsyncHttpFetch : public AsyncHttpFetch, public AsyncReceiver<AsyncT
 {
 public:
   DelayedAsyncHttpFetch(string request, HttpMethod method, std::shared_ptr<Mutex> mutex)
-    : AsyncHttpFetch(request, method), mutex_(mutex), timer_(NULL){};
+    : AsyncHttpFetch(request, method), mutex_(mutex), timer_(nullptr){};
   void
   run()
   {
@@ -87,7 +87,7 @@ class TransactionHookPlugin : public TransactionPlugin,
 {
 public:
   TransactionHookPlugin(Transaction &transaction)
-    : TransactionPlugin(transaction), transaction_(transaction), num_fetches_pending_(0), post_request_(NULL)
+    : TransactionPlugin(transaction), transaction_(transaction), num_fetches_pending_(0), post_request_(nullptr)
   {
     TS_DEBUG(TAG, "Constructed TransactionHookPlugin, saved a reference to this transaction.");
     registerHook(HOOK_SEND_REQUEST_HEADERS);

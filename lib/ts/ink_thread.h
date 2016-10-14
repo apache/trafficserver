@@ -184,6 +184,12 @@ ink_thread_self()
   return (pthread_self());
 }
 
+static inline ink_thread
+ink_thread_null()
+{
+  return (ink_thread)0;
+}
+
 static inline int
 ink_thread_get_priority(ink_thread t, int *priority)
 {
@@ -224,7 +230,7 @@ void ink_sem_post(ink_semaphore *sp);
 static inline void
 ink_cond_init(ink_cond *cp)
 {
-  ink_assert(pthread_cond_init(cp, NULL) == 0);
+  ink_assert(pthread_cond_init(cp, nullptr) == 0);
 }
 
 static inline void

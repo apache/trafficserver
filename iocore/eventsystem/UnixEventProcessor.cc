@@ -55,7 +55,7 @@ EventProcessor::spawn_event_threads(int n_threads, const char *et_name, size_t s
   n_threads_for_type[new_thread_group_id] = n_threads;
   for (i = 0; i < n_threads; i++) {
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[%s %d]", et_name, i);
-    eventthread[new_thread_group_id][i]->start(thr_name, stacksize, NULL, NULL, NULL);
+    eventthread[new_thread_group_id][i]->start(thr_name, stacksize, nullptr, nullptr, nullptr);
   }
 
   n_thread_groups++;
@@ -68,13 +68,13 @@ EventProcessor::spawn_event_threads(int n_threads, const char *et_name, size_t s
 static void *
 alloc_stack(size_t stacksize)
 {
-  void *stack = NULL;
+  void *stack = nullptr;
 
   if (ats_hugepage_enabled()) {
     stack = ats_alloc_hugepage(stacksize);
   }
 
-  if (stack == NULL) {
+  if (stack == nullptr) {
     stack = ats_memalign(ats_pagesize(), stacksize);
   }
 
@@ -88,7 +88,7 @@ alloc_numa_stack(hwloc_cpuset_t cpuset, size_t stacksize)
   hwloc_membind_policy_t mem_policy = HWLOC_MEMBIND_DEFAULT;
   hwloc_nodeset_t nodeset           = hwloc_bitmap_alloc();
   int num_nodes                     = 0;
-  void *stack                       = NULL;
+  void *stack                       = nullptr;
 
   // Find the NUMA node set that correlates to our next thread CPU set
   hwloc_cpuset_to_nodeset(ink_get_topology(), cpuset, nodeset);
@@ -130,7 +130,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 {
   char thr_name[MAX_THREAD_NAME_LENGTH];
   int i;
-  void *stack = NULL;
+  void *stack = nullptr;
 
   // do some sanity checking.
   static int started = 0;
@@ -211,7 +211,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
       obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, i % obj_count);
 #if HWLOC_API_VERSION >= 0x00010100
       // Pretty print our CPU set
-      int cpu_mask_len = hwloc_bitmap_snprintf(NULL, 0, obj->cpuset) + 1;
+      int cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
       char *cpu_mask   = (char *)alloca(cpu_mask_len);
       hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
       Debug("iocore_thread", "EThread: %d %s: %d CPU Mask: %s", i, obj_name, obj->logical_index, cpu_mask);
@@ -237,8 +237,8 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 #endif // TS_USE_HWLOC
 
     // Start our new thread with our new stack.
-    tid   = all_ethreads[i]->start(thr_name, stacksize, NULL, NULL, stack);
-    stack = NULL;
+    tid   = all_ethreads[i]->start(thr_name, stacksize, nullptr, nullptr, stack);
+    stack = nullptr;
 
 #if TS_USE_HWLOC
     if (obj_count > 0) {
@@ -273,7 +273,7 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
   e->ethread               = all_dthreads[n_dthreads];
   e->mutex = e->continuation->mutex = all_dthreads[n_dthreads]->mutex;
   n_dthreads++;
-  e->ethread->start(thr_name, stacksize, NULL, NULL, NULL);
+  e->ethread->start(thr_name, stacksize, nullptr, nullptr, nullptr);
 
   return e;
 }

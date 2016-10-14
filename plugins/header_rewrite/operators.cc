@@ -77,7 +77,7 @@ OperatorSetStatus::initialize(Parser &p)
 
   _status.set_value(p.get_arg());
 
-  if (NULL == (_reason = TSHttpHdrReasonLookup((TSHttpStatus)_status.get_int_value()))) {
+  if (nullptr == (_reason = TSHttpHdrReasonLookup((TSHttpStatus)_status.get_int_value()))) {
     TSError("[%s] unknown status %d", PLUGIN_NAME, _status.get_int_value());
     _reason_len = 0;
   } else {
@@ -305,7 +305,7 @@ OperatorSetRedirect::exec(const Resources &res) const
     }
 
     bool remap = false;
-    if (NULL != res._rri) {
+    if (nullptr != res._rri) {
       remap = true;
       TSDebug(PLUGIN_NAME, "OperatorSetRedirect:exec() invoked from remap plugin");
     } else {
@@ -331,7 +331,7 @@ OperatorSetRedirect::exec(const Resources &res) const
     if ((pos_path = value.find("%{PATH}")) != std::string::npos) {
       value.erase(pos_path, 7); // erase %{PATH} from the rewritten to url
       int path_len     = 0;
-      const char *path = NULL;
+      const char *path = nullptr;
       path             = TSUrlPathGet(bufp, url_loc, &path_len);
       if (path_len > 0) {
         TSDebug(PLUGIN_NAME, "Find %%{PATH} in redirect url, replace it with: %.*s", path_len, path);
@@ -341,7 +341,7 @@ OperatorSetRedirect::exec(const Resources &res) const
 
     // Append the original query string
     int query_len     = 0;
-    const char *query = NULL;
+    const char *query = nullptr;
     query             = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
     if ((get_oper_modifiers() & OPER_QSA) && (query_len > 0)) {
       TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
@@ -567,7 +567,7 @@ OperatorSetHeader::exec(const Resources &res) const
         TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
       }
     } else {
-      TSMLoc tmp = NULL;
+      TSMLoc tmp = nullptr;
       bool first = true;
 
       while (field_loc) {
@@ -636,7 +636,7 @@ OperatorRMCookie::exec(const Resources &res) const
 
     // Find Cookie
     field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
-    if (NULL == field_loc) {
+    if (nullptr == field_loc) {
       TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec, no cookie");
       return;
     }
@@ -680,7 +680,7 @@ OperatorAddCookie::exec(const Resources &res) const
 
     // Find Cookie
     field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
-    if (NULL == field_loc) {
+    if (nullptr == field_loc) {
       TSDebug(PLUGIN_NAME, "OperatorAddCookie::exec, no cookie");
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, &field_loc)) {
         value = _cookie + '=' + value;
@@ -731,7 +731,7 @@ OperatorSetCookie::exec(const Resources &res) const
 
     // Find Cookie
     field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
-    if (NULL == field_loc) {
+    if (nullptr == field_loc) {
       TSDebug(PLUGIN_NAME, "OperatorSetCookie::exec, no cookie");
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, &field_loc)) {
         value = _cookie + "=" + value;

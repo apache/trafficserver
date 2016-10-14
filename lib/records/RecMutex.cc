@@ -28,7 +28,7 @@ int
 rec_mutex_init(RecMutex *m, const char *name)
 {
   m->nthread_holding = 0;
-  m->thread_holding  = 0;
+  m->thread_holding  = ink_thread_null();
   return ink_mutex_init(&(m->the_mutex), name);
 }
 
@@ -36,7 +36,7 @@ int
 rec_mutex_destroy(RecMutex *m)
 {
   ink_assert(m->nthread_holding == 0);
-  ink_assert(m->thread_holding == 0);
+  ink_assert(m->thread_holding == ink_thread_null());
   return ink_mutex_destroy(&(m->the_mutex));
 }
 
@@ -60,7 +60,7 @@ rec_mutex_release(RecMutex *m)
   if (m->nthread_holding != 0) {
     m->nthread_holding--;
     if (m->nthread_holding == 0) {
-      m->thread_holding = 0;
+      m->thread_holding = ink_thread_null();
       ink_mutex_release(&(m->the_mutex));
     }
   }

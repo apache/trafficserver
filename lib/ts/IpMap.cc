@@ -138,15 +138,15 @@ namespace detail
     typedef typename N::ArgType ArgType; ///< Import type.
     typedef typename N::Metric Metric;   ///< Import type.g482
 
-    IpMapBase() : _root(0) {}
+    IpMapBase() : _root(nullptr) {}
     ~IpMapBase() { this->clear(); }
     /** Mark a range.
         All addresses in the range [ @a min , @a max ] are marked with @a data.
         @return This object.
     */
-    self &mark(ArgType min,   ///< Minimum value in range.
-               ArgType max,   ///< Maximum value in range.
-               void *data = 0 ///< Client data payload.
+    self &mark(ArgType min,         ///< Minimum value in range.
+               ArgType max,         ///< Maximum value in range.
+               void *data = nullptr ///< Client data payload.
                );
     /** Unmark addresses.
 
@@ -167,16 +167,16 @@ namespace detail
 
         @return This object.
     */
-    self &fill(ArgType min, ArgType max, void *data = 0);
+    self &fill(ArgType min, ArgType max, void *data = nullptr);
 
     /** Test for membership.
 
         @return @c true if the address is in the map, @c false if not.
-        If the address is in the map and @a ptr is not @c NULL, @c *ptr
+        If the address is in the map and @a ptr is not @c nullptr, @c *ptr
         is set to the client data for the address.
     */
-    bool contains(ArgType target, ///< Search target value.
-                  void **ptr = 0  ///< Client data return.
+    bool contains(ArgType target,      ///< Search target value.
+                  void **ptr = nullptr ///< Client data return.
                   ) const;
 
     /** Remove all addresses in the map.
@@ -189,7 +189,7 @@ namespace detail
     self &clear();
 
     /** Lower bound for @a target.  @return The node whose minimum value
-        is the largest that is not greater than @a target, or @c NULL if
+        is the largest that is not greater than @a target, or @c nullptr if
         all minimum values are larger than @a target.
     */
     N *lowerBound(ArgType target);
@@ -279,8 +279,8 @@ namespace detail
   N *
   IpMapBase<N>::lowerBound(ArgType target)
   {
-    N *n    = _root; // current node to test.
-    N *zret = 0;     // best node so far.
+    N *n    = _root;   // current node to test.
+    N *zret = nullptr; // best node so far.
     while (n) {
       if (target < n->_min)
         n = left(n);
@@ -307,7 +307,7 @@ namespace detail
       delete x;
     }
     _list.clear();
-    _root = 0;
+    _root = nullptr;
     return *this;
   }
 
@@ -317,7 +317,7 @@ namespace detail
   {
     // Rightmost node of interest with n->_min <= min.
     N *n = this->lowerBound(rmin);
-    N *x = 0; // New node (if any).
+    N *x = nullptr; // New node (if any).
     // Need copies because we will modify these.
     Metric min = N::deref(rmin);
     Metric max = N::deref(rmax);
@@ -398,7 +398,7 @@ namespace detail
             return *this;
           } else { // n is contained in range, skip over it.
             x->setMaxMinusOne(n->_min);
-            x   = 0;
+            x   = nullptr;
             min = n->_max;
             N::inc(min); // OK because n->_max maximal => next is null.
             n = next(n);
@@ -436,8 +436,8 @@ namespace detail
   IpMapBase<N>::mark(ArgType min, ArgType max, void *payload)
   {
     N *n = this->lowerBound(min); // current node.
-    N *x = 0;                     // New node, gets set if we re-use an existing one.
-    N *y = 0;                     // Temporary for removing and advancing.
+    N *x = nullptr;               // New node, gets set if we re-use an existing one.
+    N *y = nullptr;               // Temporary for removing and advancing.
 
     // Several places it is handy to have max+1. Must be careful
     // about wrapping.
@@ -523,7 +523,7 @@ namespace detail
         else
           this->append(x); // note that since n == 0 we'll just return.
       }
-    } else if (0 != (n = this->getHead()) &&           // at least one node in tree.
+    } else if (nullptr != (n = this->getHead()) &&     // at least one node in tree.
                n->_data == payload &&                  // payload matches
                (n->_max <= max || n->_min <= max_plus) // overlap or adj.
                ) {
@@ -1179,7 +1179,7 @@ IpMap::clear()
 IpMap::iterator
 IpMap::begin() const
 {
-  Node *x = 0;
+  Node *x = nullptr;
   if (_m4)
     x = _m4->getHead();
   if (!x && _m6)

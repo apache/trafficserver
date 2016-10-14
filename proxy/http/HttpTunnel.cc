@@ -72,11 +72,11 @@ VcTypeCode(HttpTunnelType_t t)
 
 ChunkedHandler::ChunkedHandler()
   : action(ACTION_UNSET),
-    chunked_reader(NULL),
-    dechunked_buffer(NULL),
+    chunked_reader(nullptr),
+    dechunked_buffer(nullptr),
     dechunked_size(0),
-    dechunked_reader(NULL),
-    chunked_buffer(NULL),
+    dechunked_reader(nullptr),
+    chunked_buffer(nullptr),
     chunked_size(0),
     truncation(false),
     skip_bytes(0),
@@ -421,12 +421,12 @@ ChunkedHandler::generate_chunked_content()
 
 HttpTunnelProducer::HttpTunnelProducer()
   : consumer_list(),
-    self_consumer(NULL),
-    vc(NULL),
-    vc_handler(NULL),
-    read_vio(NULL),
-    read_buffer(NULL),
-    buffer_start(NULL),
+    self_consumer(nullptr),
+    vc(nullptr),
+    vc_handler(nullptr),
+    read_vio(nullptr),
+    read_buffer(nullptr),
+    buffer_start(nullptr),
     vc_type(HT_HTTP_SERVER),
     chunking_action(TCA_PASSTHRU_DECHUNKED_CONTENT),
     do_chunking(false),
@@ -441,8 +441,8 @@ HttpTunnelProducer::HttpTunnelProducer()
     num_consumers(0),
     alive(false),
     read_success(false),
-    flow_control_source(0),
-    name(NULL)
+    flow_control_source(nullptr),
+    name(nullptr)
 {
 }
 
@@ -512,29 +512,29 @@ HttpTunnelProducer::set_throttle_src(HttpTunnelProducer *srcp)
 
 HttpTunnelConsumer::HttpTunnelConsumer()
   : link(),
-    producer(NULL),
-    self_producer(NULL),
+    producer(nullptr),
+    self_producer(nullptr),
     vc_type(HT_HTTP_CLIENT),
-    vc(NULL),
-    buffer_reader(NULL),
-    vc_handler(NULL),
-    write_vio(NULL),
+    vc(nullptr),
+    buffer_reader(nullptr),
+    vc_handler(nullptr),
+    write_vio(nullptr),
     skip_bytes(0),
     bytes_written(0),
     handler_state(0),
     alive(false),
     write_success(false),
-    name(NULL)
+    name(nullptr)
 {
 }
 
 HttpTunnel::HttpTunnel()
-  : Continuation(NULL),
+  : Continuation(nullptr),
     num_producers(0),
     num_consumers(0),
-    sm(NULL),
+    sm(nullptr),
     active(false),
-    postbuf(NULL),
+    postbuf(nullptr),
     reentrancy_count(0),
     call_sm(false)
 {
@@ -583,7 +583,7 @@ void
 HttpTunnel::kill_tunnel()
 {
   for (int i = 0; i < MAX_PRODUCERS; ++i) {
-    if (producers[i].vc != NULL) {
+    if (producers[i].vc != nullptr) {
       chain_abort_all(&producers[i]);
     }
     ink_assert(producers[i].alive == false);
@@ -598,28 +598,28 @@ HttpTunnelProducer *
 HttpTunnel::alloc_producer()
 {
   for (int i = 0; i < MAX_PRODUCERS; ++i) {
-    if (producers[i].vc == NULL) {
+    if (producers[i].vc == nullptr) {
       num_producers++;
       ink_assert(num_producers <= MAX_PRODUCERS);
       return producers + i;
     }
   }
   ink_release_assert(0);
-  return NULL;
+  return nullptr;
 }
 
 HttpTunnelConsumer *
 HttpTunnel::alloc_consumer()
 {
   for (int i = 0; i < MAX_CONSUMERS; i++) {
-    if (consumers[i].vc == NULL) {
+    if (consumers[i].vc == nullptr) {
       num_consumers++;
       ink_assert(num_consumers <= MAX_CONSUMERS);
       return consumers + i;
     }
   }
   ink_release_assert(0);
-  return NULL;
+  return nullptr;
 }
 
 int
@@ -628,25 +628,25 @@ HttpTunnel::deallocate_buffers()
   int num = 0;
   ink_release_assert(active == false);
   for (int i = 0; i < MAX_PRODUCERS; ++i) {
-    if (producers[i].read_buffer != NULL) {
-      ink_assert(producers[i].vc != NULL);
+    if (producers[i].read_buffer != nullptr) {
+      ink_assert(producers[i].vc != nullptr);
       free_MIOBuffer(producers[i].read_buffer);
-      producers[i].read_buffer  = NULL;
-      producers[i].buffer_start = NULL;
+      producers[i].read_buffer  = nullptr;
+      producers[i].buffer_start = nullptr;
       num++;
     }
 
-    if (producers[i].chunked_handler.dechunked_buffer != NULL) {
-      ink_assert(producers[i].vc != NULL);
+    if (producers[i].chunked_handler.dechunked_buffer != nullptr) {
+      ink_assert(producers[i].vc != nullptr);
       free_MIOBuffer(producers[i].chunked_handler.dechunked_buffer);
-      producers[i].chunked_handler.dechunked_buffer = NULL;
+      producers[i].chunked_handler.dechunked_buffer = nullptr;
       num++;
     }
 
-    if (producers[i].chunked_handler.chunked_buffer != NULL) {
-      ink_assert(producers[i].vc != NULL);
+    if (producers[i].chunked_handler.chunked_buffer != nullptr) {
+      ink_assert(producers[i].vc != nullptr);
       free_MIOBuffer(producers[i].chunked_handler.chunked_buffer);
-      producers[i].chunked_handler.chunked_buffer = NULL;
+      producers[i].chunked_handler.chunked_buffer = nullptr;
       num++;
     }
     producers[i].chunked_handler.max_chunk_header_len = 0;
@@ -692,7 +692,7 @@ HttpTunnel::add_producer(VConnection *vc, int64_t nbytes_arg, IOBufferReader *re
   Debug("http_tunnel", "[%" PRId64 "] adding producer '%s'", sm->sm_id, name_arg);
 
   ink_assert(reader_start->mbuf);
-  if ((p = alloc_producer()) != NULL) {
+  if ((p = alloc_producer()) != nullptr) {
     p->vc              = vc;
     p->nbytes          = nbytes_arg;
     p->buffer_start    = reader_start;
@@ -754,7 +754,7 @@ HttpTunnel::add_consumer(VConnection *vc, VConnection *producer, HttpConsumerHan
   //  without sending all of its data
   if (p->alive == false && p->read_success == false) {
     Debug("http_tunnel", "[%" PRId64 "] consumer '%s' not added due to producer failure", sm->sm_id, name_arg);
-    return NULL;
+    return nullptr;
   }
   // Initialize the consumer structure
   HttpTunnelConsumer *c = alloc_consumer();
@@ -802,7 +802,7 @@ HttpTunnel::tunnel_run(HttpTunnelProducer *p_arg)
 
     for (int i = 0; i < MAX_PRODUCERS; ++i) {
       p = producers + i;
-      if (p->vc != NULL && (p->alive || (p->vc_type == HT_STATIC && p->buffer_start != NULL))) {
+      if (p->vc != nullptr && (p->alive || (p->vc_type == HT_STATIC && p->buffer_start != nullptr))) {
         producer_run(p);
       }
     }
@@ -824,7 +824,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   // Determine whether the producer has a cache-write consumer,
   // since all chunked content read by the producer gets dechunked
   // prior to being written into the cache.
-  HttpTunnelConsumer *c, *cache_write_consumer = NULL;
+  HttpTunnelConsumer *c, *cache_write_consumer = nullptr;
   bool transform_consumer = false;
 
   for (c = p->consumer_list.head; c; c = c->link.next) {
@@ -856,7 +856,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       p->do_chunked_passthru = true;
 
       // Dechunk the chunked content into the cache.
-      if (cache_write_consumer != NULL) {
+      if (cache_write_consumer != nullptr) {
         p->do_dechunking = true;
       }
     }
@@ -865,10 +865,10 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   int64_t consumer_n;
   int64_t producer_n;
 
-  ink_assert(p->vc != NULL);
+  ink_assert(p->vc != nullptr);
   active = true;
 
-  IOBufferReader *chunked_buffer_start = NULL, *dechunked_buffer_start = NULL;
+  IOBufferReader *chunked_buffer_start = nullptr, *dechunked_buffer_start = nullptr;
   if (p->do_chunking || p->do_dechunking || p->do_chunked_passthru) {
     p->chunked_handler.init(p->buffer_start, p);
 
@@ -962,7 +962,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
 
     if (c_write == 0) {
       // Nothing to do, call back the cleanup handlers
-      c->write_vio = NULL;
+      c->write_vio = nullptr;
       consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
     } else {
       // In the client half close case, all the data that will be sent
@@ -1066,7 +1066,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   if (p->read_buffer && p->buffer_start) {
     p->read_buffer->dealloc_reader(p->buffer_start);
   }
-  p->buffer_start = NULL;
+  p->buffer_start = nullptr;
 }
 
 int
@@ -1408,7 +1408,7 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     //  in the sm when the reader is still valid
     if (c->buffer_reader) {
       c->buffer_reader->mbuf->dealloc_reader(c->buffer_reader);
-      c->buffer_reader = NULL;
+      c->buffer_reader = nullptr;
     }
 
     // Since we removed a consumer, it may now be
@@ -1458,7 +1458,7 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
   while (c) {
     if (c->alive) {
       c->alive     = false;
-      c->write_vio = NULL;
+      c->write_vio = nullptr;
       c->vc->do_io_close(EHTTP_ERROR);
       update_stats_after_abort(c->vc_type);
     }
@@ -1468,7 +1468,7 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
       // freeing to avoid looks introduced by
       // blind tunneling
       HttpTunnelProducer *selfp = c->self_producer;
-      c->self_producer          = NULL;
+      c->self_producer          = nullptr;
       chain_abort_all(selfp);
     }
 
@@ -1483,7 +1483,7 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
     if (p->self_consumer) {
       p->self_consumer->alive = false;
     }
-    p->read_vio = NULL;
+    p->read_vio = nullptr;
     p->vc->do_io_close(EHTTP_ERROR);
     update_stats_after_abort(p->vc_type);
   }
@@ -1566,8 +1566,8 @@ HttpTunnel::chain_abort_cache_write(HttpTunnelProducer *p)
   while (c) {
     if (c->alive) {
       if (c->vc_type == HT_CACHE_WRITE) {
-        ink_assert(c->self_producer == NULL);
-        c->write_vio = NULL;
+        ink_assert(c->self_producer == nullptr);
+        c->write_vio = nullptr;
         c->vc->do_io_close(EHTTP_ERROR);
         c->alive = false;
         HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
@@ -1630,8 +1630,8 @@ HttpTunnel::close_vc(HttpTunnelConsumer *c)
 int
 HttpTunnel::main_handler(int event, void *data)
 {
-  HttpTunnelProducer *p = NULL;
-  HttpTunnelConsumer *c = NULL;
+  HttpTunnelProducer *p = nullptr;
+  HttpTunnelConsumer *c = nullptr;
   bool sm_callback      = false;
 
   ++reentrancy_count;
@@ -1639,10 +1639,10 @@ HttpTunnel::main_handler(int event, void *data)
   ink_assert(sm->magic == HTTP_SM_MAGIC_ALIVE);
 
   // Find the appropriate entry
-  if ((p = get_producer((VIO *)data)) != 0) {
+  if ((p = get_producer((VIO *)data)) != nullptr) {
     sm_callback = producer_handler(event, p);
   } else {
-    if ((c = get_consumer((VIO *)data)) != 0) {
+    if ((c = get_consumer((VIO *)data)) != nullptr) {
       ink_assert(c->write_vio == (VIO *)data || c->vc == ((VIO *)data)->vc_server);
       sm_callback = consumer_handler(event, c);
     } else {
@@ -1708,7 +1708,7 @@ HttpTunnel::allocate_redirect_postdata_producer_buffer()
 {
   int64_t alloc_index = buffer_size_to_index(sm->t_state.hdr_info.request_content_length);
 
-  ink_release_assert(postbuf->postdata_producer_buffer == NULL);
+  ink_release_assert(postbuf->postdata_producer_buffer == nullptr);
 
   postbuf->postdata_producer_buffer = new_MIOBuffer(alloc_index);
   postbuf->postdata_producer_reader = postbuf->postdata_producer_buffer->alloc_reader();
@@ -1725,7 +1725,7 @@ HttpTunnel::allocate_redirect_postdata_buffers(IOBufferReader *ua_reader)
 
   // TODO: This is uncool, shouldn't this use the class allocator or proxy allocator ?
   // If fixed, obviously also fix the deallocator.
-  if (postbuf == NULL) {
+  if (postbuf == nullptr) {
     postbuf                             = new PostDataBuffers();
     postbuf->ua_buffer_reader           = ua_reader;
     postbuf->postdata_copy_buffer       = new_MIOBuffer(alloc_index);
@@ -1747,18 +1747,18 @@ HttpTunnel::deallocate_redirect_postdata_buffers()
 {
   Debug("http_redirect", "[HttpTunnel::deallocate_postdata_copy_buffers]");
 
-  if (postbuf != NULL) {
-    if (postbuf->postdata_producer_buffer != NULL) {
+  if (postbuf != nullptr) {
+    if (postbuf->postdata_producer_buffer != nullptr) {
       free_MIOBuffer(postbuf->postdata_producer_buffer);
-      postbuf->postdata_producer_buffer = NULL;
-      postbuf->postdata_producer_reader = NULL; // deallocated by the buffer
+      postbuf->postdata_producer_buffer = nullptr;
+      postbuf->postdata_producer_reader = nullptr; // deallocated by the buffer
     }
-    if (postbuf->postdata_copy_buffer != NULL) {
+    if (postbuf->postdata_copy_buffer != nullptr) {
       free_MIOBuffer(postbuf->postdata_copy_buffer);
-      postbuf->postdata_copy_buffer       = NULL;
-      postbuf->postdata_copy_buffer_start = NULL; // deallocated by the buffer
+      postbuf->postdata_copy_buffer       = nullptr;
+      postbuf->postdata_copy_buffer_start = nullptr; // deallocated by the buffer
     }
     delete postbuf;
-    postbuf = NULL;
+    postbuf = nullptr;
   }
 }

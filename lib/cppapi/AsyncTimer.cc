@@ -38,8 +38,8 @@ struct atscppapi::AsyncTimerState {
     : type_(type),
       period_in_ms_(period_in_ms),
       initial_period_in_ms_(initial_period_in_ms),
-      initial_timer_action_(NULL),
-      periodic_timer_action_(NULL),
+      initial_timer_action_(nullptr),
+      periodic_timer_action_(nullptr),
       timer_(timer)
   {
   }
@@ -53,7 +53,7 @@ handleTimerEvent(TSCont cont, TSEvent event, void *edata)
   AsyncTimerState *state = static_cast<AsyncTimerState *>(TSContDataGet(cont));
   if (state->initial_timer_action_) {
     LOG_DEBUG("Received initial timer event.");
-    state->initial_timer_action_ = NULL; // mark it so that it won't be canceled later on
+    state->initial_timer_action_ = nullptr; // mark it so that it won't be canceled later on
     if (state->type_ == AsyncTimer::TYPE_PERIODIC) {
       LOG_DEBUG("Scheduling periodic event now");
       state->periodic_timer_action_ = TSContScheduleEvery(state->cont_, state->period_in_ms_, TS_THREAD_POOL_DEFAULT);
@@ -113,7 +113,7 @@ AsyncTimer::cancel()
   }
   LOG_DEBUG("Destroying cont");
   TSContDestroy(state_->cont_);
-  state_->cont_ = NULL;
+  state_->cont_ = nullptr;
 }
 
 AsyncTimer::~AsyncTimer()

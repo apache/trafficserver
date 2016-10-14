@@ -66,7 +66,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
   ink_assert(numParents(result) > 0 || result->rec->go_direct == true);
 
   if (first_call) {
-    if (result->rec->parents == NULL) {
+    if (result->rec->parents == nullptr) {
       // We should only get into this state if
       //   if we are supposed to go direct
       ink_assert(result->rec->go_direct == true);
@@ -77,7 +77,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
         result->result = PARENT_FAIL;
       }
 
-      result->hostname = NULL;
+      result->hostname = nullptr;
       result->port     = 0;
       return;
     } else {
@@ -88,7 +88,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
         // impact with the transition to IPv6?  The IPv4 functionality is
         // preserved for now anyway as ats_ip_hash returns the 32-bit address in
         // that case.
-        if (rdata->get_client_ip() != NULL) {
+        if (rdata->get_client_ip() != nullptr) {
           cur_index = result->start_parent = ntohl(ats_ip_hash(rdata->get_client_ip())) % result->rec->num_parents;
         } else {
           cur_index = 0;
@@ -122,7 +122,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
         } else {
           result->result = PARENT_FAIL;
         }
-        result->hostname = NULL;
+        result->hostname = nullptr;
         result->port     = 0;
         return;
       }
@@ -160,7 +160,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       result->port        = result->rec->parents[cur_index].port;
       result->last_parent = cur_index;
       result->retry       = parentRetry;
-      ink_assert(result->hostname != NULL);
+      ink_assert(result->hostname != nullptr);
       ink_assert(result->port != 0);
       Debug("parent_select", "Chosen parent = %s.%d", result->hostname, result->port);
       return;
@@ -174,7 +174,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     result->result = PARENT_FAIL;
   }
 
-  result->hostname = NULL;
+  result->hostname = nullptr;
   result->port     = 0;
 }
 
@@ -218,7 +218,7 @@ ParentRoundRobin::markParentDown(const ParentSelectionPolicy *policy, ParentResu
   if (pRec->failedAt == 0 || result->retry == true) {
     // Reread the current time.  We want this to be accurate since
     //   it relates to how long the parent has been down.
-    now = time(NULL);
+    now = time(nullptr);
 
     // Mark the parent as down
     ink_atomic_swap(&pRec->failedAt, now);

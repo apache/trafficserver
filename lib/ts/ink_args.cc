@@ -38,7 +38,7 @@ Process arguments
 //  Global variables
 //
 
-const char *file_arguments[MAX_FILE_ARGUMENTS] = {0};
+const char *file_arguments[MAX_FILE_ARGUMENTS] = {nullptr};
 const char *program_name                       = (char *)"Traffic Server";
 unsigned n_file_arguments                      = 0;
 
@@ -74,7 +74,7 @@ static bool
 process_arg(const AppVersionInfo *appinfo, const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions,
             int i, const char ***argv)
 {
-  const char *arg = NULL;
+  const char *arg = nullptr;
 
   if (arg_is_version_flag(&argument_descriptions[i])) {
     ink_fputln(stdout, appinfo->FullVersionInfoStr);

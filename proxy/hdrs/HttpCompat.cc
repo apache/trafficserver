@@ -43,7 +43,7 @@
 void
 HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, char sep)
 {
-  if (string == NULL) {
+  if (string == nullptr) {
     return;
   }
   HttpCompat::parse_tok_list(list, trim_quotes, string, (int)strlen(string), sep);
@@ -57,7 +57,7 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
   const char *s, *e, *l, *s_before_skipping_ws;
   int index, byte_length, hit_sep;
 
-  if ((string == NULL) || (list == NULL) || (sep == NUL)) {
+  if ((string == nullptr) || (list == nullptr) || (sep == NUL)) {
     return;
   }
 
@@ -206,7 +206,7 @@ HttpCompat::lookup_param_in_strlist(StrList *param_list, const char *param_name,
   Str *param;
   bool is_match;
 
-  for (param = param_list->head; param != NULL; param = param->next) {
+  for (param = param_list->head; param != nullptr; param = param->next) {
     /////////////////////////////////////////////////////
     // compare this parameter to the target param_name //
     /////////////////////////////////////////////////////
@@ -765,12 +765,12 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
     goto done;
   }
 
-  if (table_of_sets != NULL) {
+  if (table_of_sets != nullptr) {
     ///////////////////////////////////////////
     // loop over set->body-types hash table //
     ///////////////////////////////////////////
 
-    for (b1 = table_of_sets->firstBinding(&i1); b1 != NULL; b1 = table_of_sets->nextBinding(&i1)) {
+    for (b1 = table_of_sets->firstBinding(&i1); b1 != nullptr; b1 = table_of_sets->nextBinding(&i1)) {
       k1                   = table_of_sets->getKeyFromBinding(b1);
       v1                   = table_of_sets->getValueFromBinding(b1);
       const char *set_name = (const char *)k1;
@@ -778,7 +778,7 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
       body_set       = (HttpBodySetRawData *)v1;
       table_of_pages = body_set->table_of_pages;
 
-      if ((set_name == NULL) || (table_of_pages == NULL)) {
+      if ((set_name == nullptr) || (table_of_pages == nullptr)) {
         continue;
       }
 

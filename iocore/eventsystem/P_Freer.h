@@ -66,7 +66,7 @@ public: // Needed by WinNT compiler (compiler bug)
     delete this;
     return EVENT_DONE;
   }
-  FreeCallContinuation(C *ap) : Continuation(NULL), p(ap) { SET_HANDLER(&FreeCallContinuation::dieEvent); }
+  FreeCallContinuation(C *ap) : Continuation(nullptr), p(ap) { SET_HANDLER(&FreeCallContinuation::dieEvent); }
 };
 
 template <class C>
@@ -92,7 +92,7 @@ struct FreerContinuation : public Continuation {
     return EVENT_DONE;
   }
 
-  FreerContinuation(void *ap) : Continuation(NULL), p(ap) { SET_HANDLER((FreerContHandler)&FreerContinuation::dieEvent); }
+  FreerContinuation(void *ap) : Continuation(nullptr), p(ap) { SET_HANDLER((FreerContHandler)&FreerContinuation::dieEvent); }
 };
 
 TS_INLINE void
@@ -116,7 +116,7 @@ template <class C> struct DereferContinuation : public Continuation {
     return EVENT_DONE;
   }
 
-  DereferContinuation(C *ap) : Continuation(NULL), p(ap) { SET_HANDLER(&DereferContinuation::dieEvent); }
+  DereferContinuation(C *ap) : Continuation(nullptr), p(ap) { SET_HANDLER(&DereferContinuation::dieEvent); }
 };
 
 template <class C>

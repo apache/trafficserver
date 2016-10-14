@@ -35,7 +35,7 @@
 #include "metrics.h"
 
 struct Evaluator {
-  Evaluator() : rec_name(NULL), data_type(RECD_NULL), ref(-1) {}
+  Evaluator() : rec_name(nullptr), data_type(RECD_NULL), ref(-1) {}
   ~Evaluator()
   {
     ats_free(this->rec_name);
@@ -110,7 +110,7 @@ struct Evaluator {
         goto done;
       }
 
-      RecSetRecord(RECT_NULL, this->rec_name, this->data_type, &rec_value, NULL, REC_SOURCE_EXPLICIT);
+      RecSetRecord(RECT_NULL, this->rec_name, this->data_type, &rec_value, nullptr, REC_SOURCE_EXPLICIT);
     }
 
   done:
@@ -190,7 +190,7 @@ metrics_register_evaluator(lua_State *L)
   binding    = BindingInstance::self(L);
   evaluators = (EvaluatorList *)binding->retrieve_ptr("evaluators");
 
-  ink_release_assert(evaluators != NULL);
+  ink_release_assert(evaluators != nullptr);
 
   eval = new Evaluator();
   eval->bind(L, metric, chunk);
@@ -355,7 +355,7 @@ metrics_binding_destroy(BindingInstance &binding)
   EvaluatorList *evaluators;
 
   evaluators = (EvaluatorList *)binding.retrieve_ptr("evaluators");
-  binding.attach_ptr("evaluators", NULL);
+  binding.attach_ptr("evaluators", nullptr);
   delete evaluators;
 }
 
@@ -365,7 +365,7 @@ metrics_binding_evaluate(BindingInstance &binding)
   EvaluatorList *evaluators;
 
   evaluators = (EvaluatorList *)binding.retrieve_ptr("evaluators");
-  ink_release_assert(evaluators != NULL);
+  ink_release_assert(evaluators != nullptr);
 
   // Keep updating the namespace until it settles (ie. we make 0 updates).
   if (evaluators->update) {

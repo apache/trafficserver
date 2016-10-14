@@ -183,7 +183,7 @@ public:
   int indexFor(const char *name) const;
 
   /** Convert an @a index to the corresponding name.
-      @return A pointer to the name or @c NULL if the index isn't registered.
+      @return A pointer to the name or @c nullptr if the index isn't registered.
   */
   const char *nameFor(int index) const;
 
@@ -320,7 +320,7 @@ public:
   /** Load ports from a value string.
 
       Load ports from single string with port descriptors. Ports
-      found are added to @a ports. @a value may safely be @c NULL or empty.
+      found are added to @a ports. @a value may safely be @c nullptr or empty.
 
       @note This is used primarily internally but is available if needed.
       @return @c true if a valid port was found, @c false if none.
@@ -332,7 +332,7 @@ public:
   /** Load ports from a value string into the global ports.
 
       Load ports from single string of port descriptors into the
-      global set of ports. @a value may safely be @c NULL or empty.
+      global set of ports. @a value may safely be @c nullptr or empty.
 
       @return @c true if a valid port was found, @c false if none.
   */
@@ -351,7 +351,7 @@ public:
   /** Find an HTTP port in @a ports.
       If @a family is specified then only ports for that family
       are checked.
-      @return The port if found, @c NULL if not.
+      @return The port if found, @c nullptr if not.
   */
   static self *findHttp(Group const &ports,         ///< Group to search.
                         uint16_t family = AF_UNSPEC ///< Desired address family.
@@ -360,7 +360,7 @@ public:
   /** Find an HTTP port in the global ports.
       If @a family is specified then only ports for that family
       are checked.
-      @return The port if found, @c NULL if not.
+      @return The port if found, @c nullptr if not.
   */
   static self *findHttp(uint16_t family = AF_UNSPEC);
 
@@ -404,7 +404,7 @@ protected:
   void processSessionProtocolPreference(const char *value);
 
   /** Check a prefix option and find the value.
-      @return The address of the start of the value, or @c NULL if the prefix doesn't match.
+      @return The address of the start of the value, or @c nullptr if the prefix doesn't match.
   */
 
   const char *checkPrefix(char const *src ///< Input text

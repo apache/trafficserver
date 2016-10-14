@@ -51,7 +51,7 @@ pthread_key_t threadKey;
 int
 main()
 {
-  pthread_key_create(&threadKey, NULL);
+  pthread_key_create(&threadKey, nullptr);
   Utils::init(&Debug, &Error);
 
   {
@@ -215,7 +215,7 @@ main()
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_REMOVE);
     assert(list_iter->data_len == 0);
-    assert(list_iter->data == 0);
+    assert(list_iter->data == nullptr);
     assert((list_iter->child_nodes).size() == 0);
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_PRE);
@@ -239,7 +239,7 @@ main()
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_REMOVE);
     assert(list_iter->data_len == 0);
-    assert(list_iter->data == 0);
+    assert(list_iter->data == nullptr);
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_PRE);
     assert(list_iter->data_len == 5);
@@ -278,7 +278,7 @@ main()
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_REMOVE);
     assert(list_iter->data_len == 0);
-    assert(list_iter->data == 0);
+    assert(list_iter->data == nullptr);
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_PRE);
     assert(list_iter->data_len == 5);
@@ -306,7 +306,7 @@ main()
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_REMOVE);
     assert(list_iter->data_len == 0);
-    assert(list_iter->data == 0);
+    assert(list_iter->data == nullptr);
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_PRE);
     assert(list_iter->data_len == 4);
@@ -895,7 +895,7 @@ main()
                            "<!--esi blah--><esi:com",
                            "ment text=\"bleh\" /> <esi:remove> </esi:remove><!--esi bleh -->",
                            "<!--esi blooh--><esi:include src=url3/>",
-                           0};
+                           nullptr};
 
     DocNodeList node_list;
     for (int i = 0; lines[i]; ++i) {

@@ -190,7 +190,7 @@ template <typename T> struct cleaner {
   void
   reset()
   {
-    obj = 0;
+    obj = nullptr;
   }
 };
 }
@@ -199,7 +199,7 @@ template <typename T> struct cleaner {
 
     @internal This structure is used to reduce the number of places in
     which the defaults are set. Originally the argument defaulted to
-    @c NULL which meant that the defaults had to be encoded in any
+    @c nullptr which meant that the defaults had to be encoded in any
     methods that used it as well as the @c NetVCOptions
     constructor. Now they are controlled only in the latter and not in
     any of the methods. This makes handling global default values
@@ -316,7 +316,7 @@ Connection::connect(sockaddr const *target, NetVCOptions const &opt)
 
   int res;
 
-  if (target != NULL) {
+  if (target != nullptr) {
     this->setRemote(target);
   }
 

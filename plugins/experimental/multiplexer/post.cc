@@ -31,13 +31,13 @@
 
 PostState::~PostState()
 {
-  if (buffer != NULL) {
+  if (buffer != nullptr) {
     TSIOBufferDestroy(buffer);
-    buffer = NULL;
+    buffer = nullptr;
   }
 }
 
-PostState::PostState(Requests &r) : buffer(NULL), reader(NULL), vio(NULL)
+PostState::PostState(Requests &r) : buffer(nullptr), reader(nullptr), vio(nullptr)
 {
   assert(!r.empty());
   requests.swap(r);
@@ -46,26 +46,26 @@ PostState::PostState(Requests &r) : buffer(NULL), reader(NULL), vio(NULL)
 static void
 postTransform(const TSCont c, PostState &s)
 {
-  assert(c != NULL);
+  assert(c != nullptr);
 
   const TSVConn vconnection = TSTransformOutputVConnGet(c);
-  assert(vconnection != NULL);
+  assert(vconnection != nullptr);
 
   const TSVIO vio = TSVConnWriteVIOGet(c);
-  assert(vio != NULL);
+  assert(vio != nullptr);
 
   if (!s.buffer) {
     s.buffer = TSIOBufferCreate();
-    assert(s.buffer != NULL);
+    assert(s.buffer != nullptr);
 
     const TSIOBufferReader reader = TSIOBufferReaderAlloc(s.buffer);
-    assert(reader != NULL);
+    assert(reader != nullptr);
 
     s.reader = TSIOBufferReaderClone(reader);
-    assert(s.reader != NULL);
+    assert(s.reader != nullptr);
 
     s.vio = TSVConnWrite(vconnection, c, reader, std::numeric_limits<int64_t>::max());
-    assert(s.vio != NULL);
+    assert(s.vio != nullptr);
   }
 
   if (!TSVIOBufferGet(vio)) {
@@ -103,25 +103,25 @@ postTransform(const TSCont c, PostState &s)
 int
 handlePost(TSCont c, TSEvent e, void *data)
 {
-  assert(c != NULL);
+  assert(c != nullptr);
   // TODO(dmorilha): assert on possible events.
   PostState *const state = static_cast<PostState *>(TSContDataGet(c));
-  assert(state != NULL);
+  assert(state != nullptr);
   if (TSVConnClosedGet(c)) {
-    assert(data != NULL);
-    if (state->reader != NULL) {
+    assert(data != nullptr);
+    if (state->reader != nullptr) {
       addBody(state->requests, state->reader);
     }
     dispatch(state->requests, timeout);
     delete state;
-    TSContDataSet(c, NULL);
+    TSContDataSet(c, nullptr);
     TSContDestroy(c);
     return 0;
   } else {
     switch (e) {
     case TS_EVENT_ERROR: {
       const TSVIO vio = TSVConnWriteVIOGet(c);
-      assert(vio != NULL);
+      assert(vio != nullptr);
       CHECK(TSContCall(TSVIOContGet(vio), TS_EVENT_ERROR, vio));
     } break;
     case TS_EVENT_VCONN_WRITE_COMPLETE:

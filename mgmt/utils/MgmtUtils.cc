@@ -329,7 +329,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
 {
   bool found = false;
 
-  if (intrName == NULL) {
+  if (intrName == nullptr) {
     return false;
   }
 
@@ -349,7 +349,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
   // INKqa06739
   // Fetch the list of network interfaces
   // . from Stevens, Unix Network Prog., pg 434-435
-  ifbuf   = 0;
+  ifbuf   = nullptr;
   lastlen = 0;
   len     = 128 * sizeof(struct ifreq); // initial buffer size guess
   for (;;) {
@@ -420,7 +420,7 @@ mgmt_sortipaddrs(int num, struct in_addr **list)
 
   min   = (list[0])->s_addr;
   entry = list[0];
-  while (i < num && (tmp = (struct in_addr *)list[i]) != NULL) {
+  while (i < num && (tmp = (struct in_addr *)list[i]) != nullptr) {
     i++;
     if (min > tmp->s_addr) {
       min   = tmp->s_addr;

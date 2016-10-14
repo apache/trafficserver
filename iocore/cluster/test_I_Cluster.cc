@@ -39,7 +39,7 @@ main(int argc, char *argv[])
 {
   int i;
   int num_net_threads = ink_number_of_processors();
-  init_diags("", NULL);
+  init_diags("", nullptr);
   RecProcessInit(RECM_STAND_ALONE);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(num_net_threads);

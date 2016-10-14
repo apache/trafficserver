@@ -75,14 +75,14 @@ read_addr(char *line, int n, int *i, sockaddr *addr, char *err)
 char *
 Load_IpMap_From_File(IpMap *map, int fd, const char *key_str)
 {
-  char *zret = 0;
+  char *zret = nullptr;
   int fd2    = dup(fd); // dup to avoid closing the original file.
-  FILE *f    = NULL;
+  FILE *f    = nullptr;
 
   if (fd2 >= 0)
     f = fdopen(fd2, "r");
 
-  if (f != NULL) {
+  if (f != nullptr) {
     zret = Load_IpMap_From_File(map, f, key_str);
     fclose(f);
   } else {
@@ -176,5 +176,5 @@ Load_IpMap_From_File(IpMap *map, FILE *f, const char *key_str)
       }
     }
   }
-  return 0;
+  return nullptr;
 }

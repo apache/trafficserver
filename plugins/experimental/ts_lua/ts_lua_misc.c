@@ -137,8 +137,9 @@ ts_lua_schedule(lua_State *L)
   ts_lua_cont_info *nci;
 
   ci = ts_lua_get_cont_info(L);
-  if (ci == NULL)
+  if (ci == NULL) {
     return 0;
+  }
 
   entry = lua_tointeger(L, 1);
 
@@ -234,8 +235,9 @@ ts_lua_sleep(lua_State *L)
   ts_lua_cont_info *ci;
 
   ci = ts_lua_get_cont_info(L);
-  if (ci == NULL)
+  if (ci == NULL) {
     return 0;
+  }
 
   sec = luaL_checknumber(L, 1);
   if (sec < 1) {

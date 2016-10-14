@@ -108,8 +108,8 @@ public:
       of this callback.
 
   */
-  Event *schedule_imm(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
-  Event *schedule_imm_signal(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_imm(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = nullptr);
+  Event *schedule_imm_signal(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -130,7 +130,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_at(Continuation *c, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_at(Continuation *c, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -150,7 +150,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_in(Continuation *c, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_in(Continuation *c, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -171,7 +171,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_every(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_every(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -189,7 +189,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_imm_local(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_imm_local(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -210,7 +210,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_at_local(Continuation *c, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_at_local(Continuation *c, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -231,7 +231,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_in_local(Continuation *c, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_in_local(Continuation *c, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -251,7 +251,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_every_local(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_every_local(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /* private */
 

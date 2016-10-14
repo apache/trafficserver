@@ -70,7 +70,7 @@ fakeDebug(const char *tag, const char *fmt, ...)
 int
 main()
 {
-  pthread_key_create(&threadKey, NULL);
+  pthread_key_create(&threadKey, nullptr);
   Utils::init(&Debug, &Error);
 
   {
@@ -94,7 +94,7 @@ main()
                              "en-gb , en-us ,  ,",
                              "Accept-Language",
                              "ka-in",
-                             0};
+                             nullptr};
 
     HttpHeaderList headers;
     addToHeaderList(strings, headers);
@@ -156,7 +156,7 @@ main()
     esi_vars.populate("a=b&c=d&e=f");
 
     Expression esi_expr("vars_test", &Debug, &Error, esi_vars);
-    assert(esi_expr.expand(0) == "");
+    assert(esi_expr.expand(nullptr) == "");
     assert(esi_expr.expand("") == "");
     assert(esi_expr.expand("blah") == "blah");
     assert(esi_expr.expand("blah$(HTTP_HOST") == "");

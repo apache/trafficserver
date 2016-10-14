@@ -39,10 +39,10 @@ HttpDataFetcherImpl::_release(RequestData &req_data)
   if (req_data.bufp) {
     if (req_data.hdr_loc) {
       TSHandleMLocRelease(req_data.bufp, TS_NULL_MLOC, req_data.hdr_loc);
-      req_data.hdr_loc = 0;
+      req_data.hdr_loc = nullptr;
     }
     TSMBufferDestroy(req_data.bufp);
-    req_data.bufp = 0;
+    req_data.bufp = nullptr;
   }
 }
 
@@ -81,7 +81,7 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
     http_req = buff;
   } else {
     http_req = (char *)malloc(length + 1);
-    if (http_req == NULL) {
+    if (http_req == nullptr) {
       TSError("[HttpDataFetcherImpl][%s] malloc %d bytes fail", __FUNCTION__, length + 1);
       return false;
     }
@@ -226,7 +226,7 @@ HttpDataFetcherImpl::_checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const cha
 
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
-      if (NULL != value && value_len) {
+      if (nullptr != value && value_len) {
         if (prefix) {
           if ((value_len >= exp_value_len) && (strncasecmp(value, exp_value, exp_value_len) == 0)) {
             retval = true;

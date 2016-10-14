@@ -57,7 +57,7 @@ preprocess_msg(int fd, void **req, size_t *reqlen)
   TSMgmtError ret;
   MgmtMarshallData msg;
 
-  *req    = NULL;
+  *req    = nullptr;
   *reqlen = 0;
 
   ret = recv_mgmt_message(fd, msg);
@@ -66,7 +66,7 @@ preprocess_msg(int fd, void **req, size_t *reqlen)
   }
 
   // We should never receive an empty payload.
-  if (msg.ptr == NULL) {
+  if (msg.ptr == nullptr) {
     return TS_ERR_NET_READ;
   }
 

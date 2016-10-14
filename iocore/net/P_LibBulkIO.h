@@ -61,15 +61,15 @@ struct InkBulkIOAggregator {
   InkBulkIOAggregator()
   {
     metaReqCount      = 0;
-    metablockInfo.ptr = NULL;
+    metablockInfo.ptr = nullptr;
     metablockInfo.id  = 0xffffffff;
-    metablockReqPtr   = NULL;
+    metablockReqPtr   = nullptr;
 
     lastReqFragCount = 0;
-    lastReq          = NULL;
-    reqblockInfo.ptr = NULL;
+    lastReq          = nullptr;
+    reqblockInfo.ptr = nullptr;
     reqblockInfo.id  = 0xffffffff;
-    reqblockPktPtr   = NULL;
+    reqblockPktPtr   = nullptr;
   };
   struct InkBulkIOBlock metablockInfo;
   // Location where the next req. block id should be stuffed in the meta block.
@@ -85,18 +85,18 @@ struct InkBulkIOAggregator {
   ResetLastRequestInfo()
   {
     lastReqFragCount = 0;
-    lastReq          = NULL;
-    reqblockInfo.ptr = NULL;
+    lastReq          = nullptr;
+    reqblockInfo.ptr = nullptr;
     reqblockInfo.id  = 0xffffffff;
-    reqblockPktPtr   = NULL;
+    reqblockPktPtr   = nullptr;
   };
   void
   ResetMetaBlockInfo()
   {
     metaReqCount      = 0;
-    metablockInfo.ptr = NULL;
+    metablockInfo.ptr = nullptr;
     metablockInfo.id  = 0xffffffff;
-    metablockReqPtr   = NULL;
+    metablockReqPtr   = nullptr;
   };
   bool
   AppendLastRequest()

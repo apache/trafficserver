@@ -60,14 +60,14 @@ struct atscppapi::TransformationPluginState : noncopyable {
 
   TransformationPluginState(atscppapi::Transaction &transaction, TransformationPlugin &transformation_plugin,
                             TransformationPlugin::Type type, TSHttpTxn txn)
-    : vconn_(NULL),
+    : vconn_(nullptr),
       transaction_(transaction),
       transformation_plugin_(transformation_plugin),
       type_(type),
-      output_vio_(NULL),
+      output_vio_(nullptr),
       txn_(txn),
-      output_buffer_(NULL),
-      output_buffer_reader_(NULL),
+      output_buffer_(nullptr),
+      output_buffer_reader_(nullptr),
       bytes_written_(0),
       input_complete_dispatched_(false)
   {
@@ -79,12 +79,12 @@ struct atscppapi::TransformationPluginState : noncopyable {
   {
     if (output_buffer_reader_) {
       TSIOBufferReaderFree(output_buffer_reader_);
-      output_buffer_reader_ = NULL;
+      output_buffer_reader_ = nullptr;
     }
 
     if (output_buffer_) {
       TSIOBufferDestroy(output_buffer_);
-      output_buffer_ = NULL;
+      output_buffer_ = nullptr;
     }
   }
 };
@@ -176,7 +176,7 @@ handleTransformationPluginRead(TSCont contp, TransformationPluginState *state)
         if (!state->input_complete_dispatched_) {
           state->transformation_plugin_.handleInputComplete();
           state->input_complete_dispatched_ = true;
-          if (vio_cont && 0 != TSVIOBufferGet(write_vio)) {
+          if (vio_cont && nullptr != TSVIOBufferGet(write_vio)) {
             TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
           }
         }
@@ -189,13 +189,13 @@ handleTransformationPluginRead(TSCont contp, TransformationPluginState *state)
       if (!state->input_complete_dispatched_) {
         state->transformation_plugin_.handleInputComplete();
         state->input_complete_dispatched_ = true;
-        if (vio_cont && 0 != TSVIOBufferGet(write_vio)) {
+        if (vio_cont && nullptr != TSVIOBufferGet(write_vio)) {
           TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
         }
       }
     }
   } else {
-    LOG_ERROR("Transformation contp=%p write_vio=%p was NULL!", contp, write_vio);
+    LOG_ERROR("Transformation contp=%p write_vio=%p was nullptr!", contp, write_vio);
   }
   return 0;
 }

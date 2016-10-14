@@ -192,7 +192,7 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
         if (REC_TYPE_IS_STAT(r->rec_type)) {
           RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SOURCE_EXPLICIT);
         } else {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), NULL, REC_SOURCE_EXPLICIT);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), nullptr, REC_SOURCE_EXPLICIT);
         }
       } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
     }
@@ -206,7 +206,7 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
         if (REC_TYPE_IS_STAT(r->rec_type)) {
           RecResetStatRecord(r->name);
         } else {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), NULL, REC_SOURCE_EXPLICIT);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), nullptr, REC_SOURCE_EXPLICIT);
         }
       } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
     }
@@ -266,7 +266,7 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
   RecRecord *r;                                                                                                                 \
   RecData my_data_default;                                                                                                      \
   my_data_default.A = data_default;                                                                                             \
-  if ((r = RecRegisterStat(rec_type, name, B, my_data_default, persist_type)) != NULL) {                                        \
+  if ((r = RecRegisterStat(rec_type, name, B, my_data_default, persist_type)) != nullptr) {                                     \
     if (i_am_the_record_owner(r->rec_type)) {                                                                                   \
       r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                             \
     } else {                                                                                                                    \
@@ -309,7 +309,7 @@ _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default
   RecData my_data_default;                                                                                                      \
   my_data_default.A = data_default;                                                                                             \
   if ((r = RecRegisterConfig(rec_type, name, B, my_data_default, update_type, check_type, check_regex, source, access_type)) != \
-      NULL) {                                                                                                                   \
+      nullptr) {                                                                                                                \
     if (i_am_the_record_owner(r->rec_type)) {                                                                                   \
       r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                             \
     } else {                                                                                                                    \
@@ -378,7 +378,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
         if (data_type == RECD_NULL) {
           // If the caller didn't know the data type, they gave us a string
           // and we should convert based on the record's data type.
-          ink_release_assert(data->rec_string != NULL);
+          ink_release_assert(data->rec_string != nullptr);
           RecDataSetFromString(r1->data_type, &(r1->data), data->rec_string);
         } else {
           RecDataSet(data_type, &(r1->data), data);
@@ -393,7 +393,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
           r1->config_meta.update_required = REC_UPDATE_REQUIRED;
         }
 
-        if (REC_TYPE_IS_STAT(r1->rec_type) && (data_raw != NULL)) {
+        if (REC_TYPE_IS_STAT(r1->rec_type) && (data_raw != nullptr)) {
           r1->stat_meta.data_raw = *data_raw;
         } else if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
           r1->config_meta.source = source;
@@ -410,7 +410,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
       r2.name      = name;
       r2.data_type = (data_type != RECD_NULL) ? data_type : r1->data_type;
       r2.data      = *data;
-      if (REC_TYPE_IS_STAT(r2.rec_type) && (data_raw != NULL)) {
+      if (REC_TYPE_IS_STAT(r2.rec_type) && (data_raw != nullptr)) {
         r2.stat_meta.data_raw = *data_raw;
       } else if (REC_TYPE_IS_CONFIG(r2.rec_type)) {
         r2.config_meta.source = source;
@@ -430,7 +430,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
     }
     r1 = RecAlloc(rec_type, name, data_type);
     RecDataSet(data_type, &(r1->data), data);
-    if (REC_TYPE_IS_STAT(r1->rec_type) && (data_raw != NULL)) {
+    if (REC_TYPE_IS_STAT(r1->rec_type) && (data_raw != nullptr)) {
       r1->stat_meta.data_raw = *data_raw;
     } else if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
       r1->config_meta.source = source;
@@ -456,7 +456,7 @@ RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT sou
 {
   RecData data;
   data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, NULL, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, nullptr, source, lock, inc_version);
 }
 
 RecErrT
@@ -464,7 +464,7 @@ RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock, 
 {
   RecData data;
   data.rec_int = rec_int;
-  return RecSetRecord(RECT_NULL, name, RECD_INT, &data, NULL, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_INT, &data, nullptr, source, lock, inc_version);
 }
 
 RecErrT
@@ -472,7 +472,7 @@ RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool 
 {
   RecData data;
   data.rec_float = rec_float;
-  return RecSetRecord(RECT_NULL, name, RECD_FLOAT, &data, NULL, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_FLOAT, &data, nullptr, source, lock, inc_version);
 }
 
 RecErrT
@@ -480,7 +480,7 @@ RecSetRecordString(const char *name, const RecString rec_string, RecSourceT sour
 {
   RecData data;
   data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, NULL, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, nullptr, source, lock, inc_version);
 }
 
 RecErrT
@@ -488,7 +488,7 @@ RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source,
 {
   RecData data;
   data.rec_counter = rec_counter;
-  return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, NULL, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, nullptr, source, lock, inc_version);
 }
 
 //-------------------------------------------------------------------------
@@ -506,10 +506,10 @@ RecReadStatsFile()
   // lock our hash table
   ink_rwlock_wrlock(&g_records_rwlock);
 
-  if ((m = RecMessageReadFromDisk(snap_fpath)) != NULL) {
+  if ((m = RecMessageReadFromDisk(snap_fpath)) != nullptr) {
     if (RecMessageUnmarshalFirst(m, &itr, &r) != REC_ERR_FAIL) {
       do {
-        if ((r->name == NULL) || (!strlen(r->name))) {
+        if ((r->name == nullptr) || (!strlen(r->name))) {
           continue;
         }
 
@@ -598,7 +598,7 @@ RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const
 
   memset(&data, 0, sizeof(RecData));
   RecDataSetFromString(data_type, &data, value);
-  RecSetRecord(rec_type, name, data_type, &data, NULL, source, false, inc_version);
+  RecSetRecord(rec_type, name, data_type, &data, nullptr, source, false, inc_version);
   RecDataZero(data_type, &data);
 }
 
@@ -630,7 +630,7 @@ RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
 {
   RecErrT err = REC_ERR_FAIL;
 
-  if (inc_version != NULL) {
+  if (inc_version != nullptr) {
     *inc_version = false;
   }
 
@@ -660,13 +660,13 @@ RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
             cfe->entry_type = RECE_RECORD;
             cfe->entry      = ats_strdup(r->name);
             enqueue(g_rec_config_contents_llq, (void *)cfe);
-            ink_hash_table_insert(g_rec_config_contents_ht, r->name, NULL);
+            ink_hash_table_insert(g_rec_config_contents_ht, r->name, nullptr);
           }
           r->sync_required = r->sync_required & ~REC_DISK_SYNC_REQUIRED;
           sync_to_disk     = true;
           if (r->sync_required & REC_INC_CONFIG_VERSION) {
             r->sync_required = r->sync_required & ~REC_INC_CONFIG_VERSION;
-            if (r->rec_type != RECT_LOCAL && inc_version != NULL) {
+            if (r->rec_type != RECT_LOCAL && inc_version != nullptr) {
               *inc_version = true;
             }
           }
@@ -685,7 +685,7 @@ RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
       ink_rwlock_rdlock(&g_records_rwlock);
 
       LLQrec *llq_rec = g_rec_config_contents_llq->head;
-      while (llq_rec != NULL) {
+      while (llq_rec != nullptr) {
         cfe = (RecConfigFileEntry *)llq_rec->data;
         if (cfe->entry_type == RECE_COMMENT) {
           tb->copyFrom(cfe->entry, strlen(cfe->entry));
@@ -734,7 +734,7 @@ RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
               if (r->data.rec_string) {
                 tb->copyFrom(r->data.rec_string, strlen(r->data.rec_string));
               } else {
-                tb->copyFrom("NULL", strlen("NULL"));
+                tb->copyFrom("nullptr", strlen("NULL"));
               }
               break;
             case RECD_COUNTER:
@@ -792,7 +792,7 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
       }
 
       if ((r->config_meta.update_required & update_required_type) && (r->config_meta.update_cb_list)) {
-        RecConfigUpdateCbList *cur_callback = NULL;
+        RecConfigUpdateCbList *cur_callback = nullptr;
         for (cur_callback = r->config_meta.update_cb_list; cur_callback; cur_callback = cur_callback->next) {
           (*(cur_callback->update_cb))(r->name, r->data_type, r->data, cur_callback->update_cookie);
         }
@@ -837,7 +837,7 @@ reset_stat_record(RecRecord *rec)
 RecErrT
 RecResetStatRecord(const char *name)
 {
-  RecRecord *r1 = NULL;
+  RecRecord *r1 = nullptr;
   RecErrT err   = REC_ERR_FAIL;
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **)&r1)) {

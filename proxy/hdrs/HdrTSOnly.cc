@@ -138,7 +138,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
 void
 HdrHeap::set_ronly_str_heap_end(int slot, const char *end)
 {
-  ink_assert(m_ronly_heap[slot].m_heap_start != NULL);
+  ink_assert(m_ronly_heap[slot].m_heap_start != nullptr);
   ink_assert(m_ronly_heap[slot].m_heap_start <= end);
   ink_assert(end <= m_ronly_heap[slot].m_heap_start + m_ronly_heap[slot].m_heap_len);
 
@@ -167,7 +167,7 @@ RETRY:
   //   it's not possible that a heap ptr for this block
   //   exists in a later slot
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    if (m_ronly_heap[i].m_heap_start == NULL) {
+    if (m_ronly_heap[i].m_heap_start == nullptr) {
       // Add block to heap in this slot
       m_ronly_heap[i].m_heap_start    = (char *)use_start;
       m_ronly_heap[i].m_heap_len      = (int)(b->end() - b->start());

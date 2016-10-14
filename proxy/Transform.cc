@@ -90,7 +90,7 @@ TransformProcessor::open(Continuation *cont, APIHook *hooks)
   if (hooks) {
     return new TransformVConnection(cont, hooks);
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -254,9 +254,9 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
 
         if (!m_called_user) {
           m_called_user = 1;
-          m_tvc->m_cont->handleEvent(ev, NULL);
+          m_tvc->m_cont->handleEvent(ev, nullptr);
         } else {
-          ink_assert(m_read_vio._cont != NULL);
+          ink_assert(m_read_vio._cont != nullptr);
           m_read_vio._cont->handleEvent(ev, &m_read_vio);
         }
       }
@@ -391,7 +391,7 @@ TransformVConnection::TransformVConnection(Continuation *cont, APIHook *hooks)
 
   SET_HANDLER(&TransformVConnection::handle_event);
 
-  ink_assert(hooks != NULL);
+  ink_assert(hooks != nullptr);
 
   m_transform = hooks->m_cont;
   while (hooks->m_link.next) {
@@ -412,10 +412,10 @@ TransformVConnection::~TransformVConnection()
 {
   // Clear the continuations in terminus VConnections so that
   //  mutex's get released (INKqa05596)
-  m_terminus.m_read_vio.set_continuation(NULL);
-  m_terminus.m_write_vio.set_continuation(NULL);
-  m_terminus.mutex = NULL;
-  this->mutex      = NULL;
+  m_terminus.m_read_vio.set_continuation(nullptr);
+  m_terminus.m_write_vio.set_continuation(nullptr);
+  m_terminus.mutex = nullptr;
+  this->mutex      = nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -500,7 +500,7 @@ TransformVConnection::backlog(uint64_t limit)
   MIOBuffer *w;
   while (raw_vc && raw_vc != &m_terminus) {
     INKVConnInternal *vc = static_cast<INKVConnInternal *>(raw_vc);
-    if (0 != (w = vc->m_read_vio.buffer.writer())) {
+    if (nullptr != (w = vc->m_read_vio.buffer.writer())) {
       b += w->max_read_avail();
     }
     if (b >= limit) {
@@ -508,7 +508,7 @@ TransformVConnection::backlog(uint64_t limit)
     }
     raw_vc = vc->m_output_vc;
   }
-  if (0 != (w = m_terminus.m_read_vio.buffer.writer())) {
+  if (nullptr != (w = m_terminus.m_read_vio.buffer.writer())) {
     b += w->max_read_avail();
   }
   if (b >= limit) {
@@ -525,7 +525,8 @@ TransformVConnection::backlog(uint64_t limit)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-TransformControl::TransformControl() : Continuation(new_ProxyMutex()), m_hooks(), m_tvc(NULL), m_read_buf(NULL), m_write_buf(NULL)
+TransformControl::TransformControl()
+  : Continuation(new_ProxyMutex()), m_hooks(), m_tvc(nullptr), m_read_buf(nullptr), m_write_buf(nullptr)
 {
   SET_HANDLER(&TransformControl::handle_event);
 
@@ -542,13 +543,13 @@ TransformControl::handle_event(int event, void * /* edata ATS_UNUSED */)
   case EVENT_IMMEDIATE: {
     char *s, *e;
 
-    ink_assert(m_tvc == NULL);
+    ink_assert(m_tvc == nullptr);
     if (http_global_hooks && http_global_hooks->get(TS_HTTP_RESPONSE_TRANSFORM_HOOK)) {
       m_tvc = transformProcessor.open(this, http_global_hooks->get(TS_HTTP_RESPONSE_TRANSFORM_HOOK));
     } else {
       m_tvc = transformProcessor.open(this, m_hooks.get());
     }
-    ink_assert(m_tvc != NULL);
+    ink_assert(m_tvc != nullptr);
 
     m_write_buf = new_MIOBuffer();
     s           = m_write_buf->end();
@@ -574,10 +575,10 @@ TransformControl::handle_event(int event, void * /* edata ATS_UNUSED */)
     m_tvc->do_io_close();
 
     free_MIOBuffer(m_read_buf->mbuf);
-    m_read_buf = NULL;
+    m_read_buf = nullptr;
 
     free_MIOBuffer(m_write_buf);
-    m_write_buf = NULL;
+    m_write_buf = nullptr;
     break;
 
   case VC_EVENT_WRITE_COMPLETE:
@@ -595,7 +596,10 @@ TransformControl::handle_event(int event, void * /* edata ATS_UNUSED */)
   -------------------------------------------------------------------------*/
 
 NullTransform::NullTransform(ProxyMutex *_mutex)
-  : INKVConnInternal(NULL, reinterpret_cast<TSMutex>(_mutex)), m_output_buf(NULL), m_output_reader(NULL), m_output_vio(NULL)
+  : INKVConnInternal(nullptr, reinterpret_cast<TSMutex>(_mutex)),
+    m_output_buf(nullptr),
+    m_output_reader(nullptr),
+    m_output_vio(nullptr)
 {
   SET_HANDLER(&NullTransform::handle_event);
 
@@ -647,7 +651,7 @@ NullTransform::handle_event(int event, void *edata)
       int64_t towrite;
       int64_t avail;
 
-      ink_assert(m_output_vc != NULL);
+      ink_assert(m_output_vc != nullptr);
 
       if (!m_output_vio) {
         m_output_buf    = new_empty_MIOBuffer();
@@ -738,11 +742,11 @@ TransformTest::run()
 
 RangeTransform::RangeTransform(ProxyMutex *mut, RangeRecord *ranges, int num_fields, HTTPHdr *transform_resp,
                                const char *content_type, int content_type_len, int64_t content_length)
-  : INKVConnInternal(NULL, reinterpret_cast<TSMutex>(mut)),
-    m_output_buf(NULL),
-    m_output_reader(NULL),
+  : INKVConnInternal(nullptr, reinterpret_cast<TSMutex>(mut)),
+    m_output_buf(nullptr),
+    m_output_reader(nullptr),
     m_transform_resp(transform_resp),
-    m_output_vio(NULL),
+    m_output_vio(nullptr),
     m_range_content_length(0),
     m_num_range_fields(num_fields),
     m_current_range(0),
@@ -792,7 +796,7 @@ RangeTransform::handle_event(int event, void *edata)
       break;
     case VC_EVENT_WRITE_READY:
     default:
-      ink_assert(m_output_vc != NULL);
+      ink_assert(m_output_vc != nullptr);
 
       if (!m_output_vio) {
         m_output_buf    = new_empty_MIOBuffer();
@@ -1018,7 +1022,7 @@ RangeTransform::change_response_header()
     // set the right Content-Type for multiple entry Range
     field = m_transform_resp->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
 
-    if (field != NULL) {
+    if (field != nullptr) {
       m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     }
 

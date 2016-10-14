@@ -54,7 +54,7 @@ NetVCOptions::get_proto_string() const
   case USE_UDP:
     return TS_PROTO_TAG_UDP;
   default:
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -70,7 +70,7 @@ NetVCOptions::get_family_string() const
     retval = TS_PROTO_TAG_IPV6;
     break;
   default:
-    retval = NULL;
+    retval = nullptr;
     break;
   }
   return retval;

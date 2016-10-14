@@ -103,7 +103,7 @@ mgmt_fopen(const char *filename, const char *mode)
     // no leak here as f will be returned if it is > 0
     // coverity[overwrite_var]
     f = ::fopen(filename, mode);
-    if (f != NULL) {
+    if (f != nullptr) {
       return f;
     }
     if (!mgmt_transient_error()) {
@@ -254,9 +254,9 @@ mgmt_write_timeout(int fd, int sec, int usec)
 
   if (sec < 0 && usec < 0) {
     // blocking select; only returns when fd is ready to write
-    return (mgmt_select(fd + 1, NULL, &writeSet, NULL, NULL));
+    return (mgmt_select(fd + 1, nullptr, &writeSet, nullptr, nullptr));
   } else {
-    return (mgmt_select(fd + 1, NULL, &writeSet, NULL, &timeout));
+    return (mgmt_select(fd + 1, nullptr, &writeSet, nullptr, &timeout));
   }
 }
 
@@ -291,7 +291,7 @@ mgmt_read_timeout(int fd, int sec, int usec)
   FD_ZERO(&readSet);
   FD_SET(fd, &readSet);
 
-  return mgmt_select(fd + 1, &readSet, NULL, NULL, &timeout);
+  return mgmt_select(fd + 1, &readSet, nullptr, nullptr, &timeout);
 }
 
 bool

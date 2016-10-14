@@ -44,7 +44,7 @@
 //      behavior:
 //
 //      (1) the length in output characters is returned, including final NUL
-//      (2) buffer can be NULL, for just counting the output chars
+//      (2) buffer can be nullptr, for just counting the output chars
 //      (3) only %s and %d are supported, with no field modifiers
 //
 //////////////////////////////////////////////////////////////////////////////

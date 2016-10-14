@@ -219,7 +219,7 @@ register_ShowNet(Continuation *c, HTTPHdr *h)
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
     s->sarg           = ats_strndup(query, query_len);
-    char *gn          = NULL;
+    char *gn          = nullptr;
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     if (gn)
@@ -229,7 +229,7 @@ register_ShowNet(Continuation *c, HTTPHdr *h)
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
     s->sarg           = ats_strndup(query, query_len);
-    char *gn          = NULL;
+    char *gn          = nullptr;
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     if (gn)

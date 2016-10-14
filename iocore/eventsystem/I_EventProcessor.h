@@ -141,12 +141,13 @@ public:
       of this callback.
 
   */
-  Event *schedule_imm(Continuation *c, EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_imm(Continuation *c, EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE,
+                      void *cookie = nullptr);
   /*
     provides the same functionality as schedule_imm and also signals the thread immediately
   */
   Event *schedule_imm_signal(Continuation *c, EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE,
-                             void *cookie = NULL);
+                             void *cookie = nullptr);
   /**
     Schedules the continuation on a specific thread group to receive an
     event at the given timeout. Requests the EventProcessor to schedule
@@ -168,7 +169,7 @@ public:
 
   */
   Event *schedule_at(Continuation *c, ink_hrtime atimeout_at, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
-                     void *cookie = NULL);
+                     void *cookie = nullptr);
 
   /**
     Schedules the continuation on a specific thread group to receive an
@@ -190,7 +191,7 @@ public:
 
   */
   Event *schedule_in(Continuation *c, ink_hrtime atimeout_in, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
-                     void *cookie = NULL);
+                     void *cookie = nullptr);
 
   /**
     Schedules the continuation on a specific thread group to receive
@@ -212,7 +213,7 @@ public:
 
   */
   Event *schedule_every(Continuation *c, ink_hrtime aperiod, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
-                        void *cookie = NULL);
+                        void *cookie = nullptr);
 
   ////////////////////////////////////////////
   // reschedule an already scheduled event. //

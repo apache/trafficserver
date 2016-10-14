@@ -64,7 +64,7 @@ typedef enum {
 class SslEntry
 {
 public:
-  SslEntry() : ctx(NULL), op(SSL_HOOK_OP_DEFAULT) { this->mutex = TSMutexCreate(); }
+  SslEntry() : ctx(nullptr), op(SSL_HOOK_OP_DEFAULT) { this->mutex = TSMutexCreate(); }
   ~SslEntry() {}
   SSL_CTX *ctx;
   SslVConnOp op;
@@ -158,30 +158,30 @@ SSL_CTX *
 Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
 {
   SSL_CTX *retval = SSL_CTX_new(SSLv23_client_method());
-  X509 *cert      = NULL;
+  X509 *cert      = nullptr;
 
   if (entry->certFileName.length() > 0) {
     // Must load the cert file to fetch the names out later
     BIO *cert_bio = BIO_new_file(entry->certFileName.c_str(), "r");
-    cert          = PEM_read_bio_X509_AUX(cert_bio, NULL, NULL, NULL);
+    cert          = PEM_read_bio_X509_AUX(cert_bio, nullptr, nullptr, nullptr);
     BIO_free(cert_bio);
 
     if (SSL_CTX_use_certificate(retval, cert) < 1) {
       TSDebug(PN, "Failed to load cert file %s", entry->certFileName.c_str());
       SSL_CTX_free(retval);
-      return NULL;
+      return nullptr;
     }
   }
   if (entry->keyFileName.length() > 0) {
     if (!SSL_CTX_use_PrivateKey_file(retval, entry->keyFileName.c_str(), SSL_FILETYPE_PEM)) {
       TSDebug(PN, "Failed to load priv key file %s", entry->keyFileName.c_str());
       SSL_CTX_free(retval);
-      return NULL;
+      return nullptr;
     }
   }
 
   // Fetch out the names associated with the certificate
-  if (cert != NULL) {
+  if (cert != nullptr) {
     X509_NAME *name = X509_get_subject_name(cert);
     char subjectCn[256];
 
@@ -190,7 +190,7 @@ Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
       names.push_back(tmp_name);
     }
     // Look for alt names
-    GENERAL_NAMES *alt_names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+    GENERAL_NAMES *alt_names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr);
     if (alt_names) {
       unsigned count = sk_GENERAL_NAME_num(alt_names);
       for (unsigned i = 0; i < count; i++) {
@@ -218,7 +218,7 @@ Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
 SslEntry *
 Load_Certificate_Entry(ParsedSslValues const &values, std::deque<std::string> &names)
 {
-  SslEntry *retval = NULL;
+  SslEntry *retval = nullptr;
   std::string cert_file_path;
   std::string priv_file_path;
 
@@ -311,7 +311,7 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
         cur_values.server_ips[i].second.toString(val2, sizeof(val2));
       }
     }
-    if (entry != NULL) {
+    if (entry != nullptr) {
       for (size_t i = 0; i < cert_names.size(); i++) {
         Lookup.tree.insert(cert_names[i], entry, Parse_order++);
       }
@@ -334,7 +334,7 @@ Load_Certificate_Thread(void *arg)
   SslEntry *entry = reinterpret_cast<SslEntry *>(arg);
 
   TSMutexLock(entry->mutex);
-  if (entry->ctx == NULL) {
+  if (entry->ctx == nullptr) {
     // Must load certificate
     std::deque<std::string> cert_names;
 
@@ -399,7 +399,7 @@ CB_Pre_Accept(TSCont /*contp*/, TSEvent event, void *edata)
       }
       TSMutexUnlock(entry->mutex);
     } else {
-      if (entry->ctx == NULL) {
+      if (entry->ctx == nullptr) {
         if (entry->waitingVConns.begin() == entry->waitingVConns.end()) {
           entry->waitingVConns.push_back(ssl_vc);
           TSMutexUnlock(entry->mutex);
@@ -434,10 +434,10 @@ CB_servername(TSCont /*contp*/, TSEvent /*event*/, void *edata)
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
   TSDebug(PN, "SNI callback %s", servername);
-  if (servername != NULL) {
+  if (servername != nullptr) {
     // Is there a certificated loaded up for this name
     DomainNameTree::DomainNameNode *node = Lookup.tree.findFirstMatch(servername);
-    if (node != NULL && node->payload != NULL) {
+    if (node != nullptr && node->payload != nullptr) {
       SslEntry *entry = reinterpret_cast<SslEntry *>(node->payload);
       if (entry->op == SSL_HOOK_OP_TUNNEL || entry->op == SSL_HOOK_OP_TERMINATE) {
         // Push everything to blind tunnel
@@ -449,7 +449,7 @@ CB_servername(TSCont /*contp*/, TSEvent /*event*/, void *edata)
         return TS_SUCCESS;
       }
       TSMutexLock(entry->mutex);
-      if (entry->ctx == NULL) {
+      if (entry->ctx == nullptr) {
         // Spawn off a thread to load a potentially expensive certificate
         if (entry->waitingVConns.begin() == entry->waitingVConns.end()) {
           entry->waitingVConns.push_back(ssl_vc);
@@ -482,11 +482,11 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_pa                         = 0; // pre-accept callback continuation
-  TSCont cb_lc                         = 0; // life cycle callback continuuation
-  TSCont cb_sni                        = 0; // SNI callback continuuation
+  TSCont cb_pa                         = nullptr; // pre-accept callback continuation
+  TSCont cb_lc                         = nullptr; // life cycle callback continuuation
+  TSCont cb_sni                        = nullptr; // SNI callback continuuation
   static const struct option longopt[] = {
-    {const_cast<char *>("config"), required_argument, NULL, 'c'}, {NULL, no_argument, NULL, '\0'},
+    {const_cast<char *>("config"), required_argument, nullptr, 'c'}, {nullptr, no_argument, nullptr, '\0'},
   };
 
   info.plugin_name   = const_cast<char *>("SSL Certificate Loader");
@@ -495,7 +495,7 @@ TSPluginInit(int argc, const char *argv[])
 
   int opt = 0;
   while (opt >= 0) {
-    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, nullptr);
     switch (opt) {
     case 'c':
       ConfigPath = optarg;
@@ -513,11 +513,11 @@ TSPluginInit(int argc, const char *argv[])
     TSError(PCP "registration failed.");
   } else if (TSTrafficServerVersionGetMajor() < 5) {
     TSError(PCP "requires Traffic Server 5.0 or later.");
-  } else if (0 == (cb_pa = TSContCreate(&CB_Pre_Accept, TSMutexCreate()))) {
+  } else if (nullptr == (cb_pa = TSContCreate(&CB_Pre_Accept, TSMutexCreate()))) {
     TSError(PCP "Failed to pre-accept callback.");
-  } else if (0 == (cb_lc = TSContCreate(&CB_Life_Cycle, TSMutexCreate()))) {
+  } else if (nullptr == (cb_lc = TSContCreate(&CB_Life_Cycle, TSMutexCreate()))) {
     TSError(PCP "Failed to lifecycle callback.");
-  } else if (0 == (cb_sni = TSContCreate(&CB_servername, TSMutexCreate()))) {
+  } else if (nullptr == (cb_sni = TSContCreate(&CB_servername, TSMutexCreate()))) {
     TSError(PCP "Failed to create SNI callback.");
   } else {
     TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, cb_lc);

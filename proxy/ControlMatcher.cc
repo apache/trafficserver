@@ -57,7 +57,7 @@
 char *
 HttpRequestData::get_string()
 {
-  char *str = hdr->url_string_get(NULL);
+  char *str = hdr->url_string_get(nullptr);
 
   if (str) {
     unescapifyStr(str);
@@ -89,7 +89,7 @@ HttpRequestData::get_client_ip()
 
 template <class Data, class Result>
 HostMatcher<Data, Result>::HostMatcher(const char *name, const char *filename)
-  : data_array(NULL), array_len(-1), num_el(-1), matcher_name(name), file_name(filename)
+  : data_array(nullptr), array_len(-1), num_el(-1), matcher_name(name), file_name(filename)
 {
   host_lookup = new HostLookup(name);
 }
@@ -171,7 +171,7 @@ HostMatcher<Data, Result>::Match(RequestData *rdata, Result *result)
   r = host_lookup->MatchFirst(rdata->get_host(), &s, &opaque_ptr);
 
   while (r == true) {
-    ink_assert(opaque_ptr != NULL);
+    ink_assert(opaque_ptr != nullptr);
     data_ptr = (Data *)opaque_ptr;
     data_ptr->UpdateMatch(result, rdata);
 
@@ -208,10 +208,10 @@ HostMatcher<Data, Result>::NewEntry(matcher_line *line_info)
 
   // Make sure that the line_info is not bogus
   ink_assert(line_info->dest_entry < MATCHER_MAX_TOKENS);
-  ink_assert(match_data != NULL);
+  ink_assert(match_data != nullptr);
 
   // Remove our consumed label from the parsed line
-  line_info->line[0][line_info->dest_entry] = 0;
+  line_info->line[0][line_info->dest_entry] = nullptr;
   line_info->num_el--;
 
   // Fill in the parameter info
@@ -238,10 +238,10 @@ HostMatcher<Data, Result>::NewEntry(matcher_line *line_info)
 //
 template <class Data, class Result>
 UrlMatcher<Data, Result>::UrlMatcher(const char *name, const char *filename)
-  : url_ht(NULL),
-    url_str(NULL),
-    url_value(NULL),
-    data_array(NULL),
+  : url_ht(nullptr),
+    url_str(nullptr),
+    url_value(nullptr),
+    data_array(nullptr),
     array_len(0),
     num_el(-1),
     matcher_name(name),
@@ -320,14 +320,14 @@ UrlMatcher<Data, Result>::NewEntry(matcher_line *line_info)
   pattern = line_info->line[1][line_info->dest_entry];
   // Make sure that the line_info is not bogus
   ink_assert(line_info->dest_entry < MATCHER_MAX_TOKENS);
-  ink_assert(pattern != NULL);
+  ink_assert(pattern != nullptr);
 
   if (ink_hash_table_lookup(url_ht, pattern, (void **)&value)) {
     return config_parse_error("%s url expression error (have exist) at line %d position", matcher_name, line_info->line_num);
   }
 
   // Remove our consumed label from the parsed line
-  line_info->line[0][line_info->dest_entry] = 0;
+  line_info->line[0][line_info->dest_entry] = nullptr;
   line_info->num_el--;
 
   // Fill in the parameter info
@@ -366,7 +366,7 @@ UrlMatcher<Data, Result>::Match(RequestData *rdata, Result *result)
 
   // Can't do a regex match with a NULL string so
   //  use an empty one instead
-  if (url_str == NULL) {
+  if (url_str == nullptr) {
     url_str = ats_strdup("");
   }
 
@@ -383,7 +383,7 @@ UrlMatcher<Data, Result>::Match(RequestData *rdata, Result *result)
 //
 template <class Data, class Result>
 RegexMatcher<Data, Result>::RegexMatcher(const char *name, const char *filename)
-  : re_array(NULL), re_str(NULL), data_array(NULL), array_len(-1), num_el(-1), matcher_name(name), file_name(filename)
+  : re_array(nullptr), re_str(nullptr), data_array(nullptr), array_len(-1), num_el(-1), matcher_name(name), file_name(filename)
 {
 }
 
@@ -462,10 +462,10 @@ RegexMatcher<Data, Result>::NewEntry(matcher_line *line_info)
   pattern = line_info->line[1][line_info->dest_entry];
   // Make sure that the line_info is not bogus
   ink_assert(line_info->dest_entry < MATCHER_MAX_TOKENS);
-  ink_assert(pattern != NULL);
+  ink_assert(pattern != nullptr);
 
   // Create the compiled regular expression
-  re_array[num_el] = pcre_compile(pattern, 0, &errptr, &erroffset, NULL);
+  re_array[num_el] = pcre_compile(pattern, 0, &errptr, &erroffset, nullptr);
   if (!re_array[num_el]) {
     return config_parse_error("%s regular expression error at line %d position %d : %s", matcher_name, line_info->line_num,
                               erroffset, errptr);
@@ -473,7 +473,7 @@ RegexMatcher<Data, Result>::NewEntry(matcher_line *line_info)
   re_str[num_el] = ats_strdup(pattern);
 
   // Remove our consumed label from the parsed line
-  line_info->line[0][line_info->dest_entry] = 0;
+  line_info->line[0][line_info->dest_entry] = nullptr;
   line_info->num_el--;
 
   // Fill in the parameter info
@@ -483,9 +483,9 @@ RegexMatcher<Data, Result>::NewEntry(matcher_line *line_info)
   if (error) {
     // There was a problem so undo the effects this function
     ats_free(re_str[num_el]);
-    re_str[num_el] = NULL;
+    re_str[num_el] = nullptr;
     pcre_free(re_array[num_el]);
-    re_array[num_el] = NULL;
+    re_array[num_el] = nullptr;
   } else {
     num_el++;
   }
@@ -516,7 +516,7 @@ RegexMatcher<Data, Result>::Match(RequestData *rdata, Result *result)
 
   // Can't do a regex match with a NULL string so
   //  use an empty one instead
-  if (url_str == NULL) {
+  if (url_str == nullptr) {
     url_str = ats_strdup("");
   }
   // INKqa12980
@@ -525,7 +525,7 @@ RegexMatcher<Data, Result>::Match(RequestData *rdata, Result *result)
   // unescapifyStr(url_str);
 
   for (int i = 0; i < num_el; i++) {
-    r = pcre_exec(re_array[i], NULL, url_str, strlen(url_str), 0, 0, NULL, 0);
+    r = pcre_exec(re_array[i], nullptr, url_str, strlen(url_str), 0, 0, nullptr, 0);
     if (r > -1) {
       Debug("matcher", "%s Matched %s with regex at line %d", matcher_name, url_str, data_array[i].line_num);
       data_array[i].UpdateMatch(result, rdata);
@@ -569,11 +569,11 @@ HostRegexMatcher<Data, Result>::Match(RequestData *rdata, Result *result)
 
   // Can't do a regex match with a NULL string so
   //  use an empty one instead
-  if (url_str == NULL) {
+  if (url_str == nullptr) {
     url_str = "";
   }
   for (int i = 0; i < this->num_el; i++) {
-    r = pcre_exec(this->re_array[i], NULL, url_str, strlen(url_str), 0, 0, NULL, 0);
+    r = pcre_exec(this->re_array[i], nullptr, url_str, strlen(url_str), 0, 0, nullptr, 0);
     if (r != -1) {
       Debug("matcher", "%s Matched %s with regex at line %d", const_cast<char *>(this->matcher_name), url_str,
             this->data_array[i].line_num);
@@ -590,7 +590,7 @@ HostRegexMatcher<Data, Result>::Match(RequestData *rdata, Result *result)
 //
 template <class Data, class Result>
 IpMatcher<Data, Result>::IpMatcher(const char *name, const char *filename)
-  : data_array(NULL), array_len(-1), num_el(-1), matcher_name(name), file_name(filename)
+  : data_array(nullptr), array_len(-1), num_el(-1), matcher_name(name), file_name(filename)
 {
 }
 
@@ -649,16 +649,16 @@ IpMatcher<Data, Result>::NewEntry(matcher_line *line_info)
 
   // Make sure that the line_info is not bogus
   ink_assert(line_info->dest_entry < MATCHER_MAX_TOKENS);
-  ink_assert(match_data != NULL);
+  ink_assert(match_data != nullptr);
 
   // Extract the IP range
   errptr = ExtractIpRange(match_data, &addr1.sa, &addr2.sa);
-  if (errptr != NULL) {
+  if (errptr != nullptr) {
     return config_parse_error("%s %s at %s line %d", matcher_name, errptr, file_name, line_info->line_num);
   }
 
   // Remove our consumed label from the parsed line
-  line_info->line[0][line_info->dest_entry] = NULL;
+  line_info->line[0][line_info->dest_entry] = nullptr;
   line_info->num_el--;
 
   // Fill in the parameter info
@@ -682,7 +682,7 @@ IpMatcher<Data, Result>::Match(sockaddr const *addr, RequestData *rdata, Result 
   void *raw;
   if (ip_map.contains(addr, &raw)) {
     Data *cur = static_cast<Data *>(raw);
-    ink_assert(cur != 0);
+    ink_assert(cur != nullptr);
     cur->UpdateMatch(result, rdata);
   }
 }
@@ -706,7 +706,7 @@ ControlMatcher<Data, Result>::ControlMatcher(const char *file_var, const char *n
   ink_assert(flags & (ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE));
 
   config_tags = tags;
-  ink_assert(config_tags != NULL);
+  ink_assert(config_tags != nullptr);
 
   matcher_name        = name;
   config_file_path[0] = '\0';
@@ -718,11 +718,11 @@ ControlMatcher<Data, Result>::ControlMatcher(const char *file_var, const char *n
     ink_strlcpy(config_file_path, config_path, sizeof(config_file_path));
   }
 
-  reMatch   = NULL;
-  urlMatch  = NULL;
-  hostMatch = NULL;
-  ipMatch   = NULL;
-  hrMatch   = NULL;
+  reMatch   = nullptr;
+  urlMatch  = nullptr;
+  hostMatch = nullptr;
+  ipMatch   = nullptr;
+  hrMatch   = nullptr;
 
   if (!(flags & DONT_BUILD_TABLE)) {
     m_numEntries = this->BuildTable();
@@ -749,19 +749,19 @@ void
 ControlMatcher<Data, Result>::Print()
 {
   printf("Control Matcher Table: %s\n", matcher_name);
-  if (hostMatch != NULL) {
+  if (hostMatch != nullptr) {
     hostMatch->Print();
   }
-  if (reMatch != NULL) {
+  if (reMatch != nullptr) {
     reMatch->Print();
   }
-  if (urlMatch != NULL) {
+  if (urlMatch != nullptr) {
     urlMatch->Print();
   }
-  if (ipMatch != NULL) {
+  if (ipMatch != nullptr) {
     ipMatch->Print();
   }
-  if (hrMatch != NULL) {
+  if (hrMatch != nullptr) {
     hrMatch->Print();
   }
 }
@@ -775,19 +775,19 @@ template <class Data, class Result>
 void
 ControlMatcher<Data, Result>::Match(RequestData *rdata, Result *result)
 {
-  if (hostMatch != NULL) {
+  if (hostMatch != nullptr) {
     hostMatch->Match(rdata, result);
   }
-  if (reMatch != NULL) {
+  if (reMatch != nullptr) {
     reMatch->Match(rdata, result);
   }
-  if (urlMatch != NULL) {
+  if (urlMatch != nullptr) {
     urlMatch->Match(rdata, result);
   }
-  if (ipMatch != NULL) {
+  if (ipMatch != nullptr) {
     ipMatch->Match(rdata->get_ip(), rdata, result);
   }
-  if (hrMatch != NULL) {
+  if (hrMatch != nullptr) {
     hrMatch->Match(rdata, result);
   }
 }
@@ -805,9 +805,9 @@ ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
   Tokenizer bufTok("\n");
   tok_iter_state i_state;
   const char *tmp;
-  matcher_line *first = NULL;
+  matcher_line *first = nullptr;
   matcher_line *current;
-  matcher_line *last = NULL;
+  matcher_line *last = nullptr;
   int line_num       = 0;
   int second_pass    = 0;
   int numEntries     = 0;
@@ -826,7 +826,7 @@ ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
   }
   // First get the number of entries
   tmp = bufTok.iterFirst(&i_state);
-  while (tmp != NULL) {
+  while (tmp != nullptr) {
     line_num++;
 
     // skip all blank spaces at beginning of line
@@ -840,7 +840,7 @@ ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
       current = (matcher_line *)ats_malloc(sizeof(matcher_line));
       errptr  = parseConfigLine((char *)tmp, current, config_tags);
 
-      if (errptr != NULL) {
+      if (errptr != nullptr) {
         if (config_tags != &socks_server_tags) {
           config_parse_error error("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errptr);
           SignalError(error.get(), alarmAlready);
@@ -874,8 +874,8 @@ ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
           ink_assert(0);
         }
 
-        if (first == NULL) {
-          ink_assert(last == NULL);
+        if (first == nullptr) {
+          ink_assert(last == nullptr);
           first = last = current;
         } else {
           last->next = current;
@@ -918,7 +918,7 @@ ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
   }
   // Traverse the list and build the records table
   current = first;
-  while (current != NULL) {
+  while (current != nullptr) {
     config_parse_error error = config_parse_error::ok();
 
     second_pass++;
@@ -967,9 +967,9 @@ ControlMatcher<Data, Result>::BuildTable()
   char *file_buf;
   int ret;
 
-  file_buf = readIntoBuffer(config_file_path, matcher_name, NULL);
+  file_buf = readIntoBuffer(config_file_path, matcher_name, nullptr);
 
-  if (file_buf == NULL) {
+  if (file_buf == nullptr) {
     return 1;
   }
 

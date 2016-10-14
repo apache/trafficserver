@@ -58,12 +58,12 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
 
   // If this is the local node, there is no cluster peer info
   //   record.  Remote nodes require a cluster peer info record
-  ink_assert((local == false && cpi != NULL) || (local == true && cpi == NULL));
+  ink_assert((local == false && cpi != nullptr) || (local == true && cpi == nullptr));
 
   // Set up the copy of the records array and initialize it
   if (local == true) {
     node_rec_data.num_recs = 0;
-    node_rec_data.recs     = NULL;
+    node_rec_data.recs     = nullptr;
     recordArraySize        = 0;
     node_rec_first_ix      = 0;
   } else {
@@ -73,13 +73,13 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
     memcpy(node_rec_data.recs, cpi->node_rec_data.recs, recordArraySize);
 
     // Recaculate the old relative index
-    RecGetRecordOrderAndId(node_rec_data.recs[0].name, &node_rec_first_ix, NULL);
+    RecGetRecordOrderAndId(node_rec_data.recs[0].name, &node_rec_first_ix, nullptr);
   }
 
   // Query for the name of the node.  If it is not there, some
   //   their cluster ip address
   name_l = this->readString("proxy.node.hostname_FQ", &name_found);
-  if (name_found == false || name_l == NULL) {
+  if (name_found == false || name_l == nullptr) {
     nameFailed.s_addr = inetAddr;
     mgmt_log("[overviewRecord::overviewRecord] Unable to find hostname for %s\n", inet_ntoa(nameFailed));
     ats_free(name_l); // about to overwrite name_l, so we need to free it first
@@ -127,7 +127,7 @@ overviewRecord::updateStatus(time_t currentTime, ClusterPeerInfo *cpi)
   //  (remote nodes only)
   if (localNode == false) {
     memcpy(node_rec_data.recs, cpi->node_rec_data.recs, recordArraySize);
-    RecGetRecordOrderAndId(node_rec_data.recs[0].name, &node_rec_first_ix, NULL);
+    RecGetRecordOrderAndId(node_rec_data.recs[0].name, &node_rec_first_ix, nullptr);
   }
 }
 
@@ -149,7 +149,7 @@ overviewRecord::readInteger(const char *name, bool *found)
   int rec_status = REC_ERR_OKAY;
   int order      = -1;
   if (localNode == false) {
-    rec_status = RecGetRecordOrderAndId(name, &order, NULL);
+    rec_status = RecGetRecordOrderAndId(name, &order, nullptr);
     if (rec_status == REC_ERR_OKAY) {
       order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
@@ -175,7 +175,7 @@ overviewRecord::readFloat(const char *name, bool *found)
   int rec_status = REC_ERR_OKAY;
   int order      = -1;
   if (localNode == false) {
-    rec_status = RecGetRecordOrderAndId(name, &order, NULL);
+    rec_status = RecGetRecordOrderAndId(name, &order, nullptr);
     if (rec_status == REC_ERR_OKAY) {
       order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
@@ -197,11 +197,11 @@ overviewRecord::readFloat(const char *name, bool *found)
 RecString
 overviewRecord::readString(const char *name, bool *found)
 {
-  RecString rec  = NULL;
+  RecString rec  = nullptr;
   int rec_status = REC_ERR_OKAY;
   int order      = -1;
   if (localNode == false) {
-    rec_status = RecGetRecordOrderAndId(name, &order, NULL);
+    rec_status = RecGetRecordOrderAndId(name, &order, nullptr);
     if (rec_status == REC_ERR_OKAY) {
       order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
@@ -240,7 +240,7 @@ overviewRecord::readData(RecDataT varType, const char *name, bool *found)
   RecDataZero(RECD_NULL, &rec);
 
   if (localNode == false) {
-    rec_status = RecGetRecordOrderAndId(name, &order, NULL);
+    rec_status = RecGetRecordOrderAndId(name, &order, nullptr);
     if (rec_status == REC_ERR_OKAY) {
       order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
@@ -310,8 +310,8 @@ overviewPage::checkForUpdates()
   //
   ink_mutex_acquire(&accessLock);
   ink_mutex_acquire(&(lmgmt->ccom->mutex));
-  currentTime = time(NULL);
-  for (entry = ink_hash_table_iterator_first(lmgmt->ccom->peers, &iterator_state); entry != NULL;
+  currentTime = time(nullptr);
+  for (entry = ink_hash_table_iterator_first(lmgmt->ccom->peers, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(lmgmt->ccom->peers, &iterator_state)) {
     tmp = (ClusterPeerInfo *)ink_hash_table_entry_value(lmgmt->ccom->peers, entry);
 
@@ -355,10 +355,10 @@ overviewPage::addRecord(ClusterPeerInfo *cpi)
 {
   overviewRecord *newRec;
 
-  ink_assert(cpi != NULL);
+  ink_assert(cpi != nullptr);
 
   newRec = new overviewRecord(cpi->inet_address, false, cpi);
-  newRec->updateStatus(time(NULL), cpi);
+  newRec->updateStatus(time(nullptr), cpi);
 
   ink_hash_table_insert(nodeRecords, (InkHashTableKey)cpi->inet_address, (InkHashTableEntry *)newRec);
 
@@ -398,14 +398,14 @@ overviewPage::addSelfRecord()
 // overviewRecord* overviewPage::findNodeByName(const char* nodeName)
 //
 //   Returns a pointer to node name nodeName
-//     If node name is not found, returns NULL
+//     If node name is not found, returns nullptr
 //
 //   CALLEE MUST BE HOLDING this->accessLock
 //
 overviewRecord *
 overviewPage::findNodeByName(const char *nodeName)
 {
-  overviewRecord *current = NULL;
+  overviewRecord *current = nullptr;
   bool nodeFound          = false;
 
   // Do a linear search of the nodes for this nodeName.
@@ -424,11 +424,11 @@ overviewPage::findNodeByName(const char *nodeName)
   if (nodeFound == true) {
     return current;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
-// MgmtString overviewPage::readString(const char* nodeName, char* *name, bool *found = NULL)
+// MgmtString overviewPage::readString(const char* nodeName, char* *name, bool *found = nullptr)
 //
 //   Looks up a node record for a specific by nodeName
 //    CALLEE deallocates the string with free()
@@ -436,7 +436,7 @@ overviewPage::findNodeByName(const char *nodeName)
 MgmtString
 overviewPage::readString(const char *nodeName, const char *name, bool *found)
 {
-  MgmtString r = NULL;
+  MgmtString r = nullptr;
   //  bool nodeFound = false;
   bool valueFound = false;
   overviewRecord *node;
@@ -445,19 +445,19 @@ overviewPage::readString(const char *nodeName, const char *name, bool *found)
 
   node = this->findNodeByName(nodeName);
 
-  if (node != NULL) {
+  if (node != nullptr) {
     r = node->readString(name, &valueFound);
   }
   ink_mutex_release(&accessLock);
 
-  if (found != NULL) {
+  if (found != nullptr) {
     *found = valueFound;
   }
 
   return r;
 }
 
-// MgmtInt overviewPage::readInteger(const char* nodeName, char* *name, bool *found = NULL)
+// MgmtInt overviewPage::readInteger(const char* nodeName, char* *name, bool *found = nullptr)
 //
 //   Looks up a node record for a specific by nodeName
 //
@@ -473,19 +473,19 @@ overviewPage::readInteger(const char *nodeName, const char *name, bool *found)
 
   node = this->findNodeByName(nodeName);
 
-  if (node != NULL) {
+  if (node != nullptr) {
     r = node->readInteger(name, &valueFound);
   }
   ink_mutex_release(&accessLock);
 
-  if (found != NULL) {
+  if (found != nullptr) {
     *found = valueFound;
   }
 
   return r;
 }
 
-// MgmtFloat overviewPage::readFloat(const char* nodeName, char* *name, bool *found = NULL)
+// MgmtFloat overviewPage::readFloat(const char* nodeName, char* *name, bool *found = nullptr)
 //
 //   Looks up a node record for a specific by nodeName
 //
@@ -501,12 +501,12 @@ overviewPage::readFloat(const char *nodeName, const char *name, bool *found)
 
   node = this->findNodeByName(nodeName);
 
-  if (node != NULL) {
+  if (node != nullptr) {
     r = node->readFloat(name, &valueFound);
   }
   ink_mutex_release(&accessLock);
 
-  if (found != NULL) {
+  if (found != nullptr) {
     *found = valueFound;
   }
 
@@ -530,7 +530,7 @@ overviewPage::clusterSumData(RecDataT varType, const char *nodeVar, RecData *sum
   bool found;
   RecData recTmp;
 
-  ink_assert(sum != NULL);
+  ink_assert(sum != nullptr);
   RecDataZero(varType, sum);
 
   for (int i = 0; i < numHosts_local; i++) {
@@ -606,13 +606,13 @@ overviewPage::resolvePeerHostname_ml(const char *peerIP)
   unsigned long int ipAddr;
   InkHashTableValue lookup;
   overviewRecord *peerRecord;
-  char *returnName = NULL;
+  char *returnName = nullptr;
 
   ipAddr = inet_addr(peerIP);
 
   // Check to see if our address is malformed
   if ((long int)ipAddr == -1) {
-    return NULL;
+    return nullptr;
   }
 
   if (ink_hash_table_lookup(nodeRecords, (InkHashTableKey)ipAddr, &lookup)) {

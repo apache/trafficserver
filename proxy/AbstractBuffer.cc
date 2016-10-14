@@ -284,7 +284,7 @@ AbstractBuffer::clear()
   if (unaligned_buffer) {
     delete[] unaligned_buffer;
   }
-  unaligned_buffer = buffer = NULL;
+  unaligned_buffer = buffer = nullptr;
 
   vs_history[AB_STATE_UNUSED] = vs;
 

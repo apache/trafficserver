@@ -108,30 +108,30 @@ HdrTest::test_error_page_selection()
     int expected_La;
     int expected_I;
   } tests[] = {
-    {NULL, NULL, "default", 1, 0, INT_MAX},
-    {"en", NULL, "en", 1, 2, 1},
-    {"ko", NULL, "ko", 1, 2, 1},
-    {"en-us", NULL, "en-us", 1, 5, 1},
-    {"en-US", NULL, "en-us", 1, 5, 1},
-    {"en,ko", NULL, "en", 1, 2, 1},
-    {"ko,en", NULL, "ko", 1, 2, 1},
-    {"en;q=0.7,ko", NULL, "ko", 1, 2, 2},
-    {"en;q=.7,ko", NULL, "ko", 1, 2, 2},
-    {"en;q=.7,ko;q=.7", NULL, "en", 0.7, 2, 1},
-    {"en;q=.7,ko;q=.701", NULL, "ko", 0.701, 2, 2},
-    {"en;q=.7  ,  ko;q=.701", NULL, "ko", 0.701, 2, 2},
-    {"en  ;  q=.7  ,  ko  ;  ;  ;  ; q=.701", NULL, "ko", 0.701, 2, 2},
-    {"en,ko;q=.7", NULL, "en", 1, 2, 1},
-    {"en;q=1,ko;q=.7", NULL, "en", 1, 2, 1},
-    {"en;;;q=1,ko;q=.7", NULL, "en", 1, 2, 1},
-    {"en;;;q=1,,,,ko;q=.7", NULL, "en", 1, 2, 1},
-    {"en;;;q=.7,,,,ko;q=.7", NULL, "en", 0.7, 2, 1},
-    {"en;;;q=.699,,,,ko;q=.7", NULL, "ko", 0.7, 2, 5},
-    {"en;q=0,ko;q=1", NULL, "ko", 1, 2, 2},
-    {"en;q=0, ko;q=1", NULL, "ko", 1, 2, 2},
-    {"en;q=0,ko;q=.5", NULL, "ko", 0.5, 2, 2},
-    {"en;q=0, ko;q=.5", NULL, "ko", 0.5, 2, 2},
-    {"en;q=000000000.00000000000000000000,ko;q=1.0000000000000000000", NULL, "ko", 1, 2, 2},
+    {nullptr, nullptr, "default", 1, 0, INT_MAX},
+    {"en", nullptr, "en", 1, 2, 1},
+    {"ko", nullptr, "ko", 1, 2, 1},
+    {"en-us", nullptr, "en-us", 1, 5, 1},
+    {"en-US", nullptr, "en-us", 1, 5, 1},
+    {"en,ko", nullptr, "en", 1, 2, 1},
+    {"ko,en", nullptr, "ko", 1, 2, 1},
+    {"en;q=0.7,ko", nullptr, "ko", 1, 2, 2},
+    {"en;q=.7,ko", nullptr, "ko", 1, 2, 2},
+    {"en;q=.7,ko;q=.7", nullptr, "en", 0.7, 2, 1},
+    {"en;q=.7,ko;q=.701", nullptr, "ko", 0.701, 2, 2},
+    {"en;q=.7  ,  ko;q=.701", nullptr, "ko", 0.701, 2, 2},
+    {"en  ;  q=.7  ,  ko  ;  ;  ;  ; q=.701", nullptr, "ko", 0.701, 2, 2},
+    {"en,ko;q=.7", nullptr, "en", 1, 2, 1},
+    {"en;q=1,ko;q=.7", nullptr, "en", 1, 2, 1},
+    {"en;;;q=1,ko;q=.7", nullptr, "en", 1, 2, 1},
+    {"en;;;q=1,,,,ko;q=.7", nullptr, "en", 1, 2, 1},
+    {"en;;;q=.7,,,,ko;q=.7", nullptr, "en", 0.7, 2, 1},
+    {"en;;;q=.699,,,,ko;q=.7", nullptr, "ko", 0.7, 2, 5},
+    {"en;q=0,ko;q=1", nullptr, "ko", 1, 2, 2},
+    {"en;q=0, ko;q=1", nullptr, "ko", 1, 2, 2},
+    {"en;q=0,ko;q=.5", nullptr, "ko", 0.5, 2, 2},
+    {"en;q=0, ko;q=.5", nullptr, "ko", 0.5, 2, 2},
+    {"en;q=000000000.00000000000000000000,ko;q=1.0000000000000000000", nullptr, "ko", 1, 2, 2},
   };
 
   bri_box("test_error_page_selection");
@@ -225,7 +225,7 @@ HdrTest::test_parse_date()
     {"Sun, 03 Oct 1999 08:49:37 GMT", "Sunday, 03-Oct-1999 08:49:37 GMT"},
     {"Sun, 07 Nov 1999 08:49:37 GMT", "Sunday, 07-Nov-1999 08:49:37 GMT"},
     {"Sun, 05 Dec 1999 08:49:37 GMT", "Sunday, 05-Dec-1999 08:49:37 GMT"},
-    {NULL, NULL},
+    {nullptr, nullptr},
   };
 
   int i;
@@ -258,7 +258,7 @@ HdrTest::test_format_date()
     "Sun, 03 Jan 1999 08:49:37 GMT",
     "Sun, 05 Dec 1999 08:49:37 GMT",
     "Tue, 25 Apr 2000 20:29:53 GMT",
-    NULL,
+    nullptr,
   };
 
   bri_box("test_format_date");
@@ -397,7 +397,7 @@ HdrTest::test_url()
     start      = strs[i];
     end        = start + old_length;
 
-    url.create(NULL);
+    url.create(nullptr);
     err = url.parse(&start, end);
     if (err < 0) {
       failed = 1;
@@ -410,7 +410,7 @@ HdrTest::test_url()
     url.print(print_buf, 1024, &new_length, &offset);
     print_buf[new_length] = '\0';
 
-    const char *fail_text = NULL;
+    const char *fail_text = nullptr;
 
     if (old_length == new_length) {
       if (memcmp(print_buf, strs[i], new_length) != 0) {
@@ -440,7 +440,8 @@ HdrTest::test_url()
 
   for (unsigned i = 0; i < countof(bad); ++i) {
     const char *x = bad[i];
-    url.create(NULL);
+
+    url.create(nullptr);
     err = url.parse(x, strlen(x));
     url.destroy();
     if (err == PARSE_RESULT_DONE) {
@@ -515,7 +516,7 @@ HdrTest::test_mime()
 
   bool must_copy_strs = 0;
 
-  hdr.create(NULL);
+  hdr.create(nullptr);
   err = hdr.parse(&parser, &start, end, must_copy_strs, false);
 
   if (err < 0) {
@@ -549,7 +550,7 @@ HdrTest::test_mime()
     return (failures_to_status("test_mime", 1));
   }
 
-  t1 = time(NULL);
+  t1 = time(nullptr);
   hdr.set_date(t1);
   t2 = hdr.get_date();
   if (t1 != t2) {
@@ -564,7 +565,7 @@ HdrTest::test_mime()
 
   cc_field = hdr.field_find("Cache-Control", 13);
 
-  if (cc_field == NULL) {
+  if (cc_field == nullptr) {
     printf("FAILED: missing Cache-Control header\n\n");
     return (failures_to_status("test_mime", 1));
   }
@@ -595,7 +596,7 @@ HdrTest::test_mime()
 
   mime_parser_clear(&parser);
 
-  hdr.print(NULL, 0, NULL, NULL);
+  hdr.print(nullptr, 0, nullptr, nullptr);
   printf("\n");
 
   obj_describe((HdrHeapObjImpl *)(hdr.m_mime), true);
@@ -638,7 +639,7 @@ HdrTest::test_http_parser_eos_boundary_cases()
     {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
     {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
     {"", PARSE_RESULT_ERROR, 0},
-    {NULL, 0, 0},
+    {nullptr, 0, 0},
   };
 
   int i, ret, bytes_consumed;
@@ -653,7 +654,7 @@ HdrTest::test_http_parser_eos_boundary_cases()
 
   http_parser_init(&parser);
 
-  for (i = 0; tests[i].msg != NULL; i++) {
+  for (i = 0; tests[i].msg != nullptr; i++) {
     HTTPHdr req_hdr;
 
     start = tests[i].msg;
@@ -670,7 +671,7 @@ HdrTest::test_http_parser_eos_boundary_cases()
     printf("======== test %d (length=%d, consumed=%d)\n", i, (int)strlen(tests[i].msg), bytes_consumed);
     printf("[%s]\n", tests[i].msg);
     printf("\n[");
-    req_hdr.print(NULL, 0, NULL, NULL);
+    req_hdr.print(nullptr, 0, nullptr, nullptr);
     printf("]\n\n");
 
     if ((ret != tests[i].expected_result) || (bytes_consumed != tests[i].expected_bytes_consumed)) {
@@ -737,7 +738,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   printf("%s\n", request);
 
   printf("\n[");
-  req_hdr.print(NULL, 0, NULL, NULL);
+  req_hdr.print(nullptr, 0, nullptr, nullptr);
   printf("]\n\n");
 
   obj_describe(req_hdr.m_http, true);
@@ -773,7 +774,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   printf("%s\n", response);
 
   printf("\n[");
-  rsp_hdr.print(NULL, 0, NULL, NULL);
+  rsp_hdr.print(nullptr, 0, nullptr, nullptr);
   printf("]\n\n");
 
   obj_describe(rsp_hdr.m_http, true);
@@ -1033,7 +1034,7 @@ comp_http_hdr(HTTPHdr *h1, HTTPHdr *h2)
   if (rval != 0) {
     return "compare failed";
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -1052,7 +1053,7 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   HTTPParser parser;
   const char *start;
   const char *end;
-  const char *comp_str = NULL;
+  const char *comp_str = nullptr;
 
   /*** (1) parse the request string into hdr ***/
 
@@ -1664,7 +1665,7 @@ HdrTest::test_http_mutation()
 
   printf("\n======== before mutation ==========\n\n");
   printf("\n[");
-  resp_hdr.print(NULL, 0, NULL, NULL);
+  resp_hdr.print(nullptr, 0, nullptr, nullptr);
   printf("]\n\n");
 
   /*** (2) add in a bunch of header fields ****/
@@ -1707,7 +1708,7 @@ HdrTest::test_http_mutation()
 
   printf("\n======== mutated response ==========\n\n");
   printf("\n[");
-  resp_hdr.print(NULL, 0, NULL, NULL);
+  resp_hdr.print(nullptr, 0, nullptr, nullptr);
   printf("]\n\n");
 
   resp_hdr.destroy();
@@ -1824,7 +1825,7 @@ HdrTest::test_accept_language_match()
     {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *, *;q=0.9", 1.0, 1, 5},
     {"fr-belgian", "de, fr;hi-there;q=0.9, fr;q=0.8, en", 0.9, 2, 2},
     {"fr-belgian", "de, fr;q=0.8, fr;hi-there;q=0.9, en", 0.9, 2, 3},
-    {NULL, NULL, 0.0, 0, 0},
+    {nullptr, nullptr, 0.0, 0, 0},
   };
 
   int i, I, L;
@@ -1890,7 +1891,7 @@ HdrTest::test_accept_charset_match()
     {"euc-jp", "shift_jis, euc-jp;hi-there ; q = 0.5, iso-2022-jp", 0.5, 2},
     {"euc-jp", "shift_jis, euc-jp;hi-there ;; q = 0.5, iso-2022-jp", 0.5, 2},
     {"euc-jp", "shift_jis, euc-jp;hi-there ;; Q = 0.5, iso-2022-jp", 0.5, 2},
-    {NULL, NULL, 0.0, 0},
+    {nullptr, nullptr, 0.0, 0},
   };
 
   int i, I;
@@ -1966,10 +1967,10 @@ HdrTest::test_comma_vals()
     snprintf(field_name, sizeof(field_name), "Test%d", i);
 
     MIMEField *f = hdr.field_create(field_name, (int)strlen(field_name));
-    ink_release_assert(f->m_ptr_value == NULL);
+    ink_release_assert(f->m_ptr_value == nullptr);
 
     hdr.field_attach(f);
-    ink_release_assert(f->m_ptr_value == NULL);
+    ink_release_assert(f->m_ptr_value == nullptr);
 
     hdr.field_value_set(f, tests[i].value, strlen(tests[i].value));
     ink_release_assert(f->m_ptr_value != tests[i].value); // should be copied
@@ -1985,7 +1986,7 @@ HdrTest::test_comma_vals()
 
     for (j = 0; j < tests[i].value_count; j++) {
       const char *val = mime_field_value_get_comma_val(f, &len, j);
-      int offset      = ((val == NULL) ? -1 : (val - f->m_ptr_value));
+      int offset      = ((val == nullptr) ? -1 : (val - f->m_ptr_value));
 
       if ((offset != tests[i].pieces[j].offset) || (len != tests[i].pieces[j].len)) {
         ++failures;
@@ -2067,7 +2068,7 @@ HdrTest::test_set_comma_vals()
     MIMEField *f = hdr.field_create(field_name, (int)strlen(field_name));
     hdr.field_value_set(f, tests[i].old_raw, strlen(tests[i].old_raw));
     mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, tests[i].slice, strlen(tests[i].slice));
-    ink_release_assert(f->m_ptr_value != NULL);
+    ink_release_assert(f->m_ptr_value != nullptr);
 
     if ((f->m_len_value != strlen(tests[i].new_raw)) || (memcmp(f->m_ptr_value, tests[i].new_raw, f->m_len_value) != 0)) {
       ++failures;
@@ -2183,20 +2184,20 @@ HdrTest::test_parse_comma_list()
 
     for (j = 0; j < tests[i].count; j++) {
       Str *cell = list.get_idx(j);
-      if (cell != NULL) {
+      if (cell != nullptr) {
         offset = cell->str - tests[i].value;
       }
 
       if (tests[i].pieces[j].offset == -1) // should not have a piece
       {
-        if (cell != NULL) {
+        if (cell != nullptr) {
           ++failures;
           printf("FAILED: test #%d (string '%s', idx %d) expected NULL piece, got [offset %d len %d]\n", i + 1, tests[i].value, j,
                  offset, (int)cell->len);
         }
       } else // should have a piece
       {
-        if (cell == NULL) {
+        if (cell == nullptr) {
           ++failures;
           printf("FAILED: test #%d (string '%s', idx %d) expected [offset %d len %d], got NULL piece\n", i + 1, tests[i].value, j,
                  tests[i].pieces[j].offset, tests[i].pieces[j].len);

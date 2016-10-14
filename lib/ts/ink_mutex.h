@@ -67,7 +67,7 @@ ink_mutex_init(ink_mutex *m, const char *name)
   (void)name;
 
 #if defined(solaris)
-  if (pthread_mutex_init(m, NULL) != 0) {
+  if (pthread_mutex_init(m, nullptr) != 0) {
     abort();
   }
 #else

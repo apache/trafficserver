@@ -85,7 +85,7 @@ int ink_file_fd_writestring(int fd, const char *buf);
 int ink_filepath_merge(char *buf, int bufsz, const char *rootpath, const char *addpath, int flags = INK_FILEPATH_TRUENAME);
 /**
  Add addpath to the rootpath prepending slash if rootpath
- is not NULL and doesn't end with the slash already and put the
+ is not nullptr and doesn't end with the slash already and put the
  result into path buffer. If the buffer is too small to hold the
  resulting string, required size is returned. On success zero is returned
  */

@@ -82,8 +82,8 @@ send_and_parse_list(OpType op, LLQ *list)
 
   MgmtMarshallInt optype = op;
   MgmtMarshallInt err;
-  MgmtMarshallData reply    = {NULL, 0};
-  MgmtMarshallString strval = NULL;
+  MgmtMarshallData reply    = {nullptr, 0};
+  MgmtMarshallString strval = nullptr;
 
   if (!list) {
     return TS_ERR_PARAMS;
@@ -113,7 +113,7 @@ send_and_parse_list(OpType op, LLQ *list)
   // tokenize the strval and put into LLQ; use Tokenizer
   tokens.Initialize(strval, COPY_TOKS);
   tok = tokens.iterFirst(&i_state);
-  while (tok != NULL) {
+  while (tok != nullptr) {
     enqueue(list, ats_strdup(tok)); // add token to LLQ
     tok = tokens.iterNext(&i_state);
   }
@@ -146,7 +146,7 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action
   MgmtMarshallString name  = const_cast<MgmtMarshallString>(rec_name);
   MgmtMarshallString value = const_cast<MgmtMarshallString>(rec_val);
 
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallData reply = {nullptr, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt action = TS_ACTION_UNDEFINED;
 
@@ -212,7 +212,7 @@ Init(const char *socket_path, TSInitOptionT options)
       return TS_ERR_SYS_CALL;
     }
   } else {
-    remote_event_callbacks = NULL;
+    remote_event_callbacks = nullptr;
   }
 
   // try to connect to traffic manager
@@ -226,9 +226,9 @@ Init(const char *socket_path, TSInitOptionT options)
 
   // if connected, create event thread that listens for events from TM
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
-    ts_event_thread = ink_thread_create(event_poll_thread_main, &event_socket_fd, 0, 0, NULL);
+    ts_event_thread = ink_thread_create(event_poll_thread_main, &event_socket_fd, 0, 0, nullptr);
   } else {
-    ts_event_thread = static_cast<ink_thread>(NULL);
+    ts_event_thread = ink_thread_null();
   }
 
 END:
@@ -236,9 +236,9 @@ END:
   // create thread that periodically checks the socket connection
   // with TM alive - reconnects if not alive
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_SOCK_TESTS)) {
-    ts_test_thread = ink_thread_create(socket_test_thread, NULL, 0, 0, NULL);
+    ts_test_thread = ink_thread_create(socket_test_thread, nullptr, 0, 0, nullptr);
   } else {
-    ts_test_thread = static_cast<ink_thread>(NULL);
+    ts_test_thread = ink_thread_null();
   }
 
   return err;
@@ -284,9 +284,9 @@ Terminate()
   }
 
   // Clear operation
-  ts_test_thread  = static_cast<ink_thread>(NULL);
-  ts_event_thread = static_cast<ink_thread>(NULL);
-  set_socket_paths(NULL); // clear the socket_path
+  ts_test_thread  = ink_thread_null();
+  ts_event_thread = ink_thread_null();
+  set_socket_paths(nullptr); // clear the socket_path
 
   return TS_ERR_OKAY;
 }
@@ -299,7 +299,7 @@ ProxyStateGet()
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = PROXY_STATE_GET;
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallData reply = {nullptr, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt state;
 
@@ -338,13 +338,13 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 TSMgmtError
 ServerBacktrace(unsigned options, char **trace)
 {
-  ink_release_assert(trace != NULL);
+  ink_release_assert(trace != nullptr);
   TSMgmtError ret;
   MgmtMarshallInt optype = SERVER_BACKTRACE;
   MgmtMarshallInt err;
   MgmtMarshallInt flags     = options;
-  MgmtMarshallData reply    = {NULL, 0};
-  MgmtMarshallString strval = NULL;
+  MgmtMarshallData reply    = {nullptr, 0};
+  MgmtMarshallString strval = nullptr;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, SERVER_BACKTRACE, &optype, &flags);
   if (ret != TS_ERR_OKAY) {
@@ -501,12 +501,12 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
 {
   TSMgmtError ret;
 
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallData reply = {nullptr, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt rclass;
   MgmtMarshallInt type;
-  MgmtMarshallString name = NULL;
-  MgmtMarshallData value  = {NULL, 0};
+  MgmtMarshallString name = nullptr;
+  MgmtMarshallData value  = {nullptr, 0};
 
   ink_zero(*rec_ele);
   rec_ele->rec_type = TS_REC_UNDEFINED;
@@ -543,7 +543,7 @@ static TSMgmtError
 mgmt_record_describe_reply(TSConfigRecordDescription *val)
 {
   TSMgmtError ret;
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallData reply = {nullptr, 0};
 
   ret = recv_mgmt_message(main_socket_fd, reply);
   if (ret != TS_ERR_OKAY) {
@@ -551,10 +551,10 @@ mgmt_record_describe_reply(TSConfigRecordDescription *val)
   }
 
   MgmtMarshallInt err;
-  MgmtMarshallString name = NULL;
-  MgmtMarshallString expr = NULL;
-  MgmtMarshallData value  = {NULL, 0};
-  MgmtMarshallData deflt  = {NULL, 0};
+  MgmtMarshallString name = nullptr;
+  MgmtMarshallString expr = nullptr;
+  MgmtMarshallData value  = {nullptr, 0};
+  MgmtMarshallData deflt  = {nullptr, 0};
 
   MgmtMarshallInt rtype;
   MgmtMarshallInt rclass;
@@ -836,12 +836,12 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   MgmtMarshallInt optype = FILE_READ;
   MgmtMarshallInt fid    = file;
 
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallData reply = {nullptr, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt vers;
-  MgmtMarshallData data = {NULL, 0};
+  MgmtMarshallData data = {nullptr, 0};
 
-  *text = NULL;
+  *text = nullptr;
   *size = *version = 0;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, FILE_READ, &optype, &fid);
@@ -963,7 +963,7 @@ EventIsActive(const char *event_name, bool *is_current)
   MgmtMarshallInt optype  = EVENT_ACTIVE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallData reply = {nullptr, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt bval;
 
@@ -1008,7 +1008,7 @@ EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data
   bool first_time = false;
   TSMgmtError ret;
 
-  if (func == NULL) {
+  if (func == nullptr) {
     return TS_ERR_PARAMS;
   }
   if (!remote_event_callbacks) {

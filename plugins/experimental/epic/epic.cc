@@ -250,7 +250,7 @@ epic_name_is_valid(const char *name)
   // In practice the only metrics we have that are not OK are the
   // proxy.process.cache.frags_per_doc.3+ set. Let's just check for
   // that rather than regexing everything all the time.
-  return strchr(name, '+') == NULL;
+  return strchr(name, '+') == nullptr;
 }
 
 static void
@@ -260,8 +260,8 @@ epic_write_stats(TSRecordType /* rtype */, void *edata, int /* registered */, co
   epic_sample_context *sample = (epic_sample_context *)edata;
   const char *etype;
 
-  TSReleaseAssert(sample != NULL);
-  TSReleaseAssert(sample->sample_fp != NULL);
+  TSReleaseAssert(sample != nullptr);
+  TSReleaseAssert(sample->sample_fp != nullptr);
 
   if (!epic_name_is_valid(name)) {
     return;
@@ -323,10 +323,10 @@ epic_flush_stats(TSCont /* contp */, TSEvent /* event */, void * /* edata */)
   char path[MAXPATHLEN];
   epic_sample_context sample;
 
-  TSReleaseAssert(epic_prefix != NULL);
+  TSReleaseAssert(epic_prefix != nullptr);
   TSReleaseAssert(*epic_prefix != '\0');
 
-  sample.sample_time = time(NULL);
+  sample.sample_time = time(nullptr);
   debug("%s/trafficserver.%lld.%llu", epic_prefix, (long long)sample.sample_time, (unsigned long long)getpid());
   if (gethostname(sample.sample_host, sizeof(sample.sample_host)) == -1) {
     error("gethostname() failed: %s", strerror(errno));
@@ -339,7 +339,7 @@ epic_flush_stats(TSCont /* contp */, TSEvent /* event */, void * /* edata */)
   // XXX track the file size and preallocate ...
 
   sample.sample_fp = fopen(path, "w");
-  if (sample.sample_fp == NULL) {
+  if (sample.sample_fp == nullptr) {
     error("failed to create %s: %s", path, strerror(errno));
     return 0;
   }
@@ -357,9 +357,9 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   static const struct option longopts[] = {
-    {const_cast<char *>("directory"), required_argument, NULL, 'd'},
-    {const_cast<char *>("period"), required_argument, NULL, 'p'},
-    {NULL, 0, NULL, 0},
+    {const_cast<char *>("directory"), required_argument, nullptr, 'd'},
+    {const_cast<char *>("period"), required_argument, nullptr, 'p'},
+    {nullptr, 0, nullptr, 0},
   };
 
   TSPluginRegistrationInfo info;
@@ -376,7 +376,7 @@ TSPluginInit(int argc, const char *argv[])
   epic_prefix = TSstrdup("/usr/local/epic/cache/eapi");
 
   for (;;) {
-    int opt = getopt_long(argc, (char *const *)argv, "p:d:", longopts, NULL);
+    int opt = getopt_long(argc, (char *const *)argv, "p:d:", longopts, nullptr);
 
     if (opt == -1) {
       break; /* done */

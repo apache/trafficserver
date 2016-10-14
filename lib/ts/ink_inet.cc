@@ -52,9 +52,9 @@ ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data *data)
 #else // RENTRENT_GETHOSTBYNAME
 #if GETHOSTBYNAME_R_GLIBC2
 
-  struct hostent *addrp = NULL;
+  struct hostent *addrp = nullptr;
   int res               = gethostbyname_r(hostname, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp, &data->herrno);
-  struct hostent *r     = NULL;
+  struct hostent *r     = nullptr;
   if (!res && addrp)
     r               = addrp;
 
@@ -69,8 +69,8 @@ struct hostent *
 ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyaddr_r_data *data)
 {
 #if GETHOSTBYNAME_R_GLIBC2
-  struct hostent *r     = NULL;
-  struct hostent *addrp = NULL;
+  struct hostent *r     = nullptr;
+  struct hostent *addrp = nullptr;
   int res = gethostbyaddr_r((char *)ip, len, type, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp, &data->herrno);
   if (!res && addrp)
     r = addrp;
@@ -93,7 +93,7 @@ ink_inet_addr(const char *s)
   int n         = 0;
   uint32_t base = 10;
 
-  if (NULL == s) {
+  if (nullptr == s) {
     return htonl((uint32_t)-1);
   }
 
@@ -155,7 +155,7 @@ ink_inet_addr(const char *s)
 const char *
 ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
 {
-  const char *zret = 0;
+  const char *zret = nullptr;
 
   switch (addr->sa_family) {
   case AF_INET:
@@ -489,7 +489,7 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
     ink_zero(ai_hints);
     ai_hints.ai_family = AF_UNSPEC;
     ai_hints.ai_flags  = AI_ADDRCONFIG;
-    zret               = getaddrinfo(addr_text.data(), 0, &ai_hints, &ai_result);
+    zret               = getaddrinfo(addr_text.data(), nullptr, &ai_hints, &ai_result);
 
     if (0 == zret) {
       // Walk the returned addresses and pick the "best".
@@ -502,8 +502,8 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
         GL  // Global.
       } spot_type = NA,
         ip4_type = NA, ip6_type = NA;
-      sockaddr const *ip4_src = 0;
-      sockaddr const *ip6_src = 0;
+      sockaddr const *ip4_src = nullptr;
+      sockaddr const *ip6_src = nullptr;
 
       for (addrinfo *ai_spot = ai_result; ai_spot; ai_spot = ai_spot->ai_next) {
         sockaddr const *ai_ip = ai_spot->ai_addr;
@@ -595,18 +595,20 @@ REGRESSION_TEST(Ink_Inet)(RegressionTest *t, int /* atype */, int *pstatus)
 
   // Test ats_ip_parse() ...
   {
-    struct ip_parse_spec names[] = {{"::", "::", NULL, NULL},
-                                    {"[::1]:99", "::1", "99", NULL},
-                                    {"127.0.0.1:8080", "127.0.0.1", "8080", NULL},
-                                    {"127.0.0.1:8080-Bob", "127.0.0.1", "8080", "-Bob"},
-                                    {"127.0.0.1:", "127.0.0.1", NULL, ":"},
-                                    {"foo.example.com", "foo.example.com", NULL, NULL},
-                                    {"foo.example.com:99", "foo.example.com", "99", NULL},
-                                    {"ffee::24c3:3349:3cee:0143", "ffee::24c3:3349:3cee:0143", NULL, NULL},
-                                    {"fe80:88b5:4a:20c:29ff:feae:1c33:8080", "fe80:88b5:4a:20c:29ff:feae:1c33:8080", NULL, NULL},
-                                    {"[ffee::24c3:3349:3cee:0143]", "ffee::24c3:3349:3cee:0143", NULL, NULL},
-                                    {"[ffee::24c3:3349:3cee:0143]:80", "ffee::24c3:3349:3cee:0143", "80", NULL},
-                                    {"[ffee::24c3:3349:3cee:0143]:8080x", "ffee::24c3:3349:3cee:0143", "8080", "x"}};
+    struct ip_parse_spec names[] = {
+      {"::", "::", nullptr, nullptr},
+      {"[::1]:99", "::1", "99", nullptr},
+      {"127.0.0.1:8080", "127.0.0.1", "8080", nullptr},
+      {"127.0.0.1:8080-Bob", "127.0.0.1", "8080", "-Bob"},
+      {"127.0.0.1:", "127.0.0.1", nullptr, ":"},
+      {"foo.example.com", "foo.example.com", nullptr, nullptr},
+      {"foo.example.com:99", "foo.example.com", "99", nullptr},
+      {"ffee::24c3:3349:3cee:0143", "ffee::24c3:3349:3cee:0143", nullptr, nullptr},
+      {"fe80:88b5:4a:20c:29ff:feae:1c33:8080", "fe80:88b5:4a:20c:29ff:feae:1c33:8080", nullptr, nullptr},
+      {"[ffee::24c3:3349:3cee:0143]", "ffee::24c3:3349:3cee:0143", nullptr, nullptr},
+      {"[ffee::24c3:3349:3cee:0143]:80", "ffee::24c3:3349:3cee:0143", "80", nullptr},
+      {"[ffee::24c3:3349:3cee:0143]:8080x", "ffee::24c3:3349:3cee:0143", "8080", "x"},
+    };
 
     for (unsigned i = 0; i < countof(names); ++i) {
       ip_parse_spec const &s = names[i];
@@ -664,7 +666,7 @@ ats_tcp_somaxconn()
 
 /* Darwin version ... */
 #if HAVE_SYSCTLBYNAME
-  if (sysctlbyname("kern.ipc.somaxconn", NULL, NULL, &value, sizeof(value)) == 0) {
+  if (sysctlbyname("kern.ipc.somaxconn", nullptr, nullptr, &value, sizeof(value)) == 0) {
     return value;
   }
 #endif
@@ -674,7 +676,7 @@ ats_tcp_somaxconn()
     textBuffer text(0);
     text.slurp(fd);
     if (!text.empty()) {
-      value = strtoul(text.bufPtr(), NULL, 10);
+      value = strtoul(text.bufPtr(), nullptr, 10);
     }
     close(fd);
   }

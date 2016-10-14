@@ -36,7 +36,7 @@
 unsigned SIZE_clusterFunction = countof(clusterFunction);
 
 // hook for testing
-ClusterFunction *ptest_ClusterFunction = NULL;
+ClusterFunction *ptest_ClusterFunction = nullptr;
 
 // global bit buckets for closed channels
 static char channel_dummy_input[DEFAULT_MAX_BUFFER_SIZE];
@@ -133,12 +133,12 @@ verify_peters_data(char *ap, int l)
 /*************************************************************************/
 
 ClusterHandler::ClusterHandler()
-  : net_vc(0),
-    thread(0),
+  : net_vc(nullptr),
+    thread(nullptr),
     ip(0),
     port(0),
-    hostname(NULL),
-    machine(NULL),
+    hostname(nullptr),
+    machine(nullptr),
     ifd(-1),
     id(-1),
     dead(true),
@@ -146,13 +146,13 @@ ClusterHandler::ClusterHandler()
     active(false),
     on_stolen_thread(false),
     n_channels(0),
-    channels(NULL),
-    channel_data(NULL),
+    channels(nullptr),
+    channel_data(nullptr),
     connector(false),
     cluster_connect_state(ClusterHandler::CLCON_INITIAL),
     needByteSwap(false),
     configLookupFails(0),
-    cluster_periodic_event(0),
+    cluster_periodic_event(nullptr),
     read(this, true),
     write(this, false),
     current_time(0),
@@ -161,7 +161,7 @@ ClusterHandler::ClusterHandler()
     n_since_last_report(0),
     last_cluster_op_enable(0),
     last_trace_dump(0),
-    clm(0),
+    clm(nullptr),
     disable_remote_cluster_ops(0),
     pw_write_descriptors_built(0),
     pw_freespace_descriptors_built(0),
@@ -238,7 +238,7 @@ ClusterHandler::~ClusterHandler()
   bool free_m = false;
   if (net_vc) {
     net_vc->do_io(VIO::CLOSE);
-    net_vc = 0;
+    net_vc = nullptr;
   }
   if (machine) {
     MUTEX_TAKE_LOCK(the_cluster_config_mutex, this_ethread());
@@ -248,35 +248,35 @@ ClusterHandler::~ClusterHandler()
     if (free_m)
       free_ClusterMachine(machine);
   }
-  machine = NULL;
+  machine = nullptr;
   ats_free(hostname);
-  hostname = NULL;
+  hostname = nullptr;
   ats_free(channels);
-  channels = NULL;
+  channels = nullptr;
   if (channel_data) {
     for (int i = 0; i < n_channels; ++i) {
       if (channel_data[i]) {
         ats_free(channel_data[i]);
-        channel_data[i] = 0;
+        channel_data[i] = nullptr;
       }
     }
     ats_free(channel_data);
-    channel_data = NULL;
+    channel_data = nullptr;
   }
   if (read_vcs)
     delete[] read_vcs;
-  read_vcs = NULL;
+  read_vcs = nullptr;
 
   if (write_vcs)
     delete[] write_vcs;
-  write_vcs = NULL;
+  write_vcs = nullptr;
 
   if (clm) {
     delete clm;
-    clm = NULL;
+    clm = nullptr;
   }
 #ifdef CLUSTER_STATS
-  message_blk = 0;
+  message_blk = nullptr;
 #endif
 }
 
@@ -294,8 +294,8 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection *vc)
     ClusterVC_remove_read(vc);
   if (vc->write.queue)
     ClusterVC_remove_write(vc);
-  vc->read.vio.mutex  = NULL;
-  vc->write.vio.mutex = NULL;
+  vc->read.vio.mutex  = nullptr;
+  vc->write.vio.mutex = nullptr;
 
   ink_assert(!vc->read_locked);
   ink_assert(!vc->write_locked);
@@ -311,7 +311,7 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection *vc)
       ByteBankDescriptor::ByteBankDescriptor_free(d);
     }
   }
-  vc->read_block = 0;
+  vc->read_block = nullptr;
 
   ink_assert(!vc->write_list);
   ink_assert(!vc->write_list_tail);
@@ -371,11 +371,11 @@ ClusterHandler::close_free_lock(ClusterVConnection *vc, ClusterVConnState *s)
   if (s == &vc->read) {
     if (vc->read_locked)
       MUTEX_UNTAKE_LOCK(vc->read_locked, thread);
-    vc->read_locked = NULL;
+    vc->read_locked = nullptr;
   } else {
     if (vc->write_locked)
       MUTEX_UNTAKE_LOCK(vc->write_locked, thread);
-    vc->write_locked = NULL;
+    vc->write_locked = nullptr;
   }
   close_ClusterVConnection(vc);
 }
@@ -392,7 +392,7 @@ ClusterHandler::build_data_vector(char *d, int len, bool read_flag)
   ink_assert(s.iov);
 
   s.msg.count       = 1;
-  s.iov[0].iov_base = 0;
+  s.iov[0].iov_base = nullptr;
   s.iov[0].iov_len  = len;
   s.block[0]        = new_IOBufferBlock();
   s.block[0]->set(new_constant_IOBufferData(d, len));
@@ -465,7 +465,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
     // Setup vector for write of header, descriptors and control data
     //////////////////////////////////////////////////////////////////////
     len                       = sizeof(ClusterMsgHeader) + (s.msg.count * sizeof(Descriptor)) + s.msg.control_bytes;
-    s.iov[new_n_iov].iov_base = 0;
+    s.iov[new_n_iov].iov_base = nullptr;
     s.iov[new_n_iov].iov_len  = len;
     s.block[new_n_iov]        = s.msg.get_block_header();
 
@@ -481,7 +481,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
       // Setup vector for read of header
       ////////////////////////////////////
       len                       = sizeof(ClusterMsgHeader);
-      s.iov[new_n_iov].iov_base = 0;
+      s.iov[new_n_iov].iov_base = nullptr;
       s.iov[new_n_iov].iov_len  = len;
       s.block[new_n_iov]        = s.msg.get_block_header();
 
@@ -496,7 +496,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
       // Setup vector for read of Descriptors+control data
       /////////////////////////////////////////////////////////
       len                       = (s.msg.count * sizeof(Descriptor)) + s.msg.control_bytes;
-      s.iov[new_n_iov].iov_base = 0;
+      s.iov[new_n_iov].iov_base = nullptr;
       s.iov[new_n_iov].iov_len  = len;
       s.block[new_n_iov]        = s.msg.get_block_descriptor();
 
@@ -539,7 +539,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
             *((uint32_t *)ic->data) = UNDEFINED_CLUSTER_FUNCTION;
             incoming_control.enqueue(ic);
           }
-          s.iov[new_n_iov].iov_base = 0;
+          s.iov[new_n_iov].iov_base = nullptr;
           s.iov[new_n_iov].iov_len  = ic->len;
           s.block[new_n_iov]        = ic->get_block();
           to_do += s.iov[new_n_iov].iov_len;
@@ -550,7 +550,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
           // Outgoing Control
           ///////////////////////
           ink_assert(oc);
-          s.iov[new_n_iov].iov_base = 0;
+          s.iov[new_n_iov].iov_base = nullptr;
           s.iov[new_n_iov].iov_len  = oc->len;
           s.block[new_n_iov]        = oc->get_block();
           to_do += s.iov[new_n_iov].iov_len;
@@ -577,7 +577,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
             if (!MUTEX_TAKE_TRY_LOCK_FOR_SPIN(vc->read.vio.mutex, thread, vc->read.vio._cont, READ_LOCK_SPIN_COUNT))
 #endif
             {
-              vc->read_locked = 0;
+              vc->read_locked = nullptr;
             } else {
               vc->read_locked = vc->read.vio.mutex;
             }
@@ -600,12 +600,12 @@ ClusterHandler::build_initial_vector(bool read_flag)
               int64_t index  = buffer_size_to_index(s.msg.descriptor[i].length, MAX_BUFFER_SIZE_INDEX);
               vc->read_block->alloc(index);
 
-              s.iov[new_n_iov].iov_base = 0;
+              s.iov[new_n_iov].iov_base = nullptr;
               s.block[new_n_iov]        = vc->read_block->clone();
 
             } else {
               Debug(CL_NOTE, "dumping cluster read data");
-              s.iov[new_n_iov].iov_base = 0;
+              s.iov[new_n_iov].iov_base = nullptr;
               s.block[new_n_iov]        = new_IOBufferBlock();
               s.block[new_n_iov]->set(new_constant_IOBufferData(channel_dummy_input, DEFAULT_MAX_BUFFER_SIZE));
             }
@@ -621,12 +621,12 @@ ClusterHandler::build_initial_vector(bool read_flag)
             }
             if (vc_ok_write(vc) || remote_write_fill) {
               if (remote_write_fill) {
-                s.iov[new_n_iov].iov_base = 0;
+                s.iov[new_n_iov].iov_base = nullptr;
                 ink_release_assert((int)s.msg.descriptor[i].length == bytes_IOBufferBlockList(vc->remote_write_block, 1));
                 s.block[new_n_iov] = vc->remote_write_block;
 
               } else {
-                s.iov[new_n_iov].iov_base = 0;
+                s.iov[new_n_iov].iov_base = nullptr;
                 ink_release_assert((int)s.msg.descriptor[i].length <= vc->write_list_bytes);
                 s.block[new_n_iov] = vc->write_list;
                 vc->write_list     = consume_IOBufferBlockList(vc->write_list, (int)s.msg.descriptor[i].length);
@@ -640,7 +640,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
               }
             } else {
               Debug(CL_NOTE, "faking cluster write data");
-              s.iov[new_n_iov].iov_base = 0;
+              s.iov[new_n_iov].iov_base = nullptr;
               s.block[new_n_iov]        = new_IOBufferBlock();
               s.block[new_n_iov]->set(new_constant_IOBufferData(channel_dummy_output, DEFAULT_MAX_BUFFER_SIZE));
               // Make block read_avail == descriptor[].length
@@ -649,7 +649,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
           }
         } else {
           // VC has been deleted, need to dump the bits...
-          s.iov[new_n_iov].iov_base = 0;
+          s.iov[new_n_iov].iov_base = nullptr;
           s.block[new_n_iov]        = new_IOBufferBlock();
 
           if (read_flag) {
@@ -673,7 +673,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
   }
   // Release IOBufferBlock references used in previous i/o operation
   for (n = new_n_iov; n < MAX_TCOUNT; ++n) {
-    s.block[n] = 0;
+    s.block[n] = nullptr;
   }
 
   // Initialize i/o state variables
@@ -768,14 +768,14 @@ ClusterHandler::get_read_locks()
           !MUTEX_TAKE_TRY_LOCK_FOR_SPIN(vc->read.vio.mutex, thread, vc->read.vio._cont, READ_LOCK_SPIN_COUNT)) {
         // Pending byte bank completions or lock acquire failure.
 
-        vc->read_locked = NULL;
+        vc->read_locked = nullptr;
         continue;
       }
       // Since we now have the mutex, really see if reads are allowed.
 
       if (!vc_ok_read(vc)) {
         MUTEX_UNTAKE_LOCK(vc->read.vio.mutex, thread);
-        vc->read_locked = NULL;
+        vc->read_locked = nullptr;
         continue;
       }
       // Lock acquire success, move read bytes into VC
@@ -825,7 +825,7 @@ ClusterHandler::get_write_locks()
       if (!MUTEX_TAKE_TRY_LOCK_FOR_SPIN(vc->write.vio.mutex, thread, vc->write.vio._cont, WRITE_LOCK_SPIN_COUNT)) {
 #endif
         // write lock acquire failed, free all acquired locks and retry later
-        vc->write_locked = 0;
+        vc->write_locked = nullptr;
         free_locks(CLUSTER_WRITE, i);
         return false;
       }
@@ -995,7 +995,7 @@ ClusterHandler::process_large_control_msgs()
   // Place non cluster large incoming messages on external
   // incoming queue for processing by callout threads.
   ////////////////////////////////////////////////////////////////
-  IncomingControl *ic = NULL;
+  IncomingControl *ic = nullptr;
   uint32_t cluster_function_index;
 
   while ((ic = incoming_control.dequeue())) {
@@ -1081,7 +1081,7 @@ ClusterHandler::add_to_byte_bank(ClusterVConnection *vc)
   } else {
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_MULTILEVEL_BANK_STAT);
   }
-  vc->read_block = 0;
+  vc->read_block = nullptr;
 }
 
 void
@@ -1166,14 +1166,14 @@ ClusterHandler::process_incoming_callouts(ProxyMutex *mutex)
 
     while (ic_ext) {
       ic_ext_next       = (IncomingControl *)ic_ext->link.next;
-      ic_ext->link.next = NULL;
+      ic_ext->link.next = nullptr;
       local_incoming_control.push(ic_ext);
       ic_ext = ic_ext_next;
     }
 
     // Perform callout actions for each message.
     int small_control_msg;
-    IncomingControl *ic = NULL;
+    IncomingControl *ic = nullptr;
 
     while ((ic = local_incoming_control.pop())) {
       LOG_EVENT_TIME(ic->recognized_time, inmsg_time_dist, inmsg_events);
@@ -1386,7 +1386,7 @@ ClusterHandler::finish_delayed_reads()
   // the node to node connection. For explanation of "delayed read" see
   // comments at the beginning of the member functions for ClusterHandler.
   //
-  ClusterVConnection *vc = NULL;
+  ClusterVConnection *vc = nullptr;
   DLL<ClusterVConnectionBase> l;
   while ((vc = (ClusterVConnection *)delayed_reads.pop())) {
     MUTEX_TRY_LOCK_SPIN(lock, vc->read.vio.mutex, thread, READ_LOCK_SPIN_COUNT);
@@ -1439,8 +1439,8 @@ ClusterHandler::update_channels_written()
             Debug(CL_TRACE, "update_channels_written chan=%d seqno=%d len=%d", write.msg.descriptor[i].channel,
                   write.msg.descriptor[i].sequence_number, write.msg.descriptor[i].length);
             vc->pending_remote_fill = 0;
-            vc->remote_write_block  = 0; // free data block
-            continue;                    // ignore remote write fill VC(s)
+            vc->remote_write_block  = nullptr; // free data block
+            continue;                          // ignore remote write fill VC(s)
           }
 
           ClusterVConnState *s = &vc->write;
@@ -1464,7 +1464,7 @@ ClusterHandler::update_channels_written()
         //
         OutgoingControl *oc = write.msg.outgoing_control.dequeue();
         oc->free_data();
-        oc->mutex = NULL;
+        oc->mutex = nullptr;
         now       = Thread::get_hrtime();
         CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_SEND_TIME_STAT, now - oc->submit_time);
         LOG_EVENT_TIME(oc->submit_time, cluster_send_time_dist, cluster_send_events);
@@ -1485,12 +1485,12 @@ ClusterHandler::update_channels_written()
 
     // Free data descriptor
     args->data_oc->free_data(); // invoke memory free callback
-    args->data_oc->mutex = NULL;
+    args->data_oc->mutex = nullptr;
     args->data_oc->freeall();
 
     // Free descriptor
     hdr_oc->free_data();
-    hdr_oc->mutex = NULL;
+    hdr_oc->mutex = nullptr;
     now           = Thread::get_hrtime();
     CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_SEND_TIME_STAT, now - hdr_oc->submit_time);
     LOG_EVENT_TIME(hdr_oc->submit_time, cluster_send_time_dist, cluster_send_events);
@@ -1520,7 +1520,7 @@ ClusterHandler::build_write_descriptors()
   while (vc) {
     enter_exit(&cls_build_writes_entered, &cls_writes_exited);
     vc_next              = (ClusterVConnection *)vc->ready_alink.next;
-    vc->ready_alink.next = NULL;
+    vc->ready_alink.next = nullptr;
     list_len++;
     if (VC_CLUSTER_CLOSED == vc->type) {
       vc->in_vcs = false;
@@ -1591,7 +1591,7 @@ ClusterHandler::build_write_descriptors()
 
       } else {
         MUTEX_UNTAKE_LOCK(vc->write_locked, thread);
-        vc->write_locked = NULL;
+        vc->write_locked = nullptr;
 
         if (channels[vc->channel] == vc)
           CLUSTER_INCREMENT_DYN_STAT(CLUSTER_NO_REMOTE_SPACE_STAT);
@@ -1624,7 +1624,7 @@ ClusterHandler::build_freespace_descriptors()
   while (vc) {
     enter_exit(&cls_build_reads_entered, &cls_reads_exited);
     vc_next              = (ClusterVConnection *)vc->ready_alink.next;
-    vc->ready_alink.next = NULL;
+    vc->ready_alink.next = nullptr;
     list_len++;
     if (VC_CLUSTER_CLOSED == vc->type) {
       vc->in_vcs = false;
@@ -1701,7 +1701,7 @@ ClusterHandler::build_controlmsg_descriptors()
   //
   // Build descriptors for control messages
   //
-  OutgoingControl *c = NULL;
+  OutgoingControl *c = nullptr;
   int control_bytes  = 0;
   int q              = 0;
 
@@ -1711,7 +1711,7 @@ ClusterHandler::build_controlmsg_descriptors()
       // Move elements from global outgoing_control to local queue
       OutgoingControl *c_next;
       c = (OutgoingControl *)ink_atomiclist_popall(&outgoing_control_al[q]);
-      if (c == 0) {
+      if (c == nullptr) {
         if (++q >= CLUSTER_CMSG_QUEUES) {
           break;
         } else {
@@ -1720,7 +1720,7 @@ ClusterHandler::build_controlmsg_descriptors()
       }
       while (c) {
         c_next       = (OutgoingControl *)c->link.next;
-        c->link.next = NULL;
+        c->link.next = nullptr;
         outgoing_control[q].push(c);
         c = c_next;
       }
@@ -1803,17 +1803,17 @@ ClusterHandler::build_controlmsg_descriptors()
 
         // Free compound message
         oc_header->free_data();
-        oc_header->mutex = NULL;
+        oc_header->mutex = nullptr;
         oc_header->freeall();
 
         // Free response message
         oc_msg->free_data();
-        oc_msg->mutex = 0;
+        oc_msg->mutex = nullptr;
         oc_msg->freeall();
 
         // Free data descriptor
         oc_data->free_data(); // invoke memory free callback
-        oc_data->mutex = 0;
+        oc_data->mutex = nullptr;
         oc_data->freeall();
       }
 
@@ -1848,14 +1848,14 @@ ClusterHandler::add_small_controlmsg_descriptors()
   // Move small control message data to free space after descriptors
   //
   char *p            = (char *)&write.msg.descriptor[write.msg.count];
-  OutgoingControl *c = NULL;
+  OutgoingControl *c = nullptr;
 
   while ((c = write.msg.outgoing_small_control.dequeue())) {
     *(int32_t *)p = c->len;
     p += sizeof(int32_t);
     memcpy(p, c->data, c->len);
     c->free_data();
-    c->mutex = NULL;
+    c->mutex = nullptr;
     p += c->len;
     ink_hrtime now = Thread::get_hrtime();
     CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_SEND_TIME_STAT, now - c->submit_time);
@@ -1883,7 +1883,7 @@ struct DestructorLock {
     if (have_lock && m) {
       Mutex_unlock(m, t);
     }
-    m = 0;
+    m = nullptr;
   }
   EThread *t;
   Ptr<ProxyMutex> m;
@@ -1925,7 +1925,7 @@ retry:
       ink_assert(lock.m);
 #endif
       vc->write_locked = lock.m;
-      lock.m           = 0;
+      lock.m           = nullptr;
       lock.have_lock   = false;
       return 1;
     } else {
@@ -2069,7 +2069,7 @@ retry:
     ink_assert(s->vio.mutex);
 #endif
     vc->write_locked = lock.m;
-    lock.m           = 0;
+    lock.m           = nullptr;
     lock.have_lock   = false;
     return 1;
   } else {
@@ -2179,7 +2179,7 @@ retry:
       Debug("cluster_vc_xfer", "finish initial data push ch %d bytes %" PRId64, vc->channel, vc->read_block->read_avail());
 
       s->vio.buffer.writer()->append_block(vc->read_block->clone());
-      vc->read_block = 0;
+      vc->read_block = nullptr;
 
     } else {
       bytes_to_move = ntodo;
@@ -2318,12 +2318,12 @@ ClusterHandler::free_locks(bool read_flag, int i)
         if (read_flag) {
           if (vc->read_locked) {
             MUTEX_UNTAKE_LOCK(vc->read.vio.mutex, thread);
-            vc->read_locked = NULL;
+            vc->read_locked = nullptr;
           }
         } else {
           if (vc->write_locked) {
             MUTEX_UNTAKE_LOCK(vc->write_locked, thread);
-            vc->write_locked = NULL;
+            vc->write_locked = nullptr;
           }
         }
       }
@@ -2333,7 +2333,7 @@ ClusterHandler::free_locks(bool read_flag, int i)
       if (VALID_CHANNEL(vc)) {
         if (vc->read_locked) {
           MUTEX_UNTAKE_LOCK(vc->read_locked, thread);
-          vc->read_locked = NULL;
+          vc->read_locked = nullptr;
         }
       }
     }
@@ -3030,12 +3030,12 @@ ClusterHandler::do_open_local_requests()
   //
   while (true) {
     cvc_ext = (ClusterVConnection *)ink_atomiclist_popall(&external_incoming_open_local);
-    if (cvc_ext == 0)
+    if (cvc_ext == nullptr)
       break;
 
     while (cvc_ext) {
       cvc_ext_next       = (ClusterVConnection *)cvc_ext->link.next;
-      cvc_ext->link.next = NULL;
+      cvc_ext->link.next = nullptr;
       local_incoming_open_local.push(cvc_ext);
       cvc_ext = cvc_ext_next;
     }
@@ -3048,7 +3048,7 @@ ClusterHandler::do_open_local_requests()
         if (cvc->start(tt) < 0) {
           cvc->token.clear();
           if (cvc->action_.continuation) {
-            cvc->action_.continuation->handleEvent(CLUSTER_EVENT_OPEN_FAILED, 0);
+            cvc->action_.continuation->handleEvent(CLUSTER_EVENT_OPEN_FAILED, nullptr);
             clusterVCAllocator.free(cvc);
           }
         }

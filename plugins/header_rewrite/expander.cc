@@ -68,7 +68,7 @@ VariableExpander::expand(const Resources &res)
       if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url_loc) == TS_SUCCESS) {
         int len;
         const char *tmp = TSUrlSchemeGet(bufp, url_loc, &len);
-        if ((tmp != NULL) && (len > 0)) {
+        if ((tmp != nullptr) && (len > 0)) {
           resolved_variable.assign(tmp, len);
         } else {
           resolved_variable.assign("");

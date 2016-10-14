@@ -83,7 +83,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       return EVENT_ERROR;
     }
 
-    ink_assert(netvc != NULL);
+    ink_assert(netvc != nullptr);
 
     if (!reader->is_read_avail_more_than(minimum_read_size - 1)) {
       // Not enough data read. Well, that sucks.
@@ -96,9 +96,9 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       key = PROTO_HTTP;
     }
 
-    netvc->do_io_read(NULL, 0, NULL); // Disable the read IO that we started.
+    netvc->do_io_read(nullptr, 0, nullptr); // Disable the read IO that we started.
 
-    if (probeParent->endpoint[key] == NULL) {
+    if (probeParent->endpoint[key] == nullptr) {
       Warning("Unregistered protocol type %d", key);
       goto done;
     }
@@ -114,7 +114,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
   done:
     netvc->do_io_close();
     free_MIOBuffer(this->iobuf);
-    this->iobuf = NULL;
+    this->iobuf = nullptr;
     delete this;
     return EVENT_CONT;
   }
@@ -131,7 +131,7 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
 
     VIO *vio;
     NetVConnection *netvc          = (NetVConnection *)data;
-    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, NULL, NULL);
+    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, nullptr, nullptr);
 
     // XXX we need to apply accept inactivity timeout here ...
 
@@ -141,7 +141,7 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
       vio->reenable();
     } else {
       Debug("http", "probe already has data, call ioComplete directly..");
-      vio = netvc->do_io_read(NULL, 0, NULL);
+      vio = netvc->do_io_read(nullptr, 0, nullptr);
       probe->ioCompletionEvent(VC_EVENT_READ_COMPLETE, (void *)vio);
     }
     return EVENT_CONT;
@@ -161,6 +161,6 @@ ProtocolProbeSessionAccept::accept(NetVConnection *, MIOBuffer *, IOBufferReader
 void
 ProtocolProbeSessionAccept::registerEndpoint(ProtoGroupKey key, SessionAccept *ap)
 {
-  ink_release_assert(endpoint[key] == NULL);
+  ink_release_assert(endpoint[key] == nullptr);
   this->endpoint[key] = ap;
 }

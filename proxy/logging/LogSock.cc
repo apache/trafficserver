@@ -38,7 +38,7 @@ static const int LS_PROTOCOL = 0;
   first entry of the table (index 0) to be the port on which new
   connections are accepted.
 */
-LogSock::LogSock(int max_connects) : ct((ConnectTable *)NULL), m_accept_connections(false), m_max_connections(max_connects + 1)
+LogSock::LogSock(int max_connects) : ct((ConnectTable *)nullptr), m_accept_connections(false), m_max_connections(max_connects + 1)
 {
   ink_assert(m_max_connections > 0);
 
@@ -46,9 +46,9 @@ LogSock::LogSock(int max_connects) : ct((ConnectTable *)NULL), m_accept_connecti
   // allocate space for the connection table.
   //
   ct = new ConnectTable[m_max_connections];
-  ink_assert(ct != NULL);
+  ink_assert(ct != nullptr);
   for (int i = 0; i < m_max_connections; ++i) {
-    init_cid(i, NULL, 0, -1, LogSock::LS_STATE_UNUSED);
+    init_cid(i, nullptr, 0, -1, LogSock::LS_STATE_UNUSED);
   }
 
   Debug("log-sock", "LogSocket established");
@@ -210,7 +210,7 @@ LogSock::accept()
   }
   connect_port = ntohs(connect_addr.port());
 
-  init_cid(cid, NULL, connect_port, connect_sd, LogSock::LS_STATE_INCOMING);
+  init_cid(cid, nullptr, connect_port, connect_sd, LogSock::LS_STATE_INCOMING);
 
   Debug("log-sock", "new connection accepted, cid = %d, port = %d", cid, connect_port);
 
@@ -292,7 +292,7 @@ LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
   int fd_to_cid[LS_CONST_CLUSTER_MAX_MACHINES];
 
   ink_assert(m_max_connections <= (LS_CONST_CLUSTER_MAX_MACHINES + 1));
-  ink_assert(cid != NULL);
+  ink_assert(cid != nullptr);
   ink_assert(timeout_msec >= 0);
 
   //
@@ -368,7 +368,7 @@ LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
 bool
 LogSock::pending_any(int *cid, int timeout_msec)
 {
-  ink_assert(cid != NULL);
+  ink_assert(cid != nullptr);
   *cid = -1;
   if (m_accept_connections) {
     return pending_data(cid, timeout_msec, true);
@@ -387,7 +387,7 @@ LogSock::pending_any(int *cid, int timeout_msec)
 bool
 LogSock::pending_message_any(int *cid, int timeout_msec)
 {
-  ink_assert(cid != NULL);
+  ink_assert(cid != nullptr);
   *cid = -1;
   return pending_data(cid, timeout_msec, false);
 }
@@ -463,7 +463,7 @@ LogSock::write(int cid, void *buf, int bytes)
 
   ink_assert(cid >= 0 && cid < m_max_connections);
 
-  if (buf == NULL || bytes == 0) {
+  if (buf == nullptr || bytes == 0) {
     return 0;
   }
 
@@ -503,7 +503,7 @@ LogSock::read(int cid, void *buf, unsigned maxsize)
   unsigned size;
 
   ink_assert(cid >= 0 && cid < m_max_connections);
-  ink_assert(buf != NULL);
+  ink_assert(buf != nullptr);
 
   if (ct[cid].state != LogSock::LS_STATE_INCOMING) {
     return LogSock::LS_ERROR_STATE;
@@ -536,21 +536,21 @@ LogSock::read_alloc(int cid, int *size)
   ink_assert(cid >= 0 && cid < m_max_connections);
 
   if (ct[cid].state != LogSock::LS_STATE_INCOMING) {
-    return NULL;
+    return nullptr;
   }
 
   Debug("log-sock", "reading data from cid %d", cid);
 
   if (read_header(ct[cid].sd, &header) < 0) {
-    return NULL;
+    return nullptr;
   }
 
   data = new char[header.msg_bytes];
-  ink_assert(data != NULL);
+  ink_assert(data != nullptr);
 
   if ((*size = read_body(ct[cid].sd, data, header.msg_bytes)) < 0) {
     delete[] data;
-    data = NULL;
+    data = nullptr;
   }
 
   return data;
@@ -680,12 +680,12 @@ LogSock::init_cid(int cid, char *host, int port, int sd, LogSock::State state)
   // sd can be -1 to indicate no connection yet
   ink_assert(state >= 0 && state < LogSock::LS_N_STATES);
 
-  if (host != NULL) {
+  if (host != nullptr) {
     const size_t host_size = strlen(host) + 1;
     ct[cid].host           = new char[host_size];
     ink_strlcpy(ct[cid].host, host, host_size);
   } else {
-    ct[cid].host = NULL;
+    ct[cid].host = nullptr;
   }
 
   ct[cid].port  = port;
@@ -699,7 +699,7 @@ int
 LogSock::read_header(int sd, LogSock::MsgHeader *header)
 {
   ink_assert(sd >= 0);
-  ink_assert(header != NULL);
+  ink_assert(header != nullptr);
 
   int bytes = ::recv(sd, (char *)header, sizeof(LogSock::MsgHeader), 0);
   if (bytes != sizeof(LogSock::MsgHeader)) {
@@ -715,7 +715,7 @@ int
 LogSock::read_body(int sd, void *buf, int bytes)
 {
   ink_assert(sd >= 0);
-  ink_assert(buf != NULL);
+  ink_assert(buf != nullptr);
   ink_assert(bytes >= 0);
 
   if (bytes == 0) {

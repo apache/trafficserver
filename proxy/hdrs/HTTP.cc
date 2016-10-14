@@ -339,8 +339,8 @@ http_hdr_copy_onto(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HTTPHdrImpl *d_hh, HdrHea
   d_polarity = d_hh->m_polarity;
 
   ink_assert(s_hh->m_polarity != HTTP_TYPE_UNKNOWN);
-  ink_assert(s_mh != NULL);
-  ink_assert(d_mh != NULL);
+  ink_assert(s_mh != nullptr);
+  ink_assert(d_mh != nullptr);
 
   memcpy(d_hh, s_hh, sizeof(HTTPHdrImpl));
   d_hh->m_fields_impl = d_mh; // restore pre-memcpy mime impl
@@ -437,11 +437,11 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
   ink_assert((hdr->m_polarity == HTTP_TYPE_REQUEST) || (hdr->m_polarity == HTTP_TYPE_RESPONSE));
 
   if (hdr->m_polarity == HTTP_TYPE_REQUEST) {
-    if (hdr->u.req.m_ptr_method == NULL) {
+    if (hdr->u.req.m_ptr_method == nullptr) {
       return 1;
     }
 
-    if ((buf != NULL) && (*dumpoffset == 0) && (bufsize - *bufindex >= hdr->u.req.m_len_method + 1)) { // fastpath
+    if ((buf != nullptr) && (*dumpoffset == 0) && (bufsize - *bufindex >= hdr->u.req.m_len_method + 1)) { // fastpath
 
       p = buf + *bufindex;
       memcpy(p, hdr->u.req.m_ptr_method, hdr->u.req.m_len_method);
@@ -500,7 +500,7 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
 
   } else { //  hdr->m_polarity == HTTP_TYPE_RESPONSE
 
-    if ((buf != NULL) && (*dumpoffset == 0) && (bufsize - *bufindex >= 9 + 6 + 1)) { // fastpath
+    if ((buf != nullptr) && (*dumpoffset == 0) && (bufsize - *bufindex >= 9 + 6 + 1)) { // fastpath
 
       p = buf + *bufindex;
       http_hdr_version_to_string(hdr->m_version, p);
@@ -703,7 +703,7 @@ http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
 {
   ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
   if (hh->u.req.m_url_impl != url) {
-    if (hh->u.req.m_url_impl != NULL) {
+    if (hh->u.req.m_url_impl != nullptr) {
       heap->deallocate_obj(hh->u.req.m_url_impl);
     }
     hh->u.req.m_url_impl = url;
@@ -825,7 +825,7 @@ http_hdr_reason_lookup(unsigned status)
 
 #undef HTTP_STATUS_ENTRY
 
-  return NULL;
+  return nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -950,7 +950,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       int32_t version = HTTP_VERSION(end[-5] - '0', end[-3] - '0');
 
       http_hdr_method_set(heap, hh, &(cur[0]), hdrtoken_wks_to_index(HTTP_METHOD_GET), 3, must_copy_strings);
-      ink_assert(hh->u.req.m_url_impl != NULL);
+      ink_assert(hh->u.req.m_url_impl != nullptr);
       url       = hh->u.req.m_url_impl;
       url_start = &(cur[4]);
       err       = ::url_parse(heap, url, &url_start, &(end[-11]), must_copy_strings, strict_uri_parsing);
@@ -975,13 +975,13 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 
   slow_case:
 
-    method_start  = NULL;
-    method_end    = NULL;
-    url_start     = NULL;
-    url_end       = NULL;
-    version_start = NULL;
-    version_end   = NULL;
-    url           = NULL;
+    method_start  = nullptr;
+    method_end    = nullptr;
+    url_start     = nullptr;
+    url_end       = nullptr;
+    version_start = nullptr;
+    version_end   = nullptr;
+    url           = nullptr;
 
     if (ParseRules::is_cr(*cur))
       GETNEXT(done);
@@ -1091,7 +1091,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     int method_wks_idx = hdrtoken_tokenize(method_start, (int)(method_end - method_start));
     http_hdr_method_set(heap, hh, method_start, method_wks_idx, (int)(method_end - method_start), must_copy_strings);
 
-    ink_assert(hh->u.req.m_url_impl != NULL);
+    ink_assert(hh->u.req.m_url_impl != nullptr);
 
     url = hh->u.req.m_url_impl;
     err = ::url_parse(heap, url, &url_start, url_end, must_copy_strings, strict_uri_parsing);
@@ -1242,12 +1242,12 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 #endif
 
   slow_case:
-    version_start = NULL;
-    version_end   = NULL;
-    status_start  = NULL;
-    status_end    = NULL;
-    reason_start  = NULL;
-    reason_end    = NULL;
+    version_start = nullptr;
+    version_end   = nullptr;
+    status_start  = nullptr;
+    status_end    = nullptr;
+    reason_start  = nullptr;
+    reason_end    = nullptr;
 
     version_start = cur = line_start;
     if ((*cur != 'H') && (*cur != 'h')) {
@@ -1554,14 +1554,15 @@ HTTPHdr::_fill_target_cache() const
 
   m_target_in_url  = false;
   m_port_in_header = false;
-  m_host_mime      = NULL;
+  m_host_mime      = nullptr;
   // Check in the URL first, then the HOST field.
-  if (0 != url->host_get(&m_host_length)) {
+  if (nullptr != url->host_get(&m_host_length)) {
     m_target_in_url  = true;
     m_port           = url->port_get();
     m_port_in_header = 0 != url->port_get_raw();
-    m_host_mime      = NULL;
-  } else if (0 != (m_host_mime = const_cast<HTTPHdr *>(this)->get_host_port_values(0, &m_host_length, &port_ptr, 0))) {
+    m_host_mime      = nullptr;
+  } else if (nullptr !=
+             (m_host_mime = const_cast<HTTPHdr *>(this)->get_host_port_values(nullptr, &m_host_length, &port_ptr, nullptr))) {
     m_port = 0;
     if (port_ptr) {
       for (; is_digit(*port_ptr); ++port_ptr) {
@@ -1592,8 +1593,8 @@ HTTPHdr::set_url_target_from_host_field(URL *url)
     }
   } else {
     int host_len     = 0;
-    const char *host = NULL;
-    host             = host_get(&host_len);
+    const char *host = host_get(&host_len);
+
     url->host_set(host, host_len);
     if (m_port_in_header) {
       url->port_set(m_port);
@@ -1629,7 +1630,7 @@ class UrlPrintHack
          2) The values were in a HTTP header.
       */
       if (!hdr->m_target_in_url && hdr->m_host_length && hdr->m_host_mime) {
-        ink_assert(0 == ui->m_ptr_host); // shouldn't be non-zero if not in URL.
+        ink_assert(nullptr == ui->m_ptr_host); // shouldn't be non-zero if not in URL.
         ui->m_ptr_host    = hdr->m_host_mime->m_ptr_value;
         ui->m_len_host    = hdr->m_host_length;
         m_host_modified_p = true;
@@ -1638,7 +1639,7 @@ class UrlPrintHack
       }
 
       if (0 == hdr->m_url_cached.port_get_raw() && hdr->m_port_in_header) {
-        ink_assert(0 == ui->m_ptr_port); // shouldn't be set if not in URL.
+        ink_assert(nullptr == ui->m_ptr_port); // shouldn't be set if not in URL.
         ui->m_ptr_port    = m_port_buff;
         ui->m_len_port    = snprintf(m_port_buff, sizeof(m_port_buff), "%d", hdr->m_port);
         m_port_modified_p = true;
@@ -1646,7 +1647,7 @@ class UrlPrintHack
         m_port_modified_p = false;
       }
     } else {
-      m_hdr = 0;
+      m_hdr = nullptr;
     }
   }
 
@@ -1663,11 +1664,11 @@ class UrlPrintHack
       // still be NULL after a re-allocate.
       if (m_port_modified_p) {
         ui->m_len_port = 0;
-        ui->m_ptr_port = 0;
+        ui->m_ptr_port = nullptr;
       }
       if (m_host_modified_p) {
         ui->m_len_host = 0;
-        ui->m_ptr_host = 0;
+        ui->m_ptr_host = nullptr;
       }
     }
   }
@@ -1676,7 +1677,7 @@ class UrlPrintHack
   bool
   is_valid() const
   {
-    return 0 != m_hdr;
+    return nullptr != m_hdr;
   }
 
   /// Saved values.
@@ -1692,7 +1693,7 @@ class UrlPrintHack
 char *
 HTTPHdr::url_string_get(Arena *arena, int *length)
 {
-  char *zret = 0;
+  char *zret = nullptr;
   UrlPrintHack hack(this);
 
   if (hack.is_valid()) {
@@ -1825,8 +1826,8 @@ HTTPCacheAlt::HTTPCacheAlt()
     m_request_sent_time(0),
     m_response_received_time(0),
     m_frag_offset_count(0),
-    m_frag_offsets(0),
-    m_ext_buffer(NULL)
+    m_frag_offsets(nullptr),
+    m_ext_buffer(nullptr)
 {
   m_object_key[0]  = 0;
   m_object_key[1]  = 0;
@@ -1848,7 +1849,7 @@ HTTPCacheAlt::destroy()
   m_frag_offset_count = 0;
   if (m_frag_offsets && m_frag_offsets != m_integral_frag_offsets) {
     ats_free(m_frag_offsets);
-    m_frag_offsets = 0;
+    m_frag_offsets = nullptr;
   }
   httpCacheAltAllocator.free(this);
 }
@@ -1985,7 +1986,7 @@ HTTPInfo::marshal(char *buf, int len)
   marshal_alt->m_magic         = CACHE_ALT_MAGIC_MARSHALED;
   marshal_alt->m_writeable     = 0;
   marshal_alt->m_unmarshal_len = -1;
-  marshal_alt->m_ext_buffer    = NULL;
+  marshal_alt->m_ext_buffer    = nullptr;
   buf += HTTP_ALT_MARSHAL_SIZE;
   used += HTTP_ALT_MARSHAL_SIZE;
 
@@ -1995,7 +1996,7 @@ HTTPInfo::marshal(char *buf, int len)
     buf += frag_len;
     used += frag_len;
   } else {
-    marshal_alt->m_frag_offsets = 0;
+    marshal_alt->m_frag_offsets = nullptr;
   }
 
   // The m_{request,response}_hdr->m_heap pointers are converted
@@ -2008,7 +2009,7 @@ HTTPInfo::marshal(char *buf, int len)
     buf += tmp;
     used += tmp;
   } else {
-    marshal_alt->m_request_hdr.m_heap = NULL;
+    marshal_alt->m_request_hdr.m_heap = nullptr;
   }
 
   if (m_alt->m_response_hdr.valid()) {
@@ -2017,7 +2018,7 @@ HTTPInfo::marshal(char *buf, int len)
     ink_assert(((intptr_t)marshal_alt->m_response_hdr.m_heap) < len);
     used += tmp;
   } else {
-    marshal_alt->m_response_hdr.m_heap = NULL;
+    marshal_alt->m_response_hdr.m_heap = nullptr;
   }
 
   // The prior system failed the marshal if there wasn't
@@ -2072,15 +2073,15 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
   } else if (alt->m_frag_offset_count > 0) {
     alt->m_frag_offsets = alt->m_integral_frag_offsets;
   } else {
-    alt->m_frag_offsets = 0; // should really already be zero.
+    alt->m_frag_offsets = nullptr; // should really already be zero.
   }
 
-  HdrHeap *heap   = (HdrHeap *)(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : 0);
-  HTTPHdrImpl *hh = NULL;
+  HdrHeap *heap   = (HdrHeap *)(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
+  HTTPHdrImpl *hh = nullptr;
   int tmp;
-  if (heap != NULL) {
+  if (heap != nullptr) {
     tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
-    if (hh == NULL || tmp < 0) {
+    if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::request unmarshal failed");
       return -1;
     }
@@ -2091,10 +2092,10 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     alt->m_request_hdr.m_url_cached.m_heap = heap;
   }
 
-  heap = (HdrHeap *)(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : 0);
-  if (heap != NULL) {
+  heap = (HdrHeap *)(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
+  if (heap != nullptr) {
     tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
-    if (hh == NULL || tmp < 0) {
+    if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::response unmarshal failed");
       return -1;
     }
@@ -2131,7 +2132,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
     return false;
   }
 
-  if (alt->m_request_hdr.m_heap == NULL) {
+  if (alt->m_request_hdr.m_heap == nullptr) {
     return false;
   }
 
@@ -2144,7 +2145,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
     return false;
   }
 
-  if (alt->m_response_hdr.m_heap == NULL) {
+  if (alt->m_response_hdr.m_heap == nullptr) {
     return false;
   }
 
@@ -2179,7 +2180,7 @@ HTTPInfo::set_buffer_reference(RefCountObj *block_ref)
   ink_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
 
   // Free existing reference
-  if (m_alt->m_ext_buffer != NULL) {
+  if (m_alt->m_ext_buffer != nullptr) {
     if (m_alt->m_ext_buffer->refcount_dec() == 0) {
       m_alt->m_ext_buffer->free();
     }
@@ -2215,7 +2216,7 @@ void
 HTTPInfo::push_frag_offset(FragOffset offset)
 {
   ink_assert(m_alt);
-  if (0 == m_alt->m_frag_offsets) {
+  if (nullptr == m_alt->m_frag_offsets) {
     m_alt->m_frag_offsets = m_alt->m_integral_frag_offsets;
   } else if (m_alt->m_frag_offset_count >= HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS &&
              0 == (m_alt->m_frag_offset_count & (m_alt->m_frag_offset_count - 1))) {

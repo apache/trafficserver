@@ -134,7 +134,7 @@ public:
 
   */
   virtual void
-  cancel(Continuation *c = NULL)
+  cancel(Continuation *c = nullptr)
   {
     ink_assert(!c || c == continuation);
 #ifdef DEBUG
@@ -158,7 +158,7 @@ public:
 
   */
   void
-  cancel_action(Continuation *c = NULL)
+  cancel_action(Continuation *c = nullptr)
   {
     ink_assert(!c || c == continuation);
 #ifdef DEBUG
@@ -187,7 +187,7 @@ public:
     Continuation.
 
   */
-  Action() : continuation(NULL), cancelled(false) {}
+  Action() : continuation(nullptr), cancelled(false) {}
 #if defined(__GNUC__)
   virtual ~Action() {}
 #endif

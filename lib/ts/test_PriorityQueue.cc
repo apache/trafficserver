@@ -73,7 +73,7 @@ REGRESSION_TEST(PriorityQueue_1)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   box.check(pq->top() == entry_a, "top should be entry_a");
 
   pq->pop();
-  box.check(pq->top() == NULL, "top should be NULL");
+  box.check(pq->top() == nullptr, "top should be NULL");
 
   delete pq;
   delete a;
@@ -223,7 +223,7 @@ REGRESSION_TEST(PriorityQueue_4)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   box.check(pq->top() == entry_c, "top should be entry_c"); // 9
   pq->pop();
 
-  box.check(pq->top() == NULL, "top should be NULL");
+  box.check(pq->top() == nullptr, "top should be NULL");
 
   delete pq;
 
@@ -321,7 +321,7 @@ REGRESSION_TEST(PriorityQueue_5)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   box.check(pq->top() == entry_c, "top should be entry_c"); // 109
   pq->pop();
 
-  box.check(pq->top() == NULL, "top should be NULL");
+  box.check(pq->top() == nullptr, "top should be NULL");
 
   delete pq;
 
@@ -372,7 +372,7 @@ REGRESSION_TEST(PriorityQueue_6)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->erase(entry_c);
   box.check(pq->top() == entry_b, "top should be entry_b");
   pq->erase(entry_b);
-  box.check(pq->top() == NULL, "top should be NULL");
+  box.check(pq->top() == nullptr, "top should be NULL");
   box.check(pq->empty(), "should be empty");
 
   delete pq;

@@ -627,8 +627,9 @@ ts_lua_destroy_http_transform_ctx(ts_lua_http_transform_ctx *transform_ctx)
 {
   ts_lua_cont_info *ci;
 
-  if (!transform_ctx)
+  if (!transform_ctx) {
     return;
+  }
 
   ci = &transform_ctx->cinfo;
 

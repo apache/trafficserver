@@ -265,7 +265,7 @@ private:
 
 #if !defined(__GNUC__)
 #ifndef __FUNCTION__
-#define __FUNCTION__ NULL
+#define __FUNCTION__ nullptr
 #endif
 #endif
 

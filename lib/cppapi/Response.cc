@@ -35,7 +35,7 @@ struct ResponseState : noncopyable {
   TSMBuffer hdr_buf_;
   TSMLoc hdr_loc_;
   Headers headers_;
-  ResponseState() : hdr_buf_(NULL), hdr_loc_(NULL) {}
+  ResponseState() : hdr_buf_(nullptr), hdr_loc_(nullptr) {}
 };
 }
 
@@ -61,9 +61,9 @@ Response::init(void *hdr_buf, void *hdr_loc)
 void
 Response::reset()
 {
-  state_->hdr_buf_ = NULL;
-  state_->hdr_loc_ = NULL;
-  state_->headers_.reset(NULL, NULL);
+  state_->hdr_buf_ = nullptr;
+  state_->hdr_loc_ = nullptr;
+  state_->headers_.reset(nullptr, nullptr);
   LOG_DEBUG("Reset response %p", this);
 }
 

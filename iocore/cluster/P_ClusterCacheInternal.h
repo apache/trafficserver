@@ -276,7 +276,7 @@ struct CacheContinuation : public Continuation {
   }
 
   CacheContinuation()
-    : Continuation(NULL),
+    : Continuation(nullptr),
       magicno(MagicNo),
       callback_data(0),
       callback_data_2(0),
@@ -371,7 +371,7 @@ struct CacheOpArgs_General {
   CacheFragType frag_type;
   uint16_t cfl_flags;
 
-  CacheOpArgs_General() : url_md5(NULL), pin_in_cache(0), frag_type(CACHE_FRAG_TYPE_NONE), cfl_flags(0) {}
+  CacheOpArgs_General() : url_md5(nullptr), pin_in_cache(0), frag_type(CACHE_FRAG_TYPE_NONE), cfl_flags(0) {}
 };
 
 struct CacheOpArgs_Link {
@@ -380,7 +380,7 @@ struct CacheOpArgs_Link {
   uint16_t cfl_flags; // see CFL_XXX defines
   CacheFragType frag_type;
 
-  CacheOpArgs_Link() : from(NULL), to(NULL), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE) {}
+  CacheOpArgs_Link() : from(nullptr), to(nullptr), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE) {}
 };
 
 struct CacheOpArgs_Deref {
@@ -388,7 +388,7 @@ struct CacheOpArgs_Deref {
   uint16_t cfl_flags; // see CFL_XXX defines
   CacheFragType frag_type;
 
-  CacheOpArgs_Deref() : md5(NULL), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE) {}
+  CacheOpArgs_Deref() : md5(nullptr), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE) {}
 };
 
 ///////////////////////////////////

@@ -62,7 +62,7 @@ static void
 setPattern(MultiPattern &multiPattern, const char *arg)
 {
   Pattern *p = new Pattern();
-  if (NULL != p && p->init(arg)) {
+  if (nullptr != p && p->init(arg)) {
     multiPattern.add(p);
   } else {
     delete p;
@@ -266,7 +266,7 @@ Configs::loadClassifiers(const String &args, bool blacklist)
   } else {
     multiPattern = new MultiPattern(classname);
   }
-  if (NULL == multiPattern) {
+  if (nullptr == multiPattern) {
     CacheKeyError("failed to allocate classifier '%s'", classname.c_str());
     return false;
   }
@@ -291,7 +291,7 @@ Configs::loadClassifiers(const String &args, bool blacklist)
 
     p = new Pattern();
 
-    if (NULL != p && p->init(regex)) {
+    if (nullptr != p && p->init(regex)) {
       if (blacklist) {
         CacheKeyDebug("Added pattern '%s' to black list '%s'", regex.c_str(), classname.c_str());
         multiPattern->add(p);
@@ -325,23 +325,23 @@ bool
 Configs::init(int argc, char *argv[])
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("exclude-params"), optional_argument, 0, 'a'},
-    {const_cast<char *>("include-params"), optional_argument, 0, 'b'},
-    {const_cast<char *>("include-match-params"), optional_argument, 0, 'c'},
-    {const_cast<char *>("exclude-match-params"), optional_argument, 0, 'd'},
-    {const_cast<char *>("sort-params"), optional_argument, 0, 'e'},
-    {const_cast<char *>("remove-all-params"), optional_argument, 0, 'f'},
-    {const_cast<char *>("include-headers"), optional_argument, 0, 'g'},
-    {const_cast<char *>("include-cookies"), optional_argument, 0, 'h'},
-    {const_cast<char *>("ua-capture"), optional_argument, 0, 'i'},
-    {const_cast<char *>("ua-whitelist"), optional_argument, 0, 'j'},
-    {const_cast<char *>("ua-blacklist"), optional_argument, 0, 'k'},
-    {const_cast<char *>("static-prefix"), optional_argument, 0, 'l'},
-    {const_cast<char *>("capture-prefix"), optional_argument, 0, 'm'},
-    {const_cast<char *>("capture-prefix-uri"), optional_argument, 0, 'n'},
-    {const_cast<char *>("capture-path"), optional_argument, 0, 'o'},
-    {const_cast<char *>("capture-path-uri"), optional_argument, 0, 'p'},
-    {0, 0, 0, 0},
+    {const_cast<char *>("exclude-params"), optional_argument, nullptr, 'a'},
+    {const_cast<char *>("include-params"), optional_argument, nullptr, 'b'},
+    {const_cast<char *>("include-match-params"), optional_argument, nullptr, 'c'},
+    {const_cast<char *>("exclude-match-params"), optional_argument, nullptr, 'd'},
+    {const_cast<char *>("sort-params"), optional_argument, nullptr, 'e'},
+    {const_cast<char *>("remove-all-params"), optional_argument, nullptr, 'f'},
+    {const_cast<char *>("include-headers"), optional_argument, nullptr, 'g'},
+    {const_cast<char *>("include-cookies"), optional_argument, nullptr, 'h'},
+    {const_cast<char *>("ua-capture"), optional_argument, nullptr, 'i'},
+    {const_cast<char *>("ua-whitelist"), optional_argument, nullptr, 'j'},
+    {const_cast<char *>("ua-blacklist"), optional_argument, nullptr, 'k'},
+    {const_cast<char *>("static-prefix"), optional_argument, nullptr, 'l'},
+    {const_cast<char *>("capture-prefix"), optional_argument, nullptr, 'm'},
+    {const_cast<char *>("capture-prefix-uri"), optional_argument, nullptr, 'n'},
+    {const_cast<char *>("capture-path"), optional_argument, nullptr, 'o'},
+    {const_cast<char *>("capture-path-uri"), optional_argument, nullptr, 'p'},
+    {nullptr, 0, nullptr, 0},
   };
 
   bool status = true;
@@ -352,7 +352,7 @@ Configs::init(int argc, char *argv[])
 
   for (;;) {
     int opt;
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
 
     if (opt == -1) {
       break;

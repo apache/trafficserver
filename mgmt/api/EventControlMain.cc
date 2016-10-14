@@ -254,12 +254,12 @@ event_callback_main(void *arg)
   // initialize queue for accepted con
   accepted_clients = ink_hash_table_create(InkHashTableKeyType_Word);
   if (!accepted_clients) {
-    return NULL;
+    return nullptr;
   }
   // initialize queue for holding mgmt events
   if ((ret = init_mgmt_events()) != TS_ERR_OKAY) {
     ink_hash_table_destroy(accepted_clients);
-    return NULL;
+    return nullptr;
   }
   // register callback with alarms processor
   lmgmt->alarm_keeper->registerCallback(apiEventCallback);
@@ -298,7 +298,7 @@ event_callback_main(void *arg)
     }
 
     // select call - timeout is set so we can check events at regular intervals
-    fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)NULL, (fd_set *)NULL, &timeout);
+    fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)nullptr, (fd_set *)nullptr, &timeout);
 
     // check return
     if (fds_ready > 0) {
@@ -428,8 +428,8 @@ event_callback_main(void *arg)
   // all entries should be removed and freed already
   ink_hash_table_destroy(accepted_clients);
 
-  ink_thread_exit(NULL);
-  return NULL;
+  ink_thread_exit(nullptr);
+  return nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -449,7 +449,7 @@ static TSMgmtError
 handle_event_reg_callback(EventClientT *client, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
-  MgmtMarshallString name = NULL;
+  MgmtMarshallString name = nullptr;
   TSMgmtError ret;
 
   ret = recv_mgmt_request(req, reqlen, EVENT_REG_CALLBACK, &optype, &name);
@@ -492,7 +492,7 @@ static TSMgmtError
 handle_event_unreg_callback(EventClientT *client, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
-  MgmtMarshallString name = NULL;
+  MgmtMarshallString name = nullptr;
   TSMgmtError ret;
 
   ret = recv_mgmt_request(req, reqlen, EVENT_UNREG_CALLBACK, &optype, &name);
@@ -525,31 +525,31 @@ done:
 typedef TSMgmtError (*event_message_handler)(EventClientT *, void *, size_t);
 
 static const event_message_handler handlers[] = {
-  NULL,                        // FILE_READ
-  NULL,                        // FILE_WRITE
-  NULL,                        // RECORD_SET
-  NULL,                        // RECORD_GET
-  NULL,                        // PROXY_STATE_GET
-  NULL,                        // PROXY_STATE_SET
-  NULL,                        // RECONFIGURE
-  NULL,                        // RESTART
-  NULL,                        // BOUNCE
-  NULL,                        // EVENT_RESOLVE
-  NULL,                        // EVENT_GET_MLT
-  NULL,                        // EVENT_ACTIVE
+  nullptr,                     // FILE_READ
+  nullptr,                     // FILE_WRITE
+  nullptr,                     // RECORD_SET
+  nullptr,                     // RECORD_GET
+  nullptr,                     // PROXY_STATE_GET
+  nullptr,                     // PROXY_STATE_SET
+  nullptr,                     // RECONFIGURE
+  nullptr,                     // RESTART
+  nullptr,                     // BOUNCE
+  nullptr,                     // EVENT_RESOLVE
+  nullptr,                     // EVENT_GET_MLT
+  nullptr,                     // EVENT_ACTIVE
   handle_event_reg_callback,   // EVENT_REG_CALLBACK
   handle_event_unreg_callback, // EVENT_UNREG_CALLBACK
-  NULL,                        // EVENT_NOTIFY
-  NULL,                        // SNAPSHOT_TAKE
-  NULL,                        // SNAPSHOT_RESTORE
-  NULL,                        // SNAPSHOT_REMOVE
-  NULL,                        // SNAPSHOT_GET_MLT
-  NULL,                        // DIAGS
-  NULL,                        // STATS_RESET_NODE
-  NULL,                        // STATS_RESET_CLUSTER
-  NULL,                        // STORAGE_DEVICE_CMD_OFFLINE
-  NULL,                        // RECORD_MATCH_GET
-  NULL,                        // LIFECYCLE_MESSAGE
+  nullptr,                     // EVENT_NOTIFY
+  nullptr,                     // SNAPSHOT_TAKE
+  nullptr,                     // SNAPSHOT_RESTORE
+  nullptr,                     // SNAPSHOT_REMOVE
+  nullptr,                     // SNAPSHOT_GET_MLT
+  nullptr,                     // DIAGS
+  nullptr,                     // STATS_RESET_NODE
+  nullptr,                     // STATS_RESET_CLUSTER
+  nullptr,                     // STORAGE_DEVICE_CMD_OFFLINE
+  nullptr,                     // RECORD_MATCH_GET
+  nullptr,                     // LIFECYCLE_MESSAGE
 };
 
 static TSMgmtError
@@ -561,7 +561,7 @@ handle_event_message(EventClientT *client, void *req, size_t reqlen)
     goto fail;
   }
 
-  if (handlers[optype] == NULL) {
+  if (handlers[optype] == nullptr) {
     goto fail;
   }
 

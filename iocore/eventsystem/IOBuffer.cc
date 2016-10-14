@@ -76,7 +76,7 @@ MIOBuffer::remove_append(IOBufferReader *r)
     l += b->read_avail();
     append_block(b.get());
   }
-  r->mbuf->_writer = NULL;
+  r->mbuf->_writer = nullptr;
   return l;
 }
 

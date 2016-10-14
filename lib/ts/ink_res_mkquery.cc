@@ -105,7 +105,7 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
   /*
    * Initialize header fields.
    */
-  if ((buf == NULL) || (buflen < HFIXEDSZ))
+  if ((buf == nullptr) || (buflen < HFIXEDSZ))
     return (-1);
   memset(buf, 0, HFIXEDSZ);
   hp         = (HEADER *)buf;
@@ -117,7 +117,7 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
   ep         = buf + buflen;
   dpp        = dnptrs;
   *dpp++     = buf;
-  *dpp++     = NULL;
+  *dpp++     = nullptr;
   lastdnptr  = dnptrs + sizeof dnptrs / sizeof dnptrs[0];
   /*
    * perform opcode specific processing
@@ -133,7 +133,7 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
     NS_PUT16(type, cp);
     NS_PUT16(_class, cp);
     hp->qdcount = htons(1);
-    if (op == QUERY || data == NULL)
+    if (op == QUERY || data == nullptr)
       break;
     /*
      * Make an additional record for completion domain.
@@ -346,7 +346,7 @@ ink_ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
       dn += m;
       continue;
     }
-    for ((void)NULL; l > 0; l--) {
+    for ((void)nullptr; l > 0; l--) {
       c = *cp++;
       if (special(c)) {
         if (dn + 1 >= eom) {
@@ -452,7 +452,7 @@ ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
       dn += m;
       continue;
     }
-    for ((void)NULL; l > 0; l--) {
+    for ((void)nullptr; l > 0; l--) {
       c = *cp++;
       if (special(c)) {
         if (dn + 1 >= eom) {

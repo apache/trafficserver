@@ -61,7 +61,7 @@ private:
 };
 
 TS_INLINE
-UnixUDPConnection::UnixUDPConnection(int the_fd) : onCallbackQueue(0), callbackAction(NULL), ethread(NULL), m_errno(0)
+UnixUDPConnection::UnixUDPConnection(int the_fd) : onCallbackQueue(0), callbackAction(nullptr), ethread(nullptr), m_errno(0)
 {
   fd = the_fd;
   UDPPacketInternal p;
@@ -74,8 +74,8 @@ UnixUDPConnection::init(int the_fd)
 {
   fd              = the_fd;
   onCallbackQueue = 0;
-  callbackAction  = NULL;
-  ethread         = NULL;
+  callbackAction  = nullptr;
+  ethread         = nullptr;
   m_errno         = 0;
 
   UDPPacketInternal p;
@@ -101,7 +101,7 @@ UDPConnection::recv(Continuation *c)
   UnixUDPConnection *p = (UnixUDPConnection *)this;
   // register callback interest.
   p->continuation = c;
-  ink_assert(c != NULL);
+  ink_assert(c != nullptr);
   mutex         = c->mutex;
   p->recvActive = 1;
   return ACTION_RESULT_NONE;

@@ -30,7 +30,7 @@
 //-------------------------------------------------------------------------
 // Initialization/Starting
 //-------------------------------------------------------------------------
-int RecProcessInit(RecModeT mode_type, Diags *diags = NULL);
+int RecProcessInit(RecModeT mode_type, Diags *diags = nullptr);
 int RecProcessInitMessage(RecModeT mode_type);
 int RecProcessStart(void);
 
@@ -117,7 +117,7 @@ inline RecRawStat *
 raw_stat_get_tlp(RecRawStatBlock *rsb, int id, EThread *ethread)
 {
   ink_assert((id >= 0) && (id < rsb->max_stats));
-  if (ethread == NULL) {
+  if (ethread == nullptr) {
     ethread = this_ethread();
   }
   return (((RecRawStat *)((char *)(ethread) + rsb->ethr_stat_offset)) + id);

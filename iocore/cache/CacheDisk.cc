@@ -60,7 +60,7 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
       fprintf(stderr, "Could not read disk header for disk %s", path);
       SET_DISK_BAD(this);
       SET_HANDLER(&CacheDisk::openDone);
-      return openDone(EVENT_IMMEDIATE, 0);
+      return openDone(EVENT_IMMEDIATE, nullptr);
     } else {
       SET_HANDLER(&CacheDisk::clearDone);
       return clearDisk();
@@ -81,7 +81,7 @@ CacheDisk::~CacheDisk()
   if (path) {
     ats_free(path);
     for (int i = 0; i < (int)header->num_volumes; i++) {
-      DiskVolBlockQueue *q = NULL;
+      DiskVolBlockQueue *q = nullptr;
       while (disk_vols[i] && (q = (disk_vols[i]->dpb_queue.pop()))) {
         delete q;
       }
@@ -90,7 +90,7 @@ CacheDisk::~CacheDisk()
     free(header);
   }
   if (free_blocks) {
-    DiskVolBlockQueue *q = NULL;
+    DiskVolBlockQueue *q = nullptr;
     while ((q = (free_blocks->dpb_queue.pop()))) {
       delete q;
     }
@@ -123,7 +123,7 @@ CacheDisk::clearDone(int event, void * /* data ATS_UNUSED */)
   //  update_header();
 
   SET_HANDLER(&CacheDisk::openDone);
-  return openDone(EVENT_IMMEDIATE, 0);
+  return openDone(EVENT_IMMEDIATE, nullptr);
 }
 
 int
@@ -135,7 +135,7 @@ CacheDisk::openStart(int event, void * /* data ATS_UNUSED */)
     Warning("could not read disk header for disk %s: declaring disk bad", path);
     SET_DISK_BAD(this);
     SET_HANDLER(&CacheDisk::openDone);
-    return openDone(EVENT_IMMEDIATE, 0);
+    return openDone(EVENT_IMMEDIATE, nullptr);
   }
 
   if (header->magic != DISK_HEADER_MAGIC || header->num_blocks != static_cast<uint64_t>(len)) {
@@ -168,7 +168,7 @@ CacheDisk::openStart(int event, void * /* data ATS_UNUSED */)
   update_header();
 
   SET_HANDLER(&CacheDisk::openDone);
-  return openDone(EVENT_IMMEDIATE, 0);
+  return openDone(EVENT_IMMEDIATE, nullptr);
 }
 
 int
@@ -214,20 +214,20 @@ DiskVolBlock *
 CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
 {
   if (size_in_blocks == 0)
-    return NULL;
+    return nullptr;
 
   DiskVolBlockQueue *q             = free_blocks->dpb_queue.head;
   DiskVolBlockQueue *closest_match = q;
 
   if (!q)
-    return NULL;
+    return nullptr;
 
   off_t max_blocks = MAX_VOL_SIZE >> STORE_BLOCK_SHIFT;
   size_in_blocks   = (size_in_blocks <= max_blocks) ? size_in_blocks : max_blocks;
 
   int blocks_per_vol = VOL_BLOCK_SIZE / STORE_BLOCK_SIZE;
   //  ink_assert(!(size_in_blocks % blocks_per_vol));
-  DiskVolBlock *p = 0;
+  DiskVolBlock *p = nullptr;
   for (; q; q = q->link.next) {
     if ((off_t)q->b->len >= size_in_blocks) {
       p            = q->b;
@@ -240,7 +240,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   }
 
   if (!p && !closest_match)
-    return NULL;
+    return nullptr;
 
   if (!p && closest_match) {
     /* allocate from the closest match */
@@ -344,7 +344,7 @@ CacheDisk::update_header()
   unsigned int n = 0;
   unsigned int i, j;
   if (free_blocks) {
-    DiskVolBlockQueue *q = NULL;
+    DiskVolBlockQueue *q = nullptr;
     while ((q = (free_blocks->dpb_queue.pop()))) {
       delete q;
     }
@@ -408,7 +408,7 @@ CacheDisk::get_diskvol(int vol_number)
       return disk_vols[i];
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 int

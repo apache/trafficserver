@@ -26,7 +26,7 @@
 static int
 plugin_msg(unsigned argc, const char **argv)
 {
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 2) {
+  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 2) {
     return CtrlCommandUsage("plugin msg TAG DATA");
   }
 

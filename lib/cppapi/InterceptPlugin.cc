@@ -48,7 +48,7 @@ struct InterceptPlugin::State {
     TSVIO vio_;
     TSIOBuffer buffer_;
     TSIOBufferReader reader_;
-    IoHandle() : vio_(NULL), buffer_(NULL), reader_(NULL){};
+    IoHandle() : vio_(nullptr), buffer_(nullptr), reader_(nullptr){};
     ~IoHandle()
     {
       if (reader_) {
@@ -86,15 +86,15 @@ struct InterceptPlugin::State {
 
   State(TSCont cont, InterceptPlugin *plugin)
     : cont_(cont),
-      net_vc_(NULL),
+      net_vc_(nullptr),
       expected_body_size_(0),
       num_body_bytes_read_(0),
       hdr_parsed_(false),
-      hdr_buf_(NULL),
-      hdr_loc_(NULL),
+      hdr_buf_(nullptr),
+      hdr_loc_(nullptr),
       num_bytes_written_(0),
       plugin_(plugin),
-      timeout_action_(NULL),
+      timeout_action_(nullptr),
       plugin_io_done_(false)
   {
     plugin_mutex_ = plugin->getMutex();
@@ -136,8 +136,8 @@ InterceptPlugin::~InterceptPlugin()
 {
   if (state_->cont_) {
     LOG_DEBUG("Relying on callback for cleanup");
-    state_->plugin_ = NULL; // prevent callback from invoking plugin
-  } else {                  // safe to cleanup
+    state_->plugin_ = nullptr; // prevent callback from invoking plugin
+  } else {                     // safe to cleanup
     LOG_DEBUG("Normal cleanup");
     delete state_;
   }
@@ -207,7 +207,7 @@ InterceptPlugin::doRead()
     int64_t data_len; // size of all data (header + body) in a block
     const char *data, *startptr;
     TSIOBufferBlock block = TSIOBufferReaderStart(state_->input_.reader_);
-    while (block != NULL) {
+    while (block != nullptr) {
       startptr = data         = TSIOBufferBlockReadStart(block, state_->input_.reader_, &data_len);
       num_body_bytes_in_block = 0;
       if (!state_->hdr_parsed_) {
@@ -349,10 +349,10 @@ handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata)
     return 0;
   }
   if (event == TS_EVENT_TIMEOUT) { // we have a saved event to restore
-    state->timeout_action_ = NULL;
+    state->timeout_action_ = nullptr;
     if (state->plugin_io_done_) { // plugin is done, so can't send it saved event
       event = TS_EVENT_VCONN_EOS; // fake completion
-      edata = NULL;
+      edata = nullptr;
     } else {
       event = state->saved_event_;
       edata = state->saved_edata_;
@@ -364,7 +364,7 @@ handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata)
   } else {                             // plugin was destroyed before intercept was completed; cleaning up here
     LOG_DEBUG("Cleaning up as intercept plugin is already destroyed");
     destroyCont(state);
-    TSContDataSet(cont, NULL);
+    TSContDataSet(cont, nullptr);
     delete state;
   }
   return 0;
@@ -376,11 +376,11 @@ destroyCont(InterceptPlugin::State *state)
   if (state->net_vc_) {
     TSVConnShutdown(state->net_vc_, 1, 1);
     TSVConnClose(state->net_vc_);
-    state->net_vc_ = NULL;
+    state->net_vc_ = nullptr;
   }
   if (!state->timeout_action_) {
     TSContDestroy(state->cont_);
-    state->cont_ = NULL;
+    state->cont_ = nullptr;
   }
 }
 }

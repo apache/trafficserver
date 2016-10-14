@@ -62,7 +62,7 @@ inkcoreapi extern ClassAllocator<UDPPacketInternal> udpPacketAllocator;
 
 TS_INLINE
 UDPPacketInternal::UDPPacketInternal()
-  : pktLength(0), reqGenerationNum(0), delivery_time(0), cont(NULL), conn(NULL), in_the_priority_queue(0), in_heap(0)
+  : pktLength(0), reqGenerationNum(0), delivery_time(0), cont(nullptr), conn(nullptr), in_the_priority_queue(0), in_heap(0)
 {
   memset(&from, '\0', sizeof(from));
   memset(&to, '\0', sizeof(to));
@@ -71,16 +71,16 @@ UDPPacketInternal::UDPPacketInternal()
 TS_INLINE
 UDPPacketInternal::~UDPPacketInternal()
 {
-  chain = NULL;
+  chain = nullptr;
 }
 
 TS_INLINE void
 UDPPacketInternal::free()
 {
-  chain = NULL;
+  chain = nullptr;
   if (conn)
     conn->Release();
-  conn = NULL;
+  conn = nullptr;
   udpPacketAllocator.free(this);
 }
 
@@ -145,7 +145,7 @@ UDPPacket::setConnection(UDPConnection *c)
     if (conn == c)
       return;
     conn->Release();
-    conn = NULL;
+    conn = nullptr;
   }
   conn = (UDPConnectionInternal *)c;
   conn->AddRef();
@@ -154,7 +154,7 @@ UDPPacket::setConnection(UDPConnection *c)
 TS_INLINE IOBufferBlock *
 UDPPacket::getIOBlockChain(void)
 {
-  ink_assert(dynamic_cast<UDPPacketInternal *>(this) != NULL);
+  ink_assert(dynamic_cast<UDPPacketInternal *>(this) != nullptr);
   return ((UDPPacketInternal *)this)->chain.get();
 }
 
@@ -223,7 +223,7 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> buf
 TS_INLINE UDPPacket *
 new_UDPPacket(ink_hrtime when, Ptr<IOBufferBlock> buf)
 {
-  return new_UDPPacket(NULL, when, buf);
+  return new_UDPPacket(nullptr, when, buf);
 }
 
 TS_INLINE UDPPacket *

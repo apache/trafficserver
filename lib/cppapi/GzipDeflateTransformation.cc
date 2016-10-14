@@ -109,7 +109,7 @@ GzipDeflateTransformation::consume(const string &data)
 
     int err = deflate(&state_->z_stream_, Z_SYNC_FLUSH);
     if (Z_OK != err) {
-      state_->z_stream_.next_out = NULL;
+      state_->z_stream_.next_out = nullptr;
       LOG_ERROR("Iteration %d: Deflate failed to compress %ld bytes with error code '%d'", iteration, data.size(), err);
       return;
     }
@@ -122,7 +122,7 @@ GzipDeflateTransformation::consume(const string &data)
     produce(string(reinterpret_cast<char *>(&buffer[0]), static_cast<size_t>(bytes_to_write)));
   } while (state_->z_stream_.avail_out == 0);
 
-  state_->z_stream_.next_out = NULL;
+  state_->z_stream_.next_out = nullptr;
 
   if (state_->z_stream_.avail_in != 0) {
     LOG_ERROR("Inflate finished with data still remaining in the buffer of size '%u'", state_->z_stream_.avail_in);

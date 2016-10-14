@@ -54,11 +54,11 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **instance, char *errBuf, int errBufSize)
 {
   Configs *config = new Configs();
-  if (NULL != config && config->init(argc, argv)) {
+  if (nullptr != config && config->init(argc, argv)) {
     *instance = config;
   } else {
     CacheKeyError("failed to initialize the " PLUGIN_NAME " plugin");
-    *instance = NULL;
+    *instance = nullptr;
     delete config;
     return TS_ERROR;
   }
@@ -90,7 +90,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
 {
   Configs *config = (Configs *)instance;
 
-  if (NULL != config) {
+  if (nullptr != config) {
     /* Initial cache key facility from the requested URL. */
     CacheKey cachekey(txn, rri->requestBufp, rri->requestUrl, rri->requestHdrp);
 

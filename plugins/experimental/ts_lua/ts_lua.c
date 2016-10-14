@@ -41,8 +41,9 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  if (ts_lua_main_ctx_array != NULL)
+  if (ts_lua_main_ctx_array != NULL) {
     return TS_SUCCESS;
+  }
 
   ts_lua_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
   memset(ts_lua_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);

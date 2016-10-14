@@ -60,7 +60,7 @@ struct OptionInfo {
   bool first_byte_flush;
 };
 
-static HandlerManager *gHandlerManager = NULL;
+static HandlerManager *gHandlerManager = nullptr;
 static Utils::HeaderValueList gWhitelistCookies;
 
 #define DEBUG_TAG "plugin_esi"
@@ -127,18 +127,18 @@ struct ContData {
 
   ContData(TSCont contptr, TSHttpTxn tx)
     : curr_state(READING_ESI_DOC),
-      input_vio(NULL),
-      output_vio(NULL),
-      output_buffer(NULL),
-      output_reader(NULL),
-      esi_vars(NULL),
-      data_fetcher(NULL),
-      esi_proc(NULL),
-      esi_gzip(NULL),
-      esi_gunzip(NULL),
+      input_vio(nullptr),
+      output_vio(nullptr),
+      output_buffer(nullptr),
+      output_reader(nullptr),
+      esi_vars(nullptr),
+      data_fetcher(nullptr),
+      esi_proc(nullptr),
+      esi_gzip(nullptr),
+      esi_gunzip(nullptr),
       contp(contptr),
       txnp(tx),
-      request_url(NULL),
+      request_url(nullptr),
       input_type(DATA_TYPE_RAW_ESI),
       packed_node_list(""),
       gzipped_data(""),
@@ -192,7 +192,7 @@ createDebugTag(const char *prefix, TSCont contp, string &dest)
   return dest.c_str();
 }
 
-static bool checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len, const char *exp_value = 0,
+static bool checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len, const char *exp_value = nullptr,
                              int exp_value_len = 0, bool prefix = false); // forward decl
 
 static bool checkForCacheHeader(const char *name, int name_len, const char *value, int value_len, bool &cacheable);
@@ -328,12 +328,12 @@ ContData::getClientState()
         int n_values;
         n_values = TSMimeHdrFieldValuesCount(req_bufp, req_hdr_loc, field_loc);
         if (n_values && (n_values != TS_ERROR)) {
-          const char *value = NULL;
+          const char *value = nullptr;
           int value_len     = 0;
           if (n_values == 1) {
             value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, 0, &value_len);
 
-            if (NULL != value || value_len) {
+            if (nullptr != value || value_len) {
               if (Utils::areEqual(name, name_len, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING) &&
                   Utils::areEqual(value, value_len, TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP)) {
                 gzip_output = true;
@@ -342,7 +342,7 @@ ContData::getClientState()
           } else {
             for (int i = 0; i < n_values; ++i) {
               value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, i, &value_len);
-              if (NULL != value || value_len) {
+              if (nullptr != value || value_len) {
                 if (Utils::areEqual(name, name_len, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING) &&
                     Utils::areEqual(value, value_len, TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP)) {
                   gzip_output = true;
@@ -353,7 +353,7 @@ ContData::getClientState()
             value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, -1, &value_len);
           }
 
-          if (value != NULL) {
+          if (value != nullptr) {
             HttpHeader header(name, name_len, value, value_len);
             data_fetcher->useHeader(header);
             esi_vars->populate(header);
@@ -407,7 +407,7 @@ ContData::fillPostHeader(TSMBuffer bufp, TSMLoc hdr_loc)
         int n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
         for (int j = 0; j < n_field_values; ++j) {
           value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
-          if (NULL == value || !value_len) {
+          if (nullptr == value || !value_len) {
             TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
           } else {
             if (Utils::areEqual(name, name_len, TS_MIME_FIELD_VARY, TS_MIME_LEN_VARY) &&
@@ -523,9 +523,9 @@ removeCacheKey(TSHttpTxn txnp)
 {
   TSMBuffer req_bufp;
   TSMLoc req_hdr_loc;
-  TSMLoc url_loc      = NULL;
-  TSCont contp        = NULL;
-  TSCacheKey cacheKey = NULL;
+  TSMLoc url_loc      = nullptr;
+  TSCont contp        = nullptr;
+  TSCacheKey cacheKey = nullptr;
   bool result         = false;
 
   if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_hdr_loc) != TS_SUCCESS) {
@@ -539,14 +539,14 @@ removeCacheKey(TSHttpTxn txnp)
       break;
     }
 
-    contp = TSContCreate(removeCacheHandler, NULL);
-    if (contp == NULL) {
+    contp = TSContCreate(removeCacheHandler, nullptr);
+    if (contp == nullptr) {
       TSError("[esi][%s] Could not create continuation", __FUNCTION__);
       break;
     }
 
     cacheKey = TSCacheKeyCreate();
-    if (cacheKey == NULL) {
+    if (cacheKey == nullptr) {
       TSError("[esi][%s] TSCacheKeyCreate fail", __FUNCTION__);
       break;
     }
@@ -561,17 +561,17 @@ removeCacheKey(TSHttpTxn txnp)
     TSError("[esi][%s] TSCacheRemoved", __FUNCTION__);
   } while (0);
 
-  if (cacheKey != NULL) {
+  if (cacheKey != nullptr) {
     TSCacheKeyDestroy(cacheKey);
   }
   if (!result) {
-    if (contp != NULL) {
+    if (contp != nullptr) {
       TSContDestroy(contp);
     }
   }
 
   TSHandleMLocRelease(req_bufp, req_hdr_loc, url_loc);
-  if (req_hdr_loc != NULL) {
+  if (req_hdr_loc != nullptr) {
     TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_hdr_loc);
   }
 
@@ -674,7 +674,7 @@ transformData(TSCont contp)
         const char *data;
         TSIOBufferBlock block = TSIOBufferReaderStart(cont_data->input_reader);
         // Now start extraction
-        while (block != NULL) {
+        while (block != nullptr) {
           data = TSIOBufferBlockReadStart(block, cont_data->input_reader, &data_len);
           if (cont_data->input_type == DATA_TYPE_RAW_ESI) {
             cont_data->esi_proc->addParseData(data, data_len);
@@ -867,7 +867,7 @@ transformData(TSCont contp)
             TSError("[esi][%s] Error while finishing gzip", __FUNCTION__);
             return 0;
           } else {
-            if (TSVIOBufferGet(cont_data->output_vio) == NULL) {
+            if (TSVIOBufferGet(cont_data->output_vio) == nullptr) {
               TSError("[esi][%s] Error while writing bytes to downstream VC", __FUNCTION__);
               return 0;
             }
@@ -1036,7 +1036,7 @@ struct RespHdrModData {
 static void
 addMimeHeaderField(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len, const char *value, int value_len)
 {
-  TSMLoc field_loc = (TSMLoc)NULL;
+  TSMLoc field_loc = (TSMLoc) nullptr;
   TSMimeHdrFieldCreate(bufp, hdr_loc, &field_loc);
   if (!field_loc) {
     TSError("[esi][%s] Error while creating mime field", __FUNCTION__);
@@ -1106,7 +1106,7 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
           int n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
           for (int j = 0; j < n_field_values; ++j) {
             value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
-            if (NULL == value || !value_len) {
+            if (nullptr == value || !value_len) {
               TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
             } else {
               if (!mod_data->option_info->packed_node_support || mod_data->cache_txn) {
@@ -1176,7 +1176,7 @@ checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len,
     int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
-      if (NULL != value && value_len) {
+      if (nullptr != value && value_len) {
         if (prefix) {
           if ((value_len >= exp_value_len) && (strncasecmp(value, exp_value, exp_value_len) == 0)) {
             retval = true;
@@ -1226,7 +1226,7 @@ maskOsCacheHeaders(TSHttpTxn txnp)
       n_field_values                = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
       for (int j = 0; j < n_field_values; ++j) {
         value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
-        if (NULL == value || !value_len) {
+        if (nullptr == value || !value_len) {
           TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
         } else {
           is_cache_header = checkForCacheHeader(name, name_len, value, value_len, os_response_cacheable);
@@ -1275,7 +1275,7 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool *intercept_header, bo
   int method_len;
   const char *method;
   method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
-  if (method == NULL) {
+  if (method == nullptr) {
     TSError("[esi][%s] Couldn't get method", __FUNCTION__);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return false;
@@ -1415,7 +1415,7 @@ checkForCacheHeader(const char *name, int name_len, const char *value, int value
 static bool
 addSendResponseHeaderHook(TSHttpTxn txnp, const ContData *src_cont_data)
 {
-  TSCont contp = TSContCreate(modifyResponseHeader, NULL);
+  TSCont contp = TSContCreate(modifyResponseHeader, nullptr);
   if (!contp) {
     TSError("[esi][%s] Could not create continuation", __FUNCTION__);
     return false;
@@ -1434,8 +1434,8 @@ static bool
 addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool intercept_header, const bool head_only,
              const struct OptionInfo *pOptionInfo)
 {
-  TSCont contp        = 0;
-  ContData *cont_data = 0;
+  TSCont contp        = nullptr;
+  ContData *cont_data = nullptr;
 
   contp = TSTransformCreate(transformHandler, txnp);
   if (!contp) {
@@ -1566,9 +1566,9 @@ loadHandlerConf(const char *file_name, Utils::KeyValueMap &handler_conf)
 {
   std::list<string> conf_lines;
   TSFile conf_file = TSfopen(file_name, "r");
-  if (conf_file != NULL) {
+  if (conf_file != nullptr) {
     char buf[1024];
-    while (TSfgets(conf_file, buf, sizeof(buf) - 1) != NULL) {
+    while (TSfgets(conf_file, buf, sizeof(buf) - 1) != nullptr) {
       conf_lines.push_back(string(buf));
     }
     TSfclose(conf_file);
@@ -1582,15 +1582,15 @@ loadHandlerConf(const char *file_name, Utils::KeyValueMap &handler_conf)
 static int
 esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
 {
-  static TSStatSystem *statSystem = NULL;
+  static TSStatSystem *statSystem = nullptr;
 
-  if (statSystem == NULL) {
+  if (statSystem == nullptr) {
     statSystem = new TSStatSystem();
     Utils::init(&TSDebug, &TSError);
     Stats::init(statSystem);
   }
 
-  if (gHandlerManager == NULL) {
+  if (gHandlerManager == nullptr) {
     gHandlerManager = new HandlerManager(HANDLER_MGR_DEBUG_TAG, &TSDebug, &TSError);
   }
 
@@ -1599,12 +1599,12 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
   if (argc > 1) {
     int c;
     static const struct option longopts[] = {
-      {const_cast<char *>("packed-node-support"), no_argument, NULL, 'n'},
-      {const_cast<char *>("private-response"), no_argument, NULL, 'p'},
-      {const_cast<char *>("disable-gzip-output"), no_argument, NULL, 'z'},
-      {const_cast<char *>("first-byte-flush"), no_argument, NULL, 'b'},
-      {const_cast<char *>("handler-filename"), required_argument, NULL, 'f'},
-      {NULL, 0, NULL, 0},
+      {const_cast<char *>("packed-node-support"), no_argument, nullptr, 'n'},
+      {const_cast<char *>("private-response"), no_argument, nullptr, 'p'},
+      {const_cast<char *>("disable-gzip-output"), no_argument, nullptr, 'z'},
+      {const_cast<char *>("first-byte-flush"), no_argument, nullptr, 'b'},
+      {const_cast<char *>("handler-filename"), required_argument, nullptr, 'f'},
+      {nullptr, 0, nullptr, 0},
     };
 
     int longindex = 0;
@@ -1638,7 +1638,7 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
   bool bKeySet;
   if (threadKey == 0) {
     bKeySet = true;
-    if ((result = pthread_key_create(&threadKey, NULL)) != 0) {
+    if ((result = pthread_key_create(&threadKey, nullptr)) != 0) {
       TSError("[esi][%s] Could not create key", __FUNCTION__);
       TSDebug(DEBUG_TAG, "[%s] Could not create key", __FUNCTION__);
     }
@@ -1671,7 +1671,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   struct OptionInfo *pOptionInfo = (struct OptionInfo *)TSmalloc(sizeof(struct OptionInfo));
-  if (pOptionInfo == NULL) {
+  if (pOptionInfo == nullptr) {
     TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, (int)sizeof(struct OptionInfo));
     return;
   }
@@ -1680,7 +1680,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  TSCont global_contp = TSContCreate(globalHookHandler, NULL);
+  TSCont global_contp = TSContCreate(globalHookHandler, nullptr);
   if (!global_contp) {
     TSError("[esi][%s] Could not create global continuation", __FUNCTION__);
     TSfree(pOptionInfo);
@@ -1733,10 +1733,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   for (int i = 2; i < argc; i++) {
     new_argv[index++] = argv[i];
   }
-  new_argv[index] = NULL;
+  new_argv[index] = nullptr;
 
   struct OptionInfo *pOptionInfo = (struct OptionInfo *)TSmalloc(sizeof(struct OptionInfo));
-  if (pOptionInfo == NULL) {
+  if (pOptionInfo == nullptr) {
     snprintf(errbuf, errbuf_size, "malloc %d bytes fail", (int)sizeof(struct OptionInfo));
     TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, (int)sizeof(struct OptionInfo));
     return TS_ERROR;
@@ -1746,7 +1746,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     TSfree(pOptionInfo);
     return TS_ERROR;
   }
-  TSCont contp = TSContCreate(globalHookHandler, NULL);
+  TSCont contp = TSContCreate(globalHookHandler, nullptr);
   TSContDataSet(contp, pOptionInfo);
   *ih = static_cast<void *>(contp);
 
@@ -1757,7 +1757,7 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   TSCont contp = static_cast<TSCont>(ih);
-  if (contp != NULL) {
+  if (contp != nullptr) {
     TSContDestroy(contp);
   }
 }
@@ -1768,7 +1768,7 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
-  if (NULL != ih) {
+  if (nullptr != ih) {
     TSCont contp = static_cast<TSCont>(ih);
     TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
     TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, contp);

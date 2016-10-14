@@ -49,7 +49,7 @@
   in the Event Subsystem are registered with this key. Thus, whenever you
   call this_ethread() you get a pointer to EThread. If you happen to call
   this_ethread() from inside a thread which is not an EThread, you will
-  get a NULL value (since that thread will not be  registered with the
+  get a nullptr value (since that thread will not be  registered with the
   EThread key). This will hopefully make the use of this_ethread() safer.
   Note that an event created with EThread can also call this_thread(),
   in which case, it will get a pointer to Thread (rather than to EThread).

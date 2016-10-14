@@ -35,7 +35,7 @@ int accept_till_done        = 1;
 static void
 safe_delay(int msec)
 {
-  socketManager.poll(0, 0, msec);
+  socketManager.poll(nullptr, 0, msec);
 }
 
 //
@@ -48,7 +48,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   int res                = 0;
   int count              = 0;
   int loop               = accept_till_done;
-  UnixNetVConnection *vc = NULL;
+  UnixNetVConnection *vc = nullptr;
   Connection con;
 
   if (!blockable) {
@@ -204,7 +204,7 @@ NetAccept::do_listen(bool non_blocking)
       action_->continuation->handleEvent(NET_EVENT_ACCEPT_FAILED, this);
     else
       action_->continuation->handleEvent(NET_EVENT_ACCEPT_SUCCEED, this);
-    mutex = NULL;
+    mutex = nullptr;
   }
 
   return res;
@@ -215,7 +215,7 @@ NetAccept::do_blocking_accept(EThread *t)
 {
   int res                = 0;
   int loop               = accept_till_done;
-  UnixNetVConnection *vc = NULL;
+  UnixNetVConnection *vc = nullptr;
   Connection con;
 
   // do-while for accepting all the connections
@@ -255,8 +255,8 @@ NetAccept::do_blocking_accept(EThread *t)
       }
     }
 
-    // Use 'NULL' to Bypass thread allocator
-    vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(NULL);
+    // Use 'nullptr' to Bypass thread allocator
+    vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(nullptr);
     if (unlikely(!vc || shutdown_event_system == true)) {
       return -1;
     }
@@ -286,7 +286,7 @@ NetAccept::acceptEvent(int event, void *ep)
   (void)event;
   Event *e = (Event *)ep;
   // PollDescriptor *pd = get_PollDescriptor(e->ethread);
-  ProxyMutex *m = 0;
+  ProxyMutex *m = nullptr;
 
   if (action_->mutex) {
     m = action_->mutex.get();
@@ -333,7 +333,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
   Connection con;
 
   PollDescriptor *pd     = get_PollDescriptor(e->ethread);
-  UnixNetVConnection *vc = NULL;
+  UnixNetVConnection *vc = nullptr;
   int loop               = accept_till_done;
 
   do {
@@ -482,7 +482,7 @@ NetAccept::acceptLoopEvent(int event, Event *e)
 //
 
 NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt)
-  : Continuation(NULL), period(0), accept_fn(NULL), ifd(NO_FD), opt(_opt)
+  : Continuation(nullptr), period(0), accept_fn(nullptr), ifd(NO_FD), opt(_opt)
 {
 }
 

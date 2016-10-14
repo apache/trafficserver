@@ -44,7 +44,7 @@ SslHdrParseExpansion(const char *spec, SslHdrExpansion &exp)
 
   // First, split on '=' to separate the header name from the SSL expansion.
   sep = strchr(spec, '=');
-  if (sep == NULL) {
+  if (sep == nullptr) {
     SslHdrError("%s: missing '=' in SSL header expansion '%s'", PLUGIN_NAME, spec);
     return false;
   }
@@ -54,7 +54,7 @@ SslHdrParseExpansion(const char *spec, SslHdrExpansion &exp)
 
   // Next, split on '.' to separate the certificate selector from the field selector.
   sep = strchr(selector, '.');
-  if (sep == NULL) {
+  if (sep == nullptr) {
     SslHdrError("%s: missing '.' in SSL header expansion '%s'", PLUGIN_NAME, spec);
     return false;
   }

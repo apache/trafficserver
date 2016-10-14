@@ -35,7 +35,7 @@
 /*
  * Global ProcessManager
  */
-inkcoreapi ProcessManager *pmgmt = NULL;
+inkcoreapi ProcessManager *pmgmt = nullptr;
 
 /*
  * startProcessManager(...)
@@ -59,7 +59,7 @@ startProcessManager(void *arg)
 
   for (;;) {
     if (unlikely(shutdown_event_system == true)) {
-      return NULL;
+      return nullptr;
     }
     if (pmgmt->require_lm) {
       pmgmt->pollLMConnection();
@@ -72,7 +72,7 @@ startProcessManager(void *arg)
 } /* End startProcessManager */
 
 ProcessManager::ProcessManager(bool rlm)
-  : BaseManager(), require_lm(rlm), local_manager_sockfd(0), cbtable(NULL), max_msgs_in_a_row(1)
+  : BaseManager(), require_lm(rlm), local_manager_sockfd(0), cbtable(nullptr), max_msgs_in_a_row(1)
 {
   mgmt_signal_queue = create_queue();
 
@@ -142,7 +142,7 @@ ProcessManager::processEventQueue()
     if (mh->data_len > 0) {
       executeMgmtCallback(mh->msg_id, (char *)mh + sizeof(MgmtMessageHdr), mh->data_len);
     } else {
-      executeMgmtCallback(mh->msg_id, NULL, 0);
+      executeMgmtCallback(mh->msg_id, nullptr, 0);
     }
     if (mh->msg_id == MGMT_EVENT_SHUTDOWN) {
       mgmt_fatal(0, "[ProcessManager::processEventQueue] Shutdown msg received, exiting\n");
@@ -289,7 +289,7 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
     signalMgmtEntity(MGMT_EVENT_ROLL_LOG_FILES);
     break;
   case MGMT_EVENT_PLUGIN_CONFIG_UPDATE:
-    if (data_raw != NULL && data_raw[0] != '\0' && this->cbtable) {
+    if (data_raw != nullptr && data_raw[0] != '\0' && this->cbtable) {
       this->cbtable->invoke(data_raw);
     }
     break;

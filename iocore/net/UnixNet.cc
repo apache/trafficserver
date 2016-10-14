@@ -101,14 +101,14 @@ public:
 #endif
 
 PollCont::PollCont(Ptr<ProxyMutex> &m, int pt)
-  : Continuation(m.get()), net_handler(NULL), nextPollDescriptor(NULL), poll_timeout(pt)
+  : Continuation(m.get()), net_handler(nullptr), nextPollDescriptor(nullptr), poll_timeout(pt)
 {
   pollDescriptor = new PollDescriptor();
   SET_HANDLER(&PollCont::pollEvent);
 }
 
 PollCont::PollCont(Ptr<ProxyMutex> &m, NetHandler *nh, int pt)
-  : Continuation(m.get()), net_handler(nh), nextPollDescriptor(NULL), poll_timeout(pt)
+  : Continuation(m.get()), net_handler(nh), nextPollDescriptor(nullptr), poll_timeout(pt)
 {
   pollDescriptor = new PollDescriptor();
   SET_HANDLER(&PollCont::pollEvent);
@@ -117,7 +117,7 @@ PollCont::PollCont(Ptr<ProxyMutex> &m, NetHandler *nh, int pt)
 PollCont::~PollCont()
 {
   delete pollDescriptor;
-  if (nextPollDescriptor != NULL) {
+  if (nextPollDescriptor != nullptr) {
     delete nextPollDescriptor;
   }
 }
@@ -155,7 +155,7 @@ PollCont::pollEvent(int event, Event *e)
   tv.tv_sec  = poll_timeout / 1000;
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
   pollDescriptor->result =
-    kevent(pollDescriptor->kqueue_fd, NULL, 0, pollDescriptor->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
+    kevent(pollDescriptor->kqueue_fd, nullptr, 0, pollDescriptor->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
   NetDebug("iocore_net_poll", "[PollCont::pollEvent] kqueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd,
            poll_timeout, pollDescriptor->result);
 #elif TS_USE_PORT
@@ -245,15 +245,15 @@ initialize_thread_for_net(EThread *thread)
 #if HAVE_EVENTFD
   thread->ep->start(pd, thread->evfd, 0, EVENTIO_READ);
 #else
-  thread->ep->start(pd, thread->evpipe[0], 0, EVENTIO_READ);
+  thread->ep->start(pd, thread->evpipe[0], nullptr, EVENTIO_READ);
 #endif
 }
 
 // NetHandler method definitions
 
 NetHandler::NetHandler()
-  : Continuation(NULL),
-    trigger_event(0),
+  : Continuation(nullptr),
+    trigger_event(nullptr),
     keep_alive_queue_size(0),
     active_queue_size(0),
     max_connections_per_thread_in(0),
@@ -272,10 +272,10 @@ int
 update_nethandler_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data, void *cookie)
 {
   NetHandler *nh = static_cast<NetHandler *>(cookie);
-  ink_assert(nh != NULL);
+  ink_assert(nh != nullptr);
   bool update_per_thread_configuration = false;
 
-  if (nh != NULL) {
+  if (nh != nullptr) {
     if (strcmp(name, "proxy.config.net.max_connections_in") == 0) {
       Debug("net_queue", "proxy.config.net.max_connections_in updated to %" PRId64, data.rec_int);
       nh->max_connections_in          = data.rec_int;
@@ -355,7 +355,7 @@ NetHandler::startNetEvent(int event, Event *e)
 void
 NetHandler::process_enabled_list(NetHandler *nh)
 {
-  UnixNetVConnection *vc = NULL;
+  UnixNetVConnection *vc = nullptr;
 
   SListM(UnixNetVConnection, NetState, read, enable_link) rq(nh->read_enable_list.popall());
   while ((vc = rq.pop())) {
@@ -387,7 +387,7 @@ NetHandler::mainNetEvent(int event, Event *e)
   ink_assert(trigger_event == e && (event == EVENT_INTERVAL || event == EVENT_POLL));
   (void)event;
   (void)e;
-  EventIO *epd = NULL;
+  EventIO *epd = nullptr;
   int poll_timeout;
 
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
@@ -399,7 +399,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     poll_timeout = net_config_poll_timeout;
 
   PollDescriptor *pd     = get_PollDescriptor(trigger_event->ethread);
-  UnixNetVConnection *vc = NULL;
+  UnixNetVConnection *vc = nullptr;
 #if TS_USE_EPOLL
   pd->result = epoll_wait(pd->epoll_fd, pd->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
   NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] epoll_wait(%d,%d), result=%d", pd->epoll_fd, poll_timeout,
@@ -408,7 +408,7 @@ NetHandler::mainNetEvent(int event, Event *e)
   struct timespec tv;
   tv.tv_sec  = poll_timeout / 1000;
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
-  pd->result = kevent(pd->kqueue_fd, NULL, 0, pd->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
+  pd->result = kevent(pd->kqueue_fd, nullptr, 0, pd->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
   NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] kevent(%d,%d), result=%d", pd->kqueue_fd, poll_timeout, pd->result);
 #elif TS_USE_PORT
   int retval;
@@ -441,7 +441,7 @@ NetHandler::mainNetEvent(int event, Event *e)
 #error port me
 #endif
 
-  vc = NULL;
+  vc = nullptr;
   for (int x = 0; x < pd->result; x++) {
     epd = (EventIO *)get_ev_data(pd, x);
     if (epd->type == EVENTIO_READWRITE_VC) {
@@ -484,7 +484,7 @@ NetHandler::mainNetEvent(int event, Event *e)
         Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd, x));
       }
     } else if (epd->type == EVENTIO_DNS_CONNECTION) {
-      if (epd->data.dnscon != NULL) {
+      if (epd->data.dnscon != nullptr) {
         epd->data.dnscon->trigger(); // Make sure the DNSHandler for this con knows we triggered
 #if defined(USE_EDGE_TRIGGER)
         epd->refresh(EVENTIO_READ);
@@ -576,12 +576,12 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
 
   // loop over the non-active connections and try to close them
   UnixNetVConnection *vc      = active_queue.head;
-  UnixNetVConnection *vc_next = NULL;
+  UnixNetVConnection *vc_next = nullptr;
   int closed                  = 0;
   int handle_event            = 0;
   int total_idle_time         = 0;
   int total_idle_count        = 0;
-  for (; vc != NULL; vc = vc_next) {
+  for (; vc != nullptr; vc = vc_next) {
     vc_next = vc->active_queue_link.next;
     if ((vc->inactivity_timeout_in && vc->next_inactivity_timeout_at <= now) ||
         (vc->active_timeout_in && vc->next_activity_timeout_at <= now)) {
@@ -625,12 +625,12 @@ NetHandler::manage_keep_alive_queue()
   }
 
   // loop over the non-active connections and try to close them
-  UnixNetVConnection *vc_next = NULL;
+  UnixNetVConnection *vc_next = nullptr;
   int closed                  = 0;
   int handle_event            = 0;
   int total_idle_time         = 0;
   int total_idle_count        = 0;
-  for (UnixNetVConnection *vc = keep_alive_queue.head; vc != NULL; vc = vc_next) {
+  for (UnixNetVConnection *vc = keep_alive_queue.head; vc != nullptr; vc = vc_next) {
     vc_next = vc->keep_alive_queue_link.next;
     _close_vc(vc, now, handle_event, closed, total_idle_time, total_idle_count);
 

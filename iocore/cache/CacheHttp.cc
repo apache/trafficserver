@@ -33,7 +33,7 @@ static vec_info default_vec_info;
 #ifdef HTTP_CACHE
 static CacheHTTPInfo default_http_info;
 
-CacheHTTPInfoVector::CacheHTTPInfoVector() : magic(NULL), data(&default_vec_info, 4), xcount(0)
+CacheHTTPInfoVector::CacheHTTPInfoVector() : magic(nullptr), data(&default_vec_info, 4), xcount(0)
 {
 }
 
@@ -48,7 +48,7 @@ CacheHTTPInfoVector::~CacheHTTPInfoVector()
     data[i].alternate.destroy();
   }
   vector_buf.clear();
-  magic = NULL;
+  magic = nullptr;
 }
 
 /*-------------------------------------------------------------------------

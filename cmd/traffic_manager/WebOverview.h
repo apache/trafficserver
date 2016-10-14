@@ -71,7 +71,7 @@
 class overviewRecord
 {
 public:
-  overviewRecord(unsigned long inet_addr, bool local, ClusterPeerInfo *cpi = NULL);
+  overviewRecord(unsigned long inet_addr, bool local, ClusterPeerInfo *cpi = nullptr);
 
   ~overviewRecord();
 
@@ -104,9 +104,9 @@ public:
   void checkForUpdates();
   char *resolvePeerHostname(const char *peerIP);
   char *resolvePeerHostname_ml(const char *peerIP);
-  MgmtInt readInteger(const char *nodeName, const char *name, bool *found = NULL);
-  MgmtFloat readFloat(const char *nodeName, const char *name, bool *found = NULL);
-  MgmtString readString(const char *nodeName, const char *name, bool *found = NULL);
+  MgmtInt readInteger(const char *nodeName, const char *name, bool *found = nullptr);
+  MgmtFloat readFloat(const char *nodeName, const char *name, bool *found = nullptr);
+  MgmtString readString(const char *nodeName, const char *name, bool *found = nullptr);
   void addSelfRecord();
 
   int varClusterDataFromName(RecDataT varType, const char *nodeVar, RecData *sum);

@@ -166,7 +166,7 @@ Errata::pop() {
 
 void
 Errata::clear() {
-  m_data.reset(0);
+  m_data.reset(nullptr);
 }
 
 /*  We want to allow iteration on empty / nil containers because that's very

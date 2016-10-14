@@ -29,8 +29,8 @@
 std::string
 atscppapi::utils::getIpString(const sockaddr *sockaddress)
 {
-  if (sockaddress == NULL) {
-    LOG_ERROR("Cannot work on NULL sockaddress");
+  if (sockaddress == nullptr) {
+    LOG_ERROR("Cannot work on nullptr sockaddress");
     return std::string();
   }
 
@@ -52,8 +52,8 @@ atscppapi::utils::getIpString(const sockaddr *sockaddress)
 uint16_t
 atscppapi::utils::getPort(const sockaddr *sockaddress)
 {
-  if (sockaddress == NULL) {
-    LOG_ERROR("Cannot work on NULL sockaddress");
+  if (sockaddress == nullptr) {
+    LOG_ERROR("Cannot work on nullptr sockaddress");
     return 0;
   }
 
@@ -70,8 +70,8 @@ atscppapi::utils::getPort(const sockaddr *sockaddress)
 std::string
 atscppapi::utils::getIpPortString(const sockaddr *sockaddress)
 {
-  if (sockaddress == NULL) {
-    LOG_ERROR("Cannot work on NULL sockaddress");
+  if (sockaddress == nullptr) {
+    LOG_ERROR("Cannot work on nullptr sockaddress");
     return std::string();
   }
 

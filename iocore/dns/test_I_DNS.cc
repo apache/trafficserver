@@ -28,7 +28,7 @@
 
 main()
 {
-  init_diags("net_test", NULL);
+  init_diags("net_test", nullptr);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
 
   signal(SIGPIPE, SIG_IGN);

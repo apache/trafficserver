@@ -162,7 +162,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
       na->init_accept_per_thread();
     }
   } else {
-    na->init_accept(NULL);
+    na->init_accept(nullptr);
   }
 
 #ifdef TCP_DEFER_ACCEPT
@@ -209,7 +209,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
                           !socks_conf_stuff->ip_map.contains(target))
 #endif
                         );
-  SocksEntry *socksEntry = NULL;
+  SocksEntry *socksEntry = nullptr;
 
   NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
   vc->id          = net_next_connection_number();
@@ -353,7 +353,7 @@ struct CheckConnect : public Continuation {
     }
   }
 
-  explicit CheckConnect(Ptr<ProxyMutex> &m) : Continuation(m.get()), vc(NULL), connect_status(-1), recursion(0), timeout(0)
+  explicit CheckConnect(Ptr<ProxyMutex> &m) : Continuation(m.get()), vc(nullptr), connect_status(-1), recursion(0), timeout(0)
   {
     SET_HANDLER(&CheckConnect::handle_connect);
     buf    = new_empty_MIOBuffer(1);
@@ -397,7 +397,7 @@ UnixNetProcessor::start(int, size_t)
 
   RecData d;
   d.rec_int = 0;
-  change_net_connections_throttle(NULL, RECD_INT, d, NULL);
+  change_net_connections_throttle(nullptr, RECD_INT, d, nullptr);
 
   // Socks
   if (!netProcessor.socks_conf_stuff) {
@@ -454,7 +454,7 @@ UnixNetProcessor::allocate_vc(EThread *t)
   return vc;
 }
 
-struct socks_conf_struct *NetProcessor::socks_conf_stuff = NULL;
+struct socks_conf_struct *NetProcessor::socks_conf_stuff = nullptr;
 int NetProcessor::accept_mss                             = 0;
 
 UnixNetProcessor unix_netProcessor;

@@ -110,7 +110,7 @@ public:
 
   /**
    * Used to extract the body of the response after request completion. On
-   * unsuccessful completion, values (NULL, 0) are set.
+   * unsuccessful completion, values (nullptr, 0) are set.
    *
    * When streaming is enabled, this can be called on either body result.
    *

@@ -66,7 +66,7 @@ NetVCOptions::reset()
 
   etype = ET_NET;
 
-  sni_servername = NULL;
+  sni_servername = nullptr;
 }
 
 TS_INLINE void
@@ -187,7 +187,7 @@ public:
   const char *
   protocol_contains(const char *tag) const
   {
-    const char *retval   = NULL;
+    const char *retval   = nullptr;
     unsigned int tag_len = strlen(tag);
     const char *test_tag = options.get_proto_string();
     if (strncmp(tag, test_tag, tag_len) == 0) {
@@ -405,7 +405,7 @@ UnixNetVConnection::cancel_inactivity_timeout()
   if (inactivity_timeout) {
     Debug("socket", "Cancel inactive timeout for NetVC=%p", this);
     inactivity_timeout->cancel_action(this);
-    inactivity_timeout = NULL;
+    inactivity_timeout = nullptr;
   }
 #else
   set_inactivity_timeout(0);
@@ -421,7 +421,7 @@ UnixNetVConnection::cancel_active_timeout()
   if (active_timeout) {
     Debug("socket", "Cancel active timeout for NetVC=%p", this);
     active_timeout->cancel_action(this);
-    active_timeout = NULL;
+    active_timeout = nullptr;
   }
 #else
   next_activity_timeout_at = 0;

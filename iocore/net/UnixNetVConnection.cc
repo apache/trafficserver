@@ -101,11 +101,11 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
 #ifdef INACTIVITY_TIMEOUT
   if (vc->inactivity_timeout) {
     vc->inactivity_timeout->cancel_action(vc);
-    vc->inactivity_timeout = NULL;
+    vc->inactivity_timeout = nullptr;
   }
   if (vc->active_timeout) {
     vc->active_timeout->cancel_action(vc);
-    vc->active_timeout = NULL;
+    vc->active_timeout = nullptr;
   }
 #else
   vc->next_inactivity_timeout_at = 0;
@@ -676,9 +676,9 @@ UnixNetVConnection::outstanding()
 VIO *
 UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  if (closed && !(c == NULL && nbytes == 0 && buf == NULL)) {
+  if (closed && !(c == nullptr && nbytes == 0 && buf == nullptr)) {
     Error("do_io_read invoked on closed vc %p, cont %p, nbytes %" PRId64 ", buf %p", this, c, nbytes, buf);
-    return NULL;
+    return nullptr;
   }
   read.vio.op        = VIO::READ;
   read.vio.mutex     = c ? c->mutex : this->mutex;
@@ -700,9 +700,9 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 VIO *
 UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *reader, bool owner)
 {
-  if (closed && !(c == NULL && nbytes == 0 && reader == NULL)) {
+  if (closed && !(c == nullptr && nbytes == 0 && reader == nullptr)) {
     Error("do_io_write invoked on closed vc %p, cont %p, nbytes %" PRId64 ", reader %p", this, c, nbytes, reader);
-    return NULL;
+    return nullptr;
   }
   write.vio.op        = VIO::WRITE;
   write.vio.mutex     = c ? c->mutex : this->mutex;
@@ -729,11 +729,11 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   read.vio.buffer.clear();
   read.vio.nbytes = 0;
   read.vio.op     = VIO::NONE;
-  read.vio._cont  = NULL;
+  read.vio._cont  = nullptr;
   write.vio.buffer.clear();
   write.vio.nbytes = 0;
   write.vio.op     = VIO::NONE;
-  write.vio._cont  = NULL;
+  write.vio._cont  = nullptr;
 
   EThread *t        = this_ethread();
   bool close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
@@ -788,7 +788,7 @@ OOB_callback::retry_OOB_send(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED
 {
   ink_assert(mutex->thread_holding == this_ethread());
   // the NetVC and the OOB_callback share a mutex
-  server_vc->oob_ptr = NULL;
+  server_vc->oob_ptr = nullptr;
   server_vc->send_OOB(server_cont, data, length);
   delete this;
   return EVENT_DONE;
@@ -801,10 +801,10 @@ UnixNetVConnection::cancel_OOB()
   if (u->oob_ptr) {
     if (u->oob_ptr->trigger) {
       u->oob_ptr->trigger->cancel_action();
-      u->oob_ptr->trigger = NULL;
+      u->oob_ptr->trigger = nullptr;
     }
     delete u->oob_ptr;
-    u->oob_ptr = NULL;
+    u->oob_ptr = nullptr;
   }
 }
 
@@ -819,10 +819,10 @@ UnixNetVConnection::send_OOB(Continuation *cont, char *buf, int len)
   ink_assert(cont->mutex->thread_holding == this_ethread());
   written = socketManager.send(u->con.fd, buf, len, MSG_OOB);
   if (written == len) {
-    cont->handleEvent(VC_EVENT_OOB_COMPLETE, NULL);
+    cont->handleEvent(VC_EVENT_OOB_COMPLETE, nullptr);
     return ACTION_RESULT_DONE;
   } else if (!written) {
-    cont->handleEvent(VC_EVENT_EOS, NULL);
+    cont->handleEvent(VC_EVENT_EOS, nullptr);
     return ACTION_RESULT_DONE;
   }
   if (written > 0 && written < len) {
@@ -940,21 +940,21 @@ UnixNetVConnection::UnixNetVConnection()
     inactivity_timeout_in(0),
     active_timeout_in(0),
 #ifdef INACTIVITY_TIMEOUT
-    inactivity_timeout(NULL),
-    active_timeout(NULL),
+    inactivity_timeout(nullptr),
+    active_timeout(nullptr),
 #else
     next_inactivity_timeout_at(0),
     next_activity_timeout_at(0),
 #endif
-    nh(NULL),
+    nh(nullptr),
     id(0),
     flags(0),
     recursion(0),
     submit_time(0),
-    oob_ptr(0),
+    oob_ptr(nullptr),
     from_accept_thread(false),
     origin_trace(false),
-    origin_trace_addr(NULL),
+    origin_trace_addr(nullptr),
     origin_trace_port(0)
 {
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::startEvent);
@@ -1244,10 +1244,10 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   }
 
   int signal_event;
-  Continuation *reader_cont     = NULL;
-  Continuation *writer_cont     = NULL;
-  ink_hrtime *signal_timeout_at = NULL;
-  Event *t                      = NULL;
+  Continuation *reader_cont     = nullptr;
+  Continuation *writer_cont     = nullptr;
+  ink_hrtime *signal_timeout_at = nullptr;
+  Event *t                      = nullptr;
   Event **signal_timeout        = &t;
 
 #ifdef INACTIVITY_TIMEOUT
@@ -1274,7 +1274,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   }
 #endif
 
-  *signal_timeout    = 0;
+  *signal_timeout    = nullptr;
   *signal_timeout_at = 0;
   writer_cont        = write.vio._cont;
 
@@ -1315,7 +1315,7 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
   SET_HANDLER(&UnixNetVConnection::mainEvent);
 
   this->nh = get_NetHandler(t);
-  ink_assert(this->nh != NULL);
+  ink_assert(this->nh != nullptr);
   MUTEX_TRY_LOCK(lock, this->nh->mutex, t);
   if (!lock.is_locked()) {
     // Clean up and go home
@@ -1396,7 +1396,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   }
 
   if (fd == NO_FD) {
-    res = con.connect(NULL, options);
+    res = con.connect(nullptr, options);
     if (res != 0) {
       goto fail;
     }
@@ -1436,15 +1436,15 @@ UnixNetVConnection::free(EThread *t)
   write.vio.mutex.clear();
   flags = 0;
   SET_CONTINUATION_HANDLER(this, (NetVConnHandler)&UnixNetVConnection::startEvent);
-  nh                  = NULL;
+  nh                  = nullptr;
   read.triggered      = 0;
   write.triggered     = 0;
   read.enabled        = 0;
   write.enabled       = 0;
-  read.vio._cont      = NULL;
-  write.vio._cont     = NULL;
-  read.vio.vc_server  = NULL;
-  write.vio.vc_server = NULL;
+  read.vio._cont      = nullptr;
+  write.vio._cont     = nullptr;
+  read.vio.vc_server  = nullptr;
+  write.vio.vc_server = nullptr;
   options.reset();
   closed        = 0;
   netvc_context = NET_VCONNECTION_UNSET;
@@ -1524,10 +1524,10 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   hold_con.move(this->con);
   SSLNetVConnection *sslvc = dynamic_cast<SSLNetVConnection *>(this);
 
-  SSL *save_ssl = (sslvc) ? sslvc->ssl : NULL;
+  SSL *save_ssl = (sslvc) ? sslvc->ssl : nullptr;
   if (save_ssl) {
     SSLNetVCDetach(sslvc->ssl);
-    sslvc->ssl = NULL;
+    sslvc->ssl = nullptr;
   }
 
   // Do_io_close will signal the VC to be freed on the original thread
@@ -1542,7 +1542,7 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     SSLNetVConnection *sslvc = static_cast<SSLNetVConnection *>(sslNetProcessor.allocate_vc(t));
     if (sslvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       sslvc->do_io_close();
-      sslvc = NULL;
+      sslvc = nullptr;
     } else {
       sslvc->set_context(get_context());
     }
@@ -1552,7 +1552,7 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     UnixNetVConnection *netvc = static_cast<UnixNetVConnection *>(netProcessor.allocate_vc(t));
     if (netvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       netvc->do_io_close();
-      netvc = NULL;
+      netvc = nullptr;
     } else {
       netvc->set_context(get_context());
     }

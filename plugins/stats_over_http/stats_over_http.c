@@ -243,11 +243,13 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
 
   TSDebug(PLUGIN_NAME, "in the read stuff");
 
-  if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS)
+  if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS) {
     goto cleanup;
+  }
 
-  if (TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc) != TS_SUCCESS)
+  if (TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc) != TS_SUCCESS) {
     goto cleanup;
+  }
 
   int path_len     = 0;
   const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
@@ -272,10 +274,12 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
 notforme:
 
 cleanup:
-  if (url_loc)
+  if (url_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, url_loc);
-  if (hdr_loc)
+  }
+  if (hdr_loc) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
+  }
 
   TSHttpTxnReenable(txnp, reenable);
   return 0;

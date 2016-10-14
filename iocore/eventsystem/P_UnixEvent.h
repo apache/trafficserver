@@ -38,7 +38,7 @@ Event::init(Continuation *c, ink_hrtime atimeout_at, ink_hrtime aperiod)
 TS_INLINE void
 Event::free()
 {
-  mutex = NULL;
+  mutex = nullptr;
   eventAllocator.free(this);
 }
 

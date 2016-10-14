@@ -79,7 +79,7 @@ private:
 template <class C>
 RefCountCacheSerializer<C>::RefCountCacheSerializer(Continuation *acont, C *cc, int frequency, std::string dirname,
                                                     std::string filename)
-  : Continuation(NULL),
+  : Continuation(nullptr),
     partition(0),
     cache(cc),
     cont(acont),

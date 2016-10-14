@@ -46,7 +46,7 @@ unpackString(const char *&packed_data, const char *&item, int32_t &item_len)
 {
   item_len = *(reinterpret_cast<const int32_t *>(packed_data));
   packed_data += sizeof(int32_t);
-  item = item_len ? packed_data : 0;
+  item = item_len ? packed_data : nullptr;
   packed_data += item_len;
 }
 

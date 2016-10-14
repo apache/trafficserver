@@ -175,7 +175,7 @@ struct HostDBInfo : public RefCountObj {
   unmarshall(char *buf, unsigned int size)
   {
     if (size < sizeof(HostDBInfo)) {
-      return NULL;
+      return nullptr;
     }
     HostDBInfo *ret = HostDBInfo::alloc(size - sizeof(HostDBInfo));
     int buf_index   = ret->iobuffer_index;
@@ -386,7 +386,7 @@ struct HostDBRoundRobin {
   HostDBInfo *find_target(const char *target);
   /** Select the next entry after @a addr.
       @note If @a addr isn't an address in the round robin nothing is updated.
-      @return The selected entry or @c NULL if @a addr wasn't present.
+      @return The selected entry or @c nullptr if @a addr wasn't present.
    */
   HostDBInfo *select_next(sockaddr const *addr);
   HostDBInfo *select_best_http(sockaddr const *client_ip, ink_time_t now, int32_t fail_window);
@@ -462,7 +462,7 @@ struct HostDBProcessor : public Processor {
   Action *
   getbyaddr_re(Continuation *cont, sockaddr const *aip)
   {
-    return getby(cont, NULL, 0, aip, false, HOST_RES_NONE, 0);
+    return getby(cont, nullptr, 0, aip, false, HOST_RES_NONE, 0);
   }
 
   /** Set the application information (fire-and-forget). */

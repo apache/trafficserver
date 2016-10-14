@@ -38,7 +38,7 @@ struct atscppapi::UrlState : noncopyable {
 
 Url::Url()
 {
-  state_ = new UrlState(static_cast<TSMBuffer>(NULL), static_cast<TSMLoc>(NULL));
+  state_ = new UrlState(static_cast<TSMBuffer>(nullptr), static_cast<TSMLoc>(nullptr));
 }
 
 Url::Url(void *hdr_buf, void *url_loc)

@@ -247,7 +247,7 @@ struct Vol : public Continuation {
 
   Vol()
     : Continuation(new_ProxyMutex()),
-      path(NULL),
+      path(nullptr),
       fd(-1),
       dir(0),
       buckets(0),
@@ -263,7 +263,7 @@ struct Vol : public Continuation {
       agg_buf_pos(0),
       trigger(0),
       evacuate_size(0),
-      disk(NULL),
+      disk(nullptr),
       last_sync_serial(0),
       last_write_serial(0),
       recover_wrapped(false),
@@ -297,7 +297,7 @@ struct CacheVol {
   // per volume stats
   RecRawStatBlock *vol_rsb;
 
-  CacheVol() : vol_number(-1), scheme(0), size(0), num_vols(0), vols(NULL), disk_vols(0), vol_rsb(0) {}
+  CacheVol() : vol_number(-1), scheme(0), size(0), num_vols(0), vols(nullptr), disk_vols(0), vol_rsb(0) {}
 };
 
 // Note : hdr() needs to be 8 byte aligned.
@@ -466,7 +466,7 @@ Vol::cancel_trigger()
 {
   if (trigger) {
     trigger->cancel_action();
-    trigger = NULL;
+    trigger = nullptr;
   }
 }
 

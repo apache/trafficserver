@@ -74,11 +74,11 @@ enum ExtraSubstitutions {
 //
 struct UrlComponents {
   UrlComponents()
-    : scheme(NULL),
-      host(NULL),
-      path(NULL),
-      query(NULL),
-      matrix(NULL),
+    : scheme(nullptr),
+      host(nullptr),
+      path(nullptr),
+      query(nullptr),
+      matrix(nullptr),
       port(0),
       scheme_len(0),
       host_len(0),
@@ -126,8 +126,8 @@ class RemapRegex
 public:
   RemapRegex()
     : _num_subs(-1),
-      _rex(NULL),
-      _extra(NULL),
+      _rex(nullptr),
+      _extra(nullptr),
       _options(0),
       _order(-1),
       _lowercase_substitutions(false),
@@ -135,7 +135,7 @@ public:
       _no_activity_timeout(-1),
       _connect_timeout(-1),
       _dns_timeout(-1),
-      _first_override(NULL)
+      _first_override(nullptr)
   {
     TSDebug(PLUGIN_NAME, "Calling constructor");
   }
@@ -308,14 +308,14 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
   if (!reg.empty()) {
     _rex_string = TSstrdup(reg.c_str());
   } else {
-    _rex_string = NULL;
+    _rex_string = nullptr;
   }
 
   if (!sub.empty()) {
     _subst     = TSstrdup(sub.c_str());
     _subst_len = sub.length();
   } else {
-    _subst     = NULL;
+    _subst     = nullptr;
     _subst_len = 0;
   }
 
@@ -323,12 +323,12 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
 
   memset(_sub_pos, 0, sizeof(_sub_pos));
   memset(_sub_ix, 0, sizeof(_sub_ix));
-  _next = NULL;
+  _next = nullptr;
 
   // Parse options
   std::string::size_type start = opt.find_first_of("@");
   std::string::size_type pos1, pos2;
-  Override *last_override = NULL;
+  Override *last_override = nullptr;
 
   while (start != std::string::npos) {
     std::string opt_val;
@@ -356,15 +356,15 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
       TSError("[%s] Malformed options: %s", PLUGIN_NAME, opt.c_str());
       break;
     } else if (opt.compare(start, 6, "status") == 0) {
-      _status = static_cast<TSHttpStatus>(strtol(opt_val.c_str(), NULL, 10));
+      _status = static_cast<TSHttpStatus>(strtol(opt_val.c_str(), nullptr, 10));
     } else if (opt.compare(start, 14, "active_timeout") == 0) {
-      _active_timeout = strtol(opt_val.c_str(), NULL, 10);
+      _active_timeout = strtol(opt_val.c_str(), nullptr, 10);
     } else if (opt.compare(start, 19, "no_activity_timeout") == 0) {
-      _no_activity_timeout = strtol(opt_val.c_str(), NULL, 10);
+      _no_activity_timeout = strtol(opt_val.c_str(), nullptr, 10);
     } else if (opt.compare(start, 15, "connect_timeout") == 0) {
-      _connect_timeout = strtol(opt_val.c_str(), NULL, 10);
+      _connect_timeout = strtol(opt_val.c_str(), nullptr, 10);
     } else if (opt.compare(start, 11, "dns_timeout") == 0) {
-      _dns_timeout = strtol(opt_val.c_str(), NULL, 10);
+      _dns_timeout = strtol(opt_val.c_str(), nullptr, 10);
     } else {
       TSOverridableConfigKey key;
       TSRecordDataType type;
@@ -376,10 +376,10 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
         TSReleaseAssert(cur);
         switch (type) {
         case TS_RECORDDATATYPE_INT:
-          cur->data.rec_int = strtoll(opt_val.c_str(), NULL, 10);
+          cur->data.rec_int = strtoll(opt_val.c_str(), nullptr, 10);
           break;
         case TS_RECORDDATATYPE_FLOAT:
-          cur->data.rec_float = strtof(opt_val.c_str(), NULL);
+          cur->data.rec_float = strtof(opt_val.c_str(), nullptr);
           break;
         case TS_RECORDDATATYPE_STRING:
           cur->data.rec_string = TSstrdup(opt_val.c_str());
@@ -394,8 +394,8 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
           TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
           cur->key  = key;
           cur->type = type;
-          cur->next = NULL;
-          if (NULL == last_override) {
+          cur->next = nullptr;
+          if (nullptr == last_override) {
             _first_override = cur;
           } else {
             last_override->next = cur;
@@ -423,14 +423,14 @@ RemapRegex::compile(const char **error, int *erroffset)
                       _options,    // options
                       error,       // for error message
                       erroffset,   // for error offset
-                      NULL);       // use default character tables
+                      nullptr);    // use default character tables
 
-  if (NULL == _rex) {
+  if (nullptr == _rex) {
     return -1;
   }
 
   _extra = pcre_study(_rex, 0, error);
-  if ((_extra == NULL) && error && (*error != 0)) {
+  if ((_extra == nullptr) && error && (*error != nullptr)) {
     return -1;
   }
 
@@ -585,7 +585,7 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
         p1 += lengths[ix];
       } else {
         char buff[INET6_ADDRSTRLEN];
-        const char *str = NULL;
+        const char *str = nullptr;
         int len         = 0;
 
         switch (ix) {
@@ -658,8 +658,8 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
 // Hold one remap instance
 struct RemapInstance {
   RemapInstance()
-    : first(NULL),
-      last(NULL),
+    : first(nullptr),
+      last(nullptr),
       profile(false),
       method(false),
       query_string(true),
@@ -742,7 +742,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   int count  = 0;
 
   *ih = (void *)ri;
-  if (ri == NULL) {
+  if (ri == nullptr) {
     TSError("[%s] Unable to create remap instance", PLUGIN_NAME);
     return TS_ERROR;
   }
@@ -865,7 +865,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     } else {
       TSDebug(PLUGIN_NAME, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
       cur->set_order(++count);
-      if (ri->first == NULL) {
+      if (ri->first == nullptr) {
         ri->first = cur;
       } else {
         ri->last->set_next(cur);
@@ -875,7 +875,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
 
   // Make sure we got something...
-  if (ri->first == NULL) {
+  if (ri->first == nullptr) {
     TSError("[%s] no regular expressions from the maps", PLUGIN_NAME);
     return TS_ERROR;
   }
@@ -892,7 +892,7 @@ TSRemapDeleteInstance(void *ih)
 
   if (ri->profile) {
     char now[64];
-    const ink_time_t tim = time(NULL);
+    const ink_time_t tim = time(nullptr);
 
     if (ink_ctime_r(&tim, now)) {
       now[strlen(now) - 1] = '\0';
@@ -944,7 +944,7 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
-  if (NULL == ih) {
+  if (nullptr == ih) {
     TSDebug(PLUGIN_NAME, "Falling back to default URL on regex remap without rules");
     return TSREMAP_NO_REMAP;
   }
@@ -1106,7 +1106,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
     // Try the next regex
     re = re->next();
-    if (re == NULL) {
+    if (re == nullptr) {
       retval = TSREMAP_NO_REMAP; // No match
       if (ri->profile) {
         ink_atomic_increment(&(ri->misses), 1);

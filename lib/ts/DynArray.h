@@ -53,7 +53,7 @@ private:
 };
 
 template <class T>
-inline DynArray<T>::DynArray(const T *val, intptr_t initial_size) : data(NULL), default_val(val), size(0), pos(-1)
+inline DynArray<T>::DynArray(const T *val, intptr_t initial_size) : data(nullptr), default_val(val), size(0), pos(-1)
 {
   if (initial_size > 0) {
     int i = 1;
@@ -123,7 +123,7 @@ DynArray<T>::detach()
   T *d;
 
   d    = data;
-  data = NULL;
+  data = nullptr;
 
   return d;
 }
@@ -148,7 +148,7 @@ DynArray<T>::clear()
 {
   if (data) {
     delete[] data;
-    data = NULL;
+    data = nullptr;
   }
 
   size = 0;

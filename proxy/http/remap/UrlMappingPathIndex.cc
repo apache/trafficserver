@@ -59,7 +59,7 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
 url_mapping *
 UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_search /* = true */) const
 {
-  url_mapping *retval = 0;
+  url_mapping *retval = nullptr;
   int scheme_idx;
   UrlMappingTrie *trie;
   int path_len;
@@ -80,7 +80,7 @@ UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_sear
   return retval;
 
 lFail:
-  return 0;
+  return nullptr;
 }
 
 void

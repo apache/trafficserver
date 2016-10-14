@@ -135,8 +135,9 @@ ts_lua_http_intercept_entry(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_NET_ACCEPT_FAILED:
-    if (edata)
+    if (edata) {
       TSVConnClose((TSVConn)edata);
+    }
 
     ts_lua_destroy_http_intercept_ctx(ictx);
     break;
@@ -433,8 +434,9 @@ ts_lua_flush_wakeup_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata 
 static int
 ts_lua_flush_cleanup(ts_lua_async_item *ai)
 {
-  if (ai->deleted)
+  if (ai->deleted) {
     return 0;
+  }
 
   if (ai->data) {
     TSActionCancel((TSAction)ai->data);

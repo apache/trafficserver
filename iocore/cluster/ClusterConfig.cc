@@ -31,13 +31,13 @@
 int cluster_port = DEFAULT_CLUSTER_PORT_NUMBER;
 
 ClusterAccept::ClusterAccept(int *port, int send_bufsize, int recv_bufsize)
-  : Continuation(0),
+  : Continuation(nullptr),
     p_cluster_port(port),
     socket_send_bufsize(send_bufsize),
     socket_recv_bufsize(recv_bufsize),
     current_cluster_port(-1),
-    accept_action(0),
-    periodic_event(0)
+    accept_action(nullptr),
+    periodic_event(nullptr)
 {
   mutex = new_ProxyMutex();
   SET_HANDLER(&ClusterAccept::ClusterAcceptEvent);
@@ -45,7 +45,7 @@ ClusterAccept::ClusterAccept(int *port, int send_bufsize, int recv_bufsize)
 
 ClusterAccept::~ClusterAccept()
 {
-  mutex = 0;
+  mutex = nullptr;
 }
 
 void
@@ -55,7 +55,7 @@ ClusterAccept::Init()
   // where cluster accept port has changed.
 
   current_cluster_port = ~*p_cluster_port;
-  ClusterAcceptEvent(EVENT_INTERVAL, 0);
+  ClusterAcceptEvent(EVENT_INTERVAL, nullptr);
 
   // Setup periodic event to handle changing cluster accept port.
   periodic_event = eventProcessor.schedule_every(this, HRTIME_SECONDS(60));
@@ -72,11 +72,11 @@ ClusterAccept::ShutdownDelete()
   // Kill all events and delete.
   if (accept_action) {
     accept_action->cancel();
-    accept_action = 0;
+    accept_action = nullptr;
   }
   if (periodic_event) {
     periodic_event->cancel();
-    periodic_event = 0;
+    periodic_event = nullptr;
   }
   delete this;
 }
@@ -96,7 +96,7 @@ ClusterAccept::ClusterAcceptEvent(int event, void *data)
       // Configuration changed cluster port, redo accept on new port.
       if (accept_action) {
         accept_action->cancel();
-        accept_action = 0;
+        accept_action = nullptr;
       }
 
       NetProcessor::AcceptOptions opt;
@@ -142,7 +142,7 @@ ClusterAccept::ClusterAcceptMachine(NetVConnection *NetVC)
 
   Debug(CL_NOTE, "Accepting machine %u.%u.%u.%u", DOT_SEPARATED(remote_ip));
   ClusterHandler *ch = new ClusterHandler;
-  ch->machine        = new ClusterMachine(NULL, remote_ip);
+  ch->machine        = new ClusterMachine(nullptr, remote_ip);
   ch->ip             = remote_ip;
   ch->net_vc         = NetVC;
   eventProcessor.schedule_imm_signal(ch, ET_CLUSTER);
@@ -185,7 +185,7 @@ machine_config_change(const char * /* name ATS_UNUSED */, RecDataT /* data_type 
   //
   char *filename   = (char *)data.rec_string;
   MachineList *l   = read_MachineList(filename);
-  MachineList *old = NULL;
+  MachineList *old = nullptr;
 #ifdef USE_SEPARATE_MACHINE_CONFIG
   switch ((int)cookie) {
   case MACHINE_CONFIG:
@@ -241,7 +241,7 @@ struct ConfigurationContinuation : public Continuation {
   int
   zombieEvent(int /* event ATS_UNUSED */, Event *e)
   {
-    prev->link.next = NULL; // remove that next pointer
+    prev->link.next = nullptr; // remove that next pointer
     SET_HANDLER((CfgContHandler)&ConfigurationContinuation::dieEvent);
     e->schedule_in(CLUSTER_CONFIGURATION_ZOMBIE);
     return EVENT_CONT;
@@ -257,7 +257,7 @@ struct ConfigurationContinuation : public Continuation {
     return EVENT_DONE;
   }
 
-  ConfigurationContinuation(ClusterConfiguration *cc, ClusterConfiguration *aprev) : Continuation(NULL), c(cc), prev(aprev)
+  ConfigurationContinuation(ClusterConfiguration *cc, ClusterConfiguration *aprev) : Continuation(nullptr), c(cc), prev(aprev)
   {
     mutex = new_ProxyMutex();
     SET_HANDLER((CfgContHandler)&ConfigurationContinuation::zombieEvent);
@@ -353,7 +353,7 @@ configuration_remove_machine(ClusterConfiguration *c, ClusterMachine *m)
 //   Find a machine at a particular depth into the past.
 //   We don't want to probe the current machine or machines
 //   we have probed before, so we store a list of "past_probes".
-//   If probe_depth and past_probes are NULL we only want the
+//   If probe_depth and past_probes are nullptr we only want the
 //   owner (machine now as opposed to in the past).
 //
 ClusterMachine *
@@ -361,7 +361,7 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
 {
 #ifdef CLUSTER_TOMCAT
   if (!cache_clustering_enabled)
-    return NULL;
+    return nullptr;
 #endif
   ClusterConfiguration *cc      = this_cluster()->current_configuration();
   ClusterConfiguration *next_cc = cc;
@@ -423,9 +423,9 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
       continue;
     }
 
-    return (m != this_cluster_machine()) ? m : NULL;
+    return (m != this_cluster_machine()) ? m : nullptr;
   }
-  return NULL;
+  return nullptr;
 }
 
 //

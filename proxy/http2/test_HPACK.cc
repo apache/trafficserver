@@ -43,9 +43,9 @@ static char cmd_input_dir[512]  = "";
 static char cmd_output_dir[512] = "";
 
 static const ArgumentDescription argument_descriptions[] = {
-  {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, NULL, NULL},
-  {"input_dir", 'i', "input dir", "S511", &cmd_input_dir, NULL, NULL},
-  {"output_dir", 'o', "output dir", "S511", &cmd_output_dir, NULL, NULL},
+  {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, nullptr, nullptr},
+  {"input_dir", 'i', "input dir", "S511", &cmd_input_dir, nullptr, nullptr},
+  {"output_dir", 'o', "output dir", "S511", &cmd_output_dir, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 
@@ -137,7 +137,7 @@ compare_header_fields(HTTPHdr *a, HTTPHdr *b)
   if (a->fields_count() != b->fields_count()) {
     return -1;
   }
-  for (; a_field != NULL; a_field = a->iter_get_next(&a_iter), b_field = b->iter_get_next(&b_iter)) {
+  for (; a_field != nullptr; a_field = a->iter_get_next(&a_iter), b_field = b->iter_get_next(&b_iter)) {
     // compare header name
     a_str = a_field->name_get(&a_str_len);
     b_str = b_field->name_get(&b_str_len);
@@ -326,14 +326,14 @@ prepare()
   struct dirent *d;
   DIR *dir = opendir(input_dir.c_str());
 
-  if (dir == NULL) {
+  if (dir == nullptr) {
     cerr << "Cannot open " << input_dir << endl;
     return 1;
   }
   struct stat st;
   char name[PATH_MAX + 1] = "";
   strcat(name, input_dir.c_str());
-  while ((d = readdir(dir)) != NULL) {
+  while ((d = readdir(dir)) != nullptr) {
     name[input_dir.length()] = '\0';
     ink_strlcat(name, d->d_name, sizeof(name));
     stat(name, &st);

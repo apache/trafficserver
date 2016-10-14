@@ -181,9 +181,9 @@ struct sync_cont : public Continuation {
 
   ~sync_cont()
   {
-    if (m_tb != NULL) {
+    if (m_tb != nullptr) {
       delete m_tb;
-      m_tb = NULL;
+      m_tb = nullptr;
     }
   }
 
@@ -230,12 +230,12 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
    return REC_ERR_FAIL;
    }
 
-   if (RecMessageRegisterRecvCb(recv_message_cb__process, NULL)) {
+   if (RecMessageRegisterRecvCb(recv_message_cb__process, nullptr)) {
    return REC_ERR_FAIL;
    }
 
    ink_cond_init(&g_force_req_cond);
-   ink_mutex_init(&g_force_req_mutex, NULL);
+   ink_mutex_init(&g_force_req_mutex, nullptr);
    if (mode_type == RECM_CLIENT) {
    send_pull_message(RECG_PULL_REQ);
    ink_cond_wait(&g_force_req_cond, &g_force_req_mutex);
@@ -252,7 +252,7 @@ void
 RecMessageInit()
 {
   ink_assert(g_mode_type != RECM_NULL);
-  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, RecMessageRecvThis, NULL);
+  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, RecMessageRecvThis, nullptr);
   message_initialized_p = true;
 }
 
@@ -269,7 +269,7 @@ RecProcessInitMessage(RecModeT mode_type)
   }
 
   RecMessageInit();
-  if (RecMessageRegisterRecvCb(recv_message_cb__process, NULL)) {
+  if (RecMessageRegisterRecvCb(recv_message_cb__process, nullptr)) {
     return REC_ERR_FAIL;
   }
 

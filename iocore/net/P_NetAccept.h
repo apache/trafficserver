@@ -60,7 +60,7 @@ struct NetAcceptAction : public Action, public RefCountObj {
   Server *server;
 
   void
-  cancel(Continuation *cont = NULL)
+  cancel(Continuation *cont = nullptr)
   {
     Action::cancel(cont);
     server->close();
@@ -92,7 +92,7 @@ struct NetAccept : public Continuation {
   virtual NetProcessor *getNetProcessor() const;
 
   void init_accept_loop(const char *);
-  virtual void init_accept(EThread *t = NULL);
+  virtual void init_accept(EThread *t = nullptr);
   virtual void init_accept_per_thread();
   virtual NetAccept *clone() const;
 
@@ -106,7 +106,7 @@ struct NetAccept : public Continuation {
   void cancel();
 
   explicit NetAccept(const NetProcessor::AcceptOptions &);
-  virtual ~NetAccept() { action_ = NULL; }
+  virtual ~NetAccept() { action_ = nullptr; }
 };
 
 #endif

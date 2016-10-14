@@ -53,7 +53,7 @@ acl_filter_rule::reset(void)
 }
 
 acl_filter_rule::acl_filter_rule()
-  : next(NULL), filter_name(NULL), allow_flag(1), src_ip_valid(0), active_queue_flag(0), internal(0), argc(0)
+  : next(nullptr), filter_name(nullptr), allow_flag(1), src_ip_valid(0), active_queue_flag(0), internal(0), argc(0)
 {
   standard_method_lookup.resize(HTTP_WKSIDX_METHODS_CNT);
   ink_zero(argv);
@@ -72,7 +72,7 @@ acl_filter_rule::add_argv(int _argc, char *_argv[])
   int real_cnt = 0;
   if (likely(_argv)) {
     for (int i = 0; i < _argc && argc < ACL_FILTER_MAX_ARGV; i++) {
-      if (likely(_argv[i] && (argv[argc] = ats_strdup(_argv[i])) != NULL)) {
+      if (likely(_argv[i] && (argv[argc] = ats_strdup(_argv[i])) != nullptr)) {
         real_cnt++;
         argc++;
       }
@@ -130,7 +130,7 @@ acl_filter_rule *
 acl_filter_rule::find_byname(acl_filter_rule *list, const char *_name)
 {
   int _name_size      = 0;
-  acl_filter_rule *rp = 0;
+  acl_filter_rule *rp = nullptr;
   if (likely(list && _name && (_name_size = strlen(_name)) > 0)) {
     for (rp = list; rp; rp = rp->next) {
       if (strcasecmp(rp->filter_name, _name) == 0) {
@@ -147,7 +147,7 @@ acl_filter_rule::delete_byname(acl_filter_rule **rpp, const char *_name)
   int _name_size = 0;
   acl_filter_rule *rp;
   if (likely(rpp && _name && (_name_size = strlen(_name)) > 0)) {
-    for (; (rp = *rpp) != NULL; rpp = &rp->next) {
+    for (; (rp = *rpp) != nullptr; rpp = &rp->next) {
       if (strcasecmp(rp->filter_name, _name) == 0) {
         *rpp = rp->next;
         delete rp;
@@ -163,13 +163,13 @@ acl_filter_rule::requeue_in_active_list(acl_filter_rule **list, acl_filter_rule 
   if (likely(list && rp)) {
     if (rp->active_queue_flag == 0) {
       acl_filter_rule *r, **rpp;
-      for (rpp = list; ((r = *rpp) != NULL); rpp = &(r->next)) {
+      for (rpp = list; ((r = *rpp) != nullptr); rpp = &(r->next)) {
         if (r == rp) {
           *rpp = r->next;
           break;
         }
       }
-      for (rpp = list; ((r = *rpp) != NULL); rpp = &(r->next)) {
+      for (rpp = list; ((r = *rpp) != nullptr); rpp = &(r->next)) {
         if (r->active_queue_flag == 0) {
           break;
         }
@@ -195,7 +195,7 @@ acl_filter_rule::requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule
       for (rpp = list; *rpp; rpp = &((*rpp)->next)) {
         ;
       }
-      (*rpp = rp)->next     = NULL;
+      (*rpp = rp)->next     = nullptr;
       rp->active_queue_flag = 0;
     }
   }

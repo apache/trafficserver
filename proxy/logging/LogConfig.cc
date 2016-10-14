@@ -113,7 +113,7 @@ LogConfig::reconfigure_mgmt_variables(void * /* token ATS_UNUSED */, char * /* d
 {
   Note("received log reconfiguration event, rolling now");
   Log::config->roll_log_files_now = true;
-  return NULL;
+  return nullptr;
 }
 
 void
@@ -155,7 +155,7 @@ LogConfig::read_configuration_variables()
   ats_free(ptr);
 
   ptr = REC_ConfigReadString("proxy.config.log.hostname");
-  if (ptr != NULL) {
+  if (ptr != nullptr) {
     ats_free(hostname);
     hostname = ptr;
   }
@@ -177,7 +177,7 @@ LogConfig::read_configuration_variables()
   collation_mode = val;
 
   ptr = REC_ConfigReadString("proxy.config.log.collation_host");
-  if (ptr != NULL) {
+  if (ptr != nullptr) {
     ats_free(collation_host);
     collation_host = ptr;
   }
@@ -196,7 +196,7 @@ LogConfig::read_configuration_variables()
   }
 
   ptr = REC_ConfigReadString("proxy.config.log.collation_secret");
-  if (ptr != NULL) {
+  if (ptr != nullptr) {
     ats_free(collation_secret);
     collation_secret = ptr;
   }
@@ -274,8 +274,8 @@ LogConfig::LogConfig()
     logging_space_exhausted(false),
     m_space_used(0),
     m_partition_space_left((int64_t)UINT_MAX),
-    m_log_collation_accept(NULL),
-    m_pDir(NULL),
+    m_log_collation_accept(nullptr),
+    m_pDir(nullptr),
     m_disk_full(false),
     m_disk_low(false),
     m_partition_full(false),
@@ -328,7 +328,7 @@ LogConfig::setup_collation(LogConfig *prev_config)
     //
     if (prev_config && prev_config->m_log_collation_accept) {
       delete prev_config->m_log_collation_accept;
-      prev_config->m_log_collation_accept = NULL;
+      prev_config->m_log_collation_accept = nullptr;
     }
   } else {
     if (!collation_port) {
@@ -337,7 +337,7 @@ LogConfig::setup_collation(LogConfig *prev_config)
       Note("Cannot activate log collation, \"%s\" is an invalid collation host", collation_host);
     } else {
       if (collation_mode == Log::COLLATION_HOST) {
-        ink_assert(m_log_collation_accept == 0);
+        ink_assert(m_log_collation_accept == nullptr);
 
         if (prev_config && prev_config->m_log_collation_accept) {
           if (prev_config->collation_port == collation_port) {
@@ -375,7 +375,7 @@ LogConfig::setup_collation(LogConfig *prev_config)
 void
 LogConfig::init(LogConfig *prev_config)
 {
-  LogObject *errlog = NULL;
+  LogObject *errlog = nullptr;
 
   ink_assert(!initialized);
 
@@ -397,12 +397,12 @@ LogConfig::init(LogConfig *prev_config)
     Debug("log", "creating predefined error log object");
 
     fmt    = MakeTextLogFormat("error");
-    errlog = new LogObject(fmt, logfile_dir, "error.log", LOG_FILE_ASCII, NULL, (Log::RollingEnabledValues)rolling_enabled,
+    errlog = new LogObject(fmt, logfile_dir, "error.log", LOG_FILE_ASCII, nullptr, (Log::RollingEnabledValues)rolling_enabled,
                            collation_preproc_threads, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
     log_object_manager.manage_object(errlog);
     errlog->set_fmt_timestamps();
   } else {
-    Log::error_log = NULL;
+    Log::error_log = nullptr;
   }
 
   if (prev_config) {
@@ -556,7 +556,7 @@ LogConfig::register_config_callbacks()
   };
 
   for (unsigned i = 0; i < countof(names); ++i) {
-    REC_RegisterConfigUpdateFunc(names[i], &LogConfig::reconfigure, NULL);
+    REC_RegisterConfigUpdateFunc(names[i], &LogConfig::reconfigure, nullptr);
   }
 }
 
@@ -641,7 +641,7 @@ LogConfig::register_stat_callbacks()
 void
 LogConfig::register_mgmt_callbacks()
 {
-  RecRegisterManagerCb(REC_EVENT_ROLL_LOG_FILES, &LogConfig::reconfigure_mgmt_variables, NULL);
+  RecRegisterManagerCb(REC_EVENT_ROLL_LOG_FILES, &LogConfig::reconfigure_mgmt_variables, nullptr);
 }
 
 /*-------------------------------------------------------------------------
@@ -738,7 +738,7 @@ LogConfig::update_space_used()
   }
 
   ld = ::opendir(logfile_dir);
-  if (ld == NULL) {
+  if (ld == nullptr) {
     const char *msg = "Error opening logging directory %s to perform a space check: %s.";
     Error(msg, logfile_dir, strerror(errno));
     LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, logfile_dir, strerror(errno));
@@ -944,7 +944,7 @@ LogConfig::read_log_hosts_file(size_t *num_hosts)
 {
   ats_scoped_str config_path(RecConfigReadConfigPath("proxy.config.log.hosts_config_file", "log_hosts.config"));
   char line[LOG_MAX_FORMAT_LINE];
-  char **hosts = NULL;
+  char **hosts = nullptr;
 
   Debug("log-config", "Reading log hosts from %s", (const char *)config_path);
 
@@ -974,7 +974,7 @@ LogConfig::read_log_hosts_file(size_t *num_hosts)
         nhosts = 0;
       } else {
         hosts = new char *[nhosts];
-        ink_assert(hosts != NULL);
+        ink_assert(hosts != nullptr);
 
         size_t i = 0;
         while (ink_file_fd_readline(fd, LOG_MAX_FORMAT_LINE, line) > 0) {

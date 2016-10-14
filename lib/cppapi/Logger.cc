@@ -56,7 +56,7 @@ struct atscppapi::LoggerState : noncopyable {
       level_(Logger::LOG_LEVEL_NO_LOG),
       rolling_enabled_(false),
       rolling_interval_seconds_(-1),
-      text_log_obj_(NULL),
+      text_log_obj_(nullptr),
       initialized_(false){};
   ~LoggerState(){};
 };

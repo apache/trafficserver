@@ -339,7 +339,7 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig *http_config
     accept_field = client_request->field_find(MIME_FIELD_ACCEPT, MIME_LEN_ACCEPT);
 
     // A NULL Accept or a NULL Content-Type field are perfect matches.
-    if (content_field == NULL || accept_field == NULL) {
+    if (content_field == nullptr || accept_field == nullptr) {
       q[0] = 1.0; // TODO: Why should this not be 1.001 ?? // leif
     } else {
       q[0] = calculate_quality_of_accept_match(accept_field, content_field);
@@ -356,7 +356,7 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig *http_config
       cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_CHARSET, MIME_LEN_ACCEPT_CHARSET);
 
       // absence in both requests counts as exact match
-      if (accept_field == NULL && cached_accept_field == NULL) {
+      if (accept_field == nullptr && cached_accept_field == nullptr) {
         Debug("http_alternate", "Exact match for ACCEPT CHARSET (not in request nor cache)");
         q[1] = 1.001; // slightly higher weight to this guy
       } else {
@@ -375,7 +375,7 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig *http_config
         cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
 
         // absence in both requests counts as exact match
-        if (accept_field == NULL && cached_accept_field == NULL) {
+        if (accept_field == nullptr && cached_accept_field == nullptr) {
           Debug("http_alternate", "Exact match for ACCEPT ENCODING (not in request nor cache)");
           q[2] = 1.001; // slightly higher weight to this guy
         } else {
@@ -394,7 +394,7 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig *http_config
           cached_accept_field = obj_client_request->field_find(MIME_FIELD_ACCEPT_LANGUAGE, MIME_LEN_ACCEPT_LANGUAGE);
 
           // absence in both requests counts as exact match
-          if (accept_field == NULL && cached_accept_field == NULL) {
+          if (accept_field == nullptr && cached_accept_field == nullptr) {
             Debug("http_alternate", "Exact match for ACCEPT LANGUAGE (not in request nor cache)");
             q[3] = 1.001; // slightly higher weight to this guy
           } else {
@@ -522,7 +522,7 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
   float wildcard_type_q         = 1.0;
   float wildcard_subtype_q      = 1.0;
 
-  ink_assert((accept_field != NULL) && (content_field != NULL));
+  ink_assert((accept_field != nullptr) && (content_field != nullptr));
 
   // Extract the content-type field value before the semicolon.
   // This has to be done just once because assuming single
@@ -650,7 +650,7 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
   }
   // return match if either ac or ct is missing
   // this check is different from accept-encoding
-  if (accept_field == NULL || content_field == NULL) {
+  if (accept_field == nullptr || content_field == nullptr) {
     return (float)1.0;
   }
   // get the charset of this content-type //
@@ -770,7 +770,7 @@ HttpTransactCache::match_gzip(MIMEField *accept_field)
   accept_field->value_get_comma_list(&a_values_list);
 
   for (a_value = a_values_list.head; a_value; a_value = a_value->next) {
-    char *a_encoding = NULL;
+    char *a_encoding = nullptr;
     StrList a_param_list;
     a_raw = a_value->str;
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw);
@@ -804,7 +804,7 @@ match_accept_content_encoding(const char *c_raw, MIMEField *accept_field, bool *
   accept_field->value_get_comma_list(&a_values_list);
 
   for (a_value = a_values_list.head; a_value; a_value = a_value->next) {
-    char *a_encoding = NULL;
+    char *a_encoding = nullptr;
     StrList a_param_list;
 
     // Get the raw string to the current comma-sep Accept-Charset field value
@@ -862,7 +862,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
   }
   // return match if both ae and ce are missing
   // this check is different from accept charset
-  if (accept_field == NULL && content_field == NULL) {
+  if (accept_field == nullptr && content_field == nullptr) {
     return (float)1.0;
   }
   // if no Content-Encoding, treat as "identity" //
@@ -1013,7 +1013,7 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
   StrList a_values_list;
   Str *a_value;
 
-  ink_assert(accept_field != NULL);
+  ink_assert(accept_field != nullptr);
 
   // loop over each language-range pattern //
   // TODO: Should we check the return value (count) here?
@@ -1147,10 +1147,10 @@ Variability_t
 HttpTransactCache::CalcVariability(CacheLookupHttpConfig *http_config_params, HTTPHdr *client_request, HTTPHdr *obj_client_request,
                                    HTTPHdr *obj_origin_server_response)
 {
-  ink_assert(http_config_params != NULL);
-  ink_assert(client_request != NULL);
-  ink_assert(obj_client_request != NULL);
-  ink_assert(obj_origin_server_response != NULL);
+  ink_assert(http_config_params != nullptr);
+  ink_assert(client_request != nullptr);
+  ink_assert(obj_client_request != nullptr);
+  ink_assert(obj_origin_server_response != nullptr);
 
   Variability_t variability = VARIABILITY_NONE;
   if (http_config_params->cache_enable_default_vary_headers || obj_origin_server_response->presence(MIME_PRESENCE_VARY)) {
@@ -1164,7 +1164,7 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig *http_config_params, HT
     int num_vary_values = obj_origin_server_response->value_get_comma_list(MIME_FIELD_VARY, MIME_LEN_VARY, &vary_list);
 
     if (num_vary_values <= 0) { // no vary hdr, so use defaults if enabled
-      const char *vary_values = NULL;
+      const char *vary_values = nullptr;
       const char *content_type;
       int content_type_len;
       char type[32], subtype[32];
@@ -1202,7 +1202,7 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig *http_config_params, HT
     }
 
     // for each field that varies, see if current & original hdrs match //
-    for (Str *field = vary_list.head; field != NULL; field = field->next) {
+    for (Str *field = vary_list.head; field != nullptr; field = field->next) {
       if (field->len == 0) {
         continue;
       }
@@ -1251,7 +1251,7 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig *http_config_params, HT
       ink_assert(strlen(field->str) == field->len);
 
       char *field_name_str = (char *)hdrtoken_string_to_wks(field->str, field->len);
-      if (field_name_str == NULL) {
+      if (field_name_str == nullptr) {
         field_name_str = (char *)field->str;
       }
 
@@ -1342,7 +1342,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
   if (request->presence(MIME_PRESENCE_IF_NONE_MATCH)) {
     int raw_etags_len, comma_sep_tag_list_len;
     const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
-    const char *comma_sep_tag_list = NULL;
+    const char *comma_sep_tag_list = nullptr;
 
     if (raw_etags) {
       comma_sep_tag_list = request->value_get(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, &comma_sep_tag_list_len);
@@ -1393,7 +1393,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
   if (request->presence(MIME_PRESENCE_IF_MATCH)) {
     int raw_etags_len, comma_sep_tag_list_len;
     const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
-    const char *comma_sep_tag_list = NULL;
+    const char *comma_sep_tag_list = nullptr;
 
     if (raw_etags) {
       comma_sep_tag_list = request->value_get(MIME_FIELD_IF_MATCH, MIME_LEN_IF_MATCH, &comma_sep_tag_list_len);

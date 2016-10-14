@@ -58,7 +58,7 @@ extern Vol **gvol;
 extern volatile int gnvol;
 
 // Stat Pages
-ShowCacheInternal *theshowcacheInternal = NULL;
+ShowCacheInternal *theshowcacheInternal = nullptr;
 
 #define STREQ_PREFIX(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
 #define STREQ_LEN_PREFIX(_x, _l, _s) (path_len < sizeof(_s) && !strncasecmp(_x, _s, sizeof(_s) - 1))
@@ -263,7 +263,7 @@ ShowCacheInternal::showVolVolumes(int event, Event *e)
   ctime[strlen(ctime) - 1] = 0;
   int agg_todo             = 0;
   int agg_done             = p->agg_buf_pos;
-  CacheVC *c               = 0;
+  CacheVC *c               = nullptr;
   for (c = p->agg.head; c; c = (CacheVC *)c->link.next)
     agg_todo++;
   CHECK_SHOW(show("<tr>"

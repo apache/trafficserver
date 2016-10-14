@@ -34,8 +34,8 @@ namespace cache
   write(const std::string &k, std::string &&s)
   {
     Key key(k);
-    TSCont continuation = TSContCreate(Write::handle, NULL);
-    assert(continuation != NULL);
+    TSCont continuation = TSContCreate(Write::handle, nullptr);
+    assert(continuation != nullptr);
     TSContDataSet(continuation, new Write(std::move(s)));
     TSCacheWrite(continuation, key.key());
   }
@@ -43,28 +43,28 @@ namespace cache
   int
   Write::handle(TSCont c, TSEvent e, void *v)
   {
-    assert(c != NULL);
+    assert(c != nullptr);
     Write *const self = static_cast<Write *>(TSContDataGet(c));
-    assert(self != NULL);
+    assert(self != nullptr);
     switch (e) {
     case TS_EVENT_CACHE_OPEN_WRITE:
-      assert(v != NULL);
+      assert(v != nullptr);
       self->vconnection_ = static_cast<TSVConn>(v);
-      assert(self->out_ == NULL);
+      assert(self->out_ == nullptr);
       self->out_ = io::IO::write(self->vconnection_, c, self->content_.size());
       break;
     case TS_EVENT_CACHE_OPEN_WRITE_FAILED:
       TSDebug(PLUGIN_TAG, "write failed");
       delete self;
-      TSContDataSet(c, NULL);
+      TSContDataSet(c, nullptr);
       TSContDestroy(c);
       break;
     case TS_EVENT_VCONN_WRITE_COMPLETE:
       TSDebug(PLUGIN_TAG, "write completed");
-      assert(self->vconnection_ != NULL);
+      assert(self->vconnection_ != nullptr);
       TSVConnClose(self->vconnection_);
       delete self;
-      TSContDataSet(c, NULL);
+      TSContDataSet(c, nullptr);
       TSContDestroy(c);
       break;
     case TS_EVENT_VCONN_WRITE_READY:

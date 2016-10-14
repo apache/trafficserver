@@ -194,8 +194,9 @@ ts_lua_client_response_header_set(lua_State *L)
     TSMimeHdrFieldAppend(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, field_loc);
   }
 
-  if (field_loc != TS_NULL_MLOC)
+  if (field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, field_loc);
+  }
 
   return 0;
 }

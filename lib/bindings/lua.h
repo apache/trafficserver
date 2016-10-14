@@ -62,7 +62,7 @@ lua_newuserobject(lua_State *L)
     return new (ptr) T();
   }
 
-  return (T *)NULL;
+  return (T *)nullptr;
 }
 
 // Index the given key in the table at the specified index. If the

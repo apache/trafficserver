@@ -279,7 +279,7 @@ public:
   /** Test for membership.
 
       @return @c true if the address is in the map, @c false if not.
-      If the address is in the map and @a ptr is not @c NULL, @c *ptr
+      If the address is in the map and @a ptr is not @c nullptr, @c *ptr
       is set to the client data for the address.
   */
   bool contains(sockaddr const *target, ///< Search target (network order).
@@ -291,7 +291,7 @@ public:
       @note Covenience overload for IPv4.
 
       @return @c true if the address is in the map, @c false if not.
-      If the address is in the map and @a ptr is not @c NULL, @c *ptr
+      If the address is in the map and @a ptr is not @c nullptr, @c *ptr
       is set to the client data for the address.
   */
   bool contains(in_addr_t target, ///< Search target (network order).
@@ -303,7 +303,7 @@ public:
       @note Convenience overload for @c IpEndpoint.
 
       @return @c true if the address is in the map, @c false if not.
-      If the address is in the map and @a ptr is not @c NULL, @c *ptr
+      If the address is in the map and @a ptr is not @c nullptr, @c *ptr
       is set to the client data for the address.
   */
   bool contains(IpEndpoint const *target, ///< Search target (network order).
@@ -315,7 +315,7 @@ public:
       @note Convenience overload for @c IpAddr.
 
       @return @c true if the address is in the map, @c false if not.
-      If the address is in the map and @a ptr is not @c NULL, @c *ptr
+      If the address is in the map and @a ptr is not @c nullptr, @c *ptr
       is set to the client data for the address.
   */
   bool contains(IpAddr const &target, ///< Search target (network order).

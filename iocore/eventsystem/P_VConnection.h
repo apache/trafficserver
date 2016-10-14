@@ -104,22 +104,22 @@ VConnection::do_io(int op, Continuation *c, int64_t nbytes, MIOBuffer *cb, int d
     return vc_do_io_write(this, c, nbytes, cb, data);
   case VIO::CLOSE:
     do_io_close();
-    return NULL;
+    return nullptr;
   case VIO::ABORT:
     do_io_close(data);
-    return NULL;
+    return nullptr;
   case VIO::SHUTDOWN_READ:
     do_io_shutdown(IO_SHUTDOWN_READ);
-    return NULL;
+    return nullptr;
   case VIO::SHUTDOWN_WRITE:
     do_io_shutdown(IO_SHUTDOWN_WRITE);
-    return NULL;
+    return nullptr;
   case VIO::SHUTDOWN_READWRITE:
     do_io_shutdown(IO_SHUTDOWN_READWRITE);
-    return NULL;
+    return nullptr;
   }
   ink_assert(!"cannot use default implementation for do_io operation");
-  return NULL;
+  return nullptr;
 }
 
 TS_INLINE void

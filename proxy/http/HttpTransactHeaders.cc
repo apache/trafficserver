@@ -121,7 +121,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
   }
   // step 3: get a big enough buffer
   if (bytes <= sizeof(inline_buffer)) {
-    alloced_buffer = NULL;
+    alloced_buffer = nullptr;
     value_buffer   = inline_buffer;
   } else {
     alloced_buffer = (char *)ats_malloc(bytes);
@@ -199,7 +199,7 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   //         is changed for example by dechunking, the transfer encoding
   //         should be modified when when the decision is made to dechunk it
 
-  for (field = new_hdr->iter_get_first(&field_iter); field != NULL; field = new_hdr->iter_get_next(&field_iter)) {
+  for (field = new_hdr->iter_get_first(&field_iter); field != nullptr; field = new_hdr->iter_get_next(&field_iter)) {
     if (field->m_wks_idx == -1) {
       continue;
     }
@@ -489,7 +489,7 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     int reason_len;
     const char *reason = header->reason_get(&reason_len);
 
-    if (reason != NULL && reason_len >= 24 && reason[0] == '!' && reason[1] == SQUID_HIT_RESERVED) {
+    if (reason != nullptr && reason_len >= 24 && reason[0] == '!' && reason[1] == SQUID_HIT_RESERVED) {
       hit_miss_code = SQUID_HIT_RESERVED;
       // its a miss in the cache. find out why.
     } else if (via_string[VIA_DETAIL_CACHE_LOOKUP] == VIA_DETAIL_MISS_EXPIRED) {
@@ -635,7 +635,7 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
   // + 23 for 20 possible digits of warning code (long long max
   //  digits) & 2 spaces & the string terminator
   bufsize = http_config_param->proxy_response_via_string_len + 23;
-  if (warn_text != NULL) {
+  if (warn_text != nullptr) {
     bufsize += warn_text_len;
   } else {
     warn_text_len = 0; // Make sure it's really zero
@@ -919,8 +919,8 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConf
     MIMEField *ua_field;
 
     Debug("http_trans", "Adding User-Agent: %s", http_txn_conf->global_user_agent_header);
-    if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) == NULL) {
-      if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != NULL)) {
+    if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) == nullptr) {
+      if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != nullptr)) {
         header->field_attach(ua_field);
       }
     }
@@ -938,8 +938,8 @@ HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *
     MIMEField *ua_field;
     bool do_add = true;
 
-    if ((ua_field = header->field_find(MIME_FIELD_SERVER, MIME_LEN_SERVER)) == NULL) {
-      if (likely((ua_field = header->field_create(MIME_FIELD_SERVER, MIME_LEN_SERVER)) != NULL)) {
+    if ((ua_field = header->field_find(MIME_FIELD_SERVER, MIME_LEN_SERVER)) == nullptr) {
+      if (likely((ua_field = header->field_create(MIME_FIELD_SERVER, MIME_LEN_SERVER)) != nullptr)) {
         header->field_attach(ua_field);
       }
     } else {
@@ -1003,7 +1003,7 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_
     anon_string = http_config_param->anonymize_other_header_list;
     Debug("anon", "removing other headers (%s)", anon_string);
     HttpCompat::parse_comma_list(&anon_list, anon_string);
-    for (field = anon_list.head; field != NULL; field = field->next) {
+    for (field = anon_list.head; field != nullptr; field = field->next) {
       Debug("anon", "removing '%s' headers", field->str);
       header->field_delete(field->str, field->len);
     }

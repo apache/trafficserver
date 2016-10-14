@@ -191,7 +191,7 @@ read_request_hook(TSCont /* contp */, TSEvent /* event */, void *edata)
     TSDebug(PLUGIN_NAME, "*** Camel Casing %u hdrs in the request", n_mime_headers);
 
     for (int i = 0; i < n_mime_headers; ++i) {
-      if (hdr == NULL) {
+      if (hdr == nullptr) {
         break;
       }
       next_hdr = TSMimeHdrFieldNext(hdr_bufp, req_hdrs, hdr);
@@ -249,7 +249,7 @@ TSPluginInit(int /* argc */, const char * /* argv[] */)
   TSDebug(PLUGIN_NAME, "initializing plugin");
   TSCont contp;
   buildHdrMap();
-  contp = TSContCreate(read_request_hook, NULL);
+  contp = TSContCreate(read_request_hook, nullptr);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
 }
 
@@ -259,6 +259,6 @@ TSPluginInit(int /* argc */, const char * /* argv[] */)
 TSRemapStatus
 TSRemapDoRemap(void * /* ih */, TSHttpTxn rh, TSRemapRequestInfo * /* rri */)
 {
-  read_request_hook(NULL, TS_EVENT_HTTP_READ_REQUEST_HDR, rh);
+  read_request_hook(nullptr, TS_EVENT_HTTP_READ_REQUEST_HDR, rh);
   return TSREMAP_DID_REMAP;
 }

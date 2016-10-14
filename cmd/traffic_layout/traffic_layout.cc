@@ -38,9 +38,9 @@ struct CommandLineArgs {
 static CommandLineArgs cl;
 
 const ArgumentDescription argument_descriptions[] = {
-  {"layout", 'l', "Show the layout (this is the default with no options given)", "T", &cl.layout, NULL, NULL},
-  {"features", 'f', "Show the compiled features", "T", &cl.features, NULL, NULL},
-  {"json", 'j', "Produce output in JSON format (when supported)", "T", &cl.json, NULL, NULL},
+  {"layout", 'l', "Show the layout (this is the default with no options given)", "T", &cl.layout, nullptr, nullptr},
+  {"features", 'f', "Show the compiled features", "T", &cl.features, nullptr, nullptr},
+  {"json", 'j', "Produce output in JSON format (when supported)", "T", &cl.json, nullptr, nullptr},
 
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
@@ -141,7 +141,7 @@ produce_layout(bool json)
 {
   Layout::create();
 
-  RecProcessInit(RECM_STAND_ALONE, NULL /* diags */);
+  RecProcessInit(RECM_STAND_ALONE, nullptr /* diags */);
   LibRecordsConfigInit();
 
   if (json) {
@@ -157,9 +157,9 @@ produce_layout(bool json)
   print_var("INCLUDEDIR", Layout::get()->includedir, json, false); // Dont' free this
   print_var("SNAPSHOTDIR", RecConfigReadSnapshotDir(), json);
 
-  print_var("records.config", RecConfigReadConfigPath(NULL, REC_CONFIG_FILE), json);
+  print_var("records.config", RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE), json);
   print_var("remap.config", RecConfigReadConfigPath("proxy.config.url_remap.filename"), json);
-  print_var("plugin.config", RecConfigReadConfigPath(NULL, "plugin.config"), json);
+  print_var("plugin.config", RecConfigReadConfigPath(nullptr, "plugin.config"), json);
   print_var("ssl_multicert.config", RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);
   print_var("storage.config", RecConfigReadConfigPath("proxy.config.cache.storage_filename"), json);
   print_var("hosting.config", RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);

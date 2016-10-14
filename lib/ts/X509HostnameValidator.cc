@@ -48,7 +48,7 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
   size_t i = 0;
   // Minimum wildcard length *.a.b
   if (len < 5) {
-    return NULL;
+    return nullptr;
   }
 
   int wildcard_pos = -1;
@@ -62,7 +62,7 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
   }
   // Final dot minimal pos is a.b.xxxxxx
   if (final_dot_pos < 3)
-    return NULL;
+    return nullptr;
 
   for (i = 0; i < final_dot_pos; i++) {
     /*
@@ -93,7 +93,7 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
       break;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /*
@@ -165,7 +165,7 @@ wildcard_match(const unsigned char *prefix, size_t prefix_len, const unsigned ch
 static bool
 equal_wildcard(const unsigned char *pattern, size_t pattern_len, const unsigned char *subject, size_t subject_len)
 {
-  const unsigned char *wildcard = NULL;
+  const unsigned char *wildcard = nullptr;
 
   bool is_idna = (subject_len > 4 && strncasecmp((const char *)(subject), "xn--", 4) == 0);
   /*
@@ -175,7 +175,7 @@ equal_wildcard(const unsigned char *pattern, size_t pattern_len, const unsigned 
   if (subject_len > 5 && subject[0] != '.')
     wildcard = find_wildcard_in_hostname(pattern, pattern_len, is_idna);
 
-  if (wildcard == NULL)
+  if (wildcard == nullptr)
     return equal_nocase(pattern, pattern_len, subject, subject_len);
   return wildcard_match(pattern, wildcard - pattern, wildcard + 1, (pattern + pattern_len) - wildcard - 1, subject, subject_len);
 }
@@ -202,8 +202,8 @@ do_check_string(ASN1_STRING *a, int cmp_type, equal_fn equal, const unsigned cha
 bool
 validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **peername)
 {
-  GENERAL_NAMES *gens = NULL;
-  X509_NAME *name     = NULL;
+  GENERAL_NAMES *gens = nullptr;
+  X509_NAME *name     = nullptr;
   int i;
   int alt_type;
   bool retval = false;
@@ -220,7 +220,7 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
   }
 
   // Check SANs for a match.
-  gens = (GENERAL_NAMES *)X509_get_ext_d2i(x, NID_subject_alt_name, NULL, NULL);
+  gens = (GENERAL_NAMES *)X509_get_ext_d2i(x, NID_subject_alt_name, nullptr, nullptr);
   if (gens) {
     // BoringSSL has sk_GENERAL_NAME_num() return size_t.
     for (i = 0; i < static_cast<int>(sk_GENERAL_NAME_num(gens)); i++) {

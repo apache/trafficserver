@@ -92,7 +92,7 @@ HdrHeap::init()
   m_magic                     = HDR_BUF_MAGIC_ALIVE;
   m_writeable                 = true;
 
-  m_next      = NULL;
+  m_next      = nullptr;
   m_free_size = m_size - HDR_HEAP_HDR_SIZE;
 
   // We need to clear m_ptr directly since it's garbage and
@@ -101,7 +101,7 @@ HdrHeap::init()
   m_read_write_heap.detach();
 
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    m_ronly_heap[i].m_heap_start = NULL;
+    m_ronly_heap[i].m_heap_start = nullptr;
     m_ronly_heap[i].m_ref_count_ptr.detach();
     m_ronly_heap[i].m_locked   = false;
     m_ronly_heap[i].m_heap_len = 0;
@@ -175,9 +175,9 @@ HdrHeap::destroy()
     m_next->destroy();
   }
 
-  m_read_write_heap = NULL;
+  m_read_write_heap = nullptr;
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    m_ronly_heap[i].m_ref_count_ptr = NULL;
+    m_ronly_heap[i].m_ref_count_ptr = nullptr;
   }
 
   if (m_size == HDR_HEAP_DEFAULT_SIZE) {
@@ -199,7 +199,7 @@ HdrHeap::allocate_obj(int nbytes, int type)
 
   if (nbytes > (int)HDR_MAX_ALLOC_SIZE) {
     ink_assert(!"alloc too big");
-    return NULL;
+    return nullptr;
   }
 
   HdrHeap *h = this;
@@ -217,7 +217,7 @@ HdrHeap::allocate_obj(int nbytes, int type)
       return obj;
     }
 
-    if (h->m_next == NULL) {
+    if (h->m_next == nullptr) {
       // Allocate our next pointer heap
       //   twice as large as this one so
       //   number of pointer heaps is O(log n)
@@ -240,7 +240,7 @@ char *
 HdrHeap::allocate_str(int nbytes)
 {
   int last_size   = 0;
-  char *new_space = NULL;
+  char *new_space = nullptr;
   ink_assert(m_writeable);
 
   // INKqa08287 - We could get infinite build up
@@ -301,7 +301,7 @@ HdrHeap::expand_str(const char *old_str, int old_len, int new_len)
     return m_read_write_heap->expand((char *)old_str, old_len, new_len);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 // char* HdrHeap::duplicate_str(char* str, int nbytes)
@@ -331,14 +331,14 @@ HdrHeap::demote_rw_str_heap()
   // First, see if we have any open slots for read
   //  only heaps
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    if (m_ronly_heap[i].m_heap_start == NULL) {
+    if (m_ronly_heap[i].m_heap_start == nullptr) {
       // We've found a slot
       m_ronly_heap[i].m_ref_count_ptr = m_read_write_heap.object();
       m_ronly_heap[i].m_heap_start    = (char *)m_read_write_heap.get();
       m_ronly_heap[i].m_heap_len      = m_read_write_heap->m_heap_size - m_read_write_heap->m_free_size;
 
       //          Debug("hdrs", "Demoted rw heap of %d size", m_read_write_heap->m_heap_size);
-      m_read_write_heap = NULL;
+      m_read_write_heap = nullptr;
       return 0;
     }
   }
@@ -377,9 +377,9 @@ HdrHeap::coalesce_str_heaps(int incoming_size)
 
   int heaps_removed = 0;
   for (int j = 0; j < HDR_BUF_RONLY_HEAPS; j++) {
-    if (m_ronly_heap[j].m_heap_start != NULL && m_ronly_heap[j].m_locked == false) {
-      m_ronly_heap[j].m_ref_count_ptr = NULL;
-      m_ronly_heap[j].m_heap_start    = NULL;
+    if (m_ronly_heap[j].m_heap_start != nullptr && m_ronly_heap[j].m_locked == false) {
+      m_ronly_heap[j].m_ref_count_ptr = nullptr;
+      m_ronly_heap[j].m_heap_start    = nullptr;
       m_ronly_heap[j].m_heap_len      = 0;
       heaps_removed++;
     }
@@ -388,7 +388,7 @@ HdrHeap::coalesce_str_heaps(int incoming_size)
   // This function is presumed to free up read only
   //   string heap slots or be for incoming heaps
   //   If we don't have any free heaps, we are screwed
-  ink_assert(heaps_removed > 0 || incoming_size > 0 || m_ronly_heap[0].m_heap_start == NULL);
+  ink_assert(heaps_removed > 0 || incoming_size > 0 || m_ronly_heap[0].m_heap_start == nullptr);
 }
 
 void
@@ -489,7 +489,7 @@ HdrHeap::sanity_check_strs()
   }
 
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    if (m_ronly_heap[i].m_heap_start != NULL) {
+    if (m_ronly_heap[i].m_heap_start != nullptr) {
       heaps[num_heaps].start = m_ronly_heap[i].m_heap_start;
       heaps[num_heaps].end   = m_ronly_heap[i].m_heap_start + m_ronly_heap[i].m_heap_len;
       num_heaps++;
@@ -563,7 +563,7 @@ HdrHeap::marshal_length()
   }
 
   for (int j = 0; j < HDR_BUF_RONLY_HEAPS; j++) {
-    if (m_ronly_heap[j].m_heap_start != NULL) {
+    if (m_ronly_heap[j].m_heap_start != nullptr) {
       len += m_ronly_heap[j].m_heap_len;
     }
   }
@@ -663,12 +663,12 @@ HdrHeap::marshal(char *buf, int len)
 
   // Now that we've got the pointer blocks marshaled
   //  we can fill in the header on marshalled block
-  marshal_hdr->m_free_start = NULL;
+  marshal_hdr->m_free_start = nullptr;
   marshal_hdr->m_data_start = (char *)HDR_HEAP_HDR_SIZE; // offset
   marshal_hdr->m_magic      = HDR_BUF_MAGIC_MARSHALED;
   marshal_hdr->m_writeable  = false;
   marshal_hdr->m_size       = ptr_heap_size + HDR_HEAP_HDR_SIZE;
-  marshal_hdr->m_next       = NULL;
+  marshal_hdr->m_next       = nullptr;
   marshal_hdr->m_free_size  = 0;
   marshal_hdr->m_read_write_heap.detach();
   marshal_hdr->m_lost_string_space = this->m_lost_string_space;
@@ -678,7 +678,7 @@ HdrHeap::marshal(char *buf, int len)
   marshal_hdr->m_ronly_heap[0].m_ref_count_ptr.detach();
 
   for (int i = 1; i < HDR_BUF_RONLY_HEAPS; i++) {
-    marshal_hdr->m_ronly_heap[i].m_heap_start = NULL;
+    marshal_hdr->m_ronly_heap[i].m_heap_start = nullptr;
   }
 
   // Next order of business is to copy over string heaps
@@ -714,7 +714,7 @@ HdrHeap::marshal(char *buf, int len)
   }
 
   for (i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    if (m_ronly_heap[i].m_heap_start != NULL) {
+    if (m_ronly_heap[i].m_heap_start != nullptr) {
       if (m_ronly_heap[i].m_heap_len > len) {
         goto Failed;
       }
@@ -838,7 +838,7 @@ HdrHeap::check_marshalled(uint32_t buf_length)
     return false;
   }
 
-  if (this->m_ronly_heap[0].m_heap_start == NULL) {
+  if (this->m_ronly_heap[0].m_heap_start == nullptr) {
     return false;
   }
 
@@ -892,14 +892,14 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
   // Because checksums could have been enabled in the past
   //   and then be turned off without clearing the cache,
   //   always reset our variable we use for checksumming
-  m_free_start = NULL;
+  m_free_start = nullptr;
 #endif
 
   ink_release_assert(m_writeable == false);
   ink_release_assert(m_free_size == 0);
-  ink_release_assert(m_ronly_heap[0].m_heap_start != NULL);
+  ink_release_assert(m_ronly_heap[0].m_heap_start != nullptr);
 
-  ink_assert(m_free_start == NULL);
+  ink_assert(m_free_start == nullptr);
 
   // Convert Heap offsets to pointers
   m_data_start                 = ((char *)this) + (intptr_t)m_data_start;
@@ -1018,7 +1018,7 @@ HdrHeap::inherit_string_heaps(const HdrHeap *inherit_from)
 
   // Find the number of free heap slots & the first open index
   for (index = 0; index < HDR_BUF_RONLY_HEAPS; index++) {
-    if (m_ronly_heap[index].m_heap_start == NULL) {
+    if (m_ronly_heap[index].m_heap_start == nullptr) {
       if (first_free == HDR_BUF_RONLY_HEAPS) {
         first_free = index;
       }
@@ -1032,7 +1032,7 @@ HdrHeap::inherit_string_heaps(const HdrHeap *inherit_from)
     inherit_str_size = inherit_from->m_read_write_heap->m_heap_size;
   }
   for (index = 0; index < HDR_BUF_RONLY_HEAPS; index++) {
-    if (inherit_from->m_ronly_heap[index].m_heap_start != NULL) {
+    if (inherit_from->m_ronly_heap[index].m_heap_start != nullptr) {
       free_slots--;
       inherit_str_size += inherit_from->m_ronly_heap[index].m_heap_len;
     } else {
@@ -1144,7 +1144,7 @@ HdrStrHeap::allocate(int nbytes)
     m_free_size -= nbytes;
     return new_space;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -1166,13 +1166,13 @@ HdrStrHeap::expand(char *ptr, int old_size, int new_size)
     m_free_size -= expand_size;
     return ptr;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
 StrHeapDesc::StrHeapDesc()
 {
-  m_heap_start = NULL;
+  m_heap_start = nullptr;
   m_heap_len   = 0;
   m_locked     = false;
 }
@@ -1204,11 +1204,11 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */,
   HdrHeap *heap = new_HdrHeap();
   URLImpl *url  = url_create(heap);
 
-  tb.check(heap->m_read_write_heap.get() == NULL, "Checking that we have no rw heap.");
+  tb.check(heap->m_read_write_heap.get() == nullptr, "Checking that we have no rw heap.");
   url_path_set(heap, url, buf, next_required_overflow_size, true);
   tb.check(heap->m_read_write_heap->m_free_size == 0, "Checking that we've completely consumed the rw heap");
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
-    tb.check(heap->m_ronly_heap[i].m_heap_start == (char *)NULL, "Checking ronly_heap[%d] is NULL", i);
+    tb.check(heap->m_ronly_heap[i].m_heap_start == (char *)nullptr, "Checking ronly_heap[%d] is NULL", i);
   }
 
   // Now we have no ronly heaps in use and a completely full rwheap, so we will test that
@@ -1227,15 +1227,16 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */,
     tb.check(heap->m_read_write_heap->m_heap_size == (uint32_t)next_rw_heap_size, "Checking the current rw heap is %d bytes",
              (int)next_rw_heap_size);
     tb.check(heap->m_read_write_heap->m_free_size == 0, "Checking that we've completely consumed the rw heap");
-    tb.check(heap->m_ronly_heap[ronly_heap].m_heap_start != NULL, "Checking that we properly demoted the previous rw heap");
+    tb.check(heap->m_ronly_heap[ronly_heap].m_heap_start != nullptr, "Checking that we properly demoted the previous rw heap");
     for (int i = ronly_heap + 1; i < HDR_BUF_RONLY_HEAPS; ++i) {
-      tb.check(heap->m_ronly_heap[i].m_heap_start == NULL, "Checking ronly_heap[%d] is NULL", i);
+      tb.check(heap->m_ronly_heap[i].m_heap_start == nullptr, "Checking ronly_heap[%d] is NULL", i);
     }
   }
 
   // We will rerun these checks after we introduce a non-copied string to make sure we didn't already coalesce
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
-    tb.check(heap->m_ronly_heap[i].m_heap_start != (char *)NULL, "Pre non-copied string: Checking ronly_heap[%d] is NOT NULL", i);
+    tb.check(heap->m_ronly_heap[i].m_heap_start != (char *)nullptr, "Pre non-copied string: Checking ronly_heap[%d] is NOT NULL",
+             i);
   }
 
   // Now if we add a url object that contains only non-copied strings it shouldn't affect the size of the rwheap
@@ -1252,10 +1253,11 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */,
   tb.check(aliased_str_url->m_ptr_path == buf3, "Checking that the aliased string is correctly pointing at buf");
 
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
-    tb.check(heap->m_ronly_heap[i].m_heap_start != (char *)NULL, "Post non-copied string: Checking ronly_heap[%d] is NOT NULL", i);
+    tb.check(heap->m_ronly_heap[i].m_heap_start != (char *)nullptr, "Post non-copied string: Checking ronly_heap[%d] is NOT NULL",
+             i);
   }
   tb.check(heap->m_read_write_heap->m_free_size == 0, "Checking that we've completely consumed the rw heap");
-  tb.check(heap->m_next == NULL, "Checking that we dont have any chained heaps");
+  tb.check(heap->m_next == nullptr, "Checking that we dont have any chained heaps");
 
   // Now at this point we have a completely full rw_heap and no ronly heap slots, so any allocation would have to result
   // in a coalesce, and to validate that we don't reintroduce TS-2766 we have an aliased string, so when it tries to
@@ -1264,13 +1266,13 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */,
   // string is accounted for, in the old implementation it would result in an allocation failure.
 
   char *str = heap->allocate_str(1); // this will force a coalese.
-  tb.check(str != NULL, "Checking that 1 byte allocated string is not NULL");
+  tb.check(str != nullptr, "Checking that 1 byte allocated string is not NULL");
 
   // Now we need to validate that aliased_str_url has a path that isn't NULL, if it's NULL then the
   // coalesce is broken and didn't properly determine the size, if it's not null then everything worked as expected.
   tb.check(aliased_str_url->m_len_path == next_required_overflow_size,
            "Checking that the aliased string shows having proper length");
-  tb.check(aliased_str_url->m_ptr_path != NULL,
+  tb.check(aliased_str_url->m_ptr_path != nullptr,
            "Checking that the aliased string was properly moved during coalsece and evacuation");
   tb.check(aliased_str_url->m_ptr_path != buf3,
            "Checking that the aliased string was properly moved during coalsece and evacuation (not pointing at buf3)");

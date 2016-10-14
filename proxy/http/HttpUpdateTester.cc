@@ -117,7 +117,7 @@ init_http_update_test()
 {
   FILE *f = fopen("urls", "r");
 
-  if (f == NULL) {
+  if (f == nullptr) {
     Warning("[Http Update Tester] could not open URL file");
     return;
   }

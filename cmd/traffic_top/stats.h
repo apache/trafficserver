@@ -86,8 +86,8 @@ public:
     _old_time  = 0;
     _now       = 0;
     _time      = (struct timeval){0, 0};
-    _stats     = NULL;
-    _old_stats = NULL;
+    _stats     = nullptr;
+    _old_stats = nullptr;
     _absolute  = false;
     lookup_table.insert(make_pair("version", LookupItem("Version", "proxy.process.version.server.short", 1)));
     lookup_table.insert(make_pair("disk_used", LookupItem("Disk Used", "proxy.process.cache.bytes_used", 1)));
@@ -245,14 +245,14 @@ public:
   {
     if (_url == "") {
       int64_t value = 0;
-      if (_old_stats != NULL) {
+      if (_old_stats != nullptr) {
         delete _old_stats;
-        _old_stats = NULL;
+        _old_stats = nullptr;
       }
       _old_stats = _stats;
       _stats     = new map<string, string>;
 
-      gettimeofday(&_time, NULL);
+      gettimeofday(&_time, nullptr);
       double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
 
       for (map<string, LookupItem>::const_iterator lookup_it = lookup_table.begin(); lookup_it != lookup_table.end(); ++lookup_it) {
@@ -261,7 +261,7 @@ public:
         if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
           if (strcmp(item.pretty, "Version") == 0) {
             // special case for Version information
-            TSString strValue = NULL;
+            TSString strValue = nullptr;
             if (TSRecordGetString(item.name, &strValue) == TS_ERR_OKAY) {
               string key     = item.name;
               (*_stats)[key] = strValue;
@@ -299,7 +299,7 @@ public:
         curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
 
         // update time
-        gettimeofday(&_time, NULL);
+        gettimeofday(&_time, nullptr);
         double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
 
         response.clear();
@@ -308,9 +308,9 @@ public:
 
         // only if success update stats and time information
         if (res == 0) {
-          if (_old_stats != NULL) {
+          if (_old_stats != nullptr) {
             delete _old_stats;
-            _old_stats = NULL;
+            _old_stats = nullptr;
           }
           _old_stats = _stats;
           _stats     = new map<string, string>;
@@ -381,7 +381,7 @@ public:
         value = value / 10000000;
       }
 
-      if ((type == 2 || type == 5 || type == 8) && _old_stats != NULL && _absolute == false) {
+      if ((type == 2 || type == 5 || type == 8) && _old_stats != nullptr && _absolute == false) {
         double old = getValue(item.name, _old_stats);
         if (key == "total_time") {
           old = old / 10000000;
@@ -479,10 +479,10 @@ public:
 
   ~Stats()
   {
-    if (_stats != NULL) {
+    if (_stats != nullptr) {
       delete _stats;
     }
-    if (_old_stats != NULL) {
+    if (_old_stats != nullptr) {
       delete _old_stats;
     }
   }

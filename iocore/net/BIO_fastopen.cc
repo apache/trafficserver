@@ -33,7 +33,7 @@ fastopen_create(BIO *bio)
   bio->init  = 0;
   bio->num   = NO_FD;
   bio->flags = 0;
-  bio->ptr   = NULL;
+  bio->ptr   = nullptr;
 
   return 1;
 }
@@ -75,7 +75,7 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
       NET_INCREMENT_DYN_STAT(net_fastopen_successes_stat);
     }
 
-    bio->ptr = NULL;
+    bio->ptr = nullptr;
   } else {
     err = socketManager.write(bio->num, (void *)in, insz);
   }
@@ -153,12 +153,12 @@ static const BIO_METHOD fastopen_methods = {
   .name          = "fastopen",
   .bwrite        = fastopen_bwrite,
   .bread         = fastopen_bread,
-  .bputs         = NULL,
-  .bgets         = NULL,
+  .bputs         = nullptr,
+  .bgets         = nullptr,
   .ctrl          = fastopen_ctrl,
   .create        = fastopen_create,
   .destroy       = fastopen_destroy,
-  .callback_ctrl = NULL,
+  .callback_ctrl = nullptr,
 };
 
 const BIO_METHOD *

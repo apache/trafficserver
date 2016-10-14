@@ -34,7 +34,7 @@ void
 RecRecordInit(RecRecord *r)
 {
   ink_zero(*r);
-  rec_mutex_init(&(r->lock), NULL);
+  rec_mutex_init(&(r->lock), nullptr);
 }
 
 void
@@ -51,7 +51,7 @@ RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 {
   if (g_num_records >= REC_MAX_RECORDS) {
     Warning("too many stats/configs, please increase REC_MAX_RECORDS or rebuild with --with_max_api_stats=<n>");
-    return NULL;
+    return nullptr;
   }
 
   int i        = ink_atomic_increment(&g_num_records, 1);
@@ -132,14 +132,14 @@ RecDataSet(RecDataT data_type, RecData *data_dst, RecData *data_src)
 
   switch (data_type) {
   case RECD_STRING:
-    if (data_src->rec_string == NULL) {
-      if (data_dst->rec_string != NULL) {
+    if (data_src->rec_string == nullptr) {
+      if (data_dst->rec_string != nullptr) {
         ats_free(data_dst->rec_string);
-        data_dst->rec_string = NULL;
+        data_dst->rec_string = nullptr;
         rec_set              = true;
       }
     } else if (((data_dst->rec_string) && (strcmp(data_dst->rec_string, data_src->rec_string) != 0)) ||
-               ((data_dst->rec_string == NULL) && (data_src->rec_string != NULL))) {
+               ((data_dst->rec_string == nullptr) && (data_src->rec_string != nullptr))) {
       if (data_dst->rec_string) {
         ats_free(data_dst->rec_string);
       }
@@ -419,8 +419,8 @@ RecDataSetFromString(RecDataT data_type, RecData *data_dst, const char *data_str
     data_src.rec_float = atof(data_string);
     break;
   case RECD_STRING:
-    if (data_string && strcmp((data_string), "NULL") == 0) {
-      data_src.rec_string = NULL;
+    if (data_string && strcmp((data_string), "nullptr") == 0) {
+      data_src.rec_string = nullptr;
     } else {
       // It's OK to cast away the const here, because RecDataSet will copy the string.
       data_src.rec_string = (char *)data_string;

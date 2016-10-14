@@ -233,7 +233,7 @@ ink_get_hrtime_internal()
   return ink_hrtime_from_timespec(&ts);
 #else
   timeval tv;
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, nullptr);
   return ink_hrtime_from_timeval(&tv);
 #endif
 }
@@ -272,7 +272,7 @@ static inline void
 ink_hrtime_sleep(ink_hrtime delay)
 {
   struct timespec ts = ink_hrtime_to_timespec(delay);
-  nanosleep(&ts, NULL);
+  nanosleep(&ts, nullptr);
 }
 
 #endif /* _ink_hrtime_h_ */

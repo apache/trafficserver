@@ -78,7 +78,7 @@ test_block_boundries()
     // Clear out the regions array
     int j = 0;
     for (j = 0; j < regions_to_test; j++) {
-      test_regions[j] = NULL;
+      test_regions[j] = nullptr;
     }
 
     // Allocate and fill the array

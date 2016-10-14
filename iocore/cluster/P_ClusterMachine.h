@@ -71,7 +71,7 @@ struct ClusterMachine : public Server {
   Link<ClusterMachine> link;
 
   // default for localhost
-  ClusterMachine(char *hostname = NULL, unsigned int ip = 0, int acluster_port = 0);
+  ClusterMachine(char *hostname = nullptr, unsigned int ip = 0, int acluster_port = 0);
   ~ClusterMachine();
   ClusterHandler *pop_ClusterHandler(int no_rr = 0);
 
@@ -98,7 +98,7 @@ struct MachineList {
     for (int i = 0; i < n; i++)
       if (machine[i].ip == ip && (!port || machine[i].port == port))
         return &machine[i];
-    return NULL;
+    return nullptr;
   }
 };
 
@@ -109,7 +109,7 @@ struct clusterConfigFile {
   char *
   parseFile(int fd)
   {
-    return (char *)read_MachineList(NULL, fd);
+    return (char *)read_MachineList(nullptr, fd);
   }
 };
 

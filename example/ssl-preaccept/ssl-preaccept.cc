@@ -158,9 +158,9 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_pa                         = 0; // pre-accept callback continuation
+  TSCont cb_pa                         = nullptr; // pre-accept callback continuation
   static const struct option longopt[] = {
-    {const_cast<char *>("config"), required_argument, NULL, 'c'}, {NULL, no_argument, NULL, '\0'},
+    {const_cast<char *>("config"), required_argument, nullptr, 'c'}, {nullptr, no_argument, nullptr, '\0'},
   };
 
   info.plugin_name   = const_cast<char *>("SSL Preaccept test");
@@ -169,7 +169,7 @@ TSPluginInit(int argc, const char *argv[])
 
   int opt = 0;
   while (opt >= 0) {
-    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, nullptr);
     switch (opt) {
     case 'c':
       ConfigPath = optarg;
@@ -189,7 +189,7 @@ TSPluginInit(int argc, const char *argv[])
     TSError(PCP "requires Traffic Server 2.0 or later.");
   } else if (0 > Load_Configuration()) {
     TSError(PCP "Failed to load config file.");
-  } else if (0 == (cb_pa = TSContCreate(&CB_Pre_Accept, TSMutexCreate()))) {
+  } else if (nullptr == (cb_pa = TSContCreate(&CB_Pre_Accept, TSMutexCreate()))) {
     TSError(PCP "Failed to pre-accept callback.");
   } else {
     TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb_pa);

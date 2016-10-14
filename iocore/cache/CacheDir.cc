@@ -87,7 +87,7 @@ OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
     return 0;
   }
   OpenDirEntry *od = THREAD_ALLOC(openDirEntryAllocator, cont->mutex->thread_holding);
-  od->readers.head = NULL;
+  od->readers.head = nullptr;
   od->writers.push(cont);
   od->num_writers           = 1;
   od->max_writers           = max_writers;
@@ -108,12 +108,12 @@ OpenDir::signal_readers(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   Queue<CacheVC, Link_CacheVC_opendir_link> newly_delayed_readers;
   EThread *t = mutex->thread_holding;
-  CacheVC *c = NULL;
+  CacheVC *c = nullptr;
   while ((c = delayed_readers.dequeue())) {
     CACHE_TRY_LOCK(lock, c->mutex, t);
     if (lock.is_locked()) {
       c->f.open_read_timeout = 0;
-      c->handleEvent(EVENT_IMMEDIATE, 0);
+      c->handleEvent(EVENT_IMMEDIATE, nullptr);
       continue;
     }
     newly_delayed_readers.push(c);
@@ -139,11 +139,11 @@ OpenDir::close_write(CacheVC *cont)
     int b          = h % OPEN_DIR_BUCKETS;
     bucket[b].remove(cont->od);
     delayed_readers.append(cont->od->readers);
-    signal_readers(0, 0);
+    signal_readers(0, nullptr);
     cont->od->vector.clear();
     THREAD_FREE(cont->od, openDirEntryAllocator, cont->mutex->thread_holding);
   }
-  cont->od = NULL;
+  cont->od = nullptr;
   return 0;
 }
 
@@ -155,7 +155,7 @@ OpenDir::open_read(const CryptoHash *key)
   for (OpenDirEntry *d = bucket[b].head; d; d = d->link.next)
     if (d->writers.head->first_key == *key)
       return d;
-  return NULL;
+  return nullptr;
 }
 
 int
@@ -178,7 +178,7 @@ OpenDirEntry::wait(CacheVC *cont, int msec)
 int
 dir_bucket_loop_check(Dir *start_dir, Dir *seg)
 {
-  if (start_dir == NULL)
+  if (start_dir == nullptr)
     return 1;
 
   Dir *p1 = start_dir;
@@ -321,7 +321,7 @@ dir_delete_entry(Dir *e, Dir *p, int s, Vol *d)
       return e;
     } else {
       dir_clear(e);
-      return NULL;
+      return nullptr;
     }
   }
   return dir_from_offset(no, seg);
@@ -330,7 +330,7 @@ dir_delete_entry(Dir *e, Dir *p, int s, Vol *d)
 inline void
 dir_clean_bucket(Dir *b, int s, Vol *vol)
 {
-  Dir *e = b, *p = NULL;
+  Dir *e = b, *p = nullptr;
   Dir *seg = dir_segment(s, vol);
 #ifdef LOOP_CHECK_MODE
   int loop_count = 0;
@@ -429,13 +429,13 @@ freelist_pop(int s, Vol *d)
   Dir *e   = dir_from_offset(d->header->freelist[s], seg);
   if (!e) {
     freelist_clean(s, d);
-    return NULL;
+    return nullptr;
   }
   d->header->freelist[s] = dir_next(e);
   // if the freelist if bad, punt.
   if (dir_offset(e)) {
     dir_init_segment(s, d);
-    return NULL;
+    return nullptr;
   }
   Dir *h = dir_from_offset(d->header->freelist[s], seg);
   if (h)
@@ -506,7 +506,7 @@ dir_probe(const CacheKey *key, Vol *d, Dir *result, Dir **last_collision)
   int s    = key->slice32(0) % d->segments;
   int b    = key->slice32(1) % d->buckets;
   Dir *seg = dir_segment(s, d);
-  Dir *e = NULL, *p = NULL, *collision = *last_collision;
+  Dir *e = nullptr, *p = nullptr, *collision = *last_collision;
   Vol *vol = d;
   CHECK_DIR(d);
 #ifdef LOOP_CHECK_MODE
@@ -524,7 +524,7 @@ Lagain:
         // don't want to call dir_delete_entry.
         if (collision) {
           if (collision == e) {
-            collision = NULL;
+            collision = nullptr;
             // increment collison stat
             // Note: dir_probe could be called multiple times
             // for the same document and so the collision stat
@@ -557,7 +557,7 @@ Lagain:
   if (collision) { // last collision no longer in the list, retry
     DDebug("cache_stats", "Incrementing dir collisions");
     CACHE_INC_DIR_COLLISIONS(d->mutex);
-    collision = NULL;
+    collision = nullptr;
     goto Lagain;
   }
   DDebug("dir_probe_miss", "missed %X %X on vol %d bucket %d at %p", key->slice32(0), key->slice32(1), d->fd, b, seg);
@@ -573,7 +573,7 @@ dir_insert(const CacheKey *key, Vol *d, Dir *to_part)
   int bi = key->slice32(1) % d->buckets;
   ink_assert(dir_approx_size(to_part) <= MAX_FRAG_SIZE + sizeofDoc);
   Dir *seg = dir_segment(s, d);
-  Dir *e   = NULL;
+  Dir *e   = nullptr;
   Dir *b   = dir_bucket(bi, seg);
   Vol *vol = d;
 #if defined(DEBUG) && defined(DO_CHECK_DIR_FAST)
@@ -624,7 +624,7 @@ dir_overwrite(const CacheKey *key, Vol *d, Dir *dir, Dir *overwrite, bool must_o
   int s          = key->slice32(0) % d->segments, l;
   int bi         = key->slice32(1) % d->buckets;
   Dir *seg       = dir_segment(s, d);
-  Dir *e         = NULL;
+  Dir *e         = nullptr;
   Dir *b         = dir_bucket(bi, seg);
   unsigned int t = DIR_MASK_TAG(key->slice32(2));
   int res        = 1;
@@ -696,7 +696,7 @@ dir_delete(const CacheKey *key, Vol *d, Dir *del)
   int s    = key->slice32(0) % d->segments;
   int b    = key->slice32(1) % d->buckets;
   Dir *seg = dir_segment(s, d);
-  Dir *e = NULL, *p = NULL;
+  Dir *e = nullptr, *p = nullptr;
 #ifdef LOOP_CHECK_MODE
   int loop_count = 0;
 #endif
@@ -893,7 +893,7 @@ void
 sync_cache_dir_on_shutdown(void)
 {
   Debug("cache_dir_sync", "sync started");
-  char *buf     = NULL;
+  char *buf     = nullptr;
   size_t buflen = 0;
   bool buf_huge = false;
 
@@ -945,14 +945,14 @@ sync_cache_dir_on_shutdown(void)
           ats_free_hugepage(buf, buflen);
         else
           ats_memalign_free(buf);
-        buf = NULL;
+        buf = nullptr;
       }
       buflen = dirlen;
       if (ats_hugepage_enabled()) {
         buf      = (char *)ats_alloc_hugepage(buflen);
         buf_huge = true;
       }
-      if (buf == NULL) {
+      if (buf == nullptr) {
         buf      = (char *)ats_memalign(ats_pagesize(), buflen);
         buf_huge = false;
       }
@@ -979,7 +979,7 @@ sync_cache_dir_on_shutdown(void)
       ats_free_hugepage(buf, buflen);
     else
       ats_memalign_free(buf);
-    buf = NULL;
+    buf = nullptr;
   }
 }
 
@@ -988,7 +988,7 @@ CacheSync::mainEvent(int event, Event *e)
 {
   if (trigger) {
     trigger->cancel_action();
-    trigger = NULL;
+    trigger = nullptr;
   }
 
 Lrestart:
@@ -1000,7 +1000,7 @@ Lrestart:
       else
         ats_memalign_free(buf);
       buflen   = 0;
-      buf      = NULL;
+      buf      = nullptr;
       buf_huge = false;
     }
     Debug("cache_dir_sync", "sync done");
@@ -1060,7 +1060,7 @@ Lrestart:
         Debug("cache_dir_sync", "Dir %s: waiting for agg buffer", vol->hash_text.get());
         vol->dir_sync_waiting = 1;
         if (!vol->is_io_in_progress())
-          vol->aggWrite(EVENT_IMMEDIATE, 0);
+          vol->aggWrite(EVENT_IMMEDIATE, nullptr);
         return EVENT_CONT;
       }
       Debug("cache_dir_sync", "pos: %" PRIu64 " Dir %s dirty...syncing to disk", vol->header->write_pos, vol->hash_text.get());
@@ -1071,14 +1071,14 @@ Lrestart:
             ats_free_hugepage(buf, buflen);
           else
             ats_memalign_free(buf);
-          buf = NULL;
+          buf = nullptr;
         }
         buflen = dirlen;
         if (ats_hugepage_enabled()) {
           buf      = (char *)ats_alloc_hugepage(buflen);
           buf_huge = true;
         }
-        if (buf == NULL) {
+        if (buf == nullptr) {
           buf      = (char *)ats_memalign(ats_pagesize(), buflen);
           buf_huge = false;
         }
@@ -1188,7 +1188,7 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
           ++seg_empty;
           --seg_buckets_in_use;
           // this should only happen on the first dir in a bucket
-          ink_assert(NULL == next_dir(e, seg));
+          ink_assert(nullptr == next_dir(e, seg));
           break;
         } else {
           int e_idx = e - seg;
@@ -1430,7 +1430,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   regress_rand_init(13);
   ttime = Thread::get_hrtime_updated();
   for (i = 0; i < newfree; i++) {
-    Dir *last_collision = 0;
+    Dir *last_collision = nullptr;
     regress_rand_CacheKey(&key);
     if (!dir_probe(&key, d, &dir, &last_collision))
       ret = REGRESSION_TEST_FAILED;

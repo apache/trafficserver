@@ -65,7 +65,7 @@ vint32 LogBuffer::M_ID      = 0;
 char *
 LogBufferHeader::fmt_name()
 {
-  char *addr = NULL;
+  char *addr = nullptr;
   if (fmt_name_offset) {
     addr = (char *)this + fmt_name_offset;
   }
@@ -75,7 +75,7 @@ LogBufferHeader::fmt_name()
 char *
 LogBufferHeader::fmt_fieldlist()
 {
-  char *addr = NULL;
+  char *addr = nullptr;
   if (fmt_fieldlist_offset) {
     addr = (char *)this + fmt_fieldlist_offset;
   }
@@ -85,7 +85,7 @@ LogBufferHeader::fmt_fieldlist()
 char *
 LogBufferHeader::fmt_printf()
 {
-  char *addr = NULL;
+  char *addr = nullptr;
   if (fmt_printf_offset) {
     addr = (char *)this + fmt_printf_offset;
   }
@@ -95,7 +95,7 @@ LogBufferHeader::fmt_printf()
 char *
 LogBufferHeader::src_hostname()
 {
-  char *addr = NULL;
+  char *addr = nullptr;
   if (src_hostname_offset) {
     addr = (char *)this + src_hostname_offset;
   }
@@ -105,7 +105,7 @@ LogBufferHeader::src_hostname()
 char *
 LogBufferHeader::log_filename()
 {
-  char *addr = NULL;
+  char *addr = nullptr;
   if (log_filename_offset) {
     addr = (char *)this + log_filename_offset;
   }
@@ -154,7 +154,7 @@ LogBuffer::LogBuffer(LogObject *owner, size_t size, size_t buf_align, size_t wri
 }
 
 LogBuffer::LogBuffer(LogObject *owner, LogBufferHeader *header)
-  : m_unaligned_buffer(NULL),
+  : m_unaligned_buffer(nullptr),
     m_buffer((char *)header),
     m_size(0),
     m_buf_align(LB_DEFAULT_ALIGN),
@@ -181,7 +181,7 @@ LogBuffer::LogBuffer(LogObject *owner, LogBufferHeader *header)
 void
 LogBuffer::freeLogBuffer()
 {
-  char *log_buffer = NULL;
+  char *log_buffer = nullptr;
 
   if (m_unaligned_buffer) {
     log_buffer = m_unaligned_buffer;
@@ -201,8 +201,8 @@ LogBuffer::freeLogBuffer()
 LogBuffer::~LogBuffer()
 {
   freeLogBuffer();
-  m_buffer           = 0;
-  m_unaligned_buffer = 0;
+  m_buffer           = nullptr;
+  m_unaligned_buffer = nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -463,11 +463,11 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
                                 long timestamp, long timestamp_usec, unsigned buffer_version, LogFieldList *alt_fieldlist,
                                 char *alt_printf_str)
 {
-  if (fieldlist == NULL || printf_str == NULL) {
+  if (fieldlist == nullptr || printf_str == nullptr) {
     return 0;
   }
 
-  int *readfrom_map = NULL;
+  int *readfrom_map = nullptr;
 
   if (alt_fieldlist && alt_printf_str) {
     LogField *f, *g;
@@ -512,7 +512,7 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
 
   for (i = 0; i < printf_len; i++) {
     if (printf_str[i] == LOG_FIELD_MARKER) {
-      if (field != NULL) {
+      if (field != nullptr) {
         char *to = &write_to[bytes_written];
 
         // for timestamps that are not aggregates, we take the
@@ -648,9 +648,9 @@ int
 LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int buf_len, const char *symbol_str, char *printf_str,
                     unsigned buffer_version, const char *alt_format)
 {
-  ink_assert(entry != NULL);
+  ink_assert(entry != nullptr);
   ink_assert(type == LOG_FORMAT_CUSTOM || type == LOG_FORMAT_TEXT);
-  ink_assert(buf != NULL);
+  ink_assert(buf != nullptr);
 
   char *read_from; // keeps track of where we're reading from entry
   char *write_to;  // keeps track of where we're writing into buf
@@ -677,7 +677,7 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
   //
 
   int i;
-  LogFieldList *fieldlist = NULL;
+  LogFieldList *fieldlist = nullptr;
   bool delete_fieldlist_p = false; // need to free the fieldlist?
 
   for (i = 0; i < fieldlist_cache_entries; i++) {
@@ -691,7 +691,7 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
   if (!fieldlist) {
     Debug("log-fieldlist", "Fieldlist for %s not found; creating ...", symbol_str);
     fieldlist = new LogFieldList;
-    ink_assert(fieldlist != NULL);
+    ink_assert(fieldlist != nullptr);
     bool contains_aggregates = false;
     LogFormat::parse_symbol_string(symbol_str, fieldlist, &contains_aggregates);
 
@@ -705,9 +705,9 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
     }
   }
 
-  LogFieldList *alt_fieldlist = NULL;
-  char *alt_printf_str        = NULL;
-  char *alt_symbol_str        = NULL;
+  LogFieldList *alt_fieldlist = nullptr;
+  char *alt_printf_str        = nullptr;
+  char *alt_symbol_str        = nullptr;
   bool bad_alt_format         = false;
 
   if (alt_format) {
@@ -733,9 +733,9 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
     delete alt_fieldlist;
     ats_free(alt_printf_str);
     ats_free(alt_symbol_str);
-    alt_fieldlist  = NULL;
-    alt_printf_str = NULL;
-    alt_symbol_str = NULL;
+    alt_fieldlist  = nullptr;
+    alt_printf_str = nullptr;
+    alt_symbol_str = nullptr;
   }
 
   int ret = resolve_custom_entry(fieldlist, printf_str, read_from, write_to, buf_len, entry->timestamp, entry->timestamp_usec,
@@ -780,7 +780,7 @@ LogBufferList::LogBufferList()
 LogBufferList::~LogBufferList()
 {
   LogBuffer *lb;
-  while ((lb = get()) != NULL) {
+  while ((lb = get()) != nullptr) {
     delete lb;
   }
   m_size = 0;
@@ -794,7 +794,7 @@ LogBufferList::~LogBufferList()
 void
 LogBufferList::add(LogBuffer *lb)
 {
-  ink_assert(lb != NULL);
+  ink_assert(lb != nullptr);
 
   ink_mutex_acquire(&m_mutex);
   m_buffer_list.enqueue(lb);
@@ -814,7 +814,7 @@ LogBufferList::get()
 
   ink_mutex_acquire(&m_mutex);
   lb = m_buffer_list.dequeue();
-  if (lb != NULL) {
+  if (lb != nullptr) {
     m_size--;
     ink_assert(m_size >= 0);
   }
@@ -828,7 +828,7 @@ LogBufferList::get()
 LogEntryHeader *
 LogBufferIterator::next()
 {
-  LogEntryHeader *ret_val = NULL;
+  LogEntryHeader *ret_val = nullptr;
   LogEntryHeader *entry   = (LogEntryHeader *)m_next;
 
   if (entry) {

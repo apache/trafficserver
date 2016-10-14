@@ -76,19 +76,19 @@ struct SocketManager {
   int open(const char *path, int oflag = O_RDWR | O_NDELAY | O_CREAT, mode_t mode = DEFAULT_OPEN_MODE);
 
   // result is the number of bytes or -errno
-  int64_t read(int fd, void *buf, int len, void *pOLP = NULL);
+  int64_t read(int fd, void *buf, int len, void *pOLP = nullptr);
   int64_t vector_io(int fd, struct iovec *vector, size_t count, int read_request, void *pOLP = 0);
   int64_t readv(int fd, struct iovec *vector, size_t count);
   int64_t read_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
-  int64_t pread(int fd, void *buf, int len, off_t offset, char *tag = NULL);
+  int64_t pread(int fd, void *buf, int len, off_t offset, char *tag = nullptr);
 
   int recv(int s, void *buf, int len, int flags);
   int recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen);
 
-  int64_t write(int fd, void *buf, int len, void *pOLP = NULL);
+  int64_t write(int fd, void *buf, int len, void *pOLP = nullptr);
   int64_t writev(int fd, struct iovec *vector, size_t count);
   int64_t write_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
-  int64_t pwrite(int fd, void *buf, int len, off_t offset, char *tag = NULL);
+  int64_t pwrite(int fd, void *buf, int len, off_t offset, char *tag = nullptr);
 
   int send(int fd, void *buf, int len, int flags);
   int sendto(int fd, void *buf, int len, int flags, struct sockaddr const *to, int tolen);

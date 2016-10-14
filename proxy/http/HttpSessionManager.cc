@@ -144,7 +144,7 @@ ServerSessionPool::releaseSession(HttpServerSession *ss)
   ss->do_io_read(this, INT64_MAX, ss->read_buffer);
 
   // Transfer control of the write side as well
-  ss->do_io_write(this, 0, NULL);
+  ss->do_io_write(this, 0, nullptr);
 
   // we probably don't need the active timeout set, but will leave it for now
   ss->get_netvc()->set_inactivity_timeout(ss->get_netvc()->get_inactivity_timeout());
@@ -164,8 +164,8 @@ ServerSessionPool::releaseSession(HttpServerSession *ss)
 int
 ServerSessionPool::eventHandler(int event, void *data)
 {
-  NetVConnection *net_vc = NULL;
-  HttpServerSession *s   = NULL;
+  NetVConnection *net_vc = nullptr;
+  HttpServerSession *s   = nullptr;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -265,7 +265,7 @@ HSMresult_t
 HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockaddr const *ip, const char *hostname,
                                     ProxyClientTransaction *ua_session, HttpSM *sm)
 {
-  HttpServerSession *to_return = NULL;
+  HttpServerSession *to_return = nullptr;
   TSServerSessionSharingMatchType match_style =
     static_cast<TSServerSessionSharingMatchType>(sm->t_state.txn_conf->server_session_sharing_match);
   INK_MD5 hostname_hash;
@@ -276,8 +276,8 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
   // First check to see if there is a server session bound
   //   to the user agent session
   to_return = ua_session->get_server_session();
-  if (to_return != NULL) {
-    ua_session->attach_server_session(NULL);
+  if (to_return != nullptr) {
+    ua_session->attach_server_session(nullptr);
 
     // Since the client session is reusing the same server session, it seems that the SNI should match
     // Will the client make requests to different hosts over the same SSL session? Though checking
@@ -296,7 +296,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
                      "session not a match, returning to shared pool",
           to_return->con_id);
     to_return->release();
-    to_return = NULL;
+    to_return = nullptr;
   }
 
   // TS-3797 Adding another scope so the pool lock is dropped after it is removed from the pool and
@@ -327,12 +327,12 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
             UnixNetVConnection *new_vc = server_vc->migrateToCurrentThread(sm, ethread);
             // The VC moved, free up the original one
             if (new_vc != server_vc) {
-              ink_assert(new_vc == NULL || new_vc->nh != NULL);
+              ink_assert(new_vc == nullptr || new_vc->nh != nullptr);
               to_return->set_netvc(new_vc);
               if (!new_vc) {
                 // Close out to_return, we were't able to get a connection
                 to_return->do_io_close();
-                to_return = NULL;
+                to_return = nullptr;
                 retval    = HSM_NOT_FOUND;
               } else {
                 // Keep things from timing out on us

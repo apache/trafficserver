@@ -62,8 +62,9 @@ accept_handler(TSCont contp, TSEvent event, void *edata)
   default:
     /* Something wrong with the network, if there are any
        pending NetAccept, cancel them. */
-    if (pending_action && !TSActionDone(pending_action))
+    if (pending_action && !TSActionDone(pending_action)) {
       TSActionCancel(pending_action);
+    }
 
     TSContDestroy(contp);
     break;

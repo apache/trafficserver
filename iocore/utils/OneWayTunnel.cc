@@ -63,18 +63,18 @@ transfer_data(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
 }
 
 OneWayTunnel::OneWayTunnel()
-  : Continuation(0),
-    vioSource(0),
-    vioTarget(0),
-    cont(0),
-    manipulate_fn(0),
+  : Continuation(nullptr),
+    vioSource(nullptr),
+    vioTarget(nullptr),
+    cont(nullptr),
+    manipulate_fn(nullptr),
     n_connections(0),
     lerrno(0),
     single_buffer(0),
     close_source(0),
     close_target(0),
     tunnel_till_done(0),
-    tunnel_peer(0),
+    tunnel_peer(nullptr),
     free_vcs(true)
 {
 }
@@ -88,7 +88,7 @@ OneWayTunnel::OneWayTunnel_alloc()
 void
 OneWayTunnel::OneWayTunnel_free(OneWayTunnel *pOWT)
 {
-  pOWT->mutex = NULL;
+  pOWT->mutex = nullptr;
   OneWayTunnelAllocator.free(pOWT);
 }
 
@@ -127,7 +127,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
                    int water_mark)
 {
   mutex            = aCont ? aCont->mutex.get() : (aMutex ? aMutex : new_ProxyMutex());
-  cont             = aMutex ? NULL : aCont;
+  cont             = aMutex ? nullptr : aCont;
   single_buffer    = asingle_buffer;
   manipulate_fn    = aManipulate_fn;
   n_connections    = 2;
@@ -149,7 +149,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
 
   // enqueue read request on vcSource.
   MIOBuffer *buf1 = new_MIOBuffer(size_index);
-  MIOBuffer *buf2 = NULL;
+  MIOBuffer *buf2 = nullptr;
   if (single_buffer)
     buf2 = buf1;
   else
@@ -173,7 +173,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
   mutex            = aCont ? aCont->mutex : make_ptr(new_ProxyMutex());
   cont             = aCont;
   single_buffer    = true;
-  manipulate_fn    = 0;
+  manipulate_fn    = nullptr;
   n_connections    = 2;
   close_source     = aclose_source;
   close_target     = aclose_target;
@@ -199,7 +199,7 @@ OneWayTunnel::init(Continuation *aCont, VIO *SourceVio, VIO *TargetVio, bool acl
   mutex            = aCont ? aCont->mutex : make_ptr(new_ProxyMutex());
   cont             = aCont;
   single_buffer    = true;
-  manipulate_fn    = 0;
+  manipulate_fn    = nullptr;
   n_connections    = 2;
   close_source     = aclose_source;
   close_target     = aclose_target;
@@ -256,7 +256,7 @@ OneWayTunnel::startEvent(int event, void *data)
   case ONE_WAY_TUNNEL_EVENT_PEER_CLOSE:
     /* This event is sent out by our peer */
     ink_assert(tunnel_peer);
-    tunnel_peer = NULL;
+    tunnel_peer = nullptr;
     free_vcs    = false;
     goto Ldone;
 
@@ -333,7 +333,7 @@ OneWayTunnel::close_source_vio(int result)
     if (close_source && free_vcs) {
       vioSource->vc_server->do_io_close(result ? lerrno : -1);
     }
-    vioSource = NULL;
+    vioSource = nullptr;
     n_connections--;
   }
 }
@@ -350,7 +350,7 @@ OneWayTunnel::close_target_vio(int result, VIO *vio)
     if (close_target && free_vcs) {
       vioTarget->vc_server->do_io_close(result ? lerrno : -1);
     }
-    vioTarget = NULL;
+    vioTarget = nullptr;
     n_connections--;
   }
 }

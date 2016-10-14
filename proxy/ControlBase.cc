@@ -117,7 +117,7 @@ TimeMod *
 TimeMod::make(char *value, const char **error)
 {
   Tokenizer rangeTok("-");
-  TimeMod *mod = 0;
+  TimeMod *mod = nullptr;
   TimeMod tmp;
   int num_tok;
 
@@ -126,8 +126,8 @@ TimeMod::make(char *value, const char **error)
     *error = "End time not specified";
   } else if (num_tok > 2) {
     *error = "Malformed time range";
-  } else if (0 == (*error = timeOfDayToSeconds(rangeTok[0], &tmp.start_time)) &&
-             0 == (*error = timeOfDayToSeconds(rangeTok[1], &tmp.end_time))) {
+  } else if (nullptr == (*error = timeOfDayToSeconds(rangeTok[0], &tmp.start_time)) &&
+             nullptr == (*error = timeOfDayToSeconds(rangeTok[1], &tmp.end_time))) {
     mod = new TimeMod(tmp);
   }
   return mod;
@@ -170,7 +170,7 @@ TimeMod::timeOfDayToSeconds(const char *time_str, time_t *seconds)
   tmp += sec;
 
   *seconds = tmp;
-  return 0;
+  return nullptr;
 }
 
 // ----------
@@ -214,7 +214,7 @@ PortMod::make(char *value, const char **error)
   PortMod tmp;
   int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
 
-  *error = 0;
+  *error = nullptr;
   if (num_tok > 2) {
     *error = "Malformed Range";
     // coverity[secure_coding]
@@ -233,7 +233,7 @@ PortMod::make(char *value, const char **error)
 
   // If there's an error message, return null.
   // Otherwise create a new item and return it.
-  return *error ? 0 : new PortMod(tmp);
+  return *error ? nullptr : new PortMod(tmp);
 }
 
 // ----------
@@ -274,7 +274,7 @@ IPortMod::check(HttpRequestData *req) const
 IPortMod *
 IPortMod::make(char *value, const char **error)
 {
-  IPortMod *zret = 0;
+  IPortMod *zret = nullptr;
   int port;
   // coverity[secure_coding]
   if (sscanf(value, "%u", &port) == 1) {
@@ -327,7 +327,7 @@ SrcIPMod *
 SrcIPMod::make(char *value, const char **error)
 {
   SrcIPMod tmp;
-  SrcIPMod *zret = 0;
+  SrcIPMod *zret = nullptr;
   *error         = ExtractIpRange(value, &tmp.start_addr.sa, &tmp.end_addr.sa);
 
   if (!*error) {
@@ -388,7 +388,7 @@ SchemeMod::print(FILE *f) const
 SchemeMod *
 SchemeMod::make(char *value, const char **error)
 {
-  SchemeMod *zret = 0;
+  SchemeMod *zret = nullptr;
   int scheme      = hdrtoken_tokenize(value, strlen(value));
   if (scheme < 0) {
     *error = "Unknown scheme";
@@ -681,7 +681,7 @@ InternalMod::make(char *value, const char **error)
   }
 
   if (*error) {
-    return NULL;
+    return nullptr;
   } else {
     return new InternalMod(tmp);
   }
@@ -727,12 +727,13 @@ ControlBase::Print()
 const char *
 ControlBase::getSchemeModText() const
 {
-  const char *zret = 0;
-  Modifier *mod    = this->findModOfType(Modifier::MOD_SCHEME);
+  Modifier *mod = this->findModOfType(Modifier::MOD_SCHEME);
+
   if (mod) {
-    zret = static_cast<SchemeMod *>(mod)->getWksText();
+    return static_cast<SchemeMod *>(mod)->getWksText();
   }
-  return zret;
+
+  return nullptr;
 }
 
 bool
@@ -769,21 +770,21 @@ ControlBase::Modifier *
 ControlBase::findModOfType(Modifier::Type t) const
 {
   forv_Vec(Modifier, m, _mods) if (m && t == m->type()) { return m; }
-  return 0;
+  return nullptr;
 }
 
 const char *
 ControlBase::ProcessModifiers(matcher_line *line_info)
 {
   // Variables for error processing
-  const char *errBuf = NULL;
+  const char *errBuf = nullptr;
   mod_errors err     = ME_UNKNOWN;
 
   int n_elts = line_info->num_el; // Element count for line.
 
   // No elements -> no modifiers.
   if (0 >= n_elts) {
-    return 0;
+    return nullptr;
   }
   // Can't have more modifiers than elements, so reasonable upper bound.
   _mods.clear();
@@ -794,7 +795,7 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
   // finding all the elements. We'll track the element count so we can
   // escape if we've found all of the elements.
   for (int i = 0; n_elts && ME_UNKNOWN == err && i < MATCHER_MAX_TOKENS; ++i) {
-    Modifier *mod = 0;
+    Modifier *mod = nullptr;
 
     char *label = line_info->line[0][i];
     char *value = line_info->line[1][i];

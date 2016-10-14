@@ -72,7 +72,7 @@ RemapPlugins::run_plugin(remap_plugin_info *plugin)
     _s->remap_plugin_instance  = ih;
   }
 
-  plugin_retcode = plugin->fp_tsremap_do_remap(ih, _s ? reinterpret_cast<TSHttpTxn>(_s->state_machine) : NULL, &rri);
+  plugin_retcode = plugin->fp_tsremap_do_remap(ih, _s ? reinterpret_cast<TSHttpTxn>(_s->state_machine) : nullptr, &rri);
   // TODO: Deal with negative return codes here
   if (plugin_retcode < 0) {
     plugin_retcode = TSREMAP_NO_REMAP;
@@ -80,7 +80,7 @@ RemapPlugins::run_plugin(remap_plugin_info *plugin)
 
   // First step after plugin remap must be "redirect url" check
   if ((TSREMAP_DID_REMAP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) && rri.redirect) {
-    _s->remap_redirect = _request_url->string_get(NULL);
+    _s->remap_redirect = _request_url->string_get(nullptr);
   }
 
   return plugin_retcode;
@@ -178,11 +178,11 @@ RemapPlugins::run_remap(int event, Event *e)
      * then operate on _request_url, etc performing additional remaps (mainly another plugin run)
      **/
     if (ret) {
-      action.continuation->handleEvent(EVENT_REMAP_COMPLETE, NULL);
+      action.continuation->handleEvent(EVENT_REMAP_COMPLETE, nullptr);
       mutex.clear();
       action.mutex.clear();
-      mutex        = NULL;
-      action.mutex = NULL;
+      mutex        = nullptr;
+      action.mutex = nullptr;
       // THREAD_FREE(this, pluginAllocator, t);
       pluginAllocator.free(this); // ugly
       return EVENT_DONE;

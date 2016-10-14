@@ -62,7 +62,7 @@ ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
   do {                                                                                                           \
     if (is_debug_tag_set(tag)) {                                                                                 \
       cap_t caps      = cap_get_proc();                                                                          \
-      char *caps_text = cap_to_text(caps, NULL);                                                                 \
+      char *caps_text = cap_to_text(caps, nullptr);                                                              \
       Debug(tag, "caps='%s', core=%s, death signal=%d, thread=0x%llx", caps_text, is_dumpable(), death_signal(), \
             (unsigned long long)pthread_self());                                                                 \
       cap_free(caps_text);                                                                                       \
@@ -153,7 +153,7 @@ impersonate(const struct passwd *pwd, ImpersonationLevel level)
   DEBUG_CREDENTIALS("privileges");
   DEBUG_PRIVILEGES("privileges");
 
-  ink_release_assert(pwd != NULL);
+  ink_release_assert(pwd != nullptr);
 
 #if defined(PR_GET_DUMPABLE)
   dumpable = (prctl(PR_GET_DUMPABLE) == 1);
@@ -208,7 +208,7 @@ ImpersonateUserID(uid_t uid, ImpersonationLevel level)
     Fatal("missing password database entry for UID %ld: %s", (long)uid, strerror(errno));
   }
 
-  if (pwd == NULL) {
+  if (pwd == nullptr) {
     // Password entry not found ...
     Fatal("missing password database entry for UID %ld", (long)uid);
   }
@@ -235,7 +235,7 @@ ImpersonateUser(const char *user, ImpersonationLevel level)
     }
   }
 
-  if (pwd == NULL) {
+  if (pwd == nullptr) {
     // Password entry not found ...
     Fatal("missing password database entry for '%s'", user);
   }
@@ -333,7 +333,7 @@ FILE *
 elevating_fopen(const char *path, const char *mode)
 {
   FILE *f = fopen(path, mode);
-  if (NULL == f && (EPERM == errno || EACCES == errno)) {
+  if (nullptr == f && (EPERM == errno || EACCES == errno)) {
     ElevateAccess access(ElevateAccess::FILE_PRIVILEGE);
     f = fopen(path, mode);
   }
@@ -353,7 +353,7 @@ ElevateAccess::acquirePrivilege(unsigned priv_mask)
 
   Debug("privileges", "[acquirePrivilege] level= %x", level);
 
-  ink_assert(NULL == cap_state);
+  ink_assert(nullptr == cap_state);
 
   // Some privs aren't checked or used here because they are kept permanently in the
   // the capability list. See @a eff_list in @c RestrictCapabilities
@@ -396,7 +396,7 @@ ElevateAccess::releasePrivilege()
     if (cap_set_proc(static_cast<cap_t>(cap_state)) != 0) {
       Fatal("failed to restore privileged capabilities: %s", strerror(errno));
     }
-    cap_state = NULL;
+    cap_state = nullptr;
   }
 }
 #endif

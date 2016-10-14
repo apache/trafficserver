@@ -74,7 +74,7 @@ HandlerManager::getHandler(Variables &esi_vars, Expression &esi_expr, HttpDataFe
   FunctionHandleMap::const_iterator iter = _id_to_function_map.find(id);
   if (iter == _id_to_function_map.end()) {
     _errorLog("[%s::%s] handler id [%s] does not map to any loaded object", CLASS_NAME, __FUNCTION__, id.c_str());
-    return 0;
+    return nullptr;
   }
   return (*(iter->second))(esi_vars, esi_expr, fetcher, id);
 }

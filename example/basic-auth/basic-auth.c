@@ -40,8 +40,9 @@ base64_decode(const char *input)
   char *obuf;
   int len;
 
-  for (len = 0; (input[len] != '\0') && (input[len] != '='); len++)
+  for (len = 0; (input[len] != '\0') && (input[len] != '='); len++) {
     ;
+  }
 
   output = obuf = (char *)TSmalloc((len * 6) / 8 + 3);
 

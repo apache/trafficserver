@@ -153,20 +153,20 @@ main(int /* argc ATS_UNUSED */, char ** /*argv ATS_UNUSED */)
   ink_assert(h.put(hum) == hum);
   ink_assert(h.put(hhi) == hi);
   ink_assert(h.get(hhi) == hi && h.get(hi) == hi && h.get(ho) == ho);
-  ink_assert(h.get("he") == 0 && h.get("hee") == 0);
+  ink_assert(h.get("he") == nullptr && h.get("hee") == nullptr);
   h.del(ho);
-  ink_assert(h.get(ho) == 0);
+  ink_assert(h.get(ho) == nullptr);
 
   StringBlockHash hh;
   hh.put(hi);
   hh.put(ho);
-  ink_assert(hh.put(hum) == 0);
+  ink_assert(hh.put(hum) == nullptr);
   ink_assert(hh.put(hhi) == hi);
   ink_assert(hh.get(hhi) == hi && hh.get(hi) == hi && hh.get(ho) == ho);
-  ink_assert(hh.get("he") == 0 && hh.get("hee") == 0);
+  ink_assert(hh.get("he") == nullptr && hh.get("hee") == nullptr);
   hh.del(hi);
-  ink_assert(hh.get(hhi) == 0);
-  ink_assert(hh.get(hi) == 0);
+  ink_assert(hh.get(hhi) == nullptr);
+  ink_assert(hh.get(hi) == nullptr);
 
   HashMap<cchar *, StringHashFns, int> sh;
   sh.put(hi, 1);

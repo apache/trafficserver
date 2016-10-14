@@ -452,7 +452,7 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
     write_data->txnp      = transform_data->txnp;
 
     /* Don't finish computing the digest more than once! */
-    transform_data->txnp = NULL;
+    transform_data->txnp = nullptr;
 
     write_data->key = TSCacheKeyCreate();
     if (TSCacheKeyDigestSet(write_data->key, digest, sizeof(digest)) != TS_SUCCESS) {
@@ -466,7 +466,7 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
      * don't know whether to destroy it in
      * cache_open_write()/cache_open_write_failed() or
      * transform_vconn_write_complete() */
-    contp = TSContCreate(write_handler, NULL);
+    contp = TSContCreate(write_handler, nullptr);
     TSContDataSet(contp, write_data);
 
     /* Reentrant! */
@@ -520,7 +520,7 @@ http_read_response_hdr(TSCont /* contp ATS_UNUSED */, void *edata)
 
   /* Can't initialize data here because we can't call TSVConnWrite()
    * before TS_HTTP_RESPONSE_TRANSFORM_HOOK */
-  data->output_bufp = NULL;
+  data->output_bufp = nullptr;
 
   TSVConn connp = TSTransformCreate(transform_handler, data->txnp);
   TSContDataSet(connp, data);
@@ -664,7 +664,7 @@ vconn_read_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 
   /* Check if the URL stored at the digest is cached */
 
-  contp = TSContCreate(rewrite_handler, NULL);
+  contp = TSContCreate(rewrite_handler, nullptr);
   TSContDataSet(contp, data);
 
   /* Reentrant!  (Particularly in case of a cache miss.)
@@ -724,7 +724,7 @@ location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
     /* No allocation, freed with data->resp_bufp? */
     value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->digest_loc, data->idx, &length);
-    if (TSBase64Decode(value + 8, length - 8, (unsigned char *)digest, sizeof(digest), NULL) != TS_SUCCESS ||
+    if (TSBase64Decode(value + 8, length - 8, (unsigned char *)digest, sizeof(digest), nullptr) != TS_SUCCESS ||
         TSCacheKeyDigestSet(data->key, digest, 32 /* SHA-256 */) != TS_SUCCESS) {
       break;
     }
@@ -733,7 +733,7 @@ location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
     /* Check if the digest already exists in the cache */
 
-    contp = TSContCreate(digest_handler, NULL);
+    contp = TSContCreate(digest_handler, nullptr);
     TSContDataSet(contp, data);
 
     /* Reentrant! */
@@ -853,7 +853,7 @@ http_send_response_hdr(TSCont contp, void *edata)
 
       /* Check if the Location URL is already cached */
 
-      contp = TSContCreate(location_handler, NULL);
+      contp = TSContCreate(location_handler, nullptr);
       TSContDataSet(contp, data);
 
       /* Reentrant! */
@@ -913,7 +913,7 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
     TSError("[metalink] Plugin registration failed");
   }
 
-  TSCont contp = TSContCreate(handler, NULL);
+  TSCont contp = TSContCreate(handler, nullptr);
 
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
   TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);

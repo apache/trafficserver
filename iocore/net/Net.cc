@@ -31,7 +31,7 @@
 #include "P_Net.h"
 #include <utility>
 
-RecRawStatBlock *net_rsb = NULL;
+RecRawStatBlock *net_rsb = nullptr;
 
 // All in milli-seconds
 int net_config_poll_timeout = -1; // This will get set via either command line or records.config.
@@ -43,7 +43,7 @@ int net_throttle_delay      = 50; /* milliseconds */
 static inline void
 configure_net(void)
 {
-  REC_RegisterConfigUpdateFunc("proxy.config.net.connections_throttle", change_net_connections_throttle, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.net.connections_throttle", change_net_connections_throttle, nullptr);
   REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
 
   REC_EstablishStaticConfigInt32(net_retry_delay, "proxy.config.net.retry_delay");

@@ -39,7 +39,7 @@ extern int num_of_cluster_threads;
 // Incoming message continuation for periodic callout threads
 ///////////////////////////////////////////////////////////////
 
-ClusterCalloutContinuation::ClusterCalloutContinuation(struct ClusterHandler *ch) : Continuation(0), _ch(ch)
+ClusterCalloutContinuation::ClusterCalloutContinuation(struct ClusterHandler *ch) : Continuation(nullptr), _ch(ch)
 {
   mutex = new_ProxyMutex();
   SET_HANDLER((ClstCoutContHandler)&ClusterCalloutContinuation::CalloutHandler);
@@ -47,7 +47,7 @@ ClusterCalloutContinuation::ClusterCalloutContinuation(struct ClusterHandler *ch
 
 ClusterCalloutContinuation::~ClusterCalloutContinuation()
 {
-  mutex = 0;
+  mutex = nullptr;
 }
 
 int
@@ -60,7 +60,14 @@ ClusterCalloutContinuation::CalloutHandler(int /* event ATS_UNUSED */, Event * /
 // ClusterControl member functions (Internal Class)
 /*************************************************************************/
 ClusterControl::ClusterControl()
-  : Continuation(NULL), len(0), size_index(-1), real_data(0), data(0), free_proc(0), free_proc_arg(0), iob_block(0)
+  : Continuation(nullptr),
+    len(0),
+    size_index(-1),
+    real_data(nullptr),
+    data(nullptr),
+    free_proc(nullptr),
+    free_proc_arg(nullptr),
+    iob_block(nullptr)
 {
 }
 
@@ -128,7 +135,7 @@ ClusterControl::free_data()
     if (free_proc) {
       // Free memory via callback proc
       (*free_proc)(free_proc_arg);
-      iob_block = 0; // really free memory
+      iob_block = nullptr; // really free memory
       return;
     }
     if (real_data) {
@@ -140,7 +147,7 @@ ClusterControl::free_data()
       // malloc'ed memory, not alloced via real_alloc_data().
       // Data will be ats_free()'ed when IOBufferBlock is freed
     }
-    iob_block = 0; // free memory
+    iob_block = nullptr; // free memory
   }
 }
 
@@ -173,7 +180,7 @@ OutgoingControl::alloc()
   return outControlAllocator.alloc();
 }
 
-OutgoingControl::OutgoingControl() : ch(NULL), submit_time(0)
+OutgoingControl::OutgoingControl() : ch(nullptr), submit_time(0)
 {
 }
 
@@ -208,7 +215,7 @@ OutgoingControl::freeall()
 // ClusterState member functions (Internal Class)
 /*************************************************************************/
 ClusterState::ClusterState(ClusterHandler *c, bool read_chan)
-  : Continuation(0),
+  : Continuation(nullptr),
     ch(c),
     read_channel(read_chan),
     do_iodone_event(false),
@@ -219,13 +226,13 @@ ClusterState::ClusterState(ClusterHandler *c, bool read_chan)
     n_iov(0),
     io_complete(1),
     io_complete_event(0),
-    v(0),
+    v(nullptr),
     bytes_xfered(0),
     last_ndone(0),
     total_bytes_xfered(0),
-    iov(NULL),
-    iob_iov(NULL),
-    byte_bank(NULL),
+    iov(nullptr),
+    iob_iov(nullptr),
+    byte_bank(nullptr),
     n_byte_bank(0),
     byte_bank_size(0),
     missed(0),
@@ -277,21 +284,21 @@ ClusterState::ClusterState(ClusterHandler *c, bool read_chan)
 
 ClusterState::~ClusterState()
 {
-  mutex = 0;
+  mutex = nullptr;
   if (iov) {
-    iob_iov = 0; // Free memory
+    iob_iov = nullptr; // Free memory
   }
 
   if (msg.descriptor) {
-    msg.iob_descriptor_block = 0; // Free memory
+    msg.iob_descriptor_block = nullptr; // Free memory
   }
   // Deallocate IO Core structures
   int n;
   for (n = 0; n < MAX_TCOUNT; ++n) {
-    block[n] = 0;
+    block[n] = nullptr;
   }
   free_empty_MIOBuffer(mbuf);
-  mbuf = 0;
+  mbuf = nullptr;
 }
 
 void
@@ -303,7 +310,7 @@ ClusterState::build_do_io_vector()
   //
   int bytes_to_xfer = 0;
   int n;
-  IOBufferBlock *last_block = 0;
+  IOBufferBlock *last_block = nullptr;
 
   mbuf->clear();
 
@@ -550,7 +557,7 @@ ClusterState::IOComplete()
   if (do_iodone_event && !ch->mutex->thread_holding) {
     MUTEX_TRY_LOCK(lock, ch->mutex, this_ethread());
     if (lock.is_locked()) {
-      ch->handleEvent(EVENT_IMMEDIATE, (void *)0);
+      ch->handleEvent(EVENT_IMMEDIATE, (void *)nullptr);
     } else {
       eventProcessor.schedule_imm_signal(ch, ET_CLUSTER);
     }
@@ -628,12 +635,12 @@ ClusterHandler::check_channel(int c)
           channel_data[i]->channel_number = i;
           free_local_channels.enqueue(channel_data[i]);
         } else {
-          channels[i]     = NULL;
-          channel_data[i] = NULL;
+          channels[i]     = nullptr;
+          channel_data[i] = nullptr;
         }
       } else {
-        channels[i]     = NULL;
-        channel_data[i] = NULL;
+        channels[i]     = nullptr;
+        channel_data[i] = nullptr;
       }
     }
   }
@@ -646,7 +653,7 @@ ClusterHandler::alloc_channel(ClusterVConnection *vc, int requested)
   //
   // Allocate a channel
   //
-  struct ChannelData *cdp = 0;
+  struct ChannelData *cdp = nullptr;
   int i                   = requested;
 
   if (!i) {
@@ -697,7 +704,7 @@ ClusterHandler::free_channel(ClusterVConnection *vc)
       free_local_channels.enqueue(channel_data[i]);
       Debug(CL_TRACE, "free_channel local chan=%d VC=%p", i, vc);
     } else {
-      channels[i] = 0;
+      channels[i] = nullptr;
       Debug(CL_TRACE, "free_channel remote chan=%d VC=%p", i, vc);
     }
   }
@@ -729,7 +736,7 @@ ClusterHandler::machine_down()
   RecSignalManager(REC_SIGNAL_MACHINE_DOWN, textbuf);
   if (net_vc) {
     net_vc->do_io(VIO::CLOSE);
-    net_vc = 0;
+    net_vc = nullptr;
   }
   // Cancel pending cluster reads and writes
   read.io_complete  = -1;
@@ -737,7 +744,7 @@ ClusterHandler::machine_down()
 
   MUTEX_TAKE_LOCK(the_cluster_config_mutex, this_ethread());
   ClusterConfiguration *c      = this_cluster()->current_configuration();
-  machine->clusterHandlers[id] = NULL;
+  machine->clusterHandlers[id] = nullptr;
   if ((--machine->now_connections == 0) && c->find(ip, port)) {
     ClusterConfiguration *cc = configuration_remove_machine(c, machine);
     CLUSTER_DECREMENT_DYN_STAT(CLUSTER_NODES_STAT);
@@ -763,7 +770,7 @@ ClusterHandler::zombify(Event * /* e ATS_UNUSED */)
   dead = true;
   if (cluster_periodic_event) {
     cluster_periodic_event->cancel(this);
-    cluster_periodic_event = NULL;
+    cluster_periodic_event = nullptr;
   }
   clm->cancel_monitor();
 
@@ -796,7 +803,7 @@ ClusterHandler::connectClusterEvent(int event, Event *e)
       if (this_cluster_machine()->ip != machine->ip)
         Debug(CL_NOTE, "cluster connect aborted, machine %u.%u.%u.%u not in cluster", DOT_SEPARATED(machine->ip));
       delete machine;
-      machine = NULL;
+      machine = nullptr;
       delete this;
       return EVENT_DONE;
     }
@@ -1012,7 +1019,7 @@ ClusterHandler::startClusterEvent(int event, Event *e)
         vc->ep.stop();
         vc->nh->open_list.remove(vc);
         vc->nh->cop_list.remove(vc);
-        vc->thread = NULL;
+        vc->thread = nullptr;
         if (vc->nh->read_ready_list.in(vc))
           vc->nh->read_ready_list.remove(vc);
         if (vc->nh->write_ready_list.in(vc))
@@ -1165,7 +1172,7 @@ ClusterHandler::startClusterEvent(int event, Event *e)
       {
         // No references possible, so just delete it.
         delete machine;
-        machine = NULL;
+        machine = nullptr;
         delete this;
         Debug(CL_NOTE, "Failed cluster connect, deleting");
         return EVENT_DONE;
@@ -1245,7 +1252,7 @@ ClusterHandler::protoZombieEvent(int /* event ATS_UNUSED */, Event *e)
   IncomingControl *ic;
   while ((ic = incoming_control.dequeue())) {
     failed    = true;
-    ic->mutex = NULL;
+    ic->mutex = nullptr;
     ic->freeall();
   }
 
@@ -1276,9 +1283,9 @@ ClusterHandler::protoZombieEvent(int /* event ATS_UNUSED */, Event *e)
       vc = channels[i];
       if (VALID_CHANNEL(vc)) {
         if (vc->closed) {
-          vc->ch                     = 0;
-          vc->write_list             = 0;
-          vc->write_list_tail        = 0;
+          vc->ch                     = nullptr;
+          vc->write_list             = nullptr;
+          vc->write_list_tail        = nullptr;
           vc->write_list_bytes       = 0;
           vc->write_bytes_in_transit = 0;
           close_ClusterVConnection(vc);
@@ -1294,15 +1301,15 @@ ClusterHandler::protoZombieEvent(int /* event ATS_UNUSED */, Event *e)
   //   the completion callbacks.
   ///////////////////////////////////////////////////////////////
   item.data = external_incoming_control.head.data;
-  if (TO_PTR(FREELIST_POINTER(item)) == NULL) {
+  if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
     for (int n = 0; n < MAX_COMPLETION_CALLBACK_EVENTS; ++n) {
       if (callout_cont[n]) {
         MUTEX_TRY_LOCK(lock, callout_cont[n]->mutex, t);
         if (lock.is_locked()) {
           callout_events[n]->cancel(callout_cont[n]);
-          callout_events[n] = 0;
+          callout_events[n] = nullptr;
           delete callout_cont[n];
-          callout_cont[n] = 0;
+          callout_cont[n] = nullptr;
         } else {
           failed = true;
         }

@@ -63,7 +63,7 @@ LocalManager::mgmtShutdown()
   // WCCP TBD: Send a shutdown message to routers.
 
   if (processRunning()) {
-    waitpid(watched_process_pid, NULL, 0);
+    waitpid(watched_process_pid, nullptr, 0);
 #if defined(linux)
     /* Avert race condition, wait for the thread to complete,
        before getting one more restart process */
@@ -156,7 +156,7 @@ LocalManager::clusterOk()
   bool found  = true;
   bool result = true;
 
-  if (processRunning() == true && time(NULL) > (this->proxy_started_at + 30) &&
+  if (processRunning() == true && time(nullptr) > (this->proxy_started_at + 30) &&
       this->ccom->alive_peers_count + 1 != REC_readInteger("proxy.process.cluster.nodes", &found)) {
     result = false;
   }
@@ -175,7 +175,7 @@ LocalManager::processRunning()
   }
 }
 
-LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), configFiles(NULL)
+LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), configFiles(nullptr)
 {
   bool found;
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
@@ -184,17 +184,17 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
 
   syslog_facility = 0;
 
-  ccom                      = NULL;
+  ccom                      = nullptr;
   proxy_started_at          = -1;
   proxy_launch_count        = 0;
-  manager_started_at        = time(NULL);
+  manager_started_at        = time(nullptr);
   proxy_launch_outstanding  = false;
   mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
   proxy_running             = 0;
 
   RecRegisterStatInt(RECT_NODE, "proxy.node.proxy_running", 0, RECP_NON_PERSISTENT);
 
-  virt_map = NULL;
+  virt_map = nullptr;
 
   RecInt http_enabled = REC_readInteger("proxy.config.http.enabled", &found);
   ink_assert(found);
@@ -301,7 +301,7 @@ LocalManager::initCCom(const AppVersionInfo &version, FileManager *configFiles, 
   }
   // Fetch which interface we are using for clustering
   intrName = REC_readString("proxy.config.cluster.ethernet_interface", &found);
-  ink_assert(intrName != NULL);
+  ink_assert(intrName != nullptr);
 
   found = mgmt_getAddrForIntr(intrName, &cluster_ip.sa);
   if (found == false) {
@@ -420,7 +420,7 @@ LocalManager::pollMgmtProcessServer()
     }
 #endif
 
-    num = mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &timeout);
+    num = mgmt_select(FD_SETSIZE, &fdlist, nullptr, nullptr, &timeout);
 
     switch (num) {
     case 0:
@@ -497,7 +497,7 @@ LocalManager::pollMgmtProcessServer()
 
           if (lmgmt->run_proxy) {
             mgmt_log("[Alarms::signalAlarm] Server Process was reset\n");
-            lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, NULL);
+            lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, nullptr);
           } else {
             mgmt_log("[TrafficManager] Server process shutdown\n");
           }
@@ -525,7 +525,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
   switch (mh->msg_id) {
   case MGMT_SIGNAL_PID:
     watched_process_pid = *((pid_t *)data_raw);
-    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_BORN, NULL);
+    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_BORN, nullptr);
     proxy_running++;
     proxy_launch_pid         = -1;
     proxy_launch_outstanding = false;
@@ -609,7 +609,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     if (mh->data_len > 0) {
       executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, data_raw, mh->data_len);
     } else {
-      executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, NULL, 0);
+      executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, nullptr, 0);
     }
     break;
   // Congestion Control - begin
@@ -622,8 +622,8 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
   // Congestion Control - end
   case MGMT_SIGNAL_CONFIG_FILE_CHILD: {
     static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
-    char *parent                           = NULL;
-    char *child                            = NULL;
+    char *parent                           = nullptr;
+    char *child                            = nullptr;
     MgmtMarshallInt options                = 0;
     if (mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child, &options) != -1) {
       configFiles->configFileChild(parent, child, (unsigned int)options);
@@ -742,7 +742,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
                      "Server Process has been terminated\n");
             if (lmgmt->run_proxy) {
               mgmt_log("[Alarms::signalAlarm] Server Process was reset\n");
-              lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, NULL);
+              lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, nullptr);
             } else {
               mgmt_log("[TrafficManager] Server process shutdown\n");
             }
@@ -897,7 +897,7 @@ LocalManager::startProxy()
       ats_scoped_str bindir(RecConfigReadBinDir());
 
       ink_filepath_make(env_prep_bin, sizeof(env_prep_bin), bindir, env_prep);
-      res = execl(env_prep_bin, env_prep_bin, (char *)NULL);
+      res = execl(env_prep_bin, env_prep_bin, (char *)nullptr);
       _exit(res);
     }
   }
@@ -912,7 +912,7 @@ LocalManager::startProxy()
   } else if (pid > 0) { /* Parent */
     proxy_launch_pid         = pid;
     proxy_launch_outstanding = true;
-    proxy_started_at         = time(NULL);
+    proxy_started_at         = time(nullptr);
     ++proxy_launch_count;
     RecSetRecordInt("proxy.node.restarts.proxy.start_time", proxy_started_at, REC_SOURCE_DEFAULT);
     RecSetRecordInt("proxy.node.restarts.proxy.restart_count", proxy_launch_count, REC_SOURCE_DEFAULT);
@@ -965,7 +965,7 @@ LocalManager::startProxy()
     i            = 1;
     tok          = strtok_r(&real_proxy_options[0], " ", &last);
     options[i++] = tok;
-    while (i < 32 && (tok = strtok_r(NULL, " ", &last))) {
+    while (i < 32 && (tok = strtok_r(nullptr, " ", &last))) {
       Debug("lm", "opt %d = '%s'", i, tok);
       options[i++] = tok;
     }

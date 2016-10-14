@@ -62,8 +62,8 @@ char action_tags[1024]   = "";
 char command_string[512] = "";
 
 // Diags *diags = NULL;
-DiagsConfig *diagsConfig      = NULL;
-HttpBodyFactory *body_factory = NULL;
+DiagsConfig *diagsConfig      = nullptr;
+HttpBodyFactory *body_factory = nullptr;
 AppVersionInfo appVersionInfo;
 
 /*-------------------------------------------------------------------------
@@ -146,7 +146,7 @@ check_lockfile()
 {
   int err;
   pid_t holding_pid;
-  char *lockfile = NULL;
+  char *lockfile = nullptr;
 
   if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
     fprintf(stderr, "unable to access() dir'%s': %d, %s\n", Layout::get()->runtimedir, errno, strerror(errno));
@@ -202,8 +202,8 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 
   // set stdin/stdout to be unbuffered
   //
-  setbuf(stdin, NULL);
-  setbuf(stdout, NULL);
+  setbuf(stdin, nullptr);
+  setbuf(stdout, nullptr);
 
   openlog(pgm_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 
@@ -241,6 +241,6 @@ init_log_standalone_basic(const char *pgm_name)
   diags                  = diagsConfig->diags;
   // set stdin/stdout to be unbuffered
   //
-  setbuf(stdin, NULL);
-  setbuf(stdout, NULL);
+  setbuf(stdin, nullptr);
+  setbuf(stdout, nullptr);
 }

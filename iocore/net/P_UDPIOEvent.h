@@ -103,8 +103,8 @@ extern ClassAllocator<UDPIOEvent> UDPIOEventAllocator;
 TS_INLINE void
 UDPIOEvent::free(UDPIOEvent *e)
 {
-  e->b     = NULL;
-  e->mutex = NULL;
+  e->b     = nullptr;
+  e->mutex = nullptr;
   UDPIOEventAllocator.free(e);
 }
 #endif

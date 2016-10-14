@@ -98,8 +98,8 @@ clone_IOBufferBlockList(IOBufferBlock *b, int start_off, int n, IOBufferBlock **
   int64_t block_read_avail;
   int64_t bytes_to_skip      = start_off;
   IOBufferBlock *bsrc        = b;
-  IOBufferBlock *bclone      = 0;
-  IOBufferBlock *bclone_head = 0;
+  IOBufferBlock *bclone      = nullptr;
+  IOBufferBlock *bclone_head = nullptr;
 
   while (bsrc && nbytes) {
     // Skip zero length blocks
@@ -150,7 +150,7 @@ clone_IOBufferBlockList(IOBufferBlock *b, int start_off, int n, IOBufferBlock **
 IOBufferBlock *
 consume_IOBufferBlockList(IOBufferBlock *b, int64_t n)
 {
-  IOBufferBlock *b_remainder = 0;
+  IOBufferBlock *b_remainder = nullptr;
   int64_t nbytes             = n;
 
   while (b) {
@@ -162,7 +162,7 @@ consume_IOBufferBlockList(IOBufferBlock *b, int64_t n)
         b->fill(nbytes);                       // make read_avail match nbytes
         b_remainder->consume(b->read_avail()); // clone for remaining bytes
         b_remainder->next = b->next;
-        b->next           = 0;
+        b->next           = nullptr;
         nbytes            = 0;
 
       } else {

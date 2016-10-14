@@ -46,7 +46,7 @@ TSRemapInit(TSRemapInterface *, char *, int)
   {
     timeout                      = 0;
     const char *const timeoutEnv = getenv(PLUGIN_TAG "__timeout");
-    if (timeoutEnv != NULL) {
+    if (timeoutEnv != nullptr) {
       timeout = atol(timeoutEnv);
     }
     if (timeout < 1) {
@@ -73,7 +73,7 @@ TSRemapInit(TSRemapInterface *, char *, int)
 TSReturnCode
 TSRemapNewInstance(int argc, char **argv, void **i, char *, int)
 {
-  assert(i != NULL);
+  assert(i != nullptr);
   Instance *instance = new Instance;
 
   if (argc > 2) {
@@ -88,14 +88,14 @@ TSRemapNewInstance(int argc, char **argv, void **i, char *, int)
 void
 TSRemapDeleteInstance(void *i)
 {
-  assert(i != NULL);
+  assert(i != nullptr);
   delete static_cast<Instance *>(i);
 }
 
 void
 DoRemap(const Instance &i, TSHttpTxn t)
 {
-  assert(t != NULL);
+  assert(t != nullptr);
   /*
   if (POST || PUT) {
     transformRequest
@@ -106,14 +106,14 @@ DoRemap(const Instance &i, TSHttpTxn t)
 
   CHECK(TSHttpTxnClientReqGet(t, &buffer, &location));
 
-  assert(buffer != NULL);
-  assert(location != NULL);
+  assert(buffer != nullptr);
+  assert(location != nullptr);
 
   {
     TSMLoc field;
 
     CHECK(TSMimeHdrFieldCreateNamed(buffer, location, "X-Multiplexer", 13, &field));
-    assert(field != NULL);
+    assert(field != nullptr);
 
     CHECK(TSMimeHdrFieldValueStringSet(buffer, location, field, -1, "original", 8));
 
@@ -131,7 +131,7 @@ DoRemap(const Instance &i, TSHttpTxn t)
 
   if (length == TS_HTTP_LEN_POST && memcmp(TS_HTTP_METHOD_POST, method, TS_HTTP_LEN_POST) == 0) {
     const TSVConn vconnection = TSTransformCreate(handlePost, t);
-    assert(vconnection != NULL);
+    assert(vconnection != nullptr);
     TSContDataSet(vconnection, new PostState(requests));
     assert(requests.empty());
     TSHttpTxnHookAdd(t, TS_HTTP_REQUEST_TRANSFORM_HOOK, vconnection);
@@ -147,8 +147,8 @@ DoRemap(const Instance &i, TSHttpTxn t)
 TSRemapStatus
 TSRemapDoRemap(void *i, TSHttpTxn t, TSRemapRequestInfo *r)
 {
-  assert(i != NULL);
-  assert(t != NULL);
+  assert(i != nullptr);
+  assert(t != nullptr);
   const Instance *const instance = static_cast<const Instance *>(i);
 
   if (!instance->origins.empty() && !TSHttpTxnIsInternal(t)) {

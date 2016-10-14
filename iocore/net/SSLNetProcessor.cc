@@ -52,7 +52,7 @@ void
 SSLNetProcessor::cleanup(void)
 {
   SSLReleaseContext(client_ctx);
-  client_ctx = NULL;
+  client_ctx = nullptr;
 }
 
 int
@@ -113,7 +113,7 @@ SSLNetProcessor::allocate_vc(EThread *t)
   return vc;
 }
 
-SSLNetProcessor::SSLNetProcessor() : client_ctx(NULL)
+SSLNetProcessor::SSLNetProcessor() : client_ctx(nullptr)
 {
 }
 

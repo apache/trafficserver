@@ -62,7 +62,7 @@ public:
 
 TS_INLINE
 UDPConnectionInternal::UDPConnectionInternal()
-  : continuation(NULL), recvActive(0), refcount(0), fd(-1), binding_valid(0), tobedestroyed(0)
+  : continuation(nullptr), recvActive(0), refcount(0), fd(-1), binding_valid(0), tobedestroyed(0)
 {
   sendGenerationNum    = 0;
   lastSentPktTSSeqNum  = -1;
@@ -74,8 +74,8 @@ UDPConnectionInternal::UDPConnectionInternal()
 TS_INLINE
 UDPConnectionInternal::~UDPConnectionInternal()
 {
-  continuation = NULL;
-  mutex        = NULL;
+  continuation = nullptr;
+  mutex        = nullptr;
 }
 
 TS_INLINE SOCKET
@@ -156,7 +156,7 @@ TS_INLINE void
 UDPConnection::setContinuation(Continuation *c)
 {
   // it is not safe to switch among continuations that don't share locks
-  ink_assert(mutex.get() == NULL || c->mutex == mutex);
+  ink_assert(mutex.get() == nullptr || c->mutex == mutex);
   mutex                                         = c->mutex;
   ((UDPConnectionInternal *)this)->continuation = c;
 }

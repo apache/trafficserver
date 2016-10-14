@@ -102,8 +102,8 @@ struct matcher_tags {
   bool
   empty() const
   {
-    return this->match_host == NULL && this->match_domain == NULL && this->match_ip == NULL && this->match_regex == NULL &&
-           this->match_url == NULL && this->match_host_regex == NULL;
+    return this->match_host == nullptr && this->match_domain == NULL && this->match_ip == NULL && this->match_regex == NULL &&
+           this->match_url == nullptr && this->match_host_regex == NULL;
   }
 };
 
@@ -136,7 +136,7 @@ struct config_parse_error {
     if (rhs.msg.get()) {
       this->msg = ats_strdup(rhs.msg.get());
     } else {
-      this->msg = (char *)NULL;
+      this->msg = (char *)nullptr;
     }
 
     return *this;
@@ -149,7 +149,7 @@ struct config_parse_error {
   }
 
   // A config error object evaluates to true if there is an error message.
-  operator bool() const { return msg.get() != NULL; }
+  operator bool() const { return msg.get() != nullptr; }
 private:
   config_parse_error() {}
   ats_scoped_str msg;

@@ -57,7 +57,7 @@ struct PassthruIO {
   TSIOBuffer iobuf;
   TSIOBufferReader reader;
 
-  PassthruIO() : vio(NULL), iobuf(NULL), reader(NULL) {}
+  PassthruIO() : vio(nullptr), iobuf(nullptr), reader(nullptr) {}
   ~PassthruIO() { clear(); }
   void
   clear()
@@ -79,7 +79,7 @@ struct PassthruIO {
   void
   read(TSVConn vconn, TSCont contp)
   {
-    TSReleaseAssert(this->vio == NULL);
+    TSReleaseAssert(this->vio == nullptr);
 
     this->iobuf  = TSIOBufferCreate();
     this->reader = TSIOBufferReaderAlloc(this->iobuf);
@@ -90,7 +90,7 @@ struct PassthruIO {
   void
   write(TSVConn vconn, TSCont contp)
   {
-    TSReleaseAssert(this->vio == NULL);
+    TSReleaseAssert(this->vio == nullptr);
 
     this->iobuf  = TSIOBufferCreate();
     this->reader = TSIOBufferReaderAlloc(this->iobuf);
