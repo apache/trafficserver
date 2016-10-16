@@ -240,7 +240,7 @@ NetAccept::do_blocking_accept(EThread *t)
     }
 
     // Throttle accepts
-    if (!backdoor && (check_net_throttle(ACCEPT, now) || net_memory_throttle)) {
+    if (!opt.backdoor && (check_net_throttle(ACCEPT, now) || net_memory_throttle)) {
       Debug("net_accept", "Too many connections or too much memory used, throttling");
       check_throttle_warning();
       con.close();
