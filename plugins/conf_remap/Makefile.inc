@@ -14,13 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
 
-pkglib_LTLIBRARIES = conf_remap.la
-conf_remap_la_SOURCES = conf_remap.cc
-conf_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+pkglib_LTLIBRARIES += plugins/conf_remap/conf_remap.la
+plugins_conf_remap_conf_remap_la_SOURCES = plugins/conf_remap/conf_remap.cc
+plugins_conf_remap_conf_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+plugins_conf_remap_conf_remap_la_CPPFLAGS = $(TS_PLUGIN_CPPFLAGS)

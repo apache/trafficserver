@@ -168,6 +168,7 @@ include example/Makefile.inc
 
 include plugins/authproxy/Makefile.inc
 include plugins/background_fetch/Makefile.inc
+include plugins/conf_remap/Makefile.inc
 
 include build/tidy.mk
 
