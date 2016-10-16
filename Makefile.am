@@ -166,6 +166,8 @@ help:
 
 include example/Makefile.inc
 
+include plugins/authproxy/Makefile.inc
+
 include build/tidy.mk
 
 tidy-local: $(DIST_SOURCES)

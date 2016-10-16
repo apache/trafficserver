@@ -14,14 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += plugins/authproxy/authproxy.la
 
-pkglib_LTLIBRARIES = authproxy.la
-authproxy_la_SOURCES = authproxy.cc utils.cc utils.h
-authproxy_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+plugins_authproxy_authproxy_la_SOURCES = \
+	plugins/authproxy/authproxy.cc \
+	plugins/authproxy/utils.cc \
+	plugins/authproxy/utils.h
 
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+plugins_authproxy_authproxy_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+plugins_authproxy_authproxy_la_CPPFLAGS = $(TS_PLUGIN_CPPFLAGS)

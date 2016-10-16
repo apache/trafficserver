@@ -1876,7 +1876,6 @@ AC_CONFIG_FILES([
   mgmt/cluster/Makefile
   mgmt/utils/Makefile
   plugins/Makefile
-  plugins/authproxy/Makefile
   plugins/background_fetch/Makefile
   plugins/conf_remap/Makefile
   plugins/esi/Makefile
