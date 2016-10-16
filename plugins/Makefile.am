@@ -17,7 +17,6 @@
 # Add new plugins in alphabetic order, but keep experimental always at the bottom.
 
 SUBDIRS = \
-  esi \
   generator \
   gzip \
   header_rewrite \
