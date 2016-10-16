@@ -167,6 +167,7 @@ help:
 include example/Makefile.inc
 
 include plugins/authproxy/Makefile.inc
+include plugins/background_fetch/Makefile.inc
 
 include build/tidy.mk
 
