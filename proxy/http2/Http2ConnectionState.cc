@@ -892,6 +892,10 @@ Http2ConnectionState::create_stream(Http2StreamId new_id)
 
   Http2Stream *new_stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread());
   new_stream->init(new_id, client_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
+
+  ink_assert(NULL != new_stream);
+  ink_assert(!stream_list.in(new_stream));
+
   stream_list.push(new_stream);
   latest_streamid = new_id;
 
@@ -909,8 +913,10 @@ Http2Stream *
 Http2ConnectionState::find_stream(Http2StreamId id) const
 {
   for (Http2Stream *s = stream_list.head; s; s = s->link.next) {
-    if (s->get_id() == id)
+    if (s->get_id() == id) {
       return s;
+    }
+    ink_assert(s != s->link.next);
   }
   return NULL;
 }
@@ -925,6 +931,7 @@ Http2ConnectionState::restart_streams()
     if (s->get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && min(this->client_rwnd, s->client_rwnd) > 0) {
       s->send_response_body();
     }
+    ink_assert(s != next);
     s = next;
   }
 }
@@ -936,21 +943,24 @@ Http2ConnectionState::cleanup_streams()
   while (s) {
     Http2Stream *next = s->link.next;
     this->delete_stream(s);
+    ink_assert(s != next);
     s = next;
   }
-  ink_assert(stream_list.head == NULL);
+  ink_assert(stream_list.empty());
 
   if (!is_state_closed()) {
     ua_session->get_netvc()->add_to_keep_alive_queue();
   }
 }
 
-void
+bool
 Http2ConnectionState::delete_stream(Http2Stream *stream)
 {
+  ink_assert(NULL != stream);
+
   // If stream has already been removed from the list, just go on
   if (!stream_list.in(stream)) {
-    return;
+    return false;
   }
 
   DebugHttp2Stream(ua_session, stream->get_id(), "Delete stream");
@@ -964,6 +974,8 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 
   stream_list.remove(stream);
   stream->initiating_close();
+
+  return true;
 }
 
 void
