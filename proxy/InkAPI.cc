@@ -1045,7 +1045,7 @@ void
 INKVConnInternal::destroy()
 {
   m_deleted = 1;
-  if (m_deletable) {
+  if (m_deletable && this->mutex) {
     this->mutex = NULL;
     m_read_vio.set_continuation(NULL);
     m_write_vio.set_continuation(NULL);
@@ -1058,7 +1058,7 @@ INKVConnInternal::handle_event(int event, void *edata)
 {
   handle_event_count(event);
   if (m_deleted) {
-    if (m_deletable) {
+    if (m_deletable && this->mutex) {
       this->mutex = NULL;
       m_read_vio.set_continuation(NULL);
       m_write_vio.set_continuation(NULL);
