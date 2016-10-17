@@ -74,7 +74,7 @@ REF_7_0=$(getRef "7.0.x")
 REF_master=$(getRef "master")
 
 # Do the updates
-${GIT} remote update > /dev/null 2>&1
+${GIT} remote update --prune > /dev/null 2>&1
 ${GIT} update-server-info
 
 # Check the branches, this makes assumptions that the Jenkins build are named after the branches
