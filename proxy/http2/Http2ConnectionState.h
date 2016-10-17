@@ -174,7 +174,7 @@ public:
   Http2Stream *create_stream(Http2StreamId new_id);
   Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
-  void delete_stream(Http2Stream *stream);
+  bool delete_stream(Http2Stream *stream);
   void release_stream(Http2Stream *stream);
   void cleanup_streams();
 

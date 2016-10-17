@@ -675,6 +675,18 @@ Http2Stream::destroy()
   }
   chunked_handler.clear();
   super::destroy();
+
+  // Current Http2ConnectionState implementation uses a memory pool for instantiating streams and DLL<> stream_list for storing
+  // active streams. Destroying a stream before deleting it from stream_list and then creating a new one + reusing the same chunk
+  // from the memory pool right away always leads to destroying the DLL structure (deadlocks, inconsistencies).
+  // The following is meant as a safety net since the consequences are disastrous. Until the design/implementation changes it seems
+  // less error prone to (double) delete before destroying (noop if already deleted).
+  if (parent) {
+    if (static_cast<Http2ClientSession *>(parent)->connection_state.delete_stream(this)) {
+      Warning("Http2Stream was about to be deallocated without removing it from the active stream list");
+    }
+  }
+
   THREAD_FREE(this, http2StreamAllocator, this_ethread());
 }
 
