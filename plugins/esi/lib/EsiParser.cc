@@ -346,8 +346,8 @@ EsiParser::_parse(const string &data, int &parse_start_pos, DocNodeList &node_li
 
     if ((search_result == NO_MATCH) || (search_result == PARTIAL_MATCH)) {
       if (last_chunk) {
-        _errorLog("[%s] ESI tag starting with [%.10s]... has no matching closing tag [%.*s]", __FUNCTION__,
-                  data_ptr - ESI_TAG_PREFIX_LEN, node_info->closing_tag_len, node_info->closing_tag);
+        _errorLog("[%s] ESI tag starting with [%.10s]... has no matching closing tag [%.*s]", __FUNCTION__, data.c_str(),
+                  node_info->closing_tag_len, node_info->closing_tag);
         goto lFail;
       } else {
         goto lPartialMatch;
