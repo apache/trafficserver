@@ -1,0 +1,2 @@
+leak:CRYPTO_malloc
+leak:CRYPTO_realloc
