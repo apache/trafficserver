@@ -115,6 +115,7 @@ struct SSLConfigParams : public ConfigInfo {
 
   void initialize();
   void cleanup();
+  void reset();
 };
 
 /////////////////////////////////////////////////////////////
