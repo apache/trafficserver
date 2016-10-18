@@ -443,6 +443,8 @@ REGRESSION_TEST(Http2DependencyTree_remove_1)(RegressionTest *t, int /* atype AT
   tree->deactivate(node_c, 16);
   tree->remove(node_c);
   box.check(tree->find(7) == NULL, "Node C should be removed");
+
+  delete tree;
 }
 
 /**
@@ -492,6 +494,8 @@ REGRESSION_TEST(Http2DependencyTree_remove_2)(RegressionTest *t, int /* atype AT
   box.check(tree->find(3) == NULL, "Tree should be empty");
   box.check(tree->find(5) == NULL, "Tree should be empty");
   box.check(tree->find(7) == NULL, "Tree should be empty");
+
+  delete tree;
 }
 
 REGRESSION_TEST(Http2DependencyTree_max_depth)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
@@ -508,6 +512,8 @@ REGRESSION_TEST(Http2DependencyTree_max_depth)(RegressionTest *t, int /* atype A
 
   Tree::Node *node = tree->find(101);
   box.check(node->parent->id == 0, "101st node should be child of root node");
+
+  delete tree;
 }
 
 int
