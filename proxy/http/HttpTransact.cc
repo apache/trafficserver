@@ -1020,13 +1020,11 @@ HttpTransact::handle_websocket_connection(State *s)
 static bool
 mimefield_value_equal(MIMEField *field, const char *value, const int value_len)
 {
-  if (field != NULL) {
-    int field_value_len     = 0;
-    const char *field_value = field->value_get(&field_value_len);
-    if (field_value != NULL) {
-      if (field_value_len == value_len) {
-        return !strncasecmp(field_value, value, value_len);
-      }
+  int field_value_len     = 0;
+  const char *field_value = field->value_get(&field_value_len);
+  if (field_value != NULL) {
+    if (field_value_len == value_len) {
+      return !strncasecmp(field_value, value, value_len);
     }
   }
   return false;
@@ -1075,6 +1073,8 @@ HttpTransact::ModifyRequest(State *s)
   if (!request.is_target_in_url()) {
     s->hdr_info.client_req_is_server_style = true;
   }
+  // Make clang analyzer happy. hostname is non-null iff request.is_target_in_url().
+  ink_assert(hostname || s->hdr_info.client_req_is_server_style);
 
   // If the incoming request is proxy-style make sure the Host: header
   // matches the incoming request URL. The exception is if we have
@@ -1087,24 +1087,26 @@ HttpTransact::ModifyRequest(State *s)
   if ((max_forwards != 0) && !s->hdr_info.client_req_is_server_style && s->method != HTTP_WKSIDX_CONNECT) {
     MIMEField *host_field = request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
     int host_val_len      = hostname_len;
-    const char **host_val = &hostname;
+    const char *host_val  = hostname;
     int port              = url->port_get_raw();
     char *buf             = NULL;
 
     // Form the host:port string if not a default port (e.g. 80)
     if (port > 0) {
-      buf = (char *)alloca(host_val_len + 15);
+      buf = static_cast<char *>(alloca(host_val_len + 15));
       memcpy(buf, hostname, host_val_len);
       host_val_len += snprintf(buf + host_val_len, 15, ":%d", port);
-      host_val = (const char **)(&buf);
+      host_val = buf;
     }
 
-    if (mimefield_value_equal(host_field, *host_val, host_val_len) == false) {
-      if (!host_field) { // Assure we have a Host field, before setting it
-        host_field = request.field_create(MIME_FIELD_HOST, MIME_LEN_HOST);
-        request.field_attach(host_field);
-      }
-      request.field_value_set(host_field, *host_val, host_val_len);
+    // No host_field means not equal to host and will need to be set, so create it now.
+    if (!host_field) {
+      host_field = request.field_create(MIME_FIELD_HOST, MIME_LEN_HOST);
+      request.field_attach(host_field);
+    }
+
+    if (!mimefield_value_equal(host_field, host_val, host_val_len)) {
+      request.field_value_set(host_field, host_val, host_val_len);
       request.mark_target_dirty();
     }
   }
