@@ -73,40 +73,32 @@ static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
 
 SSLConfigParams::SSLConfigParams()
 {
-  serverCertPathOnly      = nullptr;
-  serverCertChainFilename = nullptr;
-  configFilePath          = nullptr;
-  serverCACertFilename    = nullptr;
-  serverCACertPath        = nullptr;
-  clientCertPath          = nullptr;
-
-  clientKeyPath        = nullptr;
-  clientCACertFilename = nullptr;
-  clientCACertPath     = nullptr;
-  cipherSuite          = nullptr;
-  client_cipherSuite   = nullptr;
-  dhparamsFile         = nullptr;
-  serverKeyPathOnly    = nullptr;
-
-  ticket_key_filename     = nullptr;
-  default_global_keyblock = nullptr;
-
-  clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
-
-  ssl_ctx_options               = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
-  ssl_client_ctx_protocols      = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
-  ssl_session_cache             = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
-  ssl_session_cache_size        = 1024 * 100;
-  ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
-  ssl_session_cache_skip_on_contention = 0;
-  ssl_session_cache_timeout            = 0;
-  ssl_session_cache_auto_clear         = 1;
-  configExitOnLoadError                = 0;
+  reset();
 }
 
 SSLConfigParams::~SSLConfigParams()
 {
   cleanup();
+}
+
+void
+SSLConfigParams::reset()
+{
+  serverCertPathOnly = serverCertChainFilename = configFilePath = serverCACertFilename = serverCACertPath = clientCertPath =
+    clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
+      ticket_key_filename                                                                                     = nullptr;
+  default_global_keyblock                                                                                     = nullptr;
+
+  clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
+  ssl_ctx_options                                                     = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_client_ctx_protocols                                            = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_session_cache                                                   = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
+  ssl_session_cache_size                                              = 1024 * 100;
+  ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
+  ssl_session_cache_skip_on_contention = 0;
+  ssl_session_cache_timeout            = 0;
+  ssl_session_cache_auto_clear         = 1;
+  configExitOnLoadError                = 0;
 }
 
 void
@@ -128,9 +120,7 @@ SSLConfigParams::cleanup()
   ssl_wire_trace_ip       = (IpAddr *)ats_free_null(ssl_wire_trace_ip);
   ticket_key_filename     = (char *)ats_free_null(ticket_key_filename);
   ticket_block_free(default_global_keyblock);
-  default_global_keyblock = NULL;
-
-  clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
+  reset();
 }
 
 /**  set_paths_helper
@@ -268,12 +258,13 @@ SSLConfigParams::initialize()
   ats_free(CACertRelativePath);
 
 #if HAVE_OPENSSL_SESSION_TICKETS
-  REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
-  if (this->ticket_key_filename != NULL) {
+
+  if (REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename") == REC_ERR_OKAY &&
+      this->ticket_key_filename != nullptr) {
     ats_scoped_str ticket_key_path(Layout::relative_to(this->serverCertPathOnly, this->ticket_key_filename));
     default_global_keyblock = ssl_create_ticket_keyblock(ticket_key_path);
   } else {
-    default_global_keyblock = ssl_create_ticket_keyblock(NULL);
+    default_global_keyblock = ssl_create_ticket_keyblock(nullptr);
   }
 #endif
 

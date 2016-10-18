@@ -171,7 +171,7 @@ ticket_block_alloc(unsigned count)
 ssl_ticket_key_block *
 ticket_block_create(char *ticket_key_data, int ticket_key_len)
 {
-  ssl_ticket_key_block *keyblock = NULL;
+  ssl_ticket_key_block *keyblock = nullptr;
   unsigned num_ticket_keys       = ticket_key_len / sizeof(ssl_ticket_key_t);
   if (num_ticket_keys == 0) {
     Error("SSL session ticket key is too short (>= 48 bytes are required)");
@@ -195,7 +195,7 @@ ticket_block_create(char *ticket_key_data, int ticket_key_len)
 
 fail:
   ticket_block_free(keyblock);
-  return NULL;
+  return nullptr;
 }
 
 ssl_ticket_key_block *
@@ -204,9 +204,9 @@ ssl_create_ticket_keyblock(const char *ticket_key_path)
 #if HAVE_OPENSSL_SESSION_TICKETS
   ats_scoped_str ticket_key_data;
   int ticket_key_len;
-  ssl_ticket_key_block *keyblock = NULL;
+  ssl_ticket_key_block *keyblock = nullptr;
 
-  if (ticket_key_path != NULL) {
+  if (ticket_key_path != nullptr) {
     ticket_key_data = readIntoBuffer(ticket_key_path, __func__, &ticket_key_len);
     if (!ticket_key_data) {
       Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
@@ -224,11 +224,11 @@ ssl_create_ticket_keyblock(const char *ticket_key_path)
 
 fail:
   ticket_block_free(keyblock);
-  return NULL;
+  return nullptr;
 
 #else  /* !HAVE_OPENSSL_SESSION_TICKETS */
   (void)ticket_key_path;
-  return NULL;
+  return nullptr;
 #endif /* HAVE_OPENSSL_SESSION_TICKETS */
 }
 void
