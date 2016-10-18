@@ -43,6 +43,8 @@
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
 
+const char PLUGIN_NAME[] = "append-transform";
+
 #define ASSERT_SUCCESS(_x) TSAssert((_x) == TS_SUCCESS)
 
 typedef struct {
@@ -348,22 +350,22 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "append-transform";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[append-transform] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
     goto Lerror;
   }
 
   if (argc != 2) {
-    TSError("[append-transform] Usage: %s <filename>", argv[0]);
+    TSError("[%s] Usage: %s <filename>", PLUGIN_NAME, argv[0]);
     goto Lerror;
   }
 
   if (!load(argv[1])) {
-    TSError("[append-transform] Could not load %s", argv[1]);
+    TSError("[%s] Could not load %s", PLUGIN_NAME, argv[1]);
     goto Lerror;
   }
 
@@ -372,5 +374,5 @@ TSPluginInit(int argc, const char *argv[])
 
 Lerror:
 
-  TSError("[append-transform] Unable to initialize plugin");
+  TSError("[%s] Unable to initialize plugin", PLUGIN_NAME);
 }
