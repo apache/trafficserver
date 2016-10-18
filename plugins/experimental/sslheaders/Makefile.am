@@ -36,6 +36,7 @@ test_sslheaders_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   @OPENSSL_LIBS@
 
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 TESTS = $(check_PROGRAMS)
 
 include $(top_srcdir)/build/tidy.mk
