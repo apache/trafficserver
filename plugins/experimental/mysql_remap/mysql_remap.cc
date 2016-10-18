@@ -232,7 +232,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  data->query = TSmalloc(QSIZE * sizeof(char)); // TODO: malloc smarter sizes
+  data->query = static_cast<char*>(TSmalloc(QSIZE * sizeof(char))); // TODO: malloc smarter sizes
 
   TSDebug(PLUGIN_NAME, "h: %s; u: %s; p: %s; p:%d; d:%s", host, username, password, port, db);
   TSCont cont = TSContCreate(mysql_remap, TSMutexCreate());
