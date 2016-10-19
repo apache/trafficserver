@@ -77,6 +77,8 @@ static int ts_lua_http_set_cache_lookup_status(lua_State *L);
 static int ts_lua_http_set_cache_url(lua_State *L);
 static int ts_lua_http_get_cache_lookup_url(lua_State *L);
 static int ts_lua_http_set_cache_lookup_url(lua_State *L);
+static int ts_lua_http_get_parent_proxy(lua_State *L);
+static int ts_lua_http_set_parent_proxy(lua_State *L);
 static int ts_lua_http_get_parent_selection_url(lua_State *L);
 static int ts_lua_http_set_parent_selection_url(lua_State *L);
 static int ts_lua_http_set_server_resp_no_store(lua_State *L);
@@ -86,6 +88,10 @@ static void ts_lua_inject_cache_lookup_result_variables(lua_State *L);
 static int ts_lua_http_resp_cache_transformed(lua_State *L);
 static int ts_lua_http_resp_cache_untransformed(lua_State *L);
 
+static int ts_lua_http_get_client_protocol_stack(lua_State *L);
+static int ts_lua_http_server_push(lua_State *L);
+static int ts_lua_http_is_websocket(lua_State *L);
+static int ts_lua_http_get_plugin_tag(lua_State *L);
 static int ts_lua_http_get_id(lua_State *L);
 static int ts_lua_http_is_internal_request(lua_State *L);
 static int ts_lua_http_skip_remapping_set(lua_State *L);
@@ -147,6 +153,12 @@ ts_lua_inject_http_cache_api(lua_State *L)
   lua_pushcfunction(L, ts_lua_http_set_cache_lookup_url);
   lua_setfield(L, -2, "set_cache_lookup_url");
 
+  lua_pushcfunction(L, ts_lua_http_get_parent_proxy);
+  lua_setfield(L, -2, "get_parent_proxy");
+
+  lua_pushcfunction(L, ts_lua_http_set_parent_proxy);
+  lua_setfield(L, -2, "set_parent_proxy");
+
   lua_pushcfunction(L, ts_lua_http_get_parent_selection_url);
   lua_setfield(L, -2, "get_parent_selection_url");
 
@@ -187,6 +199,18 @@ ts_lua_inject_http_resp_transform_api(lua_State *L)
 static void
 ts_lua_inject_http_misc_api(lua_State *L)
 {
+  lua_pushcfunction(L, ts_lua_http_get_client_protocol_stack);
+  lua_setfield(L, -2, "get_client_protocol_stack");
+
+  lua_pushcfunction(L, ts_lua_http_server_push);
+  lua_setfield(L, -2, "server_push");
+
+  lua_pushcfunction(L, ts_lua_http_is_websocket);
+  lua_setfield(L, -2, "is_websocket");
+
+  lua_pushcfunction(L, ts_lua_http_get_plugin_tag);
+  lua_setfield(L, -2, "get_plugin_tag");
+
   lua_pushcfunction(L, ts_lua_http_get_id);
   lua_setfield(L, -2, "id");
 
@@ -387,6 +411,54 @@ ts_lua_http_set_cache_lookup_url(lua_State *L)
 }
 
 static int
+ts_lua_http_get_parent_proxy(lua_State *L)
+{
+  const char *hostname = NULL;
+  int port             = 0;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TSHttpTxnParentProxyGet(http_ctx->txnp, &hostname, &port);
+
+  if (hostname == NULL) {
+    lua_pushnil(L);
+  } else {
+    lua_pushstring(L, hostname);
+  }
+  lua_pushnumber(L, port);
+
+  return 2;
+}
+
+static int
+ts_lua_http_set_parent_proxy(lua_State *L)
+{
+  int n = 0;
+  const char *hostname;
+  size_t hostname_len;
+  int port = 0;
+  const char *target;
+
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  n = lua_gettop(L);
+
+  if (n == 2) {
+    hostname = luaL_checklstring(L, 1, &hostname_len);
+    target   = TSstrndup(hostname, hostname_len);
+    port     = luaL_checkinteger(L, 2);
+    TSHttpTxnParentProxySet(http_ctx->txnp, target, port);
+  } else {
+    return luaL_error(L, "incorrect # of arguments for set_parent_proxy, receiving %d instead of 2", n);
+  }
+
+  return 0;
+}
+
+static int
 ts_lua_http_get_parent_selection_url(lua_State *L)
 {
   char output[TS_LUA_MAX_URL_LENGTH];
@@ -523,6 +595,65 @@ ts_lua_http_resp_cache_untransformed(lua_State *L)
   TSHttpTxnUntransformedRespCache(http_ctx->txnp, action);
 
   return 0;
+}
+
+static int
+ts_lua_http_get_client_protocol_stack(lua_State *L)
+{
+  char const *results[10];
+  int count = 0;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TSHttpTxnClientProtocolStackGet(http_ctx->txnp, 10, results, &count);
+  for (int i = 0; i < count; i++) {
+    lua_pushstring(L, results[i]);
+  }
+
+  return count;
+}
+
+static int
+ts_lua_http_server_push(lua_State *L)
+{
+  const char *url;
+  const char *push_url;
+  size_t url_len;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  url      = luaL_checklstring(L, 1, &url_len);
+  push_url = TSstrndup(url, url_len);
+  TSHttpTxnServerPush(http_ctx->txnp, push_url, url_len);
+
+  return 0;
+}
+
+static int
+ts_lua_http_is_websocket(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  lua_pushboolean(L, TSHttpTxnIsWebsocket(http_ctx->txnp));
+
+  return 1;
+}
+
+static int
+ts_lua_http_get_plugin_tag(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  const char *tag = TSHttpTxnPluginTagGet(http_ctx->txnp);
+  lua_pushstring(L, tag);
+
+  return 1;
 }
 
 static int
