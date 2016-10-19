@@ -254,6 +254,7 @@ Bug:
   *) [TS-4938] Crash due to null client_vc
   *) [TS-4939] Diags doesn't print the tag name anymore
   *) [TS-4942] Simple retry is not working correctly
+  *) [TS-4947] Collation Server is broken?
   *) [TS-4953] Memory leaks in priority queue test
 
 Improvement:
