@@ -188,30 +188,11 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
       ink_strlcat(tsArgs, " -k", sizeof(tsArgs));
     }
 
-    // If we've been provided an options callback, then we call the callback and
-    // put all the extra options we receive into tsArgs
-    //
-    // proxy_options_callback is given to us by traffic_manager
-    if (proxy_options_callback) {
-      std::vector<char*> options;
-      proxy_options_callback(options);
-
-      for (auto it = options.begin(); it < options.end(); ++it) {
-        ink_strlcat(tsArgs, " ", sizeof(tsArgs));
-        ink_strlcat(tsArgs, static_cast<const char*>(*it), sizeof(tsArgs));
-        free(*it);
-      }
-    }
-
-    // We always want to delete the previous run's proxy_options
-    // because we to repopulate with the most up to date options each TS restart
-    ats_free(lmgmt->proxy_options);
-    lmgmt->proxy_options = ats_strdup(tsArgs);
-    mgmt_log("[ProxyStateSet] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
+    mgmt_log("[ProxyStateSet] Traffic Server Args: '%s %s'\n", lmgmt->proxy_options ? lmgmt->proxy_options : "", tsArgs);
 
     lmgmt->run_proxy = true;
-    lmgmt->startProxy();
     lmgmt->listenForProxy();
+    lmgmt->startProxy(tsArgs);
 
     do {
       mgmt_sleep_sec(1);

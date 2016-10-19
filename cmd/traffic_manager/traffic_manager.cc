@@ -66,9 +66,6 @@
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 #define DIAGS_LOG_FILENAME "manager.log"
 
-// Used to pass traffic_server options to the RPC API
-extern std::function<void(std::vector<char*>&)> proxy_options_callback;  // declared in CoreAPI.cc
-
 // These globals are still referenced directly by management API.
 LocalManager *lmgmt = NULL;
 FileManager *configFiles;
@@ -616,37 +613,36 @@ main(int argc, const char **argv)
   RecLocalStart(configFiles);
 
   /* Update cmd line overrides/environmental overrides/etc */
-  if (tsArgs)  /* Passed command line args for proxy */
-    callback_proxy_options.push_back(ats_strdup(tsArgs));
+  if (tsArgs) { /* Passed command line args for proxy */
+    char* new_proxy_opts = new char[strlen(lmgmt->proxy_options) + strlen(tsArgs) + 1];
+    strcpy(new_proxy_opts, lmgmt->proxy_options);
+    strcat(new_proxy_opts, tsArgs);
+    ats_free(lmgmt->proxy_options);
+    lmgmt->proxy_options = new_proxy_opts;
+  }
 
-  // we must give bind_stdout and bind_stderr values to callback_proxy_options
-  // so LocalManager can start up TS with the correct options
+  // TS needs to be started up with the same outputlog bindings each time,
+  // so we append the outputlog location to the persistent proxy options
   //
   // TS needs them to be able to create BaseLogFiles for each value
   if (*bind_stdout != 0) {
-    char *bind_stdout_opt = new char[strlen("--") + strlen(TM_OPT_BIND_STDOUT)];
-    strcpy(bind_stdout_opt, "--");
-    strcat(bind_stdout_opt, TM_OPT_BIND_STDOUT);
-    callback_proxy_options.push_back(bind_stdout_opt);
-    callback_proxy_options.push_back(ats_strdup(bind_stdout));
+    const char *bind_stdout_opt = " --" TM_OPT_BIND_STDOUT " ";
+    char *new_proxy_opts = new char[strlen(lmgmt->proxy_options) + strlen(bind_stdout_opt) + strlen(bind_stdout) + 1];
+    strcpy(new_proxy_opts, lmgmt->proxy_options);
+    strcat(new_proxy_opts, bind_stdout_opt);
+    strcat(new_proxy_opts, bind_stdout);
+    delete lmgmt->proxy_options;
+    lmgmt->proxy_options = new_proxy_opts;
   }
 
   if (*bind_stderr != 0) {
-    char *bind_stderr_opt = new char[strlen("--") + strlen(TM_OPT_BIND_STDERR)];
-    strcpy(bind_stderr_opt, "--");
-    strcat(bind_stderr_opt, TM_OPT_BIND_STDERR);
-    callback_proxy_options.push_back(bind_stderr_opt);
-    callback_proxy_options.push_back(ats_strdup(bind_stderr));
-  }
-
-  // If there exist proxy options we want CoreAPI to have, we set the callback
-  // to a lambda that will pass the options
-  if (callback_proxy_options.size() > 0) {
-    proxy_options_callback = [&callback_proxy_options](std::vector<char*> &opts) {
-      for (auto it = callback_proxy_options.begin(); it < callback_proxy_options.end(); ++it) {
-        opts.push_back(ats_strdup(*it));
-      }
-    };
+    const char *bind_stderr_opt = " --" TM_OPT_BIND_STDERR " ";
+    char *new_proxy_opts = new char[strlen(lmgmt->proxy_options) + strlen(bind_stderr_opt) + strlen(bind_stderr) + 1];
+    strcpy(new_proxy_opts, lmgmt->proxy_options);
+    strcat(new_proxy_opts, bind_stderr_opt);
+    strcat(new_proxy_opts, bind_stderr);
+    delete lmgmt->proxy_options;
+    lmgmt->proxy_options = new_proxy_opts;
   }
 
   if (proxy_port) {
