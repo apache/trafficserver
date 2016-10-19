@@ -948,6 +948,42 @@ ts.http.set_cache_lookup_url
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.get_parent_proxy
+------------------------
+**syntax:** *ts.http.get_parent_proxy()*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to get the parent proxy host and port.
+
+Here is an example
+
+::
+
+    function cache_lookup()
+        ts.http.set_parent_proxy('test1.test.com', 1111)
+        host, port = ts.http.get_parent_proxy()
+        ts.debug(host)
+        ts.debug(port)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.set_parent_proxy
+------------------------
+**syntax:** *ts.http.set_parent_proxy()*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to set the parent proxy host and name.
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.get_parent_selection_url
 --------------------------------
 **syntax:** *ts.http.get_parent_selection_url()*
@@ -1420,6 +1456,38 @@ We will get the output:
     Host: b.tb.cn
     User-Agent: curl/7.19.7
     Accept: */*
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.server_addr.set_addr
+--------------------------------------
+**syntax:** *ts.server_request.server_addr.set_addr()*
+
+**context:** no later than function @ TS_LUA_HOOK_OS_DNS hook point
+
+**description**: This function can be used to set socket address of the origin server.
+
+The ts.server_request.server_addr.set_addr function requires three inputs, ip is a string, port and family is number.
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        ts.server_request.server_addr.set_addr("192.168.231.17", 80, TS_LUA_AF_INET)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+Socket address family
+---------------------
+**context:** global
+
+::
+
+    TS_LUA_AF_INET (2)
+    TS_LUA_AF_INET6 (10)
 
 
 `TOP <#ts-lua-plugin>`_
@@ -2113,6 +2181,87 @@ Here is an example:
     end
 
 This function is usually called in do_global_read_request function
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_client_protocol_stack
+---------------------------------
+**syntax:** *ts.http.get_client_protocol_stack()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to get client protocol stack information
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local stack = {ts.http.get_client_protocol_stack()}
+        for k,v in pairs(stack) do 
+          ts.debug(v) 
+        end
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.server_push
+-------------------
+**syntax:** *ts.http.server_push()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can do http/2 server push for the input url
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        ts.http.server_push("https://test.com/test.js")
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.is_websocket
+--------------------
+**syntax:** *ts.http.is_websocket()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to tell if the transacton is websocket
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local flag = ts.http.is_websocket()
+        ts.debug(flag)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_plugin_tag
+----------------------
+**syntax:** *ts.http.get_plugin_tag()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to get plugin tag of a transaction
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local tag = ts.http.get_plugin_tag() or ''
+        ts.debug(tag)
+        return 0
+    end
 
 `TOP <#ts-lua-plugin>`_
 
