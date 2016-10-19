@@ -21,8 +21,13 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
- */
- 
+*/
+
+# if defined(__GNUC__)
+# pragma GCC diagnostic ignored "-Wsign-compare"
+# endif
+
+
 # if ! (defined(__clang_analyzer__) || defined(__COVERITY__))
 
 # include "TsConfigParseEvents.h"
