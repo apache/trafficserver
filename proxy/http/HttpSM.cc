@@ -7229,15 +7229,7 @@ HttpSM::set_next_state()
   case HttpTransact::SM_ACTION_DNS_LOOKUP: {
     sockaddr const *addr;
 
-    if ((strncmp(t_state.dns_info.lookup_name, "127.0.0.1", 9) == 0 || strncmp(t_state.dns_info.lookup_name, "::1", 3) == 0) &&
-        ats_ip_pton(t_state.dns_info.lookup_name, t_state.host_db_info.ip()) == 0) {
-      // If it's 127.0.0.1 or ::1 don't bother with hostdb
-      DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for %s because it's loopback",
-              t_state.dns_info.lookup_name);
-      t_state.dns_info.lookup_success = true;
-      call_transact_and_set_next_state(nullptr);
-      break;
-    } else if (t_state.api_server_addr_set) {
+    if (t_state.api_server_addr_set) {
       /* If the API has set the server address before the OS DNS lookup
        * then we can skip the lookup
        */
@@ -7248,6 +7240,14 @@ HttpSM::set_next_state()
       ats_ip_copy(t_state.host_db_info.ip(), &t_state.server_info.dst_addr);
       t_state.dns_info.lookup_success = true;
       call_transact_and_set_next_state(nullptr);
+      break;
+    } else if (0 == ats_ip_pton(t_state.dns_info.lookup_name, t_state.host_db_info.ip()) &&
+               ats_is_ip_loopback(t_state.host_db_info.ip())) {
+      // If it's 127.0.0.1 or ::1 don't bother with hostdb
+      DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for %s because it's loopback",
+              t_state.dns_info.lookup_name);
+      t_state.dns_info.lookup_success = true;
+      call_transact_and_set_next_state(NULL);
       break;
     } else if (url_remap_mode == HttpTransact::URL_REMAP_FOR_OS && t_state.first_dns_lookup) {
       DebugSM("cdn", "Skipping DNS Lookup");
