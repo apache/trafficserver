@@ -249,6 +249,7 @@ Bug:
   *) [TS-4908] HTTP2Stream tries to cancel even twice
   *) [TS-4911] ATS restarts when ts_lua plugin is used with collapsed_forwarding plugin and write lock error was encountered (th...
   *) [TS-4915] Crash from hostdb in PriorityQueueLess
+  *) [TS-4916] Http2ConnectionState::restart_streams infinite loop causes deadlock
   *) [TS-4925] Manager puking EBADF everywhere
   *) [TS-4934] Assert in Http2Stream::do_io_close() when active timeout
   *) [TS-4938] Crash due to null client_vc
