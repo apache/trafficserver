@@ -247,10 +247,10 @@ traffic_ctl server
 traffic_ctl storage
 -------------------
 .. program:: traffic_ctl storage
-.. option:: offline DEVICE [DEVICE ...]
+.. option:: offline PATH [PATH ...]
 
    Mark a cache storage device as offline. The storage is identified
-   by a *path* which must match exactly a path specified in
+   by :arg:`PATH` which must match exactly a path specified in
    :file:`storage.config`. This removes the storage from the cache
    and redirects requests that would have used this storage to other
    storage. This has exactly the same effect as a disk failure for
@@ -262,9 +262,10 @@ traffic_ctl plugin
 .. program:: traffic_ctl plugin
 .. option:: msg TAG DATA
 
-    Send a message to plugins. All plugins that have hooked the :c:member:`TS_LIFECYCLE_MSG_HOOK`
+    Send a message to plugins. All plugins that have hooked the :cpp:enumerator:`TSLifecycleHookID::TS_LIFECYCLE_MSG_HOOK`
     will receive a callback for that hook. The :arg:`TAG` and :arg:`DATA` will be available to the
-    plugin hook processing.
+    plugin hook processing. It is expected that plugins will use :arg:`TAG` to select relevant messages
+    and determine the format of the :arg:`DATA`.
     
 Examples
 ========
