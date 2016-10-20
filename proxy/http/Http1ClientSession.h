@@ -57,6 +57,7 @@ public:
   // Implement ProxyClientSession interface.
   virtual void destroy();
   virtual void free();
+  void release_transaction();
 
   virtual void
   start()
@@ -212,6 +213,8 @@ private:
   VIO *slave_ka_vio;
 
   HttpServerSession *bound_ss;
+
+  int released_transactions;
 
 public:
   // Link<Http1ClientSession> debug_link;
