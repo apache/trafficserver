@@ -264,6 +264,9 @@ AC_ARG_WITH([profiler],
 )
 AC_MSG_RESULT([$with_profiler])
 
+# Disable all static library builds
+AC_DISABLE_STATIC
+
 #
 # use eventfd() or pipes
 # Found that ec2 is using an older kernel causing eventfd errors.
