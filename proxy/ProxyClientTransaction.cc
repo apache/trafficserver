@@ -81,10 +81,7 @@ ProxyClientTransaction::attach_server_session(HttpServerSession *ssession, bool 
 void
 ProxyClientTransaction::destroy()
 {
-  if (current_reader) {
-    current_reader->ua_session = nullptr;
-    current_reader             = nullptr;
-  }
+  current_reader = nullptr;
   this->mutex.clear();
 }
 
