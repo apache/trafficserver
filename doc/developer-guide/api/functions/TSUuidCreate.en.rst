@@ -28,14 +28,14 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSUuid TSUuidCreate(void);
-.. function:: TSReturnCode TSUuidInitialize(TSUuid uuid, TSUuidVersion v);
-.. function:: void TSUuidDestroy(TSUuid uuid);
-.. function:: TSReturnCode TSUuidCopy(TSUuid dest, const TSUuid src);
-.. function:: const char *TSUuidStringGet(const TSUuid uuid);
-.. function:: TSUuidVersion TSUuidVersionGet(const TSUuid uuid);
-.. function:: TSReturnCode TSUuidStringParse(TSUuid uuid, const char *uuid_str);
-.. function:: const TSUuid TSProcessUuidGet(void);
+.. function:: TSUuid TSUuidCreate(void)
+.. function:: TSReturnCode TSUuidInitialize(TSUuid uuid, TSUuidVersion v)
+.. function:: void TSUuidDestroy(TSUuid uuid)
+.. function:: TSReturnCode TSUuidCopy(TSUuid dest, const TSUuid src)
+.. function:: const char * TSUuidStringGet(const TSUuid uuid)
+.. function:: TSUuidVersion TSUuidVersionGet(const TSUuid uuid)
+.. function:: TSReturnCode TSUuidStringParse(TSUuid uuid, const char * uuid_str)
+.. function:: const TSUuid TSProcessUuidGet(void)
 
 Description
 ===========

@@ -64,7 +64,7 @@ more widely. Those are described on this page.
 
 .. type:: TSHttpSsn
 
-   An opaque type that represents a Traffic Server :term:`session`.
+   An opaque type that represents a Traffic SeUuirver :term:`session`.
 
 .. type:: TSHttpStatus
 
@@ -175,6 +175,22 @@ more widely. Those are described on this page.
 .. type:: TSThreadFunc
 
 .. type:: TSThreadPool
+
+.. type:: TSUuid
+
+   Opaque type that refers to an allocated UUID.
+   
+.. type:: TSUuidVersion
+
+   A version value for at :type:`TSUuid`.
+   
+   .. member:: TS_UUID_V4
+
+      A version 4 UUID. Currently only this value is used.
+      
+.. var:: size_t TS_UUID_STRING_LEN
+
+   Length of a UUID string.
 
 .. type:: TSVConn
 
