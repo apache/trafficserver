@@ -347,7 +347,7 @@ class TrafficServerDomain(Domain):
 # We really need to do better with this. Editing this file for each of
 # these is already getting silly.
 EXTERNAL_TYPES = set((
-    'int', 'uint',
+    'bool', 'int', 'uint',
     'uint8_t', 'uint16_t', 'uint24_t', 'uint32_t', 'uint64_t',
     'int8_t', 'int16_t', 'int24_t', 'int32_t', 'int64_t',
     'unsigned', 'unsigned int',
