@@ -377,6 +377,7 @@ Improvement:
   *) [TS-4837] Add -Wextra to the build
   *) [TS-4863] Remove non-existent proxy.node.num_processes metric.
   *) [TS-4884] Remove a few unused variables/define in EThread
+  *) [TS-4909] Throttling based on resident memory usage
   *) [TS-4931] Add process limits to crash logs
   *) [TS-4949] Disable fuzzy revalidation logic
   *) [TS-4959] Remove an old remnant of MSIE UA detection
