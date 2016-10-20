@@ -32,8 +32,8 @@ Description
 ===========
 
 Set the SSL connection :arg:`svc` to convert to a blind tunnel. Can be called
-from :data:`TS_VCONN_PRE_ACCEPT_HOOK` or :data:`TS_SSL_SNI_HOOK/TS_SSL_CERT_HOOK`.
+from :member:`TS_VCONN_PRE_ACCEPT_HOOK` or :member:`TS_SSL_SNI_HOOK` / :member:`TS_SSL_CERT_HOOK`.
 
-For this to work from the :data:`TS_SSL_SNI_HOOK` or :data:`TS_SSL_CERT_HOOK`,
+For this to work from the :member:`TS_SSL_SNI_HOOK` or :member:`TS_SSL_CERT_HOOK`,
 either the server must be running OpenSSL 1.0.2 or a version of OpenSSL 1.0.1
 with the appropriate patch installed.

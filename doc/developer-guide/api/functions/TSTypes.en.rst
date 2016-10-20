@@ -48,15 +48,6 @@ more widely. Those are described on this page.
 
    An opaque type that represents a Traffic Server :term:`continuation`.
 
-.. type:: TSEvent
-
-   :type:`TSEvents` are sent to continuations when they are called
-   back.
-
-   The :type:`TSEvent` provides the continuation's handler function
-   with information about the callback.  Based on the event it
-   receives, the handler function can decide what to do.
-
 .. type:: TSEventFunc
 
 .. type:: TSFile
@@ -68,10 +59,6 @@ more widely. Those are described on this page.
    "High Resolution Time"
 
    A 64 bit time value, measured in nanoseconds.
-
-.. type:: TSHttpHookID
-
-   An enumeration that identifies a specific type of hook for HTTP transactions.
 
 .. type:: TSHttpParser
 
@@ -137,6 +124,10 @@ more widely. Those are described on this page.
 
 .. type:: TSMLoc
 
+.. var:: TSMLoc TS_NULL_MLOC
+
+   A predefined null valued :type:`TSMLoc` used to indicate the absence of an :type:`TSMLoc`.
+
 .. type:: TSMutex
 
 .. type:: TSParseResult
@@ -188,3 +179,4 @@ more widely. Those are described on this page.
 .. type:: TSVConn
 
 .. type:: TSVIO
+      

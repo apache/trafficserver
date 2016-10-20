@@ -40,7 +40,7 @@ out of marshal buffers, and change the values within the marshal buffer.
 Whenever you manipulate an object, you require the handle to the object
 (:type:`TSMLoc`) and the marshal buffer containing the object (:type:`TSMBuffer`).
 
-Any marshal buffer fetched by :func:`TSHttpTxn*Get` will be used by other parts
+Any marshal buffer fetched by transaction getters will be used by other parts
 of the system. Be careful not to destroy these shared, transaction marshal buffers.
 
 :func:`TSMBufferCreate` creates a new marshal buffer and initializes

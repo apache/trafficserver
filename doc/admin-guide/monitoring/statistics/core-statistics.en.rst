@@ -36,7 +36,6 @@ component to which they're related.
    core/hierarchical.en
    core/hostdb.en
    core/dns.en
-   core/cluster.en
    core/origin.en
    core/network-io.en
    core/ssl.en
