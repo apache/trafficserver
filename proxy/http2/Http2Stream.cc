@@ -125,7 +125,9 @@ Http2Stream::main_event_handler(int event, void *edata)
       ink_release_assert(this->closed);
 
       // Safe to initiate SSN_CLOSE if this is the last stream
-      static_cast<Http2ClientSession *>(parent)->connection_state.release_stream(this);
+      if (parent) {
+        static_cast<Http2ClientSession *>(parent)->connection_state.release_stream(this);
+      }
       this->destroy();
     }
     break;
