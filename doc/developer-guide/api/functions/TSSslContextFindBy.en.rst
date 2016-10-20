@@ -29,6 +29,7 @@ Synopsis
 `#include <ts/ts.h>`
 
 .. function:: TSSslContext TSSslContextFindByName(const char * name)
+
 .. function:: TSSslContext TSSslContextFindByAddr(const struct sockaddr * address)
 
 Description
@@ -42,13 +43,6 @@ server :arg:`name`.
 created from :file:`ssl_multicert.config` matchin against the server
 :arg:`address`.
 
-Type
-====
-
-.. type:: TSSslContext
-
-The SSL context object. This is an opaque type that can be cast to
-the underlying SSL library type (SSL_CTX * for the OpenSSL library).
 
 See also
 ========

@@ -42,7 +42,7 @@ Return Values
 =============
 
 Both these APIs return a :type:`int`, indicating whether the
-request was internal (:data:`1`) or not (:data:`0`).
+request was internal (:literal:`1`) or not (:literal:`0`).
 
 Examples
 ========
@@ -50,7 +50,7 @@ Examples
 The ESI plugin uses :func:`TSHttpTxnIsInternal` to ignore requests that is
 had generated while fetching portions of an ESI document:
 
-.. literalinclude:: ../../../../plugins/experimental/esi/esi.cc
+.. literalinclude:: ../../../../plugins/esi/esi.cc
   :language: c
   :lines: 1395-1398
 
