@@ -28,15 +28,20 @@ if __name__ == '__main__':
   # Check whether we have a recent version of sphinx. EPEL and CentOS are completely crazy and I don't understand their
   # packaging at all. The test below works on Ubuntu and places where sphinx is installed sanely AFAICT.
   if options.checkvers:
-    print 'checking for sphinx version >= 1.1... ',
+    print 'checking for sphinx version >= 1.2... ',
+    # Need at least 1.2 because of some command line options stuff HRP added.
+    # Also 1.2 guarantees sphinx.version_info is available.
     try:
       import sphinx
-
-      version = sphinx.__version__
-      print 'found ' + sphinx.__version__
-
-      (major, minor, micro) = version.split('.')
-      if (int(major) < 1) or (int(major) == 1 and int(minor) < 1):
+      
+      if 'version_info' in dir(sphinx) :
+        print 'Found Sphinx version {0}'.format(sphinx.version_info)
+      else :
+        version = sphinx.__version__
+        print 'Found Sphinx version (old) {0}'.format(sphinx.__version__)
+        sphinx.version_info = version.split('.')
+        
+      if sphinx.version_info < (1,2) :
           sys.exit(1)
 
     except Exception as e:

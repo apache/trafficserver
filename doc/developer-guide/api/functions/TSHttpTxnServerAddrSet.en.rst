@@ -26,7 +26,7 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSReturnCode TSHttpTxnServerAddrGet(TSHttpTxn txnp, struct sockaddr const* addr)
+.. function:: TSReturnCode TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const* addr)
 
 Description
 ===========

@@ -348,7 +348,7 @@ minutes to transfer the object. This inaccuracy is more noticeable with
 a light load. A heavier load yields a more accurate statistic.
 
 You are unable to execute Traffic Control commands
------------------------------------------------
+--------------------------------------------------
 
 :program:`traffic_ctl` commands do not execute under the following conditions:
 
@@ -595,4 +595,3 @@ origin servers. If you cannot avoid such timeouts by otherwise addressing the
 performance on your origin servers, you may adjust the origin connection timeout
 in Traffic Server by changing :ts:cv:`proxy.config.http.connect_attempts_timeout`
 in :file:`records.config` to a larger value.
-

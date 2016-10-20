@@ -2119,9 +2119,9 @@ Heuristic Expiration
 
     These fuzzing options are marked as deprecated as of v6.2.0, and will be
     removed for v7.0.0. Instead, we recommend looking at the new
-    :ts:cv:`proxy-config-http-cache-open-write-fail-action` configuration and
+    :ts:cv:`proxy.config.http.cache.open_write_fail_action` configuration and
     the features around thundering heard avoidance (see
-    :ref:`cache-basics` for details).
+    :ref:`http-proxy-caching` for details).
 
 Dynamic Content & Content Negotiation
 =====================================
