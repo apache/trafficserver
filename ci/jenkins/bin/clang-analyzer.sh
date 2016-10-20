@@ -71,7 +71,7 @@ fi
 # Cleanup old reports (save the last 10 reports), but only for the CI
 if [ "/tmp" !=  "$output" ]; then
     cd ${output} || exit -1
-    for old in $(/usr/bin/ls -1t | tail -n +11); do
+    for old in $(/usr/bin/ls -1t | tail -n +31); do
 	rm -rf $old
     done
 
