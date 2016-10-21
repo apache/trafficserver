@@ -48,6 +48,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
    AWS S3 Authentication <s3_auth.en>
    AuthProxy <authproxy.en>
    Background Fetch <background_fetch.en>
+   Combo Handler <combo_handler.en>
    Configuration Remap <conf_remap.en>
    ESI <esi.en>
    GZip <gzip.en>
@@ -69,6 +70,9 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`Background Fetch <background_fetch.en>`
    Proactively fetch content from Origin in a way that it will fill the object into cache.
+
+:doc:`Combo Handler <combo_handler.en>`
+   Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
 
 :doc:`Configuration Remap <conf_remap.en>`
     Override configuration directives on a per-rule basis.
@@ -124,7 +128,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Cache Key Manipulation <cachekey.en>
    Cache Promote <cache_promote.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
-   Combo Handler <combo_handler.en>
    Epic <epic.en>
    Escalate <escalate.en>
    GeoIP ACL <geoip_acl.en>
@@ -156,9 +159,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Collapsed-Forwarding <collapsed_forwarding.en>`
    Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving
    all clients in parallel.
-
-:doc:`Combo Handler <combo_handler.en>`
-   Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
 
 :doc:`Epic <epic.en>`
    Emits Traffic Server metrics in a format that is consumed by the Epic Network Monitoring System.
