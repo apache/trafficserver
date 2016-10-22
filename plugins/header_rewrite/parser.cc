@@ -28,50 +28,63 @@
 
 #include "parser.h"
 
+enum ParserState { PARSER_DEFAULT, PARSER_IN_QUOTE, PARSER_IN_REGEX };
+
 Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
 {
-  TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Parser");
   std::string line        = original_line;
-  bool inquote            = false;
+  ParserState state       = PARSER_DEFAULT;
   bool extracting_token   = false;
   off_t cur_token_start   = 0;
   size_t cur_token_length = 0;
 
   for (size_t i = 0; i < line.size(); ++i) {
-    if (!inquote && (std::isspace(line[i]) || (line[i] == '=' || line[i] == '>' || line[i] == '<'))) {
+    if ((state == PARSER_DEFAULT) && (std::isspace(line[i]) || ((line[i] == '=') || (line[i] == '>') || (line[i] == '<')))) {
       if (extracting_token) {
         cur_token_length = i - cur_token_start;
-
-        if (cur_token_length) {
+        if (cur_token_length > 0) {
           _tokens.push_back(line.substr(cur_token_start, cur_token_length));
         }
-
         extracting_token = false;
+        state            = PARSER_DEFAULT;
       } else if (!std::isspace(line[i])) {
-        /* we got a standalone =, > or < */
+        // we got a standalone =, > or <
         _tokens.push_back(std::string(1, line[i]));
       }
-      continue; /* always eat whitespace */
-    } else if (line[i] == '\\') {
+    } else if ((state != PARSER_IN_QUOTE) && (line[i] == '/')) {
+      // Deal with regexes, nothing gets escaped / quoted in here
+      if ((state != PARSER_IN_REGEX) && !extracting_token) {
+        state            = PARSER_IN_REGEX;
+        extracting_token = true;
+        cur_token_start  = i;
+      } else if ((state == PARSER_IN_REGEX) && extracting_token && (line[i - 1] != '\\')) {
+        cur_token_length = i - cur_token_start + 1;
+        _tokens.push_back(line.substr(cur_token_start, cur_token_length));
+        state            = PARSER_DEFAULT;
+        extracting_token = false;
+      } else if (!extracting_token) {
+        // /'s elsewhere are just consumed, but we should not end up here if we're not extracting a token
+        TSError("[%s] malformed regex \"%s\" ignoring...", PLUGIN_NAME, line.c_str());
+      }
+    } else if ((state != PARSER_IN_REGEX) && (line[i] == '\\')) {
+      // Escaping
       if (!extracting_token) {
         extracting_token = true;
         cur_token_start  = i;
       }
       line.erase(i, 1);
-      continue;
-    } else if (line[i] == '"') {
-      if (!inquote && !extracting_token) {
-        inquote          = true;
+    } else if ((state != PARSER_IN_REGEX) && (line[i] == '"')) {
+      if ((state != PARSER_IN_QUOTE) && !extracting_token) {
+        state            = PARSER_IN_QUOTE;
         extracting_token = true;
-        cur_token_start  = i + 1; /* eat the leading quote */
-        continue;
-      } else if (inquote && extracting_token) {
+        cur_token_start  = i + 1; // Eat the leading quote
+      } else if ((state == PARSER_IN_QUOTE) && extracting_token) {
         cur_token_length = i - cur_token_start;
         _tokens.push_back(line.substr(cur_token_start, cur_token_length));
-        inquote          = false;
+        state            = PARSER_DEFAULT;
         extracting_token = false;
       } else {
-        /* malformed */
+        // Malformed expression / operation, ignore ...
         TSError("[%s] malformed line \"%s\" ignoring...", PLUGIN_NAME, line.c_str());
         _tokens.clear();
         _empty = true;
@@ -84,8 +97,8 @@ Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
         break;
       }
 
-      if (line[i] == '=' || line[i] == '>' || line[i] == '<') {
-        /* these are always a seperate token */
+      if ((line[i] == '=') || (line[i] == '>') || (line[i] == '<')) {
+        // These are always a seperate token
         _tokens.push_back(std::string(1, line[i]));
         continue;
       }
@@ -96,15 +109,15 @@ Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
   }
 
   if (extracting_token) {
-    if (inquote) {
+    if (state != PARSER_IN_QUOTE) {
+      /* we hit the end of the line while parsing a token, let's add it */
+      _tokens.push_back(line.substr(cur_token_start));
+    } else {
       // unterminated quote, error case.
       TSError("[%s] malformed line, unterminated quotation: \"%s\" ignoring...", PLUGIN_NAME, line.c_str());
       _tokens.clear();
       _empty = true;
       return;
-    } else {
-      /* we hit the end of the line while parsing a token, let's add it */
-      _tokens.push_back(line.substr(cur_token_start));
     }
   }
 
@@ -133,14 +146,15 @@ Parser::preprocess(std::vector<std::string> tokens)
       std::string s = tokens[0].substr(2, tokens[0].size() - 3);
 
       _op = s;
-      if (tokens.size() > 2 && (tokens[1][0] == '=' || tokens[1][0] == '>' || tokens[1][0] == '<')) { // cond + (=/</>) + argument
+      if (tokens.size() > 2 && (tokens[1][0] == '=' || tokens[1][0] == '>' || tokens[1][0] == '<')) {
+        // cond + [=<>] + argument
         _arg = tokens[1] + tokens[2];
       } else if (tokens.size() > 1) {
+        // This is for the regular expression, which for some reason has its own handling?? ToDo: Why ?
         _arg = tokens[1];
       } else {
-        {
-          _arg = "";
-        }
+        // This would be for hook conditions, which has no argument.
+        _arg = "";
       }
     } else {
       TSError("[%s] conditions must be embraced in %%{}", PLUGIN_NAME);
