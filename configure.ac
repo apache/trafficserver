@@ -1863,7 +1863,6 @@ AC_CONFIG_FILES([
   iocore/utils/Makefile
   lib/Makefile
   lib/atscppapi/Makefile
-  lib/atscppapi/examples/Makefile
   lib/atscppapi/src/Makefile
   lib/bindings/Makefile
   lib/perl/Makefile

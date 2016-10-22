@@ -15,47 +15,76 @@
 #  limitations under the License.
 
 include $(top_srcdir)/build/plugins.mk
+include $(top_srcdir)/build/tidy.mk
 
+AM_CXXFLAGS += -Wno-unused-variable
 AM_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
-plugins = \
-  add-header.la \
-  append-transform.la \
-  basic-auth.la \
-  blacklist-0.la \
-  blacklist-1.la \
-  bnull-transform.la \
-  cache-scan.la \
-  file-1.la \
-  hello.la \
-  intercept.la \
-  lifecycle-plugin.la \
-  null-transform.la \
-  output-header.la \
-  passthru.la \
-  protocol-stack.la \
-  protocol.la \
-  psi.la \
-  query-remap.la \
-  remap.la \
-  remap_header_add.la \
-  replace-header.la \
-  response-header-1.la \
-  secure-link.la \
-  server-push.la \
-  server-transform.la \
-  ssl-preaccept.la \
-  ssl-sni-whitelist.la \
-  ssl-sni.la \
-  statistic.la \
-  thread-1.la \
-  txn-data-sink.la \
-  version.la
+libatscppai = $(top_builddir)/lib/atscppapi/src/libatscppapi.la
+
+example_Plugins = \
+	add-header.la \
+	append-transform.la \
+	basic-auth.la \
+	blacklist-0.la \
+	blacklist-1.la \
+	bnull-transform.la \
+	cache-scan.la \
+	file-1.la \
+	hello.la \
+	intercept.la \
+	lifecycle-plugin.la \
+	null-transform.la \
+	output-header.la \
+	passthru.la \
+	protocol-stack.la \
+	protocol.la \
+	psi.la \
+	query-remap.la \
+	remap.la \
+	remap_header_add.la \
+	replace-header.la \
+	response-header-1.la \
+	secure-link.la \
+	server-push.la \
+	server-transform.la \
+	ssl-preaccept.la \
+	ssl-sni-whitelist.la \
+	ssl-sni.la \
+	statistic.la \
+	thread-1.la \
+	txn-data-sink.la \
+	version.la
+
+example_Plugins += \
+	cppapi/AsyncHttpFetch.la \
+	cppapi/AsyncHttpFetchStreaming.la \
+	cppapi/AsyncTimer.la \
+	cppapi/ClientRedirect.la \
+	cppapi/ClientRequest.la \
+	cppapi/CustomErrorRemapPlugin.la \
+	cppapi/CustomResponse.la \
+	cppapi/GlobalHookPlugin.la \
+	cppapi/GzipTransformationPlugin.la \
+	cppapi/HelloWorldPlugin.la \
+	cppapi/InternalTransactionHandling.la \
+	cppapi/LoggerExample.la \
+	cppapi/MultipleTransactionHookPlugins.la \
+	cppapi/NullTransformationPlugin.la \
+	cppapi/PostBuffer.la \
+	cppapi/RemapPlugin.la \
+	cppapi/ServerResponse.la \
+	cppapi/StatExample.la \
+	cppapi/TimeoutExamplePlugin.la \
+	cppapi/TransactionHookPlugin.la \
+	cppapi/WebSocket.la \
+	cppapi/boom.la \
+	cppapi/intercept.la
 
 if BUILD_EXAMPLE_PLUGINS
-pkglib_LTLIBRARIES = $(plugins)
+pkglib_LTLIBRARIES = $(example_Plugins)
 else
-noinst_LTLIBRARIES = $(plugins)
+noinst_LTLIBRARIES = $(example_Plugins)
 endif
 
 add_header_la_SOURCES = add-header/add-header.c
@@ -96,8 +125,55 @@ version_la_SOURCES = version/version.c
 # redirect_1_la_SOURCES = redirect-1/redirect-1.c
 # session_1_la_SOURCES = session-1/session-1.c
 
-include $(top_srcdir)/build/tidy.mk
+cppapi_AsyncHttpFetchStreaming_la_SOURCES = cppapi/async_http_fetch_streaming/AsyncHttpFetchStreaming.cc
+cppapi_AsyncHttpFetch_la_SOURCES = cppapi/async_http_fetch/AsyncHttpFetch.cc
+cppapi_AsyncTimer_la_SOURCES = cppapi/async_timer/AsyncTimer.cc
+cppapi_ClientRedirect_la_SOURCES = cppapi/clientredirect/ClientRedirect.cc
+cppapi_ClientRequest_la_SOURCES = cppapi/clientrequest/ClientRequest.cc
+cppapi_CustomErrorRemapPlugin_la_SOURCES = cppapi/custom_error_remap_plugin/CustomErrorRemapPlugin.cc
+cppapi_CustomResponse_la_SOURCES = cppapi/customresponse/CustomResponse.cc
+cppapi_GlobalHookPlugin_la_SOURCES = cppapi/globalhook/GlobalHookPlugin.cc
+cppapi_GzipTransformationPlugin_la_SOURCES = cppapi/gzip_transformation/GzipTransformationPlugin.cc
+cppapi_HelloWorldPlugin_la_SOURCES = cppapi/helloworld/HelloWorldPlugin.cc
+cppapi_InternalTransactionHandling_la_SOURCES = cppapi/internal_transaction_handling/InternalTransactionHandling.cc
+cppapi_LoggerExample_la_SOURCES = cppapi/logger_example/LoggerExample.cc
+cppapi_MultipleTransactionHookPlugins_la_SOURCES = cppapi/multiple_transaction_hooks/MultipleTransactionHookPlugins.cc
+cppapi_NullTransformationPlugin_la_SOURCES = cppapi/null_transformation_plugin/NullTransformationPlugin.cc
+cppapi_PostBuffer_la_SOURCES = cppapi/post_buffer/PostBuffer.cc
+cppapi_RemapPlugin_la_SOURCES = cppapi/remap_plugin/RemapPlugin.cc
+cppapi_ServerResponse_la_SOURCES = cppapi/serverresponse/ServerResponse.cc
+cppapi_StatExample_la_SOURCES = cppapi/stat_example/StatExample.cc
+cppapi_TimeoutExamplePlugin_la_SOURCES = cppapi/timeout_example/TimeoutExamplePlugin.cc
+cppapi_TransactionHookPlugin_la_SOURCES = cppapi/transactionhook/TransactionHookPlugin.cc
+cppapi_WebSocket_la_SOURCES = cppapi/websocket/WebSocket.cc cppapi/websocket/WSBuffer.cc
+cppapi_boom_la_SOURCES = cppapi/boom/boom.cc
+cppapi_intercept_la_SOURCES = cppapi/intercept/intercept.cc
+
+cppapi_AsyncHttpFetchStreaming_la_LIBADD = $(libatscppai)
+cppapi_AsyncHttpFetch_la_LIBADD = $(libatscppai)
+cppapi_AsyncTimer_la_LIBADD = $(libatscppai)
+cppapi_ClientRedirect_la_LIBADD = $(libatscppai)
+cppapi_ClientRequest_la_LIBADD = $(libatscppai)
+cppapi_CustomErrorRemapPlugin_la_LIBADD = $(libatscppai)
+cppapi_CustomResponse_la_LIBADD = $(libatscppai)
+cppapi_GlobalHookPlugin_la_LIBADD = $(libatscppai)
+cppapi_GzipTransformationPlugin_la_LIBADD = $(libatscppai)
+cppapi_HelloWorldPlugin_la_LIBADD = $(libatscppai)
+cppapi_InternalTransactionHandling_la_LIBADD = $(libatscppai)
+cppapi_LoggerExample_la_LIBADD = $(libatscppai)
+cppapi_MultipleTransactionHookPlugins_la_LIBADD = $(libatscppai)
+cppapi_NullTransformationPlugin_la_LIBADD = $(libatscppai)
+cppapi_PostBuffer_la_LIBADD = $(libatscppai)
+cppapi_RemapPlugin_la_LIBADD = $(libatscppai)
+cppapi_ServerResponse_la_LIBADD = $(libatscppai)
+cppapi_StatExample_la_LIBADD = $(libatscppai)
+cppapi_TimeoutExamplePlugin_la_LIBADD = $(libatscppai)
+cppapi_TransactionHookPlugin_la_LIBADD = $(libatscppai)
+cppapi_WebSocket_la_LIBADD = $(libatscppai)
+cppapi_boom_la_LIBADD = $(libatscppai)
+cppapi_intercept_la_LIBADD = $(libatscppai)
 
 tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
 	$(CC_Clang_Tidy)
+
