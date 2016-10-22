@@ -1851,7 +1851,6 @@ AC_CONFIG_FILES([
   cmd/traffic_via/Makefile
   cmd/traffic_wccp/Makefile
   doc/Makefile
-  example/Makefile
   iocore/Makefile
   iocore/aio/Makefile
   iocore/cache/Makefile
@@ -1880,10 +1879,6 @@ AC_CONFIG_FILES([
   mgmt/cluster/Makefile
   mgmt/utils/Makefile
   plugins/Makefile
-  plugins/authproxy/Makefile
-  plugins/background_fetch/Makefile
-  plugins/conf_remap/Makefile
-  plugins/esi/Makefile
   plugins/generator/Makefile
   plugins/gzip/Makefile
   plugins/header_rewrite/Makefile

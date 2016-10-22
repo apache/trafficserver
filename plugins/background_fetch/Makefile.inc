@@ -14,13 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += plugins/background_fetch/background_fetch.la
 
-pkglib_LTLIBRARIES = background_fetch.la
-background_fetch_la_SOURCES = background_fetch.cc headers.cc rules.cc configs.cc
-background_fetch_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+plugins_background_fetch_background_fetch_la_SOURCES =
+	plugins/background_fetch/background_fetch.cc
+	plugins/background_fetch/configs.cc
+	plugins/background_fetch/configs.h
+	plugins/background_fetch/headers.cc
+	plugins/background_fetch/headers.h
+	plugins/background_fetch/rules.cc
+	plugins/background_fetch/rules.h
 
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+plugins_background_fetch_background_fetch_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+plugins_background_fetch_background_fetch_la_CPPFLAGS = $(TS_PLUGIN_CPPFLAGS)

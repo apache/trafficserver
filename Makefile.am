@@ -23,14 +23,17 @@ ACLOCAL_AMFLAGS = -I build
 
 export CCACHE_BASEDIR
 
+pkglib_LTLIBRARIES =
+noinst_LTLIBRARIES =
+check_PROGRAMS =
+
 # TODO: There's still some weirdness in the dependencies between proxy
 # and mgmt, hence we have to build proxy/hdrs first.
 
 # proxy/api/ts has to be built first, since so much of libraries and "core
 # depends on the generates ts/ts.h include file.
 
-SUBDIRS = proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy cmd plugins tools example rc doc
-
+SUBDIRS = proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy cmd plugins tools rc doc
 
 DIST_BUILD_USER=`id -nu`
 DIST_BUILD_USER_GROUP=`id -ng`
@@ -160,3 +163,18 @@ help:
 	@echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag'
 	@echo 'release          recreate a signed release source package and a signed git tag'
 	@echo 'tidy             run clang-tidy in fix-it mode'
+
+include example/Makefile.inc
+
+include plugins/authproxy/Makefile.inc
+include plugins/background_fetch/Makefile.inc
+include plugins/conf_remap/Makefile.inc
+include plugins/esi/Makefile.inc
+
+include build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)
+	$(CC_Clang_Tidy)
+
+# vim: ft=make sw=8 ts=4 noet:
