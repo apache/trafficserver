@@ -14,13 +14,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-
-pkglib_LTLIBRARIES = stats_over_http.la
-stats_over_http_la_SOURCES = stats_over_http.c
-stats_over_http_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+pkglib_LTLIBRARIES += gzip/gzip.la
+gzip_gzip_la_SOURCES = gzip/gzip.cc gzip/configuration.cc gzip/misc.cc

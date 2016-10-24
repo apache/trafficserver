@@ -14,34 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-
-pkglib_LTLIBRARIES = header_rewrite.la
-header_rewrite_la_SOURCES = \
-  condition.cc \
-  conditions.cc \
-  expander.cc \
-  factory.cc \
-  header_rewrite.cc \
-  lulu.cc \
-  operator.cc \
-  operators.cc \
-  parser.cc \
-  regex_helper.cc \
-  resources.cc \
-  ruleset.cc \
-  statement.cc
-
-header_rewrite_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-header_rewrite_la_LIBADD = $(GEO_LIBS)
-
-check_PROGRAMS = header_rewrite_test
-header_rewrite_test_SOURCES = parser.cc header_rewrite_test.cc
-header_rewrite_test_CXXFLAGS = $(AM_CXXFLAGS)
-
-TESTS = $(check_PROGRAMS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+pkglib_LTLIBRARIES += authproxy/authproxy.la
+authproxy_authproxy_la_SOURCES = \
+	authproxy/authproxy.cc \
+	authproxy/utils.cc \
+	authproxy/utils.h

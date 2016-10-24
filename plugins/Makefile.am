@@ -16,23 +16,39 @@
 
 # Add new plugins in alphabetic order, but keep experimental always at the bottom.
 
-SUBDIRS = \
-  authproxy \
-  background_fetch \
-  conf_remap \
-  esi \
-  generator \
-  gzip \
-  header_rewrite \
-  healthchecks \
-  libloader \
-  regex_remap \
-  regex_revalidate \
-  s3_auth \
-  stats_over_http \
-  tcpinfo \
-  xdebug
+include $(top_srcdir)/build/plugins.mk
+include $(top_srcdir)/build/tidy.mk
+
+check_PROGRAMS =
+noinst_LTLIBRARIES =
+pkglib_LTLIBRARIES =
+
+SUBDIRS =
+
+AM_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
 if BUILD_EXPERIMENTAL_PLUGINS
 SUBDIRS += experimental
 endif
+
+include authproxy/Makefile.inc
+include background_fetch/Makefile.inc
+include conf_remap/Makefile.inc
+include esi/Makefile.inc
+include generator/Makefile.inc
+include gzip/Makefile.inc
+include header_rewrite/Makefile.inc
+include healthchecks/Makefile.inc
+include libloader/Makefile.inc
+include regex_remap/Makefile.inc
+include regex_revalidate/Makefile.inc
+include s3_auth/Makefile.inc
+include stats_over_http/Makefile.inc
+include tcpinfo/Makefile.inc
+include xdebug/Makefile.inc
+
+TESTS = $(check_PROGRAMS)
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)
+	$(CC_Clang_Tidy)

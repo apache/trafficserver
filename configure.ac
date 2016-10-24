@@ -1879,21 +1879,6 @@ AC_CONFIG_FILES([
   mgmt/cluster/Makefile
   mgmt/utils/Makefile
   plugins/Makefile
-  plugins/authproxy/Makefile
-  plugins/background_fetch/Makefile
-  plugins/conf_remap/Makefile
-  plugins/esi/Makefile
-  plugins/generator/Makefile
-  plugins/gzip/Makefile
-  plugins/header_rewrite/Makefile
-  plugins/healthchecks/Makefile
-  plugins/libloader/Makefile
-  plugins/regex_remap/Makefile
-  plugins/regex_revalidate/Makefile
-  plugins/s3_auth/Makefile
-  plugins/stats_over_http/Makefile
-  plugins/tcpinfo/Makefile
-  plugins/xdebug/Makefile
   plugins/experimental/Makefile
   plugins/experimental/acme/Makefile
   plugins/experimental/balancer/Makefile
