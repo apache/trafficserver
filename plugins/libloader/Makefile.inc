@@ -14,14 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += libloader/libloader.la
 
-pkglib_LTLIBRARIES = xdebug.la
-xdebug_la_SOURCES = xdebug.cc
-xdebug_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+libloader_libloader_la_SOURCES = \
+	libloader/libloader.c
+	libloader/libloader.h

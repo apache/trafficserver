@@ -14,13 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-
-pkglib_LTLIBRARIES = regex_revalidate.la
-regex_revalidate_la_SOURCES = regex_revalidate.c
-regex_revalidate_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+pkglib_LTLIBRARIES += background_fetch/background_fetch.la
+background_fetch_background_fetch_la_SOURCES = \
+	background_fetch/background_fetch.cc
+	background_fetch/configs.cc
+	background_fetch/configs.h
+	background_fetch/headers.cc
+	background_fetch/headers.h
+	background_fetch/rules.cc
+	background_fetch/rules.h

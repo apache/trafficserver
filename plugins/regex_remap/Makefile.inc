@@ -14,17 +14,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-
-if BUILD_HEALTHCHECK_PLUGIN
-
-pkglib_LTLIBRARIES = healthchecks.la
-healthchecks_la_SOURCES = healthchecks.c
-healthchecks_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-
-endif
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+pkglib_LTLIBRARIES += regex_remap/regex_remap.la
+regex_remap_regex_remap_la_SOURCES = regex_remap/regex_remap.cc

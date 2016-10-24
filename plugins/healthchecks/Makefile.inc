@@ -14,14 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+if BUILD_HEALTHCHECK_PLUGIN
 
-pkglib_LTLIBRARIES = tcpinfo.la
-tcpinfo_la_SOURCES = tcpinfo.cc
-tcpinfo_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+pkglib_LTLIBRARIES += healthchecks/healthchecks.la
+healthchecks_healthchecks_la_SOURCES = healthchecks/healthchecks.c
 
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+endif

@@ -14,13 +14,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-
-pkglib_LTLIBRARIES = gzip.la
-gzip_la_SOURCES = gzip.cc configuration.cc misc.cc
-gzip_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+pkglib_LTLIBRARIES += regex_revalidate/regex_revalidate.la
+regex_revalidate_regex_revalidate_la_SOURCES = regex_revalidate/regex_revalidate.c
