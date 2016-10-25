@@ -341,10 +341,8 @@ struct FD {
   unsigned int ftp_peer_addr;
   unsigned short ftp_peer_port;
   unsigned long range_bytes;
-  unsigned long ed;
-  unsigned long sa;
-  int   req_sa;
-  int   req_ed;
+  unsigned long range_end;
+  unsigned long range_start;
   int   all_length;
 
   void
@@ -362,10 +360,8 @@ struct FD {
     length      = 0;
     range       = 0;
     range_bytes = 0;
-    sa          = 0;
-    ed          = 0;
-    req_sa      = 0;
-    req_ed      = 0;
+    range_start = 0;
+    range_end   = 0;
 
     if (!urls_mode) {
       response = NULL;
@@ -699,11 +695,11 @@ send_response(int sock)
       if (fd[sock].range) {
         char buff[1024];
         memset(buff, 0, 1024);
-        if (fd[sock].ed > fd[sock].sa) {
-          snprintf(buff, 1024, "Content-Range: bytes %lu-%lu/%d", fd[sock].sa, 
-            fd[sock].ed, fd[sock].all_length);
+        if (fd[sock].range_end > fd[sock].range_start) {
+          snprintf(buff, 1024, "Content-Range: bytes %lu-%lu/%d", fd[sock].range_start, 
+            fd[sock].range_end, fd[sock].all_length);
         } else {
-          snprintf(buff, 1024, "Content-Range: bytes %lu-%d/%d", fd[sock].sa, 
+          snprintf(buff, 1024, "Content-Range: bytes %lu-%d/%d", fd[sock].range_start, 
             fd[sock].all_length, fd[sock].all_length);       
         }
         print_len = sprintf(header, "HTTP/1.1 206 Partial-Content\r\n"
@@ -809,7 +805,7 @@ send_response(int sock)
     }
 
     if (fd[sock].range) {
-      ink_assert(err <= (int)(fd[sock].ed - fd[sock].sa + 1));
+      ink_assert(err <= (int)(fd[sock].range_end - fd[sock].range_start + 1));
     }
 
     new_tbytes += err;
@@ -1059,17 +1055,17 @@ read_request(int sock)
           }
           if (range) {
             fd[sock].range = 1;
-            if (sscanf(range, "Range: bytes=%lu-%lu", &fd[sock].sa, &fd[sock].ed) == 2) {
-              fd[sock].range_bytes = fd[sock].ed - fd[sock].sa + 1;
-            } else if (sscanf(range, "Range: bytes=%lu-", &fd[sock].sa) == 1) {
-              fd[sock].range_bytes = length - fd[sock].sa + 1;  
+            if (sscanf(range, "Range: bytes=%lu-%lu", &fd[sock].range_start, &fd[sock].range_end) == 2) {
+              fd[sock].range_bytes = fd[sock].range_end - fd[sock].range_start + 1;
+            } else if (sscanf(range, "Range: bytes=%lu-", &fd[sock].range_start) == 1) {
+              fd[sock].range_bytes = length - fd[sock].range_start + 1;  
             } else {
               if (verbose)
                  printf("unvalid 206");
             }
             ims = NULL;
             if (verbose) {
-              printf("sending Range: 206 Partial %lu-%lu\n", fd[sock].sa, fd[sock].ed); 
+              printf("sending Range: 206 Partial %lu-%lu\n", fd[sock].range_start, fd[sock].range_end); 
             }
           }
 
@@ -2398,7 +2394,7 @@ read_response(int sock)
           }
         }
         printf("error response %d after %dms: '%s':'%s' %lu-%lu\n", sock, (int)elapsed_from_start(sock), fd[sock].base_url,
-               fd[sock].req_header, fd[sock].sa, fd[sock].ed);
+               fd[sock].req_header, fd[sock].range_start, fd[sock].range_end);
       }
       return read_response_error(sock);
     }
@@ -2768,10 +2764,10 @@ make_bfc_client(unsigned int addr, int port)
         }
 
         fd[sock].response_length = tmp[0];
-        fd[sock].sa              = tmp[1] > tmp[2] ? tmp[2] : tmp[1];
-        fd[sock].ed              = tmp[1] < tmp[2] ? tmp[2] : tmp[1];
-        ink_assert((int)(fd[sock].ed - fd[sock].sa + 1) >= 100); 
-        snprintf(rbuf, 1024, "Range: bytes=%lu-%lu\r\n", fd[sock].sa, fd[sock].ed);
+        fd[sock].range_start              = tmp[1] > tmp[2] ? tmp[2] : tmp[1];
+        fd[sock].range_end              = tmp[1] < tmp[2] ? tmp[2] : tmp[1];
+        ink_assert((int)(fd[sock].range_end - fd[sock].range_start + 1) >= 100); 
+        snprintf(rbuf, 1024, "Range: bytes=%lu-%lu\r\n", fd[sock].range_start, fd[sock].range_end);
       }
     } else {
       if (!range_model) {
@@ -2794,10 +2790,10 @@ make_bfc_client(unsigned int addr, int port)
         }   
 
         fd[sock].response_length = tmp[0];
-        fd[sock].sa              = tmp[1] > tmp[2] ? tmp[2] : tmp[1];
-        fd[sock].ed              = tmp[1] < tmp[2] ? tmp[2] : tmp[1];
-        ink_assert((int)(fd[sock].ed - fd[sock].sa + 1) >= 100);
-        snprintf(rbuf, 1024, "Range: bytes=%lu-%lu\r\n", fd[sock].sa, fd[sock].ed);
+        fd[sock].range_start              = tmp[1] > tmp[2] ? tmp[2] : tmp[1];
+        fd[sock].range_end              = tmp[1] < tmp[2] ? tmp[2] : tmp[1];
+        ink_assert((int)(fd[sock].range_end - fd[sock].range_start + 1) >= 100);
+        snprintf(rbuf, 1024, "Range: bytes=%lu-%lu\r\n", fd[sock].range_start, fd[sock].range_end);
       }
     }
   } else {
@@ -2919,7 +2915,7 @@ make_bfc_client(unsigned int addr, int port)
   }
 
   if (range_model) {
-    fd[sock].response_length = fd[sock].ed - fd[sock].sa + 1;
+    fd[sock].response_length = fd[sock].range_end - fd[sock].range_start + 1;
     ink_assert(fd[sock].response_length > 0);
   }
 
