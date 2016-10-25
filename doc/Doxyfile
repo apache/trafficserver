@@ -753,7 +753,7 @@ WARN_LOGFILE           =
 
 INPUT                  = mainpage.doc \
                          ../iocore \
-                         ../lib/atscppapi/src/include/atscppapi \
+                         ../lib/cppapi/include/atscppapi \
                          ../lib/records \
                          ../lib/ts \
                          ../lib/tsconfig \

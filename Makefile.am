@@ -121,7 +121,7 @@ clang-format-iocore:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/iocore
 
 clang-format-lib:
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/atscppapi
+	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/cppapi
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/bindings
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/raft
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/records
