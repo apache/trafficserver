@@ -99,7 +99,7 @@ esi_esi_la_SOURCES =  \
 
 esi_esi_la_CPPFLAGS = $(ESI_CPPFLAGS)
 esi_esi_la_CXXFLAGS = $(ESI_CXXFLAGS)
-esi_esi_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+esi_esi_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 esi_esi_la_LIBADD = esi/libesicore.la
 
 esi_combo_handler_la_SOURCES = \
@@ -109,7 +109,7 @@ esi_combo_handler_la_SOURCES = \
 
 esi_combo_handler_la_CPPFLAGS = $(ESI_CPPFLAGS)
 esi_combo_handler_la_CXXFLAGS = $(ESI_CXXFLAGS)
-esi_combo_handler_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+esi_combo_handler_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 esi_combo_handler_la_LIBADD = esi/libesicore.la
 
 esi_docnode_test_CPPFLAGS = $(ESI_CPPFLAGS)

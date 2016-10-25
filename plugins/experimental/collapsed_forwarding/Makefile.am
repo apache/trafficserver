@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = collapsed_forwarding.la
 collapsed_forwarding_la_SOURCES = collapsed_forwarding.cc
-collapsed_forwarding_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+collapsed_forwarding_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

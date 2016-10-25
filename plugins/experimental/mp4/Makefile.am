@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = mp4.la
 mp4_la_SOURCES = mp4.cc mp4_common.h mp4_meta.cc mp4_meta.h
-mp4_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+mp4_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

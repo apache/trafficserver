@@ -16,7 +16,9 @@
 
 # plugins.mk: Common automake build variables for Traffic Server plugins.
 
-TS_PLUGIN_LDFLAGS = \
+# Default plugin LDFLAGS. We don't use TS_PLUGIN_LDFLAGS because
+# that is an automake canonical variable name.
+TS_PLUGIN_LD_FLAGS = \
   -module \
   -shared \
   -avoid-version \

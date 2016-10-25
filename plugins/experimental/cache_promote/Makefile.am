@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = cache_promote.la
 cache_promote_la_SOURCES = cache_promote.cc
-cache_promote_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+cache_promote_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

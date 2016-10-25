@@ -25,7 +25,7 @@ check_PROGRAMS = test_sslheaders
 libsslhdr_la_SOURCES = sslheaders.h expand.cc util.cc
 
 sslheaders_la_SOURCES = sslheaders.cc sslheaders.h
-sslheaders_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+sslheaders_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 sslheaders_la_LIBADD = libsslhdr.la
 
 test_sslheaders_SOURCES = test_sslheaders.cc sslheaders.h

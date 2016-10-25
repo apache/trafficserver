@@ -19,7 +19,7 @@ include $(top_srcdir)/build/plugins.mk
 pkglib_LTLIBRARIES = hipes.la
 
 hipes_la_SOURCES = hipes.cc
-hipes_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+hipes_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 
