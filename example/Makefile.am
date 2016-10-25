@@ -20,7 +20,7 @@ include $(top_srcdir)/build/tidy.mk
 AM_CXXFLAGS += -Wno-unused-variable
 AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
-libatscppai = $(top_builddir)/lib/atscppapi/src/libatscppapi.la
+libatscppai = $(top_builddir)/lib/cppapi/libatscppapi.la
 
 example_Plugins = \
 	add-header.la \

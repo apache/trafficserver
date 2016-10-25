@@ -27,8 +27,8 @@ TS_PLUGIN_LD_FLAGS = \
 TS_PLUGIN_CPPFLAGS = \
   -I$(top_builddir)/proxy/api \
   -I$(top_srcdir)/proxy/api \
-  -I$(top_srcdir)/lib/atscppapi/src/include \
-  -I$(top_builddir)/lib/atscppapi/src/include \
+  -I$(top_srcdir)/lib/cppapi/include \
+  -I$(top_builddir)/lib/cppapi/include \
   -I$(top_srcdir)/lib
 
 # Provide a default AM_CPPFLAGS. Automake handles this correctly, but libtool

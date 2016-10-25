@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = ts records tsconfig bindings atscppapi
+SUBDIRS = ts records tsconfig bindings cppapi
 
 if BUILD_PERL_LIB
 SUBDIRS += perl
