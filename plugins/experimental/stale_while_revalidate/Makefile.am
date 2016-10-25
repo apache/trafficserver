@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = stale_while_revalidate.la
 stale_while_revalidate_la_SOURCES = stale_while_revalidate.c
-stale_while_revalidate_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+stale_while_revalidate_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

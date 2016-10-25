@@ -29,7 +29,7 @@ inliner_la_SOURCES = \
   inliner-handler.cc \
   ts.cc
 
-inliner_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+inliner_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 
 include $(top_srcdir)/build/tidy.mk

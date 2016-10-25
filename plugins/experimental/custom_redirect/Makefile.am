@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = custom_redirect.la
 custom_redirect_la_SOURCES = custom_redirect.cc
-custom_redirect_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+custom_redirect_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 
 include $(top_srcdir)/build/tidy.mk

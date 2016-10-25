@@ -29,7 +29,7 @@ multiplexer_la_SOURCES = \
   post.cc \
   ts.cc
 
-multiplexer_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+multiplexer_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

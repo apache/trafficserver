@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = metalink.la
 metalink_la_SOURCES = metalink.cc
-metalink_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+metalink_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

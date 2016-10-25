@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = cachekey.la
 cachekey_la_SOURCES = cachekey.cc common.cc configs.cc pattern.cc plugin.cc
-cachekey_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+cachekey_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 VIRTUALENV_DIR = ../../../ci/tsqa/virtualenv
 tsqa: $(VIRTUALENV_DIR)

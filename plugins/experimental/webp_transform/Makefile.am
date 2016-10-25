@@ -26,7 +26,7 @@ pkglib_LTLIBRARIES = WebpTransform.la
 
 WebpTransform_la_SOURCES = ImageTransform.cc
 WebpTransform_la_LDFLAGS = \
-  $(TS_PLUGIN_LDFLAGS) \
+  $(TS_PLUGIN_LD_FLAGS) \
   -L$(top_builddir)/lib/atscppapi/src
 WebpTransform_la_LIBADD = \
   -latscppapi \

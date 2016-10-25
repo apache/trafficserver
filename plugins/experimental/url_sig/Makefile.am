@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = url_sig.la
 url_sig_la_SOURCES = url_sig.c
-url_sig_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+url_sig_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

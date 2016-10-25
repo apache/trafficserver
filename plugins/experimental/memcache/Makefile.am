@@ -32,7 +32,7 @@ pkglib_LTLIBRARIES = tsmemcache.la
 tsmemcache_la_SOURCES = \
   tsmemcache.cc
 
-tsmemcache_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+tsmemcache_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

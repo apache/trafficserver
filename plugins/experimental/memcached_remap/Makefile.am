@@ -22,7 +22,7 @@ AM_CXXFLAGS += $(LIBMEMCACHED_CFLAGS)
 
 pkglib_LTLIBRARIES = memcached_remap.la
 memcached_remap_la_SOURCES = memcached_remap.cc
-memcached_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+memcached_remap_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 memcached_remap_la_LIBADD = $(LIBMEMCACHED_LIBS)
 
 endif

@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = geoip_acl.la
 geoip_acl_la_SOURCES = acl.cc geoip_acl.cc
-geoip_acl_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+geoip_acl_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 geoip_acl_la_LIBADD = $(GEO_LIBS)
 
 include $(top_srcdir)/build/tidy.mk

@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = header_normalize.la
 header_normalize_la_SOURCES = header_normalize.cc
-header_normalize_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+header_normalize_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

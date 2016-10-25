@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = hook-trace.la
 hook_trace_la_SOURCES = hook-trace.cc
-hook_trace_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+hook_trace_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

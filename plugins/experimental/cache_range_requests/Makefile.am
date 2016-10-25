@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = cache_range_requests.la
 cache_range_requests_la_SOURCES = cache_range_requests.cc
-cache_range_requests_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+cache_range_requests_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

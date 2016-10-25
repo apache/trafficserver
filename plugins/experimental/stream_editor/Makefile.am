@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = stream_editor.la
 stream_editor_la_SOURCES = stream_editor.cc
-stream_editor_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+stream_editor_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

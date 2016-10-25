@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = epic.la
 epic_la_SOURCES = epic.cc
-epic_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+epic_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 
 include $(top_srcdir)/build/tidy.mk

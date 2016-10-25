@@ -51,7 +51,7 @@ tslua_la_SOURCES = \
   ts_lua_fetch.c \
   ts_lua_constant.c
 
-tslua_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+tslua_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

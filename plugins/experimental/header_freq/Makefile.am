@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = header_freq.la
 header_freq_la_SOURCES = header_freq.cc
-header_freq_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+header_freq_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 
 include $(top_srcdir)/build/tidy.mk

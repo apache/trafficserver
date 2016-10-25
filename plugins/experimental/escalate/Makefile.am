@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = escalate.la
 escalate_la_SOURCES = escalate.cc
-escalate_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+escalate_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 
 include $(top_srcdir)/build/tidy.mk
