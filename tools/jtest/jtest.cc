@@ -2778,11 +2778,13 @@ make_bfc_client(unsigned int addr, int port)
         tmp[2] = ((int)(drand48() * 1000000)) % (tmp[0] - 1 - 0 + 1) + tmp[1] + 100;
 
         if (tmp[0] > 100) {
-          if (tmp[0] <= tmp[2])
+          if (tmp[0] <= tmp[2]) {
             tmp[2] = tmp[0] - 1;
+          }
 
-          if (tmp[2] - tmp[1] < 100)
+          if (tmp[2] - tmp[1] < 100) {
             tmp[1] = tmp[2] - 100;
+          }
         } else {
           tmp[1] = 0;
           tmp[2] = 99;
