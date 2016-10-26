@@ -617,11 +617,7 @@ VMap::rl_checkGlobConflict(char *virt_ip)
   }
 
   if (ink_hash_table_lookup(our_map, virt_ip, &hash_value) != 0) {
-    if (in_ext_map) {
-      ret = true;
-    } else {
-      ret = false;
-    }
+    ret = false;
   }
 
   return ret;
