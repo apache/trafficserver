@@ -481,7 +481,8 @@ NetAccept::acceptLoopEvent(int event, Event *e)
 //
 //
 
-NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt) : Continuation(NULL), period(0), ifd(NO_FD), opt(_opt)
+NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt)
+  : Continuation(NULL), period(0), accept_fn(NULL), ifd(NO_FD), opt(_opt)
 {
 }
 
