@@ -26,6 +26,8 @@
 #include "ts/InkErrno.h"
 #include "Log.h"
 
+#include <termios.h>
+
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 
