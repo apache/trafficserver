@@ -190,12 +190,9 @@ ConfigProcessor::release(unsigned int id, ConfigInfo *info)
 {
   int idx;
 
-  ink_assert(id != 0);
-  ink_assert(id <= MAX_CONFIGS);
-
   if (id == 0 || id > MAX_CONFIGS) {
     // nothing to delete since we have an invalid index
-    return;
+    ink_abort("released an invalid id '%u'", id);
   }
 
   idx = id - 1;
