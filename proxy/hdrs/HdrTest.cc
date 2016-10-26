@@ -371,7 +371,7 @@ HdrTest::test_url()
     "/finance/external/cbsm/*http://cbs.marketwatch.com/archive/19990713/news/current/net.htx?source=blq/yhoo&dist=yhoo",
     "http://a.b.com/xx.jpg?newpath=http://bob.dave.com"};
 
-  static char const *bad[] = {
+  static const char *bad[] = {
     "http://[1:2:3:4:5:6:7:8:9]",
     "http://1:2:3:4:5:6:7:8:A:B",
     "http://bob.com[::1]",
@@ -439,7 +439,7 @@ HdrTest::test_url()
   }
 
   for (unsigned i = 0; i < countof(bad); ++i) {
-    char const *x = bad[i];
+    const char *x = bad[i];
     url.create(NULL);
     err = url.parse(x, strlen(x));
     url.destroy();
@@ -455,7 +455,7 @@ HdrTest::test_url()
     Note("URL performance test start");
     for (int j = 0 ; j < 100000 ; ++j) {
       for (i = 0 ; i < countof(strs) ; ++i) {
-        char const* x = strs[i];
+        const char* x = strs[i];
         url.create(NULL);
         err = url.parse(x, strlen(x));
         url.destroy();

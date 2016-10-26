@@ -32,7 +32,7 @@ static int
 proto_stack_cb(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
-  char const *results[10];
+  const char *results[10];
   int count = 0;
   TSDebug(DEBUG_TAG, "Protocols:");
   TSHttpTxnClientProtocolStackGet(txnp, 10, results, &count);

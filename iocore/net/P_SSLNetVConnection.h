@@ -240,7 +240,7 @@ public:
     return ssl ? SSL_get_cipher_name(ssl) : NULL;
   }
 
-  int populate_protocol(char const **results, int n) const;
+  int populate_protocol(const char **results, int n) const;
   const char *protocol_contains(const char *tag) const;
 
   /**
@@ -262,7 +262,7 @@ private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection &operator=(const SSLNetVConnection &);
 
-  const char *map_tls_protocol_to_tag(char const *proto_string) const;
+  const char *map_tls_protocol_to_tag(const char *proto_string) const;
 
   bool sslHandShakeComplete;
   bool sslClientRenegotiationAbort;

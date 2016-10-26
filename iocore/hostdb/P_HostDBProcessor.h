@@ -75,7 +75,7 @@ enum HostDBMark {
 /** Convert a HostDB @a mark to a string.
     @return A static string.
  */
-extern char const *string_for(HostDBMark mark);
+extern const char *string_for(HostDBMark mark);
 
 inline unsigned int
 HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
@@ -399,7 +399,7 @@ struct HostDBMD5 {
 
   INK_MD5 hash; ///< The hash value.
 
-  char const *host_name; ///< Host name.
+  const char *host_name; ///< Host name.
   int host_len;          ///< Length of @a _host_name
   IpAddr ip;             ///< IP address.
   in_port_t port;        ///< IP port (host order).
@@ -419,7 +419,7 @@ struct HostDBMD5 {
   /** Assign a hostname.
       This updates the split DNS data as well.
   */
-  self &set_host(char const *name, int len);
+  self &set_host(const char *name, int len);
 };
 
 //
@@ -482,7 +482,7 @@ struct HostDBContinuation : public Continuation {
   {
     return md5.db_mark == HOSTDB_MARK_SRV;
   }
-  HostDBInfo *lookup_done(IpAddr const &ip, char const *aname, bool round_robin, unsigned int attl, SRVHosts *s = NULL,
+  HostDBInfo *lookup_done(IpAddr const &ip, const char *aname, bool round_robin, unsigned int attl, SRVHosts *s = NULL,
                           HostDBInfo *r = NULL);
   bool do_get_response(Event *e);
   void do_put_response(ClusterMachine *m, HostDBInfo *r, Continuation *cont);

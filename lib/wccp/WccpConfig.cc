@@ -56,29 +56,29 @@ using namespace wccp;
 std::vector<uint32_t> Seed_Router;
 
 // Names used for various elements and properties.
-static char const *const SVC_NAME = "service";
+static const char *const SVC_NAME = "service";
 
-static char const *const SVC_PROP_ID           = "id";
-static char const *const SVC_PROP_TYPE         = "type";
-static char const *const SVC_PROP_PRIORITY     = "priority";
-static char const *const SVC_PROP_PROTOCOL     = "protocol";
-static char const *const SVC_PROP_PRIMARY_HASH = "primary-hash";
-static char const *const SVC_PROP_ALT_HASH     = "alt-hash";
-static char const *const SVC_PROP_PORTS        = "ports";
-static char const *const SVC_PROP_PORT_TYPE    = "port-type";
-static char const *const SVC_PROP_SECURITY     = "security";
-static char const *const SVC_PROP_ROUTERS      = "routers";
-static char const *const SVC_PROP_FORWARD      = "forward";
-static char const *const SVC_PROP_RETURN       = "return";
-static char const *const SVC_PROP_ASSIGN       = "assignment";
-static char const *const SVC_PROP_PROC         = "proc-name";
+static const char *const SVC_PROP_ID           = "id";
+static const char *const SVC_PROP_TYPE         = "type";
+static const char *const SVC_PROP_PRIORITY     = "priority";
+static const char *const SVC_PROP_PROTOCOL     = "protocol";
+static const char *const SVC_PROP_PRIMARY_HASH = "primary-hash";
+static const char *const SVC_PROP_ALT_HASH     = "alt-hash";
+static const char *const SVC_PROP_PORTS        = "ports";
+static const char *const SVC_PROP_PORT_TYPE    = "port-type";
+static const char *const SVC_PROP_SECURITY     = "security";
+static const char *const SVC_PROP_ROUTERS      = "routers";
+static const char *const SVC_PROP_FORWARD      = "forward";
+static const char *const SVC_PROP_RETURN       = "return";
+static const char *const SVC_PROP_ASSIGN       = "assignment";
+static const char *const SVC_PROP_PROC         = "proc-name";
 
-static char const *const SECURITY_PROP_OPTION = "option";
-static char const *const SECURITY_PROP_KEY    = "key";
+static const char *const SECURITY_PROP_OPTION = "option";
+static const char *const SECURITY_PROP_KEY    = "key";
 
 /// Helper structure for processing configuration strings.
 struct CfgString {
-  char const *m_text; ///< Text value of the option.
+  const char *m_text; ///< Text value of the option.
   bool m_found;       ///< String was found.
 };
 typedef std::vector<CfgString> CfgOpts;
@@ -123,7 +123,7 @@ operator<<(std::ostream &out, ValueNamePrinter const &v)
 }
 
 #if 0 /* silence -Wunused-function */
-ts::Errata::Message File_Syntax_Error(int line, char const* text) {
+ts::Errata::Message File_Syntax_Error(int line, const char* text) {
   std::ostringstream out;
   out << "Service configuration error. Line "
       << line
@@ -132,7 +132,7 @@ ts::Errata::Message File_Syntax_Error(int line, char const* text) {
   return ts::Errata::Message(1, LVL_FATAL, out.str());
 }
 
-ts::Errata::Message File_Read_Error(char const* text) {
+ts::Errata::Message File_Read_Error(const char* text) {
   std::ostringstream out;
   out << "Failed to parse configuration file."
       << ": " << text
@@ -187,7 +187,7 @@ Service_Type_Invalid(ts::ConstBuffer const &text, int line)
 }
 
 ts::Errata::Message
-Prop_Not_Found(char const *prop_name, char const *group_name, int line)
+Prop_Not_Found(const char *prop_name, char const *group_name, int line)
 {
   std::ostringstream out;
   out << "Required '" << prop_name << "' property not found in '" << group_name << "' at line " << line << ".";
@@ -215,7 +215,7 @@ Prop_List_Invalid_Type(Value const &elt_cfg, ///< List element.
 }
 
 ts::Errata::Message
-Svc_Prop_Out_Of_Range(char const *name, Value const &elt_cfg, int v, int min, int max)
+Svc_Prop_Out_Of_Range(const char *name, Value const &elt_cfg, int v, int min, int max)
 {
   std::ostringstream out;
   out << "Service property '" << name << "' at line " << elt_cfg.getSourceLine() << " has a value " << v
@@ -224,7 +224,7 @@ Svc_Prop_Out_Of_Range(char const *name, Value const &elt_cfg, int v, int min, in
 }
 
 ts::Errata::Message
-Svc_Prop_Ignored(char const *name, int line)
+Svc_Prop_Ignored(const char *name, int line)
 {
   std::ostringstream out;
   out << "Service property '" << name << "' at line " << line << " ignored because the service is of type standard.";
@@ -298,7 +298,7 @@ Security_Opt_Invalid(ts::ConstBuffer const &text, int line)
 }
 
 ts::Errata::Message
-Value_Malformed(char const *name, char const *text, int line)
+Value_Malformed(const char *name, char const *text, int line)
 {
   std::ostringstream out;
   out << "'" << name << "' value '" << text << "' malformed at line " << line << ".";
@@ -322,7 +322,7 @@ Ignored_Option_Value(ts::ConstBuffer const &text, ts::ConstBuffer const &name, i
 }
 
 ts::Errata::Message
-Ignored_Opt_Errors(char const *name, int line)
+Ignored_Opt_Errors(const char *name, int line)
 {
   std::ostringstream out;
   out << "Errors in  '" << name << "' at line " << line << " were ignored.";
@@ -355,13 +355,13 @@ Port_Type_Invalid(ts::ConstBuffer const &text, int line)
 namespace wccp
 {
 inline bool
-operator==(ts::ConstBuffer const &b, char const *text)
+operator==(ts::ConstBuffer const &b, const char *text)
 {
   return 0 == strncasecmp(text, b._ptr, b._size);
 }
 
 inline bool
-operator==(char const *text, ts::ConstBuffer const &b)
+operator==(const char *text, ts::ConstBuffer const &b)
 {
   return 0 == strncasecmp(text, b._ptr, b._size);
 }
@@ -463,8 +463,8 @@ load_routers(Value const &setting,        ///< Source of addresses.
              )
 {
   ts::Errata zret;
-  char const *text;
-  static char const *const NAME = "IPv4 Address";
+  const char *text;
+  static const char *const NAME = "IPv4 Address";
 
   if (setting.isContainer()) {
     int nr = setting.childCount();
@@ -489,7 +489,7 @@ load_routers(Value const &setting,        ///< Source of addresses.
 }
 
 ts::Errata
-CacheImpl::loadServicesFromFile(char const *path)
+CacheImpl::loadServicesFromFile(const char *path)
 {
   ts::Errata zret;
   int src_line = 0;              // scratch for local source line caching.
@@ -525,7 +525,7 @@ CacheImpl::loadServicesFromFile(char const *path)
   int idx, nsvc;
   for (idx = 0, nsvc = svc_list.childCount(); idx < nsvc; ++idx) {
     int x; // scratch int.
-    char const *md5_key = 0;
+    const char *md5_key = 0;
     ts::ConstBuffer text;
     SecurityOption security_style = SECURITY_NONE;
     bool use_group_local_security = false;

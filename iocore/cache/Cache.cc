@@ -2509,7 +2509,7 @@ LmemHit:
 }
 
 Action *
-Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, char const *hostname, int host_len)
+Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_LOOKUP_FAILED, 0);
@@ -3086,7 +3086,7 @@ rebuild_host_table(Cache *cache)
 
 // if generic_host_rec.vols == NULL, what do we do???
 Vol *
-Cache::key_to_vol(const CacheKey *key, char const *hostname, int host_len)
+Cache::key_to_vol(const CacheKey *key, const char *hostname, int host_len)
 {
   uint32_t h                 = (key->slice32(2) >> DIR_TAG_WIDTH) % VOL_HASH_TABLE_SIZE;
   unsigned short *hash_table = hosttable->gen_host_rec.vol_hash_table;
@@ -3326,7 +3326,7 @@ CacheProcessor::remove(Continuation *cont, const HttpCacheKey *key, bool cluster
 }
 
 CacheDisk *
-CacheProcessor::find_by_path(char const *path, int len)
+CacheProcessor::find_by_path(const char *path, int len)
 {
   if (CACHE_INITIALIZED == initialized) {
     // If no length is passed in, assume it's null terminated.

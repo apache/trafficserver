@@ -1232,15 +1232,15 @@ url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **
 */
 
 ParseResult
-url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *end, bool copy_strings_p)
+url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *end, bool copy_strings_p)
 {
-  char const *cur = *start;
-  char const *base;        // Base for host/port field.
-  char const *bracket = 0; // marker for open bracket, if any.
+  const char *cur = *start;
+  const char *base;        // Base for host/port field.
+  const char *bracket = 0; // marker for open bracket, if any.
   ts::ConstBuffer user, passw, host, port;
   static size_t const MAX_COLON = 8; // max # of valid colons.
   size_t n_colon                = 0;
-  char const *last_colon        = 0; // pointer to last colon seen.
+  const char *last_colon        = 0; // pointer to last colon seen.
 
   // Do a quick check for "://"
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
@@ -1475,7 +1475,7 @@ ParseResult
 url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings)
 {
   const char *cur = *start;
-  char const *host_end;
+  const char *host_end;
 
   // Do a quick check for "://" - our only format check.
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
@@ -1485,8 +1485,8 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
   }
 
   // Grab everything until EOS or slash.
-  char const *base = cur;
-  cur              = static_cast<char const *>(memchr(cur, '/', end - cur));
+  const char *base = cur;
+  cur              = static_cast<const char *>(memchr(cur, '/', end - cur));
   if (cur) {
     host_end = cur;
     ++cur;
@@ -1496,13 +1496,13 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
 
   // Did we find something for the host?
   if (base != host_end) {
-    char const *port = 0;
+    const char *port = 0;
     int port_len     = 0;
 
     // Check for port. Search from the end stopping on the first non-digit
     // or more than 5 digits and a delimiter.
     port                   = host_end - 1;
-    char const *port_limit = host_end - 6;
+    const char *port_limit = host_end - 6;
     if (port_limit < base) {
       port_limit = base; // don't go past start.
     }

@@ -44,16 +44,16 @@ int unescapifyStr(char *buffer);
     @a min and @a max should be at least the size of @c sockaddr_in6 to hold
     an IP address.
 */
-char const *ExtractIpRange(char *match_str, sockaddr *min, sockaddr *max);
+const char *ExtractIpRange(char *match_str, sockaddr *min, sockaddr *max);
 
 /// Convenience overload for IPv4.
-char const *ExtractIpRange(char *match_str,
+const char *ExtractIpRange(char *match_str,
                            in_addr_t *addr1, ///< [in,out] Returned address in host order.
                            in_addr_t *addr2  ///< [in,out] Returned address in host order.
                            );
 
 /// Convenience overload for IPv6.
-inline char const *
+inline const char *
 ExtractIpRange(char *match_str,
                sockaddr_in6 *addr1, ///< [in,out] Returned address in network order.
                sockaddr_in6 *addr2  ///< [in,out] Returned address in network order.

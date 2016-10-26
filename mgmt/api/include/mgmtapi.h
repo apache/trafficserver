@@ -872,13 +872,13 @@ tsapi TSMgmtError TSBounce(unsigned options);
  * @arg dev Target device, specified by path to device.
  * @return Success.
  */
-tsapi TSMgmtError TSStorageDeviceCmdOffline(char const *dev);
+tsapi TSMgmtError TSStorageDeviceCmdOffline(const char *dev);
 
 /* TSLifecycleMessage: Send a lifecycle message to the plugins.
  * @arg tag Alert tag string (null-terminated)
  * @return Success
  */
-tsapi TSMgmtError TSLifecycleMessage(char const *tag, void const *data, size_t data_size);
+tsapi TSMgmtError TSLifecycleMessage(const char *tag, void const *data, size_t data_size);
 
 /* TSGetErrorMessage: convert error id to error message
  * Input:  error id (defined in TSMgmtError)

@@ -142,7 +142,7 @@ static int child_status = 0;
 
 AppVersionInfo appVersionInfo;
 
-static char const localhost[] = "127.0.0.1";
+static const char localhost[] = "127.0.0.1";
 
 static void cop_log(int priority, const char *format, ...) TS_PRINTFLIKE(2, 3);
 
@@ -821,7 +821,7 @@ poll_write(int fd, int timeout)
 }
 
 static int
-open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
+open_socket(int port, const char *ip = NULL, const char *ip_to_bind = NULL)
 {
   int sock = 0;
   struct addrinfo hints;
@@ -935,8 +935,8 @@ getaddrinfo_error:
 }
 
 static int
-test_port(int port, const char *request, char *buffer, int bufsize, int64_t test_timeout, char const *ip = NULL,
-          char const *ip_to_bind = NULL)
+test_port(int port, const char *request, char *buffer, int bufsize, int64_t test_timeout, const char *ip = NULL,
+          const char *ip_to_bind = NULL)
 {
   int64_t start_time, timeout;
   int sock;
@@ -1187,7 +1187,7 @@ test_mgmt_cli_port()
 }
 
 static int
-test_http_port(int port, char *request, int timeout, char const *ip = NULL, char const *ip_to_bind = NULL)
+test_http_port(int port, char *request, int timeout, const char *ip = NULL, char const *ip_to_bind = NULL)
 {
   char buffer[4096];
   char *p;

@@ -66,7 +66,7 @@ public:
 /// Data item for enumerated type config value.
 template <typename T> struct ConfigEnumPair {
   T _value;
-  char const *_key;
+  const char *_key;
 };
 
 /// Convert a string to an enumeration value.
@@ -75,7 +75,7 @@ template <typename T> struct ConfigEnumPair {
 /// If found @a value is set to the corresponding value in @a list.
 template <typename T, unsigned N>
 static bool
-http_config_enum_search(char const *key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
+http_config_enum_search(const char *key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
   for (unsigned i = 0; i < N; ++i) {
@@ -93,7 +93,7 @@ http_config_enum_search(char const *key, const ConfigEnumPair<T> (&list)[N], Mgm
 /// If found @a value is set to the corresponding value in @a list.
 template <typename T, unsigned N>
 static bool
-http_config_enum_read(char const *name, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
+http_config_enum_read(const char *name, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
   char key[512]; // it's just one key - painful UI if keys are longer than this
   if (REC_ERR_OKAY == RecGetRecordString(name, key, sizeof(key))) {
@@ -154,7 +154,7 @@ http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
 // Oh, how I long for when we can use C++eleventy lambdas without compiler problems!
 // I think for 5.0 when the BC stuff is yanked, we should probably revert this to independent callbacks.
 static int
-http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, void *cookie)
+http_server_session_sharing_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   bool valid_p        = true;
   HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);

@@ -59,7 +59,7 @@ int dns_prefer_ipv6                  = 0;
 namespace
 {
 // Currently only used for A and AAAA.
-inline char const *
+inline const char *
 QtypeName(int qtype)
 {
   return T_AAAA == qtype ? "AAAA" : T_A == qtype ? "A" : "*";
@@ -1171,8 +1171,8 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
   if (is_debug_tag_set("dns")) {
     if (is_addr_query(e->qtype)) {
       ip_text_buffer buff;
-      char const *ptr    = "<none>";
-      char const *result = "FAIL";
+      const char *ptr    = "<none>";
+      const char *result = "FAIL";
       if (ent) {
         result = "SUCCESS";
         ptr    = inet_ntop(e->qtype == T_AAAA ? AF_INET6 : AF_INET, ent->ent.h_addr_list[0], buff, sizeof(buff));

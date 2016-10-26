@@ -172,7 +172,7 @@ public:
   UnixNetVConnection();
 
   int
-  populate_protocol(char const **results, int n) const
+  populate_protocol(const char **results, int n) const
   {
     int retval = 0;
     if (n > 0) {

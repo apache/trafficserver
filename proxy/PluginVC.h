@@ -119,7 +119,7 @@ public:
 
   //@{ @name Plugin identity.
   /// Override for @c PluginIdentity.
-  virtual char const *
+  virtual const char *
   getPluginTag() const
   {
     return plugin_tag;
@@ -133,7 +133,7 @@ public:
 
   /// Setter for plugin tag.
   virtual void
-  setPluginTag(char const *tag)
+  setPluginTag(const char *tag)
   {
     plugin_tag = tag;
   }
@@ -184,7 +184,7 @@ private:
   ink_hrtime inactive_timeout_at;
   Event *inactive_event;
 
-  char const *plugin_tag;
+  const char *plugin_tag;
   int64_t plugin_id;
 };
 
@@ -232,7 +232,7 @@ public:
   /// Set the plugin ID for the internal VCs.
   void set_plugin_id(int64_t id);
   /// Set the plugin tag for the internal VCs.
-  void set_plugin_tag(char const *tag);
+  void set_plugin_tag(const char *tag);
 
   // The active vc is handed to the initiator of
   //   connection.  The passive vc is handled to

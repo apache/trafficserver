@@ -224,7 +224,7 @@ struct NetVCOptions {
   /// @name Debugging
   //@{
   /// Convert @a s to its string equivalent.
-  static char const *toString(addr_bind_style s);
+  static const char *toString(addr_bind_style s);
   //@}
 
 private:
@@ -610,7 +610,7 @@ public:
   }
 
   virtual int
-  populate_protocol(char const **results, int n) const
+  populate_protocol(const char **results, int n) const
   {
     return 0;
   }

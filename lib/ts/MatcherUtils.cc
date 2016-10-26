@@ -156,11 +156,11 @@ unescapifyStr(char *buffer)
   return (write - buffer);
 }
 
-char const *
+const char *
 ExtractIpRange(char *match_str, in_addr_t *min, in_addr_t *max)
 {
   IpEndpoint ip_min, ip_max;
-  char const *zret = ExtractIpRange(match_str, &ip_min.sa, &ip_max.sa);
+  const char *zret = ExtractIpRange(match_str, &ip_min.sa, &ip_max.sa);
   if (0 == zret) { // success
     if (ats_is_ip4(&ip_min) && ats_is_ip4(&ip_max)) {
       if (min)

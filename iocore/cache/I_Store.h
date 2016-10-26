@@ -150,7 +150,7 @@ public:
            char *buf, int buflen); // where to store the path
 
   /// Set the hash seed string.
-  void hash_base_string_set(char const *s);
+  void hash_base_string_set(const char *s);
   /// Set the volume number.
   void volume_number_set(int n);
 
@@ -267,8 +267,8 @@ struct Store {
   int write_config_data(int fd) const;
 
   /// Additional configuration key values.
-  static char const VOLUME_KEY[];
-  static char const HASH_BASE_STRING_KEY[];
+  static const char VOLUME_KEY[];
+  static const char HASH_BASE_STRING_KEY[];
 };
 
 // store either free or in the cache, can be stolen for reconfiguration

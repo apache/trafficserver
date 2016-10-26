@@ -437,7 +437,7 @@ make_key(char *hostname, int len, sockaddr const *ip, CongestionControlRecord *r
   if (record->congestion_scheme == PER_HOST && len > 0) {
     ink_code_incr_md5_update(&ctx, hostname, len);
   } else {
-    ink_code_incr_md5_update(&ctx, reinterpret_cast<char const *>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
+    ink_code_incr_md5_update(&ctx, reinterpret_cast<const char *>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
   }
   if (record->port != 0) {
     unsigned short p = record->port;
@@ -462,7 +462,7 @@ make_key(char *hostname, int len, sockaddr const *ip, char *prefix, int prelen, 
   if (hostname && len > 0) {
     ink_code_incr_md5_update(&ctx, hostname, len);
   } else {
-    ink_code_incr_md5_update(&ctx, reinterpret_cast<char const *>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
+    ink_code_incr_md5_update(&ctx, reinterpret_cast<const char *>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
   }
   if (port != 0) {
     unsigned short p = port;

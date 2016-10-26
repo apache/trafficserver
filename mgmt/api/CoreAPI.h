@@ -47,7 +47,7 @@ TSMgmtError Reconfigure();                                                      
 TSMgmtError Restart(unsigned options);                                             // restart TM
 TSMgmtError Bounce(unsigned options);                                              // restart traffic_server
 TSMgmtError StorageDeviceCmdOffline(const char *dev);                              // Storage device operation.
-TSMgmtError LifecycleMessage(char const *tag, void const *data, size_t data_size); // Lifecycle alert to plugins.
+TSMgmtError LifecycleMessage(const char *tag, void const *data, size_t data_size); // Lifecycle alert to plugins.
 
 /***************************************************************************
  * Record Operations

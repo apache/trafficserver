@@ -1218,7 +1218,7 @@ PluginVCCore::set_plugin_id(int64_t id)
 }
 
 void
-PluginVCCore::set_plugin_tag(char const *tag)
+PluginVCCore::set_plugin_tag(const char *tag)
 {
   passive_vc.plugin_tag = active_vc.plugin_tag = tag;
 }

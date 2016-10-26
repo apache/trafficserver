@@ -174,7 +174,7 @@ DNSProcessor::gethostbyname(Continuation *cont, const char *name, int len, Optio
 inline Action *
 DNSProcessor::gethostbyaddr(Continuation *cont, IpAddr const *addr, Options const &opt)
 {
-  return getby(reinterpret_cast<char const *>(addr), 0, T_PTR, cont, opt);
+  return getby(reinterpret_cast<const char *>(addr), 0, T_PTR, cont, opt);
 }
 
 inline DNSProcessor::Options::Options() : handler(0), timeout(0), host_res_style(HOST_RES_IPV4)

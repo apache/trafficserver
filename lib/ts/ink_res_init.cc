@@ -97,9 +97,9 @@ HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER = {HOST_RES_PREFE
 
 HostResPreferenceOrder host_res_default_preference_order;
 
-char const *const HOST_RES_PREFERENCE_STRING[N_HOST_RES_PREFERENCE] = {"only", "client", "ipv4", "ipv6"};
+const char *const HOST_RES_PREFERENCE_STRING[N_HOST_RES_PREFERENCE] = {"only", "client", "ipv4", "ipv6"};
 
-char const *const HOST_RES_STYLE_STRING[] = {"invalid", "IPv4", "IPv4 only", "IPv6", "IPv6 only"};
+const char *const HOST_RES_STYLE_STRING[] = {"invalid", "IPv4", "IPv4 only", "IPv6", "IPv6 only"};
 
 /*%
  * This routine is for closing the socket if a virtual circuit is used and
@@ -561,7 +561,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 }
 
 void
-parse_host_res_preference(char const *value, HostResPreferenceOrder order)
+parse_host_res_preference(const char *value, HostResPreferenceOrder order)
 {
   Tokenizer tokens(";/|");
   // preference from the config string.
@@ -576,7 +576,7 @@ parse_host_res_preference(char const *value, HostResPreferenceOrder order)
     found[i] = false;
 
   for (i = 0; i < n && np < N_HOST_RES_PREFERENCE_ORDER; ++i) {
-    char const *elt = tokens[i];
+    const char *elt = tokens[i];
     // special case none/only because that terminates the sequence.
     if (0 == strcasecmp(elt, HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_NONE])) {
       found[HOST_RES_PREFER_NONE] = true;

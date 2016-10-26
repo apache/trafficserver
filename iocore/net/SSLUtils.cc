@@ -1502,7 +1502,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   STACK_OF(X509_NAME) *ca_list = NULL;
   unsigned char hash_buf[EVP_MAX_MD_SIZE];
   unsigned int hash_len    = 0;
-  char const *setting_cert = sslMultCertSettings ? sslMultCertSettings->cert.get() : NULL;
+  const char *setting_cert = sslMultCertSettings ? sslMultCertSettings->cert.get() : NULL;
 
   // disable selected protocols
   SSL_CTX_set_options(ctx, params->ssl_ctx_options);

@@ -155,7 +155,7 @@ ink_inet_addr(const char *s)
 const char *
 ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
 {
-  char const *zret = 0;
+  const char *zret = 0;
 
   switch (addr->sa_family) {
   case AF_INET:
@@ -172,13 +172,13 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
   return zret;
 }
 
-char const *
+const char *
 ats_ip_family_name(int family)
 {
   return AF_INET == family ? "IPv4" : AF_INET6 == family ? "IPv6" : "Unspec";
 }
 
-char const *
+const char *
 ats_ip_nptop(sockaddr const *addr, char *dst, size_t size)
 {
   char buff[INET6_ADDRPORTSTRLEN];
@@ -332,7 +332,7 @@ ats_ip_to_hex(sockaddr const *src, char *dst, size_t len)
 {
   int zret = 0;
   ink_assert(len);
-  char const *dst_limit = dst + len - 1; // reserve null space.
+  const char *dst_limit = dst + len - 1; // reserve null space.
   if (ats_is_ip(src)) {
     uint8_t const *data = ats_ip_addr8_cast(src);
     for (uint8_t const *src_limit = data + ats_ip_addr_size(src); data < src_limit && dst + 1 < dst_limit; ++data, zret += 2) {
@@ -360,7 +360,7 @@ ats_ip_set(sockaddr *dst, IpAddr const &addr, uint16_t port)
 }
 
 int
-IpAddr::load(char const *text)
+IpAddr::load(const char *text)
 {
   IpEndpoint ip;
   int zret = ats_ip_pton(text, &ip);
@@ -464,7 +464,7 @@ IpAddr::cmp(self const &that) const
 }
 
 int
-ats_ip_getbestaddrinfo(char const *host, IpEndpoint *ip4, IpEndpoint *ip6)
+ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
 {
   int zret = -1;
   int port = 0; // port value to assign if we find an address.
@@ -564,7 +564,7 @@ ats_ip_check_characters(ts::ConstBuffer text)
 {
   bool found_colon = false;
   bool found_hex   = false;
-  for (char const *p = text.data(), *limit = p + text.size(); p < limit; ++p)
+  for (const char *p = text.data(), *limit = p + text.size(); p < limit; ++p)
     if (':' == *p)
       found_colon = true;
     else if ('.' == *p || isdigit(*p)) /* empty */
@@ -579,10 +579,10 @@ ats_ip_check_characters(ts::ConstBuffer text)
 
 // Need to declare this type globally so gcc 4.4 can use it in the countof() template ...
 struct ip_parse_spec {
-  char const *hostspec;
-  char const *host;
-  char const *port;
-  char const *rest;
+  const char *hostspec;
+  const char *host;
+  const char *port;
+  const char *rest;
 };
 
 REGRESSION_TEST(Ink_Inet)(RegressionTest *t, int /* atype */, int *pstatus)

@@ -460,7 +460,7 @@ StorageDeviceCmdOffline(const char *dev)
  * Signal plugins.
  */
 TSMgmtError
-LifecycleMessage(char const *tag, void const *data, size_t data_size)
+LifecycleMessage(const char *tag, void const *data, size_t data_size)
 {
   ink_release_assert(!"Not expected to reach here");
   lmgmt->signalEvent(MGMT_EVENT_LIFECYCLE_MESSAGE, tag);

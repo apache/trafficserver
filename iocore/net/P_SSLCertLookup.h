@@ -91,7 +91,7 @@ struct SSLCertLookup : public ConfigInfo {
       Exact matches have priority, then wildcards. Only destination based matches are checked.
       @return @c A pointer to the matched context, @c NULL if no match is found.
   */
-  SSLCertContext *find(char const *name) const;
+  SSLCertContext *find(const char *name) const;
 
   // Return the last-resort default TLS context if there is no name or address match.
   SSL_CTX *

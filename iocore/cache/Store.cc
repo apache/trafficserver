@@ -36,8 +36,8 @@
 // Store
 //
 
-char const Store::VOLUME_KEY[]           = "volume";
-char const Store::HASH_BASE_STRING_KEY[] = "id";
+const char Store::VOLUME_KEY[]           = "volume";
+const char Store::HASH_BASE_STRING_KEY[] = "id";
 
 static span_error_t
 make_span_error(int error)
@@ -233,7 +233,7 @@ Span::path(char *filename, int64_t *aoffset, char *buf, int buflen)
 }
 
 void
-Span::hash_base_string_set(char const *s)
+Span::hash_base_string_set(const char *s)
 {
   hash_base_string = s ? ats_strdup(s) : NULL;
 }
@@ -330,8 +330,8 @@ Store::read_config()
   char line[1024];
   int len;
   while ((len = ink_file_fd_readline(fd, sizeof(line), line)) > 0) {
-    char const *path;
-    char const *seed = 0;
+    const char *path;
+    const char *seed = 0;
     // update lines
 
     ++ln;
@@ -354,7 +354,7 @@ Store::read_config()
 
     int64_t size   = -1;
     int volume_num = -1;
-    char const *e;
+    const char *e;
     while (0 != (e = tokens.getNext())) {
       if (ParseRules::is_digit(*e)) {
         if ((size = ink_atoi64(e)) <= 0) {
