@@ -58,6 +58,7 @@ struct CacheTestHost {
 };
 
 struct CacheTestHeader {
+  CacheTestHeader() : serial(0) {}
   uint64_t serial;
 };
 
