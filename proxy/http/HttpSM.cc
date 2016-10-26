@@ -3218,11 +3218,9 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
 
-    if (ua_session != NULL) {
-      // The user agent died or aborted.  Check to
-      //  see if we should setup a background fill
-      set_ua_abort(HttpTransact::ABORTED, event);
-    }
+    // The user agent died or aborted.  Check to
+    //  see if we should setup a background fill
+    set_ua_abort(HttpTransact::ABORTED, event);
 
     if (is_bg_fill_necessary(c)) {
       DebugSM("http", "[%" PRId64 "] Initiating background fill", sm_id);
