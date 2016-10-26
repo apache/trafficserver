@@ -47,8 +47,12 @@ should_push(TSHttpTxn txnp)
 {
   TSMBuffer mbuf;
   TSMLoc hdr, url;
-  TSHttpTxnClientReqGet(txnp, &mbuf, &hdr);
-  TSHttpHdrUrlGet(mbuf, hdr, &url);
+  if (TSHttpTxnClientReqGet(txnp, &mbuf, &hdr) != TS_SUCCESS) {
+    return false;
+  }
+  if (TSHttpHdrUrlGet(mbuf, hdr, &url) != TS_SUCCESS) {
+    return false;
+  }
   int len;
   TSUrlHttpQueryGet(mbuf, url, &len);
   TSHandleMLocRelease(mbuf, hdr, url);
