@@ -91,6 +91,7 @@ typedef union {
   typedef int64_t version_type;
   typedef __int128_t data_type;
 #else
+  typedef int64_t version_type;
   typedef int64_t data_type;
 #endif
 
