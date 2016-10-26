@@ -1880,7 +1880,6 @@ AC_CONFIG_FILES([
   plugins/Makefile
   plugins/experimental/Makefile
   plugins/experimental/mysql_remap/Makefile
-  plugins/experimental/sslheaders/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
   proxy/config/Makefile

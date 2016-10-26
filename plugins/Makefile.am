@@ -44,6 +44,7 @@ include tcpinfo/Makefile.inc
 include xdebug/Makefile.inc
 
 if BUILD_EXPERIMENTAL_PLUGINS
+
 include experimental/acme/Makefile.inc
 include experimental/balancer/Makefile.inc
 include experimental/buffer_upload/Makefile.inc
@@ -67,6 +68,7 @@ include experimental/mp4/Makefile.inc
 include experimental/multiplexer/Makefile.inc
 include experimental/remap_purge/Makefile.inc
 include experimental/ssl_cert_loader/Makefile.inc
+include experimental/sslheaders/Makefile.inc
 include experimental/stale_while_revalidate/Makefile.inc
 include experimental/stream_editor/Makefile.inc
 include experimental/ts_lua/Makefile.inc
@@ -90,6 +92,8 @@ endif
 
 SUBDIRS += experimental
 endif
+
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
 TESTS = $(check_PROGRAMS)
 
