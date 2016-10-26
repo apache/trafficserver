@@ -93,7 +93,7 @@ protected:
 class RegexAcl
 {
 public:
-  RegexAcl(Acl *acl) : _extra(NULL), _next(NULL), _acl(acl) {}
+  RegexAcl(Acl *acl) : _rex(NULL), _extra(NULL), _next(NULL), _acl(acl) {}
   const std::string &
   get_regex() const
   {
