@@ -90,7 +90,10 @@ if BUILD_WEBP_TRANSFORM_PLUGIN
 include experimental/webp_transform/Makefile.inc
 endif
 
-SUBDIRS += experimental
+if HAS_MYSQL
+include experimental/mysql_remap/Makefile.inc
+endif
+
 endif
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt

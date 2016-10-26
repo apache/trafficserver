@@ -1878,8 +1878,6 @@ AC_CONFIG_FILES([
   mgmt/cluster/Makefile
   mgmt/utils/Makefile
   plugins/Makefile
-  plugins/experimental/Makefile
-  plugins/experimental/mysql_remap/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
   proxy/config/Makefile
