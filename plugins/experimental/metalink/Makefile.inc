@@ -14,14 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/metalink/metalink.la
 
-pkglib_LTLIBRARIES = cache_key_genid.la
-cache_key_genid_la_SOURCES = cache_key_genid.c
-cache_key_genid_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS) $(LIB_KYOTOCABINET)
-
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+experimental_metalink_metalink_la_SOURCES = \
+  experimental/metalink/metalink.cc

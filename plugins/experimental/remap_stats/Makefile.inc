@@ -14,14 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/remap_stats/remap_stats.la
 
-pkglib_LTLIBRARIES = escalate.la
-escalate_la_SOURCES = escalate.cc
-escalate_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_remap_stats_remap_stats_la_SOURCES = \
+  experimental/remap_stats/remap_stats.c

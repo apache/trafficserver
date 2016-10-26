@@ -14,13 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/collapsed_forwarding/collapsed_forwarding.la
 
-pkglib_LTLIBRARIES = collapsed_connection.la
-collapsed_connection_la_SOURCES = collapsed_connection.cc MurmurHash3.cc
-collapsed_connection_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_collapsed_forwarding_collapsed_forwarding_la_SOURCES = \
+  experimental/collapsed_forwarding/collapsed_forwarding.cc

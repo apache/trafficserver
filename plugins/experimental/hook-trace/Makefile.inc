@@ -14,13 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/hook-trace/hook-trace.la
 
-pkglib_LTLIBRARIES = header_normalize.la
-header_normalize_la_SOURCES = header_normalize.cc
-header_normalize_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_hook_trace_hook_trace_la_SOURCES = \
+  experimental/hook-trace/hook-trace.cc

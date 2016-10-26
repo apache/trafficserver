@@ -14,17 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/geoip_acl/geoip_acl.la
 
-if BUILD_REMAP_STATS_PLUGIN
+experimental_geoip_acl_geoip_acl_la_SOURCES = \
+  experimental/geoip_acl/acl.cc \
+  experimental/geoip_acl/geoip_acl.cc
 
-pkglib_LTLIBRARIES = remap_stats.la
-remap_stats_la_SOURCES = remap_stats.c
-remap_stats_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-endif
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+experimental_geoip_acl_geoip_acl_la_LIBADD = $(GEO_LIBS)

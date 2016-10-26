@@ -14,14 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/cache_promote/cache_promote.la
 
-pkglib_LTLIBRARIES = custom_redirect.la
-custom_redirect_la_SOURCES = custom_redirect.cc
-custom_redirect_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_cache_promote_cache_promote_la_SOURCES = \
+  experimental/cache_promote/cache_promote.cc

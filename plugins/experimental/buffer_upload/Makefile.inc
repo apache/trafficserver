@@ -14,13 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/buffer_upload/buffer_upload.la
 
-pkglib_LTLIBRARIES = cache_range_requests.la
-cache_range_requests_la_SOURCES = cache_range_requests.cc
-cache_range_requests_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_buffer_upload_buffer_upload_la_SOURCES = \
+  experimental/buffer_upload/buffer_upload.cc

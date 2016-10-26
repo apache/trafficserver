@@ -1,3 +1,4 @@
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,13 +15,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+experimental_webp_transform_WebpTransform_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBMAGICKCPP_CFLAGS)
+experimental_webp_transform_WebpTransform_la_CXXFLAGS = $(AM_CXXFLAGS) -Wno-unused-variable
 
-pkglib_LTLIBRARIES = stale_while_revalidate.la
-stale_while_revalidate_la_SOURCES = stale_while_revalidate.c
-stale_while_revalidate_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
+pkglib_LTLIBRARIES += experimental/webp_transform/WebpTransform.la
 
-include $(top_srcdir)/build/tidy.mk
+experimental_webp_transform_WebpTransform_la_SOURCES = \
+  experimental/webp_transform/ImageTransform.cc
 
-tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+experimental_webp_transform_WebpTransform_la_LDFLAGS = \
+  $(TS_PLUGIN_LD_FLAGS) \
+  -L$(top_builddir)/lib/cppapi
+
+experimental_webp_transform_WebpTransform_la_LIBADD = \
+  -latscppapi \
+  $(LIBMAGICKCPP_LIBS)

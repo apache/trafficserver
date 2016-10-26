@@ -14,14 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/collapsed_connection/collapsed_connection.la
 
-pkglib_LTLIBRARIES = hipes.la
-
-hipes_la_SOURCES = hipes.cc
-hipes_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_collapsed_connection_collapsed_connection_la_SOURCES = \
+  experimental/collapsed_connection/collapsed_connection.cc \
+  experimental/collapsed_connection/MurmurHash3.cc

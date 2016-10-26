@@ -14,14 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
 
-pkglib_LTLIBRARIES = balancer.la
-balancer_la_SOURCES = balancer.cc roundrobin.cc hash.cc balancer.h
-balancer_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
+experimental_inliner_inliner_la_CPPFLAGS = $(AM_CPPFLAGS) -DPLUGIN_TAG=\"inliner\"
 
+pkglib_LTLIBRARIES += experimental/inliner/inliner.la
 
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_inliner_inliner_la_SOURCES = \
+  experimental/inliner/ats-inliner.cc \
+  experimental/inliner/cache.cc \
+  experimental/inliner/chunk-decoder.cc \
+  experimental/inliner/fetcher.cc \
+  experimental/inliner/html-parser.cc \
+  experimental/inliner/inliner-handler.cc \
+  experimental/inliner/ts.cc

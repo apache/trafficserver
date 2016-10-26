@@ -14,25 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/stream_editor/stream_editor.la
 
-AM_CPPFLAGS += -DPLUGIN_TAG=\"inliner\"
-
-pkglib_LTLIBRARIES = inliner.la
-
-inliner_la_SOURCES = \
-  ats-inliner.cc \
-  cache.cc \
-  chunk-decoder.cc \
-  fetcher.cc \
-  html-parser.cc \
-  inliner-handler.cc \
-  ts.cc
-
-inliner_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_stream_editor_stream_editor_la_SOURCES = \
+  experimental/stream_editor/stream_editor.cc

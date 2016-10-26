@@ -14,20 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/balancer/balancer.la
 
-if BUILD_MEMCACHED_REMAP_PLUGIN
-
-AM_CXXFLAGS += $(LIBMEMCACHED_CFLAGS)
-
-pkglib_LTLIBRARIES = memcached_remap.la
-memcached_remap_la_SOURCES = memcached_remap.cc
-memcached_remap_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-memcached_remap_la_LIBADD = $(LIBMEMCACHED_LIBS)
-
-endif
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_balancer_balancer_la_SOURCES = \
+  experimental/balancer/balancer.cc\
+  experimental/balancer/roundrobin.cc \
+  experimental/balancer/hash.cc \
+  experimental/balancer/balancer.h

@@ -14,13 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-
-pkglib_LTLIBRARIES = mp4.la
-mp4_la_SOURCES = mp4.cc mp4_common.h mp4_meta.cc mp4_meta.h
-mp4_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+pkglib_LTLIBRARIES += experimental/header_freq/header_freq.la
+experimental_header_freq_header_freq_la_SOURCES = \
+  experimental/header_freq/header_freq.cc

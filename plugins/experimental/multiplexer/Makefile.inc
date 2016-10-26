@@ -14,24 +14,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+experimental_multiplexer_multiplexer_la_CPPFLAGS = $(AM_CPPFLAGS) -DPLUGIN_TAG=\"multiplexer\"
 
-AM_CPPFLAGS += -DPLUGIN_TAG=\"multiplexer\"
+pkglib_LTLIBRARIES += experimental/multiplexer/multiplexer.la
 
-pkglib_LTLIBRARIES = multiplexer.la
-
-multiplexer_la_SOURCES = \
-  ats-multiplexer.cc \
-  chunk-decoder.cc \
-  dispatch.cc \
-  fetcher.cc \
-  original-request.cc \
-  post.cc \
-  ts.cc
-
-multiplexer_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_multiplexer_multiplexer_la_SOURCES = \
+  experimental/multiplexer/ats-multiplexer.cc \
+  experimental/multiplexer/chunk-decoder.cc \
+  experimental/multiplexer/dispatch.cc \
+  experimental/multiplexer/fetcher.cc \
+  experimental/multiplexer/original-request.cc \
+  experimental/multiplexer/post.cc \
+  experimental/multiplexer/ts.cc

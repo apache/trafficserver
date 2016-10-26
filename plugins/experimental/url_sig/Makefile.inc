@@ -14,13 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/url_sig/url_sig.la
 
-pkglib_LTLIBRARIES = collapsed_forwarding.la
-collapsed_forwarding_la_SOURCES = collapsed_forwarding.cc
-collapsed_forwarding_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_url_sig_url_sig_la_SOURCES = \
+  experimental/url_sig/url_sig.c

@@ -14,13 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+experimental_memcached_remap_memcached_remap_la__CXXFLAGS = $(AM_CXXFLAGS) $(LIBMEMCACHED_CFLAGS)
 
-pkglib_LTLIBRARIES = buffer_upload.la
-buffer_upload_la_SOURCES = buffer_upload.cc
-buffer_upload_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
+pkglib_LTLIBRARIES += experimental/memcached_remap/memcached_remap.la
 
-include $(top_srcdir)/build/tidy.mk
+experimental_memcached_remap_memcached_remap_la_SOURCES = \
+  experimental/memcached_remap/memcached_remap.cc
 
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_memcached_remap_memcached_remap_la_LIBADD = $(LIBMEMCACHED_LIBS)

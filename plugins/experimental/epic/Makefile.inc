@@ -14,13 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/epic/epic.la
 
-pkglib_LTLIBRARIES = stream_editor.la
-stream_editor_la_SOURCES = stream_editor.cc
-stream_editor_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_epic_epic_la_SOURCES = \
+  experimental/epic/epic.cc
