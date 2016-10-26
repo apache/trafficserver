@@ -496,6 +496,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         }
         if (!ee || ee != e) {
           e = compressed;
+          ats_free(b);
           goto Lcontinue;
         }
       }
