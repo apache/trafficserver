@@ -684,8 +684,7 @@ IOBufferReader::consume(int64_t n)
 
 TS_INLINE char &IOBufferReader::operator[](int64_t i)
 {
-  static char _error = '\0';
-  IOBufferBlock *b   = block.get();
+  IOBufferBlock *b = block.get();
 
   i += start_offset;
   while (b) {
@@ -696,12 +695,7 @@ TS_INLINE char &IOBufferReader::operator[](int64_t i)
     b = b->next.get();
   }
 
-  ink_assert(!"out of range");
-  if (unlikely(b)) {
-    return *b->start();
-  }
-
-  return _error;
+  ink_release_assert(!"out of range");
 }
 
 TS_INLINE void
