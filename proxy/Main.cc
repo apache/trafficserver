@@ -593,7 +593,7 @@ cmd_list(char * /* cmd ATS_UNUSED */)
 
   Note("Cache Storage:");
   Store tStore;
-  if (tStore.read_config() != NULL) {
+  if (tStore.evaluate_config() != NULL) {
     Note("config read failure");
     return CMD_FAILED;
   } else {

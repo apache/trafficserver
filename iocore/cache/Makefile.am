@@ -64,6 +64,8 @@ libinkcache_a_SOURCES = \
   RamCacheCLFUS.cc \
   RamCacheLRU.cc \
   Store.cc \
+  StoreBindings.cc \
+  StoreBindings.h \
   $(ADD_SRC)
 
 include $(top_srcdir)/build/tidy.mk

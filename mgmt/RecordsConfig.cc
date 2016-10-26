@@ -931,7 +931,7 @@ static const RecordElement RecordsConfig[] =
   //# Cache
   //#
   //##############################################################################
-  {RECT_CONFIG, "proxy.config.cache.storage_filename", RECD_STRING, "storage.config", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cache.store_filename", RECD_STRING, "store.config", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cache.control.filename", RECD_STRING, "cache.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,

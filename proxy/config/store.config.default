@@ -1,0 +1,4 @@
+store {
+    Path = 'var/trafficserver', 
+    Size = '256M'
+}

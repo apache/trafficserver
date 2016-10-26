@@ -988,8 +988,8 @@ fileUpdated(char *fname, bool incVersion)
     mgmt_log("[fileUpdated] vaddrs.config updated\n");
     lmgmt->virt_map->lt_readAListFile(fname);
 
-  } else if (strcmp(fname, "storage.config") == 0) {
-    mgmt_log("[fileUpdated] storage.config changed, need restart auto-rebuild mode\n");
+  } else if (strcmp(fname, "store.config") == 0) {
+    mgmt_log("[fileUpdated] store.config changed, need restart auto-rebuild mode\n");
 
   } else if (strcmp(fname, "icp.config") == 0) {
     lmgmt->signalFileChange("proxy.config.icp.icp_configuration");

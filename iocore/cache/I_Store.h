@@ -258,6 +258,17 @@ struct Store {
   // The number of disks/paths we could actually read and parse.
   unsigned n_disks;
   Span **disk;
+  // Head of the span during evaluation of config file
+  Span *span_head;
+  // Current span during evaluation of config file
+  Span *curr_span; 
+
+  //
+  // returns NULL on success
+  // if fd >= 0 then on failure it returns an error string
+  //            otherwise on failure it returns (char *)-1
+  //
+  const char *evaluate_config();
   //
   // returns NULL on success
   // if fd >= 0 then on failure it returns an error string
