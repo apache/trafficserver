@@ -69,7 +69,7 @@ SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
 
 void
-RecHttpLoadIp(char const *value_name, IpAddr &ip4, IpAddr &ip6)
+RecHttpLoadIp(const char *value_name, IpAddr &ip4, IpAddr &ip6)
 {
   char value[1024];
   ip4.invalidate();
@@ -78,7 +78,7 @@ RecHttpLoadIp(char const *value_name, IpAddr &ip4, IpAddr &ip6)
     Tokenizer tokens(", ");
     int n_addrs = tokens.Initialize(value);
     for (int i = 0; i < n_addrs; ++i) {
-      char const *host = tokens[i];
+      const char *host = tokens[i];
       IpEndpoint tmp4, tmp6;
       // For backwards compatibility we need to support the use of host names
       // for the address to bind.
@@ -104,30 +104,30 @@ RecHttpLoadIp(char const *value_name, IpAddr &ip4, IpAddr &ip6)
   }
 }
 
-char const *const HttpProxyPort::DEFAULT_VALUE = "8080";
+const char *const HttpProxyPort::DEFAULT_VALUE = "8080";
 
-char const *const HttpProxyPort::PORTS_CONFIG_NAME = "proxy.config.http.server_ports";
+const char *const HttpProxyPort::PORTS_CONFIG_NAME = "proxy.config.http.server_ports";
 
 // "_PREFIX" means the option contains additional data.
 // Each has a corresponding _LEN value that is the length of the option text.
 // Options without _PREFIX are just flags with no additional data.
 
-char const *const HttpProxyPort::OPT_FD_PREFIX          = "fd";
-char const *const HttpProxyPort::OPT_OUTBOUND_IP_PREFIX = "ip-out";
-char const *const HttpProxyPort::OPT_INBOUND_IP_PREFIX  = "ip-in";
-char const *const HttpProxyPort::OPT_HOST_RES_PREFIX    = "ip-resolve";
-char const *const HttpProxyPort::OPT_PROTO_PREFIX       = "proto";
+const char *const HttpProxyPort::OPT_FD_PREFIX          = "fd";
+const char *const HttpProxyPort::OPT_OUTBOUND_IP_PREFIX = "ip-out";
+const char *const HttpProxyPort::OPT_INBOUND_IP_PREFIX  = "ip-in";
+const char *const HttpProxyPort::OPT_HOST_RES_PREFIX    = "ip-resolve";
+const char *const HttpProxyPort::OPT_PROTO_PREFIX       = "proto";
 
-char const *const HttpProxyPort::OPT_IPV6                    = "ipv6";
-char const *const HttpProxyPort::OPT_IPV4                    = "ipv4";
-char const *const HttpProxyPort::OPT_TRANSPARENT_INBOUND     = "tr-in";
-char const *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND    = "tr-out";
-char const *const HttpProxyPort::OPT_TRANSPARENT_FULL        = "tr-full";
-char const *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
-char const *const HttpProxyPort::OPT_SSL                     = "ssl";
-char const *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
-char const *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
-char const *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
+const char *const HttpProxyPort::OPT_IPV6                    = "ipv6";
+const char *const HttpProxyPort::OPT_IPV4                    = "ipv4";
+const char *const HttpProxyPort::OPT_TRANSPARENT_INBOUND     = "tr-in";
+const char *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND    = "tr-out";
+const char *const HttpProxyPort::OPT_TRANSPARENT_FULL        = "tr-full";
+const char *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
+const char *const HttpProxyPort::OPT_SSL                     = "ssl";
+const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
+const char *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
+const char *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
 
 // File local constants.
 namespace
@@ -192,10 +192,10 @@ HttpProxyPort::findHttp(Group const &ports, uint16_t family)
   return zret;
 }
 
-char const *
-HttpProxyPort::checkPrefix(char const *src, char const *prefix, size_t prefix_len)
+const char *
+HttpProxyPort::checkPrefix(const char *src, char const *prefix, size_t prefix_len)
 {
-  char const *zret = 0;
+  const char *zret = 0;
   if (0 == strncasecmp(prefix, src, prefix_len)) {
     src += prefix_len;
     if ('-' == *src || '=' == *src) {
@@ -232,7 +232,7 @@ HttpProxyPort::loadDefaultIfEmpty(Group &ports)
 }
 
 bool
-HttpProxyPort::loadValue(Vec<self> &ports, char const *text)
+HttpProxyPort::loadValue(Vec<self> &ports, const char *text)
 {
   unsigned old_port_length = ports.length(); // remember this.
   if (text && *text) {
@@ -240,7 +240,7 @@ HttpProxyPort::loadValue(Vec<self> &ports, char const *text)
     int n_ports = tokens.Initialize(text);
     if (n_ports > 0) {
       for (int p = 0; p < n_ports; ++p) {
-        char const *elt = tokens[p];
+        const char *elt = tokens[p];
         HttpProxyPort entry;
         if (entry.processOptions(elt)) {
           ports.push_back(entry);
@@ -254,14 +254,14 @@ HttpProxyPort::loadValue(Vec<self> &ports, char const *text)
 }
 
 bool
-HttpProxyPort::processOptions(char const *opts)
+HttpProxyPort::processOptions(const char *opts)
 {
   bool zret           = false; // found a port?
   bool af_set_p       = false; // AF explicitly specified?
   bool host_res_set_p = false; // Host resolution order set explicitly?
   bool sp_set_p       = false; // Session protocol set explicitly?
   bool bracket_p      = false; // found an open bracket in the input?
-  char const *value;           // Temp holder for value of a prefix option.
+  const char *value;           // Temp holder for value of a prefix option.
   IpAddr ip;                   // temp for loading IP addresses.
   Vec<char *> values;          // Pointers to single option values.
 
@@ -296,7 +296,7 @@ HttpProxyPort::processOptions(char const *opts)
   }
 
   for (int i = 0, n_items = values.length(); i < n_items; ++i) {
-    char const *item = values[i];
+    const char *item = values[i];
     if (isdigit(item[0])) { // leading digit -> port value
       char *ptr;
       int port = strtoul(item, &ptr, 10);
@@ -420,20 +420,20 @@ HttpProxyPort::processOptions(char const *opts)
 }
 
 void
-HttpProxyPort::processFamilyPreference(char const *value)
+HttpProxyPort::processFamilyPreference(const char *value)
 {
   parse_host_res_preference(value, m_host_res_preference);
 }
 
 void
-HttpProxyPort::processSessionProtocolPreference(char const *value)
+HttpProxyPort::processSessionProtocolPreference(const char *value)
 {
   m_session_protocol_preference.markAllOut();
   globalSessionProtocolNameRegistry.markIn(value, m_session_protocol_preference);
 }
 
 void
-SessionProtocolNameRegistry::markIn(char const *value, SessionProtocolSet &sp_set)
+SessionProtocolNameRegistry::markIn(const char *value, SessionProtocolSet &sp_set)
 {
   int n; // # of tokens
   Tokenizer tokens(" ;|,:");
@@ -441,7 +441,7 @@ SessionProtocolNameRegistry::markIn(char const *value, SessionProtocolSet &sp_se
   n = tokens.Initialize(value);
 
   for (int i = 0; i < n; ++i) {
-    char const *elt = tokens[i];
+    const char *elt = tokens[i];
 
     /// Check special cases
     if (0 == strcasecmp(elt, TS_ALPN_PROTOCOL_GROUP_HTTP)) {
@@ -651,10 +651,10 @@ ts_session_protocol_well_known_name_indices_init()
 const char *
 RecNormalizeProtoTag(const char *tag)
 {
-  char const *retval = NULL;
+  const char *retval = NULL;
   InkHashTableValue value;
   if (ink_hash_table_lookup(TSProtoTags, tag, &value)) {
-    retval = reinterpret_cast<char const *>(value);
+    retval = reinterpret_cast<const char *>(value);
   }
   return retval;
 }
@@ -669,13 +669,13 @@ SessionProtocolNameRegistry::~SessionProtocolNameRegistry()
 {
   for (size_t i = 0; i < m_n; ++i) {
     if (m_flags[i] & F_ALLOCATED) {
-      ats_free(const_cast<char *>(m_names[i])); // blech - ats_free won't take a char const*
+      ats_free(const_cast<char *>(m_names[i])); // blech - ats_free won't take a const char*
     }
   }
 }
 
 int
-SessionProtocolNameRegistry::toIndex(char const *name)
+SessionProtocolNameRegistry::toIndex(const char *name)
 {
   int zret = this->indexFor(name);
   if (INVALID == zret) {
@@ -691,7 +691,7 @@ SessionProtocolNameRegistry::toIndex(char const *name)
 }
 
 int
-SessionProtocolNameRegistry::toIndexConst(char const *name)
+SessionProtocolNameRegistry::toIndexConst(const char *name)
 {
   int zret = this->indexFor(name);
   if (INVALID == zret) {
@@ -706,7 +706,7 @@ SessionProtocolNameRegistry::toIndexConst(char const *name)
 }
 
 int
-SessionProtocolNameRegistry::indexFor(char const *name) const
+SessionProtocolNameRegistry::indexFor(const char *name) const
 {
   for (size_t i = 0; i < m_n; ++i) {
     if (0 == strcasecmp(name, m_names[i])) {
@@ -716,7 +716,7 @@ SessionProtocolNameRegistry::indexFor(char const *name) const
   return INVALID;
 }
 
-char const *
+const char *
 SessionProtocolNameRegistry::nameFor(int idx) const
 {
   return 0 <= idx && idx < static_cast<int>(m_n) ? m_names[idx] : 0;

@@ -1901,8 +1901,8 @@ HttpTransact::DecideCacheLookup(State *s)
       // We could a) have 6000 alts (barf, puke, vomit) or b) use the original
       // host header in the url before doing all cache actions (lookups, writes, etc.)
       if (s->txn_conf->maintain_pristine_host_hdr) {
-        char const *host_hdr;
-        char const *port_hdr;
+        const char *host_hdr;
+        const char *port_hdr;
         int host_len, port_len;
         // So, the host header will have the original host header.
         if (incoming_request->get_host_port_values(&host_hdr, &host_len, &port_hdr, &port_len)) {

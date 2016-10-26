@@ -60,7 +60,7 @@ void
 FetchSM::httpConnect()
 {
   PluginIdentity *pi = dynamic_cast<PluginIdentity *>(contp);
-  char const *tag    = pi ? pi->getPluginTag() : "fetchSM";
+  const char *tag    = pi ? pi->getPluginTag() : "fetchSM";
   int64_t id         = pi ? pi->getPluginId() : 0;
 
   Debug(DEBUG_TAG, "[%s] calling httpconnect write pi=%p tag=%s id=%" PRId64, __FUNCTION__, pi, tag, id);
@@ -162,7 +162,7 @@ FetchSM::check_body_done()
 }
 
 bool
-FetchSM::check_for_field_value(char const *name, size_t name_len, char const *value, size_t value_len)
+FetchSM::check_for_field_value(const char *name, size_t name_len, char const *value, size_t value_len)
 {
   bool zret = false; // not found.
   StrList slist;
@@ -187,7 +187,7 @@ FetchSM::check_for_field_value(char const *name, size_t name_len, char const *va
 bool
 FetchSM::check_chunked()
 {
-  static char const CHUNKED_TEXT[] = "chunked";
+  static const char CHUNKED_TEXT[] = "chunked";
   static size_t const CHUNKED_LEN  = sizeof(CHUNKED_TEXT) - 1;
 
   if (resp_is_chunked < 0) {
@@ -208,7 +208,7 @@ FetchSM::check_chunked()
 bool
 FetchSM::check_connection_close()
 {
-  static char const CLOSE_TEXT[] = "close";
+  static const char CLOSE_TEXT[] = "close";
   static size_t const CLOSE_LEN  = sizeof(CLOSE_TEXT) - 1;
 
   if (resp_received_close < 0) {

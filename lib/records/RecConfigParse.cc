@@ -124,7 +124,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
   int line_num;
 
   char *rec_type_str, *name_str, *data_type_str, *data_str;
-  char const *value_str;
+  const char *value_str;
   RecT rec_type;
   RecDataT data_type;
 

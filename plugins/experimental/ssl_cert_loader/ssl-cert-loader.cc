@@ -504,7 +504,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
   if (ConfigPath.length() == 0) {
-    static char const *const DEFAULT_CONFIG_PATH = "ssl_start.cfg";
+    static const char *const DEFAULT_CONFIG_PATH = "ssl_start.cfg";
     ConfigPath                                   = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
     TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
   }

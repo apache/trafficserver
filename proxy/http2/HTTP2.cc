@@ -47,19 +47,19 @@ static size_t HTTP2_LEN_STATUS_VALUE_STR = 3;
 
 // Statistics
 RecRawStatBlock *http2_rsb;
-static char const *const HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME  = "proxy.process.http2.current_client_sessions";
-static char const *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME   = "proxy.process.http2.current_client_streams";
-static char const *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME     = "proxy.process.http2.total_client_streams";
-static char const *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.process.http2.total_transactions_time";
-static char const *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.http2.total_client_connections";
-static char const *const HTTP2_STAT_CONNECTION_ERRORS_NAME       = "proxy.process.http2.connection_errors";
-static char const *const HTTP2_STAT_STREAM_ERRORS_NAME           = "proxy.process.http2.stream_errors";
-static char const *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME     = "proxy.process.http2.session_die_default";
-static char const *const HTTP2_STAT_SESSION_DIE_OTHER_NAME       = "proxy.process.http2.session_die_other";
-static char const *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME      = "proxy.process.http2.session_die_active";
-static char const *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME    = "proxy.process.http2.session_die_inactive";
-static char const *const HTTP2_STAT_SESSION_DIE_EOS_NAME         = "proxy.process.http2.session_die_eos";
-static char const *const HTTP2_STAT_SESSION_DIE_ERROR_NAME       = "proxy.process.http2.session_die_error";
+static const char *const HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME  = "proxy.process.http2.current_client_sessions";
+static const char *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME   = "proxy.process.http2.current_client_streams";
+static const char *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME     = "proxy.process.http2.total_client_streams";
+static const char *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.process.http2.total_transactions_time";
+static const char *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.http2.total_client_connections";
+static const char *const HTTP2_STAT_CONNECTION_ERRORS_NAME       = "proxy.process.http2.connection_errors";
+static const char *const HTTP2_STAT_STREAM_ERRORS_NAME           = "proxy.process.http2.stream_errors";
+static const char *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME     = "proxy.process.http2.session_die_default";
+static const char *const HTTP2_STAT_SESSION_DIE_OTHER_NAME       = "proxy.process.http2.session_die_other";
+static const char *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME      = "proxy.process.http2.session_die_active";
+static const char *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME    = "proxy.process.http2.session_die_inactive";
+static const char *const HTTP2_STAT_SESSION_DIE_EOS_NAME         = "proxy.process.http2.session_die_eos";
+static const char *const HTTP2_STAT_SESSION_DIE_ERROR_NAME       = "proxy.process.http2.session_die_error";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}

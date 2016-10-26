@@ -95,7 +95,7 @@ CacheHostMatcher::AllocateSpace(int num_entries)
 //    arg hostname
 //
 void
-CacheHostMatcher::Match(char const *rdata, int rlen, CacheHostResult *result)
+CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result)
 {
   void *opaque_ptr;
   CacheHostRecord *data_ptr;
@@ -224,7 +224,7 @@ CacheHostTable::Print()
 //   Queries each table for the Result*
 //
 void
-CacheHostTable::Match(char const *rdata, int rlen, CacheHostResult *result)
+CacheHostTable::Match(const char *rdata, int rlen, CacheHostResult *result)
 {
   hostMatch->Match(rdata, rlen, result);
 }

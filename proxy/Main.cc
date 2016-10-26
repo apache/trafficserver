@@ -140,7 +140,7 @@ int command_flag                = DEFAULT_COMMAND_FLAG;
 int command_index               = -1;
 bool command_valid              = false;
 // Commands that have special processing / requirements.
-static char const *CMD_VERIFY_CONFIG = "verify_config";
+static const char *CMD_VERIFY_CONFIG = "verify_config";
 #if TS_HAS_TESTS
 static char regression_test[1024] = "";
 static int regression_list        = 0;
@@ -910,14 +910,14 @@ static const struct CMD {
 };
 
 static int
-find_cmd_index(char const *p)
+find_cmd_index(const char *p)
 {
   p += strspn(p, " \t");
   for (unsigned c = 0; c < countof(commands); c++) {
-    char const *l = commands[c].n;
+    const char *l = commands[c].n;
     while (l) {
-      char const *s = strchr(l, '/');
-      char const *e = strpbrk(p, " \t\n");
+      const char *s = strchr(l, '/');
+      const char *e = strpbrk(p, " \t\n");
       int len       = s ? s - l : strlen(l);
       int lenp      = e ? e - p : strlen(p);
       if ((len == lenp) && !strncasecmp(p, l, len)) {

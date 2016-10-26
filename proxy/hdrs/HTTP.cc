@@ -1136,7 +1136,7 @@ validate_hdr_host(HTTPHdrImpl *hh)
       ret = PARSE_RESULT_ERROR; // can't have more than 1 host field.
     } else {
       int host_len         = 0;
-      char const *host_val = host_field->value_get(&host_len);
+      const char *host_val = host_field->value_get(&host_len);
       ts::ConstBuffer addr, port, rest, host(host_val, host_len);
       if (0 == ats_ip_parse(host, &addr, &port, &rest)) {
         if (port) {
@@ -1550,7 +1550,7 @@ void
 HTTPHdr::_fill_target_cache() const
 {
   URL *url = this->url_get();
-  char const *port_ptr;
+  const char *port_ptr;
 
   m_target_in_url  = false;
   m_port_in_header = false;
@@ -1592,7 +1592,7 @@ HTTPHdr::set_url_target_from_host_field(URL *url)
     }
   } else {
     int host_len     = 0;
-    char const *host = NULL;
+    const char *host = NULL;
     host             = host_get(&host_len);
     url->host_set(host, host_len);
     if (m_port_in_header) {

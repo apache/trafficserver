@@ -155,7 +155,7 @@ struct MIMEField {
 
      @return The index of @a value.
   */
-  int value_get_index(char const *value, int length) const;
+  int value_get_index(const char *value, int length) const;
 
   const char *value_get(int *length) const;
   int32_t value_get_int() const;
@@ -1002,9 +1002,9 @@ public:
       This parses the host field for brackets and port value.
       @return The mime HOST field if it has a value, @c NULL otherwise.
   */
-  MIMEField *get_host_port_values(char const **host_ptr, ///< [out] Pointer to host.
+  MIMEField *get_host_port_values(const char **host_ptr, ///< [out] Pointer to host.
                                   int *host_len,         ///< [out] Length of host.
-                                  char const **port_ptr, ///< [out] Pointer to port.
+                                  const char **port_ptr, ///< [out] Pointer to port.
                                   int *port_len          ///< [out] Length of port.
                                   );
 

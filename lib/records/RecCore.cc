@@ -1258,7 +1258,7 @@ void
 RecConfigWarnIfUnregistered()
 {
   RecDumpRecords(RECT_CONFIG,
-                 [](RecT, void *, int registered_p, char const *name, int, RecData *) -> void {
+                 [](RecT, void *, int registered_p, const char *name, int, RecData *) -> void {
                    if (!registered_p)
                      Warning("Unrecognized configuration value '%s'", name);
                  },

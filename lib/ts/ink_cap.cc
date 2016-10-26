@@ -138,7 +138,7 @@ death_signal()
 }
 
 void
-DebugCapabilities(char const *tag)
+DebugCapabilities(const char *tag)
 {
   DEBUG_CREDENTIALS(tag);
   DEBUG_PRIVILEGES(tag);
@@ -308,7 +308,7 @@ EnableDeathSignal(int signum)
 }
 
 int
-elevating_open(char const *path, unsigned int flags, unsigned int fperms)
+elevating_open(const char *path, unsigned int flags, unsigned int fperms)
 {
   int fd = open(path, flags, fperms);
   if (fd < 0 && (EPERM == errno || EACCES == errno)) {
@@ -319,7 +319,7 @@ elevating_open(char const *path, unsigned int flags, unsigned int fperms)
 }
 
 int
-elevating_open(char const *path, unsigned int flags)
+elevating_open(const char *path, unsigned int flags)
 {
   int fd = open(path, flags);
   if (fd < 0 && (EPERM == errno || EACCES == errno)) {
@@ -330,7 +330,7 @@ elevating_open(char const *path, unsigned int flags)
 }
 
 FILE *
-elevating_fopen(char const *path, const char *mode)
+elevating_fopen(const char *path, const char *mode)
 {
   FILE *f = fopen(path, mode);
   if (NULL == f && (EPERM == errno || EACCES == errno)) {

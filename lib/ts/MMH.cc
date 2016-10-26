@@ -368,7 +368,7 @@ MMHContext::MMHContext()
 bool
 MMHContext::update(void const *data, int length)
 {
-  return 0 == ink_code_incr_MMH_update(&_ctx, static_cast<char const *>(data), length);
+  return 0 == ink_code_incr_MMH_update(&_ctx, static_cast<const char *>(data), length);
 }
 
 bool

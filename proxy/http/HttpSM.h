@@ -510,7 +510,7 @@ public:
   // The next two enable plugins to tag the state machine for
   // the purposes of logging so the instances can be correlated
   // with the source plugin.
-  char const *plugin_tag;
+  const char *plugin_tag;
   int64_t plugin_id;
 
   // hooks_set records whether there are any hooks relevant

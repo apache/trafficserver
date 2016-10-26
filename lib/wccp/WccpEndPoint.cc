@@ -46,7 +46,7 @@ Impl::GroupData::GroupData() : m_generation(0), m_use_security_opt(false), m_use
 }
 
 Impl::GroupData &
-Impl::GroupData::setKey(char const *key)
+Impl::GroupData::setKey(const char *key)
 {
   m_use_security_key = true;
   strncpy(m_security_key, key, SecurityComp::KEY_SIZE);
@@ -312,7 +312,7 @@ CacheImpl::GroupData::removeSeedRouter(uint32_t addr)
 }
 
 CacheImpl::GroupData &
-CacheImpl::GroupData::setKey(char const *key)
+CacheImpl::GroupData::setKey(const char *key)
 {
   return static_cast<self &>(this->super::setKey(key));
 }
@@ -504,7 +504,7 @@ CacheImpl::GroupData::viewChanged(time_t now)
 }
 
 Cache::Service &
-Cache::Service::setKey(char const *key)
+Cache::Service::setKey(const char *key)
 {
   m_group->setKey(key);
   return *this;
@@ -758,7 +758,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
     // Validate capabilities.
     ServiceGroup::PacketStyle ps;
     ServiceGroup::CacheAssignmentStyle as;
-    char const *caps_tag = caps.isEmpty() ? "default" : "router";
+    const char *caps_tag = caps.isEmpty() ? "default" : "router";
 
     // No caps -> use GRE forwarding.
     ps = caps.isEmpty() ? ServiceGroup::GRE : caps.getPacketForwardStyle();
@@ -1231,7 +1231,7 @@ Cache::addSeedRouter(uint8_t id, uint32_t addr)
 }
 
 ts::Errata
-Cache::loadServicesFromFile(char const *path)
+Cache::loadServicesFromFile(const char *path)
 {
   return this->instance()->loadServicesFromFile(path);
 }

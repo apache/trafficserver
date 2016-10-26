@@ -995,7 +995,7 @@ struct Cache {
 
   int open_done();
 
-  Vol *key_to_vol(const CacheKey *key, char const *hostname, int host_len);
+  Vol *key_to_vol(const CacheKey *key, const char *hostname, int host_len);
 
   Cache()
     : cache_read_done(0),

@@ -176,7 +176,7 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
   if (!rootpath) {
     // Start with the current working path.  This is bass akwards,
     // but required since the compiler (at least vc) doesn't like
-    // passing the address of a char const* for a char** arg.
+    // passing the address of a const char* for a char** arg.
     //
     if (!getcwd(curdir, sizeof(curdir))) {
       return errno;

@@ -69,7 +69,7 @@ Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range)
 
 /// Get a string value from a config node.
 void
-Load_Config_Value(Value const &parent, char const *name, IpRangeQueue &addrs)
+Load_Config_Value(Value const &parent, const char *name, IpRangeQueue &addrs)
 {
   Value v = parent[name];
   std::string zret;
@@ -178,7 +178,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
   if (ConfigPath.length() == 0) {
-    static char const *const DEFAULT_CONFIG_PATH = "ssl_preaccept.config";
+    static const char *const DEFAULT_CONFIG_PATH = "ssl_preaccept.config";
     ConfigPath                                   = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
     TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
   }

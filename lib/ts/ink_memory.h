@@ -505,7 +505,7 @@ path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
 {
   size_t ln        = strlen(lhs);
   size_t rn        = strlen(rhs);
-  char const *rptr = rhs; // May need to be modified.
+  const char *rptr = rhs; // May need to be modified.
 
   if (ln && lhs[ln - 1] == '/')
     --ln; // drop trailing separator.

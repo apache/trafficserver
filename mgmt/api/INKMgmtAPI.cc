@@ -1736,13 +1736,13 @@ TSBounce(unsigned options)
 }
 
 tsapi TSMgmtError
-TSStorageDeviceCmdOffline(char const *dev)
+TSStorageDeviceCmdOffline(const char *dev)
 {
   return StorageDeviceCmdOffline(dev);
 }
 
 tsapi TSMgmtError
-TSLifecycleMessage(char const *tag, void const *data, size_t data_size)
+TSLifecycleMessage(const char *tag, void const *data, size_t data_size)
 {
   return LifecycleMessage(tag, data, data_size);
 }

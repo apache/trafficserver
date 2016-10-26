@@ -81,7 +81,7 @@ public:
   CacheHostMatcher(const char *name, CacheType typ);
   ~CacheHostMatcher();
 
-  void Match(char const *rdata, int rlen, CacheHostResult *result);
+  void Match(const char *rdata, int rlen, CacheHostResult *result);
   void AllocateSpace(int num_entries);
   void NewEntry(matcher_line *line_info);
   void Print();
@@ -120,7 +120,7 @@ public:
   ~CacheHostTable();
   int BuildTable(const char *config_file_path);
   int BuildTableFromString(const char *config_file_path, char *str);
-  void Match(char const *rdata, int rlen, CacheHostResult *result);
+  void Match(const char *rdata, int rlen, CacheHostResult *result);
   void Print();
 
   int

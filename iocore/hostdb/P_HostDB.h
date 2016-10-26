@@ -51,5 +51,5 @@
 #define HOSTDB_MODULE_VERSION makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER)
 Ptr<HostDBInfo> probe(ProxyMutex *mutex, HostDBMD5 const &md5, bool ignore_timeout);
 
-void make_md5(INK_MD5 &md5, const char *hostname, int len, int port, char const *pDNSServers, HostDBMark mark);
+void make_md5(INK_MD5 &md5, const char *hostname, int len, int port, const char *pDNSServers, HostDBMark mark);
 #endif

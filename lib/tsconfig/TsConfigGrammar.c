@@ -232,7 +232,7 @@ int tsconfigparse ();
 int tsconfigerror(
   yyscan_t lexer ATS_UNUSED,
   struct TsConfigHandlers* handlers,
-  char const* text
+  const char* text
 ) {
   return (handlers && handlers->error._f)
     ? handlers->error._f(handlers->error._data, text)
@@ -985,7 +985,7 @@ yytnamerr (char *yyres, const char *yystr)
   if (*yystr == '"')
     {
       YYSIZE_T yyn = 0;
-      char const *yyp = yystr;
+      const char *yyp = yystr;
 
       for (;;)
 	switch (*++yyp)
@@ -1037,7 +1037,7 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
   /* Internationalized format string. */
   const char *yyformat = YY_NULL;
   /* Arguments of yyformat. */
-  char const *yyarg[YYERROR_VERBOSE_ARGS_MAXIMUM];
+  const char *yyarg[YYERROR_VERBOSE_ARGS_MAXIMUM];
   /* Number of reported tokens (one for the "unexpected", one per
      "expected"). */
   int yycount = 0;
@@ -1605,7 +1605,7 @@ yyerrlab:
 # define YYSYNTAX_ERROR yysyntax_error (&yymsg_alloc, &yymsg, \
                                         yyssp, yytoken)
       {
-        char const *yymsgp = YY_("syntax error");
+        const char *yymsgp = YY_("syntax error");
         int yysyntax_error_status;
         yysyntax_error_status = YYSYNTAX_ERROR;
         if (yysyntax_error_status == 0)

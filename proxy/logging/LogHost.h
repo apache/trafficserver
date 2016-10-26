@@ -85,7 +85,7 @@ public:
     return m_port;
   }
 
-  char const *
+  const char *
   ipstr() const
   {
     return m_ipstr;

@@ -814,7 +814,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
 
   char *incoming_via = s->via_string;
 
-  char const *proto_buf[10]; // 10 seems like a reasonable number of protos to print
+  const char *proto_buf[10]; // 10 seems like a reasonable number of protos to print
   int retval = s->state_machine->populate_client_protocol(proto_buf, countof(proto_buf));
   for (int i = 0; i < retval; i++) {
     memcpy(via_string, proto_buf[i], strlen(proto_buf[i]));

@@ -38,7 +38,7 @@
 #include "ts/ParseRules.h"
 
 static const int min_block_transfer_bytes = 256;
-static char const *const CHUNK_HEADER_FMT = "%" PRIx64 "\r\n";
+static const char *const CHUNK_HEADER_FMT = "%" PRIx64 "\r\n";
 // This should be as small as possible because it will only hold the
 // header and trailer per chunk - the chunk body will be a reference to
 // a block in the input stream.

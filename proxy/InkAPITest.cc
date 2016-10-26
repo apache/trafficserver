@@ -2031,7 +2031,7 @@ static int
 checkHttpTxnClientProtocolStackGet(SocketTest *test, void *data)
 {
   TSHttpTxn txnp = (TSHttpTxn)data;
-  char const *results[10];
+  const char *results[10];
   int count = 0;
   TSHttpTxnClientProtocolStackGet(txnp, 10, results, &count);
   // Should return results[0] = "http/1.0", results[1] = "tcp", results[2] = "ipv4"
@@ -5144,7 +5144,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
 
 REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  static char const *const urls[] = {
+  static const char *const urls[] = {
     "file:///test.dat;ab?abc=def#abc",
     "http://www.example.com/",
     "http://abc:def@www.example.com/",
@@ -5178,7 +5178,7 @@ REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSE
 
   int idx;
   for (idx = 0; idx < num_urls; idx++) {
-    char const *url = urls[idx];
+    const char *url = urls[idx];
 
     bufp = TSMBufferCreate();
     if (TSUrlCreate(bufp, &url_loc) != TS_SUCCESS) {

@@ -1519,7 +1519,7 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
 }
 
 const char *
-SSLNetVConnection::map_tls_protocol_to_tag(char const *proto_string) const
+SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 {
   const char *retval    = NULL;
   const char *ssl_proto = getSSLProtocol();
@@ -1540,7 +1540,7 @@ SSLNetVConnection::map_tls_protocol_to_tag(char const *proto_string) const
 }
 
 int
-SSLNetVConnection::populate_protocol(char const **results, int n) const
+SSLNetVConnection::populate_protocol(const char **results, int n) const
 {
   int retval = 0;
   if (n > 0) {

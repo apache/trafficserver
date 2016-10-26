@@ -438,7 +438,7 @@ Bounce(unsigned options)
  * Disable a storage device.
  */
 TSMgmtError
-StorageDeviceCmdOffline(char const *dev)
+StorageDeviceCmdOffline(const char *dev)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype  = STORAGE_DEVICE_CMD_OFFLINE;
@@ -454,7 +454,7 @@ StorageDeviceCmdOffline(char const *dev)
  * Send alert to plugins
  */
 TSMgmtError
-LifecycleMessage(char const *tag, void const *data, size_t data_size)
+LifecycleMessage(const char *tag, void const *data, size_t data_size)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype  = LIFECYCLE_MESSAGE;

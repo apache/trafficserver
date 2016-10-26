@@ -61,7 +61,7 @@ public:
     /// Return the modifier type.
     virtual Type type() const;
     /// Return the name for the modifier type.
-    virtual char const *name() const = 0;
+    virtual const char *name() const = 0;
     /** Test if the modifier matches the request.
         @return @c true if the request is matched, @c false if not.
     */
@@ -85,7 +85,7 @@ protected:
   /// Get the text for the Scheme modifier, if any.
   /// @return The text if present, 0 otherwise.
   /// @internal Ugly but it's the only place external access is needed.
-  char const *getSchemeModText() const;
+  const char *getSchemeModText() const;
 
 private:
   typedef Vec<Modifier *> Array;

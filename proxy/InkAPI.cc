@@ -6320,7 +6320,7 @@ TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality)
 extern HttpSessionAccept *plugin_http_accept;
 extern HttpSessionAccept *plugin_http_transparent_accept;
 
-char const *
+const char *
 TSHttpTxnPluginTagGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -6330,7 +6330,7 @@ TSHttpTxnPluginTagGet(TSHttpTxn txnp)
 }
 
 TSVConn
-TSHttpConnectWithPluginId(sockaddr const *addr, char const *tag, int64_t id)
+TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
 {
   sdk_assert(addr);
 
@@ -9247,7 +9247,7 @@ TSHttpTxnIdGet(TSHttpTxn txnp)
 
 // Return information about the protocols used by the client
 TSReturnCode
-TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, char const **result, int *actual)
+TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int *actual)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(n == 0 || result != NULL);
@@ -9263,7 +9263,7 @@ TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, char const **result, int 
 }
 
 TSReturnCode
-TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, char const **result, int *actual)
+TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int *actual)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   sdk_assert(n == 0 || result != NULL);
@@ -9278,30 +9278,30 @@ TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, char const **result, int 
   return TS_SUCCESS;
 }
 
-char const *
-TSNormalizedProtocolTag(char const *tag)
+const char *
+TSNormalizedProtocolTag(const char *tag)
 {
   return RecNormalizeProtoTag(tag);
 }
 
-char const *
-TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, char const *tag)
+const char *
+TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
   return sm->client_protocol_contains(tag);
 }
 
-char const *
-TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, char const *tag)
+const char *
+TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
   return cs->protocol_contains(tag);
 }
 
-char const *
-TSRegisterProtocolTag(char const *tag)
+const char *
+TSRegisterProtocolTag(const char *tag)
 {
   return NULL;
 }

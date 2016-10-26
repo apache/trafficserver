@@ -1746,7 +1746,7 @@ mime_field_name_set(HdrHeap *heap, MIMEHdrImpl * /* mh ATS_UNUSED */, MIMEField 
 }
 
 int
-MIMEField::value_get_index(char const *value, int length) const
+MIMEField::value_get_index(const char *value, int length) const
 {
   int retval = -1;
 
@@ -2235,9 +2235,9 @@ mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const 
 }
 
 MIMEField *
-MIMEHdr::get_host_port_values(char const **host_ptr, ///< Pointer to host.
+MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
                               int *host_len,         ///< Length of host.
-                              char const **port_ptr, ///< Pointer to port.
+                              const char **port_ptr, ///< Pointer to port.
                               int *port_len)
 {
   MIMEField *field = this->field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
@@ -2259,10 +2259,10 @@ MIMEHdr::get_host_port_values(char const **host_ptr, ///< Pointer to host.
     ts::ConstBuffer host, port;
 
     if (b) {
-      char const *x;
+      const char *x;
 
       if ('[' == *b) {
-        x = static_cast<char const *>(memchr(b._ptr, ']', b._size));
+        x = static_cast<const char *>(memchr(b._ptr, ']', b._size));
         if (x && b.contains(x + 1) && ':' == x[1]) {
           host = b.splitOn(x + 1);
           port = b;
@@ -2270,7 +2270,7 @@ MIMEHdr::get_host_port_values(char const **host_ptr, ///< Pointer to host.
           host = b;
         }
       } else {
-        x = static_cast<char const *>(memchr(b._ptr, ':', b._size));
+        x = static_cast<const char *>(memchr(b._ptr, ':', b._size));
         if (x) {
           host = b.splitOn(x);
           port = b;
@@ -2375,7 +2375,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
   const char *raw_input_c, *lf_ptr;
   ParseResult zret = PARSE_RESULT_CONT;
   // Need this for handling dangling CR.
-  static char const RAW_CR = ParseRules::CHAR_CR;
+  static const char RAW_CR = ParseRules::CHAR_CR;
 
   ink_assert((raw_input_s != NULL) && (*raw_input_s != NULL));
   ink_assert(raw_input_e != NULL);
@@ -2419,7 +2419,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
       }
       break;
     case MIME_PARSE_INSIDE:
-      lf_ptr = static_cast<char const *>(memchr(raw_input_c, ParseRules::CHAR_LF, runway));
+      lf_ptr = static_cast<const char *>(memchr(raw_input_c, ParseRules::CHAR_LF, runway));
       if (lf_ptr) {
         raw_input_c = lf_ptr + 1;
         if (MIME_SCANNER_TYPE_LINE == raw_input_scan_type) {

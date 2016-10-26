@@ -234,7 +234,7 @@ int
 LogAccessHttp::marshal_plugin_identity_tag(char *buf)
 {
   int len         = INK_MIN_ALIGN;
-  char const *tag = m_http_sm->plugin_tag;
+  const char *tag = m_http_sm->plugin_tag;
 
   if (!tag) {
     tag = "*";
@@ -1104,7 +1104,7 @@ LogAccessHttp::marshal_server_host_ip(char *buf)
 int
 LogAccessHttp::marshal_server_host_name(char *buf)
 {
-  char const *str = NULL;
+  const char *str = NULL;
   int padded_len  = INK_MIN_ALIGN;
   int actual_len  = 0;
 

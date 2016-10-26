@@ -177,7 +177,7 @@ public:
   }
 
   virtual int
-  populate_protocol(char const **result, int size) const
+  populate_protocol(const char **result, int size) const
   {
     int retval = 0;
 

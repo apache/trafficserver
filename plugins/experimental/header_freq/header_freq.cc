@@ -188,14 +188,14 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
     if (0 == strcasecmp(ctl_tag, msgp->tag)) {
       // identify the command
       if (msgp->data_size >= CONTROL_MSG_LOG_LEN &&
-          0 == strncasecmp(CONTROL_MSG_LOG, static_cast<char const *>(msgp->data), CONTROL_MSG_LOG_LEN)) {
+          0 == strncasecmp(CONTROL_MSG_LOG, static_cast<const char *>(msgp->data), CONTROL_MSG_LOG_LEN)) {
         TSDebug(DEBUG_TAG_HOOK, "Scheduled execution of '%s' command", CONTROL_MSG_LOG);
         TSCont c = TSContCreate(CB_Command_Log, TSMutexCreate());
-        TSContDataSet(c, new std::string(static_cast<char const *>(msgp->data), msgp->data_size));
+        TSContDataSet(c, new std::string(static_cast<const char *>(msgp->data), msgp->data_size));
         TSContSchedule(c, 0, TS_THREAD_POOL_TASK);
       } else {
         TSError("[%s] Unknown command '%.*s'", PLUGIN_NAME, static_cast<int>(msgp->data_size),
-                static_cast<char const *>(msgp->data));
+                static_cast<const char *>(msgp->data));
       }
     }
   } break;

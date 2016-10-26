@@ -75,7 +75,7 @@ ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
 
 HostDBCache hostDB;
 
-void ParseHostFile(char const *path, unsigned int interval);
+void ParseHostFile(const char *path, unsigned int interval);
 
 char *
 HostDBInfo::srvname(HostDBRoundRobin *rr) const
@@ -149,10 +149,10 @@ check_for_retry(HostDBMark &mark, HostResStyle style)
   return zret;
 }
 
-char const *
+const char *
 string_for(HostDBMark mark)
 {
-  static char const *STRING[] = {"Generic", "IPv4", "IPv6", "SRV"};
+  static const char *STRING[] = {"Generic", "IPv4", "IPv6", "SRV"};
   return STRING[mark];
 }
 
@@ -162,7 +162,7 @@ string_for(HostDBMark mark)
 static Action *register_ShowHostDB(Continuation *c, HTTPHdr *h);
 
 HostDBMD5 &
-HostDBMD5::set_host(char const *name, int len)
+HostDBMD5::set_host(const char *name, int len)
 {
   host_name = name;
   host_len  = len;
@@ -194,7 +194,7 @@ HostDBMD5::refresh()
   MD5Context ctx;
 
   if (host_name) {
-    char const *server_line = dns_server ? dns_server->x_dns_ip_line : 0;
+    const char *server_line = dns_server ? dns_server->x_dns_ip_line : 0;
     uint8_t m               = static_cast<uint8_t>(db_mark); // be sure of the type.
 
     ctx.update(host_name, host_len);
@@ -1055,7 +1055,7 @@ HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event *e)
 // NOTE: if "i" exists it means we already allocated the space etc, just return
 //
 HostDBInfo *
-HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around_robin, unsigned int ttl_seconds, SRVHosts *srv,
+HostDBContinuation::lookup_done(IpAddr const &ip, const char *aname, bool around_robin, unsigned int ttl_seconds, SRVHosts *srv,
                                 HostDBInfo *r)
 {
   ink_assert(this_ethread() == hostDB.refcountcache->lock_for_key(md5.hash.fold())->thread_holding);
@@ -2489,14 +2489,14 @@ ink_hostdb_init(ModuleVersion v)
 struct HostFilePair {
   typedef HostFilePair self;
   IpAddr ip;
-  char const *name;
+  const char *name;
 };
 
 struct HostDBFileContinuation : public Continuation {
   typedef HostDBFileContinuation self;
 
   int idx;          ///< Working index.
-  char const *name; ///< Host name (just for debugging)
+  const char *name; ///< Host name (just for debugging)
   INK_MD5 md5;      ///< Key for entry.
   typedef std::vector<INK_MD5> Keys;
   Keys *keys;          ///< Entries from file.
@@ -2547,7 +2547,7 @@ ParseHostLine(Ptr<RefCountedHostsFileMap> &map, char *l)
 }
 
 void
-ParseHostFile(char const *path, unsigned int hostdb_hostfile_check_interval)
+ParseHostFile(const char *path, unsigned int hostdb_hostfile_check_interval)
 {
   Ptr<RefCountedHostsFileMap> parsed_hosts_file_ptr;
 
