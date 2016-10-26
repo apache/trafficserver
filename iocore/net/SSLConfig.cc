@@ -98,22 +98,23 @@ SSLConfigParams::~SSLConfigParams()
 void
 SSLConfigParams::cleanup()
 {
-  ats_free_null(serverCertChainFilename);
-  ats_free_null(serverCACertFilename);
-  ats_free_null(serverCACertPath);
-  ats_free_null(clientCertPath);
-  ats_free_null(clientKeyPath);
-  ats_free_null(clientCACertFilename);
-  ats_free_null(clientCACertPath);
-  ats_free_null(configFilePath);
-  ats_free_null(serverCertPathOnly);
-  ats_free_null(serverKeyPathOnly);
-  ats_free_null(cipherSuite);
-  ats_free_null(client_cipherSuite);
-  ats_free_null(dhparamsFile);
-  ats_free_null(ssl_wire_trace_ip);
-  ats_free_null(ticket_key_filename);
+  serverCertChainFilename = (char *)ats_free_null(serverCertChainFilename);
+  serverCACertFilename    = (char *)ats_free_null(serverCACertFilename);
+  serverCACertPath        = (char *)ats_free_null(serverCACertPath);
+  clientCertPath          = (char *)ats_free_null(clientCertPath);
+  clientKeyPath           = (char *)ats_free_null(clientKeyPath);
+  clientCACertFilename    = (char *)ats_free_null(clientCACertFilename);
+  clientCACertPath        = (char *)ats_free_null(clientCACertPath);
+  configFilePath          = (char *)ats_free_null(configFilePath);
+  serverCertPathOnly      = (char *)ats_free_null(serverCertPathOnly);
+  serverKeyPathOnly       = (char *)ats_free_null(serverKeyPathOnly);
+  cipherSuite             = (char *)ats_free_null(cipherSuite);
+  client_cipherSuite      = (char *)ats_free_null(client_cipherSuite);
+  dhparamsFile            = (char *)ats_free_null(dhparamsFile);
+  ssl_wire_trace_ip       = (IpAddr *)ats_free_null(ssl_wire_trace_ip);
+  ticket_key_filename     = (char *)ats_free_null(ticket_key_filename);
   ticket_block_free(default_global_keyblock);
+  default_global_keyblock = NULL;
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 }
