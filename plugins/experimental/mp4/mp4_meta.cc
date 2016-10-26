@@ -1712,7 +1712,7 @@ mp4_reader_set_32value(TSIOBufferReader readerp, int64_t offset, uint32_t n)
 
     } else {
       left = avail - offset;
-      ptr  = (u_char *)(const_cast<char *>(start) + offset);
+      ptr  = (u_char *)(start) + offset;
 
       while (pos < 4 && left > 0) {
         *ptr++ = (u_char)((n) >> ((3 - pos) * 8));
@@ -1751,7 +1751,7 @@ mp4_reader_set_64value(TSIOBufferReader readerp, int64_t offset, uint64_t n)
 
     } else {
       left = avail - offset;
-      ptr  = (u_char *)(const_cast<char *>(start) + offset);
+      ptr  = (u_char *)(start) + offset;
 
       while (pos < 8 && left > 0) {
         *ptr++ = (u_char)((n) >> ((7 - pos) * 8));

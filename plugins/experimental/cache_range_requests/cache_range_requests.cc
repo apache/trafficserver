@@ -160,7 +160,7 @@ static void
 handle_client_send_response(TSHttpTxn txnp, struct txndata *txn_state)
 {
   bool partial_content_reason = false;
-  char *p;
+  const char *p;
   int length;
   TSMBuffer response, hdr_bufp;
   TSMLoc resp_hdr, req_hdrs = NULL;
@@ -170,7 +170,7 @@ handle_client_send_response(TSHttpTxn txnp, struct txndata *txn_state)
   if (TS_SUCCESS == result) {
     TSHttpStatus status = TSHttpHdrStatusGet(response, resp_hdr);
     // a cached result will have a TS_HTTP_OK with a 'Partial Content' reason
-    if ((p = (char *)TSHttpHdrReasonGet(response, resp_hdr, &length)) != NULL) {
+    if ((p = TSHttpHdrReasonGet(response, resp_hdr, &length)) != NULL) {
       if ((length == 15) && (0 == strncasecmp(p, "Partial Content", length))) {
         partial_content_reason = true;
       }
@@ -360,9 +360,9 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
   TSCont txnp_cont;
 
-  info.plugin_name   = (char *)PLUGIN_NAME;
-  info.vendor_name   = (char *)"Comcast";
-  info.support_email = (char *)"John_Rushford@cable.comcast.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Comcast";
+  info.support_email = "John_Rushford@cable.comcast.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     ERROR_LOG("Plugin registration failed.\n");

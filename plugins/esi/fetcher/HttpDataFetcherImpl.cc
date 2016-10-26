@@ -80,7 +80,7 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
   if (length < (int)sizeof(buff)) {
     http_req = buff;
   } else {
-    http_req = (char *)malloc(length + 1);
+    http_req = static_cast<char *>(malloc(length + 1));
     if (http_req == NULL) {
       TSError("[HttpDataFetcherImpl][%s] malloc %d bytes fail", __FUNCTION__, length + 1);
       return false;

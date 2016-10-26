@@ -86,12 +86,12 @@ char *
 unescapify(const char *src, char *dst, int len)
 {
   const char *cur = src;
-  char *next;
+  const char *next;
   char subStr[3];
   int size;
 
   subStr[2] = '\0';
-  while ((next = (char *)memchr(cur, '%', len))) {
+  while ((next = static_cast<const char *>(memchr(cur, '%', len)))) {
     size = next - cur;
     if (size > 0) {
       memcpy(dst, cur, size);
@@ -104,7 +104,7 @@ unescapify(const char *src, char *dst, int len)
       subStr[0] = *(++cur);
       subStr[1] = *(++cur);
       len -= 2;
-      *dst = (char)strtol(subStr, (char **)NULL, 16);
+      *dst = static_cast<char>(strtol(subStr, nullptr, 16));
     } else {
       *dst = *cur;
     }
@@ -358,7 +358,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   int redirect_flag = h_conf->default_redirect_flag;
   char *pos         = new_query;
 
-  while (pos && (pos = (char *)memchr(pos, '_', new_query_size - (pos - new_query)))) {
+  while (pos && (pos = static_cast<char *>(memchr(pos, '_', new_query_size - (pos - new_query))))) {
     if (pos) {
       ++pos;
       if ((new_query_size - (pos - new_query)) < 10) { // redirect=n

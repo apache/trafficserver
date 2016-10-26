@@ -410,7 +410,7 @@ get_pointer(MC *mc, int start, int len)
   }
   // the block of data straddles an IOBufferBlock boundary, exceptional case, malloc
   ink_assert(!mc->tbuf);
-  mc->tbuf = (char *)ats_malloc(len);
+  mc->tbuf = static_cast<char *>(ats_malloc(len));
   mc->reader->memcpy(mc->tbuf, len, start);
   return mc->tbuf;
 }
@@ -1320,7 +1320,7 @@ MC::read_ascii_from_client_event(int event, void *data)
     break;
   }
   // find the end of the command
-  e = (char *)memchr(s, '\n', len);
+  e = static_cast<char *>(memchr(s, '\n', len));
   if (!e) {
     if (reader->read_avail() > TSMEMCACHE_MAX_CMD_SIZE) {
       return ASCII_CLIENT_ERROR("bad command line");
@@ -1612,9 +1612,9 @@ TSPluginInit(int argc, const char *argv[])
   ink_assert(sizeof(protocol_binary_request_header) == 24);
 
   TSPluginRegistrationInfo info;
-  info.plugin_name   = (char *)"tsmemcache";
-  info.vendor_name   = (char *)"ats";
-  info.support_email = (char *)"jplevyak@apache.org";
+  info.plugin_name   = "tsmemcache";
+  info.vendor_name   = "ats";
+  info.support_email = "jplevyak@apache.org";
 
   int port = 11211;
 

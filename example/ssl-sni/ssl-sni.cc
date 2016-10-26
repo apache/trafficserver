@@ -133,9 +133,9 @@ TSPluginInit(int argc, const char *argv[])
     {const_cast<char *>("config"), required_argument, NULL, 'c'}, {NULL, no_argument, NULL, '\0'},
   };
 
-  info.plugin_name   = const_cast<char *>("SSL SNI callback test");
-  info.vendor_name   = const_cast<char *>("Network Geographics");
-  info.support_email = const_cast<char *>("shinrich@network-geographics.com");
+  info.plugin_name   = "SSL SNI callback test";
+  info.vendor_name   = "Network Geographics";
+  info.support_email = "shinrich@network-geographics.com";
 
   int opt = 0;
   while (opt >= 0) {

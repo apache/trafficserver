@@ -60,7 +60,7 @@ ParseArgIntoNv(const char *arg, char **n, char **v)
   }
 
   size_t name_len = colon_pos - arg;
-  *n              = (char *)TSmalloc(name_len + 1);
+  *n              = static_cast<char *>(TSmalloc(name_len + 1));
   memcpy(*n, arg, colon_pos - arg);
   (*n)[name_len] = '\0';
 
@@ -72,7 +72,7 @@ ParseArgIntoNv(const char *arg, char **n, char **v)
     val_len -= 2; // don't include the trailing quote
   }
 
-  *v = (char *)TSmalloc(val_len + 1);
+  *v = static_cast<char *>(TSmalloc(val_len + 1));
   memcpy(*v, colon_pos + 1, val_len);
   (*v)[val_len] = '\0';
 

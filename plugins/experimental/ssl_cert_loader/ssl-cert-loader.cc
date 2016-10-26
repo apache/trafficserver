@@ -198,7 +198,7 @@ Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
 
         if (alt_name->type == GEN_DNS) {
           // Current name is a DNS name, let's check it
-          char *name_ptr = (char *)ASN1_STRING_data(alt_name->d.dNSName);
+          char *name_ptr = reinterpret_cast<char *>(ASN1_STRING_data(alt_name->d.dNSName));
           std::string tmp_name(name_ptr);
           names.push_back(tmp_name);
         }
@@ -489,9 +489,9 @@ TSPluginInit(int argc, const char *argv[])
     {const_cast<char *>("config"), required_argument, NULL, 'c'}, {NULL, no_argument, NULL, '\0'},
   };
 
-  info.plugin_name   = const_cast<char *>("SSL Certificate Loader");
-  info.vendor_name   = const_cast<char *>("Network Geographics");
-  info.support_email = const_cast<char *>("shinrich@network-geographics.com");
+  info.plugin_name   = "SSL Certificate Loader";
+  info.vendor_name   = "Network Geographics";
+  info.support_email = "shinrich@network-geographics.com";
 
   int opt = 0;
   while (opt >= 0) {

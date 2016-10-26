@@ -50,9 +50,9 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = const_cast<char *>("protocol-stack");
-  info.vendor_name   = const_cast<char *>("MyCompany");
-  info.support_email = const_cast<char *>("ts-api-support@MyCompany.com");
+  info.plugin_name   = "protocol-stack";
+  info.vendor_name   = "MyCompany";
+  info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[protocol-stack] Plugin registration failed.");

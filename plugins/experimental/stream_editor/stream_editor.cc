@@ -834,9 +834,9 @@ TSPluginInit(int argc, const char *argv[])
   ruleset_t *rewrites_in  = NULL;
   ruleset_t *rewrites_out = NULL;
 
-  info.plugin_name   = (char *)"stream-editor";
-  info.vendor_name   = (char *)"Apache Software Foundation";
-  info.support_email = (char *)"users@trafficserver.apache.org";
+  info.plugin_name   = "stream-editor";
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "users@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[stream-editor] Plugin registration failed.");

@@ -214,7 +214,7 @@ read_request_hook(TSCont /* contp */, TSEvent /* event */, void *edata)
       // hdr returned by TSMimeHdrFieldNameGet is already
       // in camel case, just destroy the lowercase h2 header
       // and replace it with TSMimeHdrFieldNameGet
-      char *new_hdr_name = (char *)old_hdr_name;
+      const char *new_hdr_name = old_hdr_name;
       if (new_hdr_name) {
         TSMLoc new_hdr_loc;
         TSReturnCode rval = TSMimeHdrFieldCreateNamed(hdr_bufp, req_hdrs, new_hdr_name, old_hdr_len, &new_hdr_loc);

@@ -141,9 +141,9 @@ void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
-  info.plugin_name   = (char *)"remap_plugin";
-  info.vendor_name   = (char *)"Apache";
-  info.support_email = (char *)"";
+  info.plugin_name   = "remap_plugin";
+  info.vendor_name   = "Apache";
+  info.support_email = "";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[remap] Plugin registration failed.");
@@ -306,7 +306,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   // How to cancel request processing and return error message to the client
   // We wiil do it each other request
   if (_processing_counter & 1) {
-    char *tmp                   = (char *)TSmalloc(256);
+    char *tmp                   = static_cast<char *>(TSmalloc(256));
     static int my_local_counter = 0;
 
     size_t len = snprintf(tmp, 255, "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n",

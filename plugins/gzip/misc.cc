@@ -133,7 +133,7 @@ init_hidden_header_name()
     fatal("failed to get server name");
   } else {
     int hidden_header_name_len                 = strlen("x-accept-encoding-") + strlen(result);
-    hidden_header_name                         = (char *)TSmalloc(hidden_header_name_len + 1);
+    hidden_header_name                         = static_cast<char *>(TSmalloc(hidden_header_name_len + 1));
     hidden_header_name[hidden_header_name_len] = 0;
     sprintf(hidden_header_name, "x-accept-encoding-%s", result);
   }
@@ -145,9 +145,9 @@ register_plugin()
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = (char *)"gzip";
-  info.vendor_name   = (char *)"Apache Software Foundation";
-  info.support_email = (char *)"dev@trafficserver.apache.org";
+  info.plugin_name   = "gzip";
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     return 0;

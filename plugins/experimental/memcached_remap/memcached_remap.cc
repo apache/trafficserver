@@ -166,9 +166,9 @@ TSPluginInit(int argc, const char *argv[])
   // FILE *fp;
   // char servers_string[8192];
 
-  info.plugin_name   = const_cast<char *>(PLUGIN_NAME);
-  info.vendor_name   = const_cast<char *>("Apache Software Foundation");
-  info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   TSDebug(PLUGIN_NAME, "about to init memcached");
   if (TSPluginRegister(&info) != TS_SUCCESS) {

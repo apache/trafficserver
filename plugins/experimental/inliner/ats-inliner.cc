@@ -200,9 +200,9 @@ TSPluginInit(int, const char **)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = const_cast<char *>(PLUGIN_TAG);
-  info.vendor_name   = const_cast<char *>("MyCompany");
-  info.support_email = const_cast<char *>("ts-api-support@MyCompany.com");
+  info.plugin_name   = PLUGIN_TAG;
+  info.vendor_name   = "MyCompany";
+  info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[" PLUGIN_TAG "] Plugin registration failed.\n");

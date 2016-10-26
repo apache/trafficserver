@@ -168,7 +168,7 @@ write_buffer_to_disk(TSIOBufferReader reader, pvc_state *my_state, TSCont contp)
   block = TSIOBufferReaderStart(reader);
   while (block != NULL) {
     ptr  = TSIOBufferBlockReadStart(block, reader, &size);
-    pBuf = (char *)TSmalloc(sizeof(char) * size);
+    pBuf = static_cast<char *>(TSmalloc(sizeof(char) * size));
     if (pBuf == NULL) {
       LOG_ERROR_AND_RETURN("TSAIOWrite");
     }
@@ -598,7 +598,7 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
     return;
   }
 
-  char *hostname = (char *)getenv("HOSTNAME");
+  char *hostname = getenv("HOSTNAME");
 
   // in reverse proxy mode, TSUrlHostGet returns NULL here
   str = TSUrlHostGet(req_bufp, url_loc, &len);
@@ -626,7 +626,7 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
     TSDebug(DEBUG_TAG, "convert_url_func working on path: %s", pathTmp);
     colon = strstr(str, ":");
     if (colon != NULL && colon < slash) {
-      char *port_str = (char *)TSmalloc(sizeof(char) * (slash - colon));
+      char *port_str = static_cast<char *>(TSmalloc(sizeof(char) * (slash - colon)));
       strncpy(port_str, colon + 1, slash - colon - 1);
       port_str[slash - colon - 1] = '\0';
       TSUrlPortSet(req_bufp, url_loc, atoi(port_str));
@@ -835,7 +835,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       break;
     }
 
-    my_state              = (pvc_state *)TSmalloc(sizeof(pvc_state));
+    my_state              = static_cast<pvc_state *>(TSmalloc(sizeof(pvc_state)));
     my_state->req_size    = content_length;
     my_state->p_vc        = NULL;
     my_state->p_read_vio  = NULL;
@@ -865,7 +865,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     my_state->read_offset          = 0;
     my_state->is_reading_from_disk = 0;
 
-    my_state->chunk_buffer = (char *)TSmalloc(sizeof(char) * uconfig->chunk_size);
+    my_state->chunk_buffer = static_cast<char *>(TSmalloc(sizeof(char) * uconfig->chunk_size));
 
     my_state->disk_io_mutex = TSMutexCreate();
     if (NOT_VALID_PTR(my_state->disk_io_mutex)) {
@@ -1001,7 +1001,7 @@ load_urls(char *filename)
   char *eol;
   int i;
 
-  url_buf                          = (char *)TSmalloc(sizeof(char) * (uconfig->max_url_length + 1));
+  url_buf                          = static_cast<char *>(TSmalloc(sizeof(char) * (uconfig->max_url_length + 1)));
   url_buf[uconfig->max_url_length] = '\0';
 
   for (i = 0; i < 2; i++) {
@@ -1015,7 +1015,7 @@ load_urls(char *filename)
       while (TSfgets(file, url_buf, uconfig->max_url_length) != NULL) {
         uconfig->url_num++;
       }
-      uconfig->urls = (char **)TSmalloc(sizeof(char *) * uconfig->url_num);
+      uconfig->urls = static_cast<char **>(TSmalloc(sizeof(char *) * uconfig->url_num));
     } else { // second round
       int idx = 0;
       while (TSfgets(file, url_buf, uconfig->max_url_length) != NULL && idx < uconfig->url_num) {
@@ -1093,8 +1093,8 @@ parse_config_line(char *line, const struct config_val_ul *cv)
         case TYPE_STRING: {
           size_t len = strlen(tok);
           if (len > 0) {
-            *((char **)cv->val) = (char *)TSmalloc(len + 1);
-            strcpy(*((char **)cv->val), tok);
+            *(static_cast<char **>(cv->val)) = static_cast<char *>(TSmalloc(len + 1));
+            strcpy(*(static_cast<char **>(cv->val)), tok);
             TSError("[buffer_upload] Parsed string config value %s : %s", cv->str, tok);
             TSDebug(DEBUG_TAG, "Parsed string config value %s : %s", cv->str, tok);
           }
@@ -1126,7 +1126,7 @@ bool
 read_upload_config(const char *file_name)
 {
   TSDebug(DEBUG_TAG, "read_upload_config: %s", file_name);
-  uconfig                  = (upload_config *)TSmalloc(sizeof(upload_config));
+  uconfig                  = static_cast<upload_config *>(TSmalloc(sizeof(upload_config)));
   uconfig->use_disk_buffer = true;
   uconfig->convert_url     = false;
   uconfig->chunk_size      = 16 * 1024;
@@ -1222,9 +1222,9 @@ TSPluginInit(int argc, const char *argv[])
     TSDebug(DEBUG_TAG, "loaded uconfig->url_list_file, num urls: %d", uconfig->url_num);
   }
 
-  info.plugin_name   = const_cast<char *>("buffer_upload");
-  info.vendor_name   = const_cast<char *>("Apache Software Foundation");
-  info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
+  info.plugin_name   = "buffer_upload";
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (uconfig->use_disk_buffer && !create_directory()) {
     TSError("[buffer_upload] Directory creation failed.");
