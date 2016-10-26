@@ -14,24 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/mysql_remap/mysql_remap.la
 
-pkglib_LTLIBRARIES = mysql_remap.la
-noinst_LTLIBRARIES = libmysql_remap.la
+experimental_mysql_remap_mysql_remap_la_SOURCES = \
+	experimental/mysql_remap/mysql_remap.cc \
+	experimental/mysql_remap/lib/dictionary.c  \
+	experimental/mysql_remap/lib/dictionary.h  \
+	experimental/mysql_remap/lib/iniparser.c   \
+	experimental/mysql_remap/lib/iniparser.h
 
-AM_CPPFLAGS += \
-  -I$(srcdir)/lib
+experimental_mysql_remap_mysql_remap_la_LDFLAGS = \
+	$(TS_PLUGIN_LD_FLAGS) $(LIB_MYSQLCLIENT)
 
-mysql_remap_la_SOURCES = mysql_remap.cc
-
-libmysql_remap_la_SOURCES = \
-  lib/dictionary.c \
-  lib/iniparser.c
-
-mysql_remap_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS) $(LIB_MYSQLCLIENT)
-mysql_remap_la_LIBADD = libmysql_remap.la
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+# vim: ft=make ts=8 sw=8 et:
