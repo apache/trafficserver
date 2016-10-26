@@ -119,7 +119,11 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
     opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
     switch (opt) {
     case 'p':
-      balancer = MakeBalancerInstance(optarg);
+      if (!balancer) {
+        balancer = MakeBalancerInstance(optarg);
+      } else {
+        TSError("[balancer] Duplicate --policy options, ignored %s", optarg);
+      }
       break;
     case -1:
       break;
