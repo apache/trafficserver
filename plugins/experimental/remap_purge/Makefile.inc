@@ -14,13 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/remap_purge/remap_purge.la
 
-pkglib_LTLIBRARIES = url_sig.la
-url_sig_la_SOURCES = url_sig.c
-url_sig_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+experimental_remap_purge_remap_purge_la_SOURCES = \
+  experimental/remap_purge/remap_purge.c

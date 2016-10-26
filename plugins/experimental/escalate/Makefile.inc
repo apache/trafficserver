@@ -14,17 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/escalate/escalate.la
 
-pkglib_LTLIBRARIES = cachekey.la
-cachekey_la_SOURCES = cachekey.cc common.cc configs.cc pattern.cc plugin.cc
-cachekey_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-VIRTUALENV_DIR = ../../../ci/tsqa/virtualenv
-tsqa: $(VIRTUALENV_DIR)
-	@. $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/nosetests --with-xunit -sv --logging-level=INFO
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_escalate_escalate_la_SOURCES = \
+  experimental/escalate/escalate.cc

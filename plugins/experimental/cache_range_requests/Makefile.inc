@@ -14,13 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/cache_range_requests/cache_range_requests.la
 
-pkglib_LTLIBRARIES = cache_promote.la
-cache_promote_la_SOURCES = cache_promote.cc
-cache_promote_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_cache_range_requests_cache_range_requests_la_SOURCES = \
+  experimental/cache_range_requests/cache_range_requests.cc

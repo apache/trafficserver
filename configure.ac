@@ -1879,39 +1879,8 @@ AC_CONFIG_FILES([
   mgmt/utils/Makefile
   plugins/Makefile
   plugins/experimental/Makefile
-  plugins/experimental/acme/Makefile
-  plugins/experimental/balancer/Makefile
-  plugins/experimental/buffer_upload/Makefile
-  plugins/experimental/cache_key_genid/Makefile
-  plugins/experimental/cache_promote/Makefile
-  plugins/experimental/cache_range_requests/Makefile
-  plugins/experimental/cachekey/Makefile
-  plugins/experimental/collapsed_connection/Makefile
-  plugins/experimental/collapsed_forwarding/Makefile
-  plugins/experimental/custom_redirect/Makefile
-  plugins/experimental/epic/Makefile
-  plugins/experimental/escalate/Makefile
-  plugins/experimental/geoip_acl/Makefile
-  plugins/experimental/header_freq/Makefile
-  plugins/experimental/header_normalize/Makefile
-  plugins/experimental/hipes/Makefile
-  plugins/experimental/hook-trace/Makefile
-  plugins/experimental/inliner/Makefile
-  plugins/experimental/memcache/Makefile
-  plugins/experimental/memcached_remap/Makefile
-  plugins/experimental/metalink/Makefile
-  plugins/experimental/mp4/Makefile
-  plugins/experimental/multiplexer/Makefile
   plugins/experimental/mysql_remap/Makefile
-  plugins/experimental/remap_purge/Makefile
-  plugins/experimental/remap_stats/Makefile
-  plugins/experimental/ssl_cert_loader/Makefile
   plugins/experimental/sslheaders/Makefile
-  plugins/experimental/stale_while_revalidate/Makefile
-  plugins/experimental/stream_editor/Makefile
-  plugins/experimental/ts_lua/Makefile
-  plugins/experimental/url_sig/Makefile
-  plugins/experimental/webp_transform/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
   proxy/config/Makefile

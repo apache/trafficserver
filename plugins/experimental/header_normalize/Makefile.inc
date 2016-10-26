@@ -14,14 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/header_normalize/header_normalize.la
 
-pkglib_LTLIBRARIES = epic.la
-epic_la_SOURCES = epic.cc
-epic_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_header_normalize_header_normalize_la_SOURCES = \
+  experimental/header_normalize/header_normalize.cc

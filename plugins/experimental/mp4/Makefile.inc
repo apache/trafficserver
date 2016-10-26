@@ -14,13 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/mp4/mp4.la
 
-pkglib_LTLIBRARIES = metalink.la
-metalink_la_SOURCES = metalink.cc
-metalink_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_mp4_mp4_la_SOURCES = \
+  experimental/mp4/mp4.cc \
+  experimental/mp4/mp4_common.h \
+  experimental/mp4/mp4_meta.cc \
+  experimental/mp4/mp4_meta.h

@@ -13,28 +13,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-include $(top_srcdir)/build/plugins.mk
 
-tsmemcache_la_CPPFLAGS = \
-  $(AM_CPPFLAGS) \
-  -I$(top_srcdir)/proxy/api/ts \
-  -I$(top_srcdir)/iocore/aio \
-  -I$(top_srcdir)/iocore/cache \
-  -I$(top_srcdir)/iocore/eventsystem \
-  -I$(top_srcdir)/iocore/net \
-  -I$(top_srcdir)/iocore/utils \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts
+pkglib_LTLIBRARIES += experimental/custom_redirect/custom_redirect.la
 
-pkglib_LTLIBRARIES = tsmemcache.la
-
-tsmemcache_la_SOURCES = \
-  tsmemcache.cc
-
-tsmemcache_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_custom_redirect_custom_redirect_la_SOURCES = \
+  experimental/custom_redirect/custom_redirect.cc

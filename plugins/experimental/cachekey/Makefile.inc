@@ -1,4 +1,3 @@
-#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -15,24 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/cachekey/cachekey.la
+experimental_cachekey_cachekey_la_SOURCES = \
+  experimental/cachekey/cachekey.cc \
+  experimental/cachekey/common.cc \
+  experimental/cachekey/configs.cc \
+  experimental/cachekey/pattern.cc \
+  experimental/cachekey/plugin.cc
 
-AM_CPPFLAGS += $(LIBMAGICKCPP_CFLAGS)
-
-AM_CXXFLAGS += \
-  -Wno-unused-variable
-
-pkglib_LTLIBRARIES = WebpTransform.la
-
-WebpTransform_la_SOURCES = ImageTransform.cc
-WebpTransform_la_LDFLAGS = \
-  $(TS_PLUGIN_LD_FLAGS) \
-  -L$(top_builddir)/lib/atscppapi/src
-WebpTransform_la_LIBADD = \
-  -latscppapi \
-  $(LIBMAGICKCPP_LIBS)
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+VIRTUALENV_DIR = ../../../ci/tsqa/virtualenv
+tsqa: $(VIRTUALENV_DIR)
+	@. $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/nosetests --with-xunit -sv --logging-level=INFO

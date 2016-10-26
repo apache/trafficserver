@@ -14,17 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/hipes/hipes.la
 
-AM_CPPFLAGS += -I$(top_srcdir)/lib -I$(top_srcdir)/lib/ts
-
-pkglib_LTLIBRARIES = ssl_cert_loader.la
-
-ssl_cert_loader_la_SOURCES = ssl-cert-loader.cc domain-tree.cc
-ssl_cert_loader_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-ssl_cert_loader_la_LIBADD = $(top_builddir)/lib/tsconfig/libtsconfig.la
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_hipes_hipes_la_SOURCES = \
+  experimental/hipes/hipes.cc

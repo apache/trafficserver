@@ -14,13 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/ssl_cert_loader/ssl_cert_loader.la
 
-pkglib_LTLIBRARIES = acme.la
-acme_la_SOURCES = acme.c
-acme_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
+experimental_ssl_cert_loader_ssl_cert_loader_la_SOURCES = \
+  experimental/ssl_cert_loader/ssl-cert-loader.cc \
+  experimental/ssl_cert_loader/domain-tree.cc
 
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+experimental_ssl_cert_loader_ssl_cert_loader_la_LIBADD = $(top_builddir)/lib/tsconfig/libtsconfig.la

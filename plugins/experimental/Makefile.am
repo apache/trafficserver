@@ -15,47 +15,10 @@
 #  limitations under the License.
 
 SUBDIRS = \
- acme \
- balancer \
- buffer_upload \
- cache_promote \
- cache_range_requests \
- cachekey \
- collapsed_connection \
- collapsed_forwarding \
- custom_redirect \
- epic \
- escalate \
- geoip_acl \
- header_normalize \
- header_freq \
- hipes \
- hook-trace \
- inliner \
- memcache \
- memcached_remap \
- metalink \
- mp4 \
- multiplexer \
- remap_purge \
- remap_stats \
- ssl_cert_loader \
- sslheaders \
- stale_while_revalidate \
- stream_editor \
- ts_lua \
- url_sig
-
-if BUILD_WEBP_TRANSFORM_PLUGIN
- SUBDIRS += webp_transform
-endif
+ sslheaders
 
 if HAS_MYSQL
   SUBDIRS += mysql_remap
-endif
-
-if HAS_KYOTOCABINET
-  SUBDIRS += cache_key_genid
 endif
 
 include $(top_srcdir)/build/tidy.mk

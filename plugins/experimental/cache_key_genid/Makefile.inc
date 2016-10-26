@@ -14,14 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/cache_key_genid/cache_key_genid.la
 
-pkglib_LTLIBRARIES = header_freq.la
-header_freq_la_SOURCES = header_freq.cc
-header_freq_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
+experimental_cache_key_genid_cache_key_genid_la_SOURCES = \
+  experimental/cache_key_genid/cache_key_genid.c
 
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+experimental_cache_key_genid_cache_key_genid_la_LDFLAGS = \
+    $(TS_PLUGIN_LD_FLAGS) $(LIB_KYOTOCABINET)

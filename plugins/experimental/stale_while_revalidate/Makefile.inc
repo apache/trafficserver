@@ -14,11 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
+pkglib_LTLIBRARIES += experimental/stale_while_revalidate/stale_while_revalidate.la
 
-pkglib_LTLIBRARIES = remap_purge.la
-remap_purge_la_SOURCES = remap_purge.c
-remap_purge_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
-
-tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+experimental_stale_while_revalidate_stale_while_revalidate_la_SOURCES = \
+  experimental/stale_while_revalidate/stale_while_revalidate.c
