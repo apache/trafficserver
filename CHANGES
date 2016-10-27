@@ -258,6 +258,7 @@ Bug:
   *) [TS-4947] Collation Server is broken?
   *) [TS-4953] Memory leaks in priority queue test
   *) [TS-4992] We always create .a libraries now
+  *) [TS-4993] Backslash/escape removed from header_rewrite rule when unquoted
 
 Improvement:
   *) [TS-110] Add a @host option to regex_remap plugin
