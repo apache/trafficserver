@@ -22,6 +22,7 @@
 */
 #include <stdint.h>
 #include "ts/Map.h"
+#include <list>
 
 typedef const char cchar;
 
@@ -67,13 +68,14 @@ test_TSHashTable()
 {
   static uint32_t const N = 270;
   Table t;
-  Item *item;
+  Item *item = nullptr;
   Table::Location loc;
+  std::list<Item *> to_delete;
 
-  item = new Item(1);
-  t.insert(item);
-  for (uint32_t i = 2; i <= N; ++i) {
-    t.insert(new Item(i));
+  for (uint32_t i = 1; i <= N; ++i) {
+    item = new Item(i);
+    t.insert(item);
+    to_delete.push_back(item);
   }
 
   for (uint32_t i = 1; i <= N; ++i) {
@@ -114,6 +116,10 @@ test_TSHashTable()
     ink_assert((spot->_value & 1) == 0);
   }
   ink_assert(n == N / 2);
+
+  for (auto it : to_delete) {
+    delete it;
+  }
 }
 
 int
