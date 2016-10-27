@@ -62,9 +62,6 @@ Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
         _tokens.push_back(line.substr(cur_token_start, cur_token_length));
         state            = PARSER_DEFAULT;
         extracting_token = false;
-      } else if (!extracting_token) {
-        // /'s elsewhere are just consumed, but we should not end up here if we're not extracting a token
-        TSError("[%s] malformed regex \"%s\" ignoring...", PLUGIN_NAME, line.c_str());
       }
     } else if ((state != PARSER_IN_REGEX) && (line[i] == '\\')) {
       // Escaping
