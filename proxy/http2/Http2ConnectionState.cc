@@ -299,6 +299,8 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     if (result != HTTP2_ERROR_NO_ERROR) {
       if (result == HTTP2_ERROR_COMPRESSION_ERROR) {
         return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
+      } else if (result == HTTP2_ERROR_ENHANCE_YOUR_CALM) {
+        return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_ENHANCE_YOUR_CALM);
       } else {
         return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
       }
@@ -730,6 +732,8 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     if (result != HTTP2_ERROR_NO_ERROR) {
       if (result == HTTP2_ERROR_COMPRESSION_ERROR) {
         return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
+      } else if (result == HTTP2_ERROR_ENHANCE_YOUR_CALM) {
+        return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_ENHANCE_YOUR_CALM);
       } else {
         return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
       }
