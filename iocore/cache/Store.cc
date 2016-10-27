@@ -319,17 +319,17 @@ Store::evaluate_config()
 
   ats_scoped_str storage_path(RecConfigReadConfigPath("proxy.config.cache.store_filename", "store.config"));
 
-  if(!binding.construct()) {
+  if (!binding.construct()) {
     err = "error on constructing binding";
     goto Lfail;
   }
 
-  if(MakeStoreBindings(binding, this)) {
-    if(binding.require(storage_path.get())) {
+  if (MakeStoreBindings(binding, this)) {
+    if (binding.require(storage_path.get())) {
       // count the number of disks
       extend(n_disks_in_config);
       Span *cur = span_head;
-      int i = 0;
+      int i     = 0;
       while (cur) {
         Span *next     = cur->link.next;
         cur->link.next = NULL;

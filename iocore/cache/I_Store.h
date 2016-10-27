@@ -261,7 +261,7 @@ struct Store {
   // Head of the span during evaluation of config file
   Span *span_head;
   // Current span during evaluation of config file
-  Span *curr_span; 
+  Span *curr_span;
 
   //
   // returns NULL on success

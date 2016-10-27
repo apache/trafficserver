@@ -25,27 +25,31 @@
 #include "P_Cache.h"
 #include "ts/I_Layout.h"
 
-static int 
+static int
 create_store_object(lua_State *L)
 {
   const char *path;
   const char *id;
   lua_Integer volume;
   const char *size_str;
-  int64_t size   = -1;
+  int64_t size    = -1;
   const char *err = NULL;
 
   Store *store = (Store *)BindingInstance::self(L)->retrieve_ptr("store.config");
 
   BindingInstance::typecheck(L, "store", LUA_TTABLE, LUA_TNONE);
-  
-  path = lua_getfield<const char *>(L, -1, "Path", NULL);
-  id = lua_getfield<const char *>(L, -1, "Id", NULL);
-  volume = lua_getfield<lua_Integer>(L, -1, "Volume", -1);
-  size_str = lua_getfield<const char *>(L, -1, "Size", NULL);  
+
+  path     = lua_getfield<const char *>(L, -1, "Path", NULL);
+  id       = lua_getfield<const char *>(L, -1, "Id", NULL);
+  volume   = lua_getfield<lua_Integer>(L, -1, "Volume", 0);
+  size_str = lua_getfield<const char *>(L, -1, "Size", NULL);
 
   if (path == NULL) {
     return luaL_error(L, "missing or invalid 'Path' argument");
+  }
+
+  if (size_str == NULL) {
+    return luaL_error(L, "missing or invalid 'Size' argument");
   }
 
   if (ParseRules::is_digit(*size_str)) {
@@ -54,18 +58,21 @@ create_store_object(lua_State *L)
     }
   }
 
-  if(ParseRules::is_space(*id)) {
-    id = NULL;
+  if (id != NULL) {
+    if (ParseRules::is_space(*id)) {
+      id = NULL;
+    }
   }
 
-  if(volume <= 0) {
+  if (volume < 0) {
     return luaL_error(L, "error parsing volume number");
   }
 
   char *pp = Layout::get()->relative(path);
 
   Span *ns = new Span;
-  Debug("lua", "Store::evaluate_config - new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%td%s%s", pp, size, volume, id ? " id=" : "", id ? id : "");
+  Debug("lua", "Store::evaluate_config - new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%td%s%s", pp, size, volume,
+        id ? " id=" : "", id ? id : "");
   if ((err = ns->init(pp, size))) {
     RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "could not initialize storage \"%s\" [%s]", pp, err);
     Debug("lua", "Store::evaluate_config - could not initialize storage \"%s\" [%s]", pp, err);
@@ -84,8 +91,8 @@ create_store_object(lua_State *L)
 
   // new Span
   {
-    Span *prev = store->curr_span;
-    store->curr_span        = ns;
+    Span *prev       = store->curr_span;
+    store->curr_span = ns;
     if (!store->span_head)
       store->span_head = store->curr_span;
     else
