@@ -135,6 +135,13 @@ Http2Stream::main_event_handler(int event, void *edata)
   return 0;
 }
 
+Http2ErrorCode
+Http2Stream::decode_header_blocks(HpackHandle &hpack_handle)
+{
+  return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks, header_blocks_length, NULL, hpack_handle,
+                                    trailing_header);
+}
+
 void
 Http2Stream::send_request(Http2ConnectionState &cstate)
 {
