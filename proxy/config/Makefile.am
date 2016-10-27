@@ -24,7 +24,7 @@ EXTRA_DIST = \
 sysconfdir = $(pkgsysconfdir)
 nodist_sysconf_DATA = \
   records.config.default \
-  storage.config.default
+  store.config.default
 
 dist_sysconf_DATA =	\
   cache.config.default \

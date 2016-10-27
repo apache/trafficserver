@@ -23,6 +23,7 @@
 
 #include "ts/ink_platform.h"
 #include "P_Cache.h"
+#include "StoreBindings.h"
 #include "ts/I_Layout.h"
 #include "ts/ink_file.h"
 #include "ts/Tokenizer.h"
@@ -71,7 +72,7 @@ span_file_typename(mode_t st_mode)
 }
 
 Ptr<ProxyMutex> tmp_p;
-Store::Store() : n_disks_in_config(0), n_disks(0), disk(NULL)
+Store::Store() : n_disks_in_config(0), n_disks(0), disk(NULL), span_head(NULL), curr_span(NULL)
 {
 }
 
@@ -304,6 +305,58 @@ Lagain:
     }
   }
   return found ? 0 : -1;
+}
+
+const char *
+Store::evaluate_config()
+{
+  const char *err = NULL;
+  BindingInstance binding;
+
+  // just in case it does not start with null
+  if (span_head)
+    delete span_head;
+
+  ats_scoped_str storage_path(RecConfigReadConfigPath("proxy.config.cache.store_filename", "store.config"));
+
+  if (!binding.construct()) {
+    err = "error on constructing binding";
+    goto Lfail;
+  }
+
+  if (MakeStoreBindings(binding, this)) {
+    if (binding.require(storage_path.get())) {
+      // count the number of disks
+      extend(n_disks_in_config);
+      Span *cur = span_head;
+      int i     = 0;
+      while (cur) {
+        Span *next     = cur->link.next;
+        cur->link.next = NULL;
+        disk[i++]      = cur;
+        cur            = next;
+      }
+      span_head = 0; // these are all used.
+      sort();
+
+      return NULL;
+    } else {
+      err = "error on parsing the config";
+    }
+  } else {
+    err = "error on creating bindings";
+  }
+
+Lfail:
+  // Do clean up.
+  Span *cur = span_head;
+  while (cur) {
+    Span *next = cur->link.next;
+    delete cur;
+    cur = next;
+  }
+
+  return err;
 }
 
 const char *

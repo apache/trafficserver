@@ -66,7 +66,7 @@ initializeRegistry()
 
   configFiles->addFile("log_hosts.config", false);
   configFiles->addFile("logging.config", false);
-  configFiles->addFile("storage.config", false);
+  configFiles->addFile("store.config", false);
   configFiles->addFile("socks.config", false);
   configFiles->addFile("records.config", false);
   configFiles->addFile("vaddrs.config", false);
