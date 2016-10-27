@@ -834,7 +834,8 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Hpac
 }
 
 int64_t
-hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len)
+hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len,
+                          uint32_t max_header_size)
 {
   const uint8_t *cursor           = in_buf;
   const uint8_t *const in_buf_end = in_buf + in_buf_len;
@@ -842,6 +843,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
   HTTPHdrImpl *hh                 = hdr->m_http;
   bool header_field_started       = false;
   bool has_http2_violation        = false;
+  uint32_t total_header_size      = 0;
 
   while (cursor < in_buf_end) {
     int64_t read_bytes = 0;
@@ -885,6 +887,18 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
       cursor += read_bytes;
       continue;
     }
+
+    int name_len  = 0;
+    int value_len = 0;
+
+    field->name_get(&name_len);
+    field->value_get(&value_len);
+    total_header_size += name_len + value_len;
+
+    if (total_header_size > max_header_size) {
+      return HPACK_ERROR_SIZE_EXCEEDED_ERROR;
+    }
+
     // Store to HdrHeap
     mime_hdr_field_attach(hh->m_fields_impl, field, 1, NULL);
   }

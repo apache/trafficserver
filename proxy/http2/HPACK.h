@@ -30,7 +30,8 @@
 #include "HTTP.h"
 
 // It means that any header field can be compressed/decompressed by ATS
-const static int HPACK_ERROR_COMPRESSION_ERROR = -1;
+const static int HPACK_ERROR_COMPRESSION_ERROR   = -1;
+const static int HPACK_ERROR_SIZE_EXCEEDED_ERROR = -2;
 
 enum HpackFieldType {
   HPACK_FIELD_INDEX,              // [RFC 7541] 6.1. Indexed Header Field Representation
@@ -170,7 +171,8 @@ int64_t update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_e
 
 // High level interfaces
 typedef HpackIndexingTable HpackHandle;
-int64_t hpack_decode_header_block(HpackHandle &handle, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len);
+int64_t hpack_decode_header_block(HpackHandle &handle, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len,
+                                  uint32_t max_header_size);
 int64_t hpack_encode_header_block(HpackHandle &handle, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr);
 
 #endif /* __HPACK_H__ */

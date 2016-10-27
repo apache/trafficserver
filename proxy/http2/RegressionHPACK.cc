@@ -29,6 +29,7 @@
 const static int DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST = 256;
 const static int BUFSIZE_FOR_REGRESSION_TEST            = 128;
 const static int MAX_TEST_FIELD_NUM                     = 8;
+const static int MAX_REQUEST_HEADER_SIZE                = 131072;
 
 /***********************************************************************************
  *                                                                                 *
@@ -562,7 +563,7 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
     headers->create(HTTP_TYPE_REQUEST);
 
     hpack_decode_header_block(indexing_table, headers, encoded_field_request_test_case[i].encoded_field,
-                              encoded_field_request_test_case[i].encoded_field_len);
+                              encoded_field_request_test_case[i].encoded_field_len, MAX_REQUEST_HEADER_SIZE);
 
     for (unsigned int j = 0; j < sizeof(raw_field_request_test_case[i]) / sizeof(raw_field_request_test_case[i][0]); j++) {
       const char *expected_name  = raw_field_request_test_case[i][j].raw_name;

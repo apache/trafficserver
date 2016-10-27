@@ -572,12 +572,15 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   const char *value;
   int len;
   bool is_trailing_header = trailing_header;
-  int64_t result          = hpack_decode_header_block(handle, hdr, buf_start, buf_len);
+  int64_t result          = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_request_header_size);
 
   if (result < 0) {
     if (result == HPACK_ERROR_COMPRESSION_ERROR) {
       return HTTP2_ERROR_COMPRESSION_ERROR;
+    } else if (result == HPACK_ERROR_SIZE_EXCEEDED_ERROR) {
+      return HTTP2_ERROR_ENHANCE_YOUR_CALM;
     }
+
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
   if (len_read) {
