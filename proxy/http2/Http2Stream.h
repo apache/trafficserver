@@ -149,13 +149,6 @@ public:
     return trailing_header;
   }
 
-  Http2ErrorCode
-  decode_header_blocks(HpackHandle &hpack_handle)
-  {
-    return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks, header_blocks_length, NULL, hpack_handle,
-                                      trailing_header);
-  }
-
   void
   set_request_headers(HTTPHdr &h2_headers)
   {
@@ -176,6 +169,7 @@ public:
     return content_length == 0 || content_length == data_length;
   }
 
+  Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle);
   void send_request(Http2ConnectionState &cstate);
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false);
