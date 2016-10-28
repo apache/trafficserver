@@ -74,7 +74,7 @@ public:
   void signalAlarm(int alarm_id, const char *desc = NULL, const char *ip = NULL);
 
   void processEventQueue();
-  bool startProxy(char *onetime_options);
+  bool startProxy(const char *onetime_options);
   void listenForProxy();
   void bindProxyPort(HttpProxyPort &);
   void closeProxyPorts();

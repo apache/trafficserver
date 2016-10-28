@@ -27,7 +27,6 @@
 #include "ts/ink_sock.h"
 #include "ts/ink_args.h"
 #include "ts/ink_syslog.h"
-#include <vector>
 
 #include "WebMgmtUtils.h"
 #include "WebOverview.h"
@@ -38,6 +37,7 @@
 #include "FileManager.h"
 #include "ts/I_Layout.h"
 #include "ts/I_Version.h"
+#include "ts/TextBuffer.h"
 #include "DiagsConfig.h"
 #include "HTTP.h"
 #include "CoreAPI.h"
@@ -446,8 +446,6 @@ main(int argc, const char **argv)
   int binding_version      = 0;
   BindingInstance *binding = NULL;
 
-  std::vector<char*> callback_proxy_options;
-
   ArgumentDescription argument_descriptions[] = {
     {"proxyOff", '-', "Disable proxy", "F", &proxy_off, NULL, NULL},
     {"aconfPort", '-', "Autoconf port", "I", &aconf_port_arg, "MGMT_ACONF_PORT", NULL},
@@ -614,36 +612,23 @@ main(int argc, const char **argv)
 
   /* Update cmd line overrides/environmental overrides/etc */
   if (tsArgs) { /* Passed command line args for proxy */
-    char* new_proxy_opts = new char[strlen(lmgmt->proxy_options) + strlen(tsArgs) + 1];
-    strcpy(new_proxy_opts, lmgmt->proxy_options);
-    strcat(new_proxy_opts, tsArgs);
-    ats_free(lmgmt->proxy_options);
-    lmgmt->proxy_options = new_proxy_opts;
+    lmgmt->proxy_options = ats_strdup(tsArgs);
   }
 
   // TS needs to be started up with the same outputlog bindings each time,
   // so we append the outputlog location to the persistent proxy options
   //
   // TS needs them to be able to create BaseLogFiles for each value
-  if (*bind_stdout != 0) {
-    const char *bind_stdout_opt = " --" TM_OPT_BIND_STDOUT " ";
-    char *new_proxy_opts = new char[strlen(lmgmt->proxy_options) + strlen(bind_stdout_opt) + strlen(bind_stdout) + 1];
-    strcpy(new_proxy_opts, lmgmt->proxy_options);
-    strcat(new_proxy_opts, bind_stdout_opt);
-    strcat(new_proxy_opts, bind_stdout);
-    delete lmgmt->proxy_options;
-    lmgmt->proxy_options = new_proxy_opts;
+  textBuffer args(1024);
+  if (*bind_stdout) {
+    const char *space = args.empty() ? "" : " ";
+    args.format("%s%s %s", space, "--" TM_OPT_BIND_STDOUT, bind_stdout);
   }
-
-  if (*bind_stderr != 0) {
-    const char *bind_stderr_opt = " --" TM_OPT_BIND_STDERR " ";
-    char *new_proxy_opts = new char[strlen(lmgmt->proxy_options) + strlen(bind_stderr_opt) + strlen(bind_stderr) + 1];
-    strcpy(new_proxy_opts, lmgmt->proxy_options);
-    strcat(new_proxy_opts, bind_stderr_opt);
-    strcat(new_proxy_opts, bind_stderr);
-    delete lmgmt->proxy_options;
-    lmgmt->proxy_options = new_proxy_opts;
+  if (*bind_stderr) {
+    const char *space = args.empty() ? "" : " ";
+    args.format("%s%s %s", space, "--" TM_OPT_BIND_STDERR, bind_stderr);
   }
+  lmgmt->proxy_options = args.release();
 
   if (proxy_port) {
     HttpProxyPort::loadValue(lmgmt->m_proxy_ports, proxy_port);
@@ -851,11 +836,6 @@ main(int argc, const char **argv)
       mgmt_log("[main] Proxy launch failed, retrying after %d sec...\n", sleep_time);
     }
   }
-
-  // Delete the proxy options we saved for CoreAPI.
-  // This probably isn't needed b/c the process dies here...
-  for (auto it = callback_proxy_options.begin(); it < callback_proxy_options.end(); ++it)
-    free(*it);
 
   if (binding) {
     metrics_binding_destroy(*binding);

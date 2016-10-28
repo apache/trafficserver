@@ -41,7 +41,6 @@
 #include "ts/Diags.h"
 #include "ts/ink_hash_table.h"
 #include "ExpandingArray.h"
-#include <vector>
 //#include "I_AccCrypto.h"
 
 #include "CoreAPI.h"
@@ -53,9 +52,6 @@
 
 // global variable
 CallbackTable *local_event_callbacks;
-
-// Used to get any proxy options that traffic_manager might want to tack on
-std::function<void(std::vector<char*>&)> proxy_options_callback;
 
 extern FileManager *configFiles; // global in traffic_manager
 
