@@ -1199,13 +1199,15 @@ Parent Proxy Configuration
    :reloadable:
    :overridable:
 
-   The total number of connection attempts allowed to a parent cache before Traffic Server bypasses the parent or fails the request
+   The total number of connection attempts for a specific transaction allowed to
+   a parent cache before Traffic Server bypasses the parent or fails the request
    (depending on the ``go_direct`` option in the :file:`parent.config` file).
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.per_parent_connect_attempts INT 2
    :reloadable:
 
-   The total number of connection attempts allowed per parent, if multiple parents are used.
+   The total number of connection attempts allowed per parent for a specific
+   transaction, if multiple parents are used.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
    :reloadable:
@@ -2231,13 +2233,13 @@ Customizable User Response Pages
 
 .. ts:cv:: CONFIG proxy.config.http_ui_enabled INT 0
 
-   Specifies which http UI endpoints to allow within :file:`remap.config`:
+   Specifies which http Inspector UI endpoints to allow within :file:`remap.config`:
 
    ===== ======================================================================
    Value Description
    ===== ======================================================================
    ``0`` Disable all http UI endpoints.
-   ``1`` Enable only cache endpoints.
+   ``1`` Enable only Cache Inspector endpoints.
    ``2`` Enable only stats endpoints.
    ``3`` Enable all http UI endpoints.
    ===== ======================================================================
