@@ -188,6 +188,14 @@ AC_ARG_ENABLE([werror],
 )
 AC_MSG_RESULT([$enable_werror])
 
+# Enable ASAN for the builds
+AC_MSG_CHECKING([whether to enable asan])
+AC_ARG_ENABLE([asan],
+  [AS_HELP_STRING([--enable-asan],[turn on asan])],
+  [],
+  [enable_asan=no]
+)
+AC_MSG_RESULT([$enable_asan])
 
 #
 # Fast SDK APIs, this disables the parameter checks (assert)
@@ -901,6 +909,12 @@ if test "x${enable_debug}" = "xyes"; then
 else
   TS_ADDTO(CFLAGS, [${cc_oflag_opt}])
   TS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
+fi
+
+# Flags for ASAN
+if test "x${enable_asan}" = "xyes"; then
+  TS_ADDTO(CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
+  TS_ADDTO(CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
 fi
 
 # Checks for pointer size.
