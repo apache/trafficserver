@@ -216,6 +216,7 @@ Impl::handleMessage()
   recv_hdr.msg_control    = anc_buffer;
   recv_hdr.msg_controllen = ANC_BUFFER_SIZE;
 
+  // coverity[uninit_use_in_call]
   n = recvmsg(m_fd, &recv_hdr, MSG_TRUNC);
   if (n > BUFFER_SIZE)
     return -EMSGSIZE;
