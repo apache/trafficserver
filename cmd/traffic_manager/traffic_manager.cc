@@ -810,7 +810,6 @@ main(int argc, const char **argv)
         just_started = 0;
         sleep_time   = 0;
       } else {
-        mgmt_log("in ProxyStateSet else branch");
         just_started++;
       }
       lmgmt->coreapi_sleep = true;
