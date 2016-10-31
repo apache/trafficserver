@@ -74,7 +74,7 @@ typedef enum {  // do not renumber --- used as array index
   DL_Undefined  // must be last, used for size!
 } DiagsLevel;
 
-enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, INVALID_ROLLING_VALUE };
+enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_TIME_OR_SIZE, INVALID_ROLLING_VALUE };
 
 enum DiagsShowLocation { SHOW_LOCATION_NONE = 0, SHOW_LOCATION_DEBUG, SHOW_LOCATION_ALL };
 

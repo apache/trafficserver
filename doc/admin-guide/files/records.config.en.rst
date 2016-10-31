@@ -297,6 +297,8 @@ System Variables
          The clock starts ticking on |TS| boot.
    ``2`` Enables output log rolling when the output log reaches a specific size
          (specified with :ts:cv:`proxy.config.output.logfile.rolling_size_mb`).
+   ``3`` Enables output log rolling at specific intervals or when the output log
+         reaches a specific size (whichever occurs first).
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_interval_sec INT 3600
@@ -2858,6 +2860,8 @@ Diagnostic Logging Configuration
    ``2`` Enables diagnostics log rolling when the diagnostics log reaches a
          specific size (specified with
          :ts:cv:`proxy.config.diags.logfile.rolling_size_mb`).
+   ``3`` Enables diagnostics log rolling at specific intervals or when the
+         diagnostics log reaches a specific size (whichever occurs first).
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_interval_sec INT 3600
