@@ -805,6 +805,7 @@ main(int argc, const char **argv)
       } else {
         sleep_time = 1;
       }
+      lmgmt->coreapi_sleep = false;
       if (ProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_NONE) == TS_ERR_OKAY) {
         just_started = 0;
         sleep_time   = 0;
@@ -812,6 +813,7 @@ main(int argc, const char **argv)
         mgmt_log("in ProxyStateSet else branch");
         just_started++;
       }
+      lmgmt->coreapi_sleep = true;
     } else { /* Give the proxy a chance to fire up */
       just_started++;
     }

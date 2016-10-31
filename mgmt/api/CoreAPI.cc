@@ -190,12 +190,13 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
     lmgmt->listenForProxy();
     lmgmt->startProxy(tsArgs);
 
-    do {
-      mgmt_sleep_sec(1);
-    } while (i++ < 20 && (lmgmt->proxy_running == 0));
+    if (lmgmt->coreapi_sleep) {
+      do {
+        mgmt_sleep_sec(1);
+      } while (i++ < 20 && (lmgmt->proxy_running == 0));
 
-    if (!lmgmt->processRunning()) {
-      goto Lerror;
+      if (!lmgmt->processRunning())
+        goto Lerror;
     }
 
     break;
