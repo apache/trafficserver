@@ -109,7 +109,7 @@ public:
   char *absolute_proxy_binary;
   char *proxy_name;
   char *proxy_binary;
-  char *proxy_options;  // These options should persist across proxy reboots
+  char *proxy_options; // These options should persist across proxy reboots
   char *env_prep;
 
   int process_server_sockfd;
