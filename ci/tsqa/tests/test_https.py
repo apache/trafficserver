@@ -324,7 +324,7 @@ class TestConfigFileGroup(helpers.EnvironmentCase, CertSelectionMixin):
         time.sleep(5)
         os.system('cp %s %s' % (helpers.tests_file_path('ec_keys/www.test.com.pem'), helpers.tests_file_path('www.unknown.com.pem')))
         log.info('cp %s %s' % (helpers.tests_file_path('ec_keys/www.test.com.pem'), helpers.tests_file_path('www.unknown.com.pem')))
-        os.system(signal_cmd)
+        os.system(' '.join(signal_cmd))
         log.info(signal_cmd)
         # waiting for the reconfiguration completed
         sec = 0
