@@ -480,8 +480,8 @@ gzip_transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configur
 
   resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
 
-  // conservatively pick some statusses to compress
-  if (!(resp_status == 200 || resp_status == 404 || resp_status == 500)) {
+  // conservatively pick some statusses to compress. ToDo: Make this configurable?
+  if (resp_status != 200) {
     info("http response status [%d] is not compressible", resp_status);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
