@@ -199,23 +199,23 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
     def test_bound_origin(self):
         '''Verify that we get 502s from an origin which just did a bind'''
         url = 'http://127.0.0.1:{0}/bound/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        ret = requests.get(url)
+        ret = requests.get(url, timeout=2)
         self.assertEqual(ret.status_code, 502)
 
     def test_listen_origin(self):
         '''Verify that we get 502s from origins that bind + listen'''
         url = 'http://127.0.0.1:{0}/listen/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        ret = requests.get(url)
+        ret = requests.get(url, timeout=2)
         self.assertEqual(ret.status_code, 502)
 
         url = 'http://127.0.0.1:{0}/listen/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        ret = requests.get(url)
+        ret = requests.get(url, timeout=2)
         self.assertEqual(ret.status_code, 502)
 
     def test_die_on_connect_origin(self):
         '''Verify that we get 504s from origins that die_on_connect'''
         url = 'http://127.0.0.1:{0}/die_on_connect/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        ret = requests.get(url)
+        ret = requests.get(url, timeout=2)
         self.assertEqual(ret.status_code, 504)
 
     def test_partial_response_origin(self):
@@ -226,25 +226,25 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
         gaurantee that the request is re-entrant
         '''
         url = 'http://127.0.0.1:{0}/partial_response/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        ret = requests.get(url)
+        ret = requests.get(url, timeout=2)
         self.assertEqual(ret.status_code, 500)
 
     def test_reset_after_accept_origin(self):
         '''Verify that we get 502s from origins that reset_after_accept, once any bytes are sent to origin we assume we cannot re-dispatch'''
         url = 'http://127.0.0.1:{0}/reset_after_accept/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        ret = requests.get(url)
+        ret = requests.get(url, timeout=2)
         self.assertEqual(ret.status_code, 502)
 
     def test_slow_response(self):
         '''Verify that we get 5xx from origins that take longer than acceptable, since we will not retry them'''
         url = 'http://127.0.0.1:{0}/slow_response/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        ret = requests.get(url)
+        ret = requests.get(url, timeout=2)
         # make sure it worked
         self.assertEqual(ret.status_code, 504)
 
     def test_slow_close(self):
         '''Verify that we retry connecting to an origin when there is a connection failure'''
         url = 'http://127.0.0.1:{0}/slow_close/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        ret = requests.get(url)
+        ret = requests.get(url, timeout=2)
         # make sure it worked
         self.assertEqual(ret.status_code, 200)
