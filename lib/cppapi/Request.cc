@@ -177,6 +177,23 @@ Request::getHeaders() const
   return state_->headers_;
 }
 
+void
+Request::setHost(std::string const &host)
+{
+  static const std::string HOST_FIELD_NAME(TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
+
+  if (state_->hdr_buf_ && state_->hdr_loc_) {
+    Url &url = this->getUrl();
+
+    // Update the URL if it has a host currently.
+    if (!url.getHost().empty())
+      url.setHost(host);
+
+    // Force a HOST field.
+    this->getHeaders().set(HOST_FIELD_NAME, host);
+  }
+}
+
 Request::~Request()
 {
   if (state_->url_loc_) {
