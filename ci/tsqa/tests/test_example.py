@@ -37,14 +37,9 @@ class TestNoOp(helpers.EnvironmentCase):
     '''
     This is purely a documentation test
     '''
-    # you can set configure/environment options for the source build here
-    environment_factory = {
-        'configure': {
-            'enable-wccp': None,  # A value of None means that the argument has no value
-            'with-max-api-stats': 2048,  # if there is a value it will be converted to --key=value
-        },
-        'env': None,
-    }
+    # you can set dependencies on specific "features" (according to traffic_layout)
+    # if the requirement isn't met the test is skipped
+    feature_requirements = {'TS_HAS_WCCP': 0}
 
     @classmethod
     def setUpClass(cls):
@@ -86,10 +81,7 @@ class TestNoOp(helpers.EnvironmentCase):
 
 
 class TestConfigureFlags(helpers.EnvironmentCase):
-    environment_factory = {
-        'configure': {'enable-wccp': None},
-    }
-
+    feature_requirements = {'TS_HAS_WCCP': 0}
     def test_wccp(self):
         self.assertTrue(True)
 
