@@ -59,6 +59,18 @@ public:
   /** @return Headers of the request */
   Headers &getHeaders() const;
 
+  /** Set the @a host for the request.
+
+      This sets all elements of the request related to the host. A @c
+      HOST header will be forced or updated, and the URL updated if it
+      already contains a host.
+
+      @note This is not the same as setting the @c HOST header
+      explicitly - that can lead to a malformed request where the host
+      in the method URL is different from the host in the HOST field.
+  */
+  void setHost(std::string const &host);
+
   ~Request();
 
 private:
