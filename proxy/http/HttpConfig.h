@@ -425,7 +425,7 @@ struct OverridableHttpConfigParams {
       cache_guaranteed_min_lifetime(0),
       cache_guaranteed_max_lifetime(31536000),
       cache_max_stale_age(604800),
-      keep_alive_no_activity_timeout_in(115),
+      keep_alive_no_activity_timeout_in(120),
       keep_alive_no_activity_timeout_out(120),
       transaction_no_activity_timeout_in(30),
       transaction_no_activity_timeout_out(30),

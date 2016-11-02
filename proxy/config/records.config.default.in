@@ -44,7 +44,7 @@ CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
 # HTTP connection timeouts (secs). Docs:
 #    https://docs.trafficserver.apache.org/records.config#http-connection-timeouts
 ##############################################################################
-CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
+CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
 CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
 CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
 CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30

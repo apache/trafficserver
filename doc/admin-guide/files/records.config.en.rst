@@ -1230,7 +1230,7 @@ Parent Proxy Configuration
 HTTP Connection Timeouts
 ========================
 
-.. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
    :reloadable:
    :overridable:
 
