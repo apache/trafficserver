@@ -912,7 +912,7 @@ LocalManager::startProxy(const char *onetime_options)
     }
 
     // Make sure we're starting the proxy in mgmt mode
-    if (!strstr(proxy_options, MGMT_OPT) && !strstr(onetime_options, MGMT_OPT)) {
+    if (strstr(proxy_options, MGMT_OPT) == 0 && strstr(onetime_options, MGMT_OPT) == 0) {
       real_proxy_options.append(" ", strlen(" "));
       real_proxy_options.append(MGMT_OPT, sizeof(MGMT_OPT) - 1);
     }
