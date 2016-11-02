@@ -318,7 +318,7 @@ keepalive timeout which (if set lower) will likely take precedence.
 
 ::
 
-    CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
+    CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
     CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
 
 Origin Connection Timeouts
