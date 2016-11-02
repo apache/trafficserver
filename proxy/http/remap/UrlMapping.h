@@ -107,6 +107,7 @@ public:
   unsigned int map_id;
   referer_info *referer_list;
   redirect_tag_str *redir_chunk_list;
+  bool ip_allow_check_enabled_p;
   acl_filter_rule *filter; // acl filtering (list of rules)
   unsigned int _plugin_count;
   LINK(url_mapping, link); // For use with the main Queue linked list holding all the mapping
