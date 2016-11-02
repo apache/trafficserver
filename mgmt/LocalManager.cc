@@ -189,7 +189,6 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
   proxy_launch_outstanding  = false;
   mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
   proxy_running             = 0;
-  coreapi_sleep             = true;
 
   RecRegisterStatInt(RECT_NODE, "proxy.node.proxy_running", 0, RECP_NON_PERSISTENT);
 

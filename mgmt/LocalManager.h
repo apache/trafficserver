@@ -90,7 +90,6 @@ public:
   bool processRunning();
   bool clusterOk();
 
-  volatile bool coreapi_sleep;
   volatile bool run_proxy;
   volatile time_t manager_started_at;
   volatile time_t proxy_started_at;
