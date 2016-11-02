@@ -53,6 +53,8 @@ struct BUILD_TABLE_INFO {
   char *paramv[BUILD_TABLE_MAX_ARGS];
   char *argv[BUILD_TABLE_MAX_ARGS];
 
+  bool ip_allow_check_enabled_p;
+  bool accept_check_p;
   acl_filter_rule *rules_list; // all rules defined in config files as .define_filter foobar @src_ip=.....
   UrlRewrite *rewrite;         // Pointer to the UrlRewrite object we are parsing for.
 

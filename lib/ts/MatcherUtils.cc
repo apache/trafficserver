@@ -401,7 +401,9 @@ processDurationString(char *str, int *seconds)
 
 const matcher_tags http_dest_tags = {"dest_host", "dest_domain", "dest_ip", "url_regex", "url", "host_regex", true};
 
-const matcher_tags ip_allow_tags = {nullptr, nullptr, "src_ip", nullptr, nullptr, nullptr, false};
+const matcher_tags ip_allow_src_tags = {nullptr, nullptr, "src_ip", nullptr, nullptr, nullptr, false};
+
+const matcher_tags ip_allow_dest_tags = {nullptr, nullptr, "dest_ip", nullptr, nullptr, nullptr, true};
 
 const matcher_tags socks_server_tags = {nullptr, nullptr, "dest_ip", nullptr, nullptr, nullptr, false};
 

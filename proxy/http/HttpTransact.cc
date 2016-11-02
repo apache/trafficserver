@@ -566,6 +566,16 @@ HttpTransact::BadRequest(State *s)
 }
 
 void
+HttpTransact::Forbidden(State *s)
+{
+  DebugTxn("http_trans", "[Forbidden]"
+                         "IpAllow marked request forbidden");
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied", NULL);
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
+}
+
+void
 HttpTransact::HandleBlindTunnel(State *s)
 {
   NetVConnection *vc         = s->state_machine->ua_session->get_netvc();
@@ -6573,6 +6583,12 @@ HttpTransact::process_quick_http_filter(State *s, int method)
 {
   // connection already disabled by previous ACL filtering, don't modify it.
   if (!s->client_connection_enabled) {
+    return;
+  }
+
+  // if ipallow rules are disabled by remap then don't modify anything
+  url_mapping *mp = s->url_map.getMapping();
+  if (mp && !mp->ip_allow_check_enabled_p) {
     return;
   }
 

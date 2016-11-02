@@ -1200,6 +1200,7 @@ public:
   static void StartAuth(State *s);
   static void HandleRequestAuthorized(State *s);
   static void BadRequest(State *s);
+  static void Forbidden(State *s);
   static void HandleFiltering(State *s);
   static void DecideCacheLookup(State *s);
   static void LookupSkipOpenServer(State *s);

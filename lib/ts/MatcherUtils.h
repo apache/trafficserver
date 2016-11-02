@@ -108,7 +108,8 @@ struct matcher_tags {
 };
 
 extern const matcher_tags http_dest_tags;
-extern const matcher_tags ip_allow_tags;
+extern const matcher_tags ip_allow_src_tags;
+extern const matcher_tags ip_allow_dest_tags;
 extern const matcher_tags socks_server_tags;
 
 const char *parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags);

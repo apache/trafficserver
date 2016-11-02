@@ -22,10 +22,12 @@ ip_allow.config
 .. configfile:: ip_allow.config
 
 The :file:`ip_allow.config` file controls client access to the Traffic
-Server proxy cache. You can specify ranges of IP addresses that are
-allowed to use the Traffic Server as a web proxy cache. After you modify
-the :file:`ip_allow.config` file, navigate to the Traffic Server bin
-directory and run the :option:`traffic_ctl config reload` command to apply changes. When
+Server proxy cache and Traffic Server connections to the servers. You
+can specify ranges of IP addresses that are allowed to use the Traffic
+Server as a web proxy cache or that are allowed to be remapped by
+Traffic Server. After you modify the :file:`ip_allow.config` file,
+navigate to the Traffic Server bin directory and run the
+:option:`traffic_ctl config reload` command to apply changes. When
 you apply the changes to a node in a cluster, Traffic Server
 automatically applies the changes to all other nodes in the cluster.
 
@@ -36,13 +38,18 @@ Each line in the :file:`ip_allow.config` file must have the following
 format::
 
     src_ip=<range of IP addresses> action=<action> [method=<list of methods separated by '|'>]
+    dest_ip=<range of IP addresses> action=<action> [method=<list of methods separated by '|'>]
 
 where src_ip is the IP address or range of IP addresses of the
-client(s). The action ``ip_allow`` enables the specified client(s) to
-access the Traffic Server proxy cache, and ``ip_deny`` denies the
-specified client(s) to access the Traffic Server proxy cache. Multiple
-method keywords can be specified (method=GET method=HEAD), or multiple
-methods can be separated by an '\|' (method=GET\|HEAD). The method
+client(s) and dest_ip is the IP address or range of IP addresses of the
+server(s). When src_ip is indicated, the action ``ip_allow`` enables
+the specified client(s) to access the Traffic Server proxy cache,
+and ``ip_deny`` denies the specified client(s) to access the Traffic
+Server proxy cache. When dest_ip is indicated, the action ``ip_allow``
+enables the Traffic Server to access the specified server(s), and
+``ip_deny`` denies the Traffic Server to access the specified server(s).
+Multiple method keywords can be specified (method=GET method=HEAD), or
+multiple methods can be separated by an '\|' (method=GET\|HEAD). The method
 keyword is optional and it is defaulted to ALL. This supports ANY string
 as the HTTP method, meaning no validation is done to check whether it
 is a valid HTTP method. This allows you to create filters for any method
@@ -78,3 +85,11 @@ the Traffic Server proxy cache::
 
     src_ip=123.45.6.0-123.45.6.123 action=ip_deny
 
+The following example enables the Traffic Server to access all servers::
+
+    dest_ip=0.0.0.0-255.255.255.255 action=ip_allow
+
+The following example denies the Traffic Server to access all servers
+on a specific subnet::
+
+    dest_ip=10.0.0.0-10.0.0.255 action=ip_deny
