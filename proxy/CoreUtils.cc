@@ -390,7 +390,7 @@ CoreUtils::test_HttpSM_from_tunnel(void *arg)
   char *tmp        = (char *)arg;
   intptr_t offset  = (intptr_t) & (((HttpTunnel *)nullptr)->sm);
   HttpSM **hsm_ptr = (HttpSM **)(tmp + offset);
-  HttpSM *hsm_test;
+  HttpSM *hsm_test = nullptr;
 
   if (read_from_core((intptr_t)hsm_ptr, sizeof(HttpSM *), (char *)&hsm_test) == 0) {
     return;

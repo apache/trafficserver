@@ -197,6 +197,15 @@ AC_ARG_ENABLE([asan],
 )
 AC_MSG_RESULT([$enable_asan])
 
+# Enable TSAN for the builds
+AC_MSG_CHECKING([whether to enable tsan])
+AC_ARG_ENABLE([tsan],
+  [AS_HELP_STRING([--enable-tsan],[turn on Thread Sanitizer])],
+  [],
+  [enable_tsan=no]
+)
+AC_MSG_RESULT([$enable_tsan])
+
 #
 # Fast SDK APIs, this disables the parameter checks (assert)
 # on all APIs.
@@ -913,8 +922,17 @@ fi
 
 # Flags for ASAN
 if test "x${enable_asan}" = "xyes"; then
+  if test "x${enable_tsan}" = "xyes"; then
+    AC_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
+  fi
   TS_ADDTO(CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
   TS_ADDTO(CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
+fi
+
+# Flags for TSAN
+if test "x${enable_tsan}" = "xyes"; then
+  TS_ADDTO(CFLAGS, [-fsanitize=thread])
+  TS_ADDTO(CXXFLAGS, [-fsanitize=thread])
 fi
 
 # Checks for pointer size.
