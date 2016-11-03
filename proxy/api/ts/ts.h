@@ -2409,6 +2409,7 @@ tsapi TSReturnCode TSUuidCopy(TSUuid dest, const TSUuid src);
 tsapi const char *TSUuidStringGet(const TSUuid uuid);
 tsapi TSUuidVersion TSUuidVersionGet(const TSUuid uuid);
 tsapi TSReturnCode TSUuidStringParse(TSUuid uuid, const char *uuid_str);
+tsapi TSReturnCode TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str);
 
 /* Get the process global UUID, resets on every startup */
 tsapi const TSUuid TSProcessUuidGet(void);
