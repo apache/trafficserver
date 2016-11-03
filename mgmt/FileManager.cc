@@ -374,7 +374,6 @@ FileManager::restoreSnap(const char *snapName, const char *snapDir)
 SnapResult
 FileManager::removeSnap(const char *snapName, const char *snapDir)
 {
-  struct dirent *dirEntrySpace;
   struct dirent *entryPtr;
   DIR *dir;
   char *snapPath;
@@ -391,13 +390,7 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
     return SNAP_NOT_FOUND;
   }
 
-  dirEntrySpace = (struct dirent *)ats_malloc(sizeof(struct dirent) + ink_file_namemax(".") + 1);
-
-  while (readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
-    if (!entryPtr) {
-      break;
-    }
-
+  while ((entryPtr = readdir(dir))) {
     if (strcmp(".", entryPtr->d_name) == 0 || strcmp("..", entryPtr->d_name) == 0) {
       continue;
     }
@@ -412,7 +405,6 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
     delete[] snapFilePath;
   }
 
-  ats_free(dirEntrySpace);
   closedir(dir);
 
   // If we managed to get everything, remove the directory
