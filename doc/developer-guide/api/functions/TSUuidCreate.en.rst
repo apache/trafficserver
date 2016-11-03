@@ -36,6 +36,7 @@ Synopsis
 .. function:: TSUuidVersion TSUuidVersionGet(const TSUuid uuid)
 .. function:: TSReturnCode TSUuidStringParse(TSUuid uuid, const char * uuid_str)
 .. function:: const TSUuid TSProcessUuidGet(void)
+.. function:: TSReturnCode TSClientRequestUuidGet(TSHttpTxn txnp, char* uuid_str)
 
 Description
 ===========
@@ -79,11 +80,14 @@ corresponding :type:`TSUuid` object is a serious error. The UUID object does
 not do any sort of reference counting on the string, and you must absolutely
 not free the memory as returned by this API.
 
-Finally, :func:`TSUuidStringParse` can be used to convert an existing
+:func:`TSUuidStringParse` can be used to convert an existing
 :type:`TSUuid` string to a Traffic Server UUID object. This will only succeed
 if the :type:`TSUuid` string is a proper *RFC 4122* UUID. The :type:`TSUuid`
 argument passed to this function must be a properly :func:`TSUuidCreate`
 object, but it does not need to be previously initialized.
+
+Finally, :func:`TSClientRequestUuidGet` can be used to extract
+the client request uuid from a transaction.
 
 Return Values
 =============

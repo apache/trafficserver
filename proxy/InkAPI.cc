@@ -9230,6 +9230,23 @@ TSUuidStringGet(const TSUuid uuid)
 }
 
 TSReturnCode
+TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)uuid_str) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+  const char *machine = (char *)Machine::instance()->uuid.getString();
+  int len;
+
+  len = snprintf(uuid_str, sizeof(uuid_str), "%s-%" PRId64 "", machine, sm->sm_id);
+  if (len < (int)sizeof(uuid_str)) {
+    return TS_SUCCESS;
+  }
+
+  return TS_ERROR;;
+}
+
+TSReturnCode
 TSUuidStringParse(TSUuid uuid, const char *str)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
