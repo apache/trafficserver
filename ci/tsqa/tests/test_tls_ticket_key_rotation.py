@@ -150,7 +150,7 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
                 old_renewed = stdout
                 break
             except Exception:
-                ++count
+                count += 1
                 # If we have tried 30 times and the command still failed, quit here.
                 if count > 30:
                     self.assertTrue(False, "Failed to get the number of renewed keys!")
