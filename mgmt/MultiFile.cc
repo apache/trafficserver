@@ -95,8 +95,8 @@ MultiFile::addTableEntries(ExpandingArray *fileList, textBuffer *output)
 MFresult
 MultiFile::WalkFiles(ExpandingArray *fileList)
 {
-  struct dirent *dirEntry;
   DIR *dir;
+  struct dirent *dirEntry;
   char *fileName;
   char *filePath;
   char *records_config_filePath;
@@ -108,16 +108,8 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
     mgmt_log("[MultiFile::WalkFiles] Unable to open %s directory: %s: %s\n", dirDescript, managedDir, strerror(errno));
     return MF_NO_DIR;
   }
-  // The fun of Solaris - readdir_r requires a buffer passed into it
-  //   The man page says this obscene expression gives us the proper
-  //     size
-  dirEntry = (struct dirent *)ats_malloc(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
-  struct dirent *result;
-  while (readdir_r(dir, dirEntry, &result) == 0) {
-    if (!result) {
-      break;
-    }
+  while ((dirEntry = readdir(dir))) {
     fileName                = dirEntry->d_name;
     filePath                = newPathString(managedDir, fileName);
     records_config_filePath = newPathString(filePath, "records.config");
@@ -141,7 +133,6 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
     delete[] records_config_filePath;
   }
 
-  ats_free(dirEntry);
   closedir(dir);
 
   fileList->sortWithFunction(fileEntryCmpFunc);

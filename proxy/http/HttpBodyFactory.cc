@@ -620,7 +620,7 @@ RawHashTable *
 HttpBodyFactory::load_sets_from_directory(char *set_dir)
 {
   DIR *dir;
-  struct dirent *entry_buffer, *result;
+  struct dirent *entry_buffer;
   RawHashTable *new_table_of_sets;
 
   if (set_dir == nullptr) {
@@ -641,13 +641,12 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   }
 
   new_table_of_sets = new RawHashTable(RawHashTable_KeyType_String);
-  entry_buffer      = (struct dirent *)ats_malloc(sizeof(struct dirent) + MAXPATHLEN + 1);
 
   //////////////////////////////////////////
   // loop over each language subdirectory //
   //////////////////////////////////////////
 
-  while ((readdir_r(dir, entry_buffer, &result) == 0) && (result != nullptr)) {
+  while ((entry_buffer = readdir(dir))) {
     int status;
     struct stat stat_buf;
     char subdir[MAXPATHLEN + 1];
@@ -679,7 +678,6 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
     }
   }
 
-  ats_free(entry_buffer);
   closedir(dir);
 
   return (new_table_of_sets);
@@ -693,7 +691,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   int status;
   struct stat stat_buf;
   char path[MAXPATHLEN + 1];
-  struct dirent *entry_buffer, *result;
+  struct dirent *entry_buffer;
 
   ////////////////////////////////////////////////
   // ensure we can open tmpl_dir as a directory //
@@ -726,9 +724,8 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
 
   Debug("body_factory", "  body_set = %p (set_name '%s', lang '%s', charset '%s')", body_set, body_set->set_name,
         body_set->content_language, body_set->content_charset);
-  entry_buffer = (struct dirent *)ats_malloc(sizeof(struct dirent) + MAXPATHLEN + 1);
 
-  while ((readdir_r(dir, entry_buffer, &result) == 0) && (result != nullptr)) {
+  while ((entry_buffer = readdir(dir))) {
     HttpBodyTemplate *tmpl;
 
     ///////////////////////////////////////////////////////////////
@@ -760,9 +757,8 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
       body_set->set_template_by_name(entry_buffer->d_name, tmpl);
     }
   }
-  ats_free(entry_buffer);
   closedir(dir);
-  return (body_set);
+  return body_set;
 }
 
 ////////////////////////////////////////////////////////////////////////
