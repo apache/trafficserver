@@ -591,8 +591,7 @@ main(int argc, const char **argv)
       }
     }
 
-    // NOTE: do NOT call closelog() here.  Solaris gets confused
-    //   and some how it hoses later calls to readdir_r.
+    // NOTE: do NOT call closelog() here.  Solaris gets confused.
     openlog("traffic_manager", LOG_PID | LOG_NDELAY | LOG_NOWAIT, facility_int);
 
     lmgmt->syslog_facility = facility_int;

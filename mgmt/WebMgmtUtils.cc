@@ -1288,19 +1288,10 @@ getFilesInDirectory(char *managedDir, ExpandingArray *fileList)
     mgmt_log(stderr, "[getFilesInDirectory] Unable to open %s directory: %s\n", managedDir, strerror(errno));
     return -1;
   }
-  // The fun of Solaris - readdir_r requires a buffer passed into it
-  //   The man page says this obscene expression gives us the proper
-  //     size
-  dirEntry = (struct dirent *)alloca(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
-  struct dirent *result;
-  while (readdir_r(dir, dirEntry, &result) == 0) {
-    if (!result)
-      break;
+  while ((dirEntry = readdir(dir))) {
     fileName = dirEntry->d_name;
-    if (!fileName || !*fileName) {
-      continue;
-    }
+
     filePath = newPathString(managedDir, fileName);
     if (stat(filePath, &fileInfo) < 0) {
       mgmt_log(stderr, "[getFilesInDirectory] Stat of a %s failed : %s\n", fileName, strerror(errno));
