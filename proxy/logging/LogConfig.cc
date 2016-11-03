@@ -730,7 +730,7 @@ LogConfig::update_space_used()
   int64_t total_space_used, partition_space_left;
   char path[MAXPATHLEN];
   int sret;
-  struct dirent *result;
+  struct dirent *entry;
   struct stat sbuf;
   DIR *ld;
 
@@ -743,8 +743,8 @@ LogConfig::update_space_used()
     m_log_directory_inaccessible = true;
     return;
   }
+
   // check if logging directory exists and is searchable readable & writable
-  //
   int err;
   do {
     err = access(logfile_dir, R_OK | W_OK | X_OK);
@@ -776,18 +776,14 @@ LogConfig::update_space_used()
 
   candidate_count = 0;
 
-  while (readdir_r(ld, m_dir_entry, &result) == 0) {
-    if (!result) {
-      break;
-    }
-
-    snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, m_dir_entry->d_name);
+  while ((entry = readdir(ld))) {
+    snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, entry->d_name);
 
     sret = ::stat(path, &sbuf);
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
       total_space_used += (int64_t)sbuf.st_size;
 
-      if (auto_delete_rolled_files && LogFile::rolled_logfile(m_dir_entry->d_name) && candidate_count < MAX_CANDIDATES) {
+      if (auto_delete_rolled_files && LogFile::rolled_logfile(entry->d_name) && candidate_count < MAX_CANDIDATES) {
         //
         // then add this entry to the candidate list
         //
@@ -798,6 +794,7 @@ LogConfig::update_space_used()
       }
     }
   }
+
   ::closedir(ld);
 
   //

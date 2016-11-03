@@ -610,7 +610,7 @@ RawHashTable *
 HttpBodyFactory::load_sets_from_directory(char *set_dir)
 {
   DIR *dir;
-  struct dirent *entry_buffer, *result;
+  struct dirent *dirEntry;
   RawHashTable *new_table_of_sets;
 
   if (set_dir == NULL)
@@ -630,13 +630,12 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   }
 
   new_table_of_sets = new RawHashTable(RawHashTable_KeyType_String);
-  entry_buffer      = (struct dirent *)ats_malloc(sizeof(struct dirent) + MAXPATHLEN + 1);
 
   //////////////////////////////////////////
   // loop over each language subdirectory //
   //////////////////////////////////////////
 
-  while ((readdir_r(dir, entry_buffer, &result) == 0) && (result != NULL)) {
+  while ((dirEntry = readdir(dir))) {
     int status;
     struct stat stat_buf;
     char subdir[MAXPATHLEN + 1];
@@ -645,9 +644,10 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
     // ensure a subdirectory, and not starting with '.' //
     //////////////////////////////////////////////////////
 
-    if ((entry_buffer->d_name)[0] == '.')
+    if ((dirEntry->d_name)[0] == '.')
       continue;
-    ink_filepath_make(subdir, sizeof(subdir), set_dir, entry_buffer->d_name);
+
+    ink_filepath_make(subdir, sizeof(subdir), set_dir, dirEntry->d_name);
     status = stat(subdir, &stat_buf);
     if (status != 0)
       continue; // can't stat
@@ -658,14 +658,13 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
     // at this point, 'subdir' might be a valid template dir //
     ///////////////////////////////////////////////////////////
 
-    HttpBodySet *body_set = load_body_set_from_directory(entry_buffer->d_name, subdir);
+    HttpBodySet *body_set = load_body_set_from_directory(dirEntry->d_name, subdir);
     if (body_set != NULL) {
-      Debug("body_factory", "  %s -> %p", entry_buffer->d_name, body_set);
-      new_table_of_sets->setValue((RawHashTable_Key)(entry_buffer->d_name), (RawHashTable_Value)body_set);
+      Debug("body_factory", "  %s -> %p", dirEntry->d_name, body_set);
+      new_table_of_sets->setValue((RawHashTable_Key)(dirEntry->d_name), (RawHashTable_Value)body_set);
     }
   }
 
-  ats_free(entry_buffer);
   closedir(dir);
 
   return (new_table_of_sets);
@@ -679,7 +678,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   int status;
   struct stat stat_buf;
   char path[MAXPATHLEN + 1];
-  struct dirent *entry_buffer, *result;
+  struct dirent *dirEntry;
 
   ////////////////////////////////////////////////
   // ensure we can open tmpl_dir as a directory //
@@ -711,19 +710,18 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
 
   Debug("body_factory", "  body_set = %p (set_name '%s', lang '%s', charset '%s')", body_set, body_set->set_name,
         body_set->content_language, body_set->content_charset);
-  entry_buffer = (struct dirent *)ats_malloc(sizeof(struct dirent) + MAXPATHLEN + 1);
 
-  while ((readdir_r(dir, entry_buffer, &result) == 0) && (result != NULL)) {
+  while ((dirEntry = readdir(dir))) {
     HttpBodyTemplate *tmpl;
 
     ///////////////////////////////////////////////////////////////
     // all template files have name of the form <type>#<subtype> //
     ///////////////////////////////////////////////////////////////
 
-    if ((strchr(entry_buffer->d_name, '#') == NULL) && (strcmp(entry_buffer->d_name, "default") != 0))
+    if ((strchr(dirEntry->d_name, '#') == NULL) && (strcmp(dirEntry->d_name, "default") != 0))
       continue;
 
-    snprintf(path, sizeof(path), "%s/%s", tmpl_dir, entry_buffer->d_name);
+    snprintf(path, sizeof(path), "%s/%s", tmpl_dir, dirEntry->d_name);
     status = stat(path, &stat_buf);
     if (status != 0)
       continue; // can't stat
@@ -735,14 +733,14 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
     ////////////////////////////////
 
     tmpl = new HttpBodyTemplate();
-    if (!tmpl->load_from_file(tmpl_dir, entry_buffer->d_name)) {
+    if (!tmpl->load_from_file(tmpl_dir, dirEntry->d_name)) {
       delete tmpl;
     } else {
-      Debug("body_factory", "      %s -> %p", entry_buffer->d_name, tmpl);
-      body_set->set_template_by_name(entry_buffer->d_name, tmpl);
+      Debug("body_factory", "      %s -> %p", dirEntry->d_name, tmpl);
+      body_set->set_template_by_name(dirEntry->d_name, tmpl);
     }
   }
-  ats_free(entry_buffer);
+
   closedir(dir);
   return (body_set);
 }

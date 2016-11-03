@@ -649,7 +649,6 @@ Rollback::findVersions_ml(ExpandingArray *listNames)
   ats_scoped_str sysconfdir(RecConfigReadConfigDir());
 
   DIR *dir;
-  struct dirent *dirEntrySpace;
   struct dirent *entryPtr;
 
   dir = opendir(sysconfdir);
@@ -659,15 +658,8 @@ Rollback::findVersions_ml(ExpandingArray *listNames)
              strerror(errno));
     return INVALID_VERSION;
   }
-  // The fun of Solaris - readdir_r requires a buffer passed into it
-  //   The man page says this obscene expression gives us the proper
-  //     size
-  dirEntrySpace = (struct dirent *)ats_malloc(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
-  while (readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
-    if (!entryPtr)
-      break;
-
+  while ((entryPtr = readdir(dir))) {
     if ((version = extractVersionInfo(listNames, entryPtr->d_name)) != INVALID_VERSION) {
       count++;
 
@@ -677,7 +669,6 @@ Rollback::findVersions_ml(ExpandingArray *listNames)
     }
   }
 
-  ats_free(dirEntrySpace);
   closedir(dir);
 
   numVersions = count;
