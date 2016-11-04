@@ -19,11 +19,11 @@ bin_PROGRAMS = traffic_crashlog
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/mgmt/api/include
+  -I$(abs_top_srcdir)/lib \
+  -I$(abs_top_srcdir)/lib/records \
+  -I$(abs_top_srcdir)/mgmt \
+  -I$(abs_top_srcdir)/mgmt/utils \
+  -I$(abs_top_srcdir)/mgmt/api/include
 
 AM_LDFLAGS = \
   @EXTRA_CXX_LDFLAGS@ \

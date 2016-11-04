@@ -1412,7 +1412,7 @@ esac
 
 # Flags for building and linking against our internal copy of LuaJIT.
 AC_SUBST([LUAJIT_LDFLAGS])
-AC_SUBST([LUAJIT_CPPFLAGS], ['-I$(top_srcdir)/lib/luajit/src'])
+AC_SUBST([LUAJIT_CPPFLAGS], ['-I$(abs_top_srcdir)/lib/luajit/src'])
 
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
@@ -1809,14 +1809,14 @@ AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
 # use modular IOCORE
 #
 iocore_include_dirs="\
--I\$(top_srcdir)/iocore/eventsystem \
--I\$(top_srcdir)/iocore/net \
--I\$(top_srcdir)/iocore/aio \
--I\$(top_srcdir)/iocore/hostdb \
--I\$(top_srcdir)/iocore/cache \
--I\$(top_srcdir)/iocore/cluster \
--I\$(top_srcdir)/iocore/utils \
--I\$(top_srcdir)/iocore/dns"
+-I\$(abs_top_srcdir)/iocore/eventsystem \
+-I\$(abs_top_srcdir)/iocore/net \
+-I\$(abs_top_srcdir)/iocore/aio \
+-I\$(abs_top_srcdir)/iocore/hostdb \
+-I\$(abs_top_srcdir)/iocore/cache \
+-I\$(abs_top_srcdir)/iocore/cluster \
+-I\$(abs_top_srcdir)/iocore/utils \
+-I\$(abs_top_srcdir)/iocore/dns"
 
 # Flags for buildit LuaJIT itself. We take the latest version
 # of the generic flags, plus any Lua-specific flags so that we
