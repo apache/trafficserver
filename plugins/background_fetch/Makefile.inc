@@ -16,10 +16,10 @@
 
 pkglib_LTLIBRARIES += background_fetch/background_fetch.la
 background_fetch_background_fetch_la_SOURCES = \
-	background_fetch/background_fetch.cc
-	background_fetch/configs.cc
-	background_fetch/configs.h
-	background_fetch/headers.cc
-	background_fetch/headers.h
-	background_fetch/rules.cc
+	background_fetch/background_fetch.cc \
+	background_fetch/configs.cc \
+	background_fetch/configs.h \
+	background_fetch/headers.cc \
+	background_fetch/headers.h \
+	background_fetch/rules.cc \
 	background_fetch/rules.h
