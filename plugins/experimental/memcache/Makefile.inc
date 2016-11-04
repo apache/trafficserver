@@ -16,15 +16,15 @@
 
 experimental_memcache_tsmemcache_la_CPPFLAGS = \
   $(AM_CPPFLAGS) \
-  -I$(top_srcdir)/proxy/api/ts \
-  -I$(top_srcdir)/iocore/aio \
-  -I$(top_srcdir)/iocore/cache \
-  -I$(top_srcdir)/iocore/eventsystem \
-  -I$(top_srcdir)/iocore/net \
-  -I$(top_srcdir)/iocore/utils \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts
+  -I$(abs_top_srcdir)/proxy/api/ts \
+  -I$(abs_top_srcdir)/iocore/aio \
+  -I$(abs_top_srcdir)/iocore/cache \
+  -I$(abs_top_srcdir)/iocore/eventsystem \
+  -I$(abs_top_srcdir)/iocore/net \
+  -I$(abs_top_srcdir)/iocore/utils \
+  -I$(abs_top_srcdir)/lib \
+  -I$(abs_top_srcdir)/lib/records \
+  -I$(abs_top_srcdir)/lib/ts
 
 pkglib_LTLIBRARIES += experimental/memcache/tsmemcache.la
 

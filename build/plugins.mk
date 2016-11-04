@@ -25,11 +25,11 @@ TS_PLUGIN_LD_FLAGS = \
   -export-symbols-regex '^(TSRemapInit|TSRemapDone|TSRemapDoRemap|TSRemapNewInstance|TSRemapDeleteInstance|TSRemapOSResponse|TSPluginInit)$$'
 
 TS_PLUGIN_CPPFLAGS = \
-  -I$(top_builddir)/proxy/api \
-  -I$(top_srcdir)/proxy/api \
-  -I$(top_srcdir)/lib/cppapi/include \
-  -I$(top_builddir)/lib/cppapi/include \
-  -I$(top_srcdir)/lib
+  -I$(abs_top_builddir)/proxy/api \
+  -I$(abs_top_srcdir)/proxy/api \
+  -I$(abs_top_srcdir)/lib/cppapi/include \
+  -I$(abs_top_builddir)/lib/cppapi/include \
+  -I$(abs_top_srcdir)/lib
 
 # Provide a default AM_CPPFLAGS. Automake handles this correctly, but libtool
 # throws an error if we try to do the same with AM_LDFLAGS. Hence, we provide

@@ -23,12 +23,12 @@ SUBDIRS = include
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/lib \
+  -I$(abs_top_srcdir)/lib/records \
+  -I$(abs_top_srcdir)/mgmt \
+  -I$(abs_top_srcdir)/mgmt/cluster \
+  -I$(abs_top_srcdir)/mgmt/utils \
+  -I$(abs_top_srcdir)/mgmt/api/include \
+  -I$(abs_top_srcdir)/lib \
   $(LIBUNWIND_CFLAGS)
 
 noinst_LTLIBRARIES = libmgmtapilocal.la libmgmtapi.la

@@ -20,8 +20,8 @@ if BUILD_TRAFFIC_TOP
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/mgmt/api/include \
+  -I$(abs_top_srcdir)/lib \
+  -I$(abs_top_srcdir)/mgmt/api/include \
   @CURL_CFLAGS@ \
   @CURSES_CFLAGS@
 
