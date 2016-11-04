@@ -191,7 +191,7 @@ AC_MSG_RESULT([$enable_werror])
 # Enable ASAN for the builds
 AC_MSG_CHECKING([whether to enable asan])
 AC_ARG_ENABLE([asan],
-  [AS_HELP_STRING([--enable-asan],[turn on asan])],
+  [AS_HELP_STRING([--enable-asan],[enable Address Sanitizer])],
   [],
   [enable_asan=no]
 )
