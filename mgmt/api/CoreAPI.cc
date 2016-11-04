@@ -153,7 +153,6 @@ ProxyStateGet()
 TSMgmtError
 ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 {
-  int i = 0;
   char tsArgs[MAX_BUF_SIZE];
   char *proxy_options;
 
