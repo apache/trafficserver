@@ -8076,7 +8076,7 @@ REGRESSION_TEST(SDK_API_TSStatCreate)(RegressionTest *test, int level, int *psta
   if (TSStatFindName(name, &id) == TS_SUCCESS) {
     box.check(id >= 0, "TSStatFind(%s) failed with bogus ID %d", name, id);
   } else {
-    id = TSStatCreate("generator.response_bytes", TS_RECORDDATATYPE_COUNTER, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+    id = TSStatCreate(name, TS_RECORDDATATYPE_COUNTER, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     box.check(id != TS_ERROR, "TSStatCreate(%s) failed with %d", name, id);
   }
 
