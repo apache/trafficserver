@@ -115,6 +115,18 @@ We can write this in plugin.config:
 
     tslua.so /etc/trafficserver/script/test_global_hdr.lua
 
+We can also define the number of Lua states to be used for the plugin. If it is used as global plugin, we can write the
+following in plugin.config
+
+::
+
+    tslua.so --states=64 /etc/trafficserver/script/test_global_hdr.lua
+
+If it is used as remap plugin, we can write the following in remap.config to define the number of Lua states
+
+::
+
+    map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=--states=64 @pparam=/XXX/test_hdr.lua
 
 TS API for Lua
 ==============
