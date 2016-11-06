@@ -1402,6 +1402,9 @@ static const RecordElement RecordsConfig[] =
   {RECT_LOCAL, "proxy.local.http.parent_proxy.disable_connect_tunneling", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
+  {RECT_CONFIG, "proxy.config.http.forward_connect_method", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+
   //############
   //#
   //# HTTP/2 global configuration.

@@ -8130,6 +8130,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->srv_enabled;
     break;
+  case TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->forward_connect_method;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8498,6 +8502,11 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 
   case 40:
     switch (name[length - 1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.forward_connect_method", length)) {
+        cnf = TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD;
+      }
+      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.down_server.cache_time", length)) {
         cnf = TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME;

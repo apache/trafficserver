@@ -464,10 +464,16 @@ how_to_open_connection(HttpTransact::State *s)
     break;
   }
 
-  if (s->method == HTTP_WKSIDX_CONNECT && s->parent_result.result != PARENT_SPECIFIED) {
-    s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN;
-  } else {
-    s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
+  s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
+
+  // Setting up a direct CONNECT tunnel enters OriginServerRawOpen. We always do that if we
+  // are not forwarding CONNECT and are not going to a parent proxy.
+  if (s->method == HTTP_WKSIDX_CONNECT) {
+    if (s->txn_conf->forward_connect_method == 1 || s->parent_result.result != PARENT_SPECIFIED) {
+      s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
+    } else {
+      s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN;
+    }
   }
 
   // In the following, if url_remap_mode == 2 (URL_REMAP_FOR_OS)
@@ -550,7 +556,7 @@ how_to_open_connection(HttpTransact::State *s)
  ****                 HttpTransact State Machine Handlers                 ****
  ****                                                                     ****
  **** What follow from here on are the state machine handlers - the code  ****
- **** which is called from HttpSM::set_next_state to specify ****
+ **** which is called from HttpSM::set_next_state to specify              ****
  **** what action the state machine needs to execute next. These ftns     ****
  **** take as input just the state and set the next_action variable.      ****
  *****************************************************************************
@@ -7820,27 +7826,22 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     }
   }
 
-  if (s->current.server == &s->server_info && (s->next_hop_scheme == URL_WKSIDX_HTTP || s->next_hop_scheme == URL_WKSIDX_HTTPS ||
-                                               s->next_hop_scheme == URL_WKSIDX_WS || s->next_hop_scheme == URL_WKSIDX_WSS)) {
+  // Figure out whether to force the outgoing request URL into absolute or relative styles.
+  if (outgoing_request->method_get_wksidx() == HTTP_WKSIDX_CONNECT) {
+    // CONNECT method requires a target in the URL, so always force it from the Host header.
+    outgoing_request->set_url_target_from_host_field();
+  } else if (s->current.request_to == PARENT_PROXY && s->parent_result.parent_is_proxy()) {
+    // If we have a parent proxy set the URL target field.
+    if (!outgoing_request->is_target_in_url()) {
+      DebugTxn("http_trans", "[build_request] adding target to URL for parent proxy");
+      outgoing_request->set_url_target_from_host_field();
+    }
+  } else if (s->next_hop_scheme == URL_WKSIDX_HTTP || s->next_hop_scheme == URL_WKSIDX_HTTPS ||
+             s->next_hop_scheme == URL_WKSIDX_WS || s->next_hop_scheme == URL_WKSIDX_WSS) {
+    // Otherwise, remove the URL target from HTTP and Websocket URLs since certain origins
+    // cannot deal with absolute URLs.
     DebugTxn("http_trans", "[build_request] removing host name from url");
     HttpTransactHeaders::remove_host_name_from_url(outgoing_request);
-  }
-
-  // If we're going to a parent proxy, make sure we pass host and port
-  // in the URL even if we didn't get them (e.g. transparent proxy)
-  if (s->current.request_to == PARENT_PROXY) {
-    if (!outgoing_request->is_target_in_url() && s->parent_result.parent_is_proxy()) {
-      DebugTxn("http_trans", "[build_request] adding target to URL for parent proxy");
-
-      // No worry about HTTP/0.9 because we reject forward proxy requests that
-      // don't have a host anywhere.
-      outgoing_request->set_url_target_from_host_field();
-    } else if (s->current.request_to == PARENT_PROXY && !s->parent_result.parent_is_proxy() &&
-               outgoing_request->is_target_in_url()) {
-      // If the parent is an origin server remove the hostname from the url.
-      DebugTxn("http_trans", "[build_request] removing target from URL for a parent origin.");
-      HttpTransactHeaders::remove_host_name_from_url(outgoing_request);
-    }
   }
 
   // If the response is most likely not cacheable, eg, request with Authorization,
