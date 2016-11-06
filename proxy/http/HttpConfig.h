@@ -375,6 +375,7 @@ struct OverridableHttpConfigParams {
       fwd_proxy_auth_to_parent(0),
       uncacheable_requests_bypass_parent(1),
       attach_server_session_to_client(0),
+      forward_connect_method(0),
       insert_age_in_response(1),
       anonymize_remove_from(0),
       anonymize_remove_referer(0),
@@ -491,6 +492,8 @@ struct OverridableHttpConfigParams {
   MgmtByte fwd_proxy_auth_to_parent;
   MgmtByte uncacheable_requests_bypass_parent;
   MgmtByte attach_server_session_to_client;
+
+  MgmtByte forward_connect_method;
 
   MgmtByte insert_age_in_response;
 
