@@ -298,7 +298,8 @@ ParentConsistentHash::markParentDown(const ParentSelectionPolicy *policy, Parent
   }
 
   if (new_fail_count > 0 && new_fail_count >= policy->FailThreshold) {
-    Note("Failure threshold met, http parent proxy %s:%d marked down", pRec->hostname, pRec->port);
+    Note("Failure threshold met failcount:%d >= threshold:%d, http parent proxy %s:%d marked down", new_fail_count,
+         policy->FailThreshold, pRec->hostname, pRec->port);
     ink_atomic_swap(&pRec->available, false);
     Debug("parent_select", "Parent %s:%d marked unavailable, pRec->available=%d", pRec->hostname, pRec->port, pRec->available);
   }
