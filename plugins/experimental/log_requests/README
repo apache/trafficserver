@@ -1,0 +1,28 @@
+log_requests
+==============
+
+This plugin is used to help debug errored out transactions. 
+We define errored out as any transaction returning a 4xx/5xx 
+response code. By default, all transactions that return a 
+4xx/5xx response code to the client will get its 
+request/response headers logged into error.log.
+
+We also provide a blacklist flag via the plugin arguments. Take 
+for example this config in plugin.config:
+
+    log_requests.so --no-log 414 502
+
+Then log_requests would log every 4xx/5xx response code transaction
+EXCEPT for 414 and 502.
+
+
+Usage
+------
+When compiling ATS, run configure with the following flags:
+
+    ./configure --enable-experimental-plugins
+
+
+Then in plugin.config:
+    
+    log_requests.so [--no-log [error codes]]
