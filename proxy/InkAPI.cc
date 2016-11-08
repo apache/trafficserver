@@ -111,6 +111,8 @@ tsapi const char *TS_URL_SCHEME_RTSPU;
 tsapi const char *TS_URL_SCHEME_MMS;
 tsapi const char *TS_URL_SCHEME_MMSU;
 tsapi const char *TS_URL_SCHEME_MMST;
+tsapi const char *TS_URL_SCHEME_WS;
+tsapi const char *TS_URL_SCHEME_WSS;
 
 /* URL schemes string lengths */
 tsapi int TS_URL_LEN_FILE;
@@ -131,6 +133,8 @@ tsapi int TS_URL_LEN_RTSPU;
 tsapi int TS_URL_LEN_MMS;
 tsapi int TS_URL_LEN_MMSU;
 tsapi int TS_URL_LEN_MMST;
+tsapi int TS_URL_LEN_WS;
+tsapi int TS_URL_LEN_WSS;
 
 /* MIME fields */
 tsapi const char *TS_MIME_FIELD_ACCEPT;
@@ -1397,6 +1401,8 @@ api_init()
     TS_URL_SCHEME_PROSPERO = URL_SCHEME_PROSPERO;
     TS_URL_SCHEME_TELNET   = URL_SCHEME_TELNET;
     TS_URL_SCHEME_WAIS     = URL_SCHEME_WAIS;
+    TS_URL_SCHEME_WS       = URL_SCHEME_WS;
+    TS_URL_SCHEME_WSS      = URL_SCHEME_WSS;
 
     TS_URL_LEN_FILE     = URL_LEN_FILE;
     TS_URL_LEN_FTP      = URL_LEN_FTP;
@@ -1409,6 +1415,8 @@ api_init()
     TS_URL_LEN_PROSPERO = URL_LEN_PROSPERO;
     TS_URL_LEN_TELNET   = URL_LEN_TELNET;
     TS_URL_LEN_WAIS     = URL_LEN_WAIS;
+    TS_URL_LEN_WS       = URL_LEN_WS;
+    TS_URL_LEN_WSS      = URL_LEN_WSS;
 
     /* MIME fields */
     TS_MIME_FIELD_ACCEPT                    = MIME_FIELD_ACCEPT;
