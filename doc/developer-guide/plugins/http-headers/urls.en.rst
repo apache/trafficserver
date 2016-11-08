@@ -93,6 +93,14 @@ defines several preallocated scheme names.
     "wais"
     ``TS_URL_LEN_WAIS``
 
+``TS_URL_SCHEME_WS``
+    "ws"
+    ``TS_URL_LEN_WS``
+
+``TS_URL_SCHEME_WSS``
+    "wss"
+    ``TS_URL_LEN_WSS``
+
 The scheme names above are defined in ``ts.h`` as ``const`` ``char*``
 strings. When Traffic Server sets the scheme portion of the URL (or any
 portion for that matter), it quickly checks to see if the new value is
