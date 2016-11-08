@@ -792,6 +792,20 @@ ip-resolve
 
    These are the ports on the *origin server*, not |TS| :ts:cv:`proxy ports <proxy.config.http.server_ports>`.
 
+
+.. ts:cv:: CONFIG proxy.config.http.forward_connect_method INT 0
+   :reloadable:
+   :overridable:
+
+   The default, |TS| behavior for handling a CONNECT method request
+   is to establish a tunnel to the requested destination. This
+   configuration alters the behavior so that |TS| forwards the
+   CONNECT method to the next hop, and establishes the tunnel after
+   receiving a positive response. This behavior is useful in a proxy
+   hierarchy, and is equivalent to setting
+   :ts:cv:`proxy.local.http.parent_proxy.disable_connect_tunneling` to
+   `0` when parent proxying is enabled.
+
 .. ts:cv:: CONFIG proxy.config.http.insert_request_via_str INT 1
    :reloadable:
    :overridable:
@@ -966,6 +980,7 @@ ip-resolve
    systems which support the ``TCP_INIT_CWND`` option on TCP sockets.
 
 .. ts:cv:: CONFIG proxy.config.http.auth_server_session_private INT 1
+   :overridable:
 
    If enabled (``1``) anytime a request contains a ``Authorization``,
    ``Proxy-Authorization``, or ``Www-Authenticate`` header the connection will
@@ -973,6 +988,7 @@ ip-resolve
    (``0``) the connection will be available for reuse.
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.match STRING both
+   :overridable:
 
    Enable and set the ability to re-use server connections across client
    connections. The valid values are:
@@ -2151,6 +2167,7 @@ all the different user-agent versions of documents it encounters.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.max_open_read_retries INT -1
    :reloadable:
+   :overridable:
 
     The number of times to attempt fetching an object from cache if there was an equivalent request in flight.
 
@@ -3088,6 +3105,7 @@ SSL Termination
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
+   :overridable:
 
    This configuration specifies the max-age value that will be used
    when adding the Strict-Transport-Security header.  The value is in seconds.
@@ -3097,6 +3115,7 @@ SSL Termination
    header will not be set on HTTP requests.
 
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_include_subdomains INT 0
+   :overridable:
 
    Enables (``1``) or disables (``0``) adding the includeSubdomain value
    to the Strict-Transport-Security header.  proxy.config.ssl.hsts_max_age
