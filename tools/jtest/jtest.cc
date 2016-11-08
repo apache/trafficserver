@@ -865,10 +865,11 @@ strncasestr(char *s, const char *find, int len)
 static char *
 check_keepalive(char *r, int length)
 {
-  if (range_mode) {
-    return NULL;
-  }
   char *ka = strncasestr(r, "Connection:", length);
+  char *http_1_1 = strncasestr(r, "HTTP/1.1", length);
+  if (http_1_1 && !ka) {
+    return http_1_1;
+  }
   if (ka) {
     int l   = length - (ka - r);
     char *e = (char *)memchr(ka, '\n', l);
@@ -2869,7 +2870,7 @@ make_bfc_client(unsigned int addr, int port)
                                    "%s"
                                    "%s"
                                    "\r\n",
-              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, "Connection: close\r\n",
+              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
               // coverity[dont_call]
               reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
     } else {
