@@ -976,7 +976,7 @@ public:
     bool api_skip_all_remapping;
 
     bool already_downgraded;
-    URL pristine_url; // pristine url is the url before remap
+    URL unmapped_url; // unmapped url is the effective url before remap
 
     // Http Range: related variables
     RangeSetup_t range_setup;
@@ -1082,7 +1082,6 @@ public:
         url_remap_success(false),
         api_skip_all_remapping(false),
         already_downgraded(false),
-        pristine_url(),
         range_setup(RANGE_NONE),
         num_range_fields(0),
         range_output_cl(0),
@@ -1152,7 +1151,7 @@ public:
 
       url_map.clear();
       arena.reset();
-      pristine_url.clear();
+      unmapped_url.clear();
       hostdb_entry.clear();
 
       delete[] ranges;

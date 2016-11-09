@@ -4024,11 +4024,23 @@ HttpSM::do_remap_request(bool run_inline)
     ret = remapProcessor.setup_for_remap(&t_state);
   }
 
-  // Preserve pristine url before remap
-  // This needs to be done after the Host: header for reverse proxy is added to the url, but
-  // before we return from this function for forward proxy
-  t_state.pristine_url.create(t_state.hdr_info.client_request.url_get()->m_heap);
-  t_state.pristine_url.copy(t_state.hdr_info.client_request.url_get());
+  // Preserve effective url before remap
+  t_state.unmapped_url.create(t_state.hdr_info.client_request.url_get()->m_heap);
+  t_state.unmapped_url.copy(t_state.hdr_info.client_request.url_get());
+  // Depending on a variety of factors the HOST field may or may not have been promoted to the
+  // client request URL. The unmapped URL should always have that promotion done. If the HOST field
+  // is not already there, promote it only in the unmapped_url. This avoids breaking any logic that
+  // depends on the lack of promotion in the client request URL.
+  if (!t_state.unmapped_url.m_url_impl->m_ptr_host) {
+    MIMEField *host_field = t_state.hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+    if (host_field) {
+      int host_len;
+      const char *host_name = host_field->value_get(&host_len);
+      if (host_name && host_len) {
+        t_state.unmapped_url.host_set(host_name, host_len);
+      }
+    }
+  }
 
   if (!ret) {
     DebugSM("url_rewrite", "Could not find a valid remapping entry for this request [%" PRId64 "]", sm_id);

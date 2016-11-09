@@ -322,9 +322,9 @@ void
 LogAccessHttp::validate_unmapped_url(void)
 {
   if (m_client_req_unmapped_url_canon_len < 0) {
-    if (m_http_sm->t_state.pristine_url.valid()) {
+    if (m_http_sm->t_state.unmapped_url.valid()) {
       int unmapped_url_len;
-      char *unmapped_url = m_http_sm->t_state.pristine_url.string_get_ref(&unmapped_url_len);
+      char *unmapped_url = m_http_sm->t_state.unmapped_url.string_get_ref(&unmapped_url_len);
 
       if (unmapped_url && unmapped_url[0] != 0) {
         m_client_req_unmapped_url_canon_str =
