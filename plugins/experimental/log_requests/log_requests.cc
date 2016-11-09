@@ -31,9 +31,18 @@
 
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
+#include "ts/ink_args.h"
+#include "ts/I_Version.h"
 
 #define PLUGIN_NAME "log_requests"
 #define B_PLUGIN_NAME "[" PLUGIN_NAME "]"
+
+static char arg_blacklist[2048]             = "";
+static bool log_proxy                       = false;
+ArgumentDescription argument_descriptions[] = {
+  {"no-log", '-', "Comma-separated list of status codes to blacklist", "S2047", arg_blacklist, nullptr, nullptr},
+  {"log-proxy", 'p', "Also log proxy request and proxy response transaction", "F", &log_proxy, nullptr, nullptr},
+};
 
 // we log the set of errors in {errors} - {blacklist}
 static std::vector<TSHttpStatus> blacklist;
@@ -81,6 +90,27 @@ static void log_response_status_line(TSMBuffer bufp, TSMLoc loc, std::string out
 static void log_headers(TSMBuffer bufp, TSMLoc loc, std::string output_header);
 static void log_full_transaction(TSHttpTxn txnp);
 static int log_requests_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata);
+static std::vector<std::string> split(const std::string &str, const std::string &delim);
+
+static std::vector<std::string>
+split(const std::string &str, const std::string &delim)
+{
+  std::vector<std::string> tokens;
+  size_t prev = 0, pos = 0;
+  do {
+    pos = str.find(delim, prev);
+    if (pos == std::string::npos)
+      pos = str.length();
+
+    std::string token = str.substr(prev, pos - prev);
+    if (!token.empty())
+      tokens.push_back(token);
+
+    prev = pos + delim.length();
+  } while (pos < str.length() && prev < str.length());
+
+  return tokens;
+}
 
 static bool
 should_log(TSHttpTxn txnp)
@@ -204,34 +234,66 @@ log_headers(TSMBuffer bufp, TSMLoc loc, std::string output_header)
   TSIOBufferDestroy(output_buffer);
 }
 
+/*
+ * TODO: There are resource leaks if calls to TSHttpTxnClientReqGet() & TSHttpTxnClientRespGet()
+ * fail. Likewise for the ...ServerReqGet() & ...ServerRespGet() calls. Need to do work with
+ * some goto's to fix.
+ */
 static void
 log_full_transaction(TSHttpTxn txnp)
 {
   TSMBuffer txn_req_bufp;
   TSMLoc txn_req_loc;
+  TSMBuffer txn_proxy_req_bufp;
+  TSMLoc txn_proxy_req_loc;
+  TSMBuffer txn_proxy_resp_bufp;
+  TSMLoc txn_proxy_resp_loc;
   TSMBuffer txn_resp_bufp;
   TSMLoc txn_resp_loc;
+  bool client_success = false;
+  bool proxy_success = false;
 
   TSError(B_PLUGIN_NAME " --- begin transaction ---");
 
   // get client request/response
   if (TSHttpTxnClientReqGet(txnp, &txn_req_bufp, &txn_req_loc) != TS_SUCCESS ||
       TSHttpTxnClientRespGet(txnp, &txn_resp_bufp, &txn_resp_loc) != TS_SUCCESS) {
-    TSError(B_PLUGIN_NAME " Couldn't retrieve transaction information. Aborting this transaction log");
-    return;
+    TSError(B_PLUGIN_NAME " Couldn't retrieve client transaction information. Aborting this transaction log");
+  } else {
+    // log client request/response
+    log_request_line(txn_req_bufp, txn_req_loc, "Client request");
+    log_headers(txn_req_bufp, txn_req_loc, "Client request");
+    log_response_status_line(txn_resp_bufp, txn_resp_loc, "Client response");
+    log_headers(txn_resp_bufp, txn_resp_loc, "Client response");
+    client_success = true;
   }
 
-  // log the request/response
-  log_request_line(txn_req_bufp, txn_req_loc, "Client request");
-  log_headers(txn_req_bufp, txn_req_loc, "Client request");
-  log_response_status_line(txn_resp_bufp, txn_resp_loc, "Client response");
-  log_headers(txn_resp_bufp, txn_resp_loc, "Client response");
+    // log the proxy request and proxy reponse if flag enabled
+  if (log_proxy) {
+    if (TSHttpTxnServerReqGet(txnp, &txn_proxy_req_bufp, &txn_proxy_req_loc) != TS_SUCCESS ||
+        TSHttpTxnServerRespGet(txnp, &txn_proxy_resp_bufp, &txn_proxy_resp_loc) != TS_SUCCESS) {
+      TSError(B_PLUGIN_NAME " Couldn't retrieve proxy transaction information. Aborting this transaction log");
+    } else {
+      // log proxy request/response
+      log_request_line(txn_proxy_req_bufp, txn_proxy_req_loc, "Proxy request");
+      log_headers(txn_proxy_req_bufp, txn_proxy_req_loc, "Proxy request");
+      log_response_status_line(txn_proxy_resp_bufp, txn_proxy_resp_loc, "Proxy response");
+      log_headers(txn_proxy_resp_bufp, txn_proxy_resp_loc, "Proxy response");
+      proxy_success = true;
+    }
+  }
+  
+  TSError(B_PLUGIN_NAME " --- end transaction ---");
 
   // release memory handles
-  TSHandleMLocRelease(txn_req_bufp, TS_NULL_MLOC, txn_req_loc);
-  TSHandleMLocRelease(txn_resp_bufp, TS_NULL_MLOC, txn_resp_loc);
-
-  TSError(B_PLUGIN_NAME " --- end transaction ---");
+  if (client_success) {
+    TSHandleMLocRelease(txn_req_bufp, TS_NULL_MLOC, txn_req_loc);
+    TSHandleMLocRelease(txn_resp_bufp, TS_NULL_MLOC, txn_resp_loc);
+  }
+  if (proxy_success) {
+    TSHandleMLocRelease(txn_proxy_req_bufp, TS_NULL_MLOC, txn_proxy_req_loc);
+    TSHandleMLocRelease(txn_proxy_resp_bufp, TS_NULL_MLOC, txn_proxy_resp_loc);
+  }
 }
 
 static int
@@ -246,29 +308,43 @@ log_requests_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
     return 0;
 
   default:
-    TSError("[log-requests] Unexpected event received.");
+    TSError(B_PLUGIN_NAME " Unexpected event received.");
     break;
   }
   return 0;
 }
 
 void
-TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
+TSPluginInit(int argc ATS_UNUSED, const char **argv ATS_UNUSED)
 {
+  AppVersionInfo version_info;
   TSPluginRegistrationInfo info;
 
+  // do fun plugin registration stuff
+  version_info.setup(PACKAGE_NAME, "log_requests", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Evil Inc.";
   info.support_email = "invalidemail@invalid.com";
-
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError(B_PLUGIN_NAME " Plugin registration failed.");
   }
 
+  // parse plugin args (defined in plugin.config)
+  //
+  // argv isn't terminated by a NULL for plugins, so let us terminate it so process_args_ex doesn't freak out
+  argv[argc] = nullptr;
+  if (!process_args_ex(&version_info, argument_descriptions, countof(argument_descriptions), argv)) {
+    TSError(B_PLUGIN_NAME " Plugin argument parsing failed");
+  } else {
+    TSError(B_PLUGIN_NAME " Plugin arg: log-proxy=%s", log_proxy ? "on" : "off");
+    TSError(B_PLUGIN_NAME " Plugin arg: no-log=%s", arg_blacklist);
+  }
+
   // populate blacklist
-  if (argc >= 2 && strcmp("--no-log", argv[1]) == 0) {
-    for (int i = 2; i < argc; ++i) {
-      blacklist.push_back(static_cast<TSHttpStatus>(atoi(argv[i])));
+  if (*arg_blacklist) {
+    auto tokens = split(std::string(arg_blacklist), std::string(","));
+    for (auto &tok : tokens) {
+      blacklist.push_back(static_cast<TSHttpStatus>(atoi(tok.c_str())));
     }
   }
 
