@@ -251,7 +251,7 @@ log_full_transaction(TSHttpTxn txnp)
   TSMBuffer txn_resp_bufp;
   TSMLoc txn_resp_loc;
   bool client_success = false;
-  bool proxy_success = false;
+  bool proxy_success  = false;
 
   TSError(B_PLUGIN_NAME " --- begin transaction ---");
 
@@ -268,7 +268,7 @@ log_full_transaction(TSHttpTxn txnp)
     client_success = true;
   }
 
-    // log the proxy request and proxy reponse if flag enabled
+  // log the proxy request and proxy reponse if flag enabled
   if (log_proxy) {
     if (TSHttpTxnServerReqGet(txnp, &txn_proxy_req_bufp, &txn_proxy_req_loc) != TS_SUCCESS ||
         TSHttpTxnServerRespGet(txnp, &txn_proxy_resp_bufp, &txn_proxy_resp_loc) != TS_SUCCESS) {
@@ -282,7 +282,7 @@ log_full_transaction(TSHttpTxn txnp)
       proxy_success = true;
     }
   }
-  
+
   TSError(B_PLUGIN_NAME " --- end transaction ---");
 
   // release memory handles
@@ -299,7 +299,7 @@ log_full_transaction(TSHttpTxn txnp)
 static int
 log_requests_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_CLOSE:
