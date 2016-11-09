@@ -17,4 +17,4 @@
 pkglib_LTLIBRARIES += experimental/log_requests/log_requests.la
 
 experimental_log_requests_log_requests_la_SOURCES = \
-  experimental/log_requests/log_requests.c
+  experimental/log_requests/log_requests.cc
