@@ -145,9 +145,8 @@ log_request_line(TSMBuffer bufp, TSMLoc loc, std::string output_header)
   url = TSUrlStringGet(bufp, url_loc, &url_len);
 
   // get rid of the preceeding http:// on the request URI
-  for (int i = 0; i < 7; ++i) {
+  for (int i = 0; i < 7; ++i)
     url++;
-  }
   url_len -= 7;
 
   TSError(B_PLUGIN_NAME " [%s] request line is:\n%.*s %.*s %s\n", output_header.c_str(), method_len, method, url_len, url,
