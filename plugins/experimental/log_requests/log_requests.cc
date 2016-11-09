@@ -25,55 +25,60 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <vector>
+#include <algorithm>
+#include <string>
+
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
 
-#define PLUGIN_NAME log_requests
+#define PLUGIN_NAME "log_requests"
+#define B_PLUGIN_NAME "[" PLUGIN_NAME "]"
 
 // we log the set of errors in {errors} - {blacklist}
-static TSHttpStatus *blacklist;
-static int blacklist_size; // number of entries in blacklist
-static TSHttpStatus errors[] = {TS_HTTP_STATUS_BAD_REQUEST,
-                                TS_HTTP_STATUS_UNAUTHORIZED,
-                                TS_HTTP_STATUS_PAYMENT_REQUIRED,
-                                TS_HTTP_STATUS_FORBIDDEN,
-                                TS_HTTP_STATUS_NOT_FOUND,
-                                TS_HTTP_STATUS_METHOD_NOT_ALLOWED,
-                                TS_HTTP_STATUS_NOT_ACCEPTABLE,
-                                TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED,
-                                TS_HTTP_STATUS_REQUEST_TIMEOUT,
-                                TS_HTTP_STATUS_CONFLICT,
-                                TS_HTTP_STATUS_GONE,
-                                TS_HTTP_STATUS_LENGTH_REQUIRED,
-                                TS_HTTP_STATUS_PRECONDITION_FAILED,
-                                TS_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE,
-                                TS_HTTP_STATUS_REQUEST_URI_TOO_LONG,
-                                TS_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE,
-                                TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE,
-                                TS_HTTP_STATUS_EXPECTATION_FAILED,
-                                TS_HTTP_STATUS_UNPROCESSABLE_ENTITY,
-                                TS_HTTP_STATUS_LOCKED,
-                                TS_HTTP_STATUS_FAILED_DEPENDENCY,
-                                TS_HTTP_STATUS_UPGRADE_REQUIRED,
-                                TS_HTTP_STATUS_PRECONDITION_REQUIRED,
-                                TS_HTTP_STATUS_TOO_MANY_REQUESTS,
-                                TS_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                TS_HTTP_STATUS_INTERNAL_SERVER_ERROR,
-                                TS_HTTP_STATUS_NOT_IMPLEMENTED,
-                                TS_HTTP_STATUS_BAD_GATEWAY,
-                                TS_HTTP_STATUS_SERVICE_UNAVAILABLE,
-                                TS_HTTP_STATUS_GATEWAY_TIMEOUT,
-                                TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED,
-                                TS_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES,
-                                TS_HTTP_STATUS_INSUFFICIENT_STORAGE,
-                                TS_HTTP_STATUS_LOOP_DETECTED,
-                                TS_HTTP_STATUS_NOT_EXTENDED,
-                                TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED};
+static std::vector<TSHttpStatus> blacklist;
+static std::vector<TSHttpStatus> errors({TS_HTTP_STATUS_BAD_REQUEST,
+                                         TS_HTTP_STATUS_UNAUTHORIZED,
+                                         TS_HTTP_STATUS_PAYMENT_REQUIRED,
+                                         TS_HTTP_STATUS_FORBIDDEN,
+                                         TS_HTTP_STATUS_NOT_FOUND,
+                                         TS_HTTP_STATUS_METHOD_NOT_ALLOWED,
+                                         TS_HTTP_STATUS_NOT_ACCEPTABLE,
+                                         TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED,
+                                         TS_HTTP_STATUS_REQUEST_TIMEOUT,
+                                         TS_HTTP_STATUS_CONFLICT,
+                                         TS_HTTP_STATUS_GONE,
+                                         TS_HTTP_STATUS_LENGTH_REQUIRED,
+                                         TS_HTTP_STATUS_PRECONDITION_FAILED,
+                                         TS_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE,
+                                         TS_HTTP_STATUS_REQUEST_URI_TOO_LONG,
+                                         TS_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE,
+                                         TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE,
+                                         TS_HTTP_STATUS_EXPECTATION_FAILED,
+                                         TS_HTTP_STATUS_UNPROCESSABLE_ENTITY,
+                                         TS_HTTP_STATUS_LOCKED,
+                                         TS_HTTP_STATUS_FAILED_DEPENDENCY,
+                                         TS_HTTP_STATUS_UPGRADE_REQUIRED,
+                                         TS_HTTP_STATUS_PRECONDITION_REQUIRED,
+                                         TS_HTTP_STATUS_TOO_MANY_REQUESTS,
+                                         TS_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE,
+                                         TS_HTTP_STATUS_INTERNAL_SERVER_ERROR,
+                                         TS_HTTP_STATUS_NOT_IMPLEMENTED,
+                                         TS_HTTP_STATUS_BAD_GATEWAY,
+                                         TS_HTTP_STATUS_SERVICE_UNAVAILABLE,
+                                         TS_HTTP_STATUS_GATEWAY_TIMEOUT,
+                                         TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED,
+                                         TS_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES,
+                                         TS_HTTP_STATUS_INSUFFICIENT_STORAGE,
+                                         TS_HTTP_STATUS_LOOP_DETECTED,
+                                         TS_HTTP_STATUS_NOT_EXTENDED,
+                                         TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED});
 
 static bool should_log(TSHttpTxn txnp);
-static void log_request_line(TSMBuffer bufp, TSMLoc loc, const char *output_header);
-static void log_response_status_line(TSMBuffer bufp, TSMLoc loc, const char *output_header);
-static void log_headers(TSMBuffer bufp, TSMLoc loc, const char *output_header);
+static const std::string convert_http_version(const int version);
+static void log_request_line(TSMBuffer bufp, TSMLoc loc, std::string output_header);
+static void log_response_status_line(TSMBuffer bufp, TSMLoc loc, std::string output_header);
+static void log_headers(TSMBuffer bufp, TSMLoc loc, std::string output_header);
 static void log_full_transaction(TSHttpTxn txnp);
 static int log_requests_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata);
 
@@ -85,145 +90,119 @@ should_log(TSHttpTxn txnp)
   TSHttpStatus resp_status;
 
   if (TSHttpTxnClientRespGet(txnp, &txn_resp_bufp, &txn_resp_loc) != TS_SUCCESS) {
-    TSError("[log_requests] Couldn't retrieve server response header.");
+    TSError(B_PLUGIN_NAME " Couldn't retrieve server response header.");
     return false;
   }
 
-  // if resp_status is blacklisted, don't log
+  // get the transaction response status code
   resp_status = TSHttpHdrStatusGet(txn_resp_bufp, txn_resp_loc);
-  for (int i = 0; i < blacklist_size; ++i) {
-    if (resp_status == blacklist[i])
-      return false;
-  }
+
+  // if resp_status is blacklisted, don't log
+  if (std::any_of(blacklist.begin(), blacklist.end(), [=](TSHttpStatus code) { return code == resp_status; }))
+    return false;
 
   // else, if resp_status is in errors, log it
-  for (int i = 0; i < (int)(sizeof(errors) / sizeof(TSHttpStatus)); ++i) {
-    if (resp_status == errors[i]) {
-      return true;
-    }
-  }
+  if (std::any_of(errors.begin(), errors.end(), [=](TSHttpStatus error) { return error == resp_status; }))
+    return true;
 
   // fall through
   return false;
 }
 
-const char *
+static const std::string
 convert_http_version(const int version)
 {
-  char *ret;
   if (version == TS_HTTP_VERSION(1, 0))
-    ret = "HTTP/1.0";
+    return "HTTP/1.0";
   else if (version == TS_HTTP_VERSION(1, 1))
-    ret = "HTTP/1.1";
+    return "HTTP/1.1";
   else if (version == TS_HTTP_VERSION(1, 2))
-    ret = "HTTP/1.2";
+    return "HTTP/1.2";
   else if (version == TS_HTTP_VERSION(2, 0))
-    ret = "HTTP/2.0";
+    return "HTTP/2.0";
   else {
-    ret = "(Unknown HTTP version)";
+    return "(Unknown HTTP version)";
   }
-
-  return ret;
 }
 
 static void
-log_request_line(TSMBuffer bufp, TSMLoc loc, const char *output_header)
+log_request_line(TSMBuffer bufp, TSMLoc loc, std::string output_header)
 {
   int method_len;
   int url_len;
-  const char *version;
+  const char *method;
+  const char *url;
   TSMLoc url_loc;
 
   // parse method
-  const char *method = TSHttpHdrMethodGet(bufp, loc, &method_len);
+  method = TSHttpHdrMethodGet(bufp, loc, &method_len);
 
   // parse version
-  version = convert_http_version(TSHttpHdrVersionGet(bufp, loc));
+  const std::string version = convert_http_version(TSHttpHdrVersionGet(bufp, loc));
 
   // parse request line URL
   TSHttpHdrUrlGet(bufp, loc, &url_loc);
-  const char *url = TSUrlStringGet(bufp, url_loc, &url_len);
-
-  // null terminate these strings so we can printf them
-  char *dup_method   = TSstrndup(method, method_len);
-  char *dup_url      = TSstrndup(url, url_len);
-  char *dup_url_orig = dup_url;
+  url = TSUrlStringGet(bufp, url_loc, &url_len);
 
   // get rid of the preceeding http:// on the request URI
   for (int i = 0; i < 7; ++i) {
-    dup_url++;
+    url++;
   }
+  url_len -= 7;
 
-  TSError("[log_requests] %s request line='%s %s %s'", output_header, dup_method, dup_url, version);
-
-  TSfree(dup_method);
-  TSfree(dup_url_orig);
+  TSError(B_PLUGIN_NAME " [%s] request line is:\n%.*s %.*s %s\n", output_header.c_str(), method_len, method, url_len, url,
+          version.c_str());
 }
 
 static void
-log_response_status_line(TSMBuffer bufp, TSMLoc loc, const char *output_header)
+log_response_status_line(TSMBuffer bufp, TSMLoc loc, std::string output_header)
 {
-  const char *version;
   TSHttpStatus status_code;
   const char *explanation;
   int explanation_len;
 
   // parse version
-  version = convert_http_version(TSHttpHdrVersionGet(bufp, loc));
+  const std::string version = convert_http_version(TSHttpHdrVersionGet(bufp, loc));
 
   // parse status code
   status_code = TSHttpHdrStatusGet(bufp, loc);
 
   // get explanation
-  explanation           = TSHttpHdrReasonGet(bufp, loc, &explanation_len);
-  char *explanation_dup = TSstrndup(explanation, explanation_len);
+  explanation = TSHttpHdrReasonGet(bufp, loc, &explanation_len);
 
-  TSError("[log_requests] %s response status line='%s %d %s'", output_header, version, status_code, explanation_dup);
-
-  TSfree(explanation_dup);
+  TSError(B_PLUGIN_NAME " [%s] response status line is:\n%s %d %.*s\n", output_header.c_str(), version.c_str(), status_code,
+          explanation_len, explanation);
 }
 
 static void
-log_headers(TSMBuffer bufp, TSMLoc loc, const char *output_header)
+log_headers(TSMBuffer bufp, TSMLoc loc, std::string output_header)
 {
-  // parse out request headers
-  TSMLoc field_loc = TSMimeHdrFieldGet(bufp, loc, 0);
-  while (field_loc) {
-    TSMLoc next_field_loc;
-    const char *name;
-    int name_len;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader reader;
+  TSIOBufferBlock block;
+  const char *block_start;
+  int64_t block_avail;
 
-    // grab the header name
-    name = TSMimeHdrFieldNameGet(bufp, loc, field_loc, &name_len);
+  output_buffer = TSIOBufferCreate();
+  reader        = TSIOBufferReaderAlloc(output_buffer);
 
-    if (name) {
-      char *dup_name = TSstrndup(name, name_len);
-      TSError("[log_requests] %s Header=%s", output_header, dup_name);
-      TSfree(dup_name);
+  // This will print just MIMEFields and not the http request line
+  TSMimeHdrPrint(bufp, loc, output_buffer);
 
-      // get the header value(s)
-      int n_values;
-      n_values = TSMimeHdrFieldValuesCount(bufp, loc, field_loc);
-      if (n_values && (n_values != TS_ERROR)) {
-        const char *value = NULL;
-        int value_len     = 0;
-
-        for (int i = 0; i < n_values; ++i) {
-          value = TSMimeHdrFieldValueStringGet(bufp, loc, field_loc, i, &value_len);
-          if (value != NULL || value_len) {
-            char *dup_value = TSstrndup(value, value_len);
-            TSError("[log_requests] --->Value=%s", dup_value);
-            TSfree(dup_value);
-          }
-        }
-      }
+  // We need to loop over all the buffer blocks, there can be more than 1
+  block = TSIOBufferReaderStart(reader);
+  do {
+    block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
+    if (block_avail > 0) {
+      TSError(B_PLUGIN_NAME " Headers are:\n%.*s", static_cast<int>(block_avail), block_start);
     }
+    TSIOBufferReaderConsume(reader, block_avail);
+    block = TSIOBufferReaderStart(reader);
+  } while (block && block_avail != 0);
 
-    // get the memory location to the next header field
-    next_field_loc = TSMimeHdrFieldNext(bufp, loc, field_loc);
-    TSHandleMLocRelease(bufp, loc, field_loc);
-    field_loc = next_field_loc;
-  }
+  // Free up the TSIOBuffer that we used to print out the header
+  TSIOBufferReaderFree(reader);
+  TSIOBufferDestroy(output_buffer);
 }
 
 static void
@@ -234,12 +213,12 @@ log_full_transaction(TSHttpTxn txnp)
   TSMBuffer txn_resp_bufp;
   TSMLoc txn_resp_loc;
 
-  TSError("[log_requests] --- begin transaction ---");
+  TSError(B_PLUGIN_NAME " --- begin transaction ---");
 
   // get client request/response
   if (TSHttpTxnClientReqGet(txnp, &txn_req_bufp, &txn_req_loc) != TS_SUCCESS ||
       TSHttpTxnClientRespGet(txnp, &txn_resp_bufp, &txn_resp_loc) != TS_SUCCESS) {
-    TSError("[log_requests] Couldn't retrieve transaction information. Aborting this transaction log");
+    TSError(B_PLUGIN_NAME " Couldn't retrieve transaction information. Aborting this transaction log");
     return;
   }
 
@@ -253,7 +232,7 @@ log_full_transaction(TSHttpTxn txnp)
   TSHandleMLocRelease(txn_req_bufp, TS_NULL_MLOC, txn_req_loc);
   TSHandleMLocRelease(txn_resp_bufp, TS_NULL_MLOC, txn_resp_loc);
 
-  TSError("[log_requests] --- end transaction ---");
+  TSError(B_PLUGIN_NAME " --- end transaction ---");
 }
 
 static int
@@ -279,21 +258,18 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "log-requests";
+  info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Evil Inc.";
   info.support_email = "invalidemail@invalid.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[log-requests] Plugin registration failed.");
+    TSError(B_PLUGIN_NAME " Plugin registration failed.");
   }
 
   // populate blacklist
-  blacklist_size = 0;
-  blacklist      = (TSHttpStatus *)malloc(1024 * sizeof(TSHttpStatus));
   if (argc >= 2 && strcmp("--no-log", argv[1]) == 0) {
     for (int i = 2; i < argc; ++i) {
-      blacklist[blacklist_size] = atoi(argv[i]);
-      ++blacklist_size;
+      blacklist.push_back(static_cast<TSHttpStatus>(atoi(argv[i])));
     }
   }
 
