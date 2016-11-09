@@ -714,7 +714,7 @@ cquc  Client Request Canonical URL from the client request to |TS|. This field
                      percent-escaped entity codes).
 cqup  Proxy Request  Path component from the remapped client request.
 cqus  Client Request URL scheme from the client request.
-cquuc Client Request Canonical (prior to remapping) URL from client request.
+cquuc Client Request Canonical (prior to remapping) effective URL from client request.
 cquup Client Request Canonical (prior to remapping) path component from the
                      client request. Compare with cqup_.
 cquuh Client Request Unmapped URL host from the client request.
@@ -754,4 +754,3 @@ Some examples below ::
   '%<cqup[0:30]>' // the first 30 characters of <cqup>.
   '%<cqup[-10:]>' // the last 10 characters of <cqup>.
   '%<cqup[:-5]>'  // everything except the last 5 characters of <cqup>.
-

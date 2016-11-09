@@ -4674,7 +4674,7 @@ TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc)
 
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
-    *url_loc                              = (TSMLoc)sm->t_state.pristine_url.m_url_impl;
+    *url_loc                              = (TSMLoc)sm->t_state.unmapped_url.m_url_impl;
 
     if (sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS) {
       if (*url_loc == nullptr) {

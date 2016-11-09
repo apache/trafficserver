@@ -209,7 +209,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
               }
               break;
             case 'o':
-              c = s->pristine_url.string_get_ref(nullptr);
+              c = s->unmapped_url.string_get_ref(nullptr);
               break;
             };
 
