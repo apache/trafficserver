@@ -10,6 +10,7 @@ This product includes software developed at
   - LinkedIn
   - Mike Pall
   - GoDaddy
+  - Boost
 
 ~~~
 
@@ -103,3 +104,10 @@ Copyright 2014 Google Inc. All Rights Reserved.
 
 plugins/experimental/memcache/protocol_binary.h developed by Sun Microsystems, Inc.
 Copyright (c) <2008>, Sun Microsystems, Inc.  All rights reserved.
+
+~~
+
+lib/ts/StringRef.h is a localized version of Boost.String_Ref
+  http://www.boost.org/doc/libs/1_60_0/libs/utility/doc/html/string_ref.html
+
+Copyright (C) 2012 Marshall Clow
