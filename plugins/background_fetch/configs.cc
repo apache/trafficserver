@@ -38,15 +38,17 @@ BgFetchConfig::readConfig(const char *config_file)
 
   TSDebug(PLUGIN_NAME, "trying to open config file in this path: %s", config_file);
 
-  file = TSfopen(config_file, "r");
+  if (*config_file == '/') {
+    snprintf(file_path, sizeof(file_path), "%s", config_file);
+  } else {
+    snprintf(file_path, sizeof(file_path), "%s/%s", TSConfigDirGet(), config_file);
+  }
+  TSDebug(PLUGIN_NAME, "Chosen config file is at: %s", file_path);
+
+  file = TSfopen(file_path, "r");
   if (nullptr == file) {
-    TSDebug(PLUGIN_NAME, "Failed to open config file %s, trying rel path", config_file);
-    snprintf(file_path, sizeof(file_path), "%s/%s", TSInstallDirGet(), config_file);
-    file = TSfopen(file_path, "r");
-    if (nullptr == file) {
-      TSError("[%s] invalid config file", PLUGIN_NAME);
-      return false;
-    }
+    TSError("[%s] invalid config file:  %s", PLUGIN_NAME, file_path);
+    return false;
   }
 
   BgFetchRule *cur = nullptr;
