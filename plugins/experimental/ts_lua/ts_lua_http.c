@@ -435,10 +435,6 @@ static int
 ts_lua_http_set_parent_proxy(lua_State *L)
 {
   int n = 0;
-  const char *hostname;
-  size_t hostname_len;
-  int port = 0;
-  const char *target;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -447,6 +443,11 @@ ts_lua_http_set_parent_proxy(lua_State *L)
   n = lua_gettop(L);
 
   if (n == 2) {
+    const char *hostname;
+    size_t hostname_len;
+    int port = 0;
+    const char *target;
+
     hostname = luaL_checklstring(L, 1, &hostname_len);
     target   = TSstrndup(hostname, hostname_len);
     port     = luaL_checkinteger(L, 2);
