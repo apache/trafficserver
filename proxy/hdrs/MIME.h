@@ -979,6 +979,7 @@ public:
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void field_value_append(MIMEField *field, const char *value, int value_length, bool prepend_comma = false,
                           const char separator = ',');
+  void value_append_or_set(const char *name, const int name_length, char *value, int value_length);
   void field_combine_dups(MIMEField *field, bool prepend_comma = false, const char separator = ',');
   time_t get_age();
   int64_t get_content_length() const;
@@ -1388,6 +1389,18 @@ MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char sep
     }
     field_delete(current, false); // don't delete duplicates
     current = field->m_next_dup;
+  }
+}
+
+inline void
+MIMEHdr::value_append_or_set(const char *name, const int name_length, char *value, int value_length)
+{
+  MIMEField *field = nullptr;
+
+  if ((field = field_find(name, name_length)) != nullptr) {
+    field_value_append(field, value, value_length, true);
+  } else {
+    value_set(name, name_length, value, value_length);
   }
 }
 

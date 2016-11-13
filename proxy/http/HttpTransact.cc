@@ -5218,39 +5218,28 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
     ip_string[0]   = 0;
   }
 
-  ////////////////////////////////////////////////////////////////
-  // if we want client-ip headers, and there isn't one, add one //
-  ////////////////////////////////////////////////////////////////
+  // Check to see if the ip_string has been set
+  if (ip_string_size == 0) {
+    return;
+  }
+
+  // if we want client-ip headers, and there isn't one, add one
   if ((s->txn_conf->anonymize_insert_client_ip) && (!s->txn_conf->anonymize_remove_client_ip)) {
     bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
     DebugTxn("http_trans", "client_ip_set = %d", client_ip_set);
 
-    if (!client_ip_set && ip_string_size > 0) {
+    if (client_ip_set == true) {
       request->value_set(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP, ip_string, ip_string_size);
       DebugTxn("http_trans", "inserted request header 'Client-ip: %s'", ip_string);
     }
   }
 
+  // Add or append to the X-Forwarded-For header
   if (s->txn_conf->insert_squid_x_forwarded_for) {
-    if (ip_string_size > 0) {
-      MIMEField *x_for;
-
-      if ((x_for = request->field_find(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR)) != nullptr) {
-        // http://en.wikipedia.org/wiki/X-Forwarded-For
-        // The X-Forwarded-For (XFF) HTTP header field is a de facto standard
-        // for identifying the originating IP address of a client connecting
-        // to a web server through an HTTP proxy or load balancer. This is a
-        // non-RFC-standard request field which was introduced by the Squid
-        // caching proxy server's developers.
-        //   X-Forwarded-For: client1, proxy1, proxy2
-        request->field_value_append(x_for, ip_string, ip_string_size, true); // true => comma must be inserted
-      } else {
-        request->value_set(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR, ip_string, ip_string_size);
-      }
-      DebugTxn("http_trans", "[add_client_ip_to_outgoing_request] Appended connecting client's "
-                             "(%s) to the X-Forwards header",
-               ip_string);
-    }
+    request->value_append_or_set(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR, ip_string, ip_string_size);
+    DebugTxn("http_trans", "[add_client_ip_to_outgoing_request] Appended connecting client's "
+                           "(%s) to the X-Forwards header",
+             ip_string);
   }
 }
 
