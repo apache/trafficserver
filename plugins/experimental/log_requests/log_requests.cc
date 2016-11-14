@@ -37,6 +37,10 @@
 #define PLUGIN_NAME "log_requests"
 #define B_PLUGIN_NAME "[" PLUGIN_NAME "]"
 
+// we log the set of errors in {4xx/5xx errors} - {blacklist}
+static std::vector<TSHttpStatus> blacklist;
+
+// some plugin argument stuff
 static char arg_blacklist[2048]             = "";
 static bool log_proxy                       = false;
 ArgumentDescription argument_descriptions[] = {
@@ -44,45 +48,7 @@ ArgumentDescription argument_descriptions[] = {
   {"log-proxy", 'p', "Also log proxy request and proxy response transaction", "F", &log_proxy, nullptr, nullptr},
 };
 
-// we log the set of errors in {errors} - {blacklist}
-static std::vector<TSHttpStatus> blacklist;
-static std::vector<TSHttpStatus> errors({TS_HTTP_STATUS_BAD_REQUEST,
-                                         TS_HTTP_STATUS_UNAUTHORIZED,
-                                         TS_HTTP_STATUS_PAYMENT_REQUIRED,
-                                         TS_HTTP_STATUS_FORBIDDEN,
-                                         TS_HTTP_STATUS_NOT_FOUND,
-                                         TS_HTTP_STATUS_METHOD_NOT_ALLOWED,
-                                         TS_HTTP_STATUS_NOT_ACCEPTABLE,
-                                         TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED,
-                                         TS_HTTP_STATUS_REQUEST_TIMEOUT,
-                                         TS_HTTP_STATUS_CONFLICT,
-                                         TS_HTTP_STATUS_GONE,
-                                         TS_HTTP_STATUS_LENGTH_REQUIRED,
-                                         TS_HTTP_STATUS_PRECONDITION_FAILED,
-                                         TS_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE,
-                                         TS_HTTP_STATUS_REQUEST_URI_TOO_LONG,
-                                         TS_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE,
-                                         TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE,
-                                         TS_HTTP_STATUS_EXPECTATION_FAILED,
-                                         TS_HTTP_STATUS_UNPROCESSABLE_ENTITY,
-                                         TS_HTTP_STATUS_LOCKED,
-                                         TS_HTTP_STATUS_FAILED_DEPENDENCY,
-                                         TS_HTTP_STATUS_UPGRADE_REQUIRED,
-                                         TS_HTTP_STATUS_PRECONDITION_REQUIRED,
-                                         TS_HTTP_STATUS_TOO_MANY_REQUESTS,
-                                         TS_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                         TS_HTTP_STATUS_INTERNAL_SERVER_ERROR,
-                                         TS_HTTP_STATUS_NOT_IMPLEMENTED,
-                                         TS_HTTP_STATUS_BAD_GATEWAY,
-                                         TS_HTTP_STATUS_SERVICE_UNAVAILABLE,
-                                         TS_HTTP_STATUS_GATEWAY_TIMEOUT,
-                                         TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED,
-                                         TS_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES,
-                                         TS_HTTP_STATUS_INSUFFICIENT_STORAGE,
-                                         TS_HTTP_STATUS_LOOP_DETECTED,
-                                         TS_HTTP_STATUS_NOT_EXTENDED,
-                                         TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED});
-
+// forward declarations
 static bool should_log(TSHttpTxn txnp);
 static const std::string convert_http_version(const int version);
 static void log_request_line(TSMBuffer bufp, TSMLoc loc, std::string output_header);
@@ -91,6 +57,7 @@ static void log_headers(TSMBuffer bufp, TSMLoc loc, std::string output_header);
 static void log_full_transaction(TSHttpTxn txnp);
 static int log_requests_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata);
 static std::vector<std::string> split(const std::string &str, const std::string &delim);
+
 
 static std::vector<std::string>
 split(const std::string &str, const std::string &delim)
@@ -131,8 +98,8 @@ should_log(TSHttpTxn txnp)
   if (std::any_of(blacklist.begin(), blacklist.end(), [=](TSHttpStatus code) { return code == resp_status; }))
     return false;
 
-  // else, if resp_status is in errors, log it
-  if (std::any_of(errors.begin(), errors.end(), [=](TSHttpStatus error) { return error == resp_status; }))
+  // else, if resp_status is a 4xx/5xx error, log it
+  if (static_cast<int>(resp_status) >= 400 && static_cast<int>(resp_status) < 600)
     return true;
 
   // fall through
