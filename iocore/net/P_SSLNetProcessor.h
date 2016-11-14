@@ -42,6 +42,7 @@
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include <openssl/ssl.h>
+#include "ts/Map.h"
 
 class UnixNetVConnection;
 struct NetAccept;
@@ -57,16 +58,8 @@ public:
 
   void cleanup(void);
 
-  SSL_CTX *
-  getClientSSL_CTX(void) const
-  {
-    return client_ctx;
-  }
-
   SSLNetProcessor();
   virtual ~SSLNetProcessor();
-
-  SSL_CTX *client_ctx;
 
   //
   // Private

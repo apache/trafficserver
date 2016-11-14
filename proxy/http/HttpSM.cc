@@ -39,13 +39,15 @@
 #include "RemapProcessor.h"
 #include "Transform.h"
 #include "P_SSLConfig.h"
-
+#include <openssl/ossl_typ.h>
+#include <openssl/ssl.h>
 #include "HttpPages.h"
 
 #include "IPAllow.h"
 //#include "I_Auth.h"
 //#include "HttpAuthParams.h"
 #include "congest/Congestion.h"
+#include "ts/I_Layout.h"
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX 6  // 8K
@@ -4018,7 +4020,7 @@ HttpSM::do_remap_request(bool run_inline)
 {
   DebugSM("http_seq", "[HttpSM::do_remap_request] Remapping request");
   DebugSM("url_rewrite", "Starting a possible remapping for request [%" PRId64 "]", sm_id);
-
+  SSLConfig::scoped_config params;
   bool ret = false;
   if (t_state.cop_test_page == false) {
     ret = remapProcessor.setup_for_remap(&t_state);
@@ -4057,6 +4059,16 @@ HttpSM::do_remap_request(bool run_inline)
     DebugSM("url_rewrite", "Still more remapping needed for [%" PRId64 "]", sm_id);
     ink_assert(!pending_action);
     pending_action = remap_action_handle;
+  }
+
+  // check if the overridden client cert filename is already attached to an existing ssl context
+  ats_scoped_str clientCert(Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename));
+  auto tCTX = params->getCTX(clientCert);
+
+  if (tCTX == nullptr) {
+    // make new client ctx and add it to the ctx list
+    auto tctx = params->getNewCTX(clientCert);
+    params->InsertCTX(clientCert, tctx);
   }
 
   return;
@@ -5034,6 +5046,9 @@ HttpSM::do_http_server_open(bool raw)
       opt.set_sni_servername(host, len);
     }
 
+    ats_scoped_str clientCert(
+      ats_strdup((Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename))));
+    opt.set_client_certname(clientCert);
     connect_action_handle = sslNetProcessor.connect_re(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // addr + port
                                                        &opt);

@@ -924,7 +924,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
     // net_activity will not be triggered until after the handshake
     set_inactivity_timeout(HRTIME_SECONDS(SSLConfigParams::ssl_handshake_timeout_in));
   }
-
+  SSLConfig::scoped_config params;
   switch (event) {
   case SSL_EVENT_SERVER:
     if (this->ssl == nullptr) {
@@ -980,7 +980,20 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 
   case SSL_EVENT_CLIENT:
     if (this->ssl == nullptr) {
-      this->ssl = make_ssl_connection(ssl_NetProcessor.client_ctx, this);
+      SSL_CTX *clientCTX = nullptr;
+      if (this->options.clientCertificate) {
+        const char *certfile = (const char *)this->options.clientCertificate;
+        if (certfile != nullptr) {
+          clientCTX = params->getCTX(certfile);
+          if (clientCTX != nullptr)
+            Debug("ssl", "context for %s is found at %p", this->options.clientCertificate.get(), (void *)clientCTX);
+          else
+            Debug("ssl", "failed to find context for %s", this->options.clientCertificate.get());
+        }
+      } else {
+        clientCTX = params->client_ctx;
+      }
+      this->ssl = make_ssl_connection(clientCTX, this);
 
       if (this->ssl == nullptr) {
         SSLErrorVC(this, "failed to create SSL client session");

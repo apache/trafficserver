@@ -8140,6 +8140,14 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->forward_connect_method;
     break;
+  case TS_CONFIG_SSL_CERT_FILENAME:
+    typ = OVERRIDABLE_TYPE_STRING;
+    ret = &overridableHttpConfig->client_cert_filename;
+    break;
+  case TS_CONFIG_SSL_CERT_FILEPATH:
+    typ = OVERRIDABLE_TYPE_STRING;
+    ret = &overridableHttpConfig->client_cert_filepath;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8299,6 +8307,15 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       s->t_state.txn_conf->body_factory_template_base_len = 0;
     }
     break;
+  case TS_CONFIG_SSL_CERT_FILENAME:
+    if (value && length > 0) {
+      s->t_state.txn_conf->client_cert_filename = const_cast<char *>(value);
+    }
+    break;
+  case TS_CONFIG_SSL_CERT_FILEPATH:
+    if (value && length > 0) {
+      s->t_state.txn_conf->client_cert_filepath = const_cast<char *>(value);
+    }
   default:
     return TS_ERROR;
     break;
@@ -8378,6 +8395,9 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
   case 33:
     if (!strncmp(name, "proxy.config.http.cache.fuzz.time", length)) {
       cnf = TS_CONFIG_HTTP_CACHE_FUZZ_TIME;
+    } else if (!strncmp(name, "proxy.config.ssl.client.cert.path", length)) {
+      cnf = TS_CONFIG_SSL_CERT_FILEPATH;
+      typ = TS_RECORDDATATYPE_STRING;
     }
     break;
 
@@ -8440,8 +8460,12 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME;
       } else if (!strncmp(name, "proxy.config.http.default_buffer_size", length)) {
         cnf = TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE;
+      } else if (!strncmp(name, "proxy.config.ssl.client.cert.filename", length)) {
+        cnf = TS_CONFIG_SSL_CERT_FILENAME;
+        typ = TS_RECORDDATATYPE_STRING;
       }
       break;
+
     case 'r':
       if (!strncmp(name, "proxy.config.http.response_server_str", length)) {
         cnf = TS_CONFIG_HTTP_RESPONSE_SERVER_STR;
