@@ -66,7 +66,8 @@ NetVCOptions::reset()
 
   etype = ET_NET;
 
-  sni_servername = nullptr;
+  sni_servername    = nullptr;
+  clientCertificate = nullptr;
 }
 
 TS_INLINE void

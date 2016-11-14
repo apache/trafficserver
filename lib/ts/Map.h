@@ -353,7 +353,7 @@ template <class K, class C, class A>
 inline void
 Map<K, C, A>::get_keys(Vec<K> &keys)
 {
-  for (int i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++)
     if (v[i].key)
       keys.add(v[i].key);
 }

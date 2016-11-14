@@ -469,7 +469,9 @@ struct OverridableHttpConfigParams {
       global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10),
       freshness_fuzz_prob(0.005),
-      background_fill_threshold(0.5)
+      background_fill_threshold(0.5),
+      client_cert_filename(NULL),
+      client_cert_filepath(NULL)
   {
   }
 
@@ -681,6 +683,8 @@ struct OverridableHttpConfigParams {
   MgmtFloat cache_heuristic_lm_factor;
   MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
+  char *client_cert_filename;
+  char *client_cert_filepath;
 };
 
 /////////////////////////////////////////////////////////////
