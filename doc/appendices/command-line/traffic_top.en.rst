@@ -256,7 +256,7 @@ A high percentage of cold misses indicates that your origin servers are setting
 expirations on their responses which are too short, as compared to the actual
 lifetime of the content in those responses.
 
-Statistic: :ts:stat:`proxy.process.http.transaction_counts.miss_col`.
+Statistic: :ts:stat:`proxy.process.http.transaction_counts.miss_cold`.
 
 Changed
 ~~~~~~~
@@ -678,4 +678,3 @@ requests not fulfilled by the |TS| cache.
 Statistics:
 :ts:stat:`proxy.process.http.origin_server_response_header_total_size`,
 :ts:stat:`proxy.process.http.origin_server_response_document_total_size`.
-

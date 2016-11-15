@@ -29,4 +29,4 @@ Monitoring
    statistics/index.en
    monitoring/index.en
    error-messages.en
-
+   diagnostic-files.en

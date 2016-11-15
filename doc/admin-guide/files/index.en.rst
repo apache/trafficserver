@@ -92,5 +92,3 @@ Configuration Files
 
 :doc:`volume.config.en`
     Defines cache space usage by individual protocols.
-
-
