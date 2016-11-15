@@ -105,3 +105,7 @@ origin servers' hostnames prior to object revalidation or retrieval.
    :type: gauge
    :unit: seconds
 
+.. ts:stat:: global proxy.process.hostdb.cache.current_items integer
+   :type: gauge
+
+   The number of distinct host records in the HostDB cache.

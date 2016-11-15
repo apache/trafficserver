@@ -19,9 +19,9 @@
 """
     TS Sphinx Directives
     ~~~~~~~~~~~~~~~~~~~~~~~~~
-    
+
     Sphinx Docs directives for Apache Traffic Server
-    
+
     :copyright: Copyright 2013 by the Apache Software Foundation
     :license: Apache
 """
@@ -375,6 +375,9 @@ def setup(app):
     app.add_crossref_type('configfile', 'file',
                         objname='Configuration file',
                         indextemplate='pair: %s; Configuration files')
+    app.add_crossref_type('logfile', 'file',
+                        objname='Log file',
+                        indextemplate='pair: %s; Log files')
 
     rst.roles.register_generic_role('arg', nodes.emphasis)
     rst.roles.register_generic_role('const', nodes.literal)

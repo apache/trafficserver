@@ -1245,6 +1245,8 @@ Parent Proxy Configuration
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
+.. ts:cv:: CONFIG proxy.local.http.parent_proxy.disable_connect_tunneling INT 0
+
 HTTP Connection Timeouts
 ========================
 
@@ -1417,9 +1419,9 @@ Origin Server Connect Attempts
    :overridable:
 
    Limits the number of requests to be queued when the :ts:cv:`proxy.config.http.origin_max_connections` is reached.
-   When disabled (``-1``) requests are will wait indefinitely for an available connection. When set to ``0`` all 
-   requests past the :ts:cv:`proxy.config.http.origin_max_connections` will immediately fail. When set to ``>0`` 
-   ATS will queue that many requests to go to the origin, any additional requests past the limit will immediately fail. 
+   When disabled (``-1``) requests are will wait indefinitely for an available connection. When set to ``0`` all
+   requests past the :ts:cv:`proxy.config.http.origin_max_connections` will immediately fail. When set to ``>0``
+   ATS will queue that many requests to go to the origin, any additional requests past the limit will immediately fail.
 
 .. ts:cv:: CONFIG proxy.config.http.origin_min_keep_alive_connections INT 0
    :reloadable:
@@ -2826,7 +2828,7 @@ Diagnostic Logging Configuration
    ``O`` Log to standard output.
    ``E`` Log to standard error.
    ``S`` Log to syslog.
-   ``L`` Log to ``diags.log``.
+   ``L`` Log to :file:`diags.log`.
    ===== ======================================================================
 
 .. topic:: Example
@@ -3035,7 +3037,7 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING ssl_ticket.key
 
-   The filename of the default and global ticket key for SSL sessions. The location of the :file:`ssl_ticket.key` file, relative to the
+   The filename of the default and global ticket key for SSL sessions. The location is relative to the
    :ts:cv:`proxy.config.ssl.server.cert.path` directory.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
@@ -3575,7 +3577,7 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.allocator.dontdump_iobuffers INT 1
 
   Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported
-  platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP 
+  platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP
   with madvise() on linux platforms that support MADV_DONTDUMP.  Enabled by default.
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
