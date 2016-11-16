@@ -53,5 +53,4 @@ else
 fi
 
 # output list of files changed
-COMMIT=$(git show $TAG | awk '/^commit/ {print $2}')
-git --no-pager diff --name-only "$COMMIT"
+git --no-pager diff --name-only "$TAG"
