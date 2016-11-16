@@ -30,8 +30,3 @@ Then in plugin.config:
     In other words, the --log-proxy and --no-log flags are optional. 
     --no-log should be followed with a comma separated list of error
     codes to blacklist.
-
-    Note: There is an interesting bug where if you want to enable 
-    --log-proxy, it has to come before the --no-log flag. I'm not
-    sure why this happens, but you'll have to just live with it
-    until I figure it out.

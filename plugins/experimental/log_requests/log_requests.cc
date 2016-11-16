@@ -31,8 +31,6 @@
 
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
-#include "ts/ink_args.h"
-#include "ts/I_Version.h"
 
 #define PLUGIN_NAME "log_requests"
 #define B_PLUGIN_NAME "[" PLUGIN_NAME "]"
@@ -43,10 +41,6 @@ static std::vector<TSHttpStatus> blacklist;
 // some plugin argument stuff
 static char arg_blacklist[2048]             = "";
 static bool log_proxy                       = false;
-ArgumentDescription argument_descriptions[] = {
-  {"no-log", '-', "Comma-separated list of status codes to blacklist", "S2047", arg_blacklist, nullptr, nullptr},
-  {"log-proxy", 'p', "Also log proxy request and proxy response transaction", "F", &log_proxy, nullptr, nullptr},
-};
 
 // forward declarations
 static bool should_log(TSHttpTxn txnp);
@@ -284,11 +278,9 @@ log_requests_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 void
 TSPluginInit(int argc ATS_UNUSED, const char **argv ATS_UNUSED)
 {
-  AppVersionInfo version_info;
   TSPluginRegistrationInfo info;
 
   // do fun plugin registration stuff
-  version_info.setup(PACKAGE_NAME, "log_requests", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Evil Inc.";
   info.support_email = "invalidemail@invalid.com";
@@ -297,15 +289,18 @@ TSPluginInit(int argc ATS_UNUSED, const char **argv ATS_UNUSED)
   }
 
   // parse plugin args (defined in plugin.config)
-  //
-  // argv isn't terminated by a NULL for plugins, so let us terminate it so process_args_ex doesn't freak out
-  argv[argc] = nullptr;
-  if (!process_args_ex(&version_info, argument_descriptions, countof(argument_descriptions), argv)) {
-    TSError(B_PLUGIN_NAME " Plugin argument parsing failed");
-  } else {
-    TSError(B_PLUGIN_NAME " Plugin arg: log-proxy=%s", log_proxy ? "on" : "off");
-    TSError(B_PLUGIN_NAME " Plugin arg: no-log=%s", arg_blacklist);
+  for (int i = 0; i < argc; ++i) {
+    if (strcmp(argv[i], "--log-proxy") == 0) {
+      log_proxy = true;
+    } else if (strcmp(argv[i], "--no-log") == 0) {
+      if (argv[++i]) {
+        strncpy(arg_blacklist, argv[i], sizeof(arg_blacklist) - 1);
+      }
+    }
   }
+
+  TSError(B_PLUGIN_NAME " Plugin arg: log-proxy=%s", log_proxy ? "on" : "off");
+  TSError(B_PLUGIN_NAME " Plugin arg: no-log=%s", arg_blacklist);
 
   // populate blacklist
   if (*arg_blacklist) {
