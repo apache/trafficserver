@@ -552,7 +552,12 @@ Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_
     if (cleanup_func) {
       cleanup_func();
     }
-    ink_fatal_va(format_string, ap2);
+
+    // DL_Emergency means the process cannot recover from a reboot
+    if (level == DL_Emergency)
+      ink_emergency_va(format_string, ap2);
+    else
+      ink_fatal_va(format_string, ap2);
   }
 
   va_end(ap2);

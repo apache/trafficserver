@@ -91,6 +91,7 @@ public:
   bool clusterOk();
 
   volatile bool run_proxy;
+  volatile bool proxy_recoverable; // false if traffic_server cannot recover with a reboot
   volatile time_t manager_started_at;
   volatile time_t proxy_started_at;
   volatile int proxy_launch_count;
