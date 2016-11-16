@@ -799,7 +799,7 @@ main(int argc, const char **argv)
       break;
     }
 
-    if (lmgmt->run_proxy && !lmgmt->processRunning()) { /* Make sure we still have a proxy up */
+    if (lmgmt->run_proxy && !lmgmt->processRunning() && lmgmt->proxy_recoverable) { /* Make sure we still have a proxy up */
       if (sleep_time) {
         mgmt_log("Relaunching proxy after %d sec...", sleep_time);
         millisleep(1000 * sleep_time); // we use millisleep instead of sleep because it doesnt interfere with signals
@@ -814,6 +814,10 @@ main(int argc, const char **argv)
         just_started++;
       }
     } else { /* Give the proxy a chance to fire up */
+      if (!lmgmt->proxy_recoverable) {
+        mgmt_log("[main] Proxy is un-recoverable. Proxy will not be relaunched.\n");
+      }
+
       just_started++;
     }
 
