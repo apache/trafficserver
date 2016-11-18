@@ -23,3 +23,7 @@
 
 #include "I_EventSystem.h"
 #include "test_Buffer.cc"
+
+#include "tscore/I_Version.h"
+
+AppVersionInfo appVersionInfo;

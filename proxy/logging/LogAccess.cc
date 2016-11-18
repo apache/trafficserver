@@ -30,6 +30,8 @@
 #include "LogFormat.h"
 #include "LogBuffer.h"
 
+extern AppVersionInfo appVersionInfo;
+
 char INVALID_STR[] = "!INVALID_STR!";
 
 #define HIDDEN_CONTENT_TYPE "@Content-Type"
@@ -1209,6 +1211,19 @@ LogAccess::marshal_cache_lookup_url_canon(char *buf)
     }
   }
 
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_version_build_number(char *buf)
+{
+  int len = sizeof(appVersionInfo.BldNumStr);
+  if (buf) {
+    marshal_str(buf, appVersionInfo.BldNumStr, len);
+  }
   return len;
 }
 
