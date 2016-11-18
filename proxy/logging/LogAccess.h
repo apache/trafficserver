@@ -268,12 +268,13 @@ public:
 
   // other fields
   //
-  inkcoreapi virtual int marshal_transfer_time_ms(char *);    // INT
-  inkcoreapi virtual int marshal_transfer_time_s(char *);     // INT
-  inkcoreapi virtual int marshal_file_size(char *);           // INT
-  inkcoreapi virtual int marshal_plugin_identity_id(char *);  // INT
-  inkcoreapi virtual int marshal_plugin_identity_tag(char *); // STR
-  inkcoreapi virtual int marshal_process_uuid(char *);        // STR
+  inkcoreapi virtual int marshal_transfer_time_ms(char *);     // INT
+  inkcoreapi virtual int marshal_transfer_time_s(char *);      // INT
+  inkcoreapi virtual int marshal_file_size(char *);            // INT
+  inkcoreapi virtual int marshal_plugin_identity_id(char *);   // INT
+  inkcoreapi virtual int marshal_plugin_identity_tag(char *);  // STR
+  inkcoreapi virtual int marshal_process_uuid(char *);         // STR
+  inkcoreapi virtual int marshal_version_build_number(char *); // STR
 
   // These two are special, in that they are shared for all log types / implementations
   inkcoreapi int marshal_entry_type(char *);             // INT

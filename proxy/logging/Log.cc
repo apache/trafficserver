@@ -838,6 +838,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "fsiz", field);
 
+  field = new LogField("version_build_number", "vbn", LogField::STRING, &LogAccess::marshal_version_build_number,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "vbn", field);
+
   Ptr<LogFieldAliasTable> entry_type_map = make_ptr(new LogFieldAliasTable);
   entry_type_map->init(N_LOG_ENTRY_TYPES, LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP", LOG_ENTRY_ICP, "LOG_ENTRY_ICP");
   field = new LogField("log_entry_type", "etype", LogField::sINT, &LogAccess::marshal_entry_type, &LogAccess::unmarshal_entry_type,

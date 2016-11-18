@@ -765,6 +765,16 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
   return INK_ALIGN_DEFAULT(len);
 }
 
+int
+LogAccess::marshal_version_build_number(char *buf)
+{
+  int len = sizeof(appVersionInfo.BldNumStr);
+  if (buf) {
+    marshal_str(buf, appVersionInfo.BldNumStr, len);
+  }
+  return len;
+}
+
 inline int
 LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
 {
