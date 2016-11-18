@@ -902,6 +902,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ctpd", field);
 
+  field = new LogField("version_build_number", "vbn", LogField::STRING, &LogAccess::marshal_version_build_number,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("vbn", field);
+
   init_status |= FIELDS_INITIALIZED;
 }
 

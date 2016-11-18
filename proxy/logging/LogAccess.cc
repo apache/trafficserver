@@ -30,6 +30,8 @@
 #include "LogFormat.h"
 #include "LogBuffer.h"
 
+extern AppVersionInfo appVersionInfo;
+
 char INVALID_STR[] = "!INVALID_STR!";
 
 #define HIDDEN_CONTENT_TYPE "@Content-Type"
@@ -1292,6 +1294,19 @@ LogAccess::marshal_client_sni_server_name(char *buf)
   int len = round_strlen(server_name.length() + 1);
   if (buf) {
     marshal_str(buf, server_name.data(), len);
+  }
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_version_build_number(char *buf)
+{
+  int len = sizeof(appVersionInfo.BldNumStr);
+  if (buf) {
+    marshal_str(buf, appVersionInfo.BldNumStr, len);
   }
   return len;
 }
