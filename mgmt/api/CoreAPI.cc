@@ -153,7 +153,6 @@ ProxyStateGet()
 TSMgmtError
 ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 {
-  int i = 0;
   char tsArgs[MAX_BUF_SIZE];
   char *proxy_options;
 
@@ -184,24 +183,16 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
       ink_strlcat(tsArgs, " -k", sizeof(tsArgs));
     }
 
-    if (strlen(tsArgs) > 0) { /* Passed command line args for proxy */
-      ats_free(lmgmt->proxy_options);
-      lmgmt->proxy_options = ats_strdup(tsArgs);
-      mgmt_log("[ProxyStateSet] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
-    }
+    mgmt_log("[ProxyStateSet] Traffic Server Args: '%s %s'\n", lmgmt->proxy_options ? lmgmt->proxy_options : "", tsArgs);
 
     lmgmt->run_proxy = true;
     lmgmt->listenForProxy();
-
-    do {
-      mgmt_sleep_sec(1);
-    } while (i++ < 20 && (lmgmt->proxy_running == 0));
-
-    if (!lmgmt->processRunning()) {
+    if (!lmgmt->startProxy(tsArgs)) {
       goto Lerror;
     }
 
     break;
+
   default:
     goto Lerror;
   }

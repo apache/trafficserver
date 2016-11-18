@@ -241,8 +241,8 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
   process_server_timeout_msecs = REC_readInteger("proxy.config.lm.pserver_timeout_msecs", &found);
   proxy_name                   = REC_readString("proxy.config.proxy_name", &found);
   proxy_binary                 = REC_readString("proxy.config.proxy_binary", &found);
-  proxy_options                = REC_readString("proxy.config.proxy_binary_opts", &found);
   env_prep                     = REC_readString("proxy.config.env_prep", &found);
+  proxy_options                = NULL;
 
   // Calculate proxy_binary from the absolute bin_path
   absolute_proxy_binary = Layout::relative_to(bindir, proxy_binary);
@@ -853,9 +853,13 @@ LocalManager::processEventQueue()
 /*
  * startProxy()
  *   Function fires up a proxy process.
+ *
+ * Args:
+ *   onetime_options: one time options that traffic_server should be started with (ie
+ *                    these options do not persist across reboots)
  */
 bool
-LocalManager::startProxy()
+LocalManager::startProxy(const char *onetime_options)
 {
   if (proxy_launch_outstanding) {
     return false;
@@ -924,8 +928,13 @@ LocalManager::startProxy()
     Vec<char> real_proxy_options;
 
     real_proxy_options.append(proxy_options, strlen(proxy_options));
+    if (onetime_options && *onetime_options) {
+      real_proxy_options.append(" ", strlen(" "));
+      real_proxy_options.append(onetime_options, strlen(onetime_options));
+    }
 
-    if (!strstr(proxy_options, MGMT_OPT)) { // Make sure we're starting the proxy in mgmt mode
+    // Make sure we're starting the proxy in mgmt mode
+    if (strstr(proxy_options, MGMT_OPT) == 0 && strstr(onetime_options, MGMT_OPT) == 0) {
       real_proxy_options.append(" ", strlen(" "));
       real_proxy_options.append(MGMT_OPT, sizeof(MGMT_OPT) - 1);
     }
