@@ -452,9 +452,9 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
     fmt_buf_bytes   = 0;
 
     if (m_file_format == LOG_FILE_PIPE) {
-      ascii_buffer = (char *)malloc(m_max_line_size);
+      ascii_buffer = (char *)ats_malloc(m_max_line_size);
     } else {
-      ascii_buffer = (char *)malloc(m_ascii_buffer_size);
+      ascii_buffer = (char *)ats_malloc(m_ascii_buffer_size);
     }
 
     // fill the buffer with as many records as possible
