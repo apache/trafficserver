@@ -20,7 +20,7 @@
 Cache Promote Plugin
 ********************
 
-The `cache_promote` plugin provides a means to control when an object should
+The :program:`cache_promote` plugin provides a means to control when an object should
 be allowed to enter the cache. This is orthogonal from normal Cache-Control
 directives, providing a different set of policies to apply. The typical use
 case for this plugin is when you have a very large data set, where you want to
@@ -29,13 +29,25 @@ avoid churning the ATS cache for the long tail content.
 All configuration is done via :file:`remap.config`, and the following options
 are available:
 
-    --policy   The promotion policy. `lru` and `chance` are supported
-    --sample   The sampling rate for the request to be considered
+.. program:: cache-promote
 
-For the `lru` plugin, the following options are also available:
+.. option:: --policy
 
-    --hits     The minimum number of hits before promotion
-    --buckets  The size (entries) of the LRU
+   The promotion policy. The values ``lru`` and ``chance`` are supported.
+
+.. option:: --sample
+
+   The sampling rate for the request to be considered
+
+If :option:`--policy` is set to ``lru`` the following options are also available:
+
+.. option:: --hits
+
+   The minimum number of hits before promotion.
+
+.. option:: --buckets
+
+   The size (number of entries) of the LRU.
 
 These two options combined with your usage patterns will control how likely a
 URL is to become promoted to enter the cache.
@@ -43,7 +55,7 @@ URL is to become promoted to enter the cache.
 Examples
 --------
 
-These two examples shows how to use the chance and LRU policies, respectively:
+These two examples shows how to use the chance and LRU policies, respectively::
 
     map http://cdn.example.com/ http://some-server.example.com \
       @plugin=cache_promote.so @pparam=--policy=chance @pparam=--sample=10%
@@ -52,5 +64,4 @@ These two examples shows how to use the chance and LRU policies, respectively:
       @plugin=cache_promote.so @pparam=--policy=lru \
       @pparam=--hits=10 @pparam=--buckets=10000
 
-Note that the `--sample` option is available for all policies, and when used
-to reduce pressure on the under heavy load.
+Note :option:`--sample` is available for all policies and can be used to reduce pressure under heavy load.
