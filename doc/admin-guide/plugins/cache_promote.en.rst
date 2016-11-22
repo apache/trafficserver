@@ -45,10 +45,10 @@ Examples
 
 These two examples shows how to use the chance and LRU policies, respectively:
 
-    map http://cdn.example.com/ http://some-server.example.com \\
+    map http://cdn.example.com/ http://some-server.example.com \
       @plugin=cache_promote.so @pparam=--policy=chance @pparam=--sample=10%
 
-    map http://cdn.example.com/ http://some-server.example.com \\
+    map http://cdn.example.com/ http://some-server.example.com \
       @plugin=cache_promote.so @pparam=--policy=lru \
       @pparam=--hits=10 @pparam=--buckets=10000
 
