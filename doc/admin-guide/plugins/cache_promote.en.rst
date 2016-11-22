@@ -43,8 +43,10 @@ URL is to become promoted to enter the cache.
 Examples
 --------
 
+These two examples shows how to use the chance and LRU policies, respectively:
+
     map http://cdn.example.com/ http://some-server.example.com \
-      @plugin=cache_promote.so @pparam=--policy=chance --sample=10%
+      @plugin=cache_promote.so @pparam=--policy=chance @pparam=--sample=10%
 
     map http://cdn.example.com/ http://some-server.example.com \
       @plugin=cache_promote.so @pparam=--policy=lru \
