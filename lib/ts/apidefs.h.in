@@ -798,6 +798,16 @@ typedef int64_t TSMgmtCounter;
 typedef float TSMgmtFloat;
 typedef char *TSMgmtString;
 
+/// The source of a management value.
+typedef enum {
+  TS_MGMT_SOURCE_NULL,     ///< No source / value not found.
+  TS_MGMT_SOURCE_DEFAULT,  ///< Built in core default.
+  TS_MGMT_SOURCE_PLUGIN,   ///< Plugin supplied default.
+  TS_MGMT_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, cluster, etc.)
+  TS_MGMT_SOURCE_ENV       ///< Process environment variable.
+} TSMgmtSource;
+
+
 typedef struct tsapi_file *TSFile;
 
 typedef struct tsapi_mloc *TSMLoc;

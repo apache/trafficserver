@@ -807,6 +807,30 @@ RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
   return err;
 }
 
+int
+RecGetRecordSource(const char *name, RecSourceT *source, bool lock)
+{
+  int err      = REC_ERR_FAIL;
+  RecRecord *r = nullptr;
+
+  if (lock) {
+    ink_rwlock_rdlock(&g_records_rwlock);
+  }
+
+  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r)) {
+    rec_mutex_acquire(&(r->lock));
+    *source = r->config_meta.source;
+    err     = REC_ERR_OKAY;
+    rec_mutex_release(&(r->lock));
+  }
+
+  if (lock) {
+    ink_rwlock_unlock(&g_records_rwlock);
+  }
+
+  return err;
+}
+
 //-------------------------------------------------------------------------
 // RecRegisterStat
 //-------------------------------------------------------------------------
@@ -943,6 +967,7 @@ RecForceInsert(RecRecord *record)
     ats_free(r->config_meta.check_expr);
     r->config_meta.check_expr  = ats_strdup(record->config_meta.check_expr);
     r->config_meta.access_type = record->config_meta.access_type;
+    r->config_meta.source      = record->config_meta.source;
   }
 
   if (r_is_a_new_record) {
