@@ -858,6 +858,8 @@ LocalManager::processEventQueue()
  *   onetime_options: one time options that traffic_server should be started with (ie
  *                    these options do not persist across reboots)
  */
+static const size_t OPTIONS_SIZE = 16384; // Arbitrary max size for command line option string
+
 bool
 LocalManager::startProxy(const char *onetime_options)
 {
@@ -924,19 +926,18 @@ LocalManager::startProxy(const char *onetime_options)
     int i = 0;
     char *options[32], *last, *tok;
     bool open_ports_p = false;
+    char real_proxy_options[OPTIONS_SIZE];
 
-    Vec<char> real_proxy_options;
-
-    real_proxy_options.append(proxy_options, strlen(proxy_options));
+    ink_strlcpy(real_proxy_options, proxy_options, strlen(proxy_options));
     if (onetime_options && *onetime_options) {
-      real_proxy_options.append(" ", strlen(" "));
-      real_proxy_options.append(onetime_options, strlen(onetime_options));
+      ink_strlcat(real_proxy_options, " ", OPTIONS_SIZE);
+      ink_strlcat(real_proxy_options, onetime_options, OPTIONS_SIZE);
     }
 
     // Make sure we're starting the proxy in mgmt mode
-    if (strstr(proxy_options, MGMT_OPT) == 0 && strstr(onetime_options, MGMT_OPT) == 0) {
-      real_proxy_options.append(" ", strlen(" "));
-      real_proxy_options.append(MGMT_OPT, sizeof(MGMT_OPT) - 1);
+    if (strstr(real_proxy_options, MGMT_OPT) == 0) {
+      ink_strlcat(real_proxy_options, " ", OPTIONS_SIZE);
+      ink_strlcat(real_proxy_options, MGMT_OPT, OPTIONS_SIZE);
     }
 
     // Check if we need to pass down port/fd information to
@@ -950,29 +951,27 @@ LocalManager::startProxy(const char *onetime_options)
     if (open_ports_p) {
       char portbuf[128];
       bool need_comma_p = false;
-      real_proxy_options.append(" --httpport ", strlen(" --httpport "));
+
+      ink_strlcat(real_proxy_options, " --httpport ", OPTIONS_SIZE);
       for (int i = 0, limit = m_proxy_ports.length(); i < limit; ++i) {
         HttpProxyPort &p = m_proxy_ports[i];
         if (ts::NO_FD != p.m_fd) {
           if (need_comma_p) {
-            real_proxy_options.append(',');
+            ink_strlcat(real_proxy_options, ",", OPTIONS_SIZE);
           }
           need_comma_p = true;
           p.print(portbuf, sizeof(portbuf));
-          real_proxy_options.append((const char *)portbuf, strlen(portbuf));
+          ink_strlcat(real_proxy_options, (const char *)portbuf, OPTIONS_SIZE);
         }
       }
     }
 
-    // NUL-terminate for the benefit of strtok and printf.
-    real_proxy_options.add(0);
-
-    Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'", absolute_proxy_binary, &real_proxy_options[0]);
+    Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'", absolute_proxy_binary, real_proxy_options);
 
     ink_zero(options);
     options[0]   = absolute_proxy_binary;
     i            = 1;
-    tok          = strtok_r(&real_proxy_options[0], " ", &last);
+    tok          = strtok_r(real_proxy_options, " ", &last);
     options[i++] = tok;
     while (i < 32 && (tok = strtok_r(nullptr, " ", &last))) {
       Debug("lm", "opt %d = '%s'", i, tok);
