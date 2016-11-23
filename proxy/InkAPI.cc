@@ -4304,6 +4304,12 @@ TSMgmtStringGet(const char *var_name, TSMgmtString *result)
   return TS_ERROR;
 }
 
+TSReturnCode
+TSMgmtSourceGet(const char *var_name, TSMgmtSource *source)
+{
+  return REC_ERR_OKAY == RecGetRecordSource(var_name, reinterpret_cast<RecSourceT *>(source)) ? TS_SUCCESS : TS_ERROR;
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // Continuations
@@ -8893,7 +8899,7 @@ TSMgmtStringCreate(TSRecordType rec_type, const char *name, const TSMgmtString d
     return TS_ERROR;
   }
   if (REC_ERR_OKAY != RecRegisterConfigString((enum RecT)rec_type, name, data_default, (enum RecUpdateT)update_type,
-                                              (enum RecCheckT)check_type, check_regex, REC_SOURCE_EXPLICIT,
+                                              (enum RecCheckT)check_type, check_regex, REC_SOURCE_PLUGIN,
                                               (enum RecAccessT)access_type)) {
     return TS_ERROR;
   }
@@ -8909,7 +8915,7 @@ TSMgmtIntCreate(TSRecordType rec_type, const char *name, TSMgmtInt data_default,
     return TS_ERROR;
   }
   if (REC_ERR_OKAY != RecRegisterConfigInt((enum RecT)rec_type, name, (RecInt)data_default, (enum RecUpdateT)update_type,
-                                           (enum RecCheckT)check_type, check_regex, REC_SOURCE_EXPLICIT,
+                                           (enum RecCheckT)check_type, check_regex, REC_SOURCE_PLUGIN,
                                            (enum RecAccessT)access_type)) {
     return TS_ERROR;
   }

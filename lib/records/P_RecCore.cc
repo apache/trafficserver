@@ -220,7 +220,8 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
           RecRegisterStat(r->rec_type, r->name, r->data_type, r->data_default, r->stat_meta.persist_type);
         } else if (REC_TYPE_IS_CONFIG(r->rec_type)) {
           RecRegisterConfig(r->rec_type, r->name, r->data_type, r->data_default, r->config_meta.update_type,
-                            r->config_meta.check_type, r->config_meta.check_expr, REC_SOURCE_EXPLICIT, r->config_meta.access_type);
+                            r->config_meta.check_type, r->config_meta.check_expr, r->config_meta.source,
+                            r->config_meta.access_type);
         }
       } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
     }

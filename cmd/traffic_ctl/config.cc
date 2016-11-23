@@ -150,6 +150,8 @@ rec_sourceof(int rec_source)
     return "built in default";
   case REC_SOURCE_EXPLICIT:
     return "administratively set";
+  case REC_SOURCE_PLUGIN:
+    return "plugin default";
   case REC_SOURCE_ENV:
     return "environment";
   default:
