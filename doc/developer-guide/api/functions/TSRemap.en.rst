@@ -63,6 +63,35 @@ will call :func:`TSRemapDeleteInstance`.
 entry point. In this function, the remap plugin may examine and modify
 the HTTP transaction.
 
+Types
+=====
+
+.. type:: TSRemapStatus
+
+    Status return value for remap callback.
+
+    .. macro:: TSREMAP_DID_REMAP
+
+        The remap callback modified the request.
+
+    .. macro:: TSREMAP_DID_REMAP_STOP
+
+        The remap callback modified the request and that no more remapping callbacks should be invoked.
+
+    .. macro:: TSREMAP_NO_REMAP
+
+        The remap callback did not modify the request.
+
+    .. macro:: TSREMAP_NO_REMAP_STOP
+
+        The remap callback did not modify the request and that no further remapping
+        callbacks should be invoked.
+
+    .. macro:: TSREMAP_ERROR
+
+        The remapping attempt in general failed and the transaction should fail with an
+        error return to the user agent.
+
 Return Values
 =============
 
@@ -70,16 +99,13 @@ Return Values
 :data:`TS_SUCCESS` on success, and :data:`TS_ERROR` otherwise. A
 return value of :data:`TS_ERROR` is unrecoverable.
 
-:func:`TSRemapDoRemap` returns a status code that indicates whether
-the HTTP transaction has been modified and whether Traffic Server
-should continue to evaluate the chain of remap plugins. If the
-transaction was modified, the plugin should return
-:data:`TSREMAP_DID_REMAP` or :data:`TSREMAP_DID_REMAP_STOP`; otherwise
-it should return :data:`TSREMAP_NO_REMAP` or :data:`TSREMAP_NO_REMAP_STOP`.
-If Traffic Server should not send the transaction to subsequent
-plugins in the remap chain, return :data:`TSREMAP_NO_REMAP_STOP`
-or :data:`TSREMAP_DID_REMAP_STOP`.  Returning :data:`TSREMAP_ERROR`
-causes Traffic Server to stop evaluating the remap chain and respond
+:func:`TSRemapDoRemap` returns a status code that indicates whether the HTTP transaction has been
+modified and whether Traffic Server should continue to evaluate the chain of remap plugins. If the
+transaction was modified, the plugin should return :macro:`TSREMAP_DID_REMAP` or
+:macro:`TSREMAP_DID_REMAP_STOP`; otherwise it should return :macro:`TSREMAP_NO_REMAP` or
+:macro:`TSREMAP_NO_REMAP_STOP`. If Traffic Server should not send the transaction to subsequent
+plugins in the remap chain, return :macro:`TSREMAP_NO_REMAP_STOP` or :macro:`TSREMAP_DID_REMAP_STOP`.
+Returning :macro:`TSREMAP_ERROR` causes Traffic Server to stop evaluating the remap chain and respond
 with an error.
 
 See Also

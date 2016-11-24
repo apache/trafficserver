@@ -149,8 +149,6 @@ more widely. Those are described on this page.
 
 .. type:: TSRemapRequestInfo
 
-.. type:: TSRemapStatus
-
 .. type:: TSReturnCode
 
    An indicator of the results of an API call. A value of :const:`TS_SUCCESS` means the call was successful. Any other value

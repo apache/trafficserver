@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -222,6 +222,7 @@ The following list shows the possible actions and their allowed values.
 
     -  ``true`` - requests bypass parent hierarchies and go directly to
        the origin server.
+
     -  ``false`` - requests do not bypass parent hierarchies.
 
 .. _parent-config-format-qstring:
@@ -230,6 +231,7 @@ The following list shows the possible actions and their allowed values.
     One of the following values:
 
     -  ``consider`` - Use the query string when finding a parent.
+
     -  ``ignore`` - Do not consider the query string when finding a parent. This
        is especially useful when using the ``consistent_hash`` selection strategy,
        and a random query string would prevent a consistent parent selection.
