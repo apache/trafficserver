@@ -80,18 +80,6 @@ more widely. Those are described on this page.
 
    An opaque type that represents a Traffic Server HTTP :term:`transaction`.
 
-.. type:: TSHttpType
-
-   This set of enums represents the possible HTTP types that can be
-   assigned to an HTTP header.
-
-   When a header is created with :func:`TSHttpHdrCreate`, it is
-   automatically assigned a type of :data:`TS_HTTP_TYPE_UNKNOWN`.  You
-   can modify the HTTP type ONCE after it the header is created, using
-   :func:`TSHttpHdrTypeSet`.  After setting the HTTP type once, you
-   cannot set it again.  Use :func:`TSHttpHdrTypeGet` to obtain the
-   :type:`TSHttpType` of an HTTP header.
-
 .. type:: TSIOBuffer
 
 .. type:: TSIOBufferBlock
@@ -177,15 +165,15 @@ more widely. Those are described on this page.
 .. type:: TSUuid
 
    Opaque type that refers to an allocated UUID.
-   
+
 .. type:: TSUuidVersion
 
    A version value for at :type:`TSUuid`.
-   
+
    .. member:: TS_UUID_V4
 
       A version 4 UUID. Currently only this value is used.
-      
+
 .. var:: size_t TS_UUID_STRING_LEN
 
    Length of a UUID string.
@@ -193,4 +181,3 @@ more widely. Those are described on this page.
 .. type:: TSVConn
 
 .. type:: TSVIO
-      

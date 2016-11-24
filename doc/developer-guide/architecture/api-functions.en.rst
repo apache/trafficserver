@@ -35,18 +35,6 @@ API functions
    be called from ``TS_HTTP_READ_REQUEST_HDR_HOOK`` which is before cache lookup
    but late enough that the HTTP request header is available.
 
-.. c:function:: TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
-
-   Get the current cache key URL, also referred to as the lookup URL. This must
-   be stored in a properly allocated URL object, typically created with a
-   :c:func:`TSUrlCreate()`.
-
-.. c:function:: TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
-
-   Set the current cache key URL, also referred to as the lookup URL. This must
-   be stored in a properly allocated URL object, typically created with a
-   :c:func:`TSUrlCreate()` or :c:func:`TSUrlClone()`.
-
 
 The APIs that modify the cache key can be called as early as
 ``TS_HTTP_READ_REQUEST_HDR_HOOK`` but no later than

@@ -23,7 +23,7 @@ traffic.out
 
 .. logfile:: traffic.out
 
-Debug level messages are written to this file. In particular if a :ref:`debug
+Debug level messages are written to this file. In particular if a :ts:cv:`debug
 tag <proxy.config.diags.debug.tags>` is enabled output for that tag is placed in
 this file. This applies to both the |TS| core and plugins. This file also
 contains some generic operational messages which track |TS| starting and
