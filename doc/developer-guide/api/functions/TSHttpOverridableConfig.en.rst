@@ -167,6 +167,7 @@ c:member:`TS_CONFIG_SSL_HSTS_MAX_AGE`                               :ts:cv:`prox
 c:member:`TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR`                    :ts:cv:`proxy.config.url_remap.pristine_host_hdr`
 c:member:`TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT`                       :ts:cv:`proxy.config.websocket.active_timeout`
 c:member:`TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT`                  :ts:cv:`proxy.config.websocket.no_activity_timeout`
+==================================================================  ====================================================================
 
 Examples
 ========

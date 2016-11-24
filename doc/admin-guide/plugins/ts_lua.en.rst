@@ -417,7 +417,7 @@ Additional Information:
 | TS_HTTP_READ          | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
 | _CACHE_HDR_HOOK       | _READ_CACHE_HDR           |                      |                    |                      |
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
-| TS_HTTP_OS            | TS_LUA_HOOK_              |     YES              |    NO              |    YES               |
+| TS_HTTP_OS            | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
 | _DNS_HOOK             | _OS_DNS                   |                      |                    |                      |
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_CACHE         | TS_LUA_HOOK               |     YES              |    NO              |    YES               |

@@ -231,8 +231,8 @@ The following list shows the possible actions and their allowed values.
 
     -  ``consider`` - Use the query string when finding a parent.
     -  ``ignore`` - Do not consider the query string when finding a parent. This
-      is especially useful when using the ``consistent_hash`` selection strategy,
-      and a random query string would prevent a consistent parent selection.
+       is especially useful when using the ``consistent_hash`` selection strategy,
+       and a random query string would prevent a consistent parent selection.
 
 Examples
 ========
