@@ -1456,6 +1456,10 @@ Origin Server Connect Attempts
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
+.. ts:cv:: CONFIG proxy.config.http.post.check.content_length.enabled INT 1
+
+    Enables (``1``) or disables (``0``) checking the Content-Length: Header for a POST request.
+
 .. ts:cv:: CONFIG proxy.config.http.down_server.cache_time INT 60
    :reloadable:
    :overridable:

@@ -67,7 +67,7 @@ The following configurations (from ``records.config``) are overridable:
 TSOverridableConfigKey Value                                        Configuration Value
 ==================================================================  ====================================================================
 c:member:`TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE`                     :ts:cv:`proxy.config.body_factory.template_base`
-c:member:`TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP`                :ts:cv:`proxy.config.http.anonymize_insert_client_ip`
+c:member:`TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP`                :ts:cv:`proxy.config.http.insert_client_ip`
 c:member:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP`                :ts:cv:`proxy.config.http.anonymize_remove_client_ip`
 c:member:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE`                   :ts:cv:`proxy.config.http.anonymize_remove_cookie`
 c:member:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM`                     :ts:cv:`proxy.config.http.anonymize_remove_from`

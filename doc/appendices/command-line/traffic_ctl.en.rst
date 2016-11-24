@@ -168,6 +168,8 @@ traffic_ctl config
     configuration store is current and whether any daemon processes
     should be restarted.
 
+.. _traffic-ctl-metric:
+
 traffic_ctl metric
 ------------------
 .. program:: traffic_ctl metric
