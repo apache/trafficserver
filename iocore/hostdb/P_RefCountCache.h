@@ -94,10 +94,25 @@ public:
   {
     return this->meta.expiry_time < v2.meta.expiry_time;
   }
+
+  static RefCountCacheHashEntry *alloc();
+  static void dealloc(RefCountCacheHashEntry *e);
+
+  template <typename C>
+  static void
+  free(RefCountCacheHashEntry *e)
+  {
+    // Since the Value is actually RefCountObj-- when this gets deleted normally it calls the wrong
+    // `free` method, this forces the delete/decr to happen with the right type
+    Ptr<C> *tmp = (Ptr<C> *)&e->item;
+    tmp->clear();
+
+    e->~RefCountCacheHashEntry();
+    dealloc(e);
+  }
 };
 
 // Since the hashing values are all fixed size, we can simply use a classAllocator to avoid mallocs
-extern ClassAllocator<RefCountCacheHashEntry> refCountCacheHashingValueAllocator;
 extern ClassAllocator<PriorityQueueEntry<RefCountCacheHashEntry *>> expiryQueueEntry;
 
 struct RefCountCacheHashing {
@@ -202,7 +217,7 @@ RefCountCachePartition<C>::put(uint64_t key, C *item, int size, int expire_time)
   }
 
   // Create our value-- which has a ref to the `item`
-  RefCountCacheHashEntry *val = refCountCacheHashingValueAllocator.alloc();
+  RefCountCacheHashEntry *val = RefCountCacheHashEntry::alloc();
   val->set(item, key, size, expire_time);
 
   // add expiry_entry to expiry queue, if the expire time is positive (otherwise it means don't expire)
@@ -262,12 +277,7 @@ RefCountCachePartition<C>::dealloc_entry(Iterator ptr)
       ptr->expiry_entry = nullptr; // To avoid the destruction of `l` calling the destructor again-- and causing issues
     }
 
-    // Since the Value is actually RefCountObj-- when this gets deleted normally it calls the wrong
-    // `free` method, this forces the delete/decr to happen with the right type
-    Ptr<C> *tmp = (Ptr<C> *)&ptr->item;
-    tmp->clear();
-    ptr->~RefCountCacheHashEntry();
-    refCountCacheHashingValueAllocator.free(ptr.m_value);
+    RefCountCacheHashEntry::free<C>(ptr.m_value);
   }
 }
 
@@ -332,7 +342,7 @@ void
 RefCountCachePartition<C>::copy(Vec<RefCountCacheHashEntry *> &items)
 {
   for (RefCountCachePartition<C>::iterator_type i = this->item_map.begin(); i != this->item_map.end(); ++i) {
-    RefCountCacheHashEntry *val = refCountCacheHashingValueAllocator.alloc();
+    RefCountCacheHashEntry *val = RefCountCacheHashEntry::alloc();
     val->set(i.m_value->item.get(), i.m_value->meta.key, i.m_value->meta.size, i.m_value->meta.expiry_time);
     items.push_back(val);
   }

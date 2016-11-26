@@ -276,8 +276,8 @@ struct HostDBSync : public HostDBBackgroundTask {
     SET_HANDLER(&HostDBSync::wait_event);
     start_time = Thread::get_hrtime();
 
-    new RefCountCacheSerializer<RefCountCache<HostDBInfo>>(this, hostDBProcessor.cache()->refcountcache, this->frequency,
-                                                           this->storage_path, this->full_path);
+    new RefCountCacheSerializer<HostDBInfo>(this, hostDBProcessor.cache()->refcountcache, this->frequency, this->storage_path,
+                                            this->full_path);
     return EVENT_DONE;
   }
 };
