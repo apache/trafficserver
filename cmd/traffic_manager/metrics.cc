@@ -129,7 +129,9 @@ struct EvaluatorList {
   EvaluatorList() : update(true), passes(0) {}
   ~EvaluatorList()
   {
-    forv_Vec(Evaluator, e, this->evaluators) { delete e; }
+    forv_Vec (Evaluator, e, this->evaluators) {
+      delete e;
+    }
   }
 
   void
@@ -144,7 +146,10 @@ struct EvaluatorList {
     ink_hrtime start = ink_get_hrtime_internal();
     ink_hrtime elapsed;
 
-    forv_Vec(Evaluator, e, this->evaluators) { e->eval(L); }
+    forv_Vec (Evaluator, e, this->evaluators) {
+      e->eval(L);
+    }
+
     elapsed = ink_hrtime_diff(ink_get_hrtime_internal(), start);
     Debug("lua", "evaluated %u metrics in %fmsec", evaluators.length(), ink_hrtime_to_usec(elapsed) / 1000.0);
   }

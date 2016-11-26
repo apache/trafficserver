@@ -458,8 +458,9 @@ MultiTextMod::~MultiTextMod()
 void
 MultiTextMod::print(FILE *f) const
 {
-  for_Vec(ts::Buffer, text_iter, this->text_vec)
+  for_Vec (ts::Buffer, text_iter, this->text_vec) {
     fprintf(f, "%s=%*s ", this->name(), static_cast<int>(text_iter.size()), text_iter.data());
+  }
 }
 
 void
@@ -583,17 +584,19 @@ SuffixMod::check(HttpRequestData *req) const
 {
   int path_len;
   const char *path = req->hdr->url_get()->path_get(&path_len);
+
   if (1 == static_cast<int>(this->text_vec.count()) && 1 == static_cast<int>(this->text_vec[0].size()) &&
       0 == strcmp(this->text_vec[0].data(), "*")) {
     return true;
   }
-  for_Vec(ts::Buffer, text_iter, this->text_vec)
-  {
+
+  for_Vec (ts::Buffer, text_iter, this->text_vec) {
     if (path_len >= static_cast<int>(text_iter.size()) &&
         0 == strncasecmp(path + path_len - text_iter.size(), text_iter.data(), text_iter.size())) {
       return true;
     }
   }
+
   return false;
 }
 SuffixMod *
@@ -751,7 +754,12 @@ ControlBase::CheckModifiers(HttpRequestData *request_data)
     return false;
   }
 
-  forv_Vec(Modifier, cur_mod, _mods) if (cur_mod && !cur_mod->check(request_data)) { return false; }
+  forv_Vec (Modifier, cur_mod, _mods) {
+    if (cur_mod && !cur_mod->check(request_data)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -769,7 +777,12 @@ static const char *errorFormats[] = {
 ControlBase::Modifier *
 ControlBase::findModOfType(Modifier::Type t) const
 {
-  forv_Vec(Modifier, m, _mods) if (m && t == m->type()) { return m; }
+  forv_Vec (Modifier, m, _mods) {
+    if (m && t == m->type()) {
+      return m;
+    }
+  }
+
   return nullptr;
 }
 
