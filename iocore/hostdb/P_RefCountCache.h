@@ -79,21 +79,23 @@ public:
   PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry;
   RefCountCacheItemMeta meta;
 
+  // Need a no-argument constructor to use the classAllocator
+  RefCountCacheHashEntry() : item(Ptr<RefCountObj>()), expiry_entry(nullptr), meta(0, 0) {}
   void
   set(RefCountObj *i, uint64_t key, unsigned int size, int expire_time)
   {
     this->item = make_ptr(i);
     this->meta = RefCountCacheItemMeta(key, size, expire_time);
-  };
-  // Need a no-argument constructor to use the classAllocator
-  RefCountCacheHashEntry() : item(Ptr<RefCountObj>()), expiry_entry(nullptr), meta(0, 0) {}
+  }
+
   // make these values comparable -- so we can sort them
   bool
   operator<(const RefCountCacheHashEntry &v2) const
   {
     return this->meta.expiry_time < v2.meta.expiry_time;
-  };
+  }
 };
+
 // Since the hashing values are all fixed size, we can simply use a classAllocator to avoid mallocs
 extern ClassAllocator<RefCountCacheHashEntry> refCountCacheHashingValueAllocator;
 extern ClassAllocator<PriorityQueueEntry<RefCountCacheHashEntry *>> expiryQueueEntry;
@@ -134,6 +136,7 @@ public:
   void clear();
   bool is_full() const;
   bool make_space_for(unsigned int);
+  template <class Iterator> void dealloc_entry(Iterator ptr);
 
   size_t count() const;
   void copy(Vec<RefCountCacheHashEntry *> &items);
@@ -228,31 +231,43 @@ RefCountCachePartition<C>::erase(uint64_t key, ink_time_t expiry_time)
     if (expiry_time >= 0 && l.m_value->meta.expiry_time != expiry_time) {
       return;
     }
+
     // TSHashMap does NOT clean up the item-- this remove just removes it from the map
     // we are responsible for cleaning it up here
     this->item_map.remove(l);
+    this->dealloc_entry(l);
+  }
+}
 
-    // decrement usage counters
-    this->size -= l.m_value->meta.size;
+template <class C>
+template <class Iterator>
+void
+RefCountCachePartition<C>::dealloc_entry(Iterator ptr)
+{
+  if (ptr.m_value) {
+    // decrement usag are not cleaned up. The values are not touched in this method, therefore it is safe
+    // counters
+    this->size -= ptr->meta.size;
     this->items--;
 
-    this->metric_inc(refcountcache_current_size_stat, -((int64_t)l.m_value->meta.size));
+    this->metric_inc(refcountcache_current_size_stat, -((int64_t)ptr->meta.size));
     this->metric_inc(refcountcache_current_items_stat, -1);
 
     // remove from expiry queue
-    if (l.m_value->expiry_entry != nullptr) {
-      Debug("refcountcache", "partition %d deleting item from expiry_queue idx=%d\n", this->part_num,
-            l.m_value->expiry_entry->index);
-      this->expiry_queue.erase(l.m_value->expiry_entry);
-      expiryQueueEntry.free(l.m_value->expiry_entry);
-      l.m_value->expiry_entry = nullptr; // To avoid the destruction of `l` calling the destructor again-- and causing issues
+    if (ptr->expiry_entry != nullptr) {
+      Debug("refcountcache", "partition %d deleting item from expiry_queue idx=%d", this->part_num, ptr->expiry_entry->index);
+
+      this->expiry_queue.erase(ptr->expiry_entry);
+      expiryQueueEntry.free(ptr->expiry_entry);
+      ptr->expiry_entry = nullptr; // To avoid the destruction of `l` calling the destructor again-- and causing issues
     }
+
     // Since the Value is actually RefCountObj-- when this gets deleted normally it calls the wrong
     // `free` method, this forces the delete/decr to happen with the right type
-    Ptr<C> *tmp = (Ptr<C> *)&l.m_value->item;
+    Ptr<C> *tmp = (Ptr<C> *)&ptr->item;
     tmp->clear();
-    l.m_value->~RefCountCacheHashEntry();
-    refCountCacheHashingValueAllocator.free(l.m_value);
+    ptr->~RefCountCacheHashEntry();
+    refCountCacheHashingValueAllocator.free(ptr.m_value);
   }
 }
 
@@ -260,10 +275,15 @@ template <class C>
 void
 RefCountCachePartition<C>::clear()
 {
-  // this->item_map.clear() doesn't clean up anything, so instead of using that we'll iterate
-  // over every item and then call delete
-  for (RefCountCachePartition<C>::iterator_type i = this->item_map.begin(); i != this->item_map.end(); ++i) {
-    this->erase(i.m_value->meta.key, i.m_value->meta.expiry_time);
+  // Since the hash nodes embed the list pointers, you can't iterate over the
+  // hash elements and deallocate them, let alone remove them from the hash.
+  // Hence, this monstrosity.
+  while (this->item_map.count() > 0) {
+    location_type pos = this->item_map.find(this->item_map.begin().m_value);
+
+    ink_assert(pos.isValid());
+    this->item_map.remove(pos);
+    this->dealloc_entry(pos);
   }
 }
 
