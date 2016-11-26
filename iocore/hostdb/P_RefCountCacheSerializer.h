@@ -39,8 +39,8 @@
 template <class C> class RefCountCacheSerializer : public Continuation
 {
 public:
-  size_t partition; // Current partition
-  C *cache;         // Pointer to the entire cache
+  size_t partition;        // Current partition
+  RefCountCache<C> *cache; // Pointer to the entire cache
   Continuation *cont;
 
   int copy_partition(int event, Event *e);
@@ -55,7 +55,7 @@ public:
   // helper method to spin on writes to disk
   int write_to_disk(const void *, size_t);
 
-  RefCountCacheSerializer(Continuation *acont, C *cc, int frequency, std::string dirname, std::string filename);
+  RefCountCacheSerializer(Continuation *acont, RefCountCache<C> *cc, int frequency, std::string dirname, std::string filename);
   ~RefCountCacheSerializer();
 
 private:
@@ -77,7 +77,7 @@ private:
 };
 
 template <class C>
-RefCountCacheSerializer<C>::RefCountCacheSerializer(Continuation *acont, C *cc, int frequency, std::string dirname,
+RefCountCacheSerializer<C>::RefCountCacheSerializer(Continuation *acont, RefCountCache<C> *cc, int frequency, std::string dirname,
                                                     std::string filename)
   : Continuation(nullptr),
     partition(0),
@@ -106,6 +106,11 @@ template <class C> RefCountCacheSerializer<C>::~RefCountCacheSerializer()
     unlink(this->tmp_filename.c_str());
     socketManager.close(fd);
   }
+
+  forv_Vec (RefCountCacheHashEntry, entry, this->partition_items) {
+    RefCountCacheHashEntry::free<C>(entry);
+  }
+  this->partition_items.clear();
 
   Debug("refcountcache", "finished serializer %p", this);
 
@@ -153,15 +158,15 @@ RefCountCacheSerializer<C>::write_partition(int /* event */, Event *e)
   // write to disk with headers per item
 
   for (unsigned int i = 0; i < this->partition_items.length(); i++) {
-    RefCountCacheHashEntry *it = this->partition_items[i];
+    RefCountCacheHashEntry *entry = this->partition_items[i];
 
     // check if the item has expired, if so don't persist it to disk
-    if (it->meta.expiry_time < curr_time) {
+    if (entry->meta.expiry_time < curr_time) {
       continue;
     }
 
     // Write the RefCountCacheItemMeta (as our header)
-    int ret = this->write_to_disk((char *)&it->meta, sizeof(it->meta));
+    int ret = this->write_to_disk((char *)&entry->meta, sizeof(entry->meta));
     if (ret < 0) {
       Warning("Error writing cache item header to %s: %d", this->tmp_filename.c_str(), ret);
       delete this;
@@ -169,7 +174,7 @@ RefCountCacheSerializer<C>::write_partition(int /* event */, Event *e)
     }
 
     // write the actual object now
-    ret = this->write_to_disk((char *)it->item.get(), it->meta.size);
+    ret = this->write_to_disk((char *)entry->item.get(), entry->meta.size);
     if (ret < 0) {
       Warning("Error writing cache item to %s: %d", this->tmp_filename.c_str(), ret);
       delete this;
@@ -177,11 +182,13 @@ RefCountCacheSerializer<C>::write_partition(int /* event */, Event *e)
     }
 
     this->total_items++;
-    this->total_size += it->meta.size;
-    refCountCacheHashingValueAllocator.free(it);
+    this->total_size += entry->meta.size;
   }
 
-  // Clear partition-- for the next user
+  // Clear the copied partition for the next round.
+  forv_Vec (RefCountCacheHashEntry, entry, this->partition_items) {
+    RefCountCacheHashEntry::free<C>(entry);
+  }
   this->partition_items.clear();
 
   SET_HANDLER(&RefCountCacheSerializer::pause_event);
