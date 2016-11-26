@@ -168,7 +168,7 @@ RefCountCacheSerializer<C>::write_partition(int /* event */, Event *e)
     // Write the RefCountCacheItemMeta (as our header)
     int ret = this->write_to_disk((char *)&entry->meta, sizeof(entry->meta));
     if (ret < 0) {
-      Warning("Error writing cache item header to %s: %d", this->tmp_filename.c_str(), ret);
+      Warning("Error writing cache item header to %s: %s", this->tmp_filename.c_str(), strerror(-ret));
       delete this;
       return EVENT_DONE;
     }
@@ -176,7 +176,7 @@ RefCountCacheSerializer<C>::write_partition(int /* event */, Event *e)
     // write the actual object now
     ret = this->write_to_disk((char *)entry->item.get(), entry->meta.size);
     if (ret < 0) {
-      Warning("Error writing cache item to %s: %d", this->tmp_filename.c_str(), ret);
+      Warning("Error writing cache item to %s: %s", this->tmp_filename.c_str(), strerror(-ret));
       delete this;
       return EVENT_DONE;
     }
@@ -229,8 +229,7 @@ RefCountCacheSerializer<C>::initialize_storage(int /* event */, Event *e)
 {
   this->fd = socketManager.open(this->tmp_filename.c_str(), O_TRUNC | O_RDWR | O_CREAT, 0644); // TODO: configurable perms
   if (this->fd == -1) {
-    Warning("Unable to create temporary file %s, unable to persist hostdb: %d :%s\n", this->tmp_filename.c_str(), this->fd,
-            strerror(errno));
+    Warning("Unable to create temporary file %s, unable to persist hostdb: %s", this->tmp_filename.c_str(), strerror(errno));
     delete this;
     return EVENT_DONE;
   }
@@ -238,7 +237,7 @@ RefCountCacheSerializer<C>::initialize_storage(int /* event */, Event *e)
   // Write out the header
   int ret = this->write_to_disk((char *)&this->cache->get_header(), sizeof(RefCountCacheHeader));
   if (ret < 0) {
-    Warning("Error writing cache header to %s: %d", this->tmp_filename.c_str(), ret);
+    Warning("Error writing cache header to %s: %s", this->tmp_filename.c_str(), strerror(-ret));
     delete this;
     return EVENT_DONE;
   }
@@ -314,7 +313,7 @@ RefCountCacheSerializer<C>::write_to_disk(const void *ptr, size_t n_bytes)
   while (written < n_bytes) {
     int ret = socketManager.write(this->fd, (char *)ptr + written, n_bytes - written);
     if (ret <= 0) {
-      return -1;
+      return ret;
     } else {
       written += ret;
     }
