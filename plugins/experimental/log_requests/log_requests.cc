@@ -189,11 +189,6 @@ log_headers(TSMBuffer bufp, TSMLoc loc, std::string output_header)
   TSIOBufferDestroy(output_buffer);
 }
 
-/*
- * TODO: There are resource leaks if calls to TSHttpTxnClientReqGet() & TSHttpTxnClientRespGet()
- * fail. Likewise for the ...ServerReqGet() & ...ServerRespGet() calls. Need to do work with
- * some goto's to fix.
- */
 static void
 log_full_transaction(TSHttpTxn txnp)
 {
@@ -205,50 +200,53 @@ log_full_transaction(TSHttpTxn txnp)
   TSMLoc txn_proxy_resp_loc;
   TSMBuffer txn_resp_bufp;
   TSMLoc txn_resp_loc;
-  bool client_success = false;
-  bool proxy_success  = false;
 
   TSError(B_PLUGIN_NAME " --- begin transaction ---");
 
   // get client request/response
-  if (TSHttpTxnClientReqGet(txnp, &txn_req_bufp, &txn_req_loc) != TS_SUCCESS ||
-      TSHttpTxnClientRespGet(txnp, &txn_resp_bufp, &txn_resp_loc) != TS_SUCCESS) {
-    TSError(B_PLUGIN_NAME " Couldn't retrieve client transaction information. Aborting this transaction log");
-  } else {
-    // log client request/response
+  bool clientreq_ok  = TSHttpTxnClientReqGet(txnp, &txn_req_bufp, &txn_req_loc) == TS_SUCCESS;
+  bool clientresp_ok = TSHttpTxnClientRespGet(txnp, &txn_resp_bufp, &txn_resp_loc) == TS_SUCCESS;
+
+  // log client request/response
+  if (clientreq_ok && clientresp_ok) {
     log_request_line(txn_req_bufp, txn_req_loc, "Client request");
     log_headers(txn_req_bufp, txn_req_loc, "Client request");
     log_response_status_line(txn_resp_bufp, txn_resp_loc, "Client response");
     log_headers(txn_resp_bufp, txn_resp_loc, "Client response");
-    client_success = true;
+  } else {
+    TSError(B_PLUGIN_NAME " Couldn't retrieve client transaction information. Aborting this transaction log");
   }
 
   // log the proxy request and proxy reponse if flag enabled
   if (log_proxy) {
-    if (TSHttpTxnServerReqGet(txnp, &txn_proxy_req_bufp, &txn_proxy_req_loc) != TS_SUCCESS ||
-        TSHttpTxnServerRespGet(txnp, &txn_proxy_resp_bufp, &txn_proxy_resp_loc) != TS_SUCCESS) {
-      TSError(B_PLUGIN_NAME " Couldn't retrieve proxy transaction information. Aborting this transaction log");
-    } else {
-      // log proxy request/response
+    // get proxy request/response
+    bool proxyreq_ok  = TSHttpTxnServerReqGet(txnp, &txn_proxy_req_bufp, &txn_proxy_req_loc) == TS_SUCCESS;
+    bool proxyresp_ok = TSHttpTxnServerRespGet(txnp, &txn_proxy_resp_bufp, &txn_proxy_resp_loc) == TS_SUCCESS;
+
+    // log proxy request/response
+    if (proxyreq_ok && proxyresp_ok) {
       log_request_line(txn_proxy_req_bufp, txn_proxy_req_loc, "Proxy request");
       log_headers(txn_proxy_req_bufp, txn_proxy_req_loc, "Proxy request");
       log_response_status_line(txn_proxy_resp_bufp, txn_proxy_resp_loc, "Proxy response");
       log_headers(txn_proxy_resp_bufp, txn_proxy_resp_loc, "Proxy response");
-      proxy_success = true;
+    } else {
+      TSError(B_PLUGIN_NAME " Couldn't retrieve proxy transaction information. Aborting this transaction log");
     }
+
+    // release memory handles
+    if (proxyreq_ok)
+      TSHandleMLocRelease(txn_proxy_req_bufp, TS_NULL_MLOC, txn_proxy_req_loc);
+    if (proxyresp_ok)
+      TSHandleMLocRelease(txn_proxy_resp_bufp, TS_NULL_MLOC, txn_proxy_resp_loc);
   }
 
   TSError(B_PLUGIN_NAME " --- end transaction ---");
 
   // release memory handles
-  if (client_success) {
+  if (clientreq_ok)
     TSHandleMLocRelease(txn_req_bufp, TS_NULL_MLOC, txn_req_loc);
+  if (clientresp_ok)
     TSHandleMLocRelease(txn_resp_bufp, TS_NULL_MLOC, txn_resp_loc);
-  }
-  if (proxy_success) {
-    TSHandleMLocRelease(txn_proxy_req_bufp, TS_NULL_MLOC, txn_proxy_req_loc);
-    TSHandleMLocRelease(txn_proxy_resp_bufp, TS_NULL_MLOC, txn_proxy_resp_loc);
-  }
 }
 
 static int
