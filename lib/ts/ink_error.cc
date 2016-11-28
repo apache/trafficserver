@@ -81,6 +81,7 @@ ink_emergency(const char *message_format, ...)
 
   va_start(ap, message_format);
   ink_emergency_va(message_format, ap);
+  // Should never reach here since ink_emergency_va calls exit()
   va_end(ap);
 
   ::exit(UNRECOVERABLE_EXIT);
