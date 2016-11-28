@@ -928,7 +928,7 @@ LocalManager::startProxy(const char *onetime_options)
     bool open_ports_p = false;
     char real_proxy_options[OPTIONS_SIZE];
 
-    ink_strlcpy(real_proxy_options, proxy_options, strlen(proxy_options));
+    ink_strlcpy(real_proxy_options, proxy_options, OPTIONS_SIZE);
     if (onetime_options && *onetime_options) {
       ink_strlcat(real_proxy_options, " ", OPTIONS_SIZE);
       ink_strlcat(real_proxy_options, onetime_options, OPTIONS_SIZE);
