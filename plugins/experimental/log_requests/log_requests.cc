@@ -120,9 +120,9 @@ static void
 log_request_line(TSMBuffer bufp, TSMLoc loc, std::string output_header)
 {
   int method_len;
-  int url_len;
+  int path_len;
   const char *method;
-  const char *url;
+  const char *path;
   TSMLoc url_loc;
 
   // parse method
@@ -133,14 +133,9 @@ log_request_line(TSMBuffer bufp, TSMLoc loc, std::string output_header)
 
   // parse request line URL
   TSHttpHdrUrlGet(bufp, loc, &url_loc);
-  url = TSUrlStringGet(bufp, url_loc, &url_len);
+  path = TSUrlPathGet(bufp, url_loc, &path_len);
 
-  // get rid of the preceeding http:// on the request URI
-  for (int i = 0; i < 7; ++i)
-    url++;
-  url_len -= 7;
-
-  TSError(B_PLUGIN_NAME " [%s] request line is:\n%.*s %.*s %s\n", output_header.c_str(), method_len, method, url_len, url,
+  TSError(B_PLUGIN_NAME " [%s] request line is:\n%.*s /%.*s %s\n", output_header.c_str(), method_len, method, path_len, path,
           version.c_str());
 }
 
