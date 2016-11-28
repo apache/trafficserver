@@ -39,8 +39,8 @@
 static std::vector<TSHttpStatus> blacklist;
 
 // some plugin argument stuff
-static char arg_blacklist[2048]             = "";
-static bool log_proxy                       = false;
+static char arg_blacklist[2048] = "";
+static bool log_proxy           = false;
 
 // forward declarations
 static bool should_log(TSHttpTxn txnp);
@@ -51,7 +51,6 @@ static void log_headers(TSMBuffer bufp, TSMLoc loc, std::string output_header);
 static void log_full_transaction(TSHttpTxn txnp);
 static int log_requests_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata);
 static std::vector<std::string> split(const std::string &str, const std::string &delim);
-
 
 static std::vector<std::string>
 split(const std::string &str, const std::string &delim)
