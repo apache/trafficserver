@@ -53,6 +53,7 @@ Error(char const *fmt, ...)
   va_end(args);
 
   Ready = false;
+  va_end(args);
 }
 
 int
