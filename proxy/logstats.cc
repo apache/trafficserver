@@ -1860,12 +1860,12 @@ format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json, bool 
     std::cout << "    " << '"' << desc << "\" : "
               << "{ ";
     std::cout << "\"min\": \"" << stat.min << "\", ";
-    std::cout << "\"max\": \"" << stat.max << "\", ";
+    std::cout << "\"max\": \"" << stat.max << "\"";
     if (!concise) {
-      std::cout << "\"avg\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg << "\", ";
-      std::cout << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\" },";
+      std::cout << ", \"avg\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg << "\", ";
+      std::cout << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\"";
     }
-    std::cout << std::endl;
+    std::cout << " }," << std::endl;
   } else {
     std::cout << std::left << std::setw(24) << desc;
     std::cout << std::right << std::setw(7);
@@ -1903,13 +1903,13 @@ format_line(const char *desc, const StatsCounter &stat, const StatsCounter &tota
       std::cout << "\"req_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2)
                 << (double)stat.count / total.count * 100 << "\", ";
     }
-    std::cout << "\"bytes\": \"" << stat.bytes << "\", ";
+    std::cout << "\"bytes\": \"" << stat.bytes << "\"";
 
     if (!concise) {
-      std::cout << "\"bytes_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2)
-                << (double)stat.bytes / total.bytes * 100 << "\" },";
+      std::cout << ", \"bytes_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2)
+                << (double)stat.bytes / total.bytes * 100 << "\"";
     }
-    std::cout << std::endl;
+    std::cout << " }," << std::endl;
   } else {
     std::cout << std::left << std::setw(29) << desc;
 
