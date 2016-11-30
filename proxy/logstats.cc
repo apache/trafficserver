@@ -594,15 +594,16 @@ struct CommandLineArgs {
   int64_t min_hits;
   int max_age;
   int line_len;
-  int incremental; // Do an incremental run
-  int tail;        // Tail the log file
-  int summary;     // Summary only
-  int json;        // JSON output
-  int cgi;         // CGI output (typically with json)
-  int urls;        // Produce JSON output of URL stats, arg is LRU size
-  int show_urls;   // Max URLs to show
-  int as_object;   // Show the URL stats as a single JSON object (not array)
-  int concise;     // Eliminate metrics that can be inferred by other values
+  int incremental;     // Do an incremental run
+  int tail;            // Tail the log file
+  int summary;         // Summary only
+  int json;            // JSON output
+  int cgi;             // CGI output (typically with json)
+  int urls;            // Produce JSON output of URL stats, arg is LRU size
+  int show_urls;       // Max URLs to show
+  int as_object;       // Show the URL stats as a single JSON object (not array)
+  int concise;         // Eliminate metrics that can be inferred by other values
+  int report_per_user; // A flag to aggregate and report stats per user instead of per host if 'true' (default 'false')
 
   CommandLineArgs()
     : max_origins(0),
@@ -617,7 +618,8 @@ struct CommandLineArgs {
       urls(0),
       show_urls(0),
       as_object(0),
-      concise(0)
+      concise(0),
+      report_per_user(0)
   {
     log_file[0]    = '\0';
     origin_file[0] = '\0';
@@ -649,6 +651,7 @@ static ArgumentDescription argument_descriptions[] = {
   {"max_age", 'a', "Max age for log entries to be considered", "I", &cl.max_age, NULL, NULL},
   {"line_len", 'l', "Output line length", "I", &cl.line_len, NULL, NULL},
   {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags, NULL, NULL},
+  {"report_per_user", 'r', "Report stats per user instead of host", "T", &cl.report_per_user, NULL, NULL},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 
@@ -1164,16 +1167,64 @@ update_schemes(OriginStats *stat, int scheme, int size)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Finds or creates a stats structures if missing
+OriginStats *
+find_or_create_stats(const char *key)
+{
+  OriginStats *o_stats = NULL;
+  OriginStorage::iterator o_iter;
+  char *o_server = NULL;
+
+  // TODO: If we save state (struct) for a run, we probably need to always
+  // update the origin data, no matter what the origin_set is.
+  if (origin_set->empty() || (origin_set->find(key) != origin_set->end())) {
+    o_iter = origins.find(key);
+    if (origins.end() == o_iter) {
+      o_stats = (OriginStats *)ats_malloc(sizeof(OriginStats));
+      memset(o_stats, 0, sizeof(OriginStats));
+      init_elapsed(o_stats);
+      o_server = ats_strdup(key);
+      if (o_stats && o_server) {
+        o_stats->server   = o_server;
+        origins[o_server] = o_stats;
+      }
+    } else {
+      o_stats = o_iter->second;
+    }
+  }
+  return o_stats;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Update the stats
+void
+update_stats(OriginStats *o_stats, const HTTPMethod method, URLScheme scheme, int http_code, int size, int result, int hier,
+             int elapsed)
+{
+  update_results_elapsed(&totals, result, elapsed, size);
+  update_codes(&totals, http_code, size);
+  update_methods(&totals, method, size);
+  update_schemes(&totals, scheme, size);
+  update_counter(totals.total, size);
+  if (NULL != o_stats) {
+    update_results_elapsed(o_stats, result, elapsed, size);
+    update_codes(o_stats, http_code, size);
+    update_methods(o_stats, method, size);
+    update_schemes(o_stats, scheme, size);
+    update_counter(o_stats->total, size);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Parse a log buffer
 int
-parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
+parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate_per_userid = false)
 {
   static LogFieldList *fieldlist = NULL;
 
   LogEntryHeader *entry;
   LogBufferIterator buf_iter(buf_header);
   LogField *field;
-  OriginStorage::iterator o_iter;
   ParseStates state;
 
   char *read_from;
@@ -1185,7 +1236,6 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
   // Parsed results
   int http_code = 0, size = 0, result = 0, hier = 0, elapsed = 0;
   OriginStats *o_stats;
-  char *o_server;
   HTTPMethod method;
   URLScheme scheme;
 
@@ -1205,11 +1255,10 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
       break;
     }
 
-    state    = P_STATE_ELAPSED;
-    o_stats  = NULL;
-    o_server = NULL;
-    method   = METHOD_OTHER;
-    scheme   = SCHEME_OTHER;
+    state   = P_STATE_ELAPSED;
+    o_stats = NULL;
+    method  = METHOD_OTHER;
+    scheme  = SCHEME_OTHER;
 
     while ((field = fieldlist->next(field))) {
       switch (state) {
@@ -1342,26 +1391,11 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
             tok++;
           }
           ptr = strchr(tok, '/');
-          if (ptr && !summary) { // Find the origin
+          if (ptr) {
             *ptr = '\0';
-
-            // TODO: If we save state (struct) for a run, we probably need to always
-            // update the origin data, no matter what the origin_set is.
-            if (origin_set->empty() || (origin_set->find(tok) != origin_set->end())) {
-              o_iter = origins.find(tok);
-              if (origins.end() == o_iter) {
-                o_stats = (OriginStats *)ats_malloc(sizeof(OriginStats));
-                memset(o_stats, 0, sizeof(OriginStats));
-                init_elapsed(o_stats);
-                o_server = ats_strdup(tok);
-                if (o_stats && o_server) {
-                  o_stats->server   = o_server;
-                  origins[o_server] = o_stats;
-                }
-              } else {
-                o_stats = o_iter->second;
-              }
-            }
+          }
+          if (!aggregate_per_userid && !summary) {
+            o_stats = find_or_create_stats(tok);
           }
         } else {
           // No method given
@@ -1371,24 +1405,21 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
           tok_len = strlen(read_from);
         }
         read_from += LogAccess::round_strlen(tok_len + 1);
-
-        // Update the stats so far, since now we have the Origin (maybe)
-        update_results_elapsed(&totals, result, elapsed, size);
-        update_codes(&totals, http_code, size);
-        update_methods(&totals, method, size);
-        update_schemes(&totals, scheme, size);
-        update_counter(totals.total, size);
-        if (o_stats != NULL) {
-          update_results_elapsed(o_stats, result, elapsed, size);
-          update_codes(o_stats, http_code, size);
-          update_methods(o_stats, method, size);
-          update_schemes(o_stats, scheme, size);
-          update_counter(o_stats->total, size);
+        if (!aggregate_per_userid) {
+          update_stats(o_stats, method, scheme, http_code, size, result, hier, elapsed);
         }
         break;
 
       case P_STATE_RFC931:
         state = P_STATE_HIERARCHY;
+
+        if (aggregate_per_userid) {
+          if (!summary) {
+            o_stats = find_or_create_stats(read_from);
+          }
+          update_stats(o_stats, method, scheme, http_code, size, result, hier, elapsed);
+        }
+
         if ('-' == *read_from) {
           read_from += LogAccess::round_strlen(1 + 1);
         } else {
@@ -1792,7 +1823,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
 
     // Possibly skip too old entries (the entire buffer is skipped)
     if (header->high_timestamp >= max_age) {
-      if (parse_log_buff(header, cl.summary != 0) != 0) {
+      if (parse_log_buff(header, cl.summary != 0, cl.report_per_user != 0) != 0) {
         Debug("logstats", "Failed to parse log buffer.");
         return 1;
       }
@@ -1810,7 +1841,9 @@ process_file(int in_fd, off_t offset, unsigned max_age)
 inline int
 use_origin(const OriginStats *stat)
 {
-  return ((stat->total.count > cl.min_hits) && (NULL != strchr(stat->server, '.')) && (NULL == strchr(stat->server, '%')));
+  return cl.report_per_user != 0 ?
+           (stat->total.count > cl.min_hits) :
+           ((stat->total.count > cl.min_hits) && (NULL != strchr(stat->server, '.')) && (NULL == strchr(stat->server, '%')));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
