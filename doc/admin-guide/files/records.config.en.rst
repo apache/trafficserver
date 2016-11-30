@@ -283,6 +283,27 @@ System Variables
    The name and location of the file that contains warnings, status messages, and error messages produced by the Traffic Server
    processes. If no path is specified, then Traffic Server creates the file in its logging directory.
 
+
+.. ts:cv:: CONFIG proxy.config.output.logfile_perm STRING rw-r--r--
+   :reloadable:
+
+   The log file permissions. The standard UNIX file permissions are used (owner, group, other). Permissible values are:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``-`` No permissions.
+   ``r`` Read permission.
+   ``w`` Write permission.
+   ``x`` Execute permission.
+   ===== ======================================================================
+
+   Permissions are subject to the umask settings for the |TS| process. This
+   means that a umask setting of ``002`` will not allow write permission for
+   others, even if specified in the configuration file. Permissions for
+   existing log files are not changed when the configuration is modified.
+
+
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_enabled INT 0
    :reloadable:
 
@@ -2867,6 +2888,27 @@ Diagnostic Logging Configuration
 
    |TS| plugins will typically log debug messages using the :c:func:`TSDebug`
    API, passing the plugin name as the debug tag.
+
+
+.. ts:cv:: CONFIG proxy.config.diags.logfile_perm STRING rw-r--r--
+   :reloadable:
+
+   The log file permissions. The standard UNIX file permissions are used (owner, group, other). Permissible values are:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``-`` No permissions.
+   ``r`` Read permission.
+   ``w`` Write permission.
+   ``x`` Execute permission.
+   ===== ======================================================================
+
+   Permissions are subject to the umask settings for the |TS| process. This
+   means that a umask setting of ``002`` will not allow write permission for
+   others, even if specified in the configuration file. Permissions for
+   existing log files are not changed when the configuration is modified.
+
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_enabled INT 0
    :reloadable:

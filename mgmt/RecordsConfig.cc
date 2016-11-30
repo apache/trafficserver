@@ -98,6 +98,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.output.logfile", RECD_STRING, "traffic.out", RECU_RESTART_TC, RR_REQUIRED, RECC_NULL, nullptr,
    RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.output.logfile_perm", RECD_STRING, "rw-r--r--", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   // traffic.out rotation, default is 0 (aka rolling turned off) to preserve compatibility
   {RECT_CONFIG, "proxy.config.output.logfile.rolling_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
@@ -223,6 +225,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.diags.output.alert", RECD_STRING, "L", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.diags.output.emergency", RECD_STRING, "L", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.diags.logfile_perm", RECD_STRING, "rw-r--r--", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   // diags.log rotation, default is 0 (aka rolling turned off) to preserve compatibility
   {RECT_CONFIG, "proxy.config.diags.logfile.rolling_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
