@@ -248,6 +248,19 @@ TS_ARG_ENABLE_VAR([has], [tests])
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
+# Build documentation?
+#
+
+AC_MSG_CHECKING([whether to build documentation])
+AC_ARG_ENABLE([docs],
+  [AS_HELP_STRING([--enable-docs],[enable documentation building])],
+  [],
+  [enable_doc_build=no]
+)
+AC_MSG_RESULT([$enable_doc_build])
+AM_CONDITIONAL([BUILD_DOCS], [test "xyes" = "x$enable_doc_build"])
+
+#
 # Remote Coverity Prevent commit
 #
 AC_MSG_CHECKING([whether to commit cov defects to remote host])

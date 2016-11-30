@@ -22,7 +22,7 @@ test ! -z "${WORKSPACE}" && cd "${WORKSPACE}/src"
 
 # This avoids redoing the configure on every doc build, which is somewhat annoying
 [ ! -f configure ] && autoreconf -fi
-[ ! -f config.nice ] && ./configure
+[ ! -f config.nice ] && ./configure --enable-docs
 
 cd doc
 
