@@ -1012,6 +1012,8 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
 {
   int i, num_records;
 
+  ink_rwlock_rdlock(&g_records_rwlock);
+
   num_records = g_num_records;
   for (i = 0; i < num_records; i++) {
     RecRecord *r = &(g_records[i]);
@@ -1021,6 +1023,8 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
       rec_mutex_release(&(r->lock));
     }
   }
+
+  ink_rwlock_unlock(&g_records_rwlock);
 }
 
 void
