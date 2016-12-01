@@ -1491,7 +1491,6 @@ AC_CHECK_HEADERS([sys/types.h \
                   sys/sockio.h \
                   sys/prctl.h \
                   arpa/nameser.h \
-                  arpa/nameser_compat.h \
                   execinfo.h \
                   netdb.h \
                   ctype.h \
@@ -1536,7 +1535,6 @@ AC_SUBST(sys_sysinfoh)
 AC_SUBST(sys_systeminfoh)
 AC_SUBST(arpa_ineth)
 AC_SUBST(arpa_nameserh)
-AC_SUBST(arpa_nameser_compath)
 AC_SUBST(execinfoh)
 AC_SUBST(netdbh)
 AC_SUBST(ctypeh)
