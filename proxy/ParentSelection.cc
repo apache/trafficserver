@@ -420,7 +420,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
     }
     // Check to make sure that the string will fit in the
     //  pRecord
-    if (tmp - current > MAXDNAME) {
+    if (tmp - current > NS_MAXDNAME) {
       errPtr = "Parent hostname is too long";
       goto MERROR;
     } else if (tmp - current == 0) {
@@ -790,12 +790,12 @@ setup_socks_servers(ParentRecord *rec_arr, int len)
       IpEndpoint ip4, ip6;
       if (0 == ats_ip_getbestaddrinfo(pr[i].hostname, &ip4, &ip6)) {
         IpEndpoint *ip = ats_is_ip6(&ip6) ? &ip6 : &ip4;
-        ats_ip_ntop(ip, pr[i].hostname, MAXDNAME + 1);
+        ats_ip_ntop(ip, pr[i].hostname, NS_MAXDNAME + 1);
       } else {
         Warning("Could not resolve socks server name \"%s\". "
                 "Please correct it",
                 pr[i].hostname);
-        snprintf(pr[i].hostname, MAXDNAME + 1, "255.255.255.255");
+        snprintf(pr[i].hostname, NS_MAXDNAME + 1, "255.255.255.255");
       }
     }
   }

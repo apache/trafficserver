@@ -28,11 +28,11 @@
 #include "I_SplitDNS.h"
 #endif
 
-#define SRV_COST (RRFIXEDSZ + 0)
-#define SRV_WEIGHT (RRFIXEDSZ + 2)
-#define SRV_PORT (RRFIXEDSZ + 4)
-#define SRV_SERVER (RRFIXEDSZ + 6)
-#define SRV_FIXEDSZ (RRFIXEDSZ + 6)
+#define SRV_COST (NS_RRFIXEDSZ + 0)
+#define SRV_WEIGHT (NS_RRFIXEDSZ + 2)
+#define SRV_PORT (NS_RRFIXEDSZ + 4)
+#define SRV_SERVER (NS_RRFIXEDSZ + 6)
+#define SRV_FIXEDSZ (NS_RRFIXEDSZ + 6)
 
 EventType ET_DNS = ET_CALL;
 
@@ -91,7 +91,7 @@ static bool write_dns_event(DNSHandler *h, DNSEntry *e);
 static int try_servers         = 0;
 static int local_num_entries   = 1;
 static int attempt_num_entries = 1;
-char try_server_names[DEFAULT_NUM_TRY_SERVER][MAXDNAME];
+char try_server_names[DEFAULT_NUM_TRY_SERVER][NS_MAXDNAME];
 
 static inline char *
 strnchr(char *s, char c, int len)
@@ -146,7 +146,7 @@ make_ipv4_ptr(in_addr_t addr, char *buffer)
     *p++ = ((u[0] / 10) % 10) + '0';
   *p++   = u[0] % 10 + '0';
   *p++   = '.';
-  ink_strlcpy(p, "in-addr.arpa", MAXDNAME - (p - buffer + 1));
+  ink_strlcpy(p, "in-addr.arpa", NS_MAXDNAME - (p - buffer + 1));
 }
 
 void
@@ -164,7 +164,7 @@ make_ipv6_ptr(in6_addr const *addr, char *buffer)
     *p++ = '.';
   }
 
-  ink_strlcpy(p, "ip6.arpa", MAXDNAME - (p - buffer + 1));
+  ink_strlcpy(p, "ip6.arpa", NS_MAXDNAME - (p - buffer + 1));
 }
 
 //  Public functions
@@ -386,12 +386,12 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSPr
 
   if (is_addr_query(qtype) || qtype == ns_t_srv) {
     if (len) {
-      len = len > (MAXDNAME - 1) ? (MAXDNAME - 1) : len;
+      len = len > (NS_MAXDNAME - 1) ? (NS_MAXDNAME - 1) : len;
       memcpy(qname, x, len);
       qname[len]     = 0;
       orig_qname_len = qname_len = len;
     } else {
-      qname_len      = ink_strlcpy(qname, x, MAXDNAME);
+      qname_len      = ink_strlcpy(qname, x, NS_MAXDNAME);
       orig_qname_len = qname_len;
     }
   } else { // ns_t_ptr
@@ -539,7 +539,7 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
 static inline int
 _ink_res_mkquery(ink_res_state res, char *qname, int qtype, char *buffer)
 {
-  int r = ink_res_mkquery(res, QUERY, qname, C_IN, qtype, nullptr, 0, nullptr, (unsigned char *)buffer, MAX_DNS_PACKET_LEN);
+  int r = ink_res_mkquery(res, ns_o_query, qname, ns_c_in, qtype, nullptr, 0, nullptr, (unsigned char *)buffer, MAX_DNS_PACKET_LEN);
   return r;
 }
 
@@ -1046,9 +1046,9 @@ DNSEntry::mainEvent(int event, Event *e)
       domains = dnsH->m_res->dnsrch;
       // start domain expansion straight away
       // if lookup name has no '.'
-      if (domains && !strnchr(qname, '.', MAXDNAME)) {
+      if (domains && !strnchr(qname, '.', NS_MAXDNAME)) {
         qname[orig_qname_len] = '.';
-        qname_len = orig_qname_len + 1 + ink_strlcpy(qname + orig_qname_len + 1, *domains, MAXDNAME - (orig_qname_len + 1));
+        qname_len = orig_qname_len + 1 + ink_strlcpy(qname + orig_qname_len + 1, *domains, NS_MAXDNAME - (orig_qname_len + 1));
         ++domains;
       }
     } else {
@@ -1128,12 +1128,12 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
         Debug("dns", "domain extending, last tried '%s', original '%.*s'", e->qname, e->orig_qname_len, e->qname);
 
         // Make sure the next try fits
-        if (e->orig_qname_len + strlen(*e->domains) + 2 > MAXDNAME) {
+        if (e->orig_qname_len + strlen(*e->domains) + 2 > NS_MAXDNAME) {
           Debug("dns", "domain too large %.*s + %s", e->orig_qname_len, e->qname, *e->domains);
         } else {
           e->qname[e->orig_qname_len] = '.';
-          e->qname_len =
-            e->orig_qname_len + 1 + ink_strlcpy(e->qname + e->orig_qname_len + 1, *e->domains, MAXDNAME - (e->orig_qname_len + 1));
+          e->qname_len                = e->orig_qname_len + 1 +
+                         ink_strlcpy(e->qname + e->orig_qname_len + 1, *e->domains, NS_MAXDNAME - (e->orig_qname_len + 1));
           ++(e->domains);
           e->retries = dns_retries;
           Debug("dns", "new name = %s retries = %d", e->qname, e->retries);
@@ -1333,7 +1333,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     // Initialize local data
     //
     //    struct in_addr host_addr;            unused
-    u_char tbuf[MAXDNAME + 1];
+    u_char tbuf[NS_MAXDNAME + 1];
     buf->ent.h_name = nullptr;
 
     int ancount       = ntohs(h->ancount);
@@ -1407,7 +1407,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     if (local_num_entries >= DEFAULT_NUM_TRY_SERVER) {
       if ((attempt_num_entries % 50) == 0) {
         try_servers = (try_servers + 1) % countof(try_server_names);
-        ink_strlcpy(try_server_names[try_servers], e->qname, MAXDNAME);
+        ink_strlcpy(try_server_names[try_servers], e->qname, NS_MAXDNAME);
         memset(&try_server_names[try_servers][strlen(e->qname)], 0, 1);
         attempt_num_entries = 0;
       }
@@ -1415,7 +1415,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     } else {
       // fill up try_server_names for try_primary_named
       try_servers = local_num_entries++;
-      ink_strlcpy(try_server_names[try_servers], e->qname, MAXDNAME);
+      ink_strlcpy(try_server_names[try_servers], e->qname, NS_MAXDNAME);
       memset(&try_server_names[try_servers][strlen(e->qname)], 0, 1);
     }
 
@@ -1525,7 +1525,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         SRV *srv = &buf->srv_hosts.hosts[num_srv];
 
         // expand the name
-        n = ink_dn_expand((u_char *)h, eom, srv_off + SRV_SERVER, (u_char *)srv->host, MAXDNAME);
+        n = ink_dn_expand((u_char *)h, eom, srv_off + SRV_SERVER, (u_char *)srv->host, NS_MAXDNAME);
         if (n < 0) {
           ++error;
           break;

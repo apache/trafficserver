@@ -53,7 +53,7 @@ extern int auto_clear_hostdb_flag;
 extern int auto_clear_cache_flag;
 extern int fds_limit;
 extern int debug_level;
-extern char cluster_host[MAXDNAME + 1];
+extern char cluster_host[NS_MAXDNAME + 1];
 extern int cluster_port_number;
 
 extern int remote_management_flag;
@@ -62,7 +62,7 @@ inkcoreapi extern int qt_accept_file_descriptor;
 inkcoreapi extern int cache_clustering_enabled;
 
 // Debugging Configuration
-extern char debug_host[MAXDNAME + 1];
+extern char debug_host[NS_MAXDNAME + 1];
 extern int debug_port;
 
 // Default socket buffer limits

@@ -494,9 +494,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
         if ((*cp != '\0') && (*cp != '\n')) {
           ts::ConstBuffer host(cp, strcspn(cp, ";# \t\n"));
           if (0 == ats_ip_pton(host, &statp->nsaddr_list[nserv].sa)) {
-            // If there was no port in the config, lets use NAMESERVER_PORT
+            // If there was no port in the config, lets use NS_DEFAULTPORT
             if (ats_ip_port_host_order(&statp->nsaddr_list[nserv].sa) == 0) {
-              ats_ip_port_cast(&statp->nsaddr_list[nserv].sa) = htons(NAMESERVER_PORT);
+              ats_ip_port_cast(&statp->nsaddr_list[nserv].sa) = htons(NS_DEFAULTPORT);
             }
             ++nserv;
           }

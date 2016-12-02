@@ -753,7 +753,7 @@ public:
 
     bool lookup_success;
     char *lookup_name;
-    char srv_hostname[MAXDNAME];
+    char srv_hostname[NS_MAXDNAME];
     LookingUp_t looking_up;
     bool srv_lookup_success;
     short srv_port;

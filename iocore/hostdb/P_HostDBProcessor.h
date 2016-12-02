@@ -447,10 +447,10 @@ struct HostDBContinuation : public Continuation {
   int probe_depth;
   size_t current_iterate_pos;
   ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH];
-  //  char name[MAXDNAME];
+  //  char name[NS_MAXDNAME];
   //  int namelen;
-  char md5_host_name_store[MAXDNAME + 1]; // used as backing store for @a md5
-  char srv_target_name[MAXDNAME];
+  char md5_host_name_store[NS_MAXDNAME + 1]; // used as backing store for @a md5
+  char srv_target_name[NS_MAXDNAME];
   //  void *m_pDS;
   Action *pending_action;
 
