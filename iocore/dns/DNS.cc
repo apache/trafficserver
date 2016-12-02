@@ -704,20 +704,20 @@ DNSHandler::rr_failure(int ndx)
 static inline unsigned int
 get_rcode(char *buff)
 {
-  return reinterpret_cast<HEADER *>(buff)->rcode;
+  return ns_msg_getflag(*(reinterpret_cast<ns_msg *>(buff)), ns_f_rcode);
 }
 
 static inline unsigned int
 get_rcode(HostEnt *ent)
 {
-  return get_rcode(reinterpret_cast<char *>(ent));
+  return get_rcode(reinterpret_cast<char *>(ent->buf));
 }
 
 static bool
 good_rcode(char *buff)
 {
   unsigned int r = get_rcode(buff);
-  return NOERROR == r || NXDOMAIN == r;
+  return ns_r_noerror == r || ns_r_nxdomain == r;
 }
 
 void
@@ -957,7 +957,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e)
 {
   ProxyMutex *mutex = h->mutex.get();
   union {
-    HEADER _h;
+    ns_msg _h;
     char _b[MAX_DNS_PACKET_LEN];
   } blob;
   int r = 0;
@@ -968,8 +968,8 @@ write_dns_event(DNSHandler *h, DNSEntry *e)
     return true;
   }
 
-  uint16_t i = h->get_query_id();
-  blob._h.id = htons(i);
+  uint16_t i  = h->get_query_id();
+  blob._h._id = htons(i);
   if (e->id[dns_retries - e->retries] >= 0) {
     // clear previous id in case named was switched or domain was expanded
     h->release_query_id(e->id[dns_retries - e->retries]);
@@ -1280,8 +1280,8 @@ static bool
 dns_process(DNSHandler *handler, HostEnt *buf, int len)
 {
   ProxyMutex *mutex = handler->mutex.get();
-  HEADER *h         = (HEADER *)(buf->buf);
-  DNSEntry *e       = get_dns(handler, (uint16_t)ntohs(h->id));
+  ns_msg *h         = (ns_msg *)(buf->buf);
+  DNSEntry *e       = get_dns(handler, (uint16_t)ntohs(ns_msg_id(*h)));
   bool retry        = false;
   bool server_ok    = true;
   uint32_t temp_ttl = 0;
@@ -1290,7 +1290,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   // Do we have an entry for this id?
   //
   if (!e || !e->written_flag) {
-    Debug("dns", "unknown DNS id = %u", (uint16_t)ntohs(h->id));
+    Debug("dns", "unknown DNS id = %u", (uint16_t)ntohs(ns_msg_id(*h)));
     return false; // cannot count this as a success
   }
   //
@@ -1302,30 +1302,31 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
 
   DNS_SUM_DYN_STAT(dns_response_time_stat, Thread::get_hrtime() - e->send_time);
 
-  if (h->rcode != NOERROR || !h->ancount) {
-    Debug("dns", "received rcode = %d", h->rcode);
-    switch (h->rcode) {
+  int rcode = get_rcode(buf->buf);
+  if (rcode != ns_r_noerror || !ns_msg_count(*h, ns_s_an)) {
+    Debug("dns", "received rcode = %d", rcode);
+    switch (rcode) {
     default:
-      Warning("Unknown DNS error %d for [%s]", h->rcode, e->qname);
+      Warning("Unknown DNS error %d for [%s]", rcode, e->qname);
       retry     = true;
       server_ok = false; // could be server problems
       goto Lerror;
-    case SERVFAIL: // recoverable error
+    case ns_r_servfail: // recoverable error
       retry = true;
-    case FORMERR: // unrecoverable errors
-    case REFUSED:
-    case NOTIMP:
-      Debug("dns", "DNS error %d for [%s]", h->rcode, e->qname);
+    case ns_r_formerr: // unrecoverable errors
+    case ns_r_refused:
+    case ns_r_notimpl:
+      Debug("dns", "DNS error %d for [%s]", rcode, e->qname);
       server_ok = false; // could be server problems
       goto Lerror;
-    case NOERROR:
-    case NXDOMAIN:
-    case 6:  // YXDOMAIN
-    case 7:  // YXRRSET
-    case 8:  // NOTAUTH
-    case 9:  // NOTAUTH
-    case 10: // NOTZONE
-      Debug("dns", "DNS error %d for [%s]", h->rcode, e->qname);
+    case ns_r_noerror:
+    case ns_r_nxdomain:
+    case ns_r_yxdomain:
+    case ns_r_nxrrset:
+    case ns_r_yxrrset:
+    case ns_r_notauth:
+    case ns_r_notzone:
+      Debug("dns", "DNS error %d for [%s]", rcode, e->qname);
       goto Lerror;
     }
   } else {
@@ -1336,7 +1337,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     u_char tbuf[NS_MAXDNAME + 1];
     buf->ent.h_name = nullptr;
 
-    int ancount       = ntohs(h->ancount);
+    int ancount       = ntohs(ns_msg_count(*h, ns_s_an));
     unsigned char *bp = buf->hostbuf;
     int buflen        = sizeof(buf->hostbuf);
     u_char *cp        = ((u_char *)h) + HFIXEDSZ;
@@ -1424,7 +1425,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
      */
     unsigned char *here = (unsigned char *)buf->buf + HFIXEDSZ;
     if (e->qtype == ns_t_srv) {
-      for (int ctr = ntohs(h->qdcount); ctr > 0; ctr--) {
+      for (int ctr = ntohs(ns_msg_count(*h, ns_s_qd)); ctr > 0; ctr--) {
         int strlen = dn_skipname(here, eom);
         here += strlen + QFIXEDSZ;
       }
