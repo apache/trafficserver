@@ -23,7 +23,7 @@ library_includedir=$(includedir)/ts
 library_include_HEADERS = apidefs.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator
+check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_MemView
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
@@ -189,6 +189,7 @@ libtsutil_la_SOURCES = \
   lockfile.cc \
   signals.cc \
   signals.h \
+  MemView.h MemView.cc \
   X509HostnameValidator.cc \
   X509HostnameValidator.h
 
@@ -235,6 +236,9 @@ test_tsutil_SOURCES = \
 	test_Regex.cc \
 	tests.cc
 
+test_MemView_SOURCES = test_MemView.cc
+test_MemView_LDADD = libtsutil.la
+
 CompileParseRules_SOURCES = CompileParseRules.cc
 
 clean-local:
@@ -242,4 +246,3 @@ clean-local:
 
 tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
-
