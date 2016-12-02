@@ -189,6 +189,7 @@ libtsutil_la_SOURCES = \
   lockfile.cc \
   signals.cc \
   signals.h \
+  MemView.h MemView.cc \
   X509HostnameValidator.cc \
   X509HostnameValidator.h
 
@@ -250,4 +251,3 @@ clean-local:
 
 tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
-
