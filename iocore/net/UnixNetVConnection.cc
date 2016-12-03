@@ -818,13 +818,13 @@ UnixNetVConnection::reenable(VIO *vio)
     MUTEX_TRY_LOCK(lock, nh->mutex, t);
     if (!lock.is_locked()) {
       if (vio == &read.vio) {
-        if (!read.in_enabled_list) {
-          read.in_enabled_list = 1;
+        int isin = ink_atomic_swap(&read.in_enabled_list, 1);
+        if (!isin) {
           nh->read_enable_list.push(this);
         }
       } else {
-        if (!write.in_enabled_list) {
-          write.in_enabled_list = 1;
+        int isin = ink_atomic_swap(&write.in_enabled_list, 1);
+        if (!isin) {
           nh->write_enable_list.push(this);
         }
       }
