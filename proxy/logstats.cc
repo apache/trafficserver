@@ -1184,7 +1184,7 @@ find_or_create_stats(const char *key)
       memset(o_stats, 0, sizeof(OriginStats));
       init_elapsed(o_stats);
       o_server = ats_strdup(key);
-      if (o_stats && o_server) {
+      if (o_server) {
         o_stats->server   = o_server;
         origins[o_server] = o_stats;
       }
@@ -1584,7 +1584,6 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
             break;
           default:
             tok_len = 5 + strlen(tok);
-            ;
             update_counter(totals.content.text.other, size);
             if (o_stats != NULL) {
               update_counter(o_stats->content.text.other, size);
@@ -1606,10 +1605,12 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
             }
             break;
           case JAVA_AS_INT:
+            tok_len = 22;
             update_counter(totals.content.application.javascript, size);
             if (o_stats != NULL) {
               update_counter(o_stats->content.application.javascript, size);
             }
+            break;
           case X_JA_AS_INT:
             tok_len = 24;
             update_counter(totals.content.application.javascript, size);
