@@ -306,23 +306,19 @@ DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const 
   int diags_log_roll_enable  = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
 
   // Grab some perms for the actual files on disk
-  char *diags_perms = REC_ConfigReadString("proxy.config.diags.logfile_perms");
-  char *output_perms = REC_ConfigReadString("proxy.config.output.logfile_perms");
-  int diags_perms_parsed = ink_fileperm_parse(diags_perms);
-  int output_perms_parsed = ink_fileperm_parse(output_perms);
-  ats_free(diags_perms);
-  ats_free(output_perms);
+  char *diags_perm = REC_ConfigReadString("proxy.config.diags.logfile_perm");
+  char *output_perm = REC_ConfigReadString("proxy.config.output.logfile_perm");
+  int diags_perm_parsed = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
+  int output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
+
+  ats_free(diags_perm);
+  ats_free(output_perm);
 
   // Set up diags, FILE streams are opened in Diags constructor
   diags_log = new BaseLogFile(diags_logpath);
-  diags     = new Diags(prefix_string, tags, actions, diags_log);
+  diags     = new Diags(prefix_string, tags, actions, diags_log, diags_perm_parsed, output_perm_parsed);
   diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
   diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
-  if (diags_perms_parsed != -1)
-    diags->set_diags_log_perms(diags_perms_parsed);
-  if (output_perms_parsed != -1)
-    diags->set_output_log_perms(output_perms_parsed);
-
 
   Status("opened %s", diags_logpath);
 

@@ -110,7 +110,7 @@ struct DiagsConfigState {
 class Diags
 {
 public:
-  Diags(const char *prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log);
+  Diags(const char *prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log, int diags_log_perm = -1, int output_log_perm = -1);
   ~Diags();
 
   BaseLogFile *diags_log;
@@ -209,8 +209,6 @@ public:
   void deactivate_all(DiagsTagType mode = DiagsTagType_Debug);
 
   bool setup_diagslog(BaseLogFile *blf);
-  void set_diags_log_perms(int perms);
-  void set_output_log_perms(int perms);
 
   void config_roll_diagslog(RollingEnabledValues re, int ri, int rs);
   void config_roll_outputlog(RollingEnabledValues re, int ri, int rs);
