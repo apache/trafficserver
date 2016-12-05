@@ -98,7 +98,7 @@ vprintline(FILE *fp, char (&buffer)[Size], va_list ap)
 //
 //////////////////////////////////////////////////////////////////////////////
 
-Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLogFile *_diags_log)
+Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLogFile *_diags_log, int dl_perm, int ol_perm)
   : diags_log(nullptr),
     stdout_log(nullptr),
     stderr_log(nullptr),
@@ -162,6 +162,9 @@ Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLo
 
   outputlog_time_last_roll = time(nullptr);
   diagslog_time_last_roll  = time(nullptr);
+
+  diags_logfile_perm = dl_perm;
+  output_logfile_perm = ol_perm;
 
   if (setup_diagslog(_diags_log)) {
     diags_log = _diags_log;
@@ -517,18 +520,6 @@ Diags::level_name(DiagsLevel dl) const
 //      void Diags::dump(FILE *fp)
 //
 //////////////////////////////////////////////////////////////////////////////
-
-void
-Diags::set_diags_log_perms(int perms)
-{
-  diags_logfile_perm = perms;
-}
-
-void
-Diags::set_output_log_perms(int perms)
-{
-  output_logfile_perm = perms;
-}
 
 void
 Diags::dump(FILE *fp) const

@@ -262,7 +262,7 @@ RestrictCapabilities()
 #if TS_USE_POSIX_CAP
   cap_t caps = cap_init(); // start with nothing.
   // Capabilities we need.
-  cap_value_t perm_list[]         = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE};
+  cap_value_t perm_list[]         = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE, CAP_FOWNER};
   static int const PERM_CAP_COUNT = sizeof(perm_list) / sizeof(*perm_list);
   cap_value_t eff_list[]          = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
   static int const EFF_CAP_COUNT  = sizeof(eff_list) / sizeof(*eff_list);
@@ -340,6 +340,17 @@ elevating_fopen(const char *path, const char *mode)
   return f;
 }
 
+int
+elevating_chmod(const char *path, int perm)
+{
+  int ret = chmod(path, perm);
+  if (ret != 0 && (EPERM == errno || EACCES == errno)) {
+    ElevateAccess access(ElevateAccess::OWNER_PRIVILEGE);
+    return chmod(path, perm);
+  }
+  return ret;
+}
+
 #if TS_USE_POSIX_CAP
 /** Acquire file access privileges to bypass DAC.
     @a level is a mask of the specific file access capabilities to acquire.
@@ -348,7 +359,7 @@ void
 ElevateAccess::acquirePrivilege(unsigned priv_mask)
 {
   unsigned cap_count = 0;
-  cap_value_t cap_list[2];
+  cap_value_t cap_list[3];
   cap_t new_cap_state;
 
   Debug("privileges", "[acquirePrivilege] level= %x", level);
@@ -367,6 +378,11 @@ ElevateAccess::acquirePrivilege(unsigned priv_mask)
 
   if (priv_mask & ElevateAccess::TRACE_PRIVILEGE) {
     cap_list[cap_count] = CAP_SYS_PTRACE;
+    ++cap_count;
+  }
+
+  if (priv_mask & ElevateAccess::OWNER_PRIVILEGE) {
+    cap_list[cap_count] = CAP_FOWNER;
     ++cap_count;
   }
 

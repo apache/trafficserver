@@ -342,7 +342,8 @@ BaseLogFile::open_file(int perm)
   // set permissions if necessary
   if (perm != -1) {
     // means LogFile passed in some permissions we need to set
-    if (chmod(m_name.get(), perm) != 0)
+    log_log_trace("BaseLogFile attempting to change %s's permissions to %o\n", m_name.get(), perm);
+    if (elevating_chmod(m_name.get(), perm) != 0)
       log_log_error("Error changing logfile=%s permissions: %s\n", m_name.get(), strerror(errno));
   }
 
