@@ -68,8 +68,7 @@ startProcessManager(void *arg)
   return ret;
 } /* End startProcessManager */
 
-ProcessManager::ProcessManager(bool rlm)
-  : BaseManager(), require_lm(rlm), local_manager_sockfd(0), cbtable(NULL), max_msgs_in_a_row(1)
+ProcessManager::ProcessManager(bool rlm) : BaseManager(), require_lm(rlm), local_manager_sockfd(0), cbtable(NULL), max_msgs_in_a_row(1)
 {
   mgmt_signal_queue = create_queue();
 
@@ -85,7 +84,7 @@ ProcessManager::reconfigure()
 {
   bool found;
   max_msgs_in_a_row = MAX_MSGS_IN_A_ROW;
-  timeout           = REC_readInteger("proxy.config.process_manager.timeout", &found);
+  timeout = REC_readInteger("proxy.config.process_manager.timeout", &found);
   ink_assert(found);
 
   return;
