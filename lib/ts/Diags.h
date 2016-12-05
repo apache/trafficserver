@@ -110,7 +110,8 @@ struct DiagsConfigState {
 class Diags
 {
 public:
-  Diags(const char *prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log, int diags_log_perm = -1, int output_log_perm = -1);
+  Diags(const char *prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log,
+        int diags_log_perm = -1, int output_log_perm = -1);
   ~Diags();
 
   BaseLogFile *diags_log;
@@ -227,7 +228,7 @@ private:
   DFA *activated_tags[2];           // 1 table for debug, 1 for action
 
   // These are the default logfile permissions
-  int diags_logfile_perm = -1;
+  int diags_logfile_perm  = -1;
   int output_logfile_perm = -1;
 
   // log rotation variables
