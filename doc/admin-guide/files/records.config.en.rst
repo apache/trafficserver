@@ -285,7 +285,6 @@ System Variables
 
 
 .. ts:cv:: CONFIG proxy.config.output.logfile_perm STRING rw-r--r--
-   :reloadable:
 
    The log file permissions. The standard UNIX file permissions are used (owner, group, other). Permissible values are:
 
@@ -2891,7 +2890,6 @@ Diagnostic Logging Configuration
 
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile_perm STRING rw-r--r--
-   :reloadable:
 
    The log file permissions. The standard UNIX file permissions are used (owner, group, other). Permissible values are:
 
