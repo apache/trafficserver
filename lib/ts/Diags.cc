@@ -163,7 +163,7 @@ Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLo
   outputlog_time_last_roll = time(nullptr);
   diagslog_time_last_roll  = time(nullptr);
 
-  diags_logfile_perm = dl_perm;
+  diags_logfile_perm  = dl_perm;
   output_logfile_perm = ol_perm;
 
   if (setup_diagslog(_diags_log)) {
