@@ -149,8 +149,10 @@ reloadUrlRewrite()
   newTable = new UrlRewrite();
   if (newTable->is_valid()) {
     new_Deleter(rewrite_table, URL_REWRITE_TIMEOUT);
-    Debug("url_rewrite", "remap.config done reloading!");
+    static const char *msg = "remap.config done reloading!";
     ink_atomic_swap(&rewrite_table, newTable);
+    Debug("url_rewrite", "%s", msg);
+    Note("%s", msg);
     return true;
   } else {
     static const char *msg = "failed to reload remap.config, not replacing!";
