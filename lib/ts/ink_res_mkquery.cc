@@ -81,7 +81,27 @@
 
 #define SPRINTF(x) (sprintf x)
 
-#define SETFLAG(handle, flag, x) ((handle)->_flags |= (((x) << _ns_flagdata[(flag)].shift) & _ns_flagdata[(flag)].mask))
+// This is pulled from ns_parse.c in GLIBC.
+const struct _ns_flagdata ns_flagdata[16] = {
+  {0x8000, 15}, /*%< qr. */
+  {0x7800, 11}, /*%< opcode. */
+  {0x0400, 10}, /*%< aa. */
+  {0x0200, 9},  /*%< tc. */
+  {0x0100, 8},  /*%< rd. */
+  {0x0080, 7},  /*%< ra. */
+  {0x0040, 6},  /*%< z. */
+  {0x0020, 5},  /*%< ad. */
+  {0x0010, 4},  /*%< cd. */
+  {0x000f, 0},  /*%< rcode. */
+  {0x0000, 0},  /*%< expansion (1/6). */
+  {0x0000, 0},  /*%< expansion (2/6). */
+  {0x0000, 0},  /*%< expansion (3/6). */
+  {0x0000, 0},  /*%< expansion (4/6). */
+  {0x0000, 0},  /*%< expansion (5/6). */
+  {0x0000, 0},  /*%< expansion (6/6). */
+};
+
+#define SETFLAG(handle, flag, x) ((handle)->_flags |= (((x) << ns_flagdata[(flag)].shift) & ns_flagdata[(flag)].mask))
 
 /*%
  * Form all types of queries.
