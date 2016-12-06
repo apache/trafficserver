@@ -22,14 +22,14 @@ Generator Plugin
 
 The `Generator` allows testing of synthetic workloads by generating
 HTTP responses of various sizes. The size and cacheability of the
-response is specified by the first two coomponents of the requested
+response is specified by the first two components of the requested
 URL path. This plugin only supports the ``GET`` and ``HEAD`` HTTP
 methods.
 
 +---------------+----------------------------------------------------------------+
 |Path component | Description                                                    |
 +===============+================================================================+
-|1              | ``cache`` or ``nocache``. If ``cache`` is specifed, the        |
+|1              | ``cache`` or ``nocache``. If ``cache`` is specified, the       |
 |               | `Generator` plugin will respond with ``Cache-Control`` headers |
 |               | marking the response as cacheable.                             |
 +---------------+----------------------------------------------------------------+
@@ -38,7 +38,7 @@ methods.
 
 Path components after the first 2 are ignored. This means that the
 trailing path components can be manipulated to create unique URLs
-following any covenient convention.
+following any convenient convention.
 
 The `Generator` plugin inspects the following HTTP client request headers:
 
@@ -51,7 +51,7 @@ The `Generator` plugin inspects the following HTTP client request headers:
 | ``Generator-MaxAge``  | The number of seconds that a response should be cached |
 |                       | for. This is used in the ``max-age`` field of the      |
 |                       | response's ``Cache-Control`` header.                   |
-+--------------------------------------------------------------------------------+
++-----------------------+--------------------------------------------------------+
 
 The `Generator` plugin publishes the following metrics:
 

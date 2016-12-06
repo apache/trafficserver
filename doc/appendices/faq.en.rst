@@ -60,7 +60,7 @@ the request for the objects), and do not execute on the server.
 In Squid- and Netscape-format log files, what do the cache result codes mean?
 -----------------------------------------------------------------------------
 
-This is described in detail in the :ref:`admin-logging-format-squid` documentation.
+This is described in detail in the :ref:`admin-logging-cache-results` documentation.
 
 What is recorded by the ``cqtx`` field in a custom log file?
 ------------------------------------------------------------

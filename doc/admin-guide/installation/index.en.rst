@@ -189,6 +189,8 @@ working copy::
     cd /opt/ats
     sudo bin/traffic_server -R 1
 
+.. _start-traffic-server:
+
 Start Traffic Server
 ====================
 
