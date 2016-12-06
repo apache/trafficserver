@@ -334,7 +334,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
         return "Garbage trailing entry or invalid separator";
       }
 
-      if (tmp - current > (MAXDNAME - 1)) {
+      if (tmp - current > (NS_MAXDNAME - 1)) {
         return "DNS server name (ip) is too long";
       } else if (tmp - current == 0) {
         return "server string is emtpy";
@@ -346,9 +346,9 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
       return "invalid IP address given for a DNS server";
     }
 
-    ats_ip_port_cast(&m_servers.x_server_ip[i].sa) = htons(port ? port : NAMESERVER_PORT);
+    ats_ip_port_cast(&m_servers.x_server_ip[i].sa) = htons(port ? port : NS_DEFAULTPORT);
 
-    if ((MAXDNAME * 2 - 1) > totsz) {
+    if ((NS_MAXDNAME * 2 - 1) > totsz) {
       sz = strlen(current);
       memcpy((m_servers.x_dns_ip_line + totsz), current, sz);
       totsz += sz;
@@ -411,7 +411,7 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
     current = pTok[i];
     cnt     = sz += strlen(current);
 
-    if (MAXDNAME - 1 < sz)
+    if (NS_MAXDNAME - 1 < sz)
       break;
 
     memcpy(pSp, current, cnt);

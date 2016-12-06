@@ -82,7 +82,7 @@ LogSock::listen(int accept_port, int family)
 {
   IpEndpoint bind_addr;
   int size = sizeof(bind_addr);
-  char this_host[MAXDNAME];
+  char this_host[NS_MAXDNAME];
   int ret;
   ats_scoped_fd accept_sd;
 
@@ -165,7 +165,7 @@ LogSock::listen(int accept_port, int family)
   // initialize the first entry of the table for accepting incoming
   // connection requests.
   //
-  if (gethostname(&this_host[0], MAXDNAME) != 0) {
+  if (gethostname(&this_host[0], NS_MAXDNAME) != 0) {
     snprintf(this_host, sizeof(this_host), "unknown-host");
   }
   init_cid(0, this_host, accept_port, accept_sd, LogSock::LS_STATE_INCOMING);

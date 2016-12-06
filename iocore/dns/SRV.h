@@ -39,7 +39,7 @@ struct SRV {
   unsigned int ttl;
   unsigned int host_len;
   unsigned int key;
-  char host[MAXDNAME];
+  char host[NS_MAXDNAME];
 
   SRV() : weight(0), port(0), priority(0), ttl(0), host_len(0), key(0) { host[0] = '\0'; }
 };

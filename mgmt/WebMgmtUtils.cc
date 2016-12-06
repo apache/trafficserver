@@ -1021,16 +1021,16 @@ substituteForHTMLChars(const char *buffer)
 int
 setHostnameVar()
 {
-  char ourHostName[MAXDNAME];
+  char ourHostName[NS_MAXDNAME];
   char *firstDot;
 
   // Get Our HostName
-  if (gethostname(ourHostName, MAXDNAME) < 0) {
+  if (gethostname(ourHostName, NS_MAXDNAME) < 0) {
     mgmt_fatal(errno, "[setHostnameVar] Can not determine our hostname");
   }
 
   res_init();
-  appendDefaultDomain(ourHostName, MAXDNAME);
+  appendDefaultDomain(ourHostName, NS_MAXDNAME);
 
   // FQ is a Fully Qualified hostname (ie: proxydev.example.com)
   varSetFromStr("proxy.node.hostname_FQ", ourHostName);

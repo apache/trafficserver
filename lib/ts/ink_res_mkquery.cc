@@ -81,6 +81,28 @@
 
 #define SPRINTF(x) (sprintf x)
 
+// This is pulled from ns_parse.c in GLIBC.
+const struct _ns_flagdata ns_flagdata[16] = {
+  {0x8000, 15}, /*%< qr. */
+  {0x7800, 11}, /*%< opcode. */
+  {0x0400, 10}, /*%< aa. */
+  {0x0200, 9},  /*%< tc. */
+  {0x0100, 8},  /*%< rd. */
+  {0x0080, 7},  /*%< ra. */
+  {0x0040, 6},  /*%< z. */
+  {0x0020, 5},  /*%< ad. */
+  {0x0010, 4},  /*%< cd. */
+  {0x000f, 0},  /*%< rcode. */
+  {0x0000, 0},  /*%< expansion (1/6). */
+  {0x0000, 0},  /*%< expansion (2/6). */
+  {0x0000, 0},  /*%< expansion (3/6). */
+  {0x0000, 0},  /*%< expansion (4/6). */
+  {0x0000, 0},  /*%< expansion (5/6). */
+  {0x0000, 0},  /*%< expansion (6/6). */
+};
+
+#define SETFLAG(handle, flag, x) ((handle)->_flags |= (((x) << ns_flagdata[(flag)].shift) & ns_flagdata[(flag)].mask))
+
 /*%
  * Form all types of queries.
  * Returns the size of the result or -1.
@@ -94,7 +116,7 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
                     u_char *buf,                               /*!< buffer to put query  */
                     int buflen)                                /*!< size of buffer  */
 {
-  HEADER *hp;
+  ns_msg *hp;
   u_char *cp, *ep;
   int n;
   u_char *dnptrs[20], **dpp, **lastdnptr;
@@ -102,42 +124,42 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
   /*
    * Initialize header fields.
    */
-  if ((buf == nullptr) || (buflen < HFIXEDSZ))
+  if ((buf == nullptr) || (buflen < NS_HFIXEDSZ))
     return (-1);
-  memset(buf, 0, HFIXEDSZ);
-  hp         = (HEADER *)buf;
-  hp->id     = htons(++statp->id);
-  hp->opcode = op;
-  hp->rd     = (statp->options & INK_RES_RECURSE) != 0U;
-  hp->rcode  = NOERROR;
-  cp         = buf + HFIXEDSZ;
-  ep         = buf + buflen;
-  dpp        = dnptrs;
-  *dpp++     = buf;
-  *dpp++     = nullptr;
-  lastdnptr  = dnptrs + sizeof dnptrs / sizeof dnptrs[0];
+  memset(buf, 0, NS_HFIXEDSZ);
+  hp      = (ns_msg *)buf;
+  hp->_id = htons(++statp->id);
+  SETFLAG(hp, ns_f_opcode, op);
+  SETFLAG(hp, ns_f_rd, ((statp->options & INK_RES_RECURSE) != 0U));
+  SETFLAG(hp, ns_f_rcode, ns_r_noerror);
+  cp        = buf + NS_HFIXEDSZ;
+  ep        = buf + buflen;
+  dpp       = dnptrs;
+  *dpp++    = buf;
+  *dpp++    = nullptr;
+  lastdnptr = dnptrs + sizeof dnptrs / sizeof dnptrs[0];
   /*
    * perform opcode specific processing
    */
   switch (op) {
-  case QUERY: /*FALLTHROUGH*/
-  case NS_NOTIFY_OP:
-    if (ep - cp < QFIXEDSZ)
+  case ns_o_query: /*FALLTHROUGH*/
+  case ns_o_notify:
+    if (ep - cp < NS_QFIXEDSZ)
       return (-1);
-    if ((n = dn_comp(dname, cp, ep - cp - QFIXEDSZ, dnptrs, lastdnptr)) < 0)
+    if ((n = dn_comp(dname, cp, ep - cp - NS_QFIXEDSZ, dnptrs, lastdnptr)) < 0)
       return (-1);
     cp += n;
     NS_PUT16(type, cp);
     NS_PUT16(_class, cp);
-    hp->qdcount = htons(1);
-    if (op == QUERY || data == nullptr)
+    hp->_counts[ns_s_qd] = htons(1);
+    if (op == ns_o_query || data == nullptr)
       break;
     /*
      * Make an additional record for completion domain.
      */
-    if ((ep - cp) < RRFIXEDSZ)
+    if ((ep - cp) < NS_RRFIXEDSZ)
       return (-1);
-    n = dn_comp((const char *)data, cp, ep - cp - RRFIXEDSZ, dnptrs, lastdnptr);
+    n = dn_comp((const char *)data, cp, ep - cp - NS_RRFIXEDSZ, dnptrs, lastdnptr);
     if (n < 0)
       return (-1);
     cp += n;
@@ -145,14 +167,14 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
     NS_PUT16(_class, cp);
     NS_PUT32(0, cp);
     NS_PUT16(0, cp);
-    hp->arcount = htons(1);
+    hp->_counts[ns_s_ar] = htons(1);
     break;
 
-  case IQUERY:
+  case ns_o_iquery:
     /*
      * Initialize answer section
      */
-    if (ep - cp < 1 + RRFIXEDSZ + datalen)
+    if (ep - cp < 1 + NS_RRFIXEDSZ + datalen)
       return (-1);
     *cp++ = '\0'; /*%< no domain name */
     NS_PUT16(type, cp);
@@ -163,7 +185,7 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
       memcpy(cp, data, datalen);
       cp += datalen;
     }
-    hp->ancount = htons(1);
+    hp->_counts[ns_s_an] = htons(1);
     break;
 
   default:

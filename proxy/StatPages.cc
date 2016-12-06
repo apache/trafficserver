@@ -70,13 +70,13 @@ StatPagesManager::handle_http(Continuation *cont, HTTPHdr *header)
   if (((m_enabled == 1 || m_enabled == 3) && is_cache_inspector_page(url)) ||
       ((m_enabled == 2 || m_enabled == 3) && is_stat_page(url) && !is_cache_inspector_page(url))) {
     int host_len;
-    char host[MAXDNAME + 1];
+    char host[NS_MAXDNAME + 1];
     const char *h;
     int i;
 
     h = url->host_get(&host_len);
-    if (host_len > MAXDNAME) {
-      host_len = MAXDNAME;
+    if (host_len > NS_MAXDNAME) {
+      host_len = NS_MAXDNAME;
     }
     memcpy(host, h, host_len);
     host[host_len] = '\0';
@@ -103,9 +103,9 @@ StatPagesManager::is_stat_page(URL *url)
 
   int length;
   const char *h = url->host_get(&length);
-  char host[MAXDNAME + 1];
+  char host[NS_MAXDNAME + 1];
 
-  if (h == nullptr || length < 2 || length > MAXDNAME) {
+  if (h == nullptr || length < 2 || length > NS_MAXDNAME) {
     return false;
   }
 
@@ -125,9 +125,9 @@ StatPagesManager::is_cache_inspector_page(URL *url)
 {
   int length;
   const char *h = url->host_get(&length);
-  char host[MAXDNAME + 1];
+  char host[NS_MAXDNAME + 1];
 
-  if (h == nullptr || length < 2 || length > MAXDNAME) {
+  if (h == nullptr || length < 2 || length > NS_MAXDNAME) {
     return false;
   }
 

@@ -94,7 +94,7 @@ private:
 //    A record for an invidual parent
 //
 struct pRecord : ATSConsistentHashNode {
-  char hostname[MAXDNAME + 1];
+  char hostname[NS_MAXDNAME + 1];
   int port;
   time_t failedAt;
   int failCount;

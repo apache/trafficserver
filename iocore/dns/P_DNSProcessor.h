@@ -143,7 +143,7 @@ struct DNSEntry : public Continuation {
   int which_ns;
   ink_hrtime submit_time;
   ink_hrtime send_time;
-  char qname[MAXDNAME];
+  char qname[NS_MAXDNAME];
   int qname_len;
   int orig_qname_len;
   char **domains;
@@ -184,7 +184,7 @@ struct DNSEntry : public Continuation {
   {
     for (int i = 0; i < MAX_DNS_RETRIES; i++)
       id[i]    = -1;
-    memset(qname, 0, MAXDNAME);
+    memset(qname, 0, NS_MAXDNAME);
   }
 };
 
@@ -307,10 +307,10 @@ private:
    -------------------------------------------------------------- */
 struct DNSServer {
   IpEndpoint x_server_ip[MAXNS];
-  char x_dns_ip_line[MAXDNAME * 2];
+  char x_dns_ip_line[NS_MAXDNAME * 2];
 
-  char x_def_domain[MAXDNAME];
-  char x_domain_srch_list[MAXDNAME];
+  char x_def_domain[NS_MAXDNAME];
+  char x_domain_srch_list[NS_MAXDNAME];
 
   DNSHandler *x_dnsH;
 
@@ -318,9 +318,9 @@ struct DNSServer {
   {
     memset(x_server_ip, 0, sizeof(x_server_ip));
 
-    memset(x_def_domain, 0, MAXDNAME);
-    memset(x_domain_srch_list, 0, MAXDNAME);
-    memset(x_dns_ip_line, 0, MAXDNAME * 2);
+    memset(x_def_domain, 0, NS_MAXDNAME);
+    memset(x_domain_srch_list, 0, NS_MAXDNAME);
+    memset(x_dns_ip_line, 0, NS_MAXDNAME * 2);
   }
 };
 

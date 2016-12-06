@@ -4083,7 +4083,7 @@ HttpSM::do_hostdb_lookup()
   milestones[TS_MILESTONE_DNS_LOOKUP_BEGIN] = Thread::get_hrtime();
 
   if (t_state.txn_conf->srv_enabled) {
-    char d[MAXDNAME];
+    char d[NS_MAXDNAME];
 
     // Look at the next_hop_scheme to determine what scheme to put in the SRV lookup
     unsigned int scheme_len = sprintf(d, "_%s._tcp.", hdrtoken_index_to_wks(t_state.next_hop_scheme));
@@ -7727,7 +7727,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 
   bool valid_origHost = true;
   int origHost_len, origMethod_len;
-  char origHost[MAXDNAME];
+  char origHost[NS_MAXDNAME];
   char origMethod[255];
   int origPort = 80;
 

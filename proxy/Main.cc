@@ -150,7 +150,7 @@ int auto_clear_hostdb_flag = 0;
 extern int fds_limit;
 extern int cluster_port_number;
 extern int cache_clustering_enabled;
-char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
+char cluster_host[NS_MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 
 //         = DEFAULT_CLUSTER_PORT_NUMBER;
 static char command_string[512] = "";

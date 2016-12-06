@@ -966,7 +966,7 @@ HostDBProcessor::setby_srv(const char *hostname, int len, const char *target, Ho
 
   HostDBContinuation *c = hostDBContAllocator.alloc();
   c->init(md5);
-  ink_strlcpy(c->srv_target_name, target, MAXDNAME);
+  ink_strlcpy(c->srv_target_name, target, NS_MAXDNAME);
   c->app.allotment.application1 = app->allotment.application1;
   c->app.allotment.application2 = app->allotment.application2;
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::setbyEvent);
@@ -1471,7 +1471,7 @@ struct HostDB_get_message {
   IpEndpoint ip;
   Continuation *cont;
   int namelen;
-  char name[MAXDNAME];
+  char name[NS_MAXDNAME];
 };
 
 //
@@ -1491,7 +1491,7 @@ HostDBContinuation::make_get_message(char *buf, int size)
   ink_strlcpy(msg->name, md5.host_name, sizeof(msg->name));
 
   // length
-  int len = sizeof(HostDB_get_message) - MAXDNAME + md5.host_len + 1;
+  int len = sizeof(HostDB_get_message) - NS_MAXDNAME + md5.host_len + 1;
 
   return len;
 }
@@ -1556,7 +1556,7 @@ struct HostDB_put_message {
   unsigned int application1;
   unsigned int application2;
   int namelen;
-  char name[MAXDNAME];
+  char name[NS_MAXDNAME];
 };
 
 //
@@ -1587,7 +1587,7 @@ HostDBContinuation::make_put_message(HostDBInfo *r, Continuation *c, char *buf, 
   ink_strlcpy(msg->name, md5.host_name, sizeof(msg->name));
 
   // length
-  int len = sizeof(HostDB_put_message) - MAXDNAME + md5.host_len + 1;
+  int len = sizeof(HostDB_put_message) - NS_MAXDNAME + md5.host_len + 1;
 
   return len;
 }
