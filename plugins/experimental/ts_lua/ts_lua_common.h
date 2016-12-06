@@ -32,6 +32,7 @@
 #include <ts/remap.h>
 #include "ts/ink_defs.h"
 #include "ts_lua_coroutine.h"
+#include "ts_lua_shdict.h"
 
 #define TS_LUA_FUNCTION_REMAP "do_remap"
 #define TS_LUA_FUNCTION_OS_RESPONSE "do_os_response"
@@ -98,6 +99,7 @@ typedef struct {
   int _last : 1;  // create current instance for the last ts_lua_main_ctx
 
   int remap;
+  int states;
 } ts_lua_instance_conf;
 
 /* lua state for http request */

@@ -29,7 +29,7 @@
 #include "I_Cache.h"
 #include "I_Version.h"
 
-#include "ts.h" // plugin header
+#include "ts/ts.h" // plugin header
 #include "protocol_binary.h"
 #include "ink_memory.h"
 #include "ink_hrtime.h"
