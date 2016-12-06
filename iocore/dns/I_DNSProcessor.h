@@ -156,25 +156,25 @@ extern DNSProcessor dnsProcessor;
 inline Action *
 DNSProcessor::getSRVbyname(Continuation *cont, const char *name, Options const &opt)
 {
-  return getby(name, 0, ns_t_srv, cont, opt);
+  return getby(name, 0, T_SRV, cont, opt);
 }
 
 inline Action *
 DNSProcessor::gethostbyname(Continuation *cont, const char *name, Options const &opt)
 {
-  return getby(name, 0, ns_t_a, cont, opt);
+  return getby(name, 0, T_A, cont, opt);
 }
 
 inline Action *
 DNSProcessor::gethostbyname(Continuation *cont, const char *name, int len, Options const &opt)
 {
-  return getby(name, len, ns_t_a, cont, opt);
+  return getby(name, len, T_A, cont, opt);
 }
 
 inline Action *
 DNSProcessor::gethostbyaddr(Continuation *cont, IpAddr const *addr, Options const &opt)
 {
-  return getby(reinterpret_cast<const char *>(addr), 0, ns_t_ptr, cont, opt);
+  return getby(reinterpret_cast<const char *>(addr), 0, T_PTR, cont, opt);
 }
 
 inline DNSProcessor::Options::Options() : handler(0), timeout(0), host_res_style(HOST_RES_IPV4)
