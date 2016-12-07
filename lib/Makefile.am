@@ -26,6 +26,11 @@ if BUILD_WCCP
 SUBDIRS += wccp
 endif
 
+# Support verbose LuaJIT builds with "make V=1".
+luajit__v_ = $(luajit__v_$(AM_DEFAULT_VERBOSITY))
+luajit__v_0 = @
+luajit__v_1 =
+
 # Some special hacks around building the luajit.
 #
 #  - Copy the luajit source tree if we're doing out-of-source builds
@@ -43,7 +48,8 @@ all-local:
 		CC="$(CC)" \
 		CFLAGS="$(LUAJIT_CFLAGS)" \
 		XCFLAGS="" \
-		LDFLAGS="$(LUAJIT_LDFLAGS)"
+		LDFLAGS="$(LUAJIT_LDFLAGS)" \
+		Q=$(luajit__v_$(V))
 
 clean-local:
 	test "$(top_srcdir)" != "$(top_builddir)" || (cd "$(top_builddir)/$(subdir)/luajit" && $(MAKE) clean)
