@@ -641,7 +641,7 @@ IOBufferReader::read_avail()
   return t;
 }
 
-inline bool
+TS_INLINE bool
 IOBufferReader::is_read_avail_more_than(int64_t size)
 {
   int64_t t        = -start_offset;
