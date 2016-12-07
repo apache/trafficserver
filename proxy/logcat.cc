@@ -70,6 +70,50 @@ static const ArgumentDescription argument_descriptions[] = {
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 
+/*
+ * Gets the inode number of a given file
+ *
+ * @param filename name of the file
+ * @returns -1 on failure, otherwise inode number
+ */
+static ino_t
+get_inode_num(const char *filename)
+{
+  struct stat sb;
+
+  if (stat(filename, &sb) != 0) {
+    perror("stat");
+    return -1;
+  }
+
+  return sb.st_ino;
+}
+
+/*
+ * Checks if a log file has been rotated, and if so, opens the rotated file
+ * and returns the new file descriptor
+ *
+ * @param input_file name of log file we want to follow
+ * @param old_inode_num the most recently known inode number of `input_name`
+ * @returns -1 on failure, 0 on noop, otherwise the open fd of rotated file
+ */
+static int
+follow_rotate(const char *input_file, ino_t old_inode_num)
+{
+  // check if file has been rotated
+  if (get_inode_num(input_file) != old_inode_num) {
+    int new_fd = open(input_file, O_RDONLY);
+    if (new_fd < 0) {
+      fprintf(stderr, "Error while trying to follow rotated input file %s: %s\n", input_file, strerror(errno));
+      return -1;
+    }
+
+    return new_fd;
+  } else { // file has not been rotated
+    return 0;
+  }
+}
+
 static int
 process_file(int in_fd, int out_fd)
 {
@@ -295,6 +339,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
           lseek(in_fd, 0, SEEK_END);
         }
 
+        ino_t inode_num = get_inode_num(file_arguments[i]);
         while (true) {
           if (process_file(in_fd, out_fd) != 0) {
             error = DATA_PROCESSING_ERROR;
@@ -304,6 +349,25 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
             break;
           } else {
             usleep(10000); // This avoids burning CPU, using poll() would have been nice, but doesn't work I think.
+
+            // see if the file we're following has been rotated
+            if (access(file_arguments[i], F_OK) == 0) { // Sometimes there's a gap between logfile rotation and the actual presence
+                                                        // of a fresh file on disk. We must make sure we don't get caught in that
+                                                        // gap.
+              int fd = follow_rotate(file_arguments[i], inode_num);
+              if (fd == -1) {
+                error = DATA_PROCESSING_ERROR;
+                break;
+              } else if (fd > 0) {
+                // we got a new fd to use
+                Debug("logcat", "Detected logfile rotation. Following to new file");
+                close(in_fd);
+                in_fd = fd;
+
+                // update the inode number for the log file
+                inode_num = get_inode_num(file_arguments[i]);
+              }
+            }
           }
         }
       }
