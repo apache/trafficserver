@@ -259,7 +259,14 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
         error = DATA_PROCESSING_ERROR;
       } else {
 #if HAVE_POSIX_FADVISE
-        posix_fadvise(in_fd, 0, 0, POSIX_FADV_DONTNEED);
+        // If we don't plan on following the log file, we should let the kernel know
+        // that we plan on reading the entire file so the kernel can do
+        // some fancy optimizations.
+        if (!follow_flag)
+          posix_fadvise(in_fd, 0, 0, POSIX_FADV_WILLNEED);
+
+        // We're always reading the file sequentially so this will always help
+        posix_fadvise(in_fd, 0, 0, POSIX_FADV_SEQUENTIAL);
 #endif
         if (auto_filenames) {
           // change .blog to .log
@@ -300,6 +307,11 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
           }
         }
       }
+#if HAVE_POSIX_FADVISE
+      // Now that we're done reading a potentially large log file, we can tell the kernel that it's OK to evict
+      // the associated log file pages from cache
+      posix_fadvise(in_fd, 0, 0, POSIX_FADV_DONTNEED);
+#endif
     }
   } else {
     // read from stdin, allow STDIN to go EOF a few times until we get synced
