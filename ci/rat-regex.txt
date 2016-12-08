@@ -16,6 +16,7 @@
 .*\.svg$
 .*\.sed$
 .*\.dtd$
+.*\.json$
 .*\.tsconfig$
 .clang-format
 .*\.default$
@@ -38,7 +39,6 @@ README.*$
 ^ink_res_init\.cc$
 ^ink_res_mkquery\.cc$
 ^hashtable\.cc$
-^logstats\.json$
 ^logstats\.summary$
 ^test_AIO.sample$
 ^stale_while_revalidate.conf$
