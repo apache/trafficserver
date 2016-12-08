@@ -2530,9 +2530,10 @@ HttpTransact::need_to_revalidate(State *s)
 void
 HttpTransact::HandleCacheOpenReadHit(State *s)
 {
-  bool needs_revalidate, needs_authenticate = false;
-  bool needs_cache_auth = false;
-  bool server_up        = true;
+  bool needs_revalidate   = false;
+  bool needs_authenticate = false;
+  bool needs_cache_auth   = false;
+  bool server_up          = true;
   CacheHTTPInfo *obj;
 
   if (s->api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
@@ -2576,12 +2577,20 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
   ink_assert(s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
              s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE);
-  if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE &&
-      s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
+
+  // We'll request a revalidation under one of these conditions:
+  //
+  // 1. Cache lookup is a hit, but the response is stale
+  // 2. The cached object has a "Cache-Control: no-cache" header
+  //       *and*
+  //    proxy.config.http.cache.ignore_server_no_cache is set to 0 (i.e don't ignore no cache -- the default setting)
+  //
+  // But, we only do this if we're not in an API updating the cached object (see TSHttpTxnUpdateCachedObject)
+  if ((((s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE) ||
+        ((obj->response_get()->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE) && !s->cache_control.ignore_server_no_cache)) &&
+       (s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE))) {
     needs_revalidate = true;
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
-  } else {
-    needs_revalidate = false;
   }
 
   // the response may not be directly returnable to the client. there
@@ -2603,7 +2612,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   // do we need to revalidate. in other words if the response
   // has to be authorized, is stale or can not be returned, do
   // a revalidate.
-  bool send_revalidate = ((needs_authenticate == true) || (needs_revalidate == true) || (response_returnable == false));
+  bool send_revalidate = (needs_authenticate || needs_revalidate || !response_returnable);
 
   if (needs_cache_auth == true) {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
@@ -2615,7 +2624,8 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   DebugTxn("http_trans", "CacheOpenRead --- needs_revalidate    = %d", needs_revalidate);
   DebugTxn("http_trans", "CacheOpenRead --- response_returnable = %d", response_returnable);
   DebugTxn("http_trans", "CacheOpenRead --- needs_cache_auth    = %d", needs_cache_auth);
-  DebugTxn("http_trans", "CacheOpenRead --- send_revalidate    = %d", send_revalidate);
+  DebugTxn("http_trans", "CacheOpenRead --- send_revalidate     = %d", send_revalidate);
+
   if (send_revalidate) {
     DebugTxn("http_trans", "CacheOpenRead --- HIT-STALE");
     s->dns_info.attempts = 0;
@@ -6176,8 +6186,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   }
   // does server explicitly forbid storing?
   // If OS forbids storing but a ttl is set, allow caching
-  if (!s->cache_info.directives.does_server_permit_storing && !s->cache_control.ignore_server_no_cache &&
-      (s->cache_control.ttl_in_cache <= 0)) {
+  if (!s->cache_info.directives.does_server_permit_storing && (s->cache_control.ttl_in_cache <= 0)) {
     DebugTxn("http_trans", "[is_response_cacheable] server does not permit storing and config file does not "
                            "indicate that server directive should be ignored");
     return false;
@@ -6186,8 +6195,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
 
   // does config explicitly forbid storing?
   // ttl overides other config parameters
-  if ((!s->cache_info.directives.does_config_permit_storing && !s->cache_control.ignore_server_no_cache &&
-       (s->cache_control.ttl_in_cache <= 0)) ||
+  if ((!s->cache_info.directives.does_config_permit_storing && (s->cache_control.ttl_in_cache <= 0)) ||
       (s->cache_control.never_cache)) {
     DebugTxn("http_trans", "[is_response_cacheable] config doesn't allow storing, and cache control does not "
                            "say to ignore no-cache and does not specify never-cache or a ttl");
@@ -6268,7 +6276,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     if (s->cache_control.ttl_in_cache > 0) {
       DebugTxn("http_trans",
                "[is_response_cacheable] Cache-control header directives in response overridden by ttl in cache.config");
-    } else if (!s->cache_control.ignore_server_no_cache) {
+    } else {
       DebugTxn("http_trans", "[is_response_cacheable] NO by response cache control");
       return false;
     }
