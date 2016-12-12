@@ -64,6 +64,7 @@ include experimental/hook-trace/Makefile.inc
 include experimental/inliner/Makefile.inc
 include experimental/memcache/Makefile.inc
 include experimental/metalink/Makefile.inc
+include experimental/money_trace/Makefile.inc
 include experimental/mp4/Makefile.inc
 include experimental/multiplexer/Makefile.inc
 include experimental/remap_purge/Makefile.inc
