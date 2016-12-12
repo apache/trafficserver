@@ -136,6 +136,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Hook Trace <hook-trace.en>
    Memcache <memcache.en>
    Metalink <metalink.en>
+   Money Trace <money_trace.en>
    MP4 <mp4.en>
    MySQL Remap <mysql_remap.en>
    Signed URLs <url_sig.en>
@@ -180,6 +181,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Metalink <metalink.en>`
    Implements the Metalink download description format in order to try not to download the same file twice.
+
+:doc:`Money Trace <metalink.en>`
+   Allows Trafficserver to participate in a distributed tracing system based upon the Comcast Money library.
 
 :doc:`MP4 <mp4.en>`
    MP4 streaming media.
