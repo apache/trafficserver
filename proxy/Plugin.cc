@@ -300,6 +300,7 @@ plugin_init(bool validateOnly)
         argv[i] = vars[i];
       }
     }
+    argv[argc] = nullptr;
 
     retVal = plugin_load(argc, argv, validateOnly);
 
