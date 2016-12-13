@@ -188,19 +188,20 @@ MIOBuffer::puts(char *s, int64_t len)
 int64_t
 IOBufferReader::read(void *ab, int64_t len)
 {
-  char *b           = (char *)ab;
-  int64_t max_bytes = read_avail();
-  int64_t bytes     = len <= max_bytes ? len : max_bytes;
-  int64_t n         = bytes;
+  char *b       = (char *)ab;
+  int64_t n     = len;
+  int64_t l     = block_read_avail();
+  int64_t bytes = 0;
 
-  while (n) {
-    int64_t l = block_read_avail();
+  while (n && l) {
     if (n < l)
       l = n;
     ::memcpy(b, start(), l);
     consume(l);
     b += l;
     n -= l;
+    bytes += l;
+    l = block_read_avail();
   }
   return bytes;
 }
