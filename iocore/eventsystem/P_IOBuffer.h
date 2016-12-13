@@ -678,8 +678,6 @@ IOBufferReader::consume(int64_t n)
     block        = block->next;
     r            = block->read_avail();
   }
-
-  ink_assert(read_avail() >= 0);
 }
 
 TS_INLINE char &IOBufferReader::operator[](int64_t i)
