@@ -7249,12 +7249,6 @@ HttpSM::set_next_state()
       t_state.dns_info.lookup_success = true;
       call_transact_and_set_next_state(NULL);
       break;
-    } else if (url_remap_mode == HttpTransact::URL_REMAP_FOR_OS && t_state.first_dns_lookup) {
-      DebugSM("cdn", "Skipping DNS Lookup");
-      // skip the DNS lookup
-      t_state.first_dns_lookup = false;
-      call_transact_and_set_next_state(HttpTransact::HandleFiltering);
-      break;
     } else if (t_state.http_config_param->use_client_target_addr == 2 && !t_state.url_remap_success &&
                t_state.parent_result.result != PARENT_SPECIFIED && t_state.client_info.is_transparent &&
                t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT &&

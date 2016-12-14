@@ -262,12 +262,6 @@ const int32_t HTTP_UNDEFINED_CL = -1;
 class HttpTransact
 {
 public:
-  enum UrlRemapMode_t {
-    URL_REMAP_DEFAULT = 0, // which is the same as URL_REMAP_ALL
-    URL_REMAP_ALL,
-    URL_REMAP_FOR_OS
-  };
-
   enum AbortState_t {
     ABORT_UNDEFINED = 0,
     DIDNOT_ABORT,

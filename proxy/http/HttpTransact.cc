@@ -476,70 +476,6 @@ how_to_open_connection(HttpTransact::State *s)
     }
   }
 
-  // In the following, if url_remap_mode == 2 (URL_REMAP_FOR_OS)
-  // then do remapping for requests to OS's.
-  // Whether there is CDN remapping or not, goto SM_ACTION_DNS_LOOKUP;
-  // after that, it'll goto ORIGIN_SERVER_(RAW_)OPEN as needed.
-
-  if ((url_remap_mode == HttpTransact::URL_REMAP_FOR_OS) && (s->current.request_to == HttpTransact::ORIGIN_SERVER) &&
-      !s->cdn_remap_complete) {
-    DebugTxn("cdn", "*** START CDN Remapping *** CDN mode = %d", url_remap_mode);
-
-    char *remap_redirect = nullptr;
-    int host_len;
-    const char *host;
-
-    // We need to copy the client request into the server request.  Why?  BUGBUG
-    s->hdr_info.server_request.url_set(s->hdr_info.client_request.url_get());
-
-    // TODO yeah, not sure everything here is correct with redirects
-    // This probably doesn't work properly, since request_url_remap() is broken.
-    if (request_url_remap(s, &s->hdr_info.server_request, &remap_redirect)) {
-      ink_assert(!remap_redirect); // should not redirect in this code
-      HttpTransact::initialize_state_variables_for_origin_server(s, &s->hdr_info.server_request, true);
-      DebugTxn("cdn", "Converting proxy request to server request");
-      // Check whether a Host header field is missing from a 1.0 or 1.1 request.
-      if (/*outgoing_version != HTTPVersion(0,9) && */
-          !s->hdr_info.server_request.presence(MIME_PRESENCE_HOST)) {
-        URL *url = s->hdr_info.server_request.url_get();
-        host     = url->host_get(&host_len);
-        // Add a ':port' to the HOST header if the request is not going
-        // to the default port.
-        int port = url->port_get();
-        if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
-          char *buf = (char *)alloca(host_len + 15);
-          memcpy(buf, host, host_len);
-          host_len += snprintf(buf + host_len, 15, ":%d", port);
-          s->hdr_info.server_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
-        } else {
-          s->hdr_info.server_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host, host_len);
-        }
-        ats_free(remap_redirect); // This apparently shouldn't happen...
-      }
-      // Stripping out the host name from the URL
-      if (s->current.server == &s->server_info && s->next_hop_scheme == URL_WKSIDX_HTTP) {
-        DebugTxn("cdn", "Removing host name from URL");
-        HttpTransactHeaders::remove_host_name_from_url(&s->hdr_info.server_request);
-      }
-    } // the URL was remapped
-    if (is_debug_tag_set("cdn")) {
-      char *d_url = s->hdr_info.server_request.url_get()->string_get(nullptr);
-      if (d_url) {
-        DebugTxn("cdn", "URL: %s", d_url);
-      }
-      char *d_hst = (char *)s->hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
-      if (d_hst) {
-        DebugTxn("cdn", "Host Hdr: %s", d_hst);
-      }
-      ats_free(d_url);
-    }
-    s->cdn_remap_complete    = true; // It doesn't matter if there was an actual remap or not
-    s->transact_return_point = HttpTransact::OSDNSLookup;
-    ink_assert(s->next_action);
-    ink_assert(s->cdn_saved_next_action);
-    return HttpTransact::SM_ACTION_DNS_LOOKUP;
-  }
-
   if (!s->already_downgraded) { // false unless downgraded previously (possibly due to HTTP 505)
     (&s->hdr_info.server_request)->version_set(HTTPVersion(1, 1));
     HttpTransactHeaders::convert_request(s->current.server->http_version, &s->hdr_info.server_request);
@@ -625,16 +561,11 @@ HttpTransact::HandleBlindTunnel(State *s)
   //   this request really goes since we were sent was bound for
   //   machine we are running on
 
-  // Do request_url_remap only if url_remap_mode != URL_REMAP_FOR_OS.
   bool url_remap_success = false;
   char *remap_redirect   = nullptr;
 
   if (s->transparent_passthrough) {
     url_remap_success = true;
-  } else if (url_remap_mode == URL_REMAP_DEFAULT || url_remap_mode == URL_REMAP_ALL) {
-    // TODO: take a look at this
-    // This probably doesn't work properly, since request_url_remap() is broken.
-    url_remap_success = request_url_remap(s, &s->hdr_info.client_request, &remap_redirect);
   }
   // We must have mapping or we will self loop since the this
   //    request was addressed to us to begin with.  Remap directs
@@ -720,15 +651,6 @@ HttpTransact::StartRemapRequest(State *s)
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans")) {
     DebugTxn("http_trans", "Before Remapping:");
     obj_describe(s->hdr_info.client_request.m_http, 1);
-  }
-
-  if (url_remap_mode == URL_REMAP_DEFAULT || url_remap_mode == URL_REMAP_ALL) {
-    if (s->http_config_param->referer_filter_enabled) {
-      s->filter_mask = URL_REMAP_FILTER_REFERER;
-      if (s->http_config_param->referer_format_redirect) {
-        s->filter_mask |= URL_REMAP_FILTER_REDIRECT_FMT;
-      }
-    }
   }
 
   DebugTxn("http_trans", "END HttpTransact::StartRemapRequest");
