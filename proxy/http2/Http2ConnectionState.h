@@ -171,7 +171,7 @@ public:
   int state_closed(int, void *);
 
   // Stream control interfaces
-  Http2Stream *create_stream(Http2StreamId new_id);
+  Http2Stream *create_stream(Http2StreamId new_id, Http2Error &error);
   Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
   bool delete_stream(Http2Stream *stream);
