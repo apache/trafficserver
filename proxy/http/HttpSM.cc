@@ -6857,6 +6857,10 @@ HttpSM::kill_this()
   //   then the value of kill_this_async_done has changed so
   //   we must check it again
   if (kill_this_async_done == true) {
+    if (t_state.http_config_param->enable_http_stats) {
+      update_stats();
+    }
+
     if (ua_session) {
       ua_session->transaction_done();
     }
@@ -6880,10 +6884,6 @@ HttpSM::kill_this()
     ink_release_assert(tunnel.is_tunnel_active() == false);
 
     HTTP_SM_SET_DEFAULT_HANDLER(nullptr);
-
-    if (t_state.http_config_param->enable_http_stats) {
-      update_stats();
-    }
 
     if (!t_state.cop_test_page || t_state.http_config_param->record_cop_page) {
       //////////////
@@ -7032,6 +7032,7 @@ HttpSM::update_stats()
     ats_ip_ntop(&t_state.client_info.src_addr, client_ip, sizeof(client_ip));
     Error("[%" PRId64 "] Slow Request: "
           "client_ip: %s:%u "
+          "protocol: %s "
           "url: %s "
           "status: %d "
           "unique id: %s "
@@ -7051,13 +7052,14 @@ HttpSM::update_stats()
           "server_first_read: %.3f "
           "server_read_header_done: %.3f "
           "server_close: %.3f "
+          "ua_write: %.3f "
           "ua_close: %.3f "
           "sm_finish: %.3f "
           "plugin_active: %.3f "
           "plugin_total: %.3f",
-          sm_id, client_ip, t_state.client_info.src_addr.host_order_port(), url_string, status, unique_id_string, redirection_tries,
-          client_response_body_bytes, fd, t_state.client_info.state, t_state.server_info.state,
-          milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN),
+          sm_id, client_ip, t_state.client_info.src_addr.host_order_port(), ua_session ? ua_session->get_protocol_string() : "-1",
+          url_string, status, unique_id_string, redirection_tries, client_response_body_bytes, fd, t_state.client_info.state,
+          t_state.server_info.state, milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN),
@@ -7068,6 +7070,7 @@ HttpSM::update_stats()
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE),
+          milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_PLUGIN_ACTIVE),
