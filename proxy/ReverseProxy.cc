@@ -59,8 +59,6 @@ remap_plugin_info *remap_pi_list; // We never reload the remap plugins, just app
 #define URL_REMAP_MODE_CHANGED 8
 #define HTTP_DEFAULT_REDIRECT_CHANGED 9
 
-int url_remap_mode;
-
 //
 // Begin API Functions
 //
@@ -82,18 +80,6 @@ init_reverse_proxy()
   REC_RegisterConfigUpdateFunc("proxy.config.admin.synthetic_port", url_rewrite_CB, (void *)SYNTH_PORT_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *)HTTP_DEFAULT_REDIRECT_CHANGED);
   return 0;
-}
-
-// TODO: This function needs to be rewritten (or replaced) with something that uses the new
-// Remap Processor properly. Right now, we effectively don't support "remap" rules on a few
-// odd ball configs, for example if you use the "CONNECT" method, or if you set
-// set proxy.config.url_remap.url_remap_mode to "2" (which is a completely undocumented "feature").
-bool
-request_url_remap(HttpTransact::State * /* s ATS_UNUSED */, HTTPHdr * /* request_header ATS_UNUSED */,
-                  char ** /* redirect_url ATS_UNUSED */, unsigned int /* filter_mask ATS_UNUSED */)
-{
-  return false;
-  // return rewrite_table ? rewrite_table->Remap(s, request_header, redirect_url, orig_url, tag, filter_mask) : false;
 }
 
 /**
