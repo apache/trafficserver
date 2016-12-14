@@ -210,8 +210,19 @@ install_metrics_object(RecT rec_type, void *edata, int registered, const char *n
 
   if (likely(registered)) {
     const char *end = strrchr(name, '.');
-    ptrdiff_t len   = end - name;
-    prefixes->insert(std::string(name, len));
+
+    if (end) {
+      ptrdiff_t len = end - name;
+      prefixes->insert(std::string(name, len));
+    } else {
+      // If there is no prefix in the metric name, we can't install a
+      // metrics object placeholder. We depend on the __index metamethod
+      // to give us a trigger for performing a records lookup. If we don't
+      // have a prefix, then we just have a global variable named after
+      // the metrics record and the best we could to with that would be to
+      // push a constant value, which would always be stale.
+      Debug("lua", "unable to install metrics object at %s: missing prefix", name);
+    }
   }
 }
 
