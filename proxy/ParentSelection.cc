@@ -632,28 +632,16 @@ ParentRecord::Init(matcher_line *line_info)
     }
   }
 
-  // parent_retry may only be enabled if the parents are origin servers, parent_is_proxy is false.
-  if (parent_is_proxy == true) {
-    if (parent_retry > 0) {
-      Warning("%s disabling parent_retry on line %d because parent_is_proxy is true", modulePrefix, line_num);
-      parent_retry = PARENT_RETRY_NONE;
-      if (unavailable_server_retry_responses != nullptr) {
-        delete unavailable_server_retry_responses;
-        unavailable_server_retry_responses = nullptr;
-      }
-    }
-  } else {
-    // delete unavailable_server_retry_responses if unavailable_server_retry is not enabled.
-    if (unavailable_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
-      Warning("%s ignoring unavailable_server_retry_responses directive on line %d, as unavailable_server_retry is not enabled.",
-              modulePrefix, line_num);
-      delete unavailable_server_retry_responses;
-      unavailable_server_retry_responses = nullptr;
-    } else if (unavailable_server_retry_responses == nullptr && (parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
-      // initialize UnavailableServerResponseCodes to the default value if unavailable_server_retry is enabled.
-      Warning("%s initializing UnavailableServerResponseCodes on line %d to 503 default.", modulePrefix, line_num);
-      unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
-    }
+  // delete unavailable_server_retry_responses if unavailable_server_retry is not enabled.
+  if (unavailable_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+    Warning("%s ignoring unavailable_server_retry_responses directive on line %d, as unavailable_server_retry is not enabled.",
+            modulePrefix, line_num);
+    delete unavailable_server_retry_responses;
+    unavailable_server_retry_responses = nullptr;
+  } else if (unavailable_server_retry_responses == nullptr && (parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+    // initialize UnavailableServerResponseCodes to the default value if unavailable_server_retry is enabled.
+    Warning("%s initializing UnavailableServerResponseCodes on line %d to 503 default.", modulePrefix, line_num);
+    unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
   }
 
   if (this->parents == nullptr && go_direct == false) {

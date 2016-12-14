@@ -73,9 +73,7 @@ is_localhost(const char *name, int len)
 inline static void
 simple_or_unavailable_server_retry(HttpTransact::State *s)
 {
-  HTTP_RELEASE_ASSERT(!s->parent_result.parent_is_proxy());
-
-  // reponse is from a parent origin server.
+  // server response.
   HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
 
   DebugTxn("http_trans", "[simple_or_unavailabe_server_retry] server_response = %d, simple_retry_attempts: %d, numParents:%d ",
@@ -85,9 +83,9 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
   if ((s->parent_result.retry_type() & PARENT_RETRY_SIMPLE) &&
       s->current.simple_retry_attempts < s->parent_result.max_retries(PARENT_RETRY_SIMPLE) &&
       server_response == HTTP_STATUS_NOT_FOUND) {
-    DebugTxn("parent_select", "RECEIVED A SIMPLE RETRY RESPONSE");
+    DebugTxn("http_trans", "RECEIVED A SIMPLE RETRY RESPONSE");
     if (s->current.simple_retry_attempts < s->parent_params->numParents(&s->parent_result)) {
-      s->current.state      = HttpTransact::PARENT_ORIGIN_RETRY;
+      s->current.state      = HttpTransact::PARENT_RETRY;
       s->current.retry_type = PARENT_RETRY_SIMPLE;
       return;
     } else {
@@ -101,7 +99,7 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
            s->parent_result.response_is_retryable(server_response)) {
     DebugTxn("parent_select", "RECEIVED A PARENT_RETRY_UNAVAILABLE_SERVER RESPONSE");
     if (s->current.unavailable_server_retry_attempts < s->parent_params->numParents(&s->parent_result)) {
-      s->current.state      = HttpTransact::PARENT_ORIGIN_RETRY;
+      s->current.state      = HttpTransact::PARENT_RETRY;
       s->current.retry_type = PARENT_RETRY_UNAVAILABLE_SERVER;
       return;
     } else {
@@ -3518,8 +3516,7 @@ HttpTransact::handle_response_from_parent(State *s)
   HTTP_RELEASE_ASSERT(s->current.server == &s->parent_info);
 
   // response is from a parent origin server.
-  if (is_response_valid(s, &s->hdr_info.server_response) && s->current.request_to == HttpTransact::PARENT_PROXY &&
-      !s->parent_result.parent_is_proxy()) {
+  if (is_response_valid(s, &s->hdr_info.server_response) && s->current.request_to == HttpTransact::PARENT_PROXY) {
     // check for a retryable response if simple or unavailable server retry are enabled.
     if (s->parent_result.retry_type() & (PARENT_RETRY_SIMPLE | PARENT_RETRY_UNAVAILABLE_SERVER)) {
       simple_or_unavailable_server_retry(s);
@@ -3540,7 +3537,7 @@ HttpTransact::handle_response_from_parent(State *s)
   default: {
     LookingUp_t next_lookup = UNDEFINED_LOOKUP;
 
-    if (s->current.state == PARENT_ORIGIN_RETRY) {
+    if (s->current.state == PARENT_RETRY) {
       if (s->current.retry_type == PARENT_RETRY_SIMPLE) {
         if (s->current.simple_retry_attempts >= s->parent_result.max_retries(PARENT_RETRY_SIMPLE)) {
           DebugTxn("http_trans", "PARENT_RETRY_SIMPLE: retried all parents, send error to client.");
