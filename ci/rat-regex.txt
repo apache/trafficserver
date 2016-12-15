@@ -29,7 +29,6 @@
 ^\.clang-.*$
 ^Doxyfile$
 ^CHANGES$
-^CHANGELOG
 ^LAYOUT$
 README.*$
 ^TODO$
