@@ -32,6 +32,8 @@
 #include "Plugin.h"
 #include "ts/ink_cap.h"
 
+#define MAX_PLUGIN_ARGS 64
+
 static const char *plugin_dir = ".";
 
 typedef void (*init_func_t)(int argc, char *argv[]);
@@ -219,8 +221,8 @@ plugin_init(bool validateOnly)
 {
   ats_scoped_str path;
   char line[1024], *p;
-  char *argv[64];
-  char *vars[64];
+  char *argv[MAX_PLUGIN_ARGS];
+  char *vars[MAX_PLUGIN_ARGS];
   int argc;
   int fd;
   int i;
@@ -255,6 +257,11 @@ plugin_init(bool validateOnly)
 
     // not comment or blank, so rip line into tokens
     while (1) {
+      if (argc >= MAX_PLUGIN_ARGS) {
+        Warning("Exceeded max number of args (%d) for plugin: [%s]", MAX_PLUGIN_ARGS, argc > 0 ? argv[0] : "???");
+        break;
+      }
+
       while (*p && ParseRules::is_wslfcr(*p)) {
         ++p;
       }
