@@ -1,0 +1,53 @@
+Changes with Apache Traffic Server 6.2.1
+
+Bug:
+  *) [TS-2482] Problems with SOCKS
+  *) [TS-4217] END_STREAM flag is sent twice
+  *) [TS-4391] Duplicated parent origin retry types
+  *) [TS-4475] Crash in Log-Collation client after using inactivity-cop.
+  *) [TS-4507] It is still possible for SSN_CLOSE hook to be called before TXN_CLOSE hook
+  *) [TS-4514] Transaction hangs when no_dns_just_forward is configured but parent proxy is unresolvable
+  *) [TS-4605] Coverity issue 1357058: Uninitialized members in PriorityQueue.h
+  *) [TS-4614] In UnixNetVConnection::mainEvent should not do e->schedule_in for dummy event callback
+  *) [TS-4650] cachekey: not thread safe
+  *) [TS-4697] MIOBuffer is not freed if ipallow check fails in HttpSessionAccept::accept()
+  *) [TS-4706] SSL hostname verification failed due to truncated SNI name
+  *) [TS-4717] Http2 stack explosion
+  *) [TS-4720] ATS not properly closing origin connections in client abort situations
+  *) [TS-4728] Null pointer error in LogHost.cc.
+  *) [TS-4732] Still seeing VC errors on master
+  *) [TS-4801] Are we marking parents down too aggressively?
+  *) [TS-4813] HttpTunnel.cc:1215: failed assertion `p->alive == true || event == HTTP_TUNNEL_EVENT_PRECOMPLETE ...
+  *) [TS-4838] After TS-3612 restructuring, very slow SSL sessions and HttpSM::state_raw_http_server_open errors
+  *) [TS-4845] NULL dereference in url_sig
+  *) [TS-4879] NetVC leaks while hyper emergency occur on check_emergency_throttle()
+  *) [TS-4885] Incorrect checking of fds_throttle and fds_limit
+  *) [TS-4888] collapsed_forwarding plugin returns TSREMAP_DID_REMAP though it did not perform remap
+  *) [TS-4892] Wrong metrics for proxy.process.http.current_active_client_connections
+  *) [TS-4905] Crash when slow logging is enabled.
+  *) [TS-4911] ATS restarts when ts_lua plugin is used with collapsed_forwarding plugin and write lock error was encountered (th...
+  *) [TS-4915] Crash from hostdb in PriorityQueueLess
+  *) [TS-4916] Http2ConnectionState::restart_streams infinite loop causes deadlock
+  *) [TS-4934] Assert in Http2Stream::do_io_close() when active timeout
+  *) [TS-4938] Crash due to null client_vc
+  *) [TS-4942] Simple retry is not working correctly
+  *) [TS-4953] Memory leaks in priority queue test
+  *) [TS-5019] Add total header length checks in HPACK
+  *) [TS-5027] Replace readdir_r with readdir
+  *) [TS-5046] SEGV HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
+  *) [TS-5067] proy.config.http2.enabled is not reloadable config
+  *) [TS-5076] NetVC is lost from read or write enable_list
+  *) [TS-5087] Update the license on all .po files
+
+Improvement:
+  *) [TS-3245] getopt doesn't work correctly when used in plugin chaining
+  *) [TS-4466] Add links to other versions/languages of the documentation
+  *) [TS-4498] RemapConfig.cc - Print out error message on remap plugin init failure.
+  *) [TS-4513] Error when building with gcc 6.1.1 with luajit
+  *) [TS-4554] ASAN crash (stack overflow) with H2 priorities
+  *) [TS-4719] Should have NUMA affinity for disk threads (AIO threads)
+  *) [TS-4724] Adding/creating new lua APIs: "ts.server_request.set_url_host", "ts.server_request.get_url_host", "ts.server_requ...
+  *) [TS-4957] Make the use of madvise() with MADV_DONTDUMP configurable
+
+New Feature:
+  *) [TS-4537] Add erase to PriorityQueue
