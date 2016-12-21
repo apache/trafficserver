@@ -227,6 +227,18 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_proxy_connections", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_total_parent_proxy_connections_stat, RecRawStatSyncCount);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_retries", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_total_parent_retries_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_switches", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_total_parent_switches_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_retries_exhausted", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_total_parent_retries_exhausted_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_marked_down_count", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_total_parent_marked_down_count, RecRawStatSyncCount);
+
   // Upstream current connections stats
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.current_parent_proxy_connections", RECD_INT, RECP_NON_PERSISTENT,
                      (int)http_current_parent_proxy_connections_stat, RecRawStatSyncSum);
