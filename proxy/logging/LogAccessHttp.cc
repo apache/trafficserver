@@ -775,10 +775,8 @@ LogAccessHttp::marshal_client_req_id(char *buf)
 int
 LogAccessHttp::marshal_client_req_uuid(char *buf)
 {
-  static unsigned _MAX_CRUUID_LEN = TS_UUID_STRING_LEN + 1 + 20; // 20 == max len of int64_t
-
   if (buf) {
-    char str[_MAX_CRUUID_LEN + 1];
+    char str[TS_CRUUID_STRING_LEN + 1];
     const char *uuid = (char *)Machine::instance()->uuid.getString();
     int len;
 
@@ -790,7 +788,7 @@ LogAccessHttp::marshal_client_req_uuid(char *buf)
     return len;
   }
 
-  return round_strlen(_MAX_CRUUID_LEN + 1);
+  return round_strlen(TS_CRUUID_STRING_LEN + 1);
 }
 
 /*-------------------------------------------------------------------------

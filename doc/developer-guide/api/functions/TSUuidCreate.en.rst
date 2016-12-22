@@ -87,7 +87,9 @@ argument passed to this function must be a properly :func:`TSUuidCreate`
 object, but it does not need to be previously initialized.
 
 Finally, :func:`TSClientRequestUuidGet` can be used to extract
-the client request uuid from a transaction.
+the client request uuid from a transaction. The output buffer must be of
+sufficient length, minimum of ``TS_CRUUID_STRING_LEN``. This produces the same
+string as the log tag %<cruuid> generates.
 
 Return Values
 =============
