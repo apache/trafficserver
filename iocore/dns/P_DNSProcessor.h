@@ -165,7 +165,7 @@ struct DNSEntry : public Continuation {
   void init(const char *x, int len, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt);
 
   DNSEntry()
-    : Continuation(NULL),
+    : Continuation(nullptr),
       qtype(0),
       host_res_style(HOST_RES_NONE),
       retries(DEFAULT_DNS_RETRIES),
@@ -314,7 +314,7 @@ struct DNSServer {
 
   DNSHandler *x_dnsH;
 
-  DNSServer() : x_dnsH(NULL)
+  DNSServer() : x_dnsH(nullptr)
   {
     memset(x_server_ip, 0, sizeof(x_server_ip));
 
@@ -326,7 +326,7 @@ struct DNSServer {
 
 TS_INLINE
 DNSHandler::DNSHandler()
-  : Continuation(NULL),
+  : Continuation(nullptr),
     n_con(0),
     in_flight(0),
     name_server(0),
@@ -336,7 +336,7 @@ DNSHandler::DNSHandler()
     last_primary_reopen(0),
     m_res(0),
     txn_lookup_timeout(0),
-    generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this))
+    generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this))
 {
   ats_ip_invalidate(&ip);
   for (int i = 0; i < MAX_NAMED; i++) {

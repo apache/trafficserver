@@ -58,7 +58,7 @@ struct RamCacheLRU : public RamCache {
   void resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
 
-  RamCacheLRU() : bytes(0), objects(0), seen(0), bucket(0), nbuckets(0), ibuckets(0), vol(NULL) {}
+  RamCacheLRU() : bytes(0), objects(0), seen(nullptr), bucket(nullptr), nbuckets(0), ibuckets(0), vol(nullptr) {}
 };
 
 int64_t
@@ -90,7 +90,7 @@ RamCacheLRU::resize_hashtable()
   memset(new_bucket, 0, s);
   if (bucket) {
     for (int64_t i = 0; i < nbuckets; i++) {
-      RamCacheLRUEntry *e = 0;
+      RamCacheLRUEntry *e = nullptr;
       while ((e = bucket[i].pop()))
         new_bucket[e->key.slice32(3) % anbuckets].push(e);
     }
@@ -150,7 +150,7 @@ RamCacheLRU::remove(RamCacheLRUEntry *e)
   bytes -= ENTRY_OVERHEAD + e->data->block_size();
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -(ENTRY_OVERHEAD + e->data->block_size()));
   DDebug("ram_cache", "put %X %d %d FREED", e->key.slice32(3), e->auxkey1, e->auxkey2);
-  e->data = NULL;
+  e->data = nullptr;
   THREAD_FREE(e, ramCacheLRUEntryAllocator, this_thread());
   objects--;
   return ret;

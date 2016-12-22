@@ -36,8 +36,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "Error.h"
-
 #include "P_EventSystem.h"
 #include "I_Machine.h"
 #include "LogSock.h"
@@ -73,7 +71,7 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
     m_log = new BaseLogFile(name, m_signature);
     m_log->set_hostname(Machine::instance()->hostname);
   } else {
-    m_log = NULL;
+    m_log = nullptr;
   }
 
   m_fd                = -1;
@@ -103,7 +101,7 @@ LogFile::LogFile(const LogFile &copy)
   if (copy.m_log) {
     m_log = new BaseLogFile(*(copy.m_log));
   } else {
-    m_log = NULL;
+    m_log = nullptr;
   }
 
   Debug("log-file", "exiting LogFile copy constructor, m_name=%s, this=%p", m_name, this);
@@ -157,7 +155,7 @@ int
 LogFile::open_file()
 {
   // whatever we want to open should have a name
-  ink_assert(m_name != NULL);
+  ink_assert(m_name != nullptr);
 
   // is_open() takes into account if we're using BaseLogFile or a naked fd
   if (is_open()) {
@@ -199,7 +197,7 @@ LogFile::open_file()
   if (e != 0) {
     m_fd = -1; // reset to error condition
     delete m_log;
-    m_log = NULL;
+    m_log = nullptr;
     return LOG_FILE_FILESYSTEM_CHECKS_FAILED;
   }
 
@@ -239,8 +237,6 @@ LogFile::close_file()
     } else if (m_log) {
       m_log->close_file();
       Debug("log-file", "LogFile %s is closed", m_log->get_name());
-      delete m_log;
-      m_log = NULL;
     } else {
       Warning("LogFile %s is open but was not closed", m_name);
     }
@@ -277,14 +273,14 @@ LogFile::preproc_and_try_delete(LogBuffer *lb)
   int ret = -1;
   LogBufferHeader *buffer_header;
 
-  if (lb == NULL) {
+  if (lb == nullptr) {
     Note("Cannot write LogBuffer to LogFile %s; LogBuffer is NULL", m_name);
     return -1;
   }
 
   ink_atomic_increment(&lb->m_references, 1);
 
-  if ((buffer_header = lb->header()) == NULL) {
+  if ((buffer_header = lb->header()) == nullptr) {
     Note("Cannot write LogBuffer to LogFile %s; LogBufferHeader is NULL", m_name);
     goto done;
   }
@@ -356,7 +352,7 @@ done:
 int
 LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const char *path, const char *alt_format)
 {
-  ink_assert(buffer_header != NULL);
+  ink_assert(buffer_header != nullptr);
   ink_assert(fd >= 0);
 
   char fmt_buf[LOG_MAX_FORMATTED_BUFFER];
@@ -423,7 +419,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
   Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s "
                     "(this=%p)",
         m_name, this);
-  ink_assert(buffer_header != NULL);
+  ink_assert(buffer_header != nullptr);
 
   ProxyMutex *mutex = this_thread()->mutex.get();
   LogBufferIterator iter(buffer_header);
@@ -456,9 +452,9 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
     fmt_buf_bytes   = 0;
 
     if (m_file_format == LOG_FILE_PIPE) {
-      ascii_buffer = (char *)malloc(m_max_line_size);
+      ascii_buffer = (char *)ats_malloc(m_max_line_size);
     } else {
-      ascii_buffer = (char *)malloc(m_ascii_buffer_size);
+      ascii_buffer = (char *)ats_malloc(m_ascii_buffer_size);
     }
 
     // fill the buffer with as many records as possible

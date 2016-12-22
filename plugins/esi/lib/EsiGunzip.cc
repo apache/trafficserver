@@ -59,7 +59,7 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata)
     _zstrm.zalloc   = Z_NULL;
     _zstrm.zfree    = Z_NULL;
     _zstrm.opaque   = Z_NULL;
-    _zstrm.next_in  = 0;
+    _zstrm.next_in  = nullptr;
     _zstrm.avail_in = 0;
 
     if (inflateInit2(&_zstrm, MAX_WBITS + 16) != Z_OK) {

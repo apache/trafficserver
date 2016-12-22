@@ -106,10 +106,10 @@ enum SSL_Stats {
 extern RecRawStatBlock *ssl_rsb;
 
 /* Stats should only be accessed using these macros */
-#define SSL_INCREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int)x, 1)
-#define SSL_DECREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int)x, -1)
+#define SSL_INCREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, nullptr, (int)x, 1)
+#define SSL_DECREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, nullptr, (int)x, -1)
 #define SSL_SET_COUNT_DYN_STAT(x, count) RecSetRawStatCount(ssl_rsb, x, count)
-#define SSL_INCREMENT_DYN_STAT_EX(x, y) RecIncrRawStat(ssl_rsb, NULL, (int)x, y)
+#define SSL_INCREMENT_DYN_STAT_EX(x, y) RecIncrRawStat(ssl_rsb, nullptr, (int)x, y)
 #define SSL_CLEAR_DYN_STAT(x)            \
   do {                                   \
     RecSetRawStatSum(ssl_rsb, (x), 0);   \
@@ -129,7 +129,7 @@ void SSLInitializeLibrary();
 void SSLInitializeStatistics();
 
 // Release SSL_CTX and the associated data. This works for both
-// client and server contexts and gracefully accepts NULL.
+// client and server contexts and gracefully accepts nullptr.
 void SSLReleaseContext(SSL_CTX *ctx);
 
 // Wrapper functions to SSL I/O routines
@@ -139,16 +139,16 @@ ssl_error_t SSLAccept(SSL *ssl);
 ssl_error_t SSLConnect(SSL *ssl);
 
 // Log an SSL error.
-#define SSLError(fmt, ...) SSLDiagnostic(MakeSourceLocation(), false, NULL, fmt, ##__VA_ARGS__)
+#define SSLError(fmt, ...) SSLDiagnostic(MakeSourceLocation(), false, nullptr, fmt, ##__VA_ARGS__)
 #define SSLErrorVC(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), false, (vc), fmt, ##__VA_ARGS__)
 // Log a SSL diagnostic using the "ssl" diagnostic tag.
-#define SSLDebug(fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, NULL, fmt, ##__VA_ARGS__)
+#define SSLDebug(fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, nullptr, fmt, ##__VA_ARGS__)
 #define SSLDebugVC(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, (vc), fmt, ##__VA_ARGS__)
 
 #define SSL_CLR_ERR_INCR_DYN_STAT(vc, x, fmt, ...) \
   do {                                             \
     SSLDebugVC((vc), fmt, ##__VA_ARGS__);          \
-    RecIncrRawStat(ssl_rsb, NULL, (int)x, 1);      \
+    RecIncrRawStat(ssl_rsb, nullptr, (int)x, 1);   \
   } while (0)
 
 void SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
@@ -162,6 +162,15 @@ void SSLDebugBufferPrint(const char *tag, const char *buffer, unsigned buflen, c
 // Load the SSL certificate configuration.
 bool SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup);
 
+// Attach a SSL NetVC back pointer to a SSL session.
+void SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc);
+
+// Detach from SSL NetVC back pointer to a SSL session.
+void SSLNetVCDetach(SSL *ssl);
+
+// Return the SSLNetVConnection (if any) attached to this SSL session.
+SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
+
 namespace ssl
 {
 namespace detail
@@ -171,12 +180,12 @@ namespace detail
     static value_type
     initValue()
     {
-      return NULL;
+      return nullptr;
     }
     static bool
     isValid(value_type x)
     {
-      return x != NULL;
+      return x != nullptr;
     }
     static void
     destroy(value_type x)
@@ -190,12 +199,12 @@ namespace detail
     static value_type
     initValue()
     {
-      return NULL;
+      return nullptr;
     }
     static bool
     isValid(value_type x)
     {
-      return x != NULL;
+      return x != nullptr;
     }
     static void
     destroy(value_type x)

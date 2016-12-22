@@ -145,7 +145,7 @@ event_int_to_string(int event, int blen, char *buffer)
     return "MGMT_EVENT_CLEAR_STATS";
 
   default:
-    if (buffer != NULL) {
+    if (buffer != nullptr) {
       snprintf(buffer, blen, "%d", event);
       return buffer;
     } else {

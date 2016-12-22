@@ -32,17 +32,17 @@ TESTS = \
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib/records \
-  -I$(srcdir)/http \
-  -I$(srcdir)/http2 \
-  -I$(srcdir)/logging \
-  -I$(srcdir)/http/remap  \
-  -I$(srcdir)/hdrs \
-  -I$(srcdir)/shared \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/proxy/api/ts \
-  -I$(top_srcdir)/lib \
+  -I$(abs_top_srcdir)/lib/records \
+  -I$(abs_srcdir)/http \
+  -I$(abs_srcdir)/http2 \
+  -I$(abs_srcdir)/logging \
+  -I$(abs_srcdir)/http/remap  \
+  -I$(abs_srcdir)/hdrs \
+  -I$(abs_srcdir)/shared \
+  -I$(abs_top_srcdir)/mgmt \
+  -I$(abs_top_srcdir)/mgmt/utils \
+  -I$(abs_top_srcdir)/proxy/api/ts \
+  -I$(abs_top_srcdir)/lib \
   @OPENSSL_INCLUDES@
 
 # NOTE: it is safe to use AM_LDFLAGS here because we are only building executables. If we start
@@ -199,7 +199,6 @@ traffic_server_LDADD = \
   logging/liblogging.a \
   logging/liblogcollation.a \
   hdrs/libhdrs.a  \
-  shared/liberror.a  \
   shared/libdiagsconfig.a  \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \

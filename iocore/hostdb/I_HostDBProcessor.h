@@ -145,7 +145,6 @@ struct HostDBInfo : public RefCountObj {
       This is at least large enough to hold an IPv6 address.
   */
 
-  int iobuffer_index;
   static HostDBInfo *
   alloc(int size = 0)
   {
@@ -176,7 +175,7 @@ struct HostDBInfo : public RefCountObj {
   unmarshall(char *buf, unsigned int size)
   {
     if (size < sizeof(HostDBInfo)) {
-      return NULL;
+      return nullptr;
     }
     HostDBInfo *ret = HostDBInfo::alloc(size - sizeof(HostDBInfo));
     int buf_index   = ret->iobuffer_index;
@@ -195,13 +194,12 @@ struct HostDBInfo : public RefCountObj {
     return ip_timestamp + ip_timeout_interval + hostdb_serve_stale_but_revalidate;
   }
 
-  uint64_t key;
-
   sockaddr *
   ip()
   {
     return &data.ip.sa;
   }
+
   sockaddr const *
   ip() const
   {
@@ -211,6 +209,7 @@ struct HostDBInfo : public RefCountObj {
   char *hostname() const;
   char *perm_hostname() const;
   char *srvname(HostDBRoundRobin *rr) const;
+
   /// Check if this entry is an element of a round robin entry.
   /// If @c true then this entry is part of and was obtained from a round robin root. This is useful if the
   /// address doesn't work - a retry can probably get a new address by doing another lookup and resolving to
@@ -220,15 +219,8 @@ struct HostDBInfo : public RefCountObj {
   {
     return 0 != round_robin_elt;
   }
+
   HostDBRoundRobin *rr();
-
-  /**
-    Application specific data. NOTE: We need an integral number of these
-    per block. This structure is 32 bytes. (at 200k hosts = 8 Meg). Which
-    gives us 7 bytes of application information.
-
-  */
-  HostDBApplicationInfo app;
 
   unsigned int
   ip_interval() const
@@ -270,8 +262,9 @@ struct HostDBInfo : public RefCountObj {
   serve_stale_but_revalidate() const
   {
     // the option is disabled
-    if (hostdb_serve_stale_but_revalidate <= 0)
+    if (hostdb_serve_stale_but_revalidate <= 0) {
       return false;
+    }
 
     // ip_timeout_interval == DNS TTL
     // hostdb_serve_stale_but_revalidate == number of seconds
@@ -281,32 +274,10 @@ struct HostDBInfo : public RefCountObj {
             hostdb_serve_stale_but_revalidate, ip_interval());
       return true;
     }
+
     // otherwise, the entry is too old
     return false;
   }
-
-  //
-  // Private
-  //
-
-  union {
-    IpEndpoint ip;                ///< IP address / port data.
-    unsigned int hostname_offset; ///< Some hostname thing.
-    SRVInfo srv;
-  } data;
-
-  unsigned int hostname_offset; // always maintain a permanent copy of the hostname for non-rev dns records.
-
-  unsigned int ip_timestamp;
-  // limited to HOST_DB_MAX_TTL (0x1FFFFF, 24 days)
-  // if this is 0 then no timeout.
-  unsigned int ip_timeout_interval;
-
-  unsigned int is_srv : 1;
-  unsigned int reverse_dns : 1;
-
-  unsigned int round_robin : 1;     // This is the root of a round robin block
-  unsigned int round_robin_elt : 1; // This is an address in a round robin block
 
   /*
    * Given the current time `now` and the fail_window, determine if this real is alive
@@ -348,6 +319,34 @@ struct HostDBInfo : public RefCountObj {
     else
       ats_ip_invalidate(ip());
   }
+
+  int iobuffer_index;
+
+  uint64_t key;
+
+  // Application specific data. NOTE: We need an integral number of
+  // these per block. This structure is 32 bytes. (at 200k hosts =
+  // 8 Meg). Which gives us 7 bytes of application information.
+  HostDBApplicationInfo app;
+
+  union {
+    IpEndpoint ip;                ///< IP address / port data.
+    unsigned int hostname_offset; ///< Some hostname thing.
+    SRVInfo srv;
+  } data;
+
+  unsigned int hostname_offset; // always maintain a permanent copy of the hostname for non-rev dns records.
+
+  unsigned int ip_timestamp;
+  // limited to HOST_DB_MAX_TTL (0x1FFFFF, 24 days)
+  // if this is 0 then no timeout.
+  unsigned int ip_timeout_interval;
+
+  unsigned int is_srv : 1;
+  unsigned int reverse_dns : 1;
+
+  unsigned int round_robin : 1;     // This is the root of a round robin block
+  unsigned int round_robin_elt : 1; // This is an address in a round robin block
 };
 
 struct HostDBRoundRobin {
@@ -387,7 +386,7 @@ struct HostDBRoundRobin {
   HostDBInfo *find_target(const char *target);
   /** Select the next entry after @a addr.
       @note If @a addr isn't an address in the round robin nothing is updated.
-      @return The selected entry or @c NULL if @a addr wasn't present.
+      @return The selected entry or @c nullptr if @a addr wasn't present.
    */
   HostDBInfo *select_next(sockaddr const *addr);
   HostDBInfo *select_best_http(sockaddr const *client_ip, ink_time_t now, int32_t fail_window);
@@ -463,7 +462,7 @@ struct HostDBProcessor : public Processor {
   Action *
   getbyaddr_re(Continuation *cont, sockaddr const *aip)
   {
-    return getby(cont, NULL, 0, aip, false, HOST_RES_NONE, 0);
+    return getby(cont, nullptr, 0, aip, false, HOST_RES_NONE, 0);
   }
 
   /** Set the application information (fire-and-forget). */

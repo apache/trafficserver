@@ -53,6 +53,8 @@ enum Net_Stats {
   keep_alive_queue_timeout_total_stat,
   keep_alive_queue_timeout_count_stat,
   default_inactivity_timeout_stat,
+  net_fastopen_attempts_stat,
+  net_fastopen_successes_stat,
   Net_Stat_Count
 };
 

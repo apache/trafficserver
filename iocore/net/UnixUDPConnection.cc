@@ -40,17 +40,17 @@ UnixUDPConnection::~UnixUDPConnection()
     tobedestroyed = 1;
 
   if (p) {
-    UDPPacketInternal *pnext = NULL;
+    UDPPacketInternal *pnext = nullptr;
     while (p) {
       pnext         = p->alink.next;
-      p->alink.next = NULL;
+      p->alink.next = nullptr;
       p->free();
       p = pnext;
     }
   }
   if (callbackAction) {
     callbackAction->cancel();
-    callbackAction = NULL;
+    callbackAction = nullptr;
   }
   Debug("udpnet", "Destroying udp port = %d", getPortNum());
   if (fd != NO_FD) {
@@ -66,8 +66,8 @@ UnixUDPConnection::callbackHandler(int event, void *data)
 {
   (void)event;
   (void)data;
-  callbackAction = NULL;
-  if (continuation == NULL)
+  callbackAction = nullptr;
+  if (continuation == nullptr)
     return EVENT_CONT;
 
   if (m_errno) {
@@ -80,11 +80,11 @@ UnixUDPConnection::callbackHandler(int event, void *data)
     UDPPacketInternal *p = (UDPPacketInternal *)ink_atomiclist_popall(&inQueue);
     if (p) {
       Debug("udpnet", "UDPConnection::callbackHandler");
-      UDPPacketInternal *pnext = NULL;
+      UDPPacketInternal *pnext = nullptr;
       Queue<UDPPacketInternal> result;
       while (p) {
         pnext         = p->alink.next;
-        p->alink.next = NULL;
+        p->alink.next = nullptr;
         result.push(p);
         p = pnext;
       }
@@ -131,7 +131,7 @@ UDPConnection::send(Continuation *c, UDPPacket *xp)
   p->setContinuation(c);
   p->setConnection(this);
   conn->continuation = c;
-  ink_assert(conn->continuation != NULL);
+  ink_assert(conn->continuation != nullptr);
   mutex               = c->mutex;
   p->reqGenerationNum = conn->sendGenerationNum;
   get_UDPNetHandler(conn->ethread)->udpOutQueue.send(p);
@@ -146,11 +146,11 @@ UDPConnection::Release()
   p->ep.stop();
 
   if (ink_atomic_increment(&p->refcount, -1) == 1) {
-    ink_assert(p->callback_link.next == NULL);
-    ink_assert(p->callback_link.prev == NULL);
-    ink_assert(p->polling_link.next == NULL);
-    ink_assert(p->polling_link.prev == NULL);
-    ink_assert(p->newconn_alink.next == NULL);
+    ink_assert(p->callback_link.next == nullptr);
+    ink_assert(p->callback_link.prev == nullptr);
+    ink_assert(p->polling_link.next == nullptr);
+    ink_assert(p->polling_link.prev == nullptr);
+    ink_assert(p->newconn_alink.next == nullptr);
 
     delete this;
   }

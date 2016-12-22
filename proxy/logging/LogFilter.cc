@@ -28,7 +28,6 @@
  ***************************************************************************/
 #include "ts/ink_platform.h"
 
-#include "Error.h"
 #include "LogUtils.h"
 #include "LogFilter.h"
 #include "LogField.h"
@@ -52,7 +51,7 @@ const char *LogFilter::ACTION_NAME[]   = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"
   between the classes and I think should be removed.     ltavera
   -------------------------------------------------------------------------*/
 LogFilter::LogFilter(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper)
-  : m_name(ats_strdup(name)), m_field(NULL), m_action(action), m_operator(oper), m_type(INT_FILTER), m_num_values(0)
+  : m_name(ats_strdup(name)), m_field(nullptr), m_action(action), m_operator(oper), m_type(INT_FILTER), m_num_values(0)
 {
   m_field = new LogField(*field);
   ink_assert(m_field);
@@ -77,7 +76,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
 
   if (tok.getNumTokensRemaining() < 3) {
     Error("Invalid condition syntax '%s'; cannot create filter '%s'", condition, name);
-    return NULL;
+    return nullptr;
   }
 
   char *field_str = tok.getNext();
@@ -110,9 +109,9 @@ LogFilter::parse(const char *name, Action action, const char *condition)
       char *fname_end;
 
       fname_end = strchr(field_str, '}');
-      if (NULL == fname_end) {
+      if (nullptr == fname_end) {
         Error("Invalid container field specification: no trailing '}' in '%s' cannot create filter '%s'", field_str, name);
-        return NULL;
+        return nullptr;
       }
 
       fname      = field_str + 1;
@@ -126,17 +125,17 @@ LogFilter::parse(const char *name, Action action, const char *condition)
       LogField::Container container = LogField::valid_container_name(cname);
       if (container == LogField::NO_CONTAINER) {
         Error("'%s' is not a valid container; cannot create filter '%s'", cname, name);
-        return NULL;
+        return nullptr;
       }
 
       logfield = new LogField(fname, container);
-      ink_assert(logfield != NULL);
+      ink_assert(logfield != nullptr);
     }
   }
 
   if (!logfield) {
     Error("'%s' is not a valid field; cannot create filter '%s'", field_str, name);
-    return NULL;
+    return nullptr;
   }
 
   // convert the operator string to an enum value and validate it
@@ -150,7 +149,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
 
   if (oper == LogFilter::N_OPERATORS) {
     Error("'%s' is not a valid operator; cannot create filter '%s'", oper_str, name);
-    return NULL;
+    return nullptr;
   }
 
   // now create the correct LogFilter
@@ -164,7 +163,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
 
   case LogField::dINT:
     Error("Invalid field type (double int); cannot create filter '%s'", name);
-    return NULL;
+    return nullptr;
 
   case LogField::STRING:
     filter = new LogFilterString(name, logfield, action, oper, val_str);
@@ -176,13 +175,13 @@ LogFilter::parse(const char *name, Action action, const char *condition)
 
   default:
     Error("Unknown logging field type %d; cannot create filter '%s'", field_type, name);
-    return NULL;
+    return nullptr;
   }
 
   if (filter->get_num_values() == 0) {
     Error("'%s' does not specify any valid values; cannot create filter '%s'", val_str, name);
     delete filter;
-    return NULL;
+    return nullptr;
   }
 
   return filter;
@@ -220,14 +219,14 @@ LogFilterString::LogFilterString(const char *name, LogField *field, LogFilter::A
 {
   // parse the comma-separated list of values and construct array
   //
-  char **val_array = 0;
+  char **val_array = nullptr;
   size_t i         = 0;
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
   if (n) {
     val_array = new char *[n];
     char *t;
-    while (t = tok.getNext(), t != NULL) {
+    while (t = tok.getNext(), t != nullptr) {
       val_array[i++] = t;
     }
     if (i < n) {
@@ -309,26 +308,26 @@ LogFilterString::operator==(LogFilterString &rhs)
 bool
 LogFilterString::wipe_this_entry(LogAccess *lad)
 {
-  if (m_num_values == 0 || m_field == NULL || lad == NULL || m_action != WIPE_FIELD_VALUE) {
+  if (m_num_values == 0 || m_field == nullptr || lad == nullptr || m_action != WIPE_FIELD_VALUE) {
     return false;
   }
 
   static const unsigned BUFSIZE = 1024;
   char small_buf[BUFSIZE];
-  char *big_buf    = NULL;
+  char *big_buf    = nullptr;
   char *buf        = small_buf;
   size_t marsh_len = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
     big_buf = (char *)ats_malloc(marsh_len);
-    ink_assert(big_buf != NULL);
+    ink_assert(big_buf != nullptr);
     buf = big_buf;
   }
 
-  ink_assert(buf != NULL);
+  ink_assert(buf != nullptr);
   m_field->marshal(lad, buf);
 
-  ink_assert(buf != NULL);
+  ink_assert(buf != nullptr);
 
   bool cond_satisfied = false;
   switch (m_operator) {
@@ -380,22 +379,22 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
 bool
 LogFilterString::toss_this_entry(LogAccess *lad)
 {
-  if (m_num_values == 0 || m_field == NULL || lad == NULL) {
+  if (m_num_values == 0 || m_field == nullptr || lad == nullptr) {
     return false;
   }
 
   static const unsigned BUFSIZE = 1024;
   char small_buf[BUFSIZE];
   char small_buf_upper[BUFSIZE];
-  char *big_buf       = NULL;
-  char *big_buf_upper = NULL;
+  char *big_buf       = nullptr;
+  char *big_buf_upper = nullptr;
   char *buf           = small_buf;
   char *buf_upper     = small_buf_upper;
   size_t marsh_len    = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
     big_buf = (char *)ats_malloc((unsigned int)marsh_len);
-    ink_assert(big_buf != NULL);
+    ink_assert(big_buf != nullptr);
     buf = big_buf;
   }
 
@@ -450,7 +449,7 @@ LogFilterString::toss_this_entry(LogAccess *lad)
 void
 LogFilterString::display(FILE *fd)
 {
-  ink_assert(fd != NULL);
+  ink_assert(fd != nullptr);
   if (m_num_values == 0) {
     fprintf(fd, "Filter \"%s\" is inactive, no values specified\n", m_name);
   } else {
@@ -492,7 +491,7 @@ LogFilterInt::_convertStringToInt(char *value, int64_t *ival, LogFieldAliasMap *
     // value is an alias and try to get the actual integer value
     // from the log field alias map if field has one
     //
-    if (map == NULL || map->asInt(value, ival) != LogFieldAliasMap::ALL_OK) {
+    if (map == nullptr || map->asInt(value, ival) != LogFieldAliasMap::ALL_OK) {
       return -1; // error
     };
   } else {
@@ -524,7 +523,7 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
 {
   // parse the comma-separated list of values and construct array
   //
-  int64_t *val_array = 0;
+  int64_t *val_array = nullptr;
   size_t i           = 0;
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
@@ -532,7 +531,7 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
   if (n) {
     val_array = new int64_t[n];
     char *t;
-    while (t = tok.getNext(), t != NULL) {
+    while (t = tok.getNext(), t != nullptr) {
       int64_t ival;
       if (!_convertStringToInt(t, &ival, field->map().get())) {
         // conversion was successful, add entry to array
@@ -604,7 +603,7 @@ LogFilterInt::operator==(LogFilterInt &rhs)
 bool
 LogFilterInt::wipe_this_entry(LogAccess *lad)
 {
-  if (m_num_values == 0 || m_field == NULL || lad == NULL || m_action != WIPE_FIELD_VALUE) {
+  if (m_num_values == 0 || m_field == nullptr || lad == nullptr || m_action != WIPE_FIELD_VALUE) {
     return false;
   }
 
@@ -642,7 +641,7 @@ LogFilterInt::wipe_this_entry(LogAccess *lad)
 bool
 LogFilterInt::toss_this_entry(LogAccess *lad)
 {
-  if (m_num_values == 0 || m_field == NULL || lad == NULL) {
+  if (m_num_values == 0 || m_field == nullptr || lad == nullptr) {
     return false;
   }
 
@@ -680,7 +679,7 @@ LogFilterInt::toss_this_entry(LogAccess *lad)
 void
 LogFilterInt::display(FILE *fd)
 {
-  ink_assert(fd != NULL);
+  ink_assert(fd != nullptr);
   if (m_num_values == 0) {
     fprintf(fd, "Filter \"%s\" is inactive, no values specified\n", m_name);
   } else {
@@ -724,7 +723,7 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
   char *t; // temp token pointer.
 
   if (n) {
-    while (t = tok.getNext(), t != NULL) {
+    while (t = tok.getNext(), t != nullptr) {
       IpAddr min, max;
       char *x = strchr(t, '-');
       if (x) {
@@ -887,7 +886,7 @@ LogFilterIP::displayRanges(FILE *fd)
 void
 LogFilterIP::display(FILE *fd)
 {
-  ink_assert(fd != NULL);
+  ink_assert(fd != nullptr);
 
   if (0 == m_map.getCount()) {
     fprintf(fd, "Filter \"%s\" is inactive, no values specified\n", m_name);
@@ -987,7 +986,7 @@ LogFilterList::clear()
 void
 LogFilterList::add(LogFilter *filter, bool copy)
 {
-  ink_assert(filter != NULL);
+  ink_assert(filter != nullptr);
   if (copy) {
     if (filter->type() == LogFilter::INT_FILTER) {
       LogFilterInt *f = new LogFilterInt(*((LogFilterInt *)filter));
@@ -1057,7 +1056,7 @@ LogFilterList::find_by_name(char *name)
       return f;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -1098,11 +1097,11 @@ REGRESSION_TEST(Log_FilterParse)(RegressionTest *t, int /* atype */, int *pstatu
 
   *pstatus = REGRESSION_TEST_PASSED;
 
-  box.check(LogFilter::parse("t1", LogFilter::ACCEPT, "tok1 tok2") == NULL, "At least 3 tokens are required");
-  box.check(LogFilter::parse("t2", LogFilter::ACCEPT, "%<sym operator value") == NULL, "Unclosed symbol token");
-  box.check(LogFilter::parse("t3", LogFilter::ACCEPT, "%<{Age ssh> operator value") == NULL, "Unclosed container field");
-  box.check(LogFilter::parse("t4", LogFilter::ACCEPT, "%<james> operator value") == NULL, "Invalid log field");
-  box.check(LogFilter::parse("t5", LogFilter::ACCEPT, "%<chi> invalid value") == NULL, "Invalid operator name");
+  box.check(LogFilter::parse("t1", LogFilter::ACCEPT, "tok1 tok2") == nullptr, "At least 3 tokens are required");
+  box.check(LogFilter::parse("t2", LogFilter::ACCEPT, "%<sym operator value") == nullptr, "Unclosed symbol token");
+  box.check(LogFilter::parse("t3", LogFilter::ACCEPT, "%<{Age ssh> operator value") == nullptr, "Unclosed container field");
+  box.check(LogFilter::parse("t4", LogFilter::ACCEPT, "%<james> operator value") == nullptr, "Invalid log field");
+  box.check(LogFilter::parse("t5", LogFilter::ACCEPT, "%<chi> invalid value") == nullptr, "Invalid operator name");
 
   CHECK_FORMAT_PARSE("pssc MATCH 200");
   CHECK_FORMAT_PARSE("shn CASE_INSENSITIVE_CONTAIN unwanted.com");

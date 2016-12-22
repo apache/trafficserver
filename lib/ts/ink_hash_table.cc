@@ -89,7 +89,7 @@ ink_hash_table_destroy(InkHashTable *ht_ptr)
   tcl_ht_ptr = (Tcl_HashTable *)ht_ptr;
   Tcl_DeleteHashTable(tcl_ht_ptr);
   ats_free(tcl_ht_ptr);
-  return (InkHashTable *)0;
+  return (InkHashTable *)nullptr;
 } /* End ink_hash_table_destroy */
 
 /*---------------------------------------------------------------------------*
@@ -108,7 +108,7 @@ _ink_hash_table_free_entry_value(InkHashTable *ht_ptr, InkHashTableEntry *e)
   InkHashTableValue value;
 
   value = ink_hash_table_entry_value(ht_ptr, e);
-  if (value != NULL) {
+  if (value != nullptr) {
     ats_free(value);
   }
 
@@ -120,7 +120,7 @@ ink_hash_table_destroy_and_free_values(InkHashTable *ht_ptr)
 {
   ink_hash_table_map(ht_ptr, _ink_hash_table_free_entry_value);
   ink_hash_table_destroy(ht_ptr);
-  return (InkHashTable *)0;
+  return (InkHashTable *)nullptr;
 } /* End ink_hash_table_destroy_and_free_values */
 
 /*---------------------------------------------------------------------------*
@@ -138,7 +138,7 @@ ink_hash_table_isbound(InkHashTable *ht_ptr, const char *key)
   InkHashTableEntry *he_ptr;
 
   he_ptr = ink_hash_table_lookup_entry(ht_ptr, key);
-  return ((he_ptr == NULL) ? 0 : 1);
+  return ((he_ptr == nullptr) ? 0 : 1);
 } /* End ink_hash_table_isbound */
 
 /*---------------------------------------------------------------------------*
@@ -159,7 +159,7 @@ ink_hash_table_lookup(InkHashTable *ht_ptr, const char *key, InkHashTableValue *
   InkHashTableValue value;
 
   he_ptr = ink_hash_table_lookup_entry(ht_ptr, key);
-  if (he_ptr == NULL)
+  if (he_ptr == nullptr)
     return (0);
 
   value      = ink_hash_table_entry_value(ht_ptr, he_ptr);
@@ -201,7 +201,7 @@ ink_hash_table_delete(InkHashTable *ht_ptr, const char *key)
                                                  InkHashTableKey key)
 
   This routine takes a hash table <ht_ptr> and a key <key>, and returns the
-  entry matching the key, or NULL otherwise.
+  entry matching the key, or nullptr otherwise.
 
  *---------------------------------------------------------------------------*/
 
@@ -240,8 +240,8 @@ ink_hash_table_get_entry(InkHashTable *ht_ptr, const char *key, int *new_value)
   tcl_ht_ptr = (Tcl_HashTable *)ht_ptr;
   tcl_he_ptr = Tcl_CreateHashEntry(tcl_ht_ptr, key, new_value);
 
-  if (tcl_he_ptr == NULL) {
-    ink_fatal("%s: Tcl_CreateHashEntry returned NULL", "ink_hash_table_get_entry");
+  if (tcl_he_ptr == nullptr) {
+    ink_fatal("%s: Tcl_CreateHashEntry returned nullptr", "ink_hash_table_get_entry");
   }
 
   return ((InkHashTableEntry *)tcl_he_ptr);
@@ -308,7 +308,7 @@ ink_hash_table_map(InkHashTable *ht_ptr, InkHashTableEntryFunction map)
   InkHashTableEntry *e;
   InkHashTableIteratorState state;
 
-  for (e = ink_hash_table_iterator_first(ht_ptr, &state); e != NULL; e = ink_hash_table_iterator_next(ht_ptr, &state)) {
+  for (e = ink_hash_table_iterator_first(ht_ptr, &state); e != nullptr; e = ink_hash_table_iterator_next(ht_ptr, &state)) {
     retcode = (*map)(ht_ptr, e);
     if (retcode != 0)
       break;

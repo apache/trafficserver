@@ -35,10 +35,10 @@ int cache_clustering_enabled = 0;
 int num_of_cluster_threads   = DEFAULT_NUMBER_OF_CLUSTER_THREADS;
 
 ClusterProcessor clusterProcessor;
-RecRawStatBlock *cluster_rsb = NULL;
+RecRawStatBlock *cluster_rsb = nullptr;
 int ET_CLUSTER;
 
-ClusterProcessor::ClusterProcessor() : accept_handler(NULL), this_cluster(NULL)
+ClusterProcessor::ClusterProcessor() : accept_handler(nullptr), this_cluster(nullptr)
 {
 }
 
@@ -46,7 +46,7 @@ ClusterProcessor::~ClusterProcessor()
 {
   if (accept_handler) {
     accept_handler->ShutdownDelete();
-    accept_handler = 0;
+    accept_handler = nullptr;
   }
 }
 
@@ -147,7 +147,7 @@ ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn, voi
 int
 ClusterProcessor::invoke_remote(ClusterHandler *ch, int cluster_fn, void *data, int len, int options)
 {
-  return internal_invoke_remote(ch, cluster_fn, data, len, options, (void *)NULL);
+  return internal_invoke_remote(ch, cluster_fn, data, len, options, (void *)nullptr);
 }
 
 int
@@ -157,7 +157,7 @@ ClusterProcessor::invoke_remote_data(ClusterHandler *ch, int cluster_fn, void *d
 {
   if (!buf) {
     // No buffer data, translate this into a invoke_remote() request
-    return internal_invoke_remote(ch, cluster_fn, data, data_len, options, (void *)NULL);
+    return internal_invoke_remote(ch, cluster_fn, data, data_len, options, (void *)nullptr);
   }
   ink_assert(data);
   ink_assert(data_len);
@@ -176,7 +176,7 @@ ClusterProcessor::invoke_remote_data(ClusterHandler *ch, int cluster_fn, void *d
 
   // Build OutgoingControl for compound message header
   invoke_remote_data_args mh;
-  mh.msg_oc       = 0;
+  mh.msg_oc       = nullptr;
   mh.data_oc      = bufdata_oc;
   mh.dest_channel = dest_channel;
   mh.token        = *token;
@@ -232,10 +232,10 @@ ClusterProcessor::open_local(Continuation *cont, ClusterMachine * /* m ATS_UNUSE
 
   ClusterHandler *ch = ((CacheContinuation *)cont)->ch;
   if (!ch)
-    return NULL;
+    return nullptr;
   EThread *t = ch->thread;
   if (!t)
-    return NULL;
+    return nullptr;
 
   EThread *thread        = this_ethread();
   ProxyMutex *mutex      = thread->mutex.get();
@@ -255,7 +255,7 @@ ClusterProcessor::open_local(Continuation *cont, ClusterMachine * /* m ATS_UNUSE
 #endif
     if (immediate) {
       clusterVCAllocator_free(vc);
-      return NULL;
+      return nullptr;
     }
     vc->action_ = cont;
     ink_atomiclist_push(&ch->external_incoming_open_local, (void *)vc);
@@ -268,7 +268,7 @@ ClusterProcessor::open_local(Continuation *cont, ClusterMachine * /* m ATS_UNUSE
     if (!(immediate || allow_immediate))
       vc->action_ = cont;
     if (vc->start(thread) < 0) {
-      return NULL;
+      return nullptr;
     }
     if (immediate || allow_immediate) {
       return vc;
@@ -297,15 +297,15 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
   ClusterMachine *m = this_cluster->current_configuration()->find(token->ip_created);
 #endif
   if (!m)
-    return NULL;
+    return nullptr;
   if (token->ch_id >= (uint32_t)m->num_connections)
-    return NULL;
+    return nullptr;
   ClusterHandler *ch = m->clusterHandlers[token->ch_id];
   if (!ch)
-    return NULL;
+    return nullptr;
   EThread *t = ch->thread;
   if (!t)
-    return NULL;
+    return nullptr;
 
   EThread *thread        = this_ethread();
   ProxyMutex *mutex      = thread->mutex.get();
@@ -324,7 +324,7 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
 #endif
     if (immediate) {
       clusterVCAllocator_free(vc);
-      return NULL;
+      return nullptr;
     }
     vc->mutex   = ch->mutex;
     vc->action_ = cont;
@@ -335,7 +335,7 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
     if (!(immediate || allow_immediate))
       vc->action_ = cont;
     if (vc->start(thread) < 0) {
-      return NULL;
+      return nullptr;
     }
     if (immediate || allow_immediate) {
       return vc;
@@ -620,9 +620,6 @@ ClusterProcessor::init()
   REC_ReadConfigInteger(cluster_packet_tos, "proxy.config.cluster.sock_packet_tos");
   REC_EstablishStaticConfigInt32(RPC_only_CacheCluster, "proxy.config.cluster.rpc_cache_cluster");
 
-  int cluster_type = 0;
-  REC_ReadConfigInteger(cluster_type, "proxy.local.cluster.type");
-
   create_this_cluster_machine();
   // Cluster API Initializations
   clusterAPI_init();
@@ -640,14 +637,9 @@ ClusterProcessor::init()
 
   memset(channel_dummy_output, 0, sizeof(channel_dummy_output));
 
-  if (cluster_type == 1) {
-    cache_clustering_enabled = 1;
-    Note("cache clustering enabled");
-    compute_cluster_mode();
-  } else {
-    cache_clustering_enabled = 0;
-    Note("cache clustering disabled");
-  }
+  cache_clustering_enabled = 0;
+  Note("cache clustering disabled");
+
   return 0;
 }
 

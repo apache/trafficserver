@@ -47,7 +47,7 @@
 bool do_debug  = false;
 bool do_daemon = false;
 
-static char const USAGE_TEXT[] = "%s\n"
+static const char USAGE_TEXT[] = "%s\n"
                                  "--address IP address to bind.\n"
                                  "--router Booststrap IP address for routers.\n"
                                  "--service Path to service group definitions.\n"
@@ -139,7 +139,7 @@ main(int argc, char **argv)
   int zret; // getopt return.
   int zidx; // option index.
   bool fail            = false;
-  char const *FAIL_MSG = "";
+  const char *FAIL_MSG = "";
 
   while (-1 != (zret = getopt_long_only(argc, argv, "", OPTIONS, &zidx))) {
     switch (zret) {

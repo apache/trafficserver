@@ -53,7 +53,7 @@ void *ExpandingArray::operator[](int index)
   if (index < numValidValues) {
     return internalArray[index];
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 

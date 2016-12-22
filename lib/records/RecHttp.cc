@@ -24,6 +24,7 @@
 #include <records/I_RecCore.h>
 #include <records/I_RecHttp.h>
 #include <ts/ink_defs.h>
+#include <ts/ink_hash_table.h>
 #include <ts/Tokenizer.h>
 #include <strings.h>
 
@@ -41,6 +42,20 @@ const char *const TS_ALPN_PROTOCOL_HTTP_2_0 = "h2"; // HTTP/2 over TLS
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
 
+const char *const TS_PROTO_TAG_HTTP_1_0 = TS_ALPN_PROTOCOL_HTTP_1_0;
+const char *const TS_PROTO_TAG_HTTP_1_1 = TS_ALPN_PROTOCOL_HTTP_1_1;
+const char *const TS_PROTO_TAG_HTTP_2_0 = TS_ALPN_PROTOCOL_HTTP_2_0;
+const char *const TS_PROTO_TAG_TLS_1_3  = "tls/1.3";
+const char *const TS_PROTO_TAG_TLS_1_2  = "tls/1.2";
+const char *const TS_PROTO_TAG_TLS_1_1  = "tls/1.1";
+const char *const TS_PROTO_TAG_TLS_1_0  = "tls/1.0";
+const char *const TS_PROTO_TAG_TCP      = "tcp";
+const char *const TS_PROTO_TAG_UDP      = "udp";
+const char *const TS_PROTO_TAG_IPV4     = "ipv4";
+const char *const TS_PROTO_TAG_IPV6     = "ipv6";
+
+InkHashTable *TSProtoTags;
+
 // Precomputed indices for ease of use.
 int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = SessionProtocolNameRegistry::INVALID;
@@ -54,7 +69,7 @@ SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
 
 void
-RecHttpLoadIp(char const *value_name, IpAddr &ip4, IpAddr &ip6)
+RecHttpLoadIp(const char *value_name, IpAddr &ip4, IpAddr &ip6)
 {
   char value[1024];
   ip4.invalidate();
@@ -63,7 +78,7 @@ RecHttpLoadIp(char const *value_name, IpAddr &ip4, IpAddr &ip6)
     Tokenizer tokens(", ");
     int n_addrs = tokens.Initialize(value);
     for (int i = 0; i < n_addrs; ++i) {
-      char const *host = tokens[i];
+      const char *host = tokens[i];
       IpEndpoint tmp4, tmp6;
       // For backwards compatibility we need to support the use of host names
       // for the address to bind.
@@ -89,30 +104,30 @@ RecHttpLoadIp(char const *value_name, IpAddr &ip4, IpAddr &ip6)
   }
 }
 
-char const *const HttpProxyPort::DEFAULT_VALUE = "8080";
+const char *const HttpProxyPort::DEFAULT_VALUE = "8080";
 
-char const *const HttpProxyPort::PORTS_CONFIG_NAME = "proxy.config.http.server_ports";
+const char *const HttpProxyPort::PORTS_CONFIG_NAME = "proxy.config.http.server_ports";
 
 // "_PREFIX" means the option contains additional data.
 // Each has a corresponding _LEN value that is the length of the option text.
 // Options without _PREFIX are just flags with no additional data.
 
-char const *const HttpProxyPort::OPT_FD_PREFIX          = "fd";
-char const *const HttpProxyPort::OPT_OUTBOUND_IP_PREFIX = "ip-out";
-char const *const HttpProxyPort::OPT_INBOUND_IP_PREFIX  = "ip-in";
-char const *const HttpProxyPort::OPT_HOST_RES_PREFIX    = "ip-resolve";
-char const *const HttpProxyPort::OPT_PROTO_PREFIX       = "proto";
+const char *const HttpProxyPort::OPT_FD_PREFIX          = "fd";
+const char *const HttpProxyPort::OPT_OUTBOUND_IP_PREFIX = "ip-out";
+const char *const HttpProxyPort::OPT_INBOUND_IP_PREFIX  = "ip-in";
+const char *const HttpProxyPort::OPT_HOST_RES_PREFIX    = "ip-resolve";
+const char *const HttpProxyPort::OPT_PROTO_PREFIX       = "proto";
 
-char const *const HttpProxyPort::OPT_IPV6                    = "ipv6";
-char const *const HttpProxyPort::OPT_IPV4                    = "ipv4";
-char const *const HttpProxyPort::OPT_TRANSPARENT_INBOUND     = "tr-in";
-char const *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND    = "tr-out";
-char const *const HttpProxyPort::OPT_TRANSPARENT_FULL        = "tr-full";
-char const *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
-char const *const HttpProxyPort::OPT_SSL                     = "ssl";
-char const *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
-char const *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
-char const *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
+const char *const HttpProxyPort::OPT_IPV6                    = "ipv6";
+const char *const HttpProxyPort::OPT_IPV4                    = "ipv4";
+const char *const HttpProxyPort::OPT_TRANSPARENT_INBOUND     = "tr-in";
+const char *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND    = "tr-out";
+const char *const HttpProxyPort::OPT_TRANSPARENT_FULL        = "tr-full";
+const char *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
+const char *const HttpProxyPort::OPT_SSL                     = "ssl";
+const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
+const char *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
+const char *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
 
 // File local constants.
 namespace
@@ -164,7 +179,7 @@ HttpProxyPort *
 HttpProxyPort::findHttp(Group const &ports, uint16_t family)
 {
   bool check_family_p = ats_is_ip(family);
-  self *zret          = 0;
+  self *zret          = nullptr;
   for (int i = 0, n = ports.length(); i < n && !zret; ++i) {
     HttpProxyPort &p = ports[i];
     if (p.m_port &&                               // has a valid port
@@ -177,10 +192,10 @@ HttpProxyPort::findHttp(Group const &ports, uint16_t family)
   return zret;
 }
 
-char const *
-HttpProxyPort::checkPrefix(char const *src, char const *prefix, size_t prefix_len)
+const char *
+HttpProxyPort::checkPrefix(const char *src, char const *prefix, size_t prefix_len)
 {
-  char const *zret = 0;
+  const char *zret = nullptr;
   if (0 == strncasecmp(prefix, src, prefix_len)) {
     src += prefix_len;
     if ('-' == *src || '=' == *src) {
@@ -217,7 +232,7 @@ HttpProxyPort::loadDefaultIfEmpty(Group &ports)
 }
 
 bool
-HttpProxyPort::loadValue(Vec<self> &ports, char const *text)
+HttpProxyPort::loadValue(Vec<self> &ports, const char *text)
 {
   unsigned old_port_length = ports.length(); // remember this.
   if (text && *text) {
@@ -225,7 +240,7 @@ HttpProxyPort::loadValue(Vec<self> &ports, char const *text)
     int n_ports = tokens.Initialize(text);
     if (n_ports > 0) {
       for (int p = 0; p < n_ports; ++p) {
-        char const *elt = tokens[p];
+        const char *elt = tokens[p];
         HttpProxyPort entry;
         if (entry.processOptions(elt)) {
           ports.push_back(entry);
@@ -239,14 +254,14 @@ HttpProxyPort::loadValue(Vec<self> &ports, char const *text)
 }
 
 bool
-HttpProxyPort::processOptions(char const *opts)
+HttpProxyPort::processOptions(const char *opts)
 {
   bool zret           = false; // found a port?
   bool af_set_p       = false; // AF explicitly specified?
   bool host_res_set_p = false; // Host resolution order set explicitly?
   bool sp_set_p       = false; // Session protocol set explicitly?
   bool bracket_p      = false; // found an open bracket in the input?
-  char const *value;           // Temp holder for value of a prefix option.
+  const char *value;           // Temp holder for value of a prefix option.
   IpAddr ip;                   // temp for loading IP addresses.
   Vec<char *> values;          // Pointers to single option values.
 
@@ -256,7 +271,7 @@ HttpProxyPort::processOptions(char const *opts)
   memcpy(text, opts, opts_len);
 
   // Split the copy in to tokens.
-  char *token = 0;
+  char *token = nullptr;
   for (char *spot = text; *spot; ++spot) {
     if (bracket_p) {
       if (']' == *spot) {
@@ -264,7 +279,7 @@ HttpProxyPort::processOptions(char const *opts)
       }
     } else if (':' == *spot) {
       *spot = 0;
-      token = 0;
+      token = nullptr;
     } else {
       if (!token) {
         token = spot;
@@ -281,7 +296,7 @@ HttpProxyPort::processOptions(char const *opts)
   }
 
   for (int i = 0, n_items = values.length(); i < n_items; ++i) {
-    char const *item = values[i];
+    const char *item = values[i];
     if (isdigit(item[0])) { // leading digit -> port value
       char *ptr;
       int port = strtoul(item, &ptr, 10);
@@ -294,7 +309,7 @@ HttpProxyPort::processOptions(char const *opts)
         m_port = port;
         zret   = true;
       }
-    } else if (0 != (value = this->checkPrefix(item, OPT_FD_PREFIX, OPT_FD_PREFIX_LEN))) {
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_FD_PREFIX, OPT_FD_PREFIX_LEN))) {
       char *ptr; // tmp for syntax check.
       int fd = strtoul(value, &ptr, 10);
       if (ptr == value) {
@@ -303,13 +318,13 @@ HttpProxyPort::processOptions(char const *opts)
         m_fd = fd;
         zret = true;
       }
-    } else if (0 != (value = this->checkPrefix(item, OPT_INBOUND_IP_PREFIX, OPT_INBOUND_IP_PREFIX_LEN))) {
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_INBOUND_IP_PREFIX, OPT_INBOUND_IP_PREFIX_LEN))) {
       if (0 == ip.load(value)) {
         m_inbound_ip = ip;
       } else {
         Warning("Invalid IP address value '%s' in port descriptor '%s'", item, opts);
       }
-    } else if (0 != (value = this->checkPrefix(item, OPT_OUTBOUND_IP_PREFIX, OPT_OUTBOUND_IP_PREFIX_LEN))) {
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_OUTBOUND_IP_PREFIX, OPT_OUTBOUND_IP_PREFIX_LEN))) {
       if (0 == ip.load(value)) {
         this->outboundIp(ip.family()) = ip;
       } else {
@@ -354,10 +369,10 @@ HttpProxyPort::processOptions(char const *opts)
 #else
       Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 #endif
-    } else if (0 != (value = this->checkPrefix(item, OPT_HOST_RES_PREFIX, OPT_HOST_RES_PREFIX_LEN))) {
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_HOST_RES_PREFIX, OPT_HOST_RES_PREFIX_LEN))) {
       this->processFamilyPreference(value);
       host_res_set_p = true;
-    } else if (0 != (value = this->checkPrefix(item, OPT_PROTO_PREFIX, OPT_PROTO_PREFIX_LEN))) {
+    } else if (nullptr != (value = this->checkPrefix(item, OPT_PROTO_PREFIX, OPT_PROTO_PREFIX_LEN))) {
       this->processSessionProtocolPreference(value);
       sp_set_p = true;
     } else {
@@ -405,20 +420,20 @@ HttpProxyPort::processOptions(char const *opts)
 }
 
 void
-HttpProxyPort::processFamilyPreference(char const *value)
+HttpProxyPort::processFamilyPreference(const char *value)
 {
   parse_host_res_preference(value, m_host_res_preference);
 }
 
 void
-HttpProxyPort::processSessionProtocolPreference(char const *value)
+HttpProxyPort::processSessionProtocolPreference(const char *value)
 {
   m_session_protocol_preference.markAllOut();
   globalSessionProtocolNameRegistry.markIn(value, m_session_protocol_preference);
 }
 
 void
-SessionProtocolNameRegistry::markIn(char const *value, SessionProtocolSet &sp_set)
+SessionProtocolNameRegistry::markIn(const char *value, SessionProtocolSet &sp_set)
 {
   int n; // # of tokens
   Tokenizer tokens(" ;|,:");
@@ -426,7 +441,7 @@ SessionProtocolNameRegistry::markIn(char const *value, SessionProtocolSet &sp_se
   n = tokens.Initialize(value);
 
   for (int i = 0; i < n; ++i) {
-    char const *elt = tokens[i];
+    const char *elt = tokens[i];
 
     /// Check special cases
     if (0 == strcasecmp(elt, TS_ALPN_PROTOCOL_GROUP_HTTP)) {
@@ -618,6 +633,31 @@ ts_session_protocol_well_known_name_indices_init()
   DEFAULT_TLS_SESSION_PROTOCOL_SET.markAllIn();
 
   DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
+
+  TSProtoTags = ink_hash_table_create(InkHashTableKeyType_String);
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_1_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_1_0)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_1_1, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_1_1)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_2_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_2_0)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_3, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_3)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_2, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_2)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_1, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_1)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_0)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TCP, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TCP)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_UDP, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_UDP)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_IPV4, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_IPV4)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_IPV6, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_IPV6)));
+}
+
+const char *
+RecNormalizeProtoTag(const char *tag)
+{
+  InkHashTableValue value;
+
+  if (ink_hash_table_lookup(TSProtoTags, tag, &value)) {
+    return reinterpret_cast<const char *>(value);
+  }
+
+  return nullptr;
 }
 
 SessionProtocolNameRegistry::SessionProtocolNameRegistry() : m_n(0)
@@ -630,13 +670,13 @@ SessionProtocolNameRegistry::~SessionProtocolNameRegistry()
 {
   for (size_t i = 0; i < m_n; ++i) {
     if (m_flags[i] & F_ALLOCATED) {
-      ats_free(const_cast<char *>(m_names[i])); // blech - ats_free won't take a char const*
+      ats_free(const_cast<char *>(m_names[i])); // blech - ats_free won't take a const char*
     }
   }
 }
 
 int
-SessionProtocolNameRegistry::toIndex(char const *name)
+SessionProtocolNameRegistry::toIndex(const char *name)
 {
   int zret = this->indexFor(name);
   if (INVALID == zret) {
@@ -652,7 +692,7 @@ SessionProtocolNameRegistry::toIndex(char const *name)
 }
 
 int
-SessionProtocolNameRegistry::toIndexConst(char const *name)
+SessionProtocolNameRegistry::toIndexConst(const char *name)
 {
   int zret = this->indexFor(name);
   if (INVALID == zret) {
@@ -667,7 +707,7 @@ SessionProtocolNameRegistry::toIndexConst(char const *name)
 }
 
 int
-SessionProtocolNameRegistry::indexFor(char const *name) const
+SessionProtocolNameRegistry::indexFor(const char *name) const
 {
   for (size_t i = 0; i < m_n; ++i) {
     if (0 == strcasecmp(name, m_names[i])) {
@@ -677,8 +717,8 @@ SessionProtocolNameRegistry::indexFor(char const *name) const
   return INVALID;
 }
 
-char const *
+const char *
 SessionProtocolNameRegistry::nameFor(int idx) const
 {
-  return 0 <= idx && idx < static_cast<int>(m_n) ? m_names[idx] : 0;
+  return 0 <= idx && idx < static_cast<int>(m_n) ? m_names[idx] : nullptr;
 }

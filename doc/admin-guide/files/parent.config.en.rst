@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -69,7 +69,8 @@ allowed values.
 
 The secondary specifiers are optional in the :file:`parent.config` file. The
 following list shows the possible secondary specifiers and their allowed
-values.
+values. Every line in the :file:`parent.config` file must contain either a
+``parent=`` or ``go_direct=`` directive.
 
 .. _parent-config-format-port:
 
@@ -195,8 +196,7 @@ The following list shows the possible actions and their allowed values.
 ``round_robin``
     One of the following values:
 
-    -  ``true`` - Traffic Server goes through the parent cache list in a
-       round robin-based on client IP address.
+    -  ``true`` - Traffic Server determines the parent based on client IP address.
     -  ``strict`` - Traffic Server machines serve requests strictly in
        turn. For example: machine ``proxy1`` serves the first request,
        ``proxy2`` serves the second request, and so on.
@@ -207,6 +207,13 @@ The following list shows the possible actions and their allowed values.
        The other traffic is unaffected. Once the downed parent becomes
        available, the traffic distribution returns to the pre-down
        state.
+    - ``latched`` - The first parent in the list is marked as primary and is
+      always chosen until connection errors cause it to be marked down.  When
+      this occurs the next parent in the list then becomes primary.  The primary
+      will wrap back to the first parent in the list when it is the last parent
+      in the list and is marked down due to a connection error.  Newly chosen
+      primary parents marked as unavailable will then be restored if the failure
+      retry time has elapsed and the transaction using the primary succeeds.
 
 .. _parent-config-format-go-direct:
 
@@ -215,6 +222,7 @@ The following list shows the possible actions and their allowed values.
 
     -  ``true`` - requests bypass parent hierarchies and go directly to
        the origin server.
+
     -  ``false`` - requests do not bypass parent hierarchies.
 
 .. _parent-config-format-qstring:
@@ -223,7 +231,10 @@ The following list shows the possible actions and their allowed values.
     One of the following values:
 
     -  ``consider`` - Use the query string when finding a parent.
-    -  ``ignore`` - Do not consider the query string when finding a parent.
+
+    -  ``ignore`` - Do not consider the query string when finding a parent. This
+       is especially useful when using the ``consistent_hash`` selection strategy,
+       and a random query string would prevent a consistent parent selection.
 
 Examples
 ========
@@ -234,16 +245,18 @@ Traffic Server (which is the child) and two parents, ``p1.x.com`` and
 the parent servers ``p1.x.com`` and ``p2.x.com`` in a round-robin
 fashion::
 
-    round_robin=true
     dest_domain=. method=get parent="p1.x.com:8080; p2.y.com:8080" round_robin=true
-    round_robin=consistent_hash
-    dest_domain=. method=get parent="p1.x.com:8080|1.0; p2.y.com:8080|2.0" round_robin=consistent_hash
 
 The following rule configures Traffic Server to route all requests
 containing the regular expression ``politics`` and the path
 ``/viewpoint`` directly to the origin server (bypassing any parent
-hierarchies): ``url_regex=politics prefix=/viewpoint go_direct=true``
+hierarchies)::
 
-Every line in the :file:`parent.config` file must contain either a
-``parent=`` or ``go_direct=`` directive.
+    url_regex=politics prefix=/viewpoint go_direct=true
 
+The following configures Traffic Server to route http requests for example.com (neither
+https nor www.example.com would match) through parent servers. Each url will be hashed
+to a specific parent. If the chosen parent has been marked down, a parent from the
+secondary ring will be chosen for the retry.::
+
+    dest_host=example.com scheme=http parent="p1.x.com:80,p2.x.com:80" secondary_parent="p3.x.com:80,p4.x.com:80" round_robin=consistent_hash go_direct=false

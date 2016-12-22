@@ -72,7 +72,7 @@ public:
     memset(_rules, 0, sizeof(_rules));
     memset(_resids, 0, sizeof(_resids));
 
-    _cont = TSContCreate(cont_rewrite_headers, NULL);
+    _cont = TSContCreate(cont_rewrite_headers, nullptr);
     TSContDataSet(_cont, static_cast<void *>(this));
   }
 
@@ -131,7 +131,7 @@ RulesConfig::add_rule(RuleSet *rule)
 {
   if (rule && rule->has_operator()) {
     TSDebug(PLUGIN_NAME_DBG, "   Adding rule to hook=%s", TSHttpHookNameLookup(rule->get_hook()));
-    if (NULL == _rules[rule->get_hook()]) {
+    if (nullptr == _rules[rule->get_hook()]) {
       _rules[rule->get_hook()] = rule;
     } else {
       _rules[rule->get_hook()]->append(rule);
@@ -151,7 +151,7 @@ RulesConfig::add_rule(RuleSet *rule)
 bool
 RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
 {
-  RuleSet *rule = NULL;
+  RuleSet *rule = nullptr;
   std::string filename;
   std::ifstream f;
   int lineno = 0;
@@ -200,13 +200,13 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
 
     // If we are at the beginning of a new condition, save away the previous rule (but only if it has operators).
     if (p.is_cond() && add_rule(rule)) {
-      rule = NULL;
+      rule = nullptr;
     }
 
     TSHttpHookID hook = default_hook;
     bool is_hook      = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
 
-    if (NULL == rule) {
+    if (nullptr == rule) {
       rule = new RuleSet();
       rule->set_hook(hook);
 
@@ -351,7 +351,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (got_config) {
-    TSCont contp = TSContCreate(cont_rewrite_headers, NULL);
+    TSCont contp = TSContCreate(cont_rewrite_headers, nullptr);
     TSContDataSet(contp, conf);
 
     for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
@@ -448,7 +448,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   bool hooked_p = false;
 
   // Make sure things are properly setup (this should never happen)
-  if (NULL == ih) {
+  if (nullptr == ih) {
     TSDebug(PLUGIN_NAME, "No Rules configured, falling back to default");
     return TSREMAP_NO_REMAP;
   }

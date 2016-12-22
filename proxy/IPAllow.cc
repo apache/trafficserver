@@ -45,7 +45,8 @@ enum AclOp {
 
 const AclRecord IpAllow::ALL_METHOD_ACL(AclRecord::ALL_METHOD_MASK);
 
-int IpAllow::configid = 0;
+int IpAllow::configid        = 0;
+bool IpAllow::accept_check_p = true; // initializing global flag for fast deny
 
 static ConfigUpdateHandler<IpAllow> *ipAllowUpdate;
 
@@ -108,12 +109,11 @@ IpAllow::~IpAllow()
 }
 
 void
-IpAllow::Print()
+IpAllow::PrintMap(IpMap *map)
 {
   std::ostringstream s;
-  s << _map.getCount() << " ACL entries";
-  s << '.';
-  for (IpMap::iterator spot(_map.begin()), limit(_map.end()); spot != limit; ++spot) {
+  s << map->getCount() << " ACL entries.";
+  for (IpMap::iterator spot(map->begin()), limit(map->end()); spot != limit; ++spot) {
     char text[INET6_ADDRSTRLEN];
     AclRecord const *ar = static_cast<AclRecord const *>(spot->data());
 
@@ -156,14 +156,23 @@ IpAllow::Print()
   Debug("ip-allow", "%s", s.str().c_str());
 }
 
+void
+IpAllow::Print()
+{
+  Debug("ip-allow", "Printing src map");
+  PrintMap(&_src_map);
+  Debug("ip-allow", "Printing dest map");
+  PrintMap(&_dest_map);
+}
+
 int
 IpAllow::BuildTable()
 {
-  char *tok_state    = NULL;
-  char *line         = NULL;
-  const char *errPtr = NULL;
+  char *tok_state    = nullptr;
+  char *line         = nullptr;
+  const char *errPtr = nullptr;
   char errBuf[1024];
-  char *file_buf = NULL;
+  char *file_buf = nullptr;
   int line_num   = 0;
   IpEndpoint addr1;
   IpEndpoint addr2;
@@ -171,17 +180,17 @@ IpAllow::BuildTable()
   bool alarmAlready = false;
 
   // Table should be empty
-  ink_assert(_map.getCount() == 0);
+  ink_assert(_src_map.getCount() == 0 && _dest_map.getCount() == 0);
 
-  file_buf = readIntoBuffer(config_file_path, module_name, NULL);
+  file_buf = readIntoBuffer(config_file_path, module_name, nullptr);
 
-  if (file_buf == NULL) {
+  if (file_buf == nullptr) {
     Warning("%s Failed to read %s. All IP Addresses will be blocked", module_name, config_file_path);
     return 1;
   }
 
   line = tokLine(file_buf, &tok_state);
-  while (line != NULL) {
+  while (line != nullptr) {
     ++line_num;
 
     // skip all blank spaces at beginning of line
@@ -190,9 +199,11 @@ IpAllow::BuildTable()
     }
 
     if (*line != '\0' && *line != '#') {
+      const matcher_tags &ip_allow_tags =
+        strstr(line, ip_allow_dest_tags.match_ip) != nullptr ? ip_allow_dest_tags : ip_allow_src_tags;
       errPtr = parseConfigLine(line, &line_info, &ip_allow_tags);
 
-      if (errPtr != NULL) {
+      if (errPtr != nullptr) {
         snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s", module_name, config_file_path, line_num, errPtr);
         SignalError(errBuf, alarmAlready);
       } else {
@@ -200,7 +211,7 @@ IpAllow::BuildTable()
 
         errPtr = ExtractIpRange(line_info.line[1][line_info.dest_entry], &addr1.sa, &addr2.sa);
 
-        if (errPtr != NULL) {
+        if (errPtr != nullptr) {
           snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s", module_name, config_file_path, line_num,
                    errPtr);
           SignalError(errBuf, alarmAlready);
@@ -211,12 +222,13 @@ IpAllow::BuildTable()
           uint32_t acl_method_mask = 0;
           AclRecord::MethodSet nonstandard_methods;
           bool deny_nonstandard_methods = false;
+          bool is_dest_ip               = (strcasecmp(line_info.line[0][line_info.dest_entry], "dest_ip") == 0);
           AclOp op                      = ACL_OP_DENY; // "shut up", I explained to the compiler.
           bool op_found = false, method_found = false;
           for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
             label = line_info.line[0][i];
             val   = line_info.line[1][i];
-            if (label == NULL) {
+            if (label == nullptr) {
               continue;
             }
             if (strcasecmp(label, "action") == 0) {
@@ -232,13 +244,14 @@ IpAllow::BuildTable()
             for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
               label = line_info.line[0][i];
               val   = line_info.line[1][i];
-              if (label == NULL) {
+              if (label == nullptr) {
                 continue;
               }
               if (strcasecmp(label, "method") == 0) {
-                char *method_name, *sep_ptr = 0;
+                char *method_name, *sep_ptr = nullptr;
                 // Parse method="GET|HEAD"
-                for (method_name = strtok_r(val, "|", &sep_ptr); method_name != NULL; method_name = strtok_r(NULL, "|", &sep_ptr)) {
+                for (method_name = strtok_r(val, "|", &sep_ptr); method_name != nullptr;
+                     method_name = strtok_r(nullptr, "|", &sep_ptr)) {
                   if (strcasecmp(method_name, "ALL") == 0) {
                     method_found = false; // in case someone does method=GET|ALL
                     break;
@@ -271,10 +284,11 @@ IpAllow::BuildTable()
           }
 
           if (method_found) {
-            _acls.push_back(AclRecord(acl_method_mask, line_num, nonstandard_methods, deny_nonstandard_methods));
-            // Color with index because at this point the address
-            // is volatile.
-            _map.fill(&addr1, &addr2, reinterpret_cast<void *>(_acls.length() - 1));
+            Vec<AclRecord> &acls = is_dest_ip ? _dest_acls : _src_acls;
+            IpMap &map           = is_dest_ip ? _dest_map : _src_map;
+            acls.push_back(AclRecord(acl_method_mask, line_num, nonstandard_methods, deny_nonstandard_methods));
+            // Color with index in acls because at this point the address is volatile.
+            map.fill(&addr1, &addr2, reinterpret_cast<void *>(acls.length() - 1));
           } else {
             snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s", module_name, config_file_path, line_num,
                      "Invalid action/method specified"); // changed by YTS Team, yamsat bug id -59022
@@ -284,16 +298,17 @@ IpAllow::BuildTable()
       }
     }
 
-    line = tokLine(NULL, &tok_state);
+    line = tokLine(nullptr, &tok_state);
   }
 
-  if (_map.getCount() == 0) {
+  if (_src_map.getCount() == 0 && _dest_map.getCount() == 0) { // TODO: check
     Warning("%s No entries in %s. All IP Addresses will be blocked", module_name, config_file_path);
   } else {
     // convert the coloring from indices to pointers.
-    for (IpMap::iterator spot(_map.begin()), limit(_map.end()); spot != limit; ++spot) {
-      spot->setData(&_acls[reinterpret_cast<size_t>(spot->data())]);
-    }
+    for (auto &item : _src_map)
+      item.setData(&_src_acls[reinterpret_cast<size_t>(item.data())]);
+    for (auto &item : _dest_map)
+      item.setData(&_dest_acls[reinterpret_cast<size_t>(item.data())]);
   }
 
   if (is_debug_tag_set("ip-allow")) {

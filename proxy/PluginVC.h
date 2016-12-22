@@ -119,7 +119,7 @@ public:
 
   //@{ @name Plugin identity.
   /// Override for @c PluginIdentity.
-  virtual char const *
+  virtual const char *
   getPluginTag() const
   {
     return plugin_tag;
@@ -133,7 +133,7 @@ public:
 
   /// Setter for plugin tag.
   virtual void
-  setPluginTag(char const *tag)
+  setPluginTag(const char *tag)
   {
     plugin_tag = tag;
   }
@@ -184,7 +184,7 @@ private:
   ink_hrtime inactive_timeout_at;
   Event *inactive_event;
 
-  char const *plugin_tag;
+  const char *plugin_tag;
   int64_t plugin_id;
 };
 
@@ -196,9 +196,9 @@ public:
   PluginVCCore();
   ~PluginVCCore();
 
-  static PluginVCCore *alloc();
-  void init();
-  void set_accept_cont(Continuation *c);
+  // Allocate a PluginVCCore object, passing the continuation which
+  // will receive NET_EVENT_ACCEPT to accept the new session.
+  static PluginVCCore *alloc(Continuation *acceptor);
 
   int state_send_accept(int event, void *data);
   int state_send_accept_failed(int event, void *data);
@@ -232,7 +232,7 @@ public:
   /// Set the plugin ID for the internal VCs.
   void set_plugin_id(int64_t id);
   /// Set the plugin tag for the internal VCs.
-  void set_plugin_tag(char const *tag);
+  void set_plugin_tag(const char *tag);
 
   // The active vc is handed to the initiator of
   //   connection.  The passive vc is handled to
@@ -241,6 +241,7 @@ public:
   PluginVC passive_vc;
 
 private:
+  void init();
   void destroy();
 
   Continuation *connect_to;

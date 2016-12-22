@@ -121,7 +121,7 @@ ink_hash_table_iterator_first(InkHashTable *ht_ptr, InkHashTableIteratorState *s
 
   This routine takes a hash table <ht_ptr> and a pointer to iterator state
   initialized by a previous call to InkHashTableIteratorFirst(), and returns
-  a pointer to the next InkHashTableEntry, or NULL if no entries remain.
+  a pointer to the next InkHashTableEntry, or nullptr if no entries remain.
 
  *---------------------------------------------------------------------------*/
 

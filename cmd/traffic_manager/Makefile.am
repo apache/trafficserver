@@ -20,16 +20,16 @@ bin_PROGRAMS = traffic_manager
 AM_CPPFLAGS = \
   $(LUAJIT_CPPFLAGS) \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/proxy/shared \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/api \
-  -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/luajit/src
+  -I$(abs_top_srcdir)/lib/records \
+  -I$(abs_top_srcdir)/proxy/hdrs \
+  -I$(abs_top_srcdir)/proxy/shared \
+  -I$(abs_top_srcdir)/mgmt \
+  -I$(abs_top_srcdir)/mgmt/api \
+  -I$(abs_top_srcdir)/mgmt/api/include \
+  -I$(abs_top_srcdir)/mgmt/cluster \
+  -I$(abs_top_srcdir)/mgmt/utils \
+  -I$(abs_top_srcdir)/lib \
+  -I$(abs_top_srcdir)/lib/luajit/src
 
 AM_LDFLAGS = \
   @EXTRA_CXX_LDFLAGS@ \
@@ -52,7 +52,6 @@ traffic_manager_LDADD = \
   $(top_builddir)/lib/records/librecords_lm.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/proxy/shared/liberror.a \
   $(top_builddir)/proxy/shared/libdiagsconfig.a
 
 AM_LDFLAGS += \

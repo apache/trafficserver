@@ -41,8 +41,9 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  if (ts_lua_main_ctx_array != NULL)
+  if (ts_lua_main_ctx_array != NULL) {
     return TS_SUCCESS;
+  }
 
   ts_lua_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
   memset(ts_lua_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
@@ -278,6 +279,13 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
     break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+    // client response can be changed within a transaction
+    // (e.g. due to the follow redirect feature). So, clearing the pointers
+    // to allow API(s) to fetch the pointers again when it re-enters the hook
+    if (http_ctx->client_response_hdrp != NULL) {
+      TSHandleMLocRelease(http_ctx->client_response_bufp, TS_NULL_MLOC, http_ctx->client_response_hdrp);
+      http_ctx->client_response_hdrp = NULL;
+    }
     lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_RESPONSE);
     break;
 

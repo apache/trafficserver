@@ -63,7 +63,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   count              = 0;
 
   Layout::create();
-  init_diags("", NULL);
+  init_diags("", nullptr);
   RecProcessInit(mode_type);
 
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
@@ -73,6 +73,8 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   process_killer *killer = new process_killer(new_ProxyMutex());
   eventProcessor.schedule_in(killer, HRTIME_SECONDS(10));
   eventProcessor.schedule_every(alrm, HRTIME_SECONDS(1));
-  this_thread()->execute();
+  while (!shutdown_event_system) {
+    sleep(1);
+  }
   return 0;
 }

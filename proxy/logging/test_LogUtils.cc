@@ -77,7 +77,7 @@ main(int argc, const char **argv)
 // Stub
 //
 void
-RecSignalManager(int, char const *, unsigned long)
+RecSignalManager(int, const char *, unsigned long)
 {
   ink_release_assert(false);
 }

@@ -104,7 +104,7 @@ unescapify(const char *src, char *dst, int len)
       subStr[0] = *(++cur);
       subStr[1] = *(++cur);
       len -= 2;
-      *dst = (char)strtol(subStr, (char **)NULL, 16);
+      *dst = (char)strtol(subStr, (char **)nullptr, 16);
     } else {
       *dst = *cur;
     }
@@ -186,7 +186,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   *ih = (void *)ri;
 
-  if (ri == NULL) {
+  if (ri == nullptr) {
     TSError("[hipes] Unable to create remap instance");
     return TS_ERROR;
   }
@@ -269,7 +269,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   char redirect_url[MAX_REDIRECT_URL];
   int redirect_url_size;
 
-  if (NULL == h_conf) {
+  if (nullptr == h_conf) {
     TSDebug(PLUGIN_NAME, "Falling back to default URL on URL remap without rules");
     return TSREMAP_NO_REMAP;
   }
@@ -362,7 +362,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     if (pos) {
       ++pos;
       if ((new_query_size - (pos - new_query)) < 10) { // redirect=n
-        pos = NULL;
+        pos = nullptr;
       } else {
         if ((*pos == 'r') && (!strncmp(pos, "redirect=", 9))) {
           redirect_flag = *(pos + 9) - '0';
@@ -370,7 +370,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
             redirect_flag = h_conf->default_redirect_flag;
           }
           TSDebug(PLUGIN_NAME, "Found _redirect flag in URL: %d", redirect_flag);
-          pos = NULL;
+          pos = nullptr;
         }
       }
     }

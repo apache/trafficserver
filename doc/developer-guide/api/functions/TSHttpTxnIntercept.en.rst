@@ -41,7 +41,7 @@ server and read the HTTP request and body off the :c:type:`TSVConn`
 and send an HTTP response header and body.
 
 :func:`TSHttpTxnIntercept` must be called be called from only
-:data:`TS_HTTP_READ_REQUEST_HOOK`.  Using
+:data:`TS_HTTP_READ_REQUEST_HDR_HOOK`.  Using
 :type:`TSHttpTxnIntercept` will bypass the Traffic Server cache.  If
 response sent by the plugin should be cached, use
 :func:`TSHttpTxnServerIntercept` instead.

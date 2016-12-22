@@ -564,7 +564,7 @@ public:
       This is a reference, not allocated.
       @return A pointer to the path or @c NULL if there is no valid URL.
   */
-  char const *path_get(int *length ///< Storage for path length.
+  const char *path_get(int *length ///< Storage for path length.
                        );
 
   /** Get the target host name.
@@ -572,7 +572,7 @@ public:
       @note The results are cached so this is fast after the first call.
       @return A pointer to the host name.
   */
-  char const *host_get(int *length = 0);
+  const char *host_get(int *length = 0);
 
   /** Get the target port.
       If the target port is not found then it is adjusted to the
@@ -586,7 +586,7 @@ public:
       This is a reference, not allocated.
       @return A pointer to the scheme or @c NULL if there is no valid URL.
   */
-  char const *scheme_get(int *length ///< Storage for path length.
+  const char *scheme_get(int *length ///< Storage for path length.
                          );
   void url_set(URL *url);
   void url_set_as_server_url(URL *url);
@@ -881,7 +881,7 @@ HTTPHdr::_test_and_fill_target_cache() const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline char const *
+inline const char *
 HTTPHdr::host_get(int *length)
 {
   this->_test_and_fill_target_cache();
@@ -1286,14 +1286,14 @@ HTTPHdr::url_string_get_ref(int *length)
   return this->url_string_get(USE_HDR_HEAP_MAGIC, length);
 }
 
-inline char const *
+inline const char *
 HTTPHdr::path_get(int *length)
 {
   URL *url = this->url_get();
   return url ? url->path_get(length) : 0;
 }
 
-inline char const *
+inline const char *
 HTTPHdr::scheme_get(int *length)
 {
   URL *url = this->url_get();

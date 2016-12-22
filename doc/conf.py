@@ -28,6 +28,7 @@
 # serve to show the default.
 
 import sys, os
+from sphinx import version_info
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -51,10 +52,14 @@ extensions = [
   'sphinx.ext.autodoc',
   'sphinx.ext.todo',
   'sphinx.ext.coverage',
-  'sphinx.ext.pngmath',
   'sphinx.ext.viewcode',
   'traffic-server',
 ]
+
+if version_info >= (1,4) :
+  extensions.append('sphinx.ext.imgmath')
+else :
+  extensions.append('sphinx.ext.pngmath')
 
 # XXX Disabling docxygen for now, since it make RTD documentation builds time
 # out, eg. https://readthedocs.org/projects/trafficserver/builds/3525976/
@@ -76,7 +81,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Apache Traffic Server'
-copyright = u'2015, dev@trafficserver.apache.org'
+copyright = u'2016, dev@trafficserver.apache.org'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

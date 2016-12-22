@@ -84,8 +84,9 @@ modify_header(TSHttpTxn txnp)
 
   int num_refreshes = 0;
 
-  if (!init_buffer_status)
+  if (!init_buffer_status) {
     return; /* caller reenables */
+  }
 
   if (TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc) != TS_SUCCESS) {
     TSError("[response_header-1] Couldn't retrieve server response header");
@@ -287,7 +288,8 @@ TSPluginInit(int argc, const char *argv[])
     init_buffer_status = 0;
     /* bail out here and reenable transaction */
   } else {
-    if (field_loc != chk_field_loc)
+    if (field_loc != chk_field_loc) {
       TSError("[response_header-1] Retrieved buffer field loc is %p when it should be %p", chk_field_loc, field_loc);
+    }
   }
 }

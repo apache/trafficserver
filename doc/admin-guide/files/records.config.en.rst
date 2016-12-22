@@ -231,7 +231,7 @@ System Variables
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
    The facility used to record system log files. Refer to
-   :ref:`admin-monitoring-logging-understanding` for more in-depth discussion
+   :ref:`admin-logging-understanding` for more in-depth discussion
    of the contents and interpretations of log files.
 
 .. ts:cv:: CONFIG proxy.config.cop.core_signal INT 0
@@ -262,6 +262,22 @@ System Variables
    this applies only during startup of Traffic Server and does not apply to the run
    time heartbeat checking.
 
+.. ts:cv:: CONFIG proxy.config.cop.active_health_checks INT 3
+
+   Specifies which, if any, of :program:`traffic_server` and
+   :program:`traffic_manager` that :program:`traffic_cop` is allowed to kill
+   in the event of failed health checks. The possible values are:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` :program:`traffic_cop` is not allowed to kill any processes.
+   ``1`` Only :program:`traffic_manager` can be killed on failed health checks.
+   ``2`` Only :program:`traffic_server` can be killed on failed health checks.
+   ``3`` :program:`traffic_server` and :program:`traffic_manager` can be killed
+         on failures (default).
+   ===== ======================================================================
+
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
    The name and location of the file that contains warnings, status messages, and error messages produced by the Traffic Server
@@ -281,17 +297,19 @@ System Variables
          The clock starts ticking on |TS| boot.
    ``2`` Enables output log rolling when the output log reaches a specific size
          (specified with :ts:cv:`proxy.config.output.logfile.rolling_size_mb`).
+   ``3`` Enables output log rolling at specific intervals or when the output log
+         reaches a specific size (whichever occurs first).
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_interval_sec INT 3600
    :reloadable:
-   :metric: seconds
+   :units: seconds
 
    Specifies how often the output log is rolled, in seconds. The timer starts on Traffic Server bootup.
 
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_size_mb INT 100
    :reloadable:
-   :metric: megabytes
+   :units: megabytes
 
    Specifies at what size to roll the output log at.
 
@@ -642,7 +660,7 @@ Alarm Configuration
 HTTP Engine
 ===========
 
-.. ts:cv:: CONFIG proxy.config.http.server_ports STRING 8080
+.. ts:cv:: CONFIG proxy.config.http.server_ports STRING 8080 8080:ipv6
 
    Ports used for proxying HTTP traffic.
 
@@ -775,6 +793,20 @@ ip-resolve
 .. note::
 
    These are the ports on the *origin server*, not |TS| :ts:cv:`proxy ports <proxy.config.http.server_ports>`.
+
+
+.. ts:cv:: CONFIG proxy.config.http.forward_connect_method INT 0
+   :reloadable:
+   :overridable:
+
+   The default, |TS| behavior for handling a CONNECT method request
+   is to establish a tunnel to the requested destination. This
+   configuration alters the behavior so that |TS| forwards the
+   CONNECT method to the next hop, and establishes the tunnel after
+   receiving a positive response. This behavior is useful in a proxy
+   hierarchy, and is equivalent to setting
+   :ts:cv:`proxy.local.http.parent_proxy.disable_connect_tunneling` to
+   `0` when parent proxying is enabled.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_request_via_str INT 1
    :reloadable:
@@ -950,6 +982,7 @@ ip-resolve
    systems which support the ``TCP_INIT_CWND`` option on TCP sockets.
 
 .. ts:cv:: CONFIG proxy.config.http.auth_server_session_private INT 1
+   :overridable:
 
    If enabled (``1``) anytime a request contains a ``Authorization``,
    ``Proxy-Authorization``, or ``Www-Authenticate`` header the connection will
@@ -957,6 +990,7 @@ ip-resolve
    (``0``) the connection will be available for reuse.
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.match STRING both
+   :overridable:
 
    Enable and set the ability to re-use server connections across client
    connections. The valid values are:
@@ -1111,15 +1145,8 @@ ip-resolve
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_post_out  INT 1
    :overridable:
 
-   Controls wether new POST requests re-use keep-alive sessions (``1``) or
+   Controls whether new POST requests re-use keep-alive sessions (``1``) or
    create new connections per request (``0``).
-
-.. ts:cv:: CONFIG proxy.config.http.accept_encoding_filter_enabled INT 0
-
-   Enables (``1``) or disables (``0``) additional handling of ``Accept-encoding``
-   header on incoming requests based on the ``User-Agent`` header, to account
-   for known deficiencies in legacy browsers which mis-report the encodings
-   they are able to accept.
 
 .. ts:cv:: CONFIG proxy.config.http.disallow_post_100_continue INT 0
 
@@ -1190,13 +1217,15 @@ Parent Proxy Configuration
    :reloadable:
    :overridable:
 
-   The total number of connection attempts allowed to a parent cache before Traffic Server bypasses the parent or fails the request
+   The total number of connection attempts for a specific transaction allowed to
+   a parent cache before Traffic Server bypasses the parent or fails the request
    (depending on the ``go_direct`` option in the :file:`parent.config` file).
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.per_parent_connect_attempts INT 2
    :reloadable:
 
-   The total number of connection attempts allowed per parent, if multiple parents are used.
+   The total number of connection attempts allowed per parent for a specific
+   transaction, if multiple parents are used.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
    :reloadable:
@@ -1216,10 +1245,12 @@ Parent Proxy Configuration
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
+.. ts:cv:: CONFIG proxy.local.http.parent_proxy.disable_connect_tunneling INT 0
+
 HTTP Connection Timeouts
 ========================
 
-.. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
+.. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
    :reloadable:
    :overridable:
 
@@ -1388,9 +1419,9 @@ Origin Server Connect Attempts
    :overridable:
 
    Limits the number of requests to be queued when the :ts:cv:`proxy.config.http.origin_max_connections` is reached.
-   When disabled (``-1``) requests are will wait indefinitely for an available connection. When set to ``0`` all 
-   requests past the :ts:cv:`proxy.config.http.origin_max_connections` will immediately fail. When set to ``>0`` 
-   ATS will queue that many requests to go to the origin, any additional requests past the limit will immediately fail. 
+   When disabled (``-1``) requests are will wait indefinitely for an available connection. When set to ``0`` all
+   requests past the :ts:cv:`proxy.config.http.origin_max_connections` will immediately fail. When set to ``>0``
+   ATS will queue that many requests to go to the origin, any additional requests past the limit will immediately fail.
 
 .. ts:cv:: CONFIG proxy.config.http.origin_min_keep_alive_connections INT 0
    :reloadable:
@@ -1424,6 +1455,10 @@ Origin Server Connect Attempts
    request.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
+.. ts:cv:: CONFIG proxy.config.http.post.check.content_length.enabled INT 1
+
+    Enables (``1``) or disables (``0``) checking the Content-Length: Header for a POST request.
 
 .. ts:cv:: CONFIG proxy.config.http.down_server.cache_time INT 60
    :reloadable:
@@ -1459,14 +1494,14 @@ Congestion Control
    Transaction buffering / flow control is enabled if this is set to a non-zero value. Otherwise no flow control is done.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.high_water INT 0
-   :metric: bytes
+   :units: bytes
    :overridable:
 
    The high water mark for transaction buffer control. External source I/O is halted when the total buffer space in use
    by the transaction exceeds this value.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.low_water INT 0
-   :metric: bytes
+   :units: bytes
    :overridable:
 
    The low water mark for transaction buffer control. External source I/O is resumed when the total buffer space in use
@@ -1942,7 +1977,7 @@ Cache Control
    By default, the feature is off (set to 0).
 
 .. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_size_limit INT 0
-   :metric: bytes
+   :units: bytes
 
    Limit the size of objects that are hit evacuated.
 
@@ -2063,22 +2098,31 @@ Heuristic Expiration
    aging factor is applied, the final maximum age calculated will never be
    higher than the value in this variable.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.time INT 240
+.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.time INT 0
    :deprecated:
    :reloadable:
    :overridable:
 
    How often |TS| checks for an early refresh, during the period before the
-   document stale time. The interval specified must be in seconds. See the
-   section on :ref:`fuzzy-revalidation` for more details.
+   document stale time. The interval specified must be in seconds.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.005
+.. note::
+
+   Previous versions of Apache Traffic Server defaulted this to 240s. This
+   feature is deprecated as of ATS v6.2.0.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.0
    :deprecated:
    :reloadable:
    :overridable:
 
    The probability that a refresh is made on a document during the fuzz time
    specified in :ts:cv:`proxy.config.http.cache.fuzz.time`.
+
+.. note::
+
+   Previous versions of Apache Traffic Server defaulted this to 0.005 (0.5%).
+   This feature is deprecated as of ATS v6.2.0
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.min_time INT 0
    :deprecated:
@@ -2099,9 +2143,9 @@ Heuristic Expiration
 
     These fuzzing options are marked as deprecated as of v6.2.0, and will be
     removed for v7.0.0. Instead, we recommend looking at the new
-    :ts:cv:`proxy-config-http-cache-open-write-fail-action` configuration and
+    :ts:cv:`proxy.config.http.cache.open_write_fail_action` configuration and
     the features around thundering heard avoidance (see
-    :ref:`cache-basics` for details).
+    :ref:`http-proxy-caching` for details).
 
 Dynamic Content & Content Negotiation
 =====================================
@@ -2131,6 +2175,7 @@ all the different user-agent versions of documents it encounters.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.max_open_read_retries INT -1
    :reloadable:
+   :overridable:
 
     The number of times to attempt fetching an object from cache if there was an equivalent request in flight.
 
@@ -2213,13 +2258,13 @@ Customizable User Response Pages
 
 .. ts:cv:: CONFIG proxy.config.http_ui_enabled INT 0
 
-   Specifies which http UI endpoints to allow within :file:`remap.config`:
+   Specifies which http Inspector UI endpoints to allow within :file:`remap.config`:
 
    ===== ======================================================================
    Value Description
    ===== ======================================================================
    ``0`` Disable all http UI endpoints.
-   ``1`` Enable only cache endpoints.
+   ``1`` Enable only Cache Inspector endpoints.
    ``2`` Enable only stats endpoints.
    ``3`` Enable all http UI endpoints.
    ===== ======================================================================
@@ -2320,7 +2365,7 @@ HostDB
 ======
 
 .. ts:cv:: CONFIG proxy.config.hostdb.lookup_timeout INT 30
-   :metric: seconds
+   :units: seconds
    :reloadable:
 
    Time to wait for a DNS response in seconds.
@@ -2328,7 +2373,7 @@ HostDB
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.serve_stale_for INT
-   :metric: seconds
+   :units: seconds
    :reloadable:
 
    The number of seconds for which to use a stale NS record while initiating a
@@ -2337,7 +2382,7 @@ HostDB
    If not set then stale records are not served.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.max_size INT 10737418240
-   :metric: bytes
+   :units: bytes
 
    The maximum amount of space (in bytes) allocated to ``hostdb``.
    Setting this value to ``-1`` will disable size limit enforcement.
@@ -2372,14 +2417,14 @@ HostDB
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.hostdb.timeout INT 1440
-   :metric: minutes
+   :units: seconds
    :reloadable:
 
-   Internal time to live value for host DB entries, **in minutes**.
+   Internal time to live value for host DB entries in seconds.
 
-   See :ts:cv:`proxy.config.hostdb.ttl_mode` for when this value is used.
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+   See :ts:cv:`proxy.config.hostdb.ttl_mode` for when this value
+   is used.  See :ref:`admin-performance-timeouts` for more discussion
+   on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.fail.timeout INT 0
 
@@ -2427,7 +2472,7 @@ HostDB
    check and the file will be treated as modified.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.host_file.interval INT 86400
-   :metric: seconds
+   :units: seconds
    :reloadable:
 
    Set the file changed check timer for :ts:cv:`proxy.config.hostdb.host_file.path`.
@@ -2537,7 +2582,7 @@ Logging Configuration
    ``3``    Dull logging (errors and transactions).
    ======== ===================================================================
 
-   Refer to :ref:`admin-monitoring-logging` for more information on event logging.
+   Refer to :ref:`admin-logging` for more information on event logging.
 
 .. ts:cv:: CONFIG proxy.config.log.max_secs_per_buffer INT 5
    :reloadable:
@@ -2545,7 +2590,7 @@ Logging Configuration
    The maximum amount of time before data in the buffer is flushed to disk.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_logs INT 25000
-   :metric: megabytes
+   :units: megabytes
    :reloadable:
 
    The amount of space allocated to the logging directory (in MB).
@@ -2564,7 +2609,7 @@ Logging Configuration
    for maximum allowed log space.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_orphan_logs INT 25
-   :metric: megabytes
+   :units: megabytes
    :reloadable:
 
    The amount of space allocated to the logging directory (in MB) if this node is acting as a collation client.
@@ -2577,7 +2622,7 @@ Logging Configuration
    when you enable full remote logging, and bump to the same size as proxy.config.log.max_space_mb_for_logs.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_headroom INT 1000
-   :metric: megabytes
+   :units: megabytes
    :reloadable:
 
    The tolerance for the log space limit (in megabytes). If the variable :ts:cv:`proxy.config.log.auto_delete_rolled_files` is set to ``1``
@@ -2636,7 +2681,8 @@ Logging Configuration
    ===== ======================================================================
 
    For information on sending custom formats to the collation server,
-   refer to :ref:`admin-monitoring-logging-formats` and :file:`logging.config`.
+   refer to :ref:`admin-logging-collating-custom-formats` and
+   :file:`logging.config`.
 
 .. note::
 
@@ -2666,6 +2712,24 @@ Logging Configuration
    :reloadable:
 
    The number of seconds between collation server connection retries.
+
+.. ts:cv:: CONFIG proxy.config.log.collation_host_timeout INT 86390
+
+   The number of seconds before inactivity time-out events for the host side.
+   This setting over-rides the default set with proxy.config.net.default_inactivity_timeout
+   for log collation connections.
+
+   The default is set for 10s less on the host side to help prevent any possible race
+   conditions. If the host disconnects first, the client will see the disconnect
+   before its own time-out and re-connect automatically. If the client does not see
+   the disconnect, i.e., connection is "locked-up" for some reason, it will disconnect
+   when it reaches its own time-out and then re-connect automatically.
+
+.. ts:cv:: CONFIG proxy.config.log.collation_client_timeout INT 86400
+
+   The number of seconds before inactivity time-out events for the client side.
+   This setting over-rides the default set with proxy.config.net.default_inactivity_timeout
+   for log collation connections.
 
 .. ts:cv:: CONFIG proxy.config.log.rolling_enabled INT 1
    :reloadable:
@@ -2728,13 +2792,13 @@ Logging Configuration
 
 .. ts:cv:: CONFIG proxy.config.log.periodic_tasks_interval INT 5
    :reloadable:
-   :metric: seconds
+   :units: seconds
 
    How often Traffic Server executes log related periodic tasks, in seconds
 
 .. ts:cv:: CONFIG proxy.config.http.slow.log.threshold INT 0
    :reloadable:
-   :metric: milliseconds
+   :units: milliseconds
 
    If set to a non-zero value :arg:`N` then any connection that takes longer than :arg:`N` milliseconds from accept to
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
@@ -2771,7 +2835,7 @@ Diagnostic Logging Configuration
    ``O`` Log to standard output.
    ``E`` Log to standard error.
    ``S`` Log to syslog.
-   ``L`` Log to ``diags.log``.
+   ``L`` Log to :file:`diags.log`.
    ===== ======================================================================
 
 .. topic:: Example
@@ -2822,17 +2886,19 @@ Diagnostic Logging Configuration
    ``2`` Enables diagnostics log rolling when the diagnostics log reaches a
          specific size (specified with
          :ts:cv:`proxy.config.diags.logfile.rolling_size_mb`).
+   ``3`` Enables diagnostics log rolling at specific intervals or when the
+         diagnostics log reaches a specific size (whichever occurs first).
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_interval_sec INT 3600
    :reloadable:
-   :metric: seconds
+   :units: seconds
 
    Specifies how often the diagnostics log is rolled, in seconds. The timer starts on Traffic Server bootup.
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_size_mb INT 100
    :reloadable:
-   :metric: megabytes
+   :units: megabytes
 
    Specifies at what size to roll the diagnostics log at.
 
@@ -2921,21 +2987,6 @@ SSL Termination
          allowed to access |TS|.
    ===== ======================================================================
 
-.. ts:cv:: CONFIG proxy.config.ssl.number.threads INT -1
-
-   Sets the number of SSL threads to use, this defaults to 0 (autoconfigure).
-
-   ======== ===================================================================
-   Value    Description
-   ======== ===================================================================
-   ``0``    Autoconfigure. This will allow |TS| to determine the appropriate
-            number of threads
-   ``-1``   Disable. This makes ``ET_NET`` threads behave like ``ET_SSL``
-            threads. Note that this does not disable SSL, it simply allows
-            another thread pool to assist in SSL tasks without dedicated SSL
-            threads.
-   >\ ``0`` Use a non-zero number of dedicated SSL threads.
-   ======== ===================================================================
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
 
@@ -2993,7 +3044,7 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING ssl_ticket.key
 
-   The filename of the default and global ticket key for SSL sessions. The location of the :file:`ssl_ticket.key` file, relative to the
+   The filename of the default and global ticket key for SSL sessions. The location is relative to the
    :ts:cv:`proxy.config.ssl.server.cert.path` directory.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
@@ -3067,6 +3118,7 @@ SSL Termination
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
+   :overridable:
 
    This configuration specifies the max-age value that will be used
    when adding the Strict-Transport-Security header.  The value is in seconds.
@@ -3076,6 +3128,7 @@ SSL Termination
    header will not be set on HTTP requests.
 
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_include_subdomains INT 0
+   :overridable:
 
    Enables (``1``) or disables (``0``) adding the includeSubdomain value
    to the Strict-Transport-Security header.  proxy.config.ssl.hsts_max_age
@@ -3388,12 +3441,18 @@ Sockets
         TCP_NODELAY  (1)
         SO_KEEPALIVE (2)
         SO_LINGER (4) - with a timeout of 0 seconds
+        TCP_FASTOPEN (8)
 
 .. note::
 
    This is a bitmask and you need to decide what bits to set.  Therefore,
    you must set the value to ``3`` if you want to enable nodelay and
    keepalive options above.
+
+.. note::
+
+   To allow TCP Fast Open for client sockets on Linux, bit 2 of
+   the ``net.ipv4.tcp_fastopen`` sysctl must be set.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_out INT 0
    :overridable:
@@ -3414,6 +3473,7 @@ Sockets
         TCP_NODELAY  (1)
         SO_KEEPALIVE (2)
         SO_LINGER (4) - with a timeout of 0 seconds
+        TCP_FASTOPEN (8)
 
 .. note::
 
@@ -3425,6 +3485,11 @@ Sockets
    to 0. This is useful when Traffic Server and the origin server
    are co-located and large numbers of sockets are retained
    in the TIME_WAIT state.
+
+.. note::
+
+   To allow TCP Fast Open for server sockets on Linux, bit 1 of
+   the ``net.ipv4.tcp_fastopen`` sysctl must be set.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_mss_in INT 0
 
@@ -3515,6 +3580,12 @@ Sockets
 
    For more information on the implications of enabling huge pages, see
    `Wikipedia <http://en.wikipedia.org/wiki/Page_%28computer_memory%29#Page_size_trade-off>_`.
+
+.. ts:cv:: CONFIG proxy.config.allocator.dontdump_iobuffers INT 1
+
+  Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported
+  platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP
+  with madvise() on linux platforms that support MADV_DONTDUMP.  Enabled by default.
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
 

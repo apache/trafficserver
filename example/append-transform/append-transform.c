@@ -76,8 +76,9 @@ static void
 my_data_destroy(MyData *data)
 {
   if (data) {
-    if (data->output_buffer)
+    if (data->output_buffer) {
       TSIOBufferDestroy(data->output_buffer);
+    }
     TSfree(data);
   }
 }

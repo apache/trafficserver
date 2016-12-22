@@ -53,7 +53,7 @@ SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
     // If we are only attaching to the client request, NULL the SSL context in order to
     // nuke the SSL headers from the server request.
     if (hdr->attach == SSL_HEADERS_ATTACH_CLIENT) {
-      ssl = NULL;
+      ssl = nullptr;
     }
 
     break;
@@ -122,7 +122,7 @@ SslHdrSetHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string &name, BIO *value
 static void
 SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuffer mbuf, TSMLoc mhdr)
 {
-  if (ssl == NULL) {
+  if (ssl == nullptr) {
     for (SslHdrInstance::expansion_list::const_iterator e = expansions.begin(); e != expansions.end(); ++e) {
       SslHdrRemoveHeader(mbuf, mhdr, e->name);
     }
@@ -139,10 +139,10 @@ SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuff
         x509 = SSL_get_certificate(ssl);
         break;
       default:
-        x509 = NULL;
+        x509 = nullptr;
       }
 
-      if (x509 == NULL) {
+      if (x509 == nullptr) {
         continue;
       }
 
@@ -167,7 +167,7 @@ static SslHdrInstance *
 SslHdrParseOptions(int argc, const char **argv)
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("attach"), required_argument, 0, 'a'}, {0, 0, 0, 0},
+    {const_cast<char *>("attach"), required_argument, nullptr, 'a'}, {nullptr, 0, nullptr, 0},
   };
 
   ats_scoped_obj<SslHdrInstance> hdr(new SslHdrInstance());
@@ -175,7 +175,7 @@ SslHdrParseOptions(int argc, const char **argv)
   for (;;) {
     int opt;
 
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
     switch (opt) {
     case 'a':
       if (strcmp(optarg, "client") == 0) {
@@ -186,7 +186,7 @@ SslHdrParseOptions(int argc, const char **argv)
         hdr->attach = SSL_HEADERS_ATTACH_BOTH;
       } else {
         TSError("[%s] Invalid attach option '%s'", PLUGIN_NAME, optarg);
-        return NULL;
+        return nullptr;
       }
 
       break;
@@ -202,7 +202,7 @@ SslHdrParseOptions(int argc, const char **argv)
     SslHdrExpansion exp;
     if (!SslHdrParseExpansion(argv[i], exp)) {
       // If we fail, the expansion parsing logs the error.
-      return NULL;
+      return nullptr;
     }
 
     hdr->expansions.push_back(exp);
@@ -287,7 +287,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
 }
 
 SslHdrInstance::SslHdrInstance()
-  : expansions(), attach(SSL_HEADERS_ATTACH_SERVER), cont(TSContCreate(SslHdrExpandRequestHook, NULL))
+  : expansions(), attach(SSL_HEADERS_ATTACH_SERVER), cont(TSContCreate(SslHdrExpandRequestHook, nullptr))
 {
   TSContDataSet(cont, this);
 }

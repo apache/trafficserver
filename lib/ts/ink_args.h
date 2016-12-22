@@ -67,13 +67,13 @@ struct ArgumentDescription {
   ArgumentFunction *pfn;
 };
 
-#define VERSION_ARGUMENT_DESCRIPTION()                             \
-  {                                                                \
-    "version", 'V', "Print version string", NULL, NULL, NULL, NULL \
+#define VERSION_ARGUMENT_DESCRIPTION()                                         \
+  {                                                                            \
+    "version", 'V', "Print version string", nullptr, nullptr, nullptr, nullptr \
   }
-#define HELP_ARGUMENT_DESCRIPTION()                                 \
-  {                                                                 \
-    "help", 'h', "Print usage information", NULL, NULL, NULL, usage \
+#define HELP_ARGUMENT_DESCRIPTION()                                          \
+  {                                                                          \
+    "help", 'h', "Print usage information", nullptr, nullptr, nullptr, usage \
   }
 
 /* Global Data

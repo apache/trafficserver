@@ -62,10 +62,15 @@ fi
 
 # I can't figure out how to deal with scl enable devtoolset-3 bash and the sub-shell with Jenkins,
 # so hacking this up for now.
-if test "$ATS_IS_7" == "yes" -a -x "/opt/rh/devtoolset-3/root/usr/bin/gcc"; then
-    export CC="/opt/rh/devtoolset-3/root/usr/bin/gcc"
-    export CXX="/opt/rh/devtoolset-3/root/usr/bin/g++"
-    export PATH="/opt/rh/devtoolset-3/root/usr/bin:${PATH}"
+if test "$ATS_IS_7" == "yes"; then
+    if test -x "/opt/rh/devtoolset-3/root/usr/bin/gcc"; then
+	export CC="/opt/rh/devtoolset-3/root/usr/bin/gcc"
+	export CXX="/opt/rh/devtoolset-3/root/usr/bin/g++"
+	export PATH="/opt/rh/devtoolset-3/root/usr/bin:${PATH}"
+    elif test -x "/usr/bin/gcc-4.9"; then
+	export CC="/usr/bin/gcc-4.9"
+	export CXX="/usr/bin/g++-4.9"
+    fi
 fi
 
 # Figure out parallelism for regular builds / bots

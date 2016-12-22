@@ -125,7 +125,7 @@ enum AllocType {
 
 inkcoreapi extern Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
-void init_buffer_allocators();
+void init_buffer_allocators(int iobuffer_advice);
 
 /**
   A reference counted wrapper around fast allocated or malloced memory.
@@ -261,10 +261,10 @@ public:
   IOBufferData()
     : _size_index(BUFFER_SIZE_NOT_ALLOCATED),
       _mem_type(NO_ALLOC),
-      _data(NULL)
+      _data(nullptr)
 #ifdef TRACK_BUFFER_USER
       ,
-      _location(NULL)
+      _location(nullptr)
 #endif
   {
   }
@@ -554,7 +554,7 @@ public:
   /**
     End of inuse area of the first block with unconsumed data. Returns a
     pointer to the end of the first block with unconsumed data for this
-    reader. A NULL pointer indicates there are no blocks with unconsumed
+    reader. A nullptr pointer indicates there are no blocks with unconsumed
     data for this reader.
 
     @return pointer to the end of the first block with unconsumed data.
@@ -791,7 +791,7 @@ public:
   int64_t start_offset;
   int64_t size_limit;
 
-  IOBufferReader() : accessor(NULL), mbuf(NULL), start_offset(0), size_limit(INT64_MAX) {}
+  IOBufferReader() : accessor(nullptr), mbuf(nullptr), start_offset(0), size_limit(INT64_MAX) {}
 };
 
 /**
@@ -915,7 +915,7 @@ public:
 
   /**
     Returns a pointer to the first writable block on the block chain.
-    Returns NULL if there are not currently any writable blocks on the
+    Returns nullptr if there are not currently any writable blocks on the
     block list.
   */
   IOBufferBlock *
@@ -929,7 +929,7 @@ public:
       return _writer.get();
     }
 
-    return NULL;
+    return nullptr;
   }
 
   char *
@@ -1118,7 +1118,7 @@ public:
   void
   dealloc()
   {
-    _writer = NULL;
+    _writer = nullptr;
     dealloc_all_readers();
   }
 
@@ -1212,17 +1212,17 @@ struct MIOBufferAccessor {
   void
   clear()
   {
-    mbuf  = NULL;
-    entry = NULL;
+    mbuf  = nullptr;
+    entry = nullptr;
   }
 
   MIOBufferAccessor()
     :
 #ifdef DEBUG
-      name(NULL),
+      name(nullptr),
 #endif
-      mbuf(NULL),
-      entry(NULL)
+      mbuf(nullptr),
+      entry(nullptr)
   {
   }
 

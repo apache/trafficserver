@@ -48,15 +48,6 @@ more widely. Those are described on this page.
 
    An opaque type that represents a Traffic Server :term:`continuation`.
 
-.. type:: TSEvent
-
-   :type:`TSEvents` are sent to continuations when they are called
-   back.
-
-   The :type:`TSEvent` provides the continuation's handler function
-   with information about the callback.  Based on the event it
-   receives, the handler function can decide what to do.
-
 .. type:: TSEventFunc
 
 .. type:: TSFile
@@ -69,15 +60,11 @@ more widely. Those are described on this page.
 
    A 64 bit time value, measured in nanoseconds.
 
-.. type:: TSHttpHookID
-
-   An enumeration that identifies a specific type of hook for HTTP transactions.
-
 .. type:: TSHttpParser
 
 .. type:: TSHttpSsn
 
-   An opaque type that represents a Traffic Server :term:`session`.
+   An opaque type that represents a Traffic SeUuirver :term:`session`.
 
 .. type:: TSHttpStatus
 
@@ -92,18 +79,6 @@ more widely. Those are described on this page.
 .. type:: TSHttpTxn
 
    An opaque type that represents a Traffic Server HTTP :term:`transaction`.
-
-.. type:: TSHttpType
-
-   This set of enums represents the possible HTTP types that can be
-   assigned to an HTTP header.
-
-   When a header is created with :func:`TSHttpHdrCreate`, it is
-   automatically assigned a type of :data:`TS_HTTP_TYPE_UNKNOWN`.  You
-   can modify the HTTP type ONCE after it the header is created, using
-   :func:`TSHttpHdrTypeSet`.  After setting the HTTP type once, you
-   cannot set it again.  Use :func:`TSHttpHdrTypeGet` to obtain the
-   :type:`TSHttpType` of an HTTP header.
 
 .. type:: TSIOBuffer
 
@@ -137,6 +112,10 @@ more widely. Those are described on this page.
 
 .. type:: TSMLoc
 
+.. var:: TSMLoc TS_NULL_MLOC
+
+   A predefined null valued :type:`TSMLoc` used to indicate the absence of an :type:`TSMLoc`.
+
 .. type:: TSMutex
 
 .. type:: TSParseResult
@@ -157,8 +136,6 @@ more widely. Those are described on this page.
 .. type:: TSRemapInterface
 
 .. type:: TSRemapRequestInfo
-
-.. type:: TSRemapStatus
 
 .. type:: TSReturnCode
 
@@ -184,6 +161,22 @@ more widely. Those are described on this page.
 .. type:: TSThreadFunc
 
 .. type:: TSThreadPool
+
+.. type:: TSUuid
+
+   Opaque type that refers to an allocated UUID.
+
+.. type:: TSUuidVersion
+
+   A version value for at :type:`TSUuid`.
+
+   .. member:: TS_UUID_V4
+
+      A version 4 UUID. Currently only this value is used.
+
+.. var:: size_t TS_UUID_STRING_LEN
+
+   Length of a UUID string.
 
 .. type:: TSVConn
 

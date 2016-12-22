@@ -105,3 +105,49 @@ origin servers' hostnames prior to object revalidation or retrieval.
    :type: gauge
    :unit: seconds
 
+.. ts:stat:: global proxy.process.hostdb.cache.current_items integer
+   :type: gauge
+
+   The number of distinct host records in the HostDB cache.
+
+.. ts:stat:: global proxy.process.hostdb.cache.current_size integer
+   :type: gauge
+   :unit: bytes
+
+   The total size of all host records in the HostDB cache.
+
+.. ts:stat:: global proxy.process.hostdb.cache.last_sync.time integer
+   :type: gauge
+
+   The Unix timestamp of the last successful sync of HostDB's cache to disk
+
+.. ts:stat:: global proxy.process.hostdb.cache.last_sync.total_items integer
+   :type: gauge
+
+   The number of distinct host records in the HostDB cache that where synced to disk.
+
+.. ts:stat:: global proxy.process.hostdb.cache.last_sync.total_size integer
+   :type: gauge
+   :unit: bytes
+
+   The total size of all host records in the HostDB cache that where synced to disk.
+
+.. ts:stat:: global proxy.process.hostdb.cache.total_failed_inserts integer
+   :type: counter
+
+   The number of host records that where unable to be inserted into HostDB's cache
+
+.. ts:stat:: global proxy.process.hostdb.cache.total_hits integer
+   :type: counter
+
+   The total number of successful lookups for host records from HostDB's cache
+
+.. ts:stat:: global proxy.process.hostdb.cache.total_inserts integer
+   :type: counter
+
+   The number host records inserted into HostDB's cache
+
+.. ts:stat:: global proxy.process.hostdb.cache.total_lookups integer
+   :type: counter
+
+   The total number of lookups for host records from HostDB's cache

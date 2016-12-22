@@ -46,7 +46,7 @@ PriorityEventQueue::check_ready(ink_hrtime now, EThread *t)
     Event *e;
     Que(Event, link) q = after[i];
     after[i].clear();
-    while ((e = q.dequeue()) != NULL) {
+    while ((e = q.dequeue()) != nullptr) {
       if (e->cancelled) {
         e->in_the_priority_queue = 0;
         e->cancelled             = 0;

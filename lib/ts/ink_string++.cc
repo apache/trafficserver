@@ -50,7 +50,7 @@ StrList::dump(FILE *fp)
 {
   Str *str;
 
-  for (str = head; str != NULL; str = str->next)
+  for (str = head; str != nullptr; str = str->next)
     str->dump(fp);
 }
 
@@ -69,8 +69,8 @@ StrList::_new_cell(const char *s, int len_not_counting_nul)
     cell = &(base_cells[cells_allocated]);
   } else {
     p = (char *)alloc(sizeof(Str) + 7);
-    if (p == NULL)
-      return (NULL);                            // FIX: scale heap
+    if (p == nullptr)
+      return (nullptr);                         // FIX: scale heap
     p    = (char *)((((uintptr_t)p) + 7) & ~7); // round up to multiple of 8
     cell = (Str *)p;
   }
@@ -79,8 +79,8 @@ StrList::_new_cell(const char *s, int len_not_counting_nul)
   // are we supposed to copy the string?
   if (copy_when_adding_string) {
     char *buf = (char *)alloc(l + 1);
-    if (buf == NULL)
-      return (NULL); // FIX: need to grow heap!
+    if (buf == nullptr)
+      return (nullptr); // FIX: need to grow heap!
     memcpy(buf, s, l);
     buf[l] = '\0';
 
@@ -124,7 +124,7 @@ const int overflow_head_hdr_size = INK_ALIGN(sizeof(StrListOverflow), INIT_OVERF
 void
 StrListOverflow::init()
 {
-  next      = NULL;
+  next      = nullptr;
   heap_size = 0;
   heap_used = 0;
 }
@@ -153,7 +153,7 @@ StrListOverflow::alloc(int size, StrListOverflow **new_heap_ptr)
       ink_release_assert(new_heap_size >= size);
     }
 
-    ink_assert(next == NULL);
+    ink_assert(next == nullptr);
     *new_heap_ptr = next = create_heap(new_heap_size);
     return next->alloc(size, new_heap_ptr);
   }

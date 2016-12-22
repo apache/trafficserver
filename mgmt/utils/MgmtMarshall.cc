@@ -227,7 +227,7 @@ mgmt_message_length_v(const MgmtMarshallType *fields, unsigned count, va_list ap
     case MGMT_MARSHALL_STRING:
       nbytes += 4;
       ptr.m_string = va_arg(ap, MgmtMarshallString *);
-      if (*ptr.m_string == NULL) {
+      if (*ptr.m_string == nullptr) {
         ptr.m_string = &empty;
       }
       nbytes += strlen(*ptr.m_string) + 1;
@@ -280,7 +280,7 @@ mgmt_message_write_v(int fd, const MgmtMarshallType *fields, unsigned count, va_
     case MGMT_MARSHALL_STRING: {
       MgmtMarshallData data;
       ptr.m_string = va_arg(ap, MgmtMarshallString *);
-      if (*ptr.m_string == NULL) {
+      if (*ptr.m_string == nullptr) {
         ptr.m_string = &empty;
       }
       data.ptr = *ptr.m_string;
@@ -412,7 +412,7 @@ mgmt_message_marshall_v(void *buf, size_t remain, const MgmtMarshallType *fields
     case MGMT_MARSHALL_STRING: {
       MgmtMarshallData data;
       ptr.m_string = va_arg(ap, MgmtMarshallString *);
-      if (*ptr.m_string == NULL) {
+      if (*ptr.m_string == nullptr) {
         ptr.m_string = &empty;
       }
 

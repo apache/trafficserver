@@ -37,15 +37,14 @@ struct UnixNetProcessor : public NetProcessor {
 public:
   virtual Action *accept_internal(Continuation *cont, int fd, AcceptOptions const &opt);
 
-  Action *connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *options = NULL);
-  Action *connect(Continuation *cont, UnixNetVConnection **vc, sockaddr const *target, NetVCOptions *opt = NULL);
+  Action *connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *options = nullptr);
+  Action *connect(Continuation *cont, UnixNetVConnection **vc, sockaddr const *target, NetVCOptions *opt = nullptr);
 
-  virtual NetAccept *createNetAccept();
+  virtual NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt);
   virtual NetVConnection *allocate_vc(EThread *t);
 
   virtual int start(int number_of_net_threads, size_t stacksize);
 
-  char *throttle_error_message;
   Event *accept_thread_event;
 
   // offsets for per thread data structures

@@ -367,13 +367,13 @@ struct CacheVC : public CacheVConnection {
   virtual void get_http_info(CacheHTTPInfo **info);
   /** Get the fragment table.
       @return The address of the start of the fragment table,
-      or @c NULL if there is no fragment table.
+      or @c nullptr if there is no fragment table.
   */
   virtual HTTPInfo::FragOffset *get_frag_table();
   /** Load alt pointers and do fixups if needed.
       @return Length of header data used for alternates.
    */
-  virtual uint32_t load_http_info(CacheHTTPInfoVector *info, struct Doc *doc, RefCountObj *block_ptr = NULL);
+  virtual uint32_t load_http_info(CacheHTTPInfoVector *info, struct Doc *doc, RefCountObj *block_ptr = nullptr);
 #endif
   virtual bool is_pread_capable();
   virtual bool set_pin_in_cache(time_t time_pin);
@@ -524,7 +524,7 @@ struct CacheVC : public CacheVConnection {
 struct CacheRemoveCont : public Continuation {
   int event_handler(int event, void *data);
 
-  CacheRemoveCont() : Continuation(NULL) {}
+  CacheRemoveCont() : Continuation(nullptr) {}
 };
 
 // Global Data
@@ -549,10 +549,10 @@ new_CacheVC(Continuation *cont)
   c->vector.data.data = &c->vector.data.fast_data[0];
 #endif
   c->_action        = cont;
-  c->initial_thread = t->tt == DEDICATED ? NULL : t;
+  c->initial_thread = t->tt == DEDICATED ? nullptr : t;
   c->mutex          = cont->mutex;
   c->start_time     = Thread::get_hrtime();
-  ink_assert(c->trigger == NULL);
+  ink_assert(c->trigger == nullptr);
   Debug("cache_new", "new %p", c);
 #ifdef CACHE_STAT_PAGES
   ink_assert(!c->stat_link.next);
@@ -579,11 +579,11 @@ free_CacheVC(CacheVC *cont)
     cont->trigger->cancel();
   ink_assert(!cont->is_io_in_progress());
   ink_assert(!cont->od);
-  /* calling cont->io.action = NULL causes compile problem on 2.6 solaris
+  /* calling cont->io.action = nullptr causes compile problem on 2.6 solaris
      release build....wierd??? For now, null out continuation and mutex
      of the action separately */
-  cont->io.action.continuation = NULL;
-  cont->io.action.mutex        = NULL;
+  cont->io.action.continuation = nullptr;
+  cont->io.action.mutex        = nullptr;
   cont->io.mutex.clear();
   cont->io.aio_result        = 0;
   cont->io.aiocb.aio_nbytes  = 0;
@@ -671,7 +671,7 @@ CacheVC::cancel_trigger()
 {
   if (trigger) {
     trigger->cancel_action();
-    trigger = NULL;
+    trigger = nullptr;
   }
 }
 
@@ -687,7 +687,7 @@ CacheVC::die()
     if (!is_io_in_progress()) {
       SET_HANDLER(&CacheVC::openWriteClose);
       if (!recursive)
-        openWriteClose(EVENT_NONE, NULL);
+        openWriteClose(EVENT_NONE, nullptr);
     } // else catch it at the end of openWriteWriteDone
     return EVENT_CONT;
   } else {
@@ -696,7 +696,7 @@ CacheVC::die()
     else {
       SET_HANDLER(&CacheVC::openReadClose);
       if (!recursive)
-        openReadClose(EVENT_NONE, NULL);
+        openReadClose(EVENT_NONE, nullptr);
     }
     return EVENT_CONT;
   }
@@ -741,7 +741,7 @@ CacheVC::writer_done()
   OpenDirEntry *cod = od;
   if (!cod)
     cod      = vol->open_read(&first_key);
-  CacheVC *w = (cod) ? cod->writers.head : NULL;
+  CacheVC *w = (cod) ? cod->writers.head : nullptr;
   // If the write vc started after the reader, then its not the
   // original writer, since we never choose a writer that started
   // after the reader. The original writer was deallocated and then
@@ -816,7 +816,7 @@ Vol::open_read_lock(INK_MD5 *key, EThread *t)
 {
   CACHE_TRY_LOCK(lock, mutex, t);
   if (!lock.is_locked())
-    return NULL;
+    return nullptr;
   return open_dir.open_read(key);
 }
 
@@ -928,7 +928,7 @@ new_CacheRemoveCont()
 TS_INLINE void
 free_CacheRemoveCont(CacheRemoveCont *cache_rm)
 {
-  cache_rm->mutex = NULL;
+  cache_rm->mutex = nullptr;
   cacheRemoveContAllocator.free(cache_rm);
 }
 
@@ -981,7 +981,7 @@ struct Cache {
   Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, CacheLookupHttpConfig *params,
                     CacheFragType type, const char *hostname, int host_len);
   Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
-                     const CacheKey *key1 = NULL, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = 0,
+                     const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = 0,
                      int host_len = 0);
   static void generate_key(INK_MD5 *md5, CacheURL *url);
   static void generate_key(HttpCacheKey *md5, CacheURL *url, cache_generation_t generation = -1);
@@ -995,7 +995,7 @@ struct Cache {
 
   int open_done();
 
-  Vol *key_to_vol(const CacheKey *key, char const *hostname, int host_len);
+  Vol *key_to_vol(const CacheKey *key, const char *hostname, int host_len);
 
   Cache()
     : cache_read_done(0),
@@ -1003,7 +1003,7 @@ struct Cache {
       total_nvol(0),
       ready(CACHE_INITIALIZING),
       cache_size(0), // in store block size
-      hosttable(NULL),
+      hosttable(nullptr),
       total_initialized_vol(0),
       scheme(CACHE_NONE_TYPE)
   {

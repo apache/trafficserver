@@ -20,11 +20,11 @@
 include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/lib
+  -I$(abs_top_srcdir)/lib/records \
+  -I$(abs_top_srcdir)/mgmt \
+  -I$(abs_top_srcdir)/mgmt/api/include \
+  -I$(abs_top_srcdir)/mgmt/utils \
+  -I$(abs_top_srcdir)/lib
 
 noinst_LTLIBRARIES = libcluster.la
 

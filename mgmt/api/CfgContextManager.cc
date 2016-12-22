@@ -54,7 +54,7 @@
 CfgContext *
 CfgContextCreate(TSFileNameT file)
 {
-  CfgContext *ctx = NULL;
+  CfgContext *ctx = nullptr;
   ctx             = new CfgContext(file);
   return ctx;
 }
@@ -88,8 +88,8 @@ TSMgmtError
 CfgContextCommit(CfgContext *ctx, LLQ *errRules)
 {
   int ret;
-  char *new_text = NULL;
-  char *rule     = NULL;
+  char *new_text = nullptr;
+  char *rule     = nullptr;
   CfgEleObj *ele;
   int ver, size = 0, index;
   int *iPtr;
@@ -158,14 +158,11 @@ CfgContextGet(CfgContext *ctx)
 {
   TSMgmtError ret;
   int size, ver;
-  char *old_text      = NULL;
-  RuleList *rule_list = NULL;
-  CfgEleObj *ele      = NULL;
+  char *old_text      = nullptr;
+  RuleList *rule_list = nullptr;
+  CfgEleObj *ele      = nullptr;
 
-  ink_assert(ctx);
-  if (!ctx) {
-    return TS_ERR_PARAMS;
-  }
+  ink_release_assert(ctx);
 
   // get copy of the file
   ret = ReadFile(ctx->getFilename(), &old_text, &size, &ver);
@@ -186,7 +183,7 @@ CfgContextGet(CfgContext *ctx)
   for (Rule *rule_node = rule_list->first(); rule_node; rule_node = rule_list->next(rule_node)) {
     // rule_node->Print();
     ele = create_ele_obj_from_rule_node(rule_node);
-    if (ele == NULL) { // invalid rule; skip it
+    if (ele == nullptr) { // invalid rule; skip it
       continue;
     }
 
@@ -251,7 +248,7 @@ CfgContextGetObjAt(CfgContext *ctx, int index)
 
   ink_assert(ctx);
   if (!ctx) {
-    return NULL;
+    return nullptr;
   }
 
   // iterate through the ctx, keep count of all NON-Comment Obj Objects
@@ -269,7 +266,7 @@ CfgContextGetObjAt(CfgContext *ctx, int index)
     }
   }
 
-  return NULL; // invalid index
+  return nullptr; // invalid index
 }
 
 /*--------------------------------------------------------------
@@ -288,7 +285,7 @@ CfgContextGetEleAt(CfgContext *ctx, int index)
 
   ink_assert(ctx);
   if (!ctx) {
-    return NULL;
+    return nullptr;
   }
 
   // iterate through the ctx, keep count of all NON-Comment Ele Objects
@@ -308,7 +305,7 @@ CfgContextGetEleAt(CfgContext *ctx, int index)
     }
   }
 
-  return NULL; // invalid index
+  return nullptr; // invalid index
 }
 
 /*--------------------------------------------------------------
@@ -324,7 +321,7 @@ CfgContextGetFirst(CfgContext *ctx, TSCfgIterState *state)
 
   ink_assert(ctx && state);
   if (!ctx || !state) {
-    return NULL;
+    return nullptr;
   }
 
   // iterate; return the first CfgEleObj that's not a comment
@@ -339,7 +336,7 @@ CfgContextGetFirst(CfgContext *ctx, TSCfgIterState *state)
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*--------------------------------------------------------------
@@ -355,7 +352,7 @@ CfgContextGetNext(CfgContext *ctx, TSCfgIterState *state)
 
   ink_assert(ctx && state);
   if (!ctx || !state) {
-    return NULL;
+    return nullptr;
   }
 
   // iterate through the ctx, keep count of all NON-Comment Ele Objects
@@ -380,7 +377,7 @@ CfgContextGetNext(CfgContext *ctx, TSCfgIterState *state)
      */
   }
 
-  return NULL; // ERROR
+  return nullptr; // ERROR
 }
 
 /*--------------------------------------------------------------
@@ -394,8 +391,8 @@ TSMgmtError
 CfgContextMoveEleUp(CfgContext *ctx, int index)
 {
   CfgEleObj *curr_ele_obj;
-  TSCfgEle *ele_copy = 0; /* lv: just to make gcc happy */
-  int count          = 0; // start counting from 0
+  TSCfgEle *ele_copy = nullptr; /* lv: just to make gcc happy */
+  int count          = 0;       // start counting from 0
   TSMgmtError ret;
 
   ink_assert(ctx && index >= 0);
@@ -449,8 +446,8 @@ TSMgmtError
 CfgContextMoveEleDown(CfgContext *ctx, int index)
 {
   CfgEleObj *curr_ele_obj;
-  TSCfgEle *ele_copy = 0; /* lv: just to make gcc happy */
-  int count          = 0; // start counting from 0
+  TSCfgEle *ele_copy = nullptr; /* lv: just to make gcc happy */
+  int count          = 0;       // start counting from 0
   TSMgmtError ret;
   int tot_ele;
 
@@ -532,7 +529,7 @@ CfgContextAppendEle(CfgContext *ctx, TSCfgEle *ele)
 TSMgmtError
 CfgContextInsertEleAt(CfgContext *ctx, TSCfgEle *ele, int index)
 {
-  CfgEleObj *ele_obj, *curr_ele_obj, *last_comment = NULL;
+  CfgEleObj *ele_obj, *curr_ele_obj, *last_comment = nullptr;
   int count        = 0;
   TSMgmtError err  = TS_ERR_OKAY;
   bool has_comment = false;

@@ -103,7 +103,7 @@ struct DNSProcessor : public Processor {
 
   // DNS lookup
   //   calls: cont->handleEvent( DNS_EVENT_LOOKUP, HostEnt *ent) on success
-  //          cont->handleEvent( DNS_EVENT_LOOKUP, NULL) on failure
+  //          cont->handleEvent( DNS_EVENT_LOOKUP, nullptr) on failure
   // NOTE: the HostEnt *block is freed when the function returns
   //
 
@@ -174,7 +174,7 @@ DNSProcessor::gethostbyname(Continuation *cont, const char *name, int len, Optio
 inline Action *
 DNSProcessor::gethostbyaddr(Continuation *cont, IpAddr const *addr, Options const &opt)
 {
-  return getby(reinterpret_cast<char const *>(addr), 0, T_PTR, cont, opt);
+  return getby(reinterpret_cast<const char *>(addr), 0, T_PTR, cont, opt);
 }
 
 inline DNSProcessor::Options::Options() : handler(0), timeout(0), host_res_style(HOST_RES_IPV4)

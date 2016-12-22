@@ -40,12 +40,12 @@ MakeBalancerInstance(const char *opt)
   size_t len      = end ? std::distance(opt, end) : strlen(opt);
 
   if (len == lengthof("hash") && strncmp(opt, "hash", len) == 0) {
-    return MakeHashBalancer(end ? end + 1 : NULL);
+    return MakeHashBalancer(end ? end + 1 : nullptr);
   } else if (len == lengthof("roundrobin") && strncmp(opt, "roundrobin", len) == 0) {
-    return MakeRoundRobinBalancer(end ? end + 1 : NULL);
+    return MakeRoundRobinBalancer(end ? end + 1 : nullptr);
   } else {
     TSError("[balancer] Invalid balancing policy '%.*s'", (int)len, opt);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -73,7 +73,7 @@ MakeBalancerTarget(const char *strval)
     if (colon) {
       size_t len = std::distance(strval, colon);
 
-      target.port = strtol(colon + 1, NULL, 10);
+      target.port = strtol(colon + 1, nullptr, 10);
       target.name = std::string(strval, len);
     } else {
       target.port = 0;
@@ -102,10 +102,10 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("policy"), required_argument, 0, 'p'}, {0, 0, 0, 0},
+    {const_cast<char *>("policy"), required_argument, nullptr, 'p'}, {nullptr, 0, nullptr, 0},
   };
 
-  BalancerInstance *balancer = NULL;
+  BalancerInstance *balancer = nullptr;
 
   // The first two arguments are the "from" and "to" URL string. We need to
   // skip them, but we also require that there be an option to masquerade as
@@ -116,10 +116,14 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
   for (;;) {
     int opt;
 
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
     switch (opt) {
     case 'p':
-      balancer = MakeBalancerInstance(optarg);
+      if (!balancer) {
+        balancer = MakeBalancerInstance(optarg);
+      } else {
+        TSError("[balancer] Duplicate --policy options, ignored %s", optarg);
+      }
       break;
     case -1:
       break;

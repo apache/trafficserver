@@ -123,17 +123,21 @@ transform_destroy(TSCont contp)
 
   data = TSContDataGet(contp);
   if (data != NULL) {
-    if (data->input_buf)
+    if (data->input_buf) {
       TSIOBufferDestroy(data->input_buf);
+    }
 
-    if (data->output_buf)
+    if (data->output_buf) {
       TSIOBufferDestroy(data->output_buf);
+    }
 
-    if (data->pending_action)
+    if (data->pending_action) {
       TSActionCancel(data->pending_action);
+    }
 
-    if (data->server_vc)
+    if (data->server_vc) {
       TSVConnAbort(data->server_vc, 1);
+    }
 
     TSfree(data);
   } else {

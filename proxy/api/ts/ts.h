@@ -161,7 +161,7 @@ int TSTrafficServerVersionGetPatch(void);
     @return TS_ERROR if the plugin registration failed.
 
  */
-tsapi TSReturnCode TSPluginRegister(TSPluginRegistrationInfo *plugin_info);
+tsapi TSReturnCode TSPluginRegister(const TSPluginRegistrationInfo *plugin_info);
 
 /* --------------------------------------------------------------------------
    Files */
@@ -1194,7 +1194,7 @@ tsapi TSReturnCode TSMgmtIntGet(const char *var_name, TSMgmtInt *result);
 tsapi TSReturnCode TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result);
 tsapi TSReturnCode TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result);
 tsapi TSReturnCode TSMgmtStringGet(const char *var_name, TSMgmtString *result);
-
+tsapi TSReturnCode TSMgmtSourceGet(const char *var_name, TSMgmtSource *source);
 /* --------------------------------------------------------------------------
    Continuations */
 tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);
@@ -1481,6 +1481,9 @@ tsapi TSReturnCode TSHttpTxnParentProxyGet(TSHttpTxn txnp, const char **hostname
  */
 tsapi void TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port);
 
+tsapi TSReturnCode TSHttpTxnParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
+tsapi TSReturnCode TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
+
 tsapi void TSHttpTxnUntransformedRespCache(TSHttpTxn txnp, int on);
 tsapi void TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on);
 
@@ -1642,7 +1645,7 @@ tsapi void TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp);
     @param tag A logging tag that can be accessed via the pitag field. May be @c NULL.
     @param id A logging id that can be access via the piid field.
  */
-tsapi TSVConn TSHttpConnectWithPluginId(struct sockaddr const *addr, char const *tag, int64_t id);
+tsapi TSVConn TSHttpConnectWithPluginId(struct sockaddr const *addr, const char *tag, int64_t id);
 
 /** Backwards compatible version.
     This provides a @a tag of "plugin" and an @a id of 0.
@@ -1670,13 +1673,8 @@ tsapi void TSFetchUrl(const char *request, int request_len, struct sockaddr cons
 tsapi void TSFetchPages(TSFetchUrlParams_t *params);
 
 /* Check if HTTP State machine is internal or not */
-/** @deprecated to be renamed as TSHttpTxnIsInternal **/
-tsapi TS_DEPRECATED TSReturnCode TSHttpIsInternalRequest(TSHttpTxn txnp);
-/** @deprecated to be renamed as TSHttpSsnIsInternal **/
-tsapi TS_DEPRECATED TSReturnCode TSHttpIsInternalSession(TSHttpSsn ssnp);
-
-tsapi TSReturnCode TSHttpTxnIsInternal(TSHttpTxn txnp);
-tsapi TSReturnCode TSHttpSsnIsInternal(TSHttpSsn ssnp);
+tsapi int TSHttpTxnIsInternal(TSHttpTxn txnp);
+tsapi int TSHttpSsnIsInternal(TSHttpSsn ssnp);
 
 /* --------------------------------------------------------------------------
    HTTP alternate selection */
@@ -2336,6 +2334,7 @@ tsapi TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TS
 tsapi TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
 tsapi TSReturnCode TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session);
 tsapi int TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp);
+tsapi int TSHttpTxnIsWebsocket(TSHttpTxn txnp);
 
 /* Get the Txn's (HttpSM's) unique identifier, which is a sequence number since server start) */
 tsapi uint64_t TSHttpTxnIdGet(TSHttpTxn txnp);
@@ -2418,6 +2417,16 @@ tsapi const TSUuid TSProcessUuidGet(void);
    Returns the plugin_tag.
 */
 tsapi const char *TSHttpTxnPluginTagGet(TSHttpTxn txnp);
+
+/*
+ * Return information about the client protocols
+ */
+tsapi TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int *actual);
+tsapi TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int *actual);
+tsapi const char *TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, char const *tag);
+tsapi const char *TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, char const *tag);
+tsapi const char *TSNormalizedProtocolTag(char const *tag);
+tsapi const char *TSRegisterProtocolTag(char const *tag);
 
 #ifdef __cplusplus
 }

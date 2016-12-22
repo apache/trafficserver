@@ -190,7 +190,7 @@ template <typename T> struct cleaner {
   void
   reset()
   {
-    obj = 0;
+    obj = nullptr;
   }
 };
 }
@@ -199,7 +199,7 @@ template <typename T> struct cleaner {
 
     @internal This structure is used to reduce the number of places in
     which the defaults are set. Originally the argument defaulted to
-    @c NULL which meant that the defaults had to be encoded in any
+    @c nullptr which meant that the defaults had to be encoded in any
     methods that used it as well as the @c NetVCOptions
     constructor. Now they are controlled only in the latter and not in
     any of the methods. This makes handling global default values
@@ -316,14 +316,23 @@ Connection::connect(sockaddr const *target, NetVCOptions const &opt)
 
   int res;
 
-  this->setRemote(target);
+  if (target != nullptr) {
+    this->setRemote(target);
+  }
 
   // apply dynamic options with this.addr initialized
   apply_options(opt);
 
   cleaner<Connection> cleanup(this, &Connection::_cleanup); // mark for close until we succeed.
 
-  res = ::connect(fd, target, ats_ip_size(target));
+  if (opt.f_tcp_fastopen && !opt.f_blocking_connect) {
+    // TCP Fast Open is (effectively) a non-blocking connect, so set the
+    // return value we would see in that case.
+    errno = EINPROGRESS;
+    res   = -1;
+  } else {
+    res = ::connect(fd, &this->addr.sa, ats_ip_size(&this->addr.sa));
+  }
 
   // It's only really an error if either the connect was blocking
   // or it wasn't blocking and the error was other than EINPROGRESS.
@@ -341,7 +350,10 @@ Connection::connect(sockaddr const *target, NetVCOptions const &opt)
   }
 
   cleanup.reset();
-  is_connected = true;
+
+  // Only mark this connection as connected if we successfully called connect(2). When we
+  // do the TCP Fast Open later, we need to track this accurately.
+  is_connected = !(opt.f_tcp_fastopen && !opt.f_blocking_connect);
   return 0;
 }
 
@@ -387,28 +399,4 @@ Connection::apply_options(NetVCOptions const &opt)
     safe_setsockopt(fd, IPPROTO_IPV6, IPV6_TCLASS, reinterpret_cast<char *>(&tos), sizeof(uint32_t));
   }
 #endif
-}
-
-void
-UnixNetVConnection::add_to_keep_alive_queue()
-{
-  nh->add_to_keep_alive_queue(this);
-}
-
-void
-UnixNetVConnection::remove_from_keep_alive_queue()
-{
-  nh->remove_from_keep_alive_queue(this);
-}
-
-bool
-UnixNetVConnection::add_to_active_queue()
-{
-  return nh->add_to_active_queue(this);
-}
-
-void
-UnixNetVConnection::remove_from_active_queue()
-{
-  nh->remove_from_active_queue(this);
 }

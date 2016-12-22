@@ -123,10 +123,10 @@ struct Connection {
   }
 
   int setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING, unsigned char mc_ttl = 1,
-                    bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation *c = NULL);
+                    bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation *c = nullptr);
 
-  int setup_mc_receive(sockaddr const *from, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING, Connection *sendchan = NULL,
-                       Continuation *c = NULL);
+  int setup_mc_receive(sockaddr const *from, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING,
+                       Connection *sendchan = nullptr, Continuation *c = nullptr);
 
   int close(); // 0 on success, -errno on failure
 
@@ -161,16 +161,8 @@ struct Server : public Connection {
   /// Client side (inbound) local IP address.
   IpEndpoint accept_addr;
 
-  /// If set, the related incoming connect was transparent.
-  bool f_inbound_transparent;
-
   /// If set, a kernel HTTP accept filter
   bool http_accept_filter;
-
-  //
-  // Use this call for the main proxy accept
-  //
-  int proxy_listen(bool non_blocking = false);
 
   int accept(Connection *c);
 
@@ -180,12 +172,10 @@ struct Server : public Connection {
   // converted into network byte order
   //
 
-  int listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0, bool transparent = false);
-  int setup_fd_for_listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0,
-                          bool transparent = false ///< Inbound transparent.
-                          );
+  int listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
+  int setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
 
-  Server() : Connection(), f_inbound_transparent(false) { ink_zero(accept_addr); }
+  Server() : Connection(), http_accept_filter(false) { ink_zero(accept_addr); }
 };
 
 #endif /*_Connection_h*/

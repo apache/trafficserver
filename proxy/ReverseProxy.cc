@@ -30,7 +30,6 @@
 #include "ts/ink_platform.h"
 #include <dlfcn.h>
 #include "Main.h"
-#include "Error.h"
 #include "P_EventSystem.h"
 #include "P_Cache.h"
 #include "ProxyConfig.h"
@@ -48,7 +47,7 @@
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
-UrlRewrite *rewrite_table = NULL;
+UrlRewrite *rewrite_table = nullptr;
 remap_plugin_info *remap_pi_list; // We never reload the remap plugins, just append to 'em.
 
 // Tokens for the Callback function
@@ -69,7 +68,7 @@ int url_remap_mode;
 int
 init_reverse_proxy()
 {
-  ink_assert(rewrite_table == NULL);
+  ink_assert(rewrite_table == nullptr);
   reconfig_mutex = new_ProxyMutex();
   rewrite_table  = new UrlRewrite();
 

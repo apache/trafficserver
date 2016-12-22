@@ -51,7 +51,7 @@ testalist(void *ame)
     if ((x = ink_atomiclist_pop(&al[me])))
       ink_atomiclist_push(&al[rand() % MAX_ALIST_TEST], x);
   ink_atomic_increment((int *)&al_done, 1);
-  return NULL;
+  return nullptr;
 }
 #endif // !LONG_ATOMICLIST_TEST
 
@@ -174,7 +174,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   printf("Testing atomic lists\n");
   {
     int ali;
-    srand(time(NULL));
+    srand(time(nullptr));
     printf("sizeof(al_test) = %d\n", (int)sizeof(al_test));
     memset(&al_test[0][0], 0, sizeof(al_test));
     for (ali = 0; ali < MAX_ALIST_TEST; ali++)

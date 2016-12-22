@@ -81,17 +81,17 @@ NVC_test_def netvc_tests_def[] = {
 const unsigned num_netvc_tests = countof(netvc_tests_def);
 
 NetVCTest::NetVCTest()
-  : Continuation(NULL),
+  : Continuation(nullptr),
     test_cont_type(NET_VC_TEST_ACTIVE),
-    test_vc(NULL),
-    regress(NULL),
-    driver(NULL),
-    read_vio(NULL),
-    write_vio(NULL),
-    read_buffer(NULL),
-    write_buffer(NULL),
-    reader_for_rbuf(NULL),
-    reader_for_wbuf(NULL),
+    test_vc(nullptr),
+    regress(nullptr),
+    driver(nullptr),
+    read_vio(nullptr),
+    write_vio(nullptr),
+    read_buffer(nullptr),
+    write_buffer(nullptr),
+    reader_for_rbuf(nullptr),
+    reader_for_wbuf(nullptr),
     write_bytes_to_add_per(0),
     timeout(0),
     actual_bytes_read(0),
@@ -106,28 +106,28 @@ NetVCTest::NetVCTest()
     nbytes_write(0),
     expected_read_term(0),
     expected_write_term(0),
-    test_name(NULL),
-    module_name(NULL),
-    debug_tag(NULL)
+    test_name(nullptr),
+    module_name(nullptr),
+    debug_tag(nullptr)
 {
 }
 
 NetVCTest::~NetVCTest()
 {
-  mutex = NULL;
+  mutex = nullptr;
 
   if (read_buffer) {
     Debug(debug_tag, "Freeing read MIOBuffer with %d blocks on %s", read_buffer->max_block_count(),
           (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
     free_MIOBuffer(read_buffer);
-    read_buffer = NULL;
+    read_buffer = nullptr;
   }
 
   if (write_buffer) {
     Debug(debug_tag, "Freeing write MIOBuffer with %d blocks on %s", write_buffer->max_block_count(),
           (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
     free_MIOBuffer(write_buffer);
-    write_buffer = NULL;
+    write_buffer = nullptr;
   }
 }
 
@@ -395,7 +395,7 @@ NetVCTest::main_handler(int event, void *data)
   return 0;
 }
 
-NetTestDriver::NetTestDriver() : Continuation(NULL), errors(0), r(NULL), pstatus(NULL)
+NetTestDriver::NetTestDriver() : Continuation(nullptr), errors(0), r(nullptr), pstatus(nullptr)
 {
 }
 

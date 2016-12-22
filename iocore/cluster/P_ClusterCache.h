@@ -164,7 +164,7 @@ struct ClusterConfiguration {
     for (int i = 0; i < n_machines; i++)
       if (ip == machines[i]->ip && (!port || !machines[i]->cluster_port || machines[i]->cluster_port == port))
         return machines[i];
-    return NULL;
+    return nullptr;
   }
 
   //
@@ -186,14 +186,14 @@ machine_in_vector(ClusterMachine *m, ClusterMachine **mm, int len)
 }
 
 //
-// Returns either a machine or NULL.
+// Returns either a machine or nullptr.
 // Finds a machine starting at probe_depth going up to
 //    CONFIGURATION_HISTORY_PROBE_DEPTH
 // which is up, not the current machine and has not yet been probed.
 // Updates: probe_depth and past_probes.
 //
-inkcoreapi ClusterMachine *cluster_machine_at_depth(unsigned int hash, int *probe_depth = NULL,
-                                                    ClusterMachine **past_probes = NULL);
+inkcoreapi ClusterMachine *cluster_machine_at_depth(unsigned int hash, int *probe_depth = nullptr,
+                                                    ClusterMachine **past_probes = nullptr);
 
 //
 // Cluster
@@ -433,7 +433,7 @@ ClusterVConnectionBase::cancel_active_timeout()
 {
   if (active_timeout) {
     active_timeout->cancel(this);
-    active_timeout    = NULL;
+    active_timeout    = nullptr;
     active_timeout_in = 0;
   }
 }
@@ -443,7 +443,7 @@ ClusterVConnectionBase::cancel_inactivity_timeout()
 {
   if (inactivity_timeout) {
     inactivity_timeout->cancel(this);
-    inactivity_timeout    = NULL;
+    inactivity_timeout    = nullptr;
     inactivity_timeout_in = 0;
   }
 }
@@ -488,7 +488,7 @@ struct ClusterVConnection : public ClusterVConnectionBase {
   //
   // virtual VIO * do_io(
   //   int                   op,
-  //   Continuation        * c = NULL,
+  //   Continuation        * c = nullptr,
   //   int                   nbytes = INT64_MAX,
   //   MIOBuffer           * buf = 0,
   //   int                   whence = SEEK_CUR);
@@ -666,7 +666,7 @@ struct ClusterProcessor {
 // Options: CLUSTER_OPT_IMMEDIATE, CLUSTER_OPT_ALLOW_IMMEDIATE
 // Returns: pointer for CLUSTER_OPT_IMMEDIATE
 //            or CLUSTER_DELAYED_OPEN on success,
-//          NULL on failure
+//          nullptr on failure
 // calls:  cont->handleEvent( CLUSTER_EVENT_OPEN, ClusterVConnection *)
 //         on delayed success.
 //
@@ -680,7 +680,7 @@ struct ClusterProcessor {
   // allocated with open.
   //
   // Options: CLUSTER_OPT_IMMEDIATE, CLUSTER_OPT_ALLOW_IMMEDIATE
-  // return a pointer or CLUSTER_DELAYED_OPEN success, NULL on failure
+  // return a pointer or CLUSTER_DELAYED_OPEN success, nullptr on failure
   //
   ClusterVConnection *connect_local(Continuation *cont, ClusterVCToken *token, int channel, int options = 0);
   inkcoreapi bool disable_remote_cluster_ops(ClusterMachine *);
@@ -1085,7 +1085,7 @@ struct PingMessage : public ClusterMessageHeader {
     PING_MESSAGE_VERSION = MAX_VERSION,
   };
 
-  PingMessage(uint16_t vers = PING_MESSAGE_VERSION) : ClusterMessageHeader(vers), fn(NULL) { data[0] = '\0'; }
+  PingMessage(uint16_t vers = PING_MESSAGE_VERSION) : ClusterMessageHeader(vers), fn(nullptr) { data[0] = '\0'; }
   /////////////////////////////////////////////////////////////////////////////
   static int
   protoToVersion(int protoMajor)
@@ -1160,7 +1160,7 @@ ClusterVC_remove_read(ClusterVConnectionBase *vc)
   ClusterVConnState *cs = &vc->read;
   ink_assert(cs->queue);
   ((Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link> *)cs->queue)->remove(vc);
-  cs->queue = NULL;
+  cs->queue = nullptr;
 }
 
 inline void
@@ -1169,7 +1169,7 @@ ClusterVC_remove_write(ClusterVConnectionBase *vc)
   ClusterVConnState *cs = &vc->write;
   ink_assert(cs->queue);
   ((Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link> *)cs->queue)->remove(vc);
-  cs->queue = NULL;
+  cs->queue = nullptr;
 }
 
 #endif /* _Cluster_h */

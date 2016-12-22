@@ -292,11 +292,11 @@ url_nuke_proxy_stuff(URLImpl *d_url)
   d_url->m_len_host     = 0;
   d_url->m_len_port     = 0;
 
-  d_url->m_ptr_scheme   = NULL;
-  d_url->m_ptr_user     = NULL;
-  d_url->m_ptr_password = NULL;
-  d_url->m_ptr_host     = NULL;
-  d_url->m_ptr_port     = NULL;
+  d_url->m_ptr_scheme   = nullptr;
+  d_url->m_ptr_user     = nullptr;
+  d_url->m_ptr_password = nullptr;
+  d_url->m_ptr_host     = nullptr;
+  d_url->m_ptr_port     = nullptr;
 
   d_url->m_scheme_wks_idx = -1;
   d_url->m_port           = 0;
@@ -433,7 +433,7 @@ url_scheme_set(HdrHeap *heap, URLImpl *url, const char *scheme_str, int scheme_w
   const char *scheme_wks;
   url_called_set(url);
   if (length == 0) {
-    scheme_str = NULL;
+    scheme_str = nullptr;
   }
 
   mime_str_u16_set(heap, scheme_str, length, &(url->m_ptr_scheme), &(url->m_len_scheme), copy_string);
@@ -442,7 +442,7 @@ url_scheme_set(HdrHeap *heap, URLImpl *url, const char *scheme_str, int scheme_w
   if (scheme_wks_idx >= 0) {
     scheme_wks = hdrtoken_index_to_wks(scheme_wks_idx);
   } else {
-    scheme_wks = NULL;
+    scheme_wks = nullptr;
   }
 
   if (scheme_wks == URL_SCHEME_HTTP || scheme_wks == URL_SCHEME_WS) {
@@ -464,7 +464,7 @@ url_user_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool co
 {
   url_called_set(url);
   if (length == 0) {
-    value = NULL;
+    value = nullptr;
   }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_user), &(url->m_len_user), copy_string);
 }
@@ -477,7 +477,7 @@ url_password_set(HdrHeap *heap, URLImpl *url, const char *value, int length, boo
 {
   url_called_set(url);
   if (length == 0) {
-    value = NULL;
+    value = nullptr;
   }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_password), &(url->m_len_password), copy_string);
 }
@@ -490,7 +490,7 @@ url_host_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool co
 {
   url_called_set(url);
   if (length == 0) {
-    value = NULL;
+    value = nullptr;
   }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_host), &(url->m_len_host), copy_string);
 }
@@ -503,7 +503,7 @@ url_port_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool co
 {
   url_called_set(url);
   if (length == 0) {
-    value = NULL;
+    value = nullptr;
   }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_port), &(url->m_len_port), copy_string);
 
@@ -530,7 +530,7 @@ url_port_set(HdrHeap *heap, URLImpl *url, unsigned int port)
     length = ink_fast_itoa(port, value, sizeof(value));
     mime_str_u16_set(heap, value, length, &(url->m_ptr_port), &(url->m_len_port), true);
   } else {
-    mime_str_u16_set(heap, NULL, 0, &(url->m_ptr_port), &(url->m_len_port), true);
+    mime_str_u16_set(heap, nullptr, 0, &(url->m_ptr_port), &(url->m_len_port), true);
   }
   url->m_port = port;
 }
@@ -543,7 +543,7 @@ url_path_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool co
 {
   url_called_set(url);
   if (length == 0) {
-    value = NULL;
+    value = nullptr;
   }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_path), &(url->m_len_path), copy_string);
 }
@@ -614,7 +614,7 @@ url_clear_string_ref(URLImpl *url)
 {
   if (url->m_ptr_printed_string) {
     url->m_len_printed_string = 0;
-    url->m_ptr_printed_string = NULL;
+    url->m_ptr_printed_string = nullptr;
     url->m_clean              = true;
   }
   return;
@@ -624,7 +624,7 @@ char *
 url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
 {
   if (!url) {
-    return NULL;
+    return nullptr;
   }
 
   if (url->m_ptr_printed_string && url->m_clean) {
@@ -692,7 +692,7 @@ url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
   int len    = url_length_get(url);
   int index  = 0;
   int offset = 0;
-  char *buf  = 0;
+  char *buf  = nullptr;
 
   if (dstbuf && dstbuf_size > 0) {
     buf = dstbuf;
@@ -925,7 +925,7 @@ url_to_string(URLImpl *url, Arena *arena, int *length)
   if (url->m_ptr_host) {
     memcpy(&str[idx], url->m_ptr_host, url->m_len_host);
     idx += url->m_len_host;
-    if (url->m_ptr_port != 0) {
+    if (url->m_ptr_port != nullptr) {
       str[idx++] = ':';
       memcpy(&str[idx], url->m_ptr_port, url->m_len_port);
       idx += url->m_len_port;
@@ -1141,8 +1141,8 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
 {
   const char *cur = *start;
   const char *scheme_wks;
-  const char *scheme_start = NULL;
-  const char *scheme_end   = NULL;
+  const char *scheme_start = nullptr;
+  const char *scheme_end   = nullptr;
   int scheme_wks_idx;
 
   while (' ' == *cur && ++cur < end) {
@@ -1232,15 +1232,15 @@ url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **
 */
 
 ParseResult
-url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *end, bool copy_strings_p)
+url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *end, bool copy_strings_p)
 {
-  char const *cur = *start;
-  char const *base;        // Base for host/port field.
-  char const *bracket = 0; // marker for open bracket, if any.
+  const char *cur = *start;
+  const char *base;              // Base for host/port field.
+  const char *bracket = nullptr; // marker for open bracket, if any.
   ts::ConstBuffer user, passw, host, port;
   static size_t const MAX_COLON = 8; // max # of valid colons.
   size_t n_colon                = 0;
-  char const *last_colon        = 0; // pointer to last colon seen.
+  const char *last_colon        = nullptr; // pointer to last colon seen.
 
   // Do a quick check for "://"
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
@@ -1248,6 +1248,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
   } else if (':' == *cur && (++cur >= end || ('/' == *cur && (++cur >= end || ('/' == *cur && ++cur >= end))))) {
     return PARSE_RESULT_ERROR;
   }
+
   base = cur;
   // skipped leading stuff, start real parsing.
   while (cur < end) {
@@ -1255,7 +1256,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
     // appropriate!
     switch (*cur) {
     case ']': // address close
-      if (0 == bracket || n_colon >= MAX_COLON) {
+      if (nullptr == bracket || n_colon >= MAX_COLON) {
         return PARSE_RESULT_ERROR;
       }
       ++cur;
@@ -1269,7 +1270,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
       // Spec requires This constitute the entire host so the next
       // character must be missing (EOS), slash, or colon.
       if (cur >= end || '/' == *cur) { // done which is OK
-        last_colon = 0;
+        last_colon = nullptr;
         break;
       } else if (':' != *cur) { // otherwise it must be a colon
         return PARSE_RESULT_ERROR;
@@ -1294,7 +1295,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
         user.set(base, last_colon);
         passw.set(last_colon + 1, cur);
         n_colon    = 0;
-        last_colon = 0;
+        last_colon = nullptr;
       } else {
         user.set(base, cur);
       }
@@ -1332,7 +1333,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
       host.set(base, last_colon);
     } else { // it's all host.
       host.set(base, cur);
-      last_colon = 0; // prevent port setting.
+      last_colon = nullptr; // prevent port setting.
     }
   }
   if (host._size) {
@@ -1368,14 +1369,14 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
 {
   ParseResult err;
   const char *cur;
-  const char *path_start     = NULL;
-  const char *path_end       = NULL;
-  const char *params_start   = NULL;
-  const char *params_end     = NULL;
-  const char *query_start    = NULL;
-  const char *query_end      = NULL;
-  const char *fragment_start = NULL;
-  const char *fragment_end   = NULL;
+  const char *path_start     = nullptr;
+  const char *path_end       = nullptr;
+  const char *params_start   = nullptr;
+  const char *params_end     = nullptr;
+  const char *query_start    = nullptr;
+  const char *query_end      = nullptr;
+  const char *fragment_start = nullptr;
+  const char *fragment_end   = nullptr;
   char mask;
 
   err = url_parse_internet(heap, url, start, end, copy_strings);
@@ -1475,7 +1476,7 @@ ParseResult
 url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings)
 {
   const char *cur = *start;
-  char const *host_end;
+  const char *host_end;
 
   // Do a quick check for "://" - our only format check.
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
@@ -1485,8 +1486,8 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
   }
 
   // Grab everything until EOS or slash.
-  char const *base = cur;
-  cur              = static_cast<char const *>(memchr(cur, '/', end - cur));
+  const char *base = cur;
+  cur              = static_cast<const char *>(memchr(cur, '/', end - cur));
   if (cur) {
     host_end = cur;
     ++cur;
@@ -1496,19 +1497,21 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
 
   // Did we find something for the host?
   if (base != host_end) {
-    char const *port = 0;
+    const char *port = nullptr;
     int port_len     = 0;
 
     // Check for port. Search from the end stopping on the first non-digit
     // or more than 5 digits and a delimiter.
     port                   = host_end - 1;
-    char const *port_limit = host_end - 6;
+    const char *port_limit = host_end - 6;
     if (port_limit < base) {
       port_limit = base; // don't go past start.
     }
+
     while (port >= port_limit && isdigit(*port)) {
       --port;
     }
+
     // A port if we're still in the host area and we found a ':' as
     // the immediately preceeding character.
     if (port >= base && ':' == *port) {
@@ -1517,6 +1520,7 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
       ++port;                         // drop colon from port.
       url_port_set(heap, url, port, port_len, copy_strings);
     }
+
     // Now we can set the host.
     url_host_set(heap, url, base, host_end - base, copy_strings);
   }
@@ -1570,7 +1574,7 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     // Force brackets for IPv6. Note colon must occur in first 5 characters.
     // But it can be less (e.g. "::1").
     int n          = url->m_len_host;
-    bool bracket_p = '[' != *url->m_ptr_host && (0 != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
+    bool bracket_p = '[' != *url->m_ptr_host && (nullptr != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
     if (bracket_p) {
       TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
@@ -1779,7 +1783,7 @@ url_MD5_get(const URLImpl *url, CryptoHash *hash, cache_generation_t generation)
   if ((url_hash_method != 0) && (url->m_url_type == URL_TYPE_HTTP) &&
       ((url->m_len_user + url->m_len_password + url->m_len_params + url->m_len_query) == 0) &&
       (3 + 1 + 1 + 1 + 1 + 1 + 2 + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
-      (memchr(url->m_ptr_host, '%', url->m_len_host) == NULL) && (memchr(url->m_ptr_path, '%', url->m_len_path) == NULL)) {
+      (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
     url_MD5_get_fast(url, ctx, hash, generation);
 #ifdef DEBUG
     CryptoHash md5_general;

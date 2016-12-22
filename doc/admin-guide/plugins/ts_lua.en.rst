@@ -131,6 +131,22 @@ is always available within lua script. This package can be introduced into Lua l
 
 `TOP <#ts-lua-plugin>`_
 
+ts.process.uuid
+---------------
+**syntax:** *val = ts.process.uuid()*
+
+**context:** global
+
+**description:** This function returns the global process id.
+
+Here is an example:
+
+::
+
+    local pid = ts.process.uuid()  -- a436bae6-082c-4805-86af-78a5916c4a91
+
+`TOP <#ts-lua-plugin>`_
+
 ts.now
 ------
 **syntax:** *val = ts.now()*
@@ -401,7 +417,7 @@ Additional Information:
 | TS_HTTP_READ          | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
 | _CACHE_HDR_HOOK       | _READ_CACHE_HDR           |                      |                    |                      |
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
-| TS_HTTP_OS            | TS_LUA_HOOK_              |     YES              |    NO              |    YES               |
+| TS_HTTP_OS            | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
 | _DNS_HOOK             | _OS_DNS                   |                      |                    |                      |
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_CACHE         | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
@@ -932,6 +948,77 @@ ts.http.set_cache_lookup_url
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.get_parent_proxy
+------------------------
+**syntax:** *ts.http.get_parent_proxy()*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to get the parent proxy host and port.
+
+Here is an example
+
+::
+
+    function cache_lookup()
+        ts.http.set_parent_proxy('test1.test.com', 1111)
+        host, port = ts.http.get_parent_proxy()
+        ts.debug(host)
+        ts.debug(port)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.set_parent_proxy
+------------------------
+**syntax:** *ts.http.set_parent_proxy()*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to set the parent proxy host and name.
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_parent_selection_url
+--------------------------------
+**syntax:** *ts.http.get_parent_selection_url()*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to get the parent selection url for the client request.
+
+Here is an example
+
+::
+
+    function cache_lookup()
+        ts.http.set_parent_selection_url('http://bad.com/bad.html')
+        local cache = ts.http.get_parent_selection_url()
+        ts.debug(cache)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.set_parent_selection_url
+--------------------------------
+**syntax:** *ts.http.set_parent_selection_url()*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to set the parent selection url for the client request.
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.set_server_resp_no_store
 --------------------------------
 **syntax:** *ts.http.set_server_resp_no_store(status)*
@@ -1369,6 +1456,38 @@ We will get the output:
     Host: b.tb.cn
     User-Agent: curl/7.19.7
     Accept: */*
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.server_addr.set_addr
+--------------------------------------
+**syntax:** *ts.server_request.server_addr.set_addr()*
+
+**context:** no later than function @ TS_LUA_HOOK_OS_DNS hook point
+
+**description**: This function can be used to set socket address of the origin server.
+
+The ts.server_request.server_addr.set_addr function requires three inputs, ip is a string, port and family is number.
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        ts.server_request.server_addr.set_addr("192.168.231.17", 80, TS_LUA_AF_INET)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+Socket address family
+---------------------
+**context:** global
+
+::
+
+    TS_LUA_AF_INET (2)
+    TS_LUA_AF_INET6 (10)
 
 
 `TOP <#ts-lua-plugin>`_
@@ -2062,6 +2181,107 @@ Here is an example:
     end
 
 This function is usually called in do_global_read_request function
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_client_protocol_stack
+---------------------------------
+**syntax:** *ts.http.get_client_protocol_stack()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to get client protocol stack information
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local stack = {ts.http.get_client_protocol_stack()}
+        for k,v in pairs(stack) do 
+          ts.debug(v) 
+        end
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.server_push
+-------------------
+**syntax:** *ts.http.server_push()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can do http/2 server push for the input url
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        ts.http.server_push("https://test.com/test.js")
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.is_websocket
+--------------------
+**syntax:** *ts.http.is_websocket()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to tell if the transacton is websocket
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local flag = ts.http.is_websocket()
+        ts.debug(flag)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_plugin_tag
+----------------------
+**syntax:** *ts.http.get_plugin_tag()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to get plugin tag of a transaction
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local tag = ts.http.get_plugin_tag() or ''
+        ts.debug(tag)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.id
+----------
+**syntax:** *ts.http.id()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to tell id of a transaction
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local id = ts.http.id()
+        ts.debug(id)
+        return 0
+    end
 
 `TOP <#ts-lua-plugin>`_
 
@@ -2882,7 +3102,6 @@ Http config constants
     TS_LUA_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE
     TS_LUA_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED
     TS_LUA_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME
-    TS_LUA_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED
     TS_LUA_CONFIG_SSL_HSTS_MAX_AGE
     TS_LUA_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS
     TS_LUA_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME

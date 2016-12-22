@@ -27,10 +27,10 @@ namespace ats
 void
 HttpParser::destroyParser(void)
 {
-  if (parser_ != NULL) {
+  if (parser_ != nullptr) {
     TSHttpParserClear(parser_);
     TSHttpParserDestroy(parser_);
-    parser_ = NULL;
+    parser_ = nullptr;
   }
 }
 
@@ -41,7 +41,7 @@ HttpParser::parse(io::IO &io)
     return true;
   }
   TSIOBufferBlock block = TSIOBufferReaderStart(io.reader);
-  while (block != NULL) {
+  while (block != nullptr) {
     int64_t size            = 0;
     const char *const begin = TSIOBufferBlockReadStart(block, io.reader, &size);
     const char *iterator    = begin;
@@ -51,7 +51,7 @@ HttpParser::parse(io::IO &io)
 
     if (parsed_) {
       TSDebug(PLUGIN_TAG, "HttpParser: response parsing is complete (%u response status code)", statusCode());
-      assert(parser_ != NULL);
+      assert(parser_ != nullptr);
       destroyParser();
       return true;
     }

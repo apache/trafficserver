@@ -34,7 +34,7 @@ ink_rwlock_init(ink_rwlock *rw)
 {
   int result;
 
-  if ((result = ink_mutex_init(&rw->rw_mutex, NULL)) != 0)
+  if ((result = ink_mutex_init(&rw->rw_mutex, nullptr)) != 0)
     goto Lerror;
 
   ink_cond_init(&rw->rw_condreaders);

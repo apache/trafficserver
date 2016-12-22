@@ -47,7 +47,7 @@
 --
 -- integer(NAME, FUNC), counter(NAME, FUNC), float(NAME, FUNC)
 --    These global functions register a metric of the corresponding name. Each
---    registered metric will be periodically recalculated by evaluating the 
+--    registered metric will be periodically recalculated by evaluating the
 --    given function.
 --
 --    The scope of a metric is derived from the name. 'proxy.cluster.*' metrics

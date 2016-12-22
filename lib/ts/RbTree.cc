@@ -45,7 +45,7 @@ namespace detail
   RBNode *
   RBNode::getChild(Direction d) const
   {
-    return d == RIGHT ? _right : d == LEFT ? _left : 0;
+    return d == RIGHT ? _right : d == LEFT ? _left : nullptr;
   }
 
   RBNode *
@@ -68,7 +68,7 @@ namespace detail
         parent->clearChild(child_dir);
         parent->setChild(child, child_dir);
       } else {
-        child->_parent = 0;
+        child->_parent = nullptr;
       }
     }
     return child;
@@ -106,18 +106,18 @@ namespace detail
     n->_color = _color;
     if (_parent) {
       Direction d = _parent->getChildDirection(this);
-      _parent->setChild(0, d);
+      _parent->setChild(nullptr, d);
       if (_parent != n)
         _parent->setChild(n, d);
     } else {
-      n->_parent = 0;
+      n->_parent = nullptr;
     }
-    n->_left = n->_right = 0;
+    n->_left = n->_right = nullptr;
     if (_left && _left != n)
       n->setChild(_left, LEFT);
     if (_right && _right != n)
       n->setChild(_right, RIGHT);
-    _left = _right = 0;
+    _left = _right = nullptr;
   }
 
   /* Rebalance the tree. This node is the unbalanced node. */
@@ -166,7 +166,7 @@ namespace detail
   RBNode *
   RBNode::remove()
   {
-    self *root = 0; // new root node, returned to caller
+    self *root = nullptr; // new root node, returned to caller
 
     /*  Handle two special cases first.
         - This is the only node in the tree, return a new root of NIL
@@ -174,11 +174,11 @@ namespace detail
     */
     if (!_parent && !(_left && _right)) {
       if (_left) {
-        _left->_parent = 0;
+        _left->_parent = nullptr;
         root           = _left;
         root->_color   = BLACK;
       } else if (_right) {
-        _right->_parent = 0;
+        _right->_parent = nullptr;
         root            = _right;
         root->_color    = BLACK;
       } // else that was the only node, so leave @a root @c NULL.
@@ -222,7 +222,7 @@ namespace detail
       splice_node = remove_node->_parent;
       // Keep @a d up to date.
       d = splice_node->getChildDirection(remove_node);
-      splice_node->setChild(0, d);
+      splice_node->setChild(nullptr, d);
     }
 
     // If the node to pull out of the tree isn't this one,
@@ -260,7 +260,7 @@ namespace detail
       // This is why we need @a parent, otherwise we could just use @a n.
       if (NONE != d) {
         parent = n;
-        n      = 0;
+        n      = nullptr;
       }
 
       while (parent) { // @a n is not the root

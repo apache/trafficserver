@@ -52,35 +52,28 @@ int SSLConfigParams::ssl_handshake_timeout_in               = 0;
 size_t SSLConfigParams::session_cache_number_buckets        = 1024;
 bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
-init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = NULL;
-load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = NULL;
+init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
+load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
 
 // TS-3534 Wiretracing for SSL Connections
 int SSLConfigParams::ssl_wire_trace_enabled       = 0;
-char *SSLConfigParams::ssl_wire_trace_addr        = NULL;
-IpAddr *SSLConfigParams::ssl_wire_trace_ip        = NULL;
+char *SSLConfigParams::ssl_wire_trace_addr        = nullptr;
+IpAddr *SSLConfigParams::ssl_wire_trace_ip        = nullptr;
 int SSLConfigParams::ssl_wire_trace_percentage    = 0;
-char *SSLConfigParams::ssl_wire_trace_server_name = NULL;
+char *SSLConfigParams::ssl_wire_trace_server_name = nullptr;
 
 static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
 
+// Check if the ticket_key callback #define is available, and if so, enable session tickets.
+#ifdef SSL_CTX_set_tlsext_ticket_key_cb
+
+#define HAVE_OPENSSL_SESSION_TICKETS 1
+
+#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
+
 SSLConfigParams::SSLConfigParams()
 {
-  serverCertPathOnly = serverCertChainFilename = configFilePath = serverCACertFilename = serverCACertPath = clientCertPath =
-    clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
-      NULL;
-
-  clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
-
-  ssl_ctx_options               = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
-  ssl_client_ctx_protocols      = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
-  ssl_session_cache             = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
-  ssl_session_cache_size        = 1024 * 100;
-  ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
-  ssl_session_cache_skip_on_contention = 0;
-  ssl_session_cache_timeout            = 0;
-  ssl_session_cache_auto_clear         = 1;
-  configExitOnLoadError                = 0;
+  reset();
 }
 
 SSLConfigParams::~SSLConfigParams()
@@ -89,31 +82,52 @@ SSLConfigParams::~SSLConfigParams()
 }
 
 void
-SSLConfigParams::cleanup()
+SSLConfigParams::reset()
 {
-  ats_free_null(serverCertChainFilename);
-  ats_free_null(serverCACertFilename);
-  ats_free_null(serverCACertPath);
-  ats_free_null(clientCertPath);
-  ats_free_null(clientKeyPath);
-  ats_free_null(clientCACertFilename);
-  ats_free_null(clientCACertPath);
-  ats_free_null(configFilePath);
-  ats_free_null(serverCertPathOnly);
-  ats_free_null(serverKeyPathOnly);
-  ats_free_null(cipherSuite);
-  ats_free_null(client_cipherSuite);
-  ats_free_null(dhparamsFile);
-  ats_free_null(ssl_wire_trace_ip);
+  serverCertPathOnly = serverCertChainFilename = configFilePath = serverCACertFilename = serverCACertPath = clientCertPath =
+    clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
+      ticket_key_filename                                                                                     = nullptr;
+  default_global_keyblock                                                                                     = nullptr;
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
+  ssl_ctx_options                                                     = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_client_ctx_protocols                                            = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_session_cache                                                   = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
+  ssl_session_cache_size                                              = 1024 * 100;
+  ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
+  ssl_session_cache_skip_on_contention = 0;
+  ssl_session_cache_timeout            = 0;
+  ssl_session_cache_auto_clear         = 1;
+  configExitOnLoadError                = 0;
+}
+
+void
+SSLConfigParams::cleanup()
+{
+  serverCertChainFilename = (char *)ats_free_null(serverCertChainFilename);
+  serverCACertFilename    = (char *)ats_free_null(serverCACertFilename);
+  serverCACertPath        = (char *)ats_free_null(serverCACertPath);
+  clientCertPath          = (char *)ats_free_null(clientCertPath);
+  clientKeyPath           = (char *)ats_free_null(clientKeyPath);
+  clientCACertFilename    = (char *)ats_free_null(clientCACertFilename);
+  clientCACertPath        = (char *)ats_free_null(clientCACertPath);
+  configFilePath          = (char *)ats_free_null(configFilePath);
+  serverCertPathOnly      = (char *)ats_free_null(serverCertPathOnly);
+  serverKeyPathOnly       = (char *)ats_free_null(serverKeyPathOnly);
+  cipherSuite             = (char *)ats_free_null(cipherSuite);
+  client_cipherSuite      = (char *)ats_free_null(client_cipherSuite);
+  dhparamsFile            = (char *)ats_free_null(dhparamsFile);
+  ssl_wire_trace_ip       = (IpAddr *)ats_free_null(ssl_wire_trace_ip);
+  ticket_key_filename     = (char *)ats_free_null(ticket_key_filename);
+  ticket_block_free(default_global_keyblock);
+  reset();
 }
 
 /**  set_paths_helper
 
  If path is *not* absolute, consider it relative to PREFIX
  if it's empty, just take SYSCONFDIR, otherwise we can take it as-is
- if final_path is NULL, it will not be updated.
+ if final_path is nullptr, it will not be updated.
 
  XXX: Add handling for Windows?
  */
@@ -122,7 +136,7 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 {
   if (final_path) {
     if (path && path[0] != '/') {
-      *final_path = RecConfigReadPrefixPath(NULL, path);
+      *final_path = RecConfigReadPrefixPath(nullptr, path);
     } else if (!path || path[0] == '\0') {
       *final_path = RecConfigReadConfigDir();
     } else {
@@ -131,23 +145,23 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
   }
 
   if (final_filename) {
-    *final_filename = filename ? Layout::get()->relative_to(path, filename) : NULL;
+    *final_filename = filename ? Layout::get()->relative_to(path, filename) : nullptr;
   }
 }
 
 void
 SSLConfigParams::initialize()
 {
-  char *serverCertRelativePath          = NULL;
-  char *ssl_server_private_key_path     = NULL;
-  char *CACertRelativePath              = NULL;
-  char *ssl_client_cert_filename        = NULL;
-  char *ssl_client_cert_path            = NULL;
-  char *ssl_client_private_key_filename = NULL;
-  char *ssl_client_private_key_path     = NULL;
-  char *clientCACertRelativePath        = NULL;
-  char *ssl_server_ca_cert_filename     = NULL;
-  char *ssl_client_ca_cert_filename     = NULL;
+  char *serverCertRelativePath          = nullptr;
+  char *ssl_server_private_key_path     = nullptr;
+  char *CACertRelativePath              = nullptr;
+  char *ssl_client_cert_filename        = nullptr;
+  char *ssl_client_cert_path            = nullptr;
+  char *ssl_client_private_key_filename = nullptr;
+  char *ssl_client_private_key_path     = nullptr;
+  char *clientCACertRelativePath        = nullptr;
+  char *ssl_server_ca_cert_filename     = nullptr;
+  char *ssl_client_ca_cert_filename     = nullptr;
 
   cleanup();
 
@@ -227,14 +241,14 @@ SSLConfigParams::initialize()
 
   REC_ReadConfigStringAlloc(serverCertChainFilename, "proxy.config.ssl.server.cert_chain.filename");
   REC_ReadConfigStringAlloc(serverCertRelativePath, "proxy.config.ssl.server.cert.path");
-  set_paths_helper(serverCertRelativePath, NULL, &serverCertPathOnly, NULL);
+  set_paths_helper(serverCertRelativePath, nullptr, &serverCertPathOnly, nullptr);
   ats_free(serverCertRelativePath);
 
   configFilePath = RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename");
   REC_ReadConfigInteger(configExitOnLoadError, "proxy.config.ssl.server.multicert.exit_on_load_fail");
 
   REC_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");
-  set_paths_helper(ssl_server_private_key_path, NULL, &serverKeyPathOnly, NULL);
+  set_paths_helper(ssl_server_private_key_path, nullptr, &serverKeyPathOnly, nullptr);
   ats_free(ssl_server_private_key_path);
 
   REC_ReadConfigStringAlloc(ssl_server_ca_cert_filename, "proxy.config.ssl.CA.cert.filename");
@@ -242,6 +256,17 @@ SSLConfigParams::initialize()
   set_paths_helper(CACertRelativePath, ssl_server_ca_cert_filename, &serverCACertPath, &serverCACertFilename);
   ats_free(ssl_server_ca_cert_filename);
   ats_free(CACertRelativePath);
+
+#if HAVE_OPENSSL_SESSION_TICKETS
+
+  if (REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename") == REC_ERR_OKAY &&
+      this->ticket_key_filename != nullptr) {
+    ats_scoped_str ticket_key_path(Layout::relative_to(this->serverCertPathOnly, this->ticket_key_filename));
+    default_global_keyblock = ssl_create_ticket_keyblock(ticket_key_path);
+  } else {
+    default_global_keyblock = ssl_create_ticket_keyblock(nullptr);
+  }
+#endif
 
   // SSL session cache configurations
   REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");
@@ -274,17 +299,17 @@ SSLConfigParams::initialize()
   client_verify_depth = 7;
   REC_ReadConfigInt32(clientVerify, "proxy.config.ssl.client.verify.server");
 
-  ssl_client_cert_filename = NULL;
-  ssl_client_cert_path     = NULL;
+  ssl_client_cert_filename = nullptr;
+  ssl_client_cert_path     = nullptr;
   REC_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
   REC_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
-  set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, NULL, &clientCertPath);
+  set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, nullptr, &clientCertPath);
   ats_free_null(ssl_client_cert_filename);
   ats_free_null(ssl_client_cert_path);
 
   REC_ReadConfigStringAlloc(ssl_client_private_key_filename, "proxy.config.ssl.client.private_key.filename");
   REC_ReadConfigStringAlloc(ssl_client_private_key_path, "proxy.config.ssl.client.private_key.path");
-  set_paths_helper(ssl_client_private_key_path, ssl_client_private_key_filename, NULL, &clientKeyPath);
+  set_paths_helper(ssl_client_private_key_path, ssl_client_private_key_filename, nullptr, &clientKeyPath);
   ats_free_null(ssl_client_private_key_filename);
   ats_free_null(ssl_client_private_key_path);
 
@@ -305,16 +330,16 @@ SSLConfigParams::initialize()
       ssl_wire_trace_ip = new IpAddr();
       ssl_wire_trace_ip->load(ssl_wire_trace_addr);
     } else {
-      ssl_wire_trace_ip = NULL;
+      ssl_wire_trace_ip = nullptr;
     }
     // wire trace percentage of requests
     REC_EstablishStaticConfigInt32(ssl_wire_trace_percentage, "proxy.config.ssl.wire_trace_percentage");
     REC_EstablishStaticConfigStringAlloc(ssl_wire_trace_server_name, "proxy.config.ssl.wire_trace_server_name");
   } else {
-    ssl_wire_trace_addr        = NULL;
-    ssl_wire_trace_ip          = NULL;
+    ssl_wire_trace_addr        = nullptr;
+    ssl_wire_trace_ip          = nullptr;
     ssl_wire_trace_percentage  = 0;
-    ssl_wire_trace_server_name = NULL;
+    ssl_wire_trace_server_name = nullptr;
   }
 }
 

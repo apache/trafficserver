@@ -40,7 +40,6 @@ struct ssl_ticket_key_block {
   unsigned num_keys;
   ssl_ticket_key_t keys[];
 };
-
 /** A certificate context.
 
     This holds data about a certificate and how it is used by the SSL logic. Current this is mainly
@@ -54,7 +53,7 @@ struct ssl_ticket_key_block {
 */
 struct SSLCertContext {
   /** Special things to do instead of use a context.
-      In general an option will be associated with a @c NULL context because
+      In general an option will be associated with a @c nullptr context because
       the context is not used.
   */
   enum Option {
@@ -62,9 +61,9 @@ struct SSLCertContext {
     OPT_TUNNEL ///< Just tunnel, don't terminate.
   };
 
-  SSLCertContext() : ctx(0), opt(OPT_NONE), keyblock(NULL) {}
-  explicit SSLCertContext(SSL_CTX *c) : ctx(c), opt(OPT_NONE), keyblock(NULL) {}
-  SSLCertContext(SSL_CTX *c, Option o) : ctx(c), opt(o), keyblock(NULL) {}
+  SSLCertContext() : ctx(0), opt(OPT_NONE), keyblock(nullptr) {}
+  explicit SSLCertContext(SSL_CTX *c) : ctx(c), opt(OPT_NONE), keyblock(nullptr) {}
+  SSLCertContext(SSL_CTX *c, Option o) : ctx(c), opt(o), keyblock(nullptr) {}
   SSLCertContext(SSL_CTX *c, Option o, ssl_ticket_key_block *kb) : ctx(c), opt(o), keyblock(kb) {}
   void release();
 
@@ -84,15 +83,15 @@ struct SSLCertLookup : public ConfigInfo {
   /** Find certificate context by IP address.
       The IP addresses are taken from the socket @a s.
       Exact matches have priority, then wildcards. The destination address is preferred to the source address.
-      @return @c A pointer to the matched context, @c NULL if no match is found.
+      @return @c A pointer to the matched context, @c nullptr if no match is found.
   */
   SSLCertContext *find(const IpEndpoint &address) const;
 
   /** Find certificate context by name (FQDN).
       Exact matches have priority, then wildcards. Only destination based matches are checked.
-      @return @c A pointer to the matched context, @c NULL if no match is found.
+      @return @c A pointer to the matched context, @c nullptr if no match is found.
   */
-  SSLCertContext *find(char const *name) const;
+  SSLCertContext *find(const char *name) const;
 
   // Return the last-resort default TLS context if there is no name or address match.
   SSL_CTX *
@@ -110,5 +109,6 @@ struct SSLCertLookup : public ConfigInfo {
 
 void ticket_block_free(void *ptr);
 ssl_ticket_key_block *ticket_block_alloc(unsigned count);
-
+ssl_ticket_key_block *ticket_block_create(char *ticket_key_data, int ticket_key_len);
+ssl_ticket_key_block *ssl_create_ticket_keyblock(const char *ticket_key_path);
 #endif /* __P_SSLCERTLOOKUP_H__ */

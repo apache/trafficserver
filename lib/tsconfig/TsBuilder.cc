@@ -166,7 +166,7 @@ void Builder::pathIndex(Token const& token){
     // We take advantage of the lexer - token will always be a valid
     // digit string that is followed by a non-digit or the FLEX
     // required double null at the end of the input buffer.
-    _path.append(Buffer(0, static_cast<size_t>(atol(token._s))));
+    _path.append(Buffer(nullptr, static_cast<size_t>(atol(token._s))));
     if (_extent._ptr) _extent._size = token._s - _extent._ptr + token._n;
     else _extent.set(token._s, token._n);
 }
@@ -208,7 +208,7 @@ void Builder::literalValue(Token const& token) {
     }
     if (!cv.isOK()) _errata.pull(cv.errata());
     if (cv.result()) cv.result().setSource(token._loc._line, token._loc._col);
-    _name.set(0,0); // used, so clear it.
+    _name.set(nullptr,0); // used, so clear it.
 }
 void Builder::invalidToken(Token const&) { }
 

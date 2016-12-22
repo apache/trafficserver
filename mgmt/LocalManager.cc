@@ -43,12 +43,14 @@ void
 LocalManager::mgmtCleanup()
 {
   close_socket(process_server_sockfd);
+  process_server_sockfd = ts::NO_FD;
 
   // fix me for librecords
 
   if (virt_map) {
     virt_map->rl_downAddrs(); // We are bailing done need to worry about table
   }
+
   closelog();
   return;
 }
@@ -61,7 +63,7 @@ LocalManager::mgmtShutdown()
   // WCCP TBD: Send a shutdown message to routers.
 
   if (processRunning()) {
-    waitpid(watched_process_pid, NULL, 0);
+    waitpid(watched_process_pid, nullptr, 0);
 #if defined(linux)
     /* Avert race condition, wait for the thread to complete,
        before getting one more restart process */
@@ -120,7 +122,7 @@ LocalManager::clearStats(const char *name)
   //   stats getting cleared by progation of clearing the
   //   cluster stats
   //
-  if (name) {
+  if (name && *name) {
     RecResetStatRecord(name);
   } else {
     RecResetStatRecord(RECT_NULL, true);
@@ -154,7 +156,7 @@ LocalManager::clusterOk()
   bool found  = true;
   bool result = true;
 
-  if (processRunning() == true && time(NULL) > (this->proxy_started_at + 30) &&
+  if (processRunning() == true && time(nullptr) > (this->proxy_started_at + 30) &&
       this->ccom->alive_peers_count + 1 != REC_readInteger("proxy.process.cluster.nodes", &found)) {
     result = false;
   }
@@ -173,7 +175,7 @@ LocalManager::processRunning()
   }
 }
 
-LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), configFiles(NULL)
+LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), configFiles(nullptr)
 {
   bool found;
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
@@ -182,16 +184,17 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
 
   syslog_facility = 0;
 
-  ccom                      = NULL;
+  ccom                      = nullptr;
   proxy_started_at          = -1;
   proxy_launch_count        = 0;
-  manager_started_at        = time(NULL);
+  manager_started_at        = time(nullptr);
   proxy_launch_outstanding  = false;
   mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
   proxy_running             = 0;
-  RecSetRecordInt("proxy.node.proxy_running", 0, REC_SOURCE_DEFAULT);
 
-  virt_map = NULL;
+  RecRegisterStatInt(RECT_NODE, "proxy.node.proxy_running", 0, RECP_NON_PERSISTENT);
+
+  virt_map = nullptr;
 
   RecInt http_enabled = REC_readInteger("proxy.config.http.enabled", &found);
   ink_assert(found);
@@ -238,8 +241,8 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
   process_server_timeout_msecs = REC_readInteger("proxy.config.lm.pserver_timeout_msecs", &found);
   proxy_name                   = REC_readString("proxy.config.proxy_name", &found);
   proxy_binary                 = REC_readString("proxy.config.proxy_binary", &found);
-  proxy_options                = REC_readString("proxy.config.proxy_binary_opts", &found);
   env_prep                     = REC_readString("proxy.config.env_prep", &found);
+  proxy_options                = NULL;
 
   // Calculate proxy_binary from the absolute bin_path
   absolute_proxy_binary = Layout::relative_to(bindir, proxy_binary);
@@ -298,7 +301,7 @@ LocalManager::initCCom(const AppVersionInfo &version, FileManager *configFiles, 
   }
   // Fetch which interface we are using for clustering
   intrName = REC_readString("proxy.config.cluster.ethernet_interface", &found);
-  ink_assert(intrName != NULL);
+  ink_assert(intrName != nullptr);
 
   found = mgmt_getAddrForIntr(intrName, &cluster_ip.sa);
   if (found == false) {
@@ -383,16 +386,21 @@ LocalManager::pollMgmtProcessServer()
   int num;
   struct timeval timeout;
   fd_set fdlist;
-#if TS_HAS_WCCP
-  int wccp_fd = wccp_cache.getSocket();
-#endif
 
   while (1) {
-    // poll only
+#if TS_HAS_WCCP
+    int wccp_fd = wccp_cache.getSocket();
+#endif
+
     timeout.tv_sec  = process_server_timeout_secs;
     timeout.tv_usec = process_server_timeout_msecs * 1000;
+
     FD_ZERO(&fdlist);
-    FD_SET(process_server_sockfd, &fdlist);
+
+    if (process_server_sockfd != ts::NO_FD) {
+      FD_SET(process_server_sockfd, &fdlist);
+    }
+
     if (watched_process_fd != ts::NO_FD) {
       FD_SET(watched_process_fd, &fdlist);
     }
@@ -405,21 +413,37 @@ LocalManager::pollMgmtProcessServer()
       time_t wccp_wait = wccp_cache.waitTime();
       if (wccp_wait < process_server_timeout_secs)
         timeout.tv_sec = wccp_wait;
-      FD_SET(wccp_cache.getSocket(), &fdlist);
+
+      if (wccp_fd != ts::NO_FD) {
+        FD_SET(wccp_fd, &fdlist);
+      }
     }
 #endif
 
-    num = mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &timeout);
-    if (num == 0) { /* Have nothing */
-      break;
-    } else if (num > 0) { /* Have something */
+    num = mgmt_select(FD_SETSIZE, &fdlist, nullptr, nullptr, &timeout);
+
+    switch (num) {
+    case 0:
+      // Timed out, nothing to do.
+      return;
+    case -1:
+      if (mgmt_transient_error()) {
+        continue;
+      }
+
+      mgmt_log("[LocalManager::pollMgmtProcessServer] select failed: %s (%d)\n", ::strerror(errno), errno);
+      return;
+
+    default:
+
 #if TS_HAS_WCCP
       if (wccp_fd != ts::NO_FD && FD_ISSET(wccp_fd, &fdlist)) {
         wccp_cache.handleMessage();
         --num;
       }
 #endif
-      if (FD_ISSET(process_server_sockfd, &fdlist)) { /* New connection */
+
+      if (process_server_sockfd != ts::NO_FD && FD_ISSET(process_server_sockfd, &fdlist)) { /* New connection */
         struct sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
         int new_sockfd      = mgmt_accept(process_server_sockfd, (struct sockaddr *)&clientAddr, &clientLen);
@@ -455,6 +479,7 @@ LocalManager::pollMgmtProcessServer()
         } else if (res < 0) {
           mgmt_fatal(0, "[LocalManager::pollMgmtProcessServer] Error in read (errno: %d)\n", -res);
         }
+
         // handle EOF
         if (res == 0) {
           int estatus;
@@ -472,7 +497,7 @@ LocalManager::pollMgmtProcessServer()
 
           if (lmgmt->run_proxy) {
             mgmt_log("[Alarms::signalAlarm] Server Process was reset\n");
-            lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, NULL);
+            lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, nullptr);
           } else {
             mgmt_log("[TrafficManager] Server process shutdown\n");
           }
@@ -487,10 +512,8 @@ LocalManager::pollMgmtProcessServer()
 
         num--;
       }
-      ink_assert(num == 0); /* Invariant */
 
-    } else if (num < 0) { /* Error */
-      mgmt_log("[LocalManager::pollMgmtProcessServer] select failed or was interrupted (%d)\n", errno);
+      ink_assert(num == 0); /* Invariant */
     }
   }
 }
@@ -502,7 +525,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
   switch (mh->msg_id) {
   case MGMT_SIGNAL_PID:
     watched_process_pid = *((pid_t *)data_raw);
-    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_BORN, NULL);
+    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_BORN, nullptr);
     proxy_running++;
     proxy_launch_pid         = -1;
     proxy_launch_outstanding = false;
@@ -586,7 +609,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     if (mh->data_len > 0) {
       executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, data_raw, mh->data_len);
     } else {
-      executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, NULL, 0);
+      executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, nullptr, 0);
     }
     break;
   // Congestion Control - begin
@@ -599,8 +622,8 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
   // Congestion Control - end
   case MGMT_SIGNAL_CONFIG_FILE_CHILD: {
     static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
-    char *parent                           = NULL;
-    char *child                            = NULL;
+    char *parent                           = nullptr;
+    char *child                            = nullptr;
     MgmtMarshallInt options                = 0;
     if (mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child, &options) != -1) {
       configFiles->configFileChild(parent, child, (unsigned int)options);
@@ -719,7 +742,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
                      "Server Process has been terminated\n");
             if (lmgmt->run_proxy) {
               mgmt_log("[Alarms::signalAlarm] Server Process was reset\n");
-              lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, NULL);
+              lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, nullptr);
             } else {
               mgmt_log("[TrafficManager] Server process shutdown\n");
             }
@@ -805,6 +828,8 @@ LocalManager::processEventQueue()
         bool incVersion = mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE;
         if (RecReadConfigFile(incVersion) != REC_ERR_OKAY) {
           mgmt_elog(errno, "[fileUpdated] Config update failed for records.config\n");
+        } else {
+          RecConfigWarnIfUnregistered();
         }
         handled_by_mgmt = true;
       }
@@ -828,9 +853,15 @@ LocalManager::processEventQueue()
 /*
  * startProxy()
  *   Function fires up a proxy process.
+ *
+ * Args:
+ *   onetime_options: one time options that traffic_server should be started with (ie
+ *                    these options do not persist across reboots)
  */
+static const size_t OPTIONS_SIZE = 16384; // Arbitrary max size for command line option string
+
 bool
-LocalManager::startProxy()
+LocalManager::startProxy(const char *onetime_options)
 {
   if (proxy_launch_outstanding) {
     return false;
@@ -872,7 +903,7 @@ LocalManager::startProxy()
       ats_scoped_str bindir(RecConfigReadBinDir());
 
       ink_filepath_make(env_prep_bin, sizeof(env_prep_bin), bindir, env_prep);
-      res = execl(env_prep_bin, env_prep_bin, (char *)NULL);
+      res = execl(env_prep_bin, env_prep_bin, (char *)nullptr);
       _exit(res);
     }
   }
@@ -887,7 +918,7 @@ LocalManager::startProxy()
   } else if (pid > 0) { /* Parent */
     proxy_launch_pid         = pid;
     proxy_launch_outstanding = true;
-    proxy_started_at         = time(NULL);
+    proxy_started_at         = time(nullptr);
     ++proxy_launch_count;
     RecSetRecordInt("proxy.node.restarts.proxy.start_time", proxy_started_at, REC_SOURCE_DEFAULT);
     RecSetRecordInt("proxy.node.restarts.proxy.restart_count", proxy_launch_count, REC_SOURCE_DEFAULT);
@@ -895,14 +926,18 @@ LocalManager::startProxy()
     int i = 0;
     char *options[32], *last, *tok;
     bool open_ports_p = false;
+    char real_proxy_options[OPTIONS_SIZE];
 
-    Vec<char> real_proxy_options;
+    ink_strlcpy(real_proxy_options, proxy_options, OPTIONS_SIZE);
+    if (onetime_options && *onetime_options) {
+      ink_strlcat(real_proxy_options, " ", OPTIONS_SIZE);
+      ink_strlcat(real_proxy_options, onetime_options, OPTIONS_SIZE);
+    }
 
-    real_proxy_options.append(proxy_options, strlen(proxy_options));
-
-    if (!strstr(proxy_options, MGMT_OPT)) { // Make sure we're starting the proxy in mgmt mode
-      real_proxy_options.append(" ", strlen(" "));
-      real_proxy_options.append(MGMT_OPT, sizeof(MGMT_OPT) - 1);
+    // Make sure we're starting the proxy in mgmt mode
+    if (strstr(real_proxy_options, MGMT_OPT) == 0) {
+      ink_strlcat(real_proxy_options, " ", OPTIONS_SIZE);
+      ink_strlcat(real_proxy_options, MGMT_OPT, OPTIONS_SIZE);
     }
 
     // Check if we need to pass down port/fd information to
@@ -916,31 +951,29 @@ LocalManager::startProxy()
     if (open_ports_p) {
       char portbuf[128];
       bool need_comma_p = false;
-      real_proxy_options.append(" --httpport ", strlen(" --httpport "));
+
+      ink_strlcat(real_proxy_options, " --httpport ", OPTIONS_SIZE);
       for (int i = 0, limit = m_proxy_ports.length(); i < limit; ++i) {
         HttpProxyPort &p = m_proxy_ports[i];
         if (ts::NO_FD != p.m_fd) {
           if (need_comma_p) {
-            real_proxy_options.append(',');
+            ink_strlcat(real_proxy_options, ",", OPTIONS_SIZE);
           }
           need_comma_p = true;
           p.print(portbuf, sizeof(portbuf));
-          real_proxy_options.append((const char *)portbuf, strlen(portbuf));
+          ink_strlcat(real_proxy_options, (const char *)portbuf, OPTIONS_SIZE);
         }
       }
     }
 
-    // NUL-terminate for the benefit of strtok and printf.
-    real_proxy_options.add(0);
-
-    Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'", absolute_proxy_binary, &real_proxy_options[0]);
+    Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'", absolute_proxy_binary, real_proxy_options);
 
     ink_zero(options);
     options[0]   = absolute_proxy_binary;
     i            = 1;
-    tok          = strtok_r(&real_proxy_options[0], " ", &last);
+    tok          = strtok_r(real_proxy_options, " ", &last);
     options[i++] = tok;
-    while (i < 32 && (tok = strtok_r(NULL, " ", &last))) {
+    while (i < 32 && (tok = strtok_r(nullptr, " ", &last))) {
       Debug("lm", "opt %d = '%s'", i, tok);
       options[i++] = tok;
     }

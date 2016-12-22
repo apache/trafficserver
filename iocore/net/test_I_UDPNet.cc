@@ -98,7 +98,7 @@ main(int argc, char *argv[])
 {
   int port = (argc > 1) ? atoi(argv[1]) : 39680;
 
-  init_diags((argc > 2) ? argv[2] : "udp.*", NULL);
+  init_diags((argc > 2) ? argv[2] : "udp.*", nullptr);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(2);
   udpNet.start(1);

@@ -174,8 +174,9 @@ ts_lua_add_package_path_items(lua_State *L, ts_lua_package_path *pp, int n)
   lua_getfield(L, -1, "path"); /* get old package.path */
 
   old_path = lua_tolstring(L, -1, &old_path_len);
-  if (old_path[old_path_len - 1] == ';')
+  if (old_path[old_path_len - 1] == ';') {
     old_path_len--;
+  }
 
   new_path_len = snprintf(new_path, sizeof(new_path) - 32, "%.*s", (int)old_path_len, old_path);
 
@@ -319,8 +320,9 @@ ts_lua_add_package_cpath_items(lua_State *L, ts_lua_package_path *pp, int n)
   lua_getfield(L, -1, "cpath"); /* get old package.cpath */
 
   old_path = lua_tolstring(L, -1, &old_path_len);
-  if (old_path[old_path_len - 1] == ';')
+  if (old_path[old_path_len - 1] == ';') {
     old_path_len--;
+  }
 
   new_path_len = snprintf(new_path, sizeof(new_path) - 32, "%.*s", (int)old_path_len, old_path);
 

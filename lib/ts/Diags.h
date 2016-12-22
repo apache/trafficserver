@@ -74,7 +74,7 @@ typedef enum {  // do not renumber --- used as array index
   DL_Undefined  // must be last, used for size!
 } DiagsLevel;
 
-enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, INVALID_ROLLING_VALUE };
+enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_TIME_OR_SIZE, INVALID_ROLLING_VALUE };
 
 enum DiagsShowLocation { SHOW_LOCATION_NONE = 0, SHOW_LOCATION_DEBUG, SHOW_LOCATION_ALL };
 
@@ -110,7 +110,7 @@ struct DiagsConfigState {
 class Diags
 {
 public:
-  Diags(const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log);
+  Diags(const char *prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log);
   ~Diags();
 
   BaseLogFile *diags_log;
@@ -121,7 +121,6 @@ public:
   volatile DiagsConfigState config;
   DiagsShowLocation show_location;
   DiagsCleanupFunc cleanup_func;
-  const char *prefix_str;
 
   ///////////////////////////
   // conditional debugging //
@@ -167,7 +166,7 @@ public:
   {
     va_list ap;
     va_start(ap, fmt);
-    print_va(NULL, level, loc, fmt, ap);
+    print_va(tag, level, loc, fmt, ap);
     va_end(ap);
   }
 
@@ -179,7 +178,7 @@ public:
     if (on(tag)) {
       va_list ap;
       va_start(ap, fmt);
-      print_va(NULL, level, loc, fmt, ap);
+      print_va(tag, level, loc, fmt, ap);
       va_end(ap);
     }
   }
@@ -188,7 +187,7 @@ public:
   log_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap)
   {
     if (on(tag)) {
-      print_va(NULL, level, loc, fmt, ap);
+      print_va(tag, level, loc, fmt, ap);
     }
   }
 
@@ -221,6 +220,7 @@ public:
   const char *base_action_tags; // internal copy of default action tags
 
 private:
+  const char *prefix_str;
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
   DFA *activated_tags[2];           // 1 table for debug, 1 for action
 
@@ -265,7 +265,7 @@ private:
 
 #if !defined(__GNUC__)
 #ifndef __FUNCTION__
-#define __FUNCTION__ NULL
+#define __FUNCTION__ nullptr
 #endif
 #endif
 

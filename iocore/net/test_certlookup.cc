@@ -52,11 +52,11 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
 
   box = REGRESSION_TEST_PASSED;
 
-  assert(wild != NULL);
-  assert(notwild != NULL);
-  assert(b_notwild != NULL);
-  assert(foo != NULL);
-  assert(all_com != NULL);
+  assert(wild != nullptr);
+  assert(notwild != nullptr);
+  assert(b_notwild != nullptr);
+  assert(foo != nullptr);
+  assert(all_com != nullptr);
 
   box.check(lookup.insert("www.foo.com", foo_cc) >= 0, "insert host context");
   // Insert the same SSL_CTX instance under another name too
@@ -88,8 +88,15 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
 
   // Basic hostname cases.
   box.check(lookup.find("www.foo.com")->ctx == foo, "host lookup for www.foo.com");
-  box.check(lookup.find("www.bar.com")->ctx == all_com, "host lookup for www.bar.com");
-  box.check(lookup.find("www.bar.net") == NULL, "host lookup for www.bar.net");
+  box.check(lookup.find("www.bar.com") == nullptr, "www.bar.com won't match *.com because we only match one level");
+  box.check(lookup.find("www.bar.net") == nullptr, "host lookup for www.bar.net");
+
+  // Make sure cases are lowered
+  box.check(lookup.find("WWW.foo.com")->ctx == foo, "mixed case lookup for www.foo.com");
+  box.check(lookup.insert("Mixed.Case.Com", foo_cc) >= 0, "mixed case insert for Mixed.Case.Com");
+  box.check(lookup.find("Mixed.CASE.Com")->ctx == foo, "mixed case lookup 1 for Mixed.Case.Com");
+  box.check(lookup.find("Mixed.Case.Com")->ctx == foo, "mixed case lookup 2 for Mixed.Case.Com");
+  box.check(lookup.find("mixed.case.com")->ctx == foo, "lower case lookup for Mixed.Case.Com");
 }
 
 REGRESSION_TEST(SSLAddressLookup)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
@@ -207,7 +214,7 @@ int
 main(int argc, const char **argv)
 {
   BaseLogFile *blf = new BaseLogFile("stdout");
-  diags            = new Diags(NULL, NULL, blf);
+  diags            = new Diags("test_certlookup", nullptr, nullptr, blf);
   res_track_memory = 1;
 
   SSL_library_init();
@@ -225,7 +232,7 @@ main(int argc, const char **argv)
 
   } else {
     // Standard regression tests.
-    RegressionTest::run(NULL, REGRESSION_TEST_QUICK);
+    RegressionTest::run(nullptr, REGRESSION_TEST_QUICK);
   }
 
   ink_freelists_dump(stdout);

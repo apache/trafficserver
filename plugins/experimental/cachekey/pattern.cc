@@ -38,7 +38,7 @@ replaceString(String &str, const String &from, const String &to)
   }
 }
 
-Pattern::Pattern() : _re(NULL), _extra(NULL), _pattern(""), _replacement(""), _tokenCount(0)
+Pattern::Pattern() : _re(nullptr), _extra(nullptr), _pattern(""), _replacement(""), _tokenCount(0)
 {
 }
 
@@ -131,7 +131,7 @@ Pattern::init(const String &config)
 bool
 Pattern::empty() const
 {
-  return _pattern.empty() || NULL == _re;
+  return _pattern.empty() || nullptr == _re;
 }
 
 /**
@@ -142,12 +142,12 @@ Pattern::pcreFree()
 {
   if (_re) {
     pcre_free(_re);
-    _re = NULL;
+    _re = nullptr;
   }
 
   if (_extra) {
     pcre_free(_extra);
-    _extra = NULL;
+    _extra = nullptr;
   }
 }
 
@@ -213,7 +213,7 @@ Pattern::match(const String &subject)
     return false;
   }
 
-  matchCount = pcre_exec(_re, _extra, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, NULL, 0);
+  matchCount = pcre_exec(_re, _extra, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, nullptr, 0);
   if (matchCount < 0) {
     if (matchCount != PCRE_ERROR_NOMATCH)
       CacheKeyError("matching error %d", matchCount);
@@ -240,7 +240,7 @@ Pattern::capture(const String &subject, StringVector &result)
     return false;
   }
 
-  matchCount = pcre_exec(_re, NULL, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
+  matchCount = pcre_exec(_re, nullptr, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
   if (matchCount < 0) {
     if (matchCount != PCRE_ERROR_NOMATCH)
       CacheKeyError("matching error %d", matchCount);
@@ -278,7 +278,7 @@ Pattern::replace(const String &subject, String &result)
     return false;
   }
 
-  matchCount = pcre_exec(_re, NULL, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
+  matchCount = pcre_exec(_re, nullptr, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
   if (matchCount < 0) {
     if (matchCount != PCRE_ERROR_NOMATCH)
       CacheKeyError("matching error %d", matchCount);
@@ -333,9 +333,9 @@ Pattern::compile()
                      0,                /* options */
                      &errPtr,          /* for error message */
                      &errOffset,       /* for error offset */
-                     NULL);            /* use default character tables */
+                     nullptr);         /* use default character tables */
 
-  if (NULL == _re) {
+  if (nullptr == _re) {
     CacheKeyError("compile of regex '%s' at char %d: %s", _pattern.c_str(), errOffset, errPtr);
 
     return false;
@@ -343,11 +343,11 @@ Pattern::compile()
 
   _extra = pcre_study(_re, 0, &errPtr);
 
-  if ((NULL == _extra) && (NULL != errPtr) && (0 != *errPtr)) {
+  if ((nullptr == _extra) && (nullptr != errPtr) && (0 != *errPtr)) {
     CacheKeyError("failed to study regex '%s': %s", _pattern.c_str(), errPtr);
 
     pcre_free(_re);
-    _re = NULL;
+    _re = nullptr;
     return false;
   }
 
@@ -431,7 +431,7 @@ bool
 MultiPattern::match(const String &subject) const
 {
   for (std::vector<Pattern *>::const_iterator p = this->_list.begin(); p != this->_list.end(); ++p) {
-    if (NULL != (*p) && (*p)->match(subject)) {
+    if (nullptr != (*p) && (*p)->match(subject)) {
       return true;
     }
   }

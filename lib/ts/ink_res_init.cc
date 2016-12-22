@@ -97,9 +97,9 @@ HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER = {HOST_RES_PREFE
 
 HostResPreferenceOrder host_res_default_preference_order;
 
-char const *const HOST_RES_PREFERENCE_STRING[N_HOST_RES_PREFERENCE] = {"only", "client", "ipv4", "ipv6"};
+const char *const HOST_RES_PREFERENCE_STRING[N_HOST_RES_PREFERENCE] = {"only", "client", "ipv4", "ipv6"};
 
-char const *const HOST_RES_STYLE_STRING[] = {"invalid", "IPv4", "IPv4 only", "IPv6", "IPv6 only"};
+const char *const HOST_RES_STYLE_STRING[] = {"invalid", "IPv4", "IPv4 only", "IPv6", "IPv6 only"};
 
 /*%
  * This routine is for closing the socket if a virtual circuit is used and
@@ -260,7 +260,7 @@ ink_res_randomid(void)
 {
   struct timeval now;
 
-  gettimeofday(&now, NULL);
+  gettimeofday(&now, nullptr);
   return (0xffff & (now.tv_sec ^ now.tv_usec ^ getpid()));
 }
 
@@ -292,7 +292,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
              IpEndpoint const *pHostList, ///< Additional servers.
              size_t pHostListSize,        ///< # of entries in @a pHostList.
              int dnsSearch,               /// Option of search_default_domains.
-             const char *pDefDomain,      ///< Default domain (may be NULL).
+             const char *pDefDomain,      ///< Default domain (may be nullptr).
              const char *pSearchList,     ///< Unknown
              const char *pResolvConf      ///< Path to configuration file.
              )
@@ -320,8 +320,8 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   statp->pfcode  = 0;
   statp->_vcsock = -1;
   statp->_flags  = 0;
-  statp->qhook   = NULL;
-  statp->rhook   = NULL;
+  statp->qhook   = nullptr;
+  statp->rhook   = nullptr;
 
 #ifdef SOLARIS2
   /*
@@ -336,14 +336,14 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
       if (buf[0] == '+')
         buf[0] = '.';
       cp       = strchr(buf, '.');
-      cp       = (cp == NULL) ? buf : (cp + 1);
+      cp       = (cp == nullptr) ? buf : (cp + 1);
       ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
     }
   }
 #endif /* SOLARIS2 */
 
   /* Allow user to override the local domain definition */
-  if ((cp = getenv("LOCALDOMAIN")) != NULL) {
+  if ((cp = getenv("LOCALDOMAIN")) != nullptr) {
     (void)ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
     haveenv++;
 
@@ -373,7 +373,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
     while (*cp != '\0' && *cp != ' ' && *cp != '\t' && *cp != '\n')
       cp++;
     *cp   = '\0';
-    *pp++ = 0;
+    *pp++ = nullptr;
   }
 
   /* ---------------------------------------------
@@ -387,12 +387,12 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 
   if (pDefDomain && '\0' != *pDefDomain && '\n' != *pDefDomain) {
     ink_strlcpy(statp->defdname, pDefDomain, sizeof(statp->defdname));
-    if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL)
+    if ((cp = strpbrk(statp->defdname, " \t\n")) != nullptr)
       *cp = '\0';
   }
   if (pSearchList && '\0' != *pSearchList && '\n' != *pSearchList) {
     ink_strlcpy(statp->defdname, pSearchList, sizeof(statp->defdname));
-    if ((cp = strchr(statp->defdname, '\n')) != NULL)
+    if ((cp = strchr(statp->defdname, '\n')) != nullptr)
       *cp = '\0';
     /*
      * Set search list to be blank-separated strings
@@ -414,7 +414,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
     while (*cp != '\0' && *cp != ' ' && *cp != '\t')
       cp++;
     *cp        = '\0';
-    *pp++      = 0;
+    *pp++      = nullptr;
     havesearch = 1;
   }
 
@@ -432,9 +432,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 #define MATCH(line, name) \
   (!strncmp(line, name, sizeof(name) - 1) && (line[sizeof(name) - 1] == ' ' || line[sizeof(name) - 1] == '\t'))
 
-  if ((fp = fopen(pResolvConf, "r")) != NULL) {
+  if ((fp = fopen(pResolvConf, "r")) != nullptr) {
     /* read the config file */
-    while (fgets(buf, sizeof(buf), fp) != NULL) {
+    while (fgets(buf, sizeof(buf), fp) != nullptr) {
       /* skip comments */
       if (*buf == ';' || *buf == '#')
         continue;
@@ -448,7 +448,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
         if ((*cp == '\0') || (*cp == '\n'))
           continue;
         ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
-        if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL)
+        if ((cp = strpbrk(statp->defdname, " \t\n")) != nullptr)
           *cp      = '\0';
         havesearch = 0;
         continue;
@@ -463,7 +463,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
         if ((*cp == '\0') || (*cp == '\n'))
           continue;
         ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
-        if ((cp = strchr(statp->defdname, '\n')) != NULL)
+        if ((cp = strchr(statp->defdname, '\n')) != nullptr)
           *cp = '\0';
         /*
          * Set search list to be blank-separated strings
@@ -485,7 +485,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
         while (*cp != '\0' && *cp != ' ' && *cp != '\t')
           cp++;
         *cp        = '\0';
-        *pp++      = 0;
+        *pp++      = nullptr;
         havesearch = 1;
         continue;
       }
@@ -517,14 +517,14 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   if (nserv > 0)
     statp->nscount = nserv;
 
-  if (statp->defdname[0] == 0 && gethostname(buf, sizeof(statp->defdname) - 1) == 0 && (cp = strchr(buf, '.')) != NULL)
+  if (statp->defdname[0] == 0 && gethostname(buf, sizeof(statp->defdname) - 1) == 0 && (cp = strchr(buf, '.')) != nullptr)
     ink_strlcpy(statp->defdname, cp + 1, sizeof(statp->defdname));
 
   /* find components of local domain that might be searched */
   if (havesearch == 0) {
     pp    = statp->dnsrch;
     *pp++ = statp->defdname;
-    *pp   = NULL;
+    *pp   = nullptr;
 
     if (dnsSearch == 1) {
       dots = 0;
@@ -539,7 +539,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
         *pp++ = cp;
         dots--;
       }
-      *pp = NULL;
+      *pp = nullptr;
     }
 #ifdef DEBUG
     if (statp->options & INK_RES_DEBUG) {
@@ -554,14 +554,14 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   /* export all ns servers to DNSprocessor. */
   ink_res_setservers(statp, &statp->nsaddr_list[0], statp->nscount);
 
-  if ((cp = getenv("RES_OPTIONS")) != NULL)
+  if ((cp = getenv("RES_OPTIONS")) != nullptr)
     ink_res_setoptions(statp, cp, "env");
   statp->options |= INK_RES_INIT;
   return (statp->res_h_errno);
 }
 
 void
-parse_host_res_preference(char const *value, HostResPreferenceOrder order)
+parse_host_res_preference(const char *value, HostResPreferenceOrder order)
 {
   Tokenizer tokens(";/|");
   // preference from the config string.
@@ -576,7 +576,7 @@ parse_host_res_preference(char const *value, HostResPreferenceOrder order)
     found[i] = false;
 
   for (i = 0; i < n && np < N_HOST_RES_PREFERENCE_ORDER; ++i) {
-    char const *elt = tokens[i];
+    const char *elt = tokens[i];
     // special case none/only because that terminates the sequence.
     if (0 == strcasecmp(elt, HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_NONE])) {
       found[HOST_RES_PREFER_NONE] = true;

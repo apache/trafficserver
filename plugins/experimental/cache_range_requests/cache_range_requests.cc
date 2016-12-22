@@ -80,8 +80,8 @@ range_header_check(TSHttpTxn txnp)
   int length, url_length;
   struct txndata *txn_state;
   TSMBuffer hdr_bufp;
-  TSMLoc req_hdrs = NULL;
-  TSMLoc loc      = NULL;
+  TSMLoc req_hdrs = nullptr;
+  TSMLoc loc      = nullptr;
   TSCont txn_contp;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_bufp, &req_hdrs)) {
@@ -91,7 +91,7 @@ range_header_check(TSHttpTxn txnp)
       if (!hdr_value || length <= 0) {
         DEBUG_LOG("Not a range request.");
       } else {
-        if (NULL == (txn_contp = TSContCreate((TSEventFunc)transaction_handler, NULL))) {
+        if (nullptr == (txn_contp = TSContCreate((TSEventFunc)transaction_handler, nullptr))) {
           ERROR_LOG("failed to create the transaction handler continuation.");
         } else {
           txn_state              = (struct txndata *)TSmalloc(sizeof(struct txndata));
@@ -102,7 +102,7 @@ range_header_check(TSHttpTxn txnp)
           req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_length);
           snprintf(cache_key_url, 8192, "%s-%s", req_url, txn_state->range_value);
           DEBUG_LOG("Rewriting cache URL for %s to %s", req_url, cache_key_url);
-          if (req_url != NULL) {
+          if (req_url != nullptr) {
             TSfree(req_url);
           }
 
@@ -126,7 +126,7 @@ range_header_check(TSHttpTxn txnp)
     } else {
       DEBUG_LOG("no range request header.");
     }
-    TSHandleMLocRelease(hdr_bufp, req_hdrs, NULL);
+    TSHandleMLocRelease(hdr_bufp, req_hdrs, nullptr);
   } else {
     DEBUG_LOG("failed to retrieve the server request");
   }
@@ -140,16 +140,16 @@ static void
 handle_send_origin_request(TSCont contp, TSHttpTxn txnp, struct txndata *txn_state)
 {
   TSMBuffer hdr_bufp;
-  TSMLoc req_hdrs = NULL;
+  TSMLoc req_hdrs = nullptr;
 
-  if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &hdr_bufp, &req_hdrs) && txn_state->range_value != NULL) {
+  if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &hdr_bufp, &req_hdrs) && txn_state->range_value != nullptr) {
     if (set_header(hdr_bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, txn_state->range_value,
                    strlen(txn_state->range_value))) {
       DEBUG_LOG("Added range header: %s", txn_state->range_value);
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
     }
   }
-  TSHandleMLocRelease(hdr_bufp, req_hdrs, NULL);
+  TSHandleMLocRelease(hdr_bufp, req_hdrs, nullptr);
 }
 
 /**
@@ -163,14 +163,14 @@ handle_client_send_response(TSHttpTxn txnp, struct txndata *txn_state)
   char *p;
   int length;
   TSMBuffer response, hdr_bufp;
-  TSMLoc resp_hdr, req_hdrs = NULL;
+  TSMLoc resp_hdr, req_hdrs = nullptr;
 
   TSReturnCode result = TSHttpTxnClientRespGet(txnp, &response, &resp_hdr);
   DEBUG_LOG("result: %d", result);
   if (TS_SUCCESS == result) {
     TSHttpStatus status = TSHttpHdrStatusGet(response, resp_hdr);
     // a cached result will have a TS_HTTP_OK with a 'Partial Content' reason
-    if ((p = (char *)TSHttpHdrReasonGet(response, resp_hdr, &length)) != NULL) {
+    if ((p = (char *)TSHttpHdrReasonGet(response, resp_hdr, &length)) != nullptr) {
       if ((length == 15) && (0 == strncasecmp(p, "Partial Content", length))) {
         partial_content_reason = true;
       }
@@ -183,7 +183,7 @@ handle_client_send_response(TSHttpTxn txnp, struct txndata *txn_state)
     }
   }
   // add the range request header back in so that range requests may be logged.
-  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_bufp, &req_hdrs) && txn_state->range_value != NULL) {
+  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_bufp, &req_hdrs) && txn_state->range_value != nullptr) {
     if (set_header(hdr_bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, txn_state->range_value,
                    strlen(txn_state->range_value))) {
       DEBUG_LOG("added range header: %s", txn_state->range_value);
@@ -193,8 +193,8 @@ handle_client_send_response(TSHttpTxn txnp, struct txndata *txn_state)
   } else {
     DEBUG_LOG("failed to get Request Headers");
   }
-  TSHandleMLocRelease(response, resp_hdr, NULL);
-  TSHandleMLocRelease(hdr_bufp, req_hdrs, NULL);
+  TSHandleMLocRelease(response, resp_hdr, nullptr);
+  TSHandleMLocRelease(hdr_bufp, req_hdrs, nullptr);
 }
 
 /**
@@ -215,7 +215,7 @@ handle_server_read_response(TSHttpTxn txnp, struct txndata *txn_state)
       DEBUG_LOG("Got TS_HTTP_STATUS_PARTIAL_CONTENT.");
       TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_OK);
       DEBUG_LOG("Set response header to TS_HTTP_STATUS_OK.");
-      bool cacheable = TSHttpTxnIsCacheable(txnp, NULL, response);
+      bool cacheable = TSHttpTxnIsCacheable(txnp, nullptr, response);
       DEBUG_LOG("range is cacheable: %d", cacheable);
     } else if (TS_HTTP_STATUS_OK == status) {
       DEBUG_LOG("The origin does not support range requests, attempting to disable cache write.");
@@ -226,7 +226,7 @@ handle_server_read_response(TSHttpTxn txnp, struct txndata *txn_state)
       }
     }
   }
-  TSHandleMLocRelease(response, resp_hdr, NULL);
+  TSHandleMLocRelease(response, resp_hdr, nullptr);
 }
 
 /**
@@ -281,7 +281,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     }
   } else {
-    TSMLoc tmp = NULL;
+    TSMLoc tmp = nullptr;
     bool first = true;
 
     while (field_loc) {
@@ -370,7 +370,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  if (NULL == (txnp_cont = TSContCreate((TSEventFunc)handle_read_request_header, NULL))) {
+  if (nullptr == (txnp_cont = TSContCreate((TSEventFunc)handle_read_request_header, nullptr))) {
     ERROR_LOG("failed to create the transaction continuation handler.");
     return;
   } else {
@@ -398,10 +398,10 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
     handle_client_send_response(txnp, txn_state);
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
-    if (txn_state != NULL && txn_state->range_value != NULL) {
+    if (txn_state != nullptr && txn_state->range_value != nullptr) {
       TSfree(txn_state->range_value);
     }
-    if (txn_state != NULL) {
+    if (txn_state != nullptr) {
       TSfree(txn_state);
     }
     TSContDestroy(contp);

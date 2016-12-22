@@ -35,7 +35,6 @@ man_pages = [
   ('appendices/command-line/traffic_via.en', 'traffic_via', u'Traffic Server Via header decoder', None, '1'),
 
   ('admin-guide/files/cache.config.en', 'cache.config', u'Traffic Server cache configuration file', None, '5'),
-  ('admin-guide/files/cluster.config.en', 'cluster.config', u'Traffic Server cluster configuration file', None, '5'),
   ('admin-guide/files/congestion.config.en', 'congestion.config', u'Traffic Server congestion control configuration file', None, '5'),
   ('admin-guide/files/hosting.config.en', 'hosting.config', u'Traffic Server domain hosting configuration file', None, '5'),
   ('admin-guide/files/ip_allow.config.en', 'ip_allow.config', u'Traffic Server IP access control configuration file', None, '5'),

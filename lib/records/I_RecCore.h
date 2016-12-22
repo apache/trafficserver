@@ -30,6 +30,7 @@
 #include "I_RecAlarms.h"
 #include "I_RecSignals.h"
 #include "I_RecEvents.h"
+#include <functional>
 
 struct RecRecord;
 
@@ -69,11 +70,11 @@ char *RecConfigReadBinDir();
 
 // Return a copy of a configuration file that is relative to sysconfdir. The relative path to the configuration
 // file is specified in the configuration variable named by "file_variable". If the configuration variable has no
-// value, NULL is returned. The caller MUST release the result with ats_free().
-char *RecConfigReadConfigPath(const char *file_variable, const char *default_value = NULL);
+// value, nullptr is returned. The caller MUST release the result with ats_free().
+char *RecConfigReadConfigPath(const char *file_variable, const char *default_value = nullptr);
 
 // This is the same as RecConfigReadConfigPath, except it makes the paths relative to $PREFIX.
-char *RecConfigReadPrefixPath(const char *file_variable, const char *default_value = NULL);
+char *RecConfigReadPrefixPath(const char *file_variable, const char *default_value = nullptr);
 
 // Return a copy of the persistent stats file. This is $RUNTIMEDIR/records.snap.
 // The caller MUST release the result with ats_free().
@@ -168,7 +169,6 @@ int RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
-
 typedef void (*RecLookupCallback)(const RecRecord *, void *);
 
 int RecLookupRecord(const char *name, RecLookupCallback callback, void *data, bool lock = true);
@@ -203,6 +203,9 @@ RecSignalManager(int id, const char *str)
 
 // Format a message, and send it to the manager and to the Warning diagnostic.
 void RecSignalWarning(int sig, const char *fmt, ...) TS_PRINTFLIKE(2, 3);
+
+/// Generate a warning if any configuration name/value is not registered.
+void RecConfigWarnIfUnregistered();
 
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
@@ -314,6 +317,6 @@ RecErrT RecSetSyncRequired(char *name, bool lock = true);
 // Manager Callback
 //------------------------------------------------------------------------
 typedef void *(*RecManagerCb)(void *opaque_cb_data, char *data_raw, int data_len);
-int RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data = NULL);
+int RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data = nullptr);
 
 #endif

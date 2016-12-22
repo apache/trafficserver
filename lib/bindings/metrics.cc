@@ -47,7 +47,7 @@ metrics_binding::check(lua_State *L, int index)
 
   luaL_checktype(L, index, LUA_TUSERDATA);
   m = (metrics_binding *)luaL_checkudata(L, index, BINDING);
-  if (m == NULL) {
+  if (m == nullptr) {
     luaL_typerror(L, index, "userdata");
   }
 
@@ -96,7 +96,7 @@ metrics_index(lua_State *L)
   size_t len;
 
   key = luaL_checklstring(L, 2, &len);
-  ink_release_assert(key != NULL && len != 0);
+  ink_release_assert(key != nullptr && len != 0);
 
   // First, check whether we have a reference stored for this key.
   ptr = m->refs.find(std::string(key, len));
@@ -196,7 +196,9 @@ lua_metrics_new(const char *prefix, lua_State *L)
 void
 lua_metrics_register(lua_State *L)
 {
-  static const luaL_reg metatable[] = {{"__gc", metrics_gc}, {"__index", metrics_index}, {"__newindex", metrics_newindex}, {0, 0}};
+  static const luaL_reg metatable[] = {
+    {"__gc", metrics_gc}, {"__index", metrics_index}, {"__newindex", metrics_newindex}, {nullptr, nullptr},
+  };
 
   BindingInstance::register_metatable(L, BINDING, metatable);
 }
@@ -208,8 +210,19 @@ install_metrics_object(RecT rec_type, void *edata, int registered, const char *n
 
   if (likely(registered)) {
     const char *end = strrchr(name, '.');
-    ptrdiff_t len   = end - name;
-    prefixes->insert(std::string(name, len));
+
+    if (end) {
+      ptrdiff_t len = end - name;
+      prefixes->insert(std::string(name, len));
+    } else {
+      // If there is no prefix in the metric name, we can't install a
+      // metrics object placeholder. We depend on the __index metamethod
+      // to give us a trigger for performing a records lookup. If we don't
+      // have a prefix, then we just have a global variable named after
+      // the metrics record and the best we could to with that would be to
+      // push a constant value, which would always be stale.
+      Debug("lua", "unable to install metrics object at %s: missing prefix", name);
+    }
   }
 }
 

@@ -40,7 +40,7 @@
 #define PCP "[" PLUGIN_NAME "]"
 
 // Activate the data sink if this field is present in the request.
-static char const FLAG_MIME_FIELD[] = "TS-Agent";
+static const char FLAG_MIME_FIELD[] = "TS-Agent";
 static size_t const FLAG_MIME_LEN   = sizeof(FLAG_MIME_FIELD) - 1;
 
 typedef struct {

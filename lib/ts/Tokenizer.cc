@@ -39,8 +39,8 @@ Tokenizer::Tokenizer(const char *StrOfDelimiters)
 {
   int length;
 
-  if (StrOfDelimiters == NULL) {
-    strOfDelimit = NULL;
+  if (StrOfDelimiters == nullptr) {
+    strOfDelimit = nullptr;
   } else {
     length       = (int)(strlen(StrOfDelimiters) + 1);
     strOfDelimit = new char[length];
@@ -63,13 +63,13 @@ Tokenizer::~Tokenizer()
   bool root     = true;
   tok_node *cur = &start_node;
   ;
-  tok_node *next = NULL;
+  tok_node *next = nullptr;
 
-  if (strOfDelimit != NULL) {
+  if (strOfDelimit != nullptr) {
     delete[] strOfDelimit;
   }
 
-  while (cur != NULL) {
+  while (cur != nullptr) {
     if (options & COPY_TOKS) {
       for (int i = 0; i < TOK_NODE_ELEMENTS; i++)
         ats_free(cur->el[i]);
@@ -118,7 +118,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
 {
   char *strStart;
   int priorCharWasDelimit = 1;
-  char *tokStart          = NULL;
+  char *tokStart          = nullptr;
   unsigned tok_count      = 0;
   bool max_limit_hit      = false;
 
@@ -260,7 +260,7 @@ Tokenizer::addToken(char *startAddr, int length)
   //   to point to next tok_node, creating one
   //   if there is not a next one
   if (add_index >= TOK_NODE_ELEMENTS) {
-    if (add_node->next == NULL) {
+    if (add_node->next == nullptr) {
       add_node->next = (tok_node *)ats_malloc(sizeof(tok_node));
       memset(add_node->next, 0, sizeof(tok_node));
     }
@@ -275,11 +275,11 @@ const char *Tokenizer::operator[](unsigned index) const
   unsigned cur_start       = 0;
 
   if (index >= numValidTokens) {
-    return NULL;
+    return nullptr;
   } else {
     while (cur_start + TOK_NODE_ELEMENTS <= index) {
       cur_node = cur_node->next;
-      ink_assert(cur_node != NULL);
+      ink_assert(cur_node != nullptr);
       cur_start += TOK_NODE_ELEMENTS;
     }
     return cur_node->el[index % TOK_NODE_ELEMENTS];
@@ -310,19 +310,19 @@ Tokenizer::iterNext(tok_iter_state *state)
   index++;
   if (index >= TOK_NODE_ELEMENTS) {
     node = node->next;
-    if (node == NULL) {
-      return NULL;
+    if (node == nullptr) {
+      return nullptr;
     } else {
       index = 0;
     }
   }
 
-  if (node->el[index] != NULL) {
+  if (node->el[index] != nullptr) {
     state->node  = node;
     state->index = index;
     return node->el[index];
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -333,8 +333,8 @@ Tokenizer::Print()
   int node_index     = 0;
   int count          = 0;
 
-  while (cur_node != NULL) {
-    if (cur_node->el[node_index] != NULL) {
+  while (cur_node != nullptr) {
+    if (cur_node->el[node_index] != nullptr) {
       printf("Token %d : |%s|\n", count, cur_node->el[node_index]);
       count++;
     } else {
@@ -354,7 +354,7 @@ Tokenizer::ReUse()
 {
   tok_node *cur_node = &start_node;
 
-  while (cur_node != NULL) {
+  while (cur_node != nullptr) {
     if (options & COPY_TOKS) {
       for (int i = 0; i < TOK_NODE_ELEMENTS; i++)
         ats_free(cur_node->el[i]);

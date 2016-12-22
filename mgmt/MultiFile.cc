@@ -46,8 +46,8 @@
 
 MultiFile::MultiFile()
 {
-  managedDir  = NULL;
-  dirDescript = NULL;
+  managedDir  = nullptr;
+  dirDescript = nullptr;
 }
 
 // void MultiFile::addTableEntries(ExpandingArray* fileList, textBuffer* output)
@@ -77,7 +77,7 @@ MultiFile::addTableEntries(ExpandingArray *fileList, textBuffer *output)
     output->copyFrom(dataClose, dataCloseLen);
     output->copyFrom(dataOpen, dataOpenLen);
 
-    if (ink_ctime_r(&current->c_time, dateBuf) == NULL) {
+    if (ink_ctime_r(&current->c_time, dateBuf) == nullptr) {
       ink_strlcpy(dateBuf, "<em>No time-stamp</em>", sizeof(dateBuf));
     }
     output->copyFrom(dateBuf, strlen(dateBuf));
@@ -104,23 +104,16 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
   struct stat records_config_fileInfo;
   fileEntry *fileListEntry;
 
-  if ((dir = opendir(managedDir)) == NULL) {
+  if ((dir = opendir(managedDir)) == nullptr) {
     mgmt_log("[MultiFile::WalkFiles] Unable to open %s directory: %s: %s\n", dirDescript, managedDir, strerror(errno));
     return MF_NO_DIR;
   }
-  // The fun of Solaris - readdir_r requires a buffer passed into it
-  //   The man page says this obscene expression gives us the proper
-  //     size
-  dirEntry = (struct dirent *)ats_malloc(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
-  struct dirent *result;
-  while (readdir_r(dir, dirEntry, &result) == 0) {
-    if (!result) {
-      break;
-    }
+  while ((dirEntry = readdir(dir))) {
     fileName                = dirEntry->d_name;
     filePath                = newPathString(managedDir, fileName);
     records_config_filePath = newPathString(filePath, "records.config");
+
     if (stat(filePath, &fileInfo) < 0) {
       mgmt_log("[MultiFile::WalkFiles] Stat of a %s failed %s: %s\n", dirDescript, fileName, strerror(errno));
     } else {
@@ -137,11 +130,11 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
         fileList->addEntry(fileListEntry);
       }
     }
+
     delete[] filePath;
     delete[] records_config_filePath;
   }
 
-  ats_free(dirEntry);
   closedir(dir);
 
   fileList->sortWithFunction(fileEntryCmpFunc);
@@ -151,7 +144,7 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
 bool
 MultiFile::isManaged(const char *fileName)
 {
-  if (fileName == NULL) {
+  if (fileName == nullptr) {
     return false;
   } else {
     return true;
@@ -236,7 +229,7 @@ MultiFile::newPathString(const char *s1, const char *s2)
   }
   srcLen = strlen(s1);
   newStr = new char[srcLen + addLen + 1];
-  ink_assert(newStr != NULL);
+  ink_assert(newStr != nullptr);
 
   ink_strlcpy(newStr, s1, addLen);
   if (newStr[srcLen - 1] != '/') {

@@ -52,7 +52,7 @@ OneWayMultiTunnel::OneWayMultiTunnel_alloc()
 void
 OneWayMultiTunnel::OneWayMultiTunnel_free(OneWayMultiTunnel *pOWT)
 {
-  pOWT->mutex = NULL;
+  pOWT->mutex = nullptr;
   OneWayMultiTunnelAllocator.free(pOWT);
 }
 
@@ -83,7 +83,7 @@ OneWayMultiTunnel::init(VConnection *vcSource, VConnection **vcTargets, int n_vc
   tunnel_till_done = (nbytes == TUNNEL_TILL_DONE);
 
   MIOBuffer *buf1 = new_MIOBuffer(size_index);
-  MIOBuffer *buf2 = NULL;
+  MIOBuffer *buf2 = nullptr;
 
   single_buffer = asingle_buffer;
 
@@ -111,7 +111,7 @@ OneWayMultiTunnel::init(Continuation *aCont, VIO *SourceVio, VIO **TargetVios, i
   mutex         = aCont ? aCont->mutex : make_ptr(new_ProxyMutex());
   cont          = aCont;
   single_buffer = true;
-  manipulate_fn = 0;
+  manipulate_fn = nullptr;
   n_connections = n_TargetVios + 1;
   ;
   close_source = aclose_source;
@@ -236,7 +236,7 @@ OneWayMultiTunnel::close_target_vio(int result, VIO *vio)
         free_MIOBuffer(v->buffer.writer());
       if (close_target)
         v->vc_server->do_io(result ? VIO::ABORT : VIO::CLOSE);
-      vioTargets[i] = NULL;
+      vioTargets[i] = nullptr;
       n_connections--;
     }
   }

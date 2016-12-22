@@ -242,8 +242,9 @@ ts_lua_client_request_header_set(lua_State *L)
     TSMimeHdrFieldAppend(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc);
   }
 
-  if (field_loc != TS_NULL_MLOC)
+  if (field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc);
+  }
 
   return 0;
 }
@@ -383,8 +384,9 @@ ts_lua_client_request_get_pristine_url(lua_State *L)
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
-  if (TSHttpTxnPristineUrlGet(http_ctx->txnp, &bufp, &url_loc) != TS_SUCCESS)
+  if (TSHttpTxnPristineUrlGet(http_ctx->txnp, &bufp, &url_loc) != TS_SUCCESS) {
     return 0;
+  }
 
   url = TSUrlStringGet(bufp, url_loc, &url_len);
 

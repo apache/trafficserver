@@ -28,9 +28,17 @@
 #include "P_SSLConfig.h"
 #include "I_EventSystem.h"
 #include "ts/I_Layout.h"
+#include "ts/MatcherUtils.h"
 #include "ts/Regex.h"
 #include "ts/Trie.h"
 #include "ts/TestBox.h"
+
+// Check if the ticket_key callback #define is available, and if so, enable session tickets.
+#ifdef SSL_CTX_set_tlsext_ticket_key_cb
+
+#define HAVE_OPENSSL_SESSION_TICKETS 1
+
+#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 struct SSLAddressLookupKey {
   explicit SSLAddressLookupKey(const IpEndpoint &ip) : sep(0)
@@ -72,7 +80,7 @@ struct SSLAddressLookupKey {
   }
 
 private:
-  char key[(TS_IP6_SIZE * 2) /* hex addr */ + 1 /* dot */ + 4 /* port */ + 1 /* NULL */];
+  char key[(TS_IP6_SIZE * 2) /* hex addr */ + 1 /* dot */ + 4 /* port */ + 1 /* nullptr */];
   unsigned char sep; // offset of address/port separator
 };
 
@@ -120,8 +128,10 @@ private:
     LINK(ContextRef, link); ///< Require by @c Trie
   };
 
-  /// Items tored by wildcard name
-  Trie<ContextRef> wildcards;
+  /// We can only match one layer with the wildcards
+  /// This table stores the wildcarded subdomain
+  InkHashTable *wilddomains;
+
   /// Contexts stored by IP address or FQDN
   InkHashTable *hostnames;
   /// List for cleanup.
@@ -158,20 +168,82 @@ ticket_block_alloc(unsigned count)
 
   return ptr;
 }
+ssl_ticket_key_block *
+ticket_block_create(char *ticket_key_data, int ticket_key_len)
+{
+  ssl_ticket_key_block *keyblock = nullptr;
+  unsigned num_ticket_keys       = ticket_key_len / sizeof(ssl_ticket_key_t);
+  if (num_ticket_keys == 0) {
+    Error("SSL session ticket key is too short (>= 48 bytes are required)");
+    goto fail;
+  }
 
+  keyblock = ticket_block_alloc(num_ticket_keys);
+
+  // Slurp all the keys in the ticket key file. We will encrypt with the first key, and decrypt
+  // with any key (for rotation purposes).
+  for (unsigned i = 0; i < num_ticket_keys; ++i) {
+    const char *data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
+
+    memcpy(keyblock->keys[i].key_name, data, sizeof(keyblock->keys[i].key_name));
+    memcpy(keyblock->keys[i].hmac_secret, data + sizeof(keyblock->keys[i].key_name), sizeof(keyblock->keys[i].hmac_secret));
+    memcpy(keyblock->keys[i].aes_key, data + sizeof(keyblock->keys[i].key_name) + sizeof(keyblock->keys[i].hmac_secret),
+           sizeof(keyblock->keys[i].aes_key));
+  }
+
+  return keyblock;
+
+fail:
+  ticket_block_free(keyblock);
+  return nullptr;
+}
+
+ssl_ticket_key_block *
+ssl_create_ticket_keyblock(const char *ticket_key_path)
+{
+#if HAVE_OPENSSL_SESSION_TICKETS
+  ats_scoped_str ticket_key_data;
+  int ticket_key_len;
+  ssl_ticket_key_block *keyblock = nullptr;
+
+  if (ticket_key_path != nullptr) {
+    ticket_key_data = readIntoBuffer(ticket_key_path, __func__, &ticket_key_len);
+    if (!ticket_key_data) {
+      Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
+      goto fail;
+    }
+    keyblock = ticket_block_create(ticket_key_data, ticket_key_len);
+  } else {
+    // Generate a random ticket key
+    ssl_ticket_key_t key;
+    RAND_bytes(reinterpret_cast<unsigned char *>(&key), sizeof(key));
+    keyblock = ticket_block_create(reinterpret_cast<char *>(&key), sizeof(key));
+  }
+
+  return keyblock;
+
+fail:
+  ticket_block_free(keyblock);
+  return nullptr;
+
+#else  /* !HAVE_OPENSSL_SESSION_TICKETS */
+  (void)ticket_key_path;
+  return nullptr;
+#endif /* HAVE_OPENSSL_SESSION_TICKETS */
+}
 void
 SSLCertContext::release()
 {
   if (keyblock) {
     ticket_block_free(keyblock);
-    keyblock = NULL;
+    keyblock = nullptr;
   }
 
   SSLReleaseContext(ctx);
-  ctx = NULL;
+  ctx = nullptr;
 }
 
-SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(NULL), is_valid(true)
+SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(nullptr), is_valid(true)
 {
 }
 
@@ -203,7 +275,7 @@ SSLCertLookup::find(const IpEndpoint &address) const
     return this->ssl_storage->lookup(key.get());
   }
 
-  return NULL;
+  return nullptr;
 }
 
 int
@@ -250,6 +322,20 @@ private:
   DFA regex;
 };
 
+static void
+make_to_lower_case(const char *name, char *lower_case_name, int buf_len)
+{
+  int name_len = strlen(name);
+  int i;
+  if (name_len > (buf_len - 1)) {
+    name_len = buf_len - 1;
+  }
+  for (i = 0; i < name_len; i++) {
+    lower_case_name[i] = ParseRules::ink_tolower(name[i]);
+  }
+  lower_case_name[i] = '\0';
+}
+
 static char *
 reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
 {
@@ -263,7 +349,7 @@ reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1
     ssize_t remain = ptr - reversed;
 
     if (remain < (len + 1)) {
-      return NULL;
+      return nullptr;
     }
 
     ptr -= len;
@@ -277,11 +363,13 @@ reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1
       *(--ptr) = '.';
     }
   }
+  make_to_lower_case(ptr, ptr, strlen(ptr) + 1);
 
   return ptr;
 }
 
-SSLContextStorage::SSLContextStorage() : wildcards(), hostnames(ink_hash_table_create(InkHashTableKeyType_String))
+SSLContextStorage::SSLContextStorage()
+  : wilddomains(ink_hash_table_create(InkHashTableKeyType_String)), hostnames(ink_hash_table_create(InkHashTableKeyType_String))
 {
 }
 
@@ -298,7 +386,7 @@ SSLContextStorage::~SSLContextStorage()
   // First sort the array so we can efficiently detect duplicates
   // and avoid the double free
   this->ctx_store.qsort(SSLCtxCompare);
-  SSL_CTX *last_ctx = NULL;
+  SSL_CTX *last_ctx = nullptr;
   for (unsigned i = 0; i < this->ctx_store.length(); ++i) {
     if (this->ctx_store[i].ctx != last_ctx) {
       last_ctx = this->ctx_store[i].ctx;
@@ -307,6 +395,7 @@ SSLContextStorage::~SSLContextStorage()
   }
 
   ink_hash_table_destroy(this->hostnames);
+  ink_hash_table_destroy(this->wilddomains);
 }
 
 int
@@ -331,52 +420,34 @@ int
 SSLContextStorage::insert(const char *name, int idx)
 {
   ats_wildcard_matcher wildcard;
-  bool inserted = false;
+  InkHashTableValue value;
+  char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
+  make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
 
-  if (wildcard.match(name)) {
-    // We turn wildcards into the reverse DNS form, then insert them into the trie
-    // so that we can do a longest match lookup.
-    char namebuf[TS_MAX_HOST_NAME_LEN + 1];
-    char *reversed;
-    ats_scoped_obj<ContextRef> ref;
-
-    reversed = reverse_dns_name(name + 1, namebuf);
-    if (!reversed) {
-      Error("wildcard name '%s' is too long", name);
-      return -1;
+  if (wildcard.match(lower_case_name)) {
+    // Strip the wildcard and store the subdomain
+    const char *subdomain = index(lower_case_name, '*');
+    if (subdomain && subdomain[1] == '.') {
+      subdomain += 2; // Move beyond the '.'
+    } else {
+      subdomain = nullptr;
     }
-
-    ref         = new ContextRef(idx);
-    int ref_idx = (*ref).idx;
-    inserted    = this->wildcards.Insert(reversed, ref, 0 /* rank */, -1 /* keylen */);
-    if (!inserted) {
-      ContextRef *found;
-
-      // We fail to insert, so the longest wildcard match search should return the full match value.
-      found = this->wildcards.Search(reversed);
-      // Fail even if we are reinserting the exact same value
-      // Otherwise we cannot detect and recover from a double insert
-      // into the references array
-      if (found != NULL) {
-        Warning("previously indexed wildcard certificate for '%s' as '%s', cannot index it with SSL_CTX #%d now", name, reversed,
-                idx);
+    if (subdomain) {
+      if (ink_hash_table_lookup(this->wilddomains, subdomain, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
+        Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", lower_case_name, value, idx);
+        idx = -1;
+      } else {
+        ink_hash_table_insert(this->wilddomains, subdomain, reinterpret_cast<void *>(static_cast<intptr_t>(idx)));
+        Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, this->ctx_store[idx].ctx, idx);
       }
-      idx = -1;
-    } else {
-      ref.release(); // it's the hands of the Trie now, forget it and move on.
     }
-
-    Debug("ssl", "%s wildcard certificate for '%s' as '%s' with SSL_CTX %p [%d]", idx >= 0 ? "index" : "failed to index", name,
-          reversed, this->ctx_store[ref_idx].ctx, ref_idx);
   } else {
-    InkHashTableValue value;
-
-    if (ink_hash_table_lookup(this->hostnames, name, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
-      Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", name, value, idx);
+    if (ink_hash_table_lookup(this->hostnames, lower_case_name, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
+      Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", lower_case_name, value, idx);
       idx = -1;
     } else {
-      ink_hash_table_insert(this->hostnames, name, reinterpret_cast<void *>(static_cast<intptr_t>(idx)));
-      Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", name, this->ctx_store[idx].ctx, idx);
+      ink_hash_table_insert(this->hostnames, lower_case_name, reinterpret_cast<void *>(static_cast<intptr_t>(idx)));
+      Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, this->ctx_store[idx].ctx, idx);
     }
   }
   return idx;
@@ -387,29 +458,26 @@ SSLContextStorage::lookup(const char *name) const
 {
   InkHashTableValue value;
 
+  // First look for an exact name match
   if (ink_hash_table_lookup(const_cast<InkHashTable *>(this->hostnames), name, &value)) {
     return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
   }
-
-  if (!this->wildcards.Empty()) {
-    char namebuf[TS_MAX_HOST_NAME_LEN + 1];
-    char *reversed;
-    ContextRef *ref;
-
-    reversed = reverse_dns_name(name, namebuf);
-    if (!reversed) {
-      Error("failed to reverse hostname name '%s' is too long", name);
-      return NULL;
-    }
-
-    Debug("ssl", "attempting wildcard match for %s", reversed);
-    ref = this->wildcards.Search(reversed);
-    if (ref) {
-      return &(this->ctx_store[ref->idx]);
-    }
+  // Try lower casing it
+  char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
+  make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
+  if (ink_hash_table_lookup(const_cast<InkHashTable *>(this->hostnames), lower_case_name, &value)) {
+    return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
   }
 
-  return NULL;
+  // Then strip off the top domain name and look for a wildcard domain match
+  const char *subdomain = index(name, '.');
+  if (subdomain) {
+    ++subdomain; // Move beyond the '.'
+    if (ink_hash_table_lookup(const_cast<InkHashTable *>(this->wilddomains), subdomain, &value)) {
+      return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
+    }
+  }
+  return nullptr;
 }
 
 #if TS_HAS_TESTS
@@ -422,7 +490,7 @@ REGRESSION_TEST(SSLWildcardMatch)(RegressionTest *t, int /* atype ATS_UNUSED */,
   box = REGRESSION_TEST_PASSED;
 
   box.check(wildcard.match("foo.com") == false, "foo.com is not a wildcard");
-  box.check(wildcard.match("*.foo.com") == true, "*.foo.com not a wildcard");
+  box.check(wildcard.match("*.foo.com") == true, "*.foo.com is a wildcard");
   box.check(wildcard.match("bar*.foo.com") == false, "bar*.foo.com not a wildcard");
   box.check(wildcard.match("*") == false, "* is not a wildcard");
   box.check(wildcard.match("") == false, "'' is not a wildcard");
@@ -441,6 +509,8 @@ REGRESSION_TEST(SSLReverseHostname)(RegressionTest *t, int /* atype ATS_UNUSED *
   box.check(strcmp(_R("foo.com"), "com.foo") == 0, "reversed foo.com");
   box.check(strcmp(_R("bar.foo.com"), "com.foo.bar") == 0, "reversed bar.foo.com");
   box.check(strcmp(_R("foo"), "foo") == 0, "reversed foo");
+  box.check(strcmp(_R("foo.Com"), "Com.foo") != 0, "mixed case reversed foo.com mismatch");
+  box.check(strcmp(_R("foo.Com"), "com.foo") == 0, "mixed case reversed foo.com match");
 
 #undef _R
 }

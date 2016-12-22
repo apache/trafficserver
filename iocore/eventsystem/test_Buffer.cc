@@ -36,11 +36,14 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   RecModeT mode_type = RECM_STAND_ALONE;
 
   Layout::create();
-  init_diags("", NULL);
+  init_diags("", nullptr);
   RecProcessInit(mode_type);
 
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(TEST_THREADS);
+
+  Thread *main_thread = new EThread;
+  main_thread->set_specific();
 
   for (unsigned i = 0; i < 100; ++i) {
     MIOBuffer *b1                       = new_MIOBuffer(default_large_iobuffer_size);
@@ -58,6 +61,4 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   }
 
   exit(0);
-  this_thread()->execute();
-  return 0;
 }

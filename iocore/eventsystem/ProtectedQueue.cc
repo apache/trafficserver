@@ -49,7 +49,7 @@ ProtectedQueue::enqueue(Event *e, bool fast_signal)
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
   EThread *e_ethread   = e->ethread;
   e->in_the_prot_queue = 1;
-  bool was_empty       = (ink_atomiclist_push(&al, e) == NULL);
+  bool was_empty       = (ink_atomiclist_push(&al, e) == nullptr);
 
   if (was_empty) {
     EThread *inserting_thread = this_ethread();
@@ -90,7 +90,7 @@ ProtectedQueue::enqueue(Event *e, bool fast_signal)
               }
               // if not overwritten
               if (sig_e[i] && sig_e[i]->id != i)
-                sig_e[i] = 0;
+                sig_e[i] = nullptr;
             }
             t++;
           }
@@ -130,7 +130,7 @@ flush_signals(EThread *thr)
       thr->ethreads_to_be_signalled[i]->EventQueueExternal.signal();
       if (thr->ethreads_to_be_signalled[i]->signal_hook)
         thr->ethreads_to_be_signalled[i]->signal_hook(thr->ethreads_to_be_signalled[i]);
-      thr->ethreads_to_be_signalled[i] = 0;
+      thr->ethreads_to_be_signalled[i] = nullptr;
     }
   }
   thr->n_ethreads_to_be_signalled = 0;
@@ -161,7 +161,7 @@ ProtectedQueue::dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool slee
     if (!e->cancelled)
       localQueue.enqueue(e);
     else {
-      e->mutex = NULL;
+      e->mutex = nullptr;
       eventAllocator.free(e);
     }
   }

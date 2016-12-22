@@ -119,7 +119,7 @@ memTable default_memTable = {0, 0, 0};
 DynArray<struct memTable> arrayMem(&default_memTable, 0);
 
 HTTPHdrImpl *global_http;
-HttpSM *last_seen_http_sm = NULL;
+HttpSM *last_seen_http_sm = nullptr;
 
 char ethread_ptr_str[256] = "";
 char netvc_ptr_str[256]   = "";
@@ -388,9 +388,9 @@ void
 CoreUtils::test_HttpSM_from_tunnel(void *arg)
 {
   char *tmp        = (char *)arg;
-  intptr_t offset  = (intptr_t) & (((HttpTunnel *)NULL)->sm);
+  intptr_t offset  = (intptr_t) & (((HttpTunnel *)nullptr)->sm);
   HttpSM **hsm_ptr = (HttpSM **)(tmp + offset);
-  HttpSM *hsm_test;
+  HttpSM *hsm_test = nullptr;
 
   if (read_from_core((intptr_t)hsm_ptr, sizeof(HttpSM *), (char *)&hsm_test) == 0) {
     return;
@@ -479,7 +479,7 @@ CoreUtils::print_http_hdr(HTTPHdr *h, const char *name)
     if (r > 0) {
       printf("----------- %s  ------------\n", name);
       new_handle.m_mime = new_handle.m_http->m_fields_impl;
-      new_handle.print(NULL, 0, NULL, NULL);
+      new_handle.print(nullptr, 0, nullptr, nullptr);
       printf("-----------------------------\n\n");
     }
   }
@@ -498,7 +498,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   intptr_t ptr_xl_size              = 2;
   intptr_t str_size                 = 0;
   intptr_t str_heaps                = 0;
-  MarshalXlate default_MarshalXlate = {0, 0, 0};
+  MarshalXlate default_MarshalXlate = {nullptr, nullptr, nullptr};
   DynArray<struct MarshalXlate> ptr_xlation(&default_MarshalXlate, 2);
   // MarshalXlate static_table[2];
   // MarshalXlate* ptr_xlation = static_table;
@@ -561,21 +561,21 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   }
   heap = (HdrHeap *)buf;
   // filling in the live_hdr
-  swizzle_heap->m_free_start            = NULL;
+  swizzle_heap->m_free_start            = nullptr;
   swizzle_heap->m_data_start            = (char *)ptr_data - ptr_heap_size; // offset
   swizzle_heap->m_magic                 = HDR_BUF_MAGIC_ALIVE;
   swizzle_heap->m_writeable             = false;
   swizzle_heap->m_size                  = ptr_heap_size;
-  swizzle_heap->m_next                  = NULL;
+  swizzle_heap->m_next                  = nullptr;
   swizzle_heap->m_free_size             = 0;
-  swizzle_heap->m_read_write_heap.m_ptr = NULL;
+  swizzle_heap->m_read_write_heap.m_ptr = nullptr;
 
   // We'have one read-only string heap after marshalling
   swizzle_heap->m_ronly_heap[0].m_heap_start          = (char *)(intptr_t)swizzle_heap->m_size; // offset
-  swizzle_heap->m_ronly_heap[0].m_ref_count_ptr.m_ptr = NULL;
+  swizzle_heap->m_ronly_heap[0].m_ref_count_ptr.m_ptr = nullptr;
 
   for (int i = 1; i < HDR_BUF_RONLY_HEAPS; i++) {
-    swizzle_heap->m_ronly_heap[i].m_heap_start = NULL;
+    swizzle_heap->m_ronly_heap[i].m_heap_start = nullptr;
   }
 
   // Next order of business is to copy over string heaps
@@ -619,7 +619,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   }
 
   for (i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    if (heap->m_ronly_heap[i].m_heap_start != NULL) {
+    if (heap->m_ronly_heap[i].m_heap_start != nullptr) {
 #if defined(__GNUC__)
       char ro_heap[sizeof(char) * heap->m_ronly_heap[i].m_heap_len];
 #else
@@ -715,7 +715,7 @@ CoreUtils::dump_history(HttpSM *hsm)
     int e          = (int)hsm->history[i].event;
     char *fileline = load_string(hsm->history[i].fileline);
 
-    fileline = (fileline != NULL) ? fileline : ats_strdup("UNKNOWN");
+    fileline = (fileline != nullptr) ? fileline : ats_strdup("UNKNOWN");
 
     printf("%d   %d   %s", e, r, fileline);
 
@@ -768,8 +768,8 @@ CoreUtils::process_NetVC(UnixNetVConnection *nvc_test)
     char addrbuf[INET6_ADDRSTRLEN];
 
     printf("----------- UnixNetVConnection @ 0x%p ----------\n", nvc_test);
-    printf("     ip: %s    port: %d\n", ats_ip_ntop(&loaded_nvc->server_addr.sa, addrbuf, sizeof(addrbuf)),
-           ats_ip_port_host_order(&loaded_nvc->server_addr));
+    printf("     ip: %s    port: %d\n", ats_ip_ntop(loaded_nvc->get_remote_addr(), addrbuf, sizeof(addrbuf)),
+           ats_ip_port_host_order(loaded_nvc->get_remote_addr()));
     printf("     closed: %d\n\n", loaded_nvc->closed);
     printf("     read state: \n");
     print_netstate(&loaded_nvc->read);
@@ -786,13 +786,13 @@ CoreUtils::load_string(const char *addr)
   char buf[2048];
   int index = 0;
 
-  if (addr == NULL) {
+  if (addr == nullptr) {
     return ats_strdup("NONE");
   }
 
   while (index < 2048) {
     if (read_from_core((intptr_t)(addr + index), 1, buf + index) < 0) {
-      return NULL;
+      return nullptr;
     }
 
     if (buf[index] == '\0') {
@@ -801,7 +801,7 @@ CoreUtils::load_string(const char *addr)
     index++;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 // parses core file

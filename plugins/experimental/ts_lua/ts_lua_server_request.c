@@ -71,6 +71,7 @@ static int ts_lua_server_request_set_url_scheme(lua_State *L);
 static int ts_lua_server_request_server_addr_get_ip(lua_State *L);
 static int ts_lua_server_request_server_addr_get_port(lua_State *L);
 static int ts_lua_server_request_server_addr_get_addr(lua_State *L);
+static int ts_lua_server_request_server_addr_set_addr(lua_State *L);
 static int ts_lua_server_request_server_addr_get_outgoing_port(lua_State *L);
 
 void
@@ -113,10 +114,19 @@ ts_lua_inject_server_request_server_addr_api(lua_State *L)
   lua_pushcfunction(L, ts_lua_server_request_server_addr_get_addr);
   lua_setfield(L, -2, "get_addr");
 
+  lua_pushcfunction(L, ts_lua_server_request_server_addr_set_addr);
+  lua_setfield(L, -2, "set_addr");
+
   lua_pushcfunction(L, ts_lua_server_request_server_addr_get_outgoing_port);
   lua_setfield(L, -2, "get_outgoing_port");
 
   lua_setfield(L, -2, "server_addr");
+
+  lua_pushinteger(L, AF_INET);
+  lua_setglobal(L, "TS_LUA_AF_INET");
+
+  lua_pushinteger(L, AF_INET6);
+  lua_setglobal(L, "TS_LUA_AF_INET6");
 }
 
 static void
@@ -255,8 +265,9 @@ ts_lua_server_request_header_set(lua_State *L)
     TSMimeHdrFieldAppend(http_ctx->server_request_bufp, http_ctx->server_request_hdrp, field_loc);
   }
 
-  if (field_loc != TS_NULL_MLOC)
+  if (field_loc != TS_NULL_MLOC) {
     TSHandleMLocRelease(http_ctx->server_request_bufp, http_ctx->server_request_hdrp, field_loc);
+  }
 
   return 0;
 }
@@ -754,4 +765,50 @@ ts_lua_server_request_server_addr_get_addr(lua_State *L)
   }
 
   return 3;
+}
+
+static int
+ts_lua_server_request_server_addr_set_addr(lua_State *L)
+{
+  union {
+    struct sockaddr_in sin4;
+    struct sockaddr_in6 sin6;
+    struct sockaddr sa;
+  } addr;
+  ts_lua_http_ctx *http_ctx;
+  int n;
+  int port;
+  int family;
+  const char *sip;
+  size_t sip_len;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  n = lua_gettop(L);
+
+  if (n == 3) {
+    sip    = luaL_checklstring(L, 1, &sip_len);
+    port   = luaL_checknumber(L, 2);
+    family = luaL_checknumber(L, 3);
+
+    if (family == AF_INET) {
+      addr.sin4.sin_family = AF_INET;
+      addr.sin4.sin_port   = htons(port);
+      if (!inet_pton(family, sip, &addr.sin4.sin_addr)) {
+        return luaL_error(L, "invalid ipv4 address");
+      }
+    } else {
+      addr.sin6.sin6_family = AF_INET6;
+      addr.sin6.sin6_port   = htons(port);
+      if (!inet_pton(family, sip, &addr.sin6.sin6_addr)) {
+        return luaL_error(L, "invalid ipv6 address");
+      }
+    }
+
+    TSHttpTxnServerAddrSet(http_ctx->txnp, &addr.sa);
+  } else {
+    return luaL_error(L, "incorrect # of arguments to ts.server_request.addr.set_addr, receiving %d instead of 3", n);
+  }
+
+  return 0;
 }

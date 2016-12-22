@@ -26,20 +26,20 @@
 #include "ts/ink_memory.h"
 
 remap_plugin_info::remap_plugin_info(char *_path)
-  : next(0),
-    path(NULL),
+  : next(nullptr),
+    path(nullptr),
     path_size(0),
-    dlh(NULL),
-    fp_tsremap_init(NULL),
-    fp_tsremap_done(NULL),
-    fp_tsremap_new_instance(NULL),
-    fp_tsremap_delete_instance(NULL),
-    fp_tsremap_do_remap(NULL),
-    fp_tsremap_os_response(NULL)
+    dlh(nullptr),
+    fp_tsremap_init(nullptr),
+    fp_tsremap_done(nullptr),
+    fp_tsremap_new_instance(nullptr),
+    fp_tsremap_delete_instance(nullptr),
+    fp_tsremap_do_remap(nullptr),
+    fp_tsremap_os_response(nullptr)
 {
   // coverity did not see ats_free
   // coverity[ctor_dtor_leak]
-  if (_path && likely((path = ats_strdup(_path)) != NULL)) {
+  if (_path && likely((path = ats_strdup(_path)) != nullptr)) {
     path_size = strlen(path);
   }
 }
@@ -59,7 +59,7 @@ remap_plugin_info *
 remap_plugin_info::find_by_path(char *_path)
 {
   int _path_size        = 0;
-  remap_plugin_info *pi = 0;
+  remap_plugin_info *pi = nullptr;
 
   if (likely(_path && (_path_size = strlen(_path)) > 0)) {
     for (pi = this; pi; pi = pi->next) {
@@ -86,7 +86,7 @@ remap_plugin_info::add_to_list(remap_plugin_info *pi)
     }
 
     p->next  = pi;
-    pi->next = NULL;
+    pi->next = nullptr;
   }
 }
 

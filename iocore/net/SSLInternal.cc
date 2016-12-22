@@ -37,7 +37,7 @@
 void
 SSL_set_rbio(SSL *ssl, BIO *rbio)
 {
-  if (ssl->rbio != NULL) {
+  if (ssl->rbio != nullptr) {
     BIO_free(ssl->rbio);
   }
   ssl->rbio = rbio;

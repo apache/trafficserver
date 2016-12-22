@@ -75,7 +75,7 @@ enum HostDBMark {
 /** Convert a HostDB @a mark to a string.
     @return A static string.
  */
-extern char const *string_for(HostDBMark mark);
+extern const char *string_for(HostDBMark mark);
 
 inline unsigned int
 HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
@@ -230,7 +230,7 @@ inline HostDBInfo *
 HostDBRoundRobin::find_ip(sockaddr const *ip)
 {
   int idx = this->index_of(ip);
-  return idx < 0 ? NULL : &info(idx);
+  return idx < 0 ? nullptr : &info(idx);
 }
 
 inline HostDBInfo *
@@ -253,7 +253,7 @@ HostDBRoundRobin::find_target(const char *target)
   bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
   if (bad) {
     ink_assert(!"bad round robin size");
-    return NULL;
+    return nullptr;
   }
 
   uint32_t key = makeHostHash(target);
@@ -261,7 +261,7 @@ HostDBRoundRobin::find_target(const char *target)
     if (info(i).data.srv.key == key && !strcmp(target, info(i).srvname(this)))
       return &info(i);
   }
-  return NULL;
+  return nullptr;
 }
 
 inline HostDBInfo *
@@ -271,7 +271,7 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
 
   if (bad) {
     ink_assert(!"bad round robin size");
-    return NULL;
+    return nullptr;
   }
 
   int best_any = 0;
@@ -340,7 +340,7 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
 
   if (bad) {
     ink_assert(!"bad round robin size");
-    return NULL;
+    return nullptr;
   }
 
 #ifdef DEBUG
@@ -351,7 +351,7 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
 
   int i = 0, len = 0;
   uint32_t weight = 0, p = INT32_MAX;
-  HostDBInfo *result = NULL;
+  HostDBInfo *result = nullptr;
   HostDBInfo *infos[HOST_DB_MAX_ROUND_ROBIN_INFO];
 
   do {
@@ -384,7 +384,7 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
     strcpy(target, result->srvname(this));
     return result;
   }
-  return NULL;
+  return nullptr;
 }
 
 //
@@ -399,7 +399,7 @@ struct HostDBMD5 {
 
   INK_MD5 hash; ///< The hash value.
 
-  char const *host_name; ///< Host name.
+  const char *host_name; ///< Host name.
   int host_len;          ///< Length of @a _host_name
   IpAddr ip;             ///< IP address.
   in_port_t port;        ///< IP port (host order).
@@ -419,7 +419,7 @@ struct HostDBMD5 {
   /** Assign a hostname.
       This updates the split DNS data as well.
   */
-  self &set_host(char const *name, int len);
+  self &set_host(const char *name, int len);
 };
 
 //
@@ -482,8 +482,8 @@ struct HostDBContinuation : public Continuation {
   {
     return md5.db_mark == HOSTDB_MARK_SRV;
   }
-  HostDBInfo *lookup_done(IpAddr const &ip, char const *aname, bool round_robin, unsigned int attl, SRVHosts *s = NULL,
-                          HostDBInfo *r = NULL);
+  HostDBInfo *lookup_done(IpAddr const &ip, const char *aname, bool round_robin, unsigned int attl, SRVHosts *s = nullptr,
+                          HostDBInfo *r = nullptr);
   bool do_get_response(Event *e);
   void do_put_response(ClusterMachine *m, HostDBInfo *r, Continuation *cont);
   int failed_cluster_request(Event *e);
@@ -503,7 +503,7 @@ struct HostDBContinuation : public Continuation {
     int timeout;                 ///< Timeout value. Default 0
     HostResStyle host_res_style; ///< IP address family fallback. Default @c HOST_RES_NONE
     bool force_dns;              ///< Force DNS lookup. Default @c false
-    Continuation *cont;          ///< Continuation / action. Default @c NULL (none)
+    Continuation *cont;          ///< Continuation / action. Default @c nullptr (none)
 
     Options() : timeout(0), host_res_style(HOST_RES_NONE), force_dns(false), cont(0) {}
   };
@@ -513,7 +513,7 @@ struct HostDBContinuation : public Continuation {
   int make_put_message(HostDBInfo *r, Continuation *c, char *buf, int len);
 
   HostDBContinuation()
-    : Continuation(NULL),
+    : Continuation(nullptr),
       ttl(0),
       host_res_style(DEFAULT_OPTIONS.host_res_style),
       dns_lookup_timeout(DEFAULT_OPTIONS.timeout),

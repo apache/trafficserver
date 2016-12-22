@@ -52,9 +52,9 @@ ParseArgIntoNv(const char *arg, char **n, char **v)
 {
   const char *colon_pos = strchr(arg, ':');
 
-  if (colon_pos == NULL) {
-    *n = NULL;
-    *v = NULL;
+  if (colon_pos == nullptr) {
+    *n = nullptr;
+    *v = nullptr;
     TSDebug(TAG, "No name value pair since it was malformed");
     return;
   }
@@ -88,7 +88,7 @@ TSRemapInit(NOWARN_UNUSED TSRemapInterface *api_info, NOWARN_UNUSED char *errbuf
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, NOWARN_UNUSED char *errbuf, NOWARN_UNUSED int errbuf_size)
 {
-  remap_line *rl = NULL;
+  remap_line *rl = nullptr;
 
   TSDebug(TAG, "TSRemapNewInstance()");
 

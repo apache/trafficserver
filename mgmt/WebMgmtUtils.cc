@@ -67,7 +67,7 @@ varSetFromStr(const char *varName, const char *value)
   // Use any empty string if we get a NULL so
   //  sprintf does puke.  However, we need to
   //  switch this back to NULL for STRING types
-  if (value == NULL) {
+  if (value == nullptr) {
     value = "";
   }
 
@@ -96,7 +96,7 @@ varSetFromStr(const char *varName, const char *value)
     break;
   case RECD_STRING:
     if (*value == '\0') {
-      RecSetRecordString((char *)varName, NULL, REC_SOURCE_EXPLICIT);
+      RecSetRecordString((char *)varName, nullptr, REC_SOURCE_EXPLICIT);
     } else {
       RecSetRecordString((char *)varName, (char *)value, REC_SOURCE_EXPLICIT);
     }
@@ -558,7 +558,7 @@ bytesFromInt(RecInt bytes, char *bufVal)
 bool
 varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
 {
-  char *varName        = NULL;
+  char *varName        = nullptr;
   RecDataT varDataType = RECD_NULL;
   bool found           = true;
   int varNameLen       = 0;
@@ -633,7 +633,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     break;
   case RECD_STRING:
     RecGetRecordString_Xmalloc(varName, &data.rec_string);
-    if (data.rec_string == NULL) {
+    if (data.rec_string == nullptr) {
       bufVal[0] = '\0';
     } else if (strlen(data.rec_string) < (size_t)(bufLen - 1)) {
       ink_strlcpy(bufVal, data.rec_string, bufLen);
@@ -748,12 +748,12 @@ MgmtData::compareFromString(const char *str)
     }
     break;
   case RECD_STRING:
-    if (str == NULL || *str == '\0') {
-      if (data.rec_string == NULL) {
+    if (str == nullptr || *str == '\0') {
+      if (data.rec_string == nullptr) {
         compare = true;
       }
     } else {
-      if ((data.rec_string != NULL) && (strcmp(str, data.rec_string) == 0)) {
+      if ((data.rec_string != nullptr) && (strcmp(str, data.rec_string) == 0)) {
         compare = true;
       }
     }
@@ -808,9 +808,9 @@ processFormSubmission(char *submission)
   char *submission_copy;
   int pairNum;
 
-  if (submission == NULL) {
+  if (submission == nullptr) {
     ink_hash_table_destroy(nameVal);
-    return NULL;
+    return nullptr;
   }
 
   submission_copy = ats_strdup(submission);
@@ -830,7 +830,7 @@ processFormSubmission(char *submission)
 
       // If the value is blank, store it as a null
       if (pairNum == 1) {
-        value = NULL;
+        value = nullptr;
       } else {
         value = ats_strdup(pair[1]);
         substituteUnsafeChars(value);
@@ -866,9 +866,9 @@ processFormSubmission_noSubstitute(char *submission)
   char *submission_copy;
   int pairNum;
 
-  if (submission == NULL) {
+  if (submission == nullptr) {
     ink_hash_table_destroy(nameVal);
-    return NULL;
+    return nullptr;
   }
 
   submission_copy = ats_strdup(submission);
@@ -887,7 +887,7 @@ processFormSubmission_noSubstitute(char *submission)
 
       // If the value is blank, store it as a null
       if (pairNum == 1) {
-        value = NULL;
+        value = nullptr;
       } else {
         value = ats_strdup(pair[1]);
       }
@@ -945,7 +945,7 @@ substituteUnsafeChars(char *buffer)
     if (*read == '%') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      charVal   = strtol(subStr, (char **)NULL, 16);
+      charVal   = strtol(subStr, (char **)nullptr, 16);
       *write    = (char)charVal;
       read++;
       write++;
@@ -1037,7 +1037,7 @@ setHostnameVar()
 
   // non-FQ is just the hostname (ie: proxydev)
   firstDot = strchr(ourHostName, '.');
-  if (firstDot != NULL) {
+  if (firstDot != nullptr) {
     *firstDot = '\0';
   }
   varSetFromStr("proxy.node.hostname", ourHostName);
@@ -1069,7 +1069,7 @@ appendDefaultDomain(char *hostname, int bufLength)
   // Ensure null termination of the result string
   hostname[bufLength - 1] = '\0';
 
-  if (strchr(hostname, '.') == NULL) {
+  if (strchr(hostname, '.') == nullptr) {
     if (_res.defdname[0] != '\0') {
       if (bufLength - 2 >= (int)(strlen(hostname) + strlen(_res.defdname))) {
         ink_strlcat(hostname, ".", bufLength);
@@ -1136,11 +1136,11 @@ recordRegexCheck(const char *pattern, const char *value)
   const char *error;
   int erroffset;
 
-  regex = pcre_compile(pattern, 0, &error, &erroffset, NULL);
+  regex = pcre_compile(pattern, 0, &error, &erroffset, nullptr);
   if (!regex) {
     return false;
   } else {
-    int r = pcre_exec(regex, NULL, value, strlen(value), 0, 0, NULL, 0);
+    int r = pcre_exec(regex, nullptr, value, strlen(value), 0, 0, nullptr, 0);
 
     pcre_free(regex);
     return (r != -1) ? true : false;
@@ -1241,24 +1241,14 @@ getFilesInDirectory(char *managedDir, ExpandingArray *fileList)
   //  struct stat records_config_fileInfo;
   fileEntry *fileListEntry;
 
-  if ((dir = opendir(managedDir)) == NULL) {
+  if ((dir = opendir(managedDir)) == nullptr) {
     mgmt_log("[getFilesInDirectory] Unable to open %s directory: %s\n", managedDir, strerror(errno));
     return -1;
   }
-  // The fun of Solaris - readdir_r requires a buffer passed into it
-  //   The man page says this obscene expression gives us the proper
-  //     size
-  dirEntry = (struct dirent *)alloca(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
-  struct dirent *result;
-  while (readdir_r(dir, dirEntry, &result) == 0) {
-    if (!result) {
-      break;
-    }
+  while ((dirEntry = readdir(dir))) {
     fileName = dirEntry->d_name;
-    if (!fileName || !*fileName) {
-      continue;
-    }
+
     filePath = newPathString(managedDir, fileName);
     if (stat(filePath, &fileInfo) < 0) {
       mgmt_log("[getFilesInDirectory] Stat of a %s failed : %s\n", fileName, strerror(errno));
@@ -1312,7 +1302,7 @@ newPathString(const char *s1, const char *s2)
   }
   srcLen = strlen(s1);
   newStr = new char[srcLen + addLen + 1];
-  ink_assert(newStr != NULL);
+  ink_assert(newStr != nullptr);
 
   ink_strlcpy(newStr, s1, srcLen + addLen + 1);
   if (newStr[srcLen - 1] != '/') {

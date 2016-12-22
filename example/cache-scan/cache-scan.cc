@@ -227,19 +227,19 @@ cleanup(TSCont contp)
 
     if (cstate->req_buffer) {
       TSIOBufferDestroy(cstate->req_buffer);
-      cstate->req_buffer = NULL;
+      cstate->req_buffer = nullptr;
     }
 
     if (cstate->key_to_delete) {
       if (TSCacheKeyDestroy(cstate->key_to_delete) == TS_ERROR) {
         TSError("[cache-scan] Failed to destroy cache key");
       }
-      cstate->key_to_delete = NULL;
+      cstate->key_to_delete = nullptr;
     }
 
     if (cstate->resp_buffer) {
       TSIOBufferDestroy(cstate->resp_buffer);
-      cstate->resp_buffer = NULL;
+      cstate->resp_buffer = nullptr;
     }
 
     TSVConnClose(cstate->net_vc);
@@ -272,7 +272,7 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
       char head[] = "<h3>Cache Contents:</h3>\n<p><pre>\n";
       cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, head, sizeof(head) - 1);
       // start scan
-      TSAction actionp = TSCacheScan(contp, 0, 512000);
+      TSAction actionp = TSCacheScan(contp, nullptr, 512000);
       if (!TSActionDone(actionp)) {
         cstate->pending_action = actionp;
       }
@@ -352,7 +352,7 @@ unescapifyStr(char *buffer)
     if (*read == '%' && *(read + 1) != '\0' && *(read + 2) != '\0') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      *write    = (char)strtol(subStr, (char **)NULL, 16);
+      *write    = (char)strtol(subStr, (char **)nullptr, 16);
       read++;
       write++;
     } else if (*read == '+') {
@@ -425,7 +425,7 @@ setup_request(TSCont contp, TSHttpTxn txnp)
       start = strstr(querybuf, "remove_url=");
       if (start && (start == querybuf || *(start - 1) == '&')) {
         start += 11;
-        if ((end = strstr(start, "&")) != NULL) {
+        if ((end = strstr(start, "&")) != nullptr) {
           *end = '\0';
         }
         del_url_len = unescapifyStr(start);
@@ -443,10 +443,10 @@ setup_request(TSCont contp, TSHttpTxn txnp)
           TSError("[cache-scan] CacheKeyDigestFromUrlSet failed");
           TSCacheKeyDestroy(cstate->key_to_delete);
           TSfree(cstate);
-          TSHandleMLocRelease(urlBuf, NULL, urlLoc);
+          TSHandleMLocRelease(urlBuf, nullptr, urlLoc);
           goto Ldone;
         }
-        TSHandleMLocRelease(urlBuf, NULL, urlLoc);
+        TSHandleMLocRelease(urlBuf, nullptr, urlLoc);
       }
     }
 

@@ -125,8 +125,8 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
       memcpy(buf, out_buf, num_chars);
       out_buf = buf;
     } else {
-      // data does not fit return NULL
-      out_buf = NULL;
+      // data does not fit return nullptr
+      out_buf = nullptr;
     }
   }
 
@@ -171,7 +171,7 @@ uint32_t
 init_hrtime_TCS()
 {
   int freqlen = sizeof(hrtime_freq);
-  if (sysctlbyname("machdep.tsc_freq", &hrtime_freq, (size_t *)&freqlen, NULL, 0) < 0) {
+  if (sysctlbyname("machdep.tsc_freq", &hrtime_freq, (size_t *)&freqlen, nullptr, 0) < 0) {
     perror("sysctl: machdep.tsc_freq");
     exit(1);
   }
@@ -203,7 +203,7 @@ init_hrtime_basis()
 #else
     {
       struct timeval tnow;
-      ink_assert(!gettimeofday(&tnow, NULL));
+      ink_assert(!gettimeofday(&tnow, nullptr));
       timespec_basis.tv_sec  = tnow.tv_sec;
       timespec_basis.tv_nsec = tnow.tv_usec * 1000;
     }

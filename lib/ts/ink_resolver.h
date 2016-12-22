@@ -85,6 +85,9 @@
 #define NS_PUT32 PUTLONG
 #endif
 
+#ifndef T_DNAME
+#define T_DNAME ns_t_dname
+#endif
 #define INK_RES_F_VC 0x00000001       /*%< socket is TCP */
 #define INK_RES_F_CONN 0x00000002     /*%< socket is connected */
 #define INK_RES_F_EDNS0ERR 0x00000004 /*%< EDNS0 caused errors */
@@ -164,7 +167,7 @@ extern HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER;
 /// Global (configurable) default.
 extern HostResPreferenceOrder host_res_default_preference_order;
 /// String versions of @c FamilyPreference
-extern char const *const HOST_RES_PREFERENCE_STRING[N_HOST_RES_PREFERENCE];
+extern const char *const HOST_RES_PREFERENCE_STRING[N_HOST_RES_PREFERENCE];
 
 /// IP family to use in a DNS query for a host address.
 /// Used during DNS query operations.
@@ -177,7 +180,7 @@ enum HostResStyle {
 };
 
 /// Strings for host resolution styles
-extern char const *const HOST_RES_STYLE_STRING[];
+extern const char *const HOST_RES_STYLE_STRING[];
 
 /// Caclulate the effective resolution preferences.
 extern HostResStyle ats_host_res_from(int family,            ///< Connection family
@@ -188,7 +191,7 @@ extern HostResStyle ats_host_res_match(sockaddr const *addr);
 
 /** Parse a host resolution configuration string.
  */
-extern void parse_host_res_preference(char const *value,           ///< [in] Configuration string.
+extern void parse_host_res_preference(const char *value,           ///< [in] Configuration string.
                                       HostResPreferenceOrder order /// [out] Order to update.
                                       );
 
@@ -266,8 +269,8 @@ struct ts_imp_res_state {
 };
 typedef ts_imp_res_state *ink_res_state;
 
-int ink_res_init(ink_res_state, IpEndpoint const *pHostList, size_t pHostListSize, int dnsSearch, const char *pDefDomain = NULL,
-                 const char *pSearchList = NULL, const char *pResolvConf = NULL);
+int ink_res_init(ink_res_state, IpEndpoint const *pHostList, size_t pHostListSize, int dnsSearch, const char *pDefDomain = nullptr,
+                 const char *pSearchList = nullptr, const char *pResolvConf = NULL);
 
 int ink_res_mkquery(ink_res_state, int, const char *, int, int, const unsigned char *, int, const unsigned char *, unsigned char *,
                     int);

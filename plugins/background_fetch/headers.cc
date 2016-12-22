@@ -71,7 +71,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     }
   } else {
-    TSMLoc tmp = NULL;
+    TSMLoc tmp = nullptr;
     bool first = true;
 
     while (field_loc) {

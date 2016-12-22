@@ -41,15 +41,15 @@ ByteBankDescriptor::ByteBankDescriptor_alloc(Ptr<IOBufferBlock> &iob)
 void
 ByteBankDescriptor::ByteBankDescriptor_free(ByteBankDescriptor *b)
 {
-  b->block = 0;
+  b->block = nullptr;
   byteBankAllocator.free(b);
 }
 
 void
 clusterVCAllocator_free(ClusterVConnection *vc)
 {
-  vc->mutex   = 0;
-  vc->action_ = 0;
+  vc->mutex   = nullptr;
+  vc->action_ = nullptr;
   vc->free();
   if (vc->in_vcs) {
     vc->type = VC_CLUSTER_CLOSED;
@@ -58,12 +58,12 @@ clusterVCAllocator_free(ClusterVConnection *vc)
   clusterVCAllocator.free(vc);
 }
 
-ClusterVConnState::ClusterVConnState() : enabled(0), priority(1), vio(VIO::NONE), queue(0), ifd(-1), delay_timeout(NULL)
+ClusterVConnState::ClusterVConnState() : enabled(0), priority(1), vio(VIO::NONE), queue(nullptr), ifd(-1), delay_timeout(nullptr)
 {
 }
 
 ClusterVConnectionBase::ClusterVConnectionBase()
-  : thread(0), closed(0), inactivity_timeout_in(0), active_timeout_in(0), inactivity_timeout(NULL), active_timeout(NULL)
+  : thread(nullptr), closed(0), inactivity_timeout_in(0), active_timeout_in(0), inactivity_timeout(nullptr), active_timeout(nullptr)
 {
 }
 
@@ -92,7 +92,7 @@ VIO *
 ClusterVConnectionBase::do_io_pread(Continuation * /* acont ATS_UNUSED */, int64_t /* anbytes ATS_UNUSED */,
                                     MIOBuffer * /* abuffer ATS_UNUSED */, int64_t /* off ATS_UNUSED */)
 {
-  return 0;
+  return nullptr;
 }
 
 int
@@ -187,7 +187,7 @@ ClusterVConnectionBase::reenable_re(VIO *vio)
 }
 
 ClusterVConnection::ClusterVConnection(int is_new_connect_read)
-  : ch(NULL),
+  : ch(nullptr),
     new_connect_read(is_new_connect_read),
     remote_free(0),
     last_local_free(0),
@@ -206,9 +206,9 @@ ClusterVConnection::ClusterVConnection(int is_new_connect_read)
     remote_ram_cache_hit(0),
     have_all_data(0),
     initial_data_bytes(0),
-    current_cont(0),
+    current_cont(nullptr),
     iov_map(CLUSTER_IOV_NOT_OPEN),
-    write_list_tail(0),
+    write_list_tail(nullptr),
     write_list_bytes(0),
     write_bytes_in_transit(0),
     alternate(),
@@ -237,11 +237,11 @@ ClusterVConnection::free()
   while ((d = byte_bank_q.dequeue())) {
     ByteBankDescriptor::ByteBankDescriptor_free(d);
   }
-  read_block             = 0;
-  remote_write_block     = 0;
-  marshal_buf            = 0;
-  write_list             = 0;
-  write_list_tail        = 0;
+  read_block             = nullptr;
+  remote_write_block     = nullptr;
+  marshal_buf            = nullptr;
+  write_list             = nullptr;
+  write_list_tail        = nullptr;
   write_list_bytes       = 0;
   write_bytes_in_transit = 0;
 }
@@ -284,10 +284,10 @@ int
 ClusterVConnection::startEvent(int event, Event *e)
 {
   //
-  // Safe to call with e == NULL from the same thread.
+  // Safe to call with e == nullptr from the same thread.
   //
   (void)event;
-  start(e ? e->ethread : (EThread *)NULL);
+  start(e ? e->ethread : (EThread *)nullptr);
   return EVENT_DONE;
 }
 
@@ -396,7 +396,7 @@ ClusterVConnection::start(EThread *t)
   if (action_.continuation) {
     action_.continuation->handleEvent(CLUSTER_EVENT_OPEN, this);
   }
-  mutex = NULL;
+  mutex = nullptr;
   return EVENT_DONE;
 }
 
@@ -444,8 +444,8 @@ ClusterVConnection::schedule_write()
     if ((closed < 0) || remote_closed) {
       // User aborted connection, dump data.
 
-      write_list       = 0;
-      write_list_tail  = 0;
+      write_list       = nullptr;
+      write_list_tail  = nullptr;
       write_list_bytes = 0;
 
       return false;

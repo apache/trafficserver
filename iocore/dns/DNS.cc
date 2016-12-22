@@ -50,16 +50,16 @@ int dns_validate_qname               = 0;
 unsigned int dns_handler_initialized = 0;
 int dns_ns_rr                        = 0;
 int dns_ns_rr_init_down              = 1;
-char *dns_ns_list                    = NULL;
-char *dns_resolv_conf                = NULL;
-char *dns_local_ipv6                 = NULL;
-char *dns_local_ipv4                 = NULL;
+char *dns_ns_list                    = nullptr;
+char *dns_resolv_conf                = nullptr;
+char *dns_local_ipv6                 = nullptr;
+char *dns_local_ipv4                 = nullptr;
 int dns_thread                       = 0;
 int dns_prefer_ipv6                  = 0;
 namespace
 {
 // Currently only used for A and AAAA.
-inline char const *
+inline const char *
 QtypeName(int qtype)
 {
   return T_AAAA == qtype ? "AAAA" : T_A == qtype ? "A" : "*";
@@ -98,7 +98,7 @@ strnchr(char *s, char c, int len)
 {
   while (*s && *s != c && len)
     ++s, --len;
-  return *s == c ? s : (char *)NULL;
+  return *s == c ? s : (char *)nullptr;
 }
 
 static inline uint16_t
@@ -261,7 +261,7 @@ DNSProcessor::dns_init()
       Debug("dns", "Nameserver list - parsing \"%s\"", ns);
       bool err    = false;
       int prt     = DOMAIN_SERVICE_PORT;
-      char *colon = 0; // where the port colon is.
+      char *colon = nullptr; // where the port colon is.
       // Check for IPv6 notation.
       if ('[' == *ns) {
         char *ndx = strchr(ns + 1, ']');
@@ -300,13 +300,13 @@ DNSProcessor::dns_init()
         ++nserv;
       }
 
-      ns = (char *)strtok_r(NULL, " ,;\t\r", &last);
+      ns = (char *)strtok_r(nullptr, " ,;\t\r", &last);
     }
     ats_free(ns_list);
   }
   // The default domain (5th param) and search list (6th param) will
   // come from /etc/resolv.conf.
-  if (ink_res_init(&l_res, nameserver, nserv, dns_search, NULL, NULL, dns_resolv_conf) < 0)
+  if (ink_res_init(&l_res, nameserver, nserv, dns_search, nullptr, nullptr, dns_resolv_conf) < 0)
     Warning("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
 
   // Check for local forced bindings.
@@ -346,7 +346,7 @@ ink_dn_expand(const u_char *msg, const u_char *eom, const u_char *comp_dn, u_cha
   return ::dn_expand((unsigned char *)msg, (unsigned char *)eom, (unsigned char *)comp_dn, (char *)exp_dn, length);
 }
 
-DNSProcessor::DNSProcessor() : thread(NULL), handler(NULL)
+DNSProcessor::DNSProcessor() : thread(nullptr), handler(nullptr)
 {
   ink_zero(l_res);
   ink_zero(local_ipv6);
@@ -506,7 +506,7 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
       }
       dns_ns_rr_init_down = 0;
     } else {
-      open_con(0); // use current target address.
+      open_con(nullptr); // use current target address.
       n_con = 1;
     }
     e->ethread->schedule_every(this, DNS_PERIOD);
@@ -539,7 +539,7 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
 static inline int
 _ink_res_mkquery(ink_res_state res, char *qname, int qtype, char *buffer)
 {
-  int r = ink_res_mkquery(res, QUERY, qname, C_IN, qtype, NULL, 0, NULL, (unsigned char *)buffer, MAX_DNS_PACKET_LEN);
+  int r = ink_res_mkquery(res, QUERY, qname, C_IN, qtype, nullptr, 0, nullptr, (unsigned char *)buffer, MAX_DNS_PACKET_LEN);
   return r;
 }
 
@@ -723,7 +723,7 @@ good_rcode(char *buff)
 void
 DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  DNSConnection *dnsc = NULL;
+  DNSConnection *dnsc = nullptr;
   ip_text_buffer ipbuff1, ipbuff2;
 
   while ((dnsc = (DNSConnection *)triggered.dequeue())) {
@@ -754,7 +754,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
                 ats_ip_ntop(&dnsc->ip.sa, ipbuff2, sizeof ipbuff2));
         continue;
       }
-      hostent_cache    = 0;
+      hostent_cache    = nullptr;
       buf->packet_size = res;
       Debug("dns", "received packet size = %d", res);
       if (dns_ns_rr) {
@@ -851,7 +851,7 @@ get_dns(DNSHandler *h, uint16_t id)
     }
   Lnext:;
   }
-  return NULL;
+  return nullptr;
 }
 
 /** Find a DNSEntry by query name and type. */
@@ -867,7 +867,7 @@ get_entry(DNSHandler *h, char *qname, int qtype)
         return e;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /** Write up to dns_max_dns_in_flight entries. */
@@ -882,7 +882,7 @@ write_dns(DNSHandler *h)
   if (max_nscount <= 0) {
     Warning("There is no name server found in the resolv.conf");
     if (h->entries.head) {
-      dns_result(h, h->entries.head, NULL, false);
+      dns_result(h, h->entries.head, nullptr, false);
     }
     return;
   }
@@ -964,7 +964,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e)
 
   if ((r = _ink_res_mkquery(h->m_res, e->qname, e->qtype, blob._b)) <= 0) {
     Debug("dns", "cannot build query: %s", e->qname);
-    dns_result(h, e, NULL, false);
+    dns_result(h, e, nullptr, false);
     return true;
   }
 
@@ -1052,7 +1052,7 @@ DNSEntry::mainEvent(int event, Event *e)
         ++domains;
       }
     } else {
-      domains = NULL;
+      domains = nullptr;
     }
     Debug("dns", "enqueing query %s", qname);
     DNSEntry *dup = get_entry(dnsH, qname, qtype);
@@ -1069,7 +1069,7 @@ DNSEntry::mainEvent(int event, Event *e)
   case EVENT_INTERVAL:
     Debug("dns", "timeout for query %s", qname);
     if (dnsH->txn_lookup_timeout) {
-      timeout = NULL;
+      timeout = nullptr;
       dns_result(dnsH, this, result_ent.get(), false); // do not retry -- we are over TXN timeout on DNS alone!
       return EVENT_DONE;
     }
@@ -1079,7 +1079,7 @@ DNSEntry::mainEvent(int event, Event *e)
       --(dnsH->in_flight);
       DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
     }
-    timeout = NULL;
+    timeout = nullptr;
     dns_result(dnsH, this, result_ent.get(), true);
     return EVENT_DONE;
   }
@@ -1099,7 +1099,7 @@ DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, Option
   if (!lock.is_locked())
     thread->schedule_imm(e);
   else
-    e->handleEvent(EVENT_IMMEDIATE, 0);
+    e->handleEvent(EVENT_IMMEDIATE, nullptr);
   return &e->action;
 }
 
@@ -1158,7 +1158,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
     }
   }
   if (ent == BAD_DNS_RESULT)
-    ent = NULL;
+    ent = nullptr;
   if (!cancelled) {
     if (!ent) {
       DNS_SUM_DYN_STAT(dns_fail_time_stat, Thread::get_hrtime() - e->submit_time);
@@ -1171,8 +1171,8 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
   if (is_debug_tag_set("dns")) {
     if (is_addr_query(e->qtype)) {
       ip_text_buffer buff;
-      char const *ptr    = "<none>";
-      char const *result = "FAIL";
+      const char *ptr    = "<none>";
+      const char *result = "FAIL";
       if (ent) {
         result = "SUCCESS";
         ptr    = inet_ntop(e->qtype == T_AAAA ? AF_INET6 : AF_INET, ent->ent.h_addr_list[0], buff, sizeof(buff));
@@ -1193,7 +1193,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
     DNS_INCREMENT_DYN_STAT(dns_lookup_fail_stat);
   }
 
-  DNSEntry *dup = NULL;
+  DNSEntry *dup = nullptr;
   while ((dup = e->dups.dequeue())) {
     if (dup->post(h, ent)) {
       e->dups.enqueue(dup);
@@ -1203,7 +1203,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
 
   if (e->timeout) {
     e->timeout->cancel(e);
-    e->timeout = NULL;
+    e->timeout = nullptr;
   }
   e->result_ent = ent;
 
@@ -1218,7 +1218,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
         break;
       h->release_query_id(e->id[i]);
     }
-    e->postEvent(0, 0);
+    e->postEvent(0, nullptr);
   } else {
     for (int i = 0; i < MAX_DNS_RETRIES; i++) {
       if (e->id[i] < 0)
@@ -1243,7 +1243,7 @@ DNSEntry::post(DNSHandler *h, HostEnt *ent)
 {
   if (timeout) {
     timeout->cancel(this);
-    timeout = NULL;
+    timeout = nullptr;
   }
   result_ent = ent;
   if (h->mutex->thread_holding == submit_thread) {
@@ -1252,7 +1252,7 @@ DNSEntry::post(DNSHandler *h, HostEnt *ent)
       Debug("dns", "failed lock for result %s", qname);
       return 1;
     }
-    postEvent(0, 0);
+    postEvent(0, nullptr);
   } else {
     mutex = action.mutex;
     SET_HANDLER(&DNSEntry::postEvent);
@@ -1268,9 +1268,9 @@ DNSEntry::postEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     Debug("dns", "called back continuation for %s", qname);
     action.continuation->handleEvent(DNS_EVENT_LOOKUP, result_ent.get());
   }
-  result_ent   = NULL;
-  action.mutex = NULL;
-  mutex        = NULL;
+  result_ent   = nullptr;
+  action.mutex = nullptr;
+  mutex        = nullptr;
   dnsEntryAllocator.free(this);
   return EVENT_DONE;
 }
@@ -1334,7 +1334,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     //
     //    struct in_addr host_addr;            unused
     u_char tbuf[MAXDNAME + 1];
-    buf->ent.h_name = NULL;
+    buf->ent.h_name = nullptr;
 
     int ancount       = ntohs(h->ancount);
     unsigned char *bp = buf->hostbuf;
@@ -1392,7 +1392,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     u_char **ap          = buf->host_aliases;
     buf->ent.h_aliases   = (char **)buf->host_aliases;
     u_char **hap         = (u_char **)buf->h_addr_ptrs;
-    *hap                 = NULL;
+    *hap                 = nullptr;
     buf->ent.h_addr_list = (char **)buf->h_addr_ptrs;
 
     //
@@ -1452,7 +1452,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       //
       // Decode cname
       //
-      if (is_addr_query(e->qtype) && type == T_CNAME) {
+      if (is_addr_query(e->qtype) && (type == T_CNAME || type == T_DNAME)) {
         if (ap >= &buf->host_aliases[DNS_MAX_ALIASES - 1])
           continue;
         n = ink_dn_expand((u_char *)h, eom, cp, tbuf, sizeof(tbuf));
@@ -1473,7 +1473,16 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         ink_strlcpy((char *)bp, (char *)tbuf, buflen);
         bp += n;
         buflen -= n;
-        Debug("dns", "received cname = %s", tbuf);
+        if (is_debug_tag_set("dns")) {
+          switch (type) {
+          case T_CNAME:
+            Debug("dns", "received cname = %s", tbuf);
+            break;
+          case T_DNAME:
+            Debug("dns", "received dname = %s", tbuf);
+            break;
+          }
+        }
         continue;
       }
       if (e->qtype != type) {
@@ -1573,8 +1582,8 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       ++answer;
     }
     if (answer) {
-      *ap  = NULL;
-      *hap = NULL;
+      *ap  = nullptr;
+      *hap = nullptr;
       //
       // If the named didn't send us the name, insert the one
       // the user gave us...
@@ -1590,7 +1599,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   }
 Lerror:;
   DNS_INCREMENT_DYN_STAT(dns_lookup_fail_stat);
-  dns_result(handler, e, NULL, retry);
+  dns_result(handler, e, nullptr, retry);
   return server_ok;
 }
 

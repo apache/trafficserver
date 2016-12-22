@@ -60,7 +60,7 @@ void
 FetchSM::httpConnect()
 {
   PluginIdentity *pi = dynamic_cast<PluginIdentity *>(contp);
-  char const *tag    = pi ? pi->getPluginTag() : "fetchSM";
+  const char *tag    = pi ? pi->getPluginTag() : "fetchSM";
   int64_t id         = pi ? pi->getPluginId() : 0;
 
   Debug(DEBUG_TAG, "[%s] calling httpconnect write pi=%p tag=%s id=%" PRId64, __FUNCTION__, pi, tag, id);
@@ -73,7 +73,7 @@ FetchSM::httpConnect()
    */
   if (!is_internal_request) {
     PluginVC *other_side = reinterpret_cast<PluginVC *>(http_vc)->get_other_side();
-    if (other_side != NULL) {
+    if (other_side != nullptr) {
       other_side->set_is_internal_request(false);
     }
   }
@@ -162,7 +162,7 @@ FetchSM::check_body_done()
 }
 
 bool
-FetchSM::check_for_field_value(char const *name, size_t name_len, char const *value, size_t value_len)
+FetchSM::check_for_field_value(const char *name, size_t name_len, char const *value, size_t value_len)
 {
   bool zret = false; // not found.
   StrList slist;
@@ -172,7 +172,7 @@ FetchSM::check_for_field_value(char const *name, size_t name_len, char const *va
   ink_release_assert(header_done);
 
   if (ret) {
-    for (Str *f = slist.head; f != NULL; f = f->next) {
+    for (Str *f = slist.head; f != nullptr; f = f->next) {
       if (f->len == value_len && 0 == strncasecmp(f->str, value, value_len)) {
         Debug(DEBUG_TAG, "[%s] field '%.*s', value '%.*s'", __FUNCTION__, static_cast<int>(name_len), name,
               static_cast<int>(value_len), value);
@@ -187,7 +187,7 @@ FetchSM::check_for_field_value(char const *name, size_t name_len, char const *va
 bool
 FetchSM::check_chunked()
 {
-  static char const CHUNKED_TEXT[] = "chunked";
+  static const char CHUNKED_TEXT[] = "chunked";
   static size_t const CHUNKED_LEN  = sizeof(CHUNKED_TEXT) - 1;
 
   if (resp_is_chunked < 0) {
@@ -208,7 +208,7 @@ FetchSM::check_chunked()
 bool
 FetchSM::check_connection_close()
 {
-  static char const CLOSE_TEXT[] = "close";
+  static const char CLOSE_TEXT[] = "close";
   static size_t const CLOSE_LEN  = sizeof(CLOSE_TEXT) - 1;
 
   if (resp_received_close < 0) {
@@ -499,7 +499,7 @@ FetchSM::process_fetch_read(int event)
     if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
       return InvokePluginExt(event);
     }
-    InvokePlugin(callback_events.failure_event_id, NULL);
+    InvokePlugin(callback_events.failure_event_id, nullptr);
     cleanUp();
     break;
   }
@@ -525,7 +525,7 @@ FetchSM::process_fetch_write(int event)
     if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
       return InvokePluginExt(event);
     }
-    InvokePlugin(callback_events.failure_event_id, NULL);
+    InvokePlugin(callback_events.failure_event_id, nullptr);
     cleanUp();
   default:
     break;
@@ -546,7 +546,7 @@ FetchSM::fetch_handler(int event, void *edata)
       InvokePluginExt(event);
       return 1;
     }
-    InvokePlugin(callback_events.failure_event_id, NULL);
+    InvokePlugin(callback_events.failure_event_id, nullptr);
     cleanUp();
   }
   return 1;
@@ -688,7 +688,7 @@ FetchSM::ext_read_data(char *buf, size_t len)
 void
 FetchSM::ext_destroy()
 {
-  contp = NULL;
+  contp = nullptr;
 
   if (recursion) {
     return;

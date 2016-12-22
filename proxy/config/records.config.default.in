@@ -11,7 +11,6 @@
 CONFIG proxy.config.exec_thread.autoconfig INT 1
 CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.5
 CONFIG proxy.config.exec_thread.limit INT 2
-CONFIG proxy.config.ssl.number.threads INT -1
 CONFIG proxy.config.accept_threads INT 1
 CONFIG proxy.config.task_threads INT 2
 CONFIG proxy.config.cache.threads_per_disk INT 8
@@ -21,7 +20,7 @@ CONFIG proxy.config.exec_thread.affinity INT 1
 # Specify server addresses and ports to bind for HTTP and HTTPS. Docs:
 #    https://docs.trafficserver.apache.org/records.config#proxy.config.http.server_ports
 ##############################################################################
-CONFIG proxy.config.http.server_ports STRING 8080
+CONFIG proxy.config.http.server_ports STRING 8080 8080:ipv6
 
 ##############################################################################
 # Via: headers. Docs:
@@ -45,7 +44,7 @@ CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
 # HTTP connection timeouts (secs). Docs:
 #    https://docs.trafficserver.apache.org/records.config#http-connection-timeouts
 ##############################################################################
-CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
+CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
 CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
 CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
 CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30
@@ -178,14 +177,3 @@ CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
 # ToDo: Undocumented
 CONFIG proxy.config.dump_mem_info_frequency INT 0
 CONFIG proxy.config.http.slow.log.threshold INT 0
-
-##############################################################################
-# Cluster Subsystem. Docs:
-#    https://docs.trafficserver.apache.org/records.config#cluster
-##############################################################################
-LOCAL proxy.local.cluster.type INT 3
-CONFIG proxy.config.cluster.ethernet_interface STRING @default_loopback_iface@
-CONFIG proxy.config.cluster.cluster_port INT 8086
-CONFIG proxy.config.cluster.rsport INT 8088
-CONFIG proxy.config.cluster.mcport INT 8089
-CONFIG proxy.config.cluster.mc_group_addr STRING 224.0.1.37

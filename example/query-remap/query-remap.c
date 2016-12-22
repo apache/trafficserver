@@ -96,8 +96,9 @@ TSRemapDeleteInstance(void *ih)
 
   if (ih) {
     query_remap_info *qri = (query_remap_info *)ih;
-    if (qri->param_name)
+    if (qri->param_name) {
       TSfree(qri->param_name);
+    }
     if (qri->hosts) {
       for (i = 0; i < qri->num_hosts; ++i) {
         TSfree(qri->hosts[i]);

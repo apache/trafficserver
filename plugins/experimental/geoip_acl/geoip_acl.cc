@@ -60,7 +60,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
     TSError("[%s] Unable to create remap instance, need more parameters", PLUGIN_NAME);
     return TS_ERROR;
   } else {
-    Acl *a = NULL;
+    Acl *a = nullptr;
 
     // ToDo: Should do better processing here, to make it easier to deal with
     // rules other then country codes.
@@ -99,7 +99,7 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  if (NULL == ih) {
+  if (nullptr == ih) {
     TSDebug(PLUGIN_NAME, "No ACLs configured, this is probably a plugin bug");
   } else {
     Acl *a = static_cast<Acl *>(ih);

@@ -269,7 +269,7 @@ Variables::_parseSubCookies()
   for (StringHash::const_iterator it_cookie = cookies.begin(); it_cookie != cookies.end(); ++it_cookie) {
     const std::string &name  = it_cookie->first;
     const std::string &value = it_cookie->second;
-    if (strchr(value.c_str(), '=') == NULL) {
+    if (strchr(value.c_str(), '=') == nullptr) {
       continue;
     }
 

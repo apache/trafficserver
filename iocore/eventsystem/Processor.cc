@@ -74,7 +74,7 @@ Thread *
 Processor::create_thread(int /* thread_index */)
 {
   ink_release_assert(!"Processor::create_thread -- no default implementation");
-  return ((Thread *)0);
+  return ((Thread *)nullptr);
 }
 
 //////////////////////////////////////////////////////////////////

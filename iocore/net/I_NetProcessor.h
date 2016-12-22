@@ -86,6 +86,8 @@ public:
     uint32_t packet_mark;
     uint32_t packet_tos;
 
+    int tfo_queue_length;
+
     /** Transparency on client (user agent) connection.
         @internal This is irrelevant at a socket level (since inbound
         transparency must be set up when the listen socket is created)
@@ -172,7 +174,7 @@ public:
 
   */
 
-  inkcoreapi Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *options = NULL);
+  inkcoreapi Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *options = nullptr);
 
   /**
     Open a NetVConnection for connection oriented I/O. This call
@@ -193,7 +195,7 @@ public:
     @see connect_re()
 
   */
-  Action *connect_s(Continuation *cont, sockaddr const *addr, int timeout = NET_CONNECT_TIMEOUT, NetVCOptions *opts = NULL);
+  Action *connect_s(Continuation *cont, sockaddr const *addr, int timeout = NET_CONNECT_TIMEOUT, NetVCOptions *opts = nullptr);
 
   /**
     Starts the Netprocessor. This has to be called before doing any

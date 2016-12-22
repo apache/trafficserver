@@ -37,7 +37,7 @@ struct AclRecord;
      - Create ClientSession.
      - Pass NetVC and MIOBuffer by call ClientSession::new_connection().
 
-   NULL mutex:
+   nullptr mutex:
 
      - One specific protocol has ONLY one inherited class of SessionAccept.
      - The object of this class is shared by all incoming request / NetVC that
@@ -50,7 +50,7 @@ struct AclRecord;
      - Values are required to be set during construction and never changed.
      - Can not put into EventSystem.
 
-   So a NULL mutex is safe for the continuation.
+   So a nullptr mutex is safe for the continuation.
 */
 
 class SessionAccept : public Continuation
@@ -72,7 +72,7 @@ public:
    */
   virtual bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
 
-  /* Returns NULL if the specified client_ip is not allowed by ip_allow
+  /* Returns nullptr if the specified client_ip is not allowed by ip_allow
    * Returns a pointer to the relevant IP policy for later processing otherwise */
   static const AclRecord *testIpAllowPolicy(sockaddr const *client_ip);
 

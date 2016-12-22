@@ -29,7 +29,7 @@ static inkcoreapi ink_thread_key flags_data_key = init_thread_key();
 static ink_thread_key
 init_thread_key()
 {
-  ink_thread_key_create(&flags_data_key, NULL);
+  ink_thread_key_create(&flags_data_key, nullptr);
   return flags_data_key;
 }
 

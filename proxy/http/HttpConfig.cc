@@ -66,7 +66,7 @@ public:
 /// Data item for enumerated type config value.
 template <typename T> struct ConfigEnumPair {
   T _value;
-  char const *_key;
+  const char *_key;
 };
 
 /// Convert a string to an enumeration value.
@@ -75,7 +75,7 @@ template <typename T> struct ConfigEnumPair {
 /// If found @a value is set to the corresponding value in @a list.
 template <typename T, unsigned N>
 static bool
-http_config_enum_search(char const *key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
+http_config_enum_search(const char *key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
   for (unsigned i = 0; i < N; ++i) {
@@ -93,7 +93,7 @@ http_config_enum_search(char const *key, const ConfigEnumPair<T> (&list)[N], Mgm
 /// If found @a value is set to the corresponding value in @a list.
 template <typename T, unsigned N>
 static bool
-http_config_enum_read(char const *name, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
+http_config_enum_read(const char *name, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
   char key[512]; // it's just one key - painful UI if keys are longer than this
   if (REC_ERR_OKAY == RecGetRecordString(name, key, sizeof(key))) {
@@ -120,10 +120,9 @@ static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolSt
 ////////////////////////////////////////////////////////////////
 int HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
-HttpUserAgent_RegxEntry *HttpConfig::user_agent_list = NULL;
 
 static volatile int http_config_changes = 1;
-static HttpConfigCont *http_config_cont = NULL;
+static HttpConfigCont *http_config_cont = nullptr;
 
 HttpConfigCont::HttpConfigCont() : Continuation(new_ProxyMutex())
 {
@@ -155,7 +154,7 @@ http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
 // Oh, how I long for when we can use C++eleventy lambdas without compiler problems!
 // I think for 5.0 when the BC stuff is yanked, we should probably revert this to independent callbacks.
 static int
-http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, void *cookie)
+http_server_session_sharing_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   bool valid_p        = true;
   HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
@@ -872,7 +871,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigStringAlloc(c.proxy_hostname, "proxy.config.proxy_name");
   c.proxy_hostname_len = -1;
 
-  if (c.proxy_hostname == NULL) {
+  if (c.proxy_hostname == nullptr) {
     c.proxy_hostname    = (char *)ats_malloc(sizeof(char));
     c.proxy_hostname[0] = '\0';
   }
@@ -888,8 +887,9 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
 
-  // Wank me.
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
+  HttpEstablishStaticConfigByte(c.oride.forward_connect_method, "proxy.config.http.forward_connect_method");
+
   HttpEstablishStaticConfigByte(c.no_dns_forward_to_parent, "proxy.config.http.no_dns_just_forward_to_parent");
   HttpEstablishStaticConfigByte(c.oride.uncacheable_requests_bypass_parent, "proxy.config.http.uncacheable_requests_bypass_parent");
   HttpEstablishStaticConfigByte(c.oride.doc_in_cache_skip_dns, "proxy.config.http.doc_in_cache_skip_dns");
@@ -1038,6 +1038,9 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
   HttpEstablishStaticConfigByte(c.parser_allow_non_http, "proxy.config.http.parse.allow_non_http");
+
+  HttpEstablishStaticConfigByte(c.keepalive_internal_vc, "proxy.config.http.keepalive_internal_vc");
+
   HttpEstablishStaticConfigByte(c.oride.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
@@ -1112,9 +1115,9 @@ HttpConfig::startup()
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
   c.cluster_time_delta = 0;
-  RegisterMgmtCallback(MGMT_EVENT_HTTP_CLUSTER_DELTA, cluster_delta_cb, NULL);
+  RegisterMgmtCallback(MGMT_EVENT_HTTP_CLUSTER_DELTA, cluster_delta_cb, nullptr);
 
-  http_config_cont->handleEvent(EVENT_NONE, NULL);
+  http_config_cont->handleEvent(EVENT_NONE, nullptr);
 
   return;
 }
@@ -1148,7 +1151,8 @@ HttpConfig::reconfigure()
   params->use_client_source_port                   = INT_TO_BOOL(m_master.use_client_source_port);
   params->oride.maintain_pristine_host_hdr         = INT_TO_BOOL(m_master.oride.maintain_pristine_host_hdr);
 
-  params->disable_ssl_parenting = INT_TO_BOOL(m_master.disable_ssl_parenting);
+  params->disable_ssl_parenting        = INT_TO_BOOL(m_master.disable_ssl_parenting);
+  params->oride.forward_connect_method = INT_TO_BOOL(m_master.oride.forward_connect_method);
 
   params->server_max_connections             = m_master.server_max_connections;
   params->max_websocket_connections          = m_master.max_websocket_connections;
@@ -1222,18 +1226,30 @@ HttpConfig::reconfigure()
 
   params->oride.connect_attempts_max_retries             = m_master.oride.connect_attempts_max_retries;
   params->oride.connect_attempts_max_retries_dead_server = m_master.oride.connect_attempts_max_retries_dead_server;
-  params->oride.connect_attempts_rr_retries              = m_master.oride.connect_attempts_rr_retries;
-  params->oride.connect_attempts_timeout                 = m_master.oride.connect_attempts_timeout;
-  params->oride.post_connect_attempts_timeout            = m_master.oride.post_connect_attempts_timeout;
-  params->oride.parent_connect_attempts                  = m_master.oride.parent_connect_attempts;
-  params->per_parent_connect_attempts                    = m_master.per_parent_connect_attempts;
-  params->parent_connect_timeout                         = m_master.parent_connect_timeout;
+  if (m_master.oride.connect_attempts_rr_retries >= params->oride.connect_attempts_max_retries) {
+    Warning("connect_attempts_rr_retries (%" PRIu64 ") is greater than "
+            "connect_attempts_max_retries (%" PRIu64 "), this means requests "
+            "will never redispatch to another server",
+            m_master.oride.connect_attempts_rr_retries, params->oride.connect_attempts_max_retries);
+  }
+  params->oride.connect_attempts_rr_retries   = m_master.oride.connect_attempts_rr_retries;
+  params->oride.connect_attempts_timeout      = m_master.oride.connect_attempts_timeout;
+  params->oride.post_connect_attempts_timeout = m_master.oride.post_connect_attempts_timeout;
+  params->oride.parent_connect_attempts       = m_master.oride.parent_connect_attempts;
+  params->per_parent_connect_attempts         = m_master.per_parent_connect_attempts;
+  params->parent_connect_timeout              = m_master.parent_connect_timeout;
 
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
   params->oride.sock_send_buffer_size_out = m_master.oride.sock_send_buffer_size_out;
-  params->oride.sock_option_flag_out      = m_master.oride.sock_option_flag_out;
   params->oride.sock_packet_mark_out      = m_master.oride.sock_packet_mark_out;
   params->oride.sock_packet_tos_out       = m_master.oride.sock_packet_tos_out;
+  params->oride.sock_option_flag_out      = m_master.oride.sock_option_flag_out;
+
+  // Clear the TCP Fast Open option if it is not supported on this host.
+  if ((params->oride.sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) && !SocketManager::fastopen_supported()) {
+    Status("disabling unsupported TCP Fast Open flag on proxy.config.net.sock_option_flag_out");
+    params->oride.sock_option_flag_out &= ~NetVCOptions::SOCK_OPT_TCP_FAST_OPEN;
+  }
 
   params->oride.fwd_proxy_auth_to_parent = INT_TO_BOOL(m_master.oride.fwd_proxy_auth_to_parent);
 
@@ -1305,9 +1321,11 @@ HttpConfig::reconfigure()
   params->ignore_accept_encoding_mismatch = m_master.ignore_accept_encoding_mismatch;
   params->ignore_accept_charset_mismatch  = m_master.ignore_accept_charset_mismatch;
 
-  params->send_100_continue_response         = INT_TO_BOOL(m_master.send_100_continue_response);
-  params->disallow_post_100_continue         = INT_TO_BOOL(m_master.disallow_post_100_continue);
-  params->parser_allow_non_http              = INT_TO_BOOL(m_master.parser_allow_non_http);
+  params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
+  params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
+  params->parser_allow_non_http      = INT_TO_BOOL(m_master.parser_allow_non_http);
+  params->keepalive_internal_vc      = INT_TO_BOOL(m_master.keepalive_internal_vc);
+
   params->oride.cache_open_write_fail_action = m_master.oride.cache_open_write_fail_action;
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
@@ -1346,8 +1364,6 @@ HttpConfig::reconfigure()
   params->referer_format_redirect = INT_TO_BOOL(m_master.referer_format_redirect);
 
   params->strict_uri_parsing = INT_TO_BOOL(m_master.strict_uri_parsing);
-
-  params->oride.accept_encoding_filter_enabled = INT_TO_BOOL(m_master.oride.accept_encoding_filter_enabled);
 
   params->oride.down_server_timeout    = m_master.oride.down_server_timeout;
   params->oride.client_abort_threshold = m_master.oride.client_abort_threshold;
@@ -1394,7 +1410,7 @@ HttpConfig::acquire()
   if (m_id != 0) {
     return (HttpConfigParams *)configProcessor.get(m_id);
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -1417,24 +1433,24 @@ HttpConfig::release(HttpConfigParams *params)
 HttpConfigPortRange *
 HttpConfig::parse_ports_list(char *ports_string)
 {
-  HttpConfigPortRange *ports_list = 0;
+  HttpConfigPortRange *ports_list = nullptr;
 
   if (!ports_string) {
-    return (0);
+    return (nullptr);
   }
 
   if (strchr(ports_string, '*')) {
     ports_list       = new HttpConfigPortRange;
     ports_list->low  = -1;
     ports_list->high = -1;
-    ports_list->next = NULL;
+    ports_list->next = nullptr;
   } else {
     HttpConfigPortRange *pr, *prev;
     char *start;
     char *end;
 
-    pr   = NULL;
-    prev = NULL;
+    pr   = nullptr;
+    prev = nullptr;
 
     start = ports_string;
 
@@ -1457,7 +1473,7 @@ HttpConfig::parse_ports_list(char *ports_string)
       pr       = new HttpConfigPortRange;
       pr->low  = atoi(start);
       pr->high = pr->low;
-      pr->next = NULL;
+      pr->next = nullptr;
 
       if (prev) {
         prev->next = pr;
@@ -1511,7 +1527,7 @@ HttpConfig::cluster_delta_cb(void * /* opaque_token ATS_UNUSED */, char *data_ra
   old = ink_atomic_swap(&HttpConfig::m_master.cluster_time_delta, delta32);
   Debug("http_trans", "Cluster time delta moving from %d to %d", old, delta32);
 
-  return NULL;
+  return nullptr;
 }
 
 volatile int32_t icp_dynamic_enabled;

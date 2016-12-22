@@ -80,7 +80,7 @@ ink_code_incr_md5_final(char *sixteen_byte_hash_pointer, INK_DIGEST_CTX *context
   @return always returns 0, maybe some error checking should be done
 */
 int
-ink_code_md5(unsigned char const *input, int input_length, unsigned char *sixteen_byte_hash_pointer)
+ink_code_md5(unsigned const char *input, int input_length, unsigned char *sixteen_byte_hash_pointer)
 {
   MD5_CTX context;
 

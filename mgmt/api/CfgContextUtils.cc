@@ -47,18 +47,18 @@ string_to_ip_addr_ele(const char *str)
   Tokenizer cidr_tokens2(CIDR_DELIMITER_STR);
   TSIpAddrEle *ele;
   const char *const_ip_a, *const_ip_b;
-  char *ip_a = NULL, *ip_b = NULL;
+  char *ip_a = nullptr, *ip_b = nullptr;
   int numTokens = 0;
   char buf[MAX_BUF_SIZE];
 
   // ink_assert(str);
   if (!str) {
-    return NULL;
+    return nullptr;
   }
 
   ele = TSIpAddrEleCreate();
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   memset(buf, 0, MAX_BUF_SIZE);
@@ -121,7 +121,7 @@ Lerror:
   ats_free(ip_b);
   TSIpAddrEleDestroy(ele);
 
-  return NULL;
+  return nullptr;
 }
 
 /* ----------------------------------------------------------------------------
@@ -138,7 +138,7 @@ char *
 ip_addr_ele_to_string(TSIpAddrEle *ele)
 {
   char buf[MAX_BUF_SIZE];
-  char *str, *ip_a_str = NULL, *ip_b_str = NULL;
+  char *str, *ip_a_str = nullptr, *ip_b_str = nullptr;
 
   // ink_assert(ele);
   if (!ele) {
@@ -191,7 +191,7 @@ ip_addr_ele_to_string(TSIpAddrEle *ele)
 Lerror:
   ats_free(ip_a_str);
   ats_free(ip_b_str);
-  return NULL;
+  return nullptr;
 }
 
 /* ----------------------------------------------------------------------------
@@ -206,10 +206,10 @@ ip_addr_to_string(TSIpAddr ip)
 {
   // ink_assert(ip != TS_INVALID_IP_ADDR);
   if (ip == TS_INVALID_IP_ADDR) {
-    return NULL;
+    return nullptr;
   }
   if (!ccu_checkIpAddr(ip)) {
-    return NULL;
+    return nullptr;
   }
   return ats_strdup((char *)ip);
 }
@@ -251,7 +251,7 @@ ip_addr_list_to_string(IpAddrList *list, const char *delimiter)
 
   // ink_assert(list && delimiter);
   if (!list || !delimiter) {
-    return NULL;
+    return nullptr;
   }
 
   num = queue_len((LLQ *)list);
@@ -262,7 +262,7 @@ ip_addr_list_to_string(IpAddrList *list, const char *delimiter)
 
     if (!ip_str) {
       enqueue((LLQ *)list, ip_ele);
-      return NULL;
+      return nullptr;
     }
     if (i == num - 1) {
       snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%s", ip_str);
@@ -376,7 +376,7 @@ port_list_to_string(PortList *ports, const char *delimiter)
   return str;
 
 Lerror:
-  return NULL;
+  return nullptr;
 }
 
 /* ---------------------------------------------------------------
@@ -432,7 +432,7 @@ port_ele_to_string(TSPortEle *ele)
 
   // ink_assert(ele);
   if (!ele || !ccu_checkPortEle(ele)) {
-    return NULL;
+    return nullptr;
   }
 
   memset(buf, 0, MAX_BUF_SIZE);
@@ -462,7 +462,7 @@ string_to_port_ele(const char *str)
 
   // ink_assert(str);
   if (!str) {
-    return NULL;
+    return nullptr;
   }
 
   memset(copy, 0, MAX_BUF_SIZE);
@@ -493,7 +493,7 @@ string_to_port_ele(const char *str)
 
 Lerror:
   TSPortEleDestroy(ele);
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -513,7 +513,7 @@ string_list_to_string(TSStringList str_list, const char *delimiter)
 
   // ink_assert(str_list != TS_INVALID_LIST && delimiter);
   if (str_list == TS_INVALID_LIST || !delimiter) {
-    return NULL;
+    return nullptr;
   }
 
   memset(buf, 0, MAX_BUF_SIZE);
@@ -582,7 +582,7 @@ int_list_to_string(TSIntList list, const char *delimiter)
 
   // ink_assert(list != TS_INVALID_LIST && delimiter);
   if (list == TS_INVALID_LIST || !delimiter) {
-    return NULL;
+    return nullptr;
   }
 
   numElems = queue_len((LLQ *)list);
@@ -702,7 +702,7 @@ domain_list_to_string(TSDomainList list, const char *delimiter)
 
   // ink_assert(list != TS_INVALID_LIST && delimiter);
   if (list == TS_INVALID_LIST || !delimiter) {
-    return NULL;
+    return nullptr;
   }
 
   numElems = queue_len((LLQ *)list);
@@ -714,7 +714,7 @@ domain_list_to_string(TSDomainList list, const char *delimiter)
 
     dom_str = domain_to_string(domain);
     if (!dom_str) {
-      return NULL;
+      return nullptr;
     }
     if (i == numElems - 1) { // the last element shouldn't print comma
       if (buf_pos < sizeof(buf) && (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%s", dom_str)) > 0) {
@@ -748,7 +748,7 @@ domain_to_string(TSDomain *domain)
 
   // ink_assert(domain);
   if (!domain) {
-    return NULL;
+    return nullptr;
   }
 
   if (domain->domain_val) {
@@ -758,7 +758,7 @@ domain_to_string(TSDomain *domain)
       snprintf(buf, sizeof(buf), "%s", domain->domain_val);
     }
   } else {
-    return NULL; // invalid TSDomain
+    return nullptr; // invalid TSDomain
   }
 
   dom_str = ats_strdup(buf);
@@ -783,7 +783,7 @@ string_to_domain(const char *str)
 
   // ink_assert(str);
   if (!str) {
-    return NULL;
+    return nullptr;
   }
 
   dom = TSDomainCreate();
@@ -813,7 +813,7 @@ string_to_domain(const char *str)
 
 Lerror:
   TSDomainDestroy(dom);
-  return NULL;
+  return nullptr;
 }
 
 /* ---------------------------------------------------------------
@@ -836,7 +836,7 @@ pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec *sspec)
 
   // ink_assert(pd != TS_PD_UNDEFINED && pd_val && sspec);
   if (pd == TS_PD_UNDEFINED || !pd_val || !sspec) {
-    return NULL;
+    return nullptr;
   }
 
   memset(buf, 0, MAX_BUF_SIZE);
@@ -923,7 +923,7 @@ pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec *sspec)
       if (sspec->src_ip != TS_INVALID_IP_ADDR) {
         src_ip = ip_addr_to_string(sspec->src_ip);
         if (!src_ip) {
-          return NULL;
+          return nullptr;
         }
         if (buf_pos < sizeof(buf) && (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "src_ip=%s ", src_ip)) > 0) {
           buf_pos += psize;
@@ -1101,7 +1101,7 @@ hms_time_to_string(TSHmsTime time)
   if ((s > 0) && (s < sizeof(buf))) {
     return ats_strdup(buf);
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -1287,7 +1287,7 @@ header_type_to_string(TSHdrT hdr)
     break;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -1318,7 +1318,7 @@ scheme_type_to_string(TSSchemeT scheme)
     break;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -1362,7 +1362,7 @@ method_type_to_string(TSMethodT method)
     break;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -1380,7 +1380,7 @@ connect_type_to_string(TSConnectT conn)
   default:
     break;
   }
-  return NULL;
+  return nullptr;
 }
 
 TSConnectT
@@ -1410,7 +1410,7 @@ multicast_type_to_string(TSMcTtlT mc)
   default:
     break;
   }
-  return NULL;
+  return nullptr;
 }
 
 /* -------------------------------------------------------------------------
@@ -1445,7 +1445,7 @@ round_robin_type_to_string(TSRrT rr)
     break;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------
@@ -1484,7 +1484,7 @@ filename_to_string(TSFileNameT file)
   case TS_FNAME_VADDRS:
     return "vaddrs.config";
   default: /* no such config file */
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -1540,7 +1540,7 @@ admin_acc_type_to_string(TSAccessT access)
     break;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /***************************************************************************
@@ -1567,7 +1567,7 @@ tokens_to_pdss_format(TokenList *tokens, Token *first_tok, TSPdSsFormat *pdss)
 
   // ink_assert(tokens && first_tok && pdss);
   if (!tokens || !first_tok || !pdss) {
-    return NULL;
+    return nullptr;
   }
 
   // tokens->Print();
@@ -1584,7 +1584,7 @@ tokens_to_pdss_format(TokenList *tokens, Token *first_tok, TSPdSsFormat *pdss)
   } else if (strcmp(first_tok->name, "url") == 0) {
     pdss->pd_type = TS_PD_URL;
   } else {
-    return NULL; // INVALID primary destination specifier
+    return nullptr; // INVALID primary destination specifier
   }
   pdss->pd_val = ats_strdup(first_tok->value);
 
@@ -1640,7 +1640,7 @@ tokens_to_pdss_format(TokenList *tokens, Token *first_tok, TSPdSsFormat *pdss)
 
   } // end while loop
 
-  return NULL;
+  return nullptr;
 }
 
 /***************************************************************************
@@ -1690,7 +1690,7 @@ ccu_checkIpAddr(const char *addr, const char *min_addr, const char *max_addr)
   // truncate any leading or trailing white spaces from addr,
   // which can occur if IP is from a list of IP addresses
   char *new_addr = chopWhiteSpaces_alloc((char *)addr);
-  if (new_addr == NULL) {
+  if (new_addr == nullptr) {
     return false;
   }
 
@@ -1895,7 +1895,7 @@ chopWhiteSpaces_alloc(char *str)
   int len;
 
   if (!str) {
-    return NULL;
+    return nullptr;
   }
 
   // skip any leading white spaces
@@ -1927,12 +1927,12 @@ create_ele_obj_from_rule_node(Rule *rule)
 {
   TSRuleTypeT rule_type;
   TokenList *token_list;
-  CfgEleObj *ele = NULL;
+  CfgEleObj *ele = nullptr;
 
   // sanity check
   // ink_assert(rule != NULL);
   if (!rule) {
-    return NULL;
+    return nullptr;
   }
 
   // first check if the rule node is a comment
@@ -2003,10 +2003,10 @@ create_ele_obj_from_rule_node(Rule *rule)
     ele = (CfgEleObj *)new VirtIpAddrObj(token_list);
     break;
   default:
-    return NULL; // invalid rule type
+    return nullptr; // invalid rule type
   }
   if (!ele || !ele->isValid()) {
-    return NULL;
+    return nullptr;
   }
   return ele;
 }
@@ -2022,10 +2022,10 @@ create_ele_obj_from_rule_node(Rule *rule)
 CfgEleObj *
 create_ele_obj_from_ele(TSCfgEle *ele)
 {
-  CfgEleObj *ele_obj = NULL;
+  CfgEleObj *ele_obj = nullptr;
 
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   switch (ele->type) {
@@ -2096,7 +2096,7 @@ create_ele_obj_from_ele(TSCfgEle *ele)
     break;
   case TS_TYPE_UNDEFINED:
   default:
-    return NULL; // error
+    return nullptr; // error
   }
 
   return ele_obj;
@@ -2123,7 +2123,7 @@ get_rule_type(TokenList *token_list, TSFileNameT file)
   switch (file) {
   case TS_FNAME_CACHE_OBJ: /* cache.config */
     tok = token_list->first();
-    while (tok != NULL) {
+    while (tok != nullptr) {
       if (strcmp(tok->name, "action") == 0) {
         if (strcmp(tok->value, "never-cache") == 0) {
           return TS_CACHE_NEVER;
@@ -2302,7 +2302,7 @@ copy_ip_addr_ele(TSIpAddrEle *src_ele)
   TSIpAddrEle *dst_ele;
 
   if (!src_ele) {
-    return NULL;
+    return nullptr;
   }
 
   dst_ele       = TSIpAddrEleCreate();
@@ -2327,7 +2327,7 @@ copy_port_ele(TSPortEle *src_ele)
   TSPortEle *dst_ele;
 
   if (!src_ele) {
-    return NULL;
+    return nullptr;
   }
 
   dst_ele         = TSPortEleCreate();
@@ -2343,7 +2343,7 @@ copy_domain(TSDomain *src_dom)
   TSDomain *dst_dom;
 
   if (!src_dom) {
-    return NULL;
+    return nullptr;
   }
 
   dst_dom = TSDomainCreate();
@@ -2475,12 +2475,12 @@ TSCacheEle *
 copy_cache_ele(TSCacheEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSCacheEle *nele = TSCacheEleCreate(ele->cfg_ele.type);
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2494,12 +2494,12 @@ TSCongestionEle *
 copy_congestion_ele(TSCongestionEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSCongestionEle *nele = TSCongestionEleCreate();
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   // copy_pdss_format(&(ele->congestion_info), &(nele->congestion_info));
@@ -2531,12 +2531,12 @@ TSHostingEle *
 copy_hosting_ele(TSHostingEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSHostingEle *nele = TSHostingEleCreate();
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2553,12 +2553,12 @@ TSIcpEle *
 copy_icp_ele(TSIcpEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSIcpEle *nele = TSIcpEleCreate();
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2584,12 +2584,12 @@ TSIpAllowEle *
 copy_ip_allow_ele(TSIpAllowEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSIpAllowEle *nele = TSIpAllowEleCreate();
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
   if (ele->src_ip_addr) {
     nele->src_ip_addr = copy_ip_addr_ele(ele->src_ip_addr);
@@ -2602,12 +2602,12 @@ TSParentProxyEle *
 copy_parent_proxy_ele(TSParentProxyEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSParentProxyEle *nele = TSParentProxyEleCreate(TS_TYPE_UNDEFINED);
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2623,12 +2623,12 @@ TSVolumeEle *
 copy_volume_ele(TSVolumeEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSVolumeEle *nele = TSVolumeEleCreate();
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2644,12 +2644,12 @@ TSPluginEle *
 copy_plugin_ele(TSPluginEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSPluginEle *nele = TSPluginEleCreate();
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2665,12 +2665,12 @@ TSRemapEle *
 copy_remap_ele(TSRemapEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSRemapEle *nele = TSRemapEleCreate(TS_TYPE_UNDEFINED);
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2699,12 +2699,12 @@ TSSocksEle *
 copy_socks_ele(TSSocksEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSSocksEle *nele = TSSocksEleCreate(TS_TYPE_UNDEFINED);
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2726,12 +2726,12 @@ TSSplitDnsEle *
 copy_split_dns_ele(TSSplitDnsEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSSplitDnsEle *nele = TSSplitDnsEleCreate();
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2752,12 +2752,12 @@ TSStorageEle *
 copy_storage_ele(TSStorageEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   TSStorageEle *nele = TSStorageEleCreate();
   if (!nele) {
-    return NULL;
+    return nullptr;
   }
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2775,12 +2775,12 @@ copy_virt_ip_addr_ele(TSVirtIpAddrEle *ele)
   TSVirtIpAddrEle *new_ele;
 
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   new_ele = TSVirtIpAddrEleCreate();
   if (!new_ele) {
-    return NULL;
+    return nullptr;
   }
 
   // copy cfg ele
@@ -2796,7 +2796,7 @@ INKCommentEle *
 copy_comment_ele(INKCommentEle *ele)
 {
   if (!ele) {
-    return NULL;
+    return nullptr;
   }
 
   INKCommentEle *nele = comment_ele_create(ele->comment);
@@ -2818,7 +2818,7 @@ comment_ele_create(char *comment)
   if (comment) {
     ele->comment = ats_strdup(comment);
   } else { // comment is NULL
-    ele->comment = NULL;
+    ele->comment = nullptr;
   }
 
   return ele;

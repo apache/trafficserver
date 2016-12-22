@@ -19,9 +19,9 @@
 
 
 AM_CPPFLAGS = $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/wccp \
+  -I$(abs_top_srcdir)/lib \
+  -I$(abs_top_srcdir)/lib/records \
+  -I$(abs_top_srcdir)/lib/wccp \
   @OPENSSL_INCLUDES@
 
 AM_LDFLAGS = \

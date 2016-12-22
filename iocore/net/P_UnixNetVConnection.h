@@ -66,7 +66,7 @@ NetVCOptions::reset()
 
   etype = ET_NET;
 
-  sni_servername = NULL;
+  sni_servername = nullptr;
 }
 
 TS_INLINE void
@@ -100,6 +100,7 @@ struct OOB_callback : public Continuation {
 class UnixNetVConnection : public NetVConnection
 {
 public:
+  virtual const int64_t outstanding();
   virtual VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
   virtual VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
 
@@ -170,6 +171,36 @@ public:
   /////////////////////////////////////////////////////////////////
   UnixNetVConnection();
 
+  int
+  populate_protocol(const char **results, int n) const
+  {
+    int retval = 0;
+    if (n > 0) {
+      results[retval++] = options.get_proto_string();
+      if (n > 1) {
+        results[retval++] = options.get_family_string();
+      }
+    }
+    return retval;
+  }
+
+  const char *
+  protocol_contains(const char *tag) const
+  {
+    const char *retval   = nullptr;
+    unsigned int tag_len = strlen(tag);
+    const char *test_tag = options.get_proto_string();
+    if (strncmp(tag, test_tag, tag_len) == 0) {
+      retval = test_tag;
+    } else {
+      test_tag = options.get_family_string();
+      if (strncmp(tag, test_tag, tag_len) == 0) {
+        retval = test_tag;
+      }
+    }
+    return retval;
+  }
+
 private:
   UnixNetVConnection(const NetVConnection &);
   UnixNetVConnection &operator=(const NetVConnection &);
@@ -199,22 +230,11 @@ public:
     return (true);
   }
 
-  virtual bool
-  getSSLClientConnection() const
-  {
-    return (false);
-  }
-
-  virtual void
-  setSSLClientConnection(bool state)
-  {
-    (void)state;
-  }
-
   virtual void net_read_io(NetHandler *nh, EThread *lthread);
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs);
   void readDisable(NetHandler *nh);
   void readSignalError(NetHandler *nh, int err);
+  void writeSignalError(NetHandler *nh, int err);
   int readSignalDone(int event, NetHandler *nh);
   int readSignalAndUpdate(int event);
   void readReschedule(NetHandler *nh);
@@ -253,8 +273,6 @@ public:
   EventIO ep;
   NetHandler *nh;
   unsigned int id;
-  // amc - what is this for? Why not use remote_addr or con.addr?
-  IpEndpoint server_addr; /// Server address and port.
 
   union {
     unsigned int flags;
@@ -349,41 +367,6 @@ UnixNetVConnection::get_inactivity_timeout()
 }
 
 TS_INLINE void
-UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
-{
-  Debug("socket", "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
-  inactivity_timeout_in = timeout_in;
-#ifdef INACTIVITY_TIMEOUT
-
-  if (inactivity_timeout)
-    inactivity_timeout->cancel_action(this);
-  if (inactivity_timeout_in) {
-    if (read.enabled) {
-      ink_assert(read.vio.mutex->thread_holding == this_ethread() && thread);
-      if (read.vio.mutex->thread_holding == thread)
-        inactivity_timeout = thread->schedule_in_local(this, inactivity_timeout_in);
-      else
-        inactivity_timeout = thread->schedule_in(this, inactivity_timeout_in);
-    } else if (write.enabled) {
-      ink_assert(write.vio.mutex->thread_holding == this_ethread() && thread);
-      if (write.vio.mutex->thread_holding == thread)
-        inactivity_timeout = thread->schedule_in_local(this, inactivity_timeout_in);
-      else
-        inactivity_timeout = thread->schedule_in(this, inactivity_timeout_in);
-    } else
-      inactivity_timeout = 0;
-  } else
-    inactivity_timeout = 0;
-#else
-  if (timeout_in) {
-    next_inactivity_timeout_at = Thread::get_hrtime() + timeout_in;
-  } else {
-    next_inactivity_timeout_at = 0;
-  }
-#endif
-}
-
-TS_INLINE void
 UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
@@ -409,7 +392,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
   } else
     active_timeout = 0;
 #else
-  next_activity_timeout_at   = Thread::get_hrtime() + timeout_in;
+  next_activity_timeout_at = Thread::get_hrtime() + timeout_in;
 #endif
 }
 
@@ -422,10 +405,10 @@ UnixNetVConnection::cancel_inactivity_timeout()
   if (inactivity_timeout) {
     Debug("socket", "Cancel inactive timeout for NetVC=%p", this);
     inactivity_timeout->cancel_action(this);
-    inactivity_timeout = NULL;
+    inactivity_timeout = nullptr;
   }
 #else
-  next_inactivity_timeout_at = 0;
+  set_inactivity_timeout(0);
 #endif
 }
 
@@ -438,10 +421,10 @@ UnixNetVConnection::cancel_active_timeout()
   if (active_timeout) {
     Debug("socket", "Cancel active timeout for NetVC=%p", this);
     active_timeout->cancel_action(this);
-    active_timeout = NULL;
+    active_timeout = nullptr;
   }
 #else
-  next_activity_timeout_at   = 0;
+  next_activity_timeout_at = 0;
 #endif
 }
 

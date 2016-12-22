@@ -16,18 +16,20 @@
 
 # plugins.mk: Common automake build variables for Traffic Server plugins.
 
-TS_PLUGIN_LDFLAGS = \
+# Default plugin LDFLAGS. We don't use TS_PLUGIN_LDFLAGS because
+# that is an automake canonical variable name.
+TS_PLUGIN_LD_FLAGS = \
   -module \
   -shared \
   -avoid-version \
   -export-symbols-regex '^(TSRemapInit|TSRemapDone|TSRemapDoRemap|TSRemapNewInstance|TSRemapDeleteInstance|TSRemapOSResponse|TSPluginInit)$$'
 
 TS_PLUGIN_CPPFLAGS = \
-  -I$(top_builddir)/proxy/api \
-  -I$(top_srcdir)/proxy/api \
-  -I$(top_srcdir)/lib/atscppapi/src/include \
-  -I$(top_builddir)/lib/atscppapi/src/include \
-  -I$(top_srcdir)/lib
+  -I$(abs_top_builddir)/proxy/api \
+  -I$(abs_top_srcdir)/proxy/api \
+  -I$(abs_top_srcdir)/lib/cppapi/include \
+  -I$(abs_top_builddir)/lib/cppapi/include \
+  -I$(abs_top_srcdir)/lib
 
 # Provide a default AM_CPPFLAGS. Automake handles this correctly, but libtool
 # throws an error if we try to do the same with AM_LDFLAGS. Hence, we provide

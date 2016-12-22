@@ -24,7 +24,7 @@
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
 
-static Diags *g_diags = NULL;
+static Diags *g_diags = nullptr;
 
 //-------------------------------------------------------------------------
 // RecSetDiags
@@ -74,5 +74,5 @@ _RecDebug(DiagsLevel dl, const SourceLocation &loc, const char *fmt, ...)
 void
 RecDebugOff()
 {
-  g_diags = NULL;
+  g_diags = nullptr;
 }

@@ -62,7 +62,7 @@ struct Config {
   unsigned log_level;
   TSTextLogObject log;
 
-  Config() : sample(1000), log_level(1), log(NULL) {}
+  Config() : sample(1000), log_level(1), log(nullptr) {}
   ~Config()
   {
     if (log) {
@@ -85,7 +85,7 @@ union const_sockaddr_ptr {
     case AF_INET6:
       return &(in6->sin6_addr);
     default:
-      return NULL;
+      return nullptr;
     }
   }
 };
@@ -168,8 +168,8 @@ log_tcp_info(Config * /* config */, const char * /* event_name */, TSHttpSsn /* 
 static int
 tcp_info_hook(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpSsn ssnp = NULL;
-  TSHttpTxn txnp = NULL;
+  TSHttpSsn ssnp = nullptr;
+  TSHttpTxn txnp = nullptr;
   int random     = 0;
   Config *config = (Config *)TSContDataGet(contp);
 
@@ -204,12 +204,12 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
 
   TSDebug("tcpinfo", "logging hook called for %s (%s) with log object %p", TSHttpEventNameLookup(event), event_name, config->log);
 
-  if (config->log == NULL) {
+  if (config->log == nullptr) {
     goto done;
   }
 
   // Don't try to sample internal requests. TCP metrics for loopback are not interesting.
-  if (TSHttpSsnIsInternal(ssnp) == TS_SUCCESS) {
+  if (TSHttpSsnIsInternal(ssnp)) {
     goto done;
   }
 
@@ -226,9 +226,9 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
   }
 
 done:
-  if (txnp != NULL) {
+  if (txnp != nullptr) {
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  } else if (ssnp != NULL) {
+  } else if (ssnp != nullptr) {
     TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
   }
 
@@ -238,7 +238,7 @@ done:
 static bool
 parse_unsigned(const char *str, unsigned long &lval)
 {
-  char *end = NULL;
+  char *end = nullptr;
 
   if (*str == '\0') {
     return false;
@@ -271,14 +271,14 @@ parse_hook_list(const char *hook_list)
     const char *name;
     unsigned mask;
   } hooks[] = {{"ssn_start", TCPI_HOOK_SSN_START}, {"txn_start", TCPI_HOOK_TXN_START}, {"send_resp_hdr", TCPI_HOOK_SEND_RESPONSE},
-               {"ssn_close", TCPI_HOOK_SSN_CLOSE}, {"txn_close", TCPI_HOOK_TXN_CLOSE}, {NULL, 0u}};
+               {"ssn_close", TCPI_HOOK_SSN_CLOSE}, {"txn_close", TCPI_HOOK_TXN_CLOSE}, {nullptr, 0u}};
 
   str = TSstrdup(hook_list);
 
-  for (tok = strtok_r(str, ",", &last); tok; tok = strtok_r(NULL, ",", &last)) {
+  for (tok = strtok_r(str, ",", &last); tok; tok = strtok_r(nullptr, ",", &last)) {
     bool match = false;
 
-    for (const struct hookmask *m = hooks; m->name != NULL; ++m) {
+    for (const struct hookmask *m = hooks; m->name != nullptr; ++m) {
       if (strcmp(m->name, tok) == 0) {
         mask |= m->mask;
         match = true;
@@ -300,11 +300,11 @@ TSPluginInit(int argc, const char *argv[])
 {
   static const char usage[]             = "tcpinfo.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT]";
   static const struct option longopts[] = {
-    {const_cast<char *>("sample-rate"), required_argument, NULL, 'r'},
-    {const_cast<char *>("log-file"), required_argument, NULL, 'f'},
-    {const_cast<char *>("log-level"), required_argument, NULL, 'l'},
-    {const_cast<char *>("hooks"), required_argument, NULL, 'h'},
-    {NULL, 0, NULL, 0},
+    {const_cast<char *>("sample-rate"), required_argument, nullptr, 'r'},
+    {const_cast<char *>("log-file"), required_argument, nullptr, 'f'},
+    {const_cast<char *>("log-level"), required_argument, nullptr, 'l'},
+    {const_cast<char *>("hooks"), required_argument, nullptr, 'h'},
+    {nullptr, 0, nullptr, 0},
   };
 
   TSPluginRegistrationInfo info;
@@ -324,7 +324,7 @@ TSPluginInit(int argc, const char *argv[])
   for (;;) {
     unsigned long lval;
 
-    switch (getopt_long(argc, (char *const *)argv, "r:f:l:h:", longopts, NULL)) {
+    switch (getopt_long(argc, (char *const *)argv, "r:f:l:h:", longopts, nullptr)) {
     case 'r':
       if (parse_unsigned(optarg, lval)) {
         config->sample = atoi(optarg);
@@ -371,7 +371,7 @@ init:
 
   TSTextLogObjectHeaderSet(config->log, tcpi_headers[config->log_level - 1]);
 
-  cont = TSContCreate(tcp_info_hook, NULL);
+  cont = TSContCreate(tcp_info_hook, nullptr);
   TSContDataSet(cont, config);
 
   if (hooks & TCPI_HOOK_SSN_START) {

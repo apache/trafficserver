@@ -209,7 +209,7 @@ LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
 
   ink_assert(alarm_type >= 0 && alarm_type < LogUtils::LOG_ALARM_N_TYPES);
 
-  if (msg == NULL) {
+  if (msg == nullptr) {
     snprintf(msg_buf, sizeof(msg_buf), "No Message");
   } else {
     va_start(ap, msg);
@@ -243,7 +243,7 @@ LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
 void
 LogUtils::strip_trailing_newline(char *buf)
 {
-  if (buf != NULL) {
+  if (buf != nullptr) {
     int len = ::strlen(buf);
     if (len > 0) {
       if (buf[len - 1] == '\n') {
@@ -303,7 +303,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
 
   if (!url || (dst && dst_size < len_in)) {
     *len_out = 0;
-    return NULL;
+    return nullptr;
   }
 
   if (!map) {
@@ -345,7 +345,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
 
   if (dst && out_len > dst_size) {
     *len_out = 0;
-    return NULL;
+    return nullptr;
   }
 
   // To play it safe, we null terminate the string we return in case
@@ -549,7 +549,7 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
       // write and execute permissions
 
       char *dir;
-      char *prefix = 0;
+      char *prefix = nullptr;
 
       // search for forward or reverse slash in full_filename
       // starting from the end

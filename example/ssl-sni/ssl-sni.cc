@@ -87,7 +87,7 @@ CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
   TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
   SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  if (servername != NULL) {
+  if (servername != nullptr) {
     int servername_len    = strlen(servername);
     int facebook_name_len = strlen("facebook.com");
     if (servername_len >= facebook_name_len) {
@@ -105,7 +105,7 @@ CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
       TSDebug("skh", "SNI name is yahoo ssl obj is %p", sslobj);
       if (sslobj) {
         TSSslContext ctxobj = TSSslContextFindByName("safelyfiled.com");
-        if (ctxobj != NULL) {
+        if (ctxobj != nullptr) {
           TSDebug("skh", "Found cert for safelyfiled");
           SSL_CTX *ctx = reinterpret_cast<SSL_CTX *>(ctxobj);
           SSL_set_SSL_CTX(ssl, ctx);
@@ -128,9 +128,9 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_cert                       = 0; // Certificate callback continuation
+  TSCont cb_cert                       = nullptr; // Certificate callback continuation
   static const struct option longopt[] = {
-    {const_cast<char *>("config"), required_argument, NULL, 'c'}, {NULL, no_argument, NULL, '\0'},
+    {const_cast<char *>("config"), required_argument, nullptr, 'c'}, {nullptr, no_argument, nullptr, '\0'},
   };
 
   info.plugin_name   = const_cast<char *>("SSL SNI callback test");
@@ -139,7 +139,7 @@ TSPluginInit(int argc, const char *argv[])
 
   int opt = 0;
   while (opt >= 0) {
-    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, nullptr);
     switch (opt) {
     case 'c':
       ConfigPath = optarg;
@@ -148,7 +148,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
   if (ConfigPath.length() == 0) {
-    static char const *const DEFAULT_CONFIG_PATH = "ssl_sni.config";
+    static const char *const DEFAULT_CONFIG_PATH = "ssl_sni.config";
     ConfigPath                                   = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
     TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
   }
@@ -159,7 +159,7 @@ TSPluginInit(int argc, const char *argv[])
     TSError(PCP "requires Traffic Server 2.0 or later.");
   } else if (0 > Load_Configuration()) {
     TSError(PCP "Failed to load config file.");
-  } else if (0 == (cb_cert = TSContCreate(&CB_servername, TSMutexCreate()))) {
+  } else if (nullptr == (cb_cert = TSContCreate(&CB_servername, TSMutexCreate()))) {
     TSError(PCP "Failed to create cert callback.");
   } else {
     TSHttpHookAdd(TS_SSL_CERT_HOOK, cb_cert);

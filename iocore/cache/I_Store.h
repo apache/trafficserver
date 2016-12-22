@@ -150,7 +150,7 @@ public:
            char *buf, int buflen); // where to store the path
 
   /// Set the hash seed string.
-  void hash_base_string_set(char const *s);
+  void hash_base_string_set(const char *s);
   /// Set the volume number.
   void volume_number_set(int n);
 
@@ -176,7 +176,7 @@ public:
       pathname = ats_strdup(that.pathname);
     if (that.hash_base_string)
       hash_base_string = ats_strdup(that.hash_base_string);
-    link.next          = NULL;
+    link.next          = nullptr;
   }
 
   ~Span();
@@ -201,11 +201,11 @@ struct Store {
     alloc(s, blocks, true, mmapable);
     if (s.n_disks) {
       Span *t   = s.disk[0];
-      s.disk[0] = NULL;
+      s.disk[0] = nullptr;
       return t;
     }
 
-    return NULL;
+    return nullptr;
   }
   // try to allocate, return (s == gotten, diff == not gotten)
   void try_realloc(Store &s, Store &diff);
@@ -223,7 +223,7 @@ struct Store {
     if (i > n_disks) {
       disk = (Span **)ats_realloc(disk, i * sizeof(Span *));
       for (unsigned j = n_disks; j < i; j++) {
-        disk[j] = NULL;
+        disk[j] = nullptr;
       }
       n_disks = i;
     }
@@ -259,7 +259,7 @@ struct Store {
   unsigned n_disks;
   Span **disk;
   //
-  // returns NULL on success
+  // returns nullptr on success
   // if fd >= 0 then on failure it returns an error string
   //            otherwise on failure it returns (char *)-1
   //
@@ -267,8 +267,8 @@ struct Store {
   int write_config_data(int fd) const;
 
   /// Additional configuration key values.
-  static char const VOLUME_KEY[];
-  static char const HASH_BASE_STRING_KEY[];
+  static const char VOLUME_KEY[];
+  static const char HASH_BASE_STRING_KEY[];
 };
 
 // store either free or in the cache, can be stolen for reconfiguration

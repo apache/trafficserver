@@ -64,7 +64,7 @@ stack via the loopback interface.
    reserved to mean "not set" and can be used as a default if this
    functionality is not needed.
 
-The virtual connection returned as the :c:type:`TSCVonn` is API
+The virtual connection returned as the :c:type:`TSVConn` is API
 equivalent to a network virtual connection both to the plugin and
 to internal mechanisms. Data is read and written to the connection
 (and thence to the target system) by reading and writing on this

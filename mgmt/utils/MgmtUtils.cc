@@ -23,6 +23,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_sock.h"
 #include "MgmtUtils.h"
+#include "MgmtSocket.h"
 #include "ts/Diags.h"
 
 #include "LocalManager.h"
@@ -52,11 +53,12 @@ mgmt_use_syslog()
 int
 mgmt_readline(int soc, char *buf, int maxlen)
 {
-  int n, rc;
+  int n = 0, rc;
   char c;
 
-  for (n = 1; n < maxlen; n++) {
-    if ((rc = read_socket(soc, &c, 1)) == 1) {
+  for (; n < maxlen; n++) {
+    rc = read_socket(soc, &c, 1);
+    if (rc == 1) {
       *buf++ = c;
       if (c == '\n') {
         --buf;
@@ -74,9 +76,19 @@ mgmt_readline(int soc, char *buf, int maxlen)
         break;
       }
     } else { /* Error */
+      if (errno == ECONNRESET || errno == EPIPE) {
+        return n ? n : 0;
+      }
+
+      if (mgmt_transient_error()) {
+        mgmt_sleep_msec(1);
+        continue;
+      }
+
       return -1;
     }
   }
+
   return n;
 } /* End mgmt_readline */
 
@@ -132,30 +144,30 @@ mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
   int err        = 0;
   char *p        = buf;
   int bytes_read = 0;
+
   while (bytes_to_read > 0) {
     err = read_socket(fd, p, bytes_to_read);
     if (err == 0) {
       return err;
     } else if (err < 0) {
-      switch (errno) {
-      case EINTR:
-      case EAGAIN:
-#if defined(hpux)
-      case EWOULDBLOCK:
-#endif
+      // Turn ECONNRESET into EOF.
+      if (errno == ECONNRESET || errno == EPIPE) {
+        return bytes_read ? bytes_read : 0;
+      }
+
+      if (mgmt_transient_error()) {
         mgmt_sleep_msec(1);
         continue;
-      default:
-        return -errno;
       }
+
+      return -errno;
     }
+
     bytes_to_read -= err;
     bytes_read += err;
     p += err;
   }
-  /*
-     Ldone:
-   */
+
   return bytes_read;
 }
 
@@ -174,44 +186,26 @@ mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
   int err           = 0;
   char *p           = buf;
   int bytes_written = 0;
+
   while (bytes_to_write > 0) {
     err = write_socket(fd, p, bytes_to_write);
     if (err == 0) {
       return err;
     } else if (err < 0) {
-      switch (errno) {
-      case EINTR:
-      case EAGAIN:
-#if defined(hpux)
-      case EWOULDBLOCK:
-#endif
+      if (mgmt_transient_error()) {
         mgmt_sleep_msec(1);
         continue;
-      default:
-        return -errno;
       }
+
+      return -errno;
     }
+
     bytes_to_write -= err;
     bytes_written += err;
     p += err;
   }
-  /*
-     Ldone:
-   */
-  return bytes_written;
-}
 
-void
-mgmt_blockAllSigs()
-{
-#if !defined(linux)
-  // Start by blocking all signals
-  sigset_t allSigs; // Set of all signals
-  sigfillset(&allSigs);
-  if (ink_thread_sigsetmask(SIG_SETMASK, &allSigs, NULL) < 0) {
-    perror("ink_thread_sigsetmask");
-  }
-#endif
+  return bytes_written;
 }
 
 void
@@ -335,7 +329,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
 {
   bool found = false;
 
-  if (intrName == NULL) {
+  if (intrName == nullptr) {
     return false;
   }
 
@@ -355,7 +349,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
   // INKqa06739
   // Fetch the list of network interfaces
   // . from Stevens, Unix Network Prog., pg 434-435
-  ifbuf   = 0;
+  ifbuf   = nullptr;
   lastlen = 0;
   len     = 128 * sizeof(struct ifreq); // initial buffer size guess
   for (;;) {
@@ -426,7 +420,7 @@ mgmt_sortipaddrs(int num, struct in_addr **list)
 
   min   = (list[0])->s_addr;
   entry = list[0];
-  while (i < num && (tmp = (struct in_addr *)list[i]) != NULL) {
+  while (i < num && (tmp = (struct in_addr *)list[i]) != nullptr) {
     i++;
     if (min > tmp->s_addr) {
       min   = tmp->s_addr;

@@ -33,7 +33,6 @@
  */
 #include "ts/ink_platform.h"
 
-#include "Error.h"
 #include "HTTP.h"
 
 #include "P_Net.h"
@@ -293,7 +292,7 @@ LOG_ACCESS_DEFAULT_FIELD(marshal_client_retry_after_time, DEFAULT_INT_FIELD)
 int
 LogAccess::marshal_proxy_host_name(char *buf)
 {
-  char *str        = NULL;
+  char *str        = nullptr;
   int len          = 0;
   Machine *machine = Machine::instance();
 
@@ -508,7 +507,7 @@ LogAccess::marshal_config_int_var(char *config_var, char *buf)
 int
 LogAccess::marshal_config_str_var(char *config_var, char *buf)
 {
-  char *str = NULL;
+  char *str = nullptr;
   str       = REC_ConfigReadString(config_var);
   int len   = LogAccess::strlen(str);
   if (buf) {
@@ -552,7 +551,7 @@ LogAccess::marshal_record(char *record, char *buf)
 {
   const unsigned int max_chars = MARSHAL_RECORD_LENGTH;
 
-  if (NULL == buf) {
+  if (nullptr == buf) {
     return max_chars;
   }
 
@@ -632,7 +631,7 @@ LogAccess::marshal_record(char *record, char *buf)
       out_buf = REC_readString(record, &found);
 
       if (found) {
-        if (out_buf != 0 && out_buf[0] != 0) {
+        if (out_buf != nullptr && out_buf[0] != 0) {
           num_chars = ::strlen(out_buf) + 1;
           if (num_chars > max_chars) {
             // truncate string and write ellipsis at the end
@@ -678,7 +677,7 @@ LogAccess::marshal_record(char *record, char *buf)
 void
 LogAccess::marshal_str(char *dest, const char *source, int padded_len)
 {
-  if (source == NULL || source[0] == 0 || padded_len == 0) {
+  if (source == nullptr || source[0] == 0 || padded_len == 0) {
     source = DEFAULT_STR;
   }
   ink_strlcpy(dest, source, padded_len);
@@ -708,7 +707,7 @@ LogAccess::marshal_str(char *dest, const char *source, int padded_len)
 void
 LogAccess::marshal_mem(char *dest, const char *source, int actual_len, int padded_len)
 {
-  if (source == NULL || source[0] == 0 || actual_len == 0) {
+  if (source == nullptr || source[0] == 0 || actual_len == 0) {
     source     = DEFAULT_STR;
     actual_len = DEFAULT_STR_LEN;
     ink_assert(actual_len < padded_len);
@@ -742,7 +741,7 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
 {
   LogFieldIpStorage data;
   int len = sizeof(data._ip);
-  if (NULL == ip) {
+  if (nullptr == ip) {
     data._ip._family = AF_UNSPEC;
   } else if (ats_is_ip4(ip)) {
     if (dest) {
@@ -804,8 +803,8 @@ LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAli
 int64_t
 LogAccess::unmarshal_int(char **buf)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
   int64_t val;
 
   // TODO: this used to do nthol, do we need to worrry? TS-1156.
@@ -826,7 +825,7 @@ LogAccess::unmarshal_int(char **buf)
 int
 LogAccess::unmarshal_itoa(int64_t val, char *dest, int field_width, char leading_char)
 {
-  ink_assert(dest != NULL);
+  ink_assert(dest != nullptr);
 
   char *p = dest;
 
@@ -860,7 +859,7 @@ LogAccess::unmarshal_itoa(int64_t val, char *dest, int field_width, char leading
 int
 LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading_char)
 {
-  ink_assert(dest != NULL);
+  ink_assert(dest != nullptr);
 
   char *p             = dest;
   static char table[] = "0123456789abcdef?";
@@ -885,9 +884,9 @@ LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading
 int
 LogAccess::unmarshal_int_to_str(char **buf, char *dest, int len)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   char val_buf[128];
   int64_t val = unmarshal_int(buf);
@@ -909,9 +908,9 @@ LogAccess::unmarshal_int_to_str(char **buf, char *dest, int len)
 int
 LogAccess::unmarshal_int_to_str_hex(char **buf, char *dest, int len)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   char val_buf[128];
   int64_t val = unmarshal_int(buf);
@@ -936,9 +935,9 @@ LogAccess::unmarshal_int_to_str_hex(char **buf, char *dest, int len)
 int
 LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   char *val_buf = *buf;
   int val_len   = (int)::strlen(val_buf);
@@ -971,9 +970,9 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
 int
 LogAccess::unmarshal_ttmsf(char **buf, char *dest, int len)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   int64_t val = unmarshal_int(buf);
   float secs  = (float)val / 1000;
@@ -1006,9 +1005,9 @@ LogAccess::unmarshal_http_method (char **buf, char *dest, int len)
 int
 LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   static const char *http = "HTTP/";
   static int http_len     = (int)::strlen(http);
@@ -1048,9 +1047,9 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
 int
 LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   char *p = dest;
 
@@ -1085,9 +1084,9 @@ LogAccess::unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice)
 int
 LogAccess::unmarshal_http_status(char **buf, char *dest, int len)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   char val_buf[128];
   int64_t val = unmarshal_int(buf);
@@ -1109,9 +1108,9 @@ LogAccess::unmarshal_ip(char **buf, IpEndpoint *dest)
 {
   int len = sizeof(LogFieldIp); // of object processed.
 
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   LogFieldIp *raw = reinterpret_cast<LogFieldIp *>(*buf);
   if (AF_INET == raw->_family) {
@@ -1194,9 +1193,9 @@ LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
 int
 LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "INVALID_CODE"));
 }
@@ -1212,9 +1211,9 @@ LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAlia
 int
 LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "UNKNOWN_FINISH_CODE"));
 }
@@ -1230,9 +1229,9 @@ LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogField
 int
 LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "ERROR_UNKNOWN"));
 }
@@ -1248,9 +1247,9 @@ LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAli
 int
 LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "HIT_MISS_UNKNOWN"));
 }
@@ -1262,9 +1261,9 @@ LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFiel
 int
 LogAccess::unmarshal_entry_type(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "UNKNOWN_ENTRY_TYPE"));
 }
@@ -1272,9 +1271,9 @@ LogAccess::unmarshal_entry_type(char **buf, char *dest, int len, Ptr<LogFieldAli
 int
 LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "UNKNOWN_CACHE_WRITE_CODE"));
 }
@@ -1282,9 +1281,9 @@ LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFi
 int
 LogAccess::unmarshal_record(char **buf, char *dest, int len)
 {
-  ink_assert(buf != NULL);
-  ink_assert(*buf != NULL);
-  ink_assert(dest != NULL);
+  ink_assert(buf != nullptr);
+  ink_assert(*buf != nullptr);
+  ink_assert(dest != nullptr);
 
   char *val_buf = *buf;
   int val_len   = (int)::strlen(val_buf);
@@ -1309,12 +1308,12 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
 {
   if (!context) {
     Debug("log-resolve", "No context to resolve?");
-    return NULL;
+    return nullptr;
   }
 
   if (!format_str) {
     Debug("log-resolve", "No format to resolve?");
-    return NULL;
+    return nullptr;
   }
 
   Debug("log-resolve", "Resolving: %s", format_str);
@@ -1323,8 +1322,8 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   // Divide the format string into two parts: one for the printf-style
   // string and one for the symbols.
   //
-  char *printf_str = NULL;
-  char *fields_str = NULL;
+  char *printf_str = nullptr;
+  char *fields_str = nullptr;
   int n_fields     = LogFormat::parse_format_string(format_str, &printf_str, &fields_str);
 
   //
@@ -1349,7 +1348,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
     Error("format_str contains %d invalid field symbols", n_fields - field_count);
     ats_free(printf_str);
     ats_free(fields_str);
-    return NULL;
+    return nullptr;
   }
   //
   // Ok, now marshal the data out of the LogAccess object and into a
@@ -1378,7 +1377,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
 
   if (!bytes_resolved) {
     ats_free(result);
-    result = NULL;
+    result = nullptr;
   } else {
     result[bytes_resolved] = 0; // NULL terminate
   }

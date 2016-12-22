@@ -49,6 +49,7 @@
 #endif
 
 #define INK_MUTEX_INIT PTHREAD_MUTEX_INITIALIZER
+#define INK_THREAD_STACK_MIN PTHREAD_STACK_MIN
 
 typedef pthread_t ink_thread;
 typedef pthread_cond_t ink_cond;
@@ -127,7 +128,7 @@ ink_thread_key_delete(ink_thread_key key)
 }
 
 static inline ink_thread
-ink_thread_create(void *(*f)(void *), void *a, int detached = 0, size_t stacksize = 0)
+ink_thread_create(void *(*f)(void *), void *a, int detached, size_t stacksize, void *stack)
 {
   ink_thread t;
   int ret;
@@ -137,7 +138,11 @@ ink_thread_create(void *(*f)(void *), void *a, int detached = 0, size_t stacksiz
   pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 
   if (stacksize) {
-    pthread_attr_setstacksize(&attr, stacksize);
+    if (stack) {
+      pthread_attr_setstack(&attr, stack, stacksize);
+    } else {
+      pthread_attr_setstacksize(&attr, stacksize);
+    }
   }
 
   if (detached) {
@@ -145,14 +150,12 @@ ink_thread_create(void *(*f)(void *), void *a, int detached = 0, size_t stacksiz
   }
 
   ret = pthread_create(&t, &attr, f, a);
-  ink_assert(ret == 0);
+  if (ret != 0) {
+    ink_abort("pthread_create() failed: %s (%d)", strerror(ret), ret);
+  }
   pthread_attr_destroy(&attr);
 
-  /**
-   * Fix for INKqa10118.
-   * If the thread has not been created successfully return 0.
-   */
-  return ret ? (ink_thread)0 : t;
+  return t;
 }
 
 static inline void
@@ -179,6 +182,12 @@ static inline ink_thread
 ink_thread_self()
 {
   return (pthread_self());
+}
+
+static inline ink_thread
+ink_thread_null()
+{
+  return (ink_thread)0;
 }
 
 static inline int
@@ -221,7 +230,7 @@ void ink_sem_post(ink_semaphore *sp);
 static inline void
 ink_cond_init(ink_cond *cp)
 {
-  ink_assert(pthread_cond_init(cp, NULL) == 0);
+  ink_assert(pthread_cond_init(cp, nullptr) == 0);
 }
 
 static inline void

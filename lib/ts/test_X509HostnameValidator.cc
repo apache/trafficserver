@@ -96,7 +96,7 @@ static X509 *
 load_cert_from_string(const char *cert_string)
 {
   BIO *bio = BIO_new_mem_buf((void *)cert_string, -1);
-  return PEM_read_bio_X509(bio, NULL, 0, NULL);
+  return PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
 }
 
 REGRESSION_TEST(CN_match)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
@@ -106,10 +106,11 @@ REGRESSION_TEST(CN_match)(RegressionTest *t, int /* atype ATS_UNUSED */, int *ps
 
   box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn);
-  box.check(x != NULL, "failed to load the test certificate");
+  box.check(x != nullptr, "failed to load the test certificate");
   box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true, "Hostname should match");
   box.check(strcmp(test_certificate_cn_name, matching) == 0, "Return hostname doesn't match lookup");
-  box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name + 1, false, NULL) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name + 1, false, nullptr) == false,
+            "Hostname shouldn't match");
   ats_free(matching);
 }
 
@@ -119,12 +120,12 @@ REGRESSION_TEST(bad_wildcard_SANs)(RegressionTest *t, int /* atype ATS_UNUSED */
 
   box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_bad_sans);
-  box.check(x != NULL, "failed to load the test certificate");
-  box.check(validate_hostname(x, (unsigned char *)"something.or.other", false, NULL) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"a.b.c", false, NULL) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"0.0.0.0", true, NULL) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"......", true, NULL) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"a.b", true, NULL) == false, "Hostname shouldn't match");
+  box.check(x != nullptr, "failed to load the test certificate");
+  box.check(validate_hostname(x, (unsigned char *)"something.or.other", false, nullptr) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"a.b.c", false, nullptr) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"0.0.0.0", true, nullptr) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"......", true, nullptr) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"a.b", true, nullptr) == false, "Hostname shouldn't match");
 }
 
 REGRESSION_TEST(wildcard_SAN_and_CN)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
@@ -134,7 +135,7 @@ REGRESSION_TEST(wildcard_SAN_and_CN)(RegressionTest *t, int /* atype ATS_UNUSED 
 
   box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
-  box.check(x != NULL, "failed to load the test certificate");
+  box.check(x != nullptr, "failed to load the test certificate");
   box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true, "Hostname should match");
   box.check(strcmp(test_certificate_cn_name, matching) == 0, "Return hostname doesn't match lookup");
   ats_free(matching);
@@ -142,7 +143,7 @@ REGRESSION_TEST(wildcard_SAN_and_CN)(RegressionTest *t, int /* atype ATS_UNUSED 
   box.check(validate_hostname(x, (unsigned char *)"a.trafficserver.org", false, &matching) == true, "Hostname should match");
   box.check(strcmp("*.trafficserver.org", matching) == 0, "Return hostname doesn't match lookup");
 
-  box.check(validate_hostname(x, (unsigned char *)"a.*.trafficserver.org", false, NULL) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"a.*.trafficserver.org", false, nullptr) == false, "Hostname shouldn't match");
   ats_free(matching);
 }
 
@@ -152,7 +153,7 @@ REGRESSION_TEST(IDNA_hostnames)(RegressionTest *t, int /* atype ATS_UNUSED */, i
   char *matching;
   box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
-  box.check(x != NULL, "failed to load the test certificate");
+  box.check(x != nullptr, "failed to load the test certificate");
   box.check(validate_hostname(x, (unsigned char *)"xn--foobar.trafficserver.org", false, &matching) == true,
             "Hostname should match");
   box.check(strcmp("*.trafficserver.org", matching) == 0, "Return hostname doesn't match lookup");
@@ -169,7 +170,7 @@ REGRESSION_TEST(middle_label_match)(RegressionTest *t, int /* atype ATS_UNUSED *
   char *matching;
   box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
-  box.check(x != NULL, "failed to load the test certificate");
+  box.check(x != nullptr, "failed to load the test certificate");
   box.check(validate_hostname(x, (unsigned char *)"foosomething.trafficserver.com", false, &matching) == true,
             "Hostname should match");
   box.check(strcmp("foo*.trafficserver.com", matching) == 0, "Return hostname doesn't match lookup");
@@ -179,15 +180,16 @@ REGRESSION_TEST(middle_label_match)(RegressionTest *t, int /* atype ATS_UNUSED *
   box.check(strcmp("*bar.trafficserver.net", matching) == 0, "Return hostname doesn't match lookup");
   ats_free(matching);
 
-  box.check(validate_hostname(x, (unsigned char *)"a.bar.trafficserver.net", false, NULL) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"foo.bar.trafficserver.net", false, NULL) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"a.bar.trafficserver.net", false, nullptr) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"foo.bar.trafficserver.net", false, nullptr) == false,
+            "Hostname shouldn't match");
 }
 
 int
 main(int argc, const char **argv)
 {
   BaseLogFile *blf = new BaseLogFile("stdout");
-  diags            = new Diags(NULL, NULL, blf);
+  diags            = new Diags("test_x509", nullptr, nullptr, blf);
   res_track_memory = 1;
 
   SSL_library_init();

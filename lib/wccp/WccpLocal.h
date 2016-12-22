@@ -119,7 +119,7 @@ public:
   /// Get address of first byte.
   char *getBase();
   /// Get address of first byte.
-  char const *getBase() const;
+  const char *getBase() const;
   /// Get the remaining space in the buffer.
   size_t getSpace() const;
   /// Mark additional space in use.
@@ -1027,13 +1027,13 @@ public:
   /// Set the global / default security key.
   /// This is used for the security hash unless the local key is set.
   /// @a key is copied to a global buffer and clipped to @c KEY_SIZE bytes.
-  static void setDefaultKey(char const *key ///< Shared key.
+  static void setDefaultKey(const char *key ///< Shared key.
                             );
   static void setDefaultOption(Option opt ///< Type of security.
                                );
 
   /// Set messsage local security key.
-  self &setKey(char const *key ///< Shared key.
+  self &setKey(const char *key ///< Shared key.
                );
 
   /// Compute and set the security data.
@@ -1891,7 +1891,7 @@ struct IpHeader {
 };
 
 // Various static values.
-char const *const BUFFER_TOO_SMALL_FOR_COMP_TEXT = "Unable to write component -- buffer too small";
+const char *const BUFFER_TOO_SMALL_FOR_COMP_TEXT = "Unable to write component -- buffer too small";
 
 // ------------------------------------------------------
 namespace detail
@@ -1991,7 +1991,7 @@ namespace detail
       /// Default constructor.
       GroupData();
       /// Use @a key instead of global default.
-      self &setKey(char const *key ///< Shared key.
+      self &setKey(const char *key ///< Shared key.
                    );
       /// Use security @a style instead of global default.
       self &setSecurity(SecurityOption style ///< Security style to use.
@@ -2421,7 +2421,7 @@ namespace detail
       self &viewChanged(time_t now);
 
       /// Use @a key instead of global default.
-      self &setKey(char const *key ///< Shared key.
+      self &setKey(const char *key ///< Shared key.
                    );
       /// Use security @a style instead of global default.
       self &setSecurity(SecurityOption style ///< Security style to use.
@@ -2478,7 +2478,7 @@ public:
                    );
 
   /// Define services from a configuration file.
-  ts::Errata loadServicesFromFile(char const *path ///< Path to file.
+  ts::Errata loadServicesFromFile(const char *path ///< Path to file.
                                   );
 
   /// Override.
@@ -3305,7 +3305,7 @@ MsgBuffer::getBase()
 {
   return _ptr;
 }
-inline char const *
+inline const char *
 MsgBuffer::getBase() const
 {
   return _ptr;

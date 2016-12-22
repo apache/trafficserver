@@ -604,7 +604,7 @@ set-header
 Replaces the value of header ``<name>`` with ``<value>``, creating the header
 if necessary.
 
-The header's ``<value>`` may be specified according to `Header Value`_ or take
+The header's ``<value>`` may be specified according to `Header Values`_ or take
 advantage of `Variable Expansion`_ to calculate a dynamic value for the header.
 
 set-redirect

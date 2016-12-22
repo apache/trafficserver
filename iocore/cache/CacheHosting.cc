@@ -28,13 +28,13 @@
 
 extern int gndisks;
 
-matcher_tags CacheHosting_tags = {"hostname", "domain", NULL, NULL, NULL, NULL, 0};
+matcher_tags CacheHosting_tags = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, 0};
 
 /*************************************************************
  *   Begin class HostMatcher
  *************************************************************/
 
-CacheHostMatcher::CacheHostMatcher(const char *name, CacheType typ) : data_array(NULL), array_len(-1), num_el(-1), type(typ)
+CacheHostMatcher::CacheHostMatcher(const char *name, CacheType typ) : data_array(nullptr), array_len(-1), num_el(-1), type(typ)
 {
   host_lookup = new HostLookup(name);
 }
@@ -95,7 +95,7 @@ CacheHostMatcher::AllocateSpace(int num_entries)
 //    arg hostname
 //
 void
-CacheHostMatcher::Match(char const *rdata, int rlen, CacheHostResult *result)
+CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result)
 {
   void *opaque_ptr;
   CacheHostRecord *data_ptr;
@@ -117,7 +117,7 @@ CacheHostMatcher::Match(char const *rdata, int rlen, CacheHostResult *result)
   r = host_lookup->MatchFirst(data, &s, &opaque_ptr);
 
   while (r == true) {
-    ink_assert(opaque_ptr != NULL);
+    ink_assert(opaque_ptr != nullptr);
     data_ptr = (CacheHostRecord *)opaque_ptr;
     data_ptr->UpdateMatch(result, data);
 
@@ -151,11 +151,11 @@ CacheHostMatcher::NewEntry(matcher_line *line_info)
 
   // Make sure that the line_info is not bogus
   ink_assert(line_info->dest_entry < MATCHER_MAX_TOKENS);
-  ink_assert(match_data != NULL);
+  ink_assert(match_data != nullptr);
 
   // Remove our consumed label from the parsed line
   if (line_info->dest_entry < MATCHER_MAX_TOKENS)
-    line_info->line[0][line_info->dest_entry] = NULL;
+    line_info->line[0][line_info->dest_entry] = nullptr;
   line_info->num_el--;
 
   // Fill in the parameter info
@@ -184,13 +184,13 @@ CacheHostTable::CacheHostTable(Cache *c, CacheType typ)
   ats_scoped_str config_path;
 
   config_tags = &CacheHosting_tags;
-  ink_assert(config_tags != NULL);
+  ink_assert(config_tags != nullptr);
 
   type         = typ;
   cache        = c;
   matcher_name = "[CacheHosting]";
   ;
-  hostMatch = NULL;
+  hostMatch = nullptr;
 
   config_path = RecConfigReadConfigPath("proxy.config.cache.hosting_filename");
   ink_release_assert(config_path);
@@ -200,7 +200,7 @@ CacheHostTable::CacheHostTable(Cache *c, CacheType typ)
 
 CacheHostTable::~CacheHostTable()
 {
-  if (hostMatch != NULL) {
+  if (hostMatch != nullptr) {
     delete hostMatch;
   }
 }
@@ -213,7 +213,7 @@ void
 CacheHostTable::Print()
 {
   printf("Control Matcher Table: %s\n", matcher_name);
-  if (hostMatch != NULL) {
+  if (hostMatch != nullptr) {
     hostMatch->Print();
   }
 }
@@ -224,7 +224,7 @@ CacheHostTable::Print()
 //   Queries each table for the Result*
 //
 void
-CacheHostTable::Match(char const *rdata, int rlen, CacheHostResult *result)
+CacheHostTable::Match(const char *rdata, int rlen, CacheHostResult *result)
 {
   hostMatch->Match(rdata, rlen, result);
 }
@@ -252,13 +252,13 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   Tokenizer bufTok("\n");
   tok_iter_state i_state;
   const char *tmp;
-  matcher_line *first = NULL;
+  matcher_line *first = nullptr;
   matcher_line *current;
-  matcher_line *last = NULL;
+  matcher_line *last = nullptr;
   int line_num       = 0;
   int second_pass    = 0;
   int numEntries     = 0;
-  const char *errPtr = NULL;
+  const char *errPtr = nullptr;
 
   // type counts
   int hostDomain = 0;
@@ -273,7 +273,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   }
   // First get the number of entries
   tmp = bufTok.iterFirst(&i_state);
-  while (tmp != NULL) {
+  while (tmp != nullptr) {
     line_num++;
 
     // skip all blank spaces at beginning of line
@@ -285,7 +285,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
       current = (matcher_line *)ats_malloc(sizeof(matcher_line));
       errPtr  = parseConfigLine((char *)tmp, current, config_tags);
 
-      if (errPtr != NULL) {
+      if (errPtr != nullptr) {
         RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s", matcher_name, config_file_path,
                          line_num, errPtr);
         ats_free(current);
@@ -305,8 +305,8 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
           ink_assert(0);
         }
 
-        if (first == NULL) {
-          ink_assert(last == NULL);
+        if (first == nullptr) {
+          ink_assert(last == nullptr);
           first = last = current;
         } else {
           last->next = current;
@@ -326,7 +326,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
       Warning("Problems encountered while initializing the Generic Volume");
     }
 
-    if (first != NULL) {
+    if (first != nullptr) {
       ats_free(first);
     }
     return 0;
@@ -339,11 +339,11 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   // Traverse the list and build the records table
   int generic_rec_initd = 0;
   current               = first;
-  while (current != NULL) {
+  while (current != nullptr) {
     second_pass++;
     if ((current->type == MATCH_DOMAIN) || (current->type == MATCH_HOST)) {
       char *match_data = current->line[1][current->dest_entry];
-      ink_assert(match_data != NULL);
+      ink_assert(match_data != nullptr);
 
       if (!strcasecmp(match_data, "*")) {
         // generic volume - initialize the generic hostrecord */
@@ -352,7 +352,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 
         // Remove our consumed label from the parsed line
         if (current->dest_entry < MATCHER_MAX_TOKENS)
-          current->line[0][current->dest_entry] = NULL;
+          current->line[0][current->dest_entry] = nullptr;
         else
           Warning("Problems encountered while initializing the Generic Volume");
 
@@ -397,9 +397,9 @@ CacheHostTable::BuildTable(const char *config_file_path)
   char *file_buf;
   int ret;
 
-  file_buf = readIntoBuffer(config_file_path, matcher_name, NULL);
+  file_buf = readIntoBuffer(config_file_path, matcher_name, nullptr);
 
-  if (file_buf == NULL) {
+  if (file_buf == nullptr) {
     Warning("Cannot read the config file: %s", config_file_path);
     gen_host_rec.Init(type);
     return 0;
@@ -482,7 +482,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
             const char *errptr = "A volume number expected";
             RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d :%s", "[CacheHosting]", config_file,
                              line_info->line_num, errptr);
-            if (val != NULL) {
+            if (val != nullptr) {
               ats_free(val);
             }
             return -1;
@@ -491,7 +491,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
         if ((*s < '0') || (*s > '9')) {
           RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : bad token [%c]", "[CacheHosting]",
                            config_file, line_info->line_num, *s);
-          if (val != NULL) {
+          if (val != nullptr) {
             ats_free(val);
           }
           return -1;
@@ -526,7 +526,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
           if (!is_vol_present) {
             RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : bad volume number [%d]",
                              "[CacheHosting]", config_file, line_info->line_num, volume_number);
-            if (val != NULL) {
+            if (val != nullptr) {
               ats_free(val);
             }
             return -1;
@@ -537,7 +537,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
         }
         s++;
       }
-      if (val != NULL) {
+      if (val != nullptr) {
         ats_free(val);
       }
       break;
@@ -591,8 +591,8 @@ ConfigVolumes::read_config_file()
   config_path = RecConfigReadConfigPath("proxy.config.cache.volume_filename");
   ink_release_assert(config_path);
 
-  file_buf = readIntoBuffer(config_path, "[CacheVolition]", NULL);
-  if (file_buf == NULL) {
+  file_buf = readIntoBuffer(config_path, "[CacheVolition]", nullptr);
+  if (file_buf == nullptr) {
     Warning("Cannot read the config file: %s", (const char *)config_path);
     return;
   }
@@ -628,12 +628,12 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 
   // First get the number of entries
   tmp = bufTok.iterFirst(&i_state);
-  while (tmp != NULL) {
+  while (tmp != nullptr) {
     line_num++;
 
     char *end;
-    char *line_end    = NULL;
-    const char *err   = NULL;
+    char *line_end    = nullptr;
+    const char *err   = nullptr;
     int volume_number = 0;
     CacheType scheme  = CACHE_NONE_TYPE;
     int size          = 0;
@@ -746,7 +746,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       }
       configp->scheme = scheme;
       configp->size   = size;
-      configp->cachep = NULL;
+      configp->cachep = nullptr;
       cp_queue.enqueue(configp);
       num_volumes++;
       if (scheme == CACHE_HTTP_TYPE) {
@@ -791,7 +791,7 @@ static void restore_state();
 EXCLUSIVE_REGRESSION_TEST(Cache_vol)(RegressionTest *t, int /* atype ATS_UNUSED */, int *status)
 {
   save_state();
-  srand48(time(NULL));
+  srand48(time(nullptr));
   *status = REGRESSION_TEST_PASSED;
   for (int i = 0; i < configs; i++) {
     if (create_config(t, i)) {
@@ -829,7 +829,7 @@ create_config(RegressionTest *t, int num)
         cp->scheme     = CACHE_HTTP_TYPE;
         cp->size       = 128;
         cp->in_percent = 0;
-        cp->cachep     = 0;
+        cp->cachep     = nullptr;
         config_volumes.cp_queue.enqueue(cp);
         config_volumes.num_volumes++;
         config_volumes.num_http_volumes++;
@@ -868,7 +868,7 @@ create_config(RegressionTest *t, int num)
       cp->size       = 10;
       cp->percent    = 10;
       cp->in_percent = 1;
-      cp->cachep     = 0;
+      cp->cachep     = nullptr;
       config_volumes.cp_queue.enqueue(cp);
       config_volumes.num_volumes++;
       config_volumes.num_http_volumes++;
@@ -926,7 +926,7 @@ create_config(RegressionTest *t, int num)
       cp->size       = random_size >> 20;
       cp->percent    = 0;
       cp->in_percent = 0;
-      cp->cachep     = 0;
+      cp->cachep     = nullptr;
       config_volumes.cp_queue.enqueue(cp);
       config_volumes.num_volumes++;
       if (cp->scheme == CACHE_HTTP_TYPE) {
@@ -1035,7 +1035,7 @@ int
 ClearConfigVol(ConfigVolumes *configp)
 {
   int i         = 0;
-  ConfigVol *cp = NULL;
+  ConfigVol *cp = nullptr;
   while ((cp = configp->cp_queue.dequeue())) {
     delete cp;
     i++;
@@ -1054,7 +1054,7 @@ int
 ClearCacheVolList(Queue<CacheVol> *cpl, int len)
 {
   int i        = 0;
-  CacheVol *cp = NULL;
+  CacheVol *cp = nullptr;
   while ((cp = cpl->dequeue())) {
     ats_free(cp->disk_vols);
     ats_free(cp->vols);

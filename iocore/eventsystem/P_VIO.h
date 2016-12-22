@@ -26,7 +26,7 @@
 #include "I_VIO.h"
 
 TS_INLINE
-VIO::VIO(int aop) : _cont(NULL), nbytes(0), ndone(0), op(aop), buffer(), vc_server(0), mutex(0)
+VIO::VIO(int aop) : _cont(nullptr), nbytes(0), ndone(0), op(aop), buffer(), vc_server(0), mutex(0)
 {
 }
 
@@ -93,8 +93,8 @@ VIO::set_continuation(Continuation *acont)
     mutex = acont->mutex;
     _cont = acont;
   } else {
-    mutex = NULL;
-    _cont = NULL;
+    mutex = nullptr;
+    _cont = nullptr;
   }
   return;
 }

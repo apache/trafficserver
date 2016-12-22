@@ -116,7 +116,7 @@ void
 HashTxnKey(TSHttpTxn txn, TSRemapRequestInfo *rri, MD5_CTX *ctx)
 {
   TSMLoc url = TS_NULL_MLOC;
-  char *str  = NULL;
+  char *str  = nullptr;
   int len;
 
   if (TSUrlCreate(rri->requestBufp, &url) != TS_SUCCESS) {
@@ -207,7 +207,7 @@ MakeHashBalancer(const char *options)
   if (options) {
     hash->hash_parts.clear(); // clear the default hash type if we have options
     options = tmp = strdup(options);
-    while ((opt = strsep(&tmp, ",")) != NULL) {
+    while ((opt = strsep(&tmp, ",")) != nullptr) {
       if (strcmp(opt, "key") == 0) {
         hash->hash_parts.push_back(HashTxnKey);
       } else if (strcmp(opt, "url") == 0) {

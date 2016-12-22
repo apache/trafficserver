@@ -242,7 +242,7 @@ should be carefully considered and closely monitored.
 Default Inactivity Timeout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The :ts:cv:`proxy.process.net.default_inactivity_timeout` setting is applied to
+The :ts:cv:`proxy.config.net.default_inactivity_timeout` setting is applied to
 the HTTP state machine when no other inactivity timeouts have been applied. In
 effect, it sets an upper limit, in seconds, on state machine inactivity.
 
@@ -318,7 +318,7 @@ keepalive timeout which (if set lower) will likely take precedence.
 
 ::
 
-    CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
+    CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
     CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
 
 Origin Connection Timeouts

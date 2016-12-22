@@ -235,7 +235,7 @@ getUri(TSMBuffer buf, TSMLoc url)
   String uri;
   int uriLen;
   const char *uriPtr = TSUrlStringGet(buf, url, &uriLen);
-  if (NULL != uriPtr && 0 != uriLen) {
+  if (nullptr != uriPtr && 0 != uriLen) {
     uri.assign(uriPtr, uriLen);
     TSfree((void *)uriPtr);
   } else {
@@ -268,7 +268,7 @@ CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &pr
 
   int hostLen;
   const char *hostPtr = TSUrlHostGet(_buf, _url, &hostLen);
-  if (NULL != hostPtr && 0 != hostLen) {
+  if (nullptr != hostPtr && 0 != hostLen) {
     host.assign(hostPtr, hostLen);
   } else {
     CacheKeyError("failed to get host");
@@ -330,7 +330,7 @@ CacheKey::appendPath(Pattern &pathCapture, Pattern &pathCaptureUri)
 
   int pathLen;
   const char *pathPtr = TSUrlPathGet(_buf, _url, &pathLen);
-  if (NULL != pathPtr && 0 != pathLen) {
+  if (nullptr != pathPtr && 0 != pathLen) {
     path.assign(pathPtr, pathLen);
   }
 
@@ -399,7 +399,7 @@ CacheKey::appendHeaders(const ConfigHeaders &config)
 
       for (int i = 0; i < count; ++i) {
         value = TSMimeHdrFieldValueStringGet(_buf, _hdrs, field, i, &vlen);
-        if (value == NULL || vlen == 0) {
+        if (value == nullptr || vlen == 0) {
           CacheKeyDebug("missing value %d for header %s", i, name_s.c_str());
           continue;
         }
@@ -448,7 +448,7 @@ CacheKey::appendCookies(const ConfigCookies &config)
       int len;
 
       value = TSMimeHdrFieldValueStringGet(_buf, _hdrs, field, i, &len);
-      if (value == NULL || len == 0) {
+      if (value == nullptr || len == 0) {
         continue;
       }
 
@@ -494,7 +494,7 @@ CacheKey::appendQuery(const ConfigQuery &config)
   int length;
 
   query = TSUrlHttpQueryGet(_buf, _url, &length);
-  if (query == NULL || length == 0) {
+  if (query == nullptr || length == 0) {
     return;
   }
 

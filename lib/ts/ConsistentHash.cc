@@ -80,7 +80,7 @@ ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, AT
   } else if (hash) {
     thash = hash;
   } else {
-    return NULL;
+    return nullptr;
   }
 
   if (w) {
@@ -117,7 +117,7 @@ ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, AT
   }
 
   if (*wptr && *iter == NodeMap.end()) {
-    return NULL;
+    return nullptr;
   }
 
   return (*iter)->second;
@@ -136,7 +136,7 @@ ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, b
   } else if (hash) {
     thash = hash;
   } else {
-    return NULL;
+    return nullptr;
   }
 
   if (w) {
@@ -172,7 +172,7 @@ ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, b
       *wptr = true;
       *iter = NodeMap.begin();
     } else if (*wptr && *iter == NodeMap.end()) {
-      return NULL;
+      return nullptr;
     }
   }
 

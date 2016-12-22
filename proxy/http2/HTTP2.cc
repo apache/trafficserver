@@ -47,19 +47,19 @@ static size_t HTTP2_LEN_STATUS_VALUE_STR = 3;
 
 // Statistics
 RecRawStatBlock *http2_rsb;
-static char const *const HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME  = "proxy.process.http2.current_client_sessions";
-static char const *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME   = "proxy.process.http2.current_client_streams";
-static char const *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME     = "proxy.process.http2.total_client_streams";
-static char const *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.process.http2.total_transactions_time";
-static char const *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.http2.total_client_connections";
-static char const *const HTTP2_STAT_CONNECTION_ERRORS_NAME       = "proxy.process.http2.connection_errors";
-static char const *const HTTP2_STAT_STREAM_ERRORS_NAME           = "proxy.process.http2.stream_errors";
-static char const *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME     = "proxy.process.http2.session_die_default";
-static char const *const HTTP2_STAT_SESSION_DIE_OTHER_NAME       = "proxy.process.http2.session_die_other";
-static char const *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME      = "proxy.process.http2.session_die_active";
-static char const *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME    = "proxy.process.http2.session_die_inactive";
-static char const *const HTTP2_STAT_SESSION_DIE_EOS_NAME         = "proxy.process.http2.session_die_eos";
-static char const *const HTTP2_STAT_SESSION_DIE_ERROR_NAME       = "proxy.process.http2.session_die_error";
+static const char *const HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME  = "proxy.process.http2.current_client_sessions";
+static const char *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME   = "proxy.process.http2.current_client_streams";
+static const char *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME     = "proxy.process.http2.total_client_streams";
+static const char *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.process.http2.total_transactions_time";
+static const char *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.http2.total_client_connections";
+static const char *const HTTP2_STAT_CONNECTION_ERRORS_NAME       = "proxy.process.http2.connection_errors";
+static const char *const HTTP2_STAT_STREAM_ERRORS_NAME           = "proxy.process.http2.stream_errors";
+static const char *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME     = "proxy.process.http2.session_die_default";
+static const char *const HTTP2_STAT_SESSION_DIE_OTHER_NAME       = "proxy.process.http2.session_die_other";
+static const char *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME      = "proxy.process.http2.session_die_active";
+static const char *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME    = "proxy.process.http2.session_die_inactive";
+static const char *const HTTP2_STAT_SESSION_DIE_EOS_NAME         = "proxy.process.http2.session_die_eos";
+static const char *const HTTP2_STAT_SESSION_DIE_ERROR_NAME       = "proxy.process.http2.session_die_error";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -326,6 +326,15 @@ http2_write_window_update(const uint32_t new_size, const IOVec &iov)
 }
 
 bool
+http2_write_push_promise(const Http2PushPromise &push_promise, const uint8_t *src, size_t length, const IOVec &iov)
+{
+  byte_pointer ptr(iov.iov_base);
+  write_and_advance(ptr, push_promise.promised_streamid);
+  write_and_advance(ptr, src, length);
+  return true;
+}
+
+bool
 http2_parse_headers_parameter(IOVec iov, Http2HeadersParameter &params)
 {
   byte_pointer ptr(iov.iov_base);
@@ -425,19 +434,19 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     int scheme_len, authority_len, path_len, method_len;
 
     // Get values of :scheme, :authority and :path to assemble requested URL
-    if ((field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME)) != NULL && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME)) != nullptr && field->value_is_valid()) {
       scheme = field->value_get(&scheme_len);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
-    if ((field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY)) != NULL && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY)) != nullptr && field->value_is_valid()) {
       authority = field->value_get(&authority_len);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
-    if ((field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH)) != NULL && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH)) != nullptr && field->value_is_valid()) {
       path = field->value_get(&path_len);
     } else {
       return PARSE_RESULT_ERROR;
@@ -457,7 +466,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     arena.str_free(url);
 
     // Get value of :method
-    if ((field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD)) != NULL && field->value_is_valid()) {
+    if ((field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD)) != nullptr && field->value_is_valid()) {
       method = field->value_get(&method_len);
 
       int method_wks_idx = hdrtoken_tokenize(method, method_len);
@@ -485,7 +494,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     int status_len;
     const char *status;
 
-    if ((field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS)) != NULL) {
+    if ((field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS)) != nullptr) {
       status = field->value_get(&status_len);
       headers->status_set(http_parse_status(status, status + status_len));
     } else {
@@ -498,7 +507,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 
   // Check validity of all names and values
   MIMEFieldIter iter;
-  for (const MIMEField *field = headers->iter_get_first(&iter); field != NULL; field = headers->iter_get_next(&iter)) {
+  for (const MIMEField *field = headers->iter_get_first(&iter); field != nullptr; field = headers->iter_get_next(&iter)) {
     if (!field->name_is_valid() || !field->value_is_valid()) {
       return PARSE_RESULT_ERROR;
     }
@@ -513,37 +522,77 @@ http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
   h2_headers->create(http_hdr_type_get(headers->m_http));
 
   if (http_hdr_type_get(headers->m_http) == HTTP_TYPE_RESPONSE) {
+    // Add ':status' header field
     char status_str[HTTP2_LEN_STATUS_VALUE_STR + 1];
     snprintf(status_str, sizeof(status_str), "%d", headers->status_get());
-
-    // Add ':status' header field
     MIMEField *status_field = h2_headers->field_create(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS);
     status_field->value_set(h2_headers->m_heap, h2_headers->m_mime, status_str, HTTP2_LEN_STATUS_VALUE_STR);
     h2_headers->field_attach(status_field);
 
-    MIMEFieldIter field_iter;
-    for (MIMEField *field = headers->iter_get_first(&field_iter); field != NULL; field = headers->iter_get_next(&field_iter)) {
-      // Intermediaries SHOULD remove connection-specific header fields.
-      const char *name;
-      int name_len;
-      const char *value;
-      int value_len;
-      name = field->name_get(&name_len);
-      if ((name_len == MIME_LEN_CONNECTION && strncasecmp(name, MIME_FIELD_CONNECTION, name_len) == 0) ||
-          (name_len == MIME_LEN_KEEP_ALIVE && strncasecmp(name, MIME_FIELD_KEEP_ALIVE, name_len) == 0) ||
-          (name_len == MIME_LEN_PROXY_CONNECTION && strncasecmp(name, MIME_FIELD_PROXY_CONNECTION, name_len) == 0) ||
-          (name_len == MIME_LEN_TRANSFER_ENCODING && strncasecmp(name, MIME_FIELD_TRANSFER_ENCODING, name_len) == 0) ||
-          (name_len == MIME_LEN_UPGRADE && strncasecmp(name, MIME_FIELD_UPGRADE, name_len) == 0)) {
-        continue;
-      }
+  } else if (http_hdr_type_get(headers->m_http) == HTTP_TYPE_REQUEST) {
+    MIMEField *field;
+    const char *value;
+    int value_len;
 
-      MIMEField *newfield;
-      name     = field->name_get(&name_len);
-      newfield = h2_headers->field_create(name, name_len);
-      value    = field->value_get(&value_len);
-      newfield->value_set(h2_headers->m_heap, h2_headers->m_mime, value, value_len);
-      h2_headers->field_attach(newfield);
+    // Add ':authority' header field
+    field = h2_headers->field_create(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
+    value = headers->host_get(&value_len);
+    if (headers->is_port_in_header()) {
+      int port            = headers->port_get();
+      char *host_and_port = (char *)ats_malloc(value_len + 8);
+      value_len           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value, port);
+      field->value_set(h2_headers->m_heap, h2_headers->m_mime, host_and_port, value_len);
+      ats_free(host_and_port);
+    } else {
+      field->value_set(h2_headers->m_heap, h2_headers->m_mime, value, value_len);
     }
+    h2_headers->field_attach(field);
+
+    // Add ':method' header field
+    field = h2_headers->field_create(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD);
+    value = headers->method_get(&value_len);
+    field->value_set(h2_headers->m_heap, h2_headers->m_mime, value, value_len);
+    h2_headers->field_attach(field);
+
+    // Add ':path' header field
+    field      = h2_headers->field_create(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
+    value      = headers->path_get(&value_len);
+    char *path = (char *)ats_malloc(value_len + 1);
+    path[0]    = '/';
+    memcpy(path + 1, value, value_len);
+    field->value_set(h2_headers->m_heap, h2_headers->m_mime, path, value_len + 1);
+    ats_free(path);
+    h2_headers->field_attach(field);
+
+    // Add ':scheme' header field
+    field = h2_headers->field_create(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME);
+    value = headers->scheme_get(&value_len);
+    field->value_set(h2_headers->m_heap, h2_headers->m_mime, value, value_len);
+    h2_headers->field_attach(field);
+  }
+
+  // Copy headers
+  // Intermediaries SHOULD remove connection-specific header fields.
+  MIMEFieldIter field_iter;
+  for (MIMEField *field = headers->iter_get_first(&field_iter); field != nullptr; field = headers->iter_get_next(&field_iter)) {
+    const char *name;
+    int name_len;
+    const char *value;
+    int value_len;
+    name = field->name_get(&name_len);
+    if ((name_len == MIME_LEN_CONNECTION && strncasecmp(name, MIME_FIELD_CONNECTION, name_len) == 0) ||
+        (name_len == MIME_LEN_KEEP_ALIVE && strncasecmp(name, MIME_FIELD_KEEP_ALIVE, name_len) == 0) ||
+        (name_len == MIME_LEN_PROXY_CONNECTION && strncasecmp(name, MIME_FIELD_PROXY_CONNECTION, name_len) == 0) ||
+        (name_len == MIME_LEN_TRANSFER_ENCODING && strncasecmp(name, MIME_FIELD_TRANSFER_ENCODING, name_len) == 0) ||
+        (name_len == MIME_LEN_UPGRADE && strncasecmp(name, MIME_FIELD_UPGRADE, name_len) == 0)) {
+      continue;
+    }
+    MIMEField *newfield;
+    name     = field->name_get(&name_len);
+    newfield = h2_headers->field_create(name, name_len);
+    value    = field->value_get(&value_len);
+    newfield->value_set(h2_headers->m_heap, h2_headers->m_mime, value, value_len);
+    h2_headers->field_attach(newfield);
   }
 }
 
@@ -572,12 +621,15 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   const char *value;
   int len;
   bool is_trailing_header = trailing_header;
-  int64_t result          = hpack_decode_header_block(handle, hdr, buf_start, buf_len);
+  int64_t result          = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_request_header_size);
 
   if (result < 0) {
     if (result == HPACK_ERROR_COMPRESSION_ERROR) {
       return HTTP2_ERROR_COMPRESSION_ERROR;
+    } else if (result == HPACK_ERROR_SIZE_EXCEEDED_ERROR) {
+      return HTTP2_ERROR_ENHANCE_YOUR_CALM;
     }
+
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
   if (len_read) {
@@ -591,7 +643,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (is_trailing_header) {
     expected_pseudo_header_count = 0;
   }
-  for (field = hdr->iter_get_first(&iter); field != NULL; field = hdr->iter_get_next(&iter)) {
+  for (field = hdr->iter_get_first(&iter); field != nullptr; field = hdr->iter_get_next(&iter)) {
     value = field->name_get(&len);
     // Pseudo headers must appear before regular headers
     if (len && value[0] == ':') {
@@ -615,7 +667,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 
   // rfc7540,sec8.1.2.2: Any message containing connection-specific header
   // fields MUST be treated as malformed
-  if (hdr->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != NULL) {
+  if (hdr->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != nullptr) {
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
 
@@ -648,11 +700,11 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (!is_trailing_header) {
     // Check pseudo headers
     if (hdr->fields_count() >= 4) {
-      if (hdr->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME) == NULL ||
-          hdr->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD) == NULL ||
-          hdr->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH) == NULL ||
-          hdr->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY) == NULL ||
-          hdr->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS) != NULL) {
+      if (hdr->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME) == nullptr ||
+          hdr->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD) == nullptr ||
+          hdr->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH) == nullptr ||
+          hdr->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY) == nullptr ||
+          hdr->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS) != nullptr) {
         // Decoded header field is invalid
         return HTTP2_ERROR_PROTOCOL_ERROR;
       }

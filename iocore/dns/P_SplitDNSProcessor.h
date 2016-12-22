@@ -173,7 +173,7 @@ DNSRequestData::get_host()
 TS_INLINE sockaddr const *
 DNSRequestData::get_ip()
 {
-  return NULL;
+  return nullptr;
 }
 
 /* --------------------------------------------------------------
@@ -182,7 +182,7 @@ DNSRequestData::get_ip()
 TS_INLINE sockaddr const *
 DNSRequestData::get_client_ip()
 {
-  return NULL;
+  return nullptr;
 }
 
 /* --------------------------------------------------------------

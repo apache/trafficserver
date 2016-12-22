@@ -129,7 +129,7 @@ ts_ctrl_main(void *arg)
   // initialize queue for accepted con
   accepted_con = ink_hash_table_create(InkHashTableKeyType_Word);
   if (!accepted_con) {
-    return NULL;
+    return nullptr;
   }
 
   // now we can start listening, accepting connections and servicing requests
@@ -168,7 +168,7 @@ ts_ctrl_main(void *arg)
     }
 
     // select call - timeout is set so we can check events at regular intervals
-    fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)NULL, (fd_set *)NULL, &timeout);
+    fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)nullptr, (fd_set *)nullptr, &timeout);
 
     // check if have any connections or requests
     if (fds_ready > 0) {
@@ -201,7 +201,7 @@ ts_ctrl_main(void *arg)
           client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
           // got information; check
           if (client_entry->fd && FD_ISSET(client_entry->fd, &selectFDs)) {
-            void *req = NULL;
+            void *req = nullptr;
             size_t reqlen;
 
             ret = preprocess_msg(client_entry->fd, &req, &reqlen);
@@ -255,8 +255,8 @@ ts_ctrl_main(void *arg)
   // all entries should be removed and freed already
   ink_hash_table_destroy(accepted_con);
 
-  ink_thread_exit(NULL);
-  return NULL;
+  ink_thread_exit(nullptr);
+  return nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -307,7 +307,7 @@ send_record_get_response(int fd, const RecRecord *rec)
   MgmtMarshallInt type;
   MgmtMarshallInt rclass;
   MgmtMarshallString name;
-  MgmtMarshallData value = {NULL, 0};
+  MgmtMarshallData value = {nullptr, 0};
 
   if (rec) {
     type   = rec->data_type;
@@ -316,7 +316,7 @@ send_record_get_response(int fd, const RecRecord *rec)
   } else {
     type   = RECD_NULL;
     rclass = RECT_NULL;
-    name   = NULL;
+    name   = nullptr;
   }
 
   switch (type) {
@@ -454,7 +454,7 @@ handle_record_match(int fd, void *req, size_t reqlen)
 
   // If successful, send a list terminator.
   if (match.err == TS_ERR_OKAY) {
-    return send_record_get_response(fd, NULL);
+    return send_record_get_response(fd, nullptr);
   }
 
   return match.err;
@@ -473,8 +473,8 @@ handle_record_set(int fd, void *req, size_t reqlen)
   TSMgmtError ret;
   TSActionNeedT action = TS_ACTION_UNDEFINED;
   MgmtMarshallInt optype;
-  MgmtMarshallString name  = NULL;
-  MgmtMarshallString value = NULL;
+  MgmtMarshallString name  = nullptr;
+  MgmtMarshallString value = nullptr;
 
   ret = recv_mgmt_request(req, reqlen, RECORD_SET, &optype, &name, &value);
   if (ret != TS_ERR_OKAY) {
@@ -517,7 +517,7 @@ handle_file_read(int fd, void *req, size_t reqlen)
 
   MgmtMarshallInt err;
   MgmtMarshallInt vers  = 0;
-  MgmtMarshallData data = {NULL, 0};
+  MgmtMarshallData data = {nullptr, 0};
 
   err = recv_mgmt_request(req, reqlen, FILE_READ, &optype, &fid);
   if (err != TS_ERR_OKAY) {
@@ -551,7 +551,7 @@ handle_file_write(int fd, void *req, size_t reqlen)
   MgmtMarshallInt optype;
   MgmtMarshallInt fid;
   MgmtMarshallInt vers;
-  MgmtMarshallData data = {NULL, 0};
+  MgmtMarshallData data = {nullptr, 0};
 
   MgmtMarshallInt err;
 
@@ -560,7 +560,7 @@ handle_file_write(int fd, void *req, size_t reqlen)
     goto done;
   }
 
-  if (data.ptr == NULL) {
+  if (data.ptr == nullptr) {
     err = TS_ERR_PARAMS;
     goto done;
   }
@@ -684,7 +684,7 @@ static TSMgmtError
 handle_storage_device_cmd_offline(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
-  MgmtMarshallString name = NULL;
+  MgmtMarshallString name = nullptr;
   MgmtMarshallInt err;
 
   err = recv_mgmt_request(req, reqlen, STORAGE_DEVICE_CMD_OFFLINE, &optype, &name);
@@ -707,7 +707,7 @@ static TSMgmtError
 handle_event_resolve(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
-  MgmtMarshallString name = NULL;
+  MgmtMarshallString name = nullptr;
   MgmtMarshallInt err;
 
   err = recv_mgmt_request(req, reqlen, EVENT_RESOLVE, &optype, &name);
@@ -736,7 +736,7 @@ handle_event_get_mlt(int fd, void *req, size_t reqlen)
 
   MgmtMarshallInt optype;
   MgmtMarshallInt err;
-  MgmtMarshallString list = NULL;
+  MgmtMarshallString list = nullptr;
 
   err = recv_mgmt_request(req, reqlen, EVENT_GET_MLT, &optype);
   if (err != TS_ERR_OKAY) {
@@ -781,7 +781,7 @@ handle_event_active(int fd, void *req, size_t reqlen)
 {
   bool active;
   MgmtMarshallInt optype;
-  MgmtMarshallString name = NULL;
+  MgmtMarshallString name = nullptr;
 
   MgmtMarshallInt err;
   MgmtMarshallInt bval = 0;
@@ -816,7 +816,7 @@ static TSMgmtError
 handle_snapshot(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
-  MgmtMarshallString name = NULL;
+  MgmtMarshallString name = nullptr;
 
   MgmtMarshallInt err;
 
@@ -868,7 +868,7 @@ handle_snapshot_get_mlt(int fd, void *req, size_t reqlen)
 
   MgmtMarshallInt optype;
   MgmtMarshallInt err;
-  MgmtMarshallString list = NULL;
+  MgmtMarshallString list = nullptr;
 
   err = recv_mgmt_request(req, reqlen, SNAPSHOT_GET_MLT, &optype);
   if (err != TS_ERR_OKAY) {
@@ -911,7 +911,7 @@ static TSMgmtError
 handle_stats_reset(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
-  MgmtMarshallString name = NULL;
+  MgmtMarshallString name = nullptr;
   MgmtMarshallInt err;
 
   err = recv_mgmt_request(req, reqlen, STATS_RESET_NODE, &optype, &name);
@@ -944,7 +944,7 @@ handle_server_backtrace(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
   MgmtMarshallInt options;
-  MgmtMarshallString trace = NULL;
+  MgmtMarshallString trace = nullptr;
   MgmtMarshallInt err;
 
   err = recv_mgmt_request(req, reqlen, SERVER_BACKTRACE, &optype, &options);
@@ -961,9 +961,9 @@ handle_server_backtrace(int fd, void *req, size_t reqlen)
 static void
 send_record_describe(const RecRecord *rec, void *edata)
 {
-  MgmtMarshallString rec_name      = NULL;
-  MgmtMarshallData rec_value       = {NULL, 0};
-  MgmtMarshallData rec_default     = {NULL, 0};
+  MgmtMarshallString rec_name      = nullptr;
+  MgmtMarshallData rec_value       = {nullptr, 0};
+  MgmtMarshallData rec_default     = {nullptr, 0};
   MgmtMarshallInt rec_type         = TS_REC_UNDEFINED;
   MgmtMarshallInt rec_class        = RECT_NULL;
   MgmtMarshallInt rec_version      = 0;
@@ -974,7 +974,7 @@ send_record_describe(const RecRecord *rec, void *edata)
   MgmtMarshallInt rec_updatetype   = 0;
   MgmtMarshallInt rec_checktype    = RECC_NULL;
   MgmtMarshallInt rec_source       = REC_SOURCE_NULL;
-  MgmtMarshallString rec_checkexpr = NULL;
+  MgmtMarshallString rec_checkexpr = nullptr;
 
   TSMgmtError err = TS_ERR_OKAY;
 
@@ -1070,7 +1070,7 @@ handle_record_describe(int fd, void *req, size_t reqlen)
 
     // If successful, send a list terminator.
     if (match.err == TS_ERR_OKAY) {
-      send_record_describe(NULL, &match);
+      send_record_describe(nullptr, &match);
     }
 
   } else {
@@ -1130,9 +1130,9 @@ static const control_message_handler handlers[] = {
   /* EVENT_RESOLVE              */ {MGMT_API_PRIVILEGED, handle_event_resolve},
   /* EVENT_GET_MLT              */ {0, handle_event_get_mlt},
   /* EVENT_ACTIVE               */ {0, handle_event_active},
-  /* EVENT_REG_CALLBACK         */ {0, NULL},
-  /* EVENT_UNREG_CALLBACK       */ {0, NULL},
-  /* EVENT_NOTIFY               */ {0, NULL},
+  /* EVENT_REG_CALLBACK         */ {0, nullptr},
+  /* EVENT_UNREG_CALLBACK       */ {0, nullptr},
+  /* EVENT_NOTIFY               */ {0, nullptr},
   /* SNAPSHOT_TAKE              */ {MGMT_API_PRIVILEGED, handle_snapshot},
   /* SNAPSHOT_RESTORE           */ {MGMT_API_PRIVILEGED, handle_snapshot},
   /* SNAPSHOT_REMOVE            */ {MGMT_API_PRIVILEGED, handle_snapshot},
@@ -1161,7 +1161,7 @@ handle_control_message(int fd, void *req, size_t reqlen)
     goto fail;
   }
 
-  if (handlers[optype].handler == NULL) {
+  if (handlers[optype].handler == nullptr) {
     goto fail;
   }
 

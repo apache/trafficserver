@@ -76,6 +76,25 @@ content from the origin server (or from another cache, depending on the parentâ€
 configuration). The parent caches the content and then sends a copy to Traffic
 Server (its child), where it is cached and served to the client.
 
+Parent Selection Policies
+-------------------------
+
+There are several parent selection policies available to the Traffic Server child
+node.
+
+    - Consistent Hash. The child node chooses a specific parent for each URI. This effectively
+      makes the parent's cache size the sum total of each of the individual parent cache
+      sizes.
+    - Round Robin. The child node cycles through the parents. The child can select the parent
+      based on the client IP ("true"), or in a strict cycling ("strict").
+    - (Unnamed). The child node chooses the first live parent listed. There are two variants to this
+      strategy.  When the strategy is set to "false," the child will use the first listed parent
+      (for clarity called p1) until it is marked down, when the child will switch to the second
+      listed parent (p2). Then, when the p1 is retested and found live, the child
+      will restart using p1. When the selection strategy is set to "latched," the child will use
+      p1 until it is marked down, when it will switch to p2. When p1 is retested and found live,
+      the child will continue using p2 until it is marked down.
+
 Interaction with Remap.config
 -----------------------------
 

@@ -105,13 +105,13 @@ extern "C" {
 
  */
 typedef struct {
-  char *plugin_name;
-  char *vendor_name;
-  char *support_email;
+  const char *plugin_name;
+  const char *vendor_name;
+  const char *support_email;
 } TSPluginRegistrationInfo;
 
 typedef struct {
-  char const *tag;  ///< Message tag (null terminated).
+  const char *tag;  ///< Message tag (null terminated).
   void const *data; ///< Message data (payload)
   size_t data_size; ///< Amount of message data.
 } TSPluginMsg;
@@ -717,7 +717,6 @@ typedef enum {
   TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE,
   TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED,
   TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME,
-  TS_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED,
   TS_CONFIG_SSL_HSTS_MAX_AGE,
   TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS,
   TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME,
@@ -742,6 +741,7 @@ typedef enum {
   TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS,
   TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN,
   TS_CONFIG_SRV_ENABLED,
+  TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 
@@ -797,6 +797,16 @@ typedef int64_t TSMgmtInt;
 typedef int64_t TSMgmtCounter;
 typedef float TSMgmtFloat;
 typedef char *TSMgmtString;
+
+/// The source of a management value.
+typedef enum {
+  TS_MGMT_SOURCE_NULL,     ///< No source / value not found.
+  TS_MGMT_SOURCE_DEFAULT,  ///< Built in core default.
+  TS_MGMT_SOURCE_PLUGIN,   ///< Plugin supplied default.
+  TS_MGMT_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, cluster, etc.)
+  TS_MGMT_SOURCE_ENV       ///< Process environment variable.
+} TSMgmtSource;
+
 
 typedef struct tsapi_file *TSFile;
 
@@ -889,6 +899,8 @@ extern tsapi const char *TS_URL_SCHEME_RTSPU;
 extern tsapi const char *TS_URL_SCHEME_MMS;
 extern tsapi const char *TS_URL_SCHEME_MMSU;
 extern tsapi const char *TS_URL_SCHEME_MMST;
+extern tsapi const char *TS_URL_SCHEME_WS;
+extern tsapi const char *TS_URL_SCHEME_WSS;
 
 /* --------------------------------------------------------------------------
    URL scheme string lengths */
@@ -903,6 +915,8 @@ extern tsapi int TS_URL_LEN_NNTP;
 extern tsapi int TS_URL_LEN_PROSPERO;
 extern tsapi int TS_URL_LEN_TELNET;
 extern tsapi int TS_URL_LEN_WAIS;
+extern tsapi int TS_URL_LEN_WS;
+extern tsapi int TS_URL_LEN_WSS;
 
 /* --------------------------------------------------------------------------
    MIME fields */
@@ -1141,6 +1155,18 @@ extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0;
 
 extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP;
 extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2;
+
+extern tsapi const char *const TS_PROTO_TAG_HTTP_1_0;
+extern tsapi const char *const TS_PROTO_TAG_HTTP_1_1;
+extern tsapi const char *const TS_PROTO_TAG_HTTP_2_0;
+extern tsapi const char *const TS_PROTO_TAG_TLS_1_3;
+extern tsapi const char *const TS_PROTO_TAG_TLS_1_2;
+extern tsapi const char *const TS_PROTO_TAG_TLS_1_1;
+extern tsapi const char *const TS_PROTO_TAG_TLS_1_0;
+extern tsapi const char *const TS_PROTO_TAG_TCP;
+extern tsapi const char *const TS_PROTO_TAG_UDP;
+extern tsapi const char *const TS_PROTO_TAG_IPV4;
+extern tsapi const char *const TS_PROTO_TAG_IPV6;
 
 /* --------------------------------------------------------------------------
    MLoc Constants */

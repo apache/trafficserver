@@ -67,7 +67,7 @@ template <class C> class SLink
 {
 public:
   C *next;
-  SLink() : next(NULL){};
+  SLink() : next(nullptr){};
 };
 #define SLINK(_c, _f)                  \
   class Link##_##_f : public SLink<_c> \
@@ -101,7 +101,7 @@ public:
 //
 template <class C> struct Link : public SLink<C> {
   C *prev;
-  Link() : prev(NULL) {}
+  Link() : prev(nullptr) {}
 };
 #define LINK(_c, _f)                  \
   class Link##_##_f : public Link<_c> \
@@ -164,14 +164,14 @@ public:
   bool
   empty() const
   {
-    return head == NULL;
+    return head == nullptr;
   }
   void push(C *e);
   C *pop();
   void
   clear()
   {
-    head = NULL;
+    head = nullptr;
   }
   C *&
   next(C *e)
@@ -184,7 +184,7 @@ public:
     return L::next_link(e);
   }
 
-  SLL() : head(NULL) {}
+  SLL() : head(nullptr) {}
   SLL(C *c) : head(c) {}
 };
 #define SList(_c, _f) SLL<_c, _c::Link##_##_f>
@@ -206,7 +206,7 @@ SLL<C, L>::pop()
   C *ret = head;
   if (ret) {
     head      = next(ret);
-    next(ret) = NULL;
+    next(ret) = nullptr;
   }
   return ret;
 }
@@ -219,7 +219,7 @@ template <class C, class L = typename C::Link_link> struct DLL {
   bool
   empty() const
   {
-    return head == NULL;
+    return head == nullptr;
   }
   void push(C *e);
   C *pop();
@@ -233,7 +233,7 @@ template <class C, class L = typename C::Link_link> struct DLL {
   void
   clear()
   {
-    head = NULL;
+    head = nullptr;
   }
   static C *&
   next(C *e)
@@ -256,7 +256,7 @@ template <class C, class L = typename C::Link_link> struct DLL {
     return L::prev_link(e);
   }
 
-  DLL() : head(NULL) {}
+  DLL() : head(nullptr) {}
 };
 #define DList(_c, _f) DLL<_c, _c::Link##_##_f>
 #define DListM(_c, _m, _ml, _l) DLL<_c, _c::Link##_##_ml##_##_l>
@@ -283,8 +283,8 @@ DLL<C, L>::remove(C *e)
     next(prev(e)) = next(e);
   if (next(e))
     prev(next(e)) = prev(e);
-  prev(e)         = NULL;
-  next(e)         = NULL;
+  prev(e)         = nullptr;
+  next(e)         = nullptr;
 }
 
 template <class C, class L>
@@ -295,11 +295,11 @@ DLL<C, L>::pop()
   if (ret) {
     head = next(ret);
     if (head)
-      prev(head) = NULL;
-    next(ret)    = NULL;
+      prev(head) = nullptr;
+    next(ret)    = nullptr;
     return ret;
   } else
-    return NULL;
+    return nullptr;
 }
 
 template <class C, class L>
@@ -337,16 +337,16 @@ public:
   void
   clear()
   {
-    head = NULL;
-    tail = NULL;
+    head = nullptr;
+    tail = nullptr;
   }
   bool
   empty() const
   {
-    return head == NULL;
+    return head == nullptr;
   }
 
-  Queue() : tail(NULL) {}
+  Queue() : tail(nullptr) {}
 };
 #define Que(_c, _f) Queue<_c, _c::Link##_##_f>
 #define QueM(_c, _m, _mf, _f) Queue<_c, _c::Link##_##_mf##_##_f>
@@ -366,7 +366,7 @@ Queue<C, L>::pop()
 {
   C *ret = DLL<C, L>::pop();
   if (!head)
-    tail = NULL;
+    tail = nullptr;
   return ret;
 }
 
@@ -483,13 +483,13 @@ template <class C, class L = typename C::Link_link> struct SortableQueue : publi
             this->next(p) = n;
             this->prev(n) = p;
           } else
-            this->prev(n) = NULL;
+            this->prev(n) = nullptr;
           // fix follow (f)
           if (f) {
             this->prev(f) = v;
             this->next(v) = f;
           } else
-            this->next(v) = NULL;
+            this->next(v) = nullptr;
           // fix interior
           this->prev(v) = n;
           this->next(n) = v;
@@ -595,7 +595,7 @@ template <class C, class A = DefaultAlloc> struct ConsCell {
   C car;
   ConsCell *cdr;
   ConsCell(C acar, ConsCell *acdr) : car(acar), cdr(acdr) {}
-  ConsCell(C acar) : car(acar), cdr(NULL) {}
+  ConsCell(C acar) : car(acar), cdr(nullptr) {}
   ConsCell(ConsCell *acdr) : cdr(acdr) {}
   static void *
   operator new(size_t size)
@@ -657,7 +657,7 @@ template <class C, class A = DefaultAlloc> struct List {
   void
   clear()
   {
-    head = NULL;
+    head = nullptr;
   }
   void reverse();
   List(C acar) : head(new ConsCell<C, A>(acar)) {}

@@ -37,7 +37,7 @@ ConditionStatus::initialize(Parser &p)
   Condition::initialize(p);
   MatcherType *match = new MatcherType(_cond_op);
 
-  match->set(static_cast<TSHttpStatus>(strtol(p.get_arg().c_str(), NULL, 10)));
+  match->set(static_cast<TSHttpStatus>(strtol(p.get_arg().c_str(), nullptr, 10)));
   _matcher = match;
 
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
@@ -117,11 +117,11 @@ ConditionRandom::initialize(Parser &p)
   Condition::initialize(p);
   MatcherType *match = new MatcherType(_cond_op);
 
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, nullptr);
   _seed = getpid() * tv.tv_usec;
-  _max  = strtol(_qualifier.c_str(), NULL, 10);
+  _max  = strtol(_qualifier.c_str(), nullptr, 10);
 
-  match->set(static_cast<unsigned int>(strtol(p.get_arg().c_str(), NULL, 10)));
+  match->set(static_cast<unsigned int>(strtol(p.get_arg().c_str(), nullptr, 10)));
   _matcher = match;
 }
 
@@ -149,7 +149,7 @@ ConditionAccess::initialize(Parser &p)
   struct timeval tv;
   Condition::initialize(p);
 
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, nullptr);
 
   _next = tv.tv_sec + 2;
   _last = !access(_qualifier.c_str(), R_OK);
@@ -170,7 +170,7 @@ ConditionAccess::eval(const Resources & /* res ATS_UNUSED */)
 {
   struct timeval tv;
 
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, nullptr);
   if (tv.tv_sec > _next) {
     // There is a small "race" here, where we could end up calling access() a few times extra. I think
     // that is OK, and not worth protecting with a lock.
@@ -314,7 +314,7 @@ ConditionQuery::append_value(std::string &s, const Resources &res)
 bool
 ConditionQuery::eval(const Resources &res)
 {
-  if (NULL != res._rri) {
+  if (nullptr != res._rri) {
     std::string s;
 
     append_value(s, res);
@@ -356,11 +356,11 @@ bool
 ConditionUrl::eval(const Resources &res)
 {
   TSDebug(PLUGIN_NAME, "ConditionUrl::eval");
-  TSMLoc url     = NULL;
-  TSMBuffer bufp = NULL;
+  TSMLoc url     = nullptr;
+  TSMBuffer bufp = nullptr;
   std::string s;
 
-  if (res._rri != NULL) {
+  if (res._rri != nullptr) {
     // called at the remap hook
     bufp = res._rri->requestBufp;
     if (_type == URL || _type == CLIENT) {
@@ -378,7 +378,7 @@ ConditionUrl::eval(const Resources &res)
       return false;
     }
   } else {
-    TSMLoc hdr_loc = NULL;
+    TSMLoc hdr_loc = nullptr;
     if (_type == CLIENT) {
       bufp    = res.client_bufp;
       hdr_loc = res.client_hdr_loc;
@@ -498,19 +498,19 @@ ConditionCookie::append_value(std::string &s, const Resources &res)
   const int cookie_name_len     = _qualifier.length();
 
   // Sanity
-  if (bufp == NULL || hdr_loc == NULL) {
+  if (bufp == nullptr || hdr_loc == nullptr) {
     return;
   }
 
   // Find Cookie
   field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
-  if (field_loc == NULL) {
+  if (field_loc == nullptr) {
     return;
   }
 
   // Get all cookies
   cookies = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &cookies_len);
-  if (cookies == NULL || cookies_len <= 0) {
+  if (cookies == nullptr || cookies_len <= 0) {
     goto out_release_field;
   }
 
@@ -543,7 +543,7 @@ ConditionCookie::eval(const Resources &res)
 bool
 ConditionInternalTxn::eval(const Resources &res)
 {
-  bool ret = (TSHttpTxnIsInternal(res.txnp) == TS_SUCCESS);
+  bool ret = (0 != TSHttpTxnIsInternal(res.txnp));
 
   TSDebug(PLUGIN_NAME, "Evaluating INTERNAL-TRANSACTION() -> %d", ret);
   return ret;
@@ -588,7 +588,7 @@ ConditionIncomingPort::initialize(Parser &p)
 
   MatcherType *match = new MatcherType(_cond_op);
 
-  match->set(static_cast<uint16_t>(strtoul(p.get_arg().c_str(), NULL, 10)));
+  match->set(static_cast<uint16_t>(strtoul(p.get_arg().c_str(), nullptr, 10)));
   _matcher = match;
 }
 
@@ -620,7 +620,7 @@ ConditionTransactCount::initialize(Parser &p)
   MatcherType *match     = new MatcherType(_cond_op);
   std::string const &arg = p.get_arg();
 
-  match->set(strtol(arg.c_str(), NULL, 10));
+  match->set(strtol(arg.c_str(), nullptr, 10));
   _matcher = match;
 }
 
@@ -710,7 +710,7 @@ ConditionNow::initialize(Parser &p)
 
   MatcherType *match = new MatcherType(_cond_op);
 
-  match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), NULL, 10)));
+  match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), nullptr, 10)));
   _matcher = match;
 }
 
@@ -766,7 +766,7 @@ ConditionNow::eval(const Resources &res)
 const char *
 ConditionGeo::get_geo_string(const sockaddr *addr) const
 {
-  const char *ret = NULL;
+  const char *ret = nullptr;
   int v           = 4;
 
   switch (_geo_qual) {
@@ -857,7 +857,7 @@ ConditionGeo::get_geo_int(const sockaddr *addr) const
     break;
 
   case GEO_QUAL_ASN: {
-    const char *asn_name = NULL;
+    const char *asn_name = nullptr;
 
     switch (addr->sa_family) {
     case AF_INET:
@@ -881,7 +881,7 @@ ConditionGeo::get_geo_int(const sockaddr *addr) const
       while (*asn_name && !(isdigit(*asn_name))) {
         ++asn_name;
       }
-      ret = strtol(asn_name, NULL, 10);
+      ret = strtol(asn_name, nullptr, 10);
     }
   }
     TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ASN #: %" PRId64, v, ret);
@@ -923,7 +923,7 @@ ConditionGeo::initialize(Parser &p)
   if (is_int_type()) {
     Matchers<int64_t> *match = new Matchers<int64_t>(_cond_op);
 
-    match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), NULL, 10)));
+    match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), nullptr, 10)));
     _matcher = match;
   } else {
     // The default is to have a string matcher
@@ -1004,7 +1004,7 @@ ConditionId::initialize(Parser &p)
   if (_id_qual == ID_QUAL_REQUEST) {
     Matchers<uint64_t> *match = new Matchers<uint64_t>(_cond_op);
 
-    match->set(static_cast<uint64_t>(strtol(p.get_arg().c_str(), NULL, 10)));
+    match->set(static_cast<uint64_t>(strtol(p.get_arg().c_str(), nullptr, 10)));
     _matcher = match;
   } else {
     // The default is to have a string matcher

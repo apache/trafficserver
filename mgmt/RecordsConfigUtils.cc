@@ -36,13 +36,13 @@ override_record(const RecordElement *record, void *)
     const char *value;
     RecData data = {0};
 
-    if ((value = RecConfigOverrideFromEnvironment(record->name, NULL))) {
+    if ((value = RecConfigOverrideFromEnvironment(record->name, nullptr))) {
       if (RecDataSetFromString(record->value_type, &data, value)) {
         // WARNING: If we are not the record owner, RecSetRecord() doesn't set our copy
         // of the record. It sends a set message to the local manager. This can cause
         // "interesting" results if you are trying to override configuration values
         // early in startup (before we have synced with the local manager).
-        RecSetRecord(record->type, record->name, record->value_type, &data, NULL, REC_SOURCE_ENV, false);
+        RecSetRecord(record->type, record->name, record->value_type, &data, nullptr, REC_SOURCE_ENV, false);
         RecDataZero(record->value_type, &data);
       }
     }
@@ -55,7 +55,7 @@ override_record(const RecordElement *record, void *)
 void
 RecordsConfigOverrideFromEnvironment()
 {
-  RecordsConfigIterate(override_record, NULL);
+  RecordsConfigIterate(override_record, nullptr);
 }
 
 //-------------------------------------------------------------------------
@@ -87,7 +87,7 @@ initialize_record(const RecordElement *record, void *)
 
     // If you specify a consistency check, you have to specify a regex expression. We abort here
     // so that this breaks QA completely.
-    if (record->check != RECC_NULL && record->regex == NULL) {
+    if (record->check != RECC_NULL && record->regex == nullptr) {
       ink_fatal("%s has a consistency check but no regular expression", record->name);
     }
 
@@ -149,7 +149,7 @@ initialize_record(const RecordElement *record, void *)
 void
 LibRecordsConfigInit()
 {
-  RecordsConfigIterate(initialize_record, NULL);
+  RecordsConfigIterate(initialize_record, nullptr);
 }
 
 void

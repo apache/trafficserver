@@ -48,11 +48,6 @@ General
 
    The hostname only, without domain, for the host on which |TS| is running.
 
-.. ts:stat:: global proxy.node.num_processes integer
-   :type: gauge
-
-   The number of :program:`traffic_server` processes running on the host.
-
 .. ts:stat:: global proxy.node.proxy_running integer
    :type: flag
 

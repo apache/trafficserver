@@ -30,7 +30,7 @@ bool StubIncludeHandler::includeResult            = true;
 const char *const StubIncludeHandler::DATA_PREFIX = "Special data for include id ";
 const int StubIncludeHandler::DATA_PREFIX_SIZE    = strlen(StubIncludeHandler::DATA_PREFIX);
 
-const char *StubIncludeHandler::FOOTER = 0;
+const char *StubIncludeHandler::FOOTER = nullptr;
 int StubIncludeHandler::FOOTER_SIZE    = 0;
 
 int

@@ -32,8 +32,8 @@
 
 static bool g_initialized = false;
 
-RecRecord *g_records       = NULL;
-InkHashTable *g_records_ht = NULL;
+RecRecord *g_records       = nullptr;
+InkHashTable *g_records_ht = nullptr;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
 
@@ -42,9 +42,9 @@ int g_num_records = 0;
 //-------------------------------------------------------------------------
 static RecRecord *
 register_record(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type,
-                bool *updated_p = NULL)
+                bool *updated_p = nullptr)
 {
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   // Metrics are restored from persistence before they are registered. In this case, when the registration arrives, we
   // might find that they yave changed. For example, a metric might change it's type due to a software upgrade. Records
@@ -78,8 +78,8 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
       *updated_p = true;
     }
   } else {
-    if ((r = RecAlloc(rec_type, name, data_type)) == NULL) {
-      return NULL;
+    if ((r = RecAlloc(rec_type, name, data_type)) == nullptr) {
+      return nullptr;
     }
 
     // Set the r->data to its default value as this is a new record
@@ -162,7 +162,7 @@ static int
 link_string_alloc(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
   RecString _ss        = data.rec_string;
-  RecString _new_value = NULL;
+  RecString _new_value = nullptr;
 
   if (_ss) {
     _new_value = ats_strdup(_ss);
@@ -210,17 +210,17 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   }
   // read configs
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
-    ink_mutex_init(&g_rec_config_lock, NULL);
+    ink_mutex_init(&g_rec_config_lock, nullptr);
     // Import the file into memory; try the following in this order:
     // ./etc/trafficserver/records.config.shadow
     // ./records.config.shadow
     // ./etc/trafficserver/records.config
     // ./records.config
     bool file_exists   = true;
-    g_rec_config_fpath = RecConfigReadConfigPath(NULL, REC_CONFIG_FILE REC_SHADOW_EXT);
+    g_rec_config_fpath = RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE REC_SHADOW_EXT);
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
       ats_free((char *)g_rec_config_fpath);
-      g_rec_config_fpath = RecConfigReadConfigPath(NULL, REC_CONFIG_FILE);
+      g_rec_config_fpath = RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE);
       if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
         RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
         file_exists = false;
@@ -332,14 +332,14 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
       new_callback->update_cb     = update_cb;
       new_callback->update_cookie = cookie;
 
-      new_callback->next = NULL;
+      new_callback->next = nullptr;
 
       ink_assert(new_callback);
       if (!r->config_meta.update_cb_list) {
         r->config_meta.update_cb_list = new_callback;
       } else {
-        RecConfigUpdateCbList *cur_callback  = NULL;
-        RecConfigUpdateCbList *prev_callback = NULL;
+        RecConfigUpdateCbList *cur_callback  = nullptr;
+        RecConfigUpdateCbList *prev_callback = nullptr;
         for (cur_callback = r->config_meta.update_cb_list; cur_callback; cur_callback = cur_callback->next) {
           prev_callback = cur_callback;
         }
@@ -396,7 +396,7 @@ RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
     if (!r->registered || (r->data_type != RECD_STRING)) {
       err = REC_ERR_FAIL;
     } else {
-      if (r->data.rec_string == NULL) {
+      if (r->data.rec_string == nullptr) {
         buf[0] = '\0';
       } else {
         ink_strlcpy(buf, r->data.rec_string, buf_len);
@@ -542,7 +542,7 @@ int
 RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock)
 {
   int err      = REC_ERR_FAIL;
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -570,7 +570,7 @@ int
 RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lock)
 {
   int err      = REC_ERR_FAIL;
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -598,7 +598,7 @@ int
 RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
 {
   int err      = REC_ERR_FAIL;
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -629,7 +629,7 @@ int
 RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock)
 {
   int err      = REC_ERR_FAIL;
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -657,7 +657,7 @@ int
 RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock)
 {
   int err      = REC_ERR_FAIL;
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -685,7 +685,7 @@ int
 RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
 {
   int err      = REC_ERR_FAIL;
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -713,7 +713,7 @@ int
 RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
 {
   int err;
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -736,7 +736,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
         ink_strlcpy(*buf, r->data_default.rec_string, 1024);
       } else {
         ats_free(*buf);
-        *buf = NULL;
+        *buf = nullptr;
       }
       break;
     case RECD_COUNTER:
@@ -745,7 +745,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
     default:
       ink_assert(!"Unexpected RecD type");
       ats_free(*buf);
-      *buf = NULL;
+      *buf = nullptr;
       break;
     }
   } else {
@@ -763,7 +763,7 @@ int
 RecGetRecordAccessType(const char *name, RecAccessT *access, bool lock)
 {
   int err      = REC_ERR_FAIL;
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -787,7 +787,7 @@ int
 RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
 {
   int err      = REC_ERR_FAIL;
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -807,16 +807,40 @@ RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
   return err;
 }
 
+int
+RecGetRecordSource(const char *name, RecSourceT *source, bool lock)
+{
+  int err      = REC_ERR_FAIL;
+  RecRecord *r = nullptr;
+
+  if (lock) {
+    ink_rwlock_rdlock(&g_records_rwlock);
+  }
+
+  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r)) {
+    rec_mutex_acquire(&(r->lock));
+    *source = r->config_meta.source;
+    err     = REC_ERR_OKAY;
+    rec_mutex_release(&(r->lock));
+  }
+
+  if (lock) {
+    ink_rwlock_unlock(&g_records_rwlock);
+  }
+
+  return err;
+}
+
 //-------------------------------------------------------------------------
 // RecRegisterStat
 //-------------------------------------------------------------------------
 RecRecord *
 RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type)
 {
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
 
   ink_rwlock_wrlock(&g_records_rwlock);
-  if ((r = register_record(rec_type, name, data_type, data_default, persist_type)) != NULL) {
+  if ((r = register_record(rec_type, name, data_type, data_default, persist_type)) != nullptr) {
     // If the persistence type we found in the records hash is not the same as the persistence
     // type we are registering, then that means that it changed between the previous software
     // version and the current version. If the metric changed to non-persistent, reset to the
@@ -848,7 +872,7 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData d
   bool updated_p;
 
   ink_rwlock_wrlock(&g_records_rwlock);
-  if ((r = register_record(rec_type, name, data_type, data_default, RECP_NULL, &updated_p)) != NULL) {
+  if ((r = register_record(rec_type, name, data_type, data_default, RECP_NULL, &updated_p)) != nullptr) {
     // Note: do not modify 'record->config_meta.update_required'
     r->config_meta.update_type = update_type;
     r->config_meta.check_type  = check_type;
@@ -856,7 +880,7 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData d
       ats_free(r->config_meta.check_expr);
     }
     r->config_meta.check_expr     = ats_strdup(check_expr);
-    r->config_meta.update_cb_list = NULL;
+    r->config_meta.update_cb_list = nullptr;
     r->config_meta.access_type    = access_type;
     if (!updated_p) {
       r->config_meta.source = source;
@@ -908,7 +932,7 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 RecRecord *
 RecForceInsert(RecRecord *record)
 {
-  RecRecord *r = NULL;
+  RecRecord *r = nullptr;
   bool r_is_a_new_record;
 
   ink_rwlock_wrlock(&g_records_rwlock);
@@ -920,9 +944,9 @@ RecForceInsert(RecRecord *record)
     r->data_type = record->data_type;
   } else {
     r_is_a_new_record = true;
-    if ((r = RecAlloc(record->rec_type, record->name, record->data_type)) == NULL) {
+    if ((r = RecAlloc(record->rec_type, record->name, record->data_type)) == nullptr) {
       ink_rwlock_unlock(&g_records_rwlock);
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -943,6 +967,7 @@ RecForceInsert(RecRecord *record)
     ats_free(r->config_meta.check_expr);
     r->config_meta.check_expr  = ats_strdup(record->config_meta.check_expr);
     r->config_meta.access_type = record->config_meta.access_type;
+    r->config_meta.source      = record->config_meta.source;
   }
 
   if (r_is_a_new_record) {
@@ -971,7 +996,7 @@ debug_record_callback(RecT /* rec_type */, void * /* edata */, int registered, c
     RecDebug(DL_Note, "  ([%d] '%s', '%f')", registered, name, datum->rec_float);
     break;
   case RECD_STRING:
-    RecDebug(DL_Note, "  ([%d] '%s', '%s')", registered, name, datum->rec_string ? datum->rec_string : "NULL");
+    RecDebug(DL_Note, "  ([%d] '%s', '%s')", registered, name, datum->rec_string ? datum->rec_string : "nullptr");
     break;
   case RECD_COUNTER:
     RecDebug(DL_Note, "  ([%d] '%s', '%" PRId64 "')", registered, name, datum->rec_counter);
@@ -1002,7 +1027,7 @@ void
 RecDumpRecordsHt(RecT rec_type)
 {
   RecDebug(DL_Note, "Dumping Records:");
-  RecDumpRecords(rec_type, debug_record_callback, NULL);
+  RecDumpRecords(rec_type, debug_record_callback, nullptr);
 }
 
 //-------------------------------------------------------------------------
@@ -1019,7 +1044,7 @@ REC_ConfigReadInteger(const char *name)
 char *
 REC_ConfigReadString(const char *name)
 {
-  char *t = 0;
+  char *t = nullptr;
   RecGetRecordString_Xmalloc(name, (RecString *)&t);
   return t;
 }
@@ -1086,7 +1111,7 @@ RecString
 REC_readString(const char *name, bool *found, bool lock)
 {
   ink_assert(name);
-  RecString _tmp = NULL;
+  RecString _tmp = nullptr;
   bool _found;
   _found = (RecGetRecordString_Xmalloc(name, &_tmp, lock) == REC_ERR_OKAY);
   if (found) {
@@ -1196,7 +1221,7 @@ RecConfigReadConfigPath(const char *file_variable, const char *default_value)
     return Layout::get()->relative_to(sysconfdir, default_value);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //-------------------------------------------------------------------------
@@ -1221,7 +1246,7 @@ RecConfigReadPrefixPath(const char *file_variable, const char *default_value)
     return Layout::get()->relative_to(Layout::get()->prefix, default_value);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //-------------------------------------------------------------------------
@@ -1248,4 +1273,19 @@ RecSignalWarning(int sig, const char *fmt, ...)
   vsnprintf(msg, sizeof(msg), fmt, args);
   RecSignalManager(sig, msg);
   va_end(args);
+}
+
+//-------------------------------------------------------------------------
+// RecConfigWarnIfUnregistered
+//-------------------------------------------------------------------------
+/// Generate a warning if the record is a configuration name/value but is not registered.
+void
+RecConfigWarnIfUnregistered()
+{
+  RecDumpRecords(RECT_CONFIG,
+                 [](RecT, void *, int registered_p, const char *name, int, RecData *) -> void {
+                   if (!registered_p)
+                     Warning("Unrecognized configuration value '%s'", name);
+                 },
+                 nullptr);
 }

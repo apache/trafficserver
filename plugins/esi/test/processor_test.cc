@@ -48,7 +48,7 @@ main()
   Variables esi_vars("vars", &Debug, &Error, whitelistCookies);
   HandlerManager handler_mgr("handler_mgr", &Debug, &Error);
 
-  pthread_key_create(&threadKey, NULL);
+  pthread_key_create(&threadKey, nullptr);
   Utils::init(&Debug, &Error);
 
   {
@@ -1018,7 +1018,7 @@ main()
     assert(strncmp(output_data, "Special data for include id 2", output_data_len - StubIncludeHandler::FOOTER_SIZE) == 0);
     assert(strncmp(output_data + StubIncludeHandler::DATA_PREFIX_SIZE + 1, StubIncludeHandler::FOOTER,
                    StubIncludeHandler::FOOTER_SIZE) == 0);
-    StubIncludeHandler::FOOTER      = 0;
+    StubIncludeHandler::FOOTER      = nullptr;
     StubIncludeHandler::FOOTER_SIZE = 0;
   }
 
@@ -1041,7 +1041,7 @@ main()
 
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars, handler_mgr);
 
-    assert(esi_proc.usePackedNodeList(0, packedNodeList.size()) == EsiProcessor::UNPACK_FAILURE);
+    assert(esi_proc.usePackedNodeList(nullptr, packedNodeList.size()) == EsiProcessor::UNPACK_FAILURE);
   }
 
   {

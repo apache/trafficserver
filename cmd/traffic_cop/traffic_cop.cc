@@ -113,6 +113,15 @@ static int server_failures  = 0;
 static int server_not_found = 0;
 static int init_sleep_time  = cop_sleep_time; // 10 sec
 
+/* This gets setup when loading the configuration */
+typedef enum {
+  COP_KILL_NONE    = 0,
+  COP_KILL_SERVER  = 1,
+  COP_KILL_MANAGER = 2,
+} ActiveHealthChecks;
+
+static int active_health_checks = COP_KILL_SERVER | COP_KILL_MANAGER;
+
 // traffic_manager flap detection
 #define MANAGER_FLAP_DETECTION 1
 #if defined(MANAGER_FLAP_DETECTION)
@@ -133,7 +142,7 @@ static int child_status = 0;
 
 AppVersionInfo appVersionInfo;
 
-static char const localhost[] = "127.0.0.1";
+static const char localhost[] = "127.0.0.1";
 
 static void cop_log(int priority, const char *format, ...) TS_PRINTFLIKE(2, 3);
 
@@ -330,7 +339,7 @@ set_alarm_death()
 
   cop_log_trace("Entering set_alarm_death()\n");
 #if defined(solaris)
-  action.sa_handler   = NULL;
+  action.sa_handler   = nullptr;
   action.sa_sigaction = sig_fatal;
   sigemptyset(&action.sa_mask);
   action.sa_flags = SA_SIGINFO;
@@ -340,7 +349,7 @@ set_alarm_death()
   action.sa_flags   = 0;
 #endif
 
-  sigaction(SIGALRM, &action, NULL);
+  sigaction(SIGALRM, &action, nullptr);
   cop_log_trace("Leaving set_alarm_death()\n");
 }
 
@@ -351,7 +360,7 @@ set_alarm_warn()
 
   cop_log_trace("Entering set_alarm_warn()\n");
 #if defined(solaris)
-  action.sa_handler   = NULL;
+  action.sa_handler   = nullptr;
   action.sa_sigaction = sig_alarm_warn;
   sigemptyset(&action.sa_mask);
   action.sa_flags = SA_SIGINFO;
@@ -361,7 +370,7 @@ set_alarm_warn()
   action.sa_flags = 0;
 #endif
 
-  sigaction(SIGALRM, &action, NULL);
+  sigaction(SIGALRM, &action, nullptr);
   cop_log_trace("Leaving set_alarm_warn()\n");
 }
 
@@ -432,7 +441,7 @@ millisleep(int ms)
   cop_log_trace("Entering millisleep(%d)\n", ms);
   ts.tv_sec  = ms / 1000;
   ts.tv_nsec = (ms - ts.tv_sec * 1000) * 1000 * 1000;
-  nanosleep(&ts, NULL);
+  nanosleep(&ts, nullptr);
   cop_log_trace("Leaving millisleep(%d)\n", ms);
 }
 
@@ -480,7 +489,7 @@ static void
 config_register_default(const RecordElement *record, void *)
 {
   if (record->type == RECT_CONFIG || record->type == RECT_LOCAL) {
-    const char *value = record->value ? record->value : ""; // splooch NULL values so std::string can swallow them
+    const char *value = record->value ? record->value : ""; // splooch nullptr values so std::string can swallow them
     configTable[std::string(record->name)] = ConfigValue(record->type, record->value_type, value);
   }
 }
@@ -600,7 +609,7 @@ config_reload_records()
   struct stat stat_buf;
   static time_t last_mod = 0;
   char log_filename[PATH_NAME_MAX];
-  int tmp_int;
+  int tmp_int = 3;
 
   ats_scoped_str bindir;
   ats_scoped_str logdir;
@@ -619,7 +628,7 @@ config_reload_records()
   }
 
   configTable.clear();
-  RecordsConfigIterate(config_register_default, NULL);
+  RecordsConfigIterate(config_register_default, nullptr);
 
   if (RecConfigFileParse(config_file, config_register_variable, false) != REC_ERR_OKAY) {
     cop_log(COP_FATAL, "could not parse \"%s\"\n", config_file);
@@ -652,13 +661,30 @@ config_reload_records()
   config_read_int("proxy.config.cluster.rsport", &rs_port, true);
   config_read_int("proxy.config.cop.init_sleep_time", &init_sleep_time, true);
 
+  config_read_int("proxy.config.cop.active_health_checks", &tmp_int, true);
+  // 0 == No servers are killed
+  // 1 == Only traffic_manager can be killed on failure
+  // 2 == Only traffic_server can be killed on failure
+  // 3 == Any failing healthchecks can cause restarts (default)
+  switch (tmp_int) {
+  case 0:
+    active_health_checks = COP_KILL_NONE;
+    break;
+  case 1:
+    active_health_checks = COP_KILL_MANAGER;
+    break;
+  case 2:
+    active_health_checks = COP_KILL_SERVER;
+    break;
+  default:
+    active_health_checks = COP_KILL_SERVER | COP_KILL_MANAGER;
+    break;
+  }
+
 #if defined(linux)
   // TS-1075 : auto-port ::connect DoS on high traffic linux systems
   config_read_int("proxy.config.cop.source_port", &source_port, true);
 #endif
-
-  config_read_int("proxy.local.cluster.type", &tmp_int);
-  cluster_type = static_cast<MgmtClusterType>(tmp_int);
 
   if (stdout_flag) {
     config_read_string("proxy.config.syslog_facility", syslog_fac_str, sizeof(syslog_fac_str), true);
@@ -676,7 +702,7 @@ config_reload_records()
 static void
 get_admin_user()
 {
-  struct passwd *pwd = NULL;
+  struct passwd *pwd = nullptr;
 
   if (!admin_user) {
     admin_user = (char *)ats_malloc(MAX_LOGIN);
@@ -749,8 +775,8 @@ spawn_manager()
     EnableDeathSignal(SIGTERM);
 
     // Bind stdout and stderr of traffic_manager to traffic.out
-    execl(prog, prog, "--" TM_OPT_BIND_STDOUT, log_file, "--" TM_OPT_BIND_STDERR, log_file, NULL);
-    cop_log_trace("Somehow execv(%s, options, NULL) failed: %s (%d)!\n", prog, strerror(errno), errno);
+    execl(prog, prog, "--" TM_OPT_BIND_STDOUT, log_file, "--" TM_OPT_BIND_STDERR, log_file, nullptr);
+    cop_log_trace("Somehow execv(%s, options, nullptr) failed: %s (%d)!\n", prog, strerror(errno), errno);
     exit(1);
   } else if (child == -1) {
     cop_log(COP_FATAL, "unable to fork [%d '%s']\n", errno, strerror(errno));
@@ -795,12 +821,12 @@ poll_write(int fd, int timeout)
 }
 
 static int
-open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
+open_socket(int port, const char *ip = nullptr, const char *ip_to_bind = nullptr)
 {
   int sock = 0;
   struct addrinfo hints;
-  struct addrinfo *result         = NULL;
-  struct addrinfo *result_to_bind = NULL;
+  struct addrinfo *result         = nullptr;
+  struct addrinfo *result_to_bind = nullptr;
   char port_str[8]                = {'\0'};
   int err                         = 0;
 
@@ -843,7 +869,7 @@ open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
     hints.ai_family   = result->ai_family;
     hints.ai_socktype = result->ai_socktype;
 
-    err = getaddrinfo(ip_to_bind, NULL, &hints, &result_to_bind);
+    err = getaddrinfo(ip_to_bind, nullptr, &hints, &result_to_bind);
     if (err != 0) {
       cop_log(COP_WARNING, "(test) unable to get address info [%d %s] at ip %s\n", err, gai_strerror(err), ip_to_bind);
       freeaddrinfo(result_to_bind);
@@ -909,8 +935,8 @@ getaddrinfo_error:
 }
 
 static int
-test_port(int port, const char *request, char *buffer, int bufsize, int64_t test_timeout, char const *ip = NULL,
-          char const *ip_to_bind = NULL)
+test_port(int port, const char *request, char *buffer, int bufsize, int64_t test_timeout, const char *ip = NULL,
+          const char *ip_to_bind = nullptr)
 {
   int64_t start_time, timeout;
   int sock;
@@ -1141,7 +1167,7 @@ test_rs_port()
 static int
 test_mgmt_cli_port()
 {
-  TSString val = NULL;
+  TSString val = nullptr;
   int ret      = 0;
 
   if (TSRecordGetString("proxy.config.manager_binary", &val) != TS_ERR_OKAY) {
@@ -1161,7 +1187,7 @@ test_mgmt_cli_port()
 }
 
 static int
-test_http_port(int port, char *request, int timeout, char const *ip = NULL, char const *ip_to_bind = NULL)
+test_http_port(int port, char *request, int timeout, const char *ip = nullptr, char const *ip_to_bind = nullptr)
 {
   char buffer[4096];
   char *p;
@@ -1249,8 +1275,12 @@ heartbeat_manager()
 
     if (manager_failures > 1) {
       manager_failures = 0;
-      cop_log(COP_WARNING, "killing manager\n");
-      safe_kill(manager_lockfile, manager_binary, true);
+      if (active_health_checks & COP_KILL_MANAGER) {
+        cop_log(COP_WARNING, "killing manager\n");
+        safe_kill(manager_lockfile, manager_binary, true);
+      } else {
+        cop_log(COP_WARNING, "would have killed manager, but configuration said not to\n");
+      }
     }
     cop_log_trace("Leaving heartbeat_manager() --> %d\n", err);
     return err;
@@ -1284,19 +1314,22 @@ heartbeat_server()
     // we kill the server.
     if (server_failures > 1) {
       server_failures = 0;
-      cop_log(COP_WARNING, "killing server\n");
-
       // TSqa02622: Change the ALRM signal handler while
       //   trying to kill the process since if a core
       //   is being written, it could take a long time
       //   Set a new alarm so that we can print warnings
       //   if it is taking too long to kill the server
       //
-      safe_kill(server_lockfile, server_binary, false);
-      // Allow a configurable longer sleep init time
-      // to load very large remap files
-      cop_log_trace("performing additional sleep for %d sec during init", init_sleep_time);
-      millisleep(init_sleep_time * 1000);
+      if (active_health_checks & COP_KILL_SERVER) {
+        cop_log(COP_WARNING, "killing server\n");
+        safe_kill(server_lockfile, server_binary, false);
+        // Allow a configurable longer sleep init time
+        // to load very large remap files
+        cop_log_trace("performing additional sleep for %d sec during init", init_sleep_time);
+        millisleep(init_sleep_time * 1000);
+      } else {
+        cop_log(COP_WARNING, "would have killed server, but configurations said not to\n");
+      }
     }
   } else {
     if (server_failures) {
@@ -1503,11 +1536,20 @@ check_memory()
       // 5:     0       0      low     (bad)
       if ((swapsize != 0 && swapfree < check_memory_min_swapfree_kb) || (swapsize == 0 && memfree < check_memory_min_memfree_kb)) {
         cop_log(COP_WARNING, "Low memory available (swap: %dkB, mem: %dkB)\n", (int)swapfree, (int)memfree);
-        cop_log(COP_WARNING, "Killing '%s' and '%s'\n", manager_binary, server_binary);
-        manager_failures = 0;
-        safe_kill(manager_lockfile, manager_binary, true);
-        server_failures = 0;
-        safe_kill(server_lockfile, server_binary, false);
+        if (active_health_checks & COP_KILL_MANAGER) {
+          cop_log(COP_WARNING, "Killing '%s'\n", manager_binary);
+          manager_failures = 0;
+          safe_kill(manager_lockfile, manager_binary, true);
+        } else {
+          cop_log(COP_WARNING, "would have killed manager due to low memory, but configurations sayd not to\n");
+        }
+        if (active_health_checks & COP_KILL_SERVER) {
+          cop_log(COP_WARNING, "Killing '%s'\n", server_binary);
+          server_failures = 0;
+          safe_kill(server_lockfile, server_binary, false);
+        } else {
+          cop_log(COP_WARNING, "would have killed server due to low memory, but configurations sayd not to\n");
+        }
       }
     } else {
       cop_log(COP_WARNING, "Unable to open /proc/meminfo: %s\n", strerror(errno));
@@ -1647,8 +1689,8 @@ init_signals()
   sigemptyset(&action.sa_mask);
   action.sa_flags = 0;
 
-  sigaction(SIGTERM, &action, NULL);
-  sigaction(SIGINT, &action, NULL);
+  sigaction(SIGTERM, &action, nullptr);
+  sigaction(SIGINT, &action, nullptr);
 
   // Handle the SIGCHLD signal. We simply reap all children that
   // die (which should only be spawned traffic_manager's).
@@ -1656,14 +1698,14 @@ init_signals()
   sigemptyset(&action.sa_mask);
   action.sa_flags = 0;
 
-  sigaction(SIGCHLD, &action, NULL);
+  sigaction(SIGCHLD, &action, nullptr);
 
 // Handle a bunch of fatal signals. We simply call abort() when
 // these signals arrive in order to generate a core. There is some
 // difficulty with generating core files when linking with libthread
 // under solaris.
 #if defined(solaris)
-  action.sa_handler   = NULL;
+  action.sa_handler   = nullptr;
   action.sa_sigaction = sig_fatal;
 #else
   action.sa_handler = sig_fatal;
@@ -1675,14 +1717,14 @@ init_signals()
   action.sa_flags   = 0;
 #endif
 
-  sigaction(SIGQUIT, &action, NULL);
-  sigaction(SIGILL, &action, NULL);
-  sigaction(SIGFPE, &action, NULL);
-  sigaction(SIGBUS, &action, NULL);
-  sigaction(SIGSEGV, &action, NULL);
+  sigaction(SIGQUIT, &action, nullptr);
+  sigaction(SIGILL, &action, nullptr);
+  sigaction(SIGFPE, &action, nullptr);
+  sigaction(SIGBUS, &action, nullptr);
+  sigaction(SIGSEGV, &action, nullptr);
 #if !defined(linux)
-  sigaction(SIGEMT, &action, NULL);
-  sigaction(SIGSYS, &action, NULL);
+  sigaction(SIGEMT, &action, nullptr);
+  sigaction(SIGSYS, &action, nullptr);
 #endif
 
   // Handle the SIGALRM signal. We use this signal to make sure the
@@ -1695,7 +1737,7 @@ init_signals()
   sigemptyset(&action.sa_mask);
   action.sa_flags = 0;
 
-  sigaction(SIGPIPE, &action, NULL);
+  sigaction(SIGPIPE, &action, nullptr);
   cop_log_trace("Leaving init_signals()\n");
 }
 
@@ -1752,7 +1794,7 @@ init()
 
   // Start up the records store and load the defaults so that we can locate our configuration.
   RecConfigFileInit();
-  RecordsConfigIterate(config_register_default, NULL);
+  RecordsConfigIterate(config_register_default, nullptr);
 
   init_signals();
   init_syslog();
@@ -1774,9 +1816,9 @@ init()
 }
 
 static const ArgumentDescription argument_descriptions[] = {
-  {"debug", 'd', "Enable debug logging", "F", &debug_flag, NULL, NULL},
-  {"stdout", 'o', "Print log messages to standard output", "F", &stdout_flag, NULL, NULL},
-  {"stop", 's', "Send child processes SIGSTOP instead of SIGKILL", "F", &stop_flag, NULL, NULL},
+  {"debug", 'd', "Enable debug logging", "F", &debug_flag, nullptr, nullptr},
+  {"stdout", 'o', "Print log messages to standard output", "F", &stdout_flag, nullptr, nullptr},
+  {"stop", 's', "Send child processes SIGSTOP instead of SIGKILL", "F", &stop_flag, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 
@@ -1802,7 +1844,7 @@ main(int /* argc */, const char *argv[])
   signal(SIGTTIN, SIG_IGN);
 
   // setup supplementary groups if it is not set. any way, worth a try.
-  if (0 == getgroups(0, NULL)) {
+  if (0 == getgroups(0, nullptr)) {
     uid_t uid = getuid();
     gid_t gid = getgid();
 
@@ -1810,7 +1852,7 @@ main(int /* argc */, const char *argv[])
     char buf[bufSize];
 
     struct passwd passwdInfo;
-    struct passwd *ppasswd = NULL;
+    struct passwd *ppasswd = nullptr;
     int res;
     res = getpwuid_r(uid, &passwdInfo, buf, bufSize, &ppasswd);
     if (!res && ppasswd) {
@@ -1849,7 +1891,7 @@ main(int /* argc */, const char *argv[])
 
   // Initialize and start it up.
   init();
-  check(NULL);
+  check(nullptr);
 
   return 0;
 }

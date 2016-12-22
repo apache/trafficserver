@@ -34,7 +34,6 @@
 
 #include "ts/INK_MD5.h"
 
-#include "Error.h"
 #include "ts/SimpleTokenizer.h"
 
 #include "LogUtils.h"
@@ -59,7 +58,7 @@ bool LogFormat::m_tagging_on = false;
 bool
 LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec)
 {
-  if (name == NULL) {
+  if (name == nullptr) {
     Note("missing log format name");
     return false;
   }
@@ -76,8 +75,8 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
       ink_strlcat(m_format_str, tag, m_format_str_size);
     };
 
-    char *printf_str    = NULL;
-    char *fieldlist_str = NULL;
+    char *printf_str    = nullptr;
+    char *fieldlist_str = nullptr;
     int nfields         = parse_format_string(m_format_str, &printf_str, &fieldlist_str);
     if (nfields > (m_tagging_on ? 1 : 0)) {
       init_variables(name, fieldlist_str, printf_str, interval_sec);
@@ -147,7 +146,7 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
 
     if (m_name_str) {
       ats_free(m_name_str);
-      m_name_str = NULL;
+      m_name_str = nullptr;
       m_name_id  = 0;
     }
     if (name) {
@@ -157,7 +156,7 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
 
     if (m_fieldlist_str) {
       ats_free(m_fieldlist_str);
-      m_fieldlist_str = NULL;
+      m_fieldlist_str = nullptr;
       m_fieldlist_id  = 0;
     }
     if (fieldlist_str) {
@@ -185,16 +184,16 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
 LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval_sec)
   : m_interval_sec(0),
     m_interval_next(0),
-    m_agg_marshal_space(NULL),
+    m_agg_marshal_space(nullptr),
     m_valid(false),
-    m_name_str(NULL),
+    m_name_str(nullptr),
     m_name_id(0),
-    m_fieldlist_str(NULL),
+    m_fieldlist_str(nullptr),
     m_fieldlist_id(0),
     m_field_count(0),
-    m_printf_str(NULL),
+    m_printf_str(nullptr),
     m_aggregate(false),
-    m_format_str(NULL)
+    m_format_str(nullptr)
 {
   setup(name, format_str, interval_sec);
 
@@ -214,16 +213,16 @@ LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval
 LogFormat::LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec)
   : m_interval_sec(0),
     m_interval_next(0),
-    m_agg_marshal_space(NULL),
+    m_agg_marshal_space(nullptr),
     m_valid(false),
-    m_name_str(NULL),
+    m_name_str(nullptr),
     m_name_id(0),
-    m_fieldlist_str(NULL),
+    m_fieldlist_str(nullptr),
     m_fieldlist_id(0),
     m_field_count(0),
-    m_printf_str(NULL),
+    m_printf_str(nullptr),
     m_aggregate(false),
-    m_format_str(NULL)
+    m_format_str(nullptr)
 {
   init_variables(name, fieldlist_str, printf_str, interval_sec);
   m_format_type = LOG_FORMAT_CUSTOM;
@@ -239,23 +238,23 @@ LogFormat::LogFormat(const LogFormat &rhs)
   : RefCountObj(rhs),
     m_interval_sec(0),
     m_interval_next(0),
-    m_agg_marshal_space(NULL),
+    m_agg_marshal_space(nullptr),
     m_valid(rhs.m_valid),
-    m_name_str(NULL),
+    m_name_str(nullptr),
     m_name_id(0),
-    m_fieldlist_str(NULL),
+    m_fieldlist_str(nullptr),
     m_fieldlist_id(0),
     m_field_count(0),
-    m_printf_str(NULL),
+    m_printf_str(nullptr),
     m_aggregate(false),
-    m_format_str(NULL),
+    m_format_str(nullptr),
     m_format_type(rhs.m_format_type)
 {
   if (m_valid) {
     if (m_format_type == LOG_FORMAT_TEXT) {
       m_name_str = ats_strdup(rhs.m_name_str);
     } else {
-      m_format_str = rhs.m_format_str ? ats_strdup(rhs.m_format_str) : 0;
+      m_format_str = rhs.m_format_str ? ats_strdup(rhs.m_format_str) : nullptr;
       init_variables(rhs.m_name_str, rhs.m_fieldlist_str, rhs.m_printf_str, rhs.m_interval_sec);
     }
   }
@@ -295,9 +294,9 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   int format_id;
   char *format_name, *format_str;
 
-  ink_assert(file_name != NULL);
-  ink_assert(file_header != NULL);
-  ink_assert(file_type != NULL);
+  ink_assert(file_name != nullptr);
+  ink_assert(file_header != nullptr);
+  ink_assert(file_type != nullptr);
 
   SimpleTokenizer tok(spec, ':');
 
@@ -310,15 +309,15 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   // First should be the "format" keyword that says this is a format spec.
   //
   token = tok.getNext();
-  if (token == NULL) {
+  if (token == nullptr) {
     Debug("log-format", "token expected");
-    return NULL;
+    return nullptr;
   }
   if (strcasecmp(token, "format") == 0) {
     Debug("log-format", "this is a format");
   } else {
     Debug("log-format", "should be 'format'");
-    return NULL;
+    return nullptr;
   }
 
   //
@@ -326,27 +325,27 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   // whether we should care about this format or not.
   //
   token = tok.getNext();
-  if (token == NULL) {
+  if (token == nullptr) {
     Debug("log-format", "token expected");
-    return NULL;
+    return nullptr;
   }
   if (!strcasecmp(token, "disabled")) {
     Debug("log-format", "format not enabled, skipping ...");
-    return NULL;
+    return nullptr;
   } else if (!strcasecmp(token, "enabled")) {
     Debug("log-format", "enabled format");
   } else {
     Debug("log-format", "should be 'enabled' or 'disabled', not %s", token);
-    return NULL;
+    return nullptr;
   }
 
   //
   // Next should be the numeric format identifier
   //
   token = tok.getNext();
-  if (token == NULL) {
+  if (token == nullptr) {
     Debug("log-format", "token expected");
-    return NULL;
+    return nullptr;
   }
   format_id = atoi(token);
   // NOW UNUSED !!!
@@ -355,9 +354,9 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   // Next should be the format name
   //
   token = tok.getNext();
-  if (token == NULL) {
+  if (token == nullptr) {
     Debug("log-format", "token expected");
-    return NULL;
+    return nullptr;
   }
   format_name = token;
 
@@ -365,9 +364,9 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   // Next should be the printf-stlye format symbol string
   //
   token = tok.getNext();
-  if (token == NULL) {
+  if (token == nullptr) {
     Debug("log-format", "token expected");
-    return NULL;
+    return nullptr;
   }
   format_str = token;
 
@@ -375,9 +374,9 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   // Next should be the file name for the log
   //
   token = tok.getNext();
-  if (token == NULL) {
+  if (token == nullptr) {
     Debug("log-format", "token expected");
-    return NULL;
+    return nullptr;
   }
   *file_name = ats_strdup(token);
 
@@ -385,9 +384,9 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   // Next should be the file type, either "ASCII" or "BINARY"
   //
   token = tok.getNext();
-  if (token == NULL) {
+  if (token == nullptr) {
     Debug("log-format", "token expected");
-    return NULL;
+    return nullptr;
   }
   if (!strcasecmp(token, "ASCII")) {
     *file_type = LOG_FILE_ASCII;
@@ -395,29 +394,29 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
     *file_type = LOG_FILE_BINARY;
   } else {
     Debug("log-format", "%s is not a valid file format (ASCII or BINARY)", token);
-    return NULL;
+    return nullptr;
   }
 
   //
   // the rest should be the file header
   //
   token = tok.getRest();
-  if (token == NULL) {
+  if (token == nullptr) {
     Debug("log-format", "token expected");
-    return NULL;
+    return nullptr;
   }
   // set header to NULL if "none" was specified (a NULL header means
   // "write no header" to the rest of the logging system)
   //
-  *file_header = strcmp(token, "none") == 0 ? NULL : ats_strdup(token);
+  *file_header = strcmp(token, "none") == 0 ? nullptr : ats_strdup(token);
 
   Debug("log-format", "custom:%d:%s:%s:%s:%d:%s", format_id, format_name, format_str, *file_name, *file_type, token);
 
   format = new LogFormat(format_name, format_str);
-  ink_assert(format != NULL);
+  ink_assert(format != nullptr);
   if (!format->valid()) {
     delete format;
-    return NULL;
+    return nullptr;
   }
 
   return format;
@@ -441,11 +440,11 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   LogField::Container container;
   LogField::Aggregate aggregate;
 
-  if (symbol_string == NULL) {
+  if (symbol_string == nullptr) {
     return 0;
   }
-  ink_assert(field_list != NULL);
-  ink_assert(contains_aggregates != NULL);
+  ink_assert(field_list != nullptr);
+  ink_assert(contains_aggregates != nullptr);
 
   *contains_aggregates = false; // we'll change if it does
 
@@ -455,7 +454,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   sym_str = ats_strdup(symbol_string);
   symbol  = strtok_r(sym_str, ",", &saveptr);
 
-  while (symbol != NULL) {
+  while (symbol != nullptr) {
     //
     // See if there is an aggregate operator, which will contain "()"
     //
@@ -504,9 +503,9 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     //
     else if (*symbol == '{') {
       Debug("log-format", "Container symbol: %s", symbol);
-      f              = NULL;
+      f              = nullptr;
       char *name_end = strchr(symbol, '}');
-      if (name_end != NULL) {
+      if (name_end != nullptr) {
         name      = symbol + 1;
         *name_end = 0;            // changes '}' to '\0'
         sym       = name_end + 1; // start of container symbol
@@ -517,7 +516,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
           Note("Invalid container specification: %s", sym);
         } else {
           f = new LogField(name, container);
-          ink_assert(f != NULL);
+          ink_assert(f != nullptr);
           if (slice.m_enable) {
             f->m_slice = slice;
             Debug("log-slice", "symbol = %s, [%d:%d]", sym, f->m_slice.m_start, f->m_slice.m_end);
@@ -539,7 +538,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
       LogSlice slice(symbol);
       Debug("log-format", "Regular field symbol: %s", symbol);
       f = Log::global_field_list.find_by_symbol(symbol);
-      if (f != NULL) {
+      if (f != nullptr) {
         LogField *cpy = new LogField(*f);
         if (slice.m_enable) {
           cpy->m_slice = slice;
@@ -558,7 +557,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     //
     // Get the next symbol
     //
-    symbol = strtok_r(NULL, ",", &saveptr);
+    symbol = strtok_r(nullptr, ",", &saveptr);
   }
 
   ats_free(sym_str);
@@ -658,11 +657,11 @@ LogFormat::parse_escape_string(const char *str, int len)
 int
 LogFormat::parse_format_string(const char *format_str, char **printf_str, char **fields_str)
 {
-  ink_assert(printf_str != NULL);
-  ink_assert(fields_str != NULL);
+  ink_assert(printf_str != nullptr);
+  ink_assert(fields_str != nullptr);
 
-  if (format_str == NULL) {
-    *printf_str = *fields_str = NULL;
+  if (format_str == nullptr) {
+    *printf_str = *fields_str = nullptr;
     return 0;
   }
   //
@@ -807,7 +806,7 @@ LogFormatList::clear()
 void
 LogFormatList::add(LogFormat *format, bool copy)
 {
-  ink_assert(format != NULL);
+  ink_assert(format != nullptr);
 
   if (copy) {
     m_format_list.enqueue(new LogFormat(*format));
@@ -824,7 +823,7 @@ LogFormatList::find_by_name(const char *name) const
       return f;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 unsigned

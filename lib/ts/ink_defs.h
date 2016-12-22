@@ -69,11 +69,6 @@
 
 #define NUL '\0'
 
-// Need to use this to avoid problems when calling variadic functions
-// with many arguments. In such cases, a raw '0' or NULL can be
-// interpreted as 32 bits
-#define NULL_PTR static_cast<void *>(0)
-
 // Determine the element count for an array.
 #ifdef __cplusplus
 template <typename T, unsigned N>

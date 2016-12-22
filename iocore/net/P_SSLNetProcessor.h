@@ -72,7 +72,7 @@ public:
   // Private
   //
 
-  virtual NetAccept *createNetAccept();
+  virtual NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt);
   virtual NetVConnection *allocate_vc(EThread *t);
 
 private:

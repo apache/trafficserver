@@ -229,6 +229,8 @@ tsapi TSReturnCode TSHttpTxnUpdateCachedObject(TSHttpTxn txnp);
  ****************************************************************************/
 tsapi int TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp);
 
+tsapi void TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
+
 /**
    Attempt to attach the contp continuation to sockets that have already been
    opened by the traffic manager and defined as belonging to plugins (based on

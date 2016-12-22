@@ -368,7 +368,7 @@ MMHContext::MMHContext()
 bool
 MMHContext::update(void const *data, int length)
 {
-  return 0 == ink_code_incr_MMH_update(&_ctx, static_cast<char const *>(data), length);
+  return 0 == ink_code_incr_MMH_update(&_ctx, static_cast<const char *>(data), length);
 }
 
 bool
@@ -421,7 +421,7 @@ main()
   ink_code_MMH((unsigned char *)sc4, strlen(sc4), h.hash);
   printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
 
-  srand48(time(NULL));
+  srand48(time(nullptr));
   for (int xx = 0; xx < TEST_COLLISIONS; xx++) {
     char xs[256];
     xf[xx] = drand48();

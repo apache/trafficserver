@@ -34,10 +34,10 @@
 #include "ts/ink_assert.h"
 #include "ts/ink_args.h"
 
-static RegressionTest *test           = NULL;
-static RegressionTest *exclusive_test = NULL;
+static RegressionTest *test           = nullptr;
+static RegressionTest *exclusive_test = nullptr;
 
-RegressionTest *RegressionTest::current = 0;
+RegressionTest *RegressionTest::current = nullptr;
 int RegressionTest::ran_tests           = 0;
 DFA RegressionTest::dfa;
 int RegressionTest::final_status = REGRESSION_TEST_PASSED;
@@ -59,7 +59,7 @@ regression_status_string(int status)
 }
 
 RegressionTest::RegressionTest(const char *_n, const SourceLocation &_l, TestFunction *_f, int _o)
-  : name(_n), location(_l), function(_f), next(0), status(REGRESSION_TEST_NOT_RUN), printed(false), opt(_o)
+  : name(_n), location(_l), function(_f), next(nullptr), status(REGRESSION_TEST_NOT_RUN), printed(false), opt(_o)
 {
   if (opt == REGRESSION_OPT_EXCLUSIVE) {
     if (exclusive_test)
@@ -211,9 +211,9 @@ RegressionTest::main(int /* argc */, const char **argv, int level)
   int regression_level       = level;
 
   const ArgumentDescription argument_descriptions[] = {
-    {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},
-    {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
-    {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", NULL},
+    {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", nullptr},
+    {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", nullptr},
+    {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", nullptr},
   };
 
   AppVersionInfo version;
@@ -225,7 +225,7 @@ RegressionTest::main(int /* argc */, const char **argv, int level)
   if (regression_list) {
     RegressionTest::list();
   } else {
-    RegressionTest::run(*regression_test == '\0' ? NULL : regression_test, regression_level);
+    RegressionTest::run(*regression_test == '\0' ? nullptr : regression_test, regression_level);
   }
 
   return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;

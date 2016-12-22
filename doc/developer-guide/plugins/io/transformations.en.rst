@@ -30,10 +30,10 @@ VConnections (net VConnections and cache VConnections) are implemented
 in iocore. As mentioned earlier, a given vconnection can have a maximum
 of one read operation and one write operation being performed on it. The
 vconnection user gets information about the operation being performed by
-examining the VIO returned by a call to ``TSVConnRead`` or
-``TSVConnWrite``. The implementor, in turn, gets a handle on the VIO
-operation by examining the VIO returned by ``TSVConnReadVIOGet`` or
-``TSVConnWriteVIOGet`` (recall that every vconnection created through
+examining the VIO returned by a call to :c:func:`TSVConnRead` or
+:c:func:`TSVConnWrite`. The implementor, in turn, gets a handle on the VIO
+operation by examining the VIO returned by :c:func:`TSVConnReadVIOGet` or
+:c:func:`TSVConnWriteVIOGet` (recall that every vconnection created through
 the Traffic Server API has an associated read VIO and write VIO, even if
 it only supports reading or writing).
 
@@ -73,19 +73,19 @@ similar. Their basic form looks something like the code fragment below:
 This code fragment basically shows that many vconnections simply want to
 destroy themselves when they are closed. However, the situation might
 also require the vconnection to do some cleanup processing - which is
-why ``TSVConnClose`` does not simply just destroy the vconnection.
+why :c:func:`TSVConnClose` does not simply just destroy the vconnection.
 
 Vconnections are state machines that are animated by the events they
 receive. An event is sent to the vconnection whenever an
-``TSVConnRead``, ``TSVConnWrite``, ``TSVConnClose``,
-``TSVConnShutdown``, or ``TSVIOReenable`` call is performed.
-``TSVIOReenable`` indirectly references the vconnection through a
+:c:func:`TSVConnRead`, :c:func:`TSVConnWrite`, :c:func:`TSVConnClose`,
+:c:func:`TSVConnShutdown`, or :c:func:`TSVIOReenable` call is performed.
+:c:func:`TSVIOReenable` indirectly references the vconnection through a
 back-pointer in the VIO structure to the vconnection. The vconnection
 itself only knows which call was performed by examining its state and
-the state of its VIOs. For example, when ``TSVConnClose`` is called, the
+the state of its VIOs. For example, when :c:func:`TSVConnClose` is called, the
 vconnection is sent an immediate event (``TS_EVENT_IMMEDIATE``). For
 every event the vconnection receives, it needs to check its closed flag
-to see if it has been closed. Similarly, when ``TSVIOReenable`` is
+to see if it has been closed. Similarly, when :c:func:`TSVIOReenable` is
 called, the vconnection is sent an immediate event. For every event the
 vconnection receives, it must check its VIOs to see if the buffers have
 been modified to a state in which it can continue processing one of its
@@ -159,10 +159,10 @@ Here's how to make sure that all incoming data is consumed:
    ``TSVIONTodoGet`` (``input_vio``). This value should go to zero when
    all of the upstream data is consumed
    (``TSVIONTodoGet = nbytes - ndone``). Do not send
-   ``TS_EVENT_VCONN_WRITE_COMPLETE`` events if ``TSVIONTodoGet`` is
+   ``TS_EVENT_VCONN_WRITE_COMPLETE`` events if :c:func:`TSVIONTodoGet` is
    greater than zero.
 -  The transformation passes data out of itself by using the output
-   vconnection retrieved by ``TSTransformOutputVConnGet``. Immediately
+   vconnection retrieved by :c:func:`TSTransformOutputVConnGet`. Immediately
    before Traffic Server initiates the write operation (which inputs
    data into the transformation), it sets the output vconnection either
    to the next transformation in the chain of transformations or to a
@@ -172,12 +172,12 @@ Here's how to make sure that all incoming data is consumed:
    be deallocated.
 -  All of the transformations in a transformation chain share the
    transaction's mutex. This small restriction (enforced by
-   ``TSTransformCreate``) removes many of the locking complications of
+   :c:func:`TSTransformCreate`) removes many of the locking complications of
    implementing general vconnections. For example, a transformation does
    not have to grab its write VIO mutex before accessing its write VIO
    because it knows it already holds the mutex.
 
-The transformation functions are: \*
-:c:func:`TSTransformCreate`
-\*
-:c:func:`TSTransformOutputVConnGet`
+The transformation functions are:
+
+  - :c:func:`TSTransformCreate`
+  - :c:func:`TSTransformOutputVConnGet`

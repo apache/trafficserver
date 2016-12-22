@@ -46,7 +46,7 @@ Cpp11BracedListStyle: true
 DerivePointerAlignment: false
 DisableFormat:   false
 ExperimentalAutoDetectBinPacking: false
-ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
+ForEachMacros:   [ forv_Vec, for_Vec, forp_Vec, foreach, Q_FOREACH, BOOST_FOREACH ]
 SortIncludes:    false
 IncludeCategories: 
   - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'

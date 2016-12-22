@@ -36,7 +36,7 @@
 #include "ts/InkErrno.h"
 #include <ts/IpMapConf.h>
 
-socks_conf_struct *g_socks_conf_stuff = 0;
+socks_conf_struct *g_socks_conf_stuff = nullptr;
 
 ClassAllocator<SocksEntry> socksAllocator("socksAllocator");
 
@@ -59,10 +59,10 @@ SocksEntry::init(Ptr<ProxyMutex> &m, SocksNetVC *vc, unsigned char socks_support
   ats_ip_copy(&target_addr, vc->get_remote_addr());
 
 #ifdef SOCKS_WITH_TS
-  req_data.hdr          = 0;
-  req_data.hostname_str = 0;
-  req_data.api_info     = 0;
-  req_data.xact_start   = time(0);
+  req_data.hdr          = nullptr;
+  req_data.hostname_str = nullptr;
+  req_data.api_info     = nullptr;
+  req_data.xact_start   = time(nullptr);
 
   assert(ats_is_ip4(&target_addr));
   ats_ip_copy(&req_data.dest_ip, &target_addr);
@@ -157,10 +157,10 @@ SocksEntry::free()
       NET_INCREMENT_DYN_STAT(socks_connections_unsuccessful_stat);
       action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)(-lerrno));
     } else {
-      netVConnection->do_io_read(this, 0, 0);
-      netVConnection->do_io_write(this, 0, 0);
+      netVConnection->do_io_read(this, 0, nullptr);
+      netVConnection->do_io_write(this, 0, nullptr);
       netVConnection->action_ = action_; // assign the original continuation
-      ats_ip_copy(&netVConnection->server_addr, &server_addr);
+      netVConnection->con.setRemote(&server_addr.sa);
       Debug("Socks", "Sent success to HTTP");
       NET_INCREMENT_DYN_STAT(socks_connections_successful_stat);
       action_.continuation->handleEvent(NET_EVENT_OPEN, netVConnection);
@@ -171,8 +171,8 @@ SocksEntry::free()
 #endif
 
   free_MIOBuffer(buf);
-  action_ = NULL;
-  mutex   = NULL;
+  action_ = nullptr;
+  mutex   = nullptr;
   socksAllocator.free(this);
 }
 
@@ -190,7 +190,7 @@ SocksEntry::startEvent(int event, void *data)
   } else {
     if (timeout) {
       timeout->cancel(this);
-      timeout = NULL;
+      timeout = nullptr;
     }
 
     char buff[INET6_ADDRPORTSTRLEN];
@@ -207,12 +207,12 @@ SocksEntry::startEvent(int event, void *data)
 
     if (timeout) {
       timeout->cancel(this);
-      timeout = 0;
+      timeout = nullptr;
     }
 
     if (netVConnection) {
       netVConnection->do_io_close();
-      netVConnection = 0;
+      netVConnection = nullptr;
     }
 
     timeout = this_ethread()->schedule_in(this, HRTIME_SECONDS(netProcessor.socks_conf_stuff->server_connect_timeout));
@@ -274,7 +274,7 @@ SocksEntry::mainEvent(int event, void *data)
           memcpy(p + n_bytes, &target_addr.sin.sin_addr, 4);
           n_bytes += 4;
 
-          p[n_bytes++] = 0; // NULL
+          p[n_bytes++] = 0; // nullptr
         } else {
           Debug("Socks", "SOCKS v4 supports only IPv4 addresses.");
         }
@@ -302,14 +302,14 @@ SocksEntry::mainEvent(int event, void *data)
   case VC_EVENT_WRITE_COMPLETE:
     if (timeout) {
       timeout->cancel(this);
-      timeout    = NULL;
+      timeout    = nullptr;
       write_done = true;
     }
 
     buf->reset(); // Use the same buffer for a read now
 
     if (auth_handler)
-      n_bytes = invokeSocksAuthHandler(auth_handler, SOCKS_AUTH_WRITE_COMPLETE, NULL);
+      n_bytes = invokeSocksAuthHandler(auth_handler, SOCKS_AUTH_WRITE_COMPLETE, nullptr);
     else if (socks_cmd == NORMAL_SOCKS)
       n_bytes = (version == SOCKS5_VERSION) ? SOCKS5_REP_LEN : SOCKS4_REP_LEN;
     else {
@@ -329,7 +329,7 @@ SocksEntry::mainEvent(int event, void *data)
   case VC_EVENT_READ_READY:
     ret = EVENT_CONT;
 
-    if (version == SOCKS5_VERSION && auth_handler == NULL) {
+    if (version == SOCKS5_VERSION && auth_handler == nullptr) {
       VIO *vio = (VIO *)data;
       p        = (unsigned char *)buf->start();
 
@@ -365,7 +365,7 @@ SocksEntry::mainEvent(int event, void *data)
   case VC_EVENT_READ_COMPLETE:
     if (timeout) {
       timeout->cancel(this);
-      timeout = NULL;
+      timeout = nullptr;
     }
     // Debug("Socks", "Successfully read the reply from the SOCKS server");
     p = (unsigned char *)buf->start();
@@ -379,7 +379,7 @@ SocksEntry::mainEvent(int event, void *data)
       } else if (auth_handler != temp) {
         // here either authorization is done or there is another
         // stage left.
-        mainEvent(NET_EVENT_OPEN, NULL);
+        mainEvent(NET_EVENT_OPEN, nullptr);
       }
 
     } else {
@@ -404,7 +404,7 @@ SocksEntry::mainEvent(int event, void *data)
     break;
 
   case EVENT_INTERVAL:
-    timeout = NULL;
+    timeout = nullptr;
     if (write_done) {
       lerrno = ESOCK_TIMEOUT;
       free();
@@ -420,7 +420,7 @@ SocksEntry::mainEvent(int event, void *data)
   case VC_EVENT_ERROR:
     /*This is mostly ECONNREFUSED on Unix */
     SET_HANDLER(&SocksEntry::startEvent);
-    startEvent(NET_EVENT_OPEN_FAILED, NULL);
+    startEvent(NET_EVENT_OPEN_FAILED, nullptr);
     break;
 
   case VC_EVENT_EOS:
@@ -602,7 +602,7 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
       case 0: // no authentication required
         Debug("Socks", "No authentication required for Socks server");
         // make sure this is ok for us. right now it is always ok for us.
-        *h_ptr = NULL;
+        *h_ptr = nullptr;
         break;
 
       case 2:
@@ -611,7 +611,7 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
           Debug("Socks", "Buggy Socks server: asks for username/passwd "
                          "when not supplied as an option");
           ret    = -1;
-          *h_ptr = NULL;
+          *h_ptr = nullptr;
         } else
           *(SocksAuthHandler *)h_ptr = &socks5PasswdAuthHandler;
 
@@ -620,7 +620,7 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
       case 0xff:
         Debug("Socks", "None of the Socks authentcations is acceptable "
                        "to the server");
-        *h_ptr = NULL;
+        *h_ptr = nullptr;
         ret    = -1;
         break;
 
@@ -677,7 +677,7 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
     switch (p[1]) {
     case 0:
       Debug("Socks", "Username/Passwd succeded");
-      *h_ptr = NULL;
+      *h_ptr = nullptr;
       break;
 
     default:

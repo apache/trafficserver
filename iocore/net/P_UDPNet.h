@@ -141,7 +141,7 @@ public:
     if (t > delivery_time[now_slot]) {
       return bucket[now_slot].head;
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -175,7 +175,7 @@ public:
 
     for (i = 0; i < numSlots; i++) {
       s = (now_slot + i) % N_SLOTS;
-      while (NULL != (p = bucket[s].dequeue())) {
+      while (nullptr != (p = bucket[s].dequeue())) {
         if (IsCancelledPacket(p)) {
           p->free();
           continue;
@@ -183,7 +183,7 @@ public:
         tempQ.enqueue(p);
       }
       // remove and flip it over
-      while (NULL != (p = tempQ.dequeue())) {
+      while (nullptr != (p = tempQ.dequeue())) {
         bucket[s].enqueue(p);
       }
     }
@@ -203,9 +203,9 @@ public:
       // this is to handle wierdoness where someone is trying to queue a
       // packet to be sent in SLOT_TIME_MSEC * N_SLOTS * (2+)---the packet
       // will get back to longTermQ and we'll have an infinite loop.
-      while ((p = longTermQ.dequeue()) != NULL)
+      while ((p = longTermQ.dequeue()) != nullptr)
         tempQ.enqueue(p);
-      while ((p = tempQ.dequeue()) != NULL)
+      while ((p = tempQ.dequeue()) != nullptr)
         addPacket(p);
     }
 

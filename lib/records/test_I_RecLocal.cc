@@ -27,7 +27,7 @@
 
 #include "P_RecCore.h"
 
-Diags *diags = NULL;
+Diags *diags = nullptr;
 void RecDumpRecordsHt(RecT rec_type);
 
 //-------------------------------------------------------------------------
@@ -174,16 +174,16 @@ main(int argc, char **argv)
 {
   // start diags logging
   FILE *log_fp;
-  if ((log_fp = fopen("reclocal.log", "a+")) != NULL) {
-    int status = setvbuf(log_fp, NULL, _IOLBF, 512);
+  if ((log_fp = fopen("reclocal.log", "a+")) != nullptr) {
+    int status = setvbuf(log_fp, nullptr, _IOLBF, 512);
     if (status != 0) {
       fclose(log_fp);
-      log_fp = NULL;
+      log_fp = nullptr;
     }
   }
-  diags = new Diags("rec", NULL, log_fp);
+  diags = new Diags("rec", nullptr, log_fp);
   diags->activate_taglist(diags->base_debug_tags, DiagsTagType_Debug);
-  diags->log(NULL, DTA(DL_Note), "Starting '%s'", argv[0]);
+  diags->log(nullptr, DTA(DL_Note), "Starting '%s'", argv[0]);
 
   // system initialization
   RecLocalInit(diags);

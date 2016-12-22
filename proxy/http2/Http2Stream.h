@@ -45,10 +45,12 @@ public:
       header_blocks(NULL),
       header_blocks_length(0),
       request_header_length(0),
-      end_stream(false),
+      recv_end_stream(false),
+      send_end_stream(false),
       sent_request_header(false),
       response_header_done(false),
       request_sent(false),
+      is_first_transaction_flag(false),
       response_reader(NULL),
       request_reader(NULL),
       request_buffer(CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX),
@@ -147,11 +149,10 @@ public:
     return trailing_header;
   }
 
-  Http2ErrorCode
-  decode_header_blocks(HpackHandle &hpack_handle)
+  void
+  set_request_headers(HTTPHdr &h2_headers)
   {
-    return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks, header_blocks_length, NULL, hpack_handle,
-                                      trailing_header);
+    _req_header.copy(&h2_headers);
   }
 
   // Check entire DATA payload length if content-length: header is exist
@@ -168,6 +169,7 @@ public:
     return content_length == 0 || content_length == data_length;
   }
 
+  Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle);
   void send_request(Http2ConnectionState &cstate);
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false);
@@ -179,6 +181,7 @@ public:
   void reenable(VIO *vio);
   virtual void transaction_done();
   void send_response_body();
+  void push_promise(URL &url);
 
   // Stream level window size
   ssize_t client_rwnd, server_rwnd;
@@ -190,11 +193,13 @@ public:
                                   // Padding or other fields)
   uint32_t request_header_length; // total length of payload (include Padding
                                   // and other fields)
-  bool end_stream;
+  bool recv_end_stream;
+  bool send_end_stream;
 
   bool sent_request_header;
   bool response_header_done;
   bool request_sent;
+  bool is_first_transaction_flag;
 
   HTTPHdr response_header;
   IOBufferReader *response_reader;
@@ -231,9 +236,22 @@ public:
   void clear_timers();
   void clear_io_events();
   bool
-  is_client_state_writeable()
+  is_client_state_writeable() const
   {
-    return _state == HTTP2_STREAM_STATE_OPEN || _state == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+    return _state == HTTP2_STREAM_STATE_OPEN || _state == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE ||
+           HTTP2_STREAM_STATE_RESERVED_LOCAL;
+  }
+
+  bool
+  is_closed() const
+  {
+    return closed;
+  }
+
+  bool
+  is_first_transaction() const
+  {
+    return is_first_transaction_flag;
   }
 
 private:

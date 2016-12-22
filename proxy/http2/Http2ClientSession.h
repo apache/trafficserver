@@ -160,7 +160,7 @@ public:
   void start();
   virtual void destroy();
   virtual void free();
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
+  virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
 
   bool
   ready_to_free() const
@@ -174,16 +174,17 @@ public:
   void do_io_close(int lerrno = -1);
   void do_io_shutdown(ShutdownHowTo_t howto);
   void reenable(VIO *vio);
+
   virtual NetVConnection *
   get_netvc() const
   {
     return client_vc;
-  };
+  }
+
   virtual void
   release_netvc()
   {
-    // Make sure the vio's are also released to avoid
-    // later surprises in inactivity timeout
+    // Make sure the vio's are also released to avoid later surprises in inactivity timeout
     if (client_vc) {
       client_vc->do_io_read(NULL, 0, NULL);
       client_vc->do_io_write(NULL, 0, NULL);
@@ -204,6 +205,7 @@ public:
   }
 
   void set_upgrade_context(HTTPHdr *h);
+
   const Http2UpgradeContext &
   get_upgrade_context() const
   {
@@ -213,8 +215,9 @@ public:
   virtual int
   get_transact_count() const
   {
-    return (int)con_id;
+    return connection_state.get_stream_requests();
   }
+
   virtual void
   release(ProxyClientTransaction *trans)
   {
@@ -226,11 +229,13 @@ public:
   {
     dying_event = event;
   }
+
   int
   get_dying_event() const
   {
     return dying_event;
   }
+
   bool
   is_recursing() const
   {
@@ -241,6 +246,33 @@ public:
   get_protocol_string() const
   {
     return "http/2";
+  }
+
+  virtual int
+  populate_protocol(const char **result, int size) const
+  {
+    int retval = 0;
+    if (size > 0) {
+      result[0] = TS_PROTO_TAG_HTTP_2_0;
+      retval    = 1;
+      if (size > 1) {
+        retval += super::populate_protocol(result + 1, size - 1);
+      }
+    }
+    return retval;
+  }
+
+  virtual const char *
+  protocol_contains(const char *tag_prefix) const
+  {
+    const char *retval   = NULL;
+    unsigned int tag_len = strlen(tag_prefix);
+    if (tag_len <= strlen(TS_PROTO_TAG_HTTP_2_0) && strncmp(tag_prefix, TS_PROTO_TAG_HTTP_2_0, tag_len) == 0) {
+      retval = TS_PROTO_TAG_HTTP_2_0;
+    } else {
+      retval = super::protocol_contains(tag_prefix);
+    }
+    return retval;
   }
 
 private:
@@ -259,7 +291,6 @@ private:
   // if there are multiple frames ready on the wire
   int state_process_frame_read(int event, VIO *vio, bool inside_frame);
 
-  int64_t con_id;
   int64_t total_write_len;
   SessionHandler session_handler;
   NetVConnection *client_vc;

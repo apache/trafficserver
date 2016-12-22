@@ -25,6 +25,7 @@
 ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _round_robin_type)
 {
   round_robin_type = _round_robin_type;
+  latched_parent   = 0;
 
   if (is_debug_tag_set("parent_select")) {
     switch (round_robin_type) {
@@ -36,6 +37,9 @@ ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _roun
       break;
     case P_HASH_ROUND_ROBIN:
       Debug("parent_select", "Using a round robin parent selection strategy of type P_HASH_ROUND_ROBIN.");
+      break;
+    case P_LATCHED_ROUND_ROBIN:
+      Debug("parent_select", "Using a round robin parent selection strategy of type P_LATCHED_ROUND_ROBIN.");
       break;
     default:
       // should never see this, there is a problem if you do.
@@ -62,7 +66,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
   ink_assert(numParents(result) > 0 || result->rec->go_direct == true);
 
   if (first_call) {
-    if (result->rec->parents == NULL) {
+    if (result->rec->parents == nullptr) {
       // We should only get into this state if
       //   if we are supposed to go direct
       ink_assert(result->rec->go_direct == true);
@@ -73,7 +77,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
         result->result = PARENT_FAIL;
       }
 
-      result->hostname = NULL;
+      result->hostname = nullptr;
       result->port     = 0;
       return;
     } else {
@@ -84,7 +88,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
         // impact with the transition to IPv6?  The IPv4 functionality is
         // preserved for now anyway as ats_ip_hash returns the 32-bit address in
         // that case.
-        if (rdata->get_client_ip() != NULL) {
+        if (rdata->get_client_ip() != nullptr) {
           cur_index = result->start_parent = ntohl(ats_ip_hash(rdata->get_client_ip())) % result->rec->num_parents;
         } else {
           cur_index = 0;
@@ -97,13 +101,16 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       case P_NO_ROUND_ROBIN:
         cur_index = result->start_parent = 0;
         break;
+      case P_LATCHED_ROUND_ROBIN:
+        cur_index = result->start_parent = latched_parent;
+        break;
       default:
         ink_release_assert(0);
       }
     }
   } else {
     // Move to next parent due to failure
-    cur_index = (result->last_parent + 1) % result->rec->num_parents;
+    latched_parent = cur_index = (result->last_parent + 1) % result->rec->num_parents;
 
     // Check to see if we have wrapped around
     if ((unsigned int)cur_index == result->start_parent) {
@@ -115,7 +122,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
         } else {
           result->result = PARENT_FAIL;
         }
-        result->hostname = NULL;
+        result->hostname = nullptr;
         result->port     = 0;
         return;
       }
@@ -153,12 +160,12 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       result->port        = result->rec->parents[cur_index].port;
       result->last_parent = cur_index;
       result->retry       = parentRetry;
-      ink_assert(result->hostname != NULL);
+      ink_assert(result->hostname != nullptr);
       ink_assert(result->port != 0);
       Debug("parent_select", "Chosen parent = %s.%d", result->hostname, result->port);
       return;
     }
-    cur_index = (cur_index + 1) % result->rec->num_parents;
+    latched_parent = cur_index = (cur_index + 1) % result->rec->num_parents;
   } while ((unsigned int)cur_index != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
@@ -167,7 +174,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     result->result = PARENT_FAIL;
   }
 
-  result->hostname = NULL;
+  result->hostname = nullptr;
   result->port     = 0;
 }
 
@@ -211,7 +218,7 @@ ParentRoundRobin::markParentDown(const ParentSelectionPolicy *policy, ParentResu
   if (pRec->failedAt == 0 || result->retry == true) {
     // Reread the current time.  We want this to be accurate since
     //   it relates to how long the parent has been down.
-    now = time(NULL);
+    now = time(nullptr);
 
     // Mark the parent as down
     ink_atomic_swap(&pRec->failedAt, now);
@@ -232,7 +239,8 @@ ParentRoundRobin::markParentDown(const ParentSelectionPolicy *policy, ParentResu
   }
 
   if (new_fail_count > 0 && new_fail_count >= policy->FailThreshold) {
-    Note("Failure threshold met, http parent proxy %s:%d marked down", pRec->hostname, pRec->port);
+    Note("Failure threshold met failcount:%d >= threshold:%d, http parent proxy %s:%d marked down", new_fail_count,
+         policy->FailThreshold, pRec->hostname, pRec->port);
     ink_atomic_swap(&pRec->available, false);
     Debug("parent_select", "Parent marked unavailable, pRec->available=%d", pRec->available);
   }

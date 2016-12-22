@@ -31,33 +31,35 @@ BgFetchConfig::readConfig(const char *config_file)
   char file_path[4096];
   TSFile file;
 
-  if (NULL == config_file) {
+  if (nullptr == config_file) {
     TSError("[%s] invalid config file", PLUGIN_NAME);
     return false;
   }
 
   TSDebug(PLUGIN_NAME, "trying to open config file in this path: %s", config_file);
 
-  file = TSfopen(config_file, "r");
-  if (NULL == file) {
-    TSDebug(PLUGIN_NAME, "Failed to open config file %s, trying rel path", config_file);
-    snprintf(file_path, sizeof(file_path), "%s/%s", TSInstallDirGet(), config_file);
-    file = TSfopen(file_path, "r");
-    if (NULL == file) {
-      TSError("[%s] invalid config file", PLUGIN_NAME);
-      return false;
-    }
+  if (*config_file == '/') {
+    snprintf(file_path, sizeof(file_path), "%s", config_file);
+  } else {
+    snprintf(file_path, sizeof(file_path), "%s/%s", TSConfigDirGet(), config_file);
+  }
+  TSDebug(PLUGIN_NAME, "Chosen config file is at: %s", file_path);
+
+  file = TSfopen(file_path, "r");
+  if (nullptr == file) {
+    TSError("[%s] invalid config file:  %s", PLUGIN_NAME, file_path);
+    return false;
   }
 
-  BgFetchRule *cur = NULL;
+  BgFetchRule *cur = nullptr;
   char buffer[8192];
 
   memset(buffer, 0, sizeof(buffer));
-  while (TSfgets(file, buffer, sizeof(buffer) - 1) != NULL) {
-    char *eol = 0;
+  while (TSfgets(file, buffer, sizeof(buffer) - 1) != nullptr) {
+    char *eol = nullptr;
 
     // make sure line was not bigger than buffer
-    if (NULL == (eol = strchr(buffer, '\n')) && NULL == (eol = strstr(buffer, "\r\n"))) {
+    if (nullptr == (eol = strchr(buffer, '\n')) && nullptr == (eol = strstr(buffer, "\r\n"))) {
       TSError("[%s] exclusion line too long, did not get a good line in cfg, skipping, line: %s", PLUGIN_NAME, buffer);
       memset(buffer, 0, sizeof(buffer));
       continue;
@@ -68,14 +70,14 @@ BgFetchConfig::readConfig(const char *config_file)
       continue;
     }
 
-    char *savePtr = NULL;
+    char *savePtr = nullptr;
     char *cfg     = strtok_r(buffer, "\n\r\n", &savePtr);
 
-    if (NULL != cfg) {
+    if (nullptr != cfg) {
       TSDebug(PLUGIN_NAME, "setting background_fetch exclusion criterion based on string: %s", cfg);
       char *cfg_type  = strtok_r(buffer, " ", &savePtr);
-      char *cfg_name  = NULL;
-      char *cfg_value = NULL;
+      char *cfg_name  = nullptr;
+      char *cfg_value = nullptr;
       bool exclude    = false;
 
       if (cfg_type) {
@@ -86,9 +88,9 @@ BgFetchConfig::readConfig(const char *config_file)
           memset(buffer, 0, sizeof(buffer));
           continue;
         }
-        cfg_name = strtok_r(NULL, " ", &savePtr);
+        cfg_name = strtok_r(nullptr, " ", &savePtr);
         if (cfg_name) {
-          cfg_value = strtok_r(NULL, " ", &savePtr);
+          cfg_value = strtok_r(nullptr, " ", &savePtr);
           if (cfg_value) {
             if (!strcmp(cfg_name, "Content-Length")) {
               if ((cfg_value[0] != '<') && (cfg_value[0] != '>')) {
@@ -99,7 +101,7 @@ BgFetchConfig::readConfig(const char *config_file)
             }
             BgFetchRule *r = new BgFetchRule(exclude, cfg_name, cfg_value);
 
-            if (NULL == cur) {
+            if (nullptr == cur) {
               _rules = r;
             } else {
               cur->chain(r);

@@ -59,6 +59,12 @@ public:
     return parent ? parent->get_transact_count() : 0;
   }
 
+  virtual bool
+  is_first_transaction() const
+  {
+    return get_transact_count() == 1;
+  }
+
   // Ask your session if this is allowed
   bool
   is_transparent_passthrough_allowed()
@@ -103,11 +109,21 @@ public:
     return parent->has_hooks();
   }
 
-  // for DI. An active connection is one that a request has
-  // been successfully parsed (PARSE_DONE) and it remains to
-  // be active until the transaction goes through or the client
-  // aborts.
-  bool m_active;
+  virtual void
+  set_session_active()
+  {
+    if (parent) {
+      parent->set_session_active();
+    }
+  }
+
+  virtual void
+  clear_session_active()
+  {
+    if (parent) {
+      parent->clear_session_active();
+    }
+  }
 
   /// DNS resolution preferences.
   HostResStyle
@@ -226,6 +242,26 @@ public:
     return restart_immediate;
   }
 
+  virtual int
+  populate_protocol(const char **result, int size) const
+  {
+    int retval = 0;
+    if (parent) {
+      retval = parent->populate_protocol(result, size);
+    }
+    return retval;
+  }
+  virtual const char *
+  protocol_contains(const char *tag_prefix) const
+  {
+    const char *retval = NULL;
+    if (parent) {
+      retval = parent->protocol_contains(tag_prefix);
+    }
+    return retval;
+  }
+
+protected:
 protected:
   ProxyClientSession *parent;
   HttpSM *current_reader;

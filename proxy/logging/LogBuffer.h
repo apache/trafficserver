@@ -25,6 +25,7 @@
 #define LOG_BUFFER_H
 
 #include "ts/ink_platform.h"
+#include "ts/Diags.h"
 #include "LogFormat.h"
 #include "LogLimits.h"
 #include "LogAccess.h"

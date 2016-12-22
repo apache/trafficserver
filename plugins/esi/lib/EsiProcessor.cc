@@ -204,7 +204,7 @@ EsiProcessor::_getIncludeData(const DocNode &node, const char **content_ptr /* =
 
     if (url.value_len == 0) { // allow empty url
       if (content_ptr && content_len_ptr) {
-        *content_ptr     = NULL;
+        *content_ptr     = nullptr;
         *content_len_ptr = 0;
         return true;
       } else {
@@ -754,7 +754,7 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
       bool fetch = true;
       FailureData *threadData;
       /* FAILURE CACHE */
-      if ((threadData = static_cast<FailureData *>(pthread_getspecific(threadKey))) == NULL) {
+      if ((threadData = static_cast<FailureData *>(pthread_getspecific(threadKey))) == nullptr) {
         threadData = new FailureData();
         if (pthread_setspecific(threadKey, threadData)) {
           _errorLog("[%s] Unable to set the key", __FUNCTION__);

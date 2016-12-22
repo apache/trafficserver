@@ -26,7 +26,6 @@ Configuration Files
    :hidden:
 
    cache.config.en
-   cluster.config.en
    congestion.config.en
    hosting.config.en
    ip_allow.config.en
@@ -45,9 +44,6 @@ Configuration Files
 :doc:`cache.config.en`
     Defines if, how, and for what durations |TS| caches objects, based on
     destinations, clients, URL components, and more.
-
-:doc:`cluster.config.en`
-    Manages |TS| cluster configuration and membership on each node.
 
 :doc:`congestion.config.en`
     Defines network conditions under which clients will receive retry messages
@@ -96,5 +92,3 @@ Configuration Files
 
 :doc:`volume.config.en`
     Defines cache space usage by individual protocols.
-
-

@@ -56,12 +56,12 @@ struct CacheHostRecord {
 
   CacheHostRecord()
     : type(CACHE_NONE_TYPE),
-      vols(NULL),
+      vols(nullptr),
       good_num_vols(0),
       num_vols(0),
       num_initialized(0),
       vol_hash_table(0),
-      cp(NULL),
+      cp(nullptr),
       num_cachevols(0)
   {
   }
@@ -72,7 +72,7 @@ void build_vol_hash_table(CacheHostRecord *cp);
 struct CacheHostResult {
   CacheHostRecord *record;
 
-  CacheHostResult() : record(NULL) {}
+  CacheHostResult() : record(nullptr) {}
 };
 
 class CacheHostMatcher
@@ -81,7 +81,7 @@ public:
   CacheHostMatcher(const char *name, CacheType typ);
   ~CacheHostMatcher();
 
-  void Match(char const *rdata, int rlen, CacheHostResult *result);
+  void Match(const char *rdata, int rlen, CacheHostResult *result);
   void AllocateSpace(int num_entries);
   void NewEntry(matcher_line *line_info);
   void Print();
@@ -120,7 +120,7 @@ public:
   ~CacheHostTable();
   int BuildTable(const char *config_file_path);
   int BuildTableFromString(const char *config_file_path, char *str);
-  void Match(char const *rdata, int rlen, CacheHostResult *result);
+  void Match(const char *rdata, int rlen, CacheHostResult *result);
   void Print();
 
   int
@@ -157,7 +157,7 @@ struct CacheHostTableConfig;
 typedef int (CacheHostTableConfig::*CacheHostTabHandler)(int, void *);
 struct CacheHostTableConfig : public Continuation {
   CacheHostTable **ppt;
-  CacheHostTableConfig(CacheHostTable **appt) : Continuation(NULL), ppt(appt)
+  CacheHostTableConfig(CacheHostTable **appt) : Continuation(nullptr), ppt(appt)
   {
     SET_HANDLER((CacheHostTabHandler)&CacheHostTableConfig::mainEvent);
   }

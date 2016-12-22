@@ -153,7 +153,7 @@ struct InkBulkIORequest {
 
 /*
  * There is always 1 req. block and 1 pkt. block.  Next,
- * Leave space for 1 "NULL" block for the Address information.
+ * Leave space for 1 "nullptr" block for the Address information.
  */
 
 #define INKBIO_MAX_SPLIT_WO_HDR_PER_SPLIT_BLOCK                                                           \

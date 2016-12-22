@@ -126,7 +126,7 @@ struct ink_gethostbyaddr_r_data {
 
 /**
   Wrapper for gethostbyname_r(). If successful, returns a pointer
-  to the hostent structure. Returns NULL and sets data->herrno to
+  to the hostent structure. Returns nullptr and sets data->herrno to
   the appropriate error code on failure.
 
   @param hostname null-terminated host name string
@@ -137,7 +137,7 @@ struct hostent *ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data *da
 
 /**
   Wrapper for gethostbyaddr_r(). If successful, returns a pointer
-  to the hostent structure. Returns NULL and sets data->herrno to
+  to the hostent structure. Returns nullptr and sets data->herrno to
   the appropriate error code on failure.
 
   @param ip IP address of the host
@@ -160,7 +160,7 @@ int ats_tcp_somaxconn();
     @code
       [FE80:9312::192:168:1:1]:80
     @endcode
-    @a addr or @a port can be @c NULL in which case that value isn't returned.
+    @a addr or @a port can be @c nullptr in which case that value isn't returned.
 
     @return 0 if an address was found, non-zero otherwise.
 */
@@ -211,9 +211,9 @@ ats_ip_invalidate(IpEndpoint *ip)
 }
 
 /** Get a string name for an IP address family.
-    @return The string name (never @c NULL).
+    @return The string name (never @c nullptr).
 */
-char const *ats_ip_family_name(int family);
+const char *ats_ip_family_name(int family);
 
 /// Test for IP protocol.
 /// @return @c true if the address is IP, @c false otherwise.
@@ -562,7 +562,7 @@ ats_ip6_addr_cast(IpEndpoint const *ip)
 /** Cast an IP address to an array of @c uint32_t.
     @note The size of the array is dependent on the address type which
     must be checked independently of this function.
-    @return A pointer to the address information in @a addr or @c NULL
+    @return A pointer to the address information in @a addr or @c nullptr
     if @a addr is not an IP address.
 */
 inline uint32_t *
@@ -588,7 +588,7 @@ ats_ip_addr32_cast(sockaddr const *addr)
 /** Cast an IP address to an array of @c uint8_t.
     @note The size of the array is dependent on the address type which
     must be checked independently of this function.
-    @return A pointer to the address information in @a addr or @c NULL
+    @return A pointer to the address information in @a addr or @c nullptr
     if @a addr is not an IP address.
     @see ats_ip_addr_size
 */
@@ -1009,7 +1009,7 @@ ats_ip6_set(IpEndpoint *dst,      ///< Destination storage.
 /** Write a null terminated string for @a addr to @a dst.
     A buffer of size INET6_ADDRSTRLEN suffices, including a terminating nul.
  */
-char const *ats_ip_ntop(const sockaddr *addr, ///< Address.
+const char *ats_ip_ntop(const sockaddr *addr, ///< Address.
                         char *dst,            ///< Output buffer.
                         size_t size           ///< Length of buffer.
                         );
@@ -1017,7 +1017,7 @@ char const *ats_ip_ntop(const sockaddr *addr, ///< Address.
 /** Write a null terminated string for @a addr to @a dst.
     A buffer of size INET6_ADDRSTRLEN suffices, including a terminating nul.
  */
-inline char const *
+inline const char *
 ats_ip_ntop(IpEndpoint const *addr, ///< Address.
             char *dst,              ///< Output buffer.
             size_t size             ///< Length of buffer.
@@ -1036,7 +1036,7 @@ typedef char ip_port_text_buffer[INET6_ADDRPORTSTRLEN];
 /** Write a null terminated string for @a addr to @a dst with port.
     A buffer of size INET6_ADDRPORTSTRLEN suffices, including a terminating nul.
  */
-char const *ats_ip_nptop(const sockaddr *addr, ///< Address.
+const char *ats_ip_nptop(const sockaddr *addr, ///< Address.
                          char *dst,            ///< Output buffer.
                          size_t size           ///< Length of buffer.
                          );
@@ -1044,7 +1044,7 @@ char const *ats_ip_nptop(const sockaddr *addr, ///< Address.
 /** Write a null terminated string for @a addr to @a dst with port.
     A buffer of size INET6_ADDRPORTSTRLEN suffices, including a terminating nul.
  */
-inline char const *
+inline const char *
 ats_ip_nptop(IpEndpoint const *addr, ///< Address.
              char *dst,              ///< Output buffer.
              size_t size             ///< Length of buffer.
@@ -1085,7 +1085,7 @@ int ats_ip_pton(const ts::ConstBuffer &text, ///< [in] text.
     @return 0 on success, non-zero on failure.
 */
 inline int
-ats_ip_pton(char const *text,  ///< [in] text.
+ats_ip_pton(const char *text,  ///< [in] text.
             sockaddr_in6 *addr ///< [out] address
             )
 {
@@ -1131,8 +1131,8 @@ ats_ip_pton(const char *text, ///< [in] text.
     addresses and not just get the "best", use @c getaddrinfo
     directly.
 
-    @a ip4 or @a ip6 can be @c NULL and the result for that family is
-    discarded. It is legal for both to be @c NULL in which case this
+    @a ip4 or @a ip6 can be @c nullptr and the result for that family is
+    discarded. It is legal for both to be @c nullptr in which case this
     is just a format check.
 
     @return 0 if an address was found, non-zero otherwise.
@@ -1141,7 +1141,7 @@ ats_ip_pton(const char *text, ///< [in] text.
     @see getaddrinfo
  */
 
-int ats_ip_getbestaddrinfo(char const *name, ///< [in] Address name (IPv4, IPv6, or host name)
+int ats_ip_getbestaddrinfo(const char *name, ///< [in] Address name (IPv4, IPv6, or host name)
                            IpEndpoint *ip4,  ///< [out] Storage for IPv4 address.
                            IpEndpoint *ip6   ///< [out] Storage for IPv6 address
                            );
@@ -1197,7 +1197,7 @@ struct IpAddr {
   /// Construct from @c IpEndpoint.
   explicit IpAddr(IpEndpoint const *addr) { this->assign(&addr->sa); }
   /// Assign sockaddr storage.
-  self &assign(sockaddr const *addr ///< May be @c NULL
+  self &assign(sockaddr const *addr ///< May be @c nullptr
                );
 
   /// Assign from end point.
@@ -1217,7 +1217,7 @@ struct IpAddr {
       otherwise this object is invalidated.
       @return 0 on success, non-zero on failure.
   */
-  int load(char const *str ///< Nul terminated input string.
+  int load(const char *str ///< Nul terminated input string.
            );
 
   /** Load from string.
@@ -1467,7 +1467,7 @@ sockaddr *ats_ip_set(sockaddr *dst,      ///< Destination storage.
     @return 0 on success, non-zero on failure.
 */
 inline int
-ats_ip_pton(char const *text, ///< [in] text.
+ats_ip_pton(const char *text, ///< [in] text.
             IpAddr &addr      ///< [out] address
             )
 {

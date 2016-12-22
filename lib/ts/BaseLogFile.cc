@@ -48,7 +48,7 @@ BaseLogFile::BaseLogFile(const char *name, uint64_t sig) : m_signature(sig), m_h
  * This copy constructor creates a BaseLogFile based on a given copy.
  */
 BaseLogFile::BaseLogFile(const BaseLogFile &copy)
-  : m_fp(NULL),
+  : m_fp(nullptr),
     m_start_time(copy.m_start_time),
     m_end_time(0L),
     m_bytes_written(0),
@@ -58,7 +58,7 @@ BaseLogFile::BaseLogFile(const BaseLogFile &copy)
     m_hostname(ats_strdup(copy.m_hostname)),
     m_is_regfile(false),
     m_is_init(copy.m_is_init),
-    m_meta_info(NULL)
+    m_meta_info(nullptr)
 {
   log_log_trace("exiting BaseLogFile copy constructor, m_name=%s, this=%p\n", m_name.get(), this);
 }
@@ -84,15 +84,15 @@ BaseLogFile::~BaseLogFile()
 void
 BaseLogFile::init(const char *name)
 {
-  m_fp            = NULL;
-  m_start_time    = time(0);
+  m_fp            = nullptr;
+  m_start_time    = time(nullptr);
   m_end_time      = 0L;
   m_bytes_written = 0;
   m_name          = ats_strdup(name);
-  m_hostname      = NULL;
+  m_hostname      = nullptr;
   m_is_regfile    = false;
   m_is_init       = false;
-  m_meta_info     = NULL;
+  m_meta_info     = nullptr;
 }
 
 /*
@@ -122,7 +122,7 @@ int
 BaseLogFile::roll(long interval_start, long interval_end)
 {
   // First, let's see if a roll is even needed.
-  if (m_name == NULL || !BaseLogFile::exists(m_name.get())) {
+  if (m_name == nullptr || !BaseLogFile::exists(m_name.get())) {
     log_log_trace("Roll not needed for %s; file doesn't exist\n", (m_name.get()) ? m_name.get() : "no_name\n");
     return 0;
   }
@@ -151,9 +151,6 @@ BaseLogFile::roll(long interval_start, long interval_end)
   char end_time_ext[64];
   time_t start, end;
 
-  // Make sure the file is closed so we don't leak any descriptors.
-  close_file();
-
   // Start with conservative values for the start and end bounds, then
   // try to refine.
   start = 0L;
@@ -165,7 +162,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
     // our starting bounds.  Instead, we'll try to use the file
     // creation time stored in the metafile (if it's valid and we can
     // read it).  If all else fails, we'll use 0 for the start time.
-    log_log_trace("in BaseLogFile::roll(..) used metadata starttime");
+    log_log_trace("in BaseLogFile::roll(..) used metadata starttime\n");
     m_meta_info->get_creation_time(&start);
   } else {
     // The logfile was not preexisting (normal case), so we'll use
@@ -242,7 +239,7 @@ int
 BaseLogFile::roll()
 {
   long start;
-  time_t now = time(NULL);
+  time_t now = time(nullptr);
 
   if (!m_meta_info || !m_meta_info->get_creation_time(&start))
     start = 0L;
@@ -274,7 +271,7 @@ BaseLogFile::rolled_logfile(char *path)
 bool
 BaseLogFile::exists(const char *pathname)
 {
-  ink_assert(pathname != NULL);
+  ink_assert(pathname != nullptr);
   return (pathname && ::access(pathname, F_OK) == 0);
 }
 
@@ -291,7 +288,7 @@ BaseLogFile::open_file(int perm)
   }
 
   if (!m_name.get()) {
-    log_log_error("BaseLogFile: m_name is NULL, aborting open_file()\n");
+    log_log_error("BaseLogFile: m_name is nullptr, aborting open_file()\n");
     return LOG_FILE_COULD_NOT_OPEN_FILE;
   } else if (!strcmp(m_name.get(), "stdout")) {
     log_log_trace("BaseLogFile: stdout opened\n");
@@ -323,9 +320,9 @@ BaseLogFile::open_file(int perm)
     // The log file does not exist, so we create a new MetaInfo object
     //  which will save itself to disk right away (in the constructor)
     if (m_has_signature)
-      m_meta_info = new BaseMetaInfo(m_name.get(), (long)time(0), m_signature);
+      m_meta_info = new BaseMetaInfo(m_name.get(), (long)time(nullptr), m_signature);
     else
-      m_meta_info = new BaseMetaInfo(m_name.get(), (long)time(0));
+      m_meta_info = new BaseMetaInfo(m_name.get(), (long)time(nullptr));
   }
 
   // open actual log file (not metainfo)
@@ -366,7 +363,7 @@ BaseLogFile::close_file()
   if (is_open()) {
     fclose(m_fp);
     log_log_trace("BaseLogFile %s is closed\n", m_name.get());
-    m_fp      = NULL;
+    m_fp      = nullptr;
     m_is_init = false;
   }
 }
@@ -404,7 +401,7 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
 {
   va_list args;
 
-  const char *priority_name = NULL;
+  const char *priority_name = nullptr;
   FILE *output              = stdout;
   switch (priority) {
   case LL_Debug:
@@ -433,7 +430,7 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
   struct timeval now;
   double now_f;
 
-  gettimeofday(&now, NULL);
+  gettimeofday(&now, nullptr);
   now_f = now.tv_sec + now.tv_usec / 1000000.0f;
 
   fprintf(output, "<%.4f> [%s]: ", now_f, priority_name);
@@ -471,10 +468,10 @@ BaseMetaInfo::_build_name(const char *filename)
   _filename = (char *)ats_malloc(l + 7);
 
   if (i < 0) {
-    ink_string_concatenate_strings(_filename, ".", filename, ".meta", NULL);
+    ink_string_concatenate_strings(_filename, ".", filename, ".meta", nullptr);
   } else {
     memcpy(_filename, filename, i + 1);
-    ink_string_concatenate_strings(&_filename[i + 1], ".", &filename[i + 1], ".meta", NULL);
+    ink_string_concatenate_strings(&_filename[i + 1], ".", &filename[i + 1], ".meta", nullptr);
   }
 }
 
@@ -571,7 +568,7 @@ BaseMetaInfo::_write_to_file()
  *
  * Since the resulting buffer is passed in, this routine is thread-safe.
  * Return value is the number of characters placed into the array, not
- * including the NULL.
+ * including the nullptr.
  */
 
 int

@@ -65,6 +65,7 @@ public:
   ServerSessionPool();
   /// Handle events from server sessions.
   int eventHandler(int event, void *data);
+  static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
 
 protected:
   /// Interface class for IP map.
@@ -132,7 +133,7 @@ public:
       @return A pointer to the session or @c NULL if not matching session was found.
   */
   HSMresult_t acquireSession(sockaddr const *addr, INK_MD5 const &host_hash, TSServerSessionSharingMatchType match_style,
-                             HttpServerSession *&server_session);
+                             HttpSM *sm, HttpServerSession *&server_session);
   /** Release a session to to pool.
    */
   void releaseSession(HttpServerSession *ss);

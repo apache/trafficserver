@@ -263,6 +263,10 @@ public:
   bool is_private();
   bool is_redirect_required();
 
+  int populate_client_protocol(const char **result, int n) const;
+  const char *client_protocol_contains(const char *tag_prefix) const;
+  const char *find_proto_string(HTTPVersion version) const;
+
   int64_t sm_id;
   unsigned int magic;
 
@@ -506,7 +510,7 @@ public:
   // The next two enable plugins to tag the state machine for
   // the purposes of logging so the instances can be correlated
   // with the source plugin.
-  char const *plugin_tag;
+  const char *plugin_tag;
   int64_t plugin_id;
 
   // hooks_set records whether there are any hooks relevant

@@ -45,17 +45,19 @@ Plugins that are considered stable are installed by default in |TS| releases.
 .. toctree::
    :hidden:
 
-   AuthProxy <authproxy.en>
    AWS S3 Authentication <s3_auth.en>
+   AuthProxy <authproxy.en>
    Background Fetch <background_fetch.en>
+   Combo Handler <combo_handler.en>
    Configuration Remap <conf_remap.en>
    ESI <esi.en>
-   Generator <generator.en>
    GZip <gzip.en>
+   Generator <generator.en>
    Header Rewrite <header_rewrite.en>
    Health Checks <healthchecks.en>
    Regex Remap <regex_remap.en>
    Regex Revalidate <regex_revalidate.en>
+   Remap Purge <remap_purge.en>
    Stats over HTTP <stats_over_http.en>
    TCPInfo <tcpinfo.en>
    XDebug <xdebug.en>
@@ -68,6 +70,9 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`Background Fetch <background_fetch.en>`
    Proactively fetch content from Origin in a way that it will fill the object into cache.
+
+:doc:`Combo Handler <combo_handler.en>`
+   Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
 
 :doc:`Configuration Remap <conf_remap.en>`
     Override configuration directives on a per-rule basis.
@@ -123,14 +128,15 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Cache Key Manipulation <cachekey.en>
    Cache Promote <cache_promote.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
-   Combo Handler <combo_handler.en>
    Epic <epic.en>
    Escalate <escalate.en>
    GeoIP ACL <geoip_acl.en>
+   Header Frequency <header_freq.en>
    HIPES <hipes.en>
    Hook Trace <hook-trace.en>
    Memcache <memcache.en>
    Metalink <metalink.en>
+   Money Trace <money_trace.en>
    MP4 <mp4.en>
    MySQL Remap <mysql_remap.en>
    Signed URLs <url_sig.en>
@@ -155,9 +161,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving
    all clients in parallel.
 
-:doc:`Combo Handler <combo_handler.en>`
-   Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
-
 :doc:`Epic <epic.en>`
    Emits Traffic Server metrics in a format that is consumed by the Epic Network Monitoring System.
 
@@ -166,6 +169,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`GeoIP ACL <geoip_acl.en>`
    Deny or allow requests based on the source IP geo-location.
+
+:doc:`Header Frequency <header_freq.en>`
+   Count the frequency of headers.
 
 :doc:`HIPES <hipes.en>`
    Adds support for HTTP Pipes.
@@ -176,11 +182,18 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Metalink <metalink.en>`
    Implements the Metalink download description format in order to try not to download the same file twice.
 
+:doc:`Money Trace <metalink.en>`
+   Allows Trafficserver to participate in a distributed tracing system based upon the Comcast Money library.
+
 :doc:`MP4 <mp4.en>`
    MP4 streaming media.
 
 :doc:`MySQL Remap <mysql_remap.en>`
    Allows dynamic remaps from a MySQL database.
+
+:doc:`Remap Purge <remap_purge.en>`
+   This remap plugin allows the administrator to easily setup remotely
+   controlled ``PURGE`` for the content of an entire remap rule.
 
 :doc:`Signed URLs <url_sig.en>`
    Adds support for verifying URL signatures for incoming requests to either deny or redirect access.
@@ -190,6 +203,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Stale While Revalidate <stale_while_revalidate.en>`
    :deprecated:
+
    Refresh content asynchronously while serving stale data.
 
 :doc:`TS Lua <ts_lua.en>`

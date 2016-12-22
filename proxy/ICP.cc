@@ -150,7 +150,7 @@ typedef int (ICPHandlerCont::*ICPHandlerContHandler)(int, void *);
 typedef int (ICPRequestCont::*ICPRequestContHandler)(int, void *);
 
 // Plugin freshness function
-PluginFreshnessCalcFunc pluginFreshnessCalcFunc = (PluginFreshnessCalcFunc)NULL;
+PluginFreshnessCalcFunc pluginFreshnessCalcFunc = (PluginFreshnessCalcFunc) nullptr;
 
 //---------------------------------------
 // Class ICPHandlerCont member functions
@@ -163,7 +163,7 @@ int64_t ICPHandlerCont::ICPDataBuf_IOBuffer_sizeindex;
 static ClassAllocator<ICPPeerReadCont::PeerReadData> PeerReadDataAllocator("PeerReadDataAllocator");
 static ClassAllocator<ICPPeerReadCont> ICPPeerReadContAllocator("ICPPeerReadContAllocator");
 
-static Action *default_action = NULL;
+static Action *default_action = nullptr;
 
 ICPHandlerCont::ICPHandlerCont(ICPProcessor *icpP) : PeriodicCont(icpP)
 {
@@ -211,7 +211,7 @@ ICPHandlerCont::PeriodicEvent(int event, Event * /* e ATS_UNUSED */)
         ///////////////////////////////////////////
         // Start processing
         ///////////////////////////////////////////
-        s->handleEvent(EVENT_INTERVAL, (Event *)0);
+        s->handleEvent(EVENT_INTERVAL, (Event *)nullptr);
       }
     }
     break;
@@ -238,16 +238,16 @@ void
 ICPPeerReadCont::PeerReadData::init()
 {
   _start_time         = 0;
-  _mycont             = 0;
-  _peer               = 0;
+  _mycont             = nullptr;
+  _peer               = nullptr;
   _next_state         = READ_ACTIVE;
   _cache_lookup_local = 0;
-  _buf                = 0;
-  _rICPmsg            = 0;
+  _buf                = nullptr;
+  _rICPmsg            = nullptr;
   _rICPmsg_len        = 0;
   _cachelookupURL.clear();
   _queryResult   = 0;
-  _ICPReqCont    = 0;
+  _ICPReqCont    = nullptr;
   _bytesReceived = 0;
 #ifdef DEBUG_ICP
   _nhistory = 0;
@@ -264,11 +264,11 @@ void
 ICPPeerReadCont::PeerReadData::reset(int full_reset)
 {
   if (full_reset) {
-    _peer = 0;
-    _buf  = 0;
+    _peer = nullptr;
+    _buf  = nullptr;
   }
   if (_rICPmsg) {
-    _rICPmsg     = 0;
+    _rICPmsg     = nullptr;
     _rICPmsg_len = 0;
   }
 
@@ -283,13 +283,13 @@ ICPPeerReadCont::PeerReadData::reset(int full_reset)
 // ICPPeerReadCont -- ICP incoming message processing state machine
 //------------------------------------------------------------------------
 ICPPeerReadCont::ICPPeerReadCont()
-  : Continuation(0),
-    _object_vc(NULL),
-    _object_read(NULL),
-    _cache_req_hdr_heap_handle(NULL),
-    _cache_resp_hdr_heap_handle(NULL),
-    _ICPpr(NULL),
-    _state(NULL),
+  : Continuation(nullptr),
+    _object_vc(nullptr),
+    _object_read(nullptr),
+    _cache_req_hdr_heap_handle(nullptr),
+    _cache_resp_hdr_heap_handle(nullptr),
+    _ICPpr(nullptr),
+    _state(nullptr),
     _start_time(0),
     _recursion_depth(0)
 {
@@ -308,10 +308,10 @@ ICPPeerReadCont::init(ICPProcessor *ICPpr, Peer *p, int lookup_local)
   _ICPpr                      = ICPpr;
   _state                      = s;
   _recursion_depth            = -1;
-  _object_vc                  = NULL;
-  _object_read                = NULL;
-  _cache_req_hdr_heap_handle  = NULL;
-  _cache_resp_hdr_heap_handle = NULL;
+  _object_vc                  = nullptr;
+  _object_read                = nullptr;
+  _cache_req_hdr_heap_handle  = nullptr;
+  _cache_resp_hdr_heap_handle = nullptr;
   mutex                       = new_ProxyMutex();
 }
 
@@ -323,18 +323,18 @@ ICPPeerReadCont::~ICPPeerReadCont()
 void
 ICPPeerReadCont::reset(int full_reset)
 {
-  mutex = 0;
+  mutex = nullptr;
   if (this->_state) {
     this->_state->reset(full_reset);
     PeerReadDataAllocator.free(this->_state);
   }
   if (_cache_req_hdr_heap_handle) {
     ats_free(_cache_req_hdr_heap_handle);
-    _cache_req_hdr_heap_handle = NULL;
+    _cache_req_hdr_heap_handle = nullptr;
   }
   if (_cache_resp_hdr_heap_handle) {
     ats_free(_cache_resp_hdr_heap_handle);
-    _cache_resp_hdr_heap_handle = NULL;
+    _cache_resp_hdr_heap_handle = nullptr;
   }
 }
 
@@ -408,9 +408,9 @@ ICPPeerReadCont::StaleCheck(int event, Event * /* e ATS_UNUSED */)
   }
   }
   _object_vc->do_io(VIO::CLOSE);
-  _object_vc = 0;
+  _object_vc = nullptr;
   SET_HANDLER((ICPPeerReadContHandler)&ICPPeerReadCont::ICPPeerReadEvent);
-  return handleEvent(_state->_queryResult, 0);
+  return handleEvent(_state->_queryResult, nullptr);
 }
 
 int
@@ -452,7 +452,7 @@ ICPPeerReadCont::ICPPeerQueryCont(int /* event ATS_UNUSED */, Event * /* e ATS_U
   // Perform lookup()/open_read() on behalf of PeerReadStateMachine()
 
   ((char *)_state->_rICPmsg)[MAX_ICP_MSGSIZE - 1] = 0; // null terminate
-  _state->_cachelookupURL.create(NULL);
+  _state->_cachelookupURL.create(nullptr);
   const char *qurl = (const char *)_state->_rICPmsg->un.query.URL;
   _state->_cachelookupURL.parse(qurl, strlen(qurl));
   Debug("icp", "Remote Query for id=%d, [%s] from [%s]", _state->_rICPmsg->h.requestno, _state->_rICPmsg->un.query.URL,
@@ -482,14 +482,14 @@ ICPPeerReadCont::ICPPeerQueryCont(int /* event ATS_UNUSED */, Event * /* e ATS_U
     if (a == ACTION_RESULT_DONE) {
       return EVENT_DONE; // callback complete
     } else if (a == ACTION_IO_ERROR) {
-      handleEvent(CACHE_EVENT_LOOKUP_FAILED, 0);
+      handleEvent(CACHE_EVENT_LOOKUP_FAILED, nullptr);
       return EVENT_DONE; // callback complete
     } else {
       return EVENT_CONT; // callback pending
     }
   } else {
     // Null URL, return failed lookup
-    handleEvent(CACHE_EVENT_LOOKUP_FAILED, 0);
+    handleEvent(CACHE_EVENT_LOOKUP_FAILED, nullptr);
     return EVENT_DONE; // callback done
   }
 }
@@ -564,7 +564,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       be[0]          = 0; // null terminate buffer
       s->_next_state = READ_DATA_DONE;
       RECORD_ICP_STATE_CHANGE(s, 0, READ_DATA_DONE);
-      ink_assert(s->_peer->readAction == NULL);
+      ink_assert(s->_peer->readAction == nullptr);
       Action *a =
         s->_peer->RecvFrom_re(this, this, buf.get(), buf->write_avail() - 1, &s->_peer->fromaddr.sa, &s->_peer->fromaddrlen);
       if (!a) {
@@ -584,7 +584,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
         // No data, terminate read loop.
         //
         ICP_INCREMENT_DYN_STAT(no_data_read_stat);
-        s->_peer->buf  = NULL; // release reference
+        s->_peer->buf  = nullptr; // release reference
         s->_next_state = READ_NOT_ACTIVE_EXIT;
         RECORD_ICP_STATE_CHANGE(s, 0, READ_NOT_ACTIVE_EXIT);
         // move to next state
@@ -598,9 +598,9 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
 
     case READ_DATA_DONE: {
       // Convert ICP message from network to host format
-      if (s->_peer->readAction != NULL) {
+      if (s->_peer->readAction != nullptr) {
         ink_assert(s->_peer->readAction == e);
-        s->_peer->readAction = NULL;
+        s->_peer->readAction = nullptr;
       }
       s->_bytesReceived = completionUtil::getBytesTransferred(e);
 
@@ -609,7 +609,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
         RECORD_ICP_STATE_CHANGE(s, 0, PROCESS_READ_DATA);
       } else {
         ICP_INCREMENT_DYN_STAT(no_data_read_stat);
-        s->_peer->buf  = NULL; // release reference
+        s->_peer->buf  = nullptr; // release reference
         s->_next_state = READ_NOT_ACTIVE_EXIT;
         RECORD_ICP_STATE_CHANGE(s, 0, READ_NOT_ACTIVE_EXIT);
       }
@@ -641,7 +641,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
           // Short read, terminate
           //
           ICP_INCREMENT_DYN_STAT(short_read_stat);
-          s->_peer->buf  = NULL;
+          s->_peer->buf  = nullptr;
           s->_next_state = READ_NOT_ACTIVE;
           RECORD_ICP_STATE_CHANGE(s, 0, READ_NOT_ACTIVE);
           break; // move to next_state
@@ -696,7 +696,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
           ICP_INCREMENT_DYN_STAT(invalid_sender_stat);
           Debug("icp", "Received msg from invalid sender [%s]", ats_ip_nptop(&s->_peer->fromaddr, ipb, sizeof(ipb)));
 
-          s->_peer->buf  = NULL;
+          s->_peer->buf  = nullptr;
           s->_next_state = READ_NOT_ACTIVE;
           RECORD_ICP_STATE_CHANGE(s, 0, READ_NOT_ACTIVE);
           break; // move to next_state
@@ -708,7 +708,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       ink_assert(!s->_buf);
       s->_buf       = s->_peer->buf;
       s->_rICPmsg   = (ICPMsg_t *)s->_buf->start();
-      s->_peer->buf = NULL;
+      s->_peer->buf = nullptr;
 
       //
       // Handle only ICP_VERSION_2/3 messages.  Reject all others.
@@ -718,8 +718,8 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
         Debug("icp", "Received (v=%d) !v2 && !v3 msg from sender [%s]", (uint32_t)s->_rICPmsg->h.version,
               ats_ip_nptop(&from, ipb, sizeof(ipb)));
 
-        s->_rICPmsg    = NULL;
-        s->_buf        = NULL;
+        s->_rICPmsg    = nullptr;
+        s->_buf        = nullptr;
         s->_next_state = READ_NOT_ACTIVE;
         RECORD_ICP_STATE_CHANGE(s, 0, READ_NOT_ACTIVE);
         break; // move to next_state
@@ -734,7 +734,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
         s->_next_state = AWAITING_CACHE_LOOKUP_RESPONSE;
         RECORD_ICP_STATE_CHANGE(s, 0, AWAITING_CACHE_LOOKUP_RESPONSE);
 
-        if (ICPPeerQueryCont(0, (Event *)0) == EVENT_DONE) {
+        if (ICPPeerQueryCont(0, (Event *)nullptr) == EVENT_DONE) {
           break; // Callback complete
         } else {
           return EVENT_DONE; // Callback pending
@@ -798,7 +798,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       //
       s->_next_state = WRITE_DONE;
       RECORD_ICP_STATE_CHANGE(s, 0, WRITE_DONE);
-      ink_assert(s->_peer->writeAction == NULL);
+      ink_assert(s->_peer->writeAction == nullptr);
       Action *a = s->_peer->SendMsg_re(this, this, &s->_mhdr, &s->_sender.sa);
       if (!a) {
         a = ACTION_IO_ERROR;
@@ -825,7 +825,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       ink_release_assert(0); // Should never happen
 
     case WRITE_DONE: {
-      s->_peer->writeAction = NULL;
+      s->_peer->writeAction = nullptr;
       int len               = completionUtil::getBytesTransferred(e);
 
       if (len == (int)ntohs(s->_rICPmsg->h.msglen)) {
@@ -891,7 +891,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
         // since the ICP request may be deallocated by the active
         // continuation.
         //
-        s->_ICPReqCont = (ICPRequestCont *)0;
+        s->_ICPReqCont = (ICPRequestCont *)nullptr;
         s->_next_state = GET_ICP_REQUEST;
         RECORD_ICP_STATE_CHANGE(s, 0, GET_ICP_REQUEST);
         return EVENT_CONT;
@@ -916,7 +916,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       }
 
       // Note: s->_ICPReqCont is deallocated at this point.
-      s->_ICPReqCont = 0;
+      s->_ICPReqCont = nullptr;
 
       MUTEX_UNTAKE_LOCK(ICPReqContMutex, ethread);
       if (request_start_time) {
@@ -939,7 +939,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       _ICPpr->DecPendingQuery();
       _ICPpr->Unlock();
 
-      s->_buf = 0;
+      s->_buf = nullptr;
       if (s->_next_state == READ_NOT_ACTIVE_EXIT) {
         s->_next_state = READ_PROCESSING_COMPLETE;
         return EVENT_DONE;
@@ -971,14 +971,14 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
 ClassAllocator<ICPRequestCont> ICPRequestCont_allocator("ICPRequestCont_allocator");
 
 ICPRequestCont::ICPRequestCont(ICPProcessor *pr, Continuation *c, URL *u)
-  : Continuation(0),
+  : Continuation(nullptr),
     _cont(c),
     _url(u),
     _start_time(0),
     _ICPpr(pr),
-    _timeout(0),
+    _timeout(nullptr),
     npending_actions(0),
-    pendingActions(NULL),
+    pendingActions(nullptr),
     _sequence_number(0),
     _expected_replies(0),
     _expected_replies_list(MAX_DEFINED_PEERS),
@@ -1000,12 +1000,12 @@ ICPRequestCont::ICPRequestCont(ICPProcessor *pr, Continuation *c, URL *u)
 
 ICPRequestCont::~ICPRequestCont()
 {
-  _act        = NULL;
-  this->mutex = NULL;
+  _act        = nullptr;
+  this->mutex = nullptr;
 
   if (_timeout) {
     _timeout->cancel(this);
-    _timeout = 0;
+    _timeout = nullptr;
   }
   RemoveICPRequest(_sequence_number);
 
@@ -1016,7 +1016,7 @@ ICPRequestCont::~ICPRequestCont()
   }
   if (pendingActions) {
     delete pendingActions;
-    pendingActions = 0;
+    pendingActions = nullptr;
   }
 }
 
@@ -1051,11 +1051,11 @@ ICPRequestCont::remove_all_pendingActions()
   for (intptr_t i = 0; i < pendingActions->length(); i++) {
     if ((*pendingActions)[i] && ((*pendingActions)[i] != ACTION_IO_ERROR)) {
       ((*pendingActions)[i])->cancel();
-      (*pendingActions)[i] = 0;
+      (*pendingActions)[i] = nullptr;
       npending_actions--;
       active_pendingActions++;
     } else {
-      (*pendingActions)[i] = 0;
+      (*pendingActions)[i] = nullptr;
     }
   }
   pendingActions->set_length(pendingActions->length() - active_pendingActions);
@@ -1161,7 +1161,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _ICPpr->Unlock();
 
         // Build the ICP query message
-        char *urlstr   = _url->string_get(NULL);
+        char *urlstr   = _url->string_get(nullptr);
         int urlstr_len = strlen(urlstr) + 1;
 
         int status = BuildICPMsg(ICP_OP_QUERY, _sequence_number = ICPReqSeqNumber(), 0 /* optflags */, 0 /* optdata */,
@@ -1225,7 +1225,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         int was_expected = P->ExpectedReplies(&_expected_replies_list);
         _expected_replies += was_expected;
         npending_actions++;
-        Action *a = P->SendMsg_re(this, P, &_sendMsgHdr, NULL);
+        Action *a = P->SendMsg_re(this, P, &_sendMsgHdr, nullptr);
         if (!a) {
           a = ACTION_IO_ERROR;
         }
@@ -1236,7 +1236,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
             }
             (*pendingActions)(npending_actions) = a;
           }
-          P->LogSendMsg(&_ICPmsg, NULL); // log as send query
+          P->LogSendMsg(&_ICPmsg, nullptr); // log as send query
           Debug("icp", "[ICP_QUEUE_REQUEST] Id=%d send query to [%s]", _sequence_number,
                 ats_ip_nptop(P->GetIP(), ipb, sizeof(ipb)));
         } else {
@@ -1276,7 +1276,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
       Debug("icp", "[ICP_AWAITING_RESPONSE] Id=%d", _sequence_number);
       ink_assert(d);
       ICPRequestEventArgs_t dummyArgs;
-      ICPRequestEventArgs_t *args = 0;
+      ICPRequestEventArgs_t *args = nullptr;
 
       if (event == ICP_RESPONSE_MESSAGE) {
         args = (ICPRequestEventArgs_t *)d;
@@ -1370,7 +1370,7 @@ ICPRequestCont::ICPResponseMessage(int event, ICPMsg_t *m, Peer *peer)
   ip_port_text_buffer ipb, ipb2;
 
   if (event == EVENT_INTERVAL) {
-    _timeout = 0;
+    _timeout = nullptr;
     remove_all_pendingActions();
 
     // ICP request response timeout, if we received a response from
@@ -1410,7 +1410,7 @@ ICPRequestCont::ICPResponseMessage(int event, ICPMsg_t *m, Peer *peer)
     case ICP_OP_HIT_OBJ: {
       // Kill timeout event
       _timeout->cancel(this);
-      _timeout = 0;
+      _timeout = nullptr;
 
       ICP_INCREMENT_DYN_STAT(icp_query_hits_stat);
       ++_received_replies;
@@ -1442,7 +1442,7 @@ ICPRequestCont::ICPResponseMessage(int event, ICPMsg_t *m, Peer *peer)
 
       // Kill timeout event
       _timeout->cancel(this);
-      _timeout = 0;
+      _timeout = nullptr;
 
       ICP_INCREMENT_DYN_STAT(icp_query_misses_stat);
       //
@@ -1452,7 +1452,7 @@ ICPRequestCont::ICPResponseMessage(int event, ICPMsg_t *m, Peer *peer)
       if (_ICPpr->GetParentPeers() > 0) {
         // In cases where multiple parents exist, we use
         // a round robin scheme.
-        Peer *p = NULL;
+        Peer *p = nullptr;
         // try to find an UP parent, if none, return ICP_LOOKUP_FAILED
         {
           int i;
@@ -1466,7 +1466,7 @@ ICPRequestCont::ICPResponseMessage(int event, ICPMsg_t *m, Peer *peer)
           // if no parent is selected, then return ICP_LOOKUP_FAILED
           if (i >= _ICPpr->GetParentPeers()) {
             Debug("icp", "None of the %d ICP parent(s) is up", _ICPpr->GetParentPeers());
-            p = NULL;
+            p = nullptr;
           }
         }
         if (p) {
@@ -1593,14 +1593,14 @@ ICPRequestCont::BuildICPMsg(ICPopcode_t op, unsigned int seqno, int optflags, in
     return 1; // failed
   }
 
-  mhdr->msg_name    = (caddr_t)0;
+  mhdr->msg_name    = (caddr_t) nullptr;
   mhdr->msg_namelen = 0;
 // TODO: The following is just awkward
 #if !defined(linux) && !defined(freebsd) && !defined(darwin) && !defined(solaris) && !defined(openbsd)
   mhdr->msg_accrights    = (caddr_t)0;
   mhdr->msg_accrightslen = 0;
 #elif !defined(solaris)
-  mhdr->msg_control    = 0;
+  mhdr->msg_control    = nullptr;
   mhdr->msg_controllen = 0;
   mhdr->msg_flags      = 0;
 #endif
@@ -1664,7 +1664,7 @@ ICPRequestCont::FindICPRequest(unsigned int seqno)
       return r;
     }
   }
-  return (ICPRequestCont *)0; // Not found
+  return (ICPRequestCont *)nullptr; // Not found
 }
 
 // Static member function
@@ -1710,18 +1710,18 @@ ICPProcessor icpProcessorInternal;
 ICPProcessorExt icpProcessor(&icpProcessorInternal);
 
 ICPProcessor::ICPProcessor()
-  : _l(0),
+  : _l(nullptr),
     _Initialized(0),
     _AllowIcpQueries(0),
     _PendingIcpQueries(0),
-    _ICPConfig(0),
-    _ICPPeriodic(0),
-    _ICPHandler(0),
-    _mcastCB_handler(NULL),
-    _PeriodicEvent(0),
-    _ICPHandlerEvent(0),
+    _ICPConfig(nullptr),
+    _ICPPeriodic(nullptr),
+    _ICPHandler(nullptr),
+    _mcastCB_handler(nullptr),
+    _PeriodicEvent(nullptr),
+    _ICPHandlerEvent(nullptr),
     _nPeerList(-1),
-    _LocalPeer(0),
+    _LocalPeer(nullptr),
     _curSendPeer(0),
     _nSendPeerList(-1),
     _curRecvPeer(0),
@@ -1985,12 +1985,12 @@ ICPProcessor::FreePeerList()
   int index;
   for (index = 0; index < (_nPeerList + 1); ++index) {
     if (_PeerList[index]) {
-      _PeerList[index] = 0;
+      _PeerList[index] = nullptr;
     }
   }
   // Reset all control data
   _nPeerList           = -1;
-  _LocalPeer           = (Peer *)0;
+  _LocalPeer           = (Peer *)nullptr;
   _curSendPeer         = 0;
   _nSendPeerList       = -1;
   _curRecvPeer         = 0;
@@ -2001,16 +2001,16 @@ ICPProcessor::FreePeerList()
   _last_recv_peer_bias = 0;
 
   for (index = 0; index < PEER_LIST_SIZE; index++) {
-    _PeerList[index] = 0;
+    _PeerList[index] = nullptr;
   }
   for (index = 0; index < SEND_PEER_LIST_SIZE; index++) {
-    _SendPeerList[index] = 0;
+    _SendPeerList[index] = nullptr;
   }
   for (index = 0; index < RECV_PEER_LIST_SIZE; index++) {
-    _RecvPeerList[index] = 0;
+    _RecvPeerList[index] = nullptr;
   }
   for (index = 0; index < PARENT_PEER_LIST_SIZE; index++) {
-    _ParentPeerList[index] = 0;
+    _ParentPeerList[index] = nullptr;
   }
   memset((void *)_PeerIDtoPollIndex, 0, sizeof(_PeerIDtoPollIndex[PEER_ID_POLL_INDEX_SIZE]));
 }
@@ -2065,7 +2065,7 @@ ICPProcessor::SetupListenSockets()
 
       } else if (P->GetType() == PEER_MULTICAST) {
         MultiCastPeer *pMC = (MultiCastPeer *)P;
-        ink_assert(_mcastCB_handler != NULL);
+        ink_assert(_mcastCB_handler != nullptr);
         status = pMC->GetSendChan()->setup_mc_send(pMC->GetIP(), _LocalPeer->GetIP(), NON_BLOCKING, pMC->GetTTL(),
                                                    DISABLE_MC_LOOPBACK, _mcastCB_handler);
         if (status) {
@@ -2243,13 +2243,13 @@ ICPProcessor::CancelPendingReads()
   // Cancel pending ICP read by sending a bogus message to
   //  the local ICP port.
 
-  ICPRequestCont *r = new (ICPRequestCont_allocator.alloc()) ICPRequestCont(this, NULL, NULL);
+  ICPRequestCont *r = new (ICPRequestCont_allocator.alloc()) ICPRequestCont(this, nullptr, nullptr);
   SET_CONTINUATION_HANDLER(r, (ICPRequestContHandler)&ICPRequestCont::NopICPRequestEvent);
   r->mutex = new_ProxyMutex();
 
   // TODO: Check return value?
-  ICPRequestCont::BuildICPMsg(ICP_OP_HIT, 0, 0 /* optflags */, 0 /* optdata */, 0 /* shostid */, (void *)0, 0, &r->_sendMsgHdr,
-                              r->_sendMsgIOV, &r->_ICPmsg);
+  ICPRequestCont::BuildICPMsg(ICP_OP_HIT, 0, 0 /* optflags */, 0 /* optdata */, 0 /* shostid */, (void *)nullptr, 0,
+                              &r->_sendMsgHdr, r->_sendMsgIOV, &r->_ICPmsg);
   r->_sendMsgHdr.msg_iovlen = 1;
   r->_ICPmsg.h.version      = ~r->_ICPmsg.h.version; // bogus message
 
@@ -2273,7 +2273,7 @@ ICPProcessor::GenericFindListPeer(IpAddr const &ip, uint16_t port, int validList
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Peer *
@@ -2337,7 +2337,7 @@ ICPProcessor::AddPeerToRecvList(Peer *P)
   // Returns 1 - added; 0 - Not added
 
   // Assert that no duplicate exists
-  ink_assert(FindRecvListPeer(IpAddr(P->GetIP()), ats_ip_port_host_order(P->GetIP())) == 0);
+  ink_assert(FindRecvListPeer(IpAddr(P->GetIP()), ats_ip_port_host_order(P->GetIP())) == nullptr);
 
   if (_nRecvPeerList + 1 < RECV_PEER_LIST_SIZE) {
     _nRecvPeerList++;
@@ -2356,7 +2356,7 @@ ICPProcessor::AddPeerToSendList(Peer *P)
   // Returns 1 - added; 0 - Not added
 
   // Assert that no duplicate exists
-  ink_assert(FindSendListPeer(IpAddr(P->GetIP()), ats_ip_port_host_order(P->GetIP())) == 0);
+  ink_assert(FindSendListPeer(IpAddr(P->GetIP()), ats_ip_port_host_order(P->GetIP())) == nullptr);
 
   if (_nSendPeerList + 1 < SEND_PEER_LIST_SIZE) {
     _nSendPeerList++;

@@ -41,7 +41,7 @@ enum RecErrT {
 //-------------------------------------------------------------------------
 // Types
 //-------------------------------------------------------------------------
-#define RecStringNull NULL
+#define RecStringNull nullptr
 
 typedef int64_t RecInt;
 typedef float RecFloat;
@@ -121,9 +121,11 @@ enum RecCheckT {
 
 /// The source of the value.
 /// @internal @c REC_SOURCE_NULL is useful for a return value, I don't see using it in the actual data.
+/// @internal If this is changed, TSMgmtSource in apidefs.h.in must also be changed.
 enum RecSourceT {
   REC_SOURCE_NULL,     ///< No source / value not set.
   REC_SOURCE_DEFAULT,  ///< Built in default.
+  REC_SOURCE_PLUGIN,   ///< Plugin supplied default.
   REC_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, cluster, etc.)
   REC_SOURCE_ENV       ///< Process environment variable.
 };
@@ -157,7 +159,7 @@ union RecData {
 struct RecRawStat {
   int64_t sum;
   int64_t count;
-  // XXX - these will waist some space because they are only needed for the globals
+  // XXX - these will waste some space because they are only needed for the globals
   // this is a fix for bug TS-162, so I am trying to do as few code changes as
   // possible, this should be revisted -bcall
   int64_t last_sum;   // value from the last global sync

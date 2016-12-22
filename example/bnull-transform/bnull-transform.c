@@ -151,11 +151,6 @@ handle_buffering(TSCont contp, MyData *data)
   }
 
   return 1;
-
-  /* If we are in this code path then something is seriously wrong. */
-  TSError("[bnull-transform] Fatal error in plugin");
-  TSReleaseAssert(!"[bnull-transform] Fatal error in plugin\n");
-  return 0;
 }
 
 static int

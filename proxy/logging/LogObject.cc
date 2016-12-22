@@ -29,7 +29,6 @@
 #include "ts/ink_platform.h"
 #include "ts/CryptoHash.h"
 #include "ts/INK_MD5.h"
-#include "Error.h"
 #include "P_EventSystem.h"
 #include "LogUtils.h"
 #include "LogField.h"
@@ -55,7 +54,7 @@ size_t
 LogBufferManager::preproc_buffers(LogBufferSink *sink)
 {
   SList(LogBuffer, write_link) q(write_list.popall()), new_q;
-  LogBuffer *b = NULL;
+  LogBuffer *b = nullptr;
   while ((b = q.pop())) {
     if (b->m_references || b->m_state.s.num_writers) {
       // Still has outstanding references.
@@ -91,7 +90,7 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
                      const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
                      int rolling_offset_hr, int rolling_size_mb, bool auto_created)
   : m_auto_created(auto_created),
-    m_alt_filename(NULL),
+    m_alt_filename(nullptr),
     m_flags(0),
     m_signature(0),
     m_flush_threads(flush_threads),
@@ -147,7 +146,7 @@ LogObject::LogObject(LogObject &rhs)
   if (rhs.m_logFile) {
     m_logFile = new LogFile(*(rhs.m_logFile));
   } else {
-    m_logFile = NULL;
+    m_logFile = nullptr;
   }
 
   LogFilter *filter;
@@ -220,7 +219,7 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
     --len;
   }; // remove dot at end of name
 
-  const char *ext = 0;
+  const char *ext = nullptr;
   int ext_len     = 0;
   if (i < 0) { // no extension, add one
     switch (file_format) {
@@ -288,7 +287,7 @@ LogObject::set_filter_list(const LogFilterList &list, bool copy)
   LogFilter *f;
 
   m_filter_list.clear();
-  for (f = list.first(); f != NULL; f = list.next(f)) {
+  for (f = list.first(); f != nullptr; f = list.next(f)) {
     m_filter_list.add(f, copy);
   }
   m_filter_list.set_conjunction(list.does_conjunction());
@@ -355,6 +354,29 @@ LogObject::display(FILE *fd)
   fprintf(fd, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 }
 
+static head_p
+increment_pointer_version(volatile head_p *dst)
+{
+  head_p h;
+  head_p new_h;
+
+  do {
+    INK_QUEUE_LD(h, *dst);
+    SET_FREELIST_POINTER_VERSION(new_h, FREELIST_POINTER(h), FREELIST_VERSION(h) + 1);
+  } while (ink_atomic_cas(&dst->data, h.data, new_h.data) == false);
+
+  return h;
+}
+
+static bool
+write_pointer_version(volatile head_p *dst, head_p old_h, void *ptr, head_p::version_type vers)
+{
+  head_p tmp_h;
+
+  SET_FREELIST_POINTER_VERSION(tmp_h, ptr, vers);
+  return ink_atomic_cas(&dst->data, old_h.data, tmp_h.data);
+}
+
 LogBuffer *
 LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
 {
@@ -366,14 +388,10 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
   do {
     // To avoid a race condition, we keep a count of held references in
     // the pointer itself and add this to m_outstanding_references.
-    head_p h;
-    int result = 0;
-    do {
-      INK_QUEUE_LD(h, m_log_buffer);
-      head_p new_h;
-      SET_FREELIST_POINTER_VERSION(new_h, FREELIST_POINTER(h), FREELIST_VERSION(h) + 1);
-      result = ink_atomic_cas(&m_log_buffer.data, h.data, new_h.data);
-    } while (!result);
+
+    // Increment the version of m_log_buffer, returning the previous version.
+    head_p h = increment_pointer_version(&m_log_buffer);
+
     buffer           = (LogBuffer *)FREELIST_POINTER(h);
     result_code      = buffer->checkout_write(write_offset, bytes_needed);
     bool decremented = false;
@@ -393,6 +411,7 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
       // swap the new buffer for the old one
       INK_WRITE_MEMORY_BARRIER;
       head_p old_h;
+
       do {
         INK_QUEUE_LD(old_h, m_log_buffer);
         if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h)) {
@@ -403,10 +422,8 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
           delete new_buffer;
           break;
         }
-        head_p tmp_h;
-        SET_FREELIST_POINTER_VERSION(tmp_h, new_buffer, 0);
-        result = ink_atomic_cas(&m_log_buffer.data, old_h.data, tmp_h.data);
-      } while (!result);
+      } while (!write_pointer_version(&m_log_buffer, old_h, new_buffer, 0));
+
       if (FREELIST_POINTER(old_h) == FREELIST_POINTER(h)) {
         ink_atomic_increment(&buffer->m_references, FREELIST_VERSION(old_h) - 1);
 
@@ -414,7 +431,9 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
         Debug("log-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
         m_buffer_manager[idx].add_to_flush_queue(buffer);
         Log::preproc_notify[idx].signal();
+        buffer = nullptr;
       }
+
       decremented = true;
       break;
 
@@ -435,27 +454,29 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
     default:
       ink_assert(false);
     }
+
     if (!decremented) {
       head_p old_h;
+
       do {
         INK_QUEUE_LD(old_h, m_log_buffer);
         if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h)) {
           break;
         }
-        head_p tmp_h;
-        SET_FREELIST_POINTER_VERSION(tmp_h, FREELIST_POINTER(h), FREELIST_VERSION(old_h) - 1);
-        result = ink_atomic_cas(&m_log_buffer.data, old_h.data, tmp_h.data);
-      } while (!result);
+
+      } while (!write_pointer_version(&m_log_buffer, old_h, FREELIST_POINTER(h), FREELIST_VERSION(old_h) - 1));
+
       if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h)) {
         ink_atomic_increment(&buffer->m_references, -1);
       }
     }
+
   } while (retry && write_offset); // if write_offset is null, we do
   // not retry because we really do
   // not want to write to the buffer
   // only to set it as full
   if (result_code == LogBuffer::LB_BUFFER_TOO_SMALL) {
-    buffer = NULL;
+    buffer = nullptr;
   }
   return buffer;
 }
@@ -467,7 +488,7 @@ LogObject::va_log(LogAccess *lad, const char *fmt, va_list ap)
   char entry[MAX_ENTRY];
   unsigned len = 0;
 
-  ink_assert(fmt != NULL);
+  ink_assert(fmt != nullptr);
   len = 0;
 
   if (this->m_flags & LOG_OBJECT_FMT_TIMESTAMP) {
@@ -524,7 +545,7 @@ LogObject::log(LogAccess *lad, const char *text_entry)
   if (lad && m_format->is_aggregate()) {
     // marshal the field data into the temp space provided by the
     // LogFormat object for aggregate formats
-    if (m_format->m_agg_marshal_space == NULL) {
+    if (m_format->m_agg_marshal_space == nullptr) {
       Note("No temp space to marshal aggregate fields into");
       return Log::FAIL;
     }
@@ -800,7 +821,7 @@ TextLogObject::write(const char *format, ...)
 {
   int ret_val;
 
-  ink_assert(format != NULL);
+  ink_assert(format != nullptr);
   va_list ap;
   va_start(ap, format);
   ret_val = va_write(format, ap);
@@ -821,7 +842,7 @@ TextLogObject::write(const char *format, ...)
 int
 TextLogObject::va_write(const char *format, va_list ap)
 {
-  return this->va_log(NULL, format, ap);
+  return this->va_log(nullptr, format, ap);
 }
 
 /*-------------------------------------------------------------------------
@@ -996,7 +1017,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
                   "different format is requesting the same "
                   "filename",
                   filename);
-          LogFile logfile(filename, NULL, LOG_FILE_ASCII, 0);
+          LogFile logfile(filename, nullptr, LOG_FILE_ASCII, 0);
           if (logfile.open_file() == LogFile::LOG_FILE_NO_ERROR) {
             long time_now = LogUtils::timestamp();
 
@@ -1078,7 +1099,7 @@ LogObjectManager::get_object_with_signature(uint64_t signature)
       return obj;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void
@@ -1261,7 +1282,7 @@ LogObjectManager::find_by_format_name(const char *name) const
       return this->_objects[i];
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 unsigned
@@ -1340,7 +1361,7 @@ static LogObject *
 MakeTestLogObject(const char *name)
 {
   const char *tmpdir = getenv("TMPDIR");
-  LogFormat format("testfmt", NULL);
+  LogFormat format("testfmt", nullptr);
 
   if (!tmpdir) {
     tmpdir = "/tmp";

@@ -109,18 +109,6 @@ public:
     sslHandShakeComplete = state;
   }
 
-  virtual bool
-  getSSLClientConnection() const
-  {
-    return sslClientConnection;
-  }
-
-  virtual void
-  setSSLClientConnection(bool state)
-  {
-    sslClientConnection = state;
-  }
-
   void
   setSSLSessionCacheHit(bool state)
   {
@@ -214,9 +202,9 @@ public:
     if (this->handShakeBuffer) {
       free_MIOBuffer(this->handShakeBuffer);
     }
-    this->handShakeReader    = NULL;
-    this->handShakeHolder    = NULL;
-    this->handShakeBuffer    = NULL;
+    this->handShakeReader    = nullptr;
+    this->handShakeHolder    = nullptr;
+    this->handShakeBuffer    = nullptr;
     this->handShakeBioStored = 0;
   }
 
@@ -243,14 +231,17 @@ public:
   const char *
   getSSLProtocol(void) const
   {
-    return ssl ? SSL_get_version(ssl) : NULL;
+    return ssl ? SSL_get_version(ssl) : nullptr;
   }
 
   const char *
   getSSLCipherSuite(void) const
   {
-    return ssl ? SSL_get_cipher_name(ssl) : NULL;
+    return ssl ? SSL_get_cipher_name(ssl) : nullptr;
   }
+
+  int populate_protocol(const char **results, int n) const;
+  const char *protocol_contains(const char *tag) const;
 
   /**
    * Populate the current object based on the socket information in in the
@@ -271,8 +262,9 @@ private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection &operator=(const SSLNetVConnection &);
 
+  const char *map_tls_protocol_to_tag(const char *proto_string) const;
+
   bool sslHandShakeComplete;
-  bool sslClientConnection;
   bool sslClientRenegotiationAbort;
   bool sslSessionCacheHit;
   MIOBuffer *handShakeBuffer;

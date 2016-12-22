@@ -37,7 +37,7 @@ completionUtil::create()
 TS_INLINE void
 completionUtil::destroy(Event *e)
 {
-  ink_assert(e != NULL);
+  ink_assert(e != nullptr);
   UDPIOEvent *u = (UDPIOEvent *)e;
   UDPIOEvent::free(u);
 }

@@ -51,7 +51,7 @@
 #include "ts/ink_cap.h"
 
 // global variable
-CallbackTable *local_event_callbacks;
+static CallbackTable *local_event_callbacks;
 
 extern FileManager *configFiles; // global in traffic_manager
 
@@ -71,7 +71,7 @@ Init(const char * /* socket_path ATS_UNUSED */, TSInitOptionT options)
       return TS_ERR_SYS_CALL;
     }
   } else {
-    local_event_callbacks = NULL;
+    local_event_callbacks = nullptr;
   }
 
   return TS_ERR_OKAY;
@@ -153,7 +153,6 @@ ProxyStateGet()
 TSMgmtError
 ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 {
-  int i = 0;
   char tsArgs[MAX_BUF_SIZE];
   char *proxy_options;
 
@@ -184,24 +183,16 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
       ink_strlcat(tsArgs, " -k", sizeof(tsArgs));
     }
 
-    if (strlen(tsArgs) > 0) { /* Passed command line args for proxy */
-      ats_free(lmgmt->proxy_options);
-      lmgmt->proxy_options = ats_strdup(tsArgs);
-      mgmt_log("[ProxyStateSet] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
-    }
+    mgmt_log("[ProxyStateSet] Traffic Server Args: '%s %s'\n", lmgmt->proxy_options ? lmgmt->proxy_options : "", tsArgs);
 
     lmgmt->run_proxy = true;
     lmgmt->listenForProxy();
-
-    do {
-      mgmt_sleep_sec(1);
-    } while (i++ < 20 && (lmgmt->proxy_running == 0));
-
-    if (!lmgmt->processRunning()) {
+    if (!lmgmt->startProxy(tsArgs)) {
       goto Lerror;
     }
 
     break;
+
   default:
     goto Lerror;
   }
@@ -349,8 +340,8 @@ ServerBacktrace(unsigned /* options */, char **trace)
   textBuffer text(0);
 
   Debug("backtrace", "tracing %zd threads for traffic_server PID %ld", threads.count(), (long)lmgmt->watched_process_pid);
-  for_Vec(pid_t, threadid, threads)
-  {
+
+  for_Vec (pid_t, threadid, threads) {
     Debug("backtrace", "tracing thread %ld", (long)threadid);
     // Get the thread name using /proc/PID/comm
     ats_scoped_fd fd;
@@ -381,7 +372,7 @@ ServerBacktrace(unsigned /* options */, char **trace)
 TSMgmtError
 ServerBacktrace(unsigned /* options */, char **trace)
 {
-  *trace = NULL;
+  *trace = nullptr;
   return TS_ERR_NOT_SUPPORTED;
 }
 
@@ -397,7 +388,7 @@ Reconfigure()
 {
   configFiles->rereadConfig();                              // TM rereads
   lmgmt->signalEvent(MGMT_EVENT_PLUGIN_CONFIG_UPDATE, "*"); // TS rereads
-  RecSetRecordInt("proxy.node.config.reconfigure_time", time(NULL), REC_SOURCE_DEFAULT);
+  RecSetRecordInt("proxy.node.config.reconfigure_time", time(nullptr), REC_SOURCE_DEFAULT);
   RecSetRecordInt("proxy.node.config.reconfigure_required", 0, REC_SOURCE_DEFAULT);
 
   return TS_ERR_OKAY;
@@ -460,7 +451,7 @@ StorageDeviceCmdOffline(const char *dev)
  * Signal plugins.
  */
 TSMgmtError
-LifecycleMessage(char const *tag, void const *data, size_t data_size)
+LifecycleMessage(const char *tag, void const *data, size_t data_size)
 {
   ink_release_assert(!"Not expected to reach here");
   lmgmt->signalEvent(MGMT_EVENT_LIFECYCLE_MESSAGE, tag);
@@ -897,7 +888,7 @@ ActiveEventGetMlt(LLQ *active_events)
   event_ht = lmgmt->alarm_keeper->getLocalAlarms();
 
   // iterate through hash-table and insert event_name's into active_events list
-  for (entry = ink_hash_table_iterator_first(event_ht, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(event_ht, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(event_ht, &iterator_state)) {
     char *key = (char *)ink_hash_table_entry_key(event_ht, entry);
 
@@ -957,7 +948,7 @@ EventIsActive(const char *event_name, bool *is_current)
 TSMgmtError
 EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data)
 {
-  return cb_table_register(local_event_callbacks, event_name, func, data, NULL);
+  return cb_table_register(local_event_callbacks, event_name, func, data, nullptr);
 }
 
 /*-------------------------------------------------------------------------

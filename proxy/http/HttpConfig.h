@@ -375,6 +375,7 @@ struct OverridableHttpConfigParams {
       fwd_proxy_auth_to_parent(0),
       uncacheable_requests_bypass_parent(1),
       attach_server_session_to_client(0),
+      forward_connect_method(0),
       insert_age_in_response(1),
       anonymize_remove_from(0),
       anonymize_remove_referer(0),
@@ -402,7 +403,6 @@ struct OverridableHttpConfigParams {
       insert_response_via_string(0),
       doc_in_cache_skip_dns(1),
       flow_control_enabled(0),
-      accept_encoding_filter_enabled(0),
       normalize_ae_gzip(0),
       srv_enabled(0),
       cache_open_write_fail_action(0),
@@ -426,7 +426,7 @@ struct OverridableHttpConfigParams {
       cache_guaranteed_min_lifetime(0),
       cache_guaranteed_max_lifetime(31536000),
       cache_max_stale_age(604800),
-      keep_alive_no_activity_timeout_in(115),
+      keep_alive_no_activity_timeout_in(120),
       keep_alive_no_activity_timeout_out(120),
       transaction_no_activity_timeout_in(30),
       transaction_no_activity_timeout_out(30),
@@ -493,6 +493,8 @@ struct OverridableHttpConfigParams {
   MgmtByte uncacheable_requests_bypass_parent;
   MgmtByte attach_server_session_to_client;
 
+  MgmtByte forward_connect_method;
+
   MgmtByte insert_age_in_response;
 
   ///////////////////////////////////////////////////////////////////
@@ -542,11 +544,6 @@ struct OverridableHttpConfigParams {
   //////////////////////
   MgmtByte doc_in_cache_skip_dns;
   MgmtByte flow_control_enabled;
-
-  ////////////////////////////////////////////////////////
-  // HTTP Accept-Encoding filtering based on User-Agent //
-  ////////////////////////////////////////////////////////
-  MgmtByte accept_encoding_filter_enabled;
 
   ////////////////////////////////
   // Optimize gzip alternates   //
@@ -804,6 +801,7 @@ public:
   MgmtByte send_100_continue_response;
   MgmtByte disallow_post_100_continue;
   MgmtByte parser_allow_non_http;
+  MgmtByte keepalive_internal_vc;
 
   MgmtByte server_session_sharing_pool;
 
@@ -817,39 +815,6 @@ private:
   /////////////////////////////////////
   HttpConfigParams(const HttpConfigParams &);
   HttpConfigParams &operator=(const HttpConfigParams &);
-};
-
-/////////////////////////////////////////////////////////////
-//
-// class HttpUserAgent_RegxEntry
-//
-// configuration entry for specific User-Agent
-// Created at startup time only and never changed
-// The main purpose of the User-Agent filtering is to find "bad" user agents
-// and modify Accept-Encoding to prevent compression for such "bad" guys
-/////////////////////////////////////////////////////////////
-
-class HttpUserAgent_RegxEntry
-{
-public:
-  typedef enum { // for more details, please see comments in "ae_ua.config" file
-    STRTYPE_UNKNOWN = 0,
-    STRTYPE_SUBSTR_CASE,  /* .substring, .string */
-    STRTYPE_SUBSTR_NCASE, /* .substring_ncase, .string_ncase */
-    STRTYPE_REGEXP        /* .regexp POSIX regular expression */
-  } StrType;
-
-  HttpUserAgent_RegxEntry *next;
-  int user_agent_str_size;
-  char *user_agent_str;
-  bool regx_valid;
-  StrType stype;
-  pcre *regx;
-
-  HttpUserAgent_RegxEntry();
-  ~HttpUserAgent_RegxEntry();
-
-  bool create(char *refexp_str = NULL, char *errmsgbuf = NULL, int errmsgbuf_size = 0);
 };
 
 /////////////////////////////////////////////////////////////
@@ -879,7 +844,6 @@ public:
 public:
   static int m_id;
   static HttpConfigParams m_master;
-  static HttpUserAgent_RegxEntry *user_agent_list;
 };
 
 // DI's request to disable ICP on the fly
@@ -945,6 +909,7 @@ inline HttpConfigParams::HttpConfigParams()
     send_100_continue_response(0),
     disallow_post_100_continue(0),
     parser_allow_non_http(1),
+    keepalive_internal_vc(0),
     server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD)
 {
 }

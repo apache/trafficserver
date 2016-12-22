@@ -47,8 +47,8 @@ alarm_list(unsigned argc, const char **argv)
   TSMgmtError error;
   CtrlAlarmList alarms;
 
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 0) {
-    return CtrlCommandUsage("alarm list", NULL, 0);
+  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 0) {
+    return CtrlCommandUsage("alarm list", nullptr, 0);
   }
 
   error = TSActiveEventGetMlt(alarms.list);
@@ -72,8 +72,8 @@ alarm_clear(unsigned argc, const char **argv)
   TSMgmtError error;
   CtrlAlarmList alarms;
 
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 0) {
-    return CtrlCommandUsage("alarm clear", NULL, 0);
+  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 0) {
+    return CtrlCommandUsage("alarm clear", nullptr, 0);
   }
 
   // First get the active alarms ...
@@ -106,8 +106,8 @@ alarm_resolve(unsigned argc, const char **argv)
   TSMgmtError error;
   CtrlAlarmList alarms;
 
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments == 0) {
-    return CtrlCommandUsage("alarm resolve ALARM [ALARM ...]", NULL, 0);
+  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments == 0) {
+    return CtrlCommandUsage("alarm resolve ALARM [ALARM ...]", nullptr, 0);
   }
 
   for (unsigned i = 0; i < n_file_arguments; ++i) {

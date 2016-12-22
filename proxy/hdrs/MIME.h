@@ -155,7 +155,7 @@ struct MIMEField {
 
      @return The index of @a value.
   */
-  int value_get_index(char const *value, int length) const;
+  int value_get_index(const char *value, int length) const;
 
   const char *value_get(int *length) const;
   int32_t value_get_int() const;
@@ -979,6 +979,7 @@ public:
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void field_value_append(MIMEField *field, const char *value, int value_length, bool prepend_comma = false,
                           const char separator = ',');
+  void value_append_or_set(const char *name, const int name_length, char *value, int value_length);
   void field_combine_dups(MIMEField *field, bool prepend_comma = false, const char separator = ',');
   time_t get_age();
   int64_t get_content_length() const;
@@ -1002,9 +1003,9 @@ public:
       This parses the host field for brackets and port value.
       @return The mime HOST field if it has a value, @c NULL otherwise.
   */
-  MIMEField *get_host_port_values(char const **host_ptr, ///< [out] Pointer to host.
+  MIMEField *get_host_port_values(const char **host_ptr, ///< [out] Pointer to host.
                                   int *host_len,         ///< [out] Length of host.
-                                  char const **port_ptr, ///< [out] Pointer to port.
+                                  const char **port_ptr, ///< [out] Pointer to port.
                                   int *port_len          ///< [out] Length of port.
                                   );
 
@@ -1388,6 +1389,18 @@ MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char sep
     }
     field_delete(current, false); // don't delete duplicates
     current = field->m_next_dup;
+  }
+}
+
+inline void
+MIMEHdr::value_append_or_set(const char *name, const int name_length, char *value, int value_length)
+{
+  MIMEField *field = nullptr;
+
+  if ((field = field_find(name, name_length)) != nullptr) {
+    field_value_append(field, value, value_length, true);
+  } else {
+    value_set(name, name_length, value, value_length);
   }
 }
 

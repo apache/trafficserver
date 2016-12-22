@@ -19,12 +19,12 @@
 include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/iocore/eventsystem \
-  -I$(top_srcdir)/iocore/utils \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/lib
+  -I$(abs_top_srcdir)/iocore/eventsystem \
+  -I$(abs_top_srcdir)/iocore/utils \
+  -I$(abs_top_srcdir)/mgmt \
+  -I$(abs_top_srcdir)/mgmt/api/include \
+  -I$(abs_top_srcdir)/mgmt/utils \
+  -I$(abs_top_srcdir)/lib
 
 noinst_LIBRARIES = librecords_lm.a librecords_p.a librecords_cop.a
 

@@ -38,11 +38,11 @@ url_mapping::url_mapping(int rank /* = 0 */)
     optional_referer(false),
     negative_referer(false),
     wildcard_from_scheme(false),
-    tag(NULL),
-    filter_redirect_url(NULL),
-    referer_list(0),
-    redir_chunk_list(0),
-    filter(NULL),
+    tag(nullptr),
+    filter_redirect_url(nullptr),
+    referer_list(nullptr),
+    redir_chunk_list(nullptr),
+    filter(nullptr),
     _plugin_count(0),
     _rank(rank)
 {
@@ -75,7 +75,7 @@ url_mapping::get_plugin(unsigned int index) const
 {
   Debug("url_rewrite", "get_plugin says we have %d plugins and asking for plugin %d", _plugin_count, index);
   if ((_plugin_count == 0) || unlikely(index > _plugin_count)) {
-    return NULL;
+    return nullptr;
   }
 
   return _plugin_list[index];
@@ -107,12 +107,12 @@ url_mapping::~url_mapping()
   tag                 = (char *)ats_free_null(tag);
   filter_redirect_url = (char *)ats_free_null(filter_redirect_url);
 
-  while ((r = referer_list) != 0) {
+  while ((r = referer_list) != nullptr) {
     referer_list = r->next;
     delete r;
   }
 
-  while ((rc = redir_chunk_list) != 0) {
+  while ((rc = redir_chunk_list) != nullptr) {
     redir_chunk_list = rc->next;
     delete rc;
   }
@@ -123,7 +123,7 @@ url_mapping::~url_mapping()
   }
 
   // Delete filters
-  while ((afr = filter) != NULL) {
+  while ((afr = filter) != nullptr) {
     filter = afr->next;
     delete afr;
   }
@@ -152,7 +152,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
 {
   char *c;
   redirect_tag_str *r, **rr;
-  redirect_tag_str *list = 0;
+  redirect_tag_str *list = nullptr;
   char type              = 0;
 
   if (url && *url) {
@@ -179,7 +179,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
         } else {
           url += 2;
         }
-        (*rr = r)->next = 0;
+        (*rr = r)->next = nullptr;
         rr              = &(r->next);
         // printf("\t***********'%c' - '%s'*******\n",r->type,r->chunk_str ? r->chunk_str : "<NULL>");
       } else {
@@ -194,7 +194,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
  *
 **/
 referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size)
-  : next(0), referer(0), referer_size(0), any(false), negative(false), regx_valid(false)
+  : next(nullptr), referer(nullptr), referer_size(0), any(false), negative(false), regx_valid(false)
 {
   const char *error;
   int erroffset;
@@ -202,19 +202,19 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
   if (error_flag) {
     *error_flag = false;
   }
-  regx = NULL;
+  regx = nullptr;
 
   if (_ref) {
     if (*_ref == '~') {
       negative = true;
       _ref++;
     }
-    if ((referer = ats_strdup(_ref)) != 0) {
+    if ((referer = ats_strdup(_ref)) != nullptr) {
       referer_size = strlen(referer);
       if (!strcmp(referer, "*")) {
         any = true;
       } else {
-        regx = pcre_compile(referer, PCRE_CASELESS, &error, &erroffset, NULL);
+        regx = pcre_compile(referer, PCRE_CASELESS, &error, &erroffset, nullptr);
         if (!regx) {
           if (errmsgbuf && (errmsgbuf_size - 1) > 0) {
             ink_strlcpy(errmsgbuf, error, errmsgbuf_size);
@@ -236,12 +236,12 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
 referer_info::~referer_info()
 {
   ats_free(referer);
-  referer      = 0;
+  referer      = nullptr;
   referer_size = 0;
 
   if (regx_valid) {
     pcre_free(regx);
-    regx       = NULL;
+    regx       = nullptr;
     regx_valid = false;
   }
 }

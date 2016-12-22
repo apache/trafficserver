@@ -191,8 +191,8 @@ CtrlGenericSubcommand(const char *name, const subcommand *cmds, unsigned ncmds, 
   CtrlCommandLine cmdline;
 
   // Process command line arguments and dump into variables
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments < 1) {
-    return CtrlSubcommandUsage(name, cmds, ncmds, NULL, 0);
+  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments < 1) {
+    return CtrlSubcommandUsage(name, cmds, ncmds, nullptr, 0);
   }
 
   cmdline.init(n_file_arguments, file_arguments);
@@ -203,7 +203,7 @@ CtrlGenericSubcommand(const char *name, const subcommand *cmds, unsigned ncmds, 
     }
   }
 
-  return CtrlSubcommandUsage(name, cmds, ncmds, NULL, 0);
+  return CtrlSubcommandUsage(name, cmds, ncmds, nullptr, 0);
 }
 
 int
@@ -215,9 +215,11 @@ main(int argc, const char **argv)
   CtrlVersionInfo.setup(PACKAGE_NAME, "traffic_ctl", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   program_name = CtrlVersionInfo.AppStr;
 
-  ArgumentDescription argument_descriptions[] = {{"debug", '-', "Enable debugging output", "F", &debug, NULL, NULL},
-                                                 HELP_ARGUMENT_DESCRIPTION(),
-                                                 VERSION_ARGUMENT_DESCRIPTION()};
+  ArgumentDescription argument_descriptions[] = {
+    {"debug", '-', "Enable debugging output", "F", &debug, nullptr, nullptr},
+    HELP_ARGUMENT_DESCRIPTION(),
+    VERSION_ARGUMENT_DESCRIPTION(),
+  };
 
   const subcommand commands[] = {
     {subcommand_alarm, "alarm", "Manipulate alarms"},
@@ -230,11 +232,11 @@ main(int argc, const char **argv)
   };
 
   BaseLogFile *base_log_file = new BaseLogFile("stderr");
-  diags                      = new Diags("" /* tags */, "" /* actions */, base_log_file);
+  diags                      = new Diags(program_name, "" /* tags */, "" /* actions */, base_log_file);
 
   // Process command line arguments and dump into variables
   if (!CtrlProcessArguments(argc, argv, argument_descriptions, countof(argument_descriptions))) {
-    return CtrlSubcommandUsage(NULL, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
+    return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
   }
 
   if (debug) {
@@ -246,13 +248,13 @@ main(int argc, const char **argv)
   CtrlDebug("debug logging active");
 
   if (n_file_arguments < 1) {
-    return CtrlSubcommandUsage(NULL, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
+    return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
   }
 
   // Make a best effort to connect the control socket. If it turns out we are just displaying help or something then it
   // doesn't matter that we failed. If we end up performing some operation then that operation will fail and display the
   // error.
-  TSInit(NULL, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
+  TSInit(nullptr, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
 
   for (unsigned i = 0; i < countof(commands); ++i) {
     if (strcmp(file_arguments[0], commands[i].name) == 0) {
@@ -265,5 +267,5 @@ main(int argc, const char **argv)
 
   // Done with the mgmt API.
   TSTerminate();
-  return CtrlSubcommandUsage(NULL, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
+  return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
 }

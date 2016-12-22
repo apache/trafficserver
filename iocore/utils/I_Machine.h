@@ -69,7 +69,7 @@ struct Machine {
   ~Machine();
 
   /** Initialize the singleton.
-      If @a hostname or @a ip are @c NULL then system defaults are used.
+      If @a hostname or @a ip are @c nullptr then system defaults are used.
 
       @note This must be called before called @c instance so that the
       singleton is not @em inadvertently default initialized.

@@ -48,14 +48,14 @@ Cluster_lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type,
     } else {
       // not remote, do local lookup
       CacheContinuation::cacheContAllocator_free(cc);
-      return (Action *)NULL;
+      return (Action *)nullptr;
     }
   } else {
     Action a;
     a = cont;
     return CacheContinuation::callback_failure(&a, CACHE_EVENT_LOOKUP_FAILED, 0);
   }
-  return (Action *)NULL;
+  return (Action *)nullptr;
 }
 
 inline Action *

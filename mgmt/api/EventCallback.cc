@@ -84,7 +84,7 @@ create_callback_table(const char *lock_name)
   CallbackTable *cb_table = (CallbackTable *)ats_malloc(sizeof(CallbackTable));
 
   for (int i = 0; i < NUM_EVENTS; i++) {
-    cb_table->event_callback_l[i] = NULL;
+    cb_table->event_callback_l[i] = nullptr;
   }
 
   // initialize the mutex
@@ -161,7 +161,7 @@ get_events_with_callbacks(CallbackTable *cb_table)
 
   if (all_events) {
     delete_queue(cb_ev_list);
-    return NULL;
+    return nullptr;
   }
 
   return cb_ev_list;
@@ -187,14 +187,14 @@ cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignal
   EventCallbackT *event_cb; // create new EventCallbackT EACH TIME enqueue
 
   // the data and event_name can be NULL
-  if (func == NULL || !cb_table) {
+  if (func == nullptr || !cb_table) {
     return TS_ERR_PARAMS;
   }
 
   ink_mutex_acquire(&(cb_table->event_callback_lock));
 
   // got lock, add it
-  if (event_name == NULL) { // register for all alarms
+  if (event_name == nullptr) { // register for all alarms
     // printf("[EventSignalCbRegister] Register callback for all alarms\n");
     for (int i = 0; i < NUM_EVENTS; i++) {
       if (!cb_table->event_callback_l[i]) {
@@ -260,7 +260,7 @@ cb_table_unregister(CallbackTable *cb_table, const char *event_name, TSEventSign
   ink_mutex_acquire(&cb_table->event_callback_lock);
 
   // got lock, add it
-  if (event_name == NULL) { // unregister the callback for ALL EVENTS
+  if (event_name == nullptr) { // unregister the callback for ALL EVENTS
     // for each event
     for (int i = 0; i < NUM_EVENTS; i++) {
       if (!cb_table->event_callback_l[i]) { // this event has no callbacks
@@ -268,14 +268,14 @@ cb_table_unregister(CallbackTable *cb_table, const char *event_name, TSEventSign
       }
 
       // func == NULL means unregister all functions associated with alarm
-      if (func == NULL) {
+      if (func == nullptr) {
         while (!queue_is_empty(cb_table->event_callback_l[i])) {
           event_cb = (EventCallbackT *)dequeue(cb_table->event_callback_l[i]);
           delete_event_callback(event_cb);
         }
         // clean up queue and set to NULL
         delete_queue(cb_table->event_callback_l[i]);
-        cb_table->event_callback_l[i] = NULL;
+        cb_table->event_callback_l[i] = nullptr;
       } else { // only remove the func passed in
         int queue_depth;
 
@@ -297,7 +297,7 @@ cb_table_unregister(CallbackTable *cb_table, const char *event_name, TSEventSign
         // is queue empty now? then clean up
         if (queue_is_empty(cb_table->event_callback_l[i])) {
           delete_queue(cb_table->event_callback_l[i]);
-          cb_table->event_callback_l[i] = NULL;
+          cb_table->event_callback_l[i] = nullptr;
         }
       }
     } // end for (int i = 0; i < NUM_EVENTS; i++) {
@@ -310,7 +310,7 @@ cb_table_unregister(CallbackTable *cb_table, const char *event_name, TSEventSign
 
         queue_depth = queue_len(cb_table->event_callback_l[id]);
         // func == NULL means unregister all functions associated with alarm
-        if (func == NULL) {
+        if (func == nullptr) {
           while (!queue_is_empty(cb_table->event_callback_l[id])) {
             event_cb = (EventCallbackT *)dequeue(cb_table->event_callback_l[id]);
             delete_event_callback(event_cb);
@@ -318,7 +318,7 @@ cb_table_unregister(CallbackTable *cb_table, const char *event_name, TSEventSign
 
           // clean up queue and set to NULL
           delete_queue(cb_table->event_callback_l[id]);
-          cb_table->event_callback_l[id] = NULL;
+          cb_table->event_callback_l[id] = nullptr;
         } else {
           // remove this function
           for (int j = 0; j < queue_depth; j++) {
@@ -337,7 +337,7 @@ cb_table_unregister(CallbackTable *cb_table, const char *event_name, TSEventSign
           // is queue empty now?
           if (queue_is_empty(cb_table->event_callback_l[id])) {
             delete_queue(cb_table->event_callback_l[id]);
-            cb_table->event_callback_l[id] = NULL;
+            cb_table->event_callback_l[id] = nullptr;
           }
         } // end if NULL else
       }

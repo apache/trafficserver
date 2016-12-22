@@ -28,7 +28,7 @@ buffer blocks that point to buffer data. Both the buffer block
 (``TSIOBufferBlock``) and buffer data (``TSIOBufferData``) data
 structures are reference-counted, so they can reside in multiple buffers
 at the same time. This makes it extremely efficient to copy data from
-one IO buffer to another via ``TSIOBufferCopy``, since Traffic Server
+one IO buffer to another via :c:func:`TSIOBufferCopy`, since Traffic Server
 must only copy pointers and adjust reference counts appropriately (and
 doesn't actually copy any data).
 
@@ -51,6 +51,6 @@ Additional information about IO buffer functions:
 
 -  Bytes that have already been read may not necessarily be freed within
    the ``TSIOBuffer``. To consume bytes that have been read, you must
-   call ``TSIOBufferConsume``.
+   call :c:func:`TSIOBufferConsume`.
 
 

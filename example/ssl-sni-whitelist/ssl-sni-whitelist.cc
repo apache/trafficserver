@@ -78,14 +78,14 @@ CB_servername_whitelist(TSCont /* contp */, TSEvent /* event */, void *edata)
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
   bool do_blind_tunnel = true;
-  if (servername != NULL) {
+  if (servername != nullptr) {
     TSSslContext ctxobj = TSSslContextFindByName(servername);
-    if (ctxobj != NULL) {
+    if (ctxobj != nullptr) {
       do_blind_tunnel = false;
     } else {
       // Look up by destination address
       ctxobj = TSSslContextFindByAddr(TSNetVConnRemoteAddrGet(ssl_vc));
-      if (ctxobj != NULL) {
+      if (ctxobj != nullptr) {
         do_blind_tunnel = false;
       }
     }
@@ -107,9 +107,9 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_sni                        = 0; // sni callback continuation
+  TSCont cb_sni                        = nullptr; // sni callback continuation
   static const struct option longopt[] = {
-    {const_cast<char *>("config"), required_argument, NULL, 'c'}, {NULL, no_argument, NULL, '\0'},
+    {const_cast<char *>("config"), required_argument, nullptr, 'c'}, {nullptr, no_argument, nullptr, '\0'},
   };
 
   info.plugin_name   = const_cast<char *>("SSL SNI whitelist");
@@ -118,7 +118,7 @@ TSPluginInit(int argc, const char *argv[])
 
   int opt = 0;
   while (opt >= 0) {
-    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, nullptr);
     switch (opt) {
     case 'c':
       ConfigPath = optarg;
@@ -127,7 +127,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
   if (ConfigPath.length() == 0) {
-    static char const *const DEFAULT_CONFIG_PATH = "ssl_sni_whitelist.config";
+    static const char *const DEFAULT_CONFIG_PATH = "ssl_sni_whitelist.config";
     ConfigPath                                   = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
     TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
   }
@@ -138,7 +138,7 @@ TSPluginInit(int argc, const char *argv[])
     TSError(PCP "requires Traffic Server 2.0 or later.");
   } else if (0 > Load_Configuration()) {
     TSError(PCP "Failed to load config file.");
-  } else if (0 == (cb_sni = TSContCreate(&CB_servername_whitelist, TSMutexCreate()))) {
+  } else if (nullptr == (cb_sni = TSContCreate(&CB_servername_whitelist, TSMutexCreate()))) {
     TSError(PCP "Failed to create SNI callback.");
   } else {
     TSHttpHookAdd(TS_SSL_CERT_HOOK, cb_sni);

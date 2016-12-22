@@ -137,7 +137,7 @@ ChannelToCacheWriteVC(ClusterHandler *ch, int channel, uint32_t channel_seqno, C
   ClusterVConnection *cvc = ch->channels[channel];
   if (!VALID_CHANNEL(cvc) || (channel_seqno != cvc->token.sequence_number) || (cvc->read.vio.op != VIO::READ)) {
     CLUSTER_INCREMENT_DYN_STAT(cluster_setdata_no_CLUSTERVC_STAT);
-    return NULL;
+    return nullptr;
   }
   // Tunneling from cluster to cache (remote write).
   // Get cache VC pointer.
@@ -145,12 +145,12 @@ ChannelToCacheWriteVC(ClusterHandler *ch, int channel, uint32_t channel_seqno, C
   OneWayTunnel *owt = (OneWayTunnel *)cvc->read.vio._cont;
   if (!owt) {
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_SETDATA_NO_TUNNEL_STAT);
-    return NULL;
+    return nullptr;
   }
   CacheVC *cache_vc = (CacheVC *)owt->vioTarget->vc_server;
   if (!cache_vc) {
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_SETDATA_NO_CACHEVC_STAT);
-    return NULL;
+    return nullptr;
   }
   *cluster_vc = cvc;
   return cache_vc;
@@ -272,10 +272,10 @@ set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_U
   if (m->NeedByteSwap())
     m->SwapBytes();
 
-  ClusterVConnection *cvc = NULL; // Just to make GCC happy
+  ClusterVConnection *cvc = nullptr; // Just to make GCC happy
   CacheVC *cache_vc;
 
-  if (ch != 0) {
+  if (ch != nullptr) {
     cache_vc = ChannelToCacheWriteVC(ch, m->channel, m->sequence_number, &cvc);
     if (cache_vc) {
       cache_vc->set_pin_in_cache(m->pin_time);
@@ -332,10 +332,10 @@ set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len 
   if (m->NeedByteSwap())
     m->SwapBytes();
 
-  ClusterVConnection *cvc = NULL; // Just to make GCC happy
+  ClusterVConnection *cvc = nullptr; // Just to make GCC happy
   CacheVC *cache_vc;
 
-  if (ch != 0) {
+  if (ch != nullptr) {
     cache_vc = ChannelToCacheWriteVC(ch, m->channel, m->sequence_number, &cvc);
     if (cache_vc) {
       cache_vc->set_disk_io_priority(m->disk_priority);

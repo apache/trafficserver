@@ -186,7 +186,7 @@ synthetic_thread(void *info)
   }
 
   // Format the response
-  mime_format_date(dateBuf, time(NULL));
+  mime_format_date(dateBuf, time(nullptr));
   len = snprintf(buffer, sizeof(buffer), SyntheticResponse, dateBuf, (int)strlen(SyntheticData) * 3, SyntheticData, SyntheticData,
                  SyntheticData);
 
@@ -213,9 +213,9 @@ synthetic_thread(void *info)
 
 error:
   close_socket(clientFD);
-  ink_thread_exit(NULL);
+  ink_thread_exit(nullptr);
 
-  return NULL;
+  return nullptr;
 }
 
 void *
@@ -235,7 +235,7 @@ mgmt_synthetic_main(void *)
 #if !defined(linux)
   // Start by blocking all signals
   sigfillset(&allSigs);
-  ink_thread_sigsetmask(SIG_SETMASK, &allSigs, NULL);
+  ink_thread_sigsetmask(SIG_SETMASK, &allSigs, nullptr);
 #endif
 
   if (aconf_port_arg > 0) {
@@ -266,16 +266,12 @@ mgmt_synthetic_main(void *)
       mgmt_log("[SyntheticHealthServer] Connect by disallowed client %s, closing\n", inet_ntoa(clientInfo.sin_addr));
       close_socket(clientFD);
     } else {
-      ink_thread thrId = ink_thread_create(synthetic_thread, (void *)&clientFD, 1);
-
-      if (thrId <= 0) {
-        mgmt_log("[SyntheticHealthServer] Failed to create worker thread");
-      }
+      ink_thread_create(synthetic_thread, (void *)&clientFD, 1, 0, nullptr);
     }
   }
 
   ink_release_assert(!"impossible"); // should never get here
-  return NULL;
+  return nullptr;
 }
 
 /*

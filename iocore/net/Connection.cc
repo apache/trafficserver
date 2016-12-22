@@ -133,16 +133,9 @@ add_http_filter(int fd ATS_UNUSED)
 }
 
 int
-Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)
+Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 {
-  int res             = 0;
-  int sockopt_flag_in = 0;
-  REC_ReadConfigInteger(sockopt_flag_in, "proxy.config.net.sock_option_flag_in");
-
-#ifdef TCP_FASTOPEN
-  int tfo_queue_length = 0;
-  REC_ReadConfigInteger(tfo_queue_length, "proxy.config.net.sock_option_tfo_queue_size_in");
-#endif
+  int res = 0;
 
   ink_assert(fd != NO_FD);
 
@@ -168,10 +161,10 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
   }
 #endif
 
-  if (recv_bufsize) {
-    if (socketManager.set_rcvbuf_size(fd, recv_bufsize)) {
+  if (opt.recv_bufsize) {
+    if (socketManager.set_rcvbuf_size(fd, opt.recv_bufsize)) {
       // Round down until success
-      int rbufsz = ROUNDUP(recv_bufsize, 1024);
+      int rbufsz = ROUNDUP(opt.recv_bufsize, 1024);
       while (rbufsz) {
         if (socketManager.set_rcvbuf_size(fd, rbufsz)) {
           rbufsz -= 1024;
@@ -182,10 +175,10 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
     }
   }
 
-  if (send_bufsize) {
-    if (socketManager.set_sndbuf_size(fd, send_bufsize)) {
+  if (opt.send_bufsize) {
+    if (socketManager.set_sndbuf_size(fd, opt.send_bufsize)) {
       // Round down until success
-      int sbufsz = ROUNDUP(send_bufsize, 1024);
+      int sbufsz = ROUNDUP(opt.send_bufsize, 1024);
       while (sbufsz) {
         if (socketManager.set_sndbuf_size(fd, sbufsz)) {
           sbufsz -= 1024;
@@ -204,7 +197,7 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
     struct linger l;
     l.l_onoff  = 0;
     l.l_linger = 0;
-    if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_LINGER_ON) &&
+    if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) &&
         (res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
       goto Lerror;
     }
@@ -218,25 +211,25 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
     goto Lerror;
   }
 
-  if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_NO_DELAY) &&
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) &&
       (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
   }
 
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_KEEP_ALIVE) &&
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) &&
       (res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
   }
 
 #ifdef TCP_FASTOPEN
-  if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
-      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&tfo_queue_length, sizeof(int)))) {
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
+      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int)))) {
     goto Lerror;
   }
 #endif
 
-  if (transparent) {
+  if (opt.f_inbound_transparent) {
 #if TS_USE_TPROXY
     Debug("http_tproxy", "Listen port inbound transparency enabled.");
     if (safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT, SOCKOPT_ON, sizeof(int)) < 0) {
@@ -276,7 +269,7 @@ Lerror:
 }
 
 int
-Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)
+Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 {
   ink_assert(fd == NO_FD);
   int res = 0;
@@ -293,7 +286,7 @@ Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool trans
     goto Lerror;
   }
 
-  res = setup_fd_for_listen(non_blocking, recv_bufsize, send_bufsize, transparent);
+  res = setup_fd_for_listen(non_blocking, opt);
   if (res < 0) {
     goto Lerror;
   }

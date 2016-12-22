@@ -55,8 +55,9 @@ ts_lua_async_create_item(TSCont cont, async_clean func, void *d, ts_lua_cont_inf
   ts_lua_async_item *ai;
 
   ai = (ts_lua_async_item *)TSmalloc(sizeof(ts_lua_async_item));
-  if (ai == NULL)
+  if (ai == NULL) {
     return NULL;
+  }
 
   ai->cinfo = ci;
 

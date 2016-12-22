@@ -43,7 +43,7 @@ newrec(LLQ *Q)
   LLQrec *new_val;
   int i;
 
-  if (Q->free != NULL) {
+  if (Q->free != nullptr) {
     new_val = Q->free;
     Q->free = Q->free->next;
     return new_val;
@@ -53,7 +53,7 @@ newrec(LLQ *Q)
   for (i            = 0; i < RECORD_CHUNK; i++)
     Q->free[i].next = &Q->free[i + 1];
 
-  Q->free[RECORD_CHUNK - 1].next = NULL;
+  Q->free[RECORD_CHUNK - 1].next = nullptr;
 
   new_val = Q->free;
   Q->free = Q->free->next;
@@ -78,7 +78,7 @@ create_queue()
   ink_sem_init(&(new_val->sema), 0);
   ink_mutex_init(&(new_val->mux), "LLQ::create_queue");
 
-  new_val->head = new_val->tail = new_val->free = NULL;
+  new_val->head = new_val->tail = new_val->free = nullptr;
   new_val->len = new_val->highwater = 0;
 
   return new_val;
@@ -106,13 +106,13 @@ enqueue(LLQ *Q, void *data)
   ink_mutex_acquire(&(Q->mux));
   new_val       = (LLQrec *)ats_malloc(sizeof(LLQrec));
   new_val->data = data;
-  new_val->next = NULL;
+  new_val->next = nullptr;
 
   if (Q->tail)
     Q->tail->next = new_val;
   Q->tail         = new_val;
 
-  if (Q->head == NULL)
+  if (Q->head == nullptr)
     Q->head = Q->tail;
 
   Q->len++;
@@ -184,17 +184,17 @@ dequeue(LLQ *Q)
   ink_sem_wait(&(Q->sema));
   ink_mutex_acquire(&(Q->mux));
 
-  if (Q->head == NULL) {
+  if (Q->head == nullptr) {
     ink_mutex_release(&(Q->mux));
 
-    return NULL;
+    return nullptr;
   }
 
   rec = Q->head;
 
   Q->head = Q->head->next;
-  if (Q->head == NULL)
-    Q->tail = NULL;
+  if (Q->head == nullptr)
+    Q->tail = nullptr;
 
   d = rec->data;
   // freerec(Q, rec);
@@ -229,7 +229,7 @@ testfun(void *unused)
     }
   } while (num >= -1);
 
-  return NULL;
+  return nullptr;
 }
 
 /*
@@ -238,7 +238,7 @@ testfun(void *unused)
 void
 main()
 {
-  assert(thr_create(NULL, 0, testfun, (void *)NULL, THR_NEW_LWP, NULL) == 0);
+  assert(thr_create(nullptr, 0, testfun, (void *)NULL, THR_NEW_LWP, NULL) == 0);
   while (1) {
     ;
   }

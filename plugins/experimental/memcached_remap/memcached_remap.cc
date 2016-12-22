@@ -45,7 +45,7 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
   int request_scheme_length = 0;
   int request_port          = 80;
   char ikey[1024];
-  char *m_result = NULL;
+  char *m_result = nullptr;
   size_t oval_length;
   uint32_t flags;
   memcached_return_t lrc;
@@ -68,7 +68,7 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
   }
 
   request_host = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field_loc, -1, &request_host_length);
-  if (request_host == NULL || strlen(request_host) < 1) {
+  if (request_host == nullptr || strlen(request_host) < 1) {
     TSDebug(PLUGIN_NAME, "couldn't find request HOST header");
     goto release_field;
   }

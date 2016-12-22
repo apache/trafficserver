@@ -123,7 +123,7 @@ public:
   static CTypeResult is_end_of_url(char c);       // NUL,CR,SP
   static CTypeResult is_eow(char c);              // NUL,CR,LF
   static CTypeResult is_uri(char c);              // A-Z,a-z,0-9 :/?#[]@!$&'()*+,;=-._~%
-  static CTypeResult is_sep(char c);              // NULL,COMMA,':','!',wslfcr
+  static CTypeResult is_sep(char c);              // nullptr,COMMA,':','!',wslfcr
   static CTypeResult is_empty(char c);            // wslfcr,#
   static CTypeResult is_alnum(char c);            // 0-9,A-Z,a-z
   static CTypeResult is_space(char c);            // ' ' HT,VT,NP,CR,LF

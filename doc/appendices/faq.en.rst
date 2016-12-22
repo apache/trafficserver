@@ -60,7 +60,7 @@ the request for the objects), and do not execute on the server.
 In Squid- and Netscape-format log files, what do the cache result codes mean?
 -----------------------------------------------------------------------------
 
-This is described in detail in the :ref:`admin-logging-format-squid` documentation.
+This is described in detail in the :ref:`admin-logging-cache-results` documentation.
 
 What is recorded by the ``cqtx`` field in a custom log file?
 ------------------------------------------------------------
@@ -118,7 +118,7 @@ How do I interpret the Via: header code?
 
 The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
-The Via header is an optional HTTP header added by Traffic Server and other HTTP proxies. If a request goes through multiple proxies, each one appends its Via header content to the end of the existing Via header. Via header content is for general information and diagnostic use only and should not be used as a programmatic interface to Traffic Server.
+The Via header is an optional HTTP header added by Traffic Server and other HTTP proxies. If a request goes through multiple proxies, each one appends its Via header content to the end of the existing Via header. Via header content is for general information and diagnostic use only and should not be used as a programmatic interface to Traffic Server. The header is cached by each intermediary with the object as received from its downstream node. Thus, the last node in the list to report a cache hit is the end of the transaction for that specific request. Nodes reported earlier were from a previous transaction.
 
 The form of the Via header is
 
@@ -348,7 +348,7 @@ minutes to transfer the object. This inaccuracy is more noticeable with
 a light load. A heavier load yields a more accurate statistic.
 
 You are unable to execute Traffic Control commands
------------------------------------------------
+--------------------------------------------------
 
 :program:`traffic_ctl` commands do not execute under the following conditions:
 
@@ -595,4 +595,3 @@ origin servers. If you cannot avoid such timeouts by otherwise addressing the
 performance on your origin servers, you may adjust the origin connection timeout
 in Traffic Server by changing :ts:cv:`proxy.config.http.connect_attempts_timeout`
 in :file:`records.config` to a larger value.
-

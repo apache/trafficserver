@@ -26,6 +26,7 @@
 #include <I_EventSystem.h>
 #include <ts/I_Layout.h>
 #include <diags.i>
+#include <set>
 
 // TODO: add tests with expiry_time
 
@@ -34,6 +35,7 @@ class ExampleStruct : public RefCountObj
 public:
   int idx;
   int name_offset; // pointer addr to name
+  static std::set<ExampleStruct *> items_freed;
 
   // Return the char* to the name (TODO: cleaner interface??)
   char *
@@ -48,18 +50,27 @@ public:
     return new (malloc(sizeof(ExampleStruct) + size)) ExampleStruct();
   }
 
-  // To mark it as "deleted" (so its easy to check) we'll just mark the idx as -1
+  static void
+  dealloc(ExampleStruct *e)
+  {
+    e->~ExampleStruct();
+    ::free(e);
+  }
+
+  // Really free the memory, we can use asan leak detection to verify it was freed
   void
   free()
   {
     this->idx = -1;
+    items_freed.insert(this);
+    printf("freeing: %p items_freed.size(): %zd\n", this, items_freed.size());
   }
 
   static ExampleStruct *
   unmarshall(char *buf, unsigned int size)
   {
     if (size < sizeof(ExampleStruct)) {
-      return NULL;
+      return nullptr;
     }
     ExampleStruct *ret = ExampleStruct::alloc(size - sizeof(ExampleStruct));
     memcpy((void *)ret, buf, size);
@@ -69,6 +80,8 @@ public:
     return ret;
   }
 };
+
+std::set<ExampleStruct *> ExampleStruct::items_freed;
 
 void
 fillCache(RefCountCache<ExampleStruct> *cache, int start, int end)
@@ -84,7 +97,7 @@ fillCache(RefCountCache<ExampleStruct> *cache, int start, int end)
     tmp->idx         = i;
     tmp->name_offset = sizeof(ExampleStruct);
     memcpy(tmp->name(), name.c_str(), name.size());
-    // NULL terminate the string
+    // nullptr terminate the string
     *(tmp->name() + name.size()) = '\0';
 
     // Print out the struct we put in there
@@ -100,7 +113,7 @@ verifyCache(RefCountCache<ExampleStruct> *cache, int start, int end)
   for (int i = start; i < end; i++) {
     Ptr<ExampleStruct> ccitem = cache->get(i);
     ExampleStruct *tmp        = ccitem.get();
-    if (tmp == NULL) {
+    if (tmp == nullptr) {
       // printf("ExampleStruct %d missing, skipping\n", i);
       continue;
     }
@@ -161,10 +174,12 @@ testRefcounting()
   ret |= tmp->refcount() != 2;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
   // verify that it still isn't in there
-  ret |= cache->get(1).get() != NULL;
+  ret |= cache->get(1).get() != nullptr;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
   ret |= tmpAfter.get()->idx != 1;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
+
+  delete cache;
 
   return ret;
 }
@@ -189,12 +204,12 @@ testclear()
 }
 
 int
-main()
+test()
 {
   // Initialize IOBufAllocator
   RecModeT mode_type = RECM_STAND_ALONE;
   Layout::create();
-  init_diags("", NULL);
+  init_diags("", nullptr);
   RecProcessInit(mode_type);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
 
@@ -252,7 +267,7 @@ main()
   // Delete a single item
   cache->erase(1);
   // verify that it still isn't in there
-  ret |= cache->get(1).get() != NULL;
+  ret |= cache->get(1).get() != nullptr;
   ret |= ccitem.get()->idx != 1;
   printf("ret=%d\n", ret);
 
@@ -264,7 +279,22 @@ main()
   // printf("Sync return: %d\n", cache->sync_all());
 
   printf("TestRun: %d\n", ret);
-  exit(ret);
+
+  delete cache;
+
+  return ret;
+}
+
+int
+main()
+{
+  int ret = test();
+
+  for (const auto item : ExampleStruct::items_freed) {
+    printf("really freeing: %p\n", item);
+    ExampleStruct::dealloc(item);
+  }
+  ExampleStruct::items_freed.clear();
 
   return ret;
 }

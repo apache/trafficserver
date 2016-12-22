@@ -32,29 +32,7 @@ def tests_file_path(path):
     return os.path.join(base, path)
 
 
-class EnvironmentCase(tsqa.test_cases.EnvironmentCase):
+class EnvironmentCase(tsqa.test_cases.CloneEnvironmentCase):
     '''
     This class will get an environment (which is unique) but won't start it
     '''
-    @classmethod
-    def getEnv(cls):
-        '''
-        This function is responsible for returning an environment
-        '''
-        SOURCE_DIR = os.path.realpath(os.path.join(__file__, '..', '..', '..', '..'))
-        TMP_DIR = os.path.join(tempfile.gettempdir(), 'tsqa')
-        ef = tsqa.environment.EnvironmentFactory(SOURCE_DIR,
-                                                 os.path.join(TMP_DIR, 'base_envs'),
-                                                 default_configure={'enable-experimental-plugins': None,
-                                                                    'enable-example-plugins': None,
-                                                                    'enable-test-tools': None,
-                                                                    'disable-dependency-tracking': None,
-                                                                    'enable-ccache': None,
-                                                                    },
-                                                 )
-        # TODO: figure out a way to determine why the build didn't fail and
-        # not skip all build failures?
-        try:
-            return ef.get_environment(cls.environment_factory.get('configure'), cls.environment_factory.get('env'))
-        except Exception as e:
-            raise unittest.SkipTest(e)

@@ -47,10 +47,10 @@ public:
   Exception(const char *text ///< Alternate text for exception.
             );
 
-  static char const *const DEFAULT_TEXT;
+  static const char *const DEFAULT_TEXT;
 
 protected:
-  char const *m_text;
+  const char *m_text;
 };
 
 // ----------------------------------------------------------
@@ -59,7 +59,7 @@ protected:
 inline Exception::Exception() : m_text(DEFAULT_TEXT)
 {
 }
-inline Exception::Exception(char const *text) : m_text(text)
+inline Exception::Exception(const char *text) : m_text(text)
 {
 }
 }

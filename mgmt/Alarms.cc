@@ -68,7 +68,7 @@ alarm_script_dir()
 {
   char *path;
 
-  path = REC_readString("proxy.config.alarm.abs_path", NULL);
+  path = REC_readString("proxy.config.alarm.abs_path", nullptr);
   if (path && *path) {
     return path;
   }
@@ -211,16 +211,16 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   /* Quick hack to buffer repeat alarms and only send every 15 min */
   if (desc && (priority == 1 || priority == 2) && !ip) {
     if (strcmp(prev_alarm_text, desc) == 0) { /* a repeated alarm */
-      time_t time_delta = time(0) - last_sent;
+      time_t time_delta = time(nullptr) - last_sent;
       if (time_delta < 900) {
         mgmt_log("[Alarms::signalAlarm] Skipping Alarm: '%s'\n", desc);
         return;
       } else {
-        last_sent = time(0);
+        last_sent = time(nullptr);
       }
     } else {
       ink_strlcpy(prev_alarm_text, desc, sizeof(prev_alarm_text));
-      last_sent = time(0);
+      last_sent = time(nullptr);
     }
   }
 
@@ -269,7 +269,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   atmp->linger      = true;
   atmp->seen        = true;
   atmp->priority    = priority;
-  atmp->description = NULL;
+  atmp->description = nullptr;
 
   if (!ip) {
     atmp->local        = true;
@@ -302,7 +302,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 
   ink_mutex_release(&mutex);
 
-  for (entry = ink_hash_table_iterator_first(cblist, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(cblist, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(cblist, &iterator_state)) {
     AlarmCallbackFunc func = (AlarmCallbackFunc)ink_hash_table_entry_value(remote_alarms, entry);
     Debug("alarm", "[Alarms::signalAlarm] invoke callback for %d", a);
@@ -328,7 +328,7 @@ Alarms::resetSeenFlag(char *ip)
   InkHashTableIteratorState iterator_state;
 
   ink_mutex_acquire(&mutex);
-  for (entry = ink_hash_table_iterator_first(remote_alarms, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(remote_alarms, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(remote_alarms, &iterator_state)) {
     char *key  = (char *)ink_hash_table_entry_key(remote_alarms, entry);
     Alarm *tmp = (Alarm *)ink_hash_table_entry_value(remote_alarms, entry);
@@ -353,7 +353,7 @@ Alarms::clearUnSeen(char *ip)
   InkHashTableIteratorState iterator_state;
 
   ink_mutex_acquire(&mutex);
-  for (entry = ink_hash_table_iterator_first(remote_alarms, &iterator_state); entry != NULL;
+  for (entry = ink_hash_table_iterator_first(remote_alarms, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(remote_alarms, &iterator_state)) {
     char *key  = (char *)ink_hash_table_entry_key(remote_alarms, entry);
     Alarm *tmp = (Alarm *)ink_hash_table_entry_value(remote_alarms, entry);
@@ -401,7 +401,7 @@ Alarms::constructAlarmMessage(const AppVersionInfo &version, char *ip, char *mes
   ink_strlcpy(&message[n], "type: alarm\n", max - n);
   n += strlen("type: alarm\n");
   bsum = n;
-  for (entry = ink_hash_table_iterator_first(local_alarms, &iterator_state); (entry != NULL && n < max);
+  for (entry = ink_hash_table_iterator_first(local_alarms, &iterator_state); (entry != nullptr && n < max);
        entry = ink_hash_table_iterator_next(local_alarms, &iterator_state)) {
     Alarm *tmp = (Alarm *)ink_hash_table_entry_value(remote_alarms, entry);
 
@@ -449,7 +449,7 @@ Alarms::execAlarmBin(const char *desc)
   ats_scoped_str bindir(alarm_script_dir());
   char cmd_line[MAXPATHLEN];
 
-  ats_scoped_str alarm_bin(REC_readString("proxy.config.alarm.bin", NULL));
+  ats_scoped_str alarm_bin(REC_readString("proxy.config.alarm.bin", nullptr));
   ats_scoped_str alarm_email_from_name;
   ats_scoped_str alarm_email_from_addr;
   ats_scoped_str alarm_email_to_addr;
@@ -462,9 +462,9 @@ Alarms::execAlarmBin(const char *desc)
   }
 
   // get email info
-  alarm_email_from_name = REC_readString("proxy.config.product_name", NULL);
-  alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", NULL);
-  alarm_email_to_addr   = REC_readString("proxy.config.alarm_email", NULL);
+  alarm_email_from_name = REC_readString("proxy.config.product_name", nullptr);
+  alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", nullptr);
+  alarm_email_to_addr   = REC_readString("proxy.config.alarm_email", nullptr);
 
   ink_filepath_make(cmd_line, sizeof(cmd_line), bindir, alarm_bin);
 
@@ -478,12 +478,12 @@ Alarms::execAlarmBin(const char *desc)
   } else if (pid > 0) { /* Parent */
     int status;
     bool script_done = false;
-    time_t timeout   = (time_t)REC_readInteger("proxy.config.alarm.script_runtime", NULL);
+    time_t timeout   = (time_t)REC_readInteger("proxy.config.alarm.script_runtime", nullptr);
     if (!timeout) {
       timeout = 5; // default time = 5 secs
     }
     time_t time_delta = 0;
-    time_t first_time = time(0);
+    time_t first_time = time(nullptr);
     while (time_delta <= timeout) {
       // waitpid will return child's pid if status is available
       // or -1 if there is some problem; returns 0 if child status
@@ -493,7 +493,7 @@ Alarms::execAlarmBin(const char *desc)
         script_done = true;
         break;
       }
-      time_delta = time(0) - first_time;
+      time_delta = time(nullptr) - first_time;
     }
     // need to kill the child script process if it's not complete
     if (!script_done) {
@@ -505,9 +505,9 @@ Alarms::execAlarmBin(const char *desc)
     int res;
     if (alarm_email_from_name && alarm_email_from_addr && alarm_email_to_addr) {
       res = execl(cmd_line, (const char *)alarm_bin, desc, (const char *)alarm_email_from_name, (const char *)alarm_email_from_addr,
-                  (const char *)alarm_email_to_addr, (char *)NULL);
+                  (const char *)alarm_email_to_addr, (char *)nullptr);
     } else {
-      res = execl(cmd_line, (const char *)alarm_bin, desc, (char *)NULL);
+      res = execl(cmd_line, (const char *)alarm_bin, desc, (char *)nullptr);
     }
     _exit(res);
   }

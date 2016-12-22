@@ -59,13 +59,12 @@ send_connection_event(Continuation *cont, int event, void *edata)
 }
 
 Http2ClientSession::Http2ClientSession()
-  : con_id(0),
-    total_write_len(0),
-    client_vc(NULL),
-    read_buffer(NULL),
-    sm_reader(NULL),
-    write_buffer(NULL),
-    sm_writer(NULL),
+  : total_write_len(0),
+    client_vc(nullptr),
+    read_buffer(nullptr),
+    sm_reader(nullptr),
+    write_buffer(nullptr),
+    sm_writer(nullptr),
     upgrade_context(),
     kill_me(false),
     recursion(0)
@@ -89,7 +88,7 @@ Http2ClientSession::free()
   if (client_vc) {
     release_netvc();
     client_vc->do_io_close();
-    client_vc = NULL;
+    client_vc = nullptr;
   }
 
   // Make sure the we are at the bottom of the stack
@@ -128,7 +127,7 @@ Http2ClientSession::free()
     break;
   }
 
-  ink_release_assert(this->client_vc == NULL);
+  ink_release_assert(this->client_vc == nullptr);
 
   this->connection_state.destroy();
 
@@ -177,7 +176,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->con_id    = ProxyClientSession::next_connection_id();
   this->client_vc = new_vc;
   client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
-  this->schedule_event = NULL;
+  this->schedule_event = nullptr;
   this->mutex          = new_vc->mutex;
   this->in_destroy     = false;
 
@@ -202,7 +201,7 @@ Http2ClientSession::set_upgrade_context(HTTPHdr *h)
   upgrade_context.req_header->copy(h);
 
   MIMEField *settings = upgrade_context.req_header->field_find(MIME_FIELD_HTTP2_SETTINGS, MIME_LEN_HTTP2_SETTINGS);
-  ink_release_assert(settings != NULL);
+  ink_release_assert(settings != nullptr);
   int svlen;
   const char *sv = settings->value_get(&svlen);
 
@@ -269,9 +268,9 @@ Http2ClientSession::do_io_close(int alerrno)
   if (client_vc) {
     this->release_netvc();
     client_vc->do_io_close();
-    client_vc = NULL;
+    client_vc = nullptr;
   }
-  this->connection_state.release_stream(NULL);
+  this->connection_state.release_stream(nullptr);
 }
 
 void
@@ -290,7 +289,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
 
   Event *e = static_cast<Event *>(edata);
   if (e == schedule_event) {
-    schedule_event = NULL;
+    schedule_event = nullptr;
   }
 
   switch (event) {
@@ -314,7 +313,8 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     this->do_io_close();
-    return 0;
+    retval = 0;
+    break;
 
   case VC_EVENT_WRITE_READY:
     retval = 0;

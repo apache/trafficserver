@@ -398,7 +398,7 @@ get_event_name(int id)
     ink_strlcpy(name, "MGMT_ALARM_ADD_ALARM", sizeof(name));
     break;
   default:
-    return NULL;
+    return nullptr;
   }
 
   return ats_strdup(name);

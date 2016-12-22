@@ -26,8 +26,15 @@ Synopsis
 
 .. c:type:: TSHttpStatus
 
-Enum typedef which defines the possible return values from
-:c:func:`TSHttpStatusGet`.
+This set of enums represents the possible HTTP types that can be
+assigned to an HTTP header.
+
+When a header is created with :func:`TSHttpHdrCreate`, it is
+automatically assigned a type of :data:`TS_HTTP_TYPE_UNKNOWN`.  You
+can modify the HTTP type ONCE after it the header is created, using
+:func:`TSHttpHdrTypeSet`.  After setting the HTTP type once, you
+cannot set it again.  Use :func:`TSHttpHdrTypeGet` to obtain the
+:type:`TSHttpType` of an HTTP header.
 
 Enumeration Members
 ===================
@@ -148,4 +155,3 @@ Enumeration Members
 
 Description
 ===========
-

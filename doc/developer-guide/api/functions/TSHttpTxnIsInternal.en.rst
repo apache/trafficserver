@@ -26,8 +26,8 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSReturnCode TSHttpTxnIsInternal(TSHttpTxn txnp)
-.. function:: TSReturnCode TSHttpSsnIsInternal(TSHttpSsn ssnp)
+.. function:: int TSHttpTxnIsInternal(TSHttpTxn txnp)
+.. function:: int TSHttpSsnIsInternal(TSHttpSsn ssnp)
 
 Description
 ===========
@@ -41,8 +41,8 @@ was originated within Traffic Server.
 Return Values
 =============
 
-Both these APIs returns a :type:`TSReturnCode`, indicating whether the
-object was internal (:data:`TS_SUCCESS`) or not (:data:`TS_ERROR`).
+Both these APIs return a :type:`int`, indicating whether the
+request was internal (:literal:`1`) or not (:literal:`0`).
 
 Examples
 ========
@@ -50,7 +50,7 @@ Examples
 The ESI plugin uses :func:`TSHttpTxnIsInternal` to ignore requests that is
 had generated while fetching portions of an ESI document:
 
-.. literalinclude:: ../../../../plugins/experimental/esi/esi.cc
+.. literalinclude:: ../../../../plugins/esi/esi.cc
   :language: c
   :lines: 1395-1398
 

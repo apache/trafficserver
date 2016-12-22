@@ -67,10 +67,11 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
     TSMutexLock(create_mutex);
     if (TS_ERROR == TSStatFindName((const char *)name, &stat_id)) {
       stat_id = TSStatCreate((const char *)name, TS_RECORDDATATYPE_INT, persist_type, TS_STAT_SYNC_SUM);
-      if (stat_id == TS_ERROR)
+      if (stat_id == TS_ERROR) {
         TSDebug(DEBUG_TAG, "Error creating stat_name: %s", name);
-      else
+      } else {
         TSDebug(DEBUG_TAG, "Created stat_name: %s stat_id: %d", name, stat_id);
+      }
     }
     TSMutexUnlock(create_mutex);
 
@@ -80,13 +81,15 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
       hsearch_r(search, ENTER, &result, &stat_cache);
       TSDebug(DEBUG_TAG, "Cached stat_name: %s stat_id: %d", name, stat_id);
     }
-  } else
+  } else {
     stat_id = (int)((intptr_t)result->data);
+  }
 
-  if (likely(stat_id >= 0))
+  if (likely(stat_id >= 0)) {
     TSStatIntIncrement(stat_id, amount);
-  else
+  } else {
     TSDebug(DEBUG_TAG, "stat error! stat_name: %s stat_id: %d", name, stat_id);
+  }
 }
 
 static char *
@@ -139,9 +142,9 @@ handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 
   config = (config_t *)TSContDataGet(cont);
 
-  if (config->post_remap_host)
+  if (config->post_remap_host) {
     TSHttpTxnArgSet(txn, config->txn_slot, txnd);
-  else {
+  } else {
     txnd = (void *)((uintptr_t)txnd | (uintptr_t)TSHttpTxnArgGet(txn, config->txn_slot)); // We need the hostname pre-remap
     TSHttpTxnArgSet(txn, config->txn_slot, txnd);
   }
@@ -175,13 +178,15 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   if (txnd) {
     if ((uintptr_t)txnd & 0x01) // remap succeeded?
     {
-      if (!config->post_remap_host)
+      if (!config->post_remap_host) {
         remap = hostname;
-      else
+      } else {
         remap = get_effective_host(txn);
+      }
 
-      if (!remap)
+      if (!remap) {
         remap = unknown;
+      }
 
       in_bytes = TSHttpTxnClientReqHdrBytesGet(txn);
       in_bytes += TSHttpTxnClientReqBodyBytesGet(txn);
@@ -199,18 +204,19 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
         status_code = (int)TSHttpHdrStatusGet(buf, hdr_loc);
         TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
 
-        if (status_code < 200)
+        if (status_code < 200) {
           CREATE_STAT_NAME(stat_name, remap, "status_other");
-        else if (status_code <= 299)
+        } else if (status_code <= 299) {
           CREATE_STAT_NAME(stat_name, remap, "status_2xx");
-        else if (status_code <= 399)
+        } else if (status_code <= 399) {
           CREATE_STAT_NAME(stat_name, remap, "status_3xx");
-        else if (status_code <= 499)
+        } else if (status_code <= 499) {
           CREATE_STAT_NAME(stat_name, remap, "status_4xx");
-        else if (status_code <= 599)
+        } else if (status_code <= 599) {
           CREATE_STAT_NAME(stat_name, remap, "status_5xx");
-        else
+        } else {
           CREATE_STAT_NAME(stat_name, remap, "status_other");
+        }
 
         stat_add(stat_name, 1, config->persist_type, config->stat_creation_mutex);
       } else {
@@ -218,10 +224,12 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
         stat_add(stat_name, 1, config->persist_type, config->stat_creation_mutex);
       }
 
-      if (remap != unknown)
+      if (remap != unknown) {
         TSfree(remap);
-    } else if (hostname)
+      }
+    } else if (hostname) {
       TSfree(hostname);
+    }
   }
 
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
@@ -244,8 +252,9 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[remap_stats] Plugin registration failed.");
 
     return;
-  } else
+  } else {
     TSDebug(DEBUG_TAG, "Plugin registration succeeded.");
+  }
 
   config                      = TSmalloc(sizeof(config_t));
   config->post_remap_host     = false;

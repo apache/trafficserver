@@ -27,8 +27,8 @@ getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
 {
   res[0] = '\0';
 
-  if (s_sockaddr == NULL) {
-    return NULL;
+  if (s_sockaddr == nullptr) {
+    return nullptr;
   }
 
   switch (s_sockaddr->sa_family) {
@@ -42,7 +42,7 @@ getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
   } break;
   }
 
-  return res[0] ? res : NULL;
+  return res[0] ? res : nullptr;
 }
 
 // Return it as a std::string instead (more expensive, but sometimes convenient)

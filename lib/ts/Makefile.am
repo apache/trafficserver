@@ -25,9 +25,11 @@ library_include_HEADERS = apidefs.h
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator
 
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
+
 TESTS = $(check_PROGRAMS)
 
-AM_CPPFLAGS = -I$(top_srcdir)/lib
+AM_CPPFLAGS = -I$(abs_top_srcdir)/lib
 
 lib_LTLIBRARIES = libtsutil.la
 

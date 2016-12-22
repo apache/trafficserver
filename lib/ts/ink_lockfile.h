@@ -82,8 +82,8 @@ public:
   //
   // The intial signal can be used to generate a core from the process while
   // still ensuring it dies.
-  void Kill(int sig, int initial_sig = 0, const char *pname = NULL);
-  void KillGroup(int sig, int initial_sig = 0, const char *pname = NULL);
+  void Kill(int sig, int initial_sig = 0, const char *pname = nullptr);
+  void KillGroup(int sig, int initial_sig = 0, const char *pname = nullptr);
 
 private:
   char fname[PATH_NAME_MAX];

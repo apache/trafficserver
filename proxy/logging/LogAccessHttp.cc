@@ -31,7 +31,6 @@
 
  ***************************************************************************/
 #include "ts/ink_platform.h"
-#include "Error.h"
 #include "LogAccessHttp.h"
 #include "http/HttpSM.h"
 #include "MIME.h"
@@ -52,29 +51,29 @@
 LogAccessHttp::LogAccessHttp(HttpSM *sm)
   : m_http_sm(sm),
     m_arena(),
-    m_client_request(NULL),
-    m_proxy_response(NULL),
-    m_proxy_request(NULL),
-    m_server_response(NULL),
-    m_cache_response(NULL),
-    m_client_req_url_str(NULL),
+    m_client_request(nullptr),
+    m_proxy_response(nullptr),
+    m_proxy_request(nullptr),
+    m_server_response(nullptr),
+    m_cache_response(nullptr),
+    m_client_req_url_str(nullptr),
     m_client_req_url_len(0),
-    m_client_req_url_canon_str(NULL),
+    m_client_req_url_canon_str(nullptr),
     m_client_req_url_canon_len(0),
-    m_client_req_unmapped_url_canon_str(NULL),
+    m_client_req_unmapped_url_canon_str(nullptr),
     m_client_req_unmapped_url_canon_len(-1),
-    m_client_req_unmapped_url_path_str(NULL),
+    m_client_req_unmapped_url_path_str(nullptr),
     m_client_req_unmapped_url_path_len(-1),
-    m_client_req_unmapped_url_host_str(NULL),
+    m_client_req_unmapped_url_host_str(nullptr),
     m_client_req_unmapped_url_host_len(-1),
-    m_client_req_url_path_str(NULL),
+    m_client_req_url_path_str(nullptr),
     m_client_req_url_path_len(0),
-    m_proxy_resp_content_type_str(NULL),
+    m_proxy_resp_content_type_str(nullptr),
     m_proxy_resp_content_type_len(0),
-    m_cache_lookup_url_canon_str(NULL),
+    m_cache_lookup_url_canon_str(nullptr),
     m_cache_lookup_url_canon_len(0)
 {
-  ink_assert(m_http_sm != NULL);
+  ink_assert(m_http_sm != nullptr);
 }
 
 /*-------------------------------------------------------------------------
@@ -235,7 +234,7 @@ int
 LogAccessHttp::marshal_plugin_identity_tag(char *buf)
 {
   int len         = INK_MIN_ALIGN;
-  char const *tag = m_http_sm->plugin_tag;
+  const char *tag = m_http_sm->plugin_tag;
 
   if (!tag) {
     tag = "*";
@@ -298,7 +297,7 @@ LogAccessHttp::marshal_client_host_port(char *buf)
 int
 LogAccessHttp::marshal_client_auth_user_name(char *buf)
 {
-  char *str = NULL;
+  char *str = nullptr;
   int len   = INK_MIN_ALIGN;
 
   // Jira TS-40:
@@ -323,9 +322,9 @@ void
 LogAccessHttp::validate_unmapped_url(void)
 {
   if (m_client_req_unmapped_url_canon_len < 0) {
-    if (m_http_sm->t_state.pristine_url.valid()) {
+    if (m_http_sm->t_state.unmapped_url.valid()) {
       int unmapped_url_len;
-      char *unmapped_url = m_http_sm->t_state.pristine_url.string_get_ref(&unmapped_url_len);
+      char *unmapped_url = m_http_sm->t_state.unmapped_url.string_get_ref(&unmapped_url_len);
 
       if (unmapped_url && unmapped_url[0] != 0) {
         m_client_req_unmapped_url_canon_str =
@@ -362,7 +361,8 @@ LogAccessHttp::validate_unmapped_url_path(void)
           m_client_req_unmapped_url_host_len = m_client_req_unmapped_url_path_len - len;
           // Attempt to find first '/' in the path
           if (m_client_req_unmapped_url_host_len > 0 &&
-              (c = (char *)memchr((void *)m_client_req_unmapped_url_host_str, '/', m_client_req_unmapped_url_path_len)) != 0) {
+              (c = (char *)memchr((void *)m_client_req_unmapped_url_host_str, '/', m_client_req_unmapped_url_path_len)) !=
+                nullptr) {
             m_client_req_unmapped_url_host_len = (int)(c - m_client_req_unmapped_url_host_str);
             m_client_req_unmapped_url_path_str = &m_client_req_unmapped_url_host_str[m_client_req_unmapped_url_host_len];
             m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_path_len - len - m_client_req_unmapped_url_host_len;
@@ -402,7 +402,7 @@ LogAccessHttp::validate_lookup_url(void)
 int
 LogAccessHttp::marshal_client_req_text(char *buf)
 {
-  int len = marshal_client_req_http_method(NULL) + marshal_client_req_url(NULL) + marshal_client_req_http_version(NULL);
+  int len = marshal_client_req_http_method(nullptr) + marshal_client_req_url(nullptr) + marshal_client_req_http_version(nullptr);
 
   if (buf) {
     int offset = 0;
@@ -420,7 +420,7 @@ LogAccessHttp::marshal_client_req_text(char *buf)
 int
 LogAccessHttp::marshal_client_req_http_method(char *buf)
 {
-  char *str = NULL;
+  char *str = nullptr;
   int alen  = 0;
   int plen  = INK_MIN_ALIGN;
 
@@ -562,7 +562,7 @@ int
 LogAccessHttp::marshal_client_req_url_scheme(char *buf)
 {
   int scheme      = m_http_sm->t_state.orig_scheme;
-  const char *str = NULL;
+  const char *str = nullptr;
   int alen;
   int plen = INK_MIN_ALIGN;
 
@@ -1019,7 +1019,7 @@ LogAccessHttp::marshal_proxy_req_squid_len(char *buf)
 int
 LogAccessHttp::marshal_proxy_req_server_name(char *buf)
 {
-  char *str = NULL;
+  char *str = nullptr;
   int len   = INK_MIN_ALIGN;
 
   if (m_http_sm->t_state.current.server) {
@@ -1037,14 +1037,14 @@ LogAccessHttp::marshal_proxy_req_server_name(char *buf)
 int
 LogAccessHttp::marshal_proxy_req_server_ip(char *buf)
 {
-  return marshal_ip(buf, m_http_sm->t_state.current.server != NULL ? &m_http_sm->t_state.current.server->dst_addr.sa : 0);
+  return marshal_ip(buf, m_http_sm->t_state.current.server != nullptr ? &m_http_sm->t_state.current.server->dst_addr.sa : nullptr);
 }
 
 int
 LogAccessHttp::marshal_proxy_req_server_port(char *buf)
 {
   if (buf) {
-    uint16_t port = ntohs(m_http_sm->t_state.current.server != NULL ? m_http_sm->t_state.current.server->dst_addr.port() : 0);
+    uint16_t port = ntohs(m_http_sm->t_state.current.server != nullptr ? m_http_sm->t_state.current.server->dst_addr.port() : 0);
     marshal_int(buf, port);
   }
   return INK_MIN_ALIGN;
@@ -1084,16 +1084,16 @@ LogAccessHttp::marshal_proxy_hierarchy_route(char *buf)
 int
 LogAccessHttp::marshal_server_host_ip(char *buf)
 {
-  sockaddr const *ip = 0;
+  sockaddr const *ip = nullptr;
   ip                 = &m_http_sm->t_state.server_info.dst_addr.sa;
   if (!ats_is_ip(ip)) {
     if (m_http_sm->t_state.current.server) {
       ip = &m_http_sm->t_state.current.server->dst_addr.sa;
       if (!ats_is_ip(ip)) {
-        ip = 0;
+        ip = nullptr;
       }
     } else {
-      ip = 0;
+      ip = nullptr;
     }
   }
   return marshal_ip(buf, ip);
@@ -1105,7 +1105,7 @@ LogAccessHttp::marshal_server_host_ip(char *buf)
 int
 LogAccessHttp::marshal_server_host_name(char *buf)
 {
-  char const *str = NULL;
+  const char *str = nullptr;
   int padded_len  = INK_MIN_ALIGN;
   int actual_len  = 0;
 
@@ -1461,7 +1461,7 @@ LogAccessHttp::marshal_file_size(char *buf)
 int
 LogAccessHttp::marshal_http_header_field(LogField::Container container, char *field, char *buf)
 {
-  char *str        = NULL;
+  char *str        = nullptr;
   int padded_len   = INK_MIN_ALIGN;
   int actual_len   = 0;
   bool valid_field = false;
@@ -1489,7 +1489,7 @@ LogAccessHttp::marshal_http_header_field(LogField::Container container, char *fi
     break;
 
   default:
-    header = NULL;
+    header = nullptr;
     break;
   }
 
@@ -1514,7 +1514,7 @@ LogAccessHttp::marshal_http_header_field(LogField::Container container, char *fi
         // Dups need to be comma separated.  So if there's another
         // dup, then add a comma and a space ...
         //
-        if (fld != NULL) {
+        if (fld != nullptr) {
           if (buf) {
             memcpy(buf, ", ", 2);
             buf += 2;
@@ -1552,7 +1552,7 @@ LogAccessHttp::marshal_http_header_field(LogField::Container container, char *fi
   if (valid_field == false) {
     padded_len = INK_MIN_ALIGN;
     if (buf) {
-      marshal_str(buf, NULL, padded_len);
+      marshal_str(buf, nullptr, padded_len);
     }
   }
 
@@ -1562,7 +1562,7 @@ LogAccessHttp::marshal_http_header_field(LogField::Container container, char *fi
 int
 LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf)
 {
-  char *str = NULL, *new_str = NULL;
+  char *str = nullptr, *new_str = nullptr;
   int padded_len = INK_MIN_ALIGN;
   int actual_len = 0, new_len = 0;
   bool valid_field = false;
@@ -1590,7 +1590,7 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
     break;
 
   default:
-    header = NULL;
+    header = nullptr;
     break;
   }
 
@@ -1616,7 +1616,7 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
         // Dups need to be comma separated.  So if there's another
         // dup, then add a comma and a space ...
         //
-        if (fld != NULL) {
+        if (fld != nullptr) {
           if (buf) {
             memcpy(buf, ", ", 2);
             buf += 2;
@@ -1654,7 +1654,7 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
   if (valid_field == false) {
     padded_len = INK_MIN_ALIGN;
     if (buf) {
-      marshal_str(buf, NULL, padded_len);
+      marshal_str(buf, nullptr, padded_len);
     }
   }
 

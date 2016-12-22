@@ -39,7 +39,7 @@ get_jit_stack(void *data ATS_UNUSED)
 {
   pcre_jit_stack *jit_stack;
 
-  if ((jit_stack = (pcre_jit_stack *)ink_thread_getspecific(k.key)) == NULL) {
+  if ((jit_stack = (pcre_jit_stack *)ink_thread_getspecific(k.key)) == nullptr) {
     jit_stack = pcre_jit_stack_alloc(ats_pagesize(), 1024 * 1024); // 1 page min and 1MB max
     ink_thread_setspecific(k.key, (void *)jit_stack);
   }
@@ -67,9 +67,9 @@ Regex::compile(const char *pattern, const unsigned flags)
     options |= PCRE_ANCHORED;
   }
 
-  regex = pcre_compile(pattern, options, &error, &erroffset, NULL);
+  regex = pcre_compile(pattern, options, &error, &erroffset, nullptr);
   if (error) {
-    regex = NULL;
+    regex = nullptr;
     return false;
   }
 
@@ -81,7 +81,7 @@ Regex::compile(const char *pattern, const unsigned flags)
 
 #ifdef PCRE_CONFIG_JIT
   if (regex_extra)
-    pcre_assign_jit_stack(regex_extra, &get_jit_stack, NULL);
+    pcre_assign_jit_stack(regex_extra, &get_jit_stack, nullptr);
 #endif
 
   return true;
@@ -159,26 +159,26 @@ DFA::build(const char *pattern, unsigned flags)
   }
 
   ret     = (dfa_pattern *)ats_malloc(sizeof(dfa_pattern));
-  ret->_p = NULL;
+  ret->_p = nullptr;
 
   ret->_re = new Regex();
   rv       = ret->_re->compile(pattern, flags);
   if (rv == -1) {
     delete ret->_re;
     ats_free(ret);
-    return NULL;
+    return nullptr;
   }
 
   ret->_idx  = 0;
   ret->_p    = ats_strndup(pattern, strlen(pattern));
-  ret->_next = NULL;
+  ret->_next = nullptr;
   return ret;
 }
 
 int
 DFA::compile(const char *pattern, unsigned flags)
 {
-  ink_assert(_my_patterns == NULL);
+  ink_assert(_my_patterns == nullptr);
   _my_patterns = build(pattern, flags);
   if (_my_patterns)
     return 0;
@@ -190,8 +190,8 @@ int
 DFA::compile(const char **patterns, int npatterns, unsigned flags)
 {
   const char *pattern;
-  dfa_pattern *ret = NULL;
-  dfa_pattern *end = NULL;
+  dfa_pattern *ret = nullptr;
+  dfa_pattern *end = nullptr;
   int i;
 
   for (i = 0; i < npatterns; i++) {
@@ -203,7 +203,7 @@ DFA::compile(const char **patterns, int npatterns, unsigned flags)
 
     if (!_my_patterns) {
       _my_patterns        = ret;
-      _my_patterns->_next = NULL;
+      _my_patterns->_next = nullptr;
       _my_patterns->_idx  = i;
     } else {
       end = _my_patterns;

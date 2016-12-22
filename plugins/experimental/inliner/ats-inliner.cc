@@ -44,8 +44,8 @@ struct MyData {
   MyData(const TSIOBufferReader r, const TSVConn v)
     : handler(r, ats::io::IOSink::Create(TSTransformOutputVConnGet(v), TSContMutexGet(v), timeout))
   {
-    assert(r != NULL);
-    assert(v != NULL);
+    assert(r != nullptr);
+    assert(v != nullptr);
   }
 };
 
@@ -58,7 +58,7 @@ handle_transform(const TSCont c)
 
   if (!TSVIOBufferGet(vio)) {
     TSVConnShutdown(c, 1, 0);
-    TSContDataSet(c, NULL);
+    TSContDataSet(c, nullptr);
     delete data;
     return;
   }
@@ -89,7 +89,7 @@ handle_transform(const TSCont c)
   } else {
     TSContCall(TSVIOContGet(vio), TS_EVENT_VCONN_WRITE_COMPLETE, vio);
     TSVConnShutdown(c, 1, 0);
-    TSContDataSet(c, NULL);
+    TSContDataSet(c, nullptr);
     delete data;
   }
 }
@@ -100,8 +100,8 @@ inliner_transform(TSCont c, TSEvent e, void *)
   if (TSVConnClosedGet(c)) {
     TSDebug(PLUGIN_TAG, "connection closed");
     MyData *const data = static_cast<MyData *>(TSContDataGet(c));
-    if (data != NULL) {
-      TSContDataSet(c, NULL);
+    if (data != nullptr) {
+      TSContDataSet(c, nullptr);
       data->handler.abort();
       delete data;
     }
@@ -110,7 +110,7 @@ inliner_transform(TSCont c, TSEvent e, void *)
     switch (e) {
     case TS_EVENT_ERROR: {
       const TSVIO vio = TSVConnWriteVIOGet(c);
-      assert(vio != NULL);
+      assert(vio != nullptr);
       TSContCall(TSVIOContGet(vio), TS_EVENT_ERROR, vio);
     } break;
 
@@ -134,8 +134,8 @@ transformable(TSHttpTxn txnp)
   TSMBuffer buffer;
   TSMLoc location;
   CHECK(TSHttpTxnServerRespGet(txnp, &buffer, &location));
-  assert(buffer != NULL);
-  assert(location != NULL);
+  assert(buffer != nullptr);
+  assert(location != nullptr);
 
   returnValue = TSHttpHdrStatusGet(buffer, location) == TS_HTTP_STATUS_OK;
 
@@ -147,7 +147,7 @@ transformable(TSHttpTxn txnp)
       int length                = 0;
       const char *const content = TSMimeHdrFieldValueStringGet(buffer, location, field, 0, &length);
 
-      if (content != NULL && length > 0) {
+      if (content != nullptr && length > 0) {
         returnValue = strncasecmp(content, "text/html", 9) == 0;
       }
 
@@ -164,9 +164,9 @@ transformable(TSHttpTxn txnp)
 void
 transform_add(const TSHttpTxn t)
 {
-  assert(t != NULL);
+  assert(t != nullptr);
   const TSVConn vconnection = TSTransformCreate(inliner_transform, t);
-  assert(vconnection != NULL);
+  assert(vconnection != nullptr);
   TSHttpTxnHookAdd(t, TS_HTTP_RESPONSE_TRANSFORM_HOOK, vconnection);
 }
 
@@ -174,7 +174,7 @@ int
 transform_plugin(TSCont, TSEvent e, void *d)
 {
   assert(TS_EVENT_HTTP_READ_RESPONSE_HDR == e);
-  assert(d != NULL);
+  assert(d != nullptr);
 
   const TSHttpTxn transaction = static_cast<TSHttpTxn>(d);
 
@@ -209,7 +209,7 @@ TSPluginInit(int, const char **)
     goto error;
   }
 
-  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, NULL));
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, nullptr));
   return;
 
 error:

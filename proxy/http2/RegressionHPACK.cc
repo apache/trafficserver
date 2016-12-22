@@ -29,6 +29,7 @@
 const static int DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST = 256;
 const static int BUFSIZE_FOR_REGRESSION_TEST            = 128;
 const static int MAX_TEST_FIELD_NUM                     = 8;
+const static int MAX_REQUEST_HEADER_SIZE                = 131072;
 
 /***********************************************************************************
  *                                                                                 *
@@ -410,7 +411,7 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
       MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
       field->name_set(headers->m_heap, headers->m_http->m_fields_impl, expected_name, strlen(expected_name));
       field->value_set(headers->m_heap, headers->m_http->m_fields_impl, expected_value, strlen(expected_value));
-      mime_hdr_field_attach(headers->m_http->m_fields_impl, field, 1, NULL);
+      mime_hdr_field_attach(headers->m_http->m_fields_impl, field, 1, nullptr);
     }
 
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
@@ -474,7 +475,7 @@ REGRESSION_TEST(HPACK_DecodeString)(RegressionTest *t, int, int *pstatus)
   box = REGRESSION_TEST_PASSED;
 
   Arena arena;
-  char *actual        = NULL;
+  char *actual        = nullptr;
   uint32_t actual_len = 0;
 
   hpack_huffman_init();
@@ -564,7 +565,7 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
     headers->create(HTTP_TYPE_REQUEST);
 
     hpack_decode_header_block(indexing_table, headers, encoded_field_request_test_case[i].encoded_field,
-                              encoded_field_request_test_case[i].encoded_field_len);
+                              encoded_field_request_test_case[i].encoded_field_len, MAX_REQUEST_HEADER_SIZE);
 
     for (unsigned int j = 0; j < sizeof(raw_field_request_test_case[i]) / sizeof(raw_field_request_test_case[i][0]); j++) {
       const char *expected_name  = raw_field_request_test_case[i][j].raw_name;
@@ -574,7 +575,7 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
       }
 
       MIMEField *field = headers->field_find(expected_name, strlen(expected_name));
-      box.check(field != NULL, "A MIMEField that has \"%s\" as name doesn't exist", expected_name);
+      box.check(field != nullptr, "A MIMEField that has \"%s\" as name doesn't exist", expected_name);
 
       if (field) {
         int actual_value_len;

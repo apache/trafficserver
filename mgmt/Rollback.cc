@@ -45,7 +45,7 @@ const char *RollbackStrings[] = {"Rollback Ok", "File was not found", "Version w
                                  "Invalid Version - Version Numbers Must Increase"};
 
 Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *parentRollback_, unsigned flags)
-  : configFiles(NULL),
+  : configFiles(nullptr),
     root_access_needed(root_access_needed_),
     parentRollback(parentRollback_),
     currentVersion(0),
@@ -68,11 +68,11 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
   char *activeVerStr;
   bool needZeroLength;
 
-  ink_assert(fileName_ != NULL);
+  ink_assert(fileName_ != nullptr);
 
   // parent must not also have a parent
   if (parentRollback) {
-    ink_assert(parentRollback->parentRollback == NULL);
+    ink_assert(parentRollback->parentRollback == nullptr);
   }
 
   // Copy the file name.
@@ -174,7 +174,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
 
     // Make sure that we have a backup of the file
     if (highestSeen == 0) {
-      textBuffer *version0 = NULL;
+      textBuffer *version0 = nullptr;
       char failStr[]       = "[Rollback::Rollback] Automatic Roll of Version 1 failed: %s";
       if (getVersion_ml(ACTIVE_VERSION, &version0) != OK_ROLLBACK) {
         mgmt_log(failStr, fileName);
@@ -183,7 +183,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
           mgmt_log(failStr, fileName);
         }
       }
-      if (version0 != NULL) {
+      if (version0 != nullptr) {
         delete version0;
       }
     }
@@ -232,7 +232,7 @@ char *
 Rollback::createPathStr(version_t version)
 {
   int bufSize  = 0;
-  char *buffer = NULL;
+  char *buffer = nullptr;
   ats_scoped_str sysconfdir(RecConfigReadConfigDir());
   bufSize = strlen(sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
   buffer  = (char *)ats_malloc(bufSize);
@@ -287,7 +287,7 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
   fd = mgmt_open_mode(filePath, oflags, 0644);
 
   if (fd < 0) {
-    if (errnoPtr != NULL) {
+    if (errnoPtr != nullptr) {
       *errnoPtr = errno;
     }
     mgmt_log("[Rollback::openFile] Open of %s failed: %s\n", fileName, strerror(errno));
@@ -376,7 +376,7 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
   versionInfo *toRemove;
   versionInfo *newBak;
   bool failedLink = false;
-  char *alarmMsg  = NULL;
+  char *alarmMsg  = nullptr;
 
   // Check to see if the callee has specified a newVersion number
   //   If the newVersion argument is less than zero, the callee
@@ -454,9 +454,9 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
   //
   if (numVersions >= this->numberBackups && failedLink == false) {
     toRemove = versionQ.head;
-    ink_assert(toRemove != NULL);
+    ink_assert(toRemove != nullptr);
     ink_assert((toRemove->version) < this->currentVersion);
-    if (toRemove != NULL) {
+    if (toRemove != nullptr) {
       removeVersion_ml(toRemove->version);
     }
   }
@@ -526,7 +526,7 @@ Rollback::getVersion_ml(version_t version, textBuffer **buffer)
   int readResult;           // return val of (indirect) read calls
   textBuffer *newBuffer;    // return buffer
 
-  *buffer = NULL;
+  *buffer = nullptr;
 
   if (version == currentVersion) {
     version = ACTIVE_VERSION;
@@ -645,26 +645,17 @@ Rollback::findVersions_ml(ExpandingArray *listNames)
   ats_scoped_str sysconfdir(RecConfigReadConfigDir());
 
   DIR *dir;
-  struct dirent *dirEntrySpace;
   struct dirent *entryPtr;
 
   dir = opendir(sysconfdir);
 
-  if (dir == NULL) {
+  if (dir == nullptr) {
     mgmt_log("[Rollback::findVersions] Unable to open configuration directory: %s: %s\n", (const char *)sysconfdir,
              strerror(errno));
     return INVALID_VERSION;
   }
-  // The fun of Solaris - readdir_r requires a buffer passed into it
-  //   The man page says this obscene expression gives us the proper
-  //     size
-  dirEntrySpace = (struct dirent *)ats_malloc(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
-  while (readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
-    if (!entryPtr) {
-      break;
-    }
-
+  while ((entryPtr = readdir(dir))) {
     if ((version = extractVersionInfo(listNames, entryPtr->d_name)) != INVALID_VERSION) {
       count++;
 
@@ -674,7 +665,6 @@ Rollback::findVersions_ml(ExpandingArray *listNames)
     }
   }
 
-  ats_free(dirEntrySpace);
   closedir(dir);
 
   numVersions = count;
@@ -717,7 +707,7 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
           version = atoi(currentVersionStr);
 
           // Add info about version number and modTime
-          if (listNames != NULL) {
+          if (listNames != nullptr) {
             struct stat fileInfo;
             versionInfo *verInfo;
 
@@ -788,7 +778,7 @@ Rollback::removeVersion_ml(version_t version)
 {
   struct stat statInfo;
   char *versionPath;
-  versionInfo *removeInfo = NULL;
+  versionInfo *removeInfo = nullptr;
   bool infoFound          = false;
 
   if (this->statFile(version, &statInfo) < 0) {
@@ -806,7 +796,7 @@ Rollback::removeVersion_ml(version_t version)
   //   We are doing a linear search but since we almost always
   //    are deleting the oldest version, the head of the queue
   //    should be what we are looking for
-  for (removeInfo = versionQ.head; removeInfo != NULL; removeInfo = removeInfo->link.next) {
+  for (removeInfo = versionQ.head; removeInfo != nullptr; removeInfo = removeInfo->link.next) {
     if (removeInfo->version == version) {
       infoFound = true;
       break;
@@ -874,7 +864,7 @@ Rollback::setLastModifiedTime()
     // We really shoudn't fail to stat the file since we just
     //  created it.  If we do, just punt and just use the current
     //  time.
-    fileLastModified = (time(NULL) - ink_timezone()) * 1000000000;
+    fileLastModified = (time(nullptr) - ink_timezone()) * 1000000000;
     return false;
   }
 }

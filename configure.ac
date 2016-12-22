@@ -32,8 +32,8 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[7.0.0])
-m4_define([TS_VERSION_N],[7000000])
+m4_define([TS_VERSION_S],[7.1.0])
+m4_define([TS_VERSION_N],[7001000])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
@@ -188,6 +188,23 @@ AC_ARG_ENABLE([werror],
 )
 AC_MSG_RESULT([$enable_werror])
 
+# Enable ASAN for the builds
+AC_MSG_CHECKING([whether to enable asan])
+AC_ARG_ENABLE([asan],
+  [AS_HELP_STRING([--enable-asan],[enable Address Sanitizer])],
+  [],
+  [enable_asan=no]
+)
+AC_MSG_RESULT([$enable_asan])
+
+# Enable TSAN for the builds
+AC_MSG_CHECKING([whether to enable tsan])
+AC_ARG_ENABLE([tsan],
+  [AS_HELP_STRING([--enable-tsan],[turn on Thread Sanitizer])],
+  [],
+  [enable_tsan=no]
+)
+AC_MSG_RESULT([$enable_tsan])
 
 #
 # Fast SDK APIs, this disables the parameter checks (assert)
@@ -231,6 +248,19 @@ TS_ARG_ENABLE_VAR([has], [tests])
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
+# Build documentation?
+#
+
+AC_MSG_CHECKING([whether to build documentation])
+AC_ARG_ENABLE([docs],
+  [AS_HELP_STRING([--enable-docs],[enable documentation building])],
+  [],
+  [enable_doc_build=no]
+)
+AC_MSG_RESULT([$enable_doc_build])
+AM_CONDITIONAL([BUILD_DOCS], [test "xyes" = "x$enable_doc_build"])
+
+#
 # Remote Coverity Prevent commit
 #
 AC_MSG_CHECKING([whether to commit cov defects to remote host])
@@ -263,6 +293,9 @@ AC_ARG_WITH([profiler],
   [with_profiler=no]
 )
 AC_MSG_RESULT([$with_profiler])
+
+# Disable all static library builds
+AC_DISABLE_STATIC
 
 #
 # use eventfd() or pipes
@@ -900,6 +933,21 @@ else
   TS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
 fi
 
+# Flags for ASAN
+if test "x${enable_asan}" = "xyes"; then
+  if test "x${enable_tsan}" = "xyes"; then
+    AC_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
+  fi
+  TS_ADDTO(CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
+  TS_ADDTO(CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
+fi
+
+# Flags for TSAN
+if test "x${enable_tsan}" = "xyes"; then
+  TS_ADDTO(CFLAGS, [-fsanitize=thread])
+  TS_ADDTO(CXXFLAGS, [-fsanitize=thread])
+fi
+
 # Checks for pointer size.
 # TODO: Later this is irrelevant, and we should just bail on 32-bit platforms always
 AC_CHECK_SIZEOF([void*])
@@ -1395,7 +1443,7 @@ esac
 
 # Flags for building and linking against our internal copy of LuaJIT.
 AC_SUBST([LUAJIT_LDFLAGS])
-AC_SUBST([LUAJIT_CPPFLAGS], ['-I$(top_srcdir)/lib/luajit/src'])
+AC_SUBST([LUAJIT_CPPFLAGS], ['-I$(abs_top_srcdir)/lib/luajit/src'])
 
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
@@ -1792,14 +1840,14 @@ AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
 # use modular IOCORE
 #
 iocore_include_dirs="\
--I\$(top_srcdir)/iocore/eventsystem \
--I\$(top_srcdir)/iocore/net \
--I\$(top_srcdir)/iocore/aio \
--I\$(top_srcdir)/iocore/hostdb \
--I\$(top_srcdir)/iocore/cache \
--I\$(top_srcdir)/iocore/cluster \
--I\$(top_srcdir)/iocore/utils \
--I\$(top_srcdir)/iocore/dns"
+-I\$(abs_top_srcdir)/iocore/eventsystem \
+-I\$(abs_top_srcdir)/iocore/net \
+-I\$(abs_top_srcdir)/iocore/aio \
+-I\$(abs_top_srcdir)/iocore/hostdb \
+-I\$(abs_top_srcdir)/iocore/cache \
+-I\$(abs_top_srcdir)/iocore/cluster \
+-I\$(abs_top_srcdir)/iocore/utils \
+-I\$(abs_top_srcdir)/iocore/dns"
 
 # Flags for buildit LuaJIT itself. We take the latest version
 # of the generic flags, plus any Lua-specific flags so that we
@@ -1859,9 +1907,7 @@ AC_CONFIG_FILES([
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
-  lib/atscppapi/Makefile
-  lib/atscppapi/examples/Makefile
-  lib/atscppapi/src/Makefile
+  lib/cppapi/Makefile
   lib/bindings/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
@@ -1877,54 +1923,6 @@ AC_CONFIG_FILES([
   mgmt/cluster/Makefile
   mgmt/utils/Makefile
   plugins/Makefile
-  plugins/authproxy/Makefile
-  plugins/background_fetch/Makefile
-  plugins/conf_remap/Makefile
-  plugins/esi/Makefile
-  plugins/generator/Makefile
-  plugins/gzip/Makefile
-  plugins/header_rewrite/Makefile
-  plugins/healthchecks/Makefile
-  plugins/libloader/Makefile
-  plugins/regex_remap/Makefile
-  plugins/regex_revalidate/Makefile
-  plugins/s3_auth/Makefile
-  plugins/stats_over_http/Makefile
-  plugins/tcpinfo/Makefile
-  plugins/xdebug/Makefile
-  plugins/experimental/Makefile
-  plugins/experimental/acme/Makefile
-  plugins/experimental/balancer/Makefile
-  plugins/experimental/buffer_upload/Makefile
-  plugins/experimental/cache_key_genid/Makefile
-  plugins/experimental/cache_promote/Makefile
-  plugins/experimental/cache_range_requests/Makefile
-  plugins/experimental/cachekey/Makefile
-  plugins/experimental/collapsed_connection/Makefile
-  plugins/experimental/collapsed_forwarding/Makefile
-  plugins/experimental/custom_redirect/Makefile
-  plugins/experimental/epic/Makefile
-  plugins/experimental/escalate/Makefile
-  plugins/experimental/geoip_acl/Makefile
-  plugins/experimental/header_normalize/Makefile
-  plugins/experimental/hipes/Makefile
-  plugins/experimental/hook-trace/Makefile
-  plugins/experimental/inliner/Makefile
-  plugins/experimental/memcache/Makefile
-  plugins/experimental/memcached_remap/Makefile
-  plugins/experimental/metalink/Makefile
-  plugins/experimental/mp4/Makefile
-  plugins/experimental/multiplexer/Makefile
-  plugins/experimental/mysql_remap/Makefile
-  plugins/experimental/remap_purge/Makefile
-  plugins/experimental/remap_stats/Makefile
-  plugins/experimental/ssl_cert_loader/Makefile
-  plugins/experimental/sslheaders/Makefile
-  plugins/experimental/stale_while_revalidate/Makefile
-  plugins/experimental/stream_editor/Makefile
-  plugins/experimental/ts_lua/Makefile
-  plugins/experimental/url_sig/Makefile
-  plugins/experimental/webp_transform/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
   proxy/config/Makefile

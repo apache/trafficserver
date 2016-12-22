@@ -147,7 +147,7 @@ private:
     return req_reader->read_avail();
   }
   /// Check if the comma supproting MIME field @a name has @a value in it.
-  bool check_for_field_value(char const *name, size_t name_len, char const *value, size_t value_len);
+  bool check_for_field_value(const char *name, size_t name_len, char const *value, size_t value_len);
 
   bool has_body();
   bool check_body_done();

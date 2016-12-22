@@ -54,7 +54,7 @@ The IO buffer abstraction provides for a single writer and multiple
 readers. In order for the readers to have no knowledge of each
 other, they manipulate IO buffers through the :type:`TSIOBufferReader`
 data structure. Since only a single writer is allowed, there is no
-corresponding :type:`TSIOBufferWriter` data structure. The writer
+corresponding `TSIOBufferWriter` data structure. The writer
 simply modifies the IO buffer directly.
 
 :func:`TSIOBufferCreate` creates an empty :type:`TSIOBuffer`.
@@ -75,9 +75,11 @@ buffer :arg:`bufp`. A common pattern for writing to an IO buffer is to copy
 data into a buffer block and then call INKIOBufferProduce to make the new
 data visible to any readers.
 
-.. XXX The above references an old API function: INKIOBufferProduce and needs to
-       be fixed. I don't see a TSIOBufferProduce function that would be its
-       obvious replacement from the Ink->TS rename.
+.. note::
+
+   The above references an old API function: INKIOBufferProduce and needs to
+   be fixed. I don't see a TSIOBufferProduce function that would be its
+   obvious replacement from the Ink->TS rename.
 
 The watermark of an :type:`TSIOBuffer` is the minimum number of bytes of data
 that have to be in the buffer before calling back any continuation that

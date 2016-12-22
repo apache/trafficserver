@@ -42,10 +42,10 @@ Description
 
 Traffic Server provides a number of routines for allocating and freeing
 memory. These routines correspond to similar routines in the C library.
-For example, :func:`TSrealloc` behaves like the C library routine :func:`realloc`.
+For example, :func:`TSrealloc` behaves like the C library routine :code:`realloc`.
 There are two reasons to use the routines provided by Traffic Server. The
 first is portability. The Traffic Server API routines behave the same on
-all of Traffic Servers supported platforms. For example, :func:`realloc` does
+all of Traffic Servers supported platforms. For example, :code:`realloc` does
 not accept an argument of ``NULL`` on some platforms. The second reason is
 that the Traffic Server routines actually track the memory allocations by
 file and line number. This tracking is very efficient, is always turned
@@ -54,7 +54,7 @@ on, and is useful for tracking down memory leaks.
 :func:`TSmalloc` returns a pointer to size bytes of memory allocated from the
 heap. Traffic Server uses :func:`TSmalloc` internally for memory allocations.
 Always use :func:`TSfree` to release memory allocated by :func:`TSmalloc`; do not use
-:func:`free`.
+:code:`free`.
 
 :func:`TSstrdup` returns a pointer to a new string that is a duplicate
 of the string pointed to by str. The memory for the new string is

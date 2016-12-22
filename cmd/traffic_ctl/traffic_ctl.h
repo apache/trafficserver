@@ -47,7 +47,7 @@ extern AppVersionInfo CtrlVersionInfo;
 
 void CtrlMgmtError(TSMgmtError err, const char *fmt, ...) TS_PRINTFLIKE(2, 3);
 int CtrlSubcommandUsage(const char *name, const subcommand *cmds, unsigned ncmds, const ArgumentDescription *desc, unsigned ndesc);
-int CtrlCommandUsage(const char *msg, const ArgumentDescription *desc = NULL, unsigned ndesc = 0);
+int CtrlCommandUsage(const char *msg, const ArgumentDescription *desc = nullptr, unsigned ndesc = 0);
 
 bool CtrlProcessArguments(int argc, const char **argv, const ArgumentDescription *desc, unsigned ndesc);
 int CtrlUnimplementedCommand(unsigned argc, const char **argv);
@@ -59,7 +59,7 @@ int CtrlGenericSubcommand(const char *, const subcommand *cmds, unsigned ncmds, 
     TSMgmtError e = (expr);                            \
     if (e != TS_ERR_OKAY) {                            \
       CtrlDebug("%s failed with status %d", #expr, e); \
-      CtrlMgmtError(e, NULL);                          \
+      CtrlMgmtError(e, nullptr);                       \
       return CTRL_EX_ERROR;                            \
     }                                                  \
   } while (0)
@@ -166,7 +166,7 @@ struct CtrlMgmtRecordList : CtrlMgmtList<RecordListPolicy> {
 };
 
 struct CtrlCommandLine {
-  CtrlCommandLine() { this->args.push_back(NULL); }
+  CtrlCommandLine() { this->args.push_back(nullptr); }
   void
   init(unsigned argc, const char **argv)
   {
@@ -175,8 +175,8 @@ struct CtrlCommandLine {
       this->args.push_back(argv[i]);
     }
 
-    // Always NULL-terminate to keep ink_args happy. Note that we adjust arg() accordingly.
-    this->args.push_back(NULL);
+    // Always nullptr-terminate to keep ink_args happy. Note that we adjust arg() accordingly.
+    this->args.push_back(nullptr);
   }
 
   unsigned

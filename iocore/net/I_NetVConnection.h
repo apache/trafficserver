@@ -40,6 +40,13 @@
 #define SSL_EVENT_SERVER 0
 #define SSL_EVENT_CLIENT 1
 
+// Indicator the context for a NetVConnection
+typedef enum {
+  NET_VCONNECTION_UNSET = 0,
+  NET_VCONNECTION_IN,  // Client <--> ATS, Client-Side
+  NET_VCONNECTION_OUT, // ATS <--> Server, Server-Side
+} NetVConnectionContext_t;
+
 /** Holds client options for NetVConnection.
 
     This class holds various options a user can specify for
@@ -135,6 +142,9 @@ struct NetVCOptions {
   /// Make socket block on connect (default: @c false)
   bool f_blocking_connect;
 
+  // Use TCP Fast Open on this socket. The connect(2) call will be omitted.
+  bool f_tcp_fastopen = false;
+
   /// Control use of SOCKS.
   /// Set to @c NO_SOCKS to disable use of SOCKS. Otherwise SOCKS is
   /// used if available.
@@ -188,7 +198,7 @@ struct NetVCOptions {
     if (name && len && ats_ip_pton(ts::ConstBuffer(name, len), &ip) != 0) {
       sni_servername = ats_strndup(name, len);
     } else {
-      sni_servername = NULL;
+      sni_servername = nullptr;
     }
     return *this;
   }
@@ -197,7 +207,7 @@ struct NetVCOptions {
   operator=(self const &that)
   {
     if (&that != this) {
-      sni_servername = NULL; // release any current name.
+      sni_servername = nullptr; // release any current name.
       memcpy(this, &that, sizeof(self));
       if (that.sni_servername) {
         sni_servername.release(); // otherwise we'll free the source string.
@@ -207,10 +217,14 @@ struct NetVCOptions {
     return *this;
   }
 
+  const char *get_family_string() const;
+
+  const char *get_proto_string() const;
+
   /// @name Debugging
   //@{
   /// Convert @a s to its string equivalent.
-  static char const *toString(addr_bind_style s);
+  static const char *toString(addr_bind_style s);
   //@}
 
 private:
@@ -228,6 +242,14 @@ private:
 class NetVConnection : public VConnection
 {
 public:
+  // How many bytes have been queued to the OS for sending by haven't been sent yet
+  // Not all platforms support this, and if they don't we'll return -1 for them
+  virtual const int64_t
+  outstanding()
+  {
+    return -1;
+  };
+
   /**
      Initiates read. Thread safe, may be called when not handling
      an event from the NetVConnection, or the NetVConnection creation
@@ -434,7 +456,7 @@ public:
       The action continuation will be called with an event if there is no pending I/O operation
       to receive the event.
 
-      Pass @c NULL to disable.
+      Pass @c nullptr to disable.
 
       @internal Subclasses should implement this if they support actions. This abstract class does
       not. If the subclass doesn't have an action this method is silently ignored.
@@ -491,6 +513,27 @@ public:
 
   /** Returns remote port. */
   uint16_t get_remote_port();
+
+  /** Set the context of NetVConnection.
+   * The context is ONLY set once and will not be changed.
+   *
+   * @param context The context to be set.
+   */
+  void
+  set_context(NetVConnectionContext_t context)
+  {
+    ink_assert(NET_VCONNECTION_UNSET == netvc_context);
+    netvc_context = context;
+  }
+
+  /** Get the context.
+   * @return the context of current NetVConnection
+   */
+  NetVConnectionContext_t
+  get_context() const
+  {
+    return netvc_context;
+  }
 
   /** Structure holding user options. */
   NetVCOptions options;
@@ -566,6 +609,18 @@ public:
     is_transparent = state;
   }
 
+  virtual int
+  populate_protocol(const char **results, int n) const
+  {
+    return 0;
+  }
+
+  virtual const char *
+  protocol_contains(const char *tag) const
+  {
+    return nullptr;
+  }
+
 private:
   NetVConnection(const NetVConnection &);
   NetVConnection &operator=(const NetVConnection &);
@@ -582,17 +637,20 @@ protected:
   bool is_transparent;
   /// Set if the next write IO that empties the write buffer should generate an event.
   int write_buffer_empty_event;
+  /// NetVConnection Context.
+  NetVConnectionContext_t netvc_context;
 };
 
 inline NetVConnection::NetVConnection()
-  : VConnection(NULL),
+  : VConnection(nullptr),
     attributes(0),
-    thread(NULL),
+    thread(nullptr),
     got_local_addr(0),
     got_remote_addr(0),
     is_internal_request(false),
     is_transparent(false),
-    write_buffer_empty_event(0)
+    write_buffer_empty_event(0),
+    netvc_context(NET_VCONNECTION_UNSET)
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);

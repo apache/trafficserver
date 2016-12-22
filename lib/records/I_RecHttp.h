@@ -31,7 +31,7 @@
 #include <ts/apidefs.h>
 
 /// Load default inbound IP addresses from the configuration file.
-void RecHttpLoadIp(char const *name, ///< Name of value in configuration file.
+void RecHttpLoadIp(const char *name, ///< Name of value in configuration file.
                    IpAddr &ip4,      ///< [out] IPv4 address.
                    IpAddr &ip6       ///< [out] Ipv6 address.
                    );
@@ -136,6 +136,8 @@ extern SessionProtocolSet HTTP2_PROTOCOL_SET;
 extern SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 extern SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
 
+const char *RecNormalizeProtoTag(const char *tag);
+
 /** Registered session protocol names.
 
     We do this to avoid lots of string compares. By normalizing the
@@ -167,33 +169,33 @@ public:
       The name is copied internally.
       @return The index for the registered @a name.
   */
-  int toIndex(char const *name);
+  int toIndex(const char *name);
 
   /** Get the index for @a name, registering it if needed.
       The caller @b guarantees @a name is persistent and immutable.
       @return The index for the registered @a name.
   */
-  int toIndexConst(char const *name);
+  int toIndexConst(const char *name);
 
   /** Convert a @a name to an index.
       @return The index for @a name or @c INVALID if it is not registered.
   */
-  int indexFor(char const *name) const;
+  int indexFor(const char *name) const;
 
   /** Convert an @a index to the corresponding name.
-      @return A pointer to the name or @c NULL if the index isn't registered.
+      @return A pointer to the name or @c nullptr if the index isn't registered.
   */
-  char const *nameFor(int index) const;
+  const char *nameFor(int index) const;
 
   /// Mark protocols as present in @a sp_set based on the names in @a value.
   /// The names can be separated by ;/|,: and space.
   /// @internal This is separated out to make it easy to access from the plugin API
   /// implementation.
-  void markIn(char const *value, SessionProtocolSet &sp_set);
+  void markIn(const char *value, SessionProtocolSet &sp_set);
 
 protected:
   unsigned int m_n;         ///< Index of first unused slot.
-  char const *m_names[MAX]; ///< Pointers to registered names.
+  const char *m_names[MAX]; ///< Pointers to registered names.
   uint8_t m_flags[MAX];     ///< Flags for each name.
 
   static uint8_t const F_ALLOCATED = 0x1; ///< Flag for allocated by this instance.
@@ -277,7 +279,7 @@ public:
   /// @a opts should not contain any whitespace, only the option string.
   /// This object's internal state is updated as specified by @a opts.
   /// @return @c true if a port option was successfully processed, @c false otherwise.
-  bool processOptions(char const *opts ///< String containing the options.
+  bool processOptions(const char *opts ///< String containing the options.
                       );
 
   /** Global instance.
@@ -318,23 +320,23 @@ public:
   /** Load ports from a value string.
 
       Load ports from single string with port descriptors. Ports
-      found are added to @a ports. @a value may safely be @c NULL or empty.
+      found are added to @a ports. @a value may safely be @c nullptr or empty.
 
       @note This is used primarily internally but is available if needed.
       @return @c true if a valid port was found, @c false if none.
   */
   static bool loadValue(Vec<self> &ports, ///< Destination for found port data.
-                        char const *value ///< Source port data.
+                        const char *value ///< Source port data.
                         );
 
   /** Load ports from a value string into the global ports.
 
       Load ports from single string of port descriptors into the
-      global set of ports. @a value may safely be @c NULL or empty.
+      global set of ports. @a value may safely be @c nullptr or empty.
 
       @return @c true if a valid port was found, @c false if none.
   */
-  static bool loadValue(char const *value ///< Source port data.
+  static bool loadValue(const char *value ///< Source port data.
                         );
 
   /// Load default value if @a ports is empty.
@@ -349,7 +351,7 @@ public:
   /** Find an HTTP port in @a ports.
       If @a family is specified then only ports for that family
       are checked.
-      @return The port if found, @c NULL if not.
+      @return The port if found, @c nullptr if not.
   */
   static self *findHttp(Group const &ports,         ///< Group to search.
                         uint16_t family = AF_UNSPEC ///< Desired address family.
@@ -358,7 +360,7 @@ public:
   /** Find an HTTP port in the global ports.
       If @a family is specified then only ports for that family
       are checked.
-      @return The port if found, @c NULL if not.
+      @return The port if found, @c nullptr if not.
   */
   static self *findHttp(uint16_t family = AF_UNSPEC);
 
@@ -371,43 +373,43 @@ public:
             size_t n   ///< Maximum output length.
             );
 
-  static char const *const PORTS_CONFIG_NAME; ///< New unified port descriptor.
+  static const char *const PORTS_CONFIG_NAME; ///< New unified port descriptor.
 
   /// Default value if no other values can be found.
-  static char const *const DEFAULT_VALUE;
+  static const char *const DEFAULT_VALUE;
 
   // Keywords (lower case versions, but compares should be case insensitive)
-  static char const *const OPT_FD_PREFIX;               ///< Prefix for file descriptor value.
-  static char const *const OPT_OUTBOUND_IP_PREFIX;      ///< Prefix for inbound IP address.
-  static char const *const OPT_INBOUND_IP_PREFIX;       ///< Prefix for outbound IP address.
-  static char const *const OPT_IPV6;                    ///< IPv6.
-  static char const *const OPT_IPV4;                    ///< IPv4
-  static char const *const OPT_TRANSPARENT_INBOUND;     ///< Inbound transparent.
-  static char const *const OPT_TRANSPARENT_OUTBOUND;    ///< Outbound transparent.
-  static char const *const OPT_TRANSPARENT_FULL;        ///< Full transparency.
-  static char const *const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
-  static char const *const OPT_SSL;                     ///< SSL (experimental)
-  static char const *const OPT_PLUGIN;                  ///< Protocol Plugin handle (experimental)
-  static char const *const OPT_BLIND_TUNNEL;            ///< Blind tunnel.
-  static char const *const OPT_COMPRESSED;              ///< Compressed.
-  static char const *const OPT_HOST_RES_PREFIX;         ///< Set DNS family preference.
-  static char const *const OPT_PROTO_PREFIX;            ///< Transport layer protocols.
+  static const char *const OPT_FD_PREFIX;               ///< Prefix for file descriptor value.
+  static const char *const OPT_OUTBOUND_IP_PREFIX;      ///< Prefix for inbound IP address.
+  static const char *const OPT_INBOUND_IP_PREFIX;       ///< Prefix for outbound IP address.
+  static const char *const OPT_IPV6;                    ///< IPv6.
+  static const char *const OPT_IPV4;                    ///< IPv4
+  static const char *const OPT_TRANSPARENT_INBOUND;     ///< Inbound transparent.
+  static const char *const OPT_TRANSPARENT_OUTBOUND;    ///< Outbound transparent.
+  static const char *const OPT_TRANSPARENT_FULL;        ///< Full transparency.
+  static const char *const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
+  static const char *const OPT_SSL;                     ///< SSL (experimental)
+  static const char *const OPT_PLUGIN;                  ///< Protocol Plugin handle (experimental)
+  static const char *const OPT_BLIND_TUNNEL;            ///< Blind tunnel.
+  static const char *const OPT_COMPRESSED;              ///< Compressed.
+  static const char *const OPT_HOST_RES_PREFIX;         ///< Set DNS family preference.
+  static const char *const OPT_PROTO_PREFIX;            ///< Transport layer protocols.
 
   static Vec<self> &m_global; ///< Global ("default") data.
 
 protected:
   /// Process @a value for DNS resolution family preferences.
-  void processFamilyPreference(char const *value);
+  void processFamilyPreference(const char *value);
   /// Process @a value for session protocol preferences.
-  void processSessionProtocolPreference(char const *value);
+  void processSessionProtocolPreference(const char *value);
 
   /** Check a prefix option and find the value.
-      @return The address of the start of the value, or @c NULL if the prefix doesn't match.
+      @return The address of the start of the value, or @c nullptr if the prefix doesn't match.
   */
 
-  char const *checkPrefix(char const *src ///< Input text
+  const char *checkPrefix(char const *src ///< Input text
                           ,
-                          char const *prefix ///< Keyword prefix
+                          const char *prefix ///< Keyword prefix
                           ,
                           size_t prefix_len ///< Length of keyword prefix.
                           );
@@ -437,7 +439,7 @@ HttpProxyPort::outboundIp(uint16_t family)
 }
 
 inline bool
-HttpProxyPort::loadValue(char const *value)
+HttpProxyPort::loadValue(const char *value)
 {
   return self::loadValue(m_global, value);
 }

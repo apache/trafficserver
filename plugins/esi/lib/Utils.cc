@@ -27,8 +27,8 @@
 
 using namespace EsiLib;
 
-ComponentBase::Debug Utils::DEBUG_LOG(0);
-ComponentBase::Error Utils::ERROR_LOG(0);
+ComponentBase::Debug Utils::DEBUG_LOG(nullptr);
+ComponentBase::Error Utils::ERROR_LOG(nullptr);
 
 #define DEBUG_TAG "EsiUtils"
 
@@ -158,7 +158,7 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
     ;
   }
   attr.name  = data + i;
-  attr.value = 0;
+  attr.value = nullptr;
   for (; i <= data_len; ++i) {
     end_of_attribute = false;
     if (i == data_len) {
@@ -187,7 +187,7 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
         ;
       }
       attr.name     = data + i;
-      attr.value    = 0;
+      attr.value    = nullptr;
       inside_quotes = false;
     } else if (data[i] == '"') {
       if (!escape_on) {

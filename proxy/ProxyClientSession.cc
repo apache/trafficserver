@@ -28,9 +28,34 @@
 static int64_t next_cs_id = 0;
 
 ProxyClientSession::ProxyClientSession()
-  : VConnection(NULL), acl_record(NULL), host_res_style(HOST_RES_IPV4), debug_on(false), hooks_on(true), con_id(0)
+  : VConnection(nullptr),
+    acl_record(nullptr),
+    host_res_style(HOST_RES_IPV4),
+    debug_on(false),
+    hooks_on(true),
+    in_destroy(false),
+    con_id(0),
+    m_active(false)
 {
   ink_zero(this->user_args);
+}
+
+void
+ProxyClientSession::set_session_active()
+{
+  if (!m_active) {
+    m_active = true;
+    HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
+  }
+}
+
+void
+ProxyClientSession::clear_session_active()
+{
+  if (m_active) {
+    m_active = false;
+    HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
+  }
 }
 
 int64_t
@@ -71,7 +96,7 @@ ProxyClientSession::free()
 {
   if (schedule_event) {
     schedule_event->cancel();
-    schedule_event = NULL;
+    schedule_event = nullptr;
   }
   this->api_hooks.clear();
   this->mutex.clear();
@@ -82,7 +107,7 @@ ProxyClientSession::state_api_callout(int event, void *data)
 {
   Event *e = static_cast<Event *>(data);
   if (e == schedule_event) {
-    schedule_event = NULL;
+    schedule_event = nullptr;
   }
 
   switch (event) {
@@ -90,12 +115,12 @@ ProxyClientSession::state_api_callout(int event, void *data)
   case EVENT_INTERVAL:
   case TS_EVENT_HTTP_CONTINUE:
     if (likely(is_valid_hook(this->api_hookid))) {
-      if (this->api_current == NULL && this->api_scope == API_HOOK_SCOPE_GLOBAL) {
+      if (this->api_current == nullptr && this->api_scope == API_HOOK_SCOPE_GLOBAL) {
         this->api_current = http_global_hooks->get(this->api_hookid);
         this->api_scope   = API_HOOK_SCOPE_LOCAL;
       }
 
-      if (this->api_current == NULL && this->api_scope == API_HOOK_SCOPE_LOCAL) {
+      if (this->api_current == nullptr && this->api_scope == API_HOOK_SCOPE_LOCAL) {
         this->api_current = ssn_hook_get(this->api_hookid);
         this->api_scope   = API_HOOK_SCOPE_NONE;
       }
@@ -150,11 +175,11 @@ ProxyClientSession::do_api_callout(TSHttpHookID id)
 
   this->api_hookid  = id;
   this->api_scope   = API_HOOK_SCOPE_GLOBAL;
-  this->api_current = NULL;
+  this->api_current = nullptr;
 
   if (this->hooks_on && this->has_hooks()) {
     SET_HANDLER(&ProxyClientSession::state_api_callout);
-    this->state_api_callout(EVENT_NONE, NULL);
+    this->state_api_callout(EVENT_NONE, nullptr);
   } else {
     this->handle_api_return(TS_EVENT_HTTP_CONTINUE);
   }
@@ -169,7 +194,7 @@ ProxyClientSession::handle_api_return(int event)
 
   this->api_hookid  = TS_HTTP_LAST_HOOK;
   this->api_scope   = API_HOOK_SCOPE_NONE;
-  this->api_current = NULL;
+  this->api_current = nullptr;
 
   switch (hookid) {
   case TS_HTTP_SSN_START_HOOK:

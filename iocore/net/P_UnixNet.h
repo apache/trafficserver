@@ -124,6 +124,7 @@ extern ink_hrtime last_throttle_warning;
 extern ink_hrtime last_shedding_warning;
 extern ink_hrtime emergency_throttle_time;
 extern int net_connections_throttle;
+extern bool net_memory_throttle;
 extern int fds_throttle;
 extern int fds_limit;
 extern ink_hrtime last_transient_accept_error;
@@ -141,7 +142,6 @@ extern int http_accept_port_number;
 #define TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY HRTIME_HOURS(24)
 
 // also the 'throttle connect headroom'
-#define THROTTLE_AT_ONCE 5
 #define EMERGENCY_THROTTLE 16
 #define HYPER_EMERGENCY_THROTTLE 6
 
@@ -195,6 +195,7 @@ public:
   uint32_t inactive_threashold_in;
   uint32_t transaction_no_activity_timeout_in;
   uint32_t keep_alive_no_activity_timeout_in;
+  uint32_t default_inactivity_timeout;
 
   int startNetEvent(int event, Event *data);
   int mainNetEvent(int event, Event *data);
@@ -261,13 +262,13 @@ check_shedding_warning()
   }
 }
 
-TS_INLINE int
+TS_INLINE bool
 emergency_throttle(ink_hrtime now)
 {
-  return emergency_throttle_time > now;
+  return (bool)(emergency_throttle_time > now);
 }
 
-TS_INLINE int
+TS_INLINE bool
 check_net_throttle(ThrottleType t, ink_hrtime now)
 {
   int connections = net_connections_to_throttle(t);
@@ -302,7 +303,7 @@ check_throttle_warning()
 // descriptors.  Close the connection immediately, the upper levels
 // will recover.
 //
-TS_INLINE int
+TS_INLINE bool
 check_emergency_throttle(Connection &con)
 {
   int fd        = con.fd;
@@ -401,12 +402,12 @@ read_disable(NetHandler *nh, UnixNetVConnection *vc)
   if (vc->inactivity_timeout) {
     if (!vc->write.enabled) {
       vc->inactivity_timeout->cancel_action();
-      vc->inactivity_timeout = NULL;
+      vc->inactivity_timeout = nullptr;
     }
   }
 #else
   if (!vc->write.enabled) {
-    vc->next_inactivity_timeout_at = 0;
+    vc->set_inactivity_timeout(0);
     Debug("socket", "read_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
   }
 #endif
@@ -422,12 +423,12 @@ write_disable(NetHandler *nh, UnixNetVConnection *vc)
   if (vc->inactivity_timeout) {
     if (!vc->read.enabled) {
       vc->inactivity_timeout->cancel_action();
-      vc->inactivity_timeout = NULL;
+      vc->inactivity_timeout = nullptr;
     }
   }
 #else
   if (!vc->read.enabled) {
-    vc->next_inactivity_timeout_at = 0;
+    vc->set_inactivity_timeout(0);
     Debug("socket", "write_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
   }
 #endif
@@ -504,7 +505,7 @@ EventIO::start(EventLoop l, int afd, Continuation *c, int e)
     EV_SET(&ev[n++], fd, EVFILT_READ, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   if (e & EVENTIO_WRITE)
     EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
-  return kevent(l->kqueue_fd, &ev[0], n, NULL, 0, NULL);
+  return kevent(l->kqueue_fd, &ev[0], n, nullptr, 0, nullptr);
 #endif
 #if TS_USE_PORT
   events     = e;
@@ -556,7 +557,7 @@ EventIO::modify(int e)
   }
   events = ee;
   if (n)
-    return kevent(event_loop->kqueue_fd, &ev[0], n, NULL, 0, NULL);
+    return kevent(event_loop->kqueue_fd, &ev[0], n, nullptr, 0, nullptr);
   else
     return 0;
 #endif
@@ -607,7 +608,7 @@ EventIO::refresh(int e)
   if (e & EVENTIO_WRITE)
     EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   if (n)
-    return kevent(event_loop->kqueue_fd, &ev[0], n, NULL, 0, NULL);
+    return kevent(event_loop->kqueue_fd, &ev[0], n, nullptr, 0, nullptr);
   else
     return 0;
 #endif
@@ -651,7 +652,7 @@ EventIO::stop()
     Debug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval < 0 ? strerror(errno) : "ok",
           event_loop->port_fd, PORT_SOURCE_FD, fd);
 #endif
-    event_loop = NULL;
+    event_loop = nullptr;
     return retval;
   }
   return 0;

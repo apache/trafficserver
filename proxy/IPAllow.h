@@ -110,12 +110,14 @@ class IpAllow : public ConfigInfo
 
 public:
   typedef IpAllow self; ///< Self reference type.
+  // indicator for whether we should be checking the acl record for src ip or dest ip
+  enum match_key_t { SRC_ADDR, DEST_ADDR };
 
   IpAllow(const char *config_var, const char *name, const char *action_val);
   ~IpAllow();
   void Print();
-  AclRecord *match(IpEndpoint const *ip) const;
-  AclRecord *match(sockaddr const *ip) const;
+  AclRecord *match(IpEndpoint const *ip, match_key_t key) const;
+  AclRecord *match(sockaddr const *ip, match_key_t key) const;
 
   static void startup();
   static void reconfigure();
@@ -130,35 +132,59 @@ public:
     return &ALL_METHOD_ACL;
   }
 
+  /* @return The previous accept check state
+   * This is a global variable that is independent of
+   * the ip_allow configuration
+   */
+  static bool
+  enableAcceptCheck(bool state)
+  {
+    bool temp      = accept_check_p;
+    accept_check_p = state;
+    return temp;
+  }
+  /* @return The current accept check state
+   * This is a global variable that is independent of
+   * the ip_allow configuration
+   */
+  static bool
+  isAcceptCheckEnabled()
+  {
+    return accept_check_p;
+  }
+
   typedef ConfigProcessor::scoped_config<IpAllow, IpAllow> scoped_config;
 
 private:
   static int configid;
   static const AclRecord ALL_METHOD_ACL;
+  static bool accept_check_p;
 
+  void PrintMap(IpMap *map);
   int BuildTable();
 
   char config_file_path[PATH_NAME_MAX];
   const char *module_name;
   const char *action;
-  IpMap _map;
-  Vec<AclRecord> _acls;
+  IpMap _src_map;
+  IpMap _dest_map;
+  Vec<AclRecord> _src_acls;
+  Vec<AclRecord> _dest_acls;
 };
 
 inline AclRecord *
-IpAllow::match(IpEndpoint const *ip) const
+IpAllow::match(IpEndpoint const *ip, match_key_t key) const
 {
-  return this->match(&ip->sa);
+  return this->match(&ip->sa, key);
 }
 
 inline AclRecord *
-IpAllow::match(sockaddr const *ip) const
+IpAllow::match(sockaddr const *ip, match_key_t key) const
 {
-  void *raw;
-  if (_map.contains(ip, &raw)) {
-    return static_cast<AclRecord *>(raw);
-  }
-  return NULL;
+  void *raw        = nullptr;
+  const IpMap &map = (key == SRC_ADDR) ? _src_map : _dest_map;
+  map.contains(ip, &raw);
+  return static_cast<AclRecord *>(raw);
 }
 
 #endif
