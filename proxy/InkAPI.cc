@@ -9244,7 +9244,7 @@ TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
   const char *machine = (char *)Machine::instance()->uuid.getString();
   int len;
 
-  len = snprintf(uuid_str, sizeof(uuid_str), "%s-%" PRId64 "", machine, sm->sm_id);
+  len = snprintf(uuid_str, TS_CRUUID_STRING_LEN, "%s-%" PRId64 "", machine, sm->sm_id);
   if (len < (int)sizeof(uuid_str)) {
     return TS_SUCCESS;
   }
