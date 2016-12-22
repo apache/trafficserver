@@ -699,7 +699,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       // If we had a GET request that has data after the
       // get request, do blind tunnel
     } else if (state == PARSE_RESULT_DONE && t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET &&
-               ua_raw_buffer_reader->read_avail() > 0 && !t_state.hdr_info.client_request.is_keep_alive_set()) {
+               ua_buffer_reader->read_avail() > 0 && !t_state.hdr_info.client_request.is_keep_alive_set()) {
       do_blind_tunnel = true;
     }
     if (do_blind_tunnel) {
