@@ -9240,7 +9240,7 @@ TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)uuid_str) == TS_SUCCESS);
 
-  HttpSM *sm = (HttpSM *)txnp;
+  HttpSM *sm          = (HttpSM *)txnp;
   const char *machine = (char *)Machine::instance()->uuid.getString();
   int len;
 
@@ -9249,7 +9249,7 @@ TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
     return TS_SUCCESS;
   }
 
-  return TS_ERROR;;
+  return TS_ERROR;
 }
 
 TSReturnCode
