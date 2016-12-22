@@ -1673,7 +1673,7 @@ HttpTransact::ReDNSRoundRobin(State *s)
 void
 HttpTransact::OSDNSLookup(State *s)
 {
-  static int max_dns_lookups = 3 + s->http_config_param->num_url_expansions;
+  static int max_dns_lookups = 2 + s->http_config_param->num_url_expansions;
   ++s->dns_info.attempts;
 
   DebugTxn("http_trans", "[HttpTransact::OSDNSLookup] This was attempt %d", s->dns_info.attempts);
