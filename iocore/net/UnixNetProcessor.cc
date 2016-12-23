@@ -233,6 +233,8 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
     char buff[INET6_ADDRPORTSTRLEN];
     Debug("Socks", "Using Socks ip: %s\n", ats_ip_nptop(target, buff, sizeof(buff)));
     socksEntry = socksAllocator.alloc();
+    // The socksEntry->init() will get the origin server addr by vc->server_addr
+    //   and save it to socksEntry->req_data.dest_ip.
     socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version); /*XXXX remove last two args */
     socksEntry->action_ = cont;
     cont                = socksEntry;
@@ -241,6 +243,9 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
       socksEntry->free();
       return ACTION_RESULT_DONE;
     }
+    // At the end of socksEntry->init(), a socks server will be selected and saved to socksEntry->server_addr.
+    // Therefore, we should override the vc->server_addr by socksEntry->server_addr in order to establish a connection
+    // with the socks server.
     ats_ip_copy(&vc->server_addr, &socksEntry->server_addr);
     result      = &socksEntry->action_;
     vc->action_ = socksEntry;

@@ -56,7 +56,8 @@ SocksEntry::init(ProxyMutex *m, SocksNetVC *vc, unsigned char socks_support, uns
 
   SET_HANDLER(&SocksEntry::startEvent);
 
-  ats_ip_copy(&target_addr, vc->get_remote_addr());
+  // Save the original server_addr as target_addr to initial a socks request.
+  ats_ip_copy(&target_addr, vc->server_addr);
 
 #ifdef SOCKS_WITH_TS
   req_data.hdr          = 0;
@@ -248,7 +249,7 @@ SocksEntry::mainEvent(int event, void *data)
 
       p[n_bytes++] = version;
       p[n_bytes++] = (socks_cmd == NORMAL_SOCKS) ? SOCKS_CONNECT : socks_cmd;
-      ts           = ntohs(ats_ip_port_cast(&target_addr));
+      ts           = ats_ip_port_cast(&target_addr);
 
       if (version == SOCKS5_VERSION) {
         p[n_bytes++] = 0; // Reserved
