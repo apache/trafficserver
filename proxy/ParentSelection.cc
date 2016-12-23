@@ -501,6 +501,9 @@ ParentRecord::DefaultInit(char *val)
     ats_free(errBuf);
     return false;
   } else {
+    ParentRR_t round_robin = P_NO_ROUND_ROBIN;
+    TSDebug("parent_select", "allocating ParentRoundRobin() lookup strategy.");
+    selection_strategy = new ParentRoundRobin(this, round_robin);
     return true;
   }
 }
