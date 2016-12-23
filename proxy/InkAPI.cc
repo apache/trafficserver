@@ -9245,11 +9245,11 @@ TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
   int len;
 
   len = snprintf(uuid_str, TS_CRUUID_STRING_LEN, "%s-%" PRId64 "", machine, sm->sm_id);
-  if (len < (int)sizeof(uuid_str)) {
-    return TS_SUCCESS;
+  if (len > TS_CRUUID_STRING_LEN) {
+    return TS_ERROR;
   }
 
-  return TS_ERROR;
+  return TS_SUCCESS;
 }
 
 TSReturnCode

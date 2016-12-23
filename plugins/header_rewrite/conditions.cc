@@ -1051,7 +1051,8 @@ ConditionId::append_value(std::string &s, const Resources &res ATS_UNUSED)
     }
   } break;
   case ID_QUAL_UNIQUE: {
-    char *uuid = nullptr;
+    char uuid[TS_CRUUID_STRING_LEN + 1];
+
     if (TS_SUCCESS == TSClientRequestUuidGet(res.txnp, uuid)) {
       s += uuid;
     }

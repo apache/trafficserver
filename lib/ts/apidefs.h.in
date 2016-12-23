@@ -1189,7 +1189,7 @@ typedef enum {
 } TSUuidVersion;
 
 #define TS_UUID_STRING_LEN 36
-#define TS_CRUUID_STRING_LEN TS_UUID_STRING_LEN + 20 + 1 /* UUID-len + len(int64_t) + '-' */
+#define TS_CRUUID_STRING_LEN (TS_UUID_STRING_LEN + 20 + 1) /* UUID-len + len(int64_t) + '-' */
 typedef struct tsapi_uuid *TSUuid;
 
 #ifdef __cplusplus
