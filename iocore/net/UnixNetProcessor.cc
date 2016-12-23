@@ -216,11 +216,16 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   vc->submit_time = Thread::get_hrtime();
   vc->mutex       = cont->mutex;
   Action *result  = &vc->action_;
+  // Copy target to con.addr,
+  //   then con.addr will copy to vc->remote_addr by set_remote_addr()
+  vc->con.setRemote(target);
 
   if (using_socks) {
     char buff[INET6_ADDRPORTSTRLEN];
     Debug("Socks", "Using Socks ip: %s", ats_ip_nptop(target, buff, sizeof(buff)));
     socksEntry = socksAllocator.alloc();
+    // The socksEntry->init() will get the origin server addr by vc->get_remote_addr(),
+    //   and save it to socksEntry->req_data.dest_ip.
     socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version); /*XXXX remove last two args */
     socksEntry->action_ = cont;
     cont                = socksEntry;
@@ -229,12 +234,13 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
       socksEntry->free();
       return ACTION_RESULT_DONE;
     }
+    // At the end of socksEntry->init(), a socks server will be selected and saved to socksEntry->server_addr.
+    // Therefore, we should set the remote to socks server in order to establish a connection with socks server.
     vc->con.setRemote(&socksEntry->server_addr.sa);
     result      = &socksEntry->action_;
     vc->action_ = socksEntry;
   } else {
     Debug("Socks", "Not Using Socks %d ", socks_conf_stuff->socks_needed);
-    vc->con.setRemote(target);
     vc->action_ = cont;
   }
 
