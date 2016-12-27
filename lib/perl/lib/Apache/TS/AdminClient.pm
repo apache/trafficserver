@@ -611,7 +611,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.net.defer_accept
  proxy.config.output.logfile
  proxy.config.plugin.plugin_dir
- proxy.config.process_manager.enable_mgmt_port
  proxy.config.process_manager.mgmt_port
  proxy.config.process_manager.timeout
  proxy.config.product_company

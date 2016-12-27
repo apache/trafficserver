@@ -301,8 +301,6 @@ static const RecordElement RecordsConfig[] =
   //##############################################################################
   {RECT_CONFIG, "proxy.config.process_manager.timeout", RECD_INT, "5", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.process_manager.enable_mgmt_port", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.process_manager.mgmt_port", RECD_INT, "8084", RECU_NULL, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
   ,
 
