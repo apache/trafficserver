@@ -23,7 +23,7 @@ library_includedir=$(includedir)/ts
 library_include_HEADERS = apidefs.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_MemView
+check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_MemView test_Scalar
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
@@ -239,6 +239,8 @@ test_tsutil_SOURCES = \
 
 test_MemView_SOURCES = test_MemView.cc
 test_MemView_LDADD = libtsutil.la
+
+test_Scalar_SOURCES = test_Scalar.cc Scalar.h
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
