@@ -900,7 +900,9 @@ ts_lua_client_request_set_version(lua_State *L)
 
   version = luaL_checklstring(L, 1, &len);
 
-  sscanf(version, "%2u.%2u", &major, &minor);
+  if (sscanf(version, "%2u.%2u", &major, &minor) != 2) {
+    return luaL_error(L, "failed to set version. Format must be X.Y");
+  }
 
   TSHttpHdrVersionSet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, TS_HTTP_VERSION(major, minor));
 
