@@ -446,12 +446,10 @@ ts_lua_http_set_parent_proxy(lua_State *L)
     const char *hostname;
     size_t hostname_len;
     int port = 0;
-    const char *target;
 
     hostname = luaL_checklstring(L, 1, &hostname_len);
-    target   = TSstrndup(hostname, hostname_len);
     port     = luaL_checkinteger(L, 2);
-    TSHttpTxnParentProxySet(http_ctx->txnp, target, port);
+    TSHttpTxnParentProxySet(http_ctx->txnp, hostname, port);
   } else {
     return luaL_error(L, "incorrect # of arguments for set_parent_proxy, receiving %d instead of 2", n);
   }
@@ -619,15 +617,13 @@ static int
 ts_lua_http_server_push(lua_State *L)
 {
   const char *url;
-  const char *push_url;
   size_t url_len;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
-  url      = luaL_checklstring(L, 1, &url_len);
-  push_url = TSstrndup(url, url_len);
-  TSHttpTxnServerPush(http_ctx->txnp, push_url, url_len);
+  url = luaL_checklstring(L, 1, &url_len);
+  TSHttpTxnServerPush(http_ctx->txnp, url, url_len);
 
   return 0;
 }
