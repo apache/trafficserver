@@ -61,11 +61,25 @@ namespace ApacheTrafficServer
     Metric(); ///< Default contructor.
     Metric(CountType n); ///< Contruct from unscaled integer.
 
+    /// Copy constructor.
+    /// @note This is valid only if the scale does not increase.
+    template < intmax_t S, typename I >
+    Metric(Metric<S,I> const& that);
+
+    /// Direct assignment.
+    /// The count is set to @a n.
+    self& operator = (CountType n);
+    
     /// The count in terms of the local @c SCALE.
     CountType count() const;
     /// The absolute count, unscaled.
     CountType units() const;
 
+    /// Assignment operator.
+    /// @note This is valid only if the scale does not increase.
+    template < intmax_t S, typename I >
+    self& operator = (Metric<S,I> const& that);
+    
     /// Convert the count of a differently scaled @c Metric @a src by rounding down if needed.
     /// @internal This is intended for internal use but may be handy for other clients.
     template < intmax_t S, typename I > static intmax_t round_down(Metric<S,I> const& src);
@@ -82,6 +96,27 @@ namespace ApacheTrafficServer
   inline auto Metric<N,C>::count() const -> CountType { return _n; }
   template < intmax_t N, typename C >
   inline auto Metric<N,C>::units() const -> CountType { return _n * SCALE; }
+  template < intmax_t N, typename C >
+  inline auto Metric<N,C>::operator = (CountType n) -> self& { _n = n; return *this; }
+
+  template <intmax_t N, typename C>
+    template <intmax_t S, typename I>
+    Metric<N,C>::Metric(Metric<S,I> const& that)
+    {
+      typedef std::ratio<S,N> R;
+      static_assert(R::den == 1, "Construction not permitted - target scale is not an integral multiple of source scale.");
+      _n = that.count() * R::num;
+    }
+
+  template <intmax_t N, typename C>
+    template <intmax_t S, typename I>
+    auto Metric<N,C>::operator = (Metric<S,I> const& that) -> self&
+    {
+      typedef std::ratio<S,N> R;
+      static_assert(R::den == 1, "Assignment not permitted - target scale is not an integral multiple of source scale.");
+      _n = that.count() * R::num;
+      return *this;
+    }
 
   template < intmax_t N, typename C >
     template < intmax_t S, typename I >

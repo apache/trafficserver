@@ -124,12 +124,46 @@ Test_2()
   test.check(sz.count() == 29 , "Rounding up, got %d expected %d", sz.count(), 29);
   sz = ts::metric_round_down<Size_1>(sz_d);
   test.check(sz.count() == 29 , "Rounding down, got %d expected %d", sz.count(), 29);
+
+  sz = 119;
+  sz_b = sz; // Should be OK because SCALE_1 is an integer multiple of SCALE_2
+  //  sz = sz_b; // Should not compile.
+  test.check(sz_b.count() == 119 * (SCALE_1/SCALE_2) , "Integral conversion, got %d expected %d", sz_b.count(), 119 * (SCALE_1/SCALE_2));
 }
+
+void
+Test_3()
+{
+  TestBox test("TS Metric: relatively prime tests");
+  
+  ts::Metric<9> m_9;
+  ts::Metric<4> m_4, m_test;
+
+  m_9 = 95;
+  //  m_4 = m_9; // Should fail to compile with static assert.
+  //  m_9 = m_4; // Should fail to compile with static assert.
+
+  m_4 = ts::metric_round_up<decltype(m_4)>(m_9);
+  test.check(m_4.count() == 214 , "Rounding down, got %d expected %d", m_4.count(), 214);
+  m_4 = ts::metric_round_down<decltype(m_4)>(m_9);
+  test.check(m_4.count() == 213 , "Rounding down, got %d expected %d", m_4.count(), 213);
+
+  m_4 = 213;
+  m_9 = ts::metric_round_up<decltype(m_9)>(m_4);
+  test.check(m_9.count() == 95 , "Rounding down, got %d expected %d", m_9.count(), 95);
+  m_9 = ts::metric_round_down<decltype(m_9)>(m_4);
+  test.check(m_9.count() == 94, "Rounding down, got %d expected %d", m_9.count(), 94);
+
+  m_test = m_4; // Verify assignment of identical scale values compiles.
+  test.check(m_test.count() == 213 , "Assignment got %d expected %d", m_4.count(), 213);
+}
+
 int
 main(int, char **)
 {
   Test_1();
   Test_2();
+  Test_3();
   TestBox::print_summary();
   return 0;
 }
