@@ -29,7 +29,6 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. type:: TSOverridableConfigKey
 
 .. function:: TSReturnCode TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtInt value)
 .. function:: TSReturnCode TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey key, TSMgmtInt* value)
