@@ -1122,7 +1122,7 @@ TS_CHECK_CRYPTO_SNI
 TS_CHECK_CRYPTO_CERT_CB
 
 #
-# Check for SSL_set_rbio call
+# Check for SSL_set0_rbio call
 TS_CHECK_CRYPTO_SET_RBIO
 
 # Check for DH_get_2048_256
