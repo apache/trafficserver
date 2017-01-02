@@ -168,7 +168,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
   enable_set_rbio=yes
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_MSG_CHECKING([for SSL_set_rbio])
+  AC_MSG_CHECKING([for SSL_set0_rbio])
   AC_LINK_IFELSE(
   [
     AC_LANG_PROGRAM([[
@@ -179,7 +179,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
 #include <openssl/tls1.h>
 #endif
       ]],
-      [[SSL_set_rbio(NULL, NULL);]])
+      [[SSL_set0_rbio(NULL, NULL);]])
   ],
   [
     AC_MSG_RESULT([yes])
