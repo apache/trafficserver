@@ -36,7 +36,7 @@
 #if !TS_USE_SET_RBIO
 // Defined in SSLInternal.c, should probably make a separate include
 // file for this at some point
-void SSL_set_rbio(SSL *ssl, BIO *rbio);
+void SSL_set0_rbio(SSL *ssl, BIO *rbio);
 #endif
 
 // This is missing from BoringSSL
@@ -403,7 +403,7 @@ SSLNetVConnection::read_raw_data()
   // Must be reset on each read
   BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
   BIO_set_mem_eof_return(rbio, -1);
-  SSL_set_rbio(this->ssl, rbio);
+  SSL_set0_rbio(this->ssl, rbio);
 
   return r;
 }
@@ -577,7 +577,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         // Must be reset on each read
         BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
         BIO_set_mem_eof_return(rbio, -1);
-        SSL_set_rbio(this->ssl, rbio);
+        SSL_set0_rbio(this->ssl, rbio);
       }
     }
   }
