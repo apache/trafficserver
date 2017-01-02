@@ -23,7 +23,7 @@
  */
 #include "ts/ink_config.h"
 #if TS_USE_SET_RBIO
-// No need to do anything, this version of openssl provides the SSL_set_rbio function
+// No need to do anything, this version of openssl provides the SSL_set0_rbio function
 #else
 
 #ifdef OPENSSL_NO_SSL_INTERN
@@ -35,7 +35,7 @@
 #include "P_SSLNetVConnection.h"
 
 void
-SSL_set_rbio(SSL *ssl, BIO *rbio)
+SSL_set0_rbio(SSL *ssl, BIO *rbio)
 {
   if (ssl->rbio != NULL) {
     BIO_free(ssl->rbio);
