@@ -118,35 +118,15 @@ more widely. Those are described on this page.
 
 .. type:: TSMutex
 
-.. type:: TSParseResult
-
-   This set of enums are possible values returned by
-   :func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp`.
-
 .. type:: TSPluginRegistrationInfo
 
    The following struct is used by :func:`TSPluginRegister`.
 
    It stores registration information about the plugin.
 
-.. type:: TSRecordDataType
-
-   An enumeration that specifies the type of a value in an internal data structure that is accessible via the API.
-
 .. type:: TSRemapInterface
 
 .. type:: TSRemapRequestInfo
-
-.. type:: TSReturnCode
-
-   An indicator of the results of an API call. A value of :const:`TS_SUCCESS` means the call was successful. Any other value
-   indicates a failure and is specific to the API call.
-
-.. type:: TSSDKVersion
-
-   Starting 2.0, SDK now follows same versioning as Traffic Server.
-
-.. type:: TSServerState
 
 .. type:: TSTextLogObject
 
@@ -159,12 +139,6 @@ more widely. Those are described on this page.
 .. type:: TSThread
 
 .. type:: TSThreadFunc
-
-.. type:: TSThreadPool
-
-.. type:: TSUuid
-
-   Opaque type that refers to an allocated UUID.
 
 .. type:: TSUuidVersion
 
