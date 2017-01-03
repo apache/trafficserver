@@ -64,6 +64,7 @@
 #include "HttpTransact.h"
 #include "Main.h"
 #include "ts/RawHashTable.h"
+#include "ts/ink_sprintf.h"
 
 #define HTTP_BODY_TEMPLATE_MAGIC 0xB0DFAC00
 #define HTTP_BODY_SET_MAGIC 0xB0DFAC55
@@ -156,21 +157,22 @@ public:
   ///////////////////////
   char *fabricate_with_old_api(const char *type, HttpTransact::State *context, int64_t max_buffer_length,
                                int64_t *resulting_buffer_length, char *content_language_out_buf, size_t content_language_buf_size,
-                               char *content_type_out_buf, size_t content_type_buf_size, const char *format, va_list ap);
+                               char *content_type_out_buf, size_t content_type_buf_size, int format_size, const char *format);
 
   char *
-  fabricate_with_old_api_build_va(const char *type, HttpTransact::State *context, int64_t max_buffer_length,
-                                  int64_t *resulting_buffer_length, char *content_language_out_buf,
-                                  size_t content_language_buf_size, char *content_type_out_buf, size_t content_type_buf_size,
-                                  const char *format, ...)
+  getFormat(int64_t max_buffer_length, int64_t *resulting_buffer_length, const char *format, ...)
   {
-    char *msg;
+    char *msg = nullptr;
     va_list ap;
-
-    va_start(ap, format);
-    msg = fabricate_with_old_api(type, context, max_buffer_length, resulting_buffer_length, content_language_out_buf,
-                                 content_language_buf_size, content_type_out_buf, content_type_buf_size, format, ap);
-    va_end(ap);
+    if (format) {
+      // The length from ink_bvsprintf includes the trailing NUL, so adjust the final
+      // length accordingly.
+      int l = ink_bvsprintf(nullptr, format, ap);
+      if (l <= max_buffer_length) {
+        msg                      = (char *)ats_malloc(l);
+        *resulting_buffer_length = ink_bvsprintf(msg, format, ap) - 1;
+      }
+    }
     return msg;
   }
 
