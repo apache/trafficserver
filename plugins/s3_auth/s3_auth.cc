@@ -416,37 +416,49 @@ S3Request::authorize(S3Config *s3)
     TSDebug(PLUGIN_NAME, "%s", left);
   }
 
-  // Produce the SHA1 MAC digest
-  HMAC_CTX ctx;
+// Produce the SHA1 MAC digest
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  HMAC_CTX ctx[1];
+#else
+  HMAC_CTX *ctx;
+#endif
   unsigned int hmac_len;
   size_t hmac_b64_len;
   unsigned char hmac[SHA_DIGEST_LENGTH];
   char hmac_b64[SHA_DIGEST_LENGTH * 2];
 
-  HMAC_CTX_init(&ctx);
-  HMAC_Init_ex(&ctx, s3->secret(), s3->secret_len(), EVP_sha1(), nullptr);
-  HMAC_Update(&ctx, (unsigned char *)method, method_len);
-  HMAC_Update(&ctx, (unsigned char *)"\n", 1);
-  HMAC_Update(&ctx, (unsigned char *)con_md5, con_md5_len);
-  HMAC_Update(&ctx, (unsigned char *)"\n", 1);
-  HMAC_Update(&ctx, (unsigned char *)con_type, con_type_len);
-  HMAC_Update(&ctx, (unsigned char *)"\n", 1);
-  HMAC_Update(&ctx, (unsigned char *)date, date_len);
-  HMAC_Update(&ctx, (unsigned char *)"\n/", 2);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  HMAC_CTX_init(ctx);
+#else
+  ctx = HMAC_CTX_new();
+#endif
+  HMAC_Init_ex(ctx, s3->secret(), s3->secret_len(), EVP_sha1(), nullptr);
+  HMAC_Update(ctx, (unsigned char *)method, method_len);
+  HMAC_Update(ctx, (unsigned char *)"\n", 1);
+  HMAC_Update(ctx, (unsigned char *)con_md5, con_md5_len);
+  HMAC_Update(ctx, (unsigned char *)"\n", 1);
+  HMAC_Update(ctx, (unsigned char *)con_type, con_type_len);
+  HMAC_Update(ctx, (unsigned char *)"\n", 1);
+  HMAC_Update(ctx, (unsigned char *)date, date_len);
+  HMAC_Update(ctx, (unsigned char *)"\n/", 2);
 
   if (host && host_endp) {
-    HMAC_Update(&ctx, (unsigned char *)host, host_endp - host);
-    HMAC_Update(&ctx, (unsigned char *)"/", 1);
+    HMAC_Update(ctx, (unsigned char *)host, host_endp - host);
+    HMAC_Update(ctx, (unsigned char *)"/", 1);
   }
 
-  HMAC_Update(&ctx, (unsigned char *)path, path_len);
+  HMAC_Update(ctx, (unsigned char *)path, path_len);
   if (param) {
-    HMAC_Update(&ctx, (unsigned char *)";", 1); // TSUrlHttpParamsGet() does not include ';'
-    HMAC_Update(&ctx, (unsigned char *)param, param_len);
+    HMAC_Update(ctx, (unsigned char *)";", 1); // TSUrlHttpParamsGet() does not include ';'
+    HMAC_Update(ctx, (unsigned char *)param, param_len);
   }
 
-  HMAC_Final(&ctx, hmac, &hmac_len);
-  HMAC_CTX_cleanup(&ctx);
+  HMAC_Final(ctx, hmac, &hmac_len);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  HMAC_CTX_cleanup(ctx);
+#else
+  HMAC_CTX_free(ctx);
+#endif
 
   // Do the Base64 encoding and set the Authorization header.
   if (TS_SUCCESS == TSBase64Encode((const char *)hmac, hmac_len, hmac_b64, sizeof(hmac_b64) - 1, &hmac_b64_len)) {
