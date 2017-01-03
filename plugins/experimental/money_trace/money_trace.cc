@@ -34,8 +34,8 @@ allocTransactionData()
 {
   LOG_DEBUG("allocating transaction state data.");
   struct txndata *txn_data           = (struct txndata *)TSmalloc(sizeof(struct txndata));
-  txn_data->client_request_mt_header = NULL;
-  txn_data->new_span_mt_header       = NULL;
+  txn_data->client_request_mt_header = nullptr;
+  txn_data->new_span_mt_header       = nullptr;
   return txn_data;
 }
 
@@ -46,16 +46,11 @@ static void
 freeTransactionData(struct txndata *txn_data)
 {
   LOG_DEBUG("de-allocating transaction state data.");
-  if (txn_data->client_request_mt_header != NULL) {
-    LOG_DEBUG("freeing txn_data->client_request_mt_header");
+
+  if (txn_data != nullptr) {
+    LOG_DEBUG("freeing transaction data.");
     TSfree(txn_data->client_request_mt_header);
-  }
-  if (txn_data->new_span_mt_header != NULL) {
-    LOG_DEBUG("freeing txn_data->new_span_mt_header.");
     TSfree(txn_data->new_span_mt_header);
-  }
-  if (txn_data != NULL) {
-    LOG_DEBUG("freeing txn_data.");
     TSfree(txn_data);
   }
 }
@@ -85,7 +80,7 @@ mt_cache_lookup_check(TSCont contp, TSHttpTxn txnp, struct txndata *txn_data)
     case TS_CACHE_LOOKUP_MISS:
     case TS_CACHE_LOOKUP_SKIPPED:
       new_mt_header = (char *)generator.moneyTraceHdr(txn_data->client_request_mt_header);
-      if (new_mt_header != NULL) {
+      if (new_mt_header != nullptr) {
         LOG_DEBUG("cache miss, built a new money trace header: %s.", new_mt_header);
         txn_data->new_span_mt_header = new_mt_header;
       } else {
@@ -112,7 +107,7 @@ static void
 mt_check_request_header(TSHttpTxn txnp)
 {
   int length               = 0;
-  struct txndata *txn_data = NULL;
+  struct txndata *txn_data = nullptr;
   TSMBuffer bufp;
   TSMLoc hdr_loc = nullptr, field_loc = nullptr;
   TSCont contp;
@@ -129,8 +124,12 @@ mt_check_request_header(TSHttpTxn txnp)
         txn_data->client_request_mt_header         = TSstrndup(hdr_value, length);
         txn_data->client_request_mt_header[length] = '\0'; // workaround for bug in core.
         LOG_DEBUG("found money trace header: %s, length: %d", txn_data->client_request_mt_header, length);
-        if (NULL == (contp = TSContCreate(transaction_handler, NULL))) {
+        if (nullptr == (contp = TSContCreate(transaction_handler, nullptr))) {
           LOG_ERROR("failed to create the transaction handler continuation");
+          if (nullptr != txn_data) {
+            TSfree(txn_data->client_request_mt_header);
+            TSfree(txn_data);
+          }
         } else {
           TSContDataSet(contp, txn_data);
           TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, contp);
@@ -158,7 +157,7 @@ mt_send_client_response(TSHttpTxn txnp, struct txndata *txn_data)
   TSMBuffer bufp;
   TSMLoc hdr_loc = nullptr, field_loc = nullptr;
 
-  if (txn_data->client_request_mt_header == NULL) {
+  if (txn_data->client_request_mt_header == nullptr) {
     LOG_DEBUG("no client request header to return.");
     return;
   }
@@ -197,7 +196,7 @@ mt_send_server_request(TSHttpTxn txnp, struct txndata *txn_data)
   TSMBuffer bufp;
   TSMLoc hdr_loc = nullptr, field_loc = nullptr;
 
-  if (txn_data->new_span_mt_header == NULL) {
+  if (txn_data->new_span_mt_header == nullptr) {
     LOG_DEBUG("there is no new mt request header to send.");
     return;
   }
@@ -309,41 +308,41 @@ const char *
 MT::moneyTraceHdr(const char *mt_request_hdr)
 {
   char copy[8192] = {'\0'};
-  char *toks[3], *p = NULL, *saveptr = NULL;
+  char *toks[3], *p = nullptr, *saveptr = nullptr;
   std::ostringstream temp_str;
   std::string mt_header_str;
   int numtoks = 0;
 
-  if (mt_request_hdr == NULL) {
+  if (mt_request_hdr == nullptr) {
     LOG_DEBUG("an empty header was passed in.");
-    return NULL;
+    return nullptr;
   } else {
     strncpy(copy, mt_request_hdr, 8191);
   }
 
   // parse the money header.
   p = strtok_r(copy, ";", &saveptr);
-  if (p != NULL) {
+  if (p != nullptr) {
     toks[numtoks++] = p;
     // copy the traceid
   } else {
     LOG_DEBUG("failed to parse the money_trace_header: %s", mt_request_hdr);
-    return NULL;
+    return nullptr;
   }
   do {
-    p = strtok_r(NULL, ";", &saveptr);
-    if (p != NULL) {
+    p = strtok_r(nullptr, ";", &saveptr);
+    if (p != nullptr) {
       toks[numtoks++] = p;
     }
-  } while (p != NULL && numtoks < 3);
+  } while (p != nullptr && numtoks < 3);
 
-  if (numtoks != 3 || toks[0] == NULL || toks[1] == NULL || toks[2] == NULL) {
+  if (numtoks != 3 || toks[0] == nullptr || toks[1] == nullptr || toks[2] == nullptr) {
     LOG_DEBUG("failed to parse the money_trace_header: %s", mt_request_hdr);
-    return NULL;
+    return nullptr;
   }
 
   if (strncmp(toks[0], "trace-id", strlen("trace-id")) == 0 && strncmp(toks[2], "span-id", strlen("span-id")) == 0 &&
-      (p = strchr(toks[2], '=')) != NULL) {
+      (p = strchr(toks[2], '=')) != nullptr) {
     p++;
     if (strncmp("0x", p, 2) == 0) {
       temp_str << toks[0] << ";parent-id=" << p << ";span-id=0x" << std::hex << spanId() << std::ends;
@@ -352,7 +351,7 @@ MT::moneyTraceHdr(const char *mt_request_hdr)
     }
   } else {
     LOG_DEBUG("invalid money_trace_header: %s", mt_request_hdr);
-    return NULL;
+    return nullptr;
   }
 
   mt_header_str = temp_str.str();
