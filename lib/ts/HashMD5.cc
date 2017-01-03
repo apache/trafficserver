@@ -20,6 +20,7 @@
  */
 
 #include "ts/HashMD5.h"
+#include "ts/ink_assert.h"
 
 ATSHashMD5::ATSHashMD5(void)
 {
@@ -65,9 +66,13 @@ ATSHashMD5::size(void) const
 void
 ATSHashMD5::clear(void)
 {
-  EVP_MD_CTX_destroy(ctx);
-  ctx = EVP_MD_CTX_create();
-  EVP_DigestInit(ctx, EVP_md5());
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#define EVP_MD_CTX_reset(ctx) EVP_MD_CTX_cleanup((ctx))
+#endif
+  int ret = EVP_MD_CTX_reset(ctx);
+  ink_assert(ret == 1);
+  ret = EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
+  ink_assert(ret == 1);
   md_len    = 0;
   finalized = false;
 }
