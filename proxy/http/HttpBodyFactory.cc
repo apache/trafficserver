@@ -63,7 +63,7 @@ char *
 HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *context, int64_t max_buffer_length,
                                         int64_t *resulting_buffer_length, char *content_language_out_buf,
                                         size_t content_language_buf_size, char *content_type_out_buf, size_t content_type_buf_size,
-                                        const char *format, va_list ap)
+                                        int format_size, const char *format)
 {
   char *buffer            = nullptr;
   const char *lang_ptr    = nullptr;
@@ -124,16 +124,8 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   ///////////////////////////////////////////
   // check if we don't need to format body //
   ///////////////////////////////////////////
-  if (format) {
-    // The length from ink_bvsprintf includes the trailing NUL, so adjust the final
-    // length accordingly.
-    int l = ink_bvsprintf(nullptr, format, ap);
-    if (l <= max_buffer_length) {
-      buffer                   = (char *)ats_malloc(l);
-      *resulting_buffer_length = ink_bvsprintf(buffer, format, ap) - 1;
-      plain_flag               = true;
-    }
-  }
+
+  buffer = (format == nullptr) ? nullptr : ats_strndup(format, format_size);
   /////////////////////////////////////////////////////////
   // try to fabricate the desired type of error response //
   /////////////////////////////////////////////////////////

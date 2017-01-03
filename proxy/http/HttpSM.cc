@@ -3496,12 +3496,10 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
 
       switch (event) {
       case VC_EVENT_INACTIVITY_TIMEOUT:
-        HttpTransact::build_error_response(&t_state, HTTP_STATUS_REQUEST_TIMEOUT, "POST Request timeout", "timeout#inactivity",
-                                           nullptr);
+        HttpTransact::build_error_response(&t_state, HTTP_STATUS_REQUEST_TIMEOUT, "POST Request timeout", "timeout#inactivity");
         break;
       case VC_EVENT_ACTIVE_TIMEOUT:
-        HttpTransact::build_error_response(&t_state, HTTP_STATUS_REQUEST_TIMEOUT, "POST Request timeout", "timeout#activity",
-                                           nullptr);
+        HttpTransact::build_error_response(&t_state, HTTP_STATUS_REQUEST_TIMEOUT, "POST Request timeout", "timeout#activity");
         break;
       }
 
