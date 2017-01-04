@@ -166,44 +166,9 @@ pygments_style = 'sphinx'
 nitpicky=1
 
 # Autolink issue references
-
-from docutils import nodes
-from docutils.parsers.rst import states
-from docutils.utils import unescape
-
-# Customize parser.inliner in the only way that Sphinx supports.
-# docutils.parsers.rst.Parser takes an instance of states.Inliner or a
-# subclass but Sphinx initializes it from
-# SphinxStandaloneReader.set_parser('restructuredtext') which is called
-# from Publisher.set_components() and initializes the parser without
-# arguments.
-
-BaseInliner = states.Inliner
-class Inliner(BaseInliner):
-  def __init__(self):
-    BaseInliner.__init__(self)
-
-    issue_pattern = re.compile(u'''
-      {start_string_prefix}
-      TS-\d+
-      {end_string_suffix}'''.format(
-        start_string_prefix=self.start_string_prefix,
-        end_string_suffix=self.end_string_suffix),
-      re.VERBOSE | re.UNICODE)
-
-    self.implicit_dispatch.append((issue_pattern, self.issue_reference))
-
-  def issue_reference(self, match, lineno):
-    text = match.group(0)
-
-    rawsource = unescape(text, True)
-    text = unescape(text, False)
-
-    refuri = 'https://issues.apache.org/jira/browse/' + text
-
-    return [nodes.reference(rawsource, text, refuri=refuri)]
-
-states.Inliner = Inliner
+# moved into traffic_server Sphinx extension
+trafficserver_jira_url='https://issues.apache.org/jira/browse/'
+trafficserver_github_url='https://github.com/apache/trafficserver/issues/'
 
 # -- Options for HTML output ---------------------------------------------------
 
@@ -352,6 +317,8 @@ latex_documents = [
 # documents and includes the same brief description in both the HTML
 # and manual page outputs.
 
+from docutils import nodes
+from docutils.utils import unescape
 from docutils.transforms import frontmatter
 from sphinx.writers import manpage
 
