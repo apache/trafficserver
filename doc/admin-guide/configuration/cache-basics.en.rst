@@ -683,7 +683,7 @@ cases the content will be buffered in ram while waiting to be sent to the
 client. This could potentially also happen for ``POST`` requests if the client
 connection is fast and the origin server connection slow. If very large objects
 are being used this can cause the memory usage of Traffic Server to become
-`very large <https://issues.apache.org/jira/browse/TS-1496>`_.
+very large (See issue :ts:jira:`1496`).
 
 This problem can be ameliorated by controlling the amount of buffer space used
 by a transaction. A high water and low water mark are set in terms of bytes

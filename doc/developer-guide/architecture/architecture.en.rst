@@ -1147,8 +1147,8 @@ including the size of each stripe.
 
 .. [#store-disk-array]
 
-   `Work is under way <https://issues.apache.org/jira/browse/TS-2020>`_ on
-   extending this to include objects that are in the memory cache.
+   Work is under way on extending this to include objects that are in the
+   memory cache. (See issue :ts:jira:`2020`)
 
 .. [#coalesced-spans]
 
