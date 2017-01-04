@@ -45,4 +45,4 @@ See Also
 
 .. _Traffic Shaping:
                  https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping
-   :ts:cv:`proxy.config.net.sock_packet_mark_out` and TS-1090
+   :ts:cv:`proxy.config.net.sock_packet_mark_out` and :ts:jira:`1090`

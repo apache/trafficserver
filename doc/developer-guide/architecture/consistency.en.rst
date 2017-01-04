@@ -59,7 +59,7 @@ Volume Tagging
 ~~~~~~~~~~~~~~
 
 Currently, :term:`cache volumes <cache volume>` are allocated somewhat
-arbitrarily from storage elements. `This enhancement <https://issues.apache.org/jira/browse/TS-1728>`__
+arbitrarily from storage elements. `This enhancement :ts:jira:`1728``__
 allows :file:`storage.config` to assign :term:`storage units <storage unit>` to
 specific :term:`volumes <cache volume>` although the volumes must still be
 listed in :file:`volume.config` in general and in particular to map domains to
