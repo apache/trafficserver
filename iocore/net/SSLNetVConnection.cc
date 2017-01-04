@@ -1246,15 +1246,18 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
       X509 *cert = SSL_get_peer_certificate(ssl);
 
       Debug("ssl", "SSL client handshake completed successfully");
-      // if the handshake is complete and write is enabled reschedule the write
-      if (closed == 0 && write.enabled)
-        writeReschedule(nh);
+
       if (cert) {
         debug_certificate_name("server certificate subject CN is", X509_get_subject_name(cert));
         debug_certificate_name("server certificate issuer CN is", X509_get_issuer_name(cert));
         X509_free(cert);
       }
     }
+
+    // if the handshake is complete and write is enabled reschedule the write
+    if (closed == 0 && write.enabled)
+      writeReschedule(nh);
+
     SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_out_stat);
 
     TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL client handshake completed successfully");
