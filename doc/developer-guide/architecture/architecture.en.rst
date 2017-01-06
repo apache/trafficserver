@@ -1147,12 +1147,12 @@ including the size of each stripe.
 
 .. [#store-disk-array]
 
-   `Work is under way :ts:jira:`2020``_ on
+   `Work is under way <https://issues.apache.org/jira/browse/TS-2020>`_ on
    extending this to include objects that are in the memory cache.
 
 .. [#coalesced-spans]
 
    This linked list is mostly ignored in later processing, causing all but one
    file or directory storage units on the same device to be ignored. See
-   :ts:jira:`1869`.
+   `TS-1869 <https://issues.apache.org/jira/browse/TS-1869>`_.
 
