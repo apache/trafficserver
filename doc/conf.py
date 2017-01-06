@@ -160,25 +160,54 @@ pygments_style = 'sphinx'
 
 nitpicky=1
 
-# Autolink issue references
+# Autolink issue references.
+# See Customizing the Parser in the docutils.parsers.rst module.
 
 from docutils import nodes
 from docutils.parsers.rst import states
+from docutils.utils import punctuation_chars
 from docutils.utils import unescape
 
 # Customize parser.inliner in the only way that Sphinx supports.
 # docutils.parsers.rst.Parser takes an instance of states.Inliner or a
-# subclass but Sphinx initializes it from
-# SphinxStandaloneReader.set_parser('restructuredtext') which is called
-# from Publisher.set_components() and initializes the parser without
-# arguments.
+# subclass, but Sphinx initializes the parser without any arguments,
+# in SphinxStandaloneReader.set_parser('restructuredtext'),
+# which is called from Publisher.set_components().
 
+# states.Inliner isn't a new-style class, so super() isn't an option.
 BaseInliner = states.Inliner
-class Inliner(BaseInliner):
-  def __init__(self):
-    BaseInliner.__init__(self)
+class Inliner(states.Inliner):
+  if hasattr(states.Inliner, 'init_customizations'):
+    def init_customizations(self, settings):
+      self.__class__ = BaseInliner
+      BaseInliner.init_customizations(self, settings)
+      self.__class__ = Inliner
 
-    issue_pattern = re.compile(u'''
+      # Copied from states.Inliner.init_customizations().
+      # In Docutils 0.13 these are locals.
+      if settings.character_level_inline_markup:
+        self.start_string_prefix = u'(^|(?<!\x00))'
+        self.end_string_suffix = u''
+      else:
+        self.start_string_prefix = (u'(^|(?<=\\s|[%s%s]))' %
+                                    (punctuation_chars.openers,
+                                     punctuation_chars.delimiters))
+        self.end_string_suffix = (u'($|(?=\\s|[\x00%s%s%s]))' %
+                                  (punctuation_chars.closing_delimiters,
+                                   punctuation_chars.delimiters,
+                                   punctuation_chars.closers))
+
+      self.init()
+  else:
+    def __init__(self):
+      BaseInliner.__init__(self)
+      self.init()
+
+  # Called from __init__() in Docutils < 0.13, otherwise from
+  # init_customizations(), which was added in Docutils 0.13.
+  def init(self):
+    issue = re.compile(
+      ur'''
       {start_string_prefix}
       TS-\d+
       {end_string_suffix}'''.format(
@@ -186,7 +215,7 @@ class Inliner(BaseInliner):
         end_string_suffix=self.end_string_suffix),
       re.VERBOSE | re.UNICODE)
 
-    self.implicit_dispatch.append((issue_pattern, self.issue_reference))
+    self.implicit_dispatch.append((issue, self.issue_reference))
 
   def issue_reference(self, match, lineno):
     text = match.group(0)
