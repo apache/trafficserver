@@ -1091,7 +1091,7 @@ ip-resolve
          performed. The result is cached (if allowed otherwise). This option is
          vulnerable to cache poisoning if an incorrect ``Host`` header is
          specified, so this option should be used with extreme caution.  See
-         bug :ts:jira:`2954` for details.
+         bug TS-2954 for details.
    ===== ======================================================================
 
    If all of these conditions are met, then the origin server IP address is
