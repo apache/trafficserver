@@ -67,7 +67,7 @@ ATSHashMD5::size(void) const
 void
 ATSHashMD5::clear(void)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #define EVP_MD_CTX_reset(ctx) EVP_MD_CTX_cleanup((ctx))
 #endif
   int ret = EVP_MD_CTX_reset(ctx);
