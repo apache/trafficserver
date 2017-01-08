@@ -417,7 +417,7 @@ S3Request::authorize(S3Config *s3)
   }
 
 // Produce the SHA1 MAC digest
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   HMAC_CTX ctx[1];
 #else
   HMAC_CTX *ctx;
@@ -427,7 +427,7 @@ S3Request::authorize(S3Config *s3)
   unsigned char hmac[SHA_DIGEST_LENGTH];
   char hmac_b64[SHA_DIGEST_LENGTH * 2];
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   HMAC_CTX_init(ctx);
 #else
   ctx = HMAC_CTX_new();
@@ -454,7 +454,7 @@ S3Request::authorize(S3Config *s3)
   }
 
   HMAC_Final(ctx, hmac, &hmac_len);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   HMAC_CTX_cleanup(ctx);
 #else
   HMAC_CTX_free(ctx);

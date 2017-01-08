@@ -84,12 +84,6 @@
 #endif
 #endif
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
-typedef const SSL_METHOD *ink_ssl_method_t;
-#else
-typedef SSL_METHOD *ink_ssl_method_t;
-#endif
-
 /*
  * struct ssl_user_config: gather user provided settings from ssl_multicert.config in to this single struct
    * ssl_ticket_enabled - session ticket enabled
@@ -149,15 +143,11 @@ static InkHashTable *ssl_cipher_name_table = nullptr;
  * may use pthreads and openssl without confusing us here. (TS-2271).
  */
 
-// Only define this function if the version of openssl really has a
-// CRYPTO_THREADID_set_callback function.  openssl 1.1.0 defines it to 0
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void
 SSL_pthreads_thread_id(CRYPTO_THREADID *id)
 {
   CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
 }
-#endif
 
 // The locking callback goes away with openssl 1.1 and CRYPTO_LOCK is on longer defined
 #ifdef CRYPTO_LOCK
@@ -228,10 +218,10 @@ ssl_session_timed_out(SSL_SESSION *session)
 static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
 
 static SSL_SESSION *
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
-ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
-#else
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
+#else
+ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
 #endif
 {
   SSLSessionID sid(id, len);
@@ -794,68 +784,47 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   return RecRawStatSyncCount(name, data_type, data, rsb, id);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#define ssl_malloc(size, file, line) ssl_malloc(size)
+#define ssl_realloc(ptr, size, file, line) ssl_realloc(ptr, size)
+#define ssl_free(ptr, file, line) ssl_free(ptr)
+#define ssl_track_malloc(size, file, line) ssl_track_malloc(size)
+#define ssl_track_realloc(ptr, size, file, line) ssl_track_realloc(ptr, size)
+#define ssl_track_free(ptr, file, line) ssl_track_free(ptr)
+#endif
+
 void *
 ssl_malloc(size_t size, const char * /*filename */, int /*lineno*/)
-#else
-void *
-ssl_malloc(size_t size)
-#endif
 {
   return ats_malloc(size);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void *
 ssl_realloc(void *ptr, size_t size, const char * /*filename*/, int /*lineno*/)
-#else
-void *
-ssl_realloc(void *ptr, size_t size)
-#endif
 {
   return ats_realloc(ptr, size);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void
 ssl_free(void *ptr, const char * /*filename*/, int /*lineno*/)
-#else
-void
-ssl_free(void *ptr)
-#endif
 {
   ats_free(ptr);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void *
 ssl_track_malloc(size_t size, const char * /*filename*/, int /*lineno*/)
-#else
-void *
-ssl_track_malloc(size_t size)
-#endif
 {
   return ats_track_malloc(size, &ssl_memory_allocated);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void *
 ssl_track_realloc(void *ptr, size_t size, const char * /*filename*/, int /*lineno*/)
-#else
-void *
-ssl_track_realloc(void *ptr, size_t size)
-#endif
 {
   return ats_track_realloc(ptr, size, &ssl_memory_allocated, &ssl_memory_freed);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void
 ssl_track_free(void *ptr, const char * /*filename*/, int /*lineno*/)
-#else
-void
-ssl_track_free(void *ptr)
-#endif
 {
   ats_track_free(ptr, &ssl_memory_freed);
 }
@@ -1283,10 +1252,7 @@ SSLDebugBufferPrint(const char *tag, const char *buffer, unsigned buflen, const 
 SSL_CTX *
 SSLDefaultServerContext()
 {
-  ink_ssl_method_t meth = nullptr;
-
-  meth = SSLv23_server_method();
-  return SSL_CTX_new(meth);
+  return SSL_CTX_new(SSLv23_server_method());
 }
 
 static bool
