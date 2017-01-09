@@ -411,17 +411,16 @@ SSLConfigParams::getNewCTX(char *client_cert) const
   nclient_ctx          = SSLInitClientContext(this);
   if (!nclient_ctx) {
     SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
+    return nullptr;
   }
   if (nclient_ctx && client_cert != nullptr) {
     if (!SSL_CTX_use_certificate_chain_file(nclient_ctx, (const char *)client_cert)) {
       SSLError("failed to load client certificate from %s", this->clientCertPath);
-      goto fail;
+      SSLReleaseContext(nclient_ctx);
+      return nullptr;
     }
   }
   return nclient_ctx;
-fail:
-  SSLReleaseContext(nclient_ctx);
-  return nullptr;
 }
 
 void
