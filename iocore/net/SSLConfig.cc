@@ -421,7 +421,7 @@ SSLConfigParams::getNewCTX(char *client_cert) const
   return nclient_ctx;
 fail:
   SSLReleaseContext(nclient_ctx);
-  ::exit(1);
+  return nullptr;
 }
 
 void
