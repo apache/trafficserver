@@ -24,6 +24,7 @@
 #include "WSBuffer.h"
 
 #include <ts/ts.h>
+#include <ts/ink_config.h>
 #include "openssl/evp.h"
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -157,54 +158,28 @@ WSBuffer::read_buffered_message(std::string &message, int &code)
 std::string
 WSBuffer::ws_digest(std::string const &key)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-  EVP_MD_CTX digest[1];
-  EVP_MD_CTX_init(digest);
-#else
-  EVP_MD_CTX *digest;
-  digest = EVP_MD_CTX_new();
-#endif
+  EVP_MD_CTX *digest = EVP_MD_CTX_new();
 
   if (!EVP_DigestInit_ex(digest, EVP_sha1(), nullptr)) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-    EVP_MD_CTX_cleanup(digest);
-#else
     EVP_MD_CTX_free(digest);
-#endif
     return "init-failed";
   }
   if (!EVP_DigestUpdate(digest, key.data(), key.length())) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-    EVP_MD_CTX_cleanup(digest);
-#else
     EVP_MD_CTX_free(digest);
-#endif
     return "update1-failed";
   }
   if (!EVP_DigestUpdate(digest, magic.data(), magic.length())) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-    EVP_MD_CTX_cleanup(digest);
-#else
     EVP_MD_CTX_free(digest);
-#endif
     return "update2-failed";
   }
 
   unsigned char hash_buf[EVP_MAX_MD_SIZE];
   unsigned int hash_len = 0;
   if (!EVP_DigestFinal_ex(digest, hash_buf, &hash_len)) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-    EVP_MD_CTX_cleanup(digest);
-#else
     EVP_MD_CTX_free(digest);
-#endif
     return "final-failed";
   }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-  EVP_MD_CTX_cleanup(digest);
-#else
   EVP_MD_CTX_free(digest);
-#endif
   if (hash_len != 20) {
     return "bad-hash-length";
   }
