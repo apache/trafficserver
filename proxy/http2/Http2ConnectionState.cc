@@ -206,8 +206,8 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   } else {
     // Create new stream
     Http2Error error(HTTP2_ERROR_CLASS_NONE);
-    Http2Stream *stream = cstate.create_stream(stream_id, error);
-    new_stream          = true;
+    stream     = cstate.create_stream(stream_id, error);
+    new_stream = true;
     if (!stream) {
       return error;
     }
