@@ -27,15 +27,6 @@
 
 #include "BIO_fastopen.h"
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-#define BIO_set_data(a, _ptr) ((a)->ptr = (_ptr))
-#define BIO_get_data(a) ((a)->ptr)
-#define BIO_get_shutdown(a) ((a)->shutdown)
-#define BIO_meth_get_ctrl(biom) ((biom)->ctrl)
-#define BIO_meth_get_create(biom) ((biom)->create)
-#define BIO_meth_get_destroy(biom) ((biom)->destroy)
-#endif
-
 static int (*fastopen_create)(BIO *) = BIO_meth_get_create(const_cast<BIO_METHOD *>(BIO_s_socket()));
 
 static int
@@ -127,7 +118,7 @@ fastopen_ctrl(BIO *bio, int cmd, long larg, void *ptr)
   return BIO_meth_get_ctrl(const_cast<BIO_METHOD *>(BIO_s_socket()))(bio, cmd, larg, ptr);
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifndef HAVE_BIO_METH_NEW
 static const BIO_METHOD fastopen_methods[] = {{
   .type          = BIO_TYPE_SOCKET,
   .name          = "fastopen",

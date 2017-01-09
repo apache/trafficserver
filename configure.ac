@@ -1128,6 +1128,37 @@ TS_CHECK_CRYPTO_SET_RBIO
 # Check for DH_get_2048_256
 TS_CHECK_CRYPTO_DH_GET_2048_256
 
+saved_LIBS = "$LIBS"
+TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
+
+AC_CHECK_FUNCS([ \
+  BIO_meth_new \
+  CRYPTO_set_mem_functions \
+  HMAC_CTX_new \
+])
+
+AC_CHECK_FUNC([BIO_set_data], [],
+              [AC_DEFINE([BIO_set_data(a, _ptr)], [((a)->ptr = (_ptr))], [Added in OpenSSL 1.1])])
+AC_CHECK_FUNC([BIO_get_data], [],
+              [AC_DEFINE([BIO_get_data(a)], [((a)->ptr)], [Added in OpenSSL 1.1])])
+AC_CHECK_FUNC([BIO_get_shutdown], [],
+              [AC_DEFINE([BIO_get_shutdown(a)], [((a)->shutdown)], [Added in OpenSSL 1.1])])
+AC_CHECK_FUNC([BIO_meth_get_ctrl], [],
+              [AC_DEFINE([BIO_meth_get_ctrl(biom)], [((biom)->ctrl)], [Added in OpenSSL 1.1])])
+AC_CHECK_FUNC([BIO_meth_get_create], [],
+              [AC_DEFINE([BIO_meth_get_create(biom)], [((biom)->create)], [Added in OpenSSL 1.1])])
+AC_CHECK_FUNC([BIO_meth_get_destroy], [],
+              [AC_DEFINE([BIO_meth_get_destroy(biom)], [((biom)->destroy)], [Added in OpenSSL 1.1])])
+
+AC_CHECK_FUNC([EVP_MD_CTX_new], [],
+              [AC_DEFINE([EVP_MD_CTX_new], [EVP_MD_CTX_create], [Renamed in OpenSSL 1.1])])
+AC_CHECK_FUNC([EVP_MD_CTX_reset], [],
+              [AC_DEFINE([EVP_MD_CTX_reset], [EVP_MD_CTX_cleanup], [Renamed in OpenSSL 1.1])])
+AC_CHECK_FUNC([EVP_MD_CTX_free], [],
+              [AC_DEFINE([EVP_MD_CTX_free], [EVP_MD_CTX_destroy], [Renamed in OpenSSL 1.1])])
+
+LIBS = "$saved_LIBS"
+
 #
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
