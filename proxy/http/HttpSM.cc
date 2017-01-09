@@ -5047,7 +5047,7 @@ HttpSM::do_http_server_open(bool raw)
     }
 
     ats_scoped_str clientCert(
-      ats_strdup((Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename))));
+      (Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename)));
     opt.set_client_certname(clientCert);
     connect_action_handle = sslNetProcessor.connect_re(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // addr + port
