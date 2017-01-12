@@ -67,9 +67,9 @@ function checkBuild() {
 }
 
 # Save away previous ref-specs, you must save all branches
-REF_4_2=$(getRef "4.2.x")
 REF_6_2=$(getRef "6.2.x")
 REF_7_0=$(getRef "7.0.x")
+REF_7_1=$(getRef "7.1.x")
 REF_master=$(getRef "master")
 
 # Do the updates
@@ -77,7 +77,7 @@ ${GIT} remote update --prune > /dev/null 2>&1
 ${GIT} update-server-info
 
 # Check the branches, this makes assumptions that the Jenkins build are named after the branches
-checkBuild "$REF_4_2" "4.2.x"
 checkBuild "$REF_6_2" "6.2.x"
 checkBuild "$REF_7_0" "7.0.x"
+checkBuild "$REF_7_1" "7.1.x"
 checkBuild "$REF_master" "master"
