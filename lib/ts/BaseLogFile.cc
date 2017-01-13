@@ -238,7 +238,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
 int
 BaseLogFile::roll()
 {
-  long start;
+  time_t start;
   time_t now = time(nullptr);
 
   if (!m_meta_info || !m_meta_info->get_creation_time(&start))
