@@ -527,9 +527,9 @@ Diags::dump(FILE *fp) const
 
   fprintf(fp, "Diags:\n");
   fprintf(fp, "  debug.enabled: %d\n", config.enabled[DiagsTagType_Debug]);
-  fprintf(fp, "  debug default tags: '%s'\n", (base_debug_tags ? base_debug_tags : "nullptr"));
+  fprintf(fp, "  debug default tags: '%s'\n", (base_debug_tags ? base_debug_tags : "NULL"));
   fprintf(fp, "  action.enabled: %d\n", config.enabled[DiagsTagType_Action]);
-  fprintf(fp, "  action default tags: '%s'\n", (base_action_tags ? base_action_tags : "nullptr"));
+  fprintf(fp, "  action default tags: '%s'\n", (base_action_tags ? base_action_tags : "NULL"));
   fprintf(fp, "  outputs:\n");
   for (i = 0; i < DiagsLevel_Count; i++) {
     fprintf(fp, "    %10s [stdout=%d, stderr=%d, syslog=%d, diagslog=%d]\n", level_name((DiagsLevel)i), config.outputs[i].to_stdout,
