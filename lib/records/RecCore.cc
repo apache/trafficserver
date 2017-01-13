@@ -996,7 +996,7 @@ debug_record_callback(RecT /* rec_type */, void * /* edata */, int registered, c
     RecDebug(DL_Note, "  ([%d] '%s', '%f')", registered, name, datum->rec_float);
     break;
   case RECD_STRING:
-    RecDebug(DL_Note, "  ([%d] '%s', '%s')", registered, name, datum->rec_string ? datum->rec_string : "nullptr");
+    RecDebug(DL_Note, "  ([%d] '%s', '%s')", registered, name, datum->rec_string ? datum->rec_string : "NULL");
     break;
   case RECD_COUNTER:
     RecDebug(DL_Note, "  ([%d] '%s', '%" PRId64 "')", registered, name, datum->rec_counter);
