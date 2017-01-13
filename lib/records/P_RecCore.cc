@@ -735,7 +735,7 @@ RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
               if (r->data.rec_string) {
                 tb->copyFrom(r->data.rec_string, strlen(r->data.rec_string));
               } else {
-                tb->copyFrom("nullptr", strlen("NULL"));
+                tb->copyFrom("NULL", strlen("NULL"));
               }
               break;
             case RECD_COUNTER:
