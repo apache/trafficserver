@@ -138,7 +138,7 @@ namespace ApacheTrafficServer
     }
 
   // -- Free Functions --
-  
+
   /** Convert a metric @a src to a different scale, keeping the unit value as close as possible, rounding up.
       The resulting count in the return value will be the smallest count that is not smaller than the unit
       value of @a src.
@@ -164,7 +164,7 @@ namespace ApacheTrafficServer
     } else if (R::num == 1) {
       return c * R::den; // S is a multiple of N.
     } else {
-      return (c / R::num) * R::den + (( c % R::num ) * R::den) / R::num + (0 != (c % R::den));
+      return (c / R::num) * R::den + (( c % R::num ) * R::den) / R::num + (0 != (c % R::num));
     }
   }
 

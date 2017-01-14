@@ -31,9 +31,9 @@ namespace ts {
 
 struct TestBox {
   typedef TestBox self;  ///< Self reference type.
-  
+
   std::string _name;
-  
+
   static int _count;
   static int _fail;
 
@@ -54,19 +54,19 @@ bool
 TestBox::check(bool result, char const *fmt, ...)
 {
   ++_count;
-  
+
   if (!result) {
     static constexpr size_t N = 1 << 16;
     size_t n = N;
     size_t x;
     char* s;
     char buffer[N]; // just stack, go big.
-    
+
     s = buffer;
     x = snprintf(s, n, "%s: ", _name.c_str());
     n -= x;
     s += x;
-    
+
     va_list ap;
     va_start(ap, fmt);
     vsnprintf(s, n, fmt, ap);
@@ -77,29 +77,31 @@ TestBox::check(bool result, char const *fmt, ...)
   return result;
 }
 
+// Extremely simple test.
 void
 Test_1()
 {
   constexpr static int SCALE = 4096;
   typedef ts::Metric<SCALE> PageSize;
 
-  TestBox test("TS Metric");
+  TestBox test("TS Metric basic");
   PageSize pg1(1);
 
   test.check(pg1.count() == 1, "Count wrong, got %d expected %d", pg1.count(), 1);
   test.check(pg1.units() == SCALE, "Units wrong, got %d expected %d", pg1.units(), SCALE);
 }
 
+// Test multiples.
 void
 Test_2()
 {
   constexpr static int SCALE_1 = 8192;
   constexpr static int SCALE_2 = 512;
-  
+
   typedef ts::Metric<SCALE_1> Size_1;
   typedef ts::Metric<SCALE_2> Size_2;
 
-  TestBox test("TS Metric Conversions");
+  TestBox test("TS Metric Conversion of scales of multiples");
   Size_2 sz_a(2);
   Size_2 sz_b(57);
   Size_2 sz_c(SCALE_1 / SCALE_2);
@@ -114,12 +116,12 @@ Test_2()
   test.check(sz.count() == 4 , "Rounding up, got %d expected %d", sz.count(), 4);
   sz = ts::metric_round_down<Size_1>(sz_b);
   test.check(sz.count() == 3 , "Rounding down, got %d expected %d", sz.count(), 3);
-  
+
   sz = ts::metric_round_up<Size_1>(sz_c);
   test.check(sz.count() == 1 , "Rounding up, got %d expected %d", sz.count(), 1);
   sz = ts::metric_round_down<Size_1>(sz_c);
   test.check(sz.count() == 1 , "Rounding down, got %d expected %d", sz.count(), 1);
-  
+
   sz = ts::metric_round_up<Size_1>(sz_d);
   test.check(sz.count() == 29 , "Rounding up, got %d expected %d", sz.count(), 29);
   sz = ts::metric_round_down<Size_1>(sz_d);
@@ -131,11 +133,36 @@ Test_2()
   test.check(sz_b.count() == 119 * (SCALE_1/SCALE_2) , "Integral conversion, got %d expected %d", sz_b.count(), 119 * (SCALE_1/SCALE_2));
 }
 
+// Test common factor.
 void
 Test_3()
 {
+  constexpr static int SCALE_1 = 30;
+  constexpr static int SCALE_2 = 20;
+
+  typedef ts::Metric<SCALE_1> Size_1;
+  typedef ts::Metric<SCALE_2> Size_2;
+
+  TestBox test("TS Metric common factor conversions");
+  Size_2 sz_a(2);
+  Size_2 sz_b(97);
+
+  auto sz = ts::metric_round_up<Size_1>(sz_a);
+  test.check(sz.count() ==2 , "Rounding up, got %d expected %d", sz.count(), 2);
+  sz = ts::metric_round_down<Size_1>(sz_a);
+  test.check(sz.count() == 1 , "Rounding down: got %d expected %d", sz.count(), 0);
+
+  sz = ts::metric_round_up<Size_1>(sz_b);
+  test.check(sz.count() == 65 , "Rounding up, got %d expected %d", sz.count(), 65);
+  sz = ts::metric_round_down<Size_1>(sz_b);
+  test.check(sz.count() == 64 , "Rounding down, got %d expected %d", sz.count(), 64);
+}
+
+void
+Test_4()
+{
   TestBox test("TS Metric: relatively prime tests");
-  
+
   ts::Metric<9> m_9;
   ts::Metric<4> m_4, m_test;
 
@@ -164,7 +191,7 @@ main(int, char **)
   Test_1();
   Test_2();
   Test_3();
+  Test_4();
   TestBox::print_summary();
   return 0;
 }
-
