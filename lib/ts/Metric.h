@@ -86,17 +86,13 @@ namespace ApacheTrafficServer
     constexpr Count units() const;
 
     /// Assignment operator.
-    /// @note Requires that @c S be an integer multiple of @c SCALE.
+    /// @note Requires the scale of @c S be an integer multiple of the scale of this.
     template < intmax_t S, typename I >
     self& operator = (Metric<S,I> const& that);
+    /// Assignment from same scale.
+    self& operator = (self const& that);
 
-    /// Convert the count of a differently scaled @c Metric @a src by rounding down if needed.
-    /// @internal This is required for internal use but may be handy for other clients.
-    /// @internal Variants to optimize special cases.
-    template < typename I > static intmax_t round_down(Metric<N,I> const& src);
-    template < intmax_t S, typename I > static intmax_t round_down(Metric<S,I> const& src);
-    static intmax_t round_down(self const& that);
-
+    /// Run time access to the scale of this metric (template arg @a N).
     static intmax_t scale();
 
   protected:
@@ -113,6 +109,8 @@ namespace ApacheTrafficServer
   constexpr auto Metric<N,C>::units() const -> Count { return _n * SCALE; }
   template < intmax_t N, typename C >
   inline auto Metric<N,C>::operator = (Count n) -> self& { _n = n; return *this; }
+  template < intmax_t N, typename C >
+  inline auto Metric<N,C>::operator = (self const& that) -> self& { _n = that._n; return *this; }
 
   template <intmax_t N, typename C>
     template <typename I>
@@ -139,44 +137,8 @@ namespace ApacheTrafficServer
       return *this;
     }
 
-  // Same type, no rounding needed.
-  template < intmax_t N, typename C >
-    intmax_t Metric<N,C>::round_down(self const& that)
-    {
-      return that._n;
-    }
-
-  // Same scale just with different count type, no rounding.
-  template < intmax_t N, typename C >
-    template < typename I >
-    intmax_t Metric<N,C>::round_down(Metric<N,I> const& that)
-    {
-      return that._n;
-    }
-
-
-  template < intmax_t N, typename C >
-    template < intmax_t S, typename I >
-    intmax_t Metric<N,C>::round_down(Metric<S,I> const& src)
-    {
-      typedef std::ratio<N,S> R_NS;
-      typedef std::ratio<S,N> R_SN;
-
-      if (R_NS::den == 1) {
-	return src.count() / R_NS::num;
-      } else if (R_SN::den ==1) {
-	return src.count() * R_SN::num; // N is a multiple of S.
-      } else {
-	// General case where neither N nor S are a multiple of the other.
-	auto n = src.count();
-	// Yes, a bit odd, but this minimizes the risk of integer overflow.
-	// I need to validate that under -O2 the compiler will only do 1 division to get
-	// both the quotient and remainder for (n/N) and (n%N). In cases where N,S are
-	// powers of 2 I have verified recent GNU compilers will optimize to bit operations.
-	return (n / N) * S + (( n % N ) * S) / N;
-      }
-    }
-
+  // -- Free Functions --
+  
   /** Convert a metric @a src to a different scale, keeping the unit value as close as possible, rounding up.
       The resulting count in the return value will be the smallest count that is not smaller than the unit
       value of @a src.
@@ -189,16 +151,20 @@ namespace ApacheTrafficServer
       auto size = metric_round_up<KiloBytes>(src); // size.count() == 586
       @endcode
    */
-  template < typename M, intmax_t N, typename C >
-  M metric_round_up(Metric<N,C> const& src)
+  template < typename M, intmax_t S, typename I >
+  M metric_round_up(Metric<S,I> const& src)
   {
-    if (1 == M::SCALE) {
-      return M(src.units());
+    typedef std::ratio<M::SCALE, S> R;
+    auto c = src.count();
+
+    if (M::SCALE == S) {
+      return c;
+    } else if (R::den == 1) {
+      return c / R::num + (0 != c % R::num); // N is a multiple of S.
+    } else if (R::num == 1) {
+      return c * R::den; // S is a multiple of N.
     } else {
-      typedef std::ratio<M::SCALE, N> R; // R::num == M::SCALE / GCD(M::SCALE, N) == GCF(M::SCALE, N)
-      auto n = src.count();
-      // Round down and add 1 unless @a n is an even multiple of the GCF of the two scales.
-      return M(M::round_down(src) + ((n % R::num) != 0));
+      return (c / R::num) * R::den + (( c % R::num ) * R::den) / R::num + (0 != (c % R::den));
     }
   }
 
@@ -214,24 +180,38 @@ namespace ApacheTrafficServer
       auto size = metric_round_up<KiloBytes>(src); // size.count() == 585
       @endcode
    */
-  template < typename M, intmax_t N, typename C >
-  M metric_round_down(Metric<N,C> const& src)
+  template < typename M, intmax_t S, typename I >
+    M metric_round_down(Metric<S,I> const& src)
   {
-    return M(1 == M::SCALE ? src.units() : M::round_down(src));
+    typedef std::ratio<M::SCALE,S> R;
+    auto c = src.count();
+
+    if (R::den == 1) {
+      return c / R::num; // S is a multiple of N.
+    } else if (R::num ==1) {
+      return c * R::den; // N is a multiple of S.
+    } else {
+      // General case where neither N nor S are a multiple of the other.
+      // Yes, a bit odd, but this minimizes the risk of integer overflow.
+      // I need to validate that under -O2 the compiler will only do 1 division to get
+      // both the quotient and remainder for (n/N) and (n%N). In cases where N,S are
+      // powers of 2 I have verified recent GNU compilers will optimize to bit operations.
+      return (c / R::num) * R::den + (( c % R::num ) * R::den) / R::num;
+    }
   }
 
-  /// Convert a unit value to a scaled count, rounding down.
+  /// Convert a unit value @a n to a Metric, rounding down.
   template < typename M >
-  M metric_round_down(intmax_t src)
+  M metric_round_down(intmax_t n)
   {
-    return M(src/M::SCALE); // assuming compiler will optimize out dividing by 1 if needed.
+    return n/M::SCALE; // assuming compiler will optimize out dividing by 1 if needed.
   }
 
-  /// Convert a unit value to a scaled count, rounding up.
+  /// Convert a unit value @a n to a Metric, rounding up.
   template < typename M >
-  M metric_round_up(intmax_t src)
+  M metric_round_up(intmax_t n)
   {
-    return M(M::SCALE == 1 ? src : (src/M::SCALE + 0 != src % M::SCALE));
+    return M::SCALE == 1 ? n : (n/M::SCALE + (0 != (n % M::SCALE)));
   }
 
 
@@ -264,33 +244,30 @@ namespace ApacheTrafficServer
   template < intmax_t N1, typename C1, intmax_t N2, typename C2 >
     bool operator < (Metric<N1,C1> const& lhs, Metric<N2,C2> const& rhs)
   {
-    typedef std::ratio<N1, N2> R12;
-    typedef std::ratio<N2, N1> R21;
+    typedef std::ratio<N1, N2> R;
     // Based on tests with the GNU compiler, the fact that the conditionals are compile time
     // constant causes the never taken paths to be dropped so there are no runtime conditional
     // checks, even with no optimization at all.
-    if (R12::den == 1) { return lhs.count() < rhs.count() * R12::num; }
-    else if (R21::den == 1) { return lhs.count() * R21::num < rhs.count(); }
+    if (R::den == 1) { return lhs.count() < rhs.count() * R::num; }
+    else if (R::num == 1) { return lhs.count() * R::den < rhs.count(); }
     else return lhs.units() < rhs.units();
   }
 
   template < intmax_t N1, typename C1, intmax_t N2, typename C2 >
     bool operator == (Metric<N1,C1> const& lhs, Metric<N2,C2> const& rhs)
   {
-    typedef std::ratio<N1, N2> R12;
-    typedef std::ratio<N2, N1> R21;
-    if (R12::den == 1) { return lhs.count() == rhs.count() * R12::num; }
-    else if (R21::den == 1) { return lhs.count() * R21::num == rhs.count(); }
+    typedef std::ratio<N1, N2> R;
+    if (R::den == 1) { return lhs.count() == rhs.count() * R::num; }
+    else if (R::num == 1) { return lhs.count() * R::den == rhs.count(); }
     else return lhs.units() == rhs.units();
   }
 
   template < intmax_t N1, typename C1, intmax_t N2, typename C2 >
     bool operator <= (Metric<N1,C1> const& lhs, Metric<N2,C2> const& rhs)
   {
-    typedef std::ratio<N1, N2> R12;
-    typedef std::ratio<N2, N1> R21;
-    if (R12::den == 1) { return lhs.count() <= rhs.count() * R12::num; }
-    else if (R21::den == 1) { return lhs.count() * R21::num <= rhs.count(); }
+    typedef std::ratio<N1, N2> R;
+    if (R::den == 1) { return lhs.count() <= rhs.count() * R::num; }
+    else if (R::num == 1) { return lhs.count() * R::den <= rhs.count(); }
     else return lhs.units() <= rhs.units();
   }
 
