@@ -37,10 +37,14 @@ namespace ApacheTrafficServer
 
       Instances of this class have a @a count and a @a scale. The "value" of the instance is @a
       count * @a scale.  The scale is stored in the compiler in the class symbol table and so only
-      the count is a run time value. This prevents passing an incorrectly scaled value. Conversions
-      between scales are explicit using @c metric_round_up and @c metric_round_down. Because the
-      scales are not the same these conversions can be lossy and the two conversions determine
-      whether, in such a case, the result should be rounded up or down to the nearest scale value.
+      the count is a run time value. An instance with a large scale can be assign to an instance
+      with a smaller scale and the conversion is done automatically. Conversions from a smaller to
+      larger scale must be explicit using @c metric_round_up and @c metric_round_down. This prevents
+      inadvertent changes in value. Because the scales are not the same these conversions can be
+      lossy and the two conversions determine whether, in such a case, the result should be rounded
+      up or down to the nearest scale value.
+
+      @a N sets the scale. @a T is the type used to hold the count, which is in units of @a N.
 
       @note This is modeled somewhat on @c std::chrono and serves a similar function for different
       and simpler cases (where the ratio is always an integer, never a fraction).
@@ -48,56 +52,73 @@ namespace ApacheTrafficServer
       @see metric_round_up
       @see metric_round_down
    */
-  template < intmax_t N, typename COUNT_TYPE = int >
+  template < intmax_t N, typename T = int >
   class Metric
   {
     typedef Metric self; ///< Self reference type.
-    
+
   public:
     /// Scaling factor for instances.
+    /// Make it externally accessible.
     constexpr static intmax_t SCALE = N;
-    typedef COUNT_TYPE CountType; ///< Type used to hold the count.
+    typedef T Count; ///< Type used to hold the count.
 
-    Metric(); ///< Default contructor.
-    Metric(CountType n); ///< Contruct from unscaled integer.
+    constexpr Metric(); ///< Default contructor.
+    ///< Construct to have @a n scaled units.
+    constexpr Metric(Count n);
 
-    /// Copy constructor.
-    /// @note This is valid only if the scale does not increase.
+    /// Copy constructor for same scale.
+    template < typename C >
+    Metric(Metric<N, C> const& that);
+
+    /// Copy / conversion constructor.
+    /// @note Requires that @c S be an integer multiple of @c SCALE.
     template < intmax_t S, typename I >
     Metric(Metric<S,I> const& that);
 
     /// Direct assignment.
     /// The count is set to @a n.
-    self& operator = (CountType n);
-    
-    /// The count in terms of the local @c SCALE.
-    CountType count() const;
-    /// The absolute count, unscaled.
-    CountType units() const;
+    self& operator = (Count n);
+
+    /// The number of scale units.
+    constexpr Count count() const;
+    /// The absolute value, scaled up.
+    constexpr Count units() const;
 
     /// Assignment operator.
-    /// @note This is valid only if the scale does not increase.
+    /// @note Requires that @c S be an integer multiple of @c SCALE.
     template < intmax_t S, typename I >
     self& operator = (Metric<S,I> const& that);
-    
+
     /// Convert the count of a differently scaled @c Metric @a src by rounding down if needed.
-    /// @internal This is intended for internal use but may be handy for other clients.
+    /// @internal This is required for internal use but may be handy for other clients.
+    /// @internal Variants to optimize special cases.
+    template < typename I > static intmax_t round_down(Metric<N,I> const& src);
     template < intmax_t S, typename I > static intmax_t round_down(Metric<S,I> const& src);
-    
+    static intmax_t round_down(self const& that);
+
+    static intmax_t scale();
+
   protected:
-    CountType _n; ///< Number of scale units.
+    Count _n; ///< Number of scale units.
   };
 
   template < intmax_t N, typename C >
-  inline Metric<N,C>::Metric() : _n() {}
+  constexpr Metric<N,C>::Metric() : _n() {}
   template < intmax_t N, typename C >
-  inline Metric<N,C>::Metric(CountType n) : _n(n) {}
+  constexpr Metric<N,C>::Metric(Count n) : _n(n) {}
   template < intmax_t N, typename C >
-  inline auto Metric<N,C>::count() const -> CountType { return _n; }
+  constexpr auto Metric<N,C>::count() const -> Count { return _n; }
   template < intmax_t N, typename C >
-  inline auto Metric<N,C>::units() const -> CountType { return _n * SCALE; }
+  constexpr auto Metric<N,C>::units() const -> Count { return _n * SCALE; }
   template < intmax_t N, typename C >
-  inline auto Metric<N,C>::operator = (CountType n) -> self& { _n = n; return *this; }
+  inline auto Metric<N,C>::operator = (Count n) -> self& { _n = n; return *this; }
+
+  template <intmax_t N, typename C>
+    template <typename I>
+    Metric<N,C>::Metric(Metric<N,I> const& that) : _n(static_cast<C>(that._n))
+    {
+    }
 
   template <intmax_t N, typename C>
     template <intmax_t S, typename I>
@@ -118,18 +139,56 @@ namespace ApacheTrafficServer
       return *this;
     }
 
+  // Same type, no rounding needed.
+  template < intmax_t N, typename C >
+    intmax_t Metric<N,C>::round_down(self const& that)
+    {
+      return that._n;
+    }
+
+  // Same scale just with different count type, no rounding.
+  template < intmax_t N, typename C >
+    template < typename I >
+    intmax_t Metric<N,C>::round_down(Metric<N,I> const& that)
+    {
+      return that._n;
+    }
+
+
   template < intmax_t N, typename C >
     template < intmax_t S, typename I >
     intmax_t Metric<N,C>::round_down(Metric<S,I> const& src)
     {
-      auto n = src.count();
-      // Yes, a bit odd, but this minimizes the risk of integer overflow.
-      // I need to validate that under -O2 the compiler will only do 1 division to ge
-      // both the quotient and remainder for (n/N) and (n%N). In cases where N,S are
-      // powers of 2 I have verified recent GNU compilers will optimize to bit operations.
-      return (n / N) * S + (( n % N ) * S) / N;
+      typedef std::ratio<N,S> R_NS;
+      typedef std::ratio<S,N> R_SN;
+
+      if (R_NS::den == 1) {
+	return src.count() / R_NS::num;
+      } else if (R_SN::den ==1) {
+	return src.count() * R_SN::num; // N is a multiple of S.
+      } else {
+	// General case where neither N nor S are a multiple of the other.
+	auto n = src.count();
+	// Yes, a bit odd, but this minimizes the risk of integer overflow.
+	// I need to validate that under -O2 the compiler will only do 1 division to get
+	// both the quotient and remainder for (n/N) and (n%N). In cases where N,S are
+	// powers of 2 I have verified recent GNU compilers will optimize to bit operations.
+	return (n / N) * S + (( n % N ) * S) / N;
+      }
     }
 
+  /** Convert a metric @a src to a different scale, keeping the unit value as close as possible, rounding up.
+      The resulting count in the return value will be the smallest count that is not smaller than the unit
+      value of @a src.
+
+      @code
+      typedef Metric<16> Paragraphs;
+      typedef Metric<1024> KiloBytes;
+
+      Paragraphs src(37459);
+      auto size = metric_round_up<KiloBytes>(src); // size.count() == 586
+      @endcode
+   */
   template < typename M, intmax_t N, typename C >
   M metric_round_up(Metric<N,C> const& src)
   {
@@ -142,11 +201,112 @@ namespace ApacheTrafficServer
       return M(M::round_down(src) + ((n % R::num) != 0));
     }
   }
-      
+
+  /** Convert a metric @a src to a different scale, keeping the unit value as close as possible, rounding down.
+      The resulting count in the return value will be the largest count that is not larger than the unit
+      value of @a src.
+
+      @code
+      typedef Metric<16> Paragraphs;
+      typedef Metric<1024> KiloBytes;
+
+      Paragraphs src(37459);
+      auto size = metric_round_up<KiloBytes>(src); // size.count() == 585
+      @endcode
+   */
   template < typename M, intmax_t N, typename C >
   M metric_round_down(Metric<N,C> const& src)
   {
     return M(1 == M::SCALE ? src.units() : M::round_down(src));
+  }
+
+  /// Convert a unit value to a scaled count, rounding down.
+  template < typename M >
+  M metric_round_down(intmax_t src)
+  {
+    return M(src/M::SCALE); // assuming compiler will optimize out dividing by 1 if needed.
+  }
+
+  /// Convert a unit value to a scaled count, rounding up.
+  template < typename M >
+  M metric_round_up(intmax_t src)
+  {
+    return M(M::SCALE == 1 ? src : (src/M::SCALE + 0 != src % M::SCALE));
+  }
+
+
+  // --- Compare operators
+
+  // Try for a bit of performance boost - if the metrics have the same scale
+  // just comparing the counts is sufficient and scaling conversion is avoided.
+  template < intmax_t N, typename C1, typename C2 >
+    bool operator < (Metric<N, C1> const& lhs, Metric<N, C2> const& rhs)
+  {
+    return lhs.count() < rhs.count();
+  }
+
+  template < intmax_t N, typename C1, typename C2 >
+    bool operator == (Metric<N, C1> const& lhs, Metric<N, C2> const& rhs)
+  {
+    return lhs.count() == rhs.count();
+  }
+
+  // Could be derived but if we're optimizing let's avoid the extra negation.
+  // Or we could check if the compiler can optimize that out anyway.
+  template < intmax_t N, typename C1, typename C2 >
+    bool operator <= (Metric<N, C1> const& lhs, Metric<N, C2> const& rhs)
+  {
+    return lhs.count() <= rhs.count();
+  }
+
+  // General base cases.
+
+  template < intmax_t N1, typename C1, intmax_t N2, typename C2 >
+    bool operator < (Metric<N1,C1> const& lhs, Metric<N2,C2> const& rhs)
+  {
+    typedef std::ratio<N1, N2> R12;
+    typedef std::ratio<N2, N1> R21;
+    // Based on tests with the GNU compiler, the fact that the conditionals are compile time
+    // constant causes the never taken paths to be dropped so there are no runtime conditional
+    // checks, even with no optimization at all.
+    if (R12::den == 1) { return lhs.count() < rhs.count() * R12::num; }
+    else if (R21::den == 1) { return lhs.count() * R21::num < rhs.count(); }
+    else return lhs.units() < rhs.units();
+  }
+
+  template < intmax_t N1, typename C1, intmax_t N2, typename C2 >
+    bool operator == (Metric<N1,C1> const& lhs, Metric<N2,C2> const& rhs)
+  {
+    typedef std::ratio<N1, N2> R12;
+    typedef std::ratio<N2, N1> R21;
+    if (R12::den == 1) { return lhs.count() == rhs.count() * R12::num; }
+    else if (R21::den == 1) { return lhs.count() * R21::num == rhs.count(); }
+    else return lhs.units() == rhs.units();
+  }
+
+  template < intmax_t N1, typename C1, intmax_t N2, typename C2 >
+    bool operator <= (Metric<N1,C1> const& lhs, Metric<N2,C2> const& rhs)
+  {
+    typedef std::ratio<N1, N2> R12;
+    typedef std::ratio<N2, N1> R21;
+    if (R12::den == 1) { return lhs.count() <= rhs.count() * R12::num; }
+    else if (R21::den == 1) { return lhs.count() * R21::num <= rhs.count(); }
+    else return lhs.units() <= rhs.units();
+  }
+
+  // Derived compares. No narrowing optimization needed because if the scales
+  // are the same the nested call with be optimized.
+
+  template < intmax_t N1, typename C1, intmax_t N2, typename C2 >
+    bool operator > (Metric<N1,C1> const& lhs, Metric<N2,C2> const& rhs)
+  {
+    return rhs < lhs;
+  }
+
+  template < intmax_t N1, typename C1, intmax_t N2, typename C2 >
+    bool operator >= (Metric<N1,C1> const& lhs, Metric<N2,C2> const& rhs)
+  {
+    return rhs <= lhs;
   }
 }
 
