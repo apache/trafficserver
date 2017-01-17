@@ -420,7 +420,7 @@ namespace {
   }
 
   struct option Options[] = {
-    { "help", true, nullptr, 'h' }
+    { "help", false, nullptr, 'h' }
   };
 
 }
@@ -454,7 +454,7 @@ int main(int argc, char* argv[])
   while (-1 != (opt_val = getopt_long(argc, argv, "h", Options, &opt_idx))) {
     switch (opt_val) {
         case 'h':
-          printf("Usage: %s [device_path|config_file]", argv[0]);
+          printf("Usage: %s [device_path|config_file] <COMMAND> [<SUBCOMMAND> ...]\n", argv[0]);
           return 1;
           break;
       }

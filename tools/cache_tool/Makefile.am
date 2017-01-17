@@ -20,10 +20,10 @@
 AM_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@ -Wl,--as-needed
 AM_CPPFLAGS = -I $(srcdir)/iocore -I $(srcdir)/lib/ts
 
-noinst_PROGRAMS = cache_tool
+noinst_PROGRAMS = traffic_cache_tool
 
-cache_tool_SOURCES = CacheDefs.h CacheTool.cc File.h File.cc Command.h Command.cc
-cache_tool_LDADD = \
+traffic_cache_tool_SOURCES = CacheDefs.h CacheTool.cc File.h File.cc Command.h Command.cc
+traffic_cache_tool_LDADD = \
 	$(top_builddir)/lib/ts/.libs/MemView.o \
 	$(top_builddir)/lib/ts/.libs/ink_memory.o \
 	$(top_builddir)/lib/ts/.libs/ink_error.o \
