@@ -1240,7 +1240,7 @@ HttpConfig::reconfigure()
 
   params->oride.connect_attempts_max_retries             = m_master.oride.connect_attempts_max_retries;
   params->oride.connect_attempts_max_retries_dead_server = m_master.oride.connect_attempts_max_retries_dead_server;
-  if (m_master.oride.connect_attempts_rr_retries >= params->oride.connect_attempts_max_retries) {
+  if (m_master.oride.connect_attempts_rr_retries > params->oride.connect_attempts_max_retries) {
     Warning("connect_attempts_rr_retries (%" PRIu64 ") is greater than "
             "connect_attempts_max_retries (%" PRIu64 "), this means requests "
             "will never redispatch to another server",
