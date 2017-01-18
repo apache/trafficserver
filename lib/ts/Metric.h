@@ -97,7 +97,7 @@ namespace ApacheTrafficServer
     template < intmax_t S, typename I > static intmax_t round_down(Metric<S,I> const& src);
     static intmax_t round_down(self const& that);
 
-    static intmax_t scale();
+    constexpr static intmax_t scale();
 
   protected:
     Count _n; ///< Number of scale units.
@@ -113,6 +113,8 @@ namespace ApacheTrafficServer
   constexpr auto Metric<N,C>::units() const -> Count { return _n * SCALE; }
   template < intmax_t N, typename C >
   inline auto Metric<N,C>::operator = (Count n) -> self& { _n = n; return *this; }
+  template < intmax_t N, typename C >
+  inline constexpr intmax_t Metric<N,C>::scale() { return SCALE; }
 
   template <intmax_t N, typename C>
     template <typename I>
