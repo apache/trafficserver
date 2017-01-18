@@ -42,7 +42,7 @@ namespace ts {
 }
 
 namespace ApacheTrafficServer {
-  constexpr CacheStripeBlocks CacheSpan::OFFSET;
+  const Bytes CacheSpan::OFFSET{ CacheStripeBlocks::scale() };
 }
 
 namespace {
