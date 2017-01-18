@@ -19,7 +19,7 @@
 
 .. default-domain:: c
 
-TSHttpTxnCacheParentSelectionUrlSet
+TSHttpTxnParentSelectionUrlSet
 ***********************************
 
 Traffic Server Parent Selection consistent hash URL manipulation API.
@@ -29,8 +29,8 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSReturnCode TSHttpTxnCacheParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
-.. function:: TSReturnCode TSHttpTxnCacheParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
+.. function:: TSReturnCode TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
+.. function:: TSReturnCode TSHttpTxnParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
 
 Description
 ===========
@@ -58,9 +58,9 @@ generating the over-ride URL. For example, since the over-ride URL is
 arbitrary, the URL scheme and hostname can simply be set to
 "fake://fake.fake" when creating the over-ride URL.
 
-:func:`TSHttpTxnCacheParentSelectionUrlSet` will set the over-ride URL.
+:func:`TSHttpTxnParentSelectionUrlSet` will set the over-ride URL.
 
-:func:`TSHttpTxnCacheParentSelectionUrlGet` will get the over-ride URL.
+:func:`TSHttpTxnParentSelectionUrlGet` will get the over-ride URL.
 
 Return Values
 =============
