@@ -194,7 +194,7 @@ static LRUEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry
 class LRUPolicy : public PromotionPolicy
 {
 public:
-  LRUPolicy() : PromotionPolicy(), _buckets(1000), _hits(10), _lock(TSMutexCreate()) {}
+  LRUPolicy() : PromotionPolicy(), _buckets(1000), _hits(10), _lock(TSMutexCreate()), _list_size(0), _freelist_size(0) {}
   ~LRUPolicy()
   {
     TSDebug(PLUGIN_NAME, "deleting LRUPolicy object");
@@ -202,7 +202,9 @@ public:
 
     _map.clear();
     _list.clear();
+    _list_size = 0;
     _freelist.clear();
+    _freelist_size = 0;
 
     TSMutexUnlock(_lock);
     TSMutexDestroy(_lock);
@@ -275,11 +277,13 @@ public:
     map_it = _map.find(&hash);
     if (_map.end() != map_it) {
       // We have an entry in the LRU
-      TSAssert(_list.size() > 0); // mismatch in the LRUs hash and list, shouldn't happen
+      TSAssert(_list_size > 0); // mismatch in the LRUs hash and list, shouldn't happen
       if (++(map_it->second->second) >= _hits) {
         // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
         TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
         _freelist.splice(_freelist.begin(), _list, map_it->second);
+        ++_freelist_size;
+        --_list_size;
         _map.erase(map_it->first);
         ret = true;
       } else {
@@ -289,16 +293,19 @@ public:
       }
     } else {
       // New LRU entry for the URL, try to repurpose the list entry as much as possible
-      if (_list.size() >= _buckets) {
+      if (_list_size >= _buckets) {
         TSDebug(PLUGIN_NAME, "repurposing last LRUHash entry");
         _list.splice(_list.begin(), _list, --_list.end());
         _map.erase(&(_list.begin()->first));
-      } else if (_freelist.size() > 0) {
+      } else if (_freelist_size > 0) {
         TSDebug(PLUGIN_NAME, "reusing LRUEntry from freelist");
         _list.splice(_list.begin(), _freelist, _freelist.begin());
+        --_freelist_size;
+        ++_list_size;
       } else {
         TSDebug(PLUGIN_NAME, "creating new LRUEntry");
         _list.push_front(NULL_LRU_ENTRY);
+        ++_list_size;
       }
       // Update the "new" LRUEntry and add it to the hash
       _list.begin()->first          = hash;
@@ -327,10 +334,12 @@ public:
 private:
   unsigned _buckets;
   unsigned _hits;
-  // For the LRU
+  // For the LRU. Note that we keep track of the List sizes, because some versions fo STL have broken
+  // implementations of size(), making them obsessively slow on calling ::size().
   TSMutex _lock;
   LRUMap _map;
   LRUList _list, _freelist;
+  size_t _list_size, _freelist_size;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////
