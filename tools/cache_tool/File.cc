@@ -25,62 +25,74 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-namespace ApacheTrafficServer {
+namespace ApacheTrafficServer
+{
+FilePath &
+FilePath::operator=(char const *path)
+{
+  _path   = ats_strdup(path);
+  _stat_p = false;
+  return *this;
+}
 
-  FilePath& FilePath::operator = (char const* path)
-  {
-    _path = ats_strdup(path);
-    _stat_p = false;
-    return *this;
-  }
+bool
+FilePath::is_readable() const
+{
+  return 0 == access(_path, R_OK);
+}
 
-  bool FilePath::is_readable() const { return 0 == access(_path, R_OK); }
+FilePath
+operator/(FilePath const &lhs, FilePath const &rhs)
+{
+  return static_cast<char const *>(lhs) / rhs;
+}
 
-  FilePath operator / (FilePath const& lhs, FilePath const& rhs)
-  {
-    return static_cast<char const*>(lhs) / rhs;
-  }
+FilePath
+operator/(char const *lhs, FilePath const &rhs)
+{
+  ats_scoped_str np;
 
-  FilePath operator / (char const* lhs, FilePath const& rhs)
-  {
-    ats_scoped_str np;
+  // If either path is empty, return the other path.
+  if (nullptr == lhs || 0 == *lhs)
+    return rhs;
+  if (!rhs.has_path())
+    return FilePath(lhs);
 
-    // If either path is empty, return the other path.
-    if (nullptr == lhs || 0 == *lhs) return rhs;
-    if (!rhs.has_path()) return FilePath(lhs);
+  return FilePath(path_join(lhs, static_cast<char const *>(rhs)));
+}
 
-    return FilePath(path_join(lhs, static_cast<char const*>(rhs)));
-  }
+ats_scoped_fd
+FilePath::open(int flags) const
+{
+  return ats_scoped_fd(this->has_path() ? ::open(_path, flags) : ats_scoped_fd::Traits::initValue());
+}
 
-  ats_scoped_fd FilePath::open(int flags) const
-  {
-    return ats_scoped_fd(this->has_path() ? ::open(_path, flags) : ats_scoped_fd::Traits::initValue());
-  }
+int
+BulkFile::load()
+{
+  ats_scoped_fd fd(this->open(O_RDONLY));
+  int zret = 0; // return errno if something goes wrong.
+  struct stat info;
+  if (0 == fstat(fd, &info)) {
+    size_t n = info.st_size;
+    _content = static_cast<char *>(ats_malloc(n + 2));
+    if (0 < (_len = read(fd, _content, n))) {
+      // Force a trailing linefeed and nul.
+      memset(_content + _len, 0, 2);
+      if (_content[n - 1] != '\n') {
+        _content[n] = '\n';
+        ++_len;
+      }
+    } else
+      zret = errno;
+  } else
+    zret = errno;
+  return zret;
+}
 
-  int
-  BulkFile::load()
-  {
-    ats_scoped_fd fd(this->open(O_RDONLY));
-    int zret = 0; // return errno if something goes wrong.
-    struct stat info;
-    if (0 == fstat(fd, &info)) {
-      size_t n = info.st_size;
-      _content = static_cast<char*>(ats_malloc(n+2));
-      if (0 < (_len = read(fd, _content, n))) {
-        // Force a trailing linefeed and nul.
-        memset(_content + _len, 0, 2);
-        if (_content[n-1] != '\n') {
-          _content[n] = '\n';
-          ++_len;
-        }
-      } else zret = errno;
-    } else zret = errno;
-    return zret;
-  }
-
-  StringView
-  BulkFile::content() const
-  {
-    return StringView(_content, _len);
-  }
+StringView
+BulkFile::content() const
+{
+  return StringView(_content, _len);
+}
 }

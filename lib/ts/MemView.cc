@@ -4,7 +4,6 @@
 
 namespace ApacheTrafficServer
 {
-
 int
 memcmp(MemView const &lhs, MemView const &rhs)
 {
@@ -48,27 +47,29 @@ template void detail::aligned_stream_write(std::ostream &, const StringView &);
 
 namespace std
 {
-  ostream& operator<<(ostream &os, const ApacheTrafficServer::MemView &b)
-  {
-    if (os.good()) {
-      ostringstream out;
-      out << b.size() << '@' << hex << b.ptr();
-      os << out.str();
-    }
-    return os;
+ostream &
+operator<<(ostream &os, const ApacheTrafficServer::MemView &b)
+{
+  if (os.good()) {
+    ostringstream out;
+    out << b.size() << '@' << hex << b.ptr();
+    os << out.str();
   }
+  return os;
+}
 
-  ostream& operator<<(ostream &os, const ApacheTrafficServer::StringView &b)
-  {
-    if (os.good()) {
-      const size_t size = b.size();
-      const size_t w    = static_cast<size_t>(os.width());
-      if (w <= size)
-        os.write(b.begin(), size);
-      else
-        ApacheTrafficServer::detail::aligned_stream_write<ostream>(os, b);
-      os.width(0);
-    }
-    return os;
+ostream &
+operator<<(ostream &os, const ApacheTrafficServer::StringView &b)
+{
+  if (os.good()) {
+    const size_t size = b.size();
+    const size_t w    = static_cast<size_t>(os.width());
+    if (w <= size)
+      os.write(b.begin(), size);
+    else
+      ApacheTrafficServer::detail::aligned_stream_write<ostream>(os, b);
+    os.width(0);
   }
+  return os;
+}
 }

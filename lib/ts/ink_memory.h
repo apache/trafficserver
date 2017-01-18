@@ -252,7 +252,7 @@ public:
   /// Construct with contained resource.
   explicit ats_scoped_resource(value_type rt) : _r(rt) {}
   /// rvalue constructor
- ats_scoped_resource(self && that) : _r(that.release()) {}
+  ats_scoped_resource(self &&that) : _r(that.release()) {}
   /// Destructor.
   ~ats_scoped_resource()
   {
@@ -370,7 +370,7 @@ public:
   /// Construct with contained resource.
   explicit ats_scoped_fd(value_type rt) : super(rt) {}
   /// rvalue / move constructor
-  ats_scoped_fd(self && that) : super(static_cast<super&&>(that)) {}
+  ats_scoped_fd(self &&that) : super(static_cast<super &&>(that)) {}
   /** Place a new resource @a rt in the container.
       Any resource currently contained is destroyed.
       This object becomes the owner of @a rt.
@@ -447,7 +447,7 @@ public:
   /// Put string @a s in this container for cleanup.
   explicit ats_scoped_str(char *s) : super(s) {}
   /// rvalue constructor
-  ats_scoped_str(self && that) : super(static_cast<super&&>(that)) {}
+  ats_scoped_str(self &&that) : super(static_cast<super &&>(that)) {}
   /// Assign a string @a s to this container.`
   self &
   operator=(char *s)

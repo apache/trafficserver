@@ -29,124 +29,142 @@
 
 namespace ApacheTrafficServer
 {
+int CommandTable::_opt_idx = 0;
 
-  int CommandTable::_opt_idx = 0;
+// Error message functions.
+ts::Errata
+ERR_COMMAND_TAG_NOT_FOUND(char const *tag)
+{
+  std::ostringstream s;
+  s << "Command tag " << tag << " not found";
+  return ts::Errata(s.str());
+}
 
-  // Error message functions.
-  ts::Errata ERR_COMMAND_TAG_NOT_FOUND(char const* tag) { std::ostringstream s;
-    s << "Command tag " << tag << " not found";
-    return ts::Errata(s.str());}
+ts::Errata
+ERR_SUBCOMMAND_REQUIRED()
+{
+  return ts::Errata(std::string("Incomplete command, additional keyword required"));
+}
 
-  ts::Errata ERR_SUBCOMMAND_REQUIRED() { return ts::Errata(std::string("Incomplete command, additional keyword required")); }
+CommandTable::Command::Command()
+{
+}
 
+CommandTable::Command::Command(std::string const &name, std::string const &help) : _name(name), _help(help)
+{
+}
 
-  CommandTable::Command::Command()
-  {
-  }
+CommandTable::Command::Command(std::string const &name, std::string const &help, CommandFunction const &f)
+  : _name(name), _help(help), _func(f)
+{
+}
 
-  CommandTable::Command::Command(std::string const& name, std::string const& help) : _name(name), _help(help)
-  {
-  }
+auto
+CommandTable::Command::set(CommandFunction const &f) -> self &
+{
+  _func = f;
+  return *this;
+}
 
-  CommandTable::Command::Command(std::string const& name, std::string const& help, CommandFunction const& f) : _name(name), _help(help), _func(f)
-  {
-  }
+CommandTable::Command &
+CommandTable::Command::subCommand(std::string const &name, std::string const &help, CommandFunction const &f)
+{
+  _group.emplace_back(Command(name, help, f));
+  return _group.back();
+}
 
-  auto CommandTable::Command::set(CommandFunction const& f) -> self&
-  {
-    _func = f;
-    return *this;
-  }
+auto
+CommandTable::Command::subCommand(std::string const &name, std::string const &help) -> self &
+{
+  _group.emplace_back(Command(name, help));
+  return _group.back();
+}
 
-  CommandTable::Command& CommandTable::Command::subCommand(std::string const& name, std::string const& help, CommandFunction const & f)
-  {
-    _group.emplace_back(Command(name, help, f));
-    return _group.back();
-  }
+ts::Rv<bool>
+CommandTable::Command::invoke(int argc, char *argv[])
+{
+  ts::Rv<bool> zret = true;
 
-  auto CommandTable::Command::subCommand(std::string const& name, std::string const& help) -> self&
-  {
-    _group.emplace_back(Command(name,help));
-    return _group.back();
-  }
-
-  ts::Rv<bool> CommandTable::Command::invoke(int argc, char* argv[])
-  {
-    ts::Rv<bool> zret = true;
-
-    if (CommandTable::_opt_idx >= argc || argv[CommandTable::_opt_idx][0] == '-') {
-      // Tail of command keywords, try to invoke.
-      if (_func) zret = _func(argc - CommandTable::_opt_idx, argv + CommandTable::_opt_idx);
-      else zret = false, zret = ERR_SUBCOMMAND_REQUIRED();
+  if (CommandTable::_opt_idx >= argc || argv[CommandTable::_opt_idx][0] == '-') {
+    // Tail of command keywords, try to invoke.
+    if (_func)
+      zret = _func(argc - CommandTable::_opt_idx, argv + CommandTable::_opt_idx);
+    else
+      zret = false, zret = ERR_SUBCOMMAND_REQUIRED();
+  } else {
+    char const *tag = argv[CommandTable::_opt_idx];
+    auto spot       = std::find_if(_group.begin(), _group.end(),
+                             [tag](CommandGroup::value_type const &elt) { return 0 == strcasecmp(tag, elt._name.c_str()); });
+    if (spot != _group.end()) {
+      ++CommandTable::_opt_idx;
+      zret = spot->invoke(argc, argv);
     } else {
-      char const* tag = argv[CommandTable::_opt_idx];
-      auto spot = std::find_if(_group.begin(), _group.end(),
-                               [tag](CommandGroup::value_type const& elt) {
-                                 return 0 == strcasecmp(tag, elt._name.c_str()); } );
-      if (spot != _group.end()) {
-        ++CommandTable::_opt_idx;
-        zret = spot->invoke(argc, argv);
-      }
-      else {
-        zret = false;
-        zret = ERR_COMMAND_TAG_NOT_FOUND(tag);
-      }
-    }
-    return zret;
-  }
-
-  void CommandTable::Command::helpMessage(int argc, char* argv[], std::ostream& out, std::string const& prefix) const
-  {
-
-    if (CommandTable::_opt_idx >= argc || argv[CommandTable::_opt_idx][0] == '-') {
-      // Tail of command keywords, start listing
-      if (_name.empty()) { // root command group, don't print for that.
-        for ( Command const& c : _group ) c.helpMessage(argc, argv, out, prefix);
-      } else {
-        out << prefix << _name << ": " << _help << std::endl;
-        for ( Command const& c : _group ) c.helpMessage(argc, argv, out, "  " + prefix);
-      }
-    } else {
-      char const* tag = argv[CommandTable::_opt_idx];
-      auto spot = std::find_if(_group.begin(), _group.end(),
-                               [tag](CommandGroup::value_type const& elt) {
-                                 return 0 == strcasecmp(tag, elt._name.c_str()); } );
-      if (spot != _group.end()) {
-        ++CommandTable::_opt_idx;
-        spot->helpMessage(argc, argv, out, prefix);
-      } else {
-        out <<  ERR_COMMAND_TAG_NOT_FOUND(tag) << std::endl;
-      }
+      zret = false;
+      zret = ERR_COMMAND_TAG_NOT_FOUND(tag);
     }
   }
+  return zret;
+}
 
-  CommandTable::Command::~Command() { }
-
-  CommandTable::CommandTable()
-  {
+void
+CommandTable::Command::helpMessage(int argc, char *argv[], std::ostream &out, std::string const &prefix) const
+{
+  if (CommandTable::_opt_idx >= argc || argv[CommandTable::_opt_idx][0] == '-') {
+    // Tail of command keywords, start listing
+    if (_name.empty()) { // root command group, don't print for that.
+      for (Command const &c : _group)
+        c.helpMessage(argc, argv, out, prefix);
+    } else {
+      out << prefix << _name << ": " << _help << std::endl;
+      for (Command const &c : _group)
+        c.helpMessage(argc, argv, out, "  " + prefix);
+    }
+  } else {
+    char const *tag = argv[CommandTable::_opt_idx];
+    auto spot       = std::find_if(_group.begin(), _group.end(),
+                             [tag](CommandGroup::value_type const &elt) { return 0 == strcasecmp(tag, elt._name.c_str()); });
+    if (spot != _group.end()) {
+      ++CommandTable::_opt_idx;
+      spot->helpMessage(argc, argv, out, prefix);
+    } else {
+      out << ERR_COMMAND_TAG_NOT_FOUND(tag) << std::endl;
+    }
   }
+}
 
-  auto CommandTable::add(std::string const& name, std::string const& help) -> Command&
-  {
-    return _top.subCommand(name, help);
-  }
+CommandTable::Command::~Command()
+{
+}
 
-  auto CommandTable::add(std::string const& name, std::string const& help, CommandFunction const& f) -> Command&
-  {
-    return _top.subCommand(name, help, f);
-  }
+CommandTable::CommandTable()
+{
+}
 
-  ts::Rv<bool> CommandTable::invoke(int argc, char* argv[])
-  {
-    _opt_idx = 0;
-    return _top.invoke(argc, argv);
-  }
+auto
+CommandTable::add(std::string const &name, std::string const &help) -> Command &
+{
+  return _top.subCommand(name, help);
+}
 
-  // This is basically cloned from invoke(), need to find how to do some unification.
-  void CommandTable::helpMessage(int argc, char* argv[]) const
-  {
-    _opt_idx = 0;
-    std::cerr << "Command tree" << std::endl;
-    _top.helpMessage(argc, argv, std::cerr, std::string("* "));
-  }
+auto
+CommandTable::add(std::string const &name, std::string const &help, CommandFunction const &f) -> Command &
+{
+  return _top.subCommand(name, help, f);
+}
+
+ts::Rv<bool>
+CommandTable::invoke(int argc, char *argv[])
+{
+  _opt_idx = 0;
+  return _top.invoke(argc, argv);
+}
+
+// This is basically cloned from invoke(), need to find how to do some unification.
+void
+CommandTable::helpMessage(int argc, char *argv[]) const
+{
+  _opt_idx = 0;
+  std::cerr << "Command tree" << std::endl;
+  _top.helpMessage(argc, argv, std::cerr, std::string("* "));
+}
 }

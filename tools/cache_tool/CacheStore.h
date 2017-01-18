@@ -28,24 +28,24 @@
 
 namespace ApacheTrafficServer
 {
-  class CacheStore
+class CacheStore
+{
+  /// Configuration data for the cache store.
+  class Config
   {
-    /// Configuration data for the cache store.
-    class Config
-    {
-    public:
-      /// A single item (line) from the configuration.
-      struct Item
-      {
-	StringView
-      };
-    private:
-      /// Items read from the configuration.
-      std::vector<Item> _items;
-      /// The raw text of the configuration file.
-      std::unique_ptr<char*> _text;
+  public:
+    /// A single item (line) from the configuration.
+    struct Item {
+      StringView
     };
+
+  private:
+    /// Items read from the configuration.
+    std::vector<Item> _items;
+    /// The raw text of the configuration file.
+    std::unique_ptr<char *> _text;
   };
+};
 }
 
 #endif // CACHE_STORE_H

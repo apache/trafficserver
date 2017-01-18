@@ -40,7 +40,7 @@ class MemView;
 class StringView;
 
 int memcmp(MemView const &lhs, MemView const &rhs);
- int strcmp(StringView const &lhs, StringView const &rhs);
+int strcmp(StringView const &lhs, StringView const &rhs);
 int strcasecmp(StringView lhs, StringView rhs);
 
 /** A read only view of contiguous piece of memory.
@@ -89,7 +89,7 @@ public:
   constexpr MemView(std::nullptr_t);
 
   /// Convert from StringView.
-  constexpr MemView(StringView const& that);
+  constexpr MemView(StringView const &that);
 
   /** Equality.
 
@@ -148,7 +148,7 @@ public:
   /// This is faster but equivalent to constructing a new view with the same
   /// arguments and assigning it.
   /// @return @c this.
-  self &setView(const void* ptr, ///< Buffer address.
+  self &setView(const void *ptr, ///< Buffer address.
                 size_t n = 0     ///< Buffer size.
                 );
 
@@ -172,8 +172,7 @@ public:
       @return A pointer to the first occurrence of @a v in @a this
       or @c nullptr if @a v is not found.
   */
-  template < typename V >
-  const V *find(V v) const;
+  template <typename V> const V *find(V v) const;
 
   /** Find a value.
       The memory is searched as if it were an array of the value type @a V.
@@ -181,8 +180,7 @@ public:
       @return A pointer to the first value for which @a pred is @c true otherwise
       @c nullptr.
   */
-  template <typename V>
-  const V *find(std::function<bool(V)> const &pred);
+  template <typename V> const V *find(std::function<bool(V)> const &pred);
 
   /** Get the initial segment of the view before @a p.
 
@@ -273,15 +271,15 @@ public:
   /** Construct explicitly with a pointer and size.
    */
   constexpr StringView(const char *ptr, ///< Pointer to buffer.
-		       size_t n         ///< Size of buffer.
-		       );
+                       size_t n         ///< Size of buffer.
+                       );
 
   /** Construct from a half open range of two pointers.
       @note The byte at @start is in the view but the byte at @a end is not.
   */
   constexpr StringView(const char *start, ///< First byte in the view.
-		       const char *end    ///< First byte not in the view.
-		       );
+                       const char *end    ///< First byte not in the view.
+                       );
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -294,7 +292,7 @@ public:
   explicit constexpr StringView(const char *s);
 
   /// Construct from @c MemView to reference the same view.
-  constexpr StringView(MemView const& that);
+  constexpr StringView(MemView const &that);
 
   /** Equality.
 
@@ -362,7 +360,7 @@ public:
   /// This is faster but equivalent to constructing a new view with the same
   /// arguments and assigning it.
   /// @return @c this.
-  self &setView(const char* ptr, ///< Buffer address.
+  self &setView(const char *ptr, ///< Buffer address.
                 size_t n = 0     ///< Buffer size.
                 );
 
@@ -422,7 +420,6 @@ public:
   self prefix(self delimiters) const;
   /// Convenience overload, split on predicate.
   self prefix(std::function<bool(char)> const &pred) const;
-
 
   /** Split the view on the character at @a p.
 
@@ -487,7 +484,6 @@ public:
   /// Convenience overload, extract on predicate.
   self extractPrefix(std::function<bool(char)> const &pred);
 
-
   /** Get the trailing segment of the view after @a p.
 
       The byte at @a p is not included. If @a p is not in the view an empty view is returned.
@@ -537,13 +533,14 @@ inline constexpr MemView::MemView()
 inline constexpr MemView::MemView(void const *ptr, size_t n) : _ptr(ptr), _size(n)
 {
 }
-inline constexpr MemView::MemView(void const *start, void const *end) : _ptr(start), _size(static_cast<const char*>(end) - static_cast<const char*>(start))
+inline constexpr MemView::MemView(void const *start, void const *end)
+  : _ptr(start), _size(static_cast<const char *>(end) - static_cast<const char *>(start))
 {
 }
 inline constexpr MemView::MemView(std::nullptr_t) : _ptr(nullptr), _size(0)
 {
 }
-inline constexpr MemView::MemView(StringView const& that) : _ptr(that.ptr()), _size(that.size())
+inline constexpr MemView::MemView(StringView const &that) : _ptr(that.ptr()), _size(that.size())
 {
 }
 
@@ -559,7 +556,7 @@ inline MemView &
 MemView::setView(const void *ptr, const void *limit)
 {
   _ptr  = ptr;
-  _size = static_cast<const char*>(limit) - static_cast<const char*>(ptr);
+  _size = static_cast<const char *>(limit) - static_cast<const char *>(ptr);
   return *this;
 }
 
@@ -601,7 +598,7 @@ MemView::is_empty() const
 
 inline MemView &MemView::operator++()
 {
-  _ptr = static_cast<const char*>(_ptr) + 1;
+  _ptr = static_cast<const char *>(_ptr) + 1;
   --_size;
   return *this;
 }
@@ -613,7 +610,7 @@ MemView::operator+=(size_t n)
     _ptr  = nullptr;
     _size = 0;
   } else {
-    _ptr = static_cast<const char*>(_ptr) + n;
+    _ptr = static_cast<const char *>(_ptr) + n;
     _size -= n;
   }
   return *this;
@@ -633,7 +630,7 @@ MemView::ptr() const
 inline const void *
 MemView::end() const
 {
-  return static_cast<const char*>(_ptr) + _size;
+  return static_cast<const char *>(_ptr) + _size;
 }
 
 inline constexpr size_t
@@ -710,29 +707,31 @@ MemView::splitSuffix(const void *p)
   return zret;
 }
 
-template < typename V >
+template <typename V>
 inline const V *
 MemView::find(V v) const
 {
-  for ( const V* spot = static_cast<const V*>(_ptr), limit = spot + (_size/sizeof(V)) ; spot < limit ; ++spot )
-    if (v == *spot) return spot;
+  for (const V *spot = static_cast<const V *>(_ptr), limit = spot + (_size / sizeof(V)); spot < limit; ++spot)
+    if (v == *spot)
+      return spot;
   return nullptr;
 }
 
 // Specialize char for performance.
-template < >
+template <>
 inline const char *
 MemView::find(char v) const
 {
   return static_cast<const char *>(memchr(_ptr, v, _size));
 }
 
-template < typename V >
+template <typename V>
 inline const V *
 MemView::find(std::function<bool(V)> const &pred)
 {
-  for (const V *p = static_cast<const V *>(_ptr), *limit = p + (_size/sizeof(V)) ; p < limit; ++p)
-    if (pred(*p)) return p;
+  for (const V *p = static_cast<const V *>(_ptr), *limit = p + (_size / sizeof(V)); p < limit; ++p)
+    if (pred(*p))
+      return p;
   return nullptr;
 }
 
@@ -752,7 +751,7 @@ inline constexpr StringView::StringView(const char *s) : _ptr(s), _size(strlen(s
 inline constexpr StringView::StringView(std::nullptr_t) : _ptr(nullptr), _size(0)
 {
 }
-inline constexpr StringView::StringView(MemView const& that) : _ptr(static_cast<const char*>(that.ptr())), _size(that.size())
+inline constexpr StringView::StringView(MemView const &that) : _ptr(static_cast<const char *>(that.ptr())), _size(that.size())
 {
 }
 
@@ -1008,7 +1007,7 @@ StringView::find(self delimiters) const
 inline const char *
 StringView::find(std::function<bool(char)> const &pred) const
 {
-  const char* p = std::find_if(this->begin(), this->end(), pred);
+  const char *p = std::find_if(this->begin(), this->end(), pred);
   return p == this->end() ? nullptr : p;
 }
 
@@ -1098,8 +1097,8 @@ namespace detail
 
 namespace std
 {
-  ostream& operator<<(ostream &os, const ApacheTrafficServer::MemView &b);
-  ostream& operator<<(ostream &os, const ApacheTrafficServer::StringView &b);
+ostream &operator<<(ostream &os, const ApacheTrafficServer::MemView &b);
+ostream &operator<<(ostream &os, const ApacheTrafficServer::StringView &b);
 }
 
 #endif // TS_BUFFER_HEADER

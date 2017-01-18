@@ -31,90 +31,95 @@
 #define CACHE_TOOL_COMMAND_H
 namespace ApacheTrafficServer
 {
-  // Because in C+11 std::max is not constexpr
-  template < typename I > constexpr inline I maximum(I lhs, I rhs) { return lhs < rhs ? rhs : lhs; }
+// Because in C+11 std::max is not constexpr
+template <typename I>
+constexpr inline I
+maximum(I lhs, I rhs)
+{
+  return lhs < rhs ? rhs : lhs;
+}
 
-  /// Top level container for commands.
-  class CommandTable
+/// Top level container for commands.
+class CommandTable
+{
+  typedef CommandTable self; ///< Self reference type.
+public:
+  /// Signature for actual command implementation.
+  typedef std::function<ts::Rv<bool>(int argc, char *argv[])> CommandFunction;
+
+  CommandTable();
+
+  /// A command.
+  /// This is either a leaf (and has a function for an implementation) or it is a group
+  /// of nested commands.
+  class Command
   {
-    typedef CommandTable self; ///< Self reference type.
+    typedef Command self; ///< Self reference type.
   public:
-    /// Signature for actual command implementation.
-    typedef std::function<ts::Rv<bool> (int argc, char* argv[])> CommandFunction;
+    ~Command();
 
-    CommandTable();
-
-    /// A command.
-    /// This is either a leaf (and has a function for an implementation) or it is a group
-    /// of nested commands.
-    class Command
-    {
-      typedef Command self; ///< Self reference type.
-    public:
-      ~Command();
-
-      /** Add a subcommand to this command.
-          @return The subcommand object.
-      */
-      Command& subCommand(std::string const& name, std::string const& help);
-      /** Add a subcommand to this command.
-          @return The new sub command instance.
-      */
-      Command& subCommand(std::string const& name, std::string const& help, CommandFunction const& f);
-      /** Add a leaf command.
-          @return This new sub command instance.
-      */
-      Command& set(CommandFunction const& f);
-
-      /** Invoke a command.
-          @return The return value of the executed command, or an error value if the command was not found.
-      */
-      ts::Rv<bool> invoke(int argc, char* argv[]);
-
-      void helpMessage(int argc, char* argv[], std::ostream& out = std::cerr, std::string const& prefix = std::string()) const;
-
-    protected:
-      typedef std::vector<Command> CommandGroup;
-
-      std::string _name; ///< Command name.
-      std::string _help; ///< Help message.
-      /// Command to execute if no more keywords.
-      CommandFunction _func;
-      /// Next command for current keyword.
-      CommandGroup _group;
-
-      /// Default constructor, no execution logic.
-      Command();
-      /// Construct with a function for this command.
-      Command(std::string const& name, std::string const& help);
-      /// Construct with a function for this command.
-      Command(std::string const& name, std::string const& help, CommandFunction const& f);
-
-      friend class CommandTable;
-    };
-
-    /** Add a direct command.
-        @return The created @c Command instance.
-     */
-    Command& add(std::string const& name, std::string const& help, CommandFunction const& f);
-
-    /** Add a parent command.
-        @return The created @c Command instance.
+    /** Add a subcommand to this command.
+        @return The subcommand object.
     */
-    Command& add(std::string const& name, std::string const& help);
+    Command &subCommand(std::string const &name, std::string const &help);
+    /** Add a subcommand to this command.
+        @return The new sub command instance.
+    */
+    Command &subCommand(std::string const &name, std::string const &help, CommandFunction const &f);
+    /** Add a leaf command.
+        @return This new sub command instance.
+    */
+    Command &set(CommandFunction const &f);
 
     /** Invoke a command.
         @return The return value of the executed command, or an error value if the command was not found.
     */
-    ts::Rv<bool> invoke(int argc, char* argv[]);
+    ts::Rv<bool> invoke(int argc, char *argv[]);
 
-    void helpMessage(int argc, char* argv[]) const;
+    void helpMessage(int argc, char *argv[], std::ostream &out = std::cerr, std::string const &prefix = std::string()) const;
 
   protected:
-    Command _top;
-    static int _opt_idx;
+    typedef std::vector<Command> CommandGroup;
 
-    friend class Command;
+    std::string _name; ///< Command name.
+    std::string _help; ///< Help message.
+    /// Command to execute if no more keywords.
+    CommandFunction _func;
+    /// Next command for current keyword.
+    CommandGroup _group;
+
+    /// Default constructor, no execution logic.
+    Command();
+    /// Construct with a function for this command.
+    Command(std::string const &name, std::string const &help);
+    /// Construct with a function for this command.
+    Command(std::string const &name, std::string const &help, CommandFunction const &f);
+
+    friend class CommandTable;
   };
+
+  /** Add a direct command.
+      @return The created @c Command instance.
+   */
+  Command &add(std::string const &name, std::string const &help, CommandFunction const &f);
+
+  /** Add a parent command.
+      @return The created @c Command instance.
+  */
+  Command &add(std::string const &name, std::string const &help);
+
+  /** Invoke a command.
+      @return The return value of the executed command, or an error value if the command was not found.
+  */
+  ts::Rv<bool> invoke(int argc, char *argv[]);
+
+  void helpMessage(int argc, char *argv[]) const;
+
+protected:
+  Command _top;
+  static int _opt_idx;
+
+  friend class Command;
+};
 }
 #endif
