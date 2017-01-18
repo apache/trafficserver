@@ -33,13 +33,15 @@ namespace ApacheTrafficServer
 
   typedef Metric<1, int64_t> Bytes;
   typedef Metric<1024, int64_t> Kilobytes;
-  typedef Metric<1<<20, int64_t> Megabytes;
+  typedef Metric<1024 * Kilobytes::SCALE, int64_t> Megabytes;
 
+  // Units of allocation for stripes.
+  typedef Metric<128 * Megabytes::SCALE, int64_t> CacheStripeBlocks;
   // Size measurement of cache storage.
   // Also size of meta data storage units.
-  typedef Metric<8192, int64_t> CacheStripeBlocks;
+  typedef Metric<8 * Kilobytes::SCALE, int64_t> CacheStoreBlocks;
   // Size unit for content stored in cache.
-  typedef Metric<512, int64_t> CacheContentBlocks;
+  typedef Metric<512, int64_t> CacheDataBlocks;
 
   /** A cache span is a representation of raw storage.
       It corresponds to a raw disk, disk partition, file, or directory.
@@ -60,7 +62,7 @@ namespace ApacheTrafficServer
    */
   struct CacheStripeDescriptor {
     Bytes offset; // offset of start of stripe from start of span.
-    CacheStripeBlocks len;    // length of block.
+    CacheStoreBlocks len;    // length of block.
     uint32_t vol_idx; ///< If in use, the volume index.
     unsigned int type : 3;
     unsigned int free : 1;

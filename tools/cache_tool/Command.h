@@ -23,6 +23,8 @@
 
 #include <vector>
 #include <functional>
+#include <string>
+#include <iostream>
 #include <tsconfig/Errata.h>
 
 #if !defined(CACHE_TOOL_COMMAND_H)
@@ -69,6 +71,8 @@ namespace ApacheTrafficServer
       */
       ts::Rv<bool> invoke(int argc, char* argv[]);
 
+      void helpMessage(int argc, char* argv[], std::ostream& out = std::cerr, std::string const& prefix = std::string()) const;
+
     protected:
       typedef std::vector<Command> CommandGroup;
 
@@ -104,7 +108,7 @@ namespace ApacheTrafficServer
     */
     ts::Rv<bool> invoke(int argc, char* argv[]);
 
-    ts::Rv<bool> helpMessage(int argc, char* argv[]);
+    void helpMessage(int argc, char* argv[]) const;
 
   protected:
     Command _top;

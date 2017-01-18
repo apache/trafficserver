@@ -42,7 +42,7 @@ namespace ts {
 }
 
 namespace ApacheTrafficServer {
-  const Bytes CacheSpan::OFFSET{ CacheStripeBlocks::scale() };
+  const Bytes CacheSpan::OFFSET{ CacheStoreBlocks{1} };
 }
 
 namespace {
@@ -94,7 +94,7 @@ namespace {
     while (mem.size() >= sizeof(ts::CacheStripeMeta)) {
       // The meta data is stored aligned on a stripe block boundary, so only need to check there.
       test_site = mem;
-      mem += ts::CacheStripeBlocks::SCALE; // always move this forward to make restarting search easy.
+      mem += ts::CacheStoreBlocks::SCALE; // always move this forward to make restarting search easy.
 
       if (Validate_Stripe_Meta(*reinterpret_cast<ts::CacheStripeMeta const*>(test_site.ptr()))) {
         std::get<0>(zret) = 1;
@@ -108,7 +108,7 @@ namespace {
   {
     // Assuming header + free list fits in one cache stripe block, which isn't true for large stripes (>2G or so).
     // Need to detect that, presumably by checking that the segment count fits in the stripe block.
-    ts::CacheStripeBlocks hdr_size { 1 };
+    ts::CacheStoreBlocks hdr_size { 1 };
     off_t space = delta - hdr_size.units();
     int64_t n_buckets = space / 40;
     data.segments = n_buckets / (1<<14);
@@ -187,7 +187,7 @@ namespace {
           // do another read.
           if (!data) {
             pos += N;
-            n = pread(fd, buff, ts::CacheStripeBlocks::SCALE, pos);
+            n = pread(fd, buff, ts::CacheStoreBlocks::SCALE, pos);
             data.setView(buff, n);
           }
           std::tie(found, stripe_mem) = Probe_For_Stripe(data);
@@ -199,7 +199,7 @@ namespace {
             printf("Found Header B at expected location %" PRIu64 ".\n", stripe_pos[2]);
 
             // Footer B must be at the same relative offset to Header B as Footer A -> Header A.
-            n = pread(fd, buff, ts::CacheStripeBlocks::SCALE, stripe_pos[2] + delta);
+            n = pread(fd, buff, ts::CacheStoreBlocks::SCALE, stripe_pos[2] + delta);
             data.setView(buff, n);
             std::tie(found, stripe_mem) = Probe_For_Stripe(data);
             if (found == 1) {
@@ -406,7 +406,7 @@ namespace {
   void
   Span::clearPermanently()
   {
-    alignas(512) static char zero[ts::CacheStripeBlocks::SCALE]; // should be all zero, it's static.
+    alignas(512) static char zero[ts::CacheStoreBlocks::SCALE]; // should be all zero, it's static.
     std::cout << "Clearing " << _path << " permanently on disk ";
     ssize_t n = pwrite(_fd, zero, sizeof(zero), ts::CacheSpan::OFFSET.units());
     if (n == sizeof(zero)) std::cout << "done";
@@ -451,11 +451,12 @@ int main(int argc, char* argv[])
 {
   int opt_idx = 0;
   int opt_val;
+  bool help = false;
   while (-1 != (opt_val = getopt_long(argc, argv, "h", Options, &opt_idx))) {
     switch (opt_val) {
         case 'h':
           printf("Usage: %s [device_path|config_file] <COMMAND> [<SUBCOMMAND> ...]\n", argv[0]);
-          return 1;
+          help = true;
           break;
       }
   }
@@ -464,15 +465,20 @@ int main(int argc, char* argv[])
     .subCommand(std::string("stripes"), std::string("The stripes"), [] (int argc, char* argv[]) { return List_Stripes(Cache::SpanDumpDepth::STRIPE, argc, argv); });
   Commands.add(std::string("clear"), std::string("Clear spans"), &Clear_Spans);
 
+  if (help) {
+    Commands.helpMessage(argc - optind, argv + optind);
+    exit(1);
+  }
+
   if (optind < argc) {
     TargetFile = argv[optind];
     argc -= optind+1;
     argv += optind+1;
-  } else {
-    Commands.helpMessage(argc, argv);
-    exit(1);
   }
   ts::Rv<bool> result = Commands.invoke(argc, argv);
 
+  if (!result) {
+    std::cerr << result.errata();
+  }
   return 0;
 }

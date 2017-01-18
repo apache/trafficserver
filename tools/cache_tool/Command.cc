@@ -25,7 +25,6 @@
 #include <new>
 #include <algorithm>
 #include <string.h>
-#include <iostream>
 #include <sstream>
 
 namespace ApacheTrafficServer
@@ -96,6 +95,27 @@ namespace ApacheTrafficServer
     return zret;
   }
 
+  void CommandTable::Command::helpMessage(int argc, char* argv[], std::ostream& out, std::string const& prefix) const
+  {
+
+    if (CommandTable::_opt_idx >= argc || argv[CommandTable::_opt_idx][0] == '-') {
+      // Tail of command keywords, start listing
+      if (!_name.empty()) out << prefix << _name << ": " << _help << std::endl;
+      for ( Command const& c : _group ) c.helpMessage(argc, argv, out, "  " + prefix);
+    } else {
+      char const* tag = argv[CommandTable::_opt_idx];
+      auto spot = std::find_if(_group.begin(), _group.end(),
+                               [tag](CommandGroup::value_type const& elt) {
+                                 return 0 == strcasecmp(tag, elt._name.c_str()); } );
+      if (spot != _group.end()) {
+        ++CommandTable::_opt_idx;
+        spot->helpMessage(argc, argv, out, prefix);
+      } else {
+        out <<  ERR_COMMAND_TAG_NOT_FOUND(tag) << std::endl;
+      }
+    }
+  }
+
   CommandTable::Command::~Command() { }
 
   CommandTable::CommandTable()
@@ -118,9 +138,11 @@ namespace ApacheTrafficServer
     return _top.invoke(argc, argv);
   }
 
-  ts::Rv<bool> CommandTable::helpMessage(int argc, char* argv[])
+  // This is basically cloned from invoke(), need to find how to do some unification.
+  void CommandTable::helpMessage(int argc, char* argv[]) const
   {
-    std::cout << "Help message" << std::endl;
-    return false;
+    _opt_idx = 0;
+    std::cerr << "Command tree" << std::endl;
+    _top.helpMessage(argc, argv, std::cerr, std::string("* "));
   }
 }
