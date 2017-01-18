@@ -93,7 +93,7 @@ namespace ApacheTrafficServer
     self& operator = (self const& that);
 
     /// Run time access to the scale of this metric (template arg @a N).
-    static intmax_t scale();
+    static constexpr intmax_t scale();
 
   protected:
     Count _n; ///< Number of scale units.
@@ -111,6 +111,8 @@ namespace ApacheTrafficServer
   inline auto Metric<N,C>::operator = (Count n) -> self& { _n = n; return *this; }
   template < intmax_t N, typename C >
   inline auto Metric<N,C>::operator = (self const& that) -> self& { _n = that._n; return *this; }
+  template < intmax_t N, typename C >
+  constexpr inline intmax_t Metric<N,C>::scale() { return SCALE; }
 
   template <intmax_t N, typename C>
     template <typename I>
