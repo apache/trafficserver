@@ -4062,13 +4062,17 @@ HttpSM::do_remap_request(bool run_inline)
   }
 
   // check if the overridden client cert filename is already attached to an existing ssl context
-  ats_scoped_str clientCert(Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename));
-  auto tCTX = params->getCTX(clientCert);
+  if (t_state.txn_conf->client_cert_filepath && t_state.txn_conf->client_cert_filename) {
+    ats_scoped_str clientCert(Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename));
+    if (clientCert != nullptr) {
+      auto tCTX = params->getCTX(clientCert);
 
-  if (tCTX == nullptr) {
-    // make new client ctx and add it to the ctx list
-    auto tctx = params->getNewCTX(clientCert);
-    params->InsertCTX(clientCert, tctx);
+      if (tCTX == nullptr) {
+        // make new client ctx and add it to the ctx list
+        auto tctx = params->getNewCTX(clientCert);
+        params->InsertCTX(clientCert, tctx);
+      }
+    }
   }
 
   return;

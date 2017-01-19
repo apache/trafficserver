@@ -307,7 +307,9 @@ SSLConfigParams::initialize()
   ssl_client_cert_path     = nullptr;
   REC_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
   REC_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
-  set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, nullptr, &clientCertPath);
+  if (ssl_client_cert_filename && ssl_client_cert_path) {
+    set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, nullptr, &clientCertPath);
+  }
   ats_free_null(ssl_client_cert_filename);
   ats_free_null(ssl_client_cert_path);
 
@@ -351,9 +353,9 @@ SSLConfigParams::initialize()
   client_ctx = SSLInitClientContext(this);
   if (!client_ctx) {
     SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
+  } else {
+    InsertCTX(this->clientCertPath, this->client_ctx);
   }
-
-  InsertCTX(this->clientCertPath, this->client_ctx);
 }
 
 // getCTX: returns the context attached to the given certificate
