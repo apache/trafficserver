@@ -231,6 +231,7 @@ static int no_cache            = 0;
 static double evo_rate         = 0.0;
 static double zipf             = 0.0;
 static int zipf_bucket_size    = 1;
+static int range_model         = 0;
 
 static const ArgumentDescription argument_descriptions[] = {
   {"proxy_port", 'p', "Proxy Port", "I", &proxy_port, "JTEST_PROXY_PORT", NULL},
@@ -297,6 +298,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"zipf", '8', "Use a Zipf distribution with this alpha (say 1.2)", "D", &zipf, "JTEST_ZIPF", NULL},
   {"evo_rate", '9', "Evolving Hotset Rate (evolutions/hour)", "D", &evo_rate, "JTEST_EVOLVING_HOTSET_RATE", NULL},
   {"debug", 'd', "Debug Flag", "F", &debug, "JTEST_DEBUG", NULL},
+  {"range_model", ' ', "Range Model", "I", &range_model, "JTEST_RANGE_MODEL", NULL},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 int n_argument_descriptions = countof(argument_descriptions);
@@ -328,6 +330,7 @@ struct FD {
   unsigned int ip;
   unsigned int binary : 1;
   unsigned int ims : 1;
+  unsigned int range : 1;
   unsigned int drop_after_CL : 1;
   unsigned int client_abort : 1;
   unsigned int jg_compressed : 1;
@@ -337,20 +340,28 @@ struct FD {
   FTP_MODE ftp_mode;
   unsigned int ftp_peer_addr;
   unsigned short ftp_peer_port;
+  unsigned long range_bytes;
+  unsigned long range_end;
+  unsigned long range_start;
+  int all_length;
 
   void
   reset()
   {
-    next     = 0;
-    fd       = -1;
-    read_cb  = NULL;
-    write_cb = NULL;
-    state    = 0;
-    start    = 0;
-    active   = 0;
-    ready    = 0;
-    req_pos  = 0;
-    length   = 0;
+    next        = 0;
+    fd          = -1;
+    read_cb     = NULL;
+    write_cb    = NULL;
+    state       = 0;
+    start       = 0;
+    active      = 0;
+    ready       = 0;
+    req_pos     = 0;
+    length      = 0;
+    range       = 0;
+    range_bytes = 0;
+    range_start = 0;
+    range_end   = 0;
 
     if (!urls_mode) {
       response = NULL;
@@ -373,6 +384,7 @@ struct FD {
     ftp_mode           = FTP_NULL;
     ftp_peer_addr      = 0;
     ftp_peer_port      = 0;
+    all_length         = 0;
   }
 
   void close();
@@ -680,7 +692,27 @@ send_response(int sock)
     }
     int print_len = 0;
     if (!ftp) {
-      if (fd[sock].ims) {
+      if (fd[sock].range) {
+        char buff[1024];
+        memset(buff, 0, 1024);
+        if (fd[sock].range_end > fd[sock].range_start) {
+          snprintf(buff, 1024, "Content-Range: bytes %lu-%lu/%d", fd[sock].range_start, fd[sock].range_end, fd[sock].all_length);
+        } else {
+          snprintf(buff, 1024, "Content-Range: bytes %lu-%d/%d", fd[sock].range_start, fd[sock].all_length, fd[sock].all_length);
+        }
+        print_len = sprintf(header, "HTTP/1.1 206 Partial-Content\r\n"
+                                    "Content-Type: %s\r\n"
+                                    "Cache-Control: max-age=630720000\r\n"
+                                    "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
+                                    "%s"
+                                    "Content-Length: %d\r\n"
+                                    "%s\r\n"
+                                    "%s"
+                                    "\r\n%s",
+                            content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "Connection: close\r\n",
+                            fd[sock].response_length, buff, no_cache ? "Pragma: no-cache\r\nCache-Control: no-cache\r\n" : "",
+                            url_start ? url_start : "");
+      } else if (fd[sock].ims) {
         print_len = sprintf(header, "HTTP/1.0 304 Not-Modified\r\n"
                                     "Content-Type: %s\r\n"
                                     "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
@@ -733,15 +765,25 @@ send_response(int sock)
     }
     fd[sock].response += url_len;
     fd[sock].length -= url_len;
+    if (fd[sock].range) {
+      fd[sock].range_bytes -= url_len;
+    }
     total_server_response_header_bytes += print_len - url_len;
     total_server_response_body_bytes += url_len;
   }
 
   /* then the response */
   towrite = server_speed ? server_speed : MAX_RESPONSE_LENGTH;
-  if (fd[sock].length < towrite) {
-    towrite = fd[sock].length;
+  if (!fd[sock].range) {
+    if (fd[sock].length < towrite) {
+      towrite = fd[sock].length;
+    }
+  } else {
+    if (fd[sock].range_bytes < (unsigned long)towrite) {
+      towrite = fd[sock].range_bytes;
+    }
   }
+
   if (towrite > 0) {
     if (fast(sock, server_speed, fd[sock].bytes)) {
       return 0;
@@ -759,6 +801,10 @@ send_response(int sock)
     }
     if (verbose) {
       printf("wrote %d %d\n", sock, err);
+    }
+
+    if (fd[sock].range) {
+      ink_assert(err <= (int)(fd[sock].range_end - fd[sock].range_start + 1));
     }
 
     new_tbytes += err;
@@ -818,6 +864,9 @@ strncasestr(char *s, const char *find, int len)
 static char *
 check_keepalive(char *r, int length)
 {
+  if (range_model) {
+    return NULL;
+  }
   char *ka = strncasestr(r, "Connection:", length);
   if (ka) {
     int l   = length - (ka - r);
@@ -997,16 +1046,38 @@ read_request(int sock)
           if (verbose) {
             printf("read_request %d got request %d\n", sock, length);
           }
-          char *ims = strncasestr(buffer, "If-Modified-Since:", i);
+          char *ims   = strncasestr(buffer, "If-Modified-Since:", i);
+          char *range = strncasestr(buffer, "Range:", i);
           // coverity[dont_call]
           if (drand48() > ims_rate) {
             ims = NULL;
           }
+          if (range) {
+            fd[sock].range = 1;
+            if (sscanf(range, "Range: bytes=%lu-%lu", &fd[sock].range_start, &fd[sock].range_end) == 2) {
+              fd[sock].range_bytes = fd[sock].range_end - fd[sock].range_start + 1;
+            } else if (sscanf(range, "Range: bytes=%lu-", &fd[sock].range_start) == 1) {
+              fd[sock].range_bytes = length - fd[sock].range_start + 1;
+            } else {
+              if (verbose)
+                printf("unvalid 206");
+            }
+            ims = NULL;
+            if (verbose) {
+              printf("sending Range: 206 Partial %lu-%lu\n", fd[sock].range_start, fd[sock].range_end);
+            }
+          }
+
           fd[sock].ims = ims ? 1 : 0;
           if (!ims) {
-            fd[sock].response_length = fd[sock].length = length;
-            fd[sock].nalternate                        = check_alt(fd[sock].req_header, strlen(fd[sock].req_header));
-            fd[sock].response                          = response_buffer + length % 256 + fd[sock].nalternate;
+            if (range) {
+              fd[sock].all_length      = length;
+              fd[sock].response_length = fd[sock].length = fd[sock].range_bytes;
+            } else {
+              fd[sock].response_length = fd[sock].length = length;
+            }
+            fd[sock].nalternate = check_alt(fd[sock].req_header, strlen(fd[sock].req_header));
+            fd[sock].response   = response_buffer + length % 256 + fd[sock].nalternate;
           } else {
             fd[sock].nalternate = 0;
             if (verbose) {
@@ -2074,7 +2145,7 @@ follow_links(int sock)
 static int
 verify_content(int sock, char *buf, int done)
 {
-  if (urls_mode && !check_content) {
+  if ((urls_mode && !check_content) || range_model) {
     return 1;
   }
   int l    = fd[sock].response_length;
@@ -2264,6 +2335,7 @@ read_response(int sock)
         total_proxy_response_body_bytes += lbody;
         total_proxy_response_header_bytes += p - fd[sock].req_header;
         fd[sock].length -= lbody;
+        ink_assert(fd[sock].length >= 0);
         fd[sock].req_pos = -1;
         // coverity[dont_call]
         if (fd[sock].length && drand48() < client_abort_rate) {
@@ -2320,8 +2392,8 @@ read_response(int sock)
             *p = 0;
           }
         }
-        printf("error response %d after %dms: '%s':'%s'\n", sock, (int)elapsed_from_start(sock), fd[sock].base_url,
-               fd[sock].req_header);
+        printf("error response %d after %dms: '%s':'%s' %lu-%lu\n", sock, (int)elapsed_from_start(sock), fd[sock].base_url,
+               fd[sock].req_header, fd[sock].range_start, fd[sock].range_end);
       }
       return read_response_error(sock);
     }
@@ -2642,6 +2714,9 @@ static void
 make_bfc_client(unsigned int addr, int port)
 {
   int sock = -1;
+  char rbuf[1024];
+  memset(rbuf, 0, 1024);
+
   if (bandwidth_test && bandwidth_test_to_go-- <= 0) {
     return;
   }
@@ -2665,10 +2740,62 @@ make_bfc_client(unsigned int addr, int port)
   double dr = drand48();
   if (zipf == 0.0) {
     if (h < hitrate) {
-      dr                       = 1.0 + (floor(dr * hotset) / hotset);
-      fd[sock].response_length = gen_bfc_dist(dr - 1.0);
+      if (!range_model) {
+        dr                       = 1.0 + (floor(dr * hotset) / hotset);
+        fd[sock].response_length = gen_bfc_dist(dr - 1.0);
+      } else {
+        int tmp[3];
+        dr     = 1.0 + (floor(dr * hotset) / hotset);
+        tmp[0] = gen_bfc_dist(dr - 1.0);
+        tmp[1] = ((int)(drand48() * 1000000)) % (tmp[0] - 1 - 0 + 1);
+        tmp[2] = ((int)(drand48() * 1000000)) % (tmp[0] - 1 - 0 + 1) + tmp[1] + 100;
+        if (tmp[0] > 100) {
+          if (tmp[0] <= tmp[2]) {
+            tmp[2] = tmp[0] - 1;
+          }
+
+          if (tmp[2] - tmp[1] < 100) {
+            tmp[1] = tmp[2] - 100;
+          }
+        } else {
+          tmp[1] = 0;
+          tmp[2] = 99;
+        }
+
+        fd[sock].response_length = tmp[0];
+        fd[sock].range_start     = tmp[1] > tmp[2] ? tmp[2] : tmp[1];
+        fd[sock].range_end       = tmp[1] < tmp[2] ? tmp[2] : tmp[1];
+        ink_assert((int)(fd[sock].range_end - fd[sock].range_start + 1) >= 100);
+        snprintf(rbuf, 1024, "Range: bytes=%lu-%lu\r\n", fd[sock].range_start, fd[sock].range_end);
+      }
     } else {
-      fd[sock].response_length = gen_bfc_dist(dr);
+      if (!range_model) {
+        fd[sock].response_length = gen_bfc_dist(dr);
+      } else {
+        int tmp[3];
+        tmp[0] = gen_bfc_dist(dr);
+        tmp[1] = ((int)(drand48() * 1000000)) % (tmp[0] - 1 - 0 + 1);
+        tmp[2] = ((int)(drand48() * 1000000)) % (tmp[0] - 1 - 0 + 1) + tmp[1] + 100;
+
+        if (tmp[0] > 100) {
+          if (tmp[0] <= tmp[2]) {
+            tmp[2] = tmp[0] - 1;
+          }
+
+          if (tmp[2] - tmp[1] < 100) {
+            tmp[1] = tmp[2] - 100;
+          }
+        } else {
+          tmp[1] = 0;
+          tmp[2] = 99;
+        }
+
+        fd[sock].response_length = tmp[0];
+        fd[sock].range_start     = tmp[1] > tmp[2] ? tmp[2] : tmp[1];
+        fd[sock].range_end       = tmp[1] < tmp[2] ? tmp[2] : tmp[1];
+        ink_assert((int)(fd[sock].range_end - fd[sock].range_start + 1) >= 100);
+        snprintf(rbuf, 1024, "Range: bytes=%lu-%lu\r\n", fd[sock].range_start, fd[sock].range_end);
+      }
     }
   } else {
     unsigned long long int doc = get_zipf(dr);
@@ -2679,6 +2806,7 @@ make_bfc_client(unsigned int addr, int port)
     y /= 0x100000000LL; // deterministic random number between 0 and 1.0
     fd[sock].response_length = gen_bfc_dist(y);
     dr                       = doc;
+    range_model              = 0;
   }
   if (verbose) {
     printf("gen_bfc_dist %d\n", fd[sock].response_length);
@@ -2731,22 +2859,36 @@ make_bfc_client(unsigned int addr, int port)
     sprintf(evo_str, ".%u", ((unsigned int)evo_index));
   }
   if (0 == hostrequest) {
-    sprintf(fd[sock].req_header, ftp ? "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-                                       "%s"
-                                       "%s"
-                                       "%s"
-                                       "%s"
-                                       "\r\n" :
-                                       "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-                                       "%s"
-                                       "%s"
-                                       "%s"
-                                       "%s"
-                                       "\r\n",
-            local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
-            fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
-            // coverity[dont_call]
-            reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+    if (range_model) {
+      sprintf(fd[sock].req_header, "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "\r\n",
+              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, "Connection: close\r\n",
+              // coverity[dont_call]
+              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
+    } else {
+      sprintf(fd[sock].req_header, ftp ? "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+                                         "%s"
+                                         "%s"
+                                         "%s"
+                                         "%s"
+                                         "\r\n" :
+                                         "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+                                         "%s"
+                                         "%s"
+                                         "%s"
+                                         "%s"
+                                         "\r\n",
+              local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
+              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
+              // coverity[dont_call]
+              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+    }
   } else if (1 == hostrequest) {
     sprintf(fd[sock].req_header, "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
                                  "Host: %s:%d\r\n"
@@ -2771,6 +2913,12 @@ make_bfc_client(unsigned int addr, int port)
             // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
   }
+
+  if (range_model) {
+    fd[sock].response_length = fd[sock].range_end - fd[sock].range_start + 1;
+    ink_assert(fd[sock].response_length > 0);
+  }
+
   if (verbose) {
     printf("request %d [%s]\n", sock, fd[sock].req_header);
   }
