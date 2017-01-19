@@ -73,6 +73,21 @@ struct Volume {
   std::vector<StripeRef> _stripes;
 };
 
+// Data parsed from the volume config file.
+struct VolumeConfig
+{
+  ts::Errata load(ts::FilePath const& path);
+
+  struct VolData
+  {
+    int _idx; ///< Volume index.
+    int _percent; ///< Size if specified as a percent.
+    ts::CacheStripeBlocks _size; ///< Size if specified as an absolute.
+  };
+
+  std::vector<VolData> _volumes;
+};
+
 // All of these free functions need to be moved to the Cache class.
 
 bool
@@ -241,7 +256,7 @@ Open_Stripe(ats_scoped_fd const &fd, ts::CacheStripeDescriptor const &block)
 struct Cache {
   ~Cache();
 
-  void load(ts::FilePath const &path);
+  ts::Errata load(ts::FilePath const &path);
   void loadConfig(ts::FilePath const &path);
   void loadDevice(ts::FilePath const &path);
 
@@ -253,17 +268,20 @@ struct Cache {
   std::map<int, Volume> _volumes;
 };
 
-void
+ts::Errata
 Cache::load(ts::FilePath const &path)
 {
+  ts::Errata zret;
   if (!path.is_readable())
-    throw(std::system_error(errno, std::system_category(), static_cast<char const *>(path)));
+    zret = ts::Errata::Message(0,0,path," is not readable");
+//    throw(std::system_error(errno, std::system_category(), static_cast<char const *>(path)));
   else if (path.is_regular_file())
     this->loadConfig(path);
   else if (path.is_char_device() || path.is_block_device())
     this->loadDevice(path);
   else
     printf("Not a valid file type: '%s'\n", static_cast<char const *>(path));
+  return zret;
 }
 
 void
@@ -411,26 +429,40 @@ Span::clearPermanently()
 struct option Options[] = {{"help", false, nullptr, 'h'}};
 }
 
-ts::Rv<bool>
+ts::Errata
 List_Stripes(Cache::SpanDumpDepth depth, int argc, char *argv[])
 {
+  ts::Errata zret;
   Cache cache;
-  cache.load(TargetFile);
-  cache.dumpSpans(depth);
-  cache.dumpVolumes();
-  return true;
+
+  if ((zret = cache.load(TargetFile))) {
+      cache.dumpSpans(depth);
+      cache.dumpVolumes();
+  }
+  return zret;
 }
 
-ts::Rv<bool>
+ts::Errata
+Simulate_Span_Allocation(int argc, char *argv[])
+{
+  ts::Errata zret;
+  return zret;
+}
+
+ts::Errata
 Clear_Spans(int argc, char *argv[])
 {
+  ts::Errata zret;
+
   Cache cache;
   OPEN_RW_FLAGS = O_RDWR;
-  cache.load(TargetFile);
-  for (auto *span : cache._spans) {
-    span->clearPermanently();
+  if ((zret = cache.load(TargetFile))) {
+    for (auto *span : cache._spans) {
+      span->clearPermanently();
+    }
   }
-  return true;
+
+  return zret;
 }
 
 int
@@ -465,10 +497,10 @@ main(int argc, char *argv[])
     argc -= optind + 1;
     argv += optind + 1;
   }
-  ts::Rv<bool> result = Commands.invoke(argc, argv);
+  ts::Errata result = Commands.invoke(argc, argv);
 
   if (!result) {
-    std::cerr << result.errata();
+    std::cerr << result;
   }
   return 0;
 }

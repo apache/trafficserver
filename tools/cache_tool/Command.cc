@@ -80,17 +80,17 @@ CommandTable::Command::subCommand(std::string const &name, std::string const &he
   return _group.back();
 }
 
-ts::Rv<bool>
+ts::Errata
 CommandTable::Command::invoke(int argc, char *argv[])
 {
-  ts::Rv<bool> zret = true;
+  ts::Errata zret;
 
   if (CommandTable::_opt_idx >= argc || argv[CommandTable::_opt_idx][0] == '-') {
     // Tail of command keywords, try to invoke.
     if (_func)
       zret = _func(argc - CommandTable::_opt_idx, argv + CommandTable::_opt_idx);
     else
-      zret = false, zret = ERR_SUBCOMMAND_REQUIRED();
+      zret = ERR_SUBCOMMAND_REQUIRED();
   } else {
     char const *tag = argv[CommandTable::_opt_idx];
     auto spot       = std::find_if(_group.begin(), _group.end(),
@@ -99,7 +99,6 @@ CommandTable::Command::invoke(int argc, char *argv[])
       ++CommandTable::_opt_idx;
       zret = spot->invoke(argc, argv);
     } else {
-      zret = false;
       zret = ERR_COMMAND_TAG_NOT_FOUND(tag);
     }
   }
@@ -152,7 +151,7 @@ CommandTable::add(std::string const &name, std::string const &help, CommandFunct
   return _top.subCommand(name, help, f);
 }
 
-ts::Rv<bool>
+ts::Errata
 CommandTable::invoke(int argc, char *argv[])
 {
   _opt_idx = 0;

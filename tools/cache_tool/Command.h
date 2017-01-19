@@ -45,7 +45,7 @@ class CommandTable
   typedef CommandTable self; ///< Self reference type.
 public:
   /// Signature for actual command implementation.
-  typedef std::function<ts::Rv<bool>(int argc, char *argv[])> CommandFunction;
+  typedef std::function<ts::Errata(int argc, char *argv[])> CommandFunction;
 
   CommandTable();
 
@@ -74,7 +74,7 @@ public:
     /** Invoke a command.
         @return The return value of the executed command, or an error value if the command was not found.
     */
-    ts::Rv<bool> invoke(int argc, char *argv[]);
+    ts::Errata invoke(int argc, char *argv[]);
 
     void helpMessage(int argc, char *argv[], std::ostream &out = std::cerr, std::string const &prefix = std::string()) const;
 
@@ -111,7 +111,7 @@ public:
   /** Invoke a command.
       @return The return value of the executed command, or an error value if the command was not found.
   */
-  ts::Rv<bool> invoke(int argc, char *argv[]);
+  ts::Errata invoke(int argc, char *argv[]);
 
   void helpMessage(int argc, char *argv[]) const;
 

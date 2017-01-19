@@ -68,6 +68,7 @@
 # include <memory>
 # include <string>
 # include <iosfwd>
+# include <sstream>
 # include <deque>
 # include "NumericType.h"
 # include "IntrusivePtr.h"
@@ -381,6 +382,21 @@ struct Errata::Message {
     Code code, ///< Message Code.
     std::string const& text ///< Final text for message.
   );
+
+  /// Construct with an @a id, @a code, and a @a message.
+  /// The message contents are created by converting the variable arguments
+  /// to strings using the stream operator and concatenated in order.
+  template < typename ... Args>
+    Message(
+	    Id id, ///< Messag Id.
+	    Code code, ///< Message Code.
+	    Args const& ... message
+	    ) : m_id(id), m_code(code)
+    {
+      std::ostringstream s;
+      (void)(int[]){0, ( (s << message) , 0 ) ... };
+      m_text = s.str();
+    }
 
   /// Reset to the message to default state.
   self& clear();
