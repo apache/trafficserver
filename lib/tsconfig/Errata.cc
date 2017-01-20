@@ -53,6 +53,11 @@ Errata::Data::push(Message const& msg) {
   m_items.push_back(msg);
 }
 
+void
+Errata::Data::push(Message && msg) {
+  m_items.push_back(std::move(msg));
+}
+
 Errata::Message const&
 Errata::Data::top() const {
   return m_items.size() ? m_items.back() : NIL_MESSAGE ;
@@ -65,21 +70,16 @@ inline Errata::Errata(ImpPtr const& ptr)
 Errata::Data::~Data() {
   if (m_log_on_delete) {
     Errata tmp(this); // because client API requires a wrapper.
-    std::deque<Errata::Sink::Handle>::iterator spot, limit;
-    for ( spot = Sink_List.begin(), limit = Sink_List.end();
-          spot != limit;
-          ++spot
-    ) {
-      (**spot)(tmp);
-    }
+    for ( auto& f : Sink_List ) (*f)(tmp);
     tmp.m_data.release(); // don't delete this again.
   }
 }
 
-Errata::Errata() {
+Errata::Errata(self const& that)
+  : m_data(that.m_data) {
 }
 
-Errata::Errata(self const& that)
+inline Errata::Errata(self && that)
   : m_data(that.m_data) {
 }
 
@@ -111,7 +111,7 @@ Errata::pre_write() {
 }
 
 // Just create an instance if needed.
-Errata::Data*
+Errata::Data const*
 Errata::instance() {
   if (!m_data) m_data = new Data;
   return m_data.get();
@@ -120,6 +120,12 @@ Errata::instance() {
 Errata&
 Errata::push(Message const& msg) {
   this->pre_write()->push(msg);
+  return *this;
+}
+
+Errata&
+Errata::push(Message && msg) {
+  this->pre_write()->push(std::move(msg));
   return *this;
 }
 
@@ -139,6 +145,12 @@ Errata::operator = (Message const& msg) {
     m_data->m_items.clear();
     m_data->push(msg);
   }
+  return *this;
+}
+
+Errata&
+Errata::operator = (self && that) {
+  m_data = that.m_data;
   return *this;
 }
 
@@ -216,19 +228,17 @@ Errata::write(
   int shift,
   char const* lead
 ) const {
-  for ( const_iterator spot = this->begin(), limit = this->end();
-        spot != limit;
-        ++spot
-  ) {
+
+  for ( auto m : *this ) {
     if ((offset + indent) > 0)
       out << std::setw(indent + offset) << std::setfill(' ')
           << ((indent > 0 && lead) ? lead : " ");
 
-    out << spot->m_id << " [" << spot->m_code << "]: " << spot->m_text
+    out << m.m_id << " [" << m.m_code << "]: " << m.m_text
         << std::endl
       ;
-    if (spot->getErrata().size())
-      spot->getErrata().write(out, offset, indent+shift, shift, lead);
+    if (m.getErrata().size())
+      m.getErrata().write(out, offset, indent+shift, shift, lead);
 
   }
   return out;
@@ -256,4 +266,3 @@ std::ostream& operator<< (std::ostream& os, Errata const& err) {
 }
 
 } // namespace ts
-

@@ -142,6 +142,11 @@ public:
       Message const& msg ///< Message to push
     );
 
+    /// Move constructor.
+    Errata(self && that);
+    /// Move constructor from @c Message.
+    Errata(Message && msg);
+
     /// destructor
     ~Errata();
 
@@ -150,6 +155,9 @@ public:
     self& operator = (
       const self& that ///< Source instance.
     );
+
+    /// Move assignment.
+    self& operator = (self && that);
 
     /** Assign message.
         All other messages are discarded.
@@ -182,6 +190,15 @@ public:
         @return A reference to this object.
     */
     self& push(Message const& msg);
+    self& push(Message && msg);
+
+    /** Push a constructed @c Message.
+	The @c Message is set to have the @a id and @a code. The other arguments are converted
+	to strings and concatenated to form the messsage text.
+	@return A reference to this object.
+    */
+    template < typename ... Args >
+      self& push(Id id, Code code, Args const& ... args);
 
     /** Push a nested status.
         @a err becomes the top item.
@@ -343,7 +360,7 @@ protected:
     Data* pre_write();
     /// Force and return an implementation instance.
     /// Does not follow copy on write.
-    Data* instance();
+    Data const* instance();
 
     /// Used for returns when no data is present.
     static Message const NIL_MESSAGE;
@@ -388,15 +405,10 @@ struct Errata::Message {
   /// to strings using the stream operator and concatenated in order.
   template < typename ... Args>
     Message(
-	    Id id, ///< Messag Id.
+	    Id id, ///< Message Id.
 	    Code code, ///< Message Code.
-	    Args const& ... message
-	    ) : m_id(id), m_code(code)
-    {
-      std::ostringstream s;
-      (void)(int[]){0, ( (s << message) , 0 ) ... };
-      m_text = s.str();
-    }
+	    Args const& ... text
+	    );
 
   /// Reset to the message to default state.
   self& clear();
@@ -468,6 +480,8 @@ struct Errata::Message {
 
   static SuccessTest const DEFAULT_SUCCESS_TEST;
 
+  template < typename ... Args> static std::string stringify(Args const& ... items);
+
   Id m_id; ///< Message ID.
   Code m_code; ///< Message code.
   std::string m_text; ///< Final text.
@@ -500,9 +514,10 @@ struct Errata::Data : public IntrusivePtrCounter {
 
   /// Put a message on top of the stack.
   void push(Message const& msg);
+  void push(Message && msg);
 
   /// Log this when it is deleted.
-  bool m_log_on_delete;
+  mutable bool m_log_on_delete;
 
   //! The message stack.
   Container m_items;
@@ -746,6 +761,12 @@ inline Errata::Message::Message(Id id, std::string const& text)
 inline Errata::Message::Message(Id id, Code code, std::string const& text)
   : m_id(id), m_code(code), m_text(text) {
 }
+template < typename ... Args>
+Errata::Message::Message(Id id, Code code, Args const& ... text)
+  : m_id(id), m_code(code), m_text(stringify(text ...))
+{
+}
+
 inline Errata::Message& Errata::Message::clear() {
   m_id = 0;
   m_code = Default_Code;
@@ -780,6 +801,15 @@ inline Errata::Message& Errata::Message::set(Errata const& err) {
   return *this;
 }
 
+template < typename ... Args>
+std::string Errata::Message::stringify(Args const& ... items)
+{
+  std::ostringstream s;
+  (void)(int[]){0, ( (s << items) , 0 ) ... };
+  return s.str();
+}
+
+inline Errata::Errata() {}
 inline Errata::Errata(Id id, Code code, std::string const& text) {
   this->push(Message(id, code, text));
 }
@@ -815,6 +845,13 @@ Errata::push(Id id, std::string const& text) {
 inline Errata&
 Errata::push(Id id, Code code, std::string const& text) {
   this->push(Message(id, code, text));
+  return *this;
+}
+
+template < typename ... Args >
+auto Errata::push(Id id, Code code, Args const& ... args) -> self&
+{
+  this->push(Message(id, code, args ...));
   return *this;
 }
 
