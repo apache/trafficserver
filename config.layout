@@ -184,7 +184,7 @@
     bindir:        ${exec_prefix}/bin
     sbindir:       ${exec_prefix}/sbin
     libdir:        ${exec_prefix}/lib+
-    libexecdir:    ${exec_prefix}/lib/trafficserver/modules
+    libexecdir:    ${libdir}/modules
     infodir:       ${prefix}/share/info
     mandir:        ${prefix}/share/man
     sysconfdir:    /etc+
