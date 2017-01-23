@@ -248,11 +248,39 @@ operator<(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
   return lhs.count() < rhs.count();
 }
 
+template <intmax_t N, typename C>
+bool
+operator<(Metric<N, C> const &lhs, C n)
+{
+  return lhs.count() < n;
+}
+
+template <intmax_t N, typename C>
+bool
+operator<(C n, Metric<N, C> const &rhs)
+{
+  return n < rhs.count();
+}
+
 template <intmax_t N, typename C1, typename C2>
 bool
 operator==(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
 {
   return lhs.count() == rhs.count();
+}
+
+template <intmax_t N, typename C>
+bool
+operator==(Metric<N, C> const &lhs, C n)
+{
+  return lhs.count() == n;
+}
+
+template <intmax_t N, typename C>
+bool
+operator==(C n, Metric<N, C> const &rhs)
+{
+  return n == rhs.count();
 }
 
 // Could be derived but if we're optimizing let's avoid the extra negation.
@@ -262,6 +290,50 @@ bool
 operator<=(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
 {
   return lhs.count() <= rhs.count();
+}
+
+template <intmax_t N, typename C>
+bool
+operator<=(Metric<N, C> const &lhs, C n)
+{
+  return lhs.count() <= n;
+}
+
+template <intmax_t N, typename C>
+bool
+operator<=(C n, Metric<N, C> const &rhs)
+{
+  return n <= rhs.count();
+}
+
+// Do the integer compares.
+
+template <intmax_t N, typename C>
+bool
+operator>(Metric<N, C> const &lhs, C n)
+{
+  return lhs.count() > n;
+}
+
+template <intmax_t N, typename C>
+bool
+operator>(C n, Metric<N, C> const &rhs)
+{
+  return n > rhs.count();
+}
+
+template <intmax_t N, typename C>
+bool
+operator>=(Metric<N, C> const &lhs, C n)
+{
+  return lhs.count() >= n;
+}
+
+template <intmax_t N, typename C>
+bool
+operator>=(C n, Metric<N, C> const &rhs)
+{
+  return n >= rhs.count();
 }
 
 // General base cases.
