@@ -228,7 +228,7 @@
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec+
     infodir:       ${prefix}/info
-    mandir:        ${prefix}/share/man
+    mandir:        ${prefix}/man
     sysconfdir:    /etc+
     datadir:       ${prefix}/share+
     docdir:        ${prefix}/share/doc+
