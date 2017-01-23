@@ -70,9 +70,9 @@ namespace detail
     @see metric_round_up
     @see metric_round_down
  */
-template <intmax_t N, typename C = int> class Metric
+template <intmax_t N, typename C = int> class Scalar
 {
-  typedef Metric self; ///< Self reference type.
+  typedef Scalar self; ///< Self reference type.
 
 public:
   /// Scaling factor for instances.
@@ -80,16 +80,16 @@ public:
   constexpr static intmax_t SCALE = N;
   typedef C Count; ///< Type used to hold the count.
 
-  constexpr Metric(); ///< Default contructor.
+  constexpr Scalar(); ///< Default contructor.
   ///< Construct to have @a n scaled units.
-  constexpr Metric(Count n);
+  constexpr Scalar(Count n);
 
   /// Copy constructor for same scale.
-  template <typename I> Metric(Metric<N, I> const &that);
+  template <typename I> Scalar(Scalar<N, I> const &that);
 
   /// Copy / conversion constructor.
   /// @note Requires that @c S be an integer multiple of @c SCALE.
-  template <intmax_t S, typename I> Metric(Metric<S, I> const &that);
+  template <intmax_t S, typename I> Scalar(Scalar<S, I> const &that);
 
   /// Direct assignment.
   /// The count is set to @a n.
@@ -102,7 +102,7 @@ public:
 
   /// Assignment operator.
   /// @note Requires the scale of @c S be an integer multiple of the scale of this.
-  template <intmax_t S, typename I> self &operator=(Metric<S, I> const &that);
+  template <intmax_t S, typename I> self &operator=(Scalar<S, I> const &that);
   /// Assignment from same scale.
   self &operator=(self const &that);
 
@@ -119,50 +119,50 @@ protected:
   Count _n; ///< Number of scale units.
 };
 
-template <intmax_t N, typename C> constexpr Metric<N, C>::Metric() : _n()
+template <intmax_t N, typename C> constexpr Scalar<N, C>::Scalar() : _n()
 {
 }
-template <intmax_t N, typename C> constexpr Metric<N, C>::Metric(Count n) : _n(n)
+template <intmax_t N, typename C> constexpr Scalar<N, C>::Scalar(Count n) : _n(n)
 {
 }
 template <intmax_t N, typename C>
 constexpr auto
-Metric<N, C>::count() const -> Count
+Scalar<N, C>::count() const -> Count
 {
   return _n;
 }
 template <intmax_t N, typename C>
 constexpr auto
-Metric<N, C>::units() const -> Count
+Scalar<N, C>::units() const -> Count
 {
   return _n * SCALE;
 }
 template <intmax_t N, typename C>
 inline auto
-Metric<N, C>::operator=(Count n) -> self &
+Scalar<N, C>::operator=(Count n) -> self &
 {
   _n = n;
   return *this;
 }
 template <intmax_t N, typename C>
 inline auto
-Metric<N, C>::operator=(self const &that) -> self &
+Scalar<N, C>::operator=(self const &that) -> self &
 {
   _n = that._n;
   return *this;
 }
 template <intmax_t N, typename C>
 constexpr inline intmax_t
-Metric<N, C>::scale()
+Scalar<N, C>::scale()
 {
   return SCALE;
 }
 
-template <intmax_t N, typename C> template <typename I> Metric<N, C>::Metric(Metric<N, I> const &that) : _n(static_cast<C>(that._n))
+template <intmax_t N, typename C> template <typename I> Scalar<N, C>::Scalar(Scalar<N, I> const &that) : _n(static_cast<C>(that._n))
 {
 }
 
-template <intmax_t N, typename C> template <intmax_t S, typename I> Metric<N, C>::Metric(Metric<S, I> const &that)
+template <intmax_t N, typename C> template <intmax_t S, typename I> Scalar<N, C>::Scalar(Scalar<S, I> const &that)
 {
   typedef std::ratio<S, N> R;
   static_assert(R::den == 1, "Construction not permitted - target scale is not an integral multiple of source scale.");
@@ -172,7 +172,7 @@ template <intmax_t N, typename C> template <intmax_t S, typename I> Metric<N, C>
 template <intmax_t N, typename C>
 template <intmax_t S, typename I>
 auto
-Metric<N, C>::operator=(Metric<S, I> const &that) -> self &
+Scalar<N, C>::operator=(Scalar<S, I> const &that) -> self &
 {
   typedef std::ratio<S, N> R;
   static_assert(R::den == 1, "Assignment not permitted - target scale is not an integral multiple of source scale.");
@@ -187,8 +187,8 @@ Metric<N, C>::operator=(Metric<S, I> const &that) -> self &
     value of @a src.
 
     @code
-    typedef Metric<16> Paragraphs;
-    typedef Metric<1024> KiloBytes;
+    typedef Scalar<16> Paragraphs;
+    typedef Scalar<1024> KiloBytes;
 
     Paragraphs src(37459);
     auto size = metric_round_up<KiloBytes>(src); // size.count() == 586
@@ -196,7 +196,7 @@ Metric<N, C>::operator=(Metric<S, I> const &that) -> self &
  */
 template <typename M, intmax_t S, typename I>
 M
-metric_round_up(Metric<S, I> const &src)
+metric_round_up(Scalar<S, I> const &src)
 {
   typedef std::ratio<M::SCALE, S> R;
   auto c = src.count();
@@ -217,8 +217,8 @@ metric_round_up(Metric<S, I> const &src)
     value of @a src.
 
     @code
-    typedef Metric<16> Paragraphs;
-    typedef Metric<1024> KiloBytes;
+    typedef Scalar<16> Paragraphs;
+    typedef Scalar<1024> KiloBytes;
 
     Paragraphs src(37459);
     auto size = metric_round_up<KiloBytes>(src); // size.count() == 585
@@ -226,7 +226,7 @@ metric_round_up(Metric<S, I> const &src)
  */
 template <typename M, intmax_t S, typename I>
 M
-metric_round_down(Metric<S, I> const &src)
+metric_round_down(Scalar<S, I> const &src)
 {
   typedef std::ratio<M::SCALE, S> R;
   auto c = src.count();
@@ -245,7 +245,7 @@ metric_round_down(Metric<S, I> const &src)
   }
 }
 
-/// Convert a unit value @a n to a Metric, rounding down.
+/// Convert a unit value @a n to a Scalar, rounding down.
 template <typename M>
 M
 metric_round_down(intmax_t n)
@@ -253,7 +253,7 @@ metric_round_down(intmax_t n)
   return n / M::SCALE; // assuming compiler will optimize out dividing by 1 if needed.
 }
 
-/// Convert a unit value @a n to a Metric, rounding up.
+/// Convert a unit value @a n to a Scalar, rounding up.
 template <typename M>
 M
 metric_round_up(intmax_t n)
@@ -267,14 +267,14 @@ metric_round_up(intmax_t n)
 // just comparing the counts is sufficient and scaling conversion is avoided.
 template <intmax_t N, typename C1, typename C2>
 bool
-operator<(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
+operator<(Scalar<N, C1> const &lhs, Scalar<N, C2> const &rhs)
 {
   return lhs.count() < rhs.count();
 }
 
 template <intmax_t N, typename C1, typename C2>
 bool
-operator==(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
+operator==(Scalar<N, C1> const &lhs, Scalar<N, C2> const &rhs)
 {
   return lhs.count() == rhs.count();
 }
@@ -283,7 +283,7 @@ operator==(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
 // Or we could check if the compiler can optimize that out anyway.
 template <intmax_t N, typename C1, typename C2>
 bool
-operator<=(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
+operator<=(Scalar<N, C1> const &lhs, Scalar<N, C2> const &rhs)
 {
   return lhs.count() <= rhs.count();
 }
@@ -292,7 +292,7 @@ operator<=(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
 
 template <intmax_t N1, typename C1, intmax_t N2, typename C2>
 bool
-operator<(Metric<N1, C1> const &lhs, Metric<N2, C2> const &rhs)
+operator<(Scalar<N1, C1> const &lhs, Scalar<N2, C2> const &rhs)
 {
   typedef std::ratio<N1, N2> R;
   // Based on tests with the GNU compiler, the fact that the conditionals are compile time
@@ -308,7 +308,7 @@ operator<(Metric<N1, C1> const &lhs, Metric<N2, C2> const &rhs)
 
 template <intmax_t N1, typename C1, intmax_t N2, typename C2>
 bool
-operator==(Metric<N1, C1> const &lhs, Metric<N2, C2> const &rhs)
+operator==(Scalar<N1, C1> const &lhs, Scalar<N2, C2> const &rhs)
 {
   typedef std::ratio<N1, N2> R;
   if (R::den == 1) {
@@ -321,7 +321,7 @@ operator==(Metric<N1, C1> const &lhs, Metric<N2, C2> const &rhs)
 
 template <intmax_t N1, typename C1, intmax_t N2, typename C2>
 bool
-operator<=(Metric<N1, C1> const &lhs, Metric<N2, C2> const &rhs)
+operator<=(Scalar<N1, C1> const &lhs, Scalar<N2, C2> const &rhs)
 {
   typedef std::ratio<N1, N2> R;
   if (R::den == 1) {
@@ -337,14 +337,14 @@ operator<=(Metric<N1, C1> const &lhs, Metric<N2, C2> const &rhs)
 
 template <intmax_t N1, typename C1, intmax_t N2, typename C2>
 bool
-operator>(Metric<N1, C1> const &lhs, Metric<N2, C2> const &rhs)
+operator>(Scalar<N1, C1> const &lhs, Scalar<N2, C2> const &rhs)
 {
   return rhs < lhs;
 }
 
 template <intmax_t N1, typename C1, intmax_t N2, typename C2>
 bool
-operator>=(Metric<N1, C1> const &lhs, Metric<N2, C2> const &rhs)
+operator>=(Scalar<N1, C1> const &lhs, Scalar<N2, C2> const &rhs)
 {
   return rhs <= lhs;
 }
@@ -354,40 +354,40 @@ operator>=(Metric<N1, C1> const &lhs, Metric<N2, C2> const &rhs)
 // for comparison not just the counter type C but also explicitly 'int'. That makes the operators ambiguous if C is
 // 'int'. The specializations for 'int' resolve this as their presence "covers" the generic cases.
 
-template <intmax_t N, typename C> bool operator <  (Metric<N, C> const &lhs, C n) { return lhs.count() < n; }
-template <intmax_t N, typename C> bool operator <  (C n, Metric<N, C> const &rhs) { return n < rhs.count(); }
-template <intmax_t N, typename C> bool operator <  (Metric<N, C> const &lhs, int n) { return lhs.count() < static_cast<C>(n); }
-template <intmax_t N, typename C> bool operator <  (int n, Metric<N, C> const &rhs) { return static_cast<C>(n) < rhs.count(); }
-template <intmax_t N>             bool operator <  (Metric<N, int> const &lhs, int n) { return lhs.count() < n; }
-template <intmax_t N>             bool operator <  (int n, Metric<N, int> const &rhs) { return n < rhs.count(); }
+template <intmax_t N, typename C> bool operator <  (Scalar<N, C> const &lhs, C n) { return lhs.count() < n; }
+template <intmax_t N, typename C> bool operator <  (C n, Scalar<N, C> const &rhs) { return n < rhs.count(); }
+template <intmax_t N, typename C> bool operator <  (Scalar<N, C> const &lhs, int n) { return lhs.count() < static_cast<C>(n); }
+template <intmax_t N, typename C> bool operator <  (int n, Scalar<N, C> const &rhs) { return static_cast<C>(n) < rhs.count(); }
+template <intmax_t N>             bool operator <  (Scalar<N, int> const &lhs, int n) { return lhs.count() < n; }
+template <intmax_t N>             bool operator <  (int n, Scalar<N, int> const &rhs) { return n < rhs.count(); }
 
-template <intmax_t N, typename C> bool operator == (Metric<N, C> const &lhs, C n) { return lhs.count() == n; }
-template <intmax_t N, typename C> bool operator == (C n, Metric<N, C> const &rhs) { return n == rhs.count(); }
-template <intmax_t N, typename C> bool operator == (Metric<N, C> const &lhs, int n) { return lhs.count() == static_cast<C>(n); }
-template <intmax_t N, typename C> bool operator == (int n, Metric<N, C> const &rhs) { return static_cast<C>(n) == rhs.count(); }
-template <intmax_t N>             bool operator == (Metric<N, int> const &lhs, int n) { return lhs.count() == n; }
-template <intmax_t N>             bool operator == (int n, Metric<N, int> const &rhs) { return n == rhs.count(); }
+template <intmax_t N, typename C> bool operator == (Scalar<N, C> const &lhs, C n) { return lhs.count() == n; }
+template <intmax_t N, typename C> bool operator == (C n, Scalar<N, C> const &rhs) { return n == rhs.count(); }
+template <intmax_t N, typename C> bool operator == (Scalar<N, C> const &lhs, int n) { return lhs.count() == static_cast<C>(n); }
+template <intmax_t N, typename C> bool operator == (int n, Scalar<N, C> const &rhs) { return static_cast<C>(n) == rhs.count(); }
+template <intmax_t N>             bool operator == (Scalar<N, int> const &lhs, int n) { return lhs.count() == n; }
+template <intmax_t N>             bool operator == (int n, Scalar<N, int> const &rhs) { return n == rhs.count(); }
 
-template <intmax_t N, typename C> bool operator >  (Metric<N, C> const &lhs, C n) { return lhs.count() > n; }
-template <intmax_t N, typename C> bool operator >  (C n, Metric<N, C> const &rhs) { return n > rhs.count(); }
-template <intmax_t N, typename C> bool operator >  (Metric<N, C> const &lhs, int n) { return lhs.count() > static_cast<C>(n); }
-template <intmax_t N, typename C> bool operator >  (int n, Metric<N, C> const &rhs) { return static_cast<C>(n) > rhs.count(); }
-template <intmax_t N>             bool operator >  (Metric<N, int> const &lhs, int n) { return lhs.count() > n; }
-template <intmax_t N>             bool operator >  (int n, Metric<N, int> const &rhs) { return n > rhs.count(); }
+template <intmax_t N, typename C> bool operator >  (Scalar<N, C> const &lhs, C n) { return lhs.count() > n; }
+template <intmax_t N, typename C> bool operator >  (C n, Scalar<N, C> const &rhs) { return n > rhs.count(); }
+template <intmax_t N, typename C> bool operator >  (Scalar<N, C> const &lhs, int n) { return lhs.count() > static_cast<C>(n); }
+template <intmax_t N, typename C> bool operator >  (int n, Scalar<N, C> const &rhs) { return static_cast<C>(n) > rhs.count(); }
+template <intmax_t N>             bool operator >  (Scalar<N, int> const &lhs, int n) { return lhs.count() > n; }
+template <intmax_t N>             bool operator >  (int n, Scalar<N, int> const &rhs) { return n > rhs.count(); }
 
-template <intmax_t N, typename C> bool operator <= (Metric<N, C> const &lhs, C n) { return lhs.count() <= n; }
-template <intmax_t N, typename C> bool operator <= (C n, Metric<N, C> const &rhs) { return n <= rhs.count(); }
-template <intmax_t N, typename C> bool operator <= (Metric<N, C> const &lhs, int n) { return lhs.count() <= static_cast<C>(n); }
-template <intmax_t N, typename C> bool operator <= (int n, Metric<N, C> const &rhs) { return static_cast<C>(n) <= rhs.count(); }
-template <intmax_t N>             bool operator <= (Metric<N, int> const &lhs, int n) { return lhs.count() <= n; }
-template <intmax_t N>             bool operator <= (int n, Metric<N, int> const &rhs) { return n <= rhs.count(); }
+template <intmax_t N, typename C> bool operator <= (Scalar<N, C> const &lhs, C n) { return lhs.count() <= n; }
+template <intmax_t N, typename C> bool operator <= (C n, Scalar<N, C> const &rhs) { return n <= rhs.count(); }
+template <intmax_t N, typename C> bool operator <= (Scalar<N, C> const &lhs, int n) { return lhs.count() <= static_cast<C>(n); }
+template <intmax_t N, typename C> bool operator <= (int n, Scalar<N, C> const &rhs) { return static_cast<C>(n) <= rhs.count(); }
+template <intmax_t N>             bool operator <= (Scalar<N, int> const &lhs, int n) { return lhs.count() <= n; }
+template <intmax_t N>             bool operator <= (int n, Scalar<N, int> const &rhs) { return n <= rhs.count(); }
 
-template <intmax_t N, typename C> bool operator >= (Metric<N, C> const &lhs, C n) { return lhs.count() >= n; }
-template <intmax_t N, typename C> bool operator >= (C n, Metric<N, C> const &rhs) { return n >= rhs.count(); }
-template <intmax_t N, typename C> bool operator >= (Metric<N, C> const &lhs, int n) { return lhs.count() >= static_cast<C>(n); }
-template <intmax_t N, typename C> bool operator >= (int n, Metric<N, C> const &rhs) { return static_cast<C>(n) >= rhs.count(); }
-template <intmax_t N>             bool operator >= (Metric<N, int> const &lhs, int n) { return lhs.count() >= n; }
-template <intmax_t N>             bool operator >= (int n, Metric<N, int> const &rhs) { return n >= rhs.count(); }
+template <intmax_t N, typename C> bool operator >= (Scalar<N, C> const &lhs, C n) { return lhs.count() >= n; }
+template <intmax_t N, typename C> bool operator >= (C n, Scalar<N, C> const &rhs) { return n >= rhs.count(); }
+template <intmax_t N, typename C> bool operator >= (Scalar<N, C> const &lhs, int n) { return lhs.count() >= static_cast<C>(n); }
+template <intmax_t N, typename C> bool operator >= (int n, Scalar<N, C> const &rhs) { return static_cast<C>(n) >= rhs.count(); }
+template <intmax_t N>             bool operator >= (Scalar<N, int> const &lhs, int n) { return lhs.count() >= n; }
+template <intmax_t N>             bool operator >= (int n, Scalar<N, int> const &rhs) { return n >= rhs.count(); }
 
 } // namespace
 #endif // TS_METRIC_H

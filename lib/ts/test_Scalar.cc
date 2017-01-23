@@ -21,7 +21,7 @@
     limitations under the License.
 */
 
-#include <ts/Metric.h>
+#include <ts/Scalar.h>
 #include <string>
 #include <stdarg.h>
 #include <iostream>
@@ -85,9 +85,9 @@ void
 Test_1()
 {
   constexpr static int SCALE = 4096;
-  typedef ts::Metric<SCALE> PageSize;
+  typedef ts::Scalar<SCALE> PageSize;
 
-  TestBox test("TS Metric basic");
+  TestBox test("TS Scalar basic");
   PageSize pg1(1);
 
   test.check(pg1.count() == 1, "Count wrong, got %d expected %d", pg1.count(), 1);
@@ -101,10 +101,10 @@ Test_2()
   constexpr static int SCALE_1 = 8192;
   constexpr static int SCALE_2 = 512;
 
-  typedef ts::Metric<SCALE_1> Size_1;
-  typedef ts::Metric<SCALE_2> Size_2;
+  typedef ts::Scalar<SCALE_1> Size_1;
+  typedef ts::Scalar<SCALE_2> Size_2;
 
-  TestBox test("TS Metric Conversion of scales of multiples");
+  TestBox test("TS Scalar Conversion of scales of multiples");
   Size_2 sz_a(2);
   Size_2 sz_b(57);
   Size_2 sz_c(SCALE_1 / SCALE_2);
@@ -144,10 +144,10 @@ Test_3()
   constexpr static int SCALE_1 = 30;
   constexpr static int SCALE_2 = 20;
 
-  typedef ts::Metric<SCALE_1> Size_1;
-  typedef ts::Metric<SCALE_2> Size_2;
+  typedef ts::Scalar<SCALE_1> Size_1;
+  typedef ts::Scalar<SCALE_2> Size_2;
 
-  TestBox test("TS Metric common factor conversions");
+  TestBox test("TS Scalar common factor conversions");
   Size_2 sz_a(2);
   Size_2 sz_b(97);
 
@@ -165,10 +165,10 @@ Test_3()
 void
 Test_4()
 {
-  TestBox test("TS Metric: relatively prime tests");
+  TestBox test("TS Scalar: relatively prime tests");
 
-  ts::Metric<9> m_9;
-  ts::Metric<4> m_4, m_test;
+  ts::Scalar<9> m_9;
+  ts::Scalar<4> m_4, m_test;
 
   m_9 = 95;
   //  m_4 = m_9; // Should fail to compile with static assert.
@@ -194,8 +194,8 @@ test_Compile()
 {
   // These tests aren't normally run, they exist to detect compiler issues.
 
-  typedef ts::Metric<1024, long int> KBytes;
-  typedef ts::Metric<1024, int> KiBytes;
+  typedef ts::Scalar<1024, long int> KBytes;
+  typedef ts::Scalar<1024, int> KiBytes;
 
   KBytes x(12);
   KiBytes y(12);
