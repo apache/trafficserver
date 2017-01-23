@@ -159,8 +159,6 @@ SSLConfigParams::initialize()
   char *serverCertRelativePath          = nullptr;
   char *ssl_server_private_key_path     = nullptr;
   char *CACertRelativePath              = nullptr;
-  char *ssl_client_cert_filename        = nullptr;
-  char *ssl_client_cert_path            = nullptr;
   char *ssl_client_private_key_filename = nullptr;
   char *ssl_client_private_key_path     = nullptr;
   char *clientCACertRelativePath        = nullptr;
@@ -303,15 +301,7 @@ SSLConfigParams::initialize()
   client_verify_depth = 7;
   REC_ReadConfigInt32(clientVerify, "proxy.config.ssl.client.verify.server");
 
-  ssl_client_cert_filename = nullptr;
-  ssl_client_cert_path     = nullptr;
-  REC_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
-  REC_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
-  if (ssl_client_cert_filename && ssl_client_cert_path) {
-    set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, nullptr, &clientCertPath);
-  }
-  ats_free_null(ssl_client_cert_filename);
-  ats_free_null(ssl_client_cert_path);
+  REC_ReadConfigStringAlloc(clientCertPath, "proxy.config.ssl.client.cert.file");
 
   REC_ReadConfigStringAlloc(ssl_client_private_key_filename, "proxy.config.ssl.client.private_key.filename");
   REC_ReadConfigStringAlloc(ssl_client_private_key_path, "proxy.config.ssl.client.private_key.path");

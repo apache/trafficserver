@@ -7618,8 +7618,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.transaction_active_timeout_in",
   "proxy.config.srv_enabled",
   "proxy.config.http.forward_connect_method",
-  "proxy.config.ssl.client.cert.filename",
-  "proxy.config.ssl.client.cert.path",
+  "proxy.config.ssl.client.cert.file",
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
