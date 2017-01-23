@@ -4020,7 +4020,7 @@ HttpSM::do_remap_request(bool run_inline)
 {
   DebugSM("http_seq", "[HttpSM::do_remap_request] Remapping request");
   DebugSM("url_rewrite", "Starting a possible remapping for request [%" PRId64 "]", sm_id);
-  SSLConfig::scoped_config params;
+
   bool ret = false;
   if (t_state.cop_test_page == false) {
     ret = remapProcessor.setup_for_remap(&t_state);
@@ -4059,16 +4059,6 @@ HttpSM::do_remap_request(bool run_inline)
     DebugSM("url_rewrite", "Still more remapping needed for [%" PRId64 "]", sm_id);
     ink_assert(!pending_action);
     pending_action = remap_action_handle;
-  }
-
-  // check if the overridden client cert filename is already attached to an existing ssl context
-  ats_scoped_str clientCert(Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename));
-  auto tCTX = params->getCTX(clientCert);
-
-  if (tCTX == nullptr) {
-    // make new client ctx and add it to the ctx list
-    auto tctx = params->getNewCTX(clientCert);
-    params->InsertCTX(clientCert, tctx);
   }
 
   return;
@@ -5046,9 +5036,26 @@ HttpSM::do_http_server_open(bool raw)
       opt.set_sni_servername(host, len);
     }
 
-    ats_scoped_str clientCert(
-      (Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename)));
-    opt.set_client_certname(clientCert);
+    SSLConfig::scoped_config params;
+    ats_scoped_str clientCert;
+    // check if the overridden client cert filename is already attached to an existing ssl context
+    if (t_state.txn_conf->client_cert_filepath && t_state.txn_conf->client_cert_filename) {
+      if (!strstr(params->clientCertPath, t_state.txn_conf->client_cert_filepath) ||
+          !strstr(params->clientCertPath, t_state.txn_conf->client_cert_filename)) {
+        ats_scoped_str clientCert(
+          Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename));
+        if (clientCert != nullptr) {
+          opt.set_client_certname(clientCert);
+          auto tCTX = params->getCTX(clientCert);
+
+          if (tCTX == nullptr) {
+            // make new client ctx and add it to the ctx list
+            auto tctx = params->getNewCTX(clientCert);
+            params->InsertCTX(clientCert, tctx);
+          }
+        }
+      }
+    }
     connect_action_handle = sslNetProcessor.connect_re(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // addr + port
                                                        &opt);
