@@ -25,39 +25,21 @@
   limitations under the License.
  */
 
-#if !defined(TS_METRIC_H)
-#define TS_METRIC_H
+#if !defined(TS_SCALAR_H)
+#define TS_SCALAR_H
 
 #include <cstdint>
 #include <ratio>
 
 namespace ApacheTrafficServer
 {
-namespace detail
-{
-  // The built in type 'int' is special because that's the type for untyped numbers.
-  // That means if we have operators for comparison to unscaled values there is ambiguity if
-  // the internal counter type is also 'int'. To avoid that this class (and hence methods) are
-  // inherited so if there is a conflict these methods are silently overridden.
-  template < intmax_t N, typename C >
-  struct ScalarIntOperators
-  {
-    bool operator < (int n) { return *this < static_cast<C>(n); }
-    bool operator > (int n) { return *this > static_cast<C>(n); }
-  };
-
-  template < intmax_t N  >
-  struct ScalarIntOperators<N, int>
-  {
-  };
-}
 /** A class to hold scaled values.
 
     Instances of this class have a @a count and a @a scale. The "value" of the instance is @a
     count * @a scale.  The scale is stored in the compiler in the class symbol table and so only
     the count is a run time value. An instance with a large scale can be assign to an instance
     with a smaller scale and the conversion is done automatically. Conversions from a smaller to
-    larger scale must be explicit using @c metric_round_up and @c metric_round_down. This prevents
+    larger scale must be explicit using @c scaled_up and @c scaled_down. This prevents
     inadvertent changes in value. Because the scales are not the same these conversions can be
     lossy and the two conversions determine whether, in such a case, the result should be rounded
     up or down to the nearest scale value.
@@ -67,8 +49,8 @@ namespace detail
     @note This is modeled somewhat on @c std::chrono and serves a similar function for different
     and simpler cases (where the ratio is always an integer, never a fraction).
 
-    @see metric_round_up
-    @see metric_round_down
+    @see scaled_up
+    @see scaled_down
  */
 template <intmax_t N, typename C = int> class Scalar
 {
@@ -191,12 +173,12 @@ Scalar<N, C>::operator=(Scalar<S, I> const &that) -> self &
     typedef Scalar<1024> KiloBytes;
 
     Paragraphs src(37459);
-    auto size = metric_round_up<KiloBytes>(src); // size.count() == 586
+    auto size = scaled_up<KiloBytes>(src); // size.count() == 586
     @endcode
  */
 template <typename M, intmax_t S, typename I>
 M
-metric_round_up(Scalar<S, I> const &src)
+scaled_up(Scalar<S, I> const &src)
 {
   typedef std::ratio<M::SCALE, S> R;
   auto c = src.count();
@@ -221,12 +203,12 @@ metric_round_up(Scalar<S, I> const &src)
     typedef Scalar<1024> KiloBytes;
 
     Paragraphs src(37459);
-    auto size = metric_round_up<KiloBytes>(src); // size.count() == 585
+    auto size = scaled_up<KiloBytes>(src); // size.count() == 585
     @endcode
  */
 template <typename M, intmax_t S, typename I>
 M
-metric_round_down(Scalar<S, I> const &src)
+scaled_down(Scalar<S, I> const &src)
 {
   typedef std::ratio<M::SCALE, S> R;
   auto c = src.count();
@@ -248,7 +230,7 @@ metric_round_down(Scalar<S, I> const &src)
 /// Convert a unit value @a n to a Scalar, rounding down.
 template <typename M>
 M
-metric_round_down(intmax_t n)
+scaled_down(intmax_t n)
 {
   return n / M::SCALE; // assuming compiler will optimize out dividing by 1 if needed.
 }
@@ -256,7 +238,7 @@ metric_round_down(intmax_t n)
 /// Convert a unit value @a n to a Scalar, rounding up.
 template <typename M>
 M
-metric_round_up(intmax_t n)
+scaled_up(intmax_t n)
 {
   return M::SCALE == 1 ? n : (n / M::SCALE + (0 != (n % M::SCALE)));
 }
@@ -390,4 +372,4 @@ template <intmax_t N>             bool operator >= (Scalar<N, int> const &lhs, i
 template <intmax_t N>             bool operator >= (int n, Scalar<N, int> const &rhs) { return n >= rhs.count(); }
 
 } // namespace
-#endif // TS_METRIC_H
+#endif // TS_SCALAR_H
