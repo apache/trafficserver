@@ -33,6 +33,24 @@
 
 namespace ApacheTrafficServer
 {
+namespace detail
+{
+  // The built in type 'int' is special because that's the type for untyped numbers.
+  // That means if we have operators for comparison to unscaled values there is ambiguity if
+  // the internal counter type is also 'int'. To avoid that this class (and hence methods) are
+  // inherited so if there is a conflict these methods are silently overridden.
+  template < intmax_t N, typename C >
+  struct ScalarIntOperators
+  {
+    bool operator < (int n) { return *this < static_cast<C>(n); }
+    bool operator > (int n) { return *this > static_cast<C>(n); }
+  };
+
+  template < intmax_t N  >
+  struct ScalarIntOperators<N, int>
+  {
+  };
+}
 /** A class to hold scaled values.
 
     Instances of this class have a @a count and a @a scale. The "value" of the instance is @a
@@ -52,7 +70,7 @@ namespace ApacheTrafficServer
     @see metric_round_up
     @see metric_round_down
  */
-template <intmax_t N, typename T = int> class Metric
+template <intmax_t N, typename C = int> class Metric
 {
   typedef Metric self; ///< Self reference type.
 
@@ -60,14 +78,14 @@ public:
   /// Scaling factor for instances.
   /// Make it externally accessible.
   constexpr static intmax_t SCALE = N;
-  typedef T Count; ///< Type used to hold the count.
+  typedef C Count; ///< Type used to hold the count.
 
   constexpr Metric(); ///< Default contructor.
   ///< Construct to have @a n scaled units.
   constexpr Metric(Count n);
 
   /// Copy constructor for same scale.
-  template <typename C> Metric(Metric<N, C> const &that);
+  template <typename I> Metric(Metric<N, I> const &that);
 
   /// Copy / conversion constructor.
   /// @note Requires that @c S be an integer multiple of @c SCALE.
@@ -87,6 +105,12 @@ public:
   template <intmax_t S, typename I> self &operator=(Metric<S, I> const &that);
   /// Assignment from same scale.
   self &operator=(self const &that);
+
+  ///@{ Comparisons.
+  //  bool operator <  (C n);
+  //  bool operator >  (C n);
+  //  bool operator == (C n);
+  ///@}
 
   /// Run time access to the scale of this metric (template arg @a N).
   static constexpr intmax_t scale();
@@ -248,39 +272,11 @@ operator<(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
   return lhs.count() < rhs.count();
 }
 
-template <intmax_t N, typename C>
-bool
-operator<(Metric<N, C> const &lhs, C n)
-{
-  return lhs.count() < n;
-}
-
-template <intmax_t N, typename C>
-bool
-operator<(C n, Metric<N, C> const &rhs)
-{
-  return n < rhs.count();
-}
-
 template <intmax_t N, typename C1, typename C2>
 bool
 operator==(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
 {
   return lhs.count() == rhs.count();
-}
-
-template <intmax_t N, typename C>
-bool
-operator==(Metric<N, C> const &lhs, C n)
-{
-  return lhs.count() == n;
-}
-
-template <intmax_t N, typename C>
-bool
-operator==(C n, Metric<N, C> const &rhs)
-{
-  return n == rhs.count();
 }
 
 // Could be derived but if we're optimizing let's avoid the extra negation.
@@ -290,50 +286,6 @@ bool
 operator<=(Metric<N, C1> const &lhs, Metric<N, C2> const &rhs)
 {
   return lhs.count() <= rhs.count();
-}
-
-template <intmax_t N, typename C>
-bool
-operator<=(Metric<N, C> const &lhs, C n)
-{
-  return lhs.count() <= n;
-}
-
-template <intmax_t N, typename C>
-bool
-operator<=(C n, Metric<N, C> const &rhs)
-{
-  return n <= rhs.count();
-}
-
-// Do the integer compares.
-
-template <intmax_t N, typename C>
-bool
-operator>(Metric<N, C> const &lhs, C n)
-{
-  return lhs.count() > n;
-}
-
-template <intmax_t N, typename C>
-bool
-operator>(C n, Metric<N, C> const &rhs)
-{
-  return n > rhs.count();
-}
-
-template <intmax_t N, typename C>
-bool
-operator>=(Metric<N, C> const &lhs, C n)
-{
-  return lhs.count() >= n;
-}
-
-template <intmax_t N, typename C>
-bool
-operator>=(C n, Metric<N, C> const &rhs)
-{
-  return n >= rhs.count();
 }
 
 // General base cases.
@@ -396,6 +348,46 @@ operator>=(Metric<N1, C1> const &lhs, Metric<N2, C2> const &rhs)
 {
   return rhs <= lhs;
 }
-}
 
+// Do the integer compares.
+// A bit ugly to handle the issue that integers without explicit type are 'int'. Therefore suppport must be provided
+// for comparison not just the counter type C but also explicitly 'int'. That makes the operators ambiguous if C is
+// 'int'. The specializations for 'int' resolve this as their presence "covers" the generic cases.
+
+template <intmax_t N, typename C> bool operator <  (Metric<N, C> const &lhs, C n) { return lhs.count() < n; }
+template <intmax_t N, typename C> bool operator <  (C n, Metric<N, C> const &rhs) { return n < rhs.count(); }
+template <intmax_t N, typename C> bool operator <  (Metric<N, C> const &lhs, int n) { return lhs.count() < static_cast<C>(n); }
+template <intmax_t N, typename C> bool operator <  (int n, Metric<N, C> const &rhs) { return static_cast<C>(n) < rhs.count(); }
+template <intmax_t N>             bool operator <  (Metric<N, int> const &lhs, int n) { return lhs.count() < n; }
+template <intmax_t N>             bool operator <  (int n, Metric<N, int> const &rhs) { return n < rhs.count(); }
+
+template <intmax_t N, typename C> bool operator == (Metric<N, C> const &lhs, C n) { return lhs.count() == n; }
+template <intmax_t N, typename C> bool operator == (C n, Metric<N, C> const &rhs) { return n == rhs.count(); }
+template <intmax_t N, typename C> bool operator == (Metric<N, C> const &lhs, int n) { return lhs.count() == static_cast<C>(n); }
+template <intmax_t N, typename C> bool operator == (int n, Metric<N, C> const &rhs) { return static_cast<C>(n) == rhs.count(); }
+template <intmax_t N>             bool operator == (Metric<N, int> const &lhs, int n) { return lhs.count() == n; }
+template <intmax_t N>             bool operator == (int n, Metric<N, int> const &rhs) { return n == rhs.count(); }
+
+template <intmax_t N, typename C> bool operator >  (Metric<N, C> const &lhs, C n) { return lhs.count() > n; }
+template <intmax_t N, typename C> bool operator >  (C n, Metric<N, C> const &rhs) { return n > rhs.count(); }
+template <intmax_t N, typename C> bool operator >  (Metric<N, C> const &lhs, int n) { return lhs.count() > static_cast<C>(n); }
+template <intmax_t N, typename C> bool operator >  (int n, Metric<N, C> const &rhs) { return static_cast<C>(n) > rhs.count(); }
+template <intmax_t N>             bool operator >  (Metric<N, int> const &lhs, int n) { return lhs.count() > n; }
+template <intmax_t N>             bool operator >  (int n, Metric<N, int> const &rhs) { return n > rhs.count(); }
+
+template <intmax_t N, typename C> bool operator <= (Metric<N, C> const &lhs, C n) { return lhs.count() <= n; }
+template <intmax_t N, typename C> bool operator <= (C n, Metric<N, C> const &rhs) { return n <= rhs.count(); }
+template <intmax_t N, typename C> bool operator <= (Metric<N, C> const &lhs, int n) { return lhs.count() <= static_cast<C>(n); }
+template <intmax_t N, typename C> bool operator <= (int n, Metric<N, C> const &rhs) { return static_cast<C>(n) <= rhs.count(); }
+template <intmax_t N>             bool operator <= (Metric<N, int> const &lhs, int n) { return lhs.count() <= n; }
+template <intmax_t N>             bool operator <= (int n, Metric<N, int> const &rhs) { return n <= rhs.count(); }
+
+template <intmax_t N, typename C> bool operator >= (Metric<N, C> const &lhs, C n) { return lhs.count() >= n; }
+template <intmax_t N, typename C> bool operator >= (C n, Metric<N, C> const &rhs) { return n >= rhs.count(); }
+template <intmax_t N, typename C> bool operator >= (Metric<N, C> const &lhs, int n) { return lhs.count() >= static_cast<C>(n); }
+template <intmax_t N, typename C> bool operator >= (int n, Metric<N, C> const &rhs) { return static_cast<C>(n) >= rhs.count(); }
+template <intmax_t N>             bool operator >= (Metric<N, int> const &lhs, int n) { return lhs.count() >= n; }
+template <intmax_t N>             bool operator >= (int n, Metric<N, int> const &rhs) { return n >= rhs.count(); }
+
+} // namespace
 #endif // TS_METRIC_H
