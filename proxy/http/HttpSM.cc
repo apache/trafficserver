@@ -4933,9 +4933,11 @@ HttpSM::do_http_server_open(bool raw)
     // between the statement above and the check below.
     // If this happens, we might go over the max by 1 but this is ok.
     if (sum >= t_state.http_config_param->server_max_connections) {
-      ink_assert(pending_action == nullptr);
-      pending_action = eventProcessor.schedule_in(this, HRTIME_MSECONDS(100));
       httpSessionManager.purge_keepalives();
+      // Eventually may want to have a queue as the origin_max_connection does to allow for a combination
+      // of retries and errors.  But at this point, we are just going to allow the error case.
+      t_state.current.state = HttpTransact::CONNECTION_ERROR;
+      call_transact_and_set_next_state(HttpTransact::HandleResponse);
       return;
     }
   }
