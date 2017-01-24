@@ -18,7 +18,7 @@
 #  limitations under the License.
 
 
-SUBDIRS = cache_tool
+SUBDIRS = 
 
 bin_SCRIPTS = tsxs tspush
 
