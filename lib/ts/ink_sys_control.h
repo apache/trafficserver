@@ -26,7 +26,7 @@
 
 #include <sys/resource.h>
 
-rlim_t ink_max_out_rlimit(int which, bool max_it = true, bool unlim_it = true);
+rlim_t ink_max_out_rlimit(int which, bool unlim_it = true);
 rlim_t ink_get_max_files();
 
 #endif /*_INK_SYS_CONTROL_H*/

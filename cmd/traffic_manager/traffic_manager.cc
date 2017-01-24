@@ -342,12 +342,12 @@ set_process_limits(RecInt fds_throttle)
   rlim_t maxfiles;
 
   // Set needed rlimits (root)
-  ink_max_out_rlimit(RLIMIT_NOFILE, true, false);
-  ink_max_out_rlimit(RLIMIT_STACK, true, true);
-  ink_max_out_rlimit(RLIMIT_DATA, true, true);
-  ink_max_out_rlimit(RLIMIT_FSIZE, true, false);
+  ink_max_out_rlimit(RLIMIT_NOFILE, false);
+  ink_max_out_rlimit(RLIMIT_STACK, true);
+  ink_max_out_rlimit(RLIMIT_DATA, true);
+  ink_max_out_rlimit(RLIMIT_FSIZE, false);
 #ifdef RLIMIT_RSS
-  ink_max_out_rlimit(RLIMIT_RSS, true, true);
+  ink_max_out_rlimit(RLIMIT_RSS, true);
 #endif
 
   maxfiles = ink_get_max_files();

@@ -27,7 +27,7 @@
 #include "ts/Diags.h"
 
 rlim_t
-ink_max_out_rlimit(int which, bool max_it, bool unlim_it)
+ink_max_out_rlimit(int which, bool unlim_it)
 {
   struct rlimit rl;
 
@@ -37,36 +37,25 @@ ink_max_out_rlimit(int which, bool max_it, bool unlim_it)
 #define MAGIC_CAST(x) x
 #endif
 
-  if (max_it) {
-    ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
-    if (rl.rlim_cur != rl.rlim_max) {
+  ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
+  if (unlim_it) {
+    rl.rlim_max = RLIM_INFINITY;
+  }
+  if (rl.rlim_cur != rl.rlim_max) {
 #if defined(darwin)
-      if (which == RLIMIT_NOFILE)
-        rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
-      else
-        rl.rlim_cur = rl.rlim_max;
-#else
+    if (which == RLIMIT_NOFILE)
+      rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
+    else
       rl.rlim_cur = rl.rlim_max;
+#else
+    rl.rlim_cur = rl.rlim_max;
 #endif
-      if (setrlimit(MAGIC_CAST(which), &rl) != 0) {
-        Warning("Failed to set resource limits: %s\nresource = %d, .rlim_cur = %lu, .rlim_max = %lu", strerror(errno), which,
-                rl.rlim_cur, rl.rlim_max);
-      }
+    if (setrlimit(MAGIC_CAST(which), &rl) != 0) {
+      Warning("Failed to set resource limits: %s\nresource = %d, .rlim_cur = %lu, .rlim_max = %lu", strerror(errno), which,
+              rl.rlim_cur, rl.rlim_max);
     }
   }
 
-#if !(defined(darwin) || defined(freebsd))
-  if (unlim_it) {
-    ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
-    if (rl.rlim_cur != (rlim_t)RLIM_INFINITY) {
-      rl.rlim_cur = (rl.rlim_max = RLIM_INFINITY);
-      if (setrlimit(MAGIC_CAST(which), &rl) != 0) {
-        Warning("Failed to set resource limits: %s\nresource = %d, .rlim_cur = %lu, .rlim_max = %lu", strerror(errno), which,
-                rl.rlim_cur, rl.rlim_max);
-      }
-    }
-  }
-#endif
   ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
   return rl.rlim_cur;
 }

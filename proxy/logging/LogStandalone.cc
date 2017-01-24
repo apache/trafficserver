@@ -81,7 +81,7 @@ logging_crash_handler(int signo, siginfo_t *info, void *ptr)
 static void
 init_system(bool notify_syslog)
 {
-  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE, true, false);
+  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE, false);
 
   signal_register_crash_handler(logging_crash_handler);
   if (notify_syslog) {
