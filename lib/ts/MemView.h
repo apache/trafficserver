@@ -42,6 +42,15 @@ class StringView;
 int memcmp(MemView const &lhs, MemView const &rhs);
 int strcmp(StringView const &lhs, StringView const &rhs);
 int strcasecmp(StringView lhs, StringView rhs);
+/** Convert the text in @c StringView @a src to a numeric value.
+
+    If @a parsed is non-null then the part of the string actually parsed is placed there.
+    @a base sets the conversion base. This defaults to 10 with two special cases:
+
+    - If the number starts with a literal '0' then it is treated as base 8.
+    - If the number starts with the literal characters '0x' or '0X' then it is treated as base 16.
+*/
+intmax_t svtoi(StringView src, StringView* parsed = nullptr, int base = 10);
 
 /** A read only view of contiguous piece of memory.
 
