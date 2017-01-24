@@ -24,6 +24,7 @@
 #include <ts/Metric.h>
 #include <string>
 #include <stdarg.h>
+#include <iostream>
 
 namespace ts
 {
@@ -159,6 +160,21 @@ Test_3()
 
   m_test = m_4; // Verify assignment of identical scale values compiles.
   test.check(m_test.count() == 213, "Assignment got %d expected %d", m_4.count(), 213);
+}
+
+void
+test_Compile()
+{
+  // These tests aren't normally run, they exist to detect compiler issues.
+
+  typedef ts::Metric<1024, long int> KBytes;
+  typedef ts::Metric<1024, int> KiBytes;
+
+  KBytes x(12);
+  KiBytes y(12);
+
+  if (x > 12) std::cout << "Operator > works" << std::endl;
+  if (y > 12) std::cout << "Operator > works" << std::endl;
 }
 
 int
