@@ -190,6 +190,36 @@ Test_4()
 }
 
 void
+Test_5()
+{
+  TestBox test("TS Scalar: arithmetic operator tests");
+
+  typedef ts::Scalar<1024> KBytes;
+  typedef ts::Scalar<1, int64_t> Bytes;
+  typedef ts::Scalar<1024 * KBytes::SCALE> MBytes;
+
+  Bytes bytes(96);
+  KBytes kbytes(2);
+  MBytes mbytes(5);
+
+  Bytes z1 = bytes + 128;
+  test.check(z1.count() == 224, "Addition got %ld expected %d", z1.count(), 224);
+  KBytes z2 = kbytes + 3;
+  test.check(z2.count() == 5, "Addition got %d expected %d", z2.count(), 5);
+  Bytes z3(bytes);
+  z3 += kbytes;
+  test.check(z3.units() == 2048+96, "Addition got %ld expected %d", z3.units(), 2048+96);
+  MBytes z4 = mbytes;
+  z4 += 5;
+  z2 += z4;
+  test.check(z2.units() == ((10<<20) + (5<<10)), "Addition got %d expected %d", z2.units(), (10<<20) + (2<<10));
+
+  z1 += 128;
+  test.check(z1.count() == 352, "Addition got %ld expected %d", z1.count(), 352);
+}
+
+
+void
 test_Compile()
 {
   // These tests aren't normally run, they exist to detect compiler issues.
@@ -211,6 +241,7 @@ main(int, char **)
   Test_2();
   Test_3();
   Test_4();
+  Test_5();
   TestBox::print_summary();
   return 0;
 }

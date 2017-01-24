@@ -33,6 +33,23 @@
 
 namespace ApacheTrafficServer
 {
+  template <intmax_t N, typename C > class Scalar;
+
+  namespace detail {
+    // Internal class to deal with operator overload issues.
+    // Because the type of integers with no explicit type is (int) that type is special in terms of overloads.
+    // To be convienet @c Scalar should support operators for its internal declared counter type and (int).
+    // This creates ambiguous overloads when C is (int). This class lets the (int) overloads be moved to a super
+    // class so conflict causes overridding rather than ambiguity. I am a bit unclear on why no implementation is
+    // needed but there it is.
+    template < intmax_t N, typename C >
+      struct ScalarArithmetics
+      {
+	ApacheTrafficServer::Scalar<N,C> operator += (int);
+	ApacheTrafficServer::Scalar<N,C> operator -= (int);
+      };
+  }
+
 /** A class to hold scaled values.
 
     Instances of this class have a @a count and a @a scale. The "value" of the instance is @a
@@ -52,7 +69,7 @@ namespace ApacheTrafficServer
     @see scaled_up
     @see scaled_down
  */
-template <intmax_t N, typename C = int> class Scalar
+template <intmax_t N, typename C = int> class Scalar : public detail::ScalarArithmetics<N,C>
 {
   typedef Scalar self; ///< Self reference type.
 
@@ -83,18 +100,24 @@ public:
   constexpr Count units() const;
 
   /// Assignment operator.
-  /// @note Requires the scale of @c S be an integer multiple of the scale of this.
+  /// The value is scaled appropriately.
+  /// @note Requires the scale of @a that be an integer multiple of the scale of @a this. If this isn't the case then
+  /// the @c scaled_up or @c scaled_down casts must be used to indicate the rounding direction.
   template <intmax_t S, typename I> self &operator=(Scalar<S, I> const &that);
   /// Assignment from same scale.
   self &operator=(self const &that);
 
-  ///@{ Comparisons.
-  //  bool operator <  (C n);
-  //  bool operator >  (C n);
-  //  bool operator == (C n);
-  ///@}
+  /// Addition operator.
+  /// The value is scaled from @a that to @a this.
+  /// @note Requires the scale of @a that be an integer multiple of the scale of @a this. If this isn't the case then
+  /// the @c scaled_up or @c scaled_down casts must be used to indicate the rounding direction.
+  template <intmax_t S, typename I> self &operator += (Scalar<S, I> const &that);
+  /// Addition - add @a n as a number of scaled units.
+  self& operator += (C n);
+  /// Addition - add @a n as a number of scaled units.
+  self& operator += (self const& that);
 
-  /// Run time access to the scale of this metric (template arg @a N).
+  /// Run time access to the scale (template arg @a N).
   static constexpr intmax_t scale();
 
 protected:
@@ -370,6 +393,28 @@ template <intmax_t N, typename C> bool operator >= (Scalar<N, C> const &lhs, int
 template <intmax_t N, typename C> bool operator >= (int n, Scalar<N, C> const &rhs) { return static_cast<C>(n) >= rhs.count(); }
 template <intmax_t N>             bool operator >= (Scalar<N, int> const &lhs, int n) { return lhs.count() >= n; }
 template <intmax_t N>             bool operator >= (int n, Scalar<N, int> const &rhs) { return n >= rhs.count(); }
+
+// Arithmetic operators
+template <intmax_t N, typename C> template <intmax_t S, typename I> auto Scalar<N,C>::operator += (Scalar<S,I> const& that) -> self&
+{
+  typedef std::ratio<S, N> R;
+  static_assert(R::den == 1, "Assignment not permitted - target scale is not an integral multiple of source scale.");
+  _n += that.count() * R::num;
+  return *this;
+}
+template <intmax_t N, typename C> auto Scalar<N,  C>::operator += (self const& that) -> self& { _n += that._n; return *this; }
+template <intmax_t N, typename C> auto Scalar<N,  C>::operator += (C n) -> self& { _n += n; return *this; }
+//template <intmax_t N, typename C> auto Scalar<N,  C>::operator += (int n) -> self& { _n += static_cast<C>(n); return *this; }
+//template <intmax_t N>             auto Scalar<N,int>::operator += (int n) -> self& { _n += n; return *this; }
+
+template <intmax_t N, typename C> Scalar<N,C> operator + (Scalar<N, C> const &lhs, Scalar<N,C> const& rhs) { return Scalar<N,C>(lhs) += rhs; }
+template <intmax_t N, typename C> Scalar<N  ,C> operator + (Scalar<N, C> const &lhs, C n) { return Scalar<N,C>(lhs) += n; }
+template <intmax_t N, typename C> Scalar<N  ,C> operator + (C n, Scalar<N,C> const& rhs) { return Scalar<N,C>(rhs) += n; }
+template <intmax_t N, typename C> Scalar<N  ,C> operator + (Scalar<N, C> const &lhs, int n) { return Scalar<N,C>(lhs) += n; }
+template <intmax_t N, typename C> Scalar<N  ,C> operator + (int n, Scalar<N,C> const& rhs) { return Scalar<N,C>(rhs) += n; }
+template <intmax_t N>             Scalar<N,int> operator + (Scalar<N, int> const &lhs, int n) { return Scalar<N,int>(lhs) += n; }
+template <intmax_t N>             Scalar<N,int> operator + (int n, Scalar<N,int> const& rhs) { return Scalar<N,int>(rhs) += n; }
+
 
 } // namespace
 #endif // TS_SCALAR_H
