@@ -5436,13 +5436,7 @@ TSHttpSsnClientAddrGet(TSHttpSsn ssnp)
   if (cs == nullptr) {
     return nullptr;
   }
-
-  NetVConnection *vc = cs->get_netvc();
-  if (vc == nullptr) {
-    return nullptr;
-  }
-
-  return vc->get_remote_addr();
+  return cs->get_client_addr();
 }
 sockaddr const *
 TSHttpTxnClientAddrGet(TSHttpTxn txnp)
@@ -5461,12 +5455,7 @@ TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp)
   if (cs == nullptr) {
     return nullptr;
   }
-
-  NetVConnection *vc = cs->get_netvc();
-  if (vc == nullptr) {
-    return nullptr;
-  }
-  return vc->get_local_addr();
+  return cs->get_local_addr();
 }
 sockaddr const *
 TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
