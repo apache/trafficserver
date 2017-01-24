@@ -257,8 +257,8 @@ struct Cache {
   ~Cache();
 
   ts::Errata load(ts::FilePath const &path);
-  void loadConfig(ts::FilePath const &path);
-  void loadDevice(ts::FilePath const &path);
+  ts::Errata loadConfig(ts::FilePath const &path);
+  ts::Errata loadDevice(ts::FilePath const &path);
 
   enum class SpanDumpDepth { SPAN, STRIPE, DIRECTORY };
   void dumpSpans(SpanDumpDepth depth);
@@ -273,22 +273,24 @@ Cache::load(ts::FilePath const &path)
 {
   ts::Errata zret;
   if (!path.is_readable())
-    zret = ts::Errata::Message(0,0,path," is not readable");
+    zret = ts::Errata::Message(0, EPERM, path," is not readable.");
 //    throw(std::system_error(errno, std::system_category(), static_cast<char const *>(path)));
   else if (path.is_regular_file())
-    this->loadConfig(path);
+    zret = this->loadConfig(path);
   else if (path.is_char_device() || path.is_block_device())
-    this->loadDevice(path);
+    zret = this->loadDevice(path);
   else
-    printf("Not a valid file type: '%s'\n", static_cast<char const *>(path));
+    zret = ts::Errata::Message(0, EBADF, path, " is not a valid file type");
   return zret;
 }
 
-void
+ts::Errata
 Cache::loadConfig(ts::FilePath const &path)
 {
   static const ts::StringView TAG_ID("id");
   static const ts::StringView TAG_VOL("volume");
+
+  ts::Errata zret;
 
   ts::BulkFile cfile(path);
   if (0 == cfile.load()) {
@@ -311,15 +313,19 @@ Cache::loadConfig(ts::FilePath const &path)
             }
           }
         }
-        this->load(ts::FilePath(path));
+        zret = this->load(ts::FilePath(path));
       }
     }
+  } else {
+    zret = ts::Errata::Message(0, EBADF, "Unable to load ", path);
   }
+  return zret;
 }
 
-void
+ts::Errata
 Cache::loadDevice(ts::FilePath const &path)
 {
+  ts::Errata zret;
   int flags;
 
   flags = OPEN_RW_FLAGS
@@ -362,11 +368,12 @@ Cache::loadDevice(ts::FilePath const &path)
         }
       }
     } else {
-      printf("Failed to read from '%s' [%d]\n", path.path(), errno);
+      zret = ts::Errata::Message(0, errno, "Failed to read from ", path, '[', errno, ':', strerror(errno), ']');
     }
   } else {
-    printf("Unable to open '%s'\n", static_cast<char const *>(path));
+    zret = ts::Errata::Message(0, errno, "Unable to open ", path);
   }
+  return zret;
 }
 
 void
@@ -425,7 +432,45 @@ Span::clearPermanently()
   }
   std::cout << std::endl;
 }
+/* --------------------------------------------------------------------------------------- */
+ts::Errata
+VolumeConfig::load(ts::FilePath const& path)
+{
+  static const ts::StringView TAG_SIZE("size");
+  static const ts::StringView TAG_VOL("volume");
 
+  ts::Errata zret;
+
+  int ln = 0;
+
+  ts::BulkFile cfile(path);
+  if (0 == cfile.load()) {
+    ts::StringView content = cfile.content();
+    while (content) {
+      ++ln;
+      ts::StringView line = content.splitPrefix('\n');
+      line.ltrim(&isspace);
+      if (!line || '#' == *line)
+        continue;
+
+      VolData v;
+      while (line) {
+        ts::StringView value(line.extractPrefix(&isspace));
+        ts::StringView tag(value.splitPrefix('='));
+        if (!tag) {
+          zret.push(0, 1, "Line ", ln, " is invalid");
+        } else if (0 == strcasecmp(tag, TAG_SIZE)) {
+          auto n = ts::svtoi(value);
+        } else if (0 == strcasecmp(tag, TAG_VOL)) {
+        }
+      }
+    }
+  } else {
+    zret = ts::Errata::Message(0, EBADF, "Unable to load ", path);
+  }
+  return zret;
+}
+/* --------------------------------------------------------------------------------------- */
 struct option Options[] = {{"help", false, nullptr, 'h'}};
 }
 
