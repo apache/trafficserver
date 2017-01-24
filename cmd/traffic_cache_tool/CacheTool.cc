@@ -80,9 +80,13 @@ struct VolumeConfig
 
   struct VolData
   {
-    int _idx; ///< Volume index.
-    int _percent; ///< Size if specified as a percent.
-    ts::CacheStripeBlocks _size; ///< Size if specified as an absolute.
+    int _idx = 0; ///< Volume index.
+    int _percent = 0; ///< Size if specified as a percent.
+    ts::Megabytes _size = 0; ///< Size if specified as an absolute.
+
+    // Methods handy for parsing
+    bool hasSize() const { return _percent > 0 || _size > 0; }
+    bool hasIndex() const { return _idx > 0; }
   };
 
   std::vector<VolData> _volumes;
@@ -447,22 +451,57 @@ VolumeConfig::load(ts::FilePath const& path)
   if (0 == cfile.load()) {
     ts::StringView content = cfile.content();
     while (content) {
+      VolData v;
+
       ++ln;
       ts::StringView line = content.splitPrefix('\n');
       line.ltrim(&isspace);
       if (!line || '#' == *line)
         continue;
 
-      VolData v;
       while (line) {
         ts::StringView value(line.extractPrefix(&isspace));
         ts::StringView tag(value.splitPrefix('='));
         if (!tag) {
           zret.push(0, 1, "Line ", ln, " is invalid");
         } else if (0 == strcasecmp(tag, TAG_SIZE)) {
-          auto n = ts::svtoi(value);
+          if (v.hasSize()) {
+            zret.push(0, 5, "Line ", ln, " has field ", TAG_SIZE, " more than once");
+          } else {
+            ts::StringView text;
+            auto n = ts::svtoi(value, &text);
+            if (text) {
+              ts::StringView percent(text.end(), value.end()); // clip parsed number.
+              if (!percent) {
+                v._size = n;
+              } else if ('%' == *percent && percent.size() == 1) {
+                v._percent = n;
+              } else {
+                zret.push(0, 3, "Line ", ln, " has invalid value '", value, "' for ", TAG_SIZE, " field");
+              }
+            } else {
+              zret.push(0, 2, "Line ", ln, " has invalid value '", value, "' for ", TAG_SIZE, " field");
+            }
+          }
         } else if (0 == strcasecmp(tag, TAG_VOL)) {
+          if (v.hasIndex()) {
+            zret.push(0, 6, "Line ", ln, " has field ", TAG_VOL, " more than once");
+          } else {
+            ts::StringView text;
+            auto n = ts::svtoi(value, &text);
+            if (text == value) {
+              v._idx = n;
+            } else {
+              zret.push(0, 4, "Line ", ln, " has invalid value '", value, "' for ", TAG_VOL, " field");
+            }
+          }
         }
+      }
+      if (v.hasSize() && v.hasIndex()) {
+        _volumes.push_back(std::move(v));
+      } else {
+        if (!v.hasSize()) zret.push(0,7, "Line ", ln, " does not have the required field ", TAG_SIZE);
+        if (!v.hasIndex()) zret.push(0,8, "Line ", ln, " does not have the required field ", TAG_VOL);
       }
     }
   } else {
