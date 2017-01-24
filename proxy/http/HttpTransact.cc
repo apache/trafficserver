@@ -1712,7 +1712,7 @@ HttpTransact::OSDNSLookup(State *s)
   // If the SRV response has a port number, we should honor it. Otherwise we do the port defined in remap
   if (s->dns_info.srv_lookup_success) {
     s->server_info.dst_addr.port() = htons(s->dns_info.srv_port);
-  } else {
+  } else if (!s->api_server_addr_set) {
     s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // now we can set the port.
   }
   ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
