@@ -182,35 +182,23 @@ from docutils.utils import unescape
 # states.Inliner isn't a new-style class, so super() isn't an option.
 BaseInliner = states.Inliner
 class Inliner(states.Inliner):
-  if hasattr(states.Inliner, 'init_customizations'):
-    def init_customizations(self, settings):
-      self.__class__ = BaseInliner
-      BaseInliner.init_customizations(self, settings)
-      self.__class__ = Inliner
+  def init_customizations(self, settings):
+    self.__class__ = BaseInliner
+    BaseInliner.init_customizations(self, settings)
+    self.__class__ = Inliner
 
-      # Copied from states.Inliner.init_customizations().
-      # In Docutils 0.13 these are locals.
-      if settings.character_level_inline_markup:
-        self.start_string_prefix = u'(^|(?<!\x00))'
-        self.end_string_suffix = u''
-      else:
-        self.start_string_prefix = (u'(^|(?<=\\s|[%s%s]))' %
-                                    (punctuation_chars.openers,
-                                     punctuation_chars.delimiters))
-        self.end_string_suffix = (u'($|(?=\\s|[\x00%s%s%s]))' %
-                                  (punctuation_chars.closing_delimiters,
-                                   punctuation_chars.delimiters,
-                                   punctuation_chars.closers))
+    # Copied from states.Inliner.init_customizations().
+    # In Docutils 0.13 these are locals.
+    if not hasattr(self, 'start_string_prefix'):
+      self.start_string_prefix = (u'(^|(?<=\\s|[%s%s]))' %
+                                  (punctuation_chars.openers,
+                                   punctuation_chars.delimiters))
+    if not hasattr(self, 'end_string_suffix'):
+      self.end_string_suffix = (u'($|(?=\\s|[\x00%s%s%s]))' %
+                                (punctuation_chars.closing_delimiters,
+                                 punctuation_chars.delimiters,
+                                 punctuation_chars.closers))
 
-      self.init()
-  else:
-    def __init__(self):
-      BaseInliner.__init__(self)
-      self.init()
-
-  # Called from __init__() in Docutils < 0.13, otherwise from
-  # init_customizations(), which was added in Docutils 0.13.
-  def init(self):
     issue = re.compile(
       ur'''
       {start_string_prefix}
