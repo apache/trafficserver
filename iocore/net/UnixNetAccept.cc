@@ -32,6 +32,7 @@ typedef int (NetAccept::*NetAcceptHandler)(int, void *);
 volatile int dummy_volatile = 0;
 int accept_till_done        = 1;
 
+std::vector<NetAccept *> naVec;
 static void
 safe_delay(int msec)
 {
@@ -100,6 +101,12 @@ Ldone:
   if (!blockable)
     MUTEX_UNTAKE_LOCK(na->action_->mutex.get(), e->ethread);
   return count;
+}
+
+NetAccept *
+getNetAccept(int ID)
+{
+  return naVec.at(ID);
 }
 
 //
@@ -272,6 +279,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->options.packet_tos  = opt.packet_tos;
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
+    vc->accept_object = this;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
     // eventProcessor.schedule_imm(vc, getEtype());
     eventProcessor.schedule_imm_signal(vc, opt.etype);
@@ -481,8 +489,7 @@ NetAccept::acceptLoopEvent(int event, Event *e)
 //
 //
 
-NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt)
-  : Continuation(nullptr), period(0), accept_fn(nullptr), ifd(NO_FD), opt(_opt)
+NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt) : Continuation(nullptr), opt(_opt)
 {
 }
 

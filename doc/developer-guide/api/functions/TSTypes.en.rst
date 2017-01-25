@@ -167,3 +167,9 @@ more widely. Those are described on this page.
 .. cpp:class:: template<typename T> DLL
 
     An anchor for a double linked instrusive list of instance of :arg:`T`.
+
+.. type:: TSAcceptor
+
+.. type:: TSNextProtocolSet
+
+
