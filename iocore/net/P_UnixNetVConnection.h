@@ -36,6 +36,7 @@
 #include "I_NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
+#include "P_NetAccept.h"
 
 class UnixNetVConnection;
 class NetHandler;
@@ -291,6 +292,7 @@ public:
   ink_hrtime submit_time;
   OOB_callback *oob_ptr;
   bool from_accept_thread;
+  NetAccept *accept_object;
 
   // es - origin_trace associated connections
   bool origin_trace;
