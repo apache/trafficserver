@@ -349,7 +349,11 @@ public:
 class MemoryLimit : public Continuation
 {
 public:
-  MemoryLimit() : Continuation(new_ProxyMutex()), _memory_limit(0) { SET_HANDLER(&MemoryLimit::periodic); }
+  MemoryLimit() : Continuation(new_ProxyMutex()), _memory_limit(0)
+  {
+    memset(&_usage, 0, sizeof(_usage));
+    SET_HANDLER(&MemoryLimit::periodic);
+  }
   ~MemoryLimit() { mutex = NULL; }
   int
   periodic(int event, Event *e)
