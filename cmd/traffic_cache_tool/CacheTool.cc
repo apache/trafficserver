@@ -49,9 +49,11 @@ const Bytes CacheSpan::OFFSET{CacheStoreBlocks{1}};
 
 namespace
 {
-ts::FilePath TargetFile;
+ts::FilePath SpanFile;
 ts::FilePath VolumeFile;
+
 ts::CommandTable Commands;
+
 // Default this to read only, only enable write if specifically required.
 int OPEN_RW_FLAGS = O_RDONLY;
 
@@ -90,6 +92,13 @@ struct VolumeConfig
   };
 
   std::vector<VolData> _volumes;
+  typedef std::vector<VolData>::iterator iterator;
+  typedef std::vector<VolData>::const_iterator const_iterator;
+
+  iterator begin() { return _volumes.begin(); }
+  iterator end()   { return _volumes.end(); }
+  const_iterator begin() const { return _volumes.begin(); }
+  const_iterator end()   const { return _volumes.end(); }
 };
 
 // All of these free functions need to be moved to the Cache class.
@@ -510,7 +519,12 @@ VolumeConfig::load(ts::FilePath const& path)
   return zret;
 }
 /* --------------------------------------------------------------------------------------- */
-struct option Options[] = {{"help", false, nullptr, 'h'}};
+struct option Options[] = {
+  {"help", 0, nullptr, 'h'},
+  {"spans", 1, nullptr, 's'},
+  {"volumes", 1, nullptr, 'v'},
+  {nullptr, 0, nullptr, 0 }
+};
 }
 
 ts::Errata
@@ -519,7 +533,7 @@ List_Stripes(Cache::SpanDumpDepth depth, int argc, char *argv[])
   ts::Errata zret;
   Cache cache;
 
-  if ((zret = cache.load(TargetFile))) {
+  if ((zret = cache.load(SpanFile))) {
       cache.dumpSpans(depth);
       cache.dumpVolumes();
   }
@@ -530,6 +544,21 @@ ts::Errata
 Simulate_Span_Allocation(int argc, char *argv[])
 {
   ts::Errata zret;
+  VolumeConfig vols;
+
+  if (!VolumeFile) {
+    return zret.push(0, 9, "Volume config file not set");
+  }
+
+  zret = vols.load(VolumeFile);
+  if (zret) {
+    for (VolumeConfig::VolData const& vd : vols) {
+      std::cout << "Volume " << vd._idx << " size ";
+      if (vd._percent) std::cout << vd._percent << '%';
+      else std::cout << vd._size.count() << " megabytes";
+      std::cout << std::endl;
+    }
+  }
   return zret;
 }
 
@@ -540,7 +569,7 @@ Clear_Spans(int argc, char *argv[])
 
   Cache cache;
   OPEN_RW_FLAGS = O_RDWR;
-  if ((zret = cache.load(TargetFile))) {
+  if ((zret = cache.load(SpanFile))) {
     for (auto *span : cache._spans) {
       span->clearPermanently();
     }
@@ -558,8 +587,14 @@ main(int argc, char *argv[])
   while (-1 != (opt_val = getopt_long(argc, argv, "h", Options, &opt_idx))) {
     switch (opt_val) {
     case 'h':
-      printf("Usage: %s [device_path|config_file] <COMMAND> [<SUBCOMMAND> ...]\n", argv[0]);
+      printf("Usage: %s --span <SPAN> --volume <FILE> <COMMAND> [<SUBCOMMAND> ...]\n", argv[0]);
       help = true;
+      break;
+    case 's':
+      SpanFile = optarg;
+      break;
+    case 'v':
+      VolumeFile = optarg;
       break;
     }
   }
@@ -570,17 +605,15 @@ main(int argc, char *argv[])
     .subCommand(std::string("stripes"), std::string("The stripes"),
                 [](int argc, char *argv[]) { return List_Stripes(Cache::SpanDumpDepth::STRIPE, argc, argv); });
   Commands.add(std::string("clear"), std::string("Clear spans"), &Clear_Spans);
+  Commands.add(std::string("volumes"), std::string("Volumes"), &Simulate_Span_Allocation);
+
+  Commands.setArgIndex(optind);
 
   if (help) {
-    Commands.helpMessage(argc - optind, argv + optind);
+    Commands.helpMessage(argc, argv);
     exit(1);
   }
 
-  if (optind < argc) {
-    TargetFile = argv[optind];
-    argc -= optind + 1;
-    argv += optind + 1;
-  }
   ts::Errata result = Commands.invoke(argc, argv);
 
   if (!result) {

@@ -154,7 +154,6 @@ CommandTable::add(std::string const &name, std::string const &help, CommandFunct
 ts::Errata
 CommandTable::invoke(int argc, char *argv[])
 {
-  _opt_idx = 0;
   return _top.invoke(argc, argv);
 }
 
