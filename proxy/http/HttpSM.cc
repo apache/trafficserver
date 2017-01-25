@@ -6328,7 +6328,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
   // Clear the decks before we setup the new producers
   // As things stand, we cannot have two static producers operating at
   // once
-  tunnel.kill_tunnel();
+  tunnel.reset();
 
   // Setup the tunnel to the client
   HttpTunnelProducer *p =
