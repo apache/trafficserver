@@ -433,6 +433,23 @@ private:
   struct rusage _usage;
 };
 
+void
+set_debug_ip(const char *ip_string)
+{
+  if (ip_string)
+    diags->debug_client_ip.load(ip_string);
+  else
+    diags->debug_client_ip.invalidate();
+}
+
+static int
+update_debug_client_ip(const char * /*name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
+                       void * /* data_type ATS_UNUSED */)
+{
+  set_debug_ip(data.rec_string);
+  return 0;
+}
+
 static int
 init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecData data, void * /* cookie ATS_UNUSED */)
 {
@@ -1792,6 +1809,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND * 10, ET_TASK);
   REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
+
+  char *p = REC_ConfigReadString("proxy.config.diags.debug.client_ip");
+  if (p) {
+    // Translate string to IpAddr
+    set_debug_ip(p);
+  }
+  REC_RegisterConfigUpdateFunc("proxy.config.diags.debug.client_ip", update_debug_client_ip, NULL);
 
   // log initialization moved down
 
