@@ -2384,9 +2384,12 @@ TSStringPercentDecode(const char *str, size_t str_len, char *dst, size_t dst_siz
 
   // TODO: We should check for "failures" here?
   unescape_str(buffer, buffer + dst_size, src, src + str_len, s);
-  *buffer = '\0';
+
+  size_t data_written   = std::min<size_t>(buffer - dst, dst_size - 1);
+  *(dst + data_written) = '\0';
+
   if (length) {
-    *length = (buffer - dst);
+    *length = (data_written);
   }
 
   return TS_SUCCESS;
