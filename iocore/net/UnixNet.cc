@@ -432,7 +432,7 @@ NetHandler::process_ready_list()
   }
 #else  /* !USE_EDGE_TRIGGER */
   while ((vc = read_ready_list.dequeue())) {
-    diags->set_override(vc->control.debug_override);
+    set_cont_flags(vc->control_flags);
     if (vc->closed)
       free_netvc(vc);
     else if (vc->read.enabled && vc->read.triggered)
@@ -441,7 +441,7 @@ NetHandler::process_ready_list()
       vc->ep.modify(-EVENTIO_READ);
   }
   while ((vc = write_ready_list.dequeue())) {
-    diags->set_override(vc->control.debug_override);
+    set_cont_flags(vc->control_flags);
     if (vc->closed)
       free_netvc(vc);
     else if (vc->write.enabled && vc->write.triggered)

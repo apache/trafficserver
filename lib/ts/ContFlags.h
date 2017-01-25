@@ -42,7 +42,7 @@ class ContFlags
 public:
   enum flags { DEBUG_OVERRIDE = 0, DISABLE_PLUGINS = 1, LAST_FLAG };
 
-  ContFlags() : raw_flags(0) {}
+  ContFlags() {}
   ContFlags(uint32_t in_flags) : raw_flags(in_flags) {}
   void
   set_flags(uint32_t new_flags)
@@ -80,12 +80,16 @@ public:
       return false;
     }
   }
+  bool
+  is_set() const
+  {
+    return raw_flags != 0;
+  }
 
 private:
-  uint32_t raw_flags;
+  uint32_t raw_flags = 0;
 };
 
-void init_cont_flags();
 void set_cont_flags(const ContFlags &flags);
 void set_cont_flag(ContFlags::flags flag_bit, bool value);
 ContFlags get_cont_flags();

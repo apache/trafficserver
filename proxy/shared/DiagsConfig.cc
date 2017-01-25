@@ -73,7 +73,7 @@ DiagsConfig::reconfigure_diags()
 
   e = (int)REC_readInteger("proxy.config.diags.debug.enabled", &found);
   if (e && found) {
-    c.enabled[DiagsTagType_Debug] = true; // implement OR logic
+    c.enabled[DiagsTagType_Debug] = e; // implement OR logic
   }
   all_found = all_found && found;
 

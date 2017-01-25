@@ -1004,6 +1004,7 @@ CacheProcessor::cacheInitialized()
           vol = gvol[i];
           double factor;
           if (gvol[i]->cache == theCache) {
+            ink_assert(gvol[i]->cache != nullptr);
             factor = (double)(int64_t)(gvol[i]->len >> STORE_BLOCK_SHIFT) / (int64_t)theCache->cache_size;
             Debug("cache_init", "CacheProcessor::cacheInitialized - factor = %f", factor);
             gvol[i]->ram_cache->init((int64_t)(http_ram_cache_size * factor), vol);

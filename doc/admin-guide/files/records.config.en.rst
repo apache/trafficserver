@@ -2967,7 +2967,13 @@ Diagnostic Logging Configuration
 .. ts:cv:: CONFIG proxy.config.diags.debug.enabled INT 0
    :reloadable:
 
-   Enables logging for diagnostic messages whose log level is `diag` or `debug`.
+   When set to 1, enables logging for diagnostic messages whose log level is `diag` or `debug`.
+
+   When set to 2, interprets the :ts:cv:`proxy.config.diags.debug.client_ip` setting determine whether diagnostic messages are logged.
+
+.. ts:cv:: CONFIG proxy.config.diags.debug.client_ip STRING NULL
+
+   if :ts:cv:`proxy.config.diags.debug.enabled` is set to 2, this value is tested against the source IP of the incoming connection.  If there is a match, all the diagnostic messages for that connection and the related outgoing connection will be logged.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING http|dns
 

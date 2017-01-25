@@ -44,8 +44,8 @@
 #include "ts/ink_thread.h"
 #include "ts/Diags.h"
 
-int diags_on_for_plugins          = 0;
-bool DiagsConfigState::enabled[2] = {false, false};
+int diags_on_for_plugins         = 0;
+int DiagsConfigState::enabled[2] = {0, 0};
 
 // Global, used for all diagnostics
 inkcoreapi Diags *diags = nullptr;
