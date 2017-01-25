@@ -7777,6 +7777,7 @@ REGRESSION_TEST(SDK_API_ENCODING)(RegressionTest *test, int /* atype ATS_UNUSED 
   const char *url_base64 =
     "aHR0cDovL3d3dy5leGFtcGxlLmNvbS9mb28/ZmllPSAiIyU8PltdXF5ge31+JmJhcj17dGVzdH0mZnVtPUFwYWNoZSBUcmFmZmljIFNlcnZlcg==";
   const char *url2 = "http://www.example.com/"; // No Percent encoding necessary
+  const char *url3 = "https://www.thisisoneexampleofastringoflengtheightyasciilowercasecharacters.com/";
   char buf[1024];
   size_t length;
   bool success = true;
@@ -7822,10 +7823,33 @@ REGRESSION_TEST(SDK_API_ENCODING)(RegressionTest *test, int /* atype ATS_UNUSED 
     success = false;
   } else {
     if (length != strlen(url2) || strcmp(buf, url2)) {
-      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url2);
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase2", TC_FAIL, "Failed on %s != %s", buf, url2);
       success = false;
     } else {
-      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_PASS, "ok");
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase2", TC_PASS, "ok");
+    }
+  }
+
+  // test to verify TSStringPercentDecode does not write past the end of the
+  // buffer
+  const size_t buf_len = strlen(url3) + 1; // 81
+  strncpy(buf, url3, buf_len - 1);
+  const char canary = 0xFF;
+  buf[buf_len - 1]  = canary;
+
+  const char *url3_clipped = "https://www.thisisoneexampleofastringoflengtheightyasciilowercasecharacters.com";
+  if (TS_SUCCESS != TSStringPercentDecode(buf, buf_len - 1, buf, buf_len - 1, &length)) {
+    SDK_RPRINT(test, "TSStringPercentDecode", "TestCase3", TC_FAIL, "Failed on %s", url3);
+    success = false;
+  } else {
+    if (memcmp(buf + buf_len - 1, &canary, 1)) { // Overwrite
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase3", TC_FAIL, "Failed on %s overwrites buffer", url3);
+      success = false;
+    } else if (length != strlen(url3_clipped) || strcmp(buf, url3_clipped)) {
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase3", TC_FAIL, "Failed on %s != %s", buf, url3_clipped);
+      success = false;
+    } else {
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase3", TC_PASS, "ok");
     }
   }
 
