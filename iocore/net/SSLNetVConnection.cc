@@ -1338,9 +1338,8 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 }
 
 void
-SSLNetVConnection::registerNextProtocolSet(const SSLNextProtocolSet *s)
+SSLNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s)
 {
-  ink_release_assert(this->npnSet == nullptr);
   this->npnSet = s;
 }
 
@@ -1353,7 +1352,6 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   ink_release_assert(netvc != nullptr);
-
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(out, outlen)) {
     // Successful return tells OpenSSL to advertise.
     return SSL_TLSEXT_ERR_OK;
@@ -1373,7 +1371,6 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
   unsigned npnsz           = 0;
 
   ink_release_assert(netvc != nullptr);
-
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(&npn, &npnsz)) {
 // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
 // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
