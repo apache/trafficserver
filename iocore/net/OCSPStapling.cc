@@ -413,7 +413,7 @@ ssl_callback_ocsp_stapling(SSL *ssl)
   // originally was, cinf = stapling_get_cert_info(ssl->ctx);
   cinf = stapling_get_cert_info(SSL_get_SSL_CTX(ssl));
   if (cinf == nullptr) {
-    Error("ssl_callback_ocsp_stapling: failed to get certificate information for %s", cinf->certname);
+    Error("ssl_callback_ocsp_stapling: failed to get certificate information");
     return SSL_TLSEXT_ERR_NOACK;
   }
 
