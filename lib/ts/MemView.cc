@@ -66,7 +66,7 @@ svtoi(StringView src, StringView* out, int base)
   intmax_t zret = 0;
 
   if (*out) out->clear();
-  if (1 <= base || base > 36) return 0;
+  if (!(1 < base && base <= 36)) return 0;
   if (src.ltrim(&isspace)) {
     const char* start = src.ptr();
     int8_t v;
@@ -77,6 +77,7 @@ svtoi(StringView src, StringView* out, int base)
     }
     while (src.size() && (-1 != (v = convert[static_cast<unsigned char>(*src)]))) {
       zret = zret * base + v;
+      ++src;
     }
     if (out && (src.ptr() > (neg ? start+1 : start))) {
       out->setView(start, src.ptr());
