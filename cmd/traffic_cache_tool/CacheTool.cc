@@ -482,7 +482,10 @@ VolumeConfig::load(ts::FilePath const& path)
             if (text) {
               ts::StringView percent(text.end(), value.end()); // clip parsed number.
               if (!percent) {
-                v._size = n;
+                v._size = ts::scaled_up<ts::CacheStripeBlocks>(v._size = n);
+                if (v._size.count() != n) {
+                  zret.push(0, 0, "Line ", ln, " size ", n, " was rounded up to ", v._size.count());
+                }
               } else if ('%' == *percent && percent.size() == 1) {
                 v._percent = n;
               } else {
@@ -616,7 +619,7 @@ main(int argc, char *argv[])
 
   ts::Errata result = Commands.invoke(argc, argv);
 
-  if (!result) {
+  if (result.size()) {
     std::cerr << result;
   }
   return 0;
