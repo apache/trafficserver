@@ -49,6 +49,8 @@ public:
   bool unregisterEndpoint(const char *protocol, Continuation *handler);
 
   SLINK(SSLNextProtocolAccept, link);
+  SSLNextProtocolSet *getProtoSet();
+  SSLNextProtocolSet *cloneProtoSet();
 
 private:
   int mainEvent(int event, void *netvc);
