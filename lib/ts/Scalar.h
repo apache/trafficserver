@@ -53,6 +53,8 @@ namespace detail
     // Only let subclasses construct, as this class only makes sense as an abstract superclass.
     ScalarArithmetics();
   };
+
+  template <intmax_t N, typename C> ScalarArithmetics<N, C>::ScalarArithmetics() {}
   template <intmax_t N, typename C>
   auto
   ScalarArithmetics<N, C>::operator+=(int n) -> S &
