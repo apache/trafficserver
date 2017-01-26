@@ -666,7 +666,8 @@ ats_tcp_somaxconn()
 
 /* Darwin version ... */
 #if HAVE_SYSCTLBYNAME
-  if (sysctlbyname("kern.ipc.somaxconn", nullptr, nullptr, &value, sizeof(value)) == 0) {
+  size_t value_size = sizeof(value);
+  if (sysctlbyname("kern.ipc.somaxconn", &value, &value_size, nullptr, 0) == 0) {
     return value;
   }
 #endif
