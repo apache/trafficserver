@@ -1128,7 +1128,7 @@ TS_CHECK_CRYPTO_SET_RBIO
 # Check for DH_get_2048_256
 TS_CHECK_CRYPTO_DH_GET_2048_256
 
-saved_LIBS = "$LIBS"
+saved_LIBS="$LIBS"
 TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 
 AC_CHECK_FUNCS([ \
@@ -1157,7 +1157,7 @@ AC_CHECK_FUNC([EVP_MD_CTX_reset], [],
 AC_CHECK_FUNC([EVP_MD_CTX_free], [],
               [AC_DEFINE([EVP_MD_CTX_free], [EVP_MD_CTX_destroy], [Renamed in OpenSSL 1.1])])
 
-LIBS = "$saved_LIBS"
+LIBS="$saved_LIBS"
 
 #
 # Check for zlib presence and usability
