@@ -47,6 +47,8 @@ namespace ApacheTrafficServer
 const Bytes CacheSpan::OFFSET{CacheStoreBlocks{1}};
 }
 
+using ts::Bytes;
+
 namespace
 {
 ts::FilePath SpanFile;
@@ -59,11 +61,15 @@ int OPEN_RW_FLAGS = O_RDONLY;
 
 struct Span {
   Span(ts::FilePath const &path) : _path(path) {}
+  ts::Errata load();
+  ts::Errata loadDevice();
+
   void clearPermanently();
 
   ts::FilePath _path;
   ats_scoped_fd _fd;
   std::unique_ptr<ts::SpanHeader> _header;
+  int _vol_idx = 0;
 };
 
 struct Volume {
@@ -101,7 +107,7 @@ struct VolumeConfig
   const_iterator end()   const { return _volumes.end(); }
 };
 
-// All of these free functions need to be moved to the Cache class.
+// All of these free functions need to be moved to the Cache class. Or the Span class?
 
 bool
 Validate_Stripe_Meta(ts::CacheStripeMeta const &stripe)
@@ -132,6 +138,7 @@ Probe_For_Stripe(ts::StringView &mem)
   return zret;
 }
 
+/* --------------------------------------------------------------------------------------- */
 void
 Calc_Stripe_Data(ts::CacheStripeMeta const &header, ts::CacheStripeMeta const &footer, off_t delta, ts::StripeData &data)
 {
@@ -265,40 +272,59 @@ Open_Stripe(ats_scoped_fd const &fd, ts::CacheStripeDescriptor const &block)
   }
 }
 
-// --------------------
+/* --------------------------------------------------------------------------------------- */
 struct Cache {
   ~Cache();
 
-  ts::Errata load(ts::FilePath const &path);
-  ts::Errata loadConfig(ts::FilePath const &path);
-  ts::Errata loadDevice(ts::FilePath const &path);
+  ts::Errata loadSpan(ts::FilePath const &path);
+  ts::Errata loadSpanConfig(ts::FilePath const &path);
+  ts::Errata loadSpanDirect(ts::FilePath const &path, int vol_idx = -1, Bytes size = -1);
 
   enum class SpanDumpDepth { SPAN, STRIPE, DIRECTORY };
   void dumpSpans(SpanDumpDepth depth);
   void dumpVolumes();
 
+  ts::CacheStripeBlocks calcTotalSpanSize();
+
   std::list<Span *> _spans;
   std::map<int, Volume> _volumes;
+
 };
 
 ts::Errata
-Cache::load(ts::FilePath const &path)
+Cache::loadSpan(ts::FilePath const &path)
 {
   ts::Errata zret;
   if (!path.is_readable())
     zret = ts::Errata::Message(0, EPERM, path," is not readable.");
-//    throw(std::system_error(errno, std::system_category(), static_cast<char const *>(path)));
   else if (path.is_regular_file())
-    zret = this->loadConfig(path);
-  else if (path.is_char_device() || path.is_block_device())
-    zret = this->loadDevice(path);
+    zret = this->loadSpanConfig(path);
   else
-    zret = ts::Errata::Message(0, EBADF, path, " is not a valid file type");
+    zret = this->loadSpanDirect(path);
   return zret;
 }
 
 ts::Errata
-Cache::loadConfig(ts::FilePath const &path)
+Cache::loadSpanDirect(ts::FilePath const &path, int vol_idx, Bytes size)
+{
+  ts::Errata zret;
+  std::unique_ptr<Span> span(new Span(path));
+  zret = span->load();
+  if (zret) {
+    int nspb = span->_header->num_diskvol_blks;
+    for (auto i = 0; i < nspb; ++i) {
+      ts::CacheStripeDescriptor &stripe = span->_header->stripes[i];
+      if (stripe.free == 0)
+        _volumes[stripe.vol_idx]._stripes.push_back(Volume::StripeRef{span.get(), i});
+    }
+    span->_vol_idx = vol_idx;
+    _spans.push_back(span.release());
+  }
+  return zret;
+}
+
+ts::Errata
+Cache::loadSpanConfig(ts::FilePath const &path)
 {
   static const ts::StringView TAG_ID("id");
   static const ts::StringView TAG_VOL("volume");
@@ -315,76 +341,28 @@ Cache::loadConfig(ts::FilePath const &path)
         continue;
       ts::StringView path = line.extractPrefix(&isspace);
       if (path) {
-        // After this the line is [size] [id=string] [vol=#]
+        // After this the line is [size] [id=string] [volume=#]
         while (line) {
           ts::StringView value(line.extractPrefix(&isspace));
           if (value) {
             ts::StringView tag(value.splitPrefix('='));
-            if (!tag) {
+            if (!tag) { // must be the size
             } else if (0 == strcasecmp(tag, TAG_ID)) {
             } else if (0 == strcasecmp(tag, TAG_VOL)) {
+              ts::StringView text;
+              auto n = ts::svtoi(value, &text);
+              if (text == value && 0 < n && n < 256) {
+              } else {
+                zret.push(0,0, "Invalid volume index '", value, "'");
+              }
             }
           }
         }
-        zret = this->load(ts::FilePath(path));
+        zret = this->loadSpan(ts::FilePath(path));
       }
     }
   } else {
     zret = ts::Errata::Message(0, EBADF, "Unable to load ", path);
-  }
-  return zret;
-}
-
-ts::Errata
-Cache::loadDevice(ts::FilePath const &path)
-{
-  ts::Errata zret;
-  int flags;
-
-  flags = OPEN_RW_FLAGS
-#if defined(O_DIRECT)
-          | O_DIRECT
-#endif
-#if defined(O_DSYNC)
-          | O_DSYNC
-#endif
-    ;
-
-  ats_scoped_fd fd(path.open(flags));
-
-  if (fd) {
-    off_t offset = ts::CacheSpan::OFFSET.units();
-    alignas(512) char buff[8192];
-    int64_t n = pread(fd, buff, sizeof(buff), offset);
-    if (n >= static_cast<int64_t>(sizeof(ts::SpanHeader))) {
-      ts::SpanHeader &span_hdr = reinterpret_cast<ts::SpanHeader &>(buff);
-      // See if it looks valid
-      if (span_hdr.magic == ts::SpanHeader::MAGIC && span_hdr.num_diskvol_blks == span_hdr.num_used + span_hdr.num_free) {
-        int nspb             = span_hdr.num_diskvol_blks;
-        size_t span_hdr_size = sizeof(ts::SpanHeader) + (nspb - 1) * sizeof(ts::CacheStripeDescriptor);
-        Span *span           = new Span(path);
-        span->_header.reset(new (malloc(span_hdr_size)) ts::SpanHeader);
-        if (span_hdr_size <= sizeof(buff)) {
-          memcpy(span->_header.get(), buff, span_hdr_size);
-        } else {
-          // TODO - check the pread return
-          pread(fd, span->_header.get(), span_hdr_size, offset);
-        }
-        span->_fd = fd.release();
-        _spans.push_back(span);
-        for (auto i = 0; i < nspb; ++i) {
-          ts::CacheStripeDescriptor &stripe = span->_header->stripes[i];
-          if (stripe.free == 0) {
-            // Add to volume.
-            _volumes[stripe.vol_idx]._stripes.push_back(Volume::StripeRef{span, i});
-          }
-        }
-      }
-    } else {
-      zret = ts::Errata::Message(0, errno, "Failed to read from ", path, '[', errno, ':', strerror(errno), ']');
-    }
-  } else {
-    zret = ts::Errata::Message(0, errno, "Unable to open ", path);
   }
   return zret;
 }
@@ -422,10 +400,80 @@ Cache::dumpVolumes()
   }
 }
 
+ts::CacheStripeBlocks Cache::calcTotalSpanSize()
+{
+  ts::CacheStripeBlocks zret(0);
+
+  for ( auto span : _spans ) {
+    zret += ts::scaled_down(span->_size);
+  }
+}
+
+
 Cache::~Cache()
 {
   for (auto *span : _spans)
     delete span;
+}
+/* --------------------------------------------------------------------------------------- */
+ts::Errata
+Span::load()
+{
+  ts::Errata zret;
+  if (!_path.is_readable())
+    zret = ts::Errata::Message(0, EPERM, _path," is not readable.");
+  else if (_path.is_char_device() || _path.is_block_device())
+    zret = this->loadDevice();
+  else if (_path.is_dir())
+    zret.push(0, 1, "Directory support not yet available");
+  else
+    zret.push(0, EBADF, _path, " is not a valid file type");
+  return zret;
+}
+
+ts::Errata
+Span::loadDevice()
+{
+  ts::Errata zret;
+  int flags;
+
+  flags = OPEN_RW_FLAGS
+#if defined(O_DIRECT)
+          | O_DIRECT
+#endif
+#if defined(O_DSYNC)
+          | O_DSYNC
+#endif
+    ;
+
+  ats_scoped_fd fd(_path.open(flags));
+
+  if (fd) {
+    off_t offset = ts::CacheSpan::OFFSET.units();
+    alignas(512) char buff[8192];
+    int64_t n = pread(fd, buff, sizeof(buff), offset);
+    if (n >= static_cast<int64_t>(sizeof(ts::SpanHeader))) {
+      ts::SpanHeader &span_hdr = reinterpret_cast<ts::SpanHeader &>(buff);
+      // See if it looks valid
+      if (span_hdr.magic == ts::SpanHeader::MAGIC && span_hdr.num_diskvol_blks == span_hdr.num_used + span_hdr.num_free) {
+        int nspb             = span_hdr.num_diskvol_blks;
+        size_t span_hdr_size = sizeof(ts::SpanHeader) + (nspb - 1) * sizeof(ts::CacheStripeDescriptor);
+        _header.reset(new (malloc(span_hdr_size)) ts::SpanHeader);
+        if (span_hdr_size <= sizeof(buff)) {
+          memcpy(_header.get(), buff, span_hdr_size);
+        } else {
+          // TODO - check the pread return
+          pread(fd, _header.get(), span_hdr_size, offset);
+        }
+        _fd = fd.release();
+      }
+    } else {
+      zret = ts::Errata::Message(0, errno, "Failed to read from ", _path, '[', errno, ':', strerror(errno), ']');
+    }
+  } else {
+    zret = ts::Errata::Message(0, errno, "Unable to open ", _path);
+  }
+  return zret;
 }
 
 void
@@ -536,7 +584,7 @@ List_Stripes(Cache::SpanDumpDepth depth, int argc, char *argv[])
   ts::Errata zret;
   Cache cache;
 
-  if ((zret = cache.load(SpanFile))) {
+  if ((zret = cache.loadSpan(SpanFile))) {
       cache.dumpSpans(depth);
       cache.dumpVolumes();
   }
@@ -548,18 +596,17 @@ Simulate_Span_Allocation(int argc, char *argv[])
 {
   ts::Errata zret;
   VolumeConfig vols;
+  Cache cache;
 
-  if (!VolumeFile) {
-    return zret.push(0, 9, "Volume config file not set");
-  }
+  if (!VolumeFile) zret.push(0, 9, "Volume config file not set");
+  if (!SpanFile) zret.push(0, 9, "Span file not set");
 
-  zret = vols.load(VolumeFile);
   if (zret) {
-    for (VolumeConfig::VolData const& vd : vols) {
-      std::cout << "Volume " << vd._idx << " size ";
-      if (vd._percent) std::cout << vd._percent << '%';
-      else std::cout << vd._size.count() << " megabytes";
-      std::cout << std::endl;
+    zret = vols.load(VolumeFile);
+    if (zret) {
+      zret = cache.loadSpan(SpanFile);
+      if (zret) {
+      }
     }
   }
   return zret;
@@ -572,7 +619,7 @@ Clear_Spans(int argc, char *argv[])
 
   Cache cache;
   OPEN_RW_FLAGS = O_RDWR;
-  if ((zret = cache.load(SpanFile))) {
+  if ((zret = cache.loadSpan(SpanFile))) {
     for (auto *span : cache._spans) {
       span->clearPermanently();
     }
