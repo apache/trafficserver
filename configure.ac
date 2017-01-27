@@ -1229,7 +1229,6 @@ if test "${has_backtrace}" = "1"; then
 else
   AC_MSG_WARN([No backtrace() support found])
 fi
-AC_SUBST(execinfoh)
 AC_SUBST(has_backtrace)
 
 # Remote process unwinding is only implemented on Linux because it depends on various Linux-specific
@@ -1547,48 +1546,6 @@ AC_CHECK_HEADERS([sys/types.h \
                   editline/readline.h \
                   ucred.h ])
 
-AC_SUBST(sys_epollh)
-AC_SUBST(sys_eventh)
-AC_SUBST(machine_endianh)
-AC_SUBST(endianh)
-AC_SUBST(pthread_nph)
-AC_SUBST(sys_paramh)
-AC_SUBST(sys_cpuseth)
-AC_SUBST(sys_pseth)
-AC_SUBST(schedh)
-AC_SUBST(netinet_inh)
-AC_SUBST(netinet_in_systmh)
-AC_SUBST(netinet_tcph)
-AC_SUBST(sys_ioctlh)
-AC_SUBST(sys_byteorderh)
-AC_SUBST(sys_sockioh)
-AC_SUBST(sys_sysctlh)
-AC_SUBST(sys_sysinfoh)
-AC_SUBST(sys_systeminfoh)
-AC_SUBST(arpa_ineth)
-AC_SUBST(arpa_nameserh)
-AC_SUBST(arpa_nameser_compath)
-AC_SUBST(execinfoh)
-AC_SUBST(netdbh)
-AC_SUBST(ctypeh)
-
-AC_SUBST(siginfoh)
-AC_SUBST(malloch)
-AC_SUBST(waith)
-AC_SUBST(floath)
-AC_SUBST(libgenh)
-AC_SUBST(valuesh)
-AC_SUBST(allocah)
-AC_SUBST(cpioh)
-AC_SUBST(stroptsh)
-AC_SUBST(sys_mounth)
-AC_SUBST(sys_paramh)
-AC_SUBST(sys_sysmacrosh)
-AC_SUBST(mathh)
-AC_SUBST(net_ppp_defsh)
-AC_SUBST(ifaddrsh)
-AC_SUBST(readline_readlineh)
-
 AC_CHECK_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h])
 AC_CHECK_HEADERS([linux/hdreg.h linux/fs.h linux/major.h])
 
@@ -1646,8 +1603,6 @@ AC_CHECK_HEADERS([netinet/ip_icmp.h], [], [],
                    #endif
                  ]])
 
-AC_SUBST(netinet_iph)
-AC_SUBST(netinet_ip_icmph)
 
 # Test for additional pthread interfaces.
 

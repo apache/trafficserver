@@ -73,7 +73,6 @@ else
   fi
 fi
 
-zlibh=0
 if test "$enable_zlib" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -96,5 +95,4 @@ if test "$enable_zlib" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
-AC_SUBST(zlibh)
 ])
