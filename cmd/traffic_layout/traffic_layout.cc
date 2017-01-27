@@ -77,8 +77,16 @@ produce_features(bool json)
   print_feature("BUILD_PERSON", BUILD_PERSON, json);
   print_feature("BUILD_GROUP", BUILD_GROUP, json);
   print_feature("BUILD_NUMBER", BUILD_NUMBER, json);
-  print_feature("TS_HAS_LIBZ", TS_HAS_LIBZ, json);
-  print_feature("TS_HAS_LZMA", TS_HAS_LZMA, json);
+#ifdef HAVE_ZLIB_H
+  print_feature("TS_HAS_LIBZ", 1, json);
+#else
+  print_feature("TS_HAS_LIBZ", 0, json);
+#endif
+#ifdef HAVE_LZMA_H
+  print_feature("TS_HAS_LZMA", 1, json);
+#else
+  print_feature("TS_HAS_LZMA", 0, json);
+#endif
   print_feature("TS_HAS_JEMALLOC", TS_HAS_JEMALLOC, json);
   print_feature("TS_HAS_TCMALLOC", TS_HAS_TCMALLOC, json);
   print_feature("TS_HAS_IN6_IS_ADDR_UNSPECIFIED", TS_HAS_IN6_IS_ADDR_UNSPECIFIED, json);

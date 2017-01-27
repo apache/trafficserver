@@ -73,7 +73,6 @@ else
   fi
 fi
 
-lzmah=0
 if test "$enable_lzma" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -96,5 +95,4 @@ if test "$enable_lzma" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
-AC_SUBST(lzmah)
 ])
