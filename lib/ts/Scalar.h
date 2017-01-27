@@ -738,27 +738,27 @@ Scalar<N, C>::operator*=(C n) -> self &
 
 template <intmax_t N, typename C> Scalar<N, C> operator*(Scalar<N, C> const &lhs, C n)
 {
-  return Scalar<N, C>(lhs) -= n;
+  return Scalar<N, C>(lhs) *= n;
 }
 template <intmax_t N, typename C> Scalar<N, C> operator*(C n, Scalar<N, C> const &rhs)
 {
-  return Scalar<N, C>(rhs) -= n;
+  return Scalar<N, C>(rhs) *= n;
 }
 template <intmax_t N, typename C> Scalar<N, C> operator*(Scalar<N, C> const &lhs, int n)
 {
-  return Scalar<N, C>(lhs) -= n;
+  return Scalar<N, C>(lhs) *= n;
 }
 template <intmax_t N, typename C> Scalar<N, C> operator*(int n, Scalar<N, C> const &rhs)
 {
-  return Scalar<N, C>(rhs) -= n;
+  return Scalar<N, C>(rhs) *= n;
 }
 template <intmax_t N> Scalar<N, int> operator*(Scalar<N, int> const &lhs, int n)
 {
-  return Scalar<N, int>(lhs) -= n;
+  return Scalar<N, int>(lhs) *= n;
 }
 template <intmax_t N> Scalar<N, int> operator*(int n, Scalar<N, int> const &rhs)
 {
-  return Scalar<N, int>(rhs) -= n;
+  return Scalar<N, int>(rhs) *= n;
 }
 
 template <intmax_t N, typename C>
@@ -773,19 +773,19 @@ template <intmax_t N, typename C>
 Scalar<N, C>
 operator/(Scalar<N, C> const &lhs, C n)
 {
-  return Scalar<N, C>(lhs) -= n;
+  return Scalar<N, C>(lhs) /= n;
 }
 template <intmax_t N, typename C>
 Scalar<N, C>
 operator/(Scalar<N, C> const &lhs, int n)
 {
-  return Scalar<N, C>(lhs) -= n;
+  return Scalar<N, C>(lhs) /= n;
 }
 template <intmax_t N>
 Scalar<N, int>
 operator/(Scalar<N, int> const &lhs, int n)
 {
-  return Scalar<N, int>(lhs) -= n;
+  return Scalar<N, int>(lhs) /= n;
 }
 
 } // namespace

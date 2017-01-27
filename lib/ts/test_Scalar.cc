@@ -216,6 +216,14 @@ Test_5()
 
   z1 += 128;
   test.check(z1.count() == 352, "Addition got %ld expected %d", z1.count(), 352);
+
+  z2 = 2;
+  z1 = 3 * z2;
+  test.check(z1.count() == 6144, "Addition got %ld expected %d", z1.count(), 6144);
+  z1 *= 5;
+  test.check(z1.count() == 30720, "Addition got %ld expected %d", z1.count(), 30720);
+  z1 /= 3;
+  test.check(z1.count() == 10240, "Addition got %ld expected %d", z1.count(), 10240);
 }
 
 void
