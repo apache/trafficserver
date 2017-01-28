@@ -1128,6 +1128,7 @@ AC_CHECK_FUNCS([ \
   BIO_meth_new \
   CRYPTO_set_mem_functions \
   HMAC_CTX_new \
+  X509_get0_signature \
 ])
 
 AC_CHECK_FUNC([ASN1_STRING_get0_data], [],
