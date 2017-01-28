@@ -1148,6 +1148,9 @@ AC_CHECK_FUNCS([ \
   X509_get0_signature \
 ])
 
+AC_CHECK_FUNC([ASN1_STRING_get0_data], [],
+              [AC_DEFINE([ASN1_STRING_get0_data], [ASN1_STRING_data], [Added in OpenSSL 1.1])])
+
 AC_CHECK_FUNC([BIO_set_data], [],
               [AC_DEFINE([BIO_set_data(a, _ptr)], [((a)->ptr = (_ptr))], [Added in OpenSSL 1.1])])
 AC_CHECK_FUNC([BIO_get_data], [],

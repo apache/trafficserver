@@ -198,7 +198,7 @@ Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
 
         if (alt_name->type == GEN_DNS) {
           // Current name is a DNS name, let's check it
-          char *name_ptr = (char *)ASN1_STRING_data(alt_name->d.dNSName);
+          char *name_ptr = (char *)ASN1_STRING_get0_data(alt_name->d.dNSName);
           std::string tmp_name(name_ptr);
           names.push_back(tmp_name);
         }
