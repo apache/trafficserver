@@ -265,8 +265,6 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 static void
 ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 {
-  SSL_CTX_remove_session(ctx, sess);
-
   unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
   SSLSessionID sid(id, len);
