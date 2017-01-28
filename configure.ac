@@ -1145,6 +1145,7 @@ AC_CHECK_FUNCS([ \
   BIO_sock_non_fatal_error \
   CRYPTO_set_mem_functions \
   HMAC_CTX_new \
+  X509_get0_signature \
 ])
 
 AC_CHECK_FUNC([BIO_set_data], [],
