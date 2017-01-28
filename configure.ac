@@ -1140,6 +1140,15 @@ TS_CHECK_CRYPTO_SET_RBIO
 # Check for DH_get_2048_256
 TS_CHECK_CRYPTO_DH_GET_2048_256
 
+saved_LIBS="$LIBS"
+TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
+
+AC_CHECK_FUNCS([ \
+  X509_get0_signature \
+])
+
+LIBS="$saved_LIBS"
+
 #
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
