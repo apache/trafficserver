@@ -94,7 +94,13 @@ namespace detail
     lossy and the two conversions determine whether, in such a case, the result should be rounded
     up or down to the nearest scale value.
 
-    @a N sets the scale. @a T is the type used to hold the count, which is in units of @a N.
+    @a N sets the scale. @a C is the type used to hold the count, which is in units of @a N.
+
+    @a T is a "tag" type which is used only to distinguish the base metric for the scale. Scalar
+    types that have different tags are not interoperable although they can be converted manually by
+    converting to units and then explicitly constructing a new Scalar instance. This is by
+    design. This can be ignored - if not specified then it defaults to a "generic" tag. The type can
+    be (and usually is) defined in name only).
 
     @note This is modeled somewhat on @c std::chrono and serves a similar function for different
     and simpler cases (where the ratio is always an integer, never a fraction).
@@ -150,6 +156,15 @@ public:
   self &operator+=(C n);
   /// Addition - add @a n as a number of scaled units.
   self &operator+=(self const &that);
+
+  /// Increment - increase count by 1.
+  self &operator ++();
+  /// Increment - increase count by 1.
+  self operator ++(int);
+  /// Decrement - decrease count by 1.
+  self &operator --();
+  /// Decrement - decrease count by 1.
+  self operator --(int);
 
   /// Subtraction operator.
   /// The value is scaled from @a that to @a this.
@@ -729,6 +744,41 @@ Scalar<N, int>
 operator-(int n, Scalar<N, int> const &rhs)
 {
   return Scalar<N, int>(rhs) -= n;
+}
+
+template <intmax_t N, typename C, typename T>
+auto
+Scalar<N, C, T>::operator++() -> self &
+{
+  ++_n;
+  return *this;
+}
+
+template <intmax_t N, typename C, typename T>
+auto
+Scalar<N, C, T>::operator++(int) -> self
+{
+  self zret(*this);
+  ++_n;
+  return zret;
+}
+
+
+template <intmax_t N, typename C, typename T>
+auto
+Scalar<N, C, T>::operator--() -> self &
+{
+  --_n;
+  return *this;
+}
+
+template <intmax_t N, typename C, typename T>
+auto
+Scalar<N, C, T>::operator--(int) -> self
+{
+  self zret(*this);
+  --_n;
+  return zret;
 }
 
 template <intmax_t N, typename C, typename T>
