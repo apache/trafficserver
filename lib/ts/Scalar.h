@@ -31,7 +31,10 @@
 #include <cstdint>
 #include <ratio>
 
-namespace tag { struct generic; }
+namespace tag
+{
+struct generic;
+}
 
 namespace ApacheTrafficServer
 {
@@ -117,7 +120,7 @@ public:
   /// Make it externally accessible.
   constexpr static intmax_t SCALE = N;
   typedef C Count; ///< Type used to hold the count.
-  typedef T Tag; ///< Make tag accessible.
+  typedef T Tag;   ///< Make tag accessible.
 
   constexpr Scalar(); ///< Default contructor.
   ///< Construct to have @a n scaled units.
@@ -158,13 +161,13 @@ public:
   self &operator+=(self const &that);
 
   /// Increment - increase count by 1.
-  self &operator ++();
+  self &operator++();
   /// Increment - increase count by 1.
-  self operator ++(int);
+  self operator++(int);
   /// Decrement - decrease count by 1.
-  self &operator --();
+  self &operator--();
   /// Decrement - decrease count by 1.
-  self operator --(int);
+  self operator--(int);
 
   /// Subtraction operator.
   /// The value is scaled from @a that to @a this.
@@ -228,11 +231,13 @@ Scalar<N, C, T>::scale()
   return SCALE;
 }
 
- template <intmax_t N, typename C, typename T> template <typename I> Scalar<N, C, T>::Scalar(Scalar<N, I, T> const &that) : _n(static_cast<C>(that._n))
+template <intmax_t N, typename C, typename T>
+template <typename I>
+Scalar<N, C, T>::Scalar(Scalar<N, I, T> const &that) : _n(static_cast<C>(that._n))
 {
 }
 
- template <intmax_t N, typename C, typename T> template <intmax_t S, typename I> Scalar<N, C, T>::Scalar(Scalar<S, I, T> const &that)
+template <intmax_t N, typename C, typename T> template <intmax_t S, typename I> Scalar<N, C, T>::Scalar(Scalar<S, I, T> const &that)
 {
   typedef std::ratio<S, N> R;
   static_assert(R::den == 1, "Construction not permitted - target scale is not an integral multiple of source scale.");
@@ -242,7 +247,7 @@ Scalar<N, C, T>::scale()
 template <intmax_t N, typename C, typename T>
 template <intmax_t S, typename I>
 auto
-  Scalar<N, C, T>::operator=(Scalar<S, I, T> const &that) -> self &
+Scalar<N, C, T>::operator=(Scalar<S, I, T> const &that) -> self &
 {
   typedef std::ratio<S, N> R;
   static_assert(R::den == 1, "Assignment not permitted - target scale is not an integral multiple of source scale.");
@@ -376,9 +381,9 @@ operator<(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
     return lhs.units() < rhs.units();
 }
 
- template <intmax_t N1, typename C1, intmax_t N2, typename C2, typename T>
+template <intmax_t N1, typename C1, intmax_t N2, typename C2, typename T>
 bool
-   operator==(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
+operator==(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 {
   typedef std::ratio<N1, N2> R;
   if (R::den == 1) {
@@ -389,9 +394,9 @@ bool
     return lhs.units() == rhs.units();
 }
 
- template <intmax_t N1, typename C1, intmax_t N2, typename C2, typename T>
+template <intmax_t N1, typename C1, intmax_t N2, typename C2, typename T>
 bool
-   operator<=(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
+operator<=(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 {
   typedef std::ratio<N1, N2> R;
   if (R::den == 1) {
@@ -681,7 +686,7 @@ operator+(int n, Scalar<N, int> const &rhs)
 template <intmax_t N, typename C, typename T>
 template <intmax_t S, typename I>
 auto
-  Scalar<N, C, T>::operator-=(Scalar<S, I, T> const &that) -> self &
+Scalar<N, C, T>::operator-=(Scalar<S, I, T> const &that) -> self &
 {
   typedef std::ratio<S, N> R;
   static_assert(R::den == 1, "Subtraction not permitted - target scale is not an integral multiple of source scale.");
@@ -746,35 +751,26 @@ operator-(int n, Scalar<N, int> const &rhs)
   return Scalar<N, int>(rhs) -= n;
 }
 
-template <intmax_t N, typename C, typename T>
-auto
-Scalar<N, C, T>::operator++() -> self &
+template <intmax_t N, typename C, typename T> auto Scalar<N, C, T>::operator++() -> self &
 {
   ++_n;
   return *this;
 }
 
-template <intmax_t N, typename C, typename T>
-auto
-Scalar<N, C, T>::operator++(int) -> self
+template <intmax_t N, typename C, typename T> auto Scalar<N, C, T>::operator++(int) -> self
 {
   self zret(*this);
   ++_n;
   return zret;
 }
 
-
-template <intmax_t N, typename C, typename T>
-auto
-Scalar<N, C, T>::operator--() -> self &
+template <intmax_t N, typename C, typename T> auto Scalar<N, C, T>::operator--() -> self &
 {
   --_n;
   return *this;
 }
 
-template <intmax_t N, typename C, typename T>
-auto
-Scalar<N, C, T>::operator--(int) -> self
+template <intmax_t N, typename C, typename T> auto Scalar<N, C, T>::operator--(int) -> self
 {
   self zret(*this);
   --_n;
