@@ -993,6 +993,7 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
   // Update stream counts
   if (stream) {
     --total_client_streams_count;
+    --client_streams_count;
     stream_list.remove(stream);
   }
 
