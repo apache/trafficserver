@@ -31,11 +31,11 @@
 #include <cstdint>
 #include <ratio>
 
+namespace tag { struct generic; }
+
 namespace ApacheTrafficServer
 {
 template <intmax_t N, typename C, typename T> class Scalar;
-
-namespace tag { struct generic; }
 
 namespace detail
 {
