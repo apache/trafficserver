@@ -817,6 +817,8 @@ public:
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
 
+  MgmtInt body_factory_response_max_size;
+
 private:
   /////////////////////////////////////
   // operator = and copy constructor //
@@ -918,7 +920,8 @@ inline HttpConfigParams::HttpConfigParams()
     disallow_post_100_continue(0),
     parser_allow_non_http(1),
     keepalive_internal_vc(0),
-    server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD)
+    server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD),
+    body_factory_response_max_size(8192)
 {
 }
 
