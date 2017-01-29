@@ -26,110 +26,13 @@
     :license: Apache
 """
 
-from docutils import nodes, utils
-from docutils.parsers.rst.roles import set_classes
+from docutils import nodes
 from docutils.parsers import rst
 from docutils.parsers.rst import directives
 from sphinx.domains import Domain, ObjType, std
 from sphinx.roles import XRefRole
 from sphinx.locale import l_, _
 import sphinx
-
-# Autolink for Trafficserver issues
-# Moved from doc/conf.py, now integrated into TS domain
-#
-# Two types of issues supported:
-# * Jira: for archive purpose only (after the Jira to Github move)
-# * Github: for new issues (after the Jira to Github move)
-#
-# Syntax:
-# :ts:jira:`XXXX` where XXXX is the issue number
-# :ts:github:`XXXX` where XXXX is the issue number
-#
-# Output
-# * Prefix issue number with 'TS-'
-# * Render HTML link:
-#   - either to https://issues.apache.org/jira/browse/TS-XXXX
-#   - or to https://github.com/apache/trafficserver/issues/XXXX
-
-def ts_jira_role(name, rawtext,  issue_num, lineno, inliner, options={}, content=[]):
-  """Link to a Trafficserver Jira issue.
-
-  Returns 2 part tuple containing list of nodes to insert into the
-  document and a list of system messages.  Both are allowed to be
-  empty.
-
-  :param name: The role name used in the document.
-  :param rawtext: The entire markup snippet, with role.
-  :param issue_num: The issue number marked with the role.
-  :param lineno: The line number where rawtext appears in the input.
-  :param inliner: The inliner instance that called us.
-  :param options: Directive options for customization.
-  :param content: The directive content for customization.
-  """
-  app = inliner.document.settings.env.app
-  try:
-    base_url = app.config.trafficserver_jira_url
-    if not base_url:
-      raise AttributeError
-  except AttributeError, err:
-    raise ValueError('trafficserver_jira_url configuration values not set (%s)' % str(err))
-  #
-  issue_prefix = 'TS-'
-  node = make_link_node(rawtext, app, base_url, issue_prefix, issue_num, options)
-  return [node], []
-
-def ts_github_role(name, rawtext,  issue_num, lineno, inliner, options={}, content=[]):
-  """Link to a Trafficserver Github issue.
-
-  Returns 2 part tuple containing list of nodes to insert into the
-  document and a list of system messages.  Both are allowed to be
-  empty.
-
-  :param name: The role name used in the document.
-  :param rawtext: The entire markup snippet, with role.
-  :param text: The text marked with the role.
-  :param lineno: The line number where rawtext appears in the input.
-  :param inliner: The inliner instance that called us.
-  :param options: Directive options for customization.
-  :param content: The directive content for customization.
-  """
-  app = inliner.document.settings.env.app
-  try:
-    base_url = app.config.trafficserver_github_url
-    if not base_url:
-      raise AttributeError
-  except AttributeError, err:
-    raise ValueError('trafficserver_github_url configuration values not set (%s)' % str(err))
-  #
-  issue_prefix = ''
-  node = make_link_node(rawtext, app, base_url, issue_prefix, issue_num, options)
-  return [node], []
-
-def make_link_node(rawtext, app, base_url, issue_prefix, issue_num, options):
-  """Create a link to a Apache Jira resource.
-
-  :param rawtext: Text being replaced with link node.
-  :param app: Sphinx application context
-  :param type: Link type ('jira' or 'github')
-  :param slug: ID of the thing to link to
-  :param options: Options dictionary passed to role func.
-  """
-  #
-  try:
-      issue_num_int = int(issue_num)
-      if issue_num_int <= 0:
-          raise ValueError
-  except ValueError:
-    raise ValueError('Trafficserver issue number must be a number greater than or equal to 1; '
-                     '"%s" is invalid.' % text, line=lineno)
-  #
-  base_url = base_url + issue_prefix + '{0}'
-  ref = base_url.format(issue_num)
-  set_classes(options)
-  node = nodes.reference(rawtext, issue_prefix + issue_num, refuri=ref,
-                         **options)
-  return node
 
 class TSConfVar(std.Target):
     """
@@ -370,10 +273,6 @@ class TSStatRef(XRefRole):
     def process_link(self, env, ref_node, explicit_title_p, title, target):
         return title, target
 
-class TSIssueRef(XRefRole):
-    def process_link(self, env, ref_node, explicit_title_p, title, target):
-        return 'TS-' + title, 'https://issues.apache.org/jira/browse/TS-' + target
-
 class TrafficServerDomain(Domain):
     """
     Apache Traffic Server Documentation.
@@ -385,8 +284,7 @@ class TrafficServerDomain(Domain):
 
     object_types = {
         'cv': ObjType(l_('configuration variable'), 'cv'),
-        'stat': ObjType(l_('statistic'), 'stat'),
-        'jira': ObjType(l_('jira'), 'jira')
+        'stat': ObjType(l_('statistic'), 'stat')
     }
 
     directives = {
@@ -396,21 +294,17 @@ class TrafficServerDomain(Domain):
 
     roles = {
         'cv' : TSConfVarRef(),
-        'stat' : TSStatRef(),
-        'jira' : ts_jira_role,
-        'github' : ts_github_role
+        'stat' : TSStatRef()
     }
 
     initial_data = {
         'cv' : {}, # full name -> docname
-        'stat' : {},
-        'issue' : {}
+        'stat' : {}
     }
 
     dangling_warnings = {
         'cv' : "No definition found for configuration variable '%(target)s'",
-        'stat' : "No definition found for statistic '%(target)s'",
-        'issue' : "No definition found for issue '%(target)s'"
+        'stat' : "No definition found for statistic '%(target)s'"
     }
 
     def clear_doc(self, docname):
@@ -422,10 +316,6 @@ class TrafficServerDomain(Domain):
         for var, doc in stat_list.items():
             if doc == docname:
                 del stat_list[var]
-        issue_list = self.data['issue']
-        for var, doc in issue_list.items():
-            if doc == docname:
-                del issue_list[var]
 
     def find_doc(self, key, obj_type):
         zret = None
@@ -434,8 +324,6 @@ class TrafficServerDomain(Domain):
             obj_list = self.data['cv']
         elif obj_type == 'stat' :
             obj_list = self.data['stat']
-        elif obj_type == 'issue' :
-            obj_list = self.data['issue']
         else:
             obj_list = None
 
@@ -445,20 +333,15 @@ class TrafficServerDomain(Domain):
         return zret
 
     def resolve_xref(self, env, src_doc, builder, obj_type, target, node, cont_node):
-        if obj_type == 'issue':
-            return sphinx.util.nodes.make_refnode(builder, src_doc, src_doc, nodes.make_id(target), cont_node, None)
-        else:
-            dst_doc = self.find_doc(target, obj_type)
-            if (dst_doc):
-                return sphinx.util.nodes.make_refnode(builder, src_doc, dst_doc, nodes.make_id(target), cont_node, 'records.config')
+        dst_doc = self.find_doc(target, obj_type)
+        if (dst_doc):
+            return sphinx.util.nodes.make_refnode(builder, src_doc, dst_doc, nodes.make_id(target), cont_node, 'records.config')
 
     def get_objects(self):
         for var, doc in self.data['cv'].iteritems():
             yield var, var, 'cv', doc, var, 1
         for var, doc in self.data['stat'].iteritems():
             yield var, var, 'stat', doc, var, 1
-        for var, doc in self.data['issue'].iteritems():
-            yield var, var, 'issue', doc, var, 1
 
 # These types are ignored as missing references for the C++ domain.
 # We really need to do better with this. Editing this file for each of
@@ -500,8 +383,6 @@ def setup(app):
     rst.roles.register_generic_role('const', nodes.literal)
 
     app.add_domain(TrafficServerDomain)
-    app.add_config_value('trafficserver_jira_url', None, 'env')
-    app.add_config_value('trafficserver_github_url', None, 'env')
 
     # Types that we want the C domain to consider built in
     for word in EXTERNAL_TYPES:

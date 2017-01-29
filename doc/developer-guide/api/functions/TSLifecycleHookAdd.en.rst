@@ -162,7 +162,7 @@ History
 =======
 
 Lifecycle hooks were introduced to solve process initialization ordering issues
-:ts:jira:`1487`. Different API calls required different modules of |TS| to be
+(TS-1487). Different API calls required different modules of |TS| to be
 initialized for the call to work, but others did not work that late in
 initialization, which was problematic because all of them could effectively
 only be called from :func:`TSPluginInit` . The solution was to move

@@ -361,7 +361,6 @@ HttpSM::cleanup()
 void
 HttpSM::destroy()
 {
-  HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
   cleanup();
   httpSMAllocator.free(this);
 }
@@ -4062,13 +4061,17 @@ HttpSM::do_remap_request(bool run_inline)
   }
 
   // check if the overridden client cert filename is already attached to an existing ssl context
-  ats_scoped_str clientCert(Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename));
-  auto tCTX = params->getCTX(clientCert);
+  if (t_state.txn_conf->client_cert_filepath && t_state.txn_conf->client_cert_filename) {
+    ats_scoped_str clientCert(Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename));
+    if (clientCert != nullptr) {
+      auto tCTX = params->getCTX(clientCert);
 
-  if (tCTX == nullptr) {
-    // make new client ctx and add it to the ctx list
-    auto tctx = params->getNewCTX(clientCert);
-    params->InsertCTX(clientCert, tctx);
+      if (tCTX == nullptr) {
+        // make new client ctx and add it to the ctx list
+        auto tctx = params->getNewCTX(clientCert);
+        params->InsertCTX(clientCert, tctx);
+      }
+    }
   }
 
   return;
@@ -4929,9 +4932,11 @@ HttpSM::do_http_server_open(bool raw)
     // between the statement above and the check below.
     // If this happens, we might go over the max by 1 but this is ok.
     if (sum >= t_state.http_config_param->server_max_connections) {
-      ink_assert(pending_action == nullptr);
-      pending_action = eventProcessor.schedule_in(this, HRTIME_MSECONDS(100));
       httpSessionManager.purge_keepalives();
+      // Eventually may want to have a queue as the origin_max_connection does to allow for a combination
+      // of retries and errors.  But at this point, we are just going to allow the error case.
+      t_state.current.state = HttpTransact::CONNECTION_ERROR;
+      call_transact_and_set_next_state(HttpTransact::HandleResponse);
       return;
     }
   }
@@ -6324,7 +6329,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
   // Clear the decks before we setup the new producers
   // As things stand, we cannot have two static producers operating at
   // once
-  tunnel.kill_tunnel();
+  tunnel.reset();
 
   // Setup the tunnel to the client
   HttpTunnelProducer *p =
@@ -6933,6 +6938,7 @@ HttpSM::kill_this()
 
     DebugSM("http", "[%" PRId64 "] deallocating sm", sm_id);
     //    authAdapter.destroyState();
+    HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
     destroy();
   }
 }
@@ -7064,6 +7070,7 @@ HttpSM::update_stats()
           "dns_lookup_begin: %.3f "
           "dns_lookup_end: %.3f "
           "server_connect: %.3f "
+          "server_connect_end: %.3f "
           "server_first_read: %.3f "
           "server_read_header_done: %.3f "
           "server_close: %.3f "
@@ -7082,6 +7089,7 @@ HttpSM::update_stats()
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT),
+          milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE),
           milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE),

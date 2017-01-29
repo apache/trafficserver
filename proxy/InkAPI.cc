@@ -2384,9 +2384,12 @@ TSStringPercentDecode(const char *str, size_t str_len, char *dst, size_t dst_siz
 
   // TODO: We should check for "failures" here?
   unescape_str(buffer, buffer + dst_size, src, src + str_len, s);
-  *buffer = '\0';
+
+  size_t data_written   = std::min<size_t>(buffer - dst, dst_size - 1);
+  *(dst + data_written) = '\0';
+
   if (length) {
-    *length = (buffer - dst);
+    *length = (data_written);
   }
 
   return TS_SUCCESS;
@@ -4612,7 +4615,16 @@ TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_hook_id(id) == TS_SUCCESS);
 
-  HttpSM *sm = (HttpSM *)txnp;
+  HttpSM *sm    = (HttpSM *)txnp;
+  APIHook *hook = sm->txn_hook_get(id);
+
+  // Traverse list of hooks and add a particular hook only once
+  while (hook != NULL) {
+    if (hook->m_cont == (INKContInternal *)contp) {
+      return;
+    }
+    hook = hook->m_link.next;
+  }
   sm->txn_hook_append(id, (INKContInternal *)contp);
 }
 

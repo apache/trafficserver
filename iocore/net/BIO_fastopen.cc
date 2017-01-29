@@ -27,16 +27,7 @@
 
 #include "BIO_fastopen.h"
 
-static int
-fastopen_create(BIO *bio)
-{
-  bio->init  = 0;
-  bio->num   = NO_FD;
-  bio->flags = 0;
-  bio->ptr   = nullptr;
-
-  return 1;
-}
+static int (*fastopen_create)(BIO *) = BIO_meth_get_create(const_cast<BIO_METHOD *>(BIO_s_socket()));
 
 static int
 fastopen_destroy(BIO *bio)
@@ -44,11 +35,10 @@ fastopen_destroy(BIO *bio)
   if (bio) {
     // We expect this BIO to not own the socket, so we must always
     // be in NOCLOSE mode.
-    ink_assert(bio->shutdown == BIO_NOCLOSE);
-    fastopen_create(bio);
+    ink_assert(BIO_get_shutdown(bio) == BIO_NOCLOSE);
   }
 
-  return 1;
+  return BIO_meth_get_destroy(const_cast<BIO_METHOD *>(BIO_s_socket()))(bio);
 }
 
 static int
@@ -58,26 +48,27 @@ fastopen_bwrite(BIO *bio, const char *in, int insz)
 
   errno = 0;
   BIO_clear_retry_flags(bio);
-  ink_assert(bio->num != NO_FD);
+  int fd = BIO_get_fd(bio, nullptr);
+  ink_assert(fd != NO_FD);
 
-  if (bio->ptr) {
+  if (BIO_get_data(bio)) {
     // On the first write only, make a TFO request if TFO is enabled.
     // The best documentation on the behavior of the Linux API is in
     // RFC 7413. If we get EINPROGRESS it means that the SYN has been
     // sent without data and we should retry.
-    const sockaddr *dst = reinterpret_cast<const sockaddr *>(bio->ptr);
+    const sockaddr *dst = reinterpret_cast<const sockaddr *>(BIO_get_data(bio));
     ProxyMutex *mutex   = this_ethread()->mutex.get();
 
     NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
 
-    err = socketManager.sendto(bio->num, (void *)in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
+    err = socketManager.sendto(fd, (void *)in, insz, MSG_FASTOPEN, dst, ats_ip_size(dst));
     if (err >= 0) {
       NET_INCREMENT_DYN_STAT(net_fastopen_successes_stat);
     }
 
-    bio->ptr = nullptr;
+    BIO_set_data(bio, nullptr);
   } else {
-    err = socketManager.write(bio->num, (void *)in, insz);
+    err = socketManager.write(fd, (void *)in, insz);
   }
 
   if (err < 0) {
@@ -97,11 +88,12 @@ fastopen_bread(BIO *bio, char *out, int outsz)
 
   errno = 0;
   BIO_clear_retry_flags(bio);
-  ink_assert(bio->num != NO_FD);
+  int fd = BIO_get_fd(bio, nullptr);
+  ink_assert(fd != NO_FD);
 
   // TODO: If we haven't done the fastopen, ink_abort().
 
-  err = socketManager.read(bio->num, out, outsz);
+  err = socketManager.read(fd, out, outsz);
   if (err < 0) {
     errno = -err;
     if (BIO_sock_non_fatal_error(errno)) {
@@ -116,39 +108,18 @@ static long
 fastopen_ctrl(BIO *bio, int cmd, long larg, void *ptr)
 {
   switch (cmd) {
-  case BIO_C_SET_FD:
-    ink_assert(larg == BIO_CLOSE || larg == BIO_NOCLOSE);
-    ink_assert(bio->num == NO_FD);
-
-    bio->init     = 1;
-    bio->shutdown = larg;
-    bio->num      = *reinterpret_cast<int *>(ptr);
-    return 0;
-
   case BIO_C_SET_CONNECT:
     // We only support BIO_set_conn_address(), which sets a sockaddr.
     ink_assert(larg == 2);
-    bio->ptr = ptr;
-    return 0;
-
-  // We are unbuffered so unconditionally succeed on BIO_flush().
-  case BIO_CTRL_FLUSH:
-    return 1;
-
-  case BIO_CTRL_PUSH:
-  case BIO_CTRL_POP:
-    return 0;
-
-  default:
-#if DEBUG
-    ink_abort("unsupported BIO control cmd=%d larg=%ld ptr=%p", cmd, larg, ptr);
-#endif
-
+    BIO_set_data(bio, ptr);
     return 0;
   }
+
+  return BIO_meth_get_ctrl(const_cast<BIO_METHOD *>(BIO_s_socket()))(bio, cmd, larg, ptr);
 }
 
-static const BIO_METHOD fastopen_methods = {
+#ifndef HAVE_BIO_METH_NEW
+static const BIO_METHOD fastopen_methods[] = {{
   .type          = BIO_TYPE_SOCKET,
   .name          = "fastopen",
   .bwrite        = fastopen_bwrite,
@@ -159,10 +130,21 @@ static const BIO_METHOD fastopen_methods = {
   .create        = fastopen_create,
   .destroy       = fastopen_destroy,
   .callback_ctrl = nullptr,
-};
+}};
+#else
+static const BIO_METHOD *fastopen_methods = [] {
+  BIO_METHOD *fastopen_methods = BIO_meth_new(BIO_TYPE_SOCKET, "fastopen");
+  BIO_meth_set_write(fastopen_methods, fastopen_bwrite);
+  BIO_meth_set_read(fastopen_methods, fastopen_bread);
+  BIO_meth_set_ctrl(fastopen_methods, fastopen_ctrl);
+  BIO_meth_set_create(fastopen_methods, fastopen_create);
+  BIO_meth_set_destroy(fastopen_methods, fastopen_destroy);
+  return fastopen_methods;
+}();
+#endif
 
 const BIO_METHOD *
 BIO_s_fastopen()
 {
-  return &fastopen_methods;
+  return fastopen_methods;
 }

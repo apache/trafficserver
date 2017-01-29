@@ -1050,8 +1050,8 @@ void
 HttpTransact::ModifyRequest(State *s)
 {
   int scheme, hostname_len;
-  const char *hostname;
-  HTTPHdr &request = s->hdr_info.client_request;
+  HTTPHdr &request              = s->hdr_info.client_request;
+  static const int PORT_PADDING = 8;
 
   DebugTxn("http_trans", "START HttpTransact::ModifyRequest");
 
@@ -1085,10 +1085,15 @@ HttpTransact::ModifyRequest(State *s)
   // The solution should be to move the scheme detecting logic in to
   // the header class, rather than doing it in a random bit of
   // external code.
-  hostname = request.host_get(&hostname_len);
+  const char *buf = request.host_get(&hostname_len);
   if (!request.is_target_in_url()) {
     s->hdr_info.client_req_is_server_style = true;
   }
+  // Copy out buf to a hostname just in case its heap header memory is freed during coalescing
+  // due to later HdrHeap operations
+  char *hostname = (char *)alloca(hostname_len + PORT_PADDING);
+  memcpy(hostname, buf, hostname_len);
+
   // Make clang analyzer happy. hostname is non-null iff request.is_target_in_url().
   ink_assert(hostname || s->hdr_info.client_req_is_server_style);
 
@@ -1102,17 +1107,12 @@ HttpTransact::ModifyRequest(State *s)
 
   if ((max_forwards != 0) && !s->hdr_info.client_req_is_server_style && s->method != HTTP_WKSIDX_CONNECT) {
     MIMEField *host_field = request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
-    int host_val_len      = hostname_len;
-    const char *host_val  = hostname;
-    int port              = url->port_get_raw();
-    char *buf             = nullptr;
+    in_port_t port        = url->port_get_raw();
 
     // Form the host:port string if not a default port (e.g. 80)
+    // We allocated extra space for the port above
     if (port > 0) {
-      buf = static_cast<char *>(alloca(host_val_len + 15));
-      memcpy(buf, hostname, host_val_len);
-      host_val_len += snprintf(buf + host_val_len, 15, ":%d", port);
-      host_val = buf;
+      hostname_len += snprintf(hostname + hostname_len, PORT_PADDING, ":%u", port);
     }
 
     // No host_field means not equal to host and will need to be set, so create it now.
@@ -1121,8 +1121,8 @@ HttpTransact::ModifyRequest(State *s)
       request.field_attach(host_field);
     }
 
-    if (!mimefield_value_equal(host_field, host_val, host_val_len)) {
-      request.field_value_set(host_field, host_val, host_val_len);
+    if (mimefield_value_equal(host_field, hostname, hostname_len) == false) {
+      request.field_value_set(host_field, hostname, hostname_len);
       request.mark_target_dirty();
     }
   }
@@ -1712,7 +1712,7 @@ HttpTransact::OSDNSLookup(State *s)
   // If the SRV response has a port number, we should honor it. Otherwise we do the port defined in remap
   if (s->dns_info.srv_lookup_success) {
     s->server_info.dst_addr.port() = htons(s->dns_info.srv_port);
-  } else {
+  } else if (!s->api_server_addr_set) {
     s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // now we can set the port.
   }
   ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
@@ -5817,7 +5817,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     while (enc_value) {
       const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
 
-      if (wks_value == HTTP_VALUE_CHUNKED) {
+      if (wks_value == HTTP_VALUE_CHUNKED && !is_response_body_precluded(status_code, s->method)) {
         if (!s->cop_test_page) {
           DebugTxn("http_hdrs", "[init_state_vars_from_resp] transfer encoding: chunked!");
         }
@@ -7990,12 +7990,8 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // If the response is prohibited from containing a body,
   //  we know the content length is trustable for keep-alive
-  if (is_response_body_precluded(status_code, s->method)) {
-    s->hdr_info.trust_response_cl       = true;
-    s->hdr_info.response_content_length = 0;
-    s->client_info.transfer_encoding    = HttpTransact::NO_TRANSFER_ENCODING;
-    s->server_info.transfer_encoding    = HttpTransact::NO_TRANSFER_ENCODING;
-  }
+  if (is_response_body_precluded(status_code, s->method))
+    s->hdr_info.trust_response_cl = true;
 
   handle_response_keep_alive_headers(s, outgoing_version, outgoing_response);
 

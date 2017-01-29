@@ -30,60 +30,7 @@
 #include "ts/TestBox.h"
 #include "ts/TextBuffer.h"
 
-#if defined(darwin)
-extern "C" {
-struct hostent *gethostbyname_r(const char *name, struct hostent *result, char *buffer, int buflen, int *h_errnop);
-struct hostent *gethostbyaddr_r(const char *name, size_t size, int type, struct hostent *result, char *buffer, int buflen,
-                                int *h_errnop);
-}
-#endif
-
 IpAddr const IpAddr::INVALID;
-
-struct hostent *
-ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data *data)
-{
-#ifdef RENTRENT_GETHOSTBYNAME
-  struct hostent *r = gethostbyname(hostname);
-  if (r)
-    data->ent  = *r;
-  data->herrno = errno;
-
-#else // RENTRENT_GETHOSTBYNAME
-#if GETHOSTBYNAME_R_GLIBC2
-
-  struct hostent *addrp = nullptr;
-  int res               = gethostbyname_r(hostname, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp, &data->herrno);
-  struct hostent *r     = nullptr;
-  if (!res && addrp)
-    r               = addrp;
-
-#else
-  struct hostent *r = gethostbyname_r(hostname, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &data->herrno);
-#endif
-#endif
-  return r;
-}
-
-struct hostent *
-ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyaddr_r_data *data)
-{
-#if GETHOSTBYNAME_R_GLIBC2
-  struct hostent *r     = nullptr;
-  struct hostent *addrp = nullptr;
-  int res = gethostbyaddr_r((char *)ip, len, type, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp, &data->herrno);
-  if (!res && addrp)
-    r = addrp;
-#else
-#ifdef RENTRENT_GETHOSTBYADDR
-  struct hostent *r = gethostbyaddr((const void *)ip, len, type);
-
-#else
-  struct hostent *r = gethostbyaddr_r((char *)ip, len, type, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &data->herrno);
-#endif
-#endif // LINUX
-  return r;
-}
 
 uint32_t
 ink_inet_addr(const char *s)
@@ -666,7 +613,8 @@ ats_tcp_somaxconn()
 
 /* Darwin version ... */
 #if HAVE_SYSCTLBYNAME
-  if (sysctlbyname("kern.ipc.somaxconn", nullptr, nullptr, &value, sizeof(value)) == 0) {
+  size_t value_size = sizeof(value);
+  if (sysctlbyname("kern.ipc.somaxconn", &value, &value_size, nullptr, 0) == 0) {
     return value;
   }
 #endif

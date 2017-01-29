@@ -24,7 +24,7 @@
 
 ATSHashMD5::ATSHashMD5(void) : md_len(0), finalized(false)
 {
-  ctx     = EVP_MD_CTX_create();
+  ctx     = EVP_MD_CTX_new();
   int ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
   ink_assert(ret == 1);
 }
@@ -67,9 +67,6 @@ ATSHashMD5::size(void) const
 void
 ATSHashMD5::clear(void)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-#define EVP_MD_CTX_reset(ctx) EVP_MD_CTX_cleanup((ctx))
-#endif
   int ret = EVP_MD_CTX_reset(ctx);
   ink_assert(ret == 1);
   ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
@@ -80,5 +77,5 @@ ATSHashMD5::clear(void)
 
 ATSHashMD5::~ATSHashMD5()
 {
-  EVP_MD_CTX_destroy(ctx);
+  EVP_MD_CTX_free(ctx);
 }
