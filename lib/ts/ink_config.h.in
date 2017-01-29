@@ -84,7 +84,6 @@
 #define TS_HAS_SO_PEERCRED @has_so_peercred@
 
 /* OS API definitions */
-#define SIZEOF_VOID_POINTER @ac_cv_sizeof_voidp@
 #define TS_IP_TRANSPARENT @ip_transparent@
 #define TS_HAS_128BIT_CAS @has_128bit_cas@
 

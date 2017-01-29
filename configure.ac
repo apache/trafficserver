@@ -954,7 +954,6 @@ AC_CHECK_SIZEOF([void*])
 if test "x$ac_cv_sizeof_voidp" == "x"; then
   AC_ERROR([Cannot determine size of void*])
 fi
-AC_SUBST(ac_cv_sizeof_voidp)
 
 # Right now, 32-bit platform is a build error, unless we've forced it with --enable-32bit-build
 if test "${ac_cv_sizeof_voidp}" = "4"; then
