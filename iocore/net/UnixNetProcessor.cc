@@ -258,7 +258,12 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
       }
     }
   }
-  t->schedule_imm(vc);
+  // Try to stay on the current thread if it is the right type
+  if (t->is_event_type(opt->etype)) {
+    t->schedule_imm(vc);
+  } else { // Otherwise, pass along to another thread of the right type
+    eventProcessor.schedule_imm(vc, opt->etype);
+  }
   if (using_socks) {
     return &socksEntry->action_;
   } else

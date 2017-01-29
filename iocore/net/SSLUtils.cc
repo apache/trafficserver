@@ -834,7 +834,7 @@ SSLInitializeLibrary()
 {
   if (!open_ssl_initialized) {
 // BoringSSL does not have the memory functions
-#ifndef OPENSSL_IS_BORINGSSL
+#ifdef HAVE_CRYPTO_SET_MEM_FUNCTIONS
     if (res_track_memory >= 2) {
       CRYPTO_set_mem_functions(ssl_track_malloc, ssl_track_realloc, ssl_track_free);
     } else {
@@ -1467,7 +1467,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   int server_verify_client;
   ats_scoped_str completeServerCertPath;
   SSL_CTX *ctx                 = SSLDefaultServerContext();
-  EVP_MD_CTX *digest           = EVP_MD_CTX_create();
+  EVP_MD_CTX *digest           = EVP_MD_CTX_new();
   STACK_OF(X509_NAME) *ca_list = nullptr;
   unsigned char hash_buf[EVP_MAX_MD_SIZE];
   unsigned int hash_len    = 0;
@@ -1678,7 +1678,6 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
       SSL_CTX_set_client_CA_list(ctx, ca_list);
     }
   }
-  EVP_MD_CTX_init(digest);
 
   if (EVP_DigestInit_ex(digest, evp_md_func, nullptr) == 0) {
     SSLError("EVP_DigestInit_ex failed");
@@ -1764,8 +1763,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   return ctx;
 
 fail:
-  // EVP_MD_CTX_destroy calls EVP_MD_CTX_cleanup too
-  EVP_MD_CTX_destroy(digest);
+  EVP_MD_CTX_free(digest);
   SSL_CLEAR_PW_REFERENCES(ctx)
   SSLReleaseContext(ctx);
   for (unsigned int i = 0; i < certList.length(); i++) {
