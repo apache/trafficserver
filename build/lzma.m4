@@ -84,7 +84,7 @@ if test "$enable_lzma" != "no"; then
     TS_ADDTO(LDFLAGS, [-L${lzma_ldflags}])
     TS_ADDTO_RPATH(${lzma_ldflags})
   fi
-  AC_SEARCH_LIBS([lzma_code], [lzma], [lzma_have_libs=1])
+  AC_CHECK_LIB([lzma], [lzma_code], [lzma_have_libs=1])
   if test "$lzma_have_libs" != "0"; then
     AC_CHECK_HEADERS(lzma.h, [lzma_have_headers=1])
   fi
