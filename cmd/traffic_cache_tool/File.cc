@@ -31,7 +31,7 @@ FilePath &
 FilePath::operator=(char const *path)
 {
   _path   = ats_strdup(path);
-  _stat_p = false;
+  _stat_p = STAT_P::UNDEF;
   return *this;
 }
 

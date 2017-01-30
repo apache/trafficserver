@@ -70,6 +70,8 @@ public:
 
   /// Return the file type value.
   int file_type() const;
+  /// Size of the file or block device.
+  off_t physical_size() const;
 
   bool is_char_device() const;
   bool is_block_device() const;
@@ -81,8 +83,10 @@ public:
 
 protected:
   ats_scoped_str _path;         ///< File path.
+
+  enum class STAT_P : int8_t { INVALID = -1, UNDEF = 0, VALID = 1};
+  mutable STAT_P _stat_p = STAT_P::UNDEF; ///< Whether _stat is valid.
   mutable struct stat _stat;    ///< File information.
-  mutable bool _stat_p = false; ///< Whether _stat is valid.
 };
 
 /** A file support class for handling files as bulk content.
@@ -162,9 +166,9 @@ FilePath::is_relative() const
 inline struct stat const *
 FilePath::stat() const
 {
-  if (!_stat_p)
-    _stat_p = ::stat(_path, &_stat) >= 0;
-  return _stat_p ? &_stat : nullptr;
+  if (STAT_P::UNDEF == _stat_p)
+    _stat_p = ::stat(_path, &_stat) >= 0 ? STAT_P::VALID : STAT_P::INVALID;
+  return _stat_p == STAT_P::VALID ? &_stat : nullptr;
 }
 
 FilePath operator/(FilePath const &lhs, FilePath const &rhs);
@@ -196,6 +200,11 @@ FilePath::is_regular_file() const
 {
   return this->file_type() == S_IFREG;
 }
+
+ inline off_t
+   FilePath::physical_size() const
+ {
+   return this->stat() ? _stat.
 
 inline BulkFile::BulkFile(super &&that) : super(that)
 {
