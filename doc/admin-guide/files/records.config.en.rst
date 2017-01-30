@@ -2264,6 +2264,11 @@ Customizable User Response Pages
     this value and an underscore are predended to the file name to find in the template sets
     directory. See :ref:`body-factory`.
 
+.. ts:cv:: CONFIG proxy.config.body_factory.response_max_size INT 8192
+    :reloadable:
+
+    Maximum size of the error template response page.
+
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
 
    Specifies when Traffic Server suppresses generated response pages:

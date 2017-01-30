@@ -323,6 +323,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.bin_path
  proxy.config.body_factory.enable_customizations
  proxy.config.body_factory.enable_logging
+ proxy.config.body_factory.response_max_size
  proxy.config.body_factory.response_suppression_mode
  proxy.config.body_factory.template_sets_dir
  proxy.config.cache.agg_write_backlog
