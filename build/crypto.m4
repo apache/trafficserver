@@ -22,7 +22,7 @@ dnl
 dnl TS_CHECK_CRYPTO: look for crypto libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO], [
-  AC_SEARCH_LIBS([crypt], [crypt], [AC_SUBST([LIBCRYPT],["-lcrypt"])])
+  AC_CHECK_LIB([crypt], [crypt], [AC_SUBST([LIBCRYPT],["-lcrypt"])])
 
   AX_CHECK_OPENSSL([
     enable_crypto=yes

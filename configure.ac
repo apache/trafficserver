@@ -1300,7 +1300,7 @@ AC_SUBST(use_port)
 # Profiler support
 has_profiler=0
 if test "x${with_profiler}" = "xyes"; then
-  AC_SEARCH_LIBS([ProfilerStart], [profiler],
+  AC_CHECK_LIB([profiler], [ProfilerStart],
     [AC_SUBST([LIBPROFILER], ["-lprofiler"])
      has_profiler=1
     ],
@@ -1356,7 +1356,7 @@ AS_IF([test "x$has_128bit_cas" = "x1"], [
 # If we don't find it, disable checking for header.
 use_posix_cap=0
 AS_IF([test "x$enable_posix_cap" != "xno"],
-  AC_SEARCH_LIBS([cap_set_proc],[cap],
+  AC_CHECK_LIB([cap], [cap_set_proc],
     [AC_SUBST([LIBCAP], ["-lcap"])
      use_posix_cap=1
     ],[
