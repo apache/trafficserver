@@ -931,6 +931,8 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.body_factory_template_base);
   ats_free(oride.proxy_response_server_string);
   ats_free(oride.global_user_agent_header);
+  ats_free(oride.client_cert_filename);
+  ats_free(oride.client_cert_filepath);
   ats_free(cache_vary_default_text);
   ats_free(cache_vary_default_images);
   ats_free(cache_vary_default_other);
