@@ -470,8 +470,7 @@ struct OverridableHttpConfigParams {
       cache_heuristic_lm_factor(0.10),
       freshness_fuzz_prob(0.005),
       background_fill_threshold(0.5),
-      client_cert_filename(NULL),
-      client_cert_filepath(NULL)
+      client_cert_file(NULL)
   {
   }
 
@@ -683,7 +682,7 @@ struct OverridableHttpConfigParams {
   MgmtFloat cache_heuristic_lm_factor;
   MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
-  char *client_cert_filename;
+  char *client_cert_file;
   char *client_cert_filepath;
 };
 
@@ -931,6 +930,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.body_factory_template_base);
   ats_free(oride.proxy_response_server_string);
   ats_free(oride.global_user_agent_header);
+  ats_free(oride.client_cert_file);
   ats_free(cache_vary_default_text);
   ats_free(cache_vary_default_images);
   ats_free(cache_vary_default_other);

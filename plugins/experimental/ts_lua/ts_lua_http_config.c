@@ -122,7 +122,6 @@ typedef enum {
   TS_LUA_CONFIG_SRV_ENABLED                                   = TS_CONFIG_SRV_ENABLED,
   TS_LUA_CONFIG_HTTP_FORWARD_CONNECT_METHOD                   = TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD,
   TS_LUA_CONFIG_SSL_CERT_FILENAME                             = TS_CONFIG_SSL_CERT_FILENAME,
-  TS_LUA_CONFIG_SSL_CERT_FILEPATH                             = TS_CONFIG_SSL_CERT_FILEPATH,
 } TSLuaOverridableConfigKey;
 
 typedef enum {
