@@ -896,7 +896,7 @@ ostream &
 operator<<(ostream &s, ApacheTrafficServer::Scalar<N, C, T> const &x)
 {
   static ApacheTrafficServer::detail::tag_label_B const b;
-  s << x.count();
+  s << x.units();
   return ApacheTrafficServer::detail::tag_label<T>(s, b);
 }
 }

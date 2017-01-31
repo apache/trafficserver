@@ -229,7 +229,7 @@ Test_5()
 struct KBytes_tag {
   static std::string const label;
 };
-std::string const KBytes_tag::label(" KBytes");
+std::string const KBytes_tag::label(" bytes");
 
 void
 Test_IO()
@@ -270,7 +270,7 @@ main(int, char **)
   Test_3();
   Test_4();
   Test_5();
-  TestBox::print_summary();
   Test_IO();
+  TestBox::print_summary();
   return 0;
 }
