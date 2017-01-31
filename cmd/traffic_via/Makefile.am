@@ -34,6 +34,7 @@ traffic_via_SOURCES = \
 
 traffic_via_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
+  @LIBPCRE@ \
   @LIBTCL@
 
 TESTS = \
