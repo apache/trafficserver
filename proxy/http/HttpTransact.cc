@@ -8198,8 +8198,8 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   char *new_msg;
 
   va_start(ap, format);
-  new_msg = body_factory->fabricate_with_old_api(error_body_type, s, s->http_config_param->body_factory_response_max_size, &len, body_language, sizeof(body_language), body_type,
-                                                 sizeof(body_type), format, ap);
+  new_msg = body_factory->fabricate_with_old_api(error_body_type, s, s->http_config_param->body_factory_response_max_size, &len,
+                                                 body_language, sizeof(body_language), body_type, sizeof(body_type), format, ap);
   va_end(ap);
 
   // After the body factory is called, a new "body" is allocated, and we must replace it. It is
