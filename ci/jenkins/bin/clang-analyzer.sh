@@ -53,7 +53,7 @@ export CCC_CC=${LLVM_BASE}/bin/clang
 export CCC_CXX=${LLVM_BASE}/bin/clang++
 
 autoreconf -fi
-scan-build ./configure ${configure}
+${LLVM_BASE}/bin/scan-build ./configure ${configure}
 
 # Since we don't want the analyzer to look at LuaJIT, build it first
 # without scan-build. The subsequent make will then skip it.
