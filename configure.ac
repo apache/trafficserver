@@ -228,6 +228,19 @@ AC_ARG_ENABLE([fast-sdk],
 AC_MSG_RESULT([$enable_fast_sdk])
 TS_ARG_ENABLE_VAR([use], [fast-sdk])
 
+# Curl support for traffic_top
+AC_MSG_CHECKING([whether to enable CURL])
+AC_ARG_ENABLE([curl],
+  [AS_HELP_STRING([--disable-curl],[turn off CURL support for traffic_top])],
+  [],
+  [enable_curl=yes]
+)
+AC_MSG_RESULT([$enable_curl])
+
+if test "x${enable_curl}" = "xyes"; then
+AX_LIB_CURL([7.19], [AC_DEFINE([HAS_CURL], [1], [Define if libcurl >= 7.19.])])
+fi
+
 #
 # Diags
 #
@@ -1088,13 +1101,6 @@ TS_REMOVEFROM(CFLAGS, -Werror)
 AX_WITH_CURSES
 CFLAGS="$__saved_CFLAGS"
 
-AX_LIB_CURL([7.19], [
-    AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [test "x$ax_cv_curses" = "xyes"])
-  ], [
-    AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [false])
-  ]
-)
-
 #
 # Check for SSL presence and usability
 TS_CHECK_CRYPTO
@@ -1478,6 +1484,9 @@ AC_SUBST([LUAJIT_CPPFLAGS], ['-I$(abs_top_srcdir)/lib/luajit/src'])
 
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
+
+# We should only build traffic_top if we have curses
+AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [test "x$ax_cv_curses" = "xyes"])
 
 AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
 AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])

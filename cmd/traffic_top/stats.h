@@ -20,14 +20,16 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-
+#if HAS_CURL
 #include <curl/curl.h>
+#endif
 #include <map>
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <sys/time.h>
 #include "mgmtapi.h"
 
 using namespace std;
@@ -44,7 +46,9 @@ struct LookupItem {
   int type;
 };
 extern size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream);
+#if HAS_CURL
 extern char curl_error[CURL_ERROR_SIZE];
+#endif
 extern string response;
 
 namespace constant
@@ -289,6 +293,7 @@ public:
       _now       = now;
       _time_diff = _now - _old_time;
     } else {
+#if HAS_CURL
       CURL *curl;
       CURLcode res;
 
@@ -328,6 +333,7 @@ public:
         /* always cleanup */
         curl_easy_cleanup(curl);
       }
+#endif
     }
   }
 
