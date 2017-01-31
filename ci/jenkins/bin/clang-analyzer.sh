@@ -45,7 +45,7 @@ test ! -z "${WORKSPACE}" && cd "${WORKSPACE}/src"
 
 # Where to store the results, special case for the CI
 output="/tmp"
-test -d "/home/jenkins/clang-analyzer" && output="/home/jenkins/clang-analyzer"
+test -w "/home/jenkins/clang-analyzer" && output="/home/jenkins/clang-analyzer"
 
 # Tell scan-build to use clang as the underlying compiler to actually build
 # source. If you don't do this, it will default to GCC.
