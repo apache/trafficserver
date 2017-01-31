@@ -64,10 +64,6 @@ public:
   /// Access the path explicitly.
   char const *path() const;
 
-  /// Get the stat buffer.
-  /// @return A valid stat buffer or @c nullptr if the system call failed.
-  struct stat const *stat() const;
-
   /// Return the file type value.
   int file_type() const;
   /// Size of the file or block device.
@@ -82,6 +78,10 @@ public:
   ats_scoped_fd open(int flags) const;
 
 protected:
+  /// Get the stat buffer.
+  /// @return A valid stat buffer or @c nullptr if the system call failed.
+  template <typename T> T stat(T (*f)(struct stat const*)) const;
+
   ats_scoped_str _path;         ///< File path.
 
   enum class STAT_P : int8_t { INVALID = -1, UNDEF = 0, VALID = 1};
@@ -163,12 +163,11 @@ FilePath::is_relative() const
   return !this->is_absolute();
 }
 
-inline struct stat const *
-FilePath::stat() const
+ template <typename T> T FilePath::stat(T (*f)(struct stat const*)) const
 {
   if (STAT_P::UNDEF == _stat_p)
     _stat_p = ::stat(_path, &_stat) >= 0 ? STAT_P::VALID : STAT_P::INVALID;
-  return _stat_p == STAT_P::VALID ? &_stat : nullptr;
+  return _stat_p == STAT_P::VALID ? f(&_stat) : T();
 }
 
 FilePath operator/(FilePath const &lhs, FilePath const &rhs);
@@ -177,7 +176,7 @@ FilePath operator/(char const *lhs, FilePath const &rhs);
 inline int
 FilePath::file_type() const
 {
-  return this->stat() ? (_stat.st_mode & S_IFMT) : 0;
+  return this->stat<int>([](struct stat const* s) -> int { return s->st_mode & S_IFMT; });
 }
 
 inline bool
@@ -201,10 +200,11 @@ FilePath::is_regular_file() const
   return this->file_type() == S_IFREG;
 }
 
- inline off_t
-   FilePath::physical_size() const
- {
-   return this->stat() ? _stat.
+inline off_t
+FilePath::physical_size() const
+{
+  return this->stat<off_t>([](struct stat const* s) { return s->st_size; });
+}
 
 inline BulkFile::BulkFile(super &&that) : super(that)
 {

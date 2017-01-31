@@ -80,7 +80,7 @@ struct SpanHeader {
   uint32_t num_free;         /* number of disk volume blocks free */
   uint32_t num_used;         /* number of disk volume blocks in use */
   uint32_t num_diskvol_blks; /* number of disk volume blocks */
-  uint64_t num_blocks;
+  CacheStoreBlocks num_blocks;
   /// Serialized stripe descriptors. This is treated as a variable sized array.
   CacheStripeDescriptor stripes[1];
 };

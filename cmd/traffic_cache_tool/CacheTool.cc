@@ -284,7 +284,8 @@ struct Cache {
   void dumpSpans(SpanDumpDepth depth);
   void dumpVolumes();
 
-  ts::CacheStripeBlocks calcTotalSpanSize();
+  ts::CacheStripeBlocks calcTotalSpanPhysicalSize();
+  ts::CacheStripeBlocks calcTotalSpanConfiguredSize();
 
   std::list<Span *> _spans;
   std::map<int, Volume> _volumes;
@@ -374,7 +375,7 @@ Cache::dumpSpans(SpanDumpDepth depth)
     for (auto span : _spans) {
       std::cout << "Span: " << span->_path << " " << span->_header->num_volumes << " Volumes " << span->_header->num_used
                 << " in use " << span->_header->num_free << " free " << span->_header->num_diskvol_blks << " stripes "
-                << span->_header->num_blocks << " blocks" << std::endl;
+                << span->_header->num_blocks.units() << " blocks" << std::endl;
       for (unsigned int i = 0; i < span->_header->num_diskvol_blks; ++i) {
         ts::CacheStripeDescriptor &stripe = span->_header->stripes[i];
         std::cout << "    : SpanBlock " << i << " @ " << stripe.offset.units() << " blocks=" << stripe.len.units()
@@ -400,15 +401,26 @@ Cache::dumpVolumes()
   }
 }
 
-ts::CacheStripeBlocks Cache::calcTotalSpanSize()
+ts::CacheStripeBlocks Cache::calcTotalSpanConfiguredSize()
 {
   ts::CacheStripeBlocks zret(0);
 
   for ( auto span : _spans ) {
-    zret += ts::scaled_down(span->_size);
+    zret += ts::scaled_down<ts::CacheStripeBlocks>(span->_header->num_blocks);
   }
+  return zret;
 }
 
+ts::CacheStripeBlocks Cache::calcTotalSpanPhysicalSize()
+{
+  ts::CacheStripeBlocks zret(0);
+
+  for ( auto span : _spans ) {
+    // This is broken, physical_size doesn't work for devices, need to fix that.
+    zret += ts::scaled_down<ts::CacheStripeBlocks>(span->_path.physical_size());
+  }
+  return zret;
+}
 
 Cache::~Cache()
 {
@@ -606,6 +618,7 @@ Simulate_Span_Allocation(int argc, char *argv[])
     if (zret) {
       zret = cache.loadSpan(SpanFile);
       if (zret) {
+        std::cout << "Total physical span size is " << cache.calcTotalSpanConfiguredSize().count() << " stripe blocks" << std::endl;
       }
     }
   }
