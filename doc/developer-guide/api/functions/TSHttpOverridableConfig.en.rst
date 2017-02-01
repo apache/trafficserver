@@ -73,6 +73,7 @@ c:member:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM`                     :ts:cv:`prox
 c:member:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER`                  :ts:cv:`proxy.config.http.anonymize_remove_referer`
 c:member:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT`               :ts:cv:`proxy.config.http.anonymize_remove_user_agent`
 c:member:`TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT`           :ts:cv:`proxy.config.http.attach_server_session_to_client`
+c:member:`TS_CONFIG_HTTP_SAFE_REQUESTS_RETRYABLE`                             :ts:cv:`proxy.config.http.safe_requests_retryable`
 c:member:`TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE`               :ts:cv:`proxy.config.http.auth_server_session_private`
 c:member:`TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT`            :ts:cv:`proxy.config.http.background_fill_active_timeout`
 c:member:`TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD`       :ts:cv:`proxy.config.http.background_fill_completed_threshold`

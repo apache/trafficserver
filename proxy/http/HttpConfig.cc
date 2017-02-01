@@ -898,6 +898,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections_queue, "proxy.config.http.origin_max_connections_queue");
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
+  HttpEstablishStaticConfigByte(c.oride.safe_requests_retryable, "proxy.config.http.safe_requests_retryable");
 
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
   HttpEstablishStaticConfigByte(c.oride.forward_connect_method, "proxy.config.http.forward_connect_method");
@@ -1182,6 +1183,7 @@ HttpConfig::reconfigure()
   }
   params->origin_min_keep_alive_connections     = m_master.origin_min_keep_alive_connections;
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
+  params->oride.safe_requests_retryable         = m_master.oride.safe_requests_retryable;
 
   if (params->oride.origin_max_connections && params->oride.origin_max_connections < params->origin_min_keep_alive_connections) {
     Warning("origin_max_connections < origin_min_keep_alive_connections, setting min=max , please correct your records.config");
