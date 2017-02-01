@@ -362,7 +362,7 @@ config_handler(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     iptr = __sync_val_compare_and_swap(&(pstate->invalidate_list), pstate->invalidate_list, i);
 
     if (iptr) {
-      free_cont = TSContCreate(free_handler, NULL);
+      free_cont = TSContCreate(free_handler, TSMutexCreate());
       TSContDataSet(free_cont, (void *)iptr);
       TSContSchedule(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
     }
