@@ -57,6 +57,8 @@ public:
                                            ink_time_t base_response_date, ink_time_t now);
   static bool does_server_allow_response_to_be_stored(HTTPHdr *resp);
   static bool downgrade_request(bool *origin_server_keep_alive, HTTPHdr *outgoing_request);
+  static bool is_method_safe(int method);
+  static bool is_method_idempotent(int method);
 
   static void generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes);
 

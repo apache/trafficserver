@@ -71,6 +71,19 @@ HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
     return false;
 }
 
+bool
+HttpTransactHeaders::is_method_safe(int method)
+{
+  return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_OPTIONS || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_TRACE);
+}
+
+bool
+HttpTransactHeaders::is_method_idempotent(int method)
+{
+  return (method == HTTP_WKSIDX_CONNECT || method == HTTP_WKSIDX_DELETE || method == HTTP_WKSIDX_GET ||
+          method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_OPTIONS || method == HTTP_WKSIDX_TRACE);
+}
+
 void
 HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int scheme)
 {
