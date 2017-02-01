@@ -567,7 +567,7 @@ VolumeConfig::load(ts::FilePath const& path)
               if (!percent) {
                 v._size = ts::scaled_up<ts::CacheStripeBlocks>(v._size = n);
                 if (v._size.count() != n) {
-                  zret.push(0, 0, "Line ", ln, " size ", n, " was rounded up to ", v._size.count());
+                  zret.push(0, 0, "Line ", ln, " size ", n, " was rounded up to ", v._size);
                 }
               } else if ('%' == *percent && percent.size() == 1) {
                 v._percent = n;
@@ -668,17 +668,17 @@ Simulate_Span_Allocation(int argc, char *argv[])
           // Now allocate blocks.
           ts::CacheStripeBlocks span_blocks = ts::scaled_down<ts::CacheStripeBlocks>(span->_header->num_blocks);
           ts::CacheStripeBlocks span_used(0);
-          std::cout << "Allocation from span of size " << span_blocks.count() << std::endl;
+          std::cout << "Allocation from span of " << span_blocks << std::endl;
           for ( auto& v : av ) {
             if (v.shares) {
               auto n = (span_blocks * v.shares) / total_shares;
               v.size += n;
               span_used += n;
-              std::cout << "Volume " << v.idx << " allocated " << n.count() << " stripe blocks for a total of " << v.size.count() << " of " << v.alloc.count() << std::endl;
-              std::cout << "         with " << v.shares << " of " << total_shares << " " << static_cast<double>((v.shares * SCALE) / total_shares)/10.0 << "%" << std::endl;
+              std::cout << "Volume " << v.idx << " allocated " << n << " for a total of " << v.size << " of " << v.alloc << std::endl;
+              std::cout << "         with " << v.shares << " shares of " << total_shares << " total - " << static_cast<double>((v.shares * SCALE) / total_shares)/10.0 << "%" << std::endl;
             }
           }
-          std::cout << "Span allocated " << span_used.count() << " of " << span_blocks.count() << std::endl;
+          std::cout << "Span allocated " << span_used << " of " << span_blocks << std::endl;
         }
       }
     }
