@@ -68,5 +68,10 @@ if [ ! -z "$NOCLEAN" ]; then
   ${ATS_MAKE} distclean
 fi
 
+# Cleanup old reports, for main clang and github as well (if the local helper script is available)
+if [ -x "/admin/bin/clean-clang.sh" ]; then
+    /admin/bin/clean-clang.sh
+fi
+    
 # Exit with the scan-build exit code (thanks to --status-bugs)
 exit $status
