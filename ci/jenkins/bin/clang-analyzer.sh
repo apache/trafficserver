@@ -68,20 +68,5 @@ if [ ! -z "$NOCLEAN" ]; then
   ${ATS_MAKE} distclean
 fi
 
-# Cleanup old reports (save the last 10 reports), but only for the CI
-if [ "/tmp" !=  "$output" ]; then
-    cd ${output} || exit -1
-    for old in $(/usr/bin/ls -1t | tail -n +31); do
-	rm -rf $old
-    done
-
-    # Setup the symlink to the latest report
-    rm -f latest
-    ln -s $(/usr/bin/ls -1t | head -1) latest
-
-    # Purge the cached URL
-    curl -o /dev/null -k -s -X PURGE https://ci.trafficserver.apache.org/files/clang-analyzer/latest/
-fi
-
 # Exit with the scan-build exit code (thanks to --status-bugs)
 exit $status
