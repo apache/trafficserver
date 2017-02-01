@@ -1058,12 +1058,9 @@ fi
 # -----------------------------------------------------------------------------
 # 4. CHECK FOR LIBRARIES
 
-AC_SEARCH_LIBS([exc_capture_context], [exc], [], [])
-AC_SEARCH_LIBS([MLD_demangle_string], [mld], [], [])
 AC_SEARCH_LIBS([socket], [socket], [], [])
 AC_SEARCH_LIBS([gethostbyname], [nsl], [], [])
-AC_SEARCH_LIBS([clock_gettime], [rt], [], [])
-AC_SEARCH_LIBS([clock_gettime], [posix4], [], [])
+AC_SEARCH_LIBS([clock_gettime], [rt posix4], [], [])
 
 dnl We check for dlsym here instead of e.g. dlopen() because ASAN hijacks the latter.
 AC_SEARCH_LIBS([dlsym], [dl], [], [])
