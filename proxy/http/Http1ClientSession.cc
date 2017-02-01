@@ -179,6 +179,15 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   DebugHttpSsn("[%" PRId64 "] session born, netvc %p", con_id, new_vc);
 
+  RecString congestion_control_in;
+  if (REC_ReadConfigStringAlloc(congestion_control_in, "proxy.config.net.tcp_congestion_control_in") == REC_ERR_OKAY) {
+    int len = strlen(congestion_control_in);
+    if (len > 0) {
+      client_vc->set_tcp_congestion_control(congestion_control_in, len);
+    }
+    ats_free(congestion_control_in);
+  }
+
   read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   sm_reader   = reader ? reader : read_buffer->alloc_reader();
   trans.set_reader(sm_reader);
