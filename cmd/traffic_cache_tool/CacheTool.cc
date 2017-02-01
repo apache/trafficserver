@@ -91,6 +91,7 @@ struct VolumeConfig
     int _idx = 0; ///< Volume index.
     int _percent = 0; ///< Size if specified as a percent.
     ts::Megabytes _size = 0; ///< Size if specified as an absolute.
+    ts::CacheStripeBlocks _alloc; ///< Allocation size.
 
     // Methods handy for parsing
     bool hasSize() const { return _percent > 0 || _size > 0; }
@@ -105,7 +106,29 @@ struct VolumeConfig
   iterator end()   { return _volumes.end(); }
   const_iterator begin() const { return _volumes.begin(); }
   const_iterator end()   const { return _volumes.end(); }
+
+  ts::Errata validatePercentAllocation();
+  void convertToAbsolute(ts::CacheStripeBlocks total_span_size);
 };
+
+  ts::Errata VolumeConfig::validatePercentAllocation() {
+    ts::Errata zret;
+    int n = 0;
+    for ( VolData& vol : _volumes ) n += vol._percent;
+    if (n > 100) zret.push(0, 10, "Volume percent allocation ", n, " is more than 100%");
+    return zret;
+  }
+
+  void VolumeConfig::convertToAbsolute(ts::CacheStripeBlocks n)
+  {
+    for ( VolData& vol : _volumes ) {
+      if (vol._percent) {
+        vol._alloc = (n * vol._percent + 99) / 100;
+      } else {
+        vol._alloc = ts::scaled_up<ts::CacheStripeBlocks>(vol._size);
+      }
+    }
+  }
 
 // All of these free functions need to be moved to the Cache class. Or the Span class?
 
@@ -618,7 +641,45 @@ Simulate_Span_Allocation(int argc, char *argv[])
     if (zret) {
       zret = cache.loadSpan(SpanFile);
       if (zret) {
-        std::cout << "Total physical span size is " << cache.calcTotalSpanConfiguredSize().count() << " stripe blocks" << std::endl;
+        ts::CacheStripeBlocks total = cache.calcTotalSpanConfiguredSize();
+        struct V {
+          int idx;
+          ts::CacheStripeBlocks alloc;
+          ts::CacheStripeBlocks size;
+          int64_t shares;
+        };
+        std::vector<V> av;
+        vols.convertToAbsolute(total);
+        for ( auto& vol : vols ) {
+          av.push_back({ vol._idx, vol._alloc, 0, 0});
+        }
+        for ( auto span : cache._spans ) {
+          static const int64_t SCALE = 1000;
+          int64_t total_shares = 0;
+          for ( auto& v : av ) {
+            auto delta = v.alloc - v.size;
+            if (delta > 0) {
+              v.shares = delta.count() * ((delta.count() * SCALE) / v.alloc.count());
+              total_shares += v.shares;
+            } else {
+              v.shares = 0;
+            }
+          }
+          // Now allocate blocks.
+          ts::CacheStripeBlocks span_blocks = ts::scaled_down<ts::CacheStripeBlocks>(span->_header->num_blocks);
+          ts::CacheStripeBlocks span_used(0);
+          std::cout << "Allocation from span of size " << span_blocks.count() << std::endl;
+          for ( auto& v : av ) {
+            if (v.shares) {
+              auto n = (span_blocks * v.shares) / total_shares;
+              v.size += n;
+              span_used += n;
+              std::cout << "Volume " << v.idx << " allocated " << n.count() << " stripe blocks for a total of " << v.size.count() << " of " << v.alloc.count() << std::endl;
+              std::cout << "         with " << v.shares << " of " << total_shares << " " << static_cast<double>((v.shares * SCALE) / total_shares)/10.0 << "%" << std::endl;
+            }
+          }
+          std::cout << "Span allocated " << span_used.count() << " of " << span_blocks.count() << std::endl;
+        }
       }
     }
   }
