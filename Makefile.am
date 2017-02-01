@@ -99,6 +99,8 @@ install-examples: examples
 install-data-hook:
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) install-man
 
+TESTS = tools/check-unused-dependencies
+
 rat:
 	java -jar $(top_srcdir)/ci/apache-rat-0.11-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
 
