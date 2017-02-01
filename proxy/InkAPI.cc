@@ -8121,6 +8121,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->attach_server_session_to_client;
     break;
+  case TS_CONFIG_HTTP_SAFE_REQUESTS_RETRYABLE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->safe_requests_retryable;
+    break;
   case TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->origin_max_connections_queue;
@@ -8602,6 +8606,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE;
       } else if (!strncmp(name, "proxy.config.http.request_header_max_size", length)) {
         cnf = TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE;
+      } else if (!strncmp(name, "proxy.config.http.safe_requests_retryable", length)) {
+        cnf = TS_CONFIG_HTTP_SAFE_REQUESTS_RETRYABLE;
       }
       break;
     case 'r':
