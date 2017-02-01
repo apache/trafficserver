@@ -36,8 +36,7 @@ traffic_ctl_SOURCES = \
 
 traffic_ctl_LDADD = \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBTCL@
+  $(top_builddir)/lib/ts/libtsutil.la
 
 include $(top_srcdir)/build/tidy.mk
 

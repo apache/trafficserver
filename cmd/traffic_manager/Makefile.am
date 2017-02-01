@@ -64,7 +64,7 @@ traffic_manager_LDADD += \
 
 traffic_manager_LDADD +=\
   $(LIBUNWIND_LIBS) \
-  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
+  @LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
   -lm
 
 # Must do it this way or the dependencies aren't detected.

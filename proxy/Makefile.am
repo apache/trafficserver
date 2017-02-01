@@ -215,7 +215,6 @@ traffic_server_LDADD = \
   @HWLOC_LIBS@ \
   @LIBPCRE@ \
   @LIBTCL@ \
-  @LIBCAP@ \
   @LIBRESOLV@ \
   @LIBZ@ \
   @LIBLZMA@ \
@@ -236,7 +235,7 @@ traffic_logcat_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/lib/bindings/libbindings.la \
   $(top_builddir)/lib/luajit/src/libluajit.a \
-  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@\
+  @LIBTCL@ @HWLOC_LIBS@\
   @LIBPROFILER@ -lm
 
 traffic_logstats_SOURCES = logstats.cc
@@ -250,7 +249,7 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/lib/bindings/libbindings.la \
   $(top_builddir)/lib/luajit/src/libluajit.a \
-  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@ \
+  @LIBTCL@ @HWLOC_LIBS@ \
   @LIBPROFILER@ -lm
 
 versiondir = $(pkgsysconfdir)
