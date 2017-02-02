@@ -587,11 +587,9 @@ ifdef([AC_PROG_SED], [], [
 # Various OS specific setup. Note that on Solaris, 32-bit is always the
 # default, even on a box that with 64-bit architecture.
 # This also sets up a "normalized" variable and define $host_os_def.
-defer_accept=1
 case $host_os in
   linux*)
     host_os_def="linux"
-    defer_accept=45
     EXTRA_CXX_LDFLAGS="-rdynamic"
     ;;
   darwin*)
@@ -628,7 +626,6 @@ case $host_os in
 esac
 
 TS_ADDTO(CPPFLAGS, [-D$host_os_def])
-AC_SUBST(defer_accept)
 
 
 dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
