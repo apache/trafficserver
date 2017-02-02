@@ -627,6 +627,7 @@ esac
 
 TS_ADDTO(CPPFLAGS, [-D$host_os_def])
 
+TS_ADDTO([AM_LDFLAGS], [-Wl,--as-needed])
 
 dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
 ifdef([AM_PROG_AR],
