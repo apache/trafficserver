@@ -590,19 +590,19 @@ ifdef([AC_PROG_SED], [], [
 case $host_os in
   linux*)
     host_os_def="linux"
-    EXTRA_CXX_LDFLAGS="-rdynamic"
+    AM_LDFLAGS="-rdynamic"
     ;;
   darwin*)
     host_os_def="darwin"
     ;;
   freebsd*)
     host_os_def="freebsd"
-    EXTRA_CXX_LDFLAGS="-rdynamic"
+    AM_LDFLAGS="-rdynamic"
     TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     ;;
   kfreebsd*)
     host_os_def="freebsd"
-    EXTRA_CXX_LDFLAGS="-rdynamic"
+    AM_LDFLAGS="-rdynamic"
     TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     TS_ADDTO(CPPFLAGS, [-Dkfreebsd])
     ;;
@@ -620,7 +620,7 @@ case $host_os in
     esac
     ;;
   *)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
+    AM_LDFLAGS="-rdynamic"
     host_os_def=unknown
     ;;
 esac
@@ -1849,9 +1849,7 @@ AC_SUBST([CC])
 AC_SUBST([CFLAGS])
 AC_SUBST([CXX])
 AC_SUBST([CXXFLAGS])
-AC_SUBST([EXTRA_CC_LDFLAGS])
-AC_SUBST([EXTRA_CXX_LDFLAGS])
-AC_SUBST([LIBTOOL_LINK_FLAGS])
+AC_SUBST([AM_LDFLAGS])
 AC_SUBST([iocore_include_dirs])
 AC_SUBST([LDFLAGS])
 AC_SUBST([SHARED_CFLAGS])
@@ -1951,7 +1949,5 @@ AC_MSG_NOTICE([Build option summary:
     LUAJIT_CFLAGS:      $LUAJIT_CFLAGS
     LUAJIT_CPPFLAGS:	$LUAJIT_CPPFLAGS
     LUAJIT_LDFLAGS:     $LUAJIT_LDFLAGS
-    EXTRA_CC_LDFLAGS:   $EXTRA_CC_LDFLAGS
-    EXTRA_CXX_LDFLAGS:  $EXTRA_CXX_LDFLAGS
-    LIBTOOL_LINK_FLAGS: $LIBTOOL_LINK_FLAGS
+    AM@&t@_LDFLAGS:         $AM_LDFLAGS
 ])

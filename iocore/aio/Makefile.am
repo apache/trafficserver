@@ -33,8 +33,7 @@ libinkaio_a_SOURCES = \
   P_AIO.h
 
 test_AIO_LDFLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+  @AM_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
 test_AIO_SOURCES = \
