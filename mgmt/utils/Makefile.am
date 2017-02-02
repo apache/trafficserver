@@ -55,8 +55,7 @@ libutils_p_la_SOURCES = \
   MgmtProcessCleanup.cc
 
 test_marshall_LDFLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+  @AM_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
 test_marshall_SOURCES = test_marshall.cc
