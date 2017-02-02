@@ -59,7 +59,7 @@ ${LLVM_BASE}/bin/scan-build ./configure ${configure}
 # without scan-build. The subsequent make will then skip it.
 ${ATS_MAKE} -j $NPROCS -C lib all-local V=1 Q=
 
-${LLVM_BASE}/bin/scan-build ${checkers} ${options} -o ${output} --html-title="ATS master branch"  ${ATS_MAKE} -j $NPROCS V=1 Q=
+${LLVM_BASE}/bin/scan-build ${checkers} ${options} -o ${output} --html-title="ATS ${JOB_NAME}"  ${ATS_MAKE} -j $NPROCS V=1 Q=
 status=$?
 
 # Clean the work area unless NOCLEAN is set. This is jsut for debugging when you
