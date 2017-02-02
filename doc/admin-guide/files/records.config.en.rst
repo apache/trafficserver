@@ -2875,11 +2875,14 @@ Diagnostic Logging Configuration
 
    Enables logging for diagnostic messages whose log level is `diag` or `debug`.
 
-.. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
+.. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING http|dns
 
-   Each |TS| `diag` and `debug` level message is annotated with a subsytem tag.
-   This configuration contains a regular expression that filters the messages
-   based on the tag. Some commonly used debug tags are:
+   Each |TS| `diag` and `debug` level message is annotated with a subsytem tag.  This configuration
+   contains an anchored regular expression that filters the messages based on the tag. The
+   expressions are prefix matched which creates an implicit ``.*`` at the end. Therefore the default
+   value ``http|dns`` will match tags such as ``http``, ``http_hdrs``, ``dns``, and ``dns_recv``.
+
+   Some commonly used debug tags are:
 
    ============  =====================================================
    Tag           Subsytem usage
