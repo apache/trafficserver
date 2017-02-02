@@ -36,8 +36,7 @@ check_PROGRAMS = test_certlookup
 noinst_LIBRARIES = libinknet.a
 
 test_certlookup_LDFLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+  @AM_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
 test_certlookup_SOURCES = \
