@@ -417,16 +417,16 @@ operator<=(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 // Derived compares. No narrowing optimization needed because if the scales
 // are the same the nested call with be optimized.
 
-template <intmax_t N1, typename C1, intmax_t N2, typename C2>
+template <intmax_t N1, typename C1, intmax_t N2, typename C2, typename T>
 bool
-operator>(Scalar<N1, C1> const &lhs, Scalar<N2, C2> const &rhs)
+  operator>(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 {
   return rhs < lhs;
 }
 
-template <intmax_t N1, typename C1, intmax_t N2, typename C2>
+template <intmax_t N1, typename C1, intmax_t N2, typename C2, typename T>
 bool
-operator>=(Scalar<N1, C1> const &lhs, Scalar<N2, C2> const &rhs)
+  operator>=(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 {
   return rhs <= lhs;
 }
