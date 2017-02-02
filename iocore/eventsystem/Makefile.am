@@ -71,8 +71,7 @@ libinkevent_a_SOURCES = \
 check_PROGRAMS = test_Buffer test_Event
 
 test_LD_FLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+  @AM_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
 test_CPP_FLAGS = \

@@ -47,15 +47,12 @@ check_PROGRAMS = test_RefCountCache
 test_RefCountCache_SOURCES = \
   test_RefCountCache.cc
 
-
 #test_UNUSED_SOURCES = \
 #  test_I_HostDB.cc \
 #  test_P_HostDB.cc
 
-
 test_LD_FLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+  @AM_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
 test_CPP_FLAGS = \
