@@ -70,6 +70,7 @@ struct Span {
   ats_scoped_fd _fd;
   std::unique_ptr<ts::SpanHeader> _header;
   int _vol_idx = 0;
+  ts::CacheStoreBlocks _free_space;
 };
 
 struct Volume {
@@ -78,6 +79,7 @@ struct Volume {
     int _idx;    ///< Stripe index in span.
   };
   int _idx; ///< Volume index.
+  ts::CacheStoreBlocks _size; ///< Amount of storage allocated.
   std::vector<StripeRef> _stripes;
 };
 
@@ -338,8 +340,12 @@ Cache::loadSpanDirect(ts::FilePath const &path, int vol_idx, Bytes size)
     int nspb = span->_header->num_diskvol_blks;
     for (auto i = 0; i < nspb; ++i) {
       ts::CacheStripeDescriptor &stripe = span->_header->stripes[i];
-      if (stripe.free == 0)
+      if (stripe.free == 0) {
         _volumes[stripe.vol_idx]._stripes.push_back(Volume::StripeRef{span.get(), i});
+        _volumes[stripe.vol_idx]._size += stripe.len;
+      } else {
+        span->_free_space += stripe.len;
+      }
     }
     span->_vol_idx = vol_idx;
     _spans.push_back(span.release());
@@ -644,38 +650,54 @@ Simulate_Span_Allocation(int argc, char *argv[])
         ts::CacheStripeBlocks total = cache.calcTotalSpanConfiguredSize();
         struct V {
           int idx;
-          ts::CacheStripeBlocks alloc;
-          ts::CacheStripeBlocks size;
+          ts::CacheStripeBlocks alloc; // target allocation
+          ts::CacheStripeBlocks size; // actually allocated space
+          int64_t deficit;
           int64_t shares;
         };
         std::vector<V> av;
         vols.convertToAbsolute(total);
         for ( auto& vol : vols ) {
-          av.push_back({ vol._idx, vol._alloc, 0, 0});
+          ts::CacheStripeBlocks size(0);
+          auto spot = cache._volumes.find(vol._idx);
+          if (spot != cache._volumes.end())
+            size = ts::scaled_down<ts::CacheStripeBlocks>(spot->second._size);
+          av.push_back({ vol._idx, vol._alloc, size, 0, 0});
         }
         for ( auto span : cache._spans ) {
+          if (span->_free_space <= 0) continue;
           static const int64_t SCALE = 1000;
           int64_t total_shares = 0;
           for ( auto& v : av ) {
             auto delta = v.alloc - v.size;
             if (delta > 0) {
-              v.shares = delta.count() * ((delta.count() * SCALE) / v.alloc.count());
+              v.deficit = (delta.count() * SCALE) / v.alloc.count();
+              v.shares = delta.count() * v.deficit;
               total_shares += v.shares;
+              std::cout << "Volume " << v.idx << " allocated " << v.alloc << " has " << v.size << " needs " << (v.alloc - v.size) << " deficit " << v.deficit << std::endl;
             } else {
               v.shares = 0;
             }
           }
           // Now allocate blocks.
-          ts::CacheStripeBlocks span_blocks = ts::scaled_down<ts::CacheStripeBlocks>(span->_header->num_blocks);
+          ts::CacheStripeBlocks span_blocks = ts::scaled_down<ts::CacheStripeBlocks>(span->_free_space);
           ts::CacheStripeBlocks span_used(0);
           std::cout << "Allocation from span of " << span_blocks << std::endl;
+          // sort by deficit so least relatively full volumes go first.
+          std::sort(av.begin(), av.end(), [](V const& lhs, V const& rhs) { return lhs.deficit > rhs.deficit; });
           for ( auto& v : av ) {
             if (v.shares) {
-              auto n = (span_blocks * v.shares) / total_shares;
+              auto n = (((span_blocks - span_used) * v.shares) + total_shares -1) / total_shares;
+              auto delta = v.alloc - v.size;
+              // Not sure why this is needed. But a large and empty volume can dominate the shares
+              // enough to get more than it actually needs if the other volume are relative small or full.
+              // I need to do more math to see if the weighting can be adjusted to not have this happen.
+              n = std::min(n, delta);
               v.size += n;
               span_used += n;
-              std::cout << "Volume " << v.idx << " allocated " << n << " for a total of " << v.size << " of " << v.alloc << std::endl;
+              std::cout << "Volume " << v.idx << " allocated " << n << " of " << delta << " needed to total of " << v.size << " of " << v.alloc << std::endl;
               std::cout << "         with " << v.shares << " shares of " << total_shares << " total - " << static_cast<double>((v.shares * SCALE) / total_shares)/10.0 << "%" << std::endl;
+              total_shares -= v.shares;
             }
           }
           std::cout << "Span allocated " << span_used << " of " << span_blocks << std::endl;
