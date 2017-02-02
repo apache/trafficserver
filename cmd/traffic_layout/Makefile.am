@@ -24,9 +24,7 @@ AM_CPPFLAGS = \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils
 
-AM_LDFLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+AM_LDFLAGS += \
   @OPENSSL_LDFLAGS@
 
 traffic_layout_SOURCES = \

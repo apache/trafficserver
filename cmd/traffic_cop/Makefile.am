@@ -24,9 +24,7 @@ AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/mgmt/cluster \
   -I$(abs_top_srcdir)/mgmt/api/include
 
-AM_LDFLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+AM_LDFLAGS += \
   @OPENSSL_LDFLAGS@
 
 bin_PROGRAMS = traffic_cop

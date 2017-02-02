@@ -47,10 +47,8 @@ AM_CPPFLAGS = \
 
 # NOTE: it is safe to use AM_LDFLAGS here because we are only building executables. If we start
 # building libtool archives, change these to only apply to the executables.
-AM_LDFLAGS = \
+AM_LDFLAGS += \
   $(LUAJIT_LDFLAGS) \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
   @OPENSSL_LDFLAGS@
 
 noinst_HEADERS = \
@@ -188,8 +186,6 @@ traffic_server_SOURCES +=  \
   RegressionSM.h \
   RegressionSM.cc
 endif
-
-traffic_server_LDFLAGS = $(AM_LDFLAGS)
 
 traffic_server_LDADD = \
   http/libhttp.a \
