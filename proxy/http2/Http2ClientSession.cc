@@ -185,14 +185,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   DebugHttp2Ssn("session born, netvc %p", this->client_vc);
 
-  RecString congestion_control_in;
-  if (REC_ReadConfigStringAlloc(congestion_control_in, "proxy.config.net.tcp_congestion_control_in") == REC_ERR_OKAY) {
-    int len = strlen(congestion_control_in);
-    if (len > 0) {
-      this->client_vc->set_tcp_congestion_control(congestion_control_in, len);
-    }
-    ats_free(congestion_control_in);
-  }
+  this->client_vc->set_tcp_congestion_control(CLIENT_SIDE);
 
   this->read_buffer             = iobuf ? iobuf : new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
   this->read_buffer->water_mark = connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE);
