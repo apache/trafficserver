@@ -110,24 +110,24 @@ Test_2()
   Size_2 sz_c(SCALE_1 / SCALE_2);
   Size_2 sz_d(29 * SCALE_1 / SCALE_2);
 
-  auto sz = ts::scaled_up<Size_1>(sz_a);
+  auto sz = ts::scale_up<Size_1>(sz_a);
   test.check(sz.count() == 1, "Rounding up, got %d expected %d", sz.count(), 1);
-  sz = ts::scaled_down<Size_1>(sz_a);
+  sz = ts::scale_down<Size_1>(sz_a);
   test.check(sz.count() == 0, "Rounding down: got %d expected %d", sz.count(), 0);
 
-  sz = ts::scaled_up<Size_1>(sz_b);
+  sz = ts::scale_up<Size_1>(sz_b);
   test.check(sz.count() == 4, "Rounding up, got %d expected %d", sz.count(), 4);
-  sz = ts::scaled_down<Size_1>(sz_b);
+  sz = ts::scale_down<Size_1>(sz_b);
   test.check(sz.count() == 3, "Rounding down, got %d expected %d", sz.count(), 3);
 
-  sz = ts::scaled_up<Size_1>(sz_c);
+  sz = ts::scale_up<Size_1>(sz_c);
   test.check(sz.count() == 1, "Rounding up, got %d expected %d", sz.count(), 1);
-  sz = ts::scaled_down<Size_1>(sz_c);
+  sz = ts::scale_down<Size_1>(sz_c);
   test.check(sz.count() == 1, "Rounding down, got %d expected %d", sz.count(), 1);
 
-  sz = ts::scaled_up<Size_1>(sz_d);
+  sz = ts::scale_up<Size_1>(sz_d);
   test.check(sz.count() == 29, "Rounding up, got %d expected %d", sz.count(), 29);
-  sz = ts::scaled_down<Size_1>(sz_d);
+  sz = ts::scale_down<Size_1>(sz_d);
   test.check(sz.count() == 29, "Rounding down, got %d expected %d", sz.count(), 29);
 
   sz   = 119;
@@ -151,14 +151,14 @@ Test_3()
   Size_2 sz_a(2);
   Size_2 sz_b(97);
 
-  auto sz = ts::scaled_up<Size_1>(sz_a);
+  auto sz = ts::scale_up<Size_1>(sz_a);
   test.check(sz.count() == 2, "Rounding up, got %d expected %d", sz.count(), 2);
-  sz = ts::scaled_down<Size_1>(sz_a);
+  sz = ts::scale_down<Size_1>(sz_a);
   test.check(sz.count() == 1, "Rounding down: got %d expected %d", sz.count(), 0);
 
-  sz = ts::scaled_up<Size_1>(sz_b);
+  sz = ts::scale_up<Size_1>(sz_b);
   test.check(sz.count() == 65, "Rounding up, got %d expected %d", sz.count(), 65);
-  sz = ts::scaled_down<Size_1>(sz_b);
+  sz = ts::scale_down<Size_1>(sz_b);
   test.check(sz.count() == 64, "Rounding down, got %d expected %d", sz.count(), 64);
 }
 
@@ -174,15 +174,15 @@ Test_4()
   //  m_4 = m_9; // Should fail to compile with static assert.
   //  m_9 = m_4; // Should fail to compile with static assert.
 
-  m_4 = ts::scaled_up<decltype(m_4)>(m_9);
+  m_4 = ts::scale_up<decltype(m_4)>(m_9);
   test.check(m_4.count() == 214, "Rounding down, got %d expected %d", m_4.count(), 214);
-  m_4 = ts::scaled_down<decltype(m_4)>(m_9);
+  m_4 = ts::scale_down<decltype(m_4)>(m_9);
   test.check(m_4.count() == 213, "Rounding down, got %d expected %d", m_4.count(), 213);
 
   m_4 = 213;
-  m_9 = ts::scaled_up<decltype(m_9)>(m_4);
+  m_9 = ts::scale_up<decltype(m_9)>(m_4);
   test.check(m_9.count() == 95, "Rounding down, got %d expected %d", m_9.count(), 95);
-  m_9 = ts::scaled_down<decltype(m_9)>(m_4);
+  m_9 = ts::scale_down<decltype(m_9)>(m_4);
   test.check(m_9.count() == 94, "Rounding down, got %d expected %d", m_9.count(), 94);
 
   m_test = m_4; // Verify assignment of identical scale values compiles.
@@ -226,6 +226,25 @@ Test_5()
   test.check(z1.count() == 10240, "Addition got %ld expected %d", z1.count(), 10240);
 }
 
+struct KBytes_tag {
+  static std::string const label;
+};
+std::string const KBytes_tag::label(" bytes");
+
+void
+Test_IO()
+{
+  typedef ts::Scalar<1024, long int, KBytes_tag> KBytes;
+  typedef ts::Scalar<1024, int> KiBytes;
+
+  KBytes x(12);
+  KiBytes y(12);
+
+  std::cout << "Testing" << std::endl;
+  std::cout << "x is " << x << std::endl;
+  std::cout << "y is " << y << std::endl;
+}
+
 void
 test_Compile()
 {
@@ -251,6 +270,7 @@ main(int, char **)
   Test_3();
   Test_4();
   Test_5();
+  Test_IO();
   TestBox::print_summary();
   return 0;
 }

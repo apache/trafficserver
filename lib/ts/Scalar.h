@@ -30,6 +30,7 @@
 
 #include <cstdint>
 #include <ratio>
+#include <ostream>
 
 namespace tag
 {
@@ -145,7 +146,7 @@ public:
   /// Assignment operator.
   /// The value is scaled appropriately.
   /// @note Requires the scale of @a that be an integer multiple of the scale of @a this. If this isn't the case then
-  /// the @c scaled_up or @c scaled_down casts must be used to indicate the rounding direction.
+  /// the @c scale_up or @c scale_down casts must be used to indicate the rounding direction.
   template <intmax_t S, typename I> self &operator=(Scalar<S, I, T> const &that);
   /// Assignment from same scale.
   self &operator=(self const &that);
@@ -153,7 +154,7 @@ public:
   /// Addition operator.
   /// The value is scaled from @a that to @a this.
   /// @note Requires the scale of @a that be an integer multiple of the scale of @a this. If this isn't the case then
-  /// the @c scaled_up or @c scaled_down casts must be used to indicate the rounding direction.
+  /// the @c scale_up or @c scale_down casts must be used to indicate the rounding direction.
   template <intmax_t S, typename I> self &operator+=(Scalar<S, I> const &that);
   /// Addition - add @a n as a number of scaled units.
   self &operator+=(C n);
@@ -172,7 +173,7 @@ public:
   /// Subtraction operator.
   /// The value is scaled from @a that to @a this.
   /// @note Requires the scale of @a that be an integer multiple of the scale of @a this. If this isn't the case then
-  /// the @c scaled_up or @c scaled_down casts must be used to indicate the rounding direction.
+  /// the @c scale_up or @c scale_down casts must be used to indicate the rounding direction.
   template <intmax_t S, typename I> self &operator-=(Scalar<S, I, T> const &that);
   /// Subtraction - subtract @a n as a number of scaled units.
   self &operator-=(C n);
@@ -184,6 +185,12 @@ public:
 
   /// Division - divide (rounding down) the count by @a n.
   self &operator/=(C n);
+
+  /// Scale value @a x to this type, rounding up.
+  template <intmax_t S, typename I> self scale_up(Scalar<S, I, T> const &x);
+
+  /// Scale value @a x to this type, rounding down.
+  template <intmax_t S, typename I> self scale_down(Scalar<S, I, T> const &x);
 
   /// Run time access to the scale (template arg @a N).
   static constexpr intmax_t scale();
@@ -266,12 +273,12 @@ Scalar<N, C, T>::operator=(Scalar<S, I, T> const &that) -> self &
     typedef Scalar<1024> KiloBytes;
 
     Paragraphs src(37459);
-    auto size = scaled_up<KiloBytes>(src); // size.count() == 586
+    auto size = scale_up<KiloBytes>(src); // size.count() == 586
     @endcode
  */
 template <typename M, intmax_t S, typename I>
 M
-scaled_up(Scalar<S, I, typename M::Tag> const &src)
+scale_up(Scalar<S, I, typename M::Tag> const &src)
 {
   typedef std::ratio<M::SCALE, S> R;
   auto c = src.count();
@@ -296,12 +303,12 @@ scaled_up(Scalar<S, I, typename M::Tag> const &src)
     typedef Scalar<1024> KiloBytes;
 
     Paragraphs src(37459);
-    auto size = scaled_up<KiloBytes>(src); // size.count() == 585
+    auto size = scale_up<KiloBytes>(src); // size.count() == 585
     @endcode
  */
 template <typename M, intmax_t S, typename I>
 M
-scaled_down(Scalar<S, I, typename M::Tag> const &src)
+scale_down(Scalar<S, I, typename M::Tag> const &src)
 {
   typedef std::ratio<M::SCALE, S> R;
   auto c = src.count();
@@ -323,7 +330,7 @@ scaled_down(Scalar<S, I, typename M::Tag> const &src)
 /// Convert a unit value @a n to a Scalar, rounding down.
 template <typename M>
 M
-scaled_down(intmax_t n)
+scale_down(intmax_t n)
 {
   return n / M::SCALE; // assuming compiler will optimize out dividing by 1 if needed.
 }
@@ -331,7 +338,7 @@ scaled_down(intmax_t n)
 /// Convert a unit value @a n to a Scalar, rounding up.
 template <typename M>
 M
-scaled_up(intmax_t n)
+scale_up(intmax_t n)
 {
   return M::SCALE == 1 ? n : (n / M::SCALE + (0 != (n % M::SCALE)));
 }
@@ -410,16 +417,16 @@ operator<=(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 // Derived compares. No narrowing optimization needed because if the scales
 // are the same the nested call with be optimized.
 
-template <intmax_t N1, typename C1, intmax_t N2, typename C2>
+template <intmax_t N1, typename C1, intmax_t N2, typename C2, typename T>
 bool
-operator>(Scalar<N1, C1> const &lhs, Scalar<N2, C2> const &rhs)
+  operator>(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 {
   return rhs < lhs;
 }
 
-template <intmax_t N1, typename C1, intmax_t N2, typename C2>
+template <intmax_t N1, typename C1, intmax_t N2, typename C2, typename T>
 bool
-operator>=(Scalar<N1, C1> const &lhs, Scalar<N2, C2> const &rhs)
+  operator>=(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 {
   return rhs <= lhs;
 }
@@ -837,5 +844,60 @@ operator/(Scalar<N, int> const &lhs, int n)
   return Scalar<N, int>(lhs) /= n;
 }
 
+template <intmax_t N, typename C, typename T>
+template <intmax_t S, typename I>
+auto
+Scalar<N, C, T>::scale_up(Scalar<S, I, T> const &that) -> self
+{
+  return ApacheTrafficServer::scale_up<self>(that);
+}
+
+template <intmax_t N, typename C, typename T>
+template <intmax_t S, typename I>
+auto
+Scalar<N, C, T>::scale_down(Scalar<S, I, T> const &that) -> self
+{
+  return ApacheTrafficServer::scale_down<self>(that);
+}
+
+namespace detail
+{
+  // These classes exist only to create distinguishable overloads.
+  struct tag_label_A {
+  };
+  struct tag_label_B : public tag_label_A {
+  };
+  // The purpose is to print a label for a tagged type only if the tag class defines a member that
+  // is the label.  This creates a base function that always works and does nothing. The second
+  // function creates an overload if the tag class has a member named 'label' that has an stream IO
+  // output operator. When invoked with a second argument of B then the second overload exists and
+  // is used, otherwise only the first exists and that is used. The critical technology is the use
+  // of 'auto' and 'decltype' which effectively checks if the code inside 'decltype' compiles.
+  template <typename T>
+  inline std::ostream &
+  tag_label(std::ostream &s, tag_label_A const &)
+  {
+    return s;
+  }
+  template <typename T>
+  inline auto
+  tag_label(std::ostream &s, tag_label_B const &) -> decltype(s << T::label)
+  {
+    return s << T::label;
+  }
+} // detail
+
 } // namespace
+
+namespace std
+{
+template <intmax_t N, typename C, typename T>
+ostream &
+operator<<(ostream &s, ApacheTrafficServer::Scalar<N, C, T> const &x)
+{
+  static ApacheTrafficServer::detail::tag_label_B const b;
+  s << x.units();
+  return ApacheTrafficServer::detail::tag_label<T>(s, b);
+}
+}
 #endif // TS_SCALAR_H
