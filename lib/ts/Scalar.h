@@ -419,14 +419,14 @@ operator<=(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 
 template <intmax_t N1, typename C1, intmax_t N2, typename C2, typename T>
 bool
-  operator>(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
+operator>(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 {
   return rhs < lhs;
 }
 
 template <intmax_t N1, typename C1, intmax_t N2, typename C2, typename T>
 bool
-  operator>=(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
+operator>=(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 {
   return rhs <= lhs;
 }
@@ -881,7 +881,7 @@ namespace detail
   }
   template <typename T>
   inline auto
-  tag_label(std::ostream &s, tag_label_B const &) -> decltype(s << T::label)
+  tag_label(std::ostream &s, tag_label_B const &) -> decltype(s << T::label, s)
   {
     return s << T::label;
   }
