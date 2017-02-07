@@ -155,7 +155,7 @@ public:
   /// The value is scaled from @a that to @a this.
   /// @note Requires the scale of @a that be an integer multiple of the scale of @a this. If this isn't the case then
   /// the @c scale_up or @c scale_down casts must be used to indicate the rounding direction.
-  template <intmax_t S, typename I> self &operator+=(Scalar<S, I> const &that);
+  template <intmax_t S, typename I> self &operator+=(Scalar<S, I, T> const &that);
   /// Addition - add @a n as a number of scaled units.
   self &operator+=(C n);
   /// Addition - add @a n as a number of scaled units.
@@ -240,7 +240,7 @@ Scalar<N, C, T>::scale()
 
 template <intmax_t N, typename C, typename T>
 template <typename I>
-Scalar<N, C, T>::Scalar(Scalar<N, I, T> const &that) : _n(static_cast<C>(that._n))
+Scalar<N, C, T>::Scalar(Scalar<N, I, T> const &that) : _n(static_cast<C>(that.count()))
 {
 }
 
@@ -625,7 +625,7 @@ operator>=(int n, Scalar<N, int> const &rhs)
 template <intmax_t N, typename C, typename T>
 template <intmax_t S, typename I>
 auto
-Scalar<N, C, T>::operator+=(Scalar<S, I> const &that) -> self &
+  Scalar<N, C, T>::operator+=(Scalar<S, I, T> const &that) -> self &
 {
   typedef std::ratio<S, N> R;
   static_assert(R::den == 1, "Addition not permitted - target scale is not an integral multiple of source scale.");
@@ -645,6 +645,13 @@ Scalar<N, C, T>::operator+=(C n) -> self &
 {
   _n += n;
   return *this;
+}
+
+template <intmax_t N, typename C, intmax_t S, typename I, typename T>
+auto
+operator + (Scalar<N,C,T> lhs, Scalar<S, I, T> const &rhs) -> typename std::common_type<Scalar<N,C,T>,Scalar<S,I,T>>::type
+{
+  return typename std::common_type<Scalar<N,C,T>,Scalar<S,I,T>>::type(lhs) += rhs;
 }
 
 template <intmax_t N, typename C, typename T>
@@ -713,6 +720,13 @@ Scalar<N, C, T>::operator-=(C n) -> self &
 {
   _n -= n;
   return *this;
+}
+
+template <intmax_t N, typename C, intmax_t S, typename I, typename T>
+auto
+operator - (Scalar<N,C,T> lhs, Scalar<S, I, T> const &rhs) -> typename std::common_type<Scalar<N,C,T>,Scalar<S,I,T>>::type
+{
+  return typename std::common_type<Scalar<N,C,T>,Scalar<S,I,T>>::type(lhs) -= rhs;
 }
 
 template <intmax_t N, typename C, typename T>
@@ -899,5 +913,16 @@ operator<<(ostream &s, ApacheTrafficServer::Scalar<N, C, T> const &x)
   s << x.units();
   return ApacheTrafficServer::detail::tag_label<T>(s, b);
 }
+
+
+/// Compute common type of two scalars.
+/// In `std` to overload the base definition. This yields a type that has the common type of the
+/// counter type and a scale that is the GCF of the input scales.
+template < intmax_t N, typename C, intmax_t S, typename I, typename T >
+struct common_type<ApacheTrafficServer::Scalar<N,C,T>, ApacheTrafficServer::Scalar<S,I,T>>
+{
+  typedef std::ratio<N, S> R;
+  typedef ApacheTrafficServer::Scalar<N/R::num, typename common_type<C,I>::type, T> type;
+};
 }
 #endif // TS_SCALAR_H
