@@ -97,10 +97,7 @@ struct OOB_callback : public Continuation {
   }
 };
 
-enum tcp_congestion_control_t {
-  CLIENT_SIDE,
-  SERVER_SIDE
-};
+enum tcp_congestion_control_t { CLIENT_SIDE, SERVER_SIDE };
 
 class UnixNetVConnection : public NetVConnection
 {
@@ -480,8 +477,8 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
       int rv = 0;
       rv     = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<void *>(congestion_control), len);
       if (rv < 0) {
-        Error("Unable to set TCP congestion control on socket %d to \"%.*s\", errno=%d (%s)", con.fd, len, congestion_control, errno,
-              strerror(errno));
+        Error("Unable to set TCP congestion control on socket %d to \"%.*s\", errno=%d (%s)", con.fd, len, congestion_control,
+              errno, strerror(errno));
       } else {
         Debug("socket", "Setting TCP congestion control on socket [%d] to \"%.*s\" -> %d", con.fd, len, congestion_control, rv);
       }
