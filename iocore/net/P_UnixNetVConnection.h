@@ -98,6 +98,8 @@ struct OOB_callback : public Continuation {
   }
 };
 
+enum tcp_congestion_control_t { CLIENT_SIDE, SERVER_SIDE };
+
 class UnixNetVConnection : public NetVConnection
 {
 public:
@@ -314,7 +316,7 @@ public:
   virtual void set_local_addr();
   virtual void set_remote_addr();
   virtual int set_tcp_init_cwnd(int init_cwnd);
-  virtual int set_tcp_congestion_control(const char *name, int len);
+  virtual int set_tcp_congestion_control(int side);
   virtual void apply_options();
 
   friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
@@ -445,18 +447,33 @@ UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
 }
 
 TS_INLINE int
-UnixNetVConnection::set_tcp_congestion_control(const char *name, int len)
+UnixNetVConnection::set_tcp_congestion_control(int side)
 {
 #ifdef TCP_CONGESTION
-  int rv = 0;
-  rv     = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<void *>(const_cast<char *>(name)), len);
-  if (rv < 0) {
-    Error("Unable to set TCP congestion control on socket %d to \"%.*s\", errno=%d (%s)", con.fd, len, name, errno,
-          strerror(errno));
-  } else {
-    Debug("socket", "Setting TCP congestion control on socket [%d] to \"%.*s\" -> %d", con.fd, len, name, rv);
+  RecString congestion_control;
+  int ret;
+
+  if (side == CLIENT_SIDE)
+    ret = REC_ReadConfigStringAlloc(congestion_control, "proxy.config.net.tcp_congestion_control_in");
+  else
+    ret = REC_ReadConfigStringAlloc(congestion_control, "proxy.config.net.tcp_congestion_control_out");
+
+  if (ret == REC_ERR_OKAY) {
+    int len = strlen(congestion_control);
+    if (len > 0) {
+      int rv = 0;
+      rv     = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<void *>(congestion_control), len);
+      if (rv < 0) {
+        Error("Unable to set TCP congestion control on socket %d to \"%.*s\", errno=%d (%s)", con.fd, len, congestion_control,
+              errno, strerror(errno));
+      } else {
+        Debug("socket", "Setting TCP congestion control on socket [%d] to \"%.*s\" -> %d", con.fd, len, congestion_control, rv);
+      }
+    }
+    ats_free(congestion_control);
+    return 0;
   }
-  return rv;
+  return -1;
 #else
   Debug("socket", "Setting TCP congestion control %.*s is not supported on this platform.", len, name);
   return -1;
