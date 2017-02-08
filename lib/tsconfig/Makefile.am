@@ -23,7 +23,7 @@ libtsconfig_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 AM_CFLAGS += @FLEX_CFLAGS@
 AM_YFLAGS = --yacc -d -p tsconfig
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/lib
 
 BUILT_SOURCES = \

@@ -20,4 +20,4 @@ experimental_cache_key_genid_cache_key_genid_la_SOURCES = \
   experimental/cache_key_genid/cache_key_genid.c
 
 experimental_cache_key_genid_cache_key_genid_la_LDFLAGS = \
-    $(TS_PLUGIN_LD_FLAGS) $(LIB_KYOTOCABINET)
+    $(AM_LDFLAGS) $(LIB_KYOTOCABINET)
