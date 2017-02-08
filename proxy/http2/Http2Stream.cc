@@ -585,7 +585,6 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
             this->mark_body_done();
             // Send the data frame
             send_response_body();
-            retval = false;
           }
         }
         break;

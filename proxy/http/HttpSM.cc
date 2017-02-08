@@ -24,6 +24,7 @@
 
 #include "../ProxyClientTransaction.h"
 #include "HttpSM.h"
+#include "HttpTransactHeaders.h"
 #include "ProxyConfig.h"
 #include "HttpServerSession.h"
 #include "HttpDebugNames.h"
@@ -5035,10 +5036,10 @@ HttpSM::do_http_server_open(bool raw)
     }
   }
 
-  // draft-stenberg-httpbis-tcp recommends only enabling TFO on safe, indempotent methods or
+  // draft-stenberg-httpbis-tcp recommends only enabling TFO on indempotent methods or
   // those with intervening protocol layers (eg. TLS).
-  if (scheme_to_use == URL_WKSIDX_HTTPS || t_state.method == HTTP_WKSIDX_CONNECT || t_state.method == HTTP_WKSIDX_DELETE ||
-      t_state.method == HTTP_WKSIDX_GET || t_state.method == HTTP_WKSIDX_HEAD || t_state.method == HTTP_WKSIDX_PUT) {
+
+  if (scheme_to_use == URL_WKSIDX_HTTPS || HttpTransactHeaders::is_method_idempotent(t_state.method)) {
     opt.f_tcp_fastopen = (t_state.txn_conf->sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN);
   }
 
@@ -5050,10 +5051,13 @@ HttpSM::do_http_server_open(bool raw)
     if (host && len > 0) {
       opt.set_sni_servername(host, len);
     }
-
-    ats_scoped_str clientCert(
-      (Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename)));
-    opt.set_client_certname(clientCert);
+    if (t_state.txn_conf->client_cert_filepath && t_state.txn_conf->client_cert_filename) {
+      ats_scoped_str clientCert(
+        (Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename)));
+      if (clientCert != nullptr) {
+        opt.set_client_certname(clientCert);
+      }
+    }
     connect_action_handle = sslNetProcessor.connect_re(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // addr + port
                                                        &opt);

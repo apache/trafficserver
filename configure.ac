@@ -587,11 +587,9 @@ ifdef([AC_PROG_SED], [], [
 # Various OS specific setup. Note that on Solaris, 32-bit is always the
 # default, even on a box that with 64-bit architecture.
 # This also sets up a "normalized" variable and define $host_os_def.
-defer_accept=1
 case $host_os in
   linux*)
     host_os_def="linux"
-    defer_accept=45
     EXTRA_CXX_LDFLAGS="-rdynamic"
     ;;
   darwin*)
@@ -628,7 +626,6 @@ case $host_os in
 esac
 
 TS_ADDTO(CPPFLAGS, [-D$host_os_def])
-AC_SUBST(defer_accept)
 
 
 dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
@@ -954,7 +951,6 @@ AC_CHECK_SIZEOF([void*])
 if test "x$ac_cv_sizeof_voidp" == "x"; then
   AC_ERROR([Cannot determine size of void*])
 fi
-AC_SUBST(ac_cv_sizeof_voidp)
 
 # Right now, 32-bit platform is a build error, unless we've forced it with --enable-32bit-build
 if test "${ac_cv_sizeof_voidp}" = "4"; then
@@ -1059,12 +1055,9 @@ fi
 # -----------------------------------------------------------------------------
 # 4. CHECK FOR LIBRARIES
 
-AC_SEARCH_LIBS([exc_capture_context], [exc], [], [])
-AC_SEARCH_LIBS([MLD_demangle_string], [mld], [], [])
 AC_SEARCH_LIBS([socket], [socket], [], [])
 AC_SEARCH_LIBS([gethostbyname], [nsl], [], [])
-AC_SEARCH_LIBS([clock_gettime], [rt], [], [])
-AC_SEARCH_LIBS([clock_gettime], [posix4], [], [])
+AC_SEARCH_LIBS([clock_gettime], [rt posix4], [], [])
 
 dnl We check for dlsym here instead of e.g. dlopen() because ASAN hijacks the latter.
 AC_SEARCH_LIBS([dlsym], [dl], [], [])
@@ -1301,7 +1294,7 @@ AC_SUBST(use_port)
 # Profiler support
 has_profiler=0
 if test "x${with_profiler}" = "xyes"; then
-  AC_SEARCH_LIBS([ProfilerStart], [profiler],
+  AC_CHECK_LIB([profiler], [ProfilerStart],
     [AC_SUBST([LIBPROFILER], ["-lprofiler"])
      has_profiler=1
     ],
@@ -1357,7 +1350,7 @@ AS_IF([test "x$has_128bit_cas" = "x1"], [
 # If we don't find it, disable checking for header.
 use_posix_cap=0
 AS_IF([test "x$enable_posix_cap" != "xno"],
-  AC_SEARCH_LIBS([cap_set_proc],[cap],
+  AC_CHECK_LIB([cap], [cap_set_proc],
     [AC_SUBST([LIBCAP], ["-lcap"])
      use_posix_cap=1
     ],[

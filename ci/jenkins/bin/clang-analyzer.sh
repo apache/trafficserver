@@ -45,7 +45,7 @@ test ! -z "${WORKSPACE}" && cd "${WORKSPACE}/src"
 
 # Where to store the results, special case for the CI
 output="/tmp"
-test -d "/home/jenkins/clang-analyzer" && output="/home/jenkins/clang-analyzer"
+test -w "/home/jenkins/clang-analyzer/${ATS_BRANCH}" && output="/home/jenkins/clang-analyzer/${ATS_BRANCH}"
 
 # Tell scan-build to use clang as the underlying compiler to actually build
 # source. If you don't do this, it will default to GCC.
@@ -53,13 +53,13 @@ export CCC_CC=${LLVM_BASE}/bin/clang
 export CCC_CXX=${LLVM_BASE}/bin/clang++
 
 autoreconf -fi
-scan-build ./configure ${configure}
+${LLVM_BASE}/bin/scan-build ./configure ${configure}
 
 # Since we don't want the analyzer to look at LuaJIT, build it first
 # without scan-build. The subsequent make will then skip it.
 ${ATS_MAKE} -j $NPROCS -C lib all-local V=1 Q=
 
-${LLVM_BASE}/bin/scan-build ${checkers} ${options} -o ${output} --html-title="ATS master branch"  ${ATS_MAKE} -j $NPROCS V=1 Q=
+${LLVM_BASE}/bin/scan-build ${checkers} ${options} -o ${output} --html-title="clang-analyzer: ${ATS_BRANCH}" ${ATS_MAKE} -j $NPROCS V=1 Q=
 status=$?
 
 # Clean the work area unless NOCLEAN is set. This is jsut for debugging when you
@@ -68,20 +68,10 @@ if [ ! -z "$NOCLEAN" ]; then
   ${ATS_MAKE} distclean
 fi
 
-# Cleanup old reports (save the last 10 reports), but only for the CI
-if [ "/tmp" !=  "$output" ]; then
-    cd ${output} || exit -1
-    for old in $(/usr/bin/ls -1t | tail -n +31); do
-	rm -rf $old
-    done
-
-    # Setup the symlink to the latest report
-    rm -f latest
-    ln -s $(/usr/bin/ls -1t | head -1) latest
-
-    # Purge the cached URL
-    curl -o /dev/null -k -s -X PURGE https://ci.trafficserver.apache.org/files/clang-analyzer/latest/
+# Cleanup old reports, for main clang and github as well (if the local helper script is available)
+if [ -x "/admin/bin/clean-clang.sh" ]; then
+    /admin/bin/clean-clang.sh
 fi
-
+    
 # Exit with the scan-build exit code (thanks to --status-bugs)
 exit $status

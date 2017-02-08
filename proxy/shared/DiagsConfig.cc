@@ -305,9 +305,18 @@ DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const 
   int diags_log_roll_size    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
   int diags_log_roll_enable  = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
 
+  // Grab some perms for the actual files on disk
+  char *diags_perm       = REC_ConfigReadString("proxy.config.diags.logfile_perm");
+  char *output_perm      = REC_ConfigReadString("proxy.config.output.logfile_perm");
+  int diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
+  int output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
+
+  ats_free(diags_perm);
+  ats_free(output_perm);
+
   // Set up diags, FILE streams are opened in Diags constructor
   diags_log = new BaseLogFile(diags_logpath);
-  diags     = new Diags(prefix_string, tags, actions, diags_log);
+  diags     = new Diags(prefix_string, tags, actions, diags_log, diags_perm_parsed, output_perm_parsed);
   diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
   diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
 

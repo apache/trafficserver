@@ -68,7 +68,6 @@ if test "$enable_jemalloc" != "no"; then
   fi
   if test "$jemalloc_have_headers" != "0"; then
     jemalloch=1
-    TS_ADDTO(LIBS, [-ljemalloc])
   else
     CPPFLAGS=$saved_cppflags
     LDFLAGS=$saved_ldflags

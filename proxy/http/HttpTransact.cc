@@ -6487,9 +6487,12 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 bool
 HttpTransact::is_request_retryable(State *s)
 {
+  // If safe requests are  retryable, it should be safe to retry safe requests irrespective of bytes sent or connection state
+  // according to RFC the following methods are safe (https://tools.ietf.org/html/rfc7231#section-4.2.1)
   // If there was no error establishing the connection (and we sent bytes)-- we cannot retry
-  if (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0 &&
-      s->state_machine->get_server_session()->get_netvc()->outstanding() != s->state_machine->server_request_hdr_bytes) {
+  if (!(s->txn_conf->safe_requests_retryable && HttpTransactHeaders::is_method_safe(s->method)) &&
+      (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0 &&
+       s->state_machine->get_server_session()->get_netvc()->outstanding() != s->state_machine->server_request_hdr_bytes)) {
     return false;
   }
 
@@ -8198,8 +8201,8 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   char *new_msg;
 
   va_start(ap, format);
-  new_msg = body_factory->fabricate_with_old_api(error_body_type, s, 8192, &len, body_language, sizeof(body_language), body_type,
-                                                 sizeof(body_type), format, ap);
+  new_msg = body_factory->fabricate_with_old_api(error_body_type, s, s->http_config_param->body_factory_response_max_size, &len,
+                                                 body_language, sizeof(body_language), body_type, sizeof(body_type), format, ap);
   va_end(ap);
 
   // After the body factory is called, a new "body" is allocated, and we must replace it. It is

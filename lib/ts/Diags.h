@@ -110,7 +110,8 @@ struct DiagsConfigState {
 class Diags
 {
 public:
-  Diags(const char *prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log);
+  Diags(const char *prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log,
+        int diags_log_perm = -1, int output_log_perm = -1);
   ~Diags();
 
   BaseLogFile *diags_log;
@@ -208,6 +209,7 @@ public:
 
   void deactivate_all(DiagsTagType mode = DiagsTagType_Debug);
 
+  bool setup_diagslog(BaseLogFile *blf);
   void config_roll_diagslog(RollingEnabledValues re, int ri, int rs);
   void config_roll_outputlog(RollingEnabledValues re, int ri, int rs);
   bool should_roll_diagslog();
@@ -223,6 +225,10 @@ private:
   const char *prefix_str;
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
   DFA *activated_tags[2];           // 1 table for debug, 1 for action
+
+  // These are the default logfile permissions
+  int diags_logfile_perm  = -1;
+  int output_logfile_perm = -1;
 
   // log rotation variables
   RollingEnabledValues outputlog_rolling_enabled;
