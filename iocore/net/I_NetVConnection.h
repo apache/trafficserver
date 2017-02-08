@@ -531,7 +531,7 @@ public:
   virtual int set_tcp_init_cwnd(int init_cwnd) = 0;
 
   /** Set the TCP congestion control algorithm */
-  virtual int set_tcp_congestion_control(const char *name, int len) = 0;
+  virtual int set_tcp_congestion_control(int side) = 0;
 
   /** Set local sock addr struct. */
   virtual void set_local_addr() = 0;
