@@ -37,8 +37,6 @@ experimental_sslheaders_sslheaders_la_SOURCES = \
 experimental_sslheaders_sslheaders_la_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	@OPENSSL_INCLUDES@
-experimental_sslheaders_sslheaders_la_LDFLAGS = \
-        $(TS_PLUGIN_LD_FLAGS)
 experimental_sslheaders_sslheaders_la_LIBADD = \
         experimental/sslheaders/libsslhdr.la
 

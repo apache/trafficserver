@@ -22,7 +22,7 @@ bin_SCRIPTS = tsxs tspush
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = trafficserver.pc
 
-AM_CPPFLAGS = $(iocore_include_dirs) \
+AM_CPPFLAGS += $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/lib/wccp
 

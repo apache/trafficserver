@@ -30,7 +30,7 @@ TESTS = \
   tests/test_logstats_json \
   tests/test_logstats_summary
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_srcdir)/http \
