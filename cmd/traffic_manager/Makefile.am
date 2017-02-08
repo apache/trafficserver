@@ -20,7 +20,7 @@ check_PROGRAMS = test_metrics
 
 TESTS = $(check_PROGRAMS)
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   $(LUAJIT_CPPFLAGS) \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib/records \

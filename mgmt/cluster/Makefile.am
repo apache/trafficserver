@@ -19,7 +19,7 @@
 
 include $(top_srcdir)/build/tidy.mk
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/api/include \

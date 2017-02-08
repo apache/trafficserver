@@ -18,7 +18,7 @@
 
 include $(top_srcdir)/build/tidy.mk
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/lib/records

@@ -35,5 +35,5 @@ TS_PLUGIN_CPPFLAGS = \
 # throws an error if we try to do the same with AM_LDFLAGS. Hence, we provide
 # TS_PLUGIN variables that can be used to construct the necessary automake
 # syntax.
-AM_CPPFLAGS = $(TS_PLUGIN_CPPFLAGS)
+AM_CPPFLAGS += $(TS_PLUGIN_CPPFLAGS)
 pkglibdir = $(pkglibexecdir)

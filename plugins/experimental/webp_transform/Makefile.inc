@@ -24,7 +24,7 @@ experimental_webp_transform_WebpTransform_la_SOURCES = \
   experimental/webp_transform/ImageTransform.cc
 
 experimental_webp_transform_WebpTransform_la_LDFLAGS = \
-  $(TS_PLUGIN_LD_FLAGS) \
+  $(AM_LDFLAGS) \
   -L$(top_builddir)/lib/cppapi
 
 experimental_webp_transform_WebpTransform_la_LIBADD = \

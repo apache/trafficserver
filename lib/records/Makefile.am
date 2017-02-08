@@ -18,7 +18,7 @@
 
 include $(top_srcdir)/build/tidy.mk
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/iocore/eventsystem \
   -I$(abs_top_srcdir)/iocore/utils \
   -I$(abs_top_srcdir)/mgmt \
