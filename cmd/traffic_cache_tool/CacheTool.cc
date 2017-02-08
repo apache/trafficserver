@@ -90,6 +90,7 @@ struct Span {
   int _vol_idx = 0;
   CacheStoreBlocks _len; ///< Total length of span.
   CacheStoreBlocks _free_space;
+  ink_device_geometry _geometry; ///< Geometry of span.
   /// A copy of the data on the disk.
   std::unique_ptr<ts::SpanHeader> _header;
   /// Live information about stripes.
@@ -658,27 +659,36 @@ Span::loadDevice()
   ats_scoped_fd fd(_path.open(flags));
 
   if (fd) {
-    off_t offset = ts::CacheSpan::OFFSET.units();
-    alignas(512) char buff[CacheStoreBlocks::SCALE];
-    int64_t n = pread(fd, buff, sizeof(buff), offset);
-    if (n >= static_cast<int64_t>(sizeof(ts::SpanHeader))) {
-      ts::SpanHeader &span_hdr = reinterpret_cast<ts::SpanHeader &>(buff);
-      // See if it looks valid
-      if (span_hdr.magic == ts::SpanHeader::MAGIC && span_hdr.num_diskvol_blks == span_hdr.num_used + span_hdr.num_free) {
-        int nspb             = span_hdr.num_diskvol_blks;
-        size_t span_hdr_size = sizeof(ts::SpanHeader) + (nspb - 1) * sizeof(ts::CacheStripeDescriptor);
-        _header.reset(new (malloc(span_hdr_size)) ts::SpanHeader);
-        if (span_hdr_size <= sizeof(buff)) {
-          memcpy(_header.get(), buff, span_hdr_size);
+    if (ink_file_get_geometry(_fd, &_geometry)) {
+      off_t offset = ts::CacheSpan::OFFSET.units();
+      alignas(512) char buff[CacheStoreBlocks::SCALE];
+
+
+      int64_t n = pread(fd, buff, sizeof(buff), offset);
+      if (n >= static_cast<int64_t>(sizeof(ts::SpanHeader))) {
+        ts::SpanHeader &span_hdr = reinterpret_cast<ts::SpanHeader &>(buff);
+        // See if it looks valid
+        if (span_hdr.magic == ts::SpanHeader::MAGIC && span_hdr.num_diskvol_blks == span_hdr.num_used + span_hdr.num_free) {
+          int nspb             = span_hdr.num_diskvol_blks;
+          size_t span_hdr_size = sizeof(ts::SpanHeader) + (nspb - 1) * sizeof(ts::CacheStripeDescriptor);
+          _header.reset(new (malloc(span_hdr_size)) ts::SpanHeader);
+          if (span_hdr_size <= sizeof(buff)) {
+            memcpy(_header.get(), buff, span_hdr_size);
+          } else {
+            // TODO - check the pread return
+            pread(fd, _header.get(), span_hdr_size, offset);
+          }
+          _fd = fd.release();
+          _len = _header->num_blocks;
+
         } else {
-          // TODO - check the pread return
-          pread(fd, _header.get(), span_hdr_size, offset);
+          zret = Errata::Message(0, 22, "Span header for ", _path, " is invalid");
         }
-        _fd = fd.release();
-        _len = _header->num_blocks;
+      } else {
+        zret = Errata::Message(0, errno, "Failed to read from ", _path, '[', errno, ':', strerror(errno), ']');
       }
     } else {
-      zret = Errata::Message(0, errno, "Failed to read from ", _path, '[', errno, ':', strerror(errno), ']');
+      zret = Errata::Message(0, 23, "Unable to get device geometry for ", _path);
     }
   } else {
     zret = Errata::Message(0, errno, "Unable to open ", _path);
@@ -692,7 +702,7 @@ ts::Rv<Stripe*> Span::allocStripe(int vol_idx, CacheStripeBlocks len)
     Stripe* stripe = *spot;
     if (stripe->isFree()) {
       // Exact match, or if the remains after allocating are less than a stripe block, take it all.
-      if (stripe->_len <= len && len < (stripe->_len + CacheStripeBlocks(1)) {
+      if (stripe->_len <= len && len < (stripe->_len + CacheStripeBlocks(1))) {
         stripe->_vol_idx = vol_idx;
         return stripe;
       } else if (stripe->_len > len) {
@@ -705,7 +715,7 @@ ts::Rv<Stripe*> Span::allocStripe(int vol_idx, CacheStripeBlocks len)
       }
     }
   }
-  return ts::Rv<Stripe*>(nullptr, Errata::Message(0,15,"Failed to allocate stripe of size ", len, " - no free block large enough"));
+    return ts::Rv<Stripe*>(nullptr, Errata::Message(0,15,"Failed to allocate stripe of size ", len, " - no free block large enough"));
 }
 
 bool Span::isEmpty() const { return std::all_of(_stripes.begin(), _stripes.end(), [] (Stripe* s) { return s->_vol_idx == 0; });}

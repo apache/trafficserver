@@ -26,6 +26,7 @@ traffic_cache_tool_SOURCES = CacheDefs.h CacheTool.cc File.h File.cc Command.h C
 traffic_cache_tool_LDADD = \
 	$(top_builddir)/lib/ts/.libs/MemView.o \
 	$(top_builddir)/lib/ts/.libs/ink_memory.o \
+	$(top_builddir)/lib/ts/.libs/ink_file.o \
 	$(top_builddir)/lib/ts/.libs/ink_error.o \
 	$(top_builddir)/lib/tsconfig/.libs/Errata.o
 
