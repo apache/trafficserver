@@ -90,14 +90,8 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
   buf_reader = read_buffer->alloc_reader();
   Debug("http_ss", "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
   state = HSS_INIT;
-  RecString congestion_control_out;
-  if (REC_ReadConfigStringAlloc(congestion_control_out, "proxy.config.net.tcp_congestion_control_out") == REC_ERR_OKAY) {
-    int len = strlen(congestion_control_out);
-    if (len > 0) {
-      new_vc->set_tcp_congestion_control(congestion_control_out, len);
-    }
-    ats_free(congestion_control_out);
-  }
+
+  new_vc->set_tcp_congestion_control(SERVER_SIDE);
 }
 
 VIO *

@@ -179,6 +179,8 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   DebugHttpSsn("[%" PRId64 "] session born, netvc %p", con_id, new_vc);
 
+  client_vc->set_tcp_congestion_control(CLIENT_SIDE);
+
   read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   sm_reader   = reader ? reader : read_buffer->alloc_reader();
   trans.set_reader(sm_reader);
