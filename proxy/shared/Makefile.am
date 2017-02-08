@@ -23,7 +23,7 @@ noinst_LIBRARIES = \
   libdiagsconfig.a \
   libUglyLogStubs.a
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_top_srcdir)/mgmt \

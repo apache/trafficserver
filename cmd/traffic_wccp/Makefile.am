@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = $(iocore_include_dirs) \
+AM_CPPFLAGS += $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_top_srcdir)/lib/wccp \

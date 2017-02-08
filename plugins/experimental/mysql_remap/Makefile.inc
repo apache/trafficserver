@@ -24,6 +24,6 @@ experimental_mysql_remap_mysql_remap_la_SOURCES = \
 	experimental/mysql_remap/lib/iniparser.h
 
 experimental_mysql_remap_mysql_remap_la_LDFLAGS = \
-	$(TS_PLUGIN_LD_FLAGS) $(LIB_MYSQLCLIENT)
+	$(AM_LDFLAGS) $(LIB_MYSQLCLIENT)
 
 # vim: ft=make ts=8 sw=8 et:

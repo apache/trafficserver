@@ -29,7 +29,7 @@ TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
 TESTS = $(check_PROGRAMS)
 
-AM_CPPFLAGS = -I$(abs_top_srcdir)/lib
+AM_CPPFLAGS += -I$(abs_top_srcdir)/lib
 
 lib_LTLIBRARIES = libtsutil.la
 
