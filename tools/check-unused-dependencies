@@ -78,11 +78,11 @@ for filename in subprocess.Popen(args, stdout=subprocess.PIPE).stdout:
     contents = open(filename).read()
     contents = contents.replace('\\\n', '')
     for prefix, programs in programs_re.findall(contents):
-      if prefix not in {
+      if prefix not in [
           'EXTRA_',
           'check_',
           'noinst_',
-      }:
+      ]:
         for program in programs.split():
           program = os.path.join(os.path.dirname(filename), program)
           if os.path.exists(program):
