@@ -224,6 +224,11 @@ Test_5()
   test.check(z1.count() == 30720, "Addition got %ld expected %d", z1.count(), 30720);
   z1 /= 3;
   test.check(z1.count() == 10240, "Addition got %ld expected %d", z1.count(), 10240);
+
+  z2 = 3148;
+  auto x = z2 + MBytes(1);
+  test.check(x.scale() == z2.scale(), "Common type addition yielded bad scale %ld - expected %ld", x.scale(),  z2.scale());
+  test.check(x.count() == 4172, "Common type addition yielded bad count %d - expected %d", x.count(),  4172);
 }
 
 struct KBytes_tag {
