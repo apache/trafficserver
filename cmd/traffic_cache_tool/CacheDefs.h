@@ -31,6 +31,8 @@ namespace tag { struct bytes; }
 namespace ApacheTrafficServer
 {
 constexpr static uint8_t CACHE_DB_MAJOR_VERSION = 24;
+/// Maximum allowed volume index.
+constexpr static int MAX_VOLUME_IDX = 255;
 
 typedef Scalar<1, int64_t, tag::bytes> Bytes;
 typedef Scalar<1024, int64_t, tag::bytes> Kilobytes;

@@ -26,9 +26,11 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <ts/ink_memory.h>
 #include <ts/MemView.h>
 #include <getopt.h>
 #include <system_error>
+#include <string.h>
 #include <fcntl.h>
 #include <ctype.h>
 #include "File.h"
@@ -48,90 +50,273 @@ const Bytes CacheSpan::OFFSET{CacheStoreBlocks{1}};
 }
 
 using ts::Bytes;
+using ts::Megabytes;
+using ts::CacheStoreBlocks;
+using ts::CacheStripeBlocks;
+using ts::CacheStripeDescriptor;
+using ts::Errata;
+using ts::FilePath;
+
+using ts::scale_up;
+using ts::scale_down;
 
 namespace
 {
-ts::FilePath SpanFile;
-ts::FilePath VolumeFile;
+FilePath SpanFile;
+FilePath VolumeFile;
 
 ts::CommandTable Commands;
 
 // Default this to read only, only enable write if specifically required.
 int OPEN_RW_FLAGS = O_RDONLY;
 
+struct Stripe;
+
 struct Span {
-  Span(ts::FilePath const &path) : _path(path) {}
-  ts::Errata load();
-  ts::Errata loadDevice();
+  Span(FilePath const &path) : _path(path) {}
+  Errata load();
+  Errata loadDevice();
+
+  /// No allocated stripes on this span.
+  bool isEmpty() const;
 
   void clearPermanently();
 
-  ts::FilePath _path;
+  ts::Rv<Stripe*> allocStripe(int vol_idx, CacheStripeBlocks len);
+  Errata updateHeader();
+
+  FilePath _path;
   ats_scoped_fd _fd;
-  std::unique_ptr<ts::SpanHeader> _header;
   int _vol_idx = 0;
-  ts::CacheStoreBlocks _free_space;
+  CacheStoreBlocks _len; ///< Total length of span.
+  CacheStoreBlocks _free_space;
+  /// A copy of the data on the disk.
+  std::unique_ptr<ts::SpanHeader> _header;
+  /// Live information about stripes.
+  std::list<Stripe*> _stripes;
+};
+/* --------------------------------------------------------------------------------------- */
+struct Stripe
+{
+  Stripe(Span* span, Bytes start, CacheStoreBlocks len);
+
+  bool isFree() const { return 0 == _vol_idx; }
+
+  Span* _span; ///< Hosting span.
+  Bytes _start; ///< Offset of first byte of stripe.
+  Bytes _content; ///< Start of content.
+  CacheStoreBlocks _len; ///< Length of stripe.
+  uint8_t _vol_idx; ///< Volume index.
 };
 
+Stripe::Stripe(Span* span, Bytes start, CacheStoreBlocks len)
+  : _span(span), _start(start), _len(len)
+{
+}
+/* --------------------------------------------------------------------------------------- */
+/// A live volume.
+/// Volume data based on data from loaded spans.
 struct Volume {
-  struct StripeRef {
-    Span *_span; ///< Span with stripe.
-    int _idx;    ///< Stripe index in span.
-  };
   int _idx; ///< Volume index.
-  ts::CacheStoreBlocks _size; ///< Amount of storage allocated.
-  std::vector<StripeRef> _stripes;
+  CacheStoreBlocks _size; ///< Amount of storage allocated.
+  std::vector<Stripe*> _stripes;
 };
-
-// Data parsed from the volume config file.
+/* --------------------------------------------------------------------------------------- */
+/// Data parsed from the volume config file.
 struct VolumeConfig
 {
-  ts::Errata load(ts::FilePath const& path);
+  Errata load(FilePath const& path);
 
-  struct VolData
+  /// Data direct from the config file.
+  struct Data
   {
     int _idx = 0; ///< Volume index.
     int _percent = 0; ///< Size if specified as a percent.
-    ts::Megabytes _size = 0; ///< Size if specified as an absolute.
-    ts::CacheStripeBlocks _alloc; ///< Allocation size.
+    Megabytes _size = 0; ///< Size if specified as an absolute.
+    CacheStripeBlocks _alloc; ///< Allocation size.
 
     // Methods handy for parsing
     bool hasSize() const { return _percent > 0 || _size > 0; }
     bool hasIndex() const { return _idx > 0; }
   };
 
-  std::vector<VolData> _volumes;
-  typedef std::vector<VolData>::iterator iterator;
-  typedef std::vector<VolData>::const_iterator const_iterator;
+  std::vector<Data> _volumes;
+  typedef std::vector<Data>::iterator iterator;
+  typedef std::vector<Data>::const_iterator const_iterator;
 
   iterator begin() { return _volumes.begin(); }
   iterator end()   { return _volumes.end(); }
   const_iterator begin() const { return _volumes.begin(); }
   const_iterator end()   const { return _volumes.end(); }
 
-  ts::Errata validatePercentAllocation();
+  Errata validatePercentAllocation();
   void convertToAbsolute(ts::CacheStripeBlocks total_span_size);
 };
 
-  ts::Errata VolumeConfig::validatePercentAllocation() {
-    ts::Errata zret;
-    int n = 0;
-    for ( VolData& vol : _volumes ) n += vol._percent;
-    if (n > 100) zret.push(0, 10, "Volume percent allocation ", n, " is more than 100%");
-    return zret;
-  }
+Errata
+VolumeConfig::validatePercentAllocation() {
+  Errata zret;
+  int n = 0;
+  for ( auto& vol : _volumes ) n += vol._percent;
+  if (n > 100) zret.push(0, 10, "Volume percent allocation ", n, " is more than 100%");
+  return zret;
+}
 
-  void VolumeConfig::convertToAbsolute(ts::CacheStripeBlocks n)
+void
+VolumeConfig::convertToAbsolute(ts::CacheStripeBlocks n)
+{
+  for ( auto& vol : _volumes ) {
+    if (vol._percent) {
+      vol._alloc = (n * vol._percent + 99) / 100;
+    } else {
+      vol._alloc = ts::scale_up<ts::CacheStripeBlocks>(vol._size);
+    }
+  }
+}
+/* --------------------------------------------------------------------------------------- */
+struct Cache {
+  ~Cache();
+
+  Errata loadSpan(FilePath const &path);
+  Errata loadSpanConfig(FilePath const &path);
+  Errata loadSpanDirect(FilePath const &path, int vol_idx = -1, Bytes size = -1);
+
+  enum class SpanDumpDepth { SPAN, STRIPE, DIRECTORY };
+  void dumpSpans(SpanDumpDepth depth);
+  void dumpVolumes();
+
+  ts::CacheStripeBlocks calcTotalSpanPhysicalSize();
+  ts::CacheStripeBlocks calcTotalSpanConfiguredSize();
+
+  std::list<Span *> _spans;
+  std::map<int, Volume> _volumes;
+
+};
+/* --------------------------------------------------------------------------------------- */
+/// Temporary structure used for doing allocation computations.
+class VolumeAllocator
+{
+  /// Working struct that tracks allocation information.
+  struct V
   {
-    for ( VolData& vol : _volumes ) {
-      if (vol._percent) {
-        vol._alloc = (n * vol._percent + 99) / 100;
-      } else {
-        vol._alloc = ts::scaled_up<ts::CacheStripeBlocks>(vol._size);
+    VolumeConfig::Data const& _config; ///< Configuration instance.
+    CacheStripeBlocks _size; ///< Current actual size.
+    int64_t _deficit;
+    int64_t _shares;
+
+    V(VolumeConfig::Data const& config, CacheStripeBlocks size, int64_t deficit = 0, int64_t shares = 0)
+      : _config(config), _size(size), _deficit(deficit), _shares(shares)
+      {
+      }
+    V& operator = (V const& that) {
+      new(this) V(that._config, that._size, that._deficit, that._shares);
+      return *this;
+    }
+  };
+
+  typedef std::vector<V> AV;
+  AV _av; ///< Working vector of volume data.
+
+  Cache _cache; ///< Current state.
+  VolumeConfig _vols; ///< Configuration state.
+
+public:
+
+  VolumeAllocator();
+
+  Errata load(FilePath const& spanFile, FilePath const& volumeFile);
+  Errata fillEmptySpans();
+};
+
+VolumeAllocator::VolumeAllocator() { }
+
+Errata
+VolumeAllocator::load(FilePath const& spanFile, FilePath const& volumeFile)
+{
+  Errata zret;
+
+  if (!volumeFile) zret.push(0, 9, "Volume config file not set");
+  if (!spanFile) zret.push(0, 9, "Span file not set");
+
+  if (zret) {
+    zret = _vols.load(volumeFile);
+    if (zret) {
+      zret = _cache.loadSpan(spanFile);
+      if (zret) {
+        CacheStripeBlocks total = _cache.calcTotalSpanConfiguredSize();
+        _vols.convertToAbsolute(total);
+        for ( auto& vol : _vols ) {
+          CacheStripeBlocks size(0);
+          auto spot = _cache._volumes.find(vol._idx);
+          if (spot != _cache._volumes.end())
+            size = scale_down<CacheStripeBlocks>(spot->second._size);
+          _av.push_back({ vol, size, 0, 0});
+        }
       }
     }
   }
+  return zret;
+}
 
+Errata
+VolumeAllocator::fillEmptySpans()
+{
+  Errata zret;
+
+  /// Scaling factor for shares, effectively the accuracy.
+  static const int64_t SCALE = 1000;
+
+  // Walk the spans, skipping ones that are not empty.
+  for ( auto span : _cache._spans ) {
+    int64_t total_shares = 0;
+
+    if (!span->isEmpty()) continue;
+
+    std::cout << "Allocating " << scale_down<CacheStripeBlocks>(span->_len) << " from span " << span->_path << std::endl;
+
+    // Walk the volumes and get the relative allocations.
+    for ( auto& v : _av ) {
+      auto delta = v._config._alloc - v._size;
+      if (delta > 0) {
+        v._deficit = (delta.count() * SCALE) / v._config._alloc.count();
+        v._shares = delta.count() * v._deficit;
+        total_shares += v._shares;
+      } else {
+        v._shares = 0;
+      }
+    }
+    // Now allocate blocks.
+    ts::CacheStripeBlocks span_blocks = ts::scale_down<ts::CacheStripeBlocks>(span->_free_space);
+    ts::CacheStripeBlocks span_used(0);
+
+    // sort by deficit so least relatively full volumes go first.
+    std::sort(_av.begin(), _av.end(), [](V const& lhs, V const& rhs) { return lhs._deficit > rhs._deficit; });
+    for ( auto& v : _av ) {
+      if (v._shares) {
+        auto n = (((span_blocks - span_used) * v._shares) + total_shares -1) / total_shares;
+        auto delta = v._config._alloc - v._size;
+        // Not sure why this is needed. But a large and empty volume can dominate the shares
+        // enough to get more than it actually needs if the other volume are relative small or full.
+        // I need to do more math to see if the weighting can be adjusted to not have this happen.
+        n = std::min(n, delta);
+        v._size += n;
+        span_used += n;
+        total_shares -= v._shares;
+        span->allocStripe(v._config._idx, n);
+        std::cout << "           " << n << " to volume " << v._config._idx << std::endl;
+      }
+    }
+    std::cout << "     Total " << span_used << std::endl;
+    std::cout << " Updating Header ... ";
+    zret = span->updateHeader();
+    if (zret)
+      std::cout << " Done" << std::endl;
+    else
+      std::cout << " Error" << std::endl << zret;
+  }
+  return zret;
+}
+/* --------------------------------------------------------------------------------------- */
 // All of these free functions need to be moved to the Cache class. Or the Span class?
 
 bool
@@ -162,7 +347,6 @@ Probe_For_Stripe(ts::StringView &mem)
   }
   return zret;
 }
-
 /* --------------------------------------------------------------------------------------- */
 void
 Calc_Stripe_Data(ts::CacheStripeMeta const &header, ts::CacheStripeMeta const &footer, off_t delta, ts::StripeData &data)
@@ -298,31 +482,12 @@ Open_Stripe(ats_scoped_fd const &fd, ts::CacheStripeDescriptor const &block)
 }
 
 /* --------------------------------------------------------------------------------------- */
-struct Cache {
-  ~Cache();
-
-  ts::Errata loadSpan(ts::FilePath const &path);
-  ts::Errata loadSpanConfig(ts::FilePath const &path);
-  ts::Errata loadSpanDirect(ts::FilePath const &path, int vol_idx = -1, Bytes size = -1);
-
-  enum class SpanDumpDepth { SPAN, STRIPE, DIRECTORY };
-  void dumpSpans(SpanDumpDepth depth);
-  void dumpVolumes();
-
-  ts::CacheStripeBlocks calcTotalSpanPhysicalSize();
-  ts::CacheStripeBlocks calcTotalSpanConfiguredSize();
-
-  std::list<Span *> _spans;
-  std::map<int, Volume> _volumes;
-
-};
-
-ts::Errata
-Cache::loadSpan(ts::FilePath const &path)
+Errata
+Cache::loadSpan(FilePath const &path)
 {
-  ts::Errata zret;
+  Errata zret;
   if (!path.is_readable())
-    zret = ts::Errata::Message(0, EPERM, path," is not readable.");
+    zret = Errata::Message(0, EPERM, path," is not readable.");
   else if (path.is_regular_file())
     zret = this->loadSpanConfig(path);
   else
@@ -330,22 +495,25 @@ Cache::loadSpan(ts::FilePath const &path)
   return zret;
 }
 
-ts::Errata
-Cache::loadSpanDirect(ts::FilePath const &path, int vol_idx, Bytes size)
+Errata
+Cache::loadSpanDirect(FilePath const &path, int vol_idx, Bytes size)
 {
-  ts::Errata zret;
+  Errata zret;
   std::unique_ptr<Span> span(new Span(path));
   zret = span->load();
   if (zret) {
     int nspb = span->_header->num_diskvol_blks;
     for (auto i = 0; i < nspb; ++i) {
-      ts::CacheStripeDescriptor &stripe = span->_header->stripes[i];
-      if (stripe.free == 0) {
-        _volumes[stripe.vol_idx]._stripes.push_back(Volume::StripeRef{span.get(), i});
-        _volumes[stripe.vol_idx]._size += stripe.len;
+      ts::CacheStripeDescriptor &raw = span->_header->stripes[i];
+      Stripe* stripe = new Stripe(span.get(), raw.offset, raw.len);
+      if (raw.free == 0) {
+        stripe->_vol_idx = raw.vol_idx;
+        _volumes[stripe->_vol_idx]._stripes.push_back(stripe);
+        _volumes[stripe->_vol_idx]._size += stripe->_len;
       } else {
-        span->_free_space += stripe.len;
+        span->_free_space += stripe->_len;
       }
+      span->_stripes.push_back(stripe);
     }
     span->_vol_idx = vol_idx;
     _spans.push_back(span.release());
@@ -353,13 +521,13 @@ Cache::loadSpanDirect(ts::FilePath const &path, int vol_idx, Bytes size)
   return zret;
 }
 
-ts::Errata
-Cache::loadSpanConfig(ts::FilePath const &path)
+Errata
+Cache::loadSpanConfig(FilePath const &path)
 {
   static const ts::StringView TAG_ID("id");
   static const ts::StringView TAG_VOL("volume");
 
-  ts::Errata zret;
+  Errata zret;
 
   ts::BulkFile cfile(path);
   if (0 == cfile.load()) {
@@ -388,11 +556,11 @@ Cache::loadSpanConfig(ts::FilePath const &path)
             }
           }
         }
-        zret = this->loadSpan(ts::FilePath(path));
+        zret = this->loadSpan(FilePath(path));
       }
     }
   } else {
-    zret = ts::Errata::Message(0, EBADF, "Unable to load ", path);
+    zret = Errata::Message(0, EBADF, "Unable to load ", path);
   }
   return zret;
 }
@@ -423,7 +591,7 @@ Cache::dumpVolumes()
   for (auto const &elt : _volumes) {
     size_t size = 0;
     for (auto const &r : elt.second._stripes)
-      size += r._span->_header->stripes[r._idx].len.units();
+      size += r->_len.units();
 
     std::cout << "Volume " << elt.first << " has " << elt.second._stripes.size() << " stripes and " << size << " bytes"
               << std::endl;
@@ -435,7 +603,7 @@ ts::CacheStripeBlocks Cache::calcTotalSpanConfiguredSize()
   ts::CacheStripeBlocks zret(0);
 
   for ( auto span : _spans ) {
-    zret += ts::scaled_down<ts::CacheStripeBlocks>(span->_header->num_blocks);
+    zret += ts::scale_down<ts::CacheStripeBlocks>(span->_header->num_blocks);
   }
   return zret;
 }
@@ -446,7 +614,7 @@ ts::CacheStripeBlocks Cache::calcTotalSpanPhysicalSize()
 
   for ( auto span : _spans ) {
     // This is broken, physical_size doesn't work for devices, need to fix that.
-    zret += ts::scaled_down<ts::CacheStripeBlocks>(span->_path.physical_size());
+    zret += ts::scale_down<ts::CacheStripeBlocks>(span->_path.physical_size());
   }
   return zret;
 }
@@ -457,12 +625,12 @@ Cache::~Cache()
     delete span;
 }
 /* --------------------------------------------------------------------------------------- */
-ts::Errata
+Errata
 Span::load()
 {
-  ts::Errata zret;
+  Errata zret;
   if (!_path.is_readable())
-    zret = ts::Errata::Message(0, EPERM, _path," is not readable.");
+    zret = Errata::Message(0, EPERM, _path," is not readable.");
   else if (_path.is_char_device() || _path.is_block_device())
     zret = this->loadDevice();
   else if (_path.is_dir())
@@ -472,10 +640,10 @@ Span::load()
   return zret;
 }
 
-ts::Errata
+Errata
 Span::loadDevice()
 {
-  ts::Errata zret;
+  Errata zret;
   int flags;
 
   flags = OPEN_RW_FLAGS
@@ -491,7 +659,7 @@ Span::loadDevice()
 
   if (fd) {
     off_t offset = ts::CacheSpan::OFFSET.units();
-    alignas(512) char buff[8192];
+    alignas(512) char buff[CacheStoreBlocks::SCALE];
     int64_t n = pread(fd, buff, sizeof(buff), offset);
     if (n >= static_cast<int64_t>(sizeof(ts::SpanHeader))) {
       ts::SpanHeader &span_hdr = reinterpret_cast<ts::SpanHeader &>(buff);
@@ -507,20 +675,87 @@ Span::loadDevice()
           pread(fd, _header.get(), span_hdr_size, offset);
         }
         _fd = fd.release();
+        _len = _header->num_blocks;
       }
     } else {
-      zret = ts::Errata::Message(0, errno, "Failed to read from ", _path, '[', errno, ':', strerror(errno), ']');
+      zret = Errata::Message(0, errno, "Failed to read from ", _path, '[', errno, ':', strerror(errno), ']');
     }
   } else {
-    zret = ts::Errata::Message(0, errno, "Unable to open ", _path);
+    zret = Errata::Message(0, errno, "Unable to open ", _path);
   }
+  return zret;
+}
+
+ts::Rv<Stripe*> Span::allocStripe(int vol_idx, CacheStripeBlocks len)
+{
+  for (auto spot = _stripes.begin(), limit = _stripes.end() ; spot != limit ; ++spot ) {
+    Stripe* stripe = *spot;
+    if (stripe->isFree()) {
+      // Exact match, or if the remains after allocating are less than a stripe block, take it all.
+      if (stripe->_len <= len && len < (stripe->_len + CacheStripeBlocks(1)) {
+        stripe->_vol_idx = vol_idx;
+        return stripe;
+      } else if (stripe->_len > len) {
+        Stripe* ns = new Stripe(this, stripe->_start, len);
+        stripe->_start += len;
+        stripe->_len -= len;
+        ns->_vol_idx = vol_idx;
+        _stripes.insert(spot, ns);
+        return ns;
+      }
+    }
+  }
+  return ts::Rv<Stripe*>(nullptr, Errata::Message(0,15,"Failed to allocate stripe of size ", len, " - no free block large enough"));
+}
+
+bool Span::isEmpty() const { return std::all_of(_stripes.begin(), _stripes.end(), [] (Stripe* s) { return s->_vol_idx == 0; });}
+
+Errata Span::updateHeader()
+{
+  Errata zret;
+  int n = _stripes.size();
+  CacheStripeDescriptor* sd;
+  CacheStoreBlocks hdr_size = scale_up<CacheStoreBlocks>(sizeof(ts::SpanHeader) + ( n - 1 ) * sizeof(ts::CacheStripeDescriptor));
+  void* raw = ats_memalign(512, hdr_size.units());
+  ts::SpanHeader* hdr = static_cast<ts::SpanHeader*>(raw);
+  std::bitset<ts::MAX_VOLUME_IDX+1> volume_mask;
+
+  hdr->magic = ts::SpanHeader::MAGIC;
+  hdr->num_free = 0;
+  hdr->num_used = 0;
+  hdr->num_diskvol_blks = n;
+  hdr->num_blocks = _len;
+
+  sd = hdr->stripes;
+  for ( auto stripe : _stripes ) {
+    sd->offset = stripe->_start;
+    sd->len = stripe->_len;
+    sd->vol_idx = stripe->_vol_idx;
+    volume_mask[sd->vol_idx] = true;
+    sd->type = 0;
+    if (sd->vol_idx == 0) {
+      sd->free = true;
+      ++(hdr->num_free);
+    } else {
+      sd->free = false;
+      ++(hdr->num_used);
+    }
+
+    ++sd;
+  }
+  volume_mask[0] = false; // don't include free stripes in distinct volume count.
+  hdr->num_volumes = volume_mask.count();
+  _header.reset(hdr);
+  ssize_t r = pwrite(_fd, hdr, hdr_size.units(), ts::CacheSpan::OFFSET.units());
+  if (r < ts::CacheSpan::OFFSET.units())
+    zret.push(0,errno,"Failed to update span - ", strerror(errno));
   return zret;
 }
 
 void
 Span::clearPermanently()
 {
-  alignas(512) static char zero[ts::CacheStoreBlocks::SCALE]; // should be all zero, it's static.
+  alignas(512) static char zero[CacheStoreBlocks::SCALE]; // should be all zero, it's static.
   std::cout << "Clearing " << _path << " permanently on disk ";
   ssize_t n = pwrite(_fd, zero, sizeof(zero), ts::CacheSpan::OFFSET.units());
   if (n == sizeof(zero))
@@ -535,13 +770,13 @@ Span::clearPermanently()
   std::cout << std::endl;
 }
 /* --------------------------------------------------------------------------------------- */
-ts::Errata
-VolumeConfig::load(ts::FilePath const& path)
+Errata
+VolumeConfig::load(FilePath const& path)
 {
   static const ts::StringView TAG_SIZE("size");
   static const ts::StringView TAG_VOL("volume");
 
-  ts::Errata zret;
+  Errata zret;
 
   int ln = 0;
 
@@ -549,7 +784,7 @@ VolumeConfig::load(ts::FilePath const& path)
   if (0 == cfile.load()) {
     ts::StringView content = cfile.content();
     while (content) {
-      VolData v;
+      Data v;
 
       ++ln;
       ts::StringView line = content.splitPrefix('\n');
@@ -571,7 +806,7 @@ VolumeConfig::load(ts::FilePath const& path)
             if (text) {
               ts::StringView percent(text.end(), value.end()); // clip parsed number.
               if (!percent) {
-                v._size = ts::scaled_up<ts::CacheStripeBlocks>(v._size = n);
+                v._size = ts::scale_up<ts::CacheStripeBlocks>(v._size = n);
                 if (v._size.count() != n) {
                   zret.push(0, 0, "Line ", ln, " size ", n, " was rounded up to ", v._size);
                 }
@@ -606,7 +841,7 @@ VolumeConfig::load(ts::FilePath const& path)
       }
     }
   } else {
-    zret = ts::Errata::Message(0, EBADF, "Unable to load ", path);
+    zret = Errata::Message(0, EBADF, "Unable to load ", path);
   }
   return zret;
 }
@@ -619,10 +854,10 @@ struct option Options[] = {
 };
 }
 
-ts::Errata
+Errata
 List_Stripes(Cache::SpanDumpDepth depth, int argc, char *argv[])
 {
-  ts::Errata zret;
+  Errata zret;
   Cache cache;
 
   if ((zret = cache.loadSpan(SpanFile))) {
@@ -632,10 +867,25 @@ List_Stripes(Cache::SpanDumpDepth depth, int argc, char *argv[])
   return zret;
 }
 
-ts::Errata
+Errata
+Cmd_Allocate_Empty_Spans(int argc, char *argv[])
+{
+  Errata zret;
+  VolumeAllocator va;
+
+  OPEN_RW_FLAGS = O_RDWR;
+  zret = va.load(SpanFile, VolumeFile);
+  if (zret) {
+    va.fillEmptySpans();
+  }
+
+  return zret;
+}
+
+Errata
 Simulate_Span_Allocation(int argc, char *argv[])
 {
-  ts::Errata zret;
+  Errata zret;
   VolumeConfig vols;
   Cache cache;
 
@@ -661,7 +911,7 @@ Simulate_Span_Allocation(int argc, char *argv[])
           ts::CacheStripeBlocks size(0);
           auto spot = cache._volumes.find(vol._idx);
           if (spot != cache._volumes.end())
-            size = ts::scaled_down<ts::CacheStripeBlocks>(spot->second._size);
+            size = ts::scale_down<ts::CacheStripeBlocks>(spot->second._size);
           av.push_back({ vol._idx, vol._alloc, size, 0, 0});
         }
         for ( auto span : cache._spans ) {
@@ -680,7 +930,7 @@ Simulate_Span_Allocation(int argc, char *argv[])
             }
           }
           // Now allocate blocks.
-          ts::CacheStripeBlocks span_blocks = ts::scaled_down<ts::CacheStripeBlocks>(span->_free_space);
+          ts::CacheStripeBlocks span_blocks = ts::scale_down<ts::CacheStripeBlocks>(span->_free_space);
           ts::CacheStripeBlocks span_used(0);
           std::cout << "Allocation from span of " << span_blocks << std::endl;
           // sort by deficit so least relatively full volumes go first.
@@ -708,10 +958,10 @@ Simulate_Span_Allocation(int argc, char *argv[])
   return zret;
 }
 
-ts::Errata
+Errata
 Clear_Spans(int argc, char *argv[])
 {
-  ts::Errata zret;
+  Errata zret;
 
   Cache cache;
   OPEN_RW_FLAGS = O_RDWR;
@@ -752,6 +1002,8 @@ main(int argc, char *argv[])
                 [](int argc, char *argv[]) { return List_Stripes(Cache::SpanDumpDepth::STRIPE, argc, argv); });
   Commands.add(std::string("clear"), std::string("Clear spans"), &Clear_Spans);
   Commands.add(std::string("volumes"), std::string("Volumes"), &Simulate_Span_Allocation);
+  Commands.add(std::string("alloc"), std::string("Storage allocation"))
+    .subCommand(std::string("free"), std::string("Allocate storage on free (empty) spans"), &Cmd_Allocate_Empty_Spans);
 
   Commands.setArgIndex(optind);
 
@@ -760,7 +1012,7 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  ts::Errata result = Commands.invoke(argc, argv);
+  Errata result = Commands.invoke(argc, argv);
 
   if (result.size()) {
     std::cerr << result;

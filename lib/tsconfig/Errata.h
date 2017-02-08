@@ -816,6 +816,9 @@ inline Errata::Errata(Id id, Code code, std::string const& text) {
 inline Errata::Errata(Message const& msg) {
   this->push(msg);
 }
+inline Errata::Errata(Message && msg) {
+  this->push(std::move(msg));
+}
 
 inline Errata::operator bool() const { return this->isOK(); }
 
