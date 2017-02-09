@@ -41,6 +41,39 @@ namespace ApacheTrafficServer
 {
 template <intmax_t N, typename C, typename T> class Scalar;
 
+/** Helper class for @c Scalar.
+
+    This is used to wrap a value for the @c Scalar constructor to indicate the value is in units (not scaled) and should be rounded
+   up.
+*/
+template <typename C> struct unit_ceil_t {
+  C _n;
+  template <typename I> operator unit_ceil_t<I>() { return static_cast<I>(_n); }
+};
+
+template <typename C>
+constexpr unit_ceil_t<C>
+unit_ceil(C n)
+{
+  return unit_ceil_t<C>{n};
+}
+
+/** Helper class for @c Scalar.
+
+    This is used to wrap a value for the @c Scalar constructor to indicate the value is in units (not scaled) and should be rounded
+   down.
+*/
+template <typename C> struct unit_floor_t {
+  C _n;
+  template <typename I> operator unit_floor_t<I>() { return static_cast<I>(_n); }
+};
+
+template <typename C>
+constexpr unit_floor_t<C>
+unit_floor(C n)
+{
+  return unit_floor_t<C>{n};
+}
 /** A class to hold scaled values.
 
     Instances of this class have a @a count and a @a scale. The "value" of the instance is @a
@@ -80,6 +113,10 @@ public:
   constexpr Scalar(); ///< Default contructor.
   ///< Construct to have @a n scaled units.
   constexpr Scalar(Count n);
+  /// Scale units value @a x to this type, rounding down.
+  constexpr Scalar(unit_ceil_t<C> x);
+  /// Scale units value @a x to this type, rounding down.
+  constexpr Scalar(unit_floor_t<C> x);
 
   /// Copy constructor for same scale.
   template <typename I> Scalar(Scalar<N, I, T> const &that);
@@ -91,6 +128,8 @@ public:
   /// Direct assignment.
   /// The count is set to @a n.
   self &operator=(Count n);
+  self &operator=(unit_ceil_t<C> n);
+  self &operator=(unit_floor_t<C> n);
 
   /// The number of scale units.
   constexpr Count count() const;
@@ -142,9 +181,13 @@ public:
 
   /// Scale value @a x to this type, rounding up.
   template <intmax_t S, typename I> static self scale_up(Scalar<S, I, T> const &x);
+  /// Scale value units value @a x to this type, rounding up.
+  static self scale_up(C x);
 
   /// Scale value @a x to this type, rounding down.
   template <intmax_t S, typename I> static self scale_down(Scalar<S, I, T> const &x);
+  /// Scale value units value @a x to this type, rounding down.
+  static self scale_down(C x);
 
   /// Run time access to the scale (template arg @a N).
   static constexpr intmax_t scale();
@@ -157,6 +200,12 @@ template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(
 {
 }
 template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(Count n) : _n(n)
+{
+}
+template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(unit_ceil_t<C> n) : _n(scale_up(n._n)._n)
+{
+}
+template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(unit_floor_t<C> n) : _n(scale_down(n._n)._n)
 {
 }
 template <intmax_t N, typename C, typename T>
@@ -183,6 +232,20 @@ inline auto
 Scalar<N, C, T>::operator=(self const &that) -> self &
 {
   _n = that._n;
+  return *this;
+}
+template <intmax_t N, typename C, typename T>
+inline auto
+Scalar<N, C, T>::operator=(unit_ceil_t<C> n) -> self &
+{
+  *this = scale_up(n._n);
+  return *this;
+}
+template <intmax_t N, typename C, typename T>
+inline auto
+Scalar<N, C, T>::operator=(unit_floor_t<C> n) -> self &
+{
+  *this = scale_down(n._n);
   return *this;
 }
 template <intmax_t N, typename C, typename T>
@@ -335,9 +398,9 @@ operator<(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
   // constant causes the never taken paths to be dropped so there are no runtime conditional
   // checks, even with no optimization at all.
   if (R::den == 1) {
-    return lhs.count() < rhs.count() * R::num;
+    return lhs.count() * R::num < rhs.count();
   } else if (R::num == 1) {
-    return lhs.count() * R::den < rhs.count();
+    return lhs.count() < rhs.count() * R::den;
   } else
     return lhs.units() < rhs.units();
 }
@@ -348,9 +411,9 @@ operator==(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 {
   typedef std::ratio<N1, N2> R;
   if (R::den == 1) {
-    return lhs.count() == rhs.count() * R::num;
+    return lhs.count() * R::num == rhs.count();
   } else if (R::num == 1) {
-    return lhs.count() * R::den == rhs.count();
+    return lhs.count() == rhs.count() * R::den;
   } else
     return lhs.units() == rhs.units();
 }
@@ -361,9 +424,9 @@ operator<=(Scalar<N1, C1, T> const &lhs, Scalar<N2, C2, T> const &rhs)
 {
   typedef std::ratio<N1, N2> R;
   if (R::den == 1) {
-    return lhs.count() <= rhs.count() * R::num;
+    return lhs.count() * R::num <= rhs.count();
   } else if (R::num == 1) {
-    return lhs.count() * R::den <= rhs.count();
+    return lhs.count() <= rhs.count() * R::den;
   } else
     return lhs.units() <= rhs.units();
 }
@@ -826,6 +889,20 @@ auto
 Scalar<N, C, T>::scale_down(Scalar<S, I, T> const &that) -> self
 {
   return ApacheTrafficServer::scale_down<self>(that);
+}
+
+template <intmax_t N, typename C, typename T>
+auto
+Scalar<N, C, T>::scale_up(C x) -> self
+{
+  return ApacheTrafficServer::scale_up<self>(x);
+}
+
+template <intmax_t N, typename C, typename T>
+auto
+Scalar<N, C, T>::scale_down(C x) -> self
+{
+  return ApacheTrafficServer::scale_down<self>(x);
 }
 
 namespace detail
