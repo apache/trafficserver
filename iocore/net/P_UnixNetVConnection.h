@@ -466,10 +466,11 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
   RecString congestion_control;
   int ret;
 
-  if (side == CLIENT_SIDE)
+  if (side == CLIENT_SIDE) {
     ret = REC_ReadConfigStringAlloc(congestion_control, "proxy.config.net.tcp_congestion_control_in");
-  else
+  } else {
     ret = REC_ReadConfigStringAlloc(congestion_control, "proxy.config.net.tcp_congestion_control_out");
+  }
 
   if (ret == REC_ERR_OKAY) {
     int len = strlen(congestion_control);
@@ -488,7 +489,7 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
   }
   return -1;
 #else
-  Debug("socket", "Setting TCP congestion control %.*s is not supported on this platform.", len, name);
+  Debug("socket", "Setting TCP congestion control is not supported on this platform.");
   return -1;
 #endif
 }
