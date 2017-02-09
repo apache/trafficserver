@@ -41,52 +41,6 @@ namespace ApacheTrafficServer
 {
 template <intmax_t N, typename C, typename T> class Scalar;
 
-namespace detail
-{
-  // Internal class to deal with operator overload issues.
-  // Because the type of integers with no explicit type is (int) that type is special in terms of overloads.
-  // To be convienet @c Scalar should support operators for its internal declared counter type and (int).
-  // This creates ambiguous overloads when C is (int). This class lets the (int) overloads be moved to a super
-  // class so conflict causes overridding rather than ambiguity.
-  template <intmax_t N, typename C, typename T> struct ScalarArithmetics {
-    typedef ApacheTrafficServer::Scalar<N, C, T> S;
-    S &operator+=(int);
-    S &operator-=(int);
-    S &operator*=(int);
-    S &operator/=(int);
-
-  protected:
-    // Only let subclasses construct, as this class only makes sense as an abstract superclass.
-    ScalarArithmetics();
-  };
-
-  template <intmax_t N, typename C, typename T> ScalarArithmetics<N, C, T>::ScalarArithmetics() {}
-  template <intmax_t N, typename C, typename T>
-  auto
-  ScalarArithmetics<N, C, T>::operator+=(int n) -> S &
-  {
-    return static_cast<S *>(this).operator+=(static_cast<C>(n));
-  }
-  template <intmax_t N, typename C, typename T>
-  auto
-  ScalarArithmetics<N, C, T>::operator-=(int n) -> S &
-  {
-    return static_cast<S *>(this).operator-=(static_cast<C>(n));
-  }
-  template <intmax_t N, typename C, typename T>
-  auto
-  ScalarArithmetics<N, C, T>::operator*=(int n) -> S &
-  {
-    return static_cast<S *>(this).operator*=(static_cast<C>(n));
-  }
-  template <intmax_t N, typename C, typename T>
-  auto
-  ScalarArithmetics<N, C, T>::operator/=(int n) -> S &
-  {
-    return static_cast<S *>(this).operator/=(static_cast<C>(n));
-  }
-}
-
 /** A class to hold scaled values.
 
     Instances of this class have a @a count and a @a scale. The "value" of the instance is @a
@@ -112,7 +66,7 @@ namespace detail
     @see scaled_up
     @see scaled_down
  */
-template <intmax_t N, typename C = int, typename T = tag::generic> class Scalar : public detail::ScalarArithmetics<N, C, T>
+template <intmax_t N, typename C = int, typename T = tag::generic> class Scalar
 {
   typedef Scalar self; ///< Self reference type.
 
@@ -187,10 +141,10 @@ public:
   self &operator/=(C n);
 
   /// Scale value @a x to this type, rounding up.
-  template <intmax_t S, typename I> self scale_up(Scalar<S, I, T> const &x);
+  template <intmax_t S, typename I> static self scale_up(Scalar<S, I, T> const &x);
 
   /// Scale value @a x to this type, rounding down.
-  template <intmax_t S, typename I> self scale_down(Scalar<S, I, T> const &x);
+  template <intmax_t S, typename I> static self scale_down(Scalar<S, I, T> const &x);
 
   /// Run time access to the scale (template arg @a N).
   static constexpr intmax_t scale();
@@ -625,7 +579,7 @@ operator>=(int n, Scalar<N, int> const &rhs)
 template <intmax_t N, typename C, typename T>
 template <intmax_t S, typename I>
 auto
-  Scalar<N, C, T>::operator+=(Scalar<S, I, T> const &that) -> self &
+Scalar<N, C, T>::operator+=(Scalar<S, I, T> const &that) -> self &
 {
   typedef std::ratio<S, N> R;
   static_assert(R::den == 1, "Addition not permitted - target scale is not an integral multiple of source scale.");
@@ -649,9 +603,9 @@ Scalar<N, C, T>::operator+=(C n) -> self &
 
 template <intmax_t N, typename C, intmax_t S, typename I, typename T>
 auto
-operator + (Scalar<N,C,T> lhs, Scalar<S, I, T> const &rhs) -> typename std::common_type<Scalar<N,C,T>,Scalar<S,I,T>>::type
+operator+(Scalar<N, C, T> lhs, Scalar<S, I, T> const &rhs) -> typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type
 {
-  return typename std::common_type<Scalar<N,C,T>,Scalar<S,I,T>>::type(lhs) += rhs;
+  return typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type(lhs) += rhs;
 }
 
 template <intmax_t N, typename C, typename T>
@@ -724,9 +678,9 @@ Scalar<N, C, T>::operator-=(C n) -> self &
 
 template <intmax_t N, typename C, intmax_t S, typename I, typename T>
 auto
-operator - (Scalar<N,C,T> lhs, Scalar<S, I, T> const &rhs) -> typename std::common_type<Scalar<N,C,T>,Scalar<S,I,T>>::type
+operator-(Scalar<N, C, T> lhs, Scalar<S, I, T> const &rhs) -> typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type
 {
-  return typename std::common_type<Scalar<N,C,T>,Scalar<S,I,T>>::type(lhs) -= rhs;
+  return typename std::common_type<Scalar<N, C, T>, Scalar<S, I, T>>::type(lhs) -= rhs;
 }
 
 template <intmax_t N, typename C, typename T>
@@ -914,15 +868,13 @@ operator<<(ostream &s, ApacheTrafficServer::Scalar<N, C, T> const &x)
   return ApacheTrafficServer::detail::tag_label<T>(s, b);
 }
 
-
 /// Compute common type of two scalars.
 /// In `std` to overload the base definition. This yields a type that has the common type of the
 /// counter type and a scale that is the GCF of the input scales.
-template < intmax_t N, typename C, intmax_t S, typename I, typename T >
-struct common_type<ApacheTrafficServer::Scalar<N,C,T>, ApacheTrafficServer::Scalar<S,I,T>>
-{
+template <intmax_t N, typename C, intmax_t S, typename I, typename T>
+struct common_type<ApacheTrafficServer::Scalar<N, C, T>, ApacheTrafficServer::Scalar<S, I, T>> {
   typedef std::ratio<N, S> R;
-  typedef ApacheTrafficServer::Scalar<N/R::num, typename common_type<C,I>::type, T> type;
+  typedef ApacheTrafficServer::Scalar<N / R::num, typename common_type<C, I>::type, T> type;
 };
 }
 #endif // TS_SCALAR_H

@@ -225,10 +225,10 @@ Test_5()
   z1 /= 3;
   test.check(z1.count() == 10240, "Addition got %ld expected %d", z1.count(), 10240);
 
-  z2 = 3148;
+  z2     = 3148;
   auto x = z2 + MBytes(1);
-  test.check(x.scale() == z2.scale(), "Common type addition yielded bad scale %ld - expected %ld", x.scale(),  z2.scale());
-  test.check(x.count() == 4172, "Common type addition yielded bad count %d - expected %d", x.count(),  4172);
+  test.check(x.scale() == z2.scale(), "Common type addition yielded bad scale %ld - expected %ld", x.scale(), z2.scale());
+  test.check(x.count() == 4172, "Common type addition yielded bad count %d - expected %d", x.count(), 4172);
 }
 
 struct KBytes_tag {
@@ -255,8 +255,9 @@ test_Compile()
 {
   // These tests aren't normally run, they exist to detect compiler issues.
 
-  typedef ts::Scalar<1024, long int> KBytes;
+  typedef ts::Scalar<1024, short> KBytes;
   typedef ts::Scalar<1024, int> KiBytes;
+  int delta = 10;
 
   KBytes x(12);
   KiBytes y(12);
@@ -265,6 +266,15 @@ test_Compile()
     std::cout << "Operator > works" << std::endl;
   if (y > 12)
     std::cout << "Operator > works" << std::endl;
+
+  (void)(x += 10);
+  (void)(x += static_cast<int>(10));
+  (void)(x += static_cast<long int>(10));
+  (void)(x += delta);
+  (void)(y += 10);
+  (void)(y += static_cast<int>(10));
+  (void)(y += static_cast<long int>(10));
+  (void)(y += delta);
 }
 
 int
