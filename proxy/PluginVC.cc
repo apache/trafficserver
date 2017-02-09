@@ -923,7 +923,7 @@ PluginVC::set_tcp_init_cwnd(int /* init_cwnd ATS_UNUSED */)
 }
 
 int
-PluginVC::set_tcp_congestion_control(const char *ATS_UNUSED, int ATS_UNUSED)
+PluginVC::set_tcp_congestion_control(int ATS_UNUSED)
 {
   return -1;
 }
