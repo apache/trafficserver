@@ -92,13 +92,14 @@ namespace detail
      classes to pass it on to a @c Scalar method.
 
      Scale conversions between @c Scalar instances are handled in these classes via the templated
-     methods @c scale_conversion_round_up and @c scale_conversion_round_down. Scale conversions from
-     units are sufficiently simple to be done directly in the methods.
+     methods @c scale_conversion_round_up and @c scale_conversion_round_down.
 
-     The self conversion operator that just changes the internal storage type is needed for direct
-     assignments so there is a conversion from the type of the expression to the type needed by the
-     @c Scalar instance. I think this could also be done by adding a template parameter to the @c
-     Scalar methods which I may look at in the future.
+     Conversions between scales and types for the scalar helpers is done inside the helper classes
+     and a user type conversion operator exists so the helper can be converted by the compiler to
+     the correct type. For the untis bases conversion this is done in @c Scalar because the
+     generality of the needed conversion is too broad to be easily used. It can be done but there is
+     some ugliness due to the fact that in some cases two user conversions which is difficult to
+     deal with. I have tried it both ways and overall this seems a cleaner implementation.
 
      Much of this is driven by the fact that the assignment operator can not be templated and
      therefore to have a nice interace for assignment this split is needed.
@@ -107,7 +108,7 @@ namespace detail
   // Unit value, to be rounded up.
   template <typename C> struct scalar_unit_round_up_t {
     C _n;
-    template <typename I> constexpr operator scalar_unit_round_up_t<I>() { return {static_cast<I>(_n)}; }
+    //    template <typename I> constexpr operator scalar_unit_round_up_t<I>() { return {static_cast<I>(_n)}; }
     template <intmax_t N, typename I>
     constexpr I
     scale()
@@ -118,7 +119,7 @@ namespace detail
   // Unit value, to be rounded down.
   template <typename C> struct scalar_unit_round_down_t {
     C _n;
-    template <typename I> operator scalar_unit_round_down_t<I>() { return {static_cast<I>(_n)}; }
+    //    template <typename I> operator scalar_unit_round_down_t<I>() { return {static_cast<I>(_n)}; }
     template <intmax_t N, typename I>
     constexpr I
     scale()
@@ -205,11 +206,6 @@ public:
   constexpr Scalar(); ///< Default contructor.
   ///< Construct to have @a n scaled units.
   constexpr Scalar(Count n);
-  /// Scale units value @a x to this type, rounding down.
-  constexpr Scalar(detail::scalar_unit_round_up_t<C> x);
-  /// Copy constructor for same scale.
-  template <typename I> constexpr Scalar(Scalar<N, I, T> const &that);
-
   /// Copy constructor.
   constexpr Scalar(self const &that); /// Copy constructor.
   /// Conversion constructor.
@@ -219,10 +215,12 @@ public:
   Scalar(detail::scalar_round_up_t<N, C, T> const &that);
   /// Scaling constructor.
   Scalar(detail::scalar_round_down_t<N, C, T> const &that);
-  /// Scaling constructor.
-  constexpr Scalar(detail::scalar_unit_round_up_t<C> const &that);
-  /// Scaling constructor.
-  constexpr Scalar(detail::scalar_unit_round_down_t<C> const &that);
+  /// Scale units value @a x to this type, rounding up.
+  template <typename I> constexpr Scalar(detail::scalar_unit_round_up_t<I> v);
+  /// Scale units value @a x to this type, rounding down.
+  template <typename I> constexpr Scalar(detail::scalar_unit_round_down_t<I> v);
+  /// Copy constructor for same scale.
+  template <typename I> constexpr Scalar(Scalar<N, I, T> const &that);
 
   /// Assignment operator.
   /// The value is scaled appropriately.
@@ -235,10 +233,10 @@ public:
   /// The count is set to @a n.
   self &operator=(Count n);
   // Scaling assignments.
-  self &operator=(detail::scalar_unit_round_up_t<C> n);
-  self &operator=(detail::scalar_unit_round_down_t<C> n);
-  self &operator=(detail::scalar_round_up_t<N, C, T> v);
-  self &operator=(detail::scalar_round_down_t<N, C, T> v);
+  template <typename I> self &operator=(detail::scalar_unit_round_up_t<I> n);
+  template <typename I> self &operator=(detail::scalar_unit_round_down_t<I> n);
+  self &operator                      =(detail::scalar_round_up_t<N, C, T> v);
+  self &operator                      =(detail::scalar_round_down_t<N, C, T> v);
 
   /// The number of scale units.
   constexpr Count count() const;
@@ -254,8 +252,8 @@ public:
   self &operator+=(C n);
   /// Addition - add @a n as a number of scaled units.
   self &operator+=(self const &that);
-  self &operator+=(detail::scalar_unit_round_up_t<C> n);
-  self &operator+=(detail::scalar_unit_round_down_t<C> n);
+  template <typename I> self &operator+=(detail::scalar_unit_round_up_t<I> n);
+  template <typename I> self &operator+=(detail::scalar_unit_round_down_t<I> n);
   self &operator+=(detail::scalar_round_up_t<N, C, T> v);
   self &operator+=(detail::scalar_round_down_t<N, C, T> v);
 
@@ -277,8 +275,8 @@ public:
   self &operator-=(C n);
   /// Subtraction - subtract @a n as a number of scaled units.
   self &operator-=(self const &that);
-  self &operator-=(detail::scalar_unit_round_up_t<C> n);
-  self &operator-=(detail::scalar_unit_round_down_t<C> n);
+  template <typename I> self &operator-=(detail::scalar_unit_round_up_t<I> n);
+  template <typename I> self &operator-=(detail::scalar_unit_round_down_t<I> n);
   self &operator-=(detail::scalar_round_up_t<N, C, T> v);
   self &operator-=(detail::scalar_round_down_t<N, C, T> v);
 
@@ -322,11 +320,13 @@ template <intmax_t N, typename C, typename T> Scalar<N, C, T>::Scalar(detail::sc
 {
 }
 template <intmax_t N, typename C, typename T>
-constexpr Scalar<N, C, T>::Scalar(detail::scalar_unit_round_up_t<C> const &v) : _n(v.template scale<N, C>())
+template <typename I>
+constexpr Scalar<N, C, T>::Scalar(detail::scalar_unit_round_up_t<I> v) : _n(v.template scale<N, C>())
 {
 }
 template <intmax_t N, typename C, typename T>
-constexpr Scalar<N, C, T>::Scalar(detail::scalar_unit_round_down_t<C> const &v) : _n(v.template scale<N, C>())
+template <typename I>
+constexpr Scalar<N, C, T>::Scalar(detail::scalar_unit_round_down_t<I> v) : _n(v.template scale<N, C>())
 {
 }
 
@@ -372,15 +372,17 @@ Scalar<N, C, T>::operator=(detail::scalar_round_down_t<N, C, T> v) -> self &
   return *this;
 }
 template <intmax_t N, typename C, typename T>
+template <typename I>
 inline auto
-Scalar<N, C, T>::operator=(detail::scalar_unit_round_up_t<C> v) -> self &
+Scalar<N, C, T>::operator=(detail::scalar_unit_round_up_t<I> v) -> self &
 {
   _n = v.template scale<N, C>();
   return *this;
 }
 template <intmax_t N, typename C, typename T>
+template <typename I>
 inline auto
-Scalar<N, C, T>::operator=(detail::scalar_unit_round_down_t<C> v) -> self &
+Scalar<N, C, T>::operator=(detail::scalar_unit_round_down_t<I> v) -> self &
 {
   _n = v.template scale<N, C>();
   return *this;
@@ -707,15 +709,17 @@ Scalar<N, C, T>::operator+=(C n) -> self &
   return *this;
 }
 template <intmax_t N, typename C, typename T>
+template <typename I>
 auto
-Scalar<N, C, T>::operator+=(detail::scalar_unit_round_up_t<C> v) -> self &
+Scalar<N, C, T>::operator+=(detail::scalar_unit_round_up_t<I> v) -> self &
 {
   _n += v.template scale<N, C>();
   return *this;
 }
 template <intmax_t N, typename C, typename T>
+template <typename I>
 auto
-Scalar<N, C, T>::operator+=(detail::scalar_unit_round_down_t<C> v) -> self &
+Scalar<N, C, T>::operator+=(detail::scalar_unit_round_down_t<I> v) -> self &
 {
   _n += v.template scale<N, C>();
   return *this;
@@ -858,15 +862,17 @@ Scalar<N, C, T>::operator-=(C n) -> self &
   return *this;
 }
 template <intmax_t N, typename C, typename T>
+template <typename I>
 auto
-Scalar<N, C, T>::operator-=(detail::scalar_unit_round_up_t<C> v) -> self &
+Scalar<N, C, T>::operator-=(detail::scalar_unit_round_up_t<I> v) -> self &
 {
   _n -= v.template scale<N, C>();
   return *this;
 }
 template <intmax_t N, typename C, typename T>
+template <typename I>
 auto
-Scalar<N, C, T>::operator-=(detail::scalar_unit_round_down_t<C> v) -> self &
+Scalar<N, C, T>::operator-=(detail::scalar_unit_round_down_t<I> v) -> self &
 {
   _n -= v.template scale<N, C>();
   return *this;
