@@ -195,6 +195,7 @@ Test_5()
   TestBox test("TS Scalar: arithmetic operator tests");
 
   typedef ts::Scalar<1024> KBytes;
+  typedef ts::Scalar<1025, long int> KiBytes;
   typedef ts::Scalar<1, int64_t> Bytes;
   typedef ts::Scalar<1024 * KBytes::SCALE> MBytes;
 
@@ -244,6 +245,26 @@ Test_5()
 
   decltype(z2) a = z2 + ts::round_down(167229);
   test.check(a.count() == 516, "[15] Unit scale down += bad count %d - expected %d", a.count(), 516);
+
+  KiBytes k = 3148;
+  auto kx   = k + MBytes(1);
+  test.check(kx.scale() == k.scale(), "[9] Common type addition yielded bad scale %ld - expected %ld", kx.scale(), k.scale());
+  test.check(kx.count() == 4172, "[10] Common type addition yielded bad count %ld - expected %d", kx.count(), 4172);
+
+  k = ts::round_down(262150);
+  test.check(k.count() == 256, "[11] Unit scale down assignment bad count %ld - expected %d", k.count(), 256);
+
+  k = ts::round_up(262150);
+  test.check(k.count() == 257, "[12] Unit scale up assignment bad count %ld - expected %d", k.count(), 257);
+
+  KBytes kq(ts::round_down(262150));
+  test.check(kq.count() == 256, "[13] Unit scale down constructor bad count %d - expected %d", kq.count(), 256);
+
+  k += ts::round_up(97384);
+  test.check(k.count() == 353, "[14] Unit scale down += bad count %ld - expected %d", k.count(), 353);
+
+  decltype(k) ka = k + ts::round_down(167229);
+  test.check(ka.count() == 516, "[15] Unit scale down += bad count %ld - expected %d", ka.count(), 516);
 }
 
 // test comparisons
