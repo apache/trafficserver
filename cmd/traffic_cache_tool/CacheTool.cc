@@ -27,6 +27,7 @@
 #include <vector>
 #include <map>
 #include <ts/ink_memory.h>
+#include <ts/ink_file.h>
 #include <ts/MemView.h>
 #include <getopt.h>
 #include <system_error>
@@ -80,6 +81,10 @@ struct Span {
   /// No allocated stripes on this span.
   bool isEmpty() const;
 
+  /// Replace all existing stripes with a single unallocated stripe covering the span.
+  Errata clear();
+
+  /// This is broken and needs to be cleaned up.
   void clearPermanently();
 
   ts::Rv<Stripe*> allocStripe(int vol_idx, CacheStripeBlocks len);
@@ -88,6 +93,9 @@ struct Span {
   FilePath _path;
   ats_scoped_fd _fd;
   int _vol_idx = 0;
+  CacheStoreBlocks _base; ///< Offset to first usable byte.
+  CacheStoreBlocks _offset; ///< Offset to first content byte.
+  // The space between _base and _offset is where the span information is stored.
   CacheStoreBlocks _len; ///< Total length of span.
   CacheStoreBlocks _free_space;
   ink_device_geometry _geometry; ///< Geometry of span.
@@ -181,6 +189,9 @@ struct Cache {
   Errata loadSpan(FilePath const &path);
   Errata loadSpanConfig(FilePath const &path);
   Errata loadSpanDirect(FilePath const &path, int vol_idx = -1, Bytes size = -1);
+
+  /// Change the @a span to have a single, unused stripe occupying the entire @a span.
+  Errata clearSpan(Span* span);
 
   enum class SpanDumpDepth { SPAN, STRIPE, DIRECTORY };
   void dumpSpans(SpanDumpDepth depth);
@@ -287,7 +298,7 @@ VolumeAllocator::fillEmptySpans()
       }
     }
     // Now allocate blocks.
-    ts::CacheStripeBlocks span_blocks = ts::scale_down<ts::CacheStripeBlocks>(span->_free_space);
+    ts::CacheStripeBlocks span_blocks = ts::scale_up<ts::CacheStripeBlocks>(span->_free_space);
     ts::CacheStripeBlocks span_used(0);
 
     // sort by deficit so least relatively full volumes go first.
@@ -503,20 +514,24 @@ Cache::loadSpanDirect(FilePath const &path, int vol_idx, Bytes size)
   std::unique_ptr<Span> span(new Span(path));
   zret = span->load();
   if (zret) {
-    int nspb = span->_header->num_diskvol_blks;
-    for (auto i = 0; i < nspb; ++i) {
-      ts::CacheStripeDescriptor &raw = span->_header->stripes[i];
-      Stripe* stripe = new Stripe(span.get(), raw.offset, raw.len);
-      if (raw.free == 0) {
-        stripe->_vol_idx = raw.vol_idx;
-        _volumes[stripe->_vol_idx]._stripes.push_back(stripe);
-        _volumes[stripe->_vol_idx]._size += stripe->_len;
-      } else {
-        span->_free_space += stripe->_len;
+    if (span->_header) {
+      int nspb = span->_header->num_diskvol_blks;
+      for (auto i = 0; i < nspb; ++i) {
+        ts::CacheStripeDescriptor &raw = span->_header->stripes[i];
+        Stripe* stripe = new Stripe(span.get(), raw.offset, raw.len);
+        if (raw.free == 0) {
+          stripe->_vol_idx = raw.vol_idx;
+          _volumes[stripe->_vol_idx]._stripes.push_back(stripe);
+          _volumes[stripe->_vol_idx]._size += stripe->_len;
+        } else {
+          span->_free_space += stripe->_len;
+        }
+        span->_stripes.push_back(stripe);
       }
-      span->_stripes.push_back(stripe);
+      span->_vol_idx = vol_idx;
+    } else {
+      span->clear();
     }
-    span->_vol_idx = vol_idx;
     _spans.push_back(span.release());
   }
   return zret;
@@ -571,15 +586,19 @@ Cache::dumpSpans(SpanDumpDepth depth)
 {
   if (depth >= SpanDumpDepth::SPAN) {
     for (auto span : _spans) {
-      std::cout << "Span: " << span->_path << " " << span->_header->num_volumes << " Volumes " << span->_header->num_used
-                << " in use " << span->_header->num_free << " free " << span->_header->num_diskvol_blks << " stripes "
-                << span->_header->num_blocks.units() << " blocks" << std::endl;
-      for (unsigned int i = 0; i < span->_header->num_diskvol_blks; ++i) {
-        ts::CacheStripeDescriptor &stripe = span->_header->stripes[i];
-        std::cout << "    : SpanBlock " << i << " @ " << stripe.offset.units() << " blocks=" << stripe.len.units()
-                  << " vol=" << stripe.vol_idx << " type=" << stripe.type << " " << (stripe.free ? "free" : "in-use") << std::endl;
-        if (depth >= SpanDumpDepth::STRIPE) {
-          Open_Stripe(span->_fd, stripe);
+      if (nullptr == span->_header) {
+        std::cout << "Span: " << span->_path << " is uninitialized" << std::endl;
+      } else {
+        std::cout << "Span: " << span->_path << " " << span->_header->num_volumes << " Volumes " << span->_header->num_used
+                  << " in use " << span->_header->num_free << " free " << span->_header->num_diskvol_blks << " stripes "
+                  << span->_header->num_blocks.units() << " blocks" << std::endl;
+        for (unsigned int i = 0; i < span->_header->num_diskvol_blks; ++i) {
+          ts::CacheStripeDescriptor &stripe = span->_header->stripes[i];
+          std::cout << "    : SpanBlock " << i << " @ " << stripe.offset.units() << " blocks=" << stripe.len.units()
+                    << " vol=" << stripe.vol_idx << " type=" << stripe.type << " " << (stripe.free ? "free" : "in-use") << std::endl;
+          if (depth >= SpanDumpDepth::STRIPE) {
+            Open_Stripe(span->_fd, stripe);
+          }
         }
       }
     }
@@ -604,7 +623,7 @@ ts::CacheStripeBlocks Cache::calcTotalSpanConfiguredSize()
   ts::CacheStripeBlocks zret(0);
 
   for ( auto span : _spans ) {
-    zret += ts::scale_down<ts::CacheStripeBlocks>(span->_header->num_blocks);
+    zret += ts::scale_down<ts::CacheStripeBlocks>(span->_len);
   }
   return zret;
 }
@@ -659,31 +678,34 @@ Span::loadDevice()
   ats_scoped_fd fd(_path.open(flags));
 
   if (fd) {
-    if (ink_file_get_geometry(_fd, &_geometry)) {
+    if (ink_file_get_geometry(fd, _geometry)) {
       off_t offset = ts::CacheSpan::OFFSET.units();
-      alignas(512) char buff[CacheStoreBlocks::SCALE];
-
-
-      int64_t n = pread(fd, buff, sizeof(buff), offset);
-      if (n >= static_cast<int64_t>(sizeof(ts::SpanHeader))) {
+      CacheStoreBlocks span_hdr_size(1); // default.
+      static const ssize_t BUFF_SIZE = CacheStoreBlocks::SCALE; // match default span_hdr_size
+      alignas(512) char buff[BUFF_SIZE];
+      ssize_t n = pread(fd, buff, BUFF_SIZE, offset);
+      if (n >= BUFF_SIZE) {
         ts::SpanHeader &span_hdr = reinterpret_cast<ts::SpanHeader &>(buff);
         // See if it looks valid
         if (span_hdr.magic == ts::SpanHeader::MAGIC && span_hdr.num_diskvol_blks == span_hdr.num_used + span_hdr.num_free) {
           int nspb             = span_hdr.num_diskvol_blks;
-          size_t span_hdr_size = sizeof(ts::SpanHeader) + (nspb - 1) * sizeof(ts::CacheStripeDescriptor);
-          _header.reset(new (malloc(span_hdr_size)) ts::SpanHeader);
-          if (span_hdr_size <= sizeof(buff)) {
-            memcpy(_header.get(), buff, span_hdr_size);
+          span_hdr_size = span_hdr_size.scale_up(Bytes(sizeof(ts::SpanHeader) + (nspb - 1) * sizeof(ts::CacheStripeDescriptor)));
+          _header.reset(new (malloc(span_hdr_size.units())) ts::SpanHeader);
+          if (span_hdr_size.units() <= BUFF_SIZE) {
+            memcpy(_header.get(), buff, span_hdr_size.units());
           } else {
             // TODO - check the pread return
-            pread(fd, _header.get(), span_hdr_size, offset);
+            pread(fd, _header.get(), span_hdr_size.units(), offset);
           }
-          _fd = fd.release();
           _len = _header->num_blocks;
-
         } else {
-          zret = Errata::Message(0, 22, "Span header for ", _path, " is invalid");
+          zret = Errata::Message(0, 0, "Span header for ", _path, " is invalid");
+          _len = _len.scale_down(Bytes(_geometry.totalsz));
         }
+        // valid FD means the device is accessible and has enough storage to be configured.
+        _fd = fd.release();
+        _base = _base.scale_up(Bytes(offset));
+        _offset = _base + span_hdr_size;
       } else {
         zret = Errata::Message(0, errno, "Failed to read from ", _path, '[', errno, ':', strerror(errno), ']');
       }
@@ -719,6 +741,21 @@ ts::Rv<Stripe*> Span::allocStripe(int vol_idx, CacheStripeBlocks len)
 }
 
 bool Span::isEmpty() const { return std::all_of(_stripes.begin(), _stripes.end(), [] (Stripe* s) { return s->_vol_idx == 0; });}
+
+Errata
+Span::clear()
+{
+  Stripe* stripe;
+  std::for_each(_stripes.begin(), _stripes.end(), [](Stripe* s) { delete s; });
+  _stripes.clear();
+
+  stripe = new Stripe(this, _offset, _len - _offset);
+  _stripes.push_back(stripe);
+  _free_space = stripe->_len;
+
+  return Errata();
+}
+
 
 Errata Span::updateHeader()
 {
