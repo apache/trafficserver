@@ -110,25 +110,25 @@ Test_2()
   Size_2 sz_c(SCALE_1 / SCALE_2);
   Size_2 sz_d(29 * SCALE_1 / SCALE_2);
 
-  auto sz = ts::scale_up<Size_1>(sz_a);
-  test.check(sz.count() == 1, "Rounding up, got %d expected %d", sz.count(), 1);
-  sz = ts::scale_down<Size_1>(sz_a);
-  test.check(sz.count() == 0, "Rounding down: got %d expected %d", sz.count(), 0);
+  Size_1 sz = ts::round_up(sz_a);
+  test.check(sz.count() == 1, "[1] Rounding up, got %d expected %d", sz.count(), 1);
+  sz = ts::round_down(sz_a);
+  test.check(sz.count() == 0, "[2] Rounding down: got %d expected %d", sz.count(), 0);
 
-  sz = ts::scale_up<Size_1>(sz_b);
-  test.check(sz.count() == 4, "Rounding up, got %d expected %d", sz.count(), 4);
-  sz = ts::scale_down<Size_1>(sz_b);
-  test.check(sz.count() == 3, "Rounding down, got %d expected %d", sz.count(), 3);
+  sz = ts::round_up(sz_b);
+  test.check(sz.count() == 4, "[3] Rounding up, got %d expected %d", sz.count(), 4);
+  sz = ts::round_down(sz_b);
+  test.check(sz.count() == 3, "[4] Rounding down, got %d expected %d", sz.count(), 3);
 
-  sz = ts::scale_up<Size_1>(sz_c);
-  test.check(sz.count() == 1, "Rounding up, got %d expected %d", sz.count(), 1);
-  sz = ts::scale_down<Size_1>(sz_c);
-  test.check(sz.count() == 1, "Rounding down, got %d expected %d", sz.count(), 1);
+  sz = ts::round_up(sz_c);
+  test.check(sz.count() == 1, "[5] Rounding up, got %d expected %d", sz.count(), 1);
+  sz = ts::round_down(sz_c);
+  test.check(sz.count() == 1, "[6] Rounding down, got %d expected %d", sz.count(), 1);
 
-  sz = ts::scale_up<Size_1>(sz_d);
-  test.check(sz.count() == 29, "Rounding up, got %d expected %d", sz.count(), 29);
-  sz = ts::scale_down<Size_1>(sz_d);
-  test.check(sz.count() == 29, "Rounding down, got %d expected %d", sz.count(), 29);
+  sz = ts::round_up(sz_d);
+  test.check(sz.count() == 29, "[7] Rounding up, got %d expected %d", sz.count(), 29);
+  sz = ts::round_down(sz_d);
+  test.check(sz.count() == 29, "[8] Rounding down, got %d expected %d", sz.count(), 29);
 
   sz   = 119;
   sz_b = sz; // Should be OK because SCALE_1 is an integer multiple of SCALE_2
@@ -151,14 +151,14 @@ Test_3()
   Size_2 sz_a(2);
   Size_2 sz_b(97);
 
-  auto sz = ts::scale_up<Size_1>(sz_a);
+  Size_1 sz = round_up(sz_a);
   test.check(sz.count() == 2, "Rounding up, got %d expected %d", sz.count(), 2);
-  sz = ts::scale_down<Size_1>(sz_a);
+  sz = round_down(sz_a);
   test.check(sz.count() == 1, "Rounding down: got %d expected %d", sz.count(), 0);
 
-  sz = ts::scale_up<Size_1>(sz_b);
+  sz = ts::round_up(sz_b);
   test.check(sz.count() == 65, "Rounding up, got %d expected %d", sz.count(), 65);
-  sz = ts::scale_down<Size_1>(sz_b);
+  sz = ts::round_down(sz_b);
   test.check(sz.count() == 64, "Rounding down, got %d expected %d", sz.count(), 64);
 }
 
@@ -174,15 +174,15 @@ Test_4()
   //  m_4 = m_9; // Should fail to compile with static assert.
   //  m_9 = m_4; // Should fail to compile with static assert.
 
-  m_4 = ts::scale_up<decltype(m_4)>(m_9);
+  m_4 = ts::round_up(m_9);
   test.check(m_4.count() == 214, "Rounding down, got %d expected %d", m_4.count(), 214);
-  m_4 = ts::scale_down<decltype(m_4)>(m_9);
+  m_4 = ts::round_down(m_9);
   test.check(m_4.count() == 213, "Rounding down, got %d expected %d", m_4.count(), 213);
 
   m_4 = 213;
-  m_9 = ts::scale_up<decltype(m_9)>(m_4);
+  m_9 = ts::round_up(m_4);
   test.check(m_9.count() == 95, "Rounding down, got %d expected %d", m_9.count(), 95);
-  m_9 = ts::scale_down<decltype(m_9)>(m_4);
+  m_9 = ts::round_down(m_4);
   test.check(m_9.count() == 94, "Rounding down, got %d expected %d", m_9.count(), 94);
 
   m_test = m_4; // Verify assignment of identical scale values compiles.
@@ -203,41 +203,47 @@ Test_5()
   MBytes mbytes(5);
 
   Bytes z1 = bytes + 128;
-  test.check(z1.count() == 224, "Addition got %ld expected %d", z1.count(), 224);
+  test.check(z1.count() == 224, "[1] Addition got %ld expected %d", z1.count(), 224);
   KBytes z2 = kbytes + 3;
-  test.check(z2.count() == 5, "Addition got %d expected %d", z2.count(), 5);
+  test.check(z2.count() == 5, "[2] Addition got %d expected %d", z2.count(), 5);
   Bytes z3(bytes);
   z3 += kbytes;
-  test.check(z3.units() == 2048 + 96, "Addition got %ld expected %d", z3.units(), 2048 + 96);
+  test.check(z3.units() == 2048 + 96, "[3] Addition got %ld expected %d", z3.units(), 2048 + 96);
   MBytes z4 = mbytes;
   z4 += 5;
   z2 += z4;
-  test.check(z2.units() == ((10 << 20) + (5 << 10)), "Addition got %d expected %d", z2.units(), (10 << 20) + (2 << 10));
+  test.check(z2.units() == ((10 << 20) + (5 << 10)), "[4] Addition got %d expected %d", z2.units(), (10 << 20) + (2 << 10));
 
   z1 += 128;
-  test.check(z1.count() == 352, "Addition got %ld expected %d", z1.count(), 352);
+  test.check(z1.count() == 352, "[5] Addition got %ld expected %d", z1.count(), 352);
 
   z2 = 2;
   z1 = 3 * z2;
-  test.check(z1.count() == 6144, "Addition got %ld expected %d", z1.count(), 6144);
+  test.check(z1.count() == 6144, "[6] Addition got %ld expected %d", z1.count(), 6144);
   z1 *= 5;
-  test.check(z1.count() == 30720, "Addition got %ld expected %d", z1.count(), 30720);
+  test.check(z1.count() == 30720, "[7] Addition got %ld expected %d", z1.count(), 30720);
   z1 /= 3;
-  test.check(z1.count() == 10240, "Addition got %ld expected %d", z1.count(), 10240);
+  test.check(z1.count() == 10240, "[8] Addition got %ld expected %d", z1.count(), 10240);
 
   z2     = 3148;
   auto x = z2 + MBytes(1);
-  test.check(x.scale() == z2.scale(), "Common type addition yielded bad scale %ld - expected %ld", x.scale(), z2.scale());
-  test.check(x.count() == 4172, "Common type addition yielded bad count %d - expected %d", x.count(), 4172);
+  test.check(x.scale() == z2.scale(), "[9] Common type addition yielded bad scale %ld - expected %ld", x.scale(), z2.scale());
+  test.check(x.count() == 4172, "[10] Common type addition yielded bad count %d - expected %d", x.count(), 4172);
 
-  z2 = z2.scale_down(262150);
-  test.check(z2.count() == 256, "Scale down bad count %d - expected %d", z2.count(), 256);
+  z2 = ts::round_down(262150);
+  test.check(z2.count() == 256, "[11] Unit scale down assignment bad count %d - expected %d", z2.count(), 256);
 
-  z2 = ts::unit_ceil(262150);
-  test.check(z2.count() == 257, "Scale down bad count %d - expected %d", z2.count(), 257);
+  z2 = ts::round_up(262150);
+  test.check(z2.count() == 257, "[12] Unit scale up assignment bad count %d - expected %d", z2.count(), 257);
 
-  KBytes q(ts::unit_floor(262150));
-  test.check(q.count() == 256, "Scale down bad count %d - expected %d", q.count(), 256);
+  KBytes q(ts::round_down(262150));
+  test.check(q.count() == 256, "[13] Unit scale down constructor bad count %d - expected %d", q.count(), 256);
+
+  z2 += ts::round_up(97384);
+  test.check(z2.count() == 353, "[14] Unit scale down += bad count %d - expected %d", z2.count(), 353);
+
+  decltype(z2) a = z2 + ts::round_down(167229);
+  test.check(a.count() == 516, "[15] Unit scale down += bad count %d - expected %d", a.count(), 516);
 }
 
 // test comparisons
