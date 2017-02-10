@@ -225,10 +225,39 @@ Test_5()
   z1 /= 3;
   test.check(z1.count() == 10240, "Addition got %ld expected %d", z1.count(), 10240);
 
-  z2 = 3148;
+  z2     = 3148;
   auto x = z2 + MBytes(1);
-  test.check(x.scale() == z2.scale(), "Common type addition yielded bad scale %ld - expected %ld", x.scale(),  z2.scale());
-  test.check(x.count() == 4172, "Common type addition yielded bad count %d - expected %d", x.count(),  4172);
+  test.check(x.scale() == z2.scale(), "Common type addition yielded bad scale %ld - expected %ld", x.scale(), z2.scale());
+  test.check(x.count() == 4172, "Common type addition yielded bad count %d - expected %d", x.count(), 4172);
+
+  z2 = z2.scale_down(262150);
+  test.check(z2.count() == 256, "Scale down bad count %d - expected %d", z2.count(), 256);
+
+  z2 = ts::unit_ceil(262150);
+  test.check(z2.count() == 257, "Scale down bad count %d - expected %d", z2.count(), 257);
+
+  KBytes q(ts::unit_floor(262150));
+  test.check(q.count() == 256, "Scale down bad count %d - expected %d", q.count(), 256);
+}
+
+// test comparisons
+void
+Test_6()
+{
+  using ts::Scalar;
+  typedef Scalar<1024, ssize_t> KB;
+  typedef Scalar<KB::SCALE * 1024, ssize_t> MB;
+  typedef Scalar<8 * KB::SCALE, ssize_t> StoreBlocks;
+  typedef Scalar<127 * MB::SCALE, ssize_t> SpanBlocks;
+
+  TestBox test("TS Scalar: comparison operator tests");
+
+  StoreBlocks a(80759700);
+  SpanBlocks b(4968);
+  SpanBlocks delta(1);
+
+  test.check(a < b, "[1] Less than incorrect %ld < %ld", a.units(), b.units());
+  test.check(b < (a + delta), "[2] Less than incorrect %ld < %ld", b.units(), (a + delta).units());
 }
 
 struct KBytes_tag {
@@ -255,8 +284,9 @@ test_Compile()
 {
   // These tests aren't normally run, they exist to detect compiler issues.
 
-  typedef ts::Scalar<1024, long int> KBytes;
+  typedef ts::Scalar<1024, short> KBytes;
   typedef ts::Scalar<1024, int> KiBytes;
+  int delta = 10;
 
   KBytes x(12);
   KiBytes y(12);
@@ -265,6 +295,15 @@ test_Compile()
     std::cout << "Operator > works" << std::endl;
   if (y > 12)
     std::cout << "Operator > works" << std::endl;
+
+  (void)(x += 10);
+  (void)(x += static_cast<int>(10));
+  (void)(x += static_cast<long int>(10));
+  (void)(x += delta);
+  (void)(y += 10);
+  (void)(y += static_cast<int>(10));
+  (void)(y += static_cast<long int>(10));
+  (void)(y += delta);
 }
 
 int
@@ -275,6 +314,7 @@ main(int, char **)
   Test_3();
   Test_4();
   Test_5();
+  Test_6();
   Test_IO();
   TestBox::print_summary();
   return 0;
