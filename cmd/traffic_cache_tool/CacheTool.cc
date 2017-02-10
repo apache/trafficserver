@@ -115,7 +115,8 @@ struct Stripe
   Bytes _start; ///< Offset of first byte of stripe.
   Bytes _content; ///< Start of content.
   CacheStoreBlocks _len; ///< Length of stripe.
-  uint8_t _vol_idx; ///< Volume index.
+  uint8_t _vol_idx = 0; ///< Volume index.
+  uint8_t _type = 0; ///< Stripe type.
 };
 
 Stripe::Stripe(Span* span, Bytes start, CacheStoreBlocks len)
@@ -521,6 +522,7 @@ Cache::loadSpanDirect(FilePath const &path, int vol_idx, Bytes size)
         Stripe* stripe = new Stripe(span.get(), raw.offset, raw.len);
         if (raw.free == 0) {
           stripe->_vol_idx = raw.vol_idx;
+          stripe->_type = raw.type;
           _volumes[stripe->_vol_idx]._stripes.push_back(stripe);
           _volumes[stripe->_vol_idx]._size += stripe->_len;
         } else {
@@ -686,6 +688,7 @@ Span::loadDevice()
       ssize_t n = pread(fd, buff, BUFF_SIZE, offset);
       if (n >= BUFF_SIZE) {
         ts::SpanHeader &span_hdr = reinterpret_cast<ts::SpanHeader &>(buff);
+        _base = _base.scale_up(Bytes(offset));
         // See if it looks valid
         if (span_hdr.magic == ts::SpanHeader::MAGIC && span_hdr.num_diskvol_blks == span_hdr.num_used + span_hdr.num_free) {
           int nspb             = span_hdr.num_diskvol_blks;
@@ -700,11 +703,10 @@ Span::loadDevice()
           _len = _header->num_blocks;
         } else {
           zret = Errata::Message(0, 0, "Span header for ", _path, " is invalid");
-          _len = _len.scale_down(Bytes(_geometry.totalsz));
+          _len = _len.scale_down(Bytes(_geometry.totalsz)) - _base;
         }
         // valid FD means the device is accessible and has enough storage to be configured.
         _fd = fd.release();
-        _base = _base.scale_up(Bytes(offset));
         _offset = _base + span_hdr_size;
       } else {
         zret = Errata::Message(0, errno, "Failed to read from ", _path, '[', errno, ':', strerror(errno), ']');
@@ -723,17 +725,21 @@ ts::Rv<Stripe*> Span::allocStripe(int vol_idx, CacheStripeBlocks len)
   for (auto spot = _stripes.begin(), limit = _stripes.end() ; spot != limit ; ++spot ) {
     Stripe* stripe = *spot;
     if (stripe->isFree()) {
-      // Exact match, or if the remains after allocating are less than a stripe block, take it all.
-      if (stripe->_len <= len && len < (stripe->_len + CacheStripeBlocks(1))) {
-        stripe->_vol_idx = vol_idx;
-        return stripe;
-      } else if (stripe->_len > len) {
-        Stripe* ns = new Stripe(this, stripe->_start, len);
-        stripe->_start += len;
-        stripe->_len -= len;
-        ns->_vol_idx = vol_idx;
-        _stripes.insert(spot, ns);
-        return ns;
+      if (len < stripe->_len) {
+        // If the remains would be less than a stripe block, just take it all.
+        if (stripe->_len <= (len + CacheStripeBlocks(1))) {
+          stripe->_vol_idx = vol_idx;
+          stripe->_type = 1;
+          return stripe;
+        } else {
+          Stripe* ns = new Stripe(this, stripe->_start, len);
+          stripe->_start += len;
+          stripe->_len -= len;
+          ns->_vol_idx = vol_idx;
+          ns->_type = 1;
+          _stripes.insert(spot, ns);
+          return ns;
+        }
       }
     }
   }
@@ -749,6 +755,12 @@ Span::clear()
   std::for_each(_stripes.begin(), _stripes.end(), [](Stripe* s) { delete s; });
   _stripes.clear();
 
+  // Gah, due to lack of anything better, TS depends on the number of usable blocks to be consistent
+  // with internal calculations so have to match that here. Yay.
+  CacheStoreBlocks eff = _len - _base; // starting # of usable blocks.
+  // The maximum number of volumes that can store stored, accounting for the space used to store the descriptors.
+  int n = (eff.units() - sizeof(ts::SpanHeader)) / (CacheStripeBlocks::SCALE + sizeof(CacheStripeDescriptor));
+  _offset = _base + _offset.scale_up(sizeof(ts::SpanHeader) + (n - 1) * sizeof(CacheStripeDescriptor));
   stripe = new Stripe(this, _offset, _len - _offset);
   _stripes.push_back(stripe);
   _free_space = stripe->_len;
@@ -778,8 +790,8 @@ Errata Span::updateHeader()
     sd->offset = stripe->_start;
     sd->len = stripe->_len;
     sd->vol_idx = stripe->_vol_idx;
+    sd->type = stripe->_type;
     volume_mask[sd->vol_idx] = true;
-    sd->type = 0;
     if (sd->vol_idx == 0) {
       sd->free = true;
       ++(hdr->num_free);
