@@ -1133,6 +1133,7 @@ TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 
 AC_CHECK_FUNCS([ \
   BIO_meth_new \
+  BIO_sock_non_fatal_error \
   CRYPTO_set_mem_functions \
   HMAC_CTX_new \
 ])
