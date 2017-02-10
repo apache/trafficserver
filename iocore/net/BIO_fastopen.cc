@@ -27,6 +27,67 @@
 
 #include "BIO_fastopen.h"
 
+// For BoringSSL, which for some reason doesn't have this function.
+// (In BoringSSL, sock_read() and sock_write() use the internal
+// bio_fd_non_fatal_error() instead.) #1437
+//
+// The following is copied from
+// https://github.com/openssl/openssl/blob/3befffa39dbaf2688d823fcf2bdfc07d2487be48/crypto/bio/bss_sock.c
+#ifndef HAVE_BIO_SOCK_NON_FATAL_ERROR
+int
+BIO_sock_non_fatal_error(int err)
+{
+  switch (err) {
+#if defined(OPENSSL_SYS_WINDOWS)
+#if defined(WSAEWOULDBLOCK)
+  case WSAEWOULDBLOCK:
+#endif
+#endif
+
+#ifdef EWOULDBLOCK
+#ifdef WSAEWOULDBLOCK
+#if WSAEWOULDBLOCK != EWOULDBLOCK
+  case EWOULDBLOCK:
+#endif
+#else
+  case EWOULDBLOCK:
+#endif
+#endif
+
+#if defined(ENOTCONN)
+  case ENOTCONN:
+#endif
+
+#ifdef EINTR
+  case EINTR:
+#endif
+
+#ifdef EAGAIN
+#if EWOULDBLOCK != EAGAIN
+  case EAGAIN:
+#endif
+#endif
+
+#ifdef EPROTO
+  case EPROTO:
+#endif
+
+#ifdef EINPROGRESS
+  case EINPROGRESS:
+#endif
+
+#ifdef EALREADY
+  case EALREADY:
+#endif
+    return (1);
+  /* break; */
+  default:
+    break;
+  }
+  return (0);
+}
+#endif
+
 static int (*fastopen_create)(BIO *) = BIO_meth_get_create(const_cast<BIO_METHOD *>(BIO_s_socket()));
 
 static int
