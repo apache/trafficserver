@@ -788,15 +788,15 @@ operator+(int n, Scalar<N, int> const &rhs)
 {
   return Scalar<N, int>(rhs) += n;
 }
-template <intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator+(detail::scalar_unit_round_up_t<C> lhs, Scalar<N, C, T> const &rhs)
+operator+(detail::scalar_unit_round_up_t<I> lhs, Scalar<N, C, T> const &rhs)
 {
   return Scalar<N, C, T>(rhs) += lhs.template scale<N, C>();
 }
-template <intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator+(Scalar<N, C, T> const &lhs, detail::scalar_unit_round_up_t<C> rhs)
+operator+(Scalar<N, C, T> const &lhs, detail::scalar_unit_round_up_t<I> rhs)
 {
   return Scalar<N, C, T>(lhs) += rhs.template scale<N, C>();
 }
@@ -941,27 +941,27 @@ operator-(int n, Scalar<N, int> const &rhs)
 {
   return Scalar<N, int>(rhs) -= n;
 }
-template <intmax_t N, typename C, typename T, typename S>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator-(detail::scalar_unit_round_up_t<S> lhs, Scalar<N, C, T> const &rhs)
+operator-(detail::scalar_unit_round_up_t<I> lhs, Scalar<N, C, T> const &rhs)
 {
   return Scalar<N, C, T>(rhs) -= lhs.template scale<N, C>();
 }
-template <intmax_t N, typename C, typename T, typename S>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator-(Scalar<N, C, T> const &lhs, detail::scalar_unit_round_up_t<S> rhs)
+operator-(Scalar<N, C, T> const &lhs, detail::scalar_unit_round_up_t<I> rhs)
 {
   return Scalar<N, C, T>(lhs) -= rhs.template scale<N, C>();
 }
-template <intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator-(detail::scalar_unit_round_down_t<C> lhs, Scalar<N, C, T> const &rhs)
+operator-(detail::scalar_unit_round_down_t<I> lhs, Scalar<N, C, T> const &rhs)
 {
   return Scalar<N, C, T>(rhs) -= lhs.template scale<N, C>();
 }
-template <intmax_t N, typename C, typename T>
+template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
-operator-(Scalar<N, C, T> const &lhs, detail::scalar_unit_round_down_t<C> rhs)
+operator-(Scalar<N, C, T> const &lhs, detail::scalar_unit_round_down_t<I> rhs)
 {
   return Scalar<N, C, T>(lhs) -= rhs.template scale<N, C>();
 }
