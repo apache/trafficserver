@@ -214,6 +214,19 @@ public:
   ink_hrtime ssn_start_time;
   ink_hrtime ssn_last_txn_time;
 
+  virtual sockaddr const *
+  get_client_addr()
+  {
+    NetVConnection *netvc = get_netvc();
+    return netvc ? netvc->get_remote_addr() : nullptr;
+  }
+  virtual sockaddr const *
+  get_local_addr()
+  {
+    NetVConnection *netvc = get_netvc();
+    return netvc ? netvc->get_local_addr() : nullptr;
+  }
+
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so
   // that we can make the best use of internal alignment padding.

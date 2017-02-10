@@ -220,6 +220,19 @@ AC_ARG_ENABLE([fast-sdk],
 AC_MSG_RESULT([$enable_fast_sdk])
 TS_ARG_ENABLE_VAR([use], [fast-sdk])
 
+# Curl support for traffic_top
+AC_MSG_CHECKING([whether to enable CURL])
+AC_ARG_ENABLE([curl],
+  [AS_HELP_STRING([--disable-curl],[turn off CURL support for traffic_top])],
+  [],
+  [enable_curl=yes]
+)
+AC_MSG_RESULT([$enable_curl])
+
+if test "x${enable_curl}" = "xyes"; then
+AX_LIB_CURL([7.19], [AC_DEFINE([HAS_CURL], [1], [Define if libcurl >= 7.19.])])
+fi
+
 #
 # Diags
 #
@@ -587,24 +600,22 @@ ifdef([AC_PROG_SED], [], [
 # Various OS specific setup. Note that on Solaris, 32-bit is always the
 # default, even on a box that with 64-bit architecture.
 # This also sets up a "normalized" variable and define $host_os_def.
-defer_accept=1
 case $host_os in
   linux*)
     host_os_def="linux"
-    defer_accept=45
-    EXTRA_CXX_LDFLAGS="-rdynamic"
+    AM_LDFLAGS="-rdynamic"
     ;;
   darwin*)
     host_os_def="darwin"
     ;;
   freebsd*)
     host_os_def="freebsd"
-    EXTRA_CXX_LDFLAGS="-rdynamic"
+    AM_LDFLAGS="-rdynamic"
     TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     ;;
   kfreebsd*)
     host_os_def="freebsd"
-    EXTRA_CXX_LDFLAGS="-rdynamic"
+    AM_LDFLAGS="-rdynamic"
     TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     TS_ADDTO(CPPFLAGS, [-Dkfreebsd])
     ;;
@@ -622,14 +633,12 @@ case $host_os in
     esac
     ;;
   *)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
+    AM_LDFLAGS="-rdynamic"
     host_os_def=unknown
     ;;
 esac
 
 TS_ADDTO(CPPFLAGS, [-D$host_os_def])
-AC_SUBST(defer_accept)
-
 
 dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
 ifdef([AM_PROG_AR],
@@ -812,6 +821,8 @@ case $host_os_def in
       flex_cflags="-Wno-unused-parameter"
     ])
 
+    TS_ADDTO([AM_LDFLAGS], [-Wl,--as-needed])
+
     ;; # linux)
 
   darwin)
@@ -954,7 +965,6 @@ AC_CHECK_SIZEOF([void*])
 if test "x$ac_cv_sizeof_voidp" == "x"; then
   AC_ERROR([Cannot determine size of void*])
 fi
-AC_SUBST(ac_cv_sizeof_voidp)
 
 # Right now, 32-bit platform is a build error, unless we've forced it with --enable-32bit-build
 if test "${ac_cv_sizeof_voidp}" = "4"; then
@@ -1059,12 +1069,9 @@ fi
 # -----------------------------------------------------------------------------
 # 4. CHECK FOR LIBRARIES
 
-AC_SEARCH_LIBS([exc_capture_context], [exc], [], [])
-AC_SEARCH_LIBS([MLD_demangle_string], [mld], [], [])
 AC_SEARCH_LIBS([socket], [socket], [], [])
 AC_SEARCH_LIBS([gethostbyname], [nsl], [], [])
-AC_SEARCH_LIBS([clock_gettime], [rt], [], [])
-AC_SEARCH_LIBS([clock_gettime], [posix4], [], [])
+AC_SEARCH_LIBS([clock_gettime], [rt posix4], [], [])
 
 dnl We check for dlsym here instead of e.g. dlopen() because ASAN hijacks the latter.
 AC_SEARCH_LIBS([dlsym], [dl], [], [])
@@ -1090,13 +1097,6 @@ __saved_CFLAGS="$CFLAGS"
 TS_REMOVEFROM(CFLAGS, -Werror)
 AX_WITH_CURSES
 CFLAGS="$__saved_CFLAGS"
-
-AX_LIB_CURL([7.19], [
-    AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [test "x$ax_cv_curses" = "xyes"])
-  ], [
-    AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [false])
-  ]
-)
 
 #
 # Check for SSL presence and usability
@@ -1135,7 +1135,11 @@ AC_CHECK_FUNCS([ \
   BIO_meth_new \
   CRYPTO_set_mem_functions \
   HMAC_CTX_new \
+  X509_get0_signature \
 ])
+
+AC_CHECK_FUNC([ASN1_STRING_get0_data], [],
+              [AC_DEFINE([ASN1_STRING_get0_data], [ASN1_STRING_data], [Added in OpenSSL 1.1])])
 
 AC_CHECK_FUNC([BIO_set_data], [],
               [AC_DEFINE([BIO_set_data(a, _ptr)], [((a)->ptr = (_ptr))], [Added in OpenSSL 1.1])])
@@ -1229,7 +1233,6 @@ if test "${has_backtrace}" = "1"; then
 else
   AC_MSG_WARN([No backtrace() support found])
 fi
-AC_SUBST(execinfoh)
 AC_SUBST(has_backtrace)
 
 # Remote process unwinding is only implemented on Linux because it depends on various Linux-specific
@@ -1301,7 +1304,7 @@ AC_SUBST(use_port)
 # Profiler support
 has_profiler=0
 if test "x${with_profiler}" = "xyes"; then
-  AC_SEARCH_LIBS([ProfilerStart], [profiler],
+  AC_CHECK_LIB([profiler], [ProfilerStart],
     [AC_SUBST([LIBPROFILER], ["-lprofiler"])
      has_profiler=1
     ],
@@ -1357,7 +1360,7 @@ AS_IF([test "x$has_128bit_cas" = "x1"], [
 # If we don't find it, disable checking for header.
 use_posix_cap=0
 AS_IF([test "x$enable_posix_cap" != "xno"],
-  AC_SEARCH_LIBS([cap_set_proc],[cap],
+  AC_CHECK_LIB([cap], [cap_set_proc],
     [AC_SUBST([LIBCAP], ["-lcap"])
      use_posix_cap=1
     ],[
@@ -1479,6 +1482,9 @@ AC_SUBST([LUAJIT_CPPFLAGS], ['-I$(abs_top_srcdir)/lib/luajit/src'])
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 
+# We should only build traffic_top if we have curses
+AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [test "x$ax_cv_curses" = "xyes"])
+
 AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
 AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
 AC_SUBST(has_mysql)
@@ -1547,48 +1553,6 @@ AC_CHECK_HEADERS([sys/types.h \
                   editline/readline.h \
                   ucred.h ])
 
-AC_SUBST(sys_epollh)
-AC_SUBST(sys_eventh)
-AC_SUBST(machine_endianh)
-AC_SUBST(endianh)
-AC_SUBST(pthread_nph)
-AC_SUBST(sys_paramh)
-AC_SUBST(sys_cpuseth)
-AC_SUBST(sys_pseth)
-AC_SUBST(schedh)
-AC_SUBST(netinet_inh)
-AC_SUBST(netinet_in_systmh)
-AC_SUBST(netinet_tcph)
-AC_SUBST(sys_ioctlh)
-AC_SUBST(sys_byteorderh)
-AC_SUBST(sys_sockioh)
-AC_SUBST(sys_sysctlh)
-AC_SUBST(sys_sysinfoh)
-AC_SUBST(sys_systeminfoh)
-AC_SUBST(arpa_ineth)
-AC_SUBST(arpa_nameserh)
-AC_SUBST(arpa_nameser_compath)
-AC_SUBST(execinfoh)
-AC_SUBST(netdbh)
-AC_SUBST(ctypeh)
-
-AC_SUBST(siginfoh)
-AC_SUBST(malloch)
-AC_SUBST(waith)
-AC_SUBST(floath)
-AC_SUBST(libgenh)
-AC_SUBST(valuesh)
-AC_SUBST(allocah)
-AC_SUBST(cpioh)
-AC_SUBST(stroptsh)
-AC_SUBST(sys_mounth)
-AC_SUBST(sys_paramh)
-AC_SUBST(sys_sysmacrosh)
-AC_SUBST(mathh)
-AC_SUBST(net_ppp_defsh)
-AC_SUBST(ifaddrsh)
-AC_SUBST(readline_readlineh)
-
 AC_CHECK_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h])
 AC_CHECK_HEADERS([linux/hdreg.h linux/fs.h linux/major.h])
 
@@ -1646,8 +1610,6 @@ AC_CHECK_HEADERS([netinet/ip_icmp.h], [], [],
                    #endif
                  ]])
 
-AC_SUBST(netinet_iph)
-AC_SUBST(netinet_ip_icmph)
 
 # Test for additional pthread interfaces.
 
@@ -1897,9 +1859,7 @@ AC_SUBST([CC])
 AC_SUBST([CFLAGS])
 AC_SUBST([CXX])
 AC_SUBST([CXXFLAGS])
-AC_SUBST([EXTRA_CC_LDFLAGS])
-AC_SUBST([EXTRA_CXX_LDFLAGS])
-AC_SUBST([LIBTOOL_LINK_FLAGS])
+AC_SUBST([AM_LDFLAGS])
 AC_SUBST([iocore_include_dirs])
 AC_SUBST([LDFLAGS])
 AC_SUBST([SHARED_CFLAGS])
@@ -1999,7 +1959,5 @@ AC_MSG_NOTICE([Build option summary:
     LUAJIT_CFLAGS:      $LUAJIT_CFLAGS
     LUAJIT_CPPFLAGS:	$LUAJIT_CPPFLAGS
     LUAJIT_LDFLAGS:     $LUAJIT_LDFLAGS
-    EXTRA_CC_LDFLAGS:   $EXTRA_CC_LDFLAGS
-    EXTRA_CXX_LDFLAGS:  $EXTRA_CXX_LDFLAGS
-    LIBTOOL_LINK_FLAGS: $LIBTOOL_LINK_FLAGS
+    AM@&t@_LDFLAGS:         $AM_LDFLAGS
 ])

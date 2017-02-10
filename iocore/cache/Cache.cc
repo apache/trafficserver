@@ -1041,12 +1041,12 @@ CacheProcessor::cacheInitialized()
       case CACHE_COMPRESSION_FASTLZ:
         break;
       case CACHE_COMPRESSION_LIBZ:
-#if !TS_HAS_LIBZ
+#ifndef HAVE_ZLIB_H
         Fatal("libz not available for RAM cache compression");
 #endif
         break;
       case CACHE_COMPRESSION_LIBLZMA:
-#if !TS_HAS_LZMA
+#ifndef HAVE_LZMA_H
         Fatal("lzma not available for RAM cache compression");
 #endif
         break;

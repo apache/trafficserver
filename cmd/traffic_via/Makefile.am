@@ -22,9 +22,7 @@ AM_CPPFLAGS = \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/mgmt/api/include
 
-AM_LDFLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+AM_LDFLAGS += \
   @OPENSSL_LDFLAGS@
 
 bin_PROGRAMS = traffic_via
@@ -34,7 +32,7 @@ traffic_via_SOURCES = \
 
 traffic_via_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@
+  @LIBPCRE@
 
 TESTS = \
   test_traffic_via

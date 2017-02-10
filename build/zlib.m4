@@ -73,7 +73,6 @@ else
   fi
 fi
 
-zlibh=0
 if test "$enable_zlib" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -84,7 +83,7 @@ if test "$enable_zlib" != "no"; then
     TS_ADDTO(LDFLAGS, [-L${zlib_ldflags}])
     TS_ADDTO_RPATH(${zlib_ldflags})
   fi
-  AC_SEARCH_LIBS([compressBound], [z], [zlib_have_libs=1])
+  AC_CHECK_LIB([z], [compressBound], [zlib_have_libs=1])
   if test "$zlib_have_libs" != "0"; then
     AC_CHECK_HEADERS(zlib.h, [zlib_have_headers=1])
   fi
@@ -96,5 +95,4 @@ if test "$enable_zlib" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
-AC_SUBST(zlibh)
 ])

@@ -51,7 +51,7 @@ experimental_sslheaders_test_sslheaders_CPPFLAGS = \
 	-I$(abs_top_srcdir)/lib
 experimental_sslheaders_test_sslheaders_LDFLAGS = @OPENSSL_LDFLAGS@
 experimental_sslheaders_test_sslheaders_LDADD = \
-	@LIBTOOL_LINK_FLAGS@ \
+	@AM_LDFLAGS@ \
 	experimental/sslheaders/libsslhdr.la \
 	$(abs_top_builddir)/lib/ts/libtsutil.la \
 	@OPENSSL_LIBS@

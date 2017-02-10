@@ -283,6 +283,26 @@ System Variables
    The name and location of the file that contains warnings, status messages, and error messages produced by the Traffic Server
    processes. If no path is specified, then Traffic Server creates the file in its logging directory.
 
+
+.. ts:cv:: CONFIG proxy.config.output.logfile_perm STRING rw-r--r--
+
+   The log file permissions. The standard UNIX file permissions are used (owner, group, other). Permissible values are:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``-`` No permissions.
+   ``r`` Read permission.
+   ``w`` Write permission.
+   ``x`` Execute permission.
+   ===== ======================================================================
+
+   Permissions are subject to the umask settings for the |TS| process. This
+   means that a umask setting of ``002`` will not allow write permission for
+   others, even if specified in the configuration file. Permissions for
+   existing log files are not changed when the configuration is modified.
+
+
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_enabled INT 0
    :reloadable:
 
@@ -1056,6 +1076,19 @@ ip-resolve
    :ts:cv:`proxy.config.http.server_session_sharing.match` value. If the server session matches the next transaction
    according to this setting then it will be used, otherwise it will be released to the pool and a different session
    selected or created.
+
+.. ts:cv:: CONFIG proxy.config.http.safe_requests_retryable INT 1
+   :overridable:
+
+   This setting, on by default, allows requests which are considered safe to be retried on an error.
+   See https://tools.ietf.org/html/rfc7231#section-4.2.1 to RFC for details on which request methods are considered safe.
+
+   If this setting is ``0`` then ATS retries a failed origin server request only if the bytes sent by ATS
+   are not acknowledged by the origin server.
+
+   If this setting is ``1`` then ATS retries all the safe methods to a failed origin server irrespective of
+   previous connection failure status.
+
 
 .. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
    :reloadable:
@@ -2244,6 +2277,11 @@ Customizable User Response Pages
     this value and an underscore are predended to the file name to find in the template sets
     directory. See :ref:`body-factory`.
 
+.. ts:cv:: CONFIG proxy.config.body_factory.response_max_size INT 8192
+    :reloadable:
+
+    Maximum size of the error template response page.
+
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
 
    Specifies when Traffic Server suppresses generated response pages:
@@ -2850,11 +2888,14 @@ Diagnostic Logging Configuration
 
    Enables logging for diagnostic messages whose log level is `diag` or `debug`.
 
-.. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
+.. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING http|dns
 
-   Each |TS| `diag` and `debug` level message is annotated with a subsytem tag.
-   This configuration contains a regular expression that filters the messages
-   based on the tag. Some commonly used debug tags are:
+   Each |TS| `diag` and `debug` level message is annotated with a subsytem tag.  This configuration
+   contains an anchored regular expression that filters the messages based on the tag. The
+   expressions are prefix matched which creates an implicit ``.*`` at the end. Therefore the default
+   value ``http|dns`` will match tags such as ``http``, ``http_hdrs``, ``dns``, and ``dns_recv``.
+
+   Some commonly used debug tags are:
 
    ============  =====================================================
    Tag           Subsytem usage
@@ -2867,6 +2908,26 @@ Diagnostic Logging Configuration
 
    |TS| plugins will typically log debug messages using the :c:func:`TSDebug`
    API, passing the plugin name as the debug tag.
+
+
+.. ts:cv:: CONFIG proxy.config.diags.logfile_perm STRING rw-r--r--
+
+   The log file permissions. The standard UNIX file permissions are used (owner, group, other). Permissible values are:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``-`` No permissions.
+   ``r`` Read permission.
+   ``w`` Write permission.
+   ``x`` Execute permission.
+   ===== ======================================================================
+
+   Permissions are subject to the umask settings for the |TS| process. This
+   means that a umask setting of ``002`` will not allow write permission for
+   others, even if specified in the configuration file. Permissions for
+   existing log files are not changed when the configuration is modified.
+
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_enabled INT 0
    :reloadable:

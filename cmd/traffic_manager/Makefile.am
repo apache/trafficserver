@@ -31,9 +31,7 @@ AM_CPPFLAGS = \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/lib/luajit/src
 
-AM_LDFLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+AM_LDFLAGS += \
   @OPENSSL_LDFLAGS@
 
 traffic_manager_SOURCES = \
@@ -66,7 +64,7 @@ traffic_manager_LDADD += \
 
 traffic_manager_LDADD +=\
   $(LIBUNWIND_LIBS) \
-  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
+  @LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
   -lm
 
 # Must do it this way or the dependencies aren't detected.

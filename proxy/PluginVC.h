@@ -104,7 +104,7 @@ public:
   virtual void set_local_addr();
   virtual void set_remote_addr();
   virtual int set_tcp_init_cwnd(int init_cwnd);
-  virtual int set_tcp_congestion_control(const char *name, int len);
+  virtual int set_tcp_congestion_control(int);
 
   virtual void apply_options();
 

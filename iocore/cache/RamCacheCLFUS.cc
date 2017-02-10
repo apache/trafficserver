@@ -27,10 +27,10 @@
 #include "P_Cache.h"
 #include "I_Tasks.h"
 #include "ts/fastlz.h"
-#if TS_HAS_LIBZ
+#ifdef HAVE_ZLIB_H
 #include <zlib.h>
 #endif
-#if TS_HAS_LZMA
+#ifdef HAVE_LZMA_H
 #include <lzma.h>
 #endif
 
@@ -154,12 +154,12 @@ RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
   case CACHE_COMPRESSION_FASTLZ:
     break;
   case CACHE_COMPRESSION_LIBZ:
-#if !TS_HAS_LIBZ
+#ifndef HAVE_ZLIB_H
     Warning("libz not available for RAM cache compression");
 #endif
     break;
   case CACHE_COMPRESSION_LIBLZMA:
-#if !TS_HAS_LZMA
+#ifndef HAVE_LZMA_H
     Warning("lzma not available for RAM cache compression");
 #endif
     break;
@@ -270,7 +270,7 @@ RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, 
             ram_hit_state = RAM_HIT_COMPRESS_FASTLZ;
             break;
           }
-#if TS_HAS_LIBZ
+#ifdef HAVE_ZLIB_H
           case CACHE_COMPRESSION_LIBZ: {
             uLongf l = e->len;
             if (Z_OK != uncompress((Bytef *)b, &l, (Bytef *)e->data->data(), e->compressed_len))
@@ -279,7 +279,7 @@ RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, 
             break;
           }
 #endif
-#if TS_HAS_LZMA
+#ifdef HAVE_LZMA_H
           case CACHE_COMPRESSION_LIBLZMA: {
             size_t l = (size_t)e->len, ipos = 0, opos = 0;
             uint64_t memlimit = e->len * 2 + LZMA_BASE_MEMLIMIT;
@@ -435,12 +435,12 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       case CACHE_COMPRESSION_FASTLZ:
         l = (uint32_t)((double)e->len * 1.05 + 66);
         break;
-#if TS_HAS_LIBZ
+#ifdef HAVE_ZLIB_H
       case CACHE_COMPRESSION_LIBZ:
         l = (uint32_t)compressBound(e->len);
         break;
 #endif
-#if TS_HAS_LZMA
+#ifdef HAVE_LZMA_H
       case CACHE_COMPRESSION_LIBLZMA:
         l = e->len;
         break;
@@ -462,7 +462,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         if ((l = fastlz_compress(edata->data(), elen, b)) <= 0)
           failed = true;
         break;
-#if TS_HAS_LIBZ
+#ifdef HAVE_ZLIB_H
       case CACHE_COMPRESSION_LIBZ: {
         uLongf ll = l;
         if ((Z_OK != compress((Bytef *)b, &ll, (Bytef *)edata->data(), elen)))
@@ -471,7 +471,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         break;
       }
 #endif
-#if TS_HAS_LZMA
+#ifdef HAVE_LZMA_H
       case CACHE_COMPRESSION_LIBLZMA: {
         size_t pos = 0, ll = l;
         if (LZMA_OK != lzma_easy_buffer_encode(LZMA_PRESET_DEFAULT, LZMA_CHECK_NONE, nullptr, (uint8_t *)edata->data(), elen,

@@ -34,11 +34,9 @@ traffic_ctl_SOURCES = \
   storage.cc \
   traffic_ctl.cc
 
-traffic_ctl_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_ctl_LDADD = \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBTCL@
+  $(top_builddir)/lib/ts/libtsutil.la
 
 include $(top_srcdir)/build/tidy.mk
 

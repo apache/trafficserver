@@ -50,8 +50,6 @@ bool DiagsConfigState::enabled[2] = {false, false};
 // Global, used for all diagnostics
 inkcoreapi Diags *diags = nullptr;
 
-static bool setup_diagslog(BaseLogFile *blf);
-
 static bool
 location(const SourceLocation *loc, DiagsShowLocation show, DiagsLevel level)
 {
@@ -100,7 +98,7 @@ vprintline(FILE *fp, char (&buffer)[Size], va_list ap)
 //
 //////////////////////////////////////////////////////////////////////////////
 
-Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLogFile *_diags_log)
+Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLogFile *_diags_log, int dl_perm, int ol_perm)
   : diags_log(nullptr),
     stdout_log(nullptr),
     stderr_log(nullptr),
@@ -164,6 +162,9 @@ Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLo
 
   outputlog_time_last_roll = time(nullptr);
   diagslog_time_last_roll  = time(nullptr);
+
+  diags_logfile_perm  = dl_perm;
+  output_logfile_perm = ol_perm;
 
   if (setup_diagslog(_diags_log)) {
     diags_log = _diags_log;
@@ -569,11 +570,11 @@ Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_
  *
  * Returns true on success, false otherwise
  */
-static bool
-setup_diagslog(BaseLogFile *blf)
+bool
+Diags::setup_diagslog(BaseLogFile *blf)
 {
   if (blf != nullptr) {
-    if (blf->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
+    if (blf->open_file(diags_logfile_perm) != BaseLogFile::LOG_FILE_NO_ERROR) {
       log_log_error("Could not open diags log file: %s\n", strerror(errno));
       delete blf;
       return false;
@@ -808,7 +809,7 @@ Diags::set_stdout_output(const char *stdout_path)
   BaseLogFile *new_stdout_log = new BaseLogFile(stdout_path);
 
   // on any errors we quit
-  if (!new_stdout_log || new_stdout_log->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
+  if (!new_stdout_log || new_stdout_log->open_file(output_logfile_perm) != BaseLogFile::LOG_FILE_NO_ERROR) {
     log_log_error("[Warning]: unable to open file=%s to bind stdout to\n", stdout_path);
     log_log_error("[Warning]: stdout is currently not bound to anything\n");
     delete new_stdout_log;
@@ -858,7 +859,7 @@ Diags::set_stderr_output(const char *stderr_path)
   BaseLogFile *new_stderr_log = new BaseLogFile(stderr_path);
 
   // on any errors we quit
-  if (!new_stderr_log || new_stderr_log->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
+  if (!new_stderr_log || new_stderr_log->open_file(output_logfile_perm) != BaseLogFile::LOG_FILE_NO_ERROR) {
     log_log_error("[Warning]: unable to open file=%s to bind stderr to\n", stderr_path);
     log_log_error("[Warning]: stderr is currently not bound to anything\n");
     delete new_stderr_log;
