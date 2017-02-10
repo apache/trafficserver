@@ -111,7 +111,7 @@ namespace detail
     //    template <typename I> constexpr operator scalar_unit_round_up_t<I>() { return {static_cast<I>(_n)}; }
     template <intmax_t N, typename I>
     constexpr I
-    scale()
+    scale() const
     {
       return static_cast<I>(_n / N + (0 != (_n % N)));
     }
@@ -122,7 +122,7 @@ namespace detail
     //    template <typename I> operator scalar_unit_round_down_t<I>() { return {static_cast<I>(_n)}; }
     template <intmax_t N, typename I>
     constexpr I
-    scale()
+    scale() const
     {
       return static_cast<I>(_n / N);
     }
@@ -130,12 +130,12 @@ namespace detail
   // Scalar value, to be rounded up.
   template <intmax_t N, typename C, typename T> struct scalar_round_up_t {
     C _n;
-    template <intmax_t S, typename I> constexpr operator Scalar<S, I, T>() { return scale_conversion_round_up<S, N>(_n); }
+    template <intmax_t S, typename I> constexpr operator Scalar<S, I, T>() const { return scale_conversion_round_up<S, N>(_n); }
   };
   // Scalar value, to be rounded down.
   template <intmax_t N, typename C, typename T> struct scalar_round_down_t {
     C _n;
-    template <intmax_t S, typename I> constexpr operator Scalar<S, I, T>() { return scale_conversion_round_down<S, N>(_n); }
+    template <intmax_t S, typename I> constexpr operator Scalar<S, I, T>() const { return scale_conversion_round_down<S, N>(_n); }
   };
 }
 
@@ -1111,7 +1111,7 @@ template <intmax_t N, typename C, typename T>
 ostream &
 operator<<(ostream &s, ApacheTrafficServer::Scalar<N, C, T> const &x)
 {
-  static ApacheTrafficServer::detail::tag_label_B const b;
+  static ApacheTrafficServer::detail::tag_label_B b;
   s << x.units();
   return ApacheTrafficServer::detail::tag_label<T>(s, b);
 }
