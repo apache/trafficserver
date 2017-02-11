@@ -482,6 +482,8 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
     return "TS_VCONN_PRE_ACCEPT_HOOK";
   case TS_SSL_CERT_HOOK:
     return "TS_SSL_CERT_HOOK";
+  case TS_SSL_SERVERNAME_HOOK:
+    return "TS_SSL_SERVERNAME_HOOK";
   }
 
   return "unknown hook";

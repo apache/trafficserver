@@ -402,9 +402,21 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
   // Return 1 for success, 0 for error, or -1 to pause
   return retval;
 }
+
+/*
+ * Cannot stop this callback. Always reeneabled
+ */
+static int
+ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
+{
+  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
+  return SSL_TLSEXT_ERR_OK;
+}
+
 #else
 static int
-ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
+ssl_servername_and_cert_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   bool reenabled;
@@ -566,15 +578,12 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
   // so that we don't leave a ticket_key pointer attached if it fails.
   if (SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket) == 0) {
     Error("failed to set session ticket callback");
-    goto fail;
+    ticket_block_free(keyblock);
+    return nullptr;
   }
 
   SSL_CTX_clear_options(ctx, SSL_OP_NO_TICKET);
   return keyblock;
-
-fail:
-  ticket_block_free(keyblock);
-  return nullptr;
 
 #else  /* !HAVE_OPENSSL_SESSION_TICKETS */
   (void)ticket_key_path;
@@ -1188,7 +1197,7 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
     if (debug) {
       if (unlikely(diags->on())) {
-        diags->log("ssl", DL_Debug, &loc, "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
+        diags->log("ssl-diag", DL_Debug, &loc, "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
                    (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "", vc ? ": peer address is " : "",
                    ip_buf);
       }
@@ -1212,7 +1221,7 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
 
   va_start(ap, fmt);
   if (debug) {
-    diags->log_va("ssl", DL_Debug, &loc, fmt, ap);
+    diags->log_va("ssl-diag", DL_Debug, &loc, fmt, ap);
   } else {
     diags->error_va(DL_Error, &loc, fmt, ap);
   }
@@ -1453,8 +1462,9 @@ ssl_set_handshake_callbacks(SSL_CTX *ctx)
 // Make sure the callbacks are set
 #if TS_USE_CERT_CB
   SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, nullptr);
+  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_only_callback);
 #else
-  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
+  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_and_cert_callback);
 #endif
 #endif
 }
