@@ -173,8 +173,10 @@ test_Compile()
   KBytes x(12);
   KiBytes y(12);
 
-  if (x > 12) std::cout << "Operator > works" << std::endl;
-  if (y > 12) std::cout << "Operator > works" << std::endl;
+  if (x > 12)
+    std::cout << "Operator > works" << std::endl;
+  if (y > 12)
+    std::cout << "Operator > works" << std::endl;
 }
 
 int

@@ -80,13 +80,13 @@ public:
 protected:
   /// Get the stat buffer.
   /// @return A valid stat buffer or @c nullptr if the system call failed.
-  template <typename T> T stat(T (*f)(struct stat const*)) const;
+  template <typename T> T stat(T (*f)(struct stat const *)) const;
 
-  ats_scoped_str _path;         ///< File path.
+  ats_scoped_str _path; ///< File path.
 
-  enum class STAT_P : int8_t { INVALID = -1, UNDEF = 0, VALID = 1};
+  enum class STAT_P : int8_t { INVALID = -1, UNDEF = 0, VALID = 1 };
   mutable STAT_P _stat_p = STAT_P::UNDEF; ///< Whether _stat is valid.
-  mutable struct stat _stat;    ///< File information.
+  mutable struct stat _stat;              ///< File information.
 };
 
 /** A file support class for handling files as bulk content.
@@ -163,7 +163,9 @@ FilePath::is_relative() const
   return !this->is_absolute();
 }
 
- template <typename T> T FilePath::stat(T (*f)(struct stat const*)) const
+template <typename T>
+T
+FilePath::stat(T (*f)(struct stat const *)) const
 {
   if (STAT_P::UNDEF == _stat_p)
     _stat_p = ::stat(_path, &_stat) >= 0 ? STAT_P::VALID : STAT_P::INVALID;
@@ -176,7 +178,7 @@ FilePath operator/(char const *lhs, FilePath const &rhs);
 inline int
 FilePath::file_type() const
 {
-  return this->stat<int>([](struct stat const* s) -> int { return s->st_mode & S_IFMT; });
+  return this->stat<int>([](struct stat const *s) -> int { return s->st_mode & S_IFMT; });
 }
 
 inline bool
@@ -203,7 +205,7 @@ FilePath::is_regular_file() const
 inline off_t
 FilePath::physical_size() const
 {
-  return this->stat<off_t>([](struct stat const* s) { return s->st_size; });
+  return this->stat<off_t>([](struct stat const *s) { return s->st_size; });
 }
 
 inline BulkFile::BulkFile(super &&that) : super(that)

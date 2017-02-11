@@ -26,7 +26,10 @@
 #include <ts/I_Version.h>
 #include <ts/Scalar.h>
 
-namespace tag { struct bytes; }
+namespace tag
+{
+struct bytes;
+}
 
 namespace ApacheTrafficServer
 {
@@ -40,23 +43,55 @@ typedef Scalar<1024 * Kilobytes::SCALE, int64_t, tag::bytes> Megabytes;
 typedef Scalar<1024 * Megabytes::SCALE, int64_t, tag::bytes> Gigabytes;
 typedef Scalar<1024 * Gigabytes::SCALE, int64_t, tag::bytes> Terabytes;
 
-std::ostream& operator<<(std::ostream& s, Bytes const& n) { return s << n.count() << " bytes"; }
-std::ostream& operator<<(std::ostream& s, Kilobytes const& n) { return s << n.count() << " KB"; }
-std::ostream& operator<<(std::ostream& s, Megabytes const& n) { return s << n.count() << " MB"; }
-std::ostream& operator<<(std::ostream& s, Gigabytes const& n) { return s << n.count() << " HB"; }
-std::ostream& operator<<(std::ostream& s, Terabytes const& n) { return s << n.count() << " TB"; }
+std::ostream &
+operator<<(std::ostream &s, Bytes const &n)
+{
+  return s << n.count() << " bytes";
+}
+std::ostream &
+operator<<(std::ostream &s, Kilobytes const &n)
+{
+  return s << n.count() << " KB";
+}
+std::ostream &
+operator<<(std::ostream &s, Megabytes const &n)
+{
+  return s << n.count() << " MB";
+}
+std::ostream &
+operator<<(std::ostream &s, Gigabytes const &n)
+{
+  return s << n.count() << " HB";
+}
+std::ostream &
+operator<<(std::ostream &s, Terabytes const &n)
+{
+  return s << n.count() << " TB";
+}
 
 // Units of allocation for stripes.
- typedef Scalar<128 * Megabytes::SCALE, int64_t, tag::bytes> CacheStripeBlocks;
+typedef Scalar<128 * Megabytes::SCALE, int64_t, tag::bytes> CacheStripeBlocks;
 // Size measurement of cache storage.
 // Also size of meta data storage units.
- typedef Scalar<8 * Kilobytes::SCALE, int64_t, tag::bytes> CacheStoreBlocks;
+typedef Scalar<8 * Kilobytes::SCALE, int64_t, tag::bytes> CacheStoreBlocks;
 // Size unit for content stored in cache.
- typedef Scalar<512, int64_t, tag::bytes> CacheDataBlocks;
+typedef Scalar<512, int64_t, tag::bytes> CacheDataBlocks;
 
-std::ostream& operator<<(std::ostream& s, CacheStripeBlocks const& n) { return s << n.count() << " stripe blocks"; }
-std::ostream& operator<<(std::ostream& s, CacheStoreBlocks const& n) { return s << n.count() << " store blocks"; }
-std::ostream& operator<<(std::ostream& s, CacheDataBlocks const& n) { return s << n.count() << " data blocks"; }
+std::ostream &
+operator<<(std::ostream &s, CacheStripeBlocks const &n)
+{
+  return s << n.count() << " stripe blocks";
+}
+std::ostream &
+operator<<(std::ostream &s, CacheStoreBlocks const &n)
+{
+  return s << n.count() << " store blocks";
+}
+std::ostream &
+operator<<(std::ostream &s, CacheDataBlocks const &n)
+{
+  return s << n.count() << " data blocks";
+}
 
 /** A cache span is a representation of raw storage.
     It corresponds to a raw disk, disk partition, file, or directory.

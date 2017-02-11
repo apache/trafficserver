@@ -50,7 +50,7 @@ int strcasecmp(StringView lhs, StringView rhs);
     - If the number starts with a literal '0' then it is treated as base 8.
     - If the number starts with the literal characters '0x' or '0X' then it is treated as base 16.
 */
-intmax_t svtoi(StringView src, StringView* parsed = nullptr, int base = 10);
+intmax_t svtoi(StringView src, StringView *parsed = nullptr, int base = 10);
 
 /** A read only view of contiguous piece of memory.
 

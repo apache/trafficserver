@@ -41,14 +41,14 @@ strcasecmp(StringView lhs, StringView rhs)
 }
 
 intmax_t
-svtoi(StringView src, StringView* out, int base)
+svtoi(StringView src, StringView *out, int base)
 {
   static const int8_t convert[256] = {
-//   0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+    //   0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 00
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 10
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 20
-     0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1, // 30
+    0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  -1, -1, -1, -1, -1, -1, // 30
     -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 40
     25, 26, 27, 28, 20, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, // 50
     -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 60
@@ -65,10 +65,12 @@ svtoi(StringView src, StringView* out, int base)
 
   intmax_t zret = 0;
 
-  if (*out) out->clear();
-  if (!(1 < base && base <= 36)) return 0;
+  if (*out)
+    out->clear();
+  if (!(1 < base && base <= 36))
+    return 0;
   if (src.ltrim(&isspace)) {
-    const char* start = src.ptr();
+    const char *start = src.ptr();
     int8_t v;
     bool neg = false;
     if ('-' == *src) {
@@ -79,11 +81,12 @@ svtoi(StringView src, StringView* out, int base)
       zret = zret * base + v;
       ++src;
     }
-    if (out && (src.ptr() > (neg ? start+1 : start))) {
+    if (out && (src.ptr() > (neg ? start + 1 : start))) {
       out->setView(start, src.ptr());
     }
 
-    if (neg) zret = -zret;
+    if (neg)
+      zret = -zret;
   }
   return zret;
 }

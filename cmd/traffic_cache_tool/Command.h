@@ -111,7 +111,7 @@ public:
   /** Set the index of the "first" argument.
       This causes the command processing to skip @a n arguments.
   */
-  self& setArgIndex(int n);
+  self &setArgIndex(int n);
 
   /** Invoke a command.
       @return The return value of the executed command, or an error value if the command was not found.
@@ -127,7 +127,11 @@ protected:
   friend class Command;
 };
 
-inline CommandTable& CommandTable::setArgIndex(int n) { _opt_idx = n; return *this; }
-
+inline CommandTable &
+CommandTable::setArgIndex(int n)
+{
+  _opt_idx = n;
+  return *this;
+}
 }
 #endif
