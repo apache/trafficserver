@@ -17,7 +17,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@ -Wl,--as-needed
 AM_CPPFLAGS = -I $(srcdir)/iocore -I $(srcdir)/lib/ts
 
 noinst_PROGRAMS = traffic_cache_tool
