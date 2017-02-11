@@ -74,6 +74,8 @@ Enumeration Members
 
 .. c:member:: TSHttpHookID TS_SSL_CERT_HOOK
 
+.. c:member:: TSHttpHookID TS_SSL_SERVERNAME_HOOK
+
 .. c:member:: TSHttpHookID TS_SSL_LAST_HOOK
 
 .. c:member:: TSHttpHookID TS_HTTP_LAST_HOOK
@@ -81,3 +83,5 @@ Enumeration Members
 Description
 ===========
 
+Note that :member:`TS_SSL_CERT_HOOK` and :member:`TS_SSL_SNI_HOOK` hook the same openssl callbacks.  
+In openssl 1.0.2 and beyond :member:`TS_SSL_SERVERNAME_HOOK` is involved only for the openssl servername callback.  :member:`TS_SSL_SNI_HOOK` and :member:`TS_SSL_CERT_HOOK` are called for the openssl certificate callback.
