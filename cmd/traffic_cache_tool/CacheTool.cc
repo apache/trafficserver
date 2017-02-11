@@ -69,7 +69,7 @@ FilePath VolumeFile;
 ts::CommandTable Commands;
 
 // Default this to read only, only enable write if specifically required.
-int OPEN_RW_FLAGS = O_RDONLY;
+int OPEN_RW_FLAG = O_RDONLY;
 
 struct Stripe;
 
@@ -668,7 +668,7 @@ Span::loadDevice()
   Errata zret;
   int flags;
 
-  flags = OPEN_RW_FLAGS
+  flags = OPEN_RW_FLAG
 #if defined(O_DIRECT)
           | O_DIRECT
 #endif
@@ -805,28 +805,36 @@ Errata Span::updateHeader()
   volume_mask[0] = false; // don't include free stripes in distinct volume count.
   hdr->num_volumes = volume_mask.count();
   _header.reset(hdr);
-  ssize_t r = pwrite(_fd, hdr, hdr_size.units(), ts::CacheSpan::OFFSET.units());
-  if (r < ts::CacheSpan::OFFSET.units())
-    zret.push(0,errno,"Failed to update span - ", strerror(errno));
+  if (OPEN_RW_FLAG) {
+    ssize_t r = pwrite(_fd, hdr, hdr_size.units(), ts::CacheSpan::OFFSET.units());
+    if (r < ts::CacheSpan::OFFSET.units())
+      zret.push(0,errno,"Failed to update span - ", strerror(errno));
+  } else {
+    std::cout << "Writing not enabled, no updates perfomed" << std::endl;
+  }
   return zret;
 }
 
 void
 Span::clearPermanently()
 {
-  alignas(512) static char zero[CacheStoreBlocks::SCALE]; // should be all zero, it's static.
-  std::cout << "Clearing " << _path << " permanently on disk ";
-  ssize_t n = pwrite(_fd, zero, sizeof(zero), ts::CacheSpan::OFFSET.units());
-  if (n == sizeof(zero))
-    std::cout << "done";
-  else {
-    const char *text = strerror(errno);
-    std::cout << "failed";
-    if (n >= 0)
-      std::cout << " - " << n << " of " << sizeof(zero) << " bytes written";
-    std::cout << " - " << text;
+  if (OPEN_RW_FLAG) {
+    alignas(512) static char zero[CacheStoreBlocks::SCALE]; // should be all zero, it's static.
+    std::cout << "Clearing " << _path << " permanently on disk ";
+    ssize_t n = pwrite(_fd, zero, sizeof(zero), ts::CacheSpan::OFFSET.units());
+    if (n == sizeof(zero))
+      std::cout << "done";
+    else {
+      const char *text = strerror(errno);
+      std::cout << "failed";
+      if (n >= 0)
+        std::cout << " - " << n << " of " << sizeof(zero) << " bytes written";
+      std::cout << " - " << text;
+    }
+    std::cout << std::endl;
+  } else {
+    std::cout << "Clearing " << _path << " not performed, write not enabled" << std::endl;
   }
-  std::cout << std::endl;
 }
 /* --------------------------------------------------------------------------------------- */
 Errata
@@ -909,6 +917,7 @@ struct option Options[] = {
   {"help", 0, nullptr, 'h'},
   {"spans", 1, nullptr, 's'},
   {"volumes", 1, nullptr, 'v'},
+  {"write", 0, nullptr, 'w' },
   {nullptr, 0, nullptr, 0 }
 };
 }
@@ -932,7 +941,7 @@ Cmd_Allocate_Empty_Spans(int argc, char *argv[])
   Errata zret;
   VolumeAllocator va;
 
-  OPEN_RW_FLAGS = O_RDWR;
+//  OPEN_RW_FLAG = O_RDWR;
   zret = va.load(SpanFile, VolumeFile);
   if (zret) {
     va.fillEmptySpans();
@@ -1023,7 +1032,7 @@ Clear_Spans(int argc, char *argv[])
   Errata zret;
 
   Cache cache;
-  OPEN_RW_FLAGS = O_RDWR;
+//  OPEN_RW_FLAG = O_RDWR;
   if ((zret = cache.loadSpan(SpanFile))) {
     for (auto *span : cache._spans) {
       span->clearPermanently();
@@ -1050,6 +1059,10 @@ main(int argc, char *argv[])
       break;
     case 'v':
       VolumeFile = optarg;
+      break;
+    case 'w':
+      OPEN_RW_FLAG = O_RDWR;
+      std::cout << "NOTE: Writing to physical devices enabled" << std::endl;
       break;
     }
   }
