@@ -48,7 +48,10 @@ create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_ty
   const SSLNextProtocolSet::NextProtocolEndpoint *ep;
   unsigned char *advertised;
 
-  *npn = nullptr;
+  if (*npn) {
+    ats_free(*npn);
+    *npn = nullptr;
+  }
   *len = 0;
 
   for (ep = endpoints.head; ep != nullptr; ep = endpoints.next(ep)) {
@@ -100,12 +103,6 @@ SSLNextProtocolSet::registerEndpoint(const char *proto, Continuation *ep)
   if (!findEndpoint((const unsigned char *)proto, len)) {
     this->endpoints.push(new NextProtocolEndpoint(proto, ep));
 
-    if (npn) {
-      ats_free(npn);
-      npn   = nullptr;
-      npnsz = 0;
-    }
-
     create_npn_advertisement(this->endpoints, &npn, &npnsz);
 
     return true;
@@ -122,6 +119,7 @@ SSLNextProtocolSet::unregisterEndpoint(const char *proto, Continuation *ep)
       // Protocol must be registered only once; no need to remove
       // any more entries.
       this->endpoints.remove(e);
+      create_npn_advertisement(this->endpoints, &npn, &npnsz);
       return true;
     }
   }

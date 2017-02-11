@@ -83,8 +83,6 @@ else
   fi
 fi
 
-pcreh=0
-pcre_pcreh=0
 if test "$enable_pcre" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -109,6 +107,4 @@ if test "$enable_pcre" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
-AC_SUBST(pcreh)
-AC_SUBST(pcre_pcreh)
 ])

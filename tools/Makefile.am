@@ -25,7 +25,6 @@ bin_SCRIPTS = tsxs tspush
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = trafficserver.pc
 
-AM_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/lib/wccp
@@ -37,7 +36,7 @@ noinst_PROGRAMS = jtest/jtest
 endif
 
 jtest_jtest_SOURCES = jtest/jtest.cc
-jtest_jtest_LDADD = $(top_builddir)/lib/ts/libtsutil.la @OPENSSL_LIBS@
+jtest_jtest_LDADD = $(top_builddir)/lib/ts/libtsutil.la
 
 if BUILD_HTTP_LOAD
 
