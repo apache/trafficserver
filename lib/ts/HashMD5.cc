@@ -71,7 +71,7 @@ ATSHashMD5::clear(void)
 #endif
   int ret = EVP_MD_CTX_reset(ctx);
   ink_assert(ret == 1);
-  ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
+  ret = EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
   ink_assert(ret == 1);
   md_len    = 0;
   finalized = false;

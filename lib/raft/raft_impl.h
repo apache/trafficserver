@@ -338,8 +338,8 @@ private:
     if (!i_am_leader())
       return;
     // Attempt to pass leadership to a worthy successor.
-    const ::std::string *best_node = nullptr;
-    NodeState *best                = nullptr;
+    const ::std::string *best_node = NULL;
+    NodeState *best                = NULL;
     for (auto &n : other_nodes_) {
       auto &s = node_state_[n];
       if (!best || (s.last_log_term > best->last_log_term ||
