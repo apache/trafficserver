@@ -426,7 +426,7 @@ S3Request::authorize(S3Config *s3)
 #else
   ctx = HMAC_CTX_new();
 #endif
-  HMAC_Init_ex(ctx, s3->secret(), s3->secret_len(), EVP_sha1(), nullptr);
+  HMAC_Init_ex(ctx, s3->secret(), s3->secret_len(), EVP_sha1(), NULL);
   HMAC_Update(ctx, (unsigned char *)method, method_len);
   HMAC_Update(ctx, (unsigned char *)"\n", 1);
   HMAC_Update(ctx, (unsigned char *)con_md5, con_md5_len);
