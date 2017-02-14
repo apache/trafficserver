@@ -35,7 +35,7 @@
 #include <string>
 
 /// Apache Traffic Server commons.
-namespace ApacheTrafficServer
+namespace ts
 {
 class MemView;
 class StringView;
@@ -1055,22 +1055,24 @@ StringView::suffix(const char *p) const
   return zret;
 }
 
+// gcc 4.9 - it considers passing this->find(...) to suffix() to be amibugous between the const char*
+// overload and the std::function<bool (char)>. This shows up on Debian 7, so let's try a cast to help out.
 inline auto
 StringView::suffix(char c) -> self
 {
-  return this->suffix(this->find(c));
+  return this->suffix(static_cast<const char*>(this->find(c)));
 }
 
 inline auto
 StringView::suffix(self delimiters) -> self
 {
-  return this->suffix(this->find(delimiters));
+  return this->suffix(static_cast<const char*>(this->find(delimiters)));
 }
 
 inline auto
 StringView::suffix(std::function<bool(char)> const &pred) -> self
 {
-  return this->suffix(this->find(pred));
+  return this->suffix(static_cast<const char*>(this->find(pred)));
 }
 
 inline StringView

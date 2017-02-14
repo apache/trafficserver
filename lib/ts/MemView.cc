@@ -2,7 +2,7 @@
 #include <sstream>
 #include <ctype.h>
 
-namespace ApacheTrafficServer
+namespace ts
 {
 int
 memcmp(MemView const &lhs, MemView const &rhs)

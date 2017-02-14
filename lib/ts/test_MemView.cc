@@ -27,7 +27,7 @@
 #include <ios>
 #include <iostream>
 
-using namespace ApacheTrafficServer;
+using namespace ts;
 
 bool
 Test_1()
