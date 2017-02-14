@@ -783,6 +783,12 @@ ip-resolve
 
       9090:proto=http2;http:ssl
 
+.. topic:: Example
+
+   Listen on port 9090 for TSL disabled HTTP/2 and enabled HTTP connections, accept no other session protocols.::
+
+      9090:proto=http:ssl
+
 .. ts:cv:: CONFIG proxy.config.http.connect_ports STRING 443 563
 
    The range of origin server ports that can be used for tunneling via ``CONNECT``.
