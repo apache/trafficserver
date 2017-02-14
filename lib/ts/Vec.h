@@ -151,6 +151,9 @@ public:
   void qsort(bool (*lt)(const C &, const C &));
   void swap(C *p1, C *p2);
 
+  bool bin_search(int start, int end, bool (*lt)(C, C), bool (*eq)(C, C), C item);
+  bool binary_search(bool (*lt)(C, C), bool (*eq)(C, C), C item);
+
 private:
   void move_internal(Vec<C, A, S> &v);
   void copy_internal(const Vec<C, A, S> &v);
@@ -1109,6 +1112,35 @@ Vec<C, A, S>::qsort(bool (*lt)(const C &, const C &))
     qsort_VecRef<C>(&v[0], end(), lt, &ctr);
   Debug("qsort", "took %u iterations to sort %ld elements", ctr, n);
 }
+
+template <class C, class A, int S>
+inline bool
+Vec<C, A, S>::binary_search(bool (*lt)(C, C), bool (*eq)(C, C), C item)
+{
+  return bin_search(0, n - 1, lt, eq, item);
+}
+
+template <class C, class A, int S>
+inline bool
+Vec<C, A, S>::bin_search(int start, int end, bool (*lt)(C, C), bool (*eq)(C, C), C item)
+{
+  int s   = start;
+  int e   = end;
+  int mid = (s + e) / 2;
+  if (s > e)
+    return false;
+
+  if (eq(v[mid], item))
+    return true;
+
+  if (lt(v[mid], item))
+    return bin_search(mid + 1, e, lt, eq, item);
+  else
+    return bin_search(s, mid - 1, lt, eq, item);
+
+  return false;
+}
+
 void test_vec();
 
 #endif

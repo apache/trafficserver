@@ -52,11 +52,22 @@ test_append()
 
   ink_assert(str.length() == 1000 * len);
 }
+bool
+lt(int x, int y)
+{
+  return x < y;
+}
 
+bool
+eq(int x, int y)
+{
+  return x == y;
+}
 static void
 test_basic()
 {
   Vec<void *> v, vv, vvv;
+  Vec<int> intVec;
   int tt = 99 * 50, t = 0;
 
   for (size_t i = 0; i < 100; i++) {
@@ -130,6 +141,22 @@ test_basic()
   uf.unify(1, 2);
   ink_assert(uf.find(0) == uf.find(3));
   ink_assert(uf.find(1) == uf.find(3));
+
+  intVec.add(9);
+  intVec.add(5);
+  intVec.add(4);
+  intVec.add(12);
+  intVec.add(1);
+  intVec.add(21);
+  intVec.add(13);
+  intVec.add(18);
+  intVec.add(142);
+  intVec.add(721);
+  intVec.add(173);
+  intVec.add(188);
+  intVec.qsort(lt);
+  ink_assert(false == intVec.binary_search(lt, eq, 56));
+  ink_assert(true == intVec.binary_search(lt, eq, 1));
 }
 
 static bool
