@@ -7248,7 +7248,14 @@ HttpSM::set_next_state()
       do_remap_request(true); /* run inline */
       DebugSM("url_rewrite", "completed inline remapping request for [%" PRId64 "]", sm_id);
       t_state.url_remap_success = remapProcessor.finish_remap(&t_state);
-      call_transact_and_set_next_state(nullptr);
+      if (t_state.next_action == HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP && t_state.transact_return_point == nullptr) {
+        // It appears that we can now set the next_action to error and transact_return_point to nullptr when
+        // going through do_remap_request presumably due to a plugin setting an error.  In that case, it seems
+        // that the error message has already been setup, so we can just return and avoid the further
+        // call_transact_and_set_next_state
+      } else {
+        call_transact_and_set_next_state(nullptr);
+      }
     } else {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_remap_request);
       do_remap_request(false); /* dont run inline (iow on another thread) */
