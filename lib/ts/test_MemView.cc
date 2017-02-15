@@ -45,6 +45,18 @@ Test_1()
   return true;
 }
 
+// These tests are purely compile time.
+void
+Test_Compile()
+{
+  int i[12];
+  char c[29];
+  void *x = i, *y = i + 12;
+  MemView mvi(i, i + 12);
+  MemView mci(c, c + 29);
+  MemView mcv(x, y);
+}
+
 int
 main(int, char *argv[])
 {

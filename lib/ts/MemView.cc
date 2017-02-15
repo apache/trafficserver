@@ -65,7 +65,7 @@ svtoi(StringView src, StringView *out, int base)
 
   intmax_t zret = 0;
 
-  if (*out)
+  if (out)
     out->clear();
   if (!(1 < base && base <= 36))
     return 0;
