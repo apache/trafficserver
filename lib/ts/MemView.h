@@ -88,11 +88,19 @@ public:
                     );
 
   /** Construct from a half open range of two pointers.
-      @note The byte at @start is in the view but the byte at @a end is not.
+      @note The instance at @start is in the view but the instance at @a end is not.
   */
-  constexpr MemView(const void *start, ///< First byte in the view.
-                    const void *end    ///< First byte not in the view.
+  template <typename T>
+  constexpr MemView(T const *start, ///< First byte in the view.
+                    T const *end    ///< First byte not in the view.
                     );
+
+  /** Construct from a half open range of two pointers.
+      @note The instance at @start is in the view but the instance at @a end is not.
+  */
+  MemView(void const *start, ///< First byte in the view.
+          void const *end    ///< First byte not in the view.
+          );
 
   /** Construct from nullptr.
       This implicitly makes the length 0.
@@ -305,7 +313,8 @@ public:
   explicit StringView(const char *s);
 
   /// Construct from @c MemView to reference the same view.
-  constexpr StringView(MemView const &that);
+  /// @internal Can't be @c constexpr because @c static_cast of @c <void*> is not permitted.
+  StringView(MemView const &that);
 
   /// Construct from @c std::string, referencing the entire string contents.
   StringView(std::string const &str);
@@ -595,8 +604,13 @@ inline constexpr MemView::MemView()
 inline constexpr MemView::MemView(void const *ptr, size_t n) : _ptr(ptr), _size(n)
 {
 }
-inline constexpr MemView::MemView(void const *start, void const *end)
-  : _ptr(start), _size(static_cast<const char *>(end) - static_cast<const char *>(start))
+template <typename T> constexpr MemView::MemView(const T *start, const T *end) : _ptr(start), _size((end - start) * sizeof(T))
+{
+}
+// <void*> is magic, handle that specially.
+// No constexpr because the spec specifically forbids casting from <void*> to a typed pointer.
+inline MemView::MemView(void const *start, void const *end)
+  : _ptr(start), _size(static_cast<const char *>(end) - static_cast<char const *>(start))
 {
 }
 inline constexpr MemView::MemView(std::nullptr_t) : _ptr(nullptr), _size(0)
@@ -820,7 +834,7 @@ inline StringView::StringView(const char *s) : _ptr(s), _size(strlen(s))
 inline constexpr StringView::StringView(std::nullptr_t) : _ptr(nullptr), _size(0)
 {
 }
-inline constexpr StringView::StringView(MemView const &that) : _ptr(static_cast<const char *>(that.ptr())), _size(that.size())
+inline StringView::StringView(MemView const &that) : _ptr(static_cast<const char *>(that.ptr())), _size(that.size())
 {
 }
 inline StringView::StringView(std::string const &str) : _ptr(str.data()), _size(str.size())
@@ -1055,24 +1069,22 @@ StringView::suffix(const char *p) const
   return zret;
 }
 
-// gcc 4.9 - it considers passing this->find(...) to suffix() to be amibugous between the const char*
-// overload and the std::function<bool (char)>. This shows up on Debian 7, so let's try a cast to help out.
 inline auto
 StringView::suffix(char c) -> self
 {
-  return this->suffix(static_cast<const char *>(this->find(c)));
+  return this->suffix(this->find(c));
 }
 
 inline auto
 StringView::suffix(self delimiters) -> self
 {
-  return this->suffix(static_cast<const char *>(this->find(delimiters)));
+  return this->suffix(this->find(delimiters));
 }
 
 inline auto
 StringView::suffix(std::function<bool(char)> const &pred) -> self
 {
-  return this->suffix(static_cast<const char *>(this->find(pred)));
+  return this->suffix(this->find(pred));
 }
 
 inline StringView
