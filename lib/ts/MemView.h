@@ -972,8 +972,8 @@ StringView::contains(const char *p) const
   return _ptr <= p && p < _ptr + _size;
 }
 
-inline auto
-StringView::prefix(const char *p) const -> self
+inline StringView
+StringView::prefix(const char *p) const
 {
   self zret;
   if (this->contains(p))
@@ -981,26 +981,26 @@ StringView::prefix(const char *p) const -> self
   return zret;
 }
 
-inline auto
-StringView::prefix(char c) -> self
+inline StringView
+StringView::prefix(char c)
 {
   return this->prefix(this->find(c));
 }
 
-inline auto
-StringView::prefix(self delimiters) const -> self
+inline StringView
+StringView::prefix(self delimiters) const
 {
   return this->prefix(this->find(delimiters));
 }
 
-inline auto
-StringView::prefix(std::function<bool(char)> const &pred) const -> self
+inline StringView
+StringView::prefix(std::function<bool(char)> const &pred) const
 {
   return this->prefix(this->find(pred));
 }
 
-inline auto
-StringView::splitPrefix(const char *p) -> self
+inline StringView
+StringView::splitPrefix(const char *p)
 {
   self zret; // default to empty return.
   if (this->contains(p)) {
@@ -1010,20 +1010,20 @@ StringView::splitPrefix(const char *p) -> self
   return zret;
 }
 
-inline auto
-StringView::splitPrefix(char c) -> self
+inline StringView
+StringView::splitPrefix(char c)
 {
   return this->splitPrefix(this->find(c));
 }
 
-inline auto
-StringView::splitPrefix(self delimiters) -> self
+inline StringView
+StringView::splitPrefix(self delimiters)
 {
   return this->splitPrefix(this->find(delimiters));
 }
 
-inline auto
-StringView::splitPrefix(std::function<bool(char)> const &pred) -> self
+inline StringView
+StringView::splitPrefix(std::function<bool(char)> const &pred)
 {
   return this->splitPrefix(this->find(pred));
 }
@@ -1042,20 +1042,20 @@ StringView::extractPrefix(const char *p)
   return zret;
 }
 
-inline auto
-StringView::extractPrefix(char c) -> self
+inline StringView
+StringView::extractPrefix(char c)
 {
   return this->extractPrefix(this->find(c));
 }
 
-inline auto
-StringView::extractPrefix(self delimiters) -> self
+inline StringView
+StringView::extractPrefix(self delimiters)
 {
   return this->extractPrefix(this->find(delimiters));
 }
 
-inline auto
-StringView::extractPrefix(std::function<bool(char)> const &pred) -> self
+inline StringView
+StringView::extractPrefix(std::function<bool(char)> const &pred)
 {
   return this->extractPrefix(this->find(pred));
 }
@@ -1069,20 +1069,20 @@ StringView::suffix(const char *p) const
   return zret;
 }
 
-inline auto
-StringView::suffix(char c) -> self
+inline StringView
+StringView::suffix(char c)
 {
   return this->suffix(this->find(c));
 }
 
-inline auto
-StringView::suffix(self delimiters) -> self
+inline StringView
+StringView::suffix(self delimiters)
 {
   return this->suffix(this->find(delimiters));
 }
 
-inline auto
-StringView::suffix(std::function<bool(char)> const &pred) -> self
+inline StringView
+StringView::suffix(std::function<bool(char)> const &pred)
 {
   return this->suffix(this->find(pred));
 }
@@ -1098,20 +1098,20 @@ StringView::splitSuffix(const char *p)
   return zret;
 }
 
-inline auto
-StringView::splitSuffix(char c) -> self
+inline StringView
+StringView::splitSuffix(char c)
 {
   return this->splitSuffix(this->find(c));
 }
 
-inline auto
-StringView::splitSuffix(self delimiters) -> self
+inline StringView
+StringView::splitSuffix(self delimiters)
 {
   return this->splitSuffix(this->find(delimiters));
 }
 
-inline auto
-StringView::splitSuffix(std::function<bool(char)> const &pred) -> self
+inline StringView
+StringView::splitSuffix(std::function<bool(char)> const &pred)
 {
   return this->splitSuffix(this->find(pred));
 }
