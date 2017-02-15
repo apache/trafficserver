@@ -66,14 +66,14 @@ public:
   {
     _hook = hook;
   }
-  const TSHttpHookID
+
+  TSHttpHookID
   get_hook() const
   {
     return _hook;
   }
 
-  // Inline
-  const ResourceIDs
+  ResourceIDs
   get_all_resource_ids() const
   {
     return _ids;

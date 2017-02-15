@@ -23,7 +23,7 @@
 #include "ts/ts.h"
 #include "operator.h"
 
-const OperModifiers
+OperModifiers
 Operator::get_oper_modifiers() const
 {
   if (_next)
