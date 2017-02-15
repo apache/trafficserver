@@ -117,13 +117,13 @@ public:
     bytes_sent += num_bytes;
   }
 
-  const Http2StreamId
+  Http2StreamId
   get_id() const
   {
     return _id;
   }
 
-  const Http2StreamState
+  Http2StreamState
   get_state() const
   {
     return _state;

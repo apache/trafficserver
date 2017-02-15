@@ -682,7 +682,8 @@ IOBufferReader::consume(int64_t n)
 
 TS_INLINE char &IOBufferReader::operator[](int64_t i)
 {
-  IOBufferBlock *b = block.get();
+  static char default_ret = '\0'; // This is just to avoid compiler warnings...
+  IOBufferBlock *b        = block.get();
 
   i += start_offset;
   while (b) {
@@ -694,6 +695,8 @@ TS_INLINE char &IOBufferReader::operator[](int64_t i)
   }
 
   ink_release_assert(!"out of range");
+  // Never used, just to satisfy compilers not undersatnding the fatality of ink_release_assert().
+  return default_ret;
 }
 
 TS_INLINE void
