@@ -107,6 +107,12 @@ public:
     return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
   }
 
+  bool
+  is_active() const
+  {
+    return m_active;
+  }
+
   // Initiate an API hook invocation.
   void do_api_callout(TSHttpHookID id);
 
