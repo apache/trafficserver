@@ -1060,19 +1060,19 @@ StringView::suffix(const char *p) const
 inline auto
 StringView::suffix(char c) -> self
 {
-  return this->suffix(static_cast<const char*>(this->find(c)));
+  return this->suffix(static_cast<const char *>(this->find(c)));
 }
 
 inline auto
 StringView::suffix(self delimiters) -> self
 {
-  return this->suffix(static_cast<const char*>(this->find(delimiters)));
+  return this->suffix(static_cast<const char *>(this->find(delimiters)));
 }
 
 inline auto
 StringView::suffix(std::function<bool(char)> const &pred) -> self
 {
-  return this->suffix(static_cast<const char*>(this->find(pred)));
+  return this->suffix(static_cast<const char *>(this->find(pred)));
 }
 
 inline StringView
@@ -1215,7 +1215,7 @@ StringView::trim(std::function<bool(char)> const &pred)
 inline int
 strcmp(StringView const &lhs, StringView const &rhs)
 {
-  return ApacheTrafficServer::memcmp(lhs, rhs);
+  return ts::memcmp(lhs, rhs);
 }
 
 namespace detail
@@ -1265,8 +1265,8 @@ extern template std::ostream &StringView::stream_write(std::ostream &, const Str
 
 namespace std
 {
-ostream &operator<<(ostream &os, const ApacheTrafficServer::MemView &b);
-ostream &operator<<(ostream &os, const ApacheTrafficServer::StringView &b);
+ostream &operator<<(ostream &os, const ts::MemView &b);
+ostream &operator<<(ostream &os, const ts::StringView &b);
 }
 
 #endif // TS_BUFFER_HEADER

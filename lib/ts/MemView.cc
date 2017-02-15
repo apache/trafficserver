@@ -99,7 +99,7 @@ template std::ostream &StringView::stream_write(std::ostream &, const StringView
 namespace std
 {
 ostream &
-operator<<(ostream &os, const ApacheTrafficServer::MemView &b)
+operator<<(ostream &os, const ts::MemView &b)
 {
   if (os.good()) {
     ostringstream out;
@@ -110,7 +110,7 @@ operator<<(ostream &os, const ApacheTrafficServer::MemView &b)
 }
 
 ostream &
-operator<<(ostream &os, const ApacheTrafficServer::StringView &b)
+operator<<(ostream &os, const ts::StringView &b)
 {
   if (os.good()) {
     b.stream_write<ostream>(os, b);
