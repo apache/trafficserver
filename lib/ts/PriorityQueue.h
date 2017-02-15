@@ -47,7 +47,7 @@ template <typename T, class Comp = PriorityQueueLess<T>> class PriorityQueue
 public:
   PriorityQueue() {}
   ~PriorityQueue() {}
-  const bool empty();
+  bool empty();
   PriorityQueueEntry<T> *top();
   void pop();
   void push(PriorityQueueEntry<T> *);
@@ -72,7 +72,7 @@ PriorityQueue<T, Comp>::dump() const
 }
 
 template <typename T, typename Comp>
-const bool
+bool
 PriorityQueue<T, Comp>::empty()
 {
   return _v.length() == 0;

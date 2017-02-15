@@ -656,7 +656,7 @@ UnixNetVConnection::get_data(int id, void *data)
   }
 }
 
-const int64_t
+int64_t
 UnixNetVConnection::outstanding()
 {
   int n;

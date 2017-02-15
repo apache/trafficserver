@@ -45,7 +45,7 @@ class Operator : public Statement
 {
 public:
   Operator() : _mods(OPER_NONE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator"); }
-  const OperModifiers get_oper_modifiers() const;
+  OperModifiers get_oper_modifiers() const;
   virtual void initialize(Parser &p);
 
   void
