@@ -53,7 +53,7 @@ public:
       static_cast<Operator *>(_next)->do_exec(res);
   }
 
-  const OperModifiers get_oper_modifiers() const;
+  OperModifiers get_oper_modifiers() const;
 
   virtual void initialize(Parser &p);
 

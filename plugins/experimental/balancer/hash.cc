@@ -43,6 +43,8 @@ sockaddrlen(const struct sockaddr *sa)
   default:
     TSReleaseAssert(0 && "unsupported socket type");
   }
+
+  return 0;
 }
 
 struct md5_key {

@@ -795,24 +795,10 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
 case $host_os_def in
   linux)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xintel"], [
-      # -Wall goes crazy, so turned these specific checks off for now:
+      # -Wall is overzealous for us, so need to turn this off for now:
       #
-      #  111 is "statement is unreachable"
-      #  279 is "controlling expression is constant", triggered by our asserts
-      #  383 is "value copied to temporary, reference to temporary used"
-      #  444 is "destructor for base class is not virtual"
-      #  522 is "function "xyz" redeclared "inline" after being called
-      #  873 is "has no corresponding operator delete". ToDo: we should fix.
-      #  981 is "operands are evaluated in unspecified order"
-      # 1418 is "external function definition with no prior declaration"
-      # 1419 is "external declaration in primary source file"
-      # 1572 is "floating-point equality and inequality comparisons are unreliable"
-      # 1720 is "operator new" has no corresponding member operator delete"
-      # 2256 is "non-pointer conversion from "int" to "unsigned char" "
-      # 2259 is "non-pointer conversion from "int" to "unsigned char" "
-      #
-      # TODO: We should try to eliminate more of these -wd exclusions.
-      common_opt="-pipe -Wall -wd111 -wd279 -wd383 -wd522 -wd444 -wd873 -wd981 -wd1418 -wd1419 -wd1572 -wd1720 -wd2256 -wd2259"
+      #  #873 is "has no corresponding operator delete"
+      common_opt="-pipe -Wall -wd873"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -1332,7 +1318,7 @@ TS_TRY_COMPILE_NO_WARNING([],[
     has_128bit_cas=1
   ], [
     dnl If 128bit CAS fails, try again with the -mcx16 option. GCC needs this;
-    dnl clang doesn't; icc is unknown but presumed sane.
+    dnl clang doesn't; icc does not support -mcx16 (but gives a non-fatal warning).
     TS_ADDTO(CXXFLAGS, [-mcx16])
     TS_ADDTO(CFLAGS, [-mcx16])
     TS_TRY_COMPILE_NO_WARNING([],[
@@ -1352,8 +1338,10 @@ AC_LANG_POP
 AC_SUBST(has_128bit_cas)
 
 AS_IF([test "x$has_128bit_cas" = "x1"], [
-  TS_ADDTO(CFLAGS, [-mcx16])
-  TS_ADDTO(CXXFLAGS, [-mcx16])
+  AS_IF([test "x$ax_cv_c_compiler_vendor" != "xintel"], [
+    TS_ADDTO(CFLAGS, [-mcx16])
+    TS_ADDTO(CXXFLAGS, [-mcx16])
+  ])
 ])
 
 # Check for POSIX capabilities library.

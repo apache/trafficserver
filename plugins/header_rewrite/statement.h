@@ -98,7 +98,7 @@ public:
 
   // Which hook are we adding this statement to?
   bool set_hook(TSHttpHookID hook);
-  const TSHttpHookID
+  TSHttpHookID
   get_hook() const
   {
     return _hook;
@@ -114,7 +114,7 @@ public:
   // Linked list.
   void append(Statement *stmt);
 
-  const ResourceIDs get_resource_ids() const;
+  ResourceIDs get_resource_ids() const;
 
   virtual void
   initialize(Parser &)

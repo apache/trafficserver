@@ -32,7 +32,7 @@ Statement::append(Statement *stmt)
   tmp->_next = stmt;
 }
 
-const ResourceIDs
+ResourceIDs
 Statement::get_resource_ids() const
 {
   const Statement *stmt = this;
