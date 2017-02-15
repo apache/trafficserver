@@ -260,7 +260,7 @@ class NetVConnection : public VConnection
 public:
   // How many bytes have been queued to the OS for sending by haven't been sent yet
   // Not all platforms support this, and if they don't we'll return -1 for them
-  virtual const int64_t
+  virtual int64_t
   outstanding()
   {
     return -1;

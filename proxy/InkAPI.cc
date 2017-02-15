@@ -9254,7 +9254,7 @@ TSUuidInitialize(TSUuid uuid, TSUuidVersion v)
   return u->valid() ? TS_SUCCESS : TS_ERROR;
 }
 
-const TSUuid
+TSUuid
 TSProcessUuidGet(void)
 {
   Machine *machine = Machine::instance();

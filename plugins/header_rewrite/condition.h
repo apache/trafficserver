@@ -101,7 +101,7 @@ public:
     return _matcher;
   }
 
-  const MatcherOps
+  MatcherOps
   get_cond_op() const
   {
     return _cond_op;
