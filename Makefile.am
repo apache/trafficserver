@@ -102,7 +102,7 @@ install-data-hook:
 TESTS = tools/check-unused-dependencies
 
 rat:
-	java -jar $(top_srcdir)/ci/apache-rat-0.11-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
+	java -jar $(top_srcdir)/ci/apache-rat-0.13-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
 
 #
 # These are rules to make clang-format easy and fast to run. Run it with e.g.
