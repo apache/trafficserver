@@ -108,6 +108,10 @@ register_net_stats()
   NET_CLEAR_DYN_STAT(keep_alive_queue_timeout_total_stat);
   NET_CLEAR_DYN_STAT(keep_alive_queue_timeout_count_stat);
   NET_CLEAR_DYN_STAT(default_inactivity_timeout_stat);
+
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.tcp.total_accepts", RECD_INT, RECP_NON_PERSISTENT,
+                     static_cast<int>(net_tcp_accept_stat), RecRawStatSyncSum);
+  NET_CLEAR_DYN_STAT(net_tcp_accept_stat);
 }
 
 void
