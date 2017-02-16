@@ -23,7 +23,6 @@ AM_CPPFLAGS = \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/lib/luajit/src \
   -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/proxy/api/ts \
   -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/proxy/http \
   -I$(abs_top_srcdir)/proxy/http/remap \

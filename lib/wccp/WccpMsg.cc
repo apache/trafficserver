@@ -23,7 +23,7 @@
 #include "WccpLocal.h"
 #include <errno.h>
 #include <openssl/md5.h>
-#include <TsException.h>
+#include "api/ts/TsException.h"
 #include "ts/ink_memory.h"
 #include "ts/ink_string.h"
 

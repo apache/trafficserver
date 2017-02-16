@@ -24,7 +24,8 @@
 #if !defined(_REMAPPLUGININFO_h_)
 #define _REMAPPLUGININFO_h_
 #include "ts/ink_platform.h"
-#include "api/ts/ts.h"
+
+#include "ts/apidefs.h"
 #include "api/ts/remap.h"
 
 #define TSREMAP_FUNCNAME_INIT "TSRemapInit"

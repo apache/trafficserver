@@ -31,7 +31,6 @@ AM_CPPFLAGS = \
   -I$(abs_top_srcdir)/mgmt/api/include \
   -I$(abs_top_srcdir)/mgmt/utils \
   -I$(abs_top_srcdir) \
-  -I$(abs_top_srcdir)/proxy/api/ts \
   -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/proxy/http \
   -I$(abs_top_srcdir)/proxy/hdrs \

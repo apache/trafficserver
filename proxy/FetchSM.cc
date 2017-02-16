@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include "HTTP.h"
 #include "PluginVC.h"
+#include "api/ts/ts.h" // Ugly, but we need a bunch of the public APIs here ... :-/
 
 #define DEBUG_TAG "FetchSM"
 #define FETCH_LOCK_RETRY_TIME HRTIME_MSECONDS(10)

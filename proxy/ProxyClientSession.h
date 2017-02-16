@@ -88,6 +88,12 @@ public:
     user_args[ix] = arg;
   }
 
+  void
+  set_debug(bool flag)
+  {
+    debug_on = flag;
+  }
+
   // Return whether debugging is enabled for this session.
   bool
   debug() const
@@ -263,8 +269,6 @@ private:
   // be active until the transaction goes through or the client
   // aborts.
   bool m_active;
-
-  friend void TSHttpSsnDebugSet(TSHttpSsn, int);
 };
 
 #endif // __PROXY_CLIENT_SESSION_H__

@@ -26,7 +26,6 @@ AM_CPPFLAGS = \
   -I$(abs_top_srcdir)/proxy/logging \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/proxy/api/ts \
   -I$(abs_top_srcdir)/proxy/http \
   @OPENSSL_INCLUDES@
 

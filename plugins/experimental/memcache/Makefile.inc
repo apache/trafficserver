@@ -16,7 +16,7 @@
 
 experimental_memcache_tsmemcache_la_CPPFLAGS = \
   $(AM_CPPFLAGS) \
-  -I$(abs_top_srcdir)/proxy/api/ts \
+  -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/iocore/aio \
   -I$(abs_top_srcdir)/iocore/cache \
   -I$(abs_top_srcdir)/iocore/eventsystem \
