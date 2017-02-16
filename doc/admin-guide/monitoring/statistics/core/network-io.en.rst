@@ -75,3 +75,9 @@ Network I/O
    :type: counter
    :unit: bytes
 
+.. ts:stat:: global proxy.process.tcp.total_accepts integer
+   :type: counter
+
+   The total number of times a TCP connection was accepted on a proxy port. This may differ from the
+   total of other network connection counters. For example if a user agent connects via TLS but
+   sends a malformed ``CLIENT_HELLO`` this will count as a TCP connect but not an SSL connect.

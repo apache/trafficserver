@@ -75,6 +75,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       count = res;
       goto Ldone;
     }
+    NET_SUM_GLOBAL_DYN_STAT(net_tcp_accept_stat, 1);
 
     vc = static_cast<UnixNetVConnection *>(na->getNetProcessor()->allocate_vc(e->ethread));
     if (!vc)
@@ -269,6 +270,7 @@ NetAccept::do_blocking_accept(EThread *t)
     }
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+    NET_SUM_GLOBAL_DYN_STAT(net_tcp_accept_stat, 1);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = now;
@@ -356,6 +358,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
     if (likely(fd >= 0)) {
       Debug("iocore_net", "accepted a new socket: %d", fd);
+      NET_SUM_GLOBAL_DYN_STAT(net_tcp_accept_stat, 1);
       if (opt.send_bufsize > 0) {
         if (unlikely(socketManager.set_sndbuf_size(fd, opt.send_bufsize))) {
           bufsz = ROUNDUP(opt.send_bufsize, 1024);
