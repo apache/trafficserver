@@ -31,7 +31,6 @@
 #define _FETCH_SM_H
 
 #include "P_Net.h"
-#include "ts.h"
 #include "HttpSM.h"
 #include "HttpTunnel.h"
 

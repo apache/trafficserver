@@ -160,7 +160,7 @@ produce_layout(bool json)
   print_var("LIBDIR", Layout::get()->libdir, json, false); // Don't free this
   print_var("LOGDIR", RecConfigReadLogDir(), json);
   print_var("RUNTIMEDIR", RecConfigReadRuntimeDir(), json);
-  print_var("PLUGINDIR", RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir"), json);
+  print_var("PLUGINDIR", RecConfigReadPluginDir(), json);
   print_var("INCLUDEDIR", Layout::get()->includedir, json, false); // Dont' free this
   print_var("SNAPSHOTDIR", RecConfigReadSnapshotDir(), json);
 

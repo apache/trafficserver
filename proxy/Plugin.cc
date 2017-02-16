@@ -231,8 +231,7 @@ plugin_init(bool validateOnly)
 
   if (INIT_ONCE) {
     api_init();
-    TSConfigDirGet();
-    plugin_dir = TSPluginDirGet();
+    plugin_dir = RecConfigReadPluginDir();
     INIT_ONCE  = false;
   }
 

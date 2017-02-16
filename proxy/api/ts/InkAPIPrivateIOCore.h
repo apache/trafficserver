@@ -23,7 +23,6 @@
 
 #ifndef __INK_API_PRIVATE_IOCORE_H__
 #define __INK_API_PRIVATE_IOCORE_H__
-#include "ts.h"
 #if !defined(__GNUC__)
 #include "I_EventSystem.h"
 #include "I_Cache.h"

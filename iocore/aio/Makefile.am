@@ -42,8 +42,6 @@ test_AIO_SOURCES = \
 test_AIO_CPPFLAGS = \
   $(AM_CPPFLAGS) \
   $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/proxy/api/ts \
-  -I$(abs_top_srcdir)/proxy/api \
   -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/proxy/hdrs \
   -I$(abs_top_srcdir)/proxy/http \

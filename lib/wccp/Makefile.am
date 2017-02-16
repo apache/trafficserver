@@ -21,7 +21,7 @@ include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS = \
   -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/proxy/api/ts
+  -I$(abs_top_srcdir)/proxy
 
 #WCCP_DEFS = @WCCP_DEFS@
 #DEFS += $(WCCP_DEFS)

@@ -27,7 +27,6 @@
 #include "ts/ink_base64.h"
 #include "ts/I_Layout.h"
 
-#include "ts.h"
 #include "InkAPIInternal.h"
 #include "Log.h"
 #include "URL.h"
@@ -60,6 +59,8 @@
 #include "I_RecCore.h"
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
+
+#include "api/ts/ts.h"
 
 /****************************************************************
  *  IMPORTANT - READ ME
@@ -1802,7 +1803,8 @@ TSTrafficServerVersionGetPatch()
 const char *
 TSPluginDirGet(void)
 {
-  static const char *path = RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir");
+  static const char *path = RecConfigReadPluginDir();
+
   return path;
 }
 
@@ -6084,7 +6086,7 @@ void
 TSHttpSsnDebugSet(TSHttpSsn ssnp, int on)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  (reinterpret_cast<ProxyClientSession *>(ssnp))->debug_on = on;
+  (reinterpret_cast<ProxyClientSession *>(ssnp))->set_debug(0 != on);
 }
 
 int

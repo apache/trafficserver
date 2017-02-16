@@ -323,7 +323,7 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
   for (int i = 0; i < numTok; i++) {
     c = atoi(pTok[i]);
     if (c > 500 && c < 600) {
-      TSDebug("parent_select", "loading response code: %d", c);
+      Debug("parent_select", "loading response code: %d", c);
       codes.push_back(c);
     }
   }
@@ -499,7 +499,7 @@ ParentRecord::DefaultInit(char *val)
     return false;
   } else {
     ParentRR_t round_robin = P_NO_ROUND_ROBIN;
-    TSDebug("parent_select", "allocating ParentRoundRobin() lookup strategy.");
+    Debug("parent_select", "allocating ParentRoundRobin() lookup strategy.");
     selection_strategy = new ParentRoundRobin(this, round_robin);
     return true;
   }
@@ -687,11 +687,11 @@ ParentRecord::Init(matcher_line *line_info)
   case P_STRICT_ROUND_ROBIN:
   case P_HASH_ROUND_ROBIN:
   case P_LATCHED_ROUND_ROBIN:
-    TSDebug("parent_select", "allocating ParentRoundRobin() lookup strategy.");
+    Debug("parent_select", "allocating ParentRoundRobin() lookup strategy.");
     selection_strategy = new ParentRoundRobin(this, round_robin);
     break;
   case P_CONSISTENT_HASH:
-    TSDebug("parent_select", "allocating ParentConsistentHash() lookup strategy.");
+    Debug("parent_select", "allocating ParentConsistentHash() lookup strategy.");
     selection_strategy = new ParentConsistentHash(this);
     break;
   default:
