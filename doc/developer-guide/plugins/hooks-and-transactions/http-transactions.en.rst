@@ -63,20 +63,20 @@ transaction and associate data to the transaction.
     {
        TxnData *data;
        data = TSmalloc(sizeof(TxnData));
-        
+
        data->i = 1;
        data->f = 0.5;
        data->s = "Constant String";
        return data;
     }
-        
+
     /* Free up a TxnData structure */
     void
     txn_data_free(TxnData *data)
     {
        TSfree(data);
     }
-        
+
     /* Handler for event READ_REQUEST and TXN_CLOSE */
     static int
     local_hook_handler (TSCont contp, TSEvent event, void *edata)
@@ -90,25 +90,25 @@ transaction and associate data to the transaction.
           txn_data->f = 3.5;
           txn_data->s = "Constant String 2";
           break;
-        
+
        case TS_EVENT_HTTP_TXN_CLOSE:
           /* Print txn data values */
           TSDebug(DBG_TAG, "Txn data i=%d f=%f s=%s", txn_data->i, txn_data->f, txn_data->s);
-        
+
           /* Then destroy the txn cont and its data */
           txn_data_free(txn_data);
           TSContDestroy(contp);
           break;
-        
+
        default:
            TSAssert(!"Unexpected event");
            break;
        }
-        
+
        TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
        return 1;
     }
-        
+
     /* Handler for event TXN_START */
     static int
     global_hook_handler (TSCont contp, TSEvent event, void *edata)
@@ -116,38 +116,38 @@ transaction and associate data to the transaction.
        TSHttpTxn txnp = (TSHttpTxn) edata;
        TSCont txn_contp;
        TxnData *txn_data;
-        
+
        switch (event) {
        case TS_EVENT_HTTP_TXN_START:
           /* Create a new continuation for this txn and associate data to it */
           txn_contp = TSContCreate(local_hook_handler, TSMutexCreate());
           txn_data = txn_data_alloc();
           TSContDataSet(txn_contp, txn_data);
-        
+
           /* Registers locally to hook READ_REQUEST and TXN_CLOSE */
           TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, txn_contp);
           TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
           break;
-        
+
        default:
           TSAssert(!"Unexpected event");
           break;
        }
-        
+
        TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
        return 1;
     }
-        
-        
+
+
     void
     TSPluginInit (int argc, const char *argv[])
     {
        TSCont contp;
-        
+
        /* Note that we do not need a mutex for this txn since it registers globally
           and doesn't have any data associated with it */
        contp = TSContCreate(global_hook_handler, NULL);
-        
+
        /* Register gloabally */
        TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp);
     }

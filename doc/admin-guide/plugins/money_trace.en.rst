@@ -23,11 +23,11 @@ Money Trace Plugin
 This is a remap plugin  that allows ATS to participate in a distrbuted tracing system based upon
 the Comcast "Money" distributed tracing and monitoring library.  The Comcast "Money" library has
 its roots in Google's Dapper and Twitters Zipkin systems.  A money trace header or session id, is
-attached to transaction and allows an operator with the appropriate logging systems in place, 
-to determine where errors and/or latency may exit.  
+attached to transaction and allows an operator with the appropriate logging systems in place,
+to determine where errors and/or latency may exit.
 
-Use of the library enables the tracing of a transaction through all systems that participate in 
-handling the request. See the documentation on this open source library at 
+Use of the library enables the tracing of a transaction through all systems that participate in
+handling the request. See the documentation on this open source library at
 https://github.com/Comcast/money.
 
 How it Works
@@ -36,8 +36,8 @@ How it Works
 This plugin checks incoming requests for the "X-MoneyTrace" header.  If the header is not present
 no further processing takes place.  However if the header is present,  the plugin will check to
 to see if the request has been cached.  If so, the plugin will add the "X-Moneytrace" header from the
-incoming request to the cached response returned to the client as required by the money_trace 
-protocol.  If the request has not been cached, the plugin will extends the trace context by creating a new 
+incoming request to the cached response returned to the client as required by the money_trace
+protocol.  If the request has not been cached, the plugin will extends the trace context by creating a new
 "X-MoneyTrace" header for inclusion in the outgoing request to a parent cache or origin server.
 The extended header includes the 'trace-id' from the incoming request, the incoming span-id
 becomes the outgoing parent-id and the plugin generates a new random long span id for the outgoing request.

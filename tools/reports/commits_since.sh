@@ -21,7 +21,7 @@
 # This is a simple tool to show the commits, and author (by default) since
 # a particular date. This is useful to get activity reports on the git repo.
 #
-# Example: 
+# Example:
 #
 #   commits_since.sh "April 17" | grep -v commit|sort|uniq -c|sort -nr
 #

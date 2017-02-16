@@ -34,11 +34,11 @@ Enumeration Members
 .. c:member:: TSRecordUpdateType TS_RECORDUPDATE_NULL
 
    The value cannot be updated. This is used primarily as a default value, actual instances should not use this.
-   
+
 .. c:member:: TSRecordUpdateType TS_RECORDUPDATE_DYNAMIC
 
    The value can be updated at runtime, including by using :program:`traffic_ctl`.
-   
+
 .. c:member:: TSRecordUpdateType TS_RECORDUPDATE_RESTART_TS
 
    The value is updated if the :program:`traffic_server` process is restarted.
@@ -50,7 +50,7 @@ Enumeration Members
 .. c:member:: TSRecordUpdateType TS_RECORDUPDATE_RESTART_TC
 
    The value is updated if the :program:`traffic_cop` process is restarted. This is effect a complete restart of |TS|.
-   
+
 Description
 ===========
 

@@ -41,9 +41,9 @@ PSOL_LIBS = $(MOD_PAGESPEED_DIR)net/instaweb/automatic/pagespeed_automatic.a
 all: gzip/gzip.so ats_pagespeed.so
 
 install: all
-	$(TSXS) -i -o ats_pagespeed.so 
+	$(TSXS) -i -o ats_pagespeed.so
 	cp gzip/gzip.so ./
-	$(TSXS) -i -o zip.so 
+	$(TSXS) -i -o zip.so
 
 clean:
 	rm -f *.lo *.so *.o

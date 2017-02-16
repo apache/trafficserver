@@ -12,7 +12,7 @@ existing stat system:
 6) relationship with manager.
 
 Specifically, some of the stats reported seemed incorrect.
-In the cases where individual stats were incorrect (e.g. 
+In the cases where individual stats were incorrect (e.g.
 number of bytes transferred), it is suspected that atomicity
 issues played a role. For example, if the stat variable was
 64 bits long, were all 64 bits being read and written atomically?
@@ -28,13 +28,13 @@ the hit rate may appear incorrect.
 
 Some stats are interrelated with other stats (e.g. number of
 client requests and number of cache lookups). Inconsistencies
-between such stats may show up if for example one of the 
+between such stats may show up if for example one of the
 values is accessed and before the other value is accessed, it
 is allowed to change. A single client request may then, for example,
 show two cache lookups.
 
 These issues can be aggravated by allowing administrators to
-clear stat values. This lead us to introduce persistence: 
+clear stat values. This lead us to introduce persistence:
 disallow clearing of stats. While this does deal with the problems
 associated with clearing, it does not address the coupling,
 inconsistency or atomicity problems. Those remain.
@@ -98,7 +98,7 @@ require just atomic access, however, it may be better to allow direct
 access, without getting a lock. This may reduce lock contention.
 
 We ran two experiments to investigate the performance issue.
-The existing stat system allows for individual atomic access to all stats. 
+The existing stat system allows for individual atomic access to all stats.
 We compared the performance of this system with a system where instead of
 atomic access, all access requires getting a single lock. The results from
 inkbench are as follows.
@@ -176,17 +176,17 @@ divide stats into 2 groups:
 Types Of Stats:
 ---------------
 * event system stats
-	** average idle time per thread 
-	** variance of idle time per thread 
-	** average event exec rate per thread 
-	** variance of event exec rate per thread 
-	** average execution time per event 
-	** variance of execution time per event 
-	** average failed mutexes per event 
-	** variance of failed mutexes per event 
+	** average idle time per thread
+	** variance of idle time per thread
+	** average event exec rate per thread
+	** variance of event exec rate per thread
+	** average execution time per event
+	** variance of execution time per event
+	** average failed mutexes per event
+	** variance of failed mutexes per event
 	** average time lag per event
 	** variance of time lag per event
-	
+
 * socks processor stats
 	** connections unsuccessful
 	** connections successful
@@ -274,7 +274,7 @@ Types Of Stats:
  			**** POSTs
  			**** DELETEs
  			**** CONNECTs
- 		*** number of invalid requests 
+ 		*** number of invalid requests
  		*** number of broken client connections
  		*** number of proxied requests
  			**** user-specified
@@ -345,7 +345,7 @@ STAT(Count, log2_stat_log_files_space_used),		UI
 // events
 STAT(Count, log2_stat_event_log_error),			UI
 STAT(Count, log2_stat_event_log_access),		UI
-STAT(Count, log2_stat_event_log_access_fail),		
+STAT(Count, log2_stat_event_log_access_fail),
 STAT(Count, log2_stat_event_log_access_skip),		UI
 
 ---------------------------------------------------------------------------------

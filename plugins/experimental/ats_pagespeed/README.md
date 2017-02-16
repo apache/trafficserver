@@ -6,13 +6,13 @@ Apache Traffic Server web content optimization plugin powered by Google PageSpee
 http://www.atspagespeed.com/
 
 To build, a simple 'make' should work. Use 'sudo make install' to install.
-Optionally, patching ATS with ethread.patch helps with eliminating latency that 
+Optionally, patching ATS with ethread.patch helps with eliminating latency that
 sometimes gets induced when synchronising ATS's and PSOL's thread pools.
 
 After that, update ATS's plugin.config with:
 ```
-ats_pagespeed.so                                                                                 
-gzip.so /usr/local/etc/trafficserver/gzip.config  
+ats_pagespeed.so
+gzip.so /usr/local/etc/trafficserver/gzip.config
 ````
 gzip.so also is build with ats_pagespeed, as it currently is a slightly
 modified version of the official one from the ATS repository.
@@ -27,7 +27,7 @@ up immediately. A sample configuration:
 
 ```
 # Base configuration for the module, all host-specific configuration
-# will inherit. 
+# will inherit.
 pagespeed RewriteLevel CoreFilters
 # Mandatory FileCachePath setting. The path must exist and be read/write for the traffic_server process.
 pagespeed FileCachePath /tmp/ats_pagespeed/

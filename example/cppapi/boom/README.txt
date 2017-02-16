@@ -1,6 +1,6 @@
-Boom is example of how to use a global plugin to attach transaction plugins to some of the transactions. 
+Boom is example of how to use a global plugin to attach transaction plugins to some of the transactions.
 
-Boom is used to serve a custom page whenever the server responds with anything other than 200. 
+Boom is used to serve a custom page whenever the server responds with anything other than 200.
 
 
 Usage:
@@ -17,7 +17,7 @@ NNN.html - error page that is specific to error NNN, e.g. "404.html" is specific
 
 Nxx.html - error page that is generic to error family Nxx, e.g. "4xx.html" can be served for HTTP 401, 402, 403 and so on
 
-default.html - error page that is the most general fallback. 
+default.html - error page that is the most general fallback.
 
 
 Custom page resolution order
@@ -27,15 +27,15 @@ Boom proceeds from the most specific to the most generic custom error page. The 
 Phase 1 - exact match is attempted
 Phase 2 - status family match is attempted
 Phase 3 - boom attempts to serve default.html file
-Phase 4 - boom serves a compiled in fallback message. 
+Phase 4 - boom serves a compiled in fallback message.
 
 To illustrate the resolution, lets assume the following scenario:
- 
-- plugins.config contains the line 
+
+- plugins.config contains the line
 
 /path/boom.so /path/errors 404,4xx,5xx
 
-- /path/errors contains files 
+- /path/errors contains files
 
   /path/errors/404.html
   /path/errors/4xx.html
@@ -44,15 +44,15 @@ To illustrate the resolution, lets assume the following scenario:
 
 Lets consider the following scenarios:
 
-HTTP 404 
+HTTP 404
 
 Phase 1 - exact match is attempted:
 Since status code 404 is specified in the status_list, AND /path/errors/404.html is present, boom will serve /path/errors/404.html
 
-HTTP 403 
+HTTP 403
 
 Phase 1 - exact match is attempted:
-Since status 403 is not specified in the error list, boom skips to error family match 
+Since status 403 is not specified in the error list, boom skips to error family match
 
 Phase 2 - error family match is attempted:
 Since status wildcard 4xx is specified in the error list AND /path/errors/4xx.html is present, boom will serve /path/errors/4xx.html
@@ -60,13 +60,13 @@ Since status wildcard 4xx is specified in the error list AND /path/errors/4xx.ht
 
 HTTP 500
 Phase 1 - exact match is attempted:
-Since status 500 is not specified in the errors_list, boom skips to error family match 
+Since status 500 is not specified in the errors_list, boom skips to error family match
 
 Phase 2 - error family match is attempted:
-File /path/errors/5xx.html is present, however status wildcard 5xx is NOT specified. Therefore boom skips to general fallback match. 
+File /path/errors/5xx.html is present, however status wildcard 5xx is NOT specified. Therefore boom skips to general fallback match.
 
 Phase 3 - general fallback match is attempted:
-Since file /path/errors/default.html is not present, boom skips to the compiled in fallback 
+Since file /path/errors/default.html is not present, boom skips to the compiled in fallback
 
-Phase 4 - compiled in fallback. 
-boom responds with the compiled in message "<html><body><h1>Your network will be back soon</h1></body></html>" 
+Phase 4 - compiled in fallback.
+boom responds with the compiled in message "<html><body><h1>Your network will be back soon</h1></body></html>"

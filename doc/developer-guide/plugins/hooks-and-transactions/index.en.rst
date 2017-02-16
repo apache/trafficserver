@@ -131,7 +131,7 @@ HTTP Transaction State Diagram
      "send reply hdrs" -> "tunnel response";
      "tunnel response" -> TS_HTTP_TXN_CLOSE_HOOK;
      TS_HTTP_TXN_CLOSE_HOOK -> accept;
-    
+
      TS_HTTP_TXN_START_HOOK [shape=box];
      TS_HTTP_READ_REQUEST_HDR_HOOK [shape = box];
      TS_HTTP_PRE_REMAP_HOOK [shape = box];

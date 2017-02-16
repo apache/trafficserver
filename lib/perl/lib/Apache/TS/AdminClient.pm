@@ -254,7 +254,7 @@ sub get_stat {
 
 __END__
 
-#-=-=-=-=-=-=-=-= Give us some POD please =-=-=-=-=-=-=-=- 
+#-=-=-=-=-=-=-=-= Give us some POD please =-=-=-=-=-=-=-=-
 
 =head1 NAME:
 
@@ -272,17 +272,17 @@ Apache::TS::AdminClient - a perl interface to the statistics and configuration s
 
 =head1 DESCRIPTION:
 
-AdminClient opens a TCP connection to a unix domain socket on local disk.  When the connection is established, 
-AdminClient will write requests to the socket and wait for Apache Traffic Server to return a response.  Valid 
-request strings can be found in RecordsConfig.cc which is included with Apache Traffic Server source.  
+AdminClient opens a TCP connection to a unix domain socket on local disk.  When the connection is established,
+AdminClient will write requests to the socket and wait for Apache Traffic Server to return a response.  Valid
+request strings can be found in RecordsConfig.cc which is included with Apache Traffic Server source.
 A list of valid request strings are included with this documentation, but this included list may not be complete
-as future releases of Apache Traffic Server may include new request strings or remove existing ones.  
+as future releases of Apache Traffic Server may include new request strings or remove existing ones.
 
 =head1 CONSTRUCTOR
 
 When the object is created for this module, it assumes the 'Unix Domain Socket' is at the default location from
 the Apache Traffic Server installation. This can be changed when creating the object by setting B<'socket_path'>.
-For example: 
+For example:
 
 =over 4
 
@@ -310,8 +310,8 @@ This will return a (scalar) value for this metric or configuration.
 
 =head1 traffic_ctl
 
-There is a command line tool included with Apache Traffic Server called traffic_ctl which overlaps with this module.  traffic_ctl 
-can be used to read and write statistics or config settings that this module can.  Hence if you don't want to write a perl one-liner to 
+There is a command line tool included with Apache Traffic Server called traffic_ctl which overlaps with this module.  traffic_ctl
+can be used to read and write statistics or config settings that this module can.  Hence if you don't want to write a perl one-liner to
 get to this information, traffic_ctl is your tool.
 
 =head1 List of configurations
@@ -708,4 +708,4 @@ The Apache Traffic Server Administration Manual will explain what these strings 
 
 =cut
 
-#-=-=-=-=-=-=-=-= No more POD for you =-=-=-=-=-=-=-=- 
+#-=-=-=-=-=-=-=-= No more POD for you =-=-=-=-=-=-=-=-

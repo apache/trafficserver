@@ -63,7 +63,7 @@ Mutex * mutex
 activate_io()
 
     Is it part of the public interface ?
-		
+
 
 +---------------+
 | proxy/Event.h |
@@ -239,7 +239,7 @@ new do_io() interface
 void * buf;
     What is the meaning of this field ? Where is it used ?
 	Is it part of the public interface ?
-		
+
 
 +---------------------------+
 | lib/ts/ink_hrtime.h |

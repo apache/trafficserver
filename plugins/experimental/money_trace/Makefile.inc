@@ -17,5 +17,5 @@
 pkglib_LTLIBRARIES += experimental/money_trace/money_trace.la
 
 experimental_money_trace_money_trace_la_SOURCES = \
-  experimental/money_trace/money_trace.cc 
+  experimental/money_trace/money_trace.cc
 

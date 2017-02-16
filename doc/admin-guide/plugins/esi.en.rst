@@ -10,9 +10,9 @@ ESI Plugin
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -78,15 +78,15 @@ Enabling ESI
 
     esi.so
 
-2. There are four options you can add to the above. 
+2. There are four options you can add to the above.
 
-- "--private-response" will add private cache control and expires header to the processed ESI document. 
+- "--private-response" will add private cache control and expires header to the processed ESI document.
 - "--packed-node-support" will enable the support for using packed node, which will improve the performance of parsing
-  cached ESI document. 
+  cached ESI document.
 - "--disable-gzip-output" will disable gzipped output, which will NOT gzip the output anyway.
 - "--first-byte-flush" will enable the first byte flush feature, which will flush content to users as soon as the entire
   ESI document is received and parsed without all ESI includes fetched (the flushing will stop at the ESI include markup
-  till that include is fetched). 
+  till that include is fetched).
 
 3. HTTP_COOKIE variable supported is turned off by default. You can turn it on with '-f' or '-handler option'
 
@@ -99,9 +99,9 @@ And inside handler.conf you can provide the list of cookie name that is allowed.
 ::
 
     whitelistCookie A
-    whitelistCookie LOGIN 
+    whitelistCookie LOGIN
 
-We can also allow all cookie for HTTP_COOKIE variable by using a wildcard character. e.g. 
+We can also allow all cookie for HTTP_COOKIE variable by using a wildcard character. e.g.
 
 ::
 
@@ -153,7 +153,7 @@ Useful Note
 1. You can provide proper cache control header and the ESI response and ESI include response can be cached separately.
    It is extremely useful for rendering page with multiple modules. The page layout can be a ESI response with multiple
    ESI include include, each for different module. The page layour ESI response can be cached and each individual ESI
-   include can also be cached with different duration. 
+   include can also be cached with different duration.
 
 2. You should run the plugin without using "packed node support" because it is not fully tested.
 

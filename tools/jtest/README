@@ -1,7 +1,7 @@
 jtest is a performance stress tool for high performance proxy server
 Apache Traffic Server.
 
-jtest works at both UA and OS side when benchmarking the proxy, sure 
+jtest works at both UA and OS side when benchmarking the proxy, sure
 you can run client or server only.
 
 

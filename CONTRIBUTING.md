@@ -16,16 +16,16 @@ New Issues process replacing old Jira
 1. If there is an issue/feature, an existing Jira Ticket, and no code, then
    create a Github _Issue_.  Copy the relevant information into the Github
    _Issue_ and request the Jira Ticket to be closed. Hopefully this use case
-   won’t happen very often. 
+   won’t happen very often.
 
 2. If there is an issue/feature and no code, then create a Github _Issue_.
    When there is code later, create a Github Pull Request and reference the
-   Github _Issue_. 
+   Github _Issue_.
 
 3. If there is an issue/feature and code, then create a Github Pull Request.
    If there is an existing Jira Ticket or Github _Issue_ refer to the Ticket
    or _Issue_ in the _PR_.  Creating a Github _Issue_ is not required for a
-   Github Pull Request. 
+   Github Pull Request.
 
 
 Making a good PR or Issue
@@ -48,16 +48,16 @@ are a few simple rules to follow:
 
 5. Make sure you set the appropriate _Milesstone_, _Labels_, _Assignees_ and
    _Reviewers_.
-   
+
 6. If the _PR_ is a backport, or intended to be backported, please make sure to
    add the **Backport** label.
-   
+
 7. If the _PR_ is a Work-In-Progress, and not ready to commit, mark it with the
    **WIP** label.
 
 8. Make sure you run **clang-format** before making the _PR_. This is easiest
    done with e.g. "make clang-format", which works on OSX and Linux.
-   
+
 9. When making backports, make sure you mark the _PR_ for the appropriate
    Github branch (e.g. **6.2.x**).
 
@@ -75,13 +75,13 @@ merge any _PR_ after review. A few requirements before merging must be met:
 
 * Make sure all attributes on the _PR_ and issue is satisfied, such as
   Milestone and Labels.
-  
+
 * Only merge a _PR_ that have at least one review approval, and no pending
   requested changes.
-  
+
 * Make sure the _PR_ is for the _master_ branch, only the RM should merge
   backport requested for her or his release branch.
-  
+
 * If there is also an open _Issue_ associated with the _PR_, make sure to
   close the _Issue_ as well.
 

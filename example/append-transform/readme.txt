@@ -2,16 +2,16 @@ About append-transform.c
 
 This example is based on null-transform.c. It appends text to the body
 of an HTML text response document on its way from the cache to the
-client.   
+client.
 
 The plugin first makes sure that it has received a "200 OK"
 response from the origin server.  It then verifies that the returned
 document is of type "text/html".  It "transforms" the document by
-appending text to the file.   To read and write to the body of the 
+appending text to the file.   To read and write to the body of the
 document, the plugin uses functions similar to those in null-transform.c.
 
-You place the text to be appended in a file, and you must provide the 
-path to the file in plugin.config. In other words, plugin.config must 
+You place the text to be appended in a file, and you must provide the
+path to the file in plugin.config. In other words, plugin.config must
 have a line similar to the following:
 
   append-transform.so path/to/file
@@ -28,8 +28,8 @@ TSPluginInit does the following:
 	a buffer to be appended to HTML response bodies
 
 - sets up the global hook to call back the plugin:
-	TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, 
-TSContCreate (transform_plugin, NULL)); 
+	TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK,
+TSContCreate (transform_plugin, NULL));
 
 The load function does the following (similar to file-1.c):
 
@@ -45,7 +45,7 @@ The load function does the following (similar to file-1.c):
 - reads the contents of the file in to the buffer using:
 	TSIOBufferStart
 	TSIOBufferBlockWriteStart
-	TSfread	
+	TSfread
 	TSIOBufferProduce
 	TSIOBufferReaderAvail
 
@@ -54,16 +54,16 @@ The load function does the following (similar to file-1.c):
 
 The transform_plugin function does the following:
 
-- tests the response body to make sure it is text/html, using 
+- tests the response body to make sure it is text/html, using
 	the function "transformable". The transformable function
 	uses the following API calls:
 	TSHttpTxnServerRespGet
-	TSHttpHdrStatusGet	
+	TSHttpHdrStatusGet
 	TSMimeHdrFieldFind
 	TSMimeHdrFieldValueStringGet
 
 - if the response body is deemed transformable, transform_plugin calls
-	transform_add 
+	transform_add
 
 - continues the HTTP transaction using
 	TSHttpTxnReenable
@@ -71,18 +71,18 @@ The transform_plugin function does the following:
 The transform_add function does the following:
 
 - creates a continuation for the append transform, using
-	TSTransformCreate (append_transform, txnp); 
-	The handler function for this continuation is 
+	TSTransformCreate (append_transform, txnp);
+	The handler function for this continuation is
 	append_transform.
 
 - adds a transaction hook for the append transform, using
 	TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
-	This transaction hook sets up a callback during transactions. 
+	This transaction hook sets up a callback during transactions.
 	When the event TS_HTTP_RESPONSE_TRANSFORM_HOOK happens,
 	the append_transform function is called back.
 
-The remaining functions in the plugin, append_transform and 
-handle_transform, are similar to null_transform and 
-handle_transform in the null-transform.c plugin. 
+The remaining functions in the plugin, append_transform and
+handle_transform, are similar to null_transform and
+handle_transform in the null-transform.c plugin.
 
 

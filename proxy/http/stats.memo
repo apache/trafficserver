@@ -6,17 +6,17 @@ Date:   Feb 13, 1997
         | Configurations |
         +----------------+
 
-                  
+
 Proxy Schems:
 -------------
   Name          :  SchemeEnabled
-  Type          :  A bit vector. a bit per scheme. 
+  Type          :  A bit vector. a bit per scheme.
   Who It Affects:  HTTP Engine
   Comments      :  Current schemes are HTTP / HTTPS
 
   Name          :  TunnelingEnabled
   Type          :  boolean
-  Who It Affects:  HTTP Engine               
+  Who It Affects:  HTTP Engine
   Comments      :  support CONNECT request for SSL tunneling.
 
 
@@ -44,7 +44,7 @@ Connections and Keep Alive:
                    response to the last request was sent to the user agent.
                    If the time exceeds the timeout value the proxy closes
                    the connection to the user agent.
-                   
+
   Name          :  KeepAliveNoActivityTimeoutOut
   Type          :  int
   Who It Affects:  HTTP Processor
@@ -89,10 +89,10 @@ Connections and Keep Alive:
   Type          :  boolean
   Who It Affects:  HTTP Processor
   Comments      :  enable keep alive for outgoing connections
-    
-  
-                   
-                   
+
+
+
+
 Proxy - Processing a request:
 -----------------------------
 
@@ -101,12 +101,12 @@ E:Name          :  ink_api_enable
   Who It Affects:  HTTP Engine
   Comments      :  enable or disable calls to user defined ink_api
                    functions.
-                   
+
 E:Name          :  AccessControlEnable
-  Type          :  boolean  
+  Type          :  boolean
   Who It Affects:  HTTP Engine
   Comments      :  enable or disable site access control
-  
+
   Name          :  AccessControlSiteFileName
   Type          :  string
   Who It Affects:  HTTP Engine
@@ -115,24 +115,24 @@ E:Name          :  AccessControlEnable
   Name          :  MimeTypeFileName
   Type          :  string
   Who It Affects:  HTTP Engine
-  Comments      :  A file with mime types  
-  
+  Comments      :  A file with mime types
+
   Name          :  UserGroups
   Type          :  array of { strings, user_agent_ip, ?? }
   Who It Affects:  HTTP Engine
   Comments      :  Group names of users.
 
-  Name          :  RequestViaStr    
-  Type          :  string 
+  Name          :  RequestViaStr
+  Type          :  string
   Who It Affects:  HTTP Engine
   Comments      :  name to be appended to Via (e.g. "1.1 proxy-name")
 
-  Name          :  Language     
-  Type          :  string 
+  Name          :  Language
+  Type          :  string
   Who It Affects:  HTTP Engine
   Comments      :  Language to be used for proxy errors and warnings
 
-  Name          :  RemoveFrom   
+  Name          :  RemoveFrom
   Type          :  boolean
   Who It Affects:  HTTP Engine
   Comments      :  Determines whether "from" field is removed from
@@ -147,18 +147,18 @@ E:Name          :  AccessControlEnable
   Name          :  RemoveUserAgent
   Type          :  boolean
   Who It Affects:  HTTP Engine
-  Comments      :  Determines whether "User Agent" field is removed 
+  Comments      :  Determines whether "User Agent" field is removed
                    from the request before it is sent out.
 
 Proxy - Processing a response:
 -----------------------------
 
-  Name          :  ResponseViaStr    
-  Type          :  string 
+  Name          :  ResponseViaStr
+  Type          :  string
   Who It Affects:  HTTP Engine
   Comments      :  name to be appended to Via (e.g. "1.1 proxy-name")
 
-    
+
 
 Caching Policies:
 -----------------
@@ -169,7 +169,7 @@ Caching Policies:
   Comments      :  If true caching is on, if false caching is off.
 
   Name          :  HeuristicAgeFactor
-  Type          :  double 
+  Type          :  double
   Who It Affects:  HTTP Engine
   Comments      :  Heuristic age of document= doc_date + (doc_date -
                    last_mod_date)*HeuristicAgeFactor
@@ -199,17 +199,17 @@ Caching Policies:
   Type          :  A bit vector
   Who It Affects:  HTTP Engine
   Comments      :  which mime types to cache.
-  
+
   Name          :  NoCacheDomain
   Type          :  array of strings
   Who It Affects:  HTTP Engine
   Comments      :  A list of domains that should not be cached.
                    For example a small cache may not want to cache
                    local documents.
-                     
+
 
 Per Transaction Statisctics:
----------------------------- 
+----------------------------
 
   Name     :  TransactionTotalTime
   Type     :  integer
@@ -241,7 +241,7 @@ Per Transaction Statisctics:
   Internal :  External / Internal
   Comments :  Cache result.
 
-              
+
 
 
 

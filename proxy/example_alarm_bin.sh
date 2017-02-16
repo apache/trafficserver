@@ -20,7 +20,7 @@
 #   Example alarm bin program. Proxy manager execs this script with
 # a brief message as its argument. This program sends mail to the
 # e-mail address passed in by the caller.  The subject of the
-# e-mail is the passed in message, and a 'date' stamp is added 
+# e-mail is the passed in message, and a 'date' stamp is added
 # as the body.
 #
 ostype=`(uname -s) 2>/dev/null`

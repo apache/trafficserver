@@ -53,5 +53,5 @@
 #
 # Examples
 #
-#  Revalidate all http objects from www.example.com after 2 hours 
+#  Revalidate all http objects from www.example.com after 2 hours
 #    dest_domain=www.example.com   scheme=http  revalidate=2h

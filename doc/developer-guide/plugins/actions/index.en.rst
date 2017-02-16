@@ -81,7 +81,7 @@ Below is an example of typical usage for an action:
                 /* Net connection failed */
                 TSContDataSet (contp, NULL);
                 return 0;
-            } 
+            }
             return 0;
         }
 
@@ -153,7 +153,7 @@ cancel the action. The following sample code implements this:
                     TSContDataSet (contp, NULL);
                     break;
 
-            } 
+            }
             return 0;
         }
 

@@ -150,7 +150,7 @@ if ($one_at_a_time) {
     if (!defined(@tests)) {
 	#@tests = ('bad-header', 'garbage-1' 'garbage-2', 'cache', 'inkbench', 'garbage-1' );
 	@tests = ('jtest', 'cache', 'inkbench', 'bad-header', 'garbage-2', 'garbage-1' );
-    } 
+    }
     foreach $i (@tests) {
 	print "---- Running '$i' test on $myhost:$myport for $testlength seconds with $users users load\n";
 	print &ctime(time);

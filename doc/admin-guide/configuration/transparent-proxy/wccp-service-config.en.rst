@@ -49,7 +49,7 @@ Attributes in this section
 Services Section
 ================
 
-In the services section you can define a list of service groups.  Each top level entry is a separate service group.  
+In the services section you can define a list of service groups.  Each top level entry is a separate service group.
 
 Service group attributes include
 
@@ -57,9 +57,9 @@ Service group attributes include
 
 *  description – A description of the service.  Again, not used in the rest of the WCCP processing.
 
-*  id - The security group ID.  It must match the service group ID that has been defined on the associated WCCP router.  This is the true service group identifier from the WCCP perspective.  
+*  id - The security group ID.  It must match the service group ID that has been defined on the associated WCCP router.  This is the true service group identifier from the WCCP perspective.
 
-* type – This defines the type of service group either “STANDARD” or “DYNAMIC”.  There is one standard defined service group, HTTP with the id of 0.  The 4/2001 RFC indicates that id’s 0-50 are reserved for well known service groups.  But more recent 8/2012 RFC indicates that values 0 through 254 are valid service id’s for dynamic services.  To avoid differences with older WCCP routers, you probably want to  avoid dynamic service ID’s 0 through 50.  
+* type – This defines the type of service group either “STANDARD” or “DYNAMIC”.  There is one standard defined service group, HTTP with the id of 0.  The 4/2001 RFC indicates that id’s 0-50 are reserved for well known service groups.  But more recent 8/2012 RFC indicates that values 0 through 254 are valid service id’s for dynamic services.  To avoid differences with older WCCP routers, you probably want to  avoid dynamic service ID’s 0 through 50.
 
 * priority – This is a value from 0 to 255.  The higher number is a higher priority.  Well known (STANDARD) services are set to a value of 240.  If there are multiple service groups that could match a given packet, the higher priority service group is applied. RFC  For example, you have service group 100 defined for packets with destination port 80, and service group 101 defined for packets with source port 1024.  For a packet with destination port set to 80 and source port set to 1024, the priorities of the service groups would need to be compared to determine which service group applies.
 
@@ -68,9 +68,9 @@ Service group attributes include
 * assignment – WCCP supports multiple WCCP clients supporting a single service group.  However, the current WCCP client implementation in Traffic Server assumes there is only a single WCCP client, and so creates assignment tables that will direct all traffic to that WCCP client.  The assignment type is either hash or mask, and if it is not set, it defaults to hash.  If Traffic Server ever supports more than one cache, it will likely only support a balanced hash assignment.  The mask/value assignment seems to be better suited to situations where the traffic needs to be more strongly controlled.
 
 * primary-hash – This is the element of the packet that is used to compute the primary key.  The value options are src_ip, dst_ip, src_port, or  dst_port. This entry is a list, so multiple values can be specified.  In that case, all the specified packet attributes will be used to compute the hash bucket.  In the current implementation, the primary hash value does not matter, since the client always generates a hash table that directs all matching traffic to it.  But if multiple clients are ever supported, knowledge of the local traffic distribution could be used to pick a packet attribute that will better spread traffic over the WCCP clients.
-*  alt-hash – The protocol supports a two level hash.  This attribute is a list with the same value options as for primary-hash.  Again, since the current Traffic Server implementation only creates assignment tables to a single client, specifying the alt-hash values does nothing.  
+*  alt-hash – The protocol supports a two level hash.  This attribute is a list with the same value options as for primary-hash.  Again, since the current Traffic Server implementation only creates assignment tables to a single client, specifying the alt-hash values does nothing.
 
-* ports – This is a list of port values.  Up to 8 port values may be included in a service group definition.  
+* ports – This is a list of port values.  Up to 8 port values may be included in a service group definition.
 
 * port-type – This attribute can have the value of src or dst.  If not specified, it defaults to dst.  It indicates whether the port values should be interpreted as source ports or destination ports.
 

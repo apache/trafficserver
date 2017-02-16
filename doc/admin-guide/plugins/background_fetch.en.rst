@@ -30,8 +30,8 @@ is not able to cache request / responses with byte ranges.
 Using the plugin
 ----------------
 
-This plugin functions as either a global or per remap plugin, and it takes 
-an optional argument for specifying a config file with inclusion or 
+This plugin functions as either a global or per remap plugin, and it takes
+an optional argument for specifying a config file with inclusion or
 exclusion criteria. The config file can be specified both via an absolute
 path or via a relative path to the install dir
 
@@ -66,7 +66,7 @@ original client request, which continues as normal.
 Only one background fetch per URL is ever performed, making sure we do not
 accidentally put pressure on the origin servers.
 
-The plugin now supports a config file that can specify exclusion or inclusion of 
+The plugin now supports a config file that can specify exclusion or inclusion of
 background fetch based on any arbitrary header or client-ip::
 
   background_fetch.so --config <config-file>

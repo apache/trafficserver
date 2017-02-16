@@ -31,20 +31,20 @@ describe("Busted unit testing framework", function()
     end)
 
     it("test - module.set_hook", function()
-      stub(ts, "hook") 
+      stub(ts, "hook")
       local module = require("module")
 
       module.set_hook()
-      
+
       assert.stub(ts.hook).was.called_with(TS_LUA_HOOK_TXN_CLOSE, module.test)
     end)
 
     it("test - module.set_context", function()
 
       local module = require("module")
-     
+
       module.set_context()
-    
+
       assert.are.equals('test10', ts.ctx['test'])
     end)
 
@@ -58,7 +58,7 @@ describe("Busted unit testing framework", function()
 
     it("test - module.return_constant", function()
       local module = require("module")
- 
+
       local result = module.return_constant()
 
       assert.are.equals(TS_LUA_REMAP_DID_REMAP, result)

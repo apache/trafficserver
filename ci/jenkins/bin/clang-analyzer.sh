@@ -72,6 +72,6 @@ fi
 if [ -x "/admin/bin/clean-clang.sh" ]; then
     /admin/bin/clean-clang.sh
 fi
-    
+
 # Exit with the scan-build exit code (thanks to --status-bugs)
 exit $status

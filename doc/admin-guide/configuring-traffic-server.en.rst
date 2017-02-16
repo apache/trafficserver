@@ -58,7 +58,7 @@ variables, see :ref:`configuration-variables`.
 Configure Traffic Server Using Configuration Files
 ==================================================
 
-You can change 
+You can change
 Traffic Server configuration options by manually editing specific
 variables in :file:`records.config`.
 

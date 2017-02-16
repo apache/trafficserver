@@ -10,7 +10,7 @@
 # Each line consists of a set of tag value pairs.  The pairs
 #   are in the format  <tag>=<value>. Please note that there
 #   should not be any spaces in the specifiers.
-# 
+#
 # Each line must include exactly one primary specifier
 #
 #   Primary destination specifiers are
@@ -23,36 +23,36 @@
 # Required:
 #     named=       ( required; a DNS server; port may be included,
 #                    separated by ':'. If none provided, the default
-#                    port used is 53. Multiple DNS server may be 
+#                    port used is 53. Multiple DNS server may be
 #                    specified, separated by spaces or ';'. The
-#                    DNS servers are required to be in ip address 
+#                    DNS servers are required to be in ip address
 #                    format )
 #
-# Optional:          
+# Optional:
 #     def_domain=  ( optional;  when provided, only one default
 #                    may be listed on the line )
 #
-#     search_list= ( optional; however, if provided, requires at 
+#     search_list= ( optional; however, if provided, requires at
 #                    least one search domain. If an organization
-#                    has multiple zones, they may be specified, 
+#                    has multiple zones, they may be specified,
 #                    separated by spaces or ';'.  )
-# 
+#
 # Each line must include at least a named= directive with an IP address
 # in the "dot" format. "def_domain=" and "search_list=" are optional.
 #
 # Additional notes:
 #
 # For improved performance, the system has a 'fast path', which is activated
-# when all the primary destination specifiers are of the type 
+# when all the primary destination specifiers are of the type
 # 'dest_domain' or 'dest_host'. It also requires that the number of rules
 # not exceed four (4). One of the side effect of this is, the first match
 # will terminate the search.
 #
-# If a host name is not fully qualified, i.e. does not have the domain 
+# If a host name is not fully qualified, i.e. does not have the domain
 # specifier (ex. 'internal' instead of internal.example.com'), then
-# there is no rule using the primary destination specifier 'url_regex'. 
+# there is no rule using the primary destination specifier 'url_regex'.
 #
-#    
+#
 # Example:
 #
 #dest_domain=int.ik.com named="255.257..." def_domain="int.ik.com" search_list="int.ik.com mkt.ik.com"

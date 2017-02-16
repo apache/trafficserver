@@ -12,8 +12,8 @@ This plugin reads the range request header byte range value and then creates a
 new cache key url using the original request url with the range value appended
 to it.  The range header is removed where appropriate from the requests and the
 origin server response code is changed from a 206 to a 200 to insure that the
-object is written to cache using the new cache key url.  The response code sent 
-to the client will be changed back to a 206 and all requests to the origin server 
+object is written to cache using the new cache key url.  The response code sent
+to the client will be changed back to a 206 and all requests to the origin server
 will contain the range header so that the correct response is received.
 
 Installation:

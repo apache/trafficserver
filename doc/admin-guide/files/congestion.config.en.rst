@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,7 +21,7 @@ congestion.config
 
 .. configfile:: congestion.config
 
-The :file:`congestion.config` file (by default, located in 
+The :file:`congestion.config` file (by default, located in
 ``/usr/local/etc/trafficserver/``) enables you to configure Traffic Server
 to stop forwarding HTTP requests to origin servers when they become
 congested, and then send the client a message to retry the congested
@@ -30,7 +30,7 @@ navigate to the Traffic Server bin directory; then run the
 :option:`traffic_ctl config reload` command to apply changes. When you apply the changes
 to a node in a cluster, Traffic Server automatically applies the changes
 to all other nodes in the cluster. Traffic Server uses the
-:file:`congestion.config` file only if you enable the 
+:file:`congestion.config` file only if you enable the
 :ts:cv:`proxy.config.http.congestion_control.enabled` option.
 
 You can create rules in the congestion.config file to specify:

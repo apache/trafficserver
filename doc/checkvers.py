@@ -33,14 +33,14 @@ if __name__ == '__main__':
     # Also 1.2 guarantees sphinx.version_info is available.
     try:
       import sphinx
-      
+
       if 'version_info' in dir(sphinx) :
         print 'Found Sphinx version {0}'.format(sphinx.version_info)
       else :
         version = sphinx.__version__
         print 'Found Sphinx version (old) {0}'.format(sphinx.__version__)
         sphinx.version_info = version.split('.')
-        
+
       if sphinx.version_info < (1,2) :
           sys.exit(1)
 

@@ -90,7 +90,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
-  AC_CHECK_HEADERS(openssl/tls1.h, [], [], 
+  AC_CHECK_HEADERS(openssl/tls1.h, [], [],
 [ #if HAVE_OPENSSL_SSL_H
 #include <openssl/ssl.h>
 #include <openssl/tls1.h>
