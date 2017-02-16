@@ -25,7 +25,7 @@ How to run proxy
 ----------------
 
  - Compile protocol.so and copy it under plugins directory.
- - In plugin.config: 
+ - In plugin.config:
    protocol.so <accept_port> <server_port>
    accept_port is the port to listen to client requests.
    server_port is the port to connect to origin server.
@@ -42,7 +42,7 @@ How to run synthetic server
 How to run synthetic client
 ---------------------------
  - Compile ProtocolClientTest.java and get ProtocolClientTest.class.
- - Run: java ProtocolClientTest -options. 
+ - Run: java ProtocolClientTest -options.
  - Options include:
    "-P" : proxy name (e.g. npdev.example.com)
    "-p" : proxy port (match "accept_port" argument passed to the plugin)

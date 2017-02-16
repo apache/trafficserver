@@ -11,19 +11,19 @@ boundary testing.
 List of tests:
 --------------
 Test case are under thread-pool/test/SynTest/Tests/Psi
-1.cfg:Description: PSI Plugin - Include tag at the beginning of doc 
-2.cfg:Description: PSI Plugin - include tag middle of body doc 
-3.cfg:Description: PSI Plugin - include tag end of body doc 
-4.cfg:Description: PSI Plugin - 2 include tags in the same body 
-5.cfg:Description: PSI Plugin - Boundary case: no filename in include 
-6.cfg:Description: PSI Plugin - Boundary case: include tag doesn't end 
-7.cfg:Description: PSI Plugin - Boundary case: include file doesn't exist 
-8.cfg:Description: PSI Plugin - Boundary case: tag similar to include but slightly different 
-9.cfg:Description: PSI Plugin - Boundary case: include file is empty 
-10.cfg:Description: PSI Plugin - Boundary case: huge file to include 
-11.cfg:Description: PSI Plugin - Boundary case: no X-Psi header 
+1.cfg:Description: PSI Plugin - Include tag at the beginning of doc
+2.cfg:Description: PSI Plugin - include tag middle of body doc
+3.cfg:Description: PSI Plugin - include tag end of body doc
+4.cfg:Description: PSI Plugin - 2 include tags in the same body
+5.cfg:Description: PSI Plugin - Boundary case: no filename in include
+6.cfg:Description: PSI Plugin - Boundary case: include tag doesn't end
+7.cfg:Description: PSI Plugin - Boundary case: include file doesn't exist
+8.cfg:Description: PSI Plugin - Boundary case: tag similar to include but slightly different
+9.cfg:Description: PSI Plugin - Boundary case: include file is empty
+10.cfg:Description: PSI Plugin - Boundary case: huge file to include
+11.cfg:Description: PSI Plugin - Boundary case: no X-Psi header
 12.cfg:Description: PSI Plugin - Boundary case: Server Aborts in middle of header
-13.cfg:Description: PSI Plugin - Boundary case: Server Aborts in middle of body 
+13.cfg:Description: PSI Plugin - Boundary case: Server Aborts in middle of body
 
 SynTest config file:
 --------------------

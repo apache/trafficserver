@@ -61,7 +61,7 @@ Here is how the static parent continuation is created in
    {
       // ...
       TSCont contp;
-          
+
       contp = TSContCreate (blacklist_plugin, NULL);
       // ...
    }

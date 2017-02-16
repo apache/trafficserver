@@ -52,7 +52,7 @@ INC =-I$(MOD_PAGESPEED_DIR)\
  -I$(MOD_PAGESPEED_DIR)out/$(BUILDTYPE)/obj/gen\
  -I$(MOD_PAGESPEED_DIR)out/$(BUILDTYPE)/obj/gen/protoc_out/instaweb
 
-PSOL_LIBS = $(PAGESPEED_OUT)pagespeed_automatic.a 
+PSOL_LIBS = $(PAGESPEED_OUT)pagespeed_automatic.a
 #PSOL_LIBS = $(PAGESPEED_OUT)pagespeed_automatic.a $(PAGESPEED_OUT)libserf.a $(PAGESPEED_OUT)libaprutil.a $(PAGESPEED_OUT)libapr.a
 
 %.so: psol %.cc

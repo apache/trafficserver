@@ -83,7 +83,7 @@ sub load {
         ++($self->{_ix});
         next unless ($#p == 3) && (($p[0] eq "LOCAL") || ($p[0] eq "CONFIG"));
         print "Warning! duplicate configuration $p[1]\n" if exists($self->{_lookup}->{$p[1]});
-      
+
         $self->{_lookup}->{$p[1]} = $self->{_ix};
     }
 }
@@ -172,7 +172,7 @@ sub append {
 
 
 #
-# Write the new configuration file to STDOUT, or provided 
+# Write the new configuration file to STDOUT, or provided
 #
 sub write {
     my $self = shift;
@@ -223,11 +223,11 @@ the records.config file as used by Apache Traffic Server.
 
 Instantiating a new Config::Records class, with a file provided, will
 automatically load that configuration. Don't call the load() method
-explicitly in this case. 
+explicitly in this case.
 
 =head2 API Methods
 
-The following are methods in the Records class. 
+The following are methods in the Records class.
 
 =over 8
 
@@ -238,7 +238,7 @@ present that file is immediately loaded (see the load() method
 below). Example:
 
   my $r = new Apache::TS::Config::Records(file => $fname);
-    
+
 =item load
 
 Explicitly load a configuration file, merging the items with any

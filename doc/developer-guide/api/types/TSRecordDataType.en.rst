@@ -42,7 +42,7 @@ Enumeration Members
 .. c:member:: TSRecordType TS_RECORDDATATYPE_FLOAT
 
     Floating point.
-    
+
 .. c:member:: TSRecordType TS_RECORDDATATYPE_STRING
 
    A string.

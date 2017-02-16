@@ -39,7 +39,7 @@ jtest作为专门针对ATS的测试，已经就ATS的最简单配置下，做了
 1. 设置ATS的remap规则：
 
     在默认的空remap.config中添加一条规则
-    
+
     > map http://localhost:9080/ http://127.0.0.1:9080/
 
 2. 运行jtest：
@@ -110,7 +110,7 @@ jtest有非常多的参数，这些参数的组合又会产生很多特殊的效
       -K, --keepalive_cons    int   4         # Keep-Alive Connections (0:unlimit)
       -L, --docsize           int   -1        Document Size (-1:varied)
       -j, --skeepalive        int   4         Server Keep-Alive (0:unlimit)
-      
+
 * -r -w -R，控制客户端、服务器端的速度，多数压测的情况下，不会做特殊限制，在需要仿真大并发、大延迟等情况下，可以做控制。
 * -b -B，模拟客户端和服务器端的buffer大小设置，buffer的大小可以极大的影响IO的能力，也会影响内存的占用。
 * -z -Z，这是用来控制命中率和热点数据。命中率是由热点数据的命中，加miss的请求。热点数据的多少，也会影响服务器的内存使用。
@@ -327,7 +327,7 @@ screen的`-c`参数，可以很方便的启动一个screen脚本，在这个脚�
     # s为客户端ip 20..29
     # i为每个机器最多对一个服务器起10个进程压测 0..9
     # 我们的jtest监听端口为 $c$s$i，如10200这样的形式
-    
+
     for c in {10..19}
     do
       for s in {20..29}
@@ -351,7 +351,7 @@ screen的`-c`参数，可以很方便的启动一个screen脚本，在这个脚�
     map http://ts.cn:19299/ http://192.168.0.19:19299/
 
 然后我们就可以用来做一些测试的screen脚本，下面的脚本会让我们在每个测试客户端机器上，生成一些针对每个测试目标服务器启动jtest的screen命令脚本：
-    
+
     for c in {10..19};do for s in {20..29};do echo "
     screen jtest -P 192.168.0.${s} -S ts.cn -s ${c}${s}0 -z 1.0 -D ${c}${s} -k 2 -c 30 -Z 1000 -q 10000 -L 5000
     screen jtest -P 192.168.0.${s} -S ts.cn -s ${c}${s}1 -z 1.0 -D ${c}${s} -k 2 -c 30 -Z 1000 -q 10000 -L 10000

@@ -9,7 +9,7 @@ make && sudo make install
 
 if no makefile is present, you can compile it using
     tsxs -o gzip.so *.cc
-and then install it using 
+and then install it using
     tsxs -i -o gzip.so
 
 after installation, add a line to plugin.config:
@@ -60,7 +60,7 @@ disallow /notthis/*.js
 disallow /notthat*
 disallow */bla*
 
-#override the global configuration for a host. 
+#override the global configuration for a host.
 #www.foo.nl does NOT inherit anything
 [www.foo.nl]
 enabled true

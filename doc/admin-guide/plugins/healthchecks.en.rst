@@ -45,7 +45,7 @@ This configuration may contain one or more lines of the format::
 
 .. note:: This configuration is *not* reloadable.
 
-The content of the file specified in the ``file-path``, if any, is sent as the 
+The content of the file specified in the ``file-path``, if any, is sent as the
 body of the response. The existence of the file is sufficient to get an "OK"
 status.  Performance wise, everything is served out of memory, and it only
 stats / opens files as necessary. However, the content of the status file is

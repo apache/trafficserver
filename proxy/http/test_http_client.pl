@@ -24,15 +24,15 @@ use Socket;
 #forward declaration
 sub process_input_http_requests_file($$$);
 sub spawn_http_request($$$);
-sub make_proxy_request($$$$$);					   
+sub make_proxy_request($$$$$);
 sub make_doc_filename($);
 sub make_doc_http_filename($);
 
 
 ###########################################################
-#						   
+#
 # global configuration parameters
-#						   
+#
 ###########################################################
 my ($number_of_users) = 1;
 my ($save_http_doc)   = 0;
@@ -88,7 +88,7 @@ sub process_input_http_requests_file($$$)
 				print $request;
 				spawn_http_request($host_name, $host_port, $request);
 			}
-			$request = "";			
+			$request = "";
 		}
 	}
 	return;
@@ -114,7 +114,7 @@ sub spawn_http_request($$$)
 	}
 	# else, I am the child
 	do_http_request ($hostname, $hostport, $request);
-	exit;	
+	exit;
 }
 ###########################################################
 #
@@ -128,7 +128,7 @@ sub spawn_http_request($$$)
 	my ($iaddr, $paddr, $proto);
 
 	$hostname =~ s/\s//g;
-	
+
 	$iaddr     = inet_aton($hostname)   or die "no host: $hostname", "\n";
 	$paddr     = sockaddr_in($hostport, $iaddr);
 	$proto     = getprotobyname('tcp');
@@ -239,7 +239,7 @@ sub make_proxy_request($$$$$)
 
 	my ($url_prefix) = "http:\/\/$host_name\/";
 	$url_prefix =~ s/\s//g;
-	
+
 	if ($host_port != 80)
 	{
 		$url_prefix .= ":$host_port\/";
@@ -269,23 +269,23 @@ sub make_doc_filename($)
 
 	print $request, "\n";
 	print $host_name, "\n";
-	
+
 	($_, $doc_filename) = split (/ /, $request, 2);
 	#remove scheme://host_name if this is a proxy request
 #	if ($doc_filename =~ m/:\/\//)
 #	{
-#		
+#
 #	}
-#		
+#
 #	@@@@@@@@
-	
+
 	($_, $doc_filename) = split (/\//, $doc_filename, 2);
 	$doc_filename =~ s/\//_/g;
 	#remove any white spaces
 	$doc_filename =~ s/\s//g;
 
 	print "doc name is: ", $doc_filename, "\n";
-	
+
 	if (length($doc_filename) <= 1)
 	{
 		$doc_filename = 'default.html';
@@ -335,7 +335,7 @@ elsif ($#ARGV == 3)
 {
 	my ($infile, $nusers, $proxy_name, $proxy_port) = @ARGV;
 	process_input_http_requests_file($infile, $proxy_name, $proxy_port);
-}	
+}
 
 print "\n";
 exit;

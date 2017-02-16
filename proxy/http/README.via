@@ -1,34 +1,34 @@
       [u<client-stuff> c<cache-lookup-stuff> s<server-stuff> f<cache-fill-stuff> p<proxy-stuff>] e<error-codes>
-     
+
       client stuff
          E    error in request
          I    IMS
          N    no-cache
-         C    cookie		
+         C    cookie
          S    simple request (not conditional)
-     
+
       cache lookup stuff
          M    miss
          A    in cache, not acceptable
          S    in cache, stale
          H    in cache, fresh
          R    in cache, fresh RAM hit
-     
+
       server stuff
          E    error in response
          N    not-modified
          S    served
-     
+
       cache fill stuff
          D    cached copy deleted
          W    written into cache (new copy)
          U    updated cache
-     
+
       proxy stuff
          N    not-modified
          S    served
          R    origin server revalidated
-     
+
       error codes
          N    no error
          A    authorization failure
@@ -40,30 +40,30 @@
          R    cache read error
          S    server related error
          T    connection timed out
-     
+
       For example:
-     
+
       [u lH o  f  pS eN]     cache hit
       [u lM oS fF pS eN]     cache miss
       [uN l oS f  pS eN]     no-cache origin server fetch
-     
+
      -------------------------------------------------------
-     
+
       Then there are the detailed via codes which follow a ":"
-     
+
       t<tunneling information>c<cache type><cache lookup result>i<icp conn info>p<parent proxy conn info>s<server conn info>
-     
+
       tunneling information
          F    tunneling due to a header field (such as presence of If-Range header)
          M    tunneling due to a method (e.g. CONNECT)
          O    tunneling because cache is turned off
          U    tunneling because of url (url suggests dynamic content)
-         
+
       cache type
          C    cache
          L    cluster (not used)
          I    icp
-         
+
       cache lookup result
          N    conditional hit (client sent conditional, fresh in cache, returned 304)
          H    cache hit
@@ -73,7 +73,7 @@
          C    cache hit, but config forces revalidate
          U    cache hit, but client forces revalidate (e.g. Pragma: no-cache)
          D    cache hit, but method forces revalidated (e.g. not anonymous)
-         
+
       icp conn info
          S    connection opened successfully
          F    connection open failed
@@ -85,4 +85,4 @@
       server conn info
          S    connection opened successfully
          F    connection open failed
-     
+

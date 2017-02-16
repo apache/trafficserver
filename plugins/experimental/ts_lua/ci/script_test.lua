@@ -23,11 +23,11 @@ describe("Busted unit testing framework", function()
     it("test - script", function()
       stub(ts.client_request, "set_url_host")
       stub(ts.client_request, "set_url_port")
-      stub(ts.client_request, "set_url_scheme") 
+      stub(ts.client_request, "set_url_scheme")
 
       require("script")
       local result = do_remap()
-      
+
       assert.stub(ts.client_request.set_url_host).was.called_with("192.168.231.130")
       assert.stub(ts.client_request.set_url_port).was.called_with(80)
       assert.stub(ts.client_request.set_url_scheme).was.called_with("http")

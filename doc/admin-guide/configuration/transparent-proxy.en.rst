@@ -64,7 +64,7 @@ proxy, i.e. a connection initiated by the proxy to an origin server
 
 In most situations these two types of transparency are combined, but that is
 not required. Traffic Server supports transparency independently on the two
-sides. 
+sides.
 
 .. important::
 

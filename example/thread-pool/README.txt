@@ -62,7 +62,7 @@ Description
 	</HTML>
  Note that the content of the 'include.txt' file is now inserted into
  the body of the HTML response.
- 
+
 
 Architecture
 ============
@@ -100,7 +100,7 @@ Plugin Installation
  Start TS as usual. Now any HTTP response with the X-Psi headers will be processed
  by the PSI plugin.
 
- 
+
 
 Plugin Testing
 ==============
@@ -123,8 +123,8 @@ Plugin Testing
 
  The synthetic origin server has to be customized in order to send back
  responses that contains the specific 'X-Psi' header.
- This is done through a SDKTest server plugin. 
- 
+ This is done through a SDKTest server plugin.
+
  The rate of responses with X-Psi header is configurable thru a SDKTest config file.
 
  A SDKTest server plugin as well as a SDKTest configuration file

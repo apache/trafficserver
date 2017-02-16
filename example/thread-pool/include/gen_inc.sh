@@ -36,7 +36,7 @@ done
 # docs of size 1.1k, 1.2k, ...,2.0k, ..., 9.9k
 for i in 1 2 3 4 5 6 7 8 9
 do
-    for j in 0 1 2 3 4 5 6 7 8 9 
+    for j in 0 1 2 3 4 5 6 7 8 9
     do
         $GEN ${i}${j}00 > file${i}${j}.txt
     done

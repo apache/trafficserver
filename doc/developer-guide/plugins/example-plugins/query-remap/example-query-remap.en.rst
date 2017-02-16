@@ -66,21 +66,21 @@ the ``tsremap_remap`` function when it is triggered for a request.
       char **hosts;
       int num_hosts;
     } query_remap_info;
-        
-        
+
+
     int tsremap_new_instance(int argc,char *argv[],ihandle *ih,char *errbuf,int errbuf_size)
     {
       int i;
-        
+
       if (argc param_name = strdup(argv[2]);
       qri->param_len = strlen(qri->param_name);
       qri->num_hosts = argc - 3;
       qri->hosts = (char**) TSmalloc(qri->num_hosts*sizeof(char*));
-        
+
       for (i=0; i num_hosts; ++i) {
         qri->hosts[i] = strdup(argv[i+3]);
       }
-        
+
       *ih = (ihandle)qri;
       return 0;
     }
@@ -108,20 +108,20 @@ modify the request host:
     {
       int hostidx = -1;
       query_remap_info *qri = (query_remap_info*)ih;
-        
+
       if (!qri) {
         TSError("[remap] NULL ihandle");
         return 0;
       }
-          
+
       if (rri && rri->request_query && rri->request_query_size > 0) {
         char *q, *s, *key;
-            
+
         //make a copy of the query, as it is read only
         q = (char*) TSmalloc(rri->request_query_size+1);
         strncpy(q, rri->request_query, rri->request_query_size);
         q[rri->request_query_size] = '\0';
-            
+
         s = q;
         //parse query parameters
         for (key = strsep(&s, "&"); key != NULL; key = strsep(&s, "&")) {
@@ -135,9 +135,9 @@ modify the request host:
             break;
           }
         }
-            
+
         TSfree(q);
-            
+
         if (hostidx >= 0) {
           rri->new_host_size = strlen(qri->hosts[hostidx]);
           if (rri->new_host_size new_host, qri->hosts[hostidx], rri->new_host_size);
@@ -145,7 +145,7 @@ modify the request host:
           }
         }
       }
-        
+
       //the request was not modified, TS will use the toURL from the remap rule
       return 0;
     }

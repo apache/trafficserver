@@ -25,15 +25,15 @@ require "url_manip.pl";
 #forward declaration
 
 sub spawn_http_request($$$);
-sub make_proxy_request($$$$$);					   
+sub make_proxy_request($$$$$);
 sub make_doc_filename($);
 sub make_doc_http_filename($);
 
 
 ###########################################################
-#						   
+#
 # global configuration parameters
-#						   
+#
 ###########################################################
 glob ($number_of_users) = 1;
 glob ($save_http_doc)   = 0; #if false (0) don't save a copy
@@ -41,7 +41,7 @@ glob ($save_http_doc)   = 0; #if false (0) don't save a copy
 glob ($method) = "GET";      #method to use in http requests
 
 ###########################################################
-#						   
+#
 # subroutine: compare_files
 #
 # return 0 if files are identical
@@ -82,7 +82,7 @@ sub spawn_task($$$$)
 	}
 	# else, I am the child
 	run_task ($hostname, $hostport, $request);
-	exit;	
+	exit;
 }
 ###########################################################
 #
@@ -91,7 +91,7 @@ sub spawn_task($$$$)
 ###########################################################
 sub run_proxy_keep_alive
 {
-	my ($proxy_host_name, $proxy_port, 
+	my ($proxy_host_name, $proxy_port,
 }
 
 @@@@@@@@@@
@@ -107,7 +107,7 @@ sub do_http_request($$$)
 	my ($iaddr, $paddr, $proto);
 
 	$hostname =~ s/\s//g;
-	
+
 	$iaddr     = inet_aton($hostname)   or die "no host: $hostname", "\n";
 	$paddr     = sockaddr_in($hostport, $iaddr);
 	$proto     = getprotobyname('tcp');
@@ -218,7 +218,7 @@ sub make_proxy_request($$$$$)
 
 	my ($url_prefix) = "http:\/\/$host_name\/";
 	$url_prefix =~ s/\s//g;
-	
+
 	if ($host_port != 80)
 	{
 		$url_prefix .= ":$host_port\/";
@@ -248,23 +248,23 @@ sub make_doc_filename($)
 
 	print $request, "\n";
 	print $host_name, "\n";
-	
+
 	($_, $doc_filename) = split (/ /, $request, 2);
 	#remove scheme://host_name if this is a proxy request
 #	if ($doc_filename =~ m/:\/\//)
 #	{
-#		
+#
 #	}
-#		
+#
 #	@@@@@@@@
-	
+
 	($_, $doc_filename) = split (/\//, $doc_filename, 2);
 	$doc_filename =~ s/\//_/g;
 	#remove any white spaces
 	$doc_filename =~ s/\s//g;
 
 	print "doc name is: ", $doc_filename, "\n";
-	
+
 	if (length($doc_filename) <= 1)
 	{
 		$doc_filename = 'default.html';
@@ -314,7 +314,7 @@ elsif ($#ARGV == 3)
 {
 	my ($infile, $nusers, $proxy_name, $proxy_port) = @ARGV;
 	process_input_http_requests_file($infile, $proxy_name, $proxy_port);
-}	
+}
 
 print "\n";
 exit;

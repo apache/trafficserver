@@ -40,15 +40,15 @@ These types are provided by the compiler ("built-in") or from a required operati
 .. cpp:type:: off_t
 
    `Reference <https://linux.die.net/include/unistd.h>`__.
-   
+
 .. cpp:type:: uint64_t
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
-   
+
 .. cpp:type:: uint32_t
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
-   
+
 .. cpp:type:: uint8_t
 
    `Reference <https://linux.die.net/include/stdint.h>`__.

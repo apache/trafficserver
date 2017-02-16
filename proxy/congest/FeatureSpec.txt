@@ -5,8 +5,8 @@ Feature Name:
 -------------
 	Congestion Control
 
-Synopsis of Feature: 
--------------------- 
+Synopsis of Feature:
+--------------------
 
 The main purpose of this congestion control feature is to keep track
 of which hosts are congested so that TS will not forward requests to
@@ -27,50 +27,50 @@ CASE 1.  Connection Failures:
 (2) A server is marked congested if there are more than M connection failures
     within N seconds.
 
-(3) If a server is marked congested, then TS will not forward requests to it 
+(3) If a server is marked congested, then TS will not forward requests to it
     until Proxy Retry After Time (PRAT) (which is current time + t)
 
 (4) For a request to a congested server before the server's PRAT time, TS sends
     a Retry-After response to tell the client to retry the request after
-    Client Retry After Time (CRAT) (= PRAT - current time + T + a random 
+    Client Retry After Time (CRAT) (= PRAT - current time + T + a random
     interger from 0 to alpha).
 
 (5) For a request to a congested server after the server's PRAT time, TS will
-    try at most m' times to connect to the server, and the timeout is n' 
+    try at most m' times to connect to the server, and the timeout is n'
     seconds for each try.
 
-(6) A congested server will stay dead if TS cannot make a successful 
+(6) A congested server will stay dead if TS cannot make a successful
     connection; otherwise, the server becomes live again.
 
 CASE 2: Maximum Number of Connections
 -------------------------------------
 TS will temporarily mark a server as congested if a "max_connection" number
-to the server is reached. If a new client request comes in and needs a new 
-connection to the server, the client will get 503 Retry-After back. 
+to the server is reached. If a new client request comes in and needs a new
+connection to the server, the client will get 503 Retry-After back.
 There is no PRAT on the "max_connection" reached servers.
 
-Here a server can be identified by IP address (per_ip) or by host name 
-(per_host). For example, www.example.com has two IP addresses, 
+Here a server can be identified by IP address (per_ip) or by host name
+(per_host). For example, www.example.com has two IP addresses,
 209.131.63.206 and 209.131.63.207. If per_ip is used, then each IP address
 has its own number of connection failures, and each IP address will be marked
-congested or not by itself. That is, if 206 is marked congested (but 207 is 
+congested or not by itself. That is, if 206 is marked congested (but 207 is
 not), requests can still be forwarded to 207. On the other hand, if per_host is
 used, then one connection failure to either 206 or 207 will be counted to the
-number if connection failures of host www.example.com. If the host 
+number if connection failures of host www.example.com. If the host
 www.example.com is marked congested, then essentially both 206 and 207 are
-marked congested. 
+marked congested.
 
-We can also use prefix as a secondary specifier to specify the scope of 
-congestion control to sub-host (service) area. For example, 
+We can also use prefix as a secondary specifier to specify the scope of
+congestion control to sub-host (service) area. For example,
    dest_host=www.example.com prefix=/cgi/search.exe
 This rule can detect the stop of the cgi program or database it depends on.
-Each specification has an independent counter. The error of requests to 
-www.example.com/index.html will count independently to the counter of this 
+Each specification has an independent counter. The error of requests to
+www.example.com/index.html will count independently to the counter of this
 line. The prefix=/cgi/ means all requests to the objects under /cgi/ have
-one common counter with specified parameters. It does not mean each URI 
+one common counter with specified parameters. It does not mean each URI
 under the directory has its own counter.
 
-The TS administrator will be able to specify the customizeable error_page, 
+The TS administrator will be able to specify the customizeable error_page,
 the error_page can be customized to return the reason (for example: "The
 site is under maintenance") of congestion for '503'. In the error_page, the
 URL of the page congested, and the Retry-After time can be returned.
@@ -81,8 +81,8 @@ ENGINEERING DESCRIPTION:
 Risk points of feature:
 -----------------------
 
-The set of "origin server connect attempts" configuration varibles in 
-records.config will be affected by this feature. See the following 
+The set of "origin server connect attempts" configuration varibles in
+records.config will be affected by this feature. See the following
 "Requirement on Server Management" and the above "Synopsis of feature"
 sections for more information.
 
@@ -96,7 +96,7 @@ Effect on SDK/API:
 Management Implications:
 -----------------------
 
-<Record Changes> 
+<Record Changes>
 There is one new config variable to enable/disable/test congestion control.
 	proxy.config.http.congestion_control.enabled INT 0|1|2
 	proxy.config.http.congestion_control.filename STRING congestion.config
@@ -105,16 +105,16 @@ There is one new config variable to enable/disable/test congestion control.
 <Statistics Changes>
 1.  Number of congestions because of connection failures
     stat name: proxy.process.congestion.congested_on_conn_failures
-2.  Number of congestions because of max_connection reached 
+2.  Number of congestions because of max_connection reached
     stat name: proxy.process.congestion.congested_on_max_connection
 
 
 <Config File>
-A new .config file "congestion.config" is used to specify the parameters for 
+A new .config file "congestion.config" is used to specify the parameters for
 different servers.
 
-Each rule will have one primary key to identify the servers, the primaries 
-can be 
+Each rule will have one primary key to identify the servers, the primaries
+can be
 	dest_host=
 	dest_domain=
 	dest_ip=
@@ -136,7 +136,7 @@ The tag=value pairs are used to specify the rules:
 	dead_os_conn_timeout=<integer>		//  n'
 	dead_os_conn_retries=<interger>		//  m'
 	max_connection=<integer>		// -1 means unlimited
-	error_page=<page uri>          
+	error_page=<page uri>
 	congestion_scheme=per_ip|per_host
 
 The suggested default values are as follows:
@@ -153,7 +153,7 @@ The suggested default values are as follows:
 	error_page="congestion#retryAfter"
 	congestion_scheme="per_ip"
 
-The above tag values will be used as default if the tag is not specified 
+The above tag values will be used as default if the tag is not specified
 in the rule.
 
 The default values can be overrided by setting the records.config variables
@@ -168,60 +168,60 @@ be affected by this congestion control feature:
 	proxy.config.http.down_server.cache_time
 	proxy.config.http.down_server.abort_threshold
 
-For a request to a server that does not have an applicable rule in 
-congestion.config, the values for these "origins server connect attempts" 
-variables are used by TS. Otherwise, the corresponding values specified 
+For a request to a server that does not have an applicable rule in
+congestion.config, the values for these "origins server connect attempts"
+variables are used by TS. Otherwise, the corresponding values specified
 in congestion.config will override them.
 
 
 <Alarm Changes>
 Add two new alarm types to Traffic Manager:
-1) MGMT_SIGNAL_HTTP_CONGESTED_SERVER  
+1) MGMT_SIGNAL_HTTP_CONGESTED_SERVER
 	used to indicate a congested server
-2) MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER 
+2) MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER
 	used to indicate a congested server is no longer congested
 These alarms are not processed like the other Traffic Manager alarms.
 Whenever these alarms are signalled (even if they are repeat alarms)
 *only* an SNMP trap will be sent. Note, that this means that
 potentially, users can be flooded with SNMP traps if a congested
-server is always signalling an alarm. 
+server is always signalling an alarm.
 
 <Web UI Enhancement>
-For configuration purposes, we will add a new "Congestion Control" tab to the 
-"Configure -> Networking -> Connection Management" section of the web UI.  
+For configuration purposes, we will add a new "Congestion Control" tab to the
+"Configure -> Networking -> Connection Management" section of the web UI.
 Within this tab users can:
 1. enable/disable the congestion control feature
 2. edit the congestion.config file (which will be displayed in a html text box)
 
 
 <Command-Line Interface Enhancement>
-Use the traffic_line command-line interface to retrieve the congestion 
+Use the traffic_line command-line interface to retrieve the congestion
 statistics and monitoring information.
-1. "traffic_line -r <statistic_name>" 
-   Returns the value of the statistic specified 
-2. "traffic_line -q" 
-   Returns a list of currently congested sites (one site per line); 
-   for each congested site, displays the information in the following format: 
+1. "traffic_line -r <statistic_name>"
+   Returns the value of the statistic specified
+2. "traffic_line -q"
+   Returns a list of currently congested sites (one site per line);
+   for each congested site, displays the information in the following format:
    '<time>|<rule #>|<hostname>|<ip_address>|<scheme>|<prefix>|<congestion reason>|<F#>|<M#>'
-	- time : congestion detected time 
+	- time : congestion detected time
 		 in seconds since 00:00:00 UTC, January 1, 1970.
-	- rule # 
+	- rule #
 	- hostname
 	- ip address
 	- scheme: per_ip or per_host
 	- prefix (if none, leave blank)
 	- congestion reason: M or F
-          M - congestion caused by exceeding max connections, 
+          M - congestion caused by exceeding max connections,
 	  F - congestion caused by OS response timeout/failure
         - F#    number of congested requests because of F
         - M#    number of congested requests because of M
 
-NOTE: In order to use "traffic_line -q", raf must be enabled and have a 
+NOTE: In order to use "traffic_line -q", raf must be enabled and have a
       raf port specified. These are the default values used.
 	CONFIG proxy.config.raf.enabled INT 1
 	CONFIG proxy.config.raf.port INT 9000
       If the raf port conflicts with another port, then change it by:
-           traffic_line -s "proxy.config.raf.port" <new-port> 
+           traffic_line -s "proxy.config.raf.port" <new-port>
 
 
 Engineering description of feature:
@@ -235,7 +235,7 @@ CongestEntry{
 	unsigned int ip;
 	int hostname_offset;
 	int prefix_offset;
-	int last_failure; 
+	int last_failure;
 	char fail_history[17];
 	unsigned int congestion_scheme; // per_ip | per_host;
 	unsigned int congested; //0 | 1
@@ -245,13 +245,13 @@ CongestEntry{
 	unsigned long   num_congested;    // reserved for per server stat.
 };
 
-For each server, TS uses an array of 17 entries to record the number of 
-connection failures. Each entry is 16-bit long and records the number of 
-connection failures for 1/16 of the fail_window, for example, for a 
+For each server, TS uses an array of 17 entries to record the number of
+connection failures. Each entry is 16-bit long and records the number of
+connection failures for 1/16 of the fail_window, for example, for a
 fail_window=240 seconds, the granularity of recording is 240/16=15 seconds.
 That is, the first entry records the number of connection failures from time
-t+0 to t+15, and the second entry records the number of connection failures 
-from time t+16 to t+30, and so on. TS will mark the server as congested if 
+t+0 to t+15, and the second entry records the number of connection failures
+from time t+16 to t+30, and so on. TS will mark the server as congested if
 the sum of the 9 entries is greater than the specified max_connection_failures.
 Note that this algorithm will count number of failures in the past 240 to 255
 seconds. For higher accuracy, we need to increase the number of entries.
@@ -262,12 +262,12 @@ Operation:
 
 The following is an overview of the operation of this congestion control
 feature in TS. After parsing a valid request, a TS calls its HostDB module
-to get the HostDBInfo record for the host name. If the host name has more 
-than one IP address, then TS selects one of them as usual. 
+to get the HostDBInfo record for the host name. If the host name has more
+than one IP address, then TS selects one of them as usual.
 Then, TS uses the hostname, the selected IP address, and request URL to lookup
-for the first matched rule in congestion.config. 
+for the first matched rule in congestion.config.
 
-TS will lookup the CongestionDB  
+TS will lookup the CongestionDB
 
 case 1: "congested" is true and
          (current time <= "last_failure" + "proxy_retry_window"):
@@ -282,7 +282,7 @@ case 4: "congested" is false and
 	(current connections < max_connections)
 	TS makes a connection to this non-congested server.
 
-Various timeouts and max_retry numbers are set up according to the matched 
+Various timeouts and max_retry numbers are set up according to the matched
 rule in congestion.config.
 
 If a connection failure is detected, TS updates the CongestionDB record. If it
@@ -294,18 +294,18 @@ Problematic Behavior:
 For a host with multiple nicknames, we night mis-calculate the number
 of failures.
 
-For example, 
+For example,
 	www.berkeley.edu is a nickname for amber.berkeley.edu
-	amber.berkeley.edu has address 128.32.25.12. 
+	amber.berkeley.edu has address 128.32.25.12.
 In this simple case, if you only specify www.berkeley.edu in the rule and use
-per_host scheme, we will miss the info when request use amber.berkeley.edu 
+per_host scheme, we will miss the info when request use amber.berkeley.edu
 as the hostname.
 
-Another problem is with the granularity of connection failure recording. In 
-some cases, TS will mark servers congested which is actually not congested 
+Another problem is with the granularity of connection failure recording. In
+some cases, TS will mark servers congested which is actually not congested
 according to the rules in congestion.config.
 
-TS will not be able to distinguish a original server busy from TS itself 
+TS will not be able to distinguish a original server busy from TS itself
 is busy.
 
 Implementation Limits:
@@ -324,10 +324,10 @@ HttpSM / HttpTransact
 
 KNOWN PROBLEM
 =============
-(1) The config filename for congestion control must be congestion.config, 
+(1) The config filename for congestion control must be congestion.config,
     this is a known bug for TS
-(2) The test case: 
-    proxy.config.http.congestion_control.enabled INT 2 
+(2) The test case:
+    proxy.config.http.congestion_control.enabled INT 2
     is not implemented, due to the limited time for coding
 
 
@@ -336,25 +336,25 @@ TEST DESCRIPTIONS
 
 Test description:
 -----------------
-(1) Enable congestion control and specify rules for a few server in 
-    congestion.config. Then run (existing) tests to verify the 
+(1) Enable congestion control and specify rules for a few server in
+    congestion.config. Then run (existing) tests to verify the
     "origin server connect attempts" configuration variable are still
     working for servers that are not specified in congestion.config.
 (2) Enable congestion control and in congestion.config, specify a rule
     for a server that can be controlled (up/down) and has only one IP
-    address. Verify TS follow the rule for the server by sending requests 
-    for the server thru TS and controlling whether the server is up and 
+    address. Verify TS follow the rule for the server by sending requests
+    for the server thru TS and controlling whether the server is up and
     down.
 (3) Specify a prefix rule and a dest_host rule on the same host, and
     control the service specified by the prefix, check if prefix rule is
     in effect.
-(4) Repeat test (2) with a server with more than one IP address. Both 
+(4) Repeat test (2) with a server with more than one IP address. Both
     congestion schemes (per_ip and per_host) should be tested.
 
-(5) Test all possiable conbinations of rules. Check the error_page and 
+(5) Test all possiable conbinations of rules. Check the error_page and
     error logs.
 
-(6) Kill one of the servers that connected to TS, hence the server is 
+(6) Kill one of the servers that connected to TS, hence the server is
     "congested". Ensure the congested alarm is signaled (check the
     WebUI) and a SNMP trap is sent Re-start the dead
     server, hence the server is alive. Ensure the alleviated alarm is
@@ -386,31 +386,31 @@ long format
 
 	- time : congestion detected time
 		 in seconds since 00:00:00 UTC, January 1, 1970.
-	- rule # 
+	- rule #
 	- hostname
 	- ip address
 	- scheme: per_ip or per_host
 	- prefix (if none, leave blank)
 	- congestion reason: M or F
-          M - congestion caused by exceeding max connections, 
+          M - congestion caused by exceeding max connections,
 	  F - congestion caused by OS response timeout/failure
         - F#    number of congested requests because of F
         - M#    number of congested requests because of M
 	- key: the internal key in congestion control table
-	- local/GMT time:  YYYY/MM/DD hh:mm:ss 
+	- local/GMT time:  YYYY/MM/DD hh:mm:ss
 		CONFIG proxy.config.http.congestion_control.localtime INT 1 //localtime format
 		CONFIG proxy.config.http.congestion_control.localtime INT 0 //GMT format
 
 
 *** telnet localhost <Raf port>
-0 congest list  
+0 congest list
 		-- list congested servers at the moment (short format)
 0 congest list long [0-4]
 		-- list congested servers at the moment (long format)
 0 query deadhosts
 		-- list congested servers at the moment
 
-0 congest remove key=XXXXXXXXXXXXXX {key=XXXXXXXXXXXXXX} 
+0 congest remove key=XXXXXXXXXXXXXX {key=XXXXXXXXXXXXXX}
 		-- remove the entries whose keys are listed
 		   manual activate the congested server
 

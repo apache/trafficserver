@@ -1,4 +1,4 @@
 This gzip is not compiled, but only here to be able to diff later
-with the official gzip plugin. It is very slightly modified no 
-be able to disable caching of its compressed output through a 
+with the official gzip plugin. It is very slightly modified no
+be able to disable caching of its compressed output through a
 response header

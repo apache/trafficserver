@@ -45,5 +45,5 @@ foreach $func (@funcs)
     print $result;
 }
 
-	
-	
+
+

@@ -41,7 +41,7 @@ use constant {
 
 __END__
 
-#-=-=-=-=-=-=-=-= Give us some POD please =-=-=-=-=-=-=-=- 
+#-=-=-=-=-=-=-=-= Give us some POD please =-=-=-=-=-=-=-=-
 
 =head1 NAME:
 
@@ -87,4 +87,4 @@ the sub-modules as well as scripts.
 
 =cut
 
-#-=-=-=-=-=-=-=-= No more POD for you =-=-=-=-=-=-=-=- 
+#-=-=-=-=-=-=-=-= No more POD for you =-=-=-=-=-=-=-=-

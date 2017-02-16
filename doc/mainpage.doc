@@ -7,7 +7,7 @@
 /** @mainpage
 
    @section intro Introduction
-   
+
    Traffic Server is an efficient caching proxy. Traffic Server provides
    an extensible plug-in architecture, allowing properties to modify
    its behavior when necessary.

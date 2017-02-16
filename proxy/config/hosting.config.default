@@ -4,7 +4,7 @@
 # Documentation:
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/hosting.config.en.html
 #
-# The purpose of this file is to specify the volumes that 
+# The purpose of this file is to specify the volumes that
 # specific hostnames or domains should be stored in.
 #
 # Each line consists of a set of tag value pairs.  The pairs
@@ -19,13 +19,13 @@
 #
 # Available directives are:
 # volume=  (comma separated list of volumes)
-#  
-# All requests that 
-# don't belong to the list of hostnames in this file go to the 
+#
+# All requests that
+# don't belong to the list of hostnames in this file go to the
 # volumes specified with the hostname or domain name = '*'
-# 
-# For example: to store all inktomi objects in volume 2 
+#
+# For example: to store all inktomi objects in volume 2
 # hostname=www.example.com  volume=2
 # To direct all other requests to volumes 3 and 4
 # hostname=*	volume=3,4
-#  
+#
