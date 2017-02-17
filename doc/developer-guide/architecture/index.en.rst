@@ -40,4 +40,4 @@ understanding and modifying the source.
    consistency.en
    ram-cache.en
    tiered-storage.en
-
+   memview.en

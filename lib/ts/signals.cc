@@ -46,7 +46,7 @@ signal_check_handler(int signal, signal_handler_t handler)
     sigact = (void *)oact.sa_sigaction;
   }
 
-  if (sigact != handler) {
+  if (sigact != (void *)handler) {
     Warning("handler for signal %d was %p, not %p as expected", signal, sigact, handler);
     return false;
   }

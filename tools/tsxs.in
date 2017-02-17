@@ -55,8 +55,9 @@ $0 : a tool to compile, link and install trafficserver plugins.
 Compilation and Linking Options:
 -o modulename.so                        ## the name of the module
 -I include                              ## add -Iinclude to CFLAGS
--L library path				## add -Lpath to LDFLAGS
+-L library path                         ## add -Lpath to LDFLAGS
 -l library                              ## add -llib to the LDFLAGS
+-v                                      ## verbose, turn on debugging
 
 Installation Options:
 -o modulename.so                        ## the name of the module

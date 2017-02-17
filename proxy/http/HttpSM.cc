@@ -1308,8 +1308,24 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
     if (c->handler_state != HTTP_SM_TRANSFORM_FAIL) {
       t_info->vc = nullptr;
     }
-    tunnel.kill_tunnel();
-    call_transact_and_set_next_state(HttpTransact::HandleApiErrorJump);
+    if (c->producer->vc_type == HT_HTTP_CLIENT) {
+      /* Producer was the user agent and there was a failure transforming the POST.
+         Handling this is challenging and this isn't the best way but it at least
+         avoids a crash due to trying to send a response to a NULL'd out user agent.
+         The problem with not closing the user agent is handling draining of the
+         rest of the POST - the user agent may well not check for a response until that's
+         done in which case we can get a deadlock where the user agent never reads the
+         error response because the POST wasn't drained and the buffers filled up.
+         Draining has a potential bad impact on any pipelining which must be considered.
+         If we're not going to drain properly the next best choice is to shut down the
+         entire state machine since (1) there's no point in finishing the POST to the
+         origin and (2) there's no user agent connection to which to send the error response.
+      */
+      terminate_sm = true;
+    } else {
+      tunnel.kill_tunnel();
+      call_transact_and_set_next_state(HttpTransact::HandleApiErrorJump);
+    }
     break;
   default:
     ink_release_assert(0);
