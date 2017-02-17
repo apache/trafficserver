@@ -410,6 +410,7 @@ struct OverridableHttpConfigParams {
       flow_control_enabled(0),
       normalize_ae_gzip(0),
       srv_enabled(0),
+      parent_failures_update_hostdb(0),
       cache_open_write_fail_action(0),
       post_check_content_length_enabled(1),
       redirection_enabled(0),
@@ -563,6 +564,7 @@ struct OverridableHttpConfigParams {
   // hostdb/dns variables //
   //////////////////////////
   MgmtByte srv_enabled;
+  MgmtByte parent_failures_update_hostdb;
 
   MgmtByte cache_open_write_fail_action;
 
