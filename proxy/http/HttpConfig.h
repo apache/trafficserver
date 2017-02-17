@@ -402,6 +402,7 @@ struct OverridableHttpConfigParams {
       flow_control_enabled(0),
       accept_encoding_filter_enabled(0),
       normalize_ae_gzip(0),
+      parent_failures_update_hostdb(0),
       negative_caching_lifetime(1800),
       negative_revalidating_lifetime(1800),
       sock_recv_buffer_size_out(0),
@@ -554,6 +555,11 @@ struct OverridableHttpConfigParams {
   // Optimize gzip alternates   //
   ////////////////////////////////
   MgmtByte normalize_ae_gzip;
+
+  //////////////////////////
+  // hostdb/dns variables //
+  //////////////////////////
+  MgmtByte parent_failures_update_hostdb;
 
   ////////////////////////////////
   //  Negative cache lifetimes  //

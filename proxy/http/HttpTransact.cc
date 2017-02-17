@@ -3603,7 +3603,11 @@ HttpTransact::handle_response_from_parent(State *s)
       ink_assert(s->hdr_info.server_request.valid());
 
       s->current.server->connect_result = ENOTCONN;
-      s->state_machine->do_hostdb_update_if_necessary();
+      // only mark the parent down in hostdb if the configuration allows it,
+      // see proxy.config.http.parent_proxy.mark_down_hostdb in records.config.
+      if (s->txn_conf->parent_failures_update_hostdb) {
+        s->state_machine->do_hostdb_update_if_necessary();
+      }
 
       char addrbuf[INET6_ADDRSTRLEN];
       DebugTxn("http_trans", "[%d] failed to connect to parent %s", s->current.attempts,
