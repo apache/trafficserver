@@ -31,7 +31,9 @@ namespace tag
 struct bytes;
 }
 
-namespace ApacheTrafficServer
+using namespace ApacheTrafficServer;
+
+namespace ts
 {
 constexpr static uint8_t CACHE_DB_MAJOR_VERSION = 24;
 /// Maximum allowed volume index.

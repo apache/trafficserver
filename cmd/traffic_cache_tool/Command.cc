@@ -27,7 +27,7 @@
 #include <string.h>
 #include <sstream>
 
-namespace ApacheTrafficServer
+namespace ts
 {
 int CommandTable::_opt_idx = 0;
 

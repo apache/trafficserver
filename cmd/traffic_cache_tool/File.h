@@ -28,7 +28,7 @@
 #include <sys/stat.h>
 #include <ts/MemView.h>
 
-namespace ApacheTrafficServer
+namespace ts
 {
 /** A file class for supporting path operations.
  */

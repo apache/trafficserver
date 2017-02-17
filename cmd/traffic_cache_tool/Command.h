@@ -29,7 +29,7 @@
 
 #if !defined(CACHE_TOOL_COMMAND_H)
 #define CACHE_TOOL_COMMAND_H
-namespace ApacheTrafficServer
+namespace ts
 {
 // Because in C+11 std::max is not constexpr
 template <typename I>

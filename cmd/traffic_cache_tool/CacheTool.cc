@@ -38,18 +38,6 @@
 #include "CacheDefs.h"
 #include "Command.h"
 
-// Sigh, a hack for now. We already have "ts" defined as a namespace in various places so for now
-// just import the Full Name namespace in to 'ts' rather than direct 'namespace ts = ApachTrafficServer'
-namespace ts
-{
-using namespace ApacheTrafficServer;
-}
-
-namespace ApacheTrafficServer
-{
-const Bytes CacheSpan::OFFSET{CacheStoreBlocks{1}};
-}
-
 using ts::Bytes;
 using ts::Megabytes;
 using ts::CacheStoreBlocks;
@@ -58,8 +46,7 @@ using ts::CacheStripeDescriptor;
 using ts::Errata;
 using ts::FilePath;
 
-using ts::round_up;
-using ts::round_down;
+const Bytes ts::CacheSpan::OFFSET{CacheStoreBlocks{1}};
 
 namespace
 {

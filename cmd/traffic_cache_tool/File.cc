@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-namespace ApacheTrafficServer
+namespace ts
 {
 FilePath &
 FilePath::operator=(char const *path)
