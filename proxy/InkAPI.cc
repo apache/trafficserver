@@ -7979,6 +7979,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->transaction_active_timeout_in;
     break;
+  case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
+    ret = &overridableHttpConfig->parent_failures_update_hostdb;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8521,6 +8524,11 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 
   case 47:
     switch (name[length - 1]) {
+    case 'b':
+      if (!strncmp(name, "proxy.config.http.parent_proxy.mark_down_hostdb", length)) {
+        cnf = TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB;
+      }
+      break;
     case 'd':
       if (!strncmp(name, "proxy.config.http.negative_revalidating_enabled", length))
         cnf = TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED;

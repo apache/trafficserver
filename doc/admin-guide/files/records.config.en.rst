@@ -1075,6 +1075,15 @@ Parent Proxy Configuration
 
    The timeout value (in seconds) for parent cache connection attempts.
 
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.mark_down_hostdb INT 0
+   :reloadable:
+   :overridable:
+
+   Enables (``1``) or disables (``0``) marking parent proxies down in hostdb when a connection
+   error is detected.  Normally parent selection manages parent proxies and will mark them as unavailable
+   as needed.  But when parents are defined in dns with multiple ip addresses, it may be useful to mark the
+   failing ip down in hostdb.  In this case you would enable these updates.
+
 .. ts:cv:: CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
    :reloadable:
    :overridable:
