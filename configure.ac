@@ -783,7 +783,7 @@ case $host_os_def in
       #
       #  #873 is "has no corresponding operator delete"
       common_opt="-pipe -Wall -wd873"
-      debug_opt="-ggdb3 $common_opt"
+      debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     ])
