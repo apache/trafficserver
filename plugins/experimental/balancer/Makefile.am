@@ -17,6 +17,6 @@
 include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = balancer.la
-balancer_la_SOURCES = balancer.cc roundrobin.cc hash.cc balancer.h
+balancer_la_SOURCES = balancer.cc roundrobin.cc balancer.h roundrobin.h
 balancer_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 

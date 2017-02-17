@@ -392,6 +392,8 @@ main_handler(TSCont cont, TSEvent event, void *edata)
   time_t date = 0, now = 0;
   char *url = NULL;
   int url_len = 0;
+  TSMBuffer buf;
+  TSMLoc url_loc;
 
   switch (event) {
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
@@ -405,8 +407,11 @@ main_handler(TSCont cont, TSEvent event, void *edata)
             now = time(NULL);
           }
           if ((difftime(iptr->epoch, date) >= 0) && (difftime(iptr->expiry, now) >= 0)) {
-            if (!url)
-              url = TSHttpTxnEffectiveUrlStringGet(txn, &url_len);
+            if (!url && (TSHttpTxnPristineUrlGet(txn,&buf,&url_loc) == TS_SUCCESS)) {
+              url = TSUrlStringGet(buf,url_loc,&url_len);
+              TSHandleMLocRelease(buf, TS_NULL_MLOC, url_loc);
+            }
+
             if (pcre_exec(iptr->regex, iptr->regex_extra, url, url_len, 0, 0, NULL, 0) >= 0) {
               TSHttpTxnCacheLookupStatusSet(txn, TS_CACHE_LOOKUP_HIT_STALE);
               iptr = NULL;
