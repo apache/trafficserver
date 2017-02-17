@@ -477,7 +477,7 @@ IOBufferBlock::set(IOBufferData *d, int64_t len, int64_t offset)
   data = d;
   _start = buf() + offset;
   _end = _start + len;
-  _buf_end = _start + d->block_size();
+  _buf_end = buf() + d->block_size();
 }
 
 TS_INLINE void
