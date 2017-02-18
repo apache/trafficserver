@@ -229,23 +229,19 @@ textBuffer::readFromFD(int fd)
   }
 }
 
-char *
-textBuffer::bufPtr()
-{
-  return bufferStart;
-}
-
 void
-textBuffer::format(const char *fmt, ...)
+textBuffer::vformat(const char *fmt, va_list ap)
 {
-  va_list ap;
-  bool done = false;
-
-  do {
+  for (bool done = false; !done;) {
     int num;
 
-    va_start(ap, fmt);
-    num = vsnprintf(this->nextAdd, this->spaceLeft, fmt, ap);
+    // Copy the args in case the buffer isn't big enough and we need to
+    // try again. Vsnprintf modifies the va_list on each pass.
+    va_list args;
+    va_copy(args, ap);
+
+    num = vsnprintf(this->nextAdd, this->spaceLeft, fmt, args);
+
     va_end(ap);
 
     if ((unsigned)num < this->spaceLeft) {
@@ -260,8 +256,17 @@ textBuffer::format(const char *fmt, ...)
         return;
       }
     }
+  }
+}
 
-  } while (!done);
+void
+textBuffer::format(const char *fmt, ...)
+{
+  va_list ap;
+
+  va_start(ap, fmt);
+  vformat(fmt, ap);
+  va_end(ap);
 }
 
 void
