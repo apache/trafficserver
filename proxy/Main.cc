@@ -207,7 +207,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"command", 'C', "Maintenance Command to Execute\n"
                    "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, help",
    "S511", &command_string, "PROXY_COMMAND_STRING", nullptr},
-  {"conf_dir", 'D', "config dir to verify", "S511", &conf_dir, "PROXY_SYS_CONFIG_DIR", nullptr},
+  {"conf_dir", 'D', "config dir to verify", "S511", &conf_dir, "PROXY_CONFIG_CONFIG_DIR", nullptr},
   {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", nullptr},
   {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", nullptr},
   {"bind_stdout", '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", nullptr},
