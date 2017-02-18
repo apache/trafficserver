@@ -597,8 +597,10 @@ cmd_list(char * /* cmd ATS_UNUSED */)
 
   Note("Cache Storage:");
   Store tStore;
-  if (tStore.read_config() != nullptr) {
-    Note("config read failure");
+  Result result = tStore.read_config();
+
+  if (result.failed()) {
+    Note("Failed to read cache storage configuration: %s", result.message());
     return CMD_FAILED;
   } else {
     tStore.write_config_data(fileno(stdout));

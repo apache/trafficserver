@@ -3285,10 +3285,9 @@ ink_cache_init(ModuleVersion v)
 
   REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
 
-  const char *err = nullptr;
-  if ((err = theCacheStore.read_config())) {
-    printf("Failed to read cache storage configuration - %s\n", err);
-    exit(1);
+  Result result = theCacheStore.read_config();
+  if (result.failed()) {
+    Fatal("Failed to read cache storage configuration: %s", result.message());
   }
 }
 

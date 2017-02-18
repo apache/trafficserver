@@ -32,6 +32,7 @@
 #define _Store_h_
 
 #include "ts/ink_platform.h"
+#include "ts/Result.h"
 
 #define STORE_BLOCK_SIZE 8192
 #define STORE_BLOCK_SHIFT 13
@@ -258,12 +259,9 @@ struct Store {
   // The number of disks/paths we could actually read and parse.
   unsigned n_disks;
   Span **disk;
-  //
-  // returns nullptr on success
-  // if fd >= 0 then on failure it returns an error string
-  //            otherwise on failure it returns (char *)-1
-  //
-  const char *read_config();
+
+  Result read_config();
+
   int write_config_data(int fd) const;
 
   /// Additional configuration key values.
