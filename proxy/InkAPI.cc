@@ -8100,7 +8100,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret = &overridableHttpConfig->body_factory_template_base;
     break;
   case TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION:
-    typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->cache_open_write_fail_action;
     break;
   case TS_CONFIG_HTTP_ENABLE_REDIRECTION:
@@ -8149,11 +8148,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret = &overridableHttpConfig->transaction_active_timeout_in;
     break;
   case TS_CONFIG_SRV_ENABLED:
-    typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->srv_enabled;
     break;
   case TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD:
-    typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->forward_connect_method;
     break;
   case TS_CONFIG_SSL_CERT_FILENAME:
