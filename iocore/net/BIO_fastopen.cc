@@ -33,6 +33,7 @@
 //
 // The following is copied from
 // https://github.com/openssl/openssl/blob/3befffa39dbaf2688d823fcf2bdfc07d2487be48/crypto/bio/bss_sock.c
+// Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
 #ifndef HAVE_BIO_SOCK_NON_FATAL_ERROR
 int
 BIO_sock_non_fatal_error(int err)
