@@ -196,7 +196,7 @@ public:
   SplitDNSRecord();
   ~SplitDNSRecord();
 
-  config_parse_error Init(matcher_line *line_info);
+  Result Init(matcher_line *line_info);
 
   const char *ProcessDNSHosts(char *val);
   const char *ProcessDomainSrchList(char *val);

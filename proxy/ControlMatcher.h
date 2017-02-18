@@ -90,6 +90,7 @@
 #include "ts/DynArray.h"
 #include "ts/ink_hash_table.h"
 #include "ts/IpMap.h"
+#include "ts/Result.h"
 #include "ts/MatcherUtils.h"
 
 #include "ts/ink_apidefs.h"
@@ -172,7 +173,7 @@ public:
   ~UrlMatcher();
   void Match(RequestData *rdata, MatchResult *result);
   void AllocateSpace(int num_entries);
-  config_parse_error NewEntry(matcher_line *line_info);
+  Result NewEntry(matcher_line *line_info);
   void Print();
 
   int
@@ -204,7 +205,7 @@ public:
   ~RegexMatcher();
   void Match(RequestData *rdata, MatchResult *result);
   void AllocateSpace(int num_entries);
-  config_parse_error NewEntry(matcher_line *line_info);
+  Result NewEntry(matcher_line *line_info);
   void Print();
 
   int
@@ -242,7 +243,7 @@ public:
   ~HostMatcher();
   void Match(RequestData *rdata, MatchResult *result);
   void AllocateSpace(int num_entries);
-  config_parse_error NewEntry(matcher_line *line_info);
+  Result NewEntry(matcher_line *line_info);
   void Print();
 
   int
@@ -278,7 +279,7 @@ public:
   ~IpMatcher();
   void Match(sockaddr const *ip_addr, RequestData *rdata, MatchResult *result);
   void AllocateSpace(int num_entries);
-  config_parse_error NewEntry(matcher_line *line_info);
+  Result NewEntry(matcher_line *line_info);
   void Print();
 
   int

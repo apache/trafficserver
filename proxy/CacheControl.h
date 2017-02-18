@@ -34,7 +34,7 @@
 #include "Main.h"
 #include "P_EventSystem.h"
 #include "ControlBase.h"
-#include "ts/MatcherUtils.h"
+#include "ts/Result.h"
 
 struct RequestData;
 
@@ -126,7 +126,7 @@ public:
   CacheControlType directive;
   int time_arg;
   int cache_responses_to_cookies;
-  config_parse_error Init(matcher_line *line_info);
+  Result Init(matcher_line *line_info);
   inkcoreapi void UpdateMatch(CacheControlResult *result, RequestData *rdata);
   void Print();
 };

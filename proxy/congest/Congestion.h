@@ -32,6 +32,7 @@
 #define CONGESTION_H_
 
 #include "ts/ink_platform.h"
+#include "ts/Result.h"
 #include "P_EventSystem.h"
 #include "ControlBase.h"
 #include "ControlMatcher.h"
@@ -65,13 +66,13 @@ public:
   CongestionControlRecord();
   CongestionControlRecord(const CongestionControlRecord &rec);
   ~CongestionControlRecord();
-  config_parse_error Init(matcher_line *line_info);
+  Result Init(matcher_line *line_info);
   void UpdateMatch(CongestionControlRule *pRule, RequestData *rdata);
   void Print();
 
   void cleanup();
   void setdefault();
-  config_parse_error validate();
+  Result validate();
 
   int rank; // matching preference
             /*
