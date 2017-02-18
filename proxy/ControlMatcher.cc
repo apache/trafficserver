@@ -180,7 +180,7 @@ HostMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
 }
 
 //
-// config_parse_error HostMatcher<Data,MatchResult>::NewEntry(bool domain_record,
+// Result HostMatcher<Data,MatchResult>::NewEntry(bool domain_record,
 //          char* match_data, char* match_info, int line_num)
 //
 //   Creates a new host/domain record
@@ -190,11 +190,11 @@ HostMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
 //     that the caller MUST DEALLOCATE
 //
 template <class Data, class MatchResult>
-config_parse_error
+Result
 HostMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
   Data *cur_d;
-  config_parse_error error = config_parse_error::ok();
+  Result error = Result::ok();
   char *match_data;
 
   // Make sure space has been allocated
@@ -217,7 +217,7 @@ HostMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   // Fill in the parameter info
   cur_d = data_array + num_el;
   error = cur_d->Init(line_info);
-  if (error) {
+  if (error.failed()) {
     // There was a problem so undo the effects this function
     memset(cur_d, 0, sizeof(Data));
   } else {
@@ -299,16 +299,16 @@ UrlMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
 }
 
 //
-// config_parse_error UrlMatcher<Data,MatchResult>::NewEntry(matcher_line* line_info)
+// Result UrlMatcher<Data,MatchResult>::NewEntry(matcher_line* line_info)
 //
 template <class Data, class MatchResult>
-config_parse_error
+Result
 UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
   Data *cur_d;
   char *pattern;
   int *value;
-  config_parse_error error = config_parse_error::ok();
+  Result error = Result::ok();
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -323,7 +323,7 @@ UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   ink_assert(pattern != nullptr);
 
   if (ink_hash_table_lookup(url_ht, pattern, (void **)&value)) {
-    return config_parse_error("%s url expression error (have exist) at line %d position", matcher_name, line_info->line_num);
+    return Result::failure("%s url expression error (have exist) at line %d position", matcher_name, line_info->line_num);
   }
 
   // Remove our consumed label from the parsed line
@@ -333,7 +333,7 @@ UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   // Fill in the parameter info
   cur_d = data_array + num_el;
   error = cur_d->Init(line_info);
-  if (error) {
+  if (error.failed()) {
     url_str[num_el]   = ats_strdup(pattern);
     url_value[num_el] = num_el;
     ink_hash_table_insert(url_ht, url_str[num_el], (void *)&url_value[num_el]);
@@ -440,17 +440,17 @@ RegexMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
 }
 
 //
-// config_parse_error RegexMatcher<Data,MatchResult>::NewEntry(matcher_line* line_info)
+// Result RegexMatcher<Data,MatchResult>::NewEntry(matcher_line* line_info)
 //
 template <class Data, class MatchResult>
-config_parse_error
+Result
 RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
   Data *cur_d;
   char *pattern;
   const char *errptr;
   int erroffset;
-  config_parse_error error = config_parse_error::ok();
+  Result error = Result::ok();
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -467,8 +467,8 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   // Create the compiled regular expression
   re_array[num_el] = pcre_compile(pattern, 0, &errptr, &erroffset, nullptr);
   if (!re_array[num_el]) {
-    return config_parse_error("%s regular expression error at line %d position %d : %s", matcher_name, line_info->line_num,
-                              erroffset, errptr);
+    return Result::failure("%s regular expression error at line %d position %d : %s", matcher_name, line_info->line_num, erroffset,
+                           errptr);
   }
   re_str[num_el] = ats_strdup(pattern);
 
@@ -480,7 +480,7 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   cur_d = data_array + num_el;
   error = cur_d->Init(line_info);
 
-  if (error) {
+  if (error.failed()) {
     // There was a problem so undo the effects this function
     ats_free(re_str[num_el]);
     re_str[num_el] = nullptr;
@@ -619,7 +619,7 @@ IpMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
 }
 
 //
-// config_parse_error IpMatcher<Data,MatchResult>::NewEntry(matcher_line* line_info)
+// Result IpMatcher<Data,MatchResult>::NewEntry(matcher_line* line_info)
 //
 //    Inserts a range the ip lookup table.
 //        Creates new table levels as needed
@@ -629,14 +629,14 @@ IpMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
 //     for deallocating
 //
 template <class Data, class MatchResult>
-config_parse_error
+Result
 IpMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
   Data *cur_d;
   const char *errptr;
   char *match_data;
   IpEndpoint addr1, addr2;
-  config_parse_error error = config_parse_error::ok();
+  Result error = Result::ok();
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -654,7 +654,7 @@ IpMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   // Extract the IP range
   errptr = ExtractIpRange(match_data, &addr1.sa, &addr2.sa);
   if (errptr != nullptr) {
-    return config_parse_error("%s %s at %s line %d", matcher_name, errptr, file_name, line_info->line_num);
+    return Result::failure("%s %s at %s line %d", matcher_name, errptr, file_name, line_info->line_num);
   }
 
   // Remove our consumed label from the parsed line
@@ -664,7 +664,7 @@ IpMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   // Fill in the parameter info
   cur_d = data_array + num_el;
   error = cur_d->Init(line_info);
-  if (!error) {
+  if (!error.failed()) {
     ip_map.mark(&addr1.sa, &addr2.sa, cur_d);
     ++num_el;
   }
@@ -842,8 +842,9 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
 
       if (errptr != nullptr) {
         if (config_tags != &socks_server_tags) {
-          config_parse_error error("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errptr);
-          SignalError(error.get(), alarmAlready);
+          Result error =
+            Result::failure("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errptr);
+          SignalError(error.message(), alarmAlready);
         }
         ats_free(current);
       } else {
@@ -919,7 +920,7 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
   // Traverse the list and build the records table
   current = first;
   while (current != nullptr) {
-    config_parse_error error = config_parse_error::ok();
+    Result error = Result::ok();
 
     second_pass++;
     if ((flags & ALLOW_HOST_TABLE) && current->type == MATCH_DOMAIN) {
@@ -935,14 +936,14 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
     } else if ((flags & ALLOW_HOST_REGEX_TABLE) && current->type == MATCH_HOST_REGEX) {
       error = hrMatch->NewEntry(current);
     } else {
-      error = config_parse_error("%s discarding %s entry with unknown type at line %d", matcher_name, config_file_path,
-                                 current->line_num);
+      error =
+        Result::failure("%s discarding %s entry with unknown type at line %d", matcher_name, config_file_path, current->line_num);
     }
 
     // Check to see if there was an error in creating
     //   the NewEntry
-    if (error) {
-      SignalError(error.get(), alarmAlready);
+    if (error.failed()) {
+      SignalError(error.message(), alarmAlready);
     }
 
     // Deallocate the parsing structure

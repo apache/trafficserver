@@ -428,7 +428,7 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
    matcher_line* line_info - contains parsed label/value pairs
    of the current split.config line
    -------------------------------------------------------------- */
-config_parse_error
+Result
 SplitDNSRecord::Init(matcher_line *line_info)
 {
   const char *errPtr = nullptr;
@@ -447,7 +447,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
 
     if (strcasecmp(label, "def_domain") == 0) {
       if (nullptr != (errPtr = ProcessDefDomain(val))) {
-        return config_parse_error("%s %s at line %d", modulePrefix, errPtr, line_num);
+        return Result::failure("%s %s at line %d", modulePrefix, errPtr, line_num);
       }
       line_info->line[0][i] = nullptr;
       line_info->num_el--;
@@ -456,7 +456,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
 
     if (strcasecmp(label, "search_list") == 0) {
       if (nullptr != (errPtr = ProcessDomainSrchList(val))) {
-        return config_parse_error("%s %s at line %d", modulePrefix, errPtr, line_num);
+        return Result::failure("%s %s at line %d", modulePrefix, errPtr, line_num);
       }
       line_info->line[0][i] = nullptr;
       line_info->num_el--;
@@ -465,7 +465,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
 
     if (strcasecmp(label, "named") == 0) {
       if (nullptr != (errPtr = ProcessDNSHosts(val))) {
-        return config_parse_error("%s %s at line %d", modulePrefix, errPtr, line_num);
+        return Result::failure("%s %s at line %d", modulePrefix, errPtr, line_num);
       }
       line_info->line[0][i] = nullptr;
       line_info->num_el--;
@@ -474,7 +474,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
   }
 
   if (!ats_is_ip(&m_servers.x_server_ip[0].sa)) {
-    return config_parse_error("%s No server specified in splitdns.config at line %d", modulePrefix, line_num);
+    return Result::failure("%s No server specified in splitdns.config at line %d", modulePrefix, line_num);
   }
 
   DNSHandler *dnsH  = new DNSHandler;
@@ -484,8 +484,8 @@ SplitDNSRecord::Init(matcher_line *line_info)
   if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_dnsSrvr_cnt, dns_search, m_servers.x_def_domain,
                           m_servers.x_domain_srch_list, nullptr))) {
     char ab[INET6_ADDRPORTSTRLEN];
-    return config_parse_error("Failed to build res record for the servers %s ...",
-                              ats_ip_ntop(&m_servers.x_server_ip[0].sa, ab, sizeof ab));
+    return Result::failure("Failed to build res record for the servers %s ...",
+                           ats_ip_ntop(&m_servers.x_server_ip[0].sa, ab, sizeof ab));
   }
 
   dnsH->m_res = res;
@@ -503,11 +503,11 @@ SplitDNSRecord::Init(matcher_line *line_info)
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
     if (tmp != nullptr) {
-      return config_parse_error("%s %s at line %d in splitdns.config", modulePrefix, tmp, line_num);
+      return Result::failure("%s %s at line %d in splitdns.config", modulePrefix, tmp, line_num);
     }
   }
 
-  return config_parse_error::ok();
+  return Result::ok();
 }
 
 /* --------------------------------------------------------------

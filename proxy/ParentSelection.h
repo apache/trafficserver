@@ -133,7 +133,7 @@ public:
 
   ~ParentRecord();
 
-  config_parse_error Init(matcher_line *line_info);
+  Result Init(matcher_line *line_info);
   bool DefaultInit(char *val);
   void UpdateMatch(ParentResult *result, RequestData *rdata);
   void Print();

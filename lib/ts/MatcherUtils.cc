@@ -37,22 +37,6 @@
 #include "ts/MatcherUtils.h"
 #include "ts/Tokenizer.h"
 
-config_parse_error::config_parse_error(const char *fmt, ...)
-{
-  va_list ap;
-  int num;
-
-  va_start(ap, fmt);
-  num = vsnprintf(nullptr, 0, fmt, ap);
-  va_end(ap);
-
-  this->msg = (char *)ats_malloc(num + 1);
-
-  va_start(ap, fmt);
-  vsnprintf(&this->msg[0], num + 1, fmt, ap);
-  va_end(ap);
-}
-
 // char* readIntoBuffer(const char* file_path, const char* module_name,
 //                          int* read_size_ptr)
 //

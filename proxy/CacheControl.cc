@@ -239,7 +239,7 @@ CacheControlRecord::Print()
   ControlBase::Print();
 }
 
-// config_parse_error CacheControlRecord::Init(matcher_line* line_info)
+// Result CacheControlRecord::Init(matcher_line* line_info)
 //
 //    matcher_line* line_info - contains parsed label/value
 //      pairs of the current cache.config line
@@ -248,7 +248,7 @@ CacheControlRecord::Print()
 //      Otherwise, returns an error string that the caller MUST
 //        DEALLOCATE with free()
 //
-config_parse_error
+Result
 CacheControlRecord::Init(matcher_line *line_info)
 {
   int time_in;
@@ -272,7 +272,7 @@ CacheControlRecord::Init(matcher_line *line_info)
       char *ptr = nullptr;
       int v     = strtol(val, &ptr, 0);
       if (!ptr || v < 0 || v > 4) {
-        return config_parse_error("Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES " must be an integer in the range 0..4");
+        return Result::failure("Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES " must be an integer in the range 0..4");
       } else {
         cache_responses_to_cookies = v;
       }
@@ -316,7 +316,7 @@ CacheControlRecord::Init(matcher_line *line_info)
         directive = CC_IGNORE_SERVER_NO_CACHE;
         d_found   = true;
       } else {
-        return config_parse_error("%s Invalid action at line %d in cache.config", modulePrefix, line_num);
+        return Result::failure("%s Invalid action at line %d in cache.config", modulePrefix, line_num);
       }
     } else {
       if (strcasecmp(label, "revalidate") == 0) {
@@ -336,7 +336,7 @@ CacheControlRecord::Init(matcher_line *line_info)
           this->time_arg = time_in;
 
         } else {
-          return config_parse_error("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
+          return Result::failure("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
         }
       }
     }
@@ -350,18 +350,18 @@ CacheControlRecord::Init(matcher_line *line_info)
   }
 
   if (d_found == false) {
-    return config_parse_error("%s No directive in cache.config at line %d", modulePrefix, line_num);
+    return Result::failure("%s No directive in cache.config at line %d", modulePrefix, line_num);
   }
   // Process any modifiers to the directive, if they exist
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
 
     if (tmp != nullptr) {
-      return config_parse_error("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
+      return Result::failure("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
     }
   }
 
-  return config_parse_error::ok();
+  return Result::ok();
 }
 
 // void CacheControlRecord::UpdateMatch(CacheControlResult* result, RequestData* rdata)
