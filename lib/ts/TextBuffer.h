@@ -35,22 +35,47 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_apidefs.h"
 
+#include <stdarg.h>
+
 class textBuffer
 {
 public:
-  inkcoreapi textBuffer(int size);
-  inkcoreapi ~textBuffer();
+  textBuffer() {}
+  textBuffer(const textBuffer &rhs)
+  {
+    if (!rhs.empty()) {
+      copyFrom(rhs.bufPtr(), rhs.spaceUsed());
+    }
+  }
+
+  textBuffer(int size);
+  ~textBuffer();
+
   int rawReadFromFile(int fd);
   int readFromFD(int fd);
-  inkcoreapi int copyFrom(const void *, unsigned num_bytes);
+  int copyFrom(const void *, unsigned num_bytes);
   void reUse();
-  inkcoreapi char *bufPtr();
+  void chomp();
+  void slurp(int);
+
+  char *
+  bufPtr()
+  {
+    return bufferStart;
+  }
+
+  const char *
+  bufPtr() const
+  {
+    return bufferStart;
+  }
 
   void
   clear()
   {
     this->reUse();
   }
+
   void
   resize(unsigned nbytes)
   {
@@ -63,24 +88,24 @@ public:
     return (size_t)(nextAdd - bufferStart);
   };
 
-  void chomp();
-  void slurp(int);
   bool
   empty() const
   {
     return this->spaceUsed() == 0;
   }
+
   void format(const char *fmt, ...) TS_PRINTFLIKE(2, 3);
+  void vformat(const char *fmt, va_list ap);
 
   char *release();
 
 private:
-  textBuffer(const textBuffer &);
   int enlargeBuffer(unsigned N);
-  size_t currentSize;
-  size_t spaceLeft;
-  char *bufferStart;
-  char *nextAdd;
+
+  size_t currentSize = 0;
+  size_t spaceLeft   = 0;
+  char *bufferStart  = nullptr;
+  char *nextAdd      = nullptr;
 };
 
 #endif

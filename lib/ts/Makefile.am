@@ -56,68 +56,27 @@ libtsutil_la_SOURCES = \
   ConsistentHash.h \
   ContFlags.cc \
   ContFlags.h \
+  defalloc.h \
   Diags.cc \
   Diags.h \
-  SourceLocation.h \
-  SourceLocation.cc \
   DynArray.h \
   EventNotify.cc \
   EventNotify.h \
+  fastlz.c \
+  fastlz.h \
   Hash.cc \
-  Hash.h \
   HashFNV.cc \
   HashFNV.h \
+  Hash.h \
   HashMD5.cc \
   HashMD5.h \
   HashSip.cc \
   HashSip.h \
   HostLookup.cc \
   HostLookup.h \
-  INK_MD5.h \
-  I_Layout.h \
-  I_Version.h \
-  InkErrno.h \
-  InkErrno.cc \
-  IntrusiveDList.h \
-  IpMap.cc \
-  IpMap.h \
-  IpMapConf.cc \
-  IpMapConf.h \
-  Layout.cc \
-  List.h \
-  MMH.cc \
-  MMH.h \
-  Map.h \
-  MatcherUtils.cc \
-  MatcherUtils.h \
-  ParseRules.cc \
-  ParseRules.h \
-  PriorityQueue.h \
-  Ptr.h \
-  RawHashTable.cc \
-  RawHashTable.h \
-  RbTree.cc \
-  RbTree.h \
-  Regex.cc \
-  Regex.h \
-  Regression.cc \
-  Regression.h \
-  SimpleTokenizer.h \
-  TestBox.h \
-  TextBuffer.cc \
-  TextBuffer.h \
-  Tokenizer.cc \
-  Tokenizer.h \
-  Trie.h \
-  TsBuffer.h \
-  Vec.cc \
-  Vec.h \
-  Version.cc \
-  defalloc.h \
-  fastlz.c \
-  fastlz.h \
   hugepages.cc \
   hugepages.h \
+  I_Layout.h \
   ink_aiocb.h \
   ink_align.h \
   ink_apidefs.h \
@@ -134,6 +93,8 @@ libtsutil_la_SOURCES = \
   ink_code.h \
   ink_defs.cc \
   ink_defs.h \
+  InkErrno.cc \
+  InkErrno.h \
   ink_error.cc \
   ink_error.h \
   ink_exception.h \
@@ -148,6 +109,7 @@ libtsutil_la_SOURCES = \
   ink_inout.h \
   ink_llqueue.h \
   ink_lockfile.h \
+  INK_MD5.h \
   ink_memory.cc \
   ink_memory.h \
   ink_mutex.cc \
@@ -171,10 +133,10 @@ libtsutil_la_SOURCES = \
   ink_sprintf.h \
   ink_stack_trace.cc \
   ink_stack_trace.h \
-  ink_string++.cc \
-  ink_string++.h \
   ink_string.cc \
+  ink_string++.cc \
   ink_string.h \
+  ink_string++.h \
   ink_sys_control.cc \
   ink_sys_control.h \
   ink_syslog.cc \
@@ -185,11 +147,50 @@ libtsutil_la_SOURCES = \
   ink_time.h \
   ink_uuid.cc \
   ink_uuid.h \
+  IntrusiveDList.h \
+  IpMap.cc \
+  IpMapConf.cc \
+  IpMapConf.h \
+  IpMap.h \
+  I_Version.h \
+  Layout.cc \
+  List.h \
   llqueue.cc \
   lockfile.cc \
+  Map.h \
+  MatcherUtils.cc \
+  MatcherUtils.h \
+  MemView.h MemView.cc \
+  MMH.cc \
+  MMH.h \
+  ParseRules.cc \
+  ParseRules.h \
+  PriorityQueue.h \
+  Ptr.h \
+  RawHashTable.cc \
+  RawHashTable.h \
+  RbTree.cc \
+  RbTree.h \
+  Regex.cc \
+  Regex.h \
+  Regression.cc \
+  Regression.h \
+  Result.h \
   signals.cc \
   signals.h \
-  MemView.h MemView.cc \
+  SimpleTokenizer.h \
+  SourceLocation.cc \
+  SourceLocation.h \
+  TestBox.h \
+  TextBuffer.cc \
+  TextBuffer.h \
+  Tokenizer.cc \
+  Tokenizer.h \
+  Trie.h \
+  TsBuffer.h \
+  Vec.cc \
+  Vec.h \
+  Version.cc \
   X509HostnameValidator.cc \
   X509HostnameValidator.h
 
