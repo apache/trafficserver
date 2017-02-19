@@ -697,12 +697,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
     // blind tunnel
     if ((event == VC_EVENT_READ_READY || event == VC_EVENT_EOS) && state == PARSE_RESULT_ERROR) {
       do_blind_tunnel = true;
-
-      // If we had a GET request that has data after the
-      // get request, do blind tunnel
-    } else if (state == PARSE_RESULT_DONE && t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET &&
-               ua_buffer_reader->read_avail() > 0 && !t_state.hdr_info.client_request.is_keep_alive_set()) {
-      do_blind_tunnel = true;
     }
     if (do_blind_tunnel) {
       DebugSM("http", "[%" PRId64 "] first request on connection failed parsing, switching to passthrough.", sm_id);
