@@ -805,7 +805,7 @@ HttpTransact::EndRemapRequest(State *s)
       TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, nullptr);
     }
 
-    if (!s->http_config_param->url_remap_required && !incoming_request->is_target_in_url()) {
+    if (!s->http_config_param->url_remap_required && !incoming_request->is_target_in_url() && !s->client_info.is_transparent) {
       s->hdr_info.client_request.set_url_target_from_host_field();
     }
 
@@ -7845,10 +7845,12 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
       DebugTxn("http_trans", "[build_request] adding target to URL for parent proxy");
       outgoing_request->set_url_target_from_host_field();
     }
-  } else if (s->next_hop_scheme == URL_WKSIDX_HTTP || s->next_hop_scheme == URL_WKSIDX_HTTPS ||
-             s->next_hop_scheme == URL_WKSIDX_WS || s->next_hop_scheme == URL_WKSIDX_WSS) {
+  } else if (!(s->client_info.is_transparent && base_request->is_target_in_url()) &&
+             (s->next_hop_scheme == URL_WKSIDX_HTTP || s->next_hop_scheme == URL_WKSIDX_HTTPS ||
+             s->next_hop_scheme == URL_WKSIDX_WS || s->next_hop_scheme == URL_WKSIDX_WSS)) {
     // Otherwise, remove the URL target from HTTP and Websocket URLs since certain origins
-    // cannot deal with absolute URLs.
+    // cannot deal with absolute URLs. But if the connection is transparent and the target 
+    // is in the URL - keep it there.
     DebugTxn("http_trans", "[build_request] removing host name from url");
     HttpTransactHeaders::remove_host_name_from_url(outgoing_request);
   }
