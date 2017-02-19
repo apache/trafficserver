@@ -174,12 +174,6 @@ public:
     return "http";
   }
 
-  virtual bool
-  is_transparent_passthrough_allowed() const
-  {
-    return f_transparent_passthrough;
-  }
-  
 private:
   Http1ClientSession(Http1ClientSession &);
 
