@@ -34,7 +34,6 @@
 
 static int arg_index = 0;
 
-
 // The policy type is the first comma-separated token.
 static RoundRobinBalancer *
 MakeBalancerInstance(const char *opt) {
@@ -109,17 +108,19 @@ static TSReturnCode look_up_handle (TSCont contp, TSHttpTxn txnp, BalancerTarget
 
 	int obj_status;
 	RoundRobinBalancer *balancer = (RoundRobinBalancer *)TSHttpTxnArgGet((TSHttpTxn)txnp, arg_index);
-	if ( NULL == targetstatus || balancer == NULL) {
-		return TS_ERROR;
-	}
+
+    if (balancer == NULL) {
+        return TS_ERROR;
+    }
 
 	 if (TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) == TS_ERROR) {
 	   TSError("[%s]  [%s] Couldn't get cache status of object",PLUGIN_NAME, __FUNCTION__);
 	    return TS_ERROR;
 	 }
 	 TSDebug(PLUGIN_NAME, "look_up_handle  obj_status = %d\n",obj_status);
-	 targetstatus->object_status = obj_status;
-	 //排除 hit_fresh 和 hit_stale的情况，不需要回源
+     if (targetstatus)
+	    targetstatus->object_status = obj_status;
+	 //排除 hit_fresh，不需要回源
 	 if (obj_status == TS_CACHE_LOOKUP_HIT_FRESH) {
 		 return TS_ERROR;
 	 }
@@ -153,8 +154,16 @@ static TSReturnCode look_up_handle (TSCont contp, TSHttpTxn txnp, BalancerTarget
 		 return TS_ERROR;
 	 }
 
-	 TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
-	 TSDebug(PLUGIN_NAME, "add TS_HTTP_SEND_RESPONSE_HDR_HOOK");
+    if(!balancer->get_health_check_tag()) {
+        return TS_ERROR;
+    }
+
+    if ( NULL == targetstatus) {
+        return TS_ERROR;
+    }
+
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+    TSDebug(PLUGIN_NAME, "add TS_HTTP_SEND_RESPONSE_HDR_HOOK");
 
 	if (targetstatus && targetstatus->target_down && !targetstatus->is_down_check)
 		return TS_SUCCESS;
@@ -167,10 +176,10 @@ static TSReturnCode look_up_handle (TSCont contp, TSHttpTxn txnp, BalancerTarget
  * reason:  we need modify origin request URL's path, if we need.
  **/
 static TSReturnCode
-rewrite_send_request_path(TSHttpTxn txnp, BalancerTargetStatus *targetstatus)
+rewrite_send_request_path(TSHttpTxn txnp)
 {
 	RoundRobinBalancer *balancer = (RoundRobinBalancer *)TSHttpTxnArgGet((TSHttpTxn)txnp, arg_index);
-	if ( NULL == targetstatus || balancer == NULL) {
+	if (balancer == NULL) {
 		return TS_ERROR;
 	}
 
@@ -227,9 +236,14 @@ rewrite_send_request_path(TSHttpTxn txnp, BalancerTargetStatus *targetstatus)
  */
 static void balancer_handler(TSCont contp, TSEvent event, void *edata) {
 	TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-	BalancerTargetStatus *targetstatus;
-	targetstatus = (struct BalancerTargetStatus *) TSContDataGet(contp);
-	RoundRobinBalancer *balancer = (RoundRobinBalancer *)TSHttpTxnArgGet((TSHttpTxn)txnp, arg_index);
+    RoundRobinBalancer *balancer = (RoundRobinBalancer *)TSHttpTxnArgGet((TSHttpTxn)txnp, arg_index);
+    BalancerTargetStatus *targetstatus;
+    targetstatus = NULL;
+    if (balancer && balancer->get_health_check_tag()) {
+        targetstatus = (struct BalancerTargetStatus *) TSContDataGet(contp);
+    }
+
+
 	TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
 	switch (event) {
@@ -239,7 +253,7 @@ static void balancer_handler(TSCont contp, TSEvent event, void *edata) {
 		}
 		break;
 	case TS_EVENT_HTTP_SEND_REQUEST_HDR:
-		rewrite_send_request_path(txnp, targetstatus);
+		rewrite_send_request_path(txnp);
 		break;
 	case TS_EVENT_HTTP_SEND_RESPONSE_HDR://放在lookup 里添加
 		if (send_response_handle(txnp, targetstatus) == TS_ERROR) {
@@ -261,14 +275,16 @@ static void balancer_handler(TSCont contp, TSEvent event, void *edata) {
 
 ///////////////////////////////////////////////////////////////////////////////
 // One instance per remap.config invocation.
-//
+//@pparam=--policy=roundrobin,26308ac61a2e9ea3cdc922/  @pparam=origin.xxx.net,0,1,3,10
+//@pparam=--https @pparam=--policy=roundrobin @pparam=--open  @pparam=xxx.xxx.net:443
 TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **instance,
 		char *errbuf, int errbuf_size) {
 	static const struct option longopt[] = { { const_cast<char *>("policy"),
-			required_argument, 0, 'p' }, { const_cast<char *>("https"),no_argument, 0, 's' }, { 0, 0, 0, 0 } };
+			required_argument, 0, 'p' }, { const_cast<char *>("https"),no_argument, 0, 's' }, { const_cast<char *>("open"),no_argument, 0, 'o' }, { 0, 0, 0, 0 } };
 
 	RoundRobinBalancer *balancer = NULL;
 	bool need_https_backend = false;
+    bool need_health_check = false;
 
 	// The first two arguments are the "from" and "to" URL string. We need to
 	// skip them, but we also require that there be an option to masquerade as
@@ -288,6 +304,9 @@ TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **instance,
 		case 's':
 			need_https_backend = true;
 			break;
+        case 'o':
+            need_health_check = true;
+            break;
 		case -1:
 			break;
 		default:
@@ -306,7 +325,7 @@ TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **instance,
 		return TS_ERROR;
 	}
 
-	balancer->set_https_backend_tag(need_https_backend);
+	balancer->set_backend_tag(need_https_backend, need_health_check);
 	// Pick up the remaining options as balance targets.
 	uint s_count = 0;
 	int i;
@@ -356,6 +375,18 @@ TSRemapStatus TSRemapDoRemap(void *instance, TSHttpTxn txn,TSRemapRequestInfo *r
 	if (target->port) {
 		TSUrlPortSet(rri->requestBufp, rri->requestUrl, target->port);
 	}
+
+    if (!balancer->get_health_check_tag()) {
+        if (NULL == (txn_contp = TSContCreate((TSEventFunc) balancer_handler, NULL))) {
+            TSError("[%s] TSContCreate(): failed to create the transaction handler continuation.", PLUGIN_NAME);
+            balancer->release();
+        } else {
+            TSHttpTxnArgSet((TSHttpTxn)txn, arg_index, (void *) balancer);
+            TSHttpTxnHookAdd(txn, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_contp);
+            TSHttpTxnHookAdd(txn, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
+        }
+        return TSREMAP_DID_REMAP;
+    }
 
 	BalancerTargetStatus *targetstatus;
 	targetstatus = (BalancerTargetStatus *) TSmalloc(sizeof(BalancerTargetStatus));

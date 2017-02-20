@@ -69,6 +69,11 @@ void RoundRobinBalancer::push_target(BalancerTarget *target) {
 //获取一个后端
 BalancerTarget * RoundRobinBalancer::balance(TSHttpTxn, TSRemapRequestInfo *) {
 	BalancerTarget *peer;
+
+	if (!this->get_health_check_tag()) {
+		goto roundrobin;
+	}
+
 	time_t now;
 	now = TShrtime() / TS_HRTIME_SECOND;
 
@@ -94,7 +99,8 @@ BalancerTarget * RoundRobinBalancer::balance(TSHttpTxn, TSRemapRequestInfo *) {
 		return peer;
 	}
 
-	failed: if (!targets_b.empty()) {
+failed:
+	if (!targets_b.empty()) {
 //			TSDebug(PLUGIN_NAME, "backup targets is not NULL !");
 		if (peersB_number == OS_SINGLE) {
 			if (targets_b[0]->down) {
@@ -111,9 +117,11 @@ BalancerTarget * RoundRobinBalancer::balance(TSHttpTxn, TSRemapRequestInfo *) {
 		}
 	}
 
-	clear_fails: clean_peer_status();
+clear_fails:
+	clean_peer_status();
 	//当所有服务都down的时候，进入轮询模式,(主备都需要轮询,尽快找出健康的os)
 	//该状态下的target 都不会回源（除了hit_stale）
+roundrobin:
 	++next;
 	next = (next == UINT64_MAX ? 0 : next);
 	if (peersB_number && (next % 2)) {    //主备选择

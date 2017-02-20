@@ -68,12 +68,17 @@ public:
 		return this->path;
 	}
 
-	void set_https_backend_tag(bool is_need) {
+	void set_backend_tag(bool is_need, bool is_need_health_check) {
 		this->need_https_backend = is_need;
+		this->need_health_check = is_need_health_check;
 	}
 
 	bool get_https_backend_tag() {
 		return this->need_https_backend;
+	}
+
+	bool get_health_check_tag() {
+		return this->need_health_check;
 	}
 
 private:
@@ -85,6 +90,7 @@ private:
 	unsigned next;
 	char *path;
 	bool need_https_backend;
+	bool need_health_check;
 	volatile int _ref_count;
 };
 
