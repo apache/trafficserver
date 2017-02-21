@@ -618,7 +618,7 @@ main(int argc, const char **argv)
   // so we append the outputlog location to the persistent proxy options
   //
   // TS needs them to be able to create BaseLogFiles for each value
-  textBuffer args(1024);
+  TextBuffer args(1024);
 
   if (*bind_stdout) {
     const char *space = args.empty() ? "" : " ";

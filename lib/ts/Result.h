@@ -65,7 +65,7 @@ struct Result {
   }
 
 private:
-  textBuffer buf;
+  TextBuffer buf;
 };
 
 #endif /* RESULT_H_77147E59_67CF_4DD7_A58D_ED3502981E87 */

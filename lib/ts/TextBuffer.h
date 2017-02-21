@@ -37,19 +37,19 @@
 
 #include <stdarg.h>
 
-class textBuffer
+class TextBuffer
 {
 public:
-  textBuffer() {}
-  textBuffer(const textBuffer &rhs)
+  TextBuffer() {}
+  TextBuffer(const TextBuffer &rhs)
   {
     if (!rhs.empty()) {
       copyFrom(rhs.bufPtr(), rhs.spaceUsed());
     }
   }
 
-  textBuffer(int size);
-  ~textBuffer();
+  TextBuffer(int size);
+  ~TextBuffer();
 
   int rawReadFromFile(int fd);
   int readFromFD(int fd);

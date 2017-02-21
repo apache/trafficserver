@@ -253,7 +253,7 @@ done:
 }
 
 static void
-backtrace_for_thread(pid_t threadid, textBuffer &text)
+backtrace_for_thread(pid_t threadid, TextBuffer &text)
 {
   int status;
   unw_addr_space_t addr_space = NULL;
@@ -337,7 +337,7 @@ ServerBacktrace(unsigned /* options */, char **trace)
   // traceable without privilege because the process credentials do not match.
   ElevateAccess access(ElevateAccess::TRACE_PRIVILEGE);
   threadlist threads(threads_for_process(lmgmt->watched_process_pid));
-  textBuffer text(0);
+  TextBuffer text(0);
 
   Debug("backtrace", "tracing %zd threads for traffic_server PID %ld", threads.count(), (long)lmgmt->watched_process_pid);
 
@@ -723,7 +723,7 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   const char *fname;
   Rollback *file_rb;
   int ret, old_file_len;
-  textBuffer *old_file_content;
+  TextBuffer *old_file_content;
   char *old_file_lines;
   version_t ver;
 
@@ -747,10 +747,10 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   old_file_lines = old_file_content->bufPtr();
   old_file_len   = strlen(old_file_lines);
 
-  *text = ats_strdup(old_file_lines); // make copy before deleting textBuffer
+  *text = ats_strdup(old_file_lines); // make copy before deleting TextBuffer
   *size = old_file_len;
 
-  delete old_file_content; // delete textBuffer
+  delete old_file_content; // delete TextBuffer
 
   return TS_ERR_OKAY;
 }
@@ -772,7 +772,7 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
 {
   const char *fname;
   Rollback *file_rb;
-  textBuffer *file_content;
+  TextBuffer *file_content;
   int ret;
   version_t ver;
 
@@ -799,7 +799,7 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
     }
   }
   // use rollback object to update file with new content
-  file_content = new textBuffer(size + 1);
+  file_content = new TextBuffer(size + 1);
   ret          = file_content->copyFrom(text, size);
   if (ret < 0) {
     delete file_content;

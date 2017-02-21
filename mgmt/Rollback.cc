@@ -174,7 +174,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
 
     // Make sure that we have a backup of the file
     if (highestSeen == 0) {
-      textBuffer *version0 = nullptr;
+      TextBuffer *version0 = nullptr;
       char failStr[]       = "[Rollback::Rollback] Automatic Roll of Version 1 failed: %s";
       if (getVersion_ml(ACTIVE_VERSION, &version0) != OK_ROLLBACK) {
         mgmt_log(failStr, fileName);
@@ -316,7 +316,7 @@ Rollback::closeFile(int fd, bool callSync)
 }
 
 RollBackCodes
-Rollback::updateVersion(textBuffer *buf, version_t basedOn, version_t newVersion, bool notifyChange, bool incVersion)
+Rollback::updateVersion(TextBuffer *buf, version_t basedOn, version_t newVersion, bool notifyChange, bool incVersion)
 {
   RollBackCodes returnCode;
 
@@ -328,7 +328,7 @@ Rollback::updateVersion(textBuffer *buf, version_t basedOn, version_t newVersion
 }
 
 RollBackCodes
-Rollback::updateVersion_ml(textBuffer *buf, version_t basedOn, version_t newVersion, bool notifyChange, bool incVersion)
+Rollback::updateVersion_ml(TextBuffer *buf, version_t basedOn, version_t newVersion, bool notifyChange, bool incVersion)
 {
   RollBackCodes returnCode;
 
@@ -342,7 +342,7 @@ Rollback::updateVersion_ml(textBuffer *buf, version_t basedOn, version_t newVers
 }
 
 RollBackCodes
-Rollback::forceUpdate(textBuffer *buf, version_t newVersion)
+Rollback::forceUpdate(TextBuffer *buf, version_t newVersion)
 {
   RollBackCodes r;
 
@@ -354,7 +354,7 @@ Rollback::forceUpdate(textBuffer *buf, version_t newVersion)
 }
 
 RollBackCodes
-Rollback::forceUpdate_ml(textBuffer *buf, version_t newVersion)
+Rollback::forceUpdate_ml(TextBuffer *buf, version_t newVersion)
 {
   return this->internalUpdate(buf, newVersion);
 }
@@ -364,7 +364,7 @@ Rollback::forceUpdate_ml(textBuffer *buf, version_t newVersion)
 //  Creates a version from buf.  Callee must be holding the lock
 //
 RollBackCodes
-Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChange, bool incVersion)
+Rollback::internalUpdate(TextBuffer *buf, version_t newVersion, bool notifyChange, bool incVersion)
 {
   RollBackCodes returnCode;
   char *activeVersion;
@@ -505,7 +505,7 @@ UPDATE_CLEANUP:
 }
 
 RollBackCodes
-Rollback::getVersion(version_t version, textBuffer **buffer)
+Rollback::getVersion(version_t version, TextBuffer **buffer)
 {
   RollBackCodes r;
 
@@ -518,13 +518,13 @@ Rollback::getVersion(version_t version, textBuffer **buffer)
 
 // CALLEE DELETES STORAGE
 RollBackCodes
-Rollback::getVersion_ml(version_t version, textBuffer **buffer)
+Rollback::getVersion_ml(version_t version, TextBuffer **buffer)
 {
   int diskFD;               // file descriptor for version of the file we are fetching
   RollBackCodes returnCode; // our eventual return value
   struct stat fileInfo;     // Info from fstat
   int readResult;           // return val of (indirect) read calls
-  textBuffer *newBuffer;    // return buffer
+  TextBuffer *newBuffer;    // return buffer
 
   *buffer = nullptr;
 
@@ -544,7 +544,7 @@ Rollback::getVersion_ml(version_t version, textBuffer **buffer)
     goto GET_CLEANUP;
   }
   // Create a textbuffer of the
-  newBuffer = new textBuffer(fileInfo.st_size + 1);
+  newBuffer = new TextBuffer(fileInfo.st_size + 1);
 
   do {
     readResult = newBuffer->readFromFD(diskFD);
@@ -602,7 +602,7 @@ RollBackCodes
 Rollback::revertToVersion_ml(version_t version)
 {
   RollBackCodes returnCode;
-  textBuffer *revertTo;
+  TextBuffer *revertTo;
 
   returnCode = this->getVersion_ml(version, &revertTo);
   if (returnCode != OK_ROLLBACK) {
@@ -891,7 +891,7 @@ Rollback::checkForUserUpdate(RollBackCheckType how)
 
   // Variables to roll the current version
   version_t currentVersion_local;
-  textBuffer *buf;
+  TextBuffer *buf;
   RollBackCodes r;
 
   ink_mutex_acquire(&fileAccessLock);

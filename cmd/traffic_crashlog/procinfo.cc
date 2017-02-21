@@ -55,7 +55,7 @@ static bool
 write_procfd_file(const char *filename, const char *label, FILE *fp, const crashlog_target &target)
 {
   ats_scoped_fd fd;
-  textBuffer text(0);
+  TextBuffer text(0);
   fd = procfd_open(target.pid, filename);
   if (fd != -1) {
     text.slurp(fd);
@@ -117,7 +117,7 @@ crashlog_write_procname(FILE *fp, const crashlog_target &target)
 {
   ats_scoped_fd fd;
   ats_scoped_str str;
-  textBuffer text(0);
+  TextBuffer text(0);
 
   fd = procfd_open(target.pid, "comm");
   if (fd != -1) {

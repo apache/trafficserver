@@ -621,7 +621,7 @@ ats_tcp_somaxconn()
 
   fd = open("/proc/sys/net/ipv4/tcp_max_syn_backlog", O_RDONLY);
   if (fd != -1) {
-    textBuffer text(0);
+    TextBuffer text(0);
     text.slurp(fd);
     if (!text.empty()) {
       value = strtoul(text.bufPtr(), nullptr, 10);

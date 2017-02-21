@@ -80,8 +80,8 @@ RecErrT RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data
 RecErrT RecReadStatsFile();
 RecErrT RecSyncStatsFile();
 RecErrT RecReadConfigFile(bool inc_version);
-RecErrT RecWriteConfigFile(textBuffer *tb);
-RecErrT RecSyncConfigToTB(textBuffer *tb, bool *inc_version = nullptr);
+RecErrT RecWriteConfigFile(TextBuffer *tb);
+RecErrT RecSyncConfigToTB(TextBuffer *tb, bool *inc_version = nullptr);
 
 //-------------------------------------------------------------------------
 // Misc

@@ -171,12 +171,12 @@ struct config_update_cont : public Continuation {
 // sync_cont
 //-------------------------------------------------------------------------
 struct sync_cont : public Continuation {
-  textBuffer *m_tb;
+  TextBuffer *m_tb;
 
   sync_cont(ProxyMutex *m) : Continuation(m)
   {
     SET_HANDLER(&sync_cont::sync);
-    m_tb = new textBuffer(65536);
+    m_tb = new TextBuffer(65536);
   }
 
   ~sync_cont()

@@ -50,12 +50,12 @@ MultiFile::MultiFile()
   dirDescript = nullptr;
 }
 
-// void MultiFile::addTableEntries(ExpandingArray* fileList, textBuffer* output)
+// void MultiFile::addTableEntries(ExpandingArray* fileList, TextBuffer* output)
 //
 //   Adds table entries to output from the result of WalkFiles
 //
 void
-MultiFile::addTableEntries(ExpandingArray *fileList, textBuffer *output)
+MultiFile::addTableEntries(ExpandingArray *fileList, TextBuffer *output)
 {
   int numFiles = fileList->getNumEntries();
   fileEntry *current;
@@ -152,7 +152,7 @@ MultiFile::isManaged(const char *fileName)
 }
 
 void
-MultiFile::addSelectOptions(textBuffer *output, ExpandingArray *options)
+MultiFile::addSelectOptions(TextBuffer *output, ExpandingArray *options)
 {
   const char selectEnd[]  = "</select>\n";
   const char option[]     = "\t<option value='";
