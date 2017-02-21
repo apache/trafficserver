@@ -242,7 +242,7 @@ textBuffer::vformat(const char *fmt, va_list ap)
 
     num = vsnprintf(this->nextAdd, this->spaceLeft, fmt, args);
 
-    va_end(ap);
+    va_end(args);
 
     if ((unsigned)num < this->spaceLeft) {
       // We had enough space to format including the NUL. Since the returned character
