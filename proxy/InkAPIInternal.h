@@ -36,17 +36,12 @@
 #include "api/ts/InkAPIPrivateIOCore.h"
 #include "api/ts/experimental.h"
 
+#include <typeinfo>
+
 /* Some defines that might be candidates for configurable settings later.
  */
 #define HTTP_SSN_TXN_MAX_USER_ARG 16 /* max number of user arguments for Transactions and Sessions */
 
-typedef enum {
-  OVERRIDABLE_TYPE_NULL = 0,
-  OVERRIDABLE_TYPE_INT,
-  OVERRIDABLE_TYPE_FLOAT,
-  OVERRIDABLE_TYPE_STRING,
-  OVERRIDABLE_TYPE_BYTE
-} OverridableDataType;
 typedef int8_t TSMgmtByte; // Not for external use
 
 /* ****** Cache Structure ********* */
