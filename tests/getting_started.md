@@ -40,12 +40,28 @@ Autest allows for the creation of extension to help specilaize and simplify test
 
 This command line argument will point to your build of ATS you want to test. At this time v6.0 or newer of Trafficserver should work.
 
-###MakeATSProcess(name,command=[traffic_server],select_ports=[True])
+### MakeATSProcess(name,command=[traffic_server],select_ports=[True])
  * name - A name for this instance of ATS
  * command - optional argument defining what process to use. Defaults to traffic_server.
  * select_ports - have the testing system auto select the ports to use for this instance of ATS
 
-This function will return a AuTest process object that will have a number of files and variables define for making it easier to define a test.
+This function will define a sandbox for an instance of trafficserver to run under. The function will return a AuTest process object that will have a number of files and variables define for making it easier to define a test.
+
+#### Environment
+The environment of the process will have a number of added environment variables to control trafficserver running the in the sandbox location correctly. This can be used to easily setup other commands that should run under same environment.
+
+##### Example
+
+```python
+# Define default ATS
+ts=Test.MakeATSProcess("ts")
+# Call traffic_ctrl to set new generation
+tr=Test.AddTestRun()
+tr.Processes.Default.Command='traffic_ctl'
+tr.Processes.Default.ReturnCode=0
+# set the environment for traffic_control to run in to be the same as the "ts" ATS instance
+tr.Processes.Default.Env=ts.Env 
+```
 
 #### Variables
 These are the current variable that are define dynamically 
@@ -127,34 +143,6 @@ ts.Disk.remap_config.AddLines([
         ])
 ```
 
-## Setup Origin Server
-###Test.MakeOriginServer(Name)
- * name - A name for this instance of Origin Server.
- 
- This function returns a AuTest process object that launches the python-based microserver. Micro-Server is a mock server which responds to client http requests. Microserver needs to be setup for the tests that require an origin server behind ATS. The server reads a JSON-formatted data file that contains request headers and the corresponding response headers. Microserver responds with payload if the response header contains Content-Length or Transfer-Enconding specified.
- 
-###addResponse(filename, request_header, response_header)
-* filename - name of the file where the request header and response header will be written to in JSON format
-* request_header - dictionary of request header
-* response_header - dictionary of response header corresponding to the request header.
-
-This function adds the request header and response header to a file which is then read by the microserver to populate request-response map. The key-fields required for the header dictionary are 'headers', 'timestamp' and 'body'.
-
-###Example
-```python
-#create the origin server process
-server=Test.MakeOriginServer("server")
-#define the request header and the desired response header
-request_header={"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-#desired response form the origin server
-response_header={"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-#addResponse adds the transaction to a file which is used by the server
-server.addResponse("sessionlog.json", request_header, response_header)
-#add remap rule to traffic server
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-```
 ### CopyConfig(file, targetname=None, process=None)
 * file - name of the file to copy. Relative paths are relative from the test file location
 * targetname - the name name of the file when copied to the correct configuration location
@@ -179,3 +167,31 @@ Test.Setup.ts.CopyConfig('config/records_8090.config','records.config',ts1)
 Test.Setup.ts.CopyConfig('config/records_8090.config','records.config',Test.Processes.ts1)
 ```
 
+## Setup Origin Server
+### Test.MakeOriginServer(Name)
+ * name - A name for this instance of Origin Server.
+ 
+ This function returns a AuTest process object that launches the python-based microserver. Micro-Server is a mock server which responds to client http requests. Microserver needs to be setup for the tests that require an origin server behind ATS. The server reads a JSON-formatted data file that contains request headers and the corresponding response headers. Microserver responds with payload if the response header contains Content-Length or Transfer-Enconding specified.
+ 
+### addResponse(filename, request_header, response_header)
+* filename - name of the file where the request header and response header will be written to in JSON format
+* request_header - dictionary of request header
+* response_header - dictionary of response header corresponding to the request header.
+
+This function adds the request header and response header to a file which is then read by the microserver to populate request-response map. The key-fields required for the header dictionary are 'headers', 'timestamp' and 'body'.
+
+### Example
+```python
+#create the origin server process
+server=Test.MakeOriginServer("server")
+#define the request header and the desired response header
+request_header={"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+#desired response form the origin server
+response_header={"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+#addResponse adds the transaction to a file which is used by the server
+server.addResponse("sessionlog.json", request_header, response_header)
+#add remap rule to traffic server
+ts.Disk.remap_config.AddLine(
+    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+)
+```
