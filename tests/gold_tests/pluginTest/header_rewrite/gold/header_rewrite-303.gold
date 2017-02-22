@@ -1,0 +1,15 @@
+``
+> GET http://www.example.com``
+> Host: www.example.com``
+> User-Agent: curl/``
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+``
+< HTTP/1.1 303 See Other
+< Date: ``
+< Age: ``
+< Transfer-Encoding: chunked
+< Proxy-Connection: keep-alive
+< Server: ATS/``
+< 
+``
