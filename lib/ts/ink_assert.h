@@ -32,6 +32,11 @@ Assertions
 #include "ts/ink_error.h"
 
 #ifdef __cplusplus
+
+template <typename T> struct ts_always_false {
+  enum { value = false };
+};
+
 extern "C" {
 #endif /* __cplusplus */
 

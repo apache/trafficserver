@@ -7772,395 +7772,372 @@ TSSkipRemappingSet(TSHttpTxn txnp, int flag)
 }
 
 // Little helper function to find the struct member
-static void *
-_conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overridableHttpConfig, OverridableDataType *typep)
-{
-  // The default is "Byte", make sure to override that for those configs which are "Int".
-  OverridableDataType typ = OVERRIDABLE_TYPE_BYTE;
-  void *ret               = nullptr;
+#define GET_OVERIDE(var)                \
+  do {                                  \
+    type = overridable_typeof(var);     \
+    return static_cast<void *>(&(var)); \
+  } while (0)
 
+template <typename T>
+OverridableDataType
+overridable_typeof(T &t)
+{
+  static_assert(ts_always_false<T>::value, "Invalid overridable type or member");
+  return OVERRIDABLE_TYPE_NULL;
+}
+
+template <>
+OverridableDataType
+overridable_typeof<MgmtByte>(MgmtByte &)
+{
+  return OVERRIDABLE_TYPE_BYTE;
+}
+
+template <>
+OverridableDataType
+overridable_typeof<MgmtInt>(MgmtInt &)
+{
+  return OVERRIDABLE_TYPE_INT;
+}
+
+template <>
+OverridableDataType
+overridable_typeof<MgmtFloat>(MgmtFloat &)
+{
+  return OVERRIDABLE_TYPE_FLOAT;
+}
+
+template <>
+OverridableDataType
+overridable_typeof<MgmtString>(MgmtString &)
+{
+  return OVERRIDABLE_TYPE_STRING;
+}
+
+static void *
+_conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *configs, OverridableDataType &type)
+{
   switch (conf) {
   case TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR:
-    ret = &overridableHttpConfig->maintain_pristine_host_hdr;
+    GET_OVERIDE(configs->maintain_pristine_host_hdr);
     break;
   case TS_CONFIG_HTTP_CHUNKING_ENABLED:
-    ret = &overridableHttpConfig->chunking_enabled;
+    GET_OVERIDE(configs->chunking_enabled);
     break;
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED:
-    ret = &overridableHttpConfig->negative_caching_enabled;
+    GET_OVERIDE(configs->negative_caching_enabled);
     break;
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->negative_caching_lifetime;
+    GET_OVERIDE(configs->negative_caching_lifetime);
     break;
   case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
-    ret = &overridableHttpConfig->cache_when_to_revalidate;
+    GET_OVERIDE(configs->cache_when_to_revalidate);
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN:
-    ret = &overridableHttpConfig->keep_alive_enabled_in;
+    GET_OVERIDE(configs->keep_alive_enabled_in);
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT:
-    ret = &overridableHttpConfig->keep_alive_enabled_out;
+    GET_OVERIDE(configs->keep_alive_enabled_out);
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
-    ret = &overridableHttpConfig->keep_alive_post_out;
+    GET_OVERIDE(configs->keep_alive_post_out);
     break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
-    ret = &overridableHttpConfig->server_session_sharing_match;
+    GET_OVERIDE(configs->server_session_sharing_match);
     break;
   case TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->sock_recv_buffer_size_out;
+    GET_OVERIDE(configs->sock_recv_buffer_size_out);
     break;
   case TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->sock_send_buffer_size_out;
+    GET_OVERIDE(configs->sock_send_buffer_size_out);
     break;
   case TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->sock_option_flag_out;
+    GET_OVERIDE(configs->sock_option_flag_out);
     break;
   case TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT:
-    ret = &overridableHttpConfig->fwd_proxy_auth_to_parent;
+    GET_OVERIDE(configs->fwd_proxy_auth_to_parent);
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM:
-    ret = &overridableHttpConfig->anonymize_remove_from;
+    GET_OVERIDE(configs->anonymize_remove_from);
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER:
-    ret = &overridableHttpConfig->anonymize_remove_referer;
+    GET_OVERIDE(configs->anonymize_remove_referer);
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT:
-    ret = &overridableHttpConfig->anonymize_remove_user_agent;
+    GET_OVERIDE(configs->anonymize_remove_user_agent);
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE:
-    ret = &overridableHttpConfig->anonymize_remove_cookie;
+    GET_OVERIDE(configs->anonymize_remove_cookie);
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP:
-    ret = &overridableHttpConfig->anonymize_remove_client_ip;
+    GET_OVERIDE(configs->anonymize_remove_client_ip);
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP:
-    ret = &overridableHttpConfig->anonymize_insert_client_ip;
+    GET_OVERIDE(configs->anonymize_insert_client_ip);
     break;
   case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
-    ret = &overridableHttpConfig->proxy_response_server_enabled;
+    GET_OVERIDE(configs->proxy_response_server_enabled);
     break;
   case TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR:
-    ret = &overridableHttpConfig->insert_squid_x_forwarded_for;
+    GET_OVERIDE(configs->insert_squid_x_forwarded_for);
     break;
   case TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->server_tcp_init_cwnd;
+    GET_OVERIDE(configs->server_tcp_init_cwnd);
     break;
   case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
-    ret = &overridableHttpConfig->send_http11_requests;
+    GET_OVERIDE(configs->send_http11_requests);
     break;
   case TS_CONFIG_HTTP_CACHE_HTTP:
-    ret = &overridableHttpConfig->cache_http;
+    GET_OVERIDE(configs->cache_http);
     break;
   case TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL:
-    ret = &overridableHttpConfig->cache_cluster_cache_local;
+    GET_OVERIDE(configs->cache_cluster_cache_local);
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE:
-    ret = &overridableHttpConfig->cache_ignore_client_no_cache;
+    GET_OVERIDE(configs->cache_ignore_client_no_cache);
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE:
-    ret = &overridableHttpConfig->cache_ignore_client_cc_max_age;
+    GET_OVERIDE(configs->cache_ignore_client_cc_max_age);
     break;
   case TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE:
-    ret = &overridableHttpConfig->cache_ims_on_client_no_cache;
+    GET_OVERIDE(configs->cache_ims_on_client_no_cache);
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE:
-    ret = &overridableHttpConfig->cache_ignore_server_no_cache;
+    GET_OVERIDE(configs->cache_ignore_server_no_cache);
     break;
   case TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES:
-    ret = &overridableHttpConfig->cache_responses_to_cookies;
+    GET_OVERIDE(configs->cache_responses_to_cookies);
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION:
-    ret = &overridableHttpConfig->cache_ignore_auth;
+    GET_OVERIDE(configs->cache_ignore_auth);
     break;
   case TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC:
-    ret = &overridableHttpConfig->cache_urls_that_look_dynamic;
+    GET_OVERIDE(configs->cache_urls_that_look_dynamic);
     break;
   case TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS:
-    ret = &overridableHttpConfig->cache_required_headers;
+    GET_OVERIDE(configs->cache_required_headers);
     break;
   case TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR:
-    ret = &overridableHttpConfig->insert_request_via_string;
+    GET_OVERIDE(configs->insert_request_via_string);
     break;
   case TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR:
-    ret = &overridableHttpConfig->insert_response_via_string;
+    GET_OVERIDE(configs->insert_response_via_string);
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->cache_heuristic_min_lifetime;
+    GET_OVERIDE(configs->cache_heuristic_min_lifetime);
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->cache_heuristic_max_lifetime;
+    GET_OVERIDE(configs->cache_heuristic_max_lifetime);
     break;
   case TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->cache_guaranteed_min_lifetime;
+    GET_OVERIDE(configs->cache_guaranteed_min_lifetime);
     break;
   case TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->cache_guaranteed_max_lifetime;
+    GET_OVERIDE(configs->cache_guaranteed_max_lifetime);
     break;
   case TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->cache_max_stale_age;
+    GET_OVERIDE(configs->cache_max_stale_age);
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->keep_alive_no_activity_timeout_in;
+    GET_OVERIDE(configs->keep_alive_no_activity_timeout_in);
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->keep_alive_no_activity_timeout_out;
+    GET_OVERIDE(configs->keep_alive_no_activity_timeout_out);
     break;
   case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->transaction_no_activity_timeout_in;
+    GET_OVERIDE(configs->transaction_no_activity_timeout_in);
     break;
   case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->transaction_no_activity_timeout_out;
+    GET_OVERIDE(configs->transaction_no_activity_timeout_out);
     break;
   case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->transaction_active_timeout_out;
+    GET_OVERIDE(configs->transaction_active_timeout_out);
     break;
   case TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->origin_max_connections;
+    GET_OVERIDE(configs->origin_max_connections);
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->connect_attempts_max_retries;
+    GET_OVERIDE(configs->connect_attempts_max_retries);
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->connect_attempts_max_retries_dead_server;
+    GET_OVERIDE(configs->connect_attempts_max_retries_dead_server);
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->connect_attempts_rr_retries;
+    GET_OVERIDE(configs->connect_attempts_rr_retries);
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->connect_attempts_timeout;
+    GET_OVERIDE(configs->connect_attempts_timeout);
     break;
   case TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->post_connect_attempts_timeout;
+    GET_OVERIDE(configs->post_connect_attempts_timeout);
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->down_server_timeout;
+    GET_OVERIDE(configs->down_server_timeout);
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->client_abort_threshold;
+    GET_OVERIDE(configs->client_abort_threshold);
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_TIME:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->freshness_fuzz_time;
+    GET_OVERIDE(configs->freshness_fuzz_time);
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->freshness_fuzz_min_time;
+    GET_OVERIDE(configs->freshness_fuzz_min_time);
     break;
   case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
-    ret = &overridableHttpConfig->doc_in_cache_skip_dns;
+    GET_OVERIDE(configs->doc_in_cache_skip_dns);
     break;
   case TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->background_fill_active_timeout;
+    GET_OVERIDE(configs->background_fill_active_timeout);
     break;
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
-    typ = OVERRIDABLE_TYPE_STRING;
-    ret = &overridableHttpConfig->proxy_response_server_string;
+    GET_OVERIDE(configs->proxy_response_server_string);
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
-    typ = OVERRIDABLE_TYPE_FLOAT;
-    ret = &overridableHttpConfig->cache_heuristic_lm_factor;
+    GET_OVERIDE(configs->cache_heuristic_lm_factor);
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY:
-    typ = OVERRIDABLE_TYPE_FLOAT;
-    ret = &overridableHttpConfig->freshness_fuzz_prob;
+    GET_OVERIDE(configs->freshness_fuzz_prob);
     break;
   case TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD:
-    typ = OVERRIDABLE_TYPE_FLOAT;
-    ret = &overridableHttpConfig->background_fill_threshold;
+    GET_OVERIDE(configs->background_fill_threshold);
     break;
   case TS_CONFIG_NET_SOCK_PACKET_MARK_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->sock_packet_mark_out;
+    GET_OVERIDE(configs->sock_packet_mark_out);
     break;
   case TS_CONFIG_NET_SOCK_PACKET_TOS_OUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->sock_packet_tos_out;
+    GET_OVERIDE(configs->sock_packet_tos_out);
     break;
   case TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE:
-    ret = &overridableHttpConfig->insert_age_in_response;
+    GET_OVERIDE(configs->insert_age_in_response);
     break;
   case TS_CONFIG_HTTP_CHUNKING_SIZE:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->http_chunking_size;
+    GET_OVERIDE(configs->http_chunking_size);
     break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED:
-    ret = &overridableHttpConfig->flow_control_enabled;
+    GET_OVERIDE(configs->flow_control_enabled);
     break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->flow_low_water_mark;
+    GET_OVERIDE(configs->flow_low_water_mark);
     break;
   case TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->flow_high_water_mark;
+    GET_OVERIDE(configs->flow_high_water_mark);
     break;
   case TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP:
-    ret = &overridableHttpConfig->cache_range_lookup;
+    GET_OVERIDE(configs->cache_range_lookup);
     break;
   case TS_CONFIG_HTTP_NORMALIZE_AE_GZIP:
-    ret = &overridableHttpConfig->normalize_ae_gzip;
+    GET_OVERIDE(configs->normalize_ae_gzip);
     break;
   case TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->default_buffer_size_index;
+    GET_OVERIDE(configs->default_buffer_size_index);
     break;
   case TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->default_buffer_water_mark;
+    GET_OVERIDE(configs->default_buffer_water_mark);
     break;
   case TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->request_hdr_max_size;
+    GET_OVERIDE(configs->request_hdr_max_size);
     break;
   case TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->response_hdr_max_size;
+    GET_OVERIDE(configs->response_hdr_max_size);
     break;
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED:
-    ret = &overridableHttpConfig->negative_revalidating_enabled;
+    GET_OVERIDE(configs->negative_revalidating_enabled);
     break;
   case TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->negative_revalidating_lifetime;
+    GET_OVERIDE(configs->negative_revalidating_lifetime);
     break;
   case TS_CONFIG_SSL_HSTS_MAX_AGE:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->proxy_response_hsts_max_age;
+    GET_OVERIDE(configs->proxy_response_hsts_max_age);
     break;
   case TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS:
-    ret = &overridableHttpConfig->proxy_response_hsts_include_subdomains;
+    GET_OVERIDE(configs->proxy_response_hsts_include_subdomains);
     break;
   case TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->cache_open_read_retry_time;
+    GET_OVERIDE(configs->cache_open_read_retry_time);
     break;
   case TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->max_cache_open_read_retries;
+    GET_OVERIDE(configs->max_cache_open_read_retries);
     break;
   case TS_CONFIG_HTTP_CACHE_RANGE_WRITE:
-    ret = &overridableHttpConfig->cache_range_write;
+    GET_OVERIDE(configs->cache_range_write);
     break;
   case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
-    ret = &overridableHttpConfig->post_check_content_length_enabled;
+    GET_OVERIDE(configs->post_check_content_length_enabled);
     break;
   case TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER:
-    typ = OVERRIDABLE_TYPE_STRING;
-    ret = &overridableHttpConfig->global_user_agent_header;
+    GET_OVERIDE(configs->global_user_agent_header);
     break;
   case TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE:
-    ret = &overridableHttpConfig->auth_server_session_private;
+    GET_OVERIDE(configs->auth_server_session_private);
     break;
   case TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->slow_log_threshold;
+    GET_OVERIDE(configs->slow_log_threshold);
     break;
   case TS_CONFIG_HTTP_CACHE_GENERATION:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->cache_generation_number;
+    GET_OVERIDE(configs->cache_generation_number);
     break;
   case TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE:
-    typ = OVERRIDABLE_TYPE_STRING;
-    ret = &overridableHttpConfig->body_factory_template_base;
+    GET_OVERIDE(configs->body_factory_template_base);
     break;
   case TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION:
-    ret = &overridableHttpConfig->cache_open_write_fail_action;
+    GET_OVERIDE(configs->cache_open_write_fail_action);
     break;
   case TS_CONFIG_HTTP_ENABLE_REDIRECTION:
-    ret = &overridableHttpConfig->redirection_enabled;
+    GET_OVERIDE(configs->redirection_enabled);
     break;
   case TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->number_of_redirections;
+    GET_OVERIDE(configs->number_of_redirections);
     break;
   case TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->max_cache_open_write_retries;
+    GET_OVERIDE(configs->max_cache_open_write_retries);
     break;
   case TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY:
-    ret = &overridableHttpConfig->redirect_use_orig_cache_key;
+    GET_OVERIDE(configs->redirect_use_orig_cache_key);
     break;
   case TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->attach_server_session_to_client;
+    GET_OVERIDE(configs->attach_server_session_to_client);
     break;
   case TS_CONFIG_HTTP_SAFE_REQUESTS_RETRYABLE:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->safe_requests_retryable;
+    GET_OVERIDE(configs->safe_requests_retryable);
     break;
   case TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->origin_max_connections_queue;
+    GET_OVERIDE(configs->origin_max_connections_queue);
     break;
   case TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->websocket_inactive_timeout;
+    GET_OVERIDE(configs->websocket_inactive_timeout);
     break;
   case TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->websocket_active_timeout;
+    GET_OVERIDE(configs->websocket_active_timeout);
     break;
   case TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT:
-    ret = &overridableHttpConfig->uncacheable_requests_bypass_parent;
+    GET_OVERIDE(configs->uncacheable_requests_bypass_parent);
     break;
   case TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->parent_connect_attempts;
+    GET_OVERIDE(configs->parent_connect_attempts);
     break;
   case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->transaction_active_timeout_in;
+    GET_OVERIDE(configs->transaction_active_timeout_in);
     break;
   case TS_CONFIG_SRV_ENABLED:
-    ret = &overridableHttpConfig->srv_enabled;
+    GET_OVERIDE(configs->srv_enabled);
     break;
   case TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD:
-    ret = &overridableHttpConfig->forward_connect_method;
+    GET_OVERIDE(configs->forward_connect_method);
     break;
   case TS_CONFIG_SSL_CERT_FILENAME:
-    typ = OVERRIDABLE_TYPE_STRING;
-    ret = &overridableHttpConfig->client_cert_filename;
+    GET_OVERIDE(configs->client_cert_filename);
     break;
   case TS_CONFIG_SSL_CERT_FILEPATH:
-    typ = OVERRIDABLE_TYPE_STRING;
-    ret = &overridableHttpConfig->client_cert_filepath;
+    GET_OVERIDE(configs->client_cert_filepath);
     break;
-  // This helps avoiding compiler warnings, yet detect unhandled enum members.
+  // This helps avoiding compiler warnings, explicit so we get warnings on unhandled cases
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
-    typ = OVERRIDABLE_TYPE_NULL;
-    ret = nullptr;
     break;
   }
 
-  *typep = typ;
-
-  return ret;
+  ink_abort("Unrecognized overridable option");
+  return nullptr;
 }
 
 /* APIs to manipulate the overridable configuration options.
@@ -8170,12 +8147,12 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
-  HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
-  OverridableDataType type;
+  HttpSM *s                = reinterpret_cast<HttpSM *>(txnp);
+  OverridableDataType type = OVERRIDABLE_TYPE_NULL;
 
   s->t_state.setup_per_txn_configs();
 
-  void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, &type);
+  void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, type);
 
   if (!dest) {
     return TS_ERROR;
@@ -8201,9 +8178,9 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)value) == TS_SUCCESS);
 
-  HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
-  OverridableDataType type;
-  void *src = _conf_to_memberp(conf, s->t_state.txn_conf, &type);
+  HttpSM *s                = reinterpret_cast<HttpSM *>(txnp);
+  OverridableDataType type = OVERRIDABLE_TYPE_NULL;
+  void *src                = _conf_to_memberp(conf, s->t_state.txn_conf, type);
 
   if (!src) {
     return TS_ERROR;
@@ -8228,12 +8205,12 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
-  HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
-  OverridableDataType type;
+  HttpSM *s                = reinterpret_cast<HttpSM *>(txnp);
+  OverridableDataType type = OVERRIDABLE_TYPE_NULL;
 
   s->t_state.setup_per_txn_configs();
 
-  TSMgmtFloat *dest = static_cast<TSMgmtFloat *>(_conf_to_memberp(conf, s->t_state.txn_conf, &type));
+  TSMgmtFloat *dest = static_cast<TSMgmtFloat *>(_conf_to_memberp(conf, s->t_state.txn_conf, type));
 
   if (type != OVERRIDABLE_TYPE_FLOAT) {
     return TS_ERROR;
@@ -8253,8 +8230,8 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)value) == TS_SUCCESS);
 
-  OverridableDataType type;
-  TSMgmtFloat *dest = static_cast<TSMgmtFloat *>(_conf_to_memberp(conf, ((HttpSM *)txnp)->t_state.txn_conf, &type));
+  OverridableDataType type = OVERRIDABLE_TYPE_NULL;
+  TSMgmtFloat *dest        = static_cast<TSMgmtFloat *>(_conf_to_memberp(conf, ((HttpSM *)txnp)->t_state.txn_conf, type));
 
   if (type != OVERRIDABLE_TYPE_FLOAT) {
     return TS_ERROR;
