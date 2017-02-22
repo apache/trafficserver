@@ -88,7 +88,7 @@ A number of file object are define to help with adding values to a given configu
 Create a server
 
 ```python
-# don't ports because a config file will set them
+# don't set ports because a config file will set them
 ts1 = Test.MakeATSProcess("ts1",select_ports=False)
 ts1.Setup.ts.CopyConfig('config/records_8090.config','records.config')
 ```
@@ -127,6 +127,34 @@ ts.Disk.remap_config.AddLines([
         ])
 ```
 
+## Setup Origin Server
+###Test.MakeOriginServer(Name)
+ * name - A name for this instance of Origin Server.
+ 
+ This function returns a AuTest process object that launches the python-based microserver. Micro-Server is a mock server which responds to client http requests. Microserver needs to be setup for the tests that require an origin server behind ATS. The server reads a JSON-formatted data file that contains request headers and the corresponding response headers. Microserver responds with payload if the response header contains Content-Length or Transfer-Enconding specified.
+ 
+###addResponse(filename, request_header, response_header)
+* filename - name of the file where the request header and response header will be written to in JSON format
+* request_header - dictionary of request header
+* response_header - dictionary of response header corresponding to the request header.
+
+This function adds the request header and response header to a file which is then read by the microserver to populate request-response map. The key-fields required for the header dictionary are 'headers', 'timestamp' and 'body'.
+
+###Example
+```python
+#create the origin server process
+server=Test.MakeOriginServer("server")
+#define the request header and the desired response header
+request_header={"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+#desired response form the origin server
+response_header={"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+#addResponse adds the transaction to a file which is used by the server
+server.addResponse("sessionlog.json", request_header, response_header)
+#add remap rule to traffic server
+ts.Disk.remap_config.AddLine(
+    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+)
+```
 ### CopyConfig(file, targetname=None, process=None)
 * file - name of the file to copy. Relative paths are relative from the test file location
 * targetname - the name name of the file when copied to the correct configuration location
