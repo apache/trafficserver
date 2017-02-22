@@ -1,0 +1,49 @@
+'''
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+import json, subprocess
+import pprint
+
+if Arguments.ats_bin is not None:
+    # Add environment variables
+    ENV['ATS_BIN'] = Arguments.ats_bin
+    #if Arguments.ats_bin not in ENV['PATH']:
+        #ENV['PATH'] = Arguments.ats_bin + ':' + ENV['PATH']
+    
+if ENV['ATS_BIN'] is not None:
+    # Add variables for Tests
+    traffic_layout = os.path.join(ENV['ATS_BIN'], "traffic_layout")
+    if not os.path.isdir(ENV['ATS_BIN']):
+        host.WriteError("--ats-bin requires a directory", show_stack=False)
+    if not os.path.isfile(traffic_layout):
+        host.WriteError("traffic_layout is not found. Aborting tests - Bad build or install.", show_stack=False)
+    try:
+        out = subprocess.check_output([traffic_layout, "--json"])
+    except subprocess.CalledProcessError:
+        host.WriteError("traffic_layout is broken. Aborting tests - The build of traffic server is bad.", show_stack=False) 
+    out = json.loads(out.decode("utf-8"))
+    for k,v in out.items():
+        out[k]=v[:-1] if v.endswith('/') else v
+    Variables.update(out)
+    host.WriteVerbose(['ats'],"Traffic server layout Data:\n",pprint.pformat(out))
+
+Variables.AtsTestToolsDir = os.path.join(AutestSitePath,'../../tools')
+
+# modify delay times as we always have to kill Trafficserver
+# no need to wait
+Variables.Autest.StopProcessLongDelaySeconds=0
