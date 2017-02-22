@@ -162,7 +162,9 @@ public:
   /// @note This is equivalent to @c begin currently but it's probably good to have separation.
   constexpr const void *ptr() const;
   /// @return the @a V value at index @a n.
-  template <typename V> V array(size_t n) const;
+  template <typename V> V at(ssize_t n) const;
+  /// @return a pointer to the @a V value at index @a n.
+  template <typename V> V const *at_ptr(ssize_t n) const;
   //@}
 
   /// Set the view.
@@ -785,9 +787,16 @@ MemView::splitSuffix(const void *p)
 
 template <typename V>
 inline V
-MemView::array(size_t n) const
+MemView::at(ssize_t n) const
 {
   return static_cast<V const *>(_ptr)[n];
+}
+
+template <typename V>
+inline V const *
+MemView::at_ptr(ssize_t n) const
+{
+  return static_cast<V const *>(_ptr) + n;
 }
 
 template <typename V>
