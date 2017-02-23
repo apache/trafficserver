@@ -29,7 +29,7 @@
 namespace tag
 {
   struct bytes {
-    static constexpr char const* const label = "bytes";
+    static constexpr char const* const label = " bytes";
   };
 }
 

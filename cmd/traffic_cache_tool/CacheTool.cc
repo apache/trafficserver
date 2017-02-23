@@ -117,7 +117,7 @@ struct Stripe {
   static bool validateMeta(StripeMeta const* meta);
 
   /// Load metadata for this stripe.
-  bool loadMeta();
+  Errata loadMeta();
 
   /// Initialize the live data from the loaded serialized data.
   void updateLiveData(enum Copy c);
@@ -185,19 +185,15 @@ Stripe::updateLiveData(enum Copy c)
 
   _buckets = n_buckets / n_segments;
   _segments = n_segments;
-
-  std::cout << "Stripe found: " << _segments << " segments with " << _buckets << " buckets per segment for "
-            << _buckets * _segments * 4 << " total directory entries taking " << _buckets * _segments * sizeof(CacheDirEntry) * ts::ENTRIES_PER_BUCKET
-            << " out of " << (delta-header_len).units() << " bytes." << std::endl;
 }
 
-bool
+Errata
 Stripe::loadMeta()
 {
   // Read from disk in chunks of this size.
   constexpr static int64_t N = 1 << 24;
 
-  bool zret = false; // default not successful.
+  Errata zret;
 
   int fd = _span->_fd;
   Bytes n;
@@ -222,7 +218,6 @@ Stripe::loadMeta()
 
     // Search for Footer A, skipping false positives.
     do {
-      bool found;
       while (!(found = this->probeMeta(data)) && pos < limit) {
         pos += N;
         n = pread(fd, buff, N, pos.units());
@@ -234,7 +229,7 @@ Stripe::loadMeta()
 
         // Need to be more thorough in cross checks but this is OK for now.
         if (_meta[A][FOOT].version == _meta[A][HEAD].version) {
-          _meta_pos[A][FOOT] = pos + Bytes(data.template at_ptr<char>(0) - buff);
+          _meta_pos[A][FOOT] =round_down(pos + Bytes(data.template at_ptr<char>(0) - buff));
         } else {
           // false positive, keep looking.
           found = false;
@@ -243,7 +238,7 @@ Stripe::loadMeta()
     } while (!found);
 
   } else {
-    printf("Header A not found, invalid stripe.\n");
+    zret.push(0, 1, "Header A not found");
   }
 
   // Technically if Copy A is valid, Copy B is not needed. But at this point it's cheap to retrieve
@@ -259,14 +254,14 @@ Stripe::loadMeta()
     }
     if (this->validateMeta(data.template at_ptr<StripeMeta>(0))) {
       _meta[B][HEAD] = data.template at<StripeMeta>(0);
-      _meta_pos[B][HEAD]  = pos + (data.template at_ptr<char>(0) - buff);
+      _meta_pos[B][HEAD] = round_down(pos + Bytes(data.template at_ptr<char>(0) - buff));
 
       // Footer B must be at the same relative offset to Header B as Footer A -> Header A.
       n = pread(fd, buff, ts::CacheStoreBlocks::SCALE, (_meta_pos[B][HEAD] + delta).units());
       data.setView(buff, n.units());
       if (this->validateMeta(data.template at_ptr<StripeMeta>(0))) {
         _meta[B][FOOT] = data.template at<StripeMeta>(0);
-        _meta_pos[B][FOOT] = _meta_pos[B][HEAD] + delta;
+        _meta_pos[B][FOOT] = round_down(_meta_pos[B][HEAD] + delta);
       }
     }
   }
@@ -276,15 +271,11 @@ Stripe::loadMeta()
         (0 == _meta_pos[B][FOOT] || _meta[B][HEAD].sync_serial != _meta[B][FOOT].sync_serial ||
          _meta[A][HEAD].sync_serial > _meta[B][HEAD].sync_serial)) {
       this->updateLiveData(A);
-      zret = true;
     } else if (_meta_pos[B][FOOT] > 0 && _meta[B][HEAD].sync_serial == _meta[B][FOOT].sync_serial) {
       this->updateLiveData(B);
-      zret = true;
     } else {
-      std::cout << "Invalid stripe data - candidates found but sync serial data not valid." << std::endl;
+      zret.push(0, 1, "Invalid stripe data - candidates found but sync serial data not valid.");
     }
-  } else {
-    std::cout << "Invalid stripe data - no candidates found." << std::endl;
   }
   return zret;
 }
@@ -789,15 +780,29 @@ Cache::dumpSpans(SpanDumpDepth depth)
         std::cout << "Span: " << span->_path << " " << span->_header->num_volumes << " Volumes " << span->_header->num_used
                   << " in use " << span->_header->num_free << " free " << span->_header->num_diskvol_blks << " stripes "
                   << span->_header->num_blocks.units() << " blocks" << std::endl;
-        for (unsigned int i = 0; i < span->_header->num_diskvol_blks; ++i) {
-          ts::CacheStripeDescriptor &stripe = span->_header->stripes[i];
-          std::cout << "    : SpanBlock " << i << " @ " << stripe.offset.units() << " blocks=" << stripe.len.units()
-                    << " vol=" << stripe.vol_idx << " type=" << stripe.type << " " << (stripe.free ? "free" : "in-use")
+
+        for ( auto stripe : span->_stripes ) {
+          std::cout << "    : " << " @ " << stripe->_start << " len=" << stripe->_len.count() << " blocks "
+                    << " vol=" << static_cast<int>(stripe->_vol_idx) << " type=" << static_cast<int>(stripe->_type) << " " << (stripe->isFree() ? "free" : "in-use")
                     << std::endl;
+          if (depth >= SpanDumpDepth::STRIPE) {
+            Errata r = stripe->loadMeta();
+            if (r) {
+              std::cout << "Stripe found: " << stripe->_segments << " segments with " << stripe->_buckets << " buckets per segment for "
+                        << stripe->_buckets * stripe->_segments * 4 << " total directory entries taking " << stripe->_buckets * stripe->_segments * sizeof(CacheDirEntry) * ts::ENTRIES_PER_BUCKET
+//                        << " out of " << (delta-header_len).units() << " bytes."
+                        << std::endl;
+            } else {
+              std::cout << r;
+            }
+          }
+        }
+# if 0
           if (depth >= SpanDumpDepth::STRIPE) {
             Open_Stripe(span->_fd, stripe);
           }
         }
+# endif
       }
     }
   }
