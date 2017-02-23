@@ -42,9 +42,12 @@ using ts::Bytes;
 using ts::Megabytes;
 using ts::CacheStoreBlocks;
 using ts::CacheStripeBlocks;
+using ts::StripeMeta;
 using ts::CacheStripeDescriptor;
 using ts::Errata;
 using ts::FilePath;
+using ts::MemView;
+using ts::CacheDirEntry;
 
 const Bytes ts::CacheSpan::OFFSET{CacheStoreBlocks{1}};
 
@@ -75,31 +78,49 @@ struct Span {
   void clearPermanently();
 
   ts::Rv<Stripe *> allocStripe(int vol_idx, CacheStripeBlocks len);
-  Errata updateHeader();
+  Errata updateHeader(); ///< Update serialized header and write to disk.
 
-  FilePath _path;
-  ats_scoped_fd _fd;
-  int _vol_idx = 0;
+  FilePath _path; ///< File system location of span.
+  ats_scoped_fd _fd; ///< Open file descriptor for span.
+  int _vol_idx = 0; ///< Forced volume.
   CacheStoreBlocks _base;   ///< Offset to first usable byte.
   CacheStoreBlocks _offset; ///< Offset to first content byte.
   // The space between _base and _offset is where the span information is stored.
   CacheStoreBlocks _len; ///< Total length of span.
-  CacheStoreBlocks _free_space;
+  CacheStoreBlocks _free_space; ///< Total size of free stripes.
   ink_device_geometry _geometry; ///< Geometry of span.
-  /// A copy of the data on the disk.
+  /// Local copy of serialized header data stored on in the span.
   std::unique_ptr<ts::SpanHeader> _header;
   /// Live information about stripes.
+  /// Seeded from @a _header and potentially agumented with direct probing.
   std::list<Stripe *> _stripes;
 };
 /* --------------------------------------------------------------------------------------- */
 struct Stripe {
+  /// Meta data is stored in 4 copies A/B and Header/Footer.
+  enum Copy { A = 0, B = 1 };
+  enum { HEAD = 0, FOOT = 1 };
+
+  /// Construct from span header data.
   Stripe(Span *span, Bytes start, CacheStoreBlocks len);
 
-  bool
-  isFree() const
-  {
-    return 0 == _vol_idx;
-  }
+  /// Is stripe unallocated?
+  bool isFree() const;
+
+  /// Probe a chunk of memory @a mem for stripe metadata.
+  /// @a mem is updated to remove memory that has been probed.
+  /// @return @c true if @a mem has valid data, @c false otherwise.
+  bool probeMeta(MemView& mem);
+
+  /// Check a buffer for being valid stripe metadata.
+  /// @return @c true if valid, @c false otherwise.
+  static bool validateMeta(StripeMeta const* meta);
+
+  /// Load metadata for this stripe.
+  bool loadMeta();
+
+  /// Initialize the live data from the loaded serialized data.
+  void updateLiveData(enum Copy c);
 
   Span *_span;           ///< Hosting span.
   Bytes _start;          ///< Offset of first byte of stripe.
@@ -107,11 +128,167 @@ struct Stripe {
   CacheStoreBlocks _len; ///< Length of stripe.
   uint8_t _vol_idx = 0;  ///< Volume index.
   uint8_t _type    = 0;  ///< Stripe type.
+
+  int64_t _buckets; ///< Number of buckets per segment.
+  int64_t _segments; ///< Number of segments.
+
+  /// Meta copies, indexed by A/B then HEAD/FOOT.
+  StripeMeta _meta[2][2];
+  /// Locations for the meta data.
+  CacheStoreBlocks _meta_pos[2][2];
 };
 
 Stripe::Stripe(Span *span, Bytes start, CacheStoreBlocks len) : _span(span), _start(start), _len(len)
 {
 }
+
+bool Stripe::isFree() const { return 0 == _vol_idx; }
+
+// Need to be bit more robust at some point.
+bool Stripe::validateMeta(StripeMeta const* meta)
+{
+  // Need to be bit more robust at some point.
+  return StripeMeta::MAGIC == meta->magic && meta->version.ink_major <= ts::CACHE_DB_MAJOR_VERSION &&
+    meta->version.ink_minor <= 2 // This may have always been zero, actually.
+    ;
+}
+
+bool
+Stripe::probeMeta(MemView& mem)
+{
+  while (mem.size() >= sizeof(StripeMeta)) {
+    if (this->validateMeta(mem.template at_ptr<StripeMeta>(0))) {
+      return true;
+    }
+    // The meta data is stored aligned on a stripe block boundary, so only need to check there.
+    mem += CacheStoreBlocks::SCALE;
+  }
+  return false;
+}
+
+void
+Stripe::updateLiveData(enum Copy c)
+{
+  CacheStoreBlocks delta{_meta_pos[c][FOOT] - _meta_pos[c][HEAD]};
+  CacheStoreBlocks header_len(0);
+  int64_t n_buckets;
+  int64_t n_segments;
+
+  do {
+    ++header_len;
+    n_buckets = (delta - header_len).units() / (sizeof(CacheDirEntry) * ts::ENTRIES_PER_BUCKET);
+    n_segments = n_buckets / ts::MAX_BUCKETS_PER_SEGMENT;
+    // This should never be more than one loop, usually none.
+    while ((n_buckets / n_segments) > ts::MAX_BUCKETS_PER_SEGMENT)
+      ++n_segments;
+  } while (Bytes(sizeof(StripeMeta) + sizeof(uint16_t) * n_segments) > header_len);
+
+  _buckets = n_buckets / n_segments;
+  _segments = n_segments;
+
+  std::cout << "Stripe found: " << _segments << " segments with " << _buckets << " buckets per segment for "
+            << _buckets * _segments * 4 << " total directory entries taking " << _buckets * _segments * sizeof(CacheDirEntry) * ts::ENTRIES_PER_BUCKET
+            << " out of " << (delta-header_len).units() << " bytes." << std::endl;
+}
+
+bool
+Stripe::loadMeta()
+{
+  // Read from disk in chunks of this size.
+  constexpr static int64_t N = 1 << 24;
+
+  bool zret = false; // default not successful.
+
+  int fd = _span->_fd;
+  Bytes n;
+  bool found;
+  MemView data; // The current view of the read buffer.
+  Bytes delta;
+  Bytes pos = _start;
+  // Avoid searching the entire span, because some of it must be content. Assume that AOS is more than 160
+  // which means at most 10/160 (1/16) of the span can be directory/header.
+  Bytes limit = pos + _len / 16;
+  // Aligned buffer for raw device reads.
+  alignas(4096) static char buff[N];
+
+  // Check the earlier part of the block. Header A must be at the start of the stripe block.
+  // A full chunk is read in case Footer A is in that range.
+  n = pread(fd, buff, N, pos.units());
+  data.setView(buff, n.units());
+  if (this->probeMeta(data)) {
+    _meta[A][HEAD] = data.template at<StripeMeta>(0);
+    _meta_pos[A][HEAD] = round_down(pos + Bytes(data.template at_ptr<char>(0) - buff));
+    data += CacheStoreBlocks::SCALE;
+
+    // Search for Footer A, skipping false positives.
+    do {
+      bool found;
+      while (!(found = this->probeMeta(data)) && pos < limit) {
+        pos += N;
+        n = pread(fd, buff, N, pos.units());
+        data.setView(buff, n.units());
+      }
+
+      if (found) {
+        _meta[A][FOOT] = data.template at<StripeMeta>(0);
+
+        // Need to be more thorough in cross checks but this is OK for now.
+        if (_meta[A][FOOT].version == _meta[A][HEAD].version) {
+          _meta_pos[A][FOOT] = pos + Bytes(data.template at_ptr<char>(0) - buff);
+        } else {
+          // false positive, keep looking.
+          found = false;
+        }
+      }
+    } while (!found);
+
+  } else {
+    printf("Header A not found, invalid stripe.\n");
+  }
+
+  // Technically if Copy A is valid, Copy B is not needed. But at this point it's cheap to retrieve
+  // (as the exact offset is computable).
+  if (_meta_pos[A][FOOT] > 0) {
+    delta = _meta_pos[A][FOOT] - _meta_pos[A][HEAD];
+    // Header B should be immediately after Footer A. If at the end of the last read,
+    // do another read.
+    if (data.size() < CacheStoreBlocks::SCALE) {
+      pos += N;
+      n = pread(fd, buff, CacheStoreBlocks::SCALE, pos.units());
+      data.setView(buff, n.units());
+    }
+    if (this->validateMeta(data.template at_ptr<StripeMeta>(0))) {
+      _meta[B][HEAD] = data.template at<StripeMeta>(0);
+      _meta_pos[B][HEAD]  = pos + (data.template at_ptr<char>(0) - buff);
+
+      // Footer B must be at the same relative offset to Header B as Footer A -> Header A.
+      n = pread(fd, buff, ts::CacheStoreBlocks::SCALE, (_meta_pos[B][HEAD] + delta).units());
+      data.setView(buff, n.units());
+      if (this->validateMeta(data.template at_ptr<StripeMeta>(0))) {
+        _meta[B][FOOT] = data.template at<StripeMeta>(0);
+        _meta_pos[B][FOOT] = _meta_pos[B][HEAD] + delta;
+      }
+    }
+  }
+
+  if (_meta_pos[A][FOOT] > 0) {
+    if (_meta[A][HEAD].sync_serial == _meta[A][FOOT].sync_serial &&
+        (0 == _meta_pos[B][FOOT] || _meta[B][HEAD].sync_serial != _meta[B][FOOT].sync_serial ||
+         _meta[A][HEAD].sync_serial > _meta[B][HEAD].sync_serial)) {
+      this->updateLiveData(A);
+      zret = true;
+    } else if (_meta_pos[B][FOOT] > 0 && _meta[B][HEAD].sync_serial == _meta[B][FOOT].sync_serial) {
+      this->updateLiveData(B);
+      zret = true;
+    } else {
+      std::cout << "Invalid stripe data - candidates found but sync serial data not valid." << std::endl;
+    }
+  } else {
+    std::cout << "Invalid stripe data - no candidates found." << std::endl;
+  }
+  return zret;
+}
+
 /* --------------------------------------------------------------------------------------- */
 /// A live volume.
 /// Volume data based on data from loaded spans.
@@ -349,7 +526,7 @@ VolumeAllocator::fillEmptySpans()
 }
 /* --------------------------------------------------------------------------------------- */
 // All of these free functions need to be moved to the Cache class. Or the Span class?
-
+# if 0
 bool
 Validate_Stripe_Meta(ts::CacheStripeMeta const &stripe)
 {
@@ -403,12 +580,12 @@ void
 Open_Stripe(ats_scoped_fd const &fd, ts::CacheStripeDescriptor const &block)
 {
   int found;
-  ts::StringView data;
-  ts::StringView stripe_mem;
+  StringView data;
+  StringView stripe_mem;
   constexpr static int64_t N = 1 << 24;
   int64_t n;
   off_t pos = block.offset.units();
-  ts::CacheStripeMeta stripe_meta[4];
+  StripeMeta stripe_meta[4];
   off_t stripe_pos[4] = {0, 0, 0, 0};
   off_t delta;
   // Avoid searching the entire span, because some of it must be content. Assume that AOS is more than 160
@@ -459,7 +636,7 @@ Open_Stripe(ats_scoped_fd const &fd, ts::CacheStripeDescriptor const &block)
       }
 
       // Technically if Copy A is valid, Copy B is not needed. But at this point it's cheap to retrieve
-      // (as the exact offsets are computable).
+      // (as the exact offset is computable).
       if (stripe_pos[1]) {
         delta = stripe_pos[1] - stripe_pos[0];
         // Header B should be immediately after Footer A. If at the end of the last read,
@@ -511,7 +688,7 @@ Open_Stripe(ats_scoped_fd const &fd, ts::CacheStripeDescriptor const &block)
     printf("Stripe Header A not found in first chunk\n");
   }
 }
-
+# endif
 /* --------------------------------------------------------------------------------------- */
 Errata
 Cache::loadSpan(FilePath const &path)

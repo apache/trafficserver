@@ -28,7 +28,9 @@
 
 namespace tag
 {
-struct bytes;
+  struct bytes {
+    static constexpr char const* const label = "bytes";
+  };
 }
 
 using namespace ApacheTrafficServer;
@@ -38,6 +40,8 @@ namespace ts
 constexpr static uint8_t CACHE_DB_MAJOR_VERSION = 24;
 /// Maximum allowed volume index.
 constexpr static int MAX_VOLUME_IDX = 255;
+ constexpr static int ENTRIES_PER_BUCKET = 4;
+ constexpr static int MAX_BUCKETS_PER_SEGMENT = (1 << 16) / ENTRIES_PER_BUCKET;
 
 typedef Scalar<1, int64_t, tag::bytes> Bytes;
 typedef Scalar<1024, int64_t, tag::bytes> Kilobytes;
@@ -63,7 +67,7 @@ operator<<(std::ostream &s, Megabytes const &n)
 std::ostream &
 operator<<(std::ostream &s, Gigabytes const &n)
 {
-  return s << n.count() << " HB";
+  return s << n.count() << " GB";
 }
 std::ostream &
 operator<<(std::ostream &s, Terabytes const &n)
@@ -108,6 +112,8 @@ public:
 
 /** A section of storage in a span, used to contain a stripe.
 
+    This is stored in the span header to describe the stripes in the span.
+
     @note Serializable.
 
     @internal nee @c DiskVolBlock
@@ -121,6 +127,8 @@ struct CacheStripeDescriptor {
 };
 
 /** Header data for a span.
+
+    This is the serializable descriptor stored in a span.
 
     @internal nee DiskHeader
  */
@@ -140,7 +148,7 @@ struct SpanHeader {
 
     @internal nee VolHeadFooter
  */
-class CacheStripeMeta
+class StripeMeta
 {
 public:
   static constexpr uint32_t MAGIC = 0xF1D0F00D;
@@ -159,28 +167,7 @@ public:
   uint32_t dirty;
   uint32_t sector_size;
   uint32_t unused; // pad out to 8 byte boundary
-  uint16_t freelist[1];
 };
-
-class StripeData
-{
-public:
-  size_t calc_hdr_len() const;
-
-  int64_t segments; ///< Number of segments.
-  int64_t buckets;  ///< Number of buckets.
-  off_t skip;       ///< Start of stripe data.
-  off_t start;      ///< Start of content data.
-  off_t len;        ///< Total size of stripe (metric?)
-};
-
-inline size_t
-StripeData::calc_hdr_len() const
-{
-  return sizeof(CacheStripeMeta) + sizeof(uint16_t) * (this->segments - 1);
-}
-//  inline size_t StripeData::calc_dir_len() const { return this->calc_hdr_len() + this->buckets * DIR_DEPTH * this->segments *
-//  SIZEOF_DIR + sizeof(CacheStripeMeta); }
 
 class CacheDirEntry
 {
