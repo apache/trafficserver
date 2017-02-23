@@ -80,14 +80,14 @@ struct Span {
   ts::Rv<Stripe *> allocStripe(int vol_idx, CacheStripeBlocks len);
   Errata updateHeader(); ///< Update serialized header and write to disk.
 
-  FilePath _path; ///< File system location of span.
-  ats_scoped_fd _fd; ///< Open file descriptor for span.
-  int _vol_idx = 0; ///< Forced volume.
+  FilePath _path;           ///< File system location of span.
+  ats_scoped_fd _fd;        ///< Open file descriptor for span.
+  int _vol_idx = 0;         ///< Forced volume.
   CacheStoreBlocks _base;   ///< Offset to first usable byte.
   CacheStoreBlocks _offset; ///< Offset to first content byte.
   // The space between _base and _offset is where the span information is stored.
-  CacheStoreBlocks _len; ///< Total length of span.
-  CacheStoreBlocks _free_space; ///< Total size of free stripes.
+  CacheStoreBlocks _len;         ///< Total length of span.
+  CacheStoreBlocks _free_space;  ///< Total size of free stripes.
   ink_device_geometry _geometry; ///< Geometry of span.
   /// Local copy of serialized header data stored on in the span.
   std::unique_ptr<ts::SpanHeader> _header;
@@ -110,11 +110,11 @@ struct Stripe {
   /// Probe a chunk of memory @a mem for stripe metadata.
   /// @a mem is updated to remove memory that has been probed.
   /// @return @c true if @a mem has valid data, @c false otherwise.
-  bool probeMeta(MemView& mem);
+  bool probeMeta(MemView &mem);
 
   /// Check a buffer for being valid stripe metadata.
   /// @return @c true if valid, @c false otherwise.
-  static bool validateMeta(StripeMeta const* meta);
+  static bool validateMeta(StripeMeta const *meta);
 
   /// Load metadata for this stripe.
   Errata loadMeta();
@@ -129,7 +129,7 @@ struct Stripe {
   uint8_t _vol_idx = 0;  ///< Volume index.
   uint8_t _type    = 0;  ///< Stripe type.
 
-  int64_t _buckets; ///< Number of buckets per segment.
+  int64_t _buckets;  ///< Number of buckets per segment.
   int64_t _segments; ///< Number of segments.
 
   /// Meta copies, indexed by A/B then HEAD/FOOT.
@@ -142,19 +142,24 @@ Stripe::Stripe(Span *span, Bytes start, CacheStoreBlocks len) : _span(span), _st
 {
 }
 
-bool Stripe::isFree() const { return 0 == _vol_idx; }
+bool
+Stripe::isFree() const
+{
+  return 0 == _vol_idx;
+}
 
 // Need to be bit more robust at some point.
-bool Stripe::validateMeta(StripeMeta const* meta)
+bool
+Stripe::validateMeta(StripeMeta const *meta)
 {
   // Need to be bit more robust at some point.
   return StripeMeta::MAGIC == meta->magic && meta->version.ink_major <= ts::CACHE_DB_MAJOR_VERSION &&
-    meta->version.ink_minor <= 2 // This may have always been zero, actually.
+         meta->version.ink_minor <= 2 // This may have always been zero, actually.
     ;
 }
 
 bool
-Stripe::probeMeta(MemView& mem)
+Stripe::probeMeta(MemView &mem)
 {
   while (mem.size() >= sizeof(StripeMeta)) {
     if (this->validateMeta(mem.template at_ptr<StripeMeta>(0))) {
@@ -176,14 +181,14 @@ Stripe::updateLiveData(enum Copy c)
 
   do {
     ++header_len;
-    n_buckets = (delta - header_len).units() / (sizeof(CacheDirEntry) * ts::ENTRIES_PER_BUCKET);
+    n_buckets  = (delta - header_len).units() / (sizeof(CacheDirEntry) * ts::ENTRIES_PER_BUCKET);
     n_segments = n_buckets / ts::MAX_BUCKETS_PER_SEGMENT;
     // This should never be more than one loop, usually none.
     while ((n_buckets / n_segments) > ts::MAX_BUCKETS_PER_SEGMENT)
       ++n_segments;
   } while (Bytes(sizeof(StripeMeta) + sizeof(uint16_t) * n_segments) > header_len);
 
-  _buckets = n_buckets / n_segments;
+  _buckets  = n_buckets / n_segments;
   _segments = n_segments;
 }
 
@@ -212,7 +217,7 @@ Stripe::loadMeta()
   n = pread(fd, buff, N, pos.units());
   data.setView(buff, n.units());
   if (this->probeMeta(data)) {
-    _meta[A][HEAD] = data.template at<StripeMeta>(0);
+    _meta[A][HEAD]     = data.template at<StripeMeta>(0);
     _meta_pos[A][HEAD] = round_down(pos + Bytes(data.template at_ptr<char>(0) - buff));
     data += CacheStoreBlocks::SCALE;
 
@@ -229,7 +234,7 @@ Stripe::loadMeta()
 
         // Need to be more thorough in cross checks but this is OK for now.
         if (_meta[A][FOOT].version == _meta[A][HEAD].version) {
-          _meta_pos[A][FOOT] =round_down(pos + Bytes(data.template at_ptr<char>(0) - buff));
+          _meta_pos[A][FOOT] = round_down(pos + Bytes(data.template at_ptr<char>(0) - buff));
         } else {
           // false positive, keep looking.
           found = false;
@@ -253,14 +258,14 @@ Stripe::loadMeta()
       data.setView(buff, n.units());
     }
     if (this->validateMeta(data.template at_ptr<StripeMeta>(0))) {
-      _meta[B][HEAD] = data.template at<StripeMeta>(0);
+      _meta[B][HEAD]     = data.template at<StripeMeta>(0);
       _meta_pos[B][HEAD] = round_down(pos + Bytes(data.template at_ptr<char>(0) - buff));
 
       // Footer B must be at the same relative offset to Header B as Footer A -> Header A.
       n = pread(fd, buff, ts::CacheStoreBlocks::SCALE, (_meta_pos[B][HEAD] + delta).units());
       data.setView(buff, n.units());
       if (this->validateMeta(data.template at_ptr<StripeMeta>(0))) {
-        _meta[B][FOOT] = data.template at<StripeMeta>(0);
+        _meta[B][FOOT]     = data.template at<StripeMeta>(0);
         _meta_pos[B][FOOT] = round_down(_meta_pos[B][HEAD] + delta);
       }
     }
@@ -517,7 +522,7 @@ VolumeAllocator::fillEmptySpans()
 }
 /* --------------------------------------------------------------------------------------- */
 // All of these free functions need to be moved to the Cache class. Or the Span class?
-# if 0
+#if 0
 bool
 Validate_Stripe_Meta(ts::CacheStripeMeta const &stripe)
 {
@@ -679,7 +684,7 @@ Open_Stripe(ats_scoped_fd const &fd, ts::CacheStripeDescriptor const &block)
     printf("Stripe Header A not found in first chunk\n");
   }
 }
-# endif
+#endif
 /* --------------------------------------------------------------------------------------- */
 Errata
 Cache::loadSpan(FilePath const &path)
@@ -781,28 +786,31 @@ Cache::dumpSpans(SpanDumpDepth depth)
                   << " in use " << span->_header->num_free << " free " << span->_header->num_diskvol_blks << " stripes "
                   << span->_header->num_blocks.units() << " blocks" << std::endl;
 
-        for ( auto stripe : span->_stripes ) {
-          std::cout << "    : " << " @ " << stripe->_start << " len=" << stripe->_len.count() << " blocks "
-                    << " vol=" << static_cast<int>(stripe->_vol_idx) << " type=" << static_cast<int>(stripe->_type) << " " << (stripe->isFree() ? "free" : "in-use")
-                    << std::endl;
+        for (auto stripe : span->_stripes) {
+          std::cout << "    : "
+                    << " @ " << stripe->_start << " len=" << stripe->_len.count() << " blocks "
+                    << " vol=" << static_cast<int>(stripe->_vol_idx) << " type=" << static_cast<int>(stripe->_type) << " "
+                    << (stripe->isFree() ? "free" : "in-use") << std::endl;
           if (depth >= SpanDumpDepth::STRIPE) {
             Errata r = stripe->loadMeta();
             if (r) {
-              std::cout << "Stripe found: " << stripe->_segments << " segments with " << stripe->_buckets << " buckets per segment for "
-                        << stripe->_buckets * stripe->_segments * 4 << " total directory entries taking " << stripe->_buckets * stripe->_segments * sizeof(CacheDirEntry) * ts::ENTRIES_PER_BUCKET
-//                        << " out of " << (delta-header_len).units() << " bytes."
+              std::cout << "Stripe found: " << stripe->_segments << " segments with " << stripe->_buckets
+                        << " buckets per segment for " << stripe->_buckets * stripe->_segments * 4
+                        << " total directory entries taking "
+                        << stripe->_buckets * stripe->_segments * sizeof(CacheDirEntry) * ts::ENTRIES_PER_BUCKET
+                        //                        << " out of " << (delta-header_len).units() << " bytes."
                         << std::endl;
             } else {
               std::cout << r;
             }
           }
         }
-# if 0
+#if 0
           if (depth >= SpanDumpDepth::STRIPE) {
             Open_Stripe(span->_fd, stripe);
           }
         }
-# endif
+#endif
       }
     }
   }

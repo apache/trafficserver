@@ -28,9 +28,9 @@
 
 namespace tag
 {
-  struct bytes {
-    static constexpr char const* const label = " bytes";
-  };
+struct bytes {
+  static constexpr char const *const label = " bytes";
+};
 }
 
 using namespace ApacheTrafficServer;
@@ -39,9 +39,9 @@ namespace ts
 {
 constexpr static uint8_t CACHE_DB_MAJOR_VERSION = 24;
 /// Maximum allowed volume index.
-constexpr static int MAX_VOLUME_IDX = 255;
- constexpr static int ENTRIES_PER_BUCKET = 4;
- constexpr static int MAX_BUCKETS_PER_SEGMENT = (1 << 16) / ENTRIES_PER_BUCKET;
+constexpr static int MAX_VOLUME_IDX          = 255;
+constexpr static int ENTRIES_PER_BUCKET      = 4;
+constexpr static int MAX_BUCKETS_PER_SEGMENT = (1 << 16) / ENTRIES_PER_BUCKET;
 
 typedef Scalar<1, int64_t, tag::bytes> Bytes;
 typedef Scalar<1024, int64_t, tag::bytes> Kilobytes;

@@ -164,7 +164,7 @@ public:
   /// @return the @a V value at index @a n.
   template <typename V> V at(ssize_t n) const;
   /// @return a pointer to the @a V value at index @a n.
-  template <typename V> V const* at_ptr(ssize_t n) const;
+  template <typename V> V const *at_ptr(ssize_t n) const;
   //@}
 
   /// Set the view.
@@ -793,7 +793,7 @@ MemView::at(ssize_t n) const
 }
 
 template <typename V>
-inline V const*
+inline V const *
 MemView::at_ptr(ssize_t n) const
 {
   return static_cast<V const *>(_ptr) + n;
