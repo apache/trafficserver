@@ -165,11 +165,20 @@ def venv_cmds(path):
     Create virtual environment and add it
     to the path being used for the script
     '''
-    return [
-        # first command only needed for rhel and centos systems at this time
-        ". /opt/rh/rh-python35/enable || true ; virtualenv --python=python3 {0}".format(path),
-        ". /opt/rh/rh-python35/enable || true ; {0}/bin/pip install pip --upgrade".format(path)
-    ]
+
+    if isRedHatBased():
+        ret = [
+            # first command only needed for rhel and centos systems at this time
+            ". /opt/rh/rh-python35/enable || true ; virtualenv --python=python3 {0}".format(path),
+            ". /opt/rh/rh-python35/enable || true ; {0}/bin/pip install pip --upgrade".format(path)
+        ]
+    else:
+        ret = [
+            # first command only needed for rhel and centos systems at this time
+            "virtualenv --python=python3 {0}".format(path),
+            "{0}/bin/pip install pip --upgrade".format(path)
+        ]
+    return ret
 
 
 def main():
@@ -217,7 +226,10 @@ def main():
             path_to_pip = os.path.join(args.venv_path, "bin", args.use_pip)
 
     # install pip packages
-    cmds += [". /opt/rh/rh-python35/enable || true ;{0} install {1}".format(path_to_pip, " ".join(pip_packages))]
+    if isRedHatBased():
+        cmds += [". /opt/rh/rh-python35/enable || true ;{0} install {1}".format(path_to_pip, " ".join(pip_packages))]
+    else:
+        cmds += ["{0} install {1}".format(path_to_pip, " ".join(pip_packages))]
 
     run_cmds(cmds)
 
