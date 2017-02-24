@@ -2007,7 +2007,10 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
         if (ssl_extract_certificate(&line_info, sslMultiCertSettings)) {
           // There must be a certificate specified unless the tunnel action is set
           if (sslMultiCertSettings.cert || sslMultiCertSettings.opt != SSLCertContext::OPT_TUNNEL) {
-            ssl_store_ssl_context(params, lookup, &sslMultiCertSettings);
+            if (ssl_store_ssl_context(params, lookup, &sslMultiCertSettings) == nullptr) {
+              Error("failed to load SSL server contexts");
+              return false;
+            }
           } else {
             Warning("No ssl_cert_name specified and no tunnel action set");
           }
