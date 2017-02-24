@@ -1,6 +1,8 @@
 # balancer
-具体用法: 请参考https://docs.trafficserver.apache.org/en/latest/reference/plugins/balancer.en.html 
-项目地址: https://github.com/xieyugui/balancer.git
+####具体用法: 
+    > https://docs.trafficserver.apache.org/en/latest/reference/plugins/balancer.en.html 
+####项目地址: 
+    > https://github.com/xieyugui/balancer.git
 
 在roundrobin 模式下新增 backup、weight、max_fails、fail_timeout ,以及add path和开启https回源的功能, 
   当添加--open参数时, backup、weight、max_fails、fail_timeout等参数才会生效，不然只有默认轮询功能：
