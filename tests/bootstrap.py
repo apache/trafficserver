@@ -26,7 +26,7 @@ import platform
 import sys
 
 pip_packages = [
-    "git+https://bitbucket.org/dragon512/reusable-gold-testing-system.git",
+    "autest",
     "hyper"
 ]
 
