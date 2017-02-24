@@ -210,6 +210,16 @@ pthread_key_t threadKey = 0;
 void
 TSPluginInit(int argc, const char *argv[])
 {
+  TSPluginRegistrationInfo info;
+  info.plugin_name   = "combo_handler";
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
+
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
+    TSError("[combo_handler][%s] plugin registration failed.", __FUNCTION__);
+    return;
+  }
+
   if ((argc > 1) && (strcmp(argv[1], "-") != 0)) {
     COMBO_HANDLER_PATH = argv[1];
     if (COMBO_HANDLER_PATH == "/") {
