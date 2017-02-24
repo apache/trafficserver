@@ -130,7 +130,7 @@ Cache key structure and related plugin parameters
 ::
 
   Optional components      | ┌────────────────────┬────────────────┐
-  (included in this order) | │ --path-capture-uri | --path-capture │
+  (included in this order) | │ --capture-path-uri | --capture-path │
                            | ├────────────────────┴────────────────┤
   Default values if no     | │ URI path                            |
   optional components      | └─────────────────────────────────────┘
