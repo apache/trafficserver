@@ -397,7 +397,7 @@ If the plugin is used with the following plugin parameters in the remap rule. ::
       @pparam=--capture-prefix=(test_prefix).*:([^\s\/$]*) \
       @pparam=--static-prefix=static_prefix
 
-the cache key will be prefixed with ``/static_prefix/test_prefix/80`` instead of ``test_prefix_371.example.com:80`` when neither ``--capture-prefix`` nor ``--static-prefix`` are used.
+the cache key will be prefixed with ``/static_prefix/test_prefix/80`` instead of ``test_prefix_371.example.com:80`` when either ``--capture-prefix`` nor ``--static-prefix`` are used.
 
 
 Path, capture and replace from the path or entire URI
@@ -415,7 +415,7 @@ and the request URI is the following ::
 
   http://test_path_123.example.com/path/to/object?a=1&b=2&c=3
 
-then the cache key will have ``/const_path_object`` in the path section of the cache key instead of ``/path/to/object`` when neither ``--capture-path`` nor ``--capture-path-uri`` are used.
+then the cache key will have ``/const_path_object`` in the path section of the cache key instead of ``/path/to/object`` when either ``--capture-path`` nor ``--capture-path-uri`` are used.
 
 
 Capture and replace groups from whole URI for the "Path" section
@@ -430,7 +430,7 @@ and the request URI is the following ::
 
   http://test_path_123.example.com/path/to/object?a=1&b=2&c=3
 
-the the cache key will have ``/test_path_object`` in the path section of the cache key instead of ``/path/to/object`` when neither ``--capture-path`` nor ``--capture-path-uri`` are used.
+the the cache key will have ``/test_path_object`` in the path section of the cache key instead of ``/path/to/object`` when either ``--capture-path`` nor ``--capture-path-uri`` are used.
 
 
 Combining path plugin parameters --capture-path and --capture-path-uri
@@ -446,7 +446,7 @@ and the request URI is the following ::
 
   http://test_path_123.example.com/path/to/object?a=1&b=2&c=3
 
-the the cache key will have ``/test_path_object/const_path_object`` in the path section of the cache key instead of ``/path/to/object`` when neither ``--capture-path`` nor ``--capture-path-uri`` are used.
+the the cache key will have ``/test_path_object/const_path_object`` in the path section of the cache key instead of ``/path/to/object`` when either ``--capture-path`` nor ``--capture-path-uri`` are used.
 
 User-Agent capturing, replacement and classification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
