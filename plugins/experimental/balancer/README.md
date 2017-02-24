@@ -1,7 +1,8 @@
 # balancer
 具体用法：请参考https://docs.trafficserver.apache.org/en/latest/reference/plugins/balancer.en.html 
 
-在roundrobin 模式下新增 backup、weight、max_fails、fail_timeout ,以及add path和开启https回源的功能：
+在roundrobin 模式下新增 backup、weight、max_fails、fail_timeout ,以及add path和开启https回源的功能, 
+  当添加--open参数时, backup、weight、max_fails、fail_timeout等参数才会生效，不然只有默认轮询功能：
 
 ####backup=number
     marks the server as a backup server. It will be passed requests when the primary servers are 
@@ -25,8 +26,8 @@
     
     
 #For example:
- map http://foo.com http://foo.com  @plugin=balancer.so @pparam=--policy=roundrobin @pparam=--https  @pparam=one.bar.com:80,0,1,3,10 @pparam=two.bar.com,0,1,3,10
+ map http://foo.com http://foo.com  @plugin=balancer.so @pparam=--policy=roundrobin @pparam=--https @pparam=--open @pparam=one.bar.com:80,0,1,3,10 @pparam=two.bar.com,0,1,3,10
  
 #Add path:
- map http://foo.com http://foo.com  @plugin=balancer.so @pparam=--policy=roundrobin,0/ @pparam=one.bar.com:80,0,1,3,10 @pparam=two.bar.com,0,1,3,10 <br />
+ map http://foo.com http://foo.com  @plugin=balancer.so @pparam=--policy=roundrobin,0/ @pparam=--open @pparam=one.bar.com:80,0,1,3,10 @pparam=two.bar.com,0,1,3,10 <br />
  if client request http://cdnxxx.com/1.jpg then ATS will back to the source server request http://cdnxxx.com/0/1.jpg
