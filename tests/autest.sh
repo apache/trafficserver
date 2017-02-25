@@ -26,6 +26,8 @@ if [ ! -f ./env-test/bin/autest ]; then\
 		./bootstrap.py;\
         echo -e "${GREEN}Done!${NC}";\
 	fi
+# this is for rhel or centos systems
+. /opt/rh/rh-python35/enable || true ;
 . env-test/bin/activate
 ./env-test/bin/autest -D gold_tests $*
 ret=$?
