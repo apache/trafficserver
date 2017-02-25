@@ -39,6 +39,8 @@
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
 
+#define PLUGIN_NAME "add_header"
+
 static TSMBuffer hdr_bufp;
 static TSMLoc hdr_loc;
 
@@ -53,13 +55,13 @@ add_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   int retval;
 
   if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_loc) != TS_SUCCESS) {
-    TSError("[add_header] Unable to retrieve client request header");
+    TSError("[%s] Unable to retrieve client request header", PLUGIN_NAME);
     goto done;
   }
 
   field_loc = TSMimeHdrFieldGet(hdr_bufp, hdr_loc, 0);
   if (field_loc == TS_NULL_MLOC) {
-    TSError("[add_header] Unable to get field");
+    TSError("[%s] Unable to get field", PLUGIN_NAME);
     goto error;
   }
 
@@ -67,7 +69,7 @@ add_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   while (field_loc) {
     /* First create a new field in the client request header */
     if (TSMimeHdrFieldCreate(req_bufp, req_loc, &new_field_loc) != TS_SUCCESS) {
-      TSError("[add_header] Unable to create new field");
+      TSError("[%s] Unable to create new field", PLUGIN_NAME);
       TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
       break;
     }
@@ -75,7 +77,7 @@ add_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
     /* Then copy our new field at this new location */
     retval = TSMimeHdrFieldCopy(req_bufp, req_loc, new_field_loc, hdr_bufp, hdr_loc, field_loc);
     if (retval == TS_ERROR) {
-      TSError("[add_header] Unable to copy new field");
+      TSError("[%s] Unable to copy new field", PLUGIN_NAME);
       TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
       break;
     }
@@ -83,7 +85,7 @@ add_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
     /* Add this field to the Http client request header */
     retval = TSMimeHdrFieldAppend(req_bufp, req_loc, new_field_loc);
     if (retval != TS_SUCCESS) {
-      TSError("[add_header] Unable to append new field");
+      TSError("[%s] Unable to append new field", PLUGIN_NAME);
       TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
       break;
     }
@@ -126,35 +128,35 @@ TSPluginInit(int argc, const char *argv[])
   int i, retval;
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "add-header";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[add_header] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
     goto error;
   }
 
   if (argc < 2) {
-    TSError("[add_header] Usage: %s \"name1: value1\" \"name2: value2\" ...>", argv[0]);
+    TSError("[%s] Usage: %s \"name1: value1\" \"name2: value2\" ...>", PLUGIN_NAME, argv[0]);
     goto error;
   }
 
   hdr_bufp = TSMBufferCreate();
   if (TSMimeHdrCreate(hdr_bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[add_header] Can not create mime header");
+    TSError("[%s] Can not create mime header", PLUGIN_NAME);
     goto error;
   }
 
   for (i = 1; i < argc; i++) {
     if (TSMimeHdrFieldCreate(hdr_bufp, hdr_loc, &field_loc) != TS_SUCCESS) {
-      TSError("[add_header] Unable to create field");
+      TSError("[%s] Unable to create field", PLUGIN_NAME);
       goto error;
     }
 
     retval = TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
     if (retval != TS_SUCCESS) {
-      TSError("[add_header] Unable to add field");
+      TSError("[%s] Unable to add field", PLUGIN_NAME);
       goto error;
     }
 
@@ -162,7 +164,7 @@ TSPluginInit(int argc, const char *argv[])
     if (p) {
       retval = TSMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, argv[i], p - argv[i]);
       if (retval == TS_ERROR) {
-        TSError("[add_header] Unable to name field");
+        TSError("[%s] Unable to name field", PLUGIN_NAME);
         goto error;
       }
 
@@ -172,13 +174,13 @@ TSPluginInit(int argc, const char *argv[])
       }
       retval = TSMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, p, strlen(p));
       if (retval == TS_ERROR) {
-        TSError("[add_header] Unable to insert field value");
+        TSError("[%s] Unable to insert field value", PLUGIN_NAME);
         goto error;
       }
     } else {
       retval = TSMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, argv[i], strlen(argv[i]));
       if (retval == TS_ERROR) {
-        TSError("[add_header] Unable to set field name");
+        TSError("[%s] Unable to set field name", PLUGIN_NAME);
         goto error;
       }
     }
@@ -190,7 +192,7 @@ TSPluginInit(int argc, const char *argv[])
   goto done;
 
 error:
-  TSError("[add_header] Plugin not initialized");
+  TSError("[%s] Plugin not initialized", PLUGIN_NAME);
 
 done:
   return;
