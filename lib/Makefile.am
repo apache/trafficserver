@@ -26,6 +26,12 @@ if BUILD_WCCP
 SUBDIRS += wccp
 endif
 
+LOCAL =
+
+if BUILD_LUAJIT
+LOCAL += all-luajit
+endif
+
 # Support verbose LuaJIT builds with "make V=1".
 luajit__v_ = $(luajit__v_$(AM_DEFAULT_VERBOSITY))
 luajit__v_0 = @
@@ -39,7 +45,9 @@ luajit__v_1 =
 # Note: The LUAJIT_LDFLAGS is a bit of a hack, since LuaJIT on OmniOS needs
 #       the -m64 flag. See configure.ac.
 #
-all-local:
+all-local:	$(LOCAL)
+
+all-luajit:
 	@echo "Making all in luajit"
 	test -d "$(top_builddir)/$(subdir)/luajit/src" || cp -rf "$(srcdir)/luajit" "$(top_builddir)/$(subdir)/"
 	cd luajit && $(MAKE) $(AM_MAKEFLAGS) \

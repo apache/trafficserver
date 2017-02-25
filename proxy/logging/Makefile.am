@@ -21,7 +21,6 @@ include $(top_srcdir)/build/tidy.mk
 AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/luajit/src \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/proxy/http \
@@ -30,6 +29,11 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/proxy/shared \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils
+
+if BUILD_LUAJIT
+AM_CPPFLAGS += \
+  -I$(abs_top_srcdir)/lib/luajit/src
+endif
 
 EXTRA_DIST = LogStandalone.cc
 
