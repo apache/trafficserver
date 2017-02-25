@@ -26,9 +26,14 @@
 #include <ts/MemView.h>
 #include <sstream>
 #include <ctype.h>
+#include <ts/ink_platform.h>
 
 namespace ts
 {
+StringView::StringView(const char *s) : _ptr(s), _size(strlen(s))
+{
+}
+
 int
 memcmp(MemView const &lhs, MemView const &rhs)
 {
@@ -69,7 +74,9 @@ intmax_t
 svtoi(StringView src, StringView *out, int base)
 {
   static const int8_t convert[256] = {
-    //   0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+    /* [can't do this nicely because clang format won't allow exdented comments]
+     0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+    */
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 00
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 10
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 20
