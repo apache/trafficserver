@@ -40,8 +40,32 @@ namespace ts
 class MemView;
 class StringView;
 
+/// Compare the memory in two views.
+/// Return based on the first different byte. If one argument is a prefix of the other, the prefix
+/// is considered the "smaller" value.
+/// @return
+/// - -1 if @a lhs byte is less than @a rhs byte.
+/// -  1 if @a lhs byte is greater than @a rhs byte.
+/// -  0 if the views contain identical memory.
 int memcmp(MemView const &lhs, MemView const &rhs);
+/// Compare the strings in two views.
+/// Return based on the first different character. If one argument is a prefix of the other, the prefix
+/// is considered the "smaller" value.
+/// @return
+/// - -1 if @a lhs char is less than @a rhs char.
+/// -  1 if @a lhs char is greater than @a rhs char.
+/// -  0 if the views contain identical strings.
 int strcmp(StringView const &lhs, StringView const &rhs);
+/// Compare the strings in two views.
+/// Return based on the first different character. If one argument is a prefix of the other, the prefix
+/// is considered the "smaller" value. The values are compared ignoring case.
+/// @return
+/// - -1 if @a lhs char is less than @a rhs char.
+/// -  1 if @a lhs char is greater than @a rhs char.
+/// -  0 if the views contain identical strings.
+///
+/// @internal Why not <const&>? Because the implementation would make copies anyway, might as well save
+/// the cost of passing the pointers.
 int strcasecmp(StringView lhs, StringView rhs);
 
 /** Convert the text in @c StringView @a src to a numeric value.
@@ -835,9 +859,6 @@ inline constexpr StringView::StringView(const char *ptr, size_t n) : _ptr(ptr), 
 {
 }
 inline constexpr StringView::StringView(const char *start, const char *end) : _ptr(start), _size(end - start)
-{
-}
-inline StringView::StringView(const char *s) : _ptr(s), _size(strlen(s))
 {
 }
 inline constexpr StringView::StringView(std::nullptr_t) : _ptr(nullptr), _size(0)
