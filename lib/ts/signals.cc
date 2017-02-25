@@ -170,7 +170,7 @@ signal_format_siginfo(int signo, siginfo_t *info, const char *msg)
   snprintf(buf, sizeof(buf), "%s: received signal %d\n", msg, signo);
 #endif
 
-  write(STDERR_FILENO, buf, strlen(buf));
+  (void)write(STDERR_FILENO, buf, strlen(buf));
 }
 
 void
