@@ -48,8 +48,7 @@ distro_packages = {
     ],
     "CentOS": [
         "install epel-release",
-        "install python34",
-        "install rh-python34-python-virtualenv"
+        "install rh-python35-python-virtualenv"
     ]
 }
 
@@ -167,8 +166,9 @@ def venv_cmds(path):
     to the path being used for the script
     '''
     return [
-        "virtualenv --python=python3 {0}".format(path),
-        "{0}/bin/pip install pip --upgrade".format(path)
+        # first command only needed for rhel and centos systems at this time
+        ". /opt/rh/rh-python35/enable || true ; virtualenv --python=python3 {0}".format(path),
+        ". /opt/rh/rh-python35/enable || true ; {0}/bin/pip install pip --upgrade".format(path)
     ]
 
 
@@ -217,7 +217,7 @@ def main():
             path_to_pip = os.path.join(args.venv_path, "bin", args.use_pip)
 
     # install pip packages
-    cmds += ["{0} install {1}".format(path_to_pip, " ".join(pip_packages))]
+    cmds += [". /opt/rh/rh-python35/enable || true ;{0} install {1}".format(path_to_pip, " ".join(pip_packages))]
 
     run_cmds(cmds)
 
