@@ -23,7 +23,7 @@ AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 libatscppai = $(top_builddir)/lib/cppapi/libatscppapi.la
 
 example_Plugins = \
-	add-header.la \
+	add_header.la \
 	append-transform.la \
 	basic-auth.la \
 	blacklist-0.la \
@@ -87,7 +87,7 @@ else
 noinst_LTLIBRARIES = $(example_Plugins)
 endif
 
-add_header_la_SOURCES = add-header/add-header.c
+add_header_la_SOURCES = add_header/add_header.c
 append_transform_la_SOURCES = append-transform/append-transform.c
 basic_auth_la_SOURCES = basic-auth/basic-auth.c
 blacklist_0_la_SOURCES = blacklist-0/blacklist-0.c
