@@ -28,8 +28,12 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/mgmt/api/include \
   -I$(abs_top_srcdir)/mgmt/cluster \
   -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/lib \
+  -I$(abs_top_srcdir)/lib
+
+if BUILD_LUAJIT
+AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/lib/luajit/src
+endif
 
 AM_LDFLAGS += \
   @OPENSSL_LDFLAGS@
@@ -59,8 +63,17 @@ traffic_manager_SOURCES += \
   metrics.cc
 
 traffic_manager_LDADD += \
-  $(top_builddir)/lib/bindings/libbindings.la \
+  $(top_builddir)/lib/bindings/libbindings.la
+
+if BUILD_LUAJIT
+traffic_manager_LDADD += \
   $(top_builddir)/lib/luajit/src/libluajit.a
+endif
+
+if SYSTEM_LUAJIT
+traffic_manager_LDADD +=\
+  @LIBLUAJIT@
+endif
 
 traffic_manager_LDADD +=\
   $(LIBUNWIND_LIBS) \

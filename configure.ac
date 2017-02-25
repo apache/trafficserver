@@ -307,6 +307,19 @@ AC_ARG_WITH([profiler],
 )
 AC_MSG_RESULT([$with_profiler])
 
+# System luajit
+AC_MSG_CHECKING([whether to enable system luajit])
+AC_ARG_ENABLE([system-luajit],
+  [AS_HELP_STRING([--enable-system-luajit],[enable support for system-installed luajit])],
+  [enable_system_luajit=yes],
+  [enable_system_luajit=no]
+)
+AC_MSG_RESULT([$enable_system_luajit])
+TS_ARG_ENABLE_VAR([has],[system_luajit])
+AM_CONDITIONAL([BUILD_LUAJIT], [test 0 -eq $has_system_luajit])
+AM_CONDITIONAL([SYSTEM_LUAJIT], [test 0 -ne $has_system_luajit])
+
+
 # Disable all static library builds
 AC_DISABLE_STATIC
 
@@ -1152,6 +1165,21 @@ TS_CHECK_ZLIB
 #
 # Check for lzma presence and usability
 TS_CHECK_LZMA
+
+#
+# System LuaJIT
+#
+
+if test "x$enable_system_luajit" == "xyes"; then
+    saveLIBS=$LIBS
+    LIBS=""
+    AC_CHECK_HEADER(lua.h, ,
+                    [AC_MSG_ERROR([*** system luajit requested and lua.h not found ***])])
+    AC_CHECK_LIB(luajit-5.1, luaL_newstate, [],
+                 [AC_MSG_ERROR([*** system luajit requested and libluajit-5.1 not found ***])])
+    AC_SUBST([LIBLUAJIT], [$LIBS])
+    LIBS=$saveLIBS
+fi
 
 #
 # Tcl macros provided by build/tcl.m4
