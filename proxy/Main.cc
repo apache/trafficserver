@@ -41,6 +41,7 @@
 #include "api/ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 
 #include <syslog.h>
+#include <algorithm>
 
 #if !defined(linux)
 #include <sys/lock.h>
@@ -182,7 +183,7 @@ static volatile int delay_listen_for_cache_p = 0;
 
 AppVersionInfo appVersionInfo; // Build info for this application
 
-static const ArgumentDescription argument_descriptions[] = {
+static ArgumentDescription argument_descriptions[] = {
   {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", nullptr},
   {"cluster_threads", 'Z', "Number of Cluster Threads", "I", &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", nullptr},
   {"udp_threads", 'U', "Number of UDP Threads", "I", &num_of_udp_threads, "PROXY_UDP_THREADS", nullptr},
@@ -1529,6 +1530,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Before accessing file system initialize Layout engine
   Layout::create();
   chdir_root(); // change directory to the install root of traffic server.
+
+  std::sort(argument_descriptions, argument_descriptions + countof(argument_descriptions),
+            [](ArgumentDescription &a, ArgumentDescription &b) { return 0 > strcasecmp(a.name, b.name); });
 
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
   command_flag  = command_flag || *command_string;
