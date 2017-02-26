@@ -101,6 +101,8 @@ extern "C" int plock(int);
 #include <gperftools/heap-profiler.h>
 #endif
 
+#include <array>
+
 //
 // Global Data
 //
@@ -182,7 +184,7 @@ static volatile int delay_listen_for_cache_p = 0;
 
 AppVersionInfo appVersionInfo; // Build info for this application
 
-static const ArgumentDescription argument_descriptions[] = {
+static const std::array<ArgumentDescription, 27> argument_descriptions = {
   {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", nullptr},
   {"cluster_threads", 'Z', "Number of Cluster Threads", "I", &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", nullptr},
   {"udp_threads", 'U', "Number of UDP Threads", "I", &num_of_udp_threads, "PROXY_UDP_THREADS", nullptr},
@@ -1530,7 +1532,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   Layout::create();
   chdir_root(); // change directory to the install root of traffic server.
 
-  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+  std::sort(argument_descriptions.begin(), argument_descriptions.end(), [](auto const & a, auto const & b) {
+      return a.name < b.name;
+  });
+
+  process_args(&appVersionInfo, argument_descriptions, argument_descriptions.size(), argv);
   command_flag  = command_flag || *command_string;
   command_index = find_cmd_index(command_string);
   command_valid = command_flag && command_index >= 0;
