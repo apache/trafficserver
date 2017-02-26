@@ -16,6 +16,8 @@
 
 .. include:: ../../../common.defs
 
+.. default-domain:: c
+
 TSHttpStatus
 ************
 

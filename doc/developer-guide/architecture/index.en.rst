@@ -35,6 +35,7 @@ understanding and modifying the source.
    :maxdepth: 2
 
    architecture.en
+   core-cache-functions.en
    data-structures.en
    api-functions.en
    consistency.en

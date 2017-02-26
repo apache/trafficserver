@@ -66,16 +66,6 @@ more widely. Those are described on this page.
 
    An opaque type that represents a Traffic SeUuirver :term:`session`.
 
-.. type:: TSHttpStatus
-
-   This set of enums represents possible return values from
-   :func:`TSHttpHdrStatusGet`, which retrieves the status code from an
-   HTTP response header (:func:`TSHttpHdrStatusGet` retrieves status
-   codes only from headers of type :data:`TS_HTTP_TYPE_RESPONSE`).
-
-   You can also set the :type:`TSHttpStatus` of a response header using
-   :func:`TSHttpHdrStatusSet`.
-
 .. type:: TSHttpTxn
 
    An opaque type that represents a Traffic Server HTTP :term:`transaction`.

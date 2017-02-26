@@ -1155,4 +1155,3 @@ including the size of each stripe.
    This linked list is mostly ignored in later processing, causing all but one
    file or directory storage units on the same device to be ignored. See
    `TS-1869 <https://issues.apache.org/jira/browse/TS-1869>`_.
-
