@@ -1532,7 +1532,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   chdir_root(); // change directory to the install root of traffic server.
 
   std::sort(argument_descriptions, argument_descriptions + countof(argument_descriptions),
-            [](ArgumentDescription &a, ArgumentDescription &b) { return 0 > strcasecmp(a.name, b.name); });
+            [](ArgumentDescription const &a, ArgumentDescription const &b) { return 0 > strcasecmp(a.name, b.name); });
 
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
   command_flag  = command_flag || *command_string;
