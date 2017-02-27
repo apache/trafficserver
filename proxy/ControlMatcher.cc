@@ -219,7 +219,7 @@ HostMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   error = cur_d->Init(line_info);
   if (error.failed()) {
     // There was a problem so undo the effects this function
-    memset(cur_d, 0, sizeof(Data));
+    new (cur_d) Data(); // reconstruct
   } else {
     // Fill in the matching info
     host_lookup->NewEntry(match_data, (line_info->type == MATCH_DOMAIN) ? true : false, cur_d);
