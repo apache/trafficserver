@@ -17,6 +17,8 @@
 
 .. include:: ../../common.defs
 
+.. default-domain:: cpp
+
 .. _developer-cache-architecture:
 
 Cache Architecture
@@ -990,7 +992,7 @@ is put in to the aggregation buffer.
 
 When no more cache virtual connections can be processed (due to an empty queue
 or the aggregation buffer filling) then :cpp:member:`Vol::evac_range` is called
-to clear the range to be overwritten plus an additional :const:`EVACUATION_SIZE`
+to clear the range to be overwritten plus an additional :c:macro:`EVACUATION_SIZE`
 range. The buckets covering that range are checked. If there are any items in
 the buckets a new cache virtual connection (a *doc evacuator*) is created and
 used to read the evacuation item closest to the write cursor (i.e. with the
@@ -1085,7 +1087,7 @@ ID to internal linked lists attached to the :cpp:member:`Store::disk`
 array[#store-disk-array]_. Spans that refer to the same directory, disk, or raw
 device are coalesced in to a single span. Spans that refer to the same file
 with overlapping offsets are also coalesced [#coalesced-spans]_. This is all done in
-:c:func:`ink_cache_init()` called during startup.
+:func:`ink_cache_init` called during startup.
 
 .. note::
 
@@ -1101,7 +1103,7 @@ blocking operations on the span. The primary use of these is to be passed to
 the AIO threads as the callback when an I/O operation completes. These are then
 dispatched to AIO threads to perform :term:`storage unit` initialization. After
 all of those have completed, the resulting storage is distributed across the
-:term:`volumes <cache volume>` in :c:func:`cplist_reconfigure`. The
+:term:`volumes <cache volume>` in :func:`cplist_reconfigure`. The
 :cpp:class:`CacheVol` instances are created at this time.
 
 :term:`Cache stripe <cache stripe>` assignment setup is done once all stripes
@@ -1123,7 +1125,7 @@ only those stripes marked as default are placed in the generic record.
    If hosting records are specified, it is an error to not specify at least one
    default cache volume.
 
-The assignment table is initialized in :c:func:`build_vol_hash_table` which is
+The assignment table is initialized in :func:`build_vol_hash_table` which is
 called for each :cpp:class:`CacheHostRecord` instance. For each stripe in the
 host record, a sequence of pseudo-random numbers is generated. This begins with
 the folded hash of the stripe hash identifier, which is the device path followed

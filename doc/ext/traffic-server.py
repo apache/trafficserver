@@ -352,7 +352,7 @@ EXTERNAL_TYPES = set((
     'int8_t', 'int16_t', 'int24_t', 'int32_t', 'int64_t',
     'unsigned', 'unsigned int',
     'off_t', 'size_t', 'time_t',
-    'Event', 'INK_MD5', 'DLL<EvacuationBlock>',
+    'Event', 'INK_MD5',
     'sockaddr'
     ))
 
