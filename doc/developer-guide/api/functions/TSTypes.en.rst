@@ -16,6 +16,10 @@
 
 .. include:: ../../../common.defs
 
+.. Many types are here simply to avoid build errors in the documentation. It is reasonable to,
+   when providing additional documentation on the type, to move it from here to a more appropriate
+   file.
+
 .. default-domain:: c
 
 TSAPI Types
@@ -145,3 +149,15 @@ more widely. Those are described on this page.
 .. type:: TSVConn
 
 .. type:: TSVIO
+
+.. type:: ModuleVersion
+
+    A module version.
+    
+.. cpp:type:: ModuleVersion
+
+    A module version.
+    
+.. cpp:class:: template<typename T> DLL
+
+    An anchor for a double linked instrusive list of instance of :arg:`T`.

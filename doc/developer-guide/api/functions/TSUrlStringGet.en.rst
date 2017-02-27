@@ -30,6 +30,7 @@ Synopsis
 `#include <ts/ts.h>`
 
 .. function:: char * TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int * length)
+.. function:: char * TSHttpEffectiveUrlStringGet(TSHttpTxn txn, int * length)
 .. function:: int TSUrlLengthGet(TSMBuffer bufp, TSMLoc offset)
 .. function:: void TSUrlPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp)
 
@@ -49,6 +50,15 @@ parameter :arg:`length`. This is the same length that :func:`TSUrlLengthGet`
 returns. The returned string is allocated by a call to :func:`TSmalloc` and
 must be freed by a call to :func:`TSfree`. If length is :literal:`NULL` then no
 attempt is made to de-reference it.
+
+:func:`TSHttpEffectiveUrlStringGet` is similar to :func:`TSUrlStringGet`. The two differences are
+
+*  The source is transaction :arg:`txn` in order to have access to the full request.
+*  It combines, if needed, both the explicit url and the ``Host`` field. This is
+   done if the explicit URL does not have a host and the ``Host`` field does.
+
+This function is useful to guarantee a URL that is as complete as possible given
+the specific request.
 
 :func:`TSUrlLengthGet` calculates the length of the URL located at
 :arg:`offset` within the marshal buffer bufp as if it were returned as a
