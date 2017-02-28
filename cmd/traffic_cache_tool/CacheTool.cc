@@ -125,10 +125,15 @@ struct Stripe {
   /// Is stripe unallocated?
   bool isFree() const;
 
-  /// Probe a chunk of memory @a mem for stripe metadata.
-  /// @a mem is updated to remove memory that has been probed.
-  /// @return @c true if @a mem has valid data, @c false otherwise.
-  bool probeMeta(MemView &mem);
+  /** Probe a chunk of memory @a mem for stripe metadata.
+
+      @a mem is updated to remove memory that has been probed. If @a
+      meta is not @c nullptr then it is used for additional cross
+      checking.
+
+      @return @c true if @a mem has valid data, @c false otherwise.
+  */
+  bool probeMeta(MemView &mem, StripeMeta const* meta = nullptr);
 
   /// Check a buffer for being valid stripe metadata.
   /// @return @c true if valid, @c false otherwise.
@@ -197,10 +202,15 @@ Stripe::validateMeta(StripeMeta const *meta)
 }
 
 bool
-Stripe::probeMeta(MemView &mem)
+Stripe::probeMeta(MemView &mem, StripeMeta const* base_meta)
 {
   while (mem.size() >= sizeof(StripeMeta)) {
-    if (this->validateMeta(mem.template at_ptr<StripeMeta>(0))) {
+    StripeMeta const* meta = mem.template at_ptr<StripeMeta>(0);
+    if (this->validateMeta(meta) &&
+        (base_meta == nullptr || // no base version to check against.
+         ( meta->version == base_meta->version ) // need more checks here I think.
+          ))
+    {
       return true;
     }
     // The meta data is stored aligned on a stripe block boundary, so only need to check there.
@@ -254,8 +264,7 @@ Stripe::loadMeta()
   size_t io_align = _span->_geometry.blocksz;
   StripeMeta const *meta;
 
-  char* buff; // Current active buffer.
-  std::unique_ptr<void> bulk_buff; // Buffer for bulk reads.
+  std::unique_ptr<char> bulk_buff; // Buffer for bulk reads.
   static const size_t SBSIZE = CacheStripeBlocks::SCALE; // save some typing.
   alignas(SBSIZE) char stripe_buff[SBSIZE]; // Use when reading a single stripe block.
 
@@ -263,45 +272,35 @@ Stripe::loadMeta()
 
   _directory._start = pos;
 
-  // Check the earlier part of the block. Header A must be at the start of the stripe block.
+  // Header A must be at the start of the stripe block.
   n = pread(fd, stripe_buff, SBSIZE, pos.units());
   data.setView(stripe_buff, n.units());
   meta = data.template at_ptr<StripeMeta>(0);
   if (this->validateMeta(meta)) {
-    delta              = data.template at_ptr<char>(0) - buff.get();
+    delta              = data.template at_ptr<char>(0) - bulk_buff.get();
     _meta[A][HEAD]     = *meta;
     _meta_pos[A][HEAD] = round_down(pos + delta);
     pos += SBSIZE;
     // Search for Footer A, skipping false positives.
-    do {
-      do {
-        bulk_buff.reset(ats_memalign(io_align, N));
-        buff = bulk_buff.get();
-        n = pread(fd, buff, N, pos.units());
-        data.setView(buff, n.units());
-        found = this->probeMeta(data);
-      } while (!found && pos < limit);
-
-
-        _directory.append({buff.release(), N});
-        pos += N;
-        buff.reset(static_cast<char *>(malloc(N)));
-      }
-
+    while (pos < limit) {
+      char *buff = static_cast<char*>(ats_memalign(io_align, N));
+      bulk_buff.reset(buff);
+      n = pread(fd, buff, N, pos.units());
+      data.setView(buff, n.units());
+      found = this->probeMeta(data, &_meta[A][HEAD]);
       if (found) {
-        _meta[A][FOOT] = data.template at<StripeMeta>(0);
-
-        // Need to be more thorough in cross checks but this is OK for now.
-        if (_meta[A][FOOT].version == _meta[A][HEAD].version) {
-          _meta_pos[A][FOOT] = round_down(pos + Bytes(data.template at_ptr<char>(0) - buff.get()));
-          _directory._clip   = N - (data.template at_ptr<char>(0) - buff.get());
-        } else {
-          // false positive, keep looking.
-          found = false;
+        ptrdiff_t diff = data.template at_ptr<char>(0) - buff;
+        _meta_pos[A][FOOT] = round_down(pos + Bytes(diff));
+        if (diff > 0) {
+          _directory._clip   = N - diff;
+          _directory.append({bulk_buff.release(), N});
         }
+        break;
+      } else {
+        _directory.append({bulk_buff.release(), N});
+        pos += N;
       }
-    } while (!found);
-    _directory.append({buff.release(), N});
+    }
   } else {
     zret.push(0, 1, "Header A not found");
   }
@@ -309,15 +308,13 @@ Stripe::loadMeta()
   // Technically if Copy A is valid, Copy B is not needed. But at this point it's cheap to retrieve
   // (as the exact offset is computable).
   if (_meta_pos[A][FOOT] > 0) {
-    alignas(512) char b[CacheStoreBlocks::SCALE];
-
     delta = _meta_pos[A][FOOT] - _meta_pos[A][HEAD];
     // Header B should be immediately after Footer A. If at the end of the last read,
     // do another read.
     if (data.size() < CacheStoreBlocks::SCALE) {
       pos += N;
-      n = pread(fd, b, CacheStoreBlocks::SCALE, pos.units());
-      data.setView(b, n.units());
+      n = pread(fd, stripe_buff, CacheStoreBlocks::SCALE, pos.units());
+      data.setView(stripe_buff, n.units());
     }
     meta = data.template at_ptr<StripeMeta>(0);
     if (this->validateMeta(meta)) {
@@ -326,8 +323,8 @@ Stripe::loadMeta()
 
       // Footer B must be at the same relative offset to Header B as Footer A -> Header A.
       pos += delta;
-      n = pread(fd, b, ts::CacheStoreBlocks::SCALE, pos.units());
-      data.setView(b, n.units());
+      n = pread(fd, stripe_buff, ts::CacheStoreBlocks::SCALE, pos.units());
+      data.setView(stripe_buff, n.units());
       meta = data.template at_ptr<StripeMeta>(0);
       if (this->validateMeta(meta)) {
         _meta[B][FOOT]     = *meta;
