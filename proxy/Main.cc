@@ -405,7 +405,7 @@ proxy_signal_handler(int signo, siginfo_t *info, void *)
   shutdown_event_system = true;
   sleep(1);
 
-  ::_exit(signo);
+  ::exit(signo);
 }
 
 //
