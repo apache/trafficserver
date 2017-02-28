@@ -1186,10 +1186,11 @@ int
 HttpSM::state_request_wait_for_transform_read(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_request_wait_for_transform_read, event);
-  int64_t size = *((int64_t *)data);
+  int64_t size;
 
   switch (event) {
   case TRANSFORM_READ_READY:
+    size = *((int64_t *)data);
     if (size != INT64_MAX && size >= 0) {
       // We got a content length so update our internal
       //   data as well as fix up the request header
