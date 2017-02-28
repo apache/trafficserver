@@ -265,7 +265,7 @@ Stripe::loadMeta()
   StripeMeta const *meta;
 
   std::unique_ptr<char> bulk_buff; // Buffer for bulk reads.
-  static const size_t SBSIZE = CacheStripeBlocks::SCALE; // save some typing.
+  static const size_t SBSIZE = CacheStoreBlocks::SCALE; // save some typing.
   alignas(SBSIZE) char stripe_buff[SBSIZE]; // Use when reading a single stripe block.
 
   if (io_align > SBSIZE) return Errata::Message(0,1,"Cannot load stripe ", _idx, " on span ", _span->_path, " because the I/O block alignment ", io_align, " is larger than the buffer alignment ", SBSIZE);
