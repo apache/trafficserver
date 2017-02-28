@@ -77,7 +77,7 @@ int tsconfigerror(
 
 %error-verbose
 %define api.pure
-%parse-param { yyscan_t lexer }
+%parse-param { void *lexer }
 %parse-param { struct TsConfigHandlers* handlers }
 %lex-param { yyscan_t lexer }
 
