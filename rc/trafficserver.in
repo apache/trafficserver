@@ -314,9 +314,9 @@ case "$1" in
             test "x$VERBOSE" != "xno" && log_end_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE $TC_DAEMON
-            action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE $TM_DAEMON
-            action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE $TS_DAEMON
+            action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE -d 35 $TC_DAEMON
+            action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE -d 35 $TM_DAEMON
+            action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE -d 35 $TS_DAEMON
         elif [ "$DISTRIB_ID" = "gentoo" ]; then
 	    ebegin "Starting ${TS_PACKAGE_NAME}"
 	    do_stop
