@@ -148,6 +148,12 @@ more widely. Those are described on this page.
 
 .. type:: TSVConn
 
+    A virtual connection. This is the basic mechanism for abstracting I/O operations in |TS|.
+
+.. type:: TSNetVConnection
+
+    A subtype of :type:`TSVConn` that provides additional IP network information and operations.
+
 .. type:: TSVIO
 
 .. type:: ModuleVersion
