@@ -227,7 +227,19 @@ BindingInstance::construct()
     luaL_openlibs(this->lua);
 
     // Push a pointer to ourself into the well-known registry key.
-    lua_pushlightuserdata(this->lua, this);
+
+    // We do not use lightuserdata here because BindingInstance variables
+    // are often declared on stack which would make "this" a stack variable.
+    // While this might seem fine and actually work on many platforms, those
+    // 64bit platforms with split VA space where heap and stack may live in
+    // a separate 47bit VA will violate internal assumptions that luajit
+    // places on lightuserdata. Plain userdata will provide luajit-happy
+    // address in which we have the full 64bits to store our pointer to this.
+    // see: https://www.circonus.com/2016/07/luajit-illumos-vm/
+
+    BindingInstance **lua_surrogate;
+    lua_surrogate  = (BindingInstance **)lua_newuserdata(this->lua, sizeof(BindingInstance *));
+    *lua_surrogate = this;
     lua_setfield(this->lua, LUA_REGISTRYINDEX, selfkey);
 
     ink_release_assert(BindingInstance::self(this->lua) == this);
@@ -268,16 +280,17 @@ BindingInstance::eval(const char *chunk)
 BindingInstance *
 BindingInstance::self(lua_State *lua)
 {
-  BindingInstance *binding;
+  BindingInstance **binding;
 
   lua_getfield(lua, LUA_REGISTRYINDEX, selfkey);
-  binding = (BindingInstance *)lua_touserdata(lua, -1);
+  binding = (BindingInstance **)lua_touserdata(lua, -1);
 
   ink_release_assert(binding != nullptr);
-  ink_release_assert(binding->lua == lua);
+  ink_release_assert(*binding != nullptr);
+  ink_release_assert((*binding)->lua == lua);
 
   lua_pop(lua, 1);
-  return binding;
+  return *binding;
 }
 
 void
