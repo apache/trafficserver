@@ -5741,7 +5741,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
 
   // If we're half closed, we got a FIN from the client. Forward it on to the origin server
   // now that we have the tunnel operational.
-  if (ua_session->get_half_close_flag()) {
+  // HttpTunnel could broken due to bad chunked data and close all vc by chain_abort_all().
+  if (p->handler_state != HTTP_SM_POST_UA_FAIL && ua_session->get_half_close_flag()) {
     p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
   }
 }
