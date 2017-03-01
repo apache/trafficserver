@@ -1035,9 +1035,9 @@ LocalManager::listenForProxy()
 
     if ((listen(p.m_fd, backlog)) < 0) {
       mgmt_fatal(errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%s)\n", p.m_port,
-                 ats_ip_family_name(p.m_family));
+                 ats_ip_family_name(p.m_family).ptr());
     }
-    mgmt_log("[LocalManager::listenForProxy] Listening on port: %d (%s)\n", p.m_port, ats_ip_family_name(p.m_family));
+    mgmt_log("[LocalManager::listenForProxy] Listening on port: %d (%s)\n", p.m_port, ats_ip_family_name(p.m_family).ptr());
   }
   return;
 }

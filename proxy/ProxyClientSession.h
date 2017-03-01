@@ -189,27 +189,17 @@ public:
   }
 
   virtual int
-  populate_protocol(const char **result, int size) const
+  populate_protocol(ts::StringView *result, int size) const
   {
-    int retval = 0;
-
-    if (get_netvc()) {
-      retval += this->get_netvc()->populate_protocol(result, size);
-    }
-
-    return retval;
+    auto vc = this->get_netvc();
+    return vc ? vc->populate_protocol(result, size) : 0;
   }
 
   virtual const char *
-  protocol_contains(const char *tag_prefix) const
+  protocol_contains(ts::StringView tag_prefix) const
   {
-    const char *retval = NULL;
-
-    if (get_netvc()) {
-      retval = this->get_netvc()->protocol_contains(tag_prefix);
-    }
-
-    return retval;
+    auto vc = this->get_netvc();
+    return vc ? vc->protocol_contains(tag_prefix) : nullptr;
   }
 
   void set_session_active();
