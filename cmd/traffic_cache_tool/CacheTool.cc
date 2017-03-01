@@ -151,7 +151,7 @@ struct Stripe {
   CacheStoreBlocks _len; ///< Length of stripe.
   uint8_t _vol_idx = 0;  ///< Volume index.
   uint8_t _type    = 0;  ///< Stripe type.
-  uint8_t _idx     = -1; ///< Stripe index in span.
+  int8_t _idx      = -1; ///< Stripe index in span.
 
   int64_t _buckets;  ///< Number of buckets per segment.
   int64_t _segments; ///< Number of segments.
@@ -242,13 +242,17 @@ Stripe::updateLiveData(enum Copy c)
 
   _buckets  = n_buckets / n_segments;
   _segments = n_segments;
+  _directory._skip = header_len;
 }
 
 Errata
 Stripe::loadMeta()
 {
-  // Read from disk in chunks of this size.
-  constexpr static int64_t N = 1 << 24;
+  // Read from disk in chunks of this size. This needs to be a multiple of both the
+  // store block size and the directory entry size so neither goes acrss read boundaries.
+  // Beyond that the value should be in the ~10MB range for what I guess is best performance
+  // vs. blocking production disk I/O on a live system.
+  constexpr static int64_t N = (1 << 8) * CacheStoreBlocks::SCALE * sizeof(CacheDirEntry);
 
   Errata zret;
 
@@ -273,15 +277,18 @@ Stripe::loadMeta()
   _directory._start = pos;
 
   // Header A must be at the start of the stripe block.
+  // Todo: really need to check pread() for failure.
   n = pread(fd, stripe_buff, SBSIZE, pos.units());
   data.setView(stripe_buff, n.units());
   meta = data.template at_ptr<StripeMeta>(0);
   if (this->validateMeta(meta)) {
-    delta              = data.template at_ptr<char>(0) - bulk_buff.get();
+    delta              = data.template at_ptr<char>(0) - stripe_buff;
     _meta[A][HEAD]     = *meta;
-    _meta_pos[A][HEAD] = round_down(pos + delta);
+    _meta_pos[A][HEAD] = round_down(pos + Bytes(delta));
     pos += SBSIZE;
-    // Search for Footer A, skipping false positives.
+    _directory._skip = SBSIZE; // first guess, updated in @c updateLiveData when the header length is computed.
+    // Search for Footer A. Nothing for it except to grub through the disk.
+    // The searched data is cached so it's available for directory parsing later if needed.
     while (pos < limit) {
       char *buff = static_cast<char*>(ats_memalign(io_align, N));
       bulk_buff.reset(buff);
@@ -291,10 +298,12 @@ Stripe::loadMeta()
       if (found) {
         ptrdiff_t diff = data.template at_ptr<char>(0) - buff;
         _meta_pos[A][FOOT] = round_down(pos + Bytes(diff));
+        // don't bother attaching block if the footer is at the start
         if (diff > 0) {
           _directory._clip   = N - diff;
           _directory.append({bulk_buff.release(), N});
         }
+        data += SBSIZE; // skip footer for checking on B copy.
         break;
       } else {
         _directory.append({bulk_buff.release(), N});
@@ -689,13 +698,13 @@ Cache::dumpSpans(SpanDumpDepth depth)
 
         for (auto stripe : span->_stripes) {
           std::cout << "    : "
-                    << " @ " << stripe->_start << " len=" << stripe->_len.count() << " blocks "
+                    << "Stripe " << static_cast<int>(stripe->_idx) << " @ " << stripe->_start << " len=" << stripe->_len.count() << " blocks "
                     << " vol=" << static_cast<int>(stripe->_vol_idx) << " type=" << static_cast<int>(stripe->_type) << " "
                     << (stripe->isFree() ? "free" : "in-use") << std::endl;
           if (depth >= SpanDumpDepth::STRIPE) {
             Errata r = stripe->loadMeta();
             if (r) {
-              std::cout << "Stripe found: " << stripe->_segments << " segments with " << stripe->_buckets
+              std::cout << "      " << stripe->_segments << " segments with " << stripe->_buckets
                         << " buckets per segment for " << stripe->_buckets * stripe->_segments * 4
                         << " total directory entries taking "
                         << stripe->_buckets * stripe->_segments * sizeof(CacheDirEntry) * ts::ENTRIES_PER_BUCKET
