@@ -16,6 +16,8 @@
 
 .. include:: ../../../common.defs
 
+.. default-domain:: c
+
 TSHttpHookID
 ************
 
@@ -32,56 +34,68 @@ up :ref:`developer-plugins-continuations` callbacks.
 Enumeration Members
 ===================
 
-.. c:member:: TSHttpHookID TS_HTTP_READ_REQUEST_HDR_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_READ_REQUEST_HDR_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_OS_DNS_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_OS_DNS_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_SEND_REQUEST_HDR_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_SEND_REQUEST_HDR_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_READ_CACHE_HDR_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_READ_CACHE_HDR_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_READ_RESPONSE_HDR_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_READ_RESPONSE_HDR_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_SEND_RESPONSE_HDR_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_SEND_RESPONSE_HDR_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_REQUEST_TRANSFORM_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_REQUEST_TRANSFORM_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_RESPONSE_TRANSFORM_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_RESPONSE_TRANSFORM_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_SELECT_ALT_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_SELECT_ALT_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_TXN_START_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_TXN_START_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_TXN_CLOSE_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_TXN_CLOSE_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_SSN_START_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_SSN_START_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_SSN_CLOSE_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_SSN_CLOSE_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_PRE_REMAP_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_PRE_REMAP_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_POST_REMAP_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_POST_REMAP_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_RESPONSE_CLIENT_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_RESPONSE_CLIENT_HOOK
 
-.. c:member:: TSHttpHookID TS_SSL_FIRST_HOOK
+.. c:macro:: TSHttpHookID TS_SSL_FIRST_HOOK
 
-.. c:member:: TSHttpHookID TS_VCONN_PRE_ACCEPT_HOOK
+.. c:macro:: TSHttpHookID TS_VCONN_PRE_ACCEPT_HOOK
 
-.. c:member:: TSHttpHookID TS_SSL_SNI_HOOK
+.. c:macro:: TSHttpHookID TS_SSL_SNI_HOOK
 
-.. c:member:: TSHttpHookID TS_SSL_CERT_HOOK
+.. c:macro:: TSHttpHookID TS_SSL_CERT_HOOK
 
-.. c:member:: TSHttpHookID TS_SSL_SERVERNAME_HOOK
+.. c:macro:: TSHttpHookID TS_SSL_SERVERNAME_HOOK
 
-.. c:member:: TSHttpHookID TS_SSL_LAST_HOOK
+.. c:macro:: TSHttpHookID TS_SSL_LAST_HOOK
 
-.. c:member:: TSHttpHookID TS_HTTP_LAST_HOOK
+.. c:macro:: TSHttpHookID TS_HTTP_LAST_HOOK
 
 Description
 ===========
 
-Note that :member:`TS_SSL_CERT_HOOK` and :member:`TS_SSL_SNI_HOOK` hook the same openssl callbacks.  
-In openssl 1.0.2 and beyond :member:`TS_SSL_SERVERNAME_HOOK` is involved only for the openssl servername callback.  :member:`TS_SSL_SNI_HOOK` and :member:`TS_SSL_CERT_HOOK` are called for the openssl certificate callback.
+Note that :macro:`TS_SSL_CERT_HOOK` and :macro:`TS_SSL_SNI_HOOK` correspond to the same openssl
+callbacks. This is done for backwards compatibility. :macro:`TS_SSL_SNI_HOOK` is expected
+to be deprecated and removed, plugins using this should change to :macro:`TS_SSL_CERT_HOOK` or
+:macro:`TS_SSL_SERVERNAME_HOOK` as appropriate.
+
+.. warning:: openssl 1.0.2 and later versions
+
+   :macro:`TS_SSL_SERVERNAME_HOOK` is invoked for the openssl servername callback.
+   :macro:`TS_SSL_SNI_HOOK` and :macro:`TS_SSL_CERT_HOOK` are invoked for the openssl certificate
+   callback which is not guaranteed to be invoked for a TLS transaction.
+   
+   This is a behavior change dependent on the version of openssl. To avoid problems use
+   :macro:`TS_SSL_SERVERNAME_HOOK` to get called back for all TLS transaction and
+   :macro:`TS_SSL_CERT_HOOK` to get called back only to select a certificate.
