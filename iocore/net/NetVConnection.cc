@@ -45,33 +45,30 @@ NetVConnection::cancel_OOB()
   return;
 }
 
-const char *
+ts::StringView
 NetVCOptions::get_proto_string() const
 {
   switch (ip_proto) {
   case USE_TCP:
-    return TS_PROTO_TAG_TCP;
+    return IP_PROTO_TAG_TCP;
   case USE_UDP:
-    return TS_PROTO_TAG_UDP;
+    return IP_PROTO_TAG_UDP;
   default:
-    return nullptr;
+    break;
   }
+  return nullptr;
 }
 
-const char *
+ts::StringView
 NetVCOptions::get_family_string() const
 {
-  const char *retval;
   switch (ip_family) {
   case AF_INET:
-    retval = TS_PROTO_TAG_IPV4;
-    break;
+    return IP_PROTO_TAG_IPV4;
   case AF_INET6:
-    retval = TS_PROTO_TAG_IPV6;
-    break;
+    return IP_PROTO_TAG_IPV6;
   default:
-    retval = nullptr;
     break;
   }
-  return retval;
+  return nullptr;
 }
