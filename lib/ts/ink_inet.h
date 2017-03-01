@@ -31,6 +31,7 @@
 #include "ts/ink_memory.h"
 #include "ts/ink_apidefs.h"
 #include "ts/TsBuffer.h"
+#include <ts/MemView.h>
 
 #define INK_GETHOSTBYNAME_R_DATA_SIZE 1024
 #define INK_GETHOSTBYADDR_R_DATA_SIZE 1024
@@ -46,6 +47,20 @@ IN6_IS_ADDR_UNSPECIFIED(in6_addr const *addr)
   return 0 == w[0] && 0 == w[1];
 }
 #endif
+
+// IP protocol stack tags.
+extern const ts::StringView IP_PROTO_TAG_IPV4;
+extern const ts::StringView IP_PROTO_TAG_IPV6;
+extern const ts::StringView IP_PROTO_TAG_UDP;
+extern const ts::StringView IP_PROTO_TAG_TCP;
+extern const ts::StringView IP_PROTO_TAG_TLS_1_0;
+extern const ts::StringView IP_PROTO_TAG_TLS_1_1;
+extern const ts::StringView IP_PROTO_TAG_TLS_1_2;
+extern const ts::StringView IP_PROTO_TAG_TLS_1_3;
+extern const ts::StringView IP_PROTO_TAG_HTTP_0_9;
+extern const ts::StringView IP_PROTO_TAG_HTTP_1_0;
+extern const ts::StringView IP_PROTO_TAG_HTTP_1_1;
+extern const ts::StringView IP_PROTO_TAG_HTTP_2_0;
 
 struct IpAddr; // forward declare.
 
@@ -213,7 +228,7 @@ ats_ip_invalidate(IpEndpoint *ip)
 /** Get a string name for an IP address family.
     @return The string name (never @c nullptr).
 */
-const char *ats_ip_family_name(int family);
+ts::StringView ats_ip_family_name(int family);
 
 /// Test for IP protocol.
 /// @return @c true if the address is IP, @c false otherwise.

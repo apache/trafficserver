@@ -37,6 +37,7 @@
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
 #include "ts/apidefs.h"
+#include <ts/MemView.h>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -241,15 +242,15 @@ public:
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
   }
 
-  int populate_protocol(const char **results, int n) const override;
-  const char *protocol_contains(const char *tag) const override;
+  int populate_protocol(ts::StringView *results, int n) const override;
+  const char *protocol_contains(ts::StringView tag) const override;
 
   /**
    * Populate the current object based on the socket information in in the
    * con parameter and the ssl object in the arg parameter
    * This is logic is invoked when the NetVC object is created in a new thread context
    */
-  virtual int populate(Connection &con, Continuation *c, void *arg) override;
+  int populate(Connection &con, Continuation *c, void *arg) override;
 
   SSL *ssl;
   ink_hrtime sslHandshakeBeginTime;
@@ -263,7 +264,7 @@ private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection &operator=(const SSLNetVConnection &);
 
-  const char *map_tls_protocol_to_tag(const char *proto_string) const;
+  ts::StringView map_tls_protocol_to_tag(const char *proto_string) const;
 
   bool sslHandShakeComplete;
   bool sslClientRenegotiationAbort;

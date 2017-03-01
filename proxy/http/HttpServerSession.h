@@ -180,6 +180,20 @@ public:
   //   an asyncronous cancel on NT
   MIOBuffer *read_buffer;
 
+  virtual int
+  populate_protocol(ts::StringView *result, int size) const
+  {
+    auto vc = this->get_netvc();
+    return vc ? vc->populate_protocol(result, size) : 0;
+  }
+
+  virtual const char *
+  protocol_contains(ts::StringView tag_prefix) const
+  {
+    auto vc = this->get_netvc();
+    return vc ? vc->protocol_contains(tag_prefix) : nullptr;
+  }
+
 private:
   HttpServerSession(HttpServerSession &);
 
