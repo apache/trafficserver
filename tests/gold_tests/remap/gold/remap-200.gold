@@ -3,7 +3,7 @@
 > Host: www.example.com``
 > User-Agent: curl/``
 > Accept: */*
-> Proxy-Connection: Keep-Alive
+> Proxy-Connection: keep-alive
 ``
 < HTTP/1.1 200 OK
 < Date: ``
