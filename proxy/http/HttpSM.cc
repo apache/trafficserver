@@ -50,6 +50,8 @@
 #include "congest/Congestion.h"
 #include "ts/I_Layout.h"
 
+using ts::StringView;
+
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX 6  // 8K
 #define MIN_CONFIG_BUFFER_SIZE_INDEX 5       // 4K
@@ -4729,7 +4731,7 @@ void
 HttpSM::do_http_server_open(bool raw)
 {
   int ip_family = t_state.current.server->dst_addr.sa.sa_family;
-  DebugSM("http_track", "entered inside do_http_server_open ][%s]", ats_ip_family_name(ip_family));
+  DebugSM("http_track", "entered inside do_http_server_open ][%s]", ats_ip_family_name(ip_family).ptr());
 
   // Make sure we are on the "right" thread
   if (ua_session) {
@@ -8057,14 +8059,13 @@ HttpSM::is_redirect_required()
 
 // Fill in the client protocols used.  Return the number of entries returned
 int
-HttpSM::populate_client_protocol(const char **result, int n) const
+HttpSM::populate_client_protocol(ts::StringView *result, int n) const
 {
   int retval = 0;
   if (n > 0) {
-    const char *proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
+    StringView proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
     if (proto) {
-      result[0] = proto;
-      retval    = 1;
+      result[retval++] = proto;
       if (n > retval && ua_session) {
         retval += ua_session->populate_protocol(result + retval, n - retval);
       }
@@ -8075,29 +8076,28 @@ HttpSM::populate_client_protocol(const char **result, int n) const
 
 // Look for a specific protocol
 const char *
-HttpSM::client_protocol_contains(const char *tag_prefix) const
+HttpSM::client_protocol_contains(StringView tag_prefix) const
 {
   const char *retval = nullptr;
-  const char *proto  = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
+  StringView proto   = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
   if (proto) {
-    unsigned int tag_prefix_len = strlen(tag_prefix);
-    if (tag_prefix_len <= strlen(proto) && strncmp(tag_prefix, proto, tag_prefix_len) == 0) {
-      retval = proto;
+    StringView prefix(tag_prefix);
+    if (prefix.size() <= proto.size() && 0 == strncmp(proto.ptr(), prefix.ptr(), prefix.size())) {
+      retval = proto.ptr();
     } else if (ua_session) {
-      retval = ua_session->protocol_contains(tag_prefix);
+      retval = ua_session->protocol_contains(prefix);
     }
   }
   return retval;
 }
 
-const char *
+StringView
 HttpSM::find_proto_string(HTTPVersion version) const
 {
   if (version == HTTPVersion(1, 1)) {
-    return TS_PROTO_TAG_HTTP_1_1;
+    return IP_PROTO_TAG_HTTP_1_1;
   } else if (version == HTTPVersion(1, 0)) {
-    return TS_PROTO_TAG_HTTP_1_0;
-  } else {
-    return nullptr;
+    return IP_PROTO_TAG_HTTP_1_0;
   }
+  return nullptr;
 }

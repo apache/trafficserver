@@ -1542,21 +1542,28 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   return EVENT_DONE;
 }
 
-const char *
+ts::StringView
 SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 {
-  const char *retval    = nullptr;
-  const char *ssl_proto = getSSLProtocol();
-  if (ssl_proto && strncmp(ssl_proto, "TLSv1", 5) == 0) {
-    if (ssl_proto[5] == '\0') {
-      retval = TS_PROTO_TAG_TLS_1_0;
-    } else if (ssl_proto[5] == '.') {
-      if (ssl_proto[6] == '1' && ssl_proto[7] == '\0') {
-        retval = TS_PROTO_TAG_TLS_1_1;
-      } else if (ssl_proto[6] == '2' && ssl_proto[7] == '\0') {
-        retval = TS_PROTO_TAG_TLS_1_2;
-      } else if (ssl_proto[6] == '3' && ssl_proto[7] == '\0') {
-        retval = TS_PROTO_TAG_TLS_1_3;
+  // Prefix for the string the SSL library hands back.
+  static const ts::StringView PREFIX("TLSv1");
+
+  ts::StringView retval;
+  ts::StringView proto(proto_string);
+
+  if (proto.size() >= PREFIX.size() && strncmp(proto.ptr(), PREFIX.ptr(), PREFIX.size()) == 0) {
+    proto += PREFIX.size();
+    if (proto.size() <= 0) {
+      retval = IP_PROTO_TAG_TLS_1_0;
+    } else if (*proto == '.') {
+      ++proto; // skip .
+      if (proto.size() == 1) {
+        if (*proto == '1')
+          retval = IP_PROTO_TAG_TLS_1_1;
+        else if (*proto == '2')
+          retval = IP_PROTO_TAG_TLS_1_2;
+        else if (*proto == '3')
+          retval = IP_PROTO_TAG_TLS_1_3;
       }
     }
   }
@@ -1564,14 +1571,13 @@ SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 }
 
 int
-SSLNetVConnection::populate_protocol(const char **results, int n) const
+SSLNetVConnection::populate_protocol(ts::StringView *results, int n) const
 {
   int retval = 0;
-  if (n > 0) {
-    results[0] = map_tls_protocol_to_tag(getSSLProtocol());
-    if (results[0] != nullptr) {
-      retval++;
-    }
+  if (n > retval) {
+    results[retval] = map_tls_protocol_to_tag(getSSLProtocol());
+    if (results[retval])
+      ++retval;
     if (n > retval) {
       retval += super::populate_protocol(results + retval, n - retval);
     }
@@ -1580,15 +1586,14 @@ SSLNetVConnection::populate_protocol(const char **results, int n) const
 }
 
 const char *
-SSLNetVConnection::protocol_contains(const char *tag) const
+SSLNetVConnection::protocol_contains(ts::StringView prefix) const
 {
-  const char *retval   = nullptr;
-  const char *tls_tag  = map_tls_protocol_to_tag(getSSLProtocol());
-  unsigned int tag_len = strlen(tag);
-  if (tag_len <= strlen(tls_tag) && strncmp(tag, tls_tag, tag_len) == 0) {
-    retval = tls_tag;
+  const char *retval = nullptr;
+  ts::StringView tag = map_tls_protocol_to_tag(getSSLProtocol());
+  if (prefix.size() <= tag.size() && strncmp(tag.ptr(), prefix.ptr(), prefix.size()) == 0) {
+    retval = tag.ptr();
   } else {
-    retval = super::protocol_contains(tag);
+    retval = super::protocol_contains(prefix);
   }
   return retval;
 }

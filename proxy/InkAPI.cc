@@ -59,6 +59,7 @@
 #include "I_RecCore.h"
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
+#include <ts/MemView.h>
 
 #include "api/ts/ts.h"
 
@@ -9329,10 +9330,13 @@ TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int 
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(n == 0 || result != nullptr);
-  HttpSM *sm = (HttpSM *)txnp;
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   int count  = 0;
-  if (sm) {
-    count = sm->populate_client_protocol(result, n);
+  if (sm && n > 0) {
+    auto mem = static_cast<ts::StringView *>(alloca(sizeof(ts::StringView) * n));
+    count    = sm->populate_client_protocol(mem, n);
+    for (int i  = 0; i < count; ++i)
+      result[i] = mem[i].ptr();
   }
   if (actual) {
     *actual = count;
@@ -9347,8 +9351,11 @@ TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int 
   sdk_assert(n == 0 || result != nullptr);
   ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
   int count              = 0;
-  if (cs) {
-    count = cs->populate_protocol(result, n);
+  if (cs && n > 0) {
+    auto mem = static_cast<ts::StringView *>(alloca(sizeof(ts::StringView) * n));
+    count    = cs->populate_protocol(mem, n);
+    for (int i  = 0; i < count; ++i)
+      result[i] = mem[i].ptr();
   }
   if (actual) {
     *actual = count;
@@ -9367,7 +9374,7 @@ TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
-  return sm->client_protocol_contains(tag);
+  return sm->client_protocol_contains(ts::StringView(tag));
 }
 
 const char *
@@ -9375,7 +9382,7 @@ TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
-  return cs->protocol_contains(tag);
+  return cs->protocol_contains(ts::StringView(tag));
 }
 
 const char *

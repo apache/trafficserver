@@ -31,6 +31,8 @@
 
 #include "I_Machine.h"
 
+#include <array>
+
 bool
 HttpTransactHeaders::is_method_cacheable(const HttpConfigParams *http_config_param, const int method)
 {
@@ -685,6 +687,23 @@ HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, in
   }
 }
 
+/// Look up the protocol stack and write it to the @a via_string.
+size_t
+write_client_protocol_stack(HttpTransact::State *s, char *via_string, size_t len)
+{
+  std::array<ts::StringView, 10> proto_buf; // 10 seems like a reasonable number of protos to print
+  int retval        = s->state_machine->populate_client_protocol(proto_buf.data(), proto_buf.size());
+  char *via         = via_string;
+  char *limit       = via_string + len;
+  ts::StringView *v = proto_buf.data();
+  for (int i = 0; i < retval && (via + v->size() + 1) < limit; ++i, ++v) {
+    memcpy(via, v->ptr(), v->size());
+    via += v->size();
+    *via++ = ' ';
+  }
+  return via - via_string;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : insert_via_header_in_request
 // Description: takes in existing via_string and inserts it in header
@@ -741,26 +760,8 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   }
 
   char *incoming_via = s->via_string;
-  int scheme         = s->orig_scheme;
-  ink_assert(scheme >= 0);
 
-  int scheme_len   = hdrtoken_index_to_length(scheme);
-  int32_t hversion = header->version_get().m_version;
-
-  memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
-  via_string += scheme_len;
-
-  // Common case (I hope?)
-  if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
-    memcpy(via_string, "/1.1 ", 5);
-    via_string += 5;
-  } else {
-    *via_string++ = '/';
-    *via_string++ = '0' + HTTP_MAJOR(hversion);
-    *via_string++ = '.';
-    *via_string++ = '0' + HTTP_MINOR(hversion);
-    *via_string++ = ' ';
-  }
+  via_string += write_client_protocol_stack(s, via_string, sizeof(new_via_string) - (via_string - new_via_string));
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
 
   *via_string++ = '[';
@@ -827,14 +828,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
 
   char *incoming_via = s->via_string;
 
-  const char *proto_buf[10]; // 10 seems like a reasonable number of protos to print
-  int retval = s->state_machine->populate_client_protocol(proto_buf, countof(proto_buf));
-  for (int i = 0; i < retval; i++) {
-    memcpy(via_string, proto_buf[i], strlen(proto_buf[i]));
-    via_string += strlen(proto_buf[i]);
-    *via_string++ = ' ';
-  }
-
+  via_string += write_client_protocol_stack(s, via_string, sizeof(new_via_string) - (via_string - new_via_string));
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
   *via_string++ = ' ';
   *via_string++ = '(';

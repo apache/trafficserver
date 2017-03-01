@@ -32,6 +32,19 @@
 
 IpAddr const IpAddr::INVALID;
 
+const ts::StringView IP_PROTO_TAG_IPV4("ipv4", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_IPV6("ipv6", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_UDP("udp", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_TCP("tcp", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_TLS_1_0("tls/1.0", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_TLS_1_1("tls/1.1", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_TLS_1_2("tls/1.2", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_TLS_1_3("tls/1.3", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_HTTP_0_9("http/0.9", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_HTTP_1_0("http/1.0", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_HTTP_1_1("http/1.1", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_HTTP_2_0("h2", ts::StringView::literal); // HTTP/2 over TLS
+
 uint32_t
 ink_inet_addr(const char *s)
 {
@@ -119,10 +132,11 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
   return zret;
 }
 
-const char *
+ts::StringView
 ats_ip_family_name(int family)
 {
-  return AF_INET == family ? "IPv4" : AF_INET6 == family ? "IPv6" : "Unspec";
+  static const ts::StringView UNSPEC("Unspec", ts::StringView::literal);
+  return AF_INET == family ? IP_PROTO_TAG_IPV4 : AF_INET6 == family ? IP_PROTO_TAG_IPV6 : UNSPEC;
 }
 
 const char *
