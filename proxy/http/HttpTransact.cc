@@ -8347,6 +8347,8 @@ HttpTransact::get_error_string(int erno)
     //              when HttpSM.cc::state_origin_server_read_response
     //                 receives an HTTP_EVENT_EOS. (line 1729 in HttpSM.cc,
     //                 version 1.145.2.13.2.57)
+    case ENET_CONNECT_FAILED:
+      return ("connect failed");
     case UNKNOWN_INTERNAL_ERROR:
       return ("internal error - server connection terminated");
     default:
