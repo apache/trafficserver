@@ -25,7 +25,7 @@ This script should try to install python35 or better on the system, and needed p
 # Advance setup
 
 AuTest can be install manually instead of using the wrapper script. The advange of this is that it is often easier to debug issues with the testing system, or the tests. There are two ways this can be done.
-1. run the bootstrap script then source the path with a "source /env-test/bin/activate" command. At this point autest command should run without the wrapper script
+1. run the bootstrap script then source the path with a "source ./env-test/bin/activate" command. At this point autest command should run without the wrapper script
 2. The other way is to make sure you install python 3.5 or better on your system. From there install these python packages ( ie pip install ):
   - hyper
   - git+https://bitbucket.org/dragon512/reusable-gold-testing-system.git 
