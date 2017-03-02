@@ -33,6 +33,7 @@ SUBDIRS = \
  metalink \
  regex_revalidate \
  remap_stats \
+ remove_query \
  s3_auth \
  ssl_cert_loader \
  sslheaders \
