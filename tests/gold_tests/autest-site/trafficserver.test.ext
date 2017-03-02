@@ -266,6 +266,7 @@ class Config(File):
         '''
         Write contents to disk
         '''
+        host.WriteVerbosef('ats-config-file',"Writting out file {0}",self.Name)
         if self.content is not None:
             with open(name, 'w') as f:
                 f.write(self.content)
@@ -307,6 +308,7 @@ class RecordsConfig(Config, dict):
         self.WriteCustomOn(self._do_write)
 
     def _do_write(self,name):
+        host.WriteVerbosef('ats-config-file',"Writting out file {0}",name)
         if len(self) > 0:
             with open(name, 'w') as f:
                 for name, val in self.items():
