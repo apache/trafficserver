@@ -30,7 +30,7 @@ Synopsis
 `#include <ts/ts.h>`
 
 .. function:: char * TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int * length)
-.. function:: char * TSHttpEffectiveUrlStringGet(TSHttpTxn txn, int * length)
+.. function:: char * TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txn, int * length)
 .. function:: int TSUrlLengthGet(TSMBuffer bufp, TSMLoc offset)
 .. function:: void TSUrlPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp)
 
@@ -51,7 +51,7 @@ returns. The returned string is allocated by a call to :func:`TSmalloc` and
 must be freed by a call to :func:`TSfree`. If length is :literal:`NULL` then no
 attempt is made to de-reference it.
 
-:func:`TSHttpEffectiveUrlStringGet` is similar to :func:`TSUrlStringGet`. The two differences are
+:func:`TSHttpTxnEffectiveUrlStringGet` is similar to :func:`TSUrlStringGet`. The two differences are
 
 *  The source is transaction :arg:`txn` in order to have access to the full request.
 *  It combines, if needed, both the explicit url and the ``Host`` field. This is
