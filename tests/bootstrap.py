@@ -40,6 +40,7 @@ distro_packages = {
     "Fedora": [
         "install python3",
         "install python3-virtualenv",
+        "install python-virtualenv",
     ],
     "Ubuntu": [
         "install python3",
