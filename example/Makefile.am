@@ -24,7 +24,7 @@ libatscppai = $(top_builddir)/lib/cppapi/libatscppapi.la
 
 example_Plugins = \
 	add_header.la \
-	append-transform.la \
+	append_transform.la \
 	basic-auth.la \
 	blacklist-0.la \
 	blacklist-1.la \
@@ -88,7 +88,7 @@ noinst_LTLIBRARIES = $(example_Plugins)
 endif
 
 add_header_la_SOURCES = add_header/add_header.c
-append_transform_la_SOURCES = append-transform/append-transform.c
+append_transform_la_SOURCES = append_transform/append_transform.c
 basic_auth_la_SOURCES = basic-auth/basic-auth.c
 blacklist_0_la_SOURCES = blacklist-0/blacklist-0.c
 blacklist_1_la_SOURCES = blacklist-1/blacklist-1.c
@@ -176,4 +176,3 @@ cppapi_intercept_la_LIBADD = $(libatscppai)
 tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
 	$(CC_Clang_Tidy)
-
