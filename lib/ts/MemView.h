@@ -172,7 +172,7 @@ public:
 
   /// Check for empty view (no content).
   /// @see operator bool
-  bool is_empty() const;
+  bool isEmpty() const;
 
   /// @name Accessors.
   //@{
@@ -392,7 +392,7 @@ public:
 
   /// Check for empty view (no content).
   /// @see operator bool
-  bool is_empty() const;
+  bool isEmpty() const;
 
   /// @name Accessors.
   //@{
@@ -693,7 +693,7 @@ inline MemView::operator bool() const
 }
 
 inline bool
-MemView::is_empty() const
+MemView::isEmpty() const
 {
   return !(_ptr && _size);
 }
@@ -925,7 +925,7 @@ inline StringView::operator bool() const
 }
 
 inline bool
-StringView::is_empty() const
+StringView::isEmpty() const
 {
   return !(_ptr && _size);
 }
