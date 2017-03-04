@@ -321,6 +321,14 @@ public:
                        size_t n         ///< Size of buffer.
                        );
 
+  /** Construct explicitly with a pointer and size.
+      If @a n is negative it is treated as 0.
+      @internal Overload for convience, otherwise get "narrow conversion" errors.
+   */
+  constexpr StringView(const char *ptr, ///< Pointer to buffer.
+                       int n            ///< Size of buffer.
+                       );
+
   /** Construct from a half open range of two pointers.
       @note The byte at @start is in the view but the byte at @a end is not.
   */
@@ -856,6 +864,9 @@ inline constexpr StringView::StringView()
 {
 }
 inline constexpr StringView::StringView(const char *ptr, size_t n) : _ptr(ptr), _size(n)
+{
+}
+inline constexpr StringView::StringView(const char *ptr, int n) : _ptr(ptr), _size(n < 0 ? 0 : n)
 {
 }
 inline constexpr StringView::StringView(const char *start, const char *end) : _ptr(start), _size(end - start)
