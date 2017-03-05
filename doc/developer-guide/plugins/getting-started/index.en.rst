@@ -137,7 +137,7 @@ The figure below, :ref:`possibleTSplugins`, illustrates several types of plugins
 
 You can find basic examples for many plugins in the SDK sample code:
 
--  ``append-transform.c`` adds text from a specified file to HTTP/text
+-  ``append_transform.c`` adds text from a specified file to HTTP/text
    responses. This plugin is explained in
    :ref:`developer-plugins-http-transformations-append`
 
@@ -149,7 +149,7 @@ You can find basic examples for many plugins in the SDK sample code:
    ``server-transform.c``, a compression or image translation plugin
    could be implemented in a similar way.
 
--  ``basic-auth.c`` performs basic HTTP proxy authorization.
+-  ``basic_auth.c`` performs basic HTTP proxy authorization.
 
 -  ``blacklist-1.c`` reads blacklisted servers from a configuration file
    and denies client access to these servers. This plugin is explained
@@ -197,8 +197,8 @@ Plugins with global variables should not appear more than once in
 
 ::
 
-    add-header.so header1
-    add-header.so header2
+    add_header.so header1
+    add_header.so header2
 
 then the second global variable, ``header2``, will be used for both
 instances. A simple workaround is to give different names to different
@@ -206,15 +206,15 @@ instances of the same plugin. For example:
 
 ::
 
-    cp add-header.so add-header1.so
-    cp add-header.so add-header2.so
+    cp add_header.so add_header1.so
+    cp add_header.so add_header2.so
 
 These entries will produce the desired result below:
 
 ::
 
-    add-header1.so header1
-    add-header2.so header2
+    add_header1.so header1
+    add_header2.so header2
 
 Configuration File Rules
 ------------------------

@@ -47,7 +47,7 @@ understand the following topics:
 -  Working with HTTP header functions
 
 The two sample plugins discussed in this chapter are ``blacklist-1.c``
-and ``basic-auth.c``.
+and ``basic_auth.c``.
 
 Overview
 --------
@@ -75,4 +75,3 @@ following common elements:
 
 This chapter demonstrates how these components are implemented in SDK
 sample code.
-

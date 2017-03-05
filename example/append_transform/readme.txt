@@ -1,6 +1,6 @@
-About append-transform.c
+About append_transform.c
 
-This example is based on null-transform.c. It appends text to the body
+This example is based on null_transform.c. It appends text to the body
 of an HTML text response document on its way from the cache to the
 client.
 
@@ -8,13 +8,13 @@ The plugin first makes sure that it has received a "200 OK"
 response from the origin server.  It then verifies that the returned
 document is of type "text/html".  It "transforms" the document by
 appending text to the file.   To read and write to the body of the
-document, the plugin uses functions similar to those in null-transform.c.
+document, the plugin uses functions similar to those in null_transform.c.
 
 You place the text to be appended in a file, and you must provide the
 path to the file in plugin.config. In other words, plugin.config must
 have a line similar to the following:
 
-  append-transform.so path/to/file
+  append_transform.so path/to/file
 
 Specify an absolute path to the text file, or a relative path as
 described in the file-plugin README.
@@ -83,6 +83,6 @@ The transform_add function does the following:
 
 The remaining functions in the plugin, append_transform and
 handle_transform, are similar to null_transform and
-handle_transform in the null-transform.c plugin.
+handle_transform in the null_transform.c plugin.
 
 
