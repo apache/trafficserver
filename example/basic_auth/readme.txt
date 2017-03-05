@@ -1,4 +1,4 @@
-The basic-auth.c plugin performs basic HTTP proxy authentication.
+The basic_auth.c plugin performs basic HTTP proxy authentication.
 
 -- The plugin checks all client request headers for the Proxy-Authorization
    MIME field, which should contain the user name and password.
