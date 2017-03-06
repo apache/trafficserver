@@ -2343,6 +2343,35 @@ tsapi uint64_t TSHttpTxnIdGet(TSHttpTxn txnp);
 tsapi TSReturnCode TSBase64Decode(const char *str, size_t str_len, unsigned char *dst, size_t dst_size, size_t *length);
 tsapi TSReturnCode TSBase64Encode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length);
 
+/* Expose internal build_error_response function */
+/**
+   This method sets the requires state for an error reply, including
+   the error text, status code, reason phrase, and reply headers.
+
+   The caller calls the method with the TSHttpTxn <txnp>, the
+   HTTP status code <status_code>, a user-specified reason phrase
+   string (or NULL) <reason_phrase_or_null>, and a printf-like
+   text format and arguments which are appended to the error text.
+
+   @param txnp the transaction pointer
+   @param status_code the HTTP status code
+   @param reason_phrase_or_null a user-specified reason phrase string. If it
+          is NULL, the default HTTP reason phrase is used.
+   @param error_body_type the error message type, as specified by the HttpBodyFactory
+          customized error page system. Get the list by command:
+             "ls -al etc/trafficserver/body_factory/default/"
+
+   @param format If it is not NULL or "", it is also added to the error text 
+          body as descriptive text in the error body.
+
+   @note reference from build_error_response: 
+         This routine DOES NOT check for buffer overflows.  The caller should keep
+         the messages small to be sure the error text fits in the error buffer (ok,
+         it's nasty, but at least I admit it!).
+		 The buffer size is 8192 bytes, the max size of templates in body_factory.
+*/
+tsapi void TSHttpTxnErrorpageSet(TSHttpTxn txnp, TSHttpStatus status_code, const char *reason_phrase_or_null, const char *error_body_type, const char *format, ...);
+
 /* Get milestone timers, useful for measuring where we are spending time in the transaction processing */
 /**
    Return the particular milestone timer for the transaction. If 0 is returned, it means

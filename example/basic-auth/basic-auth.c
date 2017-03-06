@@ -172,9 +172,9 @@ handle_response(TSHttpTxn txnp)
     goto done;
   }
 
-  TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED);
-  TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED),
-                     strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED)));
+  TSHttpTxnErrorpageSet(txnp,  TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED, \
+                    TSHttpHdrReasonLookup(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED), \
+                    "access#proxy_auth_required", NULL);
 
   TSMimeHdrFieldCreate(bufp, hdr_loc, &field_loc); // Probably should check for errors
   TSMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, TS_MIME_FIELD_PROXY_AUTHENTICATE, TS_MIME_LEN_PROXY_AUTHENTICATE);

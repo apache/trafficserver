@@ -6186,6 +6186,22 @@ TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp)
   return sm->pushed_response_body_bytes;
 }
 
+// Set an Error Pages depend on HTTP Status Code with multi language support
+// default template of error pages can be found at etc/trafficserver/body_factory/default/
+void
+TSHttpTxnErrorpageSet(TSHttpTxn txnp, TSHttpStatus status_code, const char *reason_phrase_or_null, const char *error_body_type, const char *format, ...)
+{
+  va_list ap;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+  HttpTransact::State *s = &(sm->t_state);  
+
+  va_start(ap, format);
+  HttpTransact::build_error_response(s, (HTTPStatus)status_code, reason_phrase_or_null, error_body_type, format, ap); 
+  va_end(ap);
+}
+
 // Get a particular milestone hrtime'r. Note that this can return 0, which means it has not
 // been set yet.
 TSReturnCode
