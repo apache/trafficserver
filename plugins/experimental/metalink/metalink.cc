@@ -464,26 +464,13 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 
     /* Can't reuse the TSTransformCreate() continuation because we
      * don't know whether to destroy it in
-     * cache_open_write()/cache_open_write_failed() or
-     * transform_vconn_write_complete() */
+     * cache_open_write()/cache_open_write_failed() */
     contp = TSContCreate(write_handler, nullptr);
     TSContDataSet(contp, write_data);
 
     /* Reentrant! */
     TSCacheWrite(contp, write_data->key);
   }
-
-  return 0;
-}
-
-static int
-transform_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
-{
-  TransformData *data = (TransformData *)TSContDataGet(contp);
-  TSContDestroy(contp);
-
-  TSIOBufferDestroy(data->output_bufp);
-  TSfree(data);
 
   return 0;
 }
@@ -500,8 +487,8 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
     return vconn_write_ready(contp, edata);
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    return transform_vconn_write_complete(contp, edata);
-
+    TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
+    break;
   default:
     TSAssert(!"Unexpected event");
   }
