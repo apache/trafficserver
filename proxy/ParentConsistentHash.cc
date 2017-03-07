@@ -279,7 +279,7 @@ ParentConsistentHash::markParentDown(const ParentSelectionPolicy *policy, Parent
     //   it relates to how long the parent has been down.
     now = time(nullptr);
 
-    // Mark the parent as down
+    // Mark the parent failure time.
     ink_atomic_swap(&pRec->failedAt, now);
 
     // If this is clean mark down and not a failed retry, we
@@ -291,7 +291,17 @@ ParentConsistentHash::markParentDown(const ParentSelectionPolicy *policy, Parent
     Note("Parent %s marked as down %s:%d", (result->retry) ? "retry" : "initially", pRec->hostname, pRec->port);
 
   } else {
-    int old_count = ink_atomic_increment(&pRec->failCount, 1);
+    int old_count = 0;
+    now           = time(NULL);
+
+    // if the last failure was outside the retry window, set the failcount to 1
+    // and failedAt to now.
+    if ((pRec->failedAt + policy->ParentRetryTime) < now) {
+      ink_atomic_swap(&pRec->failCount, 1);
+      ink_atomic_swap(&pRec->failedAt, now);
+    } else {
+      old_count = ink_atomic_increment(&pRec->failCount, 1);
+    }
 
     Debug("parent_select", "Parent fail count increased to %d for %s:%d", old_count + 1, pRec->hostname, pRec->port);
     new_fail_count = old_count + 1;
