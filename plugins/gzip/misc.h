@@ -29,6 +29,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if HAVE_BROTLI_ENCODE_H
+#include <brotli/encode.h>
+#endif
+
 #include "configuration.h"
 
 using namespace Gzip;
@@ -39,8 +43,12 @@ static const int WINDOW_BITS_DEFLATE = -15;
 static const int WINDOW_BITS_GZIP    = 31;
 
 // misc
-static const int COMPRESSION_TYPE_DEFLATE = 1;
-static const int COMPRESSION_TYPE_GZIP    = 2;
+enum CompressionType {
+  COMPRESSION_TYPE_DEFAULT = 0,
+  COMPRESSION_TYPE_DEFLATE = 1,
+  COMPRESSION_TYPE_GZIP    = 2,
+  COMPRESSION_TYPE_BROTLI  = 4
+};
 
 // this one is used to rename the accept encoding header
 // it will be restored later on
@@ -53,6 +61,18 @@ enum transform_state {
   transform_state_finished,
 };
 
+#if HAVE_BROTLI_ENCODE_H
+typedef struct {
+  BrotliEncoderState *br;
+  uint8_t *next_in;
+  size_t avail_in;
+  uint8_t *next_out;
+  size_t avail_out;
+  size_t total_in;
+  size_t total_out;
+} b_stream;
+#endif
+
 typedef struct {
   TSHttpTxn txn;
   HostConfiguration *hc;
@@ -63,7 +83,11 @@ typedef struct {
   z_stream zstrm;
   enum transform_state state;
   int compression_type;
-} GzipData;
+  int compression_algorithms;
+#if HAVE_BROTLI_ENCODE_H
+  b_stream bstrm;
+#endif
+} Data;
 
 voidpf gzip_alloc(voidpf opaque, uInt items, uInt size);
 void gzip_free(voidpf opaque, voidpf address);

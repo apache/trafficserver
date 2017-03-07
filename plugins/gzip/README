@@ -44,6 +44,9 @@ a sample configuration (sample.gzip.config):
 # compressible-content-type: wildcard pattern for matching compressible content types
 #
 # disallow: wildcard pattern for disablign compression on urls
+#
+# supported-algorithms: compression algorithms supported. comma separated algorithms. Default is gzip
+#
 ######################################################################
 
 #first, we configure the default/global plugin behaviour
@@ -59,6 +62,9 @@ compressible-content-type !text/javascript
 disallow /notthis/*.js
 disallow /notthat*
 disallow */bla*
+
+#supported algorithms
+supported-algorithms br,gzip
 
 #override the global configuration for a host.
 #www.foo.nl does NOT inherit anything
