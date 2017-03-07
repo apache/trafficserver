@@ -9023,7 +9023,7 @@ TSHttpEventNameLookup(TSEvent event)
 class TSSslCallback : public Continuation
 {
 public:
-  TSSslCallback(SSLNetVConnection *vc) : Continuation(vc->mutex), m_vc(vc) { SET_HANDLER(&TSSslCallback::event_handler); }
+  TSSslCallback(SSLNetVConnection *vc) : Continuation(vc->nh->mutex), m_vc(vc) { SET_HANDLER(&TSSslCallback::event_handler); }
   int
   event_handler(int, void *)
   {
@@ -9127,22 +9127,14 @@ TSVConnReenable(TSVConn vconn)
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
   // We really only deal with a SSLNetVConnection at the moment
   if (ssl_vc != nullptr) {
-    EThread *eth    = this_ethread();
-    bool reschedule = eth != ssl_vc->thread;
+    EThread *eth = this_ethread();
 
-    if (!reschedule) {
-      // We use the VC mutex so we don't need to reschedule again if we
-      // can't get the lock. For this reason we need to execute the
-      // callback on the VC thread or it doesn't work (not sure why -
-      // deadlock or it ends up interacting with the wrong NetHandler).
-      MUTEX_TRY_LOCK(trylock, ssl_vc->mutex, eth);
-      if (trylock.is_locked()) {
-        ssl_vc->reenable(ssl_vc->nh);
-      } else {
-        reschedule = true;
-      }
-    }
-    if (reschedule) {
+    // We use the mutex of VC's NetHandler so we can put the VC into ready_list by reenable()
+    MUTEX_TRY_LOCK(trylock, ssl_vc->nh->mutex, eth);
+    if (trylock.is_locked()) {
+      ssl_vc->reenable(ssl_vc->nh);
+    } else {
+      // We schedule the reenable to the home thread of ssl_vc.
       ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc));
     }
   }
