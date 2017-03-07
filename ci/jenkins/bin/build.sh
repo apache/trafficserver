@@ -20,9 +20,9 @@
 enable_debug=""
 test "${JOB_NAME#*type=debug}" != "${JOB_NAME}" && enable_debug="--enable-debug"
 
-# When to turn on ccache, disabled for all clang / llvm builds
+# When to turn on ccache for everything (even clang now)
 enable_ccache="--enable-ccache"
-test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_ccache=""
+#test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_ccache=""
 
 # When to enable -Werror, turned off for RHEL5 node (due to LuaJIT / gcc issues on RHEL5)
 enable_werror="--enable-werror"
