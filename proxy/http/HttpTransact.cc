@@ -5333,7 +5333,8 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     s->hdr_info.request_content_length = 0;
   }
 
-  if (!((scheme == URL_WKSIDX_HTTP) && (method == HTTP_WKSIDX_GET))) {
+  if (!(((scheme == URL_WKSIDX_HTTP) || (((scheme == URL_WKSIDX_FTP) && s->http_config_param->forward_proxy_ftp_enabled))) &&
+        (method == HTTP_WKSIDX_GET))) {
     if (scheme != URL_WKSIDX_HTTP && scheme != URL_WKSIDX_HTTPS && method != HTTP_WKSIDX_CONNECT &&
         !((scheme == URL_WKSIDX_WS || scheme == URL_WKSIDX_WSS) && s->is_websocket)) {
       if (scheme < 0) {
@@ -5402,7 +5403,8 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 HttpTransact::ResponseError_t
 HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
 {
-  ink_assert(s->next_hop_scheme == URL_WKSIDX_HTTP || s->next_hop_scheme == URL_WKSIDX_HTTPS);
+  ink_assert(s->next_hop_scheme == URL_WKSIDX_HTTP || s->next_hop_scheme == URL_WKSIDX_HTTPS ||
+             s->next_hop_scheme == URL_WKSIDX_FTP);
 
   if (incoming_hdr == nullptr) {
     return NON_EXISTANT_RESPONSE_HEADER;

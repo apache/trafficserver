@@ -1129,6 +1129,8 @@ HttpConfig::startup()
   // Local Manager
   HttpEstablishStaticConfigLongLong(c.synthetic_port, "proxy.config.admin.synthetic_port");
 
+  // FTP protocol enabled
+  HttpEstablishStaticConfigByte(c.forward_proxy_ftp_enabled, "proxy.config.ftp_enabled");
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
   c.cluster_time_delta = 0;
@@ -1412,6 +1414,9 @@ HttpConfig::reconfigure()
   params->post_copy_size                    = m_master.post_copy_size;
   params->oride.client_cert_filename        = ats_strdup(m_master.oride.client_cert_filename);
   params->oride.client_cert_filepath        = ats_strdup(m_master.oride.client_cert_filepath);
+
+  //
+  params->forward_proxy_ftp_enabled = INT_TO_BOOL(m_master.forward_proxy_ftp_enabled);
 
   // Local Manager
   params->synthetic_port = m_master.synthetic_port;

@@ -3703,3 +3703,15 @@ Sockets
 
 .. _Traffic Shaping:
                  https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping
+                 
+FTP
+=======
+
+.. ts:cv:: CONFIG proxy.config.ftp_enabled INT 0
+
+   default: ``0`` meaning ``off`` all Platforms
+
+   This directive enables ftp over http, preventing the 'protocol not supported' error.
+   This enables an origin server to be reached if it handles ftp over http
+   and also enables plugins to be written to support this protocol.
+ 
