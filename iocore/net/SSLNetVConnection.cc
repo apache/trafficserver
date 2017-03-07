@@ -1465,12 +1465,15 @@ SSLNetVConnection::callHooks(TSEvent eventId)
     this->sslHandshakeHookState = HANDSHAKE_HOOKS_INVOKE;
     curHook->invoke(eventId, this);
     reenabled = eventId != TS_EVENT_SSL_CERT || (this->sslHandshakeHookState != HANDSHAKE_HOOKS_INVOKE);
-  } else {
-    // no SNI-Hooks set, set state to HOOKS_DONE
-    // no plugins registered for this hook, return (reenabled == true)
+  }
+
+  // All done with the current hook chain
+  if (curHook == nullptr) {
     if (eventId == TS_EVENT_SSL_CERT) {
+      // Set the HookState to done because we are all done with the CERT/SERVERNAME hook chains
       sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
     } else if (eventId == TS_EVENT_SSL_SERVERNAME) {
+      // Reset the HookState to PRE, so the cert hook chain can start
       sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
     }
   }
