@@ -47,7 +47,7 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   int deflate  = 0;
   int gzip     = 0;
-
+  int br       = 0;
   // remove the accept encoding field(s),
   // while finding out if gzip or deflate is supported.
   while (field) {
@@ -63,6 +63,9 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
         --value_count;
         val = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, value_count, &val_len);
 
+        if (val_len == (int)strlen("br")) {
+          br = !strncmp(val, "br", val_len);
+        }
         if (val_len == (int)strlen("gzip")) {
           gzip = !strncmp(val, "gzip", val_len);
         } else if (val_len == (int)strlen("deflate")) {
@@ -78,10 +81,13 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
   }
 
   // append a new accept-encoding field in the header
-  if (deflate || gzip) {
+  if (deflate || gzip || br) {
     TSMimeHdrFieldCreate(reqp, hdr_loc, &field);
     TSMimeHdrFieldNameSet(reqp, hdr_loc, field, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
-
+    if (br) {
+      TSMimeHdrFieldValueStringInsert(reqp, hdr_loc, field, -1, "br", strlen("br"));
+      info("normalized accept encoding to br");
+    }
     if (gzip) {
       TSMimeHdrFieldValueStringInsert(reqp, hdr_loc, field, -1, "gzip", strlen("gzip"));
       info("normalized accept encoding to gzip");

@@ -141,6 +141,14 @@ will leave the header intact if the client provided it.
 - For when the proxy parses responses, and the resulting compression and
   decompression is wasteful.
 
+supported-algorithms
+----------------------
+
+Provides the compression algorithms that are supported. This will allow the proxy to selectively
+support certain compressions. The default is gzip. Multiple algorthims can be selected using ',' delimiter
+
+-- To selectively support only certain compression algorithms.
+
 Examples
 ========
 
@@ -161,6 +169,22 @@ might create a configuration with the following options::
     remove-accept-encoding true
     disallow /notthis/*.js
     flush true
+
+    # Allows brotli encoded response from origin but is not capable of brotli compression
+    [brotli.allowed.com]
+    enabled true
+    compressible-content-type text/*
+    compressible-content-type application/json
+    flush true
+    supported-algorithms gzip,deflate
+
+    # Supports brotli compression
+    [brotli.compress.com]
+    enabled true
+    compressible-content-type text/*
+    compressible-content-type application/json
+    flush true
+    supported-algorithms br, gzip
 
     # This origin does it all
     [bar.example.com]

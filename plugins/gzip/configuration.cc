@@ -25,6 +25,7 @@
 #include <fstream>
 #include <algorithm>
 #include <vector>
+#include <sstream>
 #include <fnmatch.h>
 
 namespace Gzip
@@ -93,7 +94,8 @@ enum ParserState {
   kParseEnable,
   kParseCache,
   kParseDisallow,
-  kParseFlush
+  kParseFlush,
+  kParseAlgorithms
 };
 
 void
@@ -181,6 +183,34 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
   return is_match;
 }
 
+void
+HostConfiguration::add_compression_algorithms(const string &algorithms)
+{
+  istringstream compress_algo(algorithms);
+  string token;
+  compression_algorithms_ = ALGORITHM_DEFAULT; // remove the default gzip.
+  while (getline(compress_algo, token, ',')) {
+    if (token.find("br") != string::npos) {
+#ifdef HAVE_BROTLI_ENCODE_H
+      compression_algorithms_ |= ALGORITHM_BROTLI;
+#else
+      error("supported-algorithms: brotli support not compiled in.");
+#endif
+    } else if (token.find("gzip") != string::npos)
+      compression_algorithms_ |= ALGORITHM_GZIP;
+    else if (token.find("deflate") != string::npos)
+      compression_algorithms_ |= ALGORITHM_DEFLATE;
+    else
+      error("Unknown compression type. Supported compression-algorithms <br,gzip,deflate>.");
+  }
+}
+
+int
+HostConfiguration::compression_algorithms()
+{
+  return compression_algorithms_;
+}
+
 Configuration *
 Configuration::Parse(const char *path)
 {
@@ -263,6 +293,8 @@ Configuration::Parse(const char *path)
           state = kParseDisallow;
         } else if (token == "flush") {
           state = kParseFlush;
+        } else if (token == "supported-algorithms") {
+          state = kParseAlgorithms;
         } else {
           warning("failed to interpret \"%s\" at line %zu", token.c_str(), lineno);
         }
@@ -289,6 +321,10 @@ Configuration::Parse(const char *path)
         break;
       case kParseFlush:
         current_host_configuration->set_flush(token == "true");
+        state = kParseStart;
+        break;
+      case kParseAlgorithms:
+        current_host_configuration->add_compression_algorithms(token);
         state = kParseStart;
         break;
       }
