@@ -52,4 +52,7 @@ These types are provided by the compiler ("built-in") or from a required operati
 .. cpp:type:: uint8_t
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
-   
+
+.. cpp:type:: size_t
+
+   `Reference <https://linux.die.net/include/stdint.h>`__.

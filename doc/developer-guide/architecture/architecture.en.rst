@@ -1001,7 +1001,7 @@ the read completes it is checked for validity and if valid, the cache virtual
 connection for it is placed at the front of the write queue for the stripe and
 the write aggregation resumed.
 
-Before doing a write, the method :cpp:func:`Vol::evac_range()` is called to
+Before doing a write, the method :cpp:member:`Vol::evac_range()` is called to
 start an evacuation. If any fragments are found in the buckets in the range the
 earliest such fragment (smallest offset, closest to the write cursor) is
 selected and read from disk and the aggregation buffer write is suspended. The
@@ -1095,7 +1095,7 @@ with overlapping offsets are also coalesced [#coalesced-spans]_. This is all don
    inexplicable feature is provided by the span logic for that module.
 
 After configuration initialization, the cache processor is started by calling
-:cpp:func:`CacheProcessor::start()`. This does a number of things:
+:cpp:member:`CacheProcessor::start()`. This does a number of things:
 
 For each valid span, an instance of :cpp:class:`CacheDisk` is created. This
 class is a :term:`continuation` and so can be used to perform potentially

@@ -115,11 +115,11 @@ Data Structures
 
       Length of stripe in bytes.
 
-.. cpp:function:: int Vol::evac_range(off_t low, off_t high, int evac_phase)
+   .. cpp:member:: int evac_range(off_t low, off_t high, int evac_phase)
 
-   Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the range
-   from :arg:`low` to :arg:`high`. Return ``0`` if no evacuation was started,
-   non-zero otherwise.
+         Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the range
+         from :arg:`low` to :arg:`high`. Return ``0`` if no evacuation was started,
+         non-zero otherwise.
 
 .. cpp:class:: CacheVol
 
