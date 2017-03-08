@@ -30,7 +30,7 @@ function send_data()
         'Accept-Ranges: bytes\r\n\r\n' ..
         nt
 
-    return resp
+    ts.say(resp)
 end
 
 
