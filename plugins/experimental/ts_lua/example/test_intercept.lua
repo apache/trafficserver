@@ -31,7 +31,7 @@ function send_data()
         nt
 
     ts.sleep(1)
-    return resp
+    ts.say(resp)
 end
 
 
