@@ -103,7 +103,7 @@ def MakeOriginServer(obj, name,public_ip=False):
     # create Process
     p = obj.Processes.Process(name)
     port=get_port(p,"Port")
-    command = "python {0} --data-dir {1} --port {2} --public {3} -m test".format(server_path, data_dir, port, public_ip)
+    command = "python3 {0} --data-dir {1} --port {2} --public {3} -m test".format(server_path, data_dir, port, public_ip)
     
     # create process
     p.Command = command
