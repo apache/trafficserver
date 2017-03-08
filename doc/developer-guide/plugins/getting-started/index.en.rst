@@ -151,7 +151,7 @@ You can find basic examples for many plugins in the SDK sample code:
 
 -  ``basic_auth.c`` performs basic HTTP proxy authorization.
 
--  ``blacklist-1.c`` reads blacklisted servers from a configuration file
+-  ``blacklist_1.c`` reads blacklisted servers from a configuration file
    and denies client access to these servers. This plugin is explained
    in :ref:`developer-plugins-examples-blacklist`.
 
