@@ -27,6 +27,8 @@
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
 
+#define PLUGIN_NAME "blacklist_1"
+
 #define MAX_NSITES 500
 #define RETRY_TIME 10
 
@@ -74,19 +76,19 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   int host_length;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[blacklist-1] Couldn't retrieve client request header");
+    TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
     goto done;
   }
 
   if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("[blacklist-1] Couldn't retrieve request url");
+    TSError("[%s] Couldn't retrieve request url", PLUGIN_NAME);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
   host = TSUrlHostGet(bufp, url_loc, &host_length);
   if (!host) {
-    TSError("[blacklist-1] Couldn't retrieve request hostname");
+    TSError("[%s] Couldn't retrieve request hostname", PLUGIN_NAME);
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
@@ -95,7 +97,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   /* We need to lock the sites_mutex as that is the mutex that is
      protecting the global list of all blacklisted sites. */
   if (TSMutexLockTry(sites_mutex) != TS_SUCCESS) {
-    TSDebug("blacklist-1", "Unable to get lock. Will retry after some time");
+    TSDebug(PLUGIN_NAME, "Unable to get lock. Will retry after some time");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSContSchedule(contp, RETRY_TIME, TS_THREAD_POOL_DEFAULT);
@@ -107,7 +109,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
       if (log) {
         TSTextLogObjectWrite(log, "blacklisting site: %s", sites[i]);
       } else {
-        TSDebug("blacklist-1", "blacklisting site: %s", sites[i]);
+        TSDebug(PLUGIN_NAME, "blacklisting site: %s", sites[i]);
       }
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
@@ -137,7 +139,7 @@ handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   int url_length;
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[blacklist-1] Couldn't retrieve client response header");
+    TSError("[%s] Couldn't retrieve client response header", PLUGIN_NAME);
     goto done;
   }
 
@@ -146,13 +148,13 @@ handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[blacklist-1] Couldn't retrieve client request header");
+    TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
   if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("[blacklist-1] Couldn't retrieve request url");
+    TSError("[%s] Couldn't retrieve request url", PLUGIN_NAME);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
@@ -213,8 +215,8 @@ read_blacklist(TSCont contp)
 
     TSfclose(file);
   } else {
-    TSError("[blacklist-1] Unable to open %s", blacklist_file);
-    TSError("[blacklist-1] All sites will be allowed");
+    TSError("[%s] Unable to open %s", PLUGIN_NAME, blacklist_file);
+    TSError("[%s] All sites will be allowed", PLUGIN_NAME);
   }
 
   TSMutexUnlock(sites_mutex);
@@ -270,7 +272,7 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
         handle_response(cd->txnp, contp);
         return 0;
       default:
-        TSDebug("blacklist_plugin", "This event was unexpected: %d", event);
+        TSDebug(PLUGIN_NAME, "This event was unexpected: %d", event);
         break;
       }
     } else {
@@ -309,18 +311,18 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   TSPluginRegistrationInfo info;
   TSReturnCode error;
 
-  info.plugin_name   = "blacklist-1";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[blacklist-1] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
   }
 
   /* create an TSTextLogObject to log blacklisted requests to */
   error = TSTextLogObjectCreate("blacklist", TS_LOG_MODE_ADD_TIMESTAMP, &log);
   if (!log || error == TS_ERROR) {
-    TSDebug("blacklist-1", "error while creating log");
+    TSDebug(PLUGIN_NAME, "error while creating log");
   }
 
   sites_mutex = TSMutexCreate();

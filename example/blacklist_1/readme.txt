@@ -2,7 +2,7 @@ How to run the blacklist plugin
 ===============================
 
 1. Modify blacklist.cgi to specify the location of perl and traffic server.
-2. Copy blacklist.cgi, blacklist-1.so, PoweredByInktomi.gif to the directory
+2. Copy blacklist.cgi, blacklist_1.so, PoweredByInktomi.gif to the directory
    specified by the variable proxy.config.plugin.plugin_dir.
 3. Modify plugin.config to load the blacklist plugin.
 

@@ -22,7 +22,7 @@
  */
 
 /*
- *   blacklist-0.c:
+ *   blacklist_0.c:
  *	original version of blacklist-1, now used for internal testing
  *
  *
@@ -33,6 +33,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <ts/ts.h>
+
+#define PLUGIN_NAME "blacklist_0"
 
 static char **sites;
 static int nsites;
@@ -48,19 +50,19 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   int host_length;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[blacklist-0] Couldn't retrieve client request header");
+    TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
     goto done;
   }
 
   if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("[blacklist-0] Couldn't retrieve request url");
+    TSError("[%s] Couldn't retrieve request url", PLUGIN_NAME);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
   host = TSUrlHostGet(bufp, url_loc, &host_length);
   if (!host) {
-    TSError("[blacklist-0] Couldn't retrieve request hostname");
+    TSError("[%s] Couldn't retrieve request hostname", PLUGIN_NAME);
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
@@ -93,7 +95,7 @@ handle_response(TSHttpTxn txnp)
   int url_length;
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[blacklist-0] Couldn't retrieve client response header");
+    TSError("[%s] Couldn't retrieve client response header", PLUGIN_NAME);
     goto done;
   }
 
@@ -102,13 +104,13 @@ handle_response(TSHttpTxn txnp)
                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[blacklist-0] Couldn't retrieve client request header");
+    TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
   if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("[blacklist-0] Couldn't retrieve request url");
+    TSError("[%s] Couldn't retrieve request url", PLUGIN_NAME);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
@@ -151,12 +153,12 @@ TSPluginInit(int argc, const char *argv[])
   int i;
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "blacklist-0";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[blacklist-0] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
   }
 
   nsites = argc - 1;

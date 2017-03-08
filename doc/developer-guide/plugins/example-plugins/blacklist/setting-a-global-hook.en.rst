@@ -23,7 +23,7 @@ Setting a Global Hook
 Global hooks are always added in ``TSPluginInit`` using
 ``TSHttpHookAdd``. The two arguments of ``TSHttpHookAdd`` are the hook
 ID and the continuation to call when processing the event corresponding
-to the hook. In ``blacklist-1.c``, the global hook is added as follows:
+to the hook. In ``blacklist_1.c``, the global hook is added as follows:
 
 .. code-block:: c
 
