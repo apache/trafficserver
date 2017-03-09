@@ -1024,7 +1024,7 @@ two different file paths.::
     cond %{PATH} /examplepath1/
     add-header Cache-Control "max-age=3600" [L]
     cond %{SEND_RESPONSE_HDR_HOOK}
-    cond %{PATH} /examplepath2/examplepath3/.*/
+    cond %{PATH} /examplepath2\/examplepath3\/.*/
     add-header Cache-Control "no-cache" [L]
 
 Redirect when the Origin Server Times Out
