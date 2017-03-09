@@ -271,9 +271,22 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
     // if it is a non-temporary error, we should die appropriately
     if (err && err != EAGAIN && err != EINTR) {
-      read_signal_error(nh, vc, err);
+      Continuation *reader_cont = vc->read.vio._cont;
+
+      if (read_signal_error(nh, vc, err) == EVENT_DONE) {
+        return;
+      }
+      // If vc is closed or shutdown(WRITE) in last read_signal_error callback,
+      //   or reader_cont is same as write.vio._cont.
+      // Then we must clear the write.error to avoid callback EVENT_ERROR to SM by write_ready_list.
+      if (vc->closed || (vc->f.shutdown & NET_VC_SHUTDOWN_WRITE) || reader_cont == vc->write.vio._cont) {
+        vc->write.error = 0;
+      }
       return;
     }
+
+    // clear read.error if it is non-fatal error
+    vc->read.error = 0;
   }
 
   // if it is not enabled.
@@ -450,9 +463,14 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     }
 
     if (err && err != EAGAIN && err != EINTR) {
+      // Here is differ to net_read_io since read_signal_error always callback first.
+      // NetHandler::mainNetEvent() is always handle read_ready_list first and then write_ready_list.
       write_signal_error(nh, vc, err);
       return;
     }
+
+    // clear write.error if it is non-fatal error.
+    vc->write.error = 0;
   }
 
   // This function will always return true unless
