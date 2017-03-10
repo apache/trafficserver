@@ -2978,7 +2978,7 @@ Diagnostic Logging Configuration
 .. ts:cv:: CONFIG proxy.config.diags.scrubs STRING NULL
 
    Diagnostic log scrubbing is intended an extra security measure to prevent sensitive strings from leaking to
-   diagnistic logs. For example, if you wanted to scrub the regular expression ``string[a-z]`` from diagnostic
+   diagnostic logs. For example, if you wanted to scrub the regular expression ``string[a-z]`` from diagnostic
    logs and replace it with ``XXXXXX``, use as the config string ``string[a-z] -> XXXXXX``. Note that the spaces
    between the ``->`` are required.
 
@@ -2991,8 +2991,8 @@ Diagnostic Logging Configuration
 
 .. note::
 
-   Multiple captures are not supported. (ie. ``s/foo/bar/g`` is not suppored while ``s/foo/bar/`` is). Furthermore,
-   only the longest captured substring will be replaced for each line in the logs.
+   Multiple captures (eg capture groups) are not supported. (ie. ``s/foo/bar/g`` is not supported while ``s/foo/bar/``
+   is). Furthermore, only the longest captured substring will be replaced for each line in the logs.
 
 .. note::
 
