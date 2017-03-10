@@ -39,6 +39,8 @@
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
 
+#define PLUGIN_NAME "bnull_transform"
+
 #define TS_NULL_MUTEX NULL
 #define STATE_BUFFER_DATA 0
 #define STATE_OUTPUT_DATA 1
@@ -303,12 +305,12 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   TSPluginRegistrationInfo info;
   TSMutex mutex = TS_NULL_MUTEX;
 
-  info.plugin_name   = "buffered-null-transform";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[bnull-transform] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
 
     goto Lerror;
   }
@@ -320,5 +322,5 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   return;
 
 Lerror:
-  TSError("[bnull-transform] Plugin disabled");
+  TSError("[%s] Plugin disabled", PLUGIN_NAME);
 }
