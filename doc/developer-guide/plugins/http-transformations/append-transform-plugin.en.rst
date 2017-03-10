@@ -31,7 +31,7 @@ containing the append text is a parameter you specify in
 
     append_transform.so path/to/file
 
-The append_transform plugin is based on ``null-transform.c``. The only
+The append_transform plugin is based on ``null_transform.c``. The only
 difference is that after the plugin feeds the document through the
 transformation, it adds text to the response.
 

@@ -21,13 +21,13 @@
   limitations under the License.
  */
 
-/* null-transform.c:  an example program that does a null transform
+/* null_transform.c:  an example program that does a null transform
  *                    of response body content
  *
  *
  *
  *	Usage:
- *	  null-transform.so
+ *	  null_transform.so
  *
  *
  */
@@ -37,6 +37,8 @@
 
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
+
+#define PLUGIN_NAME "null_transform"
 
 typedef struct {
   TSVIO output_vio;
@@ -78,7 +80,7 @@ handle_transform(TSCont contp)
   int64_t towrite;
   int64_t avail;
 
-  TSDebug("null-transform", "Entering handle_transform()");
+  TSDebug(PLUGIN_NAME, "Entering handle_transform()");
   /* Get the output (downstream) vconnection where we'll write data to. */
 
   output_conn = TSTransformOutputVConnGet(contp);
@@ -101,7 +103,7 @@ handle_transform(TSCont contp)
     data                = my_data_alloc();
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
-    TSDebug("null-transform", "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
+    TSDebug(PLUGIN_NAME, "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
     // data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT32_MAX);
     data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT64_MAX);
     // data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, TSVIONBytesGet(input_vio));
@@ -129,14 +131,14 @@ handle_transform(TSCont contp)
    * to write to the output connection.
    */
   towrite = TSVIONTodoGet(input_vio);
-  TSDebug("null-transform", "\ttoWrite is %" PRId64 "", towrite);
+  TSDebug(PLUGIN_NAME, "\ttoWrite is %" PRId64 "", towrite);
 
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
      * the amount of data actually in the read buffer.
      */
     avail = TSIOBufferReaderAvail(TSVIOReaderGet(input_vio));
-    TSDebug("null-transform", "\tavail is %" PRId64 "", avail);
+    TSDebug(PLUGIN_NAME, "\tavail is %" PRId64 "", avail);
     if (towrite > avail) {
       towrite = avail;
     }
@@ -197,10 +199,10 @@ null_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
   /* Check to see if the transformation has been closed by a call to
    * TSVConnClose.
    */
-  TSDebug("null-transform", "Entering null_transform()");
+  TSDebug(PLUGIN_NAME, "Entering null_transform()");
 
   if (TSVConnClosedGet(contp)) {
-    TSDebug("null-transform", "\tVConn is closed");
+    TSDebug(PLUGIN_NAME, "\tVConn is closed");
     my_data_destroy(TSContDataGet(contp));
     TSContDestroy(contp);
     return 0;
@@ -209,7 +211,7 @@ null_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
     case TS_EVENT_ERROR: {
       TSVIO input_vio;
 
-      TSDebug("null-transform", "\tEvent is TS_EVENT_ERROR");
+      TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_ERROR");
       /* Get the write VIO for the write operation that was
        * performed on ourself. This VIO contains the continuation of
        * our parent transformation. This is the input VIO.
@@ -222,7 +224,7 @@ null_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
       TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
     } break;
     case TS_EVENT_VCONN_WRITE_COMPLETE:
-      TSDebug("null-transform", "\tEvent is TS_EVENT_VCONN_WRITE_COMPLETE");
+      TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_VCONN_WRITE_COMPLETE");
       /* When our output connection says that it has finished
        * reading all the data we've written to it then we should
        * shutdown the write portion of its connection to
@@ -231,9 +233,9 @@ null_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
       TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
       break;
     case TS_EVENT_VCONN_WRITE_READY:
-      TSDebug("null-transform", "\tEvent is TS_EVENT_VCONN_WRITE_READY");
+      TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_VCONN_WRITE_READY");
     default:
-      TSDebug("null-transform", "\t(event is %d)", event);
+      TSDebug(PLUGIN_NAME, "\t(event is %d)", event);
       /* If we get a WRITE_READY event or any other type of
        * event (sent, perhaps, because we were reenabled) then
        * we'll attempt to transform more data.
@@ -258,7 +260,7 @@ transformable(TSHttpTxn txnp)
   TSHttpStatus resp_status;
   int retv = 0;
 
-  TSDebug("null-transform", "Entering transformable()");
+  TSDebug(PLUGIN_NAME, "Entering transformable()");
 
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
     resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
@@ -266,7 +268,7 @@ transformable(TSHttpTxn txnp)
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   }
 
-  TSDebug("null-transform", "Exiting transformable with return %d", retv);
+  TSDebug(PLUGIN_NAME, "Exiting transformable with return %d", retv);
   return retv;
 }
 
@@ -275,7 +277,7 @@ transform_add(TSHttpTxn txnp)
 {
   TSVConn connp;
 
-  TSDebug("null-transform", "Entering transform_add()");
+  TSDebug(PLUGIN_NAME, "Entering transform_add()");
   connp = TSTransformCreate(null_transform, txnp);
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
 }
@@ -285,10 +287,10 @@ transform_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
 
-  TSDebug("null-transform", "Entering transform_plugin()");
+  TSDebug(PLUGIN_NAME, "Entering transform_plugin()");
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    TSDebug("null-transform", "\tEvent is TS_EVENT_HTTP_READ_RESPONSE_HDR");
+    TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_HTTP_READ_RESPONSE_HDR");
     if (transformable(txnp)) {
       transform_add(txnp);
     }
@@ -307,12 +309,12 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "null-transform";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[null-transform] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
 
     goto Lerror;
   }
@@ -321,5 +323,5 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   return;
 
 Lerror:
-  TSError("[null-transform] Unable to initialize plugin (disabled).");
+  TSError("[%s] Unable to initialize plugin (disabled).", PLUGIN_NAME);
 }

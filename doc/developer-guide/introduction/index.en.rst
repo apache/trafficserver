@@ -62,7 +62,7 @@ Below is a section-by-section breakdown of this guide:
    plugins.
 
 :ref:`developer-plugins-http-transformations`
-   Detailed explanation of the null-transform example; also discusses
+   Detailed explanation of the null_transform example; also discusses
    ``VConnections``, ``VIOs``, and IO buffers.
 
 :ref:`developer-plugins-new-protocol-plugins`
@@ -113,5 +113,3 @@ function type:
 
 :ref:`developer-api-ref-functions`
    Traffic Server API Function Documentation.
-
-

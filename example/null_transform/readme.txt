@@ -1,4 +1,4 @@
-The null-transform.c plugin performs a null transformation
+The null_transform.c plugin performs a null transformation
 on response content.
 
 The plugin is called each time Traffic Server reads an HTTP
@@ -108,5 +108,3 @@ This is how the transformation receives the WRITE_COMPLETE event:
 when the downstream vconnection learns through the downstream
 (output) vio that there is no more data left to read (nbytes=ndone),
 the downstream vconnection sends WRITE_COMPLETE upstream.
-
-

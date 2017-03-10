@@ -142,7 +142,7 @@ Here's how to make sure that all incoming data is consumed:
 
 -  After reading or copying data, make sure that you consume the data
    and increase the value of ndone for the input VIO, as in the
-   following example taken from ``null-transform.c``:
+   following example taken from ``null_transform.c``:
 
    .. code-block:: c
 
