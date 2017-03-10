@@ -162,13 +162,7 @@ signal_format_siginfo(int signo, siginfo_t *info, const char *msg)
   (void)info;
   (void)signo;
 
-#if HAVE_PSIGINFO
-  psiginfo(info, const_cast<char *>(msg));
-#elif HAVE_PSIGNAL
-  psignal(signo, msg);
-#else
   char buf[64];
-  size_t len;
 
 #if HAVE_STRSIGNAL
   snprintf(buf, sizeof(buf), "%s: received signal %d (%s)\n", msg, signo, strsignal(signo));
@@ -176,8 +170,8 @@ signal_format_siginfo(int signo, siginfo_t *info, const char *msg)
   snprintf(buf, sizeof(buf), "%s: received signal %d\n", msg, signo);
 #endif
 
-  write(STDERR_FILENO, buf, strlen(buf));
-#endif
+  ssize_t ignored = write(STDERR_FILENO, buf, strlen(buf));
+  (void)ignored; // because gcc and glibc are stupid, "(void)write(...)" doesn't suffice.
 }
 
 void
