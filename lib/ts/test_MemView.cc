@@ -26,8 +26,20 @@
 #include <iomanip>
 #include <ios>
 #include <iostream>
+#include <string>
 
 using namespace ts;
+
+template <typename T, typename S>
+bool
+CheckEqual(T const &lhs, S const &rhs, std::string const &prefix)
+{
+  bool zret = lhs == rhs;
+  if (!zret) {
+    std::cout << "FAIL: " << prefix << ": Expected " << lhs << " to be " << rhs << std::endl;
+  }
+  return zret;
+}
 
 bool
 Test_1()
@@ -45,6 +57,21 @@ Test_1()
   return true;
 }
 
+bool
+Test_2()
+{
+  bool zret = true;
+  StringView sva("litt\0ral");
+  StringView svb("litt\0ral", StringView::literal);
+  StringView svc("litt\0ral", StringView::array);
+
+  zret = zret && CheckEqual(sva.size(), 4U, "strlen constructor");
+  zret = zret && CheckEqual(svb.size(), 8U, "literal constructor");
+  zret = zret && CheckEqual(svc.size(), 9U, "array constructor");
+
+  return zret;
+}
+
 // These tests are purely compile time.
 void
 Test_Compile()
@@ -60,5 +87,10 @@ Test_Compile()
 int
 main(int, char *argv[])
 {
-  return Test_1() ? 0 : 1;
+  bool zret = true;
+
+  zret = zret && Test_1();
+  zret = zret && Test_2();
+
+  return zret ? 0 : 1;
 }
