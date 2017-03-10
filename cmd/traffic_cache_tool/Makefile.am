@@ -1,4 +1,6 @@
 #
+# Cache Tool Makefile
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -15,18 +17,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
-  traffic_cache_tool \
-  traffic_cop \
-  traffic_crashlog \
-  traffic_ctl \
-  traffic_layout \
-  traffic_manager \
-  traffic_top \
-  traffic_via
+AM_CPPFLAGS = -I $(srcdir)/lib/ts
 
-if BUILD_WCCP
+noinst_PROGRAMS = traffic_cache_tool
 
-SUBDIRS += traffic_wccp
+traffic_cache_tool_SOURCES = CacheDefs.h CacheTool.cc File.h File.cc Command.h Command.cc
+traffic_cache_tool_LDADD = \
+	$(top_builddir)/lib/ts/.libs/MemView.o \
+	$(top_builddir)/lib/ts/.libs/ink_memory.o \
+	$(top_builddir)/lib/ts/.libs/ink_file.o \
+	$(top_builddir)/lib/ts/.libs/ink_error.o \
+	$(top_builddir)/lib/ts/.libs/ink_string.o \
+	$(top_builddir)/lib/ts/.libs/ink_assert.o \
+	$(top_builddir)/lib/tsconfig/.libs/Errata.o
 
-endif
+all-am: Makefile $(PROGRAMS)
