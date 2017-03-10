@@ -326,7 +326,7 @@ DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const 
   Status("opened %s", diags_logpath);
 
   if (scrubs) {
-    config_scrubbing(diags, scrubs);
+    diags->scrub_config(true, scrubs);
   }
 
   register_diags_callbacks();
@@ -376,59 +376,6 @@ DiagsConfig::register_diags_callbacks()
   } else {
     callbacks_established = true;
   }
-}
-
-void
-DiagsConfig::config_scrubbing(Diags *d, const char *config)
-{
-  bool state_expecting_regex = true;
-  char *regex                = nullptr;
-  char *replacement          = nullptr;
-  const ts::StringView delimiters("->;,", ts::StringView::literal);
-  ts::StringView text(config);
-
-  // Loop over config string while extracting tokens
-  while (text) {
-    ts::StringView token = (text.ltrim(&isspace)).extractPrefix(&isspace);
-    if (token) {
-      // If we hit a delimiter, we change states and skip the token
-      if (!ts::StringView(token).ltrim(delimiters)) {
-        state_expecting_regex = !state_expecting_regex;
-        continue;
-      }
-
-      // Store our current token
-      if (state_expecting_regex) {
-        regex = static_cast<char *>(ats_malloc(token.size() + 1));
-        sprintf(regex, "%.*s", static_cast<int>(token.size()), token.ptr());
-        Note("regex - |%s|", regex);
-      } else {
-        replacement = static_cast<char *>(ats_malloc(token.size() + 1));
-        sprintf(replacement, "%.*s", static_cast<int>(token.size()), token.ptr());
-        Note("replacement - |%s|", replacement);
-      }
-
-      // If we have a pair of (regex, replacement) tokens, we can go ahead and store those values into Diags
-      if (regex && replacement) {
-        d->scrub_add(regex, replacement);
-        ats_free(regex);
-        ats_free(replacement);
-        regex       = nullptr;
-        replacement = nullptr;
-        Note("called scrub_add");
-      }
-    }
-  }
-
-  // This means that there was some kind of config or parse error.
-  // This doesn't catch *all* errors, and is just a heuristic so we can't actually print any meaningful message.
-  if ((regex && !replacement) || (!regex && replacement)) {
-    Error("Error in scrubbing config parsing. Not enabling scrubbing.");
-    return;
-  }
-
-  // Turn on scrubbing
-  d->scrub_config(true);
 }
 
 DiagsConfig::~DiagsConfig()
