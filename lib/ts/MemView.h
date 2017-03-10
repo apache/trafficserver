@@ -48,6 +48,7 @@ class StringView;
 /// -  1 if @a lhs byte is greater than @a rhs byte.
 /// -  0 if the views contain identical memory.
 int memcmp(MemView const &lhs, MemView const &rhs);
+using ::memcmp; // Make this an overload, not an override.
 /// Compare the strings in two views.
 /// Return based on the first different character. If one argument is a prefix of the other, the prefix
 /// is considered the "smaller" value.
@@ -56,6 +57,7 @@ int memcmp(MemView const &lhs, MemView const &rhs);
 /// -  1 if @a lhs char is greater than @a rhs char.
 /// -  0 if the views contain identical strings.
 int strcmp(StringView const &lhs, StringView const &rhs);
+using ::strcmp; // Make this an overload, not an override.
 /// Compare the strings in two views.
 /// Return based on the first different character. If one argument is a prefix of the other, the prefix
 /// is considered the "smaller" value. The values are compared ignoring case.
@@ -67,6 +69,7 @@ int strcmp(StringView const &lhs, StringView const &rhs);
 /// @internal Why not <const&>? Because the implementation would make copies anyway, might as well save
 /// the cost of passing the pointers.
 int strcasecmp(StringView lhs, StringView rhs);
+using ::strcasecmp; // Make this an overload, not an override.
 
 /** Convert the text in @c StringView @a src to a numeric value.
 
@@ -311,6 +314,11 @@ protected:
   const char *_ptr = nullptr; ///< Pointer to base of memory chunk.
   size_t _size     = 0;       ///< Size of memory chunk.
 
+  struct literal_t {
+  };
+  struct array_t {
+  };
+
 public:
   /// Default constructor (empty buffer).
   constexpr StringView();
@@ -336,21 +344,48 @@ public:
                        const char *end    ///< First byte not in the view.
                        );
 
+  /** Constructor from literal string.
+
+      Construct directly from a literal string. This avoids a call to :c strlen and therefore is
+      faster and can be @c constexpr. The terminal nul character is excluded. Internal nul
+      characters are included.
+
+      @code
+        StringView a("literal", StringView::literal);
+      @endcode
+   */
+  template <size_t N> constexpr StringView(const char (&s)[N], literal_t);
+
+  /** Constructor from character array.
+
+      Construct directly from an array of characters. All elements of the array are
+      included in the view.
+
+      @code
+        char buff[SIZE];
+        StringView a(buff, StringView::array);
+      @endcode
+
+      @note If this is used on a literal string, the terminal nul character is included.
+   */
+  template <size_t N> constexpr StringView(const char (&s)[N], array_t);
+
   /** Construct from nullptr.
       This implicitly makes the length 0.
   */
   constexpr StringView(std::nullptr_t);
+
+  /// Construct from @c MemView to reference the same view.
+  /// @internal Can't be @c constexpr because @c static_cast of @c <void*> is not permitted.
+  StringView(MemView const &that);
 
   /** Construct from null terminated string.
       @note The terminating null is not included. @c strlen is used to determine the length.
   */
   explicit StringView(const char *s);
 
-  /// Construct from @c MemView to reference the same view.
-  /// @internal Can't be @c constexpr because @c static_cast of @c <void*> is not permitted.
-  StringView(MemView const &that);
-
   /// Construct from @c std::string, referencing the entire string contents.
+  /// @internal Not all compilers make @c std::string methods called @c constexpr
   StringView(std::string const &str);
 
   /** Equality.
@@ -625,6 +660,9 @@ public:
   /// so alignment / fill have to be explicitly handled.
   template <typename Stream> Stream &stream_write(Stream &os, const StringView &b) const;
 
+  static constexpr literal_t literal{};
+  static constexpr array_t array{};
+
 protected:
   /// Initialize a bit mask to mark which characters are in this view.
   void initDelimiterSet(std::bitset<256> &set);
@@ -879,6 +917,13 @@ inline StringView::StringView(MemView const &that) : _ptr(static_cast<const char
 {
 }
 inline StringView::StringView(std::string const &str) : _ptr(str.data()), _size(str.size())
+{
+}
+template <size_t N> constexpr StringView::StringView(const char (&s)[N], literal_t) : _ptr(s), _size(N - 1)
+{
+}
+
+template <size_t N> constexpr StringView::StringView(const char (&s)[N], array_t) : _ptr(s), _size(N)
 {
 }
 
