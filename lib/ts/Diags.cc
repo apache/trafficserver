@@ -67,19 +67,6 @@ location(const SourceLocation *loc, DiagsShowLocation show, DiagsLevel level)
   return false;
 }
 
-template <int Size>
-static void
-vprintline(FILE *fp, char (&buffer)[Size], va_list ap)
-{
-  int nbytes = strlen(buffer);
-
-  vfprintf(fp, buffer, ap);
-  if (nbytes > 0 && buffer[nbytes - 1] != '\n') {
-    ink_assert(nbytes < Size);
-    putc('\n', fp);
-  }
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      Diags::Diags(char *bdt, char *bat)
@@ -186,6 +173,10 @@ Diags::~Diags()
   if (stderr_log) {
     delete stderr_log;
     stderr_log = nullptr;
+  }
+
+  for (auto s : scrubs) {
+    delete s;
   }
 
   ats_free((void *)base_debug_tags);
@@ -893,6 +884,86 @@ Diags::set_stderr_output(const char *stderr_path)
   return ret;
 }
 
+void
+Diags::scrub_add(const char *pattern, const char *replacement)
+{
+  pcre *re;
+  const char *error;
+  int erroroffset;
+  Scrub *s;
+
+  // compile the regular expression
+  re = pcre_compile(pattern, 0, &error, &erroroffset, NULL);
+  if (!re) {
+    log_log_error("[Warning]: Unable to compile PCRE scrubbing pattern\n");
+    log_log_error("[Warning]: Scrubbing pattern failed at offset %d: %s.\n", erroroffset, error);
+    return;
+  }
+
+  // add the scrub pattern to our list
+  s              = new Scrub;
+  s->pattern     = ats_strdup(pattern);
+  s->replacement = ats_strdup(replacement);
+  s->compiled_re = re;
+  scrubs.push_back(s);
+}
+
+char *
+Diags::scrub_buffer(const char *buffer, Scrub *scrub) const
+{
+  int num_matched;
+  char *scrubbed;
+  char *scrubbed_idx;
+
+  // execute regex
+  num_matched = pcre_exec(scrub->compiled_re, nullptr, buffer, strlen(buffer), 0, 0, scrub->ovector, scrub->OVECCOUNT);
+  if (likely(num_matched < 0)) {
+    switch (num_matched) {
+    case PCRE_ERROR_NOMATCH:
+      return ats_strdup(buffer);
+    default:
+      log_log_error("[Warning] PCRE matching error %d\n", num_matched);
+      break;
+    }
+  }
+
+  // guaranteed to be big enough
+  scrubbed     = static_cast<char *>(ats_malloc(strlen(buffer) + strlen(scrub->replacement) + 1));
+  scrubbed_idx = scrubbed;
+
+  // copy over all the stuff before the captured substing
+  memcpy(scrubbed_idx, buffer, scrub->ovector[0]);
+  scrubbed_idx += scrub->ovector[0];
+
+  // copy over the scrubbed stuff
+  int replacement_len = strlen(scrub->replacement);
+  memcpy(scrubbed_idx, scrub->replacement, replacement_len);
+  scrubbed_idx += replacement_len;
+
+  // copy over everything after the scrubbed stuff
+  int trailing_len = strlen(buffer + scrub->ovector[1]);
+  memcpy(scrubbed_idx, buffer + scrub->ovector[1], trailing_len);
+  scrubbed_idx += trailing_len;
+
+  // nul terminate
+  *scrubbed_idx = '\0';
+
+  return scrubbed;
+}
+
+char *
+Diags::scrub_buffer(const char *buffer, const std::vector<Scrub *> &scrubs) const
+{
+  // apply every Scrub in the vector, in order
+  char *scrubbed = ats_strdup(buffer);
+  for (auto s : scrubs) {
+    char *new_scrubbed = scrub_buffer(scrubbed, s);
+    ats_free(scrubbed);
+    scrubbed = new_scrubbed;
+  }
+  return scrubbed;
+}
+
 /*
  * Helper function that rebinds stdout to specified file descriptor
  *
@@ -925,4 +996,36 @@ Diags::rebind_stderr(int new_fd)
     return true;
   }
   return false;
+}
+
+void
+Diags::vprintline(FILE *fp, char *buffer, va_list ap) const
+{
+  int nbytes = strlen(buffer);
+
+  // check if we need to scrub any patterns
+  if (unlikely(scrub_enabled)) {
+    int buf_size = 2048;
+    while (true) {
+      char *buf = static_cast<char *>(ats_malloc(buf_size));
+      int r     = vsnprintf(buf, buf_size, buffer, ap);
+      // if it's fully written, then we can break
+      if (r < buf_size) { // we break on encoding errors (ie r < 0)
+        char *scrubbed = scrub_buffer(buf, scrubs);
+        fprintf(fp, scrubbed);
+        ats_free(scrubbed);
+        ats_free(buf);
+        break;
+      }
+      buf_size *= 2;
+      buf = static_cast<char *>(ats_realloc(buf, buf_size));
+    }
+  } else {
+    vfprintf(fp, buffer, ap);
+  }
+
+  // add a newline if one didn't exist
+  if (nbytes > 0 && buffer[nbytes - 1] != '\n') {
+    putc('\n', fp);
+  }
 }

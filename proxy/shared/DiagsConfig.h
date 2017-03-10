@@ -37,6 +37,7 @@ struct DiagsConfig {
   ~DiagsConfig();
 
 private:
+  void config_scrubbing(Diags *d, const char *config);
   bool callbacks_established;
   BaseLogFile *diags_log;
 

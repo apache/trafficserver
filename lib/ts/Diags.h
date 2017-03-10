@@ -34,8 +34,10 @@
 #ifndef __DIAGS_H___
 #define __DIAGS_H___
 
+#include <vector>
 #include <stdarg.h>
 #include "ink_mutex.h"
+#include "pcre.h"
 #include "Regex.h"
 #include "ink_apidefs.h"
 #include "ContFlags.h"
@@ -90,6 +92,26 @@ struct DiagsConfigState {
   // this is static to eliminate many loads from the critical path
   static bool enabled[2];                    // one debug, one action
   DiagsModeOutput outputs[DiagsLevel_Count]; // where each level prints
+};
+
+struct Scrub {
+  ~Scrub()
+  {
+    if (pattern) {
+      ats_free(const_cast<char *>(pattern));
+    }
+    if (replacement) {
+      ats_free(const_cast<char *>(replacement));
+    }
+    if (compiled_re) {
+      pcre_free(const_cast<pcre *>(compiled_re));
+    }
+  }
+  static const int OVECCOUNT = 30;
+  const char *pattern;
+  const char *replacement;
+  const pcre *compiled_re;
+  int ovector[OVECCOUNT];
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -201,6 +223,8 @@ public:
     va_end(ap);
   }
 
+  void vprintline(FILE *fp, char *buffer, va_list ap) const;
+
   void error_va(DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
 
   void dump(FILE *fp = stdout) const;
@@ -218,6 +242,35 @@ public:
   bool set_stdout_output(const char *_bind_stdout);
   bool set_stderr_output(const char *_bind_stderr);
 
+  /*
+   * Turn scrubbing on/off.
+   *
+   * This really shouldn't be called by anyone other than DiagsConfig b/c there's inherent race conditions.
+   */
+  void
+  scrub_config(bool enable)
+  {
+    scrub_enabled = enable;
+  }
+  /*
+   * Add another expression to scrub from diagnostic logs.
+   *
+   * This really shouldn't be called by anyone other than DiagsConfig b/c there's inherent race conditions.
+   */
+  void scrub_add(const char *pattern, const char *replacement);
+
+  /*
+   * Heap allocates an identical buffer that is scrubbed.
+   * Caller should ats_free.
+   */
+  char *scrub_buffer(const char *buffer, Scrub *scrub) const;
+
+  /*
+   * Heap allocates an identical buffer that is scrubbed with multiple Scrubs.
+   * Caller should ats_free.
+   */
+  char *scrub_buffer(const char *buffer, const std::vector<Scrub *> &scrubs) const;
+
   const char *base_debug_tags;  // internal copy of default debug tags
   const char *base_action_tags; // internal copy of default action tags
 
@@ -225,6 +278,10 @@ private:
   const char *prefix_str;
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
   DFA *activated_tags[2];           // 1 table for debug, 1 for action
+
+  // Scrubbing variables -- replaces predefined regexp matches with the replacement string
+  bool scrub_enabled = false;
+  std::vector<Scrub *> scrubs;
 
   // These are the default logfile permissions
   int diags_logfile_perm  = -1;

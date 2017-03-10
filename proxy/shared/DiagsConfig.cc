@@ -25,6 +25,7 @@
 #include "ts/ink_memory.h"
 #include "ts/ink_file.h"
 #include "ts/I_Layout.h"
+#include "ts/MemView.h"
 #include "DiagsConfig.h"
 #include "P_RecCore.h"
 
@@ -310,9 +311,11 @@ DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const 
   char *output_perm      = REC_ConfigReadString("proxy.config.output.logfile_perm");
   int diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
   int output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
-
   ats_free(diags_perm);
   ats_free(output_perm);
+
+  // Grab scrubs config
+  char *scrubs = REC_ConfigReadString("proxy.config.diags.scrubs");
 
   // Set up diags, FILE streams are opened in Diags constructor
   diags_log = new BaseLogFile(diags_logpath);
@@ -321,6 +324,10 @@ DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const 
   diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
 
   Status("opened %s", diags_logpath);
+
+  if (scrubs) {
+    config_scrubbing(diags, scrubs);
+  }
 
   register_diags_callbacks();
 
@@ -369,6 +376,59 @@ DiagsConfig::register_diags_callbacks()
   } else {
     callbacks_established = true;
   }
+}
+
+void
+DiagsConfig::config_scrubbing(Diags *d, const char *config)
+{
+  bool state_expecting_regex = true;
+  char *regex                = nullptr;
+  char *replacement          = nullptr;
+  const ts::StringView delimiters("->;,", ts::StringView::literal);
+  ts::StringView text(config);
+
+  // Loop over config string while extracting tokens
+  while (text) {
+    ts::StringView token = (text.ltrim(&isspace)).extractPrefix(&isspace);
+    if (token) {
+      // If we hit a delimiter, we change states and skip the token
+      if (!ts::StringView(token).ltrim(delimiters)) {
+        state_expecting_regex = !state_expecting_regex;
+        continue;
+      }
+
+      // Store our current token
+      if (state_expecting_regex) {
+        regex = static_cast<char *>(ats_malloc(token.size() + 1));
+        sprintf(regex, "%.*s", static_cast<int>(token.size()), token.ptr());
+        Note("regex - |%s|", regex);
+      } else {
+        replacement = static_cast<char *>(ats_malloc(token.size() + 1));
+        sprintf(replacement, "%.*s", static_cast<int>(token.size()), token.ptr());
+        Note("replacement - |%s|", replacement);
+      }
+
+      // If we have a pair of (regex, replacement) tokens, we can go ahead and store those values into Diags
+      if (regex && replacement) {
+        d->scrub_add(regex, replacement);
+        ats_free(regex);
+        ats_free(replacement);
+        regex       = nullptr;
+        replacement = nullptr;
+        Note("called scrub_add");
+      }
+    }
+  }
+
+  // This means that there was some kind of config or parse error.
+  // This doesn't catch *all* errors, and is just a heuristic so we can't actually print any meaningful message.
+  if ((regex && !replacement) || (!regex && replacement)) {
+    Error("Error in scrubbing config parsing. Not enabling scrubbing.");
+    return;
+  }
+
+  // Turn on scrubbing
+  d->scrub_config(true);
 }
 
 DiagsConfig::~DiagsConfig()

@@ -2975,6 +2975,38 @@ Diagnostic Logging Configuration
 
    Specifies at what size to roll the diagnostics log at.
 
+.. ts:cv:: CONFIG proxy.config.diags.scrubs STRING NULL
+
+   Diagnostic log scrubbing is intended an extra security measure to prevent sensitive strings from leaking to
+   diagnistic logs. For example, if you wanted to scrub the regular expression ``string[a-z]`` from diagnostic
+   logs and replace it with ``XXXXXX``, use as the config string ``string[a-z] -> XXXXXX``. Note that the spaces
+   between the ``->`` are required.
+
+   If you want to scrub multiple regular expressions, use ``;`` to separate the pairs. For example:
+   ``string[a-z] -> XXXXXX ; doge$ -> doggy``. Once again, the spaces before and after the ``;`` are required.
+
+.. note::
+
+   Diagnostic log scrubbing supports PCRE format regular expressions.
+
+.. note::
+
+   Multiple captures are not supported. (ie. ``s/foo/bar/g`` is not suppored while ``s/foo/bar/`` is). Furthermore,
+   only the longest captured substring will be replaced for each line in the logs.
+
+.. note::
+
+   If multiple pairs of replacements are supplied, the replacements are performed from leftmost pair to
+   rightmost pair. This means that latter replacements can affect the previously applied replacement strings.
+
+.. example::
+
+   Here are some valid config lines:
+
+      CONFIG proxy.config.diags.scrubs STRING string[a-z] -> XXXXXX
+
+      CONFIG proxy.config.diags.scrubs STRING pizza_party -> PIZZA__PARTY ; wonton.*party -> WONTONPARTY
+
 Reverse Proxy
 =============
 

@@ -235,6 +235,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.diags.logfile.rolling_size_mb", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_STR, "^0*[1-9][0-9]*$", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.diags.scrubs", RECD_STRING, nullptr, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
 
   //##############################################################################
   //#
