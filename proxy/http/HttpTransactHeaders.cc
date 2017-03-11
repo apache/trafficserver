@@ -741,26 +741,14 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   }
 
   char *incoming_via = s->via_string;
-  int scheme         = s->orig_scheme;
-  ink_assert(scheme >= 0);
-
-  int scheme_len   = hdrtoken_index_to_length(scheme);
-  int32_t hversion = header->version_get().m_version;
-
-  memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
-  via_string += scheme_len;
-
-  // Common case (I hope?)
-  if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
-    memcpy(via_string, "/1.1 ", 5);
-    via_string += 5;
-  } else {
-    *via_string++ = '/';
-    *via_string++ = '0' + HTTP_MAJOR(hversion);
-    *via_string++ = '.';
-    *via_string++ = '0' + HTTP_MINOR(hversion);
+  char const *proto_buf[10]; // 10 seems like a reasonable number of protos to print
+  int retval = s->state_machine->populate_client_protocol(proto_buf, countof(proto_buf));
+  for (int i = 0; i < retval; i++) {
+    memcpy(via_string, proto_buf[i], strlen(proto_buf[i]));
+    via_string += strlen(proto_buf[i]);
     *via_string++ = ' ';
   }
+
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
 
   *via_string++ = '[';
