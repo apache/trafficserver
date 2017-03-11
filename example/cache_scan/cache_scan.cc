@@ -34,6 +34,8 @@
 #include "ts/experimental.h"
 #include "ts/ink_defs.h"
 
+#define PLUGIN_NAME "cache_scan"
+
 static TSCont global_contp;
 
 struct cache_scan_state_t {
@@ -172,7 +174,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     return TS_CACHE_SCAN_RESULT_DONE;
   }
 
-  TSError("[cache-scan] Unknown event in handle_scan: %d", event);
+  TSError("[%s] Unknown event in handle_scan: %d", PLUGIN_NAME, event);
   return -1;
 }
 
@@ -232,7 +234,7 @@ cleanup(TSCont contp)
 
     if (cstate->key_to_delete) {
       if (TSCacheKeyDestroy(cstate->key_to_delete) == TS_ERROR) {
-        TSError("[cache-scan] Failed to destroy cache key");
+        TSError("[%s] Failed to destroy cache key", PLUGIN_NAME);
       }
       cstate->key_to_delete = nullptr;
     }
@@ -281,7 +283,7 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     return 0;
   }
   case TS_EVENT_VCONN_WRITE_READY: {
-    TSDebug("cache_iter", "ndone: %" PRId64 " total_bytes: % " PRId64, TSVIONDoneGet(cstate->write_vio), cstate->total_bytes);
+    TSDebug(PLUGIN_NAME, "ndone: %" PRId64 " total_bytes: % " PRId64, TSVIONDoneGet(cstate->write_vio), cstate->total_bytes);
     cstate->write_pending = 0;
     // the cache scan handler should call vio reenable when there is
     // available data
@@ -289,7 +291,7 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     return 0;
   }
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSDebug("cache_iter", "write complete");
+    TSDebug(PLUGIN_NAME, "write complete");
   case TS_EVENT_VCONN_EOS:
   default:
     cstate->done = 1;
@@ -304,7 +306,7 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 static int
 cache_intercept(TSCont contp, TSEvent event, void *edata)
 {
-  TSDebug("cache_iter", "cache_intercept event: %d", event);
+  TSDebug(PLUGIN_NAME, "cache_intercept event: %d", event);
 
   switch (event) {
   case TS_EVENT_NET_ACCEPT:
@@ -329,7 +331,7 @@ cache_intercept(TSCont contp, TSEvent event, void *edata)
     cleanup(contp);
     return 0;
   default:
-    TSError("[cache-scan] Unknown event in cache_intercept: %d", event);
+    TSError("[%s] Unknown event in cache_intercept: %d", PLUGIN_NAME, event);
     cleanup(contp);
     return 0;
   }
@@ -385,13 +387,13 @@ setup_request(TSCont contp, TSHttpTxn txnp)
   TSAssert(contp == global_contp);
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[cache-scan] Couldn't retrieve client request header");
+    TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
 
   if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("[cache-scan] Couldn't retrieve request url");
+    TSError("[%s] Couldn't retrieve request url", PLUGIN_NAME);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
@@ -399,7 +401,7 @@ setup_request(TSCont contp, TSHttpTxn txnp)
 
   path = TSUrlPathGet(bufp, url_loc, &path_len);
   if (!path) {
-    TSError("[cache-scan] Couldn't retrieve request path");
+    TSError("[%s] Couldn't retrieve request path", PLUGIN_NAME);
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -432,7 +434,7 @@ setup_request(TSCont contp, TSHttpTxn txnp)
         end         = start + del_url_len;
 
         cstate->key_to_delete = TSCacheKeyCreate();
-        TSDebug("cache_iter", "deleting url: %s", start);
+        TSDebug(PLUGIN_NAME, "deleting url: %s", start);
 
         TSMBuffer urlBuf = TSMBufferCreate();
         TSMLoc urlLoc;
@@ -440,7 +442,7 @@ setup_request(TSCont contp, TSHttpTxn txnp)
         TSUrlCreate(urlBuf, &urlLoc);
         if (TSUrlParse(urlBuf, urlLoc, (const char **)&start, end) != TS_PARSE_DONE ||
             TSCacheKeyDigestFromUrlSet(cstate->key_to_delete, urlLoc) != TS_SUCCESS) {
-          TSError("[cache-scan] CacheKeyDigestFromUrlSet failed");
+          TSError("[%s] CacheKeyDigestFromUrlSet failed", PLUGIN_NAME);
           TSCacheKeyDestroy(cstate->key_to_delete);
           TSfree(cstate);
           TSHandleMLocRelease(urlBuf, nullptr, urlLoc);
@@ -451,9 +453,9 @@ setup_request(TSCont contp, TSHttpTxn txnp)
     }
 
     TSContDataSet(scan_contp, cstate);
-    TSDebug("cache_iter", "setup cache intercept");
+    TSDebug(PLUGIN_NAME, "setup cache intercept");
   } else {
-    TSDebug("cache_iter", "not a cache iter request");
+    TSDebug(PLUGIN_NAME, "not a cache iter request");
   }
 
 Ldone:
@@ -482,6 +484,16 @@ cache_print_plugin(TSCont contp, TSEvent event, void *edata)
 void
 TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 {
-  global_contp = TSContCreate(cache_print_plugin, TSMutexCreate());
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_contp);
+  TSPluginRegistrationInfo info;
+
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
+
+  if (TSPluginRegister(&info) == TS_SUCCESS) {
+    global_contp = TSContCreate(cache_print_plugin, TSMutexCreate());
+    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, global_contp);
+  } else {
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+  }
 }
