@@ -1553,7 +1553,6 @@ AC_CHECK_HEADERS([sys/types.h \
                   stropts.h \
                   sys/param.h \
                   sys/sysmacros.h \
-                  math.h \
                   stdint.h \
                   stdbool.h \
                   sysexits.h \

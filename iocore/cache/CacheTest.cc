@@ -26,6 +26,7 @@
 #include "P_CacheTest.h"
 #include "api/ts/ts.h"
 #include <vector>
+#include <cmath>
 
 using namespace std;
 

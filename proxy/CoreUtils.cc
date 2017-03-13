@@ -103,7 +103,6 @@ int program_counter = 0;
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <math.h>
 #include "ts/ink_platform.h"
 #include "CoreUtils.h"
 #endif /* darwin || freebsd || solaris */
@@ -112,6 +111,7 @@ int program_counter = 0;
 #include "http/HttpSM.h"
 
 #include <cstdlib>
+#include <cmath>
 
 bool inTable;
 FILE *fp;

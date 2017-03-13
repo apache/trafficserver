@@ -186,9 +186,7 @@ typedef unsigned int in_addr_t;
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
-#ifdef HAVE_MATH_H
-#include <math.h>
-#endif
+
 #ifdef HAVE_FLOAT_H
 #include <float.h>
 #endif

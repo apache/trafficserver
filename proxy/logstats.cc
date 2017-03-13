@@ -36,7 +36,6 @@
 #include "LogObject.h"
 #include "hdrs/HTTP.h"
 
-#include <math.h>
 #include <sys/utsname.h>
 #if defined(solaris)
 #include <sys/types.h>
@@ -51,6 +50,7 @@
 #include <algorithm>
 #include <vector>
 #include <list>
+#include <cmath>
 #include <functional>
 #include <fcntl.h>
 #include <unordered_map>
