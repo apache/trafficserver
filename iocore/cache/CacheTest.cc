@@ -25,6 +25,7 @@
 #include "P_Cache.h"
 #include "P_CacheTest.h"
 #include <vector>
+#include <cmath>
 
 using namespace std;
 

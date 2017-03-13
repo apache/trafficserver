@@ -33,6 +33,7 @@
 #include "ts/I_Layout.h"
 
 #include <string.h>
+#include <cmath>
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"

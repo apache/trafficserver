@@ -24,7 +24,7 @@
 #include "ts/ink_platform.h"
 
 #include <strings.h>
-#include <math.h>
+#include <cmath>
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
