@@ -71,7 +71,7 @@ LogAccessHttp::LogAccessHttp(HttpSM *sm)
     m_proxy_resp_content_type_str(nullptr),
     m_proxy_resp_content_type_len(0),
     m_cache_lookup_url_canon_str(nullptr),
-    m_cache_lookup_url_canon_len(0)
+    m_cache_lookup_url_canon_len(-1)
 {
   ink_assert(m_http_sm != nullptr);
 }
@@ -269,9 +269,14 @@ LogAccessHttp::marshal_cache_lookup_url_canon(char *buf)
   int len = INK_MIN_ALIGN;
 
   validate_lookup_url();
-  len = round_strlen(m_cache_lookup_url_canon_len + 1); // +1 for eos
-  if (buf) {
-    marshal_mem(buf, m_cache_lookup_url_canon_str, m_cache_lookup_url_canon_len, len);
+  if (0 >= m_cache_lookup_url_canon_len) {
+    // If the lookup URL isn't populated, we'll fall back to the request URL.
+    len = marshal_client_req_url_canon(buf);
+  } else {
+    len = round_strlen(m_cache_lookup_url_canon_len + 1); // +1 for eos
+    if (buf) {
+      marshal_mem(buf, m_cache_lookup_url_canon_str, m_cache_lookup_url_canon_len, len);
+    }
   }
 
   return len;
