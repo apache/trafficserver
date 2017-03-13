@@ -31,6 +31,13 @@ namespace ts
 using namespace ApacheTrafficServer;
 }
 
+typedef ts::Scalar<1, off_t> Bytes;
+typedef ts::Scalar<16, off_t> Paragraphs;
+typedef ts::Scalar<1024, off_t> KB;
+typedef ts::Scalar<KB::SCALE * 1024, off_t> MB;
+
+#define FAIL_LINE " line ", __LINE__
+
 struct TestBox {
   typedef TestBox self; ///< Self reference type.
 
@@ -41,7 +48,54 @@ struct TestBox {
 
   TestBox(char const *name) : _name(name) {}
   TestBox(std::string const &name) : _name(name) {}
-  bool check(bool result, char const *fmt, ...) __attribute__((format(printf, 3, 4)));
+  template <typename... Rest>
+  bool
+  result(bool r, Rest &&... rest)
+  {
+    ++_count;
+    if (!r) {
+      std::cout << "FAIL: [" << _name << ":" << _count << "] ";
+      (void)(int[]){0, ((std::cout << rest), 0)...};
+      std::cout << std::endl;
+      ++_fail;
+    }
+    return r;
+  }
+
+  template <typename A, typename B, typename... Rest>
+  bool
+  equal(A const &expected, B const &got, Rest const &... rest)
+  {
+    return result(expected == got, "Expected ", expected, " got ", got, rest...);
+  }
+
+  template <typename A, typename B, typename... Rest>
+  bool
+  lt(A const &lhs, B const &rhs, Rest const &... rest)
+  {
+    return result(lhs < rhs, "Expected {", lhs, " < ", rhs, "} ", rest...);
+  }
+
+  template <typename A, typename B, typename... Rest>
+  bool
+  le(A const &lhs, B const &rhs, Rest const &... rest)
+  {
+    return result(lhs <= rhs, "Expected {", lhs, " <= ", rhs, "} ", rest...);
+  }
+
+  template <typename A, typename B, typename... Rest>
+  bool
+  gt(A const &lhs, B const &rhs, Rest const &... rest)
+  {
+    return result(lhs > rhs, "Expected {", lhs, " > ", rhs, "} ", rest...);
+  }
+
+  template <typename A, typename B, typename... Rest>
+  bool
+  ge(A const &lhs, B const &rhs, Rest const &... rest)
+  {
+    return result(lhs >= rhs, "Expected {", lhs, " >= ", rhs, "} ", rest...);
+  }
 
   static void
   print_summary()
@@ -53,33 +107,6 @@ struct TestBox {
 int TestBox::_count = 0;
 int TestBox::_fail  = 0;
 
-bool
-TestBox::check(bool result, char const *fmt, ...)
-{
-  ++_count;
-
-  if (!result) {
-    static constexpr size_t N = 1 << 16;
-    size_t n                  = N;
-    size_t x;
-    char *s;
-    char buffer[N]; // just stack, go big.
-
-    s = buffer;
-    x = snprintf(s, n, "%s: ", _name.c_str());
-    n -= x;
-    s += x;
-
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(s, n, fmt, ap);
-    va_end(ap);
-    printf("%s\n", buffer);
-    ++_fail;
-  }
-  return result;
-}
-
 // Extremely simple test.
 void
 Test_1()
@@ -87,11 +114,11 @@ Test_1()
   constexpr static int SCALE = 4096;
   typedef ts::Scalar<SCALE> PageSize;
 
-  TestBox test("TS Scalar basic");
+  TestBox test("TS.Scalar basic");
   PageSize pg1(1);
 
-  test.check(pg1.count() == 1, "Count wrong, got %d expected %d", pg1.count(), 1);
-  test.check(pg1.units() == SCALE, "Units wrong, got %d expected %d", pg1.units(), SCALE);
+  test.equal(pg1.count(), 1, "Count wrong", FAIL_LINE);
+  test.equal(pg1.units(), SCALE, "Units wrong", FAIL_LINE);
 }
 
 // Test multiples.
@@ -104,37 +131,36 @@ Test_2()
   typedef ts::Scalar<SCALE_1> Size_1;
   typedef ts::Scalar<SCALE_2> Size_2;
 
-  TestBox test("TS Scalar Conversion of scales of multiples");
+  TestBox test("TS.Scalar Conversion of scales of multiples");
   Size_2 sz_a(2);
   Size_2 sz_b(57);
   Size_2 sz_c(SCALE_1 / SCALE_2);
   Size_2 sz_d(29 * SCALE_1 / SCALE_2);
 
   Size_1 sz = ts::round_up(sz_a);
-  test.check(sz.count() == 1, "[1] Rounding up, got %d expected %d", sz.count(), 1);
+  test.equal(sz.count(), 1, FAIL_LINE);
   sz = ts::round_down(sz_a);
-  test.check(sz.count() == 0, "[2] Rounding down: got %d expected %d", sz.count(), 0);
+  test.equal(sz.count(), 0, FAIL_LINE);
 
   sz = ts::round_up(sz_b);
-  test.check(sz.count() == 4, "[3] Rounding up, got %d expected %d", sz.count(), 4);
+  test.equal(sz.count(), 4, FAIL_LINE);
   sz = ts::round_down(sz_b);
-  test.check(sz.count() == 3, "[4] Rounding down, got %d expected %d", sz.count(), 3);
+  test.equal(sz.count(), 3, FAIL_LINE);
 
   sz = ts::round_up(sz_c);
-  test.check(sz.count() == 1, "[5] Rounding up, got %d expected %d", sz.count(), 1);
+  test.equal(sz.count(), 1, FAIL_LINE);
   sz = ts::round_down(sz_c);
-  test.check(sz.count() == 1, "[6] Rounding down, got %d expected %d", sz.count(), 1);
+  test.equal(sz.count(), 1, FAIL_LINE);
 
   sz = ts::round_up(sz_d);
-  test.check(sz.count() == 29, "[7] Rounding up, got %d expected %d", sz.count(), 29);
+  test.equal(sz.count(), 29, FAIL_LINE);
   sz = ts::round_down(sz_d);
-  test.check(sz.count() == 29, "[8] Rounding down, got %d expected %d", sz.count(), 29);
+  test.equal(sz.count(), 29, FAIL_LINE);
 
   sz.assign(119);
   sz_b = sz; // Should be OK because SCALE_1 is an integer multiple of SCALE_2
   //  sz = sz_b; // Should not compile.
-  test.check(sz_b.count() == 119 * (SCALE_1 / SCALE_2), "Integral conversion, got %d expected %d", sz_b.count(),
-             119 * (SCALE_1 / SCALE_2));
+  test.equal(sz_b.count(), 119 * (SCALE_1 / SCALE_2), FAIL_LINE);
 }
 
 // Test common factor.
@@ -147,25 +173,25 @@ Test_3()
   typedef ts::Scalar<SCALE_1> Size_1;
   typedef ts::Scalar<SCALE_2> Size_2;
 
-  TestBox test("TS Scalar common factor conversions");
+  TestBox test("TS.Scalar common factor conversions");
   Size_2 sz_a(2);
   Size_2 sz_b(97);
 
   Size_1 sz = round_up(sz_a);
-  test.check(sz.count() == 2, "Rounding up, got %d expected %d", sz.count(), 2);
+  test.equal(sz.count(), 2, FAIL_LINE);
   sz = round_down(sz_a);
-  test.check(sz.count() == 1, "Rounding down: got %d expected %d", sz.count(), 0);
+  test.equal(sz.count(), 1, FAIL_LINE);
 
   sz = ts::round_up(sz_b);
-  test.check(sz.count() == 65, "Rounding up, got %d expected %d", sz.count(), 65);
+  test.equal(sz.count(), 65, FAIL_LINE);
   sz = ts::round_down(sz_b);
-  test.check(sz.count() == 64, "Rounding down, got %d expected %d", sz.count(), 64);
+  test.equal(sz.count(), 64, FAIL_LINE);
 }
 
 void
 Test_4()
 {
-  TestBox test("TS Scalar: relatively prime tests");
+  TestBox test("TS.Scalar: relatively prime tests");
 
   ts::Scalar<9> m_9;
   ts::Scalar<4> m_4, m_test;
@@ -175,24 +201,24 @@ Test_4()
   //  m_9 = m_4; // Should fail to compile with static assert.
 
   m_4 = ts::round_up(m_9);
-  test.check(m_4.count() == 214, "Rounding down, got %d expected %d", m_4.count(), 214);
+  test.equal(m_4.count(), 214, "Rounding up 9->4", FAIL_LINE);
   m_4 = ts::round_down(m_9);
-  test.check(m_4.count() == 213, "Rounding down, got %d expected %d", m_4.count(), 213);
+  test.equal(m_4.count(), 213, "Rounding down 9->4", FAIL_LINE);
 
   m_4.assign(213);
   m_9 = ts::round_up(m_4);
-  test.check(m_9.count() == 95, "Rounding down, got %d expected %d", m_9.count(), 95);
+  test.equal(m_9.count(), 95, FAIL_LINE);
   m_9 = ts::round_down(m_4);
-  test.check(m_9.count() == 94, "Rounding down, got %d expected %d", m_9.count(), 94);
+  test.equal(m_9.count(), 94, FAIL_LINE);
 
   m_test = m_4; // Verify assignment of identical scale values compiles.
-  test.check(m_test.count() == 213, "Assignment got %d expected %d", m_4.count(), 213);
+  test.equal(m_test.count(), 213, FAIL_LINE);
 }
 
 void
 Test_5()
 {
-  TestBox test("TS Scalar: arithmetic operator tests");
+  TestBox test("TS.Scalar: arithmetics");
 
   typedef ts::Scalar<1024> KBytes;
   typedef ts::Scalar<1024, long int> KiBytes;
@@ -204,67 +230,67 @@ Test_5()
   MBytes mbytes(5);
 
   Bytes z1 = bytes + 128;
-  test.check(z1.count() == 224, "[1] Addition got %ld expected %d", z1.count(), 224);
+  test.equal(z1.count(), 224, FAIL_LINE);
   KBytes z2 = kbytes + 3;
-  test.check(z2.count() == 5, "[2] Addition got %d expected %d", z2.count(), 5);
+  test.equal(z2.count(), 5, FAIL_LINE);
   Bytes z3(bytes);
   z3 += kbytes;
-  test.check(z3.units() == 2048 + 96, "[3] Addition got %ld expected %d", z3.units(), 2048 + 96);
+  test.equal(z3.units(), 2048 + 96, FAIL_LINE);
   MBytes z4 = mbytes;
   z4 += 5;
   z2 += z4;
-  test.check(z2.units() == ((10 << 20) + (5 << 10)), "[4] Addition got %d expected %d", z2.units(), (10 << 20) + (2 << 10));
+  test.equal(z2.units(), (10 << 20) + (5 << 10), FAIL_LINE);
 
   z1 += 128;
-  test.check(z1.count() == 352, "[5] Addition got %ld expected %d", z1.count(), 352);
+  test.equal(z1.count(), 352, FAIL_LINE);
 
   z2.assign(2);
   z1 = 3 * z2;
-  test.check(z1.count() == 6144, "[6] Addition got %ld expected %d", z1.count(), 6144);
+  test.equal(z1.count(), 6144, FAIL_LINE);
   z1 *= 5;
-  test.check(z1.count() == 30720, "[7] Addition got %ld expected %d", z1.count(), 30720);
+  test.equal(z1.count(), 30720, FAIL_LINE);
   z1 /= 3;
-  test.check(z1.count() == 10240, "[8] Addition got %ld expected %d", z1.count(), 10240);
+  test.equal(z1.count(), 10240, FAIL_LINE);
 
   z2.assign(3148);
   auto x = z2 + MBytes(1);
-  test.check(x.scale() == z2.scale(), "[9] Common type addition yielded bad scale %ld - expected %ld", x.scale(), z2.scale());
-  test.check(x.count() == 4172, "[10] Common type addition yielded bad count %d - expected %d", x.count(), 4172);
+  test.equal(x.scale(), z2.scale(), FAIL_LINE);
+  test.equal(x.count(), 4172, FAIL_LINE);
 
   z2 = ts::round_down(262150);
-  test.check(z2.count() == 256, "[11] Unit scale down assignment bad count %d - expected %d", z2.count(), 256);
+  test.equal(z2.count(), 256, FAIL_LINE);
 
   z2 = ts::round_up(262150);
-  test.check(z2.count() == 257, "[12] Unit scale up assignment bad count %d - expected %d", z2.count(), 257);
+  test.equal(z2.count(), 257, FAIL_LINE);
 
   KBytes q(ts::round_down(262150));
-  test.check(q.count() == 256, "[13] Unit scale down constructor bad count %d - expected %d", q.count(), 256);
+  test.equal(q.count(), 256, FAIL_LINE);
 
   z2 += ts::round_up(97384);
-  test.check(z2.count() == 353, "[14] Unit scale down += bad count %d - expected %d", z2.count(), 353);
+  test.equal(z2.count(), 353, FAIL_LINE);
 
   decltype(z2) a = z2 + ts::round_down(167229);
-  test.check(a.count() == 516, "[15] Unit scale down += bad count %d - expected %d", a.count(), 516);
+  test.equal(a.count(), 516, FAIL_LINE);
 
   KiBytes k(3148);
   auto kx = k + MBytes(1);
-  test.check(kx.scale() == k.scale(), "[9] Common type addition yielded bad scale %ld - expected %ld", kx.scale(), k.scale());
-  test.check(kx.count() == 4172, "[10] Common type addition yielded bad count %ld - expected %d", kx.count(), 4172);
+  test.equal(kx.scale(), k.scale(), FAIL_LINE);
+  test.equal(kx.count(), 4172, FAIL_LINE);
 
   k = ts::round_down(262150);
-  test.check(k.count() == 256, "[11] Unit scale down assignment bad count %ld - expected %d", k.count(), 256);
+  test.equal(k.count(), 256, FAIL_LINE);
 
   k = ts::round_up(262150);
-  test.check(k.count() == 257, "[12] Unit scale up assignment bad count %ld - expected %d", k.count(), 257);
+  test.equal(k.count(), 257, FAIL_LINE);
 
   KBytes kq(ts::round_down(262150));
-  test.check(kq.count() == 256, "[13] Unit scale down constructor bad count %d - expected %d", kq.count(), 256);
+  test.equal(kq.count(), 256, FAIL_LINE);
 
   k += ts::round_up(97384);
-  test.check(k.count() == 353, "[14] Unit scale down += bad count %ld - expected %d", k.count(), 353);
+  test.equal(k.count(), 353, FAIL_LINE);
 
   decltype(k) ka = k + ts::round_down(167229);
-  test.check(ka.count() == 516, "[15] Unit scale down += bad count %ld - expected %d", ka.count(), 516);
+  test.equal(ka.count(), 516, FAIL_LINE);
 }
 
 // test comparisons
@@ -272,19 +298,44 @@ void
 Test_6()
 {
   using ts::Scalar;
-  typedef Scalar<1024, ssize_t> KB;
-  typedef Scalar<KB::SCALE * 1024, ssize_t> MB;
-  typedef Scalar<8 * KB::SCALE, ssize_t> StoreBlocks;
-  typedef Scalar<127 * MB::SCALE, ssize_t> SpanBlocks;
+  typedef Scalar<8 * KB::SCALE, off_t> StoreBlocks;
+  typedef Scalar<127 * MB::SCALE, off_t> SpanBlocks;
 
-  TestBox test("TS Scalar: comparison operator tests");
+  TestBox test("TS.Scalar: comparisons");
 
   StoreBlocks a(80759700);
   SpanBlocks b(4968);
   SpanBlocks delta(1);
 
-  test.check(a < b, "[1] Less than incorrect %ld < %ld", a.units(), b.units());
-  test.check(b < (a + delta), "[2] Less than incorrect %ld < %ld", b.units(), (a + delta).units());
+  test.lt(a, b, FAIL_LINE);
+  test.lt(b, a + delta, FAIL_LINE);
+}
+
+void
+Test_7()
+{
+  using ts::Scalar;
+  TestBox test("TS.Scalar: constructor tests");
+
+  static const off_t N = 7 * 1024;
+  Bytes b(N + 384);
+  KB kb(round_down(b));
+
+  test.equal(kb, N, "Round down wrong ", FAIL_LINE);
+  test.lt(kb, N + 1, FAIL_LINE);
+  test.gt(kb, N - 1, FAIL_LINE);
+
+  test.lt(kb, b, FAIL_LINE);
+  test.le(kb, b, FAIL_LINE);
+  test.gt(b, kb, FAIL_LINE);
+  test.ge(b, kb, FAIL_LINE);
+
+  ++kb;
+
+  test.lt(b, kb, FAIL_LINE);
+  test.le(b, kb, FAIL_LINE);
+  test.gt(kb, b, FAIL_LINE);
+  test.ge(kb, b, FAIL_LINE);
 }
 
 struct KBytes_tag {
@@ -342,6 +393,7 @@ main(int, char **)
   Test_4();
   Test_5();
   Test_6();
+  Test_7();
   Test_IO();
   TestBox::print_summary();
   return 0;
