@@ -41,9 +41,9 @@
 #include <poll.h>
 #include <netinet/tcp.h>
 #include <sys/resource.h>
-#include <math.h>
 #include <limits.h>
 #include <sys/mman.h>
+#include <cmath>
 
 #include <inttypes.h>
 
