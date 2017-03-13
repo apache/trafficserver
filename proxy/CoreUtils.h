@@ -37,7 +37,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <assert.h>
 #include <elf.h>
 #include "ts/DynArray.h"
@@ -62,7 +61,6 @@ struct core_stack_state {
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <assert.h>
 
 #define NO_OF_ARGS                                             \

@@ -21,6 +21,8 @@
  *  limitations under the License.
  */
 
+#include <cmath>
+
 #include "ts/ink_config.h"
 #include "ts/ink_memory.h"
 #include "ts/Ptr.h"
@@ -102,7 +104,7 @@ struct Evaluator {
       case RECD_FLOAT:
         // Lua will eval 0/0 to NaN rather than 0.
         rec_value.rec_float = lua_tonumber(L, -1);
-        if (isnan(rec_value.rec_float)) {
+        if (std::isnan(rec_value.rec_float)) {
           rec_value.rec_float = 0.0;
         }
         break;
