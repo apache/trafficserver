@@ -84,58 +84,95 @@ Scrubber::scrub_add(const ts::StringView pattern, const ts::StringView replaceme
   return true;
 }
 
-char *
-Scrubber::scrub_buffer(const char *buffer) const
+void
+Scrubber::scrub_buffer(char *buffer) const
 {
   // apply every Scrub in the vector, in order
-  char *scrubbed = strdup(buffer);
   for (auto s : scrubs) {
-    char *new_scrubbed = scrub_buffer(scrubbed, s);
-    ats_free(scrubbed);
-    scrubbed = new_scrubbed;
+    scrub_buffer(buffer, s);
   }
-  return scrubbed;
 }
 
-char *
-Scrubber::scrub_buffer(const char *buffer, Scrub *scrub) const
+void
+Scrubber::scrub_buffer(char *buffer, Scrub *scrub) const
 {
+  char *buffer_ptr;
   int num_matched;
-  char *scrubbed;
-  char *scrubbed_idx;
+  int match_len;
+  int replacement_len;
+  int buffer_len = strlen(buffer);
 
   // execute regex
-  num_matched = pcre_exec(scrub->compiled_re, nullptr, buffer, strlen(buffer), 0, 0, scrub->ovector, scrub->OVECCOUNT);
+  num_matched = pcre_exec(scrub->compiled_re, nullptr, buffer, buffer_len, 0, 0, scrub->ovector, scrub->OVECCOUNT);
   if (num_matched < 0) {
     switch (num_matched) {
     case PCRE_ERROR_NOMATCH:
-      return strdup(buffer);
+      return;
     default:
       // Error("PCRE matching error %d\n", num_matched);
       break;
     }
   }
 
-  // guaranteed to be big enough
-  scrubbed     = static_cast<char *>(ats_malloc(strlen(buffer) + scrub->replacement.size() + 1));
-  scrubbed_idx = scrubbed;
+  /*
+   * When scrubbing the buffer in place, there are 2 scenarios we need to consider:
+   *
+   *   1) The replacement text length is shorter or equal to the text we want to scrub away
+   *   2) The replacement text is longer than the text we want to scrub away
+   *
+   * In case 1, we simply "slide" everything left a bit. Our final buffer should
+   * look like this (where XXXX is the replacment text):
+   *
+   *                                new_end  orig_end
+   *                                    V      V
+   *   -----------------------------------------
+   *   |ORIGINAL TEXT|XXXX|ORIGINAL TEXT|      |
+   *   -----------------------------------------
+   *
+   * In case 2, since the final buffer would be longer than the original allocated buffer,
+   * we need to truncate everything that would have run over the original end of the buffer.
+   * The final buffer should look like this:
+   *
+   *                                         new_end
+   *                                        orig_end
+   *                                           V
+   *   -----------------------------------------
+   *   |ORIGINAL TEXT|XXXXXXXXXXXXXXXXXXX|ORIGI|NAL TEXT
+   *   -----------------------------------------
+   *
+   */
 
-  // copy over all the stuff before the captured substing
-  memcpy(scrubbed_idx, buffer, scrub->ovector[0]);
-  scrubbed_idx += scrub->ovector[0];
+  buffer_ptr      = buffer;
+  match_len       = scrub->ovector[1] - scrub->ovector[0];
+  replacement_len = scrub->replacement.size();
 
-  // copy over the scrubbed stuff
-  int replacement_len = scrub->replacement.size();
-  memcpy(scrubbed_idx, scrub->replacement.ptr(), replacement_len);
-  scrubbed_idx += replacement_len;
+  if (replacement_len <= match_len) { // case 1
+    // overwrite the matched text with the replacement text
+    buffer_ptr += scrub->ovector[0];
+    memcpy(buffer_ptr, scrub->replacement.ptr(), replacement_len);
+    buffer_ptr += replacement_len;
 
-  // copy over everything after the scrubbed stuff
-  int trailing_len = strlen(buffer + scrub->ovector[1]);
-  memcpy(scrubbed_idx, buffer + scrub->ovector[1], trailing_len);
-  scrubbed_idx += trailing_len;
+    // slide everything after the matched text left to fill the gap including the '\0'
+    memmove(buffer_ptr, buffer + scrub->ovector[1], buffer_len - scrub->ovector[1] + 1);
 
-  // nul terminate
-  *scrubbed_idx = '\0';
+    // the last char should ALWAYS be a '\0' otherwise we did our math wrong
+    ink_assert(buffer[strlen(buffer)] == '\0');
+  } else { // case 2
+    // first slide all the text after the matched text right and truncate as necessary
+    int n_slide = buffer_len - scrub->ovector[0] - replacement_len;
+    if (n_slide < 0) {
+      // replacement string is too long, we need to shorten it
+      replacement_len -= -n_slide;
+    } else {
+      buffer_ptr += scrub->ovector[0] + replacement_len;
+      memmove(buffer_ptr, buffer + scrub->ovector[1], n_slide);
+    }
 
-  return scrubbed;
+    // next we put the replacement string into the gap we just created
+    buffer_ptr = buffer + scrub->ovector[0];
+    memcpy(buffer_ptr, scrub->replacement.ptr(), replacement_len);
+
+    // finally, null terminate, since truncation will have removed the original '\0'
+    buffer[buffer_len] = '\0';
+  }
 }

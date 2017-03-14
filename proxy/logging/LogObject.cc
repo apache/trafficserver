@@ -596,8 +596,11 @@ LogObject::log(LogAccess *lad, const char *text_entry)
     bytes_needed = m_format->m_field_list.marshal_len(lad);
   } else if (text_entry) {
     if (scrub_enabled) {
-      // we're not leaking memory here since the caller was passing in a const buffer anyways
-      text_entry = scrubber->scrub_buffer(text_entry);
+      char _buf[strlen(text_entry) + 1];
+      strcpy(_buf, text_entry);
+      scrubber->scrub_buffer(_buf);
+      text_entry = _buf;
+      // we didn't leak memory here because the caller gave us a const buffer
     }
     bytes_needed = LogAccess::strlen(text_entry);
   }

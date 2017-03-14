@@ -925,21 +925,15 @@ Diags::vprintline(FILE *fp, char *buffer, va_list ap) const
 
   // check if we need to scrub any patterns
   if (unlikely(scrub_enabled)) {
-    int buf_size = 2048;
-    while (true) {
-      char *buf = static_cast<char *>(ats_malloc(buf_size));
-      int r     = vsnprintf(buf, buf_size, buffer, ap);
-      // if it's fully written, then we can break
-      if (r < buf_size) { // we break on encoding errors (ie r < 0)
-        char *scrubbed = scrubber->scrub_buffer(buf);
-        fprintf(fp, scrubbed);
-        ats_free(scrubbed);
-        ats_free(buf);
-        break;
-      }
-      buf_size *= 2;
-      buf = static_cast<char *>(ats_realloc(buf, buf_size));
+    char _buf[MAX_LOG_LINE_SIZE];
+    int r = vsnprintf(_buf, MAX_LOG_LINE_SIZE, buffer, ap);
+    if (r > MAX_LOG_LINE_SIZE) {
+      sprintf(_buf, "[WARN] Diags log line too long, dropping log\n");
+    } else if (r < 0) {
+      sprintf(_buf, "[WARN] Diags log line failed to encode with vsnprintf\n");
     }
+    scrubber->scrub_buffer(_buf);
+    fprintf(fp, "%s", _buf);
   } else {
     vfprintf(fp, buffer, ap);
   }

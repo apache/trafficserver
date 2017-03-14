@@ -46,6 +46,7 @@
 
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000
+#define MAX_LOG_LINE_SIZE (16 * 1024) // 16K
 
 class Diags;
 

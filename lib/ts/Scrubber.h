@@ -2,6 +2,7 @@
 #include <vector>
 #include "pcre.h"
 
+#include "ts/ink_assert.h"
 #include "ts/ink_memory.h"
 #include "ts/MemView.h"
 
@@ -40,10 +41,9 @@ public:
   bool scrub_add(const ts::StringView pattern, const ts::StringView replacement);
 
   /*
-   * Heap allocates an identical buffer that is scrubbed with multiple Scrubs.
-   * Caller should ats_free.
+   * Scrubs the buffer in place with all the Scrub objects stored in this class.
    */
-  char *scrub_buffer(const char *buffer) const;
+  void scrub_buffer(char *buffer) const;
 
   /*
    * Config getter. Caller should NOT free
@@ -56,10 +56,9 @@ public:
 
 private:
   /*
-   * Heap allocates an identical buffer that is scrubbed.
-   * Caller should ats_free.
+   * Scrubs the buffer in place with the passed in Scrub object
    */
-  char *scrub_buffer(const char *buffer, Scrub *scrub) const;
+  void scrub_buffer(char *buffer, Scrub *scrub) const;
 
   char *config = nullptr;
   std::vector<Scrub *> scrubs;
