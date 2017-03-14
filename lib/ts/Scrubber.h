@@ -3,23 +3,18 @@
 #include "pcre.h"
 
 #include "ts/ink_memory.h"
+#include "ts/MemView.h"
 
 struct Scrub {
   ~Scrub()
   {
-    if (pattern) {
-      ats_free(const_cast<char *>(pattern));
-    }
-    if (replacement) {
-      ats_free(const_cast<char *>(replacement));
-    }
     if (compiled_re) {
       pcre_free(const_cast<pcre *>(compiled_re));
     }
   }
   static const int OVECCOUNT = 30;
-  const char *pattern;
-  const char *replacement;
+  ts::StringView pattern;
+  ts::StringView replacement;
   const pcre *compiled_re;
   int ovector[OVECCOUNT];
 };
@@ -42,7 +37,7 @@ public:
    *
    * @returns whether or not the addition was successful
    */
-  bool scrub_add(const char *pattern, const char *replacement);
+  bool scrub_add(const ts::StringView pattern, const ts::StringView replacement);
 
   /*
    * Heap allocates an identical buffer that is scrubbed with multiple Scrubs.
@@ -50,6 +45,9 @@ public:
    */
   char *scrub_buffer(const char *buffer) const;
 
+  /*
+   * Config getter. Caller should NOT free
+   */
   char *get_config() { return config; };
 
 private:

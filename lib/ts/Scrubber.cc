@@ -1,12 +1,11 @@
 #include "Scrubber.h"
-#include "MemView.h"
 
 Scrubber::Scrubber(const char *config)
 {
   bool state_expecting_regex = true;
-  char *regex                = nullptr;
-  char *replacement          = nullptr;
   const ts::StringView delimiters("->;,", ts::StringView::literal);
+  ts::StringView regex;
+  ts::StringView replacement;
   ts::StringView text(config);
 
   this->config = ats_strdup(config);
@@ -23,20 +22,16 @@ Scrubber::Scrubber(const char *config)
 
       // Store our current token
       if (state_expecting_regex) {
-        regex = static_cast<char *>(ats_malloc(token.size() + 1));
-        sprintf(regex, "%.*s", static_cast<int>(token.size()), token.ptr());
+        regex = token;
       } else {
-        replacement = static_cast<char *>(ats_malloc(token.size() + 1));
-        sprintf(replacement, "%.*s", static_cast<int>(token.size()), token.ptr());
+        replacement = token;
       }
 
       // If we have a pair of (regex, replacement) tokens, we can go ahead and store those values into Diags
       if (regex && replacement) {
         scrub_add(regex, replacement);
-        ats_free(regex);
-        ats_free(replacement);
-        regex       = nullptr;
-        replacement = nullptr;
+        regex.clear();
+        replacement.clear();
       }
     }
   }
@@ -56,15 +51,19 @@ Scrubber::~Scrubber()
 }
 
 bool
-Scrubber::scrub_add(const char *pattern, const char *replacement)
+Scrubber::scrub_add(const ts::StringView pattern, const ts::StringView replacement)
 {
   pcre *re;
   const char *error;
   int erroroffset;
   Scrub *s;
 
+  // Temp storage on stack is probably OK. It's unlikely someone will have long enough strings to blow the stack
+  char _pattern[pattern.size() + 1];
+  sprintf(_pattern, "%.*s", static_cast<int>(pattern.size()), pattern.ptr());
+
   // compile the regular expression
-  re = pcre_compile(pattern, 0, &error, &erroroffset, NULL);
+  re = pcre_compile(_pattern, 0, &error, &erroroffset, NULL);
   if (!re) {
     // Error("Unable to compile PCRE scrubbing pattern");
     // Error("Scrubbing pattern failed at offset %d: %s.", erroroffset, error);
@@ -73,8 +72,8 @@ Scrubber::scrub_add(const char *pattern, const char *replacement)
 
   // add the scrub pattern to our list
   s              = new Scrub;
-  s->pattern     = strdup(pattern);
-  s->replacement = strdup(replacement);
+  s->pattern     = pattern;
+  s->replacement = replacement;
   s->compiled_re = re;
   scrubs.push_back(s);
 
@@ -114,7 +113,7 @@ Scrubber::scrub_buffer(const char *buffer, Scrub *scrub) const
   }
 
   // guaranteed to be big enough
-  scrubbed     = static_cast<char *>(ats_malloc(strlen(buffer) + strlen(scrub->replacement) + 1));
+  scrubbed     = static_cast<char *>(ats_malloc(strlen(buffer) + scrub->replacement.size() + 1));
   scrubbed_idx = scrubbed;
 
   // copy over all the stuff before the captured substing
@@ -122,8 +121,8 @@ Scrubber::scrub_buffer(const char *buffer, Scrub *scrub) const
   scrubbed_idx += scrub->ovector[0];
 
   // copy over the scrubbed stuff
-  int replacement_len = strlen(scrub->replacement);
-  memcpy(scrubbed_idx, scrub->replacement, replacement_len);
+  int replacement_len = scrub->replacement.size();
+  memcpy(scrubbed_idx, scrub->replacement.ptr(), replacement_len);
   scrubbed_idx += replacement_len;
 
   // copy over everything after the scrubbed stuff
