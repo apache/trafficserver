@@ -48,7 +48,11 @@ public:
   /*
    * Config getter. Caller should NOT free
    */
-  char *get_config() { return config; };
+  char *
+  get_config()
+  {
+    return config;
+  };
 
 private:
   /*
