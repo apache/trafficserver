@@ -17,7 +17,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 import string
 import http.client
 import cgi
@@ -35,10 +34,9 @@ import ssl
 import socket
 
 test_mode_enabled = True
-__version__="1.0.Beta"
+__version__="1.0"
 
-# hack to deal with sessionvalidation until we fix up the 
-# packaing logic
+
 sys.path.append(
     os.path.normpath(
         os.path.join(
@@ -84,14 +82,20 @@ class SSLServer(ThreadingMixIn, HTTPServer):
             self.server_bind()
             self.server_activate()
 
-# Warning: if you can't tell already, it's pretty hacky
-#
-# The standard library HTTP server doesn't exactly provide all the functionality we need from the API it exposes,
-# so we have to go in and override various methods that probably weren't intended to be overridden
-#
-# See the source code (https://hg.python.org/cpython/file/3.5/Lib/http/server.py) if you want to see where all these
-# variables are coming from
+
 class MyHandler(BaseHTTPRequestHandler):
+    def handleExpect100Continue(self,contentLength,chunked=False):
+        print("....expect",contentLength)
+        self.wfile.write(bytes('HTTP/1.1 100 Continue\r\n\r\n','UTF-8'))
+        #self.send_response(HTTPStatus.CONTINUE)
+        #self.send_header('Server','blablabla')
+        #self.send_header('Connection', 'keep-alive')
+        #self.end_headers()
+        if(not chunked):
+            message = self.rfile.read(contentLength)
+        else:
+            readChunks()
+
     def getTestName(self,requestline):
         key=None
         keys=requestline.split(" ")
@@ -202,13 +206,14 @@ class MyHandler(BaseHTTPRequestHandler):
         try:
             self.headers = http.client.parse_headers(self.rfile,
                                                      _class=self.MessageClass)
+
             # read message body
             if self.headers.get('Content-Length') != None:
                 bodysize = int(self.headers.get('Content-Length'))
                 #print("length of the body is",bodysize)
                 message = self.rfile.read(bodysize)
                 #print("message body",message)
-            if self.headers.get('Transfer-Encoding',"") == 'chunked':
+            elif self.headers.get('Transfer-Encoding',"") == 'chunked':
                 #print(self.headers)
                 self.readChunks()
         except http.client.LineTooLong:
@@ -282,15 +287,7 @@ class MyHandler(BaseHTTPRequestHandler):
         elif (conntype.lower() == 'keep-alive' and
               self.protocol_version >= "HTTP/1.1"):
             self.close_connection = False
-         
-        # Examine the headers and look for an Expect directive
-        expect = self.headers.get('Expect', "")
-        if (expect.lower() == "100-continue" and
-                self.protocol_version >= "HTTP/1.1" and
-                self.request_version >= "HTTP/1.1"):
-            print("blabla on 185",self.close_connection)
-            if not self.handle_expect_100():
-                return False
+
         return True
 
     def do_GET(self):
@@ -305,7 +302,7 @@ class MyHandler(BaseHTTPRequestHandler):
             chunkedResponse= False
             if request_hash not in G_replay_dict:
                 self.send_response(404)
-                self.send_header('Server','blablabla')
+                self.send_header('Server','MicroServer')
                 self.send_header('Connection', 'close')
                 self.end_headers()
 
@@ -377,7 +374,7 @@ class MyHandler(BaseHTTPRequestHandler):
             request_hash = self.getTestName(self.requestline)
         else:
             request_hash, __ = cgi.parse_header(self.headers.get('Content-MD5'))
-        
+
         if request_hash not in G_replay_dict:
             self.send_response(404)
             self.send_header('Connection', 'close')
@@ -416,12 +413,6 @@ class MyHandler(BaseHTTPRequestHandler):
         else:
             request_hash, __ = cgi.parse_header(self.headers.get('Content-MD5'))
         try:
-            if self.headers.get('Content-MD5') == None:
-                print("Content-MD5 not found")
-                self.send_response(404)
-                self.send_header('Connection', 'close')
-                self.end_headers()
-                return
 
             if request_hash not in G_replay_dict:
                 self.send_response(404)
@@ -541,6 +532,12 @@ def main():
                         help="Bind server to public IP 0.0.0.0 vs private IP of 127.0.0.1"
                         )
 
+    parser.add_argument("--ip_address","-ip",
+                        type=str,
+                        default='',
+                        help="IP address of the interface to serve on"
+                        )
+
     parser.add_argument("--port","-p",
                         type=int,
                         default=SERVER_PORT,                        
@@ -583,39 +580,20 @@ def main():
     
     # start server
     try:
-        server_port = args.port
         socket_timeout = args.timeout
         test_mode_enabled = args.mode=="test"
         
         MyHandler.protocol_version = HTTP_VERSION        
         if options.connection == 'ssl':
-            server = SSLServer(('',options.port), MyHandler, options)
+            server = SSLServer((options.ip_address,options.port), MyHandler, options)
         else:
-            server = ThreadingServer(('', server_port), MyHandler)
+            server = ThreadingServer((options.ip_address, options.port), MyHandler)
         server.timeout = 5
         print("started server")
         server_thread = threading.Thread(target=server.serve_forever())
         server_thread.daemon=True
         server_thread.start()
 
-        #s_serverThread.daemon = True
-        #s_serverThread.start()
-        #threads.append(s_serverThread)
-
-        
-        #server.timeout = socket_timeout or 5
-        #print("=== started httpserver ===")
-        #server_thread = threading.Thread(target=server.serve_forever())
-        #server_thread.daemon=True
-        #server_thread.start()
-        #threads.append(server_thread)
-        #server.serve_forever()
-        
-        #for t in threads:
-        #    t.start()
-
-        #for t in threads:
-        #    t.join()
     except KeyboardInterrupt:
         print("\n=== ^C received, shutting down httpserver ===")
         server.socket.close()
