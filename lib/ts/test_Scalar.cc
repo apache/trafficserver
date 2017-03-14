@@ -64,7 +64,7 @@ struct TestBox {
 
   template <typename A, typename B, typename... Rest>
   bool
-  equal(A const &expected, B const &got, Rest const &... rest)
+  equal(A const &got, B const &expected, Rest const &... rest)
   {
     return result(expected == got, "Expected ", expected, " got ", got, rest...);
   }
@@ -118,7 +118,7 @@ Test_1()
   PageSize pg1(1);
 
   test.equal(pg1.count(), 1, "Count wrong", FAIL_LINE);
-  test.equal(pg1.units(), SCALE, "Units wrong", FAIL_LINE);
+  test.equal(pg1.value(), SCALE, "Units wrong", FAIL_LINE);
 }
 
 // Test multiples.
@@ -229,19 +229,19 @@ Test_5()
   KBytes kbytes(2);
   MBytes mbytes(5);
 
-  Bytes z1 = bytes + 128;
+  Bytes z1 = ts::round_up(bytes + 128);
   test.equal(z1.count(), 224, FAIL_LINE);
-  KBytes z2 = kbytes + 3;
+  KBytes z2 = kbytes + kbytes(3);
   test.equal(z2.count(), 5, FAIL_LINE);
   Bytes z3(bytes);
   z3 += kbytes;
-  test.equal(z3.units(), 2048 + 96, FAIL_LINE);
+  test.equal(z3.value(), 2048 + 96, FAIL_LINE);
   MBytes z4 = mbytes;
-  z4 += 5;
+  z4.inc(5);
   z2 += z4;
-  test.equal(z2.units(), (10 << 20) + (5 << 10), FAIL_LINE);
+  test.equal(z2.value(), (10 << 20) + (5 << 10), FAIL_LINE);
 
-  z1 += 128;
+  z1.inc(128);
   test.equal(z1.count(), 352, FAIL_LINE);
 
   z2.assign(2);
@@ -269,7 +269,7 @@ Test_5()
   z2 += ts::round_up(97384);
   test.equal(z2.count(), 353, FAIL_LINE);
 
-  decltype(z2) a = z2 + ts::round_down(167229);
+  decltype(z2) a = ts::round_down(z2 + 167229);
   test.equal(a.count(), 516, FAIL_LINE);
 
   KiBytes k(3148);
@@ -289,7 +289,7 @@ Test_5()
   k += ts::round_up(97384);
   test.equal(k.count(), 353, FAIL_LINE);
 
-  decltype(k) ka = k + ts::round_down(167229);
+  decltype(k) ka = ts::round_down(k + 167229);
   test.equal(ka.count(), 516, FAIL_LINE);
 }
 
@@ -376,14 +376,19 @@ test_Compile()
     std::cout << "Operator > works" << std::endl;
   }
 
-  (void)(x += 10);
-  (void)(x += static_cast<int>(10));
-  (void)(x += static_cast<long int>(10));
-  (void)(x += delta);
-  (void)(y += 10);
-  (void)(y += static_cast<int>(10));
-  (void)(y += static_cast<long int>(10));
-  (void)(y += delta);
+  (void)(x.inc(10));
+  (void)(x.inc(static_cast<int>(10)));
+  (void)(x.inc(static_cast<long int>(10)));
+  (void)(x.inc(delta));
+  (void)(y.inc(10));
+  (void)(y.inc(static_cast<int>(10)));
+  (void)(y.inc(static_cast<long int>(10)));
+  (void)(y.inc(delta));
+
+  (void)(x.dec(10));
+  (void)(x.dec(static_cast<int>(10)));
+  (void)(x.dec(static_cast<long int>(10)));
+  (void)(x.dec(delta));
 }
 
 int
