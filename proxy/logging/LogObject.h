@@ -301,7 +301,7 @@ private:
 
   // scrubbing data -- helps us scrub buffers of sensitive data
   bool scrub_enabled = false;
-  Scrubber *scrubber;
+  Scrubber *scrubber = nullptr;
 
   void generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format);
   void _setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr,

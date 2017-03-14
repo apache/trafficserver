@@ -126,9 +126,9 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
 
   // set up scrubbing object
   char *conf_scrubs = REC_ConfigReadString("proxy.config.diags.scrubs");
-  if (conf_srubs) {
+  if (conf_scrubs) {
     scrub_enabled = true;
-    scrubber      = new Scrubber(conf_srubs);
+    scrubber      = new Scrubber(conf_scrubs);
   }
 
   _setup_rolling(rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
@@ -167,7 +167,9 @@ LogObject::LogObject(LogObject &rhs)
   }
 
   scrub_enabled = rhs.scrub_enabled;
-  scrubber      = new Scrubber(*(rhs.scrubber));
+  if (scrub_enabled && rhs.scrubber) {
+    scrubber = new Scrubber(rhs.scrubber->get_config());
+  }
 
   // copy gets a fresh log buffer
   //

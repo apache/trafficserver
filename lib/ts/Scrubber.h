@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include <stdlib.h>
 #include "pcre.h"
 
 #include "ts/ink_memory.h"
@@ -35,7 +34,7 @@ public:
    * Parses config & constructs Scrubber
    */
   Scrubber(const char *config);
-  Scrubber(Scrubber &other) : Scrubber(other.config);  // delegate constructor
+  Scrubber(Scrubber &other) = delete;
   ~Scrubber();
 
   /*
@@ -50,6 +49,8 @@ public:
    * Caller should ats_free.
    */
   char *scrub_buffer(const char *buffer) const;
+
+  char *get_config() { return config; };
 
 private:
   /*
