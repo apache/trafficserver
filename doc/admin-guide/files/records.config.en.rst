@@ -2985,6 +2985,9 @@ Diagnostic Logging Configuration
    If you want to scrub multiple regular expressions, use ``;`` to separate the pairs. For example:
    ``string[a-z] -> XXXXXX ; doge$ -> doggy``. Once again, the spaces before and after the ``;`` are required.
 
+   For this config option, diagnostic logs will most usually refer to (unless you've changed the default filenames):
+   ``diags.log``, ``traffic.out``, ``error.log``, & ``manager.log``.
+
 .. note::
 
    Diagnostic log scrubbing supports PCRE format regular expressions.
