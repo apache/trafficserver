@@ -56,3 +56,11 @@ These types are provided by the compiler ("built-in") or from a required operati
 .. cpp:type:: size_t
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
+
+.. cpp:type:: intmax_t
+
+   The largest native signed integer type.
+
+.. cpp:type:: unspecified_type
+
+   This represents a type whose name is not known to, nor needed by, the API user. Usually this is a complex template which is consumed by other elements of the API and not intended for explicit use.
