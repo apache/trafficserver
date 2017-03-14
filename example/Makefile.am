@@ -30,7 +30,7 @@ example_Plugins = \
 	blacklist_1.la \
 	bnull_transform.la \
 	cache_scan.la \
-	file-1.la \
+	file_1.la \
 	hello.la \
 	intercept.la \
 	lifecycle-plugin.la \
@@ -94,7 +94,7 @@ blacklist_0_la_SOURCES = blacklist_0/blacklist_0.c
 blacklist_1_la_SOURCES = blacklist_1/blacklist_1.c
 bnull_transform_la_SOURCES = bnull_transform/bnull_transform.c
 cache_scan_la_SOURCES = cache_scan/cache_scan.cc
-file_1_la_SOURCES = file-1/file-1.c
+file_1_la_SOURCES = file_1/file_1.c
 hello_la_SOURCES = hello/hello.c
 intercept_la_SOURCES = intercept/intercept.cc
 lifecycle_plugin_la_SOURCES = lifecycle-plugin/lifecycle-plugin.c

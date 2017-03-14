@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-/* file-1.c:  an example program that opens files and reads them
+/* file_1.c:  an example program that opens files and reads them
  *            into a buffer
  *
  *
  *	Usage:
- *	  file-1.so <filename1> <filename2> ...
+ *	  file_1.so <filename1> <filename2> ...
  *
  *              <filenamei> is the name of the ith file to
  *              be read.
@@ -36,6 +36,8 @@
 #include <stdio.h>
 #include <ts/ts.h>
 
+#define PLUGIN_NAME "file_1"
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
@@ -44,12 +46,12 @@ TSPluginInit(int argc, const char *argv[])
   int i;
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "file_plugin";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[file-1] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
   }
 
   for (i = 1; i < argc; i++) {
@@ -59,7 +61,7 @@ TSPluginInit(int argc, const char *argv[])
     }
 
     while (TSfgets(filep, buf, 4096)) {
-      TSDebug("debug-file", "%s", buf);
+      TSDebug(PLUGIN_NAME, "%s", buf);
     }
 
     TSfclose(filep);
