@@ -48,6 +48,10 @@ Scrubber::~Scrubber()
   if (config) {
     ats_free(config);
   }
+
+  for (auto s : scrubs) {
+    delete s;
+  }
 }
 
 bool
