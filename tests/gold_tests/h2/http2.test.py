@@ -59,7 +59,7 @@ ts.Disk.records_config.update({
 ts.Setup.CopyAs('h2client.py',Test.RunDirectory)
 # call localhost straight
 tr=Test.AddTestRun()
-tr.Processes.Default.Command='python h2client.py -p {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command='python3 h2client.py -p {0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode=0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server,ready=When.PortOpen(server.Variables.Port))
