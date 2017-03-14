@@ -351,7 +351,7 @@ EXTERNAL_TYPES = set((
     'uint8_t', 'uint16_t', 'uint24_t', 'uint32_t', 'uint64_t',
     'int8_t', 'int16_t', 'int24_t', 'int32_t', 'int64_t',
     'unsigned', 'unsigned int',
-    'off_t', 'size_t', 'time_t',
+    'off_t', 'time_t',
     'Event', 'INK_MD5',
     'sockaddr'
     ))
