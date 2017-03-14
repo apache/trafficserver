@@ -125,10 +125,10 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
   SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
   // set up scrubbing object
-  char *scrubs = REC_ConfigReadString("proxy.config.diags.scrubs");
-  if (scrubs) {
+  char *conf_scrubs = REC_ConfigReadString("proxy.config.diags.scrubs");
+  if (conf_srubs) {
     scrub_enabled = true;
-    scrubber      = new Scrubber(scrubs);
+    scrubber      = new Scrubber(conf_srubs);
   }
 
   _setup_rolling(rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
@@ -594,6 +594,7 @@ LogObject::log(LogAccess *lad, const char *text_entry)
     bytes_needed = m_format->m_field_list.marshal_len(lad);
   } else if (text_entry) {
     if (scrub_enabled) {
+      // we're not leaking memory here since the caller was passing in a const buffer anyways
       text_entry = scrubber->scrub_buffer(text_entry);
     }
     bytes_needed = LogAccess::strlen(text_entry);

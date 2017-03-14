@@ -9,6 +9,8 @@ Scrubber::Scrubber(const char *config)
   const ts::StringView delimiters("->;,", ts::StringView::literal);
   ts::StringView text(config);
 
+  this->config = ats_strdup(config);
+
   // Loop over config string while extracting tokens
   while (text) {
     ts::StringView token = (text.ltrim(&isspace)).extractPrefix(&isspace);
@@ -21,18 +23,18 @@ Scrubber::Scrubber(const char *config)
 
       // Store our current token
       if (state_expecting_regex) {
-        regex = static_cast<char *>(malloc(token.size() + 1));
+        regex = static_cast<char *>(ats_malloc(token.size() + 1));
         sprintf(regex, "%.*s", static_cast<int>(token.size()), token.ptr());
       } else {
-        replacement = static_cast<char *>(malloc(token.size() + 1));
+        replacement = static_cast<char *>(ats_malloc(token.size() + 1));
         sprintf(replacement, "%.*s", static_cast<int>(token.size()), token.ptr());
       }
 
       // If we have a pair of (regex, replacement) tokens, we can go ahead and store those values into Diags
       if (regex && replacement) {
         scrub_add(regex, replacement);
-        free(regex);
-        free(replacement);
+        ats_free(regex);
+        ats_free(replacement);
         regex       = nullptr;
         replacement = nullptr;
       }
@@ -46,9 +48,11 @@ Scrubber::Scrubber(const char *config)
   }
 }
 
-Scrubber::Scrubber(Scrubber &other)
+Scrubber::~Scrubber()
 {
-  scrubs = other.scrubs;
+  if (config) {
+    ats_free(config);
+  }
 }
 
 bool
@@ -84,7 +88,7 @@ Scrubber::scrub_buffer(const char *buffer) const
   char *scrubbed = strdup(buffer);
   for (auto s : scrubs) {
     char *new_scrubbed = scrub_buffer(scrubbed, s);
-    free(scrubbed);
+    ats_free(scrubbed);
     scrubbed = new_scrubbed;
   }
   return scrubbed;
@@ -110,7 +114,7 @@ Scrubber::scrub_buffer(const char *buffer, Scrub *scrub) const
   }
 
   // guaranteed to be big enough
-  scrubbed     = static_cast<char *>(malloc(strlen(buffer) + strlen(scrub->replacement) + 1));
+  scrubbed     = static_cast<char *>(ats_malloc(strlen(buffer) + strlen(scrub->replacement) + 1));
   scrubbed_idx = scrubbed;
 
   // copy over all the stuff before the captured substing

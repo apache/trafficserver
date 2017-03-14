@@ -2991,8 +2991,8 @@ Diagnostic Logging Configuration
 
 .. note::
 
-   Multiple captures (eg capture groups) are not supported. (ie. ``s/foo/bar/g`` is not supported while ``s/foo/bar/``
-   is). Furthermore, only the longest captured substring will be replaced for each line in the logs.
+   Only single capture/replace is supported. (ie. ``s/foo/bar/`` is supported while ``s/foo/bar/g``
+   is not). Furthermore, only the longest captured substring will be replaced for each line in the logs.
 
 .. note::
 

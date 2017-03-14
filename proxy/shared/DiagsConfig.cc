@@ -315,7 +315,7 @@ DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const 
   ats_free(output_perm);
 
   // Grab scrubs config
-  char *scrubs = REC_ConfigReadString("proxy.config.diags.scrubs");
+  char *config_scrubs = REC_ConfigReadString("proxy.config.diags.scrubs");
 
   // Set up diags, FILE streams are opened in Diags constructor
   diags_log = new BaseLogFile(diags_logpath);
@@ -325,8 +325,8 @@ DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const 
 
   Status("opened %s", diags_logpath);
 
-  if (scrubs) {
-    diags->scrub_config(true, scrubs);
+  if (config_scrubs) {
+    diags->scrub_config(true, config_scrubs);
   }
 
   register_diags_callbacks();

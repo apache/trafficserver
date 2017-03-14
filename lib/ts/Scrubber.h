@@ -3,14 +3,16 @@
 #include <stdlib.h>
 #include "pcre.h"
 
+#include "ts/ink_memory.h"
+
 struct Scrub {
   ~Scrub()
   {
     if (pattern) {
-      free(const_cast<char *>(pattern));
+      ats_free(const_cast<char *>(pattern));
     }
     if (replacement) {
-      free(const_cast<char *>(replacement));
+      ats_free(const_cast<char *>(replacement));
     }
     if (compiled_re) {
       pcre_free(const_cast<pcre *>(compiled_re));
@@ -33,7 +35,8 @@ public:
    * Parses config & constructs Scrubber
    */
   Scrubber(const char *config);
-  Scrubber(Scrubber &other);
+  Scrubber(Scrubber &other) : Scrubber(other.config);  // delegate constructor
+  ~Scrubber();
 
   /*
    * Add another expression to scrub for
@@ -55,5 +58,6 @@ private:
    */
   char *scrub_buffer(const char *buffer, Scrub *scrub) const;
 
+  char *config = nullptr;
   std::vector<Scrub *> scrubs;
 };
