@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include <cmath>
+
 #include "ts/ink_defs.h"
 #include "ts/ink_assert.h"
 #include "ts/ink_sys_control.h"
