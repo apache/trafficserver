@@ -147,6 +147,7 @@ main(int /* argc ATS_UNUSED */, char ** /*argv ATS_UNUSED */)
 
   cchar *hi = "hi", *ho = "ho", *hum = "hum", *hhi = "hhi";
 
+  ++hhi;
   HashMap<cchar *, StringHashFns, int> sh;
   sh.put(hi, 1);
   sh.put(ho, 2);
