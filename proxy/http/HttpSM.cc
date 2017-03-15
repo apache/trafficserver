@@ -2751,25 +2751,39 @@ HttpSM::tunnel_handler_post(int event, void *data)
     return 0; // Cannot do anything if there is no producer
   }
 
-  if (event != HTTP_TUNNEL_EVENT_DONE) {
-    if ((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS)) {
-      if (ua_entry->write_buffer) {
-        free_MIOBuffer(ua_entry->write_buffer);
-        ua_entry->write_buffer = nullptr;
-      }
+  switch (event) {
+  case HTTP_TUNNEL_EVENT_DONE: // Tunnel done.
+    break;
+  case VC_EVENT_WRITE_READY: // iocore may callback first before send.
+    return 0;
+  case VC_EVENT_EOS:                // SSLNetVC may callback EOS during write error (6.0.x or early)
+  case VC_EVENT_ERROR:              // Send HTTP 408 error
+  case VC_EVENT_WRITE_COMPLETE:     // tunnel_handler_post_ua has sent HTTP 408 response
+  case VC_EVENT_INACTIVITY_TIMEOUT: // ua_session timeout during sending the HTTP 408 response
+  case VC_EVENT_ACTIVE_TIMEOUT:     // ua_session timeout
+    if (ua_entry->write_buffer) {
+      free_MIOBuffer(ua_entry->write_buffer);
+      ua_entry->write_buffer = nullptr;
+      ua_entry->vc->do_io_write(this, 0, NULL);
     }
+    // The if statement will always true since these codes are all for HTTP 408 response sending. - by oknet xu
     if (p->handler_state == HTTP_SM_POST_UA_FAIL) {
       Debug("http_tunnel", "cleanup tunnel in tunnel_handler_post");
       hsm_release_assert(ua_entry->in_tunnel == true);
-      ink_assert((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS));
+      tunnel_handler_post_or_put(p);
       vc_table.cleanup_all();
       tunnel.chain_abort_all(p);
       p->read_vio = nullptr;
       p->vc->do_io_close(EHTTP_ERROR);
-      tunnel_handler_post_or_put(p);
       tunnel.kill_tunnel();
       return 0;
     }
+    break;
+  case VC_EVENT_READ_READY:
+  case VC_EVENT_READ_COMPLETE:
+  default:
+    ink_assert(!"not reached");
+    return 0;
   }
 
   ink_assert(event == HTTP_TUNNEL_EVENT_DONE);
@@ -3501,7 +3515,12 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       nbytes = ua_entry->write_buffer->write(str_408_request_timeout_response, len_408_request_timeout_response);
       nbytes += ua_entry->write_buffer->write(t_state.internal_msg_buffer, t_state.internal_msg_buffer_size);
 
-      p->vc->do_io_write(this, nbytes, buf_start);
+      // The HttpSM default handler still is HttpSM::state_request_wait_for_transform_read.
+      // However, WRITE_COMPLETE/TIMEOUT/ERROR event should be managed/handled by tunnel_handler_post.
+      ua_entry->vc_handler = &HttpSM::tunnel_handler_post;
+      ua_entry->write_vio  = p->vc->do_io_write(this, nbytes, buf_start);
+      // Reset the inactivity timeout, otherwise the InactivityCop will callback again in the next second.
+      ua_session->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
       p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
       return 0;
     }
