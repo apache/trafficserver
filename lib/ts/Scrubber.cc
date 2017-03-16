@@ -26,12 +26,11 @@
 Scrubber::Scrubber(const char *config)
 {
   bool state_expecting_regex = true;
-  const ts::StringView delimiters("->;,", ts::StringView::literal);
+  static const ts::StringView delimiters("->;,", ts::StringView::literal);
+  this->config = ats_strdup(config);
   ts::StringView regex;
   ts::StringView replacement;
-  ts::StringView text(config);
-
-  this->config = ats_strdup(config);
+  ts::StringView text(this->config);
 
   // Loop over config string while extracting tokens
   while (text) {
@@ -61,17 +60,13 @@ Scrubber::Scrubber(const char *config)
 
   // This means that there was some kind of config or parse error.
   // This doesn't catch *all* errors, and is just a heuristic so we can't actually print any meaningful message.
-  if ((regex && !replacement) || (!regex && replacement)) {
-    // Error("Error in scrubbing config parsing. Not enabling scrubbing.");
-  }
+  // if ((regex && !replacement) || (!regex && replacement)) {
+  //   Error("Error in scrubbing config parsing. Not enabling scrubbing.");
+  //}
 }
 
 Scrubber::~Scrubber()
 {
-  if (config) {
-    ats_free(config);
-  }
-
   for (auto s : scrubs) {
     delete s;
   }
@@ -126,7 +121,7 @@ Scrubber::scrub_buffer(char *buffer, Scrub *scrub) const
   int buffer_len = strlen(buffer);
 
   // execute regex
-  num_matched = pcre_exec(scrub->compiled_re, nullptr, buffer, buffer_len, 0, 0, scrub->ovector, scrub->OVECCOUNT);
+  num_matched = pcre_exec(scrub->compiled_re, nullptr, buffer, buffer_len, 0, 0, scrub->ovector, OVECCOUNT);
   if (num_matched < 0) {
     switch (num_matched) {
     case PCRE_ERROR_NOMATCH:
@@ -179,13 +174,13 @@ Scrubber::scrub_buffer(char *buffer, Scrub *scrub) const
     memmove(buffer_ptr, buffer + scrub->ovector[1], buffer_len - scrub->ovector[1] + 1);
 
     // the last char should ALWAYS be a '\0' otherwise we did our math wrong
-    ink_assert(buffer[strlen(buffer)] == '\0');
+    ink_assert(buffer[buffer_len - (match_len - replacement_len)] == '\0');
   } else { // case 2
     // first slide all the text after the matched text right and truncate as necessary
     int n_slide = buffer_len - scrub->ovector[0] - replacement_len;
     if (n_slide < 0) {
       // replacement string is too long, we need to shorten it
-      replacement_len -= -n_slide;
+      replacement_len += n_slide;
     } else {
       buffer_ptr += scrub->ovector[0] + replacement_len;
       memmove(buffer_ptr, buffer + scrub->ovector[1], n_slide);

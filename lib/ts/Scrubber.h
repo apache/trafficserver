@@ -30,6 +30,10 @@
 #include "ts/ink_memory.h"
 #include "ts/MemView.h"
 
+// Used by PCRE library to store match indicies
+// Must be a multiple of 3
+#define OVECCOUNT 30
+
 struct Scrub {
   ~Scrub()
   {
@@ -37,7 +41,6 @@ struct Scrub {
       pcre_free(const_cast<pcre *>(compiled_re));
     }
   }
-  static const int OVECCOUNT = 30;
   ts::StringView pattern;
   ts::StringView replacement;
   const pcre *compiled_re;
@@ -84,6 +87,6 @@ private:
    */
   void scrub_buffer(char *buffer, Scrub *scrub) const;
 
-  char *config = nullptr;
+  ats_scoped_str config;
   std::vector<Scrub *> scrubs;
 };
