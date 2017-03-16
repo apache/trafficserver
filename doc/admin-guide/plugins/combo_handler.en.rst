@@ -83,3 +83,16 @@ results in these file paths being "reconstructed"::
     /dir:path2/file5
     /dir:path2/file6
 
+Caching
+=======
+Combohandler follows a few rules for the "Cache-Control" header:
+
+1) All requested documents must have "immutable" for the combo'd
+   response to also have "immutable".
+
+2) [Feature gated for 8.0 release] If one or more requested documents has "private" set,
+   then the combo'd response will also have "private". If no requested documents have a
+   publicity setting, then the default is "public".
+
+3) The "max-age" value will be set to the smallest of all the requested "max-age"
+   values. If no documents has "max-age" set, then the default is 10 years.
