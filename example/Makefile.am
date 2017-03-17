@@ -33,7 +33,7 @@ example_Plugins = \
 	file_1.la \
 	hello.la \
 	intercept.la \
-	lifecycle-plugin.la \
+	lifecycle_plugin.la \
 	null_transform.la \
 	output-header.la \
 	passthru.la \
@@ -97,7 +97,7 @@ cache_scan_la_SOURCES = cache_scan/cache_scan.cc
 file_1_la_SOURCES = file_1/file_1.c
 hello_la_SOURCES = hello/hello.c
 intercept_la_SOURCES = intercept/intercept.cc
-lifecycle_plugin_la_SOURCES = lifecycle-plugin/lifecycle-plugin.c
+lifecycle_plugin_la_SOURCES = lifecycle_plugin/lifecycle_plugin.c
 null_transform_la_SOURCES = null_transform/null_transform.c
 output_header_la_SOURCES = output-header/output-header.c
 passthru_la_SOURCES = passthru/passthru.cc
