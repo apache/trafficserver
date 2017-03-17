@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-/* lifecycle-plugin.c: an example plugin to demonstrate the lifecycle hooks.
+/* lifecycle_plugin.c: an example plugin to demonstrate the lifecycle hooks.
  *                    of response body content
  */
 
@@ -30,54 +30,32 @@
 #include <inttypes.h>
 #include <ts/ts.h>
 
+#define PLUGIN_NAME "lifecycle"
+
 int
 CallbackHandler(TSCont this, TSEvent id, void *data)
 {
   (void)this; // make compiler shut up about unused variable.
   switch (id) {
   case TS_EVENT_LIFECYCLE_PORTS_INITIALIZED:
-    TSDebug("lifecycle-plugin", "Proxy ports initialized");
+    TSDebug(PLUGIN_NAME, "Proxy ports initialized");
     break;
   case TS_EVENT_LIFECYCLE_PORTS_READY:
-    TSDebug("lifecycle-plugin", "Proxy ports active");
+    TSDebug(PLUGIN_NAME, "Proxy ports active");
     break;
   case TS_EVENT_LIFECYCLE_CACHE_READY:
-    TSDebug("lifecycle-plugin", "Cache ready");
+    TSDebug(PLUGIN_NAME, "Cache ready");
     break;
   case TS_EVENT_LIFECYCLE_MSG: {
     TSPluginMsg *msg = (TSPluginMsg *)data;
-    TSDebug("lifecycle-plugin", "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
+    TSDebug(PLUGIN_NAME, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
     break;
   }
   default:
-    TSDebug("lifecycle-plugin", "Unexpected event %d", id);
+    TSDebug(PLUGIN_NAME, "Unexpected event %d", id);
     break;
   }
   return TS_EVENT_NONE;
-}
-
-int
-CheckVersion()
-{
-  const char *ts_version = TSTrafficServerVersionGet();
-  int result             = 0;
-
-  if (ts_version) {
-    int major_ts_version = 0;
-    int minor_ts_version = 0;
-    int patch_ts_version = 0;
-
-    if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version, &patch_ts_version) != 3) {
-      return 0;
-    }
-
-    /* Need at least TS 3.3.5 */
-    if (major_ts_version > 3 ||
-        (major_ts_version == 3 && (minor_ts_version > 3 || (minor_ts_version == 3 && patch_ts_version >= 5)))) {
-      result = 1;
-    }
-  }
-  return result;
 }
 
 void
@@ -86,22 +64,13 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
   TSCont cb;
 
-  (void)argc;
-  (void)argv;
-
-  info.plugin_name   = "lifecycle-plugin";
-  info.vendor_name   = "My Company";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[lifecycle-plugin] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
 
-    goto Lerror;
-  }
-
-  if (!CheckVersion()) {
-    TSError("[lifecycle-plugin] Plugin requires Traffic Server 3.3.5 "
-            "or later");
     goto Lerror;
   }
 
@@ -112,10 +81,10 @@ TSPluginInit(int argc, const char *argv[])
   TSLifecycleHookAdd(TS_LIFECYCLE_CACHE_READY_HOOK, cb);
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, cb);
 
-  TSDebug("lifecycle-plugin", "online");
+  TSDebug(PLUGIN_NAME, "online");
 
   return;
 
 Lerror:
-  TSError("[lifecycle-plugin] Unable to initialize plugin (disabled).");
+  TSError("[%s] Unable to initialize plugin (disabled).", PLUGIN_NAME);
 }
