@@ -43,15 +43,15 @@
 // request. The TSQA test test-server-intercept exercises this plugin. You can
 // enable extensive logging with the "intercept" diagnostic tag.
 
-#define PLUGIN "intercept"
+#define PLUGIN_NAME "intercept"
 #define PORT 60000
 
-#define VDEBUG(fmt, ...) TSDebug(PLUGIN, fmt, ##__VA_ARGS__)
+#define VDEBUG(fmt, ...) TSDebug(PLUGIN_NAME, fmt, ##__VA_ARGS__)
 
 #if DEBUG
-#define VERROR(fmt, ...) TSDebug(PLUGIN, fmt, ##__VA_ARGS__)
+#define VERROR(fmt, ...) TSDebug(PLUGIN_NAME, fmt, ##__VA_ARGS__)
 #else
-#define VERROR(fmt, ...) TSError("[%s] %s: " fmt, PLUGIN, __FUNCTION__, ##__VA_ARGS__)
+#define VERROR(fmt, ...) TSError("[%s] %s: " fmt, PLUGIN_NAME, __FUNCTION__, ##__VA_ARGS__)
 #endif
 
 #define VIODEBUG(vio, fmt, ...)                                                                                              \
@@ -538,9 +538,9 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = (char *)PLUGIN;
-  info.vendor_name   = (char *)"MyCompany";
-  info.support_email = (char *)"ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     VERROR("plugin registration failed\n");
