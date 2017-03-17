@@ -158,7 +158,7 @@ back to sleep & waits for the next event.
    Traffic Server Internals
 
 Plugins are typically implemented as continuations. All of the sample
-code plugins (except ``hello-world``) are continuations that are created
+code plugins (except ``hello_world``) are continuations that are created
 when Traffic Server starts up; they then wait for events that trigger
 them into activity.
 
@@ -305,4 +305,3 @@ transaction further on, then the plugin adds itself to a transaction
 hook. *Transformation plugins* require a global hook to check
 all transactions for transformability followed by a *transform hook*,
 which is a type of transaction hook used specifically for transforms.
-
