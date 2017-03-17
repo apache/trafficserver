@@ -555,7 +555,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     case 'c':
       s3->parse_config(optarg);
       break;
-    case 'k':
+    case 'a':
       s3->set_keyid(optarg);
       break;
     case 's':
