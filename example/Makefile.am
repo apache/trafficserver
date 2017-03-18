@@ -35,7 +35,7 @@ example_Plugins = \
 	intercept.la \
 	lifecycle_plugin.la \
 	null_transform.la \
-	output-header.la \
+	output_header.la \
 	passthru.la \
 	protocol-stack.la \
 	protocol.la \
@@ -99,7 +99,7 @@ hello_la_SOURCES = hello/hello.c
 intercept_la_SOURCES = intercept/intercept.cc
 lifecycle_plugin_la_SOURCES = lifecycle_plugin/lifecycle_plugin.c
 null_transform_la_SOURCES = null_transform/null_transform.c
-output_header_la_SOURCES = output-header/output-header.c
+output_header_la_SOURCES = output_header/output_header.c
 passthru_la_SOURCES = passthru/passthru.cc
 protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
 protocol_stack_la_SOURCES = protocol-stack/protocol-stack.cc

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-/* output_hdr.c: a plugin prints out the client request header
+/* output_header.c: a plugin prints out the client request header
  *                 fields to stdout
  * A sample internal plugin to use the HdrPrint functions and the TSIOBuffers
  * that the functions untilize.
@@ -38,7 +38,7 @@
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
 
-#define DEBUG_TAG "output-header"
+#define PLUGIN_NAME "output_header"
 
 static void
 handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
@@ -58,8 +58,8 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   int64_t output_len;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSDebug(DEBUG_TAG, "couldn't retrieve client request header");
-    TSError("[output_header] Couldn't retrieve client request header");
+    TSDebug(PLUGIN_NAME, "couldn't retrieve client request header");
+    TSError("[%s] Couldn't retrieve client request header", PLUGIN_NAME);
     goto done;
   }
 
@@ -68,12 +68,12 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   /* This will print  just MIMEFields and not
      the http request line */
-  TSDebug(DEBUG_TAG, "Printing the hdrs ... ");
+  TSDebug(PLUGIN_NAME, "Printing the hdrs ... ");
   TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
 
   if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
-    TSDebug(DEBUG_TAG, "non-fatal: error releasing MLoc");
-    TSError("[output_header] non-fatal: Couldn't release MLoc");
+    TSDebug(PLUGIN_NAME, "non-fatal: error releasing MLoc");
+    TSError("[%s] non-fatal: Couldn't release MLoc", PLUGIN_NAME);
   }
 
   /* Find out how the big the complete header is by
@@ -124,7 +124,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   /* Although I'd never do this a production plugin, printf
      the header so that we can see it's all there */
-  TSDebug("debug-output-header", "%s", output_string);
+  TSDebug(PLUGIN_NAME, "%s", output_string);
 
   TSfree(output_string);
 
@@ -153,12 +153,12 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "output-header";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[output_header] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
 
     goto error;
   }
@@ -166,5 +166,5 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(hdr_plugin, NULL));
 
 error:
-  TSError("[output_header] Plugin not initialized");
+  TSError("[%s] Plugin not initialized", PLUGIN_NAME);
 }
