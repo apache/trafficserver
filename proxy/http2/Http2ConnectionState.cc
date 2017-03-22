@@ -66,7 +66,6 @@ read_rcv_buffer(char *buf, size_t bufsize, unsigned &nbytes, const Http2Frame &f
 static Http2Error
 rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
-  char buf[BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA])];
   unsigned nbytes               = 0;
   Http2StreamId id              = frame.header().streamid;
   uint8_t pad_length            = 0;
@@ -145,7 +144,7 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   // second time through
   IOBufferReader *myreader = frame.reader()->clone();
   while (nbytes < payload_length - pad_length) {
-    size_t read_len = sizeof(buf);
+    size_t read_len = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
     if (nbytes + read_len > unpadded_length) {
       read_len -= nbytes + read_len - unpadded_length;
     }
