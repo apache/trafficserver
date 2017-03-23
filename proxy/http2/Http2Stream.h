@@ -39,7 +39,7 @@ class Http2Stream : public ProxyClientTransaction
 {
 public:
   typedef ProxyClientTransaction super; ///< Parent type.
-  Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size) : client_rwnd(initial_rwnd), _id(sid)
+  Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size) : client_rwnd(initial_rwnd),  h2_trace(false), _id(sid)
   {
     SET_HANDLER(&Http2Stream::main_event_handler);
   }
@@ -167,6 +167,7 @@ public:
   bool response_header_done      = false;
   bool request_sent              = false;
   bool is_first_transaction_flag = false;
+  bool h2_trace = false;
 
   HTTPHdr response_header;
   IOBufferReader *response_reader     = nullptr;

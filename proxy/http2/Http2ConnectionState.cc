@@ -1041,10 +1041,15 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   new_stream->mutex                     = ua_session->mutex;
   new_stream->is_first_transaction_flag = get_stream_requests() == 0;
   increment_stream_requests();
-  ua_session->get_netvc()->add_to_active_queue();
-  // reset the activity timeout everytime a new stream is created
-  ua_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(Http2::active_timeout_in));
 
+  auto netvc = ua_session->get_netvc();
+  netvc->add_to_active_queue();
+  // reset the activity timeout everytime a new stream is created
+  netvc->set_active_timeout(HRTIME_SECONDS(Http2::active_timeout_in));
+  auto ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+  if (ssl_vc) {
+    new_stream->h2_trace = ssl_vc->getSSLTrace();
+  }
   return new_stream;
 }
 

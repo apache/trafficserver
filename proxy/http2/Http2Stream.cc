@@ -25,6 +25,7 @@
 #include "Http2Stream.h"
 #include "Http2ClientSession.h"
 #include "../http/HttpSM.h"
+#include "logging/Log.h"
 
 ClassAllocator<Http2Stream> http2StreamAllocator("http2StreamAllocator");
 
@@ -163,6 +164,8 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
       block = request_buffer.get_current_block();
     }
     done = _req_header.print(block->start(), block->write_avail(), &bufindex, &tmp);
+    TraceIn(h2_trace, cstate.ua_session->get_netvc()->get_remote_addr(), cstate.ua_session->get_netvc()->get_remote_port(),
+            "H2 TRACE bytes = %d stream ID = %d \n%.*s", (int)bufindex, this->get_id(), (int)bufindex, block->start());
     dumpoffset += bufindex;
     request_buffer.fill(bufindex);
     if (!done) {
@@ -539,6 +542,9 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       buf_reader->consume(bytes_added);
       total_added += bytes_added;
     }
+    auto nvc = parent->connection_state.ua_session->get_netvc();
+    TraceOut(h2_trace, nvc->get_remote_addr(), nvc->get_remote_port(), "H2 Trace bytes = %d Stream ID = %d \n %.*s",
+             (int)total_added, this->get_id(), (int)total_added, response_buffer.get_current_block()->start());
   }
 
   bool is_done = false;
