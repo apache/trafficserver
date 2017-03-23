@@ -180,10 +180,10 @@ Database event flow, and the thick dashed lines show Cache event flow.
 Notice that this flow of events is independent of the Protocol plugin's
 design (i.e., whether you build **accept** or **transaction** state
 machines). Any plugin that supports network connections uses the net
-vconnection interfaces (``TSNetAccept``, ``TSNetConnect``) and thus
+vconnection interfaces (:c:func:`TSNetAccept`, :c:func:`TSNetConnect`) and thus
 receives events from the Net Processor. Any plugin that performs cache
-lookups or cache writes uses ``TSCacheRead``, ``TSCacheWrite``,
-``TSVConnRead``, and ``TSVConnWrite`` and thus receives events from the
+lookups or cache writes uses :c:func:`TSCacheRead`, :c:func:`TSCacheWrite`,
+:c:func:`TSVConnRead`, and :c:func:`TSVConnWrite` and thus receives events from the
 Cache Processor and Traffic Server event system. Similarly, any plugin
 that does DNS lookups receives events from the Host Database Processor.
 
@@ -269,105 +269,91 @@ The code is contained in the following files:
 
 -  ``Protocol.c`` and ``Protocol.h``
 
--  ``Accept.c`` and ``Accept.h``
-
 -  ``TxnSM.c`` and ``TxnSM.h``
 
 Below is a step-by-step walk-through of the code that processes a
 typical transaction.
 
-1.  The ``TSPluginInit`` function is in the ``Protocol.c`` file. It
-    checks the validity of the ``plugin.config`` entries (there must be
-    two: a client accept port and a server port) and runs an
-    initialization routine, ``init``.
+#. The :c:func:`TSPluginInit` function is in the ``Protocol.c`` file. It
+   checks the validity of the :file:`plugin.config` entries (there must be two: a client accept port
+   and a server port) and runs an initialization routine, ``init``.
 
-2.  The ``init`` function (in ``Protocol.c``) creates the plugin's
-    log file using ``TSTextLogObjectCreate``.
+#. The ``init`` function (in ``Protocol.c``) creates the plugin's
+   log file using :c:func:`TSTextLogObjectCreate`.
 
-3.  The ``init`` function creates the accept state machine using
-    ``AcceptCreate``. The code for ``AcceptCreate`` is in the
-    ``Accept.c`` file.
+#. The ``init`` function creates the accept state machine using
+   ``AcceptCreate``. The code for ``AcceptCreate`` is in the
+   ``Accept.c`` file.
 
-4.  The accept state machine, like the transaction state machine, keeps
-    track of its state with a data structure. This data structure,
-    ``Accept``, is defined in the ``Accept.h`` file. State data in
-    ``AcceptCreate`` is associated with the new accept state machine
-    via ``TSContDataSet``.
+#. The ``init`` function arranges the callback of the accept state
+   machine when there is a network connection by using
+   :c:func:`TSNetAccept`.
 
-5.  The ``init`` function arranges the callback of the accept state
-    machine when there is a network connection by using
-    ``TSNetAccept``.
+#. The handler for the accept state machine is ``accept_handler`` in
+   the ``Protocol.c`` file. When Traffic Server's Net Processor sends :c:macro:`TS_EVENT_NET_ACCEPT`
+   to the accept state machine, ``accept_handler`` creates a transaction state machine (``txn_sm``)
+   by calling ``TxnSMCreate``. Notice that ``accept_event`` creates a mutex for the transaction
+   state machine, since each transaction state machine has its own mutex.
 
-6.  The handler for the accept state machine is ``accept_event`` in
-    the ``Accept.c`` file. When Traffic Server's Net Processor sends
-    ``TS_EVENT_NET_ACCEPT`` to the accept state machine,
-    ``accept_event`` creates a transaction state machine
-    (``txn_sm``) by calling ``TxnSMCreate``. Notice that
-    ``accept_event`` creates a mutex for the transaction state
-    machine, since each transaction state machine has its own mutex.
+#. The ``TxnSMCreate`` function is in the ``TxnSM.c`` file. The
+   first thing it does is initialize the transaction's data, which is of type ``TxnSM`` (as defined
+   in ``TxnSM.h``). Notice that the current handler (``q_current_handler``) is set to
+   ``state_start``.
 
-7.  The ``TxnSMCreate`` function is in the ``TxnSM.c`` file. The
-    first thing it does is initialize the transaction's data, which is
-    of type ``TxnSM`` (as defined in ``TxnSM.h``). Notice that the
-    current handler (``q_current_handler``) is set to
-    ``state_start``.
+#. ``TxnSMCreate`` then creates a transaction state machine using
+   :c:func`TSContCreate`. The handler for the transaction state machine
+   is ``main_handler``, which is in the ``TxnSM.c`` file.
 
-8.  ``TxnSMCreate`` then creates a transaction state machine using
-    ``TSContCreate``. The handler for the transaction state machine
-    is ``main_handler``, which is in the ``TxnSM.c`` file.
+#. When ``accept_event`` receives :c:macro`TS_EVENT_NET_ACCEPT`, it
+   calls the transaction state machine (
+   ``TSContCall (txn_sm, 0, NULL);`` ). The event passed to
+   ``main_handler`` is ``0`` (:c:macro`TS_EVENT_NONE`).
 
-9.  When ``accept_event`` receives ``TS_EVENT_NET_ACCEPT``, it
-    calls the transaction state machine (
-    ``TSContCall (txn_sm, 0, NULL);`` ). The event passed to
-    ``main_handler`` is ``0`` (``TS_EVENT_NONE``).
+#. The first thing ``main_handler`` does is examine the current
+   ``txn_sm`` state by calling :c:func:`TSContDataGet`. The state is
+   ``state_start``.
 
-10. The first thing ``main_handler`` does is examine the current
-    ``txn_sm`` state by calling ``TSContDataGet``. The state is
-    ``state_start``.
+#. ``main_handler`` then invokes the handler for
+   ``state_start`` by using the function pointer
+   ``TxnSMHandler`` (as defined in ``TxnSM.h``).
 
-11. ``main_handler`` then invokes the handler for
-    ``state_start`` by using the function pointer
-    ``TxnSMHandler`` (as defined in ``TxnSM.h``).
+#. The ``state_start`` handler function (in the ``TxnSM.c`` file)
+   is handed an event (at this stage, the event is :c:macro:`TS_EVENT_NET_ACCEPT`) and a client
+   vconnection. ``state_start`` checks to see if this client vconnection is closed; if it is not,
+   then ``state_start`` attempts to read data from the client vconnection into an
+   :c:type:`TSIOBuffer` (``state_start`` is handling the event it receives).
 
-12. The ``state_start`` handler function (in the ``TxnSM.c`` file)
-    is handed an event (at this stage, the event is
-    ``TS_EVENT_NET_ACCEPT``) and a client vconnection.
-    ``state_start`` checks to see if this client vconnection is
-    closed; if it is not, then ``state_start`` attempts to read data
-    from the client vconnection into an ``TSIOBuffer``
-    (``state_start`` is handling the event it receives).
+#. ``state_start`` changes the current handler to
+   ``state_interface_with_client`` (that is, it updates the state of the transaction to the next
+   state).
 
-13. ``state_start`` changes the current handler to
-    ``state_interface_with_client`` (that is, it updates the state
-    of the transaction to the next state).
+#. ``state_start`` initiates a read of the client vconnection
+   (arranges for Traffic Server to send
+   :c:macro:`TS_EVENT_VCONN_READ_READY` events to the TSM) by calling
+   :c:func:`TSVConnRead`.
 
-14. ``state_start`` initiates a read of the client vconnection
-    (arranges for Traffic Server to send
-    ``TS_EVENT_VCONN_READ_READY`` events to the TSM) by calling
-    ``TSVConnRead``.
+#. ``state_interface_with_client`` is activated by the next event
+   from Traffic Server. It checks for errors and examines the read VIO
+   for the read operation initiated by :c:func:`TSVConnRead`.
 
-15. ``state_interface_with_client`` is activated by the next event
-    from Traffic Server. It checks for errors and examines the read VIO
-    for the read operation initiated by ``TSVConnRead``.
+#. If the read VIO is the ``client_read_VIO`` (which we are
+   expecting at this stage in the transaction), then
+   ``state_interface_with_client`` updates the state to
+   ``state_read_request_from_client`` .
 
-16. If the read VIO is the ``client_read_VIO`` (which we are
-    expecting at this stage in the transaction), then
-    ``state_interface_with_client`` updates the state to
-    ``state_read_request_from_client`` .
+#. ``state_read_request_from_client`` handles actual
+   :c:macro:`TS_EVENT_VCONN_READ_READY` events and reads the client request.
 
-17. ``state_read_request_from_client`` handles actual
-    ``TS_EVENT_READ_READY`` events and reads the client request.
+#. ``state_read_request_from_client`` parses the client request.
 
-18. ``state_read_request_from_client`` parses the client request.
+#. ``state_read_request_from_client`` updates the current state to
+   the next state, ``state_handle_cache_lookup`` .
 
-19. ``state_read_request_from_client`` updates the current state to
-    the next state, ``state_handle_cache_lookup`` .
+#. ``state_read_request_from_client`` arranges for Traffic Server
+   to call back the TSM with the next set of events (initiating the
+   cache lookup) by calling :c:func:`TSCacheRead`.
 
-20. ``state_read_request_from_client`` arranges for Traffic Server
-    to call back the TSM with the next set of events (initiating the
-    cache lookup) by calling ``TSCacheRead``.
-
-21. When the ``TSCacheRead`` sends the TSM either
-    ``TS_EVENT_OPEN_READ`` (a cache hit) or
-    ``TS_EVENT_OPEN_READ_FAILED`` (a cache miss),
-    ``main_handler`` calls ``state_handle_cache_lookup``.
+#. When the :c:func:`TSCacheRead` sends the TSM either
+   :c:macro:`TS_EVENT_CACHE_OPEN_READ` (a cache hit) or
+   :c:macro:`TS_EVENT_CACHE_OPEN_READ_FAILED` (a cache miss),
+   ``main_handler`` calls ``state_handle_cache_lookup``.

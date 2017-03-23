@@ -80,15 +80,15 @@ protocol_init(int accept_port, int server_port ATS_UNUSED)
   int ret_val;
 
   /* create customized log */
-  ret_val = TSTextLogObjectCreate("protocol", TS_LOG_MODE_ADD_TIMESTAMP, &protocol_plugin_log);
+  ret_val = TSTextLogObjectCreate(PLUGIN_NAME, TS_LOG_MODE_ADD_TIMESTAMP, &protocol_plugin_log);
   if (ret_val != TS_SUCCESS) {
-    TSError("[protocol] Failed to create log");
+    TSError("[%s] Failed to create log", PLUGIN_NAME);
   }
 
   /* format of the log entries, for caching_status, 1 for HIT and 0 for MISS */
   ret_val = TSTextLogObjectWrite(protocol_plugin_log, "timestamp filename servername caching_status\n\n");
   if (ret_val != TS_SUCCESS) {
-    TSError("[protocol] Failed to write into log");
+    TSError("[%s] Failed to write into log", PLUGIN_NAME);
   }
 
   contp = TSContCreate(accept_handler, TSMutexCreate());
@@ -107,12 +107,12 @@ TSPluginInit(int argc, const char *argv[])
   char *end;
   int tmp;
 
-  info.plugin_name   = "output-header";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[protocol] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
 
     goto error;
   }
@@ -122,33 +122,28 @@ TSPluginInit(int argc, const char *argv[])
   server_port = 4666;
 
   if (argc < 3) {
-    TSDebug("protocol", "Usage: protocol.so accept_port server_port");
-    printf("[protocol_plugin] Usage: protocol.so accept_port server_port\n");
-    printf("[protocol_plugin] Wrong arguments. Using deafult ports.\n");
+    TSDebug(PLUGIN_NAME, "Usage: protocol.so <accept_port> <server_port>. Using default ports accept=%d server=%d", accept_port,
+            server_port);
   } else {
     tmp = strtol(argv[1], &end, 10);
     if (*end == '\0') {
       accept_port = tmp;
-      TSDebug("protocol", "using accept_port %d", accept_port);
-      printf("[protocol_plugin] using accept_port %d\n", accept_port);
+      TSDebug(PLUGIN_NAME, "using accept_port %d", accept_port);
     } else {
-      printf("[protocol_plugin] Wrong argument for accept_port.");
-      printf("Using deafult port %d\n", accept_port);
+      TSError("[%s] Wrong argument for accept_port, using default port %d.", PLUGIN_NAME, accept_port);
     }
 
     tmp = strtol(argv[2], &end, 10);
     if (*end == '\0') {
       server_port = tmp;
-      TSDebug("protocol", "using server_port %d", server_port);
-      printf("[protocol_plugin] using server_port %d\n", server_port);
+      TSDebug(PLUGIN_NAME, "using server_port %d", server_port);
     } else {
-      printf("[protocol_plugin] Wrong argument for server_port.");
-      printf("Using deafult port %d\n", server_port);
+      TSError("[%s] Wrong argument for server_port, using default port %d.", PLUGIN_NAME, server_port);
     }
   }
 
   protocol_init(accept_port, server_port);
 
 error:
-  TSError("[protocol] Plugin not initialized");
+  TSError("[%s] Plugin not initialized", PLUGIN_NAME);
 }
