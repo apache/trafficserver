@@ -165,9 +165,9 @@ const static struct {
  * Local functions
  ******************/
 static inline bool
-hpack_field_is_literal(HpackFieldType ftype)
+hpack_field_is_literal(HpackField ftype)
 {
-  return ftype == HPACK_FIELD_INDEXED_LITERAL || ftype == HPACK_FIELD_NOINDEX_LITERAL || ftype == HPACK_FIELD_NEVERINDEX_LITERAL;
+  return ftype == HpackField::INDEXED_LITERAL || ftype == HpackField::NOINDEX_LITERAL || ftype == HpackField::NEVERINDEX_LITERAL;
 }
 
 //
@@ -175,27 +175,27 @@ hpack_field_is_literal(HpackFieldType ftype)
 // kind of field it is. Field types are specified in the high 4 bits
 // and all bits are defined, so there's no way to get an invalid field type.
 //
-HpackFieldType
+HpackField
 hpack_parse_field_type(uint8_t ftype)
 {
   if (ftype & 0x80) {
-    return HPACK_FIELD_INDEX;
+    return HpackField::INDEX;
   }
 
   if (ftype & 0x40) {
-    return HPACK_FIELD_INDEXED_LITERAL;
+    return HpackField::INDEXED_LITERAL;
   }
 
   if (ftype & 0x20) {
-    return HPACK_FIELD_TABLESIZE_UPDATE;
+    return HpackField::TABLESIZE_UPDATE;
   }
 
   if (ftype & 0x10) {
-    return HPACK_FIELD_NEVERINDEX_LITERAL;
+    return HpackField::NEVERINDEX_LITERAL;
   }
 
   ink_assert((ftype & 0xf0) == 0x0);
-  return HPACK_FIELD_NOINDEX_LITERAL;
+  return HpackField::NOINDEX_LITERAL;
 }
 
 /************************
@@ -238,19 +238,19 @@ HpackIndexingTable::lookup(const char *name, int name_len, const char *value, in
     if (ptr_len_casecmp(name, name_len, table_name, table_name_len) == 0) {
       if ((value_len == table_value_len) && (memcmp(value, table_value, value_len) == 0)) {
         result.index      = index;
-        result.match_type = HPACK_EXACT_MATCH;
+        result.match_type = HpackMatch::EXACT;
         break;
       } else if (!result.index) {
         result.index      = index;
-        result.match_type = HPACK_NAME_MATCH;
+        result.match_type = HpackMatch::NAME;
       }
     }
   }
-  if (result.match_type != HPACK_NO_MATCH) {
+  if (result.match_type != HpackMatch::NONE) {
     if (result.index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
-      result.index_type = HPACK_INDEX_TYPE_STATIC;
+      result.index_type = HpackIndex::STATIC;
     } else {
-      result.index_type = HPACK_INDEX_TYPE_DYNAMIC;
+      result.index_type = HpackIndex::DYNAMIC;
     }
   }
 
@@ -507,7 +507,7 @@ encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t
 
 int64_t
 encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
-                                              uint32_t index, HpackIndexingTable &indexing_table, HpackFieldType type)
+                                              uint32_t index, HpackIndexingTable &indexing_table, HpackField type)
 {
   uint8_t *p = buf_start;
   int64_t len;
@@ -516,16 +516,16 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   ink_assert(hpack_field_is_literal(type));
 
   switch (type) {
-  case HPACK_FIELD_INDEXED_LITERAL:
+  case HpackField::INDEXED_LITERAL:
     indexing_table.add_header_field(header.field_get());
     prefix = 6;
     flag   = 0x40;
     break;
-  case HPACK_FIELD_NOINDEX_LITERAL:
+  case HpackField::NOINDEX_LITERAL:
     prefix = 4;
     flag   = 0x00;
     break;
-  case HPACK_FIELD_NEVERINDEX_LITERAL:
+  case HpackField::NEVERINDEX_LITERAL:
     prefix = 4;
     flag   = 0x10;
     break;
@@ -561,7 +561,7 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
 
 int64_t
 encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
-                                          HpackIndexingTable &indexing_table, HpackFieldType type)
+                                          HpackIndexingTable &indexing_table, HpackField type)
 {
   uint8_t *p = buf_start;
   int64_t len;
@@ -570,14 +570,14 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   ink_assert(hpack_field_is_literal(type));
 
   switch (type) {
-  case HPACK_FIELD_INDEXED_LITERAL:
+  case HpackField::INDEXED_LITERAL:
     indexing_table.add_header_field(header.field_get());
     flag = 0x40;
     break;
-  case HPACK_FIELD_NOINDEX_LITERAL:
+  case HpackField::NOINDEX_LITERAL:
     flag = 0x00;
     break;
-  case HPACK_FIELD_NEVERINDEX_LITERAL:
+  case HpackField::NEVERINDEX_LITERAL:
     flag = 0x10;
     break;
   default:
@@ -744,16 +744,16 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   bool isIncremental       = false;
   uint32_t index           = 0;
   int64_t len              = 0;
-  HpackFieldType ftype     = hpack_parse_field_type(*p);
+  HpackField ftype         = hpack_parse_field_type(*p);
   bool has_http2_violation = false;
 
-  if (ftype == HPACK_FIELD_INDEXED_LITERAL) {
+  if (ftype == HpackField::INDEXED_LITERAL) {
     len           = decode_integer(index, p, buf_end, 6);
     isIncremental = true;
-  } else if (ftype == HPACK_FIELD_NEVERINDEX_LITERAL) {
+  } else if (ftype == HpackField::NEVERINDEX_LITERAL) {
     len = decode_integer(index, p, buf_end, 4);
   } else {
-    ink_assert(ftype == HPACK_FIELD_NOINDEX_LITERAL);
+    ink_assert(ftype == HpackField::NOINDEX_LITERAL);
     len = decode_integer(index, p, buf_end, 4);
   }
 
@@ -868,10 +868,10 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
     // decode a header field encoded by HPACK
     MIMEField *field = mime_field_create(heap, hh->m_fields_impl);
     MIMEFieldWrapper header(field, heap, hh->m_fields_impl);
-    HpackFieldType ftype = hpack_parse_field_type(*cursor);
+    HpackField ftype = hpack_parse_field_type(*cursor);
 
     switch (ftype) {
-    case HPACK_FIELD_INDEX:
+    case HpackField::INDEX:
       read_bytes = decode_indexed_header_field(header, cursor, in_buf_end, indexing_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
@@ -879,9 +879,9 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
       cursor += read_bytes;
       header_field_started = true;
       break;
-    case HPACK_FIELD_INDEXED_LITERAL:
-    case HPACK_FIELD_NOINDEX_LITERAL:
-    case HPACK_FIELD_NEVERINDEX_LITERAL:
+    case HpackField::INDEXED_LITERAL:
+    case HpackField::NOINDEX_LITERAL:
+    case HpackField::NEVERINDEX_LITERAL:
       read_bytes = decode_literal_header_field(header, cursor, in_buf_end, indexing_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
@@ -893,7 +893,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
       cursor += read_bytes;
       header_field_started = true;
       break;
-    case HPACK_FIELD_TABLESIZE_UPDATE:
+    case HpackField::TABLESIZE_UPDATE:
       if (header_field_started) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
@@ -938,7 +938,7 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
 
   MIMEFieldIter field_iter;
   for (MIMEField *field = hdr->iter_get_first(&field_iter); field != nullptr; field = hdr->iter_get_next(&field_iter)) {
-    HpackFieldType field_type;
+    HpackField field_type;
     MIMEFieldWrapper header(field, hdr->m_heap, hdr->m_http->m_fields_impl);
     int name_len;
     int value_len;
@@ -949,20 +949,20 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
     // - Short Cookie header should not be indexed because of low entropy
     if ((ptr_len_casecmp(name, name_len, MIME_FIELD_COOKIE, MIME_LEN_COOKIE) == 0 && value_len < 20) ||
         (ptr_len_casecmp(name, name_len, MIME_FIELD_AUTHORIZATION, MIME_LEN_AUTHORIZATION) == 0)) {
-      field_type = HPACK_FIELD_NEVERINDEX_LITERAL;
+      field_type = HpackField::NEVERINDEX_LITERAL;
     } else {
-      field_type = HPACK_FIELD_INDEXED_LITERAL;
+      field_type = HpackField::INDEXED_LITERAL;
     }
     const HpackLookupResult result = indexing_table.lookup(header);
     switch (result.match_type) {
-    case HPACK_NO_MATCH:
+    case HpackMatch::NONE:
       written = encode_literal_header_field_with_new_name(cursor, out_buf_end, header, indexing_table, field_type);
       break;
-    case HPACK_NAME_MATCH:
+    case HpackMatch::NAME:
       written =
         encode_literal_header_field_with_indexed_name(cursor, out_buf_end, header, result.index, indexing_table, field_type);
       break;
-    case HPACK_EXACT_MATCH:
+    case HpackMatch::EXACT:
       written = encode_indexed_header_field(cursor, out_buf_end, result.index);
       break;
     default:
