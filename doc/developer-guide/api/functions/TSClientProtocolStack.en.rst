@@ -71,7 +71,7 @@ than 10 which therefore should suffice. These functions return :const:`TS_SUCCES
 
 The :func:`TSHttpTxnClientProtocolStackContains` and :func:`TSHttpSsnClientProtocolStackContains`
 functions are provided for the convenience when only the presence of a protocol is of interest, not
-its location or the presence of other protocols. These functions return NULL if the protocol
+its location or the presence of other protocols. These functions return :const:`NULL` if the protocol
 :arg:`tag` is not present, and a pointer to the normalized tag if it is present. The strings are
 matched with an anchor prefix search, as with debug tags. For instance if :arg:`tag` is "tls" then it
 will match "tls/1.2" or "tls/1.3". This makes checking for TLS or IP more convenient. If more precision
@@ -100,11 +100,10 @@ QUIC        quic
 Examples
 --------
 
-The example below is excerpted from `example/protocol-stack/protocol-stack.cc`
+The example below is excerpted from `example/protocol_stack/protocol_stack.cc`
 in the Traffic Server source distribution. It demonstrates how to
 use :func:`TSHttpTxnClientProtocolStackGet` and :func:`TSHttpTxnClientProtocolStackContains`
 
-.. literalinclude:: ../../../../example/protocol-stack/protocol-stack.cc
+.. literalinclude:: ../../../../example/protocol_stack/protocol_stack.cc
   :language: c
   :lines: 31-46
-
