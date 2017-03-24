@@ -311,7 +311,7 @@ http2_write_goaway(const Http2Goaway &goaway, IOVec iov)
   }
 
   write_and_advance(ptr, goaway.last_streamid);
-  write_and_advance(ptr, goaway.error_code);
+  write_and_advance(ptr, static_cast<uint32_t>(goaway.error_code));
 
   return true;
 }
@@ -405,7 +405,7 @@ http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
   memcpy_and_advance(ec.bytes, ptr);
 
   goaway.last_streamid = ntohl(sid.value);
-  goaway.error_code    = ntohl(ec.value);
+  goaway.error_code    = static_cast<Http2ErrorCode>(ntohl(ec.value));
   return true;
 }
 
@@ -602,12 +602,12 @@ http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t
   // TODO: It would be better to split Cookie header value
   int64_t result = hpack_encode_header_block(handle, out, out_len, in);
   if (result < 0) {
-    return HTTP2_ERROR_COMPRESSION_ERROR;
+    return Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR;
   }
   if (len_written) {
     *len_written = result;
   }
-  return HTTP2_ERROR_NO_ERROR;
+  return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 }
 
 /*
@@ -625,12 +625,12 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 
   if (result < 0) {
     if (result == HPACK_ERROR_COMPRESSION_ERROR) {
-      return HTTP2_ERROR_COMPRESSION_ERROR;
+      return Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR;
     } else if (result == HPACK_ERROR_SIZE_EXCEEDED_ERROR) {
-      return HTTP2_ERROR_ENHANCE_YOUR_CALM;
+      return Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
     }
 
-    return HTTP2_ERROR_PROTOCOL_ERROR;
+    return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
   }
   if (len_read) {
     *len_read = result;
@@ -649,18 +649,18 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
     if (len && value[0] == ':') {
       ++pseudo_header_count;
       if (pseudo_header_count > expected_pseudo_header_count) {
-        return HTTP2_ERROR_PROTOCOL_ERROR;
+        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
     } else {
       if (pseudo_header_count != expected_pseudo_header_count) {
-        return HTTP2_ERROR_PROTOCOL_ERROR;
+        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
     }
     // Check whether header field name is lower case
     // This check should be here but it will fail because WKSs in MIMEField is old fashioned.
     // for (uint32_t i = 0; i < len; ++i) {
     //   if (ParseRules::is_upalpha(value[i])) {
-    //     return HTTP2_ERROR_PROTOCOL_ERROR;
+    //     return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     //   }
     // }
   }
@@ -668,7 +668,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   // rfc7540,sec8.1.2.2: Any message containing connection-specific header
   // fields MUST be treated as malformed
   if (hdr->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != nullptr) {
-    return HTTP2_ERROR_PROTOCOL_ERROR;
+    return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
   }
 
   // :path pseudo header MUST NOT empty for http or https URIs
@@ -676,7 +676,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (field) {
     field->value_get(&len);
     if (len == 0) {
-      return HTTP2_ERROR_PROTOCOL_ERROR;
+      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     }
   }
 
@@ -693,7 +693,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (field) {
     value = field->value_get(&len);
     if (!(len == 8 && memcmp(value, "trailers", 8) == 0)) {
-      return HTTP2_ERROR_PROTOCOL_ERROR;
+      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     }
   }
 
@@ -706,15 +706,15 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
           hdr->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY) == nullptr ||
           hdr->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS) != nullptr) {
         // Decoded header field is invalid
-        return HTTP2_ERROR_PROTOCOL_ERROR;
+        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
     } else {
       // Pseudo headers is insufficient
-      return HTTP2_ERROR_PROTOCOL_ERROR;
+      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     }
   }
 
-  return HTTP2_ERROR_NO_ERROR;
+  return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 }
 
 // Initialize this subsystem with librecords configs (for now)
