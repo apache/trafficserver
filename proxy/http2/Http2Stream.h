@@ -58,7 +58,7 @@ public:
       _start_time(0),
       _thread(NULL),
       _id(sid),
-      _state(HTTP2_STREAM_STATE_IDLE),
+      _state(Http2StreamState::HTTP2_STREAM_STATE_IDLE),
       trailing_header(false),
       body_done(false),
       closed(false),
@@ -238,8 +238,9 @@ public:
   bool
   is_client_state_writeable() const
   {
-    return _state == HTTP2_STREAM_STATE_OPEN || _state == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE ||
-           HTTP2_STREAM_STATE_RESERVED_LOCAL;
+    return _state == Http2StreamState::HTTP2_STREAM_STATE_OPEN ||
+           _state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE ||
+           _state == Http2StreamState::HTTP2_STREAM_STATE_RESERVED_LOCAL;
   }
 
   bool
