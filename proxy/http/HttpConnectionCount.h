@@ -30,6 +30,8 @@
 #include "ts/INK_MD5.h"
 #include "ts/ink_config.h"
 #include "HttpProxyAPIEnums.h"
+#include "Show.h"
+#include <sstream>
 
 #ifndef _HTTP_CONNECTION_COUNT_H_
 #define _HTTP_CONNECTION_COUNT_H_
@@ -87,6 +89,11 @@ public:
     _hostCount.put(caddr, count + delta);
     ink_mutex_release(&_mutex);
   }
+  /**
+   * dump to JSON for stat page.
+   * @return JSON string for _hostCount
+   */
+  std::string dumpToJSON();
 
   struct ConnAddr {
     IpEndpoint _addr;
@@ -119,6 +126,26 @@ public:
     }
 
     operator bool() { return ats_is_ip(&_addr); }
+    std::string
+    getIpStr()
+    {
+      std::string str;
+      if (*this) {
+        ip_text_buffer buf;
+        const char *ret = ats_ip_ntop(&_addr.sa, buf, sizeof(buf));
+        if (ret) {
+          str.assign(ret);
+        }
+      }
+      return str;
+    }
+
+    std::string
+    getHostnameHashStr()
+    {
+      char hashBuffer[33];
+      return std::string(_hostname_hash.toHexStr(hashBuffer));
+    }
   };
 
   class ConnAddrHashFns
@@ -197,6 +224,19 @@ protected:
   static ConnectionCount _connectionCount;
   HashMap<ConnAddr, ConnAddrHashFns, int> _hostCount;
   ink_mutex _mutex;
+
+private:
+  void
+  appendJSONPair(std::ostringstream &oss, const std::string &key, const int value)
+  {
+    oss << '\"' << key << "\": " << value;
+  }
+
+  void
+  appendJSONPair(std::ostringstream &oss, const std::string &key, const std::string &value)
+  {
+    oss << '\"' << key << "\": \"" << value << '"';
+  }
 };
 
 class ConnectionCountQueue : public ConnectionCount
@@ -215,5 +255,7 @@ public:
 private:
   static ConnectionCountQueue _connectionCount;
 };
+
+Action *register_ShowConnectionCount(Continuation *, HTTPHdr *);
 
 #endif

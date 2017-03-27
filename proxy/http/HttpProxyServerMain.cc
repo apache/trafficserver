@@ -38,6 +38,7 @@
 #include "P_SSLNextProtocolAccept.h"
 #include "ProtocolProbeSessionAccept.h"
 #include "http2/Http2SessionAccept.h"
+#include "HttpConnectionCount.h"
 
 HttpSessionAccept *plugin_http_accept             = nullptr;
 HttpSessionAccept *plugin_http_transparent_accept = nullptr;
@@ -299,6 +300,9 @@ start_HttpProxyServer()
     init_http_update_test();
   }
 #endif
+
+  // Set up stat page for http connection count
+  statPagesManager.register_http("connection_count", register_ShowConnectionCount);
 
   // Alert plugins that connections will be accepted.
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_READY_HOOK);
