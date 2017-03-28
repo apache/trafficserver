@@ -175,33 +175,8 @@ public:
   /////////////////////////////////////////////////////////////////
   UnixNetVConnection();
 
-  int
-  populate_protocol(ts::StringView *results, int n) const override
-  {
-    int retval = 0;
-    if (n > retval) {
-      if (!(results[retval] = options.get_proto_string()).isEmpty())
-        ++retval;
-      if (n > retval) {
-        if (!(results[retval] = options.get_family_string()).isEmpty())
-          ++retval;
-      }
-    }
-    return retval;
-  }
-
-  const char *
-  protocol_contains(ts::StringView tag) const override
-  {
-    ts::StringView retval = options.get_proto_string();
-    if (strncmp(tag.ptr(), retval.ptr(), tag.size()) != 0) {
-      retval = options.get_family_string();
-      if (strncmp(tag.ptr(), retval.ptr(), tag.size()) != 0) {
-        retval.clear();
-      }
-    }
-    return retval.ptr();
-  }
+  int populate_protocol(ts::StringView *results, int n) const override;
+  const char *protocol_contains(ts::StringView tag) const override;
 
 private:
   UnixNetVConnection(const NetVConnection &);
