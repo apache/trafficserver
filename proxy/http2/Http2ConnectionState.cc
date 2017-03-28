@@ -615,7 +615,7 @@ rcv_goaway_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   }
 
   DebugHttp2Stream(cstate.ua_session, stream_id, "GOAWAY: last stream id=%d, error code=%d", goaway.last_streamid,
-                   goaway.error_code);
+                   static_cast<int>(goaway.error_code));
 
   cstate.handleEvent(HTTP2_SESSION_EVENT_FINI, nullptr);
   // eventProcessor.schedule_imm(&cs, ET_NET, VC_EVENT_ERROR);
