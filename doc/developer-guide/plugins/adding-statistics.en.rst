@@ -22,23 +22,22 @@
 Adding Statistics
 *****************
 
-This chapter describes how to add statistics to your plugins.  The
-|TS| statistics API functions add your plugin's statistics so you
-can view your plugin statistics as you would any other |TS| statistic,
-using :program:`traffic_ctl` or the c:func:`TSRecordDump` API.
+This chapter describes how to add statistics to your plugins. The |TS| statistics API functions add
+your plugin's statistics so you can view your plugin statistics as you would any other |TS|
+statistic, using :program:`traffic_ctl` or the :c:func:`TSRecordDump` API.
 
-A statistic is an opaque object referred to by an integral handle
-returned by c:func:`TSStatCreate`. Only integer statistics are
-supported, so the :arg:`type` argument to c:func:`TSStatCreate` must
-be c:data:`TS_RECORDDATATYPE_INT`.
+A statistic is an opaque object referred to by an integral handle returned by
+:c:func:`TSStatCreate`. Only integer statistics are supported, so the :arg:`type` argument to
+:c:func:`TSStatCreate` must be :c:macro:`TS_RECORDDATATYPE_INT`.
 
-The following example shows how to add custom statistics to your
-plugin. Typically, you would attempt to find the statistic by name
-before creating is. This technique is useful if you want to increment
-a statistic from multiple plugins. Once you have a handle to the
-statistic, set the value with c:func:`TSStatIntSet`, and increment it with
-c:func:`TSStatIntIncrement` or c:func:`TSStatIntDecrement`.
+The following example shows how to add custom statistics to your plugin. Typically, you would
+attempt to find the statistic by name before creating is. This technique is useful if you want to
+increment a statistic from multiple plugins. Once you have a handle to the statistic, set the value
+with :c:func:`TSStatIntSet`, and increment it with :c:func:`TSStatIntIncrement` or
+:c:func:`TSStatIntDecrement`.
 
 .. literalinclude:: ../../../example/statistic/statistic.cc
    :language: c
    :lines: 30-
+
+:func:`TSStatFind` can be used to check if the statistic already exists or to provide a generic interface to statistics. In the example above you can see the code first verifies the statistic does not already exist before creating it. In general, though, this should be handled by not executing the registration code twice. If done only from plugin initialization then this will be the case. It can be the case however that statistics are based on configuration data which may be reloaded and the check must be done.

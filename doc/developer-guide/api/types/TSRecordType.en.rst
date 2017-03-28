@@ -26,30 +26,33 @@ Synopsis
 
 .. c:type:: TSRecordType
 
-Enum typedef.
+   Effectively the scope of the record.
 
-Enumeration Members
-===================
+   .. c:macro:: TS_RECORDTYPE_NULL
 
-.. c:member:: TSRecordType TS_RECORDTYPE_NULL
+   .. c:macro:: TS_RECORDTYPE_CONFIG
 
-.. c:member:: TSRecordType TS_RECORDTYPE_CONFIG
+      A configuration record.
 
-   A configuration record.
+   .. c:macro:: TS_RECORDTYPE_PROCESS
 
-.. c:member:: TSRecordType TS_RECORDTYPE_PROCESS
+   .. c:macro:: TS_RECORDTYPE_NODE
 
-.. c:member:: TSRecordType TS_RECORDTYPE_NODE
+   .. c:macro:: TS_RECORDTYPE_CLUSTER
 
-.. c:member:: TSRecordType TS_RECORDTYPE_CLUSTER
+      Deprecated - shared among a cluster.
 
-.. c:member:: TSRecordType TS_RECORDTYPE_LOCAL
+   .. c:macro:: TS_RECORDTYPE_LOCAL
 
-.. c:member:: TSRecordType TS_RECORDTYPE_PLUGIN
+      Deprecated - not shared among a cluster.
 
-.. c:member:: TSRecordType TS_RECORDTYPE_ALL
+   .. c:macro:: TS_RECORDTYPE_PLUGIN
+
+      Created by a plugin.
+
+   .. c:macro:: TS_RECORDTYPE_ALL
 
 Description
 ===========
 
-The management role for a management value. In practice only :c:member:`TS_RECORDTYPE_CONFIG` is usable.
+The management role for a management value. In practice only :c:macro:`TS_RECORDTYPE_CONFIG` is usable.

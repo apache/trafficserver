@@ -16,8 +16,8 @@
 
 .. include:: ../../../common.defs
 
-TSRecordType
-************
+TSRecordDataType
+****************
 
 Synopsis
 ========
@@ -26,38 +26,35 @@ Synopsis
 
 .. c:type:: TSRecordDataType
 
-Enum typedef.
+   The underlying data type of a data record (configuration variable or statistic).
 
-Enumeration Members
-===================
+   .. c:macro:: TS_RECORDDATATYPE_NULL
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_NULL
+      No data type. Used as an invalid initialization value.
 
-   No data type. Used to as an invalid initialization value.
+   .. c:macro:: TS_RECORDDATATYPE_INT
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_INT
+      An integer.
 
-   An integer.
+   .. c:macro:: TS_RECORDDATATYPE_FLOAT
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_FLOAT
+       Floating point.
 
-    Floating point.
+   .. c:macro:: TS_RECORDDATATYPE_STRING
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_STRING
+      A string.
 
-   A string.
+   .. c:macro:: TS_RECORDDATATYPE_COUNTER
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_COUNTER
+      A counter which has a count and a sum.
 
-   A counter which has a count and a sum.
+   .. c:macro:: TS_RECORDDATATYPE_STAT_CONST
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_STAT_CONST
+      A value that is unchangeable.
 
-   A value that is unchangeable.
+   .. c:macro:: TS_RECORDDATATYPE_STAT_FX
 
-.. c:member:: TSRecordType TS_RECORDDATATYPE_STAT_FX
-
-   Unknown.
+      Unknown.
 
 Description
 ===========
