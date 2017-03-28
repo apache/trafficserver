@@ -32,16 +32,15 @@ remap rules. It is not built on top of the Traffic Server APIs and
 exists solely for the purpose of URL remapping. The remap plugin is not
 global --it is configured on a per-remap rule basis, which enables you
 to customize how URLs are redirected based on individual rules in the
-``remap.config`` file.
+:file:`remap.config` file.
 
 The Traffic Server Remap API enables a plugin to dynamically map a
 client request to a target URL. Each plugin is associated with one or
-more remap rules in ``remap.config`` (an "instance"). If a request URL
+more remap rules in :file:`remap.config` (an "instance"). If a request URL
 matches a remap rule's "fromURL", then Traffic Server calls the
 plugin-defined remap function for that request.
 
-((Editor's note: additional text TBD; text in this chapter is still
-under development))
+.. note:: Additional text TBD; text in this chapter is still under development
 
 Remap Header File
 =================
@@ -70,6 +69,4 @@ A remap plugin is required to implement the following functions:
 Configuration
 ~~~~~~~~~~~~~
 
-To associate a remap plugin with a remap rule, use the ``@plugin``
-parameter. See the Admin Guide section (?TBD?) for details on
-configuring remap plugins
+To associate a remap plugin with a remap rule, use the :code:`@plugin` parameter (see :ref:`remap-config-plugin-chaining`).
