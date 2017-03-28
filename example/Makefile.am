@@ -40,7 +40,7 @@ example_Plugins = \
 	protocol_stack.la \
 	protocol.la \
 	psi.la \
-	query-remap.la \
+	query_remap.la \
 	remap.la \
 	remap_header_add.la \
 	replace-header.la \
@@ -105,7 +105,7 @@ passthru_la_SOURCES = passthru/passthru.cc
 protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
 protocol_stack_la_SOURCES = protocol_stack/protocol_stack.cc
 psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
-query_remap_la_SOURCES = query-remap/query-remap.c
+query_remap_la_SOURCES = query_remap/query_remap.c
 remap_header_add_la_SOURCES = remap_header_add/remap_header_add.cc
 remap_la_SOURCES = remap/remap.cc
 replace_header_la_SOURCES = replace-header/replace-header.c

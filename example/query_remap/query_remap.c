@@ -57,7 +57,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
   TSDebug(PLUGIN_NAME, "new instance fromURL: %s toURL: %s", argv[0], argv[1]);
 
   if (argc < 4) {
-    TSError("[query_remap] Missing parameters");
+    TSError("[%s] Missing parameters", PLUGIN_NAME);
     return -1;
   }
 
@@ -116,7 +116,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
   query_remap_info *qri = (query_remap_info *)ih;
 
   if (!qri || !rri) {
-    TSError("[query_remap] NULL private data or RRI");
+    TSError("[%s] NULL private data or RRI", PLUGIN_NAME);
     return TSREMAP_NO_REMAP;
   }
 
