@@ -1030,14 +1030,14 @@ LocalManager::listenForProxy()
 
     // read backlong configuration value and overwrite the default value if found
     bool found;
+    ts::StringView fam{ats_ip_family_name(p.m_family)};
     RecInt backlog = REC_readInteger("proxy.config.net.listen_backlog", &found);
     backlog        = (found && backlog >= 0) ? backlog : ats_tcp_somaxconn();
 
     if ((listen(p.m_fd, backlog)) < 0) {
-      mgmt_fatal(errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%s)\n", p.m_port,
-                 ats_ip_family_name(p.m_family).ptr());
+      mgmt_fatal(errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%.*s)\n", p.m_port, fam.size(), fam.ptr());
     }
-    mgmt_log("[LocalManager::listenForProxy] Listening on port: %d (%s)\n", p.m_port, ats_ip_family_name(p.m_family).ptr());
+    mgmt_log("[LocalManager::listenForProxy] Listening on port: %d (%.*s)\n", p.m_port, fam.size(), fam.ptr());
   }
   return;
 }
