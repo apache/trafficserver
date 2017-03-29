@@ -125,6 +125,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
     result->last_parent  = 0;
 
     Debug("parent_select", "Result for %s was API set parent %s:%d", rdata->get_host(), result->hostname, result->port);
+    return;
   }
 
   tablePtr->Match(rdata, result);
