@@ -35,6 +35,7 @@
 #include "ts/ink_memory.h"
 #include "ProcessManager.h"
 #include "I_EventSystem.h"
+#include "I_Tasks.h"
 
 class ProxyMutex;
 
@@ -111,7 +112,7 @@ template <typename UpdateClass>
 int
 ConfigScheduleUpdate(Ptr<ProxyMutex> &mutex)
 {
-  eventProcessor.schedule_imm(new ConfigUpdateContinuation<UpdateClass>(mutex), ET_CALL);
+  eventProcessor.schedule_imm(new ConfigUpdateContinuation<UpdateClass>(mutex), ET_TASK);
   return 0;
 }
 
