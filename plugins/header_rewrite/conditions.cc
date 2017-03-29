@@ -582,6 +582,76 @@ ConditionClientIp::append_value(std::string &s, const Resources &res)
 }
 
 void
+ConditionIp::initialize(Parser &p)
+{
+  Condition::initialize(p);
+
+  MatcherType *match = new MatcherType(_cond_op);
+
+  match->set(p.get_arg());
+  _matcher = match;
+}
+
+void
+ConditionIp::set_qualifier(const std::string &q)
+{
+  Condition::set_qualifier(q);
+
+  TSDebug(PLUGIN_NAME, "\tParsing %%{IP:%s} qualifier", q.c_str());
+
+  if (q == "CLIENT") {
+    _ip_qual = IP_QUAL_CLIENT;
+  } else if (q == "INBOUND") {
+    _ip_qual = IP_QUAL_INBOUND;
+  } else if (q == "SERVER") {
+    _ip_qual = IP_QUAL_SERVER;
+  } else if (q == "OUTBOUND") {
+    _ip_qual = IP_QUAL_OUTBOUND;
+  } else {
+    TSError("[%s] Unknown IP() qualifier: %s", PLUGIN_NAME, q.c_str());
+  }
+}
+
+bool
+ConditionIp::eval(const Resources &res)
+{
+  std::string s;
+
+  append_value(s, res);
+  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+
+  TSDebug(PLUGIN_NAME, "Evaluating IP(): %s - rval: %d", s.c_str(), rval);
+
+  return rval;
+}
+
+void
+ConditionIp::append_value(std::string &s, const Resources &res)
+{
+  bool ip_set = false;
+  char ip[INET6_ADDRSTRLEN];
+
+  switch (_ip_qual) {
+  case IP_QUAL_CLIENT:
+    ip_set = (nullptr != getIP(TSHttpTxnClientAddrGet(res.txnp), ip));
+    break;
+  case IP_QUAL_INBOUND:
+    ip_set = (nullptr != getIP(TSHttpTxnIncomingAddrGet(res.txnp), ip));
+    break;
+  case IP_QUAL_SERVER:
+    ip_set = (nullptr != getIP(TSHttpTxnServerAddrGet(res.txnp), ip));
+    break;
+  case IP_QUAL_OUTBOUND:
+    ip_set = (nullptr != getIP(TSHttpTxnOutgoingAddrGet(res.txnp), ip));
+    break;
+  }
+
+  if (ip_set) {
+    s.append(ip);
+  }
+}
+
+void
 ConditionIncomingPort::initialize(Parser &p)
 {
   Condition::initialize(p);
