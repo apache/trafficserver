@@ -125,8 +125,6 @@ LUAJIT = \
 EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
 
 traffic_server_SOURCES = \
-  AbstractBuffer.cc \
-  AbstractBuffer.h \
   CacheControl.cc \
   CacheControl.h \
   ControlBase.cc \
