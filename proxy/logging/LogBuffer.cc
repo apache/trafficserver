@@ -112,14 +112,6 @@ LogBufferHeader::log_filename()
   return addr;
 }
 
-/*-------------------------------------------------------------------------
-  LogBuffer::LogBuffer
-
-  Initialize a LogBuffer object, which is just an AbstractBuffer object
-  with the addition of a pointer for keeping track of the LogObject object
-  that is allocating this buffer.
-  -------------------------------------------------------------------------*/
-
 LogBuffer::LogBuffer(LogObject *owner, size_t size, size_t buf_align, size_t write_align)
   : m_size(size), m_buf_align(buf_align), m_write_align(write_align), m_owner(owner), m_references(0)
 {
