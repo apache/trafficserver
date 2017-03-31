@@ -46,6 +46,8 @@
 //#include "HttpAuthParams.h"
 #include "congest/Congestion.h"
 
+#include "HttpPluginHook.h"
+
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX 6  // 8K
 #define MIN_CONFIG_BUFFER_SIZE_INDEX 5       // 4K
@@ -317,6 +319,7 @@ HttpSM::HttpSM()
     hooks_set(false),
     cur_hook_id(TS_HTTP_LAST_HOOK),
     cur_hook(NULL),
+    plugin_hook(NULL),
     cur_hooks(0),
     callout_state(HTTP_API_NO_CALLOUT),
     terminate_sm(false),
@@ -354,6 +357,11 @@ HttpSM::cleanup()
 void
 HttpSM::destroy()
 {
+  // Call Http transaction End function.
+  if (txnEnd) {
+    txnEnd(static_cast<TSHttpTxn>((void *)this));
+  }
+
   HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
   cleanup();
   httpSMAllocator.free(this);
@@ -418,6 +426,11 @@ HttpSM::init()
   debug_sm_list.push(this);
   ink_mutex_release(&debug_sm_list_mutex);
 #endif
+
+  // Call Http transaction Begin function.
+  if (txnBegin) {
+    txnBegin(static_cast<TSHttpTxn>((void *)this));
+  }
 }
 
 void
@@ -1326,6 +1339,12 @@ HttpSM::state_api_callback(int event, void *data)
 
   milestone_update_api_time(milestones, api_timer);
 
+  // Call postPluginHook after plugin execution
+  if (postPluginHook) {
+    postPluginHook(static_cast<TSHttpTxn>((void *)this), cur_hook_id, plugin_hook->m_cont->m_event_func,
+                   static_cast<TSCont>((void *)plugin_hook->m_cont));
+  }
+
   STATE_ENTER(&HttpSM::state_api_callback, event);
 
   state_api_callout(event, data);
@@ -1449,6 +1468,16 @@ HttpSM::state_api_callout(int event, void *data)
 
         if (!api_timer)
           api_timer = Thread::get_hrtime_updated();
+
+        // Call prePluginHook before plugin execution.
+        // First remember this hook, because we would lose it after plugin executing.
+        plugin_hook = hook;
+
+        if (prePluginHook) {
+          prePluginHook(static_cast<TSHttpTxn>((void *)this), cur_hook_id, plugin_hook->m_cont->m_event_func,
+                        static_cast<TSCont>((void *)plugin_hook->m_cont));
+        }
+
         hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
         if (api_timer > 0) { // true if the hook did not call TxnReenable()
           milestone_update_api_time(milestones, api_timer);

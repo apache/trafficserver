@@ -517,6 +517,10 @@ protected:
   TSHttpHookID cur_hook_id;
   APIHook *cur_hook;
 
+  // Used to remember hook when plugin executes, because this hook
+  // will lose after execution of plugin.
+  APIHook *plugin_hook;
+
   //
   // Continuation time keeper
   int64_t prev_hook_start_time;

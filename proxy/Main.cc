@@ -100,6 +100,8 @@ extern "C" int plock(int);
 #include <gperftools/heap-profiler.h>
 #endif
 
+#include "HttpPluginHook.h"
+
 //
 // Global Data
 //
@@ -1802,6 +1804,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(getNumSSLThreads(), stacksize);
+
+    // Init http transaction plugin hook
+    initHttpTxnPluginHook();
 
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
