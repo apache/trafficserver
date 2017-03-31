@@ -1598,15 +1598,19 @@ Negative Response Caching
    :ts:cv:`proxy.config.http.negative_caching_lifetime`.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_caching_lifetime INT 1800
+   :reloadable:
    :overridable:
 
    How long (in seconds) Traffic Server keeps the negative responses  valid in cache. This value only affects negative
    responses that do NOT have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_enabled INT 0
+   :reloadable:
+   :overridable:
 
    Enables (``1``) or disables (``0``) forcing revalidation of cached documents
-   when |TS| receives a negative (``5xx`` only) response from the origin server.
+   when |TS| receives a negative (``5xx`` only) response from the origin server. That is,
+   when enabled, |TS| will serve stale when it can not reach the origin server.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
 
