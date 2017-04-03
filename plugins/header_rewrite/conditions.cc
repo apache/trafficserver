@@ -1051,12 +1051,10 @@ ConditionId::append_value(std::string &s, const Resources &res ATS_UNUSED)
     }
   } break;
   case ID_QUAL_UNIQUE: {
-    std::ostringstream oss;
-    TSUuid process = TSProcessUuidGet();
+    char uuid[TS_CRUUID_STRING_LEN + 1];
 
-    if (process) {
-      oss << TSUuidStringGet(process) << '-' << TSHttpTxnIdGet(res.txnp);
-      s += oss.str();
+    if (TS_SUCCESS == TSClientRequestUuidGet(res.txnp, uuid)) {
+      s += uuid;
     }
   } break;
   }

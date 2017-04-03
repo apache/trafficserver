@@ -25,12 +25,11 @@ SUBDIRS = cluster utils api
 # 	libmgmt_p.la	libmgmt for Process Manager applications (everything else)
 noinst_LTLIBRARIES = libmgmt_c.la libmgmt_p.la libmgmt_lm.la
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/mgmt/api/include \
   -I$(abs_top_srcdir)/mgmt/cluster \
   -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/proxy/api/ts \
   -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/proxy/hdrs \
   -I$(abs_top_srcdir)/lib/records \

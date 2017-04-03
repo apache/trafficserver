@@ -14,10 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-all:  gen 
+all:  gen
 
 gen: gen.c
 	$(CC) -o gen gen.c
 
 clean-local:
-	rm -f gen gen.o 
+	rm -f gen gen.o

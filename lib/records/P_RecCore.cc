@@ -627,7 +627,7 @@ RecReadConfigFile(bool inc_version)
 // RecSyncConfigFile
 //-------------------------------------------------------------------------
 RecErrT
-RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
+RecSyncConfigToTB(TextBuffer *tb, bool *inc_version)
 {
   RecErrT err = REC_ERR_FAIL;
 
@@ -679,7 +679,7 @@ RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
     if (sync_to_disk) {
       char b[1024];
 
-      // okay, we're going to write into our textBuffer
+      // okay, we're going to write into our TextBuffer
       err = REC_ERR_OKAY;
       tb->reUse();
 
@@ -735,7 +735,7 @@ RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
               if (r->data.rec_string) {
                 tb->copyFrom(r->data.rec_string, strlen(r->data.rec_string));
               } else {
-                tb->copyFrom("nullptr", strlen("NULL"));
+                tb->copyFrom("NULL", strlen("NULL"));
               }
               break;
             case RECD_COUNTER:
@@ -931,7 +931,7 @@ RecSetSyncRequired(char *name, bool lock)
 }
 
 RecErrT
-RecWriteConfigFile(textBuffer *tb)
+RecWriteConfigFile(TextBuffer *tb)
 {
 #define TMP_FILENAME_EXT_STR ".tmp"
 #define TMP_FILENAME_EXT_LEN (sizeof(TMP_FILENAME_EXT_STR) - 1)

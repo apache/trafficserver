@@ -204,19 +204,18 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   if (!g_records_ht) {
     return REC_ERR_FAIL;
   }
+
   // read stats
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
     RecReadStatsFile();
   }
+
   // read configs
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
+    bool file_exists = true;
+
     ink_mutex_init(&g_rec_config_lock, nullptr);
-    // Import the file into memory; try the following in this order:
-    // ./etc/trafficserver/records.config.shadow
-    // ./records.config.shadow
-    // ./etc/trafficserver/records.config
-    // ./records.config
-    bool file_exists   = true;
+
     g_rec_config_fpath = RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE REC_SHADOW_EXT);
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
       ats_free((char *)g_rec_config_fpath);
@@ -226,6 +225,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
         file_exists = false;
       }
     }
+
     if (file_exists) {
       RecReadConfigFile(true);
     }
@@ -996,7 +996,7 @@ debug_record_callback(RecT /* rec_type */, void * /* edata */, int registered, c
     RecDebug(DL_Note, "  ([%d] '%s', '%f')", registered, name, datum->rec_float);
     break;
   case RECD_STRING:
-    RecDebug(DL_Note, "  ([%d] '%s', '%s')", registered, name, datum->rec_string ? datum->rec_string : "nullptr");
+    RecDebug(DL_Note, "  ([%d] '%s', '%s')", registered, name, datum->rec_string ? datum->rec_string : "NULL");
     break;
   case RECD_COUNTER:
     RecDebug(DL_Note, "  ([%d] '%s', '%" PRId64 "')", registered, name, datum->rec_counter);
@@ -1120,16 +1120,21 @@ REC_readString(const char *name, bool *found, bool lock)
   return _tmp;
 }
 
-//-------------------------------------------------------------------------
-// RecConfigReadConfigDir
-//-------------------------------------------------------------------------
+// RecConfigReadConfigDir. Note that we handle environmental configuration
+// overrides specially here. Normally we would override the configuration
+// variable when we read records.config but to avoid the bootstrapping
+// problem, we make an explicit check here.
 char *
 RecConfigReadConfigDir()
 {
-  char buf[PATH_NAME_MAX];
+  char buf[PATH_NAME_MAX] = {0};
 
-  buf[0] = '\0';
-  RecGetRecordString("proxy.config.config_dir", buf, PATH_NAME_MAX);
+  if (const char *env = getenv("PROXY_CONFIG_CONFIG_DIR")) {
+    ink_strlcpy(buf, env, sizeof(buf));
+  } else {
+    RecGetRecordString("proxy.config.config_dir", buf, sizeof(buf));
+  }
+
   if (strlen(buf) > 0) {
     return Layout::get()->relative(buf);
   } else {
@@ -1186,6 +1191,15 @@ RecConfigReadBinDir()
   } else {
     return ats_strdup(Layout::get()->bindir);
   }
+}
+
+//-------------------------------------------------------------------------
+// RecConfigReadPluginDir
+//-------------------------------------------------------------------------
+char *
+RecConfigReadPluginDir()
+{
+  return RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir");
 }
 
 //-------------------------------------------------------------------------

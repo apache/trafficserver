@@ -212,7 +212,9 @@ freelist_new(InkFreeList *f)
         newp      = ats_memalign(alignment, INK_ALIGN(alloc_size, alignment));
       }
 
-      ats_madvise((caddr_t)newp, INK_ALIGN(alloc_size, alignment), f->advice);
+      if (f->advice) {
+        ats_madvise((caddr_t)newp, INK_ALIGN(alloc_size, alignment), f->advice);
+      }
       SET_FREELIST_POINTER_VERSION(item, newp, 0);
 
       ink_atomic_increment((int *)&f->allocated, f->chunk_size);
@@ -254,10 +256,14 @@ malloc_new(InkFreeList *f)
 {
   void *newp = nullptr;
 
-  if (f->alignment)
+  if (f->alignment) {
     newp = ats_memalign(f->alignment, f->type_size);
-  else
+    if (f->advice && (INK_ALIGN((uint64_t)newp, ats_pagesize()) == (uint64_t)newp)) {
+      ats_madvise((caddr_t)newp, INK_ALIGN(f->type_size, f->alignment), f->advice);
+    }
+  } else {
     newp = ats_malloc(f->type_size);
+  }
 
   return newp;
 }

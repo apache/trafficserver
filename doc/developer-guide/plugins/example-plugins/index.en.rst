@@ -27,7 +27,7 @@ Example Plugins
 
    basic-authorization/index.en
    blacklist/index.en
-   query-remap/index.en
+   query_remap/index.en
 
 .. _developer-plugins-header-based-examples:
 
@@ -46,8 +46,8 @@ understand the following topics:
 
 -  Working with HTTP header functions
 
-The two sample plugins discussed in this chapter are ``blacklist-1.c``
-and ``basic-auth.c``.
+The two sample plugins discussed in this chapter are ``blacklist_1.c``
+and ``basic_auth.c``.
 
 Overview
 --------
@@ -75,4 +75,3 @@ following common elements:
 
 This chapter demonstrates how these components are implemented in SDK
 sample code.
-

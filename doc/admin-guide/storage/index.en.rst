@@ -77,7 +77,7 @@ The RAM cache supports two cache eviction algorithms, a regular *LRU*
 (Least Recently Used) and the more advanced *CLFUS* (Clocked Least
 Frequently Used by Size; which balances recentness, frequency, and size
 to maximize hit rate, similar to a most frequently used algorithm).
-The default is to use *CLFUS*, and this is controlled via
+The default is to use *LRU*, and this is controlled via
 :ts:cv:`proxy.config.cache.ram_cache.algorithm`.
 
 Both the *LRU* and *CLFUS* RAM caches support a configuration to increase
@@ -185,8 +185,7 @@ Partitioning the Cache
 You can manage your cache space more efficiently and restrict disk usage
 by creating :term:`cache volumes <cache volume>` with different sizes for
 specific protocols. You can further configure these volumes to store data from
-specific :term:`origin servers <origin server>` and/or domains. The volume
-configuration must be the same on all nodes in a :ref:`cluster <traffic-server-cluster>`.
+specific :term:`origin servers <origin server>` and/or domains.
 
 Creating Cache Partitions for Specific Protocols
 ------------------------------------------------

@@ -18,16 +18,14 @@
 # We only build traffic_top if libcurses and libcurl are available.
 if BUILD_TRAFFIC_TOP
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/mgmt/api/include \
   @CURL_CFLAGS@ \
   @CURSES_CFLAGS@
 
-AM_LDFLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+AM_LDFLAGS += \
   @OPENSSL_LDFLAGS@
 
 bin_PROGRAMS = traffic_top

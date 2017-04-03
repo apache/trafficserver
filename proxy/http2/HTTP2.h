@@ -96,14 +96,14 @@ extern RecRawStatBlock *http2_rsb; // Container for statistics.
 static const Http2WindowSize HTTP2_MAX_WINDOW_SIZE = 0x7FFFFFFF;
 
 // [RFC 7540] 5.4. Error Handling
-enum Http2ErrorClass {
+enum class Http2ErrorClass {
   HTTP2_ERROR_CLASS_NONE,
   HTTP2_ERROR_CLASS_CONNECTION,
   HTTP2_ERROR_CLASS_STREAM,
 };
 
 // [RFC 7540] 7. Error Codes
-enum Http2ErrorCode {
+enum class Http2ErrorCode {
   HTTP2_ERROR_NO_ERROR            = 0,
   HTTP2_ERROR_PROTOCOL_ERROR      = 1,
   HTTP2_ERROR_INTERNAL_ERROR      = 2,
@@ -123,7 +123,7 @@ enum Http2ErrorCode {
 };
 
 // [RFC 7540] 5.1. Stream States
-enum Http2StreamState {
+enum class Http2StreamState {
   HTTP2_STREAM_STATE_IDLE,
   HTTP2_STREAM_STATE_RESERVED_LOCAL,
   HTTP2_STREAM_STATE_RESERVED_REMOTE,
@@ -243,14 +243,17 @@ struct Http2FrameHeader {
 
 // [RFC 7540] 5.4. Error Handling
 struct Http2Error {
-  Http2Error(const Http2ErrorClass error_class = HTTP2_ERROR_CLASS_NONE, const Http2ErrorCode error_code = HTTP2_ERROR_NO_ERROR)
+  Http2Error(const Http2ErrorClass error_class = Http2ErrorClass::HTTP2_ERROR_CLASS_NONE,
+             const Http2ErrorCode error_code = Http2ErrorCode::HTTP2_ERROR_NO_ERROR, const char *err_msg = NULL)
   {
     cls  = error_class;
     code = error_code;
+    msg  = err_msg;
   };
 
   Http2ErrorClass cls;
   Http2ErrorCode code;
+  const char *msg;
 };
 
 // [RFC 7540] 6.5.1. SETTINGS Format
@@ -280,9 +283,9 @@ struct Http2HeadersParameter {
 
 // [RFC 7540] 6.8 GOAWAY Format
 struct Http2Goaway {
-  Http2Goaway() : last_streamid(0), error_code(0) {}
+  Http2Goaway() : last_streamid(0), error_code(Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {}
   Http2StreamId last_streamid;
-  uint32_t error_code;
+  Http2ErrorCode error_code;
 
   // NOTE: we don't (de)serialize the variable length debug data at this layer
   // because there's

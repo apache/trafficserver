@@ -20,9 +20,8 @@ include $(top_srcdir)/build/tidy.mk
 
 SUBDIRS = remap
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/proxy/api/ts \
   -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/lib/records \

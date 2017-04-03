@@ -193,16 +193,16 @@ FileManager::fileChanged(const char *fileName, bool incVersion)
   ink_mutex_release(&cbListLock);
 }
 
-// textBuffer* FileManager::filesManaged()
+// TextBuffer* FileManager::filesManaged()
 //
 //  Returns a comma separated list of all files currently being
 //    managed by this object
 //
 //  CALLEE DELETES the returned space
-textBuffer *
+TextBuffer *
 FileManager::filesManaged()
 {
-  textBuffer *result = new textBuffer(1024);
+  TextBuffer *result = new TextBuffer(1024);
   const char *currentName;
   const char separator[] = "\n";
   Rollback *rb;
@@ -315,7 +315,7 @@ FileManager::restoreSnap(const char *snapName, const char *snapDir)
   SnapResult result = SNAP_OK;
   char *snapPath;
   char *filePath = nullptr;
-  textBuffer storage(2048);
+  TextBuffer storage(2048);
 
   snapPath = newPathString(snapDir, snapName);
 
@@ -496,13 +496,13 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
 }
 
 //
-//  SnapResult FileManager::readFile(const char* filePath, textBuffer* contents)
+//  SnapResult FileManager::readFile(const char* filePath, TextBuffer* contents)
 //
-//  Reads the specified file into the textBuffer.  Returns SNAP_OK if
+//  Reads the specified file into the TextBuffer.  Returns SNAP_OK if
 //    the file was successfully read and an error code otherwise
 //
 SnapResult
-FileManager::readFile(const char *filePath, textBuffer *contents)
+FileManager::readFile(const char *filePath, TextBuffer *contents)
 {
   int diskFD;
   int readResult;
@@ -541,7 +541,7 @@ FileManager::copyFile(Rollback *rb, const char *snapPath)
   const char *fileName;
   char *filePath;
   int diskFD;
-  textBuffer *copyBuf;
+  TextBuffer *copyBuf;
   SnapResult result;
 
   fileName = rb->getBaseName();
@@ -691,13 +691,13 @@ FileManager::isConfigStale()
   return stale;
 }
 
-// void FileManager::displaySnapPage(textBuffer* output, httpResponse& answerHdr)
+// void FileManager::displaySnapPage(TextBuffer* output, httpResponse& answerHdr)
 //
 //  Generates an HTML page with the add form and the list
 //    of current snapshots
 //
 void
-FileManager::displaySnapOption(textBuffer *output)
+FileManager::displaySnapOption(TextBuffer *output)
 {
   ExpandingArray snap_list(25, true);
   SnapResult snap_result;
@@ -712,14 +712,14 @@ FileManager::displaySnapOption(textBuffer *output)
   }
 }
 
-// void FileManger::createSelect(char* formVar, textBuffer* output, ExpandingArray*)
+// void FileManger::createSelect(char* formVar, TextBuffer* output, ExpandingArray*)
 //
 //  Creats a form with a select list.  The select options come
 //    from the expanding array.  Action is the value for the hidden input
 //    tag with name action
 //
 void
-FileManager::createSelect(char *action, textBuffer *output, ExpandingArray *options)
+FileManager::createSelect(char *action, TextBuffer *output, ExpandingArray *options)
 {
   const char formOpen[]     = "<form method=POST action=\"/configure/snap_action.html\">\n<select name=snap>\n";
   const char formEnd[]      = "</form>";

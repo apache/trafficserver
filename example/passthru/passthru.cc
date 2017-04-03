@@ -267,7 +267,7 @@ PassthruSessionEvent(TSCont cont, TSEvent event, void *edata)
     return TS_EVENT_NONE;
   }
 
-  TSError("%s: unexpected event %s (%d) edata=%p", PLUGIN_NAME, TSHttpEventNameLookup(event), event, arg.edata);
+  TSError("[%s] unexpected event %s (%d) edata=%p", PLUGIN_NAME, TSHttpEventNameLookup(event), event, arg.edata);
 
   return TS_EVENT_ERROR;
 }
@@ -298,13 +298,13 @@ PassthruListen()
   TSCont cont                 = nullptr;
 
   if (TSMgmtStringGet("config.plugin.passthru.server_ports", &ports) == TS_ERROR) {
-    TSError("%s: missing config.plugin.passthru.server_ports configuration", PLUGIN_NAME);
+    TSError("[%s] missing config.plugin.passthru.server_ports configuration", PLUGIN_NAME);
     return TS_ERROR;
   }
 
   descriptor = TSPortDescriptorParse(ports);
   if (descriptor == nullptr) {
-    TSError("%s: failed to parse config.plugin.passthru.server_ports", PLUGIN_NAME);
+    TSError("[%s] failed to parse config.plugin.passthru.server_ports", PLUGIN_NAME);
     TSfree(ports);
     return TS_ERROR;
   }
@@ -319,13 +319,7 @@ PassthruListen()
 void
 TSPluginInit(int /* argc */, const char * /* argv */ [])
 {
-  // clang-format off
-    TSPluginRegistrationInfo info = {
-        const_cast<char*>(PLUGIN_NAME),
-        const_cast<char*>("Apache Software Foundation"),
-        const_cast<char*>("dev@trafficserver.apache.org"),
-    };
-  // clang-format on
+  TSPluginRegistrationInfo info = {PLUGIN_NAME, "Apache Software Foundation", "dev@trafficserver.apache.org"};
 
   TSReturnCode status;
 

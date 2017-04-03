@@ -24,6 +24,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_sock.h"
 #include "ts/ink_file.h"
+#include "ts/ink_error.h"
 #include "MgmtUtils.h"
 #include "ts/I_Layout.h"
 #include "LocalManager.h"
@@ -185,6 +186,7 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
   syslog_facility = 0;
 
   ccom                      = nullptr;
+  proxy_recoverable         = true;
   proxy_started_at          = -1;
   proxy_launch_count        = 0;
   manager_started_at        = time(nullptr);
@@ -493,6 +495,15 @@ LocalManager::pollMgmtProcessServer()
           if (WIFSIGNALED(estatus)) {
             int sig = WTERMSIG(estatus);
             mgmt_log("[LocalManager::pollMgmtProcessServer] Server Process terminated due to Sig %d: %s\n", sig, strsignal(sig));
+          } else if (WIFEXITED(estatus)) {
+            int return_code = WEXITSTATUS(estatus);
+
+            // traffic_server's exit code will be UNRECOVERABLE_EXIT if it calls
+            // ink_emergency() or ink_emergency_va(). The call signals that traffic_server
+            // cannot be recovered with a reboot. In other words, catastrophic failure.
+            if (return_code == UNRECOVERABLE_EXIT) {
+              proxy_recoverable = false;
+            }
           }
 
           if (lmgmt->run_proxy) {
@@ -1024,9 +1035,9 @@ LocalManager::listenForProxy()
 
     if ((listen(p.m_fd, backlog)) < 0) {
       mgmt_fatal(errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%s)\n", p.m_port,
-                 ats_ip_family_name(p.m_family));
+                 ats_ip_family_name(p.m_family).ptr());
     }
-    mgmt_log("[LocalManager::listenForProxy] Listening on port: %d (%s)\n", p.m_port, ats_ip_family_name(p.m_family));
+    mgmt_log("[LocalManager::listenForProxy] Listening on port: %d (%s)\n", p.m_port, ats_ip_family_name(p.m_family).ptr());
   }
   return;
 }

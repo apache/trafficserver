@@ -49,57 +49,70 @@ instance, the function that retrieves the host portion of a URL is named
 To facilitate fast comparisons and reduce storage size, Traffic Server
 defines several preallocated scheme names.
 
-``TS_URL_SCHEME_FILE``
-    "file"
-    ``TS_URL_LEN_FILE``
+.. c:var:: TS_URL_SCHEME_FILE
+   "file"
 
-``TS_URL_SCHEME_FTP``
-    "ftp"
-    ``TS_URL_LEN_FTP``
+.. c:var:: TS_URL_LEN_FILE
 
-``TS_URL_SCHEME_GOPHER``
-    "gopher"
-    ``TS_URL_LEN_GOPHER``
+.. c:var:: TS_URL_SCHEME_FTP
+   "ftp"
 
-``TS_URL_SCHEME_HTTP``
-    "http"
-    ``TS_URL_LEN_HTTP``
+.. c:var:: TS_URL_LEN_FTP
 
-``TS_URL_SCHEME_HTTPS``
-    "https"
-    ``TS_URL_LEN_HTTPS``
+.. c:var:: TS_URL_SCHEME_GOPHER
+   "gopher"
 
-``TS_URL_SCHEME_MAILTO``
-    "mailto"
-    ``TS_URL_LEN_MAILTO``
+.. c:var:: TS_URL_LEN_GOPHER
 
-``TS_URL_SCHEME_NEWS``
-    "news"
-    ``TS_URL_LEN_NEWS``
+.. c:var:: TS_URL_SCHEME_HTTP
+   "http"
 
-``TS_URL_SCHEME_NNTP``
-    "nntp"
-    ``TS_URL_LEN_NNTP``
+.. c:var:: TS_URL_LEN_HTTP
 
-``TS_URL_SCHEME_PROSPERO``
-    "prospero"
-    ``TS_URL_LEN_PROSPERO``
+.. c:var:: TS_URL_SCHEME_HTTPS
+   "https"
 
-``TS_URL_SCHEME_TELNET``
-    "telnet"
-    ``TS_URL_LEN_TELNET``
+.. c:var:: TS_URL_LEN_HTTPS
 
-``TS_URL_SCHEME_WAIS``
-    "wais"
-    ``TS_URL_LEN_WAIS``
+.. c:var:: TS_URL_SCHEME_MAILTO
+   "mailto"
 
-``TS_URL_SCHEME_WS``
-    "ws"
-    ``TS_URL_LEN_WS``
+.. c:var:: TS_URL_LEN_MAILTO
 
-``TS_URL_SCHEME_WSS``
-    "wss"
-    ``TS_URL_LEN_WSS``
+.. c:var:: TS_URL_SCHEME_NEWS
+   "news"
+
+.. c:var:: TS_URL_LEN_NEWS
+
+.. c:var:: TS_URL_SCHEME_NNTP
+   "nntp"
+
+.. c:var:: TS_URL_LEN_NNTP
+
+.. c:var:: TS_URL_SCHEME_PROSPERO
+   "prospero"
+
+.. c:var:: TS_URL_LEN_PROSPERO
+
+.. c:var:: TS_URL_SCHEME_TELNET
+   "telnet"
+
+.. c:var:: TS_URL_LEN_TELNET
+
+.. c:var:: TS_URL_SCHEME_WAIS
+   "wais"
+
+.. c:var:: TS_URL_LEN_WAIS
+
+.. c:var:: TS_URL_SCHEME_WS
+   "ws"
+
+.. c:var:: TS_URL_LEN_WS
+
+.. c:var:: TS_URL_SCHEME_WSS
+   "wss"
+
+.. c:var:: TS_URL_LEN_WSS
 
 The scheme names above are defined in ``ts.h`` as ``const`` ``char*``
 strings. When Traffic Server sets the scheme portion of the URL (or any

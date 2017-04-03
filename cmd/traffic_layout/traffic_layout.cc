@@ -77,8 +77,16 @@ produce_features(bool json)
   print_feature("BUILD_PERSON", BUILD_PERSON, json);
   print_feature("BUILD_GROUP", BUILD_GROUP, json);
   print_feature("BUILD_NUMBER", BUILD_NUMBER, json);
-  print_feature("TS_HAS_LIBZ", TS_HAS_LIBZ, json);
-  print_feature("TS_HAS_LZMA", TS_HAS_LZMA, json);
+#ifdef HAVE_ZLIB_H
+  print_feature("TS_HAS_LIBZ", 1, json);
+#else
+  print_feature("TS_HAS_LIBZ", 0, json);
+#endif
+#ifdef HAVE_LZMA_H
+  print_feature("TS_HAS_LZMA", 1, json);
+#else
+  print_feature("TS_HAS_LZMA", 0, json);
+#endif
   print_feature("TS_HAS_JEMALLOC", TS_HAS_JEMALLOC, json);
   print_feature("TS_HAS_TCMALLOC", TS_HAS_TCMALLOC, json);
   print_feature("TS_HAS_IN6_IS_ADDR_UNSPECIFIED", TS_HAS_IN6_IS_ADDR_UNSPECIFIED, json);
@@ -103,8 +111,7 @@ produce_features(bool json)
   print_feature("TS_USE_LINUX_NATIVE_AIO", TS_USE_LINUX_NATIVE_AIO, json);
   print_feature("TS_HAS_SO_PEERCRED", TS_HAS_SO_PEERCRED, json);
   print_feature("TS_USE_REMOTE_UNWINDING", TS_USE_REMOTE_UNWINDING, json);
-  print_feature("GETHOSTBYNAME_R_GLIBC2", GETHOSTBYNAME_R_GLIBC2, json);
-  print_feature("SIZEOF_VOID_POINTER", SIZEOF_VOID_POINTER, json);
+  print_feature("SIZEOF_VOIDP", SIZEOF_VOIDP, json);
   print_feature("TS_IP_TRANSPARENT", TS_IP_TRANSPARENT, json);
   print_feature("TS_HAS_128BIT_CAS", TS_HAS_128BIT_CAS, json);
   print_feature("TS_HAS_TESTS", TS_HAS_TESTS, json);
@@ -153,7 +160,7 @@ produce_layout(bool json)
   print_var("LIBDIR", Layout::get()->libdir, json, false); // Don't free this
   print_var("LOGDIR", RecConfigReadLogDir(), json);
   print_var("RUNTIMEDIR", RecConfigReadRuntimeDir(), json);
-  print_var("PLUGINDIR", RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir"), json);
+  print_var("PLUGINDIR", RecConfigReadPluginDir(), json);
   print_var("INCLUDEDIR", Layout::get()->includedir, json, false); // Dont' free this
   print_var("SNAPSHOTDIR", RecConfigReadSnapshotDir(), json);
 

@@ -112,14 +112,6 @@ LogBufferHeader::log_filename()
   return addr;
 }
 
-/*-------------------------------------------------------------------------
-  LogBuffer::LogBuffer
-
-  Initialize a LogBuffer object, which is just an AbstractBuffer object
-  with the addition of a pointer for keeping track of the LogObject object
-  that is allocating this buffer.
-  -------------------------------------------------------------------------*/
-
 LogBuffer::LogBuffer(LogObject *owner, size_t size, size_t buf_align, size_t write_align)
   : m_size(size), m_buf_align(buf_align), m_write_align(write_align), m_owner(owner), m_references(0)
 {
@@ -502,9 +494,11 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
   // LogField object, obtained from the fieldlist.
   //
 
-  LogField *field   = fieldlist->first();
-  int printf_len    = (int)::strlen(printf_str); // OPTIMIZE
-  int bytes_written = 0;
+  LogField *field     = fieldlist->first();
+  LogField *lastField = nullptr;                                // For debug message.
+  int markCount       = 0;                                      // For debug message.
+  int printf_len      = static_cast<int>(::strlen(printf_str)); // OPTIMIZE
+  int bytes_written   = 0;
   int res, i;
 
   const char *buffer_size_exceeded_msg = "Traffic Server is skipping the current log entry because its size "
@@ -512,6 +506,7 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
 
   for (i = 0; i < printf_len; i++) {
     if (printf_str[i] == LOG_FIELD_MARKER) {
+      ++markCount;
       if (field != nullptr) {
         char *to = &write_to[bytes_written];
 
@@ -615,10 +610,14 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
         }
 
         bytes_written += res;
-        field = fieldlist->next(field);
+        lastField = field;
+        field     = fieldlist->next(field);
       } else {
         Note("There are more field markers than fields;"
-             " cannot process log entry");
+             " cannot process log entry '%.*s'. Last field = '%s' printf_str='%s' pos=%d/%d count=%d alt_printf_str='%s'",
+             bytes_written, write_to, lastField == nullptr ? "*" : lastField->symbol(),
+             printf_str == nullptr ? "*NULL*" : printf_str, i, printf_len, markCount,
+             alt_printf_str == nullptr ? "*NULL*" : alt_printf_str);
         bytes_written = 0;
         break;
       }

@@ -211,7 +211,9 @@ PluginVC::main_handler(int event, void *data)
   } else if (call_event == inactive_event) {
     if (inactive_timeout_at && inactive_timeout_at < Thread::get_hrtime()) {
       process_timeout(&inactive_event, VC_EVENT_INACTIVITY_TIMEOUT);
-      call_event->cancel();
+      if (nullptr == inactive_event) {
+        call_event->cancel();
+      }
     }
   } else {
     if (call_event == sm_lock_retry_event) {
@@ -749,13 +751,17 @@ PluginVC::process_timeout(Event **e, int event_to_send)
   if (closed) {
     // already closed, ignore the timeout event
     // to avoid handle_event asserting use-after-free
+    *e = nullptr;
     return;
   }
 
   if (read_state.vio.op == VIO::READ && !read_state.shutdown && read_state.vio.ntodo() > 0) {
     MUTEX_TRY_LOCK(lock, read_state.vio.mutex, (*e)->ethread);
     if (!lock.is_locked()) {
-      (*e)->schedule_in(PVC_LOCK_RETRY_TIME);
+      if (*e == active_event) {
+        // Only reschedule active_event due to inactive_event is perorid event.
+        (*e)->schedule_in(PVC_LOCK_RETRY_TIME);
+      }
       return;
     }
     *e = nullptr;
@@ -763,7 +769,10 @@ PluginVC::process_timeout(Event **e, int event_to_send)
   } else if (write_state.vio.op == VIO::WRITE && !write_state.shutdown && write_state.vio.ntodo() > 0) {
     MUTEX_TRY_LOCK(lock, write_state.vio.mutex, (*e)->ethread);
     if (!lock.is_locked()) {
-      (*e)->schedule_in(PVC_LOCK_RETRY_TIME);
+      if (*e == active_event) {
+        // Only reschedule active_event due to inactive_event is perorid event.
+        (*e)->schedule_in(PVC_LOCK_RETRY_TIME);
+      }
       return;
     }
     *e = nullptr;
@@ -928,7 +937,7 @@ PluginVC::set_tcp_init_cwnd(int /* init_cwnd ATS_UNUSED */)
 }
 
 int
-PluginVC::set_tcp_congestion_control(const char *ATS_UNUSED, int ATS_UNUSED)
+PluginVC::set_tcp_congestion_control(int ATS_UNUSED)
 {
   return -1;
 }

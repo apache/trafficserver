@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/iocore/utils \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/api \
@@ -55,8 +55,7 @@ libutils_p_la_SOURCES = \
   MgmtProcessCleanup.cc
 
 test_marshall_LDFLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
+  @AM_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
 test_marshall_SOURCES = test_marshall.cc

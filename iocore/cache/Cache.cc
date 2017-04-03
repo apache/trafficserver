@@ -57,10 +57,10 @@ static short int const CACHE_DB_MAJOR_VERSION_COMPATIBLE = 21;
 // Configuration
 
 int64_t cache_config_ram_cache_size            = AUTO_SIZE_RAM_CACHE;
-int cache_config_ram_cache_algorithm           = 0;
+int cache_config_ram_cache_algorithm           = 1;
 int cache_config_ram_cache_compress            = 0;
 int cache_config_ram_cache_compress_percent    = 90;
-int cache_config_ram_cache_use_seen_filter     = 0;
+int cache_config_ram_cache_use_seen_filter     = 1;
 int cache_config_http_max_alts                 = 3;
 int cache_config_dir_sync_frequency            = 60;
 int cache_config_permit_pinning                = 0;
@@ -801,6 +801,11 @@ CacheProcessor::diskInitialized()
       gndisks = gndisks - bad_disks;
     }
 
+    /* Practically just took all bad_disks offline so update the stats. */
+    RecSetGlobalRawStatSum(cache_rsb, cache_span_offline_stat, bad_disks);
+    RecIncrGlobalRawStat(cache_rsb, cache_span_failing_stat, -bad_disks);
+    RecSetGlobalRawStatSum(cache_rsb, cache_span_online_stat, gndisks);
+
     /* create the cachevol list only if num volumes are greater
        than 0. */
     if (config_volumes.num_volumes == 0) {
@@ -1036,12 +1041,12 @@ CacheProcessor::cacheInitialized()
       case CACHE_COMPRESSION_FASTLZ:
         break;
       case CACHE_COMPRESSION_LIBZ:
-#if !TS_HAS_LIBZ
+#ifndef HAVE_ZLIB_H
         Fatal("libz not available for RAM cache compression");
 #endif
         break;
       case CACHE_COMPRESSION_LIBLZMA:
-#if !TS_HAS_LZMA
+#ifndef HAVE_LZMA_H
         Fatal("lzma not available for RAM cache compression");
 #endif
         break;
@@ -1429,6 +1434,7 @@ Vol::handle_dir_clear(int event, void *data)
     op = (AIOCallback *)data;
     if ((size_t)op->aio_result != (size_t)op->aiocb.aio_nbytes) {
       Warning("unable to clear cache directory '%s'", hash_text.get());
+      disk->incrErrors(op);
       fd = -1;
     }
 
@@ -1548,6 +1554,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
   } else if (event == AIO_EVENT_DONE) {
     if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
       Warning("disk read error on recover '%s', clearing", hash_text.get());
+      disk->incrErrors(&io);
       goto Lclear;
     }
     if (io.aiocb.aio_offset == header->last_write_pos) {
@@ -1991,8 +1998,8 @@ Cache::vol_initialized(bool result)
 /** Set the state of a disk programmatically.
 */
 bool
-CacheProcessor::mark_storage_offline(CacheDisk *d ///< Target disk
-                                     )
+CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
+                                     bool admin)
 {
   bool zret; // indicates whether there's any online storage left.
   int p;
@@ -2021,6 +2028,11 @@ CacheProcessor::mark_storage_offline(CacheDisk *d ///< Target disk
   RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -total_bytes_delete);
   RecIncrGlobalRawStat(cache_rsb, cache_direntries_total_stat, -total_dir_delete);
   RecIncrGlobalRawStat(cache_rsb, cache_direntries_used_stat, -used_dir_delete);
+
+  /* Update the span metrics, if failing then move the span from "failing" to "offline" bucket
+   * if operator took it offline, move it from "online" to "offline" bucket */
+  RecIncrGlobalRawStat(cache_rsb, admin ? cache_span_online_stat : cache_span_failing_stat, -1);
+  RecIncrGlobalRawStat(cache_rsb, cache_span_offline_stat, 1);
 
   if (theCache) {
     rebuild_host_table(theCache);
@@ -2079,7 +2091,7 @@ AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data
 
     if (d->fd == cb->aiocb.aio_fildes) {
       char message[256];
-      d->num_errors++;
+      d->incrErrors(cb);
 
       if (!DISK_BAD(d)) {
         snprintf(message, sizeof(message), "Error accessing Disk %s [%d/%d]", d->path, d->num_errors, cache_config_max_disk_errors);
@@ -3182,6 +3194,11 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
   REG_INT("sync.count", cache_directory_sync_count_stat);
   REG_INT("sync.bytes", cache_directory_sync_bytes_stat);
   REG_INT("sync.time", cache_directory_sync_time_stat);
+  REG_INT("span.errors.read", cache_span_errors_read_stat);
+  REG_INT("span.errors.write", cache_span_errors_write_stat);
+  REG_INT("span.failing", cache_span_failing_stat);
+  REG_INT("span.offline", cache_span_offline_stat);
+  REG_INT("span.online", cache_span_online_stat);
 }
 
 void
@@ -3268,10 +3285,9 @@ ink_cache_init(ModuleVersion v)
 
   REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
 
-  const char *err = nullptr;
-  if ((err = theCacheStore.read_config())) {
-    printf("Failed to read cache storage configuration - %s\n", err);
-    exit(1);
+  Result result = theCacheStore.read_config();
+  if (result.failed()) {
+    Fatal("Failed to read cache storage configuration: %s", result.message());
   }
 }
 

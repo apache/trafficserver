@@ -9,15 +9,15 @@ Version 0.1 (04/20/10)
 
 Upload proxy specs for phase I:
 
-1. Memory buffering (buffer the entire POST data in IOBuffer before connecting to OS) 
+1. Memory buffering (buffer the entire POST data in IOBuffer before connecting to OS)
   1.1. Memory buffer size is configured with "mem_buffer_size" in config file. Default and minimum value is 32K
        You can increase it in the config file. If a request's size is larger than "mem_buffer_size" specifiied
        in config file, then the upload proxy feature will be disabled for this particular request
 
-2. Disk buffering (buffer the entire POST data on disk before connecting to OS) 
+2. Disk buffering (buffer the entire POST data on disk before connecting to OS)
   2.1. Use disk async IO. This involved some changes in ATS core
     . new APIs wrapping around ink_aio_read() and ink_aio_write()
-    . change to distinguish between api call's AIO and cache's AIO 
+    . change to distinguish between api call's AIO and cache's AIO
     . guarantee api call's AIO only involves certain amount of threads
     . the number of threads is configurable in plugin's config file (default is 4)
 
@@ -37,7 +37,7 @@ Upload proxy specs for phase I:
   4.1. certain URLs will be provided in a plain text file (one URL each line)
   4.2. specify filename in config file by "url_list_file"
   4.3. max length of each URL: 4096 (configurable in config file)
-  4.4. use exact match, don't support regex for now 
+  4.4. use exact match, don't support regex for now
 
 5. URL conversion for Mail's specific URL format
   5.1. for now check if the "host" part in the URL is same as the proxy server name, then will do this conversion

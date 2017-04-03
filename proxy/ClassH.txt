@@ -1,5 +1,5 @@
-        
-        
+
+
              Thread      { thread_key, processor }
 
                |
@@ -9,35 +9,35 @@
                           DLL<EventContinuation> timeout_events,
                           DLL<EventContinuation> free_events
                         }
-  
+
                |
                |
 
            IOThread     { DLL<IOVConnection> io_events,
                           DLL<Connection>     free_connections;
                         }
-               
+
            /     \
           /       \
     DNSThread   AcceptThread
 
-                
-      
+
+
 
 
 
              VConnection
-    
+
                   |
                   |
 
            EventContinuation
-     
+
                 /         \
                /           \
 
         IOVConnection   DNSEntry
-      
+
            /    \    \
           /      \    \
                   \    \
@@ -50,7 +50,7 @@ DiskIOVConnection  \    \
 
 
          Processor
-             
+
              |
              |
        EventProcessor
@@ -63,18 +63,18 @@ DiskIOVConnection  \    \
          /     \
         /       \
                  \
- DiskProcessor    
+ DiskProcessor
           NetProcessor
-          
+
                 |
                 |
-                
+
           DNSProcessor
-          
 
 
 
-                    
+
+
 class VConnection:
 ==================
 vio_queue : queue of io operations.

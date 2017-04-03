@@ -30,7 +30,7 @@ TESTS = \
   tests/test_logstats_json \
   tests/test_logstats_summary
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_srcdir)/http \
@@ -41,16 +41,13 @@ AM_CPPFLAGS = \
   -I$(abs_srcdir)/shared \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/proxy/api/ts \
   -I$(abs_top_srcdir)/lib \
   @OPENSSL_INCLUDES@
 
 # NOTE: it is safe to use AM_LDFLAGS here because we are only building executables. If we start
 # building libtool archives, change these to only apply to the executables.
-AM_LDFLAGS = \
+AM_LDFLAGS += \
   $(LUAJIT_LDFLAGS) \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
   @OPENSSL_LDFLAGS@
 
 noinst_HEADERS = \
@@ -128,8 +125,6 @@ LUAJIT = \
 EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
 
 traffic_server_SOURCES = \
-  AbstractBuffer.cc \
-  AbstractBuffer.h \
   CacheControl.cc \
   CacheControl.h \
   ControlBase.cc \
@@ -189,8 +184,6 @@ traffic_server_SOURCES +=  \
   RegressionSM.cc
 endif
 
-traffic_server_LDFLAGS = $(AM_LDFLAGS)
-
 traffic_server_LDADD = \
   http/libhttp.a \
   http2/libhttp2.a \
@@ -210,8 +203,14 @@ traffic_server_LDADD = \
   $(top_builddir)/iocore/cache/libinkcache.a \
   $(top_builddir)/iocore/aio/libinkaio.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/lib/bindings/libbindings.la \
-  $(top_builddir)/lib/luajit/src/libluajit.a \
+  $(top_builddir)/lib/bindings/libbindings.la
+
+if BUILD_LUAJIT
+traffic_server_LDADD += \
+  $(top_builddir)/lib/luajit/src/libluajit.a
+endif
+
+traffic_server_LDADD += \
   $(top_builddir)/iocore/net/libinknet.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
@@ -219,7 +218,6 @@ traffic_server_LDADD = \
   @HWLOC_LIBS@ \
   @LIBPCRE@ \
   @LIBTCL@ \
-  @LIBCAP@ \
   @LIBRESOLV@ \
   @LIBZ@ \
   @LIBLZMA@ \
@@ -227,7 +225,13 @@ traffic_server_LDADD = \
   @OPENSSL_LIBS@ \
   -lm
 
+if BUILD_LUAJIT
 traffic_server_LDADD += $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%)
+endif
+
+if SYSTEM_LUAJIT
+traffic_server_LDADD += @LIBLUAJIT@
+endif
 
 traffic_logcat_SOURCES = logcat.cc
 traffic_logcat_LDADD = \
@@ -238,10 +242,20 @@ traffic_logcat_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/lib/bindings/libbindings.la \
-  $(top_builddir)/lib/luajit/src/libluajit.a \
-  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@\
+  $(top_builddir)/lib/bindings/libbindings.la
+
+if BUILD_LUAJIT
+traffic_logcat_LDADD += \
+  $(top_builddir)/lib/luajit/src/libluajit.a
+endif
+
+traffic_logcat_LDADD += \
+  @LIBTCL@ @HWLOC_LIBS@\
   @LIBPROFILER@ -lm
+
+if SYSTEM_LUAJIT
+traffic_logcat_LDADD += @LIBLUAJIT@
+endif
 
 traffic_logstats_SOURCES = logstats.cc
 traffic_logstats_LDADD = \
@@ -252,10 +266,20 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/lib/bindings/libbindings.la \
-  $(top_builddir)/lib/luajit/src/libluajit.a \
-  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@ \
+  $(top_builddir)/lib/bindings/libbindings.la
+
+if BUILD_LUAJIT
+traffic_logstats_LDADD += \
+  $(top_builddir)/lib/luajit/src/libluajit.a
+endif
+
+traffic_logstats_LDADD += \
+  @LIBTCL@ @HWLOC_LIBS@ \
   @LIBPROFILER@ -lm
+
+if SYSTEM_LUAJIT
+traffic_logstats_LDADD += @LIBLUAJIT@
+endif
 
 versiondir = $(pkgsysconfdir)
 

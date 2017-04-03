@@ -14,7 +14,7 @@
 --  See the License for the specific language governing permissions and
 --  limitations under the License.
 
-ts.hook(TS_LUA_HOOK_READ_REQUEST_HDR, 
+ts.hook(TS_LUA_HOOK_READ_REQUEST_HDR,
     function()
        ts.debug('read_request')
        return 0

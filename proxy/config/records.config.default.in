@@ -173,7 +173,7 @@ CONFIG proxy.config.ssl.server.cipher_suite STRING ECDHE-ECDSA-AES256-GCM-SHA384
 #    https://docs.trafficserver.apache.org/records.config#diagnostic-logging-configuration
 ##############################################################################
 CONFIG proxy.config.diags.debug.enabled INT 0
-CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
+CONFIG proxy.config.diags.debug.tags STRING http|dns
 # ToDo: Undocumented
 CONFIG proxy.config.dump_mem_info_frequency INT 0
 CONFIG proxy.config.http.slow.log.threshold INT 0

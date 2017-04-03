@@ -98,6 +98,7 @@ typedef struct {
   int _last : 1;  // create current instance for the last ts_lua_main_ctx
 
   int remap;
+  int states;
 } ts_lua_instance_conf;
 
 /* lua state for http request */

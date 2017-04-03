@@ -71,7 +71,7 @@ LogAccessHttp::LogAccessHttp(HttpSM *sm)
     m_proxy_resp_content_type_str(nullptr),
     m_proxy_resp_content_type_len(0),
     m_cache_lookup_url_canon_str(nullptr),
-    m_cache_lookup_url_canon_len(0)
+    m_cache_lookup_url_canon_len(-1)
 {
   ink_assert(m_http_sm != nullptr);
 }
@@ -269,9 +269,14 @@ LogAccessHttp::marshal_cache_lookup_url_canon(char *buf)
   int len = INK_MIN_ALIGN;
 
   validate_lookup_url();
-  len = round_strlen(m_cache_lookup_url_canon_len + 1); // +1 for eos
-  if (buf) {
-    marshal_mem(buf, m_cache_lookup_url_canon_str, m_cache_lookup_url_canon_len, len);
+  if (0 >= m_cache_lookup_url_canon_len) {
+    // If the lookup URL isn't populated, we'll fall back to the request URL.
+    len = marshal_client_req_url_canon(buf);
+  } else {
+    len = round_strlen(m_cache_lookup_url_canon_len + 1); // +1 for eos
+    if (buf) {
+      marshal_mem(buf, m_cache_lookup_url_canon_str, m_cache_lookup_url_canon_len, len);
+    }
   }
 
   return len;
@@ -775,10 +780,8 @@ LogAccessHttp::marshal_client_req_id(char *buf)
 int
 LogAccessHttp::marshal_client_req_uuid(char *buf)
 {
-  static unsigned _MAX_CRUUID_LEN = TS_UUID_STRING_LEN + 1 + 20; // 20 == max len of int64_t
-
   if (buf) {
-    char str[_MAX_CRUUID_LEN + 1];
+    char str[TS_CRUUID_STRING_LEN + 1];
     const char *uuid = (char *)Machine::instance()->uuid.getString();
     int len;
 
@@ -790,7 +793,7 @@ LogAccessHttp::marshal_client_req_uuid(char *buf)
     return len;
   }
 
-  return round_strlen(_MAX_CRUUID_LEN + 1);
+  return round_strlen(TS_CRUUID_STRING_LEN + 1);
 }
 
 /*-------------------------------------------------------------------------

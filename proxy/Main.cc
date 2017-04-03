@@ -38,7 +38,10 @@
 #include "ts/ink_syslog.h"
 #include "ts/hugepages.h"
 
+#include "api/ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
+
 #include <syslog.h>
+#include <algorithm>
 
 #if !defined(linux)
 #include <sys/lock.h>
@@ -180,7 +183,7 @@ static volatile int delay_listen_for_cache_p = 0;
 
 AppVersionInfo appVersionInfo; // Build info for this application
 
-static const ArgumentDescription argument_descriptions[] = {
+static ArgumentDescription argument_descriptions[] = {
   {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", nullptr},
   {"cluster_threads", 'Z', "Number of Cluster Threads", "I", &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", nullptr},
   {"udp_threads", 'U', "Number of UDP Threads", "I", &num_of_udp_threads, "PROXY_UDP_THREADS", nullptr},
@@ -207,7 +210,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"command", 'C', "Maintenance Command to Execute\n"
                    "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, help",
    "S511", &command_string, "PROXY_COMMAND_STRING", nullptr},
-  {"conf_dir", 'D', "config dir to verify", "S511", &conf_dir, "PROXY_SYS_CONFIG_DIR", nullptr},
+  {"conf_dir", 'D', "config dir to verify", "S511", &conf_dir, "PROXY_CONFIG_CONFIG_DIR", nullptr},
   {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", nullptr},
   {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", nullptr},
   {"bind_stdout", '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", nullptr},
@@ -349,7 +352,11 @@ public:
 class MemoryLimit : public Continuation
 {
 public:
-  MemoryLimit() : Continuation(new_ProxyMutex()), _memory_limit(0) { SET_HANDLER(&MemoryLimit::periodic); }
+  MemoryLimit() : Continuation(new_ProxyMutex()), _memory_limit(0)
+  {
+    memset(&_usage, 0, sizeof(_usage));
+    SET_HANDLER(&MemoryLimit::periodic);
+  }
   ~MemoryLimit() { mutex = NULL; }
   int
   periodic(int event, Event *e)
@@ -593,8 +600,10 @@ cmd_list(char * /* cmd ATS_UNUSED */)
 
   Note("Cache Storage:");
   Store tStore;
-  if (tStore.read_config() != nullptr) {
-    Note("config read failure");
+  Result result = tStore.read_config();
+
+  if (result.failed()) {
+    Note("Failed to read cache storage configuration: %s", result.message());
     return CMD_FAILED;
   } else {
     tStore.write_config_data(fileno(stdout));
@@ -1522,6 +1531,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   Layout::create();
   chdir_root(); // change directory to the install root of traffic server.
 
+  std::sort(argument_descriptions, argument_descriptions + countof(argument_descriptions),
+            [](ArgumentDescription const &a, ArgumentDescription const &b) { return 0 > strcasecmp(a.name, b.name); });
+
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
   command_flag  = command_flag || *command_string;
   command_index = find_cmd_index(command_string);
@@ -1994,7 +2006,7 @@ mgmt_storage_device_cmd_callback(void *data, char *arg, int len)
     switch (cmd) {
     case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:
       Debug("server", "Marking %.*s offline", len, arg);
-      cacheProcessor.mark_storage_offline(d);
+      cacheProcessor.mark_storage_offline(d, /* admin */ true);
       break;
     }
   }

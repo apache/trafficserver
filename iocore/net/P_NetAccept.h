@@ -44,6 +44,7 @@
 
 struct NetAccept;
 class Event;
+class SSLNextProtocolAccept;
 //
 // Default accept function
 //   Accepts as many connections as possible, returning the number accepted
@@ -80,13 +81,16 @@ struct NetAcceptAction : public Action, public RefCountObj {
 // Handles accepting connections.
 //
 struct NetAccept : public Continuation {
-  ink_hrtime period;
+  ink_hrtime period = 0;
   Server server;
-  AcceptFunctionPtr accept_fn;
-  int ifd;
+  AcceptFunctionPtr accept_fn = nullptr;
+  int ifd                     = NO_FD;
+  int id                      = -1;
   Ptr<NetAcceptAction> action_;
+  SSLNextProtocolAccept *snpa = nullptr;
   EventIO ep;
 
+  HttpProxyPort *proxyPort = nullptr;
   NetProcessor::AcceptOptions opt;
 
   virtual NetProcessor *getNetProcessor() const;

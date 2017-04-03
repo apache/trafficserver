@@ -235,6 +235,9 @@ static const std::set<std::string> epic_gauges = {
   "proxy.process.update.state_machines",
   "proxy.process.version.server.build_time",
   "proxy.process.websocket.current_active_client_connections",
+  "proxy.process.cache.span.failing",
+  "proxy.process.cache.span.offline",
+  "proxy.process.cache.span.online",
 };
 
 struct epic_sample_context {

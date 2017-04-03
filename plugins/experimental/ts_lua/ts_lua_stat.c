@@ -23,8 +23,9 @@ typedef enum {
   TS_LUA_STAT_NON_PERSISTENT = TS_STAT_NON_PERSISTENT
 } TSLuaStatPersistentType;
 
-ts_lua_var_item ts_lua_stat_persistent_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_PERSISTENT),
-                                                 TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_NON_PERSISTENT)};
+static const ts_lua_var_item ts_lua_stat_persistent_vars[] = {
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_PERSISTENT), TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_NON_PERSISTENT),
+};
 
 typedef enum {
   TS_LUA_STAT_SYNC_SUM     = TS_STAT_SYNC_SUM,
@@ -33,15 +34,18 @@ typedef enum {
   TS_LUA_STAT_SYNC_TIMEAVG = TS_STAT_SYNC_TIMEAVG
 } TSLuaStatSyncType;
 
-ts_lua_var_item ts_lua_stat_sync_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_SUM), TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_COUNT),
-                                           TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_AVG),
-                                           TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_TIMEAVG)};
+static const ts_lua_var_item ts_lua_stat_sync_vars[] = {
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_SUM), TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_COUNT),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_AVG), TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_TIMEAVG),
+};
 
 typedef enum {
   TS_LUA_RECORDDATATYPE_INT = TS_RECORDDATATYPE_INT,
 } TSLuaStatRecordType;
 
-ts_lua_var_item ts_lua_stat_record_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_RECORDDATATYPE_INT)};
+static const ts_lua_var_item ts_lua_stat_record_vars[] = {
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_RECORDDATATYPE_INT),
+};
 
 static void ts_lua_inject_stat_variables(lua_State *L);
 

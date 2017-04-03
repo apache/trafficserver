@@ -23,7 +23,7 @@ Blacklist Plugin
 ****************
 
 The sample blacklisting plugin included in the Traffic Server SDK is
-``blacklist-1.c``. This plugin checks every incoming HTTP client request
+``blacklist_1.c``. This plugin checks every incoming HTTP client request
 against a list of blacklisted web sites. If the client requests a
 blacklisted site, then the plugin returns an ``Access forbidden``
 message to the client.
@@ -52,7 +52,7 @@ Traffic Server has a multi-threaded design, race conditions can occur if
 several threads try to access the same continuation's data.
 
 Here is how the static parent continuation is created in
-``blacklist-1.c``:
+``blacklist_1.c``:
 
 .. code-block:: c
 
@@ -61,7 +61,7 @@ Here is how the static parent continuation is created in
    {
       // ...
       TSCont contp;
-          
+
       contp = TSContCreate (blacklist_plugin, NULL);
       // ...
    }

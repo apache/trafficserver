@@ -33,6 +33,7 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 #include <ts/apidefs.h>
+#include <ts/MemView.h>
 
 #define CONNECT_SUCCESS 1
 #define CONNECT_FAILURE 0
@@ -178,6 +179,10 @@ struct NetVCOptions {
    */
   ats_scoped_str sni_servername;
 
+  /**
+   * Client certificate to use in response to OS's certificate request
+   */
+  ats_scoped_str clientCertificate;
   /// Reset all values to defaults.
   void reset();
 
@@ -202,24 +207,36 @@ struct NetVCOptions {
     }
     return *this;
   }
+  self &
+  set_client_certname(const char *name)
+  {
+    clientCertificate = ats_strdup(name);
+    // clientCertificate = name;
+    return *this;
+  }
 
   self &
   operator=(self const &that)
   {
     if (&that != this) {
-      sni_servername = nullptr; // release any current name.
+      sni_servername    = nullptr; // release any current name.
+      clientCertificate = nullptr;
       memcpy(this, &that, sizeof(self));
       if (that.sni_servername) {
         sni_servername.release(); // otherwise we'll free the source string.
         this->sni_servername = ats_strdup(that.sni_servername);
       }
+      if (that.clientCertificate) {
+        clientCertificate.release();
+        this->clientCertificate = ats_strdup(that.clientCertificate);
+      }
     }
     return *this;
   }
 
-  const char *get_family_string() const;
+  ts::StringView get_family_string() const;
 
-  const char *get_proto_string() const;
+  ts::StringView get_proto_string() const;
 
   /// @name Debugging
   //@{
@@ -244,7 +261,7 @@ class NetVConnection : public VConnection
 public:
   // How many bytes have been queued to the OS for sending by haven't been sent yet
   // Not all platforms support this, and if they don't we'll return -1 for them
-  virtual const int64_t
+  virtual int64_t
   outstanding()
   {
     return -1;
@@ -575,7 +592,7 @@ public:
   virtual int set_tcp_init_cwnd(int init_cwnd) = 0;
 
   /** Set the TCP congestion control algorithm */
-  virtual int set_tcp_congestion_control(const char *name, int len) = 0;
+  virtual int set_tcp_congestion_control(int side) = 0;
 
   /** Set local sock addr struct. */
   virtual void set_local_addr() = 0;
@@ -610,13 +627,13 @@ public:
   }
 
   virtual int
-  populate_protocol(const char **results, int n) const
+  populate_protocol(ts::StringView *results, int n) const
   {
     return 0;
   }
 
   virtual const char *
-  protocol_contains(const char *tag) const
+  protocol_contains(ts::StringView prefix) const
   {
     return nullptr;
   }

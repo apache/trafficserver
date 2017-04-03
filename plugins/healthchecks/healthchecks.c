@@ -313,7 +313,7 @@ parse_configs(const char *fname)
   } else {
     char filename[PATH_MAX + 1];
 
-    snprintf(filename, sizeof(filename), "%s/%s", fname, TSConfigDirGet());
+    snprintf(filename, sizeof(filename), "%s/%s", TSConfigDirGet(), fname);
     fd = fopen(filename, "r");
   }
 

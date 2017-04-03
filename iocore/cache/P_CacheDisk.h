@@ -140,6 +140,7 @@ struct CacheDisk : public Continuation {
   int delete_all_volumes();
   void update_header();
   DiskVol *get_diskvol(int vol_number);
+  void incrErrors(const AIOCallback *io);
 };
 
 #endif

@@ -21,7 +21,7 @@ include $(top_srcdir)/build/tidy.mk
 
 SUBDIRS = include
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_top_srcdir)/mgmt \

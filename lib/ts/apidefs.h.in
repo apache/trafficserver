@@ -288,7 +288,8 @@ typedef enum {
   TS_VCONN_PRE_ACCEPT_HOOK = TS_SSL_FIRST_HOOK,
   TS_SSL_SNI_HOOK,
   TS_SSL_CERT_HOOK = TS_SSL_SNI_HOOK,
-  TS_SSL_LAST_HOOK = TS_SSL_CERT_HOOK,
+  TS_SSL_SERVERNAME_HOOK,
+  TS_SSL_LAST_HOOK = TS_SSL_SERVERNAME_HOOK,
   TS_HTTP_LAST_HOOK
 } TSHttpHookID;
 
@@ -448,7 +449,8 @@ typedef enum {
   TS_EVENT_INTERNAL_60200                       = 60200,
   TS_EVENT_INTERNAL_60201                       = 60201,
   TS_EVENT_INTERNAL_60202                       = 60202,
-  TS_EVENT_SSL_CERT                             = 60203
+  TS_EVENT_SSL_CERT                             = 60203,
+  TS_EVENT_SSL_SERVERNAME                       = 60204
 } TSEvent;
 #define TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP TS_EVENT_HTTP_PRE_REMAP /* backwards compat */
 
@@ -734,6 +736,7 @@ typedef enum {
   TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES,
   TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY,
   TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT,
+  TS_CONFIG_HTTP_SAFE_REQUESTS_RETRYABLE,
   TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE,
   TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT,
   TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT,
@@ -742,6 +745,9 @@ typedef enum {
   TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN,
   TS_CONFIG_SRV_ENABLED,
   TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD,
+  TS_CONFIG_SSL_CERT_FILENAME,
+  TS_CONFIG_SSL_CERT_FILEPATH,
+  TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 
@@ -807,7 +813,6 @@ typedef enum {
   TS_MGMT_SOURCE_ENV       ///< Process environment variable.
 } TSMgmtSource;
 
-
 typedef struct tsapi_file *TSFile;
 
 typedef struct tsapi_mloc *TSMLoc;
@@ -837,6 +842,8 @@ typedef struct tsapi_bufferblock *TSIOBufferBlock;
 typedef struct tsapi_bufferreader *TSIOBufferReader;
 typedef struct tsapi_hostlookupresult *TSHostLookupResult;
 typedef struct tsapi_aiocallback *TSAIOCallback;
+typedef struct tsapi_net_accept *TSAcceptor;
+typedef struct tsapi_protocol_set *TSNextProtocolSet;
 
 typedef void *(*TSThreadFunc)(void *data);
 typedef int (*TSEventFunc)(TSCont contp, TSEvent event, void *edata);
@@ -1190,6 +1197,7 @@ typedef enum {
 } TSUuidVersion;
 
 #define TS_UUID_STRING_LEN 36
+#define TS_CRUUID_STRING_LEN (TS_UUID_STRING_LEN + 20 + 1) /* UUID-len + len(int64_t) + '-' */
 typedef struct tsapi_uuid *TSUuid;
 
 #ifdef __cplusplus

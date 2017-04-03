@@ -71,6 +71,9 @@
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
+#ifdef HAVE_ARPA_NAMESER_COMPAT_H
+#include <arpa/nameser_compat.h>
+#endif
 #include <netdb.h>
 #include <resolv.h>
 #include <stdio.h>
@@ -141,7 +144,7 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
     if (n < 0)
       return (-1);
     cp += n;
-    NS_PUT16(ns_t_null, cp);
+    NS_PUT16(T_NULL, cp);
     NS_PUT16(_class, cp);
     NS_PUT32(0, cp);
     NS_PUT16(0, cp);

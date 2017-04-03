@@ -10,9 +10,9 @@ Combo Handler Plugin
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -83,3 +83,16 @@ results in these file paths being "reconstructed"::
     /dir:path2/file5
     /dir:path2/file6
 
+Caching
+=======
+Combohandler follows a few rules for the "Cache-Control" header:
+
+1) All requested documents must have "immutable" for the combo'd
+   response to also have "immutable".
+
+2) [Feature gated for 8.0 release] If one or more requested documents has "private" set,
+   then the combo'd response will also have "private". If no requested documents have a
+   publicity setting, then the default is "public".
+
+3) The "max-age" value will be set to the smallest of all the requested "max-age"
+   values. If no documents has "max-age" set, then the default is 10 years.

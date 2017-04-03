@@ -104,20 +104,24 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
       Debug("cluster_note", "[Machine::Machine] Cluster IP addr: %s", clusterIP);
       ip = inet_addr(clusterIP);
     } else {
-      ink_gethostbyname_r_data data;
-      struct hostent *r = ink_gethostbyname_r(ahostname, &data);
-      if (!r) {
-        Warning("unable to DNS %s: %d", ahostname, data.herrno);
+      struct addrinfo hints;
+      memset(&hints, 0, sizeof(hints));
+      hints.ai_family = AF_INET;
+      struct addrinfo *result, *rp;
+      int err = getaddrinfo(ahostname, nullptr, &hints, &result);
+      if (err != 0) {
+        Warning("unable to DNS %s: %s", ahostname, gai_strerror(err));
         ip = 0;
       } else {
         // lowest IP address
 
         ip = (unsigned int)-1; // 0xFFFFFFFF
-        for (int i = 0; r->h_addr_list[i]; i++)
-          if (ip > *(unsigned int *)r->h_addr_list[i])
-            ip = *(unsigned int *)r->h_addr_list[i];
+        for (rp = result; rp != nullptr; rp = rp->ai_next)
+          if (ip > reinterpret_cast<sockaddr_in *>(rp->ai_addr)->sin_addr.s_addr)
+            ip = reinterpret_cast<sockaddr_in *>(rp->ai_addr)->sin_addr.s_addr;
         if (ip == (unsigned int)-1)
           ip = 0;
+        freeaddrinfo(result);
       }
       // ip = htonl(ip); for the alpha!
     }
@@ -125,15 +129,18 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
   } else {
     ip = aip;
 
-    ink_gethostbyaddr_r_data data;
-    struct hostent *r = ink_gethostbyaddr_r((char *)&ip, sizeof(int), AF_INET, &data);
-
-    if (r == nullptr) {
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_addr.s_addr = ip;
+    char hbuf[NI_MAXHOST];
+    int err = getnameinfo(reinterpret_cast<sockaddr *>(&addr), sizeof(addr), hbuf, sizeof(hbuf), nullptr, 0, 0);
+    if (err != 0) {
       Alias32 x;
       memcpy(&x.u32, &ip, sizeof(x.u32));
-      Debug("machine_debug", "unable to reverse DNS %u.%u.%u.%u: %d", x.byte[0], x.byte[1], x.byte[2], x.byte[3], data.herrno);
+      Debug("machine_debug", "unable to reverse DNS %u.%u.%u.%u: %s", x.byte[0], x.byte[1], x.byte[2], x.byte[3],
+            gai_strerror(err));
     } else
-      hostname = ats_strdup(r->h_name);
+      hostname = ats_strdup(hbuf);
   }
   if (hostname)
     hostname_len = strlen(hostname);

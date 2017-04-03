@@ -10,10 +10,10 @@ Follow the steps below to use busted framework to run some unit tests on sample 
 
 4) Run "sudo luarocks install luacov"
 
-5) "cd trafficserver/plugins/experimental/ts_lua/ci" 
+5) "cd trafficserver/plugins/experimental/ts_lua/ci"
 
 6) Run "busted -c module_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage on
-"module.lua" 
+"module.lua"
 
 7) Run "busted -c script_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage on
 "script.lua"
@@ -22,6 +22,6 @@ Reference for further information
 1) Busted - http://olivinelabs.com/busted/
 
 2) Specifications for asserts/mocks/stubs/etc inside busted framework -
-https://github.com/Olivine-Labs/luassert/tree/master/spec 
+https://github.com/Olivine-Labs/luassert/tree/master/spec
 
 3) luacov - https://luarocks.org/modules/hisham/luacov

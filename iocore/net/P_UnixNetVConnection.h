@@ -36,6 +36,7 @@
 #include "I_NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
+#include "P_NetAccept.h"
 
 class UnixNetVConnection;
 class NetHandler;
@@ -66,7 +67,8 @@ NetVCOptions::reset()
 
   etype = ET_NET;
 
-  sni_servername = nullptr;
+  sni_servername    = nullptr;
+  clientCertificate = nullptr;
 }
 
 TS_INLINE void
@@ -97,17 +99,19 @@ struct OOB_callback : public Continuation {
   }
 };
 
+enum tcp_congestion_control_t { CLIENT_SIDE, SERVER_SIDE };
+
 class UnixNetVConnection : public NetVConnection
 {
 public:
-  virtual const int64_t outstanding();
-  virtual VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
-  virtual VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
+  int64_t outstanding() override;
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
 
-  virtual bool get_data(int id, void *data);
+  bool get_data(int id, void *data) override;
 
-  virtual Action *send_OOB(Continuation *cont, char *buf, int len);
-  virtual void cancel_OOB();
+  Action *send_OOB(Continuation *cont, char *buf, int len) override;
+  void cancel_OOB() override;
 
   virtual void
   setSSLHandshakeWantsRead(bool /* flag */)
@@ -131,8 +135,8 @@ public:
     return false;
   }
 
-  virtual void do_io_close(int lerrno = -1);
-  virtual void do_io_shutdown(ShutdownHowTo_t howto);
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
 
   ////////////////////////////////////////////////////////////
   // Set the timeouts associated with this connection.      //
@@ -146,21 +150,21 @@ public:
   // called when handing an  event from this NetVConnection,//
   // or the NetVConnection creation callback.               //
   ////////////////////////////////////////////////////////////
-  virtual void set_active_timeout(ink_hrtime timeout_in);
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in);
-  virtual void cancel_active_timeout();
-  virtual void cancel_inactivity_timeout();
-  virtual void set_action(Continuation *c);
-  virtual void add_to_keep_alive_queue();
-  virtual void remove_from_keep_alive_queue();
-  virtual bool add_to_active_queue();
+  void set_active_timeout(ink_hrtime timeout_in) override;
+  void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  void cancel_active_timeout() override;
+  void cancel_inactivity_timeout() override;
+  void set_action(Continuation *c) override;
+  void add_to_keep_alive_queue() override;
+  void remove_from_keep_alive_queue() override;
+  bool add_to_active_queue() override;
   virtual void remove_from_active_queue();
 
   // The public interface is VIO::reenable()
-  virtual void reenable(VIO *vio);
-  virtual void reenable_re(VIO *vio);
+  void reenable(VIO *vio) override;
+  void reenable_re(VIO *vio) override;
 
-  virtual SOCKET get_socket();
+  SOCKET get_socket() override;
 
   virtual ~UnixNetVConnection();
 
@@ -172,33 +176,31 @@ public:
   UnixNetVConnection();
 
   int
-  populate_protocol(const char **results, int n) const
+  populate_protocol(ts::StringView *results, int n) const override
   {
     int retval = 0;
-    if (n > 0) {
-      results[retval++] = options.get_proto_string();
-      if (n > 1) {
-        results[retval++] = options.get_family_string();
+    if (n > retval) {
+      if (!(results[retval] = options.get_proto_string()).isEmpty())
+        ++retval;
+      if (n > retval) {
+        if (!(results[retval] = options.get_family_string()).isEmpty())
+          ++retval;
       }
     }
     return retval;
   }
 
   const char *
-  protocol_contains(const char *tag) const
+  protocol_contains(ts::StringView tag) const override
   {
-    const char *retval   = nullptr;
-    unsigned int tag_len = strlen(tag);
-    const char *test_tag = options.get_proto_string();
-    if (strncmp(tag, test_tag, tag_len) == 0) {
-      retval = test_tag;
-    } else {
-      test_tag = options.get_family_string();
-      if (strncmp(tag, test_tag, tag_len) == 0) {
-        retval = test_tag;
+    ts::StringView retval = options.get_proto_string();
+    if (strncmp(tag.ptr(), retval.ptr(), tag.size()) != 0) {
+      retval = options.get_family_string();
+      if (strncmp(tag.ptr(), retval.ptr(), tag.size()) != 0) {
+        retval.clear();
       }
     }
-    return retval;
+    return retval.ptr();
   }
 
 private:
@@ -289,6 +291,7 @@ public:
   ink_hrtime submit_time;
   OOB_callback *oob_ptr;
   bool from_accept_thread;
+  NetAccept *accept_object;
 
   // es - origin_trace associated connections
   bool origin_trace;
@@ -307,14 +310,14 @@ public:
   virtual int populate(Connection &con, Continuation *c, void *arg);
   virtual void free(EThread *t);
 
-  virtual ink_hrtime get_inactivity_timeout();
-  virtual ink_hrtime get_active_timeout();
+  ink_hrtime get_inactivity_timeout() override;
+  ink_hrtime get_active_timeout() override;
 
-  virtual void set_local_addr();
-  virtual void set_remote_addr();
-  virtual int set_tcp_init_cwnd(int init_cwnd);
-  virtual int set_tcp_congestion_control(const char *name, int len);
-  virtual void apply_options();
+  void set_local_addr() override;
+  void set_remote_addr() override;
+  int set_tcp_init_cwnd(int init_cwnd) override;
+  int set_tcp_congestion_control(int side) override;
+  void apply_options() override;
 
   friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
 
@@ -444,20 +447,36 @@ UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
 }
 
 TS_INLINE int
-UnixNetVConnection::set_tcp_congestion_control(const char *name, int len)
+UnixNetVConnection::set_tcp_congestion_control(int side)
 {
 #ifdef TCP_CONGESTION
-  int rv = 0;
-  rv     = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<void *>(const_cast<char *>(name)), len);
-  if (rv < 0) {
-    Error("Unable to set TCP congestion control on socket %d to \"%.*s\", errno=%d (%s)", con.fd, len, name, errno,
-          strerror(errno));
+  RecString congestion_control;
+  int ret;
+
+  if (side == CLIENT_SIDE) {
+    ret = REC_ReadConfigStringAlloc(congestion_control, "proxy.config.net.tcp_congestion_control_in");
   } else {
-    Debug("socket", "Setting TCP congestion control on socket [%d] to \"%.*s\" -> %d", con.fd, len, name, rv);
+    ret = REC_ReadConfigStringAlloc(congestion_control, "proxy.config.net.tcp_congestion_control_out");
   }
-  return rv;
+
+  if (ret == REC_ERR_OKAY) {
+    int len = strlen(congestion_control);
+    if (len > 0) {
+      int rv = 0;
+      rv     = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<void *>(congestion_control), len);
+      if (rv < 0) {
+        Error("Unable to set TCP congestion control on socket %d to \"%.*s\", errno=%d (%s)", con.fd, len, congestion_control,
+              errno, strerror(errno));
+      } else {
+        Debug("socket", "Setting TCP congestion control on socket [%d] to \"%.*s\" -> %d", con.fd, len, congestion_control, rv);
+      }
+    }
+    ats_free(congestion_control);
+    return 0;
+  }
+  return -1;
 #else
-  Debug("socket", "Setting TCP congestion control %.*s is not supported on this platform.", len, name);
+  Debug("socket", "Setting TCP congestion control is not supported on this platform.");
   return -1;
 #endif
 }

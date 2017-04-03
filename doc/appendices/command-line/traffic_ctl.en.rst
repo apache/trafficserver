@@ -268,7 +268,7 @@ traffic_ctl plugin
     will receive a callback for that hook. The :arg:`TAG` and :arg:`DATA` will be available to the
     plugin hook processing. It is expected that plugins will use :arg:`TAG` to select relevant messages
     and determine the format of the :arg:`DATA`.
-    
+
 Examples
 ========
 

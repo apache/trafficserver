@@ -26,7 +26,9 @@
 #include <ts/ink_defs.h>
 #include <ts/ink_hash_table.h>
 #include <ts/Tokenizer.h>
+#include <ts/MemView.h>
 #include <strings.h>
+#include <ts/ink_inet.h>
 
 SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 
@@ -34,10 +36,10 @@ SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
    These are also used for NPN setup.
 */
 
-const char *const TS_ALPN_PROTOCOL_HTTP_0_9 = "http/0.9";
-const char *const TS_ALPN_PROTOCOL_HTTP_1_0 = "http/1.0";
-const char *const TS_ALPN_PROTOCOL_HTTP_1_1 = "http/1.1";
-const char *const TS_ALPN_PROTOCOL_HTTP_2_0 = "h2"; // HTTP/2 over TLS
+const char *const TS_ALPN_PROTOCOL_HTTP_0_9 = IP_PROTO_TAG_HTTP_0_9.ptr();
+const char *const TS_ALPN_PROTOCOL_HTTP_1_0 = IP_PROTO_TAG_HTTP_1_0.ptr();
+const char *const TS_ALPN_PROTOCOL_HTTP_1_1 = IP_PROTO_TAG_HTTP_1_1.ptr();
+const char *const TS_ALPN_PROTOCOL_HTTP_2_0 = IP_PROTO_TAG_HTTP_2_0.ptr();
 
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
@@ -45,14 +47,14 @@ const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
 const char *const TS_PROTO_TAG_HTTP_1_0 = TS_ALPN_PROTOCOL_HTTP_1_0;
 const char *const TS_PROTO_TAG_HTTP_1_1 = TS_ALPN_PROTOCOL_HTTP_1_1;
 const char *const TS_PROTO_TAG_HTTP_2_0 = TS_ALPN_PROTOCOL_HTTP_2_0;
-const char *const TS_PROTO_TAG_TLS_1_3  = "tls/1.3";
-const char *const TS_PROTO_TAG_TLS_1_2  = "tls/1.2";
-const char *const TS_PROTO_TAG_TLS_1_1  = "tls/1.1";
-const char *const TS_PROTO_TAG_TLS_1_0  = "tls/1.0";
-const char *const TS_PROTO_TAG_TCP      = "tcp";
-const char *const TS_PROTO_TAG_UDP      = "udp";
-const char *const TS_PROTO_TAG_IPV4     = "ipv4";
-const char *const TS_PROTO_TAG_IPV6     = "ipv6";
+const char *const TS_PROTO_TAG_TLS_1_3  = IP_PROTO_TAG_TLS_1_3.ptr();
+const char *const TS_PROTO_TAG_TLS_1_2  = IP_PROTO_TAG_TLS_1_2.ptr();
+const char *const TS_PROTO_TAG_TLS_1_1  = IP_PROTO_TAG_TLS_1_1.ptr();
+const char *const TS_PROTO_TAG_TLS_1_0  = IP_PROTO_TAG_TLS_1_0.ptr();
+const char *const TS_PROTO_TAG_TCP      = IP_PROTO_TAG_TCP.ptr();
+const char *const TS_PROTO_TAG_UDP      = IP_PROTO_TAG_UDP.ptr();
+const char *const TS_PROTO_TAG_IPV4     = IP_PROTO_TAG_IPV4.ptr();
+const char *const TS_PROTO_TAG_IPV6     = IP_PROTO_TAG_IPV6.ptr();
 
 InkHashTable *TSProtoTags;
 
@@ -386,7 +388,7 @@ HttpProxyPort::processOptions(const char *opts)
     if (in_ip_set_p && m_family != m_inbound_ip.family()) {
       Warning(
         "Invalid port descriptor '%s' - the inbound adddress family [%s] is not the same type as the explicit family value [%s]",
-        opts, ats_ip_family_name(m_inbound_ip.family()), ats_ip_family_name(m_family));
+        opts, ats_ip_family_name(m_inbound_ip.family()).ptr(), ats_ip_family_name(m_family).ptr());
       zret = false;
     }
   } else if (in_ip_set_p) {

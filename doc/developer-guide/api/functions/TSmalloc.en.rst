@@ -29,8 +29,8 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: void * TSmalloc(size_t size , const char * path)
-.. function:: void * TSrealloc(void * ptr , size_t size , const char * path)
+.. function:: void * TSmalloc(size_t size)
+.. function:: void * TSrealloc(void * ptr , size_t size)
 .. function:: char * TSstrdup(const char * str)
 .. function:: char * TSstrndup(const char * str, size_t size)
 .. function:: size_t TSstrlcpy(char * dst , const char * src , size_t size)
@@ -56,22 +56,22 @@ heap. Traffic Server uses :func:`TSmalloc` internally for memory allocations.
 Always use :func:`TSfree` to release memory allocated by :func:`TSmalloc`; do not use
 :code:`free`.
 
-:func:`TSstrdup` returns a pointer to a new string that is a duplicate
-of the string pointed to by str. The memory for the new string is
-allocated using :func:`TSmalloc` and should be freed by a call to
-:func:`TSfree`.  :func:`TSstrndup` returns a pointer to a new string that
-is a duplicate of the string pointed to by str and size bytes
-long. The new string will be NUL-terminated. This API is very
-useful for transforming non NUL-terminated string values returned
-by APIs such as :func:`TSMimeHdrFieldValueStringGet` into NUL-terminated
-string values. The memory for the new string is allocated using
+:func:`TSstrdup` returns a pointer to a new string that is a duplicate of the
+string pointed to by str. The memory for the new string is allocated using
 :func:`TSmalloc` and should be freed by a call to :func:`TSfree`.
+:func:`TSstrndup` returns a pointer to a new string that is a duplicate of the
+string pointed to by :arg:`str` but is at most :arg:`size` bytes long. The new
+string will be NUL-terminated. This API is very useful for transforming non
+NUL-terminated string values returned by APIs such as
+:func:`TSMimeHdrFieldValueStringGet` into NUL-terminated string values. The
+memory for the new string is allocated using :func:`TSmalloc` and should be
+freed by a call to :func:`TSfree`.
 
-:func:`TSstrlcpy` copies up to size - 1 characters from the NUL-terminated
-string src to dst, NUL-terminating the result.
+:func:`TSstrlcpy` copies up to :arg:`size` - 1 characters from the NUL-terminated
+string :arg:`src` to :arg:`dst`, NUL-terminating the result.
 
-:func:`TSstrlcat` appends the NUL-terminated string src to the end of dst. It
-will append at most size - strlen(dst) - 1 bytes, NUL-terminating the
+:func:`TSstrlcat` appends the NUL-terminated string :arg:`src` to the end of :arg:`dst`. It
+will append at most :arg:`size` - :code:`strlen(dst)` - 1 bytes, NUL-terminating the
 result.
 
 :func:`TSfree` releases the memory allocated by :func:`TSmalloc` or :func:`TSrealloc`. If

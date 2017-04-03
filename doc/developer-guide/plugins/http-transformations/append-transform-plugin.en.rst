@@ -19,23 +19,23 @@
 
 .. _developer-plugins-http-transformations-append:
 
-Append-Transform Plugin
+Append Transform Plugin
 ***********************
 
-The append-transform plugin appends text to the body of an HTTP
+The append_transform plugin appends text to the body of an HTTP
 response. It obtains this text from a file; the name of the file
 containing the append text is a parameter you specify in
 ``plugin.config``, as follows:
 
 ::
 
-    append-transform.so path/to/file
+    append_transform.so path/to/file
 
-The append-transform plugin is based on ``null-transform.c``. The only
+The append_transform plugin is based on ``null_transform.c``. The only
 difference is that after the plugin feeds the document through the
 transformation, it adds text to the response.
 
-Below is a list of the functions in ``append-transform.c``, in the order
+Below is a list of the functions in ``append_transform.c``, in the order
 they appear in the source code. Below each entry is a description of
 what the function does:
 
@@ -144,5 +144,3 @@ what the function does:
       ``TS_HTTP_READ_RESPONSE_HDR_HOOK``. In other words, it sets up a
       callback of the plugin's continuation when Traffic Server reads
       HTTP response headers.
-
-

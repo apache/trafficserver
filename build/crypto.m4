@@ -22,7 +22,7 @@ dnl
 dnl TS_CHECK_CRYPTO: look for crypto libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO], [
-  AC_SEARCH_LIBS([crypt], [crypt], [AC_SUBST([LIBCRYPT],["-lcrypt"])])
+  AC_CHECK_LIB([crypt], [crypt], [AC_SUBST([LIBCRYPT],["-lcrypt"])])
 
   AX_CHECK_OPENSSL([
     enable_crypto=yes
@@ -90,7 +90,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
-  AC_CHECK_HEADERS(openssl/tls1.h, [], [], 
+  AC_CHECK_HEADERS(openssl/tls1.h, [], [],
 [ #if HAVE_OPENSSL_SSL_H
 #include <openssl/ssl.h>
 #include <openssl/tls1.h>
@@ -168,7 +168,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
   enable_set_rbio=yes
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_MSG_CHECKING([for SSL_set_rbio])
+  AC_MSG_CHECKING([for SSL_set0_rbio])
   AC_LINK_IFELSE(
   [
     AC_LANG_PROGRAM([[
@@ -179,7 +179,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
 #include <openssl/tls1.h>
 #endif
       ]],
-      [[SSL_set_rbio(NULL, NULL);]])
+      [[SSL_set0_rbio(NULL, NULL);]])
   ],
   [
     AC_MSG_RESULT([yes])

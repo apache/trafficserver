@@ -85,6 +85,9 @@
 #define NS_PUT32 PUTLONG
 #endif
 
+#ifndef T_DNAME
+#define T_DNAME ns_t_dname
+#endif
 #define INK_RES_F_VC 0x00000001       /*%< socket is TCP */
 #define INK_RES_F_CONN 0x00000002     /*%< socket is connected */
 #define INK_RES_F_EDNS0ERR 0x00000004 /*%< EDNS0 caused errors */

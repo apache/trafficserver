@@ -41,6 +41,7 @@
 #include "InkAPIInternal.h"
 #include "../ProxyClientTransaction.h"
 #include "HdrUtils.h"
+#include <ts/MemView.h>
 //#include "AuthHttpAdapter.h"
 
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
@@ -263,9 +264,12 @@ public:
   bool is_private();
   bool is_redirect_required();
 
-  int populate_client_protocol(const char **result, int n) const;
-  const char *client_protocol_contains(const char *tag_prefix) const;
-  const char *find_proto_string(HTTPVersion version) const;
+  /// Get the protocol stack for the inbound (client, user agent) connection.
+  /// @arg result [out] Array to store the results
+  /// @arg n [in] Size of the array @a result.
+  int populate_client_protocol(ts::StringView *result, int n) const;
+  const char *client_protocol_contains(ts::StringView tag_prefix) const;
+  ts::StringView find_proto_string(HTTPVersion version) const;
 
   int64_t sm_id;
   unsigned int magic;

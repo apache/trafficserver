@@ -48,7 +48,10 @@ create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_ty
   const SSLNextProtocolSet::NextProtocolEndpoint *ep;
   unsigned char *advertised;
 
-  *npn = nullptr;
+  if (*npn) {
+    ats_free(*npn);
+    *npn = nullptr;
+  }
   *len = 0;
 
   for (ep = endpoints.head; ep != nullptr; ep = endpoints.next(ep)) {
@@ -62,7 +65,7 @@ create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_ty
   }
 
   for (ep = endpoints.head; ep != nullptr; ep = endpoints.next(ep)) {
-    Debug("ssl", "advertising protocol %s", ep->protocol);
+    Debug("ssl", "advertising protocol %s, %p", ep->protocol, ep->endpoint);
     advertised = append_protocol(ep->protocol, advertised);
   }
 
@@ -73,6 +76,19 @@ fail:
   *npn = nullptr;
   *len = 0;
   return false;
+}
+
+// copies th eprotocols but not the endpoints
+
+SSLNextProtocolSet *
+SSLNextProtocolSet::clone() const
+{
+  const SSLNextProtocolSet::NextProtocolEndpoint *ep;
+  SSLNextProtocolSet *newProtoSet = new SSLNextProtocolSet();
+  for (ep = this->endpoints.head; ep != nullptr; ep = this->endpoints.next(ep)) {
+    newProtoSet->registerEndpoint(ep->protocol, ep->endpoint);
+  }
+  return newProtoSet;
 }
 
 bool
@@ -105,7 +121,6 @@ SSLNextProtocolSet::registerEndpoint(const char *proto, Continuation *ep)
       npn   = nullptr;
       npnsz = 0;
     }
-
     create_npn_advertisement(this->endpoints, &npn, &npnsz);
 
     return true;
@@ -118,10 +133,11 @@ bool
 SSLNextProtocolSet::unregisterEndpoint(const char *proto, Continuation *ep)
 {
   for (NextProtocolEndpoint *e = this->endpoints.head; e; e = this->endpoints.next(e)) {
-    if (strcmp(proto, e->protocol) == 0 && e->endpoint == ep) {
+    if (strcmp(proto, e->protocol) == 0 && (ep == nullptr || e->endpoint == ep)) {
       // Protocol must be registered only once; no need to remove
       // any more entries.
       this->endpoints.remove(e);
+      create_npn_advertisement(this->endpoints, &npn, &npnsz);
       return true;
     }
   }

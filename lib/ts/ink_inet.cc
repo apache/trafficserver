@@ -30,60 +30,20 @@
 #include "ts/TestBox.h"
 #include "ts/TextBuffer.h"
 
-#if defined(darwin)
-extern "C" {
-struct hostent *gethostbyname_r(const char *name, struct hostent *result, char *buffer, int buflen, int *h_errnop);
-struct hostent *gethostbyaddr_r(const char *name, size_t size, int type, struct hostent *result, char *buffer, int buflen,
-                                int *h_errnop);
-}
-#endif
-
 IpAddr const IpAddr::INVALID;
 
-struct hostent *
-ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data *data)
-{
-#ifdef RENTRENT_GETHOSTBYNAME
-  struct hostent *r = gethostbyname(hostname);
-  if (r)
-    data->ent  = *r;
-  data->herrno = errno;
-
-#else // RENTRENT_GETHOSTBYNAME
-#if GETHOSTBYNAME_R_GLIBC2
-
-  struct hostent *addrp = nullptr;
-  int res               = gethostbyname_r(hostname, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp, &data->herrno);
-  struct hostent *r     = nullptr;
-  if (!res && addrp)
-    r               = addrp;
-
-#else
-  struct hostent *r = gethostbyname_r(hostname, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &data->herrno);
-#endif
-#endif
-  return r;
-}
-
-struct hostent *
-ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyaddr_r_data *data)
-{
-#if GETHOSTBYNAME_R_GLIBC2
-  struct hostent *r     = nullptr;
-  struct hostent *addrp = nullptr;
-  int res = gethostbyaddr_r((char *)ip, len, type, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp, &data->herrno);
-  if (!res && addrp)
-    r = addrp;
-#else
-#ifdef RENTRENT_GETHOSTBYADDR
-  struct hostent *r = gethostbyaddr((const void *)ip, len, type);
-
-#else
-  struct hostent *r = gethostbyaddr_r((char *)ip, len, type, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &data->herrno);
-#endif
-#endif // LINUX
-  return r;
-}
+const ts::StringView IP_PROTO_TAG_IPV4("ipv4", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_IPV6("ipv6", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_UDP("udp", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_TCP("tcp", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_TLS_1_0("tls/1.0", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_TLS_1_1("tls/1.1", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_TLS_1_2("tls/1.2", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_TLS_1_3("tls/1.3", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_HTTP_0_9("http/0.9", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_HTTP_1_0("http/1.0", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_HTTP_1_1("http/1.1", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_HTTP_2_0("h2", ts::StringView::literal); // HTTP/2 over TLS
 
 uint32_t
 ink_inet_addr(const char *s)
@@ -172,10 +132,11 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
   return zret;
 }
 
-const char *
+ts::StringView
 ats_ip_family_name(int family)
 {
-  return AF_INET == family ? "IPv4" : AF_INET6 == family ? "IPv6" : "Unspec";
+  static const ts::StringView UNSPEC("Unspec", ts::StringView::literal);
+  return AF_INET == family ? IP_PROTO_TAG_IPV4 : AF_INET6 == family ? IP_PROTO_TAG_IPV6 : UNSPEC;
 }
 
 const char *
@@ -666,14 +627,15 @@ ats_tcp_somaxconn()
 
 /* Darwin version ... */
 #if HAVE_SYSCTLBYNAME
-  if (sysctlbyname("kern.ipc.somaxconn", nullptr, nullptr, &value, sizeof(value)) == 0) {
+  size_t value_size = sizeof(value);
+  if (sysctlbyname("kern.ipc.somaxconn", &value, &value_size, nullptr, 0) == 0) {
     return value;
   }
 #endif
 
   fd = open("/proc/sys/net/ipv4/tcp_max_syn_backlog", O_RDONLY);
   if (fd != -1) {
-    textBuffer text(0);
+    TextBuffer text(0);
     text.slurp(fd);
     if (!text.empty()) {
       value = strtoul(text.bufPtr(), nullptr, 10);

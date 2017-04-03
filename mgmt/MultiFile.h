@@ -33,7 +33,7 @@
  ****************************************************************************/
 
 class ExpandingArray;
-class textBuffer;
+class TextBuffer;
 
 #if defined(NAME_MAX)
 #define FILE_NAME_MAX NAME_MAX
@@ -69,10 +69,10 @@ public:
 
 protected:
   MFresult WalkFiles(ExpandingArray *fileList);
-  void addTableEntries(ExpandingArray *fileList, textBuffer *output);
+  void addTableEntries(ExpandingArray *fileList, TextBuffer *output);
   char *newPathString(const char *s1, const char *s2);
   bool isManaged(const char *fileName);
-  void addSelectOptions(textBuffer *output, ExpandingArray *options);
+  void addSelectOptions(TextBuffer *output, ExpandingArray *options);
   char *managedDir;
   const char *dirDescript;
 };

@@ -59,20 +59,21 @@ Examples
 
 ::
 
-    #include <ts/ts.h>
+   #include <ts/ts.h>
+   #define PLUGIN_NAME "hello_world"
 
-    void
-    TSPluginInit (int argc, const char *argv[])
-    {
-        TSPluginRegistrationInfo info;
-        info.plugin_name = "hello-world";
-        info.vendor_name = "MyCompany";
-        info.support_email = "ts-api-support@MyCompany.com";
+   void
+   TSPluginInit (int argc, const char * argv[])
+   {
+      TSPluginRegistrationInfo info;
+      info.plugin_name = PLUGIN_NAME;
+      info.vendor_name = "MyCompany";
+      info.support_email = "ts-api-support@MyCompany.com";
 
-        if (TSPluginRegister(&info) != TS_SUCCESS) {
-            TSError("Plugin registration failed. 0);
-        }
-    }
+      if (TSPluginRegister(&info) != TS_SUCCESS) {
+         TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+      }
+   }
 
 See Also
 ========

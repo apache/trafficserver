@@ -466,7 +466,7 @@ sub show_logging {
   my $roll_offset_hr = get_int("proxy.config.log.rolling_offset_hr");
   my $roll_interval = get_int("proxy.config.log.rolling_interval_sec");
   my $auto_delete = get_on_off("proxy.config.log.auto_delete_rolled_files");
-  
+
   print <<__EOF
 Logging Mode ----------------------------- $logging_enabled
 
@@ -498,7 +498,7 @@ sub show_logging_stats {
   my $event_log_access = get_int("proxy.process.log.event_log_access");
   my $event_log_access_skip = get_int("proxy.process.log.event_log_access_skip");
   my $event_log_error = get_int("proxy.process.log.event_log_error");
-  
+
   print <<__EOF
 Current Open Log Files ----------- $log_file_open
 Space Used For Log Files --------- $log_files_space_used
@@ -554,7 +554,7 @@ sub show_proxy_stats {
 
   my $client_throughput_out = get_float("proxy.node.client_throughput_out");
   my $xacts_per_second = get_float("proxy.node.user_agent_xacts_per_second");
-  
+
   print <<__EOF
 Document Hit Rate -------- $cache_hit_ratio % *
 Ram cache Hit Rate ------- $cache_hit_mem_ratio % *
@@ -600,7 +600,7 @@ sub show_socks {
     my $default_servers = get_string("proxy.config.socks.default_servers");
     my $accept_enabled = get_on_off("proxy.config.socks.accept_enabled");
     my $accept_port = get_int("proxy.config.socks.accept_port");
-    
+
     print <<__EOF
 SOCKS -------------------- $socks_enabled
 SOCKS Version ------------ $version

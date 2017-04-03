@@ -708,13 +708,13 @@ any buffers associated with :ref:`transform plugins <developer-plugins-http-tran
 Transaction buffering control can be enabled globally by using configuration
 variables or by :c:func:`TSHttpTxnConfigIntSet` in a plugin.
 
-================= ================================================== ================================================
+================= ================================================== =======================================================
 Value             Variable                                           :c:func:`TSHttpTxnConfigIntSet` key
-================= ================================================== ================================================
-Enable buffering  :ts:cv:`proxy.config.http.flow_control.enabled`    :c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`
-Set high water    :ts:cv:`proxy.config.http.flow_control.high_water` :c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER`
-Set low water     :ts:cv:`proxy.config.http.flow_control.low_water`  :c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER`
-================= ================================================== ================================================
+================= ================================================== =======================================================
+Enable buffering  :ts:cv:`proxy.config.http.flow_control.enabled`    :c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`
+Set high water    :ts:cv:`proxy.config.http.flow_control.high_water` :c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK`
+Set low water     :ts:cv:`proxy.config.http.flow_control.low_water`  :c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK`
+================= ================================================== =======================================================
 
 Be careful to always have the low water mark equal or less than the high water
 mark. If you set only one, the other will be set to the same value.

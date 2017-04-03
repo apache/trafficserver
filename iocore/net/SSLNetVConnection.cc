@@ -37,7 +37,7 @@
 #if !TS_USE_SET_RBIO
 // Defined in SSLInternal.c, should probably make a separate include
 // file for this at some point
-void SSL_set_rbio(SSL *ssl, BIO *rbio);
+void SSL_set0_rbio(SSL *ssl, BIO *rbio);
 #endif
 
 // This is missing from BoringSSL
@@ -391,7 +391,7 @@ SSLNetVConnection::read_raw_data()
   // Must be reset on each read
   BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
   BIO_set_mem_eof_return(rbio, -1);
-  SSL_set_rbio(this->ssl, rbio);
+  SSL_set0_rbio(this->ssl, rbio);
 
   return r;
 }
@@ -565,7 +565,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         // Must be reset on each read
         BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
         BIO_set_mem_eof_return(rbio, -1);
-        SSL_set_rbio(this->ssl, rbio);
+        SSL_set0_rbio(this->ssl, rbio);
       }
     }
   }
@@ -924,7 +924,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
     // net_activity will not be triggered until after the handshake
     set_inactivity_timeout(HRTIME_SECONDS(SSLConfigParams::ssl_handshake_timeout_in));
   }
-
+  SSLConfig::scoped_config params;
   switch (event) {
   case SSL_EVENT_SERVER:
     if (this->ssl == nullptr) {
@@ -980,7 +980,20 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 
   case SSL_EVENT_CLIENT:
     if (this->ssl == nullptr) {
-      this->ssl = make_ssl_connection(ssl_NetProcessor.client_ctx, this);
+      SSL_CTX *clientCTX = nullptr;
+      if (this->options.clientCertificate) {
+        const char *certfile = (const char *)this->options.clientCertificate;
+        if (certfile != nullptr) {
+          clientCTX = params->getCTX(certfile);
+          if (clientCTX != nullptr)
+            Debug("ssl", "context for %s is found at %p", this->options.clientCertificate.get(), (void *)clientCTX);
+          else
+            Debug("ssl", "failed to find context for %s", this->options.clientCertificate.get());
+        }
+      } else {
+        clientCTX = params->client_ctx;
+      }
+      this->ssl = make_ssl_connection(clientCTX, this);
 
       if (this->ssl == nullptr) {
         SSLErrorVC(this, "failed to create SSL client session");
@@ -1026,7 +1039,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         sslPreAcceptHookState = SSL_HOOKS_DONE;
       } else {
         sslPreAcceptHookState = SSL_HOOKS_ACTIVE;
-        ContWrapper::wrap(mutex.get(), curHook->m_cont, TS_EVENT_VCONN_PRE_ACCEPT, this);
+        ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_PRE_ACCEPT, this);
         return SSL_WAIT_FOR_HOOK;
       }
     } else { // waiting for hook to complete
@@ -1246,15 +1259,18 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
       X509 *cert = SSL_get_peer_certificate(ssl);
 
       Debug("ssl", "SSL client handshake completed successfully");
-      // if the handshake is complete and write is enabled reschedule the write
-      if (closed == 0 && write.enabled)
-        writeReschedule(nh);
+
       if (cert) {
         debug_certificate_name("server certificate subject CN is", X509_get_subject_name(cert));
         debug_certificate_name("server certificate issuer CN is", X509_get_issuer_name(cert));
         X509_free(cert);
       }
     }
+
+    // if the handshake is complete and write is enabled reschedule the write
+    if (closed == 0 && write.enabled)
+      writeReschedule(nh);
+
     SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_out_stat);
 
     TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL client handshake completed successfully");
@@ -1305,7 +1321,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   case SSL_ERROR_SSL:
   default: {
-    err = errno;
+    err = (errno) ? errno : -ENET_CONNECT_FAILED;
     // FIXME -- This triggers a retry on cases of cert validation errors....
     Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
@@ -1322,9 +1338,8 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 }
 
 void
-SSLNetVConnection::registerNextProtocolSet(const SSLNextProtocolSet *s)
+SSLNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s)
 {
-  ink_release_assert(this->npnSet == nullptr);
   this->npnSet = s;
 }
 
@@ -1337,7 +1352,6 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   ink_release_assert(netvc != nullptr);
-
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(out, outlen)) {
     // Successful return tells OpenSSL to advertise.
     return SSL_TLSEXT_ERR_OK;
@@ -1357,7 +1371,6 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
   unsigned npnsz           = 0;
 
   ink_release_assert(netvc != nullptr);
-
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(&npn, &npnsz)) {
 // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
 // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
@@ -1422,17 +1435,22 @@ bool
 SSLNetVConnection::callHooks(TSEvent eventId)
 {
   // Only dealing with the SNI/CERT hook so far.
-  ink_assert(eventId == TS_EVENT_SSL_CERT);
+  ink_assert(eventId == TS_EVENT_SSL_CERT || eventId == TS_EVENT_SSL_SERVERNAME);
   Debug("ssl", "callHooks sslHandshakeHookState=%d", this->sslHandshakeHookState);
 
   // First time through, set the type of the hook that is currently being invoked
-  if (HANDSHAKE_HOOKS_PRE == sslHandshakeHookState) {
+  if ((this->sslHandshakeHookState == HANDSHAKE_HOOKS_PRE || this->sslHandshakeHookState == HANDSHAKE_HOOKS_DONE) &&
+      eventId == TS_EVENT_SSL_CERT) {
     // the previous hook should be DONE and set curHook to nullptr before trigger the sni hook.
     ink_assert(curHook == nullptr);
     // set to HOOKS_CERT means CERT/SNI hooks has called by SSL_accept()
     this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
     // get Hooks
     curHook = ssl_hooks->get(TS_SSL_CERT_INTERNAL_HOOK);
+  } else if (eventId == TS_EVENT_SSL_SERVERNAME) {
+    if (!curHook) {
+      curHook = ssl_hooks->get(TS_SSL_SERVERNAME_INTERNAL_HOOK);
+    }
   } else {
     // Not in the right state
     // reenable and continue
@@ -1441,14 +1459,20 @@ SSLNetVConnection::callHooks(TSEvent eventId)
 
   bool reenabled = true;
   if (curHook != nullptr) {
-    // Otherwise, we have plugin hooks to run
     this->sslHandshakeHookState = HANDSHAKE_HOOKS_INVOKE;
     curHook->invoke(eventId, this);
-    reenabled = (this->sslHandshakeHookState != HANDSHAKE_HOOKS_INVOKE);
-  } else {
-    // no SNI-Hooks set, set state to HOOKS_DONE
-    // no plugins registered for this hook, return (reenabled == true)
-    sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
+    reenabled = eventId != TS_EVENT_SSL_CERT || (this->sslHandshakeHookState != HANDSHAKE_HOOKS_INVOKE);
+  }
+
+  // All done with the current hook chain
+  if (curHook == nullptr) {
+    if (eventId == TS_EVENT_SSL_CERT) {
+      // Set the HookState to done because we are all done with the CERT/SERVERNAME hook chains
+      sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
+    } else if (eventId == TS_EVENT_SSL_SERVERNAME) {
+      // Reset the HookState to PRE, so the cert hook chain can start
+      sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
+    }
   }
   return reenabled;
 }
@@ -1518,21 +1542,28 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   return EVENT_DONE;
 }
 
-const char *
+ts::StringView
 SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 {
-  const char *retval    = nullptr;
-  const char *ssl_proto = getSSLProtocol();
-  if (ssl_proto && strncmp(ssl_proto, "TLSv1", 5) == 0) {
-    if (ssl_proto[5] == '\0') {
-      retval = TS_PROTO_TAG_TLS_1_0;
-    } else if (ssl_proto[5] == '.') {
-      if (ssl_proto[6] == '1' && ssl_proto[7] == '\0') {
-        retval = TS_PROTO_TAG_TLS_1_1;
-      } else if (ssl_proto[6] == '2' && ssl_proto[7] == '\0') {
-        retval = TS_PROTO_TAG_TLS_1_2;
-      } else if (ssl_proto[6] == '3' && ssl_proto[7] == '\0') {
-        retval = TS_PROTO_TAG_TLS_1_3;
+  // Prefix for the string the SSL library hands back.
+  static const ts::StringView PREFIX("TLSv1");
+
+  ts::StringView retval;
+  ts::StringView proto(proto_string);
+
+  if (proto.size() >= PREFIX.size() && strncmp(proto.ptr(), PREFIX.ptr(), PREFIX.size()) == 0) {
+    proto += PREFIX.size();
+    if (proto.size() <= 0) {
+      retval = IP_PROTO_TAG_TLS_1_0;
+    } else if (*proto == '.') {
+      ++proto; // skip .
+      if (proto.size() == 1) {
+        if (*proto == '1')
+          retval = IP_PROTO_TAG_TLS_1_1;
+        else if (*proto == '2')
+          retval = IP_PROTO_TAG_TLS_1_2;
+        else if (*proto == '3')
+          retval = IP_PROTO_TAG_TLS_1_3;
       }
     }
   }
@@ -1540,14 +1571,13 @@ SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 }
 
 int
-SSLNetVConnection::populate_protocol(const char **results, int n) const
+SSLNetVConnection::populate_protocol(ts::StringView *results, int n) const
 {
   int retval = 0;
-  if (n > 0) {
-    results[0] = map_tls_protocol_to_tag(getSSLProtocol());
-    if (results[0] != nullptr) {
-      retval++;
-    }
+  if (n > retval) {
+    results[retval] = map_tls_protocol_to_tag(getSSLProtocol());
+    if (results[retval])
+      ++retval;
     if (n > retval) {
       retval += super::populate_protocol(results + retval, n - retval);
     }
@@ -1556,15 +1586,14 @@ SSLNetVConnection::populate_protocol(const char **results, int n) const
 }
 
 const char *
-SSLNetVConnection::protocol_contains(const char *tag) const
+SSLNetVConnection::protocol_contains(ts::StringView prefix) const
 {
-  const char *retval   = nullptr;
-  const char *tls_tag  = map_tls_protocol_to_tag(getSSLProtocol());
-  unsigned int tag_len = strlen(tag);
-  if (tag_len <= strlen(tls_tag) && strncmp(tag, tls_tag, tag_len) == 0) {
-    retval = tls_tag;
+  const char *retval = nullptr;
+  ts::StringView tag = map_tls_protocol_to_tag(getSSLProtocol());
+  if (prefix.size() <= tag.size() && strncmp(tag.ptr(), prefix.ptr(), prefix.size()) == 0) {
+    retval = tag.ptr();
   } else {
-    retval = super::protocol_contains(tag);
+    retval = super::protocol_contains(prefix);
   }
   return retval;
 }

@@ -306,7 +306,7 @@ Lagain:
   return found ? 0 : -1;
 }
 
-const char *
+Result
 Store::read_config()
 {
   int n_dsstore   = 0;
@@ -321,8 +321,7 @@ Store::read_config()
   Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
   fd = ::open(storage_path, O_RDONLY);
   if (fd < 0) {
-    err = "error on open";
-    goto Lfail;
+    return Result::failure("open %s: %s", (const char *)storage_path, strerror(errno));
   }
 
   // For each line
@@ -358,8 +357,8 @@ Store::read_config()
     while (nullptr != (e = tokens.getNext())) {
       if (ParseRules::is_digit(*e)) {
         if ((size = ink_atoi64(e)) <= 0) {
-          err = "error parsing size";
-          goto Lfail;
+          delete sd;
+          return Result::failure("failed to parse size '%s'", e);
         }
       } else if (0 == strncasecmp(HASH_BASE_STRING_KEY, e, sizeof(HASH_BASE_STRING_KEY) - 1)) {
         e += sizeof(HASH_BASE_STRING_KEY) - 1;
@@ -372,8 +371,8 @@ Store::read_config()
         if ('=' == *e)
           ++e;
         if (!*e || !ParseRules::is_digit(*e) || 0 >= (volume_num = ink_atoi(e))) {
-          err = "error parsing volume number";
-          goto Lfail;
+          delete sd;
+          return Result::failure("failed to parse volume number '%s'", e);
         }
       }
     }
@@ -390,6 +389,7 @@ Store::read_config()
       ats_free(pp);
       continue;
     }
+
     ats_free(pp);
     n_dsstore++;
 
@@ -421,14 +421,8 @@ Store::read_config()
   }
   sd = nullptr; // these are all used.
   sort();
-  return nullptr;
 
-Lfail:
-  // Do clean up.
-  if (sd)
-    delete sd;
-
-  return err;
+  return Result::ok();
 }
 
 int

@@ -51,7 +51,7 @@ override_record(const RecordElement *record, void *)
 
 // We process environment variable overrides when we parse the records.config configuration file, but the
 // operator might choose to override a variable that is not present in records.config so we have to post-
-// process the full set of configuration valriables as well.
+// process the full set of configuration variables as well.
 void
 RecordsConfigOverrideFromEnvironment()
 {

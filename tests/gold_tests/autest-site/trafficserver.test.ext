@@ -1,0 +1,325 @@
+'''
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from __future__ import print_function
+import os
+import socket
+from ports import get_port
+
+
+def make_id(s):
+    return s.replace(".","_").replace('-','_')
+    
+# this forms is for the global process define
+def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
+    #####################################
+    # common locations
+    
+    # directory we will setup for the ATS to run under
+    ts_dir = os.path.join(obj.RunDirectory, name)
+    #common bin directory
+    bin_dir = 'bin'
+    # ideally we would use a value like config.. but there is a bug
+    # in which records.conf values are not loaded correctly from this location,
+    # so we use the expecetd "build" layout to correct the issue for the time being
+    config_dir = os.path.join(ts_dir,
+                              obj.Variables.SYSCONFDIR.replace(
+                                  obj.Variables.PREFIX+"/",
+                                  ""
+                                  )
+                             )
+    # directory contains the html response templates
+    template_dir = os.path.join(config_dir, "body_factory")
+    # contains plugins
+    plugin_dir = os.path.join(ts_dir, obj.Variables.PLUGINDIR.replace(obj.Variables.PREFIX+"/",""))
+    # the log directory
+    log_dir=os.path.join(ts_dir, 'log')
+    runtime_dir=os.path.join(ts_dir, obj.Variables.RUNTIMEDIR.replace(obj.Variables.PREFIX+"/",""))
+    ssl_dir=os.path.join(ts_dir, 'ssl')
+    
+    # create process
+    p = obj.Processes.Process(name, command)
+    
+    # we want to have a few directories more fixed
+    # this helps with debugging as location are common
+    # we do this by overiding locations from the "layout"
+    # used as part of build. This means loctaion such as 
+    # PROXY_CONFIG_BIN_PATH with alway be $root/bin
+    # not something else such as bin64    
+    #####
+    
+    # set root for this test
+    p.Env['TS_ROOT'] = ts_dir
+
+    # set bin location
+    
+    p.Env['PROXY_CONFIG_BIN_PATH'] = bin_dir
+    bin_path=os.path.join(ts_dir, bin_dir)
+    p.Env['PATH']=bin_path+os.pathsep+p.ComposeEnv()['PATH']
+    p.Setup.Copy(p.Variables.BINDIR, bin_path, True)
+    
+    #########################################################
+    ## setup config directory
+    
+    # copy all basic config files we need to get this to work
+    cfg_dir=os.path.join(AUTEST_SITE_PATH,"min_cfg")
+    for f in os.listdir(cfg_dir):
+        p.Setup.CopyAs(os.path.join(cfg_dir,f),config_dir)
+    
+    #########################################################
+    # setup read-only data directory in config. Needed for response body reponses
+    
+    p.Env['PROXY_CONFIG_BODY_FACTORY_TEMPLATE_SETS_DIR']=template_dir
+    p.Variables.body_factory_template_dir=template_dir
+    p.Setup.Copy(os.path.join(p.Variables.SYSCONFDIR,'body_factory'), template_dir)
+	
+	#########################################################
+    # setup read-only data directory for plugins
+    
+    p.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']=plugin_dir
+    p.Setup.Copy(p.Variables.PLUGINDIR, plugin_dir)
+
+    ######################################################### 
+    # create subdirectories that need to exist (but are empty)
+    # log directory has to be created with correct permissions
+    p.Setup.MakeDir(log_dir) # log directory has to be created
+    p.Setup.Chown(log_dir, "nobody", "nobody",ignore=True) 
+
+    # set env so traffic server uses correct locations
+    p.Env['PROXY_CONFIG_LOG_LOGFILE_DIR'] = log_dir
+    p.Variables.LOGDIR=log_dir
+
+    # this is needed for cache and communication sockets
+    # Below was to make shorter paths but the code in
+    # traffic_ctl is broken and ignores this.
+    #p.Env['PROXY_CONFIG_LOCAL_STATE_DIR']=runtime_dir
+    p.Env['PROXY_CONFIG_HOSTDB_STORAGE_PATH']=runtime_dir
+    #p.Variables.RUNTIMEDIR=runtime_dir
+    p.Setup.MakeDir(runtime_dir)
+    # will need this for traffic_manager is it runs
+    p.Setup.MakeDir(os.path.join(config_dir, 'snapshots'))
+
+    ##########################################################
+    # create subdirectories that need to exist (but are empty)
+    p.Setup.MakeDir(ssl_dir) # ssl directory has to be created for keeping certs and keys
+    p.Setup.Chown(ssl_dir, "nobody", "nobody",ignore=True) 
+
+    # set env so traffic server uses correct locations
+    p.Env['PROXY_CONFIG_SSL_DIR'] = ssl_dir
+    p.Variables.SSLDir=ssl_dir
+    AddMethodToInstance(p,addSSLfile)
+    ######################################################### 
+    # define the basic file for a given test run 
+    #traffic.out ?? # cannot find it at the moment...
+    #squid.log
+    fname = "squid.log"
+    tmpname = os.path.join(log_dir, fname)
+    p.Disk.File(tmpname, id=make_id(fname))
+    #error.log
+    fname = "error.log"
+    tmpname = os.path.join(log_dir, fname)
+    p.Disk.File(tmpname, id=make_id(fname), exists=False)
+    #diags.log
+    fname = "diags.log"
+    tmpname = os.path.join(log_dir, fname)
+    p.Disk.File(tmpname, id=make_id(fname))
+    # add this test back once we have network namespaces working again
+    p.Disk.diags_log.Content = Testers.ExcludesExpression("ERROR:", "diags.log should not contain errors")
+    p.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", "diags.log should not contain errors")
+
+    # config files
+    fname="records.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config:records")
+    
+    fname="cache.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="congestion.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="hosting.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="icp.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="ip_allow.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="log_hosts.config"
+    tmpname=os.path.join(config_dir,fname)
+    #p.Disk.File(tmpname,id=make_id(fname),typename="ats:config").AddLine("# need something in here")
+
+    # magic file that should probally not exist
+    fname="logging.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="metrics.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="parent.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+
+    fname="plugin.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="remap.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="socks.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="splitdns.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="ssl_multicert.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="storage.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="vaddrs.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+    
+    fname="volume.config"
+    tmpname=os.path.join(config_dir,fname)
+    p.Disk.File(tmpname,id=make_id(fname),typename="ats:config")
+
+    ##########################################################
+    # set up default ports
+    # get some ports  TODO make it so we can hold on to the socket
+    if select_ports:
+        # some system have a bug in which ipv4 and ipv6 share port space
+        # Make two different ports to avoid this
+        get_port(p,"port")
+        get_port(p,"portv6")
+        p.Ready=When.PortOpen(p.Variables.port)
+    else:
+        p.Variables.port          = 8080
+        p.Variables.portv6        = 8080
+    get_port(p,"manager_port")
+    get_port(p,"admin_port")
+    
+    # set the ports
+    if select_ports:
+        p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS']= "{0} {1}:ipv6".format(p.Variables.port,p.Variables.portv6)  # your own listen port
+    p.Env['PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT']= str(p.Variables.manager_port)  
+    p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT']= str(p.Variables.admin_port)
+    p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT']= str(p.Variables.admin_port)  # support pre ATS 6.x
+
+    # since we always kill this
+    p.ReturnCode=None
+	
+    return p
+    
+##################################
+# added to ats process object to help deal with config files 
+class Config(File):
+    '''
+    Class to represent a config file
+    '''
+
+    def __init__(self, runable, name, exists = None, size = None, content_tester = None, execute=False, runtime=True, content=None):
+        super(Config, self).__init__(
+            runable, name, exists = None, size = None, content_tester = None, execute=False, runtime=True
+        )
+        
+        self.content=content
+        self._added=False
+        
+    def AddLines(self, lines):
+        for line in lines:
+            self.AddLine(line)
+
+    def _do_write(self,name):
+        '''
+        Write contents to disk
+        '''
+        host.WriteVerbosef('ats-config-file',"Writting out file {0}",self.Name)
+        if self.content is not None:
+            with open(name, 'w') as f:
+                f.write(self.content)
+        return (False,"Appended file {0}".format(self.Name),"Success")
+
+    def AddLine(self, line):
+        if not self._added:
+            self.WriteCustomOn(self._do_write)
+            self._added=True
+        if self.content is None:
+            self.content=""
+        if not line.endswith('\n'):
+            line += '\n'
+        self.content += line
+
+
+class RecordsConfig(Config, dict):
+    '''
+    Create a "dict" representation of records.config
+
+    This can be accessed as a multi-level dictionary
+
+    such as:
+    rc['CONFIG']['proxy.config.log.hostname']
+    '''
+    
+
+    reverse_kind_map = {str: 'STRING',
+                        int: 'INT',
+                        float: 'FLOAT',
+                        }
+
+    line_template = 'CONFIG {name} {kind} {val}\n'
+	
+    def __init__(self, runable, name, exists = None, size = None, content_tester = None, execute=False, runtime=True):
+        super(RecordsConfig, self).__init__(
+            runable, name, exists = None, size = None, content_tester = None, execute=False, runtime=True
+        )
+        self.WriteCustomOn(self._do_write)
+
+    def _do_write(self,name):
+        host.WriteVerbosef('ats-config-file',"Writting out file {0}",name)
+        if len(self) > 0:
+            with open(name, 'w') as f:
+                for name, val in self.items():
+                    f.write(self.line_template.format(name=name,
+                                                       kind=self.reverse_kind_map[type(val)],
+                                                       val=val)) 
+        return (False,"Writing config file {0}".format(os.path.split(self.Name)[-1]),"Success")
+############################################################################################################
+def addSSLfile(self,filename):
+    self.Setup.CopyAs(filename, self.Variables.SSLDir)
+
+RegisterFileType(Config,"ats:config")
+RegisterFileType(RecordsConfig,"ats:config:records")
+AddTestRunSet(MakeATSProcess,name="MakeATSProcess")

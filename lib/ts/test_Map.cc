@@ -145,29 +145,9 @@ main(int /* argc ATS_UNUSED */, char ** /*argv ATS_UNUSED */)
             }
             */
 
-  StringChainHash<> h;
   cchar *hi = "hi", *ho = "ho", *hum = "hum", *hhi = "hhi";
-  hhi++;
-  h.put(hi);
-  h.put(ho);
-  ink_assert(h.put(hum) == hum);
-  ink_assert(h.put(hhi) == hi);
-  ink_assert(h.get(hhi) == hi && h.get(hi) == hi && h.get(ho) == ho);
-  ink_assert(h.get("he") == nullptr && h.get("hee") == nullptr);
-  h.del(ho);
-  ink_assert(h.get(ho) == nullptr);
 
-  StringBlockHash hh;
-  hh.put(hi);
-  hh.put(ho);
-  ink_assert(hh.put(hum) == nullptr);
-  ink_assert(hh.put(hhi) == hi);
-  ink_assert(hh.get(hhi) == hi && hh.get(hi) == hi && hh.get(ho) == ho);
-  ink_assert(hh.get("he") == nullptr && hh.get("hee") == nullptr);
-  hh.del(hi);
-  ink_assert(hh.get(hhi) == nullptr);
-  ink_assert(hh.get(hi) == nullptr);
-
+  ++hhi;
   HashMap<cchar *, StringHashFns, int> sh;
   sh.put(hi, 1);
   sh.put(ho, 2);
@@ -187,35 +167,6 @@ main(int /* argc ATS_UNUSED */, char ** /*argv ATS_UNUSED */)
   ink_assert(sh.get(hum) == 3);
   ink_assert(sh.get("af") == 10);
   ink_assert(sh.get("ac") == 7);
-
-  ChainHashMap<cchar *, StringHashFns, int> ssh;
-  ssh.put(hi, 1);
-  ssh.put(ho, 2);
-  ssh.put(hum, 3);
-  ssh.put(hhi, 4);
-  ink_assert(ssh.get(hi) == 4);
-  ink_assert(ssh.get(ho) == 2);
-  ink_assert(ssh.get(hum) == 3);
-  ssh.put("aa", 5);
-  ssh.put("ab", 6);
-  ssh.put("ac", 7);
-  ssh.put("ad", 8);
-  ssh.put("ae", 9);
-  ssh.put("af", 10);
-  ink_assert(ssh.get(hi) == 4);
-  ink_assert(ssh.get(ho) == 2);
-  ink_assert(ssh.get(hum) == 3);
-  ink_assert(ssh.get("af") == 10);
-  ink_assert(ssh.get("ac") == 7);
-  ssh.del(ho);
-  ink_assert(ssh.get(ho) == 0);
-
-  Vec<int> ints;
-  ssh.get_values(ints);
-  ink_assert(ints.n == 8);
-  Vec<cchar *> chars;
-  ssh.get_keys(chars);
-  ink_assert(chars.n == 8);
 
   test_TSHashTable();
 

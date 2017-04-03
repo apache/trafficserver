@@ -27,26 +27,21 @@
 #include "P_EventSystem.h"
 #include "URL.h"
 #include "P_Net.h"
-#include "ts.h"
-#include "experimental.h"
-#include "InkAPIPrivateIOCore.h"
 #include "HTTP.h"
 #include "ts/List.h"
 #include "ProxyConfig.h"
 #include "P_Cache.h"
 #include "I_Tasks.h"
 
+#include "api/ts/InkAPIPrivateIOCore.h"
+#include "api/ts/experimental.h"
+
+#include <typeinfo>
+
 /* Some defines that might be candidates for configurable settings later.
  */
 #define HTTP_SSN_TXN_MAX_USER_ARG 16 /* max number of user arguments for Transactions and Sessions */
 
-typedef enum {
-  OVERRIDABLE_TYPE_NULL = 0,
-  OVERRIDABLE_TYPE_INT,
-  OVERRIDABLE_TYPE_FLOAT,
-  OVERRIDABLE_TYPE_STRING,
-  OVERRIDABLE_TYPE_BYTE
-} OverridableDataType;
 typedef int8_t TSMgmtByte; // Not for external use
 
 /* ****** Cache Structure ********* */
@@ -285,6 +280,7 @@ typedef enum {
   TS_SSL_INTERNAL_FIRST_HOOK,
   TS_VCONN_PRE_ACCEPT_INTERNAL_HOOK = TS_SSL_INTERNAL_FIRST_HOOK,
   TS_SSL_CERT_INTERNAL_HOOK,
+  TS_SSL_SERVERNAME_INTERNAL_HOOK,
   TS_SSL_INTERNAL_LAST_HOOK
 } TSSslHookInternalID;
 

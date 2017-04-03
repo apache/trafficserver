@@ -283,6 +283,26 @@ System Variables
    The name and location of the file that contains warnings, status messages, and error messages produced by the Traffic Server
    processes. If no path is specified, then Traffic Server creates the file in its logging directory.
 
+
+.. ts:cv:: CONFIG proxy.config.output.logfile_perm STRING rw-r--r--
+
+   The log file permissions. The standard UNIX file permissions are used (owner, group, other). Permissible values are:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``-`` No permissions.
+   ``r`` Read permission.
+   ``w`` Write permission.
+   ``x`` Execute permission.
+   ===== ======================================================================
+
+   Permissions are subject to the umask settings for the |TS| process. This
+   means that a umask setting of ``002`` will not allow write permission for
+   others, even if specified in the configuration file. Permissions for
+   existing log files are not changed when the configuration is modified.
+
+
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_enabled INT 0
    :reloadable:
 
@@ -783,6 +803,12 @@ ip-resolve
 
       9090:proto=http2;http:ssl
 
+.. topic:: Example
+
+   Listen on port 9090 for TSL disabled HTTP/2 and enabled HTTP connections, accept no other session protocols.::
+
+      9090:proto=http:ssl
+
 .. ts:cv:: CONFIG proxy.config.http.connect_ports STRING 443 563
 
    The range of origin server ports that can be used for tunneling via ``CONNECT``.
@@ -1057,6 +1083,19 @@ ip-resolve
    according to this setting then it will be used, otherwise it will be released to the pool and a different session
    selected or created.
 
+.. ts:cv:: CONFIG proxy.config.http.safe_requests_retryable INT 1
+   :overridable:
+
+   This setting, on by default, allows requests which are considered safe to be retried on an error.
+   See https://tools.ietf.org/html/rfc7231#section-4.2.1 to RFC for details on which request methods are considered safe.
+
+   If this setting is ``0`` then ATS retries a failed origin server request only if the bytes sent by ATS
+   are not acknowledged by the origin server.
+
+   If this setting is ``1`` then ATS retries all the safe methods to a failed origin server irrespective of
+   previous connection failure status.
+
+
 .. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
    :reloadable:
 
@@ -1233,6 +1272,15 @@ Parent Proxy Configuration
    The timeout value (in seconds) for parent cache connection attempts.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.mark_down_hostdb INT 0
+   :reloadable:
+   :overridable:
+
+   Enables (``1``) or disables (``0``) marking parent proxies down in hostdb when a connection
+   error is detected.  Normally parent selection manages parent proxies and will mark them as unavailable
+   as needed.  But when parents are defined in dns with multiple ip addresses, it may be useful to mark the
+   failing ip down in hostdb.  In this case you would enable these updates.
 
 .. ts:cv:: CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
    :reloadable:
@@ -1550,15 +1598,19 @@ Negative Response Caching
    :ts:cv:`proxy.config.http.negative_caching_lifetime`.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_caching_lifetime INT 1800
+   :reloadable:
    :overridable:
 
    How long (in seconds) Traffic Server keeps the negative responses  valid in cache. This value only affects negative
    responses that do NOT have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_enabled INT 0
+   :reloadable:
+   :overridable:
 
    Enables (``1``) or disables (``0``) forcing revalidation of cached documents
-   when |TS| receives a negative (``5xx`` only) response from the origin server.
+   when |TS| receives a negative (``5xx`` only) response from the origin server. That is,
+   when enabled, |TS| will serve stale when it can not reach the origin server.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
 
@@ -2018,14 +2070,14 @@ RAM Cache
    in memory in order to improve performance.
    **4MB** (4194304)
 
-.. ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 0
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 1
 
    Two distinct RAM caches are supported, the default (0) being the **CLFUS**
    (*Clocked Least Frequently Used by Size*). As an alternative, a simpler
    **LRU** (*Least Recently Used*) cache is also available, by changing this
    configuration to 1.
 
-.. ts:cv:: CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 0
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 1
 
    Enabling this option will filter inserts into the RAM cache to ensure that
    they have been seen at least once.  For the **LRU**, this provides scan
@@ -2243,6 +2295,11 @@ Customizable User Response Pages
     A prefix for the file name to use to find an error template file. If set (not the empty string)
     this value and an underscore are predended to the file name to find in the template sets
     directory. See :ref:`body-factory`.
+
+.. ts:cv:: CONFIG proxy.config.body_factory.response_max_size INT 8192
+    :reloadable:
+
+    Maximum size of the error template response page.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
 
@@ -2586,6 +2643,11 @@ Logging Configuration
 
    The maximum amount of time before data in the buffer is flushed to disk.
 
+.. note::
+
+   The effective lower bound to this config is whatever :ts:cv:`proxy.config.log.periodic_tasks_interval`
+   is set to.
+
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_logs INT 25000
    :units: megabytes
    :reloadable:
@@ -2850,11 +2912,14 @@ Diagnostic Logging Configuration
 
    Enables logging for diagnostic messages whose log level is `diag` or `debug`.
 
-.. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
+.. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING http|dns
 
-   Each |TS| `diag` and `debug` level message is annotated with a subsytem tag.
-   This configuration contains a regular expression that filters the messages
-   based on the tag. Some commonly used debug tags are:
+   Each |TS| `diag` and `debug` level message is annotated with a subsytem tag.  This configuration
+   contains an anchored regular expression that filters the messages based on the tag. The
+   expressions are prefix matched which creates an implicit ``.*`` at the end. Therefore the default
+   value ``http|dns`` will match tags such as ``http``, ``http_hdrs``, ``dns``, and ``dns_recv``.
+
+   Some commonly used debug tags are:
 
    ============  =====================================================
    Tag           Subsytem usage
@@ -2867,6 +2932,26 @@ Diagnostic Logging Configuration
 
    |TS| plugins will typically log debug messages using the :c:func:`TSDebug`
    API, passing the plugin name as the debug tag.
+
+
+.. ts:cv:: CONFIG proxy.config.diags.logfile_perm STRING rw-r--r--
+
+   The log file permissions. The standard UNIX file permissions are used (owner, group, other). Permissible values are:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``-`` No permissions.
+   ``r`` Read permission.
+   ``w`` Write permission.
+   ``x`` Execute permission.
+   ===== ======================================================================
+
+   Permissions are subject to the umask settings for the |TS| process. This
+   means that a umask setting of ``002`` will not allow write permission for
+   others, even if specified in the configuration file. Permissions for
+   existing log files are not changed when the configuration is modified.
+
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_enabled INT 0
    :reloadable:

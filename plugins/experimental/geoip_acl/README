@@ -13,7 +13,7 @@ The build and installation requires a full installation of Apache Traffic
 Server v3.0.0 or later. A prerequisite for this is an installation of the
 MaxMind GeoIP libraries and include files. E.g. GeoIP-devel.
 
-    
+
 Configuration
 =============
 
@@ -67,7 +67,7 @@ allow all requests that don't match. For example
 
     map http://example.com http://music.example.com \
         @plugin=geoip_acl.so @pparam=country @pparam=allow @pparam= US \
-        @pparam=regex::/etc/music.regex 
+        @pparam=regex::/etc/music.regex
 
 
 This tells the plugin that in the situation where there is no matching

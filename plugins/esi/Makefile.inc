@@ -19,7 +19,7 @@ ESI_CPPFLAGS = \
 	-I$(srcdir)/esi/lib \
 	-I$(srcdir)/esi/fetcher \
 	-I$(srcdir)/esi/test \
-	$(TS_PLUGIN_CPPFLAGS)
+	$(AM_CPPFLAGS)
 
 # Add -Wno-deprecated because ESI uses ext/hash_map.
 ESI_CXXFLAGS = \
@@ -99,7 +99,6 @@ esi_esi_la_SOURCES =  \
 
 esi_esi_la_CPPFLAGS = $(ESI_CPPFLAGS)
 esi_esi_la_CXXFLAGS = $(ESI_CXXFLAGS)
-esi_esi_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 esi_esi_la_LIBADD = esi/libesicore.la
 
 esi_combo_handler_la_SOURCES = \
@@ -109,7 +108,6 @@ esi_combo_handler_la_SOURCES = \
 
 esi_combo_handler_la_CPPFLAGS = $(ESI_CPPFLAGS)
 esi_combo_handler_la_CXXFLAGS = $(ESI_CXXFLAGS)
-esi_combo_handler_la_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 esi_combo_handler_la_LIBADD = esi/libesicore.la
 
 esi_docnode_test_CPPFLAGS = $(ESI_CPPFLAGS)

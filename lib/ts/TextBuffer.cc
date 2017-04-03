@@ -34,7 +34,7 @@
  *
  ****************************************************************************/
 
-textBuffer::textBuffer(int size)
+TextBuffer::TextBuffer(int size)
 {
   bufferStart = nullptr;
   nextAdd     = nullptr;
@@ -53,13 +53,13 @@ textBuffer::textBuffer(int size)
   }
 }
 
-textBuffer::~textBuffer()
+TextBuffer::~TextBuffer()
 {
   ats_free(bufferStart);
 }
 
 char *
-textBuffer::release()
+TextBuffer::release()
 {
   char *ret = bufferStart;
 
@@ -69,13 +69,13 @@ textBuffer::release()
   return ret;
 }
 
-// void textBuffer::reUse()
+// void TextBuffer::reUse()
 //
 //   Sets the text buffer for reuse by repositioning the
 //     ptrs to beginning of buffer.  The buffer space is
 //     reused
 void
-textBuffer::reUse()
+TextBuffer::reUse()
 {
   if (bufferStart != nullptr) {
     nextAdd    = bufferStart;
@@ -84,7 +84,7 @@ textBuffer::reUse()
   }
 }
 
-// int textBuffer::copyFrom(void*,int num_bytes)
+// int TextBuffer::copyFrom(void*,int num_bytes)
 //
 //
 //  Copy N bytes (determined by num_bytes) on to the
@@ -93,7 +93,7 @@ textBuffer::reUse()
 //  Returns the number of bytes copies or
 //  -1 if there was insufficient memory
 int
-textBuffer::copyFrom(const void *source, unsigned num_bytes)
+TextBuffer::copyFrom(const void *source, unsigned num_bytes)
 {
   // Get more space if necessary
   if (spaceLeft < num_bytes) {
@@ -111,7 +111,7 @@ textBuffer::copyFrom(const void *source, unsigned num_bytes)
   return num_bytes;
 }
 
-//  textBuffer::enlargeBuffer(int n)
+//  TextBuffer::enlargeBuffer(int n)
 //
 //  Enlarge the buffer so at least at N
 //    bytes are free in the buffer.
@@ -121,7 +121,7 @@ textBuffer::copyFrom(const void *source, unsigned num_bytes)
 //  Returns -1 if insufficient memory,
 //    zero otherwise
 int
-textBuffer::enlargeBuffer(unsigned N)
+TextBuffer::enlargeBuffer(unsigned N)
 {
   unsigned addedSize = 0;
   unsigned newSize   = (currentSize ? currentSize : 1) * 2;
@@ -149,7 +149,7 @@ textBuffer::enlargeBuffer(unsigned N)
   return 0;
 }
 
-// int textBuffer::rawReadFromFile
+// int TextBuffer::rawReadFromFile
 //
 // - Issues a single read command on the file descriptor or handle
 //   passed in and reads in raw data (not assumed to be text, no
@@ -158,7 +158,7 @@ textBuffer::enlargeBuffer(unsigned N)
 //   read() function replaces CR-LF with LF if the file is not
 //   opened in binary mode.
 int
-textBuffer::rawReadFromFile(int fd)
+TextBuffer::rawReadFromFile(int fd)
 {
   int readSize;
 
@@ -186,7 +186,7 @@ textBuffer::rawReadFromFile(int fd)
 
 // Read the entire contents of the given file descriptor.
 void
-textBuffer::slurp(int fd)
+TextBuffer::slurp(int fd)
 {
   int nbytes;
 
@@ -195,13 +195,13 @@ textBuffer::slurp(int fd)
   } while (nbytes > 0);
 }
 
-// int textBuffer::readFromFD(int fd)
+// int TextBuffer::readFromFD(int fd)
 //
 // Issues a single read command on the file
 // descritor passed in.  Attempts to read a minimum of
 // 512 bytes from file descriptor passed.
 int
-textBuffer::readFromFD(int fd)
+TextBuffer::readFromFD(int fd)
 {
   int readSize;
 
@@ -229,24 +229,20 @@ textBuffer::readFromFD(int fd)
   }
 }
 
-char *
-textBuffer::bufPtr()
-{
-  return bufferStart;
-}
-
 void
-textBuffer::format(const char *fmt, ...)
+TextBuffer::vformat(const char *fmt, va_list ap)
 {
-  va_list ap;
-  bool done = false;
-
-  do {
+  for (bool done = false; !done;) {
     int num;
 
-    va_start(ap, fmt);
-    num = vsnprintf(this->nextAdd, this->spaceLeft, fmt, ap);
-    va_end(ap);
+    // Copy the args in case the buffer isn't big enough and we need to
+    // try again. Vsnprintf modifies the va_list on each pass.
+    va_list args;
+    va_copy(args, ap);
+
+    num = vsnprintf(this->nextAdd, this->spaceLeft, fmt, args);
+
+    va_end(args);
 
     if ((unsigned)num < this->spaceLeft) {
       // We had enough space to format including the NUL. Since the returned character
@@ -260,12 +256,21 @@ textBuffer::format(const char *fmt, ...)
         return;
       }
     }
-
-  } while (!done);
+  }
 }
 
 void
-textBuffer::chomp()
+TextBuffer::format(const char *fmt, ...)
+{
+  va_list ap;
+
+  va_start(ap, fmt);
+  vformat(fmt, ap);
+  va_end(ap);
+}
+
+void
+TextBuffer::chomp()
 {
   while ((nextAdd > bufferStart) && (nextAdd[-1] == '\n')) {
     --nextAdd;

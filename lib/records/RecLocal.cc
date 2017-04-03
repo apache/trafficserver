@@ -62,7 +62,7 @@ i_am_the_record_owner(RecT rec_type)
 static void *
 sync_thr(void *data)
 {
-  textBuffer *tb           = new textBuffer(65536);
+  TextBuffer *tb           = new TextBuffer(65536);
   FileManager *configFiles = (FileManager *)data;
 
   while (1) {

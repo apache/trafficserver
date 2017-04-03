@@ -19,6 +19,7 @@
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
+#include <getopt.h>
 
 #include "ts_lua_util.h"
 
@@ -64,8 +65,36 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 {
   int fn;
   int ret;
+  int states                           = TS_LUA_MAX_STATE_COUNT;
+  static const struct option longopt[] = {
+    {"states", required_argument, 0, 's'}, {0, 0, 0, 0},
+  };
 
-  if (argc < 3) {
+  argc--;
+  argv++;
+
+  for (;;) {
+    int opt;
+
+    opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
+    switch (opt) {
+    case 's':
+      states = atoi(optarg);
+      // set state
+      break;
+    }
+
+    if (opt == -1) {
+      break;
+    }
+  }
+
+  if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
+    snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - invalid state in option input");
+    return TS_ERROR;
+  }
+
+  if (argc - optind < 1) {
     strncpy(errbuf, "[TSRemapNewInstance] - lua script file or string is required !!", errbuf_size - 1);
     errbuf[errbuf_size - 1] = '\0';
     return TS_ERROR;
@@ -73,9 +102,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   fn = 1;
 
-  if (argv[2][0] != '/') {
+  if (argv[optind][0] != '/') {
     fn = 0;
-  } else if (strlen(argv[2]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16) {
+  } else if (strlen(argv[optind]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16) {
     return TS_ERROR;
   }
 
@@ -87,17 +116,18 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
 
   memset(conf, 0, sizeof(ts_lua_instance_conf));
-  conf->remap = 1;
+  conf->states = states;
+  conf->remap  = 1;
 
   if (fn) {
-    snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[2]);
+    snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[optind]);
   } else {
-    conf->content = argv[2];
+    conf->content = argv[optind];
   }
 
   ts_lua_init_instance(conf);
 
-  ret = ts_lua_add_module(conf, ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT, argc - 2, &argv[2], errbuf, errbuf_size);
+  ret = ts_lua_add_module(conf, ts_lua_main_ctx_array, conf->states, argc - optind, &argv[optind], errbuf, errbuf_size);
 
   if (ret != 0) {
     return TS_ERROR;
@@ -111,7 +141,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 void
 TSRemapDeleteInstance(void *ih)
 {
-  ts_lua_del_module((ts_lua_instance_conf *)ih, ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
+  int states = ((ts_lua_instance_conf *)ih)->states;
+  ts_lua_del_module((ts_lua_instance_conf *)ih, ts_lua_main_ctx_array, states);
   ts_lua_del_instance(ih);
   TSfree(ih);
   return;
@@ -136,7 +167,7 @@ ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   instance_conf = (ts_lua_instance_conf *)ih;
   req_id        = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
 
-  main_ctx = &ts_lua_main_ctx_array[req_id % TS_LUA_MAX_STATE_COUNT];
+  main_ctx = &ts_lua_main_ctx_array[req_id % instance_conf->states];
 
   TSMutexLock(main_ctx->mutexp);
 
@@ -227,7 +258,7 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 
   req_id = __sync_fetch_and_add(&ts_lua_g_http_next_id, 1);
 
-  main_ctx = &ts_lua_g_main_ctx_array[req_id % TS_LUA_MAX_STATE_COUNT];
+  main_ctx = &ts_lua_g_main_ctx_array[req_id % conf->states];
 
   TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
   TSMutexLock(main_ctx->mutexp);
@@ -391,12 +422,38 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  if (argc < 2) {
+  int states                           = TS_LUA_MAX_STATE_COUNT;
+  static const struct option longopt[] = {
+    {"states", required_argument, 0, 's'}, {0, 0, 0, 0},
+  };
+
+  for (;;) {
+    int opt;
+
+    opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
+    switch (opt) {
+    case 's':
+      states = atoi(optarg);
+      // set state
+      break;
+    }
+
+    if (opt == -1) {
+      break;
+    }
+  }
+
+  if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
+    TSError("[ts_lua][%s] invalid # of states from option input", __FUNCTION__);
+    return;
+  }
+
+  if (argc - optind < 1) {
     TSError("[ts_lua][%s] lua script file required !!", __FUNCTION__);
     return;
   }
 
-  if (strlen(argv[1]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16) {
+  if (strlen(argv[optind]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16) {
     TSError("[ts_lua][%s] lua script file name too long !!", __FUNCTION__);
     return;
   }
@@ -407,15 +464,16 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
   memset(conf, 0, sizeof(ts_lua_instance_conf));
-  conf->remap = 0;
+  conf->remap  = 0;
+  conf->states = states;
 
-  snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[1]);
+  snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[optind]);
 
   ts_lua_init_instance(conf);
 
   char errbuf[TS_LUA_MAX_STR_LENGTH];
   int errbuf_len = sizeof(errbuf);
-  ret = ts_lua_add_module(conf, ts_lua_g_main_ctx_array, TS_LUA_MAX_STATE_COUNT, argc - 1, (char **)&argv[1], errbuf, errbuf_len);
+  ret = ts_lua_add_module(conf, ts_lua_g_main_ctx_array, conf->states, argc - optind, (char **)&argv[optind], errbuf, errbuf_len);
 
   if (ret != 0) {
     TSError(errbuf, NULL);

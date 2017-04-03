@@ -129,7 +129,7 @@ elif [ -d /etc/init.d ]; then
 elif [ "$DISTRIB_ID" = "Darwin" ]; then
     SCRIPTNAME=$0 # Darwin
 elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
-    SCRIPTNAME=$0 # FreeBSD 
+    SCRIPTNAME=$0 # FreeBSD
 else
     echo "This script needs to be ported to this OS"
     exit 1
@@ -168,7 +168,7 @@ test -f /etc/init.d/functions.sh && . /etc/init.d/functions.sh
 test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
 
 # FreeBSD
-# NB: FreeBSD's ports system installs a run script in /usr/local/etc/rc.d/ 
+# NB: FreeBSD's ports system installs a run script in /usr/local/etc/rc.d/
 # with native OS rc.subr(8) features.
 test -f /etc/rc.subr && . /etc/rc.subr
 
@@ -314,9 +314,9 @@ case "$1" in
             test "x$VERBOSE" != "xno" && log_end_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE $TC_DAEMON
-            action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE $TM_DAEMON
-            action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE $TS_DAEMON
+            action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE -d 35 $TC_DAEMON
+            action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE -d 35 $TM_DAEMON
+            action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE -d 35 $TS_DAEMON
         elif [ "$DISTRIB_ID" = "gentoo" ]; then
 	    ebegin "Starting ${TS_PACKAGE_NAME}"
 	    do_stop
@@ -345,11 +345,11 @@ case "$1" in
             rm -f ${TS_PIDFILE}
         elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
             echo "Stopping ${TS_PACKAGE_NAME}"
-            if [ -e "$TC_PIDFILE" ]; then 
+            if [ -e "$TC_PIDFILE" ]; then
                 kill $(cat $TC_PIDFILE)
                 rm -f ${TC_PIDFILE}
             fi
-            if [ -e "$TM_PIDFILE" ]; then 
+            if [ -e "$TM_PIDFILE" ]; then
                 kill $(cat $TM_PIDFILE)
                 rm -f ${TM_PIDFILE}
             fi
@@ -433,17 +433,17 @@ case "$1" in
             [ $status -eq 0 ] || /bin/echo -n "not "
             echo "running."
         elif [ "$DISTRIB_ID" = "FreeBSD" -o "$DISTRIB_ID" = "gentoo" ]; then
-            if pgrep $TM_NAME > /dev/null ; then 
-                echo "$TM_NAME running as pid `cat $TM_PIDFILE`" ; else 
-                echo "$TM_NAME not running" 
+            if pgrep $TM_NAME > /dev/null ; then
+                echo "$TM_NAME running as pid `cat $TM_PIDFILE`" ; else
+                echo "$TM_NAME not running"
             fi
-            if pgrep $TS_NAME > /dev/null ; then 
-                echo "$TS_NAME running as pid `cat $TS_PIDFILE`"; else 
-                echo "$TS_NAME not running" 
+            if pgrep $TS_NAME > /dev/null ; then
+                echo "$TS_NAME running as pid `cat $TS_PIDFILE`"; else
+                echo "$TS_NAME not running"
             fi
-            if pgrep $TC_NAME > /dev/null ; then 
-                echo "$TC_NAME running as pid `cat $TC_PIDFILE`"; else 
-                echo "$TC_NAME not running" ; 
+            if pgrep $TC_NAME > /dev/null ; then
+                echo "$TC_NAME running as pid `cat $TC_PIDFILE`"; else
+                echo "$TC_NAME not running" ;
             fi
             exit $status
         else

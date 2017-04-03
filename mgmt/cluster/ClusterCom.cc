@@ -259,7 +259,7 @@ drainIncomingChannel(void *arg)
           bool stat = false;
           char fname[1024];
           version_t ver;
-          textBuffer *buff = nullptr;
+          TextBuffer *buff = nullptr;
           Rollback *rb;
 
           /* Get the file and blast it back */
@@ -475,7 +475,7 @@ ClusterCom::checkPeers(time_t *ticker)
   if ((t - *ticker) > 5) {
     int num_peers = 0;
     long idle_since;
-    textBuffer *buff;
+    TextBuffer *buff;
 
     Debug("ccom", "MultiCast Messages received: %d", MultiCastMessages);
 
@@ -517,7 +517,7 @@ ClusterCom::checkPeers(time_t *ticker)
     }
 
     /* Create the base for the cluster file(inserting header comment) */
-    buff = new textBuffer(strlen(CLUSTER_CONFIG_FILE_BLURB) + 1024);
+    buff = new TextBuffer(strlen(CLUSTER_CONFIG_FILE_BLURB) + 1024);
     buff->copyFrom(CLUSTER_CONFIG_FILE_BLURB, strlen(CLUSTER_CONFIG_FILE_BLURB));
 
     if (cluster_type == FULL_CLUSTER) {
@@ -1054,7 +1054,7 @@ extract_locals(MgmtHashTable *local_ht, char *record_buffer)
 }
 
 bool
-insert_locals(textBuffer *rec_cfg_new, textBuffer *rec_cfg, MgmtHashTable *local_ht)
+insert_locals(TextBuffer *rec_cfg_new, TextBuffer *rec_cfg, MgmtHashTable *local_ht)
 {
   char *p, *q, *line, *name;
   bool eof;
@@ -1156,7 +1156,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
                             * cluster anymore.
                             */
         char message[1024];
-        textBuffer *reply = new textBuffer(2048); /* Start with 2k file size */
+        TextBuffer *reply = new TextBuffer(2048); /* Start with 2k file size */
         snprintf(message, sizeof(message), "file: %s %d", file, ver);
 
         /* Send request, read response, write new file. */
@@ -1173,9 +1173,9 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
         // records; store our LOCAL records in a hash-table, and then
         // merge our LOCALs into the newly acquired remote config.
         if (!file_update_failure && (strcmp(file, "records.config") == 0)) {
-          textBuffer *our_rec_cfg;
+          TextBuffer *our_rec_cfg;
           char *our_rec_cfg_cp;
-          textBuffer *reply_new;
+          TextBuffer *reply_new;
           MgmtHashTable *our_locals_ht;
 
           if (rb->getVersion(our_ver, &our_rec_cfg) != OK_ROLLBACK) {
@@ -1184,7 +1184,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
             our_locals_ht  = new MgmtHashTable("our_locals_ht", true, InkHashTableKeyType_String);
             our_rec_cfg_cp = ats_strdup(our_rec_cfg->bufPtr());
             extract_locals(our_locals_ht, our_rec_cfg_cp);
-            reply_new = new textBuffer(reply->spaceUsed());
+            reply_new = new TextBuffer(reply->spaceUsed());
             if (!insert_locals(reply_new, reply, our_locals_ht)) {
               file_update_failure = true;
               delete reply_new;
@@ -1526,7 +1526,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
   int running_sum = 0;
   char tmp[1024], *files, *line, *last;
   struct in_addr resolved_addr;
-  textBuffer *buff;
+  TextBuffer *buff;
 
   /* Insert the standard packet header */
   resolved_addr.s_addr = our_ip;
@@ -1973,7 +1973,7 @@ ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len, char *re
  *   Used to send a string across the reliable fd.
  */
 bool
-ClusterCom::sendReliableMessageReadTillClose(unsigned long addr, char *buf, int len, textBuffer *reply)
+ClusterCom::sendReliableMessageReadTillClose(unsigned long addr, char *buf, int len, TextBuffer *reply)
 {
   int fd, cport, res;
   char string_addr[80], tmp_reply[1024];

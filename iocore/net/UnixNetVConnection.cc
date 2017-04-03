@@ -271,9 +271,22 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
     // if it is a non-temporary error, we should die appropriately
     if (err && err != EAGAIN && err != EINTR) {
-      read_signal_error(nh, vc, err);
+      Continuation *reader_cont = vc->read.vio._cont;
+
+      if (read_signal_error(nh, vc, err) == EVENT_DONE) {
+        return;
+      }
+      // If vc is closed or shutdown(WRITE) in last read_signal_error callback,
+      //   or reader_cont is same as write.vio._cont.
+      // Then we must clear the write.error to avoid callback EVENT_ERROR to SM by write_ready_list.
+      if (vc->closed || (vc->f.shutdown & NET_VC_SHUTDOWN_WRITE) || reader_cont == vc->write.vio._cont) {
+        vc->write.error = 0;
+      }
       return;
     }
+
+    // clear read.error if it is non-fatal error
+    vc->read.error = 0;
   }
 
   // if it is not enabled.
@@ -450,9 +463,14 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     }
 
     if (err && err != EAGAIN && err != EINTR) {
+      // Here is differ to net_read_io since read_signal_error always callback first.
+      // NetHandler::mainNetEvent() is always handle read_ready_list first and then write_ready_list.
       write_signal_error(nh, vc, err);
       return;
     }
+
+    // clear write.error if it is non-fatal error.
+    vc->write.error = 0;
   }
 
   // This function will always return true unless
@@ -550,9 +568,11 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     s->vio.ndone += total_written;
   }
 
+  // A write of 0 makes no sense since we tried to write more than 0.
+  ink_assert(r != 0);
+  // Either we wrote something or got an error.
   // check for errors
-  if (r <= 0) {
-    // If the socket was not ready, add it to the wait list.
+  if (r < 0) { // if the socket was not ready, add to WaitList
     if (r == -EAGAIN || r == -ENOTCONN || -r == EINPROGRESS) {
       NET_INCREMENT_DYN_STAT(net_calls_to_write_nodata_stat);
       if ((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
@@ -567,12 +587,6 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         read_reschedule(nh, vc);
       }
 
-      return;
-    }
-
-    if (!r || r == -ECONNRESET) {
-      vc->write.triggered = 0;
-      write_signal_done(VC_EVENT_EOS, nh, vc);
       return;
     }
 
@@ -660,7 +674,7 @@ UnixNetVConnection::get_data(int id, void *data)
   }
 }
 
-const int64_t
+int64_t
 UnixNetVConnection::outstanding()
 {
   int n;
@@ -953,6 +967,7 @@ UnixNetVConnection::UnixNetVConnection()
     submit_time(0),
     oob_ptr(nullptr),
     from_accept_thread(false),
+    accept_object(nullptr),
     origin_trace(false),
     origin_trace_addr(nullptr),
     origin_trace_port(0)
@@ -1071,8 +1086,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
                  origin_trace_port, (int)r, (int)r, (char *)tiovec[0].iov_base);
 
       } else if (r == 0) {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d closed connection", origin_trace_ip,
-                 origin_trace_port);
+        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d\tbytes=0", origin_trace_ip, origin_trace_port);
       } else {
         TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d error=%s", origin_trace_ip, origin_trace_port,
                  strerror(errno));

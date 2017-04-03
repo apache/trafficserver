@@ -23,24 +23,24 @@ AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 libatscppai = $(top_builddir)/lib/cppapi/libatscppapi.la
 
 example_Plugins = \
-	add-header.la \
-	append-transform.la \
-	basic-auth.la \
-	blacklist-0.la \
-	blacklist-1.la \
-	bnull-transform.la \
-	cache-scan.la \
-	file-1.la \
+	add_header.la \
+	append_transform.la \
+	basic_auth.la \
+	blacklist_0.la \
+	blacklist_1.la \
+	bnull_transform.la \
+	cache_scan.la \
+	file_1.la \
 	hello.la \
 	intercept.la \
-	lifecycle-plugin.la \
-	null-transform.la \
-	output-header.la \
+	lifecycle_plugin.la \
+	null_transform.la \
+	output_header.la \
 	passthru.la \
-	protocol-stack.la \
+	protocol_stack.la \
 	protocol.la \
 	psi.la \
-	query-remap.la \
+	query_remap.la \
 	remap.la \
 	remap_header_add.la \
 	replace-header.la \
@@ -54,7 +54,8 @@ example_Plugins = \
 	statistic.la \
 	thread-1.la \
 	txn-data-sink.la \
-	version.la
+	version.la \
+	replace-protoset.la
 
 example_Plugins += \
 	cppapi/AsyncHttpFetch.la \
@@ -87,24 +88,24 @@ else
 noinst_LTLIBRARIES = $(example_Plugins)
 endif
 
-add_header_la_SOURCES = add-header/add-header.c
-append_transform_la_SOURCES = append-transform/append-transform.c
-basic_auth_la_SOURCES = basic-auth/basic-auth.c
-blacklist_0_la_SOURCES = blacklist-0/blacklist-0.c
-blacklist_1_la_SOURCES = blacklist-1/blacklist-1.c
-bnull_transform_la_SOURCES = bnull-transform/bnull-transform.c
-cache_scan_la_SOURCES = cache-scan/cache-scan.cc
-file_1_la_SOURCES = file-1/file-1.c
+add_header_la_SOURCES = add_header/add_header.c
+append_transform_la_SOURCES = append_transform/append_transform.c
+basic_auth_la_SOURCES = basic_auth/basic_auth.c
+blacklist_0_la_SOURCES = blacklist_0/blacklist_0.c
+blacklist_1_la_SOURCES = blacklist_1/blacklist_1.c
+bnull_transform_la_SOURCES = bnull_transform/bnull_transform.c
+cache_scan_la_SOURCES = cache_scan/cache_scan.cc
+file_1_la_SOURCES = file_1/file_1.c
 hello_la_SOURCES = hello/hello.c
 intercept_la_SOURCES = intercept/intercept.cc
-lifecycle_plugin_la_SOURCES = lifecycle-plugin/lifecycle-plugin.c
-null_transform_la_SOURCES = null-transform/null-transform.c
-output_header_la_SOURCES = output-header/output-header.c
+lifecycle_plugin_la_SOURCES = lifecycle_plugin/lifecycle_plugin.c
+null_transform_la_SOURCES = null_transform/null_transform.c
+output_header_la_SOURCES = output_header/output_header.c
 passthru_la_SOURCES = passthru/passthru.cc
 protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
-protocol_stack_la_SOURCES = protocol-stack/protocol-stack.cc
+protocol_stack_la_SOURCES = protocol_stack/protocol_stack.cc
 psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
-query_remap_la_SOURCES = query-remap/query-remap.c
+query_remap_la_SOURCES = query_remap/query_remap.c
 remap_header_add_la_SOURCES = remap_header_add/remap_header_add.cc
 remap_la_SOURCES = remap/remap.cc
 replace_header_la_SOURCES = replace-header/replace-header.c
@@ -115,6 +116,7 @@ server_transform_la_SOURCES = server-transform/server-transform.c
 ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc
 ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc
 ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc
+replace_protoset_la_SOURCES = replace-protoset/replace-protoset.cc
 statistic_la_SOURCES = statistic/statistic.cc
 thread_1_la_SOURCES = thread-1/thread-1.c
 txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
@@ -176,4 +178,3 @@ cppapi_intercept_la_LIBADD = $(libatscppai)
 tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
 	$(CC_Clang_Tidy)
-

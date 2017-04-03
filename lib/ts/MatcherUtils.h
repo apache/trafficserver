@@ -33,6 +33,7 @@
 #define _MATCHER_UTILS_H_
 
 #include "ts/ParseRules.h"
+#include "ts/Result.h"
 #include "ts/ink_inet.h"
 
 // Look in MatcherUtils.cc for comments on function usage
@@ -113,48 +114,6 @@ extern const matcher_tags ip_allow_dest_tags;
 extern const matcher_tags socks_server_tags;
 
 const char *parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags);
-
-struct config_parse_error {
-  // Wrapper to make a syntactically nice success value.
-  static config_parse_error
-  ok()
-  {
-    return config_parse_error();
-  }
-
-  config_parse_error(const config_parse_error &rhs)
-  {
-    if (rhs.msg.get()) {
-      this->msg = ats_strdup(rhs.msg.get());
-    }
-  }
-
-  explicit config_parse_error(const char *fmt, ...) TS_NONNULL(2) TS_PRINTFLIKE(2, 3);
-
-  config_parse_error &
-  operator=(const config_parse_error &rhs)
-  {
-    if (rhs.msg.get()) {
-      this->msg = ats_strdup(rhs.msg.get());
-    } else {
-      this->msg = (char *)nullptr;
-    }
-
-    return *this;
-  }
-
-  const char *
-  get() const
-  {
-    return msg.get();
-  }
-
-  // A config error object evaluates to true if there is an error message.
-  operator bool() const { return msg.get() != nullptr; }
-private:
-  config_parse_error() {}
-  ats_scoped_str msg;
-};
 
 // inline void LowerCaseStr(char* str)
 //

@@ -24,7 +24,7 @@
 #include "ts/ink_platform.h"
 
 #include <strings.h>
-#include <math.h>
+#include <cmath>
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
@@ -73,9 +73,7 @@ is_localhost(const char *name, int len)
 inline static void
 simple_or_unavailable_server_retry(HttpTransact::State *s)
 {
-  HTTP_RELEASE_ASSERT(!s->parent_result.parent_is_proxy());
-
-  // reponse is from a parent origin server.
+  // server response.
   HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
 
   DebugTxn("http_trans", "[simple_or_unavailabe_server_retry] server_response = %d, simple_retry_attempts: %d, numParents:%d ",
@@ -85,9 +83,9 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
   if ((s->parent_result.retry_type() & PARENT_RETRY_SIMPLE) &&
       s->current.simple_retry_attempts < s->parent_result.max_retries(PARENT_RETRY_SIMPLE) &&
       server_response == HTTP_STATUS_NOT_FOUND) {
-    DebugTxn("parent_select", "RECEIVED A SIMPLE RETRY RESPONSE");
+    DebugTxn("http_trans", "RECEIVED A SIMPLE RETRY RESPONSE");
     if (s->current.simple_retry_attempts < s->parent_params->numParents(&s->parent_result)) {
-      s->current.state      = HttpTransact::PARENT_ORIGIN_RETRY;
+      s->current.state      = HttpTransact::PARENT_RETRY;
       s->current.retry_type = PARENT_RETRY_SIMPLE;
       return;
     } else {
@@ -101,7 +99,7 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
            s->parent_result.response_is_retryable(server_response)) {
     DebugTxn("parent_select", "RECEIVED A PARENT_RETRY_UNAVAILABLE_SERVER RESPONSE");
     if (s->current.unavailable_server_retry_attempts < s->parent_params->numParents(&s->parent_result)) {
-      s->current.state      = HttpTransact::PARENT_ORIGIN_RETRY;
+      s->current.state      = HttpTransact::PARENT_RETRY;
       s->current.retry_type = PARENT_RETRY_UNAVAILABLE_SERVER;
       return;
     } else {
@@ -567,7 +565,7 @@ HttpTransact::BadRequest(State *s)
   DebugTxn("http_trans", "[BadRequest]"
                          "parser marked request bad");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error", nullptr);
+  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error");
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
@@ -577,7 +575,7 @@ HttpTransact::Forbidden(State *s)
   DebugTxn("http_trans", "[Forbidden]"
                          "IpAllow marked request forbidden");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-  build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied", NULL);
+  build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied");
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
 }
 
@@ -644,7 +642,7 @@ HttpTransact::HandleBlindTunnel(State *s)
     // The error message we send back will be suppressed so
     //  the only important thing in selecting the error is what
     //  status code it gets logged as
-    build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Port Forwarding Error", "default", nullptr);
+    build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Port Forwarding Error", "default");
 
     int host_len;
     const char *host = s->hdr_info.client_request.url_get()->host_get(&host_len);
@@ -759,9 +757,9 @@ HttpTransact::EndRemapRequest(State *s)
   if (s->remap_redirect != nullptr) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     if (s->http_return_code == HTTP_STATUS_MOVED_PERMANENTLY) {
-      build_error_response(s, HTTP_STATUS_MOVED_PERMANENTLY, "Redirect", "redirect#moved_permanently", nullptr);
+      build_error_response(s, HTTP_STATUS_MOVED_PERMANENTLY, "Redirect", "redirect#moved_permanently");
     } else {
-      build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect", "redirect#moved_temporarily", nullptr);
+      build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect", "redirect#moved_temporarily");
     }
     ats_free(s->remap_redirect);
     s->reverse_proxy = false;
@@ -775,7 +773,7 @@ HttpTransact::EndRemapRequest(State *s)
   // We must close this connection if client_connection_enabled == false //
   /////////////////////////////////////////////////////////////////////////
   if (!s->client_connection_enabled) {
-    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied", nullptr);
+    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied");
     s->reverse_proxy = false;
     goto done;
   }
@@ -783,7 +781,7 @@ HttpTransact::EndRemapRequest(State *s)
   // Check if remap plugin set HTTP return code and return body  //
   /////////////////////////////////////////////////////////////////
   if (s->http_return_code != HTTP_STATUS_NONE) {
-    build_error_response(s, s->http_return_code, nullptr, nullptr, s->internal_msg_buffer_size ? s->internal_msg_buffer : nullptr);
+    build_error_response(s, s->http_return_code, nullptr, nullptr);
     s->reverse_proxy = false;
     goto done;
   }
@@ -827,14 +825,14 @@ HttpTransact::EndRemapRequest(State *s)
 
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       if (redirect_url) { /* there is a redirect url */
-        build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect For Explanation", "request#no_host", nullptr);
+        build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect For Explanation", "request#no_host");
         s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, redirect_url, redirect_url_len);
         // socket when there is no host. Need to handle DNS failure elsewhere.
       } else if (host == nullptr) { /* no host */
-        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host", nullptr);
+        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host");
         s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
       } else {
-        build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found on Accelerator", "urlrouting#no_mapping", nullptr);
+        build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found on Accelerator", "urlrouting#no_mapping");
         s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
       }
       s->reverse_proxy = false;
@@ -847,7 +845,7 @@ HttpTransact::EndRemapRequest(State *s)
       ///////////////////////////////////////////////////////
 
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found", "urlrouting#no_mapping", nullptr);
+      build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found", "urlrouting#no_mapping");
       s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
 
       s->reverse_proxy = false;
@@ -981,7 +979,7 @@ HttpTransact::handle_upgrade_request(State *s)
     DebugTxn("http_trans_upgrade", "Transaction requested upgrade for unknown protocol: %s", upgrade_hdr_val);
   }
 
-  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error", nullptr);
+  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error");
 
   // we want our modify_request method to just return while we fail out from here.
   // this seems like the preferred option because the user wanted to do an upgrade but sent a bad protocol.
@@ -1010,7 +1008,7 @@ HttpTransact::handle_websocket_upgrade_pre_remap(State *s)
     url->scheme_set(URL_SCHEME_WSS, URL_LEN_WSS);
   } else {
     DebugTxn("http_trans_websocket_upgrade_pre_remap", "Invalid scheme for websocket upgrade");
-    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error", nullptr);
+    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Upgrade Request", "request#syntax_error");
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
   }
 
@@ -1050,8 +1048,8 @@ void
 HttpTransact::ModifyRequest(State *s)
 {
   int scheme, hostname_len;
-  const char *hostname;
-  HTTPHdr &request = s->hdr_info.client_request;
+  HTTPHdr &request              = s->hdr_info.client_request;
+  static const int PORT_PADDING = 8;
 
   DebugTxn("http_trans", "START HttpTransact::ModifyRequest");
 
@@ -1085,10 +1083,15 @@ HttpTransact::ModifyRequest(State *s)
   // The solution should be to move the scheme detecting logic in to
   // the header class, rather than doing it in a random bit of
   // external code.
-  hostname = request.host_get(&hostname_len);
+  const char *buf = request.host_get(&hostname_len);
   if (!request.is_target_in_url()) {
     s->hdr_info.client_req_is_server_style = true;
   }
+  // Copy out buf to a hostname just in case its heap header memory is freed during coalescing
+  // due to later HdrHeap operations
+  char *hostname = (char *)alloca(hostname_len + PORT_PADDING);
+  memcpy(hostname, buf, hostname_len);
+
   // Make clang analyzer happy. hostname is non-null iff request.is_target_in_url().
   ink_assert(hostname || s->hdr_info.client_req_is_server_style);
 
@@ -1102,17 +1105,12 @@ HttpTransact::ModifyRequest(State *s)
 
   if ((max_forwards != 0) && !s->hdr_info.client_req_is_server_style && s->method != HTTP_WKSIDX_CONNECT) {
     MIMEField *host_field = request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
-    int host_val_len      = hostname_len;
-    const char *host_val  = hostname;
-    int port              = url->port_get_raw();
-    char *buf             = nullptr;
+    in_port_t port        = url->port_get_raw();
 
     // Form the host:port string if not a default port (e.g. 80)
+    // We allocated extra space for the port above
     if (port > 0) {
-      buf = static_cast<char *>(alloca(host_val_len + 15));
-      memcpy(buf, hostname, host_val_len);
-      host_val_len += snprintf(buf + host_val_len, 15, ":%d", port);
-      host_val = buf;
+      hostname_len += snprintf(hostname + hostname_len, PORT_PADDING, ":%u", port);
     }
 
     // No host_field means not equal to host and will need to be set, so create it now.
@@ -1121,8 +1119,8 @@ HttpTransact::ModifyRequest(State *s)
       request.field_attach(host_field);
     }
 
-    if (!mimefield_value_equal(host_field, host_val, host_val_len)) {
-      request.field_value_set(host_field, host_val, host_val_len);
+    if (mimefield_value_equal(host_field, hostname, hostname_len) == false) {
+      request.field_value_set(host_field, hostname, hostname_len);
       request.mark_target_dirty();
     }
   }
@@ -1170,12 +1168,12 @@ HttpTransact::handleIfRedirect(State *s)
     redirect_url.destroy();
     if (answer == TEMPORARY_REDIRECT) {
       if ((s->client_info).http_version.m_version == HTTP_VERSION(1, 1)) {
-        build_error_response(s, HTTP_STATUS_TEMPORARY_REDIRECT, "Redirect", "redirect#moved_temporarily", nullptr);
+        build_error_response(s, HTTP_STATUS_TEMPORARY_REDIRECT, "Redirect", "redirect#moved_temporarily");
       } else {
-        build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect", "redirect#moved_temporarily", nullptr);
+        build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect", "redirect#moved_temporarily");
       }
     } else {
-      build_error_response(s, HTTP_STATUS_MOVED_PERMANENTLY, "Redirect", "redirect#moved_permanently", nullptr);
+      build_error_response(s, HTTP_STATUS_MOVED_PERMANENTLY, "Redirect", "redirect#moved_permanently");
     }
     s->arena.str_free(s->remap_redirect);
     s->remap_redirect = nullptr;
@@ -1228,7 +1226,7 @@ HttpTransact::HandleRequest(State *s)
       s->is_websocket = false; // unset to avoid screwing up stats.
       DebugTxn("http_trans", "Rejecting websocket connection because the limit has been exceeded");
       bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-      build_error_response(s, HTTP_STATUS_SERVICE_UNAVAILABLE, "WebSocket Connection Limit Exceeded", nullptr, nullptr);
+      build_error_response(s, HTTP_STATUS_SERVICE_UNAVAILABLE, "WebSocket Connection Limit Exceeded", nullptr);
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
     }
   }
@@ -1240,7 +1238,7 @@ HttpTransact::HandleRequest(State *s)
              s->http_config_param->max_post_size);
     HTTP_INCREMENT_DYN_STAT(http_post_body_too_large);
     bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-    build_error_response(s, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large", "request#entity_too_large", nullptr);
+    build_error_response(s, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large", "request#entity_too_large");
     s->squid_codes.log_code = SQUID_LOG_ERR_POST_ENTITY_TOO_LARGE;
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
   }
@@ -1257,7 +1255,7 @@ HttpTransact::HandleRequest(State *s)
         // Let's error out this request.
         DebugTxn("http_trans", "Client sent a post expect: 100-continue, sending 405.");
         HTTP_INCREMENT_DYN_STAT(disallowed_post_100_continue);
-        build_error_response(s, HTTP_STATUS_METHOD_NOT_ALLOWED, "Method Not Allowed", "request#method_unsupported", nullptr);
+        build_error_response(s, HTTP_STATUS_METHOD_NOT_ALLOWED, "Method Not Allowed", "request#method_unsupported");
         TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
       }
     }
@@ -1337,7 +1335,7 @@ HttpTransact::HandleRequest(State *s)
       StartAccessControl(s);
       return;
     } else if (s->http_config_param->no_origin_server_dns) {
-      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect", nullptr);
+      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect");
 
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
     }
@@ -1489,6 +1487,7 @@ HttpTransact::PPDNSLookup(State *s)
   ink_assert(s->dns_info.looking_up == PARENT_PROXY);
   if (!s->dns_info.lookup_success) {
     // Mark parent as down due to resolving failure
+    HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
     s->parent_params->markParentDown(&s->parent_result);
     // DNS lookup of parent failed, find next parent or o.s.
     find_server_and_update_current_info(s);
@@ -1576,7 +1575,7 @@ HttpTransact::ReDNSRoundRobin(State *s)
     s->next_action = how_to_open_connection(s);
   } else {
     // Our ReDNS failed so output the DNS failure error message
-    build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed", nullptr);
+    build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed");
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->next_action       = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     //  s->next_action = PROXY_INTERNAL_CACHE_NOOP;
@@ -1668,7 +1667,7 @@ HttpTransact::OSDNSLookup(State *s)
         }
         // output the DNS failure error message
         SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-        build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed", nullptr);
+        build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed");
         // s->cache_info.action = CACHE_DO_NO_ACTION;
         TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
       }
@@ -1711,7 +1710,7 @@ HttpTransact::OSDNSLookup(State *s)
   // If the SRV response has a port number, we should honor it. Otherwise we do the port defined in remap
   if (s->dns_info.srv_lookup_success) {
     s->server_info.dst_addr.port() = htons(s->dns_info.srv_port);
-  } else {
+  } else if (!s->api_server_addr_set) {
     s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // now we can set the port.
   }
   ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
@@ -1792,7 +1791,7 @@ HttpTransact::OSDNSLookup(State *s)
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
         // DNS lookup is done if the lookup failed and need to call Handle Cache Open Read Miss
       } else {
-        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Invalid Cache Lookup result", "default", nullptr);
+        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Invalid Cache Lookup result", "default");
         Log::error("HTTP: Invalid CACHE LOOKUP RESULT : %d", s->cache_lookup_result);
         TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
       }
@@ -1846,7 +1845,7 @@ HttpTransact::HandleFiltering(State *s)
 
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     // adding a comment so that cvs recognizes that I added a space in the text below
-    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied", nullptr);
+    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied");
     // s->cache_info.action = CACHE_DO_NO_ACTION;
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
   }
@@ -2124,7 +2123,7 @@ HttpTransact::HandlePushError(State *s, const char *reason)
   //   reset from the body still being transfered
   s->state_machine->set_ua_half_close_flag();
 
-  build_error_response(s, HTTP_STATUS_BAD_REQUEST, reason, "default", nullptr);
+  build_error_response(s, HTTP_STATUS_BAD_REQUEST, reason, "default");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2530,9 +2529,10 @@ HttpTransact::need_to_revalidate(State *s)
 void
 HttpTransact::HandleCacheOpenReadHit(State *s)
 {
-  bool needs_revalidate, needs_authenticate = false;
-  bool needs_cache_auth = false;
-  bool server_up        = true;
+  bool needs_revalidate   = false;
+  bool needs_authenticate = false;
+  bool needs_cache_auth   = false;
+  bool server_up          = true;
   CacheHTTPInfo *obj;
 
   if (s->api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
@@ -2576,12 +2576,20 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
   ink_assert(s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
              s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE);
-  if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE &&
-      s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
+
+  // We'll request a revalidation under one of these conditions:
+  //
+  // 1. Cache lookup is a hit, but the response is stale
+  // 2. The cached object has a "Cache-Control: no-cache" header
+  //       *and*
+  //    proxy.config.http.cache.ignore_server_no_cache is set to 0 (i.e don't ignore no cache -- the default setting)
+  //
+  // But, we only do this if we're not in an API updating the cached object (see TSHttpTxnUpdateCachedObject)
+  if ((((s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE) ||
+        ((obj->response_get()->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE) && !s->cache_control.ignore_server_no_cache)) &&
+       (s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE))) {
     needs_revalidate = true;
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
-  } else {
-    needs_revalidate = false;
   }
 
   // the response may not be directly returnable to the client. there
@@ -2603,7 +2611,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   // do we need to revalidate. in other words if the response
   // has to be authorized, is stale or can not be returned, do
   // a revalidate.
-  bool send_revalidate = ((needs_authenticate == true) || (needs_revalidate == true) || (response_returnable == false));
+  bool send_revalidate = (needs_authenticate || needs_revalidate || !response_returnable);
 
   if (needs_cache_auth == true) {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
@@ -2615,7 +2623,8 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   DebugTxn("http_trans", "CacheOpenRead --- needs_revalidate    = %d", needs_revalidate);
   DebugTxn("http_trans", "CacheOpenRead --- response_returnable = %d", response_returnable);
   DebugTxn("http_trans", "CacheOpenRead --- needs_cache_auth    = %d", needs_cache_auth);
-  DebugTxn("http_trans", "CacheOpenRead --- send_revalidate    = %d", send_revalidate);
+  DebugTxn("http_trans", "CacheOpenRead --- send_revalidate     = %d", send_revalidate);
+
   if (send_revalidate) {
     DebugTxn("http_trans", "CacheOpenRead --- HIT-STALE");
     s->dns_info.attempts = 0;
@@ -2850,7 +2859,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
       if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE)) {
         s->state_machine->do_range_setup_if_necessary();
         if (s->range_setup == RANGE_NOT_SATISFIABLE) {
-          build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable", "default", nullptr);
+          build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable", "default");
           s->cache_info.action = CACHE_DO_NO_ACTION;
           s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
           break;
@@ -2891,7 +2900,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
       // and server is not reacheable: 502
       //
       DebugTxn("http_trans", "[build_response_from_cache] No match! Connection failed.");
-      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect", nullptr);
+      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect");
       s->cache_info.action = CACHE_DO_NO_ACTION;
       s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
       warning_code         = HTTP_WARNING_CODE_NONE;
@@ -2941,7 +2950,7 @@ HttpTransact::handle_cache_write_lock(State *s)
     case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE:
       DebugTxn("http_error", "cache_open_write_fail_action %d, cache miss, return error", s->cache_open_write_fail_action);
       s->cache_info.write_status = CACHE_WRITE_ERROR;
-      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect", nullptr);
+      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect");
       MIMEField *ats_field;
       HTTPHdr *header;
       header = &(s->hdr_info.client_response);
@@ -3128,7 +3137,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
 
     s->next_action = how_to_open_connection(s);
   } else { // miss, but only-if-cached is set
-    build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Not Cached", "cache#not_in_cache", nullptr);
+    build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Not Cached", "cache#not_in_cache");
     s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
   }
 
@@ -3507,8 +3516,7 @@ HttpTransact::handle_response_from_parent(State *s)
   HTTP_RELEASE_ASSERT(s->current.server == &s->parent_info);
 
   // response is from a parent origin server.
-  if (is_response_valid(s, &s->hdr_info.server_response) && s->current.request_to == HttpTransact::PARENT_PROXY &&
-      !s->parent_result.parent_is_proxy()) {
+  if (is_response_valid(s, &s->hdr_info.server_response) && s->current.request_to == HttpTransact::PARENT_PROXY) {
     // check for a retryable response if simple or unavailable server retry are enabled.
     if (s->parent_result.retry_type() & (PARENT_RETRY_SIMPLE | PARENT_RETRY_UNAVAILABLE_SERVER)) {
       simple_or_unavailable_server_retry(s);
@@ -3529,7 +3537,7 @@ HttpTransact::handle_response_from_parent(State *s)
   default: {
     LookingUp_t next_lookup = UNDEFINED_LOOKUP;
 
-    if (s->current.state == PARENT_ORIGIN_RETRY) {
+    if (s->current.state == PARENT_RETRY) {
       if (s->current.retry_type == PARENT_RETRY_SIMPLE) {
         if (s->current.simple_retry_attempts >= s->parent_result.max_retries(PARENT_RETRY_SIMPLE)) {
           DebugTxn("http_trans", "PARENT_RETRY_SIMPLE: retried all parents, send error to client.");
@@ -3548,6 +3556,7 @@ HttpTransact::handle_response_from_parent(State *s)
           s->current.unavailable_server_retry_attempts++;
           DebugTxn("http_trans", "PARENT_RETRY_UNAVAILABLE_SERVER: marking parent down and trying another.");
           s->current.retry_type = PARENT_RETRY_NONE;
+          HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
           s->parent_params->markParentDown(&s->parent_result);
           next_lookup = find_server_and_update_current_info(s);
         }
@@ -3559,7 +3568,11 @@ HttpTransact::handle_response_from_parent(State *s)
       ink_assert(s->hdr_info.server_request.valid());
 
       s->current.server->connect_result = ENOTCONN;
-      s->state_machine->do_hostdb_update_if_necessary();
+      // only mark the parent down in hostdb if the configuration allows it,
+      // see proxy.config.http.parent_proxy.mark_down_hostdb in records.config.
+      if (s->txn_conf->parent_failures_update_hostdb) {
+        s->state_machine->do_hostdb_update_if_necessary();
+      }
 
       char addrbuf[INET6_ADDRSTRLEN];
       DebugTxn("http_trans", "[%d] failed to connect to parent %s", s->current.attempts,
@@ -3567,6 +3580,7 @@ HttpTransact::handle_response_from_parent(State *s)
 
       // If the request is not retryable, just give up!
       if (!is_request_retryable(s)) {
+        HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
         s->parent_params->markParentDown(&s->parent_result);
         s->parent_result.result = PARENT_FAIL;
         handle_parent_died(s);
@@ -3574,22 +3588,26 @@ HttpTransact::handle_response_from_parent(State *s)
       }
 
       if (s->current.attempts < s->txn_conf->parent_connect_attempts) {
+        HTTP_INCREMENT_DYN_STAT(http_total_parent_retries_stat);
         s->current.attempts++;
 
         // Are we done with this particular parent?
         if ((s->current.attempts - 1) % s->http_config_param->per_parent_connect_attempts != 0) {
           // No we are not done with this parent so retry
+          HTTP_INCREMENT_DYN_STAT(http_total_parent_switches_stat);
           s->next_action = how_to_open_connection(s);
           DebugTxn("http_trans", "%s Retrying parent for attempt %d, max %" PRId64, "[handle_response_from_parent]",
                    s->current.attempts, s->http_config_param->per_parent_connect_attempts);
           return;
         } else {
           DebugTxn("http_trans", "%s %d per parent attempts exhausted", "[handle_response_from_parent]", s->current.attempts);
+          HTTP_INCREMENT_DYN_STAT(http_total_parent_retries_exhausted_stat);
 
           // Only mark the parent down if we failed to connect
           //  to the parent otherwise slow origin servers cause
           //  us to mark the parent down
           if (s->current.state == CONNECTION_ERROR) {
+            HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
             s->parent_params->markParentDown(&s->parent_result);
           }
           // We are done so look for another parent if any
@@ -3598,8 +3616,10 @@ HttpTransact::handle_response_from_parent(State *s)
       } else {
         // Done trying parents... fail over to origin server if that is
         //   appropriate
+        HTTP_INCREMENT_DYN_STAT(http_total_parent_retries_exhausted_stat);
         DebugTxn("http_trans", "[handle_response_from_parent] Error. No more retries.");
         if (s->current.state == CONNECTION_ERROR) {
+          HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
           s->parent_params->markParentDown(&s->parent_result);
         }
         s->parent_result.result = PARENT_FAIL;
@@ -4282,7 +4302,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
 
     /* Downgrade the request level and retry */
     if (!HttpTransactHeaders::downgrade_request(&keep_alive, &s->hdr_info.server_request)) {
-      build_error_response(s, HTTP_STATUS_HTTPVER_NOT_SUPPORTED, "HTTP Version Not Supported", "response#bad_version", nullptr);
+      build_error_response(s, HTTP_STATUS_HTTPVER_NOT_SUPPORTED, "HTTP Version Not Supported", "response#bad_version");
       s->next_action        = SM_ACTION_SEND_ERROR_CACHE_NOOP;
       s->already_downgraded = true;
     } else {
@@ -4646,7 +4666,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
     /* Downgrade the request level and retry */
     if (!HttpTransactHeaders::downgrade_request(&keep_alive, &s->hdr_info.server_request)) {
       s->already_downgraded = true;
-      build_error_response(s, HTTP_STATUS_HTTPVER_NOT_SUPPORTED, "HTTP Version Not Supported", "response#bad_version", nullptr);
+      build_error_response(s, HTTP_STATUS_HTTPVER_NOT_SUPPORTED, "HTTP Version Not Supported", "response#bad_version");
       s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     } else {
       s->already_downgraded = true;
@@ -5798,7 +5818,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     while (enc_value) {
       const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
 
-      if (wks_value == HTTP_VALUE_CHUNKED) {
+      if (wks_value == HTTP_VALUE_CHUNKED && !is_response_body_precluded(status_code, s->method)) {
         if (!s->cop_test_page) {
           DebugTxn("http_hdrs", "[init_state_vars_from_resp] transfer encoding: chunked!");
         }
@@ -6176,8 +6196,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   }
   // does server explicitly forbid storing?
   // If OS forbids storing but a ttl is set, allow caching
-  if (!s->cache_info.directives.does_server_permit_storing && !s->cache_control.ignore_server_no_cache &&
-      (s->cache_control.ttl_in_cache <= 0)) {
+  if (!s->cache_info.directives.does_server_permit_storing && (s->cache_control.ttl_in_cache <= 0)) {
     DebugTxn("http_trans", "[is_response_cacheable] server does not permit storing and config file does not "
                            "indicate that server directive should be ignored");
     return false;
@@ -6186,8 +6205,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
 
   // does config explicitly forbid storing?
   // ttl overides other config parameters
-  if ((!s->cache_info.directives.does_config_permit_storing && !s->cache_control.ignore_server_no_cache &&
-       (s->cache_control.ttl_in_cache <= 0)) ||
+  if ((!s->cache_info.directives.does_config_permit_storing && (s->cache_control.ttl_in_cache <= 0)) ||
       (s->cache_control.never_cache)) {
     DebugTxn("http_trans", "[is_response_cacheable] config doesn't allow storing, and cache control does not "
                            "say to ignore no-cache and does not specify never-cache or a ttl");
@@ -6268,7 +6286,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     if (s->cache_control.ttl_in_cache > 0) {
       DebugTxn("http_trans",
                "[is_response_cacheable] Cache-control header directives in response overridden by ttl in cache.config");
-    } else if (!s->cache_control.ignore_server_no_cache) {
+    } else {
       DebugTxn("http_trans", "[is_response_cacheable] NO by response cache control");
       return false;
     }
@@ -6369,14 +6387,14 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
     DebugTxn("http_trans", "[is_request_valid] failed proxy authorization");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED, "Proxy Authentication Required",
-                         "access#proxy_auth_required", nullptr);
+                         "access#proxy_auth_required");
     return false;
   case NON_EXISTANT_REQUEST_HEADER:
   /* fall through */
   case BAD_HTTP_HEADER_SYNTAX: {
     DebugTxn("http_trans", "[is_request_valid] non-existant/bad header");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error", nullptr);
+    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error");
     return false;
   }
 
@@ -6400,10 +6418,10 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
     DebugTxn("http_trans", "[is_request_valid] missing host field");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     if (s->http_config_param->reverse_proxy_enabled) { // host header missing and reverse proxy on
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host", nullptr);
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host");
     } else {
       // host header missing and reverse proxy off
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Required In Request", "request#no_host", nullptr);
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Required In Request", "request#no_host");
     }
 
     return false;
@@ -6411,7 +6429,7 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
   case NO_REQUEST_SCHEME: {
     DebugTxn("http_trans", "[is_request_valid] unsupported or missing request scheme");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Unsupported URL Scheme", "request#scheme_unsupported", nullptr);
+    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Unsupported URL Scheme", "request#scheme_unsupported");
     return false;
   }
   /* fall through */
@@ -6424,24 +6442,24 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
     port = url ? url->port_get() : 0;
     DebugTxn("http_trans", "[is_request_valid] %d is an invalid connect port", port);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Tunnel Forbidden", "access#connect_forbidden", nullptr);
+    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Tunnel Forbidden", "access#connect_forbidden");
     return false;
   case NO_POST_CONTENT_LENGTH: {
     DebugTxn("http_trans", "[is_request_valid] post request without content length");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    build_error_response(s, HTTP_STATUS_LENGTH_REQUIRED, "Content Length Required", "request#no_content_length", nullptr);
+    build_error_response(s, HTTP_STATUS_LENGTH_REQUIRED, "Content Length Required", "request#no_content_length");
     return false;
   }
   case UNACCEPTABLE_TE_REQUIRED: {
     DebugTxn("http_trans", "[is_request_valid] TE required is unacceptable.");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    build_error_response(s, HTTP_STATUS_NOT_ACCEPTABLE, "Transcoding Not Available", "transcoding#unsupported", nullptr);
+    build_error_response(s, HTTP_STATUS_NOT_ACCEPTABLE, "Transcoding Not Available", "transcoding#unsupported");
     return false;
   }
   case INVALID_POST_CONTENT_LENGTH: {
     DebugTxn("http_trans", "[is_request_valid] post request with negative content length value");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Content Length", "request#invalid_content_length", nullptr);
+    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Content Length", "request#invalid_content_length");
     return false;
   }
   default:
@@ -6470,9 +6488,12 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 bool
 HttpTransact::is_request_retryable(State *s)
 {
+  // If safe requests are  retryable, it should be safe to retry safe requests irrespective of bytes sent or connection state
+  // according to RFC the following methods are safe (https://tools.ietf.org/html/rfc7231#section-4.2.1)
   // If there was no error establishing the connection (and we sent bytes)-- we cannot retry
-  if (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0 &&
-      s->state_machine->get_server_session()->get_netvc()->outstanding() != s->state_machine->server_request_hdr_bytes) {
+  if (!(s->txn_conf->safe_requests_retryable && HttpTransactHeaders::is_method_safe(s->method)) &&
+      (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0 &&
+       s->state_machine->get_server_session()->get_netvc()->outstanding() != s->state_machine->server_request_hdr_bytes)) {
     return false;
   }
 
@@ -6657,7 +6678,7 @@ HttpTransact::will_this_request_self_loop(State *s)
                                     "unknown's ip and port same as local ip and port - bailing");
           break;
         }
-        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected", nullptr);
+        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected");
         return true;
       }
     }
@@ -6675,7 +6696,7 @@ HttpTransact::will_this_request_self_loop(State *s)
       if (via_string && ptr_len_str(via_string, via_len, uuid)) {
         DebugTxn("http_transact", "[will_this_request_self_loop] Incoming via: %.*s has (%s[%s] (%s))", via_len, via_string,
                  s->http_config_param->proxy_hostname, uuid, s->http_config_param->proxy_request_via_string);
-        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected", nullptr);
+        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected");
         return true;
       }
 
@@ -7579,7 +7600,7 @@ HttpTransact::handle_parent_died(State *s)
 {
   ink_assert(s->parent_result.result == PARENT_FAIL);
 
-  build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect", nullptr);
+  build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect");
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
@@ -7721,7 +7742,7 @@ HttpTransact::handle_server_died(State *s)
     body_type = "connect#failed_connect";
   }
 
-  build_error_response(s, status, reason, body_type, nullptr);
+  build_error_response(s, status, reason, body_type);
 
   return;
 }
@@ -7973,12 +7994,8 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // If the response is prohibited from containing a body,
   //  we know the content length is trustable for keep-alive
-  if (is_response_body_precluded(status_code, s->method)) {
-    s->hdr_info.trust_response_cl       = true;
-    s->hdr_info.response_content_length = 0;
-    s->client_info.transfer_encoding    = HttpTransact::NO_TRANSFER_ENCODING;
-    s->server_info.transfer_encoding    = HttpTransact::NO_TRANSFER_ENCODING;
-  }
+  if (is_response_body_precluded(status_code, s->method))
+    s->hdr_info.trust_response_cl = true;
 
   handle_response_keep_alive_headers(s, outgoing_version, outgoing_response);
 
@@ -8052,10 +8069,8 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 //
 //////////////////////////////////////////////////////////////////////////////
 void
-HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null, const char *error_body_type,
-                                   const char *format, ...)
+HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null, const char *error_body_type)
 {
-  va_list ap;
   const char *reason_phrase;
   char *url_string;
   char body_language[256], body_type[256];
@@ -8184,10 +8199,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   int64_t len;
   char *new_msg;
 
-  va_start(ap, format);
   new_msg = body_factory->fabricate_with_old_api(error_body_type, s, 8192, &len, body_language, sizeof(body_language), body_type,
-                                                 sizeof(body_type), format, ap);
-  va_end(ap);
+                                                 sizeof(body_type), s->internal_msg_buffer_size,
+                                                 s->internal_msg_buffer_size ? s->internal_msg_buffer : nullptr);
 
   // After the body factory is called, a new "body" is allocated, and we must replace it. It is
   // unfortunate that there's no way to avoid this fabrication even when there is no substitutions...
@@ -8241,7 +8255,6 @@ HttpTransact::build_redirect_response(State *s)
   const char *new_url = nullptr;
   int new_url_len;
   char *to_free = nullptr;
-  char body_language[256], body_type[256];
 
   HTTPStatus status_code = HTTP_STATUS_MOVED_TEMPORARILY;
   char *reason_phrase    = (char *)(http_hdr_reason_lookup(status_code));
@@ -8279,10 +8292,10 @@ HttpTransact::build_redirect_response(State *s)
   //////////////////////////
   s->free_internal_msg_buffer();
   s->internal_msg_buffer_fast_allocator_size = -1;
-  s->internal_msg_buffer                     = body_factory->fabricate_with_old_api_build_va(
-    "redirect#moved_temporarily", s, 8192, &s->internal_msg_buffer_size, body_language, sizeof(body_language), body_type,
-    sizeof(body_type), "%s <a href=\"%s\">%s</a>.  %s.", "The document you requested is now", new_url, new_url,
-    "Please update your documents and bookmarks accordingly", NULL);
+  // template redirect#temporarily can not be used here since there is no way to pass the computed url to the template.
+  s->internal_msg_buffer = body_factory->getFormat(8192, &s->internal_msg_buffer_size, "%s <a href=\"%s\">%s</a>.  %s.",
+                                                   "The document you requested is now", new_url, new_url,
+                                                   "Please update your documents and bookmarks accordingly", NULL);
 
   h->set_content_length(s->internal_msg_buffer_size);
   h->value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/html", 9);
@@ -8327,6 +8340,8 @@ HttpTransact::get_error_string(int erno)
     //              when HttpSM.cc::state_origin_server_read_response
     //                 receives an HTTP_EVENT_EOS. (line 1729 in HttpSM.cc,
     //                 version 1.145.2.13.2.57)
+    case ENET_CONNECT_FAILED:
+      return ("connect failed");
     case UNKNOWN_INTERNAL_ERROR:
       return ("internal error - server connection terminated");
     default:

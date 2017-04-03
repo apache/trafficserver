@@ -90,6 +90,7 @@
 #include "ts/DynArray.h"
 #include "ts/ink_hash_table.h"
 #include "ts/IpMap.h"
+#include "ts/Result.h"
 #include "ts/MatcherUtils.h"
 
 #include "ts/ink_apidefs.h"
@@ -165,14 +166,14 @@ public:
   URL **cache_info_parent_selection_url;
 };
 
-template <class Data, class Result> class UrlMatcher
+template <class Data, class MatchResult> class UrlMatcher
 {
 public:
   UrlMatcher(const char *name, const char *filename);
   ~UrlMatcher();
-  void Match(RequestData *rdata, Result *result);
+  void Match(RequestData *rdata, MatchResult *result);
   void AllocateSpace(int num_entries);
-  config_parse_error NewEntry(matcher_line *line_info);
+  Result NewEntry(matcher_line *line_info);
   void Print();
 
   int
@@ -197,14 +198,14 @@ protected:
   const char *file_name;    // Used for Debug/Warning/Error messages
 };
 
-template <class Data, class Result> class RegexMatcher
+template <class Data, class MatchResult> class RegexMatcher
 {
 public:
   RegexMatcher(const char *name, const char *filename);
   ~RegexMatcher();
-  void Match(RequestData *rdata, Result *result);
+  void Match(RequestData *rdata, MatchResult *result);
   void AllocateSpace(int num_entries);
-  config_parse_error NewEntry(matcher_line *line_info);
+  Result NewEntry(matcher_line *line_info);
   void Print();
 
   int
@@ -228,21 +229,21 @@ protected:
   const char *file_name;    // Used for Debug/Warning/Error messages
 };
 
-template <class Data, class Result> class HostRegexMatcher : public RegexMatcher<Data, Result>
+template <class Data, class MatchResult> class HostRegexMatcher : public RegexMatcher<Data, MatchResult>
 {
 public:
   HostRegexMatcher(const char *name, const char *filename);
-  void Match(RequestData *rdata, Result *result);
+  void Match(RequestData *rdata, MatchResult *result);
 };
 
-template <class Data, class Result> class HostMatcher
+template <class Data, class MatchResult> class HostMatcher
 {
 public:
   HostMatcher(const char *name, const char *filename);
   ~HostMatcher();
-  void Match(RequestData *rdata, Result *result);
+  void Match(RequestData *rdata, MatchResult *result);
   void AllocateSpace(int num_entries);
-  config_parse_error NewEntry(matcher_line *line_info);
+  Result NewEntry(matcher_line *line_info);
   void Print();
 
   int
@@ -271,14 +272,14 @@ private:
   const char *file_name;    // Used for Debug/Warning/Error messages
 };
 
-template <class Data, class Result> class IpMatcher
+template <class Data, class MatchResult> class IpMatcher
 {
 public:
   IpMatcher(const char *name, const char *filename);
   ~IpMatcher();
-  void Match(sockaddr const *ip_addr, RequestData *rdata, Result *result);
+  void Match(sockaddr const *ip_addr, RequestData *rdata, MatchResult *result);
   void AllocateSpace(int num_entries);
-  config_parse_error NewEntry(matcher_line *line_info);
+  Result NewEntry(matcher_line *line_info);
   void Print();
 
   int
@@ -308,7 +309,7 @@ public:
 #define ALLOW_URL_TABLE 1 << 4
 #define DONT_BUILD_TABLE 1 << 5 // for testing
 
-template <class Data, class Result> class ControlMatcher
+template <class Data, class MatchResult> class ControlMatcher
 {
 public:
   // Parameter name must not be deallocated before this
@@ -318,7 +319,7 @@ public:
   ~ControlMatcher();
   int BuildTable();
   int BuildTableFromString(char *str);
-  void Match(RequestData *rdata, Result *result);
+  void Match(RequestData *rdata, MatchResult *result);
   void Print();
 
   int
@@ -326,38 +327,38 @@ public:
   {
     return m_numEntries;
   }
-  HostMatcher<Data, Result> *
+  HostMatcher<Data, MatchResult> *
   getHostMatcher()
   {
     return hostMatch;
   }
-  RegexMatcher<Data, Result> *
+  RegexMatcher<Data, MatchResult> *
   getReMatcher()
   {
     return reMatch;
   }
-  UrlMatcher<Data, Result> *
+  UrlMatcher<Data, MatchResult> *
   getUrlMatcher()
   {
     return urlMatch;
   }
-  IpMatcher<Data, Result> *
+  IpMatcher<Data, MatchResult> *
   getIPMatcher()
   {
     return ipMatch;
   }
-  HostRegexMatcher<Data, Result> *
+  HostRegexMatcher<Data, MatchResult> *
   getHrMatcher()
   {
     return hrMatch;
   }
 
   // private:
-  RegexMatcher<Data, Result> *reMatch;
-  UrlMatcher<Data, Result> *urlMatch;
-  HostMatcher<Data, Result> *hostMatch;
-  IpMatcher<Data, Result> *ipMatch;
-  HostRegexMatcher<Data, Result> *hrMatch;
+  RegexMatcher<Data, MatchResult> *reMatch;
+  UrlMatcher<Data, MatchResult> *urlMatch;
+  HostMatcher<Data, MatchResult> *hostMatch;
+  IpMatcher<Data, MatchResult> *ipMatch;
+  HostRegexMatcher<Data, MatchResult> *hrMatch;
   const matcher_tags *config_tags;
   char config_file_path[PATH_NAME_MAX];
   int flags;

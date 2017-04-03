@@ -4,8 +4,8 @@ ATS (Apache Traffic Server) Collapsed Connection Handling Plugin
 This plugin collapses connections with identical CacheUrl/EffectiveUrl.
 
 If an entry was created for a given CacheUrl/EffectiveUrl in our global hashTable,
-successive GET requests with identical CacheUrl/EffectiveUrl will be blocked in 
-POST_REMAP hook until the hash entry was removed.  (POST_REMAP hook is the last 
+successive GET requests with identical CacheUrl/EffectiveUrl will be blocked in
+POST_REMAP hook until the hash entry was removed.  (POST_REMAP hook is the last
 hook before 'cache lookup')
 
 For requests going into 'cache lookup' stage,
@@ -19,7 +19,7 @@ For requests going into 'read server response header' stage,
     if proxy.config.cache.enable_read_while_writer is enabled,
       hash entry will be removed at earliest possible time.
     else
-      hash entry will be removed in TXN_CLOSE hook. 
+      hash entry will be removed in TXN_CLOSE hook.
   if response is not public cacheable,
     we will update hash entry with a special value to let successive requests pass collapsed check,
     this special hash entry will be removed in TXN_CLOSE hook if value of keep_pass_record_time is 0,

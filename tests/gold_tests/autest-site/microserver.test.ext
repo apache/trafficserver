@@ -1,0 +1,118 @@
+'''
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from ports import get_port
+import json
+
+def addMethod(self,testName, request_header, functionName):
+    return 
+
+# creates the full request or response block using headers and message data
+def httpObject(self,header,data):
+    r=dict()
+    r["timestamp"]=""
+    r["headers"]=header
+    r["body"]=data
+    return r
+
+# addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
+def addResponse(self,filename, testName, request_header, response_header):
+
+    txn = dict()
+    txn["timestamp"] = ""
+    txn["uuid"] = testName
+    txn["request"] = request_header
+    txn["response"] = response_header
+    print("data dir",self.Variables.DataDir)
+    addTransactionToSession(txn,filename)
+    absFilepath=os.path.abspath(filename)
+    self.Setup.CopyAs(absFilepath,self.Variables.DataDir)
+    return
+
+
+
+# addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
+def addResponse(self,filename, request_header, response_header):
+    requestline = request_header["headers"].split("\r\n")[0]
+    requestline = requestline.split(" ")[1]
+    resourceLocation = requestline.split("/",1)
+    if len(resourceLocation)>1:
+        rl = resourceLocation[1]
+    else:
+        rl = ""
+    txn = dict()
+    txn["timestamp"] = ""
+    txn["uuid"] = rl
+    txn["request"] = request_header
+    txn["response"] = response_header
+    absFilepath = os.path.join(self.Variables.DataDir, filename)
+    addTransactionToSession(txn,absFilepath)
+    #absFilepath=os.path.abspath(filename)
+    #self.Setup.CopyAs(absFilepath,self.Variables.DataDir)
+    return
+
+#adds transaction in json format to the specified file
+def addTransactionToSession(txn,JFile):
+    jsondata=None
+    if not os.path.exists(os.path.dirname(JFile)):
+        os.makedirs(os.path.dirname(JFile))
+    if os.path.exists(JFile):
+        jf = open(JFile,'r')
+        jsondata = json.load(jf)
+    
+    if jsondata == None:
+        jsondata = dict()
+        jsondata["version"]='0.1'
+        jsondata["timestamp"]="1234567890.098"
+        jsondata["encoding"]="url_encoded"
+        jsondata["txns"]=list()
+        jsondata["txns"].append(txn)
+    else:
+        jsondata["txns"].append(txn)
+    with open(JFile,'w+') as jf:
+        jf.write(json.dumps(jsondata))
+        
+
+#make headers with the key and values provided        
+def makeHeader(self,requestString, **kwargs):
+    headerStr = requestString+'\r\n'
+    for k,v in kwargs.iteritems():
+        headerStr += k+': '+v+'\r\n'
+    headerStr = headerStr+'\r\n'
+    return headerStr
+
+
+def MakeOriginServer(obj, name,public_ip=False):
+    server_path= os.path.join(obj.Variables.AtsTestToolsDir,'microServer/uWServer.py')
+    data_dir = os.path.join(obj.RunDirectory, name)
+    # create Process
+    p = obj.Processes.Process(name)
+    port=get_port(p,"Port")
+    command = "python3 {0} --data-dir {1} --port {2} --public {3} -m test".format(server_path, data_dir, port, public_ip)
+    
+    # create process
+    p.Command = command
+    p.Setup.MakeDir(data_dir)
+    p.Variables.DataDir = data_dir
+    AddMethodToInstance(p,addResponse)
+    AddMethodToInstance(p,addTransactionToSession)
+    
+    return p
+
+AddTestRunSet(MakeOriginServer,name="MakeOriginServer")
+AddTestRunSet(MakeOriginServer,name="MakeOrigin")

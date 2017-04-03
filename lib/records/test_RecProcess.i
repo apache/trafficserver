@@ -233,7 +233,7 @@ Test02()
   }
 
   // Testing RecLinkConfigXXX, after calling RecLinkConfigXXX above, those
-  // variable will automatically be atomically updated when record changes in 
+  // variable will automatically be atomically updated when record changes in
   // librecords.
   printf("  [RecLinkConfigXXX]\n");
 
@@ -452,16 +452,16 @@ struct RawStatCont:public Continuation
     }
 
     // Compare read value stat_f and expected value test_raw_stat_f
-    // Since RecSet only set g_rsb->global[MY_STAT_F]->count to be g_count value. 
-    // It will not set data.rec_int for stat_f until the RecExecRawStatSyncCbs 
+    // Since RecSet only set g_rsb->global[MY_STAT_F]->count to be g_count value.
+    // It will not set data.rec_int for stat_f until the RecExecRawStatSyncCbs
     // is called. RecExecRawStatSyncCbs callback RecRawStatSyncCount which set
     // data.rec_int to be g_rsb->global[MY_STAT_F]->count. The schedule for
     // RecExecRawStatSyncCbs is REC_RAW_STAT_SYNC_INTERVAL_SEC = 3 secs.
     // The normal for this dummy_function is 1 sec. There is no way we can
     // get the right value for this. Let ask Eric for this :)
-    // I have increase the ink_sleep time (about 3 secs) between RecSet and RecGet 
+    // I have increase the ink_sleep time (about 3 secs) between RecSet and RecGet
     // for stat_c hoping that we got the RecExecRawStatSyncCbs at the middle of them
-    // so we can get the right value for stat_c. However, this will screw up 
+    // so we can get the right value for stat_c. However, this will screw up
     // stat_d badly as we get NaN for stat_d.
     RecRawStat test_raw_stat_f;
     test_raw_stat_f.count = REC_ATOMIC_READ64(&(g_rsb->global[MY_STAT_F]->count));
@@ -506,7 +506,7 @@ Test03()
 {
   printf("[Test03: RawStat Test]\n");
 
-  // Register raw statistics 
+  // Register raw statistics
   g_rsb = RecAllocateRawStatBlock((int) MY_STAT_COUNT);
 
   RecRegisterRawStat(g_rsb, RECT_PROCESS, "proxy.process.test_raw_stat_a",
@@ -525,7 +525,7 @@ Test03()
                      RECD_FLOAT, RECP_NON_PERSISTENT, (int) MY_STAT_E, RecRawStatSyncHrTimeAvg);
   RecRegisterRawStat(g_rsb, RECT_PROCESS, "proxy.process.test_raw_stat_f",
                      RECD_INT, RECP_NON_PERSISTENT, (int) MY_STAT_F, RecRawStatSyncCount);
-  // If forget to Register this RawStat, we will have SEGV when checking 
+  // If forget to Register this RawStat, we will have SEGV when checking
   // g_rsb->global[MY_STAT_G]
   RecRegisterRawStat(g_rsb, RECT_PROCESS, "proxy.process.test_raw_stat_g",
                      RECD_INT, RECP_NON_PERSISTENT, (int) MY_STAT_G, RecRawStatSyncSum);

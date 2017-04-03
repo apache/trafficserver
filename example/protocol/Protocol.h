@@ -35,6 +35,8 @@
 
 #include <ts/ts.h>
 
+#define PLUGIN_NAME "protocol"
+
 #define MAX_SERVER_NAME_LENGTH 1024
 #define MAX_FILE_NAME_LENGTH 1024
 

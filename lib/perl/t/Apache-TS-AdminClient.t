@@ -30,6 +30,6 @@ BEGIN { use_ok('Apache::TS::AdminClient') };
 # Insert your test code below, the Test::More module is use()ed here so read
 # its man page ( perldoc Test::More ) for help writing this test script.
 
-#----- is this right or do we need to use Test::MockObject as well? 
+#----- is this right or do we need to use Test::MockObject as well?
 our @methods = qw(new DESTROY open_socket close_socket get_stat);
 can_ok('Apache::TS::AdminClient', @methods);

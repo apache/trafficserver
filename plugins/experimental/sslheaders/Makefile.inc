@@ -37,8 +37,6 @@ experimental_sslheaders_sslheaders_la_SOURCES = \
 experimental_sslheaders_sslheaders_la_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	@OPENSSL_INCLUDES@
-experimental_sslheaders_sslheaders_la_LDFLAGS = \
-        $(TS_PLUGIN_LD_FLAGS)
 experimental_sslheaders_sslheaders_la_LIBADD = \
         experimental/sslheaders/libsslhdr.la
 
@@ -51,7 +49,7 @@ experimental_sslheaders_test_sslheaders_CPPFLAGS = \
 	-I$(abs_top_srcdir)/lib
 experimental_sslheaders_test_sslheaders_LDFLAGS = @OPENSSL_LDFLAGS@
 experimental_sslheaders_test_sslheaders_LDADD = \
-	@LIBTOOL_LINK_FLAGS@ \
+	@AM_LDFLAGS@ \
 	experimental/sslheaders/libsslhdr.la \
 	$(abs_top_builddir)/lib/ts/libtsutil.la \
 	@OPENSSL_LIBS@

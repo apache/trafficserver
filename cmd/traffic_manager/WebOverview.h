@@ -118,10 +118,10 @@ private:
   overviewPage(const overviewPage &);
   void addRecord(ClusterPeerInfo *cpi);
   overviewRecord *findNodeByName(const char *nodeName);
-  void addReading(MgmtInt reading, textBuffer *output, int nDigits, const char **gifs, const char **alts);
-  void addLoadBar(textBuffer *output, MgmtInt load);
+  void addReading(MgmtInt reading, TextBuffer *output, int nDigits, const char **gifs, const char **alts);
+  void addLoadBar(TextBuffer *output, MgmtInt load);
   void sortHosts();
-  bool moreInfoButton(const char *submission, textBuffer *output);
+  bool moreInfoButton(const char *submission, TextBuffer *output);
 
   // Private variables
   InkHashTable *nodeRecords;  // container for overviewRecords

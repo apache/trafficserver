@@ -68,6 +68,10 @@ char *RecConfigReadLogDir();
 // release the result with ats_free().
 char *RecConfigReadBinDir();
 
+// Return a copy of the system's plugin directory, taking proxy.config.plugin.plugin_dir into account. The caller MUST
+// release the result with ats_free().
+char *RecConfigReadPluginDir();
+
 // Return a copy of a configuration file that is relative to sysconfdir. The relative path to the configuration
 // file is specified in the configuration variable named by "file_variable". If the configuration variable has no
 // value, nullptr is returned. The caller MUST release the result with ats_free().

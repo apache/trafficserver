@@ -125,14 +125,13 @@ CongestionControlRecord::setdefault()
   max_connection          = DEFAULT_max_connection;
 }
 
-config_parse_error
+Result
 CongestionControlRecord::validate()
 {
-#define IsGt0(var)                                                                                \
-  if (var < 1) {                                                                                  \
-    config_parse_error error("line %d: invalid %s = %d, %s must > 0", line_num, #var, var, #var); \
-    cleanup();                                                                                    \
-    return error;                                                                                 \
+#define IsGt0(var)                                                                              \
+  if (var < 1) {                                                                                \
+    cleanup();                                                                                  \
+    return Result::failure("line %d: invalid %s = %d, %s must > 0", line_num, #var, var, #var); \
   }
 
   if (error_page == NULL) {
@@ -140,10 +139,9 @@ CongestionControlRecord::validate()
   }
   if (max_connection_failures >= CONG_RULE_MAX_max_connection_failures ||
       (max_connection_failures <= 0 && max_connection_failures != CONG_RULE_ULIMITED_max_connection_failures)) {
-    config_parse_error error("line %d: invalid %s = %d not in [1, %d) range", line_num, "max_connection_failures",
-                             max_connection_failures, CONG_RULE_MAX_max_connection_failures);
     cleanup();
-    return error;
+    return Result::failure("line %d: invalid %s = %d not in [1, %d) range", line_num, "max_connection_failures",
+                           max_connection_failures, CONG_RULE_MAX_max_connection_failures);
   }
 
   IsGt0(fail_window);
@@ -160,10 +158,10 @@ CongestionControlRecord::validate()
 // max_connection == 0, no connection allow to the origin server for the rule
 #undef IsGt0
 
-  return config_parse_error::ok();
+  return Result::ok();
 }
 
-config_parse_error
+Result
 CongestionControlRecord::Init(matcher_line *line_info)
 {
   const char *tmp;
@@ -233,16 +231,17 @@ CongestionControlRecord::Init(matcher_line *line_info)
     tmp = ProcessModifiers(line_info);
 
     if (tmp != NULL) {
-      return config_parse_error("%s %s at line %d in congestion.config", congestPrefix, tmp, line_num);
+      return Result::failure("%s %s at line %d in congestion.config", congestPrefix, tmp, line_num);
     }
   }
 
-  config_parse_error error = validate();
-  if (!error) {
-    pRecord = new CongestionControlRecord(*this);
+  Result result = validate();
+  if (result.failed()) {
+    return result;
   }
 
-  return error;
+  pRecord = new CongestionControlRecord(*this);
+  return Result::ok();
 }
 
 void

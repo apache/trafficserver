@@ -641,7 +641,7 @@ IOBufferReader::read_avail()
   return t;
 }
 
-inline bool
+TS_INLINE bool
 IOBufferReader::is_read_avail_more_than(int64_t size)
 {
   int64_t t        = -start_offset;
@@ -678,14 +678,12 @@ IOBufferReader::consume(int64_t n)
     block        = block->next;
     r            = block->read_avail();
   }
-
-  ink_assert(read_avail() >= 0);
 }
 
 TS_INLINE char &IOBufferReader::operator[](int64_t i)
 {
-  static char _error = '\0';
-  IOBufferBlock *b   = block.get();
+  static char default_ret = '\0'; // This is just to avoid compiler warnings...
+  IOBufferBlock *b        = block.get();
 
   i += start_offset;
   while (b) {
@@ -696,12 +694,9 @@ TS_INLINE char &IOBufferReader::operator[](int64_t i)
     b = b->next.get();
   }
 
-  ink_assert(!"out of range");
-  if (unlikely(b)) {
-    return *b->start();
-  }
-
-  return _error;
+  ink_release_assert(!"out of range");
+  // Never used, just to satisfy compilers not undersatnding the fatality of ink_release_assert().
+  return default_ret;
 }
 
 TS_INLINE void

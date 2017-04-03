@@ -84,12 +84,6 @@
 #endif
 #endif
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
-typedef const SSL_METHOD *ink_ssl_method_t;
-#else
-typedef SSL_METHOD *ink_ssl_method_t;
-#endif
-
 /*
  * struct ssl_user_config: gather user provided settings from ssl_multicert.config in to this single struct
    * ssl_ticket_enabled - session ticket enabled
@@ -149,15 +143,11 @@ static InkHashTable *ssl_cipher_name_table = nullptr;
  * may use pthreads and openssl without confusing us here. (TS-2271).
  */
 
-// Only define this function if the version of openssl really has a
-// CRYPTO_THREADID_set_callback function.  openssl 1.1.0 defines it to 0
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void
 SSL_pthreads_thread_id(CRYPTO_THREADID *id)
 {
   CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
 }
-#endif
 
 // The locking callback goes away with openssl 1.1 and CRYPTO_LOCK is on longer defined
 #ifdef CRYPTO_LOCK
@@ -228,10 +218,10 @@ ssl_session_timed_out(SSL_SESSION *session)
 static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
 
 static SSL_SESSION *
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
-ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
-#else
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
+#else
+ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
 #endif
 {
   SSLSessionID sid(id, len);
@@ -291,8 +281,6 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 static void
 ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 {
-  SSL_CTX_remove_session(ctx, sess);
-
   unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
   SSLSessionID sid(id, len);
@@ -414,9 +402,21 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
   // Return 1 for success, 0 for error, or -1 to pause
   return retval;
 }
+
+/*
+ * Cannot stop this callback. Always reeneabled
+ */
+static int
+ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
+{
+  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
+  return SSL_TLSEXT_ERR_OK;
+}
+
 #else
 static int
-ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
+ssl_servername_and_cert_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   bool reenabled;
@@ -578,15 +578,12 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
   // so that we don't leave a ticket_key pointer attached if it fails.
   if (SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket) == 0) {
     Error("failed to set session ticket callback");
-    goto fail;
+    ticket_block_free(keyblock);
+    return nullptr;
   }
 
   SSL_CTX_clear_options(ctx, SSL_OP_NO_TICKET);
   return keyblock;
-
-fail:
-  ticket_block_free(keyblock);
-  return nullptr;
 
 #else  /* !HAVE_OPENSSL_SESSION_TICKETS */
   (void)ticket_key_path;
@@ -794,68 +791,47 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   return RecRawStatSyncCount(name, data_type, data, rsb, id);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#define ssl_malloc(size, file, line) ssl_malloc(size)
+#define ssl_realloc(ptr, size, file, line) ssl_realloc(ptr, size)
+#define ssl_free(ptr, file, line) ssl_free(ptr)
+#define ssl_track_malloc(size, file, line) ssl_track_malloc(size)
+#define ssl_track_realloc(ptr, size, file, line) ssl_track_realloc(ptr, size)
+#define ssl_track_free(ptr, file, line) ssl_track_free(ptr)
+#endif
+
 void *
 ssl_malloc(size_t size, const char * /*filename */, int /*lineno*/)
-#else
-void *
-ssl_malloc(size_t size)
-#endif
 {
   return ats_malloc(size);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void *
 ssl_realloc(void *ptr, size_t size, const char * /*filename*/, int /*lineno*/)
-#else
-void *
-ssl_realloc(void *ptr, size_t size)
-#endif
 {
   return ats_realloc(ptr, size);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void
 ssl_free(void *ptr, const char * /*filename*/, int /*lineno*/)
-#else
-void
-ssl_free(void *ptr)
-#endif
 {
   ats_free(ptr);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void *
 ssl_track_malloc(size_t size, const char * /*filename*/, int /*lineno*/)
-#else
-void *
-ssl_track_malloc(size_t size)
-#endif
 {
   return ats_track_malloc(size, &ssl_memory_allocated);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void *
 ssl_track_realloc(void *ptr, size_t size, const char * /*filename*/, int /*lineno*/)
-#else
-void *
-ssl_track_realloc(void *ptr, size_t size)
-#endif
 {
   return ats_track_realloc(ptr, size, &ssl_memory_allocated, &ssl_memory_freed);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void
 ssl_track_free(void *ptr, const char * /*filename*/, int /*lineno*/)
-#else
-void
-ssl_track_free(void *ptr)
-#endif
 {
   ats_track_free(ptr, &ssl_memory_freed);
 }
@@ -865,7 +841,7 @@ SSLInitializeLibrary()
 {
   if (!open_ssl_initialized) {
 // BoringSSL does not have the memory functions
-#ifndef OPENSSL_IS_BORINGSSL
+#ifdef HAVE_CRYPTO_SET_MEM_FUNCTIONS
     if (res_track_memory >= 2) {
       CRYPTO_set_mem_functions(ssl_track_malloc, ssl_track_realloc, ssl_track_free);
     } else {
@@ -1221,7 +1197,7 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
     if (debug) {
       if (unlikely(diags->on())) {
-        diags->log("ssl", DL_Debug, &loc, "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
+        diags->log("ssl-diag", DL_Debug, &loc, "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
                    (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "", vc ? ": peer address is " : "",
                    ip_buf);
       }
@@ -1245,7 +1221,7 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
 
   va_start(ap, fmt);
   if (debug) {
-    diags->log_va("ssl", DL_Debug, &loc, fmt, ap);
+    diags->log_va("ssl-diag", DL_Debug, &loc, fmt, ap);
   } else {
     diags->error_va(DL_Error, &loc, fmt, ap);
   }
@@ -1283,10 +1259,7 @@ SSLDebugBufferPrint(const char *tag, const char *buffer, unsigned buflen, const 
 SSL_CTX *
 SSLDefaultServerContext()
 {
-  ink_ssl_method_t meth = nullptr;
-
-  meth = SSLv23_server_method();
-  return SSL_CTX_new(meth);
+  return SSL_CTX_new(SSLv23_server_method());
 }
 
 static bool
@@ -1375,7 +1348,7 @@ asn1_strdup(ASN1_STRING *s)
   ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING || ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
              ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING || ASN1_STRING_type(s) == V_ASN1_T61STRING);
 
-  return ats_strndup((const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
+  return ats_strndup((const char *)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
 }
 
 // Given a certificate and it's corresponding SSL_CTX context, insert hash
@@ -1489,8 +1462,9 @@ ssl_set_handshake_callbacks(SSL_CTX *ctx)
 // Make sure the callbacks are set
 #if TS_USE_CERT_CB
   SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, nullptr);
+  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_only_callback);
 #else
-  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
+  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_and_cert_callback);
 #endif
 #endif
 }
@@ -1501,7 +1475,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   int server_verify_client;
   ats_scoped_str completeServerCertPath;
   SSL_CTX *ctx                 = SSLDefaultServerContext();
-  EVP_MD_CTX *digest           = EVP_MD_CTX_create();
+  EVP_MD_CTX *digest           = EVP_MD_CTX_new();
   STACK_OF(X509_NAME) *ca_list = nullptr;
   unsigned char hash_buf[EVP_MAX_MD_SIZE];
   unsigned int hash_len    = 0;
@@ -1712,7 +1686,6 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
       SSL_CTX_set_client_CA_list(ctx, ca_list);
     }
   }
-  EVP_MD_CTX_init(digest);
 
   if (EVP_DigestInit_ex(digest, evp_md_func, nullptr) == 0) {
     SSLError("EVP_DigestInit_ex failed");
@@ -1798,8 +1771,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   return ctx;
 
 fail:
-  // EVP_MD_CTX_destroy calls EVP_MD_CTX_cleanup too
-  EVP_MD_CTX_destroy(digest);
+  EVP_MD_CTX_free(digest);
   SSL_CLEAR_PW_REFERENCES(ctx)
   SSLReleaseContext(ctx);
   for (unsigned int i = 0; i < certList.length(); i++) {
@@ -2109,7 +2081,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   if (enc == 1) {
     const ssl_ticket_key_t &most_recent_key = keyblock->keys[0];
     memcpy(keyname, most_recent_key.key_name, sizeof(most_recent_key.key_name));
-    RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
+    RAND_bytes(iv, EVP_MAX_IV_LENGTH);
     EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), nullptr, most_recent_key.aes_key, iv);
     HMAC_Init_ex(hctx, most_recent_key.hmac_secret, sizeof(most_recent_key.hmac_secret), evp_md_func, nullptr);
 

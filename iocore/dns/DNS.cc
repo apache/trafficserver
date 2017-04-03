@@ -62,12 +62,12 @@ namespace
 inline const char *
 QtypeName(int qtype)
 {
-  return ns_t_aaaa == qtype ? "AAAA" : ns_t_a == qtype ? "A" : "*";
+  return T_AAAA == qtype ? "AAAA" : T_A == qtype ? "A" : "*";
 }
 inline bool
 is_addr_query(int qtype)
 {
-  return qtype == ns_t_a || qtype == ns_t_aaaa;
+  return qtype == T_A || qtype == T_AAAA;
 }
 }
 
@@ -361,9 +361,9 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSPr
   if (is_addr_query(qtype)) {
     // adjust things based on family preference.
     if (HOST_RES_IPV4 == host_res_style || HOST_RES_IPV4_ONLY == host_res_style) {
-      qtype = ns_t_a;
+      qtype = T_A;
     } else if (HOST_RES_IPV6 == host_res_style || HOST_RES_IPV6_ONLY == host_res_style) {
-      qtype = ns_t_aaaa;
+      qtype = T_AAAA;
     }
   }
   submit_time   = Thread::get_hrtime();
@@ -384,7 +384,7 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSPr
 
   mutex = dnsH->mutex;
 
-  if (is_addr_query(qtype) || qtype == ns_t_srv) {
+  if (is_addr_query(qtype) || qtype == T_SRV) {
     if (len) {
       len = len > (MAXDNAME - 1) ? (MAXDNAME - 1) : len;
       memcpy(qname, x, len);
@@ -394,14 +394,14 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSPr
       qname_len      = ink_strlcpy(qname, x, MAXDNAME);
       orig_qname_len = qname_len;
     }
-  } else { // ns_t_ptr
+  } else { // T_PTR
     IpAddr const *ip = reinterpret_cast<IpAddr const *>(x);
     if (ip->isIp6())
       make_ipv6_ptr(&ip->_addr._ip6, qname);
     else if (ip->isIp4())
       make_ipv4_ptr(ip->_addr._ip4, qname);
     else
-      ink_assert(!"ns_t_ptr query to DNS must be IP address.");
+      ink_assert(!"T_PTR query to DNS must be IP address.");
   }
 
   SET_HANDLER((DNSEntryHandler)&DNSEntry::mainEvent);
@@ -564,7 +564,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
 
   char buffer[MAX_DNS_PACKET_LEN];
   Debug("dns", "trying to resolve '%s' from DNS connection, ndx %d", try_server_names[try_servers], ndx);
-  int r       = _ink_res_mkquery(m_res, try_server_names[try_servers], ns_t_a, buffer);
+  int r       = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
   try_servers = (try_servers + 1) % countof(try_server_names);
   ink_assert(r >= 0);
   if (r >= 0) { // looking for a bounce
@@ -587,7 +587,7 @@ DNSHandler::try_primary_named(bool reopen)
 
     last_primary_retry = t;
     Debug("dns", "trying to resolve '%s' from primary DNS connection", try_server_names[try_servers]);
-    int r = _ink_res_mkquery(m_res, try_server_names[try_servers], ns_t_a, buffer);
+    int r = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
     // if try_server_names[] is not full, round-robin within the
     // filled entries.
     if (local_num_entries < DEFAULT_NUM_TRY_SERVER)
@@ -1089,7 +1089,7 @@ Action *
 DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, Options const &opt)
 {
   Debug("dns", "received query %s type = %d, timeout = %d", x, type, opt.timeout);
-  if (type == ns_t_srv) {
+  if (type == T_SRV) {
     Debug("dns_srv", "DNSProcessor::getby attempting an SRV lookup for %s, timeout = %d", x, opt.timeout);
   }
   DNSEntry *e = dnsEntryAllocator.alloc();
@@ -1175,7 +1175,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
       const char *result = "FAIL";
       if (ent) {
         result = "SUCCESS";
-        ptr    = inet_ntop(e->qtype == ns_t_aaaa ? AF_INET6 : AF_INET, ent->ent.h_addr_list[0], buff, sizeof(buff));
+        ptr    = inet_ntop(e->qtype == T_AAAA ? AF_INET6 : AF_INET, ent->ent.h_addr_list[0], buff, sizeof(buff));
       }
       Debug("dns", "%s result for %s = %s retry %d", result, e->qname, ptr, retry);
     } else {
@@ -1423,7 +1423,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
        this skips the query section (qdcount)
      */
     unsigned char *here = (unsigned char *)buf->buf + HFIXEDSZ;
-    if (e->qtype == ns_t_srv) {
+    if (e->qtype == T_SRV) {
       for (int ctr = ntohs(h->qdcount); ctr > 0; ctr--) {
         int strlen = dn_skipname(here, eom);
         here += strlen + QFIXEDSZ;
@@ -1444,7 +1444,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       short int type;
       NS_GET16(type, cp);
       cp += NS_INT16SZ;       // NS_GET16(cls, cp);
-      NS_GET32(temp_ttl, cp); // NOTE: this is not a "long" but 32-bits (from nameser.h)
+      NS_GET32(temp_ttl, cp); // NOTE: this is not a "long" but 32-bits (from nameser_compat.h)
       if ((temp_ttl < buf->ttl) || (buf->ttl == 0))
         buf->ttl = temp_ttl;
       NS_GET16(n, cp);
@@ -1452,7 +1452,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       //
       // Decode cname
       //
-      if (is_addr_query(e->qtype) && (type == ns_t_cname || type == ns_t_dname)) {
+      if (is_addr_query(e->qtype) && (type == T_CNAME || type == T_DNAME)) {
         if (ap >= &buf->host_aliases[DNS_MAX_ALIASES - 1])
           continue;
         n = ink_dn_expand((u_char *)h, eom, cp, tbuf, sizeof(tbuf));
@@ -1475,10 +1475,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         buflen -= n;
         if (is_debug_tag_set("dns")) {
           switch (type) {
-          case ns_t_cname:
+          case T_CNAME:
             Debug("dns", "received cname = %s", tbuf);
             break;
-          case ns_t_dname:
+          case T_DNAME:
             Debug("dns", "received dname = %s", tbuf);
             break;
           }
@@ -1492,7 +1492,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       //
       // Decode names
       //
-      if (type == ns_t_ptr) {
+      if (type == T_PTR) {
         n = ink_dn_expand((u_char *)h, eom, cp, bp, buflen);
         if (n < 0) {
           ++error;
@@ -1512,7 +1512,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           bp += n;
           buflen -= n;
         }
-      } else if (type == ns_t_srv) {
+      } else if (type == T_SRV) {
         if (num_srv >= HOST_DB_MAX_ROUND_ROBIN_INFO)
           break;
         cp         = here; /* hack */
@@ -1553,7 +1553,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         } else {
           int nn;
           buf->ent.h_length   = n;
-          buf->ent.h_addrtype = ns_t_a == type ? AF_INET : AF_INET6;
+          buf->ent.h_addrtype = T_A == type ? AF_INET : AF_INET6;
           buf->ent.h_name     = (char *)bp;
           nn                  = strlen((char *)bp) + 1;
           Debug("dns", "received %s name = %s", QtypeName(type), bp);
@@ -1573,7 +1573,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           }
           memcpy((*hap++ = bp), cp, n);
           Debug("dns", "received %s = %s", QtypeName(type),
-                inet_ntop(ns_t_aaaa == type ? AF_INET6 : AF_INET, bp, ip_string, sizeof(ip_string)));
+                inet_ntop(T_AAAA == type ? AF_INET6 : AF_INET, bp, ip_string, sizeof(ip_string)));
           bp += n;
           cp += n;
         }

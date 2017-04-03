@@ -59,8 +59,8 @@ HttpDebugNames::get_server_state_name(HttpTransact::ServerState_t state)
     return "CONGEST_CONTROL_CONGESTED_ON_F";
   case HttpTransact::CONGEST_CONTROL_CONGESTED_ON_M:
     return "CONGEST_CONTROL_CONGESTED_ON_M";
-  case HttpTransact::PARENT_ORIGIN_RETRY:
-    return "PARENT_ORIGIN_RETRY";
+  case HttpTransact::PARENT_RETRY:
+    return "PARENT_RETRY";
   }
 
   return ("unknown state name");
@@ -482,6 +482,8 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
     return "TS_VCONN_PRE_ACCEPT_HOOK";
   case TS_SSL_CERT_HOOK:
     return "TS_SSL_CERT_HOOK";
+  case TS_SSL_SERVERNAME_HOOK:
+    return "TS_SSL_SERVERNAME_HOOK";
   }
 
   return "unknown hook";

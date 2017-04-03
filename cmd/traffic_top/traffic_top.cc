@@ -54,7 +54,9 @@
 #include "stats.h"
 
 using namespace std;
+#if HAS_CURL
 char curl_error[CURL_ERROR_SIZE];
+#endif
 string response;
 
 namespace colorPair
@@ -263,7 +265,11 @@ help(const string &host, const string &version)
 static void
 usage()
 {
+#if HAS_CURL
   fprintf(stderr, "Usage: traffic_top [-s seconds] [URL|hostname|hostname:port]\n");
+#else
+  fprintf(stderr, "Usage: traffic_top [-s seconds]\n");
+#endif
   exit(1);
 }
 
@@ -400,9 +406,17 @@ main(int argc, char **argv)
   }
 
   string url = "";
+#if HAS_CURL
   if (optind >= argc) {
+#else
+  if (1) {
+#endif
     if (TS_ERR_OKAY != TSInit(nullptr, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS))) {
+#if HAS_CURL
       fprintf(stderr, "Error: missing URL on command line or error connecting to the local manager\n");
+#else
+      fprintf(stderr, "Error: error connecting to the local manager\n");
+#endif
       usage();
     }
   } else {

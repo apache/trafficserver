@@ -5550,7 +5550,8 @@ typedef enum {
   ORIG_TS_SSL_FIRST_HOOK,
   ORIG_TS_VCONN_PRE_ACCEPT_HOOK = ORIG_TS_SSL_FIRST_HOOK,
   ORIG_TS_SSL_SNI_HOOK,
-  ORIG_TS_SSL_LAST_HOOK = ORIG_TS_SSL_SNI_HOOK,
+  ORIG_TS_SSL_SERVERNAME_HOOK,
+  ORIG_TS_SSL_LAST_HOOK = TS_SSL_SERVERNAME_HOOK,
   ORIG_TS_HTTP_LAST_HOOK
 } ORIG_TSHttpHookID;
 
@@ -7610,6 +7611,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.cache.max_open_write_retries",
   "proxy.config.http.redirect_use_orig_cache_key",
   "proxy.config.http.attach_server_session_to_client",
+  "proxy.config.http.safe_requests_retryable",
   "proxy.config.http.origin_max_connections_queue",
   "proxy.config.websocket.no_activity_timeout",
   "proxy.config.websocket.active_timeout",
@@ -7618,6 +7620,9 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.transaction_active_timeout_in",
   "proxy.config.srv_enabled",
   "proxy.config.http.forward_connect_method",
+  "proxy.config.ssl.client.cert.filename",
+  "proxy.config.ssl.client.cert.path",
+  "proxy.config.http.parent_proxy.mark_down_hostdb",
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
@@ -7775,6 +7780,7 @@ REGRESSION_TEST(SDK_API_ENCODING)(RegressionTest *test, int /* atype ATS_UNUSED 
   const char *url_base64 =
     "aHR0cDovL3d3dy5leGFtcGxlLmNvbS9mb28/ZmllPSAiIyU8PltdXF5ge31+JmJhcj17dGVzdH0mZnVtPUFwYWNoZSBUcmFmZmljIFNlcnZlcg==";
   const char *url2 = "http://www.example.com/"; // No Percent encoding necessary
+  const char *url3 = "https://www.thisisoneexampleofastringoflengtheightyasciilowercasecharacters.com/";
   char buf[1024];
   size_t length;
   bool success = true;
@@ -7820,10 +7826,33 @@ REGRESSION_TEST(SDK_API_ENCODING)(RegressionTest *test, int /* atype ATS_UNUSED 
     success = false;
   } else {
     if (length != strlen(url2) || strcmp(buf, url2)) {
-      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url2);
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase2", TC_FAIL, "Failed on %s != %s", buf, url2);
       success = false;
     } else {
-      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_PASS, "ok");
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase2", TC_PASS, "ok");
+    }
+  }
+
+  // test to verify TSStringPercentDecode does not write past the end of the
+  // buffer
+  const size_t buf_len = strlen(url3) + 1; // 81
+  strncpy(buf, url3, buf_len - 1);
+  const char canary = 0xFF;
+  buf[buf_len - 1]  = canary;
+
+  const char *url3_clipped = "https://www.thisisoneexampleofastringoflengtheightyasciilowercasecharacters.com";
+  if (TS_SUCCESS != TSStringPercentDecode(buf, buf_len - 1, buf, buf_len - 1, &length)) {
+    SDK_RPRINT(test, "TSStringPercentDecode", "TestCase3", TC_FAIL, "Failed on %s", url3);
+    success = false;
+  } else {
+    if (memcmp(buf + buf_len - 1, &canary, 1)) { // Overwrite
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase3", TC_FAIL, "Failed on %s overwrites buffer", url3);
+      success = false;
+    } else if (length != strlen(url3_clipped) || strcmp(buf, url3_clipped)) {
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase3", TC_FAIL, "Failed on %s != %s", buf, url3_clipped);
+      success = false;
+    } else {
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase3", TC_PASS, "ok");
     }
   }
 

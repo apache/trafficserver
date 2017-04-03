@@ -227,6 +227,18 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_proxy_connections", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_total_parent_proxy_connections_stat, RecRawStatSyncCount);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_retries", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_total_parent_retries_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_switches", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_total_parent_switches_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_retries_exhausted", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_total_parent_retries_exhausted_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_marked_down_count", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_total_parent_marked_down_count, RecRawStatSyncCount);
+
   // Upstream current connections stats
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.current_parent_proxy_connections", RECD_INT, RECP_NON_PERSISTENT,
                      (int)http_current_parent_proxy_connections_stat, RecRawStatSyncSum);
@@ -886,6 +898,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections_queue, "proxy.config.http.origin_max_connections_queue");
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
+  HttpEstablishStaticConfigByte(c.oride.safe_requests_retryable, "proxy.config.http.safe_requests_retryable");
 
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
   HttpEstablishStaticConfigByte(c.oride.forward_connect_method, "proxy.config.http.forward_connect_method");
@@ -903,6 +916,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.insert_response_via_string, "proxy.config.http.insert_response_via_str");
   HttpEstablishStaticConfigLongLong(c.oride.proxy_response_hsts_max_age, "proxy.config.ssl.hsts_max_age");
   HttpEstablishStaticConfigByte(c.oride.proxy_response_hsts_include_subdomains, "proxy.config.ssl.hsts_include_subdomains");
+  HttpEstablishStaticConfigStringAlloc(c.oride.client_cert_filename, "proxy.config.ssl.client.cert.filename");
+  HttpEstablishStaticConfigStringAlloc(c.oride.client_cert_filepath, "proxy.config.ssl.client.cert.path");
 
   HttpEstablishStaticConfigStringAlloc(c.proxy_request_via_string, "proxy.config.http.request_via_str");
   c.proxy_request_via_string_len = -1;
@@ -957,6 +972,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.parent_connect_attempts, "proxy.config.http.parent_proxy.total_connect_attempts");
   HttpEstablishStaticConfigLongLong(c.per_parent_connect_attempts, "proxy.config.http.parent_proxy.per_parent_connect_attempts");
   HttpEstablishStaticConfigLongLong(c.parent_connect_timeout, "proxy.config.http.parent_proxy.connect_attempts_timeout");
+  HttpEstablishStaticConfigByte(c.oride.parent_failures_update_hostdb, "proxy.config.http.parent_proxy.mark_down_hostdb");
 
   HttpEstablishStaticConfigLongLong(c.oride.sock_recv_buffer_size_out, "proxy.config.net.sock_recv_buffer_size_out");
   HttpEstablishStaticConfigLongLong(c.oride.sock_send_buffer_size_out, "proxy.config.net.sock_send_buffer_size_out");
@@ -1062,6 +1078,7 @@ HttpConfig::startup()
   c.reverse_proxy_no_host_redirect_len = -1;
   HttpEstablishStaticConfigStringAlloc(c.oride.body_factory_template_base, "proxy.config.body_factory.template_base");
   c.oride.body_factory_template_base_len = c.oride.body_factory_template_base ? strlen(c.oride.body_factory_template_base) : 0;
+  HttpEstablishStaticConfigLongLong(c.body_factory_response_max_size, "proxy.config.body_factory.response_max_size");
   HttpEstablishStaticConfigByte(c.errors_log_error_pages, "proxy.config.http.errors.log_error_pages");
 
   HttpEstablishStaticConfigLongLong(c.oride.slow_log_threshold, "proxy.config.http.slow.log.threshold");
@@ -1167,6 +1184,7 @@ HttpConfig::reconfigure()
   }
   params->origin_min_keep_alive_connections     = m_master.origin_min_keep_alive_connections;
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
+  params->oride.safe_requests_retryable         = m_master.oride.safe_requests_retryable;
 
   if (params->oride.origin_max_connections && params->oride.origin_max_connections < params->origin_min_keep_alive_connections) {
     Warning("origin_max_connections < origin_min_keep_alive_connections, setting min=max , please correct your records.config");
@@ -1226,7 +1244,7 @@ HttpConfig::reconfigure()
 
   params->oride.connect_attempts_max_retries             = m_master.oride.connect_attempts_max_retries;
   params->oride.connect_attempts_max_retries_dead_server = m_master.oride.connect_attempts_max_retries_dead_server;
-  if (m_master.oride.connect_attempts_rr_retries >= params->oride.connect_attempts_max_retries) {
+  if (m_master.oride.connect_attempts_rr_retries > params->oride.connect_attempts_max_retries) {
     Warning("connect_attempts_rr_retries (%" PRIu64 ") is greater than "
             "connect_attempts_max_retries (%" PRIu64 "), this means requests "
             "will never redispatch to another server",
@@ -1238,6 +1256,7 @@ HttpConfig::reconfigure()
   params->oride.parent_connect_attempts       = m_master.oride.parent_connect_attempts;
   params->per_parent_connect_attempts         = m_master.per_parent_connect_attempts;
   params->parent_connect_timeout              = m_master.parent_connect_timeout;
+  params->oride.parent_failures_update_hostdb = m_master.oride.parent_failures_update_hostdb;
 
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
   params->oride.sock_send_buffer_size_out = m_master.oride.sock_send_buffer_size_out;
@@ -1356,6 +1375,7 @@ HttpConfig::reconfigure()
   params->oride.body_factory_template_base = ats_strdup(m_master.oride.body_factory_template_base);
   params->oride.body_factory_template_base_len =
     params->oride.body_factory_template_base ? strlen(params->oride.body_factory_template_base) : 0;
+  params->body_factory_response_max_size = m_master.body_factory_response_max_size;
   params->reverse_proxy_no_host_redirect = ats_strdup(m_master.reverse_proxy_no_host_redirect);
   params->reverse_proxy_no_host_redirect_len =
     params->reverse_proxy_no_host_redirect ? strlen(params->reverse_proxy_no_host_redirect) : 0;
@@ -1390,6 +1410,8 @@ HttpConfig::reconfigure()
   params->redirection_host_no_port          = INT_TO_BOOL(m_master.redirection_host_no_port);
   params->oride.number_of_redirections      = m_master.oride.number_of_redirections;
   params->post_copy_size                    = m_master.post_copy_size;
+  params->oride.client_cert_filename        = ats_strdup(m_master.oride.client_cert_filename);
+  params->oride.client_cert_filepath        = ats_strdup(m_master.oride.client_cert_filepath);
 
   // Local Manager
   params->synthetic_port = m_master.synthetic_port;

@@ -29,7 +29,6 @@ plugins to build large scale web applications.
   |-- iocore/ ............
       |-- aio/ ........... Asynchronous I/O core
       |-- cache/ ......... Disk and RAM cache
-      |-- cluster/ ....... Cache and configuration clustering
       |-- dns/ ........... DNS (asynchronous)
       |-- hostdb/ ........ Internal DNS cache
       |-- net/ ........... Network

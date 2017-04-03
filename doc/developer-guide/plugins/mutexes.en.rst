@@ -149,17 +149,17 @@ uses a transaction-specific continuation called ``txn_contp``.
 
 .. code-block:: c
 
-           void TSPluginInit(int argc, const char *argv[]) 
-           { 
-               /* Plugin continuation */ 
-               TSCont contp; 
-               if ((contp = TSContCreate (plugin_cont_handler, NULL)) == TS_ERROR_PTR) { 
-                   LOG_ERROR("TSContCreate"); 
-               } else { 
-                   if (TSHttpHookAdd (TS_HTTP_TXN_START_HOOK, contp) == TS_ERROR) { 
-                       LOG_ERROR("TSHttpHookAdd"); 
-                   } 
-               } 
+           void TSPluginInit(int argc, const char *argv[])
+           {
+               /* Plugin continuation */
+               TSCont contp;
+               if ((contp = TSContCreate (plugin_cont_handler, NULL)) == TS_ERROR_PTR) {
+                   LOG_ERROR("TSContCreate");
+               } else {
+                   if (TSHttpHookAdd (TS_HTTP_TXN_START_HOOK, contp) == TS_ERROR) {
+                       LOG_ERROR("TSHttpHookAdd");
+                   }
+               }
            }
 
 In the plugin continuation handler, create the new continuation
@@ -168,33 +168,33 @@ In the plugin continuation handler, create the new continuation
 
 .. code-block:: c
 
-           static int plugin_cont_handler(TSCont contp, TSEvent event, void *edata) 
-           { 
-               TSHttpTxn txnp = (TSHttpTxn)edata; 
-               TSCont txn_contp; 
+           static int plugin_cont_handler(TSCont contp, TSEvent event, void *edata)
+           {
+               TSHttpTxn txnp = (TSHttpTxn)edata;
+               TSCont txn_contp;
 
-               switch (event) { 
-                   case TS_EVENT_HTTP_TXN_START: 
-                       /* Create the HTTP txn continuation */ 
-                       txn_contp = TSContCreate(txn_cont_handler, NULL); 
+               switch (event) {
+                   case TS_EVENT_HTTP_TXN_START:
+                       /* Create the HTTP txn continuation */
+                       txn_contp = TSContCreate(txn_cont_handler, NULL);
 
-                       /* Register txn_contp to be called back when txnp reaches TS_HTTP_TXN_CLOSE_HOOK */ 
-                       if (TSHttpTxnHookAdd (txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp) == TS_ERROR) { 
-                           LOG_ERROR("TSHttpTxnHookAdd"); 
-                       } 
+                       /* Register txn_contp to be called back when txnp reaches TS_HTTP_TXN_CLOSE_HOOK */
+                       if (TSHttpTxnHookAdd (txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp) == TS_ERROR) {
+                           LOG_ERROR("TSHttpTxnHookAdd");
+                       }
 
-                       break; 
+                       break;
 
-                   default: 
-                       TSAssert(!"Unexpected Event"); 
-                       break; 
-               } 
+                   default:
+                       TSAssert(!"Unexpected Event");
+                       break;
+               }
 
-               if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) { 
-                   LOG_ERROR("TSHttpTxnReenable"); 
-               } 
+               if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+                   LOG_ERROR("TSHttpTxnReenable");
+               }
 
-               return 0; 
+               return 0;
            }
 
 Remember that the ``txn_contp`` handler must destory itself when the
@@ -204,25 +204,25 @@ will have a memory leak.
 .. code-block:: c
 
 
-           static int txn_cont_handler(TSCont txn_contp, TSEvent event, void *edata) 
-           { 
-               TSHttpTxn txnp; 
-               switch (event) { 
-                   case TS_EVENT_HTTP_TXN_CLOSE: 
-                       txnp = (TSHttpTxn) edata; 
-                       TSContDestroy(txn_contp); 
-                       break; 
+           static int txn_cont_handler(TSCont txn_contp, TSEvent event, void *edata)
+           {
+               TSHttpTxn txnp;
+               switch (event) {
+                   case TS_EVENT_HTTP_TXN_CLOSE:
+                       txnp = (TSHttpTxn) edata;
+                       TSContDestroy(txn_contp);
+                       break;
 
-                   default: 
-                       TSAssert(!"Unexpected Event"); 
-                       break; 
-               } 
+                   default:
+                       TSAssert(!"Unexpected Event");
+                       break;
+               }
 
-               if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) { 
-                   LOG_ERROR("TSHttpTxnReenable"); 
-               } 
+               if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+                   LOG_ERROR("TSHttpTxnReenable");
+               }
 
-               return 0; 
+               return 0;
            }
 
 How to Store Data Specific to Each HTTP Transaction
@@ -234,8 +234,8 @@ suppose you want to store the state of the HTTP transaction:
 
 .. code-block:: c
 
-       typedef struct { 
-             int state; 
+       typedef struct {
+             int state;
          } ContData;
 
 You need to allocate the memory and initialize this structure for each
@@ -244,86 +244,86 @@ it is called back with ``TS_EVENT_HTTP_TXN_START``
 
 .. code-block:: c
 
-           static int plugin_cont_handler(TSCont contp, TSEvent event, void *edata) 
-           { 
-               TSHttpTxn txnp = (TSHttpTxn)edata; 
-               TSCont txn_contp; 
-               ContData *contData; 
+           static int plugin_cont_handler(TSCont contp, TSEvent event, void *edata)
+           {
+               TSHttpTxn txnp = (TSHttpTxn)edata;
+               TSCont txn_contp;
+               ContData *contData;
 
-               switch (event) { 
-                   case TS_EVENT_HTTP_TXN_START: 
-                       /* Create the HTTP txn continuation */ 
-                       txn_contp = TSContCreate(txn_cont_handler, NULL); 
+               switch (event) {
+                   case TS_EVENT_HTTP_TXN_START:
+                       /* Create the HTTP txn continuation */
+                       txn_contp = TSContCreate(txn_cont_handler, NULL);
 
-                       /* Allocate and initialize the txn_contp data */ 
-                       contData = (ContData*) TSmalloc(sizeof(ContData)); 
-                       contData->state = 0; 
-                       if (TSContDataSet(txn_contp, contData) == TS_ERROR) { 
-                           LOG_ERROR("TSContDataSet"); 
-                       } 
+                       /* Allocate and initialize the txn_contp data */
+                       contData = (ContData*) TSmalloc(sizeof(ContData));
+                       contData->state = 0;
+                       if (TSContDataSet(txn_contp, contData) == TS_ERROR) {
+                           LOG_ERROR("TSContDataSet");
+                       }
 
-                       /* Register txn_contp to be called back when txnp reaches TS_HTTP_TXN_CLOSE_HOOK */ 
-                       if (TSHttpTxnHookAdd (txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp) == TS_ERROR) { 
-                           LOG_ERROR("TSHttpTxnHookAdd"); 
-                       } 
+                       /* Register txn_contp to be called back when txnp reaches TS_HTTP_TXN_CLOSE_HOOK */
+                       if (TSHttpTxnHookAdd (txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp) == TS_ERROR) {
+                           LOG_ERROR("TSHttpTxnHookAdd");
+                       }
 
-                       break; 
+                       break;
 
-                   default: 
-                       TSAssert(!"Unexpected Event"); 
-                       break; 
-               } 
+                   default:
+                       TSAssert(!"Unexpected Event");
+                       break;
+               }
 
-               if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) { 
-                   LOG_ERROR("TSHttpTxnReenable"); 
-               } 
+               if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+                   LOG_ERROR("TSHttpTxnReenable");
+               }
 
-               return 0; 
+               return 0;
            }
 
 For accessing this data from anywhere, use TSContDataGet:
 
 .. code-block:: c
 
-           TSCont txn_contp; 
-           ContData *contData; 
+           TSCont txn_contp;
+           ContData *contData;
 
-           contData = TSContDataGet(txn_contp); 
-           if (contData == TS_ERROR_PTR) { 
-               LOG_ERROR("TSContDataGet"); 
-           } 
+           contData = TSContDataGet(txn_contp);
+           if (contData == TS_ERROR_PTR) {
+               LOG_ERROR("TSContDataGet");
+           }
            contData->state = 1;
 
 Remember to free this memory before destroying the continuation:
 
 .. code-block:: c
 
-           static int txn_cont_handler(TSCont txn_contp, TSEvent event, void *edata) 
-           { 
-               TSHttpTxn txnp; 
-               ContData *contData; 
-               switch (event) { 
-                   case TS_EVENT_HTTP_TXN_CLOSE: 
-                       txnp = (TSHttpTxn) edata; 
-                       contData = TSContDataGet(txn_contp); 
-                       if (contData == TS_ERROR_PTR) { 
-                           LOG_ERROR("TSContDataGet"); 
-                       } else { 
-                           TSfree(contData); 
-                       } 
-                       TSContDestroy(txn_contp); 
-                       break; 
+           static int txn_cont_handler(TSCont txn_contp, TSEvent event, void *edata)
+           {
+               TSHttpTxn txnp;
+               ContData *contData;
+               switch (event) {
+                   case TS_EVENT_HTTP_TXN_CLOSE:
+                       txnp = (TSHttpTxn) edata;
+                       contData = TSContDataGet(txn_contp);
+                       if (contData == TS_ERROR_PTR) {
+                           LOG_ERROR("TSContDataGet");
+                       } else {
+                           TSfree(contData);
+                       }
+                       TSContDestroy(txn_contp);
+                       break;
 
-                   default: 
-                       TSAssert(!"Unexpected Event"); 
-                       break; 
-               } 
+                   default:
+                       TSAssert(!"Unexpected Event");
+                       break;
+               }
 
-               if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) { 
-                   LOG_ERROR("TSHttpTxnReenable"); 
-               } 
+               if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+                   LOG_ERROR("TSHttpTxnReenable");
+               }
 
-               return 0; 
+               return 0;
            }
 
 Using Locks

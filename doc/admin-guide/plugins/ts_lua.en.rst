@@ -115,6 +115,18 @@ We can write this in plugin.config:
 
     tslua.so /etc/trafficserver/script/test_global_hdr.lua
 
+We can also define the number of Lua states to be used for the plugin. If it is used as global plugin, we can write the
+following in plugin.config
+
+::
+
+    tslua.so --states=64 /etc/trafficserver/script/test_global_hdr.lua
+
+If it is used as remap plugin, we can write the following in remap.config to define the number of Lua states
+
+::
+
+    map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=--states=64 @pparam=/XXX/test_hdr.lua
 
 TS API for Lua
 ==============
@@ -557,7 +569,7 @@ ts.client_request.set_uri
 -------------------------
 **syntax:** *ts.client_request.set_uri(PATH)*
 
-**context:** do_remap or do_global_* 
+**context:** do_remap or do_global_*
 
 **description:** This function can be used to override the client request's path.
 
@@ -594,7 +606,7 @@ ts.client_request.set_uri_args
 ------------------------------
 **syntax:** *ts.client_request.set_uri_args(QUERY_STRING)*
 
-**context:** do_remap or do_global_* 
+**context:** do_remap or do_global_*
 
 **description:** This function can be used to override the client request's query string.
 
@@ -732,7 +744,7 @@ ts.client_request.client_addr.get_addr
 
 **description**: This function can be used to get socket address of the client.
 
-The ts.client_request.client_addr.get_addr function returns three values, ip is a string, port and family is number. 
+The ts.client_request.client_addr.get_addr function returns three values, ip is a string, port and family is number.
 
 Here is an example:
 
@@ -796,7 +808,7 @@ ts.client_request.set_url_host
 ------------------------------
 **syntax:** *ts.client_request.set_url_host(str)*
 
-**context:** do_remap or do_global_* 
+**context:** do_remap or do_global_*
 
 **description:** Set ``host`` field of the request url with ``str``. This function is used to change the address of the
 origin server, and we should return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap.
@@ -886,7 +898,7 @@ ts.client_request.set_url_scheme
 --------------------------------
 **syntax:** *ts.client_request.set_url_scheme(str)*
 
-**context:** do_remap or do_global_* 
+**context:** do_remap or do_global_*
 
 **description:** Set ``scheme`` field of the request url with ``str``. This function is used to change the scheme of the
 server request, and we should return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap.
@@ -898,7 +910,7 @@ ts.http.set_cache_url
 ---------------------
 **syntax:** *ts.http.set_cache_url(KEY_URL)*
 
-**context:** do_remap or do_global_* 
+**context:** do_remap or do_global_*
 
 **description:** This function can be used to modify the cache key for the client request.
 
@@ -929,7 +941,7 @@ Here is an example
         ts.http.set_cache_lookup_url('http://bad.com/bad.html')
         local cache = ts.http.get_cache_lookup_url()
         ts.debug(cache)
-    end 
+    end
 
     function do_remap()
         ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
@@ -1596,8 +1608,8 @@ Here is an example:
     end
 
     function do_remap()
-        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request) 
-        return 0 
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
     end
 
 Then ``GET http://abc.com/p2/a.txt HTTP/1.1`` will yield the output:
@@ -1660,7 +1672,7 @@ ts.server_request.get_url_scheme
 --------------------------------
 **syntax:** *scheme = ts.server_request.get_url_scheme()*
 
-**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point 
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point
 
 **description:** Return the ``scheme`` field of the request url.
 
@@ -1688,7 +1700,7 @@ ts.server_request.set_url_scheme
 --------------------------------
 **syntax:** *ts.server_request.set_url_scheme(str)*
 
-**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point 
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point
 
 **description:** Set ``scheme`` field of the request url with ``str``. This function is used to change the scheme of the server request.
 
@@ -2198,8 +2210,8 @@ Here is an example:
 
     function do_global_read_request()
         local stack = {ts.http.get_client_protocol_stack()}
-        for k,v in pairs(stack) do 
-          ts.debug(v) 
+        for k,v in pairs(stack) do
+          ts.debug(v)
         end
         return 0
     end
@@ -2613,7 +2625,7 @@ Returns a Lua table with serveral slots (res.status, res.header, res.body, and r
 ``res.header`` holds the response header table.
 
 ``res.body`` holds the response body which may be truncated, you need to check res.truncated to see if the data is
-truncated. 
+truncated.
 
 Here is a basic example:
 
@@ -3245,7 +3257,7 @@ Here is an example:
         ts.http.enable_redirect(1)
         return 0
     end
- 
+
 
 `TOP <#ts-lua-plugin>`_
 
@@ -3324,8 +3336,8 @@ ts.http.milestone_get
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**description:** This function can be used to retireve the various milestone times. They are how long the 
-transaction took to traverse portions of the HTTP state machine. Each milestone value is a fractional number 
+**description:** This function can be used to retireve the various milestone times. They are how long the
+transaction took to traverse portions of the HTTP state machine. Each milestone value is a fractional number
 of seconds since the beginning of the transaction.
 
 ::
@@ -3420,11 +3432,11 @@ ts.stat_create
 
 **context:** global
 
-**description:** This function can be used to create a statistics record given the name, data type, persistent 
-requirement, and sync requirement. A statistics record table will be created with 4 functions to increment, 
+**description:** This function can be used to create a statistics record given the name, data type, persistent
+requirement, and sync requirement. A statistics record table will be created with 4 functions to increment,
 decrement, get and set the value.
 
-:: 
+::
 
     stat:increment(value)
     stat:decrement(value)
@@ -3438,9 +3450,9 @@ Here is an example.
     local test_stat;
 
     function __init__(args)
-        test_stat = ts.stat_create("test_stat", 
-          TS_LUA_RECORDDATATYPE_INT, 
-          TS_LUA_STAT_PERSISTENT, 
+        test_stat = ts.stat_create("test_stat",
+          TS_LUA_RECORDDATATYPE_INT,
+          TS_LUA_STAT_PERSISTENT,
           TS_LUA_STAT_SYNC_COUNT)
     end
 

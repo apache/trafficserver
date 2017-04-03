@@ -93,6 +93,9 @@
 #ifdef HAVE_ARPA_NAMESER_H
 #include <arpa/nameser.h>
 #endif
+#ifdef HAVE_ARPA_NAMESER_COMPAT_H
+#include <arpa/nameser_compat.h>
+#endif
 
 #include <signal.h>
 #ifdef HAVE_SIGINFO_H
@@ -183,9 +186,7 @@ typedef unsigned int in_addr_t;
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
-#ifdef HAVE_MATH_H
-#include <math.h>
-#endif
+
 #ifdef HAVE_FLOAT_H
 #include <float.h>
 #endif

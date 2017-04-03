@@ -121,7 +121,7 @@ SocketManager::fastopen_supported()
   int value = 0;
 
   if (fd) {
-    textBuffer buffer(16);
+    TextBuffer buffer(16);
 
     buffer.slurp(fd.get());
     value = atoi(buffer.bufPtr());

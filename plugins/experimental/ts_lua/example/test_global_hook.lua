@@ -18,7 +18,7 @@ function do_global_txn_start()
     ts.debug('txn_start')
 
     return 0
-end 
+end
 
 function do_global_read_request()
     ts.debug('read_request')
@@ -64,7 +64,7 @@ end
 
 function do_global_cache_lookup_complete()
     ts.debug('cache_lookup_complete')
-  
+
     return 0
 end
 

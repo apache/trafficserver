@@ -74,6 +74,10 @@ enum {
   http_total_client_connections_ipv6_stat,
   http_total_server_connections_stat,
   http_total_parent_proxy_connections_stat,
+  http_total_parent_retries_stat,
+  http_total_parent_switches_stat,
+  http_total_parent_retries_exhausted_stat,
+  http_total_parent_marked_down_count,
   http_current_parent_proxy_connections_stat,
   http_current_server_connections_stat,
   http_current_cache_connections_stat,
@@ -375,6 +379,7 @@ struct OverridableHttpConfigParams {
       fwd_proxy_auth_to_parent(0),
       uncacheable_requests_bypass_parent(1),
       attach_server_session_to_client(0),
+      safe_requests_retryable(1),
       forward_connect_method(0),
       insert_age_in_response(1),
       anonymize_remove_from(0),
@@ -405,6 +410,7 @@ struct OverridableHttpConfigParams {
       flow_control_enabled(0),
       normalize_ae_gzip(0),
       srv_enabled(0),
+      parent_failures_update_hostdb(0),
       cache_open_write_fail_action(0),
       post_check_content_length_enabled(1),
       redirection_enabled(0),
@@ -465,7 +471,9 @@ struct OverridableHttpConfigParams {
       global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10),
       freshness_fuzz_prob(0.005),
-      background_fill_threshold(0.5)
+      background_fill_threshold(0.5),
+      client_cert_filename(NULL),
+      client_cert_filepath(NULL)
   {
   }
 
@@ -492,6 +500,8 @@ struct OverridableHttpConfigParams {
   MgmtByte fwd_proxy_auth_to_parent;
   MgmtByte uncacheable_requests_bypass_parent;
   MgmtByte attach_server_session_to_client;
+
+  MgmtByte safe_requests_retryable;
 
   MgmtByte forward_connect_method;
 
@@ -554,6 +564,7 @@ struct OverridableHttpConfigParams {
   // hostdb/dns variables //
   //////////////////////////
   MgmtByte srv_enabled;
+  MgmtByte parent_failures_update_hostdb;
 
   MgmtByte cache_open_write_fail_action;
 
@@ -677,6 +688,8 @@ struct OverridableHttpConfigParams {
   MgmtFloat cache_heuristic_lm_factor;
   MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
+  char *client_cert_filename;
+  char *client_cert_filepath;
 };
 
 /////////////////////////////////////////////////////////////
@@ -809,6 +822,8 @@ public:
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
 
+  MgmtInt body_factory_response_max_size;
+
 private:
   /////////////////////////////////////
   // operator = and copy constructor //
@@ -910,7 +925,8 @@ inline HttpConfigParams::HttpConfigParams()
     disallow_post_100_continue(0),
     parser_allow_non_http(1),
     keepalive_internal_vc(0),
-    server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD)
+    server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD),
+    body_factory_response_max_size(8192)
 {
 }
 

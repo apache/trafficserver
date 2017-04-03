@@ -16,6 +16,10 @@
 
 .. include:: ../../../common.defs
 
+.. Many types are here simply to avoid build errors in the documentation. It is reasonable to,
+   when providing additional documentation on the type, to move it from here to a more appropriate
+   file.
+
 .. default-domain:: c
 
 TSAPI Types
@@ -66,16 +70,6 @@ more widely. Those are described on this page.
 
    An opaque type that represents a Traffic SeUuirver :term:`session`.
 
-.. type:: TSHttpStatus
-
-   This set of enums represents possible return values from
-   :func:`TSHttpHdrStatusGet`, which retrieves the status code from an
-   HTTP response header (:func:`TSHttpHdrStatusGet` retrieves status
-   codes only from headers of type :data:`TS_HTTP_TYPE_RESPONSE`).
-
-   You can also set the :type:`TSHttpStatus` of a response header using
-   :func:`TSHttpHdrStatusSet`.
-
 .. type:: TSHttpTxn
 
    An opaque type that represents a Traffic Server HTTP :term:`transaction`.
@@ -118,35 +112,15 @@ more widely. Those are described on this page.
 
 .. type:: TSMutex
 
-.. type:: TSParseResult
-
-   This set of enums are possible values returned by
-   :func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp`.
-
 .. type:: TSPluginRegistrationInfo
 
    The following struct is used by :func:`TSPluginRegister`.
 
    It stores registration information about the plugin.
 
-.. type:: TSRecordDataType
-
-   An enumeration that specifies the type of a value in an internal data structure that is accessible via the API.
-
 .. type:: TSRemapInterface
 
 .. type:: TSRemapRequestInfo
-
-.. type:: TSReturnCode
-
-   An indicator of the results of an API call. A value of :const:`TS_SUCCESS` means the call was successful. Any other value
-   indicates a failure and is specific to the API call.
-
-.. type:: TSSDKVersion
-
-   Starting 2.0, SDK now follows same versioning as Traffic Server.
-
-.. type:: TSServerState
 
 .. type:: TSTextLogObject
 
@@ -159,12 +133,6 @@ more widely. Those are described on this page.
 .. type:: TSThread
 
 .. type:: TSThreadFunc
-
-.. type:: TSThreadPool
-
-.. type:: TSUuid
-
-   Opaque type that refers to an allocated UUID.
 
 .. type:: TSUuidVersion
 
@@ -180,4 +148,28 @@ more widely. Those are described on this page.
 
 .. type:: TSVConn
 
+    A virtual connection. This is the basic mechanism for abstracting I/O operations in |TS|.
+
+.. type:: TSNetVConnection
+
+    A subtype of :type:`TSVConn` that provides additional IP network information and operations.
+
 .. type:: TSVIO
+
+.. type:: ModuleVersion
+
+    A module version.
+    
+.. cpp:type:: ModuleVersion
+
+    A module version.
+    
+.. cpp:class:: template<typename T> DLL
+
+    An anchor for a double linked instrusive list of instance of :arg:`T`.
+
+.. type:: TSAcceptor
+
+.. type:: TSNextProtocolSet
+
+

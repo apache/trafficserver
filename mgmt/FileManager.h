@@ -95,7 +95,7 @@ class ExpandingArray;
 //  fileChanged(const char* fileName) - called by Rollback objects
 //       when their contents change.  Triggers callbacks to FileCallbackFuncs
 //
-//  filesManaged() - returns a textBuffer that contains a new line separated
+//  filesManaged() - returns a TextBuffer that contains a new line separated
 //       list of call files being managed by the FileManager.  CALLEE
 //       is responsible for deleting the returned object
 //
@@ -120,7 +120,7 @@ public:
   bool getRollbackObj(const char *fileName, Rollback **rbPtr);
   void registerCallback(FileCallbackFunc func);
   void fileChanged(const char *fileName, bool incVersion);
-  textBuffer *filesManaged();
+  TextBuffer *filesManaged();
   void rereadConfig();
   bool isConfigStale();
   // SnapResult takeSnap(const char* snapName);
@@ -129,7 +129,7 @@ public:
   SnapResult restoreSnap(const char *snapName, const char *snapDir);
   // SnapResult removeSnap(const char* snapName);
   SnapResult removeSnap(const char *snapName, const char *snapDir);
-  void displaySnapOption(textBuffer *output);
+  void displaySnapOption(TextBuffer *output);
   SnapResult WalkSnaps(ExpandingArray *snapList);
   void configFileChild(const char *parent, const char *child, unsigned int options);
 
@@ -141,12 +141,12 @@ private:
   InkHashTable *bindings;
   // InkHashTable* g_snapshot_directory_ht;
   SnapResult copyFile(Rollback *rb, const char *snapPath);
-  SnapResult readFile(const char *filePath, textBuffer *contents);
+  SnapResult readFile(const char *filePath, TextBuffer *contents);
   void abortRestore(const char *abortTo);
-  void createSelect(char *action, textBuffer *output, ExpandingArray *options);
-  void snapErrorResponse(char *action, SnapResult error, textBuffer *output);
-  void snapSuccessResponse(char *action, textBuffer *output);
-  void generateRestoreConfirm(char *snapName, textBuffer *output);
+  void createSelect(char *action, TextBuffer *output, ExpandingArray *options);
+  void snapErrorResponse(char *action, SnapResult error, TextBuffer *output);
+  void snapSuccessResponse(char *action, TextBuffer *output);
+  void generateRestoreConfirm(char *snapName, TextBuffer *output);
   bool checkValidName(const char *name);
   const char *getParentFileName(const char *fileName);
   void addFileHelper(const char *fileName, bool root_access_needed, Rollback *parentRollback, unsigned flags = 0);

@@ -31,9 +31,7 @@
 #include "ts/ink_memory.h"
 #include "ts/ink_apidefs.h"
 #include "ts/TsBuffer.h"
-
-#define INK_GETHOSTBYNAME_R_DATA_SIZE 1024
-#define INK_GETHOSTBYADDR_R_DATA_SIZE 1024
+#include <ts/MemView.h>
 
 #if !TS_HAS_IN6_IS_ADDR_UNSPECIFIED
 #if defined(IN6_IS_ADDR_UNSPECIFIED)
@@ -46,6 +44,20 @@ IN6_IS_ADDR_UNSPECIFIED(in6_addr const *addr)
   return 0 == w[0] && 0 == w[1];
 }
 #endif
+
+// IP protocol stack tags.
+extern const ts::StringView IP_PROTO_TAG_IPV4;
+extern const ts::StringView IP_PROTO_TAG_IPV6;
+extern const ts::StringView IP_PROTO_TAG_UDP;
+extern const ts::StringView IP_PROTO_TAG_TCP;
+extern const ts::StringView IP_PROTO_TAG_TLS_1_0;
+extern const ts::StringView IP_PROTO_TAG_TLS_1_1;
+extern const ts::StringView IP_PROTO_TAG_TLS_1_2;
+extern const ts::StringView IP_PROTO_TAG_TLS_1_3;
+extern const ts::StringView IP_PROTO_TAG_HTTP_0_9;
+extern const ts::StringView IP_PROTO_TAG_HTTP_1_0;
+extern const ts::StringView IP_PROTO_TAG_HTTP_1_1;
+extern const ts::StringView IP_PROTO_TAG_HTTP_2_0;
 
 struct IpAddr; // forward declare.
 
@@ -112,42 +124,6 @@ union IpEndpoint {
   operator sockaddr const *() const { return &sa; }
 };
 
-struct ink_gethostbyname_r_data {
-  int herrno;
-  struct hostent ent;
-  char buf[INK_GETHOSTBYNAME_R_DATA_SIZE];
-};
-
-struct ink_gethostbyaddr_r_data {
-  int herrno;
-  struct hostent ent;
-  char buf[INK_GETHOSTBYADDR_R_DATA_SIZE];
-};
-
-/**
-  Wrapper for gethostbyname_r(). If successful, returns a pointer
-  to the hostent structure. Returns nullptr and sets data->herrno to
-  the appropriate error code on failure.
-
-  @param hostname null-terminated host name string
-  @param data pointer to ink_gethostbyname_r_data allocated by the caller
-
-*/
-struct hostent *ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data *data);
-
-/**
-  Wrapper for gethostbyaddr_r(). If successful, returns a pointer
-  to the hostent structure. Returns nullptr and sets data->herrno to
-  the appropriate error code on failure.
-
-  @param ip IP address of the host
-  @param len length of the buffer indicated by ip
-  @param type family of the address
-  @param data pointer to ink_gethostbyname_r_data allocated by the caller
-
-*/
-struct hostent *ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyaddr_r_data *data);
-
 /** Return the detected maximum listen(2) backlog for TCP. */
 int ats_tcp_somaxconn();
 
@@ -213,7 +189,7 @@ ats_ip_invalidate(IpEndpoint *ip)
 /** Get a string name for an IP address family.
     @return The string name (never @c nullptr).
 */
-const char *ats_ip_family_name(int family);
+ts::StringView ats_ip_family_name(int family);
 
 /// Test for IP protocol.
 /// @return @c true if the address is IP, @c false otherwise.

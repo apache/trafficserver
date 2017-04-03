@@ -28,6 +28,7 @@
  */
 
 #include "ts/ink_platform.h"
+#include "api/ts/ts.h"
 #include "api/ts/InkAPIPrivateIOCore.h"
 #if defined(solaris) && !defined(__GNUC__)
 #include "P_EventSystem.h" // I_EventSystem.h

@@ -51,8 +51,6 @@
 #define BUILD_NUMBER "@build_number@"
 
 /* Libraries */
-#define TS_HAS_LIBZ @zlibh@
-#define TS_HAS_LZMA @lzmah@
 #define TS_HAS_JEMALLOC @jemalloch@
 #define TS_HAS_TCMALLOC @has_tcmalloc@
 
@@ -84,8 +82,6 @@
 #define TS_HAS_SO_PEERCRED @has_so_peercred@
 
 /* OS API definitions */
-#define GETHOSTBYNAME_R_GLIBC2 @gethostbyname_r_glibc2@
-#define SIZEOF_VOID_POINTER @ac_cv_sizeof_voidp@
 #define TS_IP_TRANSPARENT @ip_transparent@
 #define TS_HAS_128BIT_CAS @has_128bit_cas@
 

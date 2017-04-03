@@ -778,7 +778,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   }
 
   if (stat(c, &stat_buf) != 0) {
-    const char *plugin_default_path = TSPluginDirGet();
+    ats_scoped_str plugin_default_path(RecConfigReadPluginDir());
 
     // Try with the plugin path instead
     if (strlen(c) + strlen(plugin_default_path) > (PATH_NAME_MAX - 1)) {
@@ -786,7 +786,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
       return -3;
     }
 
-    snprintf(default_path, PATH_NAME_MAX, "%s/%s", plugin_default_path, c);
+    snprintf(default_path, PATH_NAME_MAX, "%s/%s", static_cast<char *>(plugin_default_path), c);
     Debug("remap_plugin", "attempting to stat default plugin path: %s", default_path);
 
     if (stat(default_path, &stat_buf) == 0) {

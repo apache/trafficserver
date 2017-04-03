@@ -23,6 +23,35 @@
 
 #include "P_Cache.h"
 
+void
+CacheDisk::incrErrors(const AIOCallback *io)
+{
+  if (0 == this->num_errors) {
+    /* This it the first read/write error on this span since ATS started.
+     * Move the newly failing span from "online" to "failing" bucket. */
+    RecIncrGlobalRawStat(cache_rsb, (int)(cache_span_online_stat), -1);
+    RecIncrGlobalRawStat(cache_rsb, (int)(cache_span_failing_stat), 1);
+  }
+  this->num_errors++;
+
+  const char *opname = "unknown";
+  int opcode         = io->aiocb.aio_lio_opcode;
+  int fd             = io->aiocb.aio_fildes;
+  switch (io->aiocb.aio_lio_opcode) {
+  case LIO_READ:
+    opname = "READ";
+    RecIncrGlobalRawStat(cache_rsb, (int)(cache_span_errors_read_stat), 1);
+    break;
+  case LIO_WRITE:
+    opname = "WRITE";
+    RecIncrGlobalRawStat(cache_rsb, (int)(cache_span_errors_write_stat), 1);
+    break;
+  default:
+    break;
+  }
+  Warning("failed operation: %s (opcode=%d), span: %s (fd=%d)", opname, opcode, path, fd);
+}
+
 int
 CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fildes, bool clear)
 {
@@ -118,6 +147,7 @@ CacheDisk::clearDone(int event, void * /* data ATS_UNUSED */)
 
   if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
     Warning("Could not clear disk header for disk %s: declaring disk bad", path);
+    incrErrors(&io);
     SET_DISK_BAD(this);
   }
   //  update_header();
@@ -133,6 +163,7 @@ CacheDisk::openStart(int event, void * /* data ATS_UNUSED */)
 
   if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
     Warning("could not read disk header for disk %s: declaring disk bad", path);
+    incrErrors(&io);
     SET_DISK_BAD(this);
     SET_HANDLER(&CacheDisk::openDone);
     return openDone(EVENT_IMMEDIATE, nullptr);
@@ -202,6 +233,7 @@ CacheDisk::syncDone(int event, void * /* data ATS_UNUSED */)
 
   if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
     Warning("Error writing disk header for disk %s:disk bad", path);
+    incrErrors(&io);
     SET_DISK_BAD(this);
     return EVENT_DONE;
   }

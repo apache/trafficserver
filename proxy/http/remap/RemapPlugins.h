@@ -31,8 +31,6 @@
 #include "ts/ink_platform.h"
 #include "I_EventSystem.h"
 #include "RemapProcessor.h"
-#include "api/ts/ts.h"
-#include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
 #include "HttpTransact.h"
 #include "ReverseProxy.h"

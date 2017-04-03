@@ -33,6 +33,7 @@
 #include "ts/I_Layout.h"
 
 #include <string.h>
+#include <cmath>
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
@@ -73,12 +74,14 @@ static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
 
 SSLConfigParams::SSLConfigParams()
 {
+  ink_mutex_init(&ctxMapLock, "Context List Lock");
   reset();
 }
 
 SSLConfigParams::~SSLConfigParams()
 {
   cleanup();
+  ink_mutex_destroy(&ctxMapLock);
 }
 
 void
@@ -88,7 +91,7 @@ SSLConfigParams::reset()
     clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
       ticket_key_filename                                                                                     = nullptr;
   default_global_keyblock                                                                                     = nullptr;
-
+  client_ctx                                                                                                  = nullptr;
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
   ssl_ctx_options                                                     = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
   ssl_client_ctx_protocols                                            = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
@@ -120,6 +123,8 @@ SSLConfigParams::cleanup()
   ssl_wire_trace_ip       = (IpAddr *)ats_free_null(ssl_wire_trace_ip);
   ticket_key_filename     = (char *)ats_free_null(ticket_key_filename);
   ticket_block_free(default_global_keyblock);
+  freeCTXmap();
+  SSLReleaseContext(client_ctx);
   reset();
 }
 
@@ -303,7 +308,9 @@ SSLConfigParams::initialize()
   ssl_client_cert_path     = nullptr;
   REC_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
   REC_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
-  set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, nullptr, &clientCertPath);
+  if (ssl_client_cert_filename && ssl_client_cert_path) {
+    set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, nullptr, &clientCertPath);
+  }
   ats_free_null(ssl_client_cert_filename);
   ats_free_null(ssl_client_cert_path);
 
@@ -341,6 +348,94 @@ SSLConfigParams::initialize()
     ssl_wire_trace_percentage  = 0;
     ssl_wire_trace_server_name = nullptr;
   }
+  // Enable client regardless of config file settings as remap file
+  // can cause HTTP layer to connect using SSL. But only if SSL
+  // initialization hasn't failed already.
+  client_ctx = SSLInitClientContext(this);
+  if (!client_ctx) {
+    SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
+  } else {
+    InsertCTX(this->clientCertPath, this->client_ctx);
+  }
+}
+
+// getCTX: returns the context attached to the given certificate
+SSL_CTX *
+SSLConfigParams::getCTX(cchar *client_cert) const
+{
+  ink_mutex_acquire(&ctxMapLock);
+  auto client_ctx = ctx_map.get(client_cert);
+  ink_mutex_release(&ctxMapLock);
+  return client_ctx;
+}
+
+// InsertCTX hashes on the absolute path to the client certificate file and stores in the map
+bool
+SSLConfigParams::InsertCTX(cchar *client_cert, SSL_CTX *cctx) const
+{
+  ink_mutex_acquire(&ctxMapLock);
+  // dup is required here to avoid the nullifying of the keys stored in the map.
+  // client_cert is coming from the overridable clientcert config retrieved by the remap plugin.
+  cchar *cert = ats_strdup(client_cert);
+  // Hashmap has no delete functionality :(
+  ctx_map.put(cert, cctx);
+  ink_mutex_release(&ctxMapLock);
+  return true;
+}
+
+void
+SSLConfigParams::printCTXmap()
+{
+  Vec<cchar *> keys;
+  ctx_map.get_keys(keys);
+  for (size_t i = 0; i < keys.length(); i++)
+    Debug("ssl", "Client certificates in the map %s", keys.get(i));
+}
+void
+SSLConfigParams::freeCTXmap() const
+{
+  ink_mutex_acquire(&ctxMapLock);
+  Vec<cchar *> keys;
+  ctx_map.get_keys(keys);
+  size_t n = keys.length();
+  Debug("ssl", "freeing CTX Map");
+  for (size_t i = 0; i < n; i++) {
+    deleteKey(keys.get(i));
+    ats_free((char *)keys.get(i));
+  }
+  ctx_map.clear();
+  ink_mutex_release(&ctxMapLock);
+}
+// creates a new context attaching the provided certificate
+SSL_CTX *
+SSLConfigParams::getNewCTX(char *client_cert) const
+{
+  SSL_CTX *nclient_ctx = nullptr;
+  nclient_ctx          = SSLInitClientContext(this);
+  if (!nclient_ctx) {
+    SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
+    return nullptr;
+  }
+  if (nclient_ctx && client_cert != nullptr) {
+    if (!SSL_CTX_use_certificate_chain_file(nclient_ctx, (const char *)client_cert)) {
+      SSLError("failed to load client certificate from %s", this->clientCertPath);
+      SSLReleaseContext(nclient_ctx);
+      return nullptr;
+    }
+  }
+  return nclient_ctx;
+}
+
+void
+SSLConfigParams::deleteKey(cchar *key) const
+{
+  SSL_CTX_free((SSL_CTX *)ctx_map.get(key));
+}
+
+SSL_CTX *
+SSLConfigParams::getClientSSL_CTX(void) const
+{
+  return client_ctx;
 }
 
 void

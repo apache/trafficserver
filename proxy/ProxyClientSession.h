@@ -88,6 +88,12 @@ public:
     user_args[ix] = arg;
   }
 
+  void
+  set_debug(bool flag)
+  {
+    debug_on = flag;
+  }
+
   // Return whether debugging is enabled for this session.
   bool
   debug() const
@@ -105,6 +111,12 @@ public:
   has_hooks() const
   {
     return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
+  }
+
+  bool
+  is_active() const
+  {
+    return m_active;
   }
 
   // Initiate an API hook invocation.
@@ -177,27 +189,17 @@ public:
   }
 
   virtual int
-  populate_protocol(const char **result, int size) const
+  populate_protocol(ts::StringView *result, int size) const
   {
-    int retval = 0;
-
-    if (get_netvc()) {
-      retval += this->get_netvc()->populate_protocol(result, size);
-    }
-
-    return retval;
+    auto vc = this->get_netvc();
+    return vc ? vc->populate_protocol(result, size) : 0;
   }
 
   virtual const char *
-  protocol_contains(const char *tag_prefix) const
+  protocol_contains(ts::StringView tag_prefix) const
   {
-    const char *retval = NULL;
-
-    if (get_netvc()) {
-      retval = this->get_netvc()->protocol_contains(tag_prefix);
-    }
-
-    return retval;
+    auto vc = this->get_netvc();
+    return vc ? vc->protocol_contains(tag_prefix) : nullptr;
   }
 
   void set_session_active();
@@ -213,6 +215,19 @@ public:
 
   ink_hrtime ssn_start_time;
   ink_hrtime ssn_last_txn_time;
+
+  virtual sockaddr const *
+  get_client_addr()
+  {
+    NetVConnection *netvc = get_netvc();
+    return netvc ? netvc->get_remote_addr() : nullptr;
+  }
+  virtual sockaddr const *
+  get_local_addr()
+  {
+    NetVConnection *netvc = get_netvc();
+    return netvc ? netvc->get_local_addr() : nullptr;
+  }
 
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so
@@ -244,8 +259,6 @@ private:
   // be active until the transaction goes through or the client
   // aborts.
   bool m_active;
-
-  friend void TSHttpSsnDebugSet(TSHttpSsn, int);
 };
 
 #endif // __PROXY_CLIENT_SESSION_H__
