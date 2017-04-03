@@ -79,10 +79,10 @@ set_socket_paths(const char *path)
 static bool
 socket_test(int fd)
 {
-  MgmtMarshallInt optype = API_PING;
-  MgmtMarshallInt now    = time(NULL);
+  OpType optype       = OpType::API_PING;
+  MgmtMarshallInt now = time(NULL);
 
-  if (MGMTAPI_SEND_MESSAGE(fd, API_PING, &optype, &now) == TS_ERR_OKAY) {
+  if (MGMTAPI_SEND_MESSAGE(fd, OpType::API_PING, &optype, &now) == TS_ERR_OKAY) {
     return true; // write was successful; connection still open
   }
 
@@ -443,22 +443,23 @@ send_register_all_callbacks(int fd, CallbackTable *cb_table)
   events_with_cb = get_events_with_callbacks(cb_table);
   // need to check that the list has all the events registered
   if (!events_with_cb) { // all events have registered callback
-    MgmtMarshallInt optype        = EVENT_REG_CALLBACK;
+    OpType optype                 = OpType::EVENT_REG_CALLBACK;
     MgmtMarshallString event_name = NULL;
 
-    err = MGMTAPI_SEND_MESSAGE(fd, EVENT_REG_CALLBACK, &optype, &event_name);
-    if (err != TS_ERR_OKAY)
+    err = MGMTAPI_SEND_MESSAGE(fd, OpType::EVENT_REG_CALLBACK, &optype, &event_name);
+    if (err != TS_ERR_OKAY) {
       return err;
+    }
   } else {
     int num_events = queue_len(events_with_cb);
     // iterate through the LLQ and send request for each event
     for (int i = 0; i < num_events; i++) {
-      MgmtMarshallInt optype        = EVENT_REG_CALLBACK;
+      OpType optype                 = OpType::EVENT_REG_CALLBACK;
       MgmtMarshallInt event_id      = *(int *)dequeue(events_with_cb);
       MgmtMarshallString event_name = (char *)get_event_name(event_id);
 
       if (event_name) {
-        err = MGMTAPI_SEND_MESSAGE(fd, EVENT_REG_CALLBACK, &optype, &event_name);
+        err = MGMTAPI_SEND_MESSAGE(fd, OpType::EVENT_REG_CALLBACK, &optype, &event_name);
         ats_free(event_name); // free memory
         if (err != TS_ERR_OKAY) {
           send_err  = err; // save the type of send error
@@ -517,10 +518,10 @@ send_unregister_all_callbacks(int fd, CallbackTable *cb_table)
   // send message to TM to mark unregister
   for (int k = 0; k < NUM_EVENTS; k++) {
     if (reg_callback[k] == 0) { // event has no registered callbacks
-      MgmtMarshallInt optype        = EVENT_UNREG_CALLBACK;
+      OpType optype                 = OpType::EVENT_UNREG_CALLBACK;
       MgmtMarshallString event_name = get_event_name(k);
 
-      err = MGMTAPI_SEND_MESSAGE(fd, EVENT_UNREG_CALLBACK, &optype, &event_name);
+      err = MGMTAPI_SEND_MESSAGE(fd, OpType::EVENT_UNREG_CALLBACK, &optype, &event_name);
       ats_free(event_name);
       if (err != TS_ERR_OKAY) {
         send_err  = err; // save the type of the sending error
@@ -596,7 +597,7 @@ event_poll_thread_main(void *arg)
     TSMgmtEvent *event = NULL;
 
     MgmtMarshallData reply = {NULL, 0};
-    MgmtMarshallInt optype;
+    OpType optype;
     MgmtMarshallString name = NULL;
     MgmtMarshallString desc = NULL;
 
@@ -616,7 +617,7 @@ event_poll_thread_main(void *arg)
       break;
     }
 
-    ret = recv_mgmt_request(reply.ptr, reply.len, EVENT_NOTIFY, &optype, &name, &desc);
+    ret = recv_mgmt_request(reply.ptr, reply.len, OpType::EVENT_NOTIFY, &optype, &name, &desc);
     ats_free(reply.ptr);
 
     if (ret != TS_ERR_OKAY) {
@@ -625,7 +626,7 @@ event_poll_thread_main(void *arg)
       break;
     }
 
-    ink_assert(optype == EVENT_NOTIFY);
+    ink_assert(optype == OpType::EVENT_NOTIFY);
 
     // The new event takes ownership of the message strings.
     event              = TSEventCreate();
