@@ -263,7 +263,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     return;
   }
 
-  if (!s->enabled && vc->read.error) {
+  if ((!s->enabled || s->vio.ntodo() <= 0) && vc->read.error) {
     int err = 0, errlen = sizeof(int);
     if (getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, &err, (socklen_t *)&errlen) == -1) {
       err = errno;
@@ -276,6 +276,8 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       if (read_signal_error(nh, vc, err) == EVENT_DONE) {
         return;
       }
+      // Clear read error if SM does not close vc [oknet]
+      vc->read.error = 0;
       // If vc is closed or shutdown(WRITE) in last read_signal_error callback,
       //   or reader_cont is same as write.vio._cont.
       // Then we must clear the write.error to avoid callback EVENT_ERROR to SM by write_ready_list.
@@ -465,7 +467,11 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     if (err && err != EAGAIN && err != EINTR) {
       // Here is differ to net_read_io since read_signal_error always callback first.
       // NetHandler::mainNetEvent() is always handle read_ready_list first and then write_ready_list.
-      write_signal_error(nh, vc, err);
+      // We only call SM when read.error has already been cleared, or there is a write error only
+      // Sometimes,  We can not clear read.error due to SM call do_io_read(NULL, 0, NULL) [oknet]
+      if (!vc->read.error || vc->read.vio._cont == nullptr) {
+        write_signal_error(nh, vc, err);
+      }
       return;
     }
 
