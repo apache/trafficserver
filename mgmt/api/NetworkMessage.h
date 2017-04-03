@@ -32,7 +32,7 @@
 #define MAX_CONN_TRIES 10 // maximum number of attemps to reconnect to TM
 
 // the possible operations or msg types sent from remote client to TM
-typedef enum {
+enum class OpType : MgmtMarshallInt {
   FILE_READ,
   FILE_WRITE,
   RECORD_SET,
@@ -61,9 +61,7 @@ typedef enum {
   RECORD_DESCRIBE_CONFIG,
   LIFECYCLE_MESSAGE,
   UNDEFINED_OP /* This must be last */
-} OpType;
-
-#define MGMT_OPERATION_TYPE_MAX (UNDEFINED_OP)
+};
 
 enum {
   RECORD_DESCRIBE_FLAGS_MATCH = 0x0001,
