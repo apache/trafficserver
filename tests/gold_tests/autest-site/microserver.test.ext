@@ -20,7 +20,7 @@ from ports import get_port
 import json
 
 def addMethod(self,testName, request_header, functionName):
-    return 
+    return
 
 # creates the full request or response block using headers and message data
 def httpObject(self,header,data):
@@ -74,7 +74,7 @@ def addTransactionToSession(txn,JFile):
     if os.path.exists(JFile):
         jf = open(JFile,'r')
         jsondata = json.load(jf)
-    
+
     if jsondata == None:
         jsondata = dict()
         jsondata["version"]='0.1'
@@ -86,9 +86,9 @@ def addTransactionToSession(txn,JFile):
         jsondata["txns"].append(txn)
     with open(JFile,'w+') as jf:
         jf.write(json.dumps(jsondata))
-        
 
-#make headers with the key and values provided        
+
+#make headers with the key and values provided
 def makeHeader(self,requestString, **kwargs):
     headerStr = requestString+'\r\n'
     for k,v in kwargs.iteritems():
@@ -97,21 +97,23 @@ def makeHeader(self,requestString, **kwargs):
     return headerStr
 
 
-def MakeOriginServer(obj, name,public_ip=False):
+def MakeOriginServer(obj, name,public_ip=False,options={}):
     server_path= os.path.join(obj.Variables.AtsTestToolsDir,'microServer/uWServer.py')
     data_dir = os.path.join(obj.RunDirectory, name)
     # create Process
     p = obj.Processes.Process(name)
     port=get_port(p,"Port")
     command = "python3 {0} --data-dir {1} --port {2} --public {3} -m test".format(server_path, data_dir, port, public_ip)
-    
+    for flag,value in options.items() :
+        command += " {} {}".format(flag,value)
+
     # create process
     p.Command = command
     p.Setup.MakeDir(data_dir)
     p.Variables.DataDir = data_dir
     AddMethodToInstance(p,addResponse)
     AddMethodToInstance(p,addTransactionToSession)
-    
+
     return p
 
 AddTestRunSet(MakeOriginServer,name="MakeOriginServer")
