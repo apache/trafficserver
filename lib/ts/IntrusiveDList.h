@@ -163,7 +163,7 @@ public:
     self operator--(int)
     {
       self tmp(*this);
-      ++*this;
+      --*this;
       return tmp;
     }
     /// Inequality test.
