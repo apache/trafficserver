@@ -22,8 +22,8 @@ set -e # exit on error
 
 DIR=${1:-.}
 ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt}
-PACKAGE="clang-format-20160415.tar.bz2"
-VERSION="clang-format version 3.9.0 (trunk 265913)"
+PACKAGE="clang-format-20170404.tar.bz2"
+VERSION="clang-format version 4.0.1 (http://llvm.org/git/clang.git 559aa046fe3260d8640791f2249d7b0d458b5700) (http://llvm.org/git/llvm.git 08142cb734b8d2cefec8b1629f6bb170b3f94610)"
 
 URL=${URL:-https://bintray.com/artifact/download/apache/trafficserver/${PACKAGE}}
 
@@ -58,7 +58,7 @@ if [ ! -e ${FORMAT} -o ! -e ${ROOT}/${PACKAGE} ] ; then
   ${CURL} -L --progress-bar -o ${ARCHIVE} ${URL}
   ${TAR} -x -C ${ROOT} -f ${ARCHIVE}
   cat > ${ROOT}/sha1 << EOF
-d5558924377a6ad5799956cec5b37d4e421e2156  ${ARCHIVE}
+ebd00097e5e16d6895d6572638cf354d705f9fcf  ${ARCHIVE}
 EOF
   ${SHASUM} -c ${ROOT}/sha1
   chmod +x ${FORMAT}
