@@ -139,6 +139,7 @@ public:
    * Unlock the mutex.
    */
   ~ScopedMutexLock() { mutex_.unlock(); }
+
 private:
   Mutex &mutex_;
 };
@@ -163,6 +164,7 @@ public:
    * Unlock the mutex.
    */
   ~ScopedSharedMutexLock() { mutex_->unlock(); }
+
 private:
   std::shared_ptr<Mutex> mutex_;
 };

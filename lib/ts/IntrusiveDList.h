@@ -179,6 +179,7 @@ public:
     /// Dereference.
     /// @return A pointer to the referent.
     pointer operator->() { return _elt; }
+
   protected:
     IntrusiveDList *_list; ///< List for this iterator.
     T *_elt;               ///< Referenced element.

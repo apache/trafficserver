@@ -179,8 +179,9 @@ UrlRewrite::_destroyTable(InkHashTable *h_table)
 void
 UrlRewrite::Print()
 {
-  printf("URL Rewrite table with %d entries\n", num_rules_forward + num_rules_reverse + num_rules_redirect_temporary +
-                                                  num_rules_redirect_permanent + num_rules_forward_with_recv_port);
+  printf("URL Rewrite table with %d entries\n",
+         num_rules_forward + num_rules_reverse + num_rules_redirect_temporary + num_rules_redirect_permanent +
+           num_rules_forward_with_recv_port);
   printf("  Reverse Proxy is %s\n", (reverse_proxy == 0) ? "Off" : "On");
 
   printf("  Forward Mapping Table with %d entries\n", num_rules_forward);

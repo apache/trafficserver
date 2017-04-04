@@ -125,6 +125,7 @@ public:
   }
 
   virtual ~SomeTransformationPlugin() {}
+
 private:
   Transaction &transaction_;
 };

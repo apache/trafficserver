@@ -57,6 +57,7 @@ public:
   }
 
   virtual ~ClientRedirectTransactionPlugin() {}
+
 private:
   string location_;
 };

@@ -2875,18 +2875,19 @@ make_bfc_client(unsigned int addr, int port)
               // coverity[dont_call]
               reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
     } else {
-      sprintf(fd[sock].req_header, ftp ? "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-                                         "%s"
-                                         "%s"
-                                         "%s"
-                                         "%s"
-                                         "\r\n" :
-                                         "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-                                         "%s"
-                                         "%s"
-                                         "%s"
-                                         "%s"
-                                         "\r\n",
+      sprintf(fd[sock].req_header,
+              ftp ? "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "\r\n" :
+                    "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
               // coverity[dont_call]

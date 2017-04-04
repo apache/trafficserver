@@ -56,6 +56,7 @@ public:
   }
 
   virtual ~PostBufferTransformationPlugin() {}
+
 private:
   Transaction &transaction_;
   string buffer_;

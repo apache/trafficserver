@@ -360,6 +360,7 @@ public:
   }
 
   ~Mp4Trak() {}
+
 public:
   uint32_t timescale;
   int64_t duration;
