@@ -370,7 +370,7 @@ public:
     if (!isspace(*(x - 1)))        \
       x = strcasestr(x + 1, str);  \
     else                           \
-  break
+      break
 
 class rule_t
 {

@@ -29,8 +29,7 @@
 #include "I_EventSystem.h"
 #if !defined(I_VIO_h)
 #error "include I_VIO.h"
--- -
-  include I_VIO.h
+---include I_VIO.h
 #endif
 
 //
@@ -111,18 +110,18 @@
 #define VC_EVENT_DONE CONTINUATION_DONE
 #define VC_EVENT_CONT CONTINUATION_CONT
 
-  //////////////////////////////////////////////////////////////////////////////
-  //
-  //      Support Data Structures
-  //
-  //////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////
+   //
+   //      Support Data Structures
+   //
+   //////////////////////////////////////////////////////////////////////////////
 
-  /** Used in VConnection::shutdown(). */
-  enum ShutdownHowTo_t {
-    IO_SHUTDOWN_READ = 0,
-    IO_SHUTDOWN_WRITE,
-    IO_SHUTDOWN_READWRITE
-  };
+   /** Used in VConnection::shutdown(). */
+   enum ShutdownHowTo_t {
+     IO_SHUTDOWN_READ = 0,
+     IO_SHUTDOWN_WRITE,
+     IO_SHUTDOWN_READWRITE
+   };
 
 /** Used in VConnection::get_data(). */
 enum TSApiDataType {

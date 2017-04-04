@@ -82,6 +82,7 @@ public:
     operator bool() const { return ptr != 0; }
     operator const ConfigType *() const { return ptr; }
     const ConfigType *operator->() const { return ptr; }
+
   private:
     ConfigType *ptr;
   };

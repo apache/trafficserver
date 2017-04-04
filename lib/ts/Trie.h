@@ -51,6 +51,7 @@ public:
   }
 
   virtual ~Trie() { Clear(); }
+
 private:
   static const int N_NODE_CHILDREN = 256;
 

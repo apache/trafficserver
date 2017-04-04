@@ -431,13 +431,14 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon)
     con[icon].close();
   }
 
-  if (con[icon].connect(target, DNSConnection::Options()
-                                  .setNonBlockingConnect(true)
-                                  .setNonBlockingIo(true)
-                                  .setUseTcp(false)
-                                  .setBindRandomPort(true)
-                                  .setLocalIpv6(&local_ipv6.sa)
-                                  .setLocalIpv4(&local_ipv4.sa)) < 0) {
+  if (con[icon].connect(target,
+                        DNSConnection::Options()
+                          .setNonBlockingConnect(true)
+                          .setNonBlockingIo(true)
+                          .setUseTcp(false)
+                          .setBindRandomPort(true)
+                          .setLocalIpv6(&local_ipv6.sa)
+                          .setLocalIpv4(&local_ipv4.sa)) < 0) {
     Debug("dns", "opening connection %s FAILED for %d", ip_text, icon);
     if (!failed) {
       if (dns_ns_rr)

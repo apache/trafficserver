@@ -52,9 +52,8 @@ static const struct NetCmdOperation requests[] = {
   /* EVENT_ACTIVE               */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* EVENT_REG_CALLBACK         */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* EVENT_UNREG_CALLBACK       */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
-  /* EVENT_NOTIFY               */ {3,
-                                    {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING,
-                                     MGMT_MARSHALL_STRING}}, // only msg sent from TM to client
+  /* EVENT_NOTIFY               */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING}}, // only msg sent from TM to
+                                                                                                         // client
   /* SNAPSHOT_TAKE              */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* SNAPSHOT_RESTORE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* SNAPSHOT_REMOVE            */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
@@ -74,9 +73,8 @@ static const struct NetCmdOperation responses[] = {
   /* FILE_READ                  */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_DATA}},
   /* FILE_WRITE                 */ {1, {MGMT_MARSHALL_INT}},
   /* RECORD_SET                 */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
-  /* RECORD_GET                 */ {5,
-                                    {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING,
-                                     MGMT_MARSHALL_DATA}},
+  /* RECORD_GET                 */
+  {5, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA}},
   /* PROXY_STATE_GET            */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
   /* PROXY_STATE_SET            */ {1, {MGMT_MARSHALL_INT}},
   /* RECONFIGURE                */ {1, {MGMT_MARSHALL_INT}},
@@ -95,18 +93,17 @@ static const struct NetCmdOperation responses[] = {
   /* STATS_RESET_NODE           */ {1, {MGMT_MARSHALL_INT}},
   /* STATS_RESET_CLUSTER        */ {1, {MGMT_MARSHALL_INT}},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {1, {MGMT_MARSHALL_INT}},
-  /* RECORD_MATCH_GET           */ {5,
-                                    {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING,
-                                     MGMT_MARSHALL_DATA}},
+  /* RECORD_MATCH_GET           */
+  {5, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA}},
   /* API_PING                   */ {0, {}}, // no reply
   /* SERVER_BACKTRACE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
-  /* RECORD_DESCRIBE_CONFIG     */ {15,
-                                    {MGMT_MARSHALL_INT /* status */, MGMT_MARSHALL_STRING /* name */,
-                                     MGMT_MARSHALL_DATA /* value */, MGMT_MARSHALL_DATA /* default */, MGMT_MARSHALL_INT /* type */,
-                                     MGMT_MARSHALL_INT /* class */, MGMT_MARSHALL_INT /* version */, MGMT_MARSHALL_INT /* rsb */,
-                                     MGMT_MARSHALL_INT /* order */, MGMT_MARSHALL_INT /* access */, MGMT_MARSHALL_INT /* update */,
-                                     MGMT_MARSHALL_INT /* updatetype */, MGMT_MARSHALL_INT /* checktype */,
-                                     MGMT_MARSHALL_INT /* source */, MGMT_MARSHALL_STRING /* checkexpr */}},
+  /* RECORD_DESCRIBE_CONFIG     */
+  {15,
+   {MGMT_MARSHALL_INT /* status */, MGMT_MARSHALL_STRING /* name */, MGMT_MARSHALL_DATA /* value */,
+    MGMT_MARSHALL_DATA /* default */, MGMT_MARSHALL_INT /* type */, MGMT_MARSHALL_INT /* class */, MGMT_MARSHALL_INT /* version */,
+    MGMT_MARSHALL_INT /* rsb */, MGMT_MARSHALL_INT /* order */, MGMT_MARSHALL_INT /* access */, MGMT_MARSHALL_INT /* update */,
+    MGMT_MARSHALL_INT /* updatetype */, MGMT_MARSHALL_INT /* checktype */, MGMT_MARSHALL_INT /* source */,
+    MGMT_MARSHALL_STRING /* checkexpr */}},
   /* LIFECYCLE_MESSAGE          */ {1, {MGMT_MARSHALL_INT}},
 };
 

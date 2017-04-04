@@ -61,6 +61,7 @@ public:
   }
 
   virtual ~CustomResponseTransactionPlugin() {}
+
 private:
   HttpStatus status_;
   string reason_;
