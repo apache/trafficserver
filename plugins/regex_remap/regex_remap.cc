@@ -919,7 +919,7 @@ TSRemapDeleteInstance(void *ih)
 
   re = ri->first;
   while (re) {
-    RemapRegex::Override * override = re->get_overrides();
+    RemapRegex::Override *override = re->get_overrides();
 
     while (override) {
       RemapRegex::Override *tmp = override;
@@ -1037,7 +1037,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         lowercase_substitutions = true;
       }
 
-      RemapRegex::Override * override = re->get_overrides();
+      RemapRegex::Override *override = re->get_overrides();
 
       while (override) {
         switch (override->type) {

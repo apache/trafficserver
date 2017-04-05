@@ -72,6 +72,15 @@ enum IdQualifiers {
   ID_QUAL_UNIQUE,
 };
 
+// IP
+enum IpQualifiers {
+  IP_QUAL_CLIENT,
+  IP_QUAL_INBOUND,
+  // These two might not necessarily get populated, e.g. on a cache hit.
+  IP_QUAL_SERVER,
+  IP_QUAL_OUTBOUND,
+};
+
 class Statement
 {
 public:

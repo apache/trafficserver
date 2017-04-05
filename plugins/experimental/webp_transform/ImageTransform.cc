@@ -76,6 +76,7 @@ public:
   }
 
   virtual ~ImageTransform() {}
+
 private:
   std::stringstream _img;
 };

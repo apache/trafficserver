@@ -39,7 +39,7 @@ struct AIOCallback;
 #define THREAD_MAX_HEARTBEAT_MSECONDS 60
 #define NO_ETHREAD_ID -1
 
-bool shutdown_event_system = false;
+volatile bool shutdown_event_system = false;
 
 EThread::EThread()
   : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this),

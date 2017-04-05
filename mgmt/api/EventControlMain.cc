@@ -391,11 +391,11 @@ event_callback_main(void *arg)
       while (con_entry) {
         client_entry = (EventClientT *)ink_hash_table_entry_value(accepted_clients, con_entry);
         if (client_entry->events_registered[event->id]) {
-          MgmtMarshallInt optype  = EVENT_NOTIFY;
+          OpType optype           = OpType::EVENT_NOTIFY;
           MgmtMarshallString name = event->name;
           MgmtMarshallString desc = event->description;
 
-          ret = send_mgmt_request(client_entry->fd, EVENT_NOTIFY, &optype, &name, &desc);
+          ret = send_mgmt_request(client_entry->fd, OpType::EVENT_NOTIFY, &optype, &name, &desc);
           if (ret != TS_ERR_OKAY) {
             Debug("event", "sending even notification to fd [%d] failed.", client_entry->fd);
           }
@@ -452,7 +452,7 @@ handle_event_reg_callback(EventClientT *client, void *req, size_t reqlen)
   MgmtMarshallString name = nullptr;
   TSMgmtError ret;
 
-  ret = recv_mgmt_request(req, reqlen, EVENT_REG_CALLBACK, &optype, &name);
+  ret = recv_mgmt_request(req, reqlen, OpType::EVENT_REG_CALLBACK, &optype, &name);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }
@@ -495,7 +495,7 @@ handle_event_unreg_callback(EventClientT *client, void *req, size_t reqlen)
   MgmtMarshallString name = nullptr;
   TSMgmtError ret;
 
-  ret = recv_mgmt_request(req, reqlen, EVENT_UNREG_CALLBACK, &optype, &name);
+  ret = recv_mgmt_request(req, reqlen, OpType::EVENT_UNREG_CALLBACK, &optype, &name);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }
@@ -557,11 +557,11 @@ handle_event_message(EventClientT *client, void *req, size_t reqlen)
 {
   OpType optype = extract_mgmt_request_optype(req, reqlen);
 
-  if (optype < 0 || static_cast<unsigned>(optype) >= countof(handlers)) {
+  if (static_cast<unsigned>(optype) >= countof(handlers)) {
     goto fail;
   }
 
-  if (handlers[optype] == nullptr) {
+  if (handlers[static_cast<unsigned>(optype)] == nullptr) {
     goto fail;
   }
 
@@ -576,7 +576,7 @@ handle_event_message(EventClientT *client, void *req, size_t reqlen)
     }
   }
 
-  return handlers[optype](client, req, reqlen);
+  return handlers[static_cast<unsigned>(optype)](client, req, reqlen);
 
 fail:
   mgmt_elog(0, "%s: missing handler for type %d event message\n", __func__, (int)optype);

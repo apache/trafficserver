@@ -74,6 +74,7 @@ public:
     return getDispatchController()->isEnabled();
   }
   ~DelayedAsyncHttpFetch() { delete timer_; }
+
 private:
   std::shared_ptr<Mutex> mutex_;
   AsyncTimer *timer_;

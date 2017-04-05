@@ -449,6 +449,12 @@ AC_ARG_WITH([max-threads-per-type],
 )
 AC_SUBST(max_threads_per_type)
 
+# Check Brotli
+AC_CHECK_HEADERS([brotli/encode.h], [has_brotli=1],[has_brotli=0])
+AC_CHECK_LIB([brotlienc],[BrotliEncoderCreateInstance],[AC_SUBST([LIB_BROTLIENC],["-lbrotlienc"])],[has_brotli=0])
+AC_SUBST(has_brotli)
+AM_CONDITIONAL([HAS_BROTLI], [ test "x${has_brotli}" = "x1" ])
+
 #
 # Experimental plugins
 #
@@ -806,7 +812,7 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -analyzer-disable-all-checks"
+      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -analyzer-disable-all-checks -Wno-varargs"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
@@ -830,7 +836,7 @@ case $host_os_def in
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -Wno-varargs"
     ], [
       AC_MSG_WARN([clang is the only supported compiler on Darwin])
     ])
@@ -851,7 +857,7 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -Wno-varargs"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [

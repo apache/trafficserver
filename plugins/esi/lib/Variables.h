@@ -98,6 +98,7 @@ public:
   void clear();
 
   virtual ~Variables() { _releaseCookieJar(); };
+
 private:
   Variables(const Variables &);            // non-copyable
   Variables &operator=(const Variables &); // non-copyable
