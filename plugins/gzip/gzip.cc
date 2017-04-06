@@ -519,7 +519,7 @@ compress_transform_finish(Data *data)
 {
   if (data->compression_type & COMPRESSION_TYPE_BROTLI && data->compression_algorithms & ALGORITHM_BROTLI) {
     brotli_transform_finish(data);
-    debug("brotli-transform: Brolti compression finish.");
+    debug("brotli-transform: Brotli compression finish.");
   } else if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
              (data->compression_algorithms & (ALGORITHM_GZIP | ALGORITHM_DEFLATE))) {
     gzip_transform_finish(data);
@@ -908,7 +908,7 @@ handle_request(TSHttpTxn txnp, Configuration *config)
     bool allowed = false;
 
     if (hc->enabled()) {
-      if (hc->has_disallows()) {
+      if (hc->has_disallows() || hc->has_allows()) {
         int url_len;
         char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
         allowed   = hc->is_url_allowed(url, url_len);

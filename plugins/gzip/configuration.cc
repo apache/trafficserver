@@ -95,7 +95,8 @@ enum ParserState {
   kParseCache,
   kParseDisallow,
   kParseFlush,
-  kParseAlgorithms
+  kParseAlgorithms,
+  kParseAllow
 };
 
 void
@@ -109,6 +110,12 @@ void
 HostConfiguration::add_disallow(const std::string &disallow)
 {
   disallows_.push_back(disallow);
+}
+
+void
+HostConfiguration::add_allow(const std::string &allow)
+{
+  allows_.push_back(allow);
 }
 
 void
@@ -150,14 +157,31 @@ bool
 HostConfiguration::is_url_allowed(const char *url, int url_len)
 {
   string surl(url, url_len);
-
-  for (StringContainer::iterator it = disallows_.begin(); it != disallows_.end(); ++it) {
-    if (fnmatch(it->c_str(), surl.c_str(), 0) == 0) {
-      info("url [%s] disabled for compression, matched on pattern [%s]", surl.c_str(), it->c_str());
-      return false;
+  if (has_disallows()) {
+    for (StringContainer::iterator it = disallows_.begin(); it != disallows_.end(); ++it) {
+      if (fnmatch(it->c_str(), surl.c_str(), 0) == 0) {
+        info("url [%s] disabled for compression, matched disallow pattern [%s]", surl.c_str(), it->c_str());
+        return false;
+      }
     }
   }
-
+  if (has_allows()) {
+    for (StringContainer::iterator allow_it = allows_.begin(); allow_it != allows_.end(); ++allow_it) {
+      const char *match_string = allow_it->c_str();
+      bool exclude             = match_string[0] == '!';
+      if (exclude) {
+        ++match_string; // skip !
+      }
+      if (fnmatch(match_string, surl.c_str(), 0) == 0) {
+        info("url [%s] %s for compression, matched allow pattern [%s]", surl.c_str(), exclude ? "disabled" : "enabled",
+             allow_it->c_str());
+        return !exclude;
+      }
+    }
+    info("url [%s] disabled for compression, did not match any allows pattern", surl.c_str());
+    return false;
+  }
+  info("url [%s] enabled for compression, did not match and disallow pattern ", surl.c_str());
   return true;
 }
 
@@ -295,6 +319,8 @@ Configuration::Parse(const char *path)
           state = kParseFlush;
         } else if (token == "supported-algorithms") {
           state = kParseAlgorithms;
+        } else if (token == "allow") {
+          state = kParseAllow;
         } else {
           warning("failed to interpret \"%s\" at line %zu", token.c_str(), lineno);
         }
@@ -325,6 +351,10 @@ Configuration::Parse(const char *path)
         break;
       case kParseAlgorithms:
         current_host_configuration->add_compression_algorithms(token);
+        state = kParseStart;
+        break;
+      case kParseAllow:
+        current_host_configuration->add_allow(token);
         state = kParseStart;
         break;
       }
