@@ -243,7 +243,7 @@ initialize_thread_for_net(EThread *thread)
   thread->ep          = (EventIO *)ats_malloc(sizeof(EventIO));
   thread->ep->type    = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
-  thread->ep->start(pd, thread->evfd, 0, EVENTIO_READ);
+  thread->ep->start(pd, thread->evfd, nullptr, EVENTIO_READ);
 #else
   thread->ep->start(pd, thread->evpipe[0], nullptr, EVENTIO_READ);
 #endif

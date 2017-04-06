@@ -216,7 +216,7 @@ static ArgumentDescription argument_descriptions[] = {
   {"bind_stdout", '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", nullptr},
   {"bind_stderr", '-', "Regular file to bind stderr to", "S512", &bind_stderr, "PROXY_BIND_STDERR", nullptr},
 #if defined(linux)
-  {"read_core", 'c', "Read Core file", "S255", &core_file, NULL, NULL},
+  {"read_core", 'c', "Read Core file", "S255", &core_file, nullptr, nullptr},
 #endif
 
   {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, nullptr, nullptr},
@@ -357,7 +357,7 @@ public:
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
   }
-  ~MemoryLimit() { mutex = NULL; }
+  ~MemoryLimit() { mutex = nullptr; }
   int
   periodic(int event, Event *e)
   {
@@ -1791,7 +1791,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
   eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND, ET_TASK);
   REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
-  init_memory_tracker(NULL, RECD_NULL, RecData(), nullptr);
+  init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
   // log initialization moved down
 

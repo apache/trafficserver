@@ -118,8 +118,8 @@ TSPluginInit(int argc, char const *argv[])
     _table.emplace(std::string(argv[i], strlen(argv[i])));
   }
   // This should not modify any state so no lock is needed.
-  TSCont cb_sni    = TSContCreate(&CB_SNI, NULL);
-  TSCont cb_netacc = TSContCreate(&CB_NetAcceptReady, NULL);
+  TSCont cb_sni    = TSContCreate(&CB_SNI, nullptr);
+  TSCont cb_netacc = TSContCreate(&CB_NetAcceptReady, nullptr);
 
   TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, cb_sni);
   TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_READY_HOOK, cb_netacc);

@@ -4627,7 +4627,7 @@ TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
   APIHook *hook = sm->txn_hook_get(id);
 
   // Traverse list of hooks and add a particular hook only once
-  while (hook != NULL) {
+  while (hook != nullptr) {
     if (hook->m_cont == (INKContInternal *)contp) {
       return;
     }

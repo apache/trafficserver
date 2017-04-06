@@ -973,7 +973,7 @@ const char *
 ConditionGeo::get_geo_string(const sockaddr *addr) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
-  return NULL;
+  return nullptr;
 }
 
 int64_t

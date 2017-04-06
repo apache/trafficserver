@@ -427,7 +427,7 @@ pvc_process_n_write(TSCont contp, TSEvent event, pvc_state *my_state)
   /* FALL THROUGH */
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     /* We should have already shutdown read pvc side */
-    TSAssert(my_state->p_read_vio == NULL);
+    TSAssert(my_state->p_read_vio == nullptr);
     TSVConnShutdown(my_state->net_vc, 0, 1);
     my_state->req_finished = 1;
 
@@ -512,7 +512,7 @@ pvc_process_p_write(TSCont contp, TSEvent event, pvc_state *my_state)
   /* FALL THROUGH */
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     /* We should have already shutdown read net side */
-    TSAssert(my_state->n_read_vio == NULL);
+    TSAssert(my_state->n_read_vio == nullptr);
     TSVConnShutdown(my_state->p_vc, 0, 1);
     my_state->resp_finished = 1;
     pvc_check_done(contp, my_state);
