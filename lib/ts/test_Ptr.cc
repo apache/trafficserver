@@ -24,7 +24,7 @@
 
 struct PtrObject : RefCountObj {
   PtrObject(unsigned *_c) : count(_c) { ++(*count); }
-  ~PtrObject() { --(*count); }
+  ~PtrObject() override { --(*count); }
   unsigned *count;
 };
 

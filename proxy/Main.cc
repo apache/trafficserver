@@ -292,7 +292,7 @@ public:
     baseline_taken = 0;
   }
 
-  ~TrackerContinuation() { mutex = nullptr; }
+  ~TrackerContinuation() override { mutex = nullptr; }
   int
   periodic(int event, Event * /* e ATS_UNUSED */)
   {
@@ -357,7 +357,7 @@ public:
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
   }
-  ~MemoryLimit() { mutex = nullptr; }
+  ~MemoryLimit() override { mutex = nullptr; }
   int
   periodic(int event, Event *e)
   {

@@ -43,32 +43,32 @@ public:
   }
 
   void
-  handleSendRequestHeaders(Transaction &transaction)
+  handleSendRequestHeaders(Transaction &transaction) override
   {
     transaction.getServerRequest().getHeaders()["X-Content-Transformed"] = "1";
     transaction.resume();
   }
 
   void
-  handleSendResponseHeaders(Transaction &transaction)
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     transaction.getClientResponse().getHeaders()["X-Content-Transformed"] = "1";
     transaction.resume();
   }
 
   void
-  consume(const string &data)
+  consume(const string &data) override
   {
     produce(data);
   }
 
   void
-  handleInputComplete()
+  handleInputComplete() override
   {
     setOutputComplete();
   }
 
-  virtual ~NullTransformationPlugin() {}
+  ~NullTransformationPlugin() override {}
 
 private:
 };
@@ -82,15 +82,15 @@ public:
     registerHook(HOOK_READ_RESPONSE_HEADERS);
   }
 
-  virtual void
-  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
     transaction.addPlugin(new NullTransformationPlugin(transaction, TransformationPlugin::REQUEST_TRANSFORMATION));
     transaction.resume();
   }
 
-  virtual void
-  handleReadResponseHeaders(Transaction &transaction)
+  void
+  handleReadResponseHeaders(Transaction &transaction) override
   {
     transaction.addPlugin(new NullTransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));
     transaction.resume();

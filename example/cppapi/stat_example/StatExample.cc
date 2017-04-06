@@ -55,8 +55,8 @@ public:
     registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
   }
 
-  virtual void
-  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
     TS_DEBUG(TAG, "Received a request, incrementing the counter.");
     stat.increment();

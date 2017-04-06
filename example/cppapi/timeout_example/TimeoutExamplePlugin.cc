@@ -39,15 +39,15 @@ public:
     registerHook(HOOK_SEND_RESPONSE_HEADERS);
   }
 
-  virtual void
-  handleSendResponseHeaders(Transaction &transaction)
+  void
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     TS_DEBUG(TAG, "Sending response headers to the client, status=%d", transaction.getClientResponse().getStatusCode());
     transaction.resume();
   }
 
-  virtual void
-  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPreRemap(Transaction &transaction) override
   {
     TS_DEBUG(TAG, "Setting all timeouts to 1ms, this will likely cause the transaction to receive a 504.");
     transaction.setTimeout(Transaction::TIMEOUT_CONNECT, 1);

@@ -48,7 +48,7 @@ public:
   }
 
   void
-  handleSendResponseHeaders(Transaction &transaction)
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     transaction.getClientResponse().setStatusCode(HTTP_STATUS_MOVED_TEMPORARILY);
     transaction.getClientResponse().setReasonPhrase("Moved Temporarily");
@@ -56,7 +56,7 @@ public:
     transaction.resume();
   }
 
-  virtual ~ClientRedirectTransactionPlugin() {}
+  ~ClientRedirectTransactionPlugin() override {}
 
 private:
   string location_;
@@ -67,7 +67,7 @@ class ClientRedirectGlobalPlugin : public GlobalPlugin
 public:
   ClientRedirectGlobalPlugin() { registerHook(HOOK_SEND_REQUEST_HEADERS); }
   void
-  handleSendRequestHeaders(Transaction &transaction)
+  handleSendRequestHeaders(Transaction &transaction) override
   {
     if (transaction.getClientRequest().getUrl().getQuery().find("redirect=1") != string::npos) {
       transaction.addPlugin(new ClientRedirectTransactionPlugin(transaction, "http://www.linkedin.com/"));

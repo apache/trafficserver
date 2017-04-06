@@ -33,7 +33,7 @@ class MyRemapPlugin : public RemapPlugin
 public:
   MyRemapPlugin(void **instance_handle) : RemapPlugin(instance_handle) {}
   Result
-  doRemap(const Url &map_from_url, const Url &map_to_url, Transaction &transaction, bool &redirect)
+  doRemap(const Url &map_from_url, const Url &map_to_url, Transaction &transaction, bool &redirect) override
   {
     if (transaction.getClientRequest().getUrl().getQuery().find("custom=1") != string::npos) {
       transaction.setStatusCode(HTTP_STATUS_FORBIDDEN);

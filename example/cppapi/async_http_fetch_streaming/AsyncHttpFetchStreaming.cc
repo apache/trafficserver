@@ -47,10 +47,10 @@ public:
   {
     main_url_ = transaction.getClientRequest().getUrl().getUrlString();
   }
-  void consume(const string &data, InterceptPlugin::RequestDataType type);
-  void handleInputComplete();
-  void handleAsyncComplete(AsyncHttpFetch &async_http_fetch);
-  ~Intercept();
+  void consume(const string &data, InterceptPlugin::RequestDataType type) override;
+  void handleInputComplete() override;
+  void handleAsyncComplete(AsyncHttpFetch &async_http_fetch) override;
+  ~Intercept() override;
 
 private:
   Transaction &transaction_;
@@ -68,7 +68,7 @@ public:
     GlobalPlugin::registerHook(Plugin::HOOK_READ_REQUEST_HEADERS_PRE_REMAP);
   }
   void
-  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  handleReadRequestHeadersPreRemap(Transaction &transaction) override
   {
     transaction.addPlugin(new Intercept(transaction));
     TS_DEBUG(TAG, "Added intercept");

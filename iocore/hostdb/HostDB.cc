@@ -271,7 +271,7 @@ struct HostDBSync : public HostDBBackgroundTask {
   HostDBSync(int frequency, std::string storage_path, std::string full_path)
     : HostDBBackgroundTask(frequency), storage_path(storage_path), full_path(full_path){};
   int
-  sync_event(int, void *)
+  sync_event(int, void *) override
   {
     SET_HANDLER(&HostDBSync::wait_event);
     start_time = Thread::get_hrtime();

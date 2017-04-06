@@ -152,7 +152,7 @@ struct ShowCache : public ShowCont {
     SET_HANDLER(&ShowCache::showMain);
   }
 
-  ~ShowCache()
+  ~ShowCache() override
   {
     if (show_cache_urlstrs)
       delete[] show_cache_urlstrs;
