@@ -117,6 +117,15 @@ of the objects will be cached and returned to clients. This may be useful for
 objects which already have their own compression built-in, to avoid the expense
 of multiple rounds of compression for trivial gains.
 
+allow
+--------
+
+Provides a wildcard pattern which will be applied to request URLs. Any which
+match the pattern will be considered compressible, and only deflated versions
+of the objects will be cached and returned to clients. This may be useful for
+objects which already have their own compression built-in, to avoid the expense
+of multiple rounds of compression for trivial gains.
+
 enabled
 -------
 
@@ -168,6 +177,7 @@ might create a configuration with the following options::
     cache false
     remove-accept-encoding true
     disallow /notthis/*.js
+    allow /this/*.js
     flush true
 
     # Allows brotli encoded response from origin but is not capable of brotli compression
