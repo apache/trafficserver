@@ -208,8 +208,8 @@ TSPluginInit(int argc, const char *argv[])
 
   host     = iniparser_getstring(ini, "mysql_remap:mysql_host", (char *)"localhost");
   port     = iniparser_getint(ini, "mysql_remap:mysql_port", 3306);
-  username = iniparser_getstring(ini, "mysql_remap:mysql_username", NULL);
-  password = iniparser_getstring(ini, "mysql_remap:mysql_password", NULL);
+  username = iniparser_getstring(ini, "mysql_remap:mysql_username", nullptr);
+  password = iniparser_getstring(ini, "mysql_remap:mysql_password", nullptr);
   db       = iniparser_getstring(ini, "mysql_remap:mysql_database", (char *)"mysql_remap");
 
   if (mysql_library_init(0, NULL, NULL)) {

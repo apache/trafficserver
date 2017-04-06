@@ -935,7 +935,7 @@ getaddrinfo_error:
 }
 
 static int
-test_port(int port, const char *request, char *buffer, int bufsize, int64_t test_timeout, const char *ip = NULL,
+test_port(int port, const char *request, char *buffer, int bufsize, int64_t test_timeout, const char *ip = nullptr,
           const char *ip_to_bind = nullptr)
 {
   int64_t start_time, timeout;
@@ -1520,11 +1520,11 @@ check_memory()
     if ((fp = fopen("/proc/meminfo", "r"))) {
       while (fgets(buf, sizeof buf, fp)) {
         if (strncmp(buf, "MemFree:", sizeof "MemFree:" - 1) == 0)
-          memfree = strtoll(buf + sizeof "MemFree:" - 1, 0, 10);
+          memfree = strtoll(buf + sizeof "MemFree:" - 1, nullptr, 10);
         else if (strncmp(buf, "SwapFree:", sizeof "SwapFree:" - 1) == 0)
-          swapfree = strtoll(buf + sizeof "SwapFree:" - 1, 0, 10);
+          swapfree = strtoll(buf + sizeof "SwapFree:" - 1, nullptr, 10);
         else if (strncmp(buf, "SwapTotal:", sizeof "SwapTotal:" - 1) == 0)
-          swapsize = strtoll(buf + sizeof "SwapTotal:" - 1, 0, 10);
+          swapsize = strtoll(buf + sizeof "SwapTotal:" - 1, nullptr, 10);
       }
       fclose(fp);
       // simple heuristic for linux

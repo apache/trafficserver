@@ -384,7 +384,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   char *buffer;
   const char *pType = context->txn_conf->body_factory_template_base;
   const char *set;
-  HttpBodyTemplate *t = NULL;
+  HttpBodyTemplate *t = nullptr;
   HttpBodySet *body_set;
   char template_base[PATH_NAME_MAX];
 

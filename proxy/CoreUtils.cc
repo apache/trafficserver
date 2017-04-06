@@ -307,7 +307,7 @@ CoreUtils::get_next_frame(core_stack_state *coress)
     if ((frameoff = (void **)ats_malloc(sizeof(long)))) {
       if (fread(frameoff, 4, 1, fp) == 1) {
         coress->framep = (intptr_t)*frameoff;
-        if (*frameoff == NULL) {
+        if (*frameoff == nullptr) {
           ats_free(frameoff);
           return 0;
         }

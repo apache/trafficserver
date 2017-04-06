@@ -2783,7 +2783,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
     if (ua_entry->write_buffer) {
       free_MIOBuffer(ua_entry->write_buffer);
       ua_entry->write_buffer = nullptr;
-      ua_entry->vc->do_io_write(this, 0, NULL);
+      ua_entry->vc->do_io_write(this, 0, nullptr);
     }
     // The if statement will always true since these codes are all for HTTP 408 response sending. - by oknet xu
     if (p->handler_state == HTTP_SM_POST_UA_FAIL) {
@@ -4823,7 +4823,7 @@ HttpSM::do_http_server_open(bool raw)
   }
 
   // Congestion Check
-  if (t_state.pCongestionEntry != NULL) {
+  if (t_state.pCongestionEntry != nullptr) {
     if (t_state.pCongestionEntry->F_congested() &&
         (!t_state.pCongestionEntry->proxy_retry(milestones[TS_MILESTONE_SERVER_CONNECT]))) {
       t_state.congestion_congested_or_failed = 1;
@@ -7317,7 +7317,7 @@ HttpSM::set_next_state()
       DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for %s because it's loopback",
               t_state.dns_info.lookup_name);
       t_state.dns_info.lookup_success = true;
-      call_transact_and_set_next_state(NULL);
+      call_transact_and_set_next_state(nullptr);
       break;
     } else if (url_remap_mode == HttpTransact::URL_REMAP_FOR_OS && t_state.first_dns_lookup) {
       DebugSM("cdn", "Skipping DNS Lookup");

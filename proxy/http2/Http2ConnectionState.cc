@@ -85,7 +85,7 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   if (stream == nullptr) {
     if (cstate.is_valid_streamid(id)) {
       // This error occurs fairly often, and is probably innocuous (SM initiates the shutdown)
-      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED, NULL);
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED, nullptr);
     } else {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data stream freed with invalid id");
@@ -985,7 +985,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   Http2Stream *new_stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread());
   new_stream->init(new_id, client_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
 
-  ink_assert(NULL != new_stream);
+  ink_assert(nullptr != new_stream);
   ink_assert(!stream_list.in(new_stream));
 
   stream_list.push(new_stream);
@@ -1061,7 +1061,7 @@ Http2ConnectionState::cleanup_streams()
 bool
 Http2ConnectionState::delete_stream(Http2Stream *stream)
 {
-  ink_assert(NULL != stream);
+  ink_assert(nullptr != stream);
 
   // If stream has already been removed from the list, just go on
   if (!stream_list.in(stream)) {
