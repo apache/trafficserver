@@ -128,6 +128,12 @@ If it is used as remap plugin, we can write the following in remap.config to def
 
     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=--states=64 @pparam=/XXX/test_hdr.lua
 
+::
+
+    map http://a.x.cn http://b.x.cn @plugin=/X/tslua.so @pparam=/XXX/example/test.lua @pparam=states:10 @pparam=shared_zone:scw=30000
+
+If you want to use k-v memcache like nginx shared memory, you can configure as above(Note: Global pulgin does not support this feature).
+
 TS API for Lua
 ==============
 
@@ -142,6 +148,46 @@ is always available within lua script. This package can be introduced into Lua l
     ts.sleep(10)
 
 `TOP <#ts-lua-plugin>`_
+
+ts.shared.XXX.set
+---------------
+**syntax:** *success, err, forcible = ts.shared.DICT:set(key, value, exptime?)*
+
+**context:** remap
+
+**description:** Store the k-v in the shared zone with expiration time.
+
+Here is an example:
+
+::
+
+    -- map http://a.x.cn http://b.x.cn @plugin=/X/tslua.so @pparam=/XXX/example/test.lua @pparam=states:10 @pparam=shared_zone:scw=30000  
+    -- configuration
+    local scw = ts.shared.scw
+    scw:set("scw", "hello")
+
+`TOP <#ts-lua-plugin>`_
+
+ts.shared.XXX.get
+---------------
+**syntax:** *value, flags = ts.shared.DICT:get(key)*
+
+**context:** remap
+
+**description:** Find the value by the key.
+
+Here is an example:
+
+::
+
+    -- map http://a.x.cn http://b.x.cn @plugin=/X/tslua.so @pparam=/XXX/example/test.lua @pparam=states:10 @pparam=shared_zone:scw=30000  
+    -- configuration
+    local scw = ts.shared.scw
+    scw:set("scw", "hello")
+    scw:get("scw")  -- return "hello" 
+
+`TOP <#ts-lua-plugin>`_
+
 
 ts.process.uuid
 ---------------
