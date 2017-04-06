@@ -67,10 +67,19 @@ class HookSet:
             self.hooks.register(hook, cb)
 
     def __init__(self) :
-        # Define all the valid hooks here.
-        self.hooks = { 'ReadRequestHook': [] }
+        self.hooks = {}
         self.modules = []
         self.registrar = HookSet.Registrar(self)
+        # Define all the valid hooks here.
+        for item in [ 'ReadRequestHook' ] :
+            if isinstance(item, list) :
+                hook = item[0];
+                label = item[1];
+            else :
+                hook = label = item
+            exec("HookSet.{} = '{}'".format(label, hook))
+            exec("HookSet.Registrar.{} = '{}'".format(label, hook))
+            self.hooks[hook] = []
 
     def load(self, source) :
         try :
@@ -99,10 +108,6 @@ class HookSet:
         else :
             for cb in cb_list :
                 cb(*args, **kwargs)
-
-    # Keep track of modules so the callbacks don't go out of scope.
-    def add_module(self, mod) :
-        self.modules.append(mod)
 
 class ThreadingServer(ThreadingMixIn, HTTPServer):
     '''This class forces the creation of a new thread on each connection'''
@@ -265,7 +270,7 @@ class MyHandler(BaseHTTPRequestHandler):
         try:
             self.headers = http.client.parse_headers(self.rfile,
                                                      _class=self.MessageClass)
-            self.server.hook_set.invoke('ReadRequestHook', self.headers)
+            self.server.hook_set.invoke(HookSet.ReadRequestHook, self.headers)
 
             # read message body
             if self.headers.get('Content-Length') != None:

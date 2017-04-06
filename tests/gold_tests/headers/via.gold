@@ -1,0 +1,4 @@
+Via: http/1.1 tcp ipv4
+Via: http/1.0 tcp ipv4
+Via: http/1.1 h2 tls/1.2 tcp ipv4
+Via: http/1.1 tls/1.2 tcp ipv4
