@@ -32,6 +32,7 @@
 #include <ts/remap.h>
 #include "ts/ink_defs.h"
 #include "ts_lua_coroutine.h"
+#include "ts_lua_shdict.h"
 
 #define TS_LUA_FUNCTION_REMAP "do_remap"
 #define TS_LUA_FUNCTION_OS_RESPONSE "do_os_response"
