@@ -403,6 +403,16 @@ public:
    */
   bool operator!=(self const &that) const;
 
+  /** Prefix check.
+      @return @c true if @a this is a prefix of @a that.
+  */
+  bool isPrefixOf(self const &that) const;
+
+  /** Case ignoring prefix check.
+      @return @c true if @a this is a prefix of @a that, ignoring case.
+  */
+  bool isNoCasePrefixOf(self const &that) const;
+
   /// Assignment - the view is copied, not the content.
   self &operator=(self const &that);
 
@@ -1308,6 +1318,18 @@ StringView::trim(std::function<bool(char)> const &pred)
 {
   this->ltrim(pred);
   return this->rtrim(pred);
+}
+
+inline bool
+StringView::isPrefixOf(self const &that) const
+{
+  return _size <= that._size && 0 == memcmp(_ptr, that._ptr, _size);
+}
+
+inline bool
+StringView::isNoCasePrefixOf(self const &that) const
+{
+  return _size <= that._size && 0 == strncasecmp(_ptr, that._ptr, _size);
 }
 
 inline int

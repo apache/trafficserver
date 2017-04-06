@@ -1546,13 +1546,13 @@ ts::StringView
 SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 {
   // Prefix for the string the SSL library hands back.
-  static const ts::StringView PREFIX("TLSv1");
+  static const ts::StringView PREFIX("TLSv1", ts::StringView::literal);
 
   ts::StringView retval;
   ts::StringView proto(proto_string);
 
-  if (proto.size() >= PREFIX.size() && strncmp(proto.ptr(), PREFIX.ptr(), PREFIX.size()) == 0) {
-    proto += PREFIX.size();
+  if (PREFIX.isNoCasePrefixOf(proto)) {
+    proto += PREFIX.size(); // skip the prefix part.
     if (proto.size() <= 0) {
       retval = IP_PROTO_TAG_TLS_1_0;
     } else if (*proto == '.') {

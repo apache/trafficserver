@@ -378,7 +378,7 @@ HttpProxyPort::processOptions(const char *opts)
       this->processSessionProtocolPreference(value);
       sp_set_p = true;
     } else {
-      Warning("Invalid option '%s' in proxy port configuration '%s'", item, opts);
+      Warning("Invalid option '%s' in proxy port descriptor '%s'", item, opts);
     }
   }
 
@@ -386,9 +386,11 @@ HttpProxyPort::processOptions(const char *opts)
 
   if (af_set_p) {
     if (in_ip_set_p && m_family != m_inbound_ip.family()) {
-      Warning(
-        "Invalid port descriptor '%s' - the inbound adddress family [%s] is not the same type as the explicit family value [%s]",
-        opts, ats_ip_family_name(m_inbound_ip.family()).ptr(), ats_ip_family_name(m_family).ptr());
+      ts::StringView iname{ats_ip_family_name(m_inbound_ip.family())};
+      ts::StringView fname{ats_ip_family_name(m_family)};
+      Warning("Invalid port descriptor '%s' - the inbound adddress family [%.*s] is not the same type as the explicit family value "
+              "[%.*s]",
+              opts, static_cast<int>(iname.size()), iname.ptr(), static_cast<int>(fname.size()), fname.ptr());
       zret = false;
     }
   } else if (in_ip_set_p) {
