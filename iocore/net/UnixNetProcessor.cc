@@ -379,7 +379,7 @@ struct CheckConnect : public Continuation {
     reader = buf->alloc_reader();
   }
 
-  ~CheckConnect()
+  ~CheckConnect() override
   {
     buf->dealloc_all_readers();
     buf->clear();

@@ -43,7 +43,7 @@ public:
   }
 
   void
-  handleReadResponseHeaders(Transaction &transaction)
+  handleReadResponseHeaders(Transaction &transaction) override
   {
     transaction.getServerResponse().getHeaders()["Content-Type"] = "image/webp";
     transaction.getServerResponse().getHeaders()["Vary"]         = "Content-Type"; // to have a separate cache entry.
@@ -53,13 +53,13 @@ public:
   }
 
   void
-  consume(const string &data)
+  consume(const string &data) override
   {
     _img.write(data.data(), data.size());
   }
 
   void
-  handleInputComplete()
+  handleInputComplete() override
   {
     string input_data = _img.str();
     Blob input_blob(input_data.data(), input_data.length());
@@ -75,7 +75,7 @@ public:
     setOutputComplete();
   }
 
-  virtual ~ImageTransform() {}
+  ~ImageTransform() override {}
 
 private:
   std::stringstream _img;
@@ -85,8 +85,8 @@ class GlobalHookPlugin : public GlobalPlugin
 {
 public:
   GlobalHookPlugin() { registerHook(HOOK_READ_RESPONSE_HEADERS); }
-  virtual void
-  handleReadResponseHeaders(Transaction &transaction)
+  void
+  handleReadResponseHeaders(Transaction &transaction) override
   {
     string ctype      = transaction.getServerResponse().getHeaders().values("Content-Type");
     string user_agent = transaction.getServerRequest().getHeaders().values("User-Agent");

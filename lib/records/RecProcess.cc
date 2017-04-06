@@ -179,7 +179,7 @@ struct sync_cont : public Continuation {
     m_tb = new TextBuffer(65536);
   }
 
-  ~sync_cont()
+  ~sync_cont() override
   {
     if (m_tb != nullptr) {
       delete m_tb;

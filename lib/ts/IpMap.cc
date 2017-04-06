@@ -748,21 +748,21 @@ namespace detail
       ats_ip4_set(ats_ip_sa_cast(&_sa._max), htonl(max));
     }
     /// @return The minimum value of the interval.
-    virtual sockaddr const *
-    min() const
+    sockaddr const *
+    min() const override
     {
       return ats_ip_sa_cast(&_sa._min);
     }
     /// @return The maximum value of the interval.
-    virtual sockaddr const *
-    max() const
+    sockaddr const *
+    max() const override
     {
       return ats_ip_sa_cast(&_sa._max);
     }
     /// Set the client data.
     self &
     setData(void *data ///< Client data.
-            )
+            ) override
     {
       _data = data;
       return *this;
@@ -902,21 +902,21 @@ namespace detail
     {
     }
     /// @return The minimum value of the interval.
-    virtual sockaddr const *
-    min() const
+    sockaddr const *
+    min() const override
     {
       return ats_ip_sa_cast(&_min);
     }
     /// @return The maximum value of the interval.
-    virtual sockaddr const *
-    max() const
+    sockaddr const *
+    max() const override
     {
       return ats_ip_sa_cast(&_max);
     }
     /// Set the client data.
     self &
     setData(void *data ///< Client data.
-            )
+            ) override
     {
       _data = data;
       return *this;

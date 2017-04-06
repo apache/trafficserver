@@ -1243,7 +1243,7 @@ class PVCTestDriver : public NetTestDriver
 {
 public:
   PVCTestDriver();
-  ~PVCTestDriver();
+  ~PVCTestDriver() override;
 
   void start_tests(RegressionTest *r_arg, int *pstatus_arg);
   void run_next_test();

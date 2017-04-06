@@ -49,7 +49,7 @@ struct ShowCacheInternal : public ShowCont {
     SET_HANDLER(&ShowCacheInternal::showMain);
   }
 
-  ~ShowCacheInternal() {}
+  ~ShowCacheInternal() override {}
 };
 extern ShowCacheInternal *theshowcacheInternal;
 Action *register_ShowCacheInternal(Continuation *c, HTTPHdr *h);

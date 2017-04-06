@@ -69,7 +69,7 @@ struct SocksProxy : public Continuation {
       pending_action(nullptr)
   {
   }
-  ~SocksProxy() {}
+  ~SocksProxy() override {}
   // int startEvent(int event, void * data);
   int mainEvent(int event, void *data);
   int setupHttpRequest(unsigned char *p);

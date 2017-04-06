@@ -312,7 +312,7 @@ public:
   }
 
   void
-  handleSendResponseHeaders(Transaction &transaction)
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     transaction.getClientResponse().setStatusCode(status_);
     transaction.getClientResponse().setReasonPhrase(reason_);
@@ -376,7 +376,7 @@ public:
   }
 
   // Upcall method that is called for every transaction.
-  void handleReadResponseHeaders(Transaction &transaction);
+  void handleReadResponseHeaders(Transaction &transaction) override;
 
 private:
   BoomGlobalPlugin();

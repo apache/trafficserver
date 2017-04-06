@@ -176,7 +176,7 @@ class UDPReadContinuation : public Continuation
 public:
   UDPReadContinuation(Event *completionToken);
   UDPReadContinuation();
-  ~UDPReadContinuation();
+  ~UDPReadContinuation() override;
   inline void free(void);
   inline void init_token(Event *completionToken);
   inline void init_read(int fd, IOBufferBlock *buf, int len, struct sockaddr *fromaddr, socklen_t *fromaddrlen);
