@@ -1608,15 +1608,18 @@ Negative Response Caching
    :reloadable:
    :overridable:
 
-   Enables (``1``) or disables (``0``) forcing revalidation of cached documents
-   when |TS| receives a negative (``5xx`` only) response from the origin server. That is,
-   when enabled, |TS| will serve stale when it can not reach the origin server.
+   Negative revalidating allows |TS| to return stale content if revalidation to the origin fails due
+   to network or HTTP errors. If it is enabled, rather than caching the negative response, the
+   current stale content is preserved and served. Note this is considered only on a revalidation of
+   already cached content. A revalidation failure means a connection failure or a 50x response code.
+
+   A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
 
-   How long, in seconds, to consider a stale cached document valid if during the
-   revalidation attempt |TS| receives a negative (``5xx`` only) response from
-   the origin server.
+   How long, in seconds, to consider a stale cached document valid if If
+   :ts:cv:`proxy.config.http.negative_revalidating_enabled` is enabled and |TS| receives a negative
+   (``5xx`` only) response from the origin server during revalidation.
 
 Proxy User Variables
 ====================
