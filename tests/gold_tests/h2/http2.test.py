@@ -35,6 +35,12 @@ request_header={"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "t
 response_header={"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
+# Add info for the large H2 download test
+server.addResponse("sessionlog.json",
+    {"headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 191414\r\n\r\n", "timestamp": "1469733493.993", "body": "" })
+
+
 #add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
@@ -47,8 +53,8 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'ssl',
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'http',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir), 
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.number.threads': 0,
@@ -57,7 +63,9 @@ ts.Disk.records_config.update({
         'proxy.config.ssl.server.cipher_suite' : 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     })
 ts.Setup.CopyAs('h2client.py',Test.RunDirectory)
-# call localhost straight
+ts.Setup.CopyAs('h2bigclient.py',Test.RunDirectory)
+
+# Test Case 1:  basic H2 interaction
 tr=Test.AddTestRun()
 tr.Processes.Default.Command='python3 h2client.py -p {0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode=0
@@ -67,4 +75,13 @@ tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Varia
 tr.Processes.Default.Streams.stdout="gold/remap-200.gold"
 tr.StillRunningAfter=server
 
-     
+# Test Case 2: Make sure all the big file gets back.  Regression test for issue 1646
+tr=Test.AddTestRun()
+tr.Processes.Default.Command='python3 h2bigclient.py -p {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode=0
+# time delay as proxy.config.http.wait_for_cache could be broken
+tr.Processes.Default.StartBefore(server,ready=When.PortOpen(server.Variables.Port))
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.Streams.stdout="gold/bigfile.gold"
+tr.StillRunningAfter=server
+
