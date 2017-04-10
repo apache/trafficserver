@@ -103,10 +103,18 @@ static int
 ts_lua_debug(lua_State *L)
 {
   const char *msg;
-  size_t len = 0;
+  const char *flag;
+  size_t msg_len = 0, flag_len = 0;
 
-  msg = luaL_checklstring(L, 1, &len);
-  TSDebug(TS_LUA_DEBUG_TAG, "%.*s", (int)len, msg);
+  if (lua_gettop(L) == 2) {
+    msg  = luaL_checklstring(L, 2, &msg_len);
+    flag = luaL_checklstring(L, 1, &flag_len);
+    TSDebug(flag, "%.*s", (int)msg_len, msg);
+  } else {
+    msg = luaL_checklstring(L, 1, &msg_len);
+    TSDebug(TS_LUA_DEBUG_TAG, "%.*s", (int)msg_len, msg);
+  }
+
   return 0;
 }
 
