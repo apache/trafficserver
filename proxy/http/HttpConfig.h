@@ -818,13 +818,13 @@ public:
 
   MgmtByte server_session_sharing_pool;
 
+  MgmtByte forward_proxy_ftp_enabled;
+
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
 
   MgmtInt body_factory_response_max_size;
-
-  MgmtByte forward_proxy_ftp_enabled;
 
 private:
   /////////////////////////////////////
@@ -928,8 +928,8 @@ inline HttpConfigParams::HttpConfigParams()
     parser_allow_non_http(1),
     keepalive_internal_vc(0),
     server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD),
-    body_factory_response_max_size(8192),
-    forward_proxy_ftp_enabled(0)
+    forward_proxy_ftp_enabled(0),
+    body_factory_response_max_size(8192)
 {
 }
 
