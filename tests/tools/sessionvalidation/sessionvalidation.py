@@ -196,12 +196,6 @@ class SessionValidator(object):
                 _verbose_print("transaction request Host header doesn't have specified host")
                 retval = False
 
-            # reject if the host is localhost (since ATS seems to ignore remap rules for localhost requests)
-            if "127.0.0.1" in txn_req.getHeaders() or "localhost" in txn_req.getHeaders():
-                _verbose_print("transaction request Host is localhost, we must reject because ATS ignores remap rules for localhost requests")
-                retval = False
-
-
             # now validate response
             if not txn_resp:
                 _verbose_print("no transaction response")
