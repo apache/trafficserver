@@ -111,6 +111,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     p.Env['PROXY_CONFIG_HOSTDB_STORAGE_PATH']=runtime_dir
     #p.Variables.RUNTIMEDIR=runtime_dir
     p.Setup.MakeDir(runtime_dir)
+    p.Setup.Chown(runtime_dir, "nobody", "nobody",ignore=True) 
     # will need this for traffic_manager is it runs
     p.Setup.MakeDir(os.path.join(config_dir, 'snapshots'))
 
