@@ -161,7 +161,7 @@ struct CacheContinuation : public Continuation {
   Arena ic_arena;
   CacheHTTPHdr ic_request;
   CacheHTTPHdr ic_response;
-  CacheLookupHttpConfig *ic_params;
+  HttpConfigParams *http_config_params;
   CacheHTTPInfo ic_old_info;
   CacheHTTPInfo ic_new_info;
   Ptr<IOBufferData> ic_hostname;
@@ -250,11 +250,7 @@ struct CacheContinuation : public Continuation {
     if (cache_vc_info.valid()) {
       cache_vc_info.destroy();
     }
-    // Deallocate unmarshaled data
-    if (ic_params) {
-      delete ic_params;
-      ic_params = 0;
-    }
+
     if (ic_request.valid()) {
       ic_request.clear();
     }
@@ -267,6 +263,12 @@ struct CacheContinuation : public Continuation {
     if (ic_new_info.valid()) {
       ic_new_info.destroy();
     }
+
+    if (http_config_params) {
+      HttpConfig::release(http_config_params);
+      http_config_params = 0;
+    }
+
     ic_arena.reset();
     freeMsgBuffer();
 
@@ -316,7 +318,7 @@ struct CacheContinuation : public Continuation {
       ic_arena(),
       ic_request(),
       ic_response(),
-      ic_params(0),
+      http_config_params(nullptr),
       ic_old_info(),
       ic_new_info(),
       ic_hostname_len(0),

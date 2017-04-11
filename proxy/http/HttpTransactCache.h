@@ -32,63 +32,12 @@
 #define _HttpTransactCache_h_
 
 #include "ts/ink_platform.h"
+#include "HttpConfig.h"
 
 // This is needed since txn_conf->cache_guaranteed_max_lifetime is currently not
 // readily available in the cache. ToDo: We should fix this with TS-1919
 static const time_t CacheHighAgeWatermark = UINT_MAX;
-
 struct CacheHTTPInfoVector;
-
-class CacheLookupHttpConfig
-{
-public:
-  bool cache_global_user_agent_header; // 'global' user agent flag (don't need to marshal/unmarshal)
-  bool cache_enable_default_vary_headers;
-  unsigned ignore_accept_mismatch;
-  unsigned ignore_accept_language_mismatch;
-  unsigned ignore_accept_encoding_mismatch;
-  unsigned ignore_accept_charset_mismatch;
-  char *cache_vary_default_text;
-  char *cache_vary_default_images;
-  char *cache_vary_default_other;
-
-  inkcoreapi int marshal_length();
-  inkcoreapi int marshal(char *buf, int length);
-  int unmarshal(Arena *arena, const char *buf, int length);
-
-  CacheLookupHttpConfig()
-    : cache_global_user_agent_header(false),
-      cache_enable_default_vary_headers(false),
-      ignore_accept_mismatch(0),
-      ignore_accept_language_mismatch(0),
-      ignore_accept_encoding_mismatch(0),
-      ignore_accept_charset_mismatch(0),
-      cache_vary_default_text(NULL),
-      cache_vary_default_images(NULL),
-      cache_vary_default_other(NULL)
-  {
-  }
-
-  void *operator new(size_t size, void *mem);
-  void operator delete(void *mem);
-};
-
-extern ClassAllocator<CacheLookupHttpConfig> CacheLookupHttpConfigAllocator;
-// this is a global CacheLookupHttpConfig used to bypass SelectFromAlternates
-extern CacheLookupHttpConfig global_cache_lookup_config;
-
-inline void *
-CacheLookupHttpConfig::operator new(size_t size, void *mem)
-{
-  (void)size;
-  return mem;
-}
-
-inline void
-CacheLookupHttpConfig::operator delete(void *mem)
-{
-  CacheLookupHttpConfigAllocator.free((CacheLookupHttpConfig *)mem);
-}
 
 enum Variability_t {
   VARIABILITY_NONE = 0,
@@ -109,11 +58,10 @@ public:
   /////////////////////////////////
 
   static int SelectFromAlternates(CacheHTTPInfoVector *cache_vector_data, HTTPHdr *client_request,
-                                  CacheLookupHttpConfig *cache_lookup_http_config_params);
+                                  OverridableHttpConfigParams *cache_lookup_http_config_params);
 
-  static float calculate_quality_of_match(CacheLookupHttpConfig *http_config_params, HTTPHdr *client_request, // in
-                                          HTTPHdr *obj_client_request,                                        // in
-                                          HTTPHdr *obj_origin_server_response);                               // in
+  static float calculate_quality_of_match(OverridableHttpConfigParams *http_config_params, HTTPHdr *client_request,
+                                          HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response);
 
   static float calculate_quality_of_accept_match(MIMEField *accept_field, MIMEField *content_field);
 
@@ -131,10 +79,8 @@ public:
   // variability & server negotiation routines //
   ///////////////////////////////////////////////
 
-  static Variability_t CalcVariability(CacheLookupHttpConfig *http_config_params, HTTPHdr *client_request, // in
-                                       HTTPHdr *obj_client_request,                                        // in
-                                       HTTPHdr *obj_origin_server_response                                 // in
-                                       );
+  static Variability_t CalcVariability(OverridableHttpConfigParams *http_config_params, HTTPHdr *client_request,
+                                       HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response);
 
   static HTTPStatus match_response_to_request_conditionals(HTTPHdr *ua_request, HTTPHdr *c_response,
                                                            ink_time_t response_received_time);

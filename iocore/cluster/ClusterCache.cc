@@ -1156,15 +1156,8 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     moi_len -= res;
     p += res;
     ink_assert(moi_len > 0);
-    // Unmarshal CacheLookupHttpConfig
-    c->ic_params = new (CacheLookupHttpConfigAllocator.alloc()) CacheLookupHttpConfig();
-    res          = c->ic_params->unmarshal(&c->ic_arena, (const char *)p, moi_len);
-    ink_assert(res > 0);
 
-    moi_len -= res;
-    p += res;
-
-    CacheKey key(msg->url_md5);
+    c->http_config_params = HttpConfig::acquire();
 
     char *hostname = nullptr;
     int host_len   = 0;
@@ -1182,8 +1175,11 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
       memcpy(c->ic_hostname->data(), hostname, host_len);
     }
 
+    // This is technically not correct, since we're not treating these properly as overridable. But,
+    // this is dead code (mostly), and they weren't overridable before.
+    CacheKey key(msg->url_md5);
     Cache *call_cache = caches[c->frag_type];
-    Action *a         = call_cache->open_read(c, &key, &c->ic_request, c->ic_params, c->frag_type, hostname, host_len);
+    Action *a = call_cache->open_read(c, &key, &c->ic_request, &c->http_config_params->oride, c->frag_type, hostname, host_len);
     // Get rid of purify warnings since 'c' can be freed by open_read.
     if (a != ACTION_RESULT_DONE) {
       c->cache_action = a;

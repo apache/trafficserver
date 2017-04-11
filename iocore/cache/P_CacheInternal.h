@@ -447,7 +447,7 @@ struct CacheVC : public CacheVConnection {
   CacheHTTPInfo *info;
   CacheHTTPInfoVector *write_vector;
 #ifdef HTTP_CACHE
-  CacheLookupHttpConfig *params;
+  OverridableHttpConfigParams *params;
 #endif
   int header_len;        // for communicating with agg_copy
   int frag_len;          // for communicating with agg_copy
@@ -988,7 +988,7 @@ struct Cache {
   Action *scan(Continuation *cont, const char *hostname = 0, int host_len = 0, int KB_per_second = 2500);
 
 #ifdef HTTP_CACHE
-  Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, CacheLookupHttpConfig *params,
+  Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, OverridableHttpConfigParams *params,
                     CacheFragType type, const char *hostname, int host_len);
   Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
                      const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = 0,

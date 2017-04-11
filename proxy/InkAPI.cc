@@ -8110,6 +8110,30 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
     ret = _memberp_to_generic(&overridableHttpConfig->parent_failures_update_hostdb, typep);
     break;
+  case TS_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_enable_default_vary_headers, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_TEXT:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_vary_default_text, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_IMAGES:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_vary_default_images, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_OTHER:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_vary_default_other, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH:
+    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_mismatch, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH:
+    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_language_mismatch, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH:
+    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_encoding_mismatch, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH:
+    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_charset_mismatch, typep);
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8545,6 +8569,12 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK;
       }
       break;
+    case 't':
+      if (!strncmp(name, "proxy.config.http.cache.vary_default_text", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_TEXT;
+        typ = TS_RECORDDATATYPE_STRING;
+      }
+      break;
     }
     break;
 
@@ -8567,6 +8597,9 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER;
       } else if (!strncmp(name, "proxy.config.http.global_user_agent_header", length)) {
         cnf = TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER;
+        typ = TS_RECORDDATATYPE_STRING;
+      } else if (!strncmp(name, "proxy.config.http.cache.vary_default_other", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_OTHER;
         typ = TS_RECORDDATATYPE_STRING;
       }
       break;
@@ -8605,6 +8638,12 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       if (!strncmp(name, "proxy.config.http.cache.heuristic_lm_factor", length)) {
         typ = TS_RECORDDATATYPE_FLOAT;
         cnf = TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR;
+      }
+      break;
+    case 's':
+      if (!strncmp(name, "proxy.config.http.cache.vary_default_images", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_IMAGES;
+        typ = TS_RECORDDATATYPE_STRING;
       }
       break;
     }
@@ -8679,6 +8718,18 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE;
       }
       break;
+    case 'h':
+      if (0 == strncmp(name, "proxy.config.http.server_session_sharing.match", length)) {
+        cnf = TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH;
+      } else if (!strncmp(name, "proxy.config.http.cache.ignore_accept_mismatch", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH;
+      }
+      break;
+    case 'n':
+      if (!strncmp(name, "proxy.config.http.cache.open_write_fail_action", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION;
+      }
+      break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.insert_squid_x_forwarded_for", length)) {
         cnf = TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR;
@@ -8694,16 +8745,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 't':
       if (!strncmp(name, "proxy.config.http.forward.proxy_auth_to_parent", length)) {
         cnf = TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT;
-      }
-      break;
-    case 'h':
-      if (0 == strncmp(name, "proxy.config.http.server_session_sharing.match", length)) {
-        cnf = TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH;
-      }
-      break;
-    case 'n':
-      if (!strncmp(name, "proxy.config.http.cache.open_write_fail_action", length)) {
-        cnf = TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION;
       }
       break;
     }
@@ -8791,6 +8832,11 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED;
       }
       break;
+    case 's':
+      if (!strncmp(name, "proxy.config.http.cache.enable_default_vary_headers", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER;
+      }
+      break;
     }
     break;
 
@@ -8834,6 +8880,20 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS;
       }
       break;
+    }
+    break;
+
+  case 54:
+    if (!strncmp(name, "proxy.config.http.cache.ignore_accept_charset_mismatch", length)) {
+      cnf = TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH;
+    }
+    break;
+
+  case 55:
+    if (!strncmp(name, "proxy.config.http.cache.ignore_accept_language_mismatch", length)) {
+      cnf = TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH;
+    } else if (!strncmp(name, "proxy.config.http.cache.ignore_accept_encoding_mismatch", length)) {
+      cnf = TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH;
     }
     break;
 

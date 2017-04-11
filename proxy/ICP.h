@@ -1166,6 +1166,8 @@ public:
   HTTPInfo *_object_read;
   HdrHeapSDKHandle *_cache_req_hdr_heap_handle;
   HdrHeapSDKHandle *_cache_resp_hdr_heap_handle;
+  // HTTP Config
+  HttpConfigParams *_http_config_params;
 
 private:
   // Class data
