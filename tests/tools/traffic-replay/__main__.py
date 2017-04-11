@@ -1,4 +1,6 @@
-
+#!/bin/env python3
+'''
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -15,6 +17,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-These tools are meant to become it own repository in the furture. They are here at the moment to help accelerate progress at getting everything working.
+from __future__ import absolute_import, division, print_function
+import mainProcess
+import argparse
 
-Note these Tools require python 3.4 or better.
+if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-type",action='store', dest='replay_type', help="Replay type: ssl/random/h2")
+    parser.add_argument("-log_dir",type=str, help="directory of JSON replay files")
+    parser.add_argument("-v", dest="verbose", help="verify response status code", action="store_true")
+
+    args = parser.parse_args()
+
+    # Let 'er loose
+    #main(args.log_dir, args.hostname, int(args.port), args.threads, args.timing, args.verbose)
+    mainProcess.main(args.log_dir, args.replay_type,args.verbose)
