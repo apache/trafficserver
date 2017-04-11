@@ -60,10 +60,8 @@ Cluster_lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type,
 
 inline Action *
 Cluster_read(ClusterMachine *owner_machine, int opcode, Continuation *cont, MIOBuffer *buf, CacheHTTPHdr *request,
-             CacheLookupHttpConfig *params, const CacheKey *key, time_t pin_in_cache, CacheFragType frag_type, const char *hostname,
-             int hostlen)
+             const CacheKey *key, time_t pin_in_cache, CacheFragType frag_type, const char *hostname, int hostlen)
 {
-  (void)params;
   if (clusterProcessor.disable_remote_cluster_ops(owner_machine)) {
     Action a;
     a = cont;
@@ -85,7 +83,6 @@ Cluster_read(ClusterMachine *owner_machine, int opcode, Continuation *cont, MIOB
       flen = op_to_sizeof_fixedlen_msg(opcode);
 
       len += request->m_heap->marshal_length();
-      len += params->marshal_length();
       len += hostlen;
 
       if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE) // Bound marshalled data
@@ -95,16 +92,10 @@ Cluster_read(ClusterMachine *owner_machine, int opcode, Continuation *cont, MIOB
       msg  = (char *)ALLOCA_DOUBLE(flen + len);
       data = msg + flen;
 
-      int cur_len = len;
-
-      res = request->m_heap->marshal(data, cur_len);
+      res = request->m_heap->marshal(data, len);
       if (res < 0) {
         goto err_exit;
       }
-      data += res;
-      cur_len -= res;
-      if ((res = params->marshal(data, cur_len)) < 0)
-        goto err_exit;
       data += res;
       memcpy(data, hostname, hostlen);
 

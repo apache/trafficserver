@@ -255,12 +255,12 @@ cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, R
 #ifdef CLUSTER_CACHE
 static Action *
 open_read_internal(int opcode, Continuation *cont, MIOBuffer *buf, const HttpCacheKey *key, CacheHTTPHdr *request,
-                   CacheLookupHttpConfig *params, time_t pin_in_cache, CacheFragType frag_type)
+                   OverridableHttpConfigParams *params, time_t pin_in_cache, CacheFragType frag_type)
 {
   ClusterMachine *m = cluster_machine_at_depth(cache_hash(key->hash));
 
   if (m) {
-    return Cluster_read(m, opcode, cont, buf, request, params, &key->hash, pin_in_cache, frag_type, key->hostname, key->hostlen);
+    return Cluster_read(m, opcode, cont, buf, request, &key->hash, pin_in_cache, frag_type, key->hostname, key->hostlen);
   } else {
     if ((opcode == CACHE_OPEN_READ_LONG) || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
       return caches[frag_type]->open_read(cont, &key->hash, request, params, frag_type, key->hostname, key->hostlen);
@@ -1136,7 +1136,7 @@ CacheProcessor::open_read(Continuation *cont, const CacheKey *key, bool cluster_
     hkey.hostname = hostname;
     hkey.hostlen  = hostlen;
     return open_read_internal(CACHE_OPEN_READ, cont, (MIOBuffer *)nullptr, &hkey, (CacheHTTPHdr *)nullptr,
-                              (CacheLookupHttpConfig *)nullptr, 0, frag_type);
+                              (OverridableHttpConfigParams *)nullptr, 0, frag_type);
   }
 #endif
   return caches[frag_type]->open_read(cont, key, frag_type, hostname, hostlen);
@@ -3294,7 +3294,7 @@ ink_cache_init(ModuleVersion v)
 //----------------------------------------------------------------------------
 Action *
 CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, bool cluster_cache_local, CacheHTTPHdr *request,
-                          CacheLookupHttpConfig *params, time_t pin_in_cache, CacheFragType type)
+                          OverridableHttpConfigParams *params, time_t pin_in_cache, CacheFragType type)
 {
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0 && !cluster_cache_local) {

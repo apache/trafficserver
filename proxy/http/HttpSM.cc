@@ -394,20 +394,6 @@ HttpSM::init()
   // entire struct if nothing is going to change it.
   t_state.txn_conf = &t_state.http_config_param->oride;
 
-  // update the cache info config structure so that
-  // selection from alternates happens correctly.
-  t_state.cache_info.config.cache_global_user_agent_header  = t_state.txn_conf->global_user_agent_header ? true : false;
-  t_state.cache_info.config.ignore_accept_mismatch          = t_state.http_config_param->ignore_accept_mismatch;
-  t_state.cache_info.config.ignore_accept_language_mismatch = t_state.http_config_param->ignore_accept_language_mismatch;
-  t_state.cache_info.config.ignore_accept_encoding_mismatch = t_state.http_config_param->ignore_accept_encoding_mismatch;
-  t_state.cache_info.config.ignore_accept_charset_mismatch  = t_state.http_config_param->ignore_accept_charset_mismatch;
-  t_state.cache_info.config.cache_enable_default_vary_headers =
-    t_state.http_config_param->cache_enable_default_vary_headers ? true : false;
-
-  t_state.cache_info.config.cache_vary_default_text   = t_state.http_config_param->cache_vary_default_text;
-  t_state.cache_info.config.cache_vary_default_images = t_state.http_config_param->cache_vary_default_images;
-  t_state.cache_info.config.cache_vary_default_other  = t_state.http_config_param->cache_vary_default_other;
-
   t_state.init();
 
   // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based ACL in
@@ -4580,7 +4566,7 @@ HttpSM::do_cache_lookup_and_read()
   Cache::generate_key(&key, c_url, t_state.txn_conf->cache_generation_number);
 
   Action *cache_action_handle =
-    cache_sm.open_read(&key, c_url, &t_state.hdr_info.client_request, &(t_state.cache_info.config),
+    cache_sm.open_read(&key, c_url, &t_state.hdr_info.client_request, t_state.txn_conf,
                        (time_t)((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for));
   //
   // pin_in_cache value is an open_write parameter.

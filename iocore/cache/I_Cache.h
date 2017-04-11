@@ -54,7 +54,7 @@ enum { RAM_HIT_COMPRESS_NONE = 1, RAM_HIT_COMPRESS_FASTLZ, RAM_HIT_COMPRESS_LIBZ
 struct CacheVC;
 struct CacheDisk;
 #ifdef HTTP_CACHE
-class CacheLookupHttpConfig;
+struct OverridableHttpConfigParams;
 class URL;
 class HTTPHdr;
 class HTTPInfo;
@@ -94,7 +94,7 @@ struct CacheProcessor : public Processor {
   Action *lookup(Continuation *cont, const HttpCacheKey *key, bool cluster_cache_local, bool local_only = false,
                  CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   inkcoreapi Action *open_read(Continuation *cont, const HttpCacheKey *key, bool cluster_cache_local, CacheHTTPHdr *request,
-                               CacheLookupHttpConfig *params, time_t pin_in_cache = (time_t)0,
+                               OverridableHttpConfigParams *params, time_t pin_in_cache = (time_t)0,
                                CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *open_write(Continuation *cont, int expected_size, const HttpCacheKey *key, bool cluster_cache_local,
                      CacheHTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,

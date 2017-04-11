@@ -43,7 +43,6 @@
 #include "BaseManager.h"
 #include "HdrUtils.h"
 
-extern CacheLookupHttpConfig global_cache_lookup_config;
 HTTPHdr gclient_request;
 
 //****************************************************************************
@@ -312,11 +311,13 @@ ICPPeerReadCont::init(ICPProcessor *ICPpr, Peer *p, int lookup_local)
   _object_read                = nullptr;
   _cache_req_hdr_heap_handle  = nullptr;
   _cache_resp_hdr_heap_handle = nullptr;
+  _http_config_params         = HttpConfig::acquire();
   mutex                       = new_ProxyMutex();
 }
 
 ICPPeerReadCont::~ICPPeerReadCont()
 {
+  HttpConfig::release(_http_config_params);
   reset(1); // Full reset
 }
 
@@ -472,7 +473,9 @@ ICPPeerReadCont::ICPPeerQueryCont(int /* event ATS_UNUSED */, Event * /* e ATS_U
       // Note: _cache_lookup_local is ignored in this case, since
       //       cache clustering is not used with stale lookup.
       //////////////////////////////////////////////////////////////
-      a = cacheProcessor.open_read(this, &key, false, &gclient_request, &global_cache_lookup_config, (time_t)0);
+
+      // ToDo: This is maybe not 100% correct, since this is not using the txnp (but the global overridable copy)
+      a = cacheProcessor.open_read(this, &key, false, &gclient_request, &_http_config_params->oride, (time_t)0);
     } else {
       a = cacheProcessor.lookup(this, &key, false, _state->_cache_lookup_local);
     }

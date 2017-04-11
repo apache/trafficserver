@@ -1872,6 +1872,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.enable_default_vary_headers INT 0
    :reloadable:
+   :overridable:
 
    Enables (``1``) or disables (``0``) caching of alternate versions of HTTP objects that do not contain the ``Vary`` header.
 
@@ -1934,6 +1935,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 2
    :reloadable:
+   :overridable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Type:`` header even if it does not match the ``Accept:`` header of the
@@ -1950,6 +1952,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 2
    :reloadable:
+   :overridable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Language:`` header even if it does not match the ``Accept-Language:``
@@ -1966,6 +1969,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 2
    :reloadable:
+   :overridable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Encoding:`` header even if it does not match the ``Accept-Encoding:``
@@ -1982,6 +1986,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 2
    :reloadable:
+   :overridable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Type:`` header even if it does not match the ``Accept-Charset:`` header
@@ -2207,6 +2212,7 @@ Dynamic Content & Content Negotiation
 
 .. ts:cv:: CONFIG proxy.config.http.cache.vary_default_text STRING NULL
    :reloadable:
+   :overridable:
 
    The header on which Traffic Server varies for text documents.
 
@@ -2215,11 +2221,13 @@ all the different user-agent versions of documents it encounters.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.vary_default_images STRING NULL
    :reloadable:
+   :overridable:
 
    The header on which Traffic Server varies for images.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.vary_default_other STRING NULL
    :reloadable:
+   :overridable:
 
    The header on which Traffic Server varies for anything other than text and images.
 

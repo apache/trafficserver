@@ -404,6 +404,11 @@ struct OverridableHttpConfigParams {
       cache_required_headers(2),
       cache_range_lookup(1),
       cache_range_write(0),
+      cache_enable_default_vary_headers(0),
+      ignore_accept_mismatch(0),
+      ignore_accept_language_mismatch(0),
+      ignore_accept_encoding_mismatch(0),
+      ignore_accept_charset_mismatch(0),
       insert_request_via_string(1),
       insert_response_via_string(0),
       doc_in_cache_skip_dns(1),
@@ -473,7 +478,10 @@ struct OverridableHttpConfigParams {
       freshness_fuzz_prob(0.005),
       background_fill_threshold(0.5),
       client_cert_filename(NULL),
-      client_cert_filepath(NULL)
+      client_cert_filepath(NULL),
+      cache_vary_default_text(NULL),
+      cache_vary_default_images(NULL),
+      cache_vary_default_other(NULL)
   {
   }
 
@@ -545,6 +553,13 @@ struct OverridableHttpConfigParams {
   MgmtByte cache_required_headers;
   MgmtByte cache_range_lookup;
   MgmtByte cache_range_write;
+
+  MgmtByte cache_enable_default_vary_headers;
+
+  MgmtByte ignore_accept_mismatch;
+  MgmtByte ignore_accept_language_mismatch;
+  MgmtByte ignore_accept_encoding_mismatch;
+  MgmtByte ignore_accept_charset_mismatch;
 
   MgmtByte insert_request_via_string;
   MgmtByte insert_response_via_string;
@@ -688,8 +703,14 @@ struct OverridableHttpConfigParams {
   MgmtFloat cache_heuristic_lm_factor;
   MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
+
+  // Various strings, good place for them here ...
   char *client_cert_filename;
   char *client_cert_filepath;
+
+  char *cache_vary_default_text;
+  char *cache_vary_default_images;
+  char *cache_vary_default_other;
 };
 
 /////////////////////////////////////////////////////////////
@@ -747,10 +768,6 @@ public:
   ///////////////////////////////////////////////////////////////////
   char *anonymize_other_header_list;
 
-  char *cache_vary_default_text;
-  char *cache_vary_default_images;
-  char *cache_vary_default_other;
-
   ////////////////////////////////////////////
   // CONNECT ports (used to be == ssl_ports //
   ////////////////////////////////////////////
@@ -786,7 +803,6 @@ public:
   MgmtByte icp_enabled;
   MgmtByte stale_icp_enabled;
 
-  MgmtByte cache_enable_default_vary_headers;
   MgmtByte cache_post_method;
 
   MgmtByte push_method_enabled;
@@ -805,11 +821,6 @@ public:
   MgmtByte enable_http_info;
 
   MgmtByte redirection_host_no_port;
-
-  MgmtByte ignore_accept_mismatch;
-  MgmtByte ignore_accept_language_mismatch;
-  MgmtByte ignore_accept_encoding_mismatch;
-  MgmtByte ignore_accept_charset_mismatch;
 
   MgmtByte send_100_continue_response;
   MgmtByte disallow_post_100_continue;
@@ -884,9 +895,6 @@ inline HttpConfigParams::HttpConfigParams()
     per_parent_connect_attempts(2),
     parent_connect_timeout(30),
     anonymize_other_header_list(NULL),
-    cache_vary_default_text(NULL),
-    cache_vary_default_images(NULL),
-    cache_vary_default_other(NULL),
     connect_ports_string(NULL),
     connect_ports(NULL),
     proxy_hostname(NULL),
@@ -905,7 +913,6 @@ inline HttpConfigParams::HttpConfigParams()
     enable_http_stats(1),
     icp_enabled(0),
     stale_icp_enabled(0),
-    cache_enable_default_vary_headers(0),
     cache_post_method(0),
     push_method_enabled(0),
     referer_filter_enabled(0),
@@ -917,10 +924,6 @@ inline HttpConfigParams::HttpConfigParams()
     errors_log_error_pages(1),
     enable_http_info(0),
     redirection_host_no_port(1),
-    ignore_accept_mismatch(0),
-    ignore_accept_language_mismatch(0),
-    ignore_accept_encoding_mismatch(0),
-    ignore_accept_charset_mismatch(0),
     send_100_continue_response(0),
     disallow_post_100_continue(0),
     parser_allow_non_http(1),
@@ -941,9 +944,9 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.global_user_agent_header);
   ats_free(oride.client_cert_filename);
   ats_free(oride.client_cert_filepath);
-  ats_free(cache_vary_default_text);
-  ats_free(cache_vary_default_images);
-  ats_free(cache_vary_default_other);
+  ats_free(oride.cache_vary_default_text);
+  ats_free(oride.cache_vary_default_images);
+  ats_free(oride.cache_vary_default_other);
   ats_free(connect_ports_string);
   ats_free(reverse_proxy_no_host_redirect);
 

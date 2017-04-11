@@ -303,8 +303,12 @@ public:
       serverVC(0),
       n_pkts_sent(0),
       seq_no(0),
-      io_block(0){};
-  ~PrefetchBlaster(){};
+      io_block(0)
+  {
+    http_config_params = HttpConfig::acquire();
+  };
+
+  ~PrefetchBlaster() { HttpConfig::release(http_config_params); };
 
   int init(PrefetchUrlEntry *entry, HTTPHdr *request, PrefetchTransform *p_trans);
 
@@ -314,7 +318,6 @@ public:
   int httpClient(int event, void *data);
 
   int invokeBlaster();
-  void initCacheLookupConfig();
 
   void handleCookieHeaders(HTTPHdr *req_hdr, HTTPHdr *resp_hdr, const char *domain_start, const char *domain_end,
                            const char *host_start, int host_len, bool no_dot);
@@ -334,8 +337,7 @@ public:
   VConnection *serverVC;
 
   TSPrefetchBlastData data_blast;
-
-  CacheLookupHttpConfig cache_lookup_config;
+  HttpConfigParams *http_config_params;
 
   // udp related:
   uint32_t n_pkts_sent;
