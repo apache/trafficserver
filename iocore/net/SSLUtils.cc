@@ -135,8 +135,8 @@ static int ssl_vc_index = -1;
 static ink_mutex *mutex_buf      = nullptr;
 static bool open_ssl_initialized = false;
 
-RecRawStatBlock *ssl_rsb                   = nullptr;
-static InkHashTable *ssl_cipher_name_table = nullptr;
+RecRawStatBlock *ssl_rsb = nullptr;
+HashMap<cchar *, class StringHashFns, intptr_t> cipher_map;
 
 /* Using pthread thread ID and mutex functions directly, instead of
  * ATS this_ethread / ProxyMutex, so that other linked libraries
@@ -1026,9 +1026,6 @@ SSLInitializeStatistics()
   // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
   // configuration reloads and works for the case where we honor the client cipher preference.
 
-  // initialize stat name->index hash table
-  ssl_cipher_name_table = ink_hash_table_create(InkHashTableKeyType_Word);
-
   ctx     = SSLDefaultServerContext();
   ssl     = SSL_new(ctx);
   ciphers = SSL_get_ciphers(ssl);
@@ -1047,8 +1044,8 @@ SSLInitializeStatistics()
     }
 
     // If not already registered ...
-    if (!ink_hash_table_isbound(ssl_cipher_name_table, cipherName)) {
-      ink_hash_table_insert(ssl_cipher_name_table, cipherName, (void *)(intptr_t)(ssl_cipher_stats_start + index));
+    if (0 == cipher_map.get(cipherName)) {
+      cipher_map.put(cipherName, (intptr_t)(ssl_cipher_stats_start + index));
       // Register as non-persistent since the order/index is dependent upon configuration.
       RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(), RECD_INT, RECP_NON_PERSISTENT,
                          (int)ssl_cipher_stats_start + index, RecRawStatSyncSum);
@@ -1447,8 +1444,8 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
     if (cipher) {
       const char *cipherName = SSL_CIPHER_get_name(cipher);
       // lookup index of stat by name and incr count
-      InkHashTableValue data;
-      if (ink_hash_table_lookup(ssl_cipher_name_table, cipherName, &data)) {
+      auto data = cipher_map.get(cipherName);
+      if (data != 0) {
         SSL_INCREMENT_DYN_STAT((intptr_t)data);
       }
     }
