@@ -3271,6 +3271,8 @@ Client-Related Configuration
 ----------------------------
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.verify.server INT 0
+   :reloadable:
+   :overridable:
 
    Configures Traffic Server to verify the origin server certificate
    with the Certificate Authority (CA).

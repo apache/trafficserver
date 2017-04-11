@@ -30,6 +30,7 @@
 #include "P_SSLConfig.h"
 #include "BIO_fastopen.h"
 #include "Log.h"
+#include "P_SSLClientUtils.h"
 
 #include <climits>
 #include <string>
@@ -897,7 +898,6 @@ SSLNetVConnection::free(EThread *t)
     THREAD_FREE(this, sslNetVCAllocator, t);
   }
 }
-
 int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
@@ -976,6 +976,11 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         clientCTX = params->client_ctx;
       }
       this->ssl = make_ssl_connection(clientCTX, this);
+      if (this->ssl != nullptr) {
+        uint8_t clientVerify = this->options.clientVerificationFlag;
+        int verifyValue      = clientVerify & 1 ? SSL_VERIFY_PEER : SSL_VERIFY_NONE;
+        SSL_set_verify(this->ssl, verifyValue, verify_callback);
+      }
 
       if (this->ssl == nullptr) {
         SSLErrorVC(this, "failed to create SSL client session");
