@@ -28,6 +28,9 @@ class Session(object):
         ''' Returns an iterator of transaction objects '''
         return iter(self._transaction_list)
 
+    def returnFirstTransaction(self):
+        return self._transaction_list[0]
+
     def __repr__(self):
         return "<Session {{'filename': {0}, 'version': {1}, 'timestamp: {2}, 'encoding': {3}, 'transaction_list': {4}}}>".format(
                   self._filename, self._version, self._timestamp, self._encoding, repr(self._transaction_list)
