@@ -414,6 +414,7 @@ struct OverridableHttpConfigParams {
       parent_failures_update_hostdb(0),
       cache_open_write_fail_action(0),
       post_check_content_length_enabled(1),
+      ssl_client_verify_server(0),
       redirection_enabled(0),
       redirect_use_orig_cache_key(0),
       number_of_redirections(1),
@@ -577,6 +578,11 @@ struct OverridableHttpConfigParams {
   // Check Post request //
   ////////////////////////
   MgmtByte post_check_content_length_enabled;
+
+  /////////////////////////////
+  // server verification mode//
+  /////////////////////////////
+  MgmtByte ssl_client_verify_server;
 
   //##############################################################################
   //#

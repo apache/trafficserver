@@ -302,7 +302,6 @@ SSLConfigParams::initialize()
 
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;
-  REC_ReadConfigInt32(clientVerify, "proxy.config.ssl.client.verify.server");
 
   ssl_client_cert_filename = nullptr;
   ssl_client_cert_path     = nullptr;

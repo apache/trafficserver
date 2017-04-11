@@ -184,6 +184,8 @@ struct NetVCOptions {
    */
   ats_scoped_str clientCertificate;
   /// Reset all values to defaults.
+
+  uint8_t clientVerificationFlag = 0;
   void reset();
 
   void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags, unsigned long _packet_mark = 0,
