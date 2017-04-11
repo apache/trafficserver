@@ -81,6 +81,8 @@ lib/ts/test_Regex
 lib/ts/test_PriorityQueue
 lib/ts/test_X509HostnameValidator
 lib/ts/test_tsutil
+lib/ts/test_MemView
+lib/ts/test_Scalar
 lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
