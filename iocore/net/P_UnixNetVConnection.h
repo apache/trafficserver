@@ -370,6 +370,41 @@ UnixNetVConnection::get_inactivity_timeout()
 }
 
 TS_INLINE void
+UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
+{
+  Debug("socket", "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
+  inactivity_timeout_in = timeout_in;
+#ifdef INACTIVITY_TIMEOUT
+
+  if (inactivity_timeout)
+    inactivity_timeout->cancel_action(this);
+  if (inactivity_timeout_in) {
+    if (read.enabled) {
+      ink_assert(read.vio.mutex->thread_holding == this_ethread() && thread);
+      if (read.vio.mutex->thread_holding == thread)
+        inactivity_timeout = thread->schedule_in_local(this, inactivity_timeout_in);
+      else
+        inactivity_timeout = thread->schedule_in(this, inactivity_timeout_in);
+    } else if (write.enabled) {
+      ink_assert(write.vio.mutex->thread_holding == this_ethread() && thread);
+      if (write.vio.mutex->thread_holding == thread)
+        inactivity_timeout = thread->schedule_in_local(this, inactivity_timeout_in);
+      else
+        inactivity_timeout = thread->schedule_in(this, inactivity_timeout_in);
+    } else
+      inactivity_timeout = 0;
+  } else
+    inactivity_timeout = 0;
+#else
+  if (timeout_in) {
+    next_inactivity_timeout_at = Thread::get_hrtime() + timeout_in;
+  } else {
+    next_inactivity_timeout_at = 0;
+  }
+#endif
+}
+
+TS_INLINE void
 UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
@@ -395,7 +430,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
   } else
     active_timeout = 0;
 #else
-  next_activity_timeout_at = Thread::get_hrtime() + timeout_in;
+  next_activity_timeout_at   = Thread::get_hrtime() + timeout_in;
 #endif
 }
 
@@ -411,7 +446,7 @@ UnixNetVConnection::cancel_inactivity_timeout()
     inactivity_timeout = nullptr;
   }
 #else
-  set_inactivity_timeout(0);
+  next_inactivity_timeout_at = 0;
 #endif
 }
 
@@ -427,7 +462,7 @@ UnixNetVConnection::cancel_active_timeout()
     active_timeout = nullptr;
   }
 #else
-  next_activity_timeout_at = 0;
+  next_activity_timeout_at   = 0;
 #endif
 }
 
