@@ -23,9 +23,7 @@
 
 #include "P_Cache.h"
 
-#ifdef HTTP_CACHE
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object.
-#endif
 
 extern int cache_config_compatibility_4_2_0_fixup;
 
@@ -90,7 +88,6 @@ Lcallreturn:
   return &c->_action;
 }
 
-#ifdef HTTP_CACHE
 Action *
 Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, OverridableHttpConfigParams *params,
                  CacheFragType type, const char *hostname, int host_len)
@@ -159,7 +156,6 @@ Lcallreturn:
     return ACTION_RESULT_DONE;
   return &c->_action;
 }
-#endif
 
 uint32_t
 CacheVC::load_http_info(CacheHTTPInfoVector *info, Doc *doc, RefCountObj *block_ptr)
@@ -209,9 +205,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
     if (!w->closed)
       return -err;
     write_vc = w;
-  }
-#ifdef HTTP_CACHE
-  else {
+  } else {
     write_vector      = &od->vector;
     int write_vec_cnt = write_vector->count();
     for (int c = 0; c < write_vec_cnt; c++)
@@ -283,7 +277,6 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
     DDebug("cache_read_agg", "%p: key: %X eKey: %d # alts: %d, ndx: %d, # writers: %d writer: %p", this, first_key.slice32(1),
            write_vc->earliest_key.slice32(1), vector.count(), alternate_index, od->num_writers, write_vc);
   }
-#endif // HTTP_CACHE
   return EVENT_NONE;
 }
 
@@ -349,10 +342,8 @@ CacheVC::openReadFromWriter(int event, Event *e)
       return openReadStartHead(event, e);
     }
   }
-#ifdef HTTP_CACHE
   OpenDirEntry *cod = od;
-#endif
-  od = nullptr;
+  od                = nullptr;
   // someone is currently writing the document
   if (write_vc->closed < 0) {
     MUTEX_RELEASE(lock);
@@ -383,7 +374,6 @@ CacheVC::openReadFromWriter(int event, Event *e)
 
   if (!write_vc->io.ok())
     return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *)-err);
-#ifdef HTTP_CACHE
   if (frag_type == CACHE_FRAG_TYPE_HTTP) {
     DDebug("cache_read_agg", "%p: key: %X http passed stage 1, closed: %d, frag: %d", this, first_key.slice32(1), write_vc->closed,
            write_vc->fragment);
@@ -432,12 +422,9 @@ CacheVC::openReadFromWriter(int event, Event *e)
       return openReadStartEarliest(event, e);
     }
   } else {
-#endif // HTTP_CACHE
     DDebug("cache_read_agg", "%p: key: %X non-http passed stage 1", this, first_key.slice32(1));
     key = write_vc->earliest_key;
-#ifdef HTTP_CACHE
   }
-#endif
   if (write_vc->fragment) {
     doc_len        = write_vc->vio.nbytes;
     last_collision = nullptr;
@@ -626,7 +613,6 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       vio.ndone = doc_len;
       return calluser(VC_EVENT_EOS);
     }
-#ifdef HTTP_CACHE
     HTTPInfo::FragOffset *frags = alternate.get_frag_table();
     if (is_debug_tag_set("cache_seek")) {
       char b[33], c[33];
@@ -693,7 +679,6 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       key.toHexStr(target_key_str);
       Debug("cache_seek", "Read # %d @ %" PRId64 "/%d for %" PRId64, fragment, doc_pos, doc->len, bytes);
     }
-#endif
   }
   if (ntodo <= 0)
     return EVENT_CONT;
@@ -842,9 +827,8 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
         goto Lcallreturn;
       return ret;
     }
-// read has detected that alternate does not exist in the cache.
-// rewrite the vector.
-#ifdef HTTP_CACHE
+    // read has detected that alternate does not exist in the cache.
+    // rewrite the vector.
     if (!f.read_from_writer_called && frag_type == CACHE_FRAG_TYPE_HTTP) {
       // don't want any writers while we are evacuating the vector
       if (!vol->open_write(this, false, 1)) {
@@ -896,7 +880,6 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
         }
       }
     }
-#endif
   // open write failure - another writer, so don't modify the vector
   Ldone:
     if (od)
@@ -916,7 +899,6 @@ Lsuccess:
 
 // create the directory entry after the vector has been evacuated
 // the volume lock has been taken when this function is called
-#ifdef HTTP_CACHE
 int
 CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
@@ -964,7 +946,6 @@ Lrestart:
   SET_HANDLER(&CacheVC::openReadStartHead);
   return openReadStartHead(EVENT_IMMEDIATE, nullptr);
 }
-#endif
 
 /*
   This code follows CacheVC::openReadStartEarliest closely,
@@ -1019,7 +1000,6 @@ CacheVC::openReadStartHead(int event, Event *e)
     if (f.lookup)
       goto Lookup;
     earliest_dir = dir;
-#ifdef HTTP_CACHE
     CacheHTTPInfo *alternate_tmp;
     if (frag_type == CACHE_FRAG_TYPE_HTTP) {
       uint32_t uml;
@@ -1080,9 +1060,7 @@ CacheVC::openReadStartHead(int event, Event *e)
       } else {
         f.single_fragment = false;
       }
-    } else
-#endif
-    {
+    } else {
       next_CacheKey(&key, &doc->key);
       f.single_fragment = doc->single_fragment();
       doc_pos           = doc->prefix_len();
@@ -1093,12 +1071,7 @@ CacheVC::openReadStartHead(int event, Event *e)
       char xt[33], yt[33];
       Debug("cache_read", "CacheReadStartHead - read %s target %s - %s %d of %" PRId64 " bytes, %d fragments",
             doc->key.toHexStr(xt), key.toHexStr(yt), f.single_fragment ? "single" : "multi", doc->len, doc->total_len,
-#ifdef HTTP_CACHE
-            alternate.get_frag_offset_count()
-#else
-            0
-#endif
-              );
+            alternate.get_frag_offset_count());
     }
     // the first fragment might have been gc'ed. Make sure the first
     // fragment is there before returning CACHE_EVENT_OPEN_READ

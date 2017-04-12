@@ -30,11 +30,9 @@
 #include "P_Net.h"
 #include "P_Cache.h"
 
-#ifdef HTTP_CACHE
 #include "MIME.h"
 #include "HTTP.h"
 // #include "HttpTransactCache.h"
-#endif
 
 #include "P_ClusterMachine.h"
 #include "P_ClusterCache.h"

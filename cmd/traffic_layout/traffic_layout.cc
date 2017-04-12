@@ -121,7 +121,6 @@ produce_features(bool json)
   print_feature("TS_MAX_HOST_NAME_LEN", TS_MAX_HOST_NAME_LEN, json);
   print_feature("TS_MAX_API_STATS", TS_MAX_API_STATS, json);
   print_feature("SPLIT_DNS", SPLIT_DNS, json);
-  print_feature("HTTP_CACHE", HTTP_CACHE, json);
   print_feature("TS_PKGSYSUSER", TS_PKGSYSUSER, json);
   print_feature("TS_PKGSYSGROUP", TS_PKGSYSGROUP, json, true);
   if (json) {

@@ -27,10 +27,8 @@
 #include "ts/ink_platform.h"
 #include "ts/InkErrno.h"
 
-#ifdef HTTP_CACHE
 #include "HTTP.h"
 #include "P_CacheHttp.h"
-#endif
 
 struct EvacuationBlock;
 
@@ -316,9 +314,7 @@ struct CacheVC : public CacheVConnection {
   int openReadReadDone(int event, Event *e);
   int openReadMain(int event, Event *e);
   int openReadStartEarliest(int event, Event *e);
-#ifdef HTTP_CACHE
   int openReadVecWrite(int event, Event *e);
-#endif
   int openReadStartHead(int event, Event *e);
   int openReadFromWriter(int event, Event *e);
   int openReadFromWriterMain(int event, Event *e);
@@ -372,7 +368,6 @@ struct CacheVC : public CacheVConnection {
 
   void cancel_trigger();
   virtual int64_t get_object_size();
-#ifdef HTTP_CACHE
   virtual void set_http_info(CacheHTTPInfo *info);
   virtual void get_http_info(CacheHTTPInfo **info);
   /** Get the fragment table.
@@ -384,7 +379,6 @@ struct CacheVC : public CacheVConnection {
       @return Length of header data used for alternates.
    */
   virtual uint32_t load_http_info(CacheHTTPInfoVector *info, struct Doc *doc, RefCountObj *block_ptr = nullptr);
-#endif
   virtual bool is_pread_capable();
   virtual bool set_pin_in_cache(time_t time_pin);
   virtual time_t get_pin_in_cache();
@@ -415,9 +409,7 @@ struct CacheVC : public CacheVConnection {
   // CacheVC is freed. All these variables must be reset/cleared
   // in free_CacheVC.
   Action _action;
-#ifdef HTTP_CACHE
   CacheHTTPHdr request;
-#endif
   CacheHTTPInfoVector vector;
   CacheHTTPInfo alternate;
   Ptr<IOBufferData> buf;
@@ -446,9 +438,7 @@ struct CacheVC : public CacheVConnection {
   CacheFragType frag_type;
   CacheHTTPInfo *info;
   CacheHTTPInfoVector *write_vector;
-#ifdef HTTP_CACHE
   OverridableHttpConfigParams *params;
-#endif
   int header_len;        // for communicating with agg_copy
   int frag_len;          // for communicating with agg_copy
   uint32_t write_len;    // for communicating with agg_copy
@@ -504,9 +494,7 @@ struct CacheVC : public CacheVConnection {
       unsigned int doc_from_ram_cache : 1;
       unsigned int hit_evacuate : 1;
       unsigned int compressed_in_ram : 1; // compressed state in ram cache
-#ifdef HTTP_CACHE
-      unsigned int allow_empty_doc : 1; // used for cache empty http document
-#endif
+      unsigned int allow_empty_doc : 1;   // used for cache empty http document
     } f;
   };
   // BTF optimization used to skip reading stuff in cache partition that doesn't contain any
@@ -542,10 +530,8 @@ extern ClassAllocator<CacheVC> cacheVConnectionAllocator;
 extern CacheKey zero_key;
 extern CacheSync *cacheDirSync;
 // Function Prototypes
-#ifdef HTTP_CACHE
 int cache_write(CacheVC *, CacheHTTPInfoVector *);
 int get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key);
-#endif
 CacheVC *new_DocEvacuator(int nbytes, Vol *d);
 
 // inline Functions
@@ -553,15 +539,13 @@ CacheVC *new_DocEvacuator(int nbytes, Vol *d);
 TS_INLINE CacheVC *
 new_CacheVC(Continuation *cont)
 {
-  EThread *t = cont->mutex->thread_holding;
-  CacheVC *c = THREAD_ALLOC(cacheVConnectionAllocator, t);
-#ifdef HTTP_CACHE
+  EThread *t          = cont->mutex->thread_holding;
+  CacheVC *c          = THREAD_ALLOC(cacheVConnectionAllocator, t);
   c->vector.data.data = &c->vector.data.fast_data[0];
-#endif
-  c->_action        = cont;
-  c->initial_thread = t->tt == DEDICATED ? nullptr : t;
-  c->mutex          = cont->mutex;
-  c->start_time     = Thread::get_hrtime();
+  c->_action          = cont;
+  c->initial_thread   = t->tt == DEDICATED ? nullptr : t;
+  c->mutex            = cont->mutex;
+  c->start_time       = Thread::get_hrtime();
   ink_assert(c->trigger == nullptr);
   Debug("cache_new", "new %p", c);
 #ifdef CACHE_STAT_PAGES
@@ -598,18 +582,14 @@ free_CacheVC(CacheVC *cont)
   cont->io.aio_result        = 0;
   cont->io.aiocb.aio_nbytes  = 0;
   cont->io.aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
-#ifdef HTTP_CACHE
   cont->request.reset();
   cont->vector.clear();
-#endif
   cont->vio.buffer.clear();
   cont->vio.mutex.clear();
-#ifdef HTTP_CACHE
   if (cont->vio.op == VIO::WRITE && cont->alternate_index == CACHE_ALT_INDEX_DEFAULT)
     cont->alternate.destroy();
   else
     cont->alternate.clear();
-#endif
   cont->_action.cancelled = 0;
   cont->_action.mutex.clear();
   cont->mutex.clear();
@@ -689,11 +669,9 @@ TS_INLINE int
 CacheVC::die()
 {
   if (vio.op == VIO::WRITE) {
-#ifdef HTTP_CACHE
     if (f.update && total_len) {
       alternate.object_key_set(earliest_key);
     }
-#endif
     if (!is_io_in_progress()) {
       SET_HANDLER(&CacheVC::openWriteClose);
       if (!recursive)
@@ -987,7 +965,6 @@ struct Cache {
                             const char *hostname = 0, int host_len = 0);
   Action *scan(Continuation *cont, const char *hostname = 0, int host_len = 0, int KB_per_second = 2500);
 
-#ifdef HTTP_CACHE
   Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, OverridableHttpConfigParams *params,
                     CacheFragType type, const char *hostname, int host_len);
   Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
@@ -995,7 +972,6 @@ struct Cache {
                      int host_len = 0);
   static void generate_key(INK_MD5 *md5, CacheURL *url);
   static void generate_key(HttpCacheKey *md5, CacheURL *url, cache_generation_t generation = -1);
-#endif
 
   Action *link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheFragType type, const char *hostname,
                int host_len);
@@ -1024,8 +1000,6 @@ extern Cache *theCache;
 extern Cache *theStreamCache;
 inkcoreapi extern Cache *caches[NUM_CACHE_FRAG_TYPES];
 
-#ifdef HTTP_CACHE
-
 TS_INLINE void
 Cache::generate_key(INK_MD5 *md5, CacheURL *url)
 {
@@ -1039,8 +1013,6 @@ Cache::generate_key(HttpCacheKey *key, CacheURL *url, cache_generation_t generat
   url->hash_get(&key->hash, generation);
 }
 
-#endif
-
 TS_INLINE unsigned int
 cache_hash(const INK_MD5 &md5)
 {
@@ -1049,9 +1021,7 @@ cache_hash(const INK_MD5 &md5)
   return mhash;
 }
 
-#ifdef HTTP_CACHE
 #define CLUSTER_CACHE
-#endif
 
 #ifdef CLUSTER_CACHE
 #include "P_Net.h"

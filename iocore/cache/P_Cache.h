@@ -29,11 +29,9 @@
 #include "P_AIO.h"
 #include "I_RecProcess.h"
 
-#ifdef HTTP_CACHE
 #include "HTTP.h"
 #include "MIME.h"
 #include "HttpTransactCache.h"
-#endif
 
 #include "I_Cache.h"
 #include "P_CacheDisk.h"

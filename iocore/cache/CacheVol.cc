@@ -156,11 +156,9 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   Doc *doc     = nullptr;
   void *result = nullptr;
-#ifdef HTTP_CACHE
-  int hlen = 0;
+  int hlen     = 0;
   char hname[500];
-  bool hostinfo_copied = false;
-#endif
+  bool hostinfo_copied         = false;
   off_t next_object_len        = 0;
   bool might_need_overlap_read = false;
 
@@ -209,7 +207,6 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     might_need_overlap_read = false;
     doc                     = (Doc *)((char *)doc + next_object_len);
     next_object_len         = vol->round_to_approx_size(doc->len);
-#ifdef HTTP_CACHE
     int i;
     bool changed;
 
@@ -321,11 +318,8 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
     continue;
   Lskip:;
-#endif
   }
-#ifdef HTTP_CACHE
   vector.clear();
-#endif
   // If we had an object that went past the end of the buffer, and it is small enough to fix,
   // fix it.
   if (might_need_overlap_read && ((off_t)((char *)doc - buf->data()) + next_object_len > (off_t)io.aiocb.aio_nbytes) &&
@@ -366,9 +360,7 @@ Lread:
 Ldone:
   Debug("cache_scan_truss", "done %p:scanObject", this);
   _action.continuation->handleEvent(CACHE_EVENT_SCAN_DONE, result);
-#ifdef HTTP_CACHE
 Lcancel:
-#endif
   return free_CacheVC(this);
 }
 
@@ -377,9 +369,7 @@ CacheVC::scanRemoveDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   Debug("cache_scan_truss", "inside %p:scanRemoveDone", this);
   Debug("cache_scan", "remove done.");
-#ifdef HTTP_CACHE
   alternate.destroy();
-#endif
   SET_HANDLER(&CacheVC::scanObject);
   return handleEvent(EVENT_IMMEDIATE, nullptr);
 }

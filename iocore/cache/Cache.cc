@@ -29,13 +29,11 @@
 
 #include "ts/I_Layout.h"
 
-#ifdef HTTP_CACHE
 #include "HttpTransactCache.h"
 #include "HttpSM.h"
 #include "HttpCacheSM.h"
 #include "InkAPIInternal.h"
 #include "P_CacheBC.h"
-#endif
 
 #include "ts/hugepages.h"
 
@@ -80,12 +78,10 @@ int cache_config_read_while_writer             = 0;
 int cache_config_mutex_retry_delay             = 2;
 int cache_read_while_writer_retry_delay        = 50;
 int cache_config_read_while_writer_max_retries = 10;
-#ifdef HTTP_CACHE
-static int enable_cache_empty_http_doc = 0;
+static int enable_cache_empty_http_doc         = 0;
 /// Fix up a specific known problem with the 4.2.0 release.
 /// Not used for stripes with a cache version later than 4.2.0.
 int cache_config_compatibility_4_2_0_fixup = 1;
-#endif
 
 // Globals
 
@@ -309,14 +305,12 @@ CacheVC::CacheVC() : alternate_index(CACHE_ALT_INDEX_DEFAULT)
   memset((void *)&vio, 0, size_to_init);
 }
 
-#ifdef HTTP_CACHE
 HTTPInfo::FragOffset *
 CacheVC::get_frag_table()
 {
   ink_assert(alternate.valid());
   return alternate.valid() ? alternate.get_frag_table() : nullptr;
 }
-#endif
 
 VIO *
 CacheVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *abuf)
@@ -422,11 +416,9 @@ bool
 CacheVC::get_data(int i, void *data)
 {
   switch (i) {
-#ifdef HTTP_CACHE
   case CACHE_DATA_HTTP_INFO:
     *((CacheHTTPInfo **)data) = &alternate;
     return true;
-#endif
   case CACHE_DATA_RAM_CACHE_HIT_FLAG:
     *((int *)data) = !f.not_from_ram_cache;
     return true;
@@ -449,7 +441,6 @@ CacheVC::set_data(int /* i ATS_UNUSED */, void * /* data */)
   return true;
 }
 
-#ifdef HTTP_CACHE
 void
 CacheVC::get_http_info(CacheHTTPInfo **ainfo)
 {
@@ -482,7 +473,6 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
   alternate.copy_shallow(ainfo);
   ainfo->clear();
 }
-#endif
 
 bool
 CacheVC::set_pin_in_cache(time_t time_pin)
@@ -1182,15 +1172,12 @@ scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second
 }
 #endif
 
-#ifdef HTTP_CACHE
 Action *
 CacheProcessor::lookup(Continuation *cont, const HttpCacheKey *key, bool cluster_cache_local, bool local_only,
                        CacheFragType frag_type)
 {
   return lookup(cont, &key->hash, cluster_cache_local, local_only, frag_type, key->hostname, key->hostlen);
 }
-
-#endif
 
 #ifdef CLUSTER_CACHE
 Action *
@@ -2215,7 +2202,6 @@ CacheVC::is_pread_capable()
 
 #define STORE_COLLISION 1
 
-#ifdef HTTP_CACHE
 static void
 unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
 {
@@ -2317,7 +2303,6 @@ upgrade_doc_version(Ptr<IOBufferData> &buf)
   }
   return zret;
 }
-#endif
 
 // [amc] I think this is where all disk reads from cache funnel through here.
 int
@@ -2413,14 +2398,12 @@ CacheVC::handleReadDone(int event, Event *e)
       }
       (void)e; // Avoid compiler warnings
       bool http_copy_hdr = false;
-#ifdef HTTP_CACHE
       http_copy_hdr =
         cache_config_ram_cache_compress && !f.doc_from_ram_cache && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen;
       // If http doc we need to unmarshal the headers before putting in the ram cache
       // unless it could be compressed
       if (!http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay)
         unmarshal_helper(doc, buf, okay);
-#endif
       // Put the request in the ram cache only if its a open_read or lookup
       if (vio.op == VIO::READ && okay) {
         bool cutoff_check;
@@ -2445,11 +2428,9 @@ CacheVC::handleReadDone(int event, Event *e)
           vol->first_fragment_data   = buf;
         }
       } // end VIO::READ check
-#ifdef HTTP_CACHE
       // If it could be compressed, unmarshal after
       if (http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay)
         unmarshal_helper(doc, buf, okay);
-#endif
     } // end io.ok() check
   }
 Ldone:
@@ -3258,11 +3239,9 @@ ink_cache_init(ModuleVersion v)
   if (cache_config_target_fragment_size == 0)
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
 
-#ifdef HTTP_CACHE
   REC_EstablishStaticConfigInt32(enable_cache_empty_http_doc, "proxy.config.http.cache.allow_empty_doc");
 
   REC_EstablishStaticConfigInt32(cache_config_compatibility_4_2_0_fixup, "proxy.config.cache.http.compatibility.4-2-0-fixup");
-#endif
 
   REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
   Debug("cache_init", "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
