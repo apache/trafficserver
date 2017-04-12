@@ -97,7 +97,6 @@
 #define TS_MAX_API_STATS @max_api_stats@
 
 #define SPLIT_DNS 1
-#define HTTP_CACHE 1
 
 /* Defaults for user / group */
 #define TS_PKGSYSUSER "@pkgsysuser@"
