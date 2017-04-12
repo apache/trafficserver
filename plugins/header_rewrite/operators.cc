@@ -878,6 +878,7 @@ void
 OperatorSetDebug::initialize_hooks()
 {
   add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
 void
