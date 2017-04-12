@@ -313,8 +313,6 @@ protected:
 
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorSetDebug);
-
-  Value _ds_value;
 };
 
 #endif // __OPERATORS_H
