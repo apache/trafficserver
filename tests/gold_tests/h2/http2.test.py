@@ -70,7 +70,7 @@ tr=Test.AddTestRun()
 tr.Processes.Default.Command='python3 h2client.py -p {0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode=0
 # time delay as proxy.config.http.wait_for_cache could be broken
-tr.Processes.Default.StartBefore(server,ready=When.PortOpen(server.Variables.Port))
+tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stdout="gold/remap-200.gold"
 tr.StillRunningAfter=server
@@ -79,9 +79,6 @@ tr.StillRunningAfter=server
 tr=Test.AddTestRun()
 tr.Processes.Default.Command='python3 h2bigclient.py -p {0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode=0
-# time delay as proxy.config.http.wait_for_cache could be broken
-tr.Processes.Default.StartBefore(server,ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stdout="gold/bigfile.gold"
 tr.StillRunningAfter=server
 
