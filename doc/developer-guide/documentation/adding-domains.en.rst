@@ -40,7 +40,7 @@ permits us to define and reference a set of variables which are constrained by
 the following characteristics:
 
 #. Each variable in the domain must be one of known list of data types, which
-   we will limit here to the possibilities of :literal:`integeer`,
+   we will limit here to the possibilities of :literal:`integer`,
    :literal:`float`, :literal:`string`.
 
 #. Where the data type is not specified, we can assume it is :literal:`string`.
