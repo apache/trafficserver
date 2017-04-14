@@ -327,7 +327,7 @@ ConditionQuery::eval(const Resources &res)
   return false;
 }
 
-// ConditionUrl: request or response header. TODO: This is not finished, at all!!!
+// ConditionUrl: request or response header.
 void
 ConditionUrl::initialize(Parser &p)
 {
@@ -348,8 +348,48 @@ ConditionUrl::set_qualifier(const std::string &q)
 }
 
 void
-ConditionUrl::append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */)
+ConditionUrl::append_value(std::string &s, const Resources &res)
 {
+  TSMBuffer bufp;
+  TSMLoc url_loc;
+  char *url;
+  int url_length;
+
+  if (res._rri != NULL) {
+    // called at the remap hook
+    bufp = res._rri->requestBufp;
+    if (_type == URL || _type == CLIENT) {
+      // res._rri->requestBufp and res.client_bufp are the same if it is at the remap hook
+      url_loc = res._rri->requestUrl;
+    } else if (_type == FROM) {
+      url_loc = res._rri->mapFromUrl;
+    } else if (_type == TO) {
+      url_loc = res._rri->mapToUrl;
+    } else {
+      return TSError("[header_rewrite] Invalid option value");
+    }
+    url = TSUrlStringGet(bufp, url_loc, &url_length);
+  } else {
+    TSMLoc hdr_loc = NULL;
+    if (_type == CLIENT) {
+      bufp    = res.client_bufp;
+      hdr_loc = res.client_hdr_loc;
+    } else if (_type == URL) {
+      bufp    = res.bufp;
+      hdr_loc = res.hdr_loc;
+    } else {
+      return TSError("[header_rewrite] Rule not supported at this hook");
+    }
+    if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
+      return TSError("[header_rewrite] Error getting the URL");
+    }
+    url = TSUrlStringGet(bufp, url_loc, &url_length);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
+  }
+  if (url && url_length) {
+    s.append(url, url_length);
+  }
+  TSfree(url);
 }
 
 bool
