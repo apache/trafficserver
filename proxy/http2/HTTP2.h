@@ -356,7 +356,7 @@ bool http2_parse_window_update(IOVec, uint32_t &);
 
 Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint32_t, uint32_t *, HpackHandle &, bool &);
 
-Http2ErrorCode http2_encode_header_blocks(HTTPHdr *, uint8_t *, uint32_t, uint32_t *, HpackHandle &);
+Http2ErrorCode http2_encode_header_blocks(HTTPHdr *, uint8_t *, uint32_t, uint32_t *, HpackHandle &, int32_t);
 
 ParseResult http2_convert_header_from_2_to_1_1(HTTPHdr *);
 void http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers);
