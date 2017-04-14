@@ -27,6 +27,10 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <ctype.h>
+#include <sys/time.h>
+
+#include <string>
+#include <unordered_map>
 
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
@@ -42,6 +46,24 @@ static const char PLUGIN_NAME[] = "s3_auth";
 static const char DATE_FMT[]    = "%a, %d %b %Y %H:%M:%S %z";
 
 ///////////////////////////////////////////////////////////////////////////////
+// Cache for the secrets file, to avoid reading / loding them repeatedly on
+// a reload of remap.config. This gets cached for 60s (not configurable).
+//
+class S3Config;
+
+class ConfigCache
+{
+public:
+  S3Config *get(const char *fname);
+
+private:
+  std::unordered_map<std::string, std::pair<S3Config *, int>> _cache;
+  static const int _ttl = 60;
+};
+
+ConfigCache gConfCache;
+
+///////////////////////////////////////////////////////////////////////////////
 // One configuration setup
 //
 int event_handler(TSCont, TSEvent, void *); // Forward declaration
@@ -49,7 +71,7 @@ int event_handler(TSCont, TSEvent, void *); // Forward declaration
 class S3Config
 {
 public:
-  S3Config() : _secret(nullptr), _secret_len(0), _keyid(nullptr), _keyid_len(0), _virt_host(false), _version(2), _cont(nullptr)
+  S3Config()
   {
     _cont = TSContCreate(event_handler, nullptr);
     TSContDataSet(_cont, static_cast<void *>(this));
@@ -70,27 +92,54 @@ public:
     return _secret && (_secret_len > 0) && _keyid && (_keyid_len > 0) && (2 == _version);
   }
 
+  // Used to copy relevant configurations that can be configured in a config file. Note: we intentionally
+  // don't override/use the assignment operator, since we only copy things IF they have been modified.
+  void
+  copy_changes_from(const S3Config *src)
+  {
+    if (src->_secret) {
+      _secret     = src->_secret;
+      _secret_len = src->_secret_len;
+    }
+
+    if (src->_keyid) {
+      _keyid     = src->_keyid;
+      _keyid_len = src->_keyid_len;
+    }
+
+    if (_version_modified) {
+      _version = src->_version;
+    }
+    if (_virt_host_modified) {
+      _virt_host = src->_virt_host;
+    }
+  }
+
   // Getters
   bool
   virt_host() const
   {
     return _virt_host;
   }
+
   const char *
   secret() const
   {
     return _secret;
   }
+
   const char *
   keyid() const
   {
     return _keyid;
   }
+
   int
   secret_len() const
   {
     return _secret_len;
   }
+
   int
   keyid_len() const
   {
@@ -115,16 +164,18 @@ public:
   void
   set_virt_host(bool f = true)
   {
-    _virt_host = f;
+    _virt_host          = f;
+    _virt_host_modified = true;
   }
   void
   set_version(const char *s)
   {
-    _version = strtol(s, nullptr, 10);
+    _version          = strtol(s, nullptr, 10);
+    _version_modified = true;
   }
 
   // Parse configs from an external file
-  bool parse_config(const char *config);
+  bool parse_config(const std::string &filename);
 
   // This should be called from the remap plugin, to setup the TXN hook for
   // SEND_REQUEST_HDR, such that we always attach the appropriate S3 auth.
@@ -135,34 +186,29 @@ public:
   }
 
 private:
-  char *_secret;
-  size_t _secret_len;
-  char *_keyid;
-  size_t _keyid_len;
-  bool _virt_host;
-  int _version;
-  TSCont _cont;
+  char *_secret            = nullptr;
+  size_t _secret_len       = 0;
+  char *_keyid             = nullptr;
+  size_t _keyid_len        = 0;
+  bool _virt_host          = false;
+  int _version             = 2;
+  bool _version_modified   = false;
+  bool _virt_host_modified = false;
+  TSCont _cont             = nullptr;
 };
 
 bool
-S3Config::parse_config(const char *config)
+S3Config::parse_config(const std::string &config_fname)
 {
-  if (!config) {
+  if (0 == config_fname.size()) {
     TSError("[%s] called without a config file, this is broken", PLUGIN_NAME);
     return false;
   } else {
-    char filename[PATH_MAX + 1];
-
-    if (*config != '/') {
-      snprintf(filename, sizeof(filename) - 1, "%s/%s", TSConfigDirGet(), config);
-      config = filename;
-    }
-
     char line[512]; // These are long lines ...
-    FILE *file = fopen(config, "r");
+    FILE *file = fopen(config_fname.c_str(), "r");
 
     if (nullptr == file) {
-      TSError("[%s] unable to open %s", PLUGIN_NAME, config);
+      TSError("[%s] unable to open %s", PLUGIN_NAME, config_fname.c_str());
       return false;
     }
 
@@ -206,6 +252,57 @@ S3Config::parse_config(const char *config)
   }
 
   return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Implementation for the ConfigCache, it has to go here since we have a sort
+// of circular dependency. Note that we always parse / get the configuration
+// for the file, either from cache or by making one. The user of this just
+// has to copy the relevant portions, but should not use the returned object
+// directly (i.e. it must be copied).
+//
+S3Config *
+ConfigCache::get(const char *fname)
+{
+  std::string config_fname;
+  struct timeval tv;
+
+  gettimeofday(&tv, nullptr);
+
+  // Make sure the filename is an absolute path, prepending the config dir if needed
+  if (*fname != '/') {
+    config_fname = TSConfigDirGet();
+    config_fname += "/";
+  }
+  config_fname += fname;
+
+  auto it = _cache.find(config_fname);
+
+  if (it != _cache.end()) {
+    if (tv.tv_sec > (it->second.second + _ttl)) {
+      TSDebug(PLUGIN_NAME, "Configuration from %s is stale, reloading", config_fname.c_str());
+      // Update the cached configuration file.
+      delete it->second.first;
+      it->second.first = new S3Config();
+      it->second.first->parse_config(config_fname);
+      it->second.second = tv.tv_sec;
+    } else {
+      TSDebug(PLUGIN_NAME, "Configuration from %s is fresh, reusing", config_fname.c_str());
+    }
+    return it->second.first;
+  } else {
+    // Create a new cached file.
+    S3Config *s3 = new S3Config();
+
+    s3->parse_config(config_fname);
+    _cache[config_fname] = std::make_pair(s3, tv.tv_sec);
+    TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s", config_fname.c_str());
+
+    return s3;
+  }
+
+  TSAssert(!"Configuration parsing / caching failed");
+  return nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -541,7 +638,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     {nullptr, no_argument, nullptr, '\0'},
   };
 
-  S3Config *s3 = new S3Config();
+  S3Config *s3          = new S3Config();
+  S3Config *file_config = nullptr;
 
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.
@@ -553,7 +651,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
     switch (opt) {
     case 'c':
-      s3->parse_config(optarg);
+      file_config = gConfCache.get(optarg); // Get cached, or new, config object, from a file
       break;
     case 'a':
       s3->set_keyid(optarg);
@@ -572,6 +670,11 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     if (opt == -1) {
       break;
     }
+  }
+
+  // Copy the config file secret into our instance of the configuration.
+  if (file_config) {
+    s3->copy_changes_from(file_config);
   }
 
   // Make sure we got both the shared secret and the AWS secret
