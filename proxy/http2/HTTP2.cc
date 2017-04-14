@@ -43,7 +43,8 @@ const unsigned HTTP2_LEN_AUTHORITY = countof(":authority") - 1;
 const unsigned HTTP2_LEN_PATH      = countof(":path") - 1;
 const unsigned HTTP2_LEN_STATUS    = countof(":status") - 1;
 
-static size_t HTTP2_LEN_STATUS_VALUE_STR = 3;
+static size_t HTTP2_LEN_STATUS_VALUE_STR    = 3;
+static const int HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
 
 // Statistics
 RecRawStatBlock *http2_rsb;
@@ -597,10 +598,17 @@ http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
 }
 
 Http2ErrorCode
-http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t *len_written, HpackHandle &handle)
+http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t *len_written, HpackHandle &handle,
+                           int32_t maximum_table_size)
 {
+  // Limit the maximum table size to 64kB, which is the size advertised by major clients
+  maximum_table_size = min(maximum_table_size, HTTP2_MAX_TABLE_SIZE_LIMIT);
+  // Set maximum table size only if it is different from current maximum size
+  if (maximum_table_size == hpack_get_maximum_table_size(handle)) {
+    maximum_table_size = -1;
+  }
   // TODO: It would be better to split Cookie header value
-  int64_t result = hpack_encode_header_block(handle, out, out_len, in);
+  int64_t result = hpack_encode_header_block(handle, out, out_len, in, maximum_table_size);
   if (result < 0) {
     return Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR;
   }

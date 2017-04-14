@@ -1324,7 +1324,8 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     h2_hdr.destroy();
     return;
   }
-  Http2ErrorCode result = http2_encode_header_blocks(&h2_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle));
+  Http2ErrorCode result = http2_encode_header_blocks(&h2_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
+                                                     client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     h2_hdr.destroy();
     ats_free(buf);
@@ -1413,7 +1414,8 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
     h2_hdr.destroy();
     return;
   }
-  Http2ErrorCode result = http2_encode_header_blocks(&h2_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle));
+  Http2ErrorCode result = http2_encode_header_blocks(&h2_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
+                                                     client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     h2_hdr.destroy();
     ats_free(buf);

@@ -122,6 +122,7 @@ public:
   const MIMEField *get_header_field(uint32_t index) const;
   void add_header_field(const MIMEField *field);
 
+  uint32_t maximum_size() const;
   uint32_t size() const;
   bool update_maximum_size(uint32_t new_size);
 
@@ -146,6 +147,7 @@ public:
   int get_header_field(uint32_t index, MIMEFieldWrapper &header_field) const;
 
   void add_header_field(const MIMEField *field);
+  uint32_t maximum_size() const;
   uint32_t size() const;
   bool update_maximum_size(uint32_t new_size);
 
@@ -173,6 +175,8 @@ int64_t update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_e
 typedef HpackIndexingTable HpackHandle;
 int64_t hpack_decode_header_block(HpackHandle &handle, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len,
                                   uint32_t max_header_size);
-int64_t hpack_encode_header_block(HpackHandle &handle, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr);
+int64_t hpack_encode_header_block(HpackHandle &handle, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr,
+                                  int32_t maximum_table_size = -1);
+int32_t hpack_get_maximum_table_size(HpackHandle &handle);
 
 #endif /* __HPACK_H__ */

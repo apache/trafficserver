@@ -296,6 +296,12 @@ HpackIndexingTable::add_header_field(const MIMEField *field)
 }
 
 uint32_t
+HpackIndexingTable::maximum_size() const
+{
+  return _dynamic_table->maximum_size();
+}
+
+uint32_t
 HpackIndexingTable::size() const
 {
   return _dynamic_table->size();
@@ -349,6 +355,12 @@ HpackDynamicTable::add_header_field(const MIMEField *field)
     // XXX Because entire Vec instance is copied, Its too expensive!
     _headers.insert(0, new_field);
   }
+}
+
+uint32_t
+HpackDynamicTable::maximum_size() const
+{
+  return _maximum_size;
 }
 
 uint32_t
@@ -617,6 +629,18 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 
   Debug("hpack_encode", "Encoded field: %.*s: %.*s", name_len, name, value_len, value);
   return p - buf_start;
+}
+
+int64_t
+encode_dynamic_table_size_update(uint8_t *buf_start, const uint8_t *buf_end, uint32_t size)
+{
+  const int64_t len = encode_integer(buf_start, buf_end, size, 5);
+  if (len == -1) {
+    return -1;
+  }
+  buf_start[0] |= 0x20;
+
+  return len;
 }
 
 //
@@ -928,13 +952,24 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
 }
 
 int64_t
-hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr)
+hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr,
+                          int32_t maximum_table_size)
 {
   uint8_t *cursor                  = out_buf;
   const uint8_t *const out_buf_end = out_buf + out_buf_len;
   int64_t written                  = 0;
 
   ink_assert(http_hdr_type_get(hdr->m_http) != HTTP_TYPE_UNKNOWN);
+
+  // Update dynamic table size
+  if (maximum_table_size >= 0) {
+    indexing_table.update_maximum_size(maximum_table_size);
+    written = encode_dynamic_table_size_update(cursor, out_buf_end, maximum_table_size);
+    if (written == HPACK_ERROR_COMPRESSION_ERROR) {
+      return HPACK_ERROR_COMPRESSION_ERROR;
+    }
+    cursor += written;
+  }
 
   MIMEFieldIter field_iter;
   for (MIMEField *field = hdr->iter_get_first(&field_iter); field != nullptr; field = hdr->iter_get_next(&field_iter)) {
@@ -976,4 +1011,10 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
     cursor += written;
   }
   return cursor - out_buf;
+}
+
+int32_t
+hpack_get_maximum_table_size(HpackIndexingTable &indexing_table)
+{
+  return indexing_table.maximum_size();
 }
