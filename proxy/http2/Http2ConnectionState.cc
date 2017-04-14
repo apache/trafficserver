@@ -863,6 +863,8 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Finalize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_FINI: {
+    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+
     ink_assert(this->fini_received == false);
     this->fini_received = true;
     cleanup_streams();
@@ -904,17 +906,11 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
                 error.msg);
         }
         this->send_goaway_frame(this->latest_streamid_in, error.code);
+        this->ua_session->set_half_close_flag(true);
+        this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+
         // The streams will be cleaned up by the HTTP2_SESSION_EVENT_FINI event
         // The Http2ClientSession will shutdown because connection_state.is_state_closed() will be true
-
-        // XXX We need to think a bit harder about how to coordinate the client
-        // session and the
-        // protocol connection. At this point, the protocol is shutting down,
-        // but there's no way
-        // to tell that to the client session. Perhaps this could be solved by
-        // implementing the
-        // half-closed state ...
-        SET_HANDLER(&Http2ConnectionState::state_closed);
       } else if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM) {
         if (error.msg) {
           Error("HTTP/2 stream error client_ip=%s session_id=%" PRId64 " %s", client_ip, ua_session->connection_id(), error.msg);
@@ -953,6 +949,13 @@ Http2ConnectionState::state_closed(int /* event */, void * /* edata */)
 Http2Stream *
 Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
 {
+  // In half_close state, TS doesn't create new stream. Because GOAWAY frame is sent to client
+  if (ua_session && ua_session->get_half_close_flag()) {
+    error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                       "refused to create new stream, because ua_session is in half_close state");
+    return nullptr;
+  }
+
   bool client_streamid = http2_is_client_streamid(new_id);
 
   // 5.1.1 The identifier of a newly established stream MUST be numerically
@@ -1063,6 +1066,8 @@ Http2ConnectionState::cleanup_streams()
   ink_assert(stream_list.empty());
 
   if (!is_state_closed()) {
+    SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+
     ua_session->get_netvc()->add_to_keep_alive_queue();
     ua_session->get_netvc()->cancel_active_timeout();
   }
@@ -1116,20 +1121,24 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
     stream_list.remove(stream);
   }
 
-  // If the number of clients is 0 and ua_session is active, then mark the connection as inactive
-  if (total_client_streams_count == 0 && ua_session && ua_session->is_active()) {
-    ua_session->clear_session_active();
-    UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
-    if (vc) {
-      vc->cancel_active_timeout();
-      vc->add_to_keep_alive_queue();
-    }
-  }
+  if (ua_session) {
+    SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
 
-  if (ua_session && fini_received && total_client_streams_count == 0) {
-    // We were shutting down, go ahead and terminate the session
-    ua_session->destroy();
-    ua_session = nullptr;
+    // If the number of clients is 0 and ua_session is active, then mark the connection as inactive
+    if (total_client_streams_count == 0 && ua_session->is_active()) {
+      ua_session->clear_session_active();
+      UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
+      if (vc) {
+        vc->cancel_active_timeout();
+        vc->add_to_keep_alive_queue();
+      }
+    }
+
+    if (fini_received && total_client_streams_count == 0) {
+      // We were shutting down, go ahead and terminate the session
+      ua_session->destroy();
+      ua_session = nullptr;
+    }
   }
 }
 
@@ -1357,6 +1366,9 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   // Change stream state
   if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, flags)) {
     this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
+    this->ua_session->set_half_close_flag(true);
+    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+
     h2_hdr.destroy();
     ats_free(buf);
     return;
@@ -1515,6 +1527,9 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   if (stream != nullptr) {
     if (!stream->change_state(HTTP2_FRAME_TYPE_RST_STREAM, 0)) {
       this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
+      this->ua_session->set_half_close_flag(true);
+      this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+
       return;
     }
   }
@@ -1547,7 +1562,10 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
 
       // Write settings to send buffer
       if (!http2_write_settings(param, iov)) {
-        send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
+        this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
+        this->ua_session->set_half_close_flag(true);
+        this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+
         return;
       }
       iov.iov_base = reinterpret_cast<uint8_t *>(iov.iov_base) + HTTP2_SETTINGS_PARAMETER_LEN;
@@ -1582,10 +1600,12 @@ Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &ping);
 }
 
+// As for gracefull shutdown, TS should process outstanding stream as long as possible.
+// As for signal connection error, TS should close connection immediately.
 void
 Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 {
-  DebugHttp2Stream(ua_session, id, "Send GOAWAY frame");
+  DebugHttp2Con(ua_session, "Send GOAWAY frame, last_stream_id: %d", id);
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CONNECTION_ERRORS_COUNT, this_ethread());
@@ -1606,8 +1626,6 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &frame);
-
-  handleEvent(HTTP2_SESSION_EVENT_FINI, nullptr);
 }
 
 void
