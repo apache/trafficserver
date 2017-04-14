@@ -23,7 +23,7 @@ Building the Documentation
 **************************
 
 All documentation and related files are located in the source tree under the
-``doc/`` directory. Makefiles are generated automatiically by the main configure
+``doc/`` directory. Makefiles are generated automatically by the main configure
 script. For simplicity's sake, it is recommended that contributors new to the
 documentation make use of the included Vagrant configurations, as these will
 take care of providing all dependencies. Please refer to the
