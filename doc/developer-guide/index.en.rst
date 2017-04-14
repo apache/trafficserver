@@ -43,7 +43,8 @@ duplicate bugs is encouraged, but not required.
    contributing/index.en
    testing-with-vagrant/index.en
    debugging/index.en
-   architecture/index.en
+   cache-architecture/index.en
+   internal-libraries/index.en
    plugins/index.en
    config-vars.en
    api/index.en
