@@ -53,7 +53,7 @@ struct Request {
   int length;
   std::unique_ptr<ats::io::IO> io;
 
-  Request(const std::string &, const TSMBuffer, const TSMLoc);
+  Request(std::string, const TSMBuffer, const TSMLoc);
   Request(const Request &);
   Request &operator=(const Request &);
 };

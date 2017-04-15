@@ -25,6 +25,7 @@
 #include <string>
 #include <stdarg.h>
 #include <iostream>
+#include <utility>
 
 namespace ts
 {
@@ -47,7 +48,7 @@ struct TestBox {
   static int _fail;
 
   TestBox(char const *name) : _name(name) {}
-  TestBox(std::string const &name) : _name(name) {}
+  TestBox(std::string name) : _name(std::move(name)) {}
   template <typename... Rest>
   bool
   result(bool r, Rest &&... rest)
