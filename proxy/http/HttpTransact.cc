@@ -8351,7 +8351,7 @@ HttpTransact::get_error_string(int erno)
 }
 
 ink_time_t
-ink_cluster_time(void)
+ink_cluster_time()
 {
   int highest_delta;
   ink_time_t local_time;

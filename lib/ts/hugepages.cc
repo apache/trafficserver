@@ -37,7 +37,7 @@ static bool hugepage_enabled;
 #endif
 
 size_t
-ats_hugepage_size(void)
+ats_hugepage_size()
 {
 #ifdef MAP_HUGETLB
   return hugepage_size;
@@ -48,7 +48,7 @@ ats_hugepage_size(void)
 }
 
 bool
-ats_hugepage_enabled(void)
+ats_hugepage_enabled()
 {
 #ifdef MAP_HUGETLB
   return hugepage_enabled;

@@ -281,7 +281,7 @@ volatile int RegressionConfig::nobjects = 0;
 struct ProxyConfig_Set_Completion {
   ProxyConfig_Set_Completion(int _id, RegressionConfig *_c) : configid(_id), config(_c) {}
   void
-  operator()(void) const
+  operator()() const
   {
     // Push one more RegressionConfig to force the LAST-tagged one to get destroyed.
     rprintf(config->test, "setting LAST config object %p\n", config);
@@ -315,7 +315,7 @@ EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Set)(RegressionTest *test, int /* atype AT
 struct ProxyConfig_Release_Completion {
   ProxyConfig_Release_Completion(int _id, RegressionConfig *_c) : configid(_id), config(_c) {}
   void
-  operator()(void) const
+  operator()() const
   {
     // Release the reference count. Since we were keeping this alive, it should be the last to die.
     configProcessor.release(configid, config);

@@ -131,7 +131,7 @@ AIOTestData::ink_aio_stats(int event, void *d)
  * Common
  */
 AIOCallback *
-new_AIOCallback(void)
+new_AIOCallback()
 {
   return new AIOCallbackInternal;
 }

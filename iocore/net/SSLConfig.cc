@@ -433,7 +433,7 @@ SSLConfigParams::deleteKey(cchar *key) const
 }
 
 SSL_CTX *
-SSLConfigParams::getClientSSL_CTX(void) const
+SSLConfigParams::getClientSSL_CTX() const
 {
   return client_ctx;
 }

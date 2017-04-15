@@ -61,7 +61,7 @@ EventNotify::EventNotify()
 }
 
 void
-EventNotify::signal(void)
+EventNotify::signal()
 {
 #ifdef HAVE_EVENTFD
   uint64_t value = 1;
@@ -77,7 +77,7 @@ EventNotify::signal(void)
 }
 
 int
-EventNotify::wait(void)
+EventNotify::wait()
 {
 #ifdef HAVE_EVENTFD
   ssize_t nr, nr_fd;
@@ -140,7 +140,7 @@ int EventNotify::timedwait(int timeout) // milliseconds
 }
 
 void
-EventNotify::lock(void)
+EventNotify::lock()
 {
 #ifdef HAVE_EVENTFD
 // do nothing
@@ -150,7 +150,7 @@ EventNotify::lock(void)
 }
 
 bool
-EventNotify::trylock(void)
+EventNotify::trylock()
 {
 #ifdef HAVE_EVENTFD
   return true;
@@ -160,7 +160,7 @@ EventNotify::trylock(void)
 }
 
 void
-EventNotify::unlock(void)
+EventNotify::unlock()
 {
 #ifdef HAVE_EVENTFD
 // do nothing

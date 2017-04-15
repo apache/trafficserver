@@ -177,7 +177,7 @@ public:
   UDPReadContinuation(Event *completionToken);
   UDPReadContinuation();
   ~UDPReadContinuation() override;
-  inline void free(void);
+  inline void free();
   inline void init_token(Event *completionToken);
   inline void init_read(int fd, IOBufferBlock *buf, int len, struct sockaddr *fromaddr, socklen_t *fromaddrlen);
 
@@ -249,7 +249,7 @@ UDPReadContinuation::UDPReadContinuation()
 }
 
 inline void
-UDPReadContinuation::free(void)
+UDPReadContinuation::free()
 {
   ink_assert(event != nullptr);
   completionUtil::destroy(event);

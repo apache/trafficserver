@@ -58,7 +58,7 @@ namespace io
   }
 
   int64_t
-  IO::consume(void) const
+  IO::consume() const
   {
     assert(reader != nullptr);
     const int64_t available = TSIOBufferReaderAvail(reader);
@@ -69,7 +69,7 @@ namespace io
   }
 
   int64_t
-  IO::done(void) const
+  IO::done() const
   {
     assert(vio != nullptr);
     assert(reader != nullptr);
@@ -257,7 +257,7 @@ namespace io
   }
 
   void
-  WriteOperation::close(void)
+  WriteOperation::close()
   {
     assert(mutex_ != nullptr);
     const Lock lock(mutex_);
@@ -269,7 +269,7 @@ namespace io
   }
 
   void
-  WriteOperation::abort(void)
+  WriteOperation::abort()
   {
     assert(mutex_ != nullptr);
     const Lock lock(mutex_);
@@ -287,7 +287,7 @@ namespace io
   }
 
   void
-  IOSink::process(void)
+  IOSink::process()
   {
     const WriteOperationPointer operation = operation_.lock();
 
@@ -308,7 +308,7 @@ namespace io
   }
 
   Lock
-  IOSink::lock(void)
+  IOSink::lock()
   {
     const WriteOperationPointer operation = operation_.lock();
 
@@ -323,7 +323,7 @@ namespace io
   }
 
   void
-  IOSink::abort(void)
+  IOSink::abort()
   {
     const WriteOperationPointer operation = operation_.lock();
     if (operation) {
@@ -394,7 +394,7 @@ namespace io
   }
 
   SinkPointer
-  IOSink::branch(void)
+  IOSink::branch()
   {
     if (!data_) {
       data_.reset(new Data(shared_from_this()));
@@ -406,7 +406,7 @@ namespace io
   }
 
   SinkPointer
-  Sink::branch(void)
+  Sink::branch()
   {
     DataPointer data;
     if (data_) {

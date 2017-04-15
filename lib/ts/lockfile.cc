@@ -166,7 +166,7 @@ Lockfile::Get(pid_t *holding_pid)
 }
 
 void
-Lockfile::Close(void)
+Lockfile::Close()
 {
   if (fd != -1) {
     close(fd);
