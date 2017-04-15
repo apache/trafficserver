@@ -40,4 +40,14 @@ with :c:func:`TSStatIntSet`, and increment it with :c:func:`TSStatIntIncrement` 
    :language: c
    :lines: 30-
 
-:c:func:`TSStatFindName` can be used to check if the statistic already exists or to provide a generic interface to statistics. In the example above you can see the code first verifies the statistic does not already exist before creating it. In general, though, this should be handled by not executing the registration code twice. If done only from plugin initialization then this will be the case. It can be the case however that statistics are based on configuration data which may be reloaded and the check must be done.
+If this plugin is loaded, then the statistic can be accessed with ::
+
+   traffic_ctl metric show plugin.statistics.now
+
+The name of the statistic can be any string but it is best to use the convention of starting it with the literal tag "plugin" followed the plugin name followed by statistic specific tags. This avoids any name collisions and also makes finding all statistics for a plugin simple. For instance, the "redirect_1" example plugin creates a number of statistics. These can be listed with the command ::
+
+   traffic_ctl metric match plugin.redirect_1..*
+
+The "redirect_1" example plugin has a more realistic handling of statistics with regard to updating and is worth examining.
+
+:c:func:`TSStatFindName` can be used to check if the statistic already exists or to provide a generic interface to statistics. In the example above you can see the code first verifies the statistic does not already exist before creating it. In general, though, this should be handled by not executing the registration code twice. If done only from plugin initialization then this will be the case. It can be the case however that statistics are based on configuration data which may be reloaded and the check must be done. This is more likely with remap plugins.
