@@ -513,7 +513,7 @@ check_lockfile()
 }
 
 static void
-check_config_directories(void)
+check_config_directories()
 {
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
   ats_scoped_str sysconfdir(RecConfigReadConfigDir());
@@ -1058,7 +1058,7 @@ init_core_size()
 }
 
 static void
-adjust_sys_settings(void)
+adjust_sys_settings()
 {
   struct rlimit lim;
   int fds_throttle = -1;

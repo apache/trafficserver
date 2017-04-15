@@ -30,7 +30,7 @@
 // ===============================================================================
 
 void
-acl_filter_rule::reset(void)
+acl_filter_rule::reset()
 {
   int i;
   for (i = (argc = 0); i < ACL_FILTER_MAX_ARGV; i++) {
@@ -91,7 +91,7 @@ acl_filter_rule::name(const char *_name)
 }
 
 void
-acl_filter_rule::print(void)
+acl_filter_rule::print()
 {
   int i;
   printf("-----------------------------------------------------------------------------------------\n");

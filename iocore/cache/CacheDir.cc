@@ -890,7 +890,7 @@ dir_entries_used(Vol *d)
  */
 
 void
-sync_cache_dir_on_shutdown(void)
+sync_cache_dir_on_shutdown()
 {
   Debug("cache_dir_sync", "sync started");
   char *buf     = nullptr;

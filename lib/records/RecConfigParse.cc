@@ -44,7 +44,7 @@ ink_mutex g_rec_config_lock;
 // RecConfigFileInit
 //-------------------------------------------------------------------------
 void
-RecConfigFileInit(void)
+RecConfigFileInit()
 {
   ink_mutex_init(&g_rec_config_lock, nullptr);
   g_rec_config_contents_llq = create_queue();

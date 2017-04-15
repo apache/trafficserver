@@ -204,7 +204,7 @@ static const milestone milestones[] = {
 };
 
 void
-LogField::init_milestone_container(void)
+LogField::init_milestone_container()
 {
   if (m_milestone_map.empty()) {
     for (unsigned i = 0; i < countof(milestones); ++i) {

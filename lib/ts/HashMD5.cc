@@ -22,7 +22,7 @@
 #include "ts/HashMD5.h"
 #include "ts/ink_assert.h"
 
-ATSHashMD5::ATSHashMD5(void) : md_len(0), finalized(false)
+ATSHashMD5::ATSHashMD5() : md_len(0), finalized(false)
 {
   ctx     = EVP_MD_CTX_new();
   int ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
@@ -39,7 +39,7 @@ ATSHashMD5::update(const void *data, size_t len)
 }
 
 void
-ATSHashMD5::final(void)
+ATSHashMD5::final()
 {
   if (!finalized) {
     int ret = EVP_DigestFinal_ex(ctx, md_value, &md_len);
@@ -49,7 +49,7 @@ ATSHashMD5::final(void)
 }
 
 const void *
-ATSHashMD5::get(void) const
+ATSHashMD5::get() const
 {
   if (finalized) {
     return (void *)md_value;
@@ -59,13 +59,13 @@ ATSHashMD5::get(void) const
 }
 
 size_t
-ATSHashMD5::size(void) const
+ATSHashMD5::size() const
 {
   return EVP_MD_CTX_size(ctx);
 }
 
 void
-ATSHashMD5::clear(void)
+ATSHashMD5::clear()
 {
   int ret = EVP_MD_CTX_reset(ctx);
   ink_assert(ret == 1);
