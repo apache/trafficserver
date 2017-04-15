@@ -45,6 +45,11 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
     Warning("HTTP/2 client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
     return false;
   }
+
+  if (http2_drain) {
+    return false;
+  }
+
   netvc->attributes = this->options.transport_type;
 
   if (is_debug_tag_set("http2_seq")) {

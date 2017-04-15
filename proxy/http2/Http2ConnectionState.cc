@@ -919,8 +919,32 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
       }
     }
 
-    break;
-  }
+  } break;
+
+  // Initiate a gracefull shutdown
+  case HTTP2_SESSION_EVENT_SHUTDOWN_INIT: {
+    ink_assert(shutdown_state == NOT_INITIATED);
+    shutdown_state = INITIATED;
+    // [RFC 7540] 6.8.  GOAWAY
+    // A server that is attempting to gracefully shut down a
+    // connection SHOULD send an initial GOAWAY frame with the last stream
+    // identifier set to 2^31-1 and a NO_ERROR code.
+    send_goaway_frame(INT32_MAX, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+    // After allowing time for any in-flight stream creation (at least one round-trip time),
+    this_ethread()->schedule_in((Continuation *)this, HRTIME_SECONDS(2), HTTP2_SESSION_EVENT_SHUTDOWN_CONT);
+  } break;
+
+  // Continue a gracefull shutdown
+  case HTTP2_SESSION_EVENT_SHUTDOWN_CONT: {
+    ink_assert(shutdown_state == INITIATED);
+    shutdown_state = IN_PROGRESS;
+    // [RFC 7540] 6.8.  GOAWAY
+    // ..., the server can send another GOAWAY frame with an updated last stream identifier
+    send_goaway_frame(latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+    // Stop creating new streams
+    SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+    this->ua_session->set_half_close_flag(true);
+  } break;
 
   default:
     DebugHttp2Con(ua_session, "unexpected event=%d edata=%p", event, edata);
@@ -1134,7 +1158,7 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
       }
     }
 
-    if (fini_received && total_client_streams_count == 0) {
+    if ((fini_received || shutdown_state == IN_PROGRESS) && total_client_streams_count == 0) {
       // We were shutting down, go ahead and terminate the session
       ua_session->destroy();
       ua_session = nullptr;
