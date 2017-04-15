@@ -166,7 +166,7 @@ a named pipe output from |TS| instead, which is always in ASCII format, but
 doesn't have the potentially increased storage needs as there is no persistent
 storage of the log data involved (at least not by |TS| - the application
 ingesting the data is probably storing its own results somewhere). It also
-avoides unnecessary disk I/O operations if you only care about the final,
+avoids unnecessary disk I/O operations if you only care about the final,
 analyzed version of the log data and have no permanent use for the intermediate
 (and raw) output from |TS|.
 
