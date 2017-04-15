@@ -560,7 +560,10 @@ PluginVC::process_write_side(bool other_side_call)
     if (!other_side_call) {
       other_side->process_read_side(true);
     } else {
-      other_side->read_state.vio.reenable();
+      // DO NOT call reenable() here,
+      // reschedule other_side with core_lock instead of sm_lock.
+      other_side->need_read_process = true;
+      other_side->setup_event_cb(0, &other_side->core_lock_retry_event);
     }
   }
 }
@@ -676,7 +679,10 @@ PluginVC::process_read_side(bool other_side_call)
     if (!other_side_call) {
       other_side->process_write_side(true);
     } else {
-      other_side->write_state.vio.reenable();
+      // DO NOT call reenable() here,
+      // reschedule other_side with core_lock instead of sm_lock.
+      other_side->need_write_process = true;
+      other_side->setup_event_cb(0, &other_side->core_lock_retry_event);
     }
   }
 }
