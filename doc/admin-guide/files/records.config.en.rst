@@ -416,6 +416,14 @@ Thread Variables
    This setting specifies the number of active client connections
    for use by :option:`traffic_ctl server restart --drain`.
 
+.. ts:cv:: CONFIG proxy.config.stop.shutdown_timeout INT 0
+   :reloadable:
+
+   The shutdown timeout(in seconds) to apply when stopping Traffic
+   Server, in which ATS can initiate graceful shutdowns. It only supports
+   HTTP/2 graceful shutdown for now. Stopping Traffic Server here means sending
+   `traffic_server` a signal either by `bin/trafficserver stop` or `kill`.
+
 Network
 =======
 

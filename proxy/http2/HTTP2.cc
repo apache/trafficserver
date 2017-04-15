@@ -28,6 +28,8 @@
 #include "P_RecCore.h"
 #include "P_RecProcess.h"
 
+volatile bool http2_drain = false;
+
 const char *const HTTP2_CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
 // Constant strings for pseudo headers

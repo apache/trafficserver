@@ -307,6 +307,10 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     schedule_event = nullptr;
   }
 
+  if (http2_drain && this->connection_state.get_shutdown_state() == NOT_INITIATED) {
+    send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_SHUTDOWN_INIT, this);
+  }
+
   switch (event) {
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_READ_READY:

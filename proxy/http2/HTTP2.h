@@ -38,6 +38,8 @@ typedef unsigned Http2StreamId;
 // the flow control window can be come negative so we need to track it with a signed type.
 typedef int32_t Http2WindowSize;
 
+extern volatile bool http2_drain;
+
 extern const char *const HTTP2_CONNECTION_PREFACE;
 const size_t HTTP2_CONNECTION_PREFACE_LEN = 24;
 

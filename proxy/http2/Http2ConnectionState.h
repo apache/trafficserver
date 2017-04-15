@@ -38,6 +38,8 @@ enum Http2SendADataFrameResult {
   HTTP2_SEND_A_DATA_FRAME_DONE       = 3,
 };
 
+enum Http2ShutdownState { NOT_INITIATED, INITIATED, IN_PROGRESS };
+
 class Http2ConnectionSettings
 {
 public:
@@ -126,7 +128,8 @@ public:
       continued_stream_id(0),
       _scheduled(false),
       fini_received(false),
-      recursion(0)
+      recursion(0),
+      shutdown_state(NOT_INITIATED)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
@@ -265,6 +268,18 @@ public:
     }
   }
 
+  Http2ShutdownState
+  get_shutdown_state() const
+  {
+    return shutdown_state;
+  }
+
+  void
+  set_shutdown_state(Http2ShutdownState state)
+  {
+    shutdown_state = state;
+  }
+
 private:
   Http2ConnectionState(const Http2ConnectionState &);            // noncopyable
   Http2ConnectionState &operator=(const Http2ConnectionState &); // noncopyable
@@ -303,6 +318,7 @@ private:
   bool _scheduled;
   bool fini_received;
   int recursion;
+  Http2ShutdownState shutdown_state;
 };
 
 #endif // __HTTP2_CONNECTION_STATE_H__
