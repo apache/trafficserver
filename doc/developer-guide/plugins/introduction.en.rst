@@ -173,7 +173,7 @@ them into activity.
 
 A plugin may consist of just one static continuation that is called
 whenever certain events happen. Examples of such plugins include
-``blacklist_1.c``, ``basic_auth.c``, and ``redirect-1.c``.
+``blacklist_1.c``, ``basic_auth.c``, and ``redirect_1.c``.
 Alternatively, a plugin might dynamically create other continuations as
 needed. Transform plugins are built in this manner: a static parent
 continuation checks all transactions to see if any are transformable;

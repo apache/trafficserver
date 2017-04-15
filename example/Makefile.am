@@ -41,6 +41,7 @@ example_Plugins = \
 	protocol.la \
 	psi.la \
 	query_remap.la \
+	redirect_1.la \
 	remap.la \
 	remap_header_add.la \
 	replace-header.la \
@@ -121,10 +122,10 @@ statistic_la_SOURCES = statistic/statistic.cc
 thread_1_la_SOURCES = thread-1/thread-1.c
 txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
 version_la_SOURCES = version/version.c
+redirect_1_la_SOURCES = redirect_1/redirect_1.c
 
 # The following examples do not build:
 #
-# redirect_1_la_SOURCES = redirect-1/redirect-1.c
 # session_1_la_SOURCES = session-1/session-1.c
 
 cppapi_AsyncHttpFetchStreaming_la_SOURCES = cppapi/async_http_fetch_streaming/AsyncHttpFetchStreaming.cc
