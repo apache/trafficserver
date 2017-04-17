@@ -30,7 +30,7 @@
 bool
 DomainNameTree::DomainNameNode::compare(std::string key, int &relative)
 {
-  size_t star_loc = key.find("*");
+  size_t star_loc = key.find('*');
   bool is_wild    = false;
 
   if (star_loc != std::string::npos) {
@@ -89,7 +89,7 @@ DomainNameTree::find(std::string key, bool best_match)
 {
   DomainNameNode *retval = nullptr;
   DomainNameNode *first  = nullptr;
-  size_t star_loc        = key.find("*");
+  size_t star_loc        = key.find('*');
   bool is_wild           = false;
 
   if (star_loc != std::string::npos) {
@@ -152,7 +152,7 @@ DomainNameTree::insert(std::string key, void *payload, int order)
   int relative;
 
   if (node->compare(key, relative)) {
-    size_t star_loc = key.find("*");
+    size_t star_loc = key.find('*');
     bool is_wild    = false;
 
     if (star_loc != std::string::npos) {

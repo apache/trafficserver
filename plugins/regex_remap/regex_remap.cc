@@ -326,7 +326,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
   _next = nullptr;
 
   // Parse options
-  std::string::size_type start = opt.find_first_of("@");
+  std::string::size_type start = opt.find_first_of('@');
   std::string::size_type pos1, pos2;
   Override *last_override = nullptr;
 
@@ -334,7 +334,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
     std::string opt_val;
 
     ++start;
-    pos1 = opt.find_first_of("=", start);
+    pos1 = opt.find_first_of('=', start);
     pos2 = opt.find_first_of(" \t\n", pos1);
     if (pos2 == std::string::npos) {
       pos2 = opt.length();
@@ -406,7 +406,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
         TSError("[%s] Unknown options: %s", PLUGIN_NAME, opt.c_str());
       }
     }
-    start = opt.find_first_of("@", pos2);
+    start = opt.find_first_of('@', pos2);
   }
 
   return true;
