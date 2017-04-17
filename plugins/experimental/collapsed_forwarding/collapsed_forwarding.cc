@@ -56,11 +56,11 @@
 #include <ts/remap.h>
 #include <set>
 #include <string>
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdarg.h>
+#include <cstring>
+#include <cstdlib>
+#include <cstdint>
+#include <cstdio>
+#include <cstdarg>
 #include <getopt.h>
 #include <netdb.h>
 #include <map>

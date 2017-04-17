@@ -24,10 +24,10 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_assert.h"
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cstdarg>
+#include <cstdlib>
+#include <cstring>
 
 #define INK_MAX_STRING_ARRAY_SIZE 128
 

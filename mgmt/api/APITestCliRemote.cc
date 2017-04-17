@@ -95,9 +95,9 @@
 
 #include "ts/ink_config.h"
 #include "ts/ink_defs.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 #include <strings.h>
 #include "ts/ink_string.h"
 

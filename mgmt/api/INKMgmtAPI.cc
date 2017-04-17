@@ -32,7 +32,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_code.h"
 #include "ts/ParseRules.h"
-#include <limits.h>
+#include <climits>
 #include "ts/I_Layout.h"
 
 #include "mgmtapi.h"

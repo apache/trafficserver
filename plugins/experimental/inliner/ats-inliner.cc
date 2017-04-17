@@ -20,12 +20,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 #include <dlfcn.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <limits>
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
 
 #include "inliner-handler.h"

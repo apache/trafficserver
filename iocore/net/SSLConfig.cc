@@ -32,7 +32,7 @@
 #include "ts/ink_platform.h"
 #include "ts/I_Layout.h"
 
-#include <string.h>
+#include <cstring>
 #include <cmath>
 #include "P_Net.h"
 #include "P_SSLConfig.h"

@@ -17,16 +17,16 @@
  */
 
 #include <ts/ts.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <climits>
+#include <ctime>
 #include <getopt.h>
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 #include <unistd.h>
 #include <sys/param.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <set>
 #include <string>
 

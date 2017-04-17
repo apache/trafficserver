@@ -26,7 +26,7 @@
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
 #include "HttpTransactCache.h"
-#include "time.h"
+#include <ctime>
 #include "HTTP.h"
 #include "HttpCompat.h"
 #include "ts/InkErrno.h"

@@ -27,8 +27,8 @@
 #include "ts/Tokenizer.h"
 #include "ts/TextBuffer.h"
 #include "mgmtapi.h"
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include "ts/Regex.h"
 
 /// XXX Use DFA or Regex wrappers?

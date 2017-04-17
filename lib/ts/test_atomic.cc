@@ -22,8 +22,8 @@
  */
 
 #include <unistd.h>
-#include <stdlib.h>
-#include <time.h>
+#include <cstdlib>
+#include <ctime>
 #include <poll.h>
 #include <pthread.h>
 

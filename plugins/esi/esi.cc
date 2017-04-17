@@ -23,10 +23,10 @@
 
 #include "ts/ink_defs.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <climits>
+#include <cstring>
 #include <string>
 #include <list>
 #include <arpa/inet.h>

@@ -24,7 +24,7 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "dispatch.h"
 #include "fetcher.h"

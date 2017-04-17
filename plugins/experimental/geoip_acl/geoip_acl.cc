@@ -22,8 +22,8 @@
 //
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "lulu.h"
 #include "acl.h"

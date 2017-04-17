@@ -23,7 +23,7 @@
 
 #include <iostream>
 #include <utility>
-#include <string.h>
+#include <cstring>
 
 #include <ts/TestBox.h>
 

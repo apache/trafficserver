@@ -34,7 +34,7 @@
  ****************************************************************************/
 
 #include "ts/Arena.h"
-#include <stdio.h>
+#include <cstdio>
 
 void
 fill_test_data(char *ptr, int size, int seed)

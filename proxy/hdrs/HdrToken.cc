@@ -25,7 +25,7 @@
 #include "ts/HashFNV.h"
 #include "ts/Diags.h"
 #include "ts/ink_memory.h"
-#include <stdio.h>
+#include <cstdio>
 #include "ts/Allocator.h"
 #include "HTTP.h"
 #include "HdrToken.h"

@@ -34,7 +34,7 @@
 #include "ts/ink_assert.h"
 #include "ts/ink_string.h"
 
-#include <locale.h>
+#include <clocale>
 #include <sys/resource.h>
 
 /*===========================================================================*

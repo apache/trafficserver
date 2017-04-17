@@ -20,10 +20,10 @@
 #include "ts/remap.h"
 #include "ts/ink_defs.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <cctype>
+#include <cstdlib>
 #include <string>
 
 static const char PLUGIN_NAME[] = "conf_remap";

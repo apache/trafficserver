@@ -31,7 +31,7 @@
 #include "HttpSM.h"
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object - YTS Team, yamsat
 #include "HttpDebugNames.h"
-#include "time.h"
+#include <ctime>
 #include "ts/ParseRules.h"
 #include "HTTP.h"
 #include "HdrUtils.h"

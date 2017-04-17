@@ -41,7 +41,7 @@
   limitations under the License.
  */
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 
 #include "chunk-decoder.h"

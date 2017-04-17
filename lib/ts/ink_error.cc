@@ -27,7 +27,7 @@
 #include "ts/ink_stack_trace.h"
 
 #include <syslog.h>
-#include <signal.h> /* MAGIC_EDITING_TAG */
+#include <csignal> /* MAGIC_EDITING_TAG */
 
 /**
   This routine prints/logs an error message given the printf format

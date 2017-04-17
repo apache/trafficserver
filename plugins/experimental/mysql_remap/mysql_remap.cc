@@ -18,7 +18,7 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
 
 #include "mysql/mysql.h"

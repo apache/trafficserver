@@ -22,10 +22,10 @@
  */
 
 #include "balancer.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <openssl/md5.h>
 #include <netinet/in.h>
-#include <string.h>
+#include <cstring>
 #include <map>
 #include <string>
 #include <vector>

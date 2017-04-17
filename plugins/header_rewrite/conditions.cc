@@ -22,7 +22,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <ctype.h>
+#include <cctype>
 #include <sstream>
 
 #include "ts/ts.h"

@@ -22,10 +22,10 @@
 */
 
 #include "HuffmanCodec.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
 using namespace std;
 

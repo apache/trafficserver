@@ -31,15 +31,15 @@
 #include <malloc_np.h> // for malloc_usable_size
 #endif
 
-#include <assert.h>
+#include <cassert>
 #if defined(linux)
 // XXX: SHouldn't that be part of CPPFLAGS?
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
 #endif
 #endif
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 void *
 ats_malloc(size_t size)

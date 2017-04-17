@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include "ts/ink_platform.h"
 #include "ts/ink_file.h"
 #include "ts/ParseRules.h"

@@ -25,10 +25,10 @@
  * cache_scan.cc:  use TSCacheScan to print URLs and headers for objects in
  *                 the cache when endpoint /show-cache is requested
  */
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <climits>
+#include <cstdlib>
 
 #include "ts/ts.h"
 #include "ts/experimental.h"

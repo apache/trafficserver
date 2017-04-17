@@ -25,9 +25,9 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_memory.h"
 #include "ts/TsBuffer.h"
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 #include "MIME.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"

@@ -23,7 +23,7 @@
 
 #include "ink_autoconf.h"
 #include "bindings.h"
-#include <stdlib.h>
+#include <cstdlib>
 
 #if HAVE_READLINE_H
 #include <readline.h>
