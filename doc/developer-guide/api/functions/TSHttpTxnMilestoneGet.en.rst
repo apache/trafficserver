@@ -68,7 +68,7 @@ Value                                           Milestone
 :const:`TS_MILESTONE_PLUGIN_TOTAL`              Wall time while plugins were active plus start time.
 =============================================== ==========
 
-*  The server connect times predate the transmission of the `:literal:`SYN`
+*  The server connect times predate the transmission of the :literal:`SYN`
    packet. That is, before a connection to the origin server is completed.
 
 *  A connection attempt is resolved when no more connection related activity
