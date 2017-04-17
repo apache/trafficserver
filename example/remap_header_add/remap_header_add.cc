@@ -156,7 +156,7 @@ TSRemapDoRemap(void *ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSED TSRemapReque
   }
 
   for (int i = 0; i < rl->nvc; ++i) {
-    TSDebug(TAG, "Attaching header \"%s\" with value \"%s\".", rl->name[i], rl->val[i]);
+    TSDebug(TAG, R"(Attaching header "%s" with value "%s".)", rl->name[i], rl->val[i]);
 
     TSMLoc field_loc;
     if (TSMimeHdrFieldCreate(req_bufp, req_loc, &field_loc) == TS_SUCCESS) {

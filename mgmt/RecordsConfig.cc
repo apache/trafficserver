@@ -263,7 +263,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cluster.mcport", RECD_INT, "8089", RECU_DYNAMIC, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.cluster.mc_group_addr", RECD_STRING, "224.0.1.37", RECU_DYNAMIC, RR_REQUIRED, RECC_IP, "[0-255]\\.[0-255]\\.[0-255]\\.[0-255]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cluster.mc_group_addr", RECD_STRING, "224.0.1.37", RECU_DYNAMIC, RR_REQUIRED, RECC_IP, R"([0-255]\.[0-255]\.[0-255]\.[0-255])", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cluster.mc_ttl", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -1303,7 +1303,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.wire_trace_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.wire_trace_addr", RECD_STRING, nullptr , RECU_DYNAMIC, RR_NULL, RECC_IP, "[0-255]\\.[0-255]\\.[0-255]\\.[0-255]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.wire_trace_addr", RECD_STRING, nullptr , RECU_DYNAMIC, RR_NULL, RECC_IP, R"([0-255]\.[0-255]\.[0-255]\.[0-255])", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.wire_trace_percentage", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
   ,
