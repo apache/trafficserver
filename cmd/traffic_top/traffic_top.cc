@@ -221,7 +221,7 @@ help(const string &host, const string &version)
 {
   timeout(1000);
 
-  while (1) {
+  while (true) {
     clear();
     time_t now       = time(nullptr);
     struct tm *nowtm = localtime(&now);
@@ -447,7 +447,7 @@ main(int argc, char **argv)
   Page page       = MAIN_PAGE;
   string page_alt = "(r)esponse";
 
-  while (1) {
+  while (true) {
     attron(COLOR_PAIR(colorPair::border));
     attron(A_BOLD);
 

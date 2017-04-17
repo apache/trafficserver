@@ -204,7 +204,7 @@ HdrHeap::allocate_obj(int nbytes, int type)
 
   HdrHeap *h = this;
 
-  while (1) {
+  while (true) {
     if ((unsigned)nbytes <= (h->m_free_size)) {
       new_space = h->m_free_start;
       h->m_free_start += nbytes;

@@ -1443,8 +1443,8 @@ UnixNetVConnection::free(EThread *t)
   // clear variables for reuse
   this->mutex.clear();
   action_.mutex.clear();
-  got_remote_addr = 0;
-  got_local_addr  = 0;
+  got_remote_addr = false;
+  got_local_addr  = false;
   attributes      = 0;
   read.vio.mutex.clear();
   write.vio.mutex.clear();

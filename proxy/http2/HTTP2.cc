@@ -463,7 +463,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     memcpy(url + scheme_len, "://", 3);
     memcpy(url + scheme_len + 3, authority, authority_len);
     memcpy(url + scheme_len + 3 + authority_len, path, path_len);
-    url_parse(headers->m_heap, headers->m_http->u.req.m_url_impl, &url_start, url + url_length, 1);
+    url_parse(headers->m_heap, headers->m_http->u.req.m_url_impl, &url_start, url + url_length, true);
     arena.str_free(url);
 
     // Get value of :method
@@ -471,7 +471,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
       method = field->value_get(&method_len);
 
       int method_wks_idx = hdrtoken_tokenize(method, method_len);
-      http_hdr_method_set(headers->m_heap, headers->m_http, method, method_wks_idx, method_len, 0);
+      http_hdr_method_set(headers->m_heap, headers->m_http, method, method_wks_idx, method_len, false);
     } else {
       return PARSE_RESULT_ERROR;
     }

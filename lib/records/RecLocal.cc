@@ -65,7 +65,7 @@ sync_thr(void *data)
   TextBuffer *tb           = new TextBuffer(65536);
   FileManager *configFiles = (FileManager *)data;
 
-  while (1) {
+  while (true) {
     bool inc_version;
     RecBool disabled = false;
     RecBool check    = true;

@@ -89,11 +89,11 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         }
       }
       if (update_key == od->single_doc_key && (total_len || !vec))
-        od->move_resident_alt = 0;
+        od->move_resident_alt = false;
     }
     if (cache_config_http_max_alts > 1 && write_vector->count() >= cache_config_http_max_alts && alternate_index < 0) {
       if (od->move_resident_alt && get_alternate_index(write_vector, od->single_doc_key) == 0)
-        od->move_resident_alt = 0;
+        od->move_resident_alt = false;
       write_vector->remove(0, true);
     }
     if (vec) {
@@ -122,7 +122,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         // for multiple fragment document, we must have done
         // CacheVC:openWriteCloseDataDone
         ink_assert(!fragment || f.data_done);
-        od->move_resident_alt  = 0;
+        od->move_resident_alt  = false;
         f.rewrite_resident_alt = 1;
         write_len              = doc->data_len();
         Debug("cache_update_alt", "rewriting resident alt size: %d key: %X, first_key: %X", write_len, doc->key.slice32(0),
@@ -130,7 +130,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       }
     }
     header_len      = write_vector->marshal_length();
-    od->writing_vec = 1;
+    od->writing_vec = true;
     f.use_first_key = 1;
     SET_HANDLER(&CacheVC::openWriteCloseHeadDone);
     ret = do_write_call();
@@ -352,7 +352,7 @@ Vol::aggWriteDone(int event, Event *e)
     }
   }
   if (dir_sync_waiting) {
-    dir_sync_waiting = 0;
+    dir_sync_waiting = false;
     cacheDirSync->handleEvent(EVENT_IMMEDIATE, nullptr);
   }
   if (agg.head || sync.head)
@@ -1129,7 +1129,7 @@ CacheVC::openWriteCloseHeadDone(int event, Event *e)
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
     if (!lock.is_locked())
       VC_LOCK_RETRY_EVENT();
-    od->writing_vec = 0;
+    od->writing_vec = false;
     if (!io.ok())
       goto Lclose;
     ink_assert(f.use_first_key);
@@ -1143,13 +1143,13 @@ CacheVC::openWriteCloseHeadDone(int event, Event *e)
         if (od->move_resident_alt) {
           if (dir_valid(vol, &od->single_doc_dir))
             dir_insert(&od->single_doc_key, vol, &od->single_doc_dir);
-          od->move_resident_alt = 0;
+          od->move_resident_alt = false;
         }
       }
       od->first_dir = dir;
       if (frag_type == CACHE_FRAG_TYPE_HTTP && f.single_fragment) {
         // fragment is tied to the vector
-        od->move_resident_alt = 1;
+        od->move_resident_alt = true;
         if (!f.rewrite_resident_alt) {
           od->single_doc_key = earliest_key;
         }
@@ -1490,7 +1490,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
       first_dir     = dir;
       if (doc->single_fragment()) {
         // fragment is tied to the vector
-        od->move_resident_alt = 1;
+        od->move_resident_alt = true;
         od->single_doc_key    = doc->key;
         dir_assign(&od->single_doc_dir, &dir);
         dir_set_tag(&od->single_doc_dir, od->single_doc_key.slice32(2));
@@ -1512,7 +1512,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
     }
     // check for collision
     if (dir_probe(&first_key, vol, &dir, &last_collision)) {
-      od->reading_vec = 1;
+      od->reading_vec = true;
       int ret         = do_read_call(&first_key);
       if (ret == EVENT_RETURN)
         goto Lcallreturn;
@@ -1524,7 +1524,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
     }
   }
 Lsuccess:
-  od->reading_vec = 0;
+  od->reading_vec = false;
   if (_action.cancelled)
     goto Lcancel;
   SET_HANDLER(&CacheVC::openWriteMain);
@@ -1535,7 +1535,7 @@ Lfailure:
   _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-err);
 Lcancel:
   if (od) {
-    od->reading_vec = 0;
+    od->reading_vec = false;
     return openWriteCloseDir(event, e);
   } else
     return free_CacheVC(this);
@@ -1731,7 +1731,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
         // document doesn't exist, begin write
         goto Lmiss;
       } else {
-        c->od->reading_vec = 1;
+        c->od->reading_vec = true;
         // document exists, read vector
         SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteStartDone);
         switch (c->do_read_call(&c->first_key)) {

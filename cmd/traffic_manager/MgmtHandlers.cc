@@ -252,7 +252,7 @@ mgmt_synthetic_main(void *)
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, "Healthcheck service failed to initialize");
   }
 
-  while (1) {
+  while (true) {
     struct sockaddr_in clientInfo; // Info about client connection
     socklen_t addrLen = sizeof(clientInfo);
 

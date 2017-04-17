@@ -871,7 +871,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
           // the evacuator changes the od->first_dir to the new directory
           // that it inserted
           od->first_dir   = first_dir;
-          od->writing_vec = 1;
+          od->writing_vec = true;
           earliest_key    = zero_key;
 
           // set up this VC as a alternate delete write_vc
@@ -884,7 +884,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
           // when another alternate does not exist.                      //
           /////////////////////////////////////////////////////////////////
           if (doc1->total_len > 0) {
-            od->move_resident_alt = 1;
+            od->move_resident_alt = true;
             od->single_doc_key    = doc1->key;
             dir_assign(&od->single_doc_dir, &dir);
             dir_set_tag(&od->single_doc_dir, od->single_doc_key.slice32(2));
@@ -923,7 +923,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
   cancel_trigger();
   set_io_not_in_progress();
   ink_assert(od);
-  od->writing_vec = 0;
+  od->writing_vec = false;
   if (_action.cancelled)
     return openWriteCloseDir(EVENT_IMMEDIATE, nullptr);
   {

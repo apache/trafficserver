@@ -994,7 +994,7 @@ RecWriteConfigFile(TextBuffer *tb)
     }
 
     result = REC_ERR_OKAY;
-  } while (0);
+  } while (false);
 
   if (h_file != REC_HANDLE_INVALID) {
     RecFileClose(h_file);

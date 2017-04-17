@@ -717,7 +717,7 @@ HttpTransact::StartRemapRequest(State *s)
 
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans")) {
     DebugTxn("http_trans", "Before Remapping:");
-    obj_describe(s->hdr_info.client_request.m_http, 1);
+    obj_describe(s->hdr_info.client_request.m_http, true);
   }
 
   if (url_remap_mode == URL_REMAP_DEFAULT || url_remap_mode == URL_REMAP_ALL) {
@@ -867,7 +867,7 @@ done:
 
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
     DebugTxn("http_trans", "After Remapping:");
-    obj_describe(s->hdr_info.client_request.m_http, 1);
+    obj_describe(s->hdr_info.client_request.m_http, true);
   }
 
   /*
@@ -1210,7 +1210,7 @@ HttpTransact::HandleRequest(State *s)
   DebugTxn("http_seq", "[HttpTransact::HandleRequest] request valid.");
 
   if (is_debug_tag_set("http_chdr_describe")) {
-    obj_describe(s->hdr_info.client_request.m_http, 1);
+    obj_describe(s->hdr_info.client_request.m_http, true);
   }
 
   // at this point we are guaranteed that the request is good and acceptable.
@@ -1347,7 +1347,7 @@ HttpTransact::HandleRequest(State *s)
   if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' &&
       (!s->state_machine->enable_redirection || !s->redirect_info.redirect_in_process) &&
       s->parent_params->parent_table->hostMatch) {
-    s->force_dns = 1;
+    s->force_dns = true;
   }
   /* A redirect means we need to check some things again.
      If the cache is enabled then we need to check the new (redirected) request against the cache.
@@ -7971,7 +7971,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
               field = base_response->field_find(fields[i].name, fields[i].len);
               ink_assert(field != nullptr);
               value = field->value_get(&len);
-              outgoing_response->value_append(fields[i].name, fields[i].len, value, len, 0);
+              outgoing_response->value_append(fields[i].name, fields[i].len, value, len, false);
             }
           }
         }

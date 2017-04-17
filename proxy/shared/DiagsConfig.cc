@@ -73,13 +73,13 @@ DiagsConfig::reconfigure_diags()
 
   e = (int)REC_readInteger("proxy.config.diags.debug.enabled", &found);
   if (e && found) {
-    c.enabled[DiagsTagType_Debug] = 1; // implement OR logic
+    c.enabled[DiagsTagType_Debug] = true; // implement OR logic
   }
   all_found = all_found && found;
 
   e = (int)REC_readInteger("proxy.config.diags.action.enabled", &found);
   if (e && found) {
-    c.enabled[DiagsTagType_Action] = 1; // implement OR logic
+    c.enabled[DiagsTagType_Action] = true; // implement OR logic
   }
   all_found = all_found && found;
 
@@ -224,16 +224,16 @@ DiagsConfig::config_diags_norecords()
 
   if (diags->base_debug_tags) {
     diags->activate_taglist(diags->base_debug_tags, DiagsTagType_Debug);
-    c.enabled[DiagsTagType_Debug] = 1;
+    c.enabled[DiagsTagType_Debug] = true;
   } else {
-    c.enabled[DiagsTagType_Debug] = 0;
+    c.enabled[DiagsTagType_Debug] = false;
   }
 
   if (diags->base_action_tags) {
     diags->activate_taglist(diags->base_action_tags, DiagsTagType_Action);
-    c.enabled[DiagsTagType_Action] = 1;
+    c.enabled[DiagsTagType_Action] = true;
   } else {
-    c.enabled[DiagsTagType_Action] = 0;
+    c.enabled[DiagsTagType_Action] = false;
   }
 
 #if !defined(__GNUC__)

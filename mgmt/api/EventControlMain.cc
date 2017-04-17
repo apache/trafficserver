@@ -62,7 +62,7 @@ new_event_client()
 
   // now set the alarms registered section
   for (int i = 0; i < NUM_EVENTS; i++) {
-    ele->events_registered[i] = 0;
+    ele->events_registered[i] = false;
   }
 
   ele->adr = (struct sockaddr *)ats_malloc(sizeof(struct sockaddr));
@@ -274,7 +274,7 @@ event_callback_main(void *arg)
   int fds_ready;                       // return value for select go here
   struct timeval timeout;
 
-  while (1) {
+  while (true) {
     // LINUX fix: to prevent hard-spin reset timeout on each loop
     timeout.tv_sec  = 1;
     timeout.tv_usec = 0;

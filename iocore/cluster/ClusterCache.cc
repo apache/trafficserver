@@ -176,7 +176,7 @@ public:
     INK_MD5 key;
     ClusterVConnection *vc;
 
-    Entry() : mark_for_delete(0), vc(nullptr) {}
+    Entry() : mark_for_delete(false), vc(nullptr) {}
     ~Entry() {}
   };
 
@@ -2216,9 +2216,9 @@ retry:
 
         have_all_data = pToken->is_clear(); // no conn implies all data
         if (have_all_data) {
-          read_cluster_vc->have_all_data = 1;
+          read_cluster_vc->have_all_data = true;
         } else {
-          read_cluster_vc->have_all_data = 0;
+          read_cluster_vc->have_all_data = false;
         }
         // Move CacheHTTPInfo reply data into VC
         read_cluster_vc->marshal_buf = this->getMsgBufferIOBData();

@@ -624,7 +624,7 @@ RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, ui
       return 0;
     }
   }
-  while (1) {
+  while (true) {
     victim = lru[0].dequeue();
     if (!victim) {
       if (bytes + size <= max_bytes)

@@ -380,7 +380,7 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
   }
 #endif // CLUSTER_TEST
 
-  while (1) {
+  while (true) {
     // If we are out of our depth, fail
     //
     if (probe_depth > CONFIGURATION_HISTORY_PROBE_DEPTH)

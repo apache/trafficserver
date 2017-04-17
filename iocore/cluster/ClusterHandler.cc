@@ -162,7 +162,7 @@ ClusterHandler::ClusterHandler()
     last_cluster_op_enable(0),
     last_trace_dump(0),
     clm(nullptr),
-    disable_remote_cluster_ops(0),
+    disable_remote_cluster_ops(false),
     pw_write_descriptors_built(0),
     pw_freespace_descriptors_built(0),
     pw_controldata_descriptors_built(0),
@@ -2436,7 +2436,7 @@ ClusterHandler::mainClusterEvent(int event, Event *e)
 
   while (io_activity) {
     io_activity             = 0;
-    only_write_control_msgs = 0;
+    only_write_control_msgs = false;
 
     if (downing) {
       machine_down();

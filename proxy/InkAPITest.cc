@@ -5910,7 +5910,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
     SDK_RPRINT(data->test, "TSHttpTxnHookAdd", "TestCase2", TC_PASS, "ok");
     data->test_passed_txn_hook_add++;
     txnp = (TSHttpTxn)edata;
-    if (1) {
+    if (true) {
       char *temp = TSstrdup(ERROR_BODY);
       TSHttpTxnErrorBodySet(txnp, temp, strlen(temp), nullptr);
     }

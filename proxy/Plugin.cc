@@ -255,7 +255,7 @@ plugin_init(bool validateOnly)
     }
 
     // not comment or blank, so rip line into tokens
-    while (1) {
+    while (true) {
       if (argc >= MAX_PLUGIN_ARGS) {
         Warning("Exceeded max number of args (%d) for plugin: [%s]", MAX_PLUGIN_ARGS, argc > 0 ? argv[0] : "???");
         break;
