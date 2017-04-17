@@ -47,6 +47,7 @@ The continuation is scheduled for a particular thread selected from a group of s
 =========================== =======================================================================================
 Pool                        Properties
 =========================== =======================================================================================
+``TS_THREAD_POOL_DEFAULT``  Use the default pool. Continuations using this must not block.
 ``TS_THREAD_POOL_NET``      Transaction processing threads. Continuations on these threads must not block.
 ``TS_THREAD_POOL_TASK``     Background threads. Continuations can perform blocking operations.
 ``TS_THREAD_POOL_SSL``      *DEPRECATED* - these are no longer used as of ATS 6.

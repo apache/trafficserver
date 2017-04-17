@@ -44,7 +44,7 @@ Description
 A plugin statistic is created by :func:`TSStatCreate`. The :arg:`name` must be globally unique and
 should follow the standard dotted tag form. To avoid collisions and for easy of use the first tag
 should be the plugin name or something easily derived from it. Currently only integers are suppored
-therefore :arg:`type` must be :macro:`TS_RECORDTYPE_INT`. The return value is the index of the
+therefore :arg:`type` must be :macro:`TS_RECORD_DATATYPE_INT`. The return value is the index of the
 statistic. In general thsi should work but if it doesn't it will :code:`assert`. In particular,
 creating the same statistic twice will fail in this way, which can happen if statistics are created
 as part of or based on configuration files and |TS| is reloaded.
