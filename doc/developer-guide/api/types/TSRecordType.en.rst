@@ -30,6 +30,8 @@ Synopsis
 
    .. c:macro:: TS_RECORDTYPE_NULL
 
+      Invalid value. This is used to indicate a failure or for initialization.
+
    .. c:macro:: TS_RECORDTYPE_CONFIG
 
       A configuration record.

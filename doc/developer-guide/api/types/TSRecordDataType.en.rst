@@ -56,6 +56,26 @@ Synopsis
 
       Unknown.
 
+.. c:type:: TSRecordData
+
+   A union that holds the data for a record. The correct member is indicated by a :c:type:`TSRecordType` value.
+
+   .. c:member:: int rec_int
+
+      Data for :c:macro:`TS_RECORDDATATYPE_INT`.
+
+   .. c:member:: float rec_float
+
+      Data for :c:macro:`TS_RECORDDATATYPE_FLOAT`.
+
+   .. c:member:: char * rec_string
+
+      Data for :c:macro:`TS_RECORDDATATYPE_STRING`.
+
+   .. c:member:: int64_t rec_counter
+
+      Data for :c:macro:`TS_RECORDDATATYPE_COUNTER`.
+
 Description
 ===========
 

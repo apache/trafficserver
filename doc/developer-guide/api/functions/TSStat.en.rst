@@ -38,13 +38,16 @@ Synopsis
 .. function:: void TSStatIntIncrement(int idx, TSMgmtInt value)
 .. function:: void TSStatIntDecrement(int idx, TSMgmtInt value)
 
+.. type:: void ( * TSRecordDumpCb) ( TSRecordType * type, void * edata, int registered, const char * name, TSRecordDataType type, TSRecordData * datum)
+.. function:: void TSRecordDump(TSRecordType rect_type, TSRecordDumpCb callback, void * edata)
+
 Description
 ===========
 
 A plugin statistic is created by :func:`TSStatCreate`. The :arg:`name` must be globally unique and
 should follow the standard dotted tag form. To avoid collisions and for easy of use the first tag
 should be the plugin name or something easily derived from it. Currently only integers are suppored
-therefore :arg:`type` must be :macro:`TS_RECORD_DATATYPE_INT`. The return value is the index of the
+therefore :arg:`type` must be :macro:`TS_RECORDDATATYPE_INT`. The return value is the index of the
 statistic. In general thsi should work but if it doesn't it will :code:`assert`. In particular,
 creating the same statistic twice will fail in this way, which can happen if statistics are created
 as part of or based on configuration files and |TS| is reloaded.
@@ -56,6 +59,29 @@ statistic. Otherwise it returns ``TS_ERROR``.
 The values in statistics are manipulated by :func:`TSStatIntSet` to set the statistic directly,
 :func:`TSStatIntIncrement` to increase it by :arg:`value`, and :func:`TSStatIntDecrement` to
 decrease it by :arg:`value`.
+
+A group of records can be examined via :func:`TSRecordDump`. A set of records is specified and the
+iterated over. For each record in the set the callbac :arg:`callback` is invoked.
+
+The records are specified by the :c:type:`TSRecordType`. This this is :c:macro:`TS_RECORDTYPE_NULL` then all records are examined. The callback is passed
+
+   :arg:`type`
+      The record type.
+
+   :arg:`edata`
+      Callback context. This is the :arg:`edata` value passed to :c:func:`TSRecordDump`.
+
+   :arg:`registered`
+      A flag indicating if the value has been registered.
+
+   :arg:`name`
+      The name of the record. This is nul terminated.
+
+   :arg:`type`
+      The storage type of the data in the record.
+
+   :arg:`datum`
+      The record data.
 
 Return Values
 =============

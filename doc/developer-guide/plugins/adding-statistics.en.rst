@@ -40,4 +40,4 @@ with :c:func:`TSStatIntSet`, and increment it with :c:func:`TSStatIntIncrement` 
    :language: c
    :lines: 30-
 
-:func:`TSStatFind` can be used to check if the statistic already exists or to provide a generic interface to statistics. In the example above you can see the code first verifies the statistic does not already exist before creating it. In general, though, this should be handled by not executing the registration code twice. If done only from plugin initialization then this will be the case. It can be the case however that statistics are based on configuration data which may be reloaded and the check must be done.
+:c:func:`TSStatFindName` can be used to check if the statistic already exists or to provide a generic interface to statistics. In the example above you can see the code first verifies the statistic does not already exist before creating it. In general, though, this should be handled by not executing the registration code twice. If done only from plugin initialization then this will be the case. It can be the case however that statistics are based on configuration data which may be reloaded and the check must be done.
