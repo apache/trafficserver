@@ -108,7 +108,7 @@ getKeyQuery(const char *query, int length, const ConfigQuery &config)
   T container;
 
   while (std::getline(istr, token, '&')) {
-    String::size_type pos(token.find_first_of("="));
+    String::size_type pos(token.find_first_of('='));
     String param(token.substr(0, pos == String::npos ? token.size() : pos));
 
     if (config.toBeAdded(param)) {
@@ -458,7 +458,7 @@ CacheKey::appendCookies(const ConfigCookies &config)
       while (std::getline(istr, cookie, ';')) {
         ::ltrim(cookie); // Trim leading spaces.
 
-        String::size_type pos(cookie.find_first_of("="));
+        String::size_type pos(cookie.find_first_of('='));
         String name(cookie.substr(0, pos == String::npos ? cookie.size() : pos));
 
         /* We only add it to the cache key it is in the cookie set. */

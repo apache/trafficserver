@@ -101,7 +101,7 @@ namespace inliner
     }
 
     const bool isTagged =
-      (src.find("http://") == 0 || src.find("https://") == 0) && src.find("inline", src.find("#")) != std::string::npos;
+      (src.find("http://") == 0 || src.find("https://") == 0) && src.find("inline", src.find('#')) != std::string::npos;
 
     if (isTagged) {
       std::string classes, original = " ";

@@ -86,7 +86,7 @@ Pattern::init(const String &config)
     size_t next    = 1;
     do {
       current = next + 1;
-      next    = config.find_first_of("/", current);
+      next    = config.find_first_of('/', current);
     } while (next != String::npos && '\\' == config[next - 1]);
 
     if (next != String::npos) {
@@ -100,7 +100,7 @@ Pattern::init(const String &config)
     start = next + 1;
     do {
       current = next + 1;
-      next    = config.find_first_of("/", current);
+      next    = config.find_first_of('/', current);
     } while (next != String::npos && '\\' == config[next - 1]);
 
     if (next != String::npos) {

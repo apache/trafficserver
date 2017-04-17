@@ -358,7 +358,7 @@ Variables::_parseCookieString(const char *str, int str_len)
   Utils::parseAttributes(str, str_len, cookies, ";,");
   for (AttributeList::iterator iter = cookies.begin(); iter != cookies.end(); ++iter) {
     std::string cookie = iter->name;
-    size_t pos         = cookie.find("=");
+    size_t pos         = cookie.find('=');
 
     if (pos != std::string::npos) {
       cookie = cookie.substr(0, pos);
