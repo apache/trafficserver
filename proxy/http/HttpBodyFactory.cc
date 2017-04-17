@@ -810,7 +810,7 @@ HttpBodySet::init(char *set, char *dir)
 
   lineno = 0;
 
-  while (1) {
+  while (true) {
     char *name_s, *name_e, *value_s, *value_e, *hash;
 
     ++lineno;

@@ -998,7 +998,7 @@ pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec *sspec)
         }
       }
     }
-  } while (0);
+  } while (false);
 
   str = ats_strdup(buf);
   return str;

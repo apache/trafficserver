@@ -519,7 +519,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
     return EVENT_CONT; // try again later
   }
 
-  while (1) { // loop forever
+  while (true) { // loop forever
 
     switch (s->_next_state) {
     case READ_ACTIVE: {
@@ -1128,7 +1128,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
   ICPConfiguration *ICPcf = _ICPpr->GetConfig();
   ip_port_text_buffer ipb;
 
-  while (1) { // loop forever
+  while (true) { // loop forever
 
     switch (_next_state) {
     case ICP_START: {
@@ -2182,7 +2182,7 @@ ICPProcessor::ReconfigureStateMachine(ReconfigState_t s, int gconfig_changed, in
   ink_assert(_ICPConfig->HaveLock());
   int reconfig_status;
 
-  while (1) {
+  while (true) {
     switch (s) {
     case RC_RECONFIG: {
       if (!Lock()) {

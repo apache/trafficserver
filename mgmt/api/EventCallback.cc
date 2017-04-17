@@ -182,7 +182,7 @@ get_events_with_callbacks(CallbackTable *cb_table)
 TSMgmtError
 cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignalFunc func, void *data, bool *first_cb)
 {
-  bool first_time = 0;
+  bool first_time = false;
   int id;
   EventCallbackT *event_cb; // create new EventCallbackT EACH TIME enqueue
 
@@ -199,7 +199,7 @@ cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignal
     for (int i = 0; i < NUM_EVENTS; i++) {
       if (!cb_table->event_callback_l[i]) {
         cb_table->event_callback_l[i] = create_queue();
-        first_time                    = 1;
+        first_time                    = true;
       }
 
       if (!cb_table->event_callback_l[i]) {
@@ -216,7 +216,7 @@ cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignal
     if (id != -1) {
       if (!cb_table->event_callback_l[id]) {
         cb_table->event_callback_l[id] = create_queue();
-        first_time                     = 1;
+        first_time                     = true;
       }
 
       if (!cb_table->event_callback_l[id]) {

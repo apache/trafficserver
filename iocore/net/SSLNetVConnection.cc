@@ -471,7 +471,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       // the client hello message back into the standard read.vio
       // so it will get forwarded onto the origin server
       if (!this->getSSLHandShakeComplete()) {
-        this->sslHandShakeComplete = 1;
+        this->sslHandShakeComplete = true;
 
         // Copy over all data already read in during the SSL_accept
         // (the client hello message)
@@ -850,8 +850,8 @@ SSLNetVConnection::do_io_close(int lerrno)
 void
 SSLNetVConnection::free(EThread *t)
 {
-  got_remote_addr = 0;
-  got_local_addr  = 0;
+  got_remote_addr = false;
+  got_local_addr  = false;
   read.vio.mutex.clear();
   write.vio.mutex.clear();
   this->mutex.clear();
@@ -950,7 +950,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       // directly into blind tunnel mode
       if (cc && SSLCertContext::OPT_TUNNEL == cc->opt && this->is_transparent) {
         this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-        sslHandShakeComplete = 1;
+        sslHandShakeComplete = true;
         SSL_free(this->ssl);
         this->ssl = nullptr;
         return EVENT_DONE;
@@ -1072,7 +1072,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // over the buffered handshake packets to the O.S.
     return EVENT_DONE;
   } else if (SSL_HOOK_OP_TERMINATE == hookOpRequested) {
-    sslHandShakeComplete = 1;
+    sslHandShakeComplete = true;
     return EVENT_DONE;
   }
 
@@ -1102,7 +1102,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
       SSLDebugVC(this, "Data does not look like SSL handshake, starting blind tunnel");
       this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      sslHandShakeComplete = 0;
+      sslHandShakeComplete = false;
       return EVENT_CONT;
     }
   }
@@ -1210,7 +1210,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 #if defined(SSL_ERROR_WANT_SNI_RESOLVE) || defined(SSL_ERROR_WANT_X509_LOOKUP)
     if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || SSL_HOOK_OP_TUNNEL == hookOpRequested) {
       this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      sslHandShakeComplete = 0;
+      sslHandShakeComplete = false;
       return EVENT_CONT;
     } else {
       //  Stopping for some other reason, perhaps loading certificate

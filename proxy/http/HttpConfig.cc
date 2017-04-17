@@ -1476,7 +1476,7 @@ HttpConfig::parse_ports_list(char *ports_string)
 
     start = ports_string;
 
-    while (1) { // eat whitespace
+    while (true) { // eat whitespace
       while ((start[0] != '\0') && ParseRules::is_space(start[0])) {
         start++;
       }

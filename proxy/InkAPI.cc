@@ -3053,7 +3053,7 @@ TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
     return TS_NULL_MLOC;
   }
 
-  while (1) {
+  while (true) {
     ++slotnum;
     MIMEField *f = mime_hdr_field_get_slotnum(handle->mh, slotnum);
 
@@ -3172,7 +3172,7 @@ TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
    * An empty string is also considered to be a token. The correct value of
    * the field after this function should be NULL.
    */
-  mime_field_value_set(heap, handle->mh, handle->field_ptr, nullptr, 0, 1);
+  mime_field_value_set(heap, handle->mh, handle->field_ptr, nullptr, 0, true);
   return TS_SUCCESS;
 }
 

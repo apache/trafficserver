@@ -118,7 +118,7 @@ do_mysql_remap(TSCont contp, TSHttpTxn txnp)
     TSUrlHostSet(reqp, url_loc, row[1], -1);
     TSUrlSchemeSet(reqp, url_loc, row[0], -1);
     TSUrlPortSet(reqp, url_loc, atoi(row[2]));
-  } while (0);
+  } while (false);
 
   ret_val = true;
 

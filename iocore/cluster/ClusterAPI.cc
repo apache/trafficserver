@@ -214,7 +214,7 @@ ClusterAPIPeriodicSM::GetNextSM()
   MachineStatusSM *msmp;
   MachineStatusSM *msmp_next;
 
-  while (1) {
+  while (true) {
     msmp = status_callout_q.pop();
     if (!msmp) {
       msmp = (MachineStatusSM *)ink_atomiclist_popall(&status_callout_atomic_q);
@@ -242,7 +242,7 @@ ClusterAPIPeriodicSM::ClusterAPIPeriodicSMEvent(int e, void *d)
   // Maintain node status event order by serializing the processing.
   int ret;
 
-  while (1) {
+  while (true) {
     if (_active_msmp) {
       ret = _active_msmp->handleEvent(e, d);
       if (ret != EVENT_DONE) {
