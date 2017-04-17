@@ -61,7 +61,7 @@ static void
 print_feature(const char *name, const char *value, bool json, bool last = false)
 {
   if (json) {
-    printf("    \"%s\": \"%s\"%s", name, value, last ? "\n" : ",\n");
+    printf(R"(    "%s": "%s"%s)", name, value, last ? "\n" : ",\n");
   } else {
     printf("#define %s \"%s\"\n", name, value);
   }
@@ -133,7 +133,7 @@ static void
 print_var(const char *name, char *value, bool json, bool free = true, bool last = false)
 {
   if (json) {
-    printf("    \"%s\": \"%s\"%s", name, value, last ? "\n" : ",\n");
+    printf(R"(    "%s": "%s"%s)", name, value, last ? "\n" : ",\n");
   } else {
     printf("%s: %s\n", name, value);
   }

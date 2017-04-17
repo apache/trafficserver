@@ -258,7 +258,7 @@ test_encoding(const string filename_in, const string filename_out)
             break;
           }
           pack(encoded, written, packed);
-          ofs << "      \"wire\": \"" << packed << "\"" << endl;
+          ofs << R"(      "wire": ")" << packed << "\"" << endl;
           ofs << "    }," << endl;
         }
         // Prepare for next sequence
@@ -303,13 +303,13 @@ test_encoding(const string filename_in, const string filename_out)
     return result;
   }
   pack(encoded, written, packed);
-  ofs << "      \"wire\": \"" << packed << "\"" << endl;
+  ofs << R"(      "wire": ")" << packed << "\"" << endl;
   ofs << "    }" << endl;
   decoded.destroy();
   original.destroy();
 
   ofs << "  ]," << endl;
-  ofs << "  \"description\": \"Apache Traffic Server\"" << endl;
+  ofs << R"(  "description": "Apache Traffic Server")" << endl;
   ofs << "}" << endl;
 
   return result;
