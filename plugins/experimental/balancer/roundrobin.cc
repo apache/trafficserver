@@ -22,8 +22,8 @@
  */
 
 #include "balancer.h"
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <map>
 #include <string>
 #include <vector>

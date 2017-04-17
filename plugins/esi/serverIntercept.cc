@@ -25,9 +25,9 @@
 #include "serverIntercept.h"
 
 #include <string>
-#include <limits.h>
+#include <climits>
 #include <strings.h>
-#include <stdio.h>
+#include <cstdio>
 
 const char *ECHO_HEADER_PREFIX        = "Echo-";
 const int ECHO_HEADER_PREFIX_LEN      = 5;

@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <ts/ts.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -31,9 +31,9 @@
 #include <sys/stat.h>
 #include <getopt.h>
 #include <fcntl.h>
-#include <limits.h>
-#include <string.h>
-#include <errno.h>
+#include <climits>
+#include <cstring>
+#include <cerrno>
 #include <sys/time.h>
 #include <arpa/inet.h>
 

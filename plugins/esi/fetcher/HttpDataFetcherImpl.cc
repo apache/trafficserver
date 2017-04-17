@@ -26,7 +26,7 @@
 #include "lib/gzip.h"
 
 #include <arpa/inet.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 using std::string;
 using namespace EsiLib;

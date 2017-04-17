@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "ts/ts.h"
 #include "ts/ink_defs.h"

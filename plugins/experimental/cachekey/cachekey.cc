@@ -21,8 +21,8 @@
  * @brief Cache key manipulation.
  */
 
-#include <string.h> /* strlen() */
-#include <sstream>  /* istringstream */
+#include <cstring> /* strlen() */
+#include <sstream> /* istringstream */
 #include "cachekey.h"
 
 static void

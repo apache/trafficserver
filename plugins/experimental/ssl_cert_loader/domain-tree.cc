@@ -20,9 +20,9 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include <stdio.h>
+#include <cstdio>
 #include <memory.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include "domain-tree.h"
 
 // return true if comparable.  Return type of compare in relative parameter

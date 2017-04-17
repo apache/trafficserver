@@ -37,7 +37,7 @@
 #include <unordered_set>
 #include <iostream>
 #include <algorithm>
-#include <inttypes.h>
+#include <cinttypes>
 #include <openssl/ssl.h>
 #include <fcntl.h>
 #include <sys/types.h>

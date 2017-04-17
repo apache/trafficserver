@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include <stdio.h>
+#include <cstdio>
 #include "StubIncludeHandler.h"
 #include "TestHttpDataFetcher.h"
 

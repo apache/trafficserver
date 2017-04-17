@@ -28,9 +28,9 @@
  ***************************************************************************/
 #include "ts/ink_config.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
 
 #include "ts/INK_MD5.h"
 

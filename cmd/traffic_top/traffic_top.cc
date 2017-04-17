@@ -25,10 +25,10 @@
 #include <map>
 #include <list>
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <iostream>
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
 #include <unistd.h>
 #include <getopt.h>
 

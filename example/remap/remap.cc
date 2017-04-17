@@ -29,11 +29,11 @@
     # tsxs -i -o remap.so
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <errno.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cstdarg>
+#include <cerrno>
 #include <pwd.h>
 #include <pthread.h>
 #include <unistd.h>

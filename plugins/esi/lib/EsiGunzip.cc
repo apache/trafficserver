@@ -23,8 +23,8 @@
 
 #include "EsiGunzip.h"
 #include "gzip.h"
-#include <ctype.h>
-#include <stdint.h>
+#include <cctype>
+#include <cstdint>
 
 using std::string;
 using namespace EsiLib;

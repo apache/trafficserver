@@ -24,17 +24,17 @@
 #include "ts/remap.h"
 
 #include <sys/types.h>
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
+#include <cstdio>
+#include <ctime>
+#include <cstring>
 
-#include <ctype.h>
+#include <cctype>
 #include <unistd.h>
 
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <ctype.h>
+#include <cctype>
 
 // Get some specific stuff from libts, yes, we can do that now that we build inside the core.
 #include "ts/ink_platform.h"

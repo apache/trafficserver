@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <stdarg.h>
+#include <cstdarg>
 #include "ts/ink_platform.h"
 #include "ts/ink_memory.h"
 #include "ts/TextBuffer.h"

@@ -23,10 +23,10 @@
 
 #include "balancer.h"
 #include <ts/remap.h>
-#include <stdio.h>
+#include <cstdio>
 #include <getopt.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 #include <iterator>
 
 // Using ink_inet API is cheating, but I was too lazy to write new IPv6 address parsing routines ;)

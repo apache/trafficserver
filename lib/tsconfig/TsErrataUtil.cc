@@ -22,11 +22,11 @@
  */
 
 # if !defined(_MSC_VER)
-# include <stdio.h>
-# include <string.h>
+# include <cstdio>
+# include <cstring>
 # endif
-# include <stdarg.h>
-# include <errno.h>
+# include <cstdarg>
+# include <cerrno>
 # include <TsErrataUtil.h>
 # include "ts/ink_string.h"
 # include "ts/ink_defs.h"

@@ -21,7 +21,7 @@
 
 #include "atscppapi/Stat.h"
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 #include <ts/ts.h>
 #include "logging_internal.h"
 

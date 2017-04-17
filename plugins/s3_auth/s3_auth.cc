@@ -20,13 +20,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include <time.h>
-#include <string.h>
+#include <ctime>
+#include <cstring>
 #include <getopt.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cstdlib>
+#include <climits>
+#include <cctype>
 
 #include <openssl/sha.h>
 #include <openssl/hmac.h>

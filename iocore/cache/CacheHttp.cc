@@ -22,7 +22,7 @@
  */
 
 #include "ts/ink_config.h"
-#include <string.h>
+#include <cstring>
 #include "P_Cache.h"
 
 /*-------------------------------------------------------------------------
