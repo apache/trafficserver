@@ -25,6 +25,7 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include <utility>
 
 #include "atscppapi/Transaction.h"
 #include "ts/ink_memory.h"
@@ -241,7 +242,7 @@ Transaction::getContextValue(const std::string &key)
 void
 Transaction::setContextValue(const std::string &key, std::shared_ptr<Transaction::ContextValue> value)
 {
-  state_->context_values_[key] = value;
+  state_->context_values_[key] = std::move(value);
 }
 
 ClientRequest &

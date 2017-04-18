@@ -43,7 +43,7 @@ DomainNameTree::DomainNameNode::compare(std::string key, int &relative)
 }
 
 bool
-DomainNameTree::DomainNameNode::prunedCompare(std::string key, int &relative, bool is_wild)
+DomainNameTree::DomainNameNode::prunedCompare(const std::string &key, int &relative, bool is_wild)
 {
   if (key == this->key) {
     relative = 0;

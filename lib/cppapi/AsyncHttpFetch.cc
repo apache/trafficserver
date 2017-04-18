@@ -30,6 +30,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <utility>
 
 using namespace atscppapi;
 using std::string;
@@ -54,7 +55,7 @@ struct atscppapi::AsyncHttpFetchState : noncopyable {
 
   AsyncHttpFetchState(const string &url_str, HttpMethod http_method, string request_body,
                       AsyncHttpFetch::StreamingFlag streaming_flag)
-    : request_body_(request_body),
+    : request_body_(std::move(request_body)),
       result_(AsyncHttpFetch::RESULT_FAILURE),
       body_(nullptr),
       body_size_(0),

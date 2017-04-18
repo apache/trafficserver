@@ -52,7 +52,7 @@ public:
     // 0 if eq.  < 0 if node key is broader.  > 0 if parameter key is broader
     bool compare(std::string key, int &relative);
     // The wildcard is pruned out of the key
-    bool prunedCompare(std::string key, int &relative, bool is_wild);
+    bool prunedCompare(const std::string &key, int &relative, bool is_wild);
     std::string key; // The string trailing the * (if any)
     int order;       // Track insert order for conflict resolution
     void *payload;

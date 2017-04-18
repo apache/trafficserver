@@ -93,7 +93,7 @@ public:
     return _rules[hook];
   }
 
-  bool parse_config(const std::string fname, TSHttpHookID default_hook);
+  bool parse_config(const std::string &fname, TSHttpHookID default_hook);
 
   void
   hold()
@@ -149,7 +149,7 @@ RulesConfig::add_rule(RuleSet *rule)
 // anyways (or reload for remap.config), so not really in the critical path.
 //
 bool
-RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
+RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
 {
   RuleSet *rule = nullptr;
   std::string filename;

@@ -25,6 +25,7 @@
 #include <atscppapi/PluginInit.h>
 #include <cstring>
 #include <cassert>
+#include <utility>
 
 using namespace atscppapi;
 using std::string;
@@ -41,20 +42,20 @@ GlobalPlugin *plugin;
 class AsyncHttpFetch2 : public AsyncHttpFetch
 {
 public:
-  AsyncHttpFetch2(string request) : AsyncHttpFetch(request){};
+  AsyncHttpFetch2(const string &request) : AsyncHttpFetch(request){};
 };
 
 class AsyncHttpFetch3 : public AsyncHttpFetch
 {
 public:
-  AsyncHttpFetch3(string request, HttpMethod method) : AsyncHttpFetch(request, method){};
+  AsyncHttpFetch3(const string &request, HttpMethod method) : AsyncHttpFetch(request, method){};
 };
 
 class DelayedAsyncHttpFetch : public AsyncHttpFetch, public AsyncReceiver<AsyncTimer>
 {
 public:
-  DelayedAsyncHttpFetch(string request, HttpMethod method, std::shared_ptr<Mutex> mutex)
-    : AsyncHttpFetch(request, method), mutex_(mutex), timer_(nullptr){};
+  DelayedAsyncHttpFetch(const string &request, HttpMethod method, std::shared_ptr<Mutex> mutex)
+    : AsyncHttpFetch(request, method), mutex_(std::move(mutex)), timer_(nullptr){};
   void
   run() override
   {
