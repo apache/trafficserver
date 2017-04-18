@@ -44,8 +44,7 @@ test -z "${ATS_MAKE}" && ATS_MAKE="make"
 test ! -z "${WORKSPACE}" && cd "${WORKSPACE}/src"
 
 # Check to see if this is a Github PR build (so not a github branch per-se)
-test "${JOB_NAME#*-github" != "${JOB_NAME}" && ATS_BRANCH=github
-
+test "${JOB_NAME#*-github}" != "${JOB_NAME}" && ATS_BRANCH="github"
 
 # Where to store the results, special case for the CI
 output="/tmp"
