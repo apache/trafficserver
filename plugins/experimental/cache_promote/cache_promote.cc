@@ -152,7 +152,9 @@ public:
   operator=(const LRUHash &h)
   {
     TSDebug(PLUGIN_NAME, "copying an LRUHash object");
-    memcpy(_hash, h._hash, sizeof(_hash));
+    if (this != &h) {
+      memcpy(_hash, h._hash, sizeof(_hash));
+    }
     return *this;
   }
 
