@@ -122,7 +122,7 @@ Transformations
 VIOs
 ----
 
-A ``VIO``*or virtual IO is a description of an in progress IO
+A ``VIO`` or virtual IO is a description of an in progress IO
 operation. The ``VIO`` data structure is used by ``VConnection`` users
 to determine how much progress has been made on a particular IO
 operation, and to reenable an IO operation when it stalls due to buffer
