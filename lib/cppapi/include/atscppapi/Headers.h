@@ -537,7 +537,7 @@ public:
     * @param position of value
     * @return value
     */
-  std::string value(const std::string key, size_type index = 0);
+  std::string value(const std::string &key, size_type index = 0);
 
   /**
     * Returns an iterator to the first HeaderField with the name key.

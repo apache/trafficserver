@@ -194,7 +194,7 @@ BoomResponseRegistry::register_error_codes(const std::vector<std::string> &error
   }
 }
 // forward declaration
-bool get_file_contents(std::string fileName, std::string &contents);
+bool get_file_contents(const std::string &fileName, std::string &contents);
 
 // Examine the error file directory and populate the error_response
 // map with the file contents.
@@ -339,7 +339,7 @@ stringSplit(const std::string &in, char delim, std::vector<std::string> &res)
 // Utility routine to read file contents into a string
 // @returns true if the file exists and has been successfully read
 bool
-get_file_contents(std::string fileName, std::string &contents)
+get_file_contents(const std::string &fileName, std::string &contents)
 {
   if (fileName.empty()) {
     return false;

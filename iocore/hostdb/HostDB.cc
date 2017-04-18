@@ -29,6 +29,7 @@
 #include "Show.h"
 #include "ts/Tokenizer.h"
 
+#include <utility>
 #include <vector>
 #include <algorithm>
 
@@ -269,7 +270,7 @@ struct HostDBSync : public HostDBBackgroundTask {
   std::string storage_path;
   std::string full_path;
   HostDBSync(int frequency, std::string storage_path, std::string full_path)
-    : HostDBBackgroundTask(frequency), storage_path(storage_path), full_path(full_path){};
+    : HostDBBackgroundTask(frequency), storage_path(std::move(storage_path)), full_path(std::move(full_path)){};
   int
   sync_event(int, void *) override
   {
