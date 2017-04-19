@@ -90,6 +90,7 @@
 
 #include <stdint.h>
 
+#include <utility>
 #include <vector>
 #include <set>
 #include <regex.h>
@@ -109,7 +110,7 @@ struct edit_t {
   const size_t bytes;
   const std::string repl;
   const int priority;
-  edit_t(size_t s, size_t b, const std::string &r, int p) : start(s), bytes(b), repl(r), priority(p) { ; }
+  edit_t(size_t s, size_t b, std::string r, int p) : start(s), bytes(b), repl(std::move(r)), priority(p) { ; }
   bool
   operator!=(const edit_t &x) const
   {

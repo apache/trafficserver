@@ -25,6 +25,7 @@
 #include <atscppapi/PluginInit.h>
 #include <cstring>
 #include <cassert>
+#include <utility>
 
 using namespace atscppapi;
 using std::string;
@@ -54,7 +55,7 @@ class DelayedAsyncHttpFetch : public AsyncHttpFetch, public AsyncReceiver<AsyncT
 {
 public:
   DelayedAsyncHttpFetch(string request, HttpMethod method, std::shared_ptr<Mutex> mutex)
-    : AsyncHttpFetch(request, method), mutex_(mutex), timer_(nullptr){};
+    : AsyncHttpFetch(request, method), mutex_(std::move(mutex)), timer_(nullptr){};
   void
   run() override
   {

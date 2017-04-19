@@ -17,6 +17,7 @@
  */
 
 #include <iostream>
+#include <utility>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>
 #include <atscppapi/PluginInit.h>
@@ -36,8 +37,8 @@ GlobalPlugin *plugin;
 class ClientRedirectTransactionPlugin : public atscppapi::TransactionPlugin
 {
 public:
-  ClientRedirectTransactionPlugin(Transaction &transaction, const string &location)
-    : TransactionPlugin(transaction), location_(location)
+  ClientRedirectTransactionPlugin(Transaction &transaction, string location)
+    : TransactionPlugin(transaction), location_(std::move(location))
   {
     //
     // We will set this transaction to jump to error state and then we will setup

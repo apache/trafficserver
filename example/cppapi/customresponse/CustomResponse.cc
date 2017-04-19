@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include <string>
+#include <utility>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>
 #include <atscppapi/PluginInit.h>
@@ -45,8 +46,8 @@ GlobalPlugin *plugin;
 class CustomResponseTransactionPlugin : public atscppapi::TransactionPlugin
 {
 public:
-  CustomResponseTransactionPlugin(Transaction &transaction, HttpStatus status, const string &reason, const string &body)
-    : TransactionPlugin(transaction), status_(status), reason_(reason), body_(body)
+  CustomResponseTransactionPlugin(Transaction &transaction, HttpStatus status, string reason, string body)
+    : TransactionPlugin(transaction), status_(status), reason_(std::move(reason)), body_(std::move(body))
   {
     TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
     transaction.error(body_); // Set the error body now, and change the status and reason later.

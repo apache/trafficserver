@@ -39,6 +39,7 @@
 
 #include <string>
 #include <map>
+#include <utility>
 
 #if defined(linux) || defined(solaris)
 #include "sys/utsname.h"
@@ -150,7 +151,7 @@ static void get_admin_user();
 
 struct ConfigValue {
   ConfigValue() : config_type(RECT_NULL), data_type(RECD_NULL) {}
-  ConfigValue(RecT _t, RecDataT _d, const std::string &_v) : config_type(_t), data_type(_d), data_value(_v) {}
+  ConfigValue(RecT _t, RecDataT _d, std::string _v) : config_type(_t), data_type(_d), data_value(std::move(_v)) {}
   RecT config_type;
   RecDataT data_type;
   std::string data_value;
