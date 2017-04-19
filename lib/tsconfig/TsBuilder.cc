@@ -24,7 +24,7 @@
 # include "TsBuilder.h"
 # include "TsErrataUtil.h"
 # include "TsConfigLexer.h"
-# include "TsConfigGrammar.hpp"
+# include "TsConfigGrammar.h"
 # include <stdlib.h>
 
 // Prefix for text of our messages.
