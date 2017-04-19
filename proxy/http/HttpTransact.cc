@@ -3176,7 +3176,11 @@ HttpTransact::HandleICPLookup(State *s)
     // Since the ICPDNSLookup is not called, these two
     //   values are not initialized.
     // Force them to be initialized
-    s->icp_info.http_version.set(1, 1);
+    if (s->request_data.hdr){
+        s->icp_info.http_version = s->request_data.hdr->version_get();
+    } else {
+        s->icp_info.http_version.set(1, 0);
+    }
     if (!s->txn_conf->keep_alive_enabled_out) {
       s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
     } else {
