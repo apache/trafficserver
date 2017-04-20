@@ -62,10 +62,7 @@ ConditionStatus::eval(const Resources &res)
 void
 ConditionStatus::append_value(std::string &s, const Resources &res)
 {
-  std::ostringstream oss;
-
-  oss << res.resp_status;
-  s += oss.str();
+  s += std::to_string(res.resp_status);
   TSDebug(PLUGIN_NAME, "Appending STATUS(%d) to evaluation value -> %s", res.resp_status, s.c_str());
 }
 
@@ -231,7 +228,7 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
       s.append(value, len);
       // multiple headers with the same name must be semantically the same as one value which is comma separated
       if (next_field_loc) {
-        s.append(",");
+        s += ',';
       }
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
       field_loc = next_field_loc;
@@ -348,17 +345,10 @@ ConditionUrl::set_qualifier(const std::string &q)
 }
 
 void
-ConditionUrl::append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */)
+ConditionUrl::append_value(std::string &s, const Resources &res)
 {
-}
-
-bool
-ConditionUrl::eval(const Resources &res)
-{
-  TSDebug(PLUGIN_NAME, "ConditionUrl::eval");
   TSMLoc url     = nullptr;
   TSMBuffer bufp = nullptr;
-  std::string s;
 
   if (res._rri != nullptr) {
     // called at the remap hook
@@ -375,7 +365,7 @@ ConditionUrl::eval(const Resources &res)
       url = res._rri->mapToUrl;
     } else {
       TSError("[header_rewrite] Invalid option value");
-      return false;
+      return;
     }
   } else {
     TSMLoc hdr_loc = nullptr;
@@ -387,21 +377,63 @@ ConditionUrl::eval(const Resources &res)
       hdr_loc = res.hdr_loc;
     } else {
       TSError("[header_rewrite] Rule not supported at this hook");
-      return false;
+      return;
     }
     if (TSHttpHdrUrlGet(bufp, hdr_loc, &url) != TS_SUCCESS) {
       TSError("[header_rewrite] Error getting the URL");
-      return false;
+      return;
     }
   }
 
-  if (_url_qual == URL_QUAL_HOST) {
-    int host_len     = 0;
-    const char *host = TSUrlHostGet(bufp, url, &host_len);
-    s.append(host, host_len);
-    TSDebug(PLUGIN_NAME, "   Host to match is: %.*s", host_len, host);
-  }
+  int i;
+  const char *q_str;
 
+  switch (_url_qual) {
+  case URL_QUAL_HOST:
+    q_str = TSUrlHostGet(bufp, url, &i);
+    s.append(q_str, i);
+    TSDebug(PLUGIN_NAME, "   Host to match is: %.*s", i, q_str);
+    break;
+  case URL_QUAL_PORT:
+    i = TSUrlPortGet(bufp, url);
+    s.append(std::to_string(i));
+    TSDebug(PLUGIN_NAME, "   Port to match is: %d", i);
+    break;
+  case URL_QUAL_PATH:
+    q_str = TSUrlPathGet(bufp, url, &i);
+    s.append(q_str, i);
+    TSDebug(PLUGIN_NAME, "   Path to match is: %.*s", i, q_str);
+    break;
+  case URL_QUAL_QUERY:
+    q_str = TSUrlHttpQueryGet(bufp, url, &i);
+    s.append(q_str, i);
+    TSDebug(PLUGIN_NAME, "   Query parameters to match is: %.*s", i, q_str);
+    break;
+  case URL_QUAL_MATRIX:
+    q_str = TSUrlHttpParamsGet(bufp, url, &i);
+    s.append(q_str, i);
+    TSDebug(PLUGIN_NAME, "   Matrix parameters to match is: %.*s", i, q_str);
+    break;
+  case URL_QUAL_SCHEME:
+    q_str = TSUrlSchemeGet(bufp, url, &i);
+    s.append(q_str, i);
+    TSDebug(PLUGIN_NAME, "   Scheme to match is: %.*s", i, q_str);
+    break;
+  case URL_QUAL_URL:
+  case URL_QUAL_NONE:
+    q_str = TSUrlStringGet(bufp, url, &i);
+    s.append(q_str, i);
+    TSDebug(PLUGIN_NAME, "   URL to match is: %.*s", i, q_str);
+    break;
+  }
+}
+
+bool
+ConditionUrl::eval(const Resources &res)
+{
+  std::string s;
+
+  append_value(s, res);
   return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }
 
@@ -577,7 +609,7 @@ ConditionClientIp::append_value(std::string &s, const Resources &res)
   char ip[INET6_ADDRSTRLEN];
 
   if (getIP(TSHttpTxnClientAddrGet(res.txnp), ip)) {
-    s.append(ip);
+    s += ip;
   }
 }
 
@@ -647,7 +679,7 @@ ConditionIp::append_value(std::string &s, const Resources &res)
   }
 
   if (ip_set) {
-    s.append(ip);
+    s += ip;
   }
 }
 
