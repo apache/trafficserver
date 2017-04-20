@@ -25,11 +25,29 @@ Test.Summary = '''
 Check VIA header for protocol stack data.
 '''
 
-# need Curl
+# Check if the local curl has a specific feature.
+# This should be made generally available.
+def RequireCurlFeature(tag):
+  FEATURE_TAG = 'Features:'
+  tag = tag.lower();
+  try:
+    text = subprocess.check_output(['curl', '--version'], universal_newlines = True)
+    for line in text.splitlines():
+      if (line.startswith(FEATURE_TAG)):
+        line = line[len(FEATURE_TAG):].lower()
+        tokens = line.split();
+        for t in tokens:
+          if t == tag:
+            return True
+  except subprocess.CalledProcessError:
+    pass # no curl at all, it clearly doesn't have the required feature.
+  return False
+
 Test.SkipUnless(
-    Condition.HasProgram("curl","curl is required for this test but was not found on the path. ")
+    Condition.Condition(lambda : RequireCurlFeature('http2'), "Via test requires a curl that supports HTTP/2")
     )
 Test.ContinueOnFail=True
+
 # Define default ATS
 ts=Test.MakeATSProcess("ts",select_ports=False)
 server=Test.MakeOriginServer("server", options={'--load' : os.path.join(Test.TestDirectory, 'via-observer.py')})
