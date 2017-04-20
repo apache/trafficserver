@@ -669,6 +669,8 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
           idx = i;
         }
         ret_flags |= REMAP_OPTFLG_INTERNAL;
+      } else {
+        Warning("ignoring invalid remap option '%s'", argv[i]);
       }
 
       if ((findmode & ret_flags) && !argptr) {
