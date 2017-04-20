@@ -167,6 +167,14 @@ AC_ARG_ENABLE([debug],
 )
 AC_MSG_RESULT([$enable_debug])
 
+AC_MSG_CHECKING([whether to enable mime sanity check])
+AC_ARG_ENABLE([mime-sanity-check],
+  [AS_HELP_STRING([--enable-mime-sanity-check],[turn on mime sanity check])],
+  [],
+  [enable_mime_sanity_check=no]
+)
+AC_MSG_RESULT([$enable_mime_sanity_check])
+
 # Enable code coverage instrumentation only if requested by the user.
 AC_MSG_CHECKING([whether to code coverage])
 AC_ARG_ENABLE([coverage],
@@ -939,6 +947,9 @@ if test "x${enable_debug}" = "xyes"; then
   TS_ADDTO(AM_CFLAGS, [${cc_oflag_dbg}])
   TS_ADDTO(AM_CXXFLAGS, [${cxx_oflag_dbg}])
   TS_ADDTO(AM_CPPFLAGS, [-DDEBUG -D_DEBUG])
+  if test "x${enable_mime_sanity_check}" = "xyes"; then
+    TS_ADDTO(AM_CPPFLAGS, [-DENABLE_MIME_SANITY_CHECK])
+  fi
 else
   TS_ADDTO(AM_CFLAGS, [${cc_oflag_opt}])
   TS_ADDTO(AM_CXXFLAGS, [${cxx_oflag_opt}])

@@ -67,7 +67,7 @@ enum MimeParseState {
  *                                                                     *
  ***********************************************************************/
 
-#ifdef DEBUG
+#ifdef ENABLE_MIME_SANITY_CHECK
 #define MIME_HDR_SANITY_CHECK mime_hdr_sanity_check
 #else
 #define MIME_HDR_SANITY_CHECK (void)
