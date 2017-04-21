@@ -40,6 +40,9 @@
 #include <ts/remap.h>
 #include <ts/ink_config.h>
 
+// Special snowflake here, only availbale when building inside the ATS source tree.
+#include "ts/ink_atomic.h"
+
 ///////////////////////////////////////////////////////////////////////////////
 // Some constants.
 //
@@ -91,6 +94,22 @@ public:
   valid() const
   {
     return _secret && (_secret_len > 0) && _keyid && (_keyid_len > 0) && (2 == _version);
+  }
+
+  void
+  acquire()
+  {
+    ink_atomic_increment(&_ref_count, 1);
+  }
+
+  void
+  release()
+  {
+    TSDebug(PLUGIN_NAME, "ref_count is %d", _ref_count);
+    if (1 >= ink_atomic_decrement(&_ref_count, 1)) {
+      TSDebug(PLUGIN_NAME, "configuration deleted, due to ref-counting");
+      delete this;
+    }
   }
 
   // Used to copy relevant configurations that can be configured in a config file. Note: we intentionally
@@ -184,6 +203,7 @@ public:
   schedule(TSHttpTxn txnp) const
   {
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, _cont);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, _cont); // To release the config lease
   }
 
 private:
@@ -196,6 +216,7 @@ private:
   bool _version_modified   = false;
   bool _virt_host_modified = false;
   TSCont _cont             = nullptr;
+  volatile int _ref_count  = 0;
 };
 
 bool
@@ -581,25 +602,38 @@ S3Request::authorize(S3Config *s3)
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main continuation.
 int
-event_handler(TSCont cont, TSEvent /* event */, void *edata)
+event_handler(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  S3Config *s3   = static_cast<S3Config *>(TSContDataGet(cont));
   S3Request request(txnp);
-  TSHttpStatus status = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  TSHttpStatus status  = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  TSEvent enable_event = TS_EVENT_HTTP_CONTINUE;
 
-  if (request.initialize()) {
-    status = request.authorize(static_cast<S3Config *>(TSContDataGet(cont)));
+  switch (event) {
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
+    if (request.initialize()) {
+      status = request.authorize(s3);
+    }
+
+    if (TS_HTTP_STATUS_OK == status) {
+      TSDebug(PLUGIN_NAME, "Succesfully signed the AWS S3 URL");
+    } else {
+      TSDebug(PLUGIN_NAME, "Failed to sign the AWS S3 URL, status = %d", status);
+      TSHttpTxnSetHttpRetStatus(txnp, status);
+      enable_event = TS_EVENT_HTTP_ERROR;
+    }
+    break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    s3->release(); // Release the configuration lease when txn closes
+    break;
+  default:
+    TSError("[%s] Unknown event for this plugin", PLUGIN_NAME);
+    TSDebug(PLUGIN_NAME, "unknown event for this plugin");
+    break;
   }
 
-  if (TS_HTTP_STATUS_OK == status) {
-    TSDebug(PLUGIN_NAME, "Succesfully signed the AWS S3 URL");
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  } else {
-    TSDebug(PLUGIN_NAME, "Failed to sign the AWS S3 URL, status = %d", status);
-    TSHttpTxnSetHttpRetStatus(txnp, status);
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
-  }
-
+  TSHttpTxnReenable(txnp, enable_event);
   return 0;
 }
 
@@ -686,6 +720,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     return TS_ERROR;
   }
 
+  s3->acquire(); // Increment ref-count
   *ih = static_cast<void *>(s3);
   TSDebug(PLUGIN_NAME, "New rule: secret_key=%s, access_key=%s, virtual_host=%s", s3->secret(), s3->keyid(),
           s3->virt_host() ? "yes" : "no");
@@ -698,7 +733,7 @@ TSRemapDeleteInstance(void *ih)
 {
   S3Config *s3 = static_cast<S3Config *>(ih);
 
-  delete s3;
+  s3->release();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -711,6 +746,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 
   if (s3) {
     TSAssert(s3->valid());
+    s3->acquire(); // Increasement ref-count
     // Now schedule the continuation to update the URL when going to origin.
     // Note that in most cases, this is a No-Op, assuming you have reasonable
     // cache hit ratio. However, the scheduling is next to free (very cheap).
