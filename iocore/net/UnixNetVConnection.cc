@@ -1513,9 +1513,10 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
 #else
   if (timeout_in == 0) {
     // set default inactivity timeout
-    inactivity_timeout_in = timeout_in = HRTIME_SECONDS(nh->default_inactivity_timeout);
+    timeout_in = HRTIME_SECONDS(nh->default_inactivity_timeout);
   }
-  next_inactivity_timeout_at = Thread::get_hrtime() + timeout_in;
+  inactivity_timeout_in      = timeout_in;
+  next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
 #endif
 }
 
