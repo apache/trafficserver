@@ -86,7 +86,9 @@ public:
    */
   enum Type {
     REQUEST_TRANSFORMATION = 0, /**< Transform the Request body content */
-    RESPONSE_TRANSFORMATION     /**< Transform the Response body content */
+    RESPONSE_TRANSFORMATION,    /**< Transform the Response body content */
+    SINK_TRANSFORMATION         /**< Sink transformation, meaning you get a separate stream of the Response
+                                     body content that does not get hooked up to a downstream input */
   };
 
   /**
