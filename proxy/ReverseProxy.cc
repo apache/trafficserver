@@ -43,7 +43,7 @@
 #include "UrlMapping.h"
 
 /** Time till we free the old stuff after a reconfiguration. */
-#define URL_REWRITE_TIMEOUT (HRTIME_SECOND * 60)
+#define URL_REWRITE_TIMEOUT (HRTIME_SECOND * 300)
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
