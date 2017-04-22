@@ -65,24 +65,11 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
 {
   Debug("socket", "net_activity updating inactivity %" PRId64 ", NetVC=%p", vc->inactivity_timeout_in, vc);
   (void)thread;
-#ifdef INACTIVITY_TIMEOUT
-  if (vc->inactivity_timeout && vc->inactivity_timeout_in && vc->inactivity_timeout->ethread == thread)
-    vc->inactivity_timeout->schedule_in(vc->inactivity_timeout_in);
-  else {
-    if (vc->inactivity_timeout)
-      vc->inactivity_timeout->cancel_action();
-    if (vc->inactivity_timeout_in) {
-      vc->inactivity_timeout = vc->thread->schedule_in_local(vc, vc->inactivity_timeout_in);
-    } else
-      vc->inactivity_timeout = 0;
-  }
-#else
   if (vc->inactivity_timeout_in) {
     vc->next_inactivity_timeout_at = Thread::get_hrtime() + vc->inactivity_timeout_in;
   } else {
     vc->next_inactivity_timeout_at = 0;
   }
-#endif
 }
 
 //
@@ -101,19 +88,8 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
 
   ink_release_assert(vc->thread == t);
 
-#ifdef INACTIVITY_TIMEOUT
-  if (vc->inactivity_timeout) {
-    vc->inactivity_timeout->cancel_action(vc);
-    vc->inactivity_timeout = nullptr;
-  }
-  if (vc->active_timeout) {
-    vc->active_timeout->cancel_action(vc);
-    vc->active_timeout = nullptr;
-  }
-#else
   vc->next_inactivity_timeout_at = 0;
   vc->next_activity_timeout_at   = 0;
-#endif
 
   vc->inactivity_timeout_in = 0;
   vc->active_timeout_in     = 0;
@@ -937,13 +913,8 @@ UnixNetVConnection::UnixNetVConnection()
   : closed(0),
     inactivity_timeout_in(0),
     active_timeout_in(0),
-#ifdef INACTIVITY_TIMEOUT
-    inactivity_timeout(nullptr),
-    active_timeout(nullptr),
-#else
     next_inactivity_timeout_at(0),
     next_activity_timeout_at(0),
-#endif
     nh(nullptr),
     id(0),
     flags(0),
@@ -967,18 +938,9 @@ UnixNetVConnection::set_enabled(VIO *vio)
   ink_assert(vio->mutex->thread_holding == this_ethread() && thread);
   ink_release_assert(!closed);
   STATE_FROM_VIO(vio)->enabled = 1;
-#ifdef INACTIVITY_TIMEOUT
-  if (!inactivity_timeout && inactivity_timeout_in) {
-    if (vio->mutex->thread_holding == thread)
-      inactivity_timeout = thread->schedule_in_local(this, inactivity_timeout_in);
-    else
-      inactivity_timeout = thread->schedule_in(this, inactivity_timeout_in);
-  }
-#else
   if (!next_inactivity_timeout_at && inactivity_timeout_in) {
     next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
   }
-#endif
 }
 
 void
@@ -1226,10 +1188,6 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   if (!hlock.is_locked() || !rlock.is_locked() || !wlock.is_locked() ||
       (read.vio.mutex && rlock.get_mutex() != read.vio.mutex.get()) ||
       (write.vio.mutex && wlock.get_mutex() != write.vio.mutex.get())) {
-#ifdef INACTIVITY_TIMEOUT
-    if (e == active_timeout)
-      e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
-#endif
     return EVENT_CONT;
   }
 
@@ -1244,16 +1202,6 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   Event *t                      = nullptr;
   Event **signal_timeout        = &t;
 
-#ifdef INACTIVITY_TIMEOUT
-  if (e == inactivity_timeout) {
-    signal_event   = VC_EVENT_INACTIVITY_TIMEOUT;
-    signal_timeout = &inactivity_timeout;
-  } else {
-    ink_assert(e == active_timeout);
-    signal_event   = VC_EVENT_ACTIVE_TIMEOUT;
-    signal_timeout = &active_timeout;
-  }
-#else
   if (event == EVENT_IMMEDIATE) {
     /* BZ 49408 */
     // ink_assert(inactivity_timeout_in);
@@ -1267,7 +1215,6 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     signal_event      = VC_EVENT_ACTIVE_TIMEOUT;
     signal_timeout_at = &next_activity_timeout_at;
   }
-#endif
 
   *signal_timeout    = nullptr;
   *signal_timeout_at = 0;
@@ -1451,9 +1398,6 @@ UnixNetVConnection::free(EThread *t)
   ink_assert(!write.ready_link.prev && !write.ready_link.next);
   ink_assert(!write.enable_link.next);
   ink_assert(!link.next && !link.prev);
-#ifdef INACTIVITY_TIMEOUT
-  ink_assert(!active_timeout);
-#endif
   ink_assert(con.fd == NO_FD);
   ink_assert(t == this_ethread());
 
@@ -1474,35 +1418,12 @@ TS_INLINE void
 UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
-#ifdef INACTIVITY_TIMEOUT
-  if (inactivity_timeout)
-    inactivity_timeout->cancel_action(this);
-  if (timeout_in) {
-    inactivity_timeout_in = timeout_in;
-    if (read.enabled) {
-      ink_assert(read.vio.mutex->thread_holding == this_ethread() && thread);
-      if (read.vio.mutex->thread_holding == thread)
-        inactivity_timeout = thread->schedule_in_local(this, inactivity_timeout_in);
-      else
-        inactivity_timeout = thread->schedule_in(this, inactivity_timeout_in);
-    } else if (write.enabled) {
-      ink_assert(write.vio.mutex->thread_holding == this_ethread() && thread);
-      if (write.vio.mutex->thread_holding == thread)
-        inactivity_timeout = thread->schedule_in_local(this, inactivity_timeout_in);
-      else
-        inactivity_timeout = thread->schedule_in(this, inactivity_timeout_in);
-    } else
-      inactivity_timeout = 0;
-  } else
-    inactivity_timeout = 0;
-#else
   if (timeout_in == 0) {
     // set default inactivity timeout
     timeout_in = HRTIME_SECONDS(nh->default_inactivity_timeout);
   }
   inactivity_timeout_in      = timeout_in;
   next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
-#endif
 }
 
 /*
