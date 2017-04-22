@@ -126,7 +126,6 @@ extern int fds_limit;
 extern ink_hrtime last_transient_accept_error;
 extern int http_accept_port_number;
 
-//#define INACTIVITY_TIMEOUT
 //
 // Configuration Parameter had to move here to share
 // between UnixNet and UnixUDPNet or SSLNet modules.
@@ -394,19 +393,10 @@ check_transient_accept_error(int res)
 static inline void
 read_disable(NetHandler *nh, UnixNetVConnection *vc)
 {
-#ifdef INACTIVITY_TIMEOUT
-  if (vc->inactivity_timeout) {
-    if (!vc->write.enabled) {
-      vc->inactivity_timeout->cancel_action();
-      vc->inactivity_timeout = nullptr;
-    }
-  }
-#else
   if (!vc->write.enabled) {
     vc->set_inactivity_timeout(0);
     Debug("socket", "read_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
   }
-#endif
   vc->read.enabled = 0;
   nh->read_ready_list.remove(vc);
   vc->ep.modify(-EVENTIO_READ);
@@ -415,19 +405,10 @@ read_disable(NetHandler *nh, UnixNetVConnection *vc)
 static inline void
 write_disable(NetHandler *nh, UnixNetVConnection *vc)
 {
-#ifdef INACTIVITY_TIMEOUT
-  if (vc->inactivity_timeout) {
-    if (!vc->read.enabled) {
-      vc->inactivity_timeout->cancel_action();
-      vc->inactivity_timeout = nullptr;
-    }
-  }
-#else
   if (!vc->read.enabled) {
     vc->set_inactivity_timeout(0);
     Debug("socket", "write_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
   }
-#endif
   vc->write.enabled = 0;
   nh->write_ready_list.remove(vc);
   vc->ep.modify(-EVENTIO_WRITE);

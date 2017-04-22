@@ -34,7 +34,6 @@ ink_hrtime last_transient_accept_error;
 
 extern "C" void fd_reify(struct ev_loop *);
 
-#ifndef INACTIVITY_TIMEOUT
 // INKqa10496
 // One Inactivity cop runs on each thread once every second and
 // loops through the list of NetVCs and calls the timeouts
@@ -97,8 +96,6 @@ public:
     return 0;
   }
 };
-
-#endif
 
 PollCont::PollCont(Ptr<ProxyMutex> &m, int pt)
   : Continuation(m.get()), net_handler(nullptr), nextPollDescriptor(nullptr), poll_timeout(pt)
@@ -231,13 +228,11 @@ initialize_thread_for_net(EThread *thread)
 
   thread->schedule_imm(get_NetHandler(thread));
 
-#ifndef INACTIVITY_TIMEOUT
   InactivityCop *inactivityCop = new InactivityCop(get_NetHandler(thread)->mutex);
   int cop_freq                 = 1;
 
   REC_ReadConfigInteger(cop_freq, "proxy.config.net.inactivity_check_frequency");
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
-#endif
 
   thread->signal_hook = net_signal_hook_function;
   thread->ep          = (EventIO *)ats_malloc(sizeof(EventIO));
