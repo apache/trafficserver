@@ -39,7 +39,6 @@ mkdir -p BUILDS && cd BUILDS
     --enable-example-plugins \
     --enable-test-tools \
     --with-user=jenkins \
-    ${enable_spdy} \
     ${enable_ccache} \
     ${enable_werror} \
     ${enable_debug}
