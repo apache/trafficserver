@@ -7969,9 +7969,11 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
               const char *value;
 
               field = base_response->field_find(fields[i].name, fields[i].len);
-              ink_assert(field != nullptr);
-              value = field->value_get(&len);
-              outgoing_response->value_append(fields[i].name, fields[i].len, value, len, 0);
+              while (field) {
+                value = field->value_get(&len);
+                outgoing_response->value_append(field_name[i], field_len[i], value, len, true);
+                field = field->m_next_dup;
+              }
             }
           }
         }
