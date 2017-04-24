@@ -260,7 +260,9 @@ ProcessManager::pollLMConnection()
       // handle EOF
       if (res == 0) {
         close_socket(local_manager_sockfd);
-        mgmt_fatal(0, "[ProcessManager::pollLMConnection] Lost Manager EOF!");
+        if (!shutdown_event_system) {
+          mgmt_fatal(0, "[ProcessManager::pollLMConnection] Lost Manager EOF!");
+        }
       }
     } else if (num < 0) { /* Error */
       mgmt_log("[ProcessManager::pollLMConnection] select failed or was interrupted (%d)\n", errno);
