@@ -38,20 +38,10 @@ extern "C" void fd_reify(struct ev_loop *);
 // INKqa10496
 // One Inactivity cop runs on each thread once every second and
 // loops through the list of NetVCs and calls the timeouts
-int update_cop_config(const char *name, RecDataT data_type, RecData data, void *cookie);
-
 class InactivityCop : public Continuation
 {
 public:
-  explicit InactivityCop(Ptr<ProxyMutex> &m) : Continuation(m.get()), default_inactivity_timeout(0)
-  {
-    SET_HANDLER(&InactivityCop::check_inactivity);
-    REC_ReadConfigInteger(default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
-    Debug("inactivity_cop", "default inactivity timeout is set to: %d", default_inactivity_timeout);
-
-    RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_cop_config, (void *)this);
-  }
-
+  explicit InactivityCop(Ptr<ProxyMutex> &m) : Continuation(m.get()) { SET_HANDLER(&InactivityCop::check_inactivity); }
   int
   check_inactivity(int event, Event *e)
   {
@@ -60,13 +50,8 @@ public:
     NetHandler &nh = *get_NetHandler(this_ethread());
 
     Debug("inactivity_cop_check", "Checking inactivity on Thread-ID #%d", this_ethread()->id);
-    // Copy the list and use pop() to catch any closes caused by callbacks.
-    forl_LL(UnixNetVConnection, vc, nh.open_list)
-    {
-      if (vc->thread == this_ethread()) {
-        nh.cop_list.push(vc);
-      }
-    }
+    // The rest NetVCs in cop_list which are not triggered between InactivityCop runs.
+    // Use pop() to catch any closes caused by callbacks.
     while (UnixNetVConnection *vc = nh.cop_list.pop()) {
       // If we cannot get the lock don't stop just keep cleaning
       MUTEX_TRY_LOCK(lock, vc->mutex, this_ethread());
@@ -78,17 +63,6 @@ public:
       if (vc->closed) {
         close_UnixNetVConnection(vc, e->ethread);
         continue;
-      }
-
-      // set a default inactivity timeout if one is not set
-      if (vc->next_inactivity_timeout_at == 0 && default_inactivity_timeout > 0) {
-        Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", vc, default_inactivity_timeout);
-        vc->set_inactivity_timeout(HRTIME_SECONDS(default_inactivity_timeout));
-        NET_INCREMENT_DYN_STAT(default_inactivity_timeout_stat);
-      } else {
-        Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
-              ink_hrtime_to_sec(now), ink_hrtime_to_sec(vc->next_inactivity_timeout_at),
-              ink_hrtime_to_sec(vc->inactivity_timeout_in));
       }
 
       if (vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now) {
@@ -103,6 +77,18 @@ public:
         vc->handleEvent(EVENT_IMMEDIATE, e);
       }
     }
+    // The cop_list is empty now.
+    // Let's reload the cop_list from open_list again.
+    forl_LL(UnixNetVConnection, vc, nh.open_list)
+    {
+      if (vc->thread == this_ethread()) {
+        nh.cop_list.push(vc);
+      }
+    }
+    // NetHandler will remove NetVC from cop_list if it is triggered.
+    // As the NetHandler runs, the number of NetVCs in the cop_list is decreasing.
+    // NetHandler runs 100 times maximum between InactivityCop runs.
+    // Therefore we don't have to check all the NetVCs as much as open_list.
 
     // Cleanup the active and keep-alive queues periodically
     nh.manage_active_queue(true); // close any connections over the active timeout
@@ -110,32 +96,7 @@ public:
 
     return 0;
   }
-
-  void
-  set_default_timeout(const int x)
-  {
-    default_inactivity_timeout = x;
-  }
-
-private:
-  int default_inactivity_timeout; // only used when one is not set for some bad reason
 };
-
-int
-update_cop_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data, void *cookie)
-{
-  InactivityCop *cop = static_cast<InactivityCop *>(cookie);
-  ink_assert(cop != NULL);
-
-  if (cop != NULL) {
-    if (strcmp(name, "proxy.config.net.default_inactivity_timeout") == 0) {
-      Debug("inactivity_cop_dynamic", "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
-      cop->set_default_timeout(data.rec_int);
-    }
-  }
-
-  return REC_ERR_OKAY;
-}
 
 #endif
 
@@ -336,6 +297,10 @@ update_nethandler_config(const char *name, RecDataT data_type ATS_UNUSED, RecDat
       Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %" PRId64, data.rec_int);
       nh->keep_alive_no_activity_timeout_in = data.rec_int;
     }
+    if (strcmp(name, "proxy.config.net.default_inactivity_timeout") == 0) {
+      Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
+      nh->default_inactivity_timeout = data.rec_int;
+    }
   }
 
   if (update_per_thread_configuration == true) {
@@ -358,18 +323,21 @@ NetHandler::startNetEvent(int event, Event *e)
   REC_ReadConfigInt32(inactive_threashold_in, "proxy.config.net.inactive_threashold_in");
   REC_ReadConfigInt32(transaction_no_activity_timeout_in, "proxy.config.net.transaction_no_activity_timeout_in");
   REC_ReadConfigInt32(keep_alive_no_activity_timeout_in, "proxy.config.net.keep_alive_no_activity_timeout_in");
+  REC_ReadConfigInt32(default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
 
   RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_nethandler_config, (void *)this);
   RecRegisterConfigUpdateCb("proxy.config.net.max_active_connections_in", update_nethandler_config, (void *)this);
   RecRegisterConfigUpdateCb("proxy.config.net.inactive_threashold_in", update_nethandler_config, (void *)this);
   RecRegisterConfigUpdateCb("proxy.config.net.transaction_no_activity_timeout_in", update_nethandler_config, (void *)this);
   RecRegisterConfigUpdateCb("proxy.config.net.keep_alive_no_activity_timeout_in", update_nethandler_config, (void *)this);
+  RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_nethandler_config, (void *)this);
 
   Debug("net_queue", "proxy.config.net.max_connections_in updated to %d", max_connections_in);
   Debug("net_queue", "proxy.config.net.max_active_connections_in updated to %d", max_connections_active_in);
   Debug("net_queue", "proxy.config.net.inactive_threashold_in updated to %d", inactive_threashold_in);
   Debug("net_queue", "proxy.config.net.transaction_no_activity_timeout_in updated to %d", transaction_no_activity_timeout_in);
   Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %d", keep_alive_no_activity_timeout_in);
+  Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %d", default_inactivity_timeout);
 
   configure_per_thread();
 
@@ -477,6 +445,10 @@ NetHandler::mainNetEvent(int event, Event *e)
     epd = (EventIO *)get_ev_data(pd, x);
     if (epd->type == EVENTIO_READWRITE_VC) {
       vc = epd->data.vc;
+      // Remove triggered NetVC from cop_list because it won't be timeout before next InactivityCop runs.
+      if (cop_list.in(vc)) {
+        cop_list.remove(vc);
+      }
       if (get_ev_events(pd, x) & EVENTIO_READ) {
         vc->read.triggered = 1;
         if (get_ev_events(pd, x) & EVENTIO_ERROR) {
