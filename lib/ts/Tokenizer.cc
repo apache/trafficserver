@@ -71,8 +71,8 @@ Tokenizer::~Tokenizer()
 
   while (cur != nullptr) {
     if (options & COPY_TOKS) {
-      for (int i = 0; i < TOK_NODE_ELEMENTS; i++)
-        ats_free(cur->el[i]);
+      for (auto &i : cur->el)
+        ats_free(i);
     }
 
     next = cur->next;
@@ -356,8 +356,8 @@ Tokenizer::ReUse()
 
   while (cur_node != nullptr) {
     if (options & COPY_TOKS) {
-      for (int i = 0; i < TOK_NODE_ELEMENTS; i++)
-        ats_free(cur_node->el[i]);
+      for (auto &i : cur_node->el)
+        ats_free(i);
     }
     memset(cur_node->el, 0, sizeof(char *) * TOK_NODE_ELEMENTS);
     cur_node = cur_node->next;

@@ -507,8 +507,8 @@ send_unregister_all_callbacks(int fd, CallbackTable *cb_table)
   bool no_errors = true; // set to false if at least one send fails
 
   // init array so that all events don't have any callbacks
-  for (int i = 0; i < NUM_EVENTS; i++) {
-    reg_callback[i] = 0;
+  for (int &i : reg_callback) {
+    i = 0;
   }
 
   events_with_cb = get_events_with_callbacks(cb_table);

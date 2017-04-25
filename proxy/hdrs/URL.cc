@@ -1854,12 +1854,11 @@ REGRESSION_TEST(VALIDATE_HDR_FIELD)(RegressionTest *t, int /* level ATS_UNUSED *
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  for (unsigned int i = 0; i < sizeof(http_validate_hdr_field_test_case) / sizeof(http_validate_hdr_field_test_case[0]); ++i) {
-    const char *const txt = http_validate_hdr_field_test_case[i].text;
+  for (auto i : http_validate_hdr_field_test_case) {
+    const char *const txt = i.text;
     ts::ConstBuffer tmp   = ts::ConstBuffer(txt, strlen(txt));
-    box.check(validate_host_name(tmp) == http_validate_hdr_field_test_case[i].valid,
-              "Validation of FQDN (host) header: \"%s\", expected %s, but not", txt,
-              (http_validate_hdr_field_test_case[i].valid ? "true" : "false"));
+    box.check(validate_host_name(tmp) == i.valid, "Validation of FQDN (host) header: \"%s\", expected %s, but not", txt,
+              (i.valid ? "true" : "false"));
   }
 }
 
@@ -1892,11 +1891,10 @@ REGRESSION_TEST(ParseRules_strict_URI)(RegressionTest *t, int /* level ATS_UNUSE
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  for (unsigned int i = 0; i < sizeof(http_strict_uri_parsing_test_case) / sizeof(http_strict_uri_parsing_test_case[0]); ++i) {
-    const char *const uri = http_strict_uri_parsing_test_case[i].uri;
-    box.check(url_is_strictly_compliant(uri, uri + strlen(uri)) == http_strict_uri_parsing_test_case[i].valid,
-              "Strictly parse URI: \"%s\", expected %s, but not", uri,
-              (http_strict_uri_parsing_test_case[i].valid ? "true" : "false"));
+  for (auto i : http_strict_uri_parsing_test_case) {
+    const char *const uri = i.uri;
+    box.check(url_is_strictly_compliant(uri, uri + strlen(uri)) == i.valid, "Strictly parse URI: \"%s\", expected %s, but not", uri,
+              (i.valid ? "true" : "false"));
   }
 }
 

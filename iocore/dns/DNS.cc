@@ -842,10 +842,10 @@ get_dns(DNSHandler *h, uint16_t id)
 {
   for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *)e->link.next) {
     if (e->once_written_flag) {
-      for (int j = 0; j < MAX_DNS_RETRIES; j++) {
-        if (e->id[j] == id) {
+      for (int j : e->id) {
+        if (j == id) {
           return e;
-        } else if (e->id[j] < 0) {
+        } else if (j < 0) {
           goto Lnext;
         }
       }
@@ -1214,17 +1214,17 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
       Debug("dns", "failed lock for result %s", e->qname);
       goto Lretry;
     }
-    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
-      if (e->id[i] < 0)
+    for (int i : e->id) {
+      if (i < 0)
         break;
-      h->release_query_id(e->id[i]);
+      h->release_query_id(i);
     }
     e->postEvent(0, nullptr);
   } else {
-    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
-      if (e->id[i] < 0)
+    for (int i : e->id) {
+      if (i < 0)
         break;
-      h->release_query_id(e->id[i]);
+      h->release_query_id(i);
     }
     e->mutex = e->action.mutex;
     SET_CONTINUATION_HANDLER(e, &DNSEntry::postEvent);

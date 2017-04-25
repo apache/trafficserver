@@ -301,19 +301,19 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
       Lookup.tree.insert(cur_values.server_name, entry, Parse_order++);
     }
     if (cur_values.server_ips.size() > 0) {
-      for (size_t i = 0; i < cur_values.server_ips.size(); i++) {
+      for (auto &server_ip : cur_values.server_ips) {
         IpEndpoint first, second;
-        first.assign(cur_values.server_ips[i].first);
-        second.assign(cur_values.server_ips[i].second);
+        first.assign(server_ip.first);
+        second.assign(server_ip.second);
         Lookup.ipmap.fill(&first, &second, entry);
         char val1[256], val2[256];
-        cur_values.server_ips[i].first.toString(val1, sizeof(val1));
-        cur_values.server_ips[i].second.toString(val2, sizeof(val2));
+        server_ip.first.toString(val1, sizeof(val1));
+        server_ip.second.toString(val2, sizeof(val2));
       }
     }
     if (entry != nullptr) {
-      for (size_t i = 0; i < cert_names.size(); i++) {
-        Lookup.tree.insert(cert_names[i], entry, Parse_order++);
+      for (const auto &cert_name : cert_names) {
+        Lookup.tree.insert(cert_name, entry, Parse_order++);
       }
     }
   }
@@ -348,8 +348,8 @@ Load_Certificate_Thread(void *arg)
       TSVConnReenable(vc);
     }
     TSMutexUnlock(entry->mutex);
-    for (size_t i = 0; i < cert_names.size(); i++) {
-      Lookup.tree.insert(cert_names[i], entry, Parse_order++);
+    for (const auto &cert_name : cert_names) {
+      Lookup.tree.insert(cert_name, entry, Parse_order++);
     }
   } else {
     TSMutexUnlock(entry->mutex);

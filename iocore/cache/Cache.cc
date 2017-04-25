@@ -126,9 +126,9 @@ struct VolInitInfo {
 
   ~VolInitInfo()
   {
-    for (int i = 0; i < 4; i++) {
-      vol_aio[i].action = nullptr;
-      vol_aio[i].mutex.clear();
+    for (auto &i : vol_aio) {
+      i.action = nullptr;
+      i.mutex.clear();
     }
     free(vol_h_f);
   }
@@ -1786,9 +1786,9 @@ Vol::handle_header_read(int event, void *data)
   switch (event) {
   case AIO_EVENT_DONE:
     op = (AIOCallback *)data;
-    for (int i = 0; i < 4; i++) {
+    for (auto &i : hf) {
       ink_assert(op != nullptr);
-      hf[i] = (VolHeaderFooter *)(op->aiocb.aio_buf);
+      i = (VolHeaderFooter *)(op->aiocb.aio_buf);
       if ((size_t)op->aio_result != (size_t)op->aiocb.aio_nbytes) {
         clear_dir();
         return EVENT_DONE;
