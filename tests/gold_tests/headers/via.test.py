@@ -29,13 +29,13 @@ Check VIA header for protocol stack data.
 # This should be made generally available.
 def RequireCurlFeature(tag):
   FEATURE_TAG = 'Features:'
-  tag = tag.lower();
+  tag = tag.lower()
   try:
     text = subprocess.check_output(['curl', '--version'], universal_newlines = True)
     for line in text.splitlines():
       if (line.startswith(FEATURE_TAG)):
         line = line[len(FEATURE_TAG):].lower()
-        tokens = line.split();
+        tokens = line.split()
         for t in tokens:
           if t == tag:
             return True
