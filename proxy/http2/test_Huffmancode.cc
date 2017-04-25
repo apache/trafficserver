@@ -70,10 +70,10 @@ random_test()
   const int size  = 1024;
   char *dst_start = (char *)malloc(size * 2);
   char string[size];
-  for (int i = 0; i < size; i++) {
+  for (char &i : string) {
     // coverity[dont_call]
-    long num  = lrand48();
-    string[i] = (char)num;
+    long num = lrand48();
+    i        = (char)num;
   }
   const uint8_t *src = (const uint8_t *)string;
   uint32_t src_len   = sizeof(string);
@@ -160,12 +160,12 @@ const static struct {
 void
 encode_test()
 {
-  for (uint64_t i = 0; i < sizeof(huffman_encode_test_data) / sizeof(huffman_encode_test_data[0]); ++i) {
-    uint8_t *dst        = static_cast<uint8_t *>(malloc(huffman_encode_test_data[i].expect_len));
-    int64_t encoded_len = huffman_encode(dst, huffman_encode_test_data[i].src, huffman_encode_test_data[i].src_len);
+  for (const auto &i : huffman_encode_test_data) {
+    uint8_t *dst        = static_cast<uint8_t *>(malloc(i.expect_len));
+    int64_t encoded_len = huffman_encode(dst, i.src, i.src_len);
 
-    assert(encoded_len == huffman_encode_test_data[i].expect_len);
-    assert(memcmp(huffman_encode_test_data[i].expect, dst, encoded_len) == 0);
+    assert(encoded_len == i.expect_len);
+    assert(memcmp(i.expect, dst, encoded_len) == 0);
 
     free(dst);
   }

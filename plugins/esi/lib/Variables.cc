@@ -50,9 +50,9 @@ const string Variables::NORM_SPECIAL_HEADERS[] = {string("HTTP_ACCEPT_LANGUAGE")
 inline string &
 Variables::_toUpperCase(string &str) const
 {
-  for (size_t i = 0; i < str.size(); ++i) {
-    if ((str[i] >= 'a') && (str[i] <= 'z')) {
-      str[i] = 'A' + (str[i] - 'a');
+  for (char &i : str) {
+    if ((i >= 'a') && (i <= 'z')) {
+      i = 'A' + (i - 'a');
     }
   }
   return str;
@@ -167,10 +167,10 @@ Variables::_parseQueryString(const char *query_string, int query_string_len)
   _insert(_simple_data, string("QUERY_STRING"), string(query_string, query_string_len));
   AttributeList attr_list;
   Utils::parseAttributes(query_string, query_string_len, attr_list, "&");
-  for (AttributeList::iterator iter = attr_list.begin(); iter != attr_list.end(); ++iter) {
-    _debugLog(_debug_tag, "[%s] Inserting query string variable [%.*s] with value [%.*s]", __FUNCTION__, iter->name_len, iter->name,
-              iter->value_len, iter->value);
-    _insert(_dict_data[QUERY_STRING], string(iter->name, iter->name_len), string(iter->value, iter->value_len));
+  for (auto &iter : attr_list) {
+    _debugLog(_debug_tag, "[%s] Inserting query string variable [%.*s] with value [%.*s]", __FUNCTION__, iter.name_len, iter.name,
+              iter.value_len, iter.value);
+    _insert(_dict_data[QUERY_STRING], string(iter.name, iter.name_len), string(iter.value, iter.value_len));
   }
 }
 
@@ -276,10 +276,10 @@ Variables::_parseSubCookies()
     StringHash &subcookies = _sub_cookies[name];
     AttributeList attr_list;
     Utils::parseAttributes(value.c_str(), value.length(), attr_list, "&");
-    for (AttributeList::iterator iter = attr_list.begin(); iter != attr_list.end(); ++iter) {
-      _debugLog(_debug_tag, "[%s] Inserting query string variable [%.*s] with value [%.*s]", __FUNCTION__, iter->name_len,
-                iter->name, iter->value_len, iter->value);
-      _insert(subcookies, string(iter->name, iter->name_len), string(iter->value, iter->value_len));
+    for (auto &iter : attr_list) {
+      _debugLog(_debug_tag, "[%s] Inserting query string variable [%.*s] with value [%.*s]", __FUNCTION__, iter.name_len, iter.name,
+                iter.value_len, iter.value);
+      _insert(subcookies, string(iter.name, iter.name_len), string(iter.value, iter.value_len));
     }
   }
 }
@@ -342,8 +342,8 @@ Variables::clear()
     _dict_data[i].clear();
     _cached_special_headers[i].clear();
   }
-  for (int i = 0; i < N_SIMPLE_HEADERS; ++i) {
-    _cached_simple_headers[i].clear();
+  for (auto &_cached_simple_header : _cached_simple_headers) {
+    _cached_simple_header.clear();
   }
   _query_string.clear();
   _headers_parsed = _query_string_parsed = false;
@@ -356,8 +356,8 @@ Variables::_parseCookieString(const char *str, int str_len)
 {
   AttributeList cookies;
   Utils::parseAttributes(str, str_len, cookies, ";,");
-  for (AttributeList::iterator iter = cookies.begin(); iter != cookies.end(); ++iter) {
-    std::string cookie = iter->name;
+  for (auto &iter : cookies) {
+    std::string cookie = iter.name;
     size_t pos         = cookie.find('=');
 
     if (pos != std::string::npos) {
@@ -365,16 +365,16 @@ Variables::_parseCookieString(const char *str, int str_len)
     }
 
     bool found = false;
-    for (Utils::HeaderValueList::iterator approved = _whitelistCookies.begin(); approved != _whitelistCookies.end(); ++approved) {
-      if ((*approved == "*") || (*approved == cookie)) {
+    for (auto &_whitelistCookie : _whitelistCookies) {
+      if ((_whitelistCookie == "*") || (_whitelistCookie == cookie)) {
         found = true;
       }
     }
 
     if (found == true) {
-      _insert(_dict_data[HTTP_COOKIE], string(iter->name, iter->name_len), string(iter->value, iter->value_len));
-      _debugLog(_debug_tag, "[%s] Inserted cookie with name [%.*s] and value [%.*s]", __FUNCTION__, iter->name_len, iter->name,
-                iter->value_len, iter->value);
+      _insert(_dict_data[HTTP_COOKIE], string(iter.name, iter.name_len), string(iter.value, iter.value_len));
+      _debugLog(_debug_tag, "[%s] Inserted cookie with name [%.*s] and value [%.*s]", __FUNCTION__, iter.name_len, iter.name,
+                iter.value_len, iter.value);
     }
   }
 }

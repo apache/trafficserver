@@ -757,8 +757,8 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
 
 LogFilterIP::LogFilterIP(const LogFilterIP &rhs) : LogFilter(rhs.m_name, rhs.m_field, rhs.m_action, rhs.m_operator)
 {
-  for (IpMap::iterator spot(rhs.m_map.begin()), limit(rhs.m_map.end()); spot != limit; ++spot) {
-    m_map.mark(spot->min(), spot->max(), spot->data());
+  for (auto &spot : rhs.m_map) {
+    m_map.mark(spot.min(), spot.max(), spot.data());
   }
   this->init();
 }

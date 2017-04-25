@@ -76,12 +76,12 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_HTTP_TXN_CLOSE: { // opening scope to declare plugins variable below
     resetTransactionHandles(transaction, event);
     const std::list<TransactionPlugin *> &plugins = utils::internal::getTransactionPlugins(transaction);
-    for (std::list<TransactionPlugin *>::const_iterator iter = plugins.begin(), end = plugins.end(); iter != end; ++iter) {
-      std::shared_ptr<Mutex> trans_mutex = utils::internal::getTransactionPluginMutex(**iter);
-      LOG_DEBUG("Locking TransacitonPlugin mutex to delete transaction plugin at %p", *iter);
+    for (auto plugin : plugins) {
+      std::shared_ptr<Mutex> trans_mutex = utils::internal::getTransactionPluginMutex(*plugin);
+      LOG_DEBUG("Locking TransacitonPlugin mutex to delete transaction plugin at %p", plugin);
       trans_mutex->lock();
-      LOG_DEBUG("Locked Mutex...Deleting transaction plugin at %p", *iter);
-      delete *iter;
+      LOG_DEBUG("Locked Mutex...Deleting transaction plugin at %p", plugin);
+      delete plugin;
       trans_mutex->unlock();
     }
     delete &transaction;

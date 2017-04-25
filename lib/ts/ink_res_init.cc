@@ -614,14 +614,14 @@ ts_host_res_order_to_string(HostResPreferenceOrder const &order, char *out, int 
 {
   int zret   = 0;
   bool first = true;
-  for (int i = 0; i < N_HOST_RES_PREFERENCE_ORDER; ++i) {
+  for (auto i : order) {
     /* Note we use a semi-colon here because this must be compatible
      * with the -httpport command line option which uses comma to
      * separate port descriptors so we cannot use that to separate
      * resolution key words.
      */
-    zret += snprintf(out + zret, size - zret, "%s%s", !first ? ";" : "", HOST_RES_PREFERENCE_STRING[order[i]]);
-    if (HOST_RES_PREFER_NONE == order[i])
+    zret += snprintf(out + zret, size - zret, "%s%s", !first ? ";" : "", HOST_RES_PREFERENCE_STRING[i]);
+    if (HOST_RES_PREFER_NONE == i)
       break;
     first = false;
   }

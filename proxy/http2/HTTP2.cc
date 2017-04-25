@@ -920,11 +920,9 @@ REGRESSION_TEST(HTTP2_FRAME_FLAGS)(RegressionTest *t, int, int *pstatus)
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  for (unsigned int i = 0; i < sizeof(http2_frame_flags_test_case) / sizeof(http2_frame_flags_test_case[0]); ++i) {
-    box.check(http2_frame_flags_are_valid(http2_frame_flags_test_case[i].ftype, http2_frame_flags_test_case[i].fflags) ==
-                http2_frame_flags_test_case[i].valid,
-              "Validation of frame flags (type: %d, flags: %d) are expected %d, but not", http2_frame_flags_test_case[i].ftype,
-              http2_frame_flags_test_case[i].fflags, http2_frame_flags_test_case[i].valid);
+  for (auto i : http2_frame_flags_test_case) {
+    box.check(http2_frame_flags_are_valid(i.ftype, i.fflags) == i.valid,
+              "Validation of frame flags (type: %d, flags: %d) are expected %d, but not", i.ftype, i.fflags, i.valid);
   }
 }
 

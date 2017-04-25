@@ -105,8 +105,8 @@ acl_filter_rule::print()
     }
   }
   printf("nonstandard methods=");
-  for (MethodMap::iterator iter = nonstandard_methods.begin(), end = nonstandard_methods.end(); iter != end; ++iter) {
-    printf("%s ", iter->c_str());
+  for (const auto &nonstandard_method : nonstandard_methods) {
+    printf("%s ", nonstandard_method.c_str());
   }
   printf("\n");
   printf("src_ip_cnt=%d\n", src_ip_cnt);

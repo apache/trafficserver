@@ -61,8 +61,8 @@ new_event_client()
   EventClientT *ele = (EventClientT *)ats_malloc(sizeof(EventClientT));
 
   // now set the alarms registered section
-  for (int i = 0; i < NUM_EVENTS; i++) {
-    ele->events_registered[i] = false;
+  for (bool &i : ele->events_registered) {
+    i = false;
   }
 
   ele->adr = (struct sockaddr *)ats_malloc(sizeof(struct sockaddr));
@@ -459,8 +459,8 @@ handle_event_reg_callback(EventClientT *client, void *req, size_t reqlen)
 
   // mark the specified alarm as "wanting to be notified" in the client's alarm_registered list
   if (strlen(name) == 0) { // mark all alarms
-    for (int i = 0; i < NUM_EVENTS; i++) {
-      client->events_registered[i] = true;
+    for (bool &i : client->events_registered) {
+      i = true;
     }
   } else {
     int id = get_event_id(name);
@@ -502,8 +502,8 @@ handle_event_unreg_callback(EventClientT *client, void *req, size_t reqlen)
 
   // mark the specified alarm as "wanting to be notified" in the client's alarm_registered list
   if (strlen(name) == 0) { // mark all alarms
-    for (int i = 0; i < NUM_EVENTS; i++) {
-      client->events_registered[i] = false;
+    for (bool &i : client->events_registered) {
+      i = false;
     }
   } else {
     int id = get_event_id(name);

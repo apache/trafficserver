@@ -284,8 +284,8 @@ CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &pr
 
     StringVector captures;
     if (prefixCapture.process(hostAndPort, captures)) {
-      for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
-        append(*it);
+      for (auto &capture : captures) {
+        append(capture);
       }
       CacheKeyDebug("added host:port capture prefix, key: '%s'", _key.c_str());
     }
@@ -298,8 +298,8 @@ CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &pr
     if (!uri.empty()) {
       StringVector captures;
       if (prefixCaptureUri.process(uri, captures)) {
-        for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
-          append(*it);
+        for (auto &capture : captures) {
+          append(capture);
         }
         CacheKeyDebug("added URI capture prefix, key: '%s'", _key.c_str());
       }
@@ -341,8 +341,8 @@ CacheKey::appendPath(Pattern &pathCapture, Pattern &pathCaptureUri)
     if (!uri.empty()) {
       StringVector captures;
       if (pathCaptureUri.process(uri, captures)) {
-        for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
-          append(*it);
+        for (auto &capture : captures) {
+          append(capture);
         }
         CacheKeyDebug("added URI capture (path), key: '%s'", _key.c_str());
       }
@@ -356,8 +356,8 @@ CacheKey::appendPath(Pattern &pathCapture, Pattern &pathCaptureUri)
     if (!path.empty()) {
       StringVector captures;
       if (pathCapture.process(path, captures)) {
-        for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
-          append(*it);
+        for (auto &capture : captures) {
+          append(capture);
         }
         CacheKeyDebug("added path capture, key: '%s'", _key.c_str());
       }
@@ -554,8 +554,8 @@ CacheKey::appendUaCaptures(Pattern &config)
     StringVector captures;
 
     if (config.process(val, captures)) {
-      for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
-        append(*it);
+      for (auto &capture : captures) {
+        append(capture);
       }
     }
   }
