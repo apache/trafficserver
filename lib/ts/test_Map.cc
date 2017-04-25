@@ -168,6 +168,11 @@ main(int /* argc ATS_UNUSED */, char ** /*argv ATS_UNUSED */)
   ink_assert(sh.get("af") == 10);
   ink_assert(sh.get("ac") == 7);
 
+  HashMap<cchar *, StringHashFns, int> sh2(-99); // return -99 if key not found
+  sh2.put("aa", 15);
+  sh2.put("ab", 16);
+  ink_assert(sh2.get("aa") == 15);
+  ink_assert(sh2.get("ac") == -99);
   test_TSHashTable();
 
   printf("test_Map PASSED\n");

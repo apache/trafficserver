@@ -114,11 +114,16 @@ public:
   using Map<K, C, A>::i;
   using Map<K, C, A>::v;
   using Map<K, C, A>::e;
+  HashMap() {}
+  HashMap(C c) : invalid_value(c) {}
   MapElem<K, C> *get_internal(K akey);
   C get(K akey);
   value_type *put(K akey, C avalue);
   void get_keys(Vec<K> &keys);
   void get_values(Vec<C> &values);
+
+private:
+  C invalid_value = 0; // return this object if key is not present
 };
 
 #define form_Map(_c, _p, _v)                                                                                                       \
@@ -513,7 +518,7 @@ HashMap<K, AHashFns, C, A>::get(K akey)
 {
   MapElem<K, C> *x = get_internal(akey);
   if (!x)
-    return 0;
+    return invalid_value;
   return x->value;
 }
 
