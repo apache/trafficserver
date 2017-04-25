@@ -74,10 +74,12 @@ int event_handler(TSCont, TSEvent, void *); // Forward declaration
 class S3Config
 {
 public:
-  S3Config()
+  S3Config(bool get_cont = true)
   {
-    _cont = TSContCreate(event_handler, nullptr);
-    TSContDataSet(_cont, static_cast<void *>(this));
+    if (get_cont) {
+      _cont = TSContCreate(event_handler, nullptr);
+      TSContDataSet(_cont, static_cast<void *>(this));
+    }
   }
 
   ~S3Config()
@@ -85,7 +87,9 @@ public:
     _secret_len = _keyid_len = 0;
     TSfree(_secret);
     TSfree(_keyid);
-    TSContDestroy(_cont);
+    if (_cont) {
+      TSContDestroy(_cont);
+    }
   }
 
   // Is this configuration usable?
@@ -117,12 +121,12 @@ public:
   copy_changes_from(const S3Config *src)
   {
     if (src->_secret) {
-      _secret     = src->_secret;
+      _secret     = TSstrdup(src->_secret);
       _secret_len = src->_secret_len;
     }
 
     if (src->_keyid) {
-      _keyid     = src->_keyid;
+      _keyid     = TSstrdup(src->_keyid);
       _keyid_len = src->_keyid_len;
     }
 
@@ -215,7 +219,7 @@ private:
   bool _version_modified   = false;
   bool _virt_host_modified = false;
   TSCont _cont             = nullptr;
-  volatile int _ref_count  = 0;
+  volatile int _ref_count  = 1;
 };
 
 bool
@@ -301,23 +305,34 @@ ConfigCache::get(const char *fname)
 
   if (it != _cache.end()) {
     if (tv.tv_sec > (it->second.second + _ttl)) {
-      TSDebug(PLUGIN_NAME, "Configuration from %s is stale, reloading", config_fname.c_str());
       // Update the cached configuration file.
-      delete it->second.first;
-      it->second.first = new S3Config();
-      it->second.first->parse_config(config_fname);
+      S3Config *s3 = new S3Config(false); // false == this config does not get the continuation
+
+      TSDebug(PLUGIN_NAME, "Configuration from %s is stale, reloading", config_fname.c_str());
       it->second.second = tv.tv_sec;
+      it->second.first->release();
+      if (s3->parse_config(config_fname)) {
+        it->second.first = s3;
+      } else {
+        // Failed the configuration parse... Set the cache response to nullptr
+        s3->release();
+        it->second.first = nullptr;
+      }
     } else {
       TSDebug(PLUGIN_NAME, "Configuration from %s is fresh, reusing", config_fname.c_str());
     }
     return it->second.first;
   } else {
     // Create a new cached file.
-    S3Config *s3 = new S3Config();
+    S3Config *s3 = new S3Config(false); // false == this config does not get the continuation
 
-    s3->parse_config(config_fname);
-    _cache[config_fname] = std::make_pair(s3, tv.tv_sec);
-    TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s", config_fname.c_str());
+    if (s3->parse_config(config_fname)) {
+      _cache[config_fname] = std::make_pair(s3, tv.tv_sec);
+      TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s", config_fname.c_str());
+    } else {
+      s3->release();
+      return nullptr;
+    }
 
     return s3;
   }
@@ -672,7 +687,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     {nullptr, no_argument, nullptr, '\0'},
   };
 
-  S3Config *s3          = new S3Config();
+  S3Config *s3          = new S3Config(true); // true == this config gets the continuation
   S3Config *file_config = nullptr;
 
   // argv contains the "to" and "from" URLs. Skip the first so that the
@@ -686,6 +701,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     switch (opt) {
     case 'c':
       file_config = gConfCache.get(optarg); // Get cached, or new, config object, from a file
+      if (!file_config) {
+        TSError("[%s] invalid configuration file, %s", PLUGIN_NAME, optarg);
+        *ih = nullptr;
+        s3->release();
+        return TS_ERROR;
+      }
       break;
     case 'a':
       s3->set_keyid(optarg);
@@ -714,12 +735,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   // Make sure we got both the shared secret and the AWS secret
   if (!s3->valid()) {
     TSError("[%s] requires both shared and AWS secret configuration", PLUGIN_NAME);
-    delete s3;
+    s3->release();
     *ih = nullptr;
     return TS_ERROR;
   }
 
-  s3->acquire(); // Increment ref-count
+  // Note that we don't acquire() the s3 config, it's implicit that we hold at least one ref
   *ih = static_cast<void *>(s3);
   TSDebug(PLUGIN_NAME, "New rule: secret_key=%s, access_key=%s, virtual_host=%s", s3->secret(), s3->keyid(),
           s3->virt_host() ? "yes" : "no");
