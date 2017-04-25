@@ -30,6 +30,7 @@
 #include <climits>
 #include <cctype>
 
+#include <fstream> /* std::ifstream */
 #include <string>
 #include <unordered_map>
 
@@ -42,12 +43,98 @@
 
 // Special snowflake here, only availbale when building inside the ATS source tree.
 #include "ts/ink_atomic.h"
+#include "aws_auth_v4.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Some constants.
 //
 static const char PLUGIN_NAME[] = "s3_auth";
 static const char DATE_FMT[]    = "%a, %d %b %Y %H:%M:%S %z";
+
+/**
+ * @brief Rebase a relative path onto the configuration directory.
+ */
+static String
+makeConfigPath(const String &path)
+{
+  if (path.empty() || path[0] == '/') {
+    return path;
+  }
+
+  return String(TSConfigDirGet()) + "/" + path;
+}
+
+/**
+ * @brief a helper function which loads the entry-point to region from files.
+ * @param args classname + filename in '<classname>:<filename>' format.
+ * @return true if successful, false otherwise.
+ */
+static bool
+loadRegionMap(StringMap &m, const String &filename)
+{
+  static const char *EXPECTED_FORMAT = "<s3-entry-point>:<s3-region>";
+
+  String path(makeConfigPath(filename));
+
+  std::ifstream ifstr;
+  String line;
+  unsigned lineno = 0;
+
+  ifstr.open(path.c_str());
+  if (!ifstr) {
+    TSError("[%s] failed to load s3-region map from '%s'", PLUGIN_NAME, path.c_str());
+    return false;
+  }
+
+  TSDebug(PLUGIN_NAME, "loading region mapping from '%s'", path.c_str());
+
+  m[""] = ""; /* set a default just in case if the user does not specify it */
+
+  while (std::getline(ifstr, line)) {
+    String::size_type pos;
+
+    ++lineno;
+
+    // Allow #-prefixed comments.
+    pos = line.find_first_of('#');
+    if (pos != String::npos) {
+      line.resize(pos);
+    }
+
+    if (line.empty()) {
+      continue;
+    }
+
+    std::size_t d = line.find(':');
+    if (String::npos == d) {
+      TSError("[%s] failed to parse region map string '%s', expected format: '%s'", PLUGIN_NAME, line.c_str(), EXPECTED_FORMAT);
+      return false;
+    }
+
+    String entrypoint(trimWhiteSpaces(String(line, 0, d)));
+    String region(trimWhiteSpaces(String(line, d + 1, String::npos)));
+
+    if (region.empty()) {
+      TSDebug(PLUGIN_NAME, "<s3-region> in '%s' cannot be empty (skipped), expected format: '%s'", line.c_str(), EXPECTED_FORMAT);
+      continue;
+    }
+
+    if (entrypoint.empty()) {
+      TSDebug(PLUGIN_NAME, "added default region %s", region.c_str());
+    } else {
+      TSDebug(PLUGIN_NAME, "added entry-point:%s, region:%s", entrypoint.c_str(), region.c_str());
+    }
+
+    m[entrypoint] = region;
+  }
+
+  if (m.at("").empty()) {
+    TSDebug(PLUGIN_NAME, "default region was not defined");
+  }
+
+  ifstr.close();
+  return true;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Cache for the secrets file, to avoid reading / loding them repeatedly on
@@ -97,7 +184,29 @@ public:
   bool
   valid() const
   {
-    return _secret && (_secret_len > 0) && _keyid && (_keyid_len > 0) && (2 == _version);
+    /* Check mandatory parameters first */
+    if (!_secret || !(_secret_len > 0) || !_keyid || !(_keyid_len > 0) || (2 != _version && 4 != _version)) {
+      return false;
+    }
+
+    /* Optional parameters, issue warning if v2 parameters are used with v4 and vice-versa (wrong parameters are ignored anyways) */
+    if (2 == _version) {
+      if (_v4includeHeaders_modified && !_v4includeHeaders.empty()) {
+        TSError("[%s] headers are not being signed with AWS auth v2, included headers parameter ignored", PLUGIN_NAME);
+      }
+      if (_v4excludeHeaders_modified && !_v4excludeHeaders.empty()) {
+        TSError("[%s] headers are not being signed with AWS auth v2, excluded headers parameter ignored", PLUGIN_NAME);
+      }
+      if (_region_map_modified && !_region_map.empty()) {
+        TSError("[%s] region map is not used with AWS auth v2, parameter ignored", PLUGIN_NAME);
+      }
+    } else {
+      /* 4 == _version */
+      if (_virt_host_modified) {
+        TSError("[%s] virtual host not used with AWS auth v4, parameter ignored", PLUGIN_NAME);
+      }
+    }
+    return true;
   }
 
   void
@@ -132,10 +241,28 @@ public:
     }
 
     if (src->_version_modified) {
-      _version = src->_version;
+      _version          = src->_version;
+      _version_modified = true;
     }
+
     if (src->_virt_host_modified) {
-      _virt_host = src->_virt_host;
+      _virt_host          = src->_virt_host;
+      _virt_host_modified = true;
+    }
+
+    if (src->_v4includeHeaders_modified) {
+      _v4includeHeaders          = src->_v4includeHeaders;
+      _v4includeHeaders_modified = true;
+    }
+
+    if (src->_v4excludeHeaders_modified) {
+      _v4excludeHeaders          = src->_v4excludeHeaders;
+      _v4excludeHeaders_modified = true;
+    }
+
+    if (src->_region_map_modified) {
+      _region_map          = src->_region_map;
+      _region_map_modified = true;
     }
   }
 
@@ -170,6 +297,30 @@ public:
     return _keyid_len;
   }
 
+  int
+  version() const
+  {
+    return _version;
+  }
+
+  const StringSet &
+  v4includeHeaders()
+  {
+    return _v4includeHeaders;
+  }
+
+  const StringSet &
+  v4excludeHeaders()
+  {
+    return _v4excludeHeaders;
+  }
+
+  const StringMap &
+  v4RegionMap()
+  {
+    return _region_map;
+  }
+
   // Setters
   void
   set_secret(const char *s)
@@ -198,6 +349,31 @@ public:
     _version_modified = true;
   }
 
+  void
+  set_include_headers(const char *s)
+  {
+    ::commaSeparateString<StringSet>(_v4includeHeaders, s);
+    _v4includeHeaders_modified = true;
+  }
+
+  void
+  set_exclude_headers(const char *s)
+  {
+    ::commaSeparateString<StringSet>(_v4excludeHeaders, s);
+    _v4excludeHeaders_modified = true;
+
+    /* Exclude headers that are meant to be changed */
+    _v4excludeHeaders.insert("x-forwarded-for");
+    _v4excludeHeaders.insert("via");
+  }
+
+  void
+  set_region_map(const char *s)
+  {
+    loadRegionMap(_region_map, s);
+    _region_map_modified = true;
+  }
+
   // Parse configs from an external file
   bool parse_config(const std::string &filename);
 
@@ -221,6 +397,12 @@ private:
   bool _virt_host_modified = false;
   TSCont _cont             = nullptr;
   volatile int _ref_count  = 1;
+  StringSet _v4includeHeaders;
+  bool _v4includeHeaders_modified = false;
+  StringSet _v4excludeHeaders;
+  bool _v4excludeHeaders_modified = false;
+  StringMap _region_map;
+  bool _region_map_modified = false;
 };
 
 bool
@@ -269,6 +451,12 @@ S3Config::parse_config(const std::string &config_fname)
         set_version(pos2 + 8);
       } else if (0 == strncasecmp(pos2, "virtual_host", 12)) {
         set_virt_host();
+      } else if (0 == strncasecmp(pos2, "v4-include-headers=", 19)) {
+        set_include_headers(pos2 + 19);
+      } else if (0 == strncasecmp(pos2, "v4-exclude-headers=", 19)) {
+        set_exclude_headers(pos2 + 19);
+      } else if (0 == strncasecmp(pos2, "v4-region-map=", 14)) {
+        set_region_map(pos2 + 14);
       } else {
         // ToDo: warnings?
       }
@@ -290,17 +478,12 @@ S3Config::parse_config(const std::string &config_fname)
 S3Config *
 ConfigCache::get(const char *fname)
 {
-  std::string config_fname;
   struct timeval tv;
 
   gettimeofday(&tv, nullptr);
 
   // Make sure the filename is an absolute path, prepending the config dir if needed
-  if (*fname != '/') {
-    config_fname = TSConfigDirGet();
-    config_fname += "/";
-  }
-  config_fname += fname;
+  std::string config_fname = makeConfigPath(fname);
 
   auto it = _cache.find(config_fname);
 
@@ -329,7 +512,7 @@ ConfigCache::get(const char *fname)
 
     if (s3->parse_config(config_fname)) {
       _cache[config_fname] = std::make_pair(s3, tv.tv_sec);
-      TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s", config_fname.c_str());
+      TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s, version:%d", config_fname.c_str(), s3->version());
     } else {
       s3->release();
       return nullptr;
@@ -368,6 +551,8 @@ public:
     return true;
   }
 
+  TSHttpStatus authorizeV2(S3Config *s3);
+  TSHttpStatus authorizeV4(S3Config *s3);
   TSHttpStatus authorize(S3Config *s3);
   bool set_header(const char *header, int header_len, const char *val, int val_len);
 
@@ -440,6 +625,55 @@ str_concat(char *dst, size_t dst_len, const char *src, size_t src_len)
   return to_copy;
 }
 
+TSHttpStatus
+S3Request::authorize(S3Config *s3)
+{
+  TSHttpStatus status = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  switch (s3->version()) {
+  case 2:
+    status = authorizeV2(s3);
+    break;
+  case 4:
+    status = authorizeV4(s3);
+    break;
+  default:
+    break;
+  }
+  return status;
+}
+
+TSHttpStatus
+S3Request::authorizeV4(S3Config *s3)
+{
+  TsApi api(_bufp, _hdr_loc, _url_loc);
+  time_t now = time(0);
+
+  AwsAuthV4 util(api, &now, /* signPayload */ false, s3->keyid(), s3->keyid_len(), s3->secret(), s3->secret_len(), "s3", 2,
+                 s3->v4includeHeaders(), s3->v4excludeHeaders(), s3->v4RegionMap());
+  String payloadHash = util.getPayloadHash();
+  if (!set_header(X_AMZ_CONTENT_SHA256.c_str(), X_AMZ_CONTENT_SHA256.length(), payloadHash.c_str(), payloadHash.length())) {
+    return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  }
+
+  /* set x-amz-date header */
+  size_t dateTimeLen   = 0;
+  const char *dateTime = util.getDateTime(&dateTimeLen);
+  if (!set_header(X_AMX_DATE.c_str(), X_AMX_DATE.length(), dateTime, dateTimeLen)) {
+    return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  }
+
+  String auth = util.getAuthorizationHeader();
+  if (auth.empty()) {
+    return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  }
+
+  if (!set_header(TS_MIME_FIELD_AUTHORIZATION, TS_MIME_LEN_AUTHORIZATION, auth.c_str(), auth.length())) {
+    return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  }
+
+  return TS_HTTP_STATUS_OK;
+}
+
 // Method to authorize the S3 request:
 //
 // StringToSign = HTTP-VERB + "\n" +
@@ -458,7 +692,7 @@ str_concat(char *dst, size_t dst_len, const char *src, size_t src_len)
 //  Note: This assumes that the URI path has been appropriately canonicalized by remapping
 //
 TSHttpStatus
-S3Request::authorize(S3Config *s3)
+S3Request::authorizeV2(S3Config *s3)
 {
   TSHttpStatus status = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   TSMLoc host_loc = TS_NULL_MLOC, md5_loc = TS_NULL_MLOC, contype_loc = TS_NULL_MLOC;
@@ -621,6 +855,7 @@ event_handler(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   S3Config *s3   = static_cast<S3Config *>(TSContDataGet(cont));
+
   S3Request request(txnp);
   TSHttpStatus status  = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   TSEvent enable_event = TS_EVENT_HTTP_CONTINUE;
@@ -685,6 +920,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     {const_cast<char *>("secret_key"), required_argument, nullptr, 's'},
     {const_cast<char *>("version"), required_argument, nullptr, 'v'},
     {const_cast<char *>("virtual_host"), no_argument, nullptr, 'h'},
+    {const_cast<char *>("v4-include-headers"), required_argument, nullptr, 'i'},
+    {const_cast<char *>("v4-exclude-headers"), required_argument, nullptr, 'e'},
+    {const_cast<char *>("v4-region-map"), required_argument, nullptr, 'm'},
     {nullptr, no_argument, nullptr, '\0'},
   };
 
@@ -721,6 +959,15 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     case 'v':
       s3->set_version(optarg);
       break;
+    case 'i':
+      s3->set_include_headers(optarg);
+      break;
+    case 'e':
+      s3->set_exclude_headers(optarg);
+      break;
+    case 'm':
+      s3->set_region_map(optarg);
+      break;
     }
 
     if (opt == -1) {
@@ -743,8 +990,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   // Note that we don't acquire() the s3 config, it's implicit that we hold at least one ref
   *ih = static_cast<void *>(s3);
-  TSDebug(PLUGIN_NAME, "New rule: secret_key=%s, access_key=%s, virtual_host=%s", s3->secret(), s3->keyid(),
-          s3->virt_host() ? "yes" : "no");
+  TSDebug(PLUGIN_NAME, "New rule: secret_key=%s, access_key=%s, virtual_host=%s, version=%d", s3->secret(), s3->keyid(),
+          s3->virt_host() ? "yes" : "no", s3->version());
 
   return TS_SUCCESS;
 }
