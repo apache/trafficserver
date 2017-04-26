@@ -287,6 +287,7 @@ ICPPeerReadCont::ICPPeerReadCont()
     _object_read(nullptr),
     _cache_req_hdr_heap_handle(nullptr),
     _cache_resp_hdr_heap_handle(nullptr),
+    _http_config_params(nullptr),
     _ICPpr(nullptr),
     _state(nullptr),
     _start_time(0),

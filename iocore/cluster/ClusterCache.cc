@@ -504,7 +504,11 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
     //////////////////////
     // Use long format  //
     //////////////////////
-    msg                = data;
+    if (!data) {
+      data_len = op_to_sizeof_fixedlen_msg(opcode);
+      data     = (char *)ALLOCA_DOUBLE(data_len);
+    }
+    msg                = (char *)data;
     CacheOpMsg_long *m = (CacheOpMsg_long *)msg;
     m->init();
     m->opcode     = opcode;
