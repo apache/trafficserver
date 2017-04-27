@@ -397,7 +397,7 @@ Http2Stream::initiating_close()
     // We are sending signals rather than calling the handlers directly to avoid the case where
     // the HttpTunnel handler causes the HttpSM to be deleted on the stack.
     bool sent_write_complete = false;
-    if (current_reader && this->is_client_state_writeable()) {
+    if (current_reader) {
       // Push out any last IO events
       if (write_vio._cont) {
         SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
