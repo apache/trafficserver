@@ -903,7 +903,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
           Error("HTTP/2 connection error client_ip=%s session_id=%" PRId64 " %s", client_ip, ua_session->connection_id(),
                 error.msg);
         }
-        this->send_goaway_frame(stream_id, error.code);
+        this->send_goaway_frame(this->latest_streamid_in, error.code);
         // The streams will be cleaned up by the HTTP2_SESSION_EVENT_FINI event
         // The Http2ClientSession will shutdown because connection_state.is_state_closed() will be true
 
@@ -1356,7 +1356,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
 
   // Change stream state
   if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, flags)) {
-    this->send_goaway_frame(stream->get_id(), Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
+    this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
     h2_hdr.destroy();
     ats_free(buf);
     return;
@@ -1514,7 +1514,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   Http2Stream *stream = find_stream(id);
   if (stream != nullptr) {
     if (!stream->change_state(HTTP2_FRAME_TYPE_RST_STREAM, 0)) {
-      this->send_goaway_frame(stream->get_id(), Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
+      this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
       return;
     }
   }
@@ -1547,7 +1547,7 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
 
       // Write settings to send buffer
       if (!http2_write_settings(param, iov)) {
-        send_goaway_frame(0, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
+        send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
         return;
       }
       iov.iov_base = reinterpret_cast<uint8_t *>(iov.iov_base) + HTTP2_SETTINGS_PARAMETER_LEN;
