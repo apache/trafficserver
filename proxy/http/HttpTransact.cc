@@ -2722,36 +2722,40 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     }
 
     if (server_up || s->stale_icp_lookup) {
-      bool check_hostdb = get_ka_info_from_config(s, s->current.server);
-      DebugTxn("http_trans", "CacheOpenReadHit - check_hostdb %d", check_hostdb);
-      if (!s->stale_icp_lookup && (check_hostdb || !s->current.server->dst_addr.isValid())) {
-        //        ink_release_assert(s->current.request_to == PARENT_PROXY ||
-        //                    s->http_config_param->no_dns_forward_to_parent != 0);
+      // set a default version for the outgoing request
+      HTTPVersion http_version;
 
-        // We must be going a PARENT PROXY since so did
-        //  origin server DNS lookup right after state Start
-        //
-        // If we end up here in the release case just fall
-        //  through.  The request will fail because of the
-        //  missing ip but we won't take down the system
-        //
-        if (s->current.request_to == PARENT_PROXY) {
-          // Set ourselves up to handle pending revalidate issues
-          //  after the PP DNS lookup
-          ink_assert(s->pending_work == NULL);
-          s->pending_work = issue_revalidate;
+      if (s->current.server != NULL) {
+        bool check_hostdb = get_ka_info_from_config(s, s->current.server);
+        DebugTxn("http_trans", "CacheOpenReadHit - check_hostdb %d", check_hostdb);
+        if (!s->stale_icp_lookup && (check_hostdb || !s->current.server->dst_addr.isValid())) {
+          // We must be going a PARENT PROXY since so did
+          //  origin server DNS lookup right after state Start
+          //
+          // If we end up here in the release case just fall
+          //  through.  The request will fail because of the
+          //  missing ip but we won't take down the system
+          //
+          if (s->current.request_to == PARENT_PROXY) {
+            // Set ourselves up to handle pending revalidate issues
+            //  after the PP DNS lookup
+            ink_assert(s->pending_work == NULL);
+            s->pending_work = issue_revalidate;
 
-          TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
-        } else if (s->current.request_to == ORIGIN_SERVER) {
-          TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
-        } else {
-          handle_parent_died(s);
-          return;
+            TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+          } else if (s->current.request_to == ORIGIN_SERVER) {
+            TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+          } else {
+            handle_parent_died(s);
+            return;
+          }
         }
+        // override the default version with what the server has
+        http_version = s->current.server->http_version;
       }
 
-      DebugTxn("http_trans", "CacheOpenReadHit - version %d", s->current.server->http_version.m_version);
-      build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
+      DebugTxn("http_trans", "CacheOpenReadHit - version %d", http_version.m_version);
+      build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, http_version);
 
       issue_revalidate(s);
 
