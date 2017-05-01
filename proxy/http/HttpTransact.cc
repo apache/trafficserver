@@ -2632,61 +2632,39 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
                          "Revalidate document with server");
 
-    if (s->http_config_param->icp_enabled && icp_dynamic_enabled && s->http_config_param->stale_icp_enabled &&
-        needs_authenticate == false && needs_cache_auth == false && !s->hdr_info.client_request.is_pragma_no_cache_set() &&
-        !s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
-      DebugTxn("http_trans", "[HandleCacheOpenReadHit] ICP is configured"
-                             " and no no-cache in request; checking ICP for a STALE hit");
+    find_server_and_update_current_info(s);
 
-      s->stale_icp_lookup = true;
-
-      // we haven't done the ICP lookup yet. The following is to
-      // fake an icp_info to cater for build_request's needs
-      s->icp_info.http_version.set(1, 0);
-      if (!s->txn_conf->keep_alive_enabled_out) {
-        s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
-      } else {
-        s->icp_info.keep_alive = HTTP_KEEPALIVE;
-      }
-
-      update_current_info(&s->current, &s->icp_info, HttpTransact::ICP_SUGGESTED_HOST, 1);
+    // We do not want to try to revalidate documents if we think
+    //  the server is down due to the something report problem
+    //
+    // Note: we only want to skip origin servers because 1)
+    //  parent proxies have their own negative caching
+    //  scheme & 2) If we skip down parents, every page
+    //  we serve is potentially stale
+    //
+    if (s->current.request_to == ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
+        is_stale_cache_response_returnable(s) == true) {
+      server_up = false;
+      update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
+      DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
     }
-
-    if (s->stale_icp_lookup == false) {
-      find_server_and_update_current_info(s);
-
-      // We do not want to try to revalidate documents if we think
-      //  the server is down due to the something report problem
-      //
-      // Note: we only want to skip origin servers because 1)
-      //  parent proxies have their own negative caching
-      //  scheme & 2) If we skip down parents, every page
-      //  we serve is potentially stale
-      //
-      if (s->current.request_to == ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
-          is_stale_cache_response_returnable(s) == true) {
+    // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
+    // there are no available parents (all down).
+    else if (s->current.request_to == HOST_NONE && s->parent_result.result == PARENT_FAIL) {
+      if (is_server_negative_cached(s) && response_returnable == true && is_stale_cache_response_returnable(s) == true) {
         server_up = false;
         update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
         DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
-      }
-      // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
-      // there are no available parents (all down).
-      else if (s->current.request_to == HOST_NONE && s->parent_result.result == PARENT_FAIL) {
-        if (is_server_negative_cached(s) && response_returnable == true && is_stale_cache_response_returnable(s) == true) {
-          server_up = false;
-          update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
-          DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
-        } else {
-          handle_parent_died(s);
-          return;
-        }
+      } else {
+        handle_parent_died(s);
+        return;
       }
     }
 
-    if (server_up || s->stale_icp_lookup) {
+    if (server_up) {
       bool check_hostdb = get_ka_info_from_config(s, s->current.server);
       DebugTxn("http_trans", "CacheOpenReadHit - check_hostdb %d", check_hostdb);
-      if (!s->stale_icp_lookup && (check_hostdb || !s->current.server->dst_addr.isValid())) {
+      if (check_hostdb || !s->current.server->dst_addr.isValid()) {
         //        ink_release_assert(s->current.request_to == PARENT_PROXY ||
         //                    s->http_config_param->no_dns_forward_to_parent != 0);
 
@@ -2721,9 +2699,6 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
       // in other words, we would not have looked up the cache for a
       // connect request, so the next action can not be origin_server_raw_open.
       s->next_action = how_to_open_connection(s);
-      if (s->stale_icp_lookup && s->next_action == SM_ACTION_ORIGIN_SERVER_OPEN) {
-        s->next_action = SM_ACTION_ICP_QUERY;
-      }
 
       ink_release_assert(s->next_action != SM_ACTION_ORIGIN_SERVER_RAW_OPEN);
       return;
@@ -3020,19 +2995,15 @@ HttpTransact::handle_cache_write_lock(State *s)
     HandleCacheOpenReadHitFreshness(s);
   } else {
     StateMachineAction_t next;
-    if (s->stale_icp_lookup == false) {
-      next = how_to_open_connection(s);
-      if (next == SM_ACTION_ORIGIN_SERVER_OPEN || next == SM_ACTION_ORIGIN_SERVER_RAW_OPEN) {
-        s->next_action = next;
-        TRANSACT_RETURN(next, nullptr);
-      } else {
-        // hehe!
-        s->next_action = next;
-        ink_assert(s->next_action == SM_ACTION_DNS_LOOKUP);
-        return;
-      }
+    next = how_to_open_connection(s);
+    if (next == SM_ACTION_ORIGIN_SERVER_OPEN || next == SM_ACTION_ORIGIN_SERVER_RAW_OPEN) {
+      s->next_action = next;
+      TRANSACT_RETURN(next, nullptr);
     } else {
-      next = SM_ACTION_ICP_QUERY;
+      // hehe!
+      s->next_action = next;
+      ink_assert(s->next_action == SM_ACTION_DNS_LOOKUP);
+      return;
     }
 
     TRANSACT_RETURN(next, nullptr);
@@ -3088,25 +3059,6 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     s->cache_info.action = CACHE_PREPARE_TO_WRITE;
   }
 
-  // We should not issue an ICP lookup if the request has a
-  // no-cache header. First check if the request has a no
-  // cache header. Then, if icp is enabled and the request
-  // does not have a no-cache header, issue an icp lookup.
-
-  // does the request have a no-cache?
-  bool no_cache_in_request = false;
-
-  if (s->hdr_info.client_request.is_pragma_no_cache_set() || s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
-    no_cache_in_request = true;
-  }
-  // if ICP is enabled and above test indicates that request
-  // does not have a no-cache, issue icp query to sibling cache.
-  if (s->http_config_param->icp_enabled && icp_dynamic_enabled != 0 && (no_cache_in_request == false)) {
-    DebugTxn("http_trans", "[HandleCacheOpenReadMiss] "
-                           "ICP is configured and no no-cache in request; checking ICP");
-    s->next_action = SM_ACTION_ICP_QUERY;
-    return;
-  }
   ///////////////////////////////////////////////////////////////
   // a normal miss would try to fetch the document from the    //
   // origin server, unless the origin server isn't resolvable, //
@@ -3205,12 +3157,7 @@ HttpTransact::HandleICPLookup(State *s)
       return;
     }
   }
-  if (!s->stale_icp_lookup) {
-    build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
-  } else {
-    ink_assert(s->hdr_info.server_request.valid());
-    s->stale_icp_lookup = false;
-  }
+  build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
   s->next_action = how_to_open_connection(s);
 
   return;
