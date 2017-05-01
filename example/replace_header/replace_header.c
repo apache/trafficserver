@@ -22,7 +22,7 @@
  */
 
 /*
- *   replace-header.c:
+ *   replace_header.c:
  *	an example program...
  *
  *   NOTE: If faced with duplicate headers, this will only detect the
@@ -39,6 +39,8 @@
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
 
+#define PLUGIN_NAME "replace_header"
+
 static void
 replace_header(TSHttpTxn txnp)
 {
@@ -47,7 +49,7 @@ replace_header(TSHttpTxn txnp)
   TSMLoc field_loc;
 
   if (TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc) != TS_SUCCESS) {
-    TSError("[replace_header] Couldn't retrieve server response header.");
+    TSError("[%s] Couldn't retrieve server response header.", PLUGIN_NAME);
     goto done;
   }
 
@@ -98,12 +100,12 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "replace-header";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[replace_header] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
   }
 
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(replace_header_plugin, NULL));
