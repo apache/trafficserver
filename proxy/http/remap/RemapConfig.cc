@@ -1357,7 +1357,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       ip_text_buffer ipb;   // buffer for address string conversion.
       if (0 == getaddrinfo(fromHost_lower, nullptr, nullptr, &ai_records)) {
         for (addrinfo *ai_spot = ai_records; ai_spot; ai_spot = ai_spot->ai_next) {
-          if (ats_is_ip(ai_spot->ai_addr) && !ats_is_ip_any(ai_spot->ai_addr)) {
+          if (ats_is_ip(ai_spot->ai_addr) && !ats_is_ip_any(ai_spot->ai_addr) && ai_spot->ai_protocol == IPPROTO_TCP) {
             url_mapping *u_mapping;
 
             ats_ip_ntop(ai_spot->ai_addr, ipb, sizeof ipb);

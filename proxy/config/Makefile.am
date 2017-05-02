@@ -40,6 +40,7 @@ dist_sysconf_DATA =	\
   socks.config.default \
   splitdns.config.default \
   ssl_multicert.config.default \
+  ssl_server_name.config.default \
   volume.config.default
 
 install-exec-hook:

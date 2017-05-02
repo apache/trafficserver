@@ -42,6 +42,7 @@
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>
 #include "HttpPages.h"
+#include <unordered_map>
 
 #include "IPAllow.h"
 //#include "I_Auth.h"
@@ -69,6 +70,7 @@
 #define USE_NEW_EMPTY_MIOBUFFER
 
 extern int cache_config_read_while_writer;
+extern TunnelHashMap TunnelMap; // stores the name of the servers to tunnel to
 
 // We have a debugging list that can use to find stuck
 //  state machines
@@ -533,8 +535,39 @@ HttpSM::setup_client_read_request_header()
 void
 HttpSM::setup_blind_tunnel_port()
 {
-  // We gotten a connect on a port for blind tunneling so
-  //  call transact figure out where it is going
+  NetVConnection *netvc     = ua_session->get_netvc();
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+  int host_len;
+  if (ssl_vc && ssl_vc->GetSNIMapping()) {
+    if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
+      // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
+      URL u;
+
+      t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
+      t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
+      t_state.hdr_info.client_request.url_create(&u);
+      u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
+      t_state.hdr_info.client_request.url_set(&u);
+      auto *hs = TunnelMap.find(ssl_vc->serverName);
+      if (hs != nullptr) {
+        t_state.hdr_info.client_request.url_get()->host_set(hs->hostname, hs->len);
+        if (hs->port > 0) {
+          t_state.hdr_info.client_request.url_get()->port_set(hs->port);
+        } else {
+          t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_session->get_netvc()->get_local_port());
+        }
+      } else {
+        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->serverName, strlen(ssl_vc->serverName));
+        t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_session->get_netvc()->get_local_port());
+      }
+    }
+  } else {
+    char new_host[INET6_ADDRSTRLEN];
+    ats_ip_ntop(t_state.state_machine->ua_session->get_netvc()->get_local_addr(), new_host, sizeof(new_host));
+
+    t_state.hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
+    t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_session->get_netvc()->get_local_port());
+  }
   call_transact_and_set_next_state(HttpTransact::HandleBlindTunnel);
 }
 
@@ -1335,6 +1368,39 @@ HttpSM::state_api_callout(int event, void *data)
     pending_action = nullptr;
   // FALLTHROUGH
   case EVENT_NONE:
+    if (cur_hook_id == TS_HTTP_TXN_START_HOOK && t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+      /* Creating the request object early to set the host header and port for blind tunneling here for the
+plugins required to work with sni_routing.
+*/
+      // Plugins triggered on txn_start_hook will get the host and port at that point
+      // We've received a request on a port which we blind forward
+      URL u;
+
+      t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
+      t_state.hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
+      t_state.hdr_info.client_request.url_create(&u);
+      u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
+      t_state.hdr_info.client_request.url_set(&u);
+
+      NetVConnection *netvc     = ua_session->get_netvc();
+      SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+      auto *hs                  = TunnelMap.find(ssl_vc->serverName);
+
+      if (ssl_vc && ssl_vc->GetSNIMapping()) {
+        if (hs != nullptr) {
+          t_state.hdr_info.client_request.url_get()->host_set(hs->hostname, hs->len);
+          if (hs->port > 0) {
+            t_state.hdr_info.client_request.url_get()->port_set(hs->port);
+          } else {
+            t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_session->get_netvc()->get_local_port());
+          }
+        } else {
+          t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->serverName, strlen(ssl_vc->serverName));
+          t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_session->get_netvc()->get_local_port());
+        }
+      }
+    }
+  // FALLTHROUGH
   case HTTP_API_CONTINUE:
     if ((cur_hook_id >= 0) && (cur_hook_id < TS_HTTP_LAST_HOOK)) {
       if (!cur_hook) {
