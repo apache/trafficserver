@@ -124,25 +124,9 @@ memcpy_and_advance(uint8_t(&dst), byte_pointer &src)
   ++src.u8;
 }
 
-static bool
-http2_frame_flags_are_valid(uint8_t ftype, uint8_t fflags)
-{
-  if (ftype >= HTTP2_FRAME_TYPE_MAX) {
-    // Skip validation for Unkown frame type - [RFC 7540] 5.5. Extending HTTP/2
-    return true;
-  }
-
-  // The frame flags are valid for this frame if nothing outside the defined bits is set.
-  return (fflags & ~HTTP2_FRAME_FLAGS_MASKS[ftype]) == 0;
-}
-
 bool
 http2_frame_header_is_valid(const Http2FrameHeader &hdr, unsigned max_frame_size)
 {
-  if (!http2_frame_flags_are_valid(hdr.type, hdr.flags)) {
-    return false;
-  }
-
   // 6.1 If a DATA frame is received whose stream identifier field is 0x0, the recipient MUST
   // respond with a connection error (Section 5.4.1) of type PROTOCOL_ERROR.
   if (hdr.type == HTTP2_FRAME_TYPE_DATA && hdr.streamid == 0) {
@@ -915,13 +899,19 @@ const static struct {
                                    {HTTP2_FRAME_TYPE_MAX, 0x40, true},
                                    {HTTP2_FRAME_TYPE_MAX, 0x80, true}};
 
+static const uint8_t HTTP2_FRAME_FLAGS_MASKS[HTTP2_FRAME_TYPE_MAX] = {
+  HTTP2_FLAGS_DATA_MASK,          HTTP2_FLAGS_HEADERS_MASK,      HTTP2_FLAGS_PRIORITY_MASK, HTTP2_FLAGS_RST_STREAM_MASK,
+  HTTP2_FLAGS_SETTINGS_MASK,      HTTP2_FLAGS_PUSH_PROMISE_MASK, HTTP2_FLAGS_PING_MASK,     HTTP2_FLAGS_GOAWAY_MASK,
+  HTTP2_FLAGS_WINDOW_UPDATE_MASK, HTTP2_FLAGS_CONTINUATION_MASK,
+};
+
 REGRESSION_TEST(HTTP2_FRAME_FLAGS)(RegressionTest *t, int, int *pstatus)
 {
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
   for (auto i : http2_frame_flags_test_case) {
-    box.check(http2_frame_flags_are_valid(i.ftype, i.fflags) == i.valid,
+    box.check((i.ftype >= HTTP2_FRAME_TYPE_MAX || (i.fflags & ~HTTP2_FRAME_FLAGS_MASKS[i.ftype]) == 0) == i.valid,
               "Validation of frame flags (type: %d, flags: %d) are expected %d, but not", i.ftype, i.fflags, i.valid);
   }
 }
