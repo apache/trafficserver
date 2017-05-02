@@ -56,7 +56,7 @@ example_Plugins = \
 	thread-1.la \
 	txn-data-sink.la \
 	version.la \
-	replace-protoset.la
+	disable_http2.la
 
 example_Plugins += \
 	cppapi/AsyncHttpFetch.la \
@@ -117,7 +117,7 @@ server_transform_la_SOURCES = server-transform/server-transform.c
 ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc
 ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc
 ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc
-replace_protoset_la_SOURCES = replace-protoset/replace-protoset.cc
+disable_http2_la_SOURCES = disable_http2/disable_http2.cc
 statistic_la_SOURCES = statistic/statistic.cc
 thread_1_la_SOURCES = thread-1/thread-1.c
 txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
