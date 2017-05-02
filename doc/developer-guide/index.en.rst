@@ -46,6 +46,7 @@ duplicate bugs is encouraged, but not required.
    architecture/index.en
    plugins/index.en
    config-vars.en
+   doxygen/index.en
    api/index.en
    continuous-integration/index.en
    documentation/index.en

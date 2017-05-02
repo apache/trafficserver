@@ -33,9 +33,10 @@ all-am: $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS)
 endif
 
 clean-local:
-	-rm -rf $(BUILDDIR)/* _build/html/* xml
+	-rm -rf $(BUILDDIR)/* _build/html/* xml ext/breathe
 
 doxygen: Doxyfile
+	pip install breathe --target ext/breathe
 	$(DOXYGEN)
 
 # Makefile for Sphinx documentation
@@ -71,27 +72,27 @@ help:
 	@echo "  changes    to make an overview of all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
 
-html-local:
+html-local: doxygen
 	$(SBUILD) -d $(BUILDDIR)/doctrees -b html $(srcdir) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
-dirhtml:
+dirhtml: doxygen
 	$(SBUILD) -d $(BUILDDIR)/doctrees -b dirhtml $(srcdir) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
 
-singlehtml:
+singlehtml: doxygen
 	$(SBUILD) -d $(BUILDDIR)/doctrees -b singlehtml $(srcdir) $(BUILDDIR)/singlehtml
 	@echo
 	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
 
-epub:
+epub: doxygen
 	$(SBUILD) -d $(BUILDDIR)/doctrees -b epub $(srcdir) $(BUILDDIR)/epub
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/epub."
 
-latex:
+latex: doxygen
 	$(SBUILD) -d $(BUILDDIR)/doctrees -b latex $(srcdir) $(BUILDDIR)/latex
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/latex."

@@ -33,9 +33,9 @@ from sphinx import version_info
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('ext'))
 sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('ext'))
+sys.path.insert(0, os.path.abspath('ext/breathe'))
 
 from manpages import man_pages
 
@@ -66,6 +66,13 @@ else :
 # extensions += [
 #   'doxygen',
 # ]
+
+# Doxygen + Sphinx integration config
+breathe_projects = { "Apache Traffic Server" : "xml/"}
+breathe_default_project = "Apache Traffic Server"
+if os.path.isdir('ext/breathe'):
+    # if ext/breathe/ was created, then it means we want to generate doxygen
+    extensions.append('breathe')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
