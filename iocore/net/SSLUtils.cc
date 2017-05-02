@@ -42,6 +42,7 @@
 #include <unistd.h>
 #include <termios.h>
 #include "ts/Vec.h"
+#include "P_SSLSNI.h"
 
 #if HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
@@ -406,10 +407,16 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
 /*
  * Cannot stop this callback. Always reeneabled
  */
+extern ActionProcessor actionProcessor;
 static int
 ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  Debug("ssl", "Requested servername is %s", servername);
+  if (servername != nullptr) {
+    actionProcessor.PerformAction(netvc, servername);
+  }
   netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
   return SSL_TLSEXT_ERR_OK;
 }
@@ -1469,6 +1476,23 @@ ssl_set_handshake_callbacks(SSL_CTX *ctx)
   SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_and_cert_callback);
 #endif
 #endif
+}
+
+void
+setClientCertLevel(SSL *ssl, uint8_t certLevel)
+{
+  SSLConfig::scoped_config params;
+  int server_verify_client = SSL_VERIFY_NONE;
+
+  if (certLevel == 2) {
+    server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE;
+  } else if (certLevel == 1) {
+    server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE;
+  }
+
+  Debug("ssl", "setting cert level to %d", server_verify_client);
+  SSL_set_verify(ssl, server_verify_client, nullptr);
+  SSL_set_verify_depth(ssl, params->verify_depth); // might want to make configurable at some point.
 }
 
 SSL_CTX *
