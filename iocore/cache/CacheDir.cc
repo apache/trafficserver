@@ -434,6 +434,7 @@ freelist_pop(int s, Vol *d)
   d->header->freelist[s] = dir_next(e);
   // if the freelist if bad, punt.
   if (dir_offset(e)) {
+    Warning("bad freelist, punt! tag: %X boffset: %" PRId64 "", dir_tag(e), dir_offset(e));
     dir_init_segment(s, d);
     return nullptr;
   }
