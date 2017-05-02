@@ -31,6 +31,7 @@
 #include "BIO_fastopen.h"
 #include "Log.h"
 #include "P_SSLClientUtils.h"
+#include "P_SSLSNI.h"
 
 #include <climits>
 #include <string>
@@ -954,40 +955,46 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
     return sslServerHandShakeEvent(err);
 
   case SSL_EVENT_CLIENT:
-    if (this->ssl == nullptr) {
-      SSL_CTX *clientCTX = nullptr;
-      if (this->options.clientCertificate) {
-        const char *certfile = (const char *)this->options.clientCertificate;
-        if (certfile != nullptr) {
-          clientCTX = params->getCTX(certfile);
-          if (clientCTX != nullptr) {
-            Debug("ssl", "context for %s is found at %p", this->options.clientCertificate.get(), (void *)clientCTX);
-          } else {
-            Debug("ssl", "failed to find context for %s", this->options.clientCertificate.get());
-          }
-        }
-      } else {
-        clientCTX = params->client_ctx;
-      }
 
-      if (this->options.clientVerificationFlag && params->clientCACertFilename != nullptr && params->clientCACertPath != nullptr) {
+    if (this->ssl == nullptr) {
+      // Making the check here instead of later, so we only
+      // do this setting immediately after we create the SSL object
+      SNIConfig::scoped_config sniParam;
+      int8_t clientVerify = 0;
+      cchar *serverKey    = this->options.sni_servername;
+      if (!serverKey) {
+        char buff[INET6_ADDRSTRLEN];
+        ats_ip_ntop(this->get_remote_addr(), buff, INET6_ADDRSTRLEN);
+        serverKey = buff;
+      }
+      auto nps           = sniParam->getPropertyConfig(serverKey);
+      SSL_CTX *clientCTX = nullptr;
+
+      if (nps) {
+        clientCTX    = nps->ctx;
+        clientVerify = nps->verifyLevel;
+      } else {
+        clientCTX    = params->client_ctx;
+        clientVerify = params->clientVerify;
+      }
+      if (!clientCTX) {
+        SSLErrorVC(this, "failed to create SSL client session");
+        return EVENT_ERROR;
+      }
+      if (clientVerify && params->clientCACertFilename != nullptr && params->clientCACertPath != nullptr) {
         if (!SSL_CTX_load_verify_locations(clientCTX, params->clientCACertFilename, params->clientCACertPath)) {
           SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)", params->clientCACertFilename,
                    params->clientCACertPath);
           return EVENT_ERROR;
         }
       }
-      this->ssl = make_ssl_connection(clientCTX, this);
-      if (this->ssl != nullptr) {
-        uint8_t clientVerify = this->options.clientVerificationFlag;
-        int verifyValue      = clientVerify & 1 ? SSL_VERIFY_PEER : SSL_VERIFY_NONE;
-        SSL_set_verify(this->ssl, verifyValue, verify_callback);
-      }
 
+      this->ssl = make_ssl_connection(clientCTX, this);
       if (this->ssl == nullptr) {
         SSLErrorVC(this, "failed to create SSL client session");
         return EVENT_ERROR;
       }
+      SSL_set_verify(this->ssl, clientVerify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, verify_callback);
 
 #if TS_USE_TLS_SNI
       if (this->options.sni_servername) {

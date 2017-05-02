@@ -84,7 +84,7 @@ struct SSLConfigParams : public ConfigInfo {
   char *clientKeyPath;
   char *clientCACertFilename;
   char *clientCACertPath;
-  int clientVerify;
+  int8_t clientVerify;
   int client_verify_depth;
   long ssl_ctx_options;
   long ssl_client_ctx_protocols;
@@ -120,7 +120,7 @@ struct SSLConfigParams : public ConfigInfo {
   SSL_CTX *getCTX(cchar *client_cert) const;
   void deleteKey(cchar *key) const;
   void freeCTXmap() const;
-  void printCTXmap();
+  void printCTXmap() const;
   bool InsertCTX(cchar *client_cert, SSL_CTX *cctx) const;
   SSL_CTX *getClientSSL_CTX(void) const;
   SSL_CTX *getNewCTX(char *client_cert) const;

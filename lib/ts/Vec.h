@@ -853,9 +853,9 @@ template <class C, class A, int S>
 inline void
 Vec<C, A, S>::free_and_clear()
 {
-  for (int x = 0; x < n; x++)
+  for (int x = 0; x < static_cast<int>(n); x++)
     if (v[x])
-      A::free(v[x]);
+      A::free((void *)v[x]);
   clear();
 }
 
