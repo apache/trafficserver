@@ -56,6 +56,7 @@ bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
+bool SSLConfigParams::sni_map_enable                        = false;
 
 // TS-3534 Wiretracing for SSL Connections
 int SSLConfigParams::ssl_wire_trace_enabled       = 0;
@@ -298,6 +299,7 @@ SSLConfigParams::initialize()
 
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;
+  REC_EstablishStaticConfigByte(clientVerify, "proxy.config.ssl.client.verify.server");
 
   ssl_client_cert_filename = nullptr;
   ssl_client_cert_path     = nullptr;
@@ -320,6 +322,9 @@ SSLConfigParams::initialize()
   set_paths_helper(clientCACertRelativePath, ssl_client_ca_cert_filename, &clientCACertPath, &clientCACertFilename);
   ats_free(clientCACertRelativePath);
   ats_free(ssl_client_ca_cert_filename);
+
+  // Enable/disable sni mapping
+  REC_ReadConfigInteger(sni_map_enable, "proxy.config.ssl.sni.map.enable");
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 
@@ -379,13 +384,12 @@ SSLConfigParams::InsertCTX(cchar *client_cert, SSL_CTX *cctx) const
 }
 
 void
-SSLConfigParams::printCTXmap()
+SSLConfigParams::printCTXmap() const
 {
   Vec<cchar *> keys;
   ctx_map.get_keys(keys);
-  for (size_t i = 0; i < keys.length(); i++) {
-    Debug("ssl", "Client certificates in the map %s", keys.get(i));
-  }
+  for (size_t i = 0; i < keys.length(); i++)
+    Debug("ssl", "Client certificates in the map %s: %p", keys.get(i), ctx_map.get(keys.get(i)));
 }
 void
 SSLConfigParams::freeCTXmap() const
@@ -404,7 +408,7 @@ SSLConfigParams::freeCTXmap() const
 }
 // creates a new context attaching the provided certificate
 SSL_CTX *
-SSLConfigParams::getNewCTX(char *client_cert) const
+SSLConfigParams::getNewCTX(cchar *client_cert) const
 {
   SSL_CTX *nclient_ctx = nullptr;
   nclient_ctx          = SSLInitClientContext(this);

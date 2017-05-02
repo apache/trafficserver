@@ -78,7 +78,6 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
   request_host  = request_header->host_get(&request_host_len);
   request_port  = request_header->port_get();
   proxy_request = request_header->is_target_in_url() || !s->reverse_proxy;
-
   // Default to empty host.
   if (!request_host) {
     request_host     = "";
