@@ -499,7 +499,7 @@ The in memory volume directory entries are described below.
 
 .. cpp:class:: Dir
 
-   Defined in |P-CacheDir.h|_.
+   Defined in :ts:git:`iocore/cache/P_CacheDir.h`.
 
    =========== =================== ===================================================
    Name        Type                Use
