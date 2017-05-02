@@ -1,6 +1,10 @@
 /** @file
 
-  A brief file description
+  An example plugin for accept object protocol set API.
+
+  This clones the protocol sets attached to all the accept objects and unregisters HTTP/2 from those
+  copies.  The protocol set for incoming connections that match a list of domains are replaced with
+  the copy, effectively disabling HTTP/2 for those domains.
 
   @section license License
 
@@ -21,51 +25,35 @@
   limitations under the License.
  */
 
-/*
- *   replace-protoset.c:
- *	an example plugin...
- * Clones protoset attached with all the accept objects
- * Unregisters H2 from the clone
- * Replaces the protoset attached with all the incoming VCs with a clone
- */
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/PluginInit.h>
 #include <ts/ts.h>
-#include <ts/TsBuffer.h>
 
 #include <unordered_map>
 #include <unordered_set>
-#include <iostream>
-#include <algorithm>
-#include <cinttypes>
+#include <string>
 #include <openssl/ssl.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
-#define PLNAME "TLS Protocol Adjuster"
-#define PLTAG "replace_protoset"
+#define PLUGIN_NAME "disable_http2"
 
-typedef std::unordered_map<int, TSNextProtocolSet> protoTable; // stores protocolset keyed by NetAccept ID
-protoTable ProtoSetTable;
-typedef std::unordered_set<std::string> Table;
+typedef std::unordered_map<int, TSNextProtocolSet> AcceptorMapping; // stores protocolset keyed by NetAccept ID
+AcceptorMapping AcceptorMap;
+
 // Map of domains to tweak.
-Table _table;
+typedef std::unordered_set<std::string> DomainSet;
+DomainSet Domains;
 
 int
 CB_SNI(TSCont contp, TSEvent, void *cb_data)
 {
-  TSVConn vc               = (static_cast<TSVConn>(cb_data));
+  auto vc                  = static_cast<TSVConn>(cb_data);
   TSSslConnection ssl_conn = TSVConnSSLConnectionGet(vc);
   auto *ssl                = reinterpret_cast<SSL *>(ssl_conn);
   char const *sni          = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (sni) {
-    if (_table.find(sni) != _table.end()) {
+    if (Domains.find(sni) != Domains.end()) {
       TSAcceptor na        = TSAcceptorGet(vc);
       int nid              = TSAcceptorIDGet(na);
-      TSNextProtocolSet ps = ProtoSetTable[nid];
-      TSRegisterProtocolSet(vc, ps);
+      TSNextProtocolSet ps = AcceptorMap[nid]; // get our copy of the protocol set.
+      TSRegisterProtocolSet(vc, ps);           // replace default protocol set with the copy.
     }
   }
 
@@ -78,12 +66,14 @@ CB_NetAcceptReady(TSCont contp, TSEvent event, void *cb_data)
 {
   switch (event) {
   case TS_EVENT_LIFECYCLE_PORTS_READY:
+    // The accept objecs are all created and ready at this point.  We
+    // can now iterate over them.
     for (int i = 0, totalNA = TSAcceptorCount(); i < totalNA; ++i) {
       TSAcceptor netaccept = TSAcceptorGetbyID(i);
       // get a clone of the protoset associated with the netaccept
       TSNextProtocolSet nps = TSGetcloneProtoSet(netaccept);
       TSUnregisterProtocol(nps, TS_ALPN_PROTOCOL_HTTP_2_0);
-      ProtoSetTable[i] = nps;
+      AcceptorMap[i] = nps;
     }
     break;
   default:
@@ -95,29 +85,29 @@ CB_NetAcceptReady(TSCont contp, TSEvent event, void *cb_data)
 void
 TSPluginInit(int argc, char const *argv[])
 {
-  int ret = -999, i;
+  int ret;
   TSPluginRegistrationInfo info;
-  info.plugin_name   = PLNAME;
-  info.vendor_name   = "Yahoo!";
-  info.support_email = "persia@yahoo-inc.com";
+
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
   ret                = TSPluginRegister(&info);
 
   if (ret != TS_SUCCESS) {
-    TSError("Plugin registration failed.");
+    TSError("[%s] registration failed.", PLUGIN_NAME);
+    return;
+  } else if (argc < 2) {
+    TSError("[%s] Usage %s.so servername1 servername2 ... ", PLUGIN_NAME, PLUGIN_NAME);
     return;
   } else {
-    if (argc < 2) {
-      TSError("[%s] Usage %s servername1 servername2 .... ", PLTAG, PLTAG);
-      return;
-    }
-    TSDebug(PLTAG, "Plugin registration succeeded.");
+    TSDebug(PLUGIN_NAME, "registration succeeded.");
   }
 
-  for (i = 1; i < argc; i++) {
-    TSDebug(PLTAG, "%s added to the No-H2 list", argv[i]);
-    _table.emplace(std::string(argv[i], strlen(argv[i])));
+  for (int i = 1; i < argc; i++) {
+    TSDebug(PLUGIN_NAME, "%s added to the No-H2 list", argv[i]);
+    Domains.emplace(std::string(argv[i], strlen(argv[i])));
   }
-  // This should not modify any state so no lock is needed.
+  // These callbacks do not modify any state so no lock is needed.
   TSCont cb_sni    = TSContCreate(&CB_SNI, nullptr);
   TSCont cb_netacc = TSContCreate(&CB_NetAcceptReady, nullptr);
 
