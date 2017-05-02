@@ -54,13 +54,13 @@ Data Structures
 
 .. cpp:class:: CacheHTTPInfoVector
 
-   Defined in |P-CacheHttp.h|_. This is an array of :cpp:class:`HTTPInfo`
+   Defined in :ts:git:`iocore/cache/P_CacheHttp.h`. This is an array of :cpp:class:`HTTPInfo`
    objects and serves as the respository of information about alternates of an
    object. It is marshaled as part of the metadata for an object in the cache.
 
 .. cpp:class:: HTTPInfo
 
-   Defined in |HTTP.h|_.
+   Defined in :ts:git:`proxy/hdrs/HTTP.h`.
 
    This class is a wrapper for :cpp:class:`HTTPCacheAlt`. It provides the
    external API for accessing data in the wrapped class. It contains only a
@@ -72,7 +72,7 @@ Data Structures
 
 .. cpp:class:: HTTPCacheAlt
 
-   Defined in |HTTP.h|_.
+   Defined in :ts:git:`proxy/hdrs/HTTP.h`.
 
    This is the metadata for a single :term:`alternate` for a cached object. It
    contains, among other data, the following:
@@ -127,7 +127,7 @@ Data Structures
 
 .. cpp:class:: Doc
 
-   Defined in |P-CacheVol.h|_.
+   Defined in :ts:git:`iocore/cache/P_CacheVol.h`.
 
    .. cpp:member:: uint32_t Doc::magic
 
