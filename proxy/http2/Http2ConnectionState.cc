@@ -270,7 +270,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
     // Protocol error if the stream depends on itself
     if (stream_id == params.priority.stream_dependency) {
-      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv headers self dependency");
     }
 
@@ -385,6 +385,12 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   if (!http2_parse_priority_parameter(make_iovec(buf, HTTP2_PRIORITY_LEN), priority)) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                       "priority parse error");
+  }
+
+  //  A stream cannot depend on itself.  An endpoint MUST treat this as a stream error of type PROTOCOL_ERROR.
+  if (stream_id == priority.stream_dependency) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                      "PRIORITY frame depends on itself");
   }
 
   DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
