@@ -1553,6 +1553,9 @@ HttpTransact::PPDNSLookup(State *s)
     if (!s->current.server->dst_addr.isValid()) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+      } else if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
+        // We ran out of parents but parent configuration allows us to go to Origin Server directly
+        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
       } else {
         // We could be out of parents here if all the parents failed DNS lookup
         ink_assert(s->current.request_to == HOST_NONE);
@@ -2032,6 +2035,9 @@ HttpTransact::LookupSkipOpenServer(State *s)
 
   if (s->current.request_to == PARENT_PROXY) {
     TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+  } else if (s->parent_result.result == PARENT_FAIL) {
+    handle_parent_died(s);
+    return;
   }
 
   ink_assert(s->current.request_to == ORIGIN_SERVER);
@@ -2230,13 +2236,10 @@ HttpTransact::HandleCacheOpenRead(State *s)
     // cache miss
     DebugTxn("http_trans", "CacheOpenRead -- miss");
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
-    // StartAccessControl(s);
-    if (s->force_dns) {
-      HandleCacheOpenReadMiss(s);
-    } else {
-      // Cache Lookup Unsuccessful ..calling dns lookup
-      TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
-    }
+    // Perform DNS for the origin when it is required.
+    // 1. If parent configuration does not allow to go to origin there is no need of performing DNS
+    // 2. If parent satisfies the request there is no need to go to origin to perfrom DNS
+    HandleCacheOpenReadMiss(s);
   } else {
     // cache hit
     DebugTxn("http_trans", "CacheOpenRead -- hit");
@@ -3165,7 +3168,12 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
       return;
     }
     if (!s->current.server->dst_addr.isValid()) {
-      ink_release_assert(s->current.request_to == PARENT_PROXY || s->http_config_param->no_dns_forward_to_parent != 0);
+      ink_release_assert(s->parent_result.result == PARENT_DIRECT || s->current.request_to == PARENT_PROXY ||
+                         s->http_config_param->no_dns_forward_to_parent != 0);
+      if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
+        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+        return;
+      }
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, HttpTransact::PPDNSLookup);
       } else {
@@ -3174,8 +3182,11 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
       }
     }
     build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
-
-    s->next_action = how_to_open_connection(s);
+    s->current.attempts = 0;
+    s->next_action      = how_to_open_connection(s);
+    if (s->current.server == &s->server_info && s->next_hop_scheme == URL_WKSIDX_HTTP) {
+      HttpTransactHeaders::remove_host_name_from_url(&s->hdr_info.server_request);
+    }
   } else { // miss, but only-if-cached is set
     build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Not Cached", "cache#not_in_cache", NULL);
     s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
@@ -3667,11 +3678,8 @@ HttpTransact::handle_response_from_parent(State *s)
       TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
       break;
     case ORIGIN_SERVER:
-      s->current.attempts = 0;
-      s->next_action      = how_to_open_connection(s);
-      if (s->current.server == &s->server_info && s->next_hop_scheme == URL_WKSIDX_HTTP) {
-        HttpTransactHeaders::remove_host_name_from_url(&s->hdr_info.server_request);
-      }
+      // Next lookup is Origin Server, try DNS for Origin Server
+      TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
       break;
     case HOST_NONE:
       handle_parent_died(s);
