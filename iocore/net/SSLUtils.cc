@@ -1905,7 +1905,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
 static bool
 ssl_extract_certificate(const matcher_line *line_info, ssl_user_config &sslMultCertSettings)
 {
-  for (int i = 0; i < MATCHER_MAX_TOKENS; ++i) {
+  for (int i = 0; i < line_info->num_el; ++i) {
     const char *label;
     const char *value;
 

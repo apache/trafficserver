@@ -459,7 +459,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
 
   REC_ReadConfigString(config_file, "proxy.config.cache.hosting_filename", PATH_NAME_MAX);
   type = typ;
-  for (i = 0; i < MATCHER_MAX_TOKENS; i++) {
+  for (i = 0; i < line_info->num_el; i++) {
     char *label = line_info->line[0][i];
     if (!label)
       continue;

@@ -224,7 +224,7 @@ IpAllow::BuildTable()
           bool is_dest_ip               = (strcasecmp(line_info.line[0][line_info.dest_entry], "dest_ip") == 0);
           AclOp op                      = ACL_OP_DENY; // "shut up", I explained to the compiler.
           bool op_found = false, method_found = false;
-          for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
+          for (int i = 0; i < line_info.num_el; i++) {
             label = line_info.line[0][i];
             val   = line_info.line[1][i];
             if (label == nullptr) {
@@ -240,7 +240,7 @@ IpAllow::BuildTable()
           }
           if (op_found) {
             // Loop again for methods, (in case action= appears after method=)
-            for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
+            for (int i = 0; i < line_info.num_el; i++) {
               label = line_info.line[0][i];
               val   = line_info.line[1][i];
               if (label == nullptr) {

@@ -268,7 +268,7 @@ CacheControlRecord::Init(matcher_line *line_info)
   this->line_num = line_info->line_num;
 
   // First pass for optional tweaks.
-  for (int i = 0; i < MATCHER_MAX_TOKENS && line_info->num_el; ++i) {
+  for (int i = 0; i < line_info->num_el; ++i) {
     bool used = false;
     label     = line_info->line[0][i];
     val       = line_info->line[1][i];
@@ -295,7 +295,7 @@ CacheControlRecord::Init(matcher_line *line_info)
   }
 
   // Now look for the directive.
-  for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
+  for (int i = 0; i < line_info->num_el; i++) {
     label = line_info->line[0][i];
     val   = line_info->line[1][i];
 
