@@ -109,6 +109,7 @@ data_alloc(int compression_type, int compression_algorithms)
     }
   }
 #if HAVE_BROTLI_ENCODE_H
+  data->bstrm.br = nullptr;
   if (compression_type & COMPRESSION_TYPE_BROTLI) {
     debug("gzip-transform: brotli compression. Create Brotli Encoder Instance.");
     data->bstrm.br = BrotliEncoderCreateInstance(0, 0, 0);
