@@ -1,16 +1,31 @@
 /** @file
 
-  A brief file description
+    An example program which illustrates adding and manipulating an
+    HTTP response MIME header:
+
+    Usage:	response_header_1.so
+
+        add read_resp_header hook
+        get http response header
+        if 200, then
+                add mime extension header with count of zero
+                add mime extension header with date response was received
+                add "Cache-Control: public" header
+        else if 304, then
+                retrieve cached header
+                get old value of mime header count
+                increment mime header count
+                store mime header with new count
 
   @section license License
 
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed
+  with this work for additional information regarding copyright
+  ownership.  The ASF licenses this file to you under the Apache
+  License, Version 2.0 (the "License"); you may not use this file
+  except in compliance with the License.  You may obtain a copy of the
+  License at
 
       http://www.apache.org/licenses/LICENSE-2.0
 
@@ -21,32 +36,6 @@
   limitations under the License.
  */
 
-/*
- * response-header-1.c:
- *		an example program which illustrates adding and manipulating
- *		an HTTP response MIME header:
- *
- *   Authorized possession and use of this software pursuant only
- *   to the terms of a written license agreement.
- *
- *	Usage:	response-header-1.so
- *
- *	add read_resp_header hook
- *	get http response header
- *	if 200, then
- *		add mime extension header with count of zero
- *		add mime extension header with date response was received
- *		add "Cache-Control: public" header
- *	else if 304, then
- *		retrieve cached header
- *		get old value of mime header count
- *		increment mime header count
- *		store mime header with new count
- *
- *
- *
- */
-
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
@@ -54,6 +43,8 @@
 
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
+
+#define PLUGIN_NAME "response_header_1"
 
 static int init_buffer_status;
 
@@ -89,7 +80,7 @@ modify_header(TSHttpTxn txnp)
   }
 
   if (TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc) != TS_SUCCESS) {
-    TSError("[response_header-1] Couldn't retrieve server response header");
+    TSError("[%s] Couldn't retrieve server response header", PLUGIN_NAME);
     return; /* caller reenables */
   }
 
@@ -97,9 +88,9 @@ modify_header(TSHttpTxn txnp)
   resp_status = TSHttpHdrStatusGet(resp_bufp, resp_loc);
 
   if (TS_HTTP_STATUS_OK == resp_status) {
-    TSDebug("resphdr", "Processing 200 OK");
+    TSDebug(PLUGIN_NAME, "Processing 200 OK");
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
-    TSDebug("resphdr", "Created new resp field with loc %p", new_field_loc);
+    TSDebug(PLUGIN_NAME, "Created new resp field with loc %p", new_field_loc);
 
     /* copy name/values created at init
      * ( "x-num-served-from-cache" ) : ( "0"  )
@@ -111,7 +102,7 @@ modify_header(TSHttpTxn txnp)
 
     /* Cache-Control: Public */
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
-    TSDebug("resphdr", "Created new resp field with loc %p", new_field_loc);
+    TSDebug(PLUGIN_NAME, "Created new resp field with loc %p", new_field_loc);
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL);
     TSMimeHdrFieldValueStringInsert(resp_bufp, resp_loc, new_field_loc, -1, TS_HTTP_VALUE_PUBLIC, TS_HTTP_LEN_PUBLIC);
@@ -120,7 +111,7 @@ modify_header(TSHttpTxn txnp)
      * mimehdr2_name  = TSstrdup( "x-date-200-recvd" ) : CurrentDateTime
      */
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
-    TSDebug("resphdr", "Created new resp field with loc %p", new_field_loc);
+    TSDebug(PLUGIN_NAME, "Created new resp field with loc %p", new_field_loc);
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr2_name, strlen(mimehdr2_name));
     recvd_time = time(NULL);
@@ -130,14 +121,14 @@ modify_header(TSHttpTxn txnp)
     TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
 
   } else if (TS_HTTP_STATUS_NOT_MODIFIED == resp_status) {
-    TSDebug("resphdr", "Processing 304 Not Modified");
+    TSDebug(PLUGIN_NAME, "Processing 304 Not Modified");
 
     /* N.B.: Protect writes to data (hash on URL + mutex: (ies)) */
 
     /* Get the cached HTTP header */
     if (TSHttpTxnCachedRespGet(txnp, &cached_bufp, &cached_loc) != TS_SUCCESS) {
-      TSError("[response_header-1] STATUS 304, TSHttpTxnCachedRespGet():");
-      TSError("[response_header-1] Couldn't retrieve cached response header");
+      TSError("[%s] STATUS 304, TSHttpTxnCachedRespGet():", PLUGIN_NAME);
+      TSError("[%s] Couldn't retrieve cached response header", PLUGIN_NAME);
       TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
       return; /* Caller reenables */
     }
@@ -145,7 +136,7 @@ modify_header(TSHttpTxn txnp)
     /* Get the cached MIME field name for this HTTP header */
     cached_field_loc = TSMimeHdrFieldFind(cached_bufp, cached_loc, (const char *)mimehdr1_name, strlen(mimehdr1_name));
     if (TS_NULL_MLOC == cached_field_loc) {
-      TSError("[response_header-1] Can't find header %s in cached document", mimehdr1_name);
+      TSError("[%s] Can't find header %s in cached document", PLUGIN_NAME, mimehdr1_name);
       TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
       TSHandleMLocRelease(cached_bufp, TS_NULL_MLOC, cached_loc);
       return; /* Caller reenables */
@@ -154,18 +145,18 @@ modify_header(TSHttpTxn txnp)
     /* Get the cached MIME value for this name in this HTTP header */
     chkptr = TSMimeHdrFieldValueStringGet(cached_bufp, cached_loc, cached_field_loc, -1, &chklength);
     if (NULL == chkptr || !chklength) {
-      TSError("[response_header-1] Could not find value for cached MIME field name %s", mimehdr1_name);
+      TSError("[%s] Could not find value for cached MIME field name %s", PLUGIN_NAME, mimehdr1_name);
       TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
       TSHandleMLocRelease(cached_bufp, TS_NULL_MLOC, cached_loc);
       TSHandleMLocRelease(cached_bufp, cached_loc, cached_field_loc);
       return; /* Caller reenables */
     }
-    TSDebug("resphdr", "Header field value is %s, with length %d", chkptr, chklength);
+    TSDebug(PLUGIN_NAME, "Header field value is %s, with length %d", chkptr, chklength);
 
     /* Get the cached MIME value for this name in this HTTP header */
     /*
        TSMimeHdrFieldValueUintGet(cached_bufp, cached_loc, cached_field_loc, 0, &num_refreshes);
-       TSDebug("resphdr",
+       TSDebug(PLUGIN_NAME,
        "Cached header shows %d refreshes so far", num_refreshes );
 
        num_refreshes++ ;
@@ -197,7 +188,7 @@ modify_header(TSHttpTxn txnp)
     TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
 
   } else {
-    TSDebug("resphdr", "other response code %d", resp_status);
+    TSDebug(PLUGIN_NAME, "other response code %d", resp_status);
   }
 
   /*
@@ -214,7 +205,7 @@ modify_response_header_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edat
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    TSDebug("resphdr", "Called back with TS_EVENT_HTTP_READ_RESPONSE_HDR");
+    TSDebug(PLUGIN_NAME, "Called back with TS_EVENT_HTTP_READ_RESPONSE_HDR");
     modify_header(txnp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   /*  fall through  */
@@ -232,19 +223,19 @@ TSPluginInit(int argc, const char *argv[])
 
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "response-header-1";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[response_header-1] Plugin registration failed.");
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
   }
 
   init_buffer_status = 0;
   if (argc > 1) {
-    TSError("[response_header-1] usage: %s", argv[0]);
-    TSError("[response_header-1] warning: too many args %d", argc);
-    TSError("[response_header-1] warning: ignoring unused arguments beginning with %s", argv[1]);
+    TSError("[%s] usage: %s", PLUGIN_NAME, argv[0]);
+    TSError("[%s] warning: too many args %d", PLUGIN_NAME, argc);
+    TSError("[%s] warning: ignoring unused arguments beginning with %s", PLUGIN_NAME, argv[1]);
   }
 
   /*
@@ -265,13 +256,13 @@ TSPluginInit(int argc, const char *argv[])
    */
   mimehdr2_name = TSstrdup("x-date-200-recvd");
 
-  TSDebug("resphdr", "Inserting header %s with value %s into init buffer", mimehdr1_name, mimehdr1_value);
+  TSDebug(PLUGIN_NAME, "Inserting header %s with value %s into init buffer", mimehdr1_name, mimehdr1_value);
 
   TSMimeHdrFieldCreate(hdr_bufp, hdr_loc, &field_loc); /* Probably should check for errors */
   TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
   TSMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, mimehdr1_name, strlen(mimehdr1_name));
   TSMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, mimehdr1_value, strlen(mimehdr1_value));
-  TSDebug("resphdr", "init buffer hdr, field and value locs are %p, %p and %p", hdr_loc, field_loc, value_loc);
+  TSDebug(PLUGIN_NAME, "init buffer hdr, field and value locs are %p, %p and %p", hdr_loc, field_loc, value_loc);
   init_buffer_status = 1;
 
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(modify_response_header_plugin, NULL));
@@ -283,13 +274,13 @@ TSPluginInit(int argc, const char *argv[])
    */
 
   if (TS_NULL_MLOC == (chk_field_loc = TSMimeHdrFieldGet(hdr_bufp, hdr_loc, 0))) {
-    TSError("[response_header-1] Couldn't retrieve header field from init buffer");
-    TSError("[response_header-1] Marking init buffer as corrupt; no more plugin processing");
+    TSError("[%s] Couldn't retrieve header field from init buffer", PLUGIN_NAME);
+    TSError("[%s] Marking init buffer as corrupt; no more plugin processing", PLUGIN_NAME);
     init_buffer_status = 0;
     /* bail out here and reenable transaction */
   } else {
     if (field_loc != chk_field_loc) {
-      TSError("[response_header-1] Retrieved buffer field loc is %p when it should be %p", chk_field_loc, field_loc);
+      TSError("[%s] Retrieved buffer field loc is %p when it should be %p", PLUGIN_NAME, chk_field_loc, field_loc);
     }
   }
 }
