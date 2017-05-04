@@ -217,12 +217,32 @@ Filter Values
 ~~~~~~~~~~~~~
 
 The final component of a filter string specifies the value against which the
-name field will be compared. For integer matches, all of the operators are
-effectively equivalent and require the field to be equal to the given integer.
+name field will be compared.
+
+For integer matches, all of the operators are effectively equivalent and require
+the field to be equal to the given integer. If you wish to match multiple
+integers, provide a comma separated list like this::
+
+    <field> <operator> 4,5,6,7
+
+String matches work similarly to integer matches. Multiple matches are also
+supported via a comma separated list. For example::
+
+    <field> <operator> e1host,host2,hostz
+
 For IP addresses, ranges may be specified by separating the first address and
 the last of the range with a single ``-`` dash, as ``10.0.0.0-10.255.255.255``
 which gives the ranges for the 10/8 network. Other network notations are not
 supported at this time.
+
+.. note::
+
+    It may be tempting to attach multiple Filters to a log object to accept or
+    reject multiple log fields (in lieu of providing a single comma separated list
+    to a single Filter). Avoid this temptation and use a comma separated list
+    instead. Attaching multiple filters does the opposite of what you'd
+    expect. If, for example, we had 2 accept log filters, each disjoint from the other,
+    nothing will ever get logged on the given log object.
 
 Wiping Filters
 ~~~~~~~~~~~~~~
