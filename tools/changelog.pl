@@ -22,36 +22,64 @@ use warnings;
 use WWW::Curl::Easy;
 use JSON;
 
-my $fixversion = shift;
-my $url = "https://issues.apache.org/jira";
-my $jql = "project = TS AND status in (Resolved, Closed) AND fixVersion = $fixversion ORDER BY key ASC";
+my $owner = shift;
+my $repo = shift;
+my $milestone = shift;
+my $url = "https://api.github.com";
 
-sub jira_search
+sub milestone_lookup
 {
   my $url = shift;
-  my $jql = shift;
-  my $index = shift;
-  my $endpoint = "/rest/api/2/search";
+  my $owner = shift;
+  my $repo = shift;
+  my $milestone_title = shift;
+  my $endpoint = "/repos/$owner/$repo/milestones";
 
-  my $query = {
-    jql => $jql,
-    startAt => $index,
-    fields => [
-      "summary",
-      "issuetype"
-    ]
-  };
+  my $params = "state=all";
 
-  my $req_body = to_json($query);
   my $resp_body;
   my $curl = WWW::Curl::Easy->new;
 
-  $curl->setopt(CURLOPT_POST, 1);
-  $curl->setopt(CURLOPT_POSTFIELDS, $req_body);
-  $curl->setopt(CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-  open(my $fileb, ">", \$resp_body);
-  $curl->setopt(CURLOPT_WRITEDATA, $fileb);
-  $curl->setopt(CURLOPT_URL, $url . $endpoint);
+  #$curl->setopt(CURLOPT_VERBOSE, 1);
+  $curl->setopt(CURLOPT_HTTPHEADER, ['Accept: application/vnd.github.v3+json', 'User-Agent: Awesome-Octocat-App']);
+  $curl->setopt(CURLOPT_WRITEDATA, \$resp_body);
+  $curl->setopt(CURLOPT_URL, $url . $endpoint . '?' . $params);
+
+  my $retcode = $curl->perform();
+  if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 200)
+  {
+    my $milestones = from_json($resp_body);
+    foreach my $milestone (@{ $milestones })
+    {
+      if ($milestone->{title} eq $milestone_title)
+      {
+        return $milestone->{number};
+      }
+    }
+  }
+
+  return undef;
+}
+
+sub issue_search
+{
+  my $url = shift;
+  my $owner = shift;
+  my $repo = shift;
+  my $milestone_id = shift;
+  my $page = shift;
+  my $endpoint = "/repos/$owner/$repo/issues";
+
+  my $params = "milestone=$milestone_id&state=closed&page=$page";
+
+  my $resp_body;
+  my $curl = WWW::Curl::Easy->new;
+
+  #$curl->setopt(CURLOPT_VERBOSE, 1);
+  $curl->setopt(CURLOPT_HTTPHEADER, ['Accept: application/vnd.github.v3+json', 'User-Agent: Awesome-Octocat-App']);
+  $curl->setopt(CURLOPT_WRITEDATA, \$resp_body);
+  $curl->setopt(CURLOPT_URL, $url . $endpoint . '?' . $params);
+
   my $retcode = $curl->perform();
   if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 200) {
     return from_json($resp_body);
@@ -60,49 +88,35 @@ sub jira_search
   undef;
 }
 
-my $count = 0;
-my $changelog;
-my $issues;
+my $milestone_id = milestone_lookup($url, $owner, $repo, $milestone);
 
-do
-{
-  $issues = jira_search($url, $jql, $count);
-
-  if (!defined($issues))
-  {
-    exit 1;
-  }
-
-  foreach my $issue (@{ $issues->{issues} })
-  {
-    if (defined($issue))
-    {
-      push @{ $changelog->{$issue->{fields}{issuetype}{name}} }, {key => $issue->{key},  summary => $issue->{fields}{summary}};
-      $count++;
-    }
-  }
-}
-while ($count < $issues->{total});
-
-if (!defined($changelog))
+if (!defined($milestone_id))
 {
   exit 1;
 }
 
-print "Changes with Apache Traffic Server $fixversion\n";
+my $issues;
+my $changelog;
+my $page = 1;
 
-foreach my $key (sort keys %{ $changelog })
-{
-  print "\n$key:\n";
-  foreach my $issue (@{ $changelog->{$key} })
+do {
+  $issues = issue_search($url, $owner, $repo, $milestone_id, $page);
+  foreach my $issue (@{ $issues })
   {
-    chomp $issue->{summary};
-    $issue->{summary} =~ s/\s+$//; # Trim trailing whitespace
-    print "  *) [$issue->{key}] ";
-    if (length($issue->{summary}) <= (131 - 15)) {
-      print "$issue->{summary}\n";
-    } else {
-      print substr($issue->{summary}, 0, (131 - 18)), "...\n";
+    if (defined($issue))
+    {
+      push @{ $changelog }, {number => $issue->{number},  title => $issue->{title}};
     }
+  }
+  $page++;
+} while (scalar @{ $issues });
+
+if (defined($changelog))
+{
+  print "Changes with Apache Traffic Server $milestone\n";
+
+  foreach my $issue (sort {$a->{number} <=> $b->{number}} @{ $changelog })
+  {
+    print "  #$issue->{number} - $issue->{title}\n";
   }
 }
