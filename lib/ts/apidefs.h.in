@@ -151,6 +151,7 @@ typedef enum {
     the TSHttpStatus of a response header using TSHttpHdrStatusSet().
 
  */
+/* clang-format off */
 typedef enum {
   TS_HTTP_STATUS_NONE                            = 0,
   TS_HTTP_STATUS_CONTINUE                        = 100,
@@ -210,6 +211,7 @@ typedef enum {
   TS_HTTP_STATUS_NOT_EXTENDED                    = 510,
   TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
 } TSHttpStatus;
+  /* clang-format on */
 
 /**
     This set of enums represents the possible hooks where you can
@@ -371,6 +373,7 @@ typedef enum {
     the handler function can decide what to do.
 
  */
+/* clang-format off */
 typedef enum {
   TS_EVENT_NONE                                 = 0,
   TS_EVENT_IMMEDIATE                            = 1,
@@ -453,6 +456,7 @@ typedef enum {
   TS_EVENT_SSL_SERVERNAME                       = 60204
 } TSEvent;
 #define TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP TS_EVENT_HTTP_PRE_REMAP /* backwards compat */
+/* clang-format on */
 
 typedef enum {
   TS_SRVSTATE_STATE_UNDEFINED = 0,
@@ -521,6 +525,7 @@ typedef enum {
   TS_VC_CLOSE_NORMAL = 1,
 } TSVConnCloseFlags;
 
+/* clang-format off */
 typedef enum {
   TS_IOBUFFER_SIZE_INDEX_128  = 0,
   TS_IOBUFFER_SIZE_INDEX_256  = 1,
@@ -538,6 +543,7 @@ typedef enum {
   TS_IOBUFFER_SIZE_INDEX_1M   = 13,
   TS_IOBUFFER_SIZE_INDEX_2M   = 14
 } TSIOBufferSizeIndex;
+/* clang-format on */
 
 typedef enum {
   TS_ERROR   = -1,
@@ -572,6 +578,7 @@ typedef enum {
 /* librecords types */
 
 /* The values of this enum must match enum RecT in I_RecDefs.h */
+/* clang-format off */
 typedef enum {
   TS_RECORDTYPE_NULL    = 0x00,
   TS_RECORDTYPE_CONFIG  = 0x01,
@@ -582,6 +589,7 @@ typedef enum {
   TS_RECORDTYPE_PLUGIN  = 0x20,
   TS_RECORDTYPE_ALL     = 0x3F
 } TSRecordType;
+/* clang-format on */
 
 /* The values of this enum must match enum RecDataT in I_RecDefs.h */
 typedef enum {
