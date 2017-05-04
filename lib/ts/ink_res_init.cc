@@ -320,8 +320,6 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   statp->pfcode  = 0;
   statp->_vcsock = -1;
   statp->_flags  = 0;
-  statp->qhook   = nullptr;
-  statp->rhook   = nullptr;
 
 #ifdef SOLARIS2
   /*
