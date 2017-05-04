@@ -3105,7 +3105,10 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
       ua_session->attach_server_session(server_session);
     } else {
       // Release the session back into the shared session pool
-      server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->keep_alive_no_activity_timeout_out));
+      NetVConnection *vc = server_session->get_netvc();
+      if (vc) {
+        vc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->keep_alive_no_activity_timeout_out));
+      }
       server_session->release();
     }
   }
