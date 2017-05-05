@@ -191,8 +191,11 @@ class MyHandler(BaseHTTPRequestHandler):
         return int(header.split(' ')[1])
 
     def generator(self):
-        yield 'microserver'
-        yield 'yahoo'
+        yield 'micro'
+        yield 'server'
+        yield 'apache'
+        yield 'traffic'
+        yield 'server'
     def send_response(self, code, message=None):
         ''' Override `send_response()`'s tacking on of server and date header lines. '''
         #self.log_request(code)

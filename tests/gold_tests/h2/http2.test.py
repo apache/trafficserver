@@ -29,10 +29,17 @@ Test.ContinueOnFail=True
 ts=Test.MakeATSProcess("ts",select_ports=False)
 server=Test.MakeOriginServer("server")
 
+
+requestLocation = "test2"
+reHost = "www.example.com"
+
 testName = ""
 request_header={"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 #desired response form the origin server
 response_header={"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header2={"headers": "GET /{0} HTTP/1.1\r\nHost: {1}\r\n\r\n".format(requestLocation,reHost), "timestamp": "1469733493.993", "body": ""}
+#desired response form the origin server
+response_header2={"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # Add info for the large H2 download test
@@ -40,7 +47,7 @@ server.addResponse("sessionlog.json",
     {"headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
     {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 191414\r\n\r\n", "timestamp": "1469733493.993", "body": "" })
 
-
+server.addResponse("sessionlog.json",request_header2,response_header2)
 #add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
@@ -49,12 +56,13 @@ ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
+
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 0,
-        'proxy.config.diags.debug.tags': 'http',
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|remap',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir), 
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.number.threads': 0,
@@ -64,6 +72,7 @@ ts.Disk.records_config.update({
     })
 ts.Setup.CopyAs('h2client.py',Test.RunDirectory)
 ts.Setup.CopyAs('h2bigclient.py',Test.RunDirectory)
+ts.Setup.CopyAs('h2chunked.py',Test.RunDirectory)
 
 # Test Case 1:  basic H2 interaction
 tr=Test.AddTestRun()
@@ -82,3 +91,9 @@ tr.Processes.Default.ReturnCode=0
 tr.Processes.Default.Streams.stdout="gold/bigfile.gold"
 tr.StillRunningAfter=server
 
+# Test Case 3: Chunked content
+tr=Test.AddTestRun()
+tr.Processes.Default.Command='python3 h2chunked.py -p {0}  -u /{1}'.format(ts.Variables.ssl_port,requestLocation)
+tr.Processes.Default.ReturnCode=0
+tr.Processes.Default.Streams.stdout="gold/chunked.gold"
+tr.StillRunningAfter=server
