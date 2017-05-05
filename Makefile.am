@@ -57,7 +57,7 @@ doxygen:
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) $@
 
 changelog:
-	./tools/changelog.pl apache trafficserver $(VERSION) > CHANGELOG-$(VERSION)
+	./tools/changelog.pl apache trafficserver $(VERSION) $(AUTHTOKEN) > CHANGELOG-$(VERSION)
 
 asf-dist: asf-distdir
 	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir).tar.bz2
