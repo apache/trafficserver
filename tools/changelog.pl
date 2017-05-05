@@ -25,23 +25,28 @@ use JSON;
 my $owner = shift;
 my $repo = shift;
 my $milestone = shift;
+my $auth = shift;
 my $url = "https://api.github.com";
+
+sub rate_fail
+{
+  print STDERR "You have exceeded your rate limit. Try using an auth token.\n";
+  exit 2;
+}
 
 sub milestone_lookup
 {
+  my $curl = shift;
   my $url = shift;
   my $owner = shift;
   my $repo = shift;
   my $milestone_title = shift;
   my $endpoint = "/repos/$owner/$repo/milestones";
 
-  my $params = "state=all";
+  my $params = "state=closed";
 
   my $resp_body;
-  my $curl = WWW::Curl::Easy->new;
 
-  #$curl->setopt(CURLOPT_VERBOSE, 1);
-  $curl->setopt(CURLOPT_HTTPHEADER, ['Accept: application/vnd.github.v3+json', 'User-Agent: Awesome-Octocat-App']);
   $curl->setopt(CURLOPT_WRITEDATA, \$resp_body);
   $curl->setopt(CURLOPT_URL, $url . $endpoint . '?' . $params);
 
@@ -57,12 +62,43 @@ sub milestone_lookup
       }
     }
   }
+  elsif ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 403)
+  {
+    rate_fail();
+  }
 
-  return undef;
+  undef;
+}
+
+sub is_merged
+{
+  my $curl = shift;
+  my $url = shift;
+  my $owner = shift;
+  my $repo = shift;
+  my $issue_id = shift;
+  my $endpoint = "/repos/$owner/$repo/pulls/$issue_id/merge";
+
+  my $resp_body;
+
+  $curl->setopt(CURLOPT_WRITEDATA, \$resp_body);
+  $curl->setopt(CURLOPT_URL, $url . $endpoint);
+
+  my $retcode = $curl->perform();
+  if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 204) {
+    return 1;
+  }
+  elsif ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 403)
+  {
+    rate_fail();
+  }
+
+  undef;
 }
 
 sub issue_search
 {
+  my $curl = shift;
   my $url = shift;
   my $owner = shift;
   my $repo = shift;
@@ -73,10 +109,7 @@ sub issue_search
   my $params = "milestone=$milestone_id&state=closed&page=$page";
 
   my $resp_body;
-  my $curl = WWW::Curl::Easy->new;
 
-  #$curl->setopt(CURLOPT_VERBOSE, 1);
-  $curl->setopt(CURLOPT_HTTPHEADER, ['Accept: application/vnd.github.v3+json', 'User-Agent: Awesome-Octocat-App']);
   $curl->setopt(CURLOPT_WRITEDATA, \$resp_body);
   $curl->setopt(CURLOPT_URL, $url . $endpoint . '?' . $params);
 
@@ -84,14 +117,29 @@ sub issue_search
   if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 200) {
     return from_json($resp_body);
   }
+  elsif ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 403)
+  {
+    rate_fail();
+  }
 
   undef;
 }
 
-my $milestone_id = milestone_lookup($url, $owner, $repo, $milestone);
+my $curl = WWW::Curl::Easy->new;
+
+#$curl->setopt(CURLOPT_VERBOSE, 1);
+$curl->setopt(CURLOPT_HTTPHEADER, ['Accept: application/vnd.github.v3+json', 'User-Agent: Awesome-Octocat-App']);
+
+if (defined($auth))
+{
+  $curl->setopt(CURLOPT_USERPWD, $auth);
+}
+
+my $milestone_id = milestone_lookup($curl, $url, $owner, $repo, $milestone);
 
 if (!defined($milestone_id))
 {
+  print STDERR "Milestone not found!\n";
   exit 1;
 }
 
@@ -99,12 +147,30 @@ my $issues;
 my $changelog;
 my $page = 1;
 
+print STDERR "Looking for issues from Milestone $milestone\n";
+
 do {
-  $issues = issue_search($url, $owner, $repo, $milestone_id, $page);
+  print STDERR "Page $page\n";
+  $issues = issue_search($curl, $url, $owner, $repo, $milestone_id, $page);
   foreach my $issue (@{ $issues })
   {
     if (defined($issue))
     {
+      print STDERR "Issue #" . $issue->{number} . " - " . $issue->{title} . " ";
+
+      if (!exists($issue->{pull_request}))
+      {
+        print STDERR "not a PR.\n";
+        next;
+      }
+
+      if (!is_merged($curl, $url, $owner, $repo, $issue->{number}))
+      {
+        print STDERR "not merged.\n";
+        next;
+      }
+
+      print STDERR "added.\n";
       push @{ $changelog }, {number => $issue->{number},  title => $issue->{title}};
     }
   }
