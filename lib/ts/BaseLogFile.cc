@@ -27,9 +27,8 @@
  * This consturctor creates a BaseLogFile based on a given name.
  * This is the most common way BaseLogFiles are created.
  */
-BaseLogFile::BaseLogFile(const char *name) : m_signature(0), m_has_signature(false)
+BaseLogFile::BaseLogFile(const char *name) : m_name(ats_strdup(name))
 {
-  init(name);
   log_log_trace("exiting BaseLogFile constructor, m_name=%s, this=%p\n", m_name.get(), this);
 }
 
@@ -37,9 +36,8 @@ BaseLogFile::BaseLogFile(const char *name) : m_signature(0), m_has_signature(fal
  * This consturctor creates a BaseLogFile based on a given name.
  * Similar to above constructor, but is overloaded with the object signature
  */
-BaseLogFile::BaseLogFile(const char *name, uint64_t sig) : m_signature(sig), m_has_signature(true)
+BaseLogFile::BaseLogFile(const char *name, uint64_t sig) : m_name(ats_strdup(name)), m_signature(sig), m_has_signature(true)
 {
-  init(name);
   log_log_trace("exiting BaseLogFile signature constructor, m_name=%s, m_signature=%ld, this=%p\n", m_name.get(), m_signature,
                 this);
 }
@@ -52,13 +50,13 @@ BaseLogFile::BaseLogFile(const BaseLogFile &copy)
     m_start_time(copy.m_start_time),
     m_end_time(0L),
     m_bytes_written(0),
-    m_signature(copy.m_signature),
-    m_has_signature(copy.m_has_signature),
     m_name(ats_strdup(copy.m_name)),
     m_hostname(ats_strdup(copy.m_hostname)),
     m_is_regfile(false),
     m_is_init(copy.m_is_init),
-    m_meta_info(nullptr)
+    m_meta_info(nullptr),
+    m_signature(copy.m_signature),
+    m_has_signature(copy.m_has_signature)
 {
   log_log_trace("exiting BaseLogFile copy constructor, m_name=%s, this=%p\n", m_name.get(), this);
 }
@@ -76,23 +74,6 @@ BaseLogFile::~BaseLogFile()
     log_log_trace("not a regular file, not closing, m_name=%s, this=%p\n", m_name.get(), this);
 
   log_log_trace("exiting BaseLogFile destructor, this=%p\n", this);
-}
-
-/*
- * Initializes the defaults of some of the common member values of this class
- */
-void
-BaseLogFile::init(const char *name)
-{
-  m_fp            = nullptr;
-  m_start_time    = time(nullptr);
-  m_end_time      = 0L;
-  m_bytes_written = 0;
-  m_name          = ats_strdup(name);
-  m_hostname      = nullptr;
-  m_is_regfile    = false;
-  m_is_init       = false;
-  m_meta_info     = nullptr;
 }
 
 /*
