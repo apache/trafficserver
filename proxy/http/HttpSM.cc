@@ -1597,11 +1597,13 @@ HttpSM::handle_api_return()
   case HttpTransact::SM_ACTION_API_POST_REMAP:
   case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
   case HttpTransact::SM_ACTION_API_OS_DNS:
-  case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
   case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
+    call_transact_and_set_next_state(nullptr);
+    return;
+
   case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
-    if (t_state.api_next_action == HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE && t_state.api_cleanup_cache_read &&
-        t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
+  case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
+    if (t_state.api_cleanup_cache_read && t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
       t_state.api_cleanup_cache_read = false;
       t_state.cache_info.object_read = nullptr;
       t_state.request_sent_time      = UNDEFINED_TIME;
@@ -1609,6 +1611,7 @@ HttpSM::handle_api_return()
       cache_sm.close_read();
       transform_cache_sm.close_read();
     }
+
     call_transact_and_set_next_state(nullptr);
     return;
   case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
