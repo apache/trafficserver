@@ -414,11 +414,14 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
 
       do {
         INK_QUEUE_LD(old_h, m_log_buffer);
+        // we may depend on comparing the old pointer to the new pointer to detect buffer swaps
+        // without worrying about pointer collisions because we always allocate a new LogBuffer
+        // before freeing the old one
         if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h)) {
           ink_atomic_increment(&buffer->m_references, -1);
 
-          // another thread should be taking care of creating a new
-          // buffer, so delete new_buffer and try again
+          // another thread is already creating a new buffer,
+          // so delete new_buffer and try again next loop iteration
           delete new_buffer;
           break;
         }
@@ -458,23 +461,26 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
     if (!decremented) {
       head_p old_h;
 
+      // The do-while loop protects us from races while we're examining ptr(old_h) and ptr(h)
+      // (essentially an optimistic lock)
       do {
         INK_QUEUE_LD(old_h, m_log_buffer);
         if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h)) {
+          // Another thread's allocated a new LogBuffer, we don't need to do anything more
           break;
         }
 
       } while (!write_pointer_version(&m_log_buffer, old_h, FREELIST_POINTER(h), FREELIST_VERSION(old_h) - 1));
 
       if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h)) {
+        // Another thread's allocated a new LogBuffer, meaning this LogObject is no longer referencing the old LogBuffer
         ink_atomic_increment(&buffer->m_references, -1);
       }
     }
 
   } while (retry && write_offset); // if write_offset is null, we do
-  // not retry because we really do
-  // not want to write to the buffer
-  // only to set it as full
+  // not retry because we really do not want to write to the buffer,
+  // only to mark the buffer as full
   if (result_code == LogBuffer::LB_BUFFER_TOO_SMALL) {
     buffer = nullptr;
   }

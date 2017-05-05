@@ -105,7 +105,7 @@ union LB_State {
     return *this;
   }
 
-  int64_t ival;
+  int64_t ival; // ival is used to help do an atomic CAS for struct s
   struct {
     uint32_t offset;           // buffer offset(bytes in buffer)
     uint16_t num_entries;      // number of entries in buffer
