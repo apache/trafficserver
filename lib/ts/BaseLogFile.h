@@ -166,6 +166,8 @@ class BaseLogFile
 {
 public:
   // member functions
+  BaseLogFile()        = delete;
+  BaseLogFile &operator=(const BaseLogFile &) = delete;
   BaseLogFile(const char *name);
   BaseLogFile(const char *name, uint64_t sig);
   BaseLogFile(const BaseLogFile &);
@@ -217,27 +219,22 @@ public:
     LOG_FILE_COULD_NOT_OPEN_FILE,
   };
 
-  FILE *m_fp;
-  long m_start_time;
-  long m_end_time;
-  volatile uint64_t m_bytes_written;
+  FILE *m_fp                        = nullptr;
+  long m_start_time                 = time(nullptr);
+  long m_end_time                   = 0L;
+  volatile uint64_t m_bytes_written = 0;
 
 private:
-  void init(const char *name);
-  // member functions not allowed
-  BaseLogFile();
-  BaseLogFile &operator=(const BaseLogFile &);
-
   // member functions
   int timestamp_to_str(long timestamp, char *buf, int size);
 
   // member variables
-  uint64_t m_signature;
-  bool m_has_signature;
   ats_scoped_str m_name;
   ats_scoped_str m_hostname;
-  bool m_is_regfile;
-  bool m_is_init;
-  BaseMetaInfo *m_meta_info;
+  bool m_is_regfile         = false;
+  bool m_is_init            = false;
+  BaseMetaInfo *m_meta_info = nullptr;
+  uint64_t m_signature      = 0;
+  bool m_has_signature      = false;
 };
 #endif
