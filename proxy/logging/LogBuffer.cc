@@ -219,7 +219,9 @@ LogBuffer::checkout_write(size_t *write_offset, size_t write_size)
 
   uint64_t retries = (uint64_t)-1;
   do {
-    new_s = old_s = m_state;
+    // we want sequence points between these two statements
+    old_s = m_state;
+    new_s = old_s;
 
     if (old_s.s.full) {
       // the buffer has already been set to full by somebody else

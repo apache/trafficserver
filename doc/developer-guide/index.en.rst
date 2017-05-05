@@ -44,6 +44,7 @@ duplicate bugs is encouraged, but not required.
    testing-with-vagrant/index.en
    debugging/index.en
    cache-architecture/index.en
+   logging-architecture/index.en
    internal-libraries/index.en
    plugins/index.en
    config-vars.en

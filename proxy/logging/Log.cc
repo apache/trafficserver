@@ -1186,10 +1186,9 @@ Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char
 /*-------------------------------------------------------------------------
   Log::preproc_thread_main
 
-  This function defines the functionality of the logging flush prepare
-  thread, whose purpose is to consume LogBuffer objects from the
-  global_buffer_full_list, do some prepare work(such as convert to ascii),
-  and then forward to flush thread.
+  This function defines the functionality of the logging flush preprocess
+  thread, whose purpose is to consume full LogBuffer objects, do some prepare
+  work (such as convert to ascii), and then forward to flush thread.
   -------------------------------------------------------------------------*/
 
 void *
