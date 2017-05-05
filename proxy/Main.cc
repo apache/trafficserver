@@ -267,8 +267,8 @@ public:
       Debug("log", "received SIGUSR2, reloading traffic.out");
 
       // reload output logfile (file is usually called traffic.out)
-      diags->set_stdout_output(bind_stdout);
-      diags->set_stderr_output(bind_stderr);
+      diags->set_std_output(StdStream::STDOUT, bind_stdout);
+      diags->set_std_output(StdStream::STDERR, bind_stderr);
     }
 
     if (signal_received[SIGTERM] || signal_received[SIGINT]) {
@@ -1564,8 +1564,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // related errors and if diagsConfig isn't get up yet that will crash on a NULL pointer.
   diagsConfig = new DiagsConfig("Server", DIAGS_LOG_FILENAME, error_tags, action_tags, false);
   diags       = diagsConfig->diags;
-  diags->set_stdout_output(bind_stdout);
-  diags->set_stderr_output(bind_stderr);
+  diags->set_std_output(StdStream::STDOUT, bind_stdout);
+  diags->set_std_output(StdStream::STDERR, bind_stderr);
   if (is_debug_tag_set("diags")) {
     diags->dump();
   }
@@ -1651,8 +1651,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   diagsConfig          = new DiagsConfig("Server", DIAGS_LOG_FILENAME, error_tags, action_tags, true);
   diags                = diagsConfig->diags;
   RecSetDiags(diags);
-  diags->set_stdout_output(bind_stdout);
-  diags->set_stderr_output(bind_stderr);
+  diags->set_std_output(StdStream::STDOUT, bind_stdout);
+  diags->set_std_output(StdStream::STDERR, bind_stderr);
   if (is_debug_tag_set("diags")) {
     diags->dump();
   }

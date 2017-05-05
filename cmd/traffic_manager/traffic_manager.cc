@@ -492,8 +492,8 @@ main(int argc, const char **argv)
   //  up the manager
   diagsConfig = new DiagsConfig("Manager", DIAGS_LOG_FILENAME, debug_tags, action_tags, false);
   diags       = diagsConfig->diags;
-  diags->set_stdout_output(bind_stdout);
-  diags->set_stderr_output(bind_stderr);
+  diags->set_std_output(StdStream::STDOUT, bind_stdout);
+  diags->set_std_output(StdStream::STDERR, bind_stderr);
 
   RecLocalInit();
   LibRecordsConfigInit();
@@ -538,8 +538,8 @@ main(int argc, const char **argv)
   diagsConfig = new DiagsConfig("Manager", DIAGS_LOG_FILENAME, debug_tags, action_tags, true);
   diags       = diagsConfig->diags;
   RecSetDiags(diags);
-  diags->set_stdout_output(bind_stdout);
-  diags->set_stderr_output(bind_stderr);
+  diags->set_std_output(StdStream::STDOUT, bind_stdout);
+  diags->set_std_output(StdStream::STDERR, bind_stderr);
 
   if (is_debug_tag_set("diags")) {
     diags->dump();

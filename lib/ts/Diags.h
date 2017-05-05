@@ -49,10 +49,10 @@
 class Diags;
 
 // extern int diags_on_for_plugins;
-typedef enum {
+enum DiagsTagType {
   DiagsTagType_Debug  = 0, // do not renumber --- used as array index
   DiagsTagType_Action = 1
-} DiagsTagType;
+};
 
 struct DiagsModeOutput {
   bool to_stdout;
@@ -61,18 +61,20 @@ struct DiagsModeOutput {
   bool to_diagslog;
 };
 
-typedef enum {  // do not renumber --- used as array index
-  DL_Diag = 0,  // process does not die
-  DL_Debug,     // process does not die
-  DL_Status,    // process does not die
-  DL_Note,      // process does not die
-  DL_Warning,   // process does not die
-  DL_Error,     // process does not die
-  DL_Fatal,     // causes process termination
-  DL_Alert,     // causes process termination
-  DL_Emergency, // causes process termination
-  DL_Undefined  // must be last, used for size!
-} DiagsLevel;
+enum DiagsLevel { // do not renumber --- used as array index
+  DL_Diag = 0,    // process does not die
+  DL_Debug,       // process does not die
+  DL_Status,      // process does not die
+  DL_Note,        // process does not die
+  DL_Warning,     // process does not die
+  DL_Error,       // process does not die
+  DL_Fatal,       // causes process termination
+  DL_Alert,       // causes process termination
+  DL_Emergency,   // causes process termination
+  DL_Undefined    // must be last, used for size!
+};
+
+enum StdStream { STDOUT = 0, STDERR };
 
 enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_TIME_OR_SIZE, INVALID_ROLLING_VALUE };
 
@@ -215,8 +217,7 @@ public:
   bool should_roll_diagslog();
   bool should_roll_outputlog();
 
-  bool set_stdout_output(const char *_bind_stdout);
-  bool set_stderr_output(const char *_bind_stderr);
+  bool set_std_output(StdStream stream, const char *file);
 
   const char *base_debug_tags;  // internal copy of default debug tags
   const char *base_action_tags; // internal copy of default action tags
@@ -240,8 +241,7 @@ private:
   time_t outputlog_time_last_roll;
   time_t diagslog_time_last_roll;
 
-  bool rebind_stdout(int new_fd);
-  bool rebind_stderr(int new_fd);
+  bool rebind_std_stream(StdStream stream, int new_fd);
 
   void
   lock() const
