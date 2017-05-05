@@ -49,6 +49,10 @@ These types are provided by the compiler ("built-in") or from a required operati
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
 
+.. cpp:type:: int64_t
+
+   64 bit signed integer.
+
 .. cpp:type:: uint32_t
 
    `Reference <https://linux.die.net/include/stdint.h>`__.

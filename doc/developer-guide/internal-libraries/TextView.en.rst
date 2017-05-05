@@ -76,9 +76,9 @@ loop condition, not a dereference of it.
 
    TextView v;
    size_t hash = 0;
-   for ( ; v ; ++v) hash = hash * 13 + *v;
+   for ( ; v ; ++v) hash = hash * 13 + * v;
 
-Or, because the view acts as a container of characters, this can be done non-destructively.
+Because the view acts as a container of characters, this can be done non-destructively.
 
 .. code-block:: cpp
 

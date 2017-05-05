@@ -41,4 +41,5 @@ understanding and modifying the source.
    api-functions.en
    consistency.en
    ram-cache.en
+   cache-tool.en
    tiered-storage.en
