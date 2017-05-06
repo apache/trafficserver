@@ -1,0 +1,15 @@
+<HTML> 
+ <HEAD> 
+  <TITLE>Authentication Failed</TITLE> 
+  <meta http-equiv="refresh" content="0;URL=%<{@redirect_url}cqh>"> 
+ </HEAD> 
+
+ <BODY BGCOLOR=#88DAFF FGCOLOR="black"> 
+  <H1>Authentication Failed.</H1> 
+  <HR> 
+  <FONT FACE="Helvetica,Arial"> 
+  <B>Please wait while you are redirected to another page.</B> 
+  If your browser fails to redirect, click on this <a href="%<{@redirect_url}cqh>">link</a>.
+  </FONT> 
+ </BODY>
+</HTML>

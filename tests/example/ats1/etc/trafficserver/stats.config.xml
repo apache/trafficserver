@@ -1,0 +1,1951 @@
+<?xml version="1.0" standalone="no"?>
+ 
+<!DOCTYPE ink:statistics SYSTEM "stats.config.dtd">
+
+<!-- Traffic Server's namespace: ink -->
+<ink:statistics xmlns:ink='http://trafficserver.apache.com/'>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.http.user_agents_total_documents_served</destination>
+        <destination scope="cluster">proxy.cluster.http.user_agents_total_documents_served</destination>
+        <expression>
+            proxy.process.http.incoming_requests
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.http.user_agents_total_transactions_count</destination>
+        <destination scope="cluster">proxy.cluster.http.user_agents_total_transactions_count</destination>
+        <expression>
+            proxy.process.http.incoming_requests
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.http.origin_server_total_transactions_count</destination>
+        <destination scope="cluster">proxy.cluster.http.origin_server_total_transactions_count</destination>
+        <expression>
+            proxy.process.http.outgoing_requests
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.http.cache_current_connections_count</destination>
+        <destination scope="cluster">proxy.cluster.http.cache_current_connections_count</destination>
+        <expression>
+            proxy.process.http.current_cache_connections
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.http.user_agent_current_connections_count</destination>
+        <destination scope="cluster">proxy.cluster.http.user_agent_current_connections_count</destination>
+        <expression>
+            proxy.process.http.current_client_connections
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.http.origin_server_current_connections_count</destination>
+        <destination scope="cluster">proxy.cluster.http.origin_server_current_connections_count</destination>
+        <expression>
+            proxy.process.http.current_server_connections
+        </expression>
+    </statistics>
+
+    <!-- Cache -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache.bytes_total</destination>
+        <expression>
+            proxy.process.cache.bytes_total
+        </expression>
+    </statistics>
+
+
+    <!-- DNS -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.dns.total_dns_lookups</destination>
+        <destination scope="cluster">proxy.cluster.dns.total_dns_lookups</destination> 
+        <expression>
+            proxy.process.dns.total_dns_lookups
+        </expression>
+    </statistics>
+
+
+    <!-- HostDB -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.hostdb.total_lookups</destination>
+        <expression>
+            proxy.process.hostdb.total_lookups
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.hostdb.total_hits</destination>
+        <expression>
+            proxy.process.hostdb.total_hits
+        </expression>
+    </statistics>
+
+
+    <!-- Cluster -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cluster.nodes</destination>
+        <expression>
+            proxy.process.cluster.nodes
+        </expression>
+    </statistics>
+
+
+	<!-- ########################################################################### -->
+    <!-- StatAggregation::Ag_XactsPerSecond() -->
+    <statistics
+        interval="10"
+	minimum="0">
+        <destination>proxy.node.http.user_agent_xacts_per_second</destination>
+        <destination scope="cluster">proxy.cluster.http.user_agent_xacts_per_second</destination>
+        <expression>
+            #proxy.process.http.incoming_requests *
+            $HRTIME_SECOND                  /
+            _DIFFTIME
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.user_agent_xacts_per_second</destination>
+        <destination scope="cluster">proxy.cluster.user_agent_xacts_per_second</destination>
+        <expression>
+            proxy.node.http.user_agent_xacts_per_second 
+        </expression>
+    </statistics>
+
+  
+	<!-- ########################################################################### -->
+    <!-- StatAggregation::Ag_TotalDocumentsServed() -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.user_agents_total_documents_served</destination>
+        <expression>
+            proxy.node.http.user_agents_total_documents_served
+        </expression>
+    </statistics>
+
+
+	<!-- ########################################################################### -->
+    <!-- StatAggregation::Ag_DnsLookupsPerSecond() -->
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.dns.lookups_per_second</destination>
+        <destination scope="cluster">proxy.cluster.dns.lookups_per_second</destination>
+        <expression>
+            #proxy.process.dns.total_dns_lookups *
+            $HRTIME_SECOND  /
+            _DIFFTIME
+        </expression>
+    </statistics>
+
+
+	<!-- ########################################################################### -->
+    <!-- StatAggregation::Ag_HostdbHitRate() -->
+    <statistics
+        minimum="0"
+        interval="10">
+        <destination>proxy.node.hostdb.total_lookups_avg_10s</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.hostdb.total_lookups_avg_10s</destination>
+        <expression>
+            #proxy.process.hostdb.total_lookups
+        </expression>
+    </statistics>
+
+
+    <statistics
+        minimum="0"
+        interval="10">
+        <destination>proxy.node.hostdb.total_hits_avg_10s</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.hostdb.total_hits_avg_10s</destination>
+        <expression>
+            #proxy.process.hostdb.total_hits
+        </expression>
+    </statistics>
+
+
+    <statistics
+        minimum="0"
+        maximum="100"
+        interval="10">
+       <destination>proxy.node.hostdb.hit_ratio_avg_10s</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.hostdb.hit_ratio_avg_10s</destination>
+        <expression>
+            proxy.node.hostdb.total_hits_avg_10s    /
+            proxy.node.hostdb.total_lookups_avg_10s
+        </expression>
+    </statistics>
+
+
+    <statistics
+        minimum="0"
+        maximum="100">
+        <destination>proxy.node.hostdb.hit_ratio</destination>
+        <expression>
+            proxy.process.hostdb.total_hits    /
+            proxy.process.hostdb.total_lookups
+        </expression>
+    </statistics>
+
+
+	<!-- ########################################################################### -->
+    <!-- StatAggregation::Ag_Bytes() -->
+    <statistics>
+        <destination>proxy.node.http.user_agent_total_request_bytes</destination>
+        <destination scope="cluster">proxy.cluster.http.user_agent_total_request_bytes</destination>
+       <expression>
+            proxy.process.http.user_agent_request_document_total_size +
+            proxy.process.http.user_agent_request_header_total_size
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.http.user_agent_total_response_bytes</destination>
+        <destination scope="cluster">proxy.cluster.http.user_agent_total_response_bytes</destination>
+       <expression>
+            proxy.process.http.user_agent_response_document_total_size +
+            proxy.process.http.user_agent_response_header_total_size
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.http.origin_server_total_request_bytes</destination>
+        <destination scope="cluster">proxy.cluster.http.origin_server_total_request_bytes</destination>
+        <expression>
+            proxy.process.http.origin_server_request_document_total_size +
+            proxy.process.http.origin_server_request_header_total_size
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.http.origin_server_total_response_bytes</destination>
+        <destination scope="cluster">proxy.cluster.http.origin_server_total_response_bytes</destination>
+         <expression>
+            proxy.process.http.origin_server_response_document_total_size +
+            proxy.process.http.origin_server_response_header_total_size
+        </expression>
+    </statistics>
+
+
+        <!-- add up the downstream (client<=>proxy) traffic volume -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.user_agent_total_bytes</destination>
+        <expression>
+            proxy.node.http.user_agent_total_request_bytes  +
+            proxy.node.http.user_agent_total_response_bytes
+        </expression>
+    </statistics>
+
+
+        <!-- add up the upstream (client<=>proxy) traffic volume -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.origin_server_total_bytes</destination>
+        <expression>
+            proxy.node.http.origin_server_total_request_bytes  +
+            proxy.node.http.origin_server_total_response_bytes +
+            proxy.node.http.parent_proxy_total_request_bytes   +
+            proxy.node.http.parent_proxy_total_response_bytes
+        </expression>
+    </statistics>
+
+
+        <!-- PP_bytes is missing!! -->
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.bandwidth_hit_ratio</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.bandwidth_hit_ratio</destination>
+        <expression>
+            (
+            proxy.node.user_agent_total_bytes    -
+            proxy.node.origin_server_total_bytes
+            )                                    /
+            proxy.node.user_agent_total_bytes
+        </expression>
+    </statistics>
+
+
+    <statistics
+        interval="10"
+	minimum="0">
+        <destination>proxy.node.user_agent_total_bytes_avg_10s</destination>
+        <destination scope="cluster">proxy.cluster.user_agent_total_bytes_avg_10s</destination>
+        <expression>
+            #proxy.node.user_agent_total_bytes
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.origin_server_total_bytes_avg_10s</destination>
+        <destination scope="cluster">proxy.cluster.origin_server_total_bytes_avg_10s</destination>
+        <expression>
+            #proxy.node.origin_server_total_bytes
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.bandwidth_hit_ratio_avg_10s</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.bandwidth_hit_ratio_avg_10s</destination>
+        <expression>
+            (
+            proxy.node.user_agent_total_bytes_avg_10s    -
+            proxy.node.origin_server_total_bytes_avg_10s
+            )                                            /
+            proxy.node.user_agent_total_bytes_avg_10s
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100"
+        interval="10">
+        <destination>proxy.node.bandwidth_hit_ratio_avg_10s_int_pct</destination>
+        <expression>
+            proxy.node.bandwidth_hit_ratio_avg_10s *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+	<!-- ########################################################################### -->
+    <!-- StatAggregation::Ag_Throughput() -->
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.throughput</destination>
+        <destination scope="cluster">proxy.cluster.http.throughput</destination> 
+        <expression>
+            (
+            #proxy.node.http.user_agent_total_response_bytes
+            )                                                *
+            $HRTIME_SECOND                                   /
+            _DIFFTIME
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.client_throughput_out</destination>
+        <destination scope="cluster">proxy.cluster.client_throughput_out</destination>
+        <expression>
+            proxy.node.http.throughput *
+            $BYTES_TO_MBIT_SCALE
+        </expression>
+    </statistics>
+
+
+	<!-- ########################################################################### -->
+    <!-- StatAggregation::Ag_cacheHits() -->
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_hit_fresh_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_hit_fresh
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_hit_mem_fresh_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_hit_mem_fresh
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_hit_revalidated_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_hit_revalidated
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_hit_ims_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_hit_ims
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_hit_stale_served_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_hit_stale_served
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_miss_cold_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_miss_cold
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_miss_changed_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_miss_changed
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_miss_not_cacheable_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_miss_not_cacheable
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_miss_client_no_cache_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_miss_client_no_cache
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_miss_ims_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_miss_ims
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.cache_read_error_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_read_error
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.cache_total_hits_avg_10s</destination>
+        <destination scope="cluster">proxy.cluster.cache_total_hits_avg_10s</destination>
+        <expression>
+            proxy.node.http.cache_hit_fresh_avg_10s        +
+            proxy.node.http.cache_hit_revalidated_avg_10s  +
+            proxy.node.http.cache_hit_ims_avg_10s          +
+            proxy.node.http.cache_hit_stale_served_avg_10s
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.cache_total_hits_mem_avg_10s</destination>
+        <destination scope="cluster">proxy.cluster.cache_total_hits_mem_avg_10s</destination>
+        <expression>
+            proxy.node.http.cache_hit_mem_fresh_avg_10s
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.cache_total_misses_avg_10s</destination>
+        <destination scope="cluster">proxy.cluster.cache_total_misses_avg_10s</destination>
+        <expression>
+            proxy.node.http.cache_miss_cold_avg_10s            +
+            proxy.node.http.cache_miss_changed_avg_10s         +
+            proxy.node.http.cache_miss_not_cacheable_avg_10s   +
+            proxy.node.http.cache_miss_client_no_cache_avg_10s +
+            proxy.node.http.cache_miss_ims_avg_10s             +
+            proxy.node.http.cache_read_error_avg_10s
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.cache_hit_ratio_avg_10s</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.cache_hit_ratio_avg_10s</destination>
+        <expression>
+            proxy.node.cache_total_hits_avg_10s   /
+            (
+            proxy.node.cache_total_hits_avg_10s   +
+            proxy.node.cache_total_misses_avg_10s
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.cache_hit_mem_ratio_avg_10s</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.cache_hit_mem_ratio_avg_10s</destination>
+        <expression>
+            proxy.node.cache_total_hits_mem_avg_10s   /
+            (
+            proxy.node.cache_total_hits_avg_10s   +
+            proxy.node.cache_total_misses_avg_10s
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100"
+        interval="10">
+        <destination>proxy.node.cache_hit_ratio_avg_10s_int_pct</destination>
+        <expression>
+	    proxy.node.cache_hit_ratio_avg_10s *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100"
+        interval="10">
+        <destination>proxy.node.cache_hit_mem_ratio_avg_10s_int_pct</destination>
+        <expression>
+	    proxy.node.cache_hit_mem_ratio_avg_10s *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache_total_hits</destination>
+        <destination scope="cluster">proxy.cluster.cache_total_hits</destination>
+        <expression>
+            proxy.process.http.cache_hit_fresh        +
+            proxy.process.http.cache_hit_revalidated  +
+            proxy.process.http.cache_hit_ims          +
+            proxy.process.http.cache_hit_stale_served
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache_total_hits_mem</destination>
+        <destination scope="cluster">proxy.cluster.cache_total_hits_mem</destination>
+        <expression>
+            proxy.process.http.cache_hit_mem_fresh
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache_total_misses</destination>
+        <destination scope="cluster">proxy.cluster.cache_total_misses</destination>
+        <expression>
+            proxy.process.http.cache_miss_cold            +
+            proxy.process.http.cache_miss_changed         +
+            proxy.process.http.cache_miss_not_cacheable   +
+            proxy.process.http.cache_miss_client_no_cache +
+            proxy.process.http.cache_miss_ims             +
+            proxy.process.http.cache_read_error
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.cache_hit_ratio</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.cache_hit_ratio</destination>
+        <expression>
+            proxy.node.cache_total_hits   /
+            (
+            proxy.node.cache_total_hits   +
+            proxy.node.cache_total_misses
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.cache_hit_mem_ratio</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.cache_hit_mem_ratio</destination>
+        <expression>
+            proxy.node.cache_total_hits_mem   /
+            (
+            proxy.node.cache_total_hits   +
+            proxy.node.cache_total_misses
+            )
+        </expression>
+    </statistics>
+
+	<!-- ########################################################################### -->
+    <!-- StatAggregation::Ag_cachePercent() -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache.bytes_free</destination>
+        <expression>
+            proxy.process.cache.bytes_total -
+            proxy.process.cache.bytes_used
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.cache.percent_free</destination>
+        <destination scope="cluster">proxy.cluster.cache.percent_free</destination>
+        <expression>
+            proxy.node.cache.bytes_free /
+            proxy.process.cache.bytes_total
+        </expression>
+    </statistics>
+
+
+	<!-- ########################################################################### -->
+    <!-- StatAggregation::Ag_TransactionPercentsAndMeanTimes() -->
+        <!-- counts_names -->
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.hit_fresh</destination>                            
+        <expression>
+            #proxy.process.http.transaction_counts.hit_fresh
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.hit_revalidated</destination>                      
+        <expression>
+            #proxy.process.http.transaction_counts.hit_revalidated
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.miss_cold</destination>                            
+        <expression>
+            #proxy.process.http.transaction_counts.miss_cold
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.miss_changed</destination>                         
+        <expression>
+            #proxy.process.http.transaction_counts.miss_changed
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache</destination>                 
+        <expression>
+            #proxy.process.http.transaction_counts.miss_client_no_cache
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable</destination>                   
+        <expression>
+            #proxy.process.http.transaction_counts.miss_not_cacheable
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.errors.connect_failed</destination>                
+        <expression>
+            #proxy.process.http.transaction_counts.errors.connect_failed
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.errors.aborts</destination>                        
+        <expression>
+            #proxy.process.http.transaction_counts.errors.aborts
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts</destination>               
+        <expression>
+            #proxy.process.http.transaction_counts.errors.possible_aborts
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups</destination>
+        <expression>
+            #proxy.process.http.transaction_counts.errors.pre_accept_hangups
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.errors.early_hangups</destination>                 
+        <expression>
+            #proxy.process.http.transaction_counts.errors.early_hangups
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups</destination>                 
+        <expression>
+            #proxy.process.http.transaction_counts.errors.empty_hangups
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_counts_avg_10s.errors.other</destination>                         
+        <expression>
+            #proxy.process.http.transaction_counts.errors.other
+        </expression>
+    </statistics>
+
+
+        <!-- StatAggregation.cc::frac_names() -->
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.hit_fresh</destination>                            
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.hit_revalidated</destination>                      
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.miss_cold</destination>                            
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.miss_cold /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.miss_changed</destination>
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.miss_changed /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache</destination>                 
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable</destination>
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.connect_failed</destination>                
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.aborts</destination>                        
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts</destination>               
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups</destination>
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.early_hangups</destination>                 
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups</destination>                 
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.other</destination>
+        <expression>
+            proxy.node.http.transaction_counts_avg_10s.errors.other /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+        <!-- frac_int_names -->
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.hit_fresh_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.hit_fresh *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.hit_revalidated_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.hit_revalidated *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.miss_cold_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.miss_cold *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.miss_changed_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.miss_changed *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.connect_failed_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.errors.connect_failed *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.aborts_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.errors.aborts *
+            $PCT_TO_INTPCT_SCALE
+       </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.early_hangups_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.errors.early_hangups *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.http.transaction_frac_avg_10s.errors.other_int_pct</destination>
+        <expression>
+            proxy.node.http.transaction_frac_avg_10s.errors.other *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+        <!-- avgtime_names -->
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.hit_fresh</destination>
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE                  *
+            #proxy.process.http.transaction_totaltime.hit_fresh /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.hit_revalidated</destination>                      
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE         *
+            #proxy.process.http.transaction_totaltime.hit_revalidated /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.miss_cold</destination>                            
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE   *
+            #proxy.process.http.transaction_totaltime.miss_cold /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.miss_changed</destination>                         
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE      *
+            #proxy.process.http.transaction_totaltime.miss_changed /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.miss_client_no_cache</destination>                 
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE              *
+            #proxy.process.http.transaction_totaltime.miss_client_no_cache /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.miss_not_cacheable</destination>                   
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE            *
+            #proxy.process.http.transaction_totaltime.miss_not_cacheable /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.errors.connect_failed</destination>                
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE               *
+            #proxy.process.http.transaction_totaltime.errors.connect_failed /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.errors.aborts</destination>                        
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE       *
+            #proxy.process.http.transaction_totaltime.errors.aborts /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.errors.possible_aborts</destination>               
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE                *
+            #proxy.process.http.transaction_totaltime.errors.possible_aborts /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.errors.pre_accept_hangups</destination>
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE                   *
+            #proxy.process.http.transaction_totaltime.errors.pre_accept_hangups /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.errors.early_hangups</destination>                 
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE              *
+            #proxy.process.http.transaction_totaltime.errors.early_hangups /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.errors.empty_hangups</destination>                 
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE              *
+            #proxy.process.http.transaction_totaltime.errors.empty_hangups /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.http.transaction_msec_avg_10s.errors.other</destination>                         
+        <expression>
+            $SECOND_TO_MILLISECOND_SCALE      *
+            #proxy.process.http.transaction_totaltime.errors.other /
+            (
+            proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+            proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+            proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+            proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+            proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+            proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+            proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+            proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+            proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+            proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+            proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
+            proxy.node.http.transaction_counts_avg_10s.errors.other
+            )
+        </expression>
+    </statistics>
+
+
+	<!-- ########################################################################### -->
+    <!-- StatAggregation::Ag_Connections() -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.current_client_connections</destination>
+        <destination scope="cluster">proxy.cluster.current_client_connections</destination>
+        <expression>
+            proxy.node.http.user_agent_current_connections_count
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.current_server_connections</destination>
+        <destination scope="cluster">proxy.cluster.current_server_connections</destination>
+        <expression>
+            proxy.node.http.origin_server_current_connections_count +
+            proxy.node.http.current_parent_proxy_connections
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.current_cache_connections</destination>
+        <destination scope="cluster">proxy.cluster.current_cache_connections</destination>
+        <expression>
+            proxy.node.http.cache_current_connections_count
+        </expression>
+    </statistics>
+
+
+    <!-- Others -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.client_throughput_out_kbit</destination>
+        <destination scope="cluster">proxy.cluster.client_throughput_out_kbit</destination>
+        <expression>
+            proxy.node.client_throughput_out *
+            $MBIT_TO_KBIT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache_hit_ratio_int_pct</destination>
+        <destination scope="cluster">proxy.cluster.cache_hit_ratio_int_pct</destination>
+        <expression>
+            proxy.node.cache_hit_ratio *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache_hit_mem_ratio_int_pct</destination>
+        <destination scope="cluster">proxy.cluster.cache_hit_mem_ratio_int_pct</destination>
+        <expression>
+            proxy.node.cache_hit_mem_ratio *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.bandwidth_hit_ratio_int_pct</destination>
+        <destination scope="cluster">proxy.cluster.bandwidth_hit_ratio_int_pct</destination>
+        <expression>
+            proxy.node.bandwidth_hit_ratio *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache.percent_free_int_pct</destination>
+        <destination scope="cluster">proxy.cluster.cache.percent_free_int_pct</destination>
+        <expression>
+            proxy.node.cache.percent_free *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.hostdb.hit_ratio_int_pct</destination>
+        <destination scope="cluster">proxy.cluster.hostdb.hit_ratio_int_pct</destination>
+        <expression>
+            proxy.node.hostdb.hit_ratio *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache.bytes_total_mb</destination>
+        <expression>
+            proxy.process.cache.bytes_total *
+            $BYTES_TO_MB_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache.bytes_free_mb</destination>
+        <expression>
+            proxy.node.cache.bytes_free *
+            $BYTES_TO_MB_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.cluster.cache.bytes_free_mb</destination>
+        <expression>
+            proxy.cluster.cache.bytes_free *
+            $BYTES_TO_MB_SCALE
+        </expression>
+    </statistics>
+
+
+<!-- -->
+
+    <statistics
+	minimum="0">
+        <destination scope="cluster">proxy.cluster.http.current_parent_proxy_connections</destination>
+        <expression>
+            proxy.node.http.current_parent_proxy_connections
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination scope="cluster">proxy.cluster.http.parent_proxy_total_request_bytes</destination>
+        <expression>
+        proxy.node.http.parent_proxy_total_request_bytes
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination scope="cluster">proxy.cluster.http.parent_proxy_total_response_bytes</destination>
+        <expression>
+             proxy.node.http.parent_proxy_total_response_bytes
+        </expression>
+    </statistics>
+
+    <!-- Logging -->
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.event_log_access_ok</destination>
+	<destination scope="cluster">proxy.cluster.log.event_log_access_ok</destination>
+        <expression>
+	    proxy.process.log.event_log_access_ok
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.event_log_access_skip</destination>
+	<destination scope="cluster">proxy.cluster.log.event_log_access_skip</destination>
+        <expression>
+	    proxy.process.log.event_log_access_skip
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.event_log_access_aggr</destination>
+	<destination scope="cluster">proxy.cluster.log.event_log_access_aggr</destination>
+        <expression>
+	    proxy.process.log.event_log_access_aggr
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.event_log_access_full</destination>
+	<destination scope="cluster">proxy.cluster.log.event_log_access_full</destination>
+        <expression>
+            proxy.process.log.event_log_access_full
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.event_log_access_fail</destination>
+	<destination scope="cluster">proxy.cluster.log.event_log_access_fail</destination>
+        <expression>
+            proxy.process.log.event_log_access_fail
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.num_lost_before_sent_to_network</destination>
+	<destination scope="cluster">proxy.cluster.log.num_lost_before_sent_to_network</destination>
+        <expression>
+            proxy.process.log.num_lost_before_sent_to_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.num_sent_to_network</destination>
+	<destination scope="cluster">proxy.cluster.log.num_sent_to_network</destination>
+        <expression>
+            proxy.process.log.num_sent_to_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_lost_before_sent_to_network</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_lost_before_sent_to_network</destination>
+        <expression>
+            proxy.process.log.bytes_lost_before_sent_to_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_sent_to_network</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_sent_to_network</destination>
+        <expression>
+            proxy.process.log.bytes_sent_to_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.num_received_from_network</destination>
+	<destination scope="cluster">proxy.cluster.log.num_received_from_network</destination>
+        <expression>
+            proxy.process.log.num_received_from_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_received_from_network</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_received_from_network</destination>
+        <expression>
+            proxy.process.log.bytes_received_from_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_lost_before_preproc</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_lost_before_preproc</destination>
+        <expression>
+            proxy.process.log.bytes_lost_before_preproc
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.num_lost_before_flush_to_disk</destination>
+	<destination scope="cluster">proxy.cluster.log.num_lost_before_flush_to_disk</destination>
+        <expression>
+            proxy.process.log.num_lost_before_flush_to_disk
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_lost_before_flush_to_disk</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_lost_before_flush_to_disk</destination>
+        <expression>
+            proxy.process.log.bytes_lost_before_flush_to_disk
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.log.bytes_lost_before_written_to_disk</destination>
+	<destination scope="cluster">proxy.cluster.log.bytes_lost_before_written_to_disk</destination>
+        <expression>
+            proxy.process.log.bytes_lost_before_written_to_disk
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.log.bytes_sent_to_network_avg_10s</destination>
+        <destination scope="cluster">proxy.cluster.log.bytes_sent_to_network_avg_10s</destination>
+        <expression>
+            #proxy.process.log.bytes_sent_to_network
+        </expression>
+    </statistics>
+
+    <statistics
+	minimum="0"
+        interval="10">
+        <destination>proxy.node.log.bytes_received_from_network_avg_10s</destination>
+        <destination scope="cluster">proxy.cluster.log.bytes_received_from_network_avg_10s</destination>
+        <expression>
+            #proxy.process.log.bytes_received_from_network
+        </expression>
+    </statistics>
+
+</ink:statistics>
+
+
