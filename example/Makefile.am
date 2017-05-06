@@ -46,7 +46,7 @@ example_Plugins = \
 	remap_header_add.la \
 	replace_header.la \
 	response_header_1.la \
-	secure-link.la \
+	secure_link.la \
 	server-push.la \
 	server-transform.la \
 	ssl-preaccept.la \
@@ -111,7 +111,7 @@ remap_header_add_la_SOURCES = remap_header_add/remap_header_add.cc
 remap_la_SOURCES = remap/remap.cc
 replace_header_la_SOURCES = replace_header/replace_header.c
 response_header_1_la_SOURCES = response_header_1/response_header_1.c
-secure_link_la_SOURCES = secure-link/secure-link.c
+secure_link_la_SOURCES = secure_link/secure_link.c
 server_push_la_SOURCES = server-push/server-push.c
 server_transform_la_SOURCES = server-transform/server-transform.c
 ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc

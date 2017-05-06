@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This plugin enables validation of link by performing checksum computations.
 
   @section license License
 
@@ -72,21 +72,21 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
             expireptr = val;
           }
         } else {
-          TSError("[secure_link] Invalid parameter [%s]", ptr);
+          TSError("[%s] Invalid parameter [%s]", PLUGIN_NAME, ptr);
           break;
         }
       } while ((ptr = strtok_r(NULL, "&", &saveptr)) != NULL);
       token  = (NULL == tokenptr ? NULL : TSstrdup(tokenptr));
       expire = (NULL == expireptr ? NULL : TSstrdup(expireptr));
     } else {
-      TSError("[secure_link] strtok didn't find a & in the query string");
+      TSError("[%s] strtok didn't find a & in the query string", PLUGIN_NAME);
       /* this is just example, so set fake params to prevent plugin crash */
       token  = TSstrdup("d41d8cd98f00b204e9800998ecf8427e");
       expire = TSstrdup("00000000");
     }
     TSfree(s);
   } else {
-    TSError("[secure_link] TSUrlHttpQueryGet returns empty value");
+    TSError("[%s] TSUrlHttpQueryGet returns empty value", PLUGIN_NAME);
   }
 
   ph = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &len);
@@ -98,7 +98,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     path = TSstrdup(s);
     TSfree(s);
   } else {
-    TSError("[secure_link] TSUrlPathGet returns empty value");
+    TSError("[%s] TSUrlPathGet returns empty value", PLUGIN_NAME);
     /* this is just example, so set fake params to prevent plugin crash */
     path = TSstrdup("example/");
   }
@@ -176,7 +176,7 @@ TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_si
         TSDebug(PLUGIN_NAME, "Unknown parameter [%s]", argv[i]);
       }
     } else {
-      TSError("[secure_link] Invalid parameter [%s]", argv[i]);
+      TSError("[%s] Invalid parameter [%s]", PLUGIN_NAME, argv[i]);
     }
   }
 
