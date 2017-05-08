@@ -98,7 +98,7 @@ public:
   typedef ServiceGroup self; ///< Self reference type.
 
   /// Type of service.
-  enum Type {
+  enum Type : uint8_t {
     STANDARD = 0, ///< Well known service.
     DYNAMIC  = 1  ///< Dynamic (locally defined) service.
   };
@@ -195,7 +195,7 @@ public:
   //@}
 
 protected:
-  uint8_t m_svc_type;        ///< @ref Type.
+  Type m_svc_type;           ///< @ref Type.
   uint8_t m_svc_id;          ///< ID for service type.
   uint8_t m_priority;        ///< Redirection priority ordering.
   uint8_t m_protocol;        ///< IP protocol for service.
