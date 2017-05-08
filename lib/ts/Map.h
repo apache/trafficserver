@@ -61,14 +61,9 @@ public:
     return e.key == key;
   }
   operator uintptr_t(void) { return (uintptr_t)(uintptr_t)key; }
-  MapElem(uintptr_t x)
-  {
-    ink_assert(!x);
-    key = 0;
-  }
-  MapElem(K akey, C avalue) : key(akey), value(avalue) {}
-  MapElem(MapElem &e) : key(e.key), value(e.value) {}
-  MapElem() : key(0) {}
+  MapElem(K const &akey, C const &avalue) : key(akey), value(avalue) {}
+  MapElem(MapElem const &e) : key(e.key), value(e.value) {}
+  MapElem() : key(), value() {}
 };
 
 template <class K, class C, class A = DefaultAlloc> class Map : public Vec<MapElem<K, C>, A>
