@@ -7954,12 +7954,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
     ret = _memberp_to_generic(&overridableHttpConfig->client_abort_threshold, typep);
     break;
-  case TS_CONFIG_HTTP_CACHE_FUZZ_TIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->freshness_fuzz_time, typep);
-    break;
-  case TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->freshness_fuzz_min_time, typep);
-    break;
   case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
     ret = _memberp_to_generic(&overridableHttpConfig->doc_in_cache_skip_dns, typep);
     break;
@@ -7971,9 +7965,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_heuristic_lm_factor, typep);
-    break;
-  case TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY:
-    ret = _memberp_to_generic(&overridableHttpConfig->freshness_fuzz_prob, typep);
     break;
   case TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD:
     ret = _memberp_to_generic(&overridableHttpConfig->background_fill_threshold, typep);
@@ -8361,9 +8352,7 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     break;
 
   case 33:
-    if (!strncmp(name, "proxy.config.http.cache.fuzz.time", length)) {
-      cnf = TS_CONFIG_HTTP_CACHE_FUZZ_TIME;
-    } else if (!strncmp(name, "proxy.config.ssl.client.cert.path", length)) {
+    if (!strncmp(name, "proxy.config.ssl.client.cert.path", length)) {
       cnf = TS_CONFIG_SSL_CERT_FILEPATH;
       typ = TS_RECORDDATATYPE_STRING;
     }
@@ -8424,8 +8413,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.max_stale_age", length)) {
         cnf = TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE;
-      } else if (!strncmp(name, "proxy.config.http.cache.fuzz.min_time", length)) {
-        cnf = TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME;
       } else if (!strncmp(name, "proxy.config.http.default_buffer_size", length)) {
         cnf = TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE;
       } else if (!strncmp(name, "proxy.config.ssl.client.cert.filename", length)) {
@@ -8535,12 +8522,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 't':
       if (!strncmp(name, "proxy.config.http.keep_alive_enabled_out", length)) {
         cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT;
-      }
-      break;
-    case 'y':
-      if (!strncmp(name, "proxy.config.http.cache.fuzz.probability", length)) {
-        typ = TS_RECORDDATATYPE_FLOAT;
-        cnf = TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY;
       }
       break;
     }

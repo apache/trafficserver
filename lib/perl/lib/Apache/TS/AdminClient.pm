@@ -452,9 +452,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.cache.cache_responses_to_cookies
  proxy.config.http.cache.cache_urls_that_look_dynamic
  proxy.config.http.cache.enable_default_vary_headers
- proxy.config.http.cache.fuzz.min_time
- proxy.config.http.cache.fuzz.probability
- proxy.config.http.cache.fuzz.time
  proxy.config.http.cache.guaranteed_max_lifetime
  proxy.config.http.cache.guaranteed_min_lifetime
  proxy.config.http.cache.heuristic_lm_factor

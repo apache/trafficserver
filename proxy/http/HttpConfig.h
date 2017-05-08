@@ -455,8 +455,6 @@ struct OverridableHttpConfigParams {
       parent_connect_attempts(4),
       down_server_timeout(300),
       client_abort_threshold(10),
-      freshness_fuzz_time(240),
-      freshness_fuzz_min_time(0),
       max_cache_open_read_retries(-1),
       cache_open_read_retry_time(10),
       cache_generation_number(-1),
@@ -475,7 +473,6 @@ struct OverridableHttpConfigParams {
       global_user_agent_header(NULL),
       global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10),
-      freshness_fuzz_prob(0.005),
       background_fill_threshold(0.5),
       client_cert_filename(NULL),
       client_cert_filepath(NULL),
@@ -665,9 +662,6 @@ struct OverridableHttpConfigParams {
   MgmtInt down_server_timeout;
   MgmtInt client_abort_threshold;
 
-  MgmtInt freshness_fuzz_time;
-  MgmtInt freshness_fuzz_min_time;
-
   // open read failure retries.
   MgmtInt max_cache_open_read_retries;
   MgmtInt cache_open_read_retry_time; // time is in mseconds
@@ -701,7 +695,6 @@ struct OverridableHttpConfigParams {
   size_t global_user_agent_header_size; // Updated when user_agent is set.
 
   MgmtFloat cache_heuristic_lm_factor;
-  MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
 
   // Various strings, good place for them here ...
