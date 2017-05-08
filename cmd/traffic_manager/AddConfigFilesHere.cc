@@ -61,9 +61,6 @@ initializeRegistry()
     ink_assert(!"Configuration Object Registry Initialized More than Once");
   }
 
-  // NOTE: Logic that controls which files are not sync'd around the
-  // cluster is located in ClusterCom::constructSharedFilePacket
-
   configFiles->addFile("log_hosts.config", false);
   configFiles->addFile("logging.config", false);
   configFiles->addFile("storage.config", false);

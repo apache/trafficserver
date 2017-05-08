@@ -2090,7 +2090,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
     HostDBRoundRobin *rr = r->rr();
     HostDBInfo *srv      = nullptr;
     if (rr) {
-      srv = rr->select_best_srv(t_state.dns_info.srv_hostname, &mutex->thread_holding->generator, ink_cluster_time(),
+      srv = rr->select_best_srv(t_state.dns_info.srv_hostname, &mutex->thread_holding->generator, ink_local_time(),
                                 (int)t_state.txn_conf->down_server_timeout);
     }
     if (!srv) {
@@ -2136,7 +2136,7 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
   }
 
   if (r && !r->is_failed()) {
-    ink_time_t now                    = ink_cluster_time();
+    ink_time_t now                    = ink_local_time();
     HostDBInfo *ret                   = nullptr;
     t_state.dns_info.lookup_success   = true;
     t_state.dns_info.lookup_validated = true;
@@ -4596,7 +4596,7 @@ HttpSM::do_cache_delete_all_alts(Continuation *cont)
 
   HttpCacheKey key;
   Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_generation_number);
-  cache_action_handle = cacheProcessor.remove(cont, &key, t_state.cache_control.cluster_cache_local);
+  cache_action_handle = cacheProcessor.remove(cont, &key);
   if (cont != nullptr) {
     if (cache_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
@@ -5253,7 +5253,7 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
   info->app.http_data.last_failure = time_down;
 
 #ifdef DEBUG
-  ink_assert(ink_cluster_time() + t_state.txn_conf->down_server_timeout > time_down);
+  ink_assert(ink_local_time() + t_state.txn_conf->down_server_timeout > time_down);
 #endif
 
   DebugSM("http", "[%" PRId64 "] hostdb update marking IP: %s as down", sm_id,

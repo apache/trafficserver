@@ -87,7 +87,7 @@
  *
  * Statistics
  * ----------
- * set_stats - sets dummy values for selected group of NODE, CLUSTER, PROCESS
+ * set_stats - sets dummy values for selected group of NODE, PROCESS
  *             records
  * print_stats - prints the values for the same selected group of records
  * reset_stats - resets all statistics to default values
@@ -407,9 +407,6 @@ print_cache_ele(TSCacheEle *ele)
     break;
   case TS_CACHE_IGNORE_NO_CACHE:
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "action=ignore-no-cache");
-    break;
-  case TS_CACHE_CLUSTER_CACHE_LOCAL:
-    snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "action=cluster-cache-local");
     break;
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "action=ignore-server-no-cache");
@@ -905,13 +902,13 @@ stop_TS()
   print_err("stop_TS", ret);
 }
 
-// restarts Traffic Manager cluster wide (Traffic Cop must be running)
+// restarts Traffic Manager (Traffic Cop must be running)
 void
 restart()
 {
   TSMgmtError ret;
 
-  printf("RESTART - Cluster wide\n");
+  printf("RESTART\n");
   if ((ret = TSRestart(true)) != TS_ERR_OKAY) {
     printf("[TSRestart] FAILED\n");
   }
@@ -947,11 +944,6 @@ test_action_need()
   TSRecordSetString("proxy.config.proxy_name", "proxy_dorky", &action);
   printf("[TSRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n", TS_ACTION_UNDEFINED,
          action);
-
-  // RU_RESTART_TS record
-  TSRecordSetInt("proxy.config.cluster.cluster_port", 6666, &action);
-  printf("[TSRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n", TS_ACTION_RESTART,
-         action);
 }
 
 /* Bouncer the traffic_server process(es) */
@@ -960,7 +952,7 @@ bounce()
 {
   TSMgmtError ret;
 
-  printf("BOUNCER - Cluster wide\n");
+  printf("BOUNCER\n");
   if ((ret = TSBounce(true)) != TS_ERR_OKAY) {
     printf("[TSBounce] FAILED\n");
   }
@@ -1276,7 +1268,7 @@ void
 test_record_set_mlt()
 {
   TSList list;
-  TSRecordEle *ele1, *ele2, *ele3, *ele4;
+  TSRecordEle *ele1, *ele2;
   TSActionNeedT action = TS_ACTION_UNDEFINED;
   TSMgmtError err;
 
@@ -1292,20 +1284,8 @@ test_record_set_mlt()
   ele2->rec_type       = TS_REC_INT;
   ele2->valueT.int_val = -4;
 
-  ele3                 = TSRecordEleCreate(); // restart TM
-  ele3->rec_name       = (char *)TSstrdup("proxy.local.cluster.type");
-  ele3->rec_type       = TS_REC_INT;
-  ele3->valueT.int_val = 2;
-
-  ele4                 = TSRecordEleCreate(); // reread action
-  ele4->rec_name       = (char *)TSstrdup("proxy.config.cluster.mc_ttl");
-  ele4->rec_type       = TS_REC_INT;
-  ele4->valueT.int_val = 555;
-
-  TSListEnqueue(list, ele4);
   TSListEnqueue(list, ele1);
   TSListEnqueue(list, ele2);
-  TSListEnqueue(list, ele3);
 
   err = TSRecordSetMlt(list, &action);
   print_err("TSRecordSetMlt", err);
@@ -2111,18 +2091,6 @@ set_stats()
   TSRecordSetInt("proxy.node.proxy_running", 110, &action);
   TSRecordSetInt("proxy.node.current_client_connections", 110, &action);
   TSRecordSetInt("proxy.node.current_cache_connections", 110, &action);
-
-  TSRecordSetFloat("proxy.cluster.user_agent_total_bytes_avg_10s", 110, &action);
-  TSRecordSetFloat("proxy.cluster.origin_server_total_bytes_avg_10s", 110, &action);
-  TSRecordSetFloat("proxy.cluster.bandwidth_hit_ratio", 110, &action);
-  TSRecordSetFloat("proxy.cluster.bandwidth_hit_ratio_avg_10s", 110, &action);
-  TSRecordSetFloat("proxy.cluster.cache_hit_ratio", 110, &action);
-  TSRecordSetFloat("proxy.cluster.cache_hit_mem_ratio", 110, &action);
-
-  TSRecordSetInt("proxy.cluster.cache_total_hits", 110, &action);
-  TSRecordSetInt("proxy.cluster.cache_total_hits_mem", 110, &action);
-  TSRecordSetInt("proxy.cluster.cache_total_misses", 110, &action);
-  TSRecordSetInt("proxy.cluster.http.throughput", 110, &action);
 }
 
 void
@@ -2168,23 +2136,6 @@ print_stats()
           "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n",
           i1, i7, i2, i3, i4, i5, i6, i8, i9);
 
-  TSRecordGetFloat("proxy.cluster.user_agent_total_bytes_avg_10s", &f1);
-  TSRecordGetFloat("proxy.cluster.origin_server_total_bytes_avg_10s", &f2);
-  TSRecordGetFloat("proxy.cluster.bandwidth_hit_ratio", &f3);
-  TSRecordGetFloat("proxy.cluster.bandwidth_hit_ratio_avg_10s", &f4);
-  TSRecordGetFloat("proxy.cluster.cache_hit_ratio", &f5);
-  TSRecordGetFloat("proxy.cluster.cache_hit_mem_ratio", &f6);
-
-  TSRecordGetInt("proxy.cluster.cache_total_hits", &i3);
-  TSRecordGetInt("proxy.cluster.cache_total_hits_mem", &i7);
-  TSRecordGetInt("proxy.cluster.cache_total_misses", &i4);
-  TSRecordGetInt("proxy.cluster.http.throughput", &i5);
-
-  fprintf(stderr, "CLUSTER stats: \n");
-  fprintf(stderr, "%f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f5, f6);
-  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i6, i2, i3, i7,
-          i4, i5);
-
   fprintf(stderr, "PROCESS stats: \n");
   fprintf(stderr, "%f, %f\n", f1, f2);
   fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i2, i3, i4);
@@ -2205,10 +2156,6 @@ sync_test()
 
   TSRecordSetString("proxy.config.proxy_name", "dorkface", &action);
   printf("[TSRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n", TS_ACTION_UNDEFINED,
-         action);
-
-  TSRecordSetInt("proxy.config.cluster.cluster_port", 3333, &action);
-  printf("[TSRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n", TS_ACTION_RESTART,
          action);
 
   TSMgmtError ret;

@@ -47,7 +47,6 @@
 #define MAX_DNS_LOOKUPS 2
 
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
-// #define ink_cluster_time(X) time(X)
 
 #define ACQUIRE_PRINT_LOCK() // ink_mutex_acquire(&print_lock);
 #define RELEASE_PRINT_LOCK() // ink_mutex_release(&print_lock);
@@ -1363,6 +1362,6 @@ is_response_body_precluded(HTTPStatus status_code, int method)
   }
 }
 
-inkcoreapi extern ink_time_t ink_cluster_time(void);
+inkcoreapi extern ink_time_t ink_local_time(void);
 
 #endif

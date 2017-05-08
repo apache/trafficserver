@@ -2047,7 +2047,7 @@ HttpTransact::HandlePushResponseHdr(State *s)
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Generated Request Header");
 
-  s->response_received_time = s->request_sent_time = ink_cluster_time();
+  s->response_received_time = s->request_sent_time = ink_local_time();
 
   if (is_response_cacheable(s, &s->hdr_info.server_request, &s->hdr_info.server_response)) {
     ink_assert(s->cache_info.action == CACHE_PREPARE_TO_WRITE || s->cache_info.action == CACHE_PREPARE_TO_UPDATE);
@@ -3312,7 +3312,7 @@ HttpTransact::HandleResponse(State *s)
   DebugTxn("http_seq", "[HttpTransact::HandleResponse] Response received");
 
   s->source                 = SOURCE_HTTP_ORIGIN_SERVER;
-  s->response_received_time = ink_cluster_time();
+  s->response_received_time = ink_local_time();
   ink_assert(s->response_received_time >= s->request_sent_time);
   s->current.now = s->response_received_time;
 
@@ -4349,7 +4349,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       s->cache_info.object_store.request_set(&s->hdr_info.client_request);
       s->cache_info.object_store.response_set(s->cache_info.object_read->response_get());
       base_response   = s->cache_info.object_store.response_get();
-      time_t exp_time = s->txn_conf->negative_revalidating_lifetime + ink_cluster_time();
+      time_t exp_time = s->txn_conf->negative_revalidating_lifetime + ink_local_time();
       base_response->set_expires(exp_time);
 
       SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);
@@ -4472,7 +4472,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         s->cache_info.object_store.response_set(&s->hdr_info.server_response);
         resp = s->cache_info.object_store.response_get();
         if (!resp->presence(MIME_PRESENCE_EXPIRES)) {
-          time_t exp_time = s->txn_conf->negative_caching_lifetime + ink_cluster_time();
+          time_t exp_time = s->txn_conf->negative_caching_lifetime + ink_local_time();
 
           resp->set_expires(exp_time);
         }
@@ -5612,7 +5612,7 @@ HttpTransact::initialize_state_variables_for_origin_server(State *s, HTTPHdr *in
 void
 HttpTransact::bootstrap_state_variables_from_request(State *s, HTTPHdr *incoming_request)
 {
-  s->current.now = s->client_request_time = ink_cluster_time();
+  s->current.now = s->client_request_time = ink_local_time();
   s->client_info.http_version             = incoming_request->version_get();
 }
 
@@ -7843,7 +7843,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     DebugTxn("http_trans", "[build_request] request expect 100-continue headers removed");
   }
 
-  s->request_sent_time = ink_cluster_time();
+  s->request_sent_time = ink_local_time();
   s->current.now       = s->request_sent_time;
   // The assert is backwards in this case because request is being (re)sent.
   ink_assert(s->request_sent_time >= s->response_received_time);
@@ -8313,27 +8313,9 @@ HttpTransact::get_error_string(int erno)
 }
 
 ink_time_t
-ink_cluster_time()
+ink_local_time()
 {
-  int highest_delta;
-  ink_time_t local_time;
-
-  local_time    = Thread::get_hrtime() / HRTIME_SECOND;
-  highest_delta = (int)HttpConfig::m_master.cluster_time_delta;
-  //     highest_delta =
-  //      lmgmt->record_data->readInteger("proxy.process.http.cluster_delta",
-  //                                      &found);
-  //     if (! found) {
-  //      ink_assert(!"Highest delta config value not found!");
-  //      highest_delta = 0L;
-  //     }
-
-  Debug("http_trans", "[ink_cluster_time] local: %" PRId64 ", highest_delta: %d, cluster: %" PRId64, (int64_t)local_time,
-        highest_delta, (int64_t)(local_time + (ink_time_t)highest_delta));
-
-  ink_assert(highest_delta >= 0);
-
-  return local_time + (ink_time_t)highest_delta;
+  return Thread::get_hrtime() / HRTIME_SECOND;
 }
 
 //

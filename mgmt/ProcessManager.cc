@@ -294,9 +294,6 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
       this->cbtable->invoke(data_raw);
     }
     break;
-  case MGMT_EVENT_HTTP_CLUSTER_DELTA:
-    signalMgmtEntity(MGMT_EVENT_HTTP_CLUSTER_DELTA, data_raw);
-    break;
   case MGMT_EVENT_CONFIG_FILE_UPDATE:
   case MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION:
     /*

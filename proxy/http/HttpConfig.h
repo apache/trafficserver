@@ -393,7 +393,6 @@ struct OverridableHttpConfigParams {
       insert_squid_x_forwarded_for(1),
       send_http11_requests(1),
       cache_http(1),
-      cache_cluster_cache_local(0),
       cache_ignore_client_no_cache(1),
       cache_ignore_client_cc_max_age(0),
       cache_ims_on_client_no_cache(1),
@@ -539,7 +538,6 @@ struct OverridableHttpConfigParams {
   // cache control //
   ///////////////////
   MgmtByte cache_http;
-  MgmtByte cache_cluster_cache_local;
   MgmtByte cache_ignore_client_no_cache;
   MgmtByte cache_ignore_client_cc_max_age;
   MgmtByte cache_ims_on_client_no_cache;
@@ -744,10 +742,6 @@ public:
   int proxy_request_via_string_len;
   int proxy_response_via_string_len;
 
-  // Cluster time delta is not a config variable,
-  //  rather it is the time skew which the manager observes
-  int32_t cluster_time_delta;
-
   MgmtInt accept_no_activity_timeout;
 
   ////////////////////////////////////
@@ -858,7 +852,6 @@ public:
 
   // parse ssl ports configuration string
   static HttpConfigPortRange *parse_ports_list(char *ports_str);
-  static void *cluster_delta_cb(void *opaque_token, char *data_raw, int data_len);
 
 public:
   static int m_id;
@@ -883,7 +876,6 @@ inline HttpConfigParams::HttpConfigParams()
     proxy_response_via_string(NULL),
     proxy_request_via_string_len(0),
     proxy_response_via_string_len(0),
-    cluster_time_delta(0),
     accept_no_activity_timeout(120),
     per_parent_connect_attempts(2),
     parent_connect_timeout(30),

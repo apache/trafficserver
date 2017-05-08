@@ -196,7 +196,6 @@ private:
 };
 
 int subcommand_alarm(unsigned argc, const char **argv);
-int subcommand_cluster(unsigned argc, const char **argv);
 int subcommand_config(unsigned argc, const char **argv);
 int subcommand_metric(unsigned argc, const char **argv);
 int subcommand_server(unsigned argc, const char **argv);

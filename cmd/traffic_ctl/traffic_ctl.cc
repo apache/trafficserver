@@ -223,7 +223,6 @@ main(int argc, const char **argv)
 
   const subcommand commands[] = {
     {subcommand_alarm, "alarm", "Manipulate alarms"},
-    {subcommand_cluster, "cluster", "Stop, restart and examine the cluster"},
     {subcommand_config, "config", "Manipulate configuration records"},
     {subcommand_metric, "metric", "Manipulate performance metrics"},
     {subcommand_server, "server", "Stop, restart and examine the server"},

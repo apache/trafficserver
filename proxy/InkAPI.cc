@@ -6901,7 +6901,7 @@ TSCacheRead(TSCont contp, TSCacheKey key)
   CacheInfo *info = (CacheInfo *)key;
   Continuation *i = (INKContInternal *)contp;
 
-  return (TSAction)cacheProcessor.open_read(i, &info->cache_key, true, info->frag_type, info->hostname, info->len);
+  return (TSAction)cacheProcessor.open_read(i, &info->cache_key, info->frag_type, info->hostname, info->len);
 }
 
 TSAction
@@ -6915,8 +6915,8 @@ TSCacheWrite(TSCont contp, TSCacheKey key)
   CacheInfo *info = (CacheInfo *)key;
   Continuation *i = (INKContInternal *)contp;
 
-  return (TSAction)cacheProcessor.open_write(i, &info->cache_key, true, info->frag_type, 0, false, info->pin_in_cache,
-                                             info->hostname, info->len);
+  return (TSAction)cacheProcessor.open_write(i, &info->cache_key, info->frag_type, 0, false, info->pin_in_cache, info->hostname,
+                                             info->len);
 }
 
 TSAction
@@ -6930,7 +6930,7 @@ TSCacheRemove(TSCont contp, TSCacheKey key)
   CacheInfo *info    = (CacheInfo *)key;
   INKContInternal *i = (INKContInternal *)contp;
 
-  return (TSAction)cacheProcessor.remove(i, &info->cache_key, true, info->frag_type, info->hostname, info->len);
+  return (TSAction)cacheProcessor.remove(i, &info->cache_key, info->frag_type, info->hostname, info->len);
 }
 
 TSAction
