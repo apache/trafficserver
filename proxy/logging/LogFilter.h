@@ -136,12 +136,12 @@ public:
   void display(FILE *fd = stdout);
 
 private:
-  char **m_value; // the array of values
+  char **m_value = nullptr; // the array of values
 
   // these are used to speed up case insensitive operations
   //
-  char **m_value_uppercase; // m_value in all uppercase
-  size_t *m_length;         // length of m_value string
+  char **m_value_uppercase = nullptr; // m_value in all uppercase
+  size_t *m_length         = nullptr; // length of m_value string
 
   void _setValues(size_t n, char **value);
 
@@ -194,7 +194,7 @@ public:
   void display(FILE *fd = stdout);
 
 private:
-  int64_t *m_value; // the array of values
+  int64_t *m_value = nullptr; // the array of values
 
   void _setValues(size_t n, int64_t *value);
   int _convertStringToInt(char *val, int64_t *ival, LogFieldAliasMap *map);
