@@ -281,7 +281,7 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     }
 
     return 0;
-  }
+  } break;
   case TS_EVENT_VCONN_WRITE_READY: {
     TSDebug(PLUGIN_NAME, "ndone: %" PRId64 " total_bytes: % " PRId64, TSVIONDoneGet(cstate->write_vio), cstate->total_bytes);
     cstate->write_pending = false;
@@ -289,13 +289,17 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     // available data
     // TSVIOReenable(cstate->write_vio);
     return 0;
-  }
-  case TS_EVENT_VCONN_WRITE_COMPLETE:
+  } break;
+  case TS_EVENT_VCONN_WRITE_COMPLETE: {
     TSDebug(PLUGIN_NAME, "write complete");
-  case TS_EVENT_VCONN_EOS:
-  default:
     cstate->done = 1;
     cleanup(contp);
+  } break;
+  case TS_EVENT_VCONN_EOS:
+  default: {
+    cstate->done = 1;
+    cleanup(contp);
+  } break;
   }
 
   return 0;
