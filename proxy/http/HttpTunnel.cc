@@ -1480,12 +1480,12 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
     if (p->read_vio) {
       p->bytes_read = p->read_vio->ndone;
     }
-    p->read_vio = nullptr;
-    if (p->self_consumer && p->self_consumer->alive) {
+    if (p->self_consumer) {
       p->self_consumer->alive = false;
-      p->vc->do_io_close(EHTTP_ERROR);
-      update_stats_after_abort(p->vc_type);
     }
+    p->read_vio = nullptr;
+    p->vc->do_io_close(EHTTP_ERROR);
+    update_stats_after_abort(p->vc_type);
   }
 }
 
