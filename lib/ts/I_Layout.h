@@ -46,7 +46,6 @@ struct Layout {
   char *libdir;
   char *libexecdir;
   char *localstatedir;
-  char *sharedstatedir;
   char *runtimedir;
   char *logdir;
   char *mandir;
