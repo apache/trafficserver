@@ -131,7 +131,6 @@
 
 enum LogEntryType {
   LOG_ENTRY_HTTP = 0,
-  LOG_ENTRY_ICP,
   N_LOG_ENTRY_TYPES,
 };
 

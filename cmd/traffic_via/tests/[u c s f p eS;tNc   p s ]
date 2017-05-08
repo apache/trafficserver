@@ -1,4 +1,4 @@
-Via header is [u c s f p eS;tNc  i p s ], Length is 26
+Via header is [u c s f p eS;tNc   p s ], Length is 25
 Via Header Details:
 Request headers received from client                   :unknown
 Result of Traffic Server cache lookup for URL          :no cache lookup
@@ -9,6 +9,5 @@ Error codes (if any)                                   :server related error
 Tunnel info                                            :tunneling due to no forward
 Cache Type                                             :unknown
 Cache Lookup Result                                    :cache miss or no cache lookup
-ICP status                                             :no icp
 Parent proxy connection status                         :no parent proxy or unknown
 Origin server connection status                        :no server connection needed

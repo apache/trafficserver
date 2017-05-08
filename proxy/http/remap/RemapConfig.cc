@@ -488,8 +488,6 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         m = HTTP_WKSIDX_GET;
       } else if (!strcasecmp(argptr, "HEAD")) {
         m = HTTP_WKSIDX_HEAD;
-      } else if (!strcasecmp(argptr, "ICP_QUERY")) {
-        m = HTTP_WKSIDX_ICP_QUERY;
       } else if (!strcasecmp(argptr, "OPTIONS")) {
         m = HTTP_WKSIDX_OPTIONS;
       } else if (!strcasecmp(argptr, "POST")) {

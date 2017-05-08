@@ -28,7 +28,6 @@
 #include "HTTP.h"
 #include "ProcessManager.h"
 #include "ProxyConfig.h"
-#include "ICPProcessor.h"
 #include "P_Net.h"
 #include "P_RecUtils.h"
 #include <records/I_RecHttp.h>
@@ -1283,9 +1282,6 @@ HttpConfig::reconfigure()
   params->oride.insert_age_in_response       = INT_TO_BOOL(m_master.oride.insert_age_in_response);
   params->enable_http_stats                  = INT_TO_BOOL(m_master.enable_http_stats);
   params->oride.normalize_ae_gzip            = INT_TO_BOOL(m_master.oride.normalize_ae_gzip);
-
-  params->icp_enabled       = (m_master.icp_enabled == ICP_MODE_SEND_RECEIVE ? 1 : 0); // INT_TO_BOOL
-  params->stale_icp_enabled = INT_TO_BOOL(m_master.stale_icp_enabled);
 
   params->oride.cache_heuristic_min_lifetime = m_master.oride.cache_heuristic_min_lifetime;
   params->oride.cache_heuristic_max_lifetime = m_master.oride.cache_heuristic_max_lifetime;

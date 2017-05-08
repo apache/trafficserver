@@ -136,14 +136,6 @@ traffic_server_SOURCES = \
   Crash.cc \
   EventName.cc \
   FetchSM.cc \
-  ICP.cc \
-  ICP.h \
-  ICPConfig.cc \
-  ICPProcessor.cc \
-  ICPProcessor.h \
-  ICPStats.cc \
-  ICPevents.h \
-  ICPlog.h \
   IPAllow.cc \
   IPAllow.h \
   InkAPI.cc \

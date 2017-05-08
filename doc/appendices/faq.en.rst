@@ -143,7 +143,7 @@ Via: HTTP/1.0 storm (Traffic-Server/4.0.0   [cMs f ])
 The short status code shows the cache-lookup, server-info and cache-fill information as listed in the full status code description below. The long status code list provided in older, commercial versions of Traffic Server can be restored by setting the verbose_via_str config variable.
 The character strings in the via-code show [<request results>:<proxy op>] where <request results> represents status information about the results of the client request and <proxy op> represent some information about the proxy operations performed during request processing. The full via-code status format is
 
-[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> i<icp-conn-info> p<parent-proxy> s<server-conn-info>]
+[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> p<parent-proxy> s<server-conn-info>]
 
 
 u client-info

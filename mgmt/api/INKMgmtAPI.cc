@@ -1010,41 +1010,6 @@ TSHostingEleDestroy(TSHostingEle *ele)
 }
 
 /*-------------------------------------------------------------
- * IcpObject
- *-------------------------------------------------------------*/
-tsapi TSIcpEle *
-TSIcpEleCreate()
-{
-  TSIcpEle *ele = (TSIcpEle *)ats_malloc(sizeof(TSIcpEle));
-
-  /* set defaults */
-  ele->cfg_ele.type      = TS_ICP;
-  ele->cfg_ele.error     = TS_ERR_OKAY;
-  ele->peer_hostname     = nullptr;
-  ele->peer_host_ip_addr = TS_INVALID_IP_ADDR;
-  ele->peer_type         = TS_ICP_UNDEFINED;
-  ele->peer_proxy_port   = TS_INVALID_PORT;
-  ele->peer_icp_port     = TS_INVALID_PORT;
-  ele->is_multicast      = false;
-  ele->mc_ip_addr        = TS_INVALID_IP_ADDR;
-  ele->mc_ttl            = TS_MC_TTL_SINGLE_SUBNET; // default value
-
-  return ele;
-}
-
-tsapi void
-TSIcpEleDestroy(TSIcpEle *ele)
-{
-  if (ele) {
-    ats_free(ele->peer_hostname);
-    ats_free(ele->peer_host_ip_addr);
-    ats_free(ele->mc_ip_addr);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
  * TSIpAllowEle
  *-------------------------------------------------------------*/
 tsapi TSIpAllowEle *

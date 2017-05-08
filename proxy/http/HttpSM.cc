@@ -34,7 +34,6 @@
 #include "StatPages.h"
 #include "Log.h"
 #include "LogAccessHttp.h"
-#include "ICP.h"
 #include "PluginVC.h"
 #include "ReverseProxy.h"
 #include "RemapProcessor.h"
@@ -2358,94 +2357,6 @@ HttpSM::state_handle_stat_page(int event, void *data)
     ink_release_assert(0);
     break;
   }
-
-  return 0;
-}
-
-///////////////////////////////////////////////////////////////
-//
-//  HttpSM::state_auth_callback()
-//
-///////////////////////////////////////////////////////////////
-// int
-// HttpSM::state_auth_callback(int event, void *data)
-//{
-// STATE_ENTER(&HttpSM::state_auth_lookup, event);
-
-// ink_release_assert(ua_entry != NULL);
-// pending_action = NULL;
-
-// if (event == AUTH_MODULE_EVENT) {
-// authAdapter.HandleAuthResponse(event, data);
-//} else {
-// ink_release_assert(!"Unknown authentication module event");
-//}
-/************************************************************************\
- * pending_action=ACTION_RESULT_DONE only if Authentication step has    *
- *                                   been done & authorization is left  *
- * pending_action=NULL only if we have to set_next_state.               *
- * pending_action=something else. Don't do anything.                    *
- *                                One more callback is pending          *
-\************************************************************************/
-
-// if (authAdapter.stateChangeRequired()) {
-// set_next_state();
-//}
-// OLD AND UGLY: if (pending_action == NULL) {
-// OLD AND UGLY:        pending_action=NULL;
-// OLD AND UGLY:     } else if(pending_action == ACTION_RESULT_DONE) {
-// OLD AND UGLY:        pending_action=NULL;
-// OLD AND UGLY:     }
-
-// return EVENT_DONE;
-//}
-
-///////////////////////////////////////////////////////////////
-//
-//  HttpSM::state_icp_lookup()
-//
-///////////////////////////////////////////////////////////////
-int
-HttpSM::state_icp_lookup(int event, void *data)
-{
-  STATE_ENTER(&HttpSM::state_icp_lookup, event);
-
-  // ua_entry is NULL for scheduled updates
-  ink_release_assert(ua_entry != nullptr || t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE ||
-                     t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
-  pending_action = nullptr;
-
-  switch (event) {
-  case ICP_LOOKUP_FOUND:
-
-    DebugSM("http", "ICP says ICP_LOOKUP_FOUND");
-    t_state.icp_lookup_success = true;
-    t_state.icp_ip_result      = *(struct sockaddr_in *)data;
-
-    /*
-    *  Disable ICP loop detection since the Cidera network
-    *    insists on trying to preload the cache from a
-    *    a sibling cache.
-    *
-    *  // inhibit bad ICP looping behavior
-    *  if (t_state.icp_ip_result.sin_addr.s_addr ==
-    *    t_state.client_info.ip) {
-    *      DebugSM("http","Loop in ICP config, bypassing...");
-    *        t_state.icp_lookup_success = false;
-    *  }
-    */
-    break;
-
-  case ICP_LOOKUP_FAILED:
-    DebugSM("http", "ICP says ICP_LOOKUP_FAILED");
-    t_state.icp_lookup_success = false;
-    break;
-  default:
-    ink_release_assert(0);
-    break;
-  }
-
-  call_transact_and_set_next_state(HttpTransact::HandleICPLookup);
 
   return 0;
 }
@@ -5116,23 +5027,6 @@ HttpSM::do_http_server_open(bool raw)
 }
 
 void
-HttpSM::do_icp_lookup()
-{
-  ink_assert(pending_action == nullptr);
-
-  URL *o_url = &t_state.cache_info.original_url;
-
-  Action *icp_lookup_action_handle = icpProcessor.ICPQuery(this, o_url->valid() ? o_url : t_state.cache_info.lookup_url);
-
-  if (icp_lookup_action_handle != ACTION_RESULT_DONE) {
-    ink_assert(!pending_action);
-    pending_action = icp_lookup_action_handle;
-  }
-
-  return;
-}
-
-void
 HttpSM::do_api_callout_internal()
 {
   if (t_state.backdoor_request) {
@@ -5302,7 +5196,7 @@ HttpSM::mark_server_down_on_client_abort()
   //  for revalidation or select it from a round     //
   //  robin set                                      //
   //                                                 //
-  //  Note: we do not want to mark parent or icp     //
+  //  Note: we do not want to mark parent            //
   //  proxies as down with this metric because       //
   //  that upstream proxy may be working but         //
   //  the actual origin server is one that is hung   //
@@ -7589,12 +7483,6 @@ HttpSM::set_next_state()
 
     ink_assert(server_entry == nullptr);
     do_http_server_open(true);
-    break;
-  }
-
-  case HttpTransact::SM_ACTION_ICP_QUERY: {
-    HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_icp_lookup);
-    do_icp_lookup();
     break;
   }
 

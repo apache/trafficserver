@@ -2635,65 +2635,43 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
                          "Revalidate document with server");
 
-    if (s->http_config_param->icp_enabled && icp_dynamic_enabled && s->http_config_param->stale_icp_enabled &&
-        needs_authenticate == false && needs_cache_auth == false && !s->hdr_info.client_request.is_pragma_no_cache_set() &&
-        !s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
-      DebugTxn("http_trans", "[HandleCacheOpenReadHit] ICP is configured"
-                             " and no no-cache in request; checking ICP for a STALE hit");
+    find_server_and_update_current_info(s);
 
-      s->stale_icp_lookup = true;
-
-      // we haven't done the ICP lookup yet. The following is to
-      // fake an icp_info to cater for build_request's needs
-      s->icp_info.http_version.set(1, 0);
-      if (!s->txn_conf->keep_alive_enabled_out) {
-        s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
-      } else {
-        s->icp_info.keep_alive = HTTP_KEEPALIVE;
-      }
-
-      update_current_info(&s->current, &s->icp_info, HttpTransact::ICP_SUGGESTED_HOST, 1);
+    // We do not want to try to revalidate documents if we think
+    //  the server is down due to the something report problem
+    //
+    // Note: we only want to skip origin servers because 1)
+    //  parent proxies have their own negative caching
+    //  scheme & 2) If we skip down parents, every page
+    //  we serve is potentially stale
+    //
+    if (s->current.request_to == ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
+        is_stale_cache_response_returnable(s) == true) {
+      server_up = false;
+      update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
+      DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
     }
-
-    if (s->stale_icp_lookup == false) {
-      find_server_and_update_current_info(s);
-
-      // We do not want to try to revalidate documents if we think
-      //  the server is down due to the something report problem
-      //
-      // Note: we only want to skip origin servers because 1)
-      //  parent proxies have their own negative caching
-      //  scheme & 2) If we skip down parents, every page
-      //  we serve is potentially stale
-      //
-      if (s->current.request_to == ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
-          is_stale_cache_response_returnable(s) == true) {
+    // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
+    // there are no available parents (all down).
+    else if (s->current.request_to == HOST_NONE && s->parent_result.result == PARENT_FAIL) {
+      if (is_server_negative_cached(s) && response_returnable == true && is_stale_cache_response_returnable(s) == true) {
         server_up = false;
         update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
         DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
-      }
-      // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
-      // there are no available parents (all down).
-      else if (s->current.request_to == HOST_NONE && s->parent_result.result == PARENT_FAIL) {
-        if (is_server_negative_cached(s) && response_returnable == true && is_stale_cache_response_returnable(s) == true) {
-          server_up = false;
-          update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
-          DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
-        } else {
-          handle_parent_died(s);
-          return;
-        }
+      } else {
+        handle_parent_died(s);
+        return;
       }
     }
 
-    if (server_up || s->stale_icp_lookup) {
+    if (server_up) {
       // set a default version for the outgoing request
       HTTPVersion http_version;
 
       if (s->current.server != nullptr) {
         bool check_hostdb = get_ka_info_from_config(s, s->current.server);
         DebugTxn("http_trans", "CacheOpenReadHit - check_hostdb %d", check_hostdb);
-        if (!s->stale_icp_lookup && (check_hostdb || !s->current.server->dst_addr.isValid())) {
+        if (check_hostdb || !s->current.server->dst_addr.isValid()) {
           // We must be going a PARENT PROXY since so did
           //  origin server DNS lookup right after state Start
           //
@@ -2728,9 +2706,6 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
       // in other words, we would not have looked up the cache for a
       // connect request, so the next action can not be origin_server_raw_open.
       s->next_action = how_to_open_connection(s);
-      if (s->stale_icp_lookup && s->next_action == SM_ACTION_ORIGIN_SERVER_OPEN) {
-        s->next_action = SM_ACTION_ICP_QUERY;
-      }
 
       ink_release_assert(s->next_action != SM_ACTION_ORIGIN_SERVER_RAW_OPEN);
       return;
@@ -3027,19 +3002,15 @@ HttpTransact::handle_cache_write_lock(State *s)
     HandleCacheOpenReadHitFreshness(s);
   } else {
     StateMachineAction_t next;
-    if (s->stale_icp_lookup == false) {
-      next = how_to_open_connection(s);
-      if (next == SM_ACTION_ORIGIN_SERVER_OPEN || next == SM_ACTION_ORIGIN_SERVER_RAW_OPEN) {
-        s->next_action = next;
-        TRANSACT_RETURN(next, nullptr);
-      } else {
-        // hehe!
-        s->next_action = next;
-        ink_assert(s->next_action == SM_ACTION_DNS_LOOKUP);
-        return;
-      }
+    next = how_to_open_connection(s);
+    if (next == SM_ACTION_ORIGIN_SERVER_OPEN || next == SM_ACTION_ORIGIN_SERVER_RAW_OPEN) {
+      s->next_action = next;
+      TRANSACT_RETURN(next, nullptr);
     } else {
-      next = SM_ACTION_ICP_QUERY;
+      // hehe!
+      s->next_action = next;
+      ink_assert(s->next_action == SM_ACTION_DNS_LOOKUP);
+      return;
     }
 
     TRANSACT_RETURN(next, nullptr);
@@ -3055,7 +3026,6 @@ HttpTransact::handle_cache_write_lock(State *s)
 //
 //
 // Possible Next States From Here:
-// - HttpTransact::ICP_QUERY;
 // - HttpTransact::SM_ACTION_DNS_LOOKUP;
 // - HttpTransact::ORIGIN_SERVER_OPEN;
 // - HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
@@ -3095,25 +3065,6 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     s->cache_info.action = CACHE_PREPARE_TO_WRITE;
   }
 
-  // We should not issue an ICP lookup if the request has a
-  // no-cache header. First check if the request has a no
-  // cache header. Then, if icp is enabled and the request
-  // does not have a no-cache header, issue an icp lookup.
-
-  // does the request have a no-cache?
-  bool no_cache_in_request = false;
-
-  if (s->hdr_info.client_request.is_pragma_no_cache_set() || s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
-    no_cache_in_request = true;
-  }
-  // if ICP is enabled and above test indicates that request
-  // does not have a no-cache, issue icp query to sibling cache.
-  if (s->http_config_param->icp_enabled && icp_dynamic_enabled != 0 && (no_cache_in_request == false)) {
-    DebugTxn("http_trans", "[HandleCacheOpenReadMiss] "
-                           "ICP is configured and no no-cache in request; checking ICP");
-    s->next_action = SM_ACTION_ICP_QUERY;
-    return;
-  }
   ///////////////////////////////////////////////////////////////
   // a normal miss would try to fetch the document from the    //
   // origin server, unless the origin server isn't resolvable, //
@@ -3155,78 +3106,6 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Not Cached", "cache#not_in_cache");
     s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
   }
-
-  return;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Name       : HandleICPLookup
-// Description:
-//
-// Details    :
-//
-//
-//
-// Possible Next States From Here:
-// - HttpTransact::SM_ACTION_DNS_LOOKUP;
-// - HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
-// - result of how_to_open_connection()
-//
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransact::HandleICPLookup(State *s)
-{
-  SET_VIA_STRING(VIA_DETAIL_CACHE_TYPE, VIA_DETAIL_ICP);
-  if (s->icp_lookup_success == true) {
-    HTTP_INCREMENT_DYN_STAT(http_icp_suggested_lookups_stat);
-    DebugTxn("http_trans", "[HandleICPLookup] Success, sending request to icp suggested host.");
-    ats_ip4_set(&s->icp_info.dst_addr, s->icp_ip_result.sin_addr.s_addr);
-    s->icp_info.dst_addr.port() = ntohs(s->icp_ip_result.sin_port);
-
-    // TODO in this case we should go to the miss case
-    // just a little shy about using goto's, that's all.
-    ink_release_assert((s->icp_info.dst_addr.port() != s->client_info.dst_addr.port()) ||
-                       (ats_ip_addr_cmp(&s->icp_info.dst_addr.sa, &Machine::instance()->ip.sa) != 0));
-
-    // Since the ICPDNSLookup is not called, these two
-    //   values are not initialized.
-    // Force them to be initialized
-    s->icp_info.http_version.set(1, 0);
-    if (!s->txn_conf->keep_alive_enabled_out) {
-      s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
-    } else {
-      s->icp_info.keep_alive = HTTP_KEEPALIVE;
-    }
-
-    s->icp_info.name = (char *)s->arena.alloc(17);
-    unsigned char *p = (unsigned char *)&s->icp_ip_result.sin_addr.s_addr;
-    snprintf(s->icp_info.name, 17, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-
-    update_current_info(&s->current, &s->icp_info, ICP_SUGGESTED_HOST, 1);
-    s->next_hop_scheme = URL_WKSIDX_HTTP;
-  } else {
-    SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
-    DebugTxn("http_trans", "[HandleICPLookup] Failure, sending request to forward server.");
-    s->parent_info.name = nullptr;
-    ink_zero(s->parent_info.dst_addr);
-
-    find_server_and_update_current_info(s);
-    if (!ats_is_ip(&s->current.server->dst_addr)) {
-      if (s->current.request_to == PARENT_PROXY) {
-        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
-      } else {
-        ink_release_assert(0);
-      }
-      return;
-    }
-  }
-  if (!s->stale_icp_lookup) {
-    build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
-  } else {
-    ink_assert(s->hdr_info.server_request.valid());
-    s->stale_icp_lookup = false;
-  }
-  s->next_action = how_to_open_connection(s);
 
   return;
 }
@@ -3292,13 +3171,12 @@ HttpTransact::OriginServerRawOpen(State *s)
 //   This is the entry into a coin-sorting machine. There are many different
 //   bins that the response can fall into. First, the response can be invalid
 //   if for example it is not a response, or not complete, or the connection
-//   was closed, etc. Then, the response can be from an icp-suggested-host,
-//   from a parent proxy or from the origin server. The next action to take
-//   differs for all three of these cases. Finally, good responses can either
-//   require a cache action, be it deletion, update, or writing or may just
-//   need to be tunnelled to the client. This latter case should be handled
-//   with as little processing as possible, since it should represent a fast
-//   path.
+//   was closed, etc. Then, the response can be from  parent proxy or from
+//   the origin server. The next action to take differs for all three of these
+//   cases. Finally, good responses can either require a cache action,
+//   be it deletion, update, or writing or may just need to be tunnelled
+//   to the client. This latter case should be handled with as little processing
+//   as possible, since it should represent a fast path.
 //
 //
 // Possible Next States From Here:
@@ -3339,9 +3217,6 @@ HttpTransact::HandleResponse(State *s)
   }
 
   switch (s->current.request_to) {
-  case ICP_SUGGESTED_HOST:
-    handle_response_from_icp_suggested_host(s);
-    break;
   case PARENT_PROXY:
     handle_response_from_parent(s);
     break;
@@ -3349,7 +3224,7 @@ HttpTransact::HandleResponse(State *s)
     handle_response_from_server(s);
     break;
   default:
-    ink_assert(!("s->current.request_to is not ICP, P.P. or O.S. - hmmm."));
+    ink_assert(!("s->current.request_to is not P.P. or O.S. - hmmm."));
     break;
   }
 
@@ -3449,64 +3324,6 @@ HttpTransact::HandleStatPage(State *s)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Name       : handle_response_from_icp_suggested_host
-// Description: response came from the host suggested by the icp lookup
-//
-// Details    :
-//
-//   If the response was bad (for whatever reason), may try to open a
-//   connection with a parent proxy, if there are any, else the request
-//   should be sent to the client.
-//   If the response is good, handle_forward_server_connection_open is
-//   called.
-//
-//
-// Possible Next States From Here:
-//
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransact::handle_response_from_icp_suggested_host(State *s)
-{
-  DebugTxn("http_trans", "[handle_response_from_icp_suggested_host] (hrfish)");
-  HTTP_RELEASE_ASSERT(s->current.server == &s->icp_info);
-
-  s->icp_info.state = s->current.state;
-  switch (s->current.state) {
-  case CONNECTION_ALIVE:
-    DebugTxn("http_trans", "[hrfish] connection alive");
-    SET_VIA_STRING(VIA_DETAIL_ICP_CONNECT, VIA_DETAIL_ICP_SUCCESS);
-    handle_forward_server_connection_open(s);
-    break;
-  default:
-    DebugTxn("http_trans", "[hrfish] connection not alive");
-    SET_VIA_STRING(VIA_DETAIL_ICP_CONNECT, VIA_DETAIL_ICP_FAILURE);
-
-    // If the request is not retryable, bail
-    if (is_request_retryable(s) == false) {
-      handle_server_died(s);
-      return;
-    }
-    // send request to parent proxy now if there is
-    // one or else directly to the origin server.
-    find_server_and_update_current_info(s);
-    if (!ats_is_ip(&s->current.server->dst_addr)) {
-      if (s->current.request_to == PARENT_PROXY) {
-        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
-      } else {
-        ink_release_assert(0);
-      }
-      return;
-    }
-    ink_assert(s->hdr_info.server_request.valid());
-    s->next_action = how_to_open_connection(s);
-    if (s->current.server == &s->server_info && s->next_hop_scheme == URL_WKSIDX_HTTP) {
-      HttpTransactHeaders::remove_host_name_from_url(&s->hdr_info.server_request);
-    }
-    break;
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_response_from_parent
 // Description: response came from a parent proxy
 //
@@ -3518,7 +3335,7 @@ HttpTransact::handle_response_from_icp_suggested_host(State *s)
 //   bad the next parent proxy (if any) is looked up. If there are no more
 //   parent proxies that can be looked up, the response is sent to the
 //   origin server. If the response is good handle_forward_server_connection_open
-//   is called, as with handle_response_from_icp_suggested_host.
+//   is called.
 //
 //
 // Possible Next States From Here:
@@ -3658,7 +3475,7 @@ HttpTransact::handle_response_from_parent(State *s)
       break;
     default:
       // This handles:
-      // UNDEFINED_LOOKUP, ICP_SUGGESTED_HOST,
+      // UNDEFINED_LOOKUP
       // INCOMING_ROUTER
       break;
     }
@@ -3959,7 +3776,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
 //
 // Details    :
 //
-//   "Forward server" includes the icp-suggested-host or the parent proxy
+//   "Forward server" includes the parent proxy
 //   or the origin server. This function first determines if the forward
 //   server uses HTTP 0.9, in which case it simply tunnels the response
 //   to the client. Else, it updates
@@ -6889,7 +6706,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
     case KA_CONNECTION:
       ink_assert(s->current.server->keep_alive != HTTP_NO_KEEPALIVE);
       if (ver == HTTPVersion(1, 0)) {
-        if (s->current.request_to == PARENT_PROXY || s->current.request_to == ICP_SUGGESTED_HOST) {
+        if (s->current.request_to == PARENT_PROXY) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "keep-alive", 10);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "keep-alive", 10);
@@ -6903,7 +6720,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       if (s->current.server->keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTPVersion(1, 1))) {
         /* Had keep-alive */
         s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
-        if (s->current.request_to == PARENT_PROXY || s->current.request_to == ICP_SUGGESTED_HOST) {
+        if (s->current.request_to == PARENT_PROXY) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);

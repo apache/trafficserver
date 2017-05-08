@@ -46,8 +46,6 @@ liblogging_a_SOURCES = \
   LogAccess.h \
   LogAccessHttp.cc \
   LogAccessHttp.h \
-  LogAccessICP.cc \
-  LogAccessICP.h \
   LogBindings.cc \
   LogBindings.h \
   LogBuffer.cc \

@@ -104,7 +104,8 @@ static const char *_hdrtoken_strs[] = {
   "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
 
   // HTTP methods
-  "CONNECT", "DELETE", "GET", "POST", "HEAD", "ICP_QUERY", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
+  // replaced ICP with DNT(DO NOT TRACK is a placeholder and not a method) as it breaks cache compatibility as wksid is stored in cache.
+  "CONNECT", "DELETE", "GET", "POST", "HEAD", "DNT" , "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
 
   // Header extensions
   "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue",
@@ -136,7 +137,6 @@ static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"DELETE", HDRTOKEN_TYPE_METHOD},
   {"GET", HDRTOKEN_TYPE_METHOD},
   {"HEAD", HDRTOKEN_TYPE_METHOD},
-  {"ICP_QUERY", HDRTOKEN_TYPE_METHOD},
   {"OPTIONS", HDRTOKEN_TYPE_METHOD},
   {"POST", HDRTOKEN_TYPE_METHOD},
   {"PURGE", HDRTOKEN_TYPE_METHOD},
@@ -206,6 +206,7 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Message-ID", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Newsgroups", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Organization", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
+  {"DNT", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Path", MIME_SLOTID_NONE, MIME_PRESENCE_PATH, HTIF_NONE},
   {"Pragma", MIME_SLOTID_PRAGMA, MIME_PRESENCE_PRAGMA, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Proxy-Authenticate", MIME_SLOTID_NONE, MIME_PRESENCE_PROXY_AUTHENTICATE, (HTIF_HOPBYHOP | HTIF_PROXYAUTH)},
@@ -349,7 +350,8 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
 
   // HTTP methods
-  "CONNECT", "DELETE", "GET", "POST", "HEAD", "ICP_QUERY", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
+  // replaced ICP with DNT(DO NOT TRACK is a placeholder and not a method) as it breaks cache compatibility as wksid is stored in cache.
+  "CONNECT", "DELETE", "GET", "POST", "HEAD", "DNT", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
 
   // Header extensions
   "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue",

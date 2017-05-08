@@ -79,7 +79,6 @@
 --  the specified size.
 --
 -- log.protocol.http (number)
--- log.protocol.icp (number)
 --  Server protocol constants for constructing %<etype> filters.
 
 -- Removed parameters.
@@ -98,8 +97,7 @@
 --      parameter can be implemented with a filter on the %<etype> (log
 --      entry type) log field, eg.
 --
---      all = filter.accept(string.format('%%<etype> CONTAIN %d,%d', log.protocol.http, log.protocol.icp))
---      icp_only = filter.accept(string.format('%%<etype> CONTAIN %d', log.protocol.icp))
+--      all = filter.accept(string.format('%%<etype> CONTAIN %d', log.protocol.http))
 --      http_only = filter.accept(string.format('%%<etype> CONTAIN %d', log.protocol.http))
 --
 -- ServerHosts:

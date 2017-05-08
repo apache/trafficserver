@@ -371,7 +371,6 @@ protected:
   int state_hostdb_reverse_lookup(int event, void *data);
   int state_mark_os_down(int event, void *data);
   int state_handle_stat_page(int event, void *data);
-  int state_icp_lookup(int event, void *data);
   int state_auth_callback(int event, void *data);
   int state_add_to_list(int event, void *data);
   int state_remove_from_list(int event, void *data);
@@ -423,7 +422,6 @@ protected:
   void do_cache_prepare_update();
   void do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_info, bool retry, bool allow_multiple = false);
   void do_cache_delete_all_alts(Continuation *cont);
-  void do_icp_lookup();
   void do_auth_callout();
   void do_api_callout();
   void do_api_callout_internal();

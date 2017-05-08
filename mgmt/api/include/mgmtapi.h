@@ -203,11 +203,6 @@ typedef enum /* header information types */
   TS_HDR_CLIENT_IP,
   TS_HDR_UNDEFINED } TSHdrT;
 
-typedef enum /* indicate if ICP parent cache or ICP sibling cache */
-{ TS_ICP_PARENT,
-  TS_ICP_SIBLING,
-  TS_ICP_UNDEFINED } TSIcpT;
-
 /* TODO: This should be removed */
 typedef enum /* access privileges to news articles cached by Traffic Server  */
 { TS_IP_ALLOW_ALLOW,
@@ -274,7 +269,6 @@ typedef enum {
   TS_FNAME_CACHE_OBJ,       /* cache.config */
   TS_FNAME_CONGESTION,      /* congestion.config */
   TS_FNAME_HOSTING,         /* hosting.config */
-  TS_FNAME_ICP_PEER,        /* icp.config */
   TS_FNAME_IP_ALLOW,        /* ip_allow.config */
   TS_FNAME_PARENT_PROXY,    /* parent.config */
   TS_FNAME_VOLUME,          /* volume.config */
@@ -304,7 +298,6 @@ typedef enum {
   TS_CACHE_AUTH_CONTENT,
   TS_CONGESTION, /* congestion.config */
   TS_HOSTING,    /* hosting.config */
-  TS_ICP,        /* icp.config */
   TS_IP_ALLOW,   /* ip_allow.config */
   TS_PP_PARENT,  /* parent.config */
   TS_PP_GO_DIRECT,
@@ -509,22 +502,6 @@ typedef struct {
   char *pd_val;      /* domain or hostname  */
   TSIntList volumes; /* must be a list of ints */
 } TSHostingEle;
-
-/* icp.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  char *peer_hostname;        /* hostname of icp peer; ("localhost" name reserved for Traffic Server) */
-  TSIpAddr peer_host_ip_addr; /* ip address of icp peer (not required if peer_hostname) */
-  TSIcpT peer_type;           /* 1: icp parent, 2: icp sibling */
-  int peer_proxy_port;        /* port number of the TCP port used by the ICP peer for proxy communication */
-  int peer_icp_port;          /* port number of the UDP port used by the ICP peer for ICP communication  */
-  bool is_multicast;          /* false: multicast not enabled; true: multicast enabled */
-  TSIpAddr mc_ip_addr;        /* multicast ip (can be 0 if is_multicast == false */
-  TSMcTtlT mc_ttl;            /* multicast time to live; either IP multicast datagrams will not
-                                  be forwarded beyond a single subnetwork, or allow delivery
-                                  of IP multicast datagrams to more than one subnet
-                                  (can be UNDEFINED if is_multicast == false */
-} TSIcpEle;
 
 /* ip_allow.config */
 typedef struct {
@@ -742,8 +719,6 @@ tsapi TSCongestionEle *TSCongestionEleCreate();
 tsapi void TSCongestionEleDestroy(TSCongestionEle *ele);
 tsapi TSHostingEle *TSHostingEleCreate();
 tsapi void TSHostingEleDestroy(TSHostingEle *ele);
-tsapi TSIcpEle *TSIcpEleCreate();
-tsapi void TSIcpEleDestroy(TSIcpEle *ele);
 tsapi TSIpAllowEle *TSIpAllowEleCreate();
 tsapi void TSIpAllowEleDestroy(TSIpAllowEle *ele);
 tsapi TSParentProxyEle *TSParentProxyEleCreate(TSRuleTypeT type);

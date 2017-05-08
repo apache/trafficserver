@@ -143,7 +143,7 @@
 #
 #    @action=allow|deny
 #    @src_ip=IP-address
-#    @method=HTTP method string (CONNECT|DELETE|GET|HEAD|ICP_QUERY|OPTIONS|POST|PURGE|PUT|TRACE|PUSH)
+#    @method=HTTP method string (CONNECT|DELETE|GET|HEAD|OPTIONS|POST|PURGE|PUT|TRACE|PUSH)
 #    @plugin=<plugin_path>
 #    @pparam=<plugin_param>
 #
