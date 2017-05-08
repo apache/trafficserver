@@ -1030,7 +1030,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.max_cache_open_write_retries, "proxy.config.http.cache.max_open_write_retries");
 
   HttpEstablishStaticConfigByte(c.oride.cache_http, "proxy.config.http.cache.http");
-  HttpEstablishStaticConfigByte(c.oride.cache_cluster_cache_local, "proxy.config.http.cache.cluster_cache_local");
   HttpEstablishStaticConfigByte(c.oride.cache_ignore_client_no_cache, "proxy.config.http.cache.ignore_client_no_cache");
   HttpEstablishStaticConfigByte(c.oride.cache_ignore_client_cc_max_age, "proxy.config.http.cache.ignore_client_cc_max_age");
   HttpEstablishStaticConfigByte(c.oride.cache_ims_on_client_no_cache, "proxy.config.http.cache.ims_on_client_no_cache");
@@ -1124,11 +1123,6 @@ HttpConfig::startup()
 
   // Local Manager
   HttpEstablishStaticConfigLongLong(c.synthetic_port, "proxy.config.admin.synthetic_port");
-
-  // Cluster time delta gets it own callback since it needs
-  //  to use ink_atomic_swap
-  c.cluster_time_delta = 0;
-  RegisterMgmtCallback(MGMT_EVENT_HTTP_CLUSTER_DELTA, cluster_delta_cb, nullptr);
 
   http_config_cont->handleEvent(EVENT_NONE, nullptr);
 
@@ -1317,7 +1311,6 @@ HttpConfig::reconfigure()
   params->oride.max_cache_open_write_retries = m_master.oride.max_cache_open_write_retries;
 
   params->oride.cache_http                        = INT_TO_BOOL(m_master.oride.cache_http);
-  params->oride.cache_cluster_cache_local         = INT_TO_BOOL(m_master.oride.cache_cluster_cache_local);
   params->oride.cache_ignore_client_no_cache      = INT_TO_BOOL(m_master.oride.cache_ignore_client_no_cache);
   params->oride.cache_ignore_client_cc_max_age    = INT_TO_BOOL(m_master.oride.cache_ignore_client_cc_max_age);
   params->oride.cache_ims_on_client_no_cache      = INT_TO_BOOL(m_master.oride.cache_ims_on_client_no_cache);
@@ -1523,26 +1516,6 @@ HttpConfig::parse_ports_list(char *ports_string)
     }
   }
   return (ports_list);
-}
-
-////////////////////////////////////////////////////////////////
-//
-//  HttpConfig::cluster_delta_cb
-//
-////////////////////////////////////////////////////////////////
-void *
-HttpConfig::cluster_delta_cb(void * /* opaque_token ATS_UNUSED */, char *data_raw, int /* data_len ATS_UNUSED */)
-{
-  int32_t delta32 = (int32_t)atoi(data_raw);
-  int32_t old;
-
-  // Using ink_atomic_swap is mostly paranoia since a thirty bit write
-  //  really ought to atomic.  However, any risk of bogus time is
-  //  too ugly for me to contemplate
-  old = ink_atomic_swap(&HttpConfig::m_master.cluster_time_delta, delta32);
-  Debug("http_trans", "Cluster time delta moving from %d to %d", old, delta32);
-
-  return nullptr;
 }
 
 volatile int32_t icp_dynamic_enabled;

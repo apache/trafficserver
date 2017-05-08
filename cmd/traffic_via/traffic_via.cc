@@ -72,7 +72,6 @@ detailViaLookup(char flag)
     // Cache type
     viaTable                              = new VIA("Cache Type");
     viaTable->viaData[(unsigned char)'C'] = "cache";
-    viaTable->viaData[(unsigned char)'L'] = "cluster, (not used)";
     viaTable->viaData[(unsigned char)'I'] = "icp";
     viaTable->viaData[(unsigned char)'P'] = "parent";
     viaTable->viaData[(unsigned char)'S'] = "server";

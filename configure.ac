@@ -1865,7 +1865,6 @@ iocore_include_dirs="\
 -I\$(abs_top_srcdir)/iocore/aio \
 -I\$(abs_top_srcdir)/iocore/hostdb \
 -I\$(abs_top_srcdir)/iocore/cache \
--I\$(abs_top_srcdir)/iocore/cluster \
 -I\$(abs_top_srcdir)/iocore/utils \
 -I\$(abs_top_srcdir)/iocore/dns"
 

@@ -211,7 +211,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
 
       if (alt_count > 1) {
         if (t_now == 0) {
-          t_now = ink_cluster_time();
+          t_now = ink_local_time();
         }
         current_age = HttpTransactHeaders::calculate_document_age(obj->request_sent_time_get(), obj->response_received_time_get(),
                                                                   cached_response, cached_response->get_date(), t_now);

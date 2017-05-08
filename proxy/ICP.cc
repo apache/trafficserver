@@ -475,9 +475,9 @@ ICPPeerReadCont::ICPPeerQueryCont(int /* event ATS_UNUSED */, Event * /* e ATS_U
       //////////////////////////////////////////////////////////////
 
       // ToDo: This is maybe not 100% correct, since this is not using the txnp (but the global overridable copy)
-      a = cacheProcessor.open_read(this, &key, false, &gclient_request, &_http_config_params->oride, (time_t)0);
+      a = cacheProcessor.open_read(this, &key, &gclient_request, &_http_config_params->oride, (time_t)0);
     } else {
-      a = cacheProcessor.lookup(this, &key, false, _state->_cache_lookup_local);
+      a = cacheProcessor.lookup(this, &key);
     }
     if (!a) {
       a = ACTION_IO_ERROR;

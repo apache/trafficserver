@@ -250,8 +250,7 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   }
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
-  Action *action_handle           = cacheProcessor.open_read(this, &key, master_sm->t_state.cache_control.cluster_cache_local,
-                                                   this->read_request_hdr, this->http_params, this->read_pin_in_cache);
+  Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, this->http_params, this->read_pin_in_cache);
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action = action_handle;
@@ -340,7 +339,7 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   }
 
   Action *action_handle =
-    cacheProcessor.open_write(this, 0, key, master_sm->t_state.cache_control.cluster_cache_local, request,
+    cacheProcessor.open_write(this, 0, key, request,
                               // INKqa11166
                               allow_multiple ? (CacheHTTPInfo *)CACHE_ALLOW_MULTIPLE_WRITES : old_info, pin_in_cache);
 
