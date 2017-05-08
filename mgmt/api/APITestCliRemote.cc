@@ -984,7 +984,6 @@ test_error_records()
   TSInt port1, new_port = 8080;
   TSActionNeedT action;
   TSMgmtError ret;
-  TSFloat flt1;
   TSCounter ctr1;
 
   printf("\n");
@@ -1008,13 +1007,6 @@ test_error_records()
   } else {
     printf("[TSRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr1);
   }
-
-  printf("\n");
-  if (TSRecordGetFloat("proxy.conig.http.cache.fuzz.probability", &flt1) != TS_ERR_OKAY) {
-    printf("TSRecordGetFloat FAILED!\n");
-  } else {
-    printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt1);
-  }
 }
 
 /* ------------------------------------------------------------------------
@@ -1031,7 +1023,6 @@ test_records()
   char *rec_value;
   char new_str[] = "new_record_value";
   TSInt port1, port2, new_port  = 52432;
-  TSFloat flt1, flt2, new_flt   = 1.444;
   TSCounter ctr1, ctr2, new_ctr = 6666;
   TSMgmtError err;
 
@@ -1147,43 +1138,6 @@ test_records()
   }
   printf("\n");
 #endif
-
-#if TEST_FLOAT
-  printf("\n");
-  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt1) != TS_ERR_OKAY) {
-    printf("TSRecordGetFloat FAILED!\n");
-  } else {
-    printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt1);
-  }
-
-  if (TSRecordSetFloat("proxy.config.http.cache.fuzz.probability", new_flt, &action) != TS_ERR_OKAY) {
-    printf("TSRecordSetFloat FAILED!\n");
-  } else {
-    printf("[TSRecordSetFloat] proxy.config.http.cache.fuzz.probability=%f\n", new_flt);
-  }
-
-  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt2) != TS_ERR_OKAY) {
-    printf("TSRecordGetFloat FAILED!\n");
-  } else {
-    printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt2);
-  }
-  printf("\n");
-#endif
-
-#if TEST_REC_SET
-  printf("\n");
-  if (TSRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3456", &action) != TS_ERR_OKAY) {
-    printf("TSRecordSet FAILED!\n");
-  } else {
-    printf("[TSRecordSet] proxy.config.http.cache.fuzz.probability=-0.3456\n");
-  }
-
-  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt2) != TS_ERR_OKAY) {
-    printf("TSRecordGetFloat FAILED!\n");
-  } else {
-    printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt2);
-  }
-#endif
 }
 
 // retrieves the value of the "proxy.config.xxx" record requested at input
@@ -1241,7 +1195,7 @@ test_record_get_mlt()
   TSStringList name_list;
   TSList rec_list;
   int i, num;
-  char *v1, *v2, *v3, *v6, *v7, *v8;
+  char *v1, *v2, *v3, *v6, *v7;
   TSMgmtError ret;
 
   name_list = TSStringListCreate();
@@ -1262,9 +1216,6 @@ test_record_get_mlt()
   const size_t v7_size = (sizeof(char) * (strlen("proxy.config.cop.core_signal") + 1));
   v7                   = (char *)TSmalloc(v7_size);
   ink_strlcpy(v7, "proxy.config.cop.core_signal", v7_size);
-  const size_t v8_size = (sizeof(char) * (strlen("proxy.config.http.cache.fuzz.probability") + 1));
-  v8                   = (char *)TSmalloc(v8_size);
-  ink_strlcpy(v8, "proxy.config.http.cache.fuzz.probability", v8_size);
 
   // add the names to the get_list
   TSStringListEnqueue(name_list, v1);
@@ -1272,7 +1223,6 @@ test_record_get_mlt()
   TSStringListEnqueue(name_list, v3);
   TSStringListEnqueue(name_list, v6);
   TSStringListEnqueue(name_list, v7);
-  TSStringListEnqueue(name_list, v8);
 
   num = TSStringListLen(name_list);
   printf("Num Records to Get: %d\n", num);
@@ -1326,7 +1276,7 @@ void
 test_record_set_mlt()
 {
   TSList list;
-  TSRecordEle *ele1, *ele2, *ele3, *ele4, *ele5;
+  TSRecordEle *ele1, *ele2, *ele3, *ele4;
   TSActionNeedT action = TS_ACTION_UNDEFINED;
   TSMgmtError err;
 
@@ -1337,31 +1287,25 @@ test_record_set_mlt()
   ele1->rec_type          = TS_REC_STRING;
   ele1->valueT.string_val = TSstrdup(ele1->rec_name);
 
-  ele2                   = TSRecordEleCreate(); // reread action
-  ele2->rec_name         = TSstrdup("proxy.config.http.cache.fuzz.probability");
-  ele2->rec_type         = TS_REC_FLOAT;
-  ele2->valueT.float_val = 0.1234;
+  ele2                 = TSRecordEleCreate(); // undefined action
+  ele2->rec_name       = TSstrdup("proxy.config.cop.core_signal");
+  ele2->rec_type       = TS_REC_INT;
+  ele2->valueT.int_val = -4;
 
-  ele3                 = TSRecordEleCreate(); // undefined action
-  ele3->rec_name       = TSstrdup("proxy.config.cop.core_signal");
+  ele3                 = TSRecordEleCreate(); // restart TM
+  ele3->rec_name       = (char *)TSstrdup("proxy.local.cluster.type");
   ele3->rec_type       = TS_REC_INT;
-  ele3->valueT.int_val = -4;
+  ele3->valueT.int_val = 2;
 
-  ele4                 = TSRecordEleCreate(); // restart TM
-  ele4->rec_name       = (char *)TSstrdup("proxy.local.cluster.type");
+  ele4                 = TSRecordEleCreate(); // reread action
+  ele4->rec_name       = (char *)TSstrdup("proxy.config.cluster.mc_ttl");
   ele4->rec_type       = TS_REC_INT;
-  ele4->valueT.int_val = 2;
-
-  ele5                 = TSRecordEleCreate(); // reread action
-  ele5->rec_name       = (char *)TSstrdup("proxy.config.cluster.mc_ttl");
-  ele5->rec_type       = TS_REC_INT;
-  ele5->valueT.int_val = 555;
+  ele4->valueT.int_val = 555;
 
   TSListEnqueue(list, ele4);
   TSListEnqueue(list, ele1);
   TSListEnqueue(list, ele2);
   TSListEnqueue(list, ele3);
-  TSListEnqueue(list, ele5);
 
   err = TSRecordSetMlt(list, &action);
   print_err("TSRecordSetMlt", err);
@@ -2266,12 +2210,6 @@ sync_test()
   TSRecordSetInt("proxy.config.cluster.cluster_port", 3333, &action);
   printf("[TSRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n", TS_ACTION_RESTART,
          action);
-
-  if (TSRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3333", &action) != TS_ERR_OKAY) {
-    printf("TSRecordSet FAILED!\n");
-  } else {
-    printf("[TSRecordSet] proxy.config.http.cache.fuzz.probability=-0.3333\n");
-  }
 
   TSMgmtError ret;
   if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_NONE)) != TS_ERR_OKAY) {

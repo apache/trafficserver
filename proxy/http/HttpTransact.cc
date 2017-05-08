@@ -7297,48 +7297,6 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
   return (freshness_limit);
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-//  int HttpTransact::calculate_freshness_fuzz()
-//
-//    This function trys to revents many, many simulatenous revalidations in
-//     reverse proxy situations.  Statistically introduce a fuzz factor that
-//     brings revalidation forward for a small percentage of the requests/
-//     The hope is that is that the document early by a selected few, and
-//     the headers are updated in the cache before the regualr freshness
-//     limit is actually reached
-////////////////////////////////////////////////////////////////////////////////////
-
-int
-HttpTransact::calculate_freshness_fuzz(State *s, int fresh_limit)
-{
-  static double LOG_YEAR     = log10((double)s->txn_conf->cache_guaranteed_max_lifetime);
-  const uint32_t granularity = 1000;
-  int result                 = 0;
-
-  uint32_t random_num = this_ethread()->generator.random();
-  uint32_t index      = random_num % granularity;
-  uint32_t range      = (uint32_t)(granularity * s->txn_conf->freshness_fuzz_prob);
-
-  if (index < range) {
-    if (s->txn_conf->freshness_fuzz_min_time > 0) {
-      // Complicated calculations to try to find a reasonable fuzz time between fuzz_min_time and fuzz_time
-      int fresh_small = (int)rint((double)s->txn_conf->freshness_fuzz_min_time *
-                                  pow(2, min((double)fresh_limit / (double)s->txn_conf->freshness_fuzz_time,
-                                             sqrt((double)s->txn_conf->freshness_fuzz_time))));
-      int fresh_large = max((int)s->txn_conf->freshness_fuzz_min_time,
-                            (int)rint(s->txn_conf->freshness_fuzz_time *
-                                      log10((double)(fresh_limit - s->txn_conf->freshness_fuzz_min_time) / LOG_YEAR)));
-      result = min(fresh_small, fresh_large);
-      DebugTxn("http_match", "calculate_freshness_fuzz using min/max --- freshness fuzz = %d", result);
-    } else {
-      result = s->txn_conf->freshness_fuzz_time;
-      DebugTxn("http_match", "calculate_freshness_fuzz --- freshness fuzz = %d", result);
-    }
-  }
-
-  return result;
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -7403,14 +7361,6 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   response_date = cached_obj_response->get_date();
   fresh_limit   = calculate_document_freshness_limit(s, cached_obj_response, response_date, &heuristic);
   ink_assert(fresh_limit >= 0);
-
-  // Fuzz the freshness to prevent too many revalidates to popular
-  //  documents at the same time
-  if ((s->txn_conf->freshness_fuzz_time > 0) && (s->txn_conf->freshness_fuzz_prob > 0.0)) {
-    fresh_limit = fresh_limit - calculate_freshness_fuzz(s, fresh_limit);
-    fresh_limit = max(0, fresh_limit);
-    fresh_limit = min((int)s->txn_conf->cache_guaranteed_max_lifetime, fresh_limit);
-  }
 
   current_age = HttpTransactHeaders::calculate_document_age(s->request_sent_time, s->response_received_time, cached_obj_response,
                                                             response_date, s->current.now);
