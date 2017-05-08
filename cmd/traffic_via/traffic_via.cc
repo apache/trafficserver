@@ -72,7 +72,7 @@ detailViaLookup(char flag)
     // Cache type
     viaTable                              = new VIA("Cache Type");
     viaTable->viaData[(unsigned char)'C'] = "cache";
-    viaTable->viaData[(unsigned char)'I'] = "icp";
+    viaTable->viaData[(unsigned char)'L'] = "cluster, (not used)";
     viaTable->viaData[(unsigned char)'P'] = "parent";
     viaTable->viaData[(unsigned char)'S'] = "server";
     viaTable->viaData[(unsigned char)' '] = "unknown";
@@ -89,12 +89,6 @@ detailViaLookup(char flag)
     viaTable->next->viaData[(unsigned char)'H'] = "cache hit";
     viaTable->next->viaData[(unsigned char)'S'] = "cache hit, but expired";
     viaTable->next->viaData[(unsigned char)'K'] = "cookie miss";
-    break;
-  case 'i':
-    viaTable                              = new VIA("ICP status");
-    viaTable->viaData[(unsigned char)' '] = "no icp";
-    viaTable->viaData[(unsigned char)'S'] = "connection opened successfully";
-    viaTable->viaData[(unsigned char)'F'] = "connection open failed";
     break;
   case 'p':
     viaTable                              = new VIA("Parent proxy connection status");
@@ -243,16 +237,16 @@ decodeViaHeader(const char *str)
     ++viaHdrLength;
   }
 
-  if (viaHdrLength == 24 || viaHdrLength == 6) {
+  if (viaHdrLength == 23 || viaHdrLength == 6) {
     // Decode via header
     printViaHeader(Via);
     return TS_ERR_OKAY;
   }
   // Invalid header size, come out.
-  printf("\nInvalid VIA header. VIA header length should be 6 or 24 characters\n");
+  printf("\nInvalid VIA header. VIA header length should be 6 or 23 characters\n");
   printf("Valid via header format is "
-         "[u<client-stuff>c<cache-lookup-stuff>s<server-stuff>f<cache-fill-stuff>p<proxy-stuff>]e<error-codes>:t<tunneling-info>c<"
-         "cache type><cache-lookup-result>i<icp-conn-info>p<parent-proxy-conn-info>s<server-conn-info>]");
+         "[u<client-stuff>c<cache-lookup-stuff>s<server-stuff>f<cache-fill-stuff>p<proxy-stuff>e<error-codes>:t<tunneling-info>c<"
+         "cache type><cache-lookup-result>p<parent-proxy-conn-info>s<server-conn-info>]\n");
   return TS_ERR_FAIL;
 }
 

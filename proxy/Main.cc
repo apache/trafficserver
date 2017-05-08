@@ -76,7 +76,6 @@ extern "C" int plock(int);
 #include "HttpProxyServerMain.h"
 #include "HttpBodyFactory.h"
 #include "logging/Log.h"
-#include "ICPProcessor.h"
 #include "CacheControl.h"
 #include "IPAllow.h"
 #include "ParentSelection.h"

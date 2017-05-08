@@ -26,7 +26,6 @@
 #include "StatPages.h"
 #include "HttpTunnel.h"
 #include "Transform.h"
-#include "ICPevents.h"
 #include "HttpSM.h"
 #include "HttpUpdateSM.h"
 
@@ -212,14 +211,6 @@ HttpDebugNames::get_event_name(int event)
   case HTTP_TUNNEL_EVENT_CONSUMER_DETACH:
     return ("HTTP_TUNNEL_EVENT_CONSUMER_DETACH");
 
-  //////////////////////////
-  //  ICP Events
-  //////////////////////////
-  case ICP_LOOKUP_FOUND:
-    return ("ICP_LOOKUP_FOUND");
-  case ICP_LOOKUP_FAILED:
-    return ("ICP_LOOKUP_FAILED");
-
   //////////////////////////////
   //  CongestionControl Events
   //////////////////////////////
@@ -282,9 +273,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
 
   case HttpTransact::SM_ACTION_DNS_REVERSE_LOOKUP:
     return ("SM_ACTION_DNS_REVERSE_LOOKUP");
-
-  case HttpTransact::SM_ACTION_ICP_QUERY:
-    return ("SM_ACTION_ICP_QUERY");
 
   case HttpTransact::SM_ACTION_CACHE_PREPARE_UPDATE:
     return ("SM_ACTION_CACHE_PREPARE_UPDATE");

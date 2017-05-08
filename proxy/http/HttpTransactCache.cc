@@ -185,9 +185,6 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
     RELEASE_PRINT_LOCK()
   }
 
-  // ToDo: Need a way to detect if it's ICP here or not, and then "return 0;". That's what the old
-  // code did, in a very convoluted way ...
-
   if (!client_request->valid()) {
     return 0;
   }

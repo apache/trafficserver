@@ -189,8 +189,6 @@ static const std::set<std::string> epic_gauges = {
   "proxy.process.http.current_cache_connections",
   "proxy.process.http.current_client_connections",
   "proxy.process.http.current_client_transactions",
-  "proxy.process.http.current_icp_raw_transactions",
-  "proxy.process.http.current_icp_transactions",
   "proxy.process.http.current_parent_proxy_connections",
   "proxy.process.http.current_parent_proxy_raw_transactions",
   "proxy.process.http.current_parent_proxy_transactions",

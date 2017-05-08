@@ -1463,8 +1463,6 @@ filename_to_string(TSFileNameT file)
     return "congestion.config";
   case TS_FNAME_HOSTING:
     return "hosting.config";
-  case TS_FNAME_ICP_PEER:
-    return "icp.config";
   case TS_FNAME_IP_ALLOW:
     return "ip_allow.config";
   case TS_FNAME_PARENT_PROXY:
@@ -1962,9 +1960,6 @@ create_ele_obj_from_rule_node(Rule *rule)
   case TS_HOSTING: /* hosting.config */
     ele = (CfgEleObj *)new HostingObj(token_list);
     break;
-  case TS_ICP: /* icp.config */
-    ele = (CfgEleObj *)new IcpObj(token_list);
-    break;
   case TS_IP_ALLOW: /* ip_allow.config */
     ele = (CfgEleObj *)new IpAllowObj(token_list);
     break;
@@ -2040,10 +2035,6 @@ create_ele_obj_from_ele(TSCfgEle *ele)
 
   case TS_HOSTING: /* hosting.config */
     ele_obj = (CfgEleObj *)new HostingObj((TSHostingEle *)ele);
-    break;
-
-  case TS_ICP: /* icp.config */
-    ele_obj = (CfgEleObj *)new IcpObj((TSIcpEle *)ele);
     break;
 
   case TS_IP_ALLOW: /* ip_allow.config */
@@ -2146,9 +2137,6 @@ get_rule_type(TokenList *token_list, TSFileNameT file)
 
   case TS_FNAME_HOSTING: /* hosting.config */
     return TS_HOSTING;
-
-  case TS_FNAME_ICP_PEER: /* icp.config */
-    return TS_ICP;
 
   case TS_FNAME_IP_ALLOW: /* ip_allow.config */
     return TS_IP_ALLOW;
@@ -2531,37 +2519,6 @@ copy_hosting_ele(TSHostingEle *ele)
     nele->pd_val = ats_strdup(ele->pd_val);
   }
   ele->volumes = copy_int_list(ele->volumes);
-
-  return nele;
-}
-
-TSIcpEle *
-copy_icp_ele(TSIcpEle *ele)
-{
-  if (!ele) {
-    return nullptr;
-  }
-
-  TSIcpEle *nele = TSIcpEleCreate();
-  if (!nele) {
-    return nullptr;
-  }
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  if (ele->peer_hostname) {
-    nele->peer_hostname = ats_strdup(ele->peer_hostname);
-  }
-  if (ele->peer_host_ip_addr) {
-    nele->peer_host_ip_addr = ats_strdup(ele->peer_host_ip_addr);
-  }
-  nele->peer_type       = ele->peer_type;
-  nele->peer_proxy_port = ele->peer_proxy_port;
-  nele->peer_icp_port   = ele->peer_icp_port;
-  nele->is_multicast    = ele->is_multicast;
-  if (ele->mc_ip_addr) {
-    nele->mc_ip_addr = ats_strdup(ele->mc_ip_addr);
-  }
-  nele->mc_ttl = ele->mc_ttl;
 
   return nele;
 }

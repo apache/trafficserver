@@ -130,8 +130,6 @@ enum ViaStringIndex_t {
   VIA_DETAIL_CACHE_DESCRIPTOR,
   VIA_DETAIL_CACHE_TYPE,
   VIA_DETAIL_CACHE_LOOKUP,
-  VIA_DETAIL_ICP_DESCRIPTOR,
-  VIA_DETAIL_ICP_CONNECT,
   VIA_DETAIL_PP_DESCRIPTOR,
   VIA_DETAIL_PP_CONNECT,
   VIA_DETAIL_SERVER_DESCRIPTOR,
@@ -198,7 +196,7 @@ enum ViaString_t {
   // cache type
   VIA_DETAIL_CACHE_DESCRIPTOR_STRING = 'c',
   VIA_DETAIL_CACHE                   = 'C',
-  VIA_DETAIL_ICP                     = 'I',
+  VIA_DETAIL_CLUSTER                 = 'L',
   VIA_DETAIL_PARENT                  = 'P',
   VIA_DETAIL_SERVER                  = 'S',
   // result of cache lookup
@@ -211,10 +209,6 @@ enum ViaString_t {
   VIA_DETAIL_MISS_CLIENT      = 'U',
   VIA_DETAIL_MISS_METHOD      = 'D',
   VIA_DETAIL_MISS_COOKIE      = 'K',
-  // result of icp suggested host lookup
-  VIA_DETAIL_ICP_DESCRIPTOR_STRING = 'i',
-  VIA_DETAIL_ICP_SUCCESS           = 'S',
-  VIA_DETAIL_ICP_FAILURE           = 'F',
   // result of pp suggested host lookup
   VIA_DETAIL_PP_DESCRIPTOR_STRING = 'p',
   VIA_DETAIL_PP_SUCCESS           = 'S',
@@ -351,7 +345,6 @@ public:
   enum LookingUp_t {
     ORIGIN_SERVER,
     UNDEFINED_LOOKUP,
-    ICP_SUGGESTED_HOST,
     PARENT_PROXY,
     INCOMING_ROUTER,
     HOST_NONE,
@@ -452,8 +445,6 @@ public:
     SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM,
     SM_ACTION_CACHE_PREPARE_UPDATE,
     SM_ACTION_CACHE_ISSUE_UPDATE,
-
-    SM_ACTION_ICP_QUERY,
 
     SM_ACTION_ORIGIN_SERVER_OPEN,
     SM_ACTION_ORIGIN_SERVER_RAW_OPEN,
@@ -837,7 +828,6 @@ public:
     bool is_revalidation_necessary; // Added to check if revalidation is necessary - YTS Team, yamsat
     bool request_will_not_selfloop; // To determine if process done - YTS Team, yamsat
     ConnectionAttributes client_info;
-    ConnectionAttributes icp_info;
     ConnectionAttributes parent_info;
     ConnectionAttributes server_info;
     // ConnectionAttributes     router_info;
@@ -889,9 +879,6 @@ public:
     char *internal_msg_buffer_type;   // out
     int64_t internal_msg_buffer_size; // out
     int64_t internal_msg_buffer_fast_allocator_size;
-
-    struct sockaddr_in icp_ip_result; // in
-    bool icp_lookup_success;          // in
 
     int scheme;          // out
     int next_hop_scheme; // out
@@ -947,7 +934,6 @@ public:
     bool api_req_cacheable;
     bool api_resp_cacheable;
     bool api_server_addr_set;
-    bool stale_icp_lookup;
     UpdateCachedObject_t api_update_cached_object;
     LockUrl_t api_lock_url;
     StateMachineAction_t saved_update_next_action;
@@ -1028,7 +1014,6 @@ public:
         internal_msg_buffer_type(NULL),
         internal_msg_buffer_size(0),
         internal_msg_buffer_fast_allocator_size(-1),
-        icp_lookup_success(false),
         scheme(-1),
         next_hop_scheme(scheme),
         orig_scheme(scheme),
@@ -1061,7 +1046,6 @@ public:
         api_req_cacheable(false),
         api_resp_cacheable(false),
         api_server_addr_set(false),
-        stale_icp_lookup(false),
         api_update_cached_object(UPDATE_CACHED_OBJECT_NONE),
         api_lock_url(LOCK_URL_FIRST),
         saved_update_next_action(SM_ACTION_UNDEFINED),
@@ -1103,7 +1087,6 @@ public:
       via_string[VIA_DETAIL_SEPARATOR]         = VIA_DETAIL_SEPARATOR_STRING;
       via_string[VIA_DETAIL_TUNNEL_DESCRIPTOR] = VIA_DETAIL_TUNNEL_DESCRIPTOR_STRING;
       via_string[VIA_DETAIL_CACHE_DESCRIPTOR]  = VIA_DETAIL_CACHE_DESCRIPTOR_STRING;
-      via_string[VIA_DETAIL_ICP_DESCRIPTOR]    = VIA_DETAIL_ICP_DESCRIPTOR_STRING;
       via_string[VIA_DETAIL_PP_DESCRIPTOR]     = VIA_DETAIL_PP_DESCRIPTOR_STRING;
       via_string[VIA_DETAIL_SERVER_DESCRIPTOR] = VIA_DETAIL_SERVER_DESCRIPTOR_STRING;
       via_string[MAX_VIA_INDICES]              = '\0';
@@ -1213,7 +1196,6 @@ public:
   static void HandleCacheOpenReadMiss(State *s);
   static void build_response_from_cache(State *s, HTTPWarningCode warning_code);
   static void handle_cache_write_lock(State *s);
-  static void HandleICPLookup(State *s);
   static void HandleResponse(State *s);
   static void HandleUpdateCachedObject(State *s);
   static void HandleUpdateCachedObjectContinue(State *s);
@@ -1221,7 +1203,6 @@ public:
   static void handle_100_continue_response(State *s);
   static void handle_transform_ready(State *s);
   static void handle_transform_cache_write(State *s);
-  static void handle_response_from_icp_suggested_host(State *s);
   static void handle_response_from_parent(State *s);
   static void handle_response_from_server(State *s);
   static void delete_server_rr_entry(State *s, int max_retries);

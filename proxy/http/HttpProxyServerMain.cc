@@ -238,9 +238,6 @@ init_HttpProxyServer(int n_accept_threads)
   ink_mutex_init(&debug_cs_list_mutex, "HttpCS Debug List");
 #endif
 
-  // DI's request to disable/reenable ICP on the fly
-  icp_dynamic_enabled = 1;
-
   // Used to give plugins the ability to create http requests
   //   The equivalent of the connecting to localhost on the  proxy
   //   port but without going through the operating system

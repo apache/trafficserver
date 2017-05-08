@@ -383,12 +383,12 @@ msgstr ""
 #: ../../../appendices/faq.en.rst:146
 msgid ""
 "[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> "
-"e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> i<icp-"
-"conn-info> p<parent-proxy> s<server-conn-info>]"
+"e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> "
+"p<parent-proxy> s<server-conn-info>]"
 msgstr ""
 "[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> "
-"e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> i<icp-"
-"conn-info> p<parent-proxy> s<server-conn-info>]"
+"e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> "
+"p<parent-proxy> s<server-conn-info>]"
 
 #: ../../../appendices/faq.en.rst:150
 msgid "u client-info"

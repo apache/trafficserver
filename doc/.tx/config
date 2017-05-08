@@ -82,11 +82,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/hosting.config.en.po
 source_file = _build/locale/pot/admin-guide/files/hosting.config.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--files--icp_config_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/icp.config.en.po
-source_file = _build/locale/pot/admin-guide/files/icp.config.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--files--index_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/index.en.po
 source_file = _build/locale/pot/admin-guide/files/index.en.pot

@@ -533,16 +533,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.transaction_no_activity_timeout_out
  proxy.config.http_ui_enabled
  proxy.config.http.uncacheable_requests_bypass_parent
- proxy.config.icp.default_reply_port
- proxy.config.icp.enabled
- proxy.config.icp.icp_configuration
- proxy.config.icp.icp_interface
- proxy.config.icp.icp_port
- proxy.config.icp.lookup_local
- proxy.config.icp.multicast_enabled
- proxy.config.icp.query_timeout
- proxy.config.icp.reply_to_unknown_peer
- proxy.config.icp.stale_icp_enabled
  proxy.config.io.max_buffer_size
  proxy.config.lm.pserver_timeout_msecs
  proxy.config.lm.pserver_timeout_secs

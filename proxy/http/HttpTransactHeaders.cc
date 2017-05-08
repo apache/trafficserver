@@ -94,7 +94,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
 {
   int method_output_lengths[32];
   const char *methods[] = {
-    HTTP_METHOD_CONNECT, HTTP_METHOD_DELETE, HTTP_METHOD_GET, HTTP_METHOD_HEAD, HTTP_METHOD_ICP_QUERY, HTTP_METHOD_OPTIONS,
+    HTTP_METHOD_CONNECT, HTTP_METHOD_DELETE, HTTP_METHOD_GET, HTTP_METHOD_HEAD, HTTP_METHOD_OPTIONS,
     HTTP_METHOD_POST,    HTTP_METHOD_PURGE,  HTTP_METHOD_PUT, HTTP_METHOD_PUSH, HTTP_METHOD_TRACE,
   };
   char inline_buffer[64];
@@ -572,8 +572,6 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   ////////////////////////
   if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH)) {
     hier_code = SQUID_HIER_NONE;
-  } else if (via_string[VIA_DETAIL_ICP_CONNECT] == VIA_DETAIL_ICP_SUCCESS) {
-    hier_code = SQUID_HIER_SIBLING_HIT;
   } else if (via_string[VIA_DETAIL_PP_CONNECT] == VIA_DETAIL_PP_SUCCESS) {
     hier_code = SQUID_HIER_PARENT_HIT;
   } else if (via_string[VIA_DETAIL_CACHE_TYPE] == VIA_DETAIL_PARENT) {

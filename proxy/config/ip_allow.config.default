@@ -12,7 +12,7 @@
 # Multiple method keywords can be specified (method=GET method=HEAD), or
 # multiple methods can be separated by an '|' (method=GET|HEAD).  The method
 # keyword is optional and it is defaulted to ALL.
-# Available methods: ALL, GET, CONNECT, DELETE, HEAD, ICP_QUERY, OPTIONS,
+# Available methods: ALL, GET, CONNECT, DELETE, HEAD, OPTIONS,
 # POST, PURGE, PUT, TRACE, PUSH
 #
 # Rules are applied in the order listed starting from the top.

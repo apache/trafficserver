@@ -858,9 +858,6 @@ public:
   static HttpConfigParams m_master;
 };
 
-// DI's request to disable ICP on the fly
-extern volatile int32_t icp_dynamic_enabled;
-
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
 //
@@ -896,8 +893,6 @@ inline HttpConfigParams::HttpConfigParams()
     use_client_target_addr(0),
     use_client_source_port(0),
     enable_http_stats(1),
-    icp_enabled(0),
-    stale_icp_enabled(0),
     cache_post_method(0),
     push_method_enabled(0),
     referer_filter_enabled(0),

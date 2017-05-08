@@ -475,32 +475,6 @@ print_hosting_ele(TSHostingEle *ele)
 }
 
 void
-print_icp_ele(TSIcpEle *ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-    return;
-  }
-
-  int peer_type;
-
-  switch (ele->peer_type) {
-  case TS_ICP_PARENT:
-    peer_type = 1;
-    break;
-  case TS_ICP_SIBLING:
-    peer_type = 2;
-    break;
-
-  default:
-    peer_type = 10;
-  }
-
-  printf("%s:%s:%d:%d:%d:%d:%s:%d:\n", ele->peer_hostname, ele->peer_host_ip_addr, peer_type, ele->peer_proxy_port,
-         ele->peer_icp_port, (ele->is_multicast ? 1 : 0), ele->mc_ip_addr, (ele->mc_ttl == TS_MC_TTL_SINGLE_SUBNET ? 1 : 2));
-}
-
-void
 print_ip_allow_ele(TSIpAllowEle *ele)
 {
   if (!ele) {
@@ -788,9 +762,6 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
       break;
     case TS_FNAME_HOSTING:
       print_hosting_ele((TSHostingEle *)ele);
-      break;
-    case TS_FNAME_ICP_PEER:
-      print_icp_ele((TSIcpEle *)ele);
       break;
     case TS_FNAME_IP_ALLOW:
       print_ip_allow_ele((TSIpAllowEle *)ele);
@@ -1449,8 +1420,6 @@ test_cfg_context_get(char *args)
     file = TS_FNAME_CONGESTION;
   } else if (strcmp(name, "hosting.config") == 0) {
     file = TS_FNAME_HOSTING;
-  } else if (strcmp(name, "icp.config") == 0) {
-    file = TS_FNAME_ICP_PEER;
   } else if (strcmp(name, "ip_allow.config") == 0) {
     file = TS_FNAME_IP_ALLOW;
   } else if (strcmp(name, "parent.config") == 0) {
@@ -1515,8 +1484,6 @@ test_cfg_context_move(char *args)
     file = TS_FNAME_CONGESTION;
   } else if (strcmp(name, "hosting.config") == 0) {
     file = TS_FNAME_HOSTING;
-  } else if (strcmp(name, "icp.config") == 0) {
-    file = TS_FNAME_ICP_PEER;
   } else if (strcmp(name, "ip_allow.config") == 0) {
     file = TS_FNAME_IP_ALLOW;
   } else if (strcmp(name, "parent.config") == 0) {

@@ -22,7 +22,7 @@
 
 #include "atscppapi/HttpMethod.h"
 
-const std::string atscppapi::HTTP_METHOD_STRINGS[] = {std::string("UNKNOWN"),   std::string("GET"),     std::string("POST"),
-                                                      std::string("HEAD"),      std::string("CONNECT"), std::string("DELETE"),
-                                                      std::string("ICP_QUERY"), std::string("OPTIONS"), std::string("PURGE"),
-                                                      std::string("PUT"),       std::string("TRACE"),   std::string("PUSH")};
+const std::string atscppapi::HTTP_METHOD_STRINGS[] = {std::string("UNKNOWN"), std::string("GET"),     std::string("POST"),
+                                                      std::string("HEAD"),    std::string("CONNECT"), std::string("DELETE"),
+                                                      std::string("OPTIONS"), std::string("PURGE"),   std::string("PUT"),
+                                                      std::string("TRACE"),   std::string("PUSH")};

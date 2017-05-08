@@ -175,7 +175,6 @@ TSIntList copy_int_list(TSIntList list);
 TSCacheEle *copy_cache_ele(TSCacheEle *ele);
 TSCongestionEle *copy_congestion_ele(TSCongestionEle *ele);
 TSHostingEle *copy_hosting_ele(TSHostingEle *ele);
-TSIcpEle *copy_icp_ele(TSIcpEle *ele);
 TSIpAllowEle *copy_ip_allow_ele(TSIpAllowEle *ele);
 TSParentProxyEle *copy_parent_proxy_ele(TSParentProxyEle *ele);
 TSVolumeEle *copy_volume_ele(TSVolumeEle *ele);

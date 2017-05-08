@@ -1,4 +1,4 @@
-Via header is [uScMsSf pSeN;t cCMi p sS], Length is 26
+Via header is [uScMsSf pSeN;t cCM p sS], Length is 25
 Via Header Details:
 Request headers received from client                   :simple request (not conditional)
 Result of Traffic Server cache lookup for URL          :miss (a cache "MISS")
@@ -9,6 +9,5 @@ Error codes (if any)                                   :no error
 Tunnel info                                            :no tunneling
 Cache Type                                             :cache
 Cache Lookup Result                                    :cache miss (url not in cache)
-ICP status                                             :no icp
 Parent proxy connection status                         :no parent proxy or unknown
 Origin server connection status                        :connection opened successfully
