@@ -3363,7 +3363,7 @@ PacketStamp::set(time_t time, uint32_t sn)
   return *this;
 }
 
-inline ServiceGroup::ServiceGroup()
+inline ServiceGroup::ServiceGroup() : m_svc_type(STANDARD), m_svc_id(0), m_priority(0), m_protocol(0), m_flags(0)
 {
 }
 
