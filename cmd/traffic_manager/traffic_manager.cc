@@ -29,11 +29,8 @@
 #include "ts/ink_syslog.h"
 
 #include "WebMgmtUtils.h"
-#include "WebOverview.h"
 #include "MgmtUtils.h"
 #include "NetworkUtilsRemote.h"
-#include "ClusterCom.h"
-#include "VMap.h"
 #include "FileManager.h"
 #include "ts/I_Layout.h"
 #include "ts/I_Version.h"
@@ -440,7 +437,6 @@ main(int argc, const char **argv)
   int disable_syslog = false;
   char userToRunAs[MAX_LOGIN + 1];
   RecInt fds_throttle = -1;
-  time_t ticker;
   ink_thread synthThrId;
 
   int binding_version      = 0;
@@ -593,12 +589,6 @@ main(int argc, const char **argv)
   // Find out our hostname so we can use it as part of the initialization
   setHostnameVar();
 
-  // Create the data structure for overview page
-  //   Do this before the rest of the set up since it needs
-  //   to created to handle any alarms thrown by later
-  //   initialization
-  overviewGenerator = new overviewPage();
-
   // Initialize the Config Object bindings before
   //   starting any other threads
   lmgmt->configFiles = configFiles = new FileManager();
@@ -664,14 +654,8 @@ main(int argc, const char **argv)
                "224.0.1.0 - 239.255.255.255");
   }
 
-  /* TODO: Do we really need to init cluster communication? */
-  lmgmt->initCCom(appVersionInfo, configFiles, cluster_mcport, group_addr, cluster_rsport); /* Setup cluster communication */
-
   lmgmt->initMgmtProcessServer(); /* Setup p-to-p process server */
 
-  // Now that we know our cluster ip address, add the
-  //   UI record for this machine
-  overviewGenerator->addSelfRecord();
   lmgmt->listenForProxy();
 
   //
@@ -712,7 +696,6 @@ main(int argc, const char **argv)
   ink_thread_create(ts_ctrl_main, &mgmtapiFD, 0, 0, nullptr);
   ink_thread_create(event_callback_main, &eventapiFD, 0, 0, nullptr);
 
-  ticker = time(nullptr);
   mgmt_log("[TrafficManager] Setup complete\n");
 
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(nullptr), RECP_NON_PERSISTENT);
@@ -750,24 +733,6 @@ main(int argc, const char **argv)
       sigHupNotifier = 0;
       mgmt_log("[main] Reading Configuration Files Reread\n");
     }
-
-    lmgmt->ccom->generateClusterDelta();
-
-    if (lmgmt->run_proxy && lmgmt->processRunning()) {
-      lmgmt->ccom->sendSharedData();
-      lmgmt->virt_map->lt_runGambit();
-    } else {
-      if (!lmgmt->run_proxy) { /* Down if we are not going to start another immed. */
-        /* Proxy is not up, so no addrs should be */
-        lmgmt->virt_map->downOurAddrs();
-      }
-
-      /* Proxy is not up, but we should still exchange config and alarm info */
-      lmgmt->ccom->sendSharedData(false);
-    }
-
-    lmgmt->ccom->checkPeers(&ticker);
-    overviewGenerator->checkForUpdates();
 
     metrics_binding_evaluate(*binding);
 
@@ -982,9 +947,6 @@ fileUpdated(char *fname, bool incVersion)
 
   } else if (strcmp(fname, "ip_allow.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.ip_allow.filename");
-  } else if (strcmp(fname, "vaddrs.config") == 0) {
-    mgmt_log("[fileUpdated] vaddrs.config updated\n");
-    lmgmt->virt_map->lt_readAListFile(fname);
 
   } else if (strcmp(fname, "storage.config") == 0) {
     mgmt_log("[fileUpdated] storage.config changed, need restart auto-rebuild mode\n");

@@ -1120,10 +1120,10 @@ SnapshotGetMlt(LLQ *snapshots)
 }
 
 TSMgmtError
-StatsReset(bool cluster, const char *stat_name)
+StatsReset(const char *stat_name)
 {
   TSMgmtError ret;
-  OpType op               = cluster ? OpType::STATS_RESET_CLUSTER : OpType::STATS_RESET_NODE;
+  OpType op               = OpType::STATS_RESET_NODE;
   OpType optype           = op;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(stat_name);
 

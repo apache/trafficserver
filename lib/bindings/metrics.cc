@@ -230,7 +230,7 @@ int
 lua_metrics_install(lua_State *L)
 {
   int count                = 0;
-  int metrics_type         = RECT_NODE | RECT_PROCESS | RECT_CLUSTER | RECT_PLUGIN;
+  int metrics_type         = RECT_NODE | RECT_PROCESS | RECT_PLUGIN;
   BindingInstance *binding = BindingInstance::self(L);
   std::set<std::string> prefixes;
 

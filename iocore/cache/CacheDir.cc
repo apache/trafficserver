@@ -24,6 +24,7 @@
 #include "P_Cache.h"
 
 #include "ts/hugepages.h"
+#include "ts/Regression.h"
 
 // #define LOOP_CHECK_MODE 1
 #ifdef LOOP_CHECK_MODE

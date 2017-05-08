@@ -484,9 +484,6 @@ struct HostDBContinuation : public Continuation {
   }
   HostDBInfo *lookup_done(IpAddr const &ip, const char *aname, bool round_robin, unsigned int attl, SRVHosts *s = nullptr,
                           HostDBInfo *r = nullptr);
-  bool do_get_response(Event *e);
-  void do_put_response(ClusterMachine *m, HostDBInfo *r, Continuation *cont);
-  int failed_cluster_request(Event *e);
   int key_partition();
   void remove_trigger_pending_dns();
   int set_check_pending_dns();

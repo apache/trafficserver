@@ -916,7 +916,7 @@ handle_stats_reset(int fd, void *req, size_t reqlen)
 
   err = recv_mgmt_request(req, reqlen, OpType::STATS_RESET_NODE, &optype, &name);
   if (err == TS_ERR_OKAY) {
-    err = StatsReset(optype == OpType::STATS_RESET_CLUSTER, name);
+    err = StatsReset(name);
   }
 
   ats_free(name);

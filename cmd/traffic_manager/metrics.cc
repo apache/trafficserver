@@ -33,7 +33,6 @@
 #include "I_RecCore.h"
 #include "MgmtDefs.h"
 #include "MgmtUtils.h"
-#include "WebOverview.h"
 #include "metrics.h"
 
 struct Evaluator {
@@ -222,8 +221,6 @@ metrics_create_record(lua_State *L, RecDataT data_type)
     rec_type = RECT_PROCESS;
   } else if (strncmp(name, "proxy.node.", sizeof("proxy.node.") - 1) == 0) {
     rec_type = RECT_NODE;
-  } else if (strncmp(name, "proxy.cluster.", sizeof("proxy.cluster.") - 1) == 0) {
-    rec_type = RECT_CLUSTER;
   }
 
   // You have to follow the naming convention.
@@ -276,52 +273,6 @@ metrics_create_float(lua_State *L)
   return metrics_create_record(L, RECD_FLOAT);
 }
 
-static int
-metrics_cluster_sum(lua_State *L)
-{
-  const char *rec_name;
-  RecDataT data_type;
-  RecData rec_data;
-
-  // Get the name of the record to sum.
-  rec_name = lua_tostring(L, -1);
-
-  // XXX Check whether we have a cached value for this somewhere ...
-
-  // If not, get the record data type.
-  if (RecGetRecordDataType(rec_name, &data_type) == REC_ERR_FAIL) {
-    luaL_error(L, "unknown metric name '%s'", rec_name);
-  }
-
-  // Sum the cluster value.
-  if (!overviewGenerator->varClusterDataFromName(data_type, rec_name, &rec_data)) {
-    RecDataZero(data_type, &rec_data);
-
-    // If we can't get any cluster data, return nil. This will generally cause the
-    // evaluator to fail, which is handled by logging and ignoring the failure.
-    lua_pushnil(L);
-    return 1;
-  }
-
-  switch (data_type) {
-  case RECD_INT: /* fallthru */
-  case RECD_COUNTER:
-    lua_pushinteger(L, rec_data.rec_int);
-    break;
-  case RECD_FLOAT:
-    lua_pushnumber(L, rec_data.rec_float);
-    break;
-  case RECD_STRING:
-    lua_pushlstring(L, rec_data.rec_string, strlen(rec_data.rec_string));
-    break;
-  default:
-    lua_pushnil(L);
-  }
-
-  // Return 1 value on the stack.
-  return 1;
-}
-
 bool
 metrics_binding_initialize(BindingInstance &binding)
 {
@@ -340,7 +291,6 @@ metrics_binding_initialize(BindingInstance &binding)
   binding.bind_function("integer", metrics_create_integer);
   binding.bind_function("counter", metrics_create_counter);
   binding.bind_function("float", metrics_create_float);
-  binding.bind_function("metrics.cluster.sum", metrics_cluster_sum);
 
   binding.bind_constant("metrics.now.msec", timestamp_now_msec());
   binding.bind_constant("metrics.update.pass", lua_Integer(0));

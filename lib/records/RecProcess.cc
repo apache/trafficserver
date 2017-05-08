@@ -60,7 +60,6 @@ i_am_the_record_owner(RecT rec_type)
       return true;
     case RECT_CONFIG:
     case RECT_NODE:
-    case RECT_CLUSTER:
     case RECT_LOCAL:
       return false;
     default:
@@ -72,7 +71,6 @@ i_am_the_record_owner(RecT rec_type)
     case RECT_CONFIG:
     case RECT_PROCESS:
     case RECT_NODE:
-    case RECT_CLUSTER:
     case RECT_LOCAL:
     case RECT_PLUGIN:
       return true;
