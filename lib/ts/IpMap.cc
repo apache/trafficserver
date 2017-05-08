@@ -134,7 +134,7 @@ namespace detail
   struct IpMapBase {
     friend class ::IpMap;
 
-    typedef IpMapBase self;              ///< Self reference type.
+    typedef IpMapBase<N> self_type;      ///< Self reference type.
     typedef typename N::ArgType ArgType; ///< Import type.
     typedef typename N::Metric Metric;   ///< Import type.g482
 
@@ -144,10 +144,10 @@ namespace detail
         All addresses in the range [ @a min , @a max ] are marked with @a data.
         @return This object.
     */
-    self &mark(ArgType min,         ///< Minimum value in range.
-               ArgType max,         ///< Maximum value in range.
-               void *data = nullptr ///< Client data payload.
-               );
+    self_type &mark(ArgType min,         ///< Minimum value in range.
+                    ArgType max,         ///< Maximum value in range.
+                    void *data = nullptr ///< Client data payload.
+                    );
     /** Unmark addresses.
 
         All addresses in the range [ @a min , @a max ] are cleared
@@ -155,7 +155,7 @@ namespace detail
 
         @return This object.
     */
-    self &unmark(ArgType min, ArgType max);
+    self_type &unmark(ArgType min, ArgType max);
 
     /** Fill addresses.
 
@@ -167,7 +167,7 @@ namespace detail
 
         @return This object.
     */
-    self &fill(ArgType min, ArgType max, void *data = nullptr);
+    self_type &fill(ArgType min, ArgType max, void *data = nullptr);
 
     /** Test for membership.
 
@@ -186,7 +186,7 @@ namespace detail
 
         @return This object.
     */
-    self &clear();
+    self_type &clear();
 
     /** Lower bound for @a target.  @return The node whose minimum value
         is the largest that is not greater than @a target, or @c nullptr if
@@ -226,7 +226,7 @@ namespace detail
 
     /// Print all spans.
     /// @return This map.
-    self &print();
+    self_type &print();
 
     // Helper methods.
     N *
@@ -735,14 +735,14 @@ namespace detail
     friend struct IpMapBase<Ip4Node>;
 
   public:
-    typedef Ip4Node self; ///< Self reference type.
+    typedef Ip4Node self_type; ///< Self reference type.
 
     /// Construct with values.
     Ip4Node(ArgType min, ///< Minimum address (host order).
             ArgType max, ///< Maximum address (host order).
             void *data   ///< Client data.
             )
-      : Node(data), Ip4Span(min, max)
+      : Node(data), Ip4Span(min, max), _sa()
     {
       ats_ip4_set(ats_ip_sa_cast(&_sa._min), htonl(min));
       ats_ip4_set(ats_ip_sa_cast(&_sa._max), htonl(max));
@@ -760,7 +760,7 @@ namespace detail
       return ats_ip_sa_cast(&_sa._max);
     }
     /// Set the client data.
-    self &
+    self_type &
     setData(void *data ///< Client data.
             ) override
     {
@@ -771,7 +771,7 @@ namespace detail
   protected:
     /// Set the minimum value of the interval.
     /// @return This interval.
-    self &
+    self_type &
     setMin(ArgType min ///< Minimum value (host order).
            )
     {
@@ -782,7 +782,7 @@ namespace detail
 
     /// Set the maximum value of the interval.
     /// @return This interval.
-    self &
+    self_type &
     setMax(ArgType max ///< Maximum value (host order).
            )
     {
@@ -794,7 +794,7 @@ namespace detail
     /** Set the maximum value to one less than @a max.
         @return This object.
     */
-    self &
+    self_type &
     setMaxMinusOne(ArgType max ///< One more than maximum value.
                    )
     {
@@ -803,7 +803,7 @@ namespace detail
     /** Set the minimum value to one more than @a min.
         @return This object.
     */
-    self &
+    self_type &
     setMinPlusOne(ArgType min ///< One less than minimum value.
                   )
     {
@@ -812,7 +812,7 @@ namespace detail
     /** Decremement the maximum value in place.
         @return This object.
     */
-    self &
+    self_type &
     decrementMax()
     {
       this->setMax(_max - 1);
@@ -821,7 +821,7 @@ namespace detail
     /** Increment the minimum value in place.
         @return This object.
     */
-    self &
+    self_type &
     incrementMin()
     {
       this->setMin(_min + 1);
@@ -880,7 +880,7 @@ namespace detail
     friend struct IpMapBase<Ip6Node>;
 
   public:
-    typedef Ip6Node self; ///< Self reference type.
+    typedef Ip6Node self_type; ///< Self reference type.
     /// Override @c ArgType from @c Interval because the convention
     /// is to use a pointer, not a reference.
     typedef Metric const *ArgType;
@@ -914,7 +914,7 @@ namespace detail
       return ats_ip_sa_cast(&_max);
     }
     /// Set the client data.
-    self &
+    self_type &
     setData(void *data ///< Client data.
             ) override
     {
@@ -925,7 +925,7 @@ namespace detail
   protected:
     /// Set the minimum value of the interval.
     /// @return This interval.
-    self &
+    self_type &
     setMin(ArgType min ///< Minimum value (host order).
            )
     {
@@ -936,7 +936,7 @@ namespace detail
     /// Set the minimum value of the interval.
     /// @note Convenience overload.
     /// @return This interval.
-    self &
+    self_type &
     setMin(Metric const &min ///< Minimum value (host order).
            )
     {
@@ -945,7 +945,7 @@ namespace detail
 
     /// Set the maximum value of the interval.
     /// @return This interval.
-    self &
+    self_type &
     setMax(ArgType max ///< Maximum value (host order).
            )
     {
@@ -955,7 +955,7 @@ namespace detail
     /// Set the maximum value of the interval.
     /// @note Convenience overload.
     /// @return This interval.
-    self &
+    self_type &
     setMax(Metric const &max ///< Maximum value (host order).
            )
     {
@@ -964,7 +964,7 @@ namespace detail
     /** Set the maximum value to one less than @a max.
         @return This object.
     */
-    self &
+    self_type &
     setMaxMinusOne(Metric const &max ///< One more than maximum value.
                    )
     {
@@ -975,7 +975,7 @@ namespace detail
     /** Set the minimum value to one more than @a min.
         @return This object.
     */
-    self &
+    self_type &
     setMinPlusOne(Metric const &min ///< One less than minimum value.
                   )
     {
@@ -986,7 +986,7 @@ namespace detail
     /** Decremement the maximum value in place.
         @return This object.
     */
-    self &
+    self_type &
     decrementMax()
     {
       dec(_max);
@@ -995,7 +995,7 @@ namespace detail
     /** Increment the mininimum value in place.
         @return This object.
     */
-    self &
+    self_type &
     incrementMin()
     {
       inc(_min);
