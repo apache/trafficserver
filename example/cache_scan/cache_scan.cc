@@ -131,15 +131,16 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     const char s1[] = "URL: ", s2[] = "\n";
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s1, sizeof(s1) - 1);
     TSCacheHttpInfoReqGet(cache_infop, &req_bufp, &req_hdr_loc);
-    TSHttpHdrUrlGet(req_bufp, req_hdr_loc, &url_loc);
-    url = TSUrlStringGet(req_bufp, url_loc, &url_len);
+    if (TS_SUCCESS == TSHttpHdrUrlGet(req_bufp, req_hdr_loc, &url_loc)) {
+      url = TSUrlStringGet(req_bufp, url_loc, &url_len);
 
-    cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, url, url_len);
-    cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s2, sizeof(s2) - 1);
+      cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, url, url_len);
+      cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s2, sizeof(s2) - 1);
 
-    TSfree(url);
-    TSHandleMLocRelease(req_bufp, req_hdr_loc, url_loc);
-    TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_hdr_loc);
+      TSfree(url);
+      TSHandleMLocRelease(req_bufp, req_hdr_loc, url_loc);
+      TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_hdr_loc);
+    }
 
     // print the response headers
     TSCacheHttpInfoRespGet(cache_infop, &resp_bufp, &resp_hdr_loc);
