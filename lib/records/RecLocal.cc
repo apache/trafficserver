@@ -44,7 +44,6 @@ i_am_the_record_owner(RecT rec_type)
   switch (rec_type) {
   case RECT_CONFIG:
   case RECT_NODE:
-  case RECT_CLUSTER:
   case RECT_LOCAL:
     return true;
   case RECT_PROCESS:

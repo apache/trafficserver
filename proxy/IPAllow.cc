@@ -35,6 +35,7 @@
 #include "P_EventSystem.h"
 #include "P_Cache.h"
 #include "hdrs/HdrToken.h"
+#include "ControlMatcher.h"
 
 #include <sstream>
 

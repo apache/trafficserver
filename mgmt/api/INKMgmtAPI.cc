@@ -1339,9 +1339,9 @@ TSVirtIpAddrEleDestroy(TSVirtIpAddrEle *ele)
 
 /*--- statistics operations ----------------------------------------------- */
 tsapi TSMgmtError
-TSStatsReset(bool cluster, const char *name)
+TSStatsReset(const char *name)
 {
-  return StatsReset(cluster, name);
+  return StatsReset(name);
 }
 
 /*--- variable operations ------------------------------------------------- */

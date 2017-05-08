@@ -1916,7 +1916,6 @@ AC_CONFIG_FILES([
   iocore/Makefile
   iocore/aio/Makefile
   iocore/cache/Makefile
-  iocore/cluster/Makefile
   iocore/dns/Makefile
   iocore/eventsystem/Makefile
   iocore/hostdb/Makefile
@@ -1936,7 +1935,6 @@ AC_CONFIG_FILES([
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
-  mgmt/cluster/Makefile
   mgmt/utils/Makefile
   plugins/Makefile
   proxy/Makefile

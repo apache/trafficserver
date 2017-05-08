@@ -42,8 +42,6 @@
 #endif
 
 class FileManager;
-class ClusterCom;
-class VMap;
 
 enum ManagementPendingOperation {
   MGMT_PENDING_NONE,         // Do nothing
@@ -88,7 +86,6 @@ public:
   void clearStats(const char *name = NULL);
 
   bool processRunning();
-  bool clusterOk();
 
   volatile bool run_proxy;
   volatile bool proxy_recoverable; // false if traffic_server cannot recover with a reboot
@@ -117,10 +114,7 @@ public:
   volatile pid_t proxy_launch_pid;
 
   Alarms *alarm_keeper;
-  VMap *virt_map;
   FileManager *configFiles;
-
-  ClusterCom *ccom;
 
   volatile pid_t watched_process_pid;
 

@@ -1021,16 +1021,6 @@ cache_hash(const INK_MD5 &md5)
   return mhash;
 }
 
-#define CLUSTER_CACHE
-
-#ifdef CLUSTER_CACHE
-#include "P_Net.h"
-#include "P_ClusterInternal.h"
-// Note: This include must occur here in order to avoid numerous forward
-//       reference problems.
-#include "P_ClusterInline.h"
-#endif
-
 LINK_DEFINITION(CacheVC, opendir_link)
 
 #endif /* _P_CACHE_INTERNAL_H__ */

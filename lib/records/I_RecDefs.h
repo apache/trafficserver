@@ -56,7 +56,6 @@ enum RecT {
   RECT_CONFIG  = 0x01,
   RECT_PROCESS = 0x02,
   RECT_NODE    = 0x04,
-  RECT_CLUSTER = 0x08,
   RECT_LOCAL   = 0x10,
   RECT_PLUGIN  = 0x20,
   RECT_ALL     = 0x3F
