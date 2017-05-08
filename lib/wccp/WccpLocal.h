@@ -1594,18 +1594,18 @@ protected:
   /// Fill the cached values.
   void cache() const;
 
-  int m_count; ///< # of elements.
-               /** Whether the style values are valid.
-                   We load all the values on the first request because we have to walk
-                   all the capabilities anyway, and cache them.
-               */
-  mutable bool m_cached;
+  int m_count = 0; ///< # of elements.
+                   /** Whether the style values are valid.
+                       We load all the values on the first request because we have to walk
+                       all the capabilities anyway, and cache them.
+                   */
+  mutable bool m_cached = false;
   /// Style used to forward packets to cache.
-  mutable ServiceGroup::PacketStyle m_packet_forward;
+  mutable ServiceGroup::PacketStyle m_packet_forward = ServiceGroup::PacketStyle::NO_PACKET_STYLE;
   /// Style used to return packets to the router.
-  mutable ServiceGroup::PacketStyle m_packet_return;
+  mutable ServiceGroup::PacketStyle m_packet_return = ServiceGroup::PacketStyle::NO_PACKET_STYLE;
   /// Style used to make cache assignments.
-  mutable ServiceGroup::CacheAssignmentStyle m_cache_assign;
+  mutable ServiceGroup::CacheAssignmentStyle m_cache_assign = ServiceGroup::CacheAssignmentStyle::NO_CACHE_ASSIGN_STYLE;
 };
 
 /** Sect 5.6.10: Alternate Assignment Component
@@ -3576,7 +3576,7 @@ inline RouterViewComp::RouterViewComp() : m_cache_count(0)
   memset(m_cache_ids, 0, sizeof(m_cache_ids));
 }
 
-inline CapComp::CapComp() : m_count(0), m_cached(false)
+inline CapComp::CapComp()
 {
 }
 inline CapComp &
