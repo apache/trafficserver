@@ -104,8 +104,9 @@ static const char *_hdrtoken_strs[] = {
   "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
 
   // HTTP methods
-  // replaced ICP with DNT(DO NOT TRACK is a placeholder and not a method) as it breaks cache compatibility as wksid is stored in cache.
-  "CONNECT", "DELETE", "GET", "POST", "HEAD", "DNT" , "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
+  // replaced ICP with DNT(DO NOT TRACK is a placeholder and not a method) as it breaks cache compatibility as wksid is stored in
+  // cache.
+  "CONNECT", "DELETE", "GET", "POST", "HEAD", "DNT", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
 
   // Header extensions
   "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue",
@@ -350,7 +351,8 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
 
   // HTTP methods
-  // replaced ICP with DNT(DO NOT TRACK is a placeholder and not a method) as it breaks cache compatibility as wksid is stored in cache.
+  // replaced ICP with DNT(DO NOT TRACK is a placeholder and not a method) as it breaks cache compatibility as wksid is stored in
+  // cache.
   "CONNECT", "DELETE", "GET", "POST", "HEAD", "DNT", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
 
   // Header extensions
