@@ -96,8 +96,8 @@ Request::init(void *hdr_buf, void *hdr_loc)
   state_->hdr_loc_ = static_cast<TSMLoc>(hdr_loc);
   state_->headers_.reset(state_->hdr_buf_, state_->hdr_loc_);
   state_->url_loc_ = nullptr;
-  TSHttpHdrUrlGet(state_->hdr_buf_, state_->hdr_loc_, &state_->url_loc_);
-  if (!state_->url_loc_) {
+  TSReturnCode ret = TSHttpHdrUrlGet(state_->hdr_buf_, state_->hdr_loc_, &state_->url_loc_);
+  if (!state_->url_loc_ and ret != TS_SUCCESS) {
     LOG_ERROR("TSHttpHdrUrlGet returned a null url loc, hdr_buf=%p, hdr_loc=%p", state_->hdr_buf_, state_->hdr_loc_);
   } else {
     state_->url_.init(state_->hdr_buf_, state_->url_loc_);
