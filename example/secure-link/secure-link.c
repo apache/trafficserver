@@ -114,7 +114,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     sprintf(&hash[i * 2], "%02x", md[i]);
   }
   time(&t);
-  e = strtol(expire, NULL, 16);
+  e = (NULL == expire ? 0 : strtol(expire, NULL, 16));
   i = TSREMAP_DID_REMAP;
   if (e < t || strcmp(hash, token) != 0) {
     if (e < t) {
