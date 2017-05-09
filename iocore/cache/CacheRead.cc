@@ -161,9 +161,10 @@ uint32_t
 CacheVC::load_http_info(CacheHTTPInfoVector *info, Doc *doc, RefCountObj *block_ptr)
 {
   uint32_t zret = info->get_handles(doc->hdr(), doc->hlen, block_ptr);
-  if (cache_config_compatibility_4_2_0_fixup && // manual override not engaged
-      !this->f.doc_from_ram_cache &&            // it's already been done for ram cache fragments
-      vol->header->version.ink_major == 23 && vol->header->version.ink_minor == 0) {
+  if (!this->f.doc_from_ram_cache && // ram cache is always already fixed up.
+      // If this is an old object, the object version will be old or 0, in either case this is correct.
+      // Forget the 4.2 compatibility, always update older versioned objects.
+      VersionNumber(doc->v_major, doc->v_minor) < CACHE_DB_VERSION) {
     for (int i = info->xcount - 1; i >= 0; --i) {
       info->data(i).alternate.m_alt->m_response_hdr.m_mime->recompute_accelerators_and_presence_bits();
       info->data(i).alternate.m_alt->m_request_hdr.m_mime->recompute_accelerators_and_presence_bits();

@@ -37,6 +37,8 @@
 
 #include "ts/hugepages.h"
 
+const VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION);
+
 // Compilation Options
 #define USELESS_REENABLES // allow them for now
 // #define VERIFY_JTEST_DATA
@@ -2256,7 +2258,15 @@ CacheVC::handleReadDone(int event, Event *e)
         // Or does that happen later anyway?
         goto Ldone;
       }
-    } // else if (doc->doc_type == CACHE_FRAG_TYPE_HTTP) // handle any version updates based on the object version in the header.
+    } else if (doc->doc_type == CACHE_FRAG_TYPE_HTTP) { // handle any version updates based on the object version
+      if (VersionNumber(doc->v_major, doc->v_minor) > CACHE_DB_VERSION) {
+        // future version, count as corrupted
+        doc->magic = DOC_CORRUPT;
+        Debug("cache_bc", "Object is future version %d:%d - disk %s - doc id = %" PRIx64 ":%" PRIx64 "", doc->v_major, doc->v_minor,
+              vol->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
+        goto Ldone;
+      }
+    }
 
 #ifdef VERIFY_JTEST_DATA
     char xx[500];
