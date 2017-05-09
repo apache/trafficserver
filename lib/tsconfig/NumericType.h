@@ -149,11 +149,11 @@ public:
     self operator --(int);
 
 private:
-    // coverity[uninit_member]
     raw_type   _t;
 };
 
 // Method definitions.
+// coverity[uninit_ctor]
 template < typename T, typename X > NumericType<T,X>::NumericType() { }
 template < typename T, typename X > NumericType<T,X>::NumericType(raw_type const t) : _t(t) { }
 template < typename T, typename X > NumericType<T,X>& NumericType<T,X>::operator = (raw_type const t) { _t = t; return *this; }
