@@ -11,6 +11,8 @@ https://github.com/floodyberry/siphash
 #include "ts/HashSip.h"
 #include <cstring>
 
+using namespace std;
+
 #define SIP_BLOCK_SIZE 8
 
 #define ROTL64(a, b) (((a) << (b)) | ((a) >> (64 - b)))
@@ -35,22 +37,16 @@ https://github.com/floodyberry/siphash
 
 ATSHash64Sip24::ATSHash64Sip24()
 {
-  k0 = 0;
-  k1 = 0;
   this->clear();
 }
 
-ATSHash64Sip24::ATSHash64Sip24(const unsigned char key[16])
+ATSHash64Sip24::ATSHash64Sip24(const unsigned char key[16]) : k0(U8TO64_LE(key)), k1(U8TO64_LE(key + sizeof(k0)))
 {
-  k0 = U8TO64_LE(key);
-  k1 = U8TO64_LE(key + sizeof(k0));
   this->clear();
 }
 
 ATSHash64Sip24::ATSHash64Sip24(uint64_t key0, uint64_t key1)
 {
-  k0 = key0;
-  k1 = key1;
   this->clear();
 }
 
