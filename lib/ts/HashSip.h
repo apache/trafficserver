@@ -23,7 +23,7 @@
 #define __HASH_SIP_H__
 
 #include "ts/Hash.h"
-#include <stdint.h>
+#include <cstdint>
 
 /*
   Siphash is a Hash Message Authentication Code and can take a key.
@@ -35,18 +35,24 @@
 struct ATSHash64Sip24 : ATSHash64 {
   ATSHash64Sip24(void);
   ATSHash64Sip24(const unsigned char key[16]);
-  ATSHash64Sip24(uint64_t key0, uint64_t key1);
-  void update(const void *data, size_t len);
+  ATSHash64Sip24(std::uint64_t key0, std::uint64_t key1);
+  void update(const void *data, std::size_t len);
   void final(void);
-  uint64_t get(void) const;
+  std::uint64_t get(void) const;
   void clear(void);
 
 private:
-  unsigned char block_buffer[8];
-  uint8_t block_buffer_len;
-  uint64_t k0, k1, v0, v1, v2, v3, hfinal;
-  size_t total_len;
-  bool finalized;
+  unsigned char block_buffer[8] = {0};
+  std::uint8_t block_buffer_len = 0;
+  std::uint64_t k0              = 0;
+  std::uint64_t k1              = 0;
+  std::uint64_t v0              = 0;
+  std::uint64_t v1              = 0;
+  std::uint64_t v2              = 0;
+  std::uint64_t v3              = 0;
+  std::uint64_t hfinal          = 0;
+  std::size_t total_len         = 0;
+  bool finalized                = false;
 };
 
 #endif
