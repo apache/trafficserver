@@ -75,11 +75,11 @@ struct RemapPlugins : public Continuation {
   Action action;
 
 private:
-  unsigned int _cur;
-  HttpTransact::State *_s;
-  URL *_request_url;
-  HTTPHdr *_request_header;
-  host_hdr_info *_hh_ptr;
+  unsigned int _cur        = 0;
+  HttpTransact::State *_s  = nullptr;
+  URL *_request_url        = nullptr;
+  HTTPHdr *_request_header = nullptr;
+  host_hdr_info *_hh_ptr   = nullptr;
 };
 
 #endif
