@@ -93,23 +93,23 @@ public:
   void delete_instance(unsigned int index);
   void Print();
 
-  int from_path_len;
+  int from_path_len = 0;
   URL fromURL;
   URL toUrl; // Default TO-URL (from remap.config)
-  bool homePageRedirect;
-  bool unique; // INKqa11970 - unique mapping
-  bool default_redirect_url;
-  bool optional_referer;
-  bool negative_referer;
-  bool wildcard_from_scheme; // from url is '/foo', only http or https for now
-  char *tag;                 // tag
-  char *filter_redirect_url; // redirect url when referer filtering enabled
-  unsigned int map_id;
-  referer_info *referer_list;
-  redirect_tag_str *redir_chunk_list;
-  bool ip_allow_check_enabled_p;
-  acl_filter_rule *filter; // acl filtering (list of rules)
-  unsigned int _plugin_count;
+  bool homePageRedirect              = false;
+  bool unique                        = false; // INKqa11970 - unique mapping
+  bool default_redirect_url          = false;
+  bool optional_referer              = false;
+  bool negative_referer              = false;
+  bool wildcard_from_scheme          = false;   // from url is '/foo', only http or https for now
+  char *tag                          = nullptr; // tag
+  char *filter_redirect_url          = nullptr; // redirect url when referer filtering enabled
+  unsigned int map_id                = 0;
+  referer_info *referer_list         = nullptr;
+  redirect_tag_str *redir_chunk_list = nullptr;
+  bool ip_allow_check_enabled_p      = false;
+  acl_filter_rule *filter            = nullptr; // acl filtering (list of rules)
+  unsigned int _plugin_count         = 0;
   LINK(url_mapping, link); // For use with the main Queue linked list holding all the mapping
 
   int
