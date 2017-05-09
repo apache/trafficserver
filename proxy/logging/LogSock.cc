@@ -288,10 +288,10 @@ bool
 LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
 {
   int start_index, ret, n_poll_fds, i;
-  static struct pollfd fds[LS_CONST_CLUSTER_MAX_MACHINES];
-  int fd_to_cid[LS_CONST_CLUSTER_MAX_MACHINES];
+  static struct pollfd fds[LS_CONST_MAX_CONNS];
+  int fd_to_cid[LS_CONST_MAX_CONNS];
 
-  ink_assert(m_max_connections <= (LS_CONST_CLUSTER_MAX_MACHINES + 1));
+  ink_assert(m_max_connections <= (LS_CONST_MAX_CONNS + 1));
   ink_assert(cid != nullptr);
   ink_assert(timeout_msec >= 0);
 

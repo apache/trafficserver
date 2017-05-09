@@ -220,8 +220,6 @@ Rule::parse(const char *const_rule, TSFileNameT filetype)
     return splitdnsParse(rule);
   case TS_FNAME_STORAGE: /* storage.config */
     return storageParse(rule);
-  case TS_FNAME_VADDRS: /* vaddrs.config */
-    return vaddrsParse(rule);
   default:
     return nullptr;
   }
@@ -780,31 +778,6 @@ Rule::updateParse(char *rule)
 }
 
 /**
- * vaddrsParse
- **/
-TokenList *
-Rule::vaddrsParse(char *rule)
-{
-  // ASSUMPTIONS:
-  //   UNIX: IP_address device subinterface
-  //   Win:  IP_address interface
-  Tokenizer ruleTok(" \t");
-  ruleTok.Initialize(rule);
-  tok_iter_state ruleTok_state;
-  const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token;
-  TokenList *m_tokenList = new TokenList();
-
-  for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
-    token = new Token();
-    token->setName(tokenStr);
-    m_tokenList->enqueue(token);
-  }
-
-  return m_tokenList;
-}
-
-/**
  * storageParse
  * ------------
  * the token value is pathname; if a size is specified, that is stored as
@@ -923,8 +896,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = TS_FNAME_SOCKS; /* socks.config */
   } else if (strstr(filename, "splitdns.config")) {
     m_filetype = TS_FNAME_SPLIT_DNS; /* splitdns.config */
-  } else if (strstr(filename, "vaddrs.config")) {
-    m_filetype = TS_FNAME_VADDRS; /* vaddrs.config */
   } else if (strstr(filename, "plugin.config")) {
     m_filetype = TS_FNAME_UNDEFINED; /* plugin.config */
   } else if (strstr(filename, "storage.config")) {

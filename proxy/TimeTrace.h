@@ -60,9 +60,6 @@ extern int inmsg_events;
 
 extern int open_delay_time_dist[TIME_DIST_BUCKETS_SIZE];
 extern int open_delay_events;
-
-extern int cluster_send_time_dist[TIME_DIST_BUCKETS_SIZE];
-extern int cluster_send_events;
 #endif // ENABLE_TIME_TRACE
 
 #ifdef ENABLE_TIME_TRACE

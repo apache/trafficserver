@@ -36,8 +36,6 @@
 
 extern int hostdb_enable;
 extern int hostdb_migrate_on_demand;
-extern int hostdb_cluster;
-extern int hostdb_cluster_round_robin;
 extern int hostdb_lookup_timeout;
 extern int hostdb_insert_timeout;
 extern int hostdb_re_dns_on_reload;
@@ -128,16 +126,13 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
 //
 
 // period to wait for a remote probe...
-#define HOST_DB_CLUSTER_TIMEOUT HRTIME_MSECONDS(5000)
 #define HOST_DB_RETRY_PERIOD HRTIME_MSECONDS(20)
 #define HOST_DB_ITERATE_PERIOD HRTIME_MSECONDS(5)
 
 //#define TEST(_x) _x
 #define TEST(_x)
 
-struct ClusterMachine;
 struct HostEnt;
-struct ClusterConfiguration;
 
 // Stats
 enum HostDB_Stats {
@@ -441,12 +436,10 @@ struct HostDBContinuation : public Continuation {
   int dns_lookup_timeout;
   //  INK_MD5 md5;
   Event *timeout;
-  ClusterMachine *from;
   Continuation *from_cont;
   HostDBApplicationInfo app;
   int probe_depth;
   size_t current_iterate_pos;
-  ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH];
   //  char name[MAXDNAME];
   //  int namelen;
   char md5_host_name_store[MAXDNAME + 1]; // used as backing store for @a md5
@@ -460,8 +453,6 @@ struct HostDBContinuation : public Continuation {
 
   int probeEvent(int event, Event *e);
   int iterateEvent(int event, Event *e);
-  int clusterEvent(int event, Event *e);
-  int clusterResponseEvent(int event, Event *e);
   int dnsEvent(int event, HostEnt *e);
   int dnsPendingEvent(int event, Event *e);
   int backgroundEvent(int event, Event *e);
@@ -488,8 +479,6 @@ struct HostDBContinuation : public Continuation {
   void remove_trigger_pending_dns();
   int set_check_pending_dns();
 
-  ClusterMachine *master_machine(ClusterConfiguration *cc);
-
   HostDBInfo *insert(unsigned int attl);
 
   /** Optional values for @c init.
@@ -515,7 +504,6 @@ struct HostDBContinuation : public Continuation {
       host_res_style(DEFAULT_OPTIONS.host_res_style),
       dns_lookup_timeout(DEFAULT_OPTIONS.timeout),
       timeout(0),
-      from(0),
       from_cont(0),
       probe_depth(0),
       current_iterate_pos(0),

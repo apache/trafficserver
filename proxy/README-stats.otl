@@ -144,8 +144,8 @@ consistency, coupling, clearing and persistence problems.
 Brian's Rant:
 -------------
 In any case, I want to change the stats system once to address all the issues
-of clearing, persistence, monotonicity, coupled computations, cluster
-aggregation, etc.  Let's be sure we all understand the design issues and do
+of clearing, persistence, monotonicity, coupled computations,
+etc.  Let's be sure we all understand the design issues and do
 the right thing one time.  We've gone through lots of band-aids in the past
 which got us nowhere, so let's get the design right.
 ---------------------------------------------------------------------------------
@@ -155,8 +155,7 @@ Issues:
 2) Persistence
 3) Monotonicity
 4) Coupled computations
-5) Cluster aggregation
-6) Inconsistencies between related stats
+5) Inconsistencies between related stats
 
 - Want to be able to clear stats
 - Do not want to see inconsistencies between stats
@@ -446,14 +445,6 @@ cache hit time
 
 Logging
 total  logging space used
-
-Cluster
-cluster network utilization %
-
-ICP
-total icp responses
-icp hit rate
-total icp requests
 ---------------------------------------------------------------------------------
 Subject: Re: Simple UI for TS100
 Date: Thu, 26 Mar 1998 11:48:15 -0800

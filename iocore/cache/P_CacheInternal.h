@@ -208,7 +208,6 @@ extern int cache_config_agg_write_backlog;
 extern int cache_config_enable_checksum;
 extern int cache_config_alt_rewrite_max_size;
 extern int cache_config_read_while_writer;
-extern int cache_clustering_enabled;
 extern int cache_config_agg_write_backlog;
 extern int cache_config_ram_cache_compress;
 extern int cache_config_ram_cache_compress_percent;

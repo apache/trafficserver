@@ -32,9 +32,6 @@
    This information is private to the Net module.   It is only here
    because of the the C++ compiler needs it to define NetVConnection.
 
-   Shared with Cluster.cc
-
-
 
  ****************************************************************************/
 #if !defined(_UnixNetState_h_)

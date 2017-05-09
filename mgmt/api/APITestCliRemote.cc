@@ -60,8 +60,6 @@
  * cfg_get:<config-filename>: prints out the rules in confg-filename
  * cfg:<config-filename>: switches the position of first and last rule of
  *                        <config-filename>
- * cfg_context: calls all the TSCfgCOntext helper function calls using
- *              vaddrs.config
  * cfg_socks: does some basic testing of socks.config (reads in file,
  *            modifies it, eg. add new rules, then commits changes)
  *
@@ -762,17 +760,6 @@ print_storage_ele(TSStorageEle *ele)
   }
 }
 
-void
-print_vaddrs_ele(TSVirtIpAddrEle *ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-    return;
-  }
-
-  printf("ip=%s, intr=%s, sub_intr=%d\n", ele->ip_addr, ele->intr, ele->sub_intr);
-}
-
 //
 // print_ele_list
 //
@@ -828,9 +815,6 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
       break;
     case TS_FNAME_STORAGE:
       print_storage_ele((TSStorageEle *)ele);
-      break;
-    case TS_FNAME_VADDRS:
-      print_vaddrs_ele((TSVirtIpAddrEle *)ele);
       break;
     default:
       printf("[print_ele_list] invalid file type \n");
@@ -1483,8 +1467,6 @@ test_cfg_context_get(char *args)
     file = TS_FNAME_STORAGE;
   } else if (strcmp(name, "splitdns.config") == 0) {
     file = TS_FNAME_SPLIT_DNS;
-  } else if (strcmp(name, "vaddrs.config") == 0) {
-    file = TS_FNAME_VADDRS;
   } else {
     TSfree(name);
     return;
@@ -1549,8 +1531,6 @@ test_cfg_context_move(char *args)
     file = TS_FNAME_STORAGE;
   } else if (strcmp(name, "splitdns.config") == 0) {
     file = TS_FNAME_SPLIT_DNS;
-  } else if (strcmp(name, "vaddrs.config") == 0) {
-    file = TS_FNAME_VADDRS;
   } else {
     TSfree(name);
     return;
@@ -1592,125 +1572,6 @@ END:
   TSCfgContextDestroy(ctx);
   TSfree(name);
   return;
-}
-
-void
-test_cfg_context_ops()
-{
-  // Not used here.
-  // TSCfgIterState iter_state;
-  // TSCfgEle *cfg_ele;
-  TSMgmtError err;
-  TSCfgContext ctx;
-  TSVirtIpAddrEle *ele;
-  int rm_index = 0, i;
-  int insert_at;
-
-  ctx = TSCfgContextCreate(TS_FNAME_VADDRS);
-
-  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
-    printf("ERROR READING FILE\n");
-  }
-
-  printf("\nBEFORE CHANGE:\n");
-  //  print_VirtIpAddr_ele_list(ctx);
-
-  int count = TSCfgContextGetCount(ctx);
-  printf("# ele's = %d\n", count);
-
-  printf("\nShifted all Ele's < %d up\n", rm_index);
-  // move all ele's below rm_index up one; this shifts the rm_index ele to
-  // bottom of TSCfgContext
-  for (i = (rm_index + 1); i < count; i++) {
-    err = TSCfgContextMoveEleUp(ctx, i);
-    if (err != TS_ERR_OKAY) {
-      printf("ERROR moving ele at index %d up \n", i);
-      goto END;
-    }
-  }
-  // print_VirtIpAddr_ele_list(ctx);
-
-  printf("\nREMOVE LAST ELE (originally the first ele)\n");
-  // remove the last ele (which was originally the first ele)
-  err = TSCfgContextRemoveEleAt(ctx, (count - 1));
-  if (err != TS_ERR_OKAY) {
-    printf("ERROR: removing ele at index %d\n", count - 1);
-    goto END;
-  }
-
-  printf("\nRemoving second to last Ele \n");
-  err = TSCfgContextRemoveEleAt(ctx, (count - 2));
-  if (err != TS_ERR_OKAY) {
-    printf("ERROR: removing ele at index %d\n", count - 2);
-    goto END;
-  }
-
-  // append a new ele
-  printf("\nappend new ele\n");
-  ele = TSVirtIpAddrEleCreate();
-  if (ele) {
-    ele->ip_addr  = TSstrdup("201.201.201.201");
-    ele->intr     = TSstrdup("appended");
-    ele->sub_intr = 201;
-    err           = TSCfgContextAppendEle(ctx, (TSCfgEle *)ele);
-    if (err != TS_ERR_OKAY) {
-      printf("ERROR: append ele\n");
-      TSVirtIpAddrEleDestroy(ele);
-      goto END;
-    }
-  } else {
-    printf("Can't create VirtIpAddrEle\n");
-  }
-  // print_VirtIpAddr_ele_list(ctx);
-
-  insert_at = 1;
-  // insert a new ele in insert_at index
-  printf("\nINSERT NEW ELE at %d index\n", insert_at);
-  ele = TSVirtIpAddrEleCreate();
-  if (ele) {
-    ele->ip_addr  = TSstrdup("101.101.101.101");
-    ele->intr     = (char *)TSstrdup("inserted");
-    ele->sub_intr = 100;
-    err           = TSCfgContextInsertEleAt(ctx, (TSCfgEle *)ele, insert_at);
-    if (err != TS_ERR_OKAY) {
-      printf("ERROR: insert ele  at index %d\n", insert_at);
-      TSVirtIpAddrEleDestroy(ele);
-      goto END;
-    }
-  } else {
-    printf("Can't create VirtIpAddrEle\n");
-  }
-  // print_VirtIpAddr_ele_list(ctx);
-
-  printf("\nMove ele at index %d to botoom of list\n", insert_at);
-  for (i = insert_at; i < TSCfgContextGetCount(ctx); i++) {
-    err = TSCfgContextMoveEleDown(ctx, i);
-    if (err != TS_ERR_OKAY) {
-      printf("ERROR: moving ele down at index %d\n", i);
-      goto END;
-    }
-  }
-  // print_VirtIpAddr_ele_list(ctx);
-
-  printf("\nShift all Ele's above last ele down; bottom ele becomes top ele\n");
-  count = TSCfgContextGetCount(ctx);
-  for (i = count - 2; i >= 0; i--) {
-    err = TSCfgContextMoveEleDown(ctx, i);
-    if (err != TS_ERR_OKAY) {
-      printf("ERROR: moving ele down at index %d\n", i);
-      goto END;
-    }
-  }
-  // print_VirtIpAddr_ele_list(ctx);
-
-  // commit change
-  TSCfgContextCommit(ctx, nullptr, nullptr);
-
-  printf("\nAFTER CHANGE:\n");
-// print_VirtIpAddr_ele_list(ctx);
-
-END:
-  TSCfgContextDestroy(ctx);
 }
 
 /* ------------------------------------------------------------------------
@@ -2251,8 +2112,6 @@ runInteractive()
       test_cfg_context_get(buf);
     } else if (strstr(buf, "cfg:")) {
       test_cfg_context_move(buf);
-    } else if (strstr(buf, "cfg_context")) {
-      test_cfg_context_ops();
     } else if (strstr(buf, "cfg_socks")) {
       test_cfg_socks();
     } else if (strstr(buf, "cfg_plugin")) {

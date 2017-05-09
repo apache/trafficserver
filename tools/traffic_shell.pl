@@ -218,21 +218,6 @@ __EOL
 }
 
 
-# Command: show:cluster
-#
-sub show_cluster {
-  my $cluster = get_int("proxy.config.cluster.cluster_port");
-  my $cluster_rs = get_int("proxy.config.cluster.rsport");
-  my $cluster_mc = get_int("proxy.config.cluster.mcport");
-
-  print <<__EOF
-Cluster Port ----------- $cluster
-Cluster RS Port -------- $cluster_rs
-Cluster MC Port -------- $cluster_mc
-__EOF
-}
-
-
 # Command: show:dns-resolver
 #
 sub show_dns_resolver {
@@ -661,7 +646,6 @@ Usage: traffic_shell <command> [argument]
 
    show:cache [rules | storage]
    show:cache-stats
-   show:cluster
    show:dns-resolver
    show:dns-stats
    show:hostdb
@@ -693,7 +677,6 @@ __EOF
 my %COMMANDS = ( "show:alarms", \&show_alarms,
                  "show:cache", \&show_cache,
                 "show:cache-stats", \&show_cache_stats,
-                "show:cluster",  \&show_cluster,
                 "show:dns-resolver", \&show_dns_resolver,
                 "show:dns-stats", \&show_dns_stats,
                 "show:hostdb", \&show_hostdb,

@@ -540,7 +540,6 @@ static const event_message_handler handlers[] = {
   nullptr,                     // SNAPSHOT_GET_MLT
   nullptr,                     // DIAGS
   nullptr,                     // STATS_RESET_NODE
-  nullptr,                     // STATS_RESET_CLUSTER
   nullptr,                     // STORAGE_DEVICE_CMD_OFFLINE
   nullptr,                     // RECORD_MATCH_GET
   nullptr,                     // LIFECYCLE_MESSAGE

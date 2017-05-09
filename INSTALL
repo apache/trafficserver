@@ -56,18 +56,6 @@ To compile with an alternate set of compilers, e.g. LLVM/Clang
     $ ./configure CC=clang CXX=clang++
 
 
-INITIAL CONFIGURATION
----------------------
-
-Next set the cluster interface in 'records.config'. The network
-interface name will vary depending on the host operating system.
-
-For example:
-    Linux: CONFIG proxy.config.cluster.ethernet_interface STRING eth0
-    OS X: CONFIG proxy.config.cluster.ethernet_interface STRING en0
-    FreeBSD: CONFIG proxy.config.cluster.ethernet_interface STRING em0
-    OpenSolaris: CONFIG proxy.config.cluster.ethernet_interface STRING e1000g0
-
 To start the Traffic Server process stack (TC, TM, TS):
     $ sudo PREFIX/bin/trafficserver start
 

@@ -902,9 +902,9 @@ TSCacheEleCreate(TSRuleTypeT type)
 {
   TSCacheEle *ele;
 
-  if (type != TS_CACHE_NEVER && type != TS_CACHE_IGNORE_NO_CACHE && type != TS_CACHE_CLUSTER_CACHE_LOCAL &&
-      type != TS_CACHE_IGNORE_CLIENT_NO_CACHE && type != TS_CACHE_IGNORE_SERVER_NO_CACHE && type != TS_CACHE_PIN_IN_CACHE &&
-      type != TS_CACHE_REVALIDATE && type != TS_CACHE_TTL_IN_CACHE && type != TS_CACHE_AUTH_CONTENT && type != TS_TYPE_UNDEFINED) {
+  if (type != TS_CACHE_NEVER && type != TS_CACHE_IGNORE_NO_CACHE && type != TS_CACHE_IGNORE_CLIENT_NO_CACHE &&
+      type != TS_CACHE_IGNORE_SERVER_NO_CACHE && type != TS_CACHE_PIN_IN_CACHE && type != TS_CACHE_REVALIDATE &&
+      type != TS_CACHE_TTL_IN_CACHE && type != TS_CACHE_AUTH_CONTENT && type != TS_TYPE_UNDEFINED) {
     return nullptr; // invalid type
   }
 
@@ -1304,33 +1304,6 @@ TSStorageEleDestroy(TSStorageEle *ele)
     ats_free(ele);
   }
   return;
-}
-
-/*-------------------------------------------------------------
- * TSVirtIpAddrEle
- *-------------------------------------------------------------*/
-TSVirtIpAddrEle *
-TSVirtIpAddrEleCreate()
-{
-  TSVirtIpAddrEle *ele = (TSVirtIpAddrEle *)ats_malloc(sizeof(TSVirtIpAddrEle));
-
-  ele->cfg_ele.type  = TS_VADDRS;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->intr          = nullptr;
-  ele->sub_intr      = -1;
-  ele->ip_addr       = TS_INVALID_IP_ADDR;
-
-  return ele;
-}
-
-void
-TSVirtIpAddrEleDestroy(TSVirtIpAddrEle *ele)
-{
-  if (ele) {
-    ats_free(ele->intr);
-    ats_free(ele->ip_addr);
-    ats_free(ele);
-  }
 }
 
 /***************************************************************************

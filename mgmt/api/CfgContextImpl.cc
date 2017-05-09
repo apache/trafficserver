@@ -150,9 +150,6 @@ CacheObj::formatEleToRule()
   case TS_CACHE_IGNORE_NO_CACHE:
     ink_strlcat(buf, "action=ignore-no-cache ", sizeof(buf));
     break;
-  case TS_CACHE_CLUSTER_CACHE_LOCAL:
-    ink_strlcat(buf, "action=cluster-cache-local ", sizeof(buf));
-    break;
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
     ink_strlcat(buf, "action=ignore-client-no-cache ", sizeof(buf));
     break;
@@ -214,7 +211,6 @@ CacheObj::isValid()
   switch (m_ele->cfg_ele.type) {
   case TS_CACHE_NEVER:
   case TS_CACHE_IGNORE_NO_CACHE:
-  case TS_CACHE_CLUSTER_CACHE_LOCAL:
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
   case TS_CACHE_IGNORE_SERVER_NO_CACHE:
   case TS_CACHE_AUTH_CONTENT:
@@ -2324,116 +2320,6 @@ TSCfgEle *
 StorageObj::getCfgEleCopy()
 {
   return (TSCfgEle *)copy_storage_ele(m_ele);
-}
-
-//--------------------------------------------------------------------------
-// VirtIpAddrObj
-//--------------------------------------------------------------------------
-VirtIpAddrObj::VirtIpAddrObj(TSVirtIpAddrEle *ele)
-{
-  m_ele   = ele;
-  m_valid = true;
-  m_valid = isValid();
-}
-
-VirtIpAddrObj::VirtIpAddrObj(TokenList *tokens)
-{
-  Token *tok;
-
-  m_ele                = TSVirtIpAddrEleCreate();
-  m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid              = true;
-
-  if (!tokens || (tokens->length != 3)) {
-    goto FORMAT_ERR;
-  }
-
-  m_ele->cfg_ele.type = get_rule_type(tokens, TS_FNAME_VADDRS);
-  if (m_ele->cfg_ele.type == TS_TYPE_UNDEFINED) {
-    goto FORMAT_ERR;
-  }
-  // IP Address
-  tok = tokens->first();
-  if (tok->value != nullptr) {
-    goto FORMAT_ERR;
-  }
-  m_ele->ip_addr = string_to_ip_addr(tok->name);
-
-  // Device
-  tok = tokens->next(tok);
-  if (tok->value != nullptr) {
-    goto FORMAT_ERR;
-  }
-  m_ele->intr = ats_strdup(tok->name);
-
-  // Subinterface
-  tok = tokens->next(tok);
-  if (tok->value != nullptr) {
-    goto FORMAT_ERR;
-  }
-  m_ele->sub_intr = ink_atoi(tok->name); // ERROR: can't convert?
-
-  return;
-
-FORMAT_ERR:
-  m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid              = false;
-}
-
-VirtIpAddrObj::~VirtIpAddrObj()
-{
-  TSVirtIpAddrEleDestroy(m_ele);
-}
-
-char *
-VirtIpAddrObj::formatEleToRule()
-{
-  if (!isValid()) {
-    m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return nullptr;
-  }
-
-  char *ip_str;
-  char buf[MAX_RULE_SIZE];
-  memset(buf, 0, MAX_RULE_SIZE);
-
-  ip_str = ip_addr_to_string(m_ele->ip_addr);
-  snprintf(buf, sizeof(buf), "%s %s %d", ip_str, m_ele->intr, m_ele->sub_intr);
-  ats_free(ip_str);
-
-  return ats_strdup(buf);
-}
-
-bool
-VirtIpAddrObj::isValid()
-{
-  if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
-    m_valid = false;
-  }
-
-  if (!ccu_checkIpAddr(m_ele->ip_addr)) {
-    m_valid = false;
-  }
-
-  if (!m_ele->intr) {
-    m_valid = false;
-  }
-
-  if ((m_ele->sub_intr < 1) || (m_ele->sub_intr > 255)) {
-    m_valid = false;
-  }
-
-  if (!m_valid) {
-    m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  }
-
-  return m_valid;
-}
-
-TSCfgEle *
-VirtIpAddrObj::getCfgEleCopy()
-{
-  return (TSCfgEle *)copy_virt_ip_addr_ele(m_ele);
 }
 
 /*****************************************************************

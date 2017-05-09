@@ -198,7 +198,6 @@ enum ViaString_t {
   // cache type
   VIA_DETAIL_CACHE_DESCRIPTOR_STRING = 'c',
   VIA_DETAIL_CACHE                   = 'C',
-  VIA_DETAIL_CLUSTER                 = 'L',
   VIA_DETAIL_ICP                     = 'I',
   VIA_DETAIL_PARENT                  = 'P',
   VIA_DETAIL_SERVER                  = 'S',

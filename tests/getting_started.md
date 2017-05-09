@@ -96,7 +96,6 @@ A number of file object are define to help with adding values to a given configu
  * splitdns.config
  * ssl_multicert.config
  * storage.config
- * vaddrs.config
  * volume.config
 
 #### Examples
