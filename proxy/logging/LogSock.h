@@ -37,8 +37,8 @@ class LogSock
 {
 public:
   enum Constant {
-    LS_CONST_PACKETSIZE           = 1024,
-    LS_CONST_CLUSTER_MAX_MACHINES = 256,
+    LS_CONST_PACKETSIZE = 1024,
+    LS_CONST_MAX_CONNS  = 256,
   };
 
   enum Err {

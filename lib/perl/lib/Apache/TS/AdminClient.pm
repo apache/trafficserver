@@ -358,34 +358,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.cache.storage_filename
  proxy.config.cache.threads_per_disk
  proxy.config.cache.mutex_retry_delay
- proxy.config.cluster.cluster_configuration
- proxy.config.cluster.cluster_load_clear_duration
- proxy.config.cluster.cluster_load_exceed_duration
- proxy.config.cluster.cluster_port
- proxy.config.cluster.delta_thresh
- proxy.config.cluster.enable_monitor
- proxy.config.cluster.ethernet_interface
- proxy.config.cluster.load_compute_interval_msecs
- proxy.config.cluster.load_monitor_enabled
- proxy.config.cluster.log_bogus_mc_msgs
- proxy.config.cluster.mc_group_addr
- proxy.config.cluster.mcport
- proxy.config.cluster.mc_ttl
- proxy.config.cluster.monitor_interval_secs
- proxy.config.cluster.msecs_per_ping_response_bucket
- proxy.config.cluster.peer_timeout
- proxy.config.cluster.periodic_timer_interval_msecs
- proxy.config.cluster.ping_history_buf_length
- proxy.config.cluster.ping_latency_threshold_msecs
- proxy.config.cluster.ping_response_buckets
- proxy.config.cluster.ping_send_interval_msecs
- proxy.config.cluster.receive_buffer_size
- proxy.config.cluster.rpc_cache_cluster
- proxy.config.cluster.rsport
- proxy.config.cluster.send_buffer_size
- proxy.config.cluster.sock_option_flag
- proxy.config.cluster.startup_timeout
- proxy.config.cluster.threads
  proxy.config.config_dir
  proxy.config.cop.core_signal
  proxy.config.cop.linux_min_memfree_kb
@@ -423,8 +395,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.exec_thread.limit
  proxy.config.header.parse.no_host_url_redirect
  proxy.config.hostdb
- proxy.config.hostdb.cluster
- proxy.config.hostdb.cluster.round_robin
  proxy.config.hostdb.fail.timeout
  proxy.config.hostdb.filename
  proxy.config.hostdb.lookup_timeout
@@ -464,7 +434,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.cache.ignore_accept_mismatch
  proxy.config.http.cache.ignore_authentication
  proxy.config.http.cache.ignore_client_cc_max_age
- proxy.config.http.cache.cluster_cache_local
  proxy.config.http.cache.ignore_client_no_cache
  proxy.config.http.cache.ignore_server_no_cache
  proxy.config.http.cache.ims_on_client_no_cache
@@ -680,9 +649,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.url_remap.filename
  proxy.config.url_remap.pristine_host_hdr
  proxy.config.url_remap.remap_required
- proxy.config.vmap.addr_file
- proxy.config.vmap.down_up_timeout
- proxy.config.vmap.enabled
 
 =head1 LICENSE
 

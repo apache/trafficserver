@@ -59,7 +59,6 @@ static const struct NetCmdOperation requests[] = {
   /* SNAPSHOT_REMOVE            */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* SNAPSHOT_GET_MLT           */ {1, {MGMT_MARSHALL_INT}},
   /* STATS_RESET_NODE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
-  /* STATS_RESET_CLUSTER        */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* RECORD_MATCH_GET           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* API_PING                   */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
@@ -91,7 +90,6 @@ static const struct NetCmdOperation responses[] = {
   /* SNAPSHOT_REMOVE            */ {1, {MGMT_MARSHALL_INT}},
   /* SNAPSHOT_GET_MLT           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* STATS_RESET_NODE           */ {1, {MGMT_MARSHALL_INT}},
-  /* STATS_RESET_CLUSTER        */ {1, {MGMT_MARSHALL_INT}},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {1, {MGMT_MARSHALL_INT}},
   /* RECORD_MATCH_GET           */
   {5, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA}},
@@ -210,7 +208,6 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
   case OpType::SNAPSHOT_REMOVE:
   case OpType::SNAPSHOT_RESTORE:
   case OpType::SNAPSHOT_TAKE:
-  case OpType::STATS_RESET_CLUSTER:
   case OpType::STATS_RESET_NODE:
   case OpType::STORAGE_DEVICE_CMD_OFFLINE:
     ink_release_assert(responses[static_cast<unsigned>(optype)].nfields == 1);

@@ -1481,8 +1481,6 @@ filename_to_string(TSFileNameT file)
     return "splitdns.config";
   case TS_FNAME_STORAGE:
     return "storage.config";
-  case TS_FNAME_VADDRS:
-    return "vaddrs.config";
   default: /* no such config file */
     return nullptr;
   }
@@ -1950,7 +1948,6 @@ create_ele_obj_from_rule_node(Rule *rule)
   switch (rule_type) {
   case TS_CACHE_NEVER: /* all cache rules use same constructor */
   case TS_CACHE_IGNORE_NO_CACHE:
-  case TS_CACHE_CLUSTER_CACHE_LOCAL:
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
   case TS_CACHE_IGNORE_SERVER_NO_CACHE:
   case TS_CACHE_PIN_IN_CACHE:
@@ -1999,9 +1996,6 @@ create_ele_obj_from_rule_node(Rule *rule)
   case TS_STORAGE:
     ele = (CfgEleObj *)new StorageObj(token_list);
     break;
-  case TS_VADDRS: /* vaddrs.config */
-    ele = (CfgEleObj *)new VirtIpAddrObj(token_list);
-    break;
   default:
     return nullptr; // invalid rule type
   }
@@ -2029,9 +2023,8 @@ create_ele_obj_from_ele(TSCfgEle *ele)
   }
 
   switch (ele->type) {
-  case TS_CACHE_NEVER:           /* cache.config */
-  case TS_CACHE_IGNORE_NO_CACHE: // fall-through
-  case TS_CACHE_CLUSTER_CACHE_LOCAL:
+  case TS_CACHE_NEVER:                  /* cache.config */
+  case TS_CACHE_IGNORE_NO_CACHE:        // fall-through
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE: // fall-through
   case TS_CACHE_IGNORE_SERVER_NO_CACHE: // fall-through
   case TS_CACHE_PIN_IN_CACHE:           // fall-through
@@ -2091,9 +2084,6 @@ create_ele_obj_from_ele(TSCfgEle *ele)
     ele_obj = (CfgEleObj *)new StorageObj((TSStorageEle *)ele);
     break;
 
-  case TS_VADDRS: /* vaddrs.config */
-    ele_obj = (CfgEleObj *)new VirtIpAddrObj((TSVirtIpAddrEle *)ele);
-    break;
   case TS_TYPE_UNDEFINED:
   default:
     return nullptr; // error
@@ -2129,8 +2119,6 @@ get_rule_type(TokenList *token_list, TSFileNameT file)
           return TS_CACHE_NEVER;
         } else if (strcmp(tok->value, "ignore-no-cache") == 0) {
           return TS_CACHE_IGNORE_NO_CACHE;
-        } else if (strcmp(tok->value, "cluster-cache-local") == 0) {
-          return TS_CACHE_CLUSTER_CACHE_LOCAL;
         } else if (strcmp(tok->value, "ignore-client-no-cache") == 0) {
           return TS_CACHE_IGNORE_CLIENT_NO_CACHE;
         } else if (strcmp(tok->value, "ignore-server-no-cache") == 0) {
@@ -2210,8 +2198,6 @@ get_rule_type(TokenList *token_list, TSFileNameT file)
   case TS_FNAME_STORAGE: /* storage.config */
     return TS_STORAGE;
 
-  case TS_FNAME_VADDRS: /* vaddrs.config */
-    return TS_VADDRS;
   case TS_FNAME_UNDEFINED:
   default:
     return TS_TYPE_UNDEFINED;
@@ -2767,29 +2753,6 @@ copy_storage_ele(TSStorageEle *ele)
   nele->size = ele->size;
 
   return nele;
-}
-
-TSVirtIpAddrEle *
-copy_virt_ip_addr_ele(TSVirtIpAddrEle *ele)
-{
-  TSVirtIpAddrEle *new_ele;
-
-  if (!ele) {
-    return nullptr;
-  }
-
-  new_ele = TSVirtIpAddrEleCreate();
-  if (!new_ele) {
-    return nullptr;
-  }
-
-  // copy cfg ele
-  copy_cfg_ele(&(ele->cfg_ele), &(new_ele->cfg_ele));
-  new_ele->ip_addr  = ats_strdup(ele->ip_addr);
-  new_ele->intr     = ats_strdup(ele->intr);
-  new_ele->sub_intr = ele->sub_intr;
-
-  return new_ele;
 }
 
 INKCommentEle *

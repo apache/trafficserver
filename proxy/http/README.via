@@ -61,7 +61,6 @@
 
       cache type
          C    cache
-         L    cluster (not used)
          I    icp
 
       cache lookup result

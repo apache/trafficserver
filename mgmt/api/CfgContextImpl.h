@@ -411,32 +411,6 @@ private:
   TSStorageEle *m_ele;
 };
 
-/* vaddrs.config       *******************************************/
-class VirtIpAddrObj : public CfgEleObj
-{
-public:
-  VirtIpAddrObj(TSVirtIpAddrEle *ele);
-  VirtIpAddrObj(TokenList *tokens);
-  ~VirtIpAddrObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual TSCfgEle *getCfgEleCopy();
-  virtual TSCfgEle *
-  getCfgEle()
-  {
-    return (TSCfgEle *)m_ele;
-  }
-  virtual TSRuleTypeT
-  getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  TSVirtIpAddrEle *m_ele;
-};
-
 /*****************************************************************
  * CfgContext
  *****************************************************************/

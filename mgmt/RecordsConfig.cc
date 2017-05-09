@@ -288,18 +288,6 @@ static const RecordElement RecordsConfig[] =
 
   //##############################################################################
   //#
-  //# Virtual IP Manager
-  //#
-  //##############################################################################
-  {RECT_CONFIG, "proxy.config.vmap.enabled", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.vmap.addr_file", RECD_STRING, "vaddrs.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.vmap.down_up_timeout", RECD_INT, "10", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-
-  //##############################################################################
-  //#
   //# Alarm Configuration
   //#
   //##############################################################################

@@ -1386,7 +1386,7 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
     // host to account for a reconfiguration.
     //
     Debug("log-sock", "collation thread starting, creating LogSock");
-    sock = new LogSock(LogSock::LS_CONST_CLUSTER_MAX_MACHINES);
+    sock = new LogSock(LogSock::LS_CONST_MAX_CONNS);
     ink_assert(sock != nullptr);
 
     if (sock->listen(Log::config->collation_port) != 0) {

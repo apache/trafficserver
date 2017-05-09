@@ -125,7 +125,7 @@ enum RecSourceT {
   REC_SOURCE_NULL,     ///< No source / value not set.
   REC_SOURCE_DEFAULT,  ///< Built in default.
   REC_SOURCE_PLUGIN,   ///< Plugin supplied default.
-  REC_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, cluster, etc.)
+  REC_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, etc.)
   REC_SOURCE_ENV       ///< Process environment variable.
 };
 

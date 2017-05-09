@@ -1138,7 +1138,6 @@ static const control_message_handler handlers[] = {
   /* SNAPSHOT_REMOVE            */ {MGMT_API_PRIVILEGED, handle_snapshot},
   /* SNAPSHOT_GET_MLT           */ {0, handle_snapshot_get_mlt},
   /* STATS_RESET_NODE           */ {MGMT_API_PRIVILEGED, handle_stats_reset},
-  /* STATS_RESET_CLUSTER        */ {MGMT_API_PRIVILEGED, handle_stats_reset},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {MGMT_API_PRIVILEGED, handle_storage_device_cmd_offline},
   /* RECORD_MATCH_GET           */ {0, handle_record_match},
   /* API_PING                   */ {0, handle_api_ping},

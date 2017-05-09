@@ -211,7 +211,6 @@ private:
   TokenList *socksParse(char *rule);
   TokenList *splitdnsParse(char *rule);
   TokenList *updateParse(char *rule);
-  TokenList *vaddrsParse(char *rule);
   TokenList *arm_securityParse(char *rule);
   TokenList *hostingParse(char *rule);
   TokenList *ip_allowParse(char *rule);

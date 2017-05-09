@@ -54,8 +54,6 @@ operator==(VersionNumber const &lhs, VersionNumber const &rhs)
 struct Version {
   VersionNumber cacheDB;
   VersionNumber cacheDir;
-  VersionNumber clustering;
-  VersionNumber clustering_min;
 };
 
 enum ModuleVersion {

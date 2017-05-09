@@ -1544,7 +1544,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
 
     // If it suceeds or it was a remote probe, we are done
     //
-    if (r || from) {
+    if (r) {
       hostdb_cont_free(this);
       return EVENT_DONE;
     }

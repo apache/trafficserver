@@ -283,7 +283,6 @@ typedef enum {
   TS_FNAME_SOCKS,           /* socks.config */
   TS_FNAME_SPLIT_DNS,       /* splitdns.config */
   TS_FNAME_STORAGE,         /* storage.config */
-  TS_FNAME_VADDRS,          /* vaddrs.config */
   TS_FNAME_VSCAN,           /* vscan.config */
   TS_FNAME_VS_TRUSTED_HOST, /* trusted-host.config */
   TS_FNAME_VS_EXTENSION,    /* extensions.config */
@@ -297,7 +296,6 @@ typedef enum {
 typedef enum {
   TS_CACHE_NEVER, /* cache.config */
   TS_CACHE_IGNORE_NO_CACHE,
-  TS_CACHE_CLUSTER_CACHE_LOCAL,
   TS_CACHE_IGNORE_CLIENT_NO_CACHE,
   TS_CACHE_IGNORE_SERVER_NO_CACHE,
   TS_CACHE_PIN_IN_CACHE,
@@ -321,7 +319,6 @@ typedef enum {
   TS_SOCKS_MULTIPLE,
   TS_SPLIT_DNS, /* splitdns.config */
   TS_STORAGE,   /* storage.config */
-  TS_VADDRS,    /* vaddrs.config */
   TS_TYPE_UNDEFINED,
   TS_TYPE_COMMENT /* for internal use only */
 } TSRuleTypeT;
@@ -334,9 +331,8 @@ typedef enum {
 } TSInitOptionT;
 
 typedef enum {
-  TS_RESTART_OPT_NONE    = 0x0,
-  TS_RESTART_OPT_CLUSTER = 0x01, /* Restart across the cluster */
-  TS_RESTART_OPT_DRAIN   = 0x02, /* Wait for traffic to drain before restarting. */
+  TS_RESTART_OPT_NONE  = 0x0,
+  TS_RESTART_OPT_DRAIN = 0x02, /* Wait for traffic to drain before restarting. */
 } TSRestartOptionT;
 
 /***************************************************************************
@@ -618,14 +614,6 @@ typedef struct {
   int size;       /* size of the named pathname (in bytes); optional if raw disk partitions */
 } TSStorageEle;
 
-/* vaddrs.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  TSIpAddr ip_addr; /* virtual ip address */
-  char *intr;       /* network interface name (hme0) */
-  int sub_intr;     /* the sub-interface number; must be between 1 and 255 */
-} TSVirtIpAddrEle;
-
 /* rmserver.cfg */
 typedef struct {
   TSCfgEle cfg_ele;
@@ -772,8 +760,6 @@ tsapi TSSplitDnsEle *TSSplitDnsEleCreate();
 tsapi void TSSplitDnsEleDestroy(TSSplitDnsEle *ele);
 tsapi TSStorageEle *TSStorageEleCreate();
 tsapi void TSStorageEleDestroy(TSStorageEle *ele);
-tsapi TSVirtIpAddrEle *TSVirtIpAddrEleCreate();
-tsapi void TSVirtIpAddrEleDestroy(TSVirtIpAddrEle *ele);
 /*--- Ele helper operations -------------------------------------*/
 
 /* TSIsValid: checks if the fields in the ele are all valid

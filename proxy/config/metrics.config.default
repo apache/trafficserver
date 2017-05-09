@@ -7,20 +7,6 @@
 -- These are called to set the initial value during XML parsing, so
 -- the net effect is to set the value to 'minimum. Since we always
 -- zero metrice on creation there's nothing to do there.
---
--- In the cluster-based statistics, the aggregation is further
--- divided into two types: sum and re-calculate. Sum refers calculating
--- the proxy.cluster.* variable by simply summing all required
--- proxy.node.* variables from nodes in the cluster. Re-calculate
--- refers to summing all proxy.nodes.* variables that are used in the
--- process of calculation before performing the calculation.  An analogy
--- would be, summing all open connection in the cluster vs. the average
--- hit rate in the cluster.
---
--- The "operation" attribute ends up in StatExprToken::m_sum_var. For "sum"
--- and default, m_sum_var is true. For "sum" operations, the cluster metric
--- don't evaluate expression, then just sum the associated node metric across
--- the cluster.
 
 -- Handling periodic updates.
 --
@@ -35,10 +21,6 @@
 
 -- Lua API.
 --
--- VALUE metrics.cluster.sum(METRIC)
---    Sum the named METRIC across the cluster. METRIC must be a string naming a node
---    metric since only node metrics are shared across the cluster.
---
 -- metrics.now.msec
 --    Wall-clock time in milliseconds.
 --
@@ -50,22 +32,11 @@
 --    registered metric will be periodically recalculated by evaluating the
 --    given function.
 --
---    The scope of a metric is derived from the name. 'proxy.cluster.*' metrics
---    are placed in CLUSTER scope and 'proxy.node.*' metrics are placed in NODE
---    scope.
---
 --    The name of the metric is passed to evaluation function on each invocation.
 --    This can be used to greate a unique key for persisting data in global tables.
 
 -- Multiplier to convert seconds to milliseconds
 sec_to_msec = 1000
-
--- Return the sum of the given metric across all cluster nodes. metrics.cluster.sum()
--- will memoize its result so that summing the same value multiple times in the same
--- metrics pass is not too expensive. The metric name should always be a node metric.
-function cluster(name)
-  return metrics.cluster.sum(name)
-end
 
 -- Convert bytes to megabits.
 function mbits(bytes)
@@ -176,48 +147,24 @@ counter 'proxy.node.http.user_agents_total_documents_served' [[
   return proxy.process.http.incoming_requests
 ]]
 
-counter 'proxy.cluster.http.user_agents_total_documents_served' [[
-  return cluster('proxy.node.http.user_agents_total_documents_served')
-]]
-
 counter 'proxy.node.http.user_agents_total_transactions_count' [[
   return proxy.process.http.incoming_requests
-]]
-
-counter 'proxy.cluster.http.user_agents_total_transactions_count' [[
-  return cluster('proxy.node.http.user_agents_total_transactions_count')
 ]]
 
 counter 'proxy.node.http.origin_server_total_transactions_count' [[
   return proxy.process.http.outgoing_requests
 ]]
 
-counter 'proxy.cluster.http.origin_server_total_transactions_count' [[
-  return cluster('proxy.node.http.origin_server_total_transactions_count')
-]]
-
 counter 'proxy.node.http.cache_current_connections_count' [[
   return proxy.process.http.current_cache_connections
-]]
-
-counter 'proxy.cluster.http.cache_current_connections_count' [[
-  return cluster('proxy.node.http.cache_current_connections_count')
 ]]
 
 counter 'proxy.node.http.user_agent_current_connections_count' [[
   return proxy.process.http.current_client_connections
 ]]
 
-counter 'proxy.cluster.http.user_agent_current_connections_count' [[
-  return cluster('proxy.node.http.user_agent_current_connections_count')
-]]
-
 counter 'proxy.node.http.origin_server_current_connections_count' [[
   return proxy.process.http.current_server_connections
-]]
-
-counter 'proxy.cluster.http.origin_server_current_connections_count' [[
-  return cluster('proxy.node.http.origin_server_current_connections_count')
 ]]
 
 --
@@ -236,10 +183,6 @@ counter 'proxy.node.dns.total_dns_lookups' [[
   return proxy.process.dns.total_dns_lookups
 ]]
 
-counter 'proxy.cluster.dns.total_dns_lookups' [[
-  return cluster('proxy.node.dns.total_dns_lookups')
-]]
-
 --
 -- HostDB metrics.
 --
@@ -250,14 +193,6 @@ counter 'proxy.node.hostdb.total_lookups' [[
 
 counter 'proxy.node.hostdb.total_hits' [[
   return proxy.process.hostdb.total_hits
-]]
-
---
--- Cluster metrics.
---
-
-integer 'proxy.node.cluster.nodes' [[
-  return proxy.process.cluster.nodes
 ]]
 
 --
@@ -341,16 +276,8 @@ integer 'proxy.node.http.user_agent_xacts_per_second' [[
   )
 ]]
 
-integer 'proxy.cluster.http.user_agent_xacts_per_second' [[
-  return cluster('proxy.node.http.user_agent_xacts_per_second')
-]]
-
 integer 'proxy.node.user_agent_xacts_per_second' [[
   return proxy.node.http.user_agent_xacts_per_second
-]]
-
-integer 'proxy.cluster.user_agent_xacts_per_second' [[
-  return cluster('proxy.cluster.http.user_agent_xacts_per_second')
 ]]
 
 counter 'proxy.node.user_agents_total_documents_served' [[
@@ -366,10 +293,6 @@ integer 'proxy.node.dns.lookups_per_second' [[
   )
 ]]
 
-integer 'proxy.cluster.dns.lookups_per_second' [[
-  return cluster('proxy.node.dns.lookups_per_second')
-]]
-
 -- StatAggregation::Ag_HostdbHitRate() -->
 integer 'proxy.node.hostdb.total_lookups_avg_10s' [[
   local self = ...
@@ -379,20 +302,12 @@ integer 'proxy.node.hostdb.total_lookups_avg_10s' [[
   end)
 ]]
 
-integer 'proxy.cluster.hostdb.total_lookups_avg_10s' [[
-  return cluster('proxy.node.hostdb.total_lookups_avg_10s')
-]]
-
 integer 'proxy.node.hostdb.total_hits_avg_10s' [[
   local self = ...
 
   return interval_delta_of_10s(self, function()
     return proxy.process.hostdb.total_hits
   end)
-]]
-
-integer 'proxy.cluster.hostdb.total_hits_avg_10s' [[
-  return cluster('proxy.node.hostdb.total_hits_avg_10s')
 ]]
 
 float 'proxy.node.hostdb.hit_ratio_avg_10s' [[
@@ -405,16 +320,6 @@ float 'proxy.node.hostdb.hit_ratio_avg_10s' [[
   end)
 ]]
 
-float 'proxy.cluster.hostdb.hit_ratio_avg_10s' [[
-  local self = ...
-
-  return interval_of_10s(self, function()
-    return
-      cluster('proxy.node.hostdb.total_hits_avg_10s')    /
-      cluster('proxy.node.hostdb.total_lookups_avg_10s')
-  end)
-]]
-
 float 'proxy.node.hostdb.hit_ratio' [[
   return proxy.process.hostdb.total_hits / proxy.process.hostdb.total_lookups
 ]]
@@ -424,17 +329,9 @@ counter 'proxy.node.http.user_agent_total_request_bytes' [[
     proxy.process.http.user_agent_request_header_total_size
 ]]
 
-counter 'proxy.cluster.http.user_agent_total_request_bytes' [[
-  return cluster('proxy.node.http.user_agent_total_request_bytes')
-]]
-
 counter 'proxy.node.http.user_agent_total_response_bytes' [[
   return proxy.process.http.user_agent_response_document_total_size +
     proxy.process.http.user_agent_response_header_total_size
-]]
-
-counter 'proxy.cluster.http.user_agent_total_response_bytes' [[
-  return cluster('proxy.node.http.user_agent_total_response_bytes')
 ]]
 
 counter 'proxy.node.http.origin_server_total_request_bytes' [[
@@ -442,25 +339,9 @@ counter 'proxy.node.http.origin_server_total_request_bytes' [[
     proxy.process.http.origin_server_request_header_total_size
 ]]
 
-counter 'proxy.cluster.http.origin_server_total_request_bytes' [[
-  return cluster('proxy.node.http.origin_server_total_request_bytes')
-]]
-
 counter 'proxy.node.http.origin_server_total_response_bytes' [[
   return proxy.process.http.origin_server_response_document_total_size +
     proxy.process.http.origin_server_response_header_total_size
-]]
-
-counter 'proxy.cluster.http.origin_server_total_response_bytes' [[
-  return cluster('proxy.node.http.origin_server_total_response_bytes')
-]]
-
-counter 'proxy.node.http.parent_proxy_total_request_bytes' [[
-  return cluster('proxy.process.http.parent_proxy_request_total_bytes')
-]]
-
-counter 'proxy.node.http.parent_proxy_total_response_bytes' [[
-  return cluster('proxy.process.http.parent_proxy_response_total_bytes')
 ]]
 
 -- Add up the downstream (client <-> proxy) traffic volume.
@@ -482,11 +363,6 @@ float 'proxy.node.bandwidth_hit_ratio' [[
       / proxy.node.user_agent_total_bytes
 ]]
 
-float 'proxy.cluster.bandwidth_hit_ratio' [[
-  return (cluster('proxy.node.user_agent_total_bytes') - cluster('proxy.node.origin_server_total_bytes'))
-      / cluster('proxy.node.user_agent_total_bytes')
-]]
-
 float 'proxy.node.user_agent_total_bytes_avg_10s' [[
   local self = ...
 
@@ -495,20 +371,12 @@ float 'proxy.node.user_agent_total_bytes_avg_10s' [[
   end)
 ]]
 
-float 'proxy.cluster.user_agent_total_bytes_avg_10s' [[
-  return cluster('proxy.node.user_agent_total_bytes_avg_10s')
-]]
-
 float 'proxy.node.origin_server_total_bytes_avg_10s' [[
   local self = ...
 
   return interval_delta_of_10s(self, function()
     return proxy.node.origin_server_total_bytes
   end)
-]]
-
-float 'proxy.cluster.origin_server_total_bytes_avg_10s' [[
-  return cluster('proxy.node.origin_server_total_bytes_avg_10s')
 ]]
 
 float 'proxy.node.bandwidth_hit_ratio_avg_10s' [[
@@ -522,13 +390,6 @@ float 'proxy.node.bandwidth_hit_ratio_avg_10s' [[
   end)
 ]]
 
-float 'proxy.cluster.bandwidth_hit_ratio_avg_10s' [[
-  return (
-    cluster('proxy.node.user_agent_total_bytes_avg_10s') -
-    cluster('proxy.node.origin_server_total_bytes_avg_10s')
-  ) / cluster('proxy.node.user_agent_total_bytes_avg_10s')
-]]
-
 -- StatAggregation::Ag_Throughput()
 integer 'proxy.node.http.throughput' [[
   local self = ...
@@ -538,16 +399,8 @@ integer 'proxy.node.http.throughput' [[
   )
 ]]
 
-integer 'proxy.cluster.http.throughput' [[
-  return cluster('proxy.cluster.http.throughput')
-]]
-
 float 'proxy.node.client_throughput_out' [[
   return mbits(proxy.node.http.throughput)
-]]
-
-float 'proxy.cluster.client_throughput_out' [[
-  return cluster('proxy.node.client_throughput_out')
 ]]
 
 -- StatAggregation::Ag_cacheHits()
@@ -639,16 +492,8 @@ float 'proxy.node.cache_total_hits_avg_10s' [[
     proxy.node.http.cache_hit_stale_served_avg_10s
 ]]
 
-float 'proxy.cluster.cache_total_hits_avg_10s' [[
-  return cluster('proxy.node.cache_total_hits_avg_10s')
-]]
-
 float 'proxy.node.cache_total_hits_mem_avg_10s' [[
   return proxy.node.http.cache_hit_mem_fresh_avg_10s
-]]
-
-float 'proxy.cluster.cache_total_hits_mem_avg_10s' [[
-  return cluster('proxy.node.cache_total_hits_mem_avg_10s')
 ]]
 
 float 'proxy.node.cache_total_misses_avg_10s' [[
@@ -660,25 +505,12 @@ float 'proxy.node.cache_total_misses_avg_10s' [[
     proxy.node.http.cache_read_error_avg_10s
 ]]
 
-float 'proxy.cluster.cache_total_misses_avg_10s' [[
-  return cluster('proxy.node.cache_total_misses_avg_10s')
-]]
-
 float 'proxy.node.cache_hit_ratio_avg_10s' [[
   return
     proxy.node.cache_total_hits_avg_10s   /
     (
     proxy.node.cache_total_hits_avg_10s   +
     proxy.node.cache_total_misses_avg_10s
-    )
-]]
-
-float 'proxy.cluster.cache_hit_ratio_avg_10s' [[
-  return
-    cluster('proxy.node.cache_total_hits_avg_10s')   /
-    (
-    cluster('proxy.node.cache_total_hits_avg_10s')   +
-    cluster('proxy.node.cache_total_misses_avg_10s')
     )
 ]]
 
@@ -691,15 +523,6 @@ float 'proxy.node.cache_hit_mem_ratio_avg_10s' [[
     )
 ]]
 
-float 'proxy.cluster.cache_hit_mem_ratio_avg_10s' [[
-  return
-    cluster('proxy.node.cache_total_hits_mem_avg_10s')   /
-    (
-    cluster('proxy.node.cache_total_hits_avg_10s')   +
-    cluster('proxy.node.cache_total_misses_avg_10s')
-    )
-]]
-
 counter 'proxy.node.cache_total_hits' [[
   return proxy.process.http.cache_hit_fresh +
     proxy.process.http.cache_hit_revalidated +
@@ -707,16 +530,8 @@ counter 'proxy.node.cache_total_hits' [[
     proxy.process.http.cache_hit_stale_served
 ]]
 
-counter 'proxy.cluster.cache_total_hits' [[
-  return cluster('proxy.node.cache_total_hits')
-]]
-
 counter 'proxy.node.cache_total_hits_mem' [[
   return proxy.process.http.cache_hit_mem_fresh
-]]
-
-counter 'proxy.cluster.cache_total_hits_mem' [[
-  return cluster('proxy.node.cache_total_hits_mem')
 ]]
 
 counter 'proxy.node.cache_total_misses' [[
@@ -728,15 +543,6 @@ counter 'proxy.node.cache_total_misses' [[
     proxy.process.http.cache_read_error
 ]]
 
-counter 'proxy.cluster.cache_total_misses' [[
-  return
-    cluster('proxy.node.http.cache_miss_cold')            +
-    cluster('proxy.node.http.cache_miss_changed')         +
-    cluster('proxy.node.http.cache_miss_client_no_cache') +
-    cluster('proxy.node.http.cache_miss_ims')             +
-    cluster('proxy.node.http.cache_read_error')
-]]
-
 float 'proxy.node.cache_hit_ratio' [[
   return
     proxy.node.cache_total_hits   /
@@ -746,30 +552,12 @@ float 'proxy.node.cache_hit_ratio' [[
     )
 ]]
 
-float 'proxy.cluster.cache_hit_ratio' [[
-  return
-    cluster('proxy.node.cache_total_hits')   /
-    (
-      cluster('proxy.node.cache_total_hits')   +
-      cluster('proxy.node.cache_total_misses')
-    )
-]]
-
 float 'proxy.node.cache_hit_mem_ratio' [[
   return
     proxy.node.cache_total_hits_mem   /
     (
     proxy.node.cache_total_hits   +
     proxy.node.cache_total_misses
-    )
-]]
-
-float 'proxy.cluster.cache_hit_mem_ratio' [[
-  return
-    cluster('proxy.node.cache_total_hits_mem')   /
-    (
-    cluster('proxy.node.cache_total_hits')   +
-    cluster('proxy.node.cache_total_misses')
     )
 ]]
 
@@ -784,12 +572,6 @@ float 'proxy.node.cache.percent_free' [[
   return
     proxy.node.cache.bytes_free /
     proxy.process.cache.bytes_total
-]]
-
-float 'proxy.cluster.cache.percent_free' [[
-  return
-    cluster('proxy.node.cache.bytes_free') /
-    cluster('proxy.node.cache.bytes_total')
 ]]
 
 -- StatAggregation::Ag_TransactionPercentsAndMeanTimes()
@@ -1351,18 +1133,10 @@ integer 'proxy.node.current_client_connections' [[
   return proxy.node.http.user_agent_current_connections_count
 ]]
 
-integer 'proxy.cluster.current_client_connections' [[
-  return cluster('proxy.node.current_client_connections')
-]]
-
 integer 'proxy.node.current_server_connections' [[
   return
     proxy.node.http.origin_server_current_connections_count +
     proxy.node.http.current_parent_proxy_connections
-]]
-
-integer 'proxy.cluster.current_server_connections' [[
-  return cluster('proxy.node.current_server_connections')
 ]]
 
 integer 'proxy.node.current_cache_connections' [[
@@ -1370,21 +1144,9 @@ integer 'proxy.node.current_cache_connections' [[
     proxy.node.http.cache_current_connections_count
 ]]
 
-integer 'proxy.cluster.current_cache_connections' [[
-  return cluster('proxy.node.current_cache_connections')
-]]
-
 integer 'proxy.node.client_throughput_out_kbit' [[
   -- Convert Mbit/sec to Kbit/sec.
   return proxy.node.client_throughput_out * 1000
-]]
-
-integer 'proxy.cluster.client_throughput_out_kbit' [[
-  return cluster('proxy.node.client_throughput_out_kbit')
-]]
-
-float 'proxy.cluster.hostdb.hit_ratio' [[
-  return cluster('proxy.node.hostdb.hit_ratio')
 ]]
 
 integer 'proxy.node.cache.bytes_total_mb' [[
@@ -1395,28 +1157,8 @@ integer 'proxy.node.cache.bytes_free_mb' [[
   return mbytes(proxy.node.cache.bytes_free)
 ]]
 
-integer 'proxy.cluster.cache.bytes_free' [[
-  return cluster('proxy.cluster.cache.bytes_free')
-]]
-
-integer 'proxy.cluster.cache.bytes_free_mb' [[
-  return mbytes(proxy.cluster.cache.bytes_free)
-]]
-
 integer 'proxy.node.http.current_parent_proxy_connections' [[
   return proxy.process.http.current_parent_proxy_connections
-]]
-
-integer 'proxy.cluster.http.current_parent_proxy_connections' [[
-  return cluster('proxy.node.http.current_parent_proxy_connections')
-]]
-
-counter 'proxy.cluster.http.parent_proxy_total_request_bytes' [[
-  return cluster('proxy.node.http.parent_proxy_total_request_bytes')
-]]
-
-counter 'proxy.cluster.http.parent_proxy_total_response_bytes' [[
-  return cluster('proxy.node.http.parent_proxy_total_response_bytes')
 ]]
 
 -- Logging.
@@ -1424,120 +1166,60 @@ counter 'proxy.node.log.event_log_access_ok' [[
   return proxy.process.log.event_log_access_ok
 ]]
 
-counter 'proxy.cluster.log.event_log_access_ok' [[
-  return cluster('proxy.node.log.event_log_access_ok')
-]]
-
 counter 'proxy.node.log.event_log_access_skip' [[
   return proxy.process.log.event_log_access_skip
-]]
-
-counter 'proxy.cluster.log.event_log_access_skip' [[
-  return cluster('proxy.node.log.event_log_access_skip')
 ]]
 
 counter 'proxy.node.log.event_log_access_aggr' [[
   return proxy.process.log.event_log_access_aggr
 ]]
 
-counter 'proxy.cluster.log.event_log_access_aggr' [[
-  return cluster('proxy.node.log.event_log_access_aggr')
-]]
-
 counter 'proxy.node.log.event_log_access_full' [[
   return proxy.process.log.event_log_access_full
-]]
-
-counter 'proxy.cluster.log.event_log_access_full' [[
-  return cluster('proxy.node.log.event_log_access_full')
 ]]
 
 counter 'proxy.node.log.event_log_access_fail' [[
   return proxy.process.log.event_log_access_fail
 ]]
 
-counter 'proxy.cluster.log.event_log_access_fail' [[
-  return cluster('proxy.node.log.event_log_access_fail')
-]]
-
 counter 'proxy.node.log.num_lost_before_sent_to_network' [[
   return proxy.process.log.num_lost_before_sent_to_network
-]]
-
-counter 'proxy.cluster.log.num_lost_before_sent_to_network' [[
-  return cluster('proxy.node.log.num_lost_before_sent_to_network')
 ]]
 
 counter 'proxy.node.log.num_sent_to_network' [[
   return proxy.process.log.num_sent_to_network
 ]]
 
-counter 'proxy.cluster.log.num_sent_to_network' [[
-  return cluster('proxy.node.log.num_sent_to_network')
-]]
-
 counter 'proxy.node.log.bytes_lost_before_sent_to_network' [[
   return proxy.process.log.bytes_lost_before_sent_to_network
-]]
-
-counter 'proxy.cluster.log.bytes_lost_before_sent_to_network' [[
-  return cluster('proxy.node.log.bytes_lost_before_sent_to_network')
 ]]
 
 counter 'proxy.node.log.bytes_sent_to_network' [[
   return proxy.process.log.bytes_sent_to_network
 ]]
 
-counter 'proxy.cluster.log.bytes_sent_to_network' [[
-  return cluster('proxy.node.log.bytes_sent_to_network')
-]]
-
 counter 'proxy.node.log.num_received_from_network' [[
   return proxy.process.log.num_received_from_network
-]]
-
-counter 'proxy.cluster.log.num_received_from_network' [[
-  return cluster('proxy.node.log.num_received_from_network')
 ]]
 
 counter 'proxy.node.log.bytes_received_from_network' [[
   return proxy.process.log.bytes_received_from_network
 ]]
 
-counter 'proxy.cluster.log.bytes_received_from_network' [[
-  return cluster('proxy.node.log.bytes_received_from_network')
-]]
-
 counter 'proxy.node.log.bytes_lost_before_preproc' [[
   return proxy.process.log.bytes_lost_before_preproc
-]]
-
-counter 'proxy.cluster.log.bytes_lost_before_preproc' [[
-  return cluster('proxy.node.log.bytes_lost_before_preproc')
 ]]
 
 counter 'proxy.node.log.num_lost_before_flush_to_disk' [[
   return proxy.process.log.num_lost_before_flush_to_disk
 ]]
 
-counter 'proxy.cluster.log.num_lost_before_flush_to_disk' [[
-  return cluster('proxy.node.log.bytes_lost_before_preproc')
-]]
-
 counter 'proxy.node.log.bytes_lost_before_flush_to_disk' [[
   return proxy.process.log.bytes_lost_before_flush_to_disk
 ]]
 
-counter 'proxy.cluster.log.bytes_lost_before_flush_to_disk' [[
-  return cluster('proxy.node.log.bytes_lost_before_preproc')
-]]
-
 counter 'proxy.node.log.bytes_lost_before_written_to_disk' [[
   return proxy.process.log.bytes_lost_before_written_to_disk
-]]
-
-counter 'proxy.cluster.log.bytes_lost_before_written_to_disk' [[
-  return cluster('proxy.node.log.bytes_lost_before_written_to_disk')
 ]]
 
 integer 'proxy.node.log.bytes_sent_to_network_avg_10s' [[
@@ -1546,18 +1228,10 @@ integer 'proxy.node.log.bytes_sent_to_network_avg_10s' [[
   end)
 ]]
 
-integer 'proxy.cluster.log.bytes_sent_to_network_avg_10s' [[
-  return cluster('proxy.node.log.bytes_sent_to_network_avg_10s')
-]]
-
 integer 'proxy.node.log.bytes_received_from_network_avg_10s' [[
   return interval_delta_of_10s(..., function()
     return proxy.process.log.bytes_received_from_network
   end)
-]]
-
-integer 'proxy.cluster.log.bytes_received_from_network_avg_10s' [[
-  return cluster('proxy.node.log.bytes_received_from_network_avg_10s')
 ]]
 
 counter 'proxy.process.ssl.total_success_handshake_count' [[
