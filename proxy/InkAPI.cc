@@ -56,6 +56,7 @@
 #include "HttpDebugNames.h"
 #include "I_AIO.h"
 #include "I_Tasks.h"
+#include "ReverseProxy.h"
 
 #include "I_RecDefs.h"
 #include "I_RecCore.h"
@@ -4126,6 +4127,12 @@ TSConfigDataGet(TSConfig configp)
 {
   INKConfigImpl *config = (INKConfigImpl *)configp;
   return config->mdata;
+}
+
+bool
+TSRemapConfigReload()
+{
+  return reloadUrlRewrite();
 }
 
 ////////////////////////////////////////////////////////////////////

@@ -1179,6 +1179,11 @@ tsapi TSConfig TSConfigGet(unsigned int id);
 tsapi void TSConfigRelease(unsigned int id, TSConfig configp);
 tsapi void *TSConfigDataGet(TSConfig configp);
 
+/**
+ * Should be called when the remap.config file has changed on the disk to reload it.
+ */
+bool TSRemapConfigReload();
+
 /* --------------------------------------------------------------------------
    Management */
 tsapi void TSMgmtUpdateRegister(TSCont contp, const char *plugin_name);
