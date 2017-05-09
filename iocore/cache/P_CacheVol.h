@@ -121,58 +121,58 @@ struct EvacuationBlock {
 };
 
 struct Vol : public Continuation {
-  char *path;
+  char *path = nullptr;
   ats_scoped_str hash_text;
   CryptoHash hash_id;
-  int fd;
+  int fd = -1;
 
-  char *raw_dir;
-  Dir *dir;
-  VolHeaderFooter *header;
-  VolHeaderFooter *footer;
-  int segments;
-  off_t buckets;
-  off_t recover_pos;
-  off_t prev_recover_pos;
-  off_t scan_pos;
-  off_t skip;  // start of headers
-  off_t start; // start of data
-  off_t len;
-  off_t data_blocks;
-  int hit_evacuate_window;
+  char *raw_dir           = nullptr;
+  Dir *dir                = nullptr;
+  VolHeaderFooter *header = nullptr;
+  VolHeaderFooter *footer = nullptr;
+  int segments            = 0;
+  off_t buckets           = 0;
+  off_t recover_pos       = 0;
+  off_t prev_recover_pos  = 0;
+  off_t scan_pos          = 0;
+  off_t skip              = 0; // start of headers
+  off_t start             = 0; // start of data
+  off_t len               = 0;
+  off_t data_blocks       = 0;
+  int hit_evacuate_window = 0;
   AIOCallbackInternal io;
 
   Queue<CacheVC, Continuation::Link_link> agg;
   Queue<CacheVC, Continuation::Link_link> stat_cache_vcs;
   Queue<CacheVC, Continuation::Link_link> sync;
-  char *agg_buffer;
-  int agg_todo_size;
-  int agg_buf_pos;
+  char *agg_buffer  = nullptr;
+  int agg_todo_size = 0;
+  int agg_buf_pos   = 0;
 
-  Event *trigger;
+  Event *trigger = nullptr;
 
   OpenDir open_dir;
-  RamCache *ram_cache;
-  int evacuate_size;
+  RamCache *ram_cache = nullptr;
+  int evacuate_size   = 0;
   DLL<EvacuationBlock> *evacuate;
   DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
-  CacheVC *doc_evacuator;
+  CacheVC *doc_evacuator = nullptr;
 
-  VolInitInfo *init_info;
+  VolInitInfo *init_info = nullptr;
 
-  CacheDisk *disk;
-  Cache *cache;
-  CacheVol *cache_vol;
-  uint32_t last_sync_serial;
-  uint32_t last_write_serial;
-  uint32_t sector_size;
-  bool recover_wrapped;
-  bool dir_sync_waiting;
-  bool dir_sync_in_progress;
-  bool writing_end_marker;
+  CacheDisk *disk            = nullptr;
+  Cache *cache               = nullptr;
+  CacheVol *cache_vol        = nullptr;
+  uint32_t last_sync_serial  = 0;
+  uint32_t last_write_serial = 0;
+  uint32_t sector_size       = 0;
+  bool recover_wrapped       = false;
+  bool dir_sync_waiting      = false;
+  bool dir_sync_in_progress  = false;
+  bool writing_end_marker    = false;
 
   CacheKey first_fragment_key;
-  int64_t first_fragment_offset;
+  int64_t first_fragment_offset = 0;
   Ptr<IOBufferData> first_fragment_data;
 
   void cancel_trigger();
@@ -245,31 +245,7 @@ struct Vol : public Continuation {
   int within_hit_evacuate_window(Dir *dir);
   uint32_t round_to_approx_size(uint32_t l);
 
-  Vol()
-    : Continuation(new_ProxyMutex()),
-      path(nullptr),
-      fd(-1),
-      dir(0),
-      buckets(0),
-      recover_pos(0),
-      prev_recover_pos(0),
-      scan_pos(0),
-      skip(0),
-      start(0),
-      len(0),
-      data_blocks(0),
-      hit_evacuate_window(0),
-      agg_todo_size(0),
-      agg_buf_pos(0),
-      trigger(0),
-      evacuate_size(0),
-      disk(nullptr),
-      last_sync_serial(0),
-      last_write_serial(0),
-      recover_wrapped(false),
-      dir_sync_waiting(0),
-      dir_sync_in_progress(0),
-      writing_end_marker(0)
+  Vol() : Continuation(new_ProxyMutex())
   {
     open_dir.mutex = mutex;
     agg_buffer     = (char *)ats_memalign(ats_pagesize(), AGG_SIZE);
