@@ -118,7 +118,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   time(&t);
   e = (NULL == expire ? 0 : strtol(expire, NULL, 16));
   i = TSREMAP_DID_REMAP;
-  if (e < t || strcmp(hash, token) != 0) {
+  if (e < t || (NULL == token || 0 != strcmp(hash, token))) {
     if (e < t) {
       TSDebug(PLUGIN_NAME, "link expired: [%lu] vs [%lu]", t, e);
     } else {
