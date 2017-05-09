@@ -401,7 +401,7 @@ cache_op(AIOCallbackInternal *op)
 {
   bool read = (op->aiocb.aio_lio_opcode == LIO_READ);
   for (; op; op = (AIOCallbackInternal *)op->then) {
-    ink_aiocb_t *a = &op->aiocb;
+    ink_aiocb *a = &op->aiocb;
     ssize_t err, res = 0;
 
     while (a->aio_nbytes - res > 0) {

@@ -59,7 +59,7 @@
 
 #define MAX_AIO_EVENTS 1024
 
-typedef struct iocb ink_aiocb_t;
+typedef struct iocb ink_aiocb;
 typedef struct io_event ink_io_event_t;
 
 // XXX hokey old-school compatibility with ink_aiocb.h ...
@@ -69,17 +69,17 @@ typedef struct io_event ink_io_event_t;
 
 #else
 
-typedef struct ink_aiocb {
-  int aio_fildes;
-  volatile void *aio_buf; /* buffer location */
-  size_t aio_nbytes;      /* length of transfer */
-  off_t aio_offset;       /* file offset */
+struct ink_aiocb {
+  int aio_fildes         = 0;
+  volatile void *aio_buf = nullptr; /* buffer location */
+  size_t aio_nbytes      = 0;       /* length of transfer */
+  off_t aio_offset       = 0;       /* file offset */
 
-  int aio_reqprio;    /* request priority offset */
-  int aio_lio_opcode; /* listio operation */
-  int aio_state;      /* state flag for List I/O */
-  int aio__pad[1];    /* extension padding */
-} ink_aiocb_t;
+  int aio_reqprio    = 0; /* request priority offset */
+  int aio_lio_opcode = 0; /* listio operation */
+  int aio_state      = 0; /* state flag for List I/O */
+  int aio__pad[1];        /* extension padding */
+};
 
 bool ink_aio_thread_num_set(int thread_num);
 
@@ -94,12 +94,12 @@ bool ink_aio_thread_num_set(int thread_num);
 
 struct AIOCallback : public Continuation {
   // set before calling aio_read/aio_write
-  ink_aiocb_t aiocb;
+  ink_aiocb aiocb;
   Action action;
-  EThread *thread;
-  AIOCallback *then;
+  EThread *thread   = nullptr;
+  AIOCallback *then = nullptr;
   // set on return from aio_read/aio_write
-  int64_t aio_result;
+  int64_t aio_result = 0;
 
   int ok();
   AIOCallback() : thread(AIO_CALLBACK_THREAD_ANY), then(0) { aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY; }
