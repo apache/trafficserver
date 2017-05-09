@@ -32,57 +32,22 @@
 
 
 ***********************************************************************/
-#include <stdio.h>
 
 #include "ts/ink_defs.h"
 #include "ts/ink_error.h"
 
-#if defined(POSIX_THREAD)
 #include <pthread.h>
 #include <stdlib.h>
 
 typedef pthread_mutex_t ink_mutex;
 
-// just a wrapper so that the constructor gets executed
-// before the first call to ink_mutex_init();
-class x_pthread_mutexattr_t
-{
-public:
-  pthread_mutexattr_t attr;
-
-  x_pthread_mutexattr_t();
-  ~x_pthread_mutexattr_t();
-};
-
-static inline void
-ink_mutex_init(ink_mutex *m, const char * /* name */)
-{
-  int error;
-  x_pthread_mutexattr_t attr;
-
-  error = pthread_mutex_init(m, &attr.attr);
-  if (unlikely(error != 0)) {
-    ink_abort("pthread_mutex_init(%p) failed: %s (%d)", m, strerror(error), error);
-  }
-}
-
-static inline void
-ink_mutex_destroy(ink_mutex *m)
-{
-  int error;
-
-  error = pthread_mutex_destroy(m);
-  if (unlikely(error != 0)) {
-    ink_abort("pthread_mutex_destroy(%p) failed: %s (%d)", m, strerror(error), error);
-  }
-}
+void ink_mutex_init(ink_mutex *m, const char * /* name */);
+void ink_mutex_destroy(ink_mutex *m);
 
 static inline void
 ink_mutex_acquire(ink_mutex *m)
 {
-  int error;
-
-  error = pthread_mutex_lock(m);
+  int error = pthread_mutex_lock(m);
   if (unlikely(error != 0)) {
     ink_abort("pthread_mutex_lock(%p) failed: %s (%d)", m, strerror(error), error);
   }
@@ -91,9 +56,7 @@ ink_mutex_acquire(ink_mutex *m)
 static inline void
 ink_mutex_release(ink_mutex *m)
 {
-  int error;
-
-  error = pthread_mutex_unlock(m);
+  int error = pthread_mutex_unlock(m);
   if (unlikely(error != 0)) {
     ink_abort("pthread_mutex_unlock(%p) failed: %s (%d)", m, strerror(error), error);
   }
@@ -105,5 +68,4 @@ ink_mutex_try_acquire(ink_mutex *m)
   return pthread_mutex_trylock(m) == 0;
 }
 
-#endif /* #if defined(POSIX_THREAD) */
 #endif /* _ink_mutex_h_ */
