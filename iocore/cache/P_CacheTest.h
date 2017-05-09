@@ -63,30 +63,30 @@ struct CacheTestHeader {
 };
 
 struct CacheTestSM : public RegressionSM {
-  int start_memcpy_on_clone; // place all variables to be copied between these markers
+  int start_memcpy_on_clone = 0; // place all variables to be copied between these markers
 
   // Cache test instance name. This is a pointer to a string literal, so copying is safe.
-  const char *cache_test_name;
+  const char *cache_test_name = nullptr;
 
-  Action *timeout;
-  Action *cache_action;
-  ink_hrtime start_time;
-  CacheVConnection *cache_vc;
-  VIO *cvio;
-  MIOBuffer *buffer;
-  IOBufferReader *buffer_reader;
+  Action *timeout               = nullptr;
+  Action *cache_action          = nullptr;
+  ink_hrtime start_time         = 0;
+  CacheVConnection *cache_vc    = nullptr;
+  VIO *cvio                     = nullptr;
+  MIOBuffer *buffer             = nullptr;
+  IOBufferReader *buffer_reader = nullptr;
   CacheHTTPInfo info;
   char urlstr[1024];
-  int64_t total_size;
-  int64_t nbytes;
+  int64_t total_size = 0;
+  int64_t nbytes     = -1;
   CacheKey key;
-  int repeat_count;
-  int expect_event;
-  int expect_initial_event;
-  int initial_event;
-  uint64_t content_salt;
+  int repeat_count         = 0;
+  int expect_event         = EVENT_NONE;
+  int expect_initial_event = EVENT_NONE;
+  int initial_event        = EVENT_NONE;
+  uint64_t content_salt    = 0;
   CacheTestHeader header;
-  int end_memcpy_on_clone; // place all variables to be copied between these markers
+  int end_memcpy_on_clone = 0; // place all variables to be copied between these markers
 
   void fill_buffer();
   int check_buffer();
