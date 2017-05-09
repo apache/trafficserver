@@ -50,7 +50,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   const char *qh, *ph, *ip;
   unsigned char md[MD5_DIGEST_LENGTH];
   secure_link_info *sli = (secure_link_info *)ih;
-  char *token = NULL, *expire = NULL, *path = NULL;
+  char *token = NULL, *tokenptr = NULL, *expire = NULL, *expireptr = NULL, *path = NULL;
   char *s, *ptr, *saveptr = NULL, *val, hash[32] = "";
 
   in = (struct sockaddr_in *)TSHttpTxnClientAddrGet(rh);
@@ -67,15 +67,17 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
         if ((val = strchr(ptr, '=')) != NULL) {
           *val++ = '\0';
           if (strcmp(ptr, "st") == 0) {
-            token = TSstrdup(val);
+            tokenptr = val;
           } else if (strcmp(ptr, "ex") == 0) {
-            expire = TSstrdup(val);
+            expireptr = val;
           }
         } else {
           TSError("[secure_link] Invalid parameter [%s]", ptr);
           break;
         }
       } while ((ptr = strtok_r(NULL, "&", &saveptr)) != NULL);
+      token  = (NULL == tokenptr ? NULL : TSstrdup(tokenptr));
+      expire = (NULL == expireptr ? NULL : TSstrdup(expireptr));
     } else {
       TSError("[secure_link] strtok didn't find a & in the query string");
       /* this is just example, so set fake params to prevent plugin crash */
