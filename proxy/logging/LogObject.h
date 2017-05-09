@@ -71,7 +71,7 @@ private:
 
 public:
   LogBufferManager() : _num_flush_buffers(0) {}
-  void
+  inline void
   add_to_flush_queue(LogBuffer *buffer)
   {
     write_list.push(buffer);
@@ -108,12 +108,12 @@ public:
   void set_filter_list(const LogFilterList &list, bool copy = true);
   void add_loghost(LogHost *host, bool copy = true);
 
-  void
+  inline void
   set_remote_flag()
   {
     m_flags |= REMOTE_DATA;
   };
-  void
+  inline void
   set_fmt_timestamps()
   {
     m_flags |= LOG_OBJECT_FMT_TIMESTAMP;
@@ -124,7 +124,7 @@ public:
 
   unsigned roll_files(long time_now = 0);
 
-  int
+  inline int
   add_to_flush_queue(LogBuffer *buffer)
   {
     int idx = m_buffer_manager_idx++ % m_flush_threads;
@@ -134,7 +134,7 @@ public:
     return idx;
   }
 
-  size_t
+  inline size_t
   preproc_buffers(int idx = -1)
   {
     size_t nfb;
@@ -155,17 +155,17 @@ public:
   void display(FILE *fd = stdout);
   static uint64_t compute_signature(LogFormat *format, char *filename, unsigned int flags);
 
-  const char *
+  inline const char *
   get_original_filename() const
   {
     return m_filename;
   }
-  const char *
+  inline const char *
   get_full_filename() const
   {
     return (m_alt_filename ? m_alt_filename : m_filename);
   }
-  const char *
+  inline const char *
   get_base_filename() const
   {
     return m_basename;
@@ -173,70 +173,70 @@ public:
 
   off_t get_file_size_bytes();
 
-  uint64_t
+  inline uint64_t
   get_signature() const
   {
     return m_signature;
   }
 
-  int
+  inline int
   get_rolling_interval() const
   {
     return m_rolling_interval_sec;
   }
 
-  void
+  inline void
   set_log_file_header(const char *header)
   {
     m_logFile->change_header(header);
   }
 
-  void
+  inline void
   set_rolling_enabled(Log::RollingEnabledValues rolling_enabled)
   {
     _setup_rolling(rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
   }
 
-  void
+  inline void
   set_rolling_interval_sec(int rolling_interval_sec)
   {
     _setup_rolling(m_rolling_enabled, rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
   }
 
-  void
+  inline void
   set_rolling_offset_hr(int rolling_offset_hr)
   {
     _setup_rolling(m_rolling_enabled, m_rolling_interval_sec, rolling_offset_hr, m_rolling_size_mb);
   }
 
-  void
+  inline void
   set_rolling_size_mb(int rolling_size_mb)
   {
     _setup_rolling(m_rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, rolling_size_mb);
   }
 
-  bool
+  inline bool
   is_collation_client() const
   {
     return (m_logFile ? false : true);
   }
-  bool
+  inline bool
   receives_remote_data() const
   {
     return m_flags & REMOTE_DATA ? true : false;
   }
-  bool
+  inline bool
   writes_to_pipe() const
   {
     return m_flags & WRITES_TO_PIPE ? true : false;
   }
-  bool
+  inline bool
   writes_to_disk()
   {
     return (m_logFile && !(m_flags & WRITES_TO_PIPE) ? true : false);
   }
 
-  unsigned int
+  inline unsigned int
   get_flags() const
   {
     return m_flags;
@@ -244,19 +244,19 @@ public:
 
   void rename(char *new_name);
 
-  bool
+  inline bool
   has_alternate_name() const
   {
     return (m_alt_filename ? true : false);
   }
 
-  const char *
+  inline const char *
   get_format_string()
   {
     return (m_format ? m_format->format_string() : "<none>");
   }
 
-  void
+  inline void
   force_new_buffer()
   {
     _checkout_write(NULL, 0);

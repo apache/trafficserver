@@ -131,14 +131,20 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
 
 LogObject::LogObject(LogObject &rhs)
   : RefCountObj(rhs),
+    m_auto_created(rhs.m_auto_created),
     m_basename(ats_strdup(rhs.m_basename)),
     m_filename(ats_strdup(rhs.m_filename)),
     m_alt_filename(ats_strdup(rhs.m_alt_filename)),
     m_flags(rhs.m_flags),
     m_signature(rhs.m_signature),
+    m_rolling_enabled(rhs.m_rolling_enabled),
     m_flush_threads(rhs.m_flush_threads),
     m_rolling_interval_sec(rhs.m_rolling_interval_sec),
-    m_last_roll_time(rhs.m_last_roll_time)
+    m_rolling_offset_hr(rhs.m_rolling_offset_hr),
+    m_rolling_size_mb(rhs.m_rolling_size_mb),
+    m_last_roll_time(rhs.m_last_roll_time),
+    m_buffer_manager_idx(rhs.m_buffer_manager_idx)
+
 {
   m_format         = new LogFormat(*(rhs.m_format));
   m_buffer_manager = new LogBufferManager[m_flush_threads];
