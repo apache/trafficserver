@@ -396,6 +396,7 @@ ElevateAccess::releasePrivilege()
     if (cap_set_proc(static_cast<cap_t>(cap_state)) != 0) {
       Fatal("failed to restore privileged capabilities: %s", strerror(errno));
     }
+    cap_free(this->cap_state);
     cap_state = NULL;
   }
 }
