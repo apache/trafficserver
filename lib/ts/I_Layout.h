@@ -36,21 +36,6 @@
 
  */
 struct Layout {
-  char *prefix;
-  char *exec_prefix;
-  char *bindir;
-  char *sbindir;
-  char *sysconfdir;
-  char *datadir;
-  char *includedir;
-  char *libdir;
-  char *libexecdir;
-  char *localstatedir;
-  char *runtimedir;
-  char *logdir;
-  char *mandir;
-  char *infodir;
-  char *cachedir;
 
   Layout(const char *prefix = 0);
   ~Layout();
@@ -105,6 +90,23 @@ struct Layout {
 
   */
   static Layout *get();
+
+  char *prefix = nullptr;
+  char *exec_prefix = nullptr;
+  char *bindir = nullptr;
+  char *sbindir = nullptr;
+  char *sysconfdir = nullptr;
+  char *datadir = nullptr;
+  char *includedir = nullptr;
+  char *libdir = nullptr;
+  char *libexecdir = nullptr;
+  char *localstatedir = nullptr;
+  char *runtimedir = nullptr;
+  char *logdir = nullptr;
+  char *mandir = nullptr;
+  char *infodir = nullptr;
+  char *cachedir = nullptr;
+
 };
 
 #endif
