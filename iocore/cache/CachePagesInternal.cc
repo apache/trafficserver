@@ -27,10 +27,10 @@
 #include "I_Tasks.h"
 
 struct ShowCacheInternal : public ShowCont {
-  int vol_index;
-  int seg_index;
+  int vol_index = 0;
+  int seg_index = 0;
   CacheKey show_cache_key;
-  CacheVC *cache_vc;
+  CacheVC *cache_vc = nullptr;
 
   int showMain(int event, Event *e);
   int showEvacuations(int event, Event *e);
@@ -44,10 +44,7 @@ struct ShowCacheInternal : public ShowCont {
   int showVolConnections(int event, Event *e);
 #endif
 
-  ShowCacheInternal(Continuation *c, HTTPHdr *h) : ShowCont(c, h), vol_index(0), seg_index(0)
-  {
-    SET_HANDLER(&ShowCacheInternal::showMain);
-  }
+  ShowCacheInternal(Continuation *c, HTTPHdr *h) : ShowCont(c, h) { SET_HANDLER(&ShowCacheInternal::showMain); }
 
   ~ShowCacheInternal() override {}
 };
