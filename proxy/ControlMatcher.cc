@@ -88,8 +88,7 @@ HttpRequestData::get_client_ip()
  *************************************************************/
 
 template <class Data, class MatchResult>
-HostMatcher<Data, MatchResult>::HostMatcher(const char *name, const char *filename)
-  : data_array(nullptr), array_len(-1), num_el(-1), matcher_name(name), file_name(filename)
+HostMatcher<Data, MatchResult>::HostMatcher(const char *name, const char *filename) : BaseMatcher<Data>(name, filename)
 {
   host_lookup = new HostLookup(name);
 }
@@ -97,7 +96,6 @@ HostMatcher<Data, MatchResult>::HostMatcher(const char *name, const char *filena
 template <class Data, class MatchResult> HostMatcher<Data, MatchResult>::~HostMatcher()
 {
   delete host_lookup;
-  delete[] data_array;
 }
 
 //
@@ -142,9 +140,8 @@ HostMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
   host_lookup->AllocateSpace(num_entries);
 
   data_array = new Data[num_entries];
-
-  array_len = num_entries;
-  num_el    = 0;
+  array_len  = num_entries;
+  num_el     = 0;
 }
 
 // void HostMatcher<Data,MatchResult>::Match(RequestData* rdata, MatchResult* result)
@@ -237,15 +234,7 @@ HostMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 // UrlMatcher<Data,MatchResult>::UrlMatcher()
 //
 template <class Data, class MatchResult>
-UrlMatcher<Data, MatchResult>::UrlMatcher(const char *name, const char *filename)
-  : url_ht(nullptr),
-    url_str(nullptr),
-    url_value(nullptr),
-    data_array(nullptr),
-    array_len(0),
-    num_el(-1),
-    matcher_name(name),
-    file_name(filename)
+UrlMatcher<Data, MatchResult>::UrlMatcher(const char *name, const char *filename) : BaseMatcher<Data>(name, filename)
 {
   url_ht = ink_hash_table_create(InkHashTableKeyType_String);
 }
@@ -261,7 +250,6 @@ template <class Data, class MatchResult> UrlMatcher<Data, MatchResult>::~UrlMatc
   }
   delete[] url_str;
   delete[] url_value;
-  delete[] data_array;
 }
 
 //
@@ -382,8 +370,7 @@ UrlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
 // RegexMatcher<Data,MatchResult>::RegexMatcher()
 //
 template <class Data, class MatchResult>
-RegexMatcher<Data, MatchResult>::RegexMatcher(const char *name, const char *filename)
-  : re_array(nullptr), re_str(nullptr), data_array(nullptr), array_len(-1), num_el(-1), matcher_name(name), file_name(filename)
+RegexMatcher<Data, MatchResult>::RegexMatcher(const char *name, const char *filename) : BaseMatcher<Data>(name, filename)
 {
 }
 
@@ -398,7 +385,6 @@ template <class Data, class MatchResult> RegexMatcher<Data, MatchResult>::~Regex
   }
   delete[] re_str;
   ats_free(re_array);
-  delete[] data_array;
 }
 
 //
@@ -589,17 +575,8 @@ HostRegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *resu
 // IpMatcher<Data,MatchResult>::IpMatcher()
 //
 template <class Data, class MatchResult>
-IpMatcher<Data, MatchResult>::IpMatcher(const char *name, const char *filename)
-  : data_array(nullptr), array_len(-1), num_el(-1), matcher_name(name), file_name(filename)
+IpMatcher<Data, MatchResult>::IpMatcher(const char *name, const char *filename) : BaseMatcher<Data>(name, filename)
 {
-}
-
-//
-// IpMatcher<Data,MatchResult>::~IpMatcher()
-//
-template <class Data, class MatchResult> IpMatcher<Data, MatchResult>::~IpMatcher()
-{
-  delete[] data_array;
 }
 
 //

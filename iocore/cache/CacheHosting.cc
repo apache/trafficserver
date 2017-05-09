@@ -29,8 +29,6 @@
 
 extern int gndisks;
 
-matcher_tags CacheHosting_tags = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
-
 /*************************************************************
  *   Begin class HostMatcher
  *************************************************************/
@@ -184,14 +182,9 @@ CacheHostTable::CacheHostTable(Cache *c, CacheType typ)
 {
   ats_scoped_str config_path;
 
-  config_tags = &CacheHosting_tags;
-  ink_assert(config_tags != nullptr);
-
   type         = typ;
   cache        = c;
   matcher_name = "[CacheHosting]";
-  ;
-  hostMatch = nullptr;
 
   config_path = RecConfigReadConfigPath("proxy.config.cache.hosting_filename");
   ink_release_assert(config_path);
@@ -284,7 +277,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 
     if (*tmp != '#' && *tmp != '\0') {
       current = (matcher_line *)ats_malloc(sizeof(matcher_line));
-      errPtr  = parseConfigLine((char *)tmp, current, config_tags);
+      errPtr  = parseConfigLine((char *)tmp, current, &config_tags);
 
       if (errPtr != nullptr) {
         RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s", matcher_name, config_file_path,
