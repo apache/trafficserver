@@ -307,14 +307,14 @@ private:
   // if there are multiple frames ready on the wire
   int state_process_frame_read(int event, VIO *vio, bool inside_frame);
 
-  int64_t total_write_len;
-  SessionHandler session_handler;
-  NetVConnection *client_vc;
-  MIOBuffer *read_buffer;
-  IOBufferReader *sm_reader;
-  MIOBuffer *write_buffer;
-  IOBufferReader *sm_writer;
-  Http2FrameHeader current_hdr;
+  int64_t total_write_len        = 0;
+  SessionHandler session_handler = nullptr;
+  NetVConnection *client_vc      = nullptr;
+  MIOBuffer *read_buffer         = nullptr;
+  IOBufferReader *sm_reader      = nullptr;
+  MIOBuffer *write_buffer        = nullptr;
+  IOBufferReader *sm_writer      = nullptr;
+  Http2FrameHeader current_hdr   = {0, 0, 0, 0};
 
   IpEndpoint cached_client_addr;
   IpEndpoint cached_local_addr;
@@ -322,11 +322,11 @@ private:
   // For Upgrade: h2c
   Http2UpgradeContext upgrade_context;
 
-  VIO *write_vio;
-  int dying_event;
-  bool kill_me;
-  bool half_close;
-  int recursion;
+  VIO *write_vio  = nullptr;
+  int dying_event = 0;
+  bool kill_me    = false;
+  bool half_close = false;
+  int recursion   = 0;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
