@@ -59,16 +59,6 @@ send_connection_event(Continuation *cont, int event, void *edata)
 }
 
 Http2ClientSession::Http2ClientSession()
-  : total_write_len(0),
-    client_vc(nullptr),
-    read_buffer(nullptr),
-    sm_reader(nullptr),
-    write_buffer(nullptr),
-    sm_writer(nullptr),
-    upgrade_context(),
-    kill_me(false),
-    half_close(false),
-    recursion(0)
 {
 }
 
