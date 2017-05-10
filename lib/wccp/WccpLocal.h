@@ -326,7 +326,8 @@ public:
   typedef CapabilityElt self; ///< Self reference type.
 
   /// Capability types.
-  enum Type {
+  enum Type : uint16_t {
+    NO_METHOD               = 0; ///< Method not set.
     PACKET_FORWARD_METHOD   = 1, ///< Packet forwarding methods.
     CACHE_ASSIGNMENT_METHOD = 2, ///< Cache assignment methods.
     PACKET_RETURN_METHOD    = 3  ///< Packet return methods.
@@ -350,9 +351,9 @@ public:
                    );
   //@}
 protected:
-  uint16_t m_cap_type;   ///< Capability type.
-  uint16_t m_cap_length; ///< Length of capability data.
-  uint32_t m_cap_data;   ///< Capability data.
+  enum Type m_cap_type  = NO_METHOD; ///< Capability type.
+  uint16_t m_cap_length = 0;         ///< Length of capability data.
+  uint32_t m_cap_data   = 0;         ///< Capability data.
 };
 
 /// Sect 5.7.7: Mask element
