@@ -444,16 +444,21 @@ setup_request(TSCont contp, TSHttpTxn txnp)
         TSMBuffer urlBuf = TSMBufferCreate();
         TSMLoc urlLoc;
 
-        TSUrlCreate(urlBuf, &urlLoc);
-        if (TSUrlParse(urlBuf, urlLoc, (const char **)&start, end) != TS_PARSE_DONE ||
-            TSCacheKeyDigestFromUrlSet(cstate->key_to_delete, urlLoc) != TS_SUCCESS) {
-          TSError("[%s] CacheKeyDigestFromUrlSet failed", PLUGIN_NAME);
-          TSCacheKeyDestroy(cstate->key_to_delete);
-          TSfree(cstate);
-          TSHandleMLocRelease(urlBuf, nullptr, urlLoc);
-          goto Ldone;
+        if (TS_SUCCESS == TSUrlCreate(urlBuf, &urlLoc)) {
+          if (TSUrlParse(urlBuf, urlLoc, (const char **)&start, end) != TS_PARSE_DONE ||
+              TSCacheKeyDigestFromUrlSet(cstate->key_to_delete, urlLoc) != TS_SUCCESS) {
+            TSError("[%s] CacheKeyDigestFromUrlSet failed", PLUGIN_NAME);
+            TSCacheKeyDestroy(cstate->key_to_delete);
+            TSfree(cstate);
+            TSHandleMLocRelease(urlBuf, TS_NULL_MLOC, urlLoc);
+            TSMBufferDestroy(urlBuf);
+            goto Ldone;
+          }
+          TSHandleMLocRelease(urlBuf, TS_NULL_MLOC, urlLoc);
+        } else {
+          TSError("[%s] TSUrlCreate failed", PLUGIN_NAME);
         }
-        TSHandleMLocRelease(urlBuf, nullptr, urlLoc);
+        TSMBufferDestroy(urlBuf);
       }
     }
 
