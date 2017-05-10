@@ -56,7 +56,7 @@ const EsiParser::EsiNodeInfo EsiParser::ESI_NODES[] = {
 const EsiParser::EsiNodeInfo EsiParser::HTML_COMMENT_NODE_INFO(DocNode::TYPE_HTML_COMMENT, "<!--esi", 7, "-->", 3);
 
 EsiParser::EsiParser(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
-  : ComponentBase(debug_tag, debug_func, error_func), _parse_start_pos(-1)
+  : ComponentBase(debug_tag, debug_func, error_func), _parse_start_pos(-1), _orig_output_list_size(0)
 {
   // do this so that object doesn't move around in memory;
   // (because we return pointers into this object)
