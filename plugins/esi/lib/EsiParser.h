@@ -94,7 +94,7 @@ private:
 
   std::string _data;
   int _parse_start_pos;
-  size_t _orig_output_list_size;
+  size_t _orig_output_list_size = 0;
 
   static const EsiNodeInfo ESI_NODES[];
   static const EsiNodeInfo HTML_COMMENT_NODE_INFO;
