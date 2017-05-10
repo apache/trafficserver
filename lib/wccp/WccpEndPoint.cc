@@ -431,7 +431,7 @@ CacheImpl::GroupData::processUp()
     zret = true; // No process to track, always chatter
   } else {
     // Look for the pid file
-    int fd = open(proc_pid_path, O_RDONLY);
+    ats_scoped_fd fd = open(proc_pid_path, O_RDONLY);
     if (fd > 0) {
       char buffer[256];
       ssize_t read_count = read(fd, buffer, sizeof(buffer) - 1);
