@@ -78,7 +78,18 @@
 extern "C" {
 #endif /* __cplusplus */
 
-typedef struct iovec IOVec;
+struct IOVec : public iovec {
+  IOVec()
+  {
+    iov_base = nullptr;
+    iov_len  = 0;
+  }
+  IOVec(void *base, size_t len)
+  {
+    iov_base = base;
+    iov_len  = len;
+  }
+};
 
 void *ats_malloc(size_t size);
 void *ats_calloc(size_t nelem, size_t elsize);
