@@ -1974,11 +1974,11 @@ namespace detail
     struct GroupData {
       typedef GroupData self; ///< Self reference type.
 
-      ServiceGroup m_svc;       ///< The service definition.
-      uint32_t m_generation;    ///< Generation value (change number).
-      time_t m_generation_time; ///< Time of last view change.
+      ServiceGroup m_svc;           ///< The service definition.
+      uint32_t m_generation;        ///< Generation value (change number).
+      time_t m_generation_time = 0; ///< Time of last view change.
 
-      bool m_use_security_opt;             ///< Use group local security.
+      bool m_use_security_opt = false;     ///< Use group local security.
       SecurityComp::Option m_security_opt; ///< Type of security.
       bool m_use_security_key;             ///< Use group local key.
       SecurityComp::Key m_security_key;    ///< MD5 key.
