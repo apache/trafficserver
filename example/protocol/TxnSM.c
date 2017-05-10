@@ -441,14 +441,20 @@ state_build_and_send_request(TSCont contp, TSEvent event ATS_UNUSED, void *data 
 
   txn_sm->q_pending_action = NULL;
 
-  txn_sm->q_server_request_buffer        = TSIOBufferCreate();
+  txn_sm->q_server_request_buffer = TSIOBufferCreate();
+  if (!txn_sm->q_server_request_buffer) {
+    return prepare_to_die(contp);
+  }
   txn_sm->q_server_request_buffer_reader = TSIOBufferReaderAlloc(txn_sm->q_server_request_buffer);
-
-  txn_sm->q_server_response_buffer       = TSIOBufferCreate();
+  if (!txn_sm->q_server_request_buffer_reader) {
+    return prepare_to_die(contp);
+  }
+  txn_sm->q_server_response_buffer = TSIOBufferCreate();
+  if (!txn_sm->q_server_response_buffer) {
+    return prepare_to_die(contp);
+  }
   txn_sm->q_cache_response_buffer_reader = TSIOBufferReaderAlloc(txn_sm->q_server_response_buffer);
-
-  if (!txn_sm->q_server_request_buffer || !txn_sm->q_server_request_buffer_reader || !txn_sm->q_server_response_buffer ||
-      !txn_sm->q_cache_response_buffer_reader) {
+  if (!txn_sm->q_cache_response_buffer_reader) {
     return prepare_to_die(contp);
   }
 
