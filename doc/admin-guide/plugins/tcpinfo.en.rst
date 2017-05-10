@@ -103,6 +103,34 @@ The following options may be specified in :file:`plugin.config`:
   not required to be in the configuration file.  To achieve a log rate
   of 1% you would set this value to 10.
 
+--rolling-enabled=VALUE
+  This logfile option allows you to set logfile rolling behaviour of
+  the output log file  without making any changes to the global
+  logging configurations.  This option overrides the 
+  :ts:cv:`proxy.config.output.logfile.rolling_enabled` setting in records.config
+  for the ``tcpinfo`` plugin.  The setting may range from ``0`` to ``3``.
+  ``0`` disables logfile rolling.  ``1`` is the ``default`` and enables logfile
+  rolling at specfic intervals set by ``--rolling-interval-sec`` discussed
+  below.  ``2`` enables logfile rolling by logfile size, see 
+  ``--rolling-size-mb`` below.  Finally a value of ``3`` enables logfile rolling
+  at specfic intervals or size, whichever occurs first using the interval or size
+  settings discussed below.
+
+--rolling-offset-hr=VALUE
+  Set the hour ``0`` to ``23`` at which the output log file will roll when
+  using interval rolling. Default value is ``0``.
+
+--rolling-interval-sec=VALUE
+  Set the rolling interval in seconds for the output log file. May be set 
+  from ``60`` to ``86400`` seconds, Defaults to ``86400``.
+
+--rolling-size=VALUE
+  Set the size in MB at which the output log file  will roll when using log size 
+  rolling.  Minimum value is ``10``, defaults to ``1024``. In your config file,
+  you may use the K, M, or G suffix as in::
+
+  --rolling-size=10M
+
 Examples:
 ---------
 
