@@ -284,7 +284,8 @@ static const ArgumentDescription argument_descriptions[] = {
   {"alternates", 'N', "Number of Alternates", "I", &alternates, "JTEST_ALTERNATES", nullptr},
   {"client_rate", 'e', "Clients Per Sec", "I", &client_rate, "JTEST_CLIENT_RATE", nullptr},
   {"abort_retry_speed", 'o', "Abort/Retry Speed", "I", &abort_retry_speed, "JTEST_ABORT_RETRY_SPEED", nullptr},
-  {"abort_retry_bytes", ' ', "Abort/Retry Threshhold (bytes)", "I", &abort_retry_bytes, "JTEST_ABORT_RETRY_THRESHHOLD_BYTES", nullptr},
+  {"abort_retry_bytes", ' ', "Abort/Retry Threshhold (bytes)", "I", &abort_retry_bytes, "JTEST_ABORT_RETRY_THRESHHOLD_BYTES",
+   nullptr},
   {"abort_retry_secs", ' ', "Abort/Retry Threshhold (secs)", "I", &abort_retry_secs, "JTEST_ABORT_RETRY_THRESHHOLD_SECS", nullptr},
   {"reload_rate", 'W', "Reload Rate", "D", &reload_rate, "JTEST_RELOAD_RATE", nullptr},
   {"compd_port", 'O', "Compd port", "I", &compd_port, "JTEST_COMPD_PORT", nullptr},
@@ -388,7 +389,15 @@ struct FD {
   }
 
   void close();
-  FD() : base_url(nullptr), req_header(nullptr), response_header(nullptr), keepalive(0), nalternate(0), ip(0), binary(0), ftp_data_fd(0)
+  FD()
+    : base_url(nullptr),
+      req_header(nullptr),
+      response_header(nullptr),
+      keepalive(0),
+      nalternate(0),
+      ip(0),
+      binary(0),
+      ftp_data_fd(0)
   {
     ink_zero(name);
     reset();
