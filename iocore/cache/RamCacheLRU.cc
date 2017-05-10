@@ -35,9 +35,9 @@ struct RamCacheLRUEntry {
 #define ENTRY_OVERHEAD 128 // per-entry overhead to consider when computing sizes
 
 struct RamCacheLRU : public RamCache {
-  int64_t max_bytes;
-  int64_t bytes;
-  int64_t objects;
+  int64_t max_bytes = 0;
+  int64_t bytes = 0;
+  int64_t objects = 0;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
   int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0) override;
@@ -48,17 +48,15 @@ struct RamCacheLRU : public RamCache {
   void init(int64_t max_bytes, Vol *vol) override;
 
   // private
-  uint16_t *seen;
+  uint16_t *seen = nullptr;
   Que(RamCacheLRUEntry, lru_link) lru;
-  DList(RamCacheLRUEntry, hash_link) * bucket;
-  int nbuckets;
-  int ibuckets;
-  Vol *vol;
+  DList(RamCacheLRUEntry, hash_link) * bucket = nullptr;
+  int nbuckets = 0;
+  int ibuckets = 0;
+  Vol *vol = nullptr;
 
   void resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
-
-  RamCacheLRU() : bytes(0), objects(0), seen(nullptr), bucket(nullptr), nbuckets(0), ibuckets(0), vol(nullptr) {}
 };
 
 int64_t
