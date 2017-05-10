@@ -22,10 +22,10 @@
  */
 
 #include <ts/ts.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <string.h>
+#include <cstdlib>
+#include <cerrno>
+#include <cinttypes>
+#include <cstring>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>

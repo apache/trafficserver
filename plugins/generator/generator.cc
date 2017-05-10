@@ -23,13 +23,13 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <errno.h>
-#include <inttypes.h>
+#include <cerrno>
+#include <cinttypes>
 #include <iterator>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <unistd.h>
 
 // Generator plugin
@@ -626,7 +626,7 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
 }
 
 static void
-GeneratorInitialize(void)
+GeneratorInitialize()
 {
   TxnHook = TSContCreate(GeneratorTxnHook, nullptr);
   memset(GeneratorData, 'x', sizeof(GeneratorData));

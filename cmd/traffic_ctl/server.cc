@@ -27,10 +27,11 @@ static int drain   = 0;
 static int manager = 0;
 
 static int
-restart(unsigned argc, const char **argv, unsigned flags)
+restart(unsigned argc, const char **argv)
 {
   TSMgmtError error;
-  const char *usage = (flags & TS_RESTART_OPT_CLUSTER) ? "cluster restart [OPTIONS]" : "server restart [OPTIONS]";
+  const char *usage = "server restart [OPTIONS]";
+  unsigned flags    = TS_RESTART_OPT_NONE;
 
   const ArgumentDescription opts[] = {
     {"drain", '-', "Wait for client connections to drain before restarting", "F", &drain, nullptr, nullptr},
@@ -52,7 +53,7 @@ restart(unsigned argc, const char **argv, unsigned flags)
   }
 
   if (error != TS_ERR_OKAY) {
-    CtrlMgmtError(error, "%s restart failed", (flags & TS_RESTART_OPT_CLUSTER) ? "cluster" : "server");
+    CtrlMgmtError(error, "server restart failed");
     return CTRL_EX_ERROR;
   }
 
@@ -60,15 +61,9 @@ restart(unsigned argc, const char **argv, unsigned flags)
 }
 
 static int
-cluster_restart(unsigned argc, const char **argv)
-{
-  return restart(argc, argv, TS_RESTART_OPT_CLUSTER);
-}
-
-static int
 server_restart(unsigned argc, const char **argv)
 {
-  return restart(argc, argv, TS_RESTART_OPT_NONE);
+  return restart(argc, argv);
 }
 
 static int
@@ -165,17 +160,6 @@ server_start(unsigned argc, const char **argv)
   }
 
   return CTRL_EX_OK;
-}
-
-int
-subcommand_cluster(unsigned argc, const char **argv)
-{
-  const subcommand commands[] = {
-    {cluster_restart, "restart", "Restart the Traffic Server cluster"},
-    {CtrlUnimplementedCommand, "status", "Show the cluster status"},
-  };
-
-  return CtrlGenericSubcommand("cluster", commands, countof(commands), argc, argv);
 }
 
 int

@@ -63,7 +63,7 @@ certinfo_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/
 static int ssl_stapling_index = -1;
 
 void
-ssl_stapling_ex_init(void)
+ssl_stapling_ex_init()
 {
   if (ssl_stapling_index != -1)
     return;

@@ -23,10 +23,10 @@
 
 #include "ts/ink_defs.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <climits>
+#include <cstring>
 #include <string>
 #include <list>
 #include <arpa/inet.h>
@@ -559,7 +559,7 @@ removeCacheKey(TSHttpTxn txnp)
     TSCacheRemove(contp, cacheKey);
     result = true;
     TSError("[esi][%s] TSCacheRemoved", __FUNCTION__);
-  } while (0);
+  } while (false);
 
   if (cacheKey != nullptr) {
     TSCacheKeyDestroy(cacheKey);
@@ -1325,7 +1325,7 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool *intercept_header, bo
     }
 
     retval = true;
-  } while (0);
+  } while (false);
 
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   return retval;

@@ -20,7 +20,7 @@
 //
 //
 #include <arpa/inet.h>
-#include <string.h>
+#include <cstring>
 
 #include "ts/ts.h"
 
@@ -345,7 +345,7 @@ OperatorSetRedirect::exec(const Resources &res) const
     query             = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
     if ((get_oper_modifiers() & OPER_QSA) && (query_len > 0)) {
       TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
-      std::string connector = (value.find("?") == std::string::npos) ? "?" : "&";
+      std::string connector = (value.find('?') == std::string::npos) ? "?" : "&";
       value.append(connector);
       value.append(query, query_len);
     }
@@ -878,6 +878,7 @@ void
 OperatorSetDebug::initialize_hooks()
 {
   add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
 void

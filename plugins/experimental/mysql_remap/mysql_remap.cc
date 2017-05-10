@@ -18,7 +18,7 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
 
 #include "mysql/mysql.h"
@@ -118,7 +118,7 @@ do_mysql_remap(TSCont contp, TSHttpTxn txnp)
     TSUrlHostSet(reqp, url_loc, row[1], -1);
     TSUrlSchemeSet(reqp, url_loc, row[0], -1);
     TSUrlPortSet(reqp, url_loc, atoi(row[2]));
-  } while (0);
+  } while (false);
 
   ret_val = true;
 
@@ -208,8 +208,8 @@ TSPluginInit(int argc, const char *argv[])
 
   host     = iniparser_getstring(ini, "mysql_remap:mysql_host", (char *)"localhost");
   port     = iniparser_getint(ini, "mysql_remap:mysql_port", 3306);
-  username = iniparser_getstring(ini, "mysql_remap:mysql_username", NULL);
-  password = iniparser_getstring(ini, "mysql_remap:mysql_password", NULL);
+  username = iniparser_getstring(ini, "mysql_remap:mysql_username", nullptr);
+  password = iniparser_getstring(ini, "mysql_remap:mysql_password", nullptr);
   db       = iniparser_getstring(ini, "mysql_remap:mysql_database", (char *)"mysql_remap");
 
   if (mysql_library_init(0, NULL, NULL)) {

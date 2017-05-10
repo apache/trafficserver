@@ -203,11 +203,6 @@ typedef enum /* header information types */
   TS_HDR_CLIENT_IP,
   TS_HDR_UNDEFINED } TSHdrT;
 
-typedef enum /* indicate if ICP parent cache or ICP sibling cache */
-{ TS_ICP_PARENT,
-  TS_ICP_SIBLING,
-  TS_ICP_UNDEFINED } TSIcpT;
-
 /* TODO: This should be removed */
 typedef enum /* access privileges to news articles cached by Traffic Server  */
 { TS_IP_ALLOW_ALLOW,
@@ -274,7 +269,6 @@ typedef enum {
   TS_FNAME_CACHE_OBJ,       /* cache.config */
   TS_FNAME_CONGESTION,      /* congestion.config */
   TS_FNAME_HOSTING,         /* hosting.config */
-  TS_FNAME_ICP_PEER,        /* icp.config */
   TS_FNAME_IP_ALLOW,        /* ip_allow.config */
   TS_FNAME_PARENT_PROXY,    /* parent.config */
   TS_FNAME_VOLUME,          /* volume.config */
@@ -283,7 +277,6 @@ typedef enum {
   TS_FNAME_SOCKS,           /* socks.config */
   TS_FNAME_SPLIT_DNS,       /* splitdns.config */
   TS_FNAME_STORAGE,         /* storage.config */
-  TS_FNAME_VADDRS,          /* vaddrs.config */
   TS_FNAME_VSCAN,           /* vscan.config */
   TS_FNAME_VS_TRUSTED_HOST, /* trusted-host.config */
   TS_FNAME_VS_EXTENSION,    /* extensions.config */
@@ -297,7 +290,6 @@ typedef enum {
 typedef enum {
   TS_CACHE_NEVER, /* cache.config */
   TS_CACHE_IGNORE_NO_CACHE,
-  TS_CACHE_CLUSTER_CACHE_LOCAL,
   TS_CACHE_IGNORE_CLIENT_NO_CACHE,
   TS_CACHE_IGNORE_SERVER_NO_CACHE,
   TS_CACHE_PIN_IN_CACHE,
@@ -306,7 +298,6 @@ typedef enum {
   TS_CACHE_AUTH_CONTENT,
   TS_CONGESTION, /* congestion.config */
   TS_HOSTING,    /* hosting.config */
-  TS_ICP,        /* icp.config */
   TS_IP_ALLOW,   /* ip_allow.config */
   TS_PP_PARENT,  /* parent.config */
   TS_PP_GO_DIRECT,
@@ -321,7 +312,6 @@ typedef enum {
   TS_SOCKS_MULTIPLE,
   TS_SPLIT_DNS, /* splitdns.config */
   TS_STORAGE,   /* storage.config */
-  TS_VADDRS,    /* vaddrs.config */
   TS_TYPE_UNDEFINED,
   TS_TYPE_COMMENT /* for internal use only */
 } TSRuleTypeT;
@@ -334,9 +324,8 @@ typedef enum {
 } TSInitOptionT;
 
 typedef enum {
-  TS_RESTART_OPT_NONE    = 0x0,
-  TS_RESTART_OPT_CLUSTER = 0x01, /* Restart across the cluster */
-  TS_RESTART_OPT_DRAIN   = 0x02, /* Wait for traffic to drain before restarting. */
+  TS_RESTART_OPT_NONE  = 0x0,
+  TS_RESTART_OPT_DRAIN = 0x02, /* Wait for traffic to drain before restarting. */
 } TSRestartOptionT;
 
 /***************************************************************************
@@ -514,22 +503,6 @@ typedef struct {
   TSIntList volumes; /* must be a list of ints */
 } TSHostingEle;
 
-/* icp.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  char *peer_hostname;        /* hostname of icp peer; ("localhost" name reserved for Traffic Server) */
-  TSIpAddr peer_host_ip_addr; /* ip address of icp peer (not required if peer_hostname) */
-  TSIcpT peer_type;           /* 1: icp parent, 2: icp sibling */
-  int peer_proxy_port;        /* port number of the TCP port used by the ICP peer for proxy communication */
-  int peer_icp_port;          /* port number of the UDP port used by the ICP peer for ICP communication  */
-  bool is_multicast;          /* false: multicast not enabled; true: multicast enabled */
-  TSIpAddr mc_ip_addr;        /* multicast ip (can be 0 if is_multicast == false */
-  TSMcTtlT mc_ttl;            /* multicast time to live; either IP multicast datagrams will not
-                                  be forwarded beyond a single subnetwork, or allow delivery
-                                  of IP multicast datagrams to more than one subnet
-                                  (can be UNDEFINED if is_multicast == false */
-} TSIcpEle;
-
 /* ip_allow.config */
 typedef struct {
   TSCfgEle cfg_ele;
@@ -617,14 +590,6 @@ typedef struct {
   char *pathname; /* the name of a disk partition, directory, or file */
   int size;       /* size of the named pathname (in bytes); optional if raw disk partitions */
 } TSStorageEle;
-
-/* vaddrs.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  TSIpAddr ip_addr; /* virtual ip address */
-  char *intr;       /* network interface name (hme0) */
-  int sub_intr;     /* the sub-interface number; must be between 1 and 255 */
-} TSVirtIpAddrEle;
 
 /* rmserver.cfg */
 typedef struct {
@@ -754,8 +719,6 @@ tsapi TSCongestionEle *TSCongestionEleCreate();
 tsapi void TSCongestionEleDestroy(TSCongestionEle *ele);
 tsapi TSHostingEle *TSHostingEleCreate();
 tsapi void TSHostingEleDestroy(TSHostingEle *ele);
-tsapi TSIcpEle *TSIcpEleCreate();
-tsapi void TSIcpEleDestroy(TSIcpEle *ele);
 tsapi TSIpAllowEle *TSIpAllowEleCreate();
 tsapi void TSIpAllowEleDestroy(TSIpAllowEle *ele);
 tsapi TSParentProxyEle *TSParentProxyEleCreate(TSRuleTypeT type);
@@ -772,8 +735,6 @@ tsapi TSSplitDnsEle *TSSplitDnsEleCreate();
 tsapi void TSSplitDnsEleDestroy(TSSplitDnsEle *ele);
 tsapi TSStorageEle *TSStorageEleCreate();
 tsapi void TSStorageEleDestroy(TSStorageEle *ele);
-tsapi TSVirtIpAddrEle *TSVirtIpAddrEleCreate();
-tsapi void TSVirtIpAddrEleDestroy(TSVirtIpAddrEle *ele);
 /*--- Ele helper operations -------------------------------------*/
 
 /* TSIsValid: checks if the fields in the ele are all valid
@@ -971,10 +932,9 @@ tsapi TSMgmtError TSSnapshotGetMlt(TSStringList snapshots);
 
 /*--- statistics operations -----------------------------------------------*/
 /* TSStatsReset: sets all the statistics variables to their default values
- * Input: cluster - Reset the stats clusterwide or not
  * Outpue: TSErrr
  */
-tsapi TSMgmtError TSStatsReset(bool cluster, const char *name);
+tsapi TSMgmtError TSStatsReset(const char *name);
 
 /*--- variable operations -------------------------------------------------*/
 /* TSRecordGet: gets a record

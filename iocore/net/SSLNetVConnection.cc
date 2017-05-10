@@ -471,7 +471,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       // the client hello message back into the standard read.vio
       // so it will get forwarded onto the origin server
       if (!this->getSSLHandShakeComplete()) {
-        this->sslHandShakeComplete = 1;
+        this->sslHandShakeComplete = true;
 
         // Copy over all data already read in during the SSL_accept
         // (the client hello message)
@@ -850,8 +850,8 @@ SSLNetVConnection::do_io_close(int lerrno)
 void
 SSLNetVConnection::free(EThread *t)
 {
-  got_remote_addr = 0;
-  got_local_addr  = 0;
+  got_remote_addr = false;
+  got_local_addr  = false;
   read.vio.mutex.clear();
   write.vio.mutex.clear();
   this->mutex.clear();
@@ -950,7 +950,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       // directly into blind tunnel mode
       if (cc && SSLCertContext::OPT_TUNNEL == cc->opt && this->is_transparent) {
         this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-        sslHandShakeComplete = 1;
+        sslHandShakeComplete = true;
         SSL_free(this->ssl);
         this->ssl = nullptr;
         return EVENT_DONE;
@@ -1072,7 +1072,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // over the buffered handshake packets to the O.S.
     return EVENT_DONE;
   } else if (SSL_HOOK_OP_TERMINATE == hookOpRequested) {
-    sslHandShakeComplete = 1;
+    sslHandShakeComplete = true;
     return EVENT_DONE;
   }
 
@@ -1102,7 +1102,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
       SSLDebugVC(this, "Data does not look like SSL handshake, starting blind tunnel");
       this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      sslHandShakeComplete = 0;
+      sslHandShakeComplete = false;
       return EVENT_CONT;
     }
   }
@@ -1210,7 +1210,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 #if defined(SSL_ERROR_WANT_SNI_RESOLVE) || defined(SSL_ERROR_WANT_X509_LOOKUP)
     if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || SSL_HOOK_OP_TUNNEL == hookOpRequested) {
       this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      sslHandShakeComplete = 0;
+      sslHandShakeComplete = false;
       return EVENT_CONT;
     } else {
       //  Stopping for some other reason, perhaps loading certificate
@@ -1338,9 +1338,8 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 }
 
 void
-SSLNetVConnection::registerNextProtocolSet(const SSLNextProtocolSet *s)
+SSLNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s)
 {
-  ink_release_assert(this->npnSet == nullptr);
   this->npnSet = s;
 }
 
@@ -1353,7 +1352,6 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   ink_release_assert(netvc != nullptr);
-
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(out, outlen)) {
     // Successful return tells OpenSSL to advertise.
     return SSL_TLSEXT_ERR_OK;
@@ -1373,7 +1371,6 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
   unsigned npnsz           = 0;
 
   ink_release_assert(netvc != nullptr);
-
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(&npn, &npnsz)) {
 // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
 // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
@@ -1549,13 +1546,13 @@ ts::StringView
 SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 {
   // Prefix for the string the SSL library hands back.
-  static const ts::StringView PREFIX("TLSv1");
+  static const ts::StringView PREFIX("TLSv1", ts::StringView::literal);
 
   ts::StringView retval;
   ts::StringView proto(proto_string);
 
-  if (proto.size() >= PREFIX.size() && strncmp(proto.ptr(), PREFIX.ptr(), PREFIX.size()) == 0) {
-    proto += PREFIX.size();
+  if (PREFIX.isNoCasePrefixOf(proto)) {
+    proto += PREFIX.size(); // skip the prefix part.
     if (proto.size() <= 0) {
       retval = IP_PROTO_TAG_TLS_1_0;
     } else if (*proto == '.') {

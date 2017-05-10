@@ -431,13 +431,14 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon)
     con[icon].close();
   }
 
-  if (con[icon].connect(target, DNSConnection::Options()
-                                  .setNonBlockingConnect(true)
-                                  .setNonBlockingIo(true)
-                                  .setUseTcp(false)
-                                  .setBindRandomPort(true)
-                                  .setLocalIpv6(&local_ipv6.sa)
-                                  .setLocalIpv4(&local_ipv4.sa)) < 0) {
+  if (con[icon].connect(target,
+                        DNSConnection::Options()
+                          .setNonBlockingConnect(true)
+                          .setNonBlockingIo(true)
+                          .setUseTcp(false)
+                          .setBindRandomPort(true)
+                          .setLocalIpv6(&local_ipv6.sa)
+                          .setLocalIpv4(&local_ipv4.sa)) < 0) {
     Debug("dns", "opening connection %s FAILED for %d", ip_text, icon);
     if (!failed) {
       if (dns_ns_rr)
@@ -606,7 +607,7 @@ void
 DNSHandler::switch_named(int ndx)
 {
   for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
-    e->written_flag = 0;
+    e->written_flag = false;
     if (e->retries < dns_retries)
       ++(e->retries); // give them another chance
   }
@@ -681,7 +682,7 @@ DNSHandler::rr_failure(int ndx)
     // actual retries will be done in retry_named called from mainEvent
     // mark any outstanding requests as not sent for later retry
     for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
-      e->written_flag = 0;
+      e->written_flag = false;
       if (e->retries < dns_retries)
         ++(e->retries); // give them another chance
       --in_flight;
@@ -691,7 +692,7 @@ DNSHandler::rr_failure(int ndx)
     // move outstanding requests that were sent to this nameserver to another
     for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
       if (e->which_ns == ndx) {
-        e->written_flag = 0;
+        e->written_flag = false;
         if (e->retries < dns_retries)
           ++(e->retries); // give them another chance
         --in_flight;
@@ -727,7 +728,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   ip_text_buffer ipbuff1, ipbuff2;
 
   while ((dnsc = (DNSConnection *)triggered.dequeue())) {
-    while (1) {
+    while (true) {
       IpEndpoint from_ip;
       socklen_t from_length = sizeof(from_ip);
 
@@ -841,10 +842,10 @@ get_dns(DNSHandler *h, uint16_t id)
 {
   for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *)e->link.next) {
     if (e->once_written_flag) {
-      for (int j = 0; j < MAX_DNS_RETRIES; j++) {
-        if (e->id[j] == id) {
+      for (int j : e->id) {
+        if (j == id) {
           return e;
-        } else if (e->id[j] < 0) {
+        } else if (j < 0) {
           goto Lnext;
         }
       }
@@ -1213,17 +1214,17 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
       Debug("dns", "failed lock for result %s", e->qname);
       goto Lretry;
     }
-    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
-      if (e->id[i] < 0)
+    for (int i : e->id) {
+      if (i < 0)
         break;
-      h->release_query_id(e->id[i]);
+      h->release_query_id(i);
     }
     e->postEvent(0, nullptr);
   } else {
-    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
-      if (e->id[i] < 0)
+    for (int i : e->id) {
+      if (i < 0)
         break;
-      h->release_query_id(e->id[i]);
+      h->release_query_id(i);
     }
     e->mutex = e->action.mutex;
     SET_CONTINUATION_HANDLER(e, &DNSEntry::postEvent);

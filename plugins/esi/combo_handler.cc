@@ -26,7 +26,7 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
-#include <time.h>
+#include <ctime>
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <limits>

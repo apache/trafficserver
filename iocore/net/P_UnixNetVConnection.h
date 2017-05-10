@@ -36,6 +36,7 @@
 #include "I_NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
+#include "P_NetAccept.h"
 
 class UnixNetVConnection;
 class NetHandler;
@@ -174,33 +175,8 @@ public:
   /////////////////////////////////////////////////////////////////
   UnixNetVConnection();
 
-  int
-  populate_protocol(ts::StringView *results, int n) const override
-  {
-    int retval = 0;
-    if (n > retval) {
-      if (!(results[retval] = options.get_proto_string()).isEmpty())
-        ++retval;
-      if (n > retval) {
-        if (!(results[retval] = options.get_family_string()).isEmpty())
-          ++retval;
-      }
-    }
-    return retval;
-  }
-
-  const char *
-  protocol_contains(ts::StringView tag) const override
-  {
-    ts::StringView retval = options.get_proto_string();
-    if (strncmp(tag.ptr(), retval.ptr(), tag.size()) != 0) {
-      retval = options.get_family_string();
-      if (strncmp(tag.ptr(), retval.ptr(), tag.size()) != 0) {
-        retval.clear();
-      }
-    }
-    return retval.ptr();
-  }
+  int populate_protocol(ts::StringView *results, int n) const override;
+  const char *protocol_contains(ts::StringView tag) const override;
 
 private:
   UnixNetVConnection(const NetVConnection &);
@@ -290,6 +266,7 @@ public:
   ink_hrtime submit_time;
   OOB_callback *oob_ptr;
   bool from_accept_thread;
+  NetAccept *accept_object;
 
   // es - origin_trace associated connections
   bool origin_trace;

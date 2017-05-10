@@ -60,7 +60,6 @@ i_am_the_record_owner(RecT rec_type)
       return true;
     case RECT_CONFIG:
     case RECT_NODE:
-    case RECT_CLUSTER:
     case RECT_LOCAL:
       return false;
     default:
@@ -72,7 +71,6 @@ i_am_the_record_owner(RecT rec_type)
     case RECT_CONFIG:
     case RECT_PROCESS:
     case RECT_NODE:
-    case RECT_CLUSTER:
     case RECT_LOCAL:
     case RECT_PLUGIN:
       return true;
@@ -179,7 +177,7 @@ struct sync_cont : public Continuation {
     m_tb = new TextBuffer(65536);
   }
 
-  ~sync_cont()
+  ~sync_cont() override
   {
     if (m_tb != nullptr) {
       delete m_tb;
@@ -289,7 +287,7 @@ RecProcessInitMessage(RecModeT mode_type)
 // RecProcessStart
 //-------------------------------------------------------------------------
 int
-RecProcessStart(void)
+RecProcessStart()
 {
   if (g_started) {
     return REC_ERR_OKAY;

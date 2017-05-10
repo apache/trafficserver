@@ -44,7 +44,7 @@ VariableExpander::expand(const Resources &res)
       break;
     }
 
-    std::string::size_type end = result.find(">", start);
+    std::string::size_type end = result.find('>', start);
     if (end == std::string::npos) {
       break;
     }

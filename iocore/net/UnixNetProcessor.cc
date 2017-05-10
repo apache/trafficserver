@@ -24,10 +24,13 @@
 #include "P_Net.h"
 #include "ts/InkErrno.h"
 #include "ts/ink_sock.h"
+#include "P_SSLNextProtocolAccept.h"
 
 // For Stat Pages
 #include "StatPages.h"
 
+volatile int net_accept_number = 0;
+extern std::vector<NetAccept *> naVec;
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
 NetProcessor::AcceptOptions &
@@ -91,6 +94,8 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   char thr_name[MAX_THREAD_NAME_LENGTH];
 
   NetAccept *na = createNetAccept(opt);
+  na->id        = ink_atomic_increment(&net_accept_number, 1);
+  Debug("iocore_net_accept", "creating new net accept number %d", na->id);
 
   // Fill in accept thread from configuration if necessary.
   if (opt.accept_threads < 0) {
@@ -125,6 +130,10 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   if (should_filter_int > 0 && opt.etype == ET_NET)
     na->server.http_accept_filter = true;
 
+  SessionAccept *sa = dynamic_cast<SessionAccept *>(cont);
+  na->proxyPort     = sa ? sa->proxyPort : nullptr;
+  na->snpa          = dynamic_cast<SSLNextProtocolAccept *>(cont);
+
   na->action_         = new NetAcceptAction();
   *na->action_        = cont;
   na->action_->server = &na->server;
@@ -138,7 +147,6 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
       if (0 == na->do_listen(BLOCKING)) {
         for (int i = 1; i < accept_threads; ++i) {
           NetAccept *a = na->clone();
-
           snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i - 1, ats_ip_port_host_order(&accept_ip));
           a->init_accept_loop(thr_name);
           Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, ats_ip_port_host_order(&accept_ip));
@@ -164,7 +172,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   } else {
     na->init_accept(nullptr);
   }
-
+  naVec.push_back(na);
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
@@ -371,7 +379,7 @@ struct CheckConnect : public Continuation {
     reader = buf->alloc_reader();
   }
 
-  ~CheckConnect()
+  ~CheckConnect() override
   {
     buf->dealloc_all_readers();
     buf->clear();

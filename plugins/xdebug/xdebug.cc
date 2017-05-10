@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <strings.h>
-#include <string.h>
+#include <cstring>
 #include <getopt.h>
 
 #include "ts/ts.h"

@@ -115,8 +115,8 @@ Utils::parseKeyValueConfig(const std::list<string> &lines, KeyValueMap &kvMap, H
 {
   string key, value;
   std::istringstream iss;
-  for (std::list<string>::const_iterator list_iter = lines.begin(); list_iter != lines.end(); ++list_iter) {
-    const string &conf_line = *list_iter; // handy reference
+  for (const auto &conf_line : lines) {
+    // handy reference
     if (!conf_line.size() || (conf_line[0] == '#')) {
       continue;
     }

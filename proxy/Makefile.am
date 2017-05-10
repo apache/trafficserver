@@ -125,8 +125,6 @@ LUAJIT = \
 EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
 
 traffic_server_SOURCES = \
-  AbstractBuffer.cc \
-  AbstractBuffer.h \
   CacheControl.cc \
   CacheControl.h \
   ControlBase.cc \
@@ -138,14 +136,6 @@ traffic_server_SOURCES = \
   Crash.cc \
   EventName.cc \
   FetchSM.cc \
-  ICP.cc \
-  ICP.h \
-  ICPConfig.cc \
-  ICPProcessor.cc \
-  ICPProcessor.h \
-  ICPStats.cc \
-  ICPevents.h \
-  ICPlog.h \
   IPAllow.cc \
   IPAllow.h \
   InkAPI.cc \
@@ -197,11 +187,9 @@ traffic_server_LDADD = \
   shared/libdiagsconfig.a  \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
-  $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
   $(top_builddir)/iocore/hostdb/libinkhostdb.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
-  $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/cache/libinkcache.a \
   $(top_builddir)/iocore/aio/libinkaio.a \
   $(top_builddir)/lib/ts/libtsutil.la \

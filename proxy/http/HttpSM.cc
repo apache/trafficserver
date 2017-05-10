@@ -34,7 +34,6 @@
 #include "StatPages.h"
 #include "Log.h"
 #include "LogAccessHttp.h"
-#include "ICP.h"
 #include "PluginVC.h"
 #include "ReverseProxy.h"
 #include "RemapProcessor.h"
@@ -393,20 +392,6 @@ HttpSM::init()
   // Simply point to the global config for the time being, no need to copy this
   // entire struct if nothing is going to change it.
   t_state.txn_conf = &t_state.http_config_param->oride;
-
-  // update the cache info config structure so that
-  // selection from alternates happens correctly.
-  t_state.cache_info.config.cache_global_user_agent_header  = t_state.txn_conf->global_user_agent_header ? true : false;
-  t_state.cache_info.config.ignore_accept_mismatch          = t_state.http_config_param->ignore_accept_mismatch;
-  t_state.cache_info.config.ignore_accept_language_mismatch = t_state.http_config_param->ignore_accept_language_mismatch;
-  t_state.cache_info.config.ignore_accept_encoding_mismatch = t_state.http_config_param->ignore_accept_encoding_mismatch;
-  t_state.cache_info.config.ignore_accept_charset_mismatch  = t_state.http_config_param->ignore_accept_charset_mismatch;
-  t_state.cache_info.config.cache_enable_default_vary_headers =
-    t_state.http_config_param->cache_enable_default_vary_headers ? true : false;
-
-  t_state.cache_info.config.cache_vary_default_text   = t_state.http_config_param->cache_vary_default_text;
-  t_state.cache_info.config.cache_vary_default_images = t_state.http_config_param->cache_vary_default_images;
-  t_state.cache_info.config.cache_vary_default_other  = t_state.http_config_param->cache_vary_default_other;
 
   t_state.init();
 
@@ -2104,7 +2089,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
     HostDBRoundRobin *rr = r->rr();
     HostDBInfo *srv      = nullptr;
     if (rr) {
-      srv = rr->select_best_srv(t_state.dns_info.srv_hostname, &mutex->thread_holding->generator, ink_cluster_time(),
+      srv = rr->select_best_srv(t_state.dns_info.srv_hostname, &mutex->thread_holding->generator, ink_local_time(),
                                 (int)t_state.txn_conf->down_server_timeout);
     }
     if (!srv) {
@@ -2150,7 +2135,7 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
   }
 
   if (r && !r->is_failed()) {
-    ink_time_t now                    = ink_cluster_time();
+    ink_time_t now                    = ink_local_time();
     HostDBInfo *ret                   = nullptr;
     t_state.dns_info.lookup_success   = true;
     t_state.dns_info.lookup_validated = true;
@@ -2372,94 +2357,6 @@ HttpSM::state_handle_stat_page(int event, void *data)
     ink_release_assert(0);
     break;
   }
-
-  return 0;
-}
-
-///////////////////////////////////////////////////////////////
-//
-//  HttpSM::state_auth_callback()
-//
-///////////////////////////////////////////////////////////////
-// int
-// HttpSM::state_auth_callback(int event, void *data)
-//{
-// STATE_ENTER(&HttpSM::state_auth_lookup, event);
-
-// ink_release_assert(ua_entry != NULL);
-// pending_action = NULL;
-
-// if (event == AUTH_MODULE_EVENT) {
-// authAdapter.HandleAuthResponse(event, data);
-//} else {
-// ink_release_assert(!"Unknown authentication module event");
-//}
-/************************************************************************\
- * pending_action=ACTION_RESULT_DONE only if Authentication step has    *
- *                                   been done & authorization is left  *
- * pending_action=NULL only if we have to set_next_state.               *
- * pending_action=something else. Don't do anything.                    *
- *                                One more callback is pending          *
-\************************************************************************/
-
-// if (authAdapter.stateChangeRequired()) {
-// set_next_state();
-//}
-// OLD AND UGLY: if (pending_action == NULL) {
-// OLD AND UGLY:        pending_action=NULL;
-// OLD AND UGLY:     } else if(pending_action == ACTION_RESULT_DONE) {
-// OLD AND UGLY:        pending_action=NULL;
-// OLD AND UGLY:     }
-
-// return EVENT_DONE;
-//}
-
-///////////////////////////////////////////////////////////////
-//
-//  HttpSM::state_icp_lookup()
-//
-///////////////////////////////////////////////////////////////
-int
-HttpSM::state_icp_lookup(int event, void *data)
-{
-  STATE_ENTER(&HttpSM::state_icp_lookup, event);
-
-  // ua_entry is NULL for scheduled updates
-  ink_release_assert(ua_entry != nullptr || t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE ||
-                     t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
-  pending_action = nullptr;
-
-  switch (event) {
-  case ICP_LOOKUP_FOUND:
-
-    DebugSM("http", "ICP says ICP_LOOKUP_FOUND");
-    t_state.icp_lookup_success = true;
-    t_state.icp_ip_result      = *(struct sockaddr_in *)data;
-
-    /*
-    *  Disable ICP loop detection since the Cidera network
-    *    insists on trying to preload the cache from a
-    *    a sibling cache.
-    *
-    *  // inhibit bad ICP looping behavior
-    *  if (t_state.icp_ip_result.sin_addr.s_addr ==
-    *    t_state.client_info.ip) {
-    *      DebugSM("http","Loop in ICP config, bypassing...");
-    *        t_state.icp_lookup_success = false;
-    *  }
-    */
-    break;
-
-  case ICP_LOOKUP_FAILED:
-    DebugSM("http", "ICP says ICP_LOOKUP_FAILED");
-    t_state.icp_lookup_success = false;
-    break;
-  default:
-    ink_release_assert(0);
-    break;
-  }
-
-  call_transact_and_set_next_state(HttpTransact::HandleICPLookup);
 
   return 0;
 }
@@ -2770,25 +2667,39 @@ HttpSM::tunnel_handler_post(int event, void *data)
     return 0; // Cannot do anything if there is no producer
   }
 
-  if (event != HTTP_TUNNEL_EVENT_DONE) {
-    if ((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS)) {
-      if (ua_entry->write_buffer) {
-        free_MIOBuffer(ua_entry->write_buffer);
-        ua_entry->write_buffer = nullptr;
-      }
+  switch (event) {
+  case HTTP_TUNNEL_EVENT_DONE: // Tunnel done.
+    break;
+  case VC_EVENT_WRITE_READY: // iocore may callback first before send.
+    return 0;
+  case VC_EVENT_EOS:                // SSLNetVC may callback EOS during write error (6.0.x or early)
+  case VC_EVENT_ERROR:              // Send HTTP 408 error
+  case VC_EVENT_WRITE_COMPLETE:     // tunnel_handler_post_ua has sent HTTP 408 response
+  case VC_EVENT_INACTIVITY_TIMEOUT: // ua_session timeout during sending the HTTP 408 response
+  case VC_EVENT_ACTIVE_TIMEOUT:     // ua_session timeout
+    if (ua_entry->write_buffer) {
+      free_MIOBuffer(ua_entry->write_buffer);
+      ua_entry->write_buffer = nullptr;
+      ua_entry->vc->do_io_write(this, 0, nullptr);
     }
+    // The if statement will always true since these codes are all for HTTP 408 response sending. - by oknet xu
     if (p->handler_state == HTTP_SM_POST_UA_FAIL) {
       Debug("http_tunnel", "cleanup tunnel in tunnel_handler_post");
       hsm_release_assert(ua_entry->in_tunnel == true);
-      ink_assert((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS));
+      tunnel_handler_post_or_put(p);
       vc_table.cleanup_all();
       tunnel.chain_abort_all(p);
       p->read_vio = nullptr;
       p->vc->do_io_close(EHTTP_ERROR);
-      tunnel_handler_post_or_put(p);
       tunnel.kill_tunnel();
       return 0;
     }
+    break;
+  case VC_EVENT_READ_READY:
+  case VC_EVENT_READ_COMPLETE:
+  default:
+    ink_assert(!"not reached");
+    return 0;
   }
 
   ink_assert(event == HTTP_TUNNEL_EVENT_DONE);
@@ -3518,7 +3429,12 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       nbytes = ua_entry->write_buffer->write(str_408_request_timeout_response, len_408_request_timeout_response);
       nbytes += ua_entry->write_buffer->write(t_state.internal_msg_buffer, t_state.internal_msg_buffer_size);
 
-      p->vc->do_io_write(this, nbytes, buf_start);
+      // The HttpSM default handler still is HttpSM::state_request_wait_for_transform_read.
+      // However, WRITE_COMPLETE/TIMEOUT/ERROR event should be managed/handled by tunnel_handler_post.
+      ua_entry->vc_handler = &HttpSM::tunnel_handler_post;
+      ua_entry->write_vio  = p->vc->do_io_write(this, nbytes, buf_start);
+      // Reset the inactivity timeout, otherwise the InactivityCop will callback again in the next second.
+      ua_session->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
       p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
       return 0;
     }
@@ -4561,7 +4477,7 @@ HttpSM::do_cache_lookup_and_read()
   Cache::generate_key(&key, c_url, t_state.txn_conf->cache_generation_number);
 
   Action *cache_action_handle =
-    cache_sm.open_read(&key, c_url, &t_state.hdr_info.client_request, &(t_state.cache_info.config),
+    cache_sm.open_read(&key, c_url, &t_state.hdr_info.client_request, t_state.txn_conf,
                        (time_t)((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for));
   //
   // pin_in_cache value is an open_write parameter.
@@ -4591,7 +4507,7 @@ HttpSM::do_cache_delete_all_alts(Continuation *cont)
 
   HttpCacheKey key;
   Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_generation_number);
-  cache_action_handle = cacheProcessor.remove(cont, &key, t_state.cache_control.cluster_cache_local);
+  cache_action_handle = cacheProcessor.remove(cont, &key);
   if (cont != nullptr) {
     if (cache_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
@@ -4804,7 +4720,7 @@ HttpSM::do_http_server_open(bool raw)
   }
 
   // Congestion Check
-  if (t_state.pCongestionEntry != NULL) {
+  if (t_state.pCongestionEntry != nullptr) {
     if (t_state.pCongestionEntry->F_congested() &&
         (!t_state.pCongestionEntry->proxy_retry(milestones[TS_MILESTONE_SERVER_CONNECT]))) {
       t_state.congestion_congested_or_failed = 1;
@@ -5111,23 +5027,6 @@ HttpSM::do_http_server_open(bool raw)
 }
 
 void
-HttpSM::do_icp_lookup()
-{
-  ink_assert(pending_action == nullptr);
-
-  URL *o_url = &t_state.cache_info.original_url;
-
-  Action *icp_lookup_action_handle = icpProcessor.ICPQuery(this, o_url->valid() ? o_url : t_state.cache_info.lookup_url);
-
-  if (icp_lookup_action_handle != ACTION_RESULT_DONE) {
-    ink_assert(!pending_action);
-    pending_action = icp_lookup_action_handle;
-  }
-
-  return;
-}
-
-void
 HttpSM::do_api_callout_internal()
 {
   if (t_state.backdoor_request) {
@@ -5248,7 +5147,7 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
   info->app.http_data.last_failure = time_down;
 
 #ifdef DEBUG
-  ink_assert(ink_cluster_time() + t_state.txn_conf->down_server_timeout > time_down);
+  ink_assert(ink_local_time() + t_state.txn_conf->down_server_timeout > time_down);
 #endif
 
   DebugSM("http", "[%" PRId64 "] hostdb update marking IP: %s as down", sm_id,
@@ -5297,7 +5196,7 @@ HttpSM::mark_server_down_on_client_abort()
   //  for revalidation or select it from a round     //
   //  robin set                                      //
   //                                                 //
-  //  Note: we do not want to mark parent or icp     //
+  //  Note: we do not want to mark parent            //
   //  proxies as down with this metric because       //
   //  that upstream proxy may be working but         //
   //  the actual origin server is one that is hung   //
@@ -7298,7 +7197,7 @@ HttpSM::set_next_state()
       DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for %s because it's loopback",
               t_state.dns_info.lookup_name);
       t_state.dns_info.lookup_success = true;
-      call_transact_and_set_next_state(NULL);
+      call_transact_and_set_next_state(nullptr);
       break;
     } else if (url_remap_mode == HttpTransact::URL_REMAP_FOR_OS && t_state.first_dns_lookup) {
       DebugSM("cdn", "Skipping DNS Lookup");
@@ -7584,12 +7483,6 @@ HttpSM::set_next_state()
 
     ink_assert(server_entry == nullptr);
     do_http_server_open(true);
-    break;
-  }
-
-  case HttpTransact::SM_ACTION_ICP_QUERY: {
-    HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_icp_lookup);
-    do_icp_lookup();
     break;
   }
 

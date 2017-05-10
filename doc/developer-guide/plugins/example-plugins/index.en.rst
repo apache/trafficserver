@@ -27,7 +27,7 @@ Example Plugins
 
    basic-authorization/index.en
    blacklist/index.en
-   query-remap/index.en
+   query_remap/index.en
 
 .. _developer-plugins-header-based-examples:
 

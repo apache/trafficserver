@@ -25,8 +25,8 @@
 #include "ts/ink_memory.h"
 #include "ts/Allocator.h"
 #include "ts/Arena.h"
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
 #define DEFAULT_ALLOC_SIZE 1024
 #define DEFAULT_BLOCK_SIZE (DEFAULT_ALLOC_SIZE - (sizeof(ArenaBlock) - 8))

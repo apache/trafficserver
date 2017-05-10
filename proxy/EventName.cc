@@ -22,14 +22,13 @@
  */
 
 #include "ts/ink_config.h"
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "P_EventSystem.h"
 // #include "I_Disk.h" unused
 #include "I_Cache.h"
 #include "I_Net.h"
-//#include "P_Cluster.h"
 #include "I_HostDB.h"
 #include "BaseManager.h"
 #include "P_RefCountCache.h"
@@ -75,18 +74,6 @@ event_int_to_string(int event, int blen, char *buffer)
   case NET_EVENT_ACCEPT_FAILED:
     return "NET_EVENT_ACCEPT_FAILED";
 
-#ifdef CLUSTER_CACHE
-  case CLUSTER_EVENT_CHANGE:
-    return "CLUSTER_EVENT_CHANGE";
-  case CLUSTER_EVENT_CONFIGURATION:
-    return "CLUSTER_EVENT_CONFIGURATION";
-  case CLUSTER_EVENT_OPEN:
-    return "CLUSTER_EVENT_OPEN";
-  case CLUSTER_EVENT_OPEN_FAILED:
-    return "CLUSTER_EVENT_OPEN_FAILED";
-  case CLUSTER_EVENT_STEAL_THREAD:
-    return "CLUSTER_EVENT_STEAL_THREAD";
-#endif
   case EVENT_HOST_DB_LOOKUP:
     return "EVENT_HOST_DB_LOOKUP";
   case EVENT_HOST_DB_GET_RESPONSE:

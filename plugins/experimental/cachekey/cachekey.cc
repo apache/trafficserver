@@ -21,8 +21,8 @@
  * @brief Cache key manipulation.
  */
 
-#include <string.h> /* strlen() */
-#include <sstream>  /* istringstream */
+#include <cstring> /* strlen() */
+#include <sstream> /* istringstream */
 #include "cachekey.h"
 
 static void
@@ -108,7 +108,7 @@ getKeyQuery(const char *query, int length, const ConfigQuery &config)
   T container;
 
   while (std::getline(istr, token, '&')) {
-    String::size_type pos(token.find_first_of("="));
+    String::size_type pos(token.find_first_of('='));
     String param(token.substr(0, pos == String::npos ? token.size() : pos));
 
     if (config.toBeAdded(param)) {
@@ -284,8 +284,8 @@ CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &pr
 
     StringVector captures;
     if (prefixCapture.process(hostAndPort, captures)) {
-      for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
-        append(*it);
+      for (auto &capture : captures) {
+        append(capture);
       }
       CacheKeyDebug("added host:port capture prefix, key: '%s'", _key.c_str());
     }
@@ -298,8 +298,8 @@ CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &pr
     if (!uri.empty()) {
       StringVector captures;
       if (prefixCaptureUri.process(uri, captures)) {
-        for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
-          append(*it);
+        for (auto &capture : captures) {
+          append(capture);
         }
         CacheKeyDebug("added URI capture prefix, key: '%s'", _key.c_str());
       }
@@ -341,8 +341,8 @@ CacheKey::appendPath(Pattern &pathCapture, Pattern &pathCaptureUri)
     if (!uri.empty()) {
       StringVector captures;
       if (pathCaptureUri.process(uri, captures)) {
-        for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
-          append(*it);
+        for (auto &capture : captures) {
+          append(capture);
         }
         CacheKeyDebug("added URI capture (path), key: '%s'", _key.c_str());
       }
@@ -356,8 +356,8 @@ CacheKey::appendPath(Pattern &pathCapture, Pattern &pathCaptureUri)
     if (!path.empty()) {
       StringVector captures;
       if (pathCapture.process(path, captures)) {
-        for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
-          append(*it);
+        for (auto &capture : captures) {
+          append(capture);
         }
         CacheKeyDebug("added path capture, key: '%s'", _key.c_str());
       }
@@ -458,7 +458,7 @@ CacheKey::appendCookies(const ConfigCookies &config)
       while (std::getline(istr, cookie, ';')) {
         ::ltrim(cookie); // Trim leading spaces.
 
-        String::size_type pos(cookie.find_first_of("="));
+        String::size_type pos(cookie.find_first_of('='));
         String name(cookie.substr(0, pos == String::npos ? cookie.size() : pos));
 
         /* We only add it to the cache key it is in the cookie set. */
@@ -554,8 +554,8 @@ CacheKey::appendUaCaptures(Pattern &config)
     StringVector captures;
 
     if (config.process(val, captures)) {
-      for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
-        append(*it);
+      for (auto &capture : captures) {
+        append(capture);
       }
     }
   }

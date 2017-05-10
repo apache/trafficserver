@@ -29,15 +29,15 @@
 
 #include "ts/I_Layout.h"
 
-#ifdef HTTP_CACHE
 #include "HttpTransactCache.h"
 #include "HttpSM.h"
 #include "HttpCacheSM.h"
 #include "InkAPIInternal.h"
 #include "P_CacheBC.h"
-#endif
 
 #include "ts/hugepages.h"
+
+const VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION);
 
 // Compilation Options
 #define USELESS_REENABLES // allow them for now
@@ -80,12 +80,10 @@ int cache_config_read_while_writer             = 0;
 int cache_config_mutex_retry_delay             = 2;
 int cache_read_while_writer_retry_delay        = 50;
 int cache_config_read_while_writer_max_retries = 10;
-#ifdef HTTP_CACHE
-static int enable_cache_empty_http_doc = 0;
+static int enable_cache_empty_http_doc         = 0;
 /// Fix up a specific known problem with the 4.2.0 release.
 /// Not used for stripes with a cache version later than 4.2.0.
 int cache_config_compatibility_4_2_0_fixup = 1;
-#endif
 
 // Globals
 
@@ -130,9 +128,9 @@ struct VolInitInfo {
 
   ~VolInitInfo()
   {
-    for (int i = 0; i < 4; i++) {
-      vol_aio[i].action = nullptr;
-      vol_aio[i].mutex.clear();
+    for (auto &i : vol_aio) {
+      i.action = nullptr;
+      i.mutex.clear();
     }
     free(vol_h_f);
   }
@@ -252,25 +250,6 @@ cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, R
   return 1;
 }
 
-#ifdef CLUSTER_CACHE
-static Action *
-open_read_internal(int opcode, Continuation *cont, MIOBuffer *buf, const HttpCacheKey *key, CacheHTTPHdr *request,
-                   CacheLookupHttpConfig *params, time_t pin_in_cache, CacheFragType frag_type)
-{
-  ClusterMachine *m = cluster_machine_at_depth(cache_hash(key->hash));
-
-  if (m) {
-    return Cluster_read(m, opcode, cont, buf, request, params, &key->hash, pin_in_cache, frag_type, key->hostname, key->hostlen);
-  } else {
-    if ((opcode == CACHE_OPEN_READ_LONG) || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
-      return caches[frag_type]->open_read(cont, &key->hash, request, params, frag_type, key->hostname, key->hostlen);
-    } else {
-      return caches[frag_type]->open_read(cont, &key->hash, frag_type, key->hostname, key->hostlen);
-    }
-  }
-}
-#endif
-
 static int
 validate_rww(int new_value)
 {
@@ -309,14 +288,12 @@ CacheVC::CacheVC() : alternate_index(CACHE_ALT_INDEX_DEFAULT)
   memset((void *)&vio, 0, size_to_init);
 }
 
-#ifdef HTTP_CACHE
 HTTPInfo::FragOffset *
 CacheVC::get_frag_table()
 {
   ink_assert(alternate.valid());
   return alternate.valid() ? alternate.get_frag_table() : nullptr;
 }
-#endif
 
 VIO *
 CacheVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *abuf)
@@ -422,11 +399,9 @@ bool
 CacheVC::get_data(int i, void *data)
 {
   switch (i) {
-#ifdef HTTP_CACHE
   case CACHE_DATA_HTTP_INFO:
     *((CacheHTTPInfo **)data) = &alternate;
     return true;
-#endif
   case CACHE_DATA_RAM_CACHE_HIT_FLAG:
     *((int *)data) = !f.not_from_ram_cache;
     return true;
@@ -449,7 +424,6 @@ CacheVC::set_data(int /* i ATS_UNUSED */, void * /* data */)
   return true;
 }
 
-#ifdef HTTP_CACHE
 void
 CacheVC::get_http_info(CacheHTTPInfo **ainfo)
 {
@@ -482,7 +456,6 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
   alternate.copy_shallow(ainfo);
   ainfo->clear();
 }
-#endif
 
 bool
 CacheVC::set_pin_in_cache(time_t time_pin)
@@ -1067,12 +1040,6 @@ CacheProcessor::cacheInitialized()
     CacheProcessor::initialized = CACHE_INITIALIZED;
     CacheProcessor::cache_ready = caches_ready;
     Note("cache enabled");
-#ifdef CLUSTER_CACHE
-    if (!(start_internal_flags & (PROCESSOR_RECONFIGURE | PROCESSOR_CHECK))) {
-      CacheContinuation::init();
-      clusterProcessor.start();
-    }
-#endif
   } else {
     CacheProcessor::initialized = CACHE_INIT_FAILED;
     Note("cache disabled");
@@ -1110,115 +1077,36 @@ CacheProcessor::db_check(bool afix)
 }
 
 Action *
-CacheProcessor::lookup(Continuation *cont, const CacheKey *key, bool cluster_cache_local ATS_UNUSED, bool local_only ATS_UNUSED,
-                       CacheFragType frag_type, const char *hostname, int host_len)
+CacheProcessor::lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int host_len)
 {
-#ifdef CLUSTER_CACHE
-  // Try to send remote, if not possible, handle locally
-  if ((cache_clustering_enabled > 0) && !cluster_cache_local && !local_only) {
-    Action *a = Cluster_lookup(cont, key, frag_type, hostname, host_len);
-    if (a) {
-      return a;
-    }
-  }
-#endif
   return caches[frag_type]->lookup(cont, key, frag_type, hostname, host_len);
 }
 
 inkcoreapi Action *
-CacheProcessor::open_read(Continuation *cont, const CacheKey *key, bool cluster_cache_local ATS_UNUSED, CacheFragType frag_type,
-                          const char *hostname, int hostlen)
+CacheProcessor::open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int hostlen)
 {
-#ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
-    HttpCacheKey hkey;
-    hkey.hash     = *key;
-    hkey.hostname = hostname;
-    hkey.hostlen  = hostlen;
-    return open_read_internal(CACHE_OPEN_READ, cont, (MIOBuffer *)nullptr, &hkey, (CacheHTTPHdr *)nullptr,
-                              (CacheLookupHttpConfig *)nullptr, 0, frag_type);
-  }
-#endif
   return caches[frag_type]->open_read(cont, key, frag_type, hostname, hostlen);
 }
 
 inkcoreapi Action *
-CacheProcessor::open_write(Continuation *cont, CacheKey *key, bool cluster_cache_local ATS_UNUSED, CacheFragType frag_type,
-                           int expected_size ATS_UNUSED, int options, time_t pin_in_cache, char *hostname, int host_len)
+CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type, int expected_size ATS_UNUSED, int options,
+                           time_t pin_in_cache, char *hostname, int host_len)
 {
-#ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
-    ClusterMachine *m = cluster_machine_at_depth(cache_hash(*key));
-    if (m)
-      return Cluster_write(cont, expected_size, (MIOBuffer *)nullptr, m, key, frag_type, options, pin_in_cache, CACHE_OPEN_WRITE,
-                           (CacheHTTPHdr *)nullptr, (CacheHTTPInfo *)nullptr, hostname, host_len);
-  }
-#endif
   return caches[frag_type]->open_write(cont, key, frag_type, options, pin_in_cache, hostname, host_len);
 }
 
 Action *
-CacheProcessor::remove(Continuation *cont, const CacheKey *key, bool cluster_cache_local ATS_UNUSED, CacheFragType frag_type,
-                       const char *hostname, int host_len)
+CacheProcessor::remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int host_len)
 {
   Debug("cache_remove", "[CacheProcessor::remove] Issuing cache delete for %u", cache_hash(*key));
-#ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
-    ClusterMachine *m = cluster_machine_at_depth(cache_hash(*key));
-
-    if (m) {
-      return Cluster_remove(m, cont, key, frag_type, hostname, host_len);
-    }
-  }
-#endif
   return caches[frag_type]->remove(cont, key, frag_type, hostname, host_len);
 }
 
-#if 0
 Action *
-scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second = 2500)
+CacheProcessor::lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type)
 {
-  return caches[CACHE_FRAG_TYPE_HTTP]->scan(cont, hostname, host_len, KB_per_second);
+  return lookup(cont, &key->hash, frag_type, key->hostname, key->hostlen);
 }
-#endif
-
-#ifdef HTTP_CACHE
-Action *
-CacheProcessor::lookup(Continuation *cont, const HttpCacheKey *key, bool cluster_cache_local, bool local_only,
-                       CacheFragType frag_type)
-{
-  return lookup(cont, &key->hash, cluster_cache_local, local_only, frag_type, key->hostname, key->hostlen);
-}
-
-#endif
-
-#ifdef CLUSTER_CACHE
-Action *
-CacheProcessor::link(Continuation *cont, CacheKey *from, CacheKey *to, bool cluster_cache_local, CacheFragType type, char *hostname,
-                     int host_len)
-{
-  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
-    // Use INK_MD5 in "from" to determine target machine
-    ClusterMachine *m = cluster_machine_at_depth(cache_hash(*from));
-    if (m) {
-      return Cluster_link(m, cont, from, to, type, hostname, host_len);
-    }
-  }
-  return caches[type]->link(cont, from, to, type, hostname, host_len);
-}
-
-Action *
-CacheProcessor::deref(Continuation *cont, CacheKey *key, bool cluster_cache_local, CacheFragType type, char *hostname, int host_len)
-{
-  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
-    ClusterMachine *m = cluster_machine_at_depth(cache_hash(*key));
-    if (m) {
-      return Cluster_deref(m, cont, key, type, hostname, host_len);
-    }
-  }
-  return caches[type]->deref(cont, key, type, hostname, host_len);
-}
-#endif
 
 Action *
 CacheProcessor::scan(Continuation *cont, char *hostname, int host_len, int KB_per_second)
@@ -1236,7 +1124,7 @@ bool
 CacheProcessor::IsCacheReady(CacheFragType type)
 {
   if (IsCacheEnabled() != CACHE_INITIALIZED)
-    return 0;
+    return false;
   return (bool)(cache_ready & (1 << type));
 }
 
@@ -1539,12 +1427,12 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
       return handle_recover_write_dir(EVENT_IMMEDIATE, nullptr);
     }
     // initialize
-    recover_wrapped   = 0;
+    recover_wrapped   = false;
     last_sync_serial  = 0;
     last_write_serial = 0;
     recover_pos       = header->last_write_pos;
     if (recover_pos >= skip + len) {
-      recover_wrapped = 1;
+      recover_wrapped = true;
       recover_pos     = start;
     }
     io.aiocb.aio_buf    = (char *)ats_memalign(ats_pagesize(), RECOVERY_SIZE);
@@ -1647,7 +1535,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
           // (doc->sync_serial > header->sync_serial + 1).
           // if we are too close to the end, wrap around
           else if (recover_pos - (e - s) > (skip + len) - AGG_SIZE) {
-            recover_wrapped     = 1;
+            recover_wrapped     = true;
             recover_pos         = start;
             io.aiocb.aio_nbytes = RECOVERY_SIZE;
 
@@ -1662,7 +1550,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
           // from the end, then wrap around
           recover_pos -= e - s;
           if (recover_pos > (skip + len) - AGG_SIZE) {
-            recover_wrapped     = 1;
+            recover_wrapped     = true;
             recover_pos         = start;
             io.aiocb.aio_nbytes = RECOVERY_SIZE;
 
@@ -1686,7 +1574,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
         s -= round_to_approx_size(doc->len);
       recover_pos -= e - s;
       if (recover_pos >= skip + len) {
-        recover_wrapped = 1;
+        recover_wrapped = true;
         recover_pos     = start;
       }
       io.aiocb.aio_nbytes = RECOVERY_SIZE;
@@ -1799,9 +1687,9 @@ Vol::handle_header_read(int event, void *data)
   switch (event) {
   case AIO_EVENT_DONE:
     op = (AIOCallback *)data;
-    for (int i = 0; i < 4; i++) {
+    for (auto &i : hf) {
       ink_assert(op != nullptr);
-      hf[i] = (VolHeaderFooter *)(op->aiocb.aio_buf);
+      i = (VolHeaderFooter *)(op->aiocb.aio_buf);
       if ((size_t)op->aio_result != (size_t)op->aiocb.aio_nbytes) {
         clear_dir();
         return EVENT_DONE;
@@ -1856,9 +1744,9 @@ Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
     gvol[vol_no] = this;
     SET_HANDLER(&Vol::aggWrite);
     if (fd == -1)
-      cache->vol_initialized(0);
+      cache->vol_initialized(false);
     else
-      cache->vol_initialized(1);
+      cache->vol_initialized(true);
     return EVENT_DONE;
   }
 }
@@ -2215,7 +2103,6 @@ CacheVC::is_pread_capable()
 
 #define STORE_COLLISION 1
 
-#ifdef HTTP_CACHE
 static void
 unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
 {
@@ -2317,7 +2204,6 @@ upgrade_doc_version(Ptr<IOBufferData> &buf)
   }
   return zret;
 }
-#endif
 
 // [amc] I think this is where all disk reads from cache funnel through here.
 int
@@ -2372,7 +2258,15 @@ CacheVC::handleReadDone(int event, Event *e)
         // Or does that happen later anyway?
         goto Ldone;
       }
-    } // else if (doc->doc_type == CACHE_FRAG_TYPE_HTTP) // handle any version updates based on the object version in the header.
+    } else if (doc->doc_type == CACHE_FRAG_TYPE_HTTP) { // handle any version updates based on the object version
+      if (VersionNumber(doc->v_major, doc->v_minor) > CACHE_DB_VERSION) {
+        // future version, count as corrupted
+        doc->magic = DOC_CORRUPT;
+        Debug("cache_bc", "Object is future version %d:%d - disk %s - doc id = %" PRIx64 ":%" PRIx64 "", doc->v_major, doc->v_minor,
+              vol->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
+        goto Ldone;
+      }
+    }
 
 #ifdef VERIFY_JTEST_DATA
     char xx[500];
@@ -2413,14 +2307,12 @@ CacheVC::handleReadDone(int event, Event *e)
       }
       (void)e; // Avoid compiler warnings
       bool http_copy_hdr = false;
-#ifdef HTTP_CACHE
       http_copy_hdr =
         cache_config_ram_cache_compress && !f.doc_from_ram_cache && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen;
       // If http doc we need to unmarshal the headers before putting in the ram cache
       // unless it could be compressed
       if (!http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay)
         unmarshal_helper(doc, buf, okay);
-#endif
       // Put the request in the ram cache only if its a open_read or lookup
       if (vio.op == VIO::READ && okay) {
         bool cutoff_check;
@@ -2445,11 +2337,9 @@ CacheVC::handleReadDone(int event, Event *e)
           vol->first_fragment_data   = buf;
         }
       } // end VIO::READ check
-#ifdef HTTP_CACHE
       // If it could be compressed, unmarshal after
       if (http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay)
         unmarshal_helper(doc, buf, okay);
-#endif
     } // end io.ok() check
   }
 Ldone:
@@ -2567,10 +2457,10 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       if (vol->open_write(this, true, 1)) {
         // writer  exists
         ink_release_assert(od = vol->open_read(&key));
-        od->dont_update_directory = 1;
+        od->dont_update_directory = true;
         od                        = nullptr;
       } else {
-        od->dont_update_directory = 1;
+        od->dont_update_directory = true;
       }
       f.remove_aborted_writers = 1;
     }
@@ -3258,11 +3148,9 @@ ink_cache_init(ModuleVersion v)
   if (cache_config_target_fragment_size == 0)
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
 
-#ifdef HTTP_CACHE
   REC_EstablishStaticConfigInt32(enable_cache_empty_http_doc, "proxy.config.http.cache.allow_empty_doc");
 
   REC_EstablishStaticConfigInt32(cache_config_compatibility_4_2_0_fixup, "proxy.config.cache.http.compatibility.4-2-0-fixup");
-#endif
 
   REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
   Debug("cache_init", "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
@@ -3293,34 +3181,17 @@ ink_cache_init(ModuleVersion v)
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, bool cluster_cache_local, CacheHTTPHdr *request,
-                          CacheLookupHttpConfig *params, time_t pin_in_cache, CacheFragType type)
+CacheProcessor::open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, OverridableHttpConfigParams *params,
+                          time_t pin_in_cache, CacheFragType type)
 {
-#ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
-    return open_read_internal(CACHE_OPEN_READ_LONG, cont, (MIOBuffer *)nullptr, key, request, params, pin_in_cache, type);
-  }
-#endif
-
   return caches[type]->open_read(cont, &key->hash, request, params, type, key->hostname, key->hostlen);
 }
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_write(Continuation *cont, int expected_size, const HttpCacheKey *key, bool cluster_cache_local,
-                           CacheHTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache, CacheFragType type)
+CacheProcessor::open_write(Continuation *cont, int expected_size, const HttpCacheKey *key, CacheHTTPHdr *request,
+                           CacheHTTPInfo *old_info, time_t pin_in_cache, CacheFragType type)
 {
-#ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
-    ClusterMachine *m = cluster_machine_at_depth(cache_hash(key->hash));
-
-    if (m) {
-      // Do remote open_write()
-      return Cluster_write(cont, expected_size, (MIOBuffer *)nullptr, m, &key->hash, type, false, pin_in_cache,
-                           CACHE_OPEN_WRITE_LONG, request, old_info, key->hostname, key->hostlen);
-    }
-  }
-#endif
   return caches[type]->open_write(cont, &key->hash, old_info, pin_in_cache, nullptr /* key1 */, type, key->hostname, key->hostlen);
 }
 
@@ -3328,16 +3199,8 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, const HttpCach
 // Note: this should not be called from from the cluster processor, or bad
 // recursion could occur. This is merely a convenience wrapper.
 Action *
-CacheProcessor::remove(Continuation *cont, const HttpCacheKey *key, bool cluster_cache_local, CacheFragType frag_type)
+CacheProcessor::remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type)
 {
-#ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
-    // Remove from cluster
-    return remove(cont, &key->hash, cluster_cache_local, frag_type, key->hostname, key->hostlen);
-  }
-#endif
-
-  // Remove from local cache only.
   return caches[frag_type]->remove(cont, &key->hash, frag_type, key->hostname, key->hostlen);
 }
 

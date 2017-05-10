@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <assert.h>
+#include <cassert>
 #include <locale>
 #include <string>
 
@@ -31,15 +31,15 @@ namespace ats
 {
 namespace inliner
 {
-  Attributes::operator std::string(void) const
+  Attributes::operator std::string() const
   {
     std::string result;
-    for (Attributes::const_iterator item = begin(); item != end(); ++item) {
-      if (!item->first.empty()) {
-        if (!item->second.empty()) {
-          result += item->first + "=\"" + item->second += "\" ";
+    for (const auto &item : *this) {
+      if (!item.first.empty()) {
+        if (!item.second.empty()) {
+          result += item.first + "=\"" + item.second += "\" ";
         } else {
-          result += item->first;
+          result += item.first;
         }
       }
     }

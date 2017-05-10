@@ -27,19 +27,19 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <limits.h>
+#include <cstdio>
+#include <cstring>
+#include <cctype>
+#include <climits>
 #include <ts/ts.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <errno.h>
+#include <cerrno>
 #include <dirent.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <inttypes.h>
+#include <cstdlib>
+#include <cinttypes>
 
 /* #define DEBUG 1 */
 #define DEBUG_TAG "buffer_upload-dbg"
@@ -322,7 +322,7 @@ pvc_process_p_read(TSCont contp, TSEvent event, pvc_state *my_state)
         TSMutexLock(my_state->disk_io_mutex);
         if (write_buffer_to_disk(my_state->req_hdr_reader, my_state, contp) == TS_ERROR) {
           LOG_ERROR("write_buffer_to_disk");
-          uconfig->use_disk_buffer = 0;
+          uconfig->use_disk_buffer = false;
           close(my_state->fd);
           my_state->fd = -1;
         }
@@ -427,7 +427,7 @@ pvc_process_n_write(TSCont contp, TSEvent event, pvc_state *my_state)
   /* FALL THROUGH */
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     /* We should have already shutdown read pvc side */
-    TSAssert(my_state->p_read_vio == NULL);
+    TSAssert(my_state->p_read_vio == nullptr);
     TSVConnShutdown(my_state->net_vc, 0, 1);
     my_state->req_finished = 1;
 
@@ -512,7 +512,7 @@ pvc_process_p_write(TSCont contp, TSEvent event, pvc_state *my_state)
   /* FALL THROUGH */
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     /* We should have already shutdown read net side */
-    TSAssert(my_state->n_read_vio == NULL);
+    TSAssert(my_state->n_read_vio == nullptr);
     TSVConnShutdown(my_state->p_vc, 0, 1);
     my_state->resp_finished = 1;
     pvc_check_done(contp, my_state);
@@ -906,7 +906,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       unlink(path);
       if (my_state->fd < 0) {
         LOG_ERROR("open");
-        uconfig->use_disk_buffer = 0;
+        uconfig->use_disk_buffer = false;
         my_state->fd             = -1;
       } else {
         TSDebug(DEBUG_TAG, "temp filename: %s", path);
@@ -1228,7 +1228,7 @@ TSPluginInit(int argc, const char *argv[])
 
   if (uconfig->use_disk_buffer && !create_directory()) {
     TSError("[buffer_upload] Directory creation failed.");
-    uconfig->use_disk_buffer = 0;
+    uconfig->use_disk_buffer = false;
   }
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

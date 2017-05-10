@@ -76,12 +76,12 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_HTTP_TXN_CLOSE: { // opening scope to declare plugins variable below
     resetTransactionHandles(transaction, event);
     const std::list<TransactionPlugin *> &plugins = utils::internal::getTransactionPlugins(transaction);
-    for (std::list<TransactionPlugin *>::const_iterator iter = plugins.begin(), end = plugins.end(); iter != end; ++iter) {
-      std::shared_ptr<Mutex> trans_mutex = utils::internal::getTransactionPluginMutex(**iter);
-      LOG_DEBUG("Locking TransacitonPlugin mutex to delete transaction plugin at %p", *iter);
+    for (auto plugin : plugins) {
+      std::shared_ptr<Mutex> trans_mutex = utils::internal::getTransactionPluginMutex(*plugin);
+      LOG_DEBUG("Locking TransacitonPlugin mutex to delete transaction plugin at %p", plugin);
       trans_mutex->lock();
-      LOG_DEBUG("Locked Mutex...Deleting transaction plugin at %p", *iter);
-      delete *iter;
+      LOG_DEBUG("Locked Mutex...Deleting transaction plugin at %p", plugin);
+      delete plugin;
       trans_mutex->unlock();
     }
     delete &transaction;
@@ -210,6 +210,8 @@ utils::internal::convertInternalTransformationTypeToTsHook(TransformationPlugin:
     return TS_HTTP_RESPONSE_TRANSFORM_HOOK;
   case TransformationPlugin::REQUEST_TRANSFORMATION:
     return TS_HTTP_REQUEST_TRANSFORM_HOOK;
+  case TransformationPlugin::SINK_TRANSFORMATION:
+    return TS_HTTP_RESPONSE_CLIENT_HOOK;
   default:
     assert(false); // shouldn't happen, let's catch it early
     break;

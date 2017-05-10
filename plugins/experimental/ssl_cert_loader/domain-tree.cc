@@ -20,9 +20,9 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include <stdio.h>
+#include <cstdio>
 #include <memory.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include "domain-tree.h"
 
 // return true if comparable.  Return type of compare in relative parameter
@@ -30,7 +30,7 @@
 bool
 DomainNameTree::DomainNameNode::compare(std::string key, int &relative)
 {
-  size_t star_loc = key.find("*");
+  size_t star_loc = key.find('*');
   bool is_wild    = false;
 
   if (star_loc != std::string::npos) {
@@ -43,7 +43,7 @@ DomainNameTree::DomainNameNode::compare(std::string key, int &relative)
 }
 
 bool
-DomainNameTree::DomainNameNode::prunedCompare(std::string key, int &relative, bool is_wild)
+DomainNameTree::DomainNameNode::prunedCompare(const std::string &key, int &relative, bool is_wild)
 {
   if (key == this->key) {
     relative = 0;
@@ -89,7 +89,7 @@ DomainNameTree::find(std::string key, bool best_match)
 {
   DomainNameNode *retval = nullptr;
   DomainNameNode *first  = nullptr;
-  size_t star_loc        = key.find("*");
+  size_t star_loc        = key.find('*');
   bool is_wild           = false;
 
   if (star_loc != std::string::npos) {
@@ -152,7 +152,7 @@ DomainNameTree::insert(std::string key, void *payload, int order)
   int relative;
 
   if (node->compare(key, relative)) {
-    size_t star_loc = key.find("*");
+    size_t star_loc = key.find('*');
     bool is_wild    = false;
 
     if (star_loc != std::string::npos) {

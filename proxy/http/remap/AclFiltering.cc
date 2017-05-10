@@ -30,7 +30,7 @@
 // ===============================================================================
 
 void
-acl_filter_rule::reset(void)
+acl_filter_rule::reset()
 {
   int i;
   for (i = (argc = 0); i < ACL_FILTER_MAX_ARGV; i++) {
@@ -91,7 +91,7 @@ acl_filter_rule::name(const char *_name)
 }
 
 void
-acl_filter_rule::print(void)
+acl_filter_rule::print()
 {
   int i;
   printf("-----------------------------------------------------------------------------------------\n");
@@ -105,8 +105,8 @@ acl_filter_rule::print(void)
     }
   }
   printf("nonstandard methods=");
-  for (MethodMap::iterator iter = nonstandard_methods.begin(), end = nonstandard_methods.end(); iter != end; ++iter) {
-    printf("%s ", iter->c_str());
+  for (const auto &nonstandard_method : nonstandard_methods) {
+    printf("%s ", nonstandard_method.c_str());
   }
   printf("\n");
   printf("src_ip_cnt=%d\n", src_ip_cnt);

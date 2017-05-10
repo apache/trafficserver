@@ -967,6 +967,7 @@ UnixNetVConnection::UnixNetVConnection()
     submit_time(0),
     oob_ptr(nullptr),
     from_accept_thread(false),
+    accept_object(nullptr),
     origin_trace(false),
     origin_trace_addr(nullptr),
     origin_trace_port(0)
@@ -1442,8 +1443,8 @@ UnixNetVConnection::free(EThread *t)
   // clear variables for reuse
   this->mutex.clear();
   action_.mutex.clear();
-  got_remote_addr = 0;
-  got_local_addr  = 0;
+  got_remote_addr = false;
+  got_local_addr  = false;
   attributes      = 0;
   read.vio.mutex.clear();
   write.vio.mutex.clear();
@@ -1513,9 +1514,10 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
 #else
   if (timeout_in == 0) {
     // set default inactivity timeout
-    inactivity_timeout_in = timeout_in = HRTIME_SECONDS(nh->default_inactivity_timeout);
+    timeout_in = HRTIME_SECONDS(nh->default_inactivity_timeout);
   }
-  next_inactivity_timeout_at = Thread::get_hrtime() + timeout_in;
+  inactivity_timeout_in      = timeout_in;
+  next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
 #endif
 }
 
@@ -1595,4 +1597,32 @@ void
 UnixNetVConnection::remove_from_active_queue()
 {
   nh->remove_from_active_queue(this);
+}
+
+int
+UnixNetVConnection::populate_protocol(ts::StringView *results, int n) const
+{
+  int retval = 0;
+  if (n > retval) {
+    if (!(results[retval] = options.get_proto_string()).isEmpty())
+      ++retval;
+    if (n > retval) {
+      if (!(results[retval] = options.get_family_string()).isEmpty())
+        ++retval;
+    }
+  }
+  return retval;
+}
+
+const char *
+UnixNetVConnection::protocol_contains(ts::StringView tag) const
+{
+  ts::StringView retval = options.get_proto_string();
+  if (!tag.isNoCasePrefixOf(retval)) { // didn't match IP level, check TCP level
+    retval = options.get_family_string();
+    if (!tag.isNoCasePrefixOf(retval)) { // no match here either, return empty.
+      retval.clear();
+    }
+  }
+  return retval.ptr();
 }

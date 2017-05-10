@@ -119,33 +119,33 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
 
   resp_add("<p> Producers </p>");
   resp_begin_table(1, 4, 60);
-  for (int i = 0; i < MAX_PRODUCERS; i++) {
-    if (t->producers[i].vc != nullptr) {
+  for (auto &producer : t->producers) {
+    if (producer.vc != nullptr) {
       resp_begin_row();
 
       // Col 1 - name
       resp_begin_column();
-      resp_add(t->producers[i].name);
+      resp_add(producer.name);
       resp_end_column();
 
       // Col 2 - alive
       resp_begin_column();
-      resp_add("%d", t->producers[i].alive);
+      resp_add("%d", producer.alive);
       resp_end_column();
 
       // Col 3 - ndone
       resp_begin_column();
-      if (t->producers[i].alive && t->producers[i].read_vio) {
-        resp_add("%d", t->producers[i].read_vio->ndone);
+      if (producer.alive && producer.read_vio) {
+        resp_add("%d", producer.read_vio->ndone);
       } else {
-        resp_add("%d", t->producers[i].bytes_read);
+        resp_add("%d", producer.bytes_read);
       }
       resp_end_column();
 
       // Col 4 - nbytes
       resp_begin_column();
-      if (t->producers[i].alive && t->producers[i].read_vio) {
-        resp_add("%d", t->producers[i].read_vio->nbytes);
+      if (producer.alive && producer.read_vio) {
+        resp_add("%d", producer.read_vio->nbytes);
       } else {
         resp_add("-");
       }
@@ -158,33 +158,33 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
 
   resp_add("<p> Consumers </p>");
   resp_begin_table(1, 5, 60);
-  for (int j = 0; j < MAX_CONSUMERS; j++) {
-    if (t->consumers[j].vc != nullptr) {
+  for (auto &consumer : t->consumers) {
+    if (consumer.vc != nullptr) {
       resp_begin_row();
 
       // Col 1 - name
       resp_begin_column();
-      resp_add(t->consumers[j].name);
+      resp_add(consumer.name);
       resp_end_column();
 
       // Col 2 - alive
       resp_begin_column();
-      resp_add("%d", t->consumers[j].alive);
+      resp_add("%d", consumer.alive);
       resp_end_column();
 
       // Col 3 - ndone
       resp_begin_column();
-      if (t->consumers[j].alive && t->consumers[j].write_vio) {
-        resp_add("%d", t->consumers[j].write_vio->ndone);
+      if (consumer.alive && consumer.write_vio) {
+        resp_add("%d", consumer.write_vio->ndone);
       } else {
-        resp_add("%d", t->consumers[j].bytes_written);
+        resp_add("%d", consumer.bytes_written);
       }
       resp_end_column();
 
       // Col 4 - nbytes
       resp_begin_column();
-      if (t->consumers[j].alive && t->consumers[j].write_vio) {
-        resp_add("%d", t->consumers[j].write_vio->nbytes);
+      if (consumer.alive && consumer.write_vio) {
+        resp_add("%d", consumer.write_vio->nbytes);
       } else {
         resp_add("-");
       }
@@ -192,8 +192,8 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
 
       // Col 5 - read avail
       resp_begin_column();
-      if (t->consumers[j].alive && t->consumers[j].buffer_reader) {
-        resp_add("%d", t->consumers[j].buffer_reader->read_avail());
+      if (consumer.alive && consumer.buffer_reader) {
+        resp_add("%d", consumer.buffer_reader->read_avail());
       } else {
         resp_add("-");
       }
@@ -462,7 +462,7 @@ http_pages_init()
   statPagesManager.register_http("http", http_pages_callback);
 
   // Create the mutexes for http list protection
-  for (int i = 0; i < HTTP_LIST_BUCKETS; i++) {
-    HttpSMList[i].mutex = new_ProxyMutex();
+  for (auto &i : HttpSMList) {
+    i.mutex = new_ProxyMutex();
   }
 }

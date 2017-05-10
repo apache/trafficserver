@@ -23,7 +23,7 @@
   @section description
   This file implements the LogAccess class.  However, LogAccess is an
   abstract base class, providing an interface that logging uses to get
-  information from a module, such as HTTP or ICP.  Each module derives a
+  information from a module, such as HTTP.  Each module derives a
   specific implementation from this base class (such as LogAccessHttp), and
   implements the virtual accessor functions there.
 

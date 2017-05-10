@@ -70,10 +70,10 @@ OneWayTunnel::OneWayTunnel()
     manipulate_fn(nullptr),
     n_connections(0),
     lerrno(0),
-    single_buffer(0),
-    close_source(0),
-    close_target(0),
-    tunnel_till_done(0),
+    single_buffer(false),
+    close_source(false),
+    close_target(false),
+    tunnel_till_done(false),
     tunnel_peer(nullptr),
     free_vcs(true)
 {
@@ -159,7 +159,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
 
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
   vioSource = vcSource->do_io_read(this, nbytes, buf1);
-  vioTarget = vcTarget->do_io_write(this, nbytes, buf2->alloc_reader(), 0);
+  vioTarget = vcTarget->do_io_write(this, nbytes, buf2->alloc_reader(), false);
   ink_assert(vioSource && vioTarget);
 
   return;
@@ -189,7 +189,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
   vioSource = SourceVio;
 
-  vioTarget = vcTarget->do_io_write(this, TUNNEL_TILL_DONE, reader, 0);
+  vioTarget = vcTarget->do_io_write(this, TUNNEL_TILL_DONE, reader, false);
   ink_assert(vioSource && vioTarget);
 }
 

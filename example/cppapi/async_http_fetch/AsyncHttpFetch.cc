@@ -25,6 +25,7 @@
 #include <atscppapi/PluginInit.h>
 #include <cstring>
 #include <cassert>
+#include <utility>
 
 using namespace atscppapi;
 using std::string;
@@ -41,28 +42,28 @@ GlobalPlugin *plugin;
 class AsyncHttpFetch2 : public AsyncHttpFetch
 {
 public:
-  AsyncHttpFetch2(string request) : AsyncHttpFetch(request){};
+  AsyncHttpFetch2(const string &request) : AsyncHttpFetch(request){};
 };
 
 class AsyncHttpFetch3 : public AsyncHttpFetch
 {
 public:
-  AsyncHttpFetch3(string request, HttpMethod method) : AsyncHttpFetch(request, method){};
+  AsyncHttpFetch3(const string &request, HttpMethod method) : AsyncHttpFetch(request, method){};
 };
 
 class DelayedAsyncHttpFetch : public AsyncHttpFetch, public AsyncReceiver<AsyncTimer>
 {
 public:
-  DelayedAsyncHttpFetch(string request, HttpMethod method, std::shared_ptr<Mutex> mutex)
-    : AsyncHttpFetch(request, method), mutex_(mutex), timer_(nullptr){};
+  DelayedAsyncHttpFetch(const string &request, HttpMethod method, std::shared_ptr<Mutex> mutex)
+    : AsyncHttpFetch(request, method), mutex_(std::move(mutex)), timer_(nullptr){};
   void
-  run()
+  run() override
   {
     timer_ = new AsyncTimer(AsyncTimer::TYPE_ONE_OFF, 1000 /* 1s */);
     Async::execute(this, timer_, mutex_);
   }
   void
-  handleAsyncComplete(AsyncTimer & /*timer ATS_UNUSED */)
+  handleAsyncComplete(AsyncTimer & /*timer ATS_UNUSED */) override
   {
     TS_DEBUG(TAG, "Receiver should not be reachable");
     assert(!getDispatchController()->dispatch());
@@ -73,7 +74,8 @@ public:
   {
     return getDispatchController()->isEnabled();
   }
-  ~DelayedAsyncHttpFetch() { delete timer_; }
+  ~DelayedAsyncHttpFetch() override { delete timer_; }
+
 private:
   std::shared_ptr<Mutex> mutex_;
   AsyncTimer *timer_;
@@ -94,7 +96,7 @@ public:
   }
 
   void
-  handleSendRequestHeaders(Transaction & /*transaction ATS_UNUSED */)
+  handleSendRequestHeaders(Transaction & /*transaction ATS_UNUSED */) override
   {
     Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/"), getMutex());
     ++num_fetches_pending_;
@@ -122,7 +124,7 @@ public:
   }
 
   void
-  handleAsyncComplete(AsyncHttpFetch &async_http_fetch)
+  handleAsyncComplete(AsyncHttpFetch &async_http_fetch) override
   {
     // This will be called when our async event is complete.
     TS_DEBUG(TAG, "AsyncHttpFetch completed");
@@ -130,14 +132,14 @@ public:
   }
 
   void
-  handleAsyncComplete(AsyncHttpFetch2 &async_http_fetch)
+  handleAsyncComplete(AsyncHttpFetch2 &async_http_fetch) override
   {
     // This will be called when our async event is complete.
     TS_DEBUG(TAG, "AsyncHttpFetch2 completed");
     handleAnyAsyncComplete(async_http_fetch);
   }
 
-  virtual ~TransactionHookPlugin()
+  ~TransactionHookPlugin() override
   {
     TS_DEBUG(TAG, "Destroyed TransactionHookPlugin!");
     // since we die right away, we should not receive the callback for this (using POST request this time)
@@ -145,13 +147,13 @@ public:
   }
 
   void
-  handleAsyncComplete(AsyncHttpFetch3 & /* async_http_fetch ATS_UNUSED */)
+  handleAsyncComplete(AsyncHttpFetch3 & /* async_http_fetch ATS_UNUSED */) override
   {
     assert(!"AsyncHttpFetch3 shouldn't have completed!");
   }
 
   void
-  handleAsyncComplete(DelayedAsyncHttpFetch & /*async_http_fetch ATS_UNUSED */)
+  handleAsyncComplete(DelayedAsyncHttpFetch & /*async_http_fetch ATS_UNUSED */) override
   {
     assert(!"Should've been canceled!");
   }
@@ -197,8 +199,8 @@ public:
     registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
   }
 
-  virtual void
-  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
     TS_DEBUG(TAG, "Received a request in handleReadRequestHeadersPostRemap.");
 

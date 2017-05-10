@@ -34,6 +34,9 @@ from sphinx.roles import XRefRole
 from sphinx.locale import l_, _
 import sphinx
 
+import subprocess
+import re
+
 class TSConfVar(std.Target):
     """
     Description of a traffic server configuration variable.
@@ -371,6 +374,37 @@ def xref_cleanup(app, env, node, contnode):
                 return node
     return;
 
+
+# get the branch this documentation is building for in X.X.x form
+with open('../configure.ac', 'r') as f:
+    contents = f.read()
+    match = re.compile('m4_define\(\[TS_VERSION_S],\[(.*?)]\)').search(contents)
+    autoconf_version = '.'.join(match.group(1).split('.', 2)[:2] + ['x'])
+
+# get the current branch the local repository is on
+git_branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+
+def make_github_link(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    """
+    This docutils role lets us link to source code via the handy :ts:git: markup.
+    Link references are rooted at the top level source directory. All links resolve
+    to GitHub.
+
+    Examples:
+
+        To link to proxy/Main.cc:
+
+            Hi, here is a link to the proxy entry point: :ts:git:`proxy/Main.cc`.
+
+        To link to CONTRIBUTING.md:
+
+            If you want to contribute, take a look at :ts:git:`CONTRIBUTING.md`.
+    """
+    url = 'https://github.com/apache/trafficserver/blob/{}/{}'
+    ref = autoconf_version if autoconf_version == git_branch else 'master'
+    node = nodes.reference(rawtext, text, refuri=url.format(ref, text), **options)
+    return [node],[]
+
 def setup(app):
     app.add_crossref_type('configfile', 'file',
                         objname='Configuration file',
@@ -383,6 +417,9 @@ def setup(app):
     rst.roles.register_generic_role('const', nodes.literal)
 
     app.add_domain(TrafficServerDomain)
+
+    # this lets us do :ts:git:`<file_path>` and link to the file on github
+    app.add_role_to_domain('ts', 'git', make_github_link)
 
     # Types that we want the C domain to consider built in
     for word in EXTERNAL_TYPES:

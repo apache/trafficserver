@@ -44,7 +44,7 @@ ink_mutex g_rec_config_lock;
 // RecConfigFileInit
 //-------------------------------------------------------------------------
 void
-RecConfigFileInit(void)
+RecConfigFileInit()
 {
   ink_mutex_init(&g_rec_config_lock, nullptr);
   g_rec_config_contents_llq = create_queue();
@@ -215,8 +215,6 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
       rec_type = RECT_PROCESS;
     } else if (strcmp(rec_type_str, "NODE") == 0) {
       rec_type = RECT_NODE;
-    } else if (strcmp(rec_type_str, "CLUSTER") == 0) {
-      rec_type = RECT_CLUSTER;
     } else if (strcmp(rec_type_str, "LOCAL") == 0) {
       rec_type = RECT_LOCAL;
     } else {

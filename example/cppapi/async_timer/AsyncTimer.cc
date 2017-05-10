@@ -38,7 +38,7 @@ public:
   }
 
   void
-  handleAsyncComplete(AsyncTimer &timer ATSCPPAPI_UNUSED)
+  handleAsyncComplete(AsyncTimer &timer ATSCPPAPI_UNUSED) override
   {
     TS_DEBUG(TAG, "Got timer event in object %p!", this);
     if ((type_ == AsyncTimer::TYPE_ONE_OFF) || (max_instances_ && (++instance_count_ == max_instances_))) {
@@ -47,7 +47,8 @@ public:
     }
   }
 
-  ~TimerEventReceiver() { delete timer_; }
+  ~TimerEventReceiver() override { delete timer_; }
+
 private:
   int max_instances_;
   int instance_count_;

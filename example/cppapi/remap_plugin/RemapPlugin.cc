@@ -38,7 +38,7 @@ class MyRemapPlugin : public RemapPlugin
 public:
   MyRemapPlugin(void **instance_handle) : RemapPlugin(instance_handle) {}
   Result
-  doRemap(const Url &map_from_url, const Url &map_to_url, Transaction &transaction, bool &redirect)
+  doRemap(const Url &map_from_url, const Url &map_to_url, Transaction &transaction, bool &redirect) override
   {
     Url &request_url = transaction.getClientRequest().getUrl();
     TS_DEBUG(LOG_TAG, "from URL is [%s], to URL is [%s], request URL is [%s]", map_from_url.getUrlString().c_str(),

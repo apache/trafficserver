@@ -22,8 +22,8 @@
 
 /* UnionFind after Tarjan */
 
-#include <stdint.h>
-#include <stdio.h>
+#include <cstdint>
+#include <cstdio>
 #include "ts/ink_assert.h"
 #include "ts/Vec.h"
 

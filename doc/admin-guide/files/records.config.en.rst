@@ -416,6 +416,14 @@ Thread Variables
    This setting specifies the number of active client connections
    for use by :option:`traffic_ctl server restart --drain`.
 
+.. ts:cv:: CONFIG proxy.config.stop.shutdown_timeout INT 0
+   :reloadable:
+
+   The shutdown timeout(in seconds) to apply when stopping Traffic
+   Server, in which ATS can initiate graceful shutdowns. It only supports
+   HTTP/2 graceful shutdown for now. Stopping Traffic Server here means sending
+   `traffic_server` a signal either by `bin/trafficserver stop` or `kill`.
+
 Network
 =======
 
@@ -1598,21 +1606,28 @@ Negative Response Caching
    :ts:cv:`proxy.config.http.negative_caching_lifetime`.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_caching_lifetime INT 1800
+   :reloadable:
    :overridable:
 
    How long (in seconds) Traffic Server keeps the negative responses  valid in cache. This value only affects negative
    responses that do NOT have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_enabled INT 0
+   :reloadable:
+   :overridable:
 
-   Enables (``1``) or disables (``0``) forcing revalidation of cached documents
-   when |TS| receives a negative (``5xx`` only) response from the origin server.
+   Negative revalidating allows |TS| to return stale content if revalidation to the origin fails due
+   to network or HTTP errors. If it is enabled, rather than caching the negative response, the
+   current stale content is preserved and served. Note this is considered only on a revalidation of
+   already cached content. A revalidation failure means a connection failure or a 50x response code.
+
+   A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
 
-   How long, in seconds, to consider a stale cached document valid if during the
-   revalidation attempt |TS| receives a negative (``5xx`` only) response from
-   the origin server.
+   How long, in seconds, to consider a stale cached document valid if If
+   :ts:cv:`proxy.config.http.negative_revalidating_enabled` is enabled and |TS| receives a negative
+   (``5xx`` only) response from the origin server during revalidation.
 
 Proxy User Variables
 ====================
@@ -1865,6 +1880,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.enable_default_vary_headers INT 0
    :reloadable:
+   :overridable:
 
    Enables (``1``) or disables (``0``) caching of alternate versions of HTTP objects that do not contain the ``Vary`` header.
 
@@ -1927,6 +1943,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_mismatch INT 2
    :reloadable:
+   :overridable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Type:`` header even if it does not match the ``Accept:`` header of the
@@ -1943,6 +1960,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 2
    :reloadable:
+   :overridable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Language:`` header even if it does not match the ``Accept-Language:``
@@ -1959,6 +1977,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 2
    :reloadable:
+   :overridable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Encoding:`` header even if it does not match the ``Accept-Encoding:``
@@ -1975,6 +1994,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 2
    :reloadable:
+   :overridable:
 
    When enabled with a value of ``1``, Traffic Server serves documents from cache with a
    ``Content-Type:`` header even if it does not match the ``Accept-Charset:`` header
@@ -2200,6 +2220,7 @@ Dynamic Content & Content Negotiation
 
 .. ts:cv:: CONFIG proxy.config.http.cache.vary_default_text STRING NULL
    :reloadable:
+   :overridable:
 
    The header on which Traffic Server varies for text documents.
 
@@ -2208,11 +2229,13 @@ all the different user-agent versions of documents it encounters.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.vary_default_images STRING NULL
    :reloadable:
+   :overridable:
 
    The header on which Traffic Server varies for images.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.vary_default_other STRING NULL
    :reloadable:
+   :overridable:
 
    The header on which Traffic Server varies for anything other than text and images.
 

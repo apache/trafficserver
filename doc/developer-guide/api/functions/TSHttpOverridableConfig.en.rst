@@ -80,7 +80,6 @@ c:member:`TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD`       :ts:cv:`prox
 c:member:`TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES`          :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies`
 c:member:`TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC`        :ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic`
 c:member:`TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL`                 :ts:cv:`proxy.config.http.cache.cluster_cache_local`
-c:member:`TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME`                       :ts:cv:`proxy.config.http.cache.fuzz.min_time`
 c:member:`TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY`                    :ts:cv:`proxy.config.http.cache.fuzz.probability`
 c:member:`TS_CONFIG_HTTP_CACHE_FUZZ_TIME`                           :ts:cv:`proxy.config.http.cache.fuzz.time`
 c:member:`TS_CONFIG_HTTP_CACHE_GENERATION`                          :ts:cv:`proxy.config.http.cache.generation`

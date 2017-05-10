@@ -49,7 +49,7 @@ struct OCSPContinuation : public Continuation {
 #endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
 void
-SSLNetProcessor::cleanup(void)
+SSLNetProcessor::cleanup()
 {
 }
 

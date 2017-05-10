@@ -67,7 +67,7 @@ enum MimeParseState {
  *                                                                     *
  ***********************************************************************/
 
-#ifdef DEBUG
+#ifdef ENABLE_MIME_SANITY_CHECK
 #define MIME_HDR_SANITY_CHECK mime_hdr_sanity_check
 #else
 #define MIME_HDR_SANITY_CHECK (void)
@@ -758,10 +758,10 @@ MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length
 
   if (hdrtoken_is_wks(name)) {
     name_wks_idx = hdrtoken_wks_to_index(name);
-    mime_field_name_set(heap, mh, this, name_wks_idx, name, length, 1);
+    mime_field_name_set(heap, mh, this, name_wks_idx, name, length, true);
   } else {
     int field_name_wks_idx = hdrtoken_tokenize(name, length, &name_wks);
-    mime_field_name_set(heap, mh, this, field_name_wks_idx, (field_name_wks_idx == -1 ? name : name_wks), length, 1);
+    mime_field_name_set(heap, mh, this, field_name_wks_idx, (field_name_wks_idx == -1 ? name : name_wks), length, true);
   }
 }
 
@@ -827,7 +827,7 @@ MIMEField::value_get_comma_list(StrList *list) const
 inline void
 MIMEField::value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length)
 {
-  mime_field_value_set(heap, mh, this, value, length, 1);
+  mime_field_value_set(heap, mh, this, value, length, true);
 }
 
 inline void
@@ -1118,7 +1118,7 @@ MIMEHdr::field_create(const char *name, int length)
 
   if (name) {
     int field_name_wks_idx = hdrtoken_tokenize(name, length);
-    mime_field_name_set(m_heap, m_mime, field, field_name_wks_idx, name, length, 1);
+    mime_field_name_set(m_heap, m_mime, field, field_name_wks_idx, name, length, true);
   }
 
   return (field);

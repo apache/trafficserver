@@ -25,10 +25,10 @@
 #include <map>
 #include <list>
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <iostream>
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
 #include <unistd.h>
 #include <getopt.h>
 
@@ -130,12 +130,12 @@ makeTable(const int x, const int y, const list<string> &items, Stats &stats)
 {
   int my_y = y;
 
-  for (list<string>::const_iterator it = items.begin(); it != items.end(); ++it) {
+  for (const auto &item : items) {
     string prettyName;
     double value = 0;
     int type;
 
-    stats.getStat(*it, value, prettyName, type);
+    stats.getStat(item, value, prettyName, type);
     mvprintw(my_y, x, prettyName.c_str());
     prettyPrint(x + 10, my_y++, value, type);
   }
@@ -221,7 +221,7 @@ help(const string &host, const string &version)
 {
   timeout(1000);
 
-  while (1) {
+  while (true) {
     clear();
     time_t now       = time(nullptr);
     struct tm *nowtm = localtime(&now);
@@ -447,7 +447,7 @@ main(int argc, char **argv)
   Page page       = MAIN_PAGE;
   string page_alt = "(r)esponse";
 
-  while (1) {
+  while (true) {
     attron(COLOR_PAIR(colorPair::border));
     attron(A_BOLD);
 

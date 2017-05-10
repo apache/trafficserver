@@ -33,7 +33,6 @@
 #include "I_RecCore.h"
 #include "mgmtapi.h"
 #include "RecordsConfig.h"
-#include "ClusterCom.h"
 #include "ts/ink_cap.h"
 #include "Cop.h"
 
@@ -98,10 +97,8 @@ static char server_binary[PATH_NAME_MAX]  = "traffic_server";
 
 static char log_file[PATH_NAME_MAX] = "traffic.out";
 
-static int synthetic_port           = 8083;
-static int rs_port                  = 8088;
-static MgmtClusterType cluster_type = NO_CLUSTER;
-static int http_backdoor_port       = 8084;
+static int synthetic_port     = 8083;
+static int http_backdoor_port = 8084;
 
 #if defined(linux)
 // TS-1075 : auto-port ::connect DoS on high traffic linux systems
@@ -146,7 +143,7 @@ static const char localhost[] = "127.0.0.1";
 
 static void cop_log(int priority, const char *format, ...) TS_PRINTFLIKE(2, 3);
 
-static void get_admin_user(void);
+static void get_admin_user();
 
 struct ConfigValue {
   ConfigValue() : config_type(RECT_NULL), data_type(RECD_NULL) {}
@@ -375,7 +372,7 @@ set_alarm_warn()
 }
 
 static void
-process_syslog_config(void)
+process_syslog_config()
 {
   int new_fac;
 
@@ -421,7 +418,7 @@ safe_kill(const char *lockfile_name, const char *pname, bool group)
 // one 64bit int
 //
 static ink_hrtime
-milliseconds(void)
+milliseconds()
 {
   struct timeval now;
 
@@ -658,7 +655,6 @@ config_reload_records()
 
   config_read_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port, true);
   config_read_int("proxy.config.admin.synthetic_port", &synthetic_port, true);
-  config_read_int("proxy.config.cluster.rsport", &rs_port, true);
   config_read_int("proxy.config.cop.init_sleep_time", &init_sleep_time, true);
 
   config_read_int("proxy.config.cop.active_health_checks", &tmp_int, true);
@@ -935,7 +931,7 @@ getaddrinfo_error:
 }
 
 static int
-test_port(int port, const char *request, char *buffer, int bufsize, int64_t test_timeout, const char *ip = NULL,
+test_port(int port, const char *request, char *buffer, int bufsize, int64_t test_timeout, const char *ip = nullptr,
           const char *ip_to_bind = nullptr)
 {
   int64_t start_time, timeout;
@@ -1027,112 +1023,6 @@ error:
 }
 
 static int
-read_manager_string(const char *variable, char *value, size_t val_len)
-{
-  char buffer[4096];
-  char request[1024];
-  char *p, *e;
-  int err;
-
-  snprintf(request, sizeof(request), "read %s\n", variable);
-
-  err = test_port(rs_port, request, buffer, 4095, cop_manager_timeout * 1000);
-  if (err < 0) {
-    return err;
-  }
-
-  p = strstr(buffer, variable);
-  if (!p) {
-    cop_log(COP_WARNING, "(manager test) could not find record name in response\n");
-    return -1;
-  }
-  p += strlen(variable);
-
-  p = strstr(p, "Val:");
-  if (!p) {
-    cop_log(COP_WARNING, "(manager test) could not find record value in response\n");
-    return -1;
-  }
-  p += sizeof("Val:") - 1;
-
-  while (*p && (*p != '\'')) {
-    p += 1;
-  }
-
-  if (*p == '\0') {
-    cop_log(COP_WARNING, "(manager test) could not find properly delimited value in response\n");
-    return -1;
-  }
-  p += 1;
-
-  e = p;
-  while (*e && (*e != '\'')) {
-    e += 1;
-  }
-
-  if (*e != '\'') {
-    cop_log(COP_WARNING, "(manager test) could not find properly delimited value in response\n");
-    return -1;
-  }
-
-  ink_strlcpy(value, p, MIN((size_t)(e - p + 1), val_len));
-
-  return 0;
-}
-
-static int
-read_manager_int(const char *variable, int *value)
-{
-  char buffer[4096];
-  char request[1024];
-  char *p;
-  int err;
-
-  snprintf(request, sizeof(request), "read %s\n", variable);
-
-  err = test_port(rs_port, request, buffer, 4095, cop_manager_timeout * 1000);
-  if (err < 0) {
-    return err;
-  }
-
-  p = strstr(buffer, variable);
-  if (!p) {
-    cop_log(COP_WARNING, "(manager test) could not find record name in response\n");
-    return -1;
-  }
-  p += strlen(variable);
-
-  p = strstr(p, "Val:");
-  if (!p) {
-    cop_log(COP_WARNING, "(manager test) could not find record value in response\n");
-    return -1;
-  }
-  p += sizeof("Val:") - 1;
-
-  while (*p && (*p != '\'')) {
-    p += 1;
-  }
-
-  if (*p == '\0') {
-    cop_log(COP_WARNING, "(manager test) could not find properly delimited value in response\n");
-    return -1;
-  }
-  p += 1;
-
-  *value = 0;
-  while (isdigit(*p)) {
-    *value = *value * 10 + (*p - '0');
-    p += 1;
-  }
-
-  if (*p != '\'') {
-    cop_log(COP_WARNING, "(manager test) could not find properly delimited value in response\n");
-    return -1;
-  }
-  return 0;
-}
-
-static int
 read_mgmt_cli_int(const char *variable, int *value)
 {
   TSInt val;
@@ -1142,25 +1032,6 @@ read_mgmt_cli_int(const char *variable, int *value)
     return -1;
   }
   *value = val;
-  return 0;
-}
-
-static int
-test_rs_port()
-{
-  char buffer[4096];
-  int err;
-
-  err = read_manager_string("proxy.config.manager_binary", buffer, sizeof(buffer));
-  if (err < 0) {
-    return err;
-  }
-
-  if (strcmp(buffer, manager_binary) != 0) {
-    cop_log(COP_WARNING, "(manager test) bad response value\n");
-    return -1;
-  }
-
   return 0;
 }
 
@@ -1262,11 +1133,8 @@ heartbeat_manager()
   int err;
 
   cop_log_trace("Entering heartbeat_manager()\n");
-  // the CLI, and the rsport if cluster is enabled.
+  // the CLI.
   err = test_mgmt_cli_port();
-  if ((0 == err) && (cluster_type != NO_CLUSTER)) {
-    err = test_rs_port();
-  }
 
   if (err < 0) {
     // See heartbeat_server()'s comments for how we determine a server/manager failure.
@@ -1350,11 +1218,7 @@ server_up()
   int err;
 
   cop_log_trace("Entering server_up()\n");
-  if (cluster_type != NO_CLUSTER) {
-    err = read_manager_int("proxy.node.proxy_running", &val);
-  } else {
-    err = read_mgmt_cli_int("proxy.node.proxy_running", &val);
-  }
+  err = read_mgmt_cli_int("proxy.node.proxy_running", &val);
 
   if (err < 0) {
     cop_log(COP_WARNING, "could not contact manager, assuming server is down\n");
@@ -1520,11 +1384,11 @@ check_memory()
     if ((fp = fopen("/proc/meminfo", "r"))) {
       while (fgets(buf, sizeof buf, fp)) {
         if (strncmp(buf, "MemFree:", sizeof "MemFree:" - 1) == 0)
-          memfree = strtoll(buf + sizeof "MemFree:" - 1, 0, 10);
+          memfree = strtoll(buf + sizeof "MemFree:" - 1, nullptr, 10);
         else if (strncmp(buf, "SwapFree:", sizeof "SwapFree:" - 1) == 0)
-          swapfree = strtoll(buf + sizeof "SwapFree:" - 1, 0, 10);
+          swapfree = strtoll(buf + sizeof "SwapFree:" - 1, nullptr, 10);
         else if (strncmp(buf, "SwapTotal:", sizeof "SwapTotal:" - 1) == 0)
-          swapsize = strtoll(buf + sizeof "SwapTotal:" - 1, 0, 10);
+          swapsize = strtoll(buf + sizeof "SwapTotal:" - 1, nullptr, 10);
       }
       fclose(fp);
       // simple heuristic for linux

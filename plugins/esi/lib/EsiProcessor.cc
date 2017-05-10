@@ -24,7 +24,7 @@
 #include "EsiProcessor.h"
 #include "Stats.h"
 #include "FailureInfo.h"
-#include <ctype.h>
+#include <cctype>
 
 using std::string;
 using namespace EsiLib;

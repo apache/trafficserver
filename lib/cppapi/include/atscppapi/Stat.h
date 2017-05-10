@@ -73,7 +73,7 @@ public:
    *
    * @see SyncType
    */
-  bool init(std::string name, Stat::SyncType type = SYNC_COUNT, bool persistent = false);
+  bool init(const std::string &name, Stat::SyncType type = SYNC_COUNT, bool persistent = false);
 
   /**
    * This method allows you to increment a stat by a certain amount.

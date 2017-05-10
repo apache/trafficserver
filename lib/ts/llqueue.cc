@@ -24,13 +24,13 @@
 #include "ts/ink_config.h"
 #include "ts/ink_memory.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <limits.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cassert>
+#include <climits>
 
 #include "ts/ink_llqueue.h"
-#include "errno.h"
+#include <cerrno>
 
 #define RECORD_CHUNK 1024
 

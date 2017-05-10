@@ -22,7 +22,7 @@
  */
 
 #include "traffic_ctl.h"
-#include <time.h>
+#include <ctime>
 #include <I_RecDefs.h>
 #include <P_RecUtils.h>
 
@@ -82,8 +82,6 @@ rec_classof(int rec_class)
     return "process metric";
   case RECT_NODE:
     return "node metric";
-  case RECT_CLUSTER:
-    return "cluster metric";
   case RECT_PLUGIN:
     return "plugin metric";
   default:

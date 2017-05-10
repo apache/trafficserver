@@ -205,13 +205,11 @@ private:
   TokenList *cacheParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
   TokenList *congestionParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN,
                              unsigned short maxNumToken = MAX_CONFIG_TOKEN);
-  TokenList *icpParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
   TokenList *parentParse(char *rule);
   TokenList *remapParse(char *rule);
   TokenList *socksParse(char *rule);
   TokenList *splitdnsParse(char *rule);
   TokenList *updateParse(char *rule);
-  TokenList *vaddrsParse(char *rule);
   TokenList *arm_securityParse(char *rule);
   TokenList *hostingParse(char *rule);
   TokenList *ip_allowParse(char *rule);

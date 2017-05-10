@@ -75,11 +75,8 @@ struct CacheTestSM : public RegressionSM {
   VIO *cvio;
   MIOBuffer *buffer;
   IOBufferReader *buffer_reader;
-#ifdef HTTP_CACHE
-  CacheLookupHttpConfig params;
   CacheHTTPInfo info;
   char urlstr[1024];
-#endif
   int64_t total_size;
   int64_t nbytes;
   CacheKey key;

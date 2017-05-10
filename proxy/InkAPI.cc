@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "ts/ink_platform.h"
 #include "ts/ink_base64.h"
@@ -38,6 +38,7 @@
 #include "HttpSM.h"
 #include "HttpConfig.h"
 #include "P_Net.h"
+#include "P_SSLNextProtocolAccept.h"
 #include "P_UDPNet.h"
 #include "P_HostDB.h"
 #include "P_Cache.h"
@@ -3052,7 +3053,7 @@ TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
     return TS_NULL_MLOC;
   }
 
-  while (1) {
+  while (true) {
     ++slotnum;
     MIMEField *f = mime_hdr_field_get_slotnum(handle->mh, slotnum);
 
@@ -3171,7 +3172,7 @@ TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
    * An empty string is also considered to be a token. The correct value of
    * the field after this function should be NULL.
    */
-  mime_field_value_set(heap, handle->mh, handle->field_ptr, nullptr, 0, 1);
+  mime_field_value_set(heap, handle->mh, handle->field_ptr, nullptr, 0, true);
   return TS_SUCCESS;
 }
 
@@ -4403,9 +4404,6 @@ TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
   case TS_THREAD_POOL_REMAP:
     etype = ET_TASK; // Should be ET_REMAP
     break;
-  case TS_THREAD_POOL_CLUSTER:
-    etype = ET_CLUSTER;
-    break;
   case TS_THREAD_POOL_UDP:
     etype = ET_UDP;
     break;
@@ -4534,21 +4532,6 @@ TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
   lifecycle_hooks->append(id, (INKContInternal *)contp);
 }
 
-void
-TSHttpIcpDynamicSet(int value)
-{
-  int32_t old_value, new_value;
-
-  new_value = (value == 0) ? 0 : 1;
-  old_value = icp_dynamic_enabled;
-  while (old_value != new_value) {
-    if (ink_atomic_cas(&icp_dynamic_enabled, old_value, new_value)) {
-      break;
-    }
-    old_value = icp_dynamic_enabled;
-  }
-}
-
 /* HTTP sessions */
 void
 TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
@@ -4626,7 +4609,7 @@ TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
   APIHook *hook = sm->txn_hook_get(id);
 
   // Traverse list of hooks and add a particular hook only once
-  while (hook != NULL) {
+  while (hook != nullptr) {
     if (hook->m_cont == (INKContInternal *)contp) {
       return;
     }
@@ -6903,7 +6886,7 @@ TSCacheRead(TSCont contp, TSCacheKey key)
   CacheInfo *info = (CacheInfo *)key;
   Continuation *i = (INKContInternal *)contp;
 
-  return (TSAction)cacheProcessor.open_read(i, &info->cache_key, true, info->frag_type, info->hostname, info->len);
+  return (TSAction)cacheProcessor.open_read(i, &info->cache_key, info->frag_type, info->hostname, info->len);
 }
 
 TSAction
@@ -6917,8 +6900,8 @@ TSCacheWrite(TSCont contp, TSCacheKey key)
   CacheInfo *info = (CacheInfo *)key;
   Continuation *i = (INKContInternal *)contp;
 
-  return (TSAction)cacheProcessor.open_write(i, &info->cache_key, true, info->frag_type, 0, false, info->pin_in_cache,
-                                             info->hostname, info->len);
+  return (TSAction)cacheProcessor.open_write(i, &info->cache_key, info->frag_type, 0, false, info->pin_in_cache, info->hostname,
+                                             info->len);
 }
 
 TSAction
@@ -6932,7 +6915,7 @@ TSCacheRemove(TSCont contp, TSCacheKey key)
   CacheInfo *info    = (CacheInfo *)key;
   INKContInternal *i = (INKContInternal *)contp;
 
-  return (TSAction)cacheProcessor.remove(i, &info->cache_key, true, info->frag_type, info->hostname, info->len);
+  return (TSAction)cacheProcessor.remove(i, &info->cache_key, info->frag_type, info->hostname, info->len);
 }
 
 TSAction
@@ -7866,9 +7849,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_HTTP:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_http, typep);
     break;
-  case TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_cluster_cache_local, typep);
-    break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_ignore_client_no_cache, typep);
     break;
@@ -7953,12 +7933,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
     ret = _memberp_to_generic(&overridableHttpConfig->client_abort_threshold, typep);
     break;
-  case TS_CONFIG_HTTP_CACHE_FUZZ_TIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->freshness_fuzz_time, typep);
-    break;
-  case TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->freshness_fuzz_min_time, typep);
-    break;
   case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
     ret = _memberp_to_generic(&overridableHttpConfig->doc_in_cache_skip_dns, typep);
     break;
@@ -7970,9 +7944,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_heuristic_lm_factor, typep);
-    break;
-  case TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY:
-    ret = _memberp_to_generic(&overridableHttpConfig->freshness_fuzz_prob, typep);
     break;
   case TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD:
     ret = _memberp_to_generic(&overridableHttpConfig->background_fill_threshold, typep);
@@ -8108,6 +8079,30 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
     ret = _memberp_to_generic(&overridableHttpConfig->parent_failures_update_hostdb, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_enable_default_vary_headers, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_TEXT:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_vary_default_text, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_IMAGES:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_vary_default_images, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_OTHER:
+    ret = _memberp_to_generic(&overridableHttpConfig->cache_vary_default_other, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH:
+    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_mismatch, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH:
+    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_language_mismatch, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH:
+    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_encoding_mismatch, typep);
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH:
+    ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_charset_mismatch, typep);
     break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -8336,9 +8331,7 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     break;
 
   case 33:
-    if (!strncmp(name, "proxy.config.http.cache.fuzz.time", length)) {
-      cnf = TS_CONFIG_HTTP_CACHE_FUZZ_TIME;
-    } else if (!strncmp(name, "proxy.config.ssl.client.cert.path", length)) {
+    if (!strncmp(name, "proxy.config.ssl.client.cert.path", length)) {
       cnf = TS_CONFIG_SSL_CERT_FILEPATH;
       typ = TS_RECORDDATATYPE_STRING;
     }
@@ -8399,8 +8392,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.max_stale_age", length)) {
         cnf = TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE;
-      } else if (!strncmp(name, "proxy.config.http.cache.fuzz.min_time", length)) {
-        cnf = TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME;
       } else if (!strncmp(name, "proxy.config.http.default_buffer_size", length)) {
         cnf = TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE;
       } else if (!strncmp(name, "proxy.config.ssl.client.cert.filename", length)) {
@@ -8512,12 +8503,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT;
       }
       break;
-    case 'y':
-      if (!strncmp(name, "proxy.config.http.cache.fuzz.probability", length)) {
-        typ = TS_RECORDDATATYPE_FLOAT;
-        cnf = TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY;
-      }
-      break;
     }
     break;
 
@@ -8544,6 +8529,12 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK;
       }
       break;
+    case 't':
+      if (!strncmp(name, "proxy.config.http.cache.vary_default_text", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_TEXT;
+        typ = TS_RECORDDATATYPE_STRING;
+      }
+      break;
     }
     break;
 
@@ -8566,6 +8557,9 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER;
       } else if (!strncmp(name, "proxy.config.http.global_user_agent_header", length)) {
         cnf = TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER;
+        typ = TS_RECORDDATATYPE_STRING;
+      } else if (!strncmp(name, "proxy.config.http.cache.vary_default_other", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_OTHER;
         typ = TS_RECORDDATATYPE_STRING;
       }
       break;
@@ -8595,15 +8589,16 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK;
       }
       break;
-    case 'l':
-      if (!strncmp(name, "proxy.config.http.cache.cluster_cache_local", length)) {
-        cnf = TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL;
-      }
-      break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.cache.heuristic_lm_factor", length)) {
         typ = TS_RECORDDATATYPE_FLOAT;
         cnf = TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR;
+      }
+      break;
+    case 's':
+      if (!strncmp(name, "proxy.config.http.cache.vary_default_images", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_IMAGES;
+        typ = TS_RECORDDATATYPE_STRING;
       }
       break;
     }
@@ -8678,6 +8673,18 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE;
       }
       break;
+    case 'h':
+      if (0 == strncmp(name, "proxy.config.http.server_session_sharing.match", length)) {
+        cnf = TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH;
+      } else if (!strncmp(name, "proxy.config.http.cache.ignore_accept_mismatch", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH;
+      }
+      break;
+    case 'n':
+      if (!strncmp(name, "proxy.config.http.cache.open_write_fail_action", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION;
+      }
+      break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.insert_squid_x_forwarded_for", length)) {
         cnf = TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR;
@@ -8693,16 +8700,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 't':
       if (!strncmp(name, "proxy.config.http.forward.proxy_auth_to_parent", length)) {
         cnf = TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT;
-      }
-      break;
-    case 'h':
-      if (0 == strncmp(name, "proxy.config.http.server_session_sharing.match", length)) {
-        cnf = TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH;
-      }
-      break;
-    case 'n':
-      if (!strncmp(name, "proxy.config.http.cache.open_write_fail_action", length)) {
-        cnf = TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION;
       }
       break;
     }
@@ -8790,6 +8787,11 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED;
       }
       break;
+    case 's':
+      if (!strncmp(name, "proxy.config.http.cache.enable_default_vary_headers", length)) {
+        cnf = TS_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER;
+      }
+      break;
     }
     break;
 
@@ -8833,6 +8835,20 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS;
       }
       break;
+    }
+    break;
+
+  case 54:
+    if (!strncmp(name, "proxy.config.http.cache.ignore_accept_charset_mismatch", length)) {
+      cnf = TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH;
+    }
+    break;
+
+  case 55:
+    if (!strncmp(name, "proxy.config.http.cache.ignore_accept_language_mismatch", length)) {
+      cnf = TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH;
+    } else if (!strncmp(name, "proxy.config.http.cache.ignore_accept_encoding_mismatch", length)) {
+      cnf = TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH;
     }
     break;
 
@@ -9110,6 +9126,65 @@ tsapi void
 TSSslContextDestroy(TSSslContext ctx)
 {
   SSLReleaseContext(reinterpret_cast<SSL_CTX *>(ctx));
+}
+
+void
+TSRegisterProtocolSet(TSVConn sslp, TSNextProtocolSet ps)
+{
+  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+  if (ssl_vc) {
+    ssl_vc->registerNextProtocolSet(reinterpret_cast<SSLNextProtocolSet *>(ps));
+  }
+}
+
+TSNextProtocolSet
+TSUnregisterProtocol(TSNextProtocolSet protoset, const char *protocol)
+{
+  SSLNextProtocolSet *snps = reinterpret_cast<SSLNextProtocolSet *>(protoset);
+  if (snps) {
+    snps->unregisterEndpoint(protocol, nullptr);
+    return reinterpret_cast<TSNextProtocolSet>(snps);
+  }
+  return nullptr;
+}
+
+TSAcceptor
+TSAcceptorGet(TSVConn sslp)
+{
+  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+  return ssl_vc ? reinterpret_cast<TSAcceptor>(ssl_vc->accept_object) : nullptr;
+}
+
+extern std::vector<NetAccept *> naVec;
+TSAcceptor
+TSAcceptorGetbyID(int ID)
+{
+  Debug("ssl", "getNetAccept in INK API.cc %p", naVec.at(ID));
+  return reinterpret_cast<TSAcceptor>(naVec.at(ID));
+}
+
+int
+TSAcceptorIDGet(TSAcceptor acceptor)
+{
+  NetAccept *na = reinterpret_cast<NetAccept *>(acceptor);
+  return na ? na->id : -1;
+}
+
+int
+TSAcceptorCount()
+{
+  return naVec.size();
+}
+
+// clones the protoset associated with netAccept
+TSNextProtocolSet
+TSGetcloneProtoSet(TSAcceptor tna)
+{
+  NetAccept *na = reinterpret_cast<NetAccept *>(tna);
+  // clone protoset
+  return (na && na->snpa) ? reinterpret_cast<TSNextProtocolSet>(na->snpa->cloneProtoSet()) : nullptr;
 }
 
 tsapi int

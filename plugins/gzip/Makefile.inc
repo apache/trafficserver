@@ -16,3 +16,7 @@
 
 pkglib_LTLIBRARIES += gzip/gzip.la
 gzip_gzip_la_SOURCES = gzip/gzip.cc gzip/configuration.cc gzip/misc.cc
+
+gzip_gzip_la_LDFLAGS = \
+  $(AM_LDFLAGS) $(LIB_BROTLIENC)
+

@@ -84,7 +84,6 @@ A number of file object are define to help with adding values to a given configu
  * cache.config
  * congestion.config
  * hosting.config
- * icp.config    
  * ip_allow.config
  * log_hosts.config
  * logging.config
@@ -96,7 +95,6 @@ A number of file object are define to help with adding values to a given configu
  * splitdns.config
  * ssl_multicert.config
  * storage.config
- * vaddrs.config
  * volume.config
 
 #### Examples

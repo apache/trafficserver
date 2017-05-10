@@ -32,7 +32,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_code.h"
 #include "ts/ParseRules.h"
-#include <limits.h>
+#include <climits>
 #include "ts/I_Layout.h"
 
 #include "mgmtapi.h"
@@ -902,9 +902,9 @@ TSCacheEleCreate(TSRuleTypeT type)
 {
   TSCacheEle *ele;
 
-  if (type != TS_CACHE_NEVER && type != TS_CACHE_IGNORE_NO_CACHE && type != TS_CACHE_CLUSTER_CACHE_LOCAL &&
-      type != TS_CACHE_IGNORE_CLIENT_NO_CACHE && type != TS_CACHE_IGNORE_SERVER_NO_CACHE && type != TS_CACHE_PIN_IN_CACHE &&
-      type != TS_CACHE_REVALIDATE && type != TS_CACHE_TTL_IN_CACHE && type != TS_CACHE_AUTH_CONTENT && type != TS_TYPE_UNDEFINED) {
+  if (type != TS_CACHE_NEVER && type != TS_CACHE_IGNORE_NO_CACHE && type != TS_CACHE_IGNORE_CLIENT_NO_CACHE &&
+      type != TS_CACHE_IGNORE_SERVER_NO_CACHE && type != TS_CACHE_PIN_IN_CACHE && type != TS_CACHE_REVALIDATE &&
+      type != TS_CACHE_TTL_IN_CACHE && type != TS_CACHE_AUTH_CONTENT && type != TS_TYPE_UNDEFINED) {
     return nullptr; // invalid type
   }
 
@@ -1004,41 +1004,6 @@ TSHostingEleDestroy(TSHostingEle *ele)
     if (ele->volumes) {
       TSIntListDestroy(ele->volumes);
     }
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * IcpObject
- *-------------------------------------------------------------*/
-tsapi TSIcpEle *
-TSIcpEleCreate()
-{
-  TSIcpEle *ele = (TSIcpEle *)ats_malloc(sizeof(TSIcpEle));
-
-  /* set defaults */
-  ele->cfg_ele.type      = TS_ICP;
-  ele->cfg_ele.error     = TS_ERR_OKAY;
-  ele->peer_hostname     = nullptr;
-  ele->peer_host_ip_addr = TS_INVALID_IP_ADDR;
-  ele->peer_type         = TS_ICP_UNDEFINED;
-  ele->peer_proxy_port   = TS_INVALID_PORT;
-  ele->peer_icp_port     = TS_INVALID_PORT;
-  ele->is_multicast      = false;
-  ele->mc_ip_addr        = TS_INVALID_IP_ADDR;
-  ele->mc_ttl            = TS_MC_TTL_SINGLE_SUBNET; // default value
-
-  return ele;
-}
-
-tsapi void
-TSIcpEleDestroy(TSIcpEle *ele)
-{
-  if (ele) {
-    ats_free(ele->peer_hostname);
-    ats_free(ele->peer_host_ip_addr);
-    ats_free(ele->mc_ip_addr);
     ats_free(ele);
   }
   return;
@@ -1306,42 +1271,15 @@ TSStorageEleDestroy(TSStorageEle *ele)
   return;
 }
 
-/*-------------------------------------------------------------
- * TSVirtIpAddrEle
- *-------------------------------------------------------------*/
-TSVirtIpAddrEle *
-TSVirtIpAddrEleCreate()
-{
-  TSVirtIpAddrEle *ele = (TSVirtIpAddrEle *)ats_malloc(sizeof(TSVirtIpAddrEle));
-
-  ele->cfg_ele.type  = TS_VADDRS;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->intr          = nullptr;
-  ele->sub_intr      = -1;
-  ele->ip_addr       = TS_INVALID_IP_ADDR;
-
-  return ele;
-}
-
-void
-TSVirtIpAddrEleDestroy(TSVirtIpAddrEle *ele)
-{
-  if (ele) {
-    ats_free(ele->intr);
-    ats_free(ele->ip_addr);
-    ats_free(ele);
-  }
-}
-
 /***************************************************************************
  * API Core
  ***************************************************************************/
 
 /*--- statistics operations ----------------------------------------------- */
 tsapi TSMgmtError
-TSStatsReset(bool cluster, const char *name)
+TSStatsReset(const char *name)
 {
-  return StatsReset(cluster, name);
+  return StatsReset(name);
 }
 
 /*--- variable operations ------------------------------------------------- */

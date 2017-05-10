@@ -22,13 +22,12 @@
  */
 
 #include "ts/ink_config.h"
-#include <ctype.h>
-#include <string.h>
+#include <cctype>
+#include <cstring>
 #include "HttpConfig.h"
 #include "HTTP.h"
 #include "ProcessManager.h"
 #include "ProxyConfig.h"
-#include "ICPProcessor.h"
 #include "P_Net.h"
 #include "P_RecUtils.h"
 #include <records/I_RecHttp.h>
@@ -1017,13 +1016,9 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
   HttpEstablishStaticConfigByte(c.oride.srv_enabled, "proxy.config.srv_enabled");
 
-  HttpEstablishStaticConfigLongLong(c.oride.freshness_fuzz_time, "proxy.config.http.cache.fuzz.time");
-  HttpEstablishStaticConfigLongLong(c.oride.freshness_fuzz_min_time, "proxy.config.http.cache.fuzz.min_time");
-  HttpEstablishStaticConfigFloat(c.oride.freshness_fuzz_prob, "proxy.config.http.cache.fuzz.probability");
-
-  HttpEstablishStaticConfigStringAlloc(c.cache_vary_default_text, "proxy.config.http.cache.vary_default_text");
-  HttpEstablishStaticConfigStringAlloc(c.cache_vary_default_images, "proxy.config.http.cache.vary_default_images");
-  HttpEstablishStaticConfigStringAlloc(c.cache_vary_default_other, "proxy.config.http.cache.vary_default_other");
+  HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_text, "proxy.config.http.cache.vary_default_text");
+  HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_images, "proxy.config.http.cache.vary_default_images");
+  HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_other, "proxy.config.http.cache.vary_default_other");
 
   // open read failure retries
   HttpEstablishStaticConfigLongLong(c.oride.max_cache_open_read_retries, "proxy.config.http.cache.max_open_read_retries");
@@ -1034,7 +1029,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.max_cache_open_write_retries, "proxy.config.http.cache.max_open_write_retries");
 
   HttpEstablishStaticConfigByte(c.oride.cache_http, "proxy.config.http.cache.http");
-  HttpEstablishStaticConfigByte(c.oride.cache_cluster_cache_local, "proxy.config.http.cache.cluster_cache_local");
   HttpEstablishStaticConfigByte(c.oride.cache_ignore_client_no_cache, "proxy.config.http.cache.ignore_client_no_cache");
   HttpEstablishStaticConfigByte(c.oride.cache_ignore_client_cc_max_age, "proxy.config.http.cache.ignore_client_cc_max_age");
   HttpEstablishStaticConfigByte(c.oride.cache_ims_on_client_no_cache, "proxy.config.http.cache.ims_on_client_no_cache");
@@ -1043,13 +1037,13 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.cache_ignore_auth, "proxy.config.http.cache.ignore_authentication");
   HttpEstablishStaticConfigByte(c.oride.cache_urls_that_look_dynamic, "proxy.config.http.cache.cache_urls_that_look_dynamic");
-  HttpEstablishStaticConfigByte(c.cache_enable_default_vary_headers, "proxy.config.http.cache.enable_default_vary_headers");
+  HttpEstablishStaticConfigByte(c.oride.cache_enable_default_vary_headers, "proxy.config.http.cache.enable_default_vary_headers");
   HttpEstablishStaticConfigByte(c.cache_post_method, "proxy.config.http.cache.post_method");
 
-  HttpEstablishStaticConfigByte(c.ignore_accept_mismatch, "proxy.config.http.cache.ignore_accept_mismatch");
-  HttpEstablishStaticConfigByte(c.ignore_accept_language_mismatch, "proxy.config.http.cache.ignore_accept_language_mismatch");
-  HttpEstablishStaticConfigByte(c.ignore_accept_encoding_mismatch, "proxy.config.http.cache.ignore_accept_encoding_mismatch");
-  HttpEstablishStaticConfigByte(c.ignore_accept_charset_mismatch, "proxy.config.http.cache.ignore_accept_charset_mismatch");
+  HttpEstablishStaticConfigByte(c.oride.ignore_accept_mismatch, "proxy.config.http.cache.ignore_accept_mismatch");
+  HttpEstablishStaticConfigByte(c.oride.ignore_accept_language_mismatch, "proxy.config.http.cache.ignore_accept_language_mismatch");
+  HttpEstablishStaticConfigByte(c.oride.ignore_accept_encoding_mismatch, "proxy.config.http.cache.ignore_accept_encoding_mismatch");
+  HttpEstablishStaticConfigByte(c.oride.ignore_accept_charset_mismatch, "proxy.config.http.cache.ignore_accept_charset_mismatch");
 
   HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
@@ -1131,10 +1125,6 @@ HttpConfig::startup()
 
   // FTP protocol enabled
   HttpEstablishStaticConfigByte(c.forward_proxy_ftp_enabled, "proxy.config.ftp_enabled");
-  // Cluster time delta gets it own callback since it needs
-  //  to use ink_atomic_swap
-  c.cluster_time_delta = 0;
-  RegisterMgmtCallback(MGMT_EVENT_HTTP_CLUSTER_DELTA, cluster_delta_cb, nullptr);
 
   http_config_cont->handleEvent(EVENT_NONE, nullptr);
 
@@ -1296,9 +1286,6 @@ HttpConfig::reconfigure()
   params->enable_http_stats                  = INT_TO_BOOL(m_master.enable_http_stats);
   params->oride.normalize_ae_gzip            = INT_TO_BOOL(m_master.oride.normalize_ae_gzip);
 
-  params->icp_enabled       = (m_master.icp_enabled == ICP_MODE_SEND_RECEIVE ? 1 : 0); // INT_TO_BOOL
-  params->stale_icp_enabled = INT_TO_BOOL(m_master.stale_icp_enabled);
-
   params->oride.cache_heuristic_min_lifetime = m_master.oride.cache_heuristic_min_lifetime;
   params->oride.cache_heuristic_max_lifetime = m_master.oride.cache_heuristic_max_lifetime;
   params->oride.cache_heuristic_lm_factor    = min(max(m_master.oride.cache_heuristic_lm_factor, 0.0f), 1.0f);
@@ -1306,14 +1293,11 @@ HttpConfig::reconfigure()
   params->oride.cache_guaranteed_min_lifetime = m_master.oride.cache_guaranteed_min_lifetime;
   params->oride.cache_guaranteed_max_lifetime = m_master.oride.cache_guaranteed_max_lifetime;
 
-  params->oride.cache_max_stale_age     = m_master.oride.cache_max_stale_age;
-  params->oride.freshness_fuzz_time     = m_master.oride.freshness_fuzz_time;
-  params->oride.freshness_fuzz_min_time = m_master.oride.freshness_fuzz_min_time;
-  params->oride.freshness_fuzz_prob     = m_master.oride.freshness_fuzz_prob;
+  params->oride.cache_max_stale_age = m_master.oride.cache_max_stale_age;
 
-  params->cache_vary_default_text   = ats_strdup(m_master.cache_vary_default_text);
-  params->cache_vary_default_images = ats_strdup(m_master.cache_vary_default_images);
-  params->cache_vary_default_other  = ats_strdup(m_master.cache_vary_default_other);
+  params->oride.cache_vary_default_text   = ats_strdup(m_master.oride.cache_vary_default_text);
+  params->oride.cache_vary_default_images = ats_strdup(m_master.oride.cache_vary_default_images);
+  params->oride.cache_vary_default_other  = ats_strdup(m_master.oride.cache_vary_default_other);
 
   params->oride.srv_enabled = m_master.oride.srv_enabled;
 
@@ -1325,22 +1309,21 @@ HttpConfig::reconfigure()
   // open write failure retries
   params->oride.max_cache_open_write_retries = m_master.oride.max_cache_open_write_retries;
 
-  params->oride.cache_http                     = INT_TO_BOOL(m_master.oride.cache_http);
-  params->oride.cache_cluster_cache_local      = INT_TO_BOOL(m_master.oride.cache_cluster_cache_local);
-  params->oride.cache_ignore_client_no_cache   = INT_TO_BOOL(m_master.oride.cache_ignore_client_no_cache);
-  params->oride.cache_ignore_client_cc_max_age = INT_TO_BOOL(m_master.oride.cache_ignore_client_cc_max_age);
-  params->oride.cache_ims_on_client_no_cache   = INT_TO_BOOL(m_master.oride.cache_ims_on_client_no_cache);
-  params->oride.cache_ignore_server_no_cache   = INT_TO_BOOL(m_master.oride.cache_ignore_server_no_cache);
-  params->oride.cache_responses_to_cookies     = m_master.oride.cache_responses_to_cookies;
-  params->oride.cache_ignore_auth              = INT_TO_BOOL(m_master.oride.cache_ignore_auth);
-  params->oride.cache_urls_that_look_dynamic   = INT_TO_BOOL(m_master.oride.cache_urls_that_look_dynamic);
-  params->cache_enable_default_vary_headers    = INT_TO_BOOL(m_master.cache_enable_default_vary_headers);
-  params->cache_post_method                    = INT_TO_BOOL(m_master.cache_post_method);
+  params->oride.cache_http                        = INT_TO_BOOL(m_master.oride.cache_http);
+  params->oride.cache_ignore_client_no_cache      = INT_TO_BOOL(m_master.oride.cache_ignore_client_no_cache);
+  params->oride.cache_ignore_client_cc_max_age    = INT_TO_BOOL(m_master.oride.cache_ignore_client_cc_max_age);
+  params->oride.cache_ims_on_client_no_cache      = INT_TO_BOOL(m_master.oride.cache_ims_on_client_no_cache);
+  params->oride.cache_ignore_server_no_cache      = INT_TO_BOOL(m_master.oride.cache_ignore_server_no_cache);
+  params->oride.cache_responses_to_cookies        = m_master.oride.cache_responses_to_cookies;
+  params->oride.cache_ignore_auth                 = INT_TO_BOOL(m_master.oride.cache_ignore_auth);
+  params->oride.cache_urls_that_look_dynamic      = INT_TO_BOOL(m_master.oride.cache_urls_that_look_dynamic);
+  params->oride.cache_enable_default_vary_headers = INT_TO_BOOL(m_master.oride.cache_enable_default_vary_headers);
+  params->cache_post_method                       = INT_TO_BOOL(m_master.cache_post_method);
 
-  params->ignore_accept_mismatch          = m_master.ignore_accept_mismatch;
-  params->ignore_accept_language_mismatch = m_master.ignore_accept_language_mismatch;
-  params->ignore_accept_encoding_mismatch = m_master.ignore_accept_encoding_mismatch;
-  params->ignore_accept_charset_mismatch  = m_master.ignore_accept_charset_mismatch;
+  params->oride.ignore_accept_mismatch          = m_master.oride.ignore_accept_mismatch;
+  params->oride.ignore_accept_language_mismatch = m_master.oride.ignore_accept_language_mismatch;
+  params->oride.ignore_accept_encoding_mismatch = m_master.oride.ignore_accept_encoding_mismatch;
+  params->oride.ignore_accept_charset_mismatch  = m_master.oride.ignore_accept_charset_mismatch;
 
   params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
   params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
@@ -1481,7 +1464,7 @@ HttpConfig::parse_ports_list(char *ports_string)
 
     start = ports_string;
 
-    while (1) { // eat whitespace
+    while (true) { // eat whitespace
       while ((start[0] != '\0') && ParseRules::is_space(start[0])) {
         start++;
       }
@@ -1535,26 +1518,6 @@ HttpConfig::parse_ports_list(char *ports_string)
     }
   }
   return (ports_list);
-}
-
-////////////////////////////////////////////////////////////////
-//
-//  HttpConfig::cluster_delta_cb
-//
-////////////////////////////////////////////////////////////////
-void *
-HttpConfig::cluster_delta_cb(void * /* opaque_token ATS_UNUSED */, char *data_raw, int /* data_len ATS_UNUSED */)
-{
-  int32_t delta32 = (int32_t)atoi(data_raw);
-  int32_t old;
-
-  // Using ink_atomic_swap is mostly paranoia since a thirty bit write
-  //  really ought to atomic.  However, any risk of bogus time is
-  //  too ugly for me to contemplate
-  old = ink_atomic_swap(&HttpConfig::m_master.cluster_time_delta, delta32);
-  Debug("http_trans", "Cluster time delta moving from %d to %d", old, delta32);
-
-  return nullptr;
 }
 
 volatile int32_t icp_dynamic_enabled;

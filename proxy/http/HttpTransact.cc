@@ -31,7 +31,7 @@
 #include "HttpSM.h"
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object - YTS Team, yamsat
 #include "HttpDebugNames.h"
-#include "time.h"
+#include <ctime>
 #include "ts/ParseRules.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
@@ -576,7 +576,7 @@ HttpTransact::Forbidden(State *s)
                          "IpAllow marked request forbidden");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
   build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied");
-  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
 void
@@ -717,7 +717,7 @@ HttpTransact::StartRemapRequest(State *s)
 
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans")) {
     DebugTxn("http_trans", "Before Remapping:");
-    obj_describe(s->hdr_info.client_request.m_http, 1);
+    obj_describe(s->hdr_info.client_request.m_http, true);
   }
 
   if (url_remap_mode == URL_REMAP_DEFAULT || url_remap_mode == URL_REMAP_ALL) {
@@ -867,7 +867,7 @@ done:
 
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
     DebugTxn("http_trans", "After Remapping:");
-    obj_describe(s->hdr_info.client_request.m_http, 1);
+    obj_describe(s->hdr_info.client_request.m_http, true);
   }
 
   /*
@@ -1210,7 +1210,7 @@ HttpTransact::HandleRequest(State *s)
   DebugTxn("http_seq", "[HttpTransact::HandleRequest] request valid.");
 
   if (is_debug_tag_set("http_chdr_describe")) {
-    obj_describe(s->hdr_info.client_request.m_http, 1);
+    obj_describe(s->hdr_info.client_request.m_http, true);
   }
 
   // at this point we are guaranteed that the request is good and acceptable.
@@ -1347,7 +1347,7 @@ HttpTransact::HandleRequest(State *s)
   if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' &&
       (!s->state_machine->enable_redirection || !s->redirect_info.redirect_in_process) &&
       s->parent_params->parent_table->hostMatch) {
-    s->force_dns = 1;
+    s->force_dns = true;
   }
   /* A redirect means we need to check some things again.
      If the cache is enabled then we need to check the new (redirected) request against the cache.
@@ -1494,6 +1494,9 @@ HttpTransact::PPDNSLookup(State *s)
     if (!s->current.server->dst_addr.isValid()) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+      } else if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
+        // We ran out of parents but parent configuration allows us to go to Origin Server directly
+        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
       } else {
         // We could be out of parents here if all the parents failed DNS lookup
         ink_assert(s->current.request_to == HOST_NONE);
@@ -1978,6 +1981,9 @@ HttpTransact::LookupSkipOpenServer(State *s)
 
   if (s->current.request_to == PARENT_PROXY) {
     TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+  } else if (s->parent_result.result == PARENT_FAIL) {
+    handle_parent_died(s);
+    return;
   }
 
   ink_assert(s->current.request_to == ORIGIN_SERVER);
@@ -2041,7 +2047,7 @@ HttpTransact::HandlePushResponseHdr(State *s)
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Generated Request Header");
 
-  s->response_received_time = s->request_sent_time = ink_cluster_time();
+  s->response_received_time = s->request_sent_time = ink_local_time();
 
   if (is_response_cacheable(s, &s->hdr_info.server_request, &s->hdr_info.server_response)) {
     ink_assert(s->cache_info.action == CACHE_PREPARE_TO_WRITE || s->cache_info.action == CACHE_PREPARE_TO_UPDATE);
@@ -2176,13 +2182,10 @@ HttpTransact::HandleCacheOpenRead(State *s)
     // cache miss
     DebugTxn("http_trans", "CacheOpenRead -- miss");
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
-    // StartAccessControl(s);
-    if (s->force_dns) {
-      HandleCacheOpenReadMiss(s);
-    } else {
-      // Cache Lookup Unsuccessful ..calling dns lookup
-      TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
-    }
+    // Perform DNS for the origin when it is required.
+    // 1. If parent configuration does not allow to go to origin there is no need of performing DNS
+    // 2. If parent satisfies the request there is no need to go to origin to perfrom DNS
+    HandleCacheOpenReadMiss(s);
   } else {
     // cache hit
     DebugTxn("http_trans", "CacheOpenRead -- hit");
@@ -2632,88 +2635,70 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
                          "Revalidate document with server");
 
-    if (s->http_config_param->icp_enabled && icp_dynamic_enabled && s->http_config_param->stale_icp_enabled &&
-        needs_authenticate == false && needs_cache_auth == false && !s->hdr_info.client_request.is_pragma_no_cache_set() &&
-        !s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
-      DebugTxn("http_trans", "[HandleCacheOpenReadHit] ICP is configured"
-                             " and no no-cache in request; checking ICP for a STALE hit");
+    find_server_and_update_current_info(s);
 
-      s->stale_icp_lookup = true;
-
-      // we haven't done the ICP lookup yet. The following is to
-      // fake an icp_info to cater for build_request's needs
-      s->icp_info.http_version.set(1, 0);
-      if (!s->txn_conf->keep_alive_enabled_out) {
-        s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
-      } else {
-        s->icp_info.keep_alive = HTTP_KEEPALIVE;
-      }
-
-      update_current_info(&s->current, &s->icp_info, HttpTransact::ICP_SUGGESTED_HOST, 1);
+    // We do not want to try to revalidate documents if we think
+    //  the server is down due to the something report problem
+    //
+    // Note: we only want to skip origin servers because 1)
+    //  parent proxies have their own negative caching
+    //  scheme & 2) If we skip down parents, every page
+    //  we serve is potentially stale
+    //
+    if (s->current.request_to == ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
+        is_stale_cache_response_returnable(s) == true) {
+      server_up = false;
+      update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
+      DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
     }
-
-    if (s->stale_icp_lookup == false) {
-      find_server_and_update_current_info(s);
-
-      // We do not want to try to revalidate documents if we think
-      //  the server is down due to the something report problem
-      //
-      // Note: we only want to skip origin servers because 1)
-      //  parent proxies have their own negative caching
-      //  scheme & 2) If we skip down parents, every page
-      //  we serve is potentially stale
-      //
-      if (s->current.request_to == ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
-          is_stale_cache_response_returnable(s) == true) {
+    // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
+    // there are no available parents (all down).
+    else if (s->current.request_to == HOST_NONE && s->parent_result.result == PARENT_FAIL) {
+      if (is_server_negative_cached(s) && response_returnable == true && is_stale_cache_response_returnable(s) == true) {
         server_up = false;
         update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
         DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
-      }
-      // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
-      // there are no available parents (all down).
-      else if (s->current.request_to == HOST_NONE && s->parent_result.result == PARENT_FAIL) {
-        if (is_server_negative_cached(s) && response_returnable == true && is_stale_cache_response_returnable(s) == true) {
-          server_up = false;
-          update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
-          DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
-        } else {
-          handle_parent_died(s);
-          return;
-        }
+      } else {
+        handle_parent_died(s);
+        return;
       }
     }
 
-    if (server_up || s->stale_icp_lookup) {
-      bool check_hostdb = get_ka_info_from_config(s, s->current.server);
-      DebugTxn("http_trans", "CacheOpenReadHit - check_hostdb %d", check_hostdb);
-      if (!s->stale_icp_lookup && (check_hostdb || !s->current.server->dst_addr.isValid())) {
-        //        ink_release_assert(s->current.request_to == PARENT_PROXY ||
-        //                    s->http_config_param->no_dns_forward_to_parent != 0);
+    if (server_up) {
+      // set a default version for the outgoing request
+      HTTPVersion http_version;
 
-        // We must be going a PARENT PROXY since so did
-        //  origin server DNS lookup right after state Start
-        //
-        // If we end up here in the release case just fall
-        //  through.  The request will fail because of the
-        //  missing ip but we won't take down the system
-        //
-        if (s->current.request_to == PARENT_PROXY) {
-          // Set ourselves up to handle pending revalidate issues
-          //  after the PP DNS lookup
-          ink_assert(s->pending_work == nullptr);
-          s->pending_work = issue_revalidate;
+      if (s->current.server != nullptr) {
+        bool check_hostdb = get_ka_info_from_config(s, s->current.server);
+        DebugTxn("http_trans", "CacheOpenReadHit - check_hostdb %d", check_hostdb);
+        if (check_hostdb || !s->current.server->dst_addr.isValid()) {
+          // We must be going a PARENT PROXY since so did
+          //  origin server DNS lookup right after state Start
+          //
+          // If we end up here in the release case just fall
+          //  through.  The request will fail because of the
+          //  missing ip but we won't take down the system
+          //
+          if (s->current.request_to == PARENT_PROXY) {
+            // Set ourselves up to handle pending revalidate issues
+            //  after the PP DNS lookup
+            ink_assert(s->pending_work == nullptr);
+            s->pending_work = issue_revalidate;
 
-          TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
-        } else if (s->current.request_to == ORIGIN_SERVER) {
-          TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
-        } else {
-          handle_parent_died(s);
-          return;
+            TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+          } else if (s->current.request_to == ORIGIN_SERVER) {
+            TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+          } else {
+            handle_parent_died(s);
+            return;
+          }
         }
+        // override the default version with what the server has
+        http_version = s->current.server->http_version;
       }
 
-      DebugTxn("http_trans", "CacheOpenReadHit - version %d", s->current.server->http_version.m_version);
-      build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
+      DebugTxn("http_trans", "CacheOpenReadHit - version %d", http_version.m_version);
+      build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, http_version);
 
       issue_revalidate(s);
 
@@ -2721,9 +2706,6 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
       // in other words, we would not have looked up the cache for a
       // connect request, so the next action can not be origin_server_raw_open.
       s->next_action = how_to_open_connection(s);
-      if (s->stale_icp_lookup && s->next_action == SM_ACTION_ORIGIN_SERVER_OPEN) {
-        s->next_action = SM_ACTION_ICP_QUERY;
-      }
 
       ink_release_assert(s->next_action != SM_ACTION_ORIGIN_SERVER_RAW_OPEN);
       return;
@@ -3020,19 +3002,15 @@ HttpTransact::handle_cache_write_lock(State *s)
     HandleCacheOpenReadHitFreshness(s);
   } else {
     StateMachineAction_t next;
-    if (s->stale_icp_lookup == false) {
-      next = how_to_open_connection(s);
-      if (next == SM_ACTION_ORIGIN_SERVER_OPEN || next == SM_ACTION_ORIGIN_SERVER_RAW_OPEN) {
-        s->next_action = next;
-        TRANSACT_RETURN(next, nullptr);
-      } else {
-        // hehe!
-        s->next_action = next;
-        ink_assert(s->next_action == SM_ACTION_DNS_LOOKUP);
-        return;
-      }
+    next = how_to_open_connection(s);
+    if (next == SM_ACTION_ORIGIN_SERVER_OPEN || next == SM_ACTION_ORIGIN_SERVER_RAW_OPEN) {
+      s->next_action = next;
+      TRANSACT_RETURN(next, nullptr);
     } else {
-      next = SM_ACTION_ICP_QUERY;
+      // hehe!
+      s->next_action = next;
+      ink_assert(s->next_action == SM_ACTION_DNS_LOOKUP);
+      return;
     }
 
     TRANSACT_RETURN(next, nullptr);
@@ -3048,7 +3026,6 @@ HttpTransact::handle_cache_write_lock(State *s)
 //
 //
 // Possible Next States From Here:
-// - HttpTransact::ICP_QUERY;
 // - HttpTransact::SM_ACTION_DNS_LOOKUP;
 // - HttpTransact::ORIGIN_SERVER_OPEN;
 // - HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
@@ -3088,25 +3065,6 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     s->cache_info.action = CACHE_PREPARE_TO_WRITE;
   }
 
-  // We should not issue an ICP lookup if the request has a
-  // no-cache header. First check if the request has a no
-  // cache header. Then, if icp is enabled and the request
-  // does not have a no-cache header, issue an icp lookup.
-
-  // does the request have a no-cache?
-  bool no_cache_in_request = false;
-
-  if (s->hdr_info.client_request.is_pragma_no_cache_set() || s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
-    no_cache_in_request = true;
-  }
-  // if ICP is enabled and above test indicates that request
-  // does not have a no-cache, issue icp query to sibling cache.
-  if (s->http_config_param->icp_enabled && icp_dynamic_enabled != 0 && (no_cache_in_request == false)) {
-    DebugTxn("http_trans", "[HandleCacheOpenReadMiss] "
-                           "ICP is configured and no no-cache in request; checking ICP");
-    s->next_action = SM_ACTION_ICP_QUERY;
-    return;
-  }
   ///////////////////////////////////////////////////////////////
   // a normal miss would try to fetch the document from the    //
   // origin server, unless the origin server isn't resolvable, //
@@ -3125,7 +3083,12 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
       return;
     }
     if (!s->current.server->dst_addr.isValid()) {
-      ink_release_assert(s->current.request_to == PARENT_PROXY || s->http_config_param->no_dns_forward_to_parent != 0);
+      ink_release_assert(s->parent_result.result == PARENT_DIRECT || s->current.request_to == PARENT_PROXY ||
+                         s->http_config_param->no_dns_forward_to_parent != 0);
+      if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
+        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+        return;
+      }
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, HttpTransact::PPDNSLookup);
       } else {
@@ -3134,84 +3097,15 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
       }
     }
     build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
-
-    s->next_action = how_to_open_connection(s);
+    s->current.attempts = 0;
+    s->next_action      = how_to_open_connection(s);
+    if (s->current.server == &s->server_info && s->next_hop_scheme == URL_WKSIDX_HTTP) {
+      HttpTransactHeaders::remove_host_name_from_url(&s->hdr_info.server_request);
+    }
   } else { // miss, but only-if-cached is set
     build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Not Cached", "cache#not_in_cache");
     s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
   }
-
-  return;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Name       : HandleICPLookup
-// Description:
-//
-// Details    :
-//
-//
-//
-// Possible Next States From Here:
-// - HttpTransact::SM_ACTION_DNS_LOOKUP;
-// - HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
-// - result of how_to_open_connection()
-//
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransact::HandleICPLookup(State *s)
-{
-  SET_VIA_STRING(VIA_DETAIL_CACHE_TYPE, VIA_DETAIL_ICP);
-  if (s->icp_lookup_success == true) {
-    HTTP_INCREMENT_DYN_STAT(http_icp_suggested_lookups_stat);
-    DebugTxn("http_trans", "[HandleICPLookup] Success, sending request to icp suggested host.");
-    ats_ip4_set(&s->icp_info.dst_addr, s->icp_ip_result.sin_addr.s_addr);
-    s->icp_info.dst_addr.port() = ntohs(s->icp_ip_result.sin_port);
-
-    // TODO in this case we should go to the miss case
-    // just a little shy about using goto's, that's all.
-    ink_release_assert((s->icp_info.dst_addr.port() != s->client_info.dst_addr.port()) ||
-                       (ats_ip_addr_cmp(&s->icp_info.dst_addr.sa, &Machine::instance()->ip.sa) != 0));
-
-    // Since the ICPDNSLookup is not called, these two
-    //   values are not initialized.
-    // Force them to be initialized
-    s->icp_info.http_version.set(1, 0);
-    if (!s->txn_conf->keep_alive_enabled_out) {
-      s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
-    } else {
-      s->icp_info.keep_alive = HTTP_KEEPALIVE;
-    }
-
-    s->icp_info.name = (char *)s->arena.alloc(17);
-    unsigned char *p = (unsigned char *)&s->icp_ip_result.sin_addr.s_addr;
-    snprintf(s->icp_info.name, 17, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-
-    update_current_info(&s->current, &s->icp_info, ICP_SUGGESTED_HOST, 1);
-    s->next_hop_scheme = URL_WKSIDX_HTTP;
-  } else {
-    SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
-    DebugTxn("http_trans", "[HandleICPLookup] Failure, sending request to forward server.");
-    s->parent_info.name = nullptr;
-    ink_zero(s->parent_info.dst_addr);
-
-    find_server_and_update_current_info(s);
-    if (!ats_is_ip(&s->current.server->dst_addr)) {
-      if (s->current.request_to == PARENT_PROXY) {
-        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
-      } else {
-        ink_release_assert(0);
-      }
-      return;
-    }
-  }
-  if (!s->stale_icp_lookup) {
-    build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
-  } else {
-    ink_assert(s->hdr_info.server_request.valid());
-    s->stale_icp_lookup = false;
-  }
-  s->next_action = how_to_open_connection(s);
 
   return;
 }
@@ -3277,13 +3171,12 @@ HttpTransact::OriginServerRawOpen(State *s)
 //   This is the entry into a coin-sorting machine. There are many different
 //   bins that the response can fall into. First, the response can be invalid
 //   if for example it is not a response, or not complete, or the connection
-//   was closed, etc. Then, the response can be from an icp-suggested-host,
-//   from a parent proxy or from the origin server. The next action to take
-//   differs for all three of these cases. Finally, good responses can either
-//   require a cache action, be it deletion, update, or writing or may just
-//   need to be tunnelled to the client. This latter case should be handled
-//   with as little processing as possible, since it should represent a fast
-//   path.
+//   was closed, etc. Then, the response can be from  parent proxy or from
+//   the origin server. The next action to take differs for all three of these
+//   cases. Finally, good responses can either require a cache action,
+//   be it deletion, update, or writing or may just need to be tunnelled
+//   to the client. This latter case should be handled with as little processing
+//   as possible, since it should represent a fast path.
 //
 //
 // Possible Next States From Here:
@@ -3297,7 +3190,7 @@ HttpTransact::HandleResponse(State *s)
   DebugTxn("http_seq", "[HttpTransact::HandleResponse] Response received");
 
   s->source                 = SOURCE_HTTP_ORIGIN_SERVER;
-  s->response_received_time = ink_cluster_time();
+  s->response_received_time = ink_local_time();
   ink_assert(s->response_received_time >= s->request_sent_time);
   s->current.now = s->response_received_time;
 
@@ -3324,9 +3217,6 @@ HttpTransact::HandleResponse(State *s)
   }
 
   switch (s->current.request_to) {
-  case ICP_SUGGESTED_HOST:
-    handle_response_from_icp_suggested_host(s);
-    break;
   case PARENT_PROXY:
     handle_response_from_parent(s);
     break;
@@ -3334,7 +3224,7 @@ HttpTransact::HandleResponse(State *s)
     handle_response_from_server(s);
     break;
   default:
-    ink_assert(!("s->current.request_to is not ICP, P.P. or O.S. - hmmm."));
+    ink_assert(!("s->current.request_to is not P.P. or O.S. - hmmm."));
     break;
   }
 
@@ -3434,64 +3324,6 @@ HttpTransact::HandleStatPage(State *s)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Name       : handle_response_from_icp_suggested_host
-// Description: response came from the host suggested by the icp lookup
-//
-// Details    :
-//
-//   If the response was bad (for whatever reason), may try to open a
-//   connection with a parent proxy, if there are any, else the request
-//   should be sent to the client.
-//   If the response is good, handle_forward_server_connection_open is
-//   called.
-//
-//
-// Possible Next States From Here:
-//
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransact::handle_response_from_icp_suggested_host(State *s)
-{
-  DebugTxn("http_trans", "[handle_response_from_icp_suggested_host] (hrfish)");
-  HTTP_RELEASE_ASSERT(s->current.server == &s->icp_info);
-
-  s->icp_info.state = s->current.state;
-  switch (s->current.state) {
-  case CONNECTION_ALIVE:
-    DebugTxn("http_trans", "[hrfish] connection alive");
-    SET_VIA_STRING(VIA_DETAIL_ICP_CONNECT, VIA_DETAIL_ICP_SUCCESS);
-    handle_forward_server_connection_open(s);
-    break;
-  default:
-    DebugTxn("http_trans", "[hrfish] connection not alive");
-    SET_VIA_STRING(VIA_DETAIL_ICP_CONNECT, VIA_DETAIL_ICP_FAILURE);
-
-    // If the request is not retryable, bail
-    if (is_request_retryable(s) == false) {
-      handle_server_died(s);
-      return;
-    }
-    // send request to parent proxy now if there is
-    // one or else directly to the origin server.
-    find_server_and_update_current_info(s);
-    if (!ats_is_ip(&s->current.server->dst_addr)) {
-      if (s->current.request_to == PARENT_PROXY) {
-        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
-      } else {
-        ink_release_assert(0);
-      }
-      return;
-    }
-    ink_assert(s->hdr_info.server_request.valid());
-    s->next_action = how_to_open_connection(s);
-    if (s->current.server == &s->server_info && s->next_hop_scheme == URL_WKSIDX_HTTP) {
-      HttpTransactHeaders::remove_host_name_from_url(&s->hdr_info.server_request);
-    }
-    break;
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_response_from_parent
 // Description: response came from a parent proxy
 //
@@ -3503,7 +3335,7 @@ HttpTransact::handle_response_from_icp_suggested_host(State *s)
 //   bad the next parent proxy (if any) is looked up. If there are no more
 //   parent proxies that can be looked up, the response is sent to the
 //   origin server. If the response is good handle_forward_server_connection_open
-//   is called, as with handle_response_from_icp_suggested_host.
+//   is called.
 //
 //
 // Possible Next States From Here:
@@ -3635,18 +3467,15 @@ HttpTransact::handle_response_from_parent(State *s)
       TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
       break;
     case ORIGIN_SERVER:
-      s->current.attempts = 0;
-      s->next_action      = how_to_open_connection(s);
-      if (s->current.server == &s->server_info && s->next_hop_scheme == URL_WKSIDX_HTTP) {
-        HttpTransactHeaders::remove_host_name_from_url(&s->hdr_info.server_request);
-      }
+      // Next lookup is Origin Server, try DNS for Origin Server
+      TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
       break;
     case HOST_NONE:
       handle_parent_died(s);
       break;
     default:
       // This handles:
-      // UNDEFINED_LOOKUP, ICP_SUGGESTED_HOST,
+      // UNDEFINED_LOOKUP
       // INCOMING_ROUTER
       break;
     }
@@ -3947,7 +3776,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
 //
 // Details    :
 //
-//   "Forward server" includes the icp-suggested-host or the parent proxy
+//   "Forward server" includes the parent proxy
 //   or the origin server. This function first determines if the forward
 //   server uses HTTP 0.9, in which case it simply tunnels the response
 //   to the client. Else, it updates
@@ -4337,7 +4166,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       s->cache_info.object_store.request_set(&s->hdr_info.client_request);
       s->cache_info.object_store.response_set(s->cache_info.object_read->response_get());
       base_response   = s->cache_info.object_store.response_get();
-      time_t exp_time = s->txn_conf->negative_revalidating_lifetime + ink_cluster_time();
+      time_t exp_time = s->txn_conf->negative_revalidating_lifetime + ink_local_time();
       base_response->set_expires(exp_time);
 
       SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);
@@ -4460,7 +4289,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         s->cache_info.object_store.response_set(&s->hdr_info.server_response);
         resp = s->cache_info.object_store.response_get();
         if (!resp->presence(MIME_PRESENCE_EXPIRES)) {
-          time_t exp_time = s->txn_conf->negative_caching_lifetime + ink_cluster_time();
+          time_t exp_time = s->txn_conf->negative_caching_lifetime + ink_local_time();
 
           resp->set_expires(exp_time);
         }
@@ -5602,7 +5431,7 @@ HttpTransact::initialize_state_variables_for_origin_server(State *s, HTTPHdr *in
 void
 HttpTransact::bootstrap_state_variables_from_request(State *s, HTTPHdr *incoming_request)
 {
-  s->current.now = s->client_request_time = ink_cluster_time();
+  s->current.now = s->client_request_time = ink_local_time();
   s->client_info.http_version             = incoming_request->version_get();
 }
 
@@ -6879,7 +6708,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
     case KA_CONNECTION:
       ink_assert(s->current.server->keep_alive != HTTP_NO_KEEPALIVE);
       if (ver == HTTPVersion(1, 0)) {
-        if (s->current.request_to == PARENT_PROXY || s->current.request_to == ICP_SUGGESTED_HOST) {
+        if (s->current.request_to == PARENT_PROXY) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "keep-alive", 10);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "keep-alive", 10);
@@ -6893,7 +6722,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       if (s->current.server->keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTPVersion(1, 1))) {
         /* Had keep-alive */
         s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
-        if (s->current.request_to == PARENT_PROXY || s->current.request_to == ICP_SUGGESTED_HOST) {
+        if (s->current.request_to == PARENT_PROXY) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
@@ -7287,48 +7116,6 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
   return (freshness_limit);
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-//  int HttpTransact::calculate_freshness_fuzz()
-//
-//    This function trys to revents many, many simulatenous revalidations in
-//     reverse proxy situations.  Statistically introduce a fuzz factor that
-//     brings revalidation forward for a small percentage of the requests/
-//     The hope is that is that the document early by a selected few, and
-//     the headers are updated in the cache before the regualr freshness
-//     limit is actually reached
-////////////////////////////////////////////////////////////////////////////////////
-
-int
-HttpTransact::calculate_freshness_fuzz(State *s, int fresh_limit)
-{
-  static double LOG_YEAR     = log10((double)s->txn_conf->cache_guaranteed_max_lifetime);
-  const uint32_t granularity = 1000;
-  int result                 = 0;
-
-  uint32_t random_num = this_ethread()->generator.random();
-  uint32_t index      = random_num % granularity;
-  uint32_t range      = (uint32_t)(granularity * s->txn_conf->freshness_fuzz_prob);
-
-  if (index < range) {
-    if (s->txn_conf->freshness_fuzz_min_time > 0) {
-      // Complicated calculations to try to find a reasonable fuzz time between fuzz_min_time and fuzz_time
-      int fresh_small = (int)rint((double)s->txn_conf->freshness_fuzz_min_time *
-                                  pow(2, min((double)fresh_limit / (double)s->txn_conf->freshness_fuzz_time,
-                                             sqrt((double)s->txn_conf->freshness_fuzz_time))));
-      int fresh_large = max((int)s->txn_conf->freshness_fuzz_min_time,
-                            (int)rint(s->txn_conf->freshness_fuzz_time *
-                                      log10((double)(fresh_limit - s->txn_conf->freshness_fuzz_min_time) / LOG_YEAR)));
-      result = min(fresh_small, fresh_large);
-      DebugTxn("http_match", "calculate_freshness_fuzz using min/max --- freshness fuzz = %d", result);
-    } else {
-      result = s->txn_conf->freshness_fuzz_time;
-      DebugTxn("http_match", "calculate_freshness_fuzz --- freshness fuzz = %d", result);
-    }
-  }
-
-  return result;
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -7393,14 +7180,6 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   response_date = cached_obj_response->get_date();
   fresh_limit   = calculate_document_freshness_limit(s, cached_obj_response, response_date, &heuristic);
   ink_assert(fresh_limit >= 0);
-
-  // Fuzz the freshness to prevent too many revalidates to popular
-  //  documents at the same time
-  if ((s->txn_conf->freshness_fuzz_time > 0) && (s->txn_conf->freshness_fuzz_prob > 0.0)) {
-    fresh_limit = fresh_limit - calculate_freshness_fuzz(s, fresh_limit);
-    fresh_limit = max(0, fresh_limit);
-    fresh_limit = min((int)s->txn_conf->cache_guaranteed_max_lifetime, fresh_limit);
-  }
 
   current_age = HttpTransactHeaders::calculate_document_age(s->request_sent_time, s->response_received_time, cached_obj_response,
                                                             response_date, s->current.now);
@@ -7883,7 +7662,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     DebugTxn("http_trans", "[build_request] request expect 100-continue headers removed");
   }
 
-  s->request_sent_time = ink_cluster_time();
+  s->request_sent_time = ink_local_time();
   s->current.now       = s->request_sent_time;
   // The assert is backwards in this case because request is being (re)sent.
   ink_assert(s->request_sent_time >= s->response_received_time);
@@ -7973,7 +7752,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
               field = base_response->field_find(fields[i].name, fields[i].len);
               ink_assert(field != nullptr);
               value = field->value_get(&len);
-              outgoing_response->value_append(fields[i].name, fields[i].len, value, len, 0);
+              outgoing_response->value_append(fields[i].name, fields[i].len, value, len, false);
             }
           }
         }
@@ -8353,27 +8132,9 @@ HttpTransact::get_error_string(int erno)
 }
 
 ink_time_t
-ink_cluster_time(void)
+ink_local_time()
 {
-  int highest_delta;
-  ink_time_t local_time;
-
-  local_time    = Thread::get_hrtime() / HRTIME_SECOND;
-  highest_delta = (int)HttpConfig::m_master.cluster_time_delta;
-  //     highest_delta =
-  //      lmgmt->record_data->readInteger("proxy.process.http.cluster_delta",
-  //                                      &found);
-  //     if (! found) {
-  //      ink_assert(!"Highest delta config value not found!");
-  //      highest_delta = 0L;
-  //     }
-
-  Debug("http_trans", "[ink_cluster_time] local: %" PRId64 ", highest_delta: %d, cluster: %" PRId64, (int64_t)local_time,
-        highest_delta, (int64_t)(local_time + (ink_time_t)highest_delta));
-
-  ink_assert(highest_delta >= 0);
-
-  return local_time + (ink_time_t)highest_delta;
+  return Thread::get_hrtime() / HRTIME_SECOND;
 }
 
 //

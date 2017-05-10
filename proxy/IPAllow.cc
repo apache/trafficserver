@@ -35,6 +35,7 @@
 #include "P_EventSystem.h"
 #include "P_Cache.h"
 #include "hdrs/HdrToken.h"
+#include "ControlMatcher.h"
 
 #include <sstream>
 
@@ -113,13 +114,13 @@ IpAllow::PrintMap(IpMap *map)
 {
   std::ostringstream s;
   s << map->getCount() << " ACL entries.";
-  for (IpMap::iterator spot(map->begin()), limit(map->end()); spot != limit; ++spot) {
+  for (auto &spot : *map) {
     char text[INET6_ADDRSTRLEN];
-    AclRecord const *ar = static_cast<AclRecord const *>(spot->data());
+    AclRecord const *ar = static_cast<AclRecord const *>(spot.data());
 
-    s << std::endl << "  Line " << ar->_src_line << ": " << ats_ip_ntop(spot->min(), text, sizeof text);
-    if (0 != ats_ip_addr_cmp(spot->min(), spot->max())) {
-      s << " - " << ats_ip_ntop(spot->max(), text, sizeof text);
+    s << std::endl << "  Line " << ar->_src_line << ": " << ats_ip_ntop(spot.min(), text, sizeof text);
+    if (0 != ats_ip_addr_cmp(spot.min(), spot.max())) {
+      s << " - " << ats_ip_ntop(spot.max(), text, sizeof text);
     }
     s << " method=";
     uint32_t mask = AclRecord::ALL_METHOD_MASK & ar->_method_mask;
@@ -143,12 +144,11 @@ IpAllow::PrintMap(IpMap *map)
     if (!ar->_nonstandard_methods.empty()) {
       s << " nonstandard method=";
       bool leader = false; // need leading vbar?
-      for (AclRecord::MethodSet::iterator iter = ar->_nonstandard_methods.begin(), end = ar->_nonstandard_methods.end();
-           iter != end; ++iter) {
+      for (const auto &_nonstandard_method : ar->_nonstandard_methods) {
         if (leader) {
           s << '|';
         }
-        s << *iter;
+        s << _nonstandard_method;
         leader = true;
       }
     }

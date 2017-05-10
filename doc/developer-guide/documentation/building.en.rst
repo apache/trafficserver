@@ -23,12 +23,9 @@ Building the Documentation
 **************************
 
 All documentation and related files are located in the source tree under the
-``doc/`` directory. Makefiles are generated automatiically by the main configure
-script. For simplicity's sake, it is recommended that contributors new to the
-documentation make use of the included Vagrant configurations, as these will
-take care of providing all dependencies. Please refer to the
-:ref:`developer-testing-with-vagrant` chapter for complete details on using
-Vagrant to build and test the |TS| source tree.
+``doc/`` directory. Makefiles are generated automatically by the main configure
+script. The current configure script switch for enabling documentation builds is
+``--enable-docs``. Also make sure you have run ``pip install sphinx`` at some point.
 
 With a configured source tree, building the documentation requires only the
 invocation ``make html`` from within ``doc/``. For repeated builds while working

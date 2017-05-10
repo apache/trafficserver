@@ -152,7 +152,7 @@ struct ShowCache : public ShowCont {
     SET_HANDLER(&ShowCache::showMain);
   }
 
-  ~ShowCache()
+  ~ShowCache() override
   {
     if (show_cache_urlstrs)
       delete[] show_cache_urlstrs;
@@ -449,8 +449,7 @@ ShowCache::lookup_url(int event, Event *e)
   Cache::generate_key(&key, &url, generation);
 
   SET_HANDLER(&ShowCache::handleCacheEvent);
-  Action *lookup_result =
-    cacheProcessor.open_read(this, &key.hash, getClusterCacheLocal(&url), CACHE_FRAG_TYPE_HTTP, key.hostname, key.hostlen);
+  Action *lookup_result = cacheProcessor.open_read(this, &key.hash, CACHE_FRAG_TYPE_HTTP, key.hostname, key.hostlen);
   if (!lookup_result)
     lookup_result = ACTION_IO_ERROR;
   if (lookup_result == ACTION_RESULT_DONE)
@@ -490,7 +489,7 @@ ShowCache::delete_url(int event, Event *e)
   HttpCacheKey key;
   Cache::generate_key(&key, &url); // XXX choose a cache generation number ...
 
-  cacheProcessor.remove(this, &key, getClusterCacheLocal(&url), CACHE_FRAG_TYPE_HTTP);
+  cacheProcessor.remove(this, &key, CACHE_FRAG_TYPE_HTTP);
   return EVENT_DONE;
 }
 

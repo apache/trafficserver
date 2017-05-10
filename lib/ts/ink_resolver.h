@@ -259,8 +259,6 @@ struct ts_imp_res_state {
   unsigned ndots : 4; /*%< threshold for initial abs. query */
   unsigned nsort : 4; /*%< number of elements in sort_list[] */
   char unused[3];
-  res_send_qhook qhook;         /*%< query hook */
-  res_send_rhook rhook;         /*%< response hook */
   int res_h_errno;              /*%< last one set for this context */
   int _vcsock;                  /*%< PRIVATE: for res_send VC i/o */
   unsigned _flags;              /*%< PRIVATE: see below */

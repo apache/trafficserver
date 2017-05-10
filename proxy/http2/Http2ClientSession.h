@@ -41,6 +41,8 @@
 #define HTTP2_SESSION_EVENT_FINI (HTTP2_SESSION_EVENTS_START + 2)
 #define HTTP2_SESSION_EVENT_RECV (HTTP2_SESSION_EVENTS_START + 3)
 #define HTTP2_SESSION_EVENT_XMIT (HTTP2_SESSION_EVENTS_START + 4)
+#define HTTP2_SESSION_EVENT_SHUTDOWN_INIT (HTTP2_SESSION_EVENTS_START + 5)
+#define HTTP2_SESSION_EVENT_SHUTDOWN_CONT (HTTP2_SESSION_EVENTS_START + 6)
 
 size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
@@ -282,6 +284,13 @@ public:
     return retval;
   }
 
+  void set_half_close_flag(bool flag) override;
+  bool
+  get_half_close_flag() const override
+  {
+    return half_close;
+  }
+
 private:
   Http2ClientSession(Http2ClientSession &);                  // noncopyable
   Http2ClientSession &operator=(const Http2ClientSession &); // noncopyable
@@ -316,6 +325,7 @@ private:
   VIO *write_vio;
   int dying_event;
   bool kill_me;
+  bool half_close;
   int recursion;
 };
 

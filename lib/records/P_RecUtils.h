@@ -33,8 +33,7 @@
 // Macros
 //-------------------------------------------------------------------------
 
-#define REC_TYPE_IS_STAT(rec_type) \
-  (((rec_type) == RECT_PROCESS) || ((rec_type) == RECT_PLUGIN) || ((rec_type) == RECT_NODE) || ((rec_type) == RECT_CLUSTER))
+#define REC_TYPE_IS_STAT(rec_type) (((rec_type) == RECT_PROCESS) || ((rec_type) == RECT_PLUGIN) || ((rec_type) == RECT_NODE))
 
 #define REC_TYPE_IS_CONFIG(rec_type) (((rec_type) == RECT_CONFIG) || ((rec_type) == RECT_LOCAL))
 

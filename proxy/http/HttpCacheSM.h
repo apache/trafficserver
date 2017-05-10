@@ -41,7 +41,6 @@
 
 class HttpSM;
 class HttpCacheSM;
-class CacheLookupHttpConfig;
 
 struct HttpCacheAction : public Action {
   HttpCacheAction();
@@ -67,7 +66,7 @@ public:
     captive_action.init(this);
   }
 
-  Action *open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, CacheLookupHttpConfig *params, time_t pin_in_cache);
+  Action *open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, OverridableHttpConfigParams *params, time_t pin_in_cache);
 
   Action *open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache, bool retry,
                      bool allow_multiple);
@@ -198,7 +197,7 @@ private:
   // Open read parameters
   int open_read_tries;
   HTTPHdr *read_request_hdr;
-  CacheLookupHttpConfig *read_config;
+  OverridableHttpConfigParams *http_params;
   time_t read_pin_in_cache;
 
   // Open write parameters

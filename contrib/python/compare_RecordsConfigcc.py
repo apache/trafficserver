@@ -41,7 +41,6 @@ ignore_keys = {
     "proxy.config.ssl.client.CA.cert.path": 1,
     "proxy.config.config_dir": 1,
     "proxy.config.proxy_name": 1,
-    "proxy.config.cluster.ethernet_interface": 1,
     "proxy.config.ssl.client.private_key.path": 1,
     "proxy.config.net.defer_accept": 1 # Specified in RecordsConfig.cc funny
 }

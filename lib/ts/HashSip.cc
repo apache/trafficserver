@@ -11,6 +11,8 @@ https://github.com/floodyberry/siphash
 #include "ts/HashSip.h"
 #include <cstring>
 
+using namespace std;
+
 #define SIP_BLOCK_SIZE 8
 
 #define ROTL64(a, b) (((a) << (b)) | ((a) >> (64 - b)))
@@ -33,24 +35,18 @@ https://github.com/floodyberry/siphash
   x3 ^= x0;                         \
   x2 = ROTL64(x2, 32);
 
-ATSHash64Sip24::ATSHash64Sip24(void)
+ATSHash64Sip24::ATSHash64Sip24()
 {
-  k0 = 0;
-  k1 = 0;
   this->clear();
 }
 
-ATSHash64Sip24::ATSHash64Sip24(const unsigned char key[16])
+ATSHash64Sip24::ATSHash64Sip24(const unsigned char key[16]) : k0(U8TO64_LE(key)), k1(U8TO64_LE(key + sizeof(k0)))
 {
-  k0 = U8TO64_LE(key);
-  k1 = U8TO64_LE(key + sizeof(k0));
   this->clear();
 }
 
 ATSHash64Sip24::ATSHash64Sip24(uint64_t key0, uint64_t key1)
 {
-  k0 = key0;
-  k1 = key1;
   this->clear();
 }
 
@@ -96,7 +92,7 @@ ATSHash64Sip24::update(const void *data, size_t len)
 }
 
 void
-ATSHash64Sip24::final(void)
+ATSHash64Sip24::final()
 {
   uint64_t last7;
   int i;
@@ -123,7 +119,7 @@ ATSHash64Sip24::final(void)
 }
 
 uint64_t
-ATSHash64Sip24::get(void) const
+ATSHash64Sip24::get() const
 {
   if (finalized) {
     return hfinal;
@@ -133,7 +129,7 @@ ATSHash64Sip24::get(void) const
 }
 
 void
-ATSHash64Sip24::clear(void)
+ATSHash64Sip24::clear()
 {
   v0               = k0 ^ 0x736f6d6570736575ull;
   v1               = k1 ^ 0x646f72616e646f6dull;

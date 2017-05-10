@@ -163,7 +163,7 @@ compare_header_fields(HTTPHdr *a, HTTPHdr *b)
 
 // Returns -1 if test passes, or returns the failed sequence number
 int
-test_decoding(const string filename)
+test_decoding(const string &filename)
 {
   HpackIndexingTable indexing_table(INITIAL_TABLE_SIZE);
   string line, name, value;
@@ -216,7 +216,7 @@ test_decoding(const string filename)
 }
 
 int
-test_encoding(const string filename_in, const string filename_out)
+test_encoding(const string &filename_in, const string &filename_out)
 {
   HpackIndexingTable indexing_table_for_encoding(INITIAL_TABLE_SIZE), indexing_table_for_decoding(INITIAL_TABLE_SIZE);
   string line, name, value;
@@ -258,7 +258,7 @@ test_encoding(const string filename_in, const string filename_out)
             break;
           }
           pack(encoded, written, packed);
-          ofs << "      \"wire\": \"" << packed << "\"" << endl;
+          ofs << R"(      "wire": ")" << packed << "\"" << endl;
           ofs << "    }," << endl;
         }
         // Prepare for next sequence
@@ -303,13 +303,13 @@ test_encoding(const string filename_in, const string filename_out)
     return result;
   }
   pack(encoded, written, packed);
-  ofs << "      \"wire\": \"" << packed << "\"" << endl;
+  ofs << R"(      "wire": ")" << packed << "\"" << endl;
   ofs << "    }" << endl;
   decoded.destroy();
   original.destroy();
 
   ofs << "  ]," << endl;
-  ofs << "  \"description\": \"Apache Traffic Server\"" << endl;
+  ofs << R"(  "description": "Apache Traffic Server")" << endl;
   ofs << "}" << endl;
 
   return result;

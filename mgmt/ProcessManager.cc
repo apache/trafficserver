@@ -23,7 +23,6 @@
 
 #include "ts/ink_platform.h"
 
-#undef HTTP_CACHE
 #include "InkAPIInternal.h"
 #include "MgmtUtils.h"
 #include "ProcessManager.h"
@@ -260,7 +259,9 @@ ProcessManager::pollLMConnection()
       // handle EOF
       if (res == 0) {
         close_socket(local_manager_sockfd);
-        mgmt_fatal(0, "[ProcessManager::pollLMConnection] Lost Manager EOF!");
+        if (!shutdown_event_system) {
+          mgmt_fatal(0, "[ProcessManager::pollLMConnection] Lost Manager EOF!");
+        }
       }
     } else if (num < 0) { /* Error */
       mgmt_log("[ProcessManager::pollLMConnection] select failed or was interrupted (%d)\n", errno);
@@ -292,9 +293,6 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
     if (data_raw != nullptr && data_raw[0] != '\0' && this->cbtable) {
       this->cbtable->invoke(data_raw);
     }
-    break;
-  case MGMT_EVENT_HTTP_CLUSTER_DELTA:
-    signalMgmtEntity(MGMT_EVENT_HTTP_CLUSTER_DELTA, data_raw);
     break;
   case MGMT_EVENT_CONFIG_FILE_UPDATE:
   case MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION:

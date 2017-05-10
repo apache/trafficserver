@@ -24,23 +24,23 @@
 #include "ts/ink_config.h"
 #include "I_RecMutex.h"
 
-int
+void
 rec_mutex_init(RecMutex *m, const char *name)
 {
   m->nthread_holding = 0;
   m->thread_holding  = ink_thread_null();
-  return ink_mutex_init(&(m->the_mutex), name);
+  ink_mutex_init(&(m->the_mutex), name);
 }
 
-int
+void
 rec_mutex_destroy(RecMutex *m)
 {
   ink_assert(m->nthread_holding == 0);
   ink_assert(m->thread_holding == ink_thread_null());
-  return ink_mutex_destroy(&(m->the_mutex));
+  ink_mutex_destroy(&(m->the_mutex));
 }
 
-int
+void
 rec_mutex_acquire(RecMutex *m)
 {
   ink_thread this_thread = ink_thread_self();
@@ -51,10 +51,9 @@ rec_mutex_acquire(RecMutex *m)
   }
 
   m->nthread_holding++;
-  return 0;
 }
 
-int
+void
 rec_mutex_release(RecMutex *m)
 {
   if (m->nthread_holding != 0) {
@@ -64,5 +63,4 @@ rec_mutex_release(RecMutex *m)
       ink_mutex_release(&(m->the_mutex));
     }
   }
-  return 0;
 }

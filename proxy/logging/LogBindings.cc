@@ -426,7 +426,6 @@ MakeLogBindings(BindingInstance &binding, LogConfig *conf)
 
   // Constants for the log object "Protocol" field.
   binding.bind_constant("log.protocol.http", lua_Integer(LOG_ENTRY_HTTP));
-  binding.bind_constant("log.protocol.icp", lua_Integer(LOG_ENTRY_ICP));
 
   // We register the same metatable for each logging object, since none
   // of them have any real API; they are just handles to internal logging

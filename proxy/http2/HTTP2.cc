@@ -28,6 +28,8 @@
 #include "P_RecCore.h"
 #include "P_RecProcess.h"
 
+volatile bool http2_drain = false;
+
 const char *const HTTP2_CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
 // Constant strings for pseudo headers
@@ -43,7 +45,8 @@ const unsigned HTTP2_LEN_AUTHORITY = countof(":authority") - 1;
 const unsigned HTTP2_LEN_PATH      = countof(":path") - 1;
 const unsigned HTTP2_LEN_STATUS    = countof(":status") - 1;
 
-static size_t HTTP2_LEN_STATUS_VALUE_STR = 3;
+static size_t HTTP2_LEN_STATUS_VALUE_STR    = 3;
+static const int HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
 
 // Statistics
 RecRawStatBlock *http2_rsb;
@@ -123,25 +126,9 @@ memcpy_and_advance(uint8_t(&dst), byte_pointer &src)
   ++src.u8;
 }
 
-static bool
-http2_frame_flags_are_valid(uint8_t ftype, uint8_t fflags)
-{
-  if (ftype >= HTTP2_FRAME_TYPE_MAX) {
-    // Skip validation for Unkown frame type - [RFC 7540] 5.5. Extending HTTP/2
-    return true;
-  }
-
-  // The frame flags are valid for this frame if nothing outside the defined bits is set.
-  return (fflags & ~HTTP2_FRAME_FLAGS_MASKS[ftype]) == 0;
-}
-
 bool
 http2_frame_header_is_valid(const Http2FrameHeader &hdr, unsigned max_frame_size)
 {
-  if (!http2_frame_flags_are_valid(hdr.type, hdr.flags)) {
-    return false;
-  }
-
   // 6.1 If a DATA frame is received whose stream identifier field is 0x0, the recipient MUST
   // respond with a connection error (Section 5.4.1) of type PROTOCOL_ERROR.
   if (hdr.type == HTTP2_FRAME_TYPE_DATA && hdr.streamid == 0) {
@@ -311,7 +298,7 @@ http2_write_goaway(const Http2Goaway &goaway, IOVec iov)
   }
 
   write_and_advance(ptr, goaway.last_streamid);
-  write_and_advance(ptr, goaway.error_code);
+  write_and_advance(ptr, static_cast<uint32_t>(goaway.error_code));
 
   return true;
 }
@@ -405,7 +392,7 @@ http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
   memcpy_and_advance(ec.bytes, ptr);
 
   goaway.last_streamid = ntohl(sid.value);
-  goaway.error_code    = ntohl(ec.value);
+  goaway.error_code    = static_cast<Http2ErrorCode>(ntohl(ec.value));
   return true;
 }
 
@@ -462,7 +449,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     memcpy(url + scheme_len, "://", 3);
     memcpy(url + scheme_len + 3, authority, authority_len);
     memcpy(url + scheme_len + 3 + authority_len, path, path_len);
-    url_parse(headers->m_heap, headers->m_http->u.req.m_url_impl, &url_start, url + url_length, 1);
+    url_parse(headers->m_heap, headers->m_http->u.req.m_url_impl, &url_start, url + url_length, true);
     arena.str_free(url);
 
     // Get value of :method
@@ -470,7 +457,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
       method = field->value_get(&method_len);
 
       int method_wks_idx = hdrtoken_tokenize(method, method_len);
-      http_hdr_method_set(headers->m_heap, headers->m_http, method, method_wks_idx, method_len, 0);
+      http_hdr_method_set(headers->m_heap, headers->m_http, method, method_wks_idx, method_len, false);
     } else {
       return PARSE_RESULT_ERROR;
     }
@@ -597,17 +584,24 @@ http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
 }
 
 Http2ErrorCode
-http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t *len_written, HpackHandle &handle)
+http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t *len_written, HpackHandle &handle,
+                           int32_t maximum_table_size)
 {
+  // Limit the maximum table size to 64kB, which is the size advertised by major clients
+  maximum_table_size = min(maximum_table_size, HTTP2_MAX_TABLE_SIZE_LIMIT);
+  // Set maximum table size only if it is different from current maximum size
+  if (maximum_table_size == hpack_get_maximum_table_size(handle)) {
+    maximum_table_size = -1;
+  }
   // TODO: It would be better to split Cookie header value
-  int64_t result = hpack_encode_header_block(handle, out, out_len, in);
+  int64_t result = hpack_encode_header_block(handle, out, out_len, in, maximum_table_size);
   if (result < 0) {
-    return HTTP2_ERROR_COMPRESSION_ERROR;
+    return Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR;
   }
   if (len_written) {
     *len_written = result;
   }
-  return HTTP2_ERROR_NO_ERROR;
+  return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 }
 
 /*
@@ -625,12 +619,12 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 
   if (result < 0) {
     if (result == HPACK_ERROR_COMPRESSION_ERROR) {
-      return HTTP2_ERROR_COMPRESSION_ERROR;
+      return Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR;
     } else if (result == HPACK_ERROR_SIZE_EXCEEDED_ERROR) {
-      return HTTP2_ERROR_ENHANCE_YOUR_CALM;
+      return Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
     }
 
-    return HTTP2_ERROR_PROTOCOL_ERROR;
+    return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
   }
   if (len_read) {
     *len_read = result;
@@ -649,18 +643,18 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
     if (len && value[0] == ':') {
       ++pseudo_header_count;
       if (pseudo_header_count > expected_pseudo_header_count) {
-        return HTTP2_ERROR_PROTOCOL_ERROR;
+        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
     } else {
       if (pseudo_header_count != expected_pseudo_header_count) {
-        return HTTP2_ERROR_PROTOCOL_ERROR;
+        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
     }
     // Check whether header field name is lower case
     // This check should be here but it will fail because WKSs in MIMEField is old fashioned.
     // for (uint32_t i = 0; i < len; ++i) {
     //   if (ParseRules::is_upalpha(value[i])) {
-    //     return HTTP2_ERROR_PROTOCOL_ERROR;
+    //     return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     //   }
     // }
   }
@@ -668,7 +662,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   // rfc7540,sec8.1.2.2: Any message containing connection-specific header
   // fields MUST be treated as malformed
   if (hdr->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != nullptr) {
-    return HTTP2_ERROR_PROTOCOL_ERROR;
+    return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
   }
 
   // :path pseudo header MUST NOT empty for http or https URIs
@@ -676,7 +670,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (field) {
     field->value_get(&len);
     if (len == 0) {
-      return HTTP2_ERROR_PROTOCOL_ERROR;
+      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     }
   }
 
@@ -693,7 +687,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (field) {
     value = field->value_get(&len);
     if (!(len == 8 && memcmp(value, "trailers", 8) == 0)) {
-      return HTTP2_ERROR_PROTOCOL_ERROR;
+      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     }
   }
 
@@ -706,15 +700,15 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
           hdr->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY) == nullptr ||
           hdr->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS) != nullptr) {
         // Decoded header field is invalid
-        return HTTP2_ERROR_PROTOCOL_ERROR;
+        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
     } else {
       // Pseudo headers is insufficient
-      return HTTP2_ERROR_PROTOCOL_ERROR;
+      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     }
   }
 
-  return HTTP2_ERROR_NO_ERROR;
+  return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 }
 
 // Initialize this subsystem with librecords configs (for now)
@@ -907,16 +901,20 @@ const static struct {
                                    {HTTP2_FRAME_TYPE_MAX, 0x40, true},
                                    {HTTP2_FRAME_TYPE_MAX, 0x80, true}};
 
+static const uint8_t HTTP2_FRAME_FLAGS_MASKS[HTTP2_FRAME_TYPE_MAX] = {
+  HTTP2_FLAGS_DATA_MASK,          HTTP2_FLAGS_HEADERS_MASK,      HTTP2_FLAGS_PRIORITY_MASK, HTTP2_FLAGS_RST_STREAM_MASK,
+  HTTP2_FLAGS_SETTINGS_MASK,      HTTP2_FLAGS_PUSH_PROMISE_MASK, HTTP2_FLAGS_PING_MASK,     HTTP2_FLAGS_GOAWAY_MASK,
+  HTTP2_FLAGS_WINDOW_UPDATE_MASK, HTTP2_FLAGS_CONTINUATION_MASK,
+};
+
 REGRESSION_TEST(HTTP2_FRAME_FLAGS)(RegressionTest *t, int, int *pstatus)
 {
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  for (unsigned int i = 0; i < sizeof(http2_frame_flags_test_case) / sizeof(http2_frame_flags_test_case[0]); ++i) {
-    box.check(http2_frame_flags_are_valid(http2_frame_flags_test_case[i].ftype, http2_frame_flags_test_case[i].fflags) ==
-                http2_frame_flags_test_case[i].valid,
-              "Validation of frame flags (type: %d, flags: %d) are expected %d, but not", http2_frame_flags_test_case[i].ftype,
-              http2_frame_flags_test_case[i].fflags, http2_frame_flags_test_case[i].valid);
+  for (auto i : http2_frame_flags_test_case) {
+    box.check((i.ftype >= HTTP2_FRAME_TYPE_MAX || (i.fflags & ~HTTP2_FRAME_FLAGS_MASKS[i.ftype]) == 0) == i.valid,
+              "Validation of frame flags (type: %d, flags: %d) are expected %d, but not", i.ftype, i.fflags, i.valid);
   }
 }
 

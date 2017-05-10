@@ -24,9 +24,9 @@
 #include "ts/ink_defs.h"
 #include "ts/ink_platform.h"
 #include "ts/ink_inet.h"
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 #include "HTTP.h"
 #include "HdrToken.h"
 #include "ts/Diags.h"
@@ -54,7 +54,6 @@ const char *HTTP_METHOD_CONNECT;
 const char *HTTP_METHOD_DELETE;
 const char *HTTP_METHOD_GET;
 const char *HTTP_METHOD_HEAD;
-const char *HTTP_METHOD_ICP_QUERY;
 const char *HTTP_METHOD_OPTIONS;
 const char *HTTP_METHOD_POST;
 const char *HTTP_METHOD_PURGE;
@@ -66,7 +65,6 @@ int HTTP_WKSIDX_CONNECT;
 int HTTP_WKSIDX_DELETE;
 int HTTP_WKSIDX_GET;
 int HTTP_WKSIDX_HEAD;
-int HTTP_WKSIDX_ICP_QUERY;
 int HTTP_WKSIDX_OPTIONS;
 int HTTP_WKSIDX_POST;
 int HTTP_WKSIDX_PURGE;
@@ -79,7 +77,6 @@ int HTTP_LEN_CONNECT;
 int HTTP_LEN_DELETE;
 int HTTP_LEN_GET;
 int HTTP_LEN_HEAD;
-int HTTP_LEN_ICP_QUERY;
 int HTTP_LEN_OPTIONS;
 int HTTP_LEN_POST;
 int HTTP_LEN_PURGE;
@@ -187,17 +184,16 @@ http_init()
     mime_init();
     url_init();
 
-    HTTP_METHOD_CONNECT   = hdrtoken_string_to_wks("CONNECT");
-    HTTP_METHOD_DELETE    = hdrtoken_string_to_wks("DELETE");
-    HTTP_METHOD_GET       = hdrtoken_string_to_wks("GET");
-    HTTP_METHOD_HEAD      = hdrtoken_string_to_wks("HEAD");
-    HTTP_METHOD_ICP_QUERY = hdrtoken_string_to_wks("ICP_QUERY");
-    HTTP_METHOD_OPTIONS   = hdrtoken_string_to_wks("OPTIONS");
-    HTTP_METHOD_POST      = hdrtoken_string_to_wks("POST");
-    HTTP_METHOD_PURGE     = hdrtoken_string_to_wks("PURGE");
-    HTTP_METHOD_PUT       = hdrtoken_string_to_wks("PUT");
-    HTTP_METHOD_TRACE     = hdrtoken_string_to_wks("TRACE");
-    HTTP_METHOD_PUSH      = hdrtoken_string_to_wks("PUSH");
+    HTTP_METHOD_CONNECT = hdrtoken_string_to_wks("CONNECT");
+    HTTP_METHOD_DELETE  = hdrtoken_string_to_wks("DELETE");
+    HTTP_METHOD_GET     = hdrtoken_string_to_wks("GET");
+    HTTP_METHOD_HEAD    = hdrtoken_string_to_wks("HEAD");
+    HTTP_METHOD_OPTIONS = hdrtoken_string_to_wks("OPTIONS");
+    HTTP_METHOD_POST    = hdrtoken_string_to_wks("POST");
+    HTTP_METHOD_PURGE   = hdrtoken_string_to_wks("PURGE");
+    HTTP_METHOD_PUT     = hdrtoken_string_to_wks("PUT");
+    HTTP_METHOD_TRACE   = hdrtoken_string_to_wks("TRACE");
+    HTTP_METHOD_PUSH    = hdrtoken_string_to_wks("PUSH");
 
     // HTTP methods index calculation. Don't forget to count them!
     // Don't change the order of calculation! Each index has related bitmask (see http quick filter)
@@ -208,8 +204,6 @@ http_init()
     HTTP_WKSIDX_GET = hdrtoken_wks_to_index(HTTP_METHOD_GET);
     HTTP_WKSIDX_METHODS_CNT++;
     HTTP_WKSIDX_HEAD = hdrtoken_wks_to_index(HTTP_METHOD_HEAD);
-    HTTP_WKSIDX_METHODS_CNT++;
-    HTTP_WKSIDX_ICP_QUERY = hdrtoken_wks_to_index(HTTP_METHOD_ICP_QUERY);
     HTTP_WKSIDX_METHODS_CNT++;
     HTTP_WKSIDX_OPTIONS = hdrtoken_wks_to_index(HTTP_METHOD_OPTIONS);
     HTTP_WKSIDX_METHODS_CNT++;
@@ -224,17 +218,16 @@ http_init()
     HTTP_WKSIDX_PUSH = hdrtoken_wks_to_index(HTTP_METHOD_PUSH);
     HTTP_WKSIDX_METHODS_CNT++;
 
-    HTTP_LEN_CONNECT   = hdrtoken_wks_to_length(HTTP_METHOD_CONNECT);
-    HTTP_LEN_DELETE    = hdrtoken_wks_to_length(HTTP_METHOD_DELETE);
-    HTTP_LEN_GET       = hdrtoken_wks_to_length(HTTP_METHOD_GET);
-    HTTP_LEN_HEAD      = hdrtoken_wks_to_length(HTTP_METHOD_HEAD);
-    HTTP_LEN_ICP_QUERY = hdrtoken_wks_to_length(HTTP_METHOD_ICP_QUERY);
-    HTTP_LEN_OPTIONS   = hdrtoken_wks_to_length(HTTP_METHOD_OPTIONS);
-    HTTP_LEN_POST      = hdrtoken_wks_to_length(HTTP_METHOD_POST);
-    HTTP_LEN_PURGE     = hdrtoken_wks_to_length(HTTP_METHOD_PURGE);
-    HTTP_LEN_PUT       = hdrtoken_wks_to_length(HTTP_METHOD_PUT);
-    HTTP_LEN_TRACE     = hdrtoken_wks_to_length(HTTP_METHOD_TRACE);
-    HTTP_LEN_PUSH      = hdrtoken_wks_to_length(HTTP_METHOD_PUSH);
+    HTTP_LEN_CONNECT = hdrtoken_wks_to_length(HTTP_METHOD_CONNECT);
+    HTTP_LEN_DELETE  = hdrtoken_wks_to_length(HTTP_METHOD_DELETE);
+    HTTP_LEN_GET     = hdrtoken_wks_to_length(HTTP_METHOD_GET);
+    HTTP_LEN_HEAD    = hdrtoken_wks_to_length(HTTP_METHOD_HEAD);
+    HTTP_LEN_OPTIONS = hdrtoken_wks_to_length(HTTP_METHOD_OPTIONS);
+    HTTP_LEN_POST    = hdrtoken_wks_to_length(HTTP_METHOD_POST);
+    HTTP_LEN_PURGE   = hdrtoken_wks_to_length(HTTP_METHOD_PURGE);
+    HTTP_LEN_PUT     = hdrtoken_wks_to_length(HTTP_METHOD_PUT);
+    HTTP_LEN_TRACE   = hdrtoken_wks_to_length(HTTP_METHOD_TRACE);
+    HTTP_LEN_PUSH    = hdrtoken_wks_to_length(HTTP_METHOD_PUSH);
 
     HTTP_VALUE_BYTES                = hdrtoken_string_to_wks("bytes");
     HTTP_VALUE_CHUNKED              = hdrtoken_string_to_wks("chunked");

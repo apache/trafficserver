@@ -23,8 +23,8 @@
 
 #include "SourceLocation.h"
 #include "ink_defs.h"
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 // This method takes a SourceLocation source location data structure and
 // converts it to a human-readable representation, in the buffer <buf>

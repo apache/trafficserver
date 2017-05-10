@@ -53,14 +53,15 @@ public:
   }
 
   void
-  handleSendResponseHeaders(Transaction &transaction)
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     transaction.getClientResponse().setStatusCode(status_);
     transaction.getClientResponse().setReasonPhrase(reason_);
     transaction.resume();
   }
 
-  virtual ~CustomResponseTransactionPlugin() {}
+  ~CustomResponseTransactionPlugin() override {}
+
 private:
   HttpStatus status_;
   string reason_;
@@ -72,7 +73,7 @@ class ClientRedirectGlobalPlugin : public GlobalPlugin
 public:
   ClientRedirectGlobalPlugin() { registerHook(HOOK_SEND_REQUEST_HEADERS); }
   void
-  handleSendRequestHeaders(Transaction &transaction)
+  handleSendRequestHeaders(Transaction &transaction) override
   {
     if (transaction.getClientRequest().getUrl().getQuery().find("custom=1") != string::npos) {
       transaction.addPlugin(new CustomResponseTransactionPlugin(transaction, HTTP_STATUS_OK, "Ok",

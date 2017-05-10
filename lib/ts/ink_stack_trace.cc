@@ -26,8 +26,8 @@
 #include "ts/ink_args.h"
 
 #include <strings.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 
 #ifndef STDERR_FILENO
@@ -37,7 +37,7 @@
 #if TS_HAS_BACKTRACE
 
 #include <execinfo.h> /* for backtrace_symbols, etc. */
-#include <signal.h>
+#include <csignal>
 
 void
 ink_stack_trace_dump()

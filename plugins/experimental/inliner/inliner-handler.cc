@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 #include <sstream>
 
@@ -67,7 +67,7 @@ namespace inliner
   }
 
   void
-  Handler::parse(void)
+  Handler::parse()
   {
     assert(reader_ != nullptr);
     TSIOBufferBlock block = TSIOBufferReaderStart(reader_);
@@ -94,28 +94,28 @@ namespace inliner
   {
     std::string src;
 
-    for (Attributes::const_iterator item = a.begin(); item != a.end(); ++item) {
-      if (!item->first.empty()) {
-        src = item->second;
+    for (const auto &item : a) {
+      if (!item.first.empty()) {
+        src = item.second;
       }
     }
 
     const bool isTagged =
-      (src.find("http://") == 0 || src.find("https://") == 0) && src.find("inline", src.find("#")) != std::string::npos;
+      (src.find("http://") == 0 || src.find("https://") == 0) && src.find("inline", src.find('#')) != std::string::npos;
 
     if (isTagged) {
       std::string classes, original = " ";
-      for (Attributes::const_iterator item = a.begin(); item != a.end(); ++item) {
-        if (!item->first.empty()) {
-          if (!item->second.empty()) {
-            if (item->first == "class") {
-              classes = item->second;
-            } else if (item->first.find("src") == std::string::npos) {
-              original += item->first + "=\"" + item->second += "\" ";
+      for (const auto &item : a) {
+        if (!item.first.empty()) {
+          if (!item.second.empty()) {
+            if (item.first == "class") {
+              classes = item.second;
+            } else if (item.first.find("src") == std::string::npos) {
+              original += item.first + "=\"" + item.second += "\" ";
             }
           }
         } else {
-          original += item->first + " ";
+          original += item.first + " ";
         }
       }
 
@@ -130,7 +130,7 @@ namespace inliner
   }
 
   std::string
-  Handler::generateId(void)
+  Handler::generateId()
   {
     std::stringstream ss;
     // TODO(dmorilha): stop using memory address here.
@@ -139,7 +139,7 @@ namespace inliner
   }
 
   void
-  Handler::abort(void)
+  Handler::abort()
   {
     abort_ = true;
     assert(ioSink_);

@@ -175,7 +175,6 @@ TSIntList copy_int_list(TSIntList list);
 TSCacheEle *copy_cache_ele(TSCacheEle *ele);
 TSCongestionEle *copy_congestion_ele(TSCongestionEle *ele);
 TSHostingEle *copy_hosting_ele(TSHostingEle *ele);
-TSIcpEle *copy_icp_ele(TSIcpEle *ele);
 TSIpAllowEle *copy_ip_allow_ele(TSIpAllowEle *ele);
 TSParentProxyEle *copy_parent_proxy_ele(TSParentProxyEle *ele);
 TSVolumeEle *copy_volume_ele(TSVolumeEle *ele);
@@ -184,7 +183,6 @@ TSRemapEle *copy_remap_ele(TSRemapEle *ele);
 TSSocksEle *copy_socks_ele(TSSocksEle *ele);
 TSSplitDnsEle *copy_split_dns_ele(TSSplitDnsEle *ele);
 TSStorageEle *copy_storage_ele(TSStorageEle *ele);
-TSVirtIpAddrEle *copy_virt_ip_addr_ele(TSVirtIpAddrEle *ele);
 INKCommentEle *copy_comment_ele(INKCommentEle *ele);
 
 /***************************************************************************

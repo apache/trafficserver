@@ -125,7 +125,6 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
   SSLNetVConnection *netvc = ssl_netvc_cast(event, edata);
 
   Debug("ssl", "[SSLNextProtocolAccept:mainEvent] event %d netvc %p", event, netvc);
-
   switch (event) {
   case NET_EVENT_ACCEPT:
     ink_release_assert(netvc != nullptr);
@@ -168,6 +167,18 @@ SSLNextProtocolAccept::SSLNextProtocolAccept(Continuation *ep, bool transparent_
   : SessionAccept(nullptr), buffer(new_empty_MIOBuffer()), endpoint(ep), transparent_passthrough(transparent_passthrough)
 {
   SET_HANDLER(&SSLNextProtocolAccept::mainEvent);
+}
+
+SSLNextProtocolSet *
+SSLNextProtocolAccept::getProtoSet()
+{
+  return &this->protoset;
+}
+
+SSLNextProtocolSet *
+SSLNextProtocolAccept::cloneProtoSet()
+{
+  return this->protoset.clone();
 }
 
 SSLNextProtocolAccept::~SSLNextProtocolAccept()

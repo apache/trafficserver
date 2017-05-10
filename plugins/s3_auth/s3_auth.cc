@@ -20,13 +20,18 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include <time.h>
-#include <string.h>
+#include <ctime>
+#include <cstring>
 #include <getopt.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <ctype.h>
+#include <sys/time.h>
+
+#include <cstdio>
+#include <cstdlib>
+#include <climits>
+#include <cctype>
+
+#include <string>
+#include <unordered_map>
 
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
@@ -35,11 +40,32 @@
 #include <ts/remap.h>
 #include <ts/ink_config.h>
 
+// Special snowflake here, only availbale when building inside the ATS source tree.
+#include "ts/ink_atomic.h"
+
 ///////////////////////////////////////////////////////////////////////////////
 // Some constants.
 //
 static const char PLUGIN_NAME[] = "s3_auth";
 static const char DATE_FMT[]    = "%a, %d %b %Y %H:%M:%S %z";
+
+///////////////////////////////////////////////////////////////////////////////
+// Cache for the secrets file, to avoid reading / loding them repeatedly on
+// a reload of remap.config. This gets cached for 60s (not configurable).
+//
+class S3Config;
+
+class ConfigCache
+{
+public:
+  S3Config *get(const char *fname);
+
+private:
+  std::unordered_map<std::string, std::pair<S3Config *, int>> _cache;
+  static const int _ttl = 60;
+};
+
+ConfigCache gConfCache;
 
 ///////////////////////////////////////////////////////////////////////////////
 // One configuration setup
@@ -49,10 +75,12 @@ int event_handler(TSCont, TSEvent, void *); // Forward declaration
 class S3Config
 {
 public:
-  S3Config() : _secret(nullptr), _secret_len(0), _keyid(nullptr), _keyid_len(0), _virt_host(false), _version(2), _cont(nullptr)
+  S3Config(bool get_cont = true)
   {
-    _cont = TSContCreate(event_handler, nullptr);
-    TSContDataSet(_cont, static_cast<void *>(this));
+    if (get_cont) {
+      _cont = TSContCreate(event_handler, nullptr);
+      TSContDataSet(_cont, static_cast<void *>(this));
+    }
   }
 
   ~S3Config()
@@ -60,7 +88,9 @@ public:
     _secret_len = _keyid_len = 0;
     TSfree(_secret);
     TSfree(_keyid);
-    TSContDestroy(_cont);
+    if (_cont) {
+      TSContDestroy(_cont);
+    }
   }
 
   // Is this configuration usable?
@@ -70,27 +100,70 @@ public:
     return _secret && (_secret_len > 0) && _keyid && (_keyid_len > 0) && (2 == _version);
   }
 
+  void
+  acquire()
+  {
+    ink_atomic_increment(&_ref_count, 1);
+  }
+
+  void
+  release()
+  {
+    TSDebug(PLUGIN_NAME, "ref_count is %d", _ref_count);
+    if (1 >= ink_atomic_decrement(&_ref_count, 1)) {
+      TSDebug(PLUGIN_NAME, "configuration deleted, due to ref-counting");
+      delete this;
+    }
+  }
+
+  // Used to copy relevant configurations that can be configured in a config file. Note: we intentionally
+  // don't override/use the assignment operator, since we only copy things IF they have been modified.
+  void
+  copy_changes_from(const S3Config *src)
+  {
+    if (src->_secret) {
+      _secret     = TSstrdup(src->_secret);
+      _secret_len = src->_secret_len;
+    }
+
+    if (src->_keyid) {
+      _keyid     = TSstrdup(src->_keyid);
+      _keyid_len = src->_keyid_len;
+    }
+
+    if (_version_modified) {
+      _version = src->_version;
+    }
+    if (_virt_host_modified) {
+      _virt_host = src->_virt_host;
+    }
+  }
+
   // Getters
   bool
   virt_host() const
   {
     return _virt_host;
   }
+
   const char *
   secret() const
   {
     return _secret;
   }
+
   const char *
   keyid() const
   {
     return _keyid;
   }
+
   int
   secret_len() const
   {
     return _secret_len;
   }
+
   int
   keyid_len() const
   {
@@ -115,16 +188,18 @@ public:
   void
   set_virt_host(bool f = true)
   {
-    _virt_host = f;
+    _virt_host          = f;
+    _virt_host_modified = true;
   }
   void
   set_version(const char *s)
   {
-    _version = strtol(s, nullptr, 10);
+    _version          = strtol(s, nullptr, 10);
+    _version_modified = true;
   }
 
   // Parse configs from an external file
-  bool parse_config(const char *config);
+  bool parse_config(const std::string &filename);
 
   // This should be called from the remap plugin, to setup the TXN hook for
   // SEND_REQUEST_HDR, such that we always attach the appropriate S3 auth.
@@ -132,37 +207,34 @@ public:
   schedule(TSHttpTxn txnp) const
   {
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, _cont);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, _cont); // To release the config lease
   }
 
 private:
-  char *_secret;
-  size_t _secret_len;
-  char *_keyid;
-  size_t _keyid_len;
-  bool _virt_host;
-  int _version;
-  TSCont _cont;
+  char *_secret            = nullptr;
+  size_t _secret_len       = 0;
+  char *_keyid             = nullptr;
+  size_t _keyid_len        = 0;
+  bool _virt_host          = false;
+  int _version             = 2;
+  bool _version_modified   = false;
+  bool _virt_host_modified = false;
+  TSCont _cont             = nullptr;
+  volatile int _ref_count  = 1;
 };
 
 bool
-S3Config::parse_config(const char *config)
+S3Config::parse_config(const std::string &config_fname)
 {
-  if (!config) {
+  if (0 == config_fname.size()) {
     TSError("[%s] called without a config file, this is broken", PLUGIN_NAME);
     return false;
   } else {
-    char filename[PATH_MAX + 1];
-
-    if (*config != '/') {
-      snprintf(filename, sizeof(filename) - 1, "%s/%s", TSConfigDirGet(), config);
-      config = filename;
-    }
-
     char line[512]; // These are long lines ...
-    FILE *file = fopen(config, "r");
+    FILE *file = fopen(config_fname.c_str(), "r");
 
     if (nullptr == file) {
-      TSError("[%s] unable to open %s", PLUGIN_NAME, config);
+      TSError("[%s] unable to open %s", PLUGIN_NAME, config_fname.c_str());
       return false;
     }
 
@@ -206,6 +278,68 @@ S3Config::parse_config(const char *config)
   }
 
   return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Implementation for the ConfigCache, it has to go here since we have a sort
+// of circular dependency. Note that we always parse / get the configuration
+// for the file, either from cache or by making one. The user of this just
+// has to copy the relevant portions, but should not use the returned object
+// directly (i.e. it must be copied).
+//
+S3Config *
+ConfigCache::get(const char *fname)
+{
+  std::string config_fname;
+  struct timeval tv;
+
+  gettimeofday(&tv, nullptr);
+
+  // Make sure the filename is an absolute path, prepending the config dir if needed
+  if (*fname != '/') {
+    config_fname = TSConfigDirGet();
+    config_fname += "/";
+  }
+  config_fname += fname;
+
+  auto it = _cache.find(config_fname);
+
+  if (it != _cache.end()) {
+    if (tv.tv_sec > (it->second.second + _ttl)) {
+      // Update the cached configuration file.
+      S3Config *s3 = new S3Config(false); // false == this config does not get the continuation
+
+      TSDebug(PLUGIN_NAME, "Configuration from %s is stale, reloading", config_fname.c_str());
+      it->second.second = tv.tv_sec;
+      it->second.first->release();
+      if (s3->parse_config(config_fname)) {
+        it->second.first = s3;
+      } else {
+        // Failed the configuration parse... Set the cache response to nullptr
+        s3->release();
+        it->second.first = nullptr;
+      }
+    } else {
+      TSDebug(PLUGIN_NAME, "Configuration from %s is fresh, reusing", config_fname.c_str());
+    }
+    return it->second.first;
+  } else {
+    // Create a new cached file.
+    S3Config *s3 = new S3Config(false); // false == this config does not get the continuation
+
+    if (s3->parse_config(config_fname)) {
+      _cache[config_fname] = std::make_pair(s3, tv.tv_sec);
+      TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s", config_fname.c_str());
+    } else {
+      s3->release();
+      return nullptr;
+    }
+
+    return s3;
+  }
+
+  TSAssert(!"Configuration parsing / caching failed");
+  return nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -483,25 +617,38 @@ S3Request::authorize(S3Config *s3)
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main continuation.
 int
-event_handler(TSCont cont, TSEvent /* event */, void *edata)
+event_handler(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  S3Config *s3   = static_cast<S3Config *>(TSContDataGet(cont));
   S3Request request(txnp);
-  TSHttpStatus status = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  TSHttpStatus status  = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  TSEvent enable_event = TS_EVENT_HTTP_CONTINUE;
 
-  if (request.initialize()) {
-    status = request.authorize(static_cast<S3Config *>(TSContDataGet(cont)));
+  switch (event) {
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
+    if (request.initialize()) {
+      status = request.authorize(s3);
+    }
+
+    if (TS_HTTP_STATUS_OK == status) {
+      TSDebug(PLUGIN_NAME, "Succesfully signed the AWS S3 URL");
+    } else {
+      TSDebug(PLUGIN_NAME, "Failed to sign the AWS S3 URL, status = %d", status);
+      TSHttpTxnSetHttpRetStatus(txnp, status);
+      enable_event = TS_EVENT_HTTP_ERROR;
+    }
+    break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    s3->release(); // Release the configuration lease when txn closes
+    break;
+  default:
+    TSError("[%s] Unknown event for this plugin", PLUGIN_NAME);
+    TSDebug(PLUGIN_NAME, "unknown event for this plugin");
+    break;
   }
 
-  if (TS_HTTP_STATUS_OK == status) {
-    TSDebug(PLUGIN_NAME, "Succesfully signed the AWS S3 URL");
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  } else {
-    TSDebug(PLUGIN_NAME, "Failed to sign the AWS S3 URL, status = %d", status);
-    TSHttpTxnSetHttpRetStatus(txnp, status);
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
-  }
-
+  TSHttpTxnReenable(txnp, enable_event);
   return 0;
 }
 
@@ -541,7 +688,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     {nullptr, no_argument, nullptr, '\0'},
   };
 
-  S3Config *s3 = new S3Config();
+  S3Config *s3          = new S3Config(true); // true == this config gets the continuation
+  S3Config *file_config = nullptr;
 
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.
@@ -553,7 +701,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
     switch (opt) {
     case 'c':
-      s3->parse_config(optarg);
+      file_config = gConfCache.get(optarg); // Get cached, or new, config object, from a file
+      if (!file_config) {
+        TSError("[%s] invalid configuration file, %s", PLUGIN_NAME, optarg);
+        *ih = nullptr;
+        s3->release();
+        return TS_ERROR;
+      }
       break;
     case 'a':
       s3->set_keyid(optarg);
@@ -574,14 +728,20 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
+  // Copy the config file secret into our instance of the configuration.
+  if (file_config) {
+    s3->copy_changes_from(file_config);
+  }
+
   // Make sure we got both the shared secret and the AWS secret
   if (!s3->valid()) {
     TSError("[%s] requires both shared and AWS secret configuration", PLUGIN_NAME);
-    delete s3;
+    s3->release();
     *ih = nullptr;
     return TS_ERROR;
   }
 
+  // Note that we don't acquire() the s3 config, it's implicit that we hold at least one ref
   *ih = static_cast<void *>(s3);
   TSDebug(PLUGIN_NAME, "New rule: secret_key=%s, access_key=%s, virtual_host=%s", s3->secret(), s3->keyid(),
           s3->virt_host() ? "yes" : "no");
@@ -594,7 +754,7 @@ TSRemapDeleteInstance(void *ih)
 {
   S3Config *s3 = static_cast<S3Config *>(ih);
 
-  delete s3;
+  s3->release();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -607,6 +767,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 
   if (s3) {
     TSAssert(s3->valid());
+    s3->acquire(); // Increasement ref-count
     // Now schedule the continuation to update the URL when going to origin.
     // Note that in most cases, this is a No-Op, assuming you have reasonable
     // cache hit ratio. However, the scheduling is next to free (very cheap).

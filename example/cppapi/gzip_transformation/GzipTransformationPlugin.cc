@@ -95,7 +95,7 @@ public:
   }
 
   void
-  handleSendResponseHeaders(Transaction &transaction)
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     TS_DEBUG(TAG, "Added X-Content-Transformed header");
     transaction.getClientResponse().getHeaders()["X-Content-Transformed"] = "1";
@@ -103,13 +103,13 @@ public:
   }
 
   void
-  consume(const string &data)
+  consume(const string &data) override
   {
     produce(data);
   }
 
   void
-  handleInputComplete()
+  handleInputComplete() override
   {
     Helpers::ContentType content_type = Helpers::getContentType(transaction_);
     if (content_type == Helpers::TEXT_HTML) {
@@ -124,7 +124,8 @@ public:
     setOutputComplete();
   }
 
-  virtual ~SomeTransformationPlugin() {}
+  ~SomeTransformationPlugin() override {}
+
 private:
   Transaction &transaction_;
 };
@@ -139,8 +140,8 @@ public:
     registerHook(HOOK_SEND_RESPONSE_HEADERS);
   }
 
-  virtual void
-  handleSendRequestHeaders(Transaction &transaction)
+  void
+  handleSendRequestHeaders(Transaction &transaction) override
   {
     // Since we can only decompress gzip we will change the accept encoding header
     // to gzip, even if the user cannot accept gziped content we will return to them
@@ -154,8 +155,8 @@ public:
     transaction.resume();
   }
 
-  virtual void
-  handleReadResponseHeaders(Transaction &transaction)
+  void
+  handleReadResponseHeaders(Transaction &transaction) override
   {
     TS_DEBUG(TAG, "Determining if we need to add an inflate transformation or a deflate transformation..");
     // We're guaranteed to have been returned either gzipped content or Identity.
@@ -176,8 +177,8 @@ public:
     transaction.resume();
   }
 
-  virtual void
-  handleSendResponseHeaders(Transaction &transaction)
+  void
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     // If the client supported gzip then we can guarantee they are receiving gzip since regardless of the
     // origins content-encoding we returned gzip, so let's make sure the content-encoding header is correctly

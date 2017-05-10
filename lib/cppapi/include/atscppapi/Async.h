@@ -85,6 +85,7 @@ public:
   }
 
   virtual ~AsyncProvider() {}
+
 protected:
   std::shared_ptr<AsyncDispatchControllerBase>
   getDispatchController()
@@ -151,6 +152,7 @@ public:
   }
 
   virtual ~AsyncDispatchController() {}
+
 public:
   AsyncEventReceiverType *event_receiver_;
   std::shared_ptr<Mutex> dispatch_mutex_;
@@ -200,6 +202,7 @@ public:
    */
   virtual void handleAsyncComplete(AsyncProviderType &provider) = 0;
   virtual ~AsyncReceiver() {}
+
 protected:
   AsyncReceiver() {}
   friend class Async;

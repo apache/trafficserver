@@ -23,7 +23,7 @@
 
 #include "InkErrno.h"
 #include "ink_assert.h"
-#include <string.h>
+#include <cstring>
 
 const char *
 InkStrerror(int ink_errno)
@@ -45,20 +45,6 @@ InkStrerror(int ink_errno)
     return "ESOCK_TIMEOUT";
   case ESOCK_NO_SOCK_SERVER_CONN:
     return "ESOCK_NO_SOCK_SERVER_CONN";
-  case ECLUSTER_NO_VC:
-    return "ECLUSTER_NO_VC";
-  case ECLUSTER_NO_MACHINE:
-    return "ECLUSTER_NO_MACHINE";
-  case ECLUSTER_OP_TIMEOUT:
-    return "ECLUSTER_OP_TIMEOUT";
-  case ECLUSTER_ORB_DATA_READ:
-    return "ECLUSTER_ORB_DATA_READ";
-  case ECLUSTER_ORB_EIO:
-    return "ECLUSTER_ORB_EIO";
-  case ECLUSTER_CHANNEL_INUSE:
-    return "ECLUSTER_CHANNEL_INUSE";
-  case ECLUSTER_NOMORE_CHANNELS:
-    return "ECLUSTER_NOMORE_CHANNELS";
   case ECACHE_NO_DOC:
     return "ECACHE_NO_DOC";
   case ECACHE_DOC_BUSY:
@@ -89,10 +75,6 @@ InkStrerror(int ink_errno)
 
   if (ink_errno > CACHE_ERRNO) {
     return "ECACHE (unknown)";
-  }
-
-  if (ink_errno > CLUSTER_ERRNO) {
-    return "ECLUSTER (unknown)";
   }
 
   if (ink_errno > NET_ERRNO) {

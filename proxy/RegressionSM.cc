@@ -252,8 +252,8 @@ RegressionSM::RegressionSM(const RegressionSM &ao) : Continuation(ao)
 }
 
 struct ReRegressionSM : public RegressionSM {
-  virtual void
-  run()
+  void
+  run() override
   {
     if (time(nullptr) < 1) { // example test
       rprintf(t, "impossible");
@@ -263,8 +263,8 @@ struct ReRegressionSM : public RegressionSM {
     }
   }
   ReRegressionSM(RegressionTest *at) : RegressionSM(at) {}
-  virtual RegressionSM *
-  clone()
+  RegressionSM *
+  clone() override
   {
     return new ReRegressionSM(*this);
   }

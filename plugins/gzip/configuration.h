@@ -33,11 +33,24 @@ namespace Gzip
 {
 typedef std::vector<std::string> StringContainer;
 
+enum CompressionAlgorithm {
+  ALGORITHM_DEFAULT = 0,
+  ALGORITHM_DEFLATE = 1,
+  ALGORITHM_GZIP    = 2,
+  ALGORITHM_BROTLI  = 4 // For bit manipulations
+};
+
 class HostConfiguration
 {
 public:
   explicit HostConfiguration(const std::string &host)
-    : host_(host), enabled_(true), cache_(true), remove_accept_encoding_(false), flush_(false), ref_count_(0)
+    : host_(host),
+      enabled_(true),
+      cache_(true),
+      remove_accept_encoding_(false),
+      flush_(false),
+      compression_algorithms_(ALGORITHM_GZIP),
+      ref_count_(0)
   {
   }
 
@@ -92,10 +105,19 @@ public:
     return !disallows_.empty();
   }
 
+  bool
+  has_allows() const
+  {
+    return !allows_.empty();
+  }
+
   void add_disallow(const std::string &disallow);
+  void add_allow(const std::string &allow);
   void add_compressible_content_type(const std::string &content_type);
   bool is_url_allowed(const char *url, int url_len);
   bool is_content_type_compressible(const char *content_type, int content_type_length);
+  void add_compression_algorithms(const std::string &algorithms);
+  int compression_algorithms();
 
   // Ref-counting these host configuration objects
   void
@@ -118,10 +140,12 @@ private:
   bool cache_;
   bool remove_accept_encoding_;
   bool flush_;
+  int compression_algorithms_;
   volatile int ref_count_;
 
   StringContainer compressible_content_types_;
   StringContainer disallows_;
+  StringContainer allows_;
 
   DISALLOW_COPY_AND_ASSIGN(HostConfiguration);
 };

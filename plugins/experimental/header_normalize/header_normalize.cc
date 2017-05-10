@@ -45,10 +45,10 @@ static char UNUSED rcsId__header_normalize_cc[] =
 #include <ts/remap.h>
 #include <set>
 #include <string>
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdlib>
+#include <cstdint>
+#include <cstdio>
 #include <netdb.h>
 #include <map>
 

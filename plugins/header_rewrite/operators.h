@@ -125,6 +125,7 @@ class OperatorNoOp : public Operator
 {
 public:
   OperatorNoOp() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorNoOp"); }
+
 protected:
   void exec(const Resources & /* res ATS_UNUSED */) const {};
 
@@ -176,6 +177,7 @@ class OperatorRMHeader : public OperatorHeaders
 {
 public:
   OperatorRMHeader() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMHeader"); }
+
 protected:
   void exec(const Resources &res) const;
 
@@ -233,6 +235,7 @@ class OperatorRMCookie : public OperatorCookies
 {
 public:
   OperatorRMCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMCookie"); }
+
 protected:
   void exec(const Resources &res) const;
 
@@ -310,8 +313,6 @@ protected:
 
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorSetDebug);
-
-  Value _ds_value;
 };
 
 #endif // __OPERATORS_H

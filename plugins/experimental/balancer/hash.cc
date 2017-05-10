@@ -22,10 +22,10 @@
  */
 
 #include "balancer.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <openssl/md5.h>
 #include <netinet/in.h>
-#include <string.h>
+#include <cstring>
 #include <map>
 #include <string>
 #include <vector>
@@ -154,7 +154,7 @@ struct HashBalancer : public BalancerInstance {
 
   HashBalancer() { this->hash_parts.push_back(HashTxnUrl); }
   void
-  push_target(const BalancerTarget &target)
+  push_target(const BalancerTarget &target) override
   {
     for (unsigned i = 0; i < iterations; ++i) {
       this->hash_ring.insert(std::make_pair(md5_key(target, i), target));
@@ -162,7 +162,7 @@ struct HashBalancer : public BalancerInstance {
   }
 
   const BalancerTarget &
-  balance(TSHttpTxn txn, TSRemapRequestInfo *rri)
+  balance(TSHttpTxn txn, TSRemapRequestInfo *rri) override
   {
     md5_key key;
     MD5_CTX ctx;

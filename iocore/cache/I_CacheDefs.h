@@ -33,11 +33,15 @@
 #define CACHE_ALT_INDEX_DEFAULT -1
 #define CACHE_ALT_REMOVED -2
 
-#define CACHE_DB_MAJOR_VERSION 24
-#define CACHE_DB_MINOR_VERSION 0
+static const uint8_t CACHE_DB_MAJOR_VERSION = 24;
+static const uint8_t CACHE_DB_MINOR_VERSION = 1;
+// This is used in various comparisons because otherwise if the minor version is 0,
+// the compile fails because the condition is always true or false. Running it through
+// VersionNumber prevents that.
+extern const VersionNumber CACHE_DB_VERSION;
 
-#define CACHE_DIR_MAJOR_VERSION 18
-#define CACHE_DIR_MINOR_VERSION 0
+static const uint8_t CACHE_DIR_MAJOR_VERSION = 18;
+static const uint8_t CACHE_DIR_MINOR_VERSION = 0;
 
 #define CACHE_DB_FDS 128
 

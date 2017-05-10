@@ -35,7 +35,6 @@
 
 #ifdef SPLIT_DNS
 #include "P_SplitDNS.h"
-#include "P_Cluster.h"
 #endif
 
 #include "P_EventSystem.h"

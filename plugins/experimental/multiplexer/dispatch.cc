@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include <inttypes.h>
+#include <cinttypes>
 #include <sys/time.h>
 
 #include "dispatch.h"
@@ -150,14 +150,14 @@ public:
   }
 
   void
-  error(void)
+  error()
   {
     TSError("[" PLUGIN_TAG "] error when communicating with \"%s\"\n", url.c_str());
     TSStatIntIncrement(statistics.failures, 1);
   }
 
   void
-  timeout(void)
+  timeout()
   {
     TSError("[" PLUGIN_TAG "] timeout when communicating with \"%s\"\n", url.c_str());
     TSStatIntIncrement(statistics.timeouts, 1);
@@ -189,7 +189,7 @@ public:
   }
 
   void
-  done(void)
+  done()
   {
     struct timeval end;
 

@@ -18,10 +18,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include <stdio.h>
+#include <cstdio>
 #include <sys/time.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 #include <string>
 
 #include <ts/ts.h>
@@ -193,7 +193,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   for (int ix = 2; ix < argc; ++ix) {
     std::string arg            = argv[ix];
-    std::string::size_type sep = arg.find_first_of(":");
+    std::string::size_type sep = arg.find_first_of(':');
 
     if (sep == std::string::npos) {
       TSError("[hipes] Malformed options in url_remap: %s", argv[ix]);
@@ -212,7 +212,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       } else if (arg.compare(0, 3, "ssl") == 0) {
         ri->ssl = true;
       } else if (arg.compare(0, 7, "service") == 0) {
-        std::string::size_type port = arg_val.find_first_of(":");
+        std::string::size_type port = arg_val.find_first_of(':');
 
         if (port == std::string::npos) {
           ri->svc_server = arg_val;
@@ -221,7 +221,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
           ri->svc_port   = atoi(arg_val.substr(port + 1).c_str());
         }
       } else if (arg.compare(0, 6, "server") == 0) {
-        std::string::size_type port = arg_val.find_first_of(":");
+        std::string::size_type port = arg_val.find_first_of(':');
 
         if (port == std::string::npos) {
           ri->hipes_server = arg_val;

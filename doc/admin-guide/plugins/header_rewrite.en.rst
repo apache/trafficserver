@@ -179,6 +179,8 @@ CLIENT-IP
 Remote IP address, as a string, of the client connection for the current
 transaction.
 
+This condition is *deprecated* as of ATS v7.1.x, please use %{IP:CLIENT} instead.
+
 CLIENT-URL
 ~~~~~~~~~~
 ::
@@ -291,6 +293,35 @@ INCOMING-PORT
 TCP port, as a decimal integer, on which the incoming client connection was
 made.
 
+IP
+~~
+::
+
+    cond %{IP:<part>} <operand>
+
+This is one of four possible IPs associated with the transaction, with the
+possible parts being
+::
+
+    %{IP:CLIENT}     Clients IP
+    %{IP:INBOUND}    ATS's server IP the client connected to
+    %{IP:SERVER}     Upstream (next-hop) server IP (typically origin, or parent)
+    %{IP:OUTBOUND}   ATS's outbound IP, that was used to connect upstream (next-hop)
+
+Note that both %{IP:SERVER} and %{IP:OUTBOUND} can be unset, in which case the
+empty string is returned. The common use for this condition is
+actually as a value to an operator, e.g.
+::
+
+   cond %{SEND_RESPONSE_HDR_HOOK}
+     set-header X-Client-IP %{IP:CLIENT}
+     set-header X-Inbound-IP %{IP:INBOUND}
+     set-header X-Server-IP %{IP:SERVER}
+     set-header X-Outbound-IP %{IP:OUTBOUND}
+
+Finally, this new condition replaces the old %{CLIENT-IP} condition, which is
+now properly deprecated. It will be removed as of ATS v8.0.0.
+
 INTERNAL-TRANSACTION
 ~~~~~~~~~~~~~~~~~~~~
 ::
@@ -345,6 +376,10 @@ first).
 Refer to `Requests vs. Responses`_ for more information on determining the
 context in which the transaction's URL is evaluated.
 
+This condition is *deprecated* as of ATS v7.1.x, please use e.g. %{URL:PATH}
+or %{CLIENT-URL:PATH} instead.
+
+
 QUERY
 ~~~~~
 ::
@@ -354,6 +389,10 @@ QUERY
 The query parameters, if any, of the transaction.  Refer to `Requests vs.
 Responses`_ for more information on determining the context in which the
 transaction's URL is evaluated.
+
+This condition is *deprecated* as of ATS v7.1.x, please use e.g. %{URL:QUERY}
+or %{CLIENT-URL:QUERY} instead.
+
 
 RANDOM
 ~~~~~~
@@ -413,14 +452,15 @@ URL
 ~~~
 ::
 
-    cond %{URL:option} <operand>
+    cond %{URL:<part>} <operand>
 
 The complete URL of the current transaction. This will automatically choose the
 most relevant URL depending upon the hook context in which the condition is
 being evaluated.
 
 Refer to `Requests vs. Responses`_ for more information on determining the
-context in which the transaction's URL is evaluated.
+context in which the transaction's URL is evaluated.  The ``<part>`` may be
+specified according to the options documented in `URL Parts`_.
 
 Condition Operands
 ------------------

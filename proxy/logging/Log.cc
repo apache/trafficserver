@@ -597,18 +597,18 @@ Log::init_fields()
     SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1", SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN");
 
   Ptr<LogFieldAliasTable> cache_hit_miss_map = make_ptr(new LogFieldAliasTable);
-  cache_hit_miss_map->init(23, SQUID_HIT_RESERVED, "HIT", SQUID_HIT_LEVEL_1, "HIT_RAM", // Also SQUID_HIT_RAM
+  cache_hit_miss_map->init(21, SQUID_HIT_RESERVED, "HIT", SQUID_HIT_LEVEL_1, "HIT_RAM", // Also SQUID_HIT_RAM
                            SQUID_HIT_LEVEL_2, "HIT_SSD",                                // Also SQUID_HIT_SSD
                            SQUID_HIT_LEVEL_3, "HIT_DISK",                               // Also SQUID_HIT_DISK
                            SQUID_HIT_LEVEL_4, "HIT_CLUSTER",                            // Also SQUID_HIT_CLUSTER
                            SQUID_HIT_LEVEL_5, "HIT_NET",                                // Also SQUID_HIT_NET
                            SQUID_HIT_LEVEL_6, "HIT_LEVEL_6", SQUID_HIT_LEVEL_7, "HIT_LEVEL_7", SQUID_HIT_LEVEL_8, "HIT_LEVEL_8",
-                           SQUID_HIT_LEVEl_9, "HIT_LEVEL_9", SQUID_MISS_NONE, "MISS", SQUID_MISS_ICP_AUTH, "MISS_ICP_AUTH",
-                           SQUID_MISS_HTTP_NON_CACHE, "MISS_HTTP_NON_CACHE", SQUID_MISS_ICP_STOPLIST, "MISS_ICP_STOPLIST",
-                           SQUID_MISS_HTTP_NO_DLE, "MISS_HTTP_NO_DLE", SQUID_MISS_HTTP_NO_LE, "MISS_HTTP_NO_LE",
-                           SQUID_MISS_HTTP_CONTENT, "MISS_HTTP_CONTENT", SQUID_MISS_PRAGMA_NOCACHE, "MISS_PRAGMA_NOCACHE",
-                           SQUID_MISS_PASS, "MISS_PASS", SQUID_MISS_PRE_EXPIRED, "MISS_PRE_EXPIRED", SQUID_MISS_ERROR, "MISS_ERROR",
-                           SQUID_MISS_CACHE_BYPASS, "MISS_CACHE_BYPASS", SQUID_HIT_MISS_INVALID_ASSIGNED_CODE, "INVALID_CODE");
+                           SQUID_HIT_LEVEl_9, "HIT_LEVEL_9", SQUID_MISS_NONE, "MISS", SQUID_MISS_HTTP_NON_CACHE,
+                           "MISS_HTTP_NON_CACHE", SQUID_MISS_HTTP_NO_DLE, "MISS_HTTP_NO_DLE", SQUID_MISS_HTTP_NO_LE,
+                           "MISS_HTTP_NO_LE", SQUID_MISS_HTTP_CONTENT, "MISS_HTTP_CONTENT", SQUID_MISS_PRAGMA_NOCACHE,
+                           "MISS_PRAGMA_NOCACHE", SQUID_MISS_PASS, "MISS_PASS", SQUID_MISS_PRE_EXPIRED, "MISS_PRE_EXPIRED",
+                           SQUID_MISS_ERROR, "MISS_ERROR", SQUID_MISS_CACHE_BYPASS, "MISS_CACHE_BYPASS",
+                           SQUID_HIT_MISS_INVALID_ASSIGNED_CODE, "INVALID_CODE");
 
   field = new LogField("cache_result_code", "crc", LogField::sINT, &LogAccess::marshal_cache_result_code,
                        &LogAccess::unmarshal_cache_code, make_alias_map(cache_code_map));
@@ -839,7 +839,7 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "fsiz", field);
 
   Ptr<LogFieldAliasTable> entry_type_map = make_ptr(new LogFieldAliasTable);
-  entry_type_map->init(N_LOG_ENTRY_TYPES, LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP", LOG_ENTRY_ICP, "LOG_ENTRY_ICP");
+  entry_type_map->init(N_LOG_ENTRY_TYPES, LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP");
   field = new LogField("log_entry_type", "etype", LogField::sINT, &LogAccess::marshal_entry_type, &LogAccess::unmarshal_entry_type,
                        make_alias_map(entry_type_map));
   global_field_list.add(field, false);
@@ -1186,10 +1186,9 @@ Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char
 /*-------------------------------------------------------------------------
   Log::preproc_thread_main
 
-  This function defines the functionality of the logging flush prepare
-  thread, whose purpose is to consume LogBuffer objects from the
-  global_buffer_full_list, do some prepare work(such as convert to ascii),
-  and then forward to flush thread.
+  This function defines the functionality of the logging flush preprocess
+  thread, whose purpose is to consume full LogBuffer objects, do some prepare
+  work (such as convert to ascii), and then forward to flush thread.
   -------------------------------------------------------------------------*/
 
 void *
@@ -1387,7 +1386,7 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
     // host to account for a reconfiguration.
     //
     Debug("log-sock", "collation thread starting, creating LogSock");
-    sock = new LogSock(LogSock::LS_CONST_CLUSTER_MAX_MACHINES);
+    sock = new LogSock(LogSock::LS_CONST_MAX_CONNS);
     ink_assert(sock != nullptr);
 
     if (sock->listen(Log::config->collation_port) != 0) {

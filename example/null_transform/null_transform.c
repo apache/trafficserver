@@ -232,14 +232,17 @@ null_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
        */
       TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
       break;
+
+    /* If we get a WRITE_READY event or any other type of
+     * event (sent, perhaps, because we were re-enabled) then
+     * we'll attempt to transform more data.
+     */
     case TS_EVENT_VCONN_WRITE_READY:
       TSDebug(PLUGIN_NAME, "\tEvent is TS_EVENT_VCONN_WRITE_READY");
+      handle_transform(contp);
+      break;
     default:
       TSDebug(PLUGIN_NAME, "\t(event is %d)", event);
-      /* If we get a WRITE_READY event or any other type of
-       * event (sent, perhaps, because we were reenabled) then
-       * we'll attempt to transform more data.
-       */
       handle_transform(contp);
       break;
     }

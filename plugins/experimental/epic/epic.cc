@@ -17,16 +17,16 @@
  */
 
 #include <ts/ts.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <climits>
+#include <ctime>
 #include <getopt.h>
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 #include <unistd.h>
 #include <sys/param.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <set>
 #include <string>
 
@@ -74,7 +74,6 @@ static const std::set<std::string> epic_gauges = {
   "proxy.node.cache_total_misses_avg_10s",
   "proxy.node.client_throughput_out",
   "proxy.node.client_throughput_out_kbit",
-  "proxy.node.cluster.nodes",
   "proxy.node.config.reconfigure_required",
   "proxy.node.config.reconfigure_time",
   "proxy.node.config.restart_required.cop",
@@ -177,21 +176,6 @@ static const std::set<std::string> epic_gauges = {
   "proxy.process.cache.update.active",
   "proxy.process.cache.write.active",
   "proxy.process.cache.write_per_sec",
-  "proxy.process.cluster.cache_callback_time",
-  "proxy.process.cluster.cache_outstanding",
-  "proxy.process.cluster.cluster_ping_time",
-  "proxy.process.cluster.connections_avg_time",
-  "proxy.process.cluster.connections_open",
-  "proxy.process.cluster.control_messages_avg_receive_time",
-  "proxy.process.cluster.control_messages_avg_send_time",
-  "proxy.process.cluster.lkrmt_cache_callback_time",
-  "proxy.process.cluster.local_connection_time",
-  "proxy.process.cluster.open_delay_time",
-  "proxy.process.cluster.rdmsg_assemble_time",
-  "proxy.process.cluster.remote_connection_time",
-  "proxy.process.cluster.remote_op_reply_timeouts",
-  "proxy.process.cluster.remote_op_timeouts",
-  "proxy.process.cluster.rmt_cache_callback_time",
   "proxy.process.dns.fail_avg_time",
   "proxy.process.dns.in_flight",
   "proxy.process.dns.lookup_avg_time",
@@ -205,8 +189,6 @@ static const std::set<std::string> epic_gauges = {
   "proxy.process.http.current_cache_connections",
   "proxy.process.http.current_client_connections",
   "proxy.process.http.current_client_transactions",
-  "proxy.process.http.current_icp_raw_transactions",
-  "proxy.process.http.current_icp_transactions",
   "proxy.process.http.current_parent_proxy_connections",
   "proxy.process.http.current_parent_proxy_raw_transactions",
   "proxy.process.http.current_parent_proxy_transactions",

@@ -22,7 +22,7 @@
  */
 
 #include <iostream>
-#include <assert.h>
+#include <cassert>
 #include <string>
 
 #include "print_funcs.h"
@@ -93,7 +93,7 @@ main()
   const char *expected_strs7[] = {"key1", "val1", nullptr};
   checkAttributes("test7", attr_list, expected_strs7);
 
-  const char *escaped_sequence = "{\\\"site-attribute\\\":\\\"content=no_expandable; ajax_cert_expandable\\\"}";
+  const char *escaped_sequence = R"({\"site-attribute\":\"content=no_expandable; ajax_cert_expandable\"})";
   string str8("pos=\"FPM1\" spaceid=96584352 extra_mime=\"");
   str8.append(escaped_sequence);
   str8.append("\" foo=bar a=\"b\"");

@@ -223,7 +223,7 @@ parse_activate_directive(const char *directive, BUILD_TABLE_INFO *bti, char *err
   }
 
   if ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *)bti->paramv[1])) == nullptr) {
-    snprintf(errbuf, errbufsize, "Undefined filter \"%s\" in directive \"%s\"", bti->paramv[1], directive);
+    snprintf(errbuf, errbufsize, R"(Undefined filter "%s" in directive "%s")", bti->paramv[1], directive);
     Debug("url_rewrite", "[parse_directive] %s", errbuf);
     return (const char *)errbuf;
   }
@@ -250,7 +250,7 @@ parse_deactivate_directive(const char *directive, BUILD_TABLE_INFO *bti, char *e
   }
 
   if ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *)bti->paramv[1])) == nullptr) {
-    snprintf(errbuf, errbufsize, "Undefined filter \"%s\" in directive \"%s\"", bti->paramv[1], directive);
+    snprintf(errbuf, errbufsize, R"(Undefined filter "%s" in directive "%s")", bti->paramv[1], directive);
     Debug("url_rewrite", "[parse_directive] %s", errbuf);
     return (const char *)errbuf;
   }
@@ -488,8 +488,6 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         m = HTTP_WKSIDX_GET;
       } else if (!strcasecmp(argptr, "HEAD")) {
         m = HTTP_WKSIDX_HEAD;
-      } else if (!strcasecmp(argptr, "ICP_QUERY")) {
-        m = HTTP_WKSIDX_ICP_QUERY;
       } else if (!strcasecmp(argptr, "OPTIONS")) {
         m = HTTP_WKSIDX_OPTIONS;
       } else if (!strcasecmp(argptr, "POST")) {
@@ -832,19 +830,19 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
       pi->fp_tsremap_os_response = (remap_plugin_info::_tsremap_os_response *)dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE);
 
       if (!pi->fp_tsremap_init) {
-        snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_INIT, c);
+        snprintf(errbuf, errbufsize, R"(Can't find "%s" function in remap plugin "%s")", TSREMAP_FUNCNAME_INIT, c);
         retcode = -10;
       } else if (!pi->fp_tsremap_new_instance && pi->fp_tsremap_delete_instance) {
         snprintf(errbuf, errbufsize,
-                 "Can't find \"%s\" function in remap plugin \"%s\" which is required if \"%s\" function exists",
+                 R"(Can't find "%s" function in remap plugin "%s" which is required if "%s" function exists)",
                  TSREMAP_FUNCNAME_NEW_INSTANCE, c, TSREMAP_FUNCNAME_DELETE_INSTANCE);
         retcode = -11;
       } else if (!pi->fp_tsremap_do_remap) {
-        snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_DO_REMAP, c);
+        snprintf(errbuf, errbufsize, R"(Can't find "%s" function in remap plugin "%s")", TSREMAP_FUNCNAME_DO_REMAP, c);
         retcode = -12;
       } else if (pi->fp_tsremap_new_instance && !pi->fp_tsremap_delete_instance) {
         snprintf(errbuf, errbufsize,
-                 "Can't find \"%s\" function in remap plugin \"%s\" which is required if \"%s\" function exists",
+                 R"(Can't find "%s" function in remap plugin "%s" which is required if "%s" function exists)",
                  TSREMAP_FUNCNAME_DELETE_INSTANCE, c, TSREMAP_FUNCNAME_NEW_INSTANCE);
         retcode = -13;
       }

@@ -22,7 +22,8 @@
 */
 
 #include <iostream>
-#include <string.h>
+#include <utility>
+#include <cstring>
 
 #include <ts/TestBox.h>
 
@@ -33,7 +34,7 @@ using namespace std;
 class N
 {
 public:
-  N(uint32_t w, string c) : weight(w), content(c) {}
+  N(uint32_t w, string c) : weight(w), content(std::move(c)) {}
   bool
   operator<(const N &n) const
   {

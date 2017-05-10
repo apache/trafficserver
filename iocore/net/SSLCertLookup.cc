@@ -306,7 +306,7 @@ SSLCertLookup::get(unsigned i) const
 struct ats_wildcard_matcher {
   ats_wildcard_matcher()
   {
-    if (regex.compile("^\\*\\.[^\\*.]+") != 0) {
+    if (regex.compile(R"(^\*\.[^\*.]+)") != 0) {
       Fatal("failed to compile TLS wildcard matching regex");
     }
   }

@@ -177,32 +177,6 @@ private:
   TSHostingEle *m_ele;
 };
 
-/* icp.config ************************************************/
-class IcpObj : public CfgEleObj
-{
-public:
-  IcpObj(TSIcpEle *ele);
-  IcpObj(TokenList *tokens); // creates the ele
-  ~IcpObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual TSCfgEle *getCfgEleCopy();
-  virtual TSCfgEle *
-  getCfgEle()
-  {
-    return (TSCfgEle *)m_ele;
-  }
-  virtual TSRuleTypeT
-  getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  TSIcpEle *m_ele;
-};
-
 /* ip_allow.config    *********************************************/
 class IpAllowObj : public CfgEleObj
 {
@@ -409,32 +383,6 @@ public:
 
 private:
   TSStorageEle *m_ele;
-};
-
-/* vaddrs.config       *******************************************/
-class VirtIpAddrObj : public CfgEleObj
-{
-public:
-  VirtIpAddrObj(TSVirtIpAddrEle *ele);
-  VirtIpAddrObj(TokenList *tokens);
-  ~VirtIpAddrObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual TSCfgEle *getCfgEleCopy();
-  virtual TSCfgEle *
-  getCfgEle()
-  {
-    return (TSCfgEle *)m_ele;
-  }
-  virtual TSRuleTypeT
-  getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  TSVirtIpAddrEle *m_ele;
 };
 
 /*****************************************************************

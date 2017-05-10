@@ -19,8 +19,8 @@
 
 #include <iostream>
 #include <sstream>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include "ts/ts.h"
 #include "ts/remap.h"
 

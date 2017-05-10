@@ -131,7 +131,7 @@ AIOTestData::ink_aio_stats(int event, void *d)
  * Common
  */
 AIOCallback *
-new_AIOCallback(void)
+new_AIOCallback()
 {
   return new AIOCallbackInternal;
 }
@@ -399,9 +399,9 @@ aio_queue_req(AIOCallbackInternal *op, int fromAPI = 0)
 static inline int
 cache_op(AIOCallbackInternal *op)
 {
-  bool read = (op->aiocb.aio_lio_opcode == LIO_READ) ? 1 : 0;
+  bool read = (op->aiocb.aio_lio_opcode == LIO_READ);
   for (; op; op = (AIOCallbackInternal *)op->then) {
-    ink_aiocb_t *a = &op->aiocb;
+    ink_aiocb *a = &op->aiocb;
     ssize_t err, res = 0;
 
     while (a->aio_nbytes - res > 0) {
@@ -513,7 +513,7 @@ aio_thread_main(void *arg)
       else
         op->thread->schedule_imm_signal(op);
       ink_mutex_acquire(&my_aio_req->aio_mutex);
-    } while (1);
+    } while (true);
     timespec timedwait_msec = ink_hrtime_to_timespec(Thread::get_hrtime_updated() + HRTIME_MSECONDS(net_config_poll_timeout));
     ink_cond_timedwait(&my_aio_req->aio_cond, &my_aio_req->aio_mutex, &timedwait_msec);
   }

@@ -58,8 +58,8 @@ public:
     registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
   }
 
-  virtual void
-  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
     LOG_DEBUG(log, "handleReadRequestHeadersPostRemap.\n"
                    "\tRequest URL: %s\n"

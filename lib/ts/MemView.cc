@@ -25,7 +25,7 @@
 */
 #include <ts/MemView.h>
 #include <sstream>
-#include <ctype.h>
+#include <cctype>
 #include <ts/ink_platform.h>
 
 namespace ts

@@ -23,11 +23,52 @@
 
 #include "ts/ink_error.h"
 #include "ts/ink_defs.h"
-#include <assert.h>
-#include "stdio.h"
+#include <cassert>
+#include <cstdio>
 #include "ts/ink_mutex.h"
 
-// Define the _g_mattr first to avoid static initialization order fiasco.
-x_pthread_mutexattr_t _g_mattr;
-
 ink_mutex __global_death = PTHREAD_MUTEX_INITIALIZER;
+
+class x_pthread_mutexattr_t
+{
+public:
+  x_pthread_mutexattr_t()
+  {
+    pthread_mutexattr_init(&attr);
+#ifndef POSIX_THREAD_10031c
+    pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+#endif
+
+#if DEBUG && HAVE_PTHREAD_MUTEXATTR_SETTYPE
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+#endif
+  }
+
+  ~x_pthread_mutexattr_t() { pthread_mutexattr_destroy(&attr); }
+
+  pthread_mutexattr_t attr;
+};
+
+static x_pthread_mutexattr_t attr;
+
+void
+ink_mutex_init(ink_mutex *m, const char * /* name */)
+{
+  int error;
+
+  error = pthread_mutex_init(m, &attr.attr);
+  if (unlikely(error != 0)) {
+    ink_abort("pthread_mutex_init(%p) failed: %s (%d)", m, strerror(error), error);
+  }
+}
+
+void
+ink_mutex_destroy(ink_mutex *m)
+{
+  int error;
+
+  error = pthread_mutex_destroy(m);
+  if (unlikely(error != 0)) {
+    ink_abort("pthread_mutex_destroy(%p) failed: %s (%d)", m, strerror(error), error);
+  }
+}

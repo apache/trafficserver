@@ -16,12 +16,12 @@
   limitations under the License.
 */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <unistd.h>
 #include <getopt.h>
-#include <stdlib.h>
-#include <time.h>
+#include <cstdlib>
+#include <ctime>
 #include <openssl/sha.h>
 
 #include <string>
@@ -35,7 +35,6 @@
 #define MINIMUM_BUCKET_SIZE 10
 
 static const char *PLUGIN_NAME = "cache_promote";
-TSCont gNocacheCont;
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Note that all options for all policies has to go here. Not particularly pretty...
@@ -117,20 +116,20 @@ private:
 class ChancePolicy : public PromotionPolicy
 {
 public:
-  bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */)
+  bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */) override
   {
     TSDebug(PLUGIN_NAME, "ChancePolicy::doPromote(%f)", getSample());
     return true;
   }
 
   void
-  usage() const
+  usage() const override
   {
     TSError("[%s] Usage: @plugin=%s.so @pparam=--policy=chance @pparam=--sample=<x>%%", PLUGIN_NAME, PLUGIN_NAME);
   }
 
   const char *
-  policyName() const
+  policyName() const override
   {
     return "chance";
   }
@@ -153,7 +152,9 @@ public:
   operator=(const LRUHash &h)
   {
     TSDebug(PLUGIN_NAME, "copying an LRUHash object");
-    memcpy(_hash, h._hash, sizeof(_hash));
+    if (this != &h) {
+      memcpy(_hash, h._hash, sizeof(_hash));
+    }
     return *this;
   }
 
@@ -195,7 +196,7 @@ class LRUPolicy : public PromotionPolicy
 {
 public:
   LRUPolicy() : PromotionPolicy(), _buckets(1000), _hits(10), _lock(TSMutexCreate()), _list_size(0), _freelist_size(0) {}
-  ~LRUPolicy()
+  ~LRUPolicy() override
   {
     TSDebug(PLUGIN_NAME, "deleting LRUPolicy object");
     TSMutexLock(_lock);
@@ -211,7 +212,7 @@ public:
   }
 
   bool
-  parseOption(int opt, char *optarg)
+  parseOption(int opt, char *optarg) override
   {
     switch (opt) {
     case 'b':
@@ -238,7 +239,7 @@ public:
   }
 
   bool
-  doPromote(TSHttpTxn txnp)
+  doPromote(TSHttpTxn txnp) override
   {
     LRUHash hash;
     LRUMap::iterator map_it;
@@ -319,14 +320,14 @@ public:
   }
 
   void
-  usage() const
+  usage() const override
   {
     TSError("[%s] Usage: @plugin=%s.so @pparam=--policy=lru @pparam=--buckets=<n> --hits=<m> --sample=<x>", PLUGIN_NAME,
             PLUGIN_NAME);
   }
 
   const char *
-  policyName() const
+  policyName() const override
   {
     return "LRU";
   }
@@ -405,20 +406,6 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-// Little helper continuation, to turn off writing to the cache. ToDo: when we have proper
-// APIs to make requests / responses, we can remove this completely.
-static int
-cont_nocache_response(TSCont contp, TSEvent event, void *edata)
-{
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-
-  TSHttpTxnServerRespNoStoreSet(txnp, 1);
-  // Reenable and continue with the state machine.
-  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  return 0;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////
 // Main "plugin", a TXN hook in the TS_HTTP_READ_CACHE_HDR_HOOK. Unless the policy allows
 // caching, we will turn off the cache from here on for the TXN.
 //
@@ -446,7 +433,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
             TSDebug(PLUGIN_NAME, "cache-status is %d, and leaving cache on (promoted)", obj_status);
           } else {
             TSDebug(PLUGIN_NAME, "cache-status is %d, and turning off the cache (not promoted)", obj_status);
-            TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, gNocacheCont);
+            TSHttpTxnServerRespNoStoreSet(txnp, 1);
           }
           break;
         default:
@@ -487,8 +474,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
              (api_info->tsremap_version & 0xffff));
     return TS_ERROR;
   }
-
-  gNocacheCont = TSContCreate(cont_nocache_response, nullptr);
 
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
   return TS_SUCCESS; /* success */

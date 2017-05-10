@@ -61,8 +61,8 @@ new_event_client()
   EventClientT *ele = (EventClientT *)ats_malloc(sizeof(EventClientT));
 
   // now set the alarms registered section
-  for (int i = 0; i < NUM_EVENTS; i++) {
-    ele->events_registered[i] = 0;
+  for (bool &i : ele->events_registered) {
+    i = false;
   }
 
   ele->adr = (struct sockaddr *)ats_malloc(sizeof(struct sockaddr));
@@ -122,13 +122,7 @@ remove_event_client(EventClientT *client, InkHashTable *table)
 TSMgmtError
 init_mgmt_events()
 {
-  int ret;
-
-  ret = ink_mutex_init(&mgmt_events_lock, "mgmt_event_notice");
-
-  if (ret) {
-    return TS_ERR_SYS_CALL;
-  }
+  ink_mutex_init(&mgmt_events_lock, "mgmt_event_notice");
 
   // initialize queue
   mgmt_events = create_queue();
@@ -274,7 +268,7 @@ event_callback_main(void *arg)
   int fds_ready;                       // return value for select go here
   struct timeval timeout;
 
-  while (1) {
+  while (true) {
     // LINUX fix: to prevent hard-spin reset timeout on each loop
     timeout.tv_sec  = 1;
     timeout.tv_usec = 0;
@@ -391,11 +385,11 @@ event_callback_main(void *arg)
       while (con_entry) {
         client_entry = (EventClientT *)ink_hash_table_entry_value(accepted_clients, con_entry);
         if (client_entry->events_registered[event->id]) {
-          MgmtMarshallInt optype  = EVENT_NOTIFY;
+          OpType optype           = OpType::EVENT_NOTIFY;
           MgmtMarshallString name = event->name;
           MgmtMarshallString desc = event->description;
 
-          ret = send_mgmt_request(client_entry->fd, EVENT_NOTIFY, &optype, &name, &desc);
+          ret = send_mgmt_request(client_entry->fd, OpType::EVENT_NOTIFY, &optype, &name, &desc);
           if (ret != TS_ERR_OKAY) {
             Debug("event", "sending even notification to fd [%d] failed.", client_entry->fd);
           }
@@ -452,15 +446,15 @@ handle_event_reg_callback(EventClientT *client, void *req, size_t reqlen)
   MgmtMarshallString name = nullptr;
   TSMgmtError ret;
 
-  ret = recv_mgmt_request(req, reqlen, EVENT_REG_CALLBACK, &optype, &name);
+  ret = recv_mgmt_request(req, reqlen, OpType::EVENT_REG_CALLBACK, &optype, &name);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }
 
   // mark the specified alarm as "wanting to be notified" in the client's alarm_registered list
   if (strlen(name) == 0) { // mark all alarms
-    for (int i = 0; i < NUM_EVENTS; i++) {
-      client->events_registered[i] = true;
+    for (bool &i : client->events_registered) {
+      i = true;
     }
   } else {
     int id = get_event_id(name);
@@ -495,15 +489,15 @@ handle_event_unreg_callback(EventClientT *client, void *req, size_t reqlen)
   MgmtMarshallString name = nullptr;
   TSMgmtError ret;
 
-  ret = recv_mgmt_request(req, reqlen, EVENT_UNREG_CALLBACK, &optype, &name);
+  ret = recv_mgmt_request(req, reqlen, OpType::EVENT_UNREG_CALLBACK, &optype, &name);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }
 
   // mark the specified alarm as "wanting to be notified" in the client's alarm_registered list
   if (strlen(name) == 0) { // mark all alarms
-    for (int i = 0; i < NUM_EVENTS; i++) {
-      client->events_registered[i] = false;
+    for (bool &i : client->events_registered) {
+      i = false;
     }
   } else {
     int id = get_event_id(name);
@@ -546,7 +540,6 @@ static const event_message_handler handlers[] = {
   nullptr,                     // SNAPSHOT_GET_MLT
   nullptr,                     // DIAGS
   nullptr,                     // STATS_RESET_NODE
-  nullptr,                     // STATS_RESET_CLUSTER
   nullptr,                     // STORAGE_DEVICE_CMD_OFFLINE
   nullptr,                     // RECORD_MATCH_GET
   nullptr,                     // LIFECYCLE_MESSAGE
@@ -557,11 +550,11 @@ handle_event_message(EventClientT *client, void *req, size_t reqlen)
 {
   OpType optype = extract_mgmt_request_optype(req, reqlen);
 
-  if (optype < 0 || static_cast<unsigned>(optype) >= countof(handlers)) {
+  if (static_cast<unsigned>(optype) >= countof(handlers)) {
     goto fail;
   }
 
-  if (handlers[optype] == nullptr) {
+  if (handlers[static_cast<unsigned>(optype)] == nullptr) {
     goto fail;
   }
 
@@ -576,7 +569,7 @@ handle_event_message(EventClientT *client, void *req, size_t reqlen)
     }
   }
 
-  return handlers[optype](client, req, reqlen);
+  return handlers[static_cast<unsigned>(optype)](client, req, reqlen);
 
 fail:
   mgmt_elog(0, "%s: missing handler for type %d event message\n", __func__, (int)optype);

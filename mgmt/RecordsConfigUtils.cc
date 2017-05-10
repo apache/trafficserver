@@ -157,6 +157,5 @@ test_librecords()
 {
   RecRegisterStatInt(RECT_PROCESS, "proxy.process.librecords.testing.int", (RecInt)100, RECP_NON_PERSISTENT);
   RecRegisterStatFloat(RECT_NODE, "proxy.node.librecords.testing.float", (RecFloat)100.1, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_CLUSTER, "proxy.cluster.librecords.testing.string", (RecString) "Hello World\n", RECP_NON_PERSISTENT);
   RecRegisterStatCounter(RECT_LOCAL, "proxy.local.librecords.testing.counter", (RecCounter)99, RECP_NON_PERSISTENT);
 }

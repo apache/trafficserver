@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdarg.h>
+#include <cstdio>
+#include <cstdarg>
 
 #include "print_funcs.h"
 

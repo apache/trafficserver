@@ -25,9 +25,9 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_memory.h"
 #include "ts/TsBuffer.h"
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 #include "MIME.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"
@@ -1029,7 +1029,7 @@ mime_hdr_cooked_stuff_init(MIMEHdrImpl *mh, MIMEField *changing_field_or_null)
     mh->m_cooked_stuff.m_cache_control.m_secs_min_fresh = 0;
   }
   if ((changing_field_or_null == nullptr) || (changing_field_or_null->m_wks_idx != MIME_WKSIDX_CACHE_CONTROL)) {
-    mh->m_cooked_stuff.m_pragma.m_no_cache = 0;
+    mh->m_cooked_stuff.m_pragma.m_no_cache = false;
   }
 }
 
@@ -1449,7 +1449,7 @@ mime_field_create_named(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int le
 {
   MIMEField *field       = mime_field_create(heap, mh);
   int field_name_wks_idx = hdrtoken_tokenize(name, length);
-  mime_field_name_set(heap, mh, field, field_name_wks_idx, name, length, 1);
+  mime_field_name_set(heap, mh, field, field_name_wks_idx, name, length, true);
   return field;
 }
 
@@ -1637,7 +1637,7 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
       heap->free_string(field->m_ptr_value, field->m_len_value);
 
       MIME_HDR_SANITY_CHECK(mh);
-      mime_hdr_field_detach(mh, field, 0);
+      mime_hdr_field_detach(mh, field, false);
 
       MIME_HDR_SANITY_CHECK(mh);
       mime_field_destroy(mh, field);
@@ -1650,7 +1650,7 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
     heap->free_string(field->m_ptr_value, field->m_len_value);
 
     MIME_HDR_SANITY_CHECK(mh);
-    mime_hdr_field_detach(mh, field, 0);
+    mime_hdr_field_detach(mh, field, false);
 
     MIME_HDR_SANITY_CHECK(mh);
     mime_field_destroy(mh, field);
@@ -1699,7 +1699,7 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name,
   {
     wks_idx = hdrtoken_tokenize(name, name_length);
     field   = mime_field_create(heap, mh);
-    mime_field_name_set(heap, mh, field, wks_idx, name, name_length, 1);
+    mime_field_name_set(heap, mh, field, wks_idx, name, name_length, true);
     mime_hdr_field_attach(mh, field, 0, nullptr);
 
   } else if (field->m_next_dup) // list of more than 1 field
@@ -1707,7 +1707,7 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name,
     wks_idx = field->m_wks_idx;
     mime_hdr_field_delete(heap, mh, field, true);
     field = mime_field_create(heap, mh);
-    mime_field_name_set(heap, mh, field, wks_idx, name, name_length, 1);
+    mime_field_name_set(heap, mh, field, wks_idx, name, name_length, true);
     mime_hdr_field_attach(mh, field, 0, nullptr);
   }
   return field;
@@ -2136,7 +2136,7 @@ mime_field_value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int32
 {
   char buf[16];
   int len = mime_format_int(buf, value, sizeof(buf));
-  mime_field_value_set(heap, mh, field, buf, len, 1);
+  mime_field_value_set(heap, mh, field, buf, len, true);
 }
 
 void
@@ -2144,7 +2144,7 @@ mime_field_value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, uint
 {
   char buf[16];
   int len = mime_format_uint(buf, value, sizeof(buf));
-  mime_field_value_set(heap, mh, field, buf, len, 1);
+  mime_field_value_set(heap, mh, field, buf, len, true);
 }
 
 void
@@ -2152,7 +2152,7 @@ mime_field_value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int
 {
   char buf[20];
   int len = mime_format_int64(buf, value, sizeof(buf));
-  mime_field_value_set(heap, mh, field, buf, len, 1);
+  mime_field_value_set(heap, mh, field, buf, len, true);
 }
 
 void
@@ -2160,7 +2160,7 @@ mime_field_value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, time
 {
   char buf[33];
   int len = mime_format_date(buf, value);
-  mime_field_value_set(heap, mh, field, buf, len, 1);
+  mime_field_value_set(heap, mh, field, buf, len, true);
 }
 
 void
@@ -2173,8 +2173,8 @@ mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int1
   ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
 
   if (must_copy_strings) {
-    mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1, name, name_length, 1);
-    mime_field_value_set(heap, mh, field, value, value_length, 1);
+    mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1, name, name_length, true);
+    mime_field_value_set(heap, mh, field, value, value_length, true);
   } else {
     field->m_wks_idx   = name_wks_idx_or_neg1;
     field->m_ptr_name  = name;
@@ -2435,6 +2435,12 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
     case MIME_PARSE_AFTER:
       // After a LF. Might be the end or a continuation.
       if (ParseRules::is_ws(*raw_input_c)) {
+        char *unfold = const_cast<char *>(raw_input_c - 1);
+
+        *unfold-- = ' ';
+        if (ParseRules::is_cr(*unfold)) {
+          *unfold = ' ';
+        }
         S->m_state = MIME_PARSE_INSIDE; // back inside the field.
       } else {
         S->m_state = MIME_PARSE_BEFORE; // field terminated.
@@ -2552,7 +2558,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
   MIMEScanner *scanner = &parser->m_scanner;
 
-  while (1) {
+  while (true) {
     ////////////////////////////////////////////////////////////////////////////
     // get a name:value line, with all continuation lines glued into one line //
     ////////////////////////////////////////////////////////////////////////////
@@ -2651,7 +2657,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     MIMEField *field = mime_field_create(heap, mh);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name_first, field_name_length, field_value_first,
-                              field_value_length, true, total_line_length, 0);
+                              field_value_length, true, total_line_length, false);
     mime_hdr_field_attach(mh, field, 1, nullptr);
   }
 }
@@ -3884,7 +3890,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
       if (!field->has_dups()) { // try fastpath first
         s = field->value_get(&len);
         if (ptr_len_casecmp(s, len, "no-cache", 8) == 0) {
-          m_cooked_stuff.m_pragma.m_no_cache = 1;
+          m_cooked_stuff.m_pragma.m_no_cache = true;
           return;
         }
       }
@@ -3901,7 +3907,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 
           if (hdrtoken_tokenize(s, tlen, &token_wks) >= 0) {
             if (token_wks == MIME_VALUE_NO_CACHE) {
-              m_cooked_stuff.m_pragma.m_no_cache = 1;
+              m_cooked_stuff.m_pragma.m_no_cache = true;
             }
           }
         }

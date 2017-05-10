@@ -244,6 +244,7 @@ ink_cond_wait(ink_cond *cp, ink_mutex *mp)
 {
   ink_assert(pthread_cond_wait(cp, mp) == 0);
 }
+
 static inline int
 ink_cond_timedwait(ink_cond *cp, ink_mutex *mp, ink_timestruc *t)
 {

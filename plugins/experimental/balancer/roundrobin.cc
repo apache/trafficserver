@@ -22,8 +22,8 @@
  */
 
 #include "balancer.h"
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <map>
 #include <string>
 #include <vector>
@@ -33,13 +33,13 @@ namespace
 struct RoundRobinBalancer : public BalancerInstance {
   RoundRobinBalancer() : targets(), next(0) {}
   void
-  push_target(const BalancerTarget &target)
+  push_target(const BalancerTarget &target) override
   {
     this->targets.push_back(target);
   }
 
   const BalancerTarget &
-  balance(TSHttpTxn, TSRemapRequestInfo *)
+  balance(TSHttpTxn, TSRemapRequestInfo *) override
   {
     return this->targets[++next % this->targets.size()];
   }

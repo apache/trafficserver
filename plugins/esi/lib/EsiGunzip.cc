@@ -23,8 +23,8 @@
 
 #include "EsiGunzip.h"
 #include "gzip.h"
-#include <ctype.h>
-#include <stdint.h>
+#include <cctype>
+#include <cstdint>
 
 using std::string;
 using namespace EsiLib;
@@ -112,8 +112,8 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata)
     _total_data_length += data_len;
   }
 
-  for (BufferList::iterator iter = buf_list.begin(); iter != buf_list.end(); ++iter) {
-    udata.append(iter->data(), iter->size());
+  for (auto &iter : buf_list) {
+    udata.append(iter.data(), iter.size());
   }
 
   return true;

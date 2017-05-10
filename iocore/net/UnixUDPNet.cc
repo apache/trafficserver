@@ -176,8 +176,8 @@ class UDPReadContinuation : public Continuation
 public:
   UDPReadContinuation(Event *completionToken);
   UDPReadContinuation();
-  ~UDPReadContinuation();
-  inline void free(void);
+  ~UDPReadContinuation() override;
+  inline void free();
   inline void init_token(Event *completionToken);
   inline void init_read(int fd, IOBufferBlock *buf, int len, struct sockaddr *fromaddr, socklen_t *fromaddrlen);
 
@@ -249,7 +249,7 @@ UDPReadContinuation::UDPReadContinuation()
 }
 
 inline void
-UDPReadContinuation::free(void)
+UDPReadContinuation::free()
 {
   ink_assert(event != nullptr);
   completionUtil::destroy(event);
@@ -776,7 +776,7 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   msg.msg_iovlen = iov_len;
 
   count = 0;
-  while (1) {
+  while (true) {
     // stupid Linux problem: sendmsg can return EAGAIN
     n = ::sendmsg(p->conn->getFd(), &msg, 0);
     if ((n >= 0) || ((n < 0) && (errno != EAGAIN)))

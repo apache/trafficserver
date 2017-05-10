@@ -43,19 +43,20 @@ public:
   }
 
   void
-  consume(const string &data)
+  consume(const string &data) override
   {
     buffer_.append(data);
   }
 
   void
-  handleInputComplete()
+  handleInputComplete() override
   {
     produce(buffer_);
     setOutputComplete();
   }
 
-  virtual ~PostBufferTransformationPlugin() {}
+  ~PostBufferTransformationPlugin() override {}
+
 private:
   Transaction &transaction_;
   string buffer_;
@@ -65,8 +66,8 @@ class GlobalHookPlugin : public GlobalPlugin
 {
 public:
   GlobalHookPlugin() { registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP); }
-  virtual void
-  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
     cerr << "Read Request Headers Post Remap" << endl;
     cerr << "Path: " << transaction.getClientRequest().getUrl().getPath() << endl;

@@ -26,7 +26,6 @@
 #include "ts/ink_file.h"
 #include "ts/ink_time.h"
 #include "LocalManager.h"
-#include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "Alarms.h"
 #include "ts/Diags.h"
@@ -150,10 +149,6 @@ Alarms::resolveAlarm(alarm_t a, char *ip)
     char buf2[1024];
 
     snprintf(buf2, sizeof(buf2), "aresolv: %d\n", a);
-    if (!lmgmt->ccom->sendReliableMessage(inet_addr(ip), buf2, strlen(buf2))) {
-      ink_mutex_release(&mutex);
-      return;
-    }
     ink_hash_table_delete(remote_alarms, buf);
     ats_free(hash_value);
   }
@@ -369,68 +364,6 @@ Alarms::clearUnSeen(char *ip)
   ink_mutex_release(&mutex);
   return;
 } /* End Alarms::clearUnSeen */
-
-/*
- * constructAlarmMessage(...)
- *   This functions builds a message buffer for passing to peers. It basically
- * takes the current list of local alarms and builds an alarm message.
- */
-void
-Alarms::constructAlarmMessage(const AppVersionInfo &version, char *ip, char *message, int max)
-{
-  int n = 0, bsum = 0;
-  char buf[4096];
-  InkHashTableEntry *entry;
-  InkHashTableIteratorState iterator_state;
-
-  if (!ip) {
-    return;
-  }
-  // Insert the standard mcast packet header
-  n = ClusterCom::constructSharedPacketHeader(version, message, ip, max);
-
-  ink_mutex_acquire(&mutex);
-  if (!((n + (int)strlen("type: alarm\n")) < max)) {
-    if (max >= 1) {
-      message[0] = '\0';
-    }
-    ink_mutex_release(&mutex);
-    return;
-  }
-
-  ink_strlcpy(&message[n], "type: alarm\n", max - n);
-  n += strlen("type: alarm\n");
-  bsum = n;
-  for (entry = ink_hash_table_iterator_first(local_alarms, &iterator_state); (entry != nullptr && n < max);
-       entry = ink_hash_table_iterator_next(local_alarms, &iterator_state)) {
-    Alarm *tmp = (Alarm *)ink_hash_table_entry_value(remote_alarms, entry);
-
-    if (tmp->description) {
-      snprintf(buf, sizeof(buf), "alarm: %d %s\n", tmp->type, tmp->description);
-    } else {
-      snprintf(buf, sizeof(buf), "alarm: %d No details available\n", tmp->type);
-    }
-
-    if (!((n + (int)strlen(buf)) < max)) {
-      break;
-    }
-    ink_strlcpy(&message[n], buf, max - n);
-    n += strlen(buf);
-  }
-
-  if (n == bsum) { /* No alarms */
-    if (!((n + (int)strlen("alarm: none\n")) < max)) {
-      if (max >= 1) {
-        message[0] = '\0';
-      }
-      ink_mutex_release(&mutex);
-      return;
-    }
-    ink_strlcpy(&message[n], "alarm: none\n", max - n);
-  }
-  ink_mutex_release(&mutex);
-  return;
-} /* End Alarms::constructAlarmMessage */
 
 /*
  * checkSystemNAlert(...)

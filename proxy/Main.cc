@@ -64,7 +64,6 @@ extern "C" int plock(int);
 #include "P_UDPNet.h"
 #include "P_DNS.h"
 #include "P_SplitDNS.h"
-#include "P_Cluster.h"
 #include "P_HostDB.h"
 #include "P_Cache.h"
 #include "ts/I_Layout.h"
@@ -77,8 +76,6 @@ extern "C" int plock(int);
 #include "HttpProxyServerMain.h"
 #include "HttpBodyFactory.h"
 #include "logging/Log.h"
-#include "ICPProcessor.h"
-//#include "ClusterTest.h"
 #include "CacheControl.h"
 #include "IPAllow.h"
 #include "ParentSelection.h"
@@ -133,8 +130,6 @@ static int num_of_udp_threads = 0;
 static int num_accept_threads = 0;
 static int num_task_threads   = 0;
 
-extern int num_of_cluster_threads;
-
 static char *http_accept_port_descriptor;
 int http_accept_file_descriptor = NO_FD;
 static char core_file[255]      = "";
@@ -151,11 +146,7 @@ static int regression_level       = REGRESSION_TEST_NONE;
 #endif
 int auto_clear_hostdb_flag = 0;
 extern int fds_limit;
-extern int cluster_port_number;
-extern int cache_clustering_enabled;
-char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 
-//         = DEFAULT_CLUSTER_PORT_NUMBER;
 static char command_string[512] = "";
 static char conf_dir[512]       = "";
 int remote_management_flag      = DEFAULT_REMOTE_MANAGEMENT_FLAG;
@@ -173,6 +164,8 @@ static int cmd_line_dprintf_level = 0;  // default debug output level from ink_d
 static int poll_timeout           = -1; // No value set.
 static int cmd_disable_freelist   = 0;
 
+static int shutdown_timeout = 0;
+
 static volatile bool sigusr1_received = false;
 static volatile bool sigusr2_received = false;
 
@@ -185,12 +178,10 @@ AppVersionInfo appVersionInfo; // Build info for this application
 
 static ArgumentDescription argument_descriptions[] = {
   {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", nullptr},
-  {"cluster_threads", 'Z', "Number of Cluster Threads", "I", &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", nullptr},
   {"udp_threads", 'U', "Number of UDP Threads", "I", &num_of_udp_threads, "PROXY_UDP_THREADS", nullptr},
   {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads, "PROXY_ACCEPT_THREAD", nullptr},
   {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done, "PROXY_ACCEPT_TILL_DONE", nullptr},
   {"httpport", 'p', "Port descriptor for HTTP Accept", "S*", &http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", nullptr},
-  {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number, "PROXY_CLUSTER_PORT", nullptr},
   {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level, "PROXY_DPRINTF_LEVEL", nullptr},
   {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, "PROXY_DPRINTF_LEVEL", nullptr},
 
@@ -216,7 +207,7 @@ static ArgumentDescription argument_descriptions[] = {
   {"bind_stdout", '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", nullptr},
   {"bind_stderr", '-', "Regular file to bind stderr to", "S512", &bind_stderr, "PROXY_BIND_STDERR", nullptr},
 #if defined(linux)
-  {"read_core", 'c', "Read Core file", "S255", &core_file, NULL, NULL},
+  {"read_core", 'c', "Read Core file", "S255", &core_file, nullptr, nullptr},
 #endif
 
   {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, nullptr, nullptr},
@@ -292,7 +283,7 @@ public:
     baseline_taken = 0;
   }
 
-  ~TrackerContinuation() { mutex = nullptr; }
+  ~TrackerContinuation() override { mutex = nullptr; }
   int
   periodic(int event, Event * /* e ATS_UNUSED */)
   {
@@ -357,7 +348,7 @@ public:
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
   }
-  ~MemoryLimit() { mutex = NULL; }
+  ~MemoryLimit() override { mutex = nullptr; }
   int
   periodic(int event, Event *e)
   {
@@ -460,10 +451,13 @@ proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
     signal_crash_handler(signo, info, ctx);
   }
 
+  if (shutdown_timeout) {
+    http2_drain = true;
+    sleep(shutdown_timeout);
+  }
+
   shutdown_event_system = true;
   sleep(1);
-
-  ::exit(signo);
 }
 
 //
@@ -515,7 +509,7 @@ check_lockfile()
 }
 
 static void
-check_config_directories(void)
+check_config_directories()
 {
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
   ats_scoped_str sysconfdir(RecConfigReadConfigDir());
@@ -1060,7 +1054,7 @@ init_core_size()
 }
 
 static void
-adjust_sys_settings(void)
+adjust_sys_settings()
 {
   struct rlimit lim;
   int fds_throttle = -1;
@@ -1214,13 +1208,6 @@ struct ShowStats : public Continuation {
     }
     fprintf(fp, "\nopen_delay_events=%d\n", open_delay_events);
 
-    fprintf(fp, "cluster_send_time_dist\n");
-    for (i = 0; i < TIME_DIST_BUCKETS_SIZE; i++) {
-      if ((i % 10) == 0)
-        fprintf(fp, "\n");
-      fprintf(fp, "%5d ", cluster_send_time_dist[i]);
-    }
-    fprintf(fp, "\ncluster_send_events=%d\n", cluster_send_events);
     fflush(fp);
 #endif
     return EVENT_CONT;
@@ -1690,6 +1677,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     ::exit(0);
   }
 
+  REC_ReadConfigInteger(shutdown_timeout, "proxy.config.stop.shutdown_timeout");
+
   // We need to do this early so we can initialize the Machine
   // singleton, which depends on configuration values loaded in this.
   // We want to initialize Machine as early as possible because it
@@ -1742,15 +1731,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Initialize the stat pages manager
   statPagesManager.init();
 
-  //////////////////////////////////////////////////////////////////////
-  // Determine if Cache Clustering is enabled, since the transaction
-  // on a thread changes require special consideration to allow
-  // minimal Cache Clustering functionality.
-  //////////////////////////////////////////////////////////////////////
-  cache_clustering_enabled = 0;
-
-  Note("cache clustering %s", cache_clustering_enabled ? "enabled" : "disabled");
-
   num_of_net_threads = adjust_num_of_net_threads(num_of_net_threads);
 
   size_t stacksize;
@@ -1793,7 +1773,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
   eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND, ET_TASK);
   REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
-  init_memory_tracker(NULL, RECD_NULL, RecData(), nullptr);
+  init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
   // log initialization moved down
 
@@ -1836,7 +1816,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
       SignalWarning(MGMT_SIGNAL_SYSTEM_ERROR, "bad hostdb or storage configuration, hostdb disabled");
-    clusterProcessor.init();
 
     // initialize logging (after event and net processor)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);

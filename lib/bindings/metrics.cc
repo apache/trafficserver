@@ -169,8 +169,8 @@ metrics_gc(lua_State *L)
   metrics_binding *m = metrics_binding::check(L, 1);
 
   // Clean up any references we stashed.
-  for (metrics_binding::ref_map::iterator ptr = m->refs.begin(); ptr != m->refs.end(); ++ptr) {
-    luaL_unref(L, LUA_REGISTRYINDEX, ptr->second);
+  for (auto &ref : m->refs) {
+    luaL_unref(L, LUA_REGISTRYINDEX, ref.second);
   }
 
   m->~metrics_binding();
@@ -230,7 +230,7 @@ int
 lua_metrics_install(lua_State *L)
 {
   int count                = 0;
-  int metrics_type         = RECT_NODE | RECT_PROCESS | RECT_CLUSTER | RECT_PLUGIN;
+  int metrics_type         = RECT_NODE | RECT_PROCESS | RECT_PLUGIN;
   BindingInstance *binding = BindingInstance::self(L);
   std::set<std::string> prefixes;
 

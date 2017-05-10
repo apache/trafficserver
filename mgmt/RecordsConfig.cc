@@ -138,6 +138,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.restart.active_client_threshold", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.stop.shutdown_timeout", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
 
   //##############################################################################
   //#
@@ -245,30 +247,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.lm.pserver_timeout_msecs", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.cluster.delta_thresh", RECD_INT, "30", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.peer_timeout", RECD_INT, "30", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.mc_send_interval", RECD_INT, "2", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.mc_poll_timeout", RECD_INT, "5", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.startup_timeout", RECD_INT, "10", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  //# cluster type requires restart to change
-  //# 1 is full clustering, 2 is mgmt only, 3 is no clustering
-  {RECT_LOCAL, "proxy.local.cluster.type", RECD_INT, "3", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.rsport", RECD_INT, "8088", RECU_NULL, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.mcport", RECD_INT, "8089", RECU_DYNAMIC, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.mc_group_addr", RECD_STRING, "224.0.1.37", RECU_DYNAMIC, RR_REQUIRED, RECC_IP, "[0-255]\\.[0-255]\\.[0-255]\\.[0-255]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.mc_ttl", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.log_bogus_mc_msgs", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.admin.synthetic_port", RECD_INT, "8083", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.autoconf.localhost_only", RECD_INT, "1", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
@@ -306,18 +284,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.process_manager.timeout", RECD_INT, "5", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.process_manager.mgmt_port", RECD_INT, "8084", RECU_NULL, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
-  ,
-
-  //##############################################################################
-  //#
-  //# Virtual IP Manager
-  //#
-  //##############################################################################
-  {RECT_CONFIG, "proxy.config.vmap.enabled", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.vmap.addr_file", RECD_STRING, "vaddrs.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.vmap.down_up_timeout", RECD_INT, "10", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
   //##############################################################################
@@ -638,8 +604,6 @@ static const RecordElement RecordsConfig[] =
   // that the response has a Content-Length: header, with a value of "0".
   {RECT_CONFIG, "proxy.config.http.cache.allow_empty_doc", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL }
   ,
-  {RECT_CONFIG, "proxy.config.http.cache.cluster_cache_local", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.http.cache.ignore_client_no_cache", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.cache.ignore_client_cc_max_age", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
@@ -718,12 +682,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.cache.guaranteed_max_lifetime", RECD_INT, "31536000", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.cache.fuzz.time", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.cache.fuzz.min_time", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.cache.fuzz.probability", RECD_FLOAT, "0.0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
 
   //        #########################################
   //        # dynamic content & content negotiation #
@@ -757,7 +715,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.body_factory.template_sets_dir", RECD_STRING, "body_factory", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.body_factory.response_max_size", RECD_INT, "8192", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.body_factory.response_max_size", RECD_INT, "8192", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   //# 0 - never suppress generated responses
   //# 1 - always suppress generated responses
@@ -870,61 +828,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.net.tcp_congestion_control_out", RECD_STRING, "", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
-  //##############################################################################
-  //#
-  //# Cluster Subsystem
-  //#
-  //##############################################################################
-  {RECT_CONFIG, "proxy.config.cluster.threads", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-512]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.cluster_port", RECD_INT, "8086", RECU_RESTART_TS, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.cluster_configuration", RECD_STRING, "cluster.config", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.ethernet_interface", RECD_STRING, TS_BUILD_DEFAULT_LOOPBACK_IFACE, RECU_RESTART_TS, RR_REQUIRED, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.enable_monitor", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.monitor_interval_secs", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.send_buffer_size", RECD_INT, "10485760", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.receive_buffer_size", RECD_INT, "10485760", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.sock_option_flag", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.sock_packet_mark", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.sock_packet_tos", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.rpc_cache_cluster", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-
-  //##################################################################
-  //# Cluster interconnect load monitoring configuration options.
-  //# Internal use only
-  //##################################################################
-  //# load monitor_enabled: -1 = compute only, 0 = disable, 1 = compute and act
-  {RECT_CONFIG, "proxy.config.cluster.load_monitor_enabled", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.ping_send_interval_msecs", RECD_INT, "100", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.ping_response_buckets", RECD_INT, "100", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.msecs_per_ping_response_bucket", RECD_INT, "50", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.ping_latency_threshold_msecs", RECD_INT, "500", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.load_compute_interval_msecs", RECD_INT, "5000", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.periodic_timer_interval_msecs", RECD_INT, "100", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.ping_history_buf_length", RECD_INT, "120", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.cluster_load_clear_duration", RECD_INT, "24", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cluster.cluster_load_exceed_duration", RECD_INT, "4", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
   //##############################################################################
   //#
   //# Hit Evacuation
@@ -1078,12 +981,6 @@ static const RecordElement RecordsConfig[] =
   ,
   //       # move entries to the owner on a lookup?
   {RECT_CONFIG, "proxy.config.hostdb.migrate_on_demand", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  //       # find DNS results on another node in the cluster?
-  {RECT_CONFIG, "proxy.config.hostdb.cluster", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  //       # find DNS results for round-robin hosts on another node in the cluster?
-  {RECT_CONFIG, "proxy.config.hostdb.cluster.round_robin", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   //       # round-robin addresses for single clients
   //       # (can cause authentication problems)
@@ -1303,7 +1200,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.wire_trace_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.wire_trace_addr", RECD_STRING, nullptr , RECU_DYNAMIC, RR_NULL, RECC_IP, "[0-255]\\.[0-255]\\.[0-255]\\.[0-255]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.wire_trace_addr", RECD_STRING, nullptr , RECU_DYNAMIC, RR_NULL, RECC_IP, R"([0-255]\.[0-255]\.[0-255]\.[0-255])", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.wire_trace_percentage", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
   ,

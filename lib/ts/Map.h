@@ -61,14 +61,9 @@ public:
     return e.key == key;
   }
   operator uintptr_t(void) { return (uintptr_t)(uintptr_t)key; }
-  MapElem(uintptr_t x)
-  {
-    ink_assert(!x);
-    key = 0;
-  }
-  MapElem(K akey, C avalue) : key(akey), value(avalue) {}
-  MapElem(MapElem &e) : key(e.key), value(e.value) {}
-  MapElem() : key(0) {}
+  MapElem(K const &akey, C const &avalue) : key(akey), value(avalue) {}
+  MapElem(MapElem const &e) : key(e.key), value(e.value) {}
+  MapElem() : key(), value() {}
 };
 
 template <class K, class C, class A = DefaultAlloc> class Map : public Vec<MapElem<K, C>, A>
@@ -114,11 +109,16 @@ public:
   using Map<K, C, A>::i;
   using Map<K, C, A>::v;
   using Map<K, C, A>::e;
+  HashMap() {}
+  HashMap(C c) : invalid_value(c) {}
   MapElem<K, C> *get_internal(K akey);
   C get(K akey);
   value_type *put(K akey, C avalue);
   void get_keys(Vec<K> &keys);
   void get_values(Vec<C> &values);
+
+private:
+  C invalid_value = 0; // return this object if key is not present
 };
 
 #define form_Map(_c, _p, _v)                                                                                                       \
@@ -513,7 +513,7 @@ HashMap<K, AHashFns, C, A>::get(K akey)
 {
   MapElem<K, C> *x = get_internal(akey);
   if (!x)
-    return 0;
+    return invalid_value;
   return x->value;
 }
 

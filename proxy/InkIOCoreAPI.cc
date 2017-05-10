@@ -96,22 +96,43 @@ TSReturnCode sdk_sanity_check_null_ptr(void *ptr);
 //
 ////////////////////////////////////////////////////////////////////
 struct INKThreadInternal : public EThread {
-  INKThreadInternal() : EThread(DEDICATED, -1) {}
-  TSThreadFunc func;
-  void *data;
+  INKThreadInternal() : EThread(DEDICATED, -1)
+  {
+    ink_mutex_init(&completion.lock, nullptr);
+    ink_cond_init(&completion.signal);
+  }
+
+  ~INKThreadInternal()
+  {
+    ink_mutex_destroy(&completion.lock);
+    ink_cond_destroy(&completion.signal);
+  }
+
+  TSThreadFunc func = nullptr;
+  void *data        = nullptr;
+
+  struct {
+    ink_mutex lock;
+    ink_cond signal;
+    bool done;
+  } completion;
 };
 
 static void *
 ink_thread_trampoline(void *data)
 {
-  INKThreadInternal *thread;
   void *retval;
+  INKThreadInternal *ithread = (INKThreadInternal *)data;
 
-  thread = (INKThreadInternal *)data;
-  thread->set_specific();
-  retval = thread->func(thread->data);
-  delete thread;
+  ithread->set_specific();
+  retval = ithread->func(ithread->data);
 
+  ink_mutex_acquire(&ithread->completion.lock);
+
+  ithread->completion.done = true;
+  ink_cond_broadcast(&ithread->completion.signal);
+
+  ink_mutex_release(&ithread->completion.lock);
   return retval;
 }
 
@@ -126,6 +147,7 @@ TSThreadCreate(TSThreadFunc func, void *data)
   thread = new INKThreadInternal;
 
   ink_assert(thread->event_types == 0);
+  ink_assert(thread->mutex->thread_holding == thread);
 
   thread->func = func;
   thread->data = data;
@@ -135,6 +157,27 @@ TSThreadCreate(TSThreadFunc func, void *data)
   }
 
   return (TSThread)thread;
+}
+
+// Wait for a thread to complete. When a thread calls TSThreadCreate,
+// it becomes the owner of the thread's mutex. Since only the thread
+// that locked a mutex should be allowed to unlock it (a condition
+// that is enforced for PTHREAD_MUTEX_ERRORCHECK), if the application
+// needs to delete the thread, it must first wait for the thread to
+// complete.
+void
+TSThreadWait(TSThread thread)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
+  INKThreadInternal *ithread = (INKThreadInternal *)thread;
+
+  ink_mutex_acquire(&ithread->completion.lock);
+
+  if (ithread->completion.done == false) {
+    ink_cond_wait(&ithread->completion.signal, &ithread->completion.lock);
+  }
+
+  ink_mutex_release(&ithread->completion.lock);
 }
 
 TSThread
@@ -161,6 +204,17 @@ TSThreadDestroy(TSThread thread)
   sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
 
   INKThreadInternal *ithread = (INKThreadInternal *)thread;
+
+  // The thread must be destroyed by the same thread that created
+  // it because that thread is holding the thread mutex.
+  ink_release_assert(ithread->mutex->thread_holding == ithread);
+
+  // If this thread was created by TSThreadCreate() rather than
+  // TSThreadInit, then we must not destroy it before it's done.
+  if (ithread->func) {
+    ink_release_assert(ithread->completion.done == true);
+  }
+
   delete ithread;
 }
 

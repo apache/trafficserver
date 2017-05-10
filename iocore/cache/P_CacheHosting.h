@@ -24,6 +24,8 @@
 #ifndef __P_CACHE_HOSTING_H__
 #define __P_CACHE_HOSTING_H__
 #include "P_Cache.h"
+#include "ts/MatcherUtils.h"
+#include "ts/HostLookup.h"
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
 
@@ -142,15 +144,15 @@ public:
     REC_RegisterConfigUpdateFunc("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *)p);
   }
 
-  CacheType type;
-  Cache *cache;
-  int m_numEntries;
+  CacheType type   = CACHE_HTTP_TYPE;
+  Cache *cache     = nullptr;
+  int m_numEntries = 0;
   CacheHostRecord gen_host_rec;
 
 private:
-  CacheHostMatcher *hostMatch;
-  const matcher_tags *config_tags;
-  const char *matcher_name; // Used for Debug/Warning/Error messages
+  CacheHostMatcher *hostMatch    = nullptr;
+  const matcher_tags config_tags = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
+  const char *matcher_name       = "unknown"; // Used for Debug/Warning/Error messages
 };
 
 struct CacheHostTableConfig;

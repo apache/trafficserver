@@ -46,6 +46,12 @@ operator<(VersionNumber const &lhs, VersionNumber const &rhs)
 }
 
 inline bool
+operator>(VersionNumber const &lhs, VersionNumber const &rhs)
+{
+  return rhs < lhs;
+}
+
+inline bool
 operator==(VersionNumber const &lhs, VersionNumber const &rhs)
 {
   return lhs.ink_major == rhs.ink_major && lhs.ink_minor == rhs.ink_minor;
@@ -54,8 +60,6 @@ operator==(VersionNumber const &lhs, VersionNumber const &rhs)
 struct Version {
   VersionNumber cacheDB;
   VersionNumber cacheDir;
-  VersionNumber clustering;
-  VersionNumber clustering_min;
 };
 
 enum ModuleVersion {

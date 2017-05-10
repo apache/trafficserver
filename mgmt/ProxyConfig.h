@@ -35,6 +35,7 @@
 #include "ts/ink_memory.h"
 #include "ProcessManager.h"
 #include "I_EventSystem.h"
+#include "I_Tasks.h"
 
 class ProxyMutex;
 
@@ -81,6 +82,7 @@ public:
     operator bool() const { return ptr != 0; }
     operator const ConfigType *() const { return ptr; }
     const ConfigType *operator->() const { return ptr; }
+
   private:
     ConfigType *ptr;
   };
@@ -111,7 +113,7 @@ template <typename UpdateClass>
 int
 ConfigScheduleUpdate(Ptr<ProxyMutex> &mutex)
 {
-  eventProcessor.schedule_imm(new ConfigUpdateContinuation<UpdateClass>(mutex), ET_CALL);
+  eventProcessor.schedule_imm(new ConfigUpdateContinuation<UpdateClass>(mutex), ET_TASK);
   return 0;
 }
 

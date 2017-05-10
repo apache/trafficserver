@@ -21,7 +21,7 @@
 
 #include "atscppapi/Stat.h"
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 #include <ts/ts.h>
 #include "logging_internal.h"
 
@@ -40,7 +40,7 @@ Stat::~Stat()
 }
 
 bool
-Stat::init(string name, Stat::SyncType type, bool persistent)
+Stat::init(const string &name, Stat::SyncType type, bool persistent)
 {
   if (TSStatFindName(name.c_str(), &stat_id_) == TS_SUCCESS) {
     LOG_DEBUG("Attached to stat '%s' with stat_id = %d", name.c_str(), stat_id_);

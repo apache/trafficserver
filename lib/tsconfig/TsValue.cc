@@ -27,8 +27,8 @@
 
 # include <TsErrataUtil.h>
 # include <sys/stat.h>
-# include <stdio.h>
-# include <stdlib.h>
+# include <cstdio>
+# include <cstdlib>
 
 # if !defined(_MSC_VER)
 # define _fileno fileno
@@ -55,8 +55,8 @@ unsigned int const detail::Type_Property[N_VALUE_TYPES] = {
 // ---------------------------------------------------------------------------
 detail::ValueTableImpl::ValueTableImpl() : _generation(0) { }
 detail::ValueTableImpl::~ValueTableImpl() {
-  for ( BufferGroup::iterator spot(_buffers.begin()), limit(_buffers.end()) ; spot != limit ; ++spot)
-    free(spot->_ptr);
+  for (auto & _buffer : _buffers)
+    free(_buffer._ptr);
 }
 // ---------------------------------------------------------------------------
 detail::ValueTable::ImplType*
@@ -135,9 +135,9 @@ Value::operator [] (ConstBuffer const& name) const {
   Value zret;
   detail::ValueItem const* item = this->item();
   if (item) {
-    for ( detail::ValueItem::ChildGroup::const_iterator spot = item->_children.begin(), limit = item->_children.end(); spot != limit; ++spot ) {
-      if (_config._table[*spot]._name == name) {
-        zret = Value(_config, *spot);
+    for (const auto & spot : item->_children) {
+      if (_config._table[spot]._name == name) {
+        zret = Value(_config, spot);
         if (PathValue == zret.getType()) zret = _config.getRoot().find(_config._table[zret._vidx]._path);
         break;
       }

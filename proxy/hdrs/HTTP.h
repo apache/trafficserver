@@ -210,9 +210,7 @@ enum SquidHitMissCode {
   SQUID_HIT_LEVEL_8                    = 'I',
   SQUID_HIT_LEVEl_9                    = 'J',
   SQUID_MISS_NONE                      = '1',
-  SQUID_MISS_ICP_AUTH                  = '2',
   SQUID_MISS_HTTP_NON_CACHE            = '3',
-  SQUID_MISS_ICP_STOPLIST              = '4',
   SQUID_MISS_HTTP_NO_DLE               = '5',
   SQUID_MISS_HTTP_NO_LE                = '6',
   SQUID_MISS_HTTP_CONTENT              = '7',
@@ -324,7 +322,6 @@ extern const char *HTTP_METHOD_CONNECT;
 extern const char *HTTP_METHOD_DELETE;
 extern const char *HTTP_METHOD_GET;
 extern const char *HTTP_METHOD_HEAD;
-extern const char *HTTP_METHOD_ICP_QUERY;
 extern const char *HTTP_METHOD_OPTIONS;
 extern const char *HTTP_METHOD_POST;
 extern const char *HTTP_METHOD_PURGE;
@@ -336,7 +333,6 @@ extern int HTTP_WKSIDX_CONNECT;
 extern int HTTP_WKSIDX_DELETE;
 extern int HTTP_WKSIDX_GET;
 extern int HTTP_WKSIDX_HEAD;
-extern int HTTP_WKSIDX_ICP_QUERY;
 extern int HTTP_WKSIDX_OPTIONS;
 extern int HTTP_WKSIDX_POST;
 extern int HTTP_WKSIDX_PURGE;
@@ -349,7 +345,6 @@ extern int HTTP_LEN_CONNECT;
 extern int HTTP_LEN_DELETE;
 extern int HTTP_LEN_GET;
 extern int HTTP_LEN_HEAD;
-extern int HTTP_LEN_ICP_QUERY;
 extern int HTTP_LEN_OPTIONS;
 extern int HTTP_LEN_POST;
 extern int HTTP_LEN_PURGE;

@@ -77,12 +77,12 @@
 #ifdef HAVE_ARPA_NAMESER_COMPAT_H
 #include <arpa/nameser_compat.h>
 #endif
-#include <stdio.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cctype>
 #include <resolv.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "ts/ink_string.h"
 #include "ts/ink_resolver.h"
@@ -256,7 +256,7 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
 }
 
 static unsigned
-ink_res_randomid(void)
+ink_res_randomid()
 {
   struct timeval now;
 
@@ -320,8 +320,6 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   statp->pfcode  = 0;
   statp->_vcsock = -1;
   statp->_flags  = 0;
-  statp->qhook   = nullptr;
-  statp->rhook   = nullptr;
 
 #ifdef SOLARIS2
   /*
@@ -614,14 +612,14 @@ ts_host_res_order_to_string(HostResPreferenceOrder const &order, char *out, int 
 {
   int zret   = 0;
   bool first = true;
-  for (int i = 0; i < N_HOST_RES_PREFERENCE_ORDER; ++i) {
+  for (auto i : order) {
     /* Note we use a semi-colon here because this must be compatible
      * with the -httpport command line option which uses comma to
      * separate port descriptors so we cannot use that to separate
      * resolution key words.
      */
-    zret += snprintf(out + zret, size - zret, "%s%s", !first ? ";" : "", HOST_RES_PREFERENCE_STRING[order[i]]);
-    if (HOST_RES_PREFER_NONE == order[i])
+    zret += snprintf(out + zret, size - zret, "%s%s", !first ? ";" : "", HOST_RES_PREFERENCE_STRING[i]);
+    if (HOST_RES_PREFER_NONE == i)
       break;
     first = false;
   }

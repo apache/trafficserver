@@ -28,6 +28,7 @@
 # serve to show the default.
 
 import sys, os
+from datetime import date
 from sphinx import version_info
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -81,7 +82,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Apache Traffic Server'
-copyright = u'2016, dev@trafficserver.apache.org'
+copyright = u'{}, dev@trafficserver.apache.org'.format(date.today().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

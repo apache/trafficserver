@@ -80,50 +80,30 @@ struct DiskHeader {
 };
 
 struct CacheDisk : public Continuation {
-  DiskHeader *header;
-  char *path;
-  int header_len;
+  DiskHeader *header = nullptr;
+  char *path         = nullptr;
+  int header_len     = 0;
   AIOCallbackInternal io;
-  off_t len; // in blocks (STORE_BLOCK)
-  off_t start;
-  off_t skip;
-  off_t num_usable_blocks;
-  int hw_sector_size;
-  int fd;
-  off_t free_space;
-  off_t wasted_space;
-  DiskVol **disk_vols;
-  DiskVol *free_blocks;
-  int num_errors;
-  int cleared;
-  bool read_only_p;
-  bool online; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
+  off_t len               = 0; // in blocks (STORE_BLOCK)
+  off_t start             = 0;
+  off_t skip              = 0;
+  off_t num_usable_blocks = 0;
+  int hw_sector_size      = 0;
+  int fd                  = -1;
+  off_t free_space        = 0;
+  off_t wasted_space      = 0;
+  DiskVol **disk_vols     = nullptr;
+  DiskVol *free_blocks    = nullptr;
+  int num_errors          = 0;
+  int cleared             = 0;
+  bool read_only_p        = false;
+  bool online             = true; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
 
   // Extra configuration values
-  int forced_volume_num;           ///< Volume number for this disk.
+  int forced_volume_num = -1;      ///< Volume number for this disk.
   ats_scoped_str hash_base_string; ///< Base string for hash seed.
 
-  CacheDisk()
-    : Continuation(new_ProxyMutex()),
-      header(nullptr),
-      path(nullptr),
-      header_len(0),
-      len(0),
-      start(0),
-      skip(0),
-      num_usable_blocks(0),
-      fd(-1),
-      free_space(0),
-      wasted_space(0),
-      disk_vols(nullptr),
-      free_blocks(nullptr),
-      num_errors(0),
-      cleared(0),
-      read_only_p(false),
-      online(true),
-      forced_volume_num(-1)
-  {
-  }
+  CacheDisk() : Continuation(new_ProxyMutex()) {}
 
   ~CacheDisk();
 

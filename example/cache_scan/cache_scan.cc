@@ -25,10 +25,10 @@
  * cache_scan.cc:  use TSCacheScan to print URLs and headers for objects in
  *                 the cache when endpoint /show-cache is requested
  */
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <climits>
+#include <cstdlib>
 
 #include "ts/ts.h"
 #include "ts/experimental.h"
@@ -131,15 +131,16 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     const char s1[] = "URL: ", s2[] = "\n";
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s1, sizeof(s1) - 1);
     TSCacheHttpInfoReqGet(cache_infop, &req_bufp, &req_hdr_loc);
-    TSHttpHdrUrlGet(req_bufp, req_hdr_loc, &url_loc);
-    url = TSUrlStringGet(req_bufp, url_loc, &url_len);
+    if (TS_SUCCESS == TSHttpHdrUrlGet(req_bufp, req_hdr_loc, &url_loc)) {
+      url = TSUrlStringGet(req_bufp, url_loc, &url_len);
 
-    cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, url, url_len);
-    cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s2, sizeof(s2) - 1);
+      cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, url, url_len);
+      cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s2, sizeof(s2) - 1);
 
-    TSfree(url);
-    TSHandleMLocRelease(req_bufp, req_hdr_loc, url_loc);
-    TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_hdr_loc);
+      TSfree(url);
+      TSHandleMLocRelease(req_bufp, req_hdr_loc, url_loc);
+      TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_hdr_loc);
+    }
 
     // print the response headers
     TSCacheHttpInfoRespGet(cache_infop, &resp_bufp, &resp_hdr_loc);
@@ -149,7 +150,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
 
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s2, sizeof(s2) - 1);
     if (!cstate->write_pending) {
-      cstate->write_pending = 1;
+      cstate->write_pending = true;
       TSVIOReenable(cstate->write_vio);
     }
 
@@ -168,7 +169,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s, s_len);
     TSVIONBytesSet(cstate->write_vio, cstate->total_bytes);
     if (!cstate->write_pending) {
-      cstate->write_pending = 1;
+      cstate->write_pending = true;
       TSVIOReenable(cstate->write_vio);
     }
     return TS_CACHE_SCAN_RESULT_DONE;
@@ -281,21 +282,25 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     }
 
     return 0;
-  }
+  } break;
   case TS_EVENT_VCONN_WRITE_READY: {
     TSDebug(PLUGIN_NAME, "ndone: %" PRId64 " total_bytes: % " PRId64, TSVIONDoneGet(cstate->write_vio), cstate->total_bytes);
-    cstate->write_pending = 0;
+    cstate->write_pending = false;
     // the cache scan handler should call vio reenable when there is
     // available data
     // TSVIOReenable(cstate->write_vio);
     return 0;
-  }
-  case TS_EVENT_VCONN_WRITE_COMPLETE:
+  } break;
+  case TS_EVENT_VCONN_WRITE_COMPLETE: {
     TSDebug(PLUGIN_NAME, "write complete");
-  case TS_EVENT_VCONN_EOS:
-  default:
     cstate->done = 1;
     cleanup(contp);
+  } break;
+  case TS_EVENT_VCONN_EOS:
+  default: {
+    cstate->done = 1;
+    cleanup(contp);
+  } break;
   }
 
   return 0;

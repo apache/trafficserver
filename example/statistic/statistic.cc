@@ -28,8 +28,8 @@
 // doc/developer-guide/plugins/adding-statistics.en.rst
 
 #include <ts/ts.h>
-#include <inttypes.h>
-#include <time.h>
+#include <cinttypes>
+#include <ctime>
 
 #define PLUGIN_NAME "statistics"
 
@@ -38,22 +38,22 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = (char *)PLUGIN_NAME;
-  info.vendor_name   = (char *)"Apache Software Foundation";
-  info.support_email = (char *)"dev@trafficserver.apache.org";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   int id;
-  const char name[] = "example.statistic.now";
+  const char name[] = "plugin." PLUGIN_NAME ".now";
 
   if (TSStatFindName(name, &id) == TS_ERROR) {
     id = TSStatCreate(name, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     if (id == TS_ERROR) {
-      TSError("%s: failed to register '%s'", PLUGIN_NAME, name);
+      TSError("[%s] failed to register '%s'", PLUGIN_NAME, name);
       return;
     }
   }
 
-  TSError("%s: %s registered with id %d", PLUGIN_NAME, name, id);
+  TSError("[%s] %s registered with id %d", PLUGIN_NAME, name, id);
 
 #if DEBUG
   TSReleaseAssert(id != TS_ERROR);

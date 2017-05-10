@@ -156,11 +156,9 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   Doc *doc     = nullptr;
   void *result = nullptr;
-#ifdef HTTP_CACHE
-  int hlen = 0;
+  int hlen     = 0;
   char hname[500];
-  bool hostinfo_copied = false;
-#endif
+  bool hostinfo_copied         = false;
   off_t next_object_len        = 0;
   bool might_need_overlap_read = false;
 
@@ -209,7 +207,6 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     might_need_overlap_read = false;
     doc                     = (Doc *)((char *)doc + next_object_len);
     next_object_len         = vol->round_to_approx_size(doc->len);
-#ifdef HTTP_CACHE
     int i;
     bool changed;
 
@@ -223,7 +220,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       goto Lskip;
 
     last_collision = nullptr;
-    while (1) {
+    while (true) {
       if (!dir_probe(&doc->first_key, vol, &dir, &last_collision))
         goto Lskip;
       if (!dir_agg_valid(vol, &dir) || !dir_head(&dir) ||
@@ -251,7 +248,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (this->load_http_info(&vector, doc) != doc->hlen)
       goto Lskip;
     changed         = false;
-    hostinfo_copied = 0;
+    hostinfo_copied = false;
     for (i = 0; i < vector.count(); i++) {
       if (!vector.get(i)->valid())
         goto Lskip;
@@ -259,7 +256,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         memccpy(hname, vector.get(i)->request_get()->host_get(&hlen), 0, 500);
         hname[hlen] = 0;
         Debug("cache_scan", "hostname = '%s', hostlen = %d", hname, hlen);
-        hostinfo_copied = 1;
+        hostinfo_copied = true;
       }
       vector.get(i)->object_key_get(&key);
       alternate_index = i;
@@ -303,7 +300,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         ink_assert(hostinfo_copied);
         SET_HANDLER(&CacheVC::scanRemoveDone);
         // force remove even if there is a writer
-        cacheProcessor.remove(this, &doc->first_key, true, CACHE_FRAG_TYPE_HTTP, hname, hlen);
+        cacheProcessor.remove(this, &doc->first_key, CACHE_FRAG_TYPE_HTTP, hname, hlen);
         return EVENT_CONT;
       } else {
         offset          = (char *)doc - buf->data();
@@ -321,11 +318,8 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
     continue;
   Lskip:;
-#endif
   }
-#ifdef HTTP_CACHE
   vector.clear();
-#endif
   // If we had an object that went past the end of the buffer, and it is small enough to fix,
   // fix it.
   if (might_need_overlap_read && ((off_t)((char *)doc - buf->data()) + next_object_len > (off_t)io.aiocb.aio_nbytes) &&
@@ -366,9 +360,7 @@ Lread:
 Ldone:
   Debug("cache_scan_truss", "done %p:scanObject", this);
   _action.continuation->handleEvent(CACHE_EVENT_SCAN_DONE, result);
-#ifdef HTTP_CACHE
 Lcancel:
-#endif
   return free_CacheVC(this);
 }
 
@@ -377,9 +369,7 @@ CacheVC::scanRemoveDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   Debug("cache_scan_truss", "inside %p:scanRemoveDone", this);
   Debug("cache_scan", "remove done.");
-#ifdef HTTP_CACHE
   alternate.destroy();
-#endif
   SET_HANDLER(&CacheVC::scanObject);
   return handleEvent(EVENT_IMMEDIATE, nullptr);
 }
@@ -424,7 +414,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     for (int i = 0; i < alt_count; i++) {
       write_vector->insert(vector.get(i));
     }
-    od->writing_vec = 1;
+    od->writing_vec = true;
     vector.clear(false);
     // check that the directory entry was not overwritten
     // if so return failure
@@ -441,10 +431,10 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       dir_assign(&od->single_doc_dir, &dir);
       dir_set_tag(&od->single_doc_dir, doc->key.slice32(2));
       od->single_doc_key    = doc->key;
-      od->move_resident_alt = 1;
+      od->move_resident_alt = true;
     }
 
-    while (1) {
+    while (true) {
       if (!dir_probe(&first_key, vol, &d, &l)) {
         vol->close_write(this);
         _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_FAILED, nullptr);

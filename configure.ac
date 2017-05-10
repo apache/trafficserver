@@ -32,8 +32,8 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[7.2.0])
-m4_define([TS_VERSION_N],[7002000])
+m4_define([TS_VERSION_S],[8.0.0])
+m4_define([TS_VERSION_N],[8000000])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
@@ -166,6 +166,14 @@ AC_ARG_ENABLE([debug],
   [enable_debug=no]
 )
 AC_MSG_RESULT([$enable_debug])
+
+AC_MSG_CHECKING([whether to enable mime sanity check])
+AC_ARG_ENABLE([mime-sanity-check],
+  [AS_HELP_STRING([--enable-mime-sanity-check],[turn on mime sanity check])],
+  [],
+  [enable_mime_sanity_check=no]
+)
+AC_MSG_RESULT([$enable_mime_sanity_check])
 
 # Enable code coverage instrumentation only if requested by the user.
 AC_MSG_CHECKING([whether to code coverage])
@@ -448,6 +456,12 @@ AC_ARG_WITH([max-threads-per-type],
   [max_threads_per_type=3072]
 )
 AC_SUBST(max_threads_per_type)
+
+# Check Brotli
+AC_CHECK_HEADERS([brotli/encode.h], [has_brotli=1],[has_brotli=0])
+AC_CHECK_LIB([brotlienc],[BrotliEncoderCreateInstance],[AC_SUBST([LIB_BROTLIENC],["-lbrotlienc"])],[has_brotli=0])
+AC_SUBST(has_brotli)
+AM_CONDITIONAL([HAS_BROTLI], [ test "x${has_brotli}" = "x1" ])
 
 #
 # Experimental plugins
@@ -806,7 +820,7 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -analyzer-disable-all-checks"
+      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -analyzer-disable-all-checks -Wno-varargs"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
@@ -830,7 +844,7 @@ case $host_os_def in
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -Wno-varargs"
     ], [
       AC_MSG_WARN([clang is the only supported compiler on Darwin])
     ])
@@ -851,7 +865,7 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -Wno-varargs"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
@@ -933,6 +947,9 @@ if test "x${enable_debug}" = "xyes"; then
   TS_ADDTO(AM_CFLAGS, [${cc_oflag_dbg}])
   TS_ADDTO(AM_CXXFLAGS, [${cxx_oflag_dbg}])
   TS_ADDTO(AM_CPPFLAGS, [-DDEBUG -D_DEBUG])
+  if test "x${enable_mime_sanity_check}" = "xyes"; then
+    TS_ADDTO(AM_CPPFLAGS, [-DENABLE_MIME_SANITY_CHECK])
+  fi
 else
   TS_ADDTO(AM_CFLAGS, [${cc_oflag_opt}])
   TS_ADDTO(AM_CXXFLAGS, [${cxx_oflag_opt}])
@@ -1074,6 +1091,7 @@ dnl Linux has pthread symbol stubss in both libc and libpthread, so it's importa
 dnl specifically for pthread_yield() here. In addition, ASAN hijacks pthread_create() so
 dnl we can't use that anymore.
 AC_SEARCH_LIBS([pthread_yield], [pthread], [], [])
+AC_CHECK_FUNCS([pthread_mutexattr_settype])
 
 dnl XXX The following check incorrectly causes the build to succeed
 dnl on Darwin. We should be using AC_SEARCH_LIBS, but rest_init is
@@ -1848,7 +1866,6 @@ iocore_include_dirs="\
 -I\$(abs_top_srcdir)/iocore/aio \
 -I\$(abs_top_srcdir)/iocore/hostdb \
 -I\$(abs_top_srcdir)/iocore/cache \
--I\$(abs_top_srcdir)/iocore/cluster \
 -I\$(abs_top_srcdir)/iocore/utils \
 -I\$(abs_top_srcdir)/iocore/dns"
 
@@ -1899,7 +1916,6 @@ AC_CONFIG_FILES([
   iocore/Makefile
   iocore/aio/Makefile
   iocore/cache/Makefile
-  iocore/cluster/Makefile
   iocore/dns/Makefile
   iocore/eventsystem/Makefile
   iocore/hostdb/Makefile
@@ -1919,7 +1935,6 @@ AC_CONFIG_FILES([
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
-  mgmt/cluster/Makefile
   mgmt/utils/Makefile
   plugins/Makefile
   proxy/Makefile

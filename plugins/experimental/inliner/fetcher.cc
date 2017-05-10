@@ -45,7 +45,7 @@
 namespace ats
 {
 void
-HttpParser::destroyParser(void)
+HttpParser::destroyParser()
 {
   if (parser_ != nullptr) {
     TSHttpParserClear(parser_);

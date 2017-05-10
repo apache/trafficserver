@@ -69,7 +69,7 @@ struct SocksProxy : public Continuation {
       pending_action(nullptr)
   {
   }
-  ~SocksProxy() {}
+  ~SocksProxy() override {}
   // int startEvent(int event, void * data);
   int mainEvent(int event, void *data);
   int setupHttpRequest(unsigned char *p);
@@ -279,7 +279,7 @@ SocksProxy::mainEvent(int event, void *data)
 
           buf->fill(n_bytes);
 
-          clientVC->do_io_write(this, n_bytes, reader, 0);
+          clientVC->do_io_write(this, n_bytes, reader, false);
 
           state = AUTH_DONE;
         } else {
@@ -439,7 +439,7 @@ SocksProxy::sendResp(bool granted)
   }
 
   buf->fill(n_bytes);
-  clientVC->do_io_write(this, n_bytes, reader, 0);
+  clientVC->do_io_write(this, n_bytes, reader, false);
 
   return n_bytes;
 }

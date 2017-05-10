@@ -19,7 +19,7 @@
 */
 
 # include "tsconfig/TsValue.h"
-# include <stdio.h>
+# include <cstdio>
 # include <iostream>
 
 using ts::config::Configuration;

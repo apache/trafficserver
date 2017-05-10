@@ -29,11 +29,10 @@
 #include "I_EventSystem.h"
 #if !defined(I_IOBuffer_h)
 #error "include I_IOBuffer.h"
--- -
-  include I_IOBuffer.h
+---include I_IOBuffer.h
 #endif
 #include "ts/ink_apidefs.h"
-  class Continuation;
+   class Continuation;
 class VConnection;
 class IOVConnection;
 class MIOBuffer;

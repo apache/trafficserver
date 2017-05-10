@@ -51,7 +51,7 @@
 
       Then there are the detailed via codes which follow a ":"
 
-      t<tunneling information>c<cache type><cache lookup result>i<icp conn info>p<parent proxy conn info>s<server conn info>
+      t<tunneling information>c<cache type><cache lookup result>p<parent proxy conn info>s<server conn info>
 
       tunneling information
          F    tunneling due to a header field (such as presence of If-Range header)
@@ -62,21 +62,16 @@
       cache type
          C    cache
          L    cluster (not used)
-         I    icp
 
       cache lookup result
          N    conditional hit (client sent conditional, fresh in cache, returned 304)
          H    cache hit
-	 I    conditional miss (client sent conditional, fresh in cache, returned 412)
+         I    conditional miss (client sent conditional, fresh in cache, returned 412)
          M    cache miss (url not in cache)
          S    cache hit, but expired
          C    cache hit, but config forces revalidate
          U    cache hit, but client forces revalidate (e.g. Pragma: no-cache)
          D    cache hit, but method forces revalidated (e.g. not anonymous)
-
-      icp conn info
-         S    connection opened successfully
-         F    connection open failed
 
       pp conn info
          S    connection opened successfully

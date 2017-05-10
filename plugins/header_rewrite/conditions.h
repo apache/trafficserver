@@ -359,6 +359,24 @@ protected:
   bool eval(const Resources &res);
 };
 
+class ConditionIp : public Condition
+{
+  typedef Matchers<std::string> MatcherType;
+
+public:
+  explicit ConditionIp() : _ip_qual(IP_QUAL_CLIENT) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIp"); };
+  void initialize(Parser &p);
+  void set_qualifier(const std::string &q);
+  void append_value(std::string &s, const Resources &res);
+
+protected:
+  bool eval(const Resources &res);
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(ConditionIp);
+  IpQualifiers _ip_qual;
+};
+
 class ConditionClientIp : public Condition
 {
   typedef Matchers<std::string> MatcherType;

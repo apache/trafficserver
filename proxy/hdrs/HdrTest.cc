@@ -475,7 +475,9 @@ HdrTest::test_url()
 int
 HdrTest::test_mime()
 {
-  static const char mime[] = {
+  // This can not be a static string (any more) since we unfold the headers
+  // in place.
+  char mime[] = {
     //        "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
     "Date: 6 Nov 1994 08:49:37 GMT\r\n"
     "Max-Forwards: 65535\r\n"
@@ -514,12 +516,32 @@ HdrTest::test_mime()
 
   mime_parser_init(&parser);
 
-  bool must_copy_strs = 0;
+  bool must_copy_strs = false;
 
   hdr.create(nullptr);
   err = hdr.parse(&parser, &start, end, must_copy_strs, false);
 
   if (err < 0) {
+    return (failures_to_status("test_mime", 1));
+  }
+
+  // Test the (new) continuation line folding to be correct. This should replace the
+  // \r\n with two spaces (so a total of three between "part1" and "part2").
+  int length;
+  const char *continuation = hdr.value_get("continuation", 12, &length);
+
+  if ((13 != length)) {
+    printf("FAILED: continue header folded line was too short\n");
+    return (failures_to_status("test_mime", 1));
+  }
+
+  if (strncmp(continuation + 5, "   ", 3)) {
+    printf("FAILED: continue header unfolding did not produce correct WS's\n");
+    return (failures_to_status("test_mime", 1));
+  }
+
+  if (strncmp(continuation, "part1   part2", 13)) {
+    printf("FAILED: continue header unfolding was not correct\n");
     return (failures_to_status("test_mime", 1));
   }
 
@@ -539,7 +561,7 @@ HdrTest::test_mime()
 
   hdr.set_age(9999);
 
-  int length = hdr.length_get();
+  length = hdr.length_get();
   printf("hdr.length_get() = %d\n", length);
 
   time_t t0, t1, t2;
@@ -558,7 +580,7 @@ HdrTest::test_mime()
     return (failures_to_status("test_mime", 1));
   }
 
-  hdr.value_append("Cache-Control", 13, "no-cache", 8, 1);
+  hdr.value_append("Cache-Control", 13, "no-cache", 8, true);
 
   MIMEField *cc_field;
   StrList slist;
@@ -713,7 +735,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   rsp_hdr.create(HTTP_TYPE_RESPONSE);
 
   printf("======== parsing\n\n");
-  while (1) {
+  while (true) {
     err = req_hdr.parse_req(&parser, &start, end, true);
     if (err != PARSE_RESULT_CONT) {
       break;
@@ -754,7 +776,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   http_parser_clear(&parser);
   http_parser_init(&parser);
 
-  while (1) {
+  while (true) {
     err = rsp_hdr.parse_resp(&parser, &start, end, true);
     if (err != PARSE_RESULT_CONT) {
       break;
@@ -1064,7 +1086,7 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
 
   http_parser_init(&parser);
 
-  while (1) {
+  while (true) {
     err = req_hdr.parse_req(&parser, &start, end, true);
     if (err != PARSE_RESULT_CONT) {
       break;
@@ -1086,7 +1108,7 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
 
   http_parser_init(&parser);
 
-  while (1) {
+  while (true) {
     err = resp_hdr.parse_resp(&parser, &start, end, true);
     if (err != PARSE_RESULT_CONT) {
       break;
@@ -1187,7 +1209,7 @@ HdrTest::test_http_hdr_null_char(int testnum, const char *request, const char * 
   cpy_buf[length / 2] = '\0';
   http_parser_init(&parser);
 
-  while (1) {
+  while (true) {
     err = hdr.parse_req(&parser, &cpy_buf_ptr, cpy_buf_ptr + length, true);
     if (err != PARSE_RESULT_CONT) {
       break;
@@ -1229,7 +1251,7 @@ HdrTest::test_http_hdr_ctl_char(int testnum, const char *request, const char * /
 
   http_parser_init(&parser);
 
-  while (1) {
+  while (true) {
     err = hdr.parse_req(&parser, &cpy_buf_ptr, cpy_buf_ptr + strlen(start), true);
     if (err != PARSE_RESULT_CONT) {
       break;
@@ -1276,7 +1298,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
 
   http_parser_init(&parser);
 
-  while (1) {
+  while (true) {
     err = hdr.parse_req(&parser, &start, end, true);
     if (err != PARSE_RESULT_CONT) {
       break;
@@ -1350,7 +1372,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
 
   http_parser_init(&parser);
 
-  while (1) {
+  while (true) {
     err = hdr.parse_resp(&parser, &start, end, true);
     if (err != PARSE_RESULT_CONT) {
       break;
@@ -1656,7 +1678,7 @@ HdrTest::test_http_mutation()
 
   resp_hdr.create(HTTP_TYPE_RESPONSE);
 
-  while (1) {
+  while (true) {
     err = resp_hdr.parse_resp(&parser, &start, end, true);
     if (err != PARSE_RESULT_CONT) {
       break;

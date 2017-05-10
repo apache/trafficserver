@@ -168,11 +168,10 @@ cancel the action. The following sample code implements this:
                system is initialized. We'll simply schedule an event
                on the continuation to occur as soon as the rest of
                the system is started up. */
-            TSContSchedule (contp, 0);
+            TSContSchedule (contp, 0, TS_THREAD_POOL_DEFAULT);
         }
 
 The action functions are:
 
 -  :c:func:`TSActionCancel`
 -  :c:func:`TSActionDone`
-

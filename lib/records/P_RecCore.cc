@@ -261,21 +261,20 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
 //-------------------------------------------------------------------------
 // RecRegisterStatXXX
 //-------------------------------------------------------------------------
-#define REC_REGISTER_STAT_XXX(A, B)                                                                                             \
-  ink_assert((rec_type == RECT_NODE) || (rec_type == RECT_CLUSTER) || (rec_type == RECT_PROCESS) || (rec_type == RECT_LOCAL) || \
-             (rec_type == RECT_PLUGIN));                                                                                        \
-  RecRecord *r;                                                                                                                 \
-  RecData my_data_default;                                                                                                      \
-  my_data_default.A = data_default;                                                                                             \
-  if ((r = RecRegisterStat(rec_type, name, B, my_data_default, persist_type)) != nullptr) {                                     \
-    if (i_am_the_record_owner(r->rec_type)) {                                                                                   \
-      r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                             \
-    } else {                                                                                                                    \
-      send_register_message(r);                                                                                                 \
-    }                                                                                                                           \
-    return REC_ERR_OKAY;                                                                                                        \
-  } else {                                                                                                                      \
-    return REC_ERR_FAIL;                                                                                                        \
+#define REC_REGISTER_STAT_XXX(A, B)                                                                                           \
+  ink_assert((rec_type == RECT_NODE) || (rec_type == RECT_PROCESS) || (rec_type == RECT_LOCAL) || (rec_type == RECT_PLUGIN)); \
+  RecRecord *r;                                                                                                               \
+  RecData my_data_default;                                                                                                    \
+  my_data_default.A = data_default;                                                                                           \
+  if ((r = RecRegisterStat(rec_type, name, B, my_data_default, persist_type)) != nullptr) {                                   \
+    if (i_am_the_record_owner(r->rec_type)) {                                                                                 \
+      r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                           \
+    } else {                                                                                                                  \
+      send_register_message(r);                                                                                               \
+    }                                                                                                                         \
+    return REC_ERR_OKAY;                                                                                                      \
+  } else {                                                                                                                    \
+    return REC_ERR_FAIL;                                                                                                      \
   }
 
 RecErrT
@@ -705,9 +704,6 @@ RecSyncConfigToTB(TextBuffer *tb, bool *inc_version)
             case RECT_NODE:
               tb->copyFrom("NODE ", 5);
               break;
-            case RECT_CLUSTER:
-              tb->copyFrom("CLUSTER ", 8);
-              break;
             case RECT_LOCAL:
               tb->copyFrom("LOCAL ", 6);
               break;
@@ -994,7 +990,7 @@ RecWriteConfigFile(TextBuffer *tb)
     }
 
     result = REC_ERR_OKAY;
-  } while (0);
+  } while (false);
 
   if (h_file != REC_HANDLE_INVALID) {
     RecFileClose(h_file);

@@ -23,7 +23,7 @@
 
 #include <ts/Scalar.h>
 #include <string>
-#include <stdarg.h>
+#include <cstdarg>
 #include <iostream>
 
 namespace ts

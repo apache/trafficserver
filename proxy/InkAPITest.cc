@@ -32,13 +32,13 @@
 #include "ts/ink_file.h"
 #include <sys/types.h>
 
-#include <errno.h>
+#include <cerrno>
 // extern int errno;
 
 #include <pthread.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "ts/Regression.h"
 #include "api/ts/ts.h"
@@ -1278,6 +1278,11 @@ REGRESSION_TEST(SDK_API_TSThread)(RegressionTest *test, int /* atype ATS_UNUSED 
     SDK_RPRINT(test, "TSThreadCreate", "TestCase1", TC_FAIL, "can't create thread");
   } else {
     SDK_RPRINT(test, "TSThreadCreate", "TestCase1", TC_PASS, "ok");
+  }
+
+  if (created_thread != nullptr) {
+    TSThreadWait(created_thread);
+    TSThreadDestroy(created_thread);
   }
 }
 
@@ -5439,7 +5444,7 @@ REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED
     err = 1;
   } else if (strcmp(svalue, CONFIG_PARAM_STRING_VALUE) != 0) {
     SDK_RPRINT(test, "TSMgmtStringGet", "TestCase1.4", TC_FAIL,
-               "got incorrect value of param %s, should have been \"%s\", found \"%s\"", CONFIG_PARAM_STRING_NAME,
+               R"(got incorrect value of param %s, should have been "%s", found "%s")", CONFIG_PARAM_STRING_NAME,
                CONFIG_PARAM_STRING_VALUE, svalue);
     err = 1;
   } else {
@@ -5910,7 +5915,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
     SDK_RPRINT(data->test, "TSHttpTxnHookAdd", "TestCase2", TC_PASS, "ok");
     data->test_passed_txn_hook_add++;
     txnp = (TSHttpTxn)edata;
-    if (1) {
+    if (true) {
       char *temp = TSstrdup(ERROR_BODY);
       TSHttpTxnErrorBodySet(txnp, temp, strlen(temp), nullptr);
     }
@@ -7542,7 +7547,6 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.server_tcp_init_cwnd",
   "proxy.config.http.send_http11_requests",
   "proxy.config.http.cache.http",
-  "proxy.config.http.cache.cluster_cache_local",
   "proxy.config.http.cache.ignore_client_no_cache",
   "proxy.config.http.cache.ignore_client_cc_max_age",
   "proxy.config.http.cache.ims_on_client_no_cache",
@@ -7571,13 +7575,10 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.post_connect_attempts_timeout",
   "proxy.config.http.down_server.cache_time",
   "proxy.config.http.down_server.abort_threshold",
-  "proxy.config.http.cache.fuzz.time",
-  "proxy.config.http.cache.fuzz.min_time",
   "proxy.config.http.doc_in_cache_skip_dns",
   "proxy.config.http.background_fill_active_timeout",
   "proxy.config.http.response_server_str",
   "proxy.config.http.cache.heuristic_lm_factor",
-  "proxy.config.http.cache.fuzz.probability",
   "proxy.config.http.background_fill_completed_threshold",
   "proxy.config.net.sock_packet_mark_out",
   "proxy.config.net.sock_packet_tos_out",
@@ -7623,6 +7624,14 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.ssl.client.cert.filename",
   "proxy.config.ssl.client.cert.path",
   "proxy.config.http.parent_proxy.mark_down_hostdb",
+  "proxy.config.http.cache.enable_default_vary_headers",
+  "proxy.config.http.cache.vary_default_text",
+  "proxy.config.http.cache.vary_default_images",
+  "proxy.config.http.cache.vary_default_other",
+  "proxy.config.http.cache.ignore_accept_mismatch",
+  "proxy.config.http.cache.ignore_accept_language_mismatch",
+  "proxy.config.http.cache.ignore_accept_encoding_mismatch",
+  "proxy.config.http.cache.ignore_accept_charset_mismatch",
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)

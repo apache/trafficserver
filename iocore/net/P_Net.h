@@ -55,6 +55,7 @@ enum Net_Stats {
   default_inactivity_timeout_stat,
   net_fastopen_attempts_stat,
   net_fastopen_successes_stat,
+  net_tcp_accept_stat,
   Net_Stat_Count
 };
 

@@ -37,15 +37,16 @@ example_Plugins = \
 	null_transform.la \
 	output_header.la \
 	passthru.la \
-	protocol-stack.la \
+	protocol_stack.la \
 	protocol.la \
 	psi.la \
-	query-remap.la \
+	query_remap.la \
+	redirect_1.la \
 	remap.la \
 	remap_header_add.la \
-	replace-header.la \
-	response-header-1.la \
-	secure-link.la \
+	replace_header.la \
+	response_header_1.la \
+	secure_link.la \
 	server-push.la \
 	server-transform.la \
 	ssl-preaccept.la \
@@ -54,7 +55,8 @@ example_Plugins = \
 	statistic.la \
 	thread-1.la \
 	txn-data-sink.la \
-	version.la
+	version.la \
+	disable_http2.la
 
 example_Plugins += \
 	cppapi/AsyncHttpFetch.la \
@@ -102,27 +104,28 @@ null_transform_la_SOURCES = null_transform/null_transform.c
 output_header_la_SOURCES = output_header/output_header.c
 passthru_la_SOURCES = passthru/passthru.cc
 protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
-protocol_stack_la_SOURCES = protocol-stack/protocol-stack.cc
+protocol_stack_la_SOURCES = protocol_stack/protocol_stack.cc
 psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
-query_remap_la_SOURCES = query-remap/query-remap.c
+query_remap_la_SOURCES = query_remap/query_remap.c
 remap_header_add_la_SOURCES = remap_header_add/remap_header_add.cc
 remap_la_SOURCES = remap/remap.cc
-replace_header_la_SOURCES = replace-header/replace-header.c
-response_header_1_la_SOURCES = response-header-1/response-header-1.c
-secure_link_la_SOURCES = secure-link/secure-link.c
+replace_header_la_SOURCES = replace_header/replace_header.c
+response_header_1_la_SOURCES = response_header_1/response_header_1.c
+secure_link_la_SOURCES = secure_link/secure_link.c
 server_push_la_SOURCES = server-push/server-push.c
 server_transform_la_SOURCES = server-transform/server-transform.c
 ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc
 ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc
 ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc
+disable_http2_la_SOURCES = disable_http2/disable_http2.cc
 statistic_la_SOURCES = statistic/statistic.cc
 thread_1_la_SOURCES = thread-1/thread-1.c
 txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
 version_la_SOURCES = version/version.c
+redirect_1_la_SOURCES = redirect_1/redirect_1.c
 
 # The following examples do not build:
 #
-# redirect_1_la_SOURCES = redirect-1/redirect-1.c
 # session_1_la_SOURCES = session-1/session-1.c
 
 cppapi_AsyncHttpFetchStreaming_la_SOURCES = cppapi/async_http_fetch_streaming/AsyncHttpFetchStreaming.cc

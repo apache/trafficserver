@@ -43,7 +43,12 @@ a sample configuration (sample.gzip.config):
 #
 # compressible-content-type: wildcard pattern for matching compressible content types
 #
-# disallow: wildcard pattern for disablign compression on urls
+# disallow: wildcard pattern for disabling compression on urls
+#
+# allow: wildcard pattern for enabling compression on urls
+#
+# supported-algorithms: compression algorithms supported. comma separated algorithms. Default is gzip
+#
 ######################################################################
 
 #first, we configure the default/global plugin behaviour
@@ -60,6 +65,13 @@ disallow /notthis/*.js
 disallow /notthat*
 disallow */bla*
 
+allow */here/*
+#disabling is possible too. trying to deprecate disallow
+allow !*/nothere/*
+
+#supported algorithms
+supported-algorithms br,gzip
+
 #override the global configuration for a host.
 #www.foo.nl does NOT inherit anything
 [www.foo.nl]
@@ -70,3 +82,6 @@ compressible-content-type text/*
 cache false
 disallow /notthis/*.js
 disallow /notthat*
+
+allow /this/*.js
+allow !/notthat/*.css

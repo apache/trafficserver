@@ -79,10 +79,10 @@ set_socket_paths(const char *path)
 static bool
 socket_test(int fd)
 {
-  MgmtMarshallInt optype = API_PING;
-  MgmtMarshallInt now    = time(nullptr);
+  OpType optype       = OpType::API_PING;
+  MgmtMarshallInt now = time(nullptr);
 
-  if (MGMTAPI_SEND_MESSAGE(fd, API_PING, &optype, &now) == TS_ERR_OKAY) {
+  if (MGMTAPI_SEND_MESSAGE(fd, OpType::API_PING, &optype, &now) == TS_ERR_OKAY) {
     return true; // write was successful; connection still open
   }
 
@@ -403,7 +403,7 @@ void *
 socket_test_thread(void *)
 {
   // loop until client process dies
-  while (1) {
+  while (true) {
     if (main_socket_fd == -1 || !socket_test(main_socket_fd)) {
       // ASSUMES that in between the time the socket_test is made
       // and this reconnect call is made, the main_socket_fd remains
@@ -450,10 +450,10 @@ send_register_all_callbacks(int fd, CallbackTable *cb_table)
   events_with_cb = get_events_with_callbacks(cb_table);
   // need to check that the list has all the events registered
   if (!events_with_cb) { // all events have registered callback
-    MgmtMarshallInt optype        = EVENT_REG_CALLBACK;
+    OpType optype                 = OpType::EVENT_REG_CALLBACK;
     MgmtMarshallString event_name = nullptr;
 
-    err = MGMTAPI_SEND_MESSAGE(fd, EVENT_REG_CALLBACK, &optype, &event_name);
+    err = MGMTAPI_SEND_MESSAGE(fd, OpType::EVENT_REG_CALLBACK, &optype, &event_name);
     if (err != TS_ERR_OKAY) {
       return err;
     }
@@ -461,12 +461,12 @@ send_register_all_callbacks(int fd, CallbackTable *cb_table)
     int num_events = queue_len(events_with_cb);
     // iterate through the LLQ and send request for each event
     for (int i = 0; i < num_events; i++) {
-      MgmtMarshallInt optype        = EVENT_REG_CALLBACK;
+      OpType optype                 = OpType::EVENT_REG_CALLBACK;
       MgmtMarshallInt event_id      = *(int *)dequeue(events_with_cb);
       MgmtMarshallString event_name = (char *)get_event_name(event_id);
 
       if (event_name) {
-        err = MGMTAPI_SEND_MESSAGE(fd, EVENT_REG_CALLBACK, &optype, &event_name);
+        err = MGMTAPI_SEND_MESSAGE(fd, OpType::EVENT_REG_CALLBACK, &optype, &event_name);
         ats_free(event_name); // free memory
         if (err != TS_ERR_OKAY) {
           send_err  = err; // save the type of send error
@@ -507,8 +507,8 @@ send_unregister_all_callbacks(int fd, CallbackTable *cb_table)
   bool no_errors = true; // set to false if at least one send fails
 
   // init array so that all events don't have any callbacks
-  for (int i = 0; i < NUM_EVENTS; i++) {
-    reg_callback[i] = 0;
+  for (int &i : reg_callback) {
+    i = 0;
   }
 
   events_with_cb = get_events_with_callbacks(cb_table);
@@ -527,10 +527,10 @@ send_unregister_all_callbacks(int fd, CallbackTable *cb_table)
   // send message to TM to mark unregister
   for (int k = 0; k < NUM_EVENTS; k++) {
     if (reg_callback[k] == 0) { // event has no registered callbacks
-      MgmtMarshallInt optype        = EVENT_UNREG_CALLBACK;
+      OpType optype                 = OpType::EVENT_UNREG_CALLBACK;
       MgmtMarshallString event_name = get_event_name(k);
 
-      err = MGMTAPI_SEND_MESSAGE(fd, EVENT_UNREG_CALLBACK, &optype, &event_name);
+      err = MGMTAPI_SEND_MESSAGE(fd, OpType::EVENT_UNREG_CALLBACK, &optype, &event_name);
       ats_free(event_name);
       if (err != TS_ERR_OKAY) {
         send_err  = err; // save the type of the sending error
@@ -602,12 +602,12 @@ event_poll_thread_main(void *arg)
   sock_fd = *((int *)arg); // should be same as event_socket_fd
 
   // the sock_fd is going to be the one we listen for events on
-  while (1) {
+  while (true) {
     TSMgmtError ret;
     TSMgmtEvent *event = nullptr;
 
     MgmtMarshallData reply = {nullptr, 0};
-    MgmtMarshallInt optype;
+    OpType optype;
     MgmtMarshallString name = nullptr;
     MgmtMarshallString desc = nullptr;
 
@@ -627,7 +627,7 @@ event_poll_thread_main(void *arg)
       break;
     }
 
-    ret = recv_mgmt_request(reply.ptr, reply.len, EVENT_NOTIFY, &optype, &name, &desc);
+    ret = recv_mgmt_request(reply.ptr, reply.len, OpType::EVENT_NOTIFY, &optype, &name, &desc);
     ats_free(reply.ptr);
 
     if (ret != TS_ERR_OKAY) {
@@ -636,7 +636,7 @@ event_poll_thread_main(void *arg)
       break;
     }
 
-    ink_assert(optype == EVENT_NOTIFY);
+    ink_assert(optype == OpType::EVENT_NOTIFY);
 
     // The new event takes ownership of the message strings.
     event              = TSEventCreate();

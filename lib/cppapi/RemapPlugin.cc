@@ -22,7 +22,7 @@
 #include "atscppapi/RemapPlugin.h"
 #include "logging_internal.h"
 #include "utils_internal.h"
-#include <assert.h>
+#include <cassert>
 #include <ts/remap.h>
 
 using namespace atscppapi;

@@ -61,7 +61,7 @@ static void
 print_feature(const char *name, const char *value, bool json, bool last = false)
 {
   if (json) {
-    printf("    \"%s\": \"%s\"%s", name, value, last ? "\n" : ",\n");
+    printf(R"(    "%s": "%s"%s)", name, value, last ? "\n" : ",\n");
   } else {
     printf("#define %s \"%s\"\n", name, value);
   }
@@ -121,7 +121,6 @@ produce_features(bool json)
   print_feature("TS_MAX_HOST_NAME_LEN", TS_MAX_HOST_NAME_LEN, json);
   print_feature("TS_MAX_API_STATS", TS_MAX_API_STATS, json);
   print_feature("SPLIT_DNS", SPLIT_DNS, json);
-  print_feature("HTTP_CACHE", HTTP_CACHE, json);
   print_feature("TS_PKGSYSUSER", TS_PKGSYSUSER, json);
   print_feature("TS_PKGSYSGROUP", TS_PKGSYSGROUP, json, true);
   if (json) {
@@ -133,7 +132,7 @@ static void
 print_var(const char *name, char *value, bool json, bool free = true, bool last = false)
 {
   if (json) {
-    printf("    \"%s\": \"%s\"%s", name, value, last ? "\n" : ",\n");
+    printf(R"(    "%s": "%s"%s)", name, value, last ? "\n" : ",\n");
   } else {
     printf("%s: %s\n", name, value);
   }

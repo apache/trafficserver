@@ -202,8 +202,6 @@ Rule::parse(const char *const_rule, TSFileNameT filetype)
     return congestionParse(rule, 1, 15);
   case TS_FNAME_HOSTING: /* hosting.config */
     return hostingParse(rule);
-  case TS_FNAME_ICP_PEER: /* icp.config */
-    return icpParse(rule, 8, 8);
   case TS_FNAME_IP_ALLOW: /* ip_allow.config */
     return ip_allowParse(rule);
   case TS_FNAME_PARENT_PROXY: /* parent.config */
@@ -220,8 +218,6 @@ Rule::parse(const char *const_rule, TSFileNameT filetype)
     return splitdnsParse(rule);
   case TS_FNAME_STORAGE: /* storage.config */
     return storageParse(rule);
-  case TS_FNAME_VADDRS: /* vaddrs.config */
-    return vaddrsParse(rule);
   default:
     return nullptr;
   }
@@ -388,41 +384,6 @@ Rule::hostingParse(char *rule)
   //   NO SPACE around "=" sign
   //   NO SPACE around ","
   return cacheParse(rule, 2, 2);
-}
-
-/**
- * icpParse
- *   - mimic proxy/ICPConfig/icp_config_change_callback
- **/
-TokenList *
-Rule::icpParse(char *rule, unsigned short minNumToken, unsigned short maxNumToken)
-{
-  Tokenizer ruleTok(":");
-  int numRuleTok = ruleTok.Initialize(rule, ALLOW_EMPTY_TOKS);
-  tok_iter_state ruleTok_state;
-  const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token;
-  TokenList *m_tokenList;
-
-  // Sanity Check -- number of token
-  if (numRuleTok < minNumToken) {
-    setErrorHint("Expecting more ':' delimited tokens!");
-    return nullptr;
-  }
-  if (numRuleTok > maxNumToken + 1 ||
-      (numRuleTok == maxNumToken + 1 && strspn(ruleTok[maxNumToken], " ") != strlen(ruleTok[maxNumToken]))) {
-    setErrorHint("Expecting less ':' delimited tokens!");
-    return nullptr;
-  }
-
-  m_tokenList = new TokenList();
-  for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
-    token = new Token();
-    token->setName(tokenStr);
-    m_tokenList->enqueue(token);
-  }
-
-  return m_tokenList;
 }
 
 /**
@@ -780,31 +741,6 @@ Rule::updateParse(char *rule)
 }
 
 /**
- * vaddrsParse
- **/
-TokenList *
-Rule::vaddrsParse(char *rule)
-{
-  // ASSUMPTIONS:
-  //   UNIX: IP_address device subinterface
-  //   Win:  IP_address interface
-  Tokenizer ruleTok(" \t");
-  ruleTok.Initialize(rule);
-  tok_iter_state ruleTok_state;
-  const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token;
-  TokenList *m_tokenList = new TokenList();
-
-  for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
-    token = new Token();
-    token->setName(tokenStr);
-    m_tokenList->enqueue(token);
-  }
-
-  return m_tokenList;
-}
-
-/**
  * storageParse
  * ------------
  * the token value is pathname; if a size is specified, that is stored as
@@ -907,8 +843,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = TS_FNAME_CONGESTION; /* congestion.config */
   } else if (strstr(filename, "hosting.config")) {
     m_filetype = TS_FNAME_HOSTING; /* hosting.config */
-  } else if (strstr(filename, "icp.config")) {
-    m_filetype = TS_FNAME_ICP_PEER; /* icp.config */
   } else if (strstr(filename, "ip_allow.config")) {
     m_filetype = TS_FNAME_IP_ALLOW; /* ip_allow.config */
   } else if (strstr(filename, "parent.config")) {
@@ -923,8 +857,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = TS_FNAME_SOCKS; /* socks.config */
   } else if (strstr(filename, "splitdns.config")) {
     m_filetype = TS_FNAME_SPLIT_DNS; /* splitdns.config */
-  } else if (strstr(filename, "vaddrs.config")) {
-    m_filetype = TS_FNAME_VADDRS; /* vaddrs.config */
   } else if (strstr(filename, "plugin.config")) {
     m_filetype = TS_FNAME_UNDEFINED; /* plugin.config */
   } else if (strstr(filename, "storage.config")) {

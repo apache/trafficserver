@@ -23,10 +23,10 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <ts/experimental.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <getopt.h>
-#include <string.h>
+#include <cstring>
 #include <string>
 #include <iterator>
 #include <map>

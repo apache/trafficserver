@@ -216,3 +216,22 @@ domain reference markup should be used::
 
 References should not include the collection name, data type, or any other
 components aside from the statistic name.
+
+Referencing source code
+-----------------------
+
+To reference source code from the documentation, use the following markup::
+
+    :ts:git:`path/to/source/file`
+
+This creates a link to Github. Sphinx does its best to pin the reference to the
+current release version of |ATS|.
+
+Avoid using hard links to Github as Github may be replaced with another host
+in the future.
+
+.. note::
+
+    Although adding the ability to point to a specific line number would not be
+    difficult, code shifts around too much and this feature would only cause
+    confusion to a downstream reader. This feature was deliberately omitted.

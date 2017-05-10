@@ -32,7 +32,7 @@
 #include "ts/ink_platform.h"
 #include "ts/I_Layout.h"
 
-#include <string.h>
+#include <cstring>
 #include <cmath>
 #include "P_Net.h"
 #include "P_SSLConfig.h"
@@ -433,7 +433,7 @@ SSLConfigParams::deleteKey(cchar *key) const
 }
 
 SSL_CTX *
-SSLConfigParams::getClientSSL_CTX(void) const
+SSLConfigParams::getClientSSL_CTX() const
 {
   return client_ctx;
 }
