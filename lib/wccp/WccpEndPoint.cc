@@ -431,7 +431,7 @@ CacheImpl::GroupData::processUp()
     zret = true; // No process to track, always chatter
   } else {
     // Look for the pid file
-    ats_scoped_fd fd = open(proc_pid_path, O_RDONLY);
+    ats_scoped_fd fd{open(proc_pid_path, O_RDONLY)};
     if (fd >= 0) {
       char buffer[256];
       ssize_t read_count = read(fd, buffer, sizeof(buffer) - 1);
@@ -441,7 +441,7 @@ CacheImpl::GroupData::processUp()
         if (pid > 0) {
           // If the process is still running, it has an entry in the proc file system, (Linux only)
           sprintf(buffer, "/proc/%d/status", pid);
-          ats_scoped_fd fd2 = open(buffer, O_RDONLY);
+          ats_scoped_fd fd2{open(buffer, O_RDONLY)};
           if (fd2 >= 0) {
             zret = true;
           }
