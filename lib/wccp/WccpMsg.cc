@@ -783,6 +783,9 @@ RouterViewComp::setChangeNumber(uint32_t n)
   return *this;
 }
 
+// This is untainted because an overall size check is done when the packet is read. If any of the
+// counts are bogus, that size check will fail.
+// coverity[ -tainted_data_return]
 uint32_t
 RouterViewComp::getCacheCount() const
 {

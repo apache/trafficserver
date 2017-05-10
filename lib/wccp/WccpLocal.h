@@ -3408,6 +3408,9 @@ RouterAssignListElt::getVarSize() const
 {
   return this->getSize() - sizeof(self);
 }
+// This is untainted because an overall size check is done when the packet is read. If any of the
+// counts are bogus, that size check will fail.
+// coverity[ -tainted_data_return]
 inline uint32_t
 RouterAssignListElt::getCount() const
 {
@@ -3420,6 +3423,9 @@ inline HashAssignElt::HashAssignElt()
 inline HashAssignElt::HashAssignElt(int n) : m_count(htonl(n))
 {
 }
+// This is untainted because an overall size check is done when the packet is read. If any of the
+// counts are bogus, that size check will fail.
+// coverity[ -tainted_data_return]
 inline uint32_t
 HashAssignElt::getCount() const
 {
@@ -3463,6 +3469,9 @@ inline HashAssignElt::Bucket const &HashAssignElt::operator[](size_t idx) const
   return (*(const_cast<self *>(this)))[idx];
 }
 
+// This is untainted because an overall size check is done when the packet is read. If any of the
+// counts are bogus, that size check will fail.
+// coverity[ -tainted_data_return]
 inline uint32_t
 MaskAssignElt::getCount() const
 {
