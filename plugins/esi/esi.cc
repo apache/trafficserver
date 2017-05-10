@@ -333,7 +333,7 @@ ContData::getClientState()
           if (n_values == 1) {
             value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, 0, &value_len);
 
-            if (nullptr != value || value_len) {
+            if (nullptr != value && value_len) {
               if (Utils::areEqual(name, name_len, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING) &&
                   Utils::areEqual(value, value_len, TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP)) {
                 gzip_output = true;
@@ -342,7 +342,7 @@ ContData::getClientState()
           } else {
             for (int i = 0; i < n_values; ++i) {
               value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, i, &value_len);
-              if (nullptr != value || value_len) {
+              if (nullptr != value && value_len) {
                 if (Utils::areEqual(name, name_len, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING) &&
                     Utils::areEqual(value, value_len, TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP)) {
                   gzip_output = true;
