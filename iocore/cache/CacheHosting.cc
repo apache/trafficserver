@@ -245,14 +245,14 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   // Table build locals
   Tokenizer bufTok("\n");
   tok_iter_state i_state;
-  const char *tmp;
-  matcher_line *first = nullptr;
-  matcher_line *current;
-  matcher_line *last = nullptr;
-  int line_num       = 0;
-  int second_pass    = 0;
-  int numEntries     = 0;
-  const char *errPtr = nullptr;
+  const char *tmp       = nullptr;
+  matcher_line *first   = nullptr;
+  matcher_line *current = nullptr;
+  matcher_line *last    = nullptr;
+  int line_num          = 0;
+  int second_pass       = 0;
+  int numEntries        = 0;
+  const char *errPtr    = nullptr;
 
   // type counts
   int hostDomain = 0;
@@ -301,7 +301,8 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 
         if (first == nullptr) {
           ink_assert(last == nullptr);
-          first = last = current;
+          first = current;
+          last  = current;
         } else {
           last->next = current;
           last       = current;
