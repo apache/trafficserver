@@ -145,6 +145,7 @@ class SSLServer(ThreadingMixIn, HTTPServer):
 
             self.server_bind()
             self.server_activate()
+            print("Port Configured for SSL communication")
 
 
 class MyHandler(BaseHTTPRequestHandler):
@@ -623,8 +624,8 @@ def main():
                         default="test",
                         help="Mode of operation")
     parser.add_argument("--ssl","-ssl",
-                        type=bool,
-                        default=False,
+                        type=str,
+                        default="False",
                         help="SSL port")
     parser.add_argument("--key","-k",
                         type=str,
@@ -658,7 +659,7 @@ def main():
         test_mode_enabled = args.mode=="test"
 
         MyHandler.protocol_version = HTTP_VERSION
-        if options.ssl == True:
+        if options.ssl == "True" or options.ssl == "true":
             server = SSLServer((options.ip_address,options.port), MyHandler, options)
         else:
             server = ThreadingServer((options.ip_address, options.port), MyHandler, options)

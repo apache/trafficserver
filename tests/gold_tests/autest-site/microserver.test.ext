@@ -97,13 +97,13 @@ def makeHeader(self,requestString, **kwargs):
     return headerStr
 
 
-def MakeOriginServer(obj, name,public_ip=False,options={}):
+def MakeOriginServer(obj, name,public_ip=False,ssl=False,options={}):
     server_path= os.path.join(obj.Variables.AtsTestToolsDir,'microServer/uWServer.py')
     data_dir = os.path.join(obj.RunDirectory, name)
     # create Process
     p = obj.Processes.Process(name)
     port=get_port(p,"Port")
-    command = "python3 {0} --data-dir {1} --port {2} --public {3} -m test".format(server_path, data_dir, port, public_ip)
+    command = "python3 {0} --data-dir {1} --port {2} --public {3} -m test --ssl {4}".format(server_path, data_dir, port, public_ip,ssl)
     for flag,value in options.items() :
         command += " {} {}".format(flag,value)
 
