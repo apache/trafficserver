@@ -482,26 +482,25 @@ class IOBufferReader;
 class HTTPHdr : public MIMEHdr
 {
 public:
-  HTTPHdrImpl *m_http;
+  HTTPHdrImpl *m_http = nullptr;
   // This is all cached data and so is mutable.
   mutable URL m_url_cached;
-  mutable MIMEField *m_host_mime;
-  mutable int m_host_length;    ///< Length of hostname.
-  mutable int m_port;           ///< Target port.
-  mutable bool m_target_cached; ///< Whether host name and port are cached.
-  mutable bool m_target_in_url; ///< Whether host name and port are in the URL.
+  mutable MIMEField *m_host_mime = nullptr;
+  mutable int m_host_length      = 0;     ///< Length of hostname.
+  mutable int m_port             = 0;     ///< Target port.
+  mutable bool m_target_cached   = false; ///< Whether host name and port are cached.
+  mutable bool m_target_in_url   = false; ///< Whether host name and port are in the URL.
   /// Set if the port was effectively specified in the header.
   /// @c true if the target (in the URL or the HOST field) also specified
   /// a port. That is, @c true if whatever source had the target host
   /// also had a port, @c false otherwise.
-  mutable bool m_port_in_header;
+  mutable bool m_port_in_header = false;
 
-  HTTPHdr();
-  ~HTTPHdr();
+  HTTPHdr() = default; // Force the creation of the default constructor
 
   int valid() const;
 
-  void create(HTTPType polarity, HdrHeap *heap = NULL);
+  void create(HTTPType polarity, HdrHeap *heap = nullptr);
   void clear();
   void reset();
   void copy(const HTTPHdr *hdr);
@@ -755,19 +754,6 @@ HTTPVersion::operator<=(const HTTPVersion &hv) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPHdr::HTTPHdr() : MIMEHdr(), m_http(NULL), m_url_cached(), m_target_cached(false)
-{
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-inline HTTPHdr::~HTTPHdr()
-{ /* nop */
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 inline int
 HTTPHdr::valid() const
 {
@@ -797,16 +783,16 @@ HTTPHdr::clear()
     m_url_cached.clear();
   }
   this->HdrHeapSDKHandle::clear();
-  m_http = NULL;
-  m_mime = NULL;
+  m_http = nullptr;
+  m_mime = nullptr;
 }
 
 inline void
 HTTPHdr::reset()
 {
-  m_heap = NULL;
-  m_http = NULL;
-  m_mime = NULL;
+  m_heap = nullptr;
+  m_http = nullptr;
+  m_mime = nullptr;
   m_url_cached.reset();
 }
 
@@ -890,7 +876,7 @@ HTTPHdr::host_get(int *length)
 
   if (length)
     *length = 0;
-  return NULL;
+  return nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -1013,7 +999,7 @@ HTTPHdr::keep_alive_get() const
 {
   HTTPKeepAlive retval = HTTP_NO_KEEPALIVE;
   const MIMEField *pc  = this->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
-  if (pc != NULL) {
+  if (pc != nullptr) {
     retval = is_header_keep_alive(this->version_get(), pc);
   } else {
     const MIMEField *c = this->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
@@ -1181,9 +1167,13 @@ inline HTTPStatus
 HTTPHdr::status_get()
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
-  return (NULL == m_http) ? HTTP_STATUS_NONE : http_hdr_status_get(m_http);
+  if (m_http) {
+    ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+    return http_hdr_status_get(m_http);
+  }
+
+  return HTTP_STATUS_NONE;
 }
 
 /*-------------------------------------------------------------------------
@@ -1366,17 +1356,17 @@ public:
 
   HTTPCacheAlt *m_alt;
 
-  HTTPInfo() : m_alt(NULL) {}
+  HTTPInfo() : m_alt(nullptr) {}
   ~HTTPInfo() { clear(); }
   void
   clear()
   {
-    m_alt = NULL;
+    m_alt = nullptr;
   }
   bool
   valid() const
   {
-    return m_alt != NULL;
+    return m_alt != nullptr;
   }
 
   void create();
@@ -1447,7 +1437,7 @@ public:
   }
 
   URL *
-  request_url_get(URL *url = NULL)
+  request_url_get(URL *url = nullptr)
   {
     return m_alt->m_request_hdr.url_get(url);
   }
