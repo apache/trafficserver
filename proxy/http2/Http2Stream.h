@@ -39,41 +39,7 @@ class Http2Stream : public ProxyClientTransaction
 {
 public:
   typedef ProxyClientTransaction super; ///< Parent type.
-  Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size)
-    : client_rwnd(initial_rwnd),
-      server_rwnd(Http2::initial_window_size),
-      header_blocks(NULL),
-      header_blocks_length(0),
-      request_header_length(0),
-      recv_end_stream(false),
-      send_end_stream(false),
-      sent_request_header(false),
-      response_header_done(false),
-      request_sent(false),
-      is_first_transaction_flag(false),
-      response_reader(NULL),
-      request_reader(NULL),
-      request_buffer(CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX),
-      priority_node(NULL),
-      _start_time(0),
-      _thread(NULL),
-      _id(sid),
-      _state(Http2StreamState::HTTP2_STREAM_STATE_IDLE),
-      trailing_header(false),
-      body_done(false),
-      closed(false),
-      sent_delete(false),
-      chunked(false),
-      data_length(0),
-      bytes_sent(0),
-      cross_thread_event(NULL),
-      active_timeout(0),
-      active_event(NULL),
-      inactive_timeout(0),
-      inactive_timeout_at(0),
-      inactive_event(NULL),
-      read_event(NULL),
-      write_event(NULL)
+  Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size) : client_rwnd(initial_rwnd), _id(sid)
   {
     SET_HANDLER(&Http2Stream::main_event_handler);
   }
@@ -188,24 +154,24 @@ public:
 
   LINK(Http2Stream, link);
 
-  uint8_t *header_blocks;
-  uint32_t header_blocks_length;  // total length of header blocks (not include
-                                  // Padding or other fields)
-  uint32_t request_header_length; // total length of payload (include Padding
-                                  // and other fields)
-  bool recv_end_stream;
-  bool send_end_stream;
+  uint8_t *header_blocks        = nullptr;
+  uint32_t header_blocks_length = 0;  // total length of header blocks (not include
+                                      // Padding or other fields)
+  uint32_t request_header_length = 0; // total length of payload (include Padding
+                                      // and other fields)
+  bool recv_end_stream = false;
+  bool send_end_stream = false;
 
-  bool sent_request_header;
-  bool response_header_done;
-  bool request_sent;
-  bool is_first_transaction_flag;
+  bool sent_request_header       = false;
+  bool response_header_done      = false;
+  bool request_sent              = false;
+  bool is_first_transaction_flag = false;
 
   HTTPHdr response_header;
-  IOBufferReader *response_reader;
-  IOBufferReader *request_reader;
-  MIOBuffer request_buffer;
-  DependencyTree::Node *priority_node;
+  IOBufferReader *response_reader     = nullptr;
+  IOBufferReader *request_reader      = nullptr;
+  MIOBuffer request_buffer            = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  DependencyTree::Node *priority_node = nullptr;
 
   EThread *
   get_thread()
@@ -262,37 +228,37 @@ private:
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   HTTPParser http_parser;
   ink_hrtime _start_time;
-  EThread *_thread;
+  EThread *_thread = nullptr;
   Http2StreamId _id;
-  Http2StreamState _state;
+  Http2StreamState _state = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
 
   MIOBuffer response_buffer;
   HTTPHdr _req_header;
   VIO read_vio;
   VIO write_vio;
 
-  bool trailing_header;
-  bool body_done;
-  bool closed;
-  bool sent_delete;
-  bool chunked;
+  bool trailing_header = false;
+  bool body_done       = false;
+  bool closed          = false;
+  bool sent_delete     = false;
+  bool chunked         = false;
 
-  uint64_t data_length;
-  uint64_t bytes_sent;
+  uint64_t data_length = 0;
+  uint64_t bytes_sent  = 0;
 
   ChunkedHandler chunked_handler;
-  Event *cross_thread_event;
+  Event *cross_thread_event = nullptr;
 
   // Support stream-specific timeouts
-  ink_hrtime active_timeout;
-  Event *active_event;
+  ink_hrtime active_timeout = 0;
+  Event *active_event       = nullptr;
 
-  ink_hrtime inactive_timeout;
-  ink_hrtime inactive_timeout_at;
-  Event *inactive_event;
+  ink_hrtime inactive_timeout    = 0;
+  ink_hrtime inactive_timeout_at = 0;
+  Event *inactive_event          = nullptr;
 
-  Event *read_event;
-  Event *write_event;
+  Event *read_event  = nullptr;
+  Event *write_event = nullptr;
 };
 
 extern ClassAllocator<Http2Stream> http2StreamAllocator;
