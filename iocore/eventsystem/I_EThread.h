@@ -281,7 +281,7 @@ public:
   char thread_private[PER_THREAD_DATA];
 
   /** Private Data for the Disk Processor. */
-  DiskHandler *diskHandler;
+  DiskHandler *diskHandler = nullptr;
 
   /** Private Data for AIO. */
   Que(Continuation, link) aio_ops;
@@ -289,11 +289,11 @@ public:
   ProtectedQueue EventQueueExternal;
   PriorityEventQueue EventQueue;
 
-  EThread **ethreads_to_be_signalled;
-  int n_ethreads_to_be_signalled;
+  EThread **ethreads_to_be_signalled = nullptr;
+  int n_ethreads_to_be_signalled     = 0;
 
   int id;
-  unsigned int event_types;
+  unsigned int event_types = 0;
   bool is_event_type(EventType et);
   void set_event_type(EventType et);
 
@@ -302,19 +302,19 @@ public:
   void execute();
   void process_event(Event *e, int calling_code);
   void free_event(Event *e);
-  void (*signal_hook)(EThread *);
+  void (*signal_hook)(EThread *) = nullptr;
 
 #if HAVE_EVENTFD
-  int evfd;
+  int evfd = -1;
 #else
   int evpipe[2];
 #endif
-  EventIO *ep;
+  EventIO *ep = nullptr;
 
-  ThreadType tt;
-  Event *oneevent; // For dedicated event thread
+  ThreadType tt   = REGULAR;
+  Event *oneevent = nullptr; // For dedicated event thread
 
-  ServerSessionPool *server_session_pool;
+  ServerSessionPool *server_session_pool = nullptr;
 };
 
 /**
