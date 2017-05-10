@@ -391,10 +391,10 @@ public:
   //@}
 
 protected:
-  uint32_t m_src_addr; ///< Source address mask.
-  uint32_t m_dst_addr; ///< Destination address mask.
-  uint16_t m_src_port; ///< Source port mask.
-  uint16_t m_dst_port; ///< Destination port mask.
+  uint32_t m_src_addr = INADDR_ANY; ///< Source address mask.
+  uint32_t m_dst_addr = INADDR_ANY; ///< Destination address mask.
+  uint16_t m_src_port = 0;          ///< Source port mask.
+  uint16_t m_dst_port = 0;          ///< Destination port mask.
 };
 
 /// Sect 5.7.8: Value element.
@@ -2319,11 +2319,11 @@ namespace detail
       bool m_assign;    ///< Send a REDIRECT_ASSIGN.
       bool m_send_caps; ///< Send capabilities.
       /// Packet forwarding method selected.
-      ServiceGroup::PacketStyle m_packet_forward;
+      ServiceGroup::PacketStyle m_packet_forward = ServiceConstants::NO_PACKET_STYLE;
       /// Packet return method selected.
-      ServiceGroup::PacketStyle m_packet_return;
+      ServiceGroup::PacketStyle m_packet_return = ServiceConstants::NO_PACKET_STYLE;
       /// Cache assignment method selected.
-      ServiceGroup::CacheAssignmentStyle m_cache_assign;
+      ServiceGroup::CacheAssignmentStyle m_cache_assign = ServiceConstants::NO_CACHE_ASSIGN_STYLE;
     };
 
     /// Data for a seeded router.
@@ -2354,11 +2354,11 @@ namespace detail
       CacheIdBox m_id;
 
       /// Packet forwarding methods supported.
-      ServiceGroup::PacketStyle m_packet_forward;
+      ServiceGroup::PacketStyle m_packet_forward = ServiceConstants::NO_PACKET_STYLE;
       /// Packet return methods supported.
-      ServiceGroup::PacketStyle m_packet_return;
+      ServiceGroup::PacketStyle m_packet_return = ServiceConstants::NO_PACKET_STYLE;
       /// Cache assignment methods supported.
-      ServiceGroup::CacheAssignmentStyle m_cache_assign;
+      ServiceGroup::CacheAssignmentStyle m_cache_assign = ServiceConstants::NO_CACHE_ASSIGN_STYLE;
 
       /// Known caches.
       CacheBag m_caches;
