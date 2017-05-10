@@ -3438,17 +3438,20 @@ HashAssignElt::getSize() const
 inline uint32_t
 HashAssignElt::getAddr(int idx) const
 {
+  // coverity[array_vs_singleton]
   return (&m_count)[idx + 1];
 }
 inline HashAssignElt &
 HashAssignElt::setAddr(int idx, uint32_t addr)
 {
+  // coverity[array_vs_singleton]
   (&m_count)[idx + 1] = addr;
   return *this;
 }
 inline HashAssignElt::Bucket *
 HashAssignElt::getBucketBase()
 {
+  // coverity[array_vs_singleton]
   return reinterpret_cast<Bucket *>((&m_count + 1 + this->getCount()));
 }
 inline HashAssignElt::Bucket &HashAssignElt::operator[](size_t idx)
