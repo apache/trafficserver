@@ -203,17 +203,17 @@ public:
 
   void free();
 
-  EThread *ethread;
+  EThread *ethread = nullptr;
 
   unsigned int in_the_prot_queue : 1;
   unsigned int in_the_priority_queue : 1;
   unsigned int immediate : 1;
   unsigned int globally_allocated : 1;
   unsigned int in_heap : 4;
-  int callback_event;
+  int callback_event = 0;
 
-  ink_hrtime timeout_at;
-  ink_hrtime period;
+  ink_hrtime timeout_at = 0;
+  ink_hrtime period     = 0;
 
   /**
     This field can be set when an event is created. It is returned
@@ -221,7 +221,7 @@ public:
     is called.
 
   */
-  void *cookie;
+  void *cookie = nullptr;
 
   // Private
 
