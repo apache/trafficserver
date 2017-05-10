@@ -710,6 +710,8 @@ HostDBProcessor::getSRVbyname_imm(Continuation *cont, process_srv_info_pfn proce
   EThread *thread   = cont->mutex->thread_holding;
   ProxyMutex *mutex = thread->mutex.get();
 
+  ink_assert(nullptr != hostname);
+
   if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS)
     force_dns = true;
   else if (opt.flags & HOSTDB_FORCE_DNS_RELOAD) {
@@ -728,7 +730,7 @@ HostDBProcessor::getSRVbyname_imm(Continuation *cont, process_srv_info_pfn proce
   }
 
   md5.host_name = hostname;
-  md5.host_len  = hostname ? (len ? len : strlen(hostname)) : 0;
+  md5.host_len  = len ? len : strlen(hostname);
   md5.port      = 0;
   md5.db_mark   = HOSTDB_MARK_SRV;
   md5.refresh();
@@ -784,6 +786,8 @@ HostDBProcessor::getbyname_imm(Continuation *cont, process_hostdb_info_pfn proce
   ProxyMutex *mutex = thread->mutex.get();
   HostDBMD5 md5;
 
+  ink_assert(nullptr != hostname);
+
   if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS)
     force_dns = true;
   else if (opt.flags & HOSTDB_FORCE_DNS_RELOAD) {
@@ -799,7 +803,7 @@ HostDBProcessor::getbyname_imm(Continuation *cont, process_hostdb_info_pfn proce
     return ACTION_RESULT_DONE;
   }
 
-  md5.set_host(hostname, hostname ? (len ? len : strlen(hostname)) : 0);
+  md5.set_host(hostname, len ? len : strlen(hostname));
   md5.port    = opt.port;
   md5.db_mark = db_mark_for(opt.host_res_style);
   md5.refresh();
@@ -2133,13 +2137,13 @@ struct HostFilePair {
 
 struct HostDBFileContinuation : public Continuation {
   typedef HostDBFileContinuation self;
-
-  int idx;          ///< Working index.
-  const char *name; ///< Host name (just for debugging)
-  INK_MD5 md5;      ///< Key for entry.
   typedef std::vector<INK_MD5> Keys;
-  Keys *keys;          ///< Entries from file.
-  ats_scoped_str path; ///< Used to keep the host file name around.
+
+  int idx          = 0;       ///< Working index.
+  const char *name = nullptr; ///< Host name (just for debugging)
+  Keys *keys       = nullptr; ///< Entries from file.
+  INK_MD5 md5;                ///< Key for entry.
+  ats_scoped_str path;        ///< Used to keep the host file name around.
 
   HostDBFileContinuation() : Continuation(nullptr) {}
   /// Finish update
