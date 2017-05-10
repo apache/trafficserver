@@ -449,14 +449,14 @@ SecurityComp &
 SecurityComp::setKey(char const *key)
 {
   m_local_key = true;
-  strncpy(m_key, key, KEY_SIZE);
+  ink_strlcpy(m_key, key, KEY_SIZE);
   return *this;
 }
 
 void
 SecurityComp::setDefaultKey(char const *key)
 {
-  strncpy(m_default_key, key, KEY_SIZE);
+  ink_strlcpy(m_default_key, key, KEY_SIZE);
 }
 
 SecurityComp &

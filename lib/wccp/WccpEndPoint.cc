@@ -49,7 +49,7 @@ Impl::GroupData &
 Impl::GroupData::setKey(const char *key)
 {
   m_use_security_key = true;
-  strncpy(m_security_key, key, SecurityComp::KEY_SIZE);
+  ink_strlcpy(m_security_key, key, SecurityComp::KEY_SIZE);
   return *this;
 }
 
