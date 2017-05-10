@@ -34,6 +34,9 @@ EsiGunzip::EsiGunzip(const char *debug_tag, ComponentBase::Debug debug_func, Com
 {
   _init    = false;
   _success = true;
+  // zlib _zstrm varibles are initialzied when they are required in stream_decode
+  // coverity[uninit_member]
+  // coverity[uninit_ctor]
 }
 
 bool

@@ -97,7 +97,7 @@ struct ContData {
   };
   STATE curr_state;
   TSVIO input_vio;
-  TSIOBufferReader input_reader;
+  TSIOBufferReader input_reader = nullptr;
   TSVIO output_vio;
   TSIOBuffer output_buffer;
   TSIOBufferReader output_reader;
@@ -108,7 +108,7 @@ struct ContData {
   EsiGunzip *esi_gunzip;
   TSCont contp;
   TSHttpTxn txnp;
-  const struct OptionInfo *option_info;
+  const struct OptionInfo *option_info = nullptr;
   char *request_url;
   sockaddr const *client_addr;
   DataType input_type;
