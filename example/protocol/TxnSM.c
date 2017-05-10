@@ -873,10 +873,9 @@ state_done(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
     txn_sm->q_server_response = NULL;
   }
 
-  if (txn_sm) {
-    txn_sm->q_magic = TXN_SM_DEAD;
-    TSfree(txn_sm);
-  }
+  txn_sm->q_magic = TXN_SM_DEAD;
+  TSfree(txn_sm);
+
   TSContDestroy(contp);
   return TS_EVENT_NONE;
 }
