@@ -318,17 +318,17 @@ struct FD {
 
   int state;   // request parsing state
   int req_pos; // request read position
-  char *base_url;
-  char *req_header;
-  char *response;
-  char *response_header;
+  char *base_url        = nullptr;
+  char *req_header      = nullptr;
+  char *response        = nullptr;
+  char *response_header = nullptr;
   int length;
   int response_length;
   int response_remaining;
-  int keepalive;
+  int keepalive = 0;
   int next;
-  int nalternate;
-  unsigned int ip;
+  int nalternate  = 0;
+  unsigned int ip = 0;
   unsigned int binary : 1;
   unsigned int ims : 1;
   unsigned int range : 1;
@@ -337,7 +337,7 @@ struct FD {
   unsigned int jg_compressed : 1;
   int *count;
   int bytes;
-  int ftp_data_fd;
+  int ftp_data_fd = 0;
   FTP_MODE ftp_mode;
   unsigned int ftp_peer_addr;
   unsigned short ftp_peer_port;
@@ -389,15 +389,7 @@ struct FD {
   }
 
   void close();
-  FD()
-    : base_url(nullptr),
-      req_header(nullptr),
-      response_header(nullptr),
-      keepalive(0),
-      nalternate(0),
-      ip(0),
-      binary(0),
-      ftp_data_fd(0)
+  FD() : binary(0)
   {
     ink_zero(name);
     reset();
