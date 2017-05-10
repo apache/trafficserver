@@ -28,6 +28,7 @@ Test.ContinueOnFail=True
 # Define default ATS
 ts=Test.MakeATSProcess("ts",select_ports=False)
 server=Test.MakeOriginServer("server")
+server2=Test.MakeOriginServer("server2",ssl=True)
 
 #**testname is required**
 testName = ""
@@ -35,6 +36,7 @@ request_header={"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "t
 #desired response form the origin server
 response_header={"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
+server2.addResponse("sessionlog.json", request_header, response_header)
 
 #add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
@@ -58,6 +60,9 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.remap_config.AddLine(
     'map https://www.example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port,ts.Variables.ssl_port)
 )
+ts.Disk.remap_config.AddLine(
+    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.Port,ts.Variables.ssl_port)
+)
 
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -71,6 +76,7 @@ tr.Processes.Default.ReturnCode=0
 
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(server2)
 # Delay on readyness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stderr="gold/remap-hitATS-404.gold"
@@ -108,5 +114,12 @@ tr=Test.AddTestRun()
 tr.Processes.Default.Command='curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:1234" --verbose'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode=0
 tr.Processes.Default.Streams.stderr="gold/remap-hitATS-404.gold"
+
+# map www.anotherexample.com to https://<IP of microserver>.com
+tr=Test.AddTestRun()
+tr.Processes.Default.Command='curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.anotherexample.com" --verbose'.format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode=0
+tr.Processes.Default.Streams.stderr="gold/remap-https-200_2.gold"
+tr.StillRunningAfter=server2
 
     
