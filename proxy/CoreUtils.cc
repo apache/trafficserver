@@ -488,11 +488,11 @@ CoreUtils::print_http_hdr(HTTPHdr *h, const char *name)
 int
 CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
 {
+  char buf[sizeof(char) * sizeof(HdrHeap)];
   // Load HdrHeap chain
   HTTPHdr *http_hdr                 = core_hdr;
   HdrHeap *heap                     = (HdrHeap *)core_hdr->m_heap;
   HdrHeap *heap_ptr                 = (HdrHeap *)http_hdr->m_heap;
-  char *buf                         = (char *)ats_malloc(sizeof(char) * sizeof(HdrHeap));
   intptr_t ptr_heaps                = 0;
   intptr_t ptr_heap_size            = 0;
   intptr_t ptr_xl_size              = 2;
@@ -597,11 +597,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
     char *free_start = (char *)(((HdrStrHeap *)str_hdr)->m_free_start);
     int nto_copy     = std::abs((char *)copy_start - free_start);
     ats_free(str_hdr);
-#if defined(__GNUC__)
     char rw_heap[sizeof(char) * nto_copy];
-#else
-    char *rw_heap   = (char *)ats_malloc(sizeof(char) * nto_copy);
-#endif
     if (read_from_core((intptr_t)copy_start, nto_copy, rw_heap) == -1) {
       printf("Cannot read from core\n");
       ::exit(0);
@@ -613,18 +609,11 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
 
     str_size += nto_copy;
     str_heaps++;
-#if !defined(__GNUC__)
-    ats_free(rw_heap);
-#endif
   }
 
   for (i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
     if (heap->m_ronly_heap[i].m_heap_start != nullptr) {
-#if defined(__GNUC__)
       char ro_heap[sizeof(char) * heap->m_ronly_heap[i].m_heap_len];
-#else
-      char *ro_heap = (char *)ats_malloc(sizeof(char) * heap->m_ronly_heap[i].m_heap_len);
-#endif
       if (read_from_core((intptr_t)heap->m_ronly_heap[i].m_heap_start, heap->m_ronly_heap[i].m_heap_len, ro_heap) == -1) {
         printf("Cannot read from core\n");
         ::exit(0);
@@ -638,9 +627,6 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
 
       str_heaps++;
       str_size += heap->m_ronly_heap[i].m_heap_len;
-#if !defined(__GNUC__)
-      ats_free(ro_heap);
-#endif
     }
   }
 
