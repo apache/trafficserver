@@ -48,8 +48,9 @@ Impl::GroupData::GroupData() : m_generation(0), m_use_security_opt(false), m_use
 Impl::GroupData &
 Impl::GroupData::setKey(const char *key)
 {
-  m_use_security_key = true;
-  ink_strlcpy(m_security_key, key, SecurityComp::KEY_SIZE);
+  if ((m_use_security_key = (key != nullptr))) {
+    ink_strlcpy(m_security_key, key, SecurityComp::KEY_SIZE);
+  }
   return *this;
 }
 
