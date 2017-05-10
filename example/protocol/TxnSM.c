@@ -160,10 +160,12 @@ state_start(TSCont contp, TSEvent event ATS_UNUSED, void *data ATS_UNUSED)
     return prepare_to_die(contp);
   }
 
-  txn_sm->q_client_request_buffer        = TSIOBufferCreate();
+  txn_sm->q_client_request_buffer = TSIOBufferCreate();
+  if (!txn_sm->q_client_request_buffer) {
+    return prepare_to_die(contp);
+  }
   txn_sm->q_client_request_buffer_reader = TSIOBufferReaderAlloc(txn_sm->q_client_request_buffer);
-
-  if (!txn_sm->q_client_request_buffer || !txn_sm->q_client_request_buffer_reader) {
+  if (!txn_sm->q_client_request_buffer_reader) {
     return prepare_to_die(contp);
   }
 
@@ -286,13 +288,20 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
     response_size = TSVConnCacheObjectSizeGet(txn_sm->q_cache_vc);
 
     /* Allocate IOBuffer to store data from the cache. */
-    txn_sm->q_client_response_buffer        = TSIOBufferCreate();
+    txn_sm->q_client_response_buffer = TSIOBufferCreate();
+    if (!txn_sm->q_client_response_buffer) {
+      return prepare_to_die(contp);
+    }
     txn_sm->q_client_response_buffer_reader = TSIOBufferReaderAlloc(txn_sm->q_client_response_buffer);
-    txn_sm->q_cache_read_buffer             = TSIOBufferCreate();
-    txn_sm->q_cache_read_buffer_reader      = TSIOBufferReaderAlloc(txn_sm->q_cache_read_buffer);
-
-    if (!txn_sm->q_client_response_buffer || !txn_sm->q_client_response_buffer_reader || !txn_sm->q_cache_read_buffer ||
-        !txn_sm->q_cache_read_buffer_reader) {
+    if (!txn_sm->q_client_response_buffer_reader) {
+      return prepare_to_die(contp);
+    }
+    txn_sm->q_cache_read_buffer = TSIOBufferCreate();
+    if (!txn_sm->q_cache_read_buffer) {
+      return prepare_to_die(contp);
+    }
+    txn_sm->q_cache_read_buffer_reader = TSIOBufferReaderAlloc(txn_sm->q_cache_read_buffer);
+    if (!txn_sm->q_cache_read_buffer_reader) {
       return prepare_to_die(contp);
     }
 
