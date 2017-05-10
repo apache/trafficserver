@@ -79,7 +79,7 @@ public:
 class url_mapping
 {
 public:
-  url_mapping(int rank = 0);
+  url_mapping();
   ~url_mapping();
 
   bool add_plugin(remap_plugin_info *i, void *ih);
@@ -126,7 +126,7 @@ public:
 private:
   remap_plugin_info *_plugin_list[MAX_REMAP_PLUGIN_CHAIN];
   void *_instance_data[MAX_REMAP_PLUGIN_CHAIN];
-  int _rank;
+  int _rank = 0;
 };
 
 /**

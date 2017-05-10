@@ -28,7 +28,7 @@
 /**
  *
 **/
-url_mapping::url_mapping(int rank /* = 0 */)
+url_mapping::url_mapping()
 {
   memset(_plugin_list, 0, sizeof(_plugin_list));
   memset(_instance_data, 0, sizeof(_instance_data));
