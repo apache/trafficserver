@@ -96,13 +96,19 @@ struct AIOCallback : public Continuation {
   // set before calling aio_read/aio_write
   ink_aiocb aiocb;
   Action action;
-  EThread *thread   = nullptr;
+  EThread *thread   = AIO_CALLBACK_THREAD_ANY;
   AIOCallback *then = nullptr;
   // set on return from aio_read/aio_write
   int64_t aio_result = 0;
 
   int ok();
-  AIOCallback() : thread(AIO_CALLBACK_THREAD_ANY), then(0) { aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY; }
+  AIOCallback()
+  {
+    aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
+#if AIO_MODE == AIO_MODE_NATIVE
+    memset((void *)&(this->aiocb), 0, sizeof(this->aiocb));
+#endif
+  }
 };
 
 #if AIO_MODE == AIO_MODE_NATIVE
