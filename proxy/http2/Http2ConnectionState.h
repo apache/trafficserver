@@ -112,32 +112,12 @@ private:
 class Http2ConnectionState : public Continuation
 {
 public:
-  Http2ConnectionState()
-    : Continuation(NULL),
-      ua_session(NULL),
-      dependency_tree(NULL),
-      client_rwnd(HTTP2_INITIAL_WINDOW_SIZE),
-      server_rwnd(Http2::initial_window_size),
-      stream_list(),
-      latest_streamid_in(0),
-      latest_streamid_out(0),
-      stream_requests(0),
-      client_streams_in_count(0),
-      client_streams_out_count(0),
-      total_client_streams_count(0),
-      continued_stream_id(0),
-      _scheduled(false),
-      fini_received(false),
-      recursion(0),
-      shutdown_state(NOT_INITIATED)
-  {
-    SET_HANDLER(&Http2ConnectionState::main_event_handler);
-  }
+  Http2ConnectionState() : stream_list() { SET_HANDLER(&Http2ConnectionState::main_event_handler); }
 
-  Http2ClientSession *ua_session;
-  HpackHandle *local_hpack_handle;
-  HpackHandle *remote_hpack_handle;
-  DependencyTree *dependency_tree;
+  Http2ClientSession *ua_session   = nullptr;
+  HpackHandle *local_hpack_handle  = nullptr;
+  HpackHandle *remote_hpack_handle = nullptr;
+  DependencyTree *dependency_tree  = nullptr;
 
   // Settings.
   Http2ConnectionSettings server_settings;
@@ -149,7 +129,7 @@ public:
     local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
     remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
 
-    continued_buffer.iov_base = NULL;
+    continued_buffer.iov_base = nullptr;
     continued_buffer.iov_len  = 0;
 
     dependency_tree = new DependencyTree(Http2::max_concurrent_streams_in);
@@ -160,7 +140,7 @@ public:
   {
     cleanup_streams();
 
-    mutex = NULL; // magic happens - assigning to NULL frees the ProxyMutex
+    mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
     delete local_hpack_handle;
     delete remote_hpack_handle;
 
@@ -231,7 +211,8 @@ public:
   }
 
   // Connection level window size
-  ssize_t client_rwnd, server_rwnd;
+  ssize_t client_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
+  ssize_t server_rwnd = Http2::initial_window_size;
 
   // HTTP/2 frame sender
   void schedule_stream(Http2Stream *stream);
@@ -249,7 +230,7 @@ public:
   bool
   is_state_closed() const
   {
-    return ua_session == NULL || fini_received;
+    return ua_session == nullptr || fini_received;
   }
 
   bool
@@ -293,18 +274,18 @@ private:
   //   If given Stream Identifier is not found in stream_list and it is greater
   //   than latest_streamid_in, the state of Stream is IDLE.
   DLL<Http2Stream> stream_list;
-  Http2StreamId latest_streamid_in;
-  Http2StreamId latest_streamid_out;
-  int stream_requests;
+  Http2StreamId latest_streamid_in  = 0;
+  Http2StreamId latest_streamid_out = 0;
+  int stream_requests               = 0;
 
   // Counter for current active streams which is started by client
-  uint32_t client_streams_in_count;
+  uint32_t client_streams_in_count = 0;
 
   // Counter for current acive streams which is started by server
-  uint32_t client_streams_out_count;
+  uint32_t client_streams_out_count = 0;
 
   // Counter for current active streams and streams in the process of shutting down
-  uint32_t total_client_streams_count;
+  uint32_t total_client_streams_count = 0;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS
@@ -313,12 +294,12 @@ private:
   //   - [RFC 7540] 6.10 CONTINUATION
   //     "If the END_HEADERS bit is not set, this frame MUST be followed by
   //     another CONTINUATION frame."
-  Http2StreamId continued_stream_id;
+  Http2StreamId continued_stream_id = 0;
   IOVec continued_buffer;
-  bool _scheduled;
-  bool fini_received;
-  int recursion;
-  Http2ShutdownState shutdown_state;
+  bool _scheduled                   = false;
+  bool fini_received                = false;
+  int recursion                     = 0;
+  Http2ShutdownState shutdown_state = NOT_INITIATED;
 };
 
 #endif // __HTTP2_CONNECTION_STATE_H__
