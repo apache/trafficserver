@@ -61,10 +61,6 @@ Impl::GroupData::setSecurity(SecurityOption style)
   return *this;
 }
 
-Impl::Impl() : m_addr(INADDR_ANY), m_fd(ts::NO_FD)
-{
-}
-
 Impl::~Impl()
 {
   this->close();
@@ -215,6 +211,7 @@ Impl::handleMessage()
   recv_hdr.msg_iovlen     = 1;
   recv_hdr.msg_control    = anc_buffer;
   recv_hdr.msg_controllen = ANC_BUFFER_SIZE;
+  recv_hdr.msg_flags      = 0; // output only, make Coverity shut up.
 
   // coverity[uninit_use_in_call]
   n = recvmsg(m_fd, &recv_hdr, MSG_TRUNC);

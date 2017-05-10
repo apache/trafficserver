@@ -202,7 +202,7 @@ CapabilityElt::getCapType() const
 inline CapabilityElt &
 CapabilityElt::setCapType(Type cap)
 {
-  m_cap_type = htons(cap);
+  m_cap_type = static_cast<Type>(htons(cap));
   return *this;
 }
 

@@ -327,7 +327,7 @@ public:
 
   /// Capability types.
   enum Type : uint16_t {
-    NO_METHOD               = 0; ///< Method not set.
+    NO_METHOD               = 0, ///< Method not set.
     PACKET_FORWARD_METHOD   = 1, ///< Packet forwarding methods.
     CACHE_ASSIGNMENT_METHOD = 2, ///< Cache assignment methods.
     PACKET_RETURN_METHOD    = 3  ///< Packet return methods.
@@ -577,9 +577,6 @@ class MaskAssignElt
 public:
   typedef MaskAssignElt self; ///< Self reference type.
 
-  /// Default constructor - @b no initialization.
-  MaskAssignElt();
-
   /** A minimalist insert iterator.
    */
   struct appender {
@@ -626,7 +623,7 @@ public:
   size_t getVarSize() const;
 
 protected:
-  uint32_t m_count; ///< # of sets (network order).
+  uint32_t m_count = 0; ///< # of sets (network order).
 
   friend struct appender;
 };
@@ -2194,7 +2191,7 @@ public:
   typedef detail::endpoint::GroupData GroupData;
 
   /// Default constructor.
-  Impl();
+  Impl() = default;
   /** Set the local address used for this endpoint.
       If not set, an arbitrary local address will be
       @note This can only be called once, and must be called before
@@ -2251,13 +2248,13 @@ protected:
   /** Local address for this end point.
       This is set only when the socket is open.
    */
-  uint32_t m_addr;
-  int m_fd; ///< Our socket.
+  uint32_t m_addr = INADDR_ANY;
+  int m_fd        = ts::NO_FD; ///< Our socket.
 
-  bool m_use_security_opt;             ///< Use group local security.
-  SecurityComp::Option m_security_opt; ///< Type of security.
-  bool m_use_security_key;             ///< Use group local key.
-  SecurityComp::Key m_security_key;    ///< MD5 key.
+  bool m_use_security_opt             = false;         ///< Use group local security.
+  SecurityComp::Option m_security_opt = SECURITY_NONE; ///< Type of security.
+  bool m_use_security_key             = false;         ///< Use group local key.
+  SecurityComp::Key m_security_key;                    ///< MD5 key.
 
   /// Close the socket.
   void close();
@@ -3463,9 +3460,6 @@ inline HashAssignElt::Bucket const &HashAssignElt::operator[](size_t idx) const
   return (*(const_cast<self *>(this)))[idx];
 }
 
-inline MaskAssignElt::MaskAssignElt()
-{
-}
 inline uint32_t
 MaskAssignElt::getCount() const
 {
