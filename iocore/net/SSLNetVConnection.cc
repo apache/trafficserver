@@ -591,7 +591,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   }
 
   switch (ret) {
-  case SSL_READ_ERROR_NONE:
   case SSL_READ_READY:
     readReschedule(nh);
     return;
@@ -794,23 +793,6 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 }
 
 SSLNetVConnection::SSLNetVConnection()
-  : ssl(nullptr),
-    sslHandshakeBeginTime(0),
-    sslLastWriteTime(0),
-    sslTotalBytesSent(0),
-    hookOpRequested(SSL_HOOK_OP_DEFAULT),
-    sslHandShakeComplete(false),
-    sslClientRenegotiationAbort(false),
-    sslSessionCacheHit(false),
-    handShakeBuffer(nullptr),
-    handShakeHolder(nullptr),
-    handShakeReader(nullptr),
-    handShakeBioStored(0),
-    sslPreAcceptHookState(SSL_HOOKS_INIT),
-    sslHandshakeHookState(HANDSHAKE_HOOKS_PRE),
-    npnSet(nullptr),
-    npnEndpoint(nullptr),
-    sslTrace(false)
 {
 }
 

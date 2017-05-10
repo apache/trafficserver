@@ -252,13 +252,13 @@ public:
    */
   int populate(Connection &con, Continuation *c, void *arg) override;
 
-  SSL *ssl;
-  ink_hrtime sslHandshakeBeginTime;
-  ink_hrtime sslLastWriteTime;
-  int64_t sslTotalBytesSent;
+  SSL *ssl                         = nullptr;
+  ink_hrtime sslHandshakeBeginTime = 0;
+  ink_hrtime sslLastWriteTime      = 0;
+  int64_t sslTotalBytesSent        = 0;
 
   /// Set by asynchronous hooks to request a specific operation.
-  SslVConnOp hookOpRequested;
+  SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
 
 private:
   SSLNetVConnection(const SSLNetVConnection &);
@@ -266,19 +266,19 @@ private:
 
   ts::StringView map_tls_protocol_to_tag(const char *proto_string) const;
 
-  bool sslHandShakeComplete;
-  bool sslClientRenegotiationAbort;
-  bool sslSessionCacheHit;
-  MIOBuffer *handShakeBuffer;
-  IOBufferReader *handShakeHolder;
-  IOBufferReader *handShakeReader;
-  int handShakeBioStored;
+  bool sslHandShakeComplete        = false;
+  bool sslClientRenegotiationAbort = false;
+  bool sslSessionCacheHit          = false;
+  MIOBuffer *handShakeBuffer       = nullptr;
+  IOBufferReader *handShakeHolder  = nullptr;
+  IOBufferReader *handShakeReader  = nullptr;
+  int handShakeBioStored           = 0;
 
-  bool transparentPassThrough;
+  bool transparentPassThrough = false;
 
   /// The current hook.
   /// @note For @C SSL_HOOKS_INVOKE, this is the hook to invoke.
-  class APIHook *curHook;
+  class APIHook *curHook = nullptr;
 
   enum {
     SSL_HOOKS_INIT,     ///< Initial state, no hooks called yet.
@@ -286,7 +286,7 @@ private:
     SSL_HOOKS_ACTIVE,   ///< Hook invoked, waiting for it to complete.
     SSL_HOOKS_CONTINUE, ///< All hooks have been called and completed
     SSL_HOOKS_DONE      ///< All hooks have been called and completed
-  } sslPreAcceptHookState;
+  } sslPreAcceptHookState = SSL_HOOKS_INIT;
 
   enum SSLHandshakeHookState {
     HANDSHAKE_HOOKS_PRE,
@@ -294,12 +294,12 @@ private:
     HANDSHAKE_HOOKS_POST,
     HANDSHAKE_HOOKS_INVOKE,
     HANDSHAKE_HOOKS_DONE
-  } sslHandshakeHookState;
+  } sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
 
-  const SSLNextProtocolSet *npnSet;
-  Continuation *npnEndpoint;
-  SessionAccept *sessionAcceptPtr;
-  bool sslTrace;
+  const SSLNextProtocolSet *npnSet = nullptr;
+  Continuation *npnEndpoint        = nullptr;
+  SessionAccept *sessionAcceptPtr  = nullptr;
+  bool sslTrace                    = false;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
