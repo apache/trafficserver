@@ -115,8 +115,6 @@ enum {
   http_tunnels_stat,
   http_throttled_proxy_only_stat,
 
-  http_icp_suggested_lookups_stat,
-
   // document size stats
   http_user_agent_request_header_total_size_stat,
   http_user_agent_response_header_total_size_stat,
@@ -786,9 +784,6 @@ public:
   MgmtByte use_client_source_port;
 
   MgmtByte enable_http_stats; // Can be "slow"
-
-  MgmtByte icp_enabled;
-  MgmtByte stale_icp_enabled;
 
   MgmtByte cache_post_method;
 

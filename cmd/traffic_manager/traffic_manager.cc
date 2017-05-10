@@ -920,9 +920,6 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "storage.config") == 0) {
     mgmt_log("[fileUpdated] storage.config changed, need restart auto-rebuild mode\n");
 
-  } else if (strcmp(fname, "icp.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.icp.icp_configuration");
-
   } else if (strcmp(fname, "volume.config") == 0) {
     mgmt_log("[fileUpdated] volume.config changed, need restart\n");
 
