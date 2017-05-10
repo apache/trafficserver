@@ -484,9 +484,9 @@ HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *
 void
 HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes)
 {
-  SquidLogCode log_code;
-  SquidHierarchyCode hier_code;
-  SquidHitMissCode hit_miss_code;
+  SquidLogCode log_code          = SQUID_LOG_EMPTY;
+  SquidHierarchyCode hier_code   = SQUID_HIER_EMPTY;
+  SquidHitMissCode hit_miss_code = SQUID_HIT_RESERVED;
 
   /////////////////////////////
   // First the Hit-Miss Code //
@@ -614,9 +614,7 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_IMS_MISS) {
       log_code = SQUID_LOG_ERR_READ_TIMEOUT;
     }
-    if (hier_code == SQUID_HIER_SIBLING_HIT) {
-      hier_code = SQUID_HIER_TIMEOUT_SIBLING_HIT;
-    } else if (hier_code == SQUID_HIER_PARENT_HIT) {
+    if (hier_code == SQUID_HIER_PARENT_HIT) {
       hier_code = SQUID_HIER_TIMEOUT_PARENT_HIT;
     } else {
       hier_code = SQUID_HIER_TIMEOUT_DIRECT;
