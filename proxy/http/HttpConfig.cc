@@ -1003,9 +1003,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.enable_http_stats, "proxy.config.http.enable_http_stats");
   HttpEstablishStaticConfigByte(c.oride.normalize_ae_gzip, "proxy.config.http.normalize_ae_gzip");
 
-  HttpEstablishStaticConfigByte(c.icp_enabled, "proxy.config.icp.enabled");
-  HttpEstablishStaticConfigByte(c.stale_icp_enabled, "proxy.config.icp.stale_icp_enabled");
-
   HttpEstablishStaticConfigLongLong(c.oride.cache_heuristic_min_lifetime, "proxy.config.http.cache.heuristic_min_lifetime");
   HttpEstablishStaticConfigLongLong(c.oride.cache_heuristic_max_lifetime, "proxy.config.http.cache.heuristic_max_lifetime");
   HttpEstablishStaticConfigFloat(c.oride.cache_heuristic_lm_factor, "proxy.config.http.cache.heuristic_lm_factor");
@@ -1513,5 +1510,3 @@ HttpConfig::parse_ports_list(char *ports_string)
   }
   return (ports_list);
 }
-
-volatile int32_t icp_dynamic_enabled;
