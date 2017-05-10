@@ -76,12 +76,12 @@ class UnixUDPConnection;
 struct DNSConnection;
 struct NetAccept;
 struct EventIO {
-  int fd;
+  int fd = -1;
 #if TS_USE_KQUEUE || TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER) || TS_USE_PORT
-  int events;
+  int events = 0;
 #endif
-  EventLoop event_loop;
-  int type;
+  EventLoop event_loop = nullptr;
+  int type             = 0;
   union {
     Continuation *c;
     UnixNetVConnection *vc;
@@ -101,11 +101,7 @@ struct EventIO {
   int refresh(int events);
   int stop();
   int close();
-  EventIO()
-  {
-    type   = 0;
-    data.c = 0;
-  }
+  EventIO() { data.c = nullptr; }
 };
 
 #include "P_UnixNetProcessor.h"
