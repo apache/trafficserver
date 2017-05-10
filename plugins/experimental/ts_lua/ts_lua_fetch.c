@@ -203,7 +203,7 @@ static int
 ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetch_info *fi)
 {
   TSCont contp;
-  int tb, flags, host_len, rc, port, n;
+  int tb, flags, host_len, port, n;
   int cl, ht, ua;
   const char *method, *key, *value, *body, *opt;
   const char *addr, *ptr, *host;
@@ -253,7 +253,7 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
   /* cliaddr */
   memset(&clientaddr, 0, sizeof(clientaddr));
   clientaddr.sin_family = AF_INET;
-  rc                    = 0;
+  const char *p         = NULL;
 
   if (tb) {
     lua_pushlstring(L, "cliaddr", sizeof("cliaddr") - 1);
@@ -261,17 +261,26 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
 
     if (lua_isstring(L, -1)) {
       addr = luaL_checklstring(L, -1, &addr_len);
-      rc   = sscanf(addr, "%15s:%d", ipstr, &port);
-      if (rc == 2) {
+      p    = strstr(addr, ":");
+      if (p && p - addr < 32) {
+        port = atoi(p + 1);
+        strncpy(ipstr, addr, p - addr);
+        ipstr[p - addr]     = 0;
         clientaddr.sin_port = htons(port);
-        inet_aton(ipstr, (struct in_addr *)&clientaddr.sin_addr.s_addr);
+        if (!inet_aton(ipstr, (struct in_addr *)&clientaddr.sin_addr.s_addr)) {
+          p = NULL;
+          TSError("[%s] Client ip parse failed! Using defualt. [ip: %s]", TS_LUA_DEBUG_TAG, ipstr);
+        }
+      } else {
+        p = NULL;
+        TSError("[%s] Client ip parse failed! Using defualt. [addrstr: %s]", TS_LUA_DEBUG_TAG, addr);
       }
     }
 
     lua_pop(L, 1);
   }
 
-  if (rc != 2) {
+  if (!p) {
     clientaddr.sin_port = htons(TS_LUA_FETCH_CLIENT_PORT);
     inet_aton(TS_LUA_FETCH_CLIENT_ADDRESS, (struct in_addr *)&clientaddr.sin_addr.s_addr);
   }
