@@ -102,7 +102,7 @@ public:
     processors and you should not modify it directly.
 
   */
-  ink_thread tid;
+  ink_thread tid = 0;
 
   /**
     Thread lock to ensure atomic operations. The thread lock available
