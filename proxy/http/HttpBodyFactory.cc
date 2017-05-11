@@ -334,14 +334,7 @@ HttpBodyFactory::HttpBodyFactory()
   ////////////////////////////////////
   // initialize first-time defaults //
   ////////////////////////////////////
-
-  magic = HTTP_BODY_FACTORY_MAGIC;
   ink_mutex_init(&mutex, "HttpBodyFactory::lock");
-
-  table_of_sets         = nullptr;
-  enable_customizations = 0;
-  enable_logging        = true;
-  callbacks_established = false;
 
   //////////////////////////////////////////////////////
   // set up management configuration-change callbacks //
