@@ -919,10 +919,9 @@ struct MIMEFieldIter {
 class MIMEHdr : public HdrHeapSDKHandle
 {
 public:
-  MIMEHdrImpl *m_mime;
+  MIMEHdrImpl *m_mime = nullptr;
 
-  MIMEHdr();
-  ~MIMEHdr();
+  MIMEHdr() = default; // Force the creation of the default constructor
 
   int valid() const;
 
@@ -1028,20 +1027,6 @@ private:
   MIMEHdr(const MIMEHdr &m);
   MIMEHdr &operator=(const MIMEHdr &m);
 };
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline MIMEHdr::MIMEHdr() : HdrHeapSDKHandle()
-{
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline MIMEHdr::~MIMEHdr()
-{
-}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

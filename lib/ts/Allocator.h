@@ -199,7 +199,7 @@ public:
 
   struct {
     uint8_t typeObject[sizeof(C)];
-    int64_t space_holder;
+    int64_t space_holder = 0;
   } proto;
 };
 

@@ -56,20 +56,8 @@ struct SocksProxy : public Continuation {
     SOCKS_ERROR,
   };
 
-  SocksProxy()
-    : Continuation(),
-      clientVC(nullptr),
-      clientVIO(nullptr),
-      buf(nullptr),
-      timeout(nullptr),
-      auth_handler(nullptr),
-      version(0),
-      state(SOCKS_INIT),
-      recursion(0),
-      pending_action(nullptr)
-  {
-  }
   ~SocksProxy() override {}
+
   // int startEvent(int event, void * data);
   int mainEvent(int event, void *data);
   int setupHttpRequest(unsigned char *p);
@@ -81,20 +69,19 @@ struct SocksProxy : public Continuation {
   void free();
 
 private:
-  NetVConnection *clientVC;
-  VIO *clientVIO;
+  NetVConnection *clientVC = nullptr;
+  VIO *clientVIO           = nullptr;
 
-  MIOBuffer *buf;
-  IOBufferReader *reader;
-  Event *timeout;
+  MIOBuffer *buf         = nullptr;
+  IOBufferReader *reader = nullptr;
+  Event *timeout         = nullptr;
 
-  SocksAuthHandler auth_handler;
+  SocksAuthHandler auth_handler = nullptr;
+  Action *pending_action        = nullptr;
 
-  unsigned char version;
-
-  int state;
-  int recursion;
-  Action *pending_action;
+  unsigned char version = 0;
+  int state             = SOCKS_INIT;
+  int recursion         = 0;
 };
 
 ClassAllocator<SocksProxy> socksProxyAllocator("socksProxyAllocator");

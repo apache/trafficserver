@@ -96,16 +96,12 @@ AIOVec::mainEvent(int /* event */, Event *)
 struct AIO_Reqs;
 
 struct AIOCallbackInternal : public AIOCallback {
-  AIOCallback *first;
-  AIO_Reqs *aio_req;
-  ink_hrtime sleep_time;
+  AIOCallback *first    = nullptr;
+  AIO_Reqs *aio_req     = nullptr;
+  ink_hrtime sleep_time = 0;
   int io_complete(int event, void *data);
-  AIOCallbackInternal()
-  {
-    const size_t to_zero = sizeof(AIOCallbackInternal) - (size_t) & (((AIOCallbackInternal *)0)->aiocb);
-    memset((char *)&(this->aiocb), 0, to_zero);
-    SET_HANDLER(&AIOCallbackInternal::io_complete);
-  }
+
+  AIOCallbackInternal() { SET_HANDLER(&AIOCallbackInternal::io_complete); }
 };
 
 TS_INLINE int

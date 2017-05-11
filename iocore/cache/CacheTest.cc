@@ -30,25 +30,7 @@
 
 using namespace std;
 
-CacheTestSM::CacheTestSM(RegressionTest *t, const char *name)
-  : RegressionSM(t),
-    start_memcpy_on_clone(0),
-    cache_test_name(name),
-    timeout(nullptr),
-    cache_action(nullptr),
-    start_time(0),
-    cache_vc(nullptr),
-    cvio(nullptr),
-    buffer(nullptr),
-    buffer_reader(nullptr),
-    total_size(0),
-    nbytes(-1),
-    repeat_count(0),
-    expect_event(EVENT_NONE),
-    expect_initial_event(EVENT_NONE),
-    initial_event(EVENT_NONE),
-    content_salt(0),
-    end_memcpy_on_clone(0)
+CacheTestSM::CacheTestSM(RegressionTest *t, const char *name) : RegressionSM(t), cache_test_name(name)
 {
   SET_HANDLER(&CacheTestSM::event_handler);
 }

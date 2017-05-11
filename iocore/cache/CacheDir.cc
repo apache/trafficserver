@@ -187,6 +187,7 @@ dir_bucket_loop_check(Dir *start_dir, Dir *seg)
 
   while (p2) {
     // p1 moves by one entry per iteration
+    ink_assert(p1);
     p1 = next_dir(p1, seg);
     // p2 moves by two entries per iteration
     p2 = next_dir(p2, seg);

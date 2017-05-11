@@ -114,7 +114,6 @@ struct Connection {
               );
 
   /// Set the internal socket address struct.
-  /// @internal Used only by ICP.
   void
   setRemote(sockaddr const *remote_addr ///< Address and port.
             )

@@ -427,25 +427,25 @@ struct HostDBContinuation : public Continuation {
   Action action;
   HostDBMD5 md5;
   //  IpEndpoint ip;
-  unsigned int ttl;
+  unsigned int ttl = 0;
   //  HostDBMark db_mark; ///< Target type.
   /// Original IP address family style. Note this will disagree with
   /// @a md5.db_mark when doing a retry on an alternate family. The retry
   /// logic depends on it to avoid looping.
-  HostResStyle host_res_style; ///< Address family priority.
-  int dns_lookup_timeout;
+  HostResStyle host_res_style = DEFAULT_OPTIONS.host_res_style; ///< Address family priority.
+  int dns_lookup_timeout      = DEFAULT_OPTIONS.timeout;
   //  INK_MD5 md5;
-  Event *timeout;
-  Continuation *from_cont;
+  Event *timeout          = nullptr;
+  Continuation *from_cont = nullptr;
   HostDBApplicationInfo app;
-  int probe_depth;
-  size_t current_iterate_pos;
+  int probe_depth            = 0;
+  size_t current_iterate_pos = 0;
   //  char name[MAXDNAME];
   //  int namelen;
   char md5_host_name_store[MAXDNAME + 1]; // used as backing store for @a md5
   char srv_target_name[MAXDNAME];
   //  void *m_pDS;
-  Action *pending_action;
+  Action *pending_action = nullptr;
 
   unsigned int missing : 1;
   unsigned int force_dns : 1;
@@ -498,18 +498,7 @@ struct HostDBContinuation : public Continuation {
   int make_get_message(char *buf, int len);
   int make_put_message(HostDBInfo *r, Continuation *c, char *buf, int len);
 
-  HostDBContinuation()
-    : Continuation(nullptr),
-      ttl(0),
-      host_res_style(DEFAULT_OPTIONS.host_res_style),
-      dns_lookup_timeout(DEFAULT_OPTIONS.timeout),
-      timeout(0),
-      from_cont(0),
-      probe_depth(0),
-      current_iterate_pos(0),
-      missing(false),
-      force_dns(DEFAULT_OPTIONS.force_dns),
-      round_robin(false)
+  HostDBContinuation() : missing(false), force_dns(DEFAULT_OPTIONS.force_dns), round_robin(false)
   {
     ink_zero(md5_host_name_store);
     ink_zero(md5.hash);

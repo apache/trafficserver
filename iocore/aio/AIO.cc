@@ -553,7 +553,7 @@ Lagain:
       Debug("aio", "io_getevents failed: %s (%d)", strerror(-ret), -ret);
   }
 
-  ink_aiocb_t *cbs[MAX_AIO_EVENTS];
+  ink_aiocb *cbs[MAX_AIO_EVENTS];
   int num = 0;
 
   for (; num < MAX_AIO_EVENTS && ((op = ready_list.dequeue()) != nullptr); ++num) {

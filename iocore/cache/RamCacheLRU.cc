@@ -36,8 +36,8 @@ struct RamCacheLRUEntry {
 
 struct RamCacheLRU : public RamCache {
   int64_t max_bytes = 0;
-  int64_t bytes = 0;
-  int64_t objects = 0;
+  int64_t bytes     = 0;
+  int64_t objects   = 0;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
   int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0) override;
@@ -50,10 +50,10 @@ struct RamCacheLRU : public RamCache {
   // private
   uint16_t *seen = nullptr;
   Que(RamCacheLRUEntry, lru_link) lru;
-  DList(RamCacheLRUEntry, hash_link) * bucket = nullptr;
+  DList(RamCacheLRUEntry, hash_link) *bucket = nullptr;
   int nbuckets = 0;
   int ibuckets = 0;
-  Vol *vol = nullptr;
+  Vol *vol     = nullptr;
 
   void resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);

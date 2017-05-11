@@ -97,7 +97,7 @@ public:
     directly by the state machine.
 
   */
-  Continuation *continuation;
+  Continuation *continuation = nullptr;
 
   /**
     Reference to the Continuation's lock.
@@ -119,7 +119,7 @@ public:
     machine.
 
   */
-  volatile int cancelled;
+  volatile int cancelled = false;
 
   /**
     Cancels the asynchronous operation represented by this action.
@@ -187,10 +187,8 @@ public:
     Continuation.
 
   */
-  Action() : continuation(nullptr), cancelled(false) {}
-#if defined(__GNUC__)
+  Action() {}
   virtual ~Action() {}
-#endif
 };
 
 #define ACTION_RESULT_NONE MAKE_ACTION_RESULT(0)

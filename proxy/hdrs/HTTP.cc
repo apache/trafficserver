@@ -1675,9 +1675,9 @@ class UrlPrintHack
 
   /// Saved values.
   ///@{
-  bool m_host_modified_p;
-  bool m_port_modified_p;
-  HTTPHdr *m_hdr;
+  bool m_host_modified_p = false;
+  bool m_port_modified_p = false;
+  HTTPHdr *m_hdr         = nullptr;
   ///@}
   /// Temporary buffer for port data.
   char m_port_buff[32];
