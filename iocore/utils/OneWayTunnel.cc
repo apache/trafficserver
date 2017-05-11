@@ -259,6 +259,7 @@ OneWayTunnel::startEvent(int event, void *data)
     tunnel_peer = nullptr;
     free_vcs    = false;
     goto Ldone;
+    break; // fix coverity
 
   case VC_EVENT_READ_READY:
     transform(vioSource->buffer, vioTarget->buffer);
@@ -278,11 +279,12 @@ OneWayTunnel::startEvent(int event, void *data)
     if (vio == vioSource) {
       transform(vioSource->buffer, vioTarget->buffer);
       goto Lread_complete;
-    } else
+    } else {
       goto Ldone;
-
-  Lread_complete:
+    }
+    break; // fix coverity
   case VC_EVENT_READ_COMPLETE:
+  Lread_complete:
     // set write nbytes to the current buffer size
     //
     vioTarget->nbytes = vioTarget->ndone + vioTarget->buffer.reader()->read_avail();
@@ -293,14 +295,14 @@ OneWayTunnel::startEvent(int event, void *data)
       close_source_vio(0);
     break;
 
-  Lerror:
   case VC_EVENT_ERROR:
+  Lerror:
     lerrno = ((VIO *)data)->vc_server->lerrno;
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
     result = -1;
-  Ldone:
   case VC_EVENT_WRITE_COMPLETE:
+  Ldone:
     if (tunnel_peer) {
       // inform the peer:
       tunnel_peer->startEvent(ONE_WAY_TUNNEL_EVENT_PEER_CLOSE, data);
