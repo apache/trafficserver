@@ -940,7 +940,7 @@ write_dns(DNSHandler *h)
             h->name_server = (h->name_server + 1) % max_nscount;
           } while (h->ns_down[h->name_server] && h->name_server != ns_start);
         }
-        if (!write_dns_event(h, e)) {
+        if (h->ns_down[h->name_server] || !write_dns_event(h, e)) {
           break;
         }
       }
