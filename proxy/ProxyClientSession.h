@@ -207,15 +207,6 @@ public:
 
   static int64_t next_connection_id();
 
-  /// acl record - cache IpAllow::match() call
-  const AclRecord *acl_record;
-
-  /// DNS resolution preferences.
-  HostResStyle host_res_style;
-
-  ink_hrtime ssn_start_time;
-  ink_hrtime ssn_last_txn_time;
-
   virtual sockaddr const *
   get_client_addr()
   {
@@ -229,17 +220,26 @@ public:
     return netvc ? netvc->get_local_addr() : nullptr;
   }
 
+  /// acl record - cache IpAllow::match() call
+  const AclRecord *acl_record = nullptr;
+
+  /// DNS resolution preferences.
+  HostResStyle host_res_style = HOST_RES_IPV4;
+
+  ink_hrtime ssn_start_time;
+  ink_hrtime ssn_last_txn_time;
+
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so
   // that we can make the best use of internal alignment padding.
 
   // Session specific debug flag.
-  bool debug_on;
-  bool hooks_on;
-  bool in_destroy;
+  bool debug_on   = false;
+  bool hooks_on   = true;
+  bool in_destroy = false;
 
-  int64_t con_id;
-  Event *schedule_event;
+  int64_t con_id        = 0;
+  Event *schedule_event = nullptr;
 
 private:
   ProxyClientSession(ProxyClientSession &);                  // noncopyable
@@ -248,9 +248,9 @@ private:
   void handle_api_return(int event);
   int state_api_callout(int event, void *edata);
 
-  APIHookScope api_scope;
-  TSHttpHookID api_hookid;
-  APIHook *api_current;
+  APIHookScope api_scope  = API_HOOK_SCOPE_NONE;
+  TSHttpHookID api_hookid = TS_HTTP_READ_REQUEST_HDR_HOOK;
+  APIHook *api_current    = nullptr;
   HttpAPIHooks api_hooks;
   void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
 
@@ -258,7 +258,7 @@ private:
   // been successfully parsed (PARSE_DONE) and it remains to
   // be active until the transaction goes through or the client
   // aborts.
-  bool m_active;
+  bool m_active = false;
 };
 
 #endif // __PROXY_CLIENT_SESSION_H__
