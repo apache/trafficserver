@@ -381,7 +381,7 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
           TSHttpTxnNewCacheLookupDo(state->txn, state->req_info->buf, url_loc);
           TSHandleMLocRelease(state->req_info->buf, state->req_info->http_hdr_loc, url_loc);
         } else {
-          TSError("[%s] Error getting the URL from the transaction",PLUGIN_NAME);
+          TSError("[%s] Error getting the URL from the transaction", PLUGIN_NAME);
         }
         // TODO add txn translation hook and pass result along, maybe inside continuation?
         // TSHttpTxnHookAdd(state->txn, TS_HTTP_RESPONSE_TRANSFORM_HOOK, TSTransformCreate(replace_transform, state->txn));
@@ -399,7 +399,7 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     TSContDestroy(cont);
     break;
   default:
-    TSError("[%s] Unknown event %d.", PLUGIN_NAME,event);
+    TSError("[%s] Unknown event %d.", PLUGIN_NAME, event);
     break;
   }
 
@@ -749,7 +749,7 @@ TSPluginInit(int argc, const char *argv[])
     if (plugin_config->log_info.all || plugin_config->log_info.stale_while_revalidate || plugin_config->log_info.stale_if_error) {
       if (TSTextLogObjectCreate(plugin_config->log_info.filename, TS_LOG_MODE_ADD_TIMESTAMP, &(plugin_config->log_info.object)) !=
           TS_SUCCESS) {
-        TSError("[%s] Error getting the URL from the transaction",PLUGIN_NAME);
+        TSError("[%s] Error getting the URL from the transaction", PLUGIN_NAME);
         return;
       }
     }
