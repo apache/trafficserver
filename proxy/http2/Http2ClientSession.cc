@@ -436,12 +436,6 @@ Http2ClientSession::do_start_frame_read(Http2ErrorCode &ret_error)
     return -1;
   }
 
-  // Allow only stream id = 0 or streams started by client.
-  if (this->current_hdr.streamid != 0 && !http2_is_client_streamid(this->current_hdr.streamid)) {
-    ret_error = Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-    return -1;
-  }
-
   // CONTINUATIONs MUST follow behind HEADERS which doesn't have END_HEADERS
   Http2StreamId continued_stream_id = this->connection_state.get_continued_stream_id();
 

@@ -429,7 +429,7 @@ rcv_rst_stream_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   // frame is received with a stream identifier of 0x0, the recipient MUST
   // treat this as a connection error (Section 5.4.1) of type
   // PROTOCOL_ERROR.
-  if (!http2_is_client_streamid(stream_id)) {
+  if (stream_id == 0) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                       "reset access stream with invalid id");
   }
