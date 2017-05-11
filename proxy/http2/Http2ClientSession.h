@@ -275,11 +275,11 @@ public:
     return retval;
   }
 
-  void set_half_close_flag(bool flag) override;
+  void set_half_close_local_flag(bool flag);
   bool
-  get_half_close_flag() const override
+  get_half_close_local_flag() const
   {
-    return half_close;
+    return half_close_local;
   }
 
 private:
@@ -313,7 +313,7 @@ private:
   VIO *write_vio;
   int dying_event;
   bool kill_me;
-  bool half_close;
+  bool half_close_local;
   int recursion;
 };
 

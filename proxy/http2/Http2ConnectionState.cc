@@ -906,7 +906,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
                 error.msg);
         }
         this->send_goaway_frame(this->latest_streamid_in, error.code);
-        this->ua_session->set_half_close_flag(true);
+        this->ua_session->set_half_close_local_flag(true);
         this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
 
         // The streams will be cleaned up by the HTTP2_SESSION_EVENT_FINI event
@@ -950,7 +950,7 @@ Http2Stream *
 Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
 {
   // In half_close state, TS doesn't create new stream. Because GOAWAY frame is sent to client
-  if (ua_session && ua_session->get_half_close_flag()) {
+  if (ua_session && ua_session->get_half_close_local_flag()) {
     error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
                        "refused to create new stream, because ua_session is in half_close state");
     return nullptr;
@@ -1366,7 +1366,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   // Change stream state
   if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, flags)) {
     this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
-    this->ua_session->set_half_close_flag(true);
+    this->ua_session->set_half_close_local_flag(true);
     this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
 
     h2_hdr.destroy();
@@ -1527,7 +1527,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   if (stream != nullptr) {
     if (!stream->change_state(HTTP2_FRAME_TYPE_RST_STREAM, 0)) {
       this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
-      this->ua_session->set_half_close_flag(true);
+      this->ua_session->set_half_close_local_flag(true);
       this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
 
       return;
@@ -1563,7 +1563,7 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
       // Write settings to send buffer
       if (!http2_write_settings(param, iov)) {
         this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
-        this->ua_session->set_half_close_flag(true);
+        this->ua_session->set_half_close_local_flag(true);
         this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
 
         return;
