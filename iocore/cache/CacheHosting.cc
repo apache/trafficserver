@@ -320,10 +320,6 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     if (gen_host_rec.Init(type)) {
       Warning("Problems encountered while initializing the Generic Volume");
     }
-
-    if (first != nullptr) {
-      ats_free(first);
-    }
     return 0;
   }
 
@@ -532,9 +528,8 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
         }
         s++;
       }
-      if (val != nullptr) {
-        ats_free(val);
-      }
+      ats_free(val);
+
       break;
     }
 
