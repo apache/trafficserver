@@ -170,6 +170,8 @@ UDPNetProcessorInternal::udp_callback(UDPNetHandler *nh, UDPConnection *xuc, ETh
   }
 }
 
+#define UNINITIALIZED_EVENT_PTR (Event *)0xdeadbeef
+
 // cheesy implementation of a asynchronous read and callback for Unix
 class UDPReadContinuation : public Continuation
 {
@@ -199,22 +201,20 @@ public:
   void setupPollDescriptor();
 
 private:
-  Event *event; // the completion event token created
+  Event *event = UNINITIALIZED_EVENT_PTR; // the completion event token created
   // on behalf of the client
-  Ptr<IOBufferBlock> readbuf;
-  int readlen;
-  struct sockaddr_in6 *fromaddr;
-  socklen_t *fromaddrlen;
-  int fd;            // fd we are reading from
-  int ifd;           // poll fd index
-  ink_hrtime period; // polling period
-  ink_hrtime elapsed_time;
-  ink_hrtime timeout_interval;
+  Ptr<IOBufferBlock> readbuf{nullptr};
+  int readlen                   = 0;
+  struct sockaddr_in6 *fromaddr = nullptr;
+  socklen_t *fromaddrlen        = nullptr;
+  int fd                        = NO_FD; // fd we are reading from
+  int ifd                       = NO_FD; // poll fd index
+  ink_hrtime period             = 0;     // polling period
+  ink_hrtime elapsed_time       = 0;
+  ink_hrtime timeout_interval   = 0;
 };
 
 ClassAllocator<UDPReadContinuation> udpReadContAllocator("udpReadContAllocator");
-
-#define UNINITIALIZED_EVENT_PTR (Event *)0xdeadbeef
 
 UDPReadContinuation::UDPReadContinuation(Event *completionToken)
   : Continuation(nullptr),
@@ -234,17 +234,7 @@ UDPReadContinuation::UDPReadContinuation(Event *completionToken)
     this->mutex = new_ProxyMutex();
 }
 
-UDPReadContinuation::UDPReadContinuation()
-  : Continuation(nullptr),
-    event(UNINITIALIZED_EVENT_PTR),
-    readbuf(nullptr),
-    readlen(0),
-    fromaddrlen(nullptr),
-    fd(-1),
-    ifd(-1),
-    period(0),
-    elapsed_time(0),
-    timeout_interval(0)
+UDPReadContinuation::UDPReadContinuation() : Continuation(nullptr)
 {
 }
 
@@ -627,7 +617,7 @@ Lerror:
 }
 
 // send out all packets that need to be sent out as of time=now
-UDPQueue::UDPQueue() : last_report(0), last_service(0), packets(0), added(0)
+UDPQueue::UDPQueue()
 {
 }
 
