@@ -40,6 +40,7 @@
 #if TS_HAS_WCCP
 #include <wccp/Wccp.h>
 #endif
+#include <syslog.h>
 
 class FileManager;
 
@@ -88,13 +89,13 @@ public:
   bool processRunning();
 
   volatile bool run_proxy;
-  volatile bool proxy_recoverable; // false if traffic_server cannot recover with a reboot
+  volatile bool proxy_recoverable = true; // false if traffic_server cannot recover with a reboot
   volatile time_t manager_started_at;
-  volatile time_t proxy_started_at;
-  volatile int proxy_launch_count;
-  volatile bool proxy_launch_outstanding;
-  volatile ManagementPendingOperation mgmt_shutdown_outstanding;
-  volatile int proxy_running;
+  volatile time_t proxy_started_at                              = -1;
+  volatile int proxy_launch_count                               = 0;
+  volatile bool proxy_launch_outstanding                        = false;
+  volatile ManagementPendingOperation mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+  volatile int proxy_running                                    = 0;
   HttpProxyPort::Group m_proxy_ports;
   // Local inbound addresses to bind, if set.
   IpAddr m_inbound_ip4;
@@ -106,19 +107,19 @@ public:
   char *absolute_proxy_binary;
   char *proxy_name;
   char *proxy_binary;
-  char *proxy_options; // These options should persist across proxy reboots
+  char *proxy_options = nullptr; // These options should persist across proxy reboots
   char *env_prep;
 
-  int process_server_sockfd;
-  volatile int watched_process_fd;
-  volatile pid_t proxy_launch_pid;
+  int process_server_sockfd       = ts::NO_FD;
+  volatile int watched_process_fd = ts::NO_FD;
+  volatile pid_t proxy_launch_pid = -1;
 
-  Alarms *alarm_keeper;
-  FileManager *configFiles;
+  Alarms *alarm_keeper     = nullptr;
+  FileManager *configFiles = nullptr;
 
-  volatile pid_t watched_process_pid;
+  volatile pid_t watched_process_pid = -1;
 
-  int syslog_facility;
+  int syslog_facility = LOG_DAEMON;
 
 #if TS_HAS_WCCP
   wccp::Cache wccp_cache;
