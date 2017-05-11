@@ -291,7 +291,7 @@ ts_lua_http_intercept_process_read(TSEvent event, ts_lua_http_intercept_ctx *ict
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
     TSVConnShutdown(ictx->net_vc, 1, 0);
-
+    break; // READ_READY_READY is not equal to EOS break statement is probably missing?
   case TS_EVENT_VCONN_READ_COMPLETE:
   case TS_EVENT_VCONN_EOS:
     ictx->recv_complete = 1;
