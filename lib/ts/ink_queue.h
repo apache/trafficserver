@@ -83,7 +83,9 @@ void ink_queue_load_64(void *dst, void *src);
  */
 // Warning: head_p is read and written in multiple threads without a
 // lock, use INK_QUEUE_LD to read safely.
-typedef union {
+union head_p {
+  head_p() : data(){};
+
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
   typedef int32_t version_type;
   typedef int64_t data_type;
@@ -101,7 +103,7 @@ typedef union {
   } s;
 
   data_type data;
-} head_p;
+};
 
 /*
  * Why is version required? One scenario is described below
@@ -174,11 +176,12 @@ void ink_freelists_dump(FILE *f);
 void ink_freelists_dump_baselinerel(FILE *f);
 void ink_freelists_snap_baseline();
 
-typedef struct {
-  volatile head_p head;
-  const char *name;
-  uint32_t offset;
-} InkAtomicList;
+struct InkAtomicList {
+  InkAtomicList() {}
+  volatile head_p head{};
+  const char *name = nullptr;
+  uint32_t offset  = 0;
+};
 
 #if !defined(INK_QUEUE_NT)
 #define INK_ATOMICLIST_EMPTY(_x) (!(TO_PTR(FREELIST_POINTER((_x.head)))))
