@@ -150,7 +150,8 @@ public:
   void push_promise(URL &url);
 
   // Stream level window size
-  ssize_t client_rwnd, server_rwnd;
+  ssize_t client_rwnd;
+  ssize_t server_rwnd = Http2::initial_window_size;
 
   LINK(Http2Stream, link);
 
@@ -227,8 +228,8 @@ private:
   bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   HTTPParser http_parser;
-  ink_hrtime _start_time;
-  EThread *_thread = nullptr;
+  ink_hrtime _start_time = 0;
+  EThread *_thread       = nullptr;
   Http2StreamId _id;
   Http2StreamState _state = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
 
