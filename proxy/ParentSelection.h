@@ -114,33 +114,16 @@ typedef ControlMatcher<ParentRecord, ParentResult> P_table;
 class ParentRecord : public ControlBase
 {
 public:
-  ParentRecord()
-    : parents(NULL),
-      secondary_parents(NULL),
-      num_parents(0),
-      num_secondary_parents(0),
-      ignore_query(false),
-      rr_next(0),
-      go_direct(true),
-      parent_is_proxy(true),
-      selection_strategy(NULL),
-      unavailable_server_retry_responses(NULL),
-      parent_retry(PARENT_RETRY_NONE),
-      max_simple_retries(1),
-      max_unavailable_server_retries(1)
-  {
-  }
-
   ~ParentRecord();
 
   Result Init(matcher_line *line_info);
   bool DefaultInit(char *val);
   void UpdateMatch(ParentResult *result, RequestData *rdata);
   void Print();
-  pRecord *parents;
-  pRecord *secondary_parents;
-  int num_parents;
-  int num_secondary_parents;
+  pRecord *parents           = nullptr;
+  pRecord *secondary_parents = nullptr;
+  int num_parents            = 0;
+  int num_secondary_parents  = 0;
 
   bool
   bypass_ok() const
@@ -148,18 +131,18 @@ public:
     return go_direct;
   }
 
-  const char *scheme;
+  const char *scheme = nullptr;
   // private:
   const char *ProcessParents(char *val, bool isPrimary);
-  bool ignore_query;
-  volatile uint32_t rr_next;
-  bool go_direct;
-  bool parent_is_proxy;
-  ParentSelectionStrategy *selection_strategy;
-  UnavailableServerResponseCodes *unavailable_server_retry_responses;
-  ParentRetry_t parent_retry;
-  int max_simple_retries;
-  int max_unavailable_server_retries;
+  bool ignore_query                                                  = false;
+  volatile uint32_t rr_next                                          = 0;
+  bool go_direct                                                     = true;
+  bool parent_is_proxy                                               = true;
+  ParentSelectionStrategy *selection_strategy                        = nullptr;
+  UnavailableServerResponseCodes *unavailable_server_retry_responses = nullptr;
+  ParentRetry_t parent_retry                                         = PARENT_RETRY_NONE;
+  int max_simple_retries                                             = 1;
+  int max_unavailable_server_retries                                 = 1;
 };
 
 // If the parent was set by the external customer api,
