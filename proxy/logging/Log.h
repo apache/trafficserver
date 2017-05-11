@@ -79,7 +79,7 @@ class LogFlushData
 public:
   LINK(LogFlushData, link);
   Ptr<LogFile> m_logfile;
-  LogBuffer *logbuffer;
+  LogBuffer *logbuffer = nullptr;
   void *m_data;
   int m_len;
 
