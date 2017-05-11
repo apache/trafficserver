@@ -124,22 +124,6 @@ struct UrlComponents {
 class RemapRegex
 {
 public:
-  RemapRegex()
-    : _num_subs(-1),
-      _rex(nullptr),
-      _extra(nullptr),
-      _options(0),
-      _order(-1),
-      _lowercase_substitutions(false),
-      _active_timeout(-1),
-      _no_activity_timeout(-1),
-      _connect_timeout(-1),
-      _dns_timeout(-1),
-      _first_override(nullptr)
-  {
-    TSDebug(PLUGIN_NAME, "Calling constructor");
-  }
-
   ~RemapRegex()
   {
     TSDebug(PLUGIN_NAME, "Calling destructor");
@@ -277,53 +261,45 @@ public:
   }
 
 private:
-  char *_rex_string;
-  char *_subst;
-  int _subst_len;
-  int _num_subs;
-  int _hits;
+  char *_rex_string = nullptr;
+  char *_subst      = nullptr;
+  int _subst_len    = 0;
+  int _num_subs     = -1;
+  int _hits         = 0;
+  int _options      = 0;
+  int _order        = -1;
 
-  pcre *_rex;
-  pcre_extra *_extra;
-  int _options;
+  bool _lowercase_substitutions = false;
+
+  pcre *_rex           = nullptr;
+  pcre_extra *_extra   = nullptr;
+  RemapRegex *_next    = nullptr;
+  TSHttpStatus _status = static_cast<TSHttpStatus>(0);
+
+  int _active_timeout      = -1;
+  int _no_activity_timeout = -1;
+  int _connect_timeout     = -1;
+  int _dns_timeout         = -1;
+
+  Override *_first_override = nullptr;
   int _sub_pos[MAX_SUBS];
   int _sub_ix[MAX_SUBS];
-  RemapRegex *_next;
-  int _order;
-  TSHttpStatus _status;
-  bool _lowercase_substitutions;
-  int _active_timeout;
-  int _no_activity_timeout;
-  int _connect_timeout;
-  int _dns_timeout;
-
-  Override *_first_override;
 };
 
 bool
 RemapRegex::initialize(const std::string &reg, const std::string &sub, const std::string &opt)
 {
-  _status = static_cast<TSHttpStatus>(0);
-
   if (!reg.empty()) {
     _rex_string = TSstrdup(reg.c_str());
-  } else {
-    _rex_string = nullptr;
   }
 
   if (!sub.empty()) {
     _subst     = TSstrdup(sub.c_str());
     _subst_len = sub.length();
-  } else {
-    _subst     = nullptr;
-    _subst_len = 0;
   }
-
-  _hits = 0;
 
   memset(_sub_pos, 0, sizeof(_sub_pos));
   memset(_sub_ix, 0, sizeof(_sub_ix));
-  _next = nullptr;
 
   // Parse options
   std::string::size_type start = opt.find_first_of('@');
@@ -390,18 +366,16 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
           delete cur;
           return false;
         }
-        if (cur) {
-          TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
-          cur->key  = key;
-          cur->type = type;
-          cur->next = nullptr;
-          if (nullptr == last_override) {
-            _first_override = cur;
-          } else {
-            last_override->next = cur;
-          }
-          last_override = cur;
+        TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
+        cur->key  = key;
+        cur->type = type;
+        cur->next = nullptr;
+        if (nullptr == last_override) {
+          _first_override = cur;
+        } else {
+          last_override->next = cur;
         }
+        last_override = cur;
       } else {
         TSError("[%s] Unknown options: %s", PLUGIN_NAME, opt.c_str());
       }
