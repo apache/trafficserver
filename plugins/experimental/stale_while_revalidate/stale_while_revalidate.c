@@ -538,6 +538,8 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
         TSHttpTxnHookAdd(txn, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
 
         TSDebug(PLUGIN_NAME, "tracking state %p from txn %p for %s", state, txn, state->req_info->effective_url);
+      } else {
+        free_request_state(state);
       }
     }
 
@@ -750,6 +752,7 @@ TSPluginInit(int argc, const char *argv[])
       if (TSTextLogObjectCreate(plugin_config->log_info.filename, TS_LOG_MODE_ADD_TIMESTAMP, &(plugin_config->log_info.object)) !=
           TS_SUCCESS) {
         TSError("[%s] Error getting the URL from the transaction", PLUGIN_NAME);
+        TSfree(plugin_config);
         return;
       }
     }
