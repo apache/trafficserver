@@ -41,10 +41,6 @@ namespace wccp
 #endif
 
 // ------------------------------------------------------
-Impl::GroupData::GroupData() : m_generation(0), m_use_security_opt(false), m_use_security_key(false)
-{
-}
-
 Impl::GroupData &
 Impl::GroupData::setKey(const char *key)
 {
