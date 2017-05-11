@@ -1648,13 +1648,13 @@ HttpTransact::OSDNSLookup(State *s)
     case EXPANSION_NOT_ALLOWED:
     case EXPANSION_FAILED:
     case DNS_ATTEMPTS_EXHAUSTED:
-      if (DNSLookupInfo::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
+      if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
         /*
          *  We tried to connect to client target address, failed and tried to use a different addr
          *  No HostDB data, just keep on with the CTA.
          */
         s->dns_info.lookup_success = true;
-        s->dns_info.os_addr_style  = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+        s->dns_info.os_addr_style  = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
         DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful, using client target address");
       } else {
         if (host_name_expansion == EXPANSION_NOT_ALLOWED) {
@@ -1685,7 +1685,7 @@ HttpTransact::OSDNSLookup(State *s)
   ink_assert(s->dns_info.lookup_success);
   DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup successful");
 
-  if (DNSLookupInfo::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
+  if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
     // We've backed off from a client supplied address and found some
     // HostDB addresses. We use those if they're different from the CTA.
     // In all cases we now commit to client or HostDB for our source.
@@ -1694,15 +1694,15 @@ HttpTransact::OSDNSLookup(State *s)
       if (cta) {
         // found another addr, lock in host DB.
         s->host_db_info           = *cta;
-        s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_HOSTDB;
+        s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB;
       } else {
         // nothing else there, continue with CTA.
-        s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+        s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
       }
     } else if (ats_ip_addr_eq(s->host_db_info.ip(), &s->server_info.dst_addr.sa)) {
-      s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+      s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
     } else {
-      s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_HOSTDB;
+      s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB;
     }
   }
 
@@ -1736,7 +1736,7 @@ HttpTransact::OSDNSLookup(State *s)
   // expansion, return a 302 response.
   // [amc] Also don't redirect if we backed off using HostDB instead of CTA.
   if (s->dns_info.attempts == max_dns_lookups && s->dns_info.looking_up == ORIGIN_SERVER &&
-      DNSLookupInfo::OS_ADDR_USE_CLIENT != s->dns_info.os_addr_style) {
+      DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT != s->dns_info.os_addr_style) {
     DebugTxn("http_trans", "[OSDNSLookup] DNS name resolution on expansion");
     DebugTxn("http_seq", "[OSDNSLookup] DNS name resolution on expansion - returning");
     build_redirect_response(s);
@@ -1760,8 +1760,8 @@ HttpTransact::OSDNSLookup(State *s)
     HttpTransactHeaders::convert_request(s->current.server->http_version, &s->hdr_info.server_request);
     DebugTxn("cdn", "outgoing version -- (post conversion) %d", s->hdr_info.server_request.m_http->m_version);
     TRANSACT_RETURN(s->cdn_saved_next_action, nullptr);
-  } else if (DNSLookupInfo::OS_ADDR_USE_CLIENT == s->dns_info.os_addr_style ||
-             DNSLookupInfo::OS_ADDR_USE_HOSTDB == s->dns_info.os_addr_style) {
+  } else if (DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT == s->dns_info.os_addr_style ||
+             DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB == s->dns_info.os_addr_style) {
     // we've come back after already trying the server to get a better address
     // and finished with all backtracking - return to trying the server.
     TRANSACT_RETURN(how_to_open_connection(s), HttpTransact::HandleResponse);
@@ -3560,13 +3560,13 @@ HttpTransact::handle_response_from_server(State *s)
     if (is_request_retryable(s) && s->current.attempts < max_connect_retries) {
       // If this is a round robin DNS entry & we're tried configured
       //    number of times, we should try another node
-      if (DNSLookupInfo::OS_ADDR_TRY_CLIENT == s->dns_info.os_addr_style) {
+      if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_CLIENT == s->dns_info.os_addr_style) {
         // attempt was based on client supplied server address. Try again
         // using HostDB.
         // Allow DNS attempt
         s->dns_info.lookup_success = false;
         // See if we can get data from HostDB for this.
-        s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_TRY_HOSTDB;
+        s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB;
         // Force host resolution to have the same family as the client.
         // Because this is a transparent connection, we can't switch address
         // families - that is locked in by the client source address.
@@ -3588,7 +3588,7 @@ HttpTransact::handle_response_from_server(State *s)
           // in OSDNSLoopkup, we back up to how_to_open_connections which
           // will tell HttpSM to connect the origin server.
 
-          s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+          s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
           TRANSACT_RETURN(SM_ACTION_API_OS_DNS, OSDNSLookup);
         }
         return;

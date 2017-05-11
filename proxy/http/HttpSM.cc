@@ -2117,7 +2117,7 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
 
   sockaddr const *client_addr = nullptr;
   bool use_client_addr        = t_state.http_config_param->use_client_target_addr == 1 && t_state.client_info.is_transparent &&
-                         t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT;
+                         t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_Addr::OS_ADDR_TRY_DEFAULT;
   if (use_client_addr) {
     NetVConnection *vc = t_state.state_machine->ua_session ? t_state.state_machine->ua_session->get_netvc() : nullptr;
     if (vc) {
@@ -2126,7 +2126,7 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
       // we want to use that address.  Therefore, we copy over the client address
       // info and skip the assignment from the DNS cache
       ats_ip_copy(t_state.host_db_info.ip(), client_addr);
-      t_state.dns_info.os_addr_style  = HttpTransact::DNSLookupInfo::OS_ADDR_TRY_CLIENT;
+      t_state.dns_info.os_addr_style  = HttpTransact::DNSLookupInfo::OS_Addr::OS_ADDR_TRY_CLIENT;
       t_state.dns_info.lookup_success = true;
       // Leave ret unassigned, so we don't overwrite the host_db_info
     } else {
@@ -7207,7 +7207,7 @@ HttpSM::set_next_state()
       break;
     } else if (t_state.http_config_param->use_client_target_addr == 2 && !t_state.url_remap_success &&
                t_state.parent_result.result != PARENT_SPECIFIED && t_state.client_info.is_transparent &&
-               t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT &&
+               t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_Addr::OS_ADDR_TRY_DEFAULT &&
                ats_is_ip(addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr())) {
       /* If the connection is client side transparent and the URL
        * was not remapped/directed to parent proxy, we can use the
@@ -7232,7 +7232,7 @@ HttpSM::set_next_state()
       t_state.dns_info.lookup_success = true;
       // cache this result so we don't have to unreliably duplicate the
       // logic later if the connect fails.
-      t_state.dns_info.os_addr_style = HttpTransact::DNSLookupInfo::OS_ADDR_TRY_CLIENT;
+      t_state.dns_info.os_addr_style = HttpTransact::DNSLookupInfo::OS_Addr::OS_ADDR_TRY_CLIENT;
       call_transact_and_set_next_state(nullptr);
       break;
     } else if (t_state.parent_result.result == PARENT_UNDEFINED && t_state.dns_info.lookup_success) {
