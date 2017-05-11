@@ -276,12 +276,12 @@ Http2ClientSession::reenable(VIO *vio)
 }
 
 void
-Http2ClientSession::set_half_close_flag(bool flag)
+Http2ClientSession::set_half_close_local_flag(bool flag)
 {
-  if (!half_close && flag) {
-    DebugHttp2Ssn("session half-close");
+  if (!half_close_local && flag) {
+    DebugHttp2Ssn("session half-close local");
   }
-  half_close = flag;
+  half_close_local = flag;
 }
 
 int
@@ -494,7 +494,7 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
         SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
         if (!this->connection_state.is_state_closed()) {
           this->connection_state.send_goaway_frame(this->connection_state.get_latest_stream_id_in(), err);
-          this->set_half_close_flag(true);
+          this->set_half_close_local_flag(true);
           this->do_io_close();
         }
       }

@@ -284,11 +284,11 @@ public:
     return retval;
   }
 
-  void set_half_close_flag(bool flag) override;
+  void set_half_close_local_flag(bool flag);
   bool
-  get_half_close_flag() const override
+  get_half_close_local_flag() const
   {
-    return half_close;
+    return half_close_local;
   }
 
 private:
@@ -322,11 +322,11 @@ private:
   // For Upgrade: h2c
   Http2UpgradeContext upgrade_context;
 
-  VIO *write_vio  = nullptr;
-  int dying_event = 0;
-  bool kill_me    = false;
-  bool half_close = false;
-  int recursion   = 0;
+  VIO *write_vio        = nullptr;
+  int dying_event       = 0;
+  bool kill_me          = false;
+  bool half_close_local = false;
+  int recursion         = 0;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
