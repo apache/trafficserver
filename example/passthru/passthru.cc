@@ -198,34 +198,32 @@ PassthruSessionEvent(TSCont cont, TSEvent event, void *edata)
       sp->server.writeio.write(sp->server.vconn, sp->contp);
     }
 
-    if (sp->server.vconn != nullptr) {
-      int64_t nbytes;
+    int64_t nbytes;
 
-      nbytes = sp->client.readio.transfer_to(sp->server.writeio);
-      PassthruSessionDebug(sp, "proxied %" PRId64 " bytes from client vconn=%p to server vconn=%p", nbytes, sp->client.vconn,
-                           sp->server.vconn);
-      if (nbytes) {
-        TSVIOReenable(sp->client.readio.vio);
-        TSVIOReenable(sp->server.writeio.vio);
-      }
-
-      nbytes = sp->server.readio.transfer_to(sp->client.writeio);
-      PassthruSessionDebug(sp, "proxied %" PRId64 " bytes from server vconn=%p to client vconn=%p", nbytes, sp->server.vconn,
-                           sp->client.vconn);
-      if (nbytes) {
-        TSVIOReenable(sp->server.readio.vio);
-        TSVIOReenable(sp->client.writeio.vio);
-      }
+    nbytes = sp->client.readio.transfer_to(sp->server.writeio);
+    PassthruSessionDebug(sp, "proxied %" PRId64 " bytes from client vconn=%p to server vconn=%p", nbytes, sp->client.vconn,
+                         sp->server.vconn);
+    if (nbytes) {
+      TSVIOReenable(sp->client.readio.vio);
+      TSVIOReenable(sp->server.writeio.vio);
     }
 
-    if (PassthruSessionIsFinished(sp)) {
-      delete sp;
-      return TS_EVENT_NONE;
+    nbytes = sp->server.readio.transfer_to(sp->client.writeio);
+    PassthruSessionDebug(sp, "proxied %" PRId64 " bytes from server vconn=%p to client vconn=%p", nbytes, sp->server.vconn,
+                         sp->client.vconn);
+    if (nbytes) {
+      TSVIOReenable(sp->server.readio.vio);
+      TSVIOReenable(sp->client.writeio.vio);
     }
+  }
 
-    TSVIOReenable(arg.vio);
+  if (PassthruSessionIsFinished(sp)) {
+    delete sp;
     return TS_EVENT_NONE;
   }
+
+  TSVIOReenable(arg.vio);
+  return TS_EVENT_NONE;
 
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (PassthruSessionIsFinished(sp)) {
