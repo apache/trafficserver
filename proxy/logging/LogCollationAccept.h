@@ -36,8 +36,8 @@ public:
 
 private:
   int m_port;
-  Action *m_accept_action;
-  Event *m_pending_event;
+  Action *m_accept_action = nullptr;
+  Event *m_pending_event  = nullptr;
 };
 
 typedef int (LogCollationAccept::*LogCollationAcceptHandler)(int, void *);

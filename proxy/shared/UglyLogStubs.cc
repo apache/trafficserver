@@ -76,7 +76,7 @@ Machine::instance()
 }
 
 #include "LogCollationAccept.h"
-LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port), m_pending_event(nullptr)
+LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port)
 {
 }
 LogCollationAccept::~LogCollationAccept()
