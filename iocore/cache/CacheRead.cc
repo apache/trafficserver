@@ -669,7 +669,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       }
     }
     doc_pos = doc->prefix_len() + seek_to;
-    if (fragment)
+    if (fragment && frags)
       doc_pos -= static_cast<int64_t>(frags[fragment - 1]);
     vio.ndone = 0;
     seek_to   = 0;
