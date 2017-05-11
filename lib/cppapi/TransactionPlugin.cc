@@ -37,7 +37,7 @@ using atscppapi::TransactionPlugin;
  * @private
  */
 struct atscppapi::TransactionPluginState : noncopyable {
-  TSCont cont_;
+  TSCont cont_ = nullptr;
   TSHttpTxn ats_txn_handle_;
   std::shared_ptr<Mutex> mutex_;
   TransactionPluginState(TSHttpTxn ats_txn_handle) : ats_txn_handle_(ats_txn_handle), mutex_(new Mutex(Mutex::TYPE_RECURSIVE)) {}
