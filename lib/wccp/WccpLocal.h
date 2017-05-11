@@ -1972,13 +1972,13 @@ namespace detail
       typedef GroupData self; ///< Self reference type.
 
       ServiceGroup m_svc;           ///< The service definition.
-      uint32_t m_generation;        ///< Generation value (change number).
+      uint32_t m_generation    = 0; ///< Generation value (change number).
       time_t m_generation_time = 0; ///< Time of last view change.
 
-      bool m_use_security_opt = false;     ///< Use group local security.
-      SecurityComp::Option m_security_opt; ///< Type of security.
-      bool m_use_security_key;             ///< Use group local key.
-      SecurityComp::Key m_security_key;    ///< MD5 key.
+      bool m_use_security_opt             = false;         ///< Use group local security.
+      SecurityComp::Option m_security_opt = SECURITY_NONE; ///< Type of security.
+      bool m_use_security_key             = false;         ///< Use group local key.
+      SecurityComp::Key m_security_key;                    ///< MD5 key.
 
       /** Group assignment data.
           This is used as a place to generate an assignment or
@@ -1987,7 +1987,7 @@ namespace detail
       detail::Assignment m_assign_info;
 
       /// Default constructor.
-      GroupData();
+      GroupData() = default;
       /// Use @a key instead of global default.
       self &setKey(const char *key ///< Shared key.
                    );
@@ -3444,20 +3444,20 @@ HashAssignElt::getSize() const
 inline uint32_t
 HashAssignElt::getAddr(int idx) const
 {
-  // coverity[array_vs_singleton]
+  // coverity[ptr_arith]
   return (&m_count)[idx + 1];
 }
 inline HashAssignElt &
 HashAssignElt::setAddr(int idx, uint32_t addr)
 {
-  // coverity[array_vs_singleton]
+  // coverity[ptr_arith]
   (&m_count)[idx + 1] = addr;
   return *this;
 }
 inline HashAssignElt::Bucket *
 HashAssignElt::getBucketBase()
 {
-  // coverity[array_vs_singleton]
+  // coverity[ptr_arith]
   return reinterpret_cast<Bucket *>((&m_count + 1 + this->getCount()));
 }
 inline HashAssignElt::Bucket &HashAssignElt::operator[](size_t idx)
