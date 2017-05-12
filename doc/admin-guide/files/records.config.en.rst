@@ -1226,11 +1226,13 @@ Parent Proxy Configuration
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.retry_time INT 300
    :reloadable:
+   :overridable:
 
    The amount of time allowed between connection retries to a parent cache that is unavailable.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.fail_threshold INT 10
    :reloadable:
+   :overridable:
 
    The number of times the connection to the parent cache can fail before Traffic Server considers the parent unavailable.
 
@@ -1244,12 +1246,14 @@ Parent Proxy Configuration
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.per_parent_connect_attempts INT 2
    :reloadable:
+   :overridable:
 
    The total number of connection attempts allowed per parent for a specific
    transaction, if multiple parents are used.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
    :reloadable:
+   :overridable:
 
    The timeout value (in seconds) for parent cache connection attempts.
 

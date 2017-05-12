@@ -970,8 +970,11 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_timeout, "proxy.config.http.connect_attempts_timeout");
   HttpEstablishStaticConfigLongLong(c.oride.post_connect_attempts_timeout, "proxy.config.http.post_connect_attempts_timeout");
   HttpEstablishStaticConfigLongLong(c.oride.parent_connect_attempts, "proxy.config.http.parent_proxy.total_connect_attempts");
-  HttpEstablishStaticConfigLongLong(c.per_parent_connect_attempts, "proxy.config.http.parent_proxy.per_parent_connect_attempts");
-  HttpEstablishStaticConfigLongLong(c.parent_connect_timeout, "proxy.config.http.parent_proxy.connect_attempts_timeout");
+  HttpEstablishStaticConfigLongLong(c.oride.parent_retry_time, "proxy.config.http.parent_proxy.retry_time");
+  HttpEstablishStaticConfigLongLong(c.oride.parent_fail_threshold, "proxy.config.http.parent_proxy.fail_threshold");
+  HttpEstablishStaticConfigLongLong(c.oride.per_parent_connect_attempts,
+                                    "proxy.config.http.parent_proxy.per_parent_connect_attempts");
+  HttpEstablishStaticConfigLongLong(c.oride.parent_connect_timeout, "proxy.config.http.parent_proxy.connect_attempts_timeout");
   HttpEstablishStaticConfigByte(c.oride.parent_failures_update_hostdb, "proxy.config.http.parent_proxy.mark_down_hostdb");
 
   HttpEstablishStaticConfigLongLong(c.oride.sock_recv_buffer_size_out, "proxy.config.net.sock_recv_buffer_size_out");
@@ -1253,8 +1256,10 @@ HttpConfig::reconfigure()
   params->oride.connect_attempts_timeout      = m_master.oride.connect_attempts_timeout;
   params->oride.post_connect_attempts_timeout = m_master.oride.post_connect_attempts_timeout;
   params->oride.parent_connect_attempts       = m_master.oride.parent_connect_attempts;
-  params->per_parent_connect_attempts         = m_master.per_parent_connect_attempts;
-  params->parent_connect_timeout              = m_master.parent_connect_timeout;
+  params->oride.parent_retry_time             = m_master.oride.parent_retry_time;
+  params->oride.parent_fail_threshold         = m_master.oride.parent_fail_threshold;
+  params->oride.per_parent_connect_attempts   = m_master.oride.per_parent_connect_attempts;
+  params->oride.parent_connect_timeout        = m_master.oride.parent_connect_timeout;
   params->oride.parent_failures_update_hostdb = m_master.oride.parent_failures_update_hostdb;
 
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
