@@ -258,7 +258,8 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // wanted it for all requests to local_host.
     s->parent_result.result = PARENT_DIRECT;
   } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting) {
-    s->parent_params->findParent(&s->request_data, &s->parent_result);
+    s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
+                                 s->txn_conf->parent_retry_time);
     if (!s->parent_result.is_some() || s->parent_result.is_api_result() || s->parent_result.parent_is_proxy()) {
       DebugTxn("http_trans", "request not cacheable, so bypass parent");
       s->parent_result.result = PARENT_DIRECT;
@@ -271,7 +272,8 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // we are assuming both child and parent have similar configuration
     // with respect to whether a request is cacheable or not.
     // For example, the cache_urls_that_look_dynamic variable.
-    s->parent_params->findParent(&s->request_data, &s->parent_result);
+    s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
+                                 s->txn_conf->parent_retry_time);
     if (!s->parent_result.is_some() || s->parent_result.is_api_result() || s->parent_result.parent_is_proxy()) {
       DebugTxn("http_trans", "request not cacheable, so bypass parent");
       s->parent_result.result = PARENT_DIRECT;
@@ -279,10 +281,12 @@ find_server_and_update_current_info(HttpTransact::State *s)
   } else {
     switch (s->parent_result.result) {
     case PARENT_UNDEFINED:
-      s->parent_params->findParent(&s->request_data, &s->parent_result);
+      s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
+                                   s->txn_conf->parent_retry_time);
       break;
     case PARENT_SPECIFIED:
-      s->parent_params->nextParent(&s->request_data, &s->parent_result);
+      s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
+                                   s->txn_conf->parent_retry_time);
 
       // Hack!
       // We already have a parent that failed, if we are now told
@@ -1499,7 +1503,7 @@ HttpTransact::PPDNSLookup(State *s)
   if (!s->dns_info.lookup_success) {
     // Mark parent as down due to resolving failure
     HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-    s->parent_params->markParentDown(&s->parent_result);
+    s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
     // DNS lookup of parent failed, find next parent or o.s.
     find_server_and_update_current_info(s);
     if (!s->current.server->dst_addr.isValid()) {
@@ -3400,7 +3404,7 @@ HttpTransact::handle_response_from_parent(State *s)
           DebugTxn("http_trans", "PARENT_RETRY_UNAVAILABLE_SERVER: marking parent down and trying another.");
           s->current.retry_type = PARENT_RETRY_NONE;
           HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-          s->parent_params->markParentDown(&s->parent_result);
+          s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
           next_lookup = find_server_and_update_current_info(s);
         }
       }
@@ -3424,7 +3428,7 @@ HttpTransact::handle_response_from_parent(State *s)
       // If the request is not retryable, just give up!
       if (!is_request_retryable(s)) {
         HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-        s->parent_params->markParentDown(&s->parent_result);
+        s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
         s->parent_result.result = PARENT_FAIL;
         handle_parent_died(s);
         return;
@@ -3435,12 +3439,12 @@ HttpTransact::handle_response_from_parent(State *s)
         s->current.attempts++;
 
         // Are we done with this particular parent?
-        if ((s->current.attempts - 1) % s->http_config_param->per_parent_connect_attempts != 0) {
+        if ((s->current.attempts - 1) % s->txn_conf->per_parent_connect_attempts != 0) {
           // No we are not done with this parent so retry
           HTTP_INCREMENT_DYN_STAT(http_total_parent_switches_stat);
           s->next_action = how_to_open_connection(s);
           DebugTxn("http_trans", "%s Retrying parent for attempt %d, max %" PRId64, "[handle_response_from_parent]",
-                   s->current.attempts, s->http_config_param->per_parent_connect_attempts);
+                   s->current.attempts, s->txn_conf->per_parent_connect_attempts);
           return;
         } else {
           DebugTxn("http_trans", "%s %d per parent attempts exhausted", "[handle_response_from_parent]", s->current.attempts);
@@ -3451,7 +3455,7 @@ HttpTransact::handle_response_from_parent(State *s)
           //  us to mark the parent down
           if (s->current.state == CONNECTION_ERROR) {
             HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-            s->parent_params->markParentDown(&s->parent_result);
+            s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
           }
           // We are done so look for another parent if any
           next_lookup = find_server_and_update_current_info(s);
@@ -3463,7 +3467,7 @@ HttpTransact::handle_response_from_parent(State *s)
         DebugTxn("http_trans", "[handle_response_from_parent] Error. No more retries.");
         if (s->current.state == CONNECTION_ERROR) {
           HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-          s->parent_params->markParentDown(&s->parent_result);
+          s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
         }
         s->parent_result.result = PARENT_FAIL;
         next_lookup             = find_server_and_update_current_info(s);
