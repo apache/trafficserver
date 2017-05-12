@@ -931,7 +931,9 @@ FileImpl::fgets(char *buf, int length)
   if (!m_buf || (m_bufpos < (length - 1))) {
     pos = m_bufpos;
 
-    fread(nullptr, length - 1);
+    if (fread(nullptr, length - 1) < 0) {
+      return nullptr;
+    }
 
     if (!m_bufpos && (pos == m_bufpos)) {
       return nullptr;
