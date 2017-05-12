@@ -103,7 +103,8 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 }
 
 void
-ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool first_call, ParentResult *result, RequestData *rdata)
+ParentConsistentHash::selectParent(bool first_call, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
+                                   unsigned int retry_time)
 {
   ATSHash64Sip24 hash;
   ATSConsistentHash *fhash;
@@ -170,8 +171,8 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
     do {
       if (pRec && !pRec->available) {
         Debug("parent_select", "Parent.failedAt = %u, retry = %u, xact_start = %u", (unsigned int)pRec->failedAt,
-              (unsigned int)policy->ParentRetryTime, (unsigned int)request_info->xact_start);
-        if ((pRec->failedAt + policy->ParentRetryTime) < request_info->xact_start) {
+              (unsigned int)retry_time, (unsigned int)request_info->xact_start);
+        if ((pRec->failedAt + retry_time) < request_info->xact_start) {
           parentRetry = true;
           // make sure that the proper state is recorded in the result structure
           result->last_parent = pRec->idx;
@@ -243,7 +244,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
 }
 
 void
-ParentConsistentHash::markParentDown(const ParentSelectionPolicy *policy, ParentResult *result)
+ParentConsistentHash::markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time)
 {
   time_t now;
   pRecord *pRec;
@@ -296,7 +297,7 @@ ParentConsistentHash::markParentDown(const ParentSelectionPolicy *policy, Parent
 
     // if the last failure was outside the retry window, set the failcount to 1
     // and failedAt to now.
-    if ((pRec->failedAt + policy->ParentRetryTime) < now) {
+    if ((pRec->failedAt + retry_time) < now) {
       ink_atomic_swap(&pRec->failCount, 1);
       ink_atomic_swap(&pRec->failedAt, now);
     } else {
@@ -307,9 +308,9 @@ ParentConsistentHash::markParentDown(const ParentSelectionPolicy *policy, Parent
     new_fail_count = old_count + 1;
   }
 
-  if (new_fail_count > 0 && new_fail_count >= policy->FailThreshold) {
-    Note("Failure threshold met failcount:%d >= threshold:%d, http parent proxy %s:%d marked down", new_fail_count,
-         policy->FailThreshold, pRec->hostname, pRec->port);
+  if (new_fail_count > 0 && new_fail_count >= static_cast<int>(fail_threshold)) {
+    Note("Failure threshold met failcount:%d >= threshold:%d, http parent proxy %s:%d marked down", new_fail_count, fail_threshold,
+         pRec->hostname, pRec->port);
     ink_atomic_swap(&pRec->available, false);
     Debug("parent_select", "Parent %s:%d marked unavailable, pRec->available=%d", pRec->hostname, pRec->port, pRec->available);
   }

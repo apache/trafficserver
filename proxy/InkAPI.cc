@@ -8166,6 +8166,22 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
     ret = &overridableHttpConfig->parent_failures_update_hostdb;
     break;
+  case TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->parent_fail_threshold;
+    break;
+  case TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->parent_retry_time;
+    break;
+  case TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->per_parent_connect_attempts;
+    break;
+  case TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->parent_connect_timeout;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8610,6 +8626,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE;
       } else if (!strncmp(name, "proxy.config.http.safe_requests_retryable", length)) {
         cnf = TS_CONFIG_HTTP_SAFE_REQUESTS_RETRYABLE;
+      } else if (!strncmp(name, "proxy.config.http.parent_proxy.retry_time", length)) {
+        cnf = TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME;
       }
       break;
     case 'r':
@@ -8704,6 +8722,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'd':
       if (!strncmp(name, "proxy.config.http.down_server.abort_threshold", length)) {
         cnf = TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD;
+      } else if (!strncmp(name, "proxy.config.http.parent_proxy.fail_threshold", length)) {
+        cnf = TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD;
       }
       break;
     case 'n':
@@ -8911,9 +8931,17 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     }
     break;
 
+  case 55:
+    if (!strncmp(name, "proxy.config.http.parent_proxy.connect_attempts_timeout", length)) {
+      cnf = TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT;
+    }
+    break;
+
   case 58:
     if (!strncmp(name, "proxy.config.http.connect_attempts_max_retries_dead_server", length)) {
       cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER;
+    } else if (!strncmp(name, "proxy.config.http.parent_proxy.per_parent_connect_attempts", length)) {
+      cnf = TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS;
     }
     break;
   }

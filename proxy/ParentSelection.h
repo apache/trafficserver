@@ -48,6 +48,7 @@
 struct RequestData;
 struct matcher_line;
 struct ParentResult;
+struct OverridableHttpConfigParams;
 class ParentRecord;
 class ParentSelectionStrategy;
 
@@ -289,17 +290,19 @@ struct ParentSelectionPolicy {
 class ParentSelectionStrategy
 {
 public:
-  // void selectParent(const ParentSelectionPolicy *policy, bool firstCall, ParentResult *result, RequestData *rdata)
+  // void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold, unsigned int
+  // retry_time)
   //
   // The implementation parent lookup.
   //
-  virtual void selectParent(const ParentSelectionPolicy *policy, bool firstCall, ParentResult *result, RequestData *rdata) = 0;
+  virtual void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
+                            unsigned int retry_time) = 0;
 
-  // void markParentDown(const ParentSelectionPolicy *policy, ParentResult *result)
+  // void markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time)
   //
   //    Marks the parent pointed to by result as down
   //
-  virtual void markParentDown(const ParentSelectionPolicy *policy, ParentResult *result) = 0;
+  virtual void markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time) = 0;
 
   // uint32_t numParents(ParentResult *result);
   //
@@ -325,26 +328,26 @@ public:
   ~ParentConfigParams(){};
 
   bool apiParentExists(HttpRequestData *rdata);
-  void findParent(HttpRequestData *rdata, ParentResult *result);
-  void nextParent(HttpRequestData *rdata, ParentResult *result);
+  void findParent(HttpRequestData *rdata, ParentResult *result, unsigned int fail_threshold, unsigned int retry_time);
+  void nextParent(HttpRequestData *rdata, ParentResult *result, unsigned int fail_threshold, unsigned int retry_time);
   bool parentExists(HttpRequestData *rdata);
 
   // implementation of functions from ParentSelectionStrategy.
   void
-  selectParent(bool firstCall, ParentResult *result, RequestData *rdata)
+  selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold, unsigned int retry_time)
   {
     if (!result->is_api_result()) {
       ink_release_assert(result->rec->selection_strategy != NULL);
-      return result->rec->selection_strategy->selectParent(&policy, firstCall, result, rdata);
+      return result->rec->selection_strategy->selectParent(firstCall, result, rdata, fail_threshold, retry_time);
     }
   }
 
   void
-  markParentDown(ParentResult *result)
+  markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time)
   {
     if (!result->is_api_result()) {
       ink_release_assert(result->rec->selection_strategy != NULL);
-      result->rec->selection_strategy->markParentDown(&policy, result);
+      result->rec->selection_strategy->markParentDown(result, fail_threshold, retry_time);
     }
   }
 

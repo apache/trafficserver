@@ -5111,7 +5111,7 @@ HttpSM::do_http_server_open(bool raw)
     // we fail this server if it doesn't start sending the response
     // header
     if (t_state.current.server == &t_state.parent_info) {
-      connect_timeout = t_state.http_config_param->parent_connect_timeout;
+      connect_timeout = t_state.txn_conf->parent_connect_timeout;
     } else if (t_state.pCongestionEntry != nullptr) {
       connect_timeout = t_state.pCongestionEntry->connect_timeout();
     } else {
@@ -6012,7 +6012,7 @@ HttpSM::attach_server_session(HttpServerSession *s)
   if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
     connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
   } else if (t_state.current.server == &t_state.parent_info) {
-    connect_timeout = t_state.http_config_param->parent_connect_timeout;
+    connect_timeout = t_state.txn_conf->parent_connect_timeout;
   } else {
     connect_timeout = t_state.txn_conf->connect_attempts_timeout;
   }
