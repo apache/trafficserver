@@ -259,6 +259,7 @@ int Parse_order = 0;
 void
 Parse_Config(Value &parent, ParsedSslValues &orig_values)
 {
+  bool inserted = false;
   ParsedSslValues cur_values(orig_values);
   Value val = parent.find("ssl-key-name");
 
@@ -299,6 +300,7 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
     // Store in appropriate table
     if (cur_values.server_name.length() > 0) {
       Lookup.tree.insert(cur_values.server_name, entry, Parse_order++);
+      inserted = true;
     }
     if (cur_values.server_ips.size() > 0) {
       for (auto &server_ip : cur_values.server_ips) {
@@ -309,11 +311,17 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
         char val1[256], val2[256];
         server_ip.first.toString(val1, sizeof(val1));
         server_ip.second.toString(val2, sizeof(val2));
+        inserted = true;
       }
     }
     if (entry != nullptr) {
-      for (const auto &cert_name : cert_names) {
-        Lookup.tree.insert(cert_name, entry, Parse_order++);
+      if (!cert_names.empty()) {
+        for (const auto &cert_name : cert_names) {
+          Lookup.tree.insert(cert_name, entry, Parse_order++);
+        }
+      } else if (!inserted) {
+        delete entry;
+        TSError(PCP "cert_names is empty and entry not otherwise inserted!");
       }
     }
   }
