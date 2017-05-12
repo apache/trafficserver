@@ -449,6 +449,10 @@ struct OverridableHttpConfigParams {
       connect_attempts_timeout(30),
       post_connect_attempts_timeout(1800),
       parent_connect_attempts(4),
+      parent_retry_time(300),
+      parent_fail_threshold(10),
+      per_parent_connect_attempts(2),
+      parent_connect_timeout(30),
       down_server_timeout(300),
       client_abort_threshold(10),
       max_cache_open_read_retries(-1),
@@ -648,7 +652,15 @@ struct OverridableHttpConfigParams {
   MgmtInt connect_attempts_rr_retries;
   MgmtInt connect_attempts_timeout;
   MgmtInt post_connect_attempts_timeout;
+
+  ////////////////////////////////////
+  // parent proxy connect attempts //
+  ///////////////////////////////////
   MgmtInt parent_connect_attempts;
+  MgmtInt parent_retry_time;
+  MgmtInt parent_fail_threshold;
+  MgmtInt per_parent_connect_attempts;
+  MgmtInt parent_connect_timeout;
 
   MgmtInt down_server_timeout;
   MgmtInt client_abort_threshold;
@@ -736,12 +748,6 @@ public:
   int proxy_response_via_string_len = 0;
 
   MgmtInt accept_no_activity_timeout = 120;
-
-  ////////////////////////////////////
-  // origin server connect attempts //
-  ////////////////////////////////////
-  MgmtInt per_parent_connect_attempts = 2;
-  MgmtInt parent_connect_timeout      = 30;
 
   ///////////////////////////////////////////////////////////////////
   // Privacy: fields which are removed from the user agent request //
