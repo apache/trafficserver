@@ -839,7 +839,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"users@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[stream-editor] Plugin registration failed.");
+    TSError("[stream-editor] Plugin registration failed");
     return;
   }
 

@@ -184,13 +184,13 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError(PCP "registration failed.");
+    TSError(PCP "registration failed");
   } else if (TSTrafficServerVersionGetMajor() < 2) {
-    TSError(PCP "requires Traffic Server 2.0 or later.");
+    TSError(PCP "requires Traffic Server 2.0 or later");
   } else if (0 > Load_Configuration()) {
-    TSError(PCP "Failed to load config file.");
+    TSError(PCP "Failed to load config file");
   } else if (nullptr == (cb_pa = TSContCreate(&CB_Pre_Accept, TSMutexCreate()))) {
-    TSError(PCP "Failed to pre-accept callback.");
+    TSError(PCP "Failed to pre-accept callback");
   } else {
     TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb_pa);
     success = true;

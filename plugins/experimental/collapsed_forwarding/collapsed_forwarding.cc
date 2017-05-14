@@ -333,7 +333,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError("[%s] Plugin registration failed.", DEBUG_TAG);
+    TSError("[%s] Plugin registration failed", DEBUG_TAG);
   }
 
   process_args(argc, argv);

@@ -361,7 +361,7 @@ TSPluginInit(int argc, const char *argv[])
     case 'e':
       i = strtoul(optarg, &endptr, 10);
       if (*endptr != '\0' || i > 3) {
-        TSError("[tcpinfo] invalid rolling-enabled argument, '%s', using default of %d.", optarg, rolling_enabled);
+        TSError("[tcpinfo] invalid rolling-enabled argument, '%s', using default of %d", optarg, rolling_enabled);
       } else {
         rolling_enabled = i;
       }
@@ -369,7 +369,7 @@ TSPluginInit(int argc, const char *argv[])
     case 'H':
       i = strtoul(optarg, &endptr, 10);
       if (*endptr != '\0' || i > 23) {
-        TSError("[tcpinfo] invalid rolling-offset-hr argument, '%s', using default of %d.", optarg, rolling_offset_hr);
+        TSError("[tcpinfo] invalid rolling-offset-hr argument, '%s', using default of %d", optarg, rolling_offset_hr);
       } else {
         rolling_offset_hr = i;
       }
@@ -377,7 +377,7 @@ TSPluginInit(int argc, const char *argv[])
     case 'S':
       i = strtoul(optarg, &endptr, 10);
       if (*endptr != '\0' || i < 60 || i > 86400) {
-        TSError("[tcpinfo] invalid rolling-interval-sec argument, '%s', using default of %d.", optarg, rolling_interval_sec);
+        TSError("[tcpinfo] invalid rolling-interval-sec argument, '%s', using default of %d", optarg, rolling_interval_sec);
       } else {
         rolling_interval_sec = i;
       }
@@ -385,7 +385,7 @@ TSPluginInit(int argc, const char *argv[])
     case 'M':
       i = ink_atoui(optarg);
       if (i < 10) {
-        TSError("[tcpinfo] invalid rolling-size argument, '%s', using default of %d.", optarg, rolling_size);
+        TSError("[tcpinfo] invalid rolling-size argument, '%s', using default of %d", optarg, rolling_size);
       } else {
         rolling_size = i;
       }

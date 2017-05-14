@@ -327,7 +327,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError("[%s] plugin registration failed.", PLUGIN_NAME);
+    TSError("[%s] plugin registration failed", PLUGIN_NAME);
   }
 
   // Parse the global config file(s). All rules are just appended

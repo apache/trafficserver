@@ -191,7 +191,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[mysql_remap] Plugin registration failed.");
+    TSError("[mysql_remap] Plugin registration failed");
   }
 
   if (argc != 2) {

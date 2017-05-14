@@ -399,7 +399,7 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     TSContDestroy(cont);
     break;
   default:
-    TSError("[%s] Unknown event %d.", PLUGIN_NAME, event);
+    TSError("[%s] Unknown event %d", PLUGIN_NAME, event);
     break;
   }
 
@@ -703,7 +703,7 @@ TSPluginInit(int argc, const char *argv[])
 
     return;
   } else {
-    TSDebug(PLUGIN_NAME, "Plugin registration succeeded.");
+    TSDebug(PLUGIN_NAME, "Plugin registration succeeded");
   }
 
   plugin_config = TSmalloc(sizeof(config_t));
@@ -763,6 +763,6 @@ TSPluginInit(int argc, const char *argv[])
     TSContDataSet(main_cont, (void *)plugin_config);
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, main_cont);
 
-    TSDebug(PLUGIN_NAME, "Plugin Init Complete.");
+    TSDebug(PLUGIN_NAME, "Plugin Init Complete");
   }
 }

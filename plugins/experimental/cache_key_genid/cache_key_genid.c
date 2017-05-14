@@ -166,7 +166,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s] plugin registration failed.  check version.", PLUGIN_NAME);
+    TSError("[%s] plugin registration failed, check version", PLUGIN_NAME);
     return;
   }
 

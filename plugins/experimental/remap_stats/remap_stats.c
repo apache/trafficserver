@@ -249,11 +249,11 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[remap_stats] Plugin registration failed.");
+    TSError("[remap_stats] Plugin registration failed");
 
     return;
   } else {
-    TSDebug(DEBUG_TAG, "Plugin registration succeeded.");
+    TSDebug(DEBUG_TAG, "Plugin registration succeeded");
   }
 
   config                      = TSmalloc(sizeof(config_t));

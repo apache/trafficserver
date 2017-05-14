@@ -105,7 +105,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
   TSstrlcpy(url, argv[1], sizeof(url));
