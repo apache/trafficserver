@@ -219,7 +219,7 @@ ps_determine_request_options(const RewriteOptions *domain_options, /* may be nul
   if (!server_context->GetQueryOptions(request_context, domain_options, url, request_headers, response_headers, &rewrite_query)) {
     // Failed to parse query params or request headers.  Treat this as if there
     // were no query params given.
-    TSError("[ats_pagespeed] ps_route request: parsing headers or query params failed.");
+    TSError("[ats_pagespeed] ps_route request: parsing headers or query params failed");
     return NULL;
   }
 

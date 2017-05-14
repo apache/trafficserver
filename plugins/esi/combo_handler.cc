@@ -318,7 +318,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[combo_handler][%s] plugin registration failed.", __FUNCTION__);
+    TSError("[combo_handler][%s] plugin registration failed", __FUNCTION__);
     return;
   }
 
@@ -403,7 +403,7 @@ handleReadRequestHeader(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
   }
 
   LOG_DEBUG("combo is enabled for this channel");
-  LOG_DEBUG("handling TS_EVENT_HTTP_OS_DNS event...");
+  LOG_DEBUG("handling TS_EVENT_HTTP_OS_DNS event");
 
   TSEvent reenable_to_event = TS_EVENT_HTTP_CONTINUE;
   TSMBuffer bufp;
@@ -484,7 +484,7 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
 
   field_loc = TSMimeHdrFieldFind(bufp, hdr_obj, TS_MIME_FIELD_HOST, -1);
   if (field_loc == TS_NULL_MLOC) {
-    LOG_ERROR("Host field not found.");
+    LOG_ERROR("Host field not found");
     return false;
   }
 
@@ -577,7 +577,7 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
               LOG_DEBUG("Signature [%.*s] on query [%.*s] is invalid", param_len - 4, param + 4, param_start_pos, query);
             }
           } else {
-            LOG_DEBUG("Verification not configured; ignoring signature...");
+            LOG_DEBUG("Verification not configured, ignoring signature");
           }
           break; // nothing useful after the signature
         }
@@ -751,7 +751,7 @@ handleServerEvent(TSCont contp, TSEvent event, void *edata)
   }
 
   if (int_data->read_complete && int_data->write_complete) {
-    LOG_DEBUG("Completed request processing. Shutting down...");
+    LOG_DEBUG("Completed request processing, shutting down");
     delete int_data;
     TSContDestroy(contp);
   }

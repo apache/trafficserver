@@ -69,7 +69,7 @@ ts_lua_add_package_path(lua_State *L)
 
   conf = ts_lua_get_instance_conf(L);
   if (conf == NULL) {
-    return luaL_error(L, "cann't get the instance conf.");
+    return luaL_error(L, "can't get the instance conf");
   }
 
   data = luaL_checklstring(L, 1, &dlen);
@@ -99,7 +99,7 @@ ts_lua_add_package_path(lua_State *L)
 
         if (i >= g_path_cnt) {
           if (n + i >= TS_LUA_MAX_PACKAGE_NUM)
-            return luaL_error(L, "extended package path number exceeds %d.", TS_LUA_MAX_PACKAGE_NUM);
+            return luaL_error(L, "extended package path number exceeds %d", TS_LUA_MAX_PACKAGE_NUM);
 
           pp[n].name = (char *)ptr;
           pp[n].len  = item_len;
@@ -115,7 +115,7 @@ ts_lua_add_package_path(lua_State *L)
 
         if (i >= path_cnt) {
           if (n + i >= TS_LUA_MAX_PACKAGE_NUM)
-            return luaL_error(L, "extended package path number exceeds %d.", TS_LUA_MAX_PACKAGE_NUM);
+            return luaL_error(L, "extended package path number exceeds %d", TS_LUA_MAX_PACKAGE_NUM);
 
           pp[n].name = (char *)ptr;
           pp[n].len  = item_len;
@@ -168,7 +168,7 @@ ts_lua_add_package_path_items(lua_State *L, ts_lua_package_path *pp, int n)
   lua_getglobal(L, "package");
 
   if (!lua_istable(L, -1)) {
-    return luaL_error(L, "'package' table does not exist.");
+    return luaL_error(L, "'package' table does not exist");
   }
 
   lua_getfield(L, -1, "path"); /* get old package.path */
@@ -182,7 +182,7 @@ ts_lua_add_package_path_items(lua_State *L, ts_lua_package_path *pp, int n)
 
   for (i = 0; i < n; i++) {
     if (new_path_len + pp[i].len + 1 >= sizeof(new_path)) {
-      TSError("[ts_lua] Extended package.path is too long.");
+      TSError("[ts_lua] Extended package.path is too long");
       return -1;
     }
 
@@ -215,7 +215,7 @@ ts_lua_add_package_cpath(lua_State *L)
 
   conf = ts_lua_get_instance_conf(L);
   if (conf == NULL) {
-    return luaL_error(L, "cann't get the instance conf.");
+    return luaL_error(L, "can't get the instance conf");
   }
 
   data = luaL_checklstring(L, 1, &dlen);
@@ -245,7 +245,7 @@ ts_lua_add_package_cpath(lua_State *L)
 
         if (i >= g_cpath_cnt) {
           if (n + i >= TS_LUA_MAX_PACKAGE_NUM)
-            return luaL_error(L, "extended package cpath number exceeds %d.", TS_LUA_MAX_PACKAGE_NUM);
+            return luaL_error(L, "extended package cpath number exceeds %d", TS_LUA_MAX_PACKAGE_NUM);
 
           pp[n].name = (char *)ptr;
           pp[n].len  = item_len;
@@ -261,7 +261,7 @@ ts_lua_add_package_cpath(lua_State *L)
 
         if (i >= cpath_cnt) {
           if (n + i >= TS_LUA_MAX_PACKAGE_NUM)
-            return luaL_error(L, "extended package cpath number exceeds %d.", TS_LUA_MAX_PACKAGE_NUM);
+            return luaL_error(L, "extended package cpath number exceeds %d", TS_LUA_MAX_PACKAGE_NUM);
 
           pp[n].name = (char *)ptr;
           pp[n].len  = item_len;
@@ -314,7 +314,7 @@ ts_lua_add_package_cpath_items(lua_State *L, ts_lua_package_path *pp, int n)
   lua_getglobal(L, "package");
 
   if (!lua_istable(L, -1)) {
-    return luaL_error(L, "'package' table does not exist.");
+    return luaL_error(L, "'package' table does not exist");
   }
 
   lua_getfield(L, -1, "cpath"); /* get old package.cpath */
@@ -328,7 +328,7 @@ ts_lua_add_package_cpath_items(lua_State *L, ts_lua_package_path *pp, int n)
 
   for (i = 0; i < n; i++) {
     if (new_path_len + pp[i].len + 1 >= sizeof(new_path)) {
-      TSError("[ts_lua] Extended package.cpath is too long.");
+      TSError("[ts_lua] Extended package.cpath is too long");
       return -1;
     }
 

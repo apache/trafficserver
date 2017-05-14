@@ -565,7 +565,7 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   if (2 != argc) {
-    TSError("[healthchecks] Must specify a configuration file.");
+    TSError("[healthchecks] Must specify a configuration file");
     return;
   }
 
@@ -574,7 +574,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError("[healthchecks] Plugin registration failed.");
+    TSError("[healthchecks] Plugin registration failed");
     return;
   }
 

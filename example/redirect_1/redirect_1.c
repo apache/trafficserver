@@ -294,7 +294,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
   if (argc == 3) {
@@ -317,7 +317,7 @@ TSPluginInit(int argc, const char *argv[])
 
   ip_deny = inet_addr(block_ip);
 
-  TSDebug(PLUGIN_NAME, "initializing stats...");
+  TSDebug(PLUGIN_NAME, "initializing stats");
   init_stats();
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(redirect_plugin, NULL));
 

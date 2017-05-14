@@ -711,7 +711,7 @@ transformData(TSCont contp)
     }
   }
   if (process_input_complete) {
-    TSDebug(cont_data->debug_tag, "[%s] Completed reading input...", __FUNCTION__);
+    TSDebug(cont_data->debug_tag, "[%s] Completed reading input", __FUNCTION__);
     if (cont_data->input_type == DATA_TYPE_PACKED_ESI) {
       TSDebug(DEBUG_TAG, "[%s] Going to use packed node list of size %d", __FUNCTION__, (int)cont_data->packed_node_list.size());
       if (cont_data->esi_proc->usePackedNodeList(cont_data->packed_node_list) == EsiProcessor::UNPACK_FAILURE) {
@@ -919,7 +919,7 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
   is_fetch_event = cont_data->data_fetcher->isFetchEvent(event);
 
   if (cont_data->xform_closed) {
-    TSDebug(cont_debug_tag, "[%s] Transformation closed. Post-processing...", __FUNCTION__);
+    TSDebug(cont_debug_tag, "[%s] Transformation closed, post-processing", __FUNCTION__);
     if (cont_data->curr_state == ContData::PROCESSING_COMPLETE) {
       TSDebug(cont_debug_tag, "[%s] Processing is complete, not processing current event %d", __FUNCTION__, event);
       process_event = false;
@@ -975,13 +975,13 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
       break;
 
     case TS_EVENT_IMMEDIATE:
-      TSDebug(cont_debug_tag, "[%s] handling TS_EVENT_IMMEDIATE...", __FUNCTION__);
+      TSDebug(cont_debug_tag, "[%s] handling TS_EVENT_IMMEDIATE", __FUNCTION__);
       transformData(contp);
       break;
 
     default:
       if (is_fetch_event) {
-        TSDebug(cont_debug_tag, "[%s] Handling fetch event %d...", __FUNCTION__, event);
+        TSDebug(cont_debug_tag, "[%s] Handling fetch event %d", __FUNCTION__, event);
         if (cont_data->data_fetcher->handleFetchEvent(event, edata)) {
           if ((cont_data->curr_state == ContData::FETCHING_DATA) || (cont_data->curr_state == ContData::READING_ESI_DOC)) {
             // there's a small chance that fetcher is ready even before
@@ -1020,7 +1020,7 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
   return 1;
 
 lShutdown:
-  TSDebug(cont_data->debug_tag, "[%s] transformation closed; cleaning up data...", __FUNCTION__);
+  TSDebug(cont_data->debug_tag, "[%s] transformation closed; cleaning up data", __FUNCTION__);
   delete cont_data;
   TSContDestroy(contp);
   return 1;
@@ -1504,7 +1504,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    TSDebug(DEBUG_TAG, "[%s] handling read request header event...", __FUNCTION__);
+    TSDebug(DEBUG_TAG, "[%s] handling read request header event", __FUNCTION__);
     if (intercept_req) {
       if (!setupServerIntercept(txnp)) {
         TSError("[esi][%s] Could not setup server intercept", __FUNCTION__);
@@ -1521,7 +1521,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
     if (!intercept_req) {
       if (event == TS_EVENT_HTTP_READ_RESPONSE_HDR) {
         bool mask_cache_headers = false;
-        TSDebug(DEBUG_TAG, "[%s] handling read response header event...", __FUNCTION__);
+        TSDebug(DEBUG_TAG, "[%s] handling read response header event", __FUNCTION__);
         if (isCacheObjTransformable(txnp, &intercept_header, &head_only)) {
           // transformable cache object will definitely have a
           // transformation already as cache_lookup_complete would
@@ -1540,7 +1540,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
           maskOsCacheHeaders(txnp);
         }
       } else {
-        TSDebug(DEBUG_TAG, "[%s] handling cache lookup complete event...", __FUNCTION__);
+        TSDebug(DEBUG_TAG, "[%s] handling cache lookup complete event", __FUNCTION__);
         if (isCacheObjTransformable(txnp, &intercept_header, &head_only)) {
           // we make the assumption above that a transformable cache
           // object would already have a tranformation. We should revisit
@@ -1666,7 +1666,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[esi][%s] plugin registration failed.", __FUNCTION__);
+    TSError("[esi][%s] plugin registration failed", __FUNCTION__);
     return;
   }
 

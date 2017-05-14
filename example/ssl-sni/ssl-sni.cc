@@ -154,13 +154,13 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError(PCP "registration failed.");
+    TSError(PCP "registration failed");
   } else if (TSTrafficServerVersionGetMajor() < 2) {
-    TSError(PCP "requires Traffic Server 2.0 or later.");
+    TSError(PCP "requires Traffic Server 2.0 or later");
   } else if (0 > Load_Configuration()) {
-    TSError(PCP "Failed to load config file.");
+    TSError(PCP "Failed to load config file");
   } else if (nullptr == (cb_cert = TSContCreate(&CB_servername, TSMutexCreate()))) {
-    TSError(PCP "Failed to create cert callback.");
+    TSError(PCP "Failed to create cert callback");
   } else {
     TSHttpHookAdd(TS_SSL_CERT_HOOK, cb_cert);
     success = true;
@@ -179,7 +179,7 @@ TSPluginInit(int argc, const char *argv[])
 void
 TSPluginInit(int, const char *[])
 {
-  TSError(PCP "requires TLS SNI which is not available.");
+  TSError(PCP "requires TLS SNI which is not available");
 }
 
 #endif // TS_USE_TLS_SNI

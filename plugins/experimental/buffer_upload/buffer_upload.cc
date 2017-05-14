@@ -190,7 +190,7 @@ call_httpconnect(TSCont contp, pvc_state *my_state)
   // unsigned int client_ip = TSHttpTxnClientIPGet(my_state->http_txnp);
   sockaddr const *client_ip = TSHttpTxnClientAddrGet(my_state->http_txnp);
 
-  TSDebug(DEBUG_TAG, "call TSHttpConnect() ...");
+  TSDebug(DEBUG_TAG, "call TSHttpConnect()");
   if ((my_state->net_vc = TSHttpConnect(client_ip)) == nullptr) {
     LOG_ERROR_AND_RETURN("TSHttpConnect");
   }
@@ -732,7 +732,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
         if (NOT_VALID_PTR(field_loc)) {
           // if (VALID_PTR(str))
           //  TSHandleStringRelease(req_bufp, url_loc, str);
-          LOG_ERROR("Host field not found.");
+          LOG_ERROR("Host field not found");
           TSHandleMLocRelease(req_bufp, req_loc, url_loc);
           TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
           break;
@@ -884,7 +884,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 
     if (!uconfig->use_disk_buffer && my_state->req_size > uconfig->mem_buffer_size) {
       TSDebug(DEBUG_TAG, "The request size %" PRId64 " is larger than memory buffer size %" PRId64
-                         ", bypass upload proxy feature for this request.",
+                         ", bypass upload proxy feature for this request",
               my_state->req_size, uconfig->mem_buffer_size);
 
       pvc_cleanup(new_cont, my_state);
@@ -913,7 +913,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       }
     }
 
-    TSDebug(DEBUG_TAG, "calling TSHttpTxnIntercept() ...");
+    TSDebug(DEBUG_TAG, "calling TSHttpTxnIntercept()");
     TSHttpTxnIntercept(new_cont, txnp);
 
     break;
@@ -1213,7 +1213,7 @@ TSPluginInit(int argc, const char *argv[])
   }
   // set the num of threads for disk AIO
   if (TSAIOThreadNumSet(uconfig->thread_num) == TS_ERROR) {
-    TSError("[buffer_upload] Failed to set thread number.");
+    TSError("[buffer_upload] Failed to set thread number");
   }
 
   TSDebug(DEBUG_TAG, "uconfig->url_list_file: %s", uconfig->url_list_file);
@@ -1227,12 +1227,12 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
   if (uconfig->use_disk_buffer && !create_directory()) {
-    TSError("[buffer_upload] Directory creation failed.");
+    TSError("[buffer_upload] Directory creation failed");
     uconfig->use_disk_buffer = false;
   }
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[buffer_upload] Plugin registration failed.");
+    TSError("[buffer_upload] Plugin registration failed");
   }
 
   /* create the statistic variables */

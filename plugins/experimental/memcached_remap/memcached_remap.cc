@@ -172,7 +172,7 @@ TSPluginInit(int argc, const char *argv[])
 
   TSDebug(PLUGIN_NAME, "about to init memcached");
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[memcached_remap] Plugin registration failed.");
+    TSError("[memcached_remap] Plugin registration failed");
     return;
   }
 

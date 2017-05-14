@@ -95,13 +95,13 @@ TSPluginInit(int argc, char const *argv[])
   ret                = TSPluginRegister(&info);
 
   if (ret != TS_SUCCESS) {
-    TSError("[%s] registration failed.", PLUGIN_NAME);
+    TSError("[%s] registration failed", PLUGIN_NAME);
     return;
   } else if (argc < 2) {
     TSError("[%s] Usage %s.so servername1 servername2 ... ", PLUGIN_NAME, PLUGIN_NAME);
     return;
   } else {
-    TSDebug(PLUGIN_NAME, "registration succeeded.");
+    TSDebug(PLUGIN_NAME, "registration succeeded");
   }
 
   for (int i = 1; i < argc; i++) {

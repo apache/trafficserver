@@ -152,9 +152,9 @@ TSPluginInit(int argc, const char *argv[])
     redirect_url_header_len = strlen(redirect_url_header);
   }
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[custom_redirect] Plugin registration failed.");
+    TSError("[custom_redirect] Plugin registration failed");
   }
-  TSError("[custom_redirect] Plugin registered successfully.");
+  TSError("[custom_redirect] Plugin registered successfully");
   TSCont mainCont = TSContCreate(plugin_main_handler, nullptr);
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, mainCont);
 }

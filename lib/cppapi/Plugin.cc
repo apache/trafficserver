@@ -36,5 +36,5 @@ atscppapi::RegisterGlobalPlugin(const char *name, const char *vendor, const char
   info.vendor_name   = vendor;
   info.support_email = email;
   if (TSPluginRegister(&info) != TS_SUCCESS)
-    TSError("[Plugin.cc] Plugin registration failed.");
+    TSError("[Plugin.cc] Plugin registration failed");
 }
