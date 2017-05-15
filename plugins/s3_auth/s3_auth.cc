@@ -130,10 +130,10 @@ public:
       _keyid_len = src->_keyid_len;
     }
 
-    if (_version_modified) {
+    if (src->_version_modified) {
       _version = src->_version;
     }
-    if (_virt_host_modified) {
+    if (src->_virt_host_modified) {
       _virt_host = src->_virt_host;
     }
   }
