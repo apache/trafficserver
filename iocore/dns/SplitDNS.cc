@@ -138,13 +138,13 @@ SplitDNSConfig::reconfigure()
   params->m_SplitDNSlEnable = gsplit_dns_enabled;
   params->m_DNSSrvrTable    = new DNS_table("proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags);
 
-  params->m_numEle = params->m_DNSSrvrTable->getEntryCount();
-  if (nullptr == params->m_DNSSrvrTable || (0 == params->m_numEle)) {
+  if (nullptr == params->m_DNSSrvrTable || (0 == params->m_DNSSrvrTable->getEntryCount())) {
     Warning("No NAMEDs provided! Disabling SplitDNS");
     gsplit_dns_enabled = 0;
     delete params;
     return;
   }
+  params->m_numEle = params->m_DNSSrvrTable->getEntryCount();
 
   if (nullptr != params->m_DNSSrvrTable->getHostMatcher() && nullptr == params->m_DNSSrvrTable->getReMatcher() &&
       nullptr == params->m_DNSSrvrTable->getIPMatcher() && 4 >= params->m_numEle) {

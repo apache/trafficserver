@@ -28,11 +28,14 @@ ClassAllocator<RemapPlugins> pluginAllocator("RemapPluginsAlloc");
 TSRemapStatus
 RemapPlugins::run_plugin(remap_plugin_info *plugin)
 {
+  ink_assert(_s);
+
   TSRemapStatus plugin_retcode;
   TSRemapRequestInfo rri;
   url_mapping *map = _s->url_map.getMapping();
   URL *map_from    = _s->url_map.getFromURL();
   URL *map_to      = _s->url_map.getToURL();
+  void *ih         = map->get_instance(_cur);
 
   // This is the equivalent of TSHttpTxnClientReqGet(), which every remap plugin would
   // have to call.
@@ -46,28 +49,8 @@ RemapPlugins::run_plugin(remap_plugin_info *plugin)
 
   rri.redirect = 0;
 
-// These are made to reflect the "defaults" that will be used in
-// the case where the plugins don't modify them. It's semi-weird
-// that the "from" and "to" URLs changes when chaining happens, but
-// it is necessary to get predictable behavior.
-#if 0
-  if (_cur == 0) {
-    rri.remap_from_host = map_from->host_get(&rri.remap_from_host_size);
-    rri.remap_from_port = map_from->port_get();
-    rri.remap_from_path = map_from->path_get(&rri.remap_from_path_size);
-    rri.from_scheme = map_from->scheme_get(&rri.from_scheme_len);
-  } else {
-    rri.remap_from_host = _request_url->host_get(&rri.remap_from_host_size);
-    rri.remap_from_port = _request_url->port_get();
-    rri.remap_from_path = _request_url->path_get(&rri.remap_from_path_size);
-    rri.from_scheme = _request_url->scheme_get(&rri.from_scheme_len);
-  }
-#endif
-
-  void *ih = map->get_instance(_cur);
-
   // Prepare State for the future
-  if (_s && _cur == 0) {
+  if (_cur == 0) {
     _s->fp_tsremap_os_response = plugin->fp_tsremap_os_response;
     _s->remap_plugin_instance  = ih;
   }

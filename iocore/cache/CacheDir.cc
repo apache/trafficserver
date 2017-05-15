@@ -1355,6 +1355,7 @@ dir_corrupt_bucket(Dir *b, int s, Vol *d)
     ink_release_assert(e);
     e = next_dir(e, seg);
   }
+  ink_release_assert(e);
   dir_set_next(e, dir_to_offset(e, seg));
 }
 

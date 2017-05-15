@@ -541,7 +541,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       cstate.update_initial_rwnd(param.value);
     }
 
-    cstate.client_settings.set((Http2SettingsIdentifier)param.id, param.value);
+    cstate.client_settings.set(static_cast<Http2SettingsIdentifier>(param.id), param.value);
   }
 
   // [RFC 7540] 6.5. Once all values have been applied, the recipient MUST

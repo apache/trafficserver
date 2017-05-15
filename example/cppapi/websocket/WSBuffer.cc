@@ -135,7 +135,7 @@ WSBuffer::read_buffered_message(std::string &message, int &code)
 
   // Apply any mask.
   if (mask_len) {
-    for (size_t i = 0, p = pos; i < msg_len; ++i, ++p) {
+    for (size_t i = 0, p = pos; i < msg_len && p < ws_buf_.size(); ++i, ++p) {
       ws_buf_[p] ^= mask[i & 3];
     }
   }

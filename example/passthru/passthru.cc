@@ -215,15 +215,15 @@ PassthruSessionEvent(TSCont cont, TSEvent event, void *edata)
       TSVIOReenable(sp->server.readio.vio);
       TSVIOReenable(sp->client.writeio.vio);
     }
-  }
 
-  if (PassthruSessionIsFinished(sp)) {
-    delete sp;
+    if (PassthruSessionIsFinished(sp)) {
+      delete sp;
+      return TS_EVENT_NONE;
+    }
+
+    TSVIOReenable(arg.vio);
     return TS_EVENT_NONE;
   }
-
-  TSVIOReenable(arg.vio);
-  return TS_EVENT_NONE;
 
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (PassthruSessionIsFinished(sp)) {

@@ -36,7 +36,7 @@
 // LogCollationAccept::LogCollationAccept
 //-------------------------------------------------------------------------
 
-LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port), m_pending_event(nullptr)
+LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port)
 {
   NetProcessor::AcceptOptions opt;
   SET_HANDLER((LogCollationAcceptHandler)&LogCollationAccept::accept_event);

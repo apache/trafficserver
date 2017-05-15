@@ -210,7 +210,7 @@ Http2ClientSession::set_upgrade_context(HTTPHdr *h)
         // TODO ignore incoming invalid parameters and send suitable SETTINGS
         // frame.
       }
-      upgrade_context.client_settings.set((Http2SettingsIdentifier)param.id, param.value);
+      upgrade_context.client_settings.set(static_cast<Http2SettingsIdentifier>(param.id), param.value);
     }
   }
 

@@ -40,23 +40,16 @@
 
 */
 struct HostEnt : RefCountObj {
-  struct hostent ent;
-  uint32_t ttl;
-  int packet_size;
-  char buf[MAX_DNS_PACKET_LEN];
-  u_char *host_aliases[DNS_MAX_ALIASES];
-  u_char *h_addr_ptrs[DNS_MAX_ADDRS + 1];
-  u_char hostbuf[DNS_HOSTBUF_SIZE];
-
+  struct hostent ent = {.h_name = nullptr, .h_aliases = nullptr, .h_addrtype = 0, .h_length = 0, .h_addr_list = nullptr};
+  uint32_t ttl                           = 0;
+  int packet_size                        = 0;
+  char buf[MAX_DNS_PACKET_LEN]           = {0};
+  u_char *host_aliases[DNS_MAX_ALIASES]  = {nullptr};
+  u_char *h_addr_ptrs[DNS_MAX_ADDRS + 1] = {nullptr};
+  u_char hostbuf[DNS_HOSTBUF_SIZE]       = {0};
   SRVHosts srv_hosts;
 
   virtual void free();
-
-  HostEnt()
-  {
-    size_t base = sizeof(force_VFPT_to_top); // preserve VFPT
-    memset(((char *)this) + base, 0, sizeof(*this) - base);
-  }
 };
 
 extern EventType ET_DNS;
