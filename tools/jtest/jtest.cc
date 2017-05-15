@@ -1385,8 +1385,8 @@ read_ftp_request(int sock)
       return 0;
     } else if (STREQ(buffer, "MDTM")) {
       double err_rand = 1.0;
-      // coverity[dont_call]
       if (ftp_mdtm_err_rate != 0.0) {
+        // coverity[dont_call]
         err_rand = drand48();
       }
       if (err_rand < ftp_mdtm_err_rate) {
@@ -2759,7 +2759,9 @@ make_range_header(int sock, double dr, char *rbuf, int size_limit)
     return;
 
   tmp[0] = gen_bfc_dist(dr - 1.0);
+  // coverity[dont_call]
   tmp[1] = ((int)(drand48() * 1000000)) % (tmp[0] - 1 - 0 + 1);
+  // coverity[dont_call]
   tmp[2] = ((int)(drand48() * 1000000)) % (tmp[0] - 1 - 0 + 1) + tmp[1] + 100;
 
   if (tmp[0] > 100) {
@@ -2786,8 +2788,10 @@ make_range_header(int sock, double dr, char *rbuf, int size_limit)
 static void
 make_random_url(int sock, double *dr, double *h)
 {
+  // coverity[dont_call]
   *dr = drand48();
-  *h  = drand48();
+  // coverity[dont_call]
+  *h = drand48();
 
   if (zipf == 0.0) {
     if (*h < hitrate) {
