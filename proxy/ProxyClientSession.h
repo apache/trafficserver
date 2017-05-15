@@ -226,8 +226,8 @@ public:
   /// DNS resolution preferences.
   HostResStyle host_res_style = HOST_RES_IPV4;
 
-  ink_hrtime ssn_start_time;
-  ink_hrtime ssn_last_txn_time;
+  ink_hrtime ssn_start_time    = 0;
+  ink_hrtime ssn_last_txn_time = 0;
 
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so
