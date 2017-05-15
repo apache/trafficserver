@@ -1091,19 +1091,6 @@ ip-resolve
    according to this setting then it will be used, otherwise it will be released to the pool and a different session
    selected or created.
 
-.. ts:cv:: CONFIG proxy.config.http.safe_requests_retryable INT 1
-   :overridable:
-
-   This setting, on by default, allows requests which are considered safe to be retried on an error.
-   See https://tools.ietf.org/html/rfc7231#section-4.2.1 to RFC for details on which request methods are considered safe.
-
-   If this setting is ``0`` then ATS retries a failed origin server request only if the bytes sent by ATS
-   are not acknowledged by the origin server.
-
-   If this setting is ``1`` then ATS retries all the safe methods to a failed origin server irrespective of
-   previous connection failure status.
-
-
 .. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
    :reloadable:
 
