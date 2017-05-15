@@ -267,74 +267,10 @@ HttpVCTable::cleanup_all()
 
 static int next_sm_id = 0;
 
-HttpSM::HttpSM()
-  : Continuation(nullptr),
-    sm_id(-1),
-    magic(HTTP_SM_MAGIC_DEAD),
-    // YTS Team, yamsat Plugin
-    enable_redirection(false),
-    redirect_url(nullptr),
-    redirect_url_len(0),
-    redirection_tries(0),
-    transfered_bytes(0),
-    post_failed(false),
-    debug_on(false),
-    plugin_tunnel_type(HTTP_NO_PLUGIN_TUNNEL),
-    plugin_tunnel(nullptr),
-    reentrancy_count(0),
-    history_pos(0),
-    tunnel(),
-    ua_entry(nullptr),
-    ua_session(nullptr),
-    background_fill(BACKGROUND_FILL_NONE),
-    ua_raw_buffer_reader(nullptr),
-    server_entry(nullptr),
-    server_session(nullptr),
-    will_be_private_ss(false),
-    shared_session_retries(0),
-    server_buffer_reader(nullptr),
-    transform_info(),
-    post_transform_info(),
-    has_active_plugin_agents(false),
-    second_cache_sm(nullptr),
-    default_handler(nullptr),
-    pending_action(nullptr),
-    last_action(HttpTransact::SM_ACTION_UNDEFINED),
-    // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
-    client_request_hdr_bytes(0),
-    client_request_body_bytes(0),
-    server_request_hdr_bytes(0),
-    server_request_body_bytes(0),
-    server_response_hdr_bytes(0),
-    server_response_body_bytes(0),
-    client_response_hdr_bytes(0),
-    client_response_body_bytes(0),
-    cache_response_hdr_bytes(0),
-    cache_response_body_bytes(0),
-    pushed_response_hdr_bytes(0),
-    pushed_response_body_bytes(0),
-    client_tcp_reused(false),
-    client_ssl_reused(false),
-    client_connection_is_ssl(false),
-    client_protocol("-"),
-    client_sec_protocol("-"),
-    client_cipher_suite("-"),
-    server_transact_count(0),
-    server_connection_is_ssl(false),
-    plugin_tag(nullptr),
-    plugin_id(0),
-    hooks_set(false),
-    cur_hook_id(TS_HTTP_LAST_HOOK),
-    cur_hook(nullptr),
-    cur_hooks(0),
-    callout_state(HTTP_API_NO_CALLOUT),
-    terminate_sm(false),
-    kill_this_async_done(false),
-    parse_range_done(false)
+HttpSM::HttpSM() : Continuation(nullptr)
 {
-  memset(&history, 0, sizeof(history));
-  memset(&vc_table, 0, sizeof(vc_table));
-  memset(&http_parser, 0, sizeof(http_parser));
+  ink_zero(vc_table);
+  ink_zero(http_parser);
 }
 
 void

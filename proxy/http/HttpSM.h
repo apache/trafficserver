@@ -271,79 +271,80 @@ public:
   const char *client_protocol_contains(ts::StringView tag_prefix) const;
   ts::StringView find_proto_string(HTTPVersion version) const;
 
-  int64_t sm_id;
-  unsigned int magic;
+  int64_t sm_id      = -1;
+  unsigned int magic = HTTP_SM_MAGIC_DEAD;
 
   // YTS Team, yamsat Plugin
-  bool enable_redirection; // To check if redirection is enabled
-  char *redirect_url;      // url for force redirect (provide users a functionality to redirect to another url when needed)
-  int redirect_url_len;
-  int redirection_tries;    // To monitor number of redirections
-  int64_t transfered_bytes; // Added to calculate POST data
-  bool post_failed;         // Added to identify post failure
-  bool debug_on;            // Transaction specific debug flag
+  bool enable_redirection = false; // To check if redirection is enabled
+  char *redirect_url    = nullptr; // url for force redirect (provide users a functionality to redirect to another url when needed)
+  int redirect_url_len  = 0;
+  int redirection_tries = 0;        // To monitor number of redirections
+  int64_t transfered_bytes = 0;     // Added to calculate POST data
+  bool post_failed         = false; // Added to identify post failure
+  bool debug_on            = false; // Transaction specific debug flag
 
   // Tunneling request to plugin
-  HttpPluginTunnel_t plugin_tunnel_type;
-  PluginVCCore *plugin_tunnel;
+  HttpPluginTunnel_t plugin_tunnel_type = HTTP_NO_PLUGIN_TUNNEL;
+  PluginVCCore *plugin_tunnel           = nullptr;
 
   HttpTransact::State t_state;
 
 protected:
-  int reentrancy_count;
+  int reentrancy_count = 0;
 
   struct History {
     const char *fileline;
     unsigned short event;
     short reentrancy;
   };
-  History history[HISTORY_SIZE];
-  int history_pos;
+  History history[HISTORY_SIZE] = {{nullptr, 0, 0}};
+  ;
+  int history_pos = 0;
 
   HttpTunnel tunnel;
 
   HttpVCTable vc_table;
 
-  HttpVCTableEntry *ua_entry;
+  HttpVCTableEntry *ua_entry = nullptr;
   void remove_ua_entry();
 
 public:
-  ProxyClientTransaction *ua_session;
-  BackgroundFill_t background_fill;
+  ProxyClientTransaction *ua_session = nullptr;
+  BackgroundFill_t background_fill   = BACKGROUND_FILL_NONE;
   // AuthHttpAdapter authAdapter;
   void set_http_schedule(Continuation *);
   int get_http_schedule(int event, void *data);
 
 protected:
-  IOBufferReader *ua_buffer_reader;
-  IOBufferReader *ua_raw_buffer_reader;
+  IOBufferReader *ua_buffer_reader     = nullptr;
+  IOBufferReader *ua_raw_buffer_reader = nullptr;
 
-  HttpVCTableEntry *server_entry;
-  HttpServerSession *server_session;
+  HttpVCTableEntry *server_entry    = nullptr;
+  HttpServerSession *server_session = nullptr;
 
   /* Because we don't want to take a session from a shared pool if we know that it will be private,
    * but we cannot set it to private until we have an attached server session.
    * So we use this variable to indicate that
    * we should create a new connection and then once we attach the session we'll mark it as private.
    */
-  bool will_be_private_ss;
-  int shared_session_retries;
-  IOBufferReader *server_buffer_reader;
+  bool will_be_private_ss              = false;
+  int shared_session_retries           = 0;
+  IOBufferReader *server_buffer_reader = nullptr;
   void remove_server_entry();
 
   HttpTransformInfo transform_info;
   HttpTransformInfo post_transform_info;
   /// Set if plugin client / user agents are active.
   /// Need primarily for cleanup.
-  bool has_active_plugin_agents;
+  bool has_active_plugin_agents = false;
 
   HttpCacheSM cache_sm;
   HttpCacheSM transform_cache_sm;
-  HttpCacheSM *second_cache_sm;
+  HttpCacheSM *second_cache_sm = nullptr;
 
-  HttpSMHandler default_handler;
-  Action *pending_action;
-  Continuation *schedule_cont;
+  HttpSMHandler default_handler = nullptr;
+  Action *pending_action        = nullptr;
+  Continuation *schedule_cont   = nullptr;
 
   HTTPParser http_parser;
   void start_sub_sm();
@@ -472,8 +473,8 @@ protected:
   HttpTunnelProducer *setup_transfer_from_transform_to_cache_only();
   void setup_plugin_agents(HttpTunnelProducer *p);
 
-  HttpTransact::StateMachineAction_t last_action;
-  int (HttpSM::*m_last_state)(int event, void *data);
+  HttpTransact::StateMachineAction_t last_action = HttpTransact::SM_ACTION_UNDEFINED;
+  int (HttpSM::*m_last_state)(int event, void *data) = nullptr;
   virtual void set_next_state();
   void call_transact_and_set_next_state(TransactEntryFunc_t f);
 
@@ -484,52 +485,53 @@ protected:
   int64_t server_transfer_init(MIOBuffer *buf, int hdr_size);
 
 public:
+  // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
   // Stats & Logging Info
-  int client_request_hdr_bytes;
-  int64_t client_request_body_bytes;
-  int server_request_hdr_bytes;
-  int64_t server_request_body_bytes;
-  int server_response_hdr_bytes;
-  int64_t server_response_body_bytes;
-  int client_response_hdr_bytes;
-  int64_t client_response_body_bytes;
-  int cache_response_hdr_bytes;
-  int64_t cache_response_body_bytes;
-  int pushed_response_hdr_bytes;
-  int64_t pushed_response_body_bytes;
-  bool client_tcp_reused;
+  int client_request_hdr_bytes       = 0;
+  int64_t client_request_body_bytes  = 0;
+  int server_request_hdr_bytes       = 0;
+  int64_t server_request_body_bytes  = 0;
+  int server_response_hdr_bytes      = 0;
+  int64_t server_response_body_bytes = 0;
+  int client_response_hdr_bytes      = 0;
+  int64_t client_response_body_bytes = 0;
+  int cache_response_hdr_bytes       = 0;
+  int64_t cache_response_body_bytes  = 0;
+  int pushed_response_hdr_bytes      = 0;
+  int64_t pushed_response_body_bytes = 0;
+  bool client_tcp_reused             = false;
   // Info about client's SSL connection.
-  bool client_ssl_reused;
-  bool client_connection_is_ssl;
-  const char *client_protocol;
-  const char *client_sec_protocol;
-  const char *client_cipher_suite;
-  int server_transact_count;
-  bool server_connection_is_ssl;
+  bool client_ssl_reused          = false;
+  bool client_connection_is_ssl   = false;
+  const char *client_protocol     = "-";
+  const char *client_sec_protocol = "-";
+  const char *client_cipher_suite = "-";
+  int server_transact_count       = 0;
+  bool server_connection_is_ssl   = false;
 
   TransactionMilestones milestones;
-  ink_hrtime api_timer;
+  ink_hrtime api_timer = 0;
   // The next two enable plugins to tag the state machine for
   // the purposes of logging so the instances can be correlated
   // with the source plugin.
-  const char *plugin_tag;
-  int64_t plugin_id;
+  const char *plugin_tag = nullptr;
+  int64_t plugin_id      = 0;
 
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls
   //  do_api_callout_internal()
-  bool hooks_set;
+  bool hooks_set = false;
 
 protected:
-  TSHttpHookID cur_hook_id;
-  APIHook *cur_hook;
+  TSHttpHookID cur_hook_id = TS_HTTP_LAST_HOOK;
+  APIHook *cur_hook        = nullptr;
 
   //
   // Continuation time keeper
-  int64_t prev_hook_start_time;
+  int64_t prev_hook_start_time = 0;
 
-  int cur_hooks;
-  HttpApiState_t callout_state;
+  int cur_hooks                = 0;
+  HttpApiState_t callout_state = HTTP_API_NO_CALLOUT;
 
   // api_hooks must not be changed directly
   //  Use txn_hook_{ap,pre}pend so hooks_set is
@@ -539,9 +541,9 @@ protected:
   // The terminate flag is set by handlers and checked by the
   //   main handler who will terminate the state machine
   //   when the flag is set
-  bool terminate_sm;
-  bool kill_this_async_done;
-  bool parse_range_done;
+  bool terminate_sm         = false;
+  bool kill_this_async_done = false;
+  bool parse_range_done     = false;
   virtual int kill_this_async_hook(int event, void *data);
   void kill_this();
   void update_stats();
