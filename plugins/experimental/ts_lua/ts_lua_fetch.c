@@ -269,11 +269,11 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
         clientaddr.sin_port = htons(port);
         if (!inet_aton(ipstr, (struct in_addr *)&clientaddr.sin_addr.s_addr)) {
           p = NULL;
-          TSError("[%s] Client ip parse failed! Using defualt. [ip: %s]", TS_LUA_DEBUG_TAG, ipstr);
+          TSError("[%s] Client ip parse failed! Using default. [ip: %s]", TS_LUA_DEBUG_TAG, ipstr);
         }
       } else {
         p = NULL;
-        TSError("[%s] Client ip parse failed! Using defualt. [addrstr: %s]", TS_LUA_DEBUG_TAG, addr);
+        TSError("[%s] Client ip parse failed! Using default. [addrstr: %s]", TS_LUA_DEBUG_TAG, addr);
       }
     }
 
@@ -282,7 +282,9 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
 
   if (!p) {
     clientaddr.sin_port = htons(TS_LUA_FETCH_CLIENT_PORT);
-    inet_aton(TS_LUA_FETCH_CLIENT_ADDRESS, (struct in_addr *)&clientaddr.sin_addr.s_addr);
+    if (!inet_aton(TS_LUA_FETCH_CLIENT_ADDRESS, (struct in_addr *)&clientaddr.sin_addr.s_addr)) {
+      TSError("[%s] Error using default for client ip in fetch API. [ip: %s]", TS_LUA_DEBUG_TAG, TS_LUA_FETCH_CLIENT_ADDRESS);
+    }
   }
 
   /* option */
