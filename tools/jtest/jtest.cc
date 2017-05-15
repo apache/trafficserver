@@ -101,6 +101,8 @@
 #define MAX_DEFERED_URLS 10000
 #define DEFERED_URLS_BLOCK 2000
 
+#define MAX_REQUEST_BODY_LENGTH MAX_RESPONSE_LENGTH
+
 #define JTEST_DONE 0
 #define JTEST_CONT 1
 #define JTEST_ERR -1
@@ -236,6 +238,8 @@ static double evo_rate         = 0.0;
 static double zipf             = 0.0;
 static int zipf_bucket_size    = 1;
 static int range_mode          = 0;
+static int post_support        = 0;
+static int post_size           = 0;
 
 static const ArgumentDescription argument_descriptions[] = {
   {"proxy_port", 'p', "Proxy Port", "I", &proxy_port, "JTEST_PROXY_PORT", nullptr},
@@ -304,6 +308,9 @@ static const ArgumentDescription argument_descriptions[] = {
   {"evo_rate", '9', "Evolving Hotset Rate (evolutions/hour)", "D", &evo_rate, "JTEST_EVOLVING_HOTSET_RATE", nullptr},
   {"debug", 'd', "Debug Flag", "F", &debug, "JTEST_DEBUG", nullptr},
   {"range_mode", ' ', "Range Mode", "I", &range_mode, "JTEST_RANGE_MODE", nullptr},
+  {"post_support", ' ', "POST Mode (0 disable(default), 1 random, 2 specified size by post_size)", "I", &post_support,
+   "JTEST_POST_MODE", nullptr},
+  {"post_size", ' ', "POST SIZE", "I", &post_size, "JTEST_POST_SIZE", nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 int n_argument_descriptions = countof(argument_descriptions);
@@ -348,7 +355,11 @@ struct FD {
   unsigned long range_bytes;
   unsigned long range_end;
   unsigned long range_start;
+  int post_size;
   int total_length;
+  int post_cl;
+  int send_header;
+  int header_size;
 
   void
   reset()
@@ -367,6 +378,8 @@ struct FD {
     range_bytes = 0;
     range_start = 0;
     range_end   = 0;
+    post_size   = 0;
+    send_header = 0;
 
     if (!urls_mode) {
       response = nullptr;
@@ -390,6 +403,8 @@ struct FD {
     ftp_peer_addr      = 0;
     ftp_peer_port      = 0;
     total_length       = 0;
+    post_cl            = 0;
+    header_size        = 0;
   }
 
   void close();
@@ -570,7 +585,7 @@ static void
 poll_init(int sock)
 {
   if (!fd[sock].req_header) {
-    fd[sock].req_header = (char *)malloc(HEADER_SIZE * pipeline);
+    fd[sock].req_header = (char *)malloc(HEADER_SIZE * pipeline + MAX_REQUEST_BODY_LENGTH);
   }
   if (!fd[sock].response_header) {
     fd[sock].response_header = (char *)malloc(HEADER_SIZE);
@@ -651,6 +666,9 @@ get_path_from_req(char *buf, char **purl_start, char **purl_end)
   char *url_end   = nullptr;
   if (!strncasecmp(url_start, "GET ", sizeof("GET ") - 1)) {
     url_start += sizeof("GET ") - 1;
+    url_end = (char *)memchr(url_start, ' ', 70);
+  } else if (!strncasecmp(url_start, "POST ", sizeof("POST ") - 1)) {
+    url_start += sizeof("POST ") - 1;
     url_end = (char *)memchr(url_start, ' ', 70);
   } else {
     url_end = (char *)memchr(url_start, 0, 70);
@@ -981,27 +999,38 @@ send_ftp_data(int sock, char *start /*, char * end */)
   return 0;
 }
 
-static void
+static int
 process_header(int sock, char *buffer, int offset)
 {
   char host[80];
   int port, length;
   float r;
+  int post_request = 0;
   if (sscanf(buffer, "GET http://%[^:]:%d/%f/%d", host, &port, &r, &length) == 4) {
   } else if (sscanf(buffer, "GET /%f/%d", &r, &length) == 2) {
+  } else if (sscanf(buffer, "POST http://%[^:]:%d/%f/%d", host, &port, &r, &length) == 4) {
+    post_request = 1;
+  } else if (sscanf(buffer, "POST /%f/%d", &r, &length) == 2) {
+    post_request = 1;
   } else {
     if (verbose) {
       printf("misscan: %s\n", buffer);
     }
     fd[sock].close();
-    return;
+    return -1;
   }
 
   if (verbose) {
     printf("read_request %d got request %d\n", sock, length);
   }
-  char *ims   = strncasestr(buffer, "If-Modified-Since:", offset);
-  char *range = strncasestr(buffer, "Range:", offset);
+  char *ims     = strncasestr(buffer, "If-Modified-Since:", offset);
+  char *range   = strncasestr(buffer, "Range:", offset);
+  char *post_cl = nullptr;
+  if (post_support) {
+    post_cl          = strncasestr(buffer, "Content-Length:", offset);
+    fd[sock].post_cl = atoi(post_cl + strlen("Content-Length: "));
+    ink_assert(post_cl && post_request && fd[sock].post_cl);
+  }
   // coverity[dont_call]
   if (drand48() > ims_rate) {
     ims = nullptr;
@@ -1040,12 +1069,16 @@ process_header(int sock, char *buffer, int offset)
     fd[sock].response        = nullptr;
     fd[sock].response_length = fd[sock].length = 0;
   }
+  fd[sock].header_size = offset;
+
+  return post_request;
 }
 
 static int
 parse_header(int sock, int err)
 {
   int i;
+  int post_request = 0;
 
   if (verbose) {
     printf("read %d got %d\n", sock, err);
@@ -1088,7 +1121,15 @@ parse_header(int sock, int err)
           printf("Request from Proxy: {\n%s}\n", buffer);
         }
 
-        process_header(sock, buffer, i);
+        post_request = process_header(sock, buffer, i);
+        if (post_request < 0) {
+          return JTEST_DONE;
+        }
+
+        if (post_request) {
+          fd[sock].state = 4;
+          break;
+        }
 
         fd[sock].req_pos = 0;
         if (!check_keepalive(fd[sock].req_header, strlen(fd[sock].req_header))) {
@@ -1108,6 +1149,25 @@ parse_header(int sock, int err)
         fd[sock].state = 0;
       }
       break;
+    case 4:
+      if (fd[sock].req_pos - fd[sock].header_size - 1 >= fd[sock].post_cl) {
+        fd[sock].req_pos = 0;
+        if (!check_keepalive(fd[sock].req_header, strlen(fd[sock].req_header))) {
+          fd[sock].keepalive = 0;
+        } else {
+          fd[sock].keepalive--;
+        }
+        // coverity[dont_call]
+        if (fd[sock].length && drand48() < server_abort_rate) {
+          // coverity[dont_call]
+          fd[sock].length    = (int)(drand48() * (fd[sock].length - 1));
+          fd[sock].keepalive = 0;
+        }
+        poll_set(sock, nullptr, send_response);
+        fd[sock].state = 0;
+        return JTEST_DONE;
+      }
+      return JTEST_CONT;
     }
   }
   return JTEST_CONT;
@@ -1119,33 +1179,40 @@ read_request(int sock)
   if (verbose) {
     printf("read_request %d\n", sock);
   }
-  int err = 0;
+  int err     = 0;
+  int maxleft = 0;
 
-  int maxleft = HEADER_SIZE - fd[sock].req_pos - 1;
+  if (!post_support)
+    maxleft = HEADER_SIZE - fd[sock].req_pos - 1;
+  else
+    maxleft = HEADER_SIZE + MAX_REQUEST_BODY_LENGTH - fd[sock].req_pos - 1;
 
-  do {
-    err = read(sock, &fd[sock].req_header[fd[sock].req_pos], maxleft);
-  } while ((err < 0) && (errno == EINTR));
+  while (true) {
+    do {
+      err = read(sock, &fd[sock].req_header[fd[sock].req_pos], maxleft);
+    } while ((err < 0) && (errno == EINTR));
 
-  if (err < 0) {
-    if (errno == EAGAIN || errno == ENOTCONN) {
-      return 0;
-    }
-    if (fd[sock].req_pos || errno != ECONNRESET) {
-      perror("read");
-    }
-    return -1;
-  } else if (err == 0) {
-    if (verbose) {
-      printf("eof\n");
-    }
-    return -1;
-  } else {
-    if (verbose) {
-      printf("read %d got %d\n", sock, err);
-    }
+    if (err < 0) {
+      if (errno == EAGAIN || errno == ENOTCONN) {
+        return 0;
+      }
+      if (fd[sock].req_pos || errno != ECONNRESET) {
+        perror("read");
+      }
+      return -1;
+    } else if (err == 0) {
+      if (verbose) {
+        printf("eof\n");
+      }
+      return -1;
+    } else {
+      if (verbose) {
+        printf("read %d got %d\n", sock, err);
+      }
 
-    parse_header(sock, err);
+      if (parse_header(sock, err) == JTEST_DONE)
+        return 0;
+    }
   }
   return 0;
 }
@@ -2583,38 +2650,85 @@ write_request(int sock)
 {
   int err = 0;
 
-  do {
-    err = write(sock, fd[sock].req_header + fd[sock].req_pos, fd[sock].length - fd[sock].req_pos);
-  } while ((err == -1) && (errno == EINTR));
-  if (err <= 0) {
-    if (!err) {
-      if (verbose_errors) {
-        printf("write %d closed early\n", sock);
+  // send request header
+  if (!fd[sock].send_header) {
+    do {
+      err = write(sock, fd[sock].req_header + fd[sock].req_pos, fd[sock].length - fd[sock].req_pos);
+    } while ((err == -1) && (errno == EINTR));
+    if (err <= 0) {
+      if (!err) {
+        if (verbose_errors) {
+          printf("write %d closed early\n", sock);
+        }
+        goto Lerror;
       }
+      if (errno == EAGAIN || errno == ENOTCONN) {
+        return 0;
+      }
+      perror("write");
       goto Lerror;
     }
-    if (errno == EAGAIN || errno == ENOTCONN) {
-      return 0;
-    }
-    perror("write");
-    goto Lerror;
-  }
-  if (verbose) {
-    printf("write %d %d\n", sock, err);
-  }
-
-  new_tbytes += err;
-  total_client_request_bytes += err;
-  fd[sock].req_pos += err;
-  fd[sock].active = ink_get_hrtime_internal();
-
-  if (fd[sock].req_pos >= fd[sock].length) {
     if (verbose) {
-      printf("write complete %d %d\n", sock, fd[sock].length);
+      printf("write %d %d\n", sock, err);
     }
-    fd[sock].req_pos = 0;
-    fd[sock].length  = fd[sock].response_length;
-    poll_set(sock, read_response);
+
+    new_tbytes += err;
+    total_client_request_bytes += err;
+    fd[sock].req_pos += err;
+    fd[sock].active = ink_get_hrtime_internal();
+
+    if (fd[sock].req_pos >= fd[sock].length) {
+      if (verbose) {
+        printf("write request header complete %d %d\n", sock, fd[sock].length);
+      }
+      fd[sock].req_pos = 0;
+      fd[sock].length  = fd[sock].response_length;
+      if (!post_support || !fd[sock].post_size) {
+        poll_set(sock, read_response);
+        return 0;
+      }
+      fd[sock].send_header = 1;
+    }
+  }
+
+  // send request body
+  ink_assert(MAX_RESPONSE_LENGTH > fd[sock].post_size);
+
+  if (fd[sock].send_header) {
+    do {
+      err = write(sock, response_buffer + fd[sock].req_pos, fd[sock].post_size - fd[sock].req_pos);
+    } while ((err == -1) && (errno == EINTR));
+    if (err <= 0) {
+      if (!err) {
+        if (verbose_errors) {
+          printf("write %d closed early\n", sock);
+        }
+        goto Lerror;
+      }
+      if (errno == EAGAIN || errno == ENOTCONN) {
+        return 0;
+      }
+      perror("write");
+      goto Lerror;
+    }
+    if (verbose) {
+      printf("write %d %d\n", sock, err);
+    }
+
+    new_tbytes += err;
+    total_client_request_bytes += err;
+    fd[sock].req_pos += err;
+    fd[sock].active = ink_get_hrtime_internal();
+
+    if (fd[sock].req_pos >= fd[sock].post_size) {
+      if (verbose) {
+        printf("write request body complete %d %d\n", sock, fd[sock].length);
+      }
+      fd[sock].send_header = 0;
+      fd[sock].req_pos     = 0;
+      fd[sock].length      = fd[sock].response_length;
+      poll_set(sock, read_response);
+    }
   }
   return 0;
 Lerror:
@@ -2812,45 +2926,116 @@ make_random_url(int sock, double *dr, double *h)
   }
 }
 
-static void
+static int
 make_nohost_request(int sock, double dr, const char *evo_str, const char *extension, const char *eheaders, const char *rbuf,
                     const char *cookie)
 {
-  if (range_mode) {
-    sprintf(fd[sock].req_header, "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
-                                 "%s"
-                                 "%s"
-                                 "%s"
-                                 "%s"
-                                 "%s"
-                                 "%s"
-                                 "\r\n",
-            local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
-            fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
-            // coverity[dont_call]
-            reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
-  } else {
-    sprintf(fd[sock].req_header,
-            ftp ? "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-                  "%s"
-                  "%s"
-                  "%s"
-                  "%s"
-                  "\r\n" :
-                  "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-                  "%s"
-                  "%s"
-                  "%s"
-                  "%s"
-                  "\r\n",
-            local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
-            fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
-            // coverity[dont_call]
-            reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+  int post_length = 0;
+
+  switch (post_support) {
+  case 0:
+    if (range_mode) {
+      sprintf(fd[sock].req_header, "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "\r\n",
+              local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
+              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
+              // coverity[dont_call]
+              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
+    } else {
+      sprintf(fd[sock].req_header,
+              ftp ? "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "\r\n" :
+                    "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "\r\n",
+              local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
+              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
+              // coverity[dont_call]
+              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+    }
+    break;
+  case 1:
+    if (range_mode) {
+      sprintf(fd[sock].req_header, "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
+                                   "Content-Length: %d\r\n"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "\r\n",
+              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].response_length,
+              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
+              // coverity[dont_call]
+              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
+    } else {
+      sprintf(fd[sock].req_header, "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+                                   "Content-Length: %d\r\n"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "\r\n",
+              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].response_length,
+              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
+              // coverity[dont_call]
+              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+    }
+    post_length = fd[sock].response_length;
+    break;
+  case 2:
+    if (!post_size)
+      ink_assert(!"post_size should never be zero!");
+
+    if (range_mode) {
+      sprintf(fd[sock].req_header, "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
+                                   "Content-Length: %d\r\n"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "\r\n",
+              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, post_size,
+              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
+              // coverity[dont_call]
+              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
+    } else {
+      sprintf(fd[sock].req_header, "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+                                   "Content-Length: %d\r\n"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "%s"
+                                   "\r\n",
+              local_host, server_port, dr, fd[sock].response_length, evo_str, extension, post_size,
+              fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
+              // coverity[dont_call]
+              reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+    }
+    post_length = post_size;
+    break;
   }
+
+  return post_length;
 }
 
-static void
+static int
 make_host1_request(int sock, double dr, const char *evo_str, const char *extension, const char *eheaders, const char *cookie)
 {
   sprintf(fd[sock].req_header, "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
@@ -2864,9 +3049,10 @@ make_host1_request(int sock, double dr, const char *evo_str, const char *extensi
           fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
           // coverity[dont_call]
           reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+  return 0;
 }
 
-static void
+static int
 make_host2_request(int sock, double dr, const char *evo_str, const char *extension, const char *eheaders, const char *cookie)
 {
   /* Send a non-proxy client request i.e. for Transparency testing */
@@ -2879,9 +3065,10 @@ make_host2_request(int sock, double dr, const char *evo_str, const char *extensi
           dr, fd[sock].response_length, evo_str, extension, fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
           // coverity[dont_call]
           reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
+  return 0;
 }
 
-static void
+static int
 build_request(int sock)
 {
   double dr, h;
@@ -2946,25 +3133,29 @@ build_request(int sock)
     sprintf(evo_str, ".%u", ((unsigned int)evo_index));
   }
 
+  int post_body = 0;
+
   switch (hostrequest) {
   case 0:
-    make_nohost_request(sock, dr, evo_str, extension, eheaders, rbuf, cookie);
+    post_body = make_nohost_request(sock, dr, evo_str, extension, eheaders, rbuf, cookie);
     break;
   case 1:
-    make_host1_request(sock, dr, evo_str, extension, eheaders, cookie);
+    post_body = make_host1_request(sock, dr, evo_str, extension, eheaders, cookie);
     break;
   case 2:
-    make_host2_request(sock, dr, evo_str, extension, eheaders, cookie);
+    post_body = make_host2_request(sock, dr, evo_str, extension, eheaders, cookie);
     break;
   default:
     ink_release_assert(!"Unexpected hostrequest! Abort.");
-    return;
+    return 0;
   }
 
   if (range_mode) {
     fd[sock].response_length = fd[sock].range_end - fd[sock].range_start + 1;
     ink_assert(fd[sock].response_length > 0);
   }
+
+  return post_body;
 }
 
 static void
@@ -2992,7 +3183,7 @@ make_bfc_client(unsigned int addr, int port)
     panic("unable to open client connection\n");
   }
 
-  build_request(sock);
+  fd[sock].post_size = build_request(sock);
 
   if (verbose) {
     printf("request %d [%s]\n", sock, fd[sock].req_header);
