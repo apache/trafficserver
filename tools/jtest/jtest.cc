@@ -3282,7 +3282,7 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
 {
   int iport       = 80;
   unsigned int ip = 0;
-  char curl[512];
+  char curl[512]  = {0};
   char sche[8], host[512], port[10], path[512], frag[512], quer[512], para[512];
   int xsche, xhost, xport, xpath, xfrag, xquer, xpar, rel, slash;
 
@@ -3296,7 +3296,7 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
       curl[strlen(curl) - 1] = 0;
     }
   } else {
-    strcpy(curl, url);
+    strncpy(curl, url, sizeof(curl) - 1);
   }
   if (!seen && seen_it(curl)) {
     return -1;
