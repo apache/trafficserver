@@ -2117,8 +2117,8 @@ extract_urls(char *buf, int buflen, char *base_url)
         // fixup unqualified hostnames (e.g. http://internal/foo)
         char *he = strchr(base_url + 8, '/');
         if (!memchr(base_url, '.', he - base_url)) {
-          char t[512];
-          strcpy(t, base_url);
+          char t[512] = {0};
+          strncpy(t, base_url, sizeof(t) - 1);
           char *old_he = strchr(old_base + 8, '.');
           if (old_he) {
             char *old_hee = strchr(old_he, '/');
