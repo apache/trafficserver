@@ -16,6 +16,13 @@
   limitations under the License.
  */
 
+#define min(a, b)           \
+  ({                        \
+    __typeof__(a) _a = (a); \
+    __typeof__(b) _b = (b); \
+    _a < _b ? _a : _b;      \
+  })
+
 #include "ts/ink_defs.h"
 #include "url_sig.h"
 
@@ -253,18 +260,18 @@ err_log(char *url, char *msg)
 // See the README.  All Signing parameters must be concatenated to the end
 // of the url and any application query parameters.
 static char *
-getAppQueryString(char *query_string, int query_length)
+getAppQueryString(char *query_string, unsigned int query_length)
 {
   int done = 0;
   char *p;
   char buf[MAX_QUERY_LEN];
 
-  if (query_length > MAX_QUERY_LEN) {
+  if (query_length >= sizeof(buf)) {
     TSDebug(PLUGIN_NAME, "Cannot process the query string as the length exceeds %d bytes", MAX_QUERY_LEN);
     return NULL;
   }
   memset(buf, 0, MAX_QUERY_LEN);
-  strncpy(buf, query_string, query_length);
+  strncpy(buf, query_string, min(query_length, sizeof(buf) - 1));
   p = buf;
 
   TSDebug(PLUGIN_NAME, "query_string: %s, query_length: %d", query_string, query_length);
@@ -390,7 +397,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       err_log(url, "IP address string too long or short");
       goto deny;
     }
-    strncpy(client_ip, p + strlen(CIP_QSTRING) + 1, (pp - p - (strlen(CIP_QSTRING) + 1)));
+    strncpy(client_ip, p + strlen(CIP_QSTRING) + 1, min((pp - p - (strlen(CIP_QSTRING) + 1)), sizeof(client_ip) - 1));
     client_ip[pp - p - (strlen(CIP_QSTRING) + 1)] = '\0';
     TSDebug(PLUGIN_NAME, "CIP: -%s-", client_ip);
     retval = TSHttpTxnClientFdGet(txnp, &sockfd);
@@ -485,8 +492,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   part = strtok_r(urltokstr, "/", &p);
   while (part != NULL) {
     if (parts[j] == '1') {
-      strcpy(signed_part + strlen(signed_part), part);
-      strcpy(signed_part + strlen(signed_part), "/");
+      strncat(signed_part, part, sizeof(signed_part) - strlen(signed_part) - 1);
+      strncat(signed_part, "/", sizeof(signed_part) - strlen(signed_part) - 1);
     }
     if (parts[j + 1] == '0' ||
         parts[j + 1] == '1') { // This remembers the last part, meaning, if there are no more valid letters in parts
@@ -497,7 +504,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   signed_part[strlen(signed_part) - 1] = '?'; // chop off the last /, replace with '?'
   p                                    = strstr(query, SIG_QSTRING "=");
-  strncat(signed_part, query, (p - query) + strlen(SIG_QSTRING) + 1);
+  strncat(signed_part, query, min((p - query) + strlen(SIG_QSTRING) + 1, sizeof(signed_part) - strlen(signed_part) - 1));
 
   TSDebug(PLUGIN_NAME, "Signed string=\"%s\"", signed_part);
 
