@@ -20,6 +20,8 @@ Makefile.in
 
 .diags.log.meta
 
+.vscode/
+
 /aclocal.m4
 /autom4te.cache
 /build-aux

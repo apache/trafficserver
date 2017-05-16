@@ -407,7 +407,7 @@ ICPPeerReadCont::StaleCheck(int event, Event * /* e ATS_UNUSED */)
     break;
   }
   }
-  _object_vc->do_io(VIO::CLOSE);
+  _object_vc->do_io_close();
   _object_vc = nullptr;
   SET_HANDLER((ICPPeerReadContHandler)&ICPPeerReadCont::ICPPeerReadEvent);
   return handleEvent(_state->_queryResult, nullptr);

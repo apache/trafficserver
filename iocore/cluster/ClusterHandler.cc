@@ -237,7 +237,7 @@ ClusterHandler::~ClusterHandler()
 {
   bool free_m = false;
   if (net_vc) {
-    net_vc->do_io(VIO::CLOSE);
+    net_vc->do_io_close();
     net_vc = nullptr;
   }
   if (machine) {
