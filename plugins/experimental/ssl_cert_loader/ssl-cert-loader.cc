@@ -315,7 +315,7 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
       }
     }
     if (entry != nullptr) {
-      if (!cert_names.empty()) {
+      if (cert_names.size() > 0) {
         for (const auto &cert_name : cert_names) {
           Lookup.tree.insert(cert_name, entry, Parse_order++);
         }
