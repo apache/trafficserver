@@ -317,7 +317,7 @@ ClusterVConnectionCacheEvent::eventHandler(int /* event ATS_UNUSED */, Event *e)
 
       cache->hash_table[hash_index].remove(entry);
       entry->vc->allow_remote_close();
-      entry->vc->do_io(VIO::CLOSE);
+      entry->vc->do_io_close();
 
       ClusterVCCacheEntryAlloc.free(entry);
       entry = next_entry;
@@ -889,7 +889,7 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection *vc)
       if (event == CLUSTER_EVENT_OPEN) {
         vc->pending_remote_fill = 0;
         vc->remote_closed       = 1; // avoid remote close msg
-        vc->do_io(VIO::CLOSE);
+        vc->do_io_close();
       }
       send_failure_callback = 0; // already sent.
     }
@@ -1462,7 +1462,7 @@ CacheContinuation::VCdataRead(int event, VIO *target_vio)
       // Close VC, since no more data and also to avoid VC_EVENT_EOS
 
       MIOBuffer *mbuf = target_vio->buffer.writer();
-      vc->do_io(VIO::CLOSE);
+      vc->do_io_close();
       free_MIOBuffer(mbuf);
       readahead_vio = nullptr;
     }
@@ -1478,7 +1478,7 @@ CacheContinuation::VCdataRead(int event, VIO *target_vio)
     // Read failed, deflect to replyOpEvent.
 
     MIOBuffer *mbuf = target_vio->buffer.writer();
-    vc->do_io(VIO::CLOSE);
+    vc->do_io_close();
     free_MIOBuffer(mbuf);
     readahead_vio = nullptr;
     reply         = CACHE_EVENT_OPEN_READ_FAILED;
@@ -1662,12 +1662,12 @@ CacheContinuation::replyOpEvent(int event, VConnection *cvc)
       //
       if (read_cluster_vc) {
         read_cluster_vc->remote_closed = 1; // avoid remote close msg
-        read_cluster_vc->do_io(VIO::CLOSE);
+        read_cluster_vc->do_io_close();
       }
       if (write_cluster_vc) {
         write_cluster_vc->pending_remote_fill = 0;
         write_cluster_vc->remote_closed       = 1; // avoid remote close msg
-        write_cluster_vc->do_io(VIO::CLOSE);
+        write_cluster_vc->do_io_close();
       }
       reply->moi.u32 = (int32_t)((uintptr_t)cvc & 0xffffffff); // code describing failure
     }
@@ -1817,7 +1817,7 @@ CacheContinuation::disposeOfDataBuffer(void *d)
     //
     cc->write_cluster_vc->pending_remote_fill = 0;
     cc->write_cluster_vc->remote_closed       = 1;
-    cc->write_cluster_vc->do_io(VIO::CLOSE);
+    cc->write_cluster_vc->do_io_close();
     cc->readahead_data = nullptr;
 
     cacheContAllocator_free(cc);
@@ -2232,7 +2232,7 @@ retry:
           target_vc->allow_remote_close();
         } else {
           read_cluster_vc->allow_remote_close();
-          read_cluster_vc->do_io(VIO::ABORT);
+          read_cluster_vc->do_io_close();
           cacheContAllocator_free(this);
         }
 
@@ -2246,7 +2246,7 @@ retry:
           result_vc->allow_remote_close();
         } else {
           result_vc->allow_remote_close();
-          result_vc->do_io(VIO::ABORT);
+          result_vc->do_io_close(); // abort
           cacheContAllocator_free(this);
         }
       }
@@ -2323,13 +2323,14 @@ retry:
     if (read_cluster_vc) {
       read_cluster_vc->remote_closed = 0; // send remote close
       read_cluster_vc->allow_remote_close();
-      read_cluster_vc->do_io(VIO::ABORT);
+
+      read_cluster_vc->do_io_close(); // abort
       read_cluster_vc = nullptr;
     }
     if (write_cluster_vc) {
       write_cluster_vc->remote_closed = 0; // send remote close
       write_cluster_vc->allow_remote_close();
-      write_cluster_vc->do_io(VIO::ABORT);
+      write_cluster_vc->do_io_close(); // abort
       write_cluster_vc = nullptr;
     }
     if (!request_timeout) {
@@ -2345,7 +2346,7 @@ retry:
       // callback already made at timeout, just free continuation
       if (cacheable_vc) {
         cacheable_vc->allow_remote_close();
-        cacheable_vc->do_io(VIO::CLOSE);
+        cacheable_vc->do_io_close();
         cacheable_vc = nullptr;
       }
       cacheContAllocator_free(this);
@@ -2998,12 +2999,12 @@ CacheContinuation::tunnelEvent(int event, VConnection *vc)
       if (!have_all_data) {
         // Shutdown cache connection and free MIOBuffer
         MIOBuffer *mbuf = readahead_vio->buffer.writer();
-        cluster_vc->do_io(VIO::CLOSE);
+        cluster_vc->do_io_close();
         free_MIOBuffer(mbuf);
       }
     } else {
       Debug("cluster_timeout", "unable to make cluster connection2A");
-      cluster_vc->do_io(VIO::CLOSE);
+      cluster_vc->do_io_close();
     }
     len = 0 - (int)sizeof(msg->token);
     --expect_reply;

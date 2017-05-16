@@ -60,11 +60,11 @@ struct TestProxy : Continuation {
     if (outbuf)
       free_MIOBuffer(outbuf);
     if (vc)
-      vc->do_io(VIO::CLOSE);
+      vc->do_io_close();
     if (remote)
-      remote->do_io(VIO::CLOSE);
+      remote->do_io_close();
     if (cachefile)
-      cachefile->do_io(VIO::CLOSE);
+      cachefile->do_io_close();
     if (tunnel)
       delete tunnel;
     delete this;
@@ -170,7 +170,7 @@ struct TestProxy : Continuation {
       if (!data)
         return done();
       remote        = (VConnection *)data;
-      clusterOutVIO = remote->do_io(VIO::WRITE, this, INT64_MAX, inbuf);
+      clusterOutVIO = remote->do_io_write(this, INT64_MAX, inbuf);
       ink_assert(clusterOutVIO);
       SET_HANDLER(tunnelEvent);
       tunnel = new OneWayTunnel(remote, vc, this, TUNNEL_TILL_DONE, true, true, true);
@@ -186,7 +186,7 @@ struct TestProxy : Continuation {
     if (!vc)
       return done();
     SET_HANDLER(startEvent);
-    vc->do_io(VIO::READ, this, INT64_MAX, inbuf);
+    vc->do_io_read(this, INT64_MAX, inbuf);
     return EVENT_CONT;
   }
 
@@ -289,7 +289,7 @@ struct TestProxy : Continuation {
     *url_end = 0;
     sprintf(outbuf->start, "GET %s HTTP/1.0\nHost: %s\n\n", url, host);
     outbuf->fill(strlen(outbuf->start) + 1);
-    remote->do_io(VIO::WRITE, this, INT64_MAX, outbuf);
+    remote->do_io_write(this, INT64_MAX, outbuf);
     // printf("sending [%s]\n",outbuf->start);
     return EVENT_CONT;
   }
@@ -326,7 +326,7 @@ struct TestProxy : Continuation {
     *url_end = 0;
     sprintf(outbuf->start, "GET %s HTTP/1.0\nHost: %s\n\n", url, host);
     outbuf->fill(strlen(outbuf->start) + 1);
-    remote->do_io(VIO::WRITE, this, INT64_MAX, outbuf);
+    remote->do_io_write(this, INT64_MAX, outbuf);
     // printf("sending [%s]\n",outbuf->start);
     return EVENT_CONT;
   }
@@ -396,7 +396,7 @@ struct TestAccept : Continuation {
   {
     if (event == NET_EVENT_ACCEPT) {
       MIOBuffer *buf = new_MIOBuffer();
-      e->do_io(VIO::READ, new TestProxy(buf), INT64_MAX, buf);
+      e->do_io_read(new TestProxy(buf), INT64_MAX, buf);
     } else {
       printf("TestAccept error %d\n", event);
       return EVENT_DONE;

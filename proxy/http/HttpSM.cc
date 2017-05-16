@@ -3462,7 +3462,8 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     } else {
       *status_ptr      = HttpTransact::CACHE_WRITE_COMPLETE;
       c->write_success = true;
-      c->write_vio     = c->vc->do_io(VIO::CLOSE);
+      c->write_vio     = nullptr;
+      c->vc->do_io_close();
     }
     break;
   default:
@@ -3877,7 +3878,7 @@ HttpSM::tunnel_handler_transform_write(int event, HttpTunnelConsumer *c)
       //   has already completed (possible when the
       //   transform intentionally truncates the response).
       //   So close it
-      c->vc->do_io(VIO::CLOSE);
+      c->vc->do_io_close();
     }
     break;
   default:
@@ -3972,7 +3973,7 @@ HttpSM::tunnel_handler_plugin_agent(int event, HttpTunnelConsumer *c)
   // FALLTHROUGH
   case VC_EVENT_WRITE_COMPLETE:
     c->write_success = true;
-    c->vc->do_io(VIO::CLOSE);
+    c->vc->do_io_close();
     break;
   default:
     ink_release_assert(0);

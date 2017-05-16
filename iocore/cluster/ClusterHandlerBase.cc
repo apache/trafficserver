@@ -735,7 +735,7 @@ ClusterHandler::machine_down()
   snprintf(textbuf, sizeof(textbuf), "%hhu.%hhu.%hhu.%hhu:%d", DOT_SEPARATED(ip), port);
   RecSignalManager(REC_SIGNAL_MACHINE_DOWN, textbuf);
   if (net_vc) {
-    net_vc->do_io(VIO::CLOSE);
+    net_vc->do_io_close();
     net_vc = nullptr;
   }
   // Cancel pending cluster reads and writes

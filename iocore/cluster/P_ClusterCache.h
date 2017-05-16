@@ -484,24 +484,7 @@ struct ClusterVConnection : public ClusterVConnectionBase {
   //
   // Public Interface (included from ClusterVConnectionBase)
   //
-  // Thread-safe  (see Net.h for details)
-  //
-  // virtual VIO * do_io(
-  //   int                   op,
-  //   Continuation        * c = nullptr,
-  //   int                   nbytes = INT64_MAX,
-  //   MIOBuffer           * buf = 0,
-  //   int                   whence = SEEK_CUR);
-  //
-  // NOT Thread-safe (see Net.h for details)
-  //
-  // void set_active_timeout(ink_hrtime timeout_in);
-  // void set_inactivity_timeout(ink_hrtime timeout_in);
-
-  //
-  // Private
-  //
-
+ 
   int startEvent(int event, Event *e);
   int mainEvent(int event, Event *e);
 
