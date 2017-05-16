@@ -586,9 +586,17 @@ CacheVC::openReadReadDone(int event, Event *e)
     // fall through for truncated documents
   }
 Lerror:
-  char tmpstring[100];
-  Warning("Document %s truncated", earliest_key.toHexStr(tmpstring));
-  return calluser(VC_EVENT_ERROR);
+  {    
+    char turl[2048] = {'\0'}, tkey[100] = {'\0'};
+    int ib = 0, xd = 0; 
+    if(request.valid()){
+        request.url_get()->print(turl, sizeof(turl), &ib, &xd);
+        Warning("Document %s truncated, url[%s]", earliest_key.toHexStr(tkey), turl);
+    }else{
+        Warning("Document %s truncated", earliest_key.toHexStr(tkey));
+    }    
+    return calluser(VC_EVENT_ERROR);                                                                                                                                     
+  }
 Ldone:
   return calluser(VC_EVENT_EOS);
 Lcallreturn:
