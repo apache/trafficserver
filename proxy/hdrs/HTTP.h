@@ -103,7 +103,8 @@ enum HTTPWarningCode {
   HTTP_WARNING_CODE_MISC_WARNING           = 199
 };
 
-/* squild log codes */
+/* squild log codes
+   There is code (e.g. logstats) that depends on these errors coming at the end of this enum */
 enum SquidLogCode {
   SQUID_LOG_EMPTY                     = '0',
   SQUID_LOG_TCP_HIT                   = '1',
