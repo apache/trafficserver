@@ -715,9 +715,11 @@ HttpSM::state_read_client_request_header(int event, void *data)
         ua_entry->write_buffer    = new_MIOBuffer(alloc_index);
         IOBufferReader *buf_start = ua_entry->write_buffer->alloc_reader();
 
+        t_state.hdr_info.client_request.m_100_continue_required = true;
+
         DebugSM("http_seq", "send 100 Continue response to client");
-        int64_t nbytes = ua_entry->write_buffer->write(str_100_continue_response, len_100_continue_response);
-        ua_session->do_io_write(netvc, nbytes, buf_start);
+        int64_t nbytes      = ua_entry->write_buffer->write(str_100_continue_response, len_100_continue_response);
+        ua_entry->write_vio = ua_session->do_io_write(this, nbytes, buf_start);
       }
     }
 
@@ -811,7 +813,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_watch_for_client_abort, event);
 
-  ink_assert(ua_entry->read_vio == (VIO *)data);
+  ink_assert(ua_entry->read_vio == (VIO *)data || ua_entry->write_vio == (VIO *)data);
   ink_assert(ua_entry->vc == ua_session);
 
   switch (event) {
@@ -873,6 +875,20 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
   case VC_EVENT_READ_READY:
     //  Ignore.  Could be a pipelined request.  We'll get to  it
     //    when we finish the current transaction
+    break;
+  case VC_EVENT_WRITE_READY:
+    // 100-continue handler
+    ink_assert(t_state.hdr_info.client_request.m_100_continue_required);
+    ua_entry->write_vio->reenable();
+    break;
+  case VC_EVENT_WRITE_COMPLETE:
+    // 100-continue handler
+    ink_assert(t_state.hdr_info.client_request.m_100_continue_required);
+    if (ua_entry->write_buffer) {
+      ink_assert(ua_entry->write_vio && !ua_entry->write_vio->ntodo());
+      free_MIOBuffer(ua_entry->write_buffer);
+      ua_entry->write_buffer = nullptr;
+    }
     break;
   default:
     ink_release_assert(0);
@@ -3357,6 +3373,9 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       // send back 408 request timeout
       alloc_index = buffer_size_to_index(len_408_request_timeout_response + t_state.internal_msg_buffer_size);
       if (ua_entry->write_buffer) {
+        if (t_state.hdr_info.client_request.m_100_continue_required) {
+          ink_assert(ua_entry->write_vio && !ua_entry->write_vio->ntodo());
+        }
         free_MIOBuffer(ua_entry->write_buffer);
         ua_entry->write_buffer = nullptr;
       }

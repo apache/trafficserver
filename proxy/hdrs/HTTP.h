@@ -486,11 +486,12 @@ public:
   HTTPHdrImpl *m_http = nullptr;
   // This is all cached data and so is mutable.
   mutable URL m_url_cached;
-  mutable MIMEField *m_host_mime = nullptr;
-  mutable int m_host_length      = 0;     ///< Length of hostname.
-  mutable int m_port             = 0;     ///< Target port.
-  mutable bool m_target_cached   = false; ///< Whether host name and port are cached.
-  mutable bool m_target_in_url   = false; ///< Whether host name and port are in the URL.
+  mutable MIMEField *m_host_mime       = nullptr;
+  mutable int m_host_length            = 0;     ///< Length of hostname.
+  mutable int m_port                   = 0;     ///< Target port.
+  mutable bool m_target_cached         = false; ///< Whether host name and port are cached.
+  mutable bool m_target_in_url         = false; ///< Whether host name and port are in the URL.
+  mutable bool m_100_continue_required = false; ///< Whether 100_continue is in the Expect header.
   /// Set if the port was effectively specified in the header.
   /// @c true if the target (in the URL or the HOST field) also specified
   /// a port. That is, @c true if whatever source had the target host
