@@ -904,22 +904,6 @@ update_results_elapsed(OriginStats *stat, int result, int elapsed, int size)
     update_elapsed(stat->elapsed.misses.refresh, elapsed, stat->results.misses.refresh);
     update_elapsed(stat->elapsed.misses.total, elapsed, stat->results.misses.total);
     break;
-  case SQUID_LOG_ERR_CLIENT_ABORT:
-    update_counter(stat->results.errors.client_abort, size);
-    update_counter(stat->results.errors.total, size);
-    break;
-  case SQUID_LOG_ERR_CONNECT_FAIL:
-    update_counter(stat->results.errors.connect_fail, size);
-    update_counter(stat->results.errors.total, size);
-    break;
-  case SQUID_LOG_ERR_INVALID_REQ:
-    update_counter(stat->results.errors.invalid_req, size);
-    update_counter(stat->results.errors.total, size);
-    break;
-  case SQUID_LOG_ERR_UNKNOWN:
-    update_counter(stat->results.errors.unknown, size);
-    update_counter(stat->results.errors.total, size);
-    break;
   case SQUID_LOG_TCP_DISK_HIT:
   case SQUID_LOG_TCP_REF_FAIL_HIT:
   case SQUID_LOG_UDP_HIT:
@@ -938,12 +922,29 @@ update_results_elapsed(OriginStats *stat, int result, int elapsed, int size)
     update_elapsed(stat->elapsed.misses.other, elapsed, stat->results.misses.other);
     update_elapsed(stat->elapsed.misses.total, elapsed, stat->results.misses.total);
     break;
+  case SQUID_LOG_ERR_CLIENT_ABORT:
+    update_counter(stat->results.errors.client_abort, size);
+    update_counter(stat->results.errors.total, size);
+    break;
+  case SQUID_LOG_ERR_CONNECT_FAIL:
+    update_counter(stat->results.errors.connect_fail, size);
+    update_counter(stat->results.errors.total, size);
+    break;
+  case SQUID_LOG_ERR_INVALID_REQ:
+    update_counter(stat->results.errors.invalid_req, size);
+    update_counter(stat->results.errors.total, size);
+    break;
+  case SQUID_LOG_ERR_UNKNOWN:
+    update_counter(stat->results.errors.unknown, size);
+    update_counter(stat->results.errors.total, size);
+    break;
   default:
-    if ((result >= SQUID_LOG_ERR_READ_TIMEOUT) && (result <= SQUID_LOG_ERR_UNKNOWN)) {
+    // This depends on all errors being at the end of the enum ... Which is the case right now.
+    if (result < SQUID_LOG_ERR_READ_TIMEOUT) {
+      update_counter(stat->results.other, size);
+    } else {
       update_counter(stat->results.errors.other, size);
       update_counter(stat->results.errors.total, size);
-    } else {
-      update_counter(stat->results.other, size);
     }
     break;
   }
@@ -2358,7 +2359,9 @@ open_main_log(ExitStatus &status)
     return -1;
   }
 #if HAVE_POSIX_FADVISE
-  posix_fadvise(main_fd, 0, 0, POSIX_FADV_DONTNEED);
+  if (0 != posix_fadvise(main_fd, 0, 0, POSIX_FADV_DONTNEED)) {
+    status.append(" posix_fadvise() failed");
+  }
 #endif
   return main_fd;
 }
@@ -2629,7 +2632,9 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     }
     // flock(state_fd, LOCK_UN);
     lck.l_type = F_UNLCK;
-    fcntl(state_fd, F_SETLK, &lck);
+    if (fcntl(state_fd, F_SETLK, &lck) < 0) {
+      exit_status.set(EXIT_WARNING, " can't unlock state_fd ");
+    }
     close(main_fd);
     close(state_fd);
   } else {
@@ -2638,23 +2643,23 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
       exit_status.set(EXIT_CRITICAL, " can't open log file ");
       exit_status.append(cl.log_file);
       my_exit(exit_status);
-    }
+    } else {
+      if (cl.tail > 0) {
+        if (lseek(main_fd, 0, SEEK_END) < 0) {
+          exit_status.set(EXIT_CRITICAL, " can't lseek squid.blog");
+          my_exit(exit_status);
+        }
+        sleep(cl.tail);
+      }
 
-    if (cl.tail > 0) {
-      if (lseek(main_fd, 0, SEEK_END) < 0) {
-        exit_status.set(EXIT_CRITICAL, " can't lseek squid.blog");
+      if (process_file(main_fd, 0, max_age) != 0) {
+        close(main_fd);
+        exit_status.set(EXIT_CRITICAL, " can't parse log file ");
+        exit_status.append(cl.log_file);
         my_exit(exit_status);
       }
-      sleep(cl.tail);
-    }
-
-    if (process_file(main_fd, 0, max_age) != 0) {
       close(main_fd);
-      exit_status.set(EXIT_CRITICAL, " can't parse log file ");
-      exit_status.append(cl.log_file);
-      my_exit(exit_status);
     }
-    close(main_fd);
   }
 
   // All done.
