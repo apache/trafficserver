@@ -2578,6 +2578,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
         exit_status.set(EXIT_WARNING, " can't read log directory");
       } else {
         while ((dp = readdir(dirp)) != NULL) {
+          // coverity[fs_check_call]
           if (stat(dp->d_name, &stat_buf) < 0) {
             exit_status.set(EXIT_WARNING, " can't stat ");
             exit_status.append(dp->d_name);
@@ -2643,23 +2644,23 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
       exit_status.set(EXIT_CRITICAL, " can't open log file ");
       exit_status.append(cl.log_file);
       my_exit(exit_status);
-    } else {
-      if (cl.tail > 0) {
-        if (lseek(main_fd, 0, SEEK_END) < 0) {
-          exit_status.set(EXIT_CRITICAL, " can't lseek squid.blog");
-          my_exit(exit_status);
-        }
-        sleep(cl.tail);
-      }
+    }
 
-      if (process_file(main_fd, 0, max_age) != 0) {
-        close(main_fd);
-        exit_status.set(EXIT_CRITICAL, " can't parse log file ");
-        exit_status.append(cl.log_file);
+    if (cl.tail > 0) {
+      if (lseek(main_fd, 0, SEEK_END) < 0) {
+        exit_status.set(EXIT_CRITICAL, " can't lseek squid.blog");
         my_exit(exit_status);
       }
-      close(main_fd);
+      sleep(cl.tail);
     }
+
+    if (process_file(main_fd, 0, max_age) != 0) {
+      close(main_fd);
+      exit_status.set(EXIT_CRITICAL, " can't parse log file ");
+      exit_status.append(cl.log_file);
+      my_exit(exit_status);
+    }
+    close(main_fd);
   }
 
   // All done.

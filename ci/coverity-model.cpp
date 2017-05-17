@@ -50,3 +50,13 @@ void _TSReleaseAssert(const char* txt, const char* f, int l)
 }
 
 } /* extern "C" */
+
+// Teach Coverity that the my_exit() in logstats.cc exits ...
+struct ExitStatus {
+};
+
+void
+my_exit(const ExitStatus &status)
+{
+  __coverity_panic__();
+}
