@@ -2915,6 +2915,7 @@ Diagnostic Logging Configuration
    for Debug() messages only. Set to 2 to enable for all messages.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.enabled INT 0
+   :reloadable:
 
    Enables logging for diagnostic messages whose log level is `diag` or `debug`.
 
