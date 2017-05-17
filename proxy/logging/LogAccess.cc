@@ -446,6 +446,8 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container /* container A
   DEFAULT_STR_FIELD;
 }
 
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_retry_count, DEFAULT_INT_FIELD)
+
 LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_host_port, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
