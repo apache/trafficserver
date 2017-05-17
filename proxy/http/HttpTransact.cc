@@ -6729,7 +6729,6 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       // Note: if we are 1.1, we always need to send the close
       //  header since persistant connnections are the default
       break;
-    case KA_UNKNOWN:
     default:
       ink_assert(0);
       break;
@@ -6868,6 +6867,8 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     }
   }
 
+  ink_assert(ka_action != KA_UNKNOWN);
+
   // Insert K-A headers as necessary
   switch (ka_action) {
   case KA_CONNECTION:
@@ -6888,7 +6889,6 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // Note: if we are 1.1, we always need to send the close
     //  header since persistant connnections are the default
     break;
-  case KA_UNKNOWN:
   default:
     ink_assert(0);
     break;
