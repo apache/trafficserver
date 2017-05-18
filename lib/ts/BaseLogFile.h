@@ -27,6 +27,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -44,8 +45,6 @@
 #define LOGFILE_SEPARATOR_STRING "_"
 #define LOGFILE_DEFAULT_PERMS (0644)
 #define LOGFILE_ROLL_MAXPATHLEN 4096
-#define BASELOGFILE_DEBUG_MODE 0 // change this to 1 to enable debug messages
-                                 // TODO find a way to enable this from autotools
 
 typedef enum {
   LL_Debug = 0, // process does not die
@@ -55,16 +54,22 @@ typedef enum {
   LL_Fatal,     // causes process termination
 } LogLogPriorityLevel;
 
-#define log_log_trace(...)                         \
-  do {                                             \
-    if (BASELOGFILE_DEBUG_MODE)                    \
-      BaseLogFile::log_log(LL_Debug, __VA_ARGS__); \
+// log_log_* macros are turned on/off via the BASELOGFILE_DEBUG environment variable.
+// For example, run traffic_server like this: `BASELOGFILE_DEBUG=1 ./traffic_server`
+#define log_log_trace(...)                                   \
+  do {                                                       \
+    static char *blf_debug_on = getenv("BASELOGFILE_DEBUG"); \
+    if (unlikely(blf_debug_on)) {                            \
+      BaseLogFile::log_log(LL_Debug, __VA_ARGS__);           \
+    }                                                        \
   } while (0)
 
-#define log_log_error(...)                         \
-  do {                                             \
-    if (BASELOGFILE_DEBUG_MODE)                    \
-      BaseLogFile::log_log(LL_Error, __VA_ARGS__); \
+#define log_log_error(...)                                   \
+  do {                                                       \
+    static char *blf_debug_on = getenv("BASELOGFILE_DEBUG"); \
+    if (unlikely(blf_debug_on)) {                            \
+      BaseLogFile::log_log(LL_Error, __VA_ARGS__);           \
+    }                                                        \
   } while (0)
 
 /*
