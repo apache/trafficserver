@@ -2093,10 +2093,10 @@ static void
 extract_urls(char *buf, int buflen, char *base_url)
 {
   // if (verbose) printf("EXTRACT<<%s\n>>", buf);
-  char *start = nullptr;
-  char *end   = nullptr;
-  char old_base[512];
-  strcpy(old_base, base_url);
+  char *start        = nullptr;
+  char *end          = nullptr;
+  char old_base[512] = {0};
+  strncpy(old_base, base_url, sizeof(old_base) - 1);
 
   start = strncasestr(buf, "<base ", buflen);
   if (start) {
