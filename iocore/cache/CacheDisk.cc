@@ -271,9 +271,6 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
     }
   }
 
-  if (!p && !closest_match)
-    return nullptr;
-
   if (!p && closest_match) {
     /* allocate from the closest match */
     q            = closest_match;
