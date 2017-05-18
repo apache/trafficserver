@@ -97,4 +97,26 @@ Environment
 
 .. envvar:: PROXY_REMOTE_MGMT
 
+This environment variable forces :program:`traffic_server` to believe that it is being managed by
+:program:`traffic_manager`.
+
 .. envvar:: PROXY_AUTO_EXIT
+
+When this environment variable is set to an integral number of
+seconds, :program:`traffic_server` will exit that many seconds after
+startup. This is primarily useful for testing.
+
+Signals
+=======
+
+On `SIGTERM`, :program:`traffic_server` exits.
+
+On `SIGUSR1`, :program:`traffic_server` logs its current memory usage.
+
+On `SIGUSR2`, :program:`traffic_server` re-opens its standard error and standard out file descriptors.
+
+See also
+========
+
+:manpage:`traffic_ctl(8)`,
+:manpage:`traffic_manager(8)`
