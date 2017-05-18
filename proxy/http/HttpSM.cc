@@ -3026,8 +3026,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
 
   if (close_connection) {
     p->vc->do_io_close();
-    server_session = nullptr; // Because p->vc == server_session
-    p->read_vio    = nullptr;
+    p->read_vio = nullptr;
     /* TS-1424: if we're outbound transparent and using the client
        source port for the outbound connection we must effectively
        propagate server closes back to the client. Part of that is
@@ -3055,6 +3054,12 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
       server_session->release();
     }
   }
+
+  // The server session has been released. Clean all pointer
+  server_entry->in_tunnel = true; // to avid cleaning in clenup_entry
+  vc_table.cleanup_entry(server_entry);
+  server_session = nullptr; // Because p->vc == server_session
+  server_entry   = nullptr;
 
   return 0;
 }
