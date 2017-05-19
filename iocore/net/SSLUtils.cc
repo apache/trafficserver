@@ -67,7 +67,6 @@
 #define SSL_ACTION_TAG "action"
 #define SSL_ACTION_TUNNEL_TAG "tunnel"
 #define SSL_SESSION_TICKET_ENABLED "ssl_ticket_enabled"
-#define SSL_SESSION_TICKET_KEY_FILE_TAG "ticket_key_name"
 #define SSL_KEY_DIALOG "ssl_key_dialog"
 #define SSL_CERT_SEPARATE_DELIM ','
 
