@@ -29,12 +29,15 @@ mkdir -p $INSTALL
 ./configure --prefix="$INSTALL" \
             --with-user=jenkins \
             --enable-experimental-plugins \
+            --enable-example-plugins \
             --enable-ccache \
             --enable-debug \
             --enable-werror
 
 # Build and run regressions
-make -j4 && make install
+${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
+${ATS_MAKE} check VERBOSE=Y && ${ATS_MAKE} install
+
 /usr/bin/autest -D ./tests/gold_tests --sandbox "$SANDBOX" --ats-bin "${INSTALL}/bin"
 status="$?"
 [ -d "$SANDBOX" ] && rm -rf "$SANDBOX"
