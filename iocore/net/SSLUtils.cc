@@ -100,8 +100,6 @@ struct ssl_user_config {
   ssl_user_config() : opt(SSLCertContext::OPT_NONE)
   {
     REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
-    REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
-    Debug("ssl", "ticket  key filename %s", (const char *)ticket_key_filename);
   }
 
   int session_ticket_enabled;
@@ -110,7 +108,6 @@ struct ssl_user_config {
   ats_scoped_str first_cert;
   ats_scoped_str ca;
   ats_scoped_str key;
-  ats_scoped_str ticket_key_filename;
   ats_scoped_str dialog;
   SSLCertContext::Option opt;
 };
@@ -1813,11 +1810,8 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     }
   }
 
-  // Load the session ticket key if session tickets are not disabled and we have key name.
-  if (sslMultCertSettings->session_ticket_enabled != 0 && sslMultCertSettings->ticket_key_filename) {
-    ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings->ticket_key_filename));
-    keyblock = ssl_context_enable_tickets(ctx, ticket_key_path);
-  } else if (sslMultCertSettings->session_ticket_enabled != 0) {
+  // Load the session ticket key if session tickets are not disabled
+  if (sslMultCertSettings->session_ticket_enabled != 0) {
     keyblock = ssl_context_enable_tickets(ctx, nullptr);
   }
 
@@ -1937,10 +1931,6 @@ ssl_extract_certificate(const matcher_line *line_info, ssl_user_config &sslMultC
 
     if (strcasecmp(label, SSL_SESSION_TICKET_ENABLED) == 0) {
       sslMultCertSettings.session_ticket_enabled = atoi(value);
-    }
-
-    if (strcasecmp(label, SSL_SESSION_TICKET_KEY_FILE_TAG) == 0) {
-      sslMultCertSettings.ticket_key_filename = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
