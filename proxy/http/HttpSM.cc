@@ -3103,11 +3103,22 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer *c)
 {
   ink_assert(c->vc_type == HT_HTTP_CLIENT);
 
-  if (c->producer->alive &&                            // something there to read
-      server_entry && server_entry->vc &&              // from an origin server
-      server_session && server_session->get_netvc() && // which is still open and valid
-      c->producer->num_consumers > 1                   // with someone else reading it
+  if (c->producer->alive &&          // something there to read
+                                     //      server_entry && server_entry->vc &&              // from an origin server
+                                     //      server_session && server_session->get_netvc() && // which is still open and valid
+      c->producer->num_consumers > 1 // with someone else reading it
       ) {
+    HttpTunnelProducer *p = nullptr;
+
+    if (!server_entry || !server_entry->vc || !server_session || !server_session->get_netvc()) {
+      // return true if we have finished the reading from OS when client aborted
+      p = c->producer->self_consumer ? c->producer->self_consumer->producer : c->producer;
+      if (p->vc_type == HT_HTTP_SERVER && p->read_success) {
+        return true;
+      } else {
+        return false;
+      }
+    }
     // If threshold is 0.0 or negative then do background
     //   fill regardless of the content length.  Since this
     //   is floating point just make sure the number is near zero
@@ -3161,15 +3172,20 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     set_ua_abort(HttpTransact::ABORTED, event);
 
     if (is_bg_fill_necessary(c)) {
+      p = c->producer->self_consumer ? c->producer->self_consumer->producer : c->producer;
       DebugSM("http", "[%" PRId64 "] Initiating background fill", sm_id);
-      background_fill = BACKGROUND_FILL_STARTED;
-      HTTP_INCREMENT_DYN_STAT(http_background_fill_current_count_stat);
+      // check whether to finish the reading.
+      background_fill = p->read_success ? BACKGROUND_FILL_COMPLETED : BACKGROUND_FILL_STARTED;
 
       // There is another consumer (cache write) so
       //  detach the user agent
-      ink_assert(server_entry->vc == server_session);
-      ink_assert(c->is_downstream_from(server_session));
-      server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
+      if (background_fill == BACKGROUND_FILL_STARTED) {
+        HTTP_INCREMENT_DYN_STAT(http_background_fill_current_count_stat);
+        ink_assert(server_entry->vc == server_session);
+        ink_assert(c->is_downstream_from(server_session));
+        server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
+      }
+
     } else {
       // No background fill
       p = c->producer;
