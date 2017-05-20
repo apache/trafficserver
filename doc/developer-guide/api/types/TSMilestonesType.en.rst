@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-TSMiletonesType
+TSMilestonesType
 ***************
 
 Synopsis
@@ -24,54 +24,54 @@ Synopsis
 
 `#include <ts/apidefs.h>`
 
-.. c:type:: TSMiletonesType
+.. c:type:: TSMilestonesType
 
 Enum typedef.
 
 Enumeration Members
 ===================
 
-.. c:member:: TSMiletonesType TS_MILESTONE_NULL
+.. c:member:: TSMilestonesType TS_MILESTONE_NULL
 
-.. c:member:: TSMiletonesType TS_MILESTONE_UA_BEGIN
+.. c:member:: TSMilestonesType TS_MILESTONE_UA_BEGIN
 
-.. c:member:: TSMiletonesType TS_MILESTONE_UA_READ_HEADER_DONE
+.. c:member:: TSMilestonesType TS_MILESTONE_UA_READ_HEADER_DONE
 
-.. c:member:: TSMiletonesType TS_MILESTONE_UA_BEGIN_WRITE
+.. c:member:: TSMilestonesType TS_MILESTONE_UA_BEGIN_WRITE
 
-.. c:member:: TSMiletonesType TS_MILESTONE_UA_CLOSE
+.. c:member:: TSMilestonesType TS_MILESTONE_UA_CLOSE
 
-.. c:member:: TSMiletonesType TS_MILESTONE_SERVER_FIRST_CONNECT
+.. c:member:: TSMilestonesType TS_MILESTONE_SERVER_FIRST_CONNECT
 
-.. c:member:: TSMiletonesType TS_MILESTONE_SERVER_CONNECT
+.. c:member:: TSMilestonesType TS_MILESTONE_SERVER_CONNECT
 
-.. c:member:: TSMiletonesType TS_MILESTONE_SERVER_CONNECT_END
+.. c:member:: TSMilestonesType TS_MILESTONE_SERVER_CONNECT_END
 
-.. c:member:: TSMiletonesType TS_MILESTONE_SERVER_BEGIN_WRITE
+.. c:member:: TSMilestonesType TS_MILESTONE_SERVER_BEGIN_WRITE
 
-.. c:member:: TSMiletonesType TS_MILESTONE_SERVER_FIRST_READ
+.. c:member:: TSMilestonesType TS_MILESTONE_SERVER_FIRST_READ
 
-.. c:member:: TSMiletonesType TS_MILESTONE_SERVER_READ_HEADER_DONE
+.. c:member:: TSMilestonesType TS_MILESTONE_SERVER_READ_HEADER_DONE
 
-.. c:member:: TSMiletonesType TS_MILESTONE_SERVER_CLOSE
+.. c:member:: TSMilestonesType TS_MILESTONE_SERVER_CLOSE
 
-.. c:member:: TSMiletonesType TS_MILESTONE_CACHE_OPEN_READ_BEGIN
+.. c:member:: TSMilestonesType TS_MILESTONE_CACHE_OPEN_READ_BEGIN
 
-.. c:member:: TSMiletonesType TS_MILESTONE_CACHE_OPEN_READ_END
+.. c:member:: TSMilestonesType TS_MILESTONE_CACHE_OPEN_READ_END
 
-.. c:member:: TSMiletonesType TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN
+.. c:member:: TSMilestonesType TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN
 
-.. c:member:: TSMiletonesType TS_MILESTONE_CACHE_OPEN_WRITE_END
+.. c:member:: TSMilestonesType TS_MILESTONE_CACHE_OPEN_WRITE_END
 
-.. c:member:: TSMiletonesType TS_MILESTONE_DNS_LOOKUP_BEGIN
+.. c:member:: TSMilestonesType TS_MILESTONE_DNS_LOOKUP_BEGIN
 
-.. c:member:: TSMiletonesType TS_MILESTONE_DNS_LOOKUP_END
+.. c:member:: TSMilestonesType TS_MILESTONE_DNS_LOOKUP_END
 
-.. c:member:: TSMiletonesType TS_MILESTONE_SM_START
+.. c:member:: TSMilestonesType TS_MILESTONE_SM_START
 
-.. c:member:: TSMiletonesType TS_MILESTONE_SM_FINISH
+.. c:member:: TSMilestonesType TS_MILESTONE_SM_FINISH
 
-.. c:member:: TSMiletonesType TS_MILESTONE_LAST_ENTRY
+.. c:member:: TSMilestonesType TS_MILESTONE_LAST_ENTRY
 
 Description
 ===========
