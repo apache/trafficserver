@@ -20,8 +20,17 @@ cd "${WORKSPACE}/src"
 autoreconf -if && ./configure
 
 # Test clang-format, copy our version of clang-format if needed
-[ ! -d .git/fmt ] && cp -rp /home/jenkins/fmt .git
-make clang-format
+if [ ! -d .git/fmt ]; then
+    if [ -z "${ghprbTargetBranch}" ]; then
+	cp -rp /home/jenkins/clang-format/master .git/fmt
+    else
+	# This is for Github PR's, to make sure we use the right clang-format for the branch.
+	# This is not an issue on normal branch builds, since they will have the right .git/fmt.
+	cp -rp /home/jenkins/clang-format/${ghprbTargetBranch} .git/fmt
+    fi
+fi
+
+${ATS_MAKE} -j clang-format
 git diff --exit-code
 [ "0" != "$?" ] && exit -1
 
