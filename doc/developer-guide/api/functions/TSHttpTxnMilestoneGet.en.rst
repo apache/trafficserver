@@ -42,31 +42,104 @@ is successful.
 
 .. type:: TSMilestonesType
 
-=============================================== ==========
-Value                                           Milestone
-=============================================== ==========
-:const:`TS_MILESTONE_SM_START`                  Transaction state machine is initialized.
-:const:`TS_MILESTONE_UA_BEGIN`                  The client connection is accepted.
-:const:`TS_MILESTONE_PLUGIN_ACTIVE`             Amount of time plugins were active plus start time.
-:const:`TS_MILESTONE_PLUGIN_TOTAL`              Wall time while plugins were active plus start time.
-:const:`TS_MILESTONE_UA_READ_HEADER_DONE`       The request header from the client has been read and parsed.
-:const:`TS_MILESTONE_CACHE_OPEN_READ_BEGIN`     Initiate read of the cache.
-:const:`TS_MILESTONE_CACHE_OPEN_READ_END`       Initial cache read has resolved.
-:const:`TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN`    Start open for cache write.
-:const:`TS_MILESTONE_CACHE_OPEN_WRITE_END`      Cache has been opened for write.
-:const:`TS_MILESTONE_DNS_LOOKUP_BEGIN`          Initiate host resolution in HostDB
-:const:`TS_MILESTONE_DNS_LOOKUP_END`            Host resolution resolves.
-:const:`TS_MILESTONE_SERVER_FIRST_CONNECT`      First time origin server connect attempted or shared shared session attached.
-:const:`TS_MILESTONE_SERVER_CONNECT`            Most recent time origin server connect attempted or shared session attached.
-:const:`TS_MILESTONE_SERVER_CONNECT_END`        More recent time a connection attempt was resolved.
-:const:`TS_MILESTONE_SERVER_BEGIN_WRITE`        First byte is written to the origin server connection.
-:const:`TS_MILESTONE_SERVER_FIRST_READ`         First byte is read from connection to origin server.
-:const:`TS_MILESTONE_SERVER_READ_HEADER_DONE`   Origin server response has been read and parsed.
-:const:`TS_MILESTONE_UA_BEGIN_WRITE`            The response header write to the client starts.
-:const:`TS_MILESTONE_SERVER_CLOSE`              Last I/O activity on origin server connection.
-:const:`TS_MILESTONE_UA_CLOSE`                  Last I/O activity on the client socket, or connection abort.
-:const:`TS_MILESTONE_SM_FINISH`                 Transaction has finished, state machine final logging has started.
-=============================================== ==========
+	An enumeration of the valid indices of transaction milestone data.
+
+	.. macro:: TS_MILESTONE_SM_START
+
+		Transaction state machine is initialized.
+
+	.. macro:: TS_MILESTONE_UA_BEGIN
+
+		The client connection is accepted.
+
+	.. macro:: TS_MILESTONE_PLUGIN_ACTIVE
+
+		Amount of time plugins were active plus start time.
+
+	.. macro:: TS_MILESTONE_PLUGIN_TOTAL
+
+		Wall time while plugins were active plus start time.
+
+	.. macro:: TS_MILESTONE_UA_READ_HEADER_DONE
+
+		The request header from the client has been read and parsed.
+
+	.. macro:: TS_MILESTONE_CACHE_OPEN_READ_BEGIN
+
+		Initiate read of the cache.
+
+	.. macro:: TS_MILESTONE_CACHE_OPEN_READ_END
+
+		Initial cache read has resolved.
+
+	.. macro:: TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN
+
+		Start open for cache write.
+
+	.. macro:: TS_MILESTONE_CACHE_OPEN_WRITE_END
+
+		Cache has been opened for write.
+
+	.. macro:: TS_MILESTONE_DNS_LOOKUP_BEGIN
+
+		Initiate host resolution in HostDB
+
+	.. macro:: TS_MILESTONE_DNS_LOOKUP_END
+
+		Host resolution resolves.
+
+	.. macro:: TS_MILESTONE_SERVER_FIRST_CONNECT
+
+		First time origin server connect attempted or shared shared session attached.
+
+	.. macro:: TS_MILESTONE_SERVER_CONNECT
+
+		Most recent time origin server connect attempted or shared session attached.
+
+	.. macro:: TS_MILESTONE_SERVER_CONNECT_END
+
+		More recent time a connection attempt was resolved.
+
+	.. macro:: TS_MILESTONE_SERVER_BEGIN_WRITE
+
+		First byte is written to the origin server connection.
+
+	.. macro:: TS_MILESTONE_SERVER_FIRST_READ
+
+		First byte is read from connection to origin server.
+
+	.. macro:: TS_MILESTONE_SERVER_READ_HEADER_DONE
+
+		Origin server response has been read and parsed.
+
+	.. macro:: TS_MILESTONE_UA_BEGIN_WRITE
+
+		The response header write to the client starts.
+
+	.. macro:: TS_MILESTONE_SERVER_CLOSE
+
+		Last I/O activity on origin server connection.
+
+	.. macro:: TS_MILESTONE_UA_CLOSE
+
+		Last I/O activity on the client socket, or connection abort.
+
+	.. macro:: TS_MILESTONE_SM_FINISH
+
+		Transaction has finished, state machine final logging has started.
+
+	.. macro:: TS_MILESTONE_PLUGIN_ACTIVE
+
+		Amount of time plugins were active (running plugin code).
+
+	.. macro:: TS_MILESTONE_PLUGIN_TOTAL
+
+		Amount of time spent in or waiting for plugins.
+
+	.. macro:: TS_MILESTONE_LAST_ENTRY
+
+		A psuedo index which is set to be one more than the last valid index. This is useful for looping over the data.
+
 
 *  The server connect times predate the transmission of the :literal:`SYN`
    packet. That is, before a connection to the origin server is completed.
@@ -74,7 +147,7 @@ Value                                           Milestone
 *  A connection attempt is resolved when no more connection related activity
    remains to be done, and the connection is either established or has failed.
 
-*  :const:`TS_MILESTONE_UA_CLOSE` and :const:`TS_MILESTONE_SERVER_CLOSE` are
+*  :macro:`TS_MILESTONE_UA_CLOSE` and :macro:`TS_MILESTONE_SERVER_CLOSE` are
    updated continuously during the life of the transaction, every time there is
    I/O activity. The updating stops when the corresponding connection is
    closed, leaving the last I/O time as the final value.
@@ -82,21 +155,21 @@ Value                                           Milestone
 *  The cache :literal:`OPEN` milestones time only the initial setup, the
    *open*, not the full read or write.
 
-*  :const:`TS_MILESTONE_PLUGIN_ACTIVE` and :const:`TS_MILESTONE_PLUGIN_TOTAL` are different from the other milestones as
-   they measure elapsed time, not event time. The value is the elapsed time *plus* :const:`TS_MILESTONE_SM_START`. This
+*  :macro:`TS_MILESTONE_PLUGIN_ACTIVE` and :macro:`TS_MILESTONE_PLUGIN_TOTAL` are different from the other milestones as
+   they measure elapsed time, not event time. The value is the elapsed time *plus* :macro:`TS_MILESTONE_SM_START`. This
    was decided to be more convenient because then these milestones can be handled / displayed in the same way as the
-   other milestones, as offsets from :const:`TS_MILESTONE_SM_START`.
+   other milestones, as offsets from :macro:`TS_MILESTONE_SM_START`.
 
-   :const:`TS_MILESTONE_PLUGIN_ACTIVE` value is the amount of time the plugin was active, that is performing
-   computation. :const:`TS_MILESTONE_PLUGIN_TOTAL` is the wall time which includes any time the transaction was blocked
+   :macro:`TS_MILESTONE_PLUGIN_ACTIVE` value is the amount of time the plugin was active, that is performing
+   computation. :macro:`TS_MILESTONE_PLUGIN_TOTAL` is the wall time which includes any time the transaction was blocked
    while a plugin was active. For instance if a plugin waits on an external event, that waiting time will be in
-   :const:`TS_MILESTONE_PLUGIN_TOTAL` but not in :const:`TS_MILESTONE_PLUGIN_ACTIVE`.
+   :macro:`TS_MILESTONE_PLUGIN_TOTAL` but not in :macro:`TS_MILESTONE_PLUGIN_ACTIVE`.
 
 Return Values
 =============
 
-:const:`TS_SUCCESS` if successful and :arg:`time` was updated, otherwise
-:const:`TS_ERROR`.
+:macro:`TS_SUCCESS` if successful and :arg:`time` was updated, otherwise
+:macro:`TS_ERROR`.
 
 See Also
 ========
