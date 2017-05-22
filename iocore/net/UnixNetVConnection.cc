@@ -773,6 +773,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     read.enabled = 0;
     read.vio.buffer.clear();
     read.vio.nbytes = 0;
+    read.vio._cont  = nullptr;
     f.shutdown      = NET_VC_SHUTDOWN_READ;
     break;
   case IO_SHUTDOWN_WRITE:
@@ -780,6 +781,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     write.enabled = 0;
     write.vio.buffer.clear();
     write.vio.nbytes = 0;
+    write.vio._cont  = nullptr;
     f.shutdown       = NET_VC_SHUTDOWN_WRITE;
     break;
   case IO_SHUTDOWN_READWRITE:
@@ -790,6 +792,8 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     read.vio.nbytes = 0;
     write.vio.buffer.clear();
     write.vio.nbytes = 0;
+    read.vio._cont   = nullptr;
+    write.vio._cont  = nullptr;
     f.shutdown       = NET_VC_SHUTDOWN_READ | NET_VC_SHUTDOWN_WRITE;
     break;
   default:
