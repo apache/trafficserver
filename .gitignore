@@ -141,6 +141,7 @@ rc/trafficserver.service
 .libs/
 
 .svn/
+.vscode/
 
 tsxs
 
