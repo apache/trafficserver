@@ -179,10 +179,10 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
   close_target     = aclose_target;
   tunnel_till_done = true;
 
-  // Prior to constructing the OneWayTunnel, we initiated a do_io(VIO::READ)
+  // Prior to constructing the OneWayTunnel, we initiated a do_io_read()
   // on the source VC.  We wish to use the same MIO buffer in the tunnel.
 
-  // do_io() read already posted on vcSource.
+  // do_io_read() already posted on vcSource.
   SET_HANDLER(&OneWayTunnel::startEvent);
 
   SourceVio->set_continuation(this);

@@ -85,7 +85,7 @@ struct SSLNextProtocolTrampoline : public Continuation {
     case VC_EVENT_INACTIVITY_TIMEOUT:
       // Cancel the read before we have a chance to delete the continuation
       netvc->do_io_read(nullptr, 0, nullptr);
-      netvc->do_io(VIO::CLOSE);
+      netvc->do_io_close();
       delete this;
       return EVENT_ERROR;
     case VC_EVENT_READ_COMPLETE:
@@ -109,7 +109,7 @@ struct SSLNextProtocolTrampoline : public Continuation {
       send_plugin_event(npnParent->endpoint, NET_EVENT_ACCEPT, netvc);
     } else {
       // No handler, what should we do? Best to just kill the VC while we can.
-      netvc->do_io(VIO::CLOSE);
+      netvc->do_io_close();
     }
 
     delete this;
@@ -136,10 +136,10 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
     // the endpoint that there is an accept to handle until the read completes
     // and we know which protocol was negotiated.
     netvc->registerNextProtocolSet(&this->protoset);
-    netvc->do_io(VIO::READ, new SSLNextProtocolTrampoline(this, netvc->mutex), 0, this->buffer, 0);
+    netvc->do_io_read(new SSLNextProtocolTrampoline(this, netvc->mutex), 0, this->buffer);
     return EVENT_CONT;
   default:
-    netvc->do_io(VIO::CLOSE);
+    netvc->do_io_close();
     return EVENT_DONE;
   }
 }
