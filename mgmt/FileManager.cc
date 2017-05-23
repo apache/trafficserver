@@ -180,7 +180,7 @@ FileManager::fileChanged(const char *fileName, bool incVersion)
 {
   callbackListable *cb;
   char *filenameCopy;
-
+  Debug("lm", "filename changed %s", fileName);
   ink_mutex_acquire(&cbListLock);
 
   for (cb = cblist.head; cb != nullptr; cb = cb->link.next) {
@@ -667,6 +667,7 @@ FileManager::rereadConfig()
   if (found && enabled) {
     fileChanged("proxy.config.body_factory.template_sets_dir", true);
   }
+  fileChanged("proxy.config.ssl.server.ticket_key.filename", true);
 }
 
 bool
