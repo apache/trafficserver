@@ -1167,6 +1167,8 @@ INKVConnInternal::do_io_close(int error)
     ink_assert(!"not reached");
   }
 
+  ink_assert(!m_closed);
+
   INK_WRITE_MEMORY_BARRIER;
 
   if (error != -1) {

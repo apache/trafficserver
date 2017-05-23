@@ -326,6 +326,8 @@ TransformTerminus::do_io_close(int error)
     ink_assert(!"not reached");
   }
 
+  ink_assert(!m_closed);
+
   INK_WRITE_MEMORY_BARRIER;
 
   if (error != -1) {
@@ -457,6 +459,8 @@ void
 TransformVConnection::do_io_close(int error)
 {
   Debug("transform", "TransformVConnection do_io_close: %d [0x%lx]", error, (long)this);
+
+  ink_assert(!m_closed);
 
   if (error != -1) {
     m_closed = TS_VC_CLOSE_ABORT;
