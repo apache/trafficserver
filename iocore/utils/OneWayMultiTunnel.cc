@@ -95,11 +95,11 @@ OneWayMultiTunnel::init(VConnection *vcSource, VConnection **vcTargets, int n_vc
 
   buf1->water_mark = water_mark;
 
-  vioSource = vcSource->do_io(VIO::READ, this, nbytes, buf1, 0);
+  vioSource = vcSource->do_io_read(this, nbytes, buf1);
 
   ink_assert(n_vcTargets <= ONE_WAY_MULTI_TUNNEL_LIMIT);
   for (int i      = 0; i < n_vcTargets; i++)
-    vioTargets[i] = vcTargets[i]->do_io(VIO::WRITE, this, INT64_MAX, buf2, 0);
+    vioTargets[i] = vc_do_io_write(vcTargets[i], this, INT64_MAX, buf2, 0);
 
   return;
 }
@@ -235,7 +235,7 @@ OneWayMultiTunnel::close_target_vio(int result, VIO *vio)
       if (last_connection() || !single_buffer)
         free_MIOBuffer(v->buffer.writer());
       if (close_target)
-        v->vc_server->do_io(result ? VIO::ABORT : VIO::CLOSE);
+        v->vc_server->do_io_close();
       vioTargets[i] = nullptr;
       n_connections--;
     }
