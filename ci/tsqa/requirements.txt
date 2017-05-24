@@ -1,9 +1,0 @@
-# requirements for the python virtualenv
-
-# TODO: pin a specific version
-https://github.com/apache/trafficserver-qa/archive/master.zip
-pyyaml
-pyOpenSSL
-# TODO: can't do python_version in requirements.txt files
-#hyper; python_version >= '2.7'
-dnslib
