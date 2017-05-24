@@ -1,7 +1,0 @@
-# TODO list for tsqa
-
-- runtests script
-    - run specific things within the virtualenv
-    - package up output from specific tests in a relocateable way
-- Documentation/Examples of TSQA framework
-- pylint for test cases
