@@ -46,6 +46,7 @@ struct Evaluator {
   bool
   bind(lua_State *L, const char *metric, const char *expression)
   {
+    const char *err = nullptr;
     if (RecGetRecordDataType(metric, &this->data_type) != REC_ERR_OKAY) {
       return false;
     }
@@ -55,8 +56,9 @@ struct Evaluator {
     switch (luaL_loadstring(L, expression)) {
     case LUA_ERRSYNTAX:
     case LUA_ERRMEM:
-      Debug("lua", "loadstring failed for %s", metric);
-      luaL_error(L, "invalid expression for %s", metric);
+      err = luaL_checkstring(L, -1);
+      Debug("lua", "loadstring failed for %s: %s", metric, err);
+      luaL_error(L, "invalid expression for %s: %s", metric, err);
       return false;
     case 0:
       break; // success
