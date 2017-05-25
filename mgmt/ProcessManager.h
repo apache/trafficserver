@@ -65,11 +65,7 @@ public:
 
   void reconfigure();
   void initLMConnection();
-  void pollLMConnection();
   void handleMgmtMsgFromLM(MgmtMessageHdr *mh);
-
-  bool processEventQueue();
-  bool processSignalQueue();
 
   void
   registerPluginCallbacks(ConfigUpdateCbTable *_cbtable)
@@ -78,6 +74,10 @@ public:
   }
 
 private:
+  int pollLMConnection();
+  int processSignalQueue();
+  bool processEventQueue();
+
   bool require_lm;
   RecInt timeout;
   LLQ *mgmt_signal_queue;
