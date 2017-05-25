@@ -26,7 +26,7 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSSslVConnection TSVConnSslConnectionGet(TSVConn svc)
+.. function:: TSSslConnection TSVConnSslConnectionGet(TSVConn svc)
 
 Description
 ===========
@@ -36,8 +36,7 @@ Get the SSL (per connection) object from the SSl connection :arg:`svc`.
 Types
 =====
 
-.. type:: TSSslVConnection
+.. type:: TSSslConnection
 
-The SSL (per connection) object. This is an opaque type that can be cast to the
-appropriate type (SSL * for the OpenSSL library).
-
+	The SSL (per connection) object. This is an opaque type that can be cast to the
+	appropriate type (:code:`SSL *` for the OpenSSL library).
