@@ -4770,7 +4770,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
   bool test_passed_mime_hdr_length_get        = false;
   bool test_passed_mime_hdr_field_next_dup    = false;
   bool test_passed_mime_hdr_copy              = false;
-  bool test_passed_mime_hdr_clone             = false;
   bool test_passed_mime_hdr_field_remove      = false;
   bool test_passed_mime_hdr_field_copy        = false;
   bool test_passed_mime_hdr_field_copy_values = false;
@@ -4930,7 +4929,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
 
   bufp3 = TSMBufferCreate();
   TSMimeHdrCreate(bufp3, &mime_hdr_loc3);
-  test_passed_mime_hdr_clone = true;
 
   // TSMimeHdrFieldRemove
   if (test_passed_mime_hdr_copy == true) {
@@ -5021,42 +5019,38 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
   }
 
   // TSMimeHdrFieldClone
-  if (test_passed_mime_hdr_clone == true) {
-    field_loc1 = nullptr;
-    field_loc2 = nullptr;
-    if ((field_loc2 = TSMimeHdrFieldGet(bufp1, mime_hdr_loc1, 0)) == TS_NULL_MLOC) {
-      SDK_RPRINT(test, "TSMimeHdrFieldClone", "TestCase1", TC_FAIL, "Unable to get source field for copying");
-    } else {
-      if (TSMimeHdrFieldClone(bufp3, mime_hdr_loc3, bufp1, mime_hdr_loc1, field_loc2, &field_loc1) != TS_SUCCESS) {
-        SDK_RPRINT(test, "TSMimeHdrFieldClone", "TestCase1", TC_FAIL, "TSMimeHdrFieldClone returns TS_ERROR");
-      } else {
-        if ((compare_field_names(test, bufp3, mime_hdr_loc3, field_loc1, bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR) ||
-            (compare_field_values(test, bufp3, mime_hdr_loc3, field_loc1, bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR)) {
-          SDK_RPRINT(test, "TSMimeHdrFieldClone", "TestCase1", TC_FAIL, "Value's Mismatch");
-        } else {
-          SDK_RPRINT(test, "TSMimeHdrFieldClone", "TestCase1", TC_PASS, "ok");
-        }
-      }
-    }
-    if (field_loc1 != nullptr) {
-      if (TSHandleMLocRelease(bufp3, mime_hdr_loc3, field_loc1) == TS_ERROR) {
-        SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase7", TC_FAIL, "TSHandleMLocRelease returns TS_ERROR");
-        test_passed_handle_mloc_release = false;
-      } else {
-        SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase7", TC_PASS, "ok");
-      }
-    }
-
-    if (field_loc2 != nullptr) {
-      if (TSHandleMLocRelease(bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR) {
-        SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase8", TC_FAIL, "TSHandleMLocRelease returns TS_ERROR");
-        test_passed_handle_mloc_release = false;
-      } else {
-        SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase8", TC_PASS, "ok");
-      }
-    }
+  field_loc1 = nullptr;
+  field_loc2 = nullptr;
+  if ((field_loc2 = TSMimeHdrFieldGet(bufp1, mime_hdr_loc1, 0)) == TS_NULL_MLOC) {
+    SDK_RPRINT(test, "TSMimeHdrFieldClone", "TestCase1", TC_FAIL, "Unable to get source field for copying");
   } else {
-    SDK_RPRINT(test, "TSMimeHdrFieldClone", "TestCase1", TC_FAIL, "Unable to run test as bufp3 might not have been created");
+    if (TSMimeHdrFieldClone(bufp3, mime_hdr_loc3, bufp1, mime_hdr_loc1, field_loc2, &field_loc1) != TS_SUCCESS) {
+      SDK_RPRINT(test, "TSMimeHdrFieldClone", "TestCase1", TC_FAIL, "TSMimeHdrFieldClone returns TS_ERROR");
+    } else {
+      if ((compare_field_names(test, bufp3, mime_hdr_loc3, field_loc1, bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR) ||
+          (compare_field_values(test, bufp3, mime_hdr_loc3, field_loc1, bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR)) {
+        SDK_RPRINT(test, "TSMimeHdrFieldClone", "TestCase1", TC_FAIL, "Value's Mismatch");
+      } else {
+        SDK_RPRINT(test, "TSMimeHdrFieldClone", "TestCase1", TC_PASS, "ok");
+      }
+    }
+  }
+  if (field_loc1 != nullptr) {
+    if (TSHandleMLocRelease(bufp3, mime_hdr_loc3, field_loc1) == TS_ERROR) {
+      SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase7", TC_FAIL, "TSHandleMLocRelease returns TS_ERROR");
+      test_passed_handle_mloc_release = false;
+    } else {
+      SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase7", TC_PASS, "ok");
+    }
+  }
+
+  if (field_loc2 != nullptr) {
+    if (TSHandleMLocRelease(bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR) {
+      SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase8", TC_FAIL, "TSHandleMLocRelease returns TS_ERROR");
+      test_passed_handle_mloc_release = false;
+    } else {
+      SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase8", TC_PASS, "ok");
+    }
   }
 
   // TSMimeHdrFieldCopyValues
@@ -5133,9 +5127,9 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
   if ((test_passed_parser_create != true) || (test_passed_parse != true) || (test_passed_parser_clear != true) ||
       (test_passed_parser_destroy != true) || (test_passed_mime_hdr_print != true) || (test_passed_mime_hdr_length_get != true) ||
       (test_passed_mime_hdr_field_next_dup != true) || (test_passed_mime_hdr_copy != true) ||
-      (test_passed_mime_hdr_clone != true) || (test_passed_mime_hdr_field_remove != true) ||
-      (test_passed_mime_hdr_field_copy != true) || (test_passed_mime_hdr_field_copy_values != true) ||
-      (test_passed_handle_mloc_release != true) || (test_passed_mime_hdr_field_find != true)) {
+      (test_passed_mime_hdr_field_remove != true) || (test_passed_mime_hdr_field_copy != true) ||
+      (test_passed_mime_hdr_field_copy_values != true) || (test_passed_handle_mloc_release != true) ||
+      (test_passed_mime_hdr_field_find != true)) {
     *pstatus = REGRESSION_TEST_FAILED;
   } else {
     *pstatus = REGRESSION_TEST_PASSED;
