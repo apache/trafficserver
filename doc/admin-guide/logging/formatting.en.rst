@@ -640,6 +640,7 @@ cqtq  Client Request          The time at which the client request was received
                               millisecond resolution.
 cqts  Client Request          Same as cqtq_, but as an integer without
                               sub-second resolution.
+cqth  Client Request          Same as cqts_, but represented in hexadecimal.
 cqtt  Client Request          Client request timestamp in the 24-hour format
                               ``hh:mm:ss`` (two digit hour, minutes, and
                               seconds - with leading zeroes as necessary).
