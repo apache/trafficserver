@@ -101,7 +101,7 @@ SSLConfigParams::reset()
   ssl_session_cache_skip_on_contention = 0;
   ssl_session_cache_timeout            = 0;
   ssl_session_cache_auto_clear         = 1;
-  configExitOnLoadError                = 0;
+  configExitOnLoadError                = 1;
 }
 
 void
