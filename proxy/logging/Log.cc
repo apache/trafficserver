@@ -388,23 +388,23 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqth", field);
 
-  field = new LogField("client_req_timestamp_squid", "cqtq", LogField::sINT, &LogAccess::marshal_client_req_timestamp_sec,
-                       &LogAccess::unmarshal_int_to_str);
+  field = new LogField("client_req_timestamp_squid", "cqtq", LogField::STRING, &LogAccess::marshal_client_req_timestamp_squid,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtq", field);
 
-  field = new LogField("client_req_timestamp_netscape", "cqtn", LogField::sINT, &LogAccess::marshal_client_req_timestamp_sec,
-                       &LogAccess::unmarshal_int_to_str);
+  field = new LogField("client_req_timestamp_netscape", "cqtn", LogField::STRING, &LogAccess::marshal_client_req_timestamp_netscape,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtn", field);
 
-  field = new LogField("client_req_timestamp_date", "cqtd", LogField::sINT, &LogAccess::marshal_client_req_timestamp_sec,
-                       &LogAccess::unmarshal_int_to_str);
+  field = new LogField("client_req_timestamp_date", "cqtd", LogField::STRING, &LogAccess::marshal_client_req_timestamp_date,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtd", field);
 
-  field = new LogField("client_req_timestamp_time", "cqtt", LogField::sINT, &LogAccess::marshal_client_req_timestamp_sec,
-                       &LogAccess::unmarshal_int_to_str);
+  field = new LogField("client_req_timestamp_time", "cqtt", LogField::STRING, &LogAccess::marshal_client_req_timestamp_time,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtt", field);
 
