@@ -686,22 +686,14 @@ public:
       connect_result = e;
     }
 
-    ConnectionAttributes()
-      : http_version(),
-        keep_alive(HTTP_KEEPALIVE_UNDEFINED),
-        receive_chunked_response(false),
-        pipeline_possible(false),
-        proxy_connect_hdr(false),
-        connect_result(0),
-        name(NULL),
-        transfer_encoding(NO_TRANSFER_ENCODING),
-        state(STATE_UNDEFINED),
-        abort(ABORT_UNDEFINED),
-        port_attribute(HttpProxyPort::TRANSPORT_DEFAULT),
-        is_transparent(false)
+    ConnectionAttributes() { clear(); }
+
+    void
+    clear()
     {
-      memset(&src_addr, 0, sizeof(src_addr));
-      memset(&dst_addr, 0, sizeof(dst_addr));
+      ink_zero(src_addr);
+      ink_zero(dst_addr);
+      connect_result = 0;
     }
   };
 
