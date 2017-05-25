@@ -157,7 +157,7 @@ transformable(TSHttpTxn txnp)
 
   CHECK(TSHandleMLocRelease(buffer, TS_NULL_MLOC, location));
 
-  returnValue &= TSHttpTxnIsInternal(txnp) != TS_SUCCESS;
+  returnValue &= !TSHttpTxnIsInternal(txnp);
   return returnValue;
 }
 
