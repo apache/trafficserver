@@ -749,7 +749,7 @@ send_response(int sock)
   char *url_start = nullptr;
   char *url_end   = nullptr;
   int err         = 0, towrite;
-  int url_len;
+  int url_len     = 0;
 
   if (fd[sock].req_pos >= 0) {
     char header[1024];
