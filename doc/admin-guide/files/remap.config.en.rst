@@ -124,6 +124,12 @@ based on configuration file parse order.
 #. ``redirect`` and ``redirect_temporary``
 #. ``regex_redirect`` and ``regex_redirect_temporary``
 
+For each precedence group the rules are checked in two phases. If the first phase fails to find a
+match then the second phase is performed against the same group of rules. In the first phase the
+rules are checked using the host name of the request. Only rules that specify a host name can match.
+If there is no match in that phase, then the rules are checked again with no host name and only
+rules without a host will match. The result is that rules with an explicit host take precedence over
+rules without.
 
 Match-All
 =========
@@ -202,11 +208,40 @@ that match the second rule also match the first rule. The first rule
 takes precedence because it appears earlier in the :file:`remap.config`
 file.
 
+This is different if one rule does not have a host. For example consider these rules using the `Match-All`_ rule::
+
+   map / http://127.0.0.1:8001/
+   map http://example.com/dist_get_user http://127.0.0.1:8001/denied.html
+
+These rules are set up to redirect requests to another local process. Using them will result in
+
+==================================== =====================================
+Client Request                       Translated Request
+==================================== =====================================
+``http://example.com/a.gif``         ``http://127.0.0.1:8001/a.gif``
+``http://example.com/dist_get_user`` ``http://127.0.0.1:8001/denied.html``
+==================================== =====================================
+
+For the first request the second rule host matches but the path does not and so the second rule is
+not selected. The first rule is then matched in the second phase when the rules are checked without
+a host value.
+
+The second request is matched by the second rule even though the rules have the same base
+precedence. Because the first rule does not have a host it will not match in the first phase. The
+second rule does have a host that matches the host in the second request along with the other parts
+of the URL and is therefore selected in the first phase.
+
+This will yield the same results if the rules are reversed because the rule selection happens in
+different phases making the order irrelevant. ::
+
+   map http://example.com/dist_get_user http://127.0.0.1:8001/denied.html
+   map / http://127.0.0.1:8001/
+
 The following example shows a mapping with a path prefix specified in
 the target and replacement::
 
-    map http://www.h.com/a/b/ http://server.h.com/customers/x/y
-    reverse_map http://server.h.com/customers/x/y/ http://www.h.com/a/b/
+   map http://www.h.com/a/b/ http://server.h.com/customers/x/y
+   reverse_map http://server.h.com/customers/x/y/ http://www.h.com/a/b/
 
 This rule results in the following translation.
 
@@ -492,4 +527,3 @@ The file `two.example.com.config` contains::
   .activatefilter allow_purge
   map http://two.example.com http://origin-two.example.com
   .deactivatefilter dallowpurge
-
