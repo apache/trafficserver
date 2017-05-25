@@ -145,7 +145,8 @@ BaseManager::signalMgmtEntity(int msg_id, char *data_raw, int data_len)
     mh->msg_id   = msg_id;
     mh->data_len = 0;
   }
-  ink_assert(enqueue(mgmt_event_queue, mh));
+
+  ink_release_assert(enqueue(mgmt_event_queue, mh));
   return msg_id;
 
 } /* End BaseManager::signalMgmtEntity */
