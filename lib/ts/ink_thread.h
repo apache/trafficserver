@@ -213,6 +213,12 @@ ink_thread_sigsetmask(int how, const sigset_t *set, sigset_t *oset)
   return (pthread_sigmask(how, set, oset));
 }
 
+static inline int
+ink_thread_kill(ink_thread t, int sig)
+{
+  return pthread_kill(t, sig);
+}
+
 /*******************************************************************
  * Posix Semaphores
  ******************************************************************/
