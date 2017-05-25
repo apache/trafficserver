@@ -115,6 +115,7 @@ ProcessManager::stop()
 
   local_manager_sockfd = -1;
   close_socket(tmp);
+  ink_thread_kill(poll_thread, SIGINT);
 
   ink_thread_join(poll_thread);
   poll_thread = ink_thread_null();
