@@ -637,10 +637,14 @@ public:
       connect_result = e;
     }
 
-    ConnectionAttributes()
+    ConnectionAttributes() { clear(); }
+
+    void
+    clear()
     {
-      memset(&src_addr, 0, sizeof(src_addr));
-      memset(&dst_addr, 0, sizeof(dst_addr));
+      ink_zero(src_addr);
+      ink_zero(dst_addr);
+      connect_result = 0;
     }
   };
 
