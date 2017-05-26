@@ -222,10 +222,11 @@ HttpPagesHandler::dump_history(HttpSM *sm)
   }
 
   for (int i = 0; i < size; i++) {
+    char buf[256];
     resp_begin_row();
 
     resp_begin_column();
-    resp_add("%s", sm->history[i].fileline);
+    resp_add("%s", sm->history[i].location.str(buf, sizeof(buf)));
     resp_end_column();
 
     resp_begin_column();
