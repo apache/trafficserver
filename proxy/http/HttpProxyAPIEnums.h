@@ -30,6 +30,10 @@
 #ifndef _HTTP_PROXY_API_ENUMS_H_
 #define _HTTP_PROXY_API_ENUMS_H_
 
+#ifdef __cplusplus
+#include <limits>
+#endif
+
 /// Server session sharing values - match
 typedef enum {
   TS_SERVER_SESSION_SHARING_MATCH_NONE,
@@ -43,5 +47,28 @@ typedef enum {
   TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
   TS_SERVER_SESSION_SHARING_POOL_THREAD,
 } TSServerSessionSharingPoolType;
+
+/// The verbosity of the transport protocol stack in a VIA header.
+typedef enum { TS_VIA_TRANSPORT_NONE = 0, TS_VIA_TRANSPORT_COMPACT = 1, TS_VIA_TRANSPORT_FULL = 2 } TSViaTransportVerbosity;
+
+#ifdef __cplusplus
+namespace std
+{
+template <> class numeric_limits<TSViaTransportVerbosity> : public numeric_limits<uint8_t>
+{
+public:
+  static TSViaTransportVerbosity
+  min()
+  {
+    return TS_VIA_TRANSPORT_NONE;
+  }
+  static TSViaTransportVerbosity
+  max()
+  {
+    return TS_VIA_TRANSPORT_FULL;
+  }
+};
+}
+#endif
 
 #endif // _HTTP_PROXY_API_ENUMS_H_

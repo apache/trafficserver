@@ -176,6 +176,7 @@ int RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 typedef void (*RecLookupCallback)(const RecRecord *, void *);
 
 int RecLookupRecord(const char *name, RecLookupCallback callback, void *data, bool lock = true);
+int RecLookupRecord(const char *name, std::function<void(const RecRecord *)> &&f, bool lock = true);
 int RecLookupMatchingRecords(unsigned rec_type, const char *match, RecLookupCallback callback, void *data, bool lock = true);
 
 int RecGetRecordType(const char *name, RecT *rec_type, bool lock = true);

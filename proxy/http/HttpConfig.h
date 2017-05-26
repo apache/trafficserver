@@ -47,6 +47,7 @@
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
 #include "P_RecProcess.h"
+#include <functional>
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
@@ -554,6 +555,8 @@ struct OverridableHttpConfigParams {
 
   MgmtByte insert_request_via_string;
   MgmtByte insert_response_via_string;
+  MgmtByte request_via_transport  = TS_VIA_TRANSPORT_COMPACT; ///< Verbosity of the transport via entry for a request.
+  MgmtByte response_via_transport = TS_VIA_TRANSPORT_COMPACT; ///< Verbosity of the transport via entry for a response.
 
   //////////////////////
   //  DOC IN CACHE NO DNS//
@@ -888,4 +891,26 @@ inline HttpConfigParams::~HttpConfigParams()
     delete connect_ports;
   }
 }
+
+/// A variant of RecData that contains a StringView. This is necessary because the TS API passes in configuration
+/// strings by pointer&length.
+union RecEnumData {
+  int _i;
+  ts::StringView _s;
+
+  RecEnumData() : _i(0) {}
+  RecEnumData(RecDataT t, RecData d)
+  {
+    if (t == RECD_INT)
+      _i = d.rec_int;
+    else if (t == RECD_STRING)
+      _s = ts::StringView{d.rec_string};
+    else
+      _i = 0;
+  }
+};
+/// Type of function called from the generic HTTP config update callback.
+/// It validates the updated data and if valid, updates the data and returns @c true.
+using MgmtByteEnumConversion = std::function<bool(MgmtByte &b, const char *name, RecDataT type, RecEnumData data)>;
+
 #endif /* #ifndef _HttpConfig_h_ */

@@ -683,24 +683,82 @@ HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, in
   }
 }
 
+/// write the protocol stack to the @a via_string.
+size_t
+write_via_protocol_stack(char *via_string, size_t len, TSViaTransportVerbosity detail, ts::StringView *proto_buf, int nproto)
+{
+  char *via   = via_string; // keep original pointer for size computation later.
+  char *limit = via_string + len;
+  static constexpr ts::StringView tls_prefix{"tls/", ts::StringView::literal};
+
+  if (nproto <= 0 || via == nullptr || len <= 0) {
+    // nothing
+  } else if (detail == TS_VIA_TRANSPORT_FULL) {
+    ts::StringView *v = proto_buf;
+    for (int i = 0; i < nproto && (via + v->size() + 1) < limit; ++i, ++v) {
+      if (i)
+        *via++ = '-';
+      memcpy(via, v->ptr(), v->size());
+      via += v->size();
+    }
+    *via++ = ' ';
+  } else if (detail == TS_VIA_TRANSPORT_COMPACT) {
+    ts::StringView *proto_end = proto_buf + nproto;
+    bool http_1_0_p           = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_0) != proto_end;
+    bool http_1_1_p           = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_1) != proto_end;
+
+    if ((http_1_0_p || http_1_1_p) && via + 10 < limit) {
+      bool tls_p = std::find_if(proto_buf, proto_end, [](ts::StringView tag) { return tls_prefix.isPrefixOf(tag); }) != proto_end;
+      bool http_2_p = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_2_0) != proto_end;
+
+      memcpy(via, "http", 4);
+      via += 4;
+      if (tls_p)
+        *via++ = 's';
+      *via++   = '/';
+      if (http_2_p) {
+        *via++ = '2';
+      } else if (http_1_0_p) {
+        memcpy(via, "1.0", 3);
+        via += 3;
+      } else if (http_1_1_p) {
+        memcpy(via, "1.1", 3);
+        via += 3;
+      }
+      *via++ = ' ';
+    }
+  }
+  return via - via_string;
+}
+
 /// Look up the protocol stack and write it to the @a via_string.
 size_t
-write_client_protocol_stack(HttpTransact::State *s, char *via_string, size_t len)
+write_client_protocol_stack(char *via_string, size_t len, HttpTransact::State *s)
 {
   std::array<ts::StringView, 10> proto_buf; // 10 seems like a reasonable number of protos to print
-  int retval        = s->state_machine->populate_client_protocol(proto_buf.data(), proto_buf.size());
-  char *via         = via_string;
-  char *limit       = via_string + len;
-  ts::StringView *v = proto_buf.data();
-  for (int i = 0; i < retval && (via + v->size() + 1) < limit; ++i, ++v) {
-    if (i) {
-      *via++ = '-';
-    }
-    memcpy(via, v->ptr(), v->size());
-    via += v->size();
+  int n = s->state_machine->populate_client_protocol(proto_buf.data(), proto_buf.size());
+  return write_via_protocol_stack(via_string, len, static_cast<TSViaTransportVerbosity>(s->txn_conf->request_via_transport),
+                                  proto_buf.data(), n);
+}
+
+/// Look up the protocol stack and write it to the @a via_string.
+size_t
+write_upstream_protocol_stack(char *via_string, size_t len, HttpTransact::State *s, HTTPHdr *header)
+{
+  int n      = 0;
+  int offset = 0;                           // # of proto_buf slots reserved for protocol data above the netvc
+  std::array<ts::StringView, 10> proto_buf; // 10 seems like a reasonable number of protos to print
+
+  // Should suffice - if we're adding a VIA, it's HTTP and only 1.0 and 1.1 are supported outbound.
+  proto_buf[offset] = HTTP_MINOR(header->version_get().m_version) == 0 ? IP_PROTO_TAG_HTTP_1_0 : IP_PROTO_TAG_HTTP_1_1;
+  ++offset;
+
+  auto ss = s->state_machine->get_server_session();
+  if (ss) {
+    n += ss->populate_protocol(proto_buf.data() + offset, proto_buf.size() - offset);
   }
-  *via++ = ' ';
-  return via - via_string;
+  return write_via_protocol_stack(via_string, len, static_cast<TSViaTransportVerbosity>(s->txn_conf->response_via_transport),
+                                  proto_buf.data(), n + offset);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -760,7 +818,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
 
   char *incoming_via = s->via_string;
 
-  via_string += write_client_protocol_stack(s, via_string, sizeof(new_via_string) - (via_string - new_via_string));
+  via_string += write_client_protocol_stack(via_string, sizeof(new_via_string) - (via_string - new_via_string), s);
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
 
   *via_string++ = '[';
@@ -827,7 +885,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
 
   char *incoming_via = s->via_string;
 
-  via_string += write_client_protocol_stack(s, via_string, sizeof(new_via_string) - (via_string - new_via_string));
+  via_string += write_upstream_protocol_stack(via_string, sizeof(new_via_string) - (via_string - new_via_string), s, header);
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
   *via_string++ = ' ';
   *via_string++ = '(';
