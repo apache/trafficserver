@@ -44,7 +44,7 @@ public:
   }
 
   SourceLocation(const SourceLocation &rhs) : file(rhs.file), func(rhs.func), line(rhs.line) {}
-  SourceLocation(const char *_file, const char *_func, int _line) : file(_file), func(_func), line(_line) {}
+  SourceLocation(const char *_file = nullptr, const char *_func = nullptr, int _line = 0) : file(_file), func(_func), line(_line) {}
   SourceLocation &
   operator=(const SourceLocation &rhs)
   {
