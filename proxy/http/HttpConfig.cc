@@ -31,6 +31,8 @@
 #include "P_Net.h"
 #include "P_RecUtils.h"
 #include <records/I_RecHttp.h>
+#include <ts/MemView.h>
+#include <list>
 
 #define HttpEstablishStaticConfigStringAlloc(_ix, _n) \
   REC_EstablishStaticConfigStringAlloc(_ix, _n);      \
@@ -65,16 +67,18 @@ public:
 /// Data item for enumerated type config value.
 template <typename T> struct ConfigEnumPair {
   T _value;
-  const char *_key;
+  ts::StringView _key;
+
+  ConfigEnumPair(T v, char const *k) : _value(v), _key(k) {}
 };
 
 /// Convert a string to an enumeration value.
 /// @a n is the number of entries in the list.
 /// @return @c true if the string is found, @c false if not found.
 /// If found @a value is set to the corresponding value in @a list.
-template <typename T, unsigned N>
+template <typename E, unsigned N>
 static bool
-http_config_enum_search(const char *key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
+http_config_enum_search(ts::StringView key, const ConfigEnumPair<E> (&list)[N], MgmtByte &value)
 {
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
   for (unsigned i = 0; i < N; ++i) {
@@ -84,6 +88,13 @@ http_config_enum_search(const char *key, const ConfigEnumPair<T> (&list)[N], Mgm
     }
   }
   return false;
+}
+
+template <typename E, unsigned N>
+static bool
+http_config_enum_search(const char *key, const ConfigEnumPair<E> (&list)[N], MgmtByte &value)
+{
+  return http_config_enum_search(ts::StringView(key), list, value);
 }
 
 /// Read a string from the configuration and convert it to an enumeration value.
@@ -101,6 +112,100 @@ http_config_enum_read(const char *name, const ConfigEnumPair<T> (&list)[N], Mgmt
   return false;
 }
 
+/** Create a functor that converts record data to a @c MgmtByte based on a set of enum pairs.
+    The functor takes a refernce to the byte and the record data and updates the byte if valid.
+    @return @c true if the data was valid and @a b update. @c false otherwise.
+ */
+template <typename E, int N>
+MgmtByteEnumConversion
+CreateMgmtByteEnumConversion(const ConfigEnumPair<E> (&pairs)[N])
+{
+  return [pairs](MgmtByte &b, const char *name, RecDataT type, RecEnumData data) -> bool {
+    MgmtByte value;
+    bool valid_p = false;
+    if (RECD_INT == type) {
+      value   = data._i;
+      valid_p = std::numeric_limits<E>::min() <= value && value <= std::numeric_limits<E>::max();
+      if (!valid_p)
+        Warning("Configuration update for '%s' failed - %d is not in [%d..%d]", name, static_cast<int>(data._i),
+                static_cast<int>(std::numeric_limits<E>::min()), static_cast<int>(std::numeric_limits<E>::max()));
+    } else if (RECD_STRING == type) {
+      valid_p = http_config_enum_search(data._s, pairs, value);
+      if (!valid_p) {
+        char buff[1024];
+        char *s     = buff;
+        char *limit = buff + sizeof(buff);
+        for (auto const &p : pairs) {
+          if (s + p._key.size() + 2 < limit) {
+            if (s != buff)
+              *s++ = ',';
+            memcpy(s, p._key.ptr(), p._key.size());
+            s += p._key.size();
+            *s = 0;
+          } else {
+            break; // out of space, give up.
+          }
+        }
+        Warning("Configuration update for '%s' failed - '%.*s' is not one of (%s)", name, static_cast<int>(data._s.size()),
+                data._s.ptr(), buff);
+      }
+    } else {
+      Warning("Configuration update for '%s' failed - type %d - expected STRING or INT", name, static_cast<int>(type));
+    }
+    if (valid_p)
+      b = value;
+    return valid_p;
+  };
+}
+
+// forward declare for the enum update.
+static int http_config_cb(const char *, RecDataT, RecData, void *);
+
+namespace
+{
+/// Type of function called from the generic HTTP config update callback.
+/// It validates the updated data and if valid, updates the data and returns @c true.
+using UpdateFunc = std::function<bool(const char *name, RecDataT type, RecData data)>;
+
+/** Establish an update callback for an enum value in the same manner as the base types.
+
+    This uses the generic update callback, passing it an update functor specialized for this
+    type. When the generic update (@c http_config_cb) is called it will be passed a pointer to the
+    specialized update functor, which it will then invoke. If that succeeds, then the data was valid
+    and the override member was updated just as for the base type callbacks.
+
+    A conversion functor must be supplied. See @c MgmtByteEnumConversion.
+ */
+void
+HttpEstablishStaticConfigEnumByte(MgmtByte &b, const char *name, MgmtByteEnumConversion &convertor)
+{
+  // Memory management troubles. Because the callback system isn't really C++ it doesn't handle
+  // cleaning up the callback data. That must be done here by stuffing the functor into a list and
+  // letting the list destructor clean up. This is not strictly needed as these objects have process
+  // lifetime and we could just "leak", but the ASAN guys will yell at me if I do that.
+  static std::list<UpdateFunc> f_list;
+
+  // Create the actual update function which updates the value in the master overide global.
+  f_list.emplace_front([&b, &convertor](const char *name, RecDataT type, RecData data) -> bool {
+    return convertor(b, name, type, RecEnumData(type, data));
+  });
+  // Get a direct reference to it to capture in the initial update lambda.
+  UpdateFunc &f = *(f_list.begin());
+
+  // No standard config link because it's not a standard type.
+  // Just use the generic callback with the updater.
+  REC_RegisterConfigUpdateFunc(name, http_config_cb, &f);
+  // Need to do this the first time around to initialize. Find the record and whatever
+  // data it has and pass that as if it were an update.
+  RecLookupRecord(name, [&f](const RecRecord *r) -> void { f(r->name, r->data_type, r->data); });
+}
+}
+
+////////////////////////////////////////////////////////////////
+//
+//  static variables
+//
+////////////////////////////////////////////////////////////////
 /// Session sharing match types.
 static const ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatchStrings[] = {
   {TS_SERVER_SESSION_SHARING_MATCH_NONE, "none"},
@@ -112,16 +217,17 @@ static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolSt
   {TS_SERVER_SESSION_SHARING_POOL_GLOBAL, "global"},
   {TS_SERVER_SESSION_SHARING_POOL_THREAD, "thread"}};
 
-////////////////////////////////////////////////////////////////
-//
-//  static variables
-//
-////////////////////////////////////////////////////////////////
+static const ConfigEnumPair<TSViaTransportVerbosity> ViaTransportVerbosityStrings[] = {{TS_VIA_TRANSPORT_NONE, "none"},
+                                                                                       {TS_VIA_TRANSPORT_COMPACT, "compact"},
+                                                                                       {TS_VIA_TRANSPORT_FULL, "full"}};
+
 int HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
 
 static volatile int http_config_changes = 1;
 static HttpConfigCont *http_config_cont = nullptr;
+
+MgmtByteEnumConversion ViaTransportVerbosityConversion{CreateMgmtByteEnumConversion(ViaTransportVerbosityStrings)};
 
 HttpConfigCont::HttpConfigCont() : Continuation(new_ProxyMutex())
 {
@@ -138,14 +244,22 @@ HttpConfigCont::handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNU
 }
 
 static int
-http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
-               void * /* cookie ATS_UNUSED */)
+http_config_cb(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  // A cookie means a specialized update function for this particular config value.
+  // Indirect through this because the config update logic only takes function pointers
+  // not generic functors. The update function verifies it's worth doing an update.
+  if (cookie) {
+    if (!((*static_cast<UpdateFunc *>(cookie))(name, data_type, data)))
+      return 0; // invalid data, don't update config.
+  }
+
   ink_atomic_increment((int *)&http_config_changes, 1);
 
   INK_MEMORY_BARRIER;
 
   eventProcessor.schedule_in(http_config_cont, HRTIME_SECONDS(1), ET_CALL);
+
   return 0;
 }
 
@@ -938,6 +1052,11 @@ HttpConfig::startup()
                         c.oride.server_session_sharing_match);
   http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, c.server_session_sharing_pool);
 
+  HttpEstablishStaticConfigEnumByte(c.oride.request_via_transport, "proxy.config.http.request_via_transport",
+                                    ViaTransportVerbosityConversion);
+  HttpEstablishStaticConfigEnumByte(c.oride.response_via_transport, "proxy.config.http.response_via_transport",
+                                    ViaTransportVerbosityConversion);
+
   HttpEstablishStaticConfigByte(c.oride.auth_server_session_private, "proxy.config.http.auth_server_session_private");
 
   HttpEstablishStaticConfigByte(c.oride.keep_alive_post_out, "proxy.config.http.keep_alive_post_out");
@@ -1178,6 +1297,8 @@ HttpConfig::reconfigure()
 
   params->oride.insert_request_via_string   = m_master.oride.insert_request_via_string;
   params->oride.insert_response_via_string  = m_master.oride.insert_response_via_string;
+  params->oride.request_via_transport       = m_master.oride.request_via_transport;
+  params->oride.response_via_transport      = m_master.oride.response_via_transport;
   params->proxy_request_via_string          = ats_strdup(m_master.proxy_request_via_string);
   params->proxy_request_via_string_len      = (params->proxy_request_via_string) ? strlen(params->proxy_request_via_string) : 0;
   params->proxy_response_via_string         = ats_strdup(m_master.proxy_response_via_string);

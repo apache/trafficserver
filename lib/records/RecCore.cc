@@ -484,6 +484,25 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
   return err;
 }
 
+namespace
+{
+// Shim to enable using functors for @c RecLookupRecord.
+// This function is passed to @c RecLookupRecord with a @a data argument that is a pointer to the functor.
+// When this is called, cast @a data back to the functor and invoke it.
+void
+RecLookupRecordForward(const RecRecord *r, void *data)
+{
+  (*static_cast<std::function<void(const RecRecord *)> *>(data))(r);
+}
+}
+
+/// Overload that takes a functor.
+int
+RecLookupRecord(const char *name, std::function<void(const RecRecord *)> &&callback, bool lock)
+{
+  return RecLookupRecord(name, &RecLookupRecordForward, &callback, lock);
+}
+
 int
 RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {

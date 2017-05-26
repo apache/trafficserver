@@ -7882,6 +7882,12 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR:
     ret = _memberp_to_generic(&overridableHttpConfig->insert_response_via_string, typep);
     break;
+  case TS_CONFIG_HTTP_REQUEST_VIA_TRANSPORT:
+    ret = _memberp_to_generic(&overridableHttpConfig->request_via_transport, typep);
+    break;
+  case TS_CONFIG_HTTP_RESPONSE_VIA_TRANSPORT:
+    ret = _memberp_to_generic(&overridableHttpConfig->response_via_transport, typep);
+    break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_heuristic_min_lifetime, typep);
     break;
@@ -8210,6 +8216,9 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 TSReturnCode
 TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char *value, int length)
 {
+  extern MgmtByteEnumConversion ViaTransportVerbosityConversion;
+  RecEnumData data;
+
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   if (length == -1) {
@@ -8256,6 +8265,17 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_SSL_CERT_FILEPATH:
     if (value && length > 0) {
       s->t_state.txn_conf->client_cert_filepath = const_cast<char *>(value);
+    }
+  case TS_CONFIG_HTTP_RESPONSE_VIA_TRANSPORT:
+    data._s.setView(value, length);
+    if (ViaTransportVerbosityConversion(s->t_state.txn_conf->response_via_transport, "proxy.config.http.response_via_tranport",
+                                        RECD_STRING, data)) {
+    }
+    break;
+  case TS_CONFIG_HTTP_REQUEST_VIA_TRANSPORT:
+    data._s.setView(value, length);
+    if (ViaTransportVerbosityConversion(s->t_state.txn_conf->request_via_transport, "proxy.config.http.request_via_tranport",
+                                        RECD_STRING, data)) {
     }
   default:
     return TS_ERROR;
@@ -8466,6 +8486,11 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS;
       }
       break;
+    case 't':
+      if (!strncmp(name, "proxy.config.http.request_via_transport", length)) {
+        cnf = TS_CONFIG_HTTP_REQUEST_VIA_TRANSPORT;
+        typ = TS_RECORDDATATYPE_STRING;
+      }
     }
     break;
 
@@ -8506,6 +8531,9 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 't':
       if (!strncmp(name, "proxy.config.http.keep_alive_enabled_out", length)) {
         cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT;
+      } else if (!strncmp(name, "proxy.config.http.response_via_transport", length)) {
+        cnf = TS_CONFIG_HTTP_RESPONSE_VIA_TRANSPORT;
+        typ = TS_RECORDDATATYPE_STRING;
       }
       break;
     }

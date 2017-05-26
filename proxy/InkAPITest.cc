@@ -7608,6 +7608,8 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.cache.ignore_accept_language_mismatch",
   "proxy.config.http.cache.ignore_accept_encoding_mismatch",
   "proxy.config.http.cache.ignore_accept_charset_mismatch",
+  "proxy.config.http.request_via_transport",
+  "proxy.config.http.response_via_transport",
 };
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {

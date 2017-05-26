@@ -867,6 +867,29 @@ ip-resolve
 
    Set the server and version string in the ``Via`` request header to the origin server which is inserted when the value of :ts:cv:`proxy.config.http.insert_request_via_str` is not ``0``.  Note that the actual default value is defined with ``"ApacheTrafficServer/" PACKAGE_VERSION`` in a C++ source code, and you must write such as ``ApacheTrafficServer/6.0.0`` if you really set a value with the version in :file:`records.config` file. If you want to hide the version, you can set this value to ``ApacheTrafficServer``.
 
+.. ts:cv:: CONFIG proxy.config.http.request_via_transport STRING compact
+   :reloadable:
+   :overridable:
+
+   The ``Via`` string set by |TS| on an upstream request to the origin server can contain a
+   description of the transport protocols used by the user agent to
+   connect to |TS|. This configuration controls the level of detail for the ``Via`` string placed in
+   the outbound request.
+
+   ======= =================================================================
+   Value   Effect
+   ======= =================================================================
+   None    No details about the transport protocol.
+   Compact Only the top level protocol plus a TLS indicator.
+   Full    The entire protocol stack of :ref:`protocol_tags <protocol_tags>`
+           as a dash separated list.
+   ======= =================================================================
+
+   The full protocol stack will be a list of :ref:`protocol tags <protocol_tags>` separated by a '-' character. The set of tags will vary but not the number of white space separated tokens in the ``Via`` header. The tags are ordered left to right from top most protocol to lowest level protocol.
+
+   The compact form always starts with ``http``. If the connection is TLS an ``s`` is added. The
+   HTTP version is a ``/`` followed by one of ``1.0``, ``1.1``, ``2``. E.g. ``http/1.1`` for just HTTP, or ``https/2`` for HTTP/2 over TLS.
+
 .. ts:cv:: CONFIG proxy.config.http.insert_response_via_str INT 0
    :reloadable:
    :overridable:
@@ -891,6 +914,32 @@ ip-resolve
    :overridable:
 
    Set the server and version string in the ``Via`` response header to the client which is inserted when the value of :ts:cv:`proxy.config.http.insert_response_via_str` is not ``0``.  Note that the actual default value is defined with ``"ApacheTrafficServer/" PACKAGE_VERSION`` in a C++ source code, and you must write such as ``ApacheTrafficServer/6.0.0`` if you really set a value with the version in :file:`records.config` file. If you want to hide the version, you can set this value to ``ApacheTrafficServer``.
+
+.. ts:cv:: CONFIG proxy.config.http.response_via_transport STRING compact
+   :reloadable:
+   :overridable:
+
+   The ``Via`` string set by |TS| in the response to the client can contain a description of the
+   transport protocols used by |TS| to connect to the origin server. This configuration controls
+   the level of detail for the ``Via`` string placed in the response.
+
+   ======= =================================================================
+   Value   Effect
+   ======= =================================================================
+   None    No details about the transport protocol.
+   Compact Only the top level protocol plus a TLS indicator.
+   Full    The entire protocol stack of :ref:`protocol_tags <protocol_tags>`
+           as a dash separated list.
+   ======= =================================================================
+
+   The full protocol stack will be a list of :ref:`protocol tags <protocol_tags>` separated by a '-'
+   character. The set of tags will vary but not the number of white space separated tokens in the
+   ``Via`` header. The tags are ordered left to right from top most protocol to lowest level
+   protocol. Note this list may not have more detail even when set to ``Full`` if |TS| does not
+   connect upstream (e.g., the request is a cache hit).
+
+   The compact form always starts with ``http``. If the connection is TLS an ``s`` is added. The
+   HTTP version is a ``/`` followed by one of ``1.0``, ``1.1``, ``2``. E.g. ``http/1.1`` for just HTTP, or ``https/2`` for HTTP/2 over TLS.
 
 .. ts:cv:: CONFIG proxy.config.http.send_100_continue_response INT 0
    :reloadable:
