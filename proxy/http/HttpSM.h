@@ -259,7 +259,7 @@ public:
   void txn_hook_prepend(TSHttpHookID id, INKContInternal *cont);
   APIHook *txn_hook_get(TSHttpHookID id);
 
-  void add_history_entry(const char *fileline, int event, int reentrant);
+  void add_history_entry(const SourceLocation &location, int event, int reentrant);
   void add_cache_sm();
   bool is_private();
   bool is_redirect_required();
@@ -293,12 +293,11 @@ protected:
   int reentrancy_count = 0;
 
   struct History {
-    const char *fileline;
-    unsigned short event;
-    short reentrancy;
+    SourceLocation location;
+    unsigned short event = 0;
+    short reentrancy     = 0;
   };
-  History history[HISTORY_SIZE] = {{nullptr, 0, 0}};
-  ;
+  History history[HISTORY_SIZE];
   int history_pos = 0;
 
   HttpTunnel tunnel;
@@ -611,10 +610,10 @@ HttpSM::write_response_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
 }
 
 inline void
-HttpSM::add_history_entry(const char *fileline, int event, int reentrant)
+HttpSM::add_history_entry(const SourceLocation &location, int event, int reentrant)
 {
   int pos                 = history_pos++ % HISTORY_SIZE;
-  history[pos].fileline   = fileline;
+  history[pos].location   = location;
   history[pos].event      = (unsigned short)event;
   history[pos].reentrancy = (short)reentrant;
 }
