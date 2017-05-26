@@ -3648,7 +3648,8 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.task_threads INT 2
 
    Specifies the number of task threads to run. These threads are used for
-   various tasks that should be off-loaded from the normal network threads.
+   various tasks that should be off-loaded from the normal network
+   threads. You must have at least one task thread available.
 
 .. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_size INT 512
 

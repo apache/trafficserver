@@ -32,8 +32,6 @@ TasksProcessor tasksProcessor;
 int
 TasksProcessor::start(int task_threads, size_t stacksize)
 {
-  if (task_threads > 0) {
-    ET_TASK = eventProcessor.spawn_event_threads(task_threads, "ET_TASK", stacksize);
-  }
+  ET_TASK = eventProcessor.spawn_event_threads(task_threads > 0 ? task_threads : 1, "ET_TASK", stacksize);
   return 0;
 }
