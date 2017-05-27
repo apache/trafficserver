@@ -55,7 +55,7 @@ RemapPlugins::run_plugin(remap_plugin_info *plugin)
     _s->remap_plugin_instance  = ih;
   }
 
-  plugin_retcode = plugin->fp_tsremap_do_remap(ih, _s ? reinterpret_cast<TSHttpTxn>(_s->state_machine) : nullptr, &rri);
+  plugin_retcode = plugin->fp_tsremap_do_remap(ih, reinterpret_cast<TSHttpTxn>(_s->state_machine), &rri);
   // TODO: Deal with negative return codes here
   if (plugin_retcode < 0) {
     plugin_retcode = TSREMAP_NO_REMAP;
