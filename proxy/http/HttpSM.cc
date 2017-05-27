@@ -239,13 +239,13 @@ HttpVCTable::cleanup_all()
 #define __REMEMBER(x) #x
 #define _REMEMBER(x) __REMEMBER(x)
 
-#define RECORD_FILE_LINE() history[pos].fileline = __FILE__ ":" _REMEMBER(__LINE__);
+#define RECORD_FILE_LINE() history[pos].location = MakeSourceLocation();
 
-#define REMEMBER(e, r)                                           \
-  {                                                              \
-    if (REMEMBER_EVENT_FILTER(e)) {                              \
-      add_history_entry(__FILE__ ":" _REMEMBER(__LINE__), e, r); \
-    }                                                            \
+#define REMEMBER(e, r)                               \
+  {                                                  \
+    if (REMEMBER_EVENT_FILTER(e)) {                  \
+      add_history_entry(MakeSourceLocation(), e, r); \
+    }                                                \
   }
 
 #define DebugSM(tag, ...) DebugSpecific(debug_on, tag, __VA_ARGS__)
@@ -6986,9 +6986,10 @@ HttpSM::dump_state_on_assert()
   }
   // Loop through the history and dump it
   for (int i = 0; i < hist_size; i++) {
+    char buf[256];
     int r = history[i].reentrancy;
     int e = history[i].event;
-    Error("%d   %d   %s", e, r, history[i].fileline);
+    Error("%d   %d   %s", e, r, history[i].location.str(buf, sizeof(buf)));
   }
 
   // Dump the via string
