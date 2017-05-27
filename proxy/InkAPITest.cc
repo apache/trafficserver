@@ -4762,7 +4762,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
   TSParseResult retval;
   int hdrLength;
 
-  bool test_passed_parser_create              = false;
   bool test_passed_parse                      = false;
   bool test_passed_parser_clear               = false;
   bool test_passed_parser_destroy             = false;
@@ -4779,80 +4778,63 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
   // Create Parser
   parser = TSMimeParserCreate();
   SDK_RPRINT(test, "TSMimeParserCreate", "TestCase1", TC_PASS, "ok");
-  test_passed_parser_create = true;
 
-  if (test_passed_parser_create == true) {
-    // Parsing
-    bufp1 = TSMBufferCreate();
-    if (TSMimeHdrCreate(bufp1, &mime_hdr_loc1) != TS_SUCCESS) {
-      SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "Cannot create Mime hdr for parsing");
-      SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_FAIL, "Cannot run test as unable to create Mime Header for parsing");
-      SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as unable to create Mime Header for parsing");
+  // Parsing
+  bufp1 = TSMBufferCreate();
+  if (TSMimeHdrCreate(bufp1, &mime_hdr_loc1) != TS_SUCCESS) {
+    SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "Cannot create Mime hdr for parsing");
+    SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_FAIL, "Cannot run test as unable to create Mime Header for parsing");
+    SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as unable to create Mime Header for parsing");
 
-      if (TSMBufferDestroy(bufp1) == TS_ERROR) {
-        SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "Error in Destroying MBuffer");
-      }
-    } else {
-      start = parse_string;
-      end   = parse_string + strlen(parse_string) + 1;
-      if ((retval = TSMimeHdrParse(parser, bufp1, mime_hdr_loc1, &start, end)) == TS_PARSE_ERROR) {
-        SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "TSMimeHdrParse returns TS_PARSE_ERROR");
-        SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse returned Error.");
-        SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse returned Error.");
-      } else {
-        if (retval == TS_PARSE_DONE) {
-          temp = convert_mime_hdr_to_string(bufp1, mime_hdr_loc1); // Implements TSMimeHdrPrint.
-          if (strcmp(parse_string, temp) == 0) {
-            SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_PASS, "ok");
-            SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_PASS, "ok");
-
-            // TSMimeHdrLengthGet
-            hdrLength = TSMimeHdrLengthGet(bufp1, mime_hdr_loc1);
-            if (hdrLength == (int)strlen(temp)) {
-              SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_PASS, "ok");
-              test_passed_mime_hdr_length_get = true;
-            } else {
-              SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Value's Mismatch");
-            }
-
-            test_passed_parse          = true;
-            test_passed_mime_hdr_print = true;
-          } else {
-            SDK_RPRINT(test, "TSMimeHdrParse|TSMimeHdrPrint", "TestCase1", TC_FAIL, "Incorrect parsing or incorrect Printing");
-            SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL,
-                       "Cannot run test as TSMimeHdrParse|TSMimeHdrPrint failed.");
-          }
-
-          TSfree(temp);
-        } else {
-          SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "Parsing Error");
-          SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse returned error.");
-          SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse returned error.");
-        }
-      }
+    if (TSMBufferDestroy(bufp1) == TS_ERROR) {
+      SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "Error in Destroying MBuffer");
     }
   } else {
-    SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "Cannot run test as unable to create a parser");
-    SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_FAIL, "Cannot run test as unable to create a parser");
-    SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as unable to create a parser");
+    start = parse_string;
+    end   = parse_string + strlen(parse_string) + 1;
+    if ((retval = TSMimeHdrParse(parser, bufp1, mime_hdr_loc1, &start, end)) == TS_PARSE_ERROR) {
+      SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "TSMimeHdrParse returns TS_PARSE_ERROR");
+      SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse returned Error.");
+      SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse returned Error.");
+    } else {
+      if (retval == TS_PARSE_DONE) {
+        temp = convert_mime_hdr_to_string(bufp1, mime_hdr_loc1); // Implements TSMimeHdrPrint.
+        if (strcmp(parse_string, temp) == 0) {
+          SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_PASS, "ok");
+          SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_PASS, "ok");
+
+          // TSMimeHdrLengthGet
+          hdrLength = TSMimeHdrLengthGet(bufp1, mime_hdr_loc1);
+          if (hdrLength == (int)strlen(temp)) {
+            SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_PASS, "ok");
+            test_passed_mime_hdr_length_get = true;
+          } else {
+            SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Value's Mismatch");
+          }
+
+          test_passed_parse          = true;
+          test_passed_mime_hdr_print = true;
+        } else {
+          SDK_RPRINT(test, "TSMimeHdrParse|TSMimeHdrPrint", "TestCase1", TC_FAIL, "Incorrect parsing or incorrect Printing");
+          SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse|TSMimeHdrPrint failed.");
+        }
+
+        TSfree(temp);
+      } else {
+        SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "Parsing Error");
+        SDK_RPRINT(test, "TSMimeHdrPrint", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse returned error.");
+        SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrParse returned error.");
+      }
+    }
   }
 
-  // HOW DO I CHECK FOR PARSER CLEAR????
-  if (test_passed_parser_create == true) {
-    TSMimeParserClear(parser);
-    SDK_RPRINT(test, "TSMimeParserClear", "TestCase1", TC_PASS, "ok");
-    test_passed_parser_clear = true;
-  } else {
-    SDK_RPRINT(test, "TSMimeParserClear", "TestCase1", TC_FAIL, "Cannot run test as unable to create a parser");
-  }
+  TSMimeParserClear(parser);
+  SDK_RPRINT(test, "TSMimeParserClear", "TestCase1", TC_PASS, "ok");
+  test_passed_parser_clear = true;
 
-  if (test_passed_parser_create == true) {
-    TSMimeParserDestroy(parser);
-    SDK_RPRINT(test, "TSMimeParserDestroy", "TestCase1", TC_PASS, "ok");
-    test_passed_parser_destroy = true;
-  } else {
-    SDK_RPRINT(test, "TSMimeParserDestroy", "TestCase1", TC_FAIL, "Cannot run test as unable to create a parser");
-  }
+  TSMimeParserDestroy(parser);
+  SDK_RPRINT(test, "TSMimeParserDestroy", "TestCase1", TC_PASS, "ok");
+  test_passed_parser_destroy = true;
 
   // TSMimeHdrFieldNextDup
   if (test_passed_parse == true) {
@@ -5124,8 +5106,8 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "", "TestCase", TC_FAIL, "TSMBufferDestroy(bufp3) returns TS_ERROR");
   }
 
-  if ((test_passed_parser_create != true) || (test_passed_parse != true) || (test_passed_parser_clear != true) ||
-      (test_passed_parser_destroy != true) || (test_passed_mime_hdr_print != true) || (test_passed_mime_hdr_length_get != true) ||
+  if ((test_passed_parse != true) || (test_passed_parser_clear != true) || (test_passed_parser_destroy != true) ||
+      (test_passed_mime_hdr_print != true) || (test_passed_mime_hdr_length_get != true) ||
       (test_passed_mime_hdr_field_next_dup != true) || (test_passed_mime_hdr_copy != true) ||
       (test_passed_mime_hdr_field_remove != true) || (test_passed_mime_hdr_field_copy != true) ||
       (test_passed_mime_hdr_field_copy_values != true) || (test_passed_handle_mloc_release != true) ||
