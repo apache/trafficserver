@@ -198,9 +198,10 @@ struct HostDBCache {
 
   // TODO configurable number of items in the cache
   Queue<HostDBContinuation, Continuation::Link_link> *pending_dns;
-  Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(INK_MD5 &md5);
+  Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(const INK_MD5 &md5);
   Queue<HostDBContinuation, Continuation::Link_link> *remoteHostDBQueue;
   HostDBCache();
+  bool is_pending_dns_for_hash(const INK_MD5 &md5);
 };
 
 inline int
@@ -519,7 +520,7 @@ is_dotted_form_hostname(const char *c)
 }
 
 inline Queue<HostDBContinuation> &
-HostDBCache::pending_dns_for_hash(INK_MD5 &md5)
+HostDBCache::pending_dns_for_hash(const INK_MD5 &md5)
 {
   return pending_dns[this->refcountcache->partition_for_key(md5.fold())];
 }
