@@ -230,6 +230,18 @@ HostDBCache::HostDBCache() : refcountcache(nullptr), pending_dns(nullptr), remot
   hosts_file_ptr = new RefCountedHostsFileMap();
 }
 
+bool
+HostDBCache::is_pending_dns_for_hash(const INK_MD5 &md5_hash)
+{
+  Queue<HostDBContinuation> &q = pending_dns_for_hash(md5_hash);
+  for (HostDBContinuation *c = q.head; c; c = (HostDBContinuation *)c->link.next) {
+    if (md5_hash == c->md5.hash) {
+      return true;
+    }
+  }
+  return false;
+}
+
 HostDBCache *
 HostDBProcessor::cache()
 {
@@ -540,6 +552,11 @@ probe(ProxyMutex *mutex, HostDBMD5 const &md5, bool ignore_timeout)
 
   // If the record is stale, but we want to revalidate-- lets start that up
   if ((!ignore_timeout && r->is_ip_stale() && !r->reverse_dns) || (r->is_ip_timeout() && r->serve_stale_but_revalidate())) {
+    if (hostDB.is_pending_dns_for_hash(md5.hash)) {
+      Debug("hostdb", "stale %u %u %u, using it and pending to refresh it", r->ip_interval(), r->ip_timestamp,
+            r->ip_timeout_interval);
+      return r;
+    }
     Debug("hostdb", "stale %u %u %u, using it and refreshing it", r->ip_interval(), r->ip_timestamp, r->ip_timeout_interval);
     HostDBContinuation *c = hostDBContAllocator.alloc();
     HostDBContinuation::Options copt;
