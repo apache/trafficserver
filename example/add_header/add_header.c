@@ -154,12 +154,6 @@ TSPluginInit(int argc, const char *argv[])
       goto error;
     }
 
-    retval = TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
-    if (retval != TS_SUCCESS) {
-      TSError("[%s] Unable to add field", PLUGIN_NAME);
-      goto error;
-    }
-
     p = strchr(argv[i], ':');
     if (p) {
       retval = TSMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, argv[i], p - argv[i]);
@@ -183,6 +177,13 @@ TSPluginInit(int argc, const char *argv[])
         TSError("[%s] Unable to set field name", PLUGIN_NAME);
         goto error;
       }
+    }
+
+    // TSMimeHdrFieldAppend is used only after successfully inserting field names and values
+    retval = TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
+    if (retval != TS_SUCCESS) {
+      TSError("[%s] Unable to add field", PLUGIN_NAME);
+      goto error;
     }
   }
 
