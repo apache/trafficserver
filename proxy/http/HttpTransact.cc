@@ -6326,6 +6326,11 @@ HttpTransact::is_request_retryable(State *s)
     return false;
   }
 
+  // FIXME: disable the post transform retry currently.
+  if (s->state_machine->is_post_transform_request()) {
+    return false;
+  }
+
   if (s->state_machine->plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {
     // API can override
     if (s->state_machine->plugin_tunnel_type == HTTP_PLUGIN_AS_SERVER && s->api_info.retry_intercept_failures == true) {

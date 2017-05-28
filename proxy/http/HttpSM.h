@@ -238,6 +238,14 @@ public:
   VConnection *do_transform_open();
   VConnection *do_post_transform_open();
 
+  // Called by transact(HttpTransact::is_request_retryable), temperarily.
+  // This function should be remove after #1994 fixed.
+  bool
+  is_post_transform_request()
+  {
+    return t_state.method == HTTP_WKSIDX_POST && post_transform_info.vc;
+  }
+
   // Called from InkAPI.cc which acquires the state machine lock
   //  before calling
   int state_api_callback(int event, void *data);
