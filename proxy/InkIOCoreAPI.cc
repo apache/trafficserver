@@ -114,7 +114,7 @@ struct INKThreadInternal : public EThread {
   struct {
     ink_mutex lock;
     ink_cond signal;
-    bool done;
+    bool done = false;
   } completion;
 };
 
