@@ -171,7 +171,7 @@ Log::change_configuration()
   -------------------------------------------------------------------------*/
 
 struct PeriodicWakeup;
-typedef int (PeriodicWakeup::*PeriodicWakeupHandler)(int, void *);
+using PeriodicWakeupHandler = int (PeriodicWakeup::*)(int, void *);
 struct PeriodicWakeup : Continuation {
   int m_preproc_threads;
   int m_flush_threads;

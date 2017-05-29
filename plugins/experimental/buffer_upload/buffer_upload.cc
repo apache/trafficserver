@@ -76,7 +76,7 @@ struct upload_config_t {
   int thread_num;
 };
 
-typedef struct upload_config_t upload_config;
+using upload_config = struct upload_config_t;
 
 enum config_type {
   TYPE_INT,
@@ -135,7 +135,7 @@ struct pvc_state_t {
   TSHttpTxn http_txnp;
 };
 
-typedef struct pvc_state_t pvc_state;
+using pvc_state = struct pvc_state_t;
 
 // print IOBuffer for test purpose
 /*

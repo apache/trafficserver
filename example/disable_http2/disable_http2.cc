@@ -39,7 +39,7 @@ typedef std::unordered_map<int, TSNextProtocolSet> AcceptorMapping; // stores pr
 AcceptorMapping AcceptorMap;
 
 // Map of domains to tweak.
-typedef std::unordered_set<std::string> DomainSet;
+using DomainSet = std::unordered_set<std::string>;
 DomainSet Domains;
 
 int

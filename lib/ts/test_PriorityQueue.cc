@@ -45,8 +45,8 @@ public:
   string content;
 };
 
-typedef PriorityQueueEntry<N *> Entry;
-typedef PriorityQueue<N *> PQ;
+using Entry = PriorityQueueEntry<N *>;
+using PQ    = PriorityQueue<N *>;
 
 // For debug
 void

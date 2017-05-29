@@ -516,7 +516,7 @@ done:
   return ret;
 }
 
-typedef TSMgmtError (*event_message_handler)(EventClientT *, void *, size_t);
+using event_message_handler = TSMgmtError (*)(EventClientT *, void *, size_t);
 
 static const event_message_handler handlers[] = {
   nullptr,                     // FILE_READ

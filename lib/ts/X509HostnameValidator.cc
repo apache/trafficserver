@@ -29,7 +29,7 @@
 
 #include "ts/ink_memory.h"
 
-typedef bool (*equal_fn)(const unsigned char *prefix, size_t prefix_len, const unsigned char *suffix, size_t suffix_len);
+using equal_fn = bool (*)(const unsigned char *, size_t, const unsigned char *, size_t);
 
 /* Return a ptr to a valid wildcard or NULL if not found
  *

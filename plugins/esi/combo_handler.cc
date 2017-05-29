@@ -70,7 +70,7 @@ static int COMBO_HANDLER_PATH_SIZE;
     TSDebug(DEBUG_TAG, "[%s:%d] [%s] DEBUG: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
-typedef list<string> StringList;
+using StringList = int;
 
 struct ClientRequest {
   TSHttpStatus status;

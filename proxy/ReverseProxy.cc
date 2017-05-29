@@ -119,7 +119,7 @@ response_url_remap(HTTPHdr *response_header)
 
 /** Used to read the remap.config file after the manager signals a change. */
 struct UR_UpdateContinuation;
-typedef int (UR_UpdateContinuation::*UR_UpdContHandler)(int, void *);
+using UR_UpdContHandler = int (UR_UpdateContinuation::*)(int, void *);
 struct UR_UpdateContinuation : public Continuation {
   int
   file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)

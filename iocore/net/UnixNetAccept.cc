@@ -28,7 +28,7 @@
 #endif
 #define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
-typedef int (NetAccept::*NetAcceptHandler)(int, void *);
+using NetAcceptHandler      = int (NetAccept::*)(int, void *);
 volatile int dummy_volatile = 0;
 int accept_till_done        = 1;
 

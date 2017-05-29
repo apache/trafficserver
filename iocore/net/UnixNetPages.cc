@@ -27,7 +27,7 @@
 #include "I_Tasks.h"
 
 struct ShowNet;
-typedef int (ShowNet::*ShowNetEventHandler)(int event, Event *data);
+using ShowNetEventHandler = int (ShowNet::*)(int, Event *);
 struct ShowNet : public ShowCont {
   int ithread;
   IpEndpoint addr;

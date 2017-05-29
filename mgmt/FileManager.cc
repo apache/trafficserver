@@ -36,7 +36,7 @@
 #define DIR_MODE S_IRWXU
 #define FILE_MODE S_IRWXU
 
-typedef fileEntry snapshot;
+using snapshot = fileEntry;
 
 FileManager::FileManager()
 {

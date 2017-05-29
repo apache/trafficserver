@@ -39,7 +39,7 @@ typedef ts::Scalar<KB::SCALE * 1024, off_t> MB;
 #define FAIL_LINE " line ", __LINE__
 
 struct TestBox {
-  typedef TestBox self; ///< Self reference type.
+  using self = TestBox; ///< Self reference type.
 
   std::string _name;
 
@@ -112,7 +112,7 @@ void
 Test_1()
 {
   constexpr static int SCALE = 4096;
-  typedef ts::Scalar<SCALE> PageSize;
+  using PageSize             = ts::Scalar<SCALE>;
 
   TestBox test("TS.Scalar basic");
   PageSize pg1(1);
@@ -128,8 +128,8 @@ Test_2()
   constexpr static int SCALE_1 = 8192;
   constexpr static int SCALE_2 = 512;
 
-  typedef ts::Scalar<SCALE_1> Size_1;
-  typedef ts::Scalar<SCALE_2> Size_2;
+  using Size_1 = ts::Scalar<SCALE_1>;
+  using Size_2 = ts::Scalar<SCALE_2>;
 
   TestBox test("TS.Scalar Conversion of scales of multiples");
   Size_2 sz_a(2);
@@ -170,8 +170,8 @@ Test_3()
   constexpr static int SCALE_1 = 30;
   constexpr static int SCALE_2 = 20;
 
-  typedef ts::Scalar<SCALE_1> Size_1;
-  typedef ts::Scalar<SCALE_2> Size_2;
+  using Size_1 = ts::Scalar<SCALE_1>;
+  using Size_2 = ts::Scalar<SCALE_2>;
 
   TestBox test("TS.Scalar common factor conversions");
   Size_2 sz_a(2);
@@ -220,10 +220,10 @@ Test_5()
 {
   TestBox test("TS.Scalar: arithmetics");
 
-  typedef ts::Scalar<1024> KBytes;
+  using KBytes = ts::Scalar<1024>;
   typedef ts::Scalar<1024, long int> KiBytes;
   typedef ts::Scalar<1, int64_t> Bytes;
-  typedef ts::Scalar<1024 * KBytes::SCALE> MBytes;
+  using MBytes = ts::Scalar<1024 * KBytes::SCALE>;
 
   Bytes bytes(96);
   KBytes kbytes(2);

@@ -32,7 +32,7 @@
 #include "P_Net.h"
 #include "P_UDPNet.h"
 
-typedef int (UDPNetHandler::*UDPNetContHandler)(int, void *);
+using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 
 inkcoreapi ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 EventType ET_UDP;
