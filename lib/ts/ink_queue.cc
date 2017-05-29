@@ -135,8 +135,9 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   // It is never useful to have alignment requirement looser than a page size
   // so clip it. This makes the item alignment checks in the actual allocator simpler.
   f->alignment = alignment;
-  if (f->alignment > ats_pagesize())
+  if (f->alignment > ats_pagesize()) {
     f->alignment = ats_pagesize();
+  }
   Debug(DEBUG_TAG "_init", "<%s> Alignment request/actual (%" PRIu32 "/%" PRIu32 ")", name, alignment, f->alignment);
   // Make sure we align *all* the objects in the allocation, not just the first one
   f->type_size = INK_ALIGN(type_size, f->alignment);
@@ -318,10 +319,11 @@ freelist_free(InkFreeList *f, void *item)
 static void
 malloc_free(InkFreeList *f, void *item)
 {
-  if (f->alignment)
+  if (f->alignment) {
     ats_memalign_free(item);
-  else
+  } else {
     ats_free(item);
+  }
 }
 
 void
@@ -413,8 +415,9 @@ void
 ink_freelists_dump_baselinerel(FILE *f)
 {
   ink_freelist_list *fll;
-  if (f == nullptr)
+  if (f == nullptr) {
     f = stderr;
+  }
 
   fprintf(f, "     allocated      |       in-use       |  count  | type size  |   free list name\n");
   fprintf(f, "  relative to base  |  relative to base  |         |            |                 \n");
@@ -438,8 +441,9 @@ void
 ink_freelists_dump(FILE *f)
 {
   ink_freelist_list *fll;
-  if (f == nullptr)
+  if (f == nullptr) {
     f = stderr;
+  }
 
   fprintf(f, "     Allocated      |        In-Use      | Type Size  |   Free List Name\n");
   fprintf(f, "--------------------|--------------------|------------|----------------------------------\n");
@@ -475,8 +479,9 @@ ink_atomiclist_pop(InkAtomicList *l)
   int result = 0;
   do {
     INK_QUEUE_LD(item, l->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == nullptr)
+    if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
       return nullptr;
+    }
     SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset), FREELIST_VERSION(item) + 1);
     result = ink_atomic_cas(&l->head.data, item.data, next.data);
   } while (result == 0);
@@ -495,8 +500,9 @@ ink_atomiclist_popall(InkAtomicList *l)
   int result = 0;
   do {
     INK_QUEUE_LD(item, l->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == nullptr)
+    if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
       return nullptr;
+    }
     SET_FREELIST_POINTER_VERSION(next, FROM_PTR(nullptr), FREELIST_VERSION(item) + 1);
     result = ink_atomic_cas(&l->head.data, item.data, next.data);
   } while (result == 0);

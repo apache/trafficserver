@@ -87,10 +87,11 @@ test_TSHashTable()
   ink_assert(!(t.find(N * 2).isValid()));
 
   loc = t.find(N / 2 | 1);
-  if (loc)
+  if (loc) {
     t.remove(loc);
-  else
+  } else {
     ink_assert(!"Did not find expected value");
+  }
 
   if (!loc) {
     ; // compiler check.
@@ -104,10 +105,11 @@ test_TSHashTable()
 
   for (uint32_t i = 1; i <= N; ++i) {
     Table::Location l = t.find(i);
-    if (1 & i)
+    if (1 & i) {
       ink_assert(!l.isValid());
-    else
+    } else {
       ink_assert(l.isValid());
+    }
   }
 
   int n = 0;

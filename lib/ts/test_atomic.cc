@@ -44,12 +44,15 @@ testalist(void *ame)
 {
   int me = (int)(uintptr_t)ame;
   int j, k;
-  for (k = 0; k < MAX_ALIST_ARRAY; k++)
+  for (k = 0; k < MAX_ALIST_ARRAY; k++) {
     ink_atomiclist_push(&al[k % MAX_ALIST_TEST], &al_test[me][k]);
+  }
   void *x;
-  for (j = 0; j < 1000000; j++)
-    if ((x = ink_atomiclist_pop(&al[me])))
+  for (j = 0; j < 1000000; j++) {
+    if ((x = ink_atomiclist_pop(&al[me]))) {
       ink_atomiclist_push(&al[rand() % MAX_ALIST_TEST], x);
+    }
+  }
   ink_atomic_increment((int *)&al_done, 1);
   return nullptr;
 }
@@ -177,8 +180,9 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
     srand(time(nullptr));
     printf("sizeof(al_test) = %d\n", (int)sizeof(al_test));
     memset(&al_test[0][0], 0, sizeof(al_test));
-    for (ali = 0; ali < MAX_ALIST_TEST; ali++)
+    for (ali = 0; ali < MAX_ALIST_TEST; ali++) {
       ink_atomiclist_init(&al[ali], "foo", 0);
+    }
     for (ali = 0; ali < MAX_ALIST_TEST; ali++) {
       ink_thread tid;
       pthread_attr_t attr;
@@ -189,8 +193,9 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 #endif
       ink_assert(pthread_create(&tid, &attr, testalist, (void *)((intptr_t)ali)) == 0);
     }
-    while (al_done != MAX_ALIST_TEST)
+    while (al_done != MAX_ALIST_TEST) {
       sleep(1);
+    }
   }
 #endif // !LONG_ATOMICLIST_TEST
 

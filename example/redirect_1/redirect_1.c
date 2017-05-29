@@ -84,15 +84,17 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
     if (addr) {
       socklen_t addr_size = 0;
 
-      if (addr->sa_family == AF_INET)
+      if (addr->sa_family == AF_INET) {
         addr_size = sizeof(struct sockaddr_in);
-      else if (addr->sa_family == AF_INET6)
+      } else if (addr->sa_family == AF_INET6) {
         addr_size = sizeof(struct sockaddr_in6);
+      }
       if (addr_size > 0) {
         char clientstring[INET6_ADDRSTRLEN];
 
-        if (NULL != inet_ntop(addr->sa_family, addr, clientstring, addr_size))
+        if (NULL != inet_ntop(addr->sa_family, addr, clientstring, addr_size)) {
           TSDebug(PLUGIN_NAME, "clientip is %s and block_ip is %s", clientstring, block_ip);
+        }
       }
     }
   }
@@ -249,17 +251,17 @@ update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc)
   txn_method = TSHttpHdrMethodGet(bufp, hdr_loc, &length);
 
   if (NULL != txn_method) {
-    if (0 == strncmp(txn_method, TS_HTTP_METHOD_CONNECT, length))
+    if (0 == strncmp(txn_method, TS_HTTP_METHOD_CONNECT, length)) {
       TSStatIntIncrement(redirect_count_connect, 1);
-    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_DELETE, length))
+    } else if (0 == strncmp(txn_method, TS_HTTP_METHOD_DELETE, length)) {
       TSStatIntIncrement(redirect_count_delete, 1);
-    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_GET, length))
+    } else if (0 == strncmp(txn_method, TS_HTTP_METHOD_GET, length)) {
       TSStatIntIncrement(redirect_count_get, 1);
 
-    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_HEAD, length))
+    } else if (0 == strncmp(txn_method, TS_HTTP_METHOD_HEAD, length)) {
       TSStatIntIncrement(redirect_count_head, 1);
 
-    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_OPTIONS, length)) {
+    } else if (0 == strncmp(txn_method, TS_HTTP_METHOD_OPTIONS, length)) {
       // This is a bad idea in a real plugin because it causes a race condition
       // with other transactions, but is here for illustrative purposes.
       tempint = TSStatIntGet(redirect_count_options);
@@ -271,14 +273,15 @@ update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc)
       TSStatIntIncrement(redirect_count_post, 2);
     }
 
-    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_PURGE, length))
+    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_PURGE, length)) {
       TSStatIntIncrement(redirect_count_purge, 1);
-    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_PUT, length))
+    } else if (0 == strncmp(txn_method, TS_HTTP_METHOD_PUT, length)) {
       TSStatIntIncrement(redirect_count_put, 1);
-    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_TRACE, length))
+    } else if (0 == strncmp(txn_method, TS_HTTP_METHOD_TRACE, length)) {
       TSStatIntIncrement(redirect_count_trace, 1);
-    else
+    } else {
       TSStatIntIncrement(redirect_count_unknown, 1);
+    }
   }
 }
 
@@ -329,8 +332,9 @@ TSPluginInit(int argc, const char *argv[])
    *  be done in debug mode.
    */
 
-  if (TSIsDebugTagSet(PLUGIN_NAME ".demo"))
+  if (TSIsDebugTagSet(PLUGIN_NAME ".demo")) {
     TSDebug(PLUGIN_NAME ".init", "The redirect_demo tag is set");
-  else
+  } else {
     TSDebug(PLUGIN_NAME ".init", "The redirect_demo tag is not set");
+  }
 }

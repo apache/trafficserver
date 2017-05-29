@@ -38,8 +38,9 @@ SourceLocation::str(char *buf, int buflen) const
 {
   const char *shortname;
 
-  if (!this->valid() || buflen < 1)
+  if (!this->valid() || buflen < 1) {
     return (nullptr);
+  }
 
   shortname = strrchr(file, '/');
   shortname = shortname ? (shortname + 1) : file;

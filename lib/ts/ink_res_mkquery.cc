@@ -105,8 +105,9 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
   /*
    * Initialize header fields.
    */
-  if ((buf == nullptr) || (buflen < HFIXEDSZ))
+  if ((buf == nullptr) || (buflen < HFIXEDSZ)) {
     return (-1);
+  }
   memset(buf, 0, HFIXEDSZ);
   hp         = (HEADER *)buf;
   hp->id     = htons(++statp->id);
@@ -125,24 +126,29 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
   switch (op) {
   case QUERY: /*FALLTHROUGH*/
   case NS_NOTIFY_OP:
-    if (ep - cp < QFIXEDSZ)
+    if (ep - cp < QFIXEDSZ) {
       return (-1);
-    if ((n = dn_comp(dname, cp, ep - cp - QFIXEDSZ, dnptrs, lastdnptr)) < 0)
+    }
+    if ((n = dn_comp(dname, cp, ep - cp - QFIXEDSZ, dnptrs, lastdnptr)) < 0) {
       return (-1);
+    }
     cp += n;
     NS_PUT16(type, cp);
     NS_PUT16(_class, cp);
     hp->qdcount = htons(1);
-    if (op == QUERY || data == nullptr)
+    if (op == QUERY || data == nullptr) {
       break;
+    }
     /*
      * Make an additional record for completion domain.
      */
-    if ((ep - cp) < RRFIXEDSZ)
+    if ((ep - cp) < RRFIXEDSZ) {
       return (-1);
+    }
     n = dn_comp((const char *)data, cp, ep - cp - RRFIXEDSZ, dnptrs, lastdnptr);
-    if (n < 0)
+    if (n < 0) {
       return (-1);
+    }
     cp += n;
     NS_PUT16(T_NULL, cp);
     NS_PUT16(_class, cp);
@@ -155,8 +161,9 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
     /*
      * Initialize answer section
      */
-    if (ep - cp < 1 + RRFIXEDSZ + datalen)
+    if (ep - cp < 1 + RRFIXEDSZ + datalen) {
       return (-1);
+    }
     *cp++ = '\0'; /*%< no domain name */
     NS_PUT16(type, cp);
     NS_PUT16(_class, cp);
@@ -205,8 +212,9 @@ labellen(const u_char *lp)
 
   if ((l & NS_CMPRSFLGS) == INK_NS_TYPE_ELT) {
     if (l == INK_DNS_LABELTYPE_BITSTRING) {
-      if ((bitlen = *(lp + 1)) == 0)
+      if ((bitlen = *(lp + 1)) == 0) {
         bitlen = 256;
+      }
       return ((bitlen + 7) / 8 + 1);
     }
     return (-1); /*%< unknwon ELT */
@@ -221,40 +229,47 @@ decode_bitstring(const unsigned char **cpp, char *dn, const char *eom)
   char *beg               = dn, tc;
   int b, blen, plen, i;
 
-  if ((blen = (*cp & 0xff)) == 0)
+  if ((blen = (*cp & 0xff)) == 0) {
     blen = 256;
-  plen   = (blen + 3) / 4;
+  }
+  plen = (blen + 3) / 4;
   plen += sizeof("\\[x/]") + (blen > 99 ? 3 : (blen > 9) ? 2 : 1);
-  if (dn + plen >= eom)
+  if (dn + plen >= eom) {
     return (-1);
+  }
 
   cp++;
   i = SPRINTF((dn, "\\[x"));
-  if (i < 0)
+  if (i < 0) {
     return (-1);
+  }
   dn += i;
   for (b = blen; b > 7; b -= 8, cp++) {
     i = SPRINTF((dn, "%02x", *cp & 0xff));
-    if (i < 0)
+    if (i < 0) {
       return (-1);
+    }
     dn += i;
   }
   if (b > 4) {
     tc = *cp++;
     i  = SPRINTF((dn, "%02x", tc & (0xff << (8 - b))));
-    if (i < 0)
+    if (i < 0) {
       return (-1);
+    }
     dn += i;
   } else if (b > 0) {
     tc = *cp++;
     i  = SPRINTF((dn, "%1x", ((tc >> 4) & 0x0f) & (0x0f << (4 - b))));
-    if (i < 0)
+    if (i < 0) {
       return (-1);
+    }
     dn += i;
   }
   i = SPRINTF((dn, "/%d]", blen));
-  if (i < 0)
+  if (i < 0) {
     return (-1);
+  }
   dn += i;
 
   *cpp = cp;
@@ -502,26 +517,30 @@ ats_host_res_from(int family, HostResPreferenceOrder order)
 
   for (int i = 0; i < N_HOST_RES_PREFERENCE_ORDER; ++i) {
     HostResPreference p = order[i];
-    if (HOST_RES_PREFER_CLIENT == p)
+    if (HOST_RES_PREFER_CLIENT == p) {
       p = client; // CLIENT -> actual value
+    }
     if (HOST_RES_PREFER_IPV4 == p) {
-      if (v6)
+      if (v6) {
         return HOST_RES_IPV6;
-      else
+      } else {
         v4 = true;
+      }
     } else if (HOST_RES_PREFER_IPV6 == p) {
-      if (v4)
+      if (v4) {
         return HOST_RES_IPV4;
-      else
+      } else {
         v6 = true;
+      }
     } else {
       break;
     }
   }
-  if (v4)
+  if (v4) {
     return HOST_RES_IPV4_ONLY;
-  else if (v6)
+  } else if (v6) {
     return HOST_RES_IPV6_ONLY;
+  }
   return HOST_RES_NONE;
 }
 
@@ -529,9 +548,10 @@ HostResStyle
 ats_host_res_match(sockaddr const *addr)
 {
   HostResStyle zret = HOST_RES_NONE;
-  if (ats_is_ip6(addr))
+  if (ats_is_ip6(addr)) {
     zret = HOST_RES_IPV6_ONLY;
-  else if (ats_is_ip4(addr))
+  } else if (ats_is_ip4(addr)) {
     zret = HOST_RES_IPV4_ONLY;
+  }
   return zret;
 }

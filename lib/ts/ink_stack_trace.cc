@@ -46,10 +46,12 @@ ink_stack_trace_dump()
 
   // Recopy and re-terminate the app name in case it has been trashed.
   const char *msg = " - STACK TRACE: \n";
-  if (write(STDERR_FILENO, program_name, strlen(program_name)) == -1)
+  if (write(STDERR_FILENO, program_name, strlen(program_name)) == -1) {
     return;
-  if (write(STDERR_FILENO, msg, strlen(msg)) == -1)
+  }
+  if (write(STDERR_FILENO, msg, strlen(msg)) == -1) {
     return;
+  }
 
   // In certain situations you can get stuck in malloc waiting for a lock
   // that your program held when it segfaulted. We set an alarm so that

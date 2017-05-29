@@ -47,10 +47,12 @@ CacheTestSM::~CacheTestSM()
 {
   ink_assert(!cache_action);
   ink_assert(!cache_vc);
-  if (buffer_reader)
+  if (buffer_reader) {
     buffer->dealloc_reader(buffer_reader);
-  if (buffer)
+  }
+  if (buffer) {
     free_MIOBuffer(buffer);
+  }
 }
 
 int
@@ -97,24 +99,27 @@ CacheTestSM::event_handler(int event, void *data)
     cache_vc      = (CacheVConnection *)data;
     buffer        = new_empty_MIOBuffer();
     buffer_reader = buffer->alloc_reader();
-    if (open_read_callout() < 0)
+    if (open_read_callout() < 0) {
       goto Lclose_error_next;
-    else
+    } else {
       return EVENT_DONE;
+    }
 
   case CACHE_EVENT_OPEN_READ_FAILED:
     goto Lcancel_next;
 
   case VC_EVENT_READ_READY:
-    if (!check_buffer())
+    if (!check_buffer()) {
       goto Lclose_error_next;
+    }
     buffer_reader->consume(buffer_reader->read_avail());
     ((VIO *)data)->reenable();
     return EVENT_CONT;
 
   case VC_EVENT_READ_COMPLETE:
-    if (!check_buffer())
+    if (!check_buffer()) {
       goto Lclose_error_next;
+    }
     goto Lclose_next;
 
   case VC_EVENT_ERROR:
@@ -128,10 +133,11 @@ CacheTestSM::event_handler(int event, void *data)
     cache_vc      = (CacheVConnection *)data;
     buffer        = new_empty_MIOBuffer();
     buffer_reader = buffer->alloc_reader();
-    if (open_write_callout() < 0)
+    if (open_write_callout() < 0) {
       goto Lclose_error_next;
-    else
+    } else {
       return EVENT_DONE;
+    }
 
   case CACHE_EVENT_OPEN_WRITE_FAILED:
     goto Lcancel_next;
@@ -142,8 +148,9 @@ CacheTestSM::event_handler(int event, void *data)
     return EVENT_CONT;
 
   case VC_EVENT_WRITE_COMPLETE:
-    if (nbytes != cvio->ndone)
+    if (nbytes != cvio->ndone) {
       goto Lclose_error_next;
+    }
     goto Lclose_next;
 
   case CACHE_EVENT_REMOVE:
@@ -203,8 +210,9 @@ Lnext:
     repeat_count--;
     timeout = eventProcessor.schedule_imm(this);
     return EVENT_DONE;
-  } else
+  } else {
     return complete(event);
+  }
 }
 
 void
@@ -216,14 +224,16 @@ CacheTestSM::fill_buffer()
   int64_t sk = (int64_t)sizeof(key);
   while (avail > 0) {
     int64_t l = avail;
-    if (l > sk)
+    if (l > sk) {
       l = sk;
+    }
 
     int64_t pos = cvio->ndone + buffer_reader->read_avail();
     int64_t o   = pos % sk;
 
-    if (l > sk - o)
-      l     = sk - o;
+    if (l > sk - o) {
+      l = sk - o;
+    }
     k.b[0]  = pos / sk;
     char *x = ((char *)&k) + o;
     buffer->write(x, l);
@@ -243,16 +253,19 @@ CacheTestSM::check_buffer()
   int64_t pos = cvio->ndone - buffer_reader->read_avail();
   while (avail > 0) {
     int64_t l = avail;
-    if (l > sk)
-      l       = sk;
+    if (l > sk) {
+      l = sk;
+    }
     int64_t o = pos % sk;
-    if (l > sk - o)
-      l     = sk - o;
+    if (l > sk - o) {
+      l = sk - o;
+    }
     k.b[0]  = pos / sk;
     char *x = ((char *)&k) + o;
     buffer_reader->read(&b[0], l);
-    if (::memcmp(b, x, l))
+    if (::memcmp(b, x, l)) {
       return 0;
+    }
     buffer_reader->consume(l);
     pos += l;
     avail -= l;
@@ -269,10 +282,11 @@ CacheTestSM::check_result(int event)
 int
 CacheTestSM::complete(int event)
 {
-  if (!check_result(event))
+  if (!check_result(event)) {
     done(REGRESSION_TEST_FAILED);
-  else
+  } else {
     done(REGRESSION_TEST_PASSED);
+  }
   delete this;
   return EVENT_DONE;
 }
@@ -460,15 +474,18 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   int to = 0, from = 0;
   int then = 0, now = 0;
   for (int i = 0; i < VOL_HASH_TABLE_SIZE; ++i) {
-    if (hr1.vol_hash_table[i] == sample_idx)
+    if (hr1.vol_hash_table[i] == sample_idx) {
       ++then;
-    if (hr2.vol_hash_table[i] == sample_idx)
+    }
+    if (hr2.vol_hash_table[i] == sample_idx) {
       ++now;
+    }
     if (hr1.vol_hash_table[i] != hr2.vol_hash_table[i]) {
-      if (hr1.vol_hash_table[i] == sample_idx)
+      if (hr1.vol_hash_table[i] == sample_idx) {
         ++from;
-      else
+      } else {
         ++to;
+      }
     }
   }
   rprintf(t, "Cache stability difference - "
@@ -490,16 +507,20 @@ static double *zipf_table = nullptr;
 static void
 build_zipf()
 {
-  if (zipf_table)
+  if (zipf_table) {
     return;
+  }
   zipf_table = (double *)ats_malloc(ZIPF_SIZE * sizeof(double));
-  for (int i      = 0; i < ZIPF_SIZE; i++)
+  for (int i = 0; i < ZIPF_SIZE; i++) {
     zipf_table[i] = 1.0 / pow(i + 2, zipf_alpha);
-  for (int i      = 1; i < ZIPF_SIZE; i++)
+  }
+  for (int i = 1; i < ZIPF_SIZE; i++) {
     zipf_table[i] = zipf_table[i - 1] + zipf_table[i];
-  double x        = zipf_table[ZIPF_SIZE - 1];
-  for (int i      = 0; i < ZIPF_SIZE; i++)
+  }
+  double x = zipf_table[ZIPF_SIZE - 1];
+  for (int i = 0; i < ZIPF_SIZE; i++) {
     zipf_table[i] = zipf_table[i] / x;
+  }
 }
 
 static int
@@ -508,13 +529,15 @@ get_zipf(double v)
   int l = 0, r = ZIPF_SIZE - 1, m;
   do {
     m = (r + l) / 2;
-    if (v < zipf_table[m])
+    if (v < zipf_table[m]) {
       r = m - 1;
-    else
+    } else {
       l = m + 1;
+    }
   } while (l < r);
-  if (zipf_bucket_size == 1)
+  if (zipf_bucket_size == 1) {
     return m;
+  }
   double x = zipf_table[m], y = zipf_table[m + 1];
   m += static_cast<int>((v - x) / (y - x));
   return m;
@@ -567,9 +590,10 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   build_zipf();
   srand48(13);
   int *r = (int *)ats_malloc(sample_size * sizeof(int));
-  for (int i = 0; i < sample_size; i++)
+  for (int i = 0; i < sample_size; i++) {
     // coverity[dont_call]
     r[i] = get_zipf(drand48());
+  }
   data.clear();
   int misses = 0;
   for (int i = 0; i < sample_size; i++) {
@@ -582,8 +606,9 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       d->alloc(BUFFER_SIZE_INDEX_16K);
       data.push_back(make_ptr(d));
       cache->put(&md5, data.back().get(), 1 << 15);
-      if (i >= sample_size / 2)
+      if (i >= sample_size / 2) {
         misses++; // Sample last half of the gets.
+      }
     }
   }
   double fixed_hit_rate = 1.0 - (((double)(misses)) / (sample_size / 2));
@@ -601,8 +626,9 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       d->alloc(BUFFER_SIZE_INDEX_8K + (r[i] % 3));
       data.push_back(make_ptr(d));
       cache->put(&md5, data.back().get(), d->block_size());
-      if (i >= sample_size / 2)
+      if (i >= sample_size / 2) {
         misses++; // Sample last half of the gets.
+      }
     }
   }
   double variable_hit_rate = 1.0 - (((double)(misses)) / (sample_size / 2));
@@ -610,10 +636,12 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
 
   rprintf(t, "RamCache %s Nominal Size %lld Size %lld\n", name, cache_size, cache->size());
 
-  if (fixed_hit_rate < 0.55 || variable_hit_rate < 0.55)
+  if (fixed_hit_rate < 0.55 || variable_hit_rate < 0.55) {
     return false;
-  if (abs(cache_size - cache->size()) > 0.02 * cache_size)
+  }
+  if (abs(cache_size - cache->size()) > 0.02 * cache_size) {
     return false;
+  }
 
   ats_free(r);
 
@@ -638,7 +666,8 @@ REGRESSION_TEST(ram_cache)(RegressionTest *t, int level, int *pstatus)
   for (int s = 20; s <= 28; s += 4) {
     int64_t cache_size = 1LL << s;
     *pstatus           = REGRESSION_TEST_PASSED;
-    if (!test_RamCache(t, new_RamCacheLRU(), "LRU", cache_size) || !test_RamCache(t, new_RamCacheCLFUS(), "CLFUS", cache_size))
+    if (!test_RamCache(t, new_RamCacheLRU(), "LRU", cache_size) || !test_RamCache(t, new_RamCacheCLFUS(), "CLFUS", cache_size)) {
       *pstatus = REGRESSION_TEST_FAILED;
+    }
   }
 }

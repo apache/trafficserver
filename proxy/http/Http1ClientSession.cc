@@ -230,8 +230,9 @@ Http1ClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 void
 Http1ClientSession::set_tcp_init_cwnd()
 {
-  if (!trans.get_sm())
+  if (!trans.get_sm()) {
     return;
+  }
   int desired_tcp_init_cwnd = trans.get_sm()->t_state.txn_conf->server_tcp_init_cwnd;
   DebugHttpSsn("desired TCP congestion window is %d", desired_tcp_init_cwnd);
   if (desired_tcp_init_cwnd == 0) {
@@ -251,8 +252,9 @@ Http1ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http1ClientSession::do_io_close(int alerrno)
 {
-  if (read_state == HCS_CLOSED)
+  if (read_state == HCS_CLOSED) {
     return; // Don't double call session close
+  }
   if (read_state == HCS_ACTIVE_READER) {
     clear_session_active();
   }

@@ -231,8 +231,9 @@ CacheControlHeader::update(TSMBuffer bufp, TSMLoc hdr_loc)
           unsigned int max_age = 0;
           char *ptr            = const_cast<char *>(val);
           ptr += TS_HTTP_LEN_MAX_AGE;
-          while ((*ptr == ' ') || (*ptr == '\t'))
+          while ((*ptr == ' ') || (*ptr == '\t')) {
             ptr++;
+          }
           if (*ptr == '=') {
             ptr++;
             max_age = atoi(ptr);

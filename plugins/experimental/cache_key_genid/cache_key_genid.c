@@ -133,10 +133,12 @@ handle_hook(TSCont *contp, TSEvent event, void *edata)
     }
 
     /* Clean up */
-    if (url)
+    if (url) {
       TSfree(url);
-    if (host)
+    }
+    if (host) {
       TSfree(host);
+    }
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 

@@ -57,10 +57,12 @@ EThread::EThread(ThreadType att, int anid)
   if (evfd < 0) {
     if (errno == EINVAL) { // flags invalid for kernel <= 2.6.26
       evfd = eventfd(0, 0);
-      if (evfd < 0)
+      if (evfd < 0) {
         Fatal("EThread::EThread: %d=eventfd(0,0),errno(%d)", evfd, errno);
-    } else
+      }
+    } else {
       Fatal("EThread::EThread: %d=eventfd(0,EFD_NONBLOCK | EFD_CLOEXEC),errno(%d)", evfd, errno);
+    }
   }
 #elif TS_USE_PORT
 /* Solaris ports requires no crutches to do cross thread signaling.
@@ -93,8 +95,9 @@ EThread::EThread(ThreadType att, Event *e)
 // threads won't have to deal with EThread memory deallocation.
 EThread::~EThread()
 {
-  if (n_ethreads_to_be_signalled > 0)
+  if (n_ethreads_to_be_signalled > 0) {
     flush_signals(this);
+  }
   ats_free(ethreads_to_be_signalled);
   // TODO: This can't be deleted ....
   // delete[]l1_hash;
@@ -132,18 +135,20 @@ EThread::process_event(Event *e, int calling_code)
     MUTEX_RELEASE(lock);
     if (e->period) {
       if (!e->in_the_prot_queue && !e->in_the_priority_queue) {
-        if (e->period < 0)
+        if (e->period < 0) {
           e->timeout_at = e->period;
-        else {
+        } else {
           this->get_hrtime_updated();
           e->timeout_at = cur_time + e->period;
-          if (e->timeout_at < cur_time)
+          if (e->timeout_at < cur_time) {
             e->timeout_at = cur_time;
+          }
         }
         EventQueueExternal.enqueue_local(e);
       }
-    } else if (!e->in_the_prot_queue && !e->in_the_priority_queue)
+    } else if (!e->in_the_prot_queue && !e->in_the_priority_queue) {
       free_event(e);
+    }
   }
 }
 
@@ -176,24 +181,25 @@ EThread::execute()
       // already been dequeued
       cur_time = Thread::get_hrtime_updated();
       while ((e = EventQueueExternal.dequeue_local())) {
-        if (e->cancelled)
+        if (e->cancelled) {
           free_event(e);
-        else if (!e->timeout_at) { // IMMEDIATE
+        } else if (!e->timeout_at) { // IMMEDIATE
           ink_assert(e->period == 0);
           process_event(e, e->callback_event);
-        } else if (e->timeout_at > 0) // INTERVAL
+        } else if (e->timeout_at > 0) { // INTERVAL
           EventQueue.enqueue(e, cur_time);
-        else { // NEGATIVE
+        } else { // NEGATIVE
           Event *p = nullptr;
           Event *a = NegativeQueue.head;
           while (a && a->timeout_at > e->timeout_at) {
             p = a;
             a = a->link.next;
           }
-          if (!a)
+          if (!a) {
             NegativeQueue.enqueue(e);
-          else
+          } else {
             NegativeQueue.insert(e, p);
+          }
         }
       }
       bool done_one;
@@ -204,9 +210,9 @@ EThread::execute()
         while ((e = EventQueue.dequeue_ready(cur_time))) {
           ink_assert(e);
           ink_assert(e->timeout_at > 0);
-          if (e->cancelled)
+          if (e->cancelled) {
             free_event(e);
-          else {
+          } else {
             done_one = true;
             process_event(e, e->callback_event);
           }
@@ -214,20 +220,22 @@ EThread::execute()
       } while (done_one);
       // execute any negative (poll) events
       if (NegativeQueue.head) {
-        if (n_ethreads_to_be_signalled)
+        if (n_ethreads_to_be_signalled) {
           flush_signals(this);
+        }
         // dequeue all the external events and put them in a local
         // queue. If there are no external events available, don't
         // do a cond_timedwait.
-        if (!INK_ATOMICLIST_EMPTY(EventQueueExternal.al))
+        if (!INK_ATOMICLIST_EMPTY(EventQueueExternal.al)) {
           EventQueueExternal.dequeue_timed(cur_time, next_time, false);
+        }
         while ((e = EventQueueExternal.dequeue_local())) {
-          if (!e->timeout_at)
+          if (!e->timeout_at) {
             process_event(e, e->callback_event);
-          else {
-            if (e->cancelled)
+          } else {
+            if (e->cancelled) {
               free_event(e);
-            else {
+            } else {
               // If its a negative event, it must be a result of
               // a negative event, which has been turned into a
               // timed-event (because of a missed lock), executed
@@ -242,20 +250,24 @@ EThread::execute()
                   p = a;
                   a = a->link.next;
                 }
-                if (!a)
+                if (!a) {
                   NegativeQueue.enqueue(e);
-                else
+                } else {
                   NegativeQueue.insert(e, p);
-              } else
+                }
+              } else {
                 EventQueue.enqueue(e, cur_time);
+              }
             }
           }
         }
         // execute poll events
-        while ((e = NegativeQueue.dequeue()))
+        while ((e = NegativeQueue.dequeue())) {
           process_event(e, EVENT_POLL);
-        if (!INK_ATOMICLIST_EMPTY(EventQueueExternal.al))
+        }
+        if (!INK_ATOMICLIST_EMPTY(EventQueueExternal.al)) {
           EventQueueExternal.dequeue_timed(cur_time, next_time, false);
+        }
       } else { // Means there are no negative events
         next_time             = EventQueue.earliest_timeout();
         ink_hrtime sleep_time = next_time - cur_time;
@@ -266,8 +278,9 @@ EThread::execute()
         // dequeue all the external events and put them in a local
         // queue. If there are no external events available, do a
         // cond_timedwait.
-        if (n_ethreads_to_be_signalled)
+        if (n_ethreads_to_be_signalled) {
           flush_signals(this);
+        }
         EventQueueExternal.dequeue_timed(cur_time, next_time, true);
       }
     }

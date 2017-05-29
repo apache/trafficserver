@@ -41,11 +41,13 @@ size_t unescape_string(char* text, size_t len) {
   if (dst) {
     char* limit = text + len;
     char* src = dst + 1; // skip escape char
-    for ( *dst++ = *src++ ; src < limit ; ++src )
-      if ('\\' != *src) *dst++ = *src;
-      else if (++src < limit) *dst++ = *src;
-      else *dst++ = '\\'; // trailing backslash.
-    zret = dst - text;
+    for ( *dst++ = *src++ ; src < limit ; ++src ) {
+      if ('\\' != *src) { *dst++ = *src;
+      } else if (++src < limit) { *dst++ = *src;
+      } else { *dst++ = '\\'; // trailing backslash.
+    
+}
+}zret = dst - text;
   }
   return zret;
 }
@@ -167,8 +169,9 @@ void Builder::pathIndex(Token const& token){
     // digit string that is followed by a non-digit or the FLEX
     // required double null at the end of the input buffer.
     _path.append(Buffer(nullptr, static_cast<size_t>(atol(token._s))));
-    if (_extent._ptr) _extent._size = token._s - _extent._ptr + token._n;
-    else _extent.set(token._s, token._n);
+    if (_extent._ptr) { _extent._size = token._s - _extent._ptr + token._n;
+    } else { _extent.set(token._s, token._n);
+}
 }
 
 void Builder::pathClose(Token const&) {
@@ -206,8 +209,10 @@ void Builder::literalValue(Token const& token) {
     } else {
         msg::logf(_errata, msg::WARN, PRE "Unexpected literal type %d.", token._type);
     }
-    if (!cv.isOK()) _errata.pull(cv.errata());
-    if (cv.result()) cv.result().setSource(token._loc._line, token._loc._col);
+    if (!cv.isOK()) { _errata.pull(cv.errata());
+}
+    if (cv.result()) { cv.result().setSource(token._loc._line, token._loc._col);
+}
     _name.set(nullptr,0); // used, so clear it.
 }
 void Builder::invalidToken(Token const&) { }

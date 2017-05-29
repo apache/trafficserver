@@ -53,10 +53,12 @@ transfer_data(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
   int64_t n = in_buf.reader()->read_avail();
   int64_t o = out_buf.writer()->write_avail();
 
-  if (n > o)
+  if (n > o) {
     n = o;
-  if (!n)
+  }
+  if (!n) {
     return;
+  }
   memcpy(in_buf.reader()->start(), out_buf.writer()->end(), n);
   in_buf.reader()->consume(n);
   out_buf.writer()->fill(n);
@@ -140,20 +142,22 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
 
   int64_t size_index = 0;
 
-  if (size_estimate)
+  if (size_estimate) {
     size_index = buffer_size_to_index(size_estimate);
-  else
+  } else {
     size_index = default_large_iobuffer_size;
+  }
 
   Debug("one_way_tunnel", "buffer size index [%" PRId64 "] [%d]", size_index, size_estimate);
 
   // enqueue read request on vcSource.
   MIOBuffer *buf1 = new_MIOBuffer(size_index);
   MIOBuffer *buf2 = nullptr;
-  if (single_buffer)
+  if (single_buffer) {
     buf2 = buf1;
-  else
+  } else {
     buf2 = new_MIOBuffer(size_index);
+  }
 
   buf1->water_mark = water_mark;
 
@@ -220,10 +224,11 @@ OneWayTunnel::init(Continuation *aCont, VIO *SourceVio, VIO *TargetVio, bool acl
 void
 OneWayTunnel::transform(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
 {
-  if (manipulate_fn)
+  if (manipulate_fn) {
     manipulate_fn(in_buf, out_buf);
-  else if (in_buf.writer() != out_buf.writer())
+  } else if (in_buf.writer() != out_buf.writer()) {
     transfer_data(in_buf, out_buf);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -247,8 +252,9 @@ OneWayTunnel::startEvent(int event, void *data)
   printf("OneWayTunnel --- %s received from %s VC\n", event_name, event_origin);
 #endif
 
-  if (!vioTarget)
+  if (!vioTarget) {
     goto Lerror;
+  }
 
   // handle the event
   //
@@ -268,14 +274,16 @@ OneWayTunnel::startEvent(int event, void *data)
     break;
 
   case VC_EVENT_WRITE_READY:
-    if (vioSource)
+    if (vioSource) {
       vioSource->reenable();
+    }
     ret = VC_EVENT_CONT;
     break;
 
   case VC_EVENT_EOS:
-    if (!tunnel_till_done && vio->ntodo())
+    if (!tunnel_till_done && vio->ntodo()) {
       goto Lerror;
+    }
     if (vio == vioSource) {
       transform(vioSource->buffer, vioTarget->buffer);
       goto Lread_complete;
@@ -288,11 +296,13 @@ OneWayTunnel::startEvent(int event, void *data)
     // set write nbytes to the current buffer size
     //
     vioTarget->nbytes = vioTarget->ndone + vioTarget->buffer.reader()->read_avail();
-    if (vioTarget->nbytes == vioTarget->ndone)
+    if (vioTarget->nbytes == vioTarget->ndone) {
       goto Ldone;
+    }
     vioTarget->reenable();
-    if (!tunnel_peer)
+    if (!tunnel_peer) {
       close_source_vio(0);
+    }
     break;
 
   case VC_EVENT_ERROR:
@@ -378,10 +388,12 @@ OneWayTunnel::connection_closed(int result)
 void
 OneWayTunnel::reenable_all()
 {
-  if (vioSource)
+  if (vioSource) {
     vioSource->reenable();
-  if (vioTarget)
+  }
+  if (vioTarget) {
     vioTarget->reenable();
+  }
 }
 
 bool

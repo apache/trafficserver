@@ -89,8 +89,9 @@ RamCacheLRU::resize_hashtable()
   if (bucket) {
     for (int64_t i = 0; i < nbuckets; i++) {
       RamCacheLRUEntry *e = nullptr;
-      while ((e = bucket[i].pop()))
+      while ((e = bucket[i].pop())) {
         new_bucket[e->key.slice32(3) % anbuckets].push(e);
+      }
     }
     ats_free(bucket);
   }
@@ -110,16 +111,18 @@ RamCacheLRU::init(int64_t abytes, Vol *avol)
   vol       = avol;
   max_bytes = abytes;
   DDebug("ram_cache", "initializing ram_cache %" PRId64 " bytes", abytes);
-  if (!max_bytes)
+  if (!max_bytes) {
     return;
+  }
   resize_hashtable();
 }
 
 int
 RamCacheLRU::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2)
 {
-  if (!max_bytes)
+  if (!max_bytes) {
     return 0;
+  }
   uint32_t i          = key->slice32(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
@@ -158,8 +161,9 @@ RamCacheLRU::remove(RamCacheLRUEntry *e)
 int
 RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint32_t auxkey1, uint32_t auxkey2)
 {
-  if (!max_bytes)
+  if (!max_bytes) {
     return 0;
+  }
   uint32_t i = key->slice32(3) % nbuckets;
   if (cache_config_ram_cache_use_seen_filter) {
     uint16_t k  = key->slice32(3) >> 16;
@@ -196,10 +200,11 @@ RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint32_t 
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, ENTRY_OVERHEAD + data->block_size());
   while (bytes > max_bytes) {
     RamCacheLRUEntry *ee = lru.dequeue();
-    if (ee)
+    if (ee) {
       remove(ee);
-    else
+    } else {
       break;
+    }
   }
   DDebug("ram_cache", "put %X %d %d INSERTED", key->slice32(3), auxkey1, auxkey2);
   if (objects > nbuckets) {
@@ -212,8 +217,9 @@ RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint32_t 
 int
 RamCacheLRU::fixup(const INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2)
 {
-  if (!max_bytes)
+  if (!max_bytes) {
     return 0;
+  }
   uint32_t i          = key->slice32(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {

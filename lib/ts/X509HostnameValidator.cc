@@ -61,8 +61,9 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
     }
   }
   // Final dot minimal pos is a.b.xxxxxx
-  if (final_dot_pos < 3)
+  if (final_dot_pos < 3) {
     return nullptr;
+  }
 
   for (i = 0; i < final_dot_pos; i++) {
     /*
@@ -76,8 +77,9 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
                  ((i < final_dot_pos - 1) && (p[i + 1] == '.'))) { // Found a trailing wildcard in the first label
 
         // IDNA hostnames must match a full label
-        if (idna_subject && (i != 0 || p[i + 1] != '.'))
+        if (idna_subject && (i != 0 || p[i + 1] != '.')) {
           break;
+        }
 
         wildcard_pos = i;
       } else {
@@ -87,8 +89,9 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
     }
     // String contains at least two dots.
     if (p[i] == '.') {
-      if (wildcard_pos != -1)
+      if (wildcard_pos != -1) {
         return &p[wildcard_pos];
+      }
       // Only valid wildcard is in the first label
       break;
     }
@@ -106,8 +109,9 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
 static bool
 equal_nocase(const unsigned char *pattern, size_t pattern_len, const unsigned char *subject, size_t subject_len)
 {
-  if (pattern_len != subject_len)
+  if (pattern_len != subject_len) {
     return false;
+  }
   return (strncasecmp((char *)pattern, (char *)subject, pattern_len) == 0);
 }
 
@@ -115,8 +119,9 @@ equal_nocase(const unsigned char *pattern, size_t pattern_len, const unsigned ch
 static bool
 equal_case(const unsigned char *pattern, size_t pattern_len, const unsigned char *subject, size_t subject_len)
 {
-  if (pattern_len != subject_len)
+  if (pattern_len != subject_len) {
     return false;
+  }
   return (memcmp(pattern, subject, pattern_len) == 0);
 }
 
@@ -132,32 +137,39 @@ wildcard_match(const unsigned char *prefix, size_t prefix_len, const unsigned ch
   const unsigned char *wildcard_end;
   const unsigned char *p;
 
-  if (subject_len < prefix_len + suffix_len)
+  if (subject_len < prefix_len + suffix_len) {
     return false;
-  if (!equal_nocase(prefix, prefix_len, subject, prefix_len))
+  }
+  if (!equal_nocase(prefix, prefix_len, subject, prefix_len)) {
     return false;
+  }
   wildcard_start = subject + prefix_len;
   wildcard_end   = subject + (subject_len - suffix_len);
-  if (!equal_nocase(wildcard_end, suffix_len, suffix, suffix_len))
+  if (!equal_nocase(wildcard_end, suffix_len, suffix, suffix_len)) {
     return false;
+  }
   /*
    * If the wildcard makes up the entire first label, it must match at
    * least one character.
    */
   if (prefix_len == 0 && *suffix == '.') {
-    if (wildcard_start == wildcard_end)
+    if (wildcard_start == wildcard_end) {
       return false;
+    }
   }
   /* The wildcard may match a literal '*' */
-  if (wildcard_end == wildcard_start + 1 && *wildcard_start == '*')
+  if (wildcard_end == wildcard_start + 1 && *wildcard_start == '*') {
     return true;
+  }
   /*
    * Check that the part matched by the wildcard contains only
    * permitted characters and only matches a single label
    */
-  for (p = wildcard_start; p != wildcard_end; ++p)
-    if (!(('0' <= *p && *p <= '9') || ('A' <= *p && *p <= 'Z') || ('a' <= *p && *p <= 'z') || *p == '-'))
+  for (p = wildcard_start; p != wildcard_end; ++p) {
+    if (!(('0' <= *p && *p <= '9') || ('A' <= *p && *p <= 'Z') || ('a' <= *p && *p <= 'z') || *p == '-')) {
       return false;
+    }
+  }
   return true;
 }
 
@@ -172,11 +184,13 @@ equal_wildcard(const unsigned char *pattern, size_t pattern_len, const unsigned 
    * Subject names starting with '.' can only match a wildcard pattern
    * via a subject sub-domain pattern suffix match (that we don't allow).
    */
-  if (subject_len > 5 && subject[0] != '.')
+  if (subject_len > 5 && subject[0] != '.') {
     wildcard = find_wildcard_in_hostname(pattern, pattern_len, is_idna);
+  }
 
-  if (wildcard == nullptr)
+  if (wildcard == nullptr) {
     return equal_nocase(pattern, pattern_len, subject, subject_len);
+  }
   return wildcard_match(pattern, wildcard - pattern, wildcard + 1, (pattern + pattern_len) - wildcard - 1, subject, subject_len);
 }
 
@@ -191,11 +205,13 @@ do_check_string(ASN1_STRING *a, int cmp_type, equal_fn equal, const unsigned cha
 {
   bool retval = false;
 
-  if (!a->data || !a->length || cmp_type != a->type)
+  if (!a->data || !a->length || cmp_type != a->type) {
     return false;
+  }
   retval = equal(a->data, a->length, b, blen);
-  if (retval && peername)
+  if (retval && peername) {
     *peername = ats_strndup((char *)a->data, a->length);
+  }
   return retval;
 }
 
@@ -236,13 +252,15 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
         continue;
       }
 
-      if ((retval = do_check_string(cstr, alt_type, equal, hostname, hostname_len, peername)) == true)
+      if ((retval = do_check_string(cstr, alt_type, equal, hostname, hostname_len, peername)) == true) {
         // We got a match
         break;
+      }
     }
     GENERAL_NAMES_free(gens);
-    if (retval)
+    if (retval) {
       return retval;
+    }
   }
   // No SAN match -- check the subject
   i    = -1;
@@ -256,11 +274,13 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
     // Convert to UTF-8
     astrlen = ASN1_STRING_to_UTF8(&astr, str);
 
-    if (astrlen < 0)
+    if (astrlen < 0) {
       return -1;
+    }
     retval = equal(astr, astrlen, hostname, hostname_len);
-    if (retval && peername)
+    if (retval && peername) {
       *peername = ats_strndup((char *)astr, astrlen);
+    }
     OPENSSL_free(astr);
     return retval;
   }

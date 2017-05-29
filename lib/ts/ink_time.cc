@@ -149,13 +149,15 @@ convert_tm(const struct tm *tp)
   mday  = tp->tm_mday;
 
   /* what should we do? */
-  if ((year < 70) || (year > 137))
+  if ((year < 70) || (year > 137)) {
     return (ink_time_t)UNDEFINED_TIME;
+  }
 
   mday += days[month];
   /* month base == march */
-  if (month < 2)
+  if (month < 2) {
     year -= 1;
+  }
   mday += (year * 365) + (year / 4) - (year / 100) + (year / 100 + 3) / 4;
   mday -= DAYS_OFFSET;
 

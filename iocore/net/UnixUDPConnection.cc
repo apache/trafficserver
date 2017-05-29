@@ -36,8 +36,9 @@ UnixUDPConnection::~UnixUDPConnection()
 {
   UDPPacketInternal *p = (UDPPacketInternal *)ink_atomiclist_popall(&inQueue);
 
-  if (!tobedestroyed)
+  if (!tobedestroyed) {
     tobedestroyed = 1;
+  }
 
   if (p) {
     UDPPacketInternal *pnext = nullptr;
@@ -67,12 +68,14 @@ UnixUDPConnection::callbackHandler(int event, void *data)
   (void)event;
   (void)data;
   callbackAction = nullptr;
-  if (continuation == nullptr)
+  if (continuation == nullptr) {
     return EVENT_CONT;
+  }
 
   if (m_errno) {
-    if (!shouldDestroy())
+    if (!shouldDestroy()) {
       continuation->handleEvent(NET_EVENT_DATAGRAM_ERROR, this);
+    }
     destroy(); // don't destroy until after calling back with error
     Release();
     return EVENT_CONT;
@@ -88,11 +91,12 @@ UnixUDPConnection::callbackHandler(int event, void *data)
         result.push(p);
         p = pnext;
       }
-      if (!shouldDestroy())
+      if (!shouldDestroy()) {
         continuation->handleEvent(NET_EVENT_DATAGRAM_READ_READY, &result);
-      else {
-        while ((p = result.dequeue()))
+      } else {
+        while ((p = result.dequeue())) {
           p->free();
+        }
       }
     }
   }

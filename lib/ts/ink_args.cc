@@ -176,12 +176,13 @@ process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argume
   //
   // Grab Environment Variables
   //
-  for (i = 0; i < n_argument_descriptions; i++)
+  for (i = 0; i < n_argument_descriptions; i++) {
     if (argument_descriptions[i].env) {
       char type = argument_descriptions[i].type[0];
       char *env = getenv(argument_descriptions[i].env);
-      if (!env)
+      if (!env) {
         continue;
+      }
       switch (type) {
       case 'f':
       case 'F':
@@ -199,6 +200,7 @@ process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argume
         break;
       }
     }
+  }
   //
   // Grab Command Line Arguments
   //
@@ -218,7 +220,7 @@ process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argume
 
     if ((*argv)[1] == '-') {
       // Deal with long options ...
-      for (i = 0; i < n_argument_descriptions; i++)
+      for (i = 0; i < n_argument_descriptions; i++) {
         if (!strcmp(argument_descriptions[i].name, (*argv) + 2)) {
           *argv += strlen(*argv) - 1;
           if (!process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv)) {
@@ -226,6 +228,7 @@ process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argume
           }
           break;
         }
+      }
       if (i >= n_argument_descriptions) {
         return false;
       }
@@ -264,21 +267,24 @@ usage(const ArgumentDescription *argument_descriptions, unsigned n_argument_desc
   (void)argument_descriptions;
   (void)n_argument_descriptions;
   (void)usage_string;
-  if (usage_string)
+  if (usage_string) {
     fprintf(stderr, "%s\n", usage_string);
-  else
+  } else {
     fprintf(stderr, "Usage: %s [--SWITCH [ARG]]\n", program_name);
+  }
   fprintf(stderr, "  switch__________________type__default___description\n");
   for (unsigned i = 0; i < n_argument_descriptions; i++) {
-    if (!argument_descriptions[i].description)
+    if (!argument_descriptions[i].description) {
       continue;
+    }
 
     fprintf(stderr, "  ");
 
-    if ('-' == argument_descriptions[i].key)
+    if ('-' == argument_descriptions[i].key) {
       fprintf(stderr, "   ");
-    else
+    } else {
       fprintf(stderr, "-%c,", argument_descriptions[i].key);
+    }
 
     fprintf(stderr, " --%-17s %s", argument_descriptions[i].name,
             argument_types_descriptions[argument_descriptions[i].type ?

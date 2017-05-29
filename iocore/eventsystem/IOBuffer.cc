@@ -51,8 +51,9 @@ init_buffer_allocators(int iobuffer_advice)
     int64_t s = DEFAULT_BUFFER_BASE_SIZE * (((int64_t)1) << i);
     int64_t a = DEFAULT_BUFFER_ALIGNMENT;
     int n     = i <= default_large_iobuffer_size ? DEFAULT_BUFFER_NUMBER : DEFAULT_HUGE_BUFFER_NUMBER;
-    if (s < a)
+    if (s < a) {
       a = s;
+    }
 
     name = new char[64];
     snprintf(name, 64, "ioBufAllocator[%d]", i);
@@ -86,8 +87,9 @@ MIOBuffer::write(const void *abuf, int64_t alen)
   const char *buf = (const char *)abuf;
   int64_t len     = alen;
   while (len) {
-    if (!_writer)
+    if (!_writer) {
       add_block();
+    }
     int64_t f = _writer->write_avail();
     f         = f < len ? f : len;
     if (f > 0) {
@@ -97,10 +99,11 @@ MIOBuffer::write(const void *abuf, int64_t alen)
       len -= f;
     }
     if (len) {
-      if (!_writer->next)
+      if (!_writer->next) {
         add_block();
-      else
+      } else {
         _writer = _writer->next;
+      }
     }
   }
   return alen;
@@ -170,8 +173,9 @@ MIOBuffer::puts(char *s, int64_t len)
   char *pc = end();
   char *pb = s;
   while (pc < buf_end()) {
-    if (len-- <= 0)
+    if (len-- <= 0) {
       return -1;
+    }
     if (!*pb || *pb == '\n') {
       int64_t n = (int64_t)(pb - s);
       memcpy(end(), s, n + 1); // Upto and including '\n'
@@ -194,8 +198,9 @@ IOBufferReader::read(void *ab, int64_t len)
   int64_t bytes = 0;
 
   while (n && l) {
-    if (n < l)
+    if (n < l) {
       l = n;
+    }
     ::memcpy(b, start(), l);
     consume(l);
     b += l;
@@ -223,14 +228,16 @@ IOBufferReader::memchr(char c, int64_t len, int64_t offset)
       continue;
     }
     int64_t bytes;
-    if (len < 0 || len >= max_bytes)
+    if (len < 0 || len >= max_bytes) {
       bytes = max_bytes;
-    else
+    } else {
       bytes = len;
+    }
     char *s = b->start() + offset;
     char *p = (char *)::memchr(s, c, bytes);
-    if (p)
+    if (p) {
       return (int64_t)(o - start_offset + p - s);
+    }
     o += bytes;
     len -= bytes;
     b      = b->next.get();
@@ -256,10 +263,11 @@ IOBufferReader::memcpy(const void *ap, int64_t len, int64_t offset)
       continue;
     }
     int64_t bytes;
-    if (len < 0 || len >= max_bytes)
+    if (len < 0 || len >= max_bytes) {
       bytes = max_bytes;
-    else
+    } else {
       bytes = len;
+    }
     ::memcpy(p, b->start() + offset, bytes);
     p += bytes;
     len -= bytes;

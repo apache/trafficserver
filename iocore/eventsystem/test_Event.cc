@@ -47,10 +47,12 @@ struct process_killer : public Continuation {
   kill_function(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     printf("Count is %d \n", count);
-    if (count <= 0)
+    if (count <= 0) {
       exit(1);
-    if (count > TEST_TIME_SECOND * TEST_THREADS)
+    }
+    if (count > TEST_TIME_SECOND * TEST_THREADS) {
       exit(1);
+    }
     exit(0);
     return 0;
   }

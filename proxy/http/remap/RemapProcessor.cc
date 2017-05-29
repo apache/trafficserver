@@ -243,8 +243,9 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
     if (is_debug_tag_set("url_rewrite")) {
       int old_host_hdr_len;
       char *old_host_hdr = (char *)request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &old_host_hdr_len);
-      if (old_host_hdr)
+      if (old_host_hdr) {
         Debug("url_rewrite", "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
+      }
     }
     //
     // Create the new host header field being careful that our

@@ -847,8 +847,9 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
         retcode = -13;
       }
       if (retcode) {
-        if (errbuf && errbufsize > 0)
+        if (errbuf && errbufsize > 0) {
           Debug("remap_plugin", "%s", errbuf);
+        }
         dlclose(pi->dlh);
         pi->dlh = nullptr;
         return retcode;

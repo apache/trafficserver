@@ -62,13 +62,15 @@ RegressionTest::RegressionTest(const char *_n, const SourceLocation &_l, TestFun
   : name(_n), location(_l), function(_f), next(nullptr), status(REGRESSION_TEST_NOT_RUN), printed(false), opt(_o)
 {
   if (opt == REGRESSION_OPT_EXCLUSIVE) {
-    if (exclusive_test)
-      this->next   = exclusive_test;
+    if (exclusive_test) {
+      this->next = exclusive_test;
+    }
     exclusive_test = this;
   } else {
-    if (test)
+    if (test) {
       this->next = test;
-    test         = this;
+    }
+    test = this;
   }
 }
 
@@ -91,18 +93,20 @@ start_test(RegressionTest *t, int regression_level)
 int
 RegressionTest::run(const char *atest, int regression_level)
 {
-  if (atest)
+  if (atest) {
     dfa.compile(atest);
-  else
+  } else {
     dfa.compile(".*");
+  }
 
   fprintf(stderr, "REGRESSION_TEST initialization begun\n");
   // start the non exclusive tests
   for (RegressionTest *t = test; t; t = t->next) {
     if ((dfa.match(t->name) >= 0)) {
       int res = start_test(t, regression_level);
-      if (res == REGRESSION_TEST_FAILED)
+      if (res == REGRESSION_TEST_FAILED) {
         final_status = REGRESSION_TEST_FAILED;
+      }
     }
   }
 
@@ -151,10 +155,12 @@ RegressionTest::run_some(int regression_level)
   for (; current; current = current->next) {
     if ((dfa.match(current->name) >= 0)) {
       int res = start_test(current, regression_level);
-      if (res == REGRESSION_TEST_INPROGRESS)
+      if (res == REGRESSION_TEST_INPROGRESS) {
         return res;
-      if (res == REGRESSION_TEST_FAILED)
+      }
+      if (res == REGRESSION_TEST_FAILED) {
         final_status = REGRESSION_TEST_FAILED;
+      }
     }
   }
   return REGRESSION_TEST_INPROGRESS;
@@ -166,8 +172,9 @@ RegressionTest::check_status(int regression_level)
   int status = REGRESSION_TEST_PASSED;
   if (current) {
     status = run_some(regression_level);
-    if (!current)
+    if (!current) {
       return status;
+    }
   }
 
   RegressionTest *t = test;
@@ -265,8 +272,9 @@ REGRESSION_TEST(Regression)(RegressionTest *t, int atype, int *status)
   (void)atype;
   rprintf(t, "regression test\n");
   rperf(t, "speed", 100.0);
-  if (!test)
+  if (!test) {
     *status = REGRESSION_TEST_FAILED;
-  else
+  } else {
     *status = REGRESSION_TEST_PASSED;
+  }
 }

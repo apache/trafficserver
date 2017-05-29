@@ -130,8 +130,9 @@ SplitDNSConfig::startup()
 void
 SplitDNSConfig::reconfigure()
 {
-  if (0 == gsplit_dns_enabled)
+  if (0 == gsplit_dns_enabled) {
     return;
+  }
 
   SplitDNS *params = new SplitDNS;
 
@@ -233,19 +234,22 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
     int len        = strlen(pHost);
     HostLeaf *pxHL = (HostLeaf *)m_pxLeafArray;
     for (int i = 0; i < m_numEle; i++) {
-      if (nullptr == pxHL)
+      if (nullptr == pxHL) {
         break;
+      }
 
-      if (false == pxHL[i].isNot && pxHL[i].len > len)
+      if (false == pxHL[i].isNot && pxHL[i].len > len) {
         continue;
+      }
 
       int idx      = len - pxHL[i].len;
       char *pH     = &pHost[idx];
       char *pMatch = (char *)pxHL[i].match;
       char cNot    = *pMatch;
 
-      if ('!' == cNot)
+      if ('!' == cNot) {
         pMatch++;
+      }
 
       int res = memcmp(pH, pMatch, pxHL[i].len);
 
@@ -325,10 +329,12 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
        ---------------------------------------- */
     if (tmp) {
       char *scan = tmp + 1;
-      for (; *scan != '\0' && ParseRules::is_digit(*scan); scan++)
+      for (; *scan != '\0' && ParseRules::is_digit(*scan); scan++) {
         ;
-      for (; *scan != '\0' && ParseRules::is_wslfcr(*scan); scan++)
+      }
+      for (; *scan != '\0' && ParseRules::is_wslfcr(*scan); scan++) {
         ;
+      }
 
       if (*scan != '\0') {
         return "Garbage trailing entry or invalid separator";
@@ -411,8 +417,9 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
     current = pTok[i];
     cnt     = sz += strlen(current);
 
-    if (MAXDNAME - 1 < sz)
+    if (MAXDNAME - 1 < sz) {
       break;
+    }
 
     memcpy(pSp, current, cnt);
     pSp += (cnt + 1);
@@ -544,8 +551,9 @@ ink_split_dns_init(ModuleVersion v)
   static int init_called = 0;
 
   ink_release_assert(!checkModuleVersion(v, SPLITDNS_MODULE_VERSION));
-  if (init_called)
+  if (init_called) {
     return;
+  }
 
   init_called = 1;
 }
