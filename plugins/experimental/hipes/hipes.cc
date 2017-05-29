@@ -391,12 +391,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
         // Alright, now match up this header flag with the request (or default) flag
         TSDebug(PLUGIN_NAME, "Extracted %s header with value %d", h_conf->x_hipes_header.c_str(), hdr_flag);
         switch (redirect_flag) {
-        case 0:
-          if (hdr_flag == 2) {
-            TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
-            has_error = true;
-          } // Everything else is a "no"
-          break;
         case 1:
           if (hdr_flag == 2) {
             do_redirect = true;
