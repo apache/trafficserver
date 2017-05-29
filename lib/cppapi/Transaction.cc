@@ -415,7 +415,7 @@ namespace
 class initializeHandles
 {
 public:
-  typedef TSReturnCode (*GetterFunction)(TSHttpTxn, TSMBuffer *, TSMLoc *);
+  using GetterFunction = TSReturnCode (*)(TSHttpTxn, TSMBuffer *, TSMLoc *);
   initializeHandles(GetterFunction getter) : getter_(getter) {}
   bool
   operator()(TSHttpTxn txn, TSMBuffer &hdr_buf, TSMLoc &hdr_loc, const char *handles_name)

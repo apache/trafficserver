@@ -43,7 +43,7 @@ static RecRawStatBlock *socksproxy_stat_block;
 #define SOCKSPROXY_INC_STAT(x) RecIncrRawStat(socksproxy_stat_block, mutex->thread_holding, x)
 
 struct SocksProxy : public Continuation {
-  typedef int (SocksProxy::*EventHandler)(int event, void *data);
+  using EventHandler = int (SocksProxy::*)(int, void *);
 
   enum {
     SOCKS_INIT = 1,
@@ -481,7 +481,7 @@ new_SocksProxy(NetVConnection *netVC)
 }
 
 struct SocksAccepter : public Continuation {
-  typedef int (SocksAccepter::*SocksAccepterHandler)(int, void *);
+  using SocksAccepterHandler = int (SocksAccepter::*)(int, void *);
 
   int
   mainEvent(int event, NetVConnection *netVC)

@@ -69,7 +69,7 @@ struct md5_key {
   unsigned char key[MD5_DIGEST_LENGTH];
 };
 
-typedef void (*HashComponent)(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX *);
+using HashComponent = void (*)(TSHttpTxn, TSRemapRequestInfo *, MD5_CTX *);
 
 // Hash on the source (client) IP address.
 void
@@ -146,7 +146,7 @@ done:
 
 struct HashBalancer : public BalancerInstance {
   typedef std::map<md5_key, BalancerTarget> hash_ring_type;
-  typedef std::vector<HashComponent> hash_part_type;
+  using hash_part_type = std::vector<HashComponent>;
 
   enum {
     iterations = 10,

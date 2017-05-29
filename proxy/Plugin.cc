@@ -36,7 +36,7 @@
 
 static const char *plugin_dir = ".";
 
-typedef void (*init_func_t)(int argc, char *argv[]);
+using init_func_t = void (*)(int, char **);
 
 // Plugin registration vars
 //

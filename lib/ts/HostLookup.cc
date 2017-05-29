@@ -554,7 +554,7 @@ charIndex::iter_next(charIndexIterState *s)
 
 // Since the only iter state is an index into the
 //   array typedef it
-typedef int hostArrayIterState;
+using hostArrayIterState = int;
 
 class hostArray
 {

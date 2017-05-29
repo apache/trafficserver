@@ -1740,7 +1740,7 @@ HostDBInfo::rr()
 }
 
 struct ShowHostDB;
-typedef int (ShowHostDB::*ShowHostDBEventHandler)(int event, Event *data);
+using ShowHostDBEventHandler = int (ShowHostDB::*)(int, Event *);
 struct ShowHostDB : public ShowCont {
   char *name;
   uint16_t port;
@@ -2026,7 +2026,7 @@ register_ShowHostDB(Continuation *c, HTTPHdr *h)
 #define HOSTDB_TEST_LENGTH 100000
 
 struct HostDBTestReverse;
-typedef int (HostDBTestReverse::*HostDBTestReverseHandler)(int, void *);
+using HostDBTestReverseHandler = int (HostDBTestReverse::*)(int, void *);
 struct HostDBTestReverse : public Continuation {
   RegressionTest *test;
   int type;
@@ -2130,14 +2130,14 @@ ink_hostdb_init(ModuleVersion v)
 
 /// Pair of IP address and host name from a host file.
 struct HostFilePair {
-  typedef HostFilePair self;
+  using self = HostFilePair;
   IpAddr ip;
   const char *name;
 };
 
 struct HostDBFileContinuation : public Continuation {
-  typedef HostDBFileContinuation self;
-  typedef std::vector<INK_MD5> Keys;
+  using self = HostDBFileContinuation;
+  using Keys = std::vector<INK_MD5>;
 
   int idx          = 0;       ///< Working index.
   const char *name = nullptr; ///< Host name (just for debugging)

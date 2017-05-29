@@ -134,9 +134,9 @@ namespace detail
   struct IpMapBase {
     friend class ::IpMap;
 
-    typedef IpMapBase<N> self_type;      ///< Self reference type.
-    typedef typename N::ArgType ArgType; ///< Import type.
-    typedef typename N::Metric Metric;   ///< Import type.g482
+    using self_type = IpMapBase<N>;             ///< Self reference type.
+    using ArgType   = typename N::ArgType;      ///< Import type.
+    using Metric    = typename Ip4Node::Metric; ///< Import type.g482
 
     IpMapBase() : _root(nullptr) {}
     ~IpMapBase() { this->clear(); }
@@ -735,7 +735,7 @@ namespace detail
     friend struct IpMapBase<Ip4Node>;
 
   public:
-    typedef Ip4Node self_type; ///< Self reference type.
+    using self_type = ts::detail::Ip4Node; ///< Self reference type.
 
     /// Construct with values.
     Ip4Node(ArgType min, ///< Minimum address (host order).
@@ -871,7 +871,7 @@ namespace detail
   };
 
   //----------------------------------------------------------------------------
-  typedef Interval<sockaddr_in6> Ip6Span;
+  using Ip6Span = Interval<sockaddr_in6>;
 
   /** Node for IPv6 map.
   */
@@ -880,10 +880,10 @@ namespace detail
     friend struct IpMapBase<Ip6Node>;
 
   public:
-    typedef Ip6Node self_type; ///< Self reference type.
+    using self_type = ts::detail::Ip6Node; ///< Self reference type.
     /// Override @c ArgType from @c Interval because the convention
     /// is to use a pointer, not a reference.
-    typedef Metric const *ArgType;
+    using ArgType = const ts::detail::Interval<sockaddr_in6, const sockaddr_in6 &>::Metric *;
 
     /// Construct from pointers.
     Ip6Node(ArgType min, ///< Minimum address (network order).

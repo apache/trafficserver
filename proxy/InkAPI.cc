@@ -2133,8 +2133,8 @@ TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
   return url_string_get(url_impl, nullptr, length, nullptr);
 }
 
-typedef const char *(URL::*URLPartGetF)(int *length);
-typedef void (URL::*URLPartSetF)(const char *value, int length);
+using URLPartGetF = const char *(URL::*)(int *);
+using URLPartSetF = void (URL::*)(const char *, int);
 
 static const char *
 URLPartGet(TSMBuffer bufp, TSMLoc obj, int *length, URLPartGetF url_f)

@@ -59,7 +59,7 @@ struct cache_scan_state_t {
   bool write_pending;
 };
 
-typedef struct cache_scan_state_t cache_scan_state;
+using cache_scan_state = struct cache_scan_state_t;
 
 //----------------------------------------------------------------------------
 static int

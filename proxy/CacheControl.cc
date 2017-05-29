@@ -75,7 +75,7 @@ CC_delete_table()
 //  a timeout
 //
 struct CC_FreerContinuation;
-typedef int (CC_FreerContinuation::*CC_FreerContHandler)(int, void *);
+using CC_FreerContHandler = int (CC_FreerContinuation::*)(int, void *);
 struct CC_FreerContinuation : public Continuation {
   CC_table *p;
   int

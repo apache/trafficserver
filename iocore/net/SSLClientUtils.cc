@@ -30,7 +30,7 @@
 #include <openssl/pem.h>
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
-typedef const SSL_METHOD *ink_ssl_method_t;
+using ink_ssl_method_t = const SSL_METHOD *;
 #else
 typedef SSL_METHOD *ink_ssl_method_t;
 #endif

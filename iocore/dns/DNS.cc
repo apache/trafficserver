@@ -1655,7 +1655,7 @@ ink_dns_init(ModuleVersion v)
 
 #ifdef TS_HAS_TESTS
 struct DNSRegressionContinuation;
-typedef int (DNSRegressionContinuation::*DNSRegContHandler)(int, void *);
+using DNSRegContHandler = int (DNSRegressionContinuation::*)(int, void *);
 
 struct DNSRegressionContinuation : public Continuation {
   int hosts;

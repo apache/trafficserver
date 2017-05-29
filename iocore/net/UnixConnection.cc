@@ -177,8 +177,8 @@ namespace
     @endcode
  */
 template <typename T> struct cleaner {
-  T *obj;                      ///< Object instance.
-  typedef void (T::*method)(); ///< Method signature.
+  T *obj;                       ///< Object instance.
+  using method = void (T::*)(); ///< Method signature.
   method m;
 
   cleaner(T *_obj, method _method) : obj(_obj), m(_method) {}

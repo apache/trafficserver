@@ -43,7 +43,7 @@ namespace
 {
 std::string ConfigPath;
 typedef std::pair<IpAddr, IpAddr> IpRange;
-typedef std::deque<IpRange> IpRangeQueue;
+using IpRangeQueue = std::deque<IpRange>;
 IpRangeQueue ClientBlindTunnelIp;
 
 Configuration Config; // global configuration

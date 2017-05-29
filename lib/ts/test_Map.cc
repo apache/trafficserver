@@ -24,15 +24,15 @@
 #include "ts/Map.h"
 #include <list>
 
-typedef const char cchar;
+using cchar = const char;
 
 struct Item {
   LINK(Item, m_link);
   struct Hash {
-    typedef uint32_t ID;
-    typedef uint32_t Key;
-    typedef Item Value;
-    typedef DList(Item, m_link) ListHead;
+    using ID       = uint32_t;
+    using Key      = uint32_t;
+    using Value    = Item;
+    using ListHead = DLL<Item, Item::Link_m_link>;
 
     static ID
     hash(Key key)
@@ -61,7 +61,7 @@ Item::Hash::equal(Key lhs, Key rhs)
   return lhs == rhs;
 }
 
-typedef TSHashTable<Item::Hash> Table;
+using Table = TSHashTable<Item::Hash>;
 
 void
 test_TSHashTable()
