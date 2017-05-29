@@ -134,9 +134,9 @@ namespace detail
   struct IpMapBase {
     friend class ::IpMap;
 
-    using self_type = IpMapBase<N>;             ///< Self reference type.
-    using ArgType   = typename N::ArgType;      ///< Import type.
-    using Metric    = typename Ip4Node::Metric; ///< Import type.g482
+    using self_type = IpMapBase<N>;        ///< Self reference type.
+    using ArgType   = typename N::ArgType; ///< Import type.
+    using Metric    = typename N::Metric;  ///< Import type.g482
 
     IpMapBase() : _root(nullptr) {}
     ~IpMapBase() { this->clear(); }

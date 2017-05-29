@@ -31,7 +31,7 @@
 
 using namespace std;
 
-using Tree = Http2DependencyTree<std::__cxx11::string *>;
+using Tree = Http2DependencyTree<std::string *>;
 
 /**
  * Exclusive Dependency Creation
