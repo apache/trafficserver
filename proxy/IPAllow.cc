@@ -305,10 +305,12 @@ IpAllow::BuildTable()
     Warning("%s No entries in %s. All IP Addresses will be blocked", module_name, config_file_path);
   } else {
     // convert the coloring from indices to pointers.
-    for (auto &item : _src_map)
+    for (auto &item : _src_map) {
       item.setData(&_src_acls[reinterpret_cast<size_t>(item.data())]);
-    for (auto &item : _dest_map)
+    }
+    for (auto &item : _dest_map) {
       item.setData(&_dest_acls[reinterpret_cast<size_t>(item.data())]);
+    }
   }
 
   if (is_debug_tag_set("ip-allow")) {

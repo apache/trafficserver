@@ -85,8 +85,9 @@ CB_Command_Log(TSCont contp, TSEvent event, void *edata)
   if (std::string::npos != (colon_idx = command->find(':'))) {
     std::string path = command->substr(colon_idx + 1);
     // The length of the data can include a trailing null, clip it.
-    if (path.length() > 0 && path.back() == '\0')
+    if (path.length() > 0 && path.back() == '\0') {
       path.pop_back();
+    }
     if (path.length() > 0) {
       std::ofstream out;
       out.open(path, std::ios::out | std::ios::app);
@@ -127,8 +128,9 @@ count_all_headers(TSMBuffer &bufp, TSMLoc &hdr_loc, std::map<std::string, unsign
     std::string str      = std::string(hdr_name, hdr_len);
 
     // make case-insensitive by converting to lowercase
-    for (auto &c : str)
+    for (auto &c : str) {
       c = tolower(c);
+    }
 
     ++map[str];
 

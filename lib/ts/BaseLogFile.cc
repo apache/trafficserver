@@ -68,10 +68,11 @@ BaseLogFile::~BaseLogFile()
 {
   log_log_trace("entering BaseLogFile destructor, m_name=%s, this=%p\n", m_name.get(), this);
 
-  if (m_is_regfile)
+  if (m_is_regfile) {
     close_file();
-  else
+  } else {
     log_log_trace("not a regular file, not closing, m_name=%s, this=%p\n", m_name.get(), this);
+  }
 
   log_log_trace("exiting BaseLogFile destructor, this=%p\n", this);
 }
@@ -157,10 +158,11 @@ BaseLogFile::roll(long interval_start, long interval_end)
     // no easy way of keeping track of the timestamp of the first
     // transaction
     log_log_trace("in BaseLogFile::roll(..), didn't use metadata starttime, used earlist available starttime\n");
-    if (interval_start == 0)
+    if (interval_start == 0) {
       start = m_start_time;
-    else
+    } else {
       start = (m_start_time < interval_start) ? m_start_time : interval_start;
+    }
   }
   log_log_trace("in BaseLogFile::roll(..), start = %ld, m_start_time = %ld, interval_start = %ld\n", start, m_start_time,
                 interval_start);
@@ -222,8 +224,9 @@ BaseLogFile::roll()
   time_t start;
   time_t now = time(nullptr);
 
-  if (!m_meta_info || !m_meta_info->get_creation_time(&start))
+  if (!m_meta_info || !m_meta_info->get_creation_time(&start)) {
     start = 0L;
+  }
 
   return roll(start, now);
 }
@@ -300,10 +303,11 @@ BaseLogFile::open_file(int perm)
   } else {
     // The log file does not exist, so we create a new MetaInfo object
     //  which will save itself to disk right away (in the constructor)
-    if (m_has_signature)
+    if (m_has_signature) {
       m_meta_info = new BaseMetaInfo(m_name.get(), (long)time(nullptr), m_signature);
-    else
+    } else {
       m_meta_info = new BaseMetaInfo(m_name.get(), (long)time(nullptr));
+    }
   }
 
   // open actual log file (not metainfo)
@@ -324,8 +328,9 @@ BaseLogFile::open_file(int perm)
   if (perm != -1) {
     // means LogFile passed in some permissions we need to set
     log_log_trace("BaseLogFile attempting to change %s's permissions to %o\n", m_name.get(), perm);
-    if (elevating_chmod(m_name.get(), perm) != 0)
+    if (elevating_chmod(m_name.get(), perm) != 0) {
       log_log_error("Error changing logfile=%s permissions: %s\n", m_name.get(), strerror(errno));
+    }
   }
 
   // set m_bytes_written to force the rolling based on filesize.

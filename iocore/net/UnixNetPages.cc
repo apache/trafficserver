@@ -64,8 +64,9 @@ struct ShowNet : public ShowCont {
     forl_LL(UnixNetVConnection, vc, nh->open_list)
     {
       //      uint16_t port = ats_ip_port_host_order(&addr.sa);
-      if (ats_is_ip(&addr) && !ats_ip_addr_port_eq(&addr.sa, vc->get_remote_addr()))
+      if (ats_is_ip(&addr) && !ats_ip_addr_port_eq(&addr.sa, vc->get_remote_addr())) {
         continue;
+      }
       //      if (port && port != ats_ip_port_host_order(&vc->server_addr.sa) && port != vc->accept_port)
       //        continue;
       char ipbuf[INET6_ADDRSTRLEN];
@@ -103,9 +104,9 @@ struct ShowNet : public ShowCont {
                       vc->f.shutdown, vc->closed ? "closed " : ""));
     }
     ithread++;
-    if (ithread < eventProcessor.n_threads_for_type[ET_NET])
+    if (ithread < eventProcessor.n_threads_for_type[ET_NET]) {
       eventProcessor.eventthread[ET_NET][ithread]->schedule_imm(this);
-    else {
+    } else {
       CHECK_SHOW(show("</table>\n"));
       return complete(event, e);
     }
@@ -166,10 +167,11 @@ struct ShowNet : public ShowCont {
     CHECK_SHOW(show("<tr><th>#</th><th>Read Priority</th><th>Read Bucket</th><th>Write Priority</th><th>Write Bucket</th></tr>\n"));
     CHECK_SHOW(show("</table>\n"));
     ithread++;
-    if (ithread < eventProcessor.n_threads_for_type[ET_NET])
+    if (ithread < eventProcessor.n_threads_for_type[ET_NET]) {
       eventProcessor.eventthread[ET_NET][ithread]->schedule_imm(this);
-    else
+    } else {
       return complete(event, e);
+    }
     return EVENT_CONT;
   }
 
@@ -220,20 +222,24 @@ register_ShowNet(Continuation *c, HTTPHdr *h)
     const char *query = h->url_get()->query_get(&query_len);
     s->sarg           = ats_strndup(query, query_len);
     char *gn          = nullptr;
-    if (s->sarg)
+    if (s->sarg) {
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
-    if (gn)
+    }
+    if (gn) {
       ats_ip_pton(gn + 1, &s->addr);
+    }
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);
   } else if (STREQ_PREFIX(path, path_len, "ports")) {
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
     s->sarg           = ats_strndup(query, query_len);
     char *gn          = nullptr;
-    if (s->sarg)
+    if (s->sarg) {
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
-    if (gn)
+    }
+    if (gn) {
       ats_ip_port_cast(&s->addr.sa) = htons(atoi(gn + 1));
+    }
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);
   }
   eventProcessor.schedule_imm(s, ET_TASK);

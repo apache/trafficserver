@@ -1383,12 +1383,13 @@ check_memory()
     memfree = swapfree = swapsize = 0;
     if ((fp = fopen("/proc/meminfo", "r"))) {
       while (fgets(buf, sizeof buf, fp)) {
-        if (strncmp(buf, "MemFree:", sizeof "MemFree:" - 1) == 0)
+        if (strncmp(buf, "MemFree:", sizeof "MemFree:" - 1) == 0) {
           memfree = strtoll(buf + sizeof "MemFree:" - 1, nullptr, 10);
-        else if (strncmp(buf, "SwapFree:", sizeof "SwapFree:" - 1) == 0)
+        } else if (strncmp(buf, "SwapFree:", sizeof "SwapFree:" - 1) == 0) {
           swapfree = strtoll(buf + sizeof "SwapFree:" - 1, nullptr, 10);
-        else if (strncmp(buf, "SwapTotal:", sizeof "SwapTotal:" - 1) == 0)
+        } else if (strncmp(buf, "SwapTotal:", sizeof "SwapTotal:" - 1) == 0) {
           swapsize = strtoll(buf + sizeof "SwapTotal:" - 1, nullptr, 10);
+        }
       }
       fclose(fp);
       // simple heuristic for linux

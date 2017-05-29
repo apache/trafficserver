@@ -144,10 +144,11 @@ Transaction::configStringGet(TSOverridableConfigKey conf, std::string &value)
   const char *svalue;
   int length;
   bool zret = TS_SUCCESS == TSHttpTxnConfigStringGet(state_->txn_, conf, &svalue, &length);
-  if (zret)
+  if (zret) {
     value.assign(svalue, length);
-  else
+  } else {
     value.clear();
+  }
   return zret;
 }
 
@@ -262,8 +263,9 @@ Transaction::getEffectiveUrl()
     ret_val.assign(buf, length);
   }
 
-  if (buf)
+  if (buf) {
     TSfree(buf);
+  }
 
   return ret_val;
 }

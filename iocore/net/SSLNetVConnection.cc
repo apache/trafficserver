@@ -340,13 +340,15 @@ SSLNetVConnection::read_raw_data()
         if (a > 0) {
           tiovec[niov].iov_base = b->_end;
           int64_t togo          = toread - total_read - rattempted;
-          if (a > togo)
-            a                  = togo;
+          if (a > togo) {
+            a = togo;
+          }
           tiovec[niov].iov_len = a;
           rattempted += a;
           niov++;
-          if (a >= togo)
+          if (a >= togo) {
             break;
+          }
         }
         b = b->next.get();
       }
@@ -367,10 +369,11 @@ SSLNetVConnection::read_raw_data()
 
     // if we have already moved some bytes successfully, summarize in r
     if (total_read != rattempted) {
-      if (r <= 0)
+      if (r <= 0) {
         r = total_read - rattempted;
-      else
+      } else {
         r = total_read - rattempted + r;
+      }
     }
     // check for errors
     if (r <= 0) {
@@ -524,8 +527,9 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         readSignalDone(VC_EVENT_READ_COMPLETE, nh);
       } else {
         read.triggered = 1;
-        if (read.enabled)
+        if (read.enabled) {
           nh->read_ready_list.in_or_enqueue(this);
+        }
       }
     } else if (ret == SSL_WAIT_FOR_HOOK) {
       // avoid readReschedule - done when the plugin calls us back to reenable
@@ -600,10 +604,11 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   case SSL_READ_WOULD_BLOCK:
     if (lock.get_mutex() != s->vio.mutex.get()) {
       Debug("ssl", "ssl_read_from_net, mutex switched");
-      if (ret == SSL_READ_WOULD_BLOCK)
+      if (ret == SSL_READ_WOULD_BLOCK) {
         readReschedule(nh);
-      else
+      } else {
         writeReschedule(nh);
+      }
       return;
     }
     // reset the trigger and remove from the ready queue
@@ -612,10 +617,11 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     nh->read_ready_list.remove(this);
     Debug("ssl", "read_from_net, read finished - would block");
 #ifdef TS_USE_PORT
-    if (ret == SSL_READ_WOULD_BLOCK)
+    if (ret == SSL_READ_WOULD_BLOCK) {
       readReschedule(nh);
-    else
+    } else {
       writeReschedule(nh);
+    }
 #endif
     break;
 
@@ -967,10 +973,11 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         const char *certfile = (const char *)this->options.clientCertificate;
         if (certfile != nullptr) {
           clientCTX = params->getCTX(certfile);
-          if (clientCTX != nullptr)
+          if (clientCTX != nullptr) {
             Debug("ssl", "context for %s is found at %p", this->options.clientCertificate.get(), (void *)clientCTX);
-          else
+          } else {
             Debug("ssl", "failed to find context for %s", this->options.clientCertificate.get());
+          }
         }
       } else {
         clientCTX = params->client_ctx;
@@ -1255,8 +1262,9 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     }
 
     // if the handshake is complete and write is enabled reschedule the write
-    if (closed == 0 && write.enabled)
+    if (closed == 0 && write.enabled) {
       writeReschedule(nh);
+    }
 
     SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_out_stat);
 
@@ -1408,10 +1416,11 @@ SSLNetVConnection::sslContextSet(void *ctx)
 {
 #if TS_USE_TLS_SNI
   bool zret = true;
-  if (ssl)
+  if (ssl) {
     SSL_set_SSL_CTX(ssl, static_cast<SSL_CTX *>(ctx));
-  else
+  } else {
     zret = false;
+  }
 #else
   bool zret      = false;
 #endif
@@ -1518,8 +1527,9 @@ int
 SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
 {
   int retval = super::populate(con, c, arg);
-  if (retval != EVENT_DONE)
+  if (retval != EVENT_DONE) {
     return retval;
+  }
   // Add in the SSL data
   this->ssl = (SSL *)arg;
   // Maybe bring over the stats?
@@ -1545,12 +1555,13 @@ SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
     } else if (*proto == '.') {
       ++proto; // skip .
       if (proto.size() == 1) {
-        if (*proto == '1')
+        if (*proto == '1') {
           retval = IP_PROTO_TAG_TLS_1_1;
-        else if (*proto == '2')
+        } else if (*proto == '2') {
           retval = IP_PROTO_TAG_TLS_1_2;
-        else if (*proto == '3')
+        } else if (*proto == '3') {
           retval = IP_PROTO_TAG_TLS_1_3;
+        }
       }
     }
   }
@@ -1563,8 +1574,9 @@ SSLNetVConnection::populate_protocol(ts::StringView *results, int n) const
   int retval = 0;
   if (n > retval) {
     results[retval] = map_tls_protocol_to_tag(getSSLProtocol());
-    if (results[retval])
+    if (results[retval]) {
       ++retval;
+    }
     if (n > retval) {
       retval += super::populate_protocol(results + retval, n - retval);
     }

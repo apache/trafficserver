@@ -1675,8 +1675,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (mlock_flags == 2) {
     if (0 != mlockall(MCL_CURRENT | MCL_FUTURE)) {
       Warning("Unable to mlockall() on startup");
-    } else
+    } else {
       Debug("server", "Successfully called mlockall()");
+    }
   }
 #endif
 

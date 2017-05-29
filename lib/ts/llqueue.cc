@@ -108,16 +108,19 @@ enqueue(LLQ *Q, void *data)
   new_val->data = data;
   new_val->next = nullptr;
 
-  if (Q->tail)
+  if (Q->tail) {
     Q->tail->next = new_val;
-  Q->tail         = new_val;
+  }
+  Q->tail = new_val;
 
-  if (Q->head == nullptr)
+  if (Q->head == nullptr) {
     Q->head = Q->tail;
+  }
 
   Q->len++;
-  if (Q->len > Q->highwater)
+  if (Q->len > Q->highwater) {
     Q->highwater = Q->len;
+  }
   ink_mutex_release(&(Q->mux));
   ink_sem_post(&(Q->sema));
   return 1;
@@ -193,8 +196,9 @@ dequeue(LLQ *Q)
   rec = Q->head;
 
   Q->head = Q->head->next;
-  if (Q->head == nullptr)
+  if (Q->head == nullptr) {
     Q->tail = nullptr;
+  }
 
   d = rec->data;
   // freerec(Q, rec);

@@ -282,14 +282,15 @@ namespace detail
     N *n    = _root;   // current node to test.
     N *zret = nullptr; // best node so far.
     while (n) {
-      if (target < n->_min)
+      if (target < n->_min) {
         n = left(n);
-      else {
+      } else {
         zret = n; // this is a better candidate.
-        if (n->_max < target)
+        if (n->_max < target) {
           n = right(n);
-        else
+        } else {
           break;
+        }
       }
     }
     return zret;
@@ -413,8 +414,9 @@ namespace detail
               y->decrementMax();
               this->insertBefore(n, y);
             }
-            if (max <= n->_max) // nothing past node
+            if (max <= n->_max) { // nothing past node
               return *this;
+            }
             min = n->_max;
             N::inc(min);
             n = next(n);
@@ -489,15 +491,16 @@ namespace detail
         // min_1 is safe here because n->_min < min so min is not zero.
         x = n;
         // If the existing span covers the requested span, we're done.
-        if (x->_max >= max)
+        if (x->_max >= max) {
           return *this;
+        }
         x->setMax(max);
       } else if (n->_max <= max) {
         // Can only have left skew overlap, otherwise disjoint.
         // Clip if overlap.
-        if (n->_max >= min)
+        if (n->_max >= min) {
           n->setMax(min_1);
-        else if (next(n) && n->_max <= max) {
+        } else if (next(n) && n->_max <= max) {
           // request region covers next span so we can re-use that node.
           x = next(n);
           x->setMin(min).setMax(max).setData(payload);
@@ -518,10 +521,11 @@ namespace detail
       n = next(n); // lower bound span handled, move on.
       if (!x) {
         x = new N(min, max, payload);
-        if (n)
+        if (n) {
           this->insertBefore(n, x);
-        else
+        } else {
           this->append(x); // note that since n == 0 we'll just return.
+        }
       }
     } else if (nullptr != (n = this->getHead()) &&     // at least one node in tree.
                n->_data == payload &&                  // payload matches
@@ -531,8 +535,9 @@ namespace detail
       x = n;
       n = next(n);
       x->setMin(min);
-      if (x->_max < max)
+      if (x->_max < max) {
         x->setMax(max);
+      }
     } else {
       x = new N(min, max, payload);
       this->prepend(x);
@@ -605,10 +610,11 @@ namespace detail
   IpMapBase<N>::insertAfter(N *spot, N *n)
   {
     N *c = right(spot);
-    if (!c)
+    if (!c) {
       spot->setChild(n, N::RIGHT);
-    else
+    } else {
       spot->_next->setChild(n, N::LEFT);
+    }
 
     _list.insertAfter(spot, n);
     _root = static_cast<N *>(n->rebalanceAfterInsert());
@@ -619,10 +625,11 @@ namespace detail
   IpMapBase<N>::insertBefore(N *spot, N *n)
   {
     N *c = left(spot);
-    if (!c)
+    if (!c) {
       spot->setChild(n, N::LEFT);
-    else
+    } else {
       spot->_prev->setChild(n, N::RIGHT);
+    }
 
     _list.insertBefore(spot, n);
     _root = static_cast<N *>(n->rebalanceAfterInsert());
@@ -632,10 +639,11 @@ namespace detail
   void
   IpMapBase<N>::prepend(N *n)
   {
-    if (!_root)
+    if (!_root) {
       _root = n;
-    else
+    } else {
       _root = static_cast<N *>(_list.getHead()->setChild(n, N::LEFT)->rebalanceAfterInsert());
+    }
     _list.prepend(n);
   }
 
@@ -643,10 +651,11 @@ namespace detail
   void
   IpMapBase<N>::append(N *n)
   {
-    if (!_root)
+    if (!_root) {
       _root = n;
-    else
+    } else {
       _root = static_cast<N *>(_list.getTail()->setChild(n, N::RIGHT)->rebalanceAfterInsert());
+    }
     _list.append(n);
   }
 
@@ -666,14 +675,15 @@ namespace detail
     bool zret = false;
     N *n      = _root; // current node to test.
     while (n) {
-      if (x < n->_min)
+      if (x < n->_min) {
         n = left(n);
-      else if (n->_max < x)
+      } else if (n->_max < x) {
         n = right(n);
-      else {
-        if (ptr)
+      } else {
+        if (ptr) {
           *ptr = n->_data;
-        zret   = true;
+        }
+        zret = true;
         break;
       }
     }
@@ -1064,16 +1074,18 @@ IpMap::~IpMap()
 inline ts::detail::Ip4Map *
 IpMap::force4()
 {
-  if (!_m4)
+  if (!_m4) {
     _m4 = new ts::detail::Ip4Map;
+  }
   return _m4;
 }
 
 inline ts::detail::Ip6Map *
 IpMap::force6()
 {
-  if (!_m6)
+  if (!_m6) {
     _m6 = new ts::detail::Ip6Map;
+  }
   return _m6;
 }
 
@@ -1119,11 +1131,13 @@ IpMap::unmark(sockaddr const *min, sockaddr const *max)
 {
   ink_assert(min->sa_family == max->sa_family);
   if (AF_INET == min->sa_family) {
-    if (_m4)
+    if (_m4) {
       _m4->unmark(ntohl(ats_ip4_addr_cast(min)), ntohl(ats_ip4_addr_cast(max)));
+    }
   } else if (AF_INET6 == min->sa_family) {
-    if (_m6)
+    if (_m6) {
       _m6->unmark(ats_ip6_cast(min), ats_ip6_cast(max));
+    }
   }
   return *this;
 }
@@ -1131,8 +1145,9 @@ IpMap::unmark(sockaddr const *min, sockaddr const *max)
 IpMap &
 IpMap::unmark(in_addr_t min, in_addr_t max)
 {
-  if (_m4)
+  if (_m4) {
     _m4->unmark(ntohl(min), ntohl(max));
+  }
   return *this;
 }
 
@@ -1159,20 +1174,24 @@ size_t
 IpMap::getCount() const
 {
   size_t zret = 0;
-  if (_m4)
+  if (_m4) {
     zret += _m4->getCount();
-  if (_m6)
+  }
+  if (_m6) {
     zret += _m6->getCount();
+  }
   return zret;
 }
 
 IpMap &
 IpMap::clear()
 {
-  if (_m4)
+  if (_m4) {
     _m4->clear();
-  if (_m6)
+  }
+  if (_m6) {
     _m6->clear();
+  }
   return *this;
 }
 
@@ -1180,10 +1199,12 @@ IpMap::iterator
 IpMap::begin() const
 {
   Node *x = nullptr;
-  if (_m4)
+  if (_m4) {
     x = _m4->getHead();
-  if (!x && _m6)
+  }
+  if (!x && _m6) {
     x = _m6->getHead();
+  }
   return iterator(this, x);
 }
 
@@ -1193,8 +1214,9 @@ IpMap::iterator &IpMap::iterator::operator++()
     // If we go past the end of the list see if it was the v4 list
     // and if so, move to the v6 list (if it's there).
     Node *x = static_cast<Node *>(_node->_next);
-    if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m4->getTail())
-      x   = _tree->_m6->getHead();
+    if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m4->getTail()) {
+      x = _tree->_m6->getHead();
+    }
     _node = x;
   }
   return *this;
@@ -1206,15 +1228,18 @@ inline IpMap::iterator &IpMap::iterator::operator--()
     // At a node, try to back up. Handle the case where we back over the
     // start of the v6 addresses and switch to the v4, if there are any.
     Node *x = static_cast<Node *>(_node->_prev);
-    if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m6->getHead())
-      x   = _tree->_m4->getTail();
+    if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m6->getHead()) {
+      x = _tree->_m4->getTail();
+    }
     _node = x;
   } else if (_tree) {
     // We were at the end. Back up to v6 if possible, v4 if not.
-    if (_tree->_m6)
+    if (_tree->_m6) {
       _node = _tree->_m6->getTail();
-    if (!_node && _tree->_m4)
+    }
+    if (!_node && _tree->_m4) {
       _node = _tree->_m4->getTail();
+    }
   }
   return *this;
 }

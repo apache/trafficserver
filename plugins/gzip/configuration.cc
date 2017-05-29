@@ -220,12 +220,13 @@ HostConfiguration::add_compression_algorithms(const string &algorithms)
 #else
       error("supported-algorithms: brotli support not compiled in.");
 #endif
-    } else if (token.find("gzip") != string::npos)
+    } else if (token.find("gzip") != string::npos) {
       compression_algorithms_ |= ALGORITHM_GZIP;
-    else if (token.find("deflate") != string::npos)
+    } else if (token.find("deflate") != string::npos) {
       compression_algorithms_ |= ALGORITHM_DEFLATE;
-    else
+    } else {
       error("Unknown compression type. Supported compression-algorithms <br,gzip,deflate>.");
+    }
   }
 }
 

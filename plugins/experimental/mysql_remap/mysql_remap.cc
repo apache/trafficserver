@@ -137,14 +137,17 @@ not_found:
     TSHandleStringRelease(reqp, hdr_loc, request_scheme);
 #endif
 release_field:
-  if (field_loc)
+  if (field_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, field_loc);
+  }
 release_url:
-  if (url_loc)
+  if (url_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, url_loc);
+  }
 release_hdr:
-  if (hdr_loc)
+  if (hdr_loc) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
+  }
 
   return ret_val;
 }

@@ -91,8 +91,9 @@ int
 safe_set_fl(int fd, int arg)
 {
   int flags = safe_fcntl(fd, F_GETFL, 0);
-  if (flags < 0)
+  if (flags < 0) {
     return flags;
+  }
   flags |= arg;
   flags = safe_fcntl(fd, F_SETFL, flags);
   return flags;
@@ -102,8 +103,9 @@ int
 safe_clr_fl(int fd, int arg)
 {
   int flags = safe_fcntl(fd, F_GETFL, 0);
-  if (flags < 0)
+  if (flags < 0) {
     return flags;
+  }
   flags &= ~arg;
   flags = safe_fcntl(fd, F_SETFL, flags);
   return flags;
@@ -128,12 +130,15 @@ write_ready(int fd, int timeout_msec)
   p.events = POLLOUT;
   p.fd     = fd;
   int r    = poll(&p, 1, timeout_msec);
-  if (r <= 0)
+  if (r <= 0) {
     return r;
-  if (p.revents & (POLLERR | POLLNVAL))
+  }
+  if (p.revents & (POLLERR | POLLNVAL)) {
     return -1;
-  if (p.revents & (POLLOUT | POLLHUP))
+  }
+  if (p.revents & (POLLOUT | POLLHUP)) {
     return 1;
+  }
   return 0;
 }
 
@@ -144,12 +149,15 @@ read_ready(int fd, int timeout_msec)
   p.events = POLLIN;
   p.fd     = fd;
   int r    = poll(&p, 1, timeout_msec);
-  if (r <= 0)
+  if (r <= 0) {
     return r;
-  if (p.revents & (POLLERR | POLLNVAL))
+  }
+  if (p.revents & (POLLERR | POLLNVAL)) {
     return -1;
-  if (p.revents & (POLLIN | POLLHUP))
+  }
+  if (p.revents & (POLLIN | POLLHUP)) {
     return 1;
+  }
   return 0;
 }
 
@@ -211,8 +219,9 @@ fd_read_char(int fd)
   int r;
   do {
     r = read(fd, &c, 1);
-    if (r > 0)
+    if (r > 0) {
       return c;
+    }
   } while (r < 0 && (errno == EAGAIN || errno == EINTR));
   perror("fd_read_char");
   ink_assert(!"fd_read_char");
@@ -226,18 +235,21 @@ fd_read_line(int fd, char *s, int len)
   int numread = 0, r;
   // char *buf = s;
   do {
-    do
+    do {
       r = read(fd, &c, 1);
-    while (r < 0 && (errno == EAGAIN || errno == EINTR));
+    } while (r < 0 && (errno == EAGAIN || errno == EINTR));
 
-    if (r <= 0 && numread)
+    if (r <= 0 && numread) {
       break;
+    }
 
-    if (r <= 0)
+    if (r <= 0) {
       return r;
+    }
 
-    if (c == '\n')
+    if (c == '\n') {
       break;
+    }
 
     s[numread++] = c;
   } while (numread < len - 1);

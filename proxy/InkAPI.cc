@@ -5763,8 +5763,9 @@ TSHttpTxnParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 
   u.m_heap     = ((HdrHeapSDKHandle *)bufp)->m_heap;
   u.m_url_impl = (URLImpl *)obj;
-  if (!u.valid())
+  if (!u.valid()) {
     return TS_ERROR;
+  }
 
   l_url = sm->t_state.cache_info.parent_selection_url;
   if (l_url && l_url->valid()) {
@@ -9339,8 +9340,9 @@ TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int 
   if (sm && n > 0) {
     auto mem = static_cast<ts::StringView *>(alloca(sizeof(ts::StringView) * n));
     count    = sm->populate_client_protocol(mem, n);
-    for (int i  = 0; i < count; ++i)
+    for (int i = 0; i < count; ++i) {
       result[i] = mem[i].ptr();
+    }
   }
   if (actual) {
     *actual = count;
@@ -9358,8 +9360,9 @@ TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int 
   if (cs && n > 0) {
     auto mem = static_cast<ts::StringView *>(alloca(sizeof(ts::StringView) * n));
     count    = cs->populate_protocol(mem, n);
-    for (int i  = 0; i < count; ++i)
+    for (int i = 0; i < count; ++i) {
       result[i] = mem[i].ptr();
+    }
   }
   if (actual) {
     *actual = count;

@@ -93,12 +93,14 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
 
   if (opt._use_tcp) {
     Proto = IPPROTO_TCP;
-    if ((res = socketManager.socket(af, SOCK_STREAM, 0)) < 0)
+    if ((res = socketManager.socket(af, SOCK_STREAM, 0)) < 0) {
       goto Lerror;
+    }
   } else {
     Proto = IPPROTO_UDP;
-    if ((res = socketManager.socket(af, SOCK_DGRAM, 0)) < 0)
+    if ((res = socketManager.socket(af, SOCK_DGRAM, 0)) < 0) {
       goto Lerror;
+    }
   }
 
   fd = res;
@@ -114,11 +116,12 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
     }
     bind_size = sizeof(sockaddr_in6);
   } else if (AF_INET == af) {
-    if (ats_is_ip4(opt._local_ipv4))
+    if (ats_is_ip4(opt._local_ipv4)) {
       ats_ip_copy(&bind_addr.sa, opt._local_ipv4);
-    else
+    } else {
       bind_addr.sin.sin_addr.s_addr = INADDR_ANY;
-    bind_size                       = sizeof(sockaddr_in);
+    }
+    bind_size = sizeof(sockaddr_in);
   } else {
     ink_assert(!"Target DNS address must be IP.");
   }
@@ -152,19 +155,24 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
   } else if (ats_is_ip(&bind_addr.sa)) {
     ip_text_buffer b;
     res = socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto);
-    if (res < 0)
+    if (res < 0) {
       Warning("Unable to bind local address to %s.", ats_ip_ntop(&bind_addr.sa, b, sizeof b));
+    }
   }
 
-  if (opt._non_blocking_connect)
-    if ((res = safe_nonblocking(fd)) < 0)
+  if (opt._non_blocking_connect) {
+    if ((res = safe_nonblocking(fd)) < 0) {
       goto Lerror;
+    }
+  }
 
 // cannot do this after connection on non-blocking connect
 #ifdef SET_TCP_NO_DELAY
-  if (opt._use_tcp)
-    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0)
+  if (opt._use_tcp) {
+    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
       goto Lerror;
+    }
+  }
 #endif
 #ifdef RECV_BUF_SIZE
   socketManager.set_rcvbuf_size(fd, RECV_BUF_SIZE);
@@ -179,18 +187,22 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
   res = ::connect(fd, addr, ats_ip_size(addr));
 
   if (!res || ((res < 0) && (errno == EINPROGRESS || errno == EWOULDBLOCK))) {
-    if (!opt._non_blocking_connect && opt._non_blocking_io)
-      if ((res = safe_nonblocking(fd)) < 0)
+    if (!opt._non_blocking_connect && opt._non_blocking_io) {
+      if ((res = safe_nonblocking(fd)) < 0) {
         goto Lerror;
+      }
+    }
     // Shouldn't we turn off non-blocking when it's a non-blocking connect
     // and blocking IO?
-  } else
+  } else {
     goto Lerror;
+  }
 
   return 0;
 
 Lerror:
-  if (fd != NO_FD)
+  if (fd != NO_FD) {
     close();
+  }
   return res;
 }

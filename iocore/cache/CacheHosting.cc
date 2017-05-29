@@ -106,8 +106,9 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result)
     return;
   }
 
-  if (rlen == 0)
+  if (rlen == 0) {
     return;
+  }
   char *data = (char *)ats_malloc(rlen + 1);
   memcpy(data, rdata, rlen);
   *(data + rlen) = '\0';
@@ -153,8 +154,9 @@ CacheHostMatcher::NewEntry(matcher_line *line_info)
   ink_assert(match_data != nullptr);
 
   // Remove our consumed label from the parsed line
-  if (line_info->dest_entry < MATCHER_MAX_TOKENS)
+  if (line_info->dest_entry < MATCHER_MAX_TOKENS) {
     line_info->line[0][line_info->dest_entry] = nullptr;
+  }
   line_info->num_el--;
 
   // Fill in the parameter info
@@ -261,8 +263,9 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     // We have an empty file
     /* no hosting customers -- put all the volumes in the
        generic table */
-    if (gen_host_rec.Init(type))
+    if (gen_host_rec.Init(type)) {
       Warning("Problems encountered while initializing the Generic Volume");
+    }
     return 0;
   }
   // First get the number of entries
@@ -342,16 +345,18 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
         ink_assert(current->dest_entry < MATCHER_MAX_TOKENS);
 
         // Remove our consumed label from the parsed line
-        if (current->dest_entry < MATCHER_MAX_TOKENS)
+        if (current->dest_entry < MATCHER_MAX_TOKENS) {
           current->line[0][current->dest_entry] = nullptr;
-        else
+        } else {
           Warning("Problems encountered while initializing the Generic Volume");
+        }
 
         current->num_el--;
-        if (!gen_host_rec.Init(current, type))
+        if (!gen_host_rec.Init(current, type)) {
           generic_rec_initd = 1;
-        else
+        } else {
           Warning("Problems encountered while initializing the Generic Volume");
+        }
 
       } else {
         hostMatch->NewEntry(current);
@@ -452,8 +457,9 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
   type = typ;
   for (i = 0; i < MATCHER_MAX_TOKENS; i++) {
     char *label = line_info->line[0][i];
-    if (!label)
+    if (!label) {
       continue;
+    }
     char *val;
 
     if (!strcasecmp(label, "volume")) {
@@ -522,8 +528,9 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
             }
             return -1;
           }
-          if (c == '\0')
+          if (c == '\0') {
             break;
+          }
           vol_no = s + 1;
         }
         s++;
@@ -643,12 +650,13 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       }
 
       end = (char *)tmp;
-      while (*end && !isspace(*end))
+      while (*end && !isspace(*end)) {
         end++;
+      }
 
-      if (!(*end))
+      if (!(*end)) {
         line_end = end;
-      else {
+      } else {
         line_end = end + 1;
         *end     = '\0';
       }
@@ -697,8 +705,9 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
         tmp += 5;
         size = atoi(tmp);
 
-        while (ParseRules::is_digit(*tmp))
+        while (ParseRules::is_digit(*tmp)) {
           tmp++;
+        }
 
         if (*tmp == '%') {
           // added by YTS Team, yamsat for bug id 59632
@@ -716,8 +725,9 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       }
 
       // ends here
-      if (end < line_end)
+      if (end < line_end) {
         tmp++;
+      }
     }
 
     if (err) {
@@ -812,8 +822,9 @@ create_config(RegressionTest *t, int num)
       }
       /* create 128 MB volumes */
       for (; blocks >= STORE_BLOCKS_PER_VOL; blocks -= STORE_BLOCKS_PER_VOL) {
-        if (vol_num > 255)
+        if (vol_num > 255) {
           break;
+        }
         ConfigVol *cp  = new ConfigVol();
         cp->number     = vol_num++;
         cp->scheme     = CACHE_HTTP_TYPE;
@@ -894,8 +905,9 @@ create_config(RegressionTest *t, int num)
       }
     }
     while (total_space > 0) {
-      if (vol_num > 255)
+      if (vol_num > 255) {
         break;
+      }
       off_t modu = MAX_VOL_SIZE;
       if (total_space < (MAX_VOL_SIZE >> STORE_BLOCK_SHIFT)) {
         modu = total_space * STORE_BLOCK_SIZE;
@@ -942,8 +954,9 @@ execute_and_verify(RegressionTest *t)
   cplist_reconfigure();
 
   /* compare the volumes */
-  if (cp_list_len != config_volumes.num_volumes)
+  if (cp_list_len != config_volumes.num_volumes) {
     return REGRESSION_TEST_FAILED;
+  }
 
   /* check that the volumes and sizes
      match the configuration */

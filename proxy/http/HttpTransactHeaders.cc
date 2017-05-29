@@ -693,8 +693,9 @@ write_client_protocol_stack(HttpTransact::State *s, char *via_string, size_t len
   char *limit       = via_string + len;
   ts::StringView *v = proto_buf.data();
   for (int i = 0; i < retval && (via + v->size() + 1) < limit; ++i, ++v) {
-    if (i)
+    if (i) {
       *via++ = '-';
+    }
     memcpy(via, v->ptr(), v->size());
     via += v->size();
   }

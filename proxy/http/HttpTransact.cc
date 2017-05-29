@@ -7644,9 +7644,10 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
         DebugTxn("http_trans", "[build_request] "
                                "request like cacheable and conditional headers removed");
         HttpTransactHeaders::remove_conditional_headers(outgoing_request);
-      } else
+      } else {
         DebugTxn("http_trans", "[build_request] "
                                "request like cacheable but keep conditional headers");
+      }
     } else {
       // In this case, we send a conditional request
       // instead of the normal non-conditional request.
@@ -7773,8 +7774,9 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // If the response is prohibited from containing a body,
   //  we know the content length is trustable for keep-alive
-  if (is_response_body_precluded(status_code, s->method))
+  if (is_response_body_precluded(status_code, s->method)) {
     s->hdr_info.trust_response_cl = true;
+  }
 
   handle_response_keep_alive_headers(s, outgoing_version, outgoing_response);
 

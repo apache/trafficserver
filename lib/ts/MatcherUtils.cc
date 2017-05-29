@@ -147,10 +147,12 @@ ExtractIpRange(char *match_str, in_addr_t *min, in_addr_t *max)
   const char *zret = ExtractIpRange(match_str, &ip_min.sa, &ip_max.sa);
   if (nullptr == zret) { // success
     if (ats_is_ip4(&ip_min) && ats_is_ip4(&ip_max)) {
-      if (min)
+      if (min) {
         *min = ntohl(ats_ip4_addr_cast(&ip_min));
-      if (max)
+      }
+      if (max) {
         *max = ntohl(ats_ip4_addr_cast(&ip_max));
+      }
     } else {
       zret = "The addresses were not IPv4 addresses.";
     }

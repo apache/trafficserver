@@ -90,8 +90,9 @@ WebSocket::consume(const std::string &data, InterceptPlugin::RequestDataType typ
     ws_buf_.buffer(data);
     while (ws_buf_.read_buffered_message(message, code)) {
       ws_receive(message, code);
-      if (code == WS_FRAME_CLOSE)
+      if (code == WS_FRAME_CLOSE) {
         break;
+      }
     }
   } else {
     body_ += data;

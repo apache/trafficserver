@@ -99,15 +99,17 @@ SocketManager::close(int s)
 {
   int res;
 
-  if (s == 0)
+  if (s == 0) {
     return -EACCES;
-  else if (s < 0)
+  } else if (s < 0) {
     return -EINVAL;
+  }
 
   do {
     res = ::close(s);
-    if (res == -1)
+    if (res == -1) {
       res = -errno;
+    }
   } while (res == -EINTR);
   return res;
 }

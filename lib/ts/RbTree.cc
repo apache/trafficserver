@@ -77,12 +77,14 @@ namespace detail
   RBNode *
   RBNode::setChild(self *n, Direction d)
   {
-    if (n)
+    if (n) {
       n->_parent = this;
-    if (d == RIGHT)
+    }
+    if (d == RIGHT) {
       _right = n;
-    else if (d == LEFT)
+    } else if (d == LEFT) {
       _left = n;
+    }
     return n;
   }
 
@@ -107,16 +109,19 @@ namespace detail
     if (_parent) {
       Direction d = _parent->getChildDirection(this);
       _parent->setChild(nullptr, d);
-      if (_parent != n)
+      if (_parent != n) {
         _parent->setChild(n, d);
+      }
     } else {
       n->_parent = nullptr;
     }
     n->_left = n->_right = nullptr;
-    if (_left && _left != n)
+    if (_left && _left != n) {
       n->setChild(_left, LEFT);
-    if (_right && _right != n)
+    }
+    if (_right && _right != n) {
       n->setChild(_right, RIGHT);
+    }
     _left = _right = nullptr;
   }
 
@@ -129,10 +134,11 @@ namespace detail
     while (x && x->_parent == RED) {
       Direction child_dir = NONE;
 
-      if (x->_parent->_parent)
+      if (x->_parent->_parent) {
         child_dir = x->_parent->_parent->getChildDirection(x->_parent);
-      else
+      } else {
         break;
+      }
       Direction other_dir(flip(child_dir));
 
       self *y = x->_parent->_parent->getChild(other_dir);
@@ -230,8 +236,9 @@ namespace detail
     // node in liu of copying the data over.
     if (remove_node != this) {
       // Don't leave @a splice_node referring to a removed node
-      if (splice_node == this)
+      if (splice_node == this) {
         splice_node = remove_node;
+      }
       this->replaceWith(remove_node);
     }
 

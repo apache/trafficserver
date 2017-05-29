@@ -356,8 +356,9 @@ Http2Stream::transaction_done()
     cross_thread_event = nullptr;
   }
 
-  if (!closed)
+  if (!closed) {
     do_io_close(); // Make sure we've been closed.  If we didn't close the parent session better still be open
+  }
   ink_release_assert(closed || !static_cast<Http2ClientSession *>(parent)->connection_state.is_state_closed());
   current_reader = nullptr;
 
@@ -480,8 +481,9 @@ Http2Stream::update_read_request(int64_t read_len, bool call_update)
           int send_event = (read_vio.nbytes == read_vio.ndone) ? VC_EVENT_READ_COMPLETE : VC_EVENT_READ_READY;
           if (call_update) { // Safe to call vio handler directly
             inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
-            if (read_vio._cont && this->current_reader)
+            if (read_vio._cont && this->current_reader) {
               read_vio._cont->handleEvent(send_event, &read_vio);
+            }
           } else { // Called from do_io_read.  Still setting things up.  Send event to handle this after the dust settles
             read_event = send_tracked_event(read_event, send_event, &read_vio);
           }
@@ -493,8 +495,9 @@ Http2Stream::update_read_request(int64_t read_len, bool call_update)
       if (request_reader->read_avail() > 0 || send_event == VC_EVENT_READ_COMPLETE) {
         if (call_update) { // Safe to call vio handler directly
           inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
-          if (read_vio._cont && this->current_reader)
+          if (read_vio._cont && this->current_reader) {
             read_vio._cont->handleEvent(send_event, &read_vio);
+          }
         } else { // Called from do_io_read.  Still setting things up.  Send event
                  // to handle this after the dust settles
           read_event = send_tracked_event(read_event, send_event, &read_vio);
@@ -575,8 +578,9 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
             // As with update_read_request, should be safe to call handler directly here if
             // call_update is true.  Commented out for now while tracking a performance regression
             if (call_update) { // Coming from reenable.  Safe to call the handler directly
-              if (write_vio._cont && this->current_reader)
+              if (write_vio._cont && this->current_reader) {
                 write_vio._cont->handleEvent(send_event, &write_vio);
+              }
             } else { // Called from do_io_write.  Might still be setting up state.  Send an event to let the dust settle
               write_event = send_tracked_event(write_event, send_event, &write_vio);
             }
@@ -604,8 +608,9 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       } else {
         send_response_body();
         if (call_update) { // Coming from reenable.  Safe to call the handler directly
-          if (write_vio._cont && this->current_reader)
+          if (write_vio._cont && this->current_reader) {
             write_vio._cont->handleEvent(send_event, &write_vio);
+          }
         } else { // Called from do_io_write.  Might still be setting up state.  Send an event to let the dust settle
           write_event = send_tracked_event(write_event, send_event, &write_vio);
         }

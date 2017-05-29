@@ -79,8 +79,9 @@ Load_IpMap_From_File(IpMap *map, int fd, const char *key_str)
   int fd2    = dup(fd); // dup to avoid closing the original file.
   FILE *f    = nullptr;
 
-  if (fd2 >= 0)
+  if (fd2 >= 0) {
     f = fdopen(fd2, "r");
+  }
 
   if (f != nullptr) {
     zret = Load_IpMap_From_File(map, f, key_str);
@@ -101,8 +102,9 @@ Load_IpMap_From_File(IpMap *map, int fd, const char *key_str)
 static inline bool
 skip_space(char *line, int n, int &offset)
 {
-  while (offset < n && isspace(line[offset]))
+  while (offset < n && isspace(line[offset])) {
     ++offset;
+  }
   return offset < n;
 }
 
@@ -124,14 +126,17 @@ Load_IpMap_From_File(IpMap *map, FILE *f, const char *key_str)
     ++line_no;
     n = strlen(line);
     // Find first white space which terminates the line key.
-    for (i = 0; i < n && !isspace(line[i]); ++i)
+    for (i = 0; i < n && !isspace(line[i]); ++i) {
       ;
-    if (i != key_len || 0 != strncmp(line, key_str, key_len))
+    }
+    if (i != key_len || 0 != strncmp(line, key_str, key_len)) {
       continue;
+    }
     // Now look for IP address
     while (true) {
-      if (!skip_space(line, n, i))
+      if (!skip_space(line, n, i)) {
         break;
+      }
 
       if (0 != read_addr(line, n, &i, &laddr.sa, err_buff)) {
         char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
@@ -143,10 +148,11 @@ Load_IpMap_From_File(IpMap *map, FILE *f, const char *key_str)
       if (!skip_space(line, n, i) || line[i] == ',') {
         // You have read an IP address. Enter it in the table
         map->mark(&laddr);
-        if (i == n)
+        if (i == n) {
           break;
-        else
+        } else {
           ++i;
+        }
       } else if (line[i] == '-') {
         // What you have just read is the start of the range,
         // Now, read the end of the IP range
@@ -161,8 +167,9 @@ Load_IpMap_From_File(IpMap *map, FILE *f, const char *key_str)
           return error_str;
         }
         map->mark(&laddr.sa, &raddr.sa);
-        if (!skip_space(line, n, i))
+        if (!skip_space(line, n, i)) {
           break;
+        }
         if (line[i] != ',') {
           char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
           snprintf(error_str, ERR_STRING_LEN, "Invalid input (expecting comma) at line %d offset %d - '%s'", line_no, i, line);

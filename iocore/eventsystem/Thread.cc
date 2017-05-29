@@ -85,10 +85,11 @@ spawn_thread_internal(void *a)
 
   p->me->set_specific();
   ink_set_thread_name(p->name);
-  if (p->f)
+  if (p->f) {
     p->f(p->a);
-  else
+  } else {
     p->me->execute();
+  }
   ats_free(a);
   return nullptr;
 }

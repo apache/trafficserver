@@ -82,10 +82,11 @@ register_ShowCacheInternal(Continuation *c, HTTPHdr *h)
     SET_CONTINUATION_HANDLER(theshowcacheInternal, &ShowCacheInternal::showVolumes);
   }
 
-  if (theshowcacheInternal->mutex->thread_holding)
+  if (theshowcacheInternal->mutex->thread_holding) {
     CONT_SCHED_LOCK_RETRY(theshowcacheInternal);
-  else
+  } else {
     eventProcessor.schedule_imm(theshowcacheInternal, ET_TASK);
+  }
   return &theshowcacheInternal->action;
 }
 
@@ -196,8 +197,9 @@ ShowCacheInternal::showVolEvacuations(int event, Event *e)
 {
   Vol *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     CONT_SCHED_LOCK_RETRY_RET(this);
+  }
 
   EvacuationBlock *b;
   int last = (p->len - (p->start - p->skip)) / EVACUATION_BUCKET_SIZE;
@@ -215,9 +217,9 @@ ShowCacheInternal::showVolEvacuations(int event, Event *e)
     }
   }
   vol_index++;
-  if (vol_index < gnvol)
+  if (vol_index < gnvol) {
     CONT_SCHED_LOCK_RETRY(this);
-  else {
+  } else {
     CHECK_SHOW(show("</table>\n"));
     return complete(event, e);
   }
@@ -252,8 +254,9 @@ ShowCacheInternal::showVolVolumes(int event, Event *e)
 {
   Vol *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     CONT_SCHED_LOCK_RETRY_RET(this);
+  }
 
   char ctime[256];
   ink_ctime_r(&p->header->create_time, ctime);
@@ -261,8 +264,9 @@ ShowCacheInternal::showVolVolumes(int event, Event *e)
   int agg_todo             = 0;
   int agg_done             = p->agg_buf_pos;
   CacheVC *c               = nullptr;
-  for (c = p->agg.head; c; c = (CacheVC *)c->link.next)
+  for (c = p->agg.head; c; c = (CacheVC *)c->link.next) {
     agg_todo++;
+  }
   CHECK_SHOW(show("<tr>"
                   "<td>%s</td>"          // ID
                   "<td>%" PRId64 "</td>" // blocks
@@ -308,8 +312,9 @@ ShowCacheInternal::showSegSegment(int event, Event *e)
 {
   Vol *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     CONT_SCHED_LOCK_RETRY_RET(this);
+  }
   int free = 0, used = 0, empty = 0, valid = 0, agg_valid = 0, avg_size = 0;
   dir_segment_accounted(seg_index, p, 0, &free, &used, &empty, &valid, &agg_valid, &avg_size);
   CHECK_SHOW(show("<tr>"
@@ -322,16 +327,17 @@ ShowCacheInternal::showSegSegment(int event, Event *e)
                   "</tr>\n",
                   free, used, empty, valid, agg_valid, avg_size));
   seg_index++;
-  if (seg_index < p->segments)
+  if (seg_index < p->segments) {
     CONT_SCHED_LOCK_RETRY(this);
-  else {
+  } else {
     CHECK_SHOW(show("</table>\n"));
     seg_index = 0;
     vol_index++;
-    if (vol_index < gnvol)
+    if (vol_index < gnvol) {
       CONT_SCHED_LOCK_RETRY(this);
-    else
+    } else {
       return complete(event, e);
+    }
   }
   return EVENT_CONT;
 }
