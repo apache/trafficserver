@@ -20,9 +20,10 @@
 
 set -e # exit on error
 
+PKGDATE="20160415"
 DIR=${1:-.}
-ROOT=${ROOT:-$(git rev-parse --show-toplevel)/.git/fmt}
-PACKAGE="clang-format-20160415.tar.bz2"
+ROOT=${ROOT:-$(git rev-parse --show-toplevel)/.git/fmt/${PKGDATE}}
+PACKAGE="clang-format-${PKGDATE}.tar.bz2"
 VERSION="clang-format version 3.9.0 (trunk 265913)"
 
 URL=${URL:-https://bintray.com/artifact/download/apache/trafficserver/${PACKAGE}}
