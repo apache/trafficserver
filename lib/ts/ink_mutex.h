@@ -68,4 +68,27 @@ ink_mutex_try_acquire(ink_mutex *m)
   return pthread_mutex_trylock(m) == 0;
 }
 
+/** RAII class for locking a @c ink_mutex.
+
+    @code
+    ink_mutex m;
+    // ...
+    {
+       ink_mutex_lock lock(m);
+       // code under lock.
+    }
+    // code not under lock
+    @endcode
+ */
+class ink_mutex_lock
+{
+private:
+  ink_mutex &_m;
+
+public:
+  ink_mutex_lock(ink_mutex *m) : _m(*m) { ink_mutex_acquire(&_m); }
+  ink_mutex_lock(ink_mutex &m) : _m(m) { ink_mutex_acquire(&_m); }
+  ~ink_mutex_lock() { ink_mutex_release(&_m); }
+};
+
 #endif /* _ink_mutex_h_ */
