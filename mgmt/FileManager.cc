@@ -43,8 +43,8 @@ FileManager::FileManager()
   bindings = ink_hash_table_create(InkHashTableKeyType_String);
   ink_assert(bindings != nullptr);
 
-  ink_mutex_init(&accessLock, "File Manager Mutex");
-  ink_mutex_init(&cbListLock, "File Changed Callback Mutex");
+  ink_mutex_init(&accessLock);
+  ink_mutex_init(&cbListLock);
 
   ats_scoped_str snapshotDir(RecConfigReadSnapshotDir());
 

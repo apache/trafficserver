@@ -334,7 +334,7 @@ HttpBodyFactory::HttpBodyFactory()
   ////////////////////////////////////
   // initialize first-time defaults //
   ////////////////////////////////////
-  ink_mutex_init(&mutex, "HttpBodyFactory::lock");
+  ink_mutex_init(&mutex);
 
   //////////////////////////////////////////////////////
   // set up management configuration-change callbacks //

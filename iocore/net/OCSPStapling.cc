@@ -134,7 +134,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
   cinf->uri         = nullptr;
   cinf->certname    = ats_strdup(certname);
   cinf->resp_derlen = 0;
-  ink_mutex_init(&cinf->stapling_mutex, "stapling_mutex");
+  ink_mutex_init(&cinf->stapling_mutex);
   cinf->is_expire   = true;
   cinf->expire_time = 0;
 

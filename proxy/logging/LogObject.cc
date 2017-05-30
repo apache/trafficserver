@@ -864,7 +864,7 @@ TextLogObject::va_write(const char *format, va_list ap)
 LogObjectManager::LogObjectManager()
 {
   _APImutex = new ink_mutex;
-  ink_mutex_init(_APImutex, "_APImutex");
+  ink_mutex_init(_APImutex);
 }
 
 LogObjectManager::~LogObjectManager()

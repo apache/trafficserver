@@ -81,7 +81,7 @@ Alarms::Alarms()
   cblist        = ink_hash_table_create(InkHashTableKeyType_String);
   local_alarms  = ink_hash_table_create(InkHashTableKeyType_String);
   remote_alarms = ink_hash_table_create(InkHashTableKeyType_String);
-  ink_mutex_init(&mutex, "alarms-mutex");
+  ink_mutex_init(&mutex);
   alarmOEMcount = minOEMkey;
 } /* End Alarms::Alarms */
 

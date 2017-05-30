@@ -56,7 +56,7 @@ EventNotify::EventNotify()
   ink_release_assert(ret != -1);
 #else
   ink_cond_init(&m_cond);
-  ink_mutex_init(&m_mutex, nullptr);
+  ink_mutex_init(&m_mutex);
 #endif
 }
 

@@ -192,7 +192,7 @@ public:
 
 protected:
   // Hide the constructor and copy constructor
-  ConnectionCount() { ink_mutex_init(&_mutex, "ConnectionCountMutex"); }
+  ConnectionCount() { ink_mutex_init(&_mutex); }
   ConnectionCount(const ConnectionCount & /* x ATS_UNUSED */) {}
   static ConnectionCount _connectionCount;
   HashMap<ConnAddr, ConnAddrHashFns, int> _hostCount;

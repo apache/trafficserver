@@ -158,7 +158,7 @@ ink_aio_init(ModuleVersion v)
                      (int)AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
 #if AIO_MODE != AIO_MODE_NATIVE
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
-  ink_mutex_init(&insert_mutex, nullptr);
+  ink_mutex_init(&insert_mutex);
 #endif
   REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 #if TS_USE_LINUX_NATIVE_AIO
@@ -228,7 +228,7 @@ aio_init_fildes(int fildes, int fromAPI = 0)
   INK_WRITE_MEMORY_BARRIER;
 
   ink_cond_init(&request->aio_cond);
-  ink_mutex_init(&request->aio_mutex, nullptr);
+  ink_mutex_init(&request->aio_mutex);
   ink_atomiclist_init(&request->aio_temp_list, "temp_list", (uintptr_t) & ((AIOCallback *)nullptr)->link);
 
   RecInt thread_num;

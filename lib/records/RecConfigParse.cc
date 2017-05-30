@@ -46,7 +46,7 @@ ink_mutex g_rec_config_lock;
 void
 RecConfigFileInit()
 {
-  ink_mutex_init(&g_rec_config_lock, nullptr);
+  ink_mutex_init(&g_rec_config_lock);
   g_rec_config_contents_llq = create_queue();
   g_rec_config_contents_ht  = ink_hash_table_create(InkHashTableKeyType_String);
 }

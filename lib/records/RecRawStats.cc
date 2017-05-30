@@ -235,7 +235,7 @@ RecAllocateRawStatBlock(int num_stats)
   rsb->max_stats        = num_stats;
   rsb->ethr_stat_offset = ethr_stat_offset;
 
-  ink_mutex_init(&(rsb->mutex), "net stat mutex");
+  ink_mutex_init(&(rsb->mutex));
   return rsb;
 }
 
