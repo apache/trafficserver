@@ -91,12 +91,17 @@ extern "C" int plock(int);
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
 #include "HTTP2.h"
+#include "ts/ink_config.h"
 
 #include <ts/ink_cap.h>
 
 #if TS_HAS_PROFILER
 #include <gperftools/profiler.h>
 #include <gperftools/heap-profiler.h>
+#endif
+
+#if TS_USE_GCOV
+extern "C" void __gcov_flush();
 #endif
 
 //
@@ -443,6 +448,10 @@ proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
   HeapProfilerDump("/tmp/ts_end.hprof");
   HeapProfilerStop();
   ProfilerStop();
+#endif
+
+#if TS_USE_GCOV
+  __gcov_flush();
 #endif
 
   // We don't expect any crashing signals here because, but

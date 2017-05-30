@@ -176,13 +176,15 @@ AC_ARG_ENABLE([mime-sanity-check],
 AC_MSG_RESULT([$enable_mime_sanity_check])
 
 # Enable code coverage instrumentation only if requested by the user.
+use_gcov=0
 AC_MSG_CHECKING([whether to code coverage])
 AC_ARG_ENABLE([coverage],
   [AS_HELP_STRING([--enable-coverage],[generate code coverage instrumentation])],
-  [],
+  [use_gcov=1],
   [enable_coverage=no]
 )
 AC_MSG_RESULT([$enable_coverage])
+AC_SUBST(use_gcov)
 
 #
 # Enable -Werror. We want this enabled by default for developers, but disabled by default

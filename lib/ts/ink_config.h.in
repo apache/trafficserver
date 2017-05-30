@@ -58,6 +58,7 @@
 #define TS_HAS_IN6_IS_ADDR_UNSPECIFIED @has_in6_is_addr_unspecified@
 #define TS_HAS_BACKTRACE @has_backtrace@
 #define TS_HAS_PROFILER @has_profiler@
+#define TS_USE_GCOV @use_gcov@
 #define TS_USE_FAST_SDK @use_fast_sdk@
 #define TS_USE_DIAGS @use_diags@
 #define TS_USE_EPOLL @use_epoll@
