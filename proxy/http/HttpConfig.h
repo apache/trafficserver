@@ -415,9 +415,8 @@ struct OverridableHttpConfigParams {
       cache_open_write_fail_action(0),
       post_check_content_length_enabled(1),
       ssl_client_verify_server(0),
-      redirection_enabled(0),
       redirect_use_orig_cache_key(0),
-      number_of_redirections(1),
+      number_of_redirections(0),
       proxy_response_hsts_max_age(-1),
       negative_caching_lifetime(1800),
       negative_revalidating_lifetime(1800),
@@ -584,16 +583,9 @@ struct OverridableHttpConfigParams {
   /////////////////////////////
   MgmtByte ssl_client_verify_server;
 
-  //##############################################################################
-  //#
-  //# Redirection
-  //#
-  //# 1. redirection_enabled: if set to 1, redirection is enabled.
-  //# 2. number_of_redirectionse: The maximum number of redirections YTS permits
-  //# 3. post_copy_size: The maximum POST data size YTS permits to copy
-  //#
-  //##############################################################################
-  MgmtByte redirection_enabled;
+  //////////////////
+  // Redirection  //
+  //////////////////
   MgmtByte redirect_use_orig_cache_key;
   MgmtInt number_of_redirections;
 

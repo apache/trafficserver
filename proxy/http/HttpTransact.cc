@@ -669,6 +669,11 @@ HttpTransact::StartRemapRequest(State *s)
 
     s->hdr_info.client_request.set_url_target_from_host_field();
 
+    // Since we're not doing remap, we still have to allow for these overridable
+    // configurations to modify follow-redirect behavior. Someone could for example
+    // have set them in a plugin other than conf_remap running in a prior hook.
+    s->state_machine->enable_redirection = (s->txn_conf->number_of_redirections > 0);
+
     if (s->is_upgrade_request && s->post_remap_upgrade_return_point) {
       TRANSACT_RETURN(SM_ACTION_POST_REMAP_SKIP, s->post_remap_upgrade_return_point);
     }
@@ -750,6 +755,12 @@ HttpTransact::EndRemapRequest(State *s)
   int host_len;
   const char *host = incoming_request->host_get(&host_len);
   DebugTxn("http_trans", "EndRemapRequest host is %.*s", host_len, host);
+
+  // Setting enable_redirection according to HttpConfig (master or overridable). We
+  // defer this as late as possible, to allow plugins to modify the overridable
+  // configurations (e.g. conf_remap.so). We intentionally only modify this if
+  // the configuration says so.
+  s->state_machine->enable_redirection = (s->txn_conf->number_of_redirections > 0);
 
   ////////////////////////////////////////////////////////////////
   // if we got back a URL to redirect to, vector the user there //

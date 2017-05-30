@@ -425,11 +425,6 @@ msgstr ":ts:cv:`proxy.config.http.cache.when_to_revalidate`"
 msgid ":ts:cv:`proxy.config.http.cache.open_write_fail_action`"
 msgstr ":ts:cv:`proxy.config.http.cache.when_to_revalidate`"
 
-#: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:150
-#, fuzzy
-msgid ":ts:cv:`proxy.config.http.redirection_enabled`"
-msgstr ":ts:cv:`proxy.config.http.flow_control.enabled`"
-
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:151
 #, fuzzy
 msgid ":ts:cv:`proxy.config.http.number_of_redirections`"

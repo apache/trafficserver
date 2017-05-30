@@ -7394,7 +7394,7 @@ TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
 
 // This API tells the core to follow normal (301/302) redirects using the
 // standard Location: URL. This does not need to be called if you set an
-// explicit URL using TSRedirectUrlSet().
+// explicit URL using TSHttpTxnRedirectUrlSet().
 TSReturnCode
 TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
 {
@@ -7403,6 +7403,11 @@ TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
   HttpSM *sm = (HttpSM *)txnp;
 
   sm->enable_redirection = (on ? true : false);
+  // Make sure we allow for at least one redirection.
+  if (0 == sm->redirection_tries) {
+    sm->redirection_tries = 1;
+  }
+
   return TS_SUCCESS;
 }
 
@@ -7424,32 +7429,10 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
   sm->redirect_url       = (char *)url;
   sm->redirect_url_len   = url_len;
   sm->enable_redirection = true;
-}
 
-// Deprecated, remove for v6.0.0
-void
-TSRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)url) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *)txnp;
-
-  if (sm->redirect_url != nullptr) {
-    ats_free(sm->redirect_url);
-    sm->redirect_url     = nullptr;
-    sm->redirect_url_len = 0;
-  }
-
-  sm->redirect_url = (char *)ats_malloc(url_len + 1);
-  ink_strlcpy(sm->redirect_url, url, url_len + 1);
-  sm->redirect_url_len = url_len;
-  // have to turn redirection on for this transaction if user wants to redirect to another URL
-  if (sm->enable_redirection == false) {
-    sm->enable_redirection = true;
-    // max-out "redirection_tries" to avoid the regular redirection being turned on in
-    // this transaction improperly. This variable doesn't affect the custom-redirection
-    sm->redirection_tries = sm->t_state.txn_conf->number_of_redirections;
+  // Make sure we allow for at least one redirection.
+  if (0 == sm->redirection_tries) {
+    sm->redirection_tries = 1;
   }
 }
 
@@ -8032,9 +8015,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_open_write_fail_action, typep);
     break;
-  case TS_CONFIG_HTTP_ENABLE_REDIRECTION:
-    ret = _memberp_to_generic(&overridableHttpConfig->redirection_enabled, typep);
-    break;
   case TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS:
     ret = _memberp_to_generic(&overridableHttpConfig->number_of_redirections, typep);
     break;
@@ -8387,11 +8367,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 
   case 37:
     switch (name[length - 1]) {
-    case 'd':
-      if (!strncmp(name, "proxy.config.http.redirection_enabled", length)) {
-        cnf = TS_CONFIG_HTTP_ENABLE_REDIRECTION;
-      }
-      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.max_stale_age", length)) {
         cnf = TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE;

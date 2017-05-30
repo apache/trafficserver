@@ -83,7 +83,6 @@ plugin to work::
 
 :ts:cv:`proxy.config.http.cache.open_write_fail_action`        1
 :ts:cv:`proxy.config.cache.enable_read_while_writer`           1
-:ts:cv:`proxy.config.http.redirection_enabled`                 1
 :ts:cv:`proxy.config.http.number_of_redirections`             10
 :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`         1
 :ts:cv:`proxy.config.http.background_fill_active_timeout`      0

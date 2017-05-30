@@ -80,7 +80,6 @@ Enumeration Members
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME
-.. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_ENABLE_REDIRECTION
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK

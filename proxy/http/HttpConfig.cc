@@ -1104,14 +1104,12 @@ HttpConfig::startup()
   //#
   //# Redirection
   //#
-  //# 1. redirection_enabled: if set to 1, redirection is enabled.
+  //# 1. number_of_redirections: The maximum number of redirections YTS permits. 0 == disabled
   //# 2. redirect_use_orig_cache_key: if set to 1, use original request cache key.
-  //# 3. number_of_redirections: The maximum number of redirections YTS permits
-  //# 4. post_copy_size: The maximum POST data size YTS permits to copy
-  //# 5. redirection_host_no_port: do not include default port in host header during redirection
+  //# 3. post_copy_size: The maximum POST data size YTS permits to copy
+  //# 4. redirection_host_no_port: do not include default port in host header during redirection
   //#
   //##############################################################################
-  HttpEstablishStaticConfigByte(c.oride.redirection_enabled, "proxy.config.http.redirection_enabled");
   HttpEstablishStaticConfigByte(c.oride.redirect_use_orig_cache_key, "proxy.config.http.redirect_use_orig_cache_key");
   HttpEstablishStaticConfigByte(c.redirection_host_no_port, "proxy.config.http.redirect_host_no_port");
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
@@ -1372,19 +1370,6 @@ HttpConfig::reconfigure()
   params->oride.negative_revalidating_enabled  = INT_TO_BOOL(m_master.oride.negative_revalidating_enabled);
   params->oride.negative_revalidating_lifetime = m_master.oride.negative_revalidating_lifetime;
 
-  //##############################################################################
-  //#
-  //# Redirection
-  //#
-  //# 1. redirection_enabled: if set to 1, redirection is enabled.
-  //# 2. redirect_use_orig_cache_key: if set to 1, use original request cache key.
-  //# 3. number_of_redirections: The maximum number of redirections YTS permits
-  //# 4. post_copy_size: The maximum POST data size YTS permits to copy
-  //# 5. redirection_host_no_port: do not include default port in host header during redirection
-  //#
-  //##############################################################################
-
-  params->oride.redirection_enabled         = INT_TO_BOOL(m_master.oride.redirection_enabled);
   params->oride.redirect_use_orig_cache_key = INT_TO_BOOL(m_master.oride.redirect_use_orig_cache_key);
   params->redirection_host_no_port          = INT_TO_BOOL(m_master.redirection_host_no_port);
   params->oride.number_of_redirections      = m_master.oride.number_of_redirections;

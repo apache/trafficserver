@@ -113,7 +113,6 @@ c:member:`TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK`                 :ts:cv:`prox
 c:member:`TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS`                     :ts:cv:`proxy.config.http.doc_in_cache_skip_dns`
 c:member:`TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD`               :ts:cv:`proxy.config.http.down_server.abort_threshold`
 c:member:`TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME`                    :ts:cv:`proxy.config.http.down_server.cache_time`
-c:member:`TS_CONFIG_HTTP_ENABLE_REDIRECTION`                        :ts:cv:`proxy.config.http.redirection_enabled`
 c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`                      :ts:cv:`proxy.config.http.flow_control.enabled`
 c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK`              :ts:cv:`proxy.config.http.flow_control.high_water`
 c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK`               :ts:cv:`proxy.config.http.flow_control.low_water`

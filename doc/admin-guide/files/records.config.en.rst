@@ -1393,15 +1393,7 @@ HTTP Connection Timeouts
 HTTP Redirection
 ================
 
-.. ts:cv:: CONFIG proxy.config.http.redirection_enabled INT 0
-   :reloadable:
-   :overridable:
-
-   This setting indicates whether Trafficserver does a redirect follow location on receiving a 3XX Redirect response from the Origin
-   server. The redirection attempt is transparent to the client and the client is served the final response from the redirected-to
-   location.
-
-.. ts:cv:: CONFIG proxy.config.http.number_of_redirections INT 1
+.. ts:cv:: CONFIG proxy.config.http.number_of_redirections INT 0
    :reloadable:
    :overridable:
 
