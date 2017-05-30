@@ -20,9 +20,11 @@
 
 set -e # exit on error
 
+# Update the PKGDATE with the new version date when making a new clang-format binary package.
+PKGDATE="20170404"
 DIR=${1:-.}
-ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt}
-PACKAGE="clang-format-20170404.tar.bz2"
+ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/${PKGDATE}}
+PACKAGE="clang-format-${PKGDATE}.tar.bz2"
 VERSION="clang-format version 4.0.1 (http://llvm.org/git/clang.git 559aa046fe3260d8640791f2249d7b0d458b5700) (http://llvm.org/git/llvm.git 08142cb734b8d2cefec8b1629f6bb170b3f94610)"
 
 URL=${URL:-https://bintray.com/artifact/download/apache/trafficserver/${PACKAGE}}
