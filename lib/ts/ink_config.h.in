@@ -124,4 +124,6 @@
 #define TS_BUILD_DEFAULT_LOOPBACK_IFACE "@default_loopback_iface@"
 /* clang-format on */
 
+static const int DEFAULT_STACKSIZE = @default_stack_size@;
+
 #endif /* _ink_config_h */
