@@ -32,7 +32,7 @@
 int
 ink_rwlock_init(ink_rwlock *rw)
 {
-  ink_mutex_init(&rw->rw_mutex, nullptr);
+  ink_mutex_init(&rw->rw_mutex);
 
   ink_cond_init(&rw->rw_condreaders);
   ink_cond_init(&rw->rw_condwriters);

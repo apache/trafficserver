@@ -41,7 +41,7 @@
 
 typedef pthread_mutex_t ink_mutex;
 
-void ink_mutex_init(ink_mutex *m, const char * /* name */);
+void ink_mutex_init(ink_mutex *m);
 void ink_mutex_destroy(ink_mutex *m);
 
 static inline void

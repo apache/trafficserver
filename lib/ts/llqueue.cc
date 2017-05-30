@@ -76,7 +76,7 @@ create_queue()
   LLQ *new_val = (LLQ *)ats_malloc(sizeof(LLQ));
 
   ink_sem_init(&(new_val->sema), 0);
-  ink_mutex_init(&(new_val->mux), "LLQ::create_queue");
+  ink_mutex_init(&(new_val->mux));
 
   new_val->head = new_val->tail = new_val->free = nullptr;
   new_val->len = new_val->highwater = 0;

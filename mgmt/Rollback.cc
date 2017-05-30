@@ -87,7 +87,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
     fileBaseName = fileName;
   }
 
-  ink_mutex_init(&fileAccessLock, "RollBack Mutex");
+  ink_mutex_init(&fileAccessLock);
 
   if (varIntFromName("proxy.config.admin.number_config_bak", &numBak) == true) {
     if (numBak > 1) {

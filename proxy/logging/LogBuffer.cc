@@ -771,7 +771,7 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
 LogBufferList::LogBufferList()
 {
   m_size = 0;
-  ink_mutex_init(&m_mutex, "LogBufferList");
+  ink_mutex_init(&m_mutex);
 }
 
 /*-------------------------------------------------------------------------

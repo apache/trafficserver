@@ -214,7 +214,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
     bool file_exists = true;
 
-    ink_mutex_init(&g_rec_config_lock, nullptr);
+    ink_mutex_init(&g_rec_config_lock);
 
     g_rec_config_fpath = RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE REC_SHADOW_EXT);
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {

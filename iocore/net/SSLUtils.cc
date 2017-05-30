@@ -862,7 +862,7 @@ SSLInitializeLibrary()
     mutex_buf = (ink_mutex *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ink_mutex));
 
     for (int i = 0; i < CRYPTO_num_locks(); i++) {
-      ink_mutex_init(&mutex_buf[i], nullptr);
+      ink_mutex_init(&mutex_buf[i]);
     }
 
     CRYPTO_set_locking_callback(SSL_locking_callback);
