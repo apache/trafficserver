@@ -36,6 +36,7 @@ EventProcessor::EventProcessor() : n_ethreads(0), n_thread_groups(0), n_dthreads
   memset(all_dthreads, 0, sizeof(all_dthreads));
   memset(n_threads_for_type, 0, sizeof(n_threads_for_type));
   memset(next_thread_for_type, 0, sizeof(next_thread_for_type));
+  ink_mutex_init(&dedicated_spawn_thread_mutex, "EventProcessorDedicatedThreadSpawn");
 }
 
 TS_INLINE off_t
