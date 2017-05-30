@@ -1248,7 +1248,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     timeout = thread->schedule_in(this, HRTIME_SECONDS(hostdb_insert_timeout));
     return EVENT_DONE;
   } else {
-    bool failed = !e;
+    bool failed = !e || !e->good;
 
     bool is_rr     = false;
     pending_action = nullptr;
@@ -1264,6 +1264,12 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     int ttl_seconds = failed ? 0 : e->ttl; // ebalsa: moving to second accuracy
 
     Ptr<HostDBInfo> old_r = probe(mutex.get(), md5, false);
+    // If the DNS lookup failed with NXDOMAIN, remove the old record
+    if (e && e->isNameError() && old_r) {
+      hostDB.refcountcache->erase(old_r->key);
+      old_r = nullptr;
+      Debug("hostdb", "Removing the old record when the DNS lookup failed with NXDOMAIN");
+    }
     HostDBInfo old_info;
     if (old_r)
       old_info                    = *old_r.get();
@@ -1327,7 +1333,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     ink_strlcpy(r->perm_hostname(), aname, s_size);
     offset += s_size;
 
-    // If the DNS lookup failed (errors such as NXDOMAIN, SERVFAIL, etc.) but we have an old record
+    // If the DNS lookup failed (errors such as SERVFAIL, etc.) but we have an old record
     // which is okay with being served stale-- lets continue to serve the stale record as long as
     // the record is willing to be served.
     if (failed && old_r && old_r->serve_stale_but_revalidate()) {
