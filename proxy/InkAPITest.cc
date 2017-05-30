@@ -7583,7 +7583,6 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.cache.generation",
   "proxy.config.body_factory.template_base",
   "proxy.config.http.cache.open_write_fail_action",
-  "proxy.config.http.redirection_enabled",
   "proxy.config.http.number_of_redirections",
   "proxy.config.http.cache.max_open_write_retries",
   "proxy.config.http.redirect_use_orig_cache_key",
