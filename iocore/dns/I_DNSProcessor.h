@@ -48,7 +48,8 @@ struct HostEnt : RefCountObj {
   u_char *h_addr_ptrs[DNS_MAX_ADDRS + 1] = {nullptr};
   u_char hostbuf[DNS_HOSTBUF_SIZE]       = {0};
   SRVHosts srv_hosts;
-
+  bool good = true;
+  bool isNameError();
   virtual void free();
 };
 
