@@ -96,7 +96,7 @@ static int TXN_INDEX_OWNED_ARG;
 static int TXN_INDEX_OWNED_ARG_SET;
 static int TXN_INDEX_OWNED_ARG_UNSET;
 TSMutex config_mutex = TSMutexCreate();
-AtsConfig *config    = NULL;
+AtsConfig *config    = nullptr;
 TransformCtx *
 get_transaction_context(TSHttpTxn txnp)
 {
@@ -109,35 +109,35 @@ ats_ctx_alloc()
   TransformCtx *ctx;
 
   ctx                    = (TransformCtx *)TSmalloc(sizeof(TransformCtx));
-  ctx->downstream_vio    = NULL;
-  ctx->downstream_buffer = NULL;
+  ctx->downstream_vio    = nullptr;
+  ctx->downstream_buffer = nullptr;
   ctx->downstream_length = 0;
   ctx->state             = transform_state_initialized;
 
-  ctx->base_fetch  = NULL;
-  ctx->proxy_fetch = NULL;
+  ctx->base_fetch  = nullptr;
+  ctx->proxy_fetch = nullptr;
 
-  ctx->inflater              = NULL;
-  ctx->url_string            = NULL;
-  ctx->gurl                  = NULL;
+  ctx->inflater              = nullptr;
+  ctx->url_string            = nullptr;
+  ctx->gurl                  = nullptr;
   ctx->write_pending         = false;
   ctx->fetch_done            = false;
   ctx->resource_request      = false;
   ctx->beacon_request        = false;
   ctx->transform_added       = false;
   ctx->mps_user_agent        = false;
-  ctx->user_agent            = NULL;
-  ctx->server_context        = NULL;
+  ctx->user_agent            = nullptr;
+  ctx->server_context        = nullptr;
   ctx->html_rewrite          = false;
-  ctx->request_method        = NULL;
+  ctx->request_method        = nullptr;
   ctx->alive                 = 0xaaaa;
-  ctx->options               = NULL;
-  ctx->to_host               = NULL;
+  ctx->options               = nullptr;
+  ctx->to_host               = nullptr;
   ctx->in_place              = false;
-  ctx->driver                = NULL;
+  ctx->driver                = nullptr;
   ctx->record_in_place       = false;
-  ctx->recorder              = NULL;
-  ctx->ipro_response_headers = NULL;
+  ctx->recorder              = nullptr;
+  ctx->ipro_response_headers = nullptr;
   ctx->serve_in_place        = false;
   return ctx;
 }
@@ -149,59 +149,59 @@ ats_ctx_destroy(TransformCtx *ctx)
   CHECK(ctx->alive == 0xaaaa) << "Already dead!";
   ctx->alive = 0xbbbb;
 
-  if (ctx->base_fetch != NULL) {
+  if (ctx->base_fetch != nullptr) {
     ctx->base_fetch->Release();
-    ctx->base_fetch = NULL;
+    ctx->base_fetch = nullptr;
   }
 
-  if (ctx->proxy_fetch != NULL) {
+  if (ctx->proxy_fetch != nullptr) {
     ctx->proxy_fetch->Done(false /* failure */);
-    ctx->proxy_fetch = NULL;
+    ctx->proxy_fetch = nullptr;
   }
 
-  if (ctx->inflater != NULL) {
+  if (ctx->inflater != nullptr) {
     delete ctx->inflater;
-    ctx->inflater = NULL;
+    ctx->inflater = nullptr;
   }
 
   if (ctx->downstream_buffer) {
     TSIOBufferDestroy(ctx->downstream_buffer);
   }
 
-  if (ctx->url_string != NULL) {
+  if (ctx->url_string != nullptr) {
     delete ctx->url_string;
-    ctx->url_string = NULL;
+    ctx->url_string = nullptr;
   }
 
-  if (ctx->gurl != NULL) {
+  if (ctx->gurl != nullptr) {
     delete ctx->gurl;
-    ctx->gurl = NULL;
+    ctx->gurl = nullptr;
   }
-  if (ctx->user_agent != NULL) {
+  if (ctx->user_agent != nullptr) {
     delete ctx->user_agent;
-    ctx->user_agent = NULL;
+    ctx->user_agent = nullptr;
   }
-  ctx->request_method = NULL;
-  if (ctx->options != NULL) {
+  ctx->request_method = nullptr;
+  if (ctx->options != nullptr) {
     delete ctx->options;
-    ctx->options = NULL;
+    ctx->options = nullptr;
   }
-  if (ctx->to_host != NULL) {
+  if (ctx->to_host != nullptr) {
     delete ctx->to_host;
-    ctx->to_host = NULL;
+    ctx->to_host = nullptr;
   }
-  if (ctx->driver != NULL) {
+  if (ctx->driver != nullptr) {
     ctx->driver->Cleanup();
-    ctx->driver = NULL;
+    ctx->driver = nullptr;
   }
-  if (ctx->recorder != NULL) {
+  if (ctx->recorder != nullptr) {
     ctx->recorder->Fail();
-    ctx->recorder->DoneAndSetHeaders(NULL); // Deletes recorder.
-    ctx->recorder = NULL;
+    ctx->recorder->DoneAndSetHeaders(nullptr); // Deletes recorder.
+    ctx->recorder = nullptr;
   }
-  if (ctx->ipro_response_headers != NULL) {
+  if (ctx->ipro_response_headers != nullptr) {
     delete ctx->ipro_response_headers;
-    ctx->ipro_response_headers = NULL;
+    ctx->ipro_response_headers = nullptr;
   }
 
   TSfree(ctx);
@@ -220,13 +220,13 @@ ps_determine_request_options(const RewriteOptions *domain_options, /* may be nul
     // Failed to parse query params or request headers.  Treat this as if there
     // were no query params given.
     TSError("[ats_pagespeed] ps_route request: parsing headers or query params failed");
-    return NULL;
+    return nullptr;
   }
 
   *pagespeed_query_params   = rewrite_query.pagespeed_query_params().ToEscapedString();
   *pagespeed_option_cookies = rewrite_query.pagespeed_option_cookies().ToEscapedString();
 
-  // Will be NULL if there aren't any options set with query params or in
+  // Will be nullptr if there aren't any options set with query params or in
   // headers.
   return rewrite_query.ReleaseOptions();
 }
@@ -238,7 +238,7 @@ ps_determine_request_options(const RewriteOptions *domain_options, /* may be nul
 //  - experiment framework
 // Consider them all, returning appropriate options for this request, of which
 // the caller takes ownership.  If the only applicable options are global,
-// set options to NULL so we can use server_context->global_options().
+// set options to nullptr so we can use server_context->global_options().
 bool
 ps_determine_options(ServerContext *server_context, RequestHeaders *request_headers, ResponseHeaders *response_headers,
                      RewriteOptions **options, RequestContextPtr request_context, GoogleUrl *url,
@@ -249,24 +249,24 @@ ps_determine_options(ServerContext *server_context, RequestHeaders *request_head
 
   // TODO(oschaaf): we don't have directory_options right now. But if we did,
   // we'd need to take them into account here.
-  RewriteOptions *directory_options = NULL;
+  RewriteOptions *directory_options = nullptr;
 
   // Request-specific options, nearly always null.  If set they need to be
   // rebased on the directory options or the global options.
   // TODO(oschaaf): domain options..
   RewriteOptions *request_options =
-    ps_determine_request_options(NULL /*domain options*/, request_headers, response_headers, request_context, server_context, url,
-                                 pagespeed_query_params, pagespeed_option_cookies);
+    ps_determine_request_options(nullptr /*domain options*/, request_headers, response_headers, request_context, server_context,
+                                 url, pagespeed_query_params, pagespeed_option_cookies);
 
   // Because the caller takes ownership of any options we return, the only
   // situation in which we can avoid allocating a new RewriteOptions is if the
   // global options are ok as are.
-  if (directory_options == NULL && request_options == NULL && !global_options->running_experiment()) {
+  if (directory_options == nullptr && request_options == nullptr && !global_options->running_experiment()) {
     return true;
   }
 
   // Start with directory options if we have them, otherwise request options.
-  if (directory_options != NULL) {
+  if (directory_options != nullptr) {
     //*options = directory_options->Clone();
     // OS: HACK! TODO!
     *options = global_options->Clone();
@@ -279,7 +279,7 @@ ps_determine_options(ServerContext *server_context, RequestHeaders *request_head
   // if we need to.  If there are request options then ignore the experiment
   // because we don't want experiments to be contaminated with unexpected
   // settings.
-  if (request_options != NULL) {
+  if (request_options != nullptr) {
     (*options)->Merge(*request_options);
     delete request_options;
   }
@@ -289,7 +289,7 @@ ps_determine_options(ServerContext *server_context, RequestHeaders *request_head
         r, request_headers, *options, url->Host());
     if (!ok) {
       delete *options;
-      *options = NULL;
+      *options = nullptr;
       return false;
       }
   }*/
@@ -308,9 +308,9 @@ handle_send_response_headers(TSHttpTxn txnp)
   }
   CHECK(ctx->alive == 0xaaaa) << "Already dead !";
   if (ctx->html_rewrite) {
-    TSMBuffer bufp = NULL;
-    TSMLoc hdr_loc = NULL;
-    if (ctx->base_fetch == NULL) {
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
+    if (ctx->base_fetch == nullptr) {
       // TODO(oschaaf): figure out when this happens.
       return;
     }
@@ -327,7 +327,7 @@ handle_send_response_headers(TSHttpTxn txnp)
         }
 
         TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, name_gs.data(), name_gs.size());
-        if (field_loc != NULL) {
+        if (field_loc != nullptr) {
           TSMimeHdrFieldValuesClear(bufp, hdr_loc, field_loc);
           TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, field_loc, -1, value_gs.data(), value_gs.size());
         } else if (TSMimeHdrFieldCreate(bufp, hdr_loc, &field_loc) == TS_SUCCESS) {
@@ -369,7 +369,7 @@ copy_response_headers_to_psol(TSMBuffer bufp, TSMLoc hdr_loc, ResponseHeaders *p
     int n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
     for (int j = 0; j < n_field_values; ++j) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
-      if (NULL == value || !value_len) {
+      if (nullptr == value || !value_len) {
         TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
       } else {
         StringPiece s_value(value, value_len);
@@ -400,7 +400,7 @@ copy_request_headers_to_psol(TSMBuffer bufp, TSMLoc hdr_loc, RequestHeaders *pso
     int n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
     for (int j = 0; j < n_field_values; ++j) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
-      if (NULL == value || !value_len) {
+      if (nullptr == value || !value_len) {
         TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
       } else {
         StringPiece s_value(value, value_len);
@@ -429,7 +429,7 @@ get_host_options(const StringPiece &host, ServerContext *server_context)
   TSMutexLock(config_mutex);
   AtsRewriteOptions *r = (AtsRewriteOptions *)server_context->global_options()->Clone();
   AtsHostConfig *hc    = config->Find(host.data(), host.size());
-  if (hc->options() != NULL) {
+  if (hc->options() != nullptr) {
     // We return a clone here to avoid having to thing about
     // configuration reloads and outstanding options
     hc->options()->ClearSignatureWithCaution();
@@ -484,7 +484,7 @@ ats_transform_init(TSCont contp, TransformCtx *ctx)
   downstream_conn        = TSTransformOutputVConnGet(contp);
   ctx->downstream_buffer = TSIOBufferCreate();
   ctx->downstream_vio    = TSVConnWrite(downstream_conn, contp, TSIOBufferReaderAlloc(ctx->downstream_buffer), INT64_MAX);
-  if (ctx->recorder != NULL) {
+  if (ctx->recorder != nullptr) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, req_hdr_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return;
@@ -505,21 +505,21 @@ ats_transform_init(TSCont contp, TransformCtx *ctx)
   copy_response_headers_to_psol(bufp, hdr_loc, &response_headers);
 
   std::string host        = ctx->gurl->HostAndPort().as_string();
-  RewriteOptions *options = NULL;
+  RewriteOptions *options = nullptr;
   if (host.size() > 0) {
     options = get_host_options(host.c_str(), server_context);
-    if (options != NULL) {
+    if (options != nullptr) {
       server_context->message_handler()->Message(kInfo, "request options found \r\n");
     }
   }
-  if (options == NULL) {
+  if (options == nullptr) {
     options = server_context->global_options()->Clone();
   }
 
   server_context->message_handler()->Message(kInfo, "request options:\r\n[%s]", options->OptionsToString().c_str());
 
   /*
-  RewriteOptions* options = NULL;
+  RewriteOptions* options = nullptr;
   GoogleString pagespeed_query_params;
   GoogleString pagespeed_option_cookies;
   bool ok = ps_determine_options(server_context,
@@ -547,7 +547,7 @@ ats_transform_init(TSCont contp, TransformCtx *ctx)
     }*/
 
   RewriteDriver *driver;
-  if (custom_options.get() == NULL) {
+  if (custom_options.get() == nullptr) {
     driver = server_context->NewRewriteDriver(ctx->base_fetch->request_context());
   } else {
     driver = server_context->NewCustomRewriteDriver(custom_options.release(), ctx->base_fetch->request_context());
@@ -569,7 +569,7 @@ ats_transform_init(TSCont contp, TransformCtx *ctx)
     false /* requires_blink_cohort (no longer unused) */, &page_callback_added));
 
   ctx->proxy_fetch = ats_process_context->proxy_fetch_factory()->CreateNewProxyFetch(
-    *(ctx->url_string), ctx->base_fetch, driver, property_callback.release(), NULL /* original_content_fetch */);
+    *(ctx->url_string), ctx->base_fetch, driver, property_callback.release(), nullptr /* original_content_fetch */);
 
   TSHandleMLocRelease(reqp, TS_NULL_MLOC, req_hdr_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -602,8 +602,8 @@ ats_transform_one(TransformCtx *ctx, TSIOBufferReader upstream_reader, int amoun
 
     TSDebug("ats-speed", "transform!");
     // TODO(oschaaf): use at least the message handler from the server conrtext here?
-    if (ctx->inflater == NULL) {
-      if (ctx->recorder != NULL) {
+    if (ctx->inflater == nullptr) {
+      if (ctx->recorder != nullptr) {
         ctx->recorder->Write(StringPiece((char *)upstream_buffer, upstream_length), ats_process_context->message_handler());
       } else {
         ctx->proxy_fetch->Write(StringPiece((char *)upstream_buffer, upstream_length), ats_process_context->message_handler());
@@ -618,7 +618,7 @@ ats_transform_one(TransformCtx *ctx, TSIOBufferReader upstream_reader, int amoun
         if (num_inflated_bytes < 0) {
           TSError("[ats_pagespeed] Corrupted inflation");
         } else if (num_inflated_bytes > 0) {
-          if (ctx->recorder != NULL) {
+          if (ctx->recorder != nullptr) {
             ctx->recorder->Write(StringPiece(buf, num_inflated_bytes), ats_process_context->message_handler());
           } else {
             ctx->proxy_fetch->Write(StringPiece(buf, num_inflated_bytes), ats_process_context->message_handler());
@@ -626,7 +626,7 @@ ats_transform_one(TransformCtx *ctx, TSIOBufferReader upstream_reader, int amoun
         }
       }
     }
-    // ctx->proxy_fetch->Flush(NULL);
+    // ctx->proxy_fetch->Flush(nullptr);
     TSIOBufferReaderConsume(upstream_reader, upstream_length);
     amount -= upstream_length;
   }
@@ -640,14 +640,14 @@ ats_transform_finish(TransformCtx *ctx)
 {
   if (ctx->state == transform_state_output) {
     ctx->state = transform_state_finished;
-    if (ctx->recorder != NULL) {
+    if (ctx->recorder != nullptr) {
       TSDebug("ats-speed", "ipro recording finished");
       ctx->recorder->DoneAndSetHeaders(ctx->ipro_response_headers);
-      ctx->recorder = NULL;
+      ctx->recorder = nullptr;
     } else {
       TSDebug("ats-speed", "proxy fetch finished");
       ctx->proxy_fetch->Done(true);
-      ctx->proxy_fetch = NULL;
+      ctx->proxy_fetch = nullptr;
     }
   }
 }
@@ -685,7 +685,7 @@ ats_transform_do(TSCont contp)
     }
 
     if (upstream_todo > 0) {
-      if (ctx->recorder != NULL) {
+      if (ctx->recorder != nullptr) {
         ctx->downstream_length += upstream_todo;
         TSIOBufferCopy(TSVIOBufferGet(ctx->downstream_vio), TSVIOReaderGet(upstream_vio), upstream_todo, 0);
       }
@@ -703,7 +703,7 @@ ats_transform_do(TSCont contp)
     }
   } else {
     // When not recording, the base fetch will re-enable from the PSOL callback.
-    if (ctx->recorder != NULL) {
+    if (ctx->recorder != nullptr) {
       TSVIONBytesSet(ctx->downstream_vio, ctx->downstream_length);
       TSVIOReenable(ctx->downstream_vio);
     }
@@ -759,7 +759,7 @@ ats_pagespeed_transform_add(TSHttpTxn txnp)
     ctx->transform_added = true;
   }
 
-  TSHttpTxnUntransformedRespCache(txnp, ctx->recorder == NULL ? 1 : 0);
+  TSHttpTxnUntransformedRespCache(txnp, ctx->recorder == nullptr ? 1 : 0);
   TSHttpTxnTransformedRespCache(txnp, 0);
 
   TSVConn connp;
@@ -772,9 +772,9 @@ ats_pagespeed_transform_add(TSHttpTxn txnp)
 void
 handle_read_request_header(TSHttpTxn txnp)
 {
-  TSMBuffer reqp = NULL;
-  TSMLoc hdr_loc = NULL;
-  char *url      = NULL;
+  TSMBuffer reqp = nullptr;
+  TSMLoc hdr_loc = nullptr;
+  char *url      = nullptr;
   int url_length = -1;
 
   TransformCtx *ctx = ats_ctx_alloc();
@@ -842,11 +842,11 @@ handle_read_request_header(TSHttpTxn txnp)
           // ctx->base_fetch->response_headers()->ComputeCaching();
           std::string host = ctx->gurl->HostAndPort().as_string();
           // request_headers->Lookup1(HttpAttributes::kHost);
-          RewriteOptions *options = NULL;
+          RewriteOptions *options = nullptr;
           if (host.size() > 0) {
             options = get_host_options(host.c_str(), server_context);
           }
-          if (options == NULL) {
+          if (options == nullptr) {
             options = server_context->global_options()->Clone();
           }
 
@@ -854,7 +854,7 @@ handle_read_request_header(TSHttpTxn txnp)
           // GoogleString pagespeed_option_cookies;
           // bool ok = ps_determine_options(server_context,
           //                               ctx->base_fetch->request_headers(),
-          //                               NULL /*ResponseHeaders* */,
+          //                               nullptr /*ResponseHeaders* */,
           //                               &options,
           //                               rptr,
           //                              ctx->gurl,
@@ -871,7 +871,7 @@ handle_read_request_header(TSHttpTxn txnp)
           rptr->set_options(options->ComputeHttpOptions());
           if (options->in_place_rewriting_enabled() && options->enabled() && options->IsAllowed(ctx->gurl->Spec())) {
             RewriteDriver *driver;
-            if (custom_options.get() == NULL) {
+            if (custom_options.get() == nullptr) {
               driver = server_context->NewRewriteDriver(ctx->base_fetch->request_context());
             } else {
               driver = server_context->NewCustomRewriteDriver(custom_options.release(), ctx->base_fetch->request_context());
@@ -942,11 +942,11 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
   }
   if (event == TS_EVENT_HTTP_TXN_CLOSE) {
     TransformCtx *ctx = get_transaction_context(txn);
-    // if (ctx != NULL && !ctx->resource_request && !ctx->beacon_request && !ctx->html_rewrite) {
+    // if (ctx != nullptr && !ctx->resource_request && !ctx->beacon_request && !ctx->html_rewrite) {
     // For intercepted requests like beacons and resource requests, we don't own the
     // ctx here - the interceptor does.
 
-    if (ctx != NULL) {
+    if (ctx != nullptr) {
       bool is_owned = TSHttpTxnArgGet(txn, TXN_INDEX_OWNED_ARG) == &TXN_INDEX_OWNED_ARG_SET
                       // TODO(oschaaf): rewrite this.
                       && !ctx->serve_in_place;
@@ -961,8 +961,8 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     handle_read_request_header(txn);
     return 0;
   } else if (event == TS_EVENT_HTTP_SEND_REQUEST_HDR) {
-    TSMBuffer request_header_buf = NULL;
-    TSMLoc request_header_loc    = NULL;
+    TSMBuffer request_header_buf = nullptr;
+    TSMLoc request_header_loc    = nullptr;
 
     if (TSHttpTxnServerReqGet(txn, &request_header_buf, &request_header_loc) == TS_SUCCESS) {
       hide_accept_encoding(request_header_buf, request_header_loc, "@xxAccept-Encoding");
@@ -975,8 +975,8 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;
   } else if (event == TS_EVENT_HTTP_READ_RESPONSE_HDR) {
-    TSMBuffer request_header_buf = NULL;
-    TSMLoc request_header_loc    = NULL;
+    TSMBuffer request_header_buf = nullptr;
+    TSMLoc request_header_loc    = nullptr;
 
     if (TSHttpTxnServerReqGet(txn, &request_header_buf, &request_header_loc) == TS_SUCCESS) {
       restore_accept_encoding(request_header_buf, request_header_loc, "@xxAccept-Encoding");
@@ -989,7 +989,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
   CHECK(event == TS_EVENT_HTTP_READ_RESPONSE_HDR || event == TS_EVENT_HTTP_READ_CACHE_HDR);
 
   TransformCtx *ctx = get_transaction_context(txn);
-  if (ctx == NULL) {
+  if (ctx == nullptr) {
     // TODO(oschaaf): document how and when this happens.
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;
@@ -1002,15 +1002,15 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
   std::string *to_host = new std::string();
   to_host->append(get_remapped_host(ctx->txn));
   ctx->to_host                  = to_host;
-  TSMBuffer response_header_buf = NULL;
-  TSMLoc response_header_loc    = NULL;
+  TSMBuffer response_header_buf = nullptr;
+  TSMLoc response_header_loc    = nullptr;
 
   // TODO(oschaaf): from configuration!
   bool override_expiry = false;
 
   const char *host = ctx->gurl->HostAndPort().as_string().c_str();
   // request_headers->Lookup1(HttpAttributes::kHost);
-  if (host != NULL && strlen(host) > 0) {
+  if (host != nullptr && strlen(host) > 0) {
     override_expiry = get_override_expiry(host);
   }
 
@@ -1070,7 +1070,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     StringPiece s_content_type                    = get_header(response_header_buf, response_header_loc, "Content-Type");
     const net_instaweb::ContentType *content_type = net_instaweb::MimeTypeToContentType(s_content_type);
 
-    if (ctx->record_in_place && content_type != NULL) {
+    if (ctx->record_in_place && content_type != nullptr) {
       GoogleString cache_url = *ctx->url_string;
       ctx->server_context->rewrite_stats()->ipro_not_in_cache()->Add(1);
       ctx->server_context->message_handler()->Message(kInfo, "Could not rewrite resource in-place "
@@ -1100,7 +1100,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       ctx->ipro_response_headers->ComputeCaching();
 
       ctx->recorder->ConsiderResponseHeaders(InPlaceResourceRecorder::kPreliminaryHeaders, ctx->ipro_response_headers);
-    } else if ((content_type == NULL || !content_type->IsHtmlLike())) {
+    } else if ((content_type == nullptr || !content_type->IsHtmlLike())) {
       ok = false;
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
       return 0;
@@ -1124,10 +1124,10 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       ctx->inflater = new GzipInflater(inflate_type);
       ctx->inflater->Init();
     }
-    ctx->html_rewrite = ctx->recorder == NULL;
+    ctx->html_rewrite = ctx->recorder == nullptr;
     if (ctx->html_rewrite) {
       TSDebug(DEBUG_TAG, "Will optimize [%s]", ctx->url_string->c_str());
-    } else if (ctx->recorder != NULL) {
+    } else if (ctx->recorder != nullptr) {
       TSDebug(DEBUG_TAG, "Will record in place: [%s]", ctx->url_string->c_str());
     } else {
       CHECK(false) << "At this point, adding a transform makes no sense";
@@ -1175,8 +1175,8 @@ process_configuration()
   DIR *dir;
   struct dirent *ent;
 
-  if ((dir = opendir("/usr/local/etc/trafficserver/psol/")) != NULL) {
-    while ((ent = readdir(dir)) != NULL) {
+  if ((dir = opendir("/usr/local/etc/trafficserver/psol/")) != nullptr) {
+    while ((ent = readdir(dir)) != nullptr) {
       size_t len = strlen(ent->d_name);
       if (len <= 0)
         continue;
@@ -1202,7 +1202,7 @@ process_configuration()
   old_config = config;
   config     = new_config;
   TSMutexUnlock(config_mutex);
-  if (old_config != NULL) {
+  if (old_config != nullptr) {
     delete old_config;
   }
 }
@@ -1248,7 +1248,7 @@ config_notification_callback(void *data)
   inotify_rm_watch(fd, wd);
   close(fd);
 
-  return NULL;
+  return nullptr;
 }
 
 void
@@ -1268,7 +1268,7 @@ TSPluginInit(int argc, const char *argv[])
     atexit(cleanup_process);
     ats_process_context = new AtsProcessContext();
     process_configuration();
-    TSCont transform_contp = TSContCreate(transform_plugin, NULL);
+    TSCont transform_contp = TSContCreate(transform_plugin, nullptr);
     TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, transform_contp);
     TSHttpHookAdd(TS_HTTP_READ_CACHE_HDR_HOOK, transform_contp);
     TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, transform_contp);
@@ -1277,7 +1277,7 @@ TSPluginInit(int argc, const char *argv[])
     TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, transform_contp);
 
     setup_resource_intercept();
-    CHECK(TSThreadCreate(config_notification_callback, NULL)) << "";
+    CHECK(TSThreadCreate(config_notification_callback, nullptr)) << "";
     ats_process_context->message_handler()->Message(kInfo, "TSPluginInit OK");
   }
 }

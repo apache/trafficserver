@@ -49,10 +49,10 @@ char *timestamp_to_time_str(long timestamp);
 unsigned ip_from_host(char *host);
 void manager_alarm(AlarmType alarm_type, const char *msg, ...) TS_PRINTFLIKE(2, 3);
 void strip_trailing_newline(char *buf);
-char *escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst = NULL, size_t dst_size = 0,
-                   const unsigned char *map = NULL);
-char *pure_escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst = NULL, size_t dst_size = 0,
-                        const unsigned char *map = NULL);
+char *escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst = nullptr, size_t dst_size = 0,
+                   const unsigned char *map = nullptr);
+char *pure_escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst = nullptr, size_t dst_size = 0,
+                        const unsigned char *map = nullptr);
 char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width = 0,
                    char pad_char = '0');
 void remove_content_type_attributes(char *type_str, int *type_len);

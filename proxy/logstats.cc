@@ -377,7 +377,7 @@ public:
     }
 
     _stack.sort();
-    for (LruStack::iterator u = _stack.begin(); NULL != u->url && --show >= 0; ++u) {
+    for (LruStack::iterator u = _stack.begin(); nullptr != u->url && --show >= 0; ++u) {
       _dump_url(u, as_object);
     }
     if (as_object) {
@@ -633,25 +633,25 @@ struct CommandLineArgs {
 static CommandLineArgs cl;
 
 static ArgumentDescription argument_descriptions[] = {
-  {"log_file", 'f', "Specific logfile to parse", "S1023", cl.log_file, NULL, NULL},
-  {"origin_list", 'o', "Only show stats for listed Origins", "S4095", cl.origin_list, NULL, NULL},
-  {"origin_file", 'O', "File listing Origins to show", "S1023", cl.origin_file, NULL, NULL},
-  {"max_orgins", 'M', "Max number of Origins to show", "I", &cl.max_origins, NULL, NULL},
-  {"urls", 'u', "Produce JSON stats for URLs, argument is LRU size", "I", &cl.urls, NULL, NULL},
-  {"show_urls", 'U', "Only show max this number of URLs", "I", &cl.show_urls, NULL, NULL},
-  {"as_object", 'A', "Produce URL stats as a JSON object instead of array", "T", &cl.as_object, NULL, NULL},
-  {"concise", 'C', "Eliminate metrics that can be inferred from other values", "T", &cl.concise, NULL, NULL},
-  {"incremental", 'i', "Incremental log parsing", "T", &cl.incremental, NULL, NULL},
-  {"statetag", 'S', "Name of the state file to use", "S1023", cl.state_tag, NULL, NULL},
-  {"tail", 't', "Parse the last <sec> seconds of log", "I", &cl.tail, NULL, NULL},
-  {"summary", 's', "Only produce the summary", "T", &cl.summary, NULL, NULL},
-  {"json", 'j', "Produce JSON formatted output", "T", &cl.json, NULL, NULL},
-  {"cgi", 'c', "Produce HTTP headers suitable as a CGI", "T", &cl.cgi, NULL, NULL},
-  {"min_hits", 'm', "Minimum total hits for an Origin", "L", &cl.min_hits, NULL, NULL},
-  {"max_age", 'a', "Max age for log entries to be considered", "I", &cl.max_age, NULL, NULL},
-  {"line_len", 'l', "Output line length", "I", &cl.line_len, NULL, NULL},
-  {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags, NULL, NULL},
-  {"report_per_user", 'r', "Report stats per user instead of host", "T", &cl.report_per_user, NULL, NULL},
+  {"log_file", 'f', "Specific logfile to parse", "S1023", cl.log_file, nullptr, nullptr},
+  {"origin_list", 'o', "Only show stats for listed Origins", "S4095", cl.origin_list, nullptr, nullptr},
+  {"origin_file", 'O', "File listing Origins to show", "S1023", cl.origin_file, nullptr, nullptr},
+  {"max_orgins", 'M', "Max number of Origins to show", "I", &cl.max_origins, nullptr, nullptr},
+  {"urls", 'u', "Produce JSON stats for URLs, argument is LRU size", "I", &cl.urls, nullptr, nullptr},
+  {"show_urls", 'U', "Only show max this number of URLs", "I", &cl.show_urls, nullptr, nullptr},
+  {"as_object", 'A', "Produce URL stats as a JSON object instead of array", "T", &cl.as_object, nullptr, nullptr},
+  {"concise", 'C', "Eliminate metrics that can be inferred from other values", "T", &cl.concise, nullptr, nullptr},
+  {"incremental", 'i', "Incremental log parsing", "T", &cl.incremental, nullptr, nullptr},
+  {"statetag", 'S', "Name of the state file to use", "S1023", cl.state_tag, nullptr, nullptr},
+  {"tail", 't', "Parse the last <sec> seconds of log", "I", &cl.tail, nullptr, nullptr},
+  {"summary", 's', "Only produce the summary", "T", &cl.summary, nullptr, nullptr},
+  {"json", 'j', "Produce JSON formatted output", "T", &cl.json, nullptr, nullptr},
+  {"cgi", 'c', "Produce HTTP headers suitable as a CGI", "T", &cl.cgi, nullptr, nullptr},
+  {"min_hits", 'm', "Minimum total hits for an Origin", "L", &cl.min_hits, nullptr, nullptr},
+  {"max_age", 'a', "Max age for log entries to be considered", "I", &cl.max_age, nullptr, nullptr},
+  {"line_len", 'l', "Output line length", "I", &cl.line_len, nullptr, nullptr},
+  {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags, nullptr, nullptr},
+  {"report_per_user", 'r', "Report stats per user instead of host", "T", &cl.report_per_user, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 
@@ -670,14 +670,14 @@ CommandLineArgs::parse_arguments(const char **argv)
     json = 1;
     cgi  = 1;
 
-    if (NULL != (query = getenv("QUERY_STRING"))) {
+    if (nullptr != (query = getenv("QUERY_STRING"))) {
       char buffer[MAX_ORIG_STRING];
       char *tok, *sep_ptr, *val;
 
       ink_strlcpy(buffer, query, sizeof(buffer));
       unescapifyStr(buffer);
 
-      for (tok = strtok_r(buffer, "&", &sep_ptr); tok != NULL;) {
+      for (tok = strtok_r(buffer, "&", &sep_ptr); tok != nullptr;) {
         val = strchr(tok, '=');
         if (val) {
           *(val++) = '\0';
@@ -686,23 +686,23 @@ CommandLineArgs::parse_arguments(const char **argv)
           } else if (0 == strncmp(tok, "state_tag", 9)) {
             ink_strlcpy(state_tag, val, sizeof(state_tag));
           } else if (0 == strncmp(tok, "max_origins", 11)) {
-            max_origins = strtol(val, NULL, 10);
+            max_origins = strtol(val, nullptr, 10);
           } else if (0 == strncmp(tok, "urls", 4)) {
-            urls = strtol(val, NULL, 10);
+            urls = strtol(val, nullptr, 10);
           } else if (0 == strncmp(tok, "show_urls", 9)) {
-            show_urls = strtol(val, NULL, 10);
+            show_urls = strtol(val, nullptr, 10);
           } else if (0 == strncmp(tok, "as_object", 9)) {
-            as_object = strtol(val, NULL, 10);
+            as_object = strtol(val, nullptr, 10);
           } else if (0 == strncmp(tok, "min_hits", 8)) {
-            min_hits = strtol(val, NULL, 10);
+            min_hits = strtol(val, nullptr, 10);
           } else if (0 == strncmp(tok, "incremental", 11)) {
-            incremental = strtol(val, NULL, 10);
+            incremental = strtol(val, nullptr, 10);
           } else {
             // Unknown query arg.
           }
         }
 
-        tok = strtok_r(NULL, "&", &sep_ptr);
+        tok = strtok_r(nullptr, "&", &sep_ptr);
       }
     }
   }
@@ -722,7 +722,7 @@ struct ExitStatus {
 
   ExitStatus() : level(EXIT_OK) { memset(notice, 0, sizeof(notice)); }
   void
-  set(ExitLevel l, const char *n = NULL)
+  set(ExitLevel l, const char *n = nullptr)
   {
     if (l > level) {
       level = l;
@@ -1172,9 +1172,9 @@ update_schemes(OriginStats *stat, int scheme, int size)
 OriginStats *
 find_or_create_stats(const char *key)
 {
-  OriginStats *o_stats = NULL;
+  OriginStats *o_stats = nullptr;
   OriginStorage::iterator o_iter;
-  char *o_server = NULL;
+  char *o_server = nullptr;
 
   // TODO: If we save state (struct) for a run, we probably need to always
   // update the origin data, no matter what the origin_set is.
@@ -1207,7 +1207,7 @@ update_stats(OriginStats *o_stats, const HTTPMethod method, URLScheme scheme, in
   update_methods(&totals, method, size);
   update_schemes(&totals, scheme, size);
   update_counter(totals.total, size);
-  if (NULL != o_stats) {
+  if (nullptr != o_stats) {
     update_results_elapsed(o_stats, result, elapsed, size);
     update_codes(o_stats, http_code, size);
     update_methods(o_stats, method, size);
@@ -1221,7 +1221,7 @@ update_stats(OriginStats *o_stats, const HTTPMethod method, URLScheme scheme, in
 int
 parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate_per_userid = false)
 {
-  static LogFieldList *fieldlist = NULL;
+  static LogFieldList *fieldlist = nullptr;
 
   LogEntryHeader *entry;
   LogBufferIterator buf_iter(buf_header);
@@ -1242,7 +1242,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
 
   if (!fieldlist) {
     fieldlist = new LogFieldList;
-    ink_assert(fieldlist != NULL);
+    ink_assert(fieldlist != nullptr);
     bool agg = false;
     LogFormat::parse_symbol_string(buf_header->fmt_fieldlist(), fieldlist, &agg);
   }
@@ -1257,7 +1257,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
     }
 
     state   = P_STATE_ELAPSED;
-    o_stats = NULL;
+    o_stats = nullptr;
     method  = METHOD_OTHER;
     scheme  = SCHEME_OTHER;
 
@@ -1434,43 +1434,43 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         switch (hier) {
         case SQUID_HIER_NONE:
           update_counter(totals.hierarchies.none, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.none, size);
           }
           break;
         case SQUID_HIER_DIRECT:
           update_counter(totals.hierarchies.direct, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.direct, size);
           }
           break;
         case SQUID_HIER_SIBLING_HIT:
           update_counter(totals.hierarchies.sibling, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.sibling, size);
           }
           break;
         case SQUID_HIER_PARENT_HIT:
           update_counter(totals.hierarchies.parent, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.direct, size);
           }
           break;
         case SQUID_HIER_EMPTY:
           update_counter(totals.hierarchies.empty, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->hierarchies.empty, size);
           }
           break;
         default:
           if ((hier >= SQUID_HIER_EMPTY) && (hier < SQUID_HIER_INVALID_ASSIGNED_CODE)) {
             update_counter(totals.hierarchies.other, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->hierarchies.other, size);
             }
           } else {
             update_counter(totals.hierarchies.invalid, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->hierarchies.invalid, size);
             }
           }
@@ -1492,7 +1492,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         state = P_STATE_END;
         if (IMAG_AS_INT == *reinterpret_cast<int *>(read_from)) {
           update_counter(totals.content.image.total, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->content.image.total, size);
           }
           tok = read_from + 6;
@@ -1500,42 +1500,42 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
           case JPEG_AS_INT:
             tok_len = 10;
             update_counter(totals.content.image.jpeg, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.image.jpeg, size);
             }
             break;
           case JPG_AS_INT:
             tok_len = 9;
             update_counter(totals.content.image.jpeg, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.image.jpeg, size);
             }
             break;
           case GIF_AS_INT:
             tok_len = 9;
             update_counter(totals.content.image.gif, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.image.gif, size);
             }
             break;
           case PNG_AS_INT:
             tok_len = 9;
             update_counter(totals.content.image.png, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.image.png, size);
             }
             break;
           case BMP_AS_INT:
             tok_len = 9;
             update_counter(totals.content.image.bmp, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.image.bmp, size);
             }
             break;
           default:
             tok_len = 6 + strlen(tok);
             update_counter(totals.content.image.other, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.image.other, size);
             }
             break;
@@ -1543,7 +1543,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         } else if (TEXT_AS_INT == *reinterpret_cast<int *>(read_from)) {
           tok = read_from + 5;
           update_counter(totals.content.text.total, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->content.text.total, size);
           }
           switch (*reinterpret_cast<int *>(tok)) {
@@ -1551,42 +1551,42 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
             // TODO verify if really "javascript"
             tok_len = 15;
             update_counter(totals.content.text.javascript, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.text.javascript, size);
             }
             break;
           case CSS_AS_INT:
             tok_len = 8;
             update_counter(totals.content.text.css, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.text.css, size);
             }
             break;
           case XML_AS_INT:
             tok_len = 8;
             update_counter(totals.content.text.xml, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.text.xml, size);
             }
             break;
           case HTML_AS_INT:
             tok_len = 9;
             update_counter(totals.content.text.html, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.text.html, size);
             }
             break;
           case PLAI_AS_INT:
             tok_len = 10;
             update_counter(totals.content.text.plain, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.text.plain, size);
             }
             break;
           default:
             tok_len = 5 + strlen(tok);
             update_counter(totals.content.text.other, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.text.other, size);
             }
             break;
@@ -1594,28 +1594,28 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         } else if (0 == strncmp(read_from, "application", 11)) {
           tok = read_from + 12;
           update_counter(totals.content.application.total, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->content.application.total, size);
           }
           switch (*reinterpret_cast<int *>(tok)) {
           case ZIP_AS_INT:
             tok_len = 15;
             update_counter(totals.content.application.zip, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.application.zip, size);
             }
             break;
           case JAVA_AS_INT:
             tok_len = 22;
             update_counter(totals.content.application.javascript, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.application.javascript, size);
             }
             break;
           case X_JA_AS_INT:
             tok_len = 24;
             update_counter(totals.content.application.javascript, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.application.javascript, size);
             }
             break;
@@ -1623,19 +1623,19 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
             if (0 == strcmp(tok + 4, "xml")) {
               tok_len = 19;
               update_counter(totals.content.application.rss_xml, size);
-              if (o_stats != NULL) {
+              if (o_stats != nullptr) {
                 update_counter(o_stats->content.application.rss_xml, size);
               }
             } else if (0 == strcmp(tok + 4, "atom")) {
               tok_len = 20;
               update_counter(totals.content.application.rss_atom, size);
-              if (o_stats != NULL) {
+              if (o_stats != nullptr) {
                 update_counter(o_stats->content.application.rss_atom, size);
               }
             } else {
               tok_len = 12 + strlen(tok);
               update_counter(totals.content.application.rss_other, size);
-              if (o_stats != NULL) {
+              if (o_stats != nullptr) {
                 update_counter(o_stats->content.application.rss_other, size);
               }
             }
@@ -1644,19 +1644,19 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
             if (0 == strcmp(tok, "x-shockwave-flash")) {
               tok_len = 29;
               update_counter(totals.content.application.shockwave_flash, size);
-              if (o_stats != NULL) {
+              if (o_stats != nullptr) {
                 update_counter(o_stats->content.application.shockwave_flash, size);
               }
             } else if (0 == strcmp(tok, "x-quicktimeplayer")) {
               tok_len = 29;
               update_counter(totals.content.application.quicktime, size);
-              if (o_stats != NULL) {
+              if (o_stats != nullptr) {
                 update_counter(o_stats->content.application.quicktime, size);
               }
             } else {
               tok_len = 12 + strlen(tok);
               update_counter(totals.content.application.other, size);
-              if (o_stats != NULL) {
+              if (o_stats != nullptr) {
                 update_counter(o_stats->content.application.other, size);
               }
             }
@@ -1665,35 +1665,35 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
           tok     = read_from + 6;
           tok_len = 6 + strlen(tok);
           update_counter(totals.content.audio.total, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->content.audio.total, size);
           }
           if ((0 == strcmp(tok, "x-wav")) || (0 == strcmp(tok, "wav"))) {
             update_counter(totals.content.audio.wav, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.audio.wav, size);
             }
           } else if ((0 == strcmp(tok, "x-mpeg")) || (0 == strcmp(tok, "mpeg"))) {
             update_counter(totals.content.audio.mpeg, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.audio.mpeg, size);
             }
           } else {
             update_counter(totals.content.audio.other, size);
-            if (o_stats != NULL) {
+            if (o_stats != nullptr) {
               update_counter(o_stats->content.audio.other, size);
             }
           }
         } else if ('-' == *read_from) {
           tok_len = 1;
           update_counter(totals.content.none, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->content.none, size);
           }
         } else {
           tok_len = strlen(read_from);
           update_counter(totals.content.other, size);
-          if (o_stats != NULL) {
+          if (o_stats != nullptr) {
             update_counter(o_stats->content.other, size);
           }
         }
@@ -1845,7 +1845,7 @@ use_origin(const OriginStats *stat)
 {
   return cl.report_per_user != 0 ?
            (stat->total.count > cl.min_hits) :
-           ((stat->total.count > cl.min_hits) && (NULL != strchr(stat->server, '.')) && (NULL == strchr(stat->server, '%')));
+           ((stat->total.count > cl.min_hits) && (nullptr != strchr(stat->server, '.')) && (nullptr == strchr(stat->server, '%')));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2396,7 +2396,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   if (cl.max_age > 0) {
     struct timeval tv;
 
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     max_age = tv.tv_sec - cl.max_age;
   } else {
     max_age = 0;
@@ -2411,9 +2411,9 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     char *tok;
     char *sep_ptr;
 
-    for (tok = strtok_r(cl.origin_list, ",", &sep_ptr); tok != NULL;) {
+    for (tok = strtok_r(cl.origin_list, ",", &sep_ptr); tok != nullptr;) {
       origin_set->insert(tok);
-      tok = strtok_r(NULL, ",", &sep_ptr);
+      tok = strtok_r(nullptr, ",", &sep_ptr);
     }
   }
   // Load origins from an "external" file (\n separated)
@@ -2565,8 +2565,8 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     // Check if the main log file was rotated, and if so, locate
     // the old file first, and parse the remaining log data.
     if (stat_buf.st_ino != last_state.st_ino) {
-      DIR *dirp         = NULL;
-      struct dirent *dp = NULL;
+      DIR *dirp         = nullptr;
+      struct dirent *dp = nullptr;
       ino_t old_inode   = last_state.st_ino;
 
       // Save the current log-file's I-Node number.
@@ -2574,10 +2574,10 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
 
       // Find the old log file.
       dirp = opendir(Layout::get()->logdir);
-      if (NULL == dirp) {
+      if (nullptr == dirp) {
         exit_status.set(EXIT_WARNING, " can't read log directory");
       } else {
-        while ((dp = readdir(dirp)) != NULL) {
+        while ((dp = readdir(dirp)) != nullptr) {
           // coverity[fs_check_call]
           if (stat(dp->d_name, &stat_buf) < 0) {
             exit_status.set(EXIT_WARNING, " can't stat ");

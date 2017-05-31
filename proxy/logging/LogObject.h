@@ -119,7 +119,7 @@ public:
     m_flags |= LOG_OBJECT_FMT_TIMESTAMP;
   }
 
-  int log(LogAccess *lad, const char *text_entry = NULL);
+  int log(LogAccess *lad, const char *text_entry = nullptr);
   int va_log(LogAccess *lad, const char *fmt, va_list ap);
 
   unsigned roll_files(long time_now = 0);
@@ -259,7 +259,7 @@ public:
   inline void
   force_new_buffer()
   {
-    _checkout_write(NULL, 0);
+    _checkout_write(nullptr, 0);
   }
 
   bool operator==(LogObject &rhs);
