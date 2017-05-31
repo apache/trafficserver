@@ -452,6 +452,11 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
     client_sec_protocol      = protocol ? protocol : "-";
     const char *cipher       = ssl_vc->getSSLCipherSuite();
     client_cipher_suite      = cipher ? cipher : "-";
+    if (!client_tcp_reused) {
+      // Copy along the TLS handshake timings
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = ssl_vc->sslHandshakeBeginTime;
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = ssl_vc->sslHandshakeEndTime;
+    }
   }
   const char *protocol_str = client_vc->get_protocol_string();
   client_protocol          = protocol_str ? protocol_str : "-";

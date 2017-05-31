@@ -1121,9 +1121,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // do we want to include cert info in trace?
 
     if (sslHandshakeBeginTime) {
-      const ink_hrtime ssl_handshake_time = Thread::get_hrtime() - sslHandshakeBeginTime;
+      sslHandshakeEndTime                 = Thread::get_hrtime();
+      const ink_hrtime ssl_handshake_time = sslHandshakeEndTime - sslHandshakeBeginTime;
+
       Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
-      sslHandshakeBeginTime = 0;
       SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);
       SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_in_stat);
     }

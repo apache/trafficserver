@@ -292,6 +292,7 @@ public:
 
   SSL *ssl                         = nullptr;
   ink_hrtime sslHandshakeBeginTime = 0;
+  ink_hrtime sslHandshakeEndTime   = 0;
   ink_hrtime sslLastWriteTime      = 0;
   int64_t sslTotalBytesSent        = 0;
 
