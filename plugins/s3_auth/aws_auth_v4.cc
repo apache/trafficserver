@@ -29,7 +29,6 @@
 #include <openssl/sha.h>  /* SHA(), sha256_Update(), SHA256_Final, etc. */
 #include <openssl/hmac.h> /* HMAC() */
 
-#undef AWS_AUTH_V4_DETAILED_DEBUG_OUTPUT
 #ifdef AWS_AUTH_V4_DETAILED_DEBUG_OUTPUT
 #include <iostream>
 #endif
@@ -565,8 +564,8 @@ getSignature(const char *awsSecret, size_t awsSecretLen, const char *awsRegion, 
 
   size_t keyLen = 4 + awsSecretLen;
   char key[keyLen];
-  strncpy(key, "AWS4", 4);
-  strncpy(key + 4, awsSecret, awsSecretLen);
+  memcpy(key, "AWS4", 4);
+  memcpy(key + 4, awsSecret, awsSecretLen);
 
   unsigned int len = signatureLen;
   if (HMAC(EVP_sha256(), key, keyLen, (unsigned char *)dateTime, dateTimeLen, dateKey, &dateKeyLen) &&
