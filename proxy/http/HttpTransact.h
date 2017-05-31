@@ -702,8 +702,13 @@ public:
         port_attribute(HttpProxyPort::TRANSPORT_DEFAULT),
         is_transparent(false)
     {
-      memset(&src_addr, 0, sizeof(src_addr));
-      memset(&dst_addr, 0, sizeof(dst_addr));
+        clear();
+    }
+    void clear()
+    {
+        ink_zero(src_addr);
+        ink_zero(dst_addr);
+        connect_result = 0;
     }
   };
 

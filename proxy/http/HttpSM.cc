@@ -7859,6 +7859,8 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   // we have a new OS and need to have DNS lookup the new OS
   t_state.dns_info.lookup_success = false;
   t_state.force_dns               = false;
+  t_state.server_info.clear();
+  t_state.parent_info.clear();
 
   if (t_state.txn_conf->cache_http) {
     t_state.cache_info.object_read = nullptr;
