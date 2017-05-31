@@ -132,6 +132,12 @@ values for ``TSHttpHookID`` are:
     modifying the proxy's request header before it is sent to the origin
     server or parent proxy.
 
+.. caution::
+
+   TS_HTTP_SEND_REQUEST_HDR_HOOK may callback several times when the  
+   OS crashed. Be careful to use functions such as TSContDestroy in 
+   TS_HTTP_SEND_REQUEST_HDR_HOOK hook.
+
 ``TS_HTTP_SSN_CLOSE_HOOK``
     Called when an HTTP session ends. A session ends when the client
     connection is closed. You can only add this hook as a global hook
