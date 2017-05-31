@@ -25,7 +25,7 @@ ROOT=${ROOT:-$(git rev-parse --show-toplevel)/.git/fmt}
 PACKAGE="clang-format-20160415.tar.bz2"
 VERSION="clang-format version 3.9.0 (trunk 265913)"
 
-URL=${URL:-https://bintray.com/artifact/download/apache/trafficserver/${PACKAGE}}
+URL=${URL:-https://ci.trafficserver.apache.org/bintray/${PACKAGE}}
 
 TAR=${TAR:-tar}
 CURL=${CURL:-curl}
