@@ -27,6 +27,7 @@
 #include <string.h>
 #include <strings.h>
 #include <inttypes.h>
+#include <memory>
 
 #include "ts/ink_config.h"
 
@@ -533,5 +534,13 @@ path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
   return x.release();
 }
 #endif /* __cplusplus */
+
+// This is in C++14 and should removed when we support it
+template <typename T, typename... Args>
+std::unique_ptr<T>
+make_unique(Args &&... args)
+{
+  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 
 #endif
