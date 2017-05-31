@@ -117,12 +117,13 @@ public:
     N_AGGREGATES,
   };
 
-  LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal, SetFunc _setFunc = NULL);
+  LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal,
+           SetFunc _setFunc = nullptr);
 
   LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
-           const Ptr<LogFieldAliasMap> &map, SetFunc _setFunc = NULL);
+           const Ptr<LogFieldAliasMap> &map, SetFunc _setFunc = nullptr);
 
-  LogField(const char *field, Container container, SetFunc _setFunc = NULL);
+  LogField(const char *field, Container container, SetFunc _setFunc = nullptr);
   LogField(const LogField &rhs);
   ~LogField();
 

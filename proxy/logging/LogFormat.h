@@ -175,7 +175,7 @@ private:
 static inline LogFormat *
 MakeTextLogFormat(const char *name = "text")
 {
-  return new LogFormat(name, NULL /* format_str */);
+  return new LogFormat(name, nullptr /* format_str */);
 }
 
 /*-------------------------------------------------------------------------
