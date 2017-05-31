@@ -702,13 +702,14 @@ public:
         port_attribute(HttpProxyPort::TRANSPORT_DEFAULT),
         is_transparent(false)
     {
-        clear();
+      clear();
     }
-    void clear()
+    void
+    clear()
     {
-        ink_zero(src_addr);
-        ink_zero(dst_addr);
-        connect_result = 0;
+      ink_zero(src_addr);
+      ink_zero(dst_addr);
+      connect_result = 0;
     }
   };
 
