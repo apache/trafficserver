@@ -288,6 +288,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->set_is_transparent(opt.f_inbound_transparent);
     vc->options.packet_mark = opt.packet_mark;
     vc->options.packet_tos  = opt.packet_tos;
+    vc->options.ip_family   = opt.ip_family;
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
     vc->accept_object = this;
@@ -436,6 +437,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->set_is_transparent(opt.f_inbound_transparent);
     vc->options.packet_mark = opt.packet_mark;
     vc->options.packet_tos  = opt.packet_tos;
+    vc->options.ip_family   = opt.ip_family;
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::mainEvent);
