@@ -26,7 +26,7 @@ ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/${PKG
 PACKAGE="clang-format-${PKGDATE}.tar.bz2"
 VERSION="clang-format version 3.9.0 (trunk 265913)"
 
-URL=${URL:-https://bintray.com/artifact/download/apache/trafficserver/${PACKAGE}}
+URL=${URL:-https://ci.trafficserver.apache.org/bintray/${PACKAGE}}
 
 TAR=${TAR:-tar}
 CURL=${CURL:-curl}
