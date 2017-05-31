@@ -565,7 +565,7 @@ getSignature(const char *awsSecret, size_t awsSecretLen, const char *awsRegion, 
 
   size_t keyLen = 4 + awsSecretLen;
   char key[keyLen];
-  strncpy(key, "AWS4", 4);
+  memcpy(key, "AWS4", 4);
   strncpy(key + 4, awsSecret, awsSecretLen);
 
   unsigned int len = signatureLen;
