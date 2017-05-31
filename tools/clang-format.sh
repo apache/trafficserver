@@ -27,7 +27,7 @@ ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/${PKG
 PACKAGE="clang-format-${PKGDATE}.tar.bz2"
 VERSION="clang-format version 4.0.1 (http://llvm.org/git/clang.git 559aa046fe3260d8640791f2249d7b0d458b5700) (http://llvm.org/git/llvm.git 08142cb734b8d2cefec8b1629f6bb170b3f94610)"
 
-URL=${URL:-https://bintray.com/artifact/download/apache/trafficserver/${PACKAGE}}
+URL=${URL:-https://ci.trafficserver.apache.org/bintray/${PACKAGE}}
 
 TAR=${TAR:-tar}
 CURL=${CURL:-curl}
