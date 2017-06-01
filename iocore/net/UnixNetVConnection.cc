@@ -1440,12 +1440,14 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
     res = -errno;
     Debug("iocore_net", "connectUp : Failed to add to epoll list : %s", strerror(errno));
+    con.close();
     goto fail;
   }
 
   if (fd == NO_FD) {
     res = con.connect(nullptr, options);
     if (res != 0) {
+      con.close();
       goto fail;
     }
   }
