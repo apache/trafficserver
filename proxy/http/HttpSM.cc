@@ -7204,6 +7204,32 @@ HttpSM::set_next_state()
 
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_hostdb_lookup);
 
+    // We need to close the previous attempt
+    // Because it could be a server side retry by DNS rr
+    if (server_entry) {
+      ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
+      vc_table.cleanup_entry(server_entry);
+      server_entry   = nullptr;
+      server_session = nullptr;
+    } else {
+      // Now that we have gotten the user agent request, we can cancel
+      // the inactivity timeout associated with it.  Note, however, that
+      // we must not cancel the inactivity timeout if the message
+      // contains a body (as indicated by the non-zero request_content_length
+      // field).  This indicates that a POST operation is taking place and
+      // that the client is still sending data to the origin server.  The
+      // origin server cannot reply until the entire request is received.  In
+      // light of this dependency, TS must ensure that the client finishes
+      // sending its request and for this reason, the inactivity timeout
+      // cannot be cancelled.
+      if (ua_session && !t_state.hdr_info.request_content_length) {
+        ua_session->cancel_inactivity_timeout();
+      } else if (!ua_session) {
+        terminate_sm = true;
+        return; // Give up if there is no session
+      }
+    }
+
     ink_assert(t_state.dns_info.looking_up != HttpTransact::UNDEFINED_LOOKUP);
     do_hostdb_lookup();
     break;
