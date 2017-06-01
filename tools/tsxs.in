@@ -25,8 +25,8 @@ localstatedir="@localstatedir@"
 INSTALLDIR=`eval echo "@libexecdir@"`
 INCLUDEDIR=`eval echo "@includedir@"`
 CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR"
-CFLAGS="$CFLAGS @CFLAGS@"
-CXXFLAGS="$CXXFLAGS @CXXFLAGS@"
+CFLAGS="$CFLAGS @AM_CFLAGS@"
+CXXFLAGS="$CXXFLAGS @AM_CXXFLAGS@"
 BUILD=
 DEBUGECHO=
 
@@ -77,8 +77,8 @@ query() {
   case $1 in
     CC) echo @CC@ ;;
     CXX) echo @CXX@ ;;
-    CFLAGS) echo @CFLAGS@ ;;
-    CXXFLAGS) echo @CXXFLAGS@ ;;
+    CFLAGS) echo @AM_CFLAGS@ ;;
+    CXXFLAGS) echo @AM_CXXFLAGS@ ;;
     PREFIX) echo @prefix@ ;;
     SYSCONFDIR) echo @sysconfdir@ ;;
     INCLUDEDIR) echo @includedir@ ;;
