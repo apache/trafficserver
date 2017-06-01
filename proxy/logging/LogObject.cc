@@ -285,7 +285,7 @@ LogObject::set_filter_list(const LogFilterList &list, bool copy)
   m_filter_list.set_conjunction(list.does_conjunction());
 }
 
-// we conpute the object signature from the fieldlist_str and the printf_str
+// we compute the object signature from the fieldlist_str and the printf_str
 // of the LogFormat rather than from the format_str because the format_str
 // is not part of a LogBuffer header
 //

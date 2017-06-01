@@ -382,7 +382,7 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   Http2StreamDebug(cstate.ua_session, stream_id, "Received PRIORITY frame");
 
   if (cstate.get_zombie_event()) {
-    Warning("Priority frame for zombied sessoin %" PRId64, cstate.ua_session->connection_id());
+    Warning("Priority frame for zombied session %" PRId64, cstate.ua_session->connection_id());
   }
 
   // If a PRIORITY frame is received with a stream identifier of 0x0, the
@@ -516,7 +516,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   Http2StreamDebug(cstate.ua_session, stream_id, "Received SETTINGS frame");
 
   if (cstate.get_zombie_event()) {
-    Warning("Setting frame for zombied sessoin %" PRId64, cstate.ua_session->connection_id());
+    Warning("Setting frame for zombied session %" PRId64, cstate.ua_session->connection_id());
   }
 
   // [RFC 7540] 6.5. The stream identifier for a SETTINGS frame MUST be zero.

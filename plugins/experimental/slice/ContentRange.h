@@ -21,7 +21,7 @@
 #include "ts/ts.h"
 
 /**
-  represents value parsed from a blocked Content-Range reponse header field.
+  represents value parsed from a blocked Content-Range response header field.
   Range is converted from closed range into a half open range for.
  */
 struct ContentRange {

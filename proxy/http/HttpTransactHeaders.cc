@@ -217,7 +217,7 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   //         we'll have problems with the TE being forwarded to the server
   //         and us caching the transfer encoded documents and then
   //         serving it to a client that can not handle it
-  //      2) Transfer enconding is copied.  If the transfer encoding
+  //      2) Transfer encoding is copied.  If the transfer encoding
   //         is changed for example by dechunking, the transfer encoding
   //         should be modified when when the decision is made to dechunk it
 

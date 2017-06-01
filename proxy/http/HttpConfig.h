@@ -73,7 +73,7 @@ enum {
 
   // Http Total Connections Stats
   //
-  // it is assumed that this inequality will always be satisifed:
+  // it is assumed that this inequality will always be satisfied:
   //   http_total_client_connections_stat >=
   //     http_total_client_connections_ipv4_stat +
   //     http_total_client_connections_ipv6_stat

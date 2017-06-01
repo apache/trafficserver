@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  IPAllow.h - Interface to IP Access Control systtem
+ *  IPAllow.h - Interface to IP Access Control system
  *
  *
  ****************************************************************************/

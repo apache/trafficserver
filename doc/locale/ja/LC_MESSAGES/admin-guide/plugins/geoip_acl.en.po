@@ -98,7 +98,7 @@ msgstr ""
 
 #: ../../admin-guide/plugins/geoip_acl.en.rst:92
 msgid ""
-"This will override the default reponse body for the denied responses with a "
+"This will override the default response body for the denied responses with a "
 "custom piece of HTML. This can be useful to explain to your users why they "
 "are getting denied access to a particular piece of content. This "
 "configuration can be used with any of the use cases described above."

@@ -1600,8 +1600,8 @@ HttpSM::handle_api_return()
 
     // We only follow 3xx when redirect_in_process == false. Otherwise the redirection has already been launched (in
     // SM_ACTION_SERVER_READ).redirect_in_process is set before this logic if we need more direction.
-    // This redirection is only used with the build_error_reponse. Then, the redirection_tries will be increased by
-    // state_read_server_reponse_header and never get into this logic again.
+    // This redirection is only used with the build_error_response. Then, the redirection_tries will be increased by
+    // state_read_server_response_header and never get into this logic again.
     if (enable_redirection && !t_state.redirect_info.redirect_in_process && is_redirect_required()) {
       do_redirect();
     }
@@ -7967,7 +7967,7 @@ HttpSM::is_redirect_required()
 
   if (redirect_required == true) {
     HTTPStatus status = t_state.hdr_info.client_response.status_get();
-    // check to see if the response from the orgin was a 301, 302, or 303
+    // check to see if the response from the origin was a 301, 302, or 303
     switch (status) {
     case HTTP_STATUS_MULTIPLE_CHOICES:   // 300
     case HTTP_STATUS_MOVED_PERMANENTLY:  // 301

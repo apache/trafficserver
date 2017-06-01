@@ -156,7 +156,7 @@ HostMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
   bool r;
 
   // Check to see if there is any work to do before makeing
-  //   the stirng copy
+  //   the string copy
   if (num_el <= 0) {
     return;
   }
@@ -969,7 +969,7 @@ ControlMatcher<Data, MatchResult>::BuildTable()
  *         when this file changes.
  *
  *         Also, does not give error messages about template
- *           compliation problems.  Requires the -verbose=template
+ *           compilation problems.  Requires the -verbose=template
  *           flage to error messages
  *
  *  g++: Requires instantiation to occur in the same file as the

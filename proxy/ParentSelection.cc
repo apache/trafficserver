@@ -1542,7 +1542,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   FP;
   RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 190);
 
-  // now set the host staus on fuzzy to up and it should now
+  // now set the host status on fuzzy to up and it should now
   // be retried.
   _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
   ST(191);

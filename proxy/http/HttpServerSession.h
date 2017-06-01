@@ -119,7 +119,7 @@ public:
   HSS_State state    = HSS_INIT;
 
   // Used to determine whether the session is for parent proxy
-  // it is session to orgin server
+  // it is session to origin server
   // We need to determine whether a closed connection was to
   // close parent proxy to update the
   // proxy.process.http.current_parent_proxy_connections
@@ -175,7 +175,7 @@ public:
   //   to being acquired and parsing the header without
   //   changing the buffer we are doing I/O on.  We can
   //   not change the buffer for I/O without issuing a
-  //   an asyncronous cancel on NT
+  //   an asynchronous cancel on NT
   MIOBuffer *read_buffer = nullptr;
 
   virtual int

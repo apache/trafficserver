@@ -266,7 +266,7 @@ public:
   VConnection *do_transform_open();
   VConnection *do_post_transform_open();
 
-  // Called by transact(HttpTransact::is_request_retryable), temperarily.
+  // Called by transact(HttpTransact::is_request_retryable), temporarily.
   // This function should be remove after #1994 fixed.
   bool
   is_post_transform_request()
@@ -323,7 +323,7 @@ public:
 
   HttpTransact::State t_state;
 
-  // This unfortunately can't go into the t_state, beacuse of circular dependencies. We could perhaps refactor
+  // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
   UrlRewrite *m_remap = nullptr;
 

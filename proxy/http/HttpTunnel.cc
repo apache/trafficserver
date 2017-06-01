@@ -613,7 +613,7 @@ HttpTunnel::add_producer(VConnection *vc, int64_t nbytes_arg, IOBufferReader *re
     if (p->nbytes < 0) {
       p->ntodo = p->nbytes;
     } else { // The byte count given us includes bytes
-      //  that alread may be in the buffer.
+      //  that already may be in the buffer.
       //  ntodo represents the number of bytes
       //  the tunneling mechanism needs to read
       //  for the producer
@@ -1330,7 +1330,7 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     }
 
     // Since we removed a consumer, it may now be
-    //   possbile to put more stuff in the buffer
+    //   possible to put more stuff in the buffer
     // Note: we reenable only after calling back
     //    the SM since the reenabling has the side effect
     //    updating the buffer state for the VConnection

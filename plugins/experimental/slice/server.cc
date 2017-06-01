@@ -70,7 +70,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
 
   // only process a 206, everything else gets a pass through
   if (TS_HTTP_STATUS_PARTIAL_CONTENT != header.status()) {
-    DEBUG_LOG("Initial reponse other than 206: %d", header.status());
+    DEBUG_LOG("Initial response other than 206: %d", header.status());
     data->m_bail = true;
 
     TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_dnstream.m_write.m_iobuf);
@@ -357,7 +357,7 @@ void
 handle_server_resp(TSCont contp, TSEvent event, Data *const data)
 {
   if (TS_EVENT_VCONN_READ_READY == event || TS_EVENT_VCONN_READ_COMPLETE == event) {
-    // has block reponse header been parsed??
+    // has block response header been parsed??
     if (!data->m_server_block_header_parsed) {
       // the server response header didn't fit into the input buffer??
       if (TS_PARSE_DONE !=

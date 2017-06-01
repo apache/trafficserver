@@ -383,7 +383,7 @@ LogFilterString::_checkCondition(OperatorFunction f, const char *field_value, si
 }
 
 /*---------------------------------------------------------------------------
-  wipeField : Given a dest buffer, wipe the first occurance of the value of the
+  wipeField : Given a dest buffer, wipe the first occurrence of the value of the
   field in the buffer.
 
 --------------------------------------------------------------------------*/

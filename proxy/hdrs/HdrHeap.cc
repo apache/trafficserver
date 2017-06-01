@@ -845,7 +845,7 @@ HdrHeap::check_marshalled(uint32_t buf_length)
 //
 //   Takes a marshalled representation and swizzles offsets
 //     so they become live pointers and make the heap usable.
-//     Sets *found_obj to first occurance of object of
+//     Sets *found_obj to first occurrence of object of
 //     type obj_type in the heap
 //
 //   Return value is the number of bytes unmarshalled or -1
@@ -1245,7 +1245,7 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */,
   // copied the above string onto the heap. The new behaviour fixed in TS-2766 will make sure that this non copied
   // string is accounted for, in the old implementation it would result in an allocation failure.
 
-  char *str = heap->allocate_str(1); // this will force a coalese.
+  char *str = heap->allocate_str(1); // this will force a coalesce.
   tb.check(str != nullptr, "Checking that 1 byte allocated string is not NULL");
 
   // Now we need to validate that aliased_str_url has a path that isn't NULL, if it's NULL then the
