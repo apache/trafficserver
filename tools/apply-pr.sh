@@ -20,13 +20,13 @@
 
 set -e # exit on error
 
-PR="$1"
-URI="https://patch-diff.githubusercontent.com/raw/apache/trafficserver/pull/${PR}.diff"
 
-if [[ "$PR" =~ ^[0-9]+$ ]];  then
-    echo "Applying changes from $URI ..."
-    curl -s $URI | patch -p1
-else
-    echo "$PR is not a valid pull request"
-    exit -1
-fi
+for pr in $@; do
+    if [[ "$pr" =~ ^[0-9]+$ ]];  then
+	URI="https://patch-diff.githubusercontent.com/raw/apache/trafficserver/pull/${pr}.diff"
+	echo "Applying changes from $URI ..."
+	curl -s $URI | patch -p1
+    else
+	echo "$PR is not a valid pull request, skipping"
+    fi
+done
