@@ -59,7 +59,8 @@ public:
     HOOK_READ_REQUEST_HEADERS,  /**< This hook will be fired after the request is read. */
     HOOK_READ_CACHE_HEADERS,    /**< This hook will be fired after the CACHE hdrs. */
     HOOK_CACHE_LOOKUP_COMPLETE, /**< This hook will be fired after caceh lookup complete. */
-    HOOK_SELECT_ALT             /**< This hook will be fired after select alt. */
+    HOOK_SELECT_ALT,            /**< This hook will be fired after select alt. */
+    HOOK_RESPONSE_CLIENT /**< This is a special hook that supports a special type of transformation -- input with no output */
   };
 
   /**
@@ -148,6 +149,15 @@ public:
    */
   virtual void
   handleSelectAlt(Transaction &transaction)
+  {
+    transaction.resume();
+  };
+
+  /**
+   * This method must be implemented when you hook HOOK_RESPONSE_CLIENT
+   */
+  virtual void
+  handleResponseClient(Transaction &transaction)
   {
     transaction.resume();
   };
