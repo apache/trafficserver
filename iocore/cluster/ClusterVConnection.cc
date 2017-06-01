@@ -522,7 +522,7 @@ ClusterVConnection::set_http_info(CacheHTTPInfo *d)
   //
   // set_http_info() is a mechanism to associate additional data with a
   // open_write() ClusterVConnection.  It is only allowed after a
-  // successful open_write() and prior to issuing the do_io(VIO::WRITE).
+  // successful open_write() and prior to issuing the do_io_write().
   // Cache semantics dictate that set_http_info() be established prior
   // to transferring any data on the ClusterVConnection.
   //
@@ -574,7 +574,7 @@ ClusterVConnection::set_pin_in_cache(time_t t)
   //
   // set_pin_in_cache() is a mechanism to set an attribute on a
   // open_write() ClusterVConnection.  It is only allowed after a
-  // successful open_write() and prior to issuing the do_io(VIO::WRITE).
+  // successful open_write() and prior to issuing the do_io_write().
   //
   ink_release_assert(this->write.vio.op == VIO::NONE); // not true if do_io()
   //   already done
@@ -617,7 +617,7 @@ ClusterVConnection::set_disk_io_priority(int priority)
   //
   // set_disk_io_priority() is a mechanism to set an attribute on a
   // open_write() ClusterVConnection.  It is only allowed after a
-  // successful open_write() and prior to issuing the do_io(VIO::WRITE).
+  // successful open_write() and prior to issuing the do_io_write().
   //
   ink_release_assert(this->write.vio.op == VIO::NONE); // not true if do_io()
   //   already done

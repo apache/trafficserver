@@ -136,7 +136,7 @@ ClusterAccept::ClusterAcceptMachine(NetVConnection *NetVC)
 
   if (mc && !mc->find(remote_ip)) {
     Note("Illegal cluster connection from %u.%u.%u.%u", DOT_SEPARATED(remote_ip));
-    NetVC->do_io(VIO::CLOSE);
+    NetVC->do_io_close();
     return 0;
   }
 

@@ -6573,7 +6573,7 @@ TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes)
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
   VConnection *vc = (VConnection *)connp;
 
-  return reinterpret_cast<TSVIO>(vc->do_io(VIO::READ, (INKContInternal *)contp, nbytes, (MIOBuffer *)bufp));
+  return reinterpret_cast<TSVIO>(vc->do_io_read((INKContInternal *)contp, nbytes, (MIOBuffer *)bufp));
 }
 
 TSVIO
