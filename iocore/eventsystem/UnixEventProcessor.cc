@@ -267,12 +267,14 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
 {
   /* Spawning threads in a live system - There are two potential race conditions in this logic. The
      first is multiple calls to this method.  In that case @a all_dthreads can end up in a bad state
-     as the same entry is overwritten while another is left unitialized.
+     as the same entry is overwritten while another is left uninitialized.
+
      The other is read/write contention where another thread (e.g. the stats collection thread) is
      iterating over the threads while the active count (@a n_dthreads) is being updated causing use
-     of not yet initialized array element.
+     of a not yet initialized array element.
+
      This logic covers both situations. For write/write the actual array update is locked. The
-     potentially expensive set up is done outside the lock making the time spent locked small For
+     potentially expensive set up is done outside the lock making the time spent locked small. For
      read/write it suffices to do the active count increment after initializing the array
      element. It's not a problem if, for one cycle, a new thread is skipped.
   */
@@ -286,11 +288,10 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
   e->mutex    = e->ethread->mutex;
   cont->mutex = e->ethread->mutex;
   {
-    ink_mutex_acquire(&dedicated_spawn_thread_mutex);
+    ink_scoped_mutex_lock lock(dedicated_spawn_thread_mutex);
     ink_release_assert(n_dthreads < MAX_EVENT_THREADS);
     all_dthreads[n_dthreads] = e->ethread;
     ++n_dthreads; // Be very sure this is after the array element update.
-    ink_mutex_release(&dedicated_spawn_thread_mutex);
   }
 
   e->ethread->start(thr_name, stacksize, nullptr, nullptr, nullptr);
