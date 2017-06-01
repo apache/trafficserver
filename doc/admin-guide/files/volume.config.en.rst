@@ -65,5 +65,4 @@ The following example partitions the cache evenly between HTTP and HTTPS
 requests::
 
     volume=1 scheme=http size=50%
-    volume=2 scheme=https size=50%
-
+    volume=2 scheme=http size=50%
