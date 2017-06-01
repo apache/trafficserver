@@ -98,7 +98,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     p.Variables.CONFIGDIR = config_dir
     #########################################################
     # setup read-only data directory in config. Needed for response body
-    # reponses
+    # responses
 
     p.Env['PROXY_CONFIG_BODY_FACTORY_TEMPLATE_SETS_DIR'] = template_dir
     p.Variables.BODY_FACTORY_TEMPLATE_DIR = template_dir

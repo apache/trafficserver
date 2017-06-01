@@ -2846,7 +2846,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
       s->next_action       = SM_ACTION_INTERNAL_CACHE_NOOP;
     } else {
       // We handled the request but it's not GET or HEAD (eg. DELETE),
-      // and server is not reacheable: 502
+      // and server is not reachable: 502
       //
       TxnDebug("http_trans", "[build_response_from_cache] No match! Connection failed.");
       build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect");
@@ -4796,7 +4796,7 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     //   can't do this because what is already there
     //   may be a dup we've already copied in.  If
     //   dups show up we look through the remaining
-    //   header fields in the new reponse, nuke
+    //   header fields in the new response, nuke
     //   them in the cached response and then add in
     //   the remaining fields one by one from the
     //   response header
@@ -4853,7 +4853,7 @@ HttpTransact::merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_hea
   //         header, they need to be removed.  Removal
   //         is difficult since the hdrs don't comma
   //         separate values, so build up a new header
-  //         piecemal.  Very slow but shouldn't happen
+  //         piecemeal.  Very slow but shouldn't happen
   //         very often
   //    3) Since we keep the all the warning codes from
   //         the response header, append if to
@@ -5396,7 +5396,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
   } else { /* max-forwards != 0 */
 
     // Logically want to make sure max_forwards is a legitimate non-zero non-negative integer
-    // Since max_fowards is a signed integer, no sense making sure it is less than INT_MAX.
+    // Since max_forwards is a signed integer, no sense making sure it is less than INT_MAX.
     // Would be negative in that case.  Already checked negative in the other case.  Noted by coverity
 
     --max_forwards;
@@ -6038,7 +6038,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // TxnDebug("http_trans", "[is_response_cacheable] server permits storing");
 
   // does config explicitly forbid storing?
-  // ttl overides other config parameters
+  // ttl overrides other config parameters
   if ((!s->cache_info.directives.does_config_permit_storing && (s->cache_control.ttl_in_cache <= 0)) ||
       (s->cache_control.never_cache)) {
     TxnDebug("http_trans", "[is_response_cacheable] config doesn't allow storing, and cache control does not "
@@ -6753,7 +6753,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
         }
       }
       // Note: if we are 1.1, we always need to send the close
-      //  header since persistant connnections are the default
+      //  header since persistent connections are the default
       break;
     default:
       ink_assert(0);
@@ -6913,7 +6913,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
       s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
     }
     // Note: if we are 1.1, we always need to send the close
-    //  header since persistant connnections are the default
+    //  header since persistent connections are the default
     break;
   default:
     ink_assert(0);
@@ -7565,7 +7565,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
       }
     }
 
-    // Peform any configured normalization (including per-remap-rule configuration overrides) of the Accept-Encoding header
+    // Perform any configured normalization (including per-remap-rule configuration overrides) of the Accept-Encoding header
     // field (if any).  This has to be done in the request from the client, for the benefit of the gzip plugin.
     //
     HttpTransactHeaders::normalize_accept_encoding(s->txn_conf, base_request);
@@ -7579,7 +7579,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   handle_request_keep_alive_headers(s, outgoing_version, outgoing_request);
 
   // handle_conditional_headers appears to be obsolete.  Nothing happens
-  // unelss s->cache_info.action == HttpTransact::CACHE_DO_UPDATE.  In that
+  // unless s->cache_info.action == HttpTransact::CACHE_DO_UPDATE.  In that
   // case an assert will go off.  The functionality of this method
   // (e.g., setting the if-modfied-since header occurs in issue_revalidate
   // HttpTransactHeaders::handle_conditional_headers(&s->cache_info, outgoing_request);
@@ -7866,7 +7866,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     error_body_type = "default";
   }
 
-  // Make sure that if this error occurred before we initailzied the state variables that we do now.
+  // Make sure that if this error occurred before we initialized the state variables that we do now.
   initialize_state_variables_from_request(s, &s->hdr_info.client_request);
 
   //////////////////////////////////////////////////////

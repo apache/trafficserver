@@ -880,7 +880,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
   //   The 1.1 spec says servers MAY assume that clients will accept   //
   //   any encoding if no header is sent.  Unforntunately, this does   //
   //   not work 1.0 clients & is particularly thorny when the proxy    //
-  //   created the enconding as the result of a transform.  Http 1.1   //
+  //   created the encoding as the result of a transform.  Http 1.1   //
   //   purists would say that if proxy encodes something it's really   //
   //   a transfer-encoding and not a content-encoding but again this   //
   //   causes problems with 1.0 clients                                //
@@ -1015,7 +1015,7 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
     float tq = HttpCompat::find_Q_param_in_strlist(&a_param_list);
 
     /////////////////////////////////////////////////////////////////////
-    // This algorithm is a bit wierd --- the resulting Q factor is     //
+    // This algorithm is a bit weird --- the resulting Q factor is     //
     // the Q value corresponding to the LONGEST range field that       //
     // matched, or if none matched, then the Q value of any asterisk.  //
     // Also, if the lang value is "", meaning that no Content-Language //
@@ -1048,7 +1048,7 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
 }
 
 // FIX: This code is icky, and i suspect wrong in places, particularly
-//      beacuse parts of match_accept_content_language are commented out.
+//      because parts of match_accept_content_language are commented out.
 //      It looks like lots of hacks were done.  The code should probably
 //      be updated to use the code in HttpCompat::match_accept_language.
 

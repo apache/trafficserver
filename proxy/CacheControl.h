@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  CacheControl.h - Interface to Cache Control systtem
+ *  CacheControl.h - Interface to Cache Control system
  *
  *
  ****************************************************************************/

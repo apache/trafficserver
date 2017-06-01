@@ -634,7 +634,7 @@ static ArgumentDescription argument_descriptions[] = {
   {"log_file", 'f', "Specific logfile to parse", "S1023", cl.log_file, nullptr, nullptr},
   {"origin_list", 'o', "Only show stats for listed Origins", "S4095", cl.origin_list, nullptr, nullptr},
   {"origin_file", 'O', "File listing Origins to show", "S1023", cl.origin_file, nullptr, nullptr},
-  {"max_orgins", 'M', "Max number of Origins to show", "I", &cl.max_origins, nullptr, nullptr},
+  {"max_origins", 'M', "Max number of Origins to show", "I", &cl.max_origins, nullptr, nullptr},
   {"urls", 'u', "Produce JSON stats for URLs, argument is LRU size", "I", &cl.urls, nullptr, nullptr},
   {"show_urls", 'U', "Only show max this number of URLs", "I", &cl.show_urls, nullptr, nullptr},
   {"as_object", 'A', "Produce URL stats as a JSON object instead of array", "T", &cl.as_object, nullptr, nullptr},

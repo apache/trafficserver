@@ -590,7 +590,7 @@ LogFile::check_fd()
     //
     // It's time to see if the file really exists.  If we can't see
     // the file (via access), then we'll close our descriptor and
-    // attept to re-open it, which will create the file if it's not
+    // attempt to re-open it, which will create the file if it's not
     // there.
     //
     if (m_name && !LogFile::exists(m_name)) {

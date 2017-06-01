@@ -479,7 +479,7 @@ LogAccess::unmarshal_int(char **buf)
   ink_assert(*buf != nullptr);
   int64_t val;
 
-  // TODO: this used to do nthol, do we need to worrry? TS-1156.
+  // TODO: this used to do nthol, do we need to worry? TS-1156.
   val = *((int64_t *)(*buf));
   *buf += INK_MIN_ALIGN;
   return val;
@@ -1788,7 +1788,7 @@ LogAccess::marshal_client_req_uuid(char *buf)
   len = round_strlen(len + 1);
 
   if (buf) {
-    marshal_str(buf, str, len); // This will pad the remaning bytes properly ...
+    marshal_str(buf, str, len); // This will pad the remaining bytes properly ...
   }
 
   return len;

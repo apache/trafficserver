@@ -269,7 +269,7 @@ HttpCacheSM::open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, Overrida
   current_lookup_level++;
   open_read_cb = false;
   act_return   = do_cache_open_read(cache_key);
-  // the following logic is based on the assumption that the secnod
+  // the following logic is based on the assumption that the second
   // lookup won't happen if the HttpSM hasn't been called back for the
   // first lookup
   if (current_lookup_level == lookup_max_recursive) {

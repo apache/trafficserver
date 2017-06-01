@@ -328,7 +328,7 @@ private:
   // Counter for current active streams which is started by client
   std::atomic<uint32_t> client_streams_in_count = 0;
 
-  // Counter for current acive streams which is started by server
+  // Counter for current active streams which is started by server
   std::atomic<uint32_t> client_streams_out_count = 0;
 
   // Counter for current active streams and streams in the process of shutting down
