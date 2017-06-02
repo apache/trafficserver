@@ -43,8 +43,8 @@
 #ifdef MAX_CONSUMERS
 #undef MAX_CONSUMERS
 #endif
-#define MAX_PRODUCERS 2
-#define MAX_CONSUMERS 4
+#define MAX_PRODUCERS 3
+#define MAX_CONSUMERS 5
 
 #define HTTP_TUNNEL_EVENT_DONE (HTTP_TUNNEL_EVENTS_START + 1)
 #define HTTP_TUNNEL_EVENT_PRECOMPLETE (HTTP_TUNNEL_EVENTS_START + 2)
@@ -59,6 +59,7 @@
 struct HttpTunnelProducer;
 class HttpSM;
 class HttpPagesHandler;
+class FakeVConnection;
 typedef int (HttpSM::*HttpSMHandler)(int event, void *data);
 
 struct HttpTunnelConsumer;
@@ -73,6 +74,8 @@ enum HttpTunnelType_t {
   HT_CACHE_WRITE,
   HT_TRANSFORM,
   HT_STATIC,
+  HT_STATIC_READ,
+  HT_STATIC_WRITE
 };
 
 enum TunnelChunkingAction_t {
@@ -81,6 +84,85 @@ enum TunnelChunkingAction_t {
   TCA_PASSTHRU_CHUNKED_CONTENT,
   TCA_PASSTHRU_DECHUNKED_CONTENT
 };
+
+class FakeVConnection : public VConnection
+{
+public:
+  virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);
+  virtual VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false);
+  virtual void do_io_close(int lerrno = -1);
+  virtual void
+  do_io_shutdown(ShutdownHowTo_t howto)
+  {
+    ink_assert(0);
+  };
+  virtual void reenable(VIO *vio);
+
+  void alloc_buffer();
+
+  IOBufferReader *
+  get_reader()
+  {
+    if (!buf_start) {
+      buf_start = mbuf->alloc_reader();
+      ink_assert(buf_start);
+    }
+    return buf_start;
+  }
+
+  int64_t
+  get_bytes()
+  {
+    return bytes;
+  }
+
+  bool
+  is_fvc_producer_run()
+  {
+    return m_read_vio.nbytes > 0;
+  }
+
+  void
+  clean_vio()
+  {
+    m_read_vio.buffer.clear();
+    m_write_vio.buffer.clear();
+    ink_zero(m_read_vio);
+    ink_zero(m_write_vio);
+    handler_state = 0;
+  }
+
+  FakeVConnection(Ptr<ProxyMutex> &amutex, int64_t bytes_arg) : VConnection(amutex), bytes(bytes_arg) { alloc_buffer(); }
+
+  ~FakeVConnection()
+  {
+    if (mbuf) {
+      free_MIOBuffer(mbuf);
+      mbuf      = nullptr;
+      buf_start = nullptr;
+    }
+  }
+
+  HttpSMHandler vc_handler = nullptr;
+  int event                = 0;
+  void *data               = nullptr;
+  int64_t bytes            = 0;
+  int handler_state        = 0;
+  volatile int m_closed    = 0;
+
+private:
+  MIOBuffer *mbuf           = nullptr;
+  IOBufferReader *buf_start = nullptr;
+
+  VIO m_read_vio;
+  VIO m_write_vio;
+};
+
+inline void
+FakeVConnection::alloc_buffer()
+{
+  mbuf = new_empty_MIOBuffer();
+}
 
 struct ChunkedHandler {
   enum ChunkedState {
@@ -301,7 +383,7 @@ public:
   HttpTunnel();
 
   void init(HttpSM *sm_arg, Ptr<ProxyMutex> &amutex);
-  void reset();
+  void reset(bool clear_fvc = true);
   void kill_tunnel();
   bool
   is_tunnel_active() const
@@ -316,6 +398,11 @@ public:
   void allocate_redirect_postdata_producer_buffer();
   void allocate_redirect_postdata_buffers(IOBufferReader *ua_reader);
   void deallocate_redirect_postdata_buffers();
+
+  void fake_vc_init(int64_t size);
+  HttpTunnelProducer *add_tunnel_fake(VConnection *producer, HttpConsumerHandler c_handler, HttpProducerHandler p_handler);
+  HttpTunnelProducer *setup_fake_tunnel(VConnection *producer, HttpConsumerHandler c_handler, HttpProducerHandler p_handler,
+                                        bool fvc_success = true);
 
   HttpTunnelProducer *add_producer(VConnection *vc, int64_t nbytes, IOBufferReader *reader_start, HttpProducerHandler sm_handler,
                                    HttpTunnelType_t vc_type, const char *name);
@@ -361,6 +448,93 @@ public:
   void close_vc(HttpTunnelProducer *p);
   void close_vc(HttpTunnelConsumer *c);
 
+  VConnection *
+  get_fvc()
+  {
+    return static_cast<VConnection *>(fvc);
+  }
+
+  bool
+  is_fvc_producer_run()
+  {
+    return fvc->is_fvc_producer_run();
+  }
+
+  int64_t
+  get_fvc_transfer_bytes()
+  {
+    return fvc->get_reader()->read_avail();
+  }
+
+  void
+  set_fvc_handler(HttpSMHandler handler, int event, void *data)
+  {
+    fvc->vc_handler = handler;
+    fvc->event      = event;
+    fvc->data       = data;
+  }
+
+  void
+  fvc_callcont()
+  {
+    HttpSMHandler sm_handler = fvc->vc_handler;
+    (sm->*sm_handler)(fvc->event, fvc->data);
+  }
+
+  void
+  set_fvc_event(int event)
+  {
+    fvc->event = event;
+  }
+
+  void *
+  get_fvc_data()
+  {
+    return fvc->data;
+  }
+
+  bool
+  is_fvc_done()
+  {
+    HttpTunnelConsumer *c = get_consumer(fvc);
+    return c->write_success;
+  }
+
+  void
+  set_fvc_state(int state)
+  {
+    fvc->handler_state = state;
+  }
+
+  int
+  get_fvc_state(int *state = nullptr)
+  {
+    if (fvc->handler_state != 0 && state != nullptr) {
+      *state = fvc->handler_state;
+    }
+
+    return fvc->handler_state;
+  }
+
+  // test only
+  IOBufferReader *
+  get_fvc_reader()
+  {
+    return fvc->get_reader();
+  }
+
+  bool
+  is_fvc_closed()
+  {
+    return fvc->m_closed;
+  }
+
+  void
+  set_fvc_bytes(int64_t b)
+  {
+    fvc->bytes = b;
+  }
+
 private:
   void internal_error();
   void finish_all_internal(HttpTunnelProducer *p, bool chain);
@@ -388,9 +562,25 @@ public:
   PostDataBuffers *postbuf;
 
 private:
+  FakeVConnection *fvc = nullptr;
   int reentrancy_count;
   bool call_sm;
 };
+
+// void HttpTunnel::fake_vc_init
+//
+//		Initialize FakeVConnection
+//
+inline void
+HttpTunnel::fake_vc_init(int64_t size)
+{
+  if (fvc) {
+    delete fvc;
+    fvc = nullptr;
+  }
+
+  fvc = new FakeVConnection(mutex, size);
+}
 
 // void HttpTunnel::abort_cache_write_finish_others
 //

@@ -556,22 +556,29 @@ HttpTunnel::init(HttpSM *sm_arg, Ptr<ProxyMutex> &amutex)
   if (params->oride.flow_high_water_mark > 0) {
     flow_state.high_water = params->oride.flow_high_water_mark;
   }
+
   // This should always be true, we handled default cases back in HttpConfig::reconfigure()
   ink_assert(flow_state.low_water <= flow_state.high_water);
 }
 
 void
-HttpTunnel::reset()
+HttpTunnel::reset(bool clear_fvc)
 {
   ink_assert(active == false);
 #ifdef DEBUG
   for (int i = 0; i < MAX_PRODUCERS; ++i) {
-    ink_assert(producers[i].alive == false);
+    ink_assert(producers[i].vc_type == HT_STATIC_WRITE || producers[i].alive == false);
   }
   for (int j = 0; j < MAX_CONSUMERS; ++j) {
-    ink_assert(consumers[j].alive == false);
+    ink_assert(consumers[j].vc_type == HT_STATIC_READ || consumers[j].alive == false);
   }
 #endif
+
+  if (clear_fvc && fvc) {
+    fvc->do_io_close();
+    delete fvc;
+    fvc = nullptr;
+  }
 
   num_producers = 0;
   num_consumers = 0;
@@ -589,6 +596,12 @@ HttpTunnel::kill_tunnel()
     ink_assert(producer.alive == false);
   }
   active = false;
+  if (fvc) {
+    fvc->do_io_close();
+    delete fvc;
+    fvc = nullptr;
+  }
+
   this->deallocate_buffers();
   this->deallocate_redirect_postdata_buffers();
   this->reset();
@@ -707,6 +720,7 @@ HttpTunnel::add_producer(VConnection *vc, int64_t nbytes_arg, IOBufferReader *re
     p->do_chunked_passthru = false;
 
     p->init_bytes_done = reader_start->read_avail();
+
     if (p->nbytes < 0) {
       p->ntodo = p->nbytes;
     } else { // The byte count given us includes bytes
@@ -726,6 +740,10 @@ HttpTunnel::add_producer(VConnection *vc, int64_t nbytes_arg, IOBufferReader *re
       p->read_success = true;
     } else {
       p->alive = true;
+    }
+
+    if (vc_type == HT_STATIC_WRITE) {
+      p->read_vio = p->vc->do_io_read(nullptr, 0, nullptr);
     }
   }
   return p;
@@ -770,6 +788,10 @@ HttpTunnel::add_consumer(VConnection *vc, VConnection *producer, HttpConsumerHan
   p->consumer_list.push(c);
   p->num_consumers++;
 
+  if (vc_type == HT_STATIC_READ) {
+    c->write_vio = c->vc->do_io_write(nullptr, 0, nullptr);
+  }
+
   return c;
 }
 
@@ -793,6 +815,7 @@ HttpTunnel::tunnel_run(HttpTunnelProducer *p_arg)
 {
   Debug("http_tunnel", "tunnel_run started, p_arg is %s", p_arg ? "provided" : "NULL");
 
+  ++reentrancy_count;
   if (p_arg) {
     producer_run(p_arg);
   } else {
@@ -816,6 +839,7 @@ HttpTunnel::tunnel_run(HttpTunnelProducer *p_arg)
     active = false;
     sm->handleEvent(HTTP_TUNNEL_EVENT_DONE, this);
   }
+  --reentrancy_count;
 }
 
 void
@@ -978,6 +1002,11 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
         }
       }
       c->write_vio = c->vc->do_io_write(this, c_write, c->buffer_reader);
+      if (c->vc_type == HT_STATIC_READ && c->self_producer) {
+        HttpConsumerHandler jump_point = c->vc_handler;
+        (sm->*jump_point)(VC_EVENT_WRITE_READY, c);
+      }
+
       ink_assert(c_write > 0);
     }
 
@@ -1377,7 +1406,6 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
   case VC_EVENT_WRITE_READY:
     this->consumer_reenable(c);
     break;
-
   case VC_EVENT_WRITE_COMPLETE:
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
@@ -1763,5 +1791,178 @@ HttpTunnel::deallocate_redirect_postdata_buffers()
     }
     delete postbuf;
     postbuf = nullptr;
+  }
+}
+
+/////////////////////////////////////
+//
+//  setup the fake tunnel
+//   all data have been saved in this case
+//
+/////////////////////////////////////
+HttpTunnelProducer *
+HttpTunnel::setup_fake_tunnel(VConnection *producer, HttpConsumerHandler c_handler, HttpProducerHandler p_handler, bool fvc_success)
+{
+  int64_t alloc_index       = buffer_size_to_index(fvc->get_reader()->read_avail());
+  MIOBuffer *buf            = new_MIOBuffer(alloc_index);
+  IOBufferReader *buf_start = buf->alloc_reader();
+
+  fvc->clean_vio();
+
+  buf->write(fvc->get_reader(), fvc->get_reader()->read_avail());
+
+  HttpTunnelConsumer *c = add_consumer(get_fvc(), producer, c_handler, HT_STATIC_READ, "fake read");
+
+  Debug("fvc_setup_tunnel", "%ld bytes need", fvc->get_bytes());
+  HttpTunnelProducer *p = add_producer(get_fvc(), fvc->get_bytes(), buf_start, p_handler, HT_STATIC_WRITE, "fake write");
+
+  if (fvc_success) {
+    c->alive         = false;
+    c->write_success = true;
+  }
+  chain(c, p);
+  return p;
+}
+
+/////////////////////////////////////
+//
+//  setup the fake tunnel to collect
+//   data
+//
+/////////////////////////////////////
+HttpTunnelProducer *
+HttpTunnel::add_tunnel_fake(VConnection *producer, HttpConsumerHandler c_handler, HttpProducerHandler p_handler)
+{
+  MIOBuffer *post_buffer = nullptr;
+  // FIXME: do chunck bug
+  if (fvc->get_bytes() < INT64_MAX) {
+    int64_t alloc_index = buffer_size_to_index(fvc->get_bytes());
+    post_buffer         = new_MIOBuffer(alloc_index);
+  } else {
+    post_buffer = new_MIOBuffer(3);
+  }
+  IOBufferReader *buf_start = post_buffer->alloc_reader();
+
+  fvc->clean_vio();
+
+  HttpTunnelConsumer *c = add_consumer(get_fvc(), producer, c_handler, HT_STATIC_READ, "fake read");
+  HttpTunnelProducer *p = add_producer(get_fvc(), fvc->get_bytes(), buf_start, p_handler, HT_STATIC_WRITE, "fake write");
+
+  chain(c, p);
+
+  return p;
+}
+
+VIO *
+FakeVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+{
+  m_read_vio.op = VIO::READ;
+  m_read_vio.set_continuation(c);
+  m_read_vio.nbytes    = nbytes;
+  m_read_vio.ndone     = 0;
+  m_read_vio.vc_server = this;
+
+  if (buf) {
+    m_read_vio.buffer.writer_for(buf);
+    reenable(&m_read_vio);
+  }
+
+  return &m_read_vio;
+}
+
+VIO *
+FakeVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+{
+  m_write_vio.op = VIO::WRITE;
+  m_write_vio.set_continuation(c);
+  m_write_vio.nbytes    = nbytes;
+  m_write_vio.ndone     = 0;
+  m_write_vio.vc_server = this;
+
+  if (buf) {
+    m_write_vio.buffer.reader_for(buf);
+    reenable(&m_write_vio);
+  }
+
+  return &m_write_vio;
+}
+
+void
+FakeVConnection::do_io_close(int lerrno)
+{
+  if (m_closed) {
+    return;
+  }
+  m_closed = 1;
+
+  if (mbuf) {
+    m_read_vio.buffer.clear();
+    m_write_vio.buffer.clear();
+    clean_vio();
+    // we only free the mbuf in kill_tunnel now
+    // if we want to setup the "server ->fake ->client" tunnel
+    // we need to free buf there
+    //    free_MIOBuffer(mbuf);
+    //    mbuf      = nullptr;
+    //    buf_start = nullptr;
+  }
+}
+
+void
+FakeVConnection::reenable(VIO *vio)
+{
+  if (vio == &m_write_vio || vio == &m_read_vio) {
+    int64_t towrite = m_write_vio.ntodo();
+
+    if (towrite > 0) {
+      if (towrite > m_write_vio.get_reader()->read_avail()) {
+        towrite = m_write_vio.get_reader()->read_avail();
+      }
+
+      if (towrite > m_read_vio.ntodo() && m_read_vio._cont) {
+        towrite = m_read_vio.ntodo();
+      }
+
+      if (towrite > 0) {
+        if (m_read_vio._cont) {
+          m_read_vio.get_writer()->write(m_write_vio.get_reader(), towrite);
+          m_read_vio.ndone += towrite;
+        }
+
+        if (!buf_start) {
+          buf_start = mbuf->alloc_reader();
+        }
+        Debug("fvc_reenable", "mbuf write %ld, now : %ld", towrite, get_reader()->read_avail());
+        mbuf->write(m_write_vio.get_reader(), towrite);
+
+        m_write_vio.get_reader()->consume(towrite);
+        m_write_vio.ndone += towrite;
+      }
+    }
+
+    // call consumer if we have data
+    if (m_write_vio.ntodo()) {
+      if (towrite > 0) {
+        m_write_vio._cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
+      }
+    } else {
+      m_write_vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
+    }
+
+    // call producer if we have data
+    if (m_read_vio._cont) {
+      if (m_read_vio.ntodo() > 0) {
+        if (m_write_vio.ntodo() <= 0) {
+          m_read_vio._cont->handleEvent(VC_EVENT_EOS, &m_read_vio);
+        } else if (towrite > 0) {
+          m_read_vio._cont->handleEvent(VC_EVENT_READ_READY, &m_read_vio);
+        }
+      } else {
+        m_read_vio._cont->handleEvent(VC_EVENT_READ_COMPLETE, &m_read_vio);
+      }
+    }
+
+  } else {
+    ink_release_assert(!"unknown vio!");
   }
 }

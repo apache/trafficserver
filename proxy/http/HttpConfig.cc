@@ -1045,6 +1045,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.flow_low_water_mark, "proxy.config.http.flow_control.low_water");
   HttpEstablishStaticConfigByte(c.oride.post_check_content_length_enabled, "proxy.config.http.post.check.content_length.enabled");
   HttpEstablishStaticConfigByte(c.strict_uri_parsing, "proxy.config.http.strict_uri_parsing");
+  HttpEstablishStaticConfigByte(c.tunnel_faker_enabled, "proxy.config.http.tunnel_faker_enabled");
 
   // [amc] This is a bit of a mess, need to figure out to make this cleaner.
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
@@ -1482,6 +1483,8 @@ HttpConfig::reconfigure()
   params->referer_format_redirect = INT_TO_BOOL(m_master.referer_format_redirect);
 
   params->strict_uri_parsing = INT_TO_BOOL(m_master.strict_uri_parsing);
+
+  params->tunnel_faker_enabled = INT_TO_BOOL(m_master.tunnel_faker_enabled);
 
   params->oride.down_server_timeout    = m_master.oride.down_server_timeout;
   params->oride.client_abort_threshold = m_master.oride.client_abort_threshold;

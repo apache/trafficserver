@@ -792,6 +792,8 @@ public:
 
   MgmtByte strict_uri_parsing = 0;
 
+  MgmtByte tunnel_faker_enabled = 0;
+
   MgmtByte reverse_proxy_enabled = 0;
   MgmtByte url_remap_required    = 1;
 

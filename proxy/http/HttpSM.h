@@ -360,6 +360,7 @@ protected:
   int tunnel_handler(int event, void *data);
   int tunnel_handler_push(int event, void *data);
   int tunnel_handler_post(int event, void *data);
+  int tunnel_handler_fake(int event, void *data);
 
   // YTS Team, yamsat Plugin
   int tunnel_handler_for_partial_post(int event, void *data);
@@ -405,6 +406,8 @@ protected:
   int state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHandler tunnel_handler, int event, void *data);
 
   // Tunnel event handlers
+  int tunnel_handler_fake_downstream(int event, HttpTunnelProducer *c);
+  int tunnel_handler_fake_upstream(int event, HttpTunnelConsumer *p);
   int tunnel_handler_server(int event, HttpTunnelProducer *p);
   int tunnel_handler_ua(int event, HttpTunnelConsumer *c);
   int tunnel_handler_ua_push(int event, HttpTunnelProducer *p);
@@ -419,12 +422,17 @@ protected:
   int tunnel_handler_transform_read(int event, HttpTunnelProducer *p);
   int tunnel_handler_plugin_agent(int event, HttpTunnelConsumer *c);
 
+  int fake_server_setup_error(int event, void *data);
+  int fake_handle_post_failure(int event, void *data);
+
   void do_hostdb_lookup();
   void do_hostdb_reverse_lookup();
   void do_cache_lookup_and_read();
   void do_http_server_open(bool raw = false);
   void send_origin_throttled_response();
   void do_setup_post_tunnel(HttpVC_t to_vc_type);
+  void do_setup_ua_to_fake_tunnel(int event, void *data);
+  void do_setup_fake_tunnel();
   void do_cache_prepare_write();
   void do_cache_prepare_write_transform();
   void do_cache_prepare_update();
@@ -467,6 +475,7 @@ protected:
   void setup_100_continue_transfer();
   HttpTunnelProducer *setup_push_transfer_to_cache();
   void setup_transform_to_server_transfer();
+  void setup_transform_to_fake_transfer(int event, void *data);
   void setup_cache_write_transfer(HttpCacheSM *c_sm, VConnection *source_vc, HTTPInfo *store_info, int64_t skip_bytes,
                                   const char *name);
   void issue_cache_update();

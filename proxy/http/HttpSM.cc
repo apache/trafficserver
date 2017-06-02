@@ -1943,7 +1943,7 @@ HttpSM::state_send_server_request_header(int event, void *data)
     method                     = t_state.hdr_info.server_request.method_get_wksidx();
     if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
         (t_state.hdr_info.request_content_length > 0 || t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
-      if (post_transform_info.vc) {
+      if (post_transform_info.vc && t_state.current.attempts == 0) {
         setup_transform_to_server_transfer();
       } else {
         do_setup_post_tunnel(HTTP_SERVER_VC);
@@ -2000,7 +2000,21 @@ HttpSM::state_send_server_request_header(int event, void *data)
   case VC_EVENT_ERROR:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
-    handle_server_setup_error(event, data);
+    // save the handler and wait for fake vc success
+    if (t_state.http_config_param->tunnel_faker_enabled && t_state.current.attempts == 0 && tunnel.get_fvc() == nullptr) {
+      // server tunnel is not running, setup server tunnel.
+      // we need to initialize fvc first to set the default handler.
+      // because tunnel may success directly and go to HttpSM::tunnel_handler_post.
+      if (post_transform_info.vc) {
+        setup_transform_to_fake_transfer(event, data);
+      } else {
+        do_setup_ua_to_fake_tunnel(event, data);
+      }
+    } else {
+      if (t_state.http_config_param->tunnel_faker_enabled && tunnel.get_fvc())
+        tunnel.set_fvc_handler(&HttpSM::fake_server_setup_error, event, data);
+      handle_server_setup_error(event, data);
+    }
     break;
 
   case VC_EVENT_READ_COMPLETE:
@@ -2561,7 +2575,7 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
   // MUST NOT clear the vc pointer from post_transform_info
   //    as this causes a double close of the transform vc in transform_cleanup
   //
-  if (post_transform_info.vc != nullptr) {
+  if (post_transform_info.vc != nullptr && t_state.current.attempts == 0) {
     ink_assert(post_transform_info.entry->in_tunnel == true);
     ink_assert(post_transform_info.vc == post_transform_info.entry->vc);
     vc_table.cleanup_entry(post_transform_info.entry);
@@ -2583,7 +2597,7 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
     ink_assert(p->read_success == true);
     ink_assert(p->consumer_list.head->write_success == true);
     tunnel.deallocate_buffers();
-    tunnel.reset();
+    tunnel.reset(false);
     // When the ua completed sending it's data we must have
     //  removed it from the tunnel
     ink_release_assert(ua_entry->in_tunnel == false);
@@ -2593,6 +2607,47 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
   default:
     ink_release_assert(0);
   }
+}
+
+int
+HttpSM::fake_server_setup_error(int event, void *data)
+{
+  Debug("fvc_handler", "state: %d, done: %d", tunnel.get_fvc_state(), tunnel.is_fvc_done());
+  handle_server_setup_error(event, data);
+  return 0;
+}
+
+int
+HttpSM::fake_handle_post_failure(int event, void *data)
+{
+  Debug("fvc_handler", "state: %d, done: %d", tunnel.get_fvc_state(), tunnel.is_fvc_done());
+  handle_post_failure();
+  return 0;
+}
+
+int
+HttpSM::tunnel_handler_fake(int event, void *data)
+{
+  STATE_ENTER(&HttpSM::tunnel_handler_fake, event);
+
+  ink_assert(tunnel.is_fvc_closed() || tunnel.is_fvc_done());
+  Debug("fvc_handler", "state: %d, done: %d", tunnel.get_fvc_state(), tunnel.is_fvc_done());
+  switch (event) {
+  case VC_EVENT_EOS:
+  case VC_EVENT_ERROR:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    tunnel.set_fvc_event(event);
+  case HTTP_TUNNEL_EVENT_DONE:
+  case VC_EVENT_WRITE_COMPLETE:
+    // all data was collected by fvc, call default_handler to continue.
+    tunnel.fvc_callcont();
+    break;
+  default:
+    ink_release_assert(!"unexpected event");
+  }
+
+  return 0;
 }
 
 // int HttpSM::tunnel_handler_post(int event, void* data)
@@ -2649,12 +2704,21 @@ HttpSM::tunnel_handler_post(int event, void *data)
   ink_assert(data == &tunnel);
   // The tunnel calls this when it is done
 
+  if (t_state.http_config_param->tunnel_faker_enabled && tunnel.get_fvc()) {
+    tunnel.get_fvc_state(&p->handler_state);
+  }
+
   int p_handler_state = p->handler_state;
   tunnel_handler_post_or_put(p);
 
   switch (p_handler_state) {
   case HTTP_SM_POST_SERVER_FAIL:
-    handle_post_failure();
+    if (t_state.http_config_param->tunnel_faker_enabled && t_state.current.attempts == 0 && tunnel.get_fvc() &&
+        !tunnel.is_fvc_done()) {
+      tunnel.set_fvc_handler(&HttpSM::fake_handle_post_failure, event, data);
+    } else {
+      handle_post_failure();
+    }
     break;
   case HTTP_SM_POST_UA_FAIL:
     break;
@@ -2828,6 +2892,39 @@ HttpSM::is_http_server_eos_truncation(HttpTunnelProducer *p)
   } else {
     return false;
   }
+}
+
+int
+HttpSM::tunnel_handler_fake_downstream(int event, HttpTunnelProducer *p)
+{
+  STATE_ENTER(&HttpSM::tunnel_handler_fake_downstream, event);
+  ink_assert(tunnel.is_fvc_done());
+  p->read_success = true;
+  return 0;
+}
+
+int
+HttpSM::tunnel_handler_fake_upstream(int event, HttpTunnelConsumer *c)
+{
+  switch (event) {
+  case VC_EVENT_WRITE_READY:
+    // run self producer
+    if (!tunnel.is_fvc_producer_run()) {
+      STATE_ENTER(&HttpSM::tunnel_handler_fake_upstream, event);
+      HttpTunnelProducer *p = c->self_producer;
+      ink_release_assert(p);
+      tunnel.tunnel_run(p);
+    }
+    return 0;
+  case VC_EVENT_ERROR:
+  case VC_EVENT_EOS:
+  default:
+    ink_release_assert("unknown event");
+  }
+
+  STATE_ENTER(&HttpSM::tunnel_handler_fake_upstream, event);
+  c->write_success = true;
+  return 0;
 }
 
 int
@@ -3513,6 +3610,8 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     server_entry->eos = true;
     c->vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
 
+    Debug("fvc_handler", "read %ld", tunnel.get_fvc_reader()->read_avail());
+
     // We may be reading from a transform.  In that case, we
     //   want to close the transform
     HttpTunnelProducer *ua_producer;
@@ -3524,6 +3623,19 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
         c->producer->self_consumer->alive = false;
       }
       ua_producer = c->producer->self_consumer->producer;
+    } else if (c->producer->vc_type == HT_STATIC_WRITE) {
+      ua_producer = c->producer->self_consumer->producer;
+      if (ua_producer->vc_type == HT_TRANSFORM) {
+        ua_producer = ua_producer->self_consumer->producer;
+      }
+
+      HttpTunnelConsumer *nc      = c->producer->self_consumer;
+      c->producer->alive          = false;
+      nc->producer->self_consumer = nullptr;
+      nc->vc->do_io_read(nullptr, 0, nullptr);
+
+      tunnel.set_fvc_state(HTTP_SM_POST_SERVER_FAIL);
+      break;
     } else {
       ua_producer = c->producer;
     }
@@ -3561,7 +3673,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     //   agent as down so that tunnel concludes.
     ua_producer->alive         = false;
     ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
-    ink_assert(tunnel.is_tunnel_alive() == false);
+    // ink_assert(tunnel.is_tunnel_alive() == false);
     break;
 
   case VC_EVENT_WRITE_COMPLETE:
@@ -5055,6 +5167,11 @@ HttpSM::do_api_callout_internal()
 VConnection *
 HttpSM::do_post_transform_open()
 {
+  // we can not go again since post_transform has already been destroyed;
+  if (t_state.current.attempts > 0) {
+    return nullptr;
+  }
+
   ink_assert(post_transform_info.vc == nullptr);
 
   if (is_action_tag_set("http_post_nullt")) {
@@ -5272,7 +5389,7 @@ HttpSM::handle_post_failure()
     setup_server_read_response_header();
   } else {
     tunnel.deallocate_buffers();
-    tunnel.reset();
+    tunnel.reset(false);
     // Server died
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
     call_transact_and_set_next_state(HttpTransact::HandleResponse);
@@ -5386,7 +5503,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
       }
     } else {
       // c could be null here as well
-      if (c != nullptr) {
+      if (c != nullptr && c->alive) {
         tunnel.handleEvent(event, c->write_vio);
       }
     }
@@ -5398,7 +5515,8 @@ HttpSM::handle_server_setup_error(int event, void *data)
         vc_table.cleanup_entry(post_transform_info.entry);
         post_transform_info.entry = nullptr;
         tunnel.deallocate_buffers();
-        tunnel.reset();
+        tunnel.reset(false);
+        server_entry->in_tunnel = false;
       }
     }
   }
@@ -5465,6 +5583,105 @@ HttpSM::handle_server_setup_error(int event, void *data)
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
 
+///////////////////////////////////////////////////////////
+//
+//  setup ua to fake tunnel
+//  and wait for tunnel success. It is server failed case only.
+//
+///////////////////////////////////////////////////////////
+void
+HttpSM::do_setup_ua_to_fake_tunnel(int event, void *data)
+{
+  ink_assert(post_transform_info.vc == nullptr);
+  ink_assert(!tunnel.get_fvc());
+
+  STATE_ENTER(&HttpSM::do_setup_ua_to_fake_tunnel, event);
+
+  HttpTunnelProducer *p = nullptr;
+  bool chunked          = (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING);
+
+  int64_t alloc_index;
+  // content length is undefined, use default buffer size
+  if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
+    alloc_index = (int)t_state.txn_conf->default_buffer_size_index;
+    if (alloc_index < MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index > MAX_BUFFER_SIZE_INDEX) {
+      alloc_index = DEFAULT_REQUEST_BUFFER_SIZE_INDEX;
+    }
+  } else {
+    alloc_index = buffer_size_to_index(t_state.hdr_info.request_content_length);
+  }
+
+  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_fake);
+
+  MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
+  IOBufferReader *buf_start = post_buffer->alloc_reader();
+  int64_t post_bytes        = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
+
+  client_request_body_bytes = post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
+  ua_buffer_reader->consume(client_request_body_bytes);
+
+  tunnel.fake_vc_init(post_bytes);
+
+  tunnel.set_fvc_handler(&HttpSM::fake_server_setup_error, event, data);
+
+  p = tunnel.add_producer(ua_entry->vc, post_bytes - transfered_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT,
+                          "user agent post");
+
+  tunnel.add_consumer(tunnel.get_fvc(), ua_entry->vc, &HttpSM::tunnel_handler_fake_upstream, HT_STATIC_READ, "fake read");
+
+  if (chunked) {
+    tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_CHUNKED_CONTENT);
+  }
+
+  tunnel.tunnel_run(p);
+
+  ua_entry->in_tunnel = true;
+}
+
+///////////////////////////////////
+//
+//  setup transform to fake tunnel
+//	and wait for tunnel success.
+//
+//////////////////////////////////
+void
+HttpSM::setup_transform_to_fake_transfer(int event, void *data)
+{
+  ink_assert(post_transform_info.vc != nullptr);
+  ink_assert(post_transform_info.entry->vc == post_transform_info.vc);
+
+  STATE_ENTER(&HttpSM::setup_transform_to_fake_transfer, event);
+
+  HttpTunnelProducer *p = nullptr;
+
+  // fvc is running retrun
+  if (tunnel.get_fvc()) {
+    return;
+  }
+
+  int64_t nbytes            = t_state.hdr_info.transform_request_cl;
+  int64_t alloc_index       = buffer_size_to_index(nbytes);
+  MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
+  IOBufferReader *buf_start = post_buffer->alloc_reader();
+
+  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_fake);
+
+  HttpTunnelConsumer *c = tunnel.get_consumer(post_transform_info.vc);
+
+  tunnel.fake_vc_init(nbytes);
+  tunnel.set_fvc_handler(&HttpSM::fake_server_setup_error, event, data);
+
+  p = tunnel.add_producer(post_transform_info.vc, nbytes, buf_start, &HttpSM::tunnel_handler_transform_read, HT_TRANSFORM,
+                          "post transform");
+  tunnel.chain(c, p);
+
+  post_transform_info.entry->in_tunnel = true;
+
+  tunnel.add_consumer(tunnel.get_fvc(), post_transform_info.vc, &HttpSM::tunnel_handler_fake_upstream, HT_STATIC_READ, "fake read");
+
+  tunnel.tunnel_run(p);
+}
+
 void
 HttpSM::setup_transform_to_server_transfer()
 {
@@ -5476,19 +5693,32 @@ HttpSM::setup_transform_to_server_transfer()
   MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = post_buffer->alloc_reader();
 
-  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
-
   HttpTunnelConsumer *c = tunnel.get_consumer(post_transform_info.vc);
 
   HttpTunnelProducer *p = tunnel.add_producer(post_transform_info.vc, nbytes, buf_start, &HttpSM::tunnel_handler_transform_read,
                                               HT_TRANSFORM, "post transform");
   tunnel.chain(c, p);
+
+  if (!t_state.http_config_param->tunnel_faker_enabled) {
+    HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
+
+    tunnel.add_consumer(server_entry->vc, post_transform_info.vc, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER,
+                        "http server post");
+  } else {
+    // setup fake vc
+    HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_fake);
+    tunnel.fake_vc_init(nbytes);
+
+    HttpTunnelProducer *fp = tunnel.add_tunnel_fake(post_transform_info.vc, &HttpSM::tunnel_handler_fake_upstream,
+                                                    &HttpSM::tunnel_handler_fake_downstream);
+    tunnel.add_consumer(server_entry->vc, fp->vc, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER, "http server post");
+
+    // save the default handler because we need to wait for fvc succeed.
+    tunnel.set_fvc_handler(&HttpSM::tunnel_handler_post, HTTP_TUNNEL_EVENT_DONE, &tunnel);
+  }
+
   post_transform_info.entry->in_tunnel = true;
-
-  tunnel.add_consumer(server_entry->vc, post_transform_info.vc, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER,
-                      "http server post");
-  server_entry->in_tunnel = true;
-
+  server_entry->in_tunnel              = true;
   tunnel.tunnel_run(p);
 }
 
@@ -5517,10 +5747,75 @@ HttpSM::do_drain_request_body()
 #endif /* PROXY_DRAIN */
 
 void
+HttpSM::do_setup_fake_tunnel()
+{
+  bool chunked = (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING);
+  int64_t alloc_index;
+
+  HttpTunnelProducer *p = nullptr;
+
+  ink_release_assert(tunnel.get_fvc());
+  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
+
+  // content length is undefined, use default buffer size
+  if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
+    alloc_index = (int)t_state.txn_conf->default_buffer_size_index;
+    if (alloc_index < MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index > MAX_BUFFER_SIZE_INDEX) {
+      alloc_index = DEFAULT_REQUEST_BUFFER_SIZE_INDEX;
+    }
+  } else {
+    alloc_index = buffer_size_to_index(t_state.hdr_info.request_content_length);
+  }
+  MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
+  IOBufferReader *buf_start = post_buffer->alloc_reader();
+  int64_t post_bytes        = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
+  int64_t left_bytes        = post_bytes - tunnel.get_fvc_transfer_bytes();
+
+  // Note: Many browsers, Netscape and IE included send two extra
+  //  bytes (CRLF) at the end of the post.  We just ignore those
+  //  bytes since the sending them is not spec
+
+  // Next order of business if copy the remaining data from the
+  //  header buffer into new buffer
+  client_request_body_bytes = post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
+
+  // ua_buffer_reader->consume(client_request_body_bytes);
+  p = tunnel.add_producer(ua_entry->vc, left_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT, "user agent post");
+
+  // Do we have data in ua_buffer_reader
+  if (left_bytes > 0) {
+    HttpTunnelProducer *fp =
+      tunnel.setup_fake_tunnel(ua_entry->vc, &HttpSM::tunnel_handler_fake_upstream, &HttpSM::tunnel_handler_fake_downstream, false);
+    tunnel.add_consumer(server_entry->vc, fp->vc, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER, "http server post");
+    // run ua producer
+    tunnel.tunnel_run(p);
+    ua_entry->in_tunnel = true;
+  } else {
+    // the client producer has already finished.
+    p->alive        = false;
+    p->read_success = true;
+    // client producer always succeed. We will reset it in HttpSM::handle_server_setup_error if not.
+    p->handler_state = HTTP_SM_POST_SUCCESS;
+
+    HttpTunnelProducer *fp =
+      tunnel.setup_fake_tunnel(ua_entry->vc, &HttpSM::tunnel_handler_fake_upstream, &HttpSM::tunnel_handler_fake_downstream);
+    tunnel.add_consumer(server_entry->vc, fp->vc, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER, "http server post");
+
+    fp->read_success                 = true;
+    fp->self_consumer->write_success = true;
+    ua_entry->in_tunnel              = false;
+    // run fake producer
+    tunnel.tunnel_run(fp);
+  }
+  server_entry->in_tunnel = true;
+}
+
+void
 HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
 {
   bool chunked       = (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING);
   bool post_redirect = false;
+  int64_t post_bytes = 0;
 
   HttpTunnelProducer *p = nullptr;
   // YTS Team, yamsat Plugin
@@ -5532,14 +5827,21 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     post_redirect = true;
     // copy the post data into a new producer buffer for static producer
     tunnel.postbuf->postdata_producer_buffer->write(tunnel.postbuf->postdata_copy_buffer_start);
-    int64_t post_bytes = tunnel.postbuf->postdata_producer_reader->read_avail();
-    transfered_bytes   = post_bytes;
-    p                  = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, tunnel.postbuf->postdata_producer_reader,
+    post_bytes       = tunnel.postbuf->postdata_producer_reader->read_avail();
+    transfered_bytes = post_bytes;
+    p                = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, tunnel.postbuf->postdata_producer_reader,
                             (HttpProducerHandler) nullptr, HT_STATIC, "redirect static agent post");
     // the tunnel has taken over the buffer and will free it
     tunnel.postbuf->postdata_producer_buffer = nullptr;
     tunnel.postbuf->postdata_producer_reader = nullptr;
   } else {
+    // This is retry case. All data was held in fvc. We just need to setup
+    // ua -> fvc -> server tunnel and run fvc producer.
+    if (t_state.current.attempts > 0 && t_state.http_config_param->tunnel_faker_enabled) {
+      do_setup_fake_tunnel();
+      return;
+    }
+
     int64_t alloc_index;
     // content length is undefined, use default buffer size
     if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
@@ -5552,7 +5854,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     }
     MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
     IOBufferReader *buf_start = post_buffer->alloc_reader();
-    int64_t post_bytes        = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
+    post_bytes                = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
 
     // Note: Many browsers, Netscape and IE included send two extra
     //  bytes (CRLF) at the end of the post.  We just ignore those
@@ -5586,8 +5888,23 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
       tunnel.add_consumer(server_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER,
                           "redirect http server post");
     } else {
-      HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
-      tunnel.add_consumer(server_entry->vc, ua_entry->vc, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER, "http server post");
+      if (t_state.http_config_param->tunnel_faker_enabled) {
+        HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_fake);
+        // setup fake vc tunnel
+        ink_assert(tunnel.get_fvc() == nullptr);
+
+        tunnel.fake_vc_init(post_bytes);
+        tunnel.set_fvc_handler(&HttpSM::tunnel_handler_post, HTTP_TUNNEL_EVENT_DONE, &tunnel);
+
+        HttpTunnelProducer *fp =
+          tunnel.add_tunnel_fake(ua_entry->vc, &HttpSM::tunnel_handler_fake_upstream, &HttpSM::tunnel_handler_fake_downstream);
+        tunnel.add_consumer(server_entry->vc, fp->vc, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER, "http server post");
+
+      } else {
+        HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
+        tunnel.add_consumer(server_entry->vc, ua_entry->vc, &HttpSM::tunnel_handler_post_server, HT_HTTP_SERVER,
+                            "http server post");
+      }
     }
     server_entry->in_tunnel = true;
     break;
@@ -5596,12 +5913,12 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     break;
   }
 
+  ua_session->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
+  server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
+
   if (chunked) {
     tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_CHUNKED_CONTENT);
   }
-
-  ua_session->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
-  server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
 
   tunnel.tunnel_run(p);
 
