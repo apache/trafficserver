@@ -412,9 +412,11 @@ cache_op(AIOCallbackInternal *op)
     while (a->aio_nbytes - res > 0) {
       do {
         if (read) {
-          err = pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pread(a->aio_fildes, (const_cast<char *>(static_cast<volatile char *>(a->aio_buf))) + res, a->aio_nbytes - res,
+                      a->aio_offset + res);
         } else {
-          err = pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pwrite(a->aio_fildes, (const_cast<char *>(static_cast<volatile char *>(a->aio_buf))) + res, a->aio_nbytes - res,
+                       a->aio_offset + res);
         }
       } while ((err < 0) && (errno == EINTR || errno == ENOBUFS || errno == ENOMEM));
       if (err <= 0) {

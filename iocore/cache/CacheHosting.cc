@@ -662,7 +662,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       }
       char *eq_sign;
 
-      eq_sign = strchr(tmp, '=');
+      eq_sign = const_cast<char *>(strchr(tmp, '='));
       if (!eq_sign) {
         err = "Unexpected end of line";
         break;

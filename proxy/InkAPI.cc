@@ -7700,7 +7700,7 @@ char *
 TSAIOBufGet(TSAIOCallback data)
 {
   AIOCallback *pAIO = reinterpret_cast<AIOCallback *>(data);
-  return static_cast<char *>(pAIO->aiocb.aio_buf);
+  return const_cast<char *>(static_cast<volatile char *>(pAIO->aiocb.aio_buf));
 }
 
 int

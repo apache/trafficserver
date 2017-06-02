@@ -933,8 +933,8 @@ Rollback::checkForUserUpdate(RollBackCheckType how)
 int
 versionCmp(const void *i1, const void *i2)
 {
-  versionInfo *v1 = static_cast<versionInfo *>(*static_cast<void **>(i1));
-  versionInfo *v2 = static_cast<versionInfo *>(*static_cast<void **>(i2));
+  versionInfo *v1 = static_cast<versionInfo *>(*static_cast<void **>(const_cast<void *>(i1)));
+  versionInfo *v2 = static_cast<versionInfo *>(*static_cast<void **>(const_cast<void *>(i2)));
 
   if ((v1->version) < v2->version) {
     return -1;

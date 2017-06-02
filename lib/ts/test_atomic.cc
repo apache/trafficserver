@@ -171,7 +171,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   printf("changed to: %d,  result=%d\n", n, m);
 
   printf("Atomic Fetch-and-Add 2 to pointer to '%s'\n", m2);
-  n2 = static_cast<char *>(ink_atomic_increment((pvvoidp)&m2, (void *)2));
+  n2 = const_cast<char *>(static_cast<volatile char *>(ink_atomic_increment((pvvoidp)&m2, reinterpret_cast<void *>(2))));
   printf("changed to: %s,  result=%s\n", m2, n2);
 
   printf("Testing atomic lists\n");

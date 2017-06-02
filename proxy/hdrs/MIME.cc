@@ -2602,7 +2602,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     }
 
     // find name last
-    colon = static_cast<char *>(memchr(line_c, ':', (line_e - line_c)));
+    colon = static_cast<char *>(const_cast<void *>(memchr(line_c, ':', (line_e - line_c))));
     if (!colon) {
       continue; // toss away garbage line
     }

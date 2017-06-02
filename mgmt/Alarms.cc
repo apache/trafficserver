@@ -299,7 +299,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 
   for (entry = ink_hash_table_iterator_first(cblist, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(cblist, &iterator_state)) {
-    AlarmCallbackFunc func = static_cast<AlarmCallbackFunc>(ink_hash_table_entry_value(remote_alarms, entry));
+    AlarmCallbackFunc func = reinterpret_cast<AlarmCallbackFunc>(ink_hash_table_entry_value(remote_alarms, entry));
     Debug("alarm", "[Alarms::signalAlarm] invoke callback for %d", a);
     (*(func))(a, ip, desc);
   }

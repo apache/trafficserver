@@ -317,7 +317,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
      ------------------------------------------------ */
   for (int i = 0; i < numTok; i++) {
     current = pTok[i];
-    tmp     = strchr(current, ':');
+    tmp     = const_cast<char *>(strchr(current, ':'));
     // coverity[secure_coding]
     if (tmp != nullptr && sscanf(tmp + 1, "%d", &port) != 1) {
       return "Malformed DNS port";

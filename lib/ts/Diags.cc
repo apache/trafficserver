@@ -251,7 +251,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   *end_of_format = NUL;
 
   // add the thread id
-  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{0x%" PRIx64 "} ", static_cast<uint64_t>(ink_thread_self()));
+  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{0x%" PRIx64 "} ", reinterpret_cast<uint64_t>(ink_thread_self()));
 
   //////////////////////////////////////
   // start with the diag level prefix //

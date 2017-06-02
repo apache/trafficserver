@@ -210,7 +210,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     io.aio_result += scan_fix_buffer_offset;
     io.aiocb.aio_nbytes += scan_fix_buffer_offset;
     io.aiocb.aio_offset -= scan_fix_buffer_offset;
-    io.aiocb.aio_buf       = static_cast<char *>(io.aiocb.aio_buf) - scan_fix_buffer_offset;
+    io.aiocb.aio_buf       = const_cast<char *>(static_cast<volatile char *>(io.aiocb.aio_buf)) - scan_fix_buffer_offset;
     scan_fix_buffer_offset = 0;
   }
   while (static_cast<off_t>(reinterpret_cast<char *>(doc) - buf->data()) + next_object_len <

@@ -143,19 +143,20 @@ values_test()
 
 // NOTE: Test data from "C.6.1 First Response" in RFC 7541.
 const static struct {
-  uint8_t *src;
+  const uint8_t *src;
   int64_t src_len;
-  uint8_t *expect;
+  const uint8_t *expect;
   int64_t expect_len;
 } huffman_encode_test_data[] = {
-  {reinterpret_cast<uint8_t *>(""), 0, reinterpret_cast<uint8_t *>(""), 0},
-  {reinterpret_cast<uint8_t *>("0"), 1, reinterpret_cast<uint8_t *>("\x07"), 1},
-  {reinterpret_cast<uint8_t *>("302"), 3, reinterpret_cast<uint8_t *>("\x64\x02"), 2},
-  {reinterpret_cast<uint8_t *>("private"), 7, reinterpret_cast<uint8_t *>("\xae\xc3\x77\x1a\x4b"), 5},
-  {reinterpret_cast<uint8_t *>("Mon, 21 Oct 2013 20:13:21 GMT"), 29,
-   reinterpret_cast<uint8_t *>("\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66\xe0\x82\xa6\x2d\x1b\xff"), 22},
-  {reinterpret_cast<uint8_t *>("https://www.example.com"), 23,
-   reinterpret_cast<uint8_t *>("\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43\xd3"), 17}};
+  {reinterpret_cast<const uint8_t *>(""), 0, reinterpret_cast<const uint8_t *>(""), 0},
+  {reinterpret_cast<const uint8_t *>("0"), 1, reinterpret_cast<const uint8_t *>("\x07"), 1},
+  {reinterpret_cast<const uint8_t *>("302"), 3, reinterpret_cast<const uint8_t *>("\x64\x02"), 2},
+  {reinterpret_cast<const uint8_t *>("private"), 7, reinterpret_cast<const uint8_t *>("\xae\xc3\x77\x1a\x4b"), 5},
+  {reinterpret_cast<const uint8_t *>("Mon, 21 Oct 2013 20:13:21 GMT"), 29,
+   reinterpret_cast<const uint8_t *>("\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66\xe0\x82\xa6\x2d\x1b\xff"),
+   22},
+  {reinterpret_cast<const uint8_t *>("https://www.example.com"), 23,
+   reinterpret_cast<const uint8_t *>("\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43\xd3"), 17}};
 
 void
 encode_test()

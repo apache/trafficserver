@@ -378,7 +378,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
     current = pTok[i];
 
     // Find the parent port
-    tmp = strchr(current, ':');
+    tmp = const_cast<char *>(strchr(current, ':'));
 
     if (tmp == nullptr) {
       errPtr = "No parent port specified";
@@ -392,7 +392,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
     }
 
     // See if there is an optional parent weight
-    tmp2 = strchr(current, '|');
+    tmp2 = const_cast<char *>(strchr(current, '|'));
 
     if (tmp2) {
       if (sscanf(tmp2 + 1, "%f", &weight) != 1) {

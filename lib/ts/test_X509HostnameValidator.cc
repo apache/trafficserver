@@ -121,12 +121,16 @@ REGRESSION_TEST(bad_wildcard_SANs)(RegressionTest *t, int /* atype ATS_UNUSED */
   box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_bad_sans);
   box.check(x != nullptr, "failed to load the test certificate");
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("something.or.other"), false, nullptr) == false,
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("something.or.other"), false, nullptr) == false,
             "Hostname shouldn't match");
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("a.b.c"), false, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("0.0.0.0"), true, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("......"), true, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("a.b"), true, nullptr) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("a.b.c"), false, nullptr) == false,
+            "Hostname shouldn't match");
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("0.0.0.0"), true, nullptr) == false,
+            "Hostname shouldn't match");
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("......"), true, nullptr) == false,
+            "Hostname shouldn't match");
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("a.b"), true, nullptr) == false,
+            "Hostname shouldn't match");
 }
 
 REGRESSION_TEST(wildcard_SAN_and_CN)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
@@ -141,11 +145,11 @@ REGRESSION_TEST(wildcard_SAN_and_CN)(RegressionTest *t, int /* atype ATS_UNUSED 
   box.check(strcmp(test_certificate_cn_name, matching) == 0, "Return hostname doesn't match lookup");
   ats_free(matching);
 
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("a.trafficserver.org"), false, &matching) == true,
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("a.trafficserver.org"), false, &matching) == true,
             "Hostname should match");
   box.check(strcmp("*.trafficserver.org", matching) == 0, "Return hostname doesn't match lookup");
 
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("a.*.trafficserver.org"), false, nullptr) == false,
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("a.*.trafficserver.org"), false, nullptr) == false,
             "Hostname shouldn't match");
   ats_free(matching);
 }
@@ -157,13 +161,14 @@ REGRESSION_TEST(IDNA_hostnames)(RegressionTest *t, int /* atype ATS_UNUSED */, i
   box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
   box.check(x != nullptr, "failed to load the test certificate");
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("xn--foobar.trafficserver.org"), false, &matching) == true,
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("xn--foobar.trafficserver.org"), false, &matching) == true,
             "Hostname should match");
   box.check(strcmp("*.trafficserver.org", matching) == 0, "Return hostname doesn't match lookup");
   ats_free(matching);
 
   // IDNA means wildcard must match full label
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("xn--foobar.trafficserver.net"), false, &matching) == false,
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("xn--foobar.trafficserver.net"), false, &matching) ==
+              false,
             "Hostname shouldn't match");
 }
 
@@ -174,18 +179,20 @@ REGRESSION_TEST(middle_label_match)(RegressionTest *t, int /* atype ATS_UNUSED *
   box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
   box.check(x != nullptr, "failed to load the test certificate");
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("foosomething.trafficserver.com"), false, &matching) == true,
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("foosomething.trafficserver.com"), false, &matching) ==
+              true,
             "Hostname should match");
   box.check(strcmp("foo*.trafficserver.com", matching) == 0, "Return hostname doesn't match lookup");
   ats_free(matching);
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("somethingbar.trafficserver.net"), false, &matching) == true,
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("somethingbar.trafficserver.net"), false, &matching) ==
+              true,
             "Hostname should match");
   box.check(strcmp("*bar.trafficserver.net", matching) == 0, "Return hostname doesn't match lookup");
   ats_free(matching);
 
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("a.bar.trafficserver.net"), false, nullptr) == false,
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("a.bar.trafficserver.net"), false, nullptr) == false,
             "Hostname shouldn't match");
-  box.check(validate_hostname(x, reinterpret_cast<unsigned char *>("foo.bar.trafficserver.net"), false, nullptr) == false,
+  box.check(validate_hostname(x, reinterpret_cast<const unsigned char *>("foo.bar.trafficserver.net"), false, nullptr) == false,
             "Hostname shouldn't match");
 }
 

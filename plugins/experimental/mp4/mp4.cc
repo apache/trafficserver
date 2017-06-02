@@ -502,7 +502,7 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
     if ((p == param || *(p - 1) == '&') && *(p + key_len) == '=') {
       val = p + key_len + 1;
 
-      p = static_cast<char *>(memchr(p, '&', last - p));
+      p = static_cast<const char *>(memchr(p, '&', last - p));
 
       if (p == nullptr) {
         p = param + param_len;

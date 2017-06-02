@@ -1492,7 +1492,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
       uint32_t to_check = header->write_pos - header->last_write_pos;
       ink_assert(to_check && to_check < (uint32_t)io.aiocb.aio_nbytes);
       uint32_t done = 0;
-      s             = static_cast<char *>(io.aiocb.aio_buf);
+      s             = const_cast<char *>(static_cast<volatile char *>(io.aiocb.aio_buf));
       while (done < to_check) {
         Doc *doc = reinterpret_cast<Doc *>(s + done);
         if (doc->magic != DOC_MAGIC || doc->write_serial > header->write_serial) {
@@ -1508,12 +1508,12 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
 
       got_len = io.aiocb.aio_nbytes - done;
       recover_pos += io.aiocb.aio_nbytes;
-      s = static_cast<char *>(io.aiocb.aio_buf) + done;
+      s = const_cast<char *>(static_cast<volatile char *>(io.aiocb.aio_buf)) + done;
       e = s + got_len;
     } else {
       got_len = io.aiocb.aio_nbytes;
       recover_pos += io.aiocb.aio_nbytes;
-      s = static_cast<char *>(io.aiocb.aio_buf);
+      s = const_cast<char *>(static_cast<volatile char *>(io.aiocb.aio_buf));
       e = s + got_len;
     }
   }
@@ -1705,7 +1705,7 @@ Ldone : {
 }
 
 Lclear:
-  free(static_cast<char *>(io.aiocb.aio_buf));
+  free(const_cast<void *>(io.aiocb.aio_buf));
   delete init_info;
   init_info = nullptr;
   clear_dir();
@@ -1716,7 +1716,7 @@ int
 Vol::handle_recover_write_dir(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
   if (io.aiocb.aio_buf) {
-    free(static_cast<char *>(io.aiocb.aio_buf));
+    free(const_cast<void *>(io.aiocb.aio_buf));
   }
   delete init_info;
   init_info = nullptr;
@@ -1737,7 +1737,7 @@ Vol::handle_header_read(int event, void *data)
     op = static_cast<AIOCallback *>(data);
     for (auto &i : hf) {
       ink_assert(op != nullptr);
-      i = static_cast<VolHeaderFooter *>(op->aiocb.aio_buf);
+      i = const_cast<VolHeaderFooter *>(static_cast<volatile VolHeaderFooter *>(op->aiocb.aio_buf));
       if (static_cast<size_t>(op->aio_result) != op->aiocb.aio_nbytes) {
         clear_dir();
         return EVENT_DONE;

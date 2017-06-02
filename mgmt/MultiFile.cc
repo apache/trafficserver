@@ -184,8 +184,8 @@ MultiFile::addSelectOptions(TextBuffer *output, ExpandingArray *options)
 int
 fileEntryCmpFunc(const void *e1, const void *e2)
 {
-  fileEntry *entry1 = static_cast<fileEntry *>(*static_cast<void **>(e1));
-  fileEntry *entry2 = static_cast<fileEntry *>(*static_cast<void **>(e2));
+  fileEntry *entry1 = static_cast<fileEntry *>(*static_cast<void **>(const_cast<void *>(e1)));
+  fileEntry *entry2 = static_cast<fileEntry *>(*static_cast<void **>(const_cast<void *>(e2)));
 
   if (entry1->c_time > entry2->c_time) {
     return 1;

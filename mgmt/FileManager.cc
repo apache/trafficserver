@@ -794,8 +794,8 @@ FileManager::checkValidName(const char *name)
 int
 snapEntryCmpFunc(const void *e1, const void *e2)
 {
-  snapshot *entry1 = static_cast<snapshot *>(*static_cast<void **>(e1));
-  snapshot *entry2 = static_cast<snapshot *>(*static_cast<void **>(e2));
+  snapshot *entry1 = static_cast<snapshot *>(*static_cast<void **>(const_cast<void *>(e1)));
+  snapshot *entry2 = static_cast<snapshot *>(*static_cast<void **>(const_cast<void *>(e2)));
 
   if (entry1->c_time > entry2->c_time) {
     return 1;

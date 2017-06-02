@@ -69,7 +69,7 @@ HttpPagesHandler::extract_id(const char *query)
   char *p;
   int64_t id;
 
-  p = strstr(query, "id=");
+  p = const_cast<char *>(strstr(query, "id="));
   if (!p) {
     return -1;
   }

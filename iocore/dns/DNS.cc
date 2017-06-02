@@ -1330,7 +1330,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
 {
   ProxyMutex *mutex = handler->mutex.get();
   HEADER *h         = reinterpret_cast<HEADER *>(buf->buf);
-  DNSEntry *e       = get_dns(handler, static_cast<uint16_t> ntohs(h->id));
+  DNSEntry *e       = get_dns(handler, static_cast<uint16_t>(ntohs(h->id)));
   bool retry        = false;
   bool server_ok    = true;
   uint32_t temp_ttl = 0;
@@ -1339,7 +1339,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   // Do we have an entry for this id?
   //
   if (!e || !e->written_flag) {
-    Debug("dns", "unknown DNS id = %u", (uint16_t)ntohs(h->id));
+    Debug("dns", "unknown DNS id = %u", static_cast<uint16_t>(ntohs(h->id)));
     return false; // cannot count this as a success
   }
   //

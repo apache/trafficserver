@@ -86,12 +86,12 @@ char *
 unescapify(const char *src, char *dst, int len)
 {
   const char *cur = src;
-  char *next;
+  const char *next;
   char subStr[3];
   int size;
 
   subStr[2] = '\0';
-  while ((next = static_cast<char *>(memchr(cur, '%', len)))) {
+  while ((next = static_cast<const char *>(memchr(cur, '%', len)))) {
     size = next - cur;
     if (size > 0) {
       memcpy(dst, cur, size);

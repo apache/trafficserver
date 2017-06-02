@@ -95,7 +95,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
         }
         break;
       case P_STRICT_ROUND_ROBIN:
-        cur_index = ink_atomic_increment(reinterpret_cast<int32_t *>(&result->rec->rr_next), 1);
+        cur_index = ink_atomic_increment(reinterpret_cast<volatile int32_t *>(&result->rec->rr_next), 1);
         cur_index = result->start_parent = cur_index % result->rec->num_parents;
         break;
       case P_NO_ROUND_ROBIN:
