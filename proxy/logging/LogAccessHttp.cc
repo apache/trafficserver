@@ -983,7 +983,7 @@ LogAccessHttp::marshal_proxy_req_header_len(char *buf)
   if (buf) {
     int64_t val = 0;
     if (m_proxy_request) {
-      val = m_proxy_request->length_get();
+      val = m_proxy_request->net_length_get();
     }
     marshal_int(buf, val);
   }
