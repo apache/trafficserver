@@ -23,12 +23,20 @@
 
 #define TS_LUA_MD5_DIGEST_LENGTH 16
 #define TS_LUA_SHA_DIGEST_LENGTH 20
+#define TS_LUA_SHA256_DIGEST_LENGTH 32
+#define TS_LUA_SHA512_DIGEST_LENGTH 64
 
 static int ts_lua_md5(lua_State *L);
 static int ts_lua_md5_bin(lua_State *L);
 
 static int ts_lua_sha1(lua_State *L);
 static int ts_lua_sha1_bin(lua_State *L);
+
+static int ts_lua_sha256(lua_State *L);
+static int ts_lua_sha256_bin(lua_State *L);
+
+static int ts_lua_sha512(lua_State *L);
+static int ts_lua_sha512_bin(lua_State *L);
 
 static int ts_lua_base64_encode(lua_State *L);
 static int ts_lua_base64_decode(lua_State *L);
@@ -47,13 +55,29 @@ ts_lua_inject_crypto_api(lua_State *L)
   lua_pushcfunction(L, ts_lua_md5_bin);
   lua_setfield(L, -2, "md5_bin");
 
-  /* ts.sha1_bin(...) */
+  /* ts.sha1(...) */
   lua_pushcfunction(L, ts_lua_sha1);
   lua_setfield(L, -2, "sha1");
 
   /* ts.sha1_bin(...) */
   lua_pushcfunction(L, ts_lua_sha1_bin);
   lua_setfield(L, -2, "sha1_bin");
+
+  /* ts.sha256(...) */
+  lua_pushcfunction(L, ts_lua_sha256);
+  lua_setfield(L, -2, "sha256");
+
+  /* ts.sha256_bin(...) */
+  lua_pushcfunction(L, ts_lua_sha256_bin);
+  lua_setfield(L, -2, "sha256_bin");
+
+  /* ts.sha512(...) */
+  lua_pushcfunction(L, ts_lua_sha512);
+  lua_setfield(L, -2, "sha512");
+
+  /* ts.sha512_bin(...) */
+  lua_pushcfunction(L, ts_lua_sha512_bin);
+  lua_setfield(L, -2, "sha512_bin");
 
   /* ts.base64_encode(...) */
   lua_pushcfunction(L, ts_lua_base64_encode);
@@ -191,6 +215,130 @@ ts_lua_sha1_bin(lua_State *L)
   SHA1_Init(&sha);
   SHA1_Update(&sha, src, slen);
   SHA1_Final(sha_buf, &sha);
+
+  lua_pushlstring(L, (char *)sha_buf, sizeof(sha_buf));
+
+  return 1;
+}
+
+static int
+ts_lua_sha256(lua_State *L)
+{
+  u_char *src;
+  size_t slen;
+
+  SHA256_CTX sha;
+  u_char sha_buf[TS_LUA_SHA256_DIGEST_LENGTH];
+  u_char hex_buf[2 * sizeof(sha_buf)];
+
+  if (lua_gettop(L) != 1) {
+    return luaL_error(L, "expecting one argument");
+  }
+
+  if (lua_isnil(L, 1)) {
+    src = (u_char *)"";
+    slen = 0;
+
+  } else {
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
+  }
+
+  SHA256_Init(&sha);
+  SHA256_Update(&sha, src, slen);
+  SHA256_Final(sha_buf, &sha);
+
+  ts_lua_hex_dump(hex_buf, sha_buf, sizeof(sha_buf));
+  lua_pushlstring(L, (char *)hex_buf, sizeof(hex_buf));
+
+  return 1;
+}
+
+static int
+ts_lua_sha256_bin(lua_State *L)
+{
+  u_char *src;
+  size_t slen;
+
+  SHA256_CTX sha;
+  u_char sha_buf[TS_LUA_SHA256_DIGEST_LENGTH];
+
+  if (lua_gettop(L) != 1) {
+    return luaL_error(L, "expecting one argument");
+  }
+
+  if (lua_isnil(L, 1)) {
+    src = (u_char *)"";
+    slen = 0;
+
+  } else {
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
+  }
+
+  SHA256_Init(&sha);
+  SHA256_Update(&sha, src, slen);
+  SHA256_Final(sha_buf, &sha);
+
+  lua_pushlstring(L, (char *)sha_buf, sizeof(sha_buf));
+
+  return 1;
+}
+
+static int
+ts_lua_sha512(lua_State *L)
+{
+  u_char *src;
+  size_t slen;
+
+  SHA512_CTX sha;
+  u_char sha_buf[TS_LUA_SHA512_DIGEST_LENGTH];
+  u_char hex_buf[2 * sizeof(sha_buf)];
+
+  if (lua_gettop(L) != 1) {
+    return luaL_error(L, "expecting one argument");
+  }
+
+  if (lua_isnil(L, 1)) {
+    src = (u_char *)"";
+    slen = 0;
+
+  } else {
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
+  }
+
+  SHA512_Init(&sha);
+  SHA512_Update(&sha, src, slen);
+  SHA512_Final(sha_buf, &sha);
+
+  ts_lua_hex_dump(hex_buf, sha_buf, sizeof(sha_buf));
+  lua_pushlstring(L, (char *)hex_buf, sizeof(hex_buf));
+
+  return 1;
+}
+
+static int
+ts_lua_sha512_bin(lua_State *L)
+{
+  u_char *src;
+  size_t slen;
+
+  SHA512_CTX sha;
+  u_char sha_buf[TS_LUA_SHA512_DIGEST_LENGTH];
+
+  if (lua_gettop(L) != 1) {
+    return luaL_error(L, "expecting one argument");
+  }
+
+  if (lua_isnil(L, 1)) {
+    src = (u_char *)"";
+    slen = 0;
+
+  } else {
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
+  }
+
+  SHA512_Init(&sha);
+  SHA512_Update(&sha, src, slen);
+  SHA512_Final(sha_buf, &sha);
 
   lua_pushlstring(L, (char *)sha_buf, sizeof(sha_buf));
 
