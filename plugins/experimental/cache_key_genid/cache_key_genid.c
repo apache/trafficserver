@@ -75,7 +75,7 @@ get_genid(char *host)
 
   if (vbuf) {
     TSDebug(PLUGIN_NAME, "kcdbget(%s) = %s", host, vbuf);
-    answer = (int)strtol(vbuf, NULL, 10);
+    answer = strtol(vbuf, NULL, 10);
     kcfree(vbuf);
   } else {
     host_size = strlen(host);

@@ -63,7 +63,7 @@ CommentObj::isValid()
 TSCfgEle *
 CommentObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_comment_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_comment_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -239,7 +239,7 @@ CacheObj::isValid()
 TSCfgEle *
 CacheObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_cache_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_cache_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -472,7 +472,7 @@ CongestionObj::isValid()
 TSCfgEle *
 CongestionObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_congestion_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_congestion_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -612,7 +612,7 @@ Lend:
 TSCfgEle *
 HostingObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_hosting_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_hosting_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -747,7 +747,7 @@ IpAllowObj::isValid()
 TSCfgEle *
 IpAllowObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_ip_allow_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_ip_allow_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -946,7 +946,7 @@ ParentProxyObj::isValid()
 TSCfgEle *
 ParentProxyObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_parent_proxy_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_parent_proxy_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -1111,7 +1111,7 @@ VolumeObj::isValid()
 TSCfgEle *
 VolumeObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_volume_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_volume_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -1211,7 +1211,7 @@ PluginObj::isValid()
 TSCfgEle *
 PluginObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_plugin_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_plugin_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -1523,7 +1523,7 @@ RemapObj::isValid()
 TSCfgEle *
 RemapObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_remap_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_remap_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -1637,7 +1637,7 @@ SocksObj::formatEleToRule()
   memset(buf, 0, MAX_RULE_SIZE);
 
   if (m_ele->ip_addrs != nullptr) { // TS_SOCKS_BYPASS rule
-    char *str_list = ip_addr_list_to_string((LLQ *)m_ele->ip_addrs, ",");
+    char *str_list = ip_addr_list_to_string(static_cast<LLQ *>(m_ele->ip_addrs), ",");
     if (str_list) {
       snprintf(buf, sizeof(buf), "no_socks %s", str_list);
       ats_free(str_list);
@@ -1648,7 +1648,7 @@ SocksObj::formatEleToRule()
     snprintf(buf, sizeof(buf), "auth u %s %s", m_ele->username, m_ele->password);
   } else { // TS_SOCKS_MULTIPLE rule
     // destination ip
-    char *ip_str = ip_addr_ele_to_string((TSIpAddrEle *)m_ele->dest_ip_addr);
+    char *ip_str = ip_addr_ele_to_string(m_ele->dest_ip_addr);
     if (ip_str) {
       ink_strlcat(buf, "dest_ip=", sizeof(buf));
       ink_strlcat(buf, ip_str, sizeof(buf));
@@ -1748,7 +1748,7 @@ SocksObj::isValid()
 TSCfgEle *
 SocksObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_socks_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_socks_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -1813,7 +1813,7 @@ SplitDnsObj::SplitDnsObj(TokenList *tokens)
         // fields are already defined!!
         goto FORMAT_ERR;
       }
-      m_ele->dns_servers_addrs = (TSDomainList)string_to_domain_list(tok->value, "; ");
+      m_ele->dns_servers_addrs = string_to_domain_list(tok->value, "; ");
     } else if (strcmp(tok->name, "def_domain") == 0) {
       if ((m_ele->def_domain != nullptr) || (!tok->value)) {
         // fields are already defined!!
@@ -1825,7 +1825,7 @@ SplitDnsObj::SplitDnsObj(TokenList *tokens)
         // fields are already defined!!
         goto FORMAT_ERR;
       }
-      m_ele->search_list = (TSDomainList)string_to_domain_list(tok->value, "; ");
+      m_ele->search_list = string_to_domain_list(tok->value, "; ");
     } else {
       // Not able to recongize token name
       goto FORMAT_ERR;
@@ -1892,7 +1892,7 @@ SplitDnsObj::formatEleToRule()
 
   if (m_ele->dns_servers_addrs) {
     ink_strlcat(buf, "named=", sizeof(buf));
-    char *temp = domain_list_to_string((LLQ *)m_ele->dns_servers_addrs, ";");
+    char *temp = domain_list_to_string(static_cast<LLQ *>(m_ele->dns_servers_addrs), ";");
     if (temp) {
       if (strstr(temp, " ")) {
         ink_strlcat(buf, "\"", sizeof(buf));
@@ -1981,7 +1981,7 @@ SplitDnsObj::isValid()
 TSCfgEle *
 SplitDnsObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_split_dns_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_split_dns_ele(m_ele));
 }
 
 //--------------------------------------------------------------------------
@@ -2077,7 +2077,7 @@ StorageObj::isValid()
 TSCfgEle *
 StorageObj::getCfgEleCopy()
 {
-  return (TSCfgEle *)copy_storage_ele(m_ele);
+  return reinterpret_cast<TSCfgEle *>(copy_storage_ele(m_ele));
 }
 
 /*****************************************************************

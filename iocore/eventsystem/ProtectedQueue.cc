@@ -157,7 +157,7 @@ ProtectedQueue::dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool slee
     ink_mutex_release(&lock);
   }
 
-  e = (Event *)ink_atomiclist_popall(&al);
+  e = static_cast<Event *>(ink_atomiclist_popall(&al));
   // invert the list, to preserve order
   SLL<Event, Event::Link_link> l, t;
   t.head = e;

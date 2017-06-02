@@ -672,7 +672,7 @@ streamedit_process(TSCont contp)
   // Loop over edits, and apply them to the stream
   // Retain buffered data at the end
   int64_t ntodo, nbytes;
-  contdata_t *contdata      = (contdata_t *)TSContDataGet(contp);
+  contdata_t *contdata      = static_cast<contdata_t *>(TSContDataGet(contp));
   TSVIO input_vio           = TSVConnWriteVIOGet(contp);
   TSIOBufferReader input_rd = TSVIOReaderGet(input_vio);
 
@@ -736,7 +736,7 @@ streamedit_filter(TSCont contp, TSEvent event, void *edata)
   TSVIO input_vio;
 
   if (TSVConnClosedGet(contp)) {
-    contdata_t *contdata = (contdata_t *)TSContDataGet(contp);
+    contdata_t *contdata = static_cast<contdata_t *>(TSContDataGet(contp));
     delete contdata;
     return TS_SUCCESS;
   }
@@ -759,8 +759,8 @@ streamedit_filter(TSCont contp, TSEvent event, void *edata)
 static int
 streamedit_setup(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txn        = (TSHttpTxn)edata;
-  ruleset_t *rules_in  = (ruleset_t *)TSContDataGet(contp);
+  TSHttpTxn txn        = static_cast<TSHttpTxn>(edata);
+  ruleset_t *rules_in  = static_cast<ruleset_t *>(TSContDataGet(contp));
   contdata_t *contdata = nullptr;
 
   assert((event == TS_EVENT_HTTP_READ_RESPONSE_HDR) || (event == TS_EVENT_HTTP_READ_REQUEST_HDR));

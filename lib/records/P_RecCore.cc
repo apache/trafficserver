@@ -340,7 +340,7 @@ RecErrT
 RecRegisterConfigString(RecT rec_type, const char *name, const char *data_default_tmp, RecUpdateT update_type, RecCheckT check_type,
                         const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
-  RecString data_default = (RecString)data_default_tmp;
+  RecString data_default = const_cast<RecString>(data_default_tmp);
   ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_string, RECD_STRING);
 }
@@ -369,7 +369,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
     ink_rwlock_wrlock(&g_records_rwlock);
   }
 
-  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r1)) {
+  if (ink_hash_table_lookup(g_records_ht, name, reinterpret_cast<void **>(&r1))) {
     if (i_am_the_record_owner(r1->rec_type)) {
       rec_mutex_acquire(&(r1->lock));
       if ((data_type != RECD_NULL) && (r1->data_type != data_type)) {
@@ -656,7 +656,7 @@ RecSyncConfigToTB(TextBuffer *tb, bool *inc_version)
       if (REC_TYPE_IS_CONFIG(r->rec_type)) {
         if (r->sync_required & REC_DISK_SYNC_REQUIRED) {
           if (!ink_hash_table_isbound(g_rec_config_contents_ht, r->name)) {
-            cfe             = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
+            cfe             = static_cast<RecConfigFileEntry *>(ats_malloc(sizeof(RecConfigFileEntry)));
             cfe->entry_type = RECE_RECORD;
             cfe->entry      = ats_strdup(r->name);
             enqueue(g_rec_config_contents_llq, (void *)cfe);
@@ -686,12 +686,12 @@ RecSyncConfigToTB(TextBuffer *tb, bool *inc_version)
 
       LLQrec *llq_rec = g_rec_config_contents_llq->head;
       while (llq_rec != nullptr) {
-        cfe = (RecConfigFileEntry *)llq_rec->data;
+        cfe = static_cast<RecConfigFileEntry *>(llq_rec->data);
         if (cfe->entry_type == RECE_COMMENT) {
           tb->copyFrom(cfe->entry, strlen(cfe->entry));
           tb->copyFrom("\n", 1);
         } else {
-          if (ink_hash_table_lookup(g_records_ht, cfe->entry, (void **)&r)) {
+          if (ink_hash_table_lookup(g_records_ht, cfe->entry, reinterpret_cast<void **>(&r))) {
             rec_mutex_acquire(&(r->lock));
             // rec_type
             switch (r->rec_type) {
@@ -837,7 +837,7 @@ RecResetStatRecord(const char *name)
   RecRecord *r1 = nullptr;
   RecErrT err   = REC_ERR_FAIL;
 
-  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r1)) {
+  if (ink_hash_table_lookup(g_records_ht, name, reinterpret_cast<void **>(&r1))) {
     err = reset_stat_record(r1);
   }
 
@@ -889,7 +889,7 @@ RecSetSyncRequired(char *name, bool lock)
     ink_rwlock_wrlock(&g_records_rwlock);
   }
 
-  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r1)) {
+  if (ink_hash_table_lookup(g_records_ht, name, reinterpret_cast<void **>(&r1))) {
     if (i_am_the_record_owner(r1->rec_type)) {
       rec_mutex_acquire(&(r1->lock));
       r1->sync_required = REC_SYNC_REQUIRED;
@@ -941,10 +941,10 @@ RecWriteConfigFile(TextBuffer *tb)
 
   filename_len     = strlen(g_rec_config_fpath);
   tmp_filename_len = filename_len + TMP_FILENAME_EXT_LEN;
-  if (tmp_filename_len < (int)sizeof(buff)) {
+  if (tmp_filename_len < static_cast<int>(sizeof(buff))) {
     tmp_filename = buff;
   } else {
-    tmp_filename = (char *)ats_malloc(tmp_filename_len + 1);
+    tmp_filename = static_cast<char *>(ats_malloc(tmp_filename_len + 1));
   }
   sprintf(tmp_filename, "%s%s", g_rec_config_fpath, TMP_FILENAME_EXT_STR);
 
@@ -964,7 +964,7 @@ RecWriteConfigFile(TextBuffer *tb)
       break;
     }
 
-    if (nbytes != (int)tb->spaceUsed()) {
+    if (nbytes != static_cast<int>(tb->spaceUsed())) {
       RecLog(DL_Warning, "write to file: %s fail, disk maybe full", tmp_filename);
       result = REC_ERR_FAIL;
       break;

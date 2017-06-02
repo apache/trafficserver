@@ -427,7 +427,7 @@ milliseconds()
   // Make liberal use of casting to ink_hrtime to ensure the
   //  compiler does not truncate our result
   cop_log_trace("Leaving milliseconds()\n");
-  return ((ink_hrtime)now.tv_sec * 1000) + ((ink_hrtime)now.tv_usec / 1000);
+  return (static_cast<ink_hrtime>(now.tv_sec) * 1000) + (static_cast<ink_hrtime>(now.tv_usec) / 1000);
 }
 
 static void
@@ -701,7 +701,7 @@ get_admin_user()
   struct passwd *pwd = nullptr;
 
   if (!admin_user) {
-    admin_user = (char *)ats_malloc(MAX_LOGIN);
+    admin_user = static_cast<char *>(ats_malloc(MAX_LOGIN));
   }
 
   config_read_string("proxy.config.admin.user_id", admin_user, MAX_LOGIN);
@@ -719,9 +719,9 @@ get_admin_user()
       int uid = atoi(admin_user + 1);
       if (uid == -1) {
         // XXX: Can this call hapen after setuid?
-        uid = (int)geteuid();
+        uid = static_cast<int>(geteuid());
       }
-      pwd = getpwuid((uid_t)uid);
+      pwd = getpwuid(static_cast<uid_t>(uid));
     } else {
       pwd = getpwnam(admin_user);
     }
@@ -877,9 +877,9 @@ open_socket(int port, const char *ip = nullptr, const char *ip_to_bind = nullptr
     // Bash the port on ::bind so that we always use the same port
     if (0 != source_port) {
       if (result_to_bind->ai_addr->sa_family == AF_INET) {
-        ((sockaddr_in *)result_to_bind->ai_addr)->sin_port = htons(source_port);
+        (reinterpret_cast<sockaddr_in *>(result_to_bind->ai_addr))->sin_port = htons(source_port);
       } else {
-        ((sockaddr_in6 *)result_to_bind->ai_addr)->sin6_port = htons(source_port);
+        (reinterpret_cast<sockaddr_in6 *>(result_to_bind->ai_addr))->sin6_port = htons(source_port);
       }
 
       // also set REUSEADDR so that previous cop connections in the TIME_WAIT state
@@ -1400,7 +1400,8 @@ check_memory()
       // 4:     0       0      high    (okay)
       // 5:     0       0      low     (bad)
       if ((swapsize != 0 && swapfree < check_memory_min_swapfree_kb) || (swapsize == 0 && memfree < check_memory_min_memfree_kb)) {
-        cop_log(COP_WARNING, "Low memory available (swap: %dkB, mem: %dkB)\n", (int)swapfree, (int)memfree);
+        cop_log(COP_WARNING, "Low memory available (swap: %dkB, mem: %dkB)\n", static_cast<int>(swapfree),
+                static_cast<int>(memfree));
         if (active_health_checks & COP_KILL_MANAGER) {
           cop_log(COP_WARNING, "Killing '%s'\n", manager_binary);
           manager_failures = 0;

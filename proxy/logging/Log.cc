@@ -211,7 +211,7 @@ Log::periodic_tasks(long time_now)
     Debug("log-config", "Performing reconfiguration, init status = %d", init_status);
 
     if (logging_mode_changed) {
-      int val = (int)REC_ConfigReadInteger("proxy.config.log.logging_enabled");
+      int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
 
       if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
         logging_mode = LOG_MODE_FULL;
@@ -219,7 +219,7 @@ Log::periodic_tasks(long time_now)
                 "value setting it to %d",
                 logging_mode);
       } else {
-        logging_mode = (LoggingMode)val;
+        logging_mode = static_cast<LoggingMode>(val);
       }
       logging_mode_changed = false;
     }
@@ -364,7 +364,7 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "hiih", field);
   // interface ip end
   field = new LogField("client_auth_user_name", "caun", LogField::STRING, &LogAccess::marshal_client_auth_user_name,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "caun", field);
 
@@ -409,48 +409,50 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "cqtt", field);
 
   field = new LogField("client_req_text", "cqtx", LogField::STRING, &LogAccess::marshal_client_req_text,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_http_text);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_http_text));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtx", field);
 
   field = new LogField("client_req_http_method", "cqhm", LogField::STRING, &LogAccess::marshal_client_req_http_method,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqhm", field);
 
   field = new LogField("client_req_url", "cqu", LogField::STRING, &LogAccess::marshal_client_req_url,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_url);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_url);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqu", field);
 
   field = new LogField("client_req_url_canonical", "cquc", LogField::STRING, &LogAccess::marshal_client_req_url_canon,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_url_canon);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_url_canon);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquc", field);
 
-  field =
-    new LogField("client_req_unmapped_url_canonical", "cquuc", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_canon,
-                 (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_unmapped_url_canon);
+  field = new LogField(
+    "client_req_unmapped_url_canonical", "cquuc", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_canon,
+    reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_unmapped_url_canon);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquuc", field);
 
   field = new LogField("client_req_unmapped_url_path", "cquup", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_path,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_unmapped_url_path);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str),
+                       &LogAccess::set_client_req_unmapped_url_path);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquup", field);
 
   field = new LogField("client_req_unmapped_url_host", "cquuh", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_host,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_unmapped_url_host);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str),
+                       &LogAccess::set_client_req_unmapped_url_host);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquuh", field);
 
   field = new LogField("client_req_url_scheme", "cqus", LogField::STRING, &LogAccess::marshal_client_req_url_scheme,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqus", field);
 
   field = new LogField("client_req_url_path", "cqup", LogField::STRING, &LogAccess::marshal_client_req_url_path,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_url_path);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_url_path);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqup", field);
 
@@ -460,7 +462,7 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "cqhv", field);
 
   field = new LogField("client_req_protocol_version", "cqpv", LogField::dINT, &LogAccess::marshal_client_req_protocol_version,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqpv", field);
 
@@ -475,12 +477,12 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "cqql", field);
 
   field = new LogField("cache_lookup_url_canonical", "cluc", LogField::STRING, &LogAccess::marshal_cache_lookup_url_canon,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cluc", field);
 
   field = new LogField("process_uuid", "puuid", LogField::STRING, &LogAccess::marshal_process_uuid,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "puuid", field);
 
@@ -511,12 +513,12 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "cqssr", field);
 
   field = new LogField("client_sec_protocol", "cqssv", LogField::STRING, &LogAccess::marshal_client_security_protocol,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqssv", field);
 
   field = new LogField("client_cipher_suite", "cqssc", LogField::STRING, &LogAccess::marshal_client_security_cipher_suite,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqssc", field);
 
@@ -534,13 +536,13 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "crid", field);
 
   field = new LogField("client_req_uuid", "cruuid", LogField::STRING, &LogAccess::marshal_client_req_uuid,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cruuid", field);
 
   // proxy -> client fields
   field = new LogField("proxy_resp_content_type", "psct", LogField::STRING, &LogAccess::marshal_proxy_resp_content_type,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "psct", field);
 
@@ -643,7 +645,7 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "pqcl", field);
 
   field = new LogField("proxy_req_server_name", "pqsn", LogField::STRING, &LogAccess::marshal_proxy_req_server_name,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqsn", field);
 
@@ -683,7 +685,7 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "phr", field);
 
   field = new LogField("proxy_host_name", "phn", LogField::STRING, &LogAccess::marshal_proxy_host_name,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "phn", field);
 
@@ -708,7 +710,7 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "shi", field);
 
   field = new LogField("server_host_name", "shn", LogField::STRING, &LogAccess::marshal_server_host_name,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "shn", field);
 
@@ -872,7 +874,7 @@ Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDat
     Error("new periodic tasks interval = %d is invalid, falling back to default = %d", (int)data.rec_int,
           PERIODIC_TASKS_INTERVAL_FALLBACK);
   } else {
-    periodic_tasks_interval = (uint32_t)data.rec_int;
+    periodic_tasks_interval = static_cast<uint32_t>(data.rec_int);
     Debug("log-periodic", "periodic task interval changed to %u", periodic_tasks_interval);
   }
   return REC_ERR_OKAY;
@@ -899,7 +901,7 @@ Log::init(int flags)
   if (config_flags & LOGCAT) {
     logging_mode = LOG_MODE_NONE;
   } else {
-    log_rsb = RecAllocateRawStatBlock((int)log_stat_count);
+    log_rsb = RecAllocateRawStatBlock(static_cast<int>(log_stat_count));
     LogConfig::register_stat_callbacks();
 
     config->read_configuration_variables();
@@ -909,14 +911,14 @@ Log::init(int flags)
     if (config_flags & STANDALONE_COLLATOR) {
       logging_mode = LOG_MODE_TRANSACTIONS;
     } else {
-      int val = (int)REC_ConfigReadInteger("proxy.config.log.logging_enabled");
+      int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
       if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
         logging_mode = LOG_MODE_FULL;
         Warning("proxy.config.log.logging_enabled has an invalid "
                 "value, setting it to %d",
                 logging_mode);
       } else {
-        logging_mode = (LoggingMode)val;
+        logging_mode = static_cast<LoggingMode>(val);
       }
       // periodic task interval are set on a per instance basis
       MgmtInt pti = REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
@@ -1177,8 +1179,8 @@ Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char
 
   struct timeval tp = ink_gettimeofday();
 
-  Log::error("[%9d.%03d] Trace {0x%" PRIx64 "} %s %s:%d: ", (int)tp.tv_sec, (int)(tp.tv_usec / 1000), (uint64_t)ink_thread_self(),
-             in ? "RECV" : "SEND", ip, peer_port);
+  Log::error("[%9d.%03d] Trace {0x%" PRIx64 "} %s %s:%d: ", static_cast<int>(tp.tv_sec), static_cast<int>(tp.tv_usec / 1000),
+             static_cast<uint64_t>(ink_thread_self()), in ? "RECV" : "SEND", ip, peer_port);
   Log::va_error(format_string, ap);
   Log::error("[End Trace]\n");
 }
@@ -1194,7 +1196,7 @@ Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char
 void *
 Log::preproc_thread_main(void *args)
 {
-  int idx = *(int *)args;
+  int idx = *static_cast<int *>(args);
 
   Debug("log-preproc", "log preproc thread is alive ...");
 
@@ -1247,7 +1249,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     if (unlikely(shutdown_event_system == true)) {
       return nullptr;
     }
-    fdata = (LogFlushData *)ink_atomiclist_popall(flush_data_list);
+    fdata = static_cast<LogFlushData *>(ink_atomiclist_popall(flush_data_list));
 
     // invert the list
     //
@@ -1264,14 +1266,14 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       LogFile *logfile  = fdata->m_logfile.get();
 
       if (logfile->m_file_format == LOG_FILE_BINARY) {
-        logbuffer                      = (LogBuffer *)fdata->m_data;
+        logbuffer                      = static_cast<LogBuffer *>(fdata->m_data);
         LogBufferHeader *buffer_header = logbuffer->header();
 
-        buf         = (char *)buffer_header;
+        buf         = reinterpret_cast<char *>(buffer_header);
         total_bytes = buffer_header->byte_count;
 
       } else if (logfile->m_file_format == LOG_FILE_ASCII || logfile->m_file_format == LOG_FILE_PIPE) {
-        buf         = (char *)fdata->m_data;
+        buf         = static_cast<char *>(fdata->m_data);
         total_bytes = fdata->m_len;
 
       } else {
@@ -1427,7 +1429,7 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
       }
 
       Debug("log-sock", "pending message ...");
-      header = (LogBufferHeader *)sock->read_alloc(sock_id, &bytes_read);
+      header = static_cast<LogBufferHeader *>(sock->read_alloc(sock_id, &bytes_read));
       if (!header) {
         Debug("log-sock", "Error reading LogBuffer from collation client");
         continue;
@@ -1493,8 +1495,8 @@ Log::match_logobject(LogBufferHeader *header)
                                     (header->log_object_flags & LogObject::WRITES_TO_PIPE ? LOG_FILE_PIPE : LOG_FILE_ASCII);
 
       obj = new LogObject(&fmt, Log::config->logfile_dir, header->log_filename(), file_format, nullptr,
-                          (Log::RollingEnabledValues)Log::config->rolling_enabled, Log::config->collation_preproc_threads,
-                          Log::config->rolling_interval_sec, Log::config->rolling_offset_hr, Log::config->rolling_size_mb, true);
+                          Log::config->rolling_enabled, Log::config->collation_preproc_threads, Log::config->rolling_interval_sec,
+                          Log::config->rolling_offset_hr, Log::config->rolling_size_mb, true);
 
       obj->set_remote_flag();
 

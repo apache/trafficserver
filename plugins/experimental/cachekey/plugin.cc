@@ -72,7 +72,7 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errBuf, int er
 void
 TSRemapDeleteInstance(void *instance)
 {
-  Configs *config = (Configs *)instance;
+  Configs *config = static_cast<Configs *>(instance);
   delete config;
 }
 
@@ -88,7 +88,7 @@ TSRemapDeleteInstance(void *instance)
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
 {
-  Configs *config = (Configs *)instance;
+  Configs *config = static_cast<Configs *>(instance);
 
   if (nullptr != config) {
     /* Initial cache key facility from the requested URL. */

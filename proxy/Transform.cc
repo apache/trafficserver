@@ -1015,7 +1015,7 @@ RangeTransform::change_response_header()
 
   status_code = HTTP_STATUS_PARTIAL_CONTENT;
   m_transform_resp->status_set(status_code);
-  reason_phrase = (char *)(http_hdr_reason_lookup(status_code));
+  reason_phrase = const_cast<char *>(http_hdr_reason_lookup(status_code));
   m_transform_resp->reason_set(reason_phrase, strlen(reason_phrase));
 
   if (m_num_range_fields > 1) {

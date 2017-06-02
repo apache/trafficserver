@@ -93,7 +93,7 @@ TSListDestroy(TSList l)
     return;
   }
 
-  delete_queue((LLQ *)l);
+  delete_queue(static_cast<LLQ *>(l));
   return;
 }
 
@@ -107,7 +107,7 @@ TSListEnqueue(TSList l, void *data)
     return TS_ERR_PARAMS;
   }
 
-  ret = enqueue((LLQ *)l, data); /* returns TRUE=1 or FALSE=0 */
+  ret = enqueue(static_cast<LLQ *>(l), data); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
     return TS_ERR_FAIL;
   } else {
@@ -119,11 +119,11 @@ tsapi void *
 TSListDequeue(TSList l)
 {
   ink_assert(l);
-  if (!l || queue_is_empty((LLQ *)l)) {
+  if (!l || queue_is_empty(static_cast<LLQ *>(l))) {
     return nullptr;
   }
 
-  return dequeue((LLQ *)l);
+  return dequeue(static_cast<LLQ *>(l));
 }
 
 tsapi bool
@@ -134,7 +134,7 @@ TSListIsEmpty(TSList l)
     return true; // list doesn't exist, so it's empty
   }
 
-  return queue_is_empty((LLQ *)l);
+  return queue_is_empty(static_cast<LLQ *>(l));
 }
 
 tsapi int
@@ -145,7 +145,7 @@ TSListLen(TSList l)
     return -1;
   }
 
-  return queue_len((LLQ *)l);
+  return queue_len(static_cast<LLQ *>(l));
 }
 
 tsapi bool
@@ -158,13 +158,13 @@ TSListIsValid(TSList l)
     return false;
   }
 
-  len = queue_len((LLQ *)l);
+  len = queue_len(static_cast<LLQ *>(l));
   for (i = 0; i < len; i++) {
-    ele = (void *)dequeue((LLQ *)l);
+    ele = dequeue(static_cast<LLQ *>(l));
     if (!ele) {
       return false;
     }
-    enqueue((LLQ *)l, ele);
+    enqueue(static_cast<LLQ *>(l), ele);
   }
   return true;
 }
@@ -188,8 +188,8 @@ TSIpAddrListDestroy(TSIpAddrList ip_addrl)
   /* dequeue each element and free it;
      currently, an element can only be an TSIpAddrEle
      or it can be an TSIpAddr ?? */
-  while (!queue_is_empty((LLQ *)ip_addrl)) {
-    ipaddr_ele = (TSIpAddrEle *)dequeue((LLQ *)ip_addrl);
+  while (!queue_is_empty(static_cast<LLQ *>(ip_addrl))) {
+    ipaddr_ele = static_cast<TSIpAddrEle *>(dequeue(static_cast<LLQ *>(ip_addrl)));
 
     if (!ipaddr_ele) {
       continue;
@@ -199,7 +199,7 @@ TSIpAddrListDestroy(TSIpAddrList ip_addrl)
   }
 
   /* we have removed everything on the list so free list */
-  delete_queue((LLQ *)ip_addrl);
+  delete_queue(static_cast<LLQ *>(ip_addrl));
   return;
 }
 
@@ -213,7 +213,7 @@ TSIpAddrListEnqueue(TSIpAddrList ip_addrl, TSIpAddrEle *ip_addr)
     return TS_ERR_PARAMS;
   }
 
-  ret = enqueue((LLQ *)ip_addrl, ip_addr);
+  ret = enqueue(static_cast<LLQ *>(ip_addrl), ip_addr);
   if (ret == 0) {
     return TS_ERR_FAIL;
   } else {
@@ -226,11 +226,11 @@ tsapi TSIpAddrEle *
 TSIpAddrListDequeue(TSIpAddrList ip_addrl)
 {
   ink_assert(ip_addrl);
-  if (!ip_addrl || queue_is_empty((LLQ *)ip_addrl)) {
+  if (!ip_addrl || queue_is_empty(static_cast<LLQ *>(ip_addrl))) {
     return nullptr;
   }
 
-  return (TSIpAddrEle *)dequeue((LLQ *)ip_addrl);
+  return static_cast<TSIpAddrEle *>(dequeue(static_cast<LLQ *>(ip_addrl)));
 }
 
 tsapi int
@@ -241,7 +241,7 @@ TSIpAddrListLen(TSIpAddrList ip_addrl)
     return -1;
   }
 
-  return queue_len((LLQ *)ip_addrl);
+  return queue_len(static_cast<LLQ *>(ip_addrl));
 }
 
 tsapi bool
@@ -252,7 +252,7 @@ TSIpAddrListIsEmpty(TSIpAddrList ip_addrl)
     return true;
   }
 
-  return queue_is_empty((LLQ *)ip_addrl);
+  return queue_is_empty(static_cast<LLQ *>(ip_addrl));
 }
 
 // returns false if any of the IpAddrEle is not an valid IP address by making
@@ -268,14 +268,14 @@ TSIpAddrListIsValid(TSIpAddrList ip_addrl)
     return false;
   }
 
-  len = queue_len((LLQ *)ip_addrl);
+  len = queue_len(static_cast<LLQ *>(ip_addrl));
   for (i = 0; i < len; i++) {
-    ele = (TSIpAddrEle *)dequeue((LLQ *)ip_addrl);
+    ele = static_cast<TSIpAddrEle *>(dequeue(static_cast<LLQ *>(ip_addrl)));
     if (!ccu_checkIpAddrEle(ele)) {
-      enqueue((LLQ *)ip_addrl, ele);
+      enqueue(static_cast<LLQ *>(ip_addrl), ele);
       return false;
     }
-    enqueue((LLQ *)ip_addrl, ele);
+    enqueue(static_cast<LLQ *>(ip_addrl), ele);
   }
   return true;
 }
@@ -296,8 +296,8 @@ TSPortListDestroy(TSPortList portl)
     return;
   }
   // dequeue each element and free it
-  while (!queue_is_empty((LLQ *)portl)) {
-    port_ele = (TSPortEle *)dequeue((LLQ *)portl);
+  while (!queue_is_empty(static_cast<LLQ *>(portl))) {
+    port_ele = static_cast<TSPortEle *>(dequeue(static_cast<LLQ *>(portl)));
 
     if (!port_ele) {
       continue;
@@ -307,7 +307,7 @@ TSPortListDestroy(TSPortList portl)
   }
 
   /* we have removed everything on the list so free list */
-  delete_queue((LLQ *)portl);
+  delete_queue(static_cast<LLQ *>(portl));
   return;
 }
 
@@ -321,7 +321,7 @@ TSPortListEnqueue(TSPortList portl, TSPortEle *port)
     return TS_ERR_PARAMS;
   }
 
-  ret = enqueue((LLQ *)portl, port); /* returns TRUE=1 or FALSE=0 */
+  ret = enqueue(static_cast<LLQ *>(portl), port); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
     return TS_ERR_FAIL;
   } else {
@@ -333,11 +333,11 @@ tsapi TSPortEle *
 TSPortListDequeue(TSPortList portl)
 {
   ink_assert(portl);
-  if (!portl || queue_is_empty((LLQ *)portl)) {
+  if (!portl || queue_is_empty(static_cast<LLQ *>(portl))) {
     return nullptr;
   }
 
-  return (TSPortEle *)dequeue((LLQ *)portl);
+  return static_cast<TSPortEle *>(dequeue(static_cast<LLQ *>(portl)));
 }
 
 tsapi int
@@ -348,7 +348,7 @@ TSPortListLen(TSPortList portl)
     return -1;
   }
 
-  return queue_len((LLQ *)portl);
+  return queue_len(static_cast<LLQ *>(portl));
 }
 
 tsapi bool
@@ -359,7 +359,7 @@ TSPortListIsEmpty(TSPortList portl)
     return true;
   }
 
-  return queue_is_empty((LLQ *)portl);
+  return queue_is_empty(static_cast<LLQ *>(portl));
 }
 
 // returns false if any of the PortEle's has a port_a <= 0;
@@ -375,14 +375,14 @@ TSPortListIsValid(TSPortList portl)
     return false;
   }
 
-  len = queue_len((LLQ *)portl);
+  len = queue_len(static_cast<LLQ *>(portl));
   for (i = 0; i < len; i++) {
-    ele = (TSPortEle *)dequeue((LLQ *)portl);
+    ele = static_cast<TSPortEle *>(dequeue(static_cast<LLQ *>(portl)));
     if (!ccu_checkPortEle(ele)) {
-      enqueue((LLQ *)portl, ele);
+      enqueue(static_cast<LLQ *>(portl), ele);
       return false;
     }
-    enqueue((LLQ *)portl, ele);
+    enqueue(static_cast<LLQ *>(portl), ele);
   }
   return true;
 }
@@ -404,8 +404,8 @@ TSDomainListDestroy(TSDomainList domainl)
   }
 
   /* dequeue each element and free it */
-  while (!queue_is_empty((LLQ *)domainl)) {
-    domain = (TSDomain *)dequeue((LLQ *)domainl);
+  while (!queue_is_empty(static_cast<LLQ *>(domainl))) {
+    domain = static_cast<TSDomain *>(dequeue(static_cast<LLQ *>(domainl)));
 
     if (!domain) {
       continue;
@@ -414,7 +414,7 @@ TSDomainListDestroy(TSDomainList domainl)
     TSDomainDestroy(domain);
   }
 
-  delete_queue((LLQ *)domainl);
+  delete_queue(static_cast<LLQ *>(domainl));
 }
 
 tsapi TSMgmtError
@@ -427,7 +427,7 @@ TSDomainListEnqueue(TSDomainList domainl, TSDomain *domain)
     return TS_ERR_PARAMS;
   }
 
-  ret = enqueue((LLQ *)domainl, domain); /* returns TRUE=1 or FALSE=0 */
+  ret = enqueue(static_cast<LLQ *>(domainl), domain); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
     return TS_ERR_FAIL;
   } else {
@@ -439,11 +439,11 @@ tsapi TSDomain *
 TSDomainListDequeue(TSDomainList domainl)
 {
   ink_assert(domainl);
-  if (!domainl || queue_is_empty((LLQ *)domainl)) {
+  if (!domainl || queue_is_empty(static_cast<LLQ *>(domainl))) {
     return nullptr;
   }
 
-  return (TSDomain *)dequeue((LLQ *)domainl);
+  return static_cast<TSDomain *>(dequeue(static_cast<LLQ *>(domainl)));
 }
 
 tsapi bool
@@ -454,7 +454,7 @@ TSDomainListIsEmpty(TSDomainList domainl)
     return true;
   }
 
-  return queue_is_empty((LLQ *)domainl);
+  return queue_is_empty(static_cast<LLQ *>(domainl));
 }
 
 tsapi int
@@ -465,7 +465,7 @@ TSDomainListLen(TSDomainList domainl)
     return -1;
   }
 
-  return queue_len((LLQ *)domainl);
+  return queue_len(static_cast<LLQ *>(domainl));
 }
 
 // returns false if encounter a NULL hostname and ip
@@ -479,16 +479,16 @@ TSDomainListIsValid(TSDomainList domainl)
     return false;
   }
 
-  len = queue_len((LLQ *)domainl);
+  len = queue_len(static_cast<LLQ *>(domainl));
   for (i = 0; i < len; i++) {
-    dom = (TSDomain *)dequeue((LLQ *)domainl);
+    dom = static_cast<TSDomain *>(dequeue(static_cast<LLQ *>(domainl)));
     if (!dom) {
       return false;
     }
     if (!dom->domain_val) {
       return false;
     }
-    enqueue((LLQ *)domainl, dom);
+    enqueue(static_cast<LLQ *>(domainl), dom);
   }
   return true;
 }
@@ -511,12 +511,12 @@ TSStringListDestroy(TSStringList strl)
   }
 
   /* dequeue each element and free it */
-  while (!queue_is_empty((LLQ *)strl)) {
-    str = (char *)dequeue((LLQ *)strl);
+  while (!queue_is_empty(static_cast<LLQ *>(strl))) {
+    str = static_cast<char *>(dequeue(static_cast<LLQ *>(strl)));
     ats_free(str);
   }
 
-  delete_queue((LLQ *)strl);
+  delete_queue(static_cast<LLQ *>(strl));
 }
 
 tsapi TSMgmtError
@@ -529,7 +529,7 @@ TSStringListEnqueue(TSStringList strl, char *str)
     return TS_ERR_PARAMS;
   }
 
-  ret = enqueue((LLQ *)strl, str); /* returns TRUE=1 or FALSE=0 */
+  ret = enqueue(static_cast<LLQ *>(strl), str); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
     return TS_ERR_FAIL;
   } else {
@@ -541,11 +541,11 @@ tsapi char *
 TSStringListDequeue(TSStringList strl)
 {
   ink_assert(strl);
-  if (!strl || queue_is_empty((LLQ *)strl)) {
+  if (!strl || queue_is_empty(static_cast<LLQ *>(strl))) {
     return nullptr;
   }
 
-  return (char *)dequeue((LLQ *)strl);
+  return static_cast<char *>(dequeue(static_cast<LLQ *>(strl)));
 }
 
 tsapi bool
@@ -556,7 +556,7 @@ TSStringListIsEmpty(TSStringList strl)
     return true;
   }
 
-  return queue_is_empty((LLQ *)strl);
+  return queue_is_empty(static_cast<LLQ *>(strl));
 }
 
 tsapi int
@@ -567,7 +567,7 @@ TSStringListLen(TSStringList strl)
     return -1;
   }
 
-  return queue_len((LLQ *)strl);
+  return queue_len(static_cast<LLQ *>(strl));
 }
 
 // returns false if any element is NULL string
@@ -581,13 +581,13 @@ TSStringListIsValid(TSStringList strl)
     return false;
   }
 
-  len = queue_len((LLQ *)strl);
+  len = queue_len(static_cast<LLQ *>(strl));
   for (i = 0; i < len; i++) {
-    str = (char *)dequeue((LLQ *)strl);
+    str = static_cast<char *>(dequeue(static_cast<LLQ *>(strl)));
     if (!str) {
       return false;
     }
-    enqueue((LLQ *)strl, str);
+    enqueue(static_cast<LLQ *>(strl), str);
   }
   return true;
 }
@@ -610,12 +610,12 @@ TSIntListDestroy(TSIntList intl)
   }
 
   /* dequeue each element and free it */
-  while (!queue_is_empty((LLQ *)intl)) {
-    iPtr = (int *)dequeue((LLQ *)intl);
+  while (!queue_is_empty(static_cast<LLQ *>(intl))) {
+    iPtr = static_cast<int *>(dequeue(static_cast<LLQ *>(intl)));
     ats_free(iPtr);
   }
 
-  delete_queue((LLQ *)intl);
+  delete_queue(static_cast<LLQ *>(intl));
   return;
 }
 
@@ -629,7 +629,7 @@ TSIntListEnqueue(TSIntList intl, int *elem)
     return TS_ERR_PARAMS;
   }
 
-  ret = enqueue((LLQ *)intl, elem); /* returns TRUE=1 or FALSE=0 */
+  ret = enqueue(static_cast<LLQ *>(intl), elem); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
     return TS_ERR_FAIL;
   } else {
@@ -641,11 +641,11 @@ tsapi int *
 TSIntListDequeue(TSIntList intl)
 {
   ink_assert(intl);
-  if (!intl || queue_is_empty((LLQ *)intl)) {
+  if (!intl || queue_is_empty(static_cast<LLQ *>(intl))) {
     return nullptr;
   }
 
-  return (int *)dequeue((LLQ *)intl);
+  return static_cast<int *>(dequeue(static_cast<LLQ *>(intl)));
 }
 
 tsapi bool
@@ -656,7 +656,7 @@ TSIntListIsEmpty(TSIntList intl)
     return true;
   }
 
-  return queue_is_empty((LLQ *)intl);
+  return queue_is_empty(static_cast<LLQ *>(intl));
 }
 
 tsapi int
@@ -667,7 +667,7 @@ TSIntListLen(TSIntList intl)
     return -1;
   }
 
-  return queue_len((LLQ *)intl);
+  return queue_len(static_cast<LLQ *>(intl));
 }
 
 tsapi bool
@@ -677,15 +677,15 @@ TSIntListIsValid(TSIntList intl, int min, int max)
     return false;
   }
 
-  for (unsigned long i = 0; i < queue_len((LLQ *)intl); i++) {
-    int *item = (int *)dequeue((LLQ *)intl);
+  for (unsigned long i = 0; i < queue_len(static_cast<LLQ *>(intl)); i++) {
+    int *item = static_cast<int *>(dequeue(static_cast<LLQ *>(intl)));
     if (*item < min) {
       return false;
     }
     if (*item > max) {
       return false;
     }
-    enqueue((LLQ *)intl, item);
+    enqueue(static_cast<LLQ *>(intl), item);
   }
   return true;
 }
@@ -713,7 +713,7 @@ init_pdss_format(TSPdSsFormat &info)
 tsapi TSMgmtEvent *
 TSEventCreate(void)
 {
-  TSMgmtEvent *event = (TSMgmtEvent *)ats_malloc(sizeof(TSMgmtEvent));
+  TSMgmtEvent *event = static_cast<TSMgmtEvent *>(ats_malloc(sizeof(TSMgmtEvent)));
 
   event->id          = -1;
   event->name        = nullptr;
@@ -737,7 +737,7 @@ TSEventDestroy(TSMgmtEvent *event)
 tsapi TSRecordEle *
 TSRecordEleCreate(void)
 {
-  TSRecordEle *ele = (TSRecordEle *)ats_malloc(sizeof(TSRecordEle));
+  TSRecordEle *ele = static_cast<TSRecordEle *>(ats_malloc(sizeof(TSRecordEle)));
 
   ele->rec_name = nullptr;
   ele->rec_type = TS_REC_UNDEFINED;
@@ -761,7 +761,7 @@ TSRecordEleDestroy(TSRecordEle *ele)
 tsapi TSIpAddrEle *
 TSIpAddrEleCreate(void)
 {
-  TSIpAddrEle *ele = (TSIpAddrEle *)ats_malloc(sizeof(TSIpAddrEle));
+  TSIpAddrEle *ele = static_cast<TSIpAddrEle *>(ats_malloc(sizeof(TSIpAddrEle)));
 
   /* set default values */
   ele->type   = TS_IP_UNDEFINED;
@@ -789,7 +789,7 @@ TSIpAddrEleDestroy(TSIpAddrEle *ele)
 tsapi TSPortEle *
 TSPortEleCreate(void)
 {
-  TSPortEle *ele = (TSPortEle *)ats_malloc(sizeof(TSPortEle));
+  TSPortEle *ele = static_cast<TSPortEle *>(ats_malloc(sizeof(TSPortEle)));
 
   ele->port_a = TS_INVALID_PORT;
   ele->port_b = TS_INVALID_PORT;
@@ -807,7 +807,7 @@ TSPortEleDestroy(TSPortEle *ele)
 tsapi TSDomain *
 TSDomainCreate()
 {
-  TSDomain *ele = (TSDomain *)ats_malloc(sizeof(TSDomain));
+  TSDomain *ele = static_cast<TSDomain *>(ats_malloc(sizeof(TSDomain)));
 
   ele->domain_val = nullptr;
   ele->port       = TS_INVALID_PORT;
@@ -827,7 +827,7 @@ TSDomainDestroy(TSDomain *ele)
 tsapi TSSspec *
 TSSspecCreate(void)
 {
-  TSSspec *sec_spec = (TSSspec *)ats_malloc(sizeof(TSSspec));
+  TSSspec *sec_spec = static_cast<TSSspec *>(ats_malloc(sizeof(TSSspec)));
 
   /* set defaults */
   sec_spec->active        = 0;
@@ -861,7 +861,7 @@ TSSspecDestroy(TSSspec *ele)
 tsapi TSPdSsFormat *
 TSPdSsFormatCreate(void)
 {
-  TSPdSsFormat *ele = (TSPdSsFormat *)ats_malloc(sizeof(TSPdSsFormat));
+  TSPdSsFormat *ele = static_cast<TSPdSsFormat *>(ats_malloc(sizeof(TSPdSsFormat)));
 
   /* should set default values here */
   ele->pd_type = TS_PD_UNDEFINED;
@@ -908,7 +908,7 @@ TSCacheEleCreate(TSRuleTypeT type)
     return nullptr; // invalid type
   }
 
-  ele = (TSCacheEle *)ats_malloc(sizeof(TSCacheEle));
+  ele = static_cast<TSCacheEle *>(ats_malloc(sizeof(TSCacheEle)));
 
   /* set defaults */
   ele->cfg_ele.type  = type;
@@ -941,7 +941,7 @@ TSCacheEleDestroy(TSCacheEle *ele)
 tsapi TSCongestionEle *
 TSCongestionEleCreate()
 {
-  TSCongestionEle *ele = (TSCongestionEle *)ats_malloc(sizeof(TSCongestionEle));
+  TSCongestionEle *ele = static_cast<TSCongestionEle *>(ats_malloc(sizeof(TSCongestionEle)));
 
   /* set defaults */
   ele->cfg_ele.type  = TS_CONGESTION;
@@ -985,7 +985,7 @@ TSCongestionEleDestroy(TSCongestionEle *ele)
 tsapi TSHostingEle *
 TSHostingEleCreate()
 {
-  TSHostingEle *ele = (TSHostingEle *)ats_malloc(sizeof(TSHostingEle));
+  TSHostingEle *ele = static_cast<TSHostingEle *>(ats_malloc(sizeof(TSHostingEle)));
 
   ele->cfg_ele.type  = TS_HOSTING;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1015,7 +1015,7 @@ TSHostingEleDestroy(TSHostingEle *ele)
 tsapi TSIpAllowEle *
 TSIpAllowEleCreate()
 {
-  TSIpAllowEle *ele = (TSIpAllowEle *)ats_malloc(sizeof(TSIpAllowEle));
+  TSIpAllowEle *ele = static_cast<TSIpAllowEle *>(ats_malloc(sizeof(TSIpAllowEle)));
 
   ele->cfg_ele.type  = TS_IP_ALLOW;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1049,7 +1049,7 @@ TSParentProxyEleCreate(TSRuleTypeT type)
     return nullptr;
   }
 
-  ele = (TSParentProxyEle *)ats_malloc(sizeof(TSParentProxyEle));
+  ele = static_cast<TSParentProxyEle *>(ats_malloc(sizeof(TSParentProxyEle)));
 
   ele->cfg_ele.type  = type;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1081,7 +1081,7 @@ TSParentProxyEleDestroy(TSParentProxyEle *ele)
 tsapi TSVolumeEle *
 TSVolumeEleCreate()
 {
-  TSVolumeEle *ele = (TSVolumeEle *)ats_malloc(sizeof(TSVolumeEle));
+  TSVolumeEle *ele = static_cast<TSVolumeEle *>(ats_malloc(sizeof(TSVolumeEle)));
 
   ele->cfg_ele.type  = TS_VOLUME;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1106,7 +1106,7 @@ TSVolumeEleDestroy(TSVolumeEle *ele)
 tsapi TSPluginEle *
 TSPluginEleCreate()
 {
-  TSPluginEle *ele = (TSPluginEle *)ats_malloc(sizeof(TSPluginEle));
+  TSPluginEle *ele = static_cast<TSPluginEle *>(ats_malloc(sizeof(TSPluginEle)));
 
   ele->cfg_ele.type  = TS_PLUGIN;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1142,7 +1142,7 @@ TSRemapEleCreate(TSRuleTypeT type)
     return nullptr;
   }
 
-  ele                   = (TSRemapEle *)ats_malloc(sizeof(TSRemapEle));
+  ele                   = static_cast<TSRemapEle *>(ats_malloc(sizeof(TSRemapEle)));
   ele->cfg_ele.type     = type;
   ele->cfg_ele.error    = TS_ERR_OKAY;
   ele->map              = true;
@@ -1176,7 +1176,7 @@ TSRemapEleDestroy(TSRemapEle *ele)
 TSSocksEle *
 TSSocksEleCreate(TSRuleTypeT type)
 {
-  TSSocksEle *ele = (TSSocksEle *)ats_malloc(sizeof(TSSocksEle));
+  TSSocksEle *ele = static_cast<TSSocksEle *>(ats_malloc(sizeof(TSSocksEle)));
 
   ele->cfg_ele.type  = type;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1215,7 +1215,7 @@ TSSocksEleDestroy(TSSocksEle *ele)
 TSSplitDnsEle *
 TSSplitDnsEleCreate()
 {
-  TSSplitDnsEle *ele = (TSSplitDnsEle *)ats_malloc(sizeof(TSSplitDnsEle));
+  TSSplitDnsEle *ele = static_cast<TSSplitDnsEle *>(ats_malloc(sizeof(TSSplitDnsEle)));
 
   ele->cfg_ele.type      = TS_SPLIT_DNS;
   ele->cfg_ele.error     = TS_ERR_OKAY;
@@ -1251,7 +1251,7 @@ TSSplitDnsEleDestroy(TSSplitDnsEle *ele)
 TSStorageEle *
 TSStorageEleCreate()
 {
-  TSStorageEle *ele = (TSStorageEle *)ats_malloc(sizeof(TSStorageEle));
+  TSStorageEle *ele = static_cast<TSStorageEle *>(ats_malloc(sizeof(TSStorageEle)));
 
   ele->cfg_ele.type  = TS_STORAGE;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1391,9 +1391,9 @@ TSRecordGetMlt(TSStringList rec_names, TSList rec_vals)
     return TS_ERR_PARAMS;
   }
 
-  num_recs = queue_len((LLQ *)rec_names);
+  num_recs = queue_len(static_cast<LLQ *>(rec_names));
   for (i = 0; i < num_recs; i++) {
-    rec_name = (char *)dequeue((LLQ *)rec_names); // remove name from list
+    rec_name = static_cast<char *>(dequeue(static_cast<LLQ *>(rec_names))); // remove name from list
     if (!rec_name) {
       return TS_ERR_PARAMS; // NULL is invalid record name
     }
@@ -1401,20 +1401,20 @@ TSRecordGetMlt(TSStringList rec_names, TSList rec_vals)
     ele = TSRecordEleCreate();
 
     ret = MgmtRecordGet(rec_name, ele);
-    enqueue((LLQ *)rec_names, rec_name); // return name to list
+    enqueue(static_cast<LLQ *>(rec_names), rec_name); // return name to list
 
     if (ret != TS_ERR_OKAY) { // RecordGet failed
       // need to free all the ele's allocated by MgmtRecordGet so far
       TSRecordEleDestroy(ele);
       for (j = 0; j < i; j++) {
-        ele = (TSRecordEle *)dequeue((LLQ *)rec_vals);
+        ele = static_cast<TSRecordEle *>(dequeue(static_cast<LLQ *>(rec_vals)));
         if (ele) {
           TSRecordEleDestroy(ele);
         }
       }
       return ret;
     }
-    enqueue((LLQ *)rec_vals, ele); // all is good; add ele to end of list
+    enqueue(static_cast<LLQ *>(rec_vals), ele); // all is good; add ele to end of list
   }
 
   return TS_ERR_OKAY;
@@ -1488,10 +1488,10 @@ TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need)
     return TS_ERR_PARAMS;
   }
 
-  num_recs = queue_len((LLQ *)rec_list);
+  num_recs = queue_len(static_cast<LLQ *>(rec_list));
 
   for (i = 0; i < num_recs; i++) {
-    ele = (TSRecordEle *)dequeue((LLQ *)rec_list);
+    ele = static_cast<TSRecordEle *>(dequeue(static_cast<LLQ *>(rec_list)));
     if (ele) {
       switch (ele->rec_type) {
       case TS_REC_INT:
@@ -1521,7 +1521,7 @@ TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need)
         top_action_req = *action_need;
       }
     }
-    enqueue((LLQ *)rec_list, ele);
+    enqueue(static_cast<LLQ *>(rec_list), ele);
   }
 
   // set the action_need to be the most sever action needed of all the "set" calls
@@ -1845,12 +1845,12 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
 
   /* sending the HTTP request via the established socket */
   snprintf(request, BUFSIZE, "http://%s:%d/%s", httpHost, httpPort, httpPath);
-  if ((status = sendHTTPRequest(hFD, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((status = sendHTTPRequest(hFD, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(buffer, 0, bufsize); /* empty the buffer */
-  if ((status = readHTTPResponse(hFD, buffer, bufsize, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((status = readHTTPResponse(hFD, buffer, bufsize, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -1895,12 +1895,12 @@ TSLookupFromCacheUrl(TSString url, TSString *info)
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/lookup_url?url=%s", url);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = sendHTTPRequest(fd, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -1937,12 +1937,12 @@ TSLookupFromCacheUrlRegex(TSString url_regex, TSString *list)
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/lookup_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = sendHTTPRequest(fd, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -1978,12 +1978,12 @@ TSDeleteFromCacheUrl(TSString url, TSString *info)
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/delete_url?url=%s", url);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = sendHTTPRequest(fd, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -2020,12 +2020,12 @@ TSDeleteFromCacheUrlRegex(TSString url_regex, TSString *list)
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/delete_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = sendHTTPRequest(fd, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -2061,12 +2061,12 @@ TSInvalidateFromCacheUrlRegex(TSString url_regex, TSString *list)
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/invalidate_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = sendHTTPRequest(fd, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -2101,7 +2101,7 @@ TSSnapshotRemove(char *snapshot_name)
 tsapi TSMgmtError
 TSSnapshotGetMlt(TSStringList snapshots)
 {
-  return SnapshotGetMlt((LLQ *)snapshots);
+  return SnapshotGetMlt(static_cast<LLQ *>(snapshots));
 }
 
 /*--- events --------------------------------------------------------------*/
@@ -2126,7 +2126,7 @@ TSEventResolve(const char *event_name)
 tsapi TSMgmtError
 TSActiveEventGetMlt(TSList active_events)
 {
-  return ActiveEventGetMlt((LLQ *)active_events);
+  return ActiveEventGetMlt(static_cast<LLQ *>(active_events));
 }
 
 tsapi TSMgmtError
@@ -2164,19 +2164,19 @@ TSCfgContextCreate(TSFileNameT file)
 tsapi TSMgmtError
 TSCfgContextDestroy(TSCfgContext ctx)
 {
-  return (CfgContextDestroy((CfgContext *)ctx));
+  return (CfgContextDestroy(static_cast<CfgContext *>(ctx)));
 }
 
 tsapi TSMgmtError
 TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT * /* action_need ATS_UNUSED */, TSIntList errRules)
 {
-  return (CfgContextCommit((CfgContext *)ctx, (LLQ *)errRules));
+  return (CfgContextCommit(static_cast<CfgContext *>(ctx), static_cast<LLQ *>(errRules)));
 }
 
 tsapi TSMgmtError
 TSCfgContextGet(TSCfgContext ctx)
 {
-  return (CfgContextGet((CfgContext *)ctx));
+  return (CfgContextGet(static_cast<CfgContext *>(ctx)));
 }
 
 /*--- helper operations ---------------------------------------------------*/
@@ -2184,63 +2184,63 @@ TSCfgContextGet(TSCfgContext ctx)
 int
 TSCfgContextGetCount(TSCfgContext ctx)
 {
-  return CfgContextGetCount((CfgContext *)ctx);
+  return CfgContextGetCount(static_cast<CfgContext *>(ctx));
 }
 
 /* user must typecast the TSCfgEle to appropriate TSEle before using */
 TSCfgEle *
 TSCfgContextGetEleAt(TSCfgContext ctx, int index)
 {
-  return CfgContextGetEleAt((CfgContext *)ctx, index);
+  return CfgContextGetEleAt(static_cast<CfgContext *>(ctx), index);
 }
 
 /* iterator */
 TSCfgEle *
 TSCfgContextGetFirst(TSCfgContext ctx, TSCfgIterState *state)
 {
-  return CfgContextGetFirst((CfgContext *)ctx, state);
+  return CfgContextGetFirst(static_cast<CfgContext *>(ctx), state);
 }
 
 TSCfgEle *
 TSCfgContextGetNext(TSCfgContext ctx, TSCfgIterState *state)
 {
-  return CfgContextGetNext((CfgContext *)ctx, state);
+  return CfgContextGetNext(static_cast<CfgContext *>(ctx), state);
 }
 
 TSMgmtError
 TSCfgContextMoveEleUp(TSCfgContext ctx, int index)
 {
-  return CfgContextMoveEleUp((CfgContext *)ctx, index);
+  return CfgContextMoveEleUp(static_cast<CfgContext *>(ctx), index);
 }
 
 TSMgmtError
 TSCfgContextMoveEleDown(TSCfgContext ctx, int index)
 {
-  return CfgContextMoveEleDown((CfgContext *)ctx, index);
+  return CfgContextMoveEleDown(static_cast<CfgContext *>(ctx), index);
 }
 
 TSMgmtError
 TSCfgContextAppendEle(TSCfgContext ctx, TSCfgEle *ele)
 {
-  return CfgContextAppendEle((CfgContext *)ctx, ele);
+  return CfgContextAppendEle(static_cast<CfgContext *>(ctx), ele);
 }
 
 TSMgmtError
 TSCfgContextInsertEleAt(TSCfgContext ctx, TSCfgEle *ele, int index)
 {
-  return CfgContextInsertEleAt((CfgContext *)ctx, ele, index);
+  return CfgContextInsertEleAt(static_cast<CfgContext *>(ctx), ele, index);
 }
 
 TSMgmtError
 TSCfgContextRemoveEleAt(TSCfgContext ctx, int index)
 {
-  return CfgContextRemoveEleAt((CfgContext *)ctx, index);
+  return CfgContextRemoveEleAt(static_cast<CfgContext *>(ctx), index);
 }
 
 TSMgmtError
 TSCfgContextRemoveAll(TSCfgContext ctx)
 {
-  return CfgContextRemoveAll((CfgContext *)ctx);
+  return CfgContextRemoveAll(static_cast<CfgContext *>(ctx));
 }
 
 /* checks if the fields in the ele are all valid */
@@ -2260,7 +2260,7 @@ TSIsValid(TSCfgEle *ele)
 TSConfigRecordDescription *
 TSConfigRecordDescriptionCreate(void)
 {
-  TSConfigRecordDescription *val = (TSConfigRecordDescription *)ats_malloc(sizeof(TSConfigRecordDescription));
+  TSConfigRecordDescription *val = static_cast<TSConfigRecordDescription *>(ats_malloc(sizeof(TSConfigRecordDescription)));
 
   ink_zero(*val);
   val->rec_type = TS_REC_UNDEFINED;

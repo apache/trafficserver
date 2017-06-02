@@ -148,9 +148,9 @@ LogCollationHostSM::read_handler(int event, void *data)
 {
   switch (m_read_state) {
   case LOG_COLL_READ_BODY:
-    return read_body(event, (VIO *)data);
+    return read_body(event, static_cast<VIO *>(data));
   case LOG_COLL_READ_HDR:
-    return read_hdr(event, (VIO *)data);
+    return read_hdr(event, static_cast<VIO *>(data));
   default:
     ink_assert(!"unexpected state");
     return EVENT_CONT;
@@ -299,7 +299,7 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
 
       ink_assert(m_read_buffer != nullptr);
       ink_assert(m_read_bytes_received >= (int64_t)sizeof(LogBufferHeader));
-      log_buffer_header = (LogBufferHeader *)m_read_buffer;
+      log_buffer_header = reinterpret_cast<LogBufferHeader *>(m_read_buffer);
 
       // convert the buffer we just received to host order
       // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
@@ -398,7 +398,7 @@ LogCollationHostSM::read_hdr(int event, VIO *vio)
 
     m_read_bytes_wanted   = sizeof(NetMsgHeader);
     m_read_bytes_received = 0;
-    m_read_buffer         = (char *)&m_net_msg_header;
+    m_read_buffer         = reinterpret_cast<char *>(&m_net_msg_header);
     ink_assert(m_client_vc != nullptr);
     Debug("log-coll", "[%d]host:read_hdr - do_io_read(%" PRId64 ")", m_id, m_read_bytes_wanted);
     m_client_vio = m_client_vc->do_io_read(this, m_read_bytes_wanted, m_client_buffer);
@@ -453,10 +453,10 @@ LogCollationHostSM::read_body(int event, VIO *vio)
     m_read_bytes_received = 0;
     if (m_read_bytes_wanted <= max_iobuffer_size) {
       m_read_buffer_fast_allocator_size = buffer_size_to_index(m_read_bytes_wanted);
-      m_read_buffer                     = (char *)ioBufAllocator[m_read_buffer_fast_allocator_size].alloc_void();
+      m_read_buffer                     = static_cast<char *>(ioBufAllocator[m_read_buffer_fast_allocator_size].alloc_void());
     } else {
       m_read_buffer_fast_allocator_size = -1;
-      m_read_buffer                     = (char *)ats_malloc(m_read_bytes_wanted);
+      m_read_buffer                     = static_cast<char *>(ats_malloc(m_read_bytes_wanted));
     }
     ink_assert(m_read_buffer != nullptr);
     ink_assert(m_client_vc != nullptr);

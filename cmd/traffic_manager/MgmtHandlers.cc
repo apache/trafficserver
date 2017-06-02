@@ -74,11 +74,11 @@ newTcpSocket(int port)
   socketInfo.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
   // Allow for immediate re-binding to port
-  if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(int)) < 0) {
+  if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&one), sizeof(int)) < 0) {
     mgmt_fatal(errno, "[newTcpSocket] Unable to set socket options.\n");
   }
   // Bind the port to the socket
-  if (bind(socketFD, (sockaddr *)&socketInfo, sizeof(socketInfo)) < 0) {
+  if (bind(socketFD, reinterpret_cast<sockaddr *>(&socketInfo), sizeof(socketInfo)) < 0) {
     mgmt_log("[newTcpSocket] Unable to bind port %d to socket: %s\n", port, strerror(errno));
     close_socket(socketFD);
     return -1;
@@ -151,7 +151,7 @@ synthetic_thread(void *info)
   char buffer[4096];
   char dateBuf[128];
   char *bufp;
-  int clientFD = *(int *)info;
+  int clientFD = *static_cast<int *>(info);
   ssize_t bytes;
   size_t len = 0;
 
@@ -187,8 +187,8 @@ synthetic_thread(void *info)
 
   // Format the response
   mime_format_date(dateBuf, time(nullptr));
-  len = snprintf(buffer, sizeof(buffer), SyntheticResponse, dateBuf, (int)strlen(SyntheticData) * 3, SyntheticData, SyntheticData,
-                 SyntheticData);
+  len = snprintf(buffer, sizeof(buffer), SyntheticResponse, dateBuf, static_cast<int>(strlen(SyntheticData)) * 3, SyntheticData,
+                 SyntheticData, SyntheticData);
 
   // Write it
   bufp = buffer;
@@ -243,7 +243,7 @@ mgmt_synthetic_main(void *)
   } else {
     found = (RecGetRecordInt("proxy.config.admin.synthetic_port", &tempInt) == REC_ERR_OKAY);
     ink_release_assert(found);
-    publicPort = (int)tempInt;
+    publicPort = static_cast<int>(tempInt);
   }
   Debug("ui", "[WebIntrMain] Starting Client AutoConfig Server on Port %d", publicPort);
 
@@ -257,7 +257,7 @@ mgmt_synthetic_main(void *)
     socklen_t addrLen = sizeof(clientInfo);
 
     ink_zero(clientInfo);
-    if ((clientFD = mgmt_accept(autoconfFD, (sockaddr *)&clientInfo, &addrLen)) < 0) {
+    if ((clientFD = mgmt_accept(autoconfFD, reinterpret_cast<sockaddr *>(&clientInfo), &addrLen)) < 0) {
       mgmt_log("[SyntheticHealthServer] accept() on incoming port failed: %s\n", strerror(errno));
     } else if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
       mgmt_log("[SyntheticHealthServer] Failed to set sock options: %s\n", strerror(errno));

@@ -180,7 +180,7 @@ struct AuthRequestContext {
   {
     AuthOptions *opt;
 
-    opt = (AuthOptions *)TSHttpTxnArgGet(this->txn, AuthTaggedRequestArg);
+    opt = static_cast<AuthOptions *>(TSHttpTxnArgGet(this->txn, AuthTaggedRequestArg));
     return opt ? opt : AuthGlobalOptions;
   }
 
@@ -208,7 +208,7 @@ AuthRequestContext::destroy(AuthRequestContext *auth)
 int
 AuthRequestContext::dispatch(TSCont cont, TSEvent event, void *edata)
 {
-  AuthRequestContext *auth = (AuthRequestContext *)TSContDataGet(cont);
+  AuthRequestContext *auth = static_cast<AuthRequestContext *>(TSContDataGet(cont));
   const StateTransition *s;
 
 pump:
@@ -639,7 +639,7 @@ static int
 AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 {
   AuthRequestContext *auth;
-  TSHttpTxn txn = (TSHttpTxn)edata;
+  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
 
   AuthLogDebug("handling event=%d edata=%p", (int)event, edata);
 
@@ -696,7 +696,7 @@ AuthParseOptions(int argc, const char **argv)
   for (;;) {
     int opt;
 
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
     switch (opt) {
     case 'h':
       options->hostname = optarg;
@@ -788,14 +788,14 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* err ATS_UN
 void
 TSRemapDeleteInstance(void *instance)
 {
-  AuthOptions *options = (AuthOptions *)instance;
+  AuthOptions *options = static_cast<AuthOptions *>(instance);
   AuthDelete(options);
 }
 
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
-  AuthOptions *options = (AuthOptions *)instance;
+  AuthOptions *options = static_cast<AuthOptions *>(instance);
 
   TSHttpTxnArgSet(txn, AuthTaggedRequestArg, options);
   TSHttpTxnHookAdd(txn, TS_HTTP_POST_REMAP_HOOK, AuthOsDnsContinuation);

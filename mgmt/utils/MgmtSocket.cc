@@ -79,7 +79,7 @@ mgmt_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
   int r, retries;
   ink_assert(*addrlen != 0);
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r = ::accept(s, addr, (socklen_t *)addrlen);
+    r = ::accept(s, addr, addrlen);
     if (r >= 0) {
       return r;
     }
@@ -195,7 +195,7 @@ mgmt_sendto(int fd, void *buf, int len, int flags, struct sockaddr *to, int tole
 {
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r = ::sendto(fd, (char *)buf, len, flags, to, tolen);
+    r = ::sendto(fd, static_cast<char *>(buf), len, flags, to, tolen);
     if (r >= 0) {
       return r;
     }
@@ -246,7 +246,7 @@ mgmt_write_timeout(int fd, int sec, int usec)
   timeout.tv_sec  = sec;
   timeout.tv_usec = usec;
 
-  if (fd < 0 || fd >= (int)FD_SETSIZE) {
+  if (fd < 0 || fd >= FD_SETSIZE) {
     errno = EBADF;
     return -1;
   }
@@ -285,7 +285,7 @@ mgmt_read_timeout(int fd, int sec, int usec)
   timeout.tv_sec  = sec;
   timeout.tv_usec = usec;
 
-  if (fd < 0 || fd >= (int)FD_SETSIZE) {
+  if (fd < 0 || fd >= FD_SETSIZE) {
     errno = EBADF;
     return -1;
   }

@@ -242,7 +242,7 @@ static void
 epic_write_stats(TSRecordType /* rtype */, void *edata, int /* registered */, const char *name, TSRecordDataType dtype,
                  TSRecordData *dvalue)
 {
-  epic_sample_context *sample = (epic_sample_context *)edata;
+  epic_sample_context *sample = static_cast<epic_sample_context *>(edata);
   const char *etype;
 
   TSReleaseAssert(sample != nullptr);
@@ -279,16 +279,16 @@ epic_write_stats(TSRecordType /* rtype */, void *edata, int /* registered */, co
 
   switch (dtype) {
   case TS_RECORDDATATYPE_INT:
-    fprintf(sample->sample_fp, "O:%s:%lld:%" PRId64 ":%s:%s:%lld\n", name, (long long)sample->sample_time, dvalue->rec_int,
-            sample->sample_host, etype, (long long)epic_period);
+    fprintf(sample->sample_fp, "O:%s:%lld:%" PRId64 ":%s:%s:%lld\n", name, static_cast<long long>(sample->sample_time),
+            dvalue->rec_int, sample->sample_host, etype, static_cast<long long>(epic_period));
     break;
   case TS_RECORDDATATYPE_FLOAT:
-    fprintf(sample->sample_fp, "O:%s:%lld:%f:%s:%s:%lld\n", name, (long long)sample->sample_time, dvalue->rec_float,
-            sample->sample_host, etype, (long long)epic_period);
+    fprintf(sample->sample_fp, "O:%s:%lld:%f:%s:%s:%lld\n", name, static_cast<long long>(sample->sample_time), dvalue->rec_float,
+            sample->sample_host, etype, static_cast<long long>(epic_period));
     break;
   case TS_RECORDDATATYPE_COUNTER:
-    fprintf(sample->sample_fp, "O:%s:%lld:%" PRId64 ":%s:%s:%lld\n", name, (long long)sample->sample_time, dvalue->rec_counter,
-            sample->sample_host, etype, (long long)epic_period);
+    fprintf(sample->sample_fp, "O:%s:%lld:%" PRId64 ":%s:%s:%lld\n", name, static_cast<long long>(sample->sample_time),
+            dvalue->rec_counter, sample->sample_host, etype, static_cast<long long>(epic_period));
     break;
   case TS_RECORDDATATYPE_STRING:
   case TS_RECORDDATATYPE_STAT_CONST: /* float */
@@ -318,8 +318,8 @@ epic_flush_stats(TSCont /* contp */, TSEvent /* event */, void * /* edata */)
     strncpy(sample.sample_host, "unknown", sizeof(sample.sample_host));
   }
 
-  snprintf(path, sizeof(path), "%s/trafficserver.%lld.%llu", epic_prefix, (long long)sample.sample_time,
-           (unsigned long long)getpid());
+  snprintf(path, sizeof(path), "%s/trafficserver.%lld.%llu", epic_prefix, static_cast<long long>(sample.sample_time),
+           static_cast<unsigned long long>(getpid()));
 
   // XXX track the file size and preallocate ...
 
@@ -361,7 +361,7 @@ TSPluginInit(int argc, const char *argv[])
   epic_prefix = TSstrdup("/usr/local/epic/cache/eapi");
 
   for (;;) {
-    int opt = getopt_long(argc, (char *const *)argv, "p:d:", longopts, nullptr);
+    int opt = getopt_long(argc, const_cast<char *const *>(argv), "p:d:", longopts, nullptr);
 
     if (opt == -1) {
       break; /* done */

@@ -373,7 +373,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
     return;
   }
 
-  info            = (char *)ats_malloc(sizeof(char) * (read_avail + 1));
+  info            = static_cast<char *>(ats_malloc(sizeof(char) * (read_avail + 1)));
   client_response = info;
 
   // To maintain backwards compatability we don't allow chunking when it's not streaming.
@@ -519,7 +519,7 @@ FetchSM::process_fetch_write(int event)
     // of input data, we have to continue reenabling until all data is
     // read (we have already written all the data to the buffer)
     if (req_reader->read_avail() > 0) {
-      ((PluginVC *)http_vc)->reenable(write_vio);
+      (http_vc)->reenable(write_vio);
     }
     break;
   case TS_EVENT_ERROR:
@@ -653,9 +653,9 @@ FetchSM::ext_read_data(char *buf, size_t len)
   }
 
   if (check_chunked() && (fetch_flags & TS_FETCH_FLAGS_DECHUNK)) {
-    reader = (tsapi_bufferreader *)chunked_handler.dechunked_reader;
+    reader = reinterpret_cast<tsapi_bufferreader *>(chunked_handler.dechunked_reader);
   } else {
-    reader = (TSIOBufferReader)resp_reader;
+    reader = reinterpret_cast<TSIOBufferReader>(resp_reader);
   }
 
   already = 0;
@@ -672,7 +672,7 @@ FetchSM::ext_read_data(char *buf, size_t len)
     memcpy(&buf[already], start, need);
     already += need;
 
-    if (already >= (int64_t)len) {
+    if (already >= static_cast<int64_t>(len)) {
       break;
     }
 
@@ -724,11 +724,11 @@ FetchSM::resp_hdr_bufp()
   HdrHeapSDKHandle *heap;
   heap = (HdrHeapSDKHandle *)&client_response_hdr;
 
-  return (TSMBuffer)heap;
+  return reinterpret_cast<TSMBuffer>(heap);
 }
 
 TSMLoc
 FetchSM::resp_hdr_mloc()
 {
-  return (TSMLoc)client_response_hdr.m_http;
+  return reinterpret_cast<TSMLoc>(client_response_hdr.m_http);
 }

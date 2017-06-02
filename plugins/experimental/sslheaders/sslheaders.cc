@@ -34,9 +34,9 @@ SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
   TSMLoc mhdr;
   SSL *ssl;
 
-  txn = (TSHttpTxn)edata;
-  hdr = (const SslHdrInstance *)TSContDataGet(cont);
-  ssl = (SSL *)TSHttpSsnSSLConnectionGet(TSHttpTxnSsnGet(txn));
+  txn = static_cast<TSHttpTxn>(edata);
+  hdr = static_cast<const SslHdrInstance *>(TSContDataGet(cont));
+  ssl = static_cast<SSL *>(TSHttpSsnSSLConnectionGet(TSHttpTxnSsnGet(txn)));
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -175,7 +175,7 @@ SslHdrParseOptions(int argc, const char **argv)
   for (;;) {
     int opt;
 
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
     switch (opt) {
     case 'a':
       if (strcmp(optarg, "client") == 0) {
@@ -225,7 +225,7 @@ TSPluginInit(int argc, const char *argv[])
     SslHdrError("plugin registration failed");
   }
 
-  hdr = SslHdrParseOptions(argc, (const char **)argv);
+  hdr = SslHdrParseOptions(argc, static_cast<const char **>(argv));
   if (hdr) {
     switch (hdr->attach) {
     case SSL_HEADERS_ATTACH_SERVER:
@@ -263,14 +263,14 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* err */, in
 void
 TSRemapDeleteInstance(void *instance)
 {
-  SslHdrInstance *hdr = (SslHdrInstance *)instance;
+  SslHdrInstance *hdr = static_cast<SslHdrInstance *>(instance);
   delete hdr;
 }
 
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
 {
-  SslHdrInstance *hdr = (SslHdrInstance *)instance;
+  SslHdrInstance *hdr = static_cast<SslHdrInstance *>(instance);
 
   switch (hdr->attach) {
   case SSL_HEADERS_ATTACH_SERVER:

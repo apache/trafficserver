@@ -244,7 +244,7 @@ typedef struct {
 static void
 config_destroy_func(void *data)
 {
-  ConfigData *config = (ConfigData *)data;
+  ConfigData *config = static_cast<ConfigData *>(data);
   TSfree(config);
   return;
 }
@@ -252,7 +252,7 @@ config_destroy_func(void *data)
 REGRESSION_TEST(SDK_API_TSConfig)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus           = REGRESSION_TEST_INPROGRESS;
-  ConfigData *config = (ConfigData *)TSmalloc(sizeof(ConfigData));
+  ConfigData *config = static_cast<ConfigData *>(TSmalloc(sizeof(ConfigData)));
   config->a          = "unit";
   config->b          = "test";
 
@@ -327,14 +327,14 @@ struct SDK_NetVConn_Params {
 int
 server_handler(TSCont contp, TSEvent event, void *data)
 {
-  SDK_NetVConn_Params *params = (SDK_NetVConn_Params *)TSContDataGet(contp);
+  SDK_NetVConn_Params *params = static_cast<SDK_NetVConn_Params *>(TSContDataGet(contp));
 
   if (event == TS_EVENT_NET_ACCEPT) {
     // Kick off a read so that we can receive an EOS event.
     SDK_RPRINT(params->test, params->api, "ServerEvent NET_ACCEPT", TC_PASS, "ok");
     params->buffer = TSIOBufferCreate();
-    params->vc     = (TSVConn)data;
-    TSVConnRead((TSVConn)data, contp, params->buffer, 100);
+    params->vc     = static_cast<TSVConn>(data);
+    TSVConnRead(static_cast<TSVConn>(data), contp, params->buffer, 100);
   } else if (event == TS_EVENT_VCONN_EOS) {
     // The server end of the test passes if it receives an EOF event. This means that it must have
     // connected to the endpoint. Since this always happens *after* the accept, we know that it is
@@ -358,7 +358,7 @@ server_handler(TSCont contp, TSEvent event, void *data)
 int
 client_handler(TSCont contp, TSEvent event, void *data)
 {
-  SDK_NetVConn_Params *params = (SDK_NetVConn_Params *)TSContDataGet(contp);
+  SDK_NetVConn_Params *params = static_cast<SDK_NetVConn_Params *>(TSContDataGet(contp));
 
   if (event == TS_EVENT_NET_CONNECT_FAILED) {
     SDK_RPRINT(params->test, params->api, "ClientConnect", TC_FAIL, "can't connect to server");
@@ -413,7 +413,7 @@ client_handler(TSCont contp, TSEvent event, void *data)
     // XXX We really ought to do a write/read exchange with the server. The sleep above works around this.
 
     // Looks good from the client end. Next we disconnect so that the server end can set the final test status.
-    TSVConnClose((TSVConn)data);
+    TSVConnClose(static_cast<TSVConn>(data));
   }
 
   TSContDestroy(contp);
@@ -545,7 +545,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 {
   Debug("sdk_ut_cache_write", "Event %d data %p", event, data);
 
-  CacheVConnStruct *cache_vconn = (CacheVConnStruct *)TSContDataGet(contp);
+  CacheVConnStruct *cache_vconn = static_cast<CacheVConnStruct *>(TSContDataGet(contp));
 
   TSIOBufferBlock blockp;
   char *ptr_block;
@@ -557,7 +557,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     SDK_RPRINT(SDK_Cache_test, "TSCacheWrite", "TestCase1", TC_PASS, "ok");
 
     // data is write_vc
-    cache_vconn->write_vconnp = (TSVConn)data;
+    cache_vconn->write_vconnp = static_cast<TSVConn>(data);
 
     // Create buffers/readers to write and read data into the cache
     cache_vconn->bufp        = TSIOBufferCreate();
@@ -579,7 +579,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     }
 
     // first write half of the data. To test TSVIOReenable
-    cache_vconn->write_vio = TSVConnWrite((TSVConn)data, contp, cache_vconn->readerp, OBJECT_SIZE / 2);
+    cache_vconn->write_vio = TSVConnWrite(static_cast<TSVConn>(data), contp, cache_vconn->readerp, OBJECT_SIZE / 2);
     return 1;
 
   case TS_EVENT_CACHE_OPEN_WRITE_FAILED:
@@ -603,7 +603,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 
     SDK_RPRINT(SDK_Cache_test, "TSCacheRead", "TestCase1", TC_PASS, "ok");
 
-    cache_vconn->read_vconnp = (TSVConn)data;
+    cache_vconn->read_vconnp = static_cast<TSVConn>(data);
     content_length           = TSVConnCacheObjectSizeGet(cache_vconn->read_vconnp);
     Debug(UTDBG_TAG "_cache_read", "In cache open read [Content-Length: %" PRId64 "]", content_length);
     if (content_length != OBJECT_SIZE) {
@@ -614,7 +614,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
       return 1;
     } else {
       SDK_RPRINT(SDK_Cache_test, "TSVConnCacheObjectSizeGet", "TestCase1", TC_PASS, "ok");
-      cache_vconn->read_vio = TSVConnRead((TSVConn)data, contp, cache_vconn->out_bufp, content_length);
+      cache_vconn->read_vio = TSVConnRead(static_cast<TSVConn>(data), contp, cache_vconn->out_bufp, content_length);
     }
     return 1;
 
@@ -681,7 +681,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
       return 1;
     }
 
-    if ((TSVIO)data != cache_vconn->write_vio) {
+    if (static_cast<TSVIO>(data) != cache_vconn->write_vio) {
       SDK_RPRINT(SDK_Cache_test, "TSVConnWrite", "TestCase1", TC_FAIL, "write_vio corrupted");
       // no need to continue, return
       *SDK_Cache_pstatus = REGRESSION_TEST_FAILED;
@@ -747,7 +747,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 
   case TS_EVENT_VCONN_WRITE_READY:
     Debug(UTDBG_TAG "_cache_event", "TS_EVENT_VCONN_WRITE_READY %d %p", event, data);
-    if ((TSVIO)data != cache_vconn->write_vio) {
+    if (static_cast<TSVIO>(data) != cache_vconn->write_vio) {
       SDK_RPRINT(SDK_Cache_test, "TSVConnWrite", "TestCase1", TC_FAIL, "write_vio corrupted");
       *SDK_Cache_pstatus = REGRESSION_TEST_FAILED;
       return 1;
@@ -763,7 +763,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 
   case TS_EVENT_VCONN_READ_COMPLETE:
     Debug(UTDBG_TAG "_cache_event", "TS_EVENT_VCONN_READ_COMPLETE %d %p", event, data);
-    if ((TSVIO)data != cache_vconn->read_vio) {
+    if (static_cast<TSVIO>(data) != cache_vconn->read_vio) {
       SDK_RPRINT(SDK_Cache_test, "TSVConnRead", "TestCase1", TC_FAIL, "read_vio corrupted");
 
       // no need to continue, return
@@ -811,7 +811,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 
   case TS_EVENT_VCONN_READ_READY:
     Debug(UTDBG_TAG "_cache_event", "TS_EVENT_VCONN_READ_READY %d %p", event, data);
-    if ((TSVIO)data != cache_vconn->read_vio) {
+    if (static_cast<TSVIO>(data) != cache_vconn->read_vio) {
       SDK_RPRINT(SDK_Cache_test, "TSVConnRead", "TestCase1", TC_FAIL, "read_vio corrupted");
 
       // no need to continue, return
@@ -922,7 +922,7 @@ REGRESSION_TEST(SDK_API_TSCache)(RegressionTest *test, int /* atype ATS_UNUSED *
 
   // Write data to cache.
   TSCont contp                  = TSContCreate(cache_handler, TSMutexCreate());
-  CacheVConnStruct *cache_vconn = (CacheVConnStruct *)TSmalloc(sizeof(CacheVConnStruct));
+  CacheVConnStruct *cache_vconn = static_cast<CacheVConnStruct *>(TSmalloc(sizeof(CacheVConnStruct)));
   cache_vconn->key              = key;
   TSContDataSet(contp, cache_vconn);
 
@@ -1031,7 +1031,8 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
     return;
   }
 
-  read_amount = (stat_buffer_input.st_size <= (off_t)sizeof(input_buffer)) ? (stat_buffer_input.st_size) : (sizeof(input_buffer));
+  read_amount =
+    (stat_buffer_input.st_size <= static_cast<off_t>(sizeof(input_buffer))) ? (stat_buffer_input.st_size) : (sizeof(input_buffer));
 
   // TSfgets
   if ((ret_val = TSfgets(source_read_file, input_buffer, read_amount)) == nullptr) {
@@ -1146,7 +1147,8 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
     return;
   }
 
-  read_amount = (stat_buffer_input.st_size <= (off_t)sizeof(cmp_buffer)) ? (stat_buffer_input.st_size) : (sizeof(cmp_buffer));
+  read_amount =
+    (stat_buffer_input.st_size <= static_cast<off_t>(sizeof(cmp_buffer))) ? (stat_buffer_input.st_size) : (sizeof(cmp_buffer));
 
   // TSfread on read file
   read = TSfread(cmp_read_file, cmp_buffer, read_amount);
@@ -1272,7 +1274,7 @@ REGRESSION_TEST(SDK_API_TSThread)(RegressionTest *test, int /* atype ATS_UNUSED 
   }
 
   // TSThreadCreate
-  TSThread created_thread = TSThreadCreate(thread_create_handler, (void *)(intptr_t)curr_tid);
+  TSThread created_thread = TSThreadCreate(thread_create_handler, (void *)static_cast<intptr_t>(curr_tid));
   if (created_thread == nullptr) {
     thread_err_count++;
     SDK_RPRINT(test, "TSThreadCreate", "TestCase1", TC_FAIL, "can't create thread");
@@ -1338,7 +1340,7 @@ REGRESSION_TEST(SDK_API_TSThreadInit)(RegressionTest *test, int /* atype ATS_UNU
 
   int ret;
   errno = 0;
-  ret   = pthread_create(&new_tid, nullptr, pthread_start_func, (void *)(intptr_t)curr_tid);
+  ret   = pthread_create(&new_tid, nullptr, pthread_start_func, (void *)static_cast<intptr_t>(curr_tid));
   if (ret != 0) {
     thread_init_err_count++;
     SDK_RPRINT(test, "TSThreadInit", "TestCase1", TC_FAIL, "can't create pthread");
@@ -1448,7 +1450,7 @@ REGRESSION_TEST(SDK_API_TSContCreate)(RegressionTest *test, int /* atype ATS_UNU
   TSCont contp   = TSContCreate(cont_handler, mutexp);
 
   if (TS_SUCCESS == TSMutexLockTry(mutexp)) { // Mutex is grabbed successfully
-    TSContCall(contp, (TSEvent)0, nullptr);
+    TSContCall(contp, static_cast<TSEvent>(0), nullptr);
     TSMutexUnlock(mutexp);
   } else { // mutex has problems
     SDK_RPRINT(SDK_ContCreate_test, "TSContCreate", "TestCase1", TC_FAIL, "continuation creation has problems");
@@ -1480,7 +1482,7 @@ typedef struct {
 int
 cont_data_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
-  MyData *my_data = (MyData *)TSContDataGet(contp);
+  MyData *my_data = static_cast<MyData *>(TSContDataGet(contp));
 
   if (my_data->data1 == 1 && my_data->data2 == 2) {
     SDK_RPRINT(SDK_ContData_test, "TSContDataSet", "TestCase1", TC_PASS, "ok");
@@ -1510,7 +1512,7 @@ REGRESSION_TEST(SDK_API_TSContDataGet)(RegressionTest *test, int /* atype ATS_UN
 
   TSCont contp = TSContCreate(cont_data_handler, TSMutexCreate());
 
-  MyData *my_data = (MyData *)TSmalloc(sizeof(MyData));
+  MyData *my_data = static_cast<MyData *>(TSmalloc(sizeof(MyData)));
   my_data->data1  = 1;
   my_data->data2  = 2;
 
@@ -1873,7 +1875,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferBlockReadAvail)(RegressionTest *test, int /* a
 
   int i           = 10000;
   TSIOBuffer bufp = TSIOBufferCreate();
-  TSIOBufferWrite(bufp, (char *)&i, sizeof(int));
+  TSIOBufferWrite(bufp, reinterpret_cast<char *>(&i), sizeof(int));
   TSIOBufferReader readerp = TSIOBufferReaderAlloc(bufp);
 
   int64_t avail_write, avail_read;
@@ -1921,7 +1923,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferBlockNext)(RegressionTest *test, int /* atype 
 
   int i           = 10000;
   TSIOBuffer bufp = TSIOBufferCreate();
-  TSIOBufferWrite(bufp, (char *)&i, sizeof(int));
+  TSIOBufferWrite(bufp, reinterpret_cast<char *>(&i), sizeof(int));
 
   TSIOBufferReader readerp = TSIOBufferReaderAlloc(bufp);
   TSIOBufferBlock blockp   = TSIOBufferReaderStart(readerp);
@@ -2010,7 +2012,7 @@ checkHttpTxnClientIPGet(SocketTest *test, void *data)
 {
   sockaddr const *ptr;
   in_addr_t ip;
-  TSHttpTxn txnp      = (TSHttpTxn)data;
+  TSHttpTxn txnp      = static_cast<TSHttpTxn>(data);
   in_addr_t actual_ip = htonl(INADDR_LOOPBACK); /* 127.0.0.1 is expected because the client is on the same machine */
 
   ptr = TSHttpTxnClientAddrGet(txnp);
@@ -2036,7 +2038,7 @@ checkHttpTxnClientIPGet(SocketTest *test, void *data)
 static int
 checkHttpTxnClientProtocolStackGet(SocketTest *test, void *data)
 {
-  TSHttpTxn txnp = (TSHttpTxn)data;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
   const char *results[10];
   int count = 0;
   TSHttpTxnClientProtocolStackGet(txnp, 10, results, &count);
@@ -2067,7 +2069,7 @@ checkHttpTxnClientProtocolStackGet(SocketTest *test, void *data)
 static int
 checkHttpTxnClientProtocolStackContains(SocketTest *test, void *data)
 {
-  TSHttpTxn txnp                            = (TSHttpTxn)data;
+  TSHttpTxn txnp                            = static_cast<TSHttpTxn>(data);
   const char *ret_tag                       = TSHttpTxnClientProtocolStackContains(txnp, "tcp");
   test->test_client_protocol_stack_contains = true;
   if (ret_tag) {
@@ -2096,7 +2098,7 @@ checkHttpTxnClientProtocolStackContains(SocketTest *test, void *data)
 static int
 checkHttpTxnNextHopIPGet(SocketTest *test, void *data)
 {
-  TSHttpTxn txnp      = (TSHttpTxn)data;
+  TSHttpTxn txnp      = static_cast<TSHttpTxn>(data);
   in_addr_t actual_ip = htonl(INADDR_LOOPBACK); /* 127.0.0.1 is expected because the client is on the same machine */
   sockaddr const *ptr;
   in_addr_t nexthopip;
@@ -2127,7 +2129,7 @@ checkHttpTxnServerIPGet(SocketTest *test, void *data)
 {
   sockaddr const *ptr;
   in_addr_t ip;
-  TSHttpTxn txnp      = (TSHttpTxn)data;
+  TSHttpTxn txnp      = static_cast<TSHttpTxn>(data);
   in_addr_t actual_ip = htonl(INADDR_LOOPBACK); /* 127.0.0.1 is expected because the client is on the same machine */
 
   ptr = TSHttpTxnServerAddrGet(txnp);
@@ -2155,7 +2157,7 @@ checkHttpTxnIncomingAddrGet(SocketTest *test, void *data)
 {
   uint16_t port;
   HttpProxyPort *proxy_port = HttpProxyPort::findHttp(AF_INET);
-  TSHttpTxn txnp            = (TSHttpTxn)data;
+  TSHttpTxn txnp            = static_cast<TSHttpTxn>(data);
   sockaddr const *ptr       = TSHttpTxnIncomingAddrGet(txnp);
 
   if (nullptr == proxy_port) {
@@ -2190,7 +2192,7 @@ checkHttpTxnClientAddrGet(SocketTest *test, void *data)
 {
   uint16_t port;
   uint16_t browser_port;
-  TSHttpTxn txnp      = (TSHttpTxn)data;
+  TSHttpTxn txnp      = static_cast<TSHttpTxn>(data);
   sockaddr const *ptr = TSHttpTxnClientAddrGet(txnp);
 
   browser_port = test->browser->local_port;
@@ -2221,7 +2223,7 @@ checkHttpTxnClientReqGet(SocketTest *test, void *data)
 {
   TSMBuffer bufp;
   TSMLoc mloc;
-  TSHttpTxn txnp = (TSHttpTxn)data;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &mloc) != TS_SUCCESS) {
     test->test_client_req_get = false;
@@ -2229,8 +2231,8 @@ checkHttpTxnClientReqGet(SocketTest *test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  if ((bufp == reinterpret_cast<TSMBuffer>(&((HttpSM *)txnp)->t_state.hdr_info.client_request)) &&
-      (mloc == reinterpret_cast<TSMLoc>(((HttpSM *)txnp)->t_state.hdr_info.client_request.m_http))) {
+  if ((bufp == reinterpret_cast<TSMBuffer>(&(reinterpret_cast<HttpSM *>(txnp))->t_state.hdr_info.client_request)) &&
+      (mloc == reinterpret_cast<TSMLoc>((reinterpret_cast<HttpSM *>(txnp))->t_state.hdr_info.client_request.m_http))) {
     test->test_client_req_get = true;
     SDK_RPRINT(test->regtest, "TSHttpTxnClientReqGet", "TestCase1", TC_PASS, "ok");
   } else {
@@ -2247,7 +2249,7 @@ checkHttpTxnClientRespGet(SocketTest *test, void *data)
 {
   TSMBuffer bufp;
   TSMLoc mloc;
-  TSHttpTxn txnp = (TSHttpTxn)data;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &mloc) != TS_SUCCESS) {
     test->test_client_resp_get = false;
@@ -2255,8 +2257,8 @@ checkHttpTxnClientRespGet(SocketTest *test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  if ((bufp == reinterpret_cast<TSMBuffer>(&((HttpSM *)txnp)->t_state.hdr_info.client_response)) &&
-      (mloc == reinterpret_cast<TSMLoc>(((HttpSM *)txnp)->t_state.hdr_info.client_response.m_http))) {
+  if ((bufp == reinterpret_cast<TSMBuffer>(&(reinterpret_cast<HttpSM *>(txnp))->t_state.hdr_info.client_response)) &&
+      (mloc == reinterpret_cast<TSMLoc>((reinterpret_cast<HttpSM *>(txnp))->t_state.hdr_info.client_response.m_http))) {
     test->test_client_resp_get = true;
     SDK_RPRINT(test->regtest, "TSHttpTxnClientRespGet", "TestCase1", TC_PASS, "ok");
   } else {
@@ -2273,7 +2275,7 @@ checkHttpTxnServerReqGet(SocketTest *test, void *data)
 {
   TSMBuffer bufp;
   TSMLoc mloc;
-  TSHttpTxn txnp = (TSHttpTxn)data;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
 
   if (TSHttpTxnServerReqGet(txnp, &bufp, &mloc) != TS_SUCCESS) {
     test->test_server_req_get = false;
@@ -2281,8 +2283,8 @@ checkHttpTxnServerReqGet(SocketTest *test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  if ((bufp == reinterpret_cast<TSMBuffer>(&((HttpSM *)txnp)->t_state.hdr_info.server_request)) &&
-      (mloc == reinterpret_cast<TSMLoc>(((HttpSM *)txnp)->t_state.hdr_info.server_request.m_http))) {
+  if ((bufp == reinterpret_cast<TSMBuffer>(&(reinterpret_cast<HttpSM *>(txnp))->t_state.hdr_info.server_request)) &&
+      (mloc == reinterpret_cast<TSMLoc>((reinterpret_cast<HttpSM *>(txnp))->t_state.hdr_info.server_request.m_http))) {
     test->test_server_req_get = true;
     SDK_RPRINT(test->regtest, "TSHttpTxnServerReqGet", "TestCase1", TC_PASS, "ok");
   } else {
@@ -2299,7 +2301,7 @@ checkHttpTxnServerRespGet(SocketTest *test, void *data)
 {
   TSMBuffer bufp;
   TSMLoc mloc;
-  TSHttpTxn txnp = (TSHttpTxn)data;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
 
   if (TSHttpTxnServerRespGet(txnp, &bufp, &mloc) != TS_SUCCESS) {
     test->test_server_resp_get = false;
@@ -2307,8 +2309,8 @@ checkHttpTxnServerRespGet(SocketTest *test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  if ((bufp == reinterpret_cast<TSMBuffer>(&((HttpSM *)txnp)->t_state.hdr_info.server_response)) &&
-      (mloc == reinterpret_cast<TSMLoc>(((HttpSM *)txnp)->t_state.hdr_info.server_response.m_http))) {
+  if ((bufp == reinterpret_cast<TSMBuffer>(&(reinterpret_cast<HttpSM *>(txnp))->t_state.hdr_info.server_response)) &&
+      (mloc == reinterpret_cast<TSMLoc>((reinterpret_cast<HttpSM *>(txnp))->t_state.hdr_info.server_response.m_http))) {
     test->test_server_resp_get = true;
     SDK_RPRINT(test->regtest, "TSHttpTxnServerRespGet", "TestCase1", TC_PASS, "ok");
   } else {
@@ -2325,12 +2327,12 @@ checkHttpTxnServerRespGet(SocketTest *test, void *data)
 static int
 mytest_handler(TSCont contp, TSEvent event, void *data)
 {
-  SocketTest *test = (SocketTest *)TSContDataGet(contp);
+  SocketTest *test = static_cast<SocketTest *>(TSContDataGet(contp));
   if (test == nullptr) {
     if ((event == TS_EVENT_IMMEDIATE) || (event == TS_EVENT_TIMEOUT)) {
       return 0;
     }
-    TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     return 0;
   }
   TSAssert(test->magic == MAGIC_ALIVE);
@@ -2342,7 +2344,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
       test->hook_mask |= 1;
     }
 
-    TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 1;
     break;
 
@@ -2350,10 +2352,10 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     if (test->hook_mask == 1) {
       test->hook_mask |= 2;
     }
-    TSSkipRemappingSet((TSHttpTxn)data, 1);
+    TSSkipRemappingSet(static_cast<TSHttpTxn>(data), 1);
     checkHttpTxnClientReqGet(test, data);
 
-    TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 2;
     break;
 
@@ -2368,7 +2370,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     checkHttpTxnClientIPGet(test, data);
     checkHttpTxnServerIPGet(test, data);
 
-    TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 8;
     break;
 
@@ -2376,7 +2378,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     if (test->hook_mask == 3 || test->hook_mask == 11) {
       test->hook_mask |= 4;
     }
-    TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 4;
     break;
 
@@ -2390,7 +2392,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     checkHttpTxnClientProtocolStackContains(test, data);
     checkHttpTxnClientProtocolStackGet(test, data);
 
-    TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 16;
     break;
 
@@ -2400,7 +2402,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     }
     checkHttpTxnServerRespGet(test, data);
 
-    TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 32;
     break;
 
@@ -2411,7 +2413,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
 
     checkHttpTxnClientRespGet(test, data);
 
-    TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 64;
     break;
 
@@ -2420,7 +2422,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
       test->hook_mask |= 128;
     }
 
-    TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 128;
     break;
 
@@ -2482,7 +2484,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd)(RegressionTest *test, int /* atyp
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   TSCont cont          = TSContCreate(mytest_handler, TSMutexCreate());
-  SocketTest *socktest = (SocketTest *)TSmalloc(sizeof(SocketTest));
+  SocketTest *socktest = static_cast<SocketTest *>(TSmalloc(sizeof(SocketTest)));
 
   socktest->regtest                       = test;
   socktest->pstatus                       = pstatus;
@@ -2592,7 +2594,7 @@ test_url_print(TSMBuffer bufp, TSMLoc hdr_loc)
 
   /* Allocate the string with an extra byte for the string
      terminator */
-  output_string = (char *)TSmalloc(total_avail + 1);
+  output_string = static_cast<char *>(TSmalloc(total_avail + 1));
   output_len    = 0;
 
   /* We need to loop over all the buffer blocks to make
@@ -2709,7 +2711,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     ((fragment == nullptr) ? 0 : strlen("#") + strlen(fragment));
 
   size_t len          = url_expected_length + 1;
-  url_expected_string = (char *)TSmalloc(len * sizeof(char));
+  url_expected_string = static_cast<char *>(TSmalloc(len * sizeof(char)));
   memset(url_expected_string, 0, url_expected_length + 1);
   snprintf(url_expected_string, len, "%s://%s%s%s%s%s%s%s/%s%s%s%s%s%s%s", scheme, ((user == nullptr) ? "" : user),
            ((password == nullptr) ? "" : ":"), ((password == nullptr) ? "" : password),
@@ -3126,7 +3128,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
       SDK_RPRINT(test, "TSHttpHdrMethodSet&Get", "TestCase1", TC_FAIL, "TSHttpHdrMethodSet returns TS_ERROR");
     } else {
       methodGet = TSHttpHdrMethodGet(bufp1, hdr_loc1, &length);
-      if ((strncmp(methodGet, TS_HTTP_METHOD_GET, length) == 0) && (length == (int)strlen(TS_HTTP_METHOD_GET))) {
+      if ((strncmp(methodGet, TS_HTTP_METHOD_GET, length) == 0) && (length == static_cast<int>(strlen(TS_HTTP_METHOD_GET)))) {
         SDK_RPRINT(test, "TSHttpHdrMethodSet&Get", "TestCase1", TC_PASS, "ok");
         test_passed_Http_Hdr_Method = true;
       } else {
@@ -3191,7 +3193,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
       SDK_RPRINT(test, "TSHttpHdrReasonSet&Get", "TestCase1", TC_FAIL, "TSHttpHdrReasonSet returns TS_ERROR");
     } else {
       response_reason_get = TSHttpHdrReasonGet(bufp2, hdr_loc2, &length);
-      if ((strncmp(response_reason_get, response_reason, length) == 0) && (length == (int)strlen(response_reason))) {
+      if ((strncmp(response_reason_get, response_reason, length) == 0) && (length == static_cast<int>(strlen(response_reason)))) {
         SDK_RPRINT(test, "TSHttpHdrReasonSet&Get", "TestCase1", TC_PASS, "ok");
         test_passed_Http_Hdr_Reason = true;
       } else {
@@ -3527,7 +3529,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
         (test_passed_Http_Hdr_Length == true) && (try_print_function == true)) {
       char *actual_iobuf = nullptr;
 
-      actual_iobuf = (char *)TSmalloc((actual_length + 1) * sizeof(char));
+      actual_iobuf = static_cast<char *>(TSmalloc((actual_length + 1) * sizeof(char)));
 
       if (actual_iobuf == nullptr) {
         SDK_RPRINT(test, "TSHttpHdrPrint", "TestCase1", TC_FAIL, "Unable to allocate memory");
@@ -3876,11 +3878,16 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
       field3NameGet = TSMimeHdrFieldNameGet(bufp1, mime_loc1, field_loc13, &field3NameGetLength);
       field4NameGet = TSMimeHdrFieldNameGet(bufp1, mime_loc1, field_loc14, &field4NameGetLength);
       field5NameGet = TSMimeHdrFieldNameGet(bufp1, mime_loc1, field_loc15, &field5NameGetLength);
-      if (((strncmp(field1NameGet, field1Name, field1NameGetLength) == 0) && (field1NameGetLength == (int)strlen(field1Name))) &&
-          ((strncmp(field2NameGet, field2Name, field2NameGetLength) == 0) && (field2NameGetLength == (int)strlen(field2Name))) &&
-          ((strncmp(field3NameGet, field3Name, field3NameGetLength) == 0) && (field3NameGetLength == (int)strlen(field3Name))) &&
-          ((strncmp(field4NameGet, field4Name, field4NameGetLength) == 0) && (field4NameGetLength == (int)strlen(field4Name))) &&
-          ((strncmp(field5NameGet, field5Name, field5NameGetLength) == 0) && field5NameGetLength == (int)strlen(field5Name))) {
+      if (((strncmp(field1NameGet, field1Name, field1NameGetLength) == 0) &&
+           (field1NameGetLength == static_cast<int>(strlen(field1Name)))) &&
+          ((strncmp(field2NameGet, field2Name, field2NameGetLength) == 0) &&
+           (field2NameGetLength == static_cast<int>(strlen(field2Name)))) &&
+          ((strncmp(field3NameGet, field3Name, field3NameGetLength) == 0) &&
+           (field3NameGetLength == static_cast<int>(strlen(field3Name)))) &&
+          ((strncmp(field4NameGet, field4Name, field4NameGetLength) == 0) &&
+           (field4NameGetLength == static_cast<int>(strlen(field4Name)))) &&
+          ((strncmp(field5NameGet, field5Name, field5NameGetLength) == 0) &&
+           field5NameGetLength == static_cast<int>(strlen(field5Name)))) {
         SDK_RPRINT(test, "TSMimeHdrFieldNameGet&Set", "TestCase1&2&3&4&5", TC_PASS, "ok");
         test_passed_Mime_Hdr_Field_Name = true;
       } else {
@@ -4048,11 +4055,16 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
       field1Value4Get   = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, 3, &lengthField1Value4);
       field1Value5Get   = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, 4, &lengthField1Value5);
       field1ValueAllGet = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, -1, &lengthField1ValueAll);
-      if (((strncmp(field1Value1Get, field1Value1, lengthField1Value1) == 0) && lengthField1Value1 == (int)strlen(field1Value1)) &&
-          ((strncmp(field1Value2Get, field1Value2, lengthField1Value2) == 0) && lengthField1Value2 == (int)strlen(field1Value2)) &&
-          ((strncmp(field1Value3Get, field1Value3, lengthField1Value3) == 0) && lengthField1Value3 == (int)strlen(field1Value3)) &&
-          ((strncmp(field1Value4Get, field1Value4, lengthField1Value4) == 0) && lengthField1Value4 == (int)strlen(field1Value4)) &&
-          ((strncmp(field1Value5Get, field1Value5, lengthField1Value5) == 0) && lengthField1Value5 == (int)strlen(field1Value5)) &&
+      if (((strncmp(field1Value1Get, field1Value1, lengthField1Value1) == 0) &&
+           lengthField1Value1 == static_cast<int>(strlen(field1Value1))) &&
+          ((strncmp(field1Value2Get, field1Value2, lengthField1Value2) == 0) &&
+           lengthField1Value2 == static_cast<int>(strlen(field1Value2))) &&
+          ((strncmp(field1Value3Get, field1Value3, lengthField1Value3) == 0) &&
+           lengthField1Value3 == static_cast<int>(strlen(field1Value3))) &&
+          ((strncmp(field1Value4Get, field1Value4, lengthField1Value4) == 0) &&
+           lengthField1Value4 == static_cast<int>(strlen(field1Value4))) &&
+          ((strncmp(field1Value5Get, field1Value5, lengthField1Value5) == 0) &&
+           lengthField1Value5 == static_cast<int>(strlen(field1Value5))) &&
           (strstr(field1ValueAllGet, field1Value1Get) == field1Value1Get) &&
           (strstr(field1ValueAllGet, field1Value2Get) == field1Value2Get) &&
           (strstr(field1ValueAllGet, field1Value3Get) == field1Value3Get) &&
@@ -4069,7 +4081,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
         } else {
           field1ValueNewGet = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc11, 3, &lengthField1ValueNew);
           if ((strncmp(field1ValueNewGet, field1ValueNew, lengthField1ValueNew) == 0) &&
-              (lengthField1ValueNew == (int)strlen(field1ValueNew))) {
+              (lengthField1ValueNew == static_cast<int>(strlen(field1ValueNew)))) {
             SDK_RPRINT(test, "TSMimeHdrFieldValueStringSet", "TestCase1", TC_PASS, "ok");
             test_passed_Mime_Hdr_Field_Value_String_Set = true;
           } else {
@@ -4255,7 +4267,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
         fieldValueAppendGet = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc15, 0, &lengthFieldValueAppended);
         char *expected_value;
         size_t len     = strlen(field5Value1) + strlen(field5Value1Append) + 1;
-        expected_value = (char *)TSmalloc(len);
+        expected_value = static_cast<char *>(TSmalloc(len));
         memset(expected_value, 0, len);
         ink_strlcpy(expected_value, field5Value1, len);
         ink_strlcat(expected_value, field5Value1Append, len);
@@ -4282,7 +4294,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
       } else {
         fieldValueDeleteGet = TSMimeHdrFieldValueStringGet(bufp1, mime_loc1, field_loc15, 2, &lengthFieldValueDeleteGet);
         if ((strncmp(fieldValueDeleteGet, field5Value3, lengthFieldValueDeleteGet) == 0) &&
-            (lengthFieldValueDeleteGet == (int)strlen(field5Value3))) {
+            (lengthFieldValueDeleteGet == static_cast<int>(strlen(field5Value3)))) {
           SDK_RPRINT(test, "TSMimeHdrFieldValueDelete", "TestCase1", TC_FAIL,
                      "Value not deleted from field or incorrect index deleted from field.");
         } else {
@@ -4454,7 +4466,7 @@ convert_http_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 
   /* Allocate the string with an extra byte for the string
      terminator */
-  output_string = (char *)TSmalloc(total_avail + 1);
+  output_string = static_cast<char *>(TSmalloc(total_avail + 1));
   output_len    = 0;
 
   /* We need to loop over all the buffer blocks to make
@@ -4661,7 +4673,7 @@ convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 
   /* Allocate the string with an extra byte for the string
      terminator */
-  output_string = (char *)TSmalloc(total_avail + 1);
+  output_string = static_cast<char *>(TSmalloc(total_avail + 1));
   output_len    = 0;
 
   /* We need to loop over all the buffer blocks to make
@@ -4805,7 +4817,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
 
           // TSMimeHdrLengthGet
           hdrLength = TSMimeHdrLengthGet(bufp1, mime_hdr_loc1);
-          if (hdrLength == (int)strlen(temp)) {
+          if (hdrLength == static_cast<int>(strlen(temp))) {
             SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_PASS, "ok");
             test_passed_mime_hdr_length_get = true;
           } else {
@@ -5235,7 +5247,7 @@ log_test_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
   TSAssert(event == TS_EVENT_TIMEOUT);
 
-  LogTestData *data = (LogTestData *)TSContDataGet(contp);
+  LogTestData *data = static_cast<LogTestData *>(TSContDataGet(contp));
   TSAssert(data->magic == MAGIC_ALIVE);
 
   // Verify content was correctly written into log file
@@ -5286,7 +5298,7 @@ log_test_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
   // 7 = 1 (dot at beginning) + 5 (".meta") + 1 (null terminating)
   //
-  char *meta_filename = (char *)ats_malloc(l + 7);
+  char *meta_filename = static_cast<char *>(ats_malloc(l + 7));
 
   if (i < 0) {
     ink_string_concatenate_strings(meta_filename, ".", data->fullpath_logname, ".meta", NULL);
@@ -5321,7 +5333,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
   /* Generate a random log file name, so if we run the test several times, we won't use the
      same log file name. */
   ats_scoped_str tmp(RecConfigReadLogDir());
-  snprintf(logname, sizeof(logname), "RegressionTestLog%d.log", (int)getpid());
+  snprintf(logname, sizeof(logname), "RegressionTestLog%d.log", static_cast<int>(getpid()));
   snprintf(fullpath_logname, sizeof(fullpath_logname), "%s/%s", (const char *)tmp, logname);
 
   unlink(fullpath_logname);
@@ -5347,7 +5359,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
   SDK_RPRINT(test, "TSTextLogObjectFlush", "TestCase1", TC_PASS, "ok");
 
   TSCont log_test_cont   = TSContCreate(log_test_handler, TSMutexCreate());
-  LogTestData *data      = (LogTestData *)TSmalloc(sizeof(LogTestData));
+  LogTestData *data      = static_cast<LogTestData *>(TSmalloc(sizeof(LogTestData)));
   data->test             = test;
   data->pstatus          = pstatus;
   data->fullpath_logname = TSstrdup(fullpath_logname);
@@ -5805,7 +5817,7 @@ checkHttpTxnParentProxy(ContData *data, TSHttpTxn txnp)
   const char *hostnameget = nullptr;
   int portget             = 0;
 
-  TSHttpTxnParentProxySet(txnp, (char *)hostname, port);
+  TSHttpTxnParentProxySet(txnp, const_cast<char *>(hostname), port);
   if (TSHttpTxnParentProxyGet(txnp, &hostnameget, &portget) != TS_SUCCESS) {
     SDK_RPRINT(data->test, "TSHttpTxnParentProxySet", "TestCase1", TC_FAIL, "TSHttpTxnParentProxyGet doesn't return TS_SUCCESS");
     SDK_RPRINT(data->test, "TSHttpTxnParentProxyGet", "TestCase1", TC_FAIL, "TSHttpTxnParentProxyGet doesn't return TS_SUCCESS");
@@ -5829,18 +5841,18 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = nullptr;
   ContData *data = nullptr;
-  data           = (ContData *)TSContDataGet(contp);
+  data           = static_cast<ContData *>(TSContDataGet(contp));
   if (data == nullptr) {
     switch (event) {
     case TS_EVENT_HTTP_SSN_START:
-      TSHttpSsnReenable((TSHttpSsn)edata, TS_EVENT_HTTP_CONTINUE);
+      TSHttpSsnReenable(static_cast<TSHttpSsn>(edata), TS_EVENT_HTTP_CONTINUE);
       break;
     case TS_EVENT_IMMEDIATE:
     case TS_EVENT_TIMEOUT:
       break;
     case TS_EVENT_HTTP_TXN_START:
     default:
-      TSHttpTxnReenable((TSHttpTxn)edata, TS_EVENT_HTTP_CONTINUE);
+      TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
       break;
     }
     return 0;
@@ -5848,17 +5860,17 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_SSN_START:
-    data->ssnp = (TSHttpSsn)edata;
+    data->ssnp = static_cast<TSHttpSsn>(edata);
     TSHttpSsnHookAdd(data->ssnp, TS_HTTP_TXN_START_HOOK, contp);
     TSHttpSsnReenable(data->ssnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_TXN_START:
-    TSSkipRemappingSet((TSHttpTxn)edata, 1);
+    TSSkipRemappingSet(static_cast<TSHttpTxn>(edata), 1);
     SDK_RPRINT(data->test, "TSHttpSsnReenable", "TestCase", TC_PASS, "ok");
     data->test_passed_ssn_reenable++;
     {
-      txnp           = (TSHttpTxn)edata;
+      txnp           = static_cast<TSHttpTxn>(edata);
       TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
       if (ssnp != data->ssnp) {
         SDK_RPRINT(data->test, "TSHttpSsnHookAdd", "TestCase", TC_FAIL, "Value's mismatch");
@@ -5879,7 +5891,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_OS_DNS:
     SDK_RPRINT(data->test, "TSHttpTxnHookAdd", "TestCase1", TC_PASS, "ok");
     data->test_passed_txn_hook_add++;
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
 
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
     checkHttpTxnParentProxy(data, txnp);
@@ -5890,7 +5902,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     SDK_RPRINT(data->test, "TSHttpTxnHookAdd", "TestCase2", TC_PASS, "ok");
     data->test_passed_txn_hook_add++;
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     if (true) {
       char *temp = TSstrdup(ERROR_BODY);
       TSHttpTxnErrorBodySet(txnp, temp, strlen(temp), nullptr);
@@ -5964,7 +5976,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpSsn)(RegressionTest *test, int /* atype AT
     return;
   }
 
-  ContData *socktest                       = (ContData *)TSmalloc(sizeof(ContData));
+  ContData *socktest                       = static_cast<ContData *>(TSmalloc(sizeof(ContData)));
   socktest->test                           = test;
   socktest->pstatus                        = pstatus;
   socktest->test_passed_ssn_hook_add       = 0;
@@ -6051,8 +6063,8 @@ struct ParentTest {
 static int
 parent_proxy_success(TSCont contp, TSEvent event, void *edata)
 {
-  ParentTest *ptest = (ParentTest *)TSContDataGet(contp);
-  TSHttpTxn txnp    = (TSHttpTxn)edata;
+  ParentTest *ptest = static_cast<ParentTest *>(TSContDataGet(contp));
+  TSHttpTxn txnp    = static_cast<TSHttpTxn>(edata);
 
   int expected;
   int received;
@@ -6083,8 +6095,8 @@ parent_proxy_success(TSCont contp, TSEvent event, void *edata)
 static int
 parent_proxy_fail(TSCont contp, TSEvent event, void *edata)
 {
-  ParentTest *ptest = (ParentTest *)TSContDataGet(contp);
-  TSHttpTxn txnp    = (TSHttpTxn)edata;
+  ParentTest *ptest = static_cast<ParentTest *>(TSContDataGet(contp));
+  TSHttpTxn txnp    = static_cast<TSHttpTxn>(edata);
 
   TSMBuffer mbuf;
   TSMLoc hdr;
@@ -6121,10 +6133,10 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
   ParentTest *ptest = nullptr;
 
   CHECK_SPURIOUS_EVENT(contp, event, edata);
-  ptest = (ParentTest *)TSContDataGet(contp);
+  ptest = static_cast<ParentTest *>(TSContDataGet(contp));
   ink_release_assert(ptest);
 
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -6296,11 +6308,11 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
   CacheTestData *data = nullptr;
 
   CHECK_SPURIOUS_EVENT(contp, event, edata);
-  data = (CacheTestData *)TSContDataGet(contp);
+  data = static_cast<CacheTestData *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     TSSkipRemappingSet(txnp, 1);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
@@ -6308,7 +6320,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
     int lookup_status;
     if (data->first_time == true) {
-      txnp = (TSHttpTxn)edata;
+      txnp = static_cast<TSHttpTxn>(edata);
       if (TSHttpTxnCacheLookupStatusGet(txnp, &lookup_status) != TS_SUCCESS) {
         SDK_RPRINT(data->test, "TSHttpTxnCacheLookupStatusGet", "TestCase1", TC_FAIL,
                    "TSHttpTxnCacheLookupStatus doesn't return TS_SUCCESS");
@@ -6322,7 +6334,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
         }
       }
     } else {
-      txnp = (TSHttpTxn)edata;
+      txnp = static_cast<TSHttpTxn>(edata);
       if (TSHttpTxnCacheLookupStatusGet(txnp, &lookup_status) != TS_SUCCESS) {
         SDK_RPRINT(data->test, "TSHttpTxnCacheLookupStatusGet", "TestCase2", TC_FAIL,
                    "TSHttpTxnCacheLookupStatus doesn't return TS_SUCCESS");
@@ -6346,13 +6358,14 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
     TSMLoc reqhdr;
     TSMLoc resphdr;
 
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
 
     if (TSHttpTxnCachedReqGet(txnp, &reqbuf, &reqhdr) != TS_SUCCESS) {
       SDK_RPRINT(data->test, "TSHttpTxnCachedReqGet", "TestCase1", TC_FAIL, "TSHttpTxnCachedReqGet returns 0");
     } else {
-      if ((reqbuf == reinterpret_cast<TSMBuffer>(((HttpSM *)txnp)->t_state.cache_req_hdr_heap_handle)) &&
-          (reqhdr == reinterpret_cast<TSMLoc>((((HttpSM *)txnp)->t_state.cache_info.object_read->request_get())->m_http))) {
+      if ((reqbuf == reinterpret_cast<TSMBuffer>((reinterpret_cast<HttpSM *>(txnp))->t_state.cache_req_hdr_heap_handle)) &&
+          (reqhdr ==
+           reinterpret_cast<TSMLoc>(((reinterpret_cast<HttpSM *>(txnp))->t_state.cache_info.object_read->request_get())->m_http))) {
         SDK_RPRINT(data->test, "TSHttpTxnCachedReqGet", "TestCase1", TC_PASS, "ok");
         data->test_passed_txn_cached_req_get = true;
       } else {
@@ -6363,8 +6376,9 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
     if (TSHttpTxnCachedRespGet(txnp, &respbuf, &resphdr) != TS_SUCCESS) {
       SDK_RPRINT(data->test, "TSHttpTxnCachedRespGet", "TestCase1", TC_FAIL, "TSHttpTxnCachedRespGet returns 0");
     } else {
-      if ((respbuf == reinterpret_cast<TSMBuffer>(((HttpSM *)txnp)->t_state.cache_resp_hdr_heap_handle)) &&
-          (resphdr == reinterpret_cast<TSMLoc>((((HttpSM *)txnp)->t_state.cache_info.object_read->response_get())->m_http))) {
+      if ((respbuf == reinterpret_cast<TSMBuffer>((reinterpret_cast<HttpSM *>(txnp))->t_state.cache_resp_hdr_heap_handle)) &&
+          (resphdr == reinterpret_cast<TSMLoc>(
+                        ((reinterpret_cast<HttpSM *>(txnp))->t_state.cache_info.object_read->response_get())->m_http))) {
         SDK_RPRINT(data->test, "TSHttpTxnCachedRespGet", "TestCase1", TC_PASS, "ok");
         data->test_passed_txn_cached_resp_get = true;
       } else {
@@ -6454,7 +6468,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnCache)(RegressionTest *test, int /* aty
     return;
   }
 
-  CacheTestData *socktest                   = (CacheTestData *)TSmalloc(sizeof(CacheTestData));
+  CacheTestData *socktest                   = static_cast<CacheTestData *>(TSmalloc(sizeof(CacheTestData)));
   socktest->test                            = test;
   socktest->pstatus                         = pstatus;
   socktest->test_passed_txn_cached_req_get  = false;
@@ -6531,7 +6545,7 @@ my_data_alloc()
 {
   MyTransformData *data;
 
-  data                = (MyTransformData *)TSmalloc(sizeof(MyTransformData));
+  data                = static_cast<MyTransformData *>(TSmalloc(sizeof(MyTransformData)));
   data->output_vio    = nullptr;
   data->output_buffer = nullptr;
   data->output_reader = nullptr;
@@ -6574,7 +6588,7 @@ handle_transform(TSCont contp)
      structure contains the output VIO and output buffer. If the
      private data structure pointer is NULL, then we'll create it
      and initialize its internals. */
-  contData = (TransformTestData *)TSContDataGet(contp);
+  contData = static_cast<TransformTestData *>(TSContDataGet(contp));
   data     = contData->transformData;
   if (!data) {
     towrite = TSVIONBytesGet(write_vio);
@@ -6672,7 +6686,7 @@ handle_transform(TSCont contp)
 static int
 transformtest_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
-  TransformTestData *contData = (TransformTestData *)TSContDataGet(contp);
+  TransformTestData *contData = static_cast<TransformTestData *>(TSContDataGet(contp));
   if (contData->test_passed_transform_create == false) {
     contData->test_passed_transform_create = true;
     SDK_RPRINT(contData->test, "TSTransformCreate", "TestCase1", TC_PASS, "ok");
@@ -6792,16 +6806,16 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
   TransformTestData *data = nullptr;
 
   CHECK_SPURIOUS_EVENT(contp, event, edata);
-  data = (TransformTestData *)TSContDataGet(contp);
+  data = static_cast<TransformTestData *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     TSSkipRemappingSet(txnp, 1);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     /* Setup hooks for Transformation */
     if (transformable(txnp, data)) {
       transform_add(txnp, data);
@@ -6847,13 +6861,13 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR: {
     TSMBuffer bufp;
     TSMLoc hdr;
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     if (TSHttpTxnTransformRespGet(txnp, &bufp, &hdr) != TS_SUCCESS) {
       SDK_RPRINT(data->test, "TSHttpTxnTransformRespGet", "TestCase", TC_FAIL, "TSHttpTxnTransformRespGet returns 0");
       data->test_passed_txn_transform_resp_get = false;
     } else {
-      if ((bufp == reinterpret_cast<TSMBuffer>(&(((HttpSM *)txnp)->t_state.hdr_info.transform_response))) &&
-          (hdr == reinterpret_cast<TSMLoc>((&(((HttpSM *)txnp)->t_state.hdr_info.transform_response))->m_http))) {
+      if ((bufp == reinterpret_cast<TSMBuffer>(&((reinterpret_cast<HttpSM *>(txnp))->t_state.hdr_info.transform_response))) &&
+          (hdr == reinterpret_cast<TSMLoc>((&((reinterpret_cast<HttpSM *>(txnp))->t_state.hdr_info.transform_response))->m_http))) {
         SDK_RPRINT(data->test, "TSHttpTxnTransformRespGet", "TestCase", TC_PASS, "ok");
       } else {
         SDK_RPRINT(data->test, "TSHttpTxnTransformRespGet", "TestCase", TC_FAIL, "Value's Mismatch");
@@ -7008,7 +7022,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform)(RegressionTest *test, int /*
     return;
   }
 
-  TransformTestData *socktest                      = (TransformTestData *)TSmalloc(sizeof(TransformTestData));
+  TransformTestData *socktest                      = static_cast<TransformTestData *>(TSmalloc(sizeof(TransformTestData)));
   socktest->test                                   = test;
   socktest->pstatus                                = pstatus;
   socktest->test_passed_txn_transform_resp_get     = true;
@@ -7082,11 +7096,11 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
   TSHttpTxn txnp        = nullptr;
 
   CHECK_SPURIOUS_EVENT(contp, event, edata);
-  data = (AltInfoTestData *)TSContDataGet(contp);
+  data = static_cast<AltInfoTestData *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    txnp = (TSHttpTxn)edata;
+    txnp = static_cast<TSHttpTxn>(edata);
     TSSkipRemappingSet(txnp, 1);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
@@ -7100,7 +7114,7 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
     TSMLoc cachereqhdr;
     TSMLoc cacheresphdr;
 
-    TSHttpAltInfo infop = (TSHttpAltInfo)edata;
+    TSHttpAltInfo infop = static_cast<TSHttpAltInfo>(edata);
 
     data->run_at_least_once = true;
     if (TSHttpAltInfoClientReqGet(infop, &clientreqbuf, &clientreqhdr) != TS_SUCCESS) {
@@ -7108,8 +7122,8 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
                  "TSHttpAltInfoClientReqGet doesn't return TS_SUCCESS");
       data->test_passed_txn_alt_info_client_req_get = false;
     } else {
-      if ((clientreqbuf == reinterpret_cast<TSMBuffer>(&(((HttpAltInfo *)infop)->m_client_req))) &&
-          (clientreqhdr == reinterpret_cast<TSMLoc>(((HttpAltInfo *)infop)->m_client_req.m_http))) {
+      if ((clientreqbuf == reinterpret_cast<TSMBuffer>(&((reinterpret_cast<HttpAltInfo *>(infop))->m_client_req))) &&
+          (clientreqhdr == reinterpret_cast<TSMLoc>((reinterpret_cast<HttpAltInfo *>(infop))->m_client_req.m_http))) {
         SDK_RPRINT(data->test, "TSHttpAltInfoClientReqGet", "TestCase", TC_PASS, "ok");
       } else {
         SDK_RPRINT(data->test, "TSHttpAltInfoClientReqGet", "TestCase", TC_FAIL, "Value's Mismatch");
@@ -7122,8 +7136,8 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
                  "TSHttpAltInfoCachedReqGet doesn't return TS_SUCCESS");
       data->test_passed_txn_alt_info_cached_req_get = false;
     } else {
-      if ((cachereqbuf == reinterpret_cast<TSMBuffer>(&(((HttpAltInfo *)infop)->m_cached_req))) &&
-          (cachereqhdr == reinterpret_cast<TSMLoc>(((HttpAltInfo *)infop)->m_cached_req.m_http))) {
+      if ((cachereqbuf == reinterpret_cast<TSMBuffer>(&((reinterpret_cast<HttpAltInfo *>(infop))->m_cached_req))) &&
+          (cachereqhdr == reinterpret_cast<TSMLoc>((reinterpret_cast<HttpAltInfo *>(infop))->m_cached_req.m_http))) {
         SDK_RPRINT(data->test, "TSHttpAltInfoCachedReqGet", "TestCase", TC_PASS, "ok");
       } else {
         SDK_RPRINT(data->test, "TSHttpAltInfoCachedReqGet", "TestCase", TC_FAIL, "Value's Mismatch");
@@ -7136,8 +7150,8 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
                  "TSHttpAltInfoCachedRespGet doesn't return TS_SUCCESS");
       data->test_passed_txn_alt_info_cached_resp_get = false;
     } else {
-      if ((cacherespbuf == reinterpret_cast<TSMBuffer>(&(((HttpAltInfo *)infop)->m_cached_resp))) &&
-          (cacheresphdr == reinterpret_cast<TSMLoc>(((HttpAltInfo *)infop)->m_cached_resp.m_http))) {
+      if ((cacherespbuf == reinterpret_cast<TSMBuffer>(&((reinterpret_cast<HttpAltInfo *>(infop))->m_cached_resp))) &&
+          (cacheresphdr == reinterpret_cast<TSMLoc>((reinterpret_cast<HttpAltInfo *>(infop))->m_cached_resp.m_http))) {
         SDK_RPRINT(data->test, "TSHttpAltInfoCachedRespGet", "TestCase", TC_PASS, "ok");
       } else {
         SDK_RPRINT(data->test, "TSHttpAltInfoCachedRespGet", "TestCase", TC_FAIL, "Value's Mismatch");
@@ -7233,7 +7247,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo)(RegressionTest *test, int /* atyp
 
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont); // so we can skip remapping
 
-  AltInfoTestData *socktest                          = (AltInfoTestData *)TSmalloc(sizeof(AltInfoTestData));
+  AltInfoTestData *socktest                          = static_cast<AltInfoTestData *>(TSmalloc(sizeof(AltInfoTestData)));
   socktest->test                                     = test;
   socktest->pstatus                                  = pstatus;
   socktest->test_passed_txn_alt_info_client_req_get  = true;
@@ -7305,12 +7319,12 @@ typedef struct {
 static int
 cont_test_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp        = (TSHttpTxn)edata;
+  TSHttpTxn txnp        = static_cast<TSHttpTxn>(edata);
   ConnectTestData *data = nullptr;
   int request_id        = -1;
 
   CHECK_SPURIOUS_EVENT(contp, event, edata);
-  data = (ConnectTestData *)TSContDataGet(contp);
+  data = static_cast<ConnectTestData *>(TSContDataGet(contp));
 
   TSReleaseAssert(data->magic == MAGIC_ALIVE);
   TSReleaseAssert((data->test_case == TEST_CASE_CONNECT_ID1) || (data->test_case == TEST_CASE_CONNECT_ID2));
@@ -7411,7 +7425,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept)(RegressionTest *test, 
   TSDebug(UTDBG_TAG, "Starting test TSHttpConnectIntercept");
 
   TSCont cont_test      = TSContCreate(cont_test_handler, TSMutexCreate());
-  ConnectTestData *data = (ConnectTestData *)TSmalloc(sizeof(ConnectTestData));
+  ConnectTestData *data = static_cast<ConnectTestData *>(TSmalloc(sizeof(ConnectTestData)));
   TSContDataSet(cont_test, data);
 
   data->test      = test;
@@ -7453,7 +7467,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *
   TSDebug(UTDBG_TAG, "Starting test TSHttpConnectServerintercept");
 
   TSCont cont_test      = TSContCreate(cont_test_handler, TSMutexCreate());
-  ConnectTestData *data = (ConnectTestData *)TSmalloc(sizeof(ConnectTestData));
+  ConnectTestData *data = static_cast<ConnectTestData *>(TSmalloc(sizeof(ConnectTestData)));
   TSContDataSet(cont_test, data);
 
   data->test      = test;
@@ -7854,7 +7868,7 @@ REGRESSION_TEST(SDK_API_ENCODING)(RegressionTest *test, int /* atype ATS_UNUSED 
     }
   }
 
-  if (TS_SUCCESS != TSBase64Decode(url_base64, strlen(url_base64), (unsigned char *)buf, sizeof(buf), &length)) {
+  if (TS_SUCCESS != TSBase64Decode(url_base64, strlen(url_base64), reinterpret_cast<unsigned char *>(buf), sizeof(buf), &length)) {
     SDK_RPRINT(test, "TSBase64Decode", "TestCase1", TC_FAIL, "Failed on %s", url_base64);
     success = false;
   } else {
@@ -7951,7 +7965,7 @@ REGRESSION_TEST(SDK_API_UUID)(RegressionTest *test, int /* atype ATS_UNUSED */, 
     SDK_RPRINT(test, "TSProcessUuidGet", "TestCase1", TC_FAIL, "Returned a NULL pointer");
     *pstatus = REGRESSION_TEST_FAILED;
     return;
-  } else if (!((ATSUuid *)machine)->valid()) {
+  } else if (!(reinterpret_cast<ATSUuid *>(machine))->valid()) {
     SDK_RPRINT(test, "TSProcessUuidGet", "TestCase2", TC_FAIL, "Returned an invalid UUID object");
     *pstatus = REGRESSION_TEST_FAILED;
     return;

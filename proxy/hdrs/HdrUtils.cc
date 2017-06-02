@@ -103,7 +103,7 @@ done:
   m_csv_start = csv_start;
 
   if (last_data) {
-    m_csv_len = (int)(last_data - csv_start) + 1;
+    m_csv_len = static_cast<int>(last_data - csv_start) + 1;
   } else {
     // Nothing found.  See if there is another
     //    field in the dup list

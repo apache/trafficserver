@@ -31,7 +31,7 @@ static void
 test_append()
 {
   static const char value[] = "this is a string";
-  unsigned int len          = (int)sizeof(value) - 1;
+  unsigned int len          = static_cast<int>(sizeof(value)) - 1;
 
   Vec<char> str;
 
@@ -60,27 +60,27 @@ test_basic()
   int tt = 99 * 50, t = 0;
 
   for (size_t i = 0; i < 100; i++) {
-    v.add((void *)(intptr_t)i);
+    v.add((void *)static_cast<intptr_t>(i));
   }
   for (size_t i = 0; i < 100; i++) {
-    t += (int)(intptr_t)v.v[i];
+    t += static_cast<int>((intptr_t)v.v[i]);
   }
   ink_assert(t == tt);
 
   t = 0;
   for (size_t i = 1; i < 100; i++) {
-    vv.set_add((void *)(intptr_t)i);
+    vv.set_add((void *)static_cast<intptr_t>(i));
   }
   for (size_t i = 1; i < 100; i++) {
-    vvv.set_add((void *)(intptr_t)i);
+    vvv.set_add((void *)static_cast<intptr_t>(i));
   }
   for (size_t i = 1; i < 100; i++) {
-    vvv.set_add((void *)(intptr_t)(i * 1000));
+    vvv.set_add((void *)static_cast<intptr_t>(i * 1000));
   }
   vv.set_union(vvv);
   for (size_t i = 0; i < vv.n; i++) {
     if (vv.v[i]) {
-      t += (int)(intptr_t)vv.v[i];
+      t += static_cast<int>((intptr_t)vv.v[i]);
     }
   }
   ink_assert(t == tt + 1000 * tt);
@@ -89,10 +89,10 @@ test_basic()
   v.reserve(1000);
   t = 0;
   for (size_t i = 0; i < 1000; i++) {
-    v.add((void *)(intptr_t)i);
+    v.add((void *)static_cast<intptr_t>(i));
   }
   for (size_t i = 0; i < 1000; i++) {
-    t += (int)(intptr_t)v.v[i];
+    t += static_cast<int>((intptr_t)v.v[i]);
   }
   ink_assert(t == 999 * 500);
   printf("%zu %zu\n", v.n, v.i);

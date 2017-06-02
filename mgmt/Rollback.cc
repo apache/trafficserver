@@ -91,7 +91,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
 
   if (varIntFromName("proxy.config.admin.number_config_bak", &numBak) == true) {
     if (numBak > 1) {
-      numberBackups = (int)numBak;
+      numberBackups = static_cast<int>(numBak);
     } else {
       numberBackups = 1;
     }
@@ -149,7 +149,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
       if (needZeroLength == true) {
         int fd = openFile(ACTIVE_VERSION, O_RDWR | O_CREAT);
         if (fd >= 0) {
-          alarmMsg = (char *)ats_malloc(2048);
+          alarmMsg = static_cast<char *>(ats_malloc(2048));
           snprintf(alarmMsg, 2048, "Created zero length place holder for config file %s", fileName);
           mgmt_log("[RollBack::Rollback] %s\n", alarmMsg);
           lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
@@ -197,7 +197,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
   testFD = openFile(ACTIVE_VERSION, O_RDWR, &testErrno);
   if (testFD < 0) {
     // We failed to open read-write
-    alarmMsg = (char *)ats_malloc(2048);
+    alarmMsg = static_cast<char *>(ats_malloc(2048));
     testFD   = openFile(ACTIVE_VERSION, O_RDONLY, &testErrno);
 
     if (testFD < 0) {
@@ -235,7 +235,7 @@ Rollback::createPathStr(version_t version)
   char *buffer = nullptr;
   ats_scoped_str sysconfdir(RecConfigReadConfigDir());
   bufSize = strlen(sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
-  buffer  = (char *)ats_malloc(bufSize);
+  buffer  = static_cast<char *>(ats_malloc(bufSize));
   Layout::get()->relative_to(buffer, bufSize, sysconfdir, fileName);
   if (version != ACTIVE_VERSION) {
     size_t pos = strlen(buffer);
@@ -414,7 +414,7 @@ Rollback::internalUpdate(TextBuffer *buf, version_t newVersion, bool notifyChang
   // Write the buffer into the new configuration file
   writeBytes = write(diskFD, buf->bufPtr(), buf->spaceUsed());
   ret        = closeFile(diskFD, true);
-  if ((ret < 0) || ((size_t)writeBytes != buf->spaceUsed())) {
+  if ((ret < 0) || (static_cast<size_t>(writeBytes) != buf->spaceUsed())) {
     mgmt_log("[Rollback::internalUpdate] Unable to write new version of %s : %s\n", fileName, strerror(errno));
     returnCode = SYS_CALL_ERROR_ROLLBACK;
     goto UPDATE_CLEANUP;
@@ -485,7 +485,7 @@ UPDATE_CLEANUP:
   //   to manipulate the disk, the error might not get
   //   written to disk
   if (returnCode != OK_ROLLBACK) {
-    alarmMsg = (char *)ats_malloc(1024);
+    alarmMsg = static_cast<char *>(ats_malloc(1024));
     snprintf(alarmMsg, 1024, "[TrafficManager] Configuration File Update Failed: %s", strerror(errno));
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
     ats_free(alarmMsg);
@@ -557,7 +557,7 @@ Rollback::getVersion_ml(version_t version, TextBuffer **buffer)
     }
   } while (readResult > 0);
 
-  if ((off_t)newBuffer->spaceUsed() != fileInfo.st_size) {
+  if (static_cast<off_t>(newBuffer->spaceUsed()) != fileInfo.st_size) {
     mgmt_log("[Rollback::getVersion] Incorrect amount of data retrieved from %s version %d.  Expected: %d   Got: %d\n", fileName,
              version, fileInfo.st_size, newBuffer->spaceUsed());
     returnCode = SYS_CALL_ERROR_ROLLBACK;
@@ -712,7 +712,7 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
             versionInfo *verInfo;
 
             if (statFile(version, &fileInfo) >= 0) {
-              verInfo          = (versionInfo *)ats_malloc(sizeof(versionInfo));
+              verInfo          = static_cast<versionInfo *>(ats_malloc(sizeof(versionInfo)));
               verInfo->version = version;
               verInfo->modTime = fileInfo.st_mtime;
               listNames->addEntry((void *)verInfo);
@@ -749,7 +749,7 @@ Rollback::findVersions_ml(Queue<versionInfo> &q)
 
   // Add the entries on to our passed in q
   for (int i = 0; i < num; i++) {
-    foundVer = (versionInfo *)versions[i];
+    foundVer = static_cast<versionInfo *>(versions[i]);
     //  We need to create our own copy so that
     //   constructor gets run
     addInfo          = new versionInfo;
@@ -933,8 +933,8 @@ Rollback::checkForUserUpdate(RollBackCheckType how)
 int
 versionCmp(const void *i1, const void *i2)
 {
-  versionInfo *v1 = (versionInfo *)*(void **)i1;
-  versionInfo *v2 = (versionInfo *)*(void **)i2;
+  versionInfo *v1 = static_cast<versionInfo *>(*static_cast<void **>(i1));
+  versionInfo *v2 = static_cast<versionInfo *>(*static_cast<void **>(i2));
 
   if ((v1->version) < v2->version) {
     return -1;

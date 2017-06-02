@@ -81,7 +81,7 @@ struct thread_data_internal {
 static void *
 spawn_thread_internal(void *a)
 {
-  thread_data_internal *p = (thread_data_internal *)a;
+  thread_data_internal *p = static_cast<thread_data_internal *>(a);
 
   p->me->set_specific();
   ink_set_thread_name(p->name);
@@ -97,7 +97,7 @@ spawn_thread_internal(void *a)
 ink_thread
 Thread::start(const char *name, size_t stacksize, ThreadFunction f, void *a, void *stack)
 {
-  thread_data_internal *p = (thread_data_internal *)ats_malloc(sizeof(thread_data_internal));
+  thread_data_internal *p = static_cast<thread_data_internal *>(ats_malloc(sizeof(thread_data_internal)));
 
   p->f  = f;
   p->a  = a;

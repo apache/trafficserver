@@ -190,7 +190,7 @@ Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
       names.push_back(tmp_name);
     }
     // Look for alt names
-    GENERAL_NAMES *alt_names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr);
+    GENERAL_NAMES *alt_names = static_cast<GENERAL_NAMES *>(X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
     if (alt_names) {
       unsigned count = sk_GENERAL_NAME_num(alt_names);
       for (unsigned i = 0; i < count; i++) {
@@ -198,7 +198,7 @@ Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
 
         if (alt_name->type == GEN_DNS) {
           // Current name is a DNS name, let's check it
-          char *name_ptr = (char *)ASN1_STRING_get0_data(alt_name->d.dNSName);
+          char *name_ptr = reinterpret_cast<char *>(ASN1_STRING_get0_data(alt_name->d.dNSName));
           std::string tmp_name(name_ptr);
           names.push_back(tmp_name);
         }
@@ -503,7 +503,7 @@ TSPluginInit(int argc, const char *argv[])
 
   int opt = 0;
   while (opt >= 0) {
-    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "c:", longopt, nullptr);
     switch (opt) {
     case 'c':
       ConfigPath = optarg;

@@ -196,7 +196,7 @@ metrics_register_evaluator(lua_State *L)
   chunk = lua_tostring(L, -1);
 
   binding    = BindingInstance::self(L);
-  evaluators = (EvaluatorList *)binding->retrieve_ptr("evaluators");
+  evaluators = static_cast<EvaluatorList *>(binding->retrieve_ptr("evaluators"));
 
   ink_release_assert(evaluators != nullptr);
 
@@ -313,7 +313,7 @@ metrics_binding_destroy(BindingInstance &binding)
 {
   EvaluatorList *evaluators;
 
-  evaluators = (EvaluatorList *)binding.retrieve_ptr("evaluators");
+  evaluators = static_cast<EvaluatorList *>(binding.retrieve_ptr("evaluators"));
   binding.attach_ptr("evaluators", nullptr);
   delete evaluators;
 }
@@ -323,7 +323,7 @@ metrics_binding_evaluate(BindingInstance &binding)
 {
   EvaluatorList *evaluators;
 
-  evaluators = (EvaluatorList *)binding.retrieve_ptr("evaluators");
+  evaluators = static_cast<EvaluatorList *>(binding.retrieve_ptr("evaluators"));
   ink_release_assert(evaluators != nullptr);
 
   // Keep updating the namespace until it settles (ie. we make 0 updates).

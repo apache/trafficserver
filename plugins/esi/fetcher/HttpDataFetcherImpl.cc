@@ -77,10 +77,10 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
   int length;
 
   length = sizeof("GET ") - 1 + url.length() + sizeof(" HTTP/1.0\r\n") - 1 + _headers_str.length() + sizeof("\r\n") - 1;
-  if (length < (int)sizeof(buff)) {
+  if (length < static_cast<int>(sizeof(buff))) {
     http_req = buff;
   } else {
-    http_req = (char *)malloc(length + 1);
+    http_req = static_cast<char *>(malloc(length + 1));
     if (http_req == nullptr) {
       TSError("[HttpDataFetcherImpl][%s] malloc %d bytes fail", __FUNCTION__, length + 1);
       return false;

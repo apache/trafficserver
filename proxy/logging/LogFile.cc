@@ -369,7 +369,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type = (LogFormatType)buffer_header->format_type;
+    format_type = static_cast<LogFormatType>(buffer_header->format_type);
 
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str    = buffer_header->fmt_printf();
@@ -435,7 +435,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type   = (LogFormatType)buffer_header->format_type;
+    format_type   = static_cast<LogFormatType>(buffer_header->format_type);
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str    = buffer_header->fmt_printf();
     break;
@@ -452,9 +452,9 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
     fmt_buf_bytes   = 0;
 
     if (m_file_format == LOG_FILE_PIPE) {
-      ascii_buffer = (char *)ats_malloc(m_max_line_size);
+      ascii_buffer = static_cast<char *>(ats_malloc(m_max_line_size));
     } else {
-      ascii_buffer = (char *)ats_malloc(m_ascii_buffer_size);
+      ascii_buffer = static_cast<char *>(ats_malloc(m_ascii_buffer_size));
     }
 
     // fill the buffer with as many records as possible
@@ -545,7 +545,7 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 #else
     wvec[0].iov_base = (void *)data;
 #endif
-    wvec[0].iov_len = (size_t)len;
+    wvec[0].iov_len = static_cast<size_t>(len);
 
     if (data[len - 1] != '\n') {
 #if defined(solaris)
@@ -553,11 +553,11 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 #else
       wvec[1].iov_base = (void *)"\n";
 #endif
-      wvec[1].iov_len = (size_t)1;
+      wvec[1].iov_len = static_cast<size_t>(1);
       vcnt++;
     }
 
-    if ((bytes_this_write = (int)::writev(fd, (const struct iovec *)wvec, vcnt)) < 0) {
+    if ((bytes_this_write = static_cast<int>(::writev(fd, (const struct iovec *)wvec, vcnt))) < 0) {
       Warning("An error was encountered in writing to %s: %s.", ((path) ? path : "logfile"), strerror(errno));
     } else {
       total_bytes = bytes_this_write;

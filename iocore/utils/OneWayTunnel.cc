@@ -243,7 +243,7 @@ OneWayTunnel::transform(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
 int
 OneWayTunnel::startEvent(int event, void *data)
 {
-  VIO *vio   = (VIO *)data;
+  VIO *vio   = static_cast<VIO *>(data);
   int ret    = VC_EVENT_DONE;
   int result = 0;
 
@@ -307,7 +307,7 @@ OneWayTunnel::startEvent(int event, void *data)
 
   case VC_EVENT_ERROR:
   Lerror:
-    lerrno = ((VIO *)data)->vc_server->lerrno;
+    lerrno = (static_cast<VIO *>(data))->vc_server->lerrno;
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
     result = -1;

@@ -468,7 +468,7 @@ int
 LogAccess::marshal_entry_type(char *buf)
 {
   if (buf) {
-    int64_t val = (int64_t)entry_type();
+    int64_t val = static_cast<int64_t>(entry_type());
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -482,7 +482,7 @@ LogAccess::marshal_process_uuid(char *buf)
   int len = round_strlen(TS_UUID_STRING_LEN + 1);
 
   if (buf) {
-    const char *str = (char *)Machine::instance()->uuid.getString();
+    const char *str = const_cast<char *>(Machine::instance()->uuid.getString());
     marshal_str(buf, str, len);
   }
   return len;
@@ -495,7 +495,7 @@ int
 LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {
   if (buf) {
-    int64_t val = (int64_t)REC_ConfigReadInteger(config_var);
+    int64_t val = static_cast<int64_t>(REC_ConfigReadInteger(config_var));
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -585,13 +585,13 @@ LogAccess::marshal_record(char *record, char *buf)
       //
       ink_assert(max_chars > 21);
 
-      int64_t val = (int64_t)(LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
+      int64_t val = static_cast<int64_t>(LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
 
       if (found) {
         out_buf = int64_to_str(ascii_buf, max_chars, val, &num_chars);
         ink_assert(out_buf);
       } else {
-        out_buf   = (char *)record_not_found_msg;
+        out_buf   = const_cast<char *>(record_not_found_msg);
         num_chars = record_not_found_chars;
       }
     } else if (LOG_FLOAT == stype) {
@@ -624,7 +624,7 @@ LogAccess::marshal_record(char *record, char *buf)
           out_buf = ascii_buf;
         }
       } else {
-        out_buf   = (char *)record_not_found_msg;
+        out_buf   = const_cast<char *>(record_not_found_msg);
         num_chars = record_not_found_chars;
       }
     } else if (LOG_STRING == stype) {
@@ -648,7 +648,7 @@ LogAccess::marshal_record(char *record, char *buf)
           num_chars = ::strlen(out_buf) + 1;
         }
       } else {
-        out_buf   = (char *)record_not_found_msg;
+        out_buf   = const_cast<char *>(record_not_found_msg);
         num_chars = record_not_found_chars;
       }
     } else {
@@ -770,7 +770,7 @@ LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAli
 {
   long int codeStrLen = 0;
 
-  switch (map->asString(code, dest, len, (size_t *)&codeStrLen)) {
+  switch (map->asString(code, dest, len, reinterpret_cast<size_t *>(&codeStrLen))) {
   case LogFieldAliasMap::INVALID_INT:
     if (msg) {
       const int bufSize = 64;
@@ -808,7 +808,7 @@ LogAccess::unmarshal_int(char **buf)
   int64_t val;
 
   // TODO: this used to do nthol, do we need to worrry? TS-1156.
-  val = *((int64_t *)(*buf));
+  val = *(reinterpret_cast<int64_t *>(*buf));
   *buf += INK_MIN_ALIGN;
   return val;
 }
@@ -834,7 +834,7 @@ LogAccess::unmarshal_itoa(int64_t val, char *dest, int field_width, char leading
     while (dest - p < field_width) {
       *p-- = leading_char;
     }
-    return (int)(dest - p);
+    return static_cast<int>(dest - p);
   }
 
   while (val) {
@@ -844,7 +844,7 @@ LogAccess::unmarshal_itoa(int64_t val, char *dest, int field_width, char leading
   while (dest - p < field_width) {
     *p-- = leading_char;
   }
-  return (int)(dest - p);
+  return static_cast<int>(dest - p);
 }
 
 /*-------------------------------------------------------------------------
@@ -864,7 +864,7 @@ LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading
   char *p             = dest;
   static char table[] = "0123456789abcdef?";
 
-  for (int i = 0; i < (int)(sizeof(int64_t) * 2); i++) {
+  for (int i = 0; i < static_cast<int>(sizeof(int64_t) * 2); i++) {
     *p-- = table[val & 0xf];
     val >>= 4;
   }
@@ -872,7 +872,7 @@ LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading
     *p-- = leading_char;
   }
 
-  return (int64_t)(dest - p);
+  return static_cast<int64_t>(dest - p);
 }
 
 /*-------------------------------------------------------------------------
@@ -940,7 +940,7 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
   ink_assert(dest != nullptr);
 
   char *val_buf = *buf;
-  int val_len   = (int)::strlen(val_buf);
+  int val_len   = static_cast<int>(::strlen(val_buf));
 
   *buf += LogAccess::strlen(val_buf); // this is how it was stored
 
@@ -975,7 +975,7 @@ LogAccess::unmarshal_ttmsf(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   int64_t val = unmarshal_int(buf);
-  float secs  = (float)val / 1000;
+  float secs  = static_cast<float>(val) / 1000;
   int val_len = snprintf(dest, len, "%.3f", secs);
   return val_len;
 }
@@ -1010,7 +1010,7 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   static const char *http = "HTTP/";
-  static int http_len     = (int)::strlen(http);
+  static int http_len     = static_cast<int>(::strlen(http));
 
   char val_buf[128];
   char *p = val_buf;
@@ -1286,7 +1286,7 @@ LogAccess::unmarshal_record(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   char *val_buf = *buf;
-  int val_len   = (int)::strlen(val_buf);
+  int val_len   = static_cast<int>(::strlen(val_buf));
   *buf += MARSHAL_RECORD_LENGTH; // this is how it was stored
   if (val_len < len) {
     memcpy(dest, val_buf, val_len);
@@ -1358,7 +1358,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   Debug("log-resolve", "Marshaling data from LogAccess into buffer ...");
   context->init();
   unsigned bytes_needed = fields.marshal_len(context);
-  char *buf             = (char *)ats_malloc(bytes_needed);
+  char *buf             = static_cast<char *>(ats_malloc(bytes_needed));
   unsigned bytes_used   = fields.marshal(context, buf);
 
   ink_assert(bytes_needed == bytes_used);
@@ -1370,7 +1370,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   // we're not sure how much space it will take when it's unmarshalled.
   // So, we'll just guess.
   //
-  char *result = (char *)ats_malloc(8192);
+  char *result = static_cast<char *>(ats_malloc(8192));
   unsigned bytes_resolved =
     LogBuffer::resolve_custom_entry(&fields, printf_str, buf, result, 8191, LogUtils::timestamp(), 0, LOG_SEGMENT_VERSION);
   ink_assert(bytes_resolved < 8192);

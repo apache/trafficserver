@@ -356,7 +356,7 @@ ParentConsistentHash::markParentUp(ParentResult *result)
   ink_atomic_swap(&pRec->available, true);
   Debug("parent_select", "%s:%s(): marked %s:%d available.", __FILE__, __func__, pRec->hostname, pRec->port);
 
-  ink_atomic_swap(&pRec->failedAt, (time_t)0);
+  ink_atomic_swap(&pRec->failedAt, static_cast<time_t>(0));
   int old_count = ink_atomic_swap(&pRec->failCount, 0);
 
   if (old_count > 0) {

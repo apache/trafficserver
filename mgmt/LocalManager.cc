@@ -331,7 +331,7 @@ LocalManager::pollMgmtProcessServer()
       if (process_server_sockfd != ts::NO_FD && FD_ISSET(process_server_sockfd, &fdlist)) { /* New connection */
         struct sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
-        int new_sockfd      = mgmt_accept(process_server_sockfd, (struct sockaddr *)&clientAddr, &clientLen);
+        int new_sockfd      = mgmt_accept(process_server_sockfd, reinterpret_cast<struct sockaddr *>(&clientAddr), &clientLen);
 
         mgmt_log("[LocalManager::pollMgmtProcessServer] New process connecting fd '%d'\n", new_sockfd);
 
@@ -352,10 +352,10 @@ LocalManager::pollMgmtProcessServer()
         char *data_raw;
 
         // read the message
-        if ((res = mgmt_read_pipe(watched_process_fd, (char *)&mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
-          mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
+        if ((res = mgmt_read_pipe(watched_process_fd, reinterpret_cast<char *>(&mh_hdr), sizeof(MgmtMessageHdr))) > 0) {
+          mh_full = static_cast<MgmtMessageHdr *>(alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len));
           memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
-          data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);
+          data_raw = reinterpret_cast<char *>(mh_full) + sizeof(MgmtMessageHdr);
           if ((res = mgmt_read_pipe(watched_process_fd, data_raw, mh_hdr.data_len)) > 0) {
             handleMgmtMsgFromProcesses(mh_full);
           } else if (res < 0) {
@@ -415,10 +415,10 @@ LocalManager::pollMgmtProcessServer()
 void
 LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
 {
-  char *data_raw = (char *)mh + sizeof(MgmtMessageHdr);
+  char *data_raw = reinterpret_cast<char *>(mh) + sizeof(MgmtMessageHdr);
   switch (mh->msg_id) {
   case MGMT_SIGNAL_PID:
-    watched_process_pid = *((pid_t *)data_raw);
+    watched_process_pid = *(reinterpret_cast<pid_t *>(data_raw));
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_BORN, nullptr);
     proxy_running++;
     proxy_launch_pid         = -1;
@@ -476,7 +476,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     char var_value[256];
     MgmtType stype;
     // stype is an enum type, so cast to an int* to avoid warnings. /leif
-    int tokens = sscanf(data_raw, "%255s %d %255s", var_name, (int *)&stype, var_value);
+    int tokens = sscanf(data_raw, "%255s %d %255s", var_name, reinterpret_cast<int *>(&stype), var_value);
     if (tokens != 3) {
       stype = MGMT_INVALID;
     }
@@ -520,7 +520,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     char *child                            = nullptr;
     MgmtMarshallInt options                = 0;
     if (mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child, &options) != -1) {
-      configFiles->configFileChild(parent, child, (unsigned int)options);
+      configFiles->configFileChild(parent, child, static_cast<unsigned int>(options));
     } else {
       mgmt_log("[LocalManager::handleMgmtMsgFromProcesses] "
                "MGMT_SIGNAL_CONFIG_FILE_CHILD mgmt_message_parse error\n");
@@ -550,10 +550,10 @@ LocalManager::sendMgmtMsgToProcesses(int msg_id, const char *data_raw, int data_
 {
   MgmtMessageHdr *mh;
 
-  mh           = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + data_len);
+  mh           = static_cast<MgmtMessageHdr *>(alloca(sizeof(MgmtMessageHdr) + data_len));
   mh->msg_id   = msg_id;
   mh->data_len = data_len;
-  memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
+  memcpy(reinterpret_cast<char *>(mh) + sizeof(MgmtMessageHdr), data_raw, data_len);
   sendMgmtMsgToProcesses(mh);
   return;
 }
@@ -584,7 +584,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
     Rollback *rb;
     char *data_raw;
 
-    data_raw = (char *)mh + sizeof(MgmtMessageHdr);
+    data_raw = reinterpret_cast<char *>(mh) + sizeof(MgmtMessageHdr);
     fname    = REC_readString(data_raw, &found);
 
     RecT rec_type;
@@ -604,7 +604,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
   }
 
   if (watched_process_fd != -1) {
-    if (mgmt_write_pipe(watched_process_fd, (char *)mh, sizeof(MgmtMessageHdr) + mh->data_len) <= 0) {
+    if (mgmt_write_pipe(watched_process_fd, reinterpret_cast<char *>(mh), sizeof(MgmtMessageHdr) + mh->data_len) <= 0) {
       // In case of Linux, sometimes when the TS dies, the connection between TS and TM
       // is not closed properly. the socket does not receive an EOF. So, the TM does
       // not detect that the connection and hence TS has gone down. Hence it still
@@ -685,10 +685,10 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
 {
   MgmtMessageHdr *mh;
 
-  mh           = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
+  mh           = static_cast<MgmtMessageHdr *>(ats_malloc(sizeof(MgmtMessageHdr) + data_len));
   mh->msg_id   = msg_id;
   mh->data_len = data_len;
-  memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
+  memcpy(reinterpret_cast<char *>(mh) + sizeof(MgmtMessageHdr), data_raw, data_len);
   ink_assert(enqueue(mgmt_event_queue, mh));
 
   return;
@@ -708,8 +708,8 @@ LocalManager::processEventQueue()
   while (!queue_is_empty(mgmt_event_queue)) {
     handled_by_mgmt = false;
 
-    MgmtMessageHdr *mh = (MgmtMessageHdr *)dequeue(mgmt_event_queue);
-    char *data_raw     = (char *)mh + sizeof(MgmtMessageHdr);
+    MgmtMessageHdr *mh = static_cast<MgmtMessageHdr *>(dequeue(mgmt_event_queue));
+    char *data_raw     = reinterpret_cast<char *>(mh) + sizeof(MgmtMessageHdr);
 
     // check if we have a local file update
     if (mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE || mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION) {
@@ -954,7 +954,7 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
       mgmt_log("[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
     }
   }
-  if (setsockopt(port.m_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(int)) < 0) {
+  if (setsockopt(port.m_fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&one), sizeof(int)) < 0) {
     mgmt_fatal(0, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
   }
 
@@ -999,6 +999,6 @@ void
 LocalManager::signalAlarm(int alarm_id, const char *desc, const char *ip)
 {
   if (alarm_keeper) {
-    alarm_keeper->signalAlarm((alarm_t)alarm_id, desc, ip);
+    alarm_keeper->signalAlarm(static_cast<alarm_t>(alarm_id), desc, ip);
   }
 }

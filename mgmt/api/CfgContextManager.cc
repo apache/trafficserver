@@ -102,7 +102,7 @@ CfgContextCommit(CfgContext *ctx, LLQ *errRules)
     return TS_ERR_PARAMS;
   }
 
-  new_text    = (char *)ats_malloc(max_file_size + 1);
+  new_text    = static_cast<char *>(ats_malloc(max_file_size + 1));
   new_text[0] = '\0';
   ele         = ctx->first();
   index       = 0;
@@ -112,7 +112,7 @@ CfgContextCommit(CfgContext *ctx, LLQ *errRules)
       err  = TS_ERR_INVALID_CONFIG_RULE;
       rule = ats_strdup(FORMAT_TO_RULE_ERROR);
       if (errRules) {
-        iPtr  = (int *)ats_malloc(sizeof(int));
+        iPtr  = static_cast<int *>(ats_malloc(sizeof(int)));
         *iPtr = index;
         enqueue(errRules, (void *)iPtr);
       }
@@ -122,7 +122,7 @@ CfgContextCommit(CfgContext *ctx, LLQ *errRules)
     size += len + 1;
     if (size > max_file_size) {
       max_file_size *= 2;
-      new_text = (char *)ats_realloc(new_text, max_file_size + 1);
+      new_text = static_cast<char *>(ats_realloc(new_text, max_file_size + 1));
     }
     ink_strlcat(new_text, rule, max_file_size + 1);
     ink_strlcat(new_text, "\n", max_file_size + 1);
@@ -357,7 +357,7 @@ CfgContextGetNext(CfgContext *ctx, TSCfgIterState *state)
 
   // iterate through the ctx, keep count of all NON-Comment Ele Objects
   // when count == state->index, then return next ele
-  curr_ele = (CfgEleObj *)*state;
+  curr_ele = static_cast<CfgEleObj *>(*state);
   curr_ele = ctx->next(curr_ele); // get next ele
   while (curr_ele) {
     if (curr_ele->getRuleType() != TS_TYPE_COMMENT) { // a non-comment ele

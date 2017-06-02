@@ -83,7 +83,7 @@ test_block_boundries()
 
     // Allocate and fill the array
     for (j = 0; j < regions_to_test; j++) {
-      test_regions[j] = (char *)a->alloc(test_size);
+      test_regions[j] = static_cast<char *>(a->alloc(test_size));
       fill_test_data(test_regions[j], test_size, j);
     }
 

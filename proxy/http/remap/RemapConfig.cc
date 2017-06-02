@@ -72,7 +72,7 @@ static void
 clear_xstr_array(char *v[], size_t vsize)
 {
   for (unsigned i = 0; i < vsize; i++) {
-    v[i] = (char *)ats_free_null(v[i]);
+    v[i] = static_cast<char *>(ats_free_null(v[i]));
   }
 }
 
@@ -313,7 +313,7 @@ parse_include_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errb
     return (const char *)errbuf;
   }
 
-  for (unsigned i = 1; i < (unsigned)bti->paramc; ++i) {
+  for (unsigned i = 1; i < static_cast<unsigned>(bti->paramc); ++i) {
     ats_scoped_str path;
     const char *errmsg = nullptr;
 
@@ -451,7 +451,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
   for (i = 0; i < argc; i++) {
     bool hasarg;
 
-    if ((ul = remap_check_option((const char **)&argv[i], 1, 0, nullptr, &argptr)) == 0) {
+    if ((ul = remap_check_option(&argv[i], 1, 0, nullptr, &argptr)) == 0) {
       Debug("url_rewrite", "[validate_filter_args] Unknown remap option - %s", argv[i]);
       snprintf(errStrBuf, errStrBufSize, "Unknown option - \"%s\"", argv[i]);
       errStrBuf[errStrBufSize - 1] = 0;
@@ -821,13 +821,15 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
         snprintf(errbuf, errbufsize, "Can't load plugin \"%s\" - %s", c, err ? err : "Unknown dlopen() error");
         return -4;
       }
-      pi->fp_tsremap_init         = (remap_plugin_info::_tsremap_init *)dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT);
-      pi->fp_tsremap_done         = (remap_plugin_info::_tsremap_done *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE);
-      pi->fp_tsremap_new_instance = (remap_plugin_info::_tsremap_new_instance *)dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE);
+      pi->fp_tsremap_init = static_cast<remap_plugin_info::_tsremap_init *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT));
+      pi->fp_tsremap_done = static_cast<remap_plugin_info::_tsremap_done *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE));
+      pi->fp_tsremap_new_instance =
+        static_cast<remap_plugin_info::_tsremap_new_instance *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE));
       pi->fp_tsremap_delete_instance =
-        (remap_plugin_info::_tsremap_delete_instance *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DELETE_INSTANCE);
-      pi->fp_tsremap_do_remap    = (remap_plugin_info::_tsremap_do_remap *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DO_REMAP);
-      pi->fp_tsremap_os_response = (remap_plugin_info::_tsremap_os_response *)dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE);
+        static_cast<remap_plugin_info::_tsremap_delete_instance *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DELETE_INSTANCE));
+      pi->fp_tsremap_do_remap = static_cast<remap_plugin_info::_tsremap_do_remap *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DO_REMAP));
+      pi->fp_tsremap_os_response =
+        static_cast<remap_plugin_info::_tsremap_os_response *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE));
 
       if (!pi->fp_tsremap_init) {
         snprintf(errbuf, errbufsize, R"(Can't find "%s" function in remap plugin "%s")", TSREMAP_FUNCNAME_INIT, c);
@@ -888,7 +890,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
 
   bool plugin_encountered = false;
   // how many plugin parameters we have for this remapping
-  for (idx = 0; idx < argc && parc < (int)(countof(parv) - 1); idx++) {
+  for (idx = 0; idx < argc && parc < static_cast<int>(countof(parv) - 1); idx++) {
     if (plugin_encountered && !strncasecmp("plugin=", argv[idx], 7) && argv[idx][7]) {
       *plugin_found_at = idx;
       break; // if there is another plugin, lets deal with that later
@@ -1077,7 +1079,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       ++cur_line;
     }
 
-    if ((cur_line_size = strlen((char *)cur_line)) <= 0) {
+    if ((cur_line_size = strlen(cur_line)) <= 0) {
       cur_line = tokLine(nullptr, &tok_state, '\\');
       ++cln;
       continue;
@@ -1090,7 +1092,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       --cur_line_tmp;
     }
 
-    if ((cur_line_size = strlen((char *)cur_line)) <= 0 || *cur_line == '#' || *cur_line == '\0') {
+    if ((cur_line_size = strlen(cur_line)) <= 0 || *cur_line == '#' || *cur_line == '\0') {
       cur_line = tokLine(nullptr, &tok_state, '\\');
       ++cln;
       continue;
@@ -1101,8 +1103,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     tok_count = whiteTok.Initialize(cur_line, (SHARE_TOKS | ALLOW_SPACES));
 
     for (int j = 0; j < tok_count; j++) {
-      if (((char *)whiteTok[j])[0] == '@') {
-        if (((char *)whiteTok[j])[1]) {
+      if ((const_cast<char *>(whiteTok[j]))[0] == '@') {
+        if ((const_cast<char *>(whiteTok[j]))[1]) {
           bti->argv[bti->argc++] = ats_strdup(&(((char *)whiteTok[j])[1]));
         }
       } else {
@@ -1178,8 +1180,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       char *c;
       int ret = remap_check_option((const char **)bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
       if (ret & REMAP_OPTFLG_MAP_ID) {
-        c                   = strchr(bti->argv[idx], (int)'=');
-        new_mapping->map_id = (unsigned int)atoi(++c);
+        c                   = strchr(bti->argv[idx], static_cast<int>('='));
+        new_mapping->map_id = static_cast<unsigned int>(atoi(++c));
       }
     }
 
@@ -1260,7 +1262,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
             char refinfo_error_buf[1024];
             bool refinfo_error = false;
 
-            ri = new referer_info((char *)bti->paramv[j - 1], &refinfo_error, refinfo_error_buf, sizeof(refinfo_error_buf));
+            ri = new referer_info(bti->paramv[j - 1], &refinfo_error, refinfo_error_buf, sizeof(refinfo_error_buf));
             if (refinfo_error) {
               snprintf(errStrBuf, sizeof(errStrBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s", modulePrefix,
                        bti->paramv[j - 1], cln + 1, refinfo_error_buf);
@@ -1321,7 +1323,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // been removed.
 
     if (unlikely(fromHostLen >= (int)sizeof(fromHost_lower_buf))) {
-      fromHost_lower = (fromHost_lower_ptr = (char *)ats_malloc(fromHostLen + 1));
+      fromHost_lower = (fromHost_lower_ptr = static_cast<char *>(ats_malloc(fromHostLen + 1)));
     } else {
       fromHost_lower = &fromHost_lower_buf[0];
     }
@@ -1417,7 +1419,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       goto MAP_ERROR;
     }
 
-    fromHost_lower_ptr = (char *)ats_free_null(fromHost_lower_ptr);
+    fromHost_lower_ptr = static_cast<char *>(ats_free_null(fromHost_lower_ptr));
 
     cur_line = tokLine(nullptr, &tok_state, '\\');
     ++cln;

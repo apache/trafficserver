@@ -129,7 +129,7 @@ SocksProxy::mainEvent(int event, void *data)
     state = SOCKS_ACCEPT;
     Debug("SocksProxy", "Proxy got accept event");
 
-    clientVC = (NetVConnection *)data;
+    clientVC = static_cast<NetVConnection *>(data);
     clientVC->socks_addr.reset();
   // Fall through:
   case VC_EVENT_WRITE_COMPLETE:
@@ -172,11 +172,11 @@ SocksProxy::mainEvent(int event, void *data)
     unsigned char *port_ptr = nullptr;
 
     ret = EVENT_CONT;
-    vio = (VIO *)data;
+    vio = static_cast<VIO *>(data);
 
     n_read_avail = reader->block_read_avail();
     ink_assert(n_read_avail == reader->read_avail());
-    p = (unsigned char *)reader->start();
+    p = reinterpret_cast<unsigned char *>(reader->start());
 
     if (n_read_avail >= 2) {
       Debug(state == SOCKS_ACCEPT ? "SocksProxy" : "", "Accepted connection from a version %d client", (int)p[0]);
@@ -259,7 +259,7 @@ SocksProxy::mainEvent(int event, void *data)
         // There is some auth stuff left.
         if (invokeSocksAuthHandler(auth_handler, SOCKS_AUTH_READ_COMPLETE, p) >= 0) {
           buf->reset();
-          p = (unsigned char *)buf->start();
+          p = reinterpret_cast<unsigned char *>(buf->start());
 
           int n_bytes = invokeSocksAuthHandler(auth_handler, SOCKS_AUTH_FILL_WRITE_BUF, p);
           ink_assert(n_bytes > 0);
@@ -330,7 +330,7 @@ SocksProxy::mainEvent(int event, void *data)
     Debug("SocksProxy", "open to Socks server succeeded");
 
     NetVConnection *serverVC;
-    serverVC = (NetVConnection *)data;
+    serverVC = static_cast<NetVConnection *>(data);
 
     OneWayTunnel *c_to_s = OneWayTunnel::OneWayTunnel_alloc();
     OneWayTunnel *s_to_c = OneWayTunnel::OneWayTunnel_alloc();
@@ -410,7 +410,7 @@ SocksProxy::sendResp(bool granted)
   // these breaks caching.
 
   buf->reset();
-  unsigned char *p = (unsigned char *)buf->start();
+  unsigned char *p = reinterpret_cast<unsigned char *>(buf->start());
 
   if (version == SOCKS4_VERSION) {
     p[0]    = 0;
@@ -450,7 +450,7 @@ SocksProxy::setupHttpRequest(unsigned char *p)
 
   case SOCKS_ATYPE_FQHN:
     // This is stored as a zero terminicated string
-    a->addr.buf = (unsigned char *)ats_malloc(p[4] + 1);
+    a->addr.buf = static_cast<unsigned char *>(ats_malloc(p[4] + 1));
     memcpy(a->addr.buf, &p[5], p[4]);
     a->addr.buf[p[4]] = 0;
     break;

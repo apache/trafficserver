@@ -165,7 +165,7 @@ BgFetchRule::bgFetchAllowed(TSHttpTxn txnp) const
   // We could do this recursively, but following the linked list is probably more efficient.
   for (const BgFetchRule *r = this; nullptr != r; r = r->_next) {
     if (check_field_configured(txnp, r->_field, r->_value)) {
-      TSDebug(PLUGIN_NAME, "found field match %s, exclude %d", r->_field, (int)r->_exclude);
+      TSDebug(PLUGIN_NAME, "found field match %s, exclude %d", r->_field, static_cast<int>(r->_exclude));
       allow_bg_fetch = !r->_exclude;
       break;
     }

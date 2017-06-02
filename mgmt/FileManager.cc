@@ -87,7 +87,7 @@ FileManager::~FileManager()
 
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb = static_cast<Rollback *>(ink_hash_table_entry_value(bindings, entry));
 
     delete rb;
   }
@@ -165,7 +165,7 @@ FileManager::getRollbackObj(const char *fileName, Rollback **rbPtr)
   found = ink_hash_table_lookup(bindings, fileName, &lookup);
   ink_mutex_release(&accessLock);
 
-  *rbPtr = (Rollback *)lookup;
+  *rbPtr = static_cast<Rollback *>(lookup);
   return (found == 0) ? false : true;
 }
 
@@ -215,7 +215,7 @@ FileManager::filesManaged()
   //   do not change from under us
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb          = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb          = static_cast<Rollback *>(ink_hash_table_entry_value(bindings, entry));
     currentName = rb->getBaseName();
     ink_assert(currentName);
 
@@ -243,7 +243,7 @@ FileManager::doRollbackLocks(lockAction_t action)
 
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb = static_cast<Rollback *>(ink_hash_table_entry_value(bindings, entry));
 
     switch (action) {
     case ACQUIRE_LOCK:
@@ -284,7 +284,7 @@ FileManager::abortRestore(const char *abortTo)
 
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb = static_cast<Rollback *>(ink_hash_table_entry_value(bindings, entry));
 
     // We are done
     if (strcmp(abortTo, rb->getBaseName()) == 0) {
@@ -337,7 +337,7 @@ FileManager::restoreSnap(const char *snapName, const char *snapDir)
   //
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb       = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb       = static_cast<Rollback *>(ink_hash_table_entry_value(bindings, entry));
     filePath = newPathString(snapPath, rb->getBaseName());
     if (readFile(filePath, &storage) != SNAP_OK) {
       abortRestore(rb->getBaseName());
@@ -473,7 +473,7 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
   // For each file, make a copy in the snap shot directory
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb         = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb         = static_cast<Rollback *>(ink_hash_table_entry_value(bindings, entry));
     callResult = this->copyFile(rb, snapPath);
     if (callResult != SNAP_OK) {
       // Remove the failed snapshot so that we do not have a partial
@@ -603,7 +603,7 @@ FileManager::WalkSnaps(ExpandingArray *snapList)
   ink_mutex_release(&accessLock);
   ats_free(this->managedDir);
   this->managedDir = nullptr;
-  return (SnapResult)r;
+  return static_cast<SnapResult>(r);
 }
 
 // void FileManger::rereadConfig()
@@ -626,7 +626,7 @@ FileManager::rereadConfig()
   ink_mutex_acquire(&accessLock);
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb = static_cast<Rollback *>(ink_hash_table_entry_value(bindings, entry));
     if (rb->checkForUserUpdate(rb->isVersioned() ? ROLLBACK_CHECK_AND_UPDATE : ROLLBACK_CHECK_ONLY)) {
       changedFiles.push_back(rb);
       if (rb->isChildRollback()) {
@@ -643,7 +643,7 @@ FileManager::rereadConfig()
     // for each parent file, if it is changed, then delete all its children
     for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
          entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-      rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+      rb = static_cast<Rollback *>(ink_hash_table_entry_value(bindings, entry));
       if (rb->getParentRollback() == changedFiles[i]) {
         childFileNeedDelete.add_exclusive(rb);
       }
@@ -663,7 +663,7 @@ FileManager::rereadConfig()
   // INKqa11910
   // need to first check that enable_customizations is enabled
   bool found;
-  int enabled = (int)REC_readInteger("proxy.config.body_factory.enable_customizations", &found);
+  int enabled = static_cast<int>(REC_readInteger("proxy.config.body_factory.enable_customizations", &found));
   if (found && enabled) {
     fileChanged("proxy.config.body_factory.template_sets_dir", true);
   }
@@ -680,7 +680,7 @@ FileManager::isConfigStale()
   ink_mutex_acquire(&accessLock);
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb = static_cast<Rollback *>(ink_hash_table_entry_value(bindings, entry));
     if (rb->checkForUserUpdate(ROLLBACK_CHECK_ONLY)) {
       stale = true;
       break;
@@ -754,7 +754,7 @@ FileManager::configFileChild(const char *parent, const char *child, unsigned fla
   ink_mutex_acquire(&accessLock);
   int htfound = ink_hash_table_lookup(bindings, parent, &lookup);
   if (htfound) {
-    parentRollback = (Rollback *)lookup;
+    parentRollback = static_cast<Rollback *>(lookup);
   }
   if (htfound) {
     addFileHelper(child, true, parentRollback, flags);
@@ -794,8 +794,8 @@ FileManager::checkValidName(const char *name)
 int
 snapEntryCmpFunc(const void *e1, const void *e2)
 {
-  snapshot *entry1 = (snapshot *)*(void **)e1;
-  snapshot *entry2 = (snapshot *)*(void **)e2;
+  snapshot *entry1 = static_cast<snapshot *>(*static_cast<void **>(e1));
+  snapshot *entry2 = static_cast<snapshot *>(*static_cast<void **>(e2));
 
   if (entry1->c_time > entry2->c_time) {
     return 1;

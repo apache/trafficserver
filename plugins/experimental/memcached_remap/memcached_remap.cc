@@ -50,7 +50,7 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
   uint32_t flags;
   memcached_return_t lrc;
 
-  if (TSHttpTxnClientReqGet((TSHttpTxn)txnp, &reqp, &hdr_loc) != TS_SUCCESS) {
+  if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS) {
     TSDebug(PLUGIN_NAME, "could not get request data");
     return false;
   }
@@ -146,7 +146,7 @@ release_hdr:
 static int
 memcached_remap(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp   = (TSHttpTxn)edata;
+  TSHttpTxn txnp   = static_cast<TSHttpTxn>(edata);
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
   if (event == TS_EVENT_HTTP_READ_REQUEST_HDR) {

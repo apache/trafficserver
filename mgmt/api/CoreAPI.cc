@@ -478,7 +478,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
     if (!varCounterFromName(rec_name, &(counter_val))) {
       return TS_ERR_FAIL;
     }
-    rec_ele->valueT.counter_val = (TSCounter)counter_val;
+    rec_ele->valueT.counter_val = static_cast<TSCounter>(counter_val);
 
     Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %" PRId64 "", rec_ele->rec_name, rec_ele->valueT.counter_val);
     break;
@@ -488,7 +488,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
     if (!varIntFromName(rec_name, &(int_val))) {
       return TS_ERR_FAIL;
     }
-    rec_ele->valueT.int_val = (TSInt)int_val;
+    rec_ele->valueT.int_val = static_cast<TSInt>(int_val);
 
     Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %" PRId64 "", rec_ele->rec_name, rec_ele->valueT.int_val);
     break;
@@ -879,7 +879,7 @@ ActiveEventGetMlt(LLQ *active_events)
   // iterate through hash-table and insert event_name's into active_events list
   for (entry = ink_hash_table_iterator_first(event_ht, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(event_ht, &iterator_state)) {
-    char *key = (char *)ink_hash_table_entry_key(event_ht, entry);
+    char *key = static_cast<char *>(ink_hash_table_entry_key(event_ht, entry));
 
     // convert key to int; insert into llQ
     event_id   = ink_atoi(key);
@@ -1027,7 +1027,7 @@ SnapshotGetMlt(LLQ *snapshots)
 
   num_snaps = snap_list.getNumEntries();
   for (int i = 0; i < num_snaps; i++) {
-    snap_name = (char *)(snap_list[i]);
+    snap_name = static_cast<char *>(snap_list[i]);
     if (snap_name) {
       enqueue(snapshots, ats_strdup(snap_name));
     }

@@ -230,7 +230,7 @@ string_to_ip_addr(const char *str)
 
   char *copy;
   copy = ats_strdup(str);
-  return (TSIpAddr)copy;
+  return static_cast<TSIpAddr>(copy);
 }
 
 /* ---------------------------------------------------------------
@@ -254,14 +254,14 @@ ip_addr_list_to_string(IpAddrList *list, const char *delimiter)
     return nullptr;
   }
 
-  num = queue_len((LLQ *)list);
+  num = queue_len(static_cast<LLQ *>(list));
 
   for (i = 0; i < num; i++) {
-    ip_ele = (TSIpAddrEle *)dequeue((LLQ *)list); // read next ip
+    ip_ele = static_cast<TSIpAddrEle *>(dequeue(static_cast<LLQ *>(list))); // read next ip
     ip_str = ip_addr_ele_to_string(ip_ele);
 
     if (!ip_str) {
-      enqueue((LLQ *)list, ip_ele);
+      enqueue(static_cast<LLQ *>(list), ip_ele);
       return nullptr;
     }
     if (i == num - 1) {
@@ -272,7 +272,7 @@ ip_addr_list_to_string(IpAddrList *list, const char *delimiter)
     buf_pos = strlen(buf);
     ats_free(ip_str);
 
-    enqueue((LLQ *)list, ip_ele); // return ip to list
+    enqueue(static_cast<LLQ *>(list), ip_ele); // return ip to list
   }
 
   new_str = ats_strdup(buf);
@@ -341,15 +341,15 @@ port_list_to_string(PortList *ports, const char *delimiter)
     goto Lerror;
   }
 
-  num_ports = queue_len((LLQ *)ports);
+  num_ports = queue_len(static_cast<LLQ *>(ports));
   if (num_ports <= 0) { // no ports specified
     goto Lerror;
   }
   // now list all the ports, including ranges
   for (i = 0; i < num_ports; i++) {
-    port_ele = (TSPortEle *)dequeue((LLQ *)ports);
+    port_ele = static_cast<TSPortEle *>(dequeue(static_cast<LLQ *>(ports)));
     if (!ccu_checkPortEle(port_ele)) {
-      enqueue((LLQ *)ports, port_ele); // return TSPortEle to list
+      enqueue(static_cast<LLQ *>(ports), port_ele); // return TSPortEle to list
       goto Lerror;
     }
 
@@ -369,7 +369,7 @@ port_list_to_string(PortList *ports, const char *delimiter)
       }
     }
 
-    enqueue((LLQ *)ports, port_ele); // return TSPortEle to list
+    enqueue(static_cast<LLQ *>(ports), port_ele); // return TSPortEle to list
   }
 
   str = ats_strdup(buf);
@@ -517,9 +517,9 @@ string_list_to_string(TSStringList str_list, const char *delimiter)
   }
 
   memset(buf, 0, MAX_BUF_SIZE);
-  numElems = queue_len((LLQ *)str_list);
+  numElems = queue_len(static_cast<LLQ *>(str_list));
   for (i = 0; i < numElems; i++) {
-    str_ele = (char *)dequeue((LLQ *)str_list);
+    str_ele = static_cast<char *>(dequeue(static_cast<LLQ *>(str_list)));
 
     if (i == numElems - 1) { // the last element shouldn't print comma
       if (buf_pos < sizeof(buf) && (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%s", str_ele)) > 0) {
@@ -531,7 +531,7 @@ string_list_to_string(TSStringList str_list, const char *delimiter)
       }
     }
 
-    enqueue((LLQ *)str_list, str_ele);
+    enqueue(static_cast<LLQ *>(str_list), str_ele);
   }
 
   list_str = ats_strdup(buf);
@@ -585,11 +585,11 @@ int_list_to_string(TSIntList list, const char *delimiter)
     return nullptr;
   }
 
-  numElems = queue_len((LLQ *)list);
+  numElems = queue_len(static_cast<LLQ *>(list));
 
   memset(buf, 0, MAX_BUF_SIZE);
   for (i = 0; i < numElems; i++) {
-    elem = (int *)dequeue((LLQ *)list);
+    elem = static_cast<int *>(dequeue(static_cast<LLQ *>(list)));
     if (i == numElems - 1) {
       if (buf_pos < sizeof(buf) && (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%d", *elem)) > 0) {
         buf_pos += psize;
@@ -599,7 +599,7 @@ int_list_to_string(TSIntList list, const char *delimiter)
         buf_pos += psize;
       }
     }
-    enqueue((LLQ *)list, elem);
+    enqueue(static_cast<LLQ *>(list), elem);
   }
   return ats_strdup(buf);
 }
@@ -633,7 +633,7 @@ string_to_int_list(const char *str_list, const char *delimiter)
     if (!isNumber(tokens[i])) {
       goto Lerror;
     }
-    ele  = (int *)ats_malloc(sizeof(int));
+    ele  = static_cast<int *>(ats_malloc(sizeof(int)));
     *ele = ink_atoi(tokens[i]); // What about we can't convert? ERROR?
     TSIntListEnqueue(list, ele);
   }
@@ -705,12 +705,12 @@ domain_list_to_string(TSDomainList list, const char *delimiter)
     return nullptr;
   }
 
-  numElems = queue_len((LLQ *)list);
+  numElems = queue_len(static_cast<LLQ *>(list));
 
   memset(buf, 0, MAX_BUF_SIZE);
 
   for (i = 0; i < numElems; i++) {
-    domain = (TSDomain *)dequeue((LLQ *)list);
+    domain = static_cast<TSDomain *>(dequeue(static_cast<LLQ *>(list)));
 
     dom_str = domain_to_string(domain);
     if (!dom_str) {
@@ -727,7 +727,7 @@ domain_list_to_string(TSDomainList list, const char *delimiter)
     }
 
     ats_free(dom_str);
-    enqueue((LLQ *)list, domain);
+    enqueue(static_cast<LLQ *>(list), domain);
   }
 
   list_str = ats_strdup(buf);
@@ -1685,13 +1685,14 @@ ccu_checkIpAddr(const char *addr, const char *min_addr, const char *max_addr)
   // BZ47440
   // truncate any leading or trailing white spaces from addr,
   // which can occur if IP is from a list of IP addresses
-  char *new_addr = chopWhiteSpaces_alloc((char *)addr);
+  char *new_addr = chopWhiteSpaces_alloc(const_cast<char *>(addr));
   if (new_addr == nullptr) {
     return false;
   }
 
-  if ((addrToks.Initialize(new_addr, ALLOW_EMPTY_TOKS)) != 4 || (minToks.Initialize((char *)min_addr, ALLOW_EMPTY_TOKS)) != 4 ||
-      (maxToks.Initialize((char *)max_addr, ALLOW_EMPTY_TOKS)) != 4) {
+  if ((addrToks.Initialize(new_addr, ALLOW_EMPTY_TOKS)) != 4 ||
+      (minToks.Initialize(const_cast<char *>(min_addr), ALLOW_EMPTY_TOKS)) != 4 ||
+      (maxToks.Initialize(const_cast<char *>(max_addr), ALLOW_EMPTY_TOKS)) != 4) {
     ats_free(new_addr);
     return false; // Wrong number of parts
   }
@@ -2026,53 +2027,53 @@ create_ele_obj_from_ele(TSCfgEle *ele)
   case TS_CACHE_REVALIDATE:             // fall-through
   case TS_CACHE_TTL_IN_CACHE:
   case TS_CACHE_AUTH_CONTENT:
-    ele_obj = (CfgEleObj *)new CacheObj((TSCacheEle *)ele);
+    ele_obj = (CfgEleObj *)new CacheObj(reinterpret_cast<TSCacheEle *>(ele));
     break;
 
   case TS_CONGESTION:
-    ele_obj = (CfgEleObj *)new CongestionObj((TSCongestionEle *)ele);
+    ele_obj = (CfgEleObj *)new CongestionObj(reinterpret_cast<TSCongestionEle *>(ele));
     break;
 
   case TS_HOSTING: /* hosting.config */
-    ele_obj = (CfgEleObj *)new HostingObj((TSHostingEle *)ele);
+    ele_obj = (CfgEleObj *)new HostingObj(reinterpret_cast<TSHostingEle *>(ele));
     break;
 
   case TS_IP_ALLOW: /* ip_allow.config */
-    ele_obj = (CfgEleObj *)new IpAllowObj((TSIpAllowEle *)ele);
+    ele_obj = (CfgEleObj *)new IpAllowObj(reinterpret_cast<TSIpAllowEle *>(ele));
     break;
 
   case TS_PP_PARENT:    /* parent.config */
   case TS_PP_GO_DIRECT: // fall-through
-    ele_obj = (CfgEleObj *)new ParentProxyObj((TSParentProxyEle *)ele);
+    ele_obj = (CfgEleObj *)new ParentProxyObj(reinterpret_cast<TSParentProxyEle *>(ele));
     break;
 
   case TS_VOLUME: /* volume.config */
-    ele_obj = (CfgEleObj *)new VolumeObj((TSVolumeEle *)ele);
+    ele_obj = (CfgEleObj *)new VolumeObj(reinterpret_cast<TSVolumeEle *>(ele));
     break;
 
   case TS_PLUGIN:
-    ele_obj = (CfgEleObj *)new PluginObj((TSPluginEle *)ele);
+    ele_obj = (CfgEleObj *)new PluginObj(reinterpret_cast<TSPluginEle *>(ele));
     break;
 
   case TS_REMAP_MAP:           /* remap.config */
   case TS_REMAP_REVERSE_MAP:   // fall-through
   case TS_REMAP_REDIRECT:      // fall-through
   case TS_REMAP_REDIRECT_TEMP: // fall-through
-    ele_obj = (CfgEleObj *)new RemapObj((TSRemapEle *)ele);
+    ele_obj = (CfgEleObj *)new RemapObj(reinterpret_cast<TSRemapEle *>(ele));
     break;
 
   case TS_SOCKS_BYPASS: /* socks.config */
   case TS_SOCKS_AUTH:
   case TS_SOCKS_MULTIPLE:
-    ele_obj = (CfgEleObj *)new SocksObj((TSSocksEle *)ele);
+    ele_obj = (CfgEleObj *)new SocksObj(reinterpret_cast<TSSocksEle *>(ele));
     break;
 
   case TS_SPLIT_DNS: /* splitdns.config */
-    ele_obj = (CfgEleObj *)new SplitDnsObj((TSSplitDnsEle *)ele);
+    ele_obj = (CfgEleObj *)new SplitDnsObj(reinterpret_cast<TSSplitDnsEle *>(ele));
     break;
 
   case TS_STORAGE: /* storage.config */
-    ele_obj = (CfgEleObj *)new StorageObj((TSStorageEle *)ele);
+    ele_obj = (CfgEleObj *)new StorageObj(reinterpret_cast<TSStorageEle *>(ele));
     break;
 
   case TS_TYPE_UNDEFINED:
@@ -2436,7 +2437,7 @@ copy_int_list(TSIntList list)
   count = TSIntListLen(list);
   for (i = 0; i < count; i++) {
     elem   = TSIntListDequeue(list);
-    nelem  = (int *)ats_malloc(sizeof(int));
+    nelem  = static_cast<int *>(ats_malloc(sizeof(int)));
     *nelem = *elem;
     TSIntListEnqueue(list, elem);
     TSIntListEnqueue(nlist, nelem);
@@ -2731,7 +2732,7 @@ comment_ele_create(char *comment)
 {
   INKCommentEle *ele;
 
-  ele = (INKCommentEle *)ats_malloc(sizeof(INKCommentEle));
+  ele = static_cast<INKCommentEle *>(ats_malloc(sizeof(INKCommentEle)));
 
   ele->cfg_ele.type  = TS_TYPE_COMMENT;
   ele->cfg_ele.error = TS_ERR_OKAY;

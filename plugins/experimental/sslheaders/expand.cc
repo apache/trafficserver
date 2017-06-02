@@ -40,7 +40,7 @@ x509_expand_certificate(X509 *x509, BIO *bio)
 
   // The PEM format has newlines in it. mod_ssl replaces those with spaces.
   remain = BIO_get_mem_data(bio, &ptr);
-  for (char *nl; (nl = (char *)memchr(ptr, '\n', remain)); ptr = nl) {
+  for (char *nl; (nl = static_cast<char *>(memchr(ptr, '\n', remain))); ptr = nl) {
     *nl = ' ';
     remain -= nl - ptr;
   }
@@ -79,7 +79,7 @@ x509_expand_signature(X509 *x509, BIO *bio)
   const ASN1_BIT_STRING *sig;
   X509_get0_signature(&sig, nullptr, x509);
 #endif
-  const char *ptr = (const char *)sig->data;
+  const char *ptr = reinterpret_cast<const char *>(sig->data);
   const char *end = ptr + sig->length;
 
   // The canonical OpenSSL way to format the signature seems to be
@@ -88,7 +88,7 @@ x509_expand_signature(X509 *x509, BIO *bio)
   // uppercase hex to match the serial number formatting.
 
   for (; ptr < end; ++ptr) {
-    BIO_printf(bio, "%02X", (unsigned char)(*ptr));
+    BIO_printf(bio, "%02X", static_cast<unsigned char>(*ptr));
   }
 }
 
@@ -123,7 +123,7 @@ SslHdrExpandX509Field(BIO *bio, X509 *x509, ExpansionField field)
   // Rewind the BIO.
   (void)BIO_reset(bio);
 
-  if ((int)field < (int)countof(expansions)) {
+  if (static_cast<int>(field) < static_cast<int>(countof(expansions))) {
     expansions[field](x509, bio);
   }
 

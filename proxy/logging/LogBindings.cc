@@ -32,7 +32,7 @@
 static int
 refcount_object_new(lua_State *L, const char *type_name, RefCountObj *obj)
 {
-  RefCountObj **ptr = (RefCountObj **)lua_newuserdata(L, sizeof(RefCountObj *));
+  RefCountObj **ptr = static_cast<RefCountObj **>(lua_newuserdata(L, sizeof(RefCountObj *)));
 
   // Hold a refcount in the Lua state until GC time.
   *ptr = obj;
@@ -48,7 +48,7 @@ refcount_object_new(lua_State *L, const char *type_name, RefCountObj *obj)
 static int
 refcount_object_gc(lua_State *L)
 {
-  RefCountObj **ptr = (RefCountObj **)lua_touserdata(L, -1);
+  RefCountObj **ptr = static_cast<RefCountObj **>(lua_touserdata(L, -1));
 
   if ((*ptr) && (*ptr)->refcount_dec() == 0) {
     (*ptr)->free();
@@ -63,7 +63,7 @@ refcount_object_get(lua_State *L, int index, const char *type_name)
 {
   RefCountObj **ptr;
 
-  ptr = (RefCountObj **)luaL_checkudata(L, index, type_name);
+  ptr = static_cast<RefCountObj **>(luaL_checkudata(L, index, type_name));
   if (!ptr) {
     luaL_typerror(L, index, type_name);
     return nullptr; // Not reached, since luaL_typerror throws.
@@ -284,7 +284,7 @@ log_object_add_filters(lua_State *L, LogObject *log, int value)
 static int
 create_log_object(lua_State *L, const char *name, LogFileFormat which)
 {
-  LogConfig *conf = (LogConfig *)BindingInstance::self(L)->retrieve_ptr("log.config");
+  LogConfig *conf = static_cast<LogConfig *>(BindingInstance::self(L)->retrieve_ptr("log.config"));
   Ptr<LogObject> log;
   Ptr<LogFormat> fmt;
 
@@ -337,7 +337,7 @@ create_log_object(lua_State *L, const char *name, LogFileFormat which)
     luaL_error(L, "invalid 'RollingEnabled' argument");
   }
 
-  log = new LogObject(fmt.get(), conf->logfile_dir, filename, which, header, (Log::RollingEnabledValues)rolling,
+  log = new LogObject(fmt.get(), conf->logfile_dir, filename, which, header, static_cast<Log::RollingEnabledValues>(rolling),
                       conf->collation_preproc_threads, interval, offset, size);
 
   lua_pushstring(L, "Filters"); // Now key is at -1 and table is at -2.

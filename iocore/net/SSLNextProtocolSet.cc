@@ -37,7 +37,7 @@ unsigned char *
 append_protocol(const char *proto, unsigned char *buf)
 {
   size_t sz = strlen(proto);
-  *buf++    = (unsigned char)sz;
+  *buf++    = static_cast<unsigned char>(sz);
   memcpy(buf, proto, sz);
   return buf + sz;
 }
@@ -59,7 +59,7 @@ create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_ty
     *len += (strlen(ep->protocol) + 1);
   }
 
-  *npn = advertised = (unsigned char *)ats_malloc(*len);
+  *npn = advertised = static_cast<unsigned char *>(ats_malloc(*len));
   if (!(*npn)) {
     goto fail;
   }
@@ -113,7 +113,7 @@ SSLNextProtocolSet::registerEndpoint(const char *proto, Continuation *ep)
     return false;
   }
 
-  if (!findEndpoint((const unsigned char *)proto, len)) {
+  if (!findEndpoint(reinterpret_cast<const unsigned char *>(proto), len)) {
     this->endpoints.push(new NextProtocolEndpoint(proto, ep));
 
     if (npn) {

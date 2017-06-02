@@ -113,9 +113,9 @@ prettyPrint(const int x, const int y, const double number, const int type)
     } else {
       color = colorPair::green;
     }
-    snprintf(buffer, sizeof(buffer), "%6.1f%%%%", (double)my_number);
+    snprintf(buffer, sizeof(buffer), "%6.1f%%%%", my_number);
   } else {
-    snprintf(buffer, sizeof(buffer), "%6.1f%c", (double)my_number, exp);
+    snprintf(buffer, sizeof(buffer), "%6.1f%c", my_number, exp);
   }
   attron(COLOR_PAIR(color));
   attron(A_BOLD);
@@ -145,7 +145,7 @@ makeTable(const int x, const int y, const list<string> &items, Stats &stats)
 size_t
 write_data(void *ptr, size_t size, size_t nmemb, void * /* stream */)
 {
-  response.append((char *)ptr, size * nmemb);
+  response.append(static_cast<char *>(ptr), size * nmemb);
   // cout << "appending: " << size * nmemb << endl;
   // int written = fwrite(ptr, size, nmemb, (FILE *)stream);
   return size * nmemb;

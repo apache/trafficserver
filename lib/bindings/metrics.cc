@@ -46,7 +46,7 @@ metrics_binding::check(lua_State *L, int index)
   metrics_binding *m;
 
   luaL_checktype(L, index, LUA_TUSERDATA);
-  m = (metrics_binding *)luaL_checkudata(L, index, BINDING);
+  m = static_cast<metrics_binding *>(luaL_checkudata(L, index, BINDING));
   if (m == nullptr) {
     luaL_typerror(L, index, "userdata");
   }
@@ -65,7 +65,7 @@ metrics_record_exists(const char *name)
 static void
 metrics_push_record(const RecRecord *rec, void *ptr)
 {
-  lua_State *L = (lua_State *)ptr;
+  lua_State *L = static_cast<lua_State *>(ptr);
 
   ink_assert(REC_TYPE_IS_STAT(rec->rec_type));
 
@@ -106,7 +106,7 @@ metrics_index(lua_State *L)
   } else {
     char name[m->prefixlen + sizeof(".") + len];
 
-    snprintf(name, sizeof(name), "%s.%.*s", m->prefix.get(), (int)len, key);
+    snprintf(name, sizeof(name), "%s.%.*s", m->prefix.get(), static_cast<int>(len), key);
 
     // Push the indexed record value, or nil if there is nothing there.
     if (RecLookupRecord(name, metrics_push_record, L) != REC_ERR_OKAY) {
@@ -143,7 +143,7 @@ metrics_newindex(lua_State *L)
 
   char name[m->prefixlen + sizeof(".") + len];
 
-  snprintf(name, sizeof(name), "%s.%.*s", m->prefix.get(), (int)len, key);
+  snprintf(name, sizeof(name), "%s.%.*s", m->prefix.get(), static_cast<int>(len), key);
 
   // If this index is already a record, don't overwrite it.
   if (metrics_record_exists(name)) {
@@ -206,7 +206,7 @@ lua_metrics_register(lua_State *L)
 static void
 install_metrics_object(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum)
 {
-  std::set<std::string> *prefixes = (std::set<std::string> *)edata;
+  std::set<std::string> *prefixes = static_cast<std::set<std::string> *>(edata);
 
   if (likely(registered)) {
     const char *end = strrchr(name, '.');
@@ -237,7 +237,7 @@ lua_metrics_install(lua_State *L)
   // Gather all the metrics namespace prefixes into a sorted set. We want to install
   // metrics objects as the last branch of the namespace so that leaf metrics lookup
   // end up indexing metrics objects.
-  RecDumpRecords((RecT)metrics_type, install_metrics_object, &prefixes);
+  RecDumpRecords(static_cast<RecT>(metrics_type), install_metrics_object, &prefixes);
 
   for (std::set<std::string>::const_iterator p = prefixes.cbegin(); p != prefixes.cend(); ++p) {
     if (lua_metrics_new(p->c_str(), binding->lua) == 1) {

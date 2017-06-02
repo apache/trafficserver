@@ -48,8 +48,8 @@ static Ptr<LogFile>
 make_orphan_logfile(LogHost *lh, const char *filename)
 {
   const char *ext   = "orphan";
-  unsigned name_len = (unsigned)(strlen(filename) + strlen(lh->name()) + strlen(ext) + 16);
-  char *name_buf    = (char *)ats_malloc(name_len);
+  unsigned name_len = static_cast<unsigned>(strlen(filename) + strlen(lh->name()) + strlen(ext) + 16);
+  char *name_buf    = static_cast<char *>(ats_malloc(name_len));
 
   // NT: replace ':'s with '-'s.  This change is necessary because
   // NT doesn't like filenames with ':'s in them.  ^_^
@@ -348,9 +348,9 @@ LogHost::authenticated()
 
   Debug("log-host", "Authenticating LogHost %s ...", name());
   char *auth_key        = Log::config->collation_secret;
-  unsigned auth_key_len = (unsigned)::strlen(auth_key) + 1; // incl null
+  unsigned auth_key_len = static_cast<unsigned>(::strlen(auth_key)) + 1; // incl null
   int bytes             = m_sock->write(m_sock_fd, auth_key, auth_key_len);
-  if ((unsigned)bytes != auth_key_len) {
+  if (static_cast<unsigned>(bytes) != auth_key_len) {
     Debug("log-host", "... bad write on authenticate");
     return false;
   }

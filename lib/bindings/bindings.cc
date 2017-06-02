@@ -238,7 +238,7 @@ BindingInstance::construct()
     // see: https://www.circonus.com/2016/07/luajit-illumos-vm/
 
     BindingInstance **lua_surrogate;
-    lua_surrogate  = (BindingInstance **)lua_newuserdata(this->lua, sizeof(BindingInstance *));
+    lua_surrogate  = static_cast<BindingInstance **>(lua_newuserdata(this->lua, sizeof(BindingInstance *)));
     *lua_surrogate = this;
     lua_setfield(this->lua, LUA_REGISTRYINDEX, selfkey);
 
@@ -283,7 +283,7 @@ BindingInstance::self(lua_State *lua)
   BindingInstance **binding;
 
   lua_getfield(lua, LUA_REGISTRYINDEX, selfkey);
-  binding = (BindingInstance **)lua_touserdata(lua, -1);
+  binding = static_cast<BindingInstance **>(lua_touserdata(lua, -1));
 
   ink_release_assert(binding != nullptr);
   ink_release_assert(*binding != nullptr);

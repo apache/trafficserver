@@ -102,7 +102,7 @@ aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *da
   diff = new_val - sum;
   RecSetGlobalRawStatSum(aio_rsb, id, new_val);
   RecSetGlobalRawStatCount(aio_rsb, id, now);
-  data->rec_float = (float)diff * 1000.00 / (float)time_diff;
+  data->rec_float = static_cast<float>(diff) * 1000.00 / static_cast<float>(time_diff);
   return 0;
 }
 
@@ -147,7 +147,7 @@ ink_aio_init(ModuleVersion v)
 {
   ink_release_assert(!checkModuleVersion(v, AIO_MODULE_VERSION));
 
-  aio_rsb = RecAllocateRawStatBlock((int)AIO_STAT_COUNT);
+  aio_rsb = RecAllocateRawStatBlock(static_cast<int>(AIO_STAT_COUNT));
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.read_per_sec", RECD_FLOAT, RECP_PERSISTENT,
                      (int)AIO_STAT_READ_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.write_per_sec", RECD_FLOAT, RECP_PERSISTENT,
@@ -221,7 +221,7 @@ aio_init_fildes(int fildes, int fromAPI = 0)
 {
   char thr_name[MAX_THREAD_NAME_LENGTH];
   int i;
-  AIO_Reqs *request = (AIO_Reqs *)ats_malloc(sizeof(AIO_Reqs));
+  AIO_Reqs *request = static_cast<AIO_Reqs *>(ats_malloc(sizeof(AIO_Reqs)));
 
   memset(request, 0, sizeof(AIO_Reqs));
 
@@ -280,14 +280,14 @@ aio_insert(AIOCallback *op, AIO_Reqs *req)
 #endif
   if (op->aiocb.aio_reqprio == AIO_LOWEST_PRIORITY) // http request
   {
-    AIOCallback *cb = (AIOCallback *)req->http_aio_todo.tail;
+    AIOCallback *cb = static_cast<AIOCallback *>(req->http_aio_todo.tail);
     if (!cb) {
       req->http_aio_todo.push(op);
     } else {
       req->http_aio_todo.insert(op, cb);
     }
   } else {
-    AIOCallback *cb = (AIOCallback *)req->aio_todo.tail;
+    AIOCallback *cb = static_cast<AIOCallback *>(req->aio_todo.tail);
 
     for (; cb; cb = (AIOCallback *)cb->link.prev) {
       if (cb->aiocb.aio_reqprio >= op->aiocb.aio_reqprio) {
@@ -305,7 +305,7 @@ aio_insert(AIOCallback *op, AIO_Reqs *req)
 static void
 aio_move(AIO_Reqs *req)
 {
-  AIOCallback *next = nullptr, *prev = nullptr, *cb = (AIOCallback *)ink_atomiclist_popall(&req->aio_temp_list);
+  AIOCallback *next = nullptr, *prev = nullptr, *cb = static_cast<AIOCallback *>(ink_atomiclist_popall(&req->aio_temp_list));
   /* flip the list */
   if (!cb) {
     return;
@@ -412,9 +412,9 @@ cache_op(AIOCallbackInternal *op)
     while (a->aio_nbytes - res > 0) {
       do {
         if (read) {
-          err = pread(a->aio_fildes, ((char *)a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
         } else {
-          err = pwrite(a->aio_fildes, ((char *)a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
         }
       } while ((err < 0) && (errno == EINTR || errno == ENOBUFS || errno == ENOMEM));
       if (err <= 0) {
@@ -462,8 +462,8 @@ ink_aio_thread_num_set(int thread_num)
 void *
 aio_thread_main(void *arg)
 {
-  AIOThreadInfo *thr_info = (AIOThreadInfo *)arg;
-  AIO_Reqs *my_aio_req    = (AIO_Reqs *)thr_info->req;
+  AIOThreadInfo *thr_info = static_cast<AIOThreadInfo *>(arg);
+  AIO_Reqs *my_aio_req    = thr_info->req;
   AIO_Reqs *current_req   = nullptr;
   AIOCallback *op         = nullptr;
   ink_mutex_acquire(&my_aio_req->aio_mutex);

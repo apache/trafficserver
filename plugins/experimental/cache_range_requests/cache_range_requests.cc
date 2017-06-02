@@ -91,10 +91,10 @@ range_header_check(TSHttpTxn txnp)
       if (!hdr_value || length <= 0) {
         DEBUG_LOG("Not a range request.");
       } else {
-        if (nullptr == (txn_contp = TSContCreate((TSEventFunc)transaction_handler, nullptr))) {
+        if (nullptr == (txn_contp = TSContCreate(reinterpret_cast<TSEventFunc>(transaction_handler), nullptr))) {
           ERROR_LOG("failed to create the transaction handler continuation.");
         } else {
-          txn_state              = (struct txndata *)TSmalloc(sizeof(struct txndata));
+          txn_state              = static_cast<struct txndata *>(TSmalloc(sizeof(struct txndata)));
           txn_state->range_value = TSstrndup(hdr_value, length);
           DEBUG_LOG("length: %d, txn_state->range_value: %s", length, txn_state->range_value);
           txn_state->range_value[length] = '\0'; // workaround for bug in core
@@ -170,7 +170,7 @@ handle_client_send_response(TSHttpTxn txnp, struct txndata *txn_state)
   if (TS_SUCCESS == result) {
     TSHttpStatus status = TSHttpHdrStatusGet(response, resp_hdr);
     // a cached result will have a TS_HTTP_OK with a 'Partial Content' reason
-    if ((p = (char *)TSHttpHdrReasonGet(response, resp_hdr, &length)) != nullptr) {
+    if ((p = const_cast<char *>(TSHttpHdrReasonGet(response, resp_hdr, &length))) != nullptr) {
       if ((length == 15) && (0 == strncasecmp(p, "Partial Content", length))) {
         partial_content_reason = true;
       }
@@ -370,7 +370,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  if (nullptr == (txnp_cont = TSContCreate((TSEventFunc)handle_read_request_header, nullptr))) {
+  if (nullptr == (txnp_cont = TSContCreate(reinterpret_cast<TSEventFunc>(handle_read_request_header), nullptr))) {
     ERROR_LOG("failed to create the transaction continuation handler.");
     return;
   } else {
@@ -385,7 +385,7 @@ static void
 transaction_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp            = static_cast<TSHttpTxn>(edata);
-  struct txndata *txn_state = (struct txndata *)TSContDataGet(contp);
+  struct txndata *txn_state = static_cast<struct txndata *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:

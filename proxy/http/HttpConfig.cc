@@ -986,7 +986,7 @@ register_stat_callbacks()
 void
 HttpConfig::startup()
 {
-  http_rsb = RecAllocateRawStatBlock((int)http_stat_count);
+  http_rsb = RecAllocateRawStatBlock(static_cast<int>(http_stat_count));
   register_stat_callbacks();
 
   HttpConfigParams &c = m_master;
@@ -997,7 +997,7 @@ HttpConfig::startup()
   c.proxy_hostname_len = -1;
 
   if (c.proxy_hostname == nullptr) {
-    c.proxy_hostname    = (char *)ats_malloc(sizeof(char));
+    c.proxy_hostname    = static_cast<char *>(ats_malloc(sizeof(char)));
     c.proxy_hostname[0] = '\0';
   }
 

@@ -106,8 +106,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
     if (!a->eval(rri, rh)) {
       TSDebug(PLUGIN_NAME, "denying request");
-      TSHttpTxnSetHttpRetStatus((TSHttpTxn)rh, (TSHttpStatus)403);
-      a->send_html((TSHttpTxn)rh);
+      TSHttpTxnSetHttpRetStatus(rh, static_cast<TSHttpStatus>(403));
+      a->send_html(rh);
     }
   }
 

@@ -79,7 +79,7 @@ fmix64(uint64_t k)
 void
 MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out)
 {
-  const uint8_t *data = (const uint8_t *)key;
+  const uint8_t *data = static_cast<const uint8_t *>(key);
   const int nblocks   = len / 4;
 
   uint32_t h1 = seed;
@@ -90,7 +90,7 @@ MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out)
   //----------
   // body
 
-  const uint32_t *blocks = (const uint32_t *)(data + nblocks * 4);
+  const uint32_t *blocks = reinterpret_cast<const uint32_t *>(data + nblocks * 4);
 
   for (int i = -nblocks; i; i++) {
     uint32_t k1 = getblock32(blocks, i);
@@ -107,7 +107,7 @@ MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out)
   //----------
   // tail
 
-  const uint8_t *tail = (const uint8_t *)(data + nblocks * 4);
+  const uint8_t *tail = (data + nblocks * 4);
 
   uint32_t k1 = 0;
 
@@ -131,7 +131,7 @@ MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out)
 
   h1 = fmix32(h1);
 
-  *(uint32_t *)out = h1;
+  *static_cast<uint32_t *>(out) = h1;
 }
 
 //-----------------------------------------------------------------------------
@@ -139,7 +139,7 @@ MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out)
 void
 MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *out)
 {
-  const uint8_t *data = (const uint8_t *)key;
+  const uint8_t *data = static_cast<const uint8_t *>(key);
   const int nblocks   = len / 16;
 
   uint32_t h1 = seed;
@@ -155,7 +155,7 @@ MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *out)
   //----------
   // body
 
-  const uint32_t *blocks = (const uint32_t *)(data + nblocks * 16);
+  const uint32_t *blocks = reinterpret_cast<const uint32_t *>(data + nblocks * 16);
 
   for (int i = -nblocks; i; i++) {
     uint32_t k1 = getblock32(blocks, i * 4 + 0);
@@ -203,7 +203,7 @@ MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *out)
   //----------
   // tail
 
-  const uint8_t *tail = (const uint8_t *)(data + nblocks * 16);
+  const uint8_t *tail = (data + nblocks * 16);
 
   uint32_t k1 = 0;
   uint32_t k2 = 0;
@@ -289,10 +289,10 @@ MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *out)
   h3 += h1;
   h4 += h1;
 
-  ((uint32_t *)out)[0] = h1;
-  ((uint32_t *)out)[1] = h2;
-  ((uint32_t *)out)[2] = h3;
-  ((uint32_t *)out)[3] = h4;
+  (static_cast<uint32_t *>(out))[0] = h1;
+  (static_cast<uint32_t *>(out))[1] = h2;
+  (static_cast<uint32_t *>(out))[2] = h3;
+  (static_cast<uint32_t *>(out))[3] = h4;
 }
 
 //-----------------------------------------------------------------------------

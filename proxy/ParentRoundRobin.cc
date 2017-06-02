@@ -95,7 +95,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
         }
         break;
       case P_STRICT_ROUND_ROBIN:
-        cur_index = ink_atomic_increment((int32_t *)&result->rec->rr_next, 1);
+        cur_index = ink_atomic_increment(reinterpret_cast<int32_t *>(&result->rec->rr_next), 1);
         cur_index = result->start_parent = cur_index % result->rec->num_parents;
         break;
       case P_NO_ROUND_ROBIN:
@@ -113,7 +113,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     latched_parent = cur_index = (result->last_parent + 1) % result->rec->num_parents;
 
     // Check to see if we have wrapped around
-    if ((unsigned int)cur_index == result->start_parent) {
+    if (static_cast<unsigned int>(cur_index) == result->start_parent) {
       // We've wrapped around so bypass if we can
       if (result->rec->go_direct == true) {
         // Could not find a parent
@@ -166,7 +166,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       return;
     }
     latched_parent = cur_index = (cur_index + 1) % result->rec->num_parents;
-  } while ((unsigned int)cur_index != result->start_parent);
+  } while (static_cast<unsigned int>(cur_index) != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
     result->result = PARENT_DIRECT;
@@ -279,7 +279,7 @@ ParentRoundRobin::markParentUp(ParentResult *result)
   pRec = result->rec->parents + result->last_parent;
   ink_atomic_swap(&pRec->available, true);
 
-  ink_atomic_swap(&pRec->failedAt, (time_t)0);
+  ink_atomic_swap(&pRec->failedAt, static_cast<time_t>(0));
   int old_count = ink_atomic_swap(&pRec->failCount, 0);
 
   if (old_count > 0) {

@@ -242,18 +242,18 @@ public:
       ink_freelists_dump(stderr);
       ResourceTracker::dump(stderr);
       if (!end) {
-        end = (char *)sbrk(0);
+        end = static_cast<char *>(sbrk(0));
       }
       if (!snap) {
-        snap = (char *)sbrk(0);
+        snap = static_cast<char *>(sbrk(0));
       }
-      char *now = (char *)sbrk(0);
+      char *now = static_cast<char *>(sbrk(0));
       // TODO: Use logging instead directly writing to stderr
       //       This is not error condition at the first place
       //       so why stderr?
       //
-      fprintf(stderr, "sbrk 0x%" PRIu64 " from first %" PRIu64 " from last %" PRIu64 "\n", (uint64_t)((ptrdiff_t)now),
-              (uint64_t)((ptrdiff_t)(now - end)), (uint64_t)((ptrdiff_t)(now - snap)));
+      fprintf(stderr, "sbrk 0x%" PRIu64 " from first %" PRIu64 " from last %" PRIu64 "\n", static_cast<uint64_t>((ptrdiff_t)now),
+              static_cast<uint64_t>(static_cast<ptrdiff_t>(now - end)), static_cast<uint64_t>(static_cast<ptrdiff_t>(now - snap)));
       snap = now;
     } else if (sigusr2_received) {
       sigusr2_received = false;
@@ -333,10 +333,10 @@ public:
     // to send a notification from TS to TM, informing TM that outputlog has
     // been rolled. It is much easier sending a notification (in the form
     // of SIGUSR2) from TM -> TS.
-    int diags_log_roll_int    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
-    int diags_log_roll_size   = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
-    int diags_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
-    diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
+    int diags_log_roll_int    = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec"));
+    int diags_log_roll_size   = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb"));
+    int diags_log_roll_enable = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled"));
+    diags->config_roll_diagslog(static_cast<RollingEnabledValues>(diags_log_roll_enable), diags_log_roll_int, diags_log_roll_size);
 
     if (diags->should_roll_diagslog()) {
       Note("Rolled %s", DIAGS_LOG_FILENAME);
@@ -505,7 +505,7 @@ check_lockfile()
     fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", (const char *)lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
-      fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
+      fprintf(stderr, " (Lock file held by process ID %ld)\n", static_cast<long>(holding_pid));
     } else if ((err == 0) && (holding_pid == -1)) {
       fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
     } else if (reason) {
@@ -1028,7 +1028,7 @@ set_core_size(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUS
     if (size < 0) {
       lim.rlim_cur = lim.rlim_max;
     } else {
-      lim.rlim_cur = (rlim_t)size;
+      lim.rlim_cur = static_cast<rlim_t>(size);
     }
     if (setrlimit(RLIMIT_CORE, &lim) < 0) {
       failed = true;
@@ -1080,19 +1080,21 @@ adjust_sys_settings()
 
     lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(maxfiles * file_max_pct);
     if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-      fds_limit = (int)lim.rlim_cur;
-      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+      fds_limit = static_cast<int>(lim.rlim_cur);
+      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, static_cast<int>(lim.rlim_cur),
+             static_cast<int>(lim.rlim_max));
     }
   }
 
   REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
 
   if (getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-    if (fds_throttle > (int)(lim.rlim_cur - THROTTLE_FD_HEADROOM)) {
-      lim.rlim_cur = (lim.rlim_max = (rlim_t)fds_throttle);
+    if (fds_throttle > static_cast<int>(lim.rlim_cur - THROTTLE_FD_HEADROOM)) {
+      lim.rlim_cur = (lim.rlim_max = static_cast<rlim_t>(fds_throttle));
       if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-        fds_limit = (int)lim.rlim_cur;
-        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+        fds_limit = static_cast<int>(lim.rlim_cur);
+        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, static_cast<int>(lim.rlim_cur),
+               static_cast<int>(lim.rlim_max));
       }
     }
   }
@@ -1324,7 +1326,7 @@ struct RegressionCont : public Continuation {
       return EVENT_CONT;
     }
 
-    char *rt = (char *)(regression_test[0] == 0 ? "" : regression_test);
+    char *rt = const_cast<char *>(regression_test[0] == 0 ? "" : regression_test);
     if (!initialized && RegressionTest::run(rt, regression_level) == REGRESSION_TEST_INPROGRESS) {
       initialized = 1;
       return EVENT_CONT;
@@ -1394,7 +1396,7 @@ adjust_num_of_net_threads(int nthreads)
   } else { /* autoconfig is enabled */
     num_of_threads_tmp = nthreads;
     REC_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
-    num_of_threads_tmp = (int)((float)num_of_threads_tmp * autoconfig_scale);
+    num_of_threads_tmp = static_cast<int>(static_cast<float>(num_of_threads_tmp) * autoconfig_scale);
 
     if (unlikely(num_of_threads_tmp > MAX_EVENT_THREADS)) {
       num_of_threads_tmp = MAX_EVENT_THREADS;
