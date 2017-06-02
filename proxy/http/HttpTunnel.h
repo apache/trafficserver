@@ -475,12 +475,32 @@ HttpTunnel::get_producer(HttpTunnelType_t type)
 inline HttpTunnelConsumer *
 HttpTunnel::get_consumer(VConnection *vc)
 {
-  for (int i = 0; i < MAX_CONSUMERS; i++) {
-    if (consumers[i].vc == vc) {
-      return consumers + i;
+  /** Rare but persistent problem in which a @c INKVConnInternal is used by a consumer, released,
+      and then re-allocated for a different consumer. This causes two consumers to have the same VC
+      pointer resulting in this method returning the wrong consumer. Note this is a not a bad use of
+      the tunnel, but an unfortunate interaction with the FIFO free lists.
+
+      It's not correct to check for the consumer being alive - at a minimum `HTTP_TUNNEL_EVENT_DONE`
+      is dispatched against a consumer after the consumer is not alive. Instead if a non-alive
+      consumer matches it is stored as a candidate and returned if no other match is found. If a
+      live matching consumer is found, it is immediately returned. It is never valid to have the
+      same VC in more than one active consumer. This should avoid a performance impact because in
+      the usual case the consumer will be alive.
+
+      In the case of a deliberate dispatch of an event to a dead consumer that has a duplicate vc
+      address, this will select the last consumer which will be correct as the consumers are added
+      in order therefore the latter consumer will be the most recent / appropriate target.
+  */
+  HttpTunnelConsumer *zret = nullptr;
+  for (HttpTunnelConsumer &c : consumers) {
+    if (c.vc == vc) {
+      zret = &c;
+      if (c.alive) { // a match that's alive is always the best.
+        break;
+      }
     }
   }
-  return NULL;
+  return zret;
 }
 
 inline HttpTunnelProducer *
@@ -499,7 +519,7 @@ HttpTunnel::get_consumer(VIO *vio)
 {
   if (vio) {
     for (int i = 0; i < MAX_CONSUMERS; i++) {
-      if (consumers[i].write_vio == vio || consumers[i].vc == vio->vc_server) {
+      if (consumers[i].alive && (consumers[i].write_vio == vio || consumers[i].vc == vio->vc_server)) {
         return consumers + i;
       }
     }
