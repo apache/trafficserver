@@ -512,7 +512,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         }
       }
       // move over to the socket if we haven't already
-      if (this->handShakeBuffer) {
+      if (this->handShakeReader) {
         ink_release_assert(BIO_eof(SSL_get_rbio(this->ssl)) && !handShakeReader->is_read_avail_more_than(0));
         // Done with the buffer after the first exchange, convert over to the socket buffer
         BIO *rbio = BIO_new_fd(this->get_socket(), BIO_NOCLOSE);
