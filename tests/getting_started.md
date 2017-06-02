@@ -193,3 +193,59 @@ ts.Disk.remap_config.AddLine(
     'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 ```
+## Condition Testing
+### Condition.HasATSFeature(feature)
+ * feature - The feature to test for
+ 
+ This function test for Traffic server for possible feature it has been compiled with. Current Features you can test for are:
+ * TS_HAS_LIBZ
+ * TS_HAS_LZMA
+ * TS_HAS_JEMALLOC
+ * TS_HAS_TCMALLOC
+ * TS_HAS_IN6_IS_ADDR_UNSPECIFIED
+ * TS_HAS_BACKTRACE
+ * TS_HAS_PROFILER
+ * TS_USE_FAST_SDK
+ * TS_USE_DIAGS
+ * TS_USE_EPOLL
+ * TS_USE_KQUEUE
+ * TS_USE_PORT
+ * TS_USE_POSIX_CAP
+ * TS_USE_TPROXY
+ * TS_HAS_SO_MARK
+ * TS_HAS_IP_TOS
+ * TS_USE_HWLOC
+ * TS_USE_TLS_NPN
+ * TS_USE_TLS_ALPN
+ * TS_USE_TLS_SNI
+ * TS_USE_CERT_CB
+ * TS_USE_SET_RBIO
+ * TS_USE_TLS_ECKEY
+ * TS_USE_LINUX_NATIVE_AIO
+ * TS_HAS_SO_PEERCRED
+ * TS_USE_REMOTE_UNWINDING
+ * TS_HAS_128BIT_CAS
+ * TS_HAS_TESTS
+ * TS_HAS_WCCP
+ * SPLIT_DNS
+                                
+### Example
+```python
+#create the origin server process
+Test.SkipUnless(
+    Condition.HasATSFeature('TS_USE_TLS_ALPN'),
+)
+```
+
+### Condition.HasCurlFeature(feature)
+ * feature - The feature to test for
+ 
+ This function test for Curl for possible feature it has been compiled with. Consult Curl documenation for feature set.
+                                
+### Example
+```python
+#create the origin server process
+Test.SkipUnless(
+    Condition.HasCurlFeature('http2'),
+)
+```

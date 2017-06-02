@@ -25,28 +25,11 @@ Test.Summary = '''
 Check VIA header for protocol stack data.
 '''
 
-# Check if the local curl has a specific feature.
-# This should be made generally available.
-def RequireCurlFeature(tag):
-  FEATURE_TAG = 'Features:'
-  tag = tag.lower()
-  try:
-    text = subprocess.check_output(['curl', '--version'], universal_newlines = True)
-    for line in text.splitlines():
-      if (line.startswith(FEATURE_TAG)):
-        line = line[len(FEATURE_TAG):].lower()
-        tokens = line.split()
-        for t in tokens:
-          if t == tag:
-            return True
-  except subprocess.CalledProcessError:
-    pass # no curl at all, it clearly doesn't have the required feature.
-  return False
-
 Test.SkipUnless(
-    Condition.Condition(lambda : RequireCurlFeature('http2'), "Via test requires a curl that supports HTTP/2"),
-    Condition.Condition(lambda : RequireCurlFeature('IPv6'), "Via test requires a curl that supports IPv6")
-    )
+    Condition.HasATSFeature('TS_USE_TLS_ALPN'), 
+    Condition.HasCurlFeature('http2'), 
+    Condition.HasCurlFeature('IPv6') 
+) 
 Test.ContinueOnFail=True
 
 # Define default ATS
