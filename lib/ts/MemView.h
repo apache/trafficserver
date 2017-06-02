@@ -33,6 +33,7 @@
 #include <memory.h>
 #include <algorithm>
 #include <string>
+#include <strings.h>
 
 /// Apache Traffic Server commons.
 namespace ts
