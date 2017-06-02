@@ -98,7 +98,7 @@ SplitDNS::~SplitDNS()
 SplitDNS *
 SplitDNSConfig::acquire()
 {
-  return (SplitDNS *)configProcessor.get(SplitDNSConfig::m_id);
+  return static_cast<SplitDNS *>(configProcessor.get(SplitDNSConfig::m_id));
 }
 
 /* --------------------------------------------------------------

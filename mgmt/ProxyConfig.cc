@@ -337,7 +337,7 @@ EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Release)(RegressionTest *test, int /* atyp
 
   // Set an initial config, then get it back to hold a reference count.
   configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_LAST), 1);
-  config   = (RegressionConfig *)configProcessor.get(configid);
+  config   = static_cast<RegressionConfig *>(configProcessor.get(configid));
 
   // Now update the config a few times.
   configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);

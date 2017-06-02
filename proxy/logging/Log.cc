@@ -1205,7 +1205,7 @@ Log::preproc_thread_main(void *args)
       return nullptr;
     }
     size_t buffers_preproced = 0;
-    LogConfig *current       = (LogConfig *)configProcessor.get(log_configid);
+    LogConfig *current       = static_cast<LogConfig *>(configProcessor.get(log_configid));
 
     if (likely(current)) {
       buffers_preproced = current->log_object_manager.preproc_buffers(idx);

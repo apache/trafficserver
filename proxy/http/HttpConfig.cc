@@ -1530,7 +1530,7 @@ HttpConfigParams *
 HttpConfig::acquire()
 {
   if (m_id != 0) {
-    return (HttpConfigParams *)configProcessor.get(m_id);
+    return static_cast<HttpConfigParams *>(configProcessor.get(m_id));
   } else {
     return nullptr;
   }
