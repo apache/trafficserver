@@ -8266,6 +8266,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     if (value && length > 0) {
       s->t_state.txn_conf->client_cert_filepath = const_cast<char *>(value);
     }
+    break;
   case TS_CONFIG_HTTP_RESPONSE_VIA_TRANSPORT:
     data._s.setView(value, length);
     if (ViaTransportVerbosityConversion(s->t_state.txn_conf->response_via_transport, "proxy.config.http.response_via_tranport",
@@ -8277,6 +8278,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     if (ViaTransportVerbosityConversion(s->t_state.txn_conf->request_via_transport, "proxy.config.http.request_via_tranport",
                                         RECD_STRING, data)) {
     }
+    break;
   default:
     return TS_ERROR;
     break;
