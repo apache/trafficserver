@@ -4599,6 +4599,16 @@ TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
   }
 }
 
+const char *
+TSHttpSsnClientProtocolGet(TSHttpSsn ssnp)
+{
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+
+  return cs->get_protocol_string();
+}
+
 /* HTTP transactions */
 void
 TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
@@ -4677,6 +4687,15 @@ TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
     }
   }
   return TS_ERROR;
+}
+
+const char *
+TSHttpTxnClientProtocolGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  return sm->client_protocol;
 }
 
 // pristine url is the url before remap
