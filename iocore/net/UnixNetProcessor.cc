@@ -406,22 +406,19 @@ NetProcessor::connect_s(Continuation *cont, sockaddr const *target, int timeout,
 
 struct PollCont;
 
-// This is a little odd, in that the actual threads are created before calling the processor.
-int
-UnixNetProcessor::start(int, size_t)
+// This needs to be called before the ET_NET threads are started.
+void
+UnixNetProcessor::init()
 {
   EventType etype = ET_NET;
 
   netHandler_offset = eventProcessor.allocate(sizeof(NetHandler));
   pollCont_offset   = eventProcessor.allocate(sizeof(PollCont));
 
-  n_netthreads = eventProcessor.n_threads_for_type[etype];
-  netthreads   = eventProcessor.eventthread[etype];
-  for (int i = 0; i < n_netthreads; ++i) {
-    initialize_thread_for_net(netthreads[i]);
-    extern void initialize_thread_for_http_sessions(EThread * thread, int thread_index);
-    initialize_thread_for_http_sessions(netthreads[i], i);
-  }
+  if (0 == accept_mss)
+    REC_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
+
+  eventProcessor.schedule_spawn(&initialize_thread_for_net, etype);
 
   RecData d;
   d.rec_int = 0;
@@ -441,14 +438,6 @@ UnixNetProcessor::start(int, size_t)
     }
   }
 
-  // commented by vijay -  bug 2489945
-  /*if (use_accept_thread) // 0
-     { NetAccept * na = createNetAccept();
-     SET_CONTINUATION_HANDLER(na,&NetAccept::acceptLoopEvent);
-     accept_thread_event = eventProcessor.spawn_thread(na);
-     if (!accept_thread_event) delete na;
-     } */
-
   /*
    * Stat pages
    */
@@ -456,7 +445,6 @@ UnixNetProcessor::start(int, size_t)
   if (etype == ET_NET) {
     statPagesManager.register_http("net", register_ShowNet);
   }
-  return 1;
 }
 
 // Virtual function allows creation of an

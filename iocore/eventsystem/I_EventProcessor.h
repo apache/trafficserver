@@ -66,17 +66,16 @@ class EThread;
 
   Thread Groups (Event types):
 
-  When the EventProcessor is started, the first group of threads is
-  spawned and it is assigned the special id ET_CALL. Depending on the
-  complexity of the state machine or protocol, you may be interested
-  in creating additional threads and the EventProcessor gives you the
-  ability to create a single thread or an entire group of threads. In
-  the former case, you call spawn_thread and the thread is independent
-  of the thread groups and it exists as long as your continuation handle
-  executes and there are events to process. In the latter, you call
-  spawn_event_theads which creates a new thread group and you get an id
-  or event type with wich you must keep for use later on when scheduling
-  continuations on that group.
+  When the EventProcessor is started, the first group of threads is spawned and it is assigned the
+  special id ET_CALL. Depending on the complexity of the state machine or protocol, you may be
+  interested in creating additional threads and the EventProcessor gives you the ability to create a
+  single thread or an entire group of threads. In the former case, you call spawn_thread and the
+  thread is independent of the thread groups and it exists as long as your continuation handle
+  executes and there are events to process. In the latter, you call @c registerEventType to get an
+  event type and then @c spawn_event_theads which creates the threads in the group of that
+  type. Such threads require events to be scheduled on a specicif thread in the group or for the
+  grouop in general using the event type. Note that between these two calls @c
+  EThread::schedule_spawn can be used to set up per thread initialization.
 
   Callback event codes:
 
@@ -100,6 +99,13 @@ class EThread;
 class EventProcessor : public Processor
 {
 public:
+  /** Register an event type with @a name.
+
+      This must be called to get an event type to pass to @c spawn_event_threads
+      @see spawn_event_threads
+   */
+  EventType register_event_type(char const *name);
+
   /**
     Spawn an additional thread for calling back the continuation. Spawns
     a dedicated thread (EThread) that calls back the continuation passed
@@ -112,16 +118,18 @@ public:
   */
   Event *spawn_thread(Continuation *cont, const char *thr_name, size_t stacksize = 0);
 
-  /**
-    Spawns a group of threads for an event type. Spawns the number of
-    event threads passed in (n_threads) creating a thread group and
-    returns the thread group id (or EventType). See the remarks section
-    for Thread Groups.
+  /** Spawn a group of @a n_threads event dispatching threads.
 
-    @return EventType or thread id for the new group of threads.
+      The threads run an event loop which dispatches events scheduled for a specific thread or the event type.
+
+      @return EventType or thread id for the new group of threads (@a ev_type)
 
   */
-  EventType spawn_event_threads(int n_threads, const char *et_name, size_t stacksize);
+  EventType spawn_event_threads(EventType ev_type, int n_threads, size_t stacksize = DEFAULT_STACKSIZE);
+
+  /// Convenience overload.
+  /// This registers @a name as an event type using @c registerEventType and then calls the real @c spawn_event_threads
+  EventType spawn_event_threads(const char *name, int n_thread, size_t stacksize = DEFAULT_STACKSIZE);
 
   /**
     Schedules the continuation on a specific EThread to receive an event
@@ -228,7 +236,21 @@ public:
   Event *reschedule_in(Event *e, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL);
   Event *reschedule_every(Event *e, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL);
 
+  /// Schedule an @a event on continuation @a c when a thread of type @a ev_type is spawned.
+  /// The @a cookie is attached to the event instance passed to the continuation.
+  /// @return The scheduled event.
+  Event *schedule_spawn(Continuation *c, EventType ev_type, int event = EVENT_IMMEDIATE, void *cookie = NULL);
+
+  /// Schedule the function @a f to be called in a thread of type @a ev_type when it is spawned.
+  Event *schedule_spawn(void (*f)(EThread *), EventType ev_type);
+
+  /// Schedule an @a event on continuation @a c to be called when a thread is spawned by this processor.
+  /// The @a cookie is attached to the event instance passed to the continuation.
+  /// @return The scheduled event.
+  //  Event *schedule_spawn(Continuation *c, int event, void *cookie = NULL);
+
   EventProcessor();
+  ~EventProcessor();
   EventProcessor(const EventProcessor &) = delete;
   EventProcessor &operator=(const EventProcessor &) = delete;
 
@@ -241,14 +263,14 @@ public:
     @return 0 if successful, and a negative value otherwise.
 
   */
-  int start(int n_net_threads, size_t stacksize = DEFAULT_STACKSIZE);
+  int start(int n_net_threads, size_t stacksize = DEFAULT_STACKSIZE) override;
 
   /**
     Stop the EventProcessor. Attempts to stop the EventProcessor and
     all of the threads in each of the thread groups.
 
   */
-  virtual void shutdown();
+  void shutdown() override;
 
   /**
     Allocates size bytes on the event threads. This function is thread
@@ -275,10 +297,24 @@ public:
     thread group id and the second the EThread pointers for that group.
 
   */
-  EThread *eventthread[MAX_EVENT_TYPES][MAX_THREADS_IN_EACH_TYPE];
+  //  EThread *eventthread[MAX_EVENT_TYPES][MAX_THREADS_IN_EACH_TYPE];
 
-  unsigned int next_thread_for_type[MAX_EVENT_TYPES];
-  int n_threads_for_type[MAX_EVENT_TYPES];
+  /// Data kept for each thread group.
+  /// The thread group ID is the index into an array of these and so is not stored explicitly.
+  struct ThreadGroupDescriptor {
+    ats_scoped_str _name;         ///< Name for the thread group.
+    int _count;                   ///< # of threads of this type.
+    int _next_round_robin;        ///< Index of thread to use for events assigned to this group.
+    Que(Event, link) _spawnQueue; ///< Events to dispatch when thread is spawned.
+    /// The actual threads in this group.
+    EThread *_thread[MAX_THREADS_IN_EACH_TYPE];
+  };
+
+  /// Storage for per group data.
+  ThreadGroupDescriptor thread_group[MAX_EVENT_TYPES];
+
+  /// Number of defined thread groups.
+  int n_thread_groups = 0;
 
   /**
     Total number of threads controlled by this EventProcessor.  This is
@@ -287,13 +323,6 @@ public:
 
   */
   int n_ethreads = 0;
-
-  /**
-    Total number of thread groups created so far. This is the count of
-    all the thread groups (event types) created for this EventProcessor.
-
-  */
-  int n_thread_groups = 0;
 
   /*------------------------------------------------------*\
   | Unix & non NT Interface                                |
@@ -305,7 +334,6 @@ public:
   EThread *all_dthreads[MAX_EVENT_THREADS];
   volatile int n_dthreads       = 0; // No. of dedicated threads
   volatile int thread_data_used = 0;
-  ink_mutex dedicated_spawn_thread_mutex;
 
   /// Provide container style access to just the active threads, not the entire array.
   class active_threads_type
@@ -344,6 +372,32 @@ public:
   {
     return {all_dthreads, n_dthreads};
   }
+
+private:
+  void initThreadState(EThread *);
+
+  /// Used to generate a callback at the start of thread execution.
+  class ThreadInit : public Continuation
+  {
+    typedef ThreadInit self;
+    EventProcessor *_evp;
+
+  public:
+    ThreadInit(EventProcessor *evp) : _evp(evp) { SET_HANDLER(&self::init); }
+
+    int
+    init(int /* event ATS_UNUSED */, Event *ev)
+    {
+      _evp->initThreadState(ev->ethread);
+      return 0;
+    }
+  };
+  friend class ThreadInit;
+  ThreadInit thread_initializer;
+
+  // Lock write access to the dedicated thread vector.
+  // @internal Not a @c ProxyMutex - that's a whole can of problems due to initialization ordering.
+  ink_mutex dedicated_thread_spawn_mutex;
 };
 
 extern inkcoreapi class EventProcessor eventProcessor;

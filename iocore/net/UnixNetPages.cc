@@ -104,8 +104,8 @@ struct ShowNet : public ShowCont {
                       vc->f.shutdown, vc->closed ? "closed " : ""));
     }
     ithread++;
-    if (ithread < eventProcessor.n_threads_for_type[ET_NET]) {
-      eventProcessor.eventthread[ET_NET][ithread]->schedule_imm(this);
+    if (ithread < eventProcessor.thread_group[ET_NET]._count) {
+      eventProcessor.thread_group[ET_NET]._thread[ithread]->schedule_imm(this);
     } else {
       CHECK_SHOW(show("</table>\n"));
       return complete(event, e);
@@ -139,7 +139,7 @@ struct ShowNet : public ShowCont {
                     "<th>Comments</th>"
                     "</tr>\n"));
     SET_HANDLER(&ShowNet::showConnectionsOnThread);
-    eventProcessor.eventthread[ET_NET][0]->schedule_imm(this); // This can not use ET_TASK.
+    eventProcessor.thread_group[ET_NET]._thread[0]->schedule_imm(this); // This can not use ET_TASK.
     return EVENT_CONT;
   }
 
@@ -167,8 +167,8 @@ struct ShowNet : public ShowCont {
     CHECK_SHOW(show("<tr><th>#</th><th>Read Priority</th><th>Read Bucket</th><th>Write Priority</th><th>Write Bucket</th></tr>\n"));
     CHECK_SHOW(show("</table>\n"));
     ithread++;
-    if (ithread < eventProcessor.n_threads_for_type[ET_NET]) {
-      eventProcessor.eventthread[ET_NET][ithread]->schedule_imm(this);
+    if (ithread < eventProcessor.thread_group[ET_NET]._count) {
+      eventProcessor.thread_group[ET_NET]._thread[ithread]->schedule_imm(this);
     } else {
       return complete(event, e);
     }
@@ -180,7 +180,7 @@ struct ShowNet : public ShowCont {
   {
     CHECK_SHOW(begin("Net Threads"));
     SET_HANDLER(&ShowNet::showSingleThread);
-    eventProcessor.eventthread[ET_NET][0]->schedule_imm(this); // This can not use ET_TASK
+    eventProcessor.thread_group[ET_NET]._thread[0]->schedule_imm(this); // This can not use ET_TASK
     return EVENT_CONT;
   }
   int

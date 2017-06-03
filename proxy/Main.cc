@@ -1756,6 +1756,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   ink_hostdb_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER));
   ink_dns_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER));
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
+
+  // Do the inits for NetProcessors that use ET_NET threads. MUST be before starting those threads.
+  netProcessor.init();
+  init_HttpProxyServer();
+
+  // !! ET_NET threads start here !!
+  // This means any spawn scheduling must be done before this point.
   eventProcessor.start(num_of_net_threads, stacksize);
 
   int num_remap_threads = 0;
@@ -1805,13 +1812,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       HttpProxyPort::loadConfig();
     }
     HttpProxyPort::loadDefaultIfEmpty();
-
-    if (!accept_mss) {
-      REC_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
-    }
-
-    NetProcessor::accept_mss = accept_mss;
-    netProcessor.start(0, stacksize);
 
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
@@ -1870,9 +1870,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // main server logic initiated here //
     //////////////////////////////////////
 
+    init_accept_HttpProxyServer(num_accept_threads);
     transformProcessor.start();
-
-    init_HttpProxyServer(num_accept_threads);
 
     int http_enabled = 1;
     REC_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");

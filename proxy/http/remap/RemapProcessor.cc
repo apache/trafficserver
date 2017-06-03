@@ -30,7 +30,7 @@ int
 RemapProcessor::start(int num_threads, size_t stacksize)
 {
   if (_use_separate_remap_thread) {
-    ET_REMAP = eventProcessor.spawn_event_threads(num_threads, "ET_REMAP", stacksize); // ET_REMAP is a class member
+    ET_REMAP = eventProcessor.spawn_event_threads("ET_REMAP", num_threads, stacksize); // ET_REMAP is a class member
   }
 
   return 0;

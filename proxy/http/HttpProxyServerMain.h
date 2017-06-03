@@ -23,9 +23,12 @@
 
 struct HttpProxyPort;
 
-/** Initialize all HTTP proxy port data structures needed to run.
+/// Perform any pre-thread start initialization.
+void init_HttpProxyServer();
+
+/** Initialize all HTTP proxy port data structures needed to accept connections.
  */
-void init_HttpProxyServer(int n_accept_threads = 0);
+void init_accept_HttpProxyServer(int n_accept_threads = 0);
 
 /** Start the proxy server.
     The port data should have been created by @c init_HttpProxyServer().

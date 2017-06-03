@@ -75,7 +75,7 @@ EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
 #endif
 }
 
-EThread::EThread(ThreadType att, Event *e) : tt(att), oneevent(e)
+EThread::EThread(ThreadType att, Event *e) : tt(att), start_event(e)
 {
   ink_assert(att == DEDICATED);
   memset(thread_private, 0, PER_THREAD_DATA);
@@ -96,7 +96,7 @@ EThread::~EThread()
 bool
 EThread::is_event_type(EventType et)
 {
-  return !!(event_types & (1 << (int)et));
+  return (event_types & (1 << static_cast<int>(et))) != 0;
 }
 
 void
@@ -156,6 +156,16 @@ EThread::process_event(Event *e, int calling_code)
 void
 EThread::execute()
 {
+  // Do the start event first.
+  // coverity[lock]
+  if (start_event) {
+    MUTEX_TAKE_LOCK_FOR(start_event->mutex, this, start_event->continuation);
+    start_event->continuation->handleEvent(EVENT_IMMEDIATE, start_event);
+    MUTEX_UNTAKE_LOCK(start_event->mutex, this);
+    free_event(start_event);
+    start_event = nullptr;
+  }
+
   switch (tt) {
   case REGULAR: {
     Event *e;
@@ -277,11 +287,6 @@ EThread::execute()
   }
 
   case DEDICATED: {
-    // coverity[lock]
-    MUTEX_TAKE_LOCK_FOR(oneevent->mutex, this, oneevent->continuation);
-    oneevent->continuation->handleEvent(EVENT_IMMEDIATE, oneevent);
-    MUTEX_UNTAKE_LOCK(oneevent->mutex, this);
-    free_event(oneevent);
     break;
   }
 
