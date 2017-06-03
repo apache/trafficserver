@@ -47,7 +47,14 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
     total->count += tlp->count;
   }
 
-  for (i = 0; i < eventProcessor.n_dthreads; i++) {
+  // The DEDICATED EThread can be created during ATS running.
+  // In the eventProcessor.spawn_thread(), the n_dthreads is incremented first
+  // then create the EThread object and put it into the array all_dthreads[].
+  // Therefore, the all_dthreads[eventProcessor.n_dthreads] maybe nullptr.
+  int n = eventProcessor.n_dthreads;
+  if (eventProcessor.all_dthreads[n] == nullptr)
+    n--;
+  for (i = 0; i < n; i++) {
     tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     total->sum += tlp->sum;
     total->count += tlp->count;
@@ -80,7 +87,14 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
     total.count += tlp->count;
   }
 
-  for (i = 0; i < eventProcessor.n_dthreads; i++) {
+  // The DEDICATED EThread can be created during ATS running.
+  // In the eventProcessor.spawn_thread(), the n_dthreads is incremented first
+  // then create the EThread object and put it into the array all_dthreads[].
+  // Therefore, the all_dthreads[eventProcessor.n_dthreads] maybe nullptr.
+  int n = eventProcessor.n_dthreads;
+  if (eventProcessor.all_dthreads[n] == nullptr)
+    n--;
+  for (i = 0; i < n; i++) {
     tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     total.sum += tlp->sum;
     total.count += tlp->count;
@@ -141,7 +155,14 @@ raw_stat_clear(RecRawStatBlock *rsb, int id)
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
 
-  for (int i = 0; i < eventProcessor.n_dthreads; i++) {
+  // The DEDICATED EThread can be created during ATS running.
+  // In the eventProcessor.spawn_thread(), the n_dthreads is incremented first
+  // then create the EThread object and put it into the array all_dthreads[].
+  // Therefore, the all_dthreads[eventProcessor.n_dthreads] maybe nullptr.
+  int n = eventProcessor.n_dthreads;
+  if (eventProcessor.all_dthreads[n] == nullptr)
+    n--;
+  for (int i = 0; i < n; i++) {
     tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
     ink_atomic_swap(&(tlp->count), (int64_t)0);
@@ -172,7 +193,14 @@ raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
   }
 
-  for (int i = 0; i < eventProcessor.n_dthreads; i++) {
+  // The DEDICATED EThread can be created during ATS running.
+  // In the eventProcessor.spawn_thread(), the n_dthreads is incremented first
+  // then create the EThread object and put it into the array all_dthreads[].
+  // Therefore, the all_dthreads[eventProcessor.n_dthreads] maybe nullptr.
+  int n = eventProcessor.n_dthreads;
+  if (eventProcessor.all_dthreads[n] == nullptr)
+    n--;
+  for (int i = 0; i < n; i++) {
     tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
   }
@@ -202,7 +230,14 @@ raw_stat_clear_count(RecRawStatBlock *rsb, int id)
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
 
-  for (int i = 0; i < eventProcessor.n_dthreads; i++) {
+  // The DEDICATED EThread can be created during ATS running.
+  // In the eventProcessor.spawn_thread(), the n_dthreads is incremented first
+  // then create the EThread object and put it into the array all_dthreads[]
+  // Therefore, the all_dthreads[eventProcessor.n_dthreads] maybe nullptr.
+  int n = eventProcessor.n_dthreads;
+  if (eventProcessor.all_dthreads[n] == nullptr)
+    n--;
+  for (int i = 0; i < n; i++) {
     tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
