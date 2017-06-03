@@ -202,13 +202,14 @@ DNSProcessor::start(int, size_t stacksize)
 
   if (dns_thread > 0) {
     // TODO: Hmmm, should we just get a single thread some other way?
-    ET_DNS = eventProcessor.spawn_event_threads(1, "ET_DNS", stacksize);
-    initialize_thread_for_net(eventProcessor.eventthread[ET_DNS][0]);
+    ET_DNS = eventProcessor.register_event_type("ET_DNS");
+    eventProcessor.schedule_spawn(&initialize_thread_for_net, ET_DNS);
+    eventProcessor.spawn_event_threads(ET_DNS, 1, stacksize);
   } else {
     // Initialize the first event thread for DNS.
     ET_DNS = ET_CALL;
   }
-  thread = eventProcessor.eventthread[ET_DNS][0];
+  thread = eventProcessor.thread_group[ET_DNS]._thread[0];
 
   dns_failover_try_period = dns_timeout + 1; // Modify the "default" accordingly
 

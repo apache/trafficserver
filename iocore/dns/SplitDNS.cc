@@ -502,7 +502,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
   m_servers.x_dnsH = dnsH;
 
   SET_CONTINUATION_HANDLER(dnsH, &DNSHandler::startEvent_sdns);
-  (eventProcessor.eventthread[ET_DNS][0])->schedule_imm(dnsH);
+  eventProcessor.thread_group[ET_DNS]._thread[0]->schedule_imm(dnsH);
 
   /* -----------------------------------------------------
      Process any modifiers to the directive, if they exist

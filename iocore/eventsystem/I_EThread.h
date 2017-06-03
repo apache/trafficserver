@@ -252,6 +252,16 @@ public:
   */
   Event *schedule_every_local(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
+  /** Schedule an event called once when the thread is spawned.
+
+      This is useful only for regular threads and if called before @c Thread::start. The event will be
+      called first before the event loop.
+
+      @Note This will override the event for a dedicate thread so that this is called instead of the
+      event passed to the constructor.
+  */
+  Event *schedule_spawn(Continuation *c, int ev = EVENT_IMMEDIATE, void *cookie = nullptr);
+
   /* private */
 
   Event *schedule_local(Event *e);
@@ -262,15 +272,13 @@ public:
   |  UNIX Interface                                         |
   \*-------------------------------------------------------*/
 
-public:
   EThread();
-  EThread(const EThread &) = delete;
-  EThread &operator=(const EThread &) = delete;
   EThread(ThreadType att, int anid);
   EThread(ThreadType att, Event *e);
+  EThread(const EThread &) = delete;
+  EThread &operator=(const EThread &) = delete;
   virtual ~EThread();
 
-  Event *schedule_spawn(Continuation *cont);
   Event *schedule(Event *e, bool fast_signal = false);
 
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
@@ -308,8 +316,16 @@ public:
 #endif
   EventIO *ep = nullptr;
 
-  ThreadType tt   = REGULAR;
-  Event *oneevent = nullptr; // For dedicated event thread
+  ThreadType tt = REGULAR;
+  /** Initial event to call, before any scheduling.
+
+      For dedicated threads this is the only event called.
+      For regular threads this is called first before the event loop starts.
+      @internal For regular threads this is used by the EventProcessor to get called back after
+      the thread starts but before any other events can be dispatched to provide initializations
+      needed for the thread.
+  */
+  Event *start_event = nullptr;
 
   ServerSessionPool *server_session_pool = nullptr;
 };

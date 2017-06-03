@@ -122,6 +122,12 @@ UnixNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
   return nullptr;
 }
 
+void
+UnixNetProcessor::init()
+{
+  ink_release_assert(false);
+}
+
 // TODO: The following was necessary only for Solaris, should examine more.
 NetVCOptions const Connection::DEFAULT_OPTIONS;
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
@@ -155,13 +161,6 @@ CacheVC::handleWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
 UnixNetProcessor unix_netProcessor;
 NetProcessor &netProcessor = unix_netProcessor;
-
-int
-UnixNetProcessor::start(int, size_t)
-{
-  ink_release_assert(false);
-  return 0;
-}
 
 Action *
 NetProcessor::accept(Continuation * /* cont ATS_UNUSED */, AcceptOptions const & /* opt ATS_UNUSED */)

@@ -174,7 +174,7 @@ NetAccept::init_accept_per_thread()
   }
 
   period = -HRTIME_MSECONDS(net_accept_period);
-  n      = eventProcessor.n_threads_for_type[opt.etype];
+  n      = eventProcessor.thread_group[opt.etype]._count;
 
   for (i = 0; i < n; i++) {
     NetAccept *a;
@@ -185,7 +185,7 @@ NetAccept::init_accept_per_thread()
       a = this;
     }
 
-    EThread *t         = eventProcessor.eventthread[opt.etype][i];
+    EThread *t         = eventProcessor.thread_group[opt.etype]._thread[i];
     PollDescriptor *pd = get_PollDescriptor(t);
 
     if (a->ep.start(pd, a, EVENTIO_READ) < 0) {

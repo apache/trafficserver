@@ -37,13 +37,6 @@
 const int DELAY_FOR_RETRY = HRTIME_MSECONDS(10);
 
 TS_INLINE Event *
-EThread::schedule_spawn(Continuation *cont)
-{
-  Event *e = EVENT_ALLOC(eventAllocator, this);
-  return schedule(e->init(cont, 0, 0));
-}
-
-TS_INLINE Event *
 EThread::schedule_imm(Continuation *cont, int callback_event, void *cookie)
 {
   Event *e          = ::eventAllocator.alloc();
@@ -154,6 +147,21 @@ EThread::schedule_local(Event *e)
   e->globally_allocated = false;
   EventQueueExternal.enqueue_local(e);
   return e;
+}
+
+TS_INLINE Event *
+EThread::schedule_spawn(Continuation *c, int ev, void *cookie)
+{
+  ink_assert(this != this_ethread()); // really broken to call this from the same thread.
+  if (start_event)
+    free_event(start_event);
+  start_event          = EVENT_ALLOC(eventAllocator, this);
+  start_event->ethread = this;
+  start_event->mutex   = this->mutex;
+  start_event->init(c);
+  start_event->callback_event = ev;
+  start_event->cookie         = cookie;
+  return start_event;
 }
 
 TS_INLINE EThread *
