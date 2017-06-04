@@ -796,14 +796,14 @@ void
 dir_lookaside_cleanup(Vol *d)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
-  for (int i = 0; i < LOOKASIDE_SIZE; i++) {
-    EvacuationBlock *b = d->lookaside[i].head;
+  for (auto &i : d->lookaside) {
+    EvacuationBlock *b = i.head;
     while (b) {
       if (!dir_valid(d, &b->new_dir)) {
         EvacuationBlock *nb = b->link.next;
         DDebug("dir_lookaside", "cleanup %X %X cleaned up", b->evac_frags.earliest_key.slice32(0),
                b->evac_frags.earliest_key.slice32(1));
-        d->lookaside[i].remove(b);
+        i.remove(b);
         free_CacheVC(b->earliest_evacuator);
         free_EvacuationBlock(b, d->mutex->thread_holding);
         b = nb;

@@ -24,8 +24,8 @@
 
 UrlMappingPathIndex::~UrlMappingPathIndex()
 {
-  for (UrlMappingGroup::iterator group_iter = m_tries.begin(); group_iter != m_tries.end(); ++group_iter) {
-    delete group_iter->second; // Delete the Trie
+  for (auto &m_trie : m_tries) {
+    delete m_trie.second; // Delete the Trie
   }
   m_tries.clear();
 }
@@ -86,7 +86,7 @@ lFail:
 void
 UrlMappingPathIndex::Print()
 {
-  for (UrlMappingGroup::iterator group_iter = m_tries.begin(); group_iter != m_tries.end(); ++group_iter) {
-    group_iter->second->Print();
+  for (auto &m_trie : m_tries) {
+    m_trie.second->Print();
   }
 }

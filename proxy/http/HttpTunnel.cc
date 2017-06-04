@@ -582,11 +582,11 @@ HttpTunnel::reset()
 void
 HttpTunnel::kill_tunnel()
 {
-  for (int i = 0; i < MAX_PRODUCERS; ++i) {
-    if (producers[i].vc != nullptr) {
-      chain_abort_all(&producers[i]);
+  for (auto &producer : producers) {
+    if (producer.vc != nullptr) {
+      chain_abort_all(&producer);
     }
-    ink_assert(producers[i].alive == false);
+    ink_assert(producer.alive == false);
   }
   active = false;
   this->deallocate_buffers();
@@ -627,29 +627,29 @@ HttpTunnel::deallocate_buffers()
 {
   int num = 0;
   ink_release_assert(active == false);
-  for (int i = 0; i < MAX_PRODUCERS; ++i) {
-    if (producers[i].read_buffer != nullptr) {
-      ink_assert(producers[i].vc != nullptr);
-      free_MIOBuffer(producers[i].read_buffer);
-      producers[i].read_buffer  = nullptr;
-      producers[i].buffer_start = nullptr;
+  for (auto &producer : producers) {
+    if (producer.read_buffer != nullptr) {
+      ink_assert(producer.vc != nullptr);
+      free_MIOBuffer(producer.read_buffer);
+      producer.read_buffer  = nullptr;
+      producer.buffer_start = nullptr;
       num++;
     }
 
-    if (producers[i].chunked_handler.dechunked_buffer != nullptr) {
-      ink_assert(producers[i].vc != nullptr);
-      free_MIOBuffer(producers[i].chunked_handler.dechunked_buffer);
-      producers[i].chunked_handler.dechunked_buffer = nullptr;
+    if (producer.chunked_handler.dechunked_buffer != nullptr) {
+      ink_assert(producer.vc != nullptr);
+      free_MIOBuffer(producer.chunked_handler.dechunked_buffer);
+      producer.chunked_handler.dechunked_buffer = nullptr;
       num++;
     }
 
-    if (producers[i].chunked_handler.chunked_buffer != nullptr) {
-      ink_assert(producers[i].vc != nullptr);
-      free_MIOBuffer(producers[i].chunked_handler.chunked_buffer);
-      producers[i].chunked_handler.chunked_buffer = nullptr;
+    if (producer.chunked_handler.chunked_buffer != nullptr) {
+      ink_assert(producer.vc != nullptr);
+      free_MIOBuffer(producer.chunked_handler.chunked_buffer);
+      producer.chunked_handler.chunked_buffer = nullptr;
       num++;
     }
-    producers[i].chunked_handler.max_chunk_header_len = 0;
+    producer.chunked_handler.max_chunk_header_len = 0;
   }
   return num;
 }
