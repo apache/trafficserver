@@ -1522,13 +1522,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
       if (event == TS_EVENT_HTTP_READ_RESPONSE_HDR) {
         bool mask_cache_headers = false;
         TSDebug(DEBUG_TAG, "[%s] handling read response header event", __FUNCTION__);
-        if (isCacheObjTransformable(txnp, &intercept_header, &head_only)) {
-          // transformable cache object will definitely have a
-          // transformation already as cache_lookup_complete would
-          // have been processed before this
-          TSDebug(DEBUG_TAG, "[%s] xform should already have been added on cache lookup. Not adding now", __FUNCTION__);
-          mask_cache_headers = true;
-        } else if (isTxnTransformable(txnp, false, &intercept_header, &head_only)) {
+        if (isTxnTransformable(txnp, false, &intercept_header, &head_only)) {
           addTransform(txnp, true, intercept_header, head_only, pOptionInfo);
           Stats::increment(Stats::N_OS_DOCS);
           mask_cache_headers = true;
