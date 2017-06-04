@@ -389,7 +389,7 @@ LocalManager::pollMgmtProcessServer()
   struct timeval timeout;
   fd_set fdlist;
 
-  while (1) {
+  while (true) {
 #if TS_HAS_WCCP
     int wccp_fd = wccp_cache.getSocket();
 #endif

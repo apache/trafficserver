@@ -155,7 +155,7 @@ hostcmp(const char *c1, const char *c2)
     }
     c1++;
     c2++;
-  } while (1);
+  } while (true);
 
   return 0;
 }
@@ -366,7 +366,7 @@ charIndex::Insert(const char *match_data, HostBranch *toInsert)
     return;
   }
 
-  while (1) {
+  while (true) {
     index = asciiToTable[(unsigned char)(*match_data)];
 
     // Check to see if our index into table is for an
@@ -421,7 +421,7 @@ charIndex::Lookup(const char *match_data)
     return nullptr;
   }
 
-  while (1) {
+  while (true) {
     index = asciiToTable[(unsigned char)(*match_data)];
 
     // Check to see if our index into table is for an
@@ -498,7 +498,7 @@ charIndex::iter_next(charIndexIterState *s)
     index         = s->cur_index;
   }
 
-  while (1) {
+  while (true) {
     // Check to see if we need to go back up a level
     if (index >= numLegalChars) {
       if (level <= 0) {
@@ -1210,7 +1210,7 @@ HostLookup::MatchNext(HostLookupState *s, void **opaque_ptr)
 
         s->host_copy_next--;
 
-        while (1) {
+        while (true) {
           if (s->host_copy_next <= s->host_copy) {
             s->host_copy_next = s->host_copy;
             break;

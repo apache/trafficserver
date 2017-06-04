@@ -776,7 +776,7 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   msg.msg_iovlen = iov_len;
 
   count = 0;
-  while (1) {
+  while (true) {
     // stupid Linux problem: sendmsg can return EAGAIN
     n = ::sendmsg(p->conn->getFd(), &msg, 0);
     if ((n >= 0) || ((n < 0) && (errno != EAGAIN)))

@@ -2292,7 +2292,7 @@ runInteractive()
   char buf[512]; // holds request from interactive prompt
 
   // process input from command line
-  while (1) {
+  while (true) {
     // Display a prompt
     printf("api_cli-> ");
 

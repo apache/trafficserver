@@ -403,7 +403,7 @@ void *
 socket_test_thread(void *)
 {
   // loop until client process dies
-  while (1) {
+  while (true) {
     if (main_socket_fd == -1 || !socket_test(main_socket_fd)) {
       // ASSUMES that in between the time the socket_test is made
       // and this reconnect call is made, the main_socket_fd remains
@@ -602,7 +602,7 @@ event_poll_thread_main(void *arg)
   sock_fd = *((int *)arg); // should be same as event_socket_fd
 
   // the sock_fd is going to be the one we listen for events on
-  while (1) {
+  while (true) {
     TSMgmtError ret;
     TSMgmtEvent *event = nullptr;
 
