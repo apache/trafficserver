@@ -606,7 +606,7 @@ void
 DNSHandler::switch_named(int ndx)
 {
   for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
-    e->written_flag = 0;
+    e->written_flag = false;
     if (e->retries < dns_retries)
       ++(e->retries); // give them another chance
   }
@@ -681,7 +681,7 @@ DNSHandler::rr_failure(int ndx)
     // actual retries will be done in retry_named called from mainEvent
     // mark any outstanding requests as not sent for later retry
     for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
-      e->written_flag = 0;
+      e->written_flag = false;
       if (e->retries < dns_retries)
         ++(e->retries); // give them another chance
       --in_flight;
@@ -691,7 +691,7 @@ DNSHandler::rr_failure(int ndx)
     // move outstanding requests that were sent to this nameserver to another
     for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
       if (e->which_ns == ndx) {
-        e->written_flag = 0;
+        e->written_flag = false;
         if (e->retries < dns_retries)
           ++(e->retries); // give them another chance
         --in_flight;
@@ -727,7 +727,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   ip_text_buffer ipbuff1, ipbuff2;
 
   while ((dnsc = (DNSConnection *)triggered.dequeue())) {
-    while (1) {
+    while (true) {
       IpEndpoint from_ip;
       socklen_t from_length = sizeof(from_ip);
 

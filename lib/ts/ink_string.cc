@@ -62,7 +62,7 @@ ink_string_concatenate_strings(char *dest, ...)
 
   d = dest;
 
-  while (1) {
+  while (true) {
     s = va_arg(ap, char *);
     if (s == nullptr)
       break;

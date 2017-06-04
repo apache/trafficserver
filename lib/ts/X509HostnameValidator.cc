@@ -107,7 +107,7 @@ static bool
 equal_nocase(const unsigned char *pattern, size_t pattern_len, const unsigned char *subject, size_t subject_len)
 {
   if (pattern_len != subject_len)
-    return 0;
+    return false;
   return (strncasecmp((char *)pattern, (char *)subject, pattern_len) == 0);
 }
 
@@ -116,7 +116,7 @@ static bool
 equal_case(const unsigned char *pattern, size_t pattern_len, const unsigned char *subject, size_t subject_len)
 {
   if (pattern_len != subject_len)
-    return 0;
+    return false;
   return (memcmp(pattern, subject, pattern_len) == 0);
 }
 

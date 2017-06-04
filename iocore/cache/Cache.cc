@@ -1236,7 +1236,7 @@ bool
 CacheProcessor::IsCacheReady(CacheFragType type)
 {
   if (IsCacheEnabled() != CACHE_INITIALIZED)
-    return 0;
+    return false;
   return (bool)(cache_ready & (1 << type));
 }
 
@@ -1539,12 +1539,12 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
       return handle_recover_write_dir(EVENT_IMMEDIATE, nullptr);
     }
     // initialize
-    recover_wrapped   = 0;
+    recover_wrapped   = false;
     last_sync_serial  = 0;
     last_write_serial = 0;
     recover_pos       = header->last_write_pos;
     if (recover_pos >= skip + len) {
-      recover_wrapped = 1;
+      recover_wrapped = true;
       recover_pos     = start;
     }
     io.aiocb.aio_buf    = (char *)ats_memalign(ats_pagesize(), RECOVERY_SIZE);
@@ -1647,7 +1647,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
           // (doc->sync_serial > header->sync_serial + 1).
           // if we are too close to the end, wrap around
           else if (recover_pos - (e - s) > (skip + len) - AGG_SIZE) {
-            recover_wrapped     = 1;
+            recover_wrapped     = true;
             recover_pos         = start;
             io.aiocb.aio_nbytes = RECOVERY_SIZE;
 
@@ -1662,7 +1662,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
           // from the end, then wrap around
           recover_pos -= e - s;
           if (recover_pos > (skip + len) - AGG_SIZE) {
-            recover_wrapped     = 1;
+            recover_wrapped     = true;
             recover_pos         = start;
             io.aiocb.aio_nbytes = RECOVERY_SIZE;
 
@@ -1686,7 +1686,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
         s -= round_to_approx_size(doc->len);
       recover_pos -= e - s;
       if (recover_pos >= skip + len) {
-        recover_wrapped = 1;
+        recover_wrapped = true;
         recover_pos     = start;
       }
       io.aiocb.aio_nbytes = RECOVERY_SIZE;
@@ -1856,9 +1856,9 @@ Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
     gvol[vol_no] = this;
     SET_HANDLER(&Vol::aggWrite);
     if (fd == -1)
-      cache->vol_initialized(0);
+      cache->vol_initialized(false);
     else
-      cache->vol_initialized(1);
+      cache->vol_initialized(true);
     return EVENT_DONE;
   }
 }
@@ -2567,10 +2567,10 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       if (vol->open_write(this, true, 1)) {
         // writer  exists
         ink_release_assert(od = vol->open_read(&key));
-        od->dont_update_directory = 1;
+        od->dont_update_directory = true;
         od                        = nullptr;
       } else {
-        od->dont_update_directory = 1;
+        od->dont_update_directory = true;
       }
       f.remove_aborted_writers = 1;
     }

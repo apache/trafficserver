@@ -223,7 +223,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       goto Lskip;
 
     last_collision = nullptr;
-    while (1) {
+    while (true) {
       if (!dir_probe(&doc->first_key, vol, &dir, &last_collision))
         goto Lskip;
       if (!dir_agg_valid(vol, &dir) || !dir_head(&dir) ||
@@ -251,7 +251,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (this->load_http_info(&vector, doc) != doc->hlen)
       goto Lskip;
     changed         = false;
-    hostinfo_copied = 0;
+    hostinfo_copied = false;
     for (i = 0; i < vector.count(); i++) {
       if (!vector.get(i)->valid())
         goto Lskip;
@@ -259,7 +259,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         memccpy(hname, vector.get(i)->request_get()->host_get(&hlen), 0, 500);
         hname[hlen] = 0;
         Debug("cache_scan", "hostname = '%s', hostlen = %d", hname, hlen);
-        hostinfo_copied = 1;
+        hostinfo_copied = true;
       }
       vector.get(i)->object_key_get(&key);
       alternate_index = i;
@@ -424,7 +424,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     for (int i = 0; i < alt_count; i++) {
       write_vector->insert(vector.get(i));
     }
-    od->writing_vec = 1;
+    od->writing_vec = true;
     vector.clear(false);
     // check that the directory entry was not overwritten
     // if so return failure
@@ -441,10 +441,10 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       dir_assign(&od->single_doc_dir, &dir);
       dir_set_tag(&od->single_doc_dir, doc->key.slice32(2));
       od->single_doc_key    = doc->key;
-      od->move_resident_alt = 1;
+      od->move_resident_alt = true;
     }
 
-    while (1) {
+    while (true) {
       if (!dir_probe(&first_key, vol, &d, &l)) {
         vol->close_write(this);
         _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_FAILED, nullptr);

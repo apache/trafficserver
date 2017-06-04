@@ -288,7 +288,7 @@ SocksEntry::mainEvent(int event, void *data)
       timeout = this_ethread()->schedule_in(this, HRTIME_SECONDS(netProcessor.socks_conf_stuff->socks_timeout));
     }
 
-    netVConnection->do_io_write(this, n_bytes, reader, 0);
+    netVConnection->do_io_write(this, n_bytes, reader, false);
     // Debug("Socks", "Sent the request to the SOCKS server");
 
     ret = EVENT_CONT;

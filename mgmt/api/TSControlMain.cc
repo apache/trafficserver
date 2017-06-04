@@ -143,7 +143,7 @@ ts_ctrl_main(void *arg)
   struct timeval timeout;
 
   // loops until TM dies; waits for and processes requests from clients
-  while (1) {
+  while (true) {
     // LINUX: to prevent hard-spin of CPU,  reset timeout on each loop
     timeout.tv_sec  = TIMEOUT_SECS;
     timeout.tv_usec = 0;

@@ -92,10 +92,10 @@ OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   od->num_writers           = 1;
   od->max_writers           = max_writers;
   od->vector.data.data      = &od->vector.data.fast_data[0];
-  od->dont_update_directory = 0;
-  od->move_resident_alt     = 0;
-  od->reading_vec           = 0;
-  od->writing_vec           = 0;
+  od->dont_update_directory = false;
+  od->move_resident_alt     = false;
+  od->reading_vec           = false;
+  od->writing_vec           = false;
   dir_clear(&od->first_dir);
   cont->od           = od;
   cont->write_vector = &od->vector;
@@ -1058,7 +1058,7 @@ Lrestart:
       }
       if (vol->is_io_in_progress() || vol->agg_buf_pos) {
         Debug("cache_dir_sync", "Dir %s: waiting for agg buffer", vol->hash_text.get());
-        vol->dir_sync_waiting = 1;
+        vol->dir_sync_waiting = true;
         if (!vol->is_io_in_progress())
           vol->aggWrite(EVENT_IMMEDIATE, nullptr);
         return EVENT_CONT;
@@ -1087,7 +1087,7 @@ Lrestart:
       vol->footer->sync_serial = vol->header->sync_serial;
       CHECK_DIR(d);
       memcpy(buf, vol->raw_dir, dirlen);
-      vol->dir_sync_in_progress = 1;
+      vol->dir_sync_in_progress = true;
     }
     size_t B    = vol->header->sync_serial & 1;
     off_t start = vol->skip + (B ? dirlen : 0);
@@ -1109,7 +1109,7 @@ Lrestart:
       aio_write(vol->fd, buf + writepos, headerlen, start + writepos);
       writepos += headerlen;
     } else {
-      vol->dir_sync_in_progress = 0;
+      vol->dir_sync_in_progress = false;
       CACHE_INCREMENT_DYN_STAT(cache_directory_sync_count_stat);
       CACHE_SUM_DYN_STAT(cache_directory_sync_time_stat, Thread::get_hrtime() - start_time);
       start_time = 0;

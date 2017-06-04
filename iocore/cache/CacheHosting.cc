@@ -28,7 +28,7 @@
 
 extern int gndisks;
 
-matcher_tags CacheHosting_tags = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, 0};
+matcher_tags CacheHosting_tags = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
 
 /*************************************************************
  *   Begin class HostMatcher
@@ -503,7 +503,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
       cp = (CacheVol **)ats_malloc(num_cachevols * sizeof(CacheVol *));
       memset(cp, 0, num_cachevols * sizeof(CacheVol *));
       num_cachevols = 0;
-      while (1) {
+      while (true) {
         char c = *s;
         if ((c == ',') || (c == '\0')) {
           *s            = '\0';
@@ -639,7 +639,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
     int size          = 0;
     int in_percent    = 0;
 
-    while (1) {
+    while (true) {
       // skip all blank spaces at beginning of line
       while (*tmp && isspace(*tmp)) {
         tmp++;
@@ -740,9 +740,9 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       configp->number    = volume_number;
       if (in_percent) {
         configp->percent    = size;
-        configp->in_percent = 1;
+        configp->in_percent = true;
       } else {
-        configp->in_percent = 0;
+        configp->in_percent = false;
       }
       configp->scheme = scheme;
       configp->size   = size;
@@ -828,7 +828,7 @@ create_config(RegressionTest *t, int num)
         cp->number     = vol_num++;
         cp->scheme     = CACHE_HTTP_TYPE;
         cp->size       = 128;
-        cp->in_percent = 0;
+        cp->in_percent = false;
         cp->cachep     = nullptr;
         config_volumes.cp_queue.enqueue(cp);
         config_volumes.num_volumes++;
@@ -867,7 +867,7 @@ create_config(RegressionTest *t, int num)
       cp->scheme     = CACHE_HTTP_TYPE;
       cp->size       = 10;
       cp->percent    = 10;
-      cp->in_percent = 1;
+      cp->in_percent = true;
       cp->cachep     = nullptr;
       config_volumes.cp_queue.enqueue(cp);
       config_volumes.num_volumes++;
@@ -925,7 +925,7 @@ create_config(RegressionTest *t, int num)
       cp->scheme     = scheme;
       cp->size       = random_size >> 20;
       cp->percent    = 0;
-      cp->in_percent = 0;
+      cp->in_percent = false;
       cp->cachep     = nullptr;
       config_volumes.cp_queue.enqueue(cp);
       config_volumes.num_volumes++;

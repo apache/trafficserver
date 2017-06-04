@@ -279,7 +279,7 @@ SocksProxy::mainEvent(int event, void *data)
 
           buf->fill(n_bytes);
 
-          clientVC->do_io_write(this, n_bytes, reader, 0);
+          clientVC->do_io_write(this, n_bytes, reader, false);
 
           state = AUTH_DONE;
         } else {
@@ -439,7 +439,7 @@ SocksProxy::sendResp(bool granted)
   }
 
   buf->fill(n_bytes);
-  clientVC->do_io_write(this, n_bytes, reader, 0);
+  clientVC->do_io_write(this, n_bytes, reader, false);
 
   return n_bytes;
 }

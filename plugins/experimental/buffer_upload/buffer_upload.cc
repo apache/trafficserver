@@ -322,7 +322,7 @@ pvc_process_p_read(TSCont contp, TSEvent event, pvc_state *my_state)
         TSMutexLock(my_state->disk_io_mutex);
         if (write_buffer_to_disk(my_state->req_hdr_reader, my_state, contp) == TS_ERROR) {
           LOG_ERROR("write_buffer_to_disk");
-          uconfig->use_disk_buffer = 0;
+          uconfig->use_disk_buffer = false;
           close(my_state->fd);
           my_state->fd = -1;
         }
@@ -906,7 +906,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       unlink(path);
       if (my_state->fd < 0) {
         LOG_ERROR("open");
-        uconfig->use_disk_buffer = 0;
+        uconfig->use_disk_buffer = false;
         my_state->fd             = -1;
       } else {
         TSDebug(DEBUG_TAG, "temp filename: %s", path);
@@ -1228,7 +1228,7 @@ TSPluginInit(int argc, const char *argv[])
 
   if (uconfig->use_disk_buffer && !create_directory()) {
     TSError("[buffer_upload] Directory creation failed.");
-    uconfig->use_disk_buffer = 0;
+    uconfig->use_disk_buffer = false;
   }
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
