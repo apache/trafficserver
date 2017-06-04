@@ -69,14 +69,14 @@ tokenize(const string &s, int (*fp)(int))
   vector<string> r;
   string tmp;
 
-  for (size_t i = 0; i < s.size(); i++) {
-    if (fp(s[i])) {
+  for (char i : s) {
+    if (fp(i)) {
       if (tmp.size()) {
         r.push_back(tmp);
         tmp = "";
       }
     } else {
-      tmp += s[i];
+      tmp += i;
     }
   }
 
@@ -148,8 +148,8 @@ Configuration::find(const char *host, int host_length)
 void
 Configuration::release_all()
 {
-  for (HostContainer::iterator it = host_configurations_.begin(); it != host_configurations_.end(); ++it) {
-    (*it)->release();
+  for (auto &host_configuration : host_configurations_) {
+    host_configuration->release();
   }
 }
 
@@ -285,8 +285,7 @@ Configuration::Parse(const char *path)
 
     vector<string> v = tokenize(line, isspace);
 
-    for (size_t i = 0; i < v.size(); i++) {
-      string token = v[i];
+    for (auto token : v) {
       trim_if(token, isspace);
 
       // should not happen

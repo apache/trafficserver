@@ -305,14 +305,13 @@ REGRESSION_TEST(HPACK_EncodeInteger)(RegressionTest *t, int, int *pstatus)
   box = REGRESSION_TEST_PASSED;
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
 
-  for (unsigned int i = 0; i < sizeof(integer_test_case) / sizeof(integer_test_case[0]); i++) {
+  for (const auto &i : integer_test_case) {
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
 
-    int len = encode_integer(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, integer_test_case[i].raw_integer, integer_test_case[i].prefix);
+    int len = encode_integer(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, i.raw_integer, i.prefix);
 
-    box.check(len == integer_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len,
-              integer_test_case[i].encoded_field_len);
-    box.check(len > 0 && memcmp(buf, integer_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+    box.check(len == i.encoded_field_len, "encoded length was %d, expecting %d", len, i.encoded_field_len);
+    box.check(len > 0 && memcmp(buf, i.encoded_field, len) == 0, "encoded value was invalid");
   }
 }
 
@@ -343,14 +342,13 @@ REGRESSION_TEST(HPACK_EncodeIndexedHeaderField)(RegressionTest *t, int, int *pst
 
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
 
-  for (unsigned int i = 0; i < sizeof(indexed_test_case) / sizeof(indexed_test_case[0]); i++) {
+  for (const auto &i : indexed_test_case) {
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
 
-    int len = encode_indexed_header_field(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, indexed_test_case[i].index);
+    int len = encode_indexed_header_field(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, i.index);
 
-    box.check(len == indexed_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len,
-              indexed_test_case[i].encoded_field_len);
-    box.check(len > 0 && memcmp(buf, indexed_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+    box.check(len == i.encoded_field_len, "encoded length was %d, expecting %d", len, i.encoded_field_len);
+    box.check(len > 0 && memcmp(buf, i.encoded_field, len) == 0, "encoded value was invalid");
   }
 }
 
@@ -457,15 +455,11 @@ REGRESSION_TEST(HPACK_DecodeInteger)(RegressionTest *t, int, int *pstatus)
 
   uint32_t actual;
 
-  for (unsigned int i = 0; i < sizeof(integer_test_case) / sizeof(integer_test_case[0]); i++) {
-    int len =
-      decode_integer(actual, integer_test_case[i].encoded_field,
-                     integer_test_case[i].encoded_field + integer_test_case[i].encoded_field_len, integer_test_case[i].prefix);
+  for (const auto &i : integer_test_case) {
+    int len = decode_integer(actual, i.encoded_field, i.encoded_field + i.encoded_field_len, i.prefix);
 
-    box.check(len == integer_test_case[i].encoded_field_len, "decoded length was %d, expecting %d", len,
-              integer_test_case[i].encoded_field_len);
-    box.check(actual == integer_test_case[i].raw_integer, "decoded value was %d, expected %d", actual,
-              integer_test_case[i].raw_integer);
+    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
+    box.check(actual == i.raw_integer, "decoded value was %d, expected %d", actual, i.raw_integer);
   }
 }
 
@@ -480,15 +474,12 @@ REGRESSION_TEST(HPACK_DecodeString)(RegressionTest *t, int, int *pstatus)
 
   hpack_huffman_init();
 
-  for (unsigned int i = 0; i < sizeof(string_test_case) / sizeof(string_test_case[0]); i++) {
-    int len = decode_string(arena, &actual, actual_len, string_test_case[i].encoded_field,
-                            string_test_case[i].encoded_field + string_test_case[i].encoded_field_len);
+  for (const auto &i : string_test_case) {
+    int len = decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);
 
-    box.check(len == string_test_case[i].encoded_field_len, "decoded length was %d, expecting %d", len,
-              string_test_case[i].encoded_field_len);
-    box.check(actual_len == string_test_case[i].raw_string_len, "length of decoded string was %d, expecting %d", actual_len,
-              string_test_case[i].raw_string_len);
-    box.check(memcmp(actual, string_test_case[i].raw_string, actual_len) == 0, "decoded string was invalid");
+    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
+    box.check(actual_len == i.raw_string_len, "length of decoded string was %d, expecting %d", actual_len, i.raw_string_len);
+    box.check(memcmp(actual, i.raw_string, actual_len) == 0, "decoded string was invalid");
   }
 }
 
@@ -499,26 +490,23 @@ REGRESSION_TEST(HPACK_DecodeIndexedHeaderField)(RegressionTest *t, int, int *pst
 
   HpackIndexingTable indexing_table(4096);
 
-  for (unsigned int i = 0; i < sizeof(indexed_test_case) / sizeof(indexed_test_case[0]); i++) {
+  for (const auto &i : indexed_test_case) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
     MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
     MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
-    int len =
-      decode_indexed_header_field(header, indexed_test_case[i].encoded_field,
-                                  indexed_test_case[i].encoded_field + indexed_test_case[i].encoded_field_len, indexing_table);
+    int len = decode_indexed_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table);
 
-    box.check(len == indexed_test_case[i].encoded_field_len, "decoded length was %d, expecting %d", len,
-              indexed_test_case[i].encoded_field_len);
+    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
 
     int name_len;
     const char *name = header.name_get(&name_len);
-    box.check(len > 0 && memcmp(name, indexed_test_case[i].raw_name, name_len) == 0, "decoded header name was invalid");
+    box.check(len > 0 && memcmp(name, i.raw_name, name_len) == 0, "decoded header name was invalid");
 
     int actual_value_len;
     const char *actual_value = header.value_get(&actual_value_len);
-    box.check(memcmp(actual_value, indexed_test_case[i].raw_value, actual_value_len) == 0, "decoded header value was invalid");
+    box.check(memcmp(actual_value, i.raw_value, actual_value_len) == 0, "decoded header value was invalid");
   }
 }
 
@@ -529,27 +517,23 @@ REGRESSION_TEST(HPACK_DecodeLiteralHeaderField)(RegressionTest *t, int, int *pst
 
   HpackIndexingTable indexing_table(4096);
 
-  for (unsigned int i = 0; i < sizeof(literal_test_case) / sizeof(literal_test_case[0]); i++) {
+  for (const auto &i : literal_test_case) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
     MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
     MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
-    int len =
-      decode_literal_header_field(header, literal_test_case[i].encoded_field,
-                                  literal_test_case[i].encoded_field + literal_test_case[i].encoded_field_len, indexing_table);
+    int len = decode_literal_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table);
 
-    box.check(len == literal_test_case[i].encoded_field_len, "decoded length was %d, expecting %d", len,
-              literal_test_case[i].encoded_field_len);
+    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
 
     int name_len;
     const char *name = header.name_get(&name_len);
-    box.check(name_len > 0 && memcmp(name, literal_test_case[i].raw_name, name_len) == 0, "decoded header name was invalid");
+    box.check(name_len > 0 && memcmp(name, i.raw_name, name_len) == 0, "decoded header name was invalid");
 
     int actual_value_len;
     const char *actual_value = header.value_get(&actual_value_len);
-    box.check(actual_value_len > 0 && memcmp(actual_value, literal_test_case[i].raw_value, actual_value_len) == 0,
-              "decoded header value was invalid");
+    box.check(actual_value_len > 0 && memcmp(actual_value, i.raw_value, actual_value_len) == 0, "decoded header value was invalid");
   }
 }
 

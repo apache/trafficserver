@@ -130,12 +130,12 @@ makeTable(const int x, const int y, const list<string> &items, Stats &stats)
 {
   int my_y = y;
 
-  for (list<string>::const_iterator it = items.begin(); it != items.end(); ++it) {
+  for (const auto &item : items) {
     string prettyName;
     double value = 0;
     int type;
 
-    stats.getStat(*it, value, prettyName, type);
+    stats.getStat(item, value, prettyName, type);
     mvprintw(my_y, x, prettyName.c_str());
     prettyPrint(x + 10, my_y++, value, type);
   }

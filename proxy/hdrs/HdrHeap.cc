@@ -100,11 +100,11 @@ HdrHeap::init()
   //  garbage it is pointing to
   m_read_write_heap.detach();
 
-  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    m_ronly_heap[i].m_heap_start = nullptr;
-    m_ronly_heap[i].m_ref_count_ptr.detach();
-    m_ronly_heap[i].m_locked   = false;
-    m_ronly_heap[i].m_heap_len = 0;
+  for (auto &i : m_ronly_heap) {
+    i.m_heap_start = nullptr;
+    i.m_ref_count_ptr.detach();
+    i.m_locked   = false;
+    i.m_heap_len = 0;
   }
   m_lost_string_space = 0;
 
@@ -176,8 +176,8 @@ HdrHeap::destroy()
   }
 
   m_read_write_heap = nullptr;
-  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    m_ronly_heap[i].m_ref_count_ptr = nullptr;
+  for (auto &i : m_ronly_heap) {
+    i.m_ref_count_ptr = nullptr;
   }
 
   if (m_size == HDR_HEAP_DEFAULT_SIZE) {
@@ -330,12 +330,12 @@ HdrHeap::demote_rw_str_heap()
 {
   // First, see if we have any open slots for read
   //  only heaps
-  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    if (m_ronly_heap[i].m_heap_start == nullptr) {
+  for (auto &i : m_ronly_heap) {
+    if (i.m_heap_start == nullptr) {
       // We've found a slot
-      m_ronly_heap[i].m_ref_count_ptr = m_read_write_heap.object();
-      m_ronly_heap[i].m_heap_start    = (char *)m_read_write_heap.get();
-      m_ronly_heap[i].m_heap_len      = m_read_write_heap->m_heap_size - m_read_write_heap->m_free_size;
+      i.m_ref_count_ptr = m_read_write_heap.object();
+      i.m_heap_start    = (char *)m_read_write_heap.get();
+      i.m_heap_len      = m_read_write_heap->m_heap_size - m_read_write_heap->m_free_size;
 
       //          Debug("hdrs", "Demoted rw heap of %d size", m_read_write_heap->m_heap_size);
       m_read_write_heap = nullptr;
@@ -376,11 +376,11 @@ HdrHeap::coalesce_str_heaps(int incoming_size)
   m_read_write_heap = new_heap;
 
   int heaps_removed = 0;
-  for (int j = 0; j < HDR_BUF_RONLY_HEAPS; j++) {
-    if (m_ronly_heap[j].m_heap_start != nullptr && m_ronly_heap[j].m_locked == false) {
-      m_ronly_heap[j].m_ref_count_ptr = nullptr;
-      m_ronly_heap[j].m_heap_start    = nullptr;
-      m_ronly_heap[j].m_heap_len      = 0;
+  for (auto &j : m_ronly_heap) {
+    if (j.m_heap_start != nullptr && j.m_locked == false) {
+      j.m_ref_count_ptr = nullptr;
+      j.m_heap_start    = nullptr;
+      j.m_heap_len      = 0;
       heaps_removed++;
     }
   }
@@ -488,10 +488,10 @@ HdrHeap::sanity_check_strs()
     num_heaps++;
   }
 
-  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    if (m_ronly_heap[i].m_heap_start != nullptr) {
-      heaps[num_heaps].start = m_ronly_heap[i].m_heap_start;
-      heaps[num_heaps].end   = m_ronly_heap[i].m_heap_start + m_ronly_heap[i].m_heap_len;
+  for (auto &i : m_ronly_heap) {
+    if (i.m_heap_start != nullptr) {
+      heaps[num_heaps].start = i.m_heap_start;
+      heaps[num_heaps].end   = i.m_heap_start + i.m_heap_len;
       num_heaps++;
     }
   }
@@ -562,9 +562,9 @@ HdrHeap::marshal_length()
     len += m_read_write_heap->m_heap_size - (sizeof(HdrStrHeap) + m_read_write_heap->m_free_size);
   }
 
-  for (int j = 0; j < HDR_BUF_RONLY_HEAPS; j++) {
-    if (m_ronly_heap[j].m_heap_start != nullptr) {
-      len += m_ronly_heap[j].m_heap_len;
+  for (auto &j : m_ronly_heap) {
+    if (j.m_heap_start != nullptr) {
+      len += j.m_heap_len;
     }
   }
 
@@ -1064,10 +1064,9 @@ HdrHeap::inherit_string_heaps(const HdrHeap *inherit_from)
                                          inherit_from->m_read_write_heap.get(), &first_free));
     }
     // Copy over read only string heaps
-    for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-      if (inherit_from->m_ronly_heap[i].m_heap_start) {
-        ink_release_assert(attach_str_heap(inherit_from->m_ronly_heap[i].m_heap_start, inherit_from->m_ronly_heap[i].m_heap_len,
-                                           inherit_from->m_ronly_heap[i].m_ref_count_ptr.get(), &first_free));
+    for (const auto &i : inherit_from->m_ronly_heap) {
+      if (i.m_heap_start) {
+        ink_release_assert(attach_str_heap(i.m_heap_start, i.m_heap_len, i.m_ref_count_ptr.get(), &first_free));
       }
     }
 

@@ -123,15 +123,15 @@ static void
 SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuffer mbuf, TSMLoc mhdr)
 {
   if (ssl == nullptr) {
-    for (SslHdrInstance::expansion_list::const_iterator e = expansions.begin(); e != expansions.end(); ++e) {
-      SslHdrRemoveHeader(mbuf, mhdr, e->name);
+    for (const auto &expansion : expansions) {
+      SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
     }
   } else {
     X509 *x509;
     BIO *exp = BIO_new(BIO_s_mem());
 
-    for (SslHdrInstance::expansion_list::const_iterator e = expansions.begin(); e != expansions.end(); ++e) {
-      switch (e->scope) {
+    for (const auto &expansion : expansions) {
+      switch (expansion.scope) {
       case SSL_HEADERS_SCOPE_CLIENT:
         x509 = SSL_get_peer_certificate(ssl);
         break;
@@ -146,15 +146,15 @@ SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuff
         continue;
       }
 
-      SslHdrExpandX509Field(exp, x509, e->field);
+      SslHdrExpandX509Field(exp, x509, expansion.field);
       if (BIO_pending(exp)) {
-        SslHdrSetHeader(mbuf, mhdr, e->name, exp);
+        SslHdrSetHeader(mbuf, mhdr, expansion.name, exp);
       } else {
-        SslHdrRemoveHeader(mbuf, mhdr, e->name);
+        SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
       }
 
       // Getting the peer certificate takes a reference count, but the server certificate doesn't.
-      if (x509 && e->scope == SSL_HEADERS_SCOPE_CLIENT) {
+      if (x509 && expansion.scope == SSL_HEADERS_SCOPE_CLIENT) {
         X509_free(x509);
       }
     }
