@@ -3324,7 +3324,11 @@ Client-Related Configuration
    :overridable:
 
    Configures Traffic Server to verify the origin server certificate
-   with the Certificate Authority (CA).
+   with the Certificate Authority (CA). This configuration takes a value between 0 to 2.
+
+:0: Server Certificate will not be verified
+:1: Certificate will be verified and the connection will not be established if verification fails.
+:2: The provided certificate will be verified and the connection will be established irrespective of the verification result. If verification fails the name of the server will be logged. 
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
 
