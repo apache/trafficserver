@@ -229,6 +229,10 @@ public:
   ink_hrtime ssn_start_time    = 0;
   ink_hrtime ssn_last_txn_time = 0;
 
+  // noncopyable
+  ProxyClientSession(ProxyClientSession &) = delete;
+  ProxyClientSession &operator=(const ProxyClientSession &) = delete;
+
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so
   // that we can make the best use of internal alignment padding.
@@ -242,9 +246,6 @@ protected:
   Event *schedule_event = nullptr;
 
 private:
-  ProxyClientSession(ProxyClientSession &);                  // noncopyable
-  ProxyClientSession &operator=(const ProxyClientSession &); // noncopyable
-
   void handle_api_return(int event);
   int state_api_callout(int event, void *edata);
 

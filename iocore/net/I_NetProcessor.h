@@ -237,6 +237,10 @@ public:
   /// Default options instance.
   static AcceptOptions const DEFAULT_ACCEPT_OPTIONS;
 
+  // noncopyable
+  NetProcessor(const NetProcessor &) = delete;
+  NetProcessor &operator=(const NetProcessor &) = delete;
+
 private:
   /** @note Not implemented. */
   virtual int
@@ -245,9 +249,6 @@ private:
     ink_release_assert(!"NetProcessor::stop not implemented");
     return 1;
   }
-
-  NetProcessor(const NetProcessor &);
-  NetProcessor &operator=(const NetProcessor &);
 };
 
 /**

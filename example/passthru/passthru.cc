@@ -113,7 +113,7 @@ struct PassthruIO {
     return consumed;
   }
 
-private:
+  // noncopyable
   PassthruIO(const PassthruIO &) = delete;
   PassthruIO &operator=(const PassthruIO &) = delete;
 };
@@ -157,7 +157,7 @@ struct PassthruSession {
     PassthruSessionDebug(this, "destroyed session");
   }
 
-private:
+  // noncopyable
   PassthruSession(const PassthruSession &) = delete;
   PassthruSession &operator=(const PassthruSession &) = delete;
 };

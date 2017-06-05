@@ -132,11 +132,12 @@ public:
 
 public:
   Link<LogFile> link;
+  // noncopyable
+  LogFile &operator=(const LogFile &) = delete;
 
 private:
   // -- member functions not allowed --
   LogFile();
-  LogFile &operator=(const LogFile &);
 };
 
 /***************************************************************************

@@ -58,7 +58,7 @@
 
 // FIXME: this one doesn't deserve to be here
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName &);              \
-  void operator=(const TypeName &)
+  TypeName(const TypeName &) = delete;     \
+  void operator=(const TypeName &) = delete
 
 #endif //_DBG_MACROS_H

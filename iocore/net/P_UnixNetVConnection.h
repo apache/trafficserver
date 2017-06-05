@@ -178,11 +178,10 @@ public:
   int populate_protocol(ts::StringView *results, int n) const override;
   const char *protocol_contains(ts::StringView tag) const override;
 
-private:
-  UnixNetVConnection(const NetVConnection &);
-  UnixNetVConnection &operator=(const NetVConnection &);
+  // noncopyable
+  UnixNetVConnection(const NetVConnection &) = delete;
+  UnixNetVConnection &operator=(const NetVConnection &) = delete;
 
-public:
   /////////////////////////
   // UNIX implementation //
   /////////////////////////

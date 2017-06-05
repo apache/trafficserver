@@ -261,10 +261,11 @@ public:
     shutdown_state = state;
   }
 
-private:
-  Http2ConnectionState(const Http2ConnectionState &);            // noncopyable
-  Http2ConnectionState &operator=(const Http2ConnectionState &); // noncopyable
+  // noncopyable
+  Http2ConnectionState(const Http2ConnectionState &) = delete;
+  Http2ConnectionState &operator=(const Http2ConnectionState &) = delete;
 
+private:
   unsigned _adjust_concurrent_stream();
 
   // NOTE: 'stream_list' has only active streams.

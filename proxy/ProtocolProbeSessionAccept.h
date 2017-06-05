@@ -50,10 +50,12 @@ public:
 
   bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
 
+  // noncopyable
+  ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &) = delete;            // disabled
+  ProtocolProbeSessionAccept &operator=(const ProtocolProbeSessionAccept &) = delete; // disabled
+
 private:
   int mainEvent(int event, void *netvc);
-  ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &);            // disabled
-  ProtocolProbeSessionAccept &operator=(const ProtocolProbeSessionAccept &); // disabled
 
   /** Child acceptors, index by @c ProtoGroupKey
 

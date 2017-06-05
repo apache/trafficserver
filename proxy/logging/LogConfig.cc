@@ -277,7 +277,6 @@ LogConfig::LogConfig()
     m_space_used(0),
     m_partition_space_left((int64_t)UINT_MAX),
     m_log_collation_accept(nullptr),
-    m_pDir(nullptr),
     m_disk_full(false),
     m_disk_low(false),
     m_partition_full(false),

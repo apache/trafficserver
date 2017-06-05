@@ -208,9 +208,9 @@ public:
   bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
   int mainEvent(int event, void *netvc);
 
-private:
-  HttpSessionAccept(const HttpSessionAccept &);
-  HttpSessionAccept &operator=(const HttpSessionAccept &);
+  // noncopyable
+  HttpSessionAccept(const HttpSessionAccept &) = delete;
+  HttpSessionAccept &operator=(const HttpSessionAccept &) = delete;
 };
 
 #endif

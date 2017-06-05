@@ -81,10 +81,11 @@ struct CtrlMgmtRecord {
   int rclass() const;
   int64_t as_int() const;
 
-private:
-  CtrlMgmtRecord(const CtrlMgmtRecord &);            // disabled
-  CtrlMgmtRecord &operator=(const CtrlMgmtRecord &); // disabled
+  // noncopyable
+  CtrlMgmtRecord(const CtrlMgmtRecord &) = delete;            // disabled
+  CtrlMgmtRecord &operator=(const CtrlMgmtRecord &) = delete; // disabled
 
+private:
   TSRecordEle *ele;
 
   friend struct CtrlMgmtRecordValue;
@@ -97,9 +98,11 @@ struct CtrlMgmtRecordValue {
   CtrlMgmtRecordValue(TSRecordT, TSRecordValueT);
   const char *c_str() const;
 
+  // noncopyable
+  CtrlMgmtRecordValue(const CtrlMgmtRecordValue &) = delete;            // disabled
+  CtrlMgmtRecordValue &operator=(const CtrlMgmtRecordValue &) = delete; // disabled
+
 private:
-  CtrlMgmtRecordValue(const CtrlMgmtRecordValue &);            // disabled
-  CtrlMgmtRecordValue &operator=(const CtrlMgmtRecordValue &); // disabled
   void init(TSRecordT, TSRecordValueT);
 
   TSRecordT rec_type;
@@ -156,9 +159,9 @@ template <typename T> struct CtrlMgmtList {
 
   TSList list;
 
-private:
-  CtrlMgmtList(const CtrlMgmtList &);            // disabled
-  CtrlMgmtList &operator=(const CtrlMgmtList &); // disabled
+  // noncopyable
+  CtrlMgmtList(const CtrlMgmtList &) = delete;            // disabled
+  CtrlMgmtList &operator=(const CtrlMgmtList &) = delete; // disabled
 };
 
 struct CtrlMgmtRecordList : CtrlMgmtList<RecordListPolicy> {

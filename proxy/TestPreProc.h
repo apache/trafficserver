@@ -39,10 +39,11 @@ public:
     return (m_len == 0);
   }
 
-private:
-  RequestInput(const RequestInput &);
-  RequestInput &operator=(const RequestInput &);
+  // noncopyable
+  RequestInput(const RequestInput &) = delete;
+  RequestInput &operator=(const RequestInput &) = delete;
 
+private:
   char *m_sp;
   unsigned m_len;
   IOBuffer *m_cb;

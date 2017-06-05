@@ -260,10 +260,11 @@ public:
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
 
-private:
-  SSLNetVConnection(const SSLNetVConnection &);
-  SSLNetVConnection &operator=(const SSLNetVConnection &);
+  // noncopyable
+  SSLNetVConnection(const SSLNetVConnection &) = delete;
+  SSLNetVConnection &operator=(const SSLNetVConnection &) = delete;
 
+private:
   ts::StringView map_tls_protocol_to_tag(const char *proto_string) const;
 
   bool sslHandShakeComplete        = false;

@@ -130,6 +130,7 @@ namespace io
       }
     }
 
+    // noncopyable
     Lock(void) : mutex_(NULL) {}
     Lock(const Lock &) = delete;
 
@@ -154,6 +155,7 @@ namespace io
 
     ~WriteOperation();
 
+    // noncopyable
     WriteOperation(const WriteOperation &) = delete;
     WriteOperation &operator=(const WriteOperation &) = delete;
 
@@ -189,8 +191,9 @@ namespace io
     DataPointer data_;
 
     ~IOSink();
-    IOSink(const IOSink &) = delete;
 
+    // noncopyable
+    IOSink(const IOSink &) = delete;
     IOSink &operator=(const IOSink &) = delete;
 
     template <class T>
@@ -252,6 +255,7 @@ namespace io
       assert(reader_ != NULL);
     }
 
+    // noncopyable
     BufferNode(const BufferNode &) = delete;
     BufferNode &operator=(const BufferNode &) = delete;
     BufferNode &operator<<(const TSIOBufferReader);
@@ -268,6 +272,7 @@ namespace io
     bool first_;
 
     template <class T> Data(T &&t) : root_(std::forward<T>(t)), first_(false) {}
+    // noncopyable
     Data(const Data &) = delete;
     Data &operator=(const Data &) = delete;
 
@@ -280,6 +285,7 @@ namespace io
     ~Sink();
 
     template <class... A> Sink(A &&... a) : data_(std::forward<A>(a)...) {}
+    // noncopyable
     Sink(const Sink &) = delete;
     Sink &operator=(const Sink &) = delete;
 

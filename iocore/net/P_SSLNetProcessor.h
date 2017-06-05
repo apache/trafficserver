@@ -68,9 +68,9 @@ public:
   virtual NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt);
   virtual NetVConnection *allocate_vc(EThread *t);
 
-private:
-  SSLNetProcessor(const SSLNetProcessor &);
-  SSLNetProcessor &operator=(const SSLNetProcessor &);
+  // noncopyable
+  SSLNetProcessor(const SSLNetProcessor &) = delete;
+  SSLNetProcessor &operator=(const SSLNetProcessor &) = delete;
 };
 
 extern SSLNetProcessor ssl_NetProcessor;

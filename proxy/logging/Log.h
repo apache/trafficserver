@@ -223,6 +223,11 @@ public:
 
   friend void RegressionTest_LogObjectManager_Transfer(RegressionTest *, int, int *);
 
+  // noncopyable
+  // -- member functions that are not allowed --
+  Log(const Log &rhs) = delete;
+  Log &operator=(const Log &rhs) = delete;
+
 private:
   static void periodic_tasks(long time_now);
   static void create_threads();
@@ -232,10 +237,6 @@ private:
   static int config_flags;
   static bool logging_mode_changed;
   static uint32_t periodic_tasks_interval;
-
-  // -- member functions that are not allowed --
-  Log(const Log &rhs);
-  Log &operator=(const Log &rhs);
 };
 
 static inline bool
