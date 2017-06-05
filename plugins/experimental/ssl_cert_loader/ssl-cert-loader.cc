@@ -88,7 +88,7 @@ Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range)
   IpAddr newAddr;
   std::string textstr(text._ptr, text._size);
   // Is there a hyphen?
-  size_t hyphen_pos = textstr.find("-");
+  size_t hyphen_pos = textstr.find('-');
 
   if (hyphen_pos != std::string::npos) {
     std::string addr1 = textstr.substr(0, hyphen_pos);
