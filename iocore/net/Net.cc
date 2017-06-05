@@ -41,7 +41,7 @@ int net_retry_delay         = 10;
 int net_throttle_delay      = 50; /* milliseconds */
 
 static inline void
-configure_net(void)
+configure_net()
 {
   REC_RegisterConfigUpdateFunc("proxy.config.net.connections_throttle", change_net_connections_throttle, nullptr);
   REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");

@@ -146,7 +146,7 @@ static const char localhost[] = "127.0.0.1";
 
 static void cop_log(int priority, const char *format, ...) TS_PRINTFLIKE(2, 3);
 
-static void get_admin_user(void);
+static void get_admin_user();
 
 struct ConfigValue {
   ConfigValue() : config_type(RECT_NULL), data_type(RECD_NULL) {}
@@ -375,7 +375,7 @@ set_alarm_warn()
 }
 
 static void
-process_syslog_config(void)
+process_syslog_config()
 {
   int new_fac;
 
@@ -421,7 +421,7 @@ safe_kill(const char *lockfile_name, const char *pname, bool group)
 // one 64bit int
 //
 static ink_hrtime
-milliseconds(void)
+milliseconds()
 {
   struct timeval now;
 

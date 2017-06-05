@@ -289,7 +289,7 @@ RecProcessInitMessage(RecModeT mode_type)
 // RecProcessStart
 //-------------------------------------------------------------------------
 int
-RecProcessStart(void)
+RecProcessStart()
 {
   if (g_started) {
     return REC_ERR_OKAY;

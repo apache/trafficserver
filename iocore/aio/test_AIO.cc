@@ -149,7 +149,7 @@ struct AIO_Device : public Continuation {
 };
 
 void
-dump_summary(void)
+dump_summary()
 {
   /* dump timing info */
   printf("Writing summary info\n");

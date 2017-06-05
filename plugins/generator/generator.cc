@@ -626,7 +626,7 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
 }
 
 static void
-GeneratorInitialize(void)
+GeneratorInitialize()
 {
   TxnHook = TSContCreate(GeneratorTxnHook, nullptr);
   memset(GeneratorData, 'x', sizeof(GeneratorData));

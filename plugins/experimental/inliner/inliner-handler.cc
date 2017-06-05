@@ -67,7 +67,7 @@ namespace inliner
   }
 
   void
-  Handler::parse(void)
+  Handler::parse()
   {
     assert(reader_ != nullptr);
     TSIOBufferBlock block = TSIOBufferReaderStart(reader_);
@@ -130,7 +130,7 @@ namespace inliner
   }
 
   std::string
-  Handler::generateId(void)
+  Handler::generateId()
   {
     std::stringstream ss;
     // TODO(dmorilha): stop using memory address here.
@@ -139,7 +139,7 @@ namespace inliner
   }
 
   void
-  Handler::abort(void)
+  Handler::abort()
   {
     abort_ = true;
     assert(ioSink_);

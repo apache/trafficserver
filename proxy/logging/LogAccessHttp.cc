@@ -324,7 +324,7 @@ LogAccessHttp::marshal_client_auth_user_name(char *buf)
   -------------------------------------------------------------------------*/
 
 void
-LogAccessHttp::validate_unmapped_url(void)
+LogAccessHttp::validate_unmapped_url()
 {
   if (m_client_req_unmapped_url_canon_len < 0) {
     if (m_http_sm->t_state.unmapped_url.valid()) {
@@ -347,7 +347,7 @@ LogAccessHttp::validate_unmapped_url(void)
   -------------------------------------------------------------------------*/
 
 void
-LogAccessHttp::validate_unmapped_url_path(void)
+LogAccessHttp::validate_unmapped_url_path()
 {
   int len;
   char *c;
@@ -383,7 +383,7 @@ LogAccessHttp::validate_unmapped_url_path(void)
   m_cache_lookup__url_canon_len fields.
   -------------------------------------------------------------------------*/
 void
-LogAccessHttp::validate_lookup_url(void)
+LogAccessHttp::validate_lookup_url()
 {
   if (m_cache_lookup_url_canon_len < 0) {
     if (m_http_sm->t_state.cache_info.lookup_url_storage.valid()) {

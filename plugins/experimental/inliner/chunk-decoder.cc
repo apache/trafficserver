@@ -111,7 +111,7 @@ ChunkDecoder::parseSize(const char *p, const int64_t s)
 }
 
 bool
-ChunkDecoder::isSizeState(void) const
+ChunkDecoder::isSizeState() const
 {
   return state_ == State::kDataN || state_ == State::kEndN || state_ == State::kSize || state_ == State::kSizeN ||
          state_ == State::kSizeR;

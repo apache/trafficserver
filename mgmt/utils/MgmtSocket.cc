@@ -295,7 +295,7 @@ mgmt_read_timeout(int fd, int sec, int usec)
 }
 
 bool
-mgmt_has_peereid(void)
+mgmt_has_peereid()
 {
 #if HAVE_GETPEEREID
   return true;
