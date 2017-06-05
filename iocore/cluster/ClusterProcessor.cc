@@ -645,7 +645,7 @@ ClusterProcessor::init()
 
 // function added to adhere to the name calling convention of init functions
 int
-init_clusterprocessor(void)
+init_clusterprocessor()
 {
   return clusterProcessor.init();
 }

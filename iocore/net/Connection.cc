@@ -40,7 +40,7 @@
 #define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
 int
-get_listen_backlog(void)
+get_listen_backlog()
 {
   int listen_backlog;
 

@@ -77,7 +77,7 @@ OriginalRequest::OriginalRequest(const TSMBuffer b, const TSMLoc l) : buffer_(b)
   }
 }
 
-OriginalRequest::~OriginalRequest(void)
+OriginalRequest::~OriginalRequest()
 {
   urlScheme(original.urlScheme);
   urlHost(original.urlHost);

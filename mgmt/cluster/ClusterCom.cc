@@ -641,7 +641,7 @@ ClusterCom::checkPeers(time_t *ticker)
 } /* End ClusterCom::checkPeers */
 
 void
-ClusterCom::generateClusterDelta(void)
+ClusterCom::generateClusterDelta()
 {
   long highest_delta = 0L;
   InkHashTableEntry *entry;
@@ -1636,7 +1636,7 @@ ClusterCom::establishChannels()
  *   Setup our multicast channel for broadcasting.
  */
 void
-ClusterCom::establishBroadcastChannel(void)
+ClusterCom::establishBroadcastChannel()
 {
   if ((broadcast_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     mgmt_fatal(errno, "[ClusterCom::establishBroadcastChannel] Unable to open socket.\n");

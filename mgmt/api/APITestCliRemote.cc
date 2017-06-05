@@ -939,7 +939,7 @@ reconfigure()
  * tests if correct action need is returned when requested record is set
  */
 void
-test_action_need(void)
+test_action_need()
 {
   TSActionNeedT action;
 
@@ -1235,7 +1235,7 @@ test_rec_get(char *rec_name)
  * get list of records
  */
 void
-test_record_get_mlt(void)
+test_record_get_mlt()
 {
   TSRecordEle *rec_ele;
   TSStringList name_list;
@@ -1323,7 +1323,7 @@ test_record_get_mlt(void)
  * Also checks to make sure correct action_need type is set.
  */
 void
-test_record_set_mlt(void)
+test_record_set_mlt()
 {
   TSList list;
   TSRecordEle *ele1, *ele2, *ele3, *ele4, *ele5;
@@ -2025,7 +2025,7 @@ eventCallbackFn(char *name, char *msg, int /* pri ATS_UNUSED */, void * /* data 
  * that for any event that's signalled, the callback fn will also be called
  */
 void
-register_event_callback(void)
+register_event_callback()
 {
   TSMgmtError err;
 
@@ -2042,7 +2042,7 @@ register_event_callback(void)
  * event called, the eventCallbackFn will NOT be called
  */
 void
-unregister_event_callback(void)
+unregister_event_callback()
 {
   TSMgmtError err;
 

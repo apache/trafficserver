@@ -31,7 +31,7 @@ namespace ats
 {
 namespace inliner
 {
-  Attributes::operator std::string(void) const
+  Attributes::operator std::string() const
   {
     std::string result;
     for (const auto &item : *this) {
