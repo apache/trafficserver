@@ -28,8 +28,8 @@
 // doc/developer-guide/plugins/adding-statistics.en.rst
 
 #include <ts/ts.h>
-#include <inttypes.h>
-#include <time.h>
+#include <cinttypes>
+#include <ctime>
 
 #define PLUGIN_NAME "statistics"
 

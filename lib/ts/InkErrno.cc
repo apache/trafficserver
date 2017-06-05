@@ -23,7 +23,7 @@
 
 #include "InkErrno.h"
 #include "ink_assert.h"
-#include <string.h>
+#include <cstring>
 
 const char *
 InkStrerror(int ink_errno)

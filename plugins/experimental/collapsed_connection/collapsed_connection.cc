@@ -21,16 +21,16 @@
   limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cctype>
 
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <ts/experimental.h>
 #include "MurmurHash3.h"
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "P_collapsed_connection.h"
 

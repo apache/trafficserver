@@ -18,8 +18,8 @@
 
 #include "sslheaders.h"
 #include <ts/TestBox.h>
-#include <stdio.h>
-#include <stdarg.h>
+#include <cstdio>
+#include <cstdarg>
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/pem.h>

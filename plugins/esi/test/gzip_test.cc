@@ -22,9 +22,9 @@
  */
 
 #include <iostream>
-#include <assert.h>
+#include <cassert>
 #include <string>
-#include <string.h>
+#include <cstring>
 
 #include "print_funcs.h"
 #include "Utils.h"

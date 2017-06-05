@@ -23,8 +23,8 @@
 
 #include "ts/ink_error.h"
 #include "ts/ink_defs.h"
-#include <assert.h>
-#include "stdio.h"
+#include <cassert>
+#include <cstdio>
 #include "ts/ink_mutex.h"
 
 // Define the _g_mattr first to avoid static initialization order fiasco.

@@ -25,7 +25,7 @@
 #include "Attribute.h"
 #include "Utils.h"
 
-#include <errno.h>
+#include <cerrno>
 
 using std::list;
 using std::pair;

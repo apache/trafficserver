@@ -20,11 +20,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
-#include <assert.h>
+#include <cassert>
 #include <string>
-#include <stdarg.h>
+#include <cstdarg>
 
 #include "print_funcs.h"
 #include "Variables.h"

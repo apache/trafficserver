@@ -22,8 +22,8 @@
  */
 
 #include "ts/ink_config.h"
-#include <ctype.h>
-#include <string.h>
+#include <cctype>
+#include <cstring>
 #include "HttpConfig.h"
 #include "HTTP.h"
 #include "ProcessManager.h"

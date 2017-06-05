@@ -22,9 +22,9 @@
     limitations under the License.
 */
 
-#include <stdio.h>
+#include <cstdio>
 #include <memory.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <ts/ts.h>
 #include <tsconfig/TsValue.h>
 #include <openssl/ssl.h>

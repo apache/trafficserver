@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <assert.h>
+#include <cassert>
 #include <new>
 #include "ts/ink_platform.h"
 #include "ts/ink_memory.h"

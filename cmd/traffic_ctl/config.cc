@@ -22,7 +22,7 @@
  */
 
 #include "traffic_ctl.h"
-#include <time.h>
+#include <ctime>
 #include <I_RecDefs.h>
 #include <P_RecUtils.h>
 

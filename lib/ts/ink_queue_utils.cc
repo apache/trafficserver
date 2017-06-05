@@ -22,7 +22,7 @@
  */
 
 #include "ts/ink_config.h"
-#include <assert.h>
+#include <cassert>
 
 #include "ts/ink_atomic.h"
 #include "ts/ink_queue.h"

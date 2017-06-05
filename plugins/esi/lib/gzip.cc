@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "gzip.h"
 #include <zlib.h>

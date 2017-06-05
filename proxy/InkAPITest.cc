@@ -32,13 +32,13 @@
 #include "ts/ink_file.h"
 #include <sys/types.h>
 
-#include <errno.h>
+#include <cerrno>
 // extern int errno;
 
 #include <pthread.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "ts/Regression.h"
 #include "api/ts/ts.h"

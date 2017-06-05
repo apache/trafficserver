@@ -27,10 +27,10 @@
 
 #include "ts/ink_config.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <climits>
+#include <cstring>
 #include <sys/types.h>
 
 #include "P_EventSystem.h"

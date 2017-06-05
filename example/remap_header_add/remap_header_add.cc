@@ -27,9 +27,9 @@
     map /foo http://127.0.0.1/ @plugin=remap_header_add.so @pparam=foo:"x" @pparam=@test:"c" @pparam=a:"b"
 
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "ts/ts.h"
 #include "ts/remap.h"

@@ -22,7 +22,7 @@
  */
 
 #include <unistd.h>
-#include <limits.h>
+#include <climits>
 #include "ts/ink_platform.h"
 #include "ts/ink_file.h"
 #include "ts/ink_string.h"

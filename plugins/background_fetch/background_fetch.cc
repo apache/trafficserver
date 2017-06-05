@@ -21,10 +21,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cstdarg>
 #include <getopt.h>
 
 #include <string>

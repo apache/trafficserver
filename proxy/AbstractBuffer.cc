@@ -22,8 +22,8 @@
  */
 
 #include "ts/ink_config.h"
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 #include "AbstractBuffer.h"
 /* #include "CacheAtomic.h" */
 #include "ts/ink_align.h"

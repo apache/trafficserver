@@ -25,7 +25,7 @@
 # include "TsErrataUtil.h"
 # include "TsConfigLexer.h"
 # include "TsConfigGrammar.hpp"
-# include <stdlib.h>
+# include <cstdlib>
 
 // Prefix for text of our messages.
 # define PRE "Configuration Parser: "
