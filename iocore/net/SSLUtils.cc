@@ -1715,6 +1715,8 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
     SSLError("EVP_DigestFinal_ex failed");
     goto fail;
   }
+  EVP_MD_CTX_free(digest);
+  digest = NULL;
 
   if (SSL_CTX_set_session_id_context(ctx, hash_buf, hash_len) == 0) {
     SSLError("SSL_CTX_set_session_id_context failed");
@@ -1769,7 +1771,8 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   return ctx;
 
 fail:
-  EVP_MD_CTX_free(digest);
+  if (digest)
+    EVP_MD_CTX_free(digest);
   SSL_CLEAR_PW_REFERENCES(ctx)
   SSLReleaseContext(ctx);
   for (unsigned int i = 0; i < certList.length(); i++) {
