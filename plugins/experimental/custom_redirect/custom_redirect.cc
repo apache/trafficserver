@@ -24,15 +24,15 @@
 /* custom_redirect.cc: Allows read header set by origin for internal redirects
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <iostream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <ts/ts.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
 static char *redirect_url_header   = nullptr;
 static int redirect_url_header_len = 0;

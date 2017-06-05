@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <string.h>
+#include <cstring>
 #include <zlib.h>
 
 #if HAVE_BROTLI_ENCODE_H

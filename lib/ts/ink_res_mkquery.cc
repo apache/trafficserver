@@ -76,8 +76,8 @@
 #endif
 #include <netdb.h>
 #include <resolv.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "ts/ink_error.h"
 #include "ts/ink_resolver.h"

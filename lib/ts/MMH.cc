@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include "ts/ink_assert.h"
 #include "ts/ink_platform.h"
 #include "ts/MMH.h"

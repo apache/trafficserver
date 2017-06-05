@@ -37,9 +37,9 @@
   ****************************************************************************/
 
 #include "ts/ink_config.h"
-#include <assert.h>
+#include <cassert>
 #include <memory.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/mman.h>

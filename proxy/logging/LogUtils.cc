@@ -24,12 +24,12 @@
 #include "ts/ink_config.h"
 #include "ts/ink_string.h"
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <time.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstring>
+#include <ctime>
 
 #include <sys/time.h>
 #include <sys/types.h>

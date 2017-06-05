@@ -88,16 +88,16 @@
 #define MAX_RX_MATCH 10
 #define WHITESPACE " \t\r\n"
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <vector>
 #include <set>
 #include <regex.h>
-#include <ctype.h>
-#include <assert.h>
-#include <string.h>
+#include <cctype>
+#include <cassert>
+#include <cstring>
 #include <string>
-#include <stdio.h>
+#include <cstdio>
 #include "ts/ts.h"
 
 struct edit_t;

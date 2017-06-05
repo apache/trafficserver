@@ -31,7 +31,7 @@
 #include "ts/SimpleTokenizer.h"
 #include "ts/ink_file.h"
 
-#include <errno.h>
+#include <cerrno>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

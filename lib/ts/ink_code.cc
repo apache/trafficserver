@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include <string.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 #include "ts/ink_code.h"
 #include "ts/INK_MD5.h"
 #include "ts/ink_assert.h"

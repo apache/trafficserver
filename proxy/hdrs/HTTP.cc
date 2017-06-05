@@ -24,9 +24,9 @@
 #include "ts/ink_defs.h"
 #include "ts/ink_platform.h"
 #include "ts/ink_inet.h"
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 #include "HTTP.h"
 #include "HdrToken.h"
 #include "ts/Diags.h"

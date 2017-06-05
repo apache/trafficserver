@@ -18,8 +18,8 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <unistd.h>
 
 // change this on your box

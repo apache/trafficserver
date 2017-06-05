@@ -24,7 +24,7 @@
 #include "EsiParser.h"
 #include "Utils.h"
 
-#include <ctype.h>
+#include <cctype>
 
 using std::string;
 using namespace EsiLib;

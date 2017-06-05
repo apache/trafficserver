@@ -27,19 +27,19 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <limits.h>
+#include <cstdio>
+#include <cstring>
+#include <cctype>
+#include <climits>
 #include <ts/ts.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <errno.h>
+#include <cerrno>
 #include <dirent.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <inttypes.h>
+#include <cstdlib>
+#include <cinttypes>
 
 /* #define DEBUG 1 */
 #define DEBUG_TAG "buffer_upload-dbg"

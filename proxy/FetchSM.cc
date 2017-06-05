@@ -23,7 +23,7 @@
 
 #include "ts/ink_config.h"
 #include "FetchSM.h"
-#include <stdio.h>
+#include <cstdio>
 #include "HTTP.h"
 #include "PluginVC.h"
 

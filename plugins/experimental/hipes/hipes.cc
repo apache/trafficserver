@@ -18,10 +18,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include <stdio.h>
+#include <cstdio>
 #include <sys/time.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 #include <string>
 
 #include <ts/ts.h>

@@ -25,8 +25,8 @@
 #include "ts/ink_defs.h"
 
 #include "misc.h"
-#include <string.h>
-#include <inttypes.h>
+#include <cstring>
+#include <cinttypes>
 #include "debug_macros.h"
 
 voidpf

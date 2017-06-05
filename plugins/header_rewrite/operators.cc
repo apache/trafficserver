@@ -20,7 +20,7 @@
 //
 //
 #include <arpa/inet.h>
-#include <string.h>
+#include <cstring>
 
 #include "ts/ts.h"
 

@@ -22,8 +22,8 @@
  */
 
 #include "ts/ink_config.h"
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "P_EventSystem.h"
 // #include "I_Disk.h" unused

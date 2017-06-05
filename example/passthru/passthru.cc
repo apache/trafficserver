@@ -32,8 +32,8 @@
  */
 
 #include <ts/ts.h>
-#include <inttypes.h>
-#include <string.h>
+#include <cinttypes>
+#include <cstring>
 
 #define PLUGIN_NAME "passthru"
 
