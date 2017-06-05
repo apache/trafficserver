@@ -29,7 +29,7 @@ const std::string atscppapi::HOOK_TYPE_STRINGS[] = {
   std::string("HOOK_CACHE_LOOKUP_COMPLETE"),          std::string("HOOK_SELECT_ALT")};
 
 void
-atscppapi::RegisterGlobalPlugin(std::string name, std::string vendor, std::string email)
+atscppapi::RegisterGlobalPlugin(const std::string &name, const std::string &vendor, const std::string &email)
 {
   TSPluginRegistrationInfo info;
   info.plugin_name   = const_cast<char *>(name.c_str());

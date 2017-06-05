@@ -38,7 +38,7 @@ TSError(const char *fmt, ...)
 class ParserTest : public Parser
 {
 public:
-  ParserTest(std::string line) : Parser(line), res(true) { std::cout << "Finished parser test: " << line << std::endl; }
+  ParserTest(const std::string &line) : Parser(line), res(true) { std::cout << "Finished parser test: " << line << std::endl; }
   std::vector<std::string>
   getTokens()
   {
