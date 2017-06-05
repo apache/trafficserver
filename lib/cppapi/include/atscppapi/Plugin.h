@@ -166,7 +166,7 @@ protected:
 
 /**< Human readable strings for each HookType, you can access them as HOOK_TYPE_STRINGS[HOOK_OS_DNS] for example. */
 extern const std::string HOOK_TYPE_STRINGS[];
-void RegisterGlobalPlugin(std::string name, std::string vendor, std::string email);
+void RegisterGlobalPlugin(const std::string &name, const std::string &vendor, const std::string &email);
 
 } /* atscppapi */
 

@@ -261,7 +261,7 @@ HeaderField::values(const char join)
 }
 
 std::string
-Headers::value(const std::string key, size_type index /* = 0 */)
+Headers::value(const std::string &key, size_type index /* = 0 */)
 {
   header_field_iterator iter = find(key);
   if (iter == end()) {

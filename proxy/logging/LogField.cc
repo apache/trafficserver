@@ -242,7 +242,7 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 }
 
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
-                   Ptr<LogFieldAliasMap> map, SetFunc _setfunc)
+                   const Ptr<LogFieldAliasMap> &map, SetFunc _setfunc)
   : m_name(ats_strdup(name)),
     m_symbol(ats_strdup(symbol)),
     m_type(type),
