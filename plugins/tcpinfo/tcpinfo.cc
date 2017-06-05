@@ -104,13 +104,13 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
   socklen_t tcp_info_len = sizeof(info);
   int fd;
 
-  TSReleaseAssert(config->log != NULL);
+  TSReleaseAssert(config->log != nullptr);
 
-  if (ssnp != NULL && (TSHttpSsnClientFdGet(ssnp, &fd) != TS_SUCCESS || fd <= 0)) {
+  if (ssnp != nullptr && (TSHttpSsnClientFdGet(ssnp, &fd) != TS_SUCCESS || fd <= 0)) {
     TSDebug("tcpinfo", "error getting the client socket fd from ssn");
     return;
   }
-  if (ssnp == NULL) {
+  if (ssnp == nullptr) {
     TSDebug("tcpinfo", "ssn is not specified");
     return;
   }
@@ -123,7 +123,7 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
   client_addr.sa = TSHttpSsnClientAddrGet(ssnp);
   server_addr.sa = TSHttpSsnIncomingAddrGet(ssnp);
 
-  if (client_addr.sa == NULL || server_addr.sa == NULL) {
+  if (client_addr.sa == nullptr || server_addr.sa == nullptr) {
     return;
   }
 

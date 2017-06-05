@@ -233,7 +233,7 @@ ParentRoundRobin::markParentDown(const ParentSelectionPolicy *policy, ParentResu
 
   } else {
     int old_count = 0;
-    now           = time(NULL);
+    now           = time(nullptr);
 
     // if the last failure was outside the retry window, set the failcount to 1
     // and failedAt to now.

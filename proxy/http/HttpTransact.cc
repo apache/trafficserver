@@ -577,8 +577,8 @@ HttpTransact::Forbidden(State *s)
   DebugTxn("http_trans", "[Forbidden]"
                          "IpAllow marked request forbidden");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-  build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied", NULL);
-  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
+  build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied", nullptr);
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
 void
