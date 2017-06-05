@@ -26,9 +26,8 @@
 #include <vector>
 
 #define DISALLOW_COPY_AND_ASSIGN(T) \
-private:                            \
-  T(const T &);                     \
-  void operator=(const T &)
+  T(const T &) = delete;            \
+  void operator=(const T &) = delete
 
 #define DISALLOW_IMPLICIT_CONSTRUCTORS(T) \
 private:                                  \

@@ -246,8 +246,8 @@ struct NetVCOptions {
   static const char *toString(addr_bind_style s);
   //@}
 
-private:
-  NetVCOptions(const NetVCOptions &);
+  // noncopyable
+  NetVCOptions(const NetVCOptions &) = delete;
 };
 
 /**
@@ -640,9 +640,9 @@ public:
     return nullptr;
   }
 
-private:
-  NetVConnection(const NetVConnection &);
-  NetVConnection &operator=(const NetVConnection &);
+  // noncopyable
+  NetVConnection(const NetVConnection &) = delete;
+  NetVConnection &operator=(const NetVConnection &) = delete;
 
 protected:
   IpEndpoint local_addr;

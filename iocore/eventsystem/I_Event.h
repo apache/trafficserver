@@ -233,13 +233,12 @@ public:
   ink_hrtime start_time;
 #endif
 
-private:
-  void *operator new(size_t size); // use the fast allocators
+  // noncopyable: prevent unauthorized copies (Not implemented)
+  Event(const Event &) = delete;
+  Event &operator=(const Event &) = delete;
 
 private:
-  // prevent unauthorized copies (Not implemented)
-  Event(const Event &);
-  Event &operator=(const Event &);
+  void *operator new(size_t size); // use the fast allocators
 
 public:
   LINK(Event, link);

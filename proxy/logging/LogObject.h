@@ -306,10 +306,13 @@ private:
 
   LogBuffer *_checkout_write(size_t *write_offset, size_t write_size);
 
+  // noncopyable
+  LogObject(const LogObject &) = delete;
+  LogObject &operator=(const LogObject &) = delete;
+
 private:
   // -- member functions not allowed --
   LogObject();
-  LogObject &operator=(const LogObject &);
 };
 
 /*-------------------------------------------------------------------------

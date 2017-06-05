@@ -641,11 +641,11 @@ protected:
 
   static Arena *const USE_HDR_HEAP_MAGIC;
 
-private:
   // No gratuitous copies!
-  HTTPHdr(const HTTPHdr &m);
-  HTTPHdr &operator=(const HTTPHdr &m);
+  HTTPHdr(const HTTPHdr &m) = delete;
+  HTTPHdr &operator=(const HTTPHdr &m) = delete;
 
+private:
   friend class UrlPrintHack; // don't ask.
 };
 

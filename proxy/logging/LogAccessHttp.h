@@ -178,6 +178,11 @@ public:
   virtual void set_client_req_unmapped_url_host(char *, int);  // STR
   virtual void set_client_req_url_path(char *, int);           // STR
 
+  // noncopyable
+  // -- member functions that are not allowed --
+  LogAccessHttp(const LogAccessHttp &rhs) = delete;
+  LogAccessHttp &operator=(LogAccessHttp &rhs) = delete;
+
 private:
   HttpSM *m_http_sm;
 
@@ -211,10 +216,6 @@ private:
   void validate_unmapped_url_path(void);
 
   void validate_lookup_url(void);
-
-  // -- member functions that are not allowed --
-  LogAccessHttp(const LogAccessHttp &rhs);
-  LogAccessHttp &operator=(LogAccessHttp &rhs);
 };
 
 #endif

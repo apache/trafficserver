@@ -143,10 +143,11 @@ public:
     }
   }
 
-private:
-  Http2Frame(Http2Frame &);                  // noncopyable
-  Http2Frame &operator=(const Http2Frame &); // noncopyable
+  // noncopyable
+  Http2Frame(Http2Frame &) = delete;
+  Http2Frame &operator=(const Http2Frame &) = delete;
 
+private:
   Http2FrameHeader hdr;       // frame header
   Ptr<IOBufferBlock> ioblock; // frame payload
   IOBufferReader *ioreader;
@@ -291,10 +292,11 @@ public:
     return half_close_local;
   }
 
-private:
-  Http2ClientSession(Http2ClientSession &);                  // noncopyable
-  Http2ClientSession &operator=(const Http2ClientSession &); // noncopyable
+  // noncopyable
+  Http2ClientSession(Http2ClientSession &) = delete;
+  Http2ClientSession &operator=(const Http2ClientSession &) = delete;
 
+private:
   int main_event_handler(int, void *);
 
   int state_read_connection_preface(int, void *);

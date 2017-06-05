@@ -449,11 +449,10 @@ public:
 
   HdrHeap *m_heap;
 
-private:
   // In order to prevent gratitous refcounting,
   //  automatic C++ copies are disabled!
-  HdrHeapSDKHandle(const HdrHeapSDKHandle &r);
-  HdrHeapSDKHandle &operator=(const HdrHeapSDKHandle &r);
+  HdrHeapSDKHandle(const HdrHeapSDKHandle &r) = delete;
+  HdrHeapSDKHandle &operator=(const HdrHeapSDKHandle &r) = delete;
 };
 
 inline void

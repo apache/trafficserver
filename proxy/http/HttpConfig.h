@@ -812,12 +812,12 @@ public:
 
   MgmtInt body_factory_response_max_size = 8192;
 
-private:
+  // noncopyable
   /////////////////////////////////////
   // operator = and copy constructor //
   /////////////////////////////////////
-  HttpConfigParams(const HttpConfigParams &);
-  HttpConfigParams &operator=(const HttpConfigParams &);
+  HttpConfigParams(const HttpConfigParams &) = delete;
+  HttpConfigParams &operator=(const HttpConfigParams &) = delete;
 };
 
 /////////////////////////////////////////////////////////////

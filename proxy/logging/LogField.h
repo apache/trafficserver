@@ -202,13 +202,14 @@ public:
   LINK(LogField, link);
   LogSlice m_slice;
 
+  // noncopyable
+  // -- member functions that are not allowed --
+  LogField &operator=(const LogField &rhs) = delete;
+
 private:
   // luis, check where this is used and what it does
   //    void init (char *name, char *symbol, Type type);
-
-  // -- member functions that are not allowed --
   LogField();
-  LogField &operator=(const LogField &rhs);
 };
 
 /*-------------------------------------------------------------------------
@@ -244,13 +245,14 @@ public:
   unsigned count();
   void display(FILE *fd = stdout);
 
+  // noncopyable
+  // -- member functions that are not allowed --
+  LogFieldList(const LogFieldList &rhs) = delete;
+  LogFieldList &operator=(const LogFieldList &rhs) = delete;
+
 private:
   unsigned m_marshal_len;
   Queue<LogField> m_field_list;
-
-  // -- member functions that are not allowed --
-  LogFieldList(const LogFieldList &rhs);
-  LogFieldList &operator=(const LogFieldList &rhs);
 };
 
 /** Base IP address data.

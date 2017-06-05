@@ -360,10 +360,12 @@ public:
 
   bool initialized;
 
-private:
+  // noncopyable
   // -- member functions that are not allowed --
-  LogAccess(const LogAccess &rhs);      // no copies
-  LogAccess &operator=(LogAccess &rhs); // or assignment
+  LogAccess(const LogAccess &rhs) = delete;      // no copies
+  LogAccess &operator=(LogAccess &rhs) = delete; // or assignment
+
+private:
 };
 
 inline int

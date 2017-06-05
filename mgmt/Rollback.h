@@ -237,8 +237,11 @@ public:
 
   FileManager *configFiles; // Manager to notify on an update.
 
+  // noncopyable
+  Rollback(const Rollback &) = delete;
+  Rollback &operator=(const Rollback &) = delete;
+
 private:
-  Rollback(const Rollback &);
   int openFile(version_t version, int oflags, int *errnoPtr = NULL);
   int closeFile(int fd, bool callSync);
   int statFile(version_t version, struct stat *buf);

@@ -46,10 +46,11 @@ struct Http2SessionAccept : public SessionAccept {
   bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
   int mainEvent(int event, void *netvc);
 
-private:
-  Http2SessionAccept(const Http2SessionAccept &);
-  Http2SessionAccept &operator=(const Http2SessionAccept &);
+  // noncopyable
+  Http2SessionAccept(const Http2SessionAccept &) = delete;
+  Http2SessionAccept &operator=(const Http2SessionAccept &) = delete;
 
+private:
   HttpSessionAccept::Options options;
 };
 

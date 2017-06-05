@@ -56,10 +56,11 @@ public:
     typedef DLL<NextProtocolEndpoint> list_type;
   };
 
-private:
-  SSLNextProtocolSet(const SSLNextProtocolSet &);            // disabled
-  SSLNextProtocolSet &operator=(const SSLNextProtocolSet &); // disabled
+  // noncopyable
+  SSLNextProtocolSet(const SSLNextProtocolSet &) = delete;            // disabled
+  SSLNextProtocolSet &operator=(const SSLNextProtocolSet &) = delete; // disabled
 
+private:
   mutable unsigned char *npn;
   mutable size_t npnsz;
 

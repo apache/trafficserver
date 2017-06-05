@@ -66,10 +66,11 @@ struct BindingInstance {
 
   lua_State *lua;
 
+  BindingInstance(const BindingInstance &) = delete;
+  BindingInstance &operator=(const BindingInstance &) = delete;
+
 private:
   std::map<std::string, void *> attachments;
-  BindingInstance(const BindingInstance &);            // noncopyable
-  BindingInstance &operator=(const BindingInstance &); // noncopyable
 };
 
 #endif /* BINDINGS_H_02DF784C_94BD_4A5C_B57A_F986F5493C6A */

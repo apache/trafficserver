@@ -206,9 +206,9 @@ struct OneWayTunnel : public Continuation {
   OneWayTunnel *tunnel_peer;
   bool free_vcs;
 
-private:
-  OneWayTunnel(const OneWayTunnel &);
-  OneWayTunnel &operator=(const OneWayTunnel &);
+  // noncopyable
+  OneWayTunnel(const OneWayTunnel &) = delete;
+  OneWayTunnel &operator=(const OneWayTunnel &) = delete;
 };
 
 #endif

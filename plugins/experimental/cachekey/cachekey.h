@@ -64,10 +64,12 @@ public:
   bool appendUaClass(Classifier &classifier);
   bool finalize() const;
 
+  // noncopyable
+  CacheKey(const CacheKey &) = delete;            // disallow
+  CacheKey &operator=(const CacheKey &) = delete; // disallow
+
 private:
-  CacheKey();                            // disallow
-  CacheKey(const CacheKey &);            // disallow
-  CacheKey &operator=(const CacheKey &); // disallow
+  CacheKey(); // disallow
 
   /* Information from the request */
   TSHttpTxn _txn; /**< @brief transaction handle */

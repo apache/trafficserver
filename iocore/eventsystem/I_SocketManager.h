@@ -145,10 +145,9 @@ struct SocketManager {
 
   virtual ~SocketManager();
 
-private:
-  // just don't do it
-  SocketManager(SocketManager &);
-  SocketManager &operator=(SocketManager &);
+  // noncopyable: Just don't Do It.
+  SocketManager(SocketManager &) = delete;
+  SocketManager &operator=(SocketManager &) = delete;
 };
 
 extern SocketManager socketManager;

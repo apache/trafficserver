@@ -924,9 +924,9 @@ protected:
   */
   void findBucket(Key key, Location &location);
 
-private:
-  TSHashTable(const TSHashTable &);            // noncopyable
-  TSHashTable &operator=(const TSHashTable &); // noncopyable
+  // noncopyable
+  TSHashTable(const TSHashTable &) = delete;
+  TSHashTable &operator=(const TSHashTable &) = delete;
 };
 
 template <typename H>

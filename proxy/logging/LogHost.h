@@ -127,10 +127,12 @@ public:
   LINK(LogHost, link);
   SLINK(LogHost, failover_link);
 
+  // noncopyable
+  LogHost &operator=(const LogHost &) = delete;
+
 private:
   // -- member functions not allowed --
   LogHost();
-  LogHost &operator=(const LogHost &);
 };
 
 /*-------------------------------------------------------------------------
@@ -163,12 +165,12 @@ public:
   bool operator==(LogHostList &rhs);
   int do_filesystem_checks();
 
+  // -- member functions not allowed --
+  LogHostList(const LogHostList &) = delete;
+  LogHostList &operator=(const LogHostList &) = delete;
+
 private:
   Queue<LogHost> m_host_list;
-
-  // -- member functions not allowed --
-  LogHostList(const LogHostList &);
-  LogHostList &operator=(const LogHostList &);
 };
 
 #endif

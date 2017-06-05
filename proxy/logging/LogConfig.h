@@ -214,17 +214,16 @@ private:
 
   LogCollationAccept *m_log_collation_accept;
 
-  char *m_pDir;
   bool m_disk_full;
   bool m_disk_low;
   bool m_partition_full;
   bool m_partition_low;
   bool m_log_directory_inaccessible;
 
-private:
+  // noncopyable
   // -- member functions not allowed --
-  LogConfig(const LogConfig &);
-  LogConfig &operator=(const LogConfig &);
+  LogConfig(const LogConfig &) = delete;
+  LogConfig &operator=(const LogConfig &) = delete;
 };
 
 /*-------------------------------------------------------------------------

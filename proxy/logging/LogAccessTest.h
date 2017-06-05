@@ -96,10 +96,10 @@ public:
   //
   virtual int marshal_http_header_field(char *header_symbol, char *field, char *buf);
 
-private:
+  // noncopyable
   // -- member functions that are not allowed --
-  LogAccessTest(const LogAccessTest &rhs);
-  LogAccessTest &operator=(LogAccessTest &rhs);
+  LogAccessTest(const LogAccessTest &rhs) = delete;
+  LogAccessTest &operator=(LogAccessTest &rhs) = delete;
 };
 
 #endif

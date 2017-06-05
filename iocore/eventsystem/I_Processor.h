@@ -107,13 +107,12 @@ public:
     return 0;
   }
 
+  // noncopyable, prevent unauthorized copies (Not implemented)
+  Processor(const Processor &) = delete;
+  Processor &operator=(const Processor &) = delete;
+
 protected:
   Processor();
-
-private:
-  // prevent unauthorized copies (Not implemented)
-  Processor(const Processor &);
-  Processor &operator=(const Processor &);
 };
 
 #endif //_I_Processor_h_

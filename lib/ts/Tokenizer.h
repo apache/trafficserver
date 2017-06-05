@@ -149,9 +149,11 @@ public:
   inkcoreapi const char *iterFirst(tok_iter_state *state);
   inkcoreapi const char *iterNext(tok_iter_state *state);
 
+  // noncopyable
+  Tokenizer &operator=(const Tokenizer &) = delete;
+  Tokenizer(const Tokenizer &)            = delete;
+
 private:
-  Tokenizer &operator=(const Tokenizer &);
-  Tokenizer(const Tokenizer &);
   int isDelimiter(char c);
   void addToken(char *startAddr, int length);
   void ReUse();

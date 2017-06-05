@@ -269,10 +269,9 @@ public:
   {
   }
 
-private:
-  // declaration only
-  IOBufferData(const IOBufferData &);
-  IOBufferData &operator=(const IOBufferData &);
+  // noncopyable, declaration only
+  IOBufferData(const IOBufferData &) = delete;
+  IOBufferData &operator=(const IOBufferData &) = delete;
 };
 
 inkcoreapi extern ClassAllocator<IOBufferData> ioDataAllocator;
@@ -520,9 +519,9 @@ public:
   */
   IOBufferBlock();
 
-private:
-  IOBufferBlock(const IOBufferBlock &);
-  IOBufferBlock &operator=(const IOBufferBlock &);
+  // noncopyable
+  IOBufferBlock(const IOBufferBlock &) = delete;
+  IOBufferBlock &operator=(const IOBufferBlock &) = delete;
 };
 
 extern inkcoreapi ClassAllocator<IOBufferBlock> ioBlockAllocator;
@@ -1232,10 +1231,11 @@ struct MIOBufferAccessor {
   const char *name;
 #endif
 
-private:
-  MIOBufferAccessor(const MIOBufferAccessor &);
-  MIOBufferAccessor &operator=(const MIOBufferAccessor &);
+  // noncopyable
+  MIOBufferAccessor(const MIOBufferAccessor &) = delete;
+  MIOBufferAccessor &operator=(const MIOBufferAccessor &) = delete;
 
+private:
   MIOBuffer *mbuf;
   IOBufferReader *entry;
 };

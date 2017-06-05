@@ -88,9 +88,9 @@ protected:
   std::vector<Pattern *> _list; /**< @brief vector which dictates the order of the pattern evaluation. */
   String _name;                 /**< @brief multi-pattern name */
 
-private:
-  MultiPattern(const MultiPattern &);            // disallow
-  MultiPattern &operator=(const MultiPattern &); // disallow
+  // noncopyable
+  MultiPattern(const MultiPattern &) = delete;            // disallow
+  MultiPattern &operator=(const MultiPattern &) = delete; // disallow
 };
 
 /**
@@ -111,10 +111,12 @@ public:
     return !MultiPattern::match(subject);
   }
 
+  // noncopyable
+  NonMatchingMultiPattern(const NonMatchingMultiPattern &) = delete;            // disallow
+  NonMatchingMultiPattern &operator=(const NonMatchingMultiPattern &) = delete; // disallow
+
 private:
-  NonMatchingMultiPattern();                                           // disallow
-  NonMatchingMultiPattern(const NonMatchingMultiPattern &);            // disallow
-  NonMatchingMultiPattern &operator=(const NonMatchingMultiPattern &); // disallow
+  NonMatchingMultiPattern(); // disallow
 };
 
 /**
@@ -129,11 +131,12 @@ public:
   bool classify(const String &subject, String &name) const;
   void add(MultiPattern *pattern);
 
+  // noncopyable
+  Classifier(const Classifier &) = delete;            // disallow
+  Classifier &operator=(const Classifier &) = delete; // disallow
+
 private:
   std::vector<MultiPattern *> _list; /**< @brief vector which dictates the multi-pattern evaluation order */
-
-  Classifier(const Classifier &);            // disallow
-  Classifier &operator=(const Classifier &); // disallow
 };
 
 #endif /* PLUGINS_EXPERIMENTAL_CACHEKEY_PATTERN_H_ */

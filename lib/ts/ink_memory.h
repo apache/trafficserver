@@ -339,8 +339,8 @@ public:
 protected:
   value_type _r; ///< Resource.
 private:
-  ats_scoped_resource(self const &); ///< Copy constructor not permitted.
-  self &operator=(self const &);     ///< Self assignment not permitted.
+  ats_scoped_resource(self const &) = delete; ///< Copy constructor not permitted.
+  self &operator=(self const &) = delete;     ///< Self assignment not permitted.
 };
 
 namespace detail

@@ -110,11 +110,13 @@ protected:
 public:
   LINK(LogFilter, link); // so we can create a LogFilterList
 
+  // noncopyable
+  LogFilter(const LogFilter &rhs) = delete;
+  LogFilter &operator=(LogFilter &rhs) = delete;
+
 private:
   // -- member functions that are not allowed --
   LogFilter();
-  LogFilter(const LogFilter &rhs);
-  LogFilter &operator=(LogFilter &rhs);
 };
 
 /*-------------------------------------------------------------------------
@@ -134,6 +136,9 @@ public:
   bool toss_this_entry(LogAccess *lad);
   bool wipe_this_entry(LogAccess *lad);
   void display(FILE *fd = stdout);
+
+  // noncopyable
+  LogFilterString &operator=(LogFilterString &rhs) = delete;
 
 private:
   char **m_value = nullptr; // the array of values
@@ -171,7 +176,6 @@ private:
 
   // -- member functions that are not allowed --
   LogFilterString();
-  LogFilterString &operator=(LogFilterString &rhs);
 };
 
 /*-------------------------------------------------------------------------
@@ -193,6 +197,9 @@ public:
   bool wipe_this_entry(LogAccess *lad);
   void display(FILE *fd = stdout);
 
+  // noncopyable
+  LogFilterInt &operator=(LogFilterInt &rhs) = delete;
+
 private:
   int64_t *m_value = nullptr; // the array of values
 
@@ -201,7 +208,6 @@ private:
 
   // -- member functions that are not allowed --
   LogFilterInt();
-  LogFilterInt &operator=(LogFilterInt &rhs);
 };
 
 /*-------------------------------------------------------------------------
@@ -224,6 +230,9 @@ public:
   virtual bool wipe_this_entry(LogAccess *lad);
   void display(FILE *fd = stdout);
 
+  // noncopyable
+  LogFilterIP &operator=(LogFilterIP &rhs) = delete;
+
 private:
   IpMap m_map;
 
@@ -238,7 +247,6 @@ private:
 
   // -- member functions that are not allowed --
   LogFilterIP();
-  LogFilterIP &operator=(LogFilterIP &rhs);
 };
 
 bool filters_are_equal(LogFilter *filt1, LogFilter *filt2);
@@ -286,6 +294,11 @@ public:
     m_does_conjunction = c;
   }
 
+  // noncopyable
+  // -- member functions that are not allowed --
+  LogFilterList(const LogFilterList &rhs) = delete;
+  LogFilterList &operator=(const LogFilterList &rhs) = delete;
+
 private:
   Queue<LogFilter> m_filter_list;
 
@@ -296,10 +309,6 @@ private:
   // If m_does_conjunction = false,
   // toss this entry returns true if
   // ALL filters toss away entry
-
-  // -- member functions that are not allowed --
-  LogFilterList(const LogFilterList &rhs);
-  LogFilterList &operator=(const LogFilterList &rhs);
 };
 
 /*-------------------------------------------------------------------------

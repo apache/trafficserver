@@ -69,9 +69,9 @@ struct HttpIoBuffer {
     TSIOBufferReaderConsume(this->reader, nbytes);
   }
 
-private:
-  HttpIoBuffer(const HttpIoBuffer &);            // delete
-  HttpIoBuffer &operator=(const HttpIoBuffer &); // delete
+  // noncopyable
+  HttpIoBuffer(const HttpIoBuffer &) = delete;            // delete
+  HttpIoBuffer &operator=(const HttpIoBuffer &) = delete; // delete
 };
 
 struct HttpHeader {
@@ -87,9 +87,9 @@ struct HttpHeader {
   TSMBuffer buffer;
   TSMLoc header;
 
-private:
-  HttpHeader(const HttpHeader &);            // delete
-  HttpHeader &operator=(const HttpHeader &); // delete
+  // noncopyable
+  HttpHeader(const HttpHeader &) = delete;            // delete
+  HttpHeader &operator=(const HttpHeader &) = delete; // delete
 };
 
 // Return true if the given HTTP header specified chunked transfer encoding.
