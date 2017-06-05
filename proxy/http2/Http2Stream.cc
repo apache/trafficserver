@@ -138,7 +138,7 @@ Http2Stream::main_event_handler(int event, void *edata)
 Http2ErrorCode
 Http2Stream::decode_header_blocks(HpackHandle &hpack_handle)
 {
-  return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks, header_blocks_length, NULL, hpack_handle,
+  return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks, header_blocks_length, nullptr, hpack_handle,
                                     trailing_header);
 }
 

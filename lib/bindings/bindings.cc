@@ -265,7 +265,7 @@ BindingInstance::require(const char *path)
 bool
 BindingInstance::eval(const char *chunk)
 {
-  ink_release_assert(this->lua != NULL);
+  ink_release_assert(this->lua != nullptr);
 
   if (luaL_dostring(this->lua, chunk) != 0) {
     const char *w = lua_tostring(this->lua, -1);

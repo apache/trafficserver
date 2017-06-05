@@ -244,7 +244,7 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
   proxy_name                   = REC_readString("proxy.config.proxy_name", &found);
   proxy_binary                 = REC_readString("proxy.config.proxy_binary", &found);
   env_prep                     = REC_readString("proxy.config.env_prep", &found);
-  proxy_options                = NULL;
+  proxy_options                = nullptr;
 
   // Calculate proxy_binary from the absolute bin_path
   absolute_proxy_binary = Layout::relative_to(bindir, proxy_binary);
@@ -946,7 +946,7 @@ LocalManager::startProxy(const char *onetime_options)
     }
 
     // Make sure we're starting the proxy in mgmt mode
-    if (strstr(real_proxy_options, MGMT_OPT) == 0) {
+    if (strstr(real_proxy_options, MGMT_OPT) == nullptr) {
       ink_strlcat(real_proxy_options, " ", OPTIONS_SIZE);
       ink_strlcat(real_proxy_options, MGMT_OPT, OPTIONS_SIZE);
     }

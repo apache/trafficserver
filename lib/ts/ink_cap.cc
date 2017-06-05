@@ -408,7 +408,7 @@ ElevateAccess::ElevateAccess(unsigned lvl)
     level(lvl)
 #if TS_USE_POSIX_CAP
     ,
-    cap_state(0)
+    cap_state(nullptr)
 #endif
 {
   elevate(level);

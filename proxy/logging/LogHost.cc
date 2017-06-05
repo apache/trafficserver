@@ -312,7 +312,7 @@ LogHost::display(FILE *fd)
   fprintf(fd, "LogHost: %s:%u, %s\n", name(), port(), (connected(NOPING)) ? "connected" : "not connected");
 
   LogHost *host = this;
-  while (host->failover_link.next != NULL) {
+  while (host->failover_link.next != nullptr) {
     fprintf(fd, "Failover: %s:%u, %s\n", host->name(), host->port(), (host->connected(NOPING)) ? "connected" : "not connected");
     host = host->failover_link.next;
   }
