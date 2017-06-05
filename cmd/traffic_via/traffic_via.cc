@@ -269,7 +269,7 @@ filterViaHeader()
   int pcreExecCode;
   int i;
   const char *viaPattern =
-    "\\[([ucsfpe]+[^\\]]+)\\]"; // Regex to match via header with in [] which can start with character class ucsfpe
+    R"(\[([ucsfpe]+[^\]]+)\])"; // Regex to match via header with in [] which can start with character class ucsfpe
   char *viaHeaderString;
   char viaHeader[1024];
 
