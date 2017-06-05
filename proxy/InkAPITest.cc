@@ -5439,7 +5439,7 @@ REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED
     err = 1;
   } else if (strcmp(svalue, CONFIG_PARAM_STRING_VALUE) != 0) {
     SDK_RPRINT(test, "TSMgmtStringGet", "TestCase1.4", TC_FAIL,
-               "got incorrect value of param %s, should have been \"%s\", found \"%s\"", CONFIG_PARAM_STRING_NAME,
+               R"(got incorrect value of param %s, should have been "%s", found "%s")", CONFIG_PARAM_STRING_NAME,
                CONFIG_PARAM_STRING_VALUE, svalue);
     err = 1;
   } else {
