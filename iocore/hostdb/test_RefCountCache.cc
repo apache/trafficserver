@@ -59,7 +59,7 @@ public:
 
   // Really free the memory, we can use asan leak detection to verify it was freed
   void
-  free()
+  free() override
   {
     this->idx = -1;
     items_freed.insert(this);

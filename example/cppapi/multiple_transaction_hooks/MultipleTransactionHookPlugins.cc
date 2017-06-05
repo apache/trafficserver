@@ -37,9 +37,9 @@ public:
     std::cout << "Constructed MultipleTransactionHookPluginsOne!" << std::endl;
   }
 
-  virtual ~MultipleTransactionHookPluginsOne() { std::cout << "Destroyed MultipleTransactionHookPluginsOne!" << std::endl; }
+  ~MultipleTransactionHookPluginsOne() override { std::cout << "Destroyed MultipleTransactionHookPluginsOne!" << std::endl; }
   void
-  handleSendResponseHeaders(Transaction &transaction)
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     std::cerr << "MultipleTransactionHookPluginsOne -- Send response headers!" << std::endl;
     transaction.resume();
@@ -56,9 +56,9 @@ public:
     std::cout << "Constructed MultipleTransactionHookPluginsTwo!" << std::endl;
   }
 
-  virtual ~MultipleTransactionHookPluginsTwo() { std::cout << "Destroyed MultipleTransactionHookPluginsTwo!" << std::endl; }
+  ~MultipleTransactionHookPluginsTwo() override { std::cout << "Destroyed MultipleTransactionHookPluginsTwo!" << std::endl; }
   void
-  handleSendRequestHeaders(Transaction &transaction)
+  handleSendRequestHeaders(Transaction &transaction) override
   {
     std::cout << "MultipleTransactionHookPluginsTwo -- Send request headers!" << std::endl;
     some_container_.push_back("We have transaction scoped storage in Transaction Hooks!");
@@ -66,7 +66,7 @@ public:
   }
 
   void
-  handleSendResponseHeaders(Transaction &transaction)
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     std::cout << "MultipleTransactionHookPluginsTwo -- Send response headers!" << std::endl;
 
@@ -86,8 +86,8 @@ class GlobalHookPlugin : public atscppapi::GlobalPlugin
 {
 public:
   GlobalHookPlugin() { GlobalPlugin::registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
-  virtual void
-  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPreRemap(Transaction &transaction) override
   {
     std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;
 

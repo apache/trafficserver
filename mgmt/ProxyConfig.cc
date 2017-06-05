@@ -254,7 +254,7 @@ struct RegressionConfig : public ConfigInfo {
     ink_atomic_increment(&nobjects, 1);
   }
 
-  ~RegressionConfig()
+  ~RegressionConfig() override
   {
     TestBox box(this->test, this->pstatus);
 

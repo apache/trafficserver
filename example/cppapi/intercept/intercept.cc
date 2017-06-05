@@ -36,9 +36,9 @@ class Intercept : public InterceptPlugin
 {
 public:
   Intercept(Transaction &transaction) : InterceptPlugin(transaction, InterceptPlugin::SERVER_INTERCEPT) {}
-  void consume(const string &data, InterceptPlugin::RequestDataType type);
-  void handleInputComplete();
-  ~Intercept() { cout << "Shutting down" << endl; }
+  void consume(const string &data, InterceptPlugin::RequestDataType type) override;
+  void handleInputComplete() override;
+  ~Intercept() override { cout << "Shutting down" << endl; }
 };
 
 class InterceptInstaller : public GlobalPlugin
@@ -49,7 +49,7 @@ public:
     GlobalPlugin::registerHook(Plugin::HOOK_READ_REQUEST_HEADERS_PRE_REMAP);
   }
   void
-  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  handleReadRequestHeadersPreRemap(Transaction &transaction) override
   {
     transaction.addPlugin(new Intercept(transaction));
     cout << "Added intercept" << endl;

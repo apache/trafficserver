@@ -44,7 +44,7 @@ public:
   }
 
   void
-  handleSendRequestHeaders(Transaction &transaction)
+  handleSendRequestHeaders(Transaction &transaction) override
   {
     // Here we can decide to abort the request to the origin (we can do this earlier too)
     // and just send the user an error page.
@@ -62,7 +62,7 @@ public:
   }
 
   void
-  handleReadResponseHeaders(Transaction &transaction)
+  handleReadResponseHeaders(Transaction &transaction) override
   {
     cout << "Hello from handleReadResponseHeaders!" << endl;
     cout << "Server response headers are" << endl;
@@ -73,7 +73,7 @@ public:
   }
 
   void
-  handleSendResponseHeaders(Transaction &transaction)
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     cout << "Hello from handleSendResponseHeaders!" << endl;
     cout << "Client response headers are" << endl;

@@ -37,13 +37,13 @@ public:
     TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
     std::cout << "Constructed!" << std::endl;
   }
-  virtual ~TransactionHookPlugin()
+  ~TransactionHookPlugin() override
   {
     delete[] char_ptr_; // cleanup
     std::cout << "Destroyed!" << std::endl;
   }
   void
-  handleSendResponseHeaders(Transaction &transaction)
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     std::cout << "Send response headers!" << std::endl;
     transaction.resume();
@@ -57,8 +57,8 @@ class GlobalHookPlugin : public atscppapi::GlobalPlugin
 {
 public:
   GlobalHookPlugin() { GlobalPlugin::registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
-  virtual void
-  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPreRemap(Transaction &transaction) override
   {
     std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;
     transaction.addPlugin(new TransactionHookPlugin(transaction));

@@ -41,8 +41,8 @@ public:
     registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
   }
 
-  virtual void
-  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
     TS_DEBUG(TAG, "Received a request in handleReadRequestHeadersPostRemap.");
     transaction.resume();
@@ -58,8 +58,8 @@ public:
     registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
   }
 
-  virtual void
-  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
     TS_DEBUG(TAG, "Received a request in handleReadRequestHeadersPostRemap.");
     std::shared_ptr<Mutex> mutex(new Mutex());                                            // required for async operation
@@ -68,7 +68,7 @@ public:
   }
 
   void
-  handleAsyncComplete(AsyncHttpFetch &provider ATSCPPAPI_UNUSED)
+  handleAsyncComplete(AsyncHttpFetch &provider ATSCPPAPI_UNUSED) override
   {
   }
 };
