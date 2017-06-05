@@ -271,7 +271,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
   INK_MD5 hostname_hash;
   HSMresult_t retval = HSM_NOT_FOUND;
 
-  ink_code_md5((unsigned char *)hostname, strlen(hostname), (unsigned char *)&hostname_hash);
+  ink_code_md5((unsigned char *)hostname, strlen(hostname), reinterpret_cast<unsigned char *>(&hostname_hash));
 
   // First check to see if there is a server session bound
   //   to the user agent session

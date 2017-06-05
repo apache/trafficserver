@@ -121,9 +121,9 @@ LogCollationClientSM::client_handler(int event, void *data)
 {
   switch (m_client_state) {
   case LOG_COLL_CLIENT_AUTH:
-    return client_auth(event, (VIO *)data);
+    return client_auth(event, static_cast<VIO *>(data));
   case LOG_COLL_CLIENT_DNS:
-    return client_dns(event, (HostDBInfo *)data);
+    return client_dns(event, static_cast<HostDBInfo *>(data));
   case LOG_COLL_CLIENT_DONE:
     return client_done(event, data);
   case LOG_COLL_CLIENT_FAIL:
@@ -133,9 +133,9 @@ LogCollationClientSM::client_handler(int event, void *data)
   case LOG_COLL_CLIENT_INIT:
     return client_init(event, data);
   case LOG_COLL_CLIENT_OPEN:
-    return client_open(event, (NetVConnection *)data);
+    return client_open(event, static_cast<NetVConnection *>(data));
   case LOG_COLL_CLIENT_SEND:
-    return client_send(event, (VIO *)data);
+    return client_send(event, static_cast<VIO *>(data));
   default:
     ink_assert(!"unexpcted state");
     return EVENT_CONT;
@@ -237,12 +237,12 @@ LogCollationClientSM::client_auth(int event, VIO * /* vio ATS_UNUSED */)
     m_client_state = LOG_COLL_CLIENT_AUTH;
 
     NetMsgHeader nmh;
-    int bytes_to_send = (int)strlen(Log::config->collation_secret);
+    int bytes_to_send = static_cast<int>(strlen(Log::config->collation_secret));
     nmh.msg_bytes     = bytes_to_send;
 
     // memory copies, I know...  but it happens rarely!!!  ^_^
     ink_assert(m_auth_buffer != nullptr);
-    m_auth_buffer->write((char *)&nmh, sizeof(NetMsgHeader));
+    m_auth_buffer->write(reinterpret_cast<char *>(&nmh), sizeof(NetMsgHeader));
     m_auth_buffer->write(Log::config->collation_secret, bytes_to_send);
     bytes_to_send += sizeof(NetMsgHeader);
 
@@ -643,8 +643,8 @@ LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
 
     // copy into m_send_buffer
     ink_assert(m_send_buffer != nullptr);
-    m_send_buffer->write((char *)&nmh, sizeof(NetMsgHeader));
-    m_send_buffer->write((char *)log_buffer_header, bytes_to_send);
+    m_send_buffer->write(reinterpret_cast<char *>(&nmh), sizeof(NetMsgHeader));
+    m_send_buffer->write(reinterpret_cast<char *>(log_buffer_header), bytes_to_send);
     bytes_to_send += sizeof(NetMsgHeader);
 
     // send m_send_buffer to iocore

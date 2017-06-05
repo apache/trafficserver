@@ -121,10 +121,10 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
 
   /* its safe to add to this global list because ink_freelist_init()
      is only called from single-threaded initialization code. */
-  f = (InkFreeList *)ats_memalign(alignment, sizeof(InkFreeList));
+  f = static_cast<InkFreeList *>(ats_memalign(alignment, sizeof(InkFreeList)));
   ink_zero(*f);
 
-  fll       = (ink_freelist_list *)ats_malloc(sizeof(ink_freelist_list));
+  fll       = static_cast<ink_freelist_list *>(ats_malloc(sizeof(ink_freelist_list)));
   fll->fl   = f;
   fll->next = freelists;
   freelists = fll;
@@ -182,7 +182,7 @@ ink_freelist_new(InkFreeList *f)
   void *ptr;
 
   if (likely(ptr = freelist_freelist_ops->fl_new(f))) {
-    ink_atomic_increment((int *)&f->used, 1);
+    ink_atomic_increment(reinterpret_cast<int *>(&f->used), 1);
   }
 
   return ptr;
@@ -214,15 +214,15 @@ freelist_new(InkFreeList *f)
       }
 
       if (f->advice) {
-        ats_madvise((caddr_t)newp, INK_ALIGN(alloc_size, alignment), f->advice);
+        ats_madvise(static_cast<caddr_t>(newp), INK_ALIGN(alloc_size, alignment), f->advice);
       }
       SET_FREELIST_POINTER_VERSION(item, newp, 0);
 
-      ink_atomic_increment((int *)&f->allocated, f->chunk_size);
+      ink_atomic_increment(reinterpret_cast<int *>(&f->allocated), f->chunk_size);
 
       /* free each of the new elements */
       for (i = 0; i < f->chunk_size; i++) {
-        char *a = ((char *)FREELIST_POINTER(item)) + i * f->type_size;
+        char *a = (static_cast<char *>(FREELIST_POINTER(item))) + i * f->type_size;
 #ifdef DEADBEEF
         const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
         for (int j = 0; j < (int)f->type_size; j++)
@@ -260,7 +260,7 @@ malloc_new(InkFreeList *f)
   if (f->alignment) {
     newp = ats_memalign(f->alignment, f->type_size);
     if (f->advice && (INK_ALIGN((uint64_t)newp, ats_pagesize()) == (uint64_t)newp)) {
-      ats_madvise((caddr_t)newp, INK_ALIGN(f->type_size, f->alignment), f->advice);
+      ats_madvise(static_cast<caddr_t>(newp), INK_ALIGN(f->type_size, f->alignment), f->advice);
     }
   } else {
     newp = ats_malloc(f->type_size);
@@ -275,7 +275,7 @@ ink_freelist_free(InkFreeList *f, void *item)
   if (likely(item != nullptr)) {
     ink_assert(f->used != 0);
     freelist_freelist_ops->fl_free(f, item);
-    ink_atomic_decrement((int *)&f->used, 1);
+    ink_atomic_decrement(reinterpret_cast<int *>(&f->used), 1);
   }
 }
 
@@ -332,7 +332,7 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
   ink_assert(f->used >= num_item);
 
   freelist_freelist_ops->fl_bulkfree(f, head, tail, num_item);
-  ink_atomic_decrement((int *)&f->used, num_item);
+  ink_atomic_decrement(reinterpret_cast<int *>(&f->used), num_item);
 }
 
 static void
@@ -388,12 +388,12 @@ malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
 
   if (f->alignment) {
     for (size_t i = 0; i < num_item && item; ++i, item = next) {
-      next = *(void **)item; // find next item before freeing current item
+      next = *static_cast<void **>(item); // find next item before freeing current item
       ats_memalign_free(item);
     }
   } else {
     for (size_t i = 0; i < num_item && item; ++i, item = next) {
-      next = *(void **)item; // find next item before freeing current item
+      next = *static_cast<void **>(item); // find next item before freeing current item
       ats_free(item);
     }
   }
@@ -428,9 +428,9 @@ ink_freelists_dump_baselinerel(FILE *f)
     int a = fll->fl->allocated - fll->fl->allocated_base;
     if (a != 0) {
       fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %7u | %10u | memory/%s\n",
-              (uint64_t)(fll->fl->allocated - fll->fl->allocated_base) * (uint64_t)fll->fl->type_size,
-              (uint64_t)(fll->fl->used - fll->fl->used_base) * (uint64_t)fll->fl->type_size, fll->fl->used - fll->fl->used_base,
-              fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
+              static_cast<uint64_t>(fll->fl->allocated - fll->fl->allocated_base) * static_cast<uint64_t>(fll->fl->type_size),
+              static_cast<uint64_t>(fll->fl->used - fll->fl->used_base) * static_cast<uint64_t>(fll->fl->type_size),
+              fll->fl->used - fll->fl->used_base, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
     }
     fll = fll->next;
   }
@@ -452,11 +452,12 @@ ink_freelists_dump(FILE *f)
   uint64_t total_used      = 0;
   fll                      = freelists;
   while (fll) {
-    fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %10u | memory/%s\n", (uint64_t)fll->fl->allocated * (uint64_t)fll->fl->type_size,
-            (uint64_t)fll->fl->used * (uint64_t)fll->fl->type_size, fll->fl->type_size,
+    fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %10u | memory/%s\n",
+            static_cast<uint64_t>(fll->fl->allocated) * static_cast<uint64_t>(fll->fl->type_size),
+            static_cast<uint64_t>(fll->fl->used) * static_cast<uint64_t>(fll->fl->type_size), fll->fl->type_size,
             fll->fl->name ? fll->fl->name : "<unknown>");
-    total_allocated += (uint64_t)fll->fl->allocated * (uint64_t)fll->fl->type_size;
-    total_used += (uint64_t)fll->fl->used * (uint64_t)fll->fl->type_size;
+    total_allocated += static_cast<uint64_t>(fll->fl->allocated) * static_cast<uint64_t>(fll->fl->type_size);
+    total_used += static_cast<uint64_t>(fll->fl->used) * static_cast<uint64_t>(fll->fl->type_size);
     fll = fll->next;
   }
   fprintf(f, " %18" PRIu64 " | %18" PRIu64 " |            | TOTAL\n", total_allocated, total_used);

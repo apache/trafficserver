@@ -54,7 +54,7 @@ sdk_sanity_check_mutex(TSMutex mutex)
     return TS_ERROR;
   }
 
-  ProxyMutex *mutexp = (ProxyMutex *)mutex;
+  ProxyMutex *mutexp = reinterpret_cast<ProxyMutex *>(mutex);
 
   if (mutexp->refcount() < 0) {
     return TS_ERROR;
@@ -122,7 +122,7 @@ static void *
 ink_thread_trampoline(void *data)
 {
   void *retval;
-  INKThreadInternal *ithread = (INKThreadInternal *)data;
+  INKThreadInternal *ithread = static_cast<INKThreadInternal *>(data);
 
   ithread->set_specific();
   retval = ithread->func(ithread->data);
@@ -156,7 +156,7 @@ TSThreadCreate(TSThreadFunc func, void *data)
     return (TSThread) nullptr;
   }
 
-  return (TSThread)thread;
+  return reinterpret_cast<TSThread>(thread);
 }
 
 // Wait for a thread to complete. When a thread calls TSThreadCreate,
@@ -169,7 +169,7 @@ void
 TSThreadWait(TSThread thread)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
-  INKThreadInternal *ithread = (INKThreadInternal *)thread;
+  INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
 
   ink_mutex_acquire(&ithread->completion.lock);
 
@@ -203,7 +203,7 @@ TSThreadDestroy(TSThread thread)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
 
-  INKThreadInternal *ithread = (INKThreadInternal *)thread;
+  INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
 
   // The thread must be destroyed by the same thread that created
   // it because that thread is holding the thread mutex.
@@ -221,7 +221,7 @@ TSThreadDestroy(TSThread thread)
 TSThread
 TSThreadSelf(void)
 {
-  TSThread ithread = (TSThread)this_ethread();
+  TSThread ithread = reinterpret_cast<TSThread>(this_ethread());
   return ithread;
 }
 
@@ -238,7 +238,7 @@ TSMutexCreate()
   // TODO: Remove this when allocations can never fail.
   sdk_assert(sdk_sanity_check_mutex((TSMutex)mutexp) == TS_SUCCESS);
 
-  return (TSMutex)mutexp;
+  return reinterpret_cast<TSMutex>(mutexp);
 }
 
 void
@@ -247,7 +247,7 @@ TSMutexDestroy(TSMutex m)
   sdk_assert(sdk_sanity_check_mutex(m) == TS_SUCCESS);
   ink_release_assert(((ProxyMutex *)m)->refcount() == 0);
 
-  ((ProxyMutex *)m)->free();
+  (reinterpret_cast<ProxyMutex *>(m))->free();
 }
 
 /* The following two APIs are for Into work, actually, APIs of Mutex
@@ -269,7 +269,7 @@ TSMutexCreateInternal()
 int
 TSMutexCheck(TSMutex mutex)
 {
-  ProxyMutex *mutexp = (ProxyMutex *)mutex;
+  ProxyMutex *mutexp = reinterpret_cast<ProxyMutex *>(mutex);
 
   if (mutexp->refcount() < 0) {
     return -1;
@@ -308,7 +308,7 @@ TSVIOReenable(TSVIO viop)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
-  VIO *vio = (VIO *)viop;
+  VIO *vio = reinterpret_cast<VIO *>(viop);
   vio->reenable();
 }
 
@@ -317,7 +317,7 @@ TSVIOBufferGet(TSVIO viop)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
-  VIO *vio = (VIO *)viop;
+  VIO *vio = reinterpret_cast<VIO *>(viop);
   return reinterpret_cast<TSIOBuffer>(vio->get_writer());
 }
 
@@ -326,7 +326,7 @@ TSVIOReaderGet(TSVIO viop)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
-  VIO *vio = (VIO *)viop;
+  VIO *vio = reinterpret_cast<VIO *>(viop);
   return reinterpret_cast<TSIOBufferReader>(vio->get_reader());
 }
 
@@ -335,7 +335,7 @@ TSVIONBytesGet(TSVIO viop)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
-  VIO *vio = (VIO *)viop;
+  VIO *vio = reinterpret_cast<VIO *>(viop);
   return vio->nbytes;
 }
 
@@ -345,7 +345,7 @@ TSVIONBytesSet(TSVIO viop, int64_t nbytes)
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
   sdk_assert(nbytes >= 0);
 
-  VIO *vio    = (VIO *)viop;
+  VIO *vio    = reinterpret_cast<VIO *>(viop);
   vio->nbytes = nbytes;
 }
 
@@ -354,7 +354,7 @@ TSVIONDoneGet(TSVIO viop)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
-  VIO *vio = (VIO *)viop;
+  VIO *vio = reinterpret_cast<VIO *>(viop);
   return vio->ndone;
 }
 
@@ -364,7 +364,7 @@ TSVIONDoneSet(TSVIO viop, int64_t ndone)
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
   sdk_assert(ndone >= 0);
 
-  VIO *vio   = (VIO *)viop;
+  VIO *vio   = reinterpret_cast<VIO *>(viop);
   vio->ndone = ndone;
 }
 
@@ -373,7 +373,7 @@ TSVIONTodoGet(TSVIO viop)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
-  VIO *vio = (VIO *)viop;
+  VIO *vio = reinterpret_cast<VIO *>(viop);
   return vio->ntodo();
 }
 
@@ -382,8 +382,8 @@ TSVIOContGet(TSVIO viop)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
-  VIO *vio = (VIO *)viop;
-  return (TSCont)vio->_cont;
+  VIO *vio = reinterpret_cast<VIO *>(viop);
+  return reinterpret_cast<TSCont>(vio->_cont);
 }
 
 TSVConn
@@ -391,8 +391,8 @@ TSVIOVConnGet(TSVIO viop)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
-  VIO *vio = (VIO *)viop;
-  return (TSVConn)vio->vc_server;
+  VIO *vio = reinterpret_cast<VIO *>(viop);
+  return reinterpret_cast<TSVConn>(vio->vc_server);
 }
 
 TSMutex
@@ -400,8 +400,8 @@ TSVIOMutexGet(TSVIO viop)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
-  VIO *vio = (VIO *)viop;
-  return (TSMutex)(vio->mutex.get());
+  VIO *vio = reinterpret_cast<VIO *>(viop);
+  return reinterpret_cast<TSMutex>(vio->mutex.get());
 }
 
 /* High Resolution Time */
@@ -425,7 +425,7 @@ INKUDPBind(TSCont contp, unsigned int ip, int port)
   ats_ip4_set(&addr, ip, htons(port));
 
   return reinterpret_cast<TSAction>(
-    udpNet.UDPBind((Continuation *)contp, ats_ip_sa_cast(&addr), INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
+    udpNet.UDPBind(reinterpret_cast<Continuation *>(contp), ats_ip_sa_cast(&addr), INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
 }
 
 TSAction
@@ -435,7 +435,7 @@ INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *data
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
   UDPPacket *packet   = new_UDPPacket();
-  UDPConnection *conn = (UDPConnection *)udp;
+  UDPConnection *conn = static_cast<UDPConnection *>(udp);
 
   ats_ip4_set(&packet->to, ip, htons(port));
 
@@ -449,13 +449,13 @@ INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *data
   memcpy(blockp->start(), data, len);
   blockp->fill(len);
 
-  packet->append_block((IOBufferBlock *)blockp);
+  packet->append_block(blockp);
   /* (Jinsheng 11/27/00) set connection twice which causes:
      FATAL: ../../../proxy/iocore/UDPPacket.h:136:
      failed assert `!m_conn` */
 
   /* packet->setConnection ((UDPConnection *)udp); */
-  return reinterpret_cast<TSAction>(conn->send((Continuation *)contp, packet));
+  return reinterpret_cast<TSAction>(conn->send(reinterpret_cast<Continuation *>(contp), packet));
 }
 
 TSAction
@@ -464,14 +464,14 @@ INKUDPRecvFrom(TSCont contp, INKUDPConn udp)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
-  UDPConnection *conn = (UDPConnection *)udp;
-  return reinterpret_cast<TSAction>(conn->recv((Continuation *)contp));
+  UDPConnection *conn = static_cast<UDPConnection *>(udp);
+  return reinterpret_cast<TSAction>(conn->recv(reinterpret_cast<Continuation *>(contp)));
 }
 
 int
 INKUDPConnFdGet(INKUDPConn udp)
 {
-  UDPConnection *conn = (UDPConnection *)udp;
+  UDPConnection *conn = static_cast<UDPConnection *>(udp);
   return conn->getFd();
 }
 
@@ -488,8 +488,8 @@ INKUDPPacketBufferBlockGet(INKUDPPacket packet)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)packet) == TS_SUCCESS);
 
-  UDPPacket *p = (UDPPacket *)packet;
-  return ((TSIOBufferBlock)p->getIOBlockChain());
+  UDPPacket *p = static_cast<UDPPacket *>(packet);
+  return (reinterpret_cast<TSIOBufferBlock>(p->getIOBlockChain()));
 }
 
 unsigned int
@@ -497,7 +497,7 @@ INKUDPPacketFromAddressGet(INKUDPPacket packet)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)packet) == TS_SUCCESS);
 
-  UDPPacket *p = (UDPPacket *)packet;
+  UDPPacket *p = static_cast<UDPPacket *>(packet);
   return ats_ip4_addr_cast(&p->from);
 }
 
@@ -506,7 +506,7 @@ INKUDPPacketFromPortGet(INKUDPPacket packet)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)packet) == TS_SUCCESS);
 
-  UDPPacket *p = (UDPPacket *)packet;
+  UDPPacket *p = static_cast<UDPPacket *>(packet);
   return ats_ip_port_host_order(&p->from);
 }
 
@@ -515,7 +515,7 @@ INKUDPPacketConnGet(INKUDPPacket packet)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)packet) == TS_SUCCESS);
 
-  UDPPacket *p = (UDPPacket *)packet;
+  UDPPacket *p = static_cast<UDPPacket *>(packet);
   return ((INKUDPConn)p->getConnection());
 }
 
@@ -524,7 +524,7 @@ INKUDPPacketDestroy(INKUDPPacket packet)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)packet) == TS_SUCCESS);
 
-  UDPPacket *p = (UDPPacket *)packet;
+  UDPPacket *p = static_cast<UDPPacket *>(packet);
   p->free();
 }
 
@@ -535,7 +535,7 @@ INKUDPPacketGet(INKUDPacketQueue queuep)
 {
   if (queuep != nullptr) {
     UDPPacket *packet;
-    Queue<UDPPacket> *qp = (Queue<UDPPacket> *)queuep;
+    Queue<UDPPacket> *qp = static_cast<Queue<UDPPacket> *>(queuep);
 
     packet = qp->pop();
     return (packet);
@@ -572,7 +572,7 @@ void
 TSIOBufferDestroy(TSIOBuffer bufp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
-  free_MIOBuffer((MIOBuffer *)bufp);
+  free_MIOBuffer(reinterpret_cast<MIOBuffer *>(bufp));
 }
 
 TSIOBufferBlock
@@ -580,7 +580,7 @@ TSIOBufferStart(TSIOBuffer bufp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
 
-  MIOBuffer *b       = (MIOBuffer *)bufp;
+  MIOBuffer *b       = reinterpret_cast<MIOBuffer *>(bufp);
   IOBufferBlock *blk = b->get_current_block();
 
   if (!blk || (blk->write_avail() == 0)) {
@@ -591,7 +591,7 @@ TSIOBufferStart(TSIOBuffer bufp)
   // TODO: Remove when memory allocations can't fail.
   sdk_assert(sdk_sanity_check_null_ptr((void *)blk) == TS_SUCCESS);
 
-  return (TSIOBufferBlock)blk;
+  return reinterpret_cast<TSIOBufferBlock>(blk);
 }
 
 int64_t
@@ -601,8 +601,8 @@ TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64_t length, int64_
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
   sdk_assert((length >= 0) && (offset >= 0));
 
-  MIOBuffer *b      = (MIOBuffer *)bufp;
-  IOBufferReader *r = (IOBufferReader *)readerp;
+  MIOBuffer *b      = reinterpret_cast<MIOBuffer *>(bufp);
+  IOBufferReader *r = reinterpret_cast<IOBufferReader *>(readerp);
 
   return b->write(r, length, offset);
 }
@@ -614,7 +614,7 @@ TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64_t length)
   sdk_assert(sdk_sanity_check_null_ptr((void *)buf) == TS_SUCCESS);
   sdk_assert(length >= 0);
 
-  MIOBuffer *b = (MIOBuffer *)bufp;
+  MIOBuffer *b = reinterpret_cast<MIOBuffer *>(bufp);
   return b->write(buf, length);
 }
 
@@ -622,7 +622,7 @@ TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64_t length)
 void
 TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64_t length)
 {
-  IOBufferReader *r = (IOBufferReader *)readerp;
+  IOBufferReader *r = reinterpret_cast<IOBufferReader *>(readerp);
   r->memcpy(buf, length);
 }
 
@@ -632,7 +632,7 @@ TSIOBufferProduce(TSIOBuffer bufp, int64_t nbytes)
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
   sdk_assert(nbytes >= 0);
 
-  MIOBuffer *b = (MIOBuffer *)bufp;
+  MIOBuffer *b = reinterpret_cast<MIOBuffer *>(bufp);
   b->fill(nbytes);
 }
 
@@ -642,7 +642,7 @@ TSIOBufferBlockDestroy(TSIOBufferBlock blockp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
 
-  IOBufferBlock *blk = (IOBufferBlock *)blockp;
+  IOBufferBlock *blk = reinterpret_cast<IOBufferBlock *>(blockp);
   blk->free();
 }
 
@@ -651,8 +651,8 @@ TSIOBufferBlockNext(TSIOBufferBlock blockp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
 
-  IOBufferBlock *blk = (IOBufferBlock *)blockp;
-  return (TSIOBufferBlock)(blk->next.get());
+  IOBufferBlock *blk = reinterpret_cast<IOBufferBlock *>(blockp);
+  return reinterpret_cast<TSIOBufferBlock>(blk->next.get());
 }
 
 // dev API, not exposed
@@ -661,7 +661,7 @@ TSIOBufferBlockDataSizeGet(TSIOBufferBlock blockp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
 
-  IOBufferBlock *blk = (IOBufferBlock *)blockp;
+  IOBufferBlock *blk = reinterpret_cast<IOBufferBlock *>(blockp);
   return (blk->read_avail());
 }
 
@@ -671,8 +671,8 @@ TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
-  IOBufferBlock *blk     = (IOBufferBlock *)blockp;
-  IOBufferReader *reader = (IOBufferReader *)readerp;
+  IOBufferBlock *blk     = reinterpret_cast<IOBufferBlock *>(blockp);
+  IOBufferReader *reader = reinterpret_cast<IOBufferReader *>(readerp);
   char *p;
 
   p = blk->start();
@@ -699,8 +699,8 @@ TSIOBufferBlockReadAvail(TSIOBufferBlock blockp, TSIOBufferReader readerp)
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
-  IOBufferBlock *blk     = (IOBufferBlock *)blockp;
-  IOBufferReader *reader = (IOBufferReader *)readerp;
+  IOBufferBlock *blk     = reinterpret_cast<IOBufferBlock *>(blockp);
+  IOBufferReader *reader = reinterpret_cast<IOBufferReader *>(readerp);
   int64_t avail;
 
   avail = blk->read_avail();
@@ -720,7 +720,7 @@ TSIOBufferBlockWriteStart(TSIOBufferBlock blockp, int64_t *avail)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
 
-  IOBufferBlock *blk = (IOBufferBlock *)blockp;
+  IOBufferBlock *blk = reinterpret_cast<IOBufferBlock *>(blockp);
 
   if (avail) {
     *avail = blk->write_avail();
@@ -733,7 +733,7 @@ TSIOBufferBlockWriteAvail(TSIOBufferBlock blockp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
 
-  IOBufferBlock *blk = (IOBufferBlock *)blockp;
+  IOBufferBlock *blk = reinterpret_cast<IOBufferBlock *>(blockp);
   return blk->write_avail();
 }
 
@@ -742,7 +742,7 @@ TSIOBufferWaterMarkGet(TSIOBuffer bufp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
 
-  MIOBuffer *b = (MIOBuffer *)bufp;
+  MIOBuffer *b = reinterpret_cast<MIOBuffer *>(bufp);
   return b->water_mark;
 }
 
@@ -752,7 +752,7 @@ TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64_t water_mark)
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
   sdk_assert(water_mark >= 0);
 
-  MIOBuffer *b  = (MIOBuffer *)bufp;
+  MIOBuffer *b  = reinterpret_cast<MIOBuffer *>(bufp);
   b->water_mark = water_mark;
 }
 
@@ -761,8 +761,8 @@ TSIOBufferReaderAlloc(TSIOBuffer bufp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
 
-  MIOBuffer *b             = (MIOBuffer *)bufp;
-  TSIOBufferReader readerp = (TSIOBufferReader)b->alloc_reader();
+  MIOBuffer *b             = reinterpret_cast<MIOBuffer *>(bufp);
+  TSIOBufferReader readerp = reinterpret_cast<TSIOBufferReader>(b->alloc_reader());
 
   // TODO: Should remove this when memory allocation can't fail.
   sdk_assert(sdk_sanity_check_null_ptr((void *)readerp) == TS_SUCCESS);
@@ -774,8 +774,8 @@ TSIOBufferReaderClone(TSIOBufferReader readerp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
-  IOBufferReader *r = (IOBufferReader *)readerp;
-  return (TSIOBufferReader)r->clone();
+  IOBufferReader *r = reinterpret_cast<IOBufferReader *>(readerp);
+  return reinterpret_cast<TSIOBufferReader>(r->clone());
 }
 
 void
@@ -783,7 +783,7 @@ TSIOBufferReaderFree(TSIOBufferReader readerp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
-  IOBufferReader *r = (IOBufferReader *)readerp;
+  IOBufferReader *r = reinterpret_cast<IOBufferReader *>(readerp);
   r->mbuf->dealloc_reader(r);
 }
 
@@ -792,7 +792,7 @@ TSIOBufferReaderStart(TSIOBufferReader readerp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
-  IOBufferReader *r = (IOBufferReader *)readerp;
+  IOBufferReader *r = reinterpret_cast<IOBufferReader *>(readerp);
 
   if (r->block) {
     r->skip_empty_blocks();
@@ -807,7 +807,7 @@ TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes)
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
   sdk_assert(nbytes >= 0);
 
-  IOBufferReader *r = (IOBufferReader *)readerp;
+  IOBufferReader *r = reinterpret_cast<IOBufferReader *>(readerp);
   r->consume(nbytes);
 }
 
@@ -816,6 +816,6 @@ TSIOBufferReaderAvail(TSIOBufferReader readerp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
-  IOBufferReader *r = (IOBufferReader *)readerp;
+  IOBufferReader *r = reinterpret_cast<IOBufferReader *>(readerp);
   return r->read_avail();
 }

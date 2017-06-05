@@ -73,7 +73,7 @@ data_alloc(int compression_type, int compression_algorithms)
   Data *data;
   int err;
 
-  data                         = (Data *)TSmalloc(sizeof(Data));
+  data                         = static_cast<Data *>(TSmalloc(sizeof(Data)));
   data->downstream_vio         = nullptr;
   data->downstream_buffer      = nullptr;
   data->downstream_reader      = nullptr;
@@ -104,7 +104,7 @@ data_alloc(int compression_type, int compression_algorithms)
   }
 
   if (dictionary) {
-    err = deflateSetDictionary(&data->zstrm, (const Bytef *)dictionary, strlen(dictionary));
+    err = deflateSetDictionary(&data->zstrm, reinterpret_cast<const Bytef *>(dictionary), strlen(dictionary));
     if (err != Z_OK) {
       fatal("gzip-transform: ERROR: deflateSetDictionary (%d)!", err);
     }
@@ -310,7 +310,7 @@ gzip_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_len
     downstream_blkp   = TSIOBufferStart(data->downstream_buffer);
     downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
 
-    data->zstrm.next_out  = (unsigned char *)downstream_buffer;
+    data->zstrm.next_out  = reinterpret_cast<unsigned char *>(downstream_buffer);
     data->zstrm.avail_out = downstream_length;
 
     if (!data->hc->flush()) {
@@ -439,12 +439,12 @@ gzip_transform_finish(Data *data)
       downstream_blkp = TSIOBufferStart(data->downstream_buffer);
 
       downstream_buffer     = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
-      data->zstrm.next_out  = (unsigned char *)downstream_buffer;
+      data->zstrm.next_out  = reinterpret_cast<unsigned char *>(downstream_buffer);
       data->zstrm.avail_out = downstream_length;
 
       err = deflate(&data->zstrm, Z_FINISH);
 
-      if (downstream_length > (int64_t)data->zstrm.avail_out) {
+      if (downstream_length > static_cast<int64_t>(data->zstrm.avail_out)) {
         TSIOBufferProduce(data->downstream_buffer, downstream_length - data->zstrm.avail_out);
         data->downstream_length += (downstream_length - data->zstrm.avail_out);
       }
@@ -459,7 +459,7 @@ gzip_transform_finish(Data *data)
       break;
     }
 
-    if (data->downstream_length != (int64_t)(data->zstrm.total_out)) {
+    if (data->downstream_length != static_cast<int64_t>(data->zstrm.total_out)) {
       error("gzip-transform: ERROR: output lengths don't match (%d, %ld)", data->downstream_length, data->zstrm.total_out);
     }
     debug("gzip-transform: Finished gzip");
@@ -540,7 +540,7 @@ compress_transform_do(TSCont contp)
   int64_t upstream_avail;
   int64_t downstream_bytes_written;
 
-  data = (Data *)TSContDataGet(contp);
+  data = static_cast<Data *>(TSContDataGet(contp));
   if (data->state == transform_state_initialized) {
     compress_transform_init(contp, data);
   }
@@ -597,7 +597,7 @@ static int
 compress_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   if (TSVConnClosedGet(contp)) {
-    data_destroy((Data *)TSContDataGet(contp));
+    data_destroy(static_cast<Data *>(TSContDataGet(contp)));
     TSContDestroy(contp);
     return 0;
   } else {
@@ -813,10 +813,10 @@ find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc 
 static int
 transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp        = (TSHttpTxn)edata;
+  TSHttpTxn txnp        = static_cast<TSHttpTxn>(edata);
   int compress_type     = COMPRESSION_TYPE_DEFAULT;
   int algorithms        = ALGORITHM_DEFAULT;
-  HostConfiguration *hc = (HostConfiguration *)TSContDataGet(contp);
+  HostConfiguration *hc = static_cast<HostConfiguration *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
@@ -941,7 +941,7 @@ handle_request(TSHttpTxn txnp, Configuration *config)
 static int
 transform_global_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -961,7 +961,7 @@ transform_global_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
 static void
 load_global_configuration(TSCont contp)
 {
-  const char *path         = (const char *)TSContDataGet(contp);
+  const char *path         = static_cast<const char *>(TSContDataGet(contp));
   Configuration *newconfig = Configuration::Parse(path);
   Configuration *oldconfig = __sync_lock_test_and_set(&cur_config, newconfig);
 
@@ -1078,7 +1078,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     info("No Rules configured, falling back to default");
   } else {
     info("Remap Rules configured for gzip");
-    Configuration *config = (Configuration *)instance;
+    Configuration *config = static_cast<Configuration *>(instance);
     // Handle gzip request and use the configs populated from remap instance
     handle_request(txnp, config);
   }

@@ -123,7 +123,7 @@ LogAccessHttp::init()
     m_proxy_response = &(hdr->client_response);
     MIMEField *field = m_proxy_response->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     if (field) {
-      m_proxy_resp_content_type_str = (char *)field->value_get(&m_proxy_resp_content_type_len);
+      m_proxy_resp_content_type_str = const_cast<char *>(field->value_get(&m_proxy_resp_content_type_len));
       //
       // here is the assert
       //
@@ -133,7 +133,7 @@ LogAccessHttp::init()
       // If Content-Type field is missing, check for @Content-Type
       field = m_proxy_response->field_find(HIDDEN_CONTENT_TYPE, HIDDEN_CONTENT_TYPE_LEN);
       if (field) {
-        m_proxy_resp_content_type_str = (char *)field->value_get(&m_proxy_resp_content_type_len);
+        m_proxy_resp_content_type_str = const_cast<char *>(field->value_get(&m_proxy_resp_content_type_len));
         LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
       }
     }
@@ -358,17 +358,17 @@ LogAccessHttp::validate_unmapped_url_path()
     m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_canon_len;
 
     if (m_client_req_unmapped_url_path_len >= 6) { // xxx:// - minimum schema size
-      c = (char *)memchr((void *)m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1);
-      if (c && (len = (int)(c - m_client_req_unmapped_url_path_str)) <= 5) { // 5 - max schema size
+      c = static_cast<char *>(memchr((void *)m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1));
+      if (c && (len = static_cast<int>(c - m_client_req_unmapped_url_path_str)) <= 5) { // 5 - max schema size
         if (len + 2 <= m_client_req_unmapped_url_canon_len && c[1] == '/' && c[2] == '/') {
           len += 3; // Skip "://"
           m_client_req_unmapped_url_host_str = &m_client_req_unmapped_url_canon_str[len];
           m_client_req_unmapped_url_host_len = m_client_req_unmapped_url_path_len - len;
           // Attempt to find first '/' in the path
           if (m_client_req_unmapped_url_host_len > 0 &&
-              (c = (char *)memchr((void *)m_client_req_unmapped_url_host_str, '/', m_client_req_unmapped_url_path_len)) !=
-                nullptr) {
-            m_client_req_unmapped_url_host_len = (int)(c - m_client_req_unmapped_url_host_str);
+              (c = static_cast<char *>(
+                 memchr((void *)m_client_req_unmapped_url_host_str, '/', m_client_req_unmapped_url_path_len))) != nullptr) {
+            m_client_req_unmapped_url_host_len = static_cast<int>(c - m_client_req_unmapped_url_host_str);
             m_client_req_unmapped_url_path_str = &m_client_req_unmapped_url_host_str[m_client_req_unmapped_url_host_len];
             m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_path_len - len - m_client_req_unmapped_url_host_len;
           }
@@ -430,7 +430,7 @@ LogAccessHttp::marshal_client_req_http_method(char *buf)
   int plen  = INK_MIN_ALIGN;
 
   if (m_client_request) {
-    str = (char *)m_client_request->method_get(&alen);
+    str = const_cast<char *>(m_client_request->method_get(&alen));
 
     // calculate the the padded length only if the actual length
     // is not zero. We don't want the padded length to be zero
@@ -782,7 +782,7 @@ LogAccessHttp::marshal_client_req_uuid(char *buf)
 {
   if (buf) {
     char str[TS_CRUUID_STRING_LEN + 1];
-    const char *uuid = (char *)Machine::instance()->uuid.getString();
+    const char *uuid = const_cast<char *>(Machine::instance()->uuid.getString());
     int len;
 
     len = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
@@ -887,7 +887,7 @@ LogAccessHttp::marshal_proxy_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, (int64_t)status);
+    marshal_int(buf, static_cast<int64_t>(status));
   }
   return INK_MIN_ALIGN;
 }
@@ -956,7 +956,7 @@ LogAccessHttp::marshal_cache_result_code(char *buf)
 {
   if (buf) {
     SquidLogCode code = m_http_sm->t_state.squid_codes.log_code;
-    marshal_int(buf, (int64_t)code);
+    marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
 }
@@ -969,7 +969,7 @@ LogAccessHttp::marshal_cache_hit_miss(char *buf)
 {
   if (buf) {
     SquidHitMissCode code = m_http_sm->t_state.squid_codes.hit_miss_code;
-    marshal_int(buf, (int64_t)code);
+    marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
 }
@@ -1075,7 +1075,7 @@ LogAccessHttp::marshal_proxy_hierarchy_route(char *buf)
 {
   if (buf) {
     SquidHierarchyCode code = m_http_sm->t_state.squid_codes.hier_code;
-    marshal_int(buf, (int64_t)code);
+    marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
 }
@@ -1138,7 +1138,7 @@ LogAccessHttp::marshal_server_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, (int64_t)status);
+    marshal_int(buf, static_cast<int64_t>(status));
   }
   return INK_MIN_ALIGN;
 }
@@ -1211,7 +1211,7 @@ LogAccessHttp::marshal_server_resp_time_ms(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val        = static_cast<int64_t>(ink_hrtime_to_msec(elapsed));
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -1222,7 +1222,7 @@ LogAccessHttp::marshal_server_resp_time_s(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
+    int64_t val        = static_cast<int64_t>(ink_hrtime_to_sec(elapsed));
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -1268,7 +1268,7 @@ LogAccessHttp::marshal_cache_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, (int64_t)status);
+    marshal_int(buf, static_cast<int64_t>(status));
   }
   return INK_MIN_ALIGN;
 }
@@ -1407,7 +1407,7 @@ LogAccessHttp::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val        = static_cast<int64_t>(ink_hrtime_to_msec(elapsed));
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -1418,7 +1418,7 @@ LogAccessHttp::marshal_transfer_time_s(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
+    int64_t val        = static_cast<int64_t>(ink_hrtime_to_sec(elapsed));
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -1437,8 +1437,8 @@ LogAccessHttp::marshal_file_size(char *buf)
 
     if (hdr && (fld = hdr->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE))) {
       int len;
-      char *str = (char *)fld->value_get(&len);
-      char *pos = (char *)memchr(str, '/', len); // Find the /
+      char *str = const_cast<char *>(fld->value_get(&len));
+      char *pos = static_cast<char *>(memchr(str, '/', len)); // Find the /
 
       // If the size is not /* (which means unknown) use it as the file_size.
       if (pos && !memchr(pos + 1, '*', len - (pos + 1 - str))) {
@@ -1497,7 +1497,7 @@ LogAccessHttp::marshal_http_header_field(LogField::Container container, char *fi
   }
 
   if (header) {
-    MIMEField *fld = header->field_find(field, (int)::strlen(field));
+    MIMEField *fld = header->field_find(field, static_cast<int>(::strlen(field)));
     if (fld) {
       valid_field = true;
 
@@ -1506,7 +1506,7 @@ LogAccessHttp::marshal_http_header_field(LogField::Container container, char *fi
       //
       int running_len = 0;
       while (fld) {
-        str = (char *)fld->value_get(&actual_len);
+        str = const_cast<char *>(fld->value_get(&actual_len));
         if (buf) {
           memcpy(buf, str, actual_len);
           buf += actual_len;
@@ -1598,7 +1598,7 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
   }
 
   if (header) {
-    MIMEField *fld = header->field_find(field, (int)::strlen(field));
+    MIMEField *fld = header->field_find(field, static_cast<int>(::strlen(field)));
     if (fld) {
       valid_field = true;
 
@@ -1607,7 +1607,7 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
       //
       int running_len = 0;
       while (fld) {
-        str     = (char *)fld->value_get(&actual_len);
+        str     = const_cast<char *>(fld->value_get(&actual_len));
         new_str = LogUtils::escapify_url(&m_arena, str, actual_len, &new_len);
         if (buf) {
           memcpy(buf, new_str, new_len);
@@ -1679,7 +1679,7 @@ LogAccessHttp::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones.elapsed(ms2, ms1);
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val        = static_cast<int64_t>(ink_hrtime_to_msec(elapsed));
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;

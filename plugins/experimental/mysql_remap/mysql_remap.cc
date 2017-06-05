@@ -48,7 +48,7 @@ do_mysql_remap(TSCont contp, TSHttpTxn txnp)
   MYSQL_ROW row;
   MYSQL_RES *res;
 
-  my_data *data = (my_data *)TSContDataGet(contp);
+  my_data *data = static_cast<my_data *>(TSContDataGet(contp));
   query         = data->query;
 
   if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS) {
@@ -155,7 +155,7 @@ release_hdr:
 static int
 mysql_remap(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp   = (TSHttpTxn)edata;
+  TSHttpTxn txnp   = static_cast<TSHttpTxn>(edata);
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
   switch (event) {
@@ -184,7 +184,7 @@ TSPluginInit(int argc, const char *argv[])
   const char *password;
   const char *db;
 
-  my_data *data = (my_data *)malloc(1 * sizeof(my_data));
+  my_data *data = static_cast<my_data *>(malloc(1 * sizeof(my_data)));
 
   TSPluginRegistrationInfo info;
   my_bool reconnect = 1;
@@ -235,7 +235,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  data->query = (char *)TSmalloc(QSIZE * sizeof(char)); // TODO: malloc smarter sizes
+  data->query = static_cast<char *>(TSmalloc(QSIZE * sizeof(char))); // TODO: malloc smarter sizes
 
   TSDebug(PLUGIN_NAME, "h: %s; u: %s; p: %s; p:%d; d:%s", host, username, password, port, db);
   TSCont cont = TSContCreate(mysql_remap, TSMutexCreate());

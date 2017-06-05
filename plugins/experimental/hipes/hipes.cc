@@ -86,12 +86,12 @@ char *
 unescapify(const char *src, char *dst, int len)
 {
   const char *cur = src;
-  char *next;
+  const char *next;
   char subStr[3];
   int size;
 
   subStr[2] = '\0';
-  while ((next = (char *)memchr(cur, '%', len))) {
+  while ((next = static_cast<const char *>(memchr(cur, '%', len)))) {
     size = next - cur;
     if (size > 0) {
       memcpy(dst, cur, size);
@@ -104,7 +104,7 @@ unescapify(const char *src, char *dst, int len)
       subStr[0] = *(++cur);
       subStr[1] = *(++cur);
       len -= 2;
-      *dst = (char)strtol(subStr, (char **)nullptr, 16);
+      *dst = static_cast<char>(strtol(subStr, (char **)nullptr, 16));
     } else {
       *dst = *cur;
     }
@@ -262,7 +262,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   const char *slash;
   char *ptr;
-  HIPESService *h_conf = (HIPESService *)ih;
+  HIPESService *h_conf = static_cast<HIPESService *>(ih);
 
   char new_query[MAX_PATH_SIZE];
   int new_query_size;
@@ -323,7 +323,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     TSDebug(PLUGIN_NAME, "Escaped service URL is %s(%d)", svc_url_esc, len);
 
     // Prepare the new query arguments, make sure it fits
-    if (((slash - param) + 2 + (int)h_conf->url_param.size() + len) > MAX_PATH_SIZE) {
+    if (((slash - param) + 2 + static_cast<int>(h_conf->url_param.size()) + len) > MAX_PATH_SIZE) {
       TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
       return TSREMAP_NO_REMAP;
     }
@@ -358,7 +358,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   int redirect_flag = h_conf->default_redirect_flag;
   char *pos         = new_query;
 
-  while (pos && (pos = (char *)memchr(pos, '_', new_query_size - (pos - new_query)))) {
+  while (pos && (pos = static_cast<char *>(memchr(pos, '_', new_query_size - (pos - new_query))))) {
     if (pos) {
       ++pos;
       if ((new_query_size - (pos - new_query)) < 10) { // redirect=n
@@ -516,7 +516,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
     // Set server ...
     TSUrlHostSet(rri->requestBufp, rri->requestUrl, h_conf->svc_server.c_str(), h_conf->svc_server.size());
-    TSDebug(PLUGIN_NAME, "New server is %.*s", (int)h_conf->svc_server.size(), h_conf->svc_server.c_str());
+    TSDebug(PLUGIN_NAME, "New server is %.*s", static_cast<int>(h_conf->svc_server.size()), h_conf->svc_server.c_str());
 
     // ... and port
     TSUrlPortSet(rri->requestBufp, rri->requestUrl, h_conf->svc_port);
@@ -524,7 +524,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
     // Update the path
     TSUrlPathSet(rri->requestBufp, rri->requestUrl, h_conf->path.c_str(), h_conf->path.size());
-    TSDebug(PLUGIN_NAME, "New path is %.*s", (int)h_conf->path.size(), h_conf->path.c_str());
+    TSDebug(PLUGIN_NAME, "New path is %.*s", static_cast<int>(h_conf->path.size()), h_conf->path.c_str());
 
     // Enable SSL?
     if (h_conf->ssl) {

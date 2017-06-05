@@ -251,7 +251,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   *end_of_format = NUL;
 
   // add the thread id
-  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{0x%" PRIx64 "} ", (uint64_t)ink_thread_self());
+  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{0x%" PRIx64 "} ", reinterpret_cast<uint64_t>(ink_thread_self()));
 
   //////////////////////////////////////
   // start with the diag level prefix //
@@ -306,10 +306,10 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   //////////////////////////////////////////////////////////////////
 
   tp               = ink_gettimeofday();
-  time_t cur_clock = (time_t)tp.tv_sec;
+  time_t cur_clock = static_cast<time_t>(tp.tv_sec);
   buffer           = ink_ctime_r(&cur_clock, timestamp_buf);
 
-  snprintf(&(timestamp_buf[19]), (sizeof(timestamp_buf) - 20), ".%03d", (int)(tp.tv_usec / 1000));
+  snprintf(&(timestamp_buf[19]), (sizeof(timestamp_buf) - 20), ".%03d", static_cast<int>(tp.tv_usec / 1000));
 
   d    = format_buf_w_ts;
   *d++ = '[';
@@ -542,8 +542,8 @@ Diags::dump(FILE *fp) const
   fprintf(fp, "  action default tags: '%s'\n", (base_action_tags ? base_action_tags : "NULL"));
   fprintf(fp, "  outputs:\n");
   for (i = 0; i < DiagsLevel_Count; i++) {
-    fprintf(fp, "    %10s [stdout=%d, stderr=%d, syslog=%d, diagslog=%d]\n", level_name((DiagsLevel)i), config.outputs[i].to_stdout,
-            config.outputs[i].to_stderr, config.outputs[i].to_syslog, config.outputs[i].to_diagslog);
+    fprintf(fp, "    %10s [stdout=%d, stderr=%d, syslog=%d, diagslog=%d]\n", level_name(static_cast<DiagsLevel>(i)),
+            config.outputs[i].to_stdout, config.outputs[i].to_stderr, config.outputs[i].to_syslog, config.outputs[i].to_diagslog);
   }
 }
 

@@ -34,7 +34,7 @@
 
 UnixUDPConnection::~UnixUDPConnection()
 {
-  UDPPacketInternal *p = (UDPPacketInternal *)ink_atomiclist_popall(&inQueue);
+  UDPPacketInternal *p = static_cast<UDPPacketInternal *>(ink_atomiclist_popall(&inQueue));
 
   if (!tobedestroyed) {
     tobedestroyed = 1;
@@ -80,7 +80,7 @@ UnixUDPConnection::callbackHandler(int event, void *data)
     Release();
     return EVENT_CONT;
   } else {
-    UDPPacketInternal *p = (UDPPacketInternal *)ink_atomiclist_popall(&inQueue);
+    UDPPacketInternal *p = static_cast<UDPPacketInternal *>(ink_atomiclist_popall(&inQueue));
     if (p) {
       Debug("udpnet", "UDPConnection::callbackHandler");
       UDPPacketInternal *pnext = nullptr;

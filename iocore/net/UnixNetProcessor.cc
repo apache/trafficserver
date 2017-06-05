@@ -62,7 +62,7 @@ net_next_connection_number()
 {
   unsigned int res = 0;
   do {
-    res = (unsigned int)ink_atomic_increment(&net_connection_number, 1);
+    res = static_cast<unsigned int>(ink_atomic_increment(&net_connection_number, 1));
   } while (!res);
   return res;
 }
@@ -303,7 +303,7 @@ struct CheckConnect : public Continuation {
     connect_status = event;
     switch (event) {
     case NET_EVENT_OPEN:
-      vc = (UnixNetVConnection *)e;
+      vc = reinterpret_cast<UnixNetVConnection *>(e);
       Debug("iocore_net_connect", "connect Net open");
       vc->do_io_write(this, 10, /* some non-zero number just to get the poll going */
                       reader);
@@ -324,7 +324,7 @@ struct CheckConnect : public Continuation {
       socklen_t sz;
       if (!action_.cancelled) {
         sz  = sizeof(int);
-        ret = getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, (char *)&sl, &sz);
+        ret = getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<char *>(&sl), &sz);
         if (!ret && sl == 0) {
           Debug("iocore_net_connect", "connection established");
           /* disable write on vc */

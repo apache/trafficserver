@@ -152,7 +152,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
                  set, type, *resulting_buffer_length, max_buffer_length);
     }
     *resulting_buffer_length = 0;
-    buffer                   = (char *)ats_free_null(buffer);
+    buffer                   = static_cast<char *>(ats_free_null(buffer));
   }
   /////////////////////////////////////////////////////////////////////
   // handle return of instantiated template and generate the content //
@@ -207,7 +207,7 @@ HttpBodyFactory::dump_template_tables(FILE *fp)
     for (b1 = h1->firstBinding(&i1); b1 != nullptr; b1 = h1->nextBinding(&i1)) {
       k1       = table_of_sets->getKeyFromBinding(b1);
       v1       = table_of_sets->getValueFromBinding(b1);
-      body_set = (HttpBodySet *)v1;
+      body_set = static_cast<HttpBodySet *>(v1);
 
       if (body_set != nullptr) {
         fprintf(fp, "set %s: name '%s', lang '%s', charset '%s'\n", k1, body_set->set_name, body_set->content_language,
@@ -223,7 +223,7 @@ HttpBodyFactory::dump_template_tables(FILE *fp)
         for (b2 = h2->firstBinding(&i2); b2 != nullptr; b2 = h2->nextBinding(&i2)) {
           k2                  = table_of_sets->getKeyFromBinding(b2);
           v2                  = table_of_sets->getValueFromBinding(b2);
-          HttpBodyTemplate *t = (HttpBodyTemplate *)v2;
+          HttpBodyTemplate *t = static_cast<HttpBodyTemplate *>(v2);
 
           fprintf(fp, "  %-30s: %" PRId64 " bytes\n", k2, t->byte_count);
         }
@@ -244,7 +244,7 @@ static int
 config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
                 void *cookie)
 {
-  HttpBodyFactory *body_factory = (HttpBodyFactory *)cookie;
+  HttpBodyFactory *body_factory = static_cast<HttpBodyFactory *>(cookie);
   body_factory->reconfigure();
   return (0);
 }
@@ -485,16 +485,16 @@ HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet **
   if (table_of_sets == nullptr) {
     return (nullptr);
   }
-  if (table_of_sets->getValue((RawHashTable_Key)set, &v)) {
-    HttpBodySet *body_set        = (HttpBodySet *)v;
+  if (table_of_sets->getValue(const_cast<RawHashTable_Key>(set), &v)) {
+    HttpBodySet *body_set        = static_cast<HttpBodySet *>(v);
     RawHashTable *table_of_types = body_set->table_of_pages;
 
     if (table_of_types == nullptr) {
       return (nullptr);
     }
 
-    if (table_of_types->getValue((RawHashTable_Key)type, &v)) {
-      HttpBodyTemplate *t = (HttpBodyTemplate *)v;
+    if (table_of_types->getValue(const_cast<RawHashTable_Key>(type), &v)) {
+      HttpBodyTemplate *t = static_cast<HttpBodyTemplate *>(v);
       if ((t == nullptr) || (!t->is_sane())) {
         return (nullptr);
       }
@@ -566,7 +566,7 @@ HttpBodyFactory::nuke_template_tables()
     for (b1 = h1->firstBinding(&i1); b1 != nullptr; b1 = h1->nextBinding(&i1)) {
       v1 = h1->getValueFromBinding(b1);
 
-      body_set = (HttpBodySet *)v1;
+      body_set = static_cast<HttpBodySet *>(v1);
       ink_assert(body_set->is_sane());
       h2 = body_set->table_of_pages;
 
@@ -581,7 +581,7 @@ HttpBodyFactory::nuke_template_tables()
           v2 = h2->getValueFromBinding(b2);
           if (v2) {
             // need a cast here
-            hbt = (HttpBodyTemplate *)v2;
+            hbt = static_cast<HttpBodyTemplate *>(v2);
             delete hbt;
           }
         }
@@ -913,8 +913,8 @@ HttpBodySet::get_template_by_name(const char *name)
     return (nullptr);
   }
 
-  if (table_of_pages->getValue((RawHashTable_Key)name, &v)) {
-    HttpBodyTemplate *t = (HttpBodyTemplate *)v;
+  if (table_of_pages->getValue(const_cast<RawHashTable_Key>(name), &v)) {
+    HttpBodyTemplate *t = static_cast<HttpBodyTemplate *>(v);
     if ((t == nullptr) || (!t->is_sane())) {
       return (nullptr);
     }
@@ -929,7 +929,7 @@ HttpBodySet::get_template_by_name(const char *name)
 void
 HttpBodySet::set_template_by_name(const char *name, HttpBodyTemplate *t)
 {
-  table_of_pages->setValue((RawHashTable_Key)name, (RawHashTable_Value)t);
+  table_of_pages->setValue(const_cast<RawHashTable_Key>(name), (RawHashTable_Value)t);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -999,7 +999,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   ////////////////////////////////////////
 
   new_byte_count                      = stat_buf.st_size;
-  new_template_buffer                 = (char *)ats_malloc(new_byte_count + 1);
+  new_template_buffer                 = static_cast<char *>(ats_malloc(new_byte_count + 1));
   bytes_read                          = read(fd, new_template_buffer, new_byte_count);
   new_template_buffer[new_byte_count] = '\0';
   close(fd);

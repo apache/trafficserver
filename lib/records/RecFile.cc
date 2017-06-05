@@ -111,7 +111,7 @@ RecFileGetSize(RecHandle h_file)
 {
   struct stat fileStats;
   fstat(h_file, &fileStats);
-  return (int)fileStats.st_size;
+  return static_cast<int>(fileStats.st_size);
 }
 
 //-------------------------------------------------------------------------
@@ -177,14 +177,14 @@ RecPipeCreate(const char *base_path, const char *name)
   ink_strlcpy(servaddr.sun_path, path, sizeof(servaddr.sun_path));
 
   int optval = 1;
-  if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(int)) < 0) {
+  if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&optval), sizeof(int)) < 0) {
     RecLog(DL_Warning, "[RecPipeCreate] setsockopt error\n");
     close(listenfd);
     return REC_HANDLE_INVALID;
   }
 
   servaddr_len = sizeof(servaddr.sun_family) + strlen(servaddr.sun_path);
-  if ((bind(listenfd, (struct sockaddr *)&servaddr, servaddr_len)) < 0) {
+  if ((bind(listenfd, reinterpret_cast<struct sockaddr *>(&servaddr), servaddr_len)) < 0) {
     RecLog(DL_Warning, "[RecPipeCreate] bind error\n");
     close(listenfd);
     return REC_HANDLE_INVALID;
@@ -197,7 +197,7 @@ RecPipeCreate(const char *base_path, const char *name)
   }
   // block until we get a connection from the other side
   cliaddr_len = sizeof(cliaddr);
-  if ((acceptfd = accept(listenfd, (struct sockaddr *)&cliaddr, &cliaddr_len)) < 0) {
+  if ((acceptfd = accept(listenfd, reinterpret_cast<struct sockaddr *>(&cliaddr), &cliaddr_len)) < 0) {
     close(listenfd);
     return REC_HANDLE_INVALID;
   }
@@ -226,7 +226,7 @@ RecPipeConnect(const char *base_path, const char *name)
     return REC_HANDLE_INVALID;
   }
   // Setup Connection to LocalManager */
-  memset((char *)&servaddr, 0, sizeof(servaddr));
+  memset(reinterpret_cast<char *>(&servaddr), 0, sizeof(servaddr));
   servaddr.sun_family = AF_UNIX;
   ink_strlcpy(servaddr.sun_path, path, sizeof(servaddr.sun_path));
   servaddr_len = sizeof(servaddr.sun_family) + strlen(servaddr.sun_path);
@@ -242,7 +242,7 @@ RecPipeConnect(const char *base_path, const char *name)
     return REC_HANDLE_INVALID;
   }
   // blocking connect
-  if ((connect(sockfd, (struct sockaddr *)&servaddr, servaddr_len)) < 0) {
+  if ((connect(sockfd, reinterpret_cast<struct sockaddr *>(&servaddr), servaddr_len)) < 0) {
     RecLog(DL_Warning, "[RecPipeConnect] connect error\n");
     close(sockfd);
     return REC_HANDLE_INVALID;

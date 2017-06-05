@@ -802,23 +802,23 @@ S3Request::authorizeV2(S3Config *s3)
   ctx = HMAC_CTX_new();
 #endif
   HMAC_Init_ex(ctx, s3->secret(), s3->secret_len(), EVP_sha1(), nullptr);
-  HMAC_Update(ctx, (unsigned char *)method, method_len);
-  HMAC_Update(ctx, (unsigned char *)"\n", 1);
-  HMAC_Update(ctx, (unsigned char *)con_md5, con_md5_len);
-  HMAC_Update(ctx, (unsigned char *)"\n", 1);
-  HMAC_Update(ctx, (unsigned char *)con_type, con_type_len);
-  HMAC_Update(ctx, (unsigned char *)"\n", 1);
-  HMAC_Update(ctx, (unsigned char *)date, date_len);
-  HMAC_Update(ctx, (unsigned char *)"\n/", 2);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>(method), method_len);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>(con_md5), con_md5_len);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>(con_type), con_type_len);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>(date), date_len);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n/"), 2);
 
   if (host && host_endp) {
     HMAC_Update(ctx, (unsigned char *)host, host_endp - host);
-    HMAC_Update(ctx, (unsigned char *)"/", 1);
+    HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("/"), 1);
   }
 
   HMAC_Update(ctx, (unsigned char *)path, path_len);
   if (param) {
-    HMAC_Update(ctx, (unsigned char *)";", 1); // TSUrlHttpParamsGet() does not include ';'
+    HMAC_Update(ctx, reinterpret_cast<const unsigned char *>(";"), 1); // TSUrlHttpParamsGet() does not include ';'
     HMAC_Update(ctx, (unsigned char *)param, param_len);
   }
 
@@ -830,7 +830,7 @@ S3Request::authorizeV2(S3Config *s3)
 #endif
 
   // Do the Base64 encoding and set the Authorization header.
-  if (TS_SUCCESS == TSBase64Encode((const char *)hmac, hmac_len, hmac_b64, sizeof(hmac_b64) - 1, &hmac_b64_len)) {
+  if (TS_SUCCESS == TSBase64Encode(reinterpret_cast<const char *>(hmac), hmac_len, hmac_b64, sizeof(hmac_b64) - 1, &hmac_b64_len)) {
     char auth[256]; // This is way bigger than any string we can think of.
     int auth_len = snprintf(auth, sizeof(auth), "AWS %s:%.*s", s3->keyid(), static_cast<int>(hmac_b64_len), hmac_b64);
 

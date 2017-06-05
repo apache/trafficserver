@@ -94,7 +94,7 @@ static uint64_t
 ink_hton64(uint64_t in)
 {
   int32_t val = 1;
-  uint8_t *c  = (uint8_t *)&val;
+  uint8_t *c  = reinterpret_cast<uint8_t *>(&val);
   if (*c == 1) {
     union {
       uint64_t rv;
@@ -222,11 +222,11 @@ MC::add_binary_header(uint16_t err, uint8_t hdr_len, uint16_t key_len, uint32_t 
 {
   protocol_binary_response_header r;
 
-  r.response.magic    = (uint8_t)PROTOCOL_BINARY_RES;
+  r.response.magic    = static_cast<uint8_t>(PROTOCOL_BINARY_RES);
   r.response.opcode   = binary_header.request.opcode;
   r.response.keylen   = (uint16_t)htons(key_len);
-  r.response.extlen   = (uint8_t)hdr_len;
-  r.response.datatype = (uint8_t)PROTOCOL_BINARY_RAW_BYTES;
+  r.response.extlen   = hdr_len;
+  r.response.datatype = static_cast<uint8_t>(PROTOCOL_BINARY_RAW_BYTES);
   r.response.status   = (uint16_t)htons(err);
   r.response.bodylen  = htonl(body_len);
   r.response.opaque   = binary_header.request.opaque;
@@ -609,7 +609,7 @@ MC::read_binary_from_client_event(int event, void *data)
     }
     key                              = binary_get_key(this);
     header.nkey                      = keylen;
-    protocol_binary_request_set *req = (protocol_binary_request_set *)&binary_header;
+    protocol_binary_request_set *req = reinterpret_cast<protocol_binary_request_set *>(&binary_header);
     req->message.body.flags          = ntohl(req->message.body.flags);
     req->message.body.expiration     = ntohl(req->message.body.expiration);
     nbytes                           = bodylen - (header.nkey + extlen);
@@ -871,8 +871,8 @@ MC::ascii_set_event(int event, void *data)
     crvio = NULL;
     if (f.set_append) {
       int64_t a = reader->read_avail();
-      if (a > (int64_t)nbytes) {
-        a = (int64_t)nbytes;
+      if (a > static_cast<int64_t>(nbytes)) {
+        a = static_cast<int64_t>(nbytes);
       }
       if (a) {
         cbuf->write(reader, a);

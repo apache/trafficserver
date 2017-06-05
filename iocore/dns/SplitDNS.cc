@@ -225,14 +225,14 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
      --------------------------- */
   if (m_bEnableFastPath) {
     SplitDNSRecord *data_ptr = nullptr;
-    char *pHost              = (char *)rdata->get_host();
+    char *pHost              = const_cast<char *>(rdata->get_host());
     if (nullptr == pHost) {
       Warning("SplitDNS: No host to match !");
       return;
     }
 
     int len        = strlen(pHost);
-    HostLeaf *pxHL = (HostLeaf *)m_pxLeafArray;
+    HostLeaf *pxHL = static_cast<HostLeaf *>(m_pxLeafArray);
     for (int i = 0; i < m_numEle; i++) {
       if (nullptr == pxHL) {
         break;
@@ -244,7 +244,7 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
 
       int idx      = len - pxHL[i].len;
       char *pH     = &pHost[idx];
-      char *pMatch = (char *)pxHL[i].match;
+      char *pMatch = pxHL[i].match;
       char cNot    = *pMatch;
 
       if ('!' == cNot) {
@@ -254,7 +254,7 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
       int res = memcmp(pH, pMatch, pxHL[i].len);
 
       if ((0 != res && '!' == cNot) || (0 == res && '!' != cNot)) {
-        data_ptr = (SplitDNSRecord *)pxHL[i].opaque_data;
+        data_ptr = static_cast<SplitDNSRecord *>(pxHL[i].opaque_data);
         data_ptr->UpdateMatch(result, rdata);
         break;
       }
@@ -317,7 +317,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
      ------------------------------------------------ */
   for (int i = 0; i < numTok; i++) {
     current = pTok[i];
-    tmp     = (char *)strchr(current, ':');
+    tmp     = const_cast<char *>(strchr(current, ':'));
     // coverity[secure_coding]
     if (tmp != nullptr && sscanf(tmp + 1, "%d", &port) != 1) {
       return "Malformed DNS port";

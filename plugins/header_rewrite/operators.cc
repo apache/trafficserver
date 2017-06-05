@@ -77,7 +77,7 @@ OperatorSetStatus::initialize(Parser &p)
 
   _status.set_value(p.get_arg());
 
-  if (nullptr == (_reason = TSHttpHdrReasonLookup((TSHttpStatus)_status.get_int_value()))) {
+  if (nullptr == (_reason = TSHttpHdrReasonLookup(static_cast<TSHttpStatus>(_status.get_int_value())))) {
     TSError("[%s] unknown status %d", PLUGIN_NAME, _status.get_int_value());
     _reason_len = 0;
   } else {
@@ -106,14 +106,14 @@ OperatorSetStatus::exec(const Resources &res) const
   case TS_HTTP_READ_RESPONSE_HDR_HOOK:
   case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
     if (res.bufp && res.hdr_loc) {
-      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, (TSHttpStatus)_status.get_int_value());
+      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()));
       if (_reason && _reason_len > 0) {
         TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
       }
     }
     break;
   default:
-    TSHttpTxnSetHttpRetStatus(res.txnp, (TSHttpStatus)_status.get_int_value());
+    TSHttpTxnSetHttpRetStatus(res.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
     break;
   }
 
@@ -280,8 +280,8 @@ OperatorSetRedirect::initialize(Parser &p)
   _status.set_value(p.get_arg());
   _location.set_value(p.get_value());
 
-  if ((_status.get_int_value() != (int)TS_HTTP_STATUS_MOVED_PERMANENTLY) &&
-      (_status.get_int_value() != (int)TS_HTTP_STATUS_MOVED_TEMPORARILY)) {
+  if ((_status.get_int_value() != static_cast<int>(TS_HTTP_STATUS_MOVED_PERMANENTLY)) &&
+      (_status.get_int_value() != static_cast<int>(TS_HTTP_STATUS_MOVED_TEMPORARILY))) {
     TSError("[%s] unsupported redirect status %d", PLUGIN_NAME, _status.get_int_value());
   }
 
@@ -357,7 +357,7 @@ OperatorSetRedirect::exec(const Resources &res) const
       // Set new location.
       TSUrlParse(bufp, url_loc, &start, end);
       // Set the new status.
-      TSHttpTxnSetHttpRetStatus(res.txnp, (TSHttpStatus)_status.get_int_value());
+      TSHttpTxnSetHttpRetStatus(res.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect                       = 1;
     } else {
@@ -373,7 +373,7 @@ OperatorSetRedirect::exec(const Resources &res) const
       }
 
       // Set the new status code and reason.
-      TSHttpStatus status = (TSHttpStatus)_status.get_int_value();
+      TSHttpStatus status = static_cast<TSHttpStatus>(_status.get_int_value());
       const char *reason  = TSHttpHdrReasonLookup(status);
       size_t len          = strlen(reason);
       TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status);

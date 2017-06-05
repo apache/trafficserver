@@ -696,7 +696,7 @@ print_split_dns_ele(TSSplitDnsEle *ele)
 
   if (ele->dns_servers_addrs) {
     ink_strlcat(buf, "named=", sizeof(buf));
-    str = ip_addr_list_to_string((LLQ *)ele->dns_servers_addrs, " ");
+    str = ip_addr_list_to_string(static_cast<LLQ *>(ele->dns_servers_addrs), " ");
     ink_strlcat(buf, str, sizeof(buf));
     ats_free(str);
     ink_strlcat(buf, " ", sizeof(buf));
@@ -758,34 +758,34 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
 
     switch (filename) {
     case TS_FNAME_CACHE_OBJ:
-      print_cache_ele((TSCacheEle *)ele);
+      print_cache_ele(reinterpret_cast<TSCacheEle *>(ele));
       break;
     case TS_FNAME_HOSTING:
-      print_hosting_ele((TSHostingEle *)ele);
+      print_hosting_ele(reinterpret_cast<TSHostingEle *>(ele));
       break;
     case TS_FNAME_IP_ALLOW:
-      print_ip_allow_ele((TSIpAllowEle *)ele);
+      print_ip_allow_ele(reinterpret_cast<TSIpAllowEle *>(ele));
       break;
     case TS_FNAME_PARENT_PROXY:
-      print_parent_ele((TSParentProxyEle *)ele);
+      print_parent_ele(reinterpret_cast<TSParentProxyEle *>(ele));
       break;
     case TS_FNAME_VOLUME:
-      print_volume_ele((TSVolumeEle *)ele);
+      print_volume_ele(reinterpret_cast<TSVolumeEle *>(ele));
       break;
     case TS_FNAME_PLUGIN:
-      print_plugin_ele((TSPluginEle *)ele);
+      print_plugin_ele(reinterpret_cast<TSPluginEle *>(ele));
       break;
     case TS_FNAME_REMAP:
-      print_remap_ele((TSRemapEle *)ele);
+      print_remap_ele(reinterpret_cast<TSRemapEle *>(ele));
       break;
     case TS_FNAME_SOCKS:
-      print_socks_ele((TSSocksEle *)ele);
+      print_socks_ele(reinterpret_cast<TSSocksEle *>(ele));
       break;
     case TS_FNAME_SPLIT_DNS:
-      print_split_dns_ele((TSSplitDnsEle *)ele);
+      print_split_dns_ele(reinterpret_cast<TSSplitDnsEle *>(ele));
       break;
     case TS_FNAME_STORAGE:
-      print_storage_ele((TSStorageEle *)ele);
+      print_storage_ele(reinterpret_cast<TSStorageEle *>(ele));
       break;
     default:
       printf("[print_ele_list] invalid file type \n");
@@ -1149,19 +1149,19 @@ test_record_get_mlt()
   rec_list  = TSListCreate();
 
   const size_t v1_size = (sizeof(char) * (strlen("proxy.config.proxy_name") + 1));
-  v1                   = (char *)TSmalloc(v1_size);
+  v1                   = static_cast<char *>(TSmalloc(v1_size));
   ink_strlcpy(v1, "proxy.config.proxy_name", v1_size);
   const size_t v2_size = (sizeof(char) * (strlen("proxy.config.bin_path") + 1));
-  v2                   = (char *)TSmalloc(v2_size);
+  v2                   = static_cast<char *>(TSmalloc(v2_size));
   ink_strlcpy(v2, "proxy.config.bin_path", v2_size);
   const size_t v3_size = (sizeof(char) * (strlen("proxy.config.manager_binary") + 1));
-  v3                   = (char *)TSmalloc(v3_size);
+  v3                   = static_cast<char *>(TSmalloc(v3_size));
   ink_strlcpy(v3, "proxy.config.manager_binary", v3_size);
   const size_t v6_size = (sizeof(char) * (strlen("proxy.config.env_prep") + 1));
-  v6                   = (char *)TSmalloc(v6_size);
+  v6                   = static_cast<char *>(TSmalloc(v6_size));
   ink_strlcpy(v6, "proxy.config.env_prep", v6_size);
   const size_t v7_size = (sizeof(char) * (strlen("proxy.config.cop.core_signal") + 1));
-  v7                   = (char *)TSmalloc(v7_size);
+  v7                   = static_cast<char *>(TSmalloc(v7_size));
   ink_strlcpy(v7, "proxy.config.cop.core_signal", v7_size);
 
   // add the names to the get_list
@@ -1181,7 +1181,7 @@ test_record_get_mlt()
   }
 
   for (i = 0; i < num; i++) {
-    rec_ele = (TSRecordEle *)TSListDequeue(rec_list);
+    rec_ele = static_cast<TSRecordEle *>(TSListDequeue(rec_list));
     if (!rec_ele) {
       printf("ERROR\n");
       break;
@@ -1249,7 +1249,7 @@ test_record_set_mlt()
   // cleanup: need to iterate through list and delete each ele
   int count = TSListLen(list);
   for (int i = 0; i < count; i++) {
-    TSRecordEle *ele = (TSRecordEle *)TSListDequeue(list);
+    TSRecordEle *ele = static_cast<TSRecordEle *>(TSListDequeue(list));
     TSRecordEleDestroy(ele);
   }
   TSListDestroy(list);
@@ -1564,7 +1564,7 @@ test_cfg_plugin()
   // retrieve and modify ele
   printf("test_cfg_plugin: modifying the first ele...\n");
   cfg_ele = TSCfgContextGetEleAt(ctx, 0);
-  ele     = (TSPluginEle *)cfg_ele;
+  ele     = reinterpret_cast<TSPluginEle *>(cfg_ele);
   if (ele) {
     // free(ele->name);
     ele->name = ats_strdup("change-plugin.so");
@@ -1583,7 +1583,7 @@ test_cfg_plugin()
   ele->args = TSStringListCreate();
   TSStringListEnqueue(ele->args, ats_strdup("arg1"));
   TSStringListEnqueue(ele->args, ats_strdup("arg2"));
-  TSCfgContextAppendEle(ctx, (TSCfgEle *)ele);
+  TSCfgContextAppendEle(ctx, reinterpret_cast<TSCfgEle *>(ele));
 
   // commit change
   TSCfgContextCommit(ctx, nullptr, nullptr);
@@ -1614,7 +1614,7 @@ test_cfg_socks()
   // retrieving an ele
   printf("test_socks_set: modifying the fourth ele...\n");
   cfg_ele = TSCfgContextGetEleAt(ctx, 3);
-  ele     = (TSSocksEle *)cfg_ele;
+  ele     = reinterpret_cast<TSSocksEle *>(cfg_ele);
   if (ele) {
     if (ele->rr != TS_RR_NONE) {
       ele->rr = TS_RR_FALSE;
@@ -1655,7 +1655,7 @@ test_cfg_socks()
     ele->socks_servers = dlist;
     ele->rr            = TS_RR_STRICT;
 
-    TSCfgContextAppendEle(ctx, (TSCfgEle *)ele);
+    TSCfgContextAppendEle(ctx, reinterpret_cast<TSCfgEle *>(ele));
   } else {
     printf("Can't create SocksEle\n");
   }
@@ -1693,7 +1693,7 @@ print_active_events()
   } else { // successful get
     count = TSListLen(events);
     for (i = 0; i < count; i++) {
-      name = (char *)TSListDequeue(events);
+      name = static_cast<char *>(TSListDequeue(events));
       printf("\t%s\n", name);
       TSfree(name);
     }

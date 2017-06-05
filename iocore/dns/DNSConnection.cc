@@ -48,7 +48,7 @@ DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
 //
 
 DNSConnection::DNSConnection()
-  : fd(NO_FD), num(0), generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this)), handler(nullptr)
+  : fd(NO_FD), num(0), generator(static_cast<uint32_t>(static_cast<uintptr_t>(time(nullptr)) ^ (uintptr_t)this)), handler(nullptr)
 {
   memset(&ip, 0, sizeof(ip));
 }

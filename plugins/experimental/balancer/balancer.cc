@@ -44,7 +44,7 @@ MakeBalancerInstance(const char *opt)
   } else if (len == lengthof("roundrobin") && strncmp(opt, "roundrobin", len) == 0) {
     return MakeRoundRobinBalancer(end ? end + 1 : nullptr);
   } else {
-    TSError("[balancer] Invalid balancing policy '%.*s'", (int)len, opt);
+    TSError("[balancer] Invalid balancing policy '%.*s'", static_cast<int>(len), opt);
     return nullptr;
   }
 }
@@ -162,13 +162,13 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
 void
 TSRemapDeleteInstance(void *instance)
 {
-  delete (BalancerInstance *)instance;
+  delete static_cast<BalancerInstance *>(instance);
 }
 
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
 {
-  BalancerInstance *balancer   = (BalancerInstance *)instance;
+  BalancerInstance *balancer   = static_cast<BalancerInstance *>(instance);
   const BalancerTarget &target = balancer->balance(txn, rri);
 
   if (TSIsDebugTagSet("balancer")) {

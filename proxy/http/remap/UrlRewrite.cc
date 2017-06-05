@@ -167,7 +167,7 @@ UrlRewrite::_destroyTable(InkHashTable *h_table)
   if (h_table != nullptr) { // Iterate over the hash tabel freeing up the all the url_mappings
     //   contained with in
     for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != nullptr;) {
-      item = (UrlMappingPathIndex *)ink_hash_table_entry_value(h_table, ht_entry);
+      item = static_cast<UrlMappingPathIndex *>(ink_hash_table_entry_value(h_table, ht_entry));
       delete item;
       ht_entry = ink_hash_table_iterator_next(h_table, &ht_iter);
     }
@@ -214,7 +214,7 @@ UrlRewrite::PrintStore(MappingsStore &store)
     UrlMappingPathIndex *value;
 
     for (ht_entry = ink_hash_table_iterator_first(store.hash_lookup, &ht_iter); ht_entry != nullptr;) {
-      value = (UrlMappingPathIndex *)ink_hash_table_entry_value(store.hash_lookup, ht_entry);
+      value = static_cast<UrlMappingPathIndex *>(ink_hash_table_entry_value(store.hash_lookup, ht_entry));
       value->Print();
       ht_entry = ink_hash_table_iterator_next(store.hash_lookup, &ht_iter);
     }
@@ -238,7 +238,7 @@ UrlRewrite::_tableLookup(InkHashTable *h_table, URL *request_url, int request_po
   url_mapping *um = nullptr;
   int ht_result;
 
-  ht_result = ink_hash_table_lookup(h_table, request_host, (void **)&ht_entry);
+  ht_result = ink_hash_table_lookup(h_table, request_host, reinterpret_cast<void **>(&ht_entry));
 
   if (likely(ht_result && ht_entry)) {
     // for empty host don't do a normal search, get a mapping arbitrarily
@@ -529,7 +529,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
       host_hdr_len = 0;
     }
 
-    const char *tmp = (const char *)memchr(host_hdr, ':', host_hdr_len);
+    const char *tmp = static_cast<const char *>(memchr(host_hdr, ':', host_hdr_len));
 
     if (tmp == nullptr) {
       host_len = host_hdr_len;
@@ -746,7 +746,7 @@ UrlRewrite::TableInsert(InkHashTable *h_table, url_mapping *mapping, const char 
     src_host_tmp_buf[0] = 0;
   }
   // Insert the new_mapping into hash table
-  if (ink_hash_table_lookup(h_table, src_host, (void **)&ht_contents)) {
+  if (ink_hash_table_lookup(h_table, src_host, reinterpret_cast<void **>(&ht_contents))) {
     // There is already a path index for this host
     if (ht_contents == nullptr) {
       // why should this happen?

@@ -134,7 +134,7 @@ send_mgmt_request(const mgmt_message_sender &snd, OpType optype, ...)
   msglen = mgmt_message_length_v(cmd->fields, cmd->nfields, ap);
   va_end(ap);
 
-  msgbuf = (char *)ats_malloc(msglen + 4);
+  msgbuf = static_cast<char *>(ats_malloc(msglen + 4));
 
   // First marshall the total message length.
   mgmt_message_marshall((char *)msgbuf, msglen, lenfield, countof(lenfield), &msglen);
@@ -168,7 +168,7 @@ send_mgmt_request(int fd, OpType optype, ...)
 
   ink_assert(msglen >= 0);
 
-  req.ptr = (char *)ats_malloc(msglen);
+  req.ptr = static_cast<char *>(ats_malloc(msglen));
   req.len = msglen;
 
   // Marshall the message itself.
@@ -283,7 +283,7 @@ send_mgmt_response(int fd, OpType optype, ...)
 
   ink_assert(msglen >= 0);
 
-  reply.ptr = (char *)ats_malloc(msglen);
+  reply.ptr = static_cast<char *>(ats_malloc(msglen));
   reply.len = msglen;
 
   // Marshall the message itself.
@@ -367,5 +367,5 @@ extract_mgmt_request_optype(void *msg, size_t msglen)
     return OpType::UNDEFINED_OP;
   }
 
-  return (OpType)optype;
+  return static_cast<OpType>(optype);
 }

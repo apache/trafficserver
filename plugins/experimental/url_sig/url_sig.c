@@ -159,7 +159,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         keynum = 0;
       } else {
         TSDebug(PLUGIN_NAME, ">>> %s <<<", line + 3);
-        keynum = atoi((char *)(line + 3));
+        keynum = atoi((line + 3));
         if (keynum == 0) {
           keynum = -1; // Not a Number
         }
@@ -409,7 +409,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     if (getpeername(sockfd, (struct sockaddr *)&peer, &peer_len) != 0) {
       perror("Can't get peer address:");
     }
-    struct sockaddr_in *s = (struct sockaddr_in *)&peer;
+    struct sockaddr_in *s = &peer;
     inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
     TSDebug(PLUGIN_NAME, "Peer address: -%s-", ipstr);
     if (strcmp(ipstr, client_ip) != 0) {

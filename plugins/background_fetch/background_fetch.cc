@@ -361,7 +361,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     // Debug info for this particular bg fetch (put all debug in here please)
     if (TSIsDebugTagSet(PLUGIN_NAME)) {
       char buf[INET6_ADDRSTRLEN];
-      const sockaddr *sockaddress = (const sockaddr *)&data->client_ip;
+      const sockaddr *sockaddress = reinterpret_cast<const sockaddr *>(&data->client_ip);
 
       switch (sockaddress->sa_family) {
       case AF_INET:
@@ -382,7 +382,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
     // Setup the NetVC for background fetch
     TSAssert(nullptr == data->vc);
-    if ((data->vc = TSHttpConnect((sockaddr *)&data->client_ip)) != nullptr) {
+    if ((data->vc = TSHttpConnect(reinterpret_cast<sockaddr *>(&data->client_ip))) != nullptr) {
       TSHttpHdrPrint(data->mbuf, data->hdr_loc, data->req_io_buf);
       // We never send a body with the request. ToDo: Do we ever need to support that ?
       TSIOBufferWrite(data->req_io_buf, "\r\n", 2);
@@ -569,7 +569,7 @@ TSPluginInit(int argc, const char *argv[])
   gConfig->acquire(); // Inc refcount, although this global config should never go out of scope
 
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "lc", longopt, nullptr);
+    int opt = getopt_long(argc, const_cast<char *const *>(argv), "lc", longopt, nullptr);
 
     switch (opt) {
     case 'l':

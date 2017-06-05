@@ -119,7 +119,7 @@ Intervals::insert(int x)
       goto Lmerge;
     }
     l += 2;
-    if (l < (int)n) {
+    if (l < static_cast<int>(n)) {
       if (x == v[l] - 1) {
         v[l]--;
         goto Lmerge;
@@ -156,7 +156,7 @@ Lmerge:
       goto Ldomerge;
     }
   }
-  if (l < (int)(n - 2)) {
+  if (l < static_cast<int>(n - 2)) {
     if (v[l + 2] - v[l + 1] < 2) {
       goto Ldomerge;
     }

@@ -118,7 +118,7 @@ ResourceTracker::increment(const char *name, const int64_t size)
 void
 ResourceTracker::increment(const void *symbol, const int64_t size, const char *name)
 {
-  Resource &resource = lookup((const char *)symbol);
+  Resource &resource = lookup(static_cast<const char *>(symbol));
   if (resource.getSymbol() == nullptr && name != nullptr) {
     resource.setName(symbol, name);
     resource.setSymbol(symbol);

@@ -101,7 +101,7 @@ Alarms::registerCallback(AlarmCallbackFunc func)
   ink_mutex_acquire(&mutex);
   snprintf(cb_buf, sizeof(cb_buf), "%d", cur_cb++);
   Debug("alarm", "[Alarms::registerCallback] Registering Alarms callback");
-  ink_hash_table_insert(cblist, cb_buf, (void *)func);
+  ink_hash_table_insert(cblist, cb_buf, reinterpret_cast<void *>(func));
   ink_mutex_release(&mutex);
 } /* End Alarms::registerCallback */
 
@@ -143,7 +143,7 @@ Alarms::resolveAlarm(alarm_t a, char *ip)
 
   if (!ip && ink_hash_table_lookup(local_alarms, buf, &hash_value) != 0) {
     ink_hash_table_delete(local_alarms, buf);
-    ats_free(((Alarm *)hash_value)->description);
+    ats_free((static_cast<Alarm *>(hash_value))->description);
     ats_free(hash_value);
   } else if (ip && ink_hash_table_lookup(remote_alarms, buf, &hash_value) != 0) {
     char buf2[1024];
@@ -222,7 +222,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   Debug("alarm", "[Alarms::signalAlarm] Sending Alarm: '%s'", desc);
 
   if (!desc) {
-    desc = (char *)getAlarmText(a);
+    desc = const_cast<char *>(getAlarmText(a));
   }
 
   /*
@@ -252,14 +252,14 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     if (ink_hash_table_lookup(remote_alarms, buf, &hash_value) != 0) {
       // Reset the seen flag so that we know the remote alarm is
       //   still active
-      atmp       = (Alarm *)hash_value;
+      atmp       = static_cast<Alarm *>(hash_value);
       atmp->seen = true;
       ink_mutex_release(&mutex);
       return;
     }
   }
 
-  atmp              = (Alarm *)ats_malloc(sizeof(Alarm));
+  atmp              = static_cast<Alarm *>(ats_malloc(sizeof(Alarm)));
   atmp->type        = a;
   atmp->linger      = true;
   atmp->seen        = true;
@@ -292,14 +292,14 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   }
   const size_t sz = sizeof(char) * (strlen(desc) + strlen(my_ctime_str) + 4);
   ats_free(atmp->description);
-  atmp->description = (char *)ats_malloc(sz);
+  atmp->description = static_cast<char *>(ats_malloc(sz));
   snprintf(atmp->description, sz, "[%s] %s", my_ctime_str, desc);
 
   ink_mutex_release(&mutex);
 
   for (entry = ink_hash_table_iterator_first(cblist, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(cblist, &iterator_state)) {
-    AlarmCallbackFunc func = (AlarmCallbackFunc)ink_hash_table_entry_value(remote_alarms, entry);
+    AlarmCallbackFunc func = reinterpret_cast<AlarmCallbackFunc>(ink_hash_table_entry_value(remote_alarms, entry));
     Debug("alarm", "[Alarms::signalAlarm] invoke callback for %d", a);
     (*(func))(a, ip, desc);
   }
@@ -325,8 +325,8 @@ Alarms::resetSeenFlag(char *ip)
   ink_mutex_acquire(&mutex);
   for (entry = ink_hash_table_iterator_first(remote_alarms, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(remote_alarms, &iterator_state)) {
-    char *key  = (char *)ink_hash_table_entry_key(remote_alarms, entry);
-    Alarm *tmp = (Alarm *)ink_hash_table_entry_value(remote_alarms, entry);
+    char *key  = static_cast<char *>(ink_hash_table_entry_key(remote_alarms, entry));
+    Alarm *tmp = static_cast<Alarm *>(ink_hash_table_entry_value(remote_alarms, entry));
 
     if (strstr(key, ip)) {
       tmp->seen = false;
@@ -350,8 +350,8 @@ Alarms::clearUnSeen(char *ip)
   ink_mutex_acquire(&mutex);
   for (entry = ink_hash_table_iterator_first(remote_alarms, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(remote_alarms, &iterator_state)) {
-    char *key  = (char *)ink_hash_table_entry_key(remote_alarms, entry);
-    Alarm *tmp = (Alarm *)ink_hash_table_entry_value(remote_alarms, entry);
+    char *key  = static_cast<char *>(ink_hash_table_entry_key(remote_alarms, entry));
+    Alarm *tmp = static_cast<Alarm *>(ink_hash_table_entry_value(remote_alarms, entry));
 
     if (strstr(key, ip)) {                         /* Make sure alarm is for correct ip */
       if (!tmp->seen) {                            /* Make sure we did not see it in peer's report */
@@ -411,7 +411,7 @@ Alarms::execAlarmBin(const char *desc)
   } else if (pid > 0) { /* Parent */
     int status;
     bool script_done = false;
-    time_t timeout   = (time_t)REC_readInteger("proxy.config.alarm.script_runtime", nullptr);
+    time_t timeout   = static_cast<time_t>(REC_readInteger("proxy.config.alarm.script_runtime", nullptr));
     if (!timeout) {
       timeout = 5; // default time = 5 secs
     }

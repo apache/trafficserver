@@ -38,7 +38,7 @@ struct RecordDescriptionPolicy {
   static entry_type
   cast(void *ptr)
   {
-    return (entry_type)ptr;
+    return static_cast<entry_type>(ptr);
   }
 };
 
@@ -373,8 +373,8 @@ config_status(unsigned argc, const char **argv)
   CTRL_MGMT_CHECK(cop.fetch("proxy.node.config.restart_required.cop"));
 
   printf("%s\n", CtrlMgmtRecordValue(version).c_str());
-  printf("Started at %s", timestr((time_t)starttime.as_int()).c_str());
-  printf("Last reconfiguration at %s", timestr((time_t)configtime.as_int()).c_str());
+  printf("Started at %s", timestr(static_cast<time_t>(starttime.as_int())).c_str());
+  printf("Last reconfiguration at %s", timestr(static_cast<time_t>(configtime.as_int())).c_str());
   printf("%s\n", reconfig.as_int() ? "Reconfiguration required" : "Configuration is current");
 
   if (proxy.as_int()) {

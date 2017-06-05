@@ -45,7 +45,7 @@ Token::~Token()
 void
 Token::setName(const char *str)
 {
-  name = (char *)strtrim(str);
+  name = const_cast<char *>(strtrim(str));
   // name = ats_strdup(str_copy); DOESN't WORK
 }
 
@@ -56,13 +56,13 @@ Token::setName(const char *str)
 void
 Token::setValue(const char *str)
 {
-  char *str_copy = (char *)strtrim(str);
+  char *str_copy = const_cast<char *>(strtrim(str));
   // Can't use ats_strdup after strtrim?
   //  value = ats_strdup(str);
   ink_assert(value == nullptr);
   if (str_copy) {
     size_t len = strlen(str_copy);
-    value      = (char *)ats_malloc(sizeof(char) * (BUFSIZ));
+    value      = static_cast<char *>(ats_malloc(sizeof(char) * (BUFSIZ)));
     len        = (len < BUFSIZ) ? len : BUFSIZ - 1;
     memcpy(value, str_copy, len);
     value[len] = '\0';
@@ -73,7 +73,7 @@ Token::setValue(const char *str)
 void
 Token::appendValue(const char *str)
 {
-  char *str_copy        = (char *)strtrim(str);
+  char *str_copy        = const_cast<char *>(strtrim(str));
   static bool firstTime = true;
 
   if (value == nullptr) {
@@ -192,7 +192,7 @@ Rule::Print()
 TokenList *
 Rule::parse(const char *const_rule, TSFileNameT filetype)
 {
-  char *rule = (char *)const_rule;
+  char *rule = const_cast<char *>(const_rule);
   m_filetype = filetype;
 
   switch (m_filetype) {
@@ -900,7 +900,7 @@ RuleList::parse(char *fileBuf, TSFileNameT filetype)
       } else {
         // rule->setComment("## WARNING: The following configuration rule is invalid!");
         size_t error_rule_size = sizeof(char) * (strlen(line) + strlen("#ERROR: ") + 1);
-        char *error_rule       = (char *)ats_malloc(error_rule_size);
+        char *error_rule       = static_cast<char *>(ats_malloc(error_rule_size));
 
         snprintf(error_rule, error_rule_size, "#ERROR: %s", line);
         rule->setComment(error_rule);

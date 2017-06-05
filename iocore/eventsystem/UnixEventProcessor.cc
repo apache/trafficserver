@@ -43,7 +43,7 @@ EventProcessor::spawn_event_threads(int n_threads, const char *et_name, size_t s
   ink_release_assert((n_ethreads + n_threads) <= MAX_EVENT_THREADS);
   ink_release_assert(n_thread_groups < MAX_EVENT_TYPES);
 
-  new_thread_group_id = (EventType)n_thread_groups;
+  new_thread_group_id = static_cast<EventType>(n_thread_groups);
 
   for (i = 0; i < n_threads; i++) {
     EThread *t                          = new EThread(REGULAR, n_ethreads + i);
@@ -158,7 +158,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     all_ethreads[i] = t;
 
     eventthread[ET_CALL][i] = t;
-    t->set_event_type((EventType)ET_CALL);
+    t->set_event_type(static_cast<EventType>(ET_CALL));
   }
   n_threads_for_type[ET_CALL] = n_event_threads;
 
@@ -212,7 +212,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 #if HWLOC_API_VERSION >= 0x00010100
       // Pretty print our CPU set
       int cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
-      char *cpu_mask   = (char *)alloca(cpu_mask_len);
+      char *cpu_mask   = static_cast<char *>(alloca(cpu_mask_len));
       hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
       Debug("iocore_thread", "EThread: %d %s: %d CPU Mask: %s", i, obj_name, obj->logical_index, cpu_mask);
 #else

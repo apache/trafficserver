@@ -61,9 +61,9 @@ static RecBool disable_modification = false;
 static ClientT *
 create_client()
 {
-  ClientT *ele = (ClientT *)ats_malloc(sizeof(ClientT));
+  ClientT *ele = static_cast<ClientT *>(ats_malloc(sizeof(ClientT)));
 
-  ele->adr = (struct sockaddr *)ats_malloc(sizeof(struct sockaddr));
+  ele->adr = static_cast<struct sockaddr *>(ats_malloc(sizeof(struct sockaddr)));
   return ele;
 }
 
@@ -99,7 +99,7 @@ remove_client(ClientT *client, InkHashTable *table)
   close_socket(client->fd); // close client socket
 
   // remove client binding from hash table
-  ink_hash_table_delete(table, (char *)&client->fd);
+  ink_hash_table_delete(table, reinterpret_cast<char *>(&client->fd));
 
   // free ClientT
   delete_client(client);
@@ -123,7 +123,7 @@ ts_ctrl_main(void *arg)
   int *socket_fd;
   int con_socket_fd; // main socket for listening to new connections
 
-  socket_fd     = (int *)arg;
+  socket_fd     = static_cast<int *>(arg);
   con_socket_fd = *socket_fd;
 
   // initialize queue for accepted con
@@ -159,7 +159,7 @@ ts_ctrl_main(void *arg)
 
     // iterate through all entries in hash table
     while (con_entry) {
-      client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
+      client_entry = static_cast<ClientT *>(ink_hash_table_entry_value(accepted_con, con_entry));
       if (client_entry->fd >= 0) { // add fd to select set
         FD_SET(client_entry->fd, &selectFDs);
         Debug("ts_main", "[ts_ctrl_main] add fd %d to select set", client_entry->fd);
@@ -187,7 +187,7 @@ ts_ctrl_main(void *arg)
           socklen_t addr_len = (sizeof(struct sockaddr));
           new_con_fd         = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
           new_client_con->fd = new_con_fd;
-          ink_hash_table_insert(accepted_con, (char *)&new_client_con->fd, new_client_con);
+          ink_hash_table_insert(accepted_con, reinterpret_cast<char *>(&new_client_con->fd), new_client_con);
           Debug("ts_main", "[ts_ctrl_main] Add new client connection");
         }
       } // end if(new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
@@ -198,7 +198,7 @@ ts_ctrl_main(void *arg)
         con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
         while (con_entry) {
           Debug("ts_main", "[ts_ctrl_main] We have a remote client request!");
-          client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
+          client_entry = static_cast<ClientT *>(ink_hash_table_entry_value(accepted_con, con_entry));
           // got information; check
           if (client_entry->fd && FD_ISSET(client_entry->fd, &selectFDs)) {
             void *req = nullptr;
@@ -244,12 +244,12 @@ ts_ctrl_main(void *arg)
   // iterate through hash table; close client socket connections and remove entry
   con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
   while (con_entry) {
-    client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
+    client_entry = static_cast<ClientT *>(ink_hash_table_entry_value(accepted_con, con_entry));
     if (client_entry->fd >= 0) {
       close_socket(client_entry->fd); // close socket
     }
-    ink_hash_table_delete(accepted_con, (char *)&client_entry->fd); // remove binding
-    delete_client(client_entry);                                    // free ClientT
+    ink_hash_table_delete(accepted_con, reinterpret_cast<char *>(&client_entry->fd)); // remove binding
+    delete_client(client_entry);                                                      // free ClientT
     con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
   }
   // all entries should be removed and freed already
@@ -368,7 +368,7 @@ send_record_get_response(int fd, const RecRecord *rec)
 static void
 send_record_get(const RecRecord *rec, void *edata)
 {
-  int *fd = (int *)edata;
+  int *fd = static_cast<int *>(edata);
   *fd     = send_record_get_response(*fd, rec);
 }
 
@@ -399,7 +399,7 @@ handle_record_get(int fd, void *req, size_t reqlen)
 
   // If the lookup succeeded, the final error is in "fderr".
   if (ret == TS_ERR_OKAY) {
-    ret = (TSMgmtError)fderr;
+    ret = static_cast<TSMgmtError>(fderr);
   }
 
 done:
@@ -415,7 +415,7 @@ struct record_match_state {
 static void
 send_record_match(const RecRecord *rec, void *edata)
 {
-  record_match_state *match = (record_match_state *)edata;
+  record_match_state *match = static_cast<record_match_state *>(edata);
 
   if (match->err != TS_ERR_OKAY) {
     return;
@@ -521,11 +521,11 @@ handle_file_read(int fd, void *req, size_t reqlen)
 
   err = recv_mgmt_request(req, reqlen, OpType::FILE_READ, &optype, &fid);
   if (err != TS_ERR_OKAY) {
-    return (TSMgmtError)err;
+    return static_cast<TSMgmtError>(err);
   }
 
   // make CoreAPI call on Traffic Manager side
-  err = ReadFile((TSFileNameT)fid, &text, &size, &version);
+  err = ReadFile(static_cast<TSFileNameT>(fid), &text, &size, &version);
   if (err == TS_ERR_OKAY) {
     vers     = version;
     data.ptr = text;
@@ -535,7 +535,7 @@ handle_file_read(int fd, void *req, size_t reqlen)
   err = send_mgmt_response(fd, OpType::FILE_READ, &err, &vers, &data);
 
   ats_free(text); // free memory allocated by ReadFile
-  return (TSMgmtError)err;
+  return static_cast<TSMgmtError>(err);
 }
 
 /**************************************************************************
@@ -566,7 +566,7 @@ handle_file_write(int fd, void *req, size_t reqlen)
   }
 
   // make CoreAPI call on Traffic Manager side
-  err = WriteFile((TSFileNameT)fid, (const char *)data.ptr, data.len, vers);
+  err = WriteFile(static_cast<TSFileNameT>(fid), static_cast<const char *>(data.ptr), data.len, vers);
 
 done:
   ats_free(data.ptr);
@@ -616,7 +616,7 @@ handle_proxy_state_set(int fd, void *req, size_t reqlen)
     return send_mgmt_response(fd, OpType::PROXY_STATE_SET, &err);
   }
 
-  err = ProxyStateSet((TSProxyStateT)state, (TSCacheClearT)clear);
+  err = ProxyStateSet(static_cast<TSProxyStateT>(state), static_cast<TSCacheClearT>(clear));
   return send_mgmt_response(fd, OpType::PROXY_STATE_SET, &err);
 }
 
@@ -752,7 +752,7 @@ handle_event_get_mlt(int fd, void *req, size_t reqlen)
   // iterate through list and put into a delimited string list
   memset(buf, 0, MAX_BUF_SIZE);
   while (!queue_is_empty(event_list)) {
-    event_name = (char *)dequeue(event_list);
+    event_name = static_cast<char *>(dequeue(event_list));
     if (event_name) {
       snprintf(buf + buf_pos, (MAX_BUF_SIZE - buf_pos), "%s%c", event_name, REMOTE_DELIM);
       buf_pos += (strlen(event_name) + 1);
@@ -848,7 +848,7 @@ handle_snapshot(int fd, void *req, size_t reqlen)
 
 done:
   ats_free(name);
-  return send_mgmt_response(fd, (OpType)optype, &err);
+  return send_mgmt_response(fd, optype, &err);
 }
 
 /**************************************************************************
@@ -884,7 +884,7 @@ handle_snapshot_get_mlt(int fd, void *req, size_t reqlen)
   // iterate through list and put into a delimited string list
   memset(buf, 0, MAX_BUF_SIZE);
   while (!queue_is_empty(snap_list)) {
-    snap_name = (char *)dequeue(snap_list);
+    snap_name = static_cast<char *>(dequeue(snap_list));
     if (snap_name) {
       snprintf(buf + buf_pos, (MAX_BUF_SIZE - buf_pos), "%s%c", snap_name, REMOTE_DELIM);
       buf_pos += (strlen(snap_name) + 1);
@@ -920,7 +920,7 @@ handle_stats_reset(int fd, void *req, size_t reqlen)
   }
 
   ats_free(name);
-  return send_mgmt_response(fd, (OpType)optype, &err);
+  return send_mgmt_response(fd, optype, &err);
 }
 
 /**************************************************************************
@@ -955,7 +955,7 @@ handle_server_backtrace(int fd, void *req, size_t reqlen)
   err = send_mgmt_response(fd, OpType::SERVER_BACKTRACE, &err, &trace);
   ats_free(trace);
 
-  return (TSMgmtError)err;
+  return static_cast<TSMgmtError>(err);
 }
 
 static void
@@ -978,7 +978,7 @@ send_record_describe(const RecRecord *rec, void *edata)
 
   TSMgmtError err = TS_ERR_OKAY;
 
-  record_match_state *match = (record_match_state *)edata;
+  record_match_state *match = static_cast<record_match_state *>(edata);
 
   if (match->err != TS_ERR_OKAY) {
     return;
@@ -1190,6 +1190,6 @@ handle_control_message(int fd, void *req, size_t reqlen)
   return TS_ERR_OKAY;
 
 fail:
-  mgmt_elog(0, "%s: missing handler for type %d control message\n", __func__, (int)optype);
+  mgmt_elog(0, "%s: missing handler for type %d control message\n", __func__, static_cast<int>(optype));
   return TS_ERR_PARAMS;
 }

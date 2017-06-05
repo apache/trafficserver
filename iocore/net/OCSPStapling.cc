@@ -48,7 +48,7 @@ struct certinfo {
 void
 certinfo_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  certinfo *cinf = (certinfo *)ptr;
+  certinfo *cinf = static_cast<certinfo *>(ptr);
 
   if (!cinf) {
     return;
@@ -124,13 +124,13 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
     return false;
   }
 
-  cinf = (certinfo *)SSL_CTX_get_ex_data(ctx, ssl_stapling_index);
+  cinf = static_cast<certinfo *>(SSL_CTX_get_ex_data(ctx, ssl_stapling_index));
   if (cinf) {
     Note("certificate already initialized for %s", certname);
     return false;
   }
 
-  cinf = (certinfo *)OPENSSL_malloc(sizeof(certinfo));
+  cinf = static_cast<certinfo *>(OPENSSL_malloc(sizeof(certinfo)));
   if (!cinf) {
     Error("error allocating memory for %s", certname);
     return false;
@@ -179,7 +179,7 @@ stapling_get_cert_info(SSL_CTX *ctx)
 {
   certinfo *cinf;
 
-  cinf = (certinfo *)SSL_CTX_get_ex_data(ctx, ssl_stapling_index);
+  cinf = static_cast<certinfo *>(SSL_CTX_get_ex_data(ctx, ssl_stapling_index));
   if (cinf && cinf->cid) {
     return cinf;
   }
@@ -443,7 +443,7 @@ ssl_callback_ocsp_stapling(SSL *ssl)
     Error("ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
     return SSL_TLSEXT_ERR_NOACK;
   } else {
-    unsigned char *p = (unsigned char *)OPENSSL_malloc(cinf->resp_derlen);
+    unsigned char *p = static_cast<unsigned char *>(OPENSSL_malloc(cinf->resp_derlen));
     unsigned int len = cinf->resp_derlen;
     memcpy(p, cinf->resp_der, cinf->resp_derlen);
     ink_mutex_release(&cinf->stapling_mutex);

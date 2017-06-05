@@ -42,13 +42,13 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
 
   // get thread local values
   for (i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     total->sum += tlp->sum;
     total->count += tlp->count;
   }
 
   for (i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     total->sum += tlp->sum;
     total->count += tlp->count;
   }
@@ -75,13 +75,13 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
 
   // sum the thread local values
   for (i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     total.sum += tlp->sum;
     total.count += tlp->count;
   }
 
   for (i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     total.sum += tlp->sum;
     total.count += tlp->count;
   }
@@ -127,24 +127,24 @@ raw_stat_clear(RecRawStatBlock *rsb, int id)
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
   ink_mutex_acquire(&(rsb->mutex));
-  ink_atomic_swap(&(rsb->global[id]->sum), (int64_t)0);
-  ink_atomic_swap(&(rsb->global[id]->last_sum), (int64_t)0);
-  ink_atomic_swap(&(rsb->global[id]->count), (int64_t)0);
-  ink_atomic_swap(&(rsb->global[id]->last_count), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->sum), static_cast<int64_t>(0));
+  ink_atomic_swap(&(rsb->global[id]->last_sum), static_cast<int64_t>(0));
+  ink_atomic_swap(&(rsb->global[id]->count), static_cast<int64_t>(0));
+  ink_atomic_swap(&(rsb->global[id]->last_count), static_cast<int64_t>(0));
   ink_mutex_release(&(rsb->mutex));
 
   // reset the local stats
   RecRawStat *tlp;
   for (int i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
-    ink_atomic_swap(&(tlp->sum), (int64_t)0);
-    ink_atomic_swap(&(tlp->count), (int64_t)0);
+    tlp = (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->sum), static_cast<int64_t>(0));
+    ink_atomic_swap(&(tlp->count), static_cast<int64_t>(0));
   }
 
   for (int i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
-    ink_atomic_swap(&(tlp->sum), (int64_t)0);
-    ink_atomic_swap(&(tlp->count), (int64_t)0);
+    tlp = (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->sum), static_cast<int64_t>(0));
+    ink_atomic_swap(&(tlp->count), static_cast<int64_t>(0));
   }
 
   return REC_ERR_OKAY;
@@ -161,20 +161,20 @@ raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
   ink_mutex_acquire(&(rsb->mutex));
-  ink_atomic_swap(&(rsb->global[id]->sum), (int64_t)0);
-  ink_atomic_swap(&(rsb->global[id]->last_sum), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->sum), static_cast<int64_t>(0));
+  ink_atomic_swap(&(rsb->global[id]->last_sum), static_cast<int64_t>(0));
   ink_mutex_release(&(rsb->mutex));
 
   // reset the local stats
   RecRawStat *tlp;
   for (int i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
-    ink_atomic_swap(&(tlp->sum), (int64_t)0);
+    tlp = (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->sum), static_cast<int64_t>(0));
   }
 
   for (int i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
-    ink_atomic_swap(&(tlp->sum), (int64_t)0);
+    tlp = (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->sum), static_cast<int64_t>(0));
   }
 
   return REC_ERR_OKAY;
@@ -191,20 +191,20 @@ raw_stat_clear_count(RecRawStatBlock *rsb, int id)
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
   ink_mutex_acquire(&(rsb->mutex));
-  ink_atomic_swap(&(rsb->global[id]->count), (int64_t)0);
-  ink_atomic_swap(&(rsb->global[id]->last_count), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->count), static_cast<int64_t>(0));
+  ink_atomic_swap(&(rsb->global[id]->last_count), static_cast<int64_t>(0));
   ink_mutex_release(&(rsb->mutex));
 
   // reset the local stats
   RecRawStat *tlp;
   for (int i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
-    ink_atomic_swap(&(tlp->count), (int64_t)0);
+    tlp = (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->count), static_cast<int64_t>(0));
   }
 
   for (int i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
-    ink_atomic_swap(&(tlp->count), (int64_t)0);
+    tlp = (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    ink_atomic_swap(&(tlp->count), static_cast<int64_t>(0));
   }
 
   return REC_ERR_OKAY;
@@ -225,10 +225,10 @@ RecAllocateRawStatBlock(int num_stats)
   }
 
   // create the raw-stat-block structure
-  rsb = (RecRawStatBlock *)ats_malloc(sizeof(RecRawStatBlock));
+  rsb = static_cast<RecRawStatBlock *>(ats_malloc(sizeof(RecRawStatBlock)));
   memset(rsb, 0, sizeof(RecRawStatBlock));
 
-  rsb->global = (RecRawStat **)ats_malloc(num_stats * sizeof(RecRawStat *));
+  rsb->global = static_cast<RecRawStat **>(ats_malloc(num_stats * sizeof(RecRawStat *)));
   memset(rsb->global, 0, num_stats * sizeof(RecRawStat *));
 
   rsb->num_stats        = 0;
@@ -329,7 +329,7 @@ RecRawStatSyncAvg(const char *name, RecDataT data_type, RecData *data, RecRawSta
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
   if (total.count != 0) {
-    avg = (float)((double)total.sum / (double)total.count);
+    avg = static_cast<float>(static_cast<double>(total.sum) / static_cast<double>(total.count));
   }
   RecDataSetFromFloat(data_type, data, avg);
   return REC_ERR_OKAY;
@@ -349,8 +349,8 @@ RecRawStatSyncHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Rec
   if (total.count == 0) {
     r = 0.0f;
   } else {
-    r = (float)((double)total.sum / (double)total.count);
-    r = r / (float)(HRTIME_SECOND);
+    r = static_cast<float>(static_cast<double>(total.sum) / static_cast<double>(total.count));
+    r = r / static_cast<float>(HRTIME_SECOND);
   }
 
   RecDataSetFromFloat(data_type, data, r);
@@ -371,7 +371,7 @@ RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, RecDa
   if (total.count == 0) {
     r = 0.0f;
   } else {
-    r = (float)((double)total.sum / 1000);
+    r = static_cast<float>(static_cast<double>(total.sum) / 1000);
   }
 
   RecDataSetFromFloat(data_type, data, r);
@@ -392,8 +392,8 @@ RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Re
   if (total.count == 0) {
     r = 0.0f;
   } else {
-    r = (float)((double)total.sum / (double)total.count);
-    r = r / (float)(HRTIME_MSECOND);
+    r = static_cast<float>(static_cast<double>(total.sum) / static_cast<double>(total.count));
+    r = r / static_cast<float>(HRTIME_MSECOND);
   }
 
   RecDataSetFromFloat(data_type, data, r);
@@ -534,7 +534,7 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
 
   ink_rwlock_rdlock(&g_records_rwlock);
 
-  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r)) {
+  if (ink_hash_table_lookup(g_records_ht, name, reinterpret_cast<void **>(&r))) {
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       if (r->stat_meta.sync_cb) {

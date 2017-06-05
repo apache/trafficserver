@@ -345,7 +345,7 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
   case ESSH:
   case ECSSH:
   case SCFG:
-    m_unmarshal_func = (UnmarshalFunc) & (LogAccess::unmarshal_str);
+    m_unmarshal_func = reinterpret_cast<UnmarshalFunc>(&(LogAccess::unmarshal_str));
     break;
 
   case ICFG:
@@ -566,9 +566,9 @@ unsigned
 LogField::unmarshal(char **buf, char *dest, int len)
 {
   if (!m_alias_map) {
-    if (m_unmarshal_func == (UnmarshalFunc)LogAccess::unmarshal_str ||
-        m_unmarshal_func == (UnmarshalFunc)LogAccess::unmarshal_http_text) {
-      UnmarshalFuncWithSlice func = (UnmarshalFuncWithSlice)m_unmarshal_func;
+    if (m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_str) ||
+        m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_http_text)) {
+      UnmarshalFuncWithSlice func = reinterpret_cast<UnmarshalFuncWithSlice>(m_unmarshal_func);
       return (*func)(buf, dest, len, &m_slice);
     }
     return (*m_unmarshal_func)(buf, dest, len);
@@ -655,7 +655,7 @@ LogField::valid_container_name(char *name)
 {
   for (unsigned i = 1; i < countof(container_names); i++) {
     if (strcmp(name, container_names[i]) == 0) {
-      return (LogField::Container)i;
+      return static_cast<LogField::Container>(i);
     }
   }
 
@@ -667,7 +667,7 @@ LogField::valid_aggregate_name(char *name)
 {
   for (unsigned i = 1; i < countof(aggregate_names); i++) {
     if (strcmp(name, aggregate_names[i]) == 0) {
-      return (LogField::Aggregate)i;
+      return static_cast<LogField::Aggregate>(i);
     }
   }
 
@@ -750,7 +750,8 @@ LogFieldList::find_by_symbol(const char *symbol) const
   LogField *field = nullptr;
 
   if (Log::field_symbol_hash) {
-    if (ink_hash_table_lookup(Log::field_symbol_hash, (char *)symbol, (InkHashTableValue *)&field) && field) {
+    if (ink_hash_table_lookup(Log::field_symbol_hash, const_cast<char *>(symbol), reinterpret_cast<InkHashTableValue *>(&field)) &&
+        field) {
       Debug("log-field-hash", "Field %s found", field->symbol());
       return field;
     }

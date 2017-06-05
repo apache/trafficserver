@@ -117,7 +117,7 @@ LogSock::listen(int accept_port, int family)
   struct linger l;
   l.l_onoff  = 0;
   l.l_linger = 0;
-  if ((ret = safe_setsockopt(accept_sd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
+  if ((ret = safe_setsockopt(accept_sd, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&l), sizeof(l))) < 0) {
     Warning("Could not set option NO_LINGER on socket (%d): %s", ret, strerror(errno));
     return -1;
   }
@@ -478,7 +478,7 @@ LogSock::write(int cid, void *buf, int bytes)
   //
   Debug("log-sock", "   sending header (%zu bytes)", sizeof(LogSock::MsgHeader));
   header.msg_bytes = bytes;
-  ret              = ::send(ct[cid].sd, (char *)&header, sizeof(LogSock::MsgHeader), 0);
+  ret              = ::send(ct[cid].sd, reinterpret_cast<char *>(&header), sizeof(LogSock::MsgHeader), 0);
   if (ret != sizeof(LogSock::MsgHeader)) {
     return LogSock::LS_ERROR_WRITE;
   }
@@ -486,7 +486,7 @@ LogSock::write(int cid, void *buf, int bytes)
   // send the actual data
   //
   Debug("log-sock", "   sending data (%d bytes)", bytes);
-  return ::send(ct[cid].sd, (char *)buf, bytes, 0);
+  return ::send(ct[cid].sd, static_cast<char *>(buf), bytes, 0);
 }
 
 /**
@@ -515,7 +515,7 @@ LogSock::read(int cid, void *buf, unsigned maxsize)
     return LogSock::LS_ERROR_READ;
   }
 
-  size = ((unsigned)header.msg_bytes < maxsize) ? (unsigned)header.msg_bytes : maxsize;
+  size = (static_cast<unsigned>(header.msg_bytes) < maxsize) ? static_cast<unsigned>(header.msg_bytes) : maxsize;
   return read_body(ct[cid].sd, buf, size);
 }
 
@@ -572,7 +572,7 @@ LogSock::is_connected(int cid, bool ping) const
   if (ping) {
     flags = fcntl(ct[cid].sd, F_GETFL);
     ::fcntl(ct[cid].sd, F_SETFL, O_NONBLOCK);
-    j = ::recv(ct[cid].sd, (char *)&i, sizeof(int), MSG_PEEK);
+    j = ::recv(ct[cid].sd, reinterpret_cast<char *>(&i), sizeof(int), MSG_PEEK);
     ::fcntl(ct[cid].sd, F_SETFL, flags);
     if (j != 0) {
       return true;
@@ -701,7 +701,7 @@ LogSock::read_header(int sd, LogSock::MsgHeader *header)
   ink_assert(sd >= 0);
   ink_assert(header != nullptr);
 
-  int bytes = ::recv(sd, (char *)header, sizeof(LogSock::MsgHeader), 0);
+  int bytes = ::recv(sd, reinterpret_cast<char *>(header), sizeof(LogSock::MsgHeader), 0);
   if (bytes != sizeof(LogSock::MsgHeader)) {
     return -1;
   }
@@ -724,7 +724,7 @@ LogSock::read_body(int sd, void *buf, int bytes)
 
   unsigned bytes_left = bytes;
   unsigned bytes_read;
-  char *to = (char *)buf;
+  char *to = static_cast<char *>(buf);
 
   while (bytes_left) {
     bytes_read = ::recv(sd, to, bytes_left, 0);

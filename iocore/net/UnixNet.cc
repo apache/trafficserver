@@ -223,8 +223,8 @@ net_signal_hook_function(EThread *thread)
 void
 initialize_thread_for_net(EThread *thread)
 {
-  new ((ink_dummy_for_new *)get_NetHandler(thread)) NetHandler();
-  new ((ink_dummy_for_new *)get_PollCont(thread)) PollCont(thread->mutex, get_NetHandler(thread));
+  new (reinterpret_cast<ink_dummy_for_new *>(get_NetHandler(thread))) NetHandler();
+  new (reinterpret_cast<ink_dummy_for_new *>(get_PollCont(thread))) PollCont(thread->mutex, get_NetHandler(thread));
   get_NetHandler(thread)->mutex = new_ProxyMutex();
   PollCont *pc                  = get_PollCont(thread);
   PollDescriptor *pd            = pc->pollDescriptor;
@@ -240,7 +240,7 @@ initialize_thread_for_net(EThread *thread)
 #endif
 
   thread->signal_hook = net_signal_hook_function;
-  thread->ep          = (EventIO *)ats_malloc(sizeof(EventIO));
+  thread->ep          = static_cast<EventIO *>(ats_malloc(sizeof(EventIO)));
   thread->ep->type    = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
   thread->ep->start(pd, thread->evfd, nullptr, EVENTIO_READ);
@@ -446,7 +446,7 @@ NetHandler::mainNetEvent(int event, Event *e)
 
   vc = nullptr;
   for (int x = 0; x < pd->result; x++) {
-    epd = (EventIO *)get_ev_data(pd, x);
+    epd = static_cast<EventIO *> get_ev_data(pd, x);
     if (epd->type == EVENTIO_READWRITE_VC) {
       vc = epd->data.vc;
       // Remove triggered NetVC from cop_list because it won't be timeout before next InactivityCop runs.

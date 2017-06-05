@@ -169,7 +169,7 @@ TSPluginInit(int argc, const char *argv[])
 
   int opt = 0;
   while (opt >= 0) {
-    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "c:", longopt, nullptr);
     switch (opt) {
     case 'c':
       ConfigPath = optarg;

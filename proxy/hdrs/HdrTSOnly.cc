@@ -75,7 +75,7 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     m_heap->set_ronly_str_heap_end(heap_slot, tmp);
     m_heap->unlock_ronly_str_heap(heap_slot);
 
-    used = (int)(tmp - start);
+    used = static_cast<int>(tmp - start);
     r->consume(used);
     *bytes_used += used;
 
@@ -115,7 +115,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
     m_heap->set_ronly_str_heap_end(heap_slot, tmp);
     m_heap->unlock_ronly_str_heap(heap_slot);
 
-    used = (int)(tmp - start);
+    used = static_cast<int>(tmp - start);
     r->consume(used);
     *bytes_used += used;
 
@@ -142,7 +142,7 @@ HdrHeap::set_ronly_str_heap_end(int slot, const char *end)
   ink_assert(m_ronly_heap[slot].m_heap_start <= end);
   ink_assert(end <= m_ronly_heap[slot].m_heap_start + m_ronly_heap[slot].m_heap_len);
 
-  m_ronly_heap[slot].m_heap_len = (int)(end - m_ronly_heap[slot].m_heap_start);
+  m_ronly_heap[slot].m_heap_len = static_cast<int>(end - m_ronly_heap[slot].m_heap_start);
 }
 
 // void HdrHeap::attach_block(IOBufferBlock* b, const char* use_start)
@@ -169,8 +169,8 @@ RETRY:
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
     if (m_ronly_heap[i].m_heap_start == nullptr) {
       // Add block to heap in this slot
-      m_ronly_heap[i].m_heap_start    = (char *)use_start;
-      m_ronly_heap[i].m_heap_len      = (int)(b->end() - b->start());
+      m_ronly_heap[i].m_heap_start    = const_cast<char *>(use_start);
+      m_ronly_heap[i].m_heap_len      = static_cast<int>(b->end() - b->start());
       m_ronly_heap[i].m_ref_count_ptr = b->data.object();
       //          printf("Attaching block at %X for %d in slot %d\n",
       //                 m_ronly_heap[i].m_heap_start,
@@ -180,7 +180,7 @@ RETRY:
     } else if (m_ronly_heap[i].m_heap_start == b->buf()) {
       // This block is already on the heap so just extend
       //   it's range
-      m_ronly_heap[i].m_heap_len = (int)(b->end() - b->buf());
+      m_ronly_heap[i].m_heap_len = static_cast<int>(b->end() - b->buf());
       //          printf("Extending block at %X to %d in slot %d\n",
       //                 m_ronly_heap[i].m_heap_start,
       //                 m_ronly_heap[i].m_heap_len,

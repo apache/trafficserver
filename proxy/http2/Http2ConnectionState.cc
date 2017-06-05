@@ -838,7 +838,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   // Initialize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_INIT: {
     ink_assert(this->ua_session == nullptr);
-    this->ua_session = (Http2ClientSession *)edata;
+    this->ua_session = static_cast<Http2ClientSession *>(edata);
 
     // [RFC 7540] 3.5. HTTP/2 Connection Preface. Upon establishment of a TCP connection and
     // determination that HTTP/2 will be used by both peers, each endpoint MUST
@@ -880,7 +880,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Parse received HTTP/2 frames
   case HTTP2_SESSION_EVENT_RECV: {
-    const Http2Frame *frame       = (Http2Frame *)edata;
+    const Http2Frame *frame       = static_cast<Http2Frame *>(edata);
     const Http2StreamId stream_id = frame->header().streamid;
     Http2Error error;
 
@@ -1359,7 +1359,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   http2_generate_h2_header_from_1_1(resp_header, &h2_hdr);
 
   buf_len = resp_header->length_get() * 2; // Make it double just in case
-  buf     = (uint8_t *)ats_malloc(buf_len);
+  buf     = static_cast<uint8_t *>(ats_malloc(buf_len));
   if (buf == nullptr) {
     h2_hdr.destroy();
     return;
@@ -1452,7 +1452,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
 
   buf_len = h1_hdr.length_get() * 2; // Make it double just in case
   h1_hdr.destroy();
-  buf = (uint8_t *)ats_malloc(buf_len);
+  buf = static_cast<uint8_t *>(ats_malloc(buf_len));
   if (buf == nullptr) {
     h2_hdr.destroy();
     return;

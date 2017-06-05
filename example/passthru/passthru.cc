@@ -182,7 +182,7 @@ static int
 PassthruSessionEvent(TSCont cont, TSEvent event, void *edata)
 {
   EventArgument arg(edata);
-  PassthruSession *sp = (PassthruSession *)TSContDataGet(cont);
+  PassthruSession *sp = static_cast<PassthruSession *>(TSContDataGet(cont));
 
   PassthruSessionDebug(sp, "session event on vconn=%p event=%d (%s)", TSVIOVConnGet(arg.vio), event, TSHttpEventNameLookup(event));
 

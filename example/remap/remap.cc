@@ -66,7 +66,7 @@ remap_entry::remap_entry(int _argc, char *_argv[]) : next(nullptr), argc(0), arg
 {
   int i;
 
-  if (_argc > 0 && _argv && (argv = (char **)TSmalloc(sizeof(char *) * (_argc + 1))) != nullptr) {
+  if (_argc > 0 && _argv && (argv = static_cast<char **>(TSmalloc(sizeof(char *) * (_argc + 1)))) != nullptr) {
     argc = _argc;
     for (i = 0; i < argc; i++) {
       argv[i] = TSstrdup(_argv[i]);
@@ -147,7 +147,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     if (unlikely(api_info->size < sizeof(TSRemapInterface))) {
       return store_my_error_message(TS_ERROR, errbuf, errbuf_size,
                                     "Incorrect size of TSRemapInterface structure %d. Should be at least %d bytes",
-                                    (int)api_info->size, (int)sizeof(TSRemapInterface));
+                                    static_cast<int>(api_info->size), static_cast<int>(sizeof(TSRemapInterface)));
     }
     if (unlikely(api_info->tsremap_version < TSREMAP_VERSION)) {
       return store_my_error_message(TS_ERROR, errbuf, errbuf_size, "Incorrect API version %d.%d", (api_info->tsremap_version >> 16),
@@ -201,7 +201,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 void
 TSRemapDeleteInstance(void *ih)
 {
-  remap_entry *ri = (remap_entry *)ih;
+  remap_entry *ri = static_cast<remap_entry *>(ih);
 
   TSDebug(PLUGIN_NAME, "enter");
 
@@ -224,7 +224,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   unsigned long _processing_counter =
     ++processing_counter; // one more function call (in real life use mutex to protect this counter)
 
-  remap_entry *ri = (remap_entry *)ih;
+  remap_entry *ri = static_cast<remap_entry *>(ih);
   TSDebug(PLUGIN_NAME, "enter");
 
   if (!ri || !rri) {
@@ -272,18 +272,18 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   // How to store plugin private arguments inside Traffic Server request processing block.
   if (TSHttpArgIndexReserve("remap_example", "Example remap plugin", &arg_index) == TS_SUCCESS) {
     TSDebug(PLUGIN_NAME, "Save processing counter %lu inside request processing block\n", _processing_counter);
-    TSHttpTxnArgSet((TSHttpTxn)rh, arg_index, (void *)_processing_counter); // save counter
+    TSHttpTxnArgSet(rh, arg_index, (void *)_processing_counter); // save counter
   }
   // How to cancel request processing and return error message to the client
   // We wiil do it each other request
   if (_processing_counter & 1) {
-    char *tmp                   = (char *)TSmalloc(256);
+    char *tmp                   = static_cast<char *>(TSmalloc(256));
     static int my_local_counter = 0;
 
     size_t len = snprintf(tmp, 255, "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n",
                           my_local_counter, TS_HTTP_STATUS_CONTINUE + my_local_counter);
-    TSHttpTxnSetHttpRetStatus((TSHttpTxn)rh, (TSHttpStatus)((int)TS_HTTP_STATUS_CONTINUE + my_local_counter));
-    TSHttpTxnErrorBodySet((TSHttpTxn)rh, tmp, len, nullptr); // Defaults to text/html
+    TSHttpTxnSetHttpRetStatus(rh, static_cast<TSHttpStatus>(static_cast<int>(TS_HTTP_STATUS_CONTINUE) + my_local_counter));
+    TSHttpTxnErrorBodySet(rh, tmp, len, nullptr); // Defaults to text/html
     my_local_counter++;
   }
   // hardcoded case for remapping
@@ -324,7 +324,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 void
 TSRemapOSResponse(void *ih ATS_UNUSED, TSHttpTxn rh, int os_response_type)
 {
-  void *data     = TSHttpTxnArgGet((TSHttpTxn)rh, arg_index); // read counter (we store it in TSRemapDoRemap function call)
+  void *data     = TSHttpTxnArgGet(rh, arg_index); // read counter (we store it in TSRemapDoRemap function call)
   int request_id = data ? static_cast<int *>(data)[0] : -1;
 
   TSDebug(PLUGIN_NAME, "Read processing counter %d from request processing block\n", request_id);

@@ -61,7 +61,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   qh = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &len);
   if (qh && len > 0) {
-    s = (char *)TSstrndup(qh, len);
+    s = TSstrndup(qh, len);
     if ((ptr = strtok_r(s, "&", &saveptr)) != NULL) {
       do {
         if ((val = strchr(ptr, '=')) != NULL) {

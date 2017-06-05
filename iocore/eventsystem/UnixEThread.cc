@@ -41,16 +41,17 @@ struct AIOCallback;
 
 volatile bool shutdown_event_system = false;
 
-EThread::EThread() : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this), id(NO_ETHREAD_ID)
+EThread::EThread()
+  : generator(static_cast<uint64_t>(Thread::get_hrtime_updated()) ^ static_cast<uint64_t>((uintptr_t)this)), id(NO_ETHREAD_ID)
 {
   memset(thread_private, 0, PER_THREAD_DATA);
 }
 
 EThread::EThread(ThreadType att, int anid)
-  : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this), id(anid), tt(att)
+  : generator(static_cast<uint64_t>(Thread::get_hrtime_updated()) ^ static_cast<uint64_t>((uintptr_t)this)), id(anid), tt(att)
 {
-  ethreads_to_be_signalled = (EThread **)ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *));
-  memset((char *)ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
+  ethreads_to_be_signalled = static_cast<EThread **>(ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *)));
+  memset(reinterpret_cast<char *>(ethreads_to_be_signalled), 0, MAX_EVENT_THREADS * sizeof(EThread *));
   memset(thread_private, 0, PER_THREAD_DATA);
 #if HAVE_EVENTFD
   evfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -78,7 +79,7 @@ EThread::EThread(ThreadType att, int anid)
 }
 
 EThread::EThread(ThreadType att, Event *e)
-  : generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this)),
+  : generator(static_cast<uint32_t>(static_cast<uintptr_t>(time(nullptr)) ^ (uintptr_t)this)),
     ethreads_to_be_signalled(nullptr),
     n_ethreads_to_be_signalled(0),
     id(NO_ETHREAD_ID),
@@ -106,13 +107,13 @@ EThread::~EThread()
 bool
 EThread::is_event_type(EventType et)
 {
-  return !!(event_types & (1 << (int)et));
+  return !!(event_types & (1 << static_cast<int>(et)));
 }
 
 void
 EThread::set_event_type(EventType et)
 {
-  event_types |= (1 << (int)et);
+  event_types |= (1 << static_cast<int>(et));
 }
 
 void

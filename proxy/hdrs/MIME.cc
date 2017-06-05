@@ -969,12 +969,12 @@ mime_init_date_format_table()
   int m = 0, d = 0, y = 0;
 
   time(&now_secs);
-  now_days   = (int)(now_secs / (60 * 60 * 24));
+  now_days   = static_cast<int>(now_secs / (60 * 60 * 24));
   first_days = now_days - 366;
   last_days  = now_days + 366;
   num_days   = last_days - first_days + 1;
 
-  _days_to_mdy_fast_lookup_table           = (MDY *)ats_malloc(num_days * sizeof(MDY));
+  _days_to_mdy_fast_lookup_table           = static_cast<MDY *>(ats_malloc(num_days * sizeof(MDY)));
   _days_to_mdy_fast_lookup_table_first_day = first_days;
   _days_to_mdy_fast_lookup_table_last_day  = last_days;
 
@@ -1106,8 +1106,8 @@ mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHea
   ink_assert(((char *)&(s_mh->m_first_fblock.m_field_slots[MIME_FIELD_BLOCK_SLOTS]) - (char *)s_mh) == sizeof(struct MIMEHdrImpl));
 
   int top             = s_mh->m_first_fblock.m_freetop;
-  char *end           = (char *)&(s_mh->m_first_fblock.m_field_slots[top]);
-  int bytes_below_top = end - (char *)s_mh;
+  char *end           = reinterpret_cast<char *>(&(s_mh->m_first_fblock.m_field_slots[top]));
+  int bytes_below_top = end - reinterpret_cast<char *>(s_mh);
 
   // copies useful part of enclosed first block too
   memcpy(d_mh, s_mh, bytes_below_top);
@@ -1752,7 +1752,7 @@ MIMEField::value_get_index(const char *value, int length) const
 
   // if field doesn't support commas and there is just one instance, just compare the value
   if (!this->supports_commas() && !this->has_dups()) {
-    if (this->m_len_value == (uint32_t)length && strncasecmp(value, this->m_ptr_value, length) == 0) {
+    if (this->m_len_value == static_cast<uint32_t>(length) && strncasecmp(value, this->m_ptr_value, length) == 0) {
       retval = 0;
     }
   } else {
@@ -1833,7 +1833,7 @@ mime_field_value_get_comma_val(const MIMEField *field, int *length, int idx)
     mime_field_value_get_comma_list(field, &list);
     str = list.get_idx(idx);
     if (str != nullptr) {
-      *length = (int)(str->len);
+      *length = static_cast<int>(str->len);
       return str->str;
     } else {
       *length = 0;
@@ -2074,7 +2074,7 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   if (extended_len <= sizeof(temp_buf)) {
     temp_ptr = temp_buf;
   } else {
-    temp_ptr = (char *)ats_malloc(extended_len);
+    temp_ptr = static_cast<char *>(ats_malloc(extended_len));
   }
 
   // (7) construct new extended token
@@ -2353,9 +2353,9 @@ mime_scanner_append(MIMEScanner *scanner, const char *data, int data_size)
     }
 
     if (scanner->m_line == nullptr) { // if no buffer yet, allocate one
-      scanner->m_line = (char *)ats_malloc(scanner->m_line_size);
+      scanner->m_line = static_cast<char *>(ats_malloc(scanner->m_line_size));
     } else {
-      scanner->m_line = (char *)ats_realloc(scanner->m_line, scanner->m_line_size);
+      scanner->m_line = static_cast<char *>(ats_realloc(scanner->m_line, scanner->m_line_size));
     }
   }
   ////////////////////////////////////////////////
@@ -2602,7 +2602,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     }
 
     // find name last
-    colon = (char *)memchr(line_c, ':', (line_e - line_c));
+    colon = static_cast<char *>(const_cast<void *>(memchr(line_c, ':', (line_e - line_c))));
     if (!colon) {
       continue; // toss away garbage line
     }
@@ -2623,15 +2623,15 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       --field_value_last;
     }
 
-    field_name_length  = (int)(field_name_last - field_name_first + 1);
-    field_value_length = (int)(field_value_last - field_value_first + 1);
+    field_name_length  = static_cast<int>(field_name_last - field_name_first + 1);
+    field_value_length = static_cast<int>(field_value_last - field_value_first + 1);
 
     // Make sure the name or value is not longer than 64K
     if (field_name_length >= UINT16_MAX || field_value_length >= UINT16_MAX) {
       return PARSE_RESULT_ERROR;
     }
 
-    int total_line_length = (int)(field_line_last - field_line_first + 1);
+    int total_line_length = static_cast<int>(field_line_last - field_line_first + 1);
 
     //////////////////////////////////////////////////////////////////////
     // if we can't leave the name & value in the real buffer, copy them //
@@ -3022,15 +3022,15 @@ mime_format_date(char *buffer, time_t value)
 
   buf = buffer;
 
-  sec = (int)(value % 60);
+  sec = static_cast<int>(value % 60);
   value /= 60;
-  min = (int)(value % 60);
+  min = static_cast<int>(value % 60);
   value /= 60;
-  hour = (int)(value % 24);
+  hour = static_cast<int>(value % 24);
   value /= 24;
 
   /* Jan 1, 1970 was a Thursday */
-  wday = (int)((4 + value) % 7);
+  wday = static_cast<int>((4 + value) % 7);
 
 /* value is days since Jan 1, 1970 */
 #if MIME_FORMAT_DATE_USE_LOOKUP_TABLE
@@ -3398,7 +3398,7 @@ mime_parse_date(const char *buf, const char *end)
   int mday;
 
   if (!buf) {
-    return (time_t)0;
+    return static_cast<time_t>(0);
   }
 
   while ((buf != end) && is_ws(*buf)) {
@@ -3407,24 +3407,24 @@ mime_parse_date(const char *buf, const char *end)
 
   if ((buf != end) && is_digit(*buf)) { // NNTP date
     if (!mime_parse_mday(buf, end, &tp.tm_mday)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
     if (!mime_parse_month(buf, end, &tp.tm_mon)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
     if (!mime_parse_year(buf, end, &tp.tm_year)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
     if (!mime_parse_time(buf, end, &tp.tm_hour, &tp.tm_min, &tp.tm_sec)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
   } else if (end && (end - buf >= 29) && (buf[3] == ',')) {
     if (!mime_parse_rfc822_date_fastcase(buf, end - buf, &tp)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
   } else {
     if (!mime_parse_day(buf, end, &tp.tm_wday)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
 
     while ((buf != end) && is_ws(*buf)) {
@@ -3434,31 +3434,31 @@ mime_parse_date(const char *buf, const char *end)
     if ((buf != end) && ((*buf == ',') || is_digit(*buf))) {
       // RFC 822 or RFC 850 time format
       if (!mime_parse_mday(buf, end, &tp.tm_mday)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_month(buf, end, &tp.tm_mon)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_year(buf, end, &tp.tm_year)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_time(buf, end, &tp.tm_hour, &tp.tm_min, &tp.tm_sec)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       // ignore timezone specifier...should always be GMT anways
     } else {
       // ANSI C's asctime format
       if (!mime_parse_month(buf, end, &tp.tm_mon)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_mday(buf, end, &tp.tm_mday)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_time(buf, end, &tp.tm_hour, &tp.tm_min, &tp.tm_sec)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_year(buf, end, &tp.tm_year)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
     }
   }
@@ -3469,10 +3469,10 @@ mime_parse_date(const char *buf, const char *end)
 
   // what should we do?
   if (year > 137) {
-    return (time_t)INT_MAX;
+    return static_cast<time_t>(INT_MAX);
   }
   if (year < 70) {
-    return (time_t)0;
+    return static_cast<time_t>(0);
   }
 
   mday += days[month];

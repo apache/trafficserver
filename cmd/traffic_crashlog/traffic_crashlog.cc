@@ -148,7 +148,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   Note("crashlog started, target=%ld, debug=%s syslog=%s, uid=%ld euid=%ld", (long)target_pid, debug_mode ? "true" : "false",
        syslog_mode ? "true" : "false", (long)getuid(), (long)geteuid());
 
-  mgmterr = TSInit(nullptr, (TSInitOptionT)(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
+  mgmterr = TSInit(nullptr, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
   if (mgmterr != TS_ERR_OKAY) {
     char *msg = TSGetErrorMessage(mgmterr);
     Warning("failed to intialize management API: %s", msg);
@@ -156,7 +156,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 
   ink_zero(target);
-  target.pid       = (pid_t)target_pid;
+  target.pid       = static_cast<pid_t>(target_pid);
   target.timestamp = timestamp();
 
   if (host_triplet && strncmp(host_triplet, "x86_64-unknown-linux", sizeof("x86_64-unknown-linux") - 1) == 0) {
@@ -164,13 +164,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     target.flags |= CRASHLOG_HAVE_THREADINFO;
 
     nbytes = read(STDIN_FILENO, &target.siginfo, sizeof(target.siginfo));
-    if (nbytes < (ssize_t)sizeof(target.siginfo)) {
+    if (nbytes < static_cast<ssize_t>(sizeof(target.siginfo))) {
       Warning("received %zd of %zu expected signal info bytes", nbytes, sizeof(target.siginfo));
       target.flags &= ~CRASHLOG_HAVE_THREADINFO;
     }
 
     nbytes = read(STDIN_FILENO, &target.ucontext, sizeof(target.ucontext));
-    if (nbytes < (ssize_t)sizeof(target.ucontext)) {
+    if (nbytes < static_cast<ssize_t>(sizeof(target.ucontext))) {
       Warning("received %zd of %zu expected thread context bytes", nbytes, sizeof(target.ucontext));
       target.flags &= ~CRASHLOG_HAVE_THREADINFO;
     }

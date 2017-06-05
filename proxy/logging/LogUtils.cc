@@ -357,7 +357,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
   if (dst) {
     new_url = dst;
   } else {
-    new_url = (char *)arena->str_alloc(out_len + 1);
+    new_url = arena->str_alloc(out_len + 1);
   }
 
   char *from = url;
@@ -428,7 +428,7 @@ LogUtils::remove_content_type_attributes(char *type_str, int *type_len)
   }
   // Look for a semicolon and cut out everything after that
   //
-  char *p = (char *)memchr(type_str, ';', *type_len);
+  char *p = static_cast<char *>(memchr(type_str, ';', *type_len));
   if (p) {
     *type_len = p - type_str;
   }
@@ -457,13 +457,13 @@ LogUtils::timestamp_to_hex_str(unsigned ip, char *buf, size_t bufLen, size_t *nu
     if (bufLen > 8) {
       bufLen = 8;
     }
-    for (retVal = 0; retVal < (int)bufLen;) {
-      buf[retVal++] = (char)table[((ip >> shift) & 0xf)];
+    for (retVal = 0; retVal < static_cast<int>(bufLen);) {
+      buf[retVal++] = table[((ip >> shift) & 0xf)];
       shift -= 4;
     }
 
     if (numCharsPtr) {
-      *numCharsPtr = (size_t)retVal;
+      *numCharsPtr = static_cast<size_t>(retVal);
     }
     retVal = (retVal == 8) ? 0 : 1;
   }
@@ -590,7 +590,7 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
     if (e < 0) {
       ret_val = -1;
     } else {
-      if (limit_data.rlim_cur != (rlim_t)RLIM_INFINITY) {
+      if (limit_data.rlim_cur != static_cast<rlim_t> RLIM_INFINITY) {
         if (has_size_limit) {
           *has_size_limit = true;
         }

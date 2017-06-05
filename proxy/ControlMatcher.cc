@@ -310,7 +310,7 @@ UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   ink_assert(line_info->dest_entry < MATCHER_MAX_TOKENS);
   ink_assert(pattern != nullptr);
 
-  if (ink_hash_table_lookup(url_ht, pattern, (void **)&value)) {
+  if (ink_hash_table_lookup(url_ht, pattern, reinterpret_cast<void **>(&value))) {
     return Result::failure("%s url expression error (have exist) at line %d position", matcher_name, line_info->line_num);
   }
 
@@ -358,7 +358,7 @@ UrlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
     url_str = ats_strdup("");
   }
 
-  if (ink_hash_table_lookup(url_ht, url_str, (void **)&value)) {
+  if (ink_hash_table_lookup(url_ht, url_str, reinterpret_cast<void **>(&value))) {
     Debug("matcher", "%s Matched %s with url at line %d", matcher_name, url_str, data_array[*value].line_num);
     data_array[*value].UpdateMatch(result, rdata);
   }
@@ -413,7 +413,7 @@ RegexMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
   // Should not have been allocated before
   ink_assert(array_len == -1);
 
-  re_array = (pcre **)ats_malloc(sizeof(pcre *) * num_entries);
+  re_array = static_cast<pcre **>(ats_malloc(sizeof(pcre *) * num_entries));
   memset(re_array, 0, sizeof(pcre *) * num_entries);
 
   data_array = new Data[num_entries];
@@ -814,8 +814,8 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
     if (*tmp != '#' && *tmp != '\0') {
       const char *errptr;
 
-      current = (matcher_line *)ats_malloc(sizeof(matcher_line));
-      errptr  = parseConfigLine((char *)tmp, current, config_tags);
+      current = static_cast<matcher_line *>(ats_malloc(sizeof(matcher_line)));
+      errptr  = parseConfigLine(const_cast<char *>(tmp), current, config_tags);
 
       if (errptr != nullptr) {
         if (config_tags != &socks_server_tags) {

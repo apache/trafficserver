@@ -168,7 +168,7 @@ write_buffer_to_disk(TSIOBufferReader reader, pvc_state *my_state, TSCont contp)
   block = TSIOBufferReaderStart(reader);
   while (block != nullptr) {
     ptr  = TSIOBufferBlockReadStart(block, reader, &size);
-    pBuf = (char *)TSmalloc(sizeof(char) * size);
+    pBuf = static_cast<char *>(TSmalloc(sizeof(char) * size));
     if (pBuf == nullptr) {
       LOG_ERROR_AND_RETURN("TSAIOWrite");
     }
@@ -266,7 +266,7 @@ pvc_process_accept(TSCont contp, int event, void *edata, pvc_state *my_state)
   TSDebug(DEBUG_TAG, "plugin called: pvc_process_accept with event %d", event);
 
   if (event == TS_EVENT_NET_ACCEPT) {
-    my_state->p_vc = (TSVConn)edata;
+    my_state->p_vc = static_cast<TSVConn>(edata);
 
     my_state->req_buffer = TSIOBufferCreate();
     my_state->req_reader = TSIOBufferReaderAlloc(my_state->req_buffer);
@@ -598,7 +598,7 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
     return;
   }
 
-  char *hostname = (char *)getenv("HOSTNAME");
+  char *hostname = getenv("HOSTNAME");
 
   // in reverse proxy mode, TSUrlHostGet returns NULL here
   str = TSUrlHostGet(req_bufp, url_loc, &len);
@@ -607,7 +607,7 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
 
   // for now we assume the <upload proxy service domain> in the format is the hostname
   // but this needs to be verified later
-  if ((NOT_VALID_PTR(str) || !strncmp(str, hostname, len)) && strlen(hostname) == (size_t)len) {
+  if ((NOT_VALID_PTR(str) || !strncmp(str, hostname, len)) && strlen(hostname) == static_cast<size_t>(len)) {
     const char *slash;
     const char *colon;
     // if (VALID_PTR(str))
@@ -626,7 +626,7 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
     TSDebug(DEBUG_TAG, "convert_url_func working on path: %s", pathTmp);
     colon = strstr(str, ":");
     if (colon != nullptr && colon < slash) {
-      char *port_str = (char *)TSmalloc(sizeof(char) * (slash - colon));
+      char *port_str = static_cast<char *>(TSmalloc(sizeof(char) * (slash - colon)));
       strncpy(port_str, colon + 1, slash - colon - 1);
       port_str[slash - colon - 1] = '\0';
       TSUrlPortSet(req_bufp, url_loc, atoi(port_str));
@@ -660,7 +660,7 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
 static int
 attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   TSMutex mutex;
   TSCont new_cont;
   pvc_state *my_state;
@@ -835,7 +835,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       break;
     }
 
-    my_state              = (pvc_state *)TSmalloc(sizeof(pvc_state));
+    my_state              = static_cast<pvc_state *>(TSmalloc(sizeof(pvc_state)));
     my_state->req_size    = content_length;
     my_state->p_vc        = nullptr;
     my_state->p_read_vio  = nullptr;
@@ -865,7 +865,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     my_state->read_offset          = 0;
     my_state->is_reading_from_disk = 0;
 
-    my_state->chunk_buffer = (char *)TSmalloc(sizeof(char) * uconfig->chunk_size);
+    my_state->chunk_buffer = static_cast<char *>(TSmalloc(sizeof(char) * uconfig->chunk_size));
 
     my_state->disk_io_mutex = TSMutexCreate();
     if (NOT_VALID_PTR(my_state->disk_io_mutex)) {
@@ -898,7 +898,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     if (uconfig->use_disk_buffer) {
       char path[500];
       // coverity[dont_call]
-      int index = (int)(random() % uconfig->subdir_num);
+      int index = static_cast<int>(random() % uconfig->subdir_num);
 
       sprintf(path, "%s/%02X/tmp-XXXXXX", uconfig->base_dir, index);
 
@@ -1001,7 +1001,7 @@ load_urls(char *filename)
   char *eol;
   int i;
 
-  url_buf                          = (char *)TSmalloc(sizeof(char) * (uconfig->max_url_length + 1));
+  url_buf                          = static_cast<char *>(TSmalloc(sizeof(char) * (uconfig->max_url_length + 1)));
   url_buf[uconfig->max_url_length] = '\0';
 
   for (i = 0; i < 2; i++) {
@@ -1015,7 +1015,7 @@ load_urls(char *filename)
       while (TSfgets(file, url_buf, uconfig->max_url_length) != nullptr) {
         uconfig->url_num++;
       }
-      uconfig->urls = (char **)TSmalloc(sizeof(char *) * uconfig->url_num);
+      uconfig->urls = static_cast<char **>(TSmalloc(sizeof(char *) * uconfig->url_num));
     } else { // second round
       int idx = 0;
       while (TSfgets(file, url_buf, uconfig->max_url_length) != nullptr && idx < uconfig->url_num) {
@@ -1054,7 +1054,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           char *end = tok;
           int iv    = strtol(tok, &end, 10);
           if (end && *end == '\0') {
-            *((int *)cv->val) = iv;
+            *(static_cast<int *>(cv->val)) = iv;
             TSError("[buffer_upload] Parsed int config value %s : %d", cv->str, iv);
             TSDebug(DEBUG_TAG, "Parsed int config value %s : %d", cv->str, iv);
           }
@@ -1064,7 +1064,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           char *end        = tok;
           unsigned int uiv = strtoul(tok, &end, 10);
           if (end && *end == '\0') {
-            *((unsigned int *)cv->val) = uiv;
+            *(static_cast<unsigned int *>(cv->val)) = uiv;
             TSError("[buffer_upload] Parsed uint config value %s : %u", cv->str, uiv);
             TSDebug(DEBUG_TAG, "Parsed uint config value %s : %u", cv->str, uiv);
           }
@@ -1074,7 +1074,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           char *end = tok;
           long lv   = strtol(tok, &end, 10);
           if (end && *end == '\0') {
-            *((long *)cv->val) = lv;
+            *(static_cast<long *>(cv->val)) = lv;
             TSError("[buffer_upload] Parsed long config value %s : %ld", cv->str, lv);
             TSDebug(DEBUG_TAG, "Parsed long config value %s : %ld", cv->str, lv);
           }
@@ -1084,7 +1084,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           char *end         = tok;
           unsigned long ulv = strtoul(tok, &end, 10);
           if (end && *end == '\0') {
-            *((unsigned long *)cv->val) = ulv;
+            *(static_cast<unsigned long *>(cv->val)) = ulv;
             TSError("[buffer_upload] Parsed ulong config value %s : %lu", cv->str, ulv);
             TSDebug(DEBUG_TAG, "Parsed ulong config value %s : %lu", cv->str, ulv);
           }
@@ -1093,8 +1093,8 @@ parse_config_line(char *line, const struct config_val_ul *cv)
         case TYPE_STRING: {
           size_t len = strlen(tok);
           if (len > 0) {
-            *((char **)cv->val) = (char *)TSmalloc(len + 1);
-            strcpy(*((char **)cv->val), tok);
+            *(static_cast<char **>(cv->val)) = static_cast<char *>(TSmalloc(len + 1));
+            strcpy(*(static_cast<char **>(cv->val)), tok);
             TSError("[buffer_upload] Parsed string config value %s : %s", cv->str, tok);
             TSDebug(DEBUG_TAG, "Parsed string config value %s : %s", cv->str, tok);
           }
@@ -1104,12 +1104,12 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           size_t len = strlen(tok);
           if (len > 0) {
             if (*tok == '1' || *tok == 't') {
-              *((bool *)cv->val) = true;
+              *(static_cast<bool *>(cv->val)) = true;
             } else {
-              *((bool *)cv->val) = false;
+              *(static_cast<bool *>(cv->val)) = false;
             }
-            TSError("[buffer_upload] Parsed bool config value %s : %d", cv->str, *((bool *)cv->val));
-            TSDebug(DEBUG_TAG, "Parsed bool config value %s : %d", cv->str, *((bool *)cv->val));
+            TSError("[buffer_upload] Parsed bool config value %s : %d", cv->str, *(static_cast<bool *>(cv->val)));
+            TSDebug(DEBUG_TAG, "Parsed bool config value %s : %d", cv->str, *(static_cast<bool *>(cv->val)));
           }
           break;
         }
@@ -1126,7 +1126,7 @@ bool
 read_upload_config(const char *file_name)
 {
   TSDebug(DEBUG_TAG, "read_upload_config: %s", file_name);
-  uconfig                  = (upload_config *)TSmalloc(sizeof(upload_config));
+  uconfig                  = static_cast<upload_config *>(TSmalloc(sizeof(upload_config)));
   uconfig->use_disk_buffer = true;
   uconfig->convert_url     = false;
   uconfig->chunk_size      = 16 * 1024;

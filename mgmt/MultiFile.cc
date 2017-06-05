@@ -67,7 +67,7 @@ MultiFile::addTableEntries(ExpandingArray *fileList, TextBuffer *output)
   const int dataCloseLen = strlen(dataClose);
 
   for (int i = 0; i < numFiles; i++) {
-    current = (fileEntry *)((*fileList)[i]);
+    current = static_cast<fileEntry *>((*fileList)[i]);
 
     output->copyFrom("<tr>\n", 5);
     output->copyFrom(dataOpen, dataOpenLen);
@@ -124,7 +124,7 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
       }
       // Ignore ., .., and any dot files
       if (*fileName != '.' && isManaged(fileName)) {
-        fileListEntry         = (fileEntry *)ats_malloc(sizeof(fileEntry));
+        fileListEntry         = static_cast<fileEntry *>(ats_malloc(sizeof(fileEntry)));
         fileListEntry->c_time = fileInfo.st_ctime;
         ink_strlcpy(fileListEntry->name, fileName, sizeof(fileListEntry->name));
         fileList->addEntry(fileListEntry);
@@ -164,7 +164,7 @@ MultiFile::addSelectOptions(TextBuffer *output, ExpandingArray *options)
 
   for (int i = 0; i < numOptions; i++) {
     output->copyFrom(option, optionLen);
-    safeCurrent = substituteForHTMLChars((char *)((*options)[i]));
+    safeCurrent = substituteForHTMLChars(static_cast<char *>((*options)[i]));
     output->copyFrom(safeCurrent, strlen(safeCurrent));
     output->copyFrom(option_end, strlen(option_end));
     output->copyFrom(safeCurrent, strlen(safeCurrent));
@@ -184,8 +184,8 @@ MultiFile::addSelectOptions(TextBuffer *output, ExpandingArray *options)
 int
 fileEntryCmpFunc(const void *e1, const void *e2)
 {
-  fileEntry *entry1 = (fileEntry *)*(void **)e1;
-  fileEntry *entry2 = (fileEntry *)*(void **)e2;
+  fileEntry *entry1 = static_cast<fileEntry *>(*static_cast<void **>(const_cast<void *>(e1)));
+  fileEntry *entry2 = static_cast<fileEntry *>(*static_cast<void **>(const_cast<void *>(e2)));
 
   if (entry1->c_time > entry2->c_time) {
     return 1;

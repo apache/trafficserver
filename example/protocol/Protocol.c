@@ -49,8 +49,8 @@ accept_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_NET_ACCEPT:
     /* Create a new mutex for the TxnSM, which is going
        to handle the incoming request. */
-    pmutex = (TSMutex)TSMutexCreate();
-    txn_sm = (TSCont)TxnSMCreate(pmutex, (TSVConn)edata, server_port);
+    pmutex = TSMutexCreate();
+    txn_sm = TxnSMCreate(pmutex, (TSVConn)edata, server_port);
 
     /* This is no reason for not grabbing the lock.
        So skip the routine which handle LockTry failure case. */

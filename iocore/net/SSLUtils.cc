@@ -142,7 +142,7 @@ HashMap<cchar *, class StringHashFns, intptr_t> cipher_map;
 static void
 SSL_pthreads_thread_id(CRYPTO_THREADID *id)
 {
-  CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
+  CRYPTO_THREADID_set_numeric(id, reinterpret_cast<unsigned long>(pthread_self()));
 }
 
 // The locking callback goes away with openssl 1.1 and CRYPTO_LOCK is on longer defined
@@ -208,7 +208,7 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
 bool
 ssl_session_timed_out(SSL_SESSION *session)
 {
-  return SSL_SESSION_get_timeout(session) < (long)(time(nullptr) - SSL_SESSION_get_time(session));
+  return SSL_SESSION_get_timeout(session) < (time(nullptr) - SSL_SESSION_get_time(session));
 }
 
 static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
@@ -321,7 +321,7 @@ set_context_cert(SSL *ssl)
   // don't find a name-based match at this point, we *do not* want to mess with the context because we've
   // already made a best effort to find the best match.
   if (likely(servername)) {
-    cc = lookup->find((char *)servername);
+    cc = lookup->find(const_cast<char *>(servername));
     if (cc && cc->ctx) {
       ctx = cc->ctx;
     }
@@ -859,7 +859,7 @@ SSLInitializeLibrary()
     Debug("ssl", "FIPS_mode: %d", mode);
 #endif
 
-    mutex_buf = (ink_mutex *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ink_mutex));
+    mutex_buf = static_cast<ink_mutex *>(OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ink_mutex)));
 
     for (int i = 0; i < CRYPTO_num_locks(); i++) {
       ink_mutex_init(&mutex_buf[i]);
@@ -898,7 +898,7 @@ SSLInitializeStatistics()
   STACK_OF(SSL_CIPHER) * ciphers;
 
   // Allocate SSL statistics block.
-  ssl_rsb = RecAllocateRawStatBlock((int)Ssl_Stat_Count);
+  ssl_rsb = RecAllocateRawStatBlock(static_cast<int>(Ssl_Stat_Count));
   ink_assert(ssl_rsb != nullptr);
 
   // SSL client errors.
@@ -1044,7 +1044,7 @@ SSLInitializeStatistics()
 
     // If not already registered ...
     if (0 == cipher_map.get(cipherName)) {
-      cipher_map.put(cipherName, (intptr_t)(ssl_cipher_stats_start + index));
+      cipher_map.put(cipherName, static_cast<intptr_t>(ssl_cipher_stats_start + index));
       // Register as non-persistent since the order/index is dependent upon configuration.
       RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(), RECD_INT, RECP_NON_PERSISTENT,
                          (int)ssl_cipher_stats_start + index, RecRawStatSyncSum);
@@ -1189,7 +1189,7 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
     ats_ip_ntop(vc->get_remote_addr(), ip_buf, sizeof(ip_buf));
   }
 
-  es = (unsigned long)pthread_self();
+  es = reinterpret_cast<unsigned long>(pthread_self());
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
     if (debug) {
       if (unlikely(diags->on())) {
@@ -1231,7 +1231,7 @@ SSLErrorName(int ssl_error)
     "SSL_ERROR_NONE",    "SSL_ERROR_SSL",         "SSL_ERROR_WANT_READ",    "SSL_ERROR_WANT_WRITE", "SSL_ERROR_WANT_X509_LOOKUP",
     "SSL_ERROR_SYSCALL", "SSL_ERROR_ZERO_RETURN", "SSL_ERROR_WANT_CONNECT", "SSL_ERROR_WANT_ACCEPT"};
 
-  if (ssl_error < 0 || ssl_error >= (int)countof(names)) {
+  if (ssl_error < 0 || ssl_error >= static_cast<int>(countof(names))) {
     return "unknown SSL error";
   }
 
@@ -1386,7 +1386,7 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cer
 
 #if HAVE_OPENSSL_TS_H
   // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  GENERAL_NAMES *names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr);
+  GENERAL_NAMES *names = static_cast<GENERAL_NAMES *>(X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
   if (names) {
     unsigned count = sk_GENERAL_NAME_num(names);
     for (unsigned i = 0; i < count; ++i) {
@@ -2042,7 +2042,7 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
 static void
 session_ticket_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  ticket_block_free((struct ssl_ticket_key_block *)ptr);
+  ticket_block_free(static_cast<struct ssl_ticket_key_block *>(ptr));
 }
 
 /*
@@ -2151,7 +2151,7 @@ SSLWriteBuffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten)
     return SSL_ERROR_NONE;
   }
   ERR_clear_error();
-  int ret = SSL_write(ssl, buf, (int)nbytes);
+  int ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
   if (ret > 0) {
     nwritten = ret;
     BIO *bio = SSL_get_wbio(ssl);
@@ -2179,7 +2179,7 @@ SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
     return SSL_ERROR_NONE;
   }
   ERR_clear_error();
-  int ret = SSL_read(ssl, buf, (int)nbytes);
+  int ret = SSL_read(ssl, buf, static_cast<int>(nbytes));
   if (ret > 0) {
     nread = ret;
     return SSL_ERROR_NONE;

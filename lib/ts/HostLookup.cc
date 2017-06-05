@@ -339,7 +339,7 @@ charIndex::~charIndex()
     ht_entry = ink_hash_table_iterator_first(illegalKey, &ht_iter);
 
     while (ht_entry != nullptr) {
-      tmp = (HostBranch *)ink_hash_table_entry_value(illegalKey, ht_entry);
+      tmp = static_cast<HostBranch *>(ink_hash_table_entry_value(illegalKey, ht_entry));
       ink_assert(tmp != nullptr);
       delete tmp;
       ht_entry = ink_hash_table_iterator_next(illegalKey, &ht_iter);
@@ -367,7 +367,7 @@ charIndex::Insert(const char *match_data, HostBranch *toInsert)
   }
 
   while (true) {
-    index = asciiToTable[(unsigned char)(*match_data)];
+    index = asciiToTable[static_cast<unsigned char>(*match_data)];
 
     // Check to see if our index into table is for an
     //  'illegal' DNS character
@@ -376,7 +376,7 @@ charIndex::Insert(const char *match_data, HostBranch *toInsert)
       if (illegalKey == nullptr) {
         illegalKey = ink_hash_table_create(InkHashTableKeyType_String);
       }
-      ink_hash_table_insert(illegalKey, (char *)match_start, toInsert);
+      ink_hash_table_insert(illegalKey, const_cast<char *>(match_start), toInsert);
       break;
     }
 
@@ -422,7 +422,7 @@ charIndex::Lookup(const char *match_data)
   }
 
   while (true) {
-    index = asciiToTable[(unsigned char)(*match_data)];
+    index = asciiToTable[static_cast<unsigned char>(*match_data)];
 
     // Check to see if our index into table is for an
     //  'illegal' DNS character
@@ -430,8 +430,8 @@ charIndex::Lookup(const char *match_data)
       if (illegalKey == nullptr) {
         return nullptr;
       } else {
-        if (ink_hash_table_lookup(illegalKey, (char *)match_start, &hash_lookup)) {
-          return (HostBranch *)hash_lookup;
+        if (ink_hash_table_lookup(illegalKey, const_cast<char *>(match_start), &hash_lookup)) {
+          return static_cast<HostBranch *>(hash_lookup);
         } else {
           return nullptr;
         }
@@ -710,11 +710,11 @@ HostBranch::~HostBranch()
     break;
   case HOST_HASH:
     ink_assert(next_level != nullptr);
-    ht       = (InkHashTable *)next_level;
+    ht       = static_cast<InkHashTable *>(next_level);
     ht_entry = ink_hash_table_iterator_first(ht, &ht_iter);
 
     while (ht_entry != nullptr) {
-      lower_branch = (HostBranch *)ink_hash_table_entry_value(ht, ht_entry);
+      lower_branch = static_cast<HostBranch *>(ink_hash_table_entry_value(ht, ht_entry));
       delete lower_branch;
       ht_entry = ink_hash_table_iterator_next(ht, &ht_iter);
     }
@@ -722,7 +722,7 @@ HostBranch::~HostBranch()
     break;
   case HOST_INDEX:
     ink_assert(next_level != nullptr);
-    ci           = (charIndex *)next_level;
+    ci           = static_cast<charIndex *>(next_level);
     lower_branch = ci->iter_first(&ci_iter);
     while (lower_branch != nullptr) {
       delete lower_branch;
@@ -732,7 +732,7 @@ HostBranch::~HostBranch()
     break;
   case HOST_ARRAY:
     ink_assert(next_level != nullptr);
-    ha           = (hostArray *)next_level;
+    ha           = static_cast<hostArray *>(next_level);
     lower_branch = ha->iter_first(&ha_iter);
     while (lower_branch != nullptr) {
       delete lower_branch;
@@ -819,18 +819,18 @@ HostLookup::PrintHostBranch(HostBranch *hb, HostLookupPrintFunc f)
     break;
   case HOST_HASH:
     ink_assert(hb->next_level != nullptr);
-    ht       = (InkHashTable *)hb->next_level;
+    ht       = static_cast<InkHashTable *>(hb->next_level);
     ht_entry = ink_hash_table_iterator_first(ht, &ht_iter);
 
     while (ht_entry != nullptr) {
-      lower_branch = (HostBranch *)ink_hash_table_entry_value(ht, ht_entry);
+      lower_branch = static_cast<HostBranch *>(ink_hash_table_entry_value(ht, ht_entry));
       PrintHostBranch(lower_branch, f);
       ht_entry = ink_hash_table_iterator_next(ht, &ht_iter);
     }
     break;
   case HOST_INDEX:
     ink_assert(hb->next_level != nullptr);
-    ci           = (charIndex *)hb->next_level;
+    ci           = static_cast<charIndex *>(hb->next_level);
     lower_branch = ci->iter_first(&ci_iter);
     while (lower_branch != nullptr) {
       PrintHostBranch(lower_branch, f);
@@ -839,7 +839,7 @@ HostLookup::PrintHostBranch(HostBranch *hb, HostLookupPrintFunc f)
     break;
   case HOST_ARRAY:
     ink_assert(hb->next_level != nullptr);
-    h_array      = (hostArray *)hb->next_level;
+    h_array      = static_cast<hostArray *>(hb->next_level);
     lower_branch = h_array->iter_first(&ha_iter);
     while (lower_branch != nullptr) {
       PrintHostBranch(lower_branch, f);
@@ -911,17 +911,17 @@ HostLookup::InsertBranch(HostBranch *insert_in, const char *level_data)
     ink_release_assert(0);
     break;
   case HOST_HASH:
-    ink_hash_table_insert((InkHashTable *)insert_in->next_level, (char *)level_data, new_branch);
+    ink_hash_table_insert(static_cast<InkHashTable *>(insert_in->next_level), const_cast<char *>(level_data), new_branch);
     break;
   case HOST_INDEX:
-    ((charIndex *)insert_in->next_level)->Insert(level_data, new_branch);
+    (static_cast<charIndex *>(insert_in->next_level))->Insert(level_data, new_branch);
     break;
   case HOST_ARRAY:
-    if (((hostArray *)insert_in->next_level)->Insert(level_data, new_branch) == false) {
+    if ((static_cast<hostArray *>(insert_in->next_level))->Insert(level_data, new_branch) == false) {
       // The array is out of space, time to move to a hash table
-      ha     = (hostArray *)insert_in->next_level;
+      ha     = static_cast<hostArray *>(insert_in->next_level);
       new_ht = ink_hash_table_create(InkHashTableKeyType_String);
-      ink_hash_table_insert(new_ht, (char *)level_data, new_branch);
+      ink_hash_table_insert(new_ht, const_cast<char *>(level_data), new_branch);
 
       // Iterate through the existing elements in the array and
       //  stuff them into the hash table
@@ -967,21 +967,21 @@ HostLookup::FindNextLevel(HostBranch *from, const char *level_data, bool bNotPro
     ink_assert(0);
     return nullptr;
   case HOST_HASH:
-    hash = (InkHashTable *)from->next_level;
+    hash = static_cast<InkHashTable *>(from->next_level);
     ink_assert(hash != nullptr);
-    if (ink_hash_table_lookup(hash, (char *)level_data, &lookup)) {
-      r = (HostBranch *)lookup;
+    if (ink_hash_table_lookup(hash, const_cast<char *>(level_data), &lookup)) {
+      r = static_cast<HostBranch *>(lookup);
     } else {
       r = nullptr;
     }
     break;
   case HOST_INDEX:
-    ci_table = (charIndex *)from->next_level;
+    ci_table = static_cast<charIndex *>(from->next_level);
     ink_assert(ci_table != nullptr);
     r = ci_table->Lookup(level_data);
     break;
   case HOST_ARRAY:
-    ha_table = (hostArray *)from->next_level;
+    ha_table = static_cast<hostArray *>(from->next_level);
     ink_assert(ha_table != nullptr);
     r = ha_table->Lookup(level_data, bNotProcess);
     break;

@@ -62,7 +62,7 @@ static void *
 sync_thr(void *data)
 {
   TextBuffer *tb           = new TextBuffer(65536);
-  FileManager *configFiles = (FileManager *)data;
+  FileManager *configFiles = static_cast<FileManager *>(data);
 
   while (true) {
     bool inc_version;
@@ -251,7 +251,7 @@ RecMessageSend(RecMessage *msg)
   if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
     msg->o_end = msg->o_write;
     msg_size   = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
-    lmgmt->signalEvent(MGMT_EVENT_LIBRECORDS, (char *)msg, msg_size);
+    lmgmt->signalEvent(MGMT_EVENT_LIBRECORDS, reinterpret_cast<char *>(msg), msg_size);
   }
 
   return REC_ERR_OKAY;

@@ -64,8 +64,8 @@ sockaddr_in6 G_bwGrapherLoc;
 void
 initialize_thread_for_udp_net(EThread *thread)
 {
-  new ((ink_dummy_for_new *)get_UDPPollCont(thread)) PollCont(thread->mutex);
-  new ((ink_dummy_for_new *)get_UDPNetHandler(thread)) UDPNetHandler;
+  new (reinterpret_cast<ink_dummy_for_new *>(get_UDPPollCont(thread))) PollCont(thread->mutex);
+  new (reinterpret_cast<ink_dummy_for_new *>(get_UDPNetHandler(thread))) UDPNetHandler;
 
   // This variable controls how often we cleanup the cancelled packets.
   // If it is set to 0, then cleanup never occurs.
@@ -124,7 +124,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
     // which gets referenced by IOBufferBlock.
     char buf[65536];
     int buflen = sizeof(buf);
-    r          = socketManager.recvfrom(uc->getFd(), buf, buflen, 0, (struct sockaddr *)&fromaddr, &fromlen);
+    r          = socketManager.recvfrom(uc->getFd(), buf, buflen, 0, reinterpret_cast<struct sockaddr *>(&fromaddr), &fromlen);
     if (r <= 0) {
       // error
       break;
@@ -508,7 +508,7 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
     cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_COMPLETE, (void *)-1);
     return ACTION_RESULT_DONE;
   } else {
-    cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, (void *)(intptr_t)nbytes_sent);
+    cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, (void *)static_cast<intptr_t>(nbytes_sent));
     return ACTION_IO_ERROR;
   }
 }
@@ -593,7 +593,8 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   if (ats_is_ip_multicast(addr)) {
     int enable_reuseaddr = 1;
 
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
+    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr),
+                               sizeof(enable_reuseaddr)) < 0)) {
       goto Lerror;
     }
   }
@@ -653,7 +654,7 @@ UDPQueue::service(UDPNetHandler *nh)
   UDPPacketInternal *p;
   ink_hrtime pktSendTime;
 
-  p = (UDPPacketInternal *)ink_atomiclist_popall(&atomicQueue);
+  p = static_cast<UDPPacketInternal *>(ink_atomiclist_popall(&atomicQueue));
   if (p) {
     UDPPacketInternal *pnext = nullptr;
     Queue<UDPPacketInternal> stk;
@@ -712,7 +713,7 @@ UDPQueue::SendPackets()
 
 sendPackets:
   sentOne       = false;
-  bytesThisPipe = (int32_t)bytesThisSlot;
+  bytesThisPipe = bytesThisSlot;
 
   while ((bytesThisPipe > 0) && (pipeInfo.firstPacket(send_threshold_time))) {
     p      = pipeInfo.getFirstPacket();
@@ -770,12 +771,12 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   msg.msg_controllen = 0;
   msg.msg_flags      = 0;
 #endif
-  msg.msg_name    = (caddr_t)&p->to;
+  msg.msg_name    = reinterpret_cast<caddr_t>(&p->to);
   msg.msg_namelen = sizeof(p->to);
   iov_len         = 0;
 
   for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
-    iov[iov_len].iov_base = (caddr_t)b->start();
+    iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
     iov[iov_len].iov_len  = b->size();
     real_len += iov[iov_len].iov_len;
     iov_len++;
@@ -850,7 +851,7 @@ UDPNetHandler::mainNetEvent(int event, Event *e)
 
   EventIO *temp_eptr = nullptr;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
-    temp_eptr = (EventIO *)get_ev_data(pc->pollDescriptor, i);
+    temp_eptr = static_cast<EventIO *> get_ev_data(pc->pollDescriptor, i);
     if ((get_ev_events(pc->pollDescriptor, i) & EVENTIO_READ) && temp_eptr->type == EVENTIO_UDP_CONNECTION) {
       uc = temp_eptr->data.uc;
       ink_assert(uc && uc->mutex && uc->continuation);

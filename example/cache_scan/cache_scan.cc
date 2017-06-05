@@ -66,12 +66,12 @@ static int
 handle_scan(TSCont contp, TSEvent event, void *edata)
 {
   TSCacheHttpInfo cache_infop;
-  cache_scan_state *cstate = (cache_scan_state *)TSContDataGet(contp);
+  cache_scan_state *cstate = static_cast<cache_scan_state *>(TSContDataGet(contp));
 
   if (event == TS_EVENT_CACHE_REMOVE) {
     cstate->done       = 1;
     const char error[] = "Cache remove operation succeeded";
-    cstate->cache_vc   = (TSVConn)edata;
+    cstate->cache_vc   = static_cast<TSVConn>(edata);
     cstate->write_vio  = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT64_MAX);
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, error, sizeof(error) - 1);
     TSVIONBytesSet(cstate->write_vio, cstate->total_bytes);
@@ -84,7 +84,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     const char error[] = "Cache remove operation failed error=";
     char rc[12];
     snprintf(rc, 12, "%p", edata);
-    cstate->cache_vc  = (TSVConn)edata;
+    cstate->cache_vc  = static_cast<TSVConn>(edata);
     cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT64_MAX);
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, error, sizeof(error) - 1);
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, rc, strlen(rc));
@@ -96,7 +96,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
 
   // first scan event, save vc and start write
   if (event == TS_EVENT_CACHE_SCAN) {
-    cstate->cache_vc  = (TSVConn)edata;
+    cstate->cache_vc  = static_cast<TSVConn>(edata);
     cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT64_MAX);
     return TS_EVENT_CONTINUE;
   }
@@ -120,7 +120,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     if (cstate->done) {
       return TS_CACHE_SCAN_RESULT_DONE;
     }
-    cache_infop = (TSCacheHttpInfo)edata;
+    cache_infop = static_cast<TSCacheHttpInfo>(edata);
 
     TSMBuffer req_bufp, resp_bufp;
     TSMLoc req_hdr_loc, resp_hdr_loc;
@@ -183,7 +183,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
 static int
 handle_accept(TSCont contp, TSEvent event, TSVConn vc)
 {
-  cache_scan_state *cstate = (cache_scan_state *)TSContDataGet(contp);
+  cache_scan_state *cstate = static_cast<cache_scan_state *>(TSContDataGet(contp));
 
   if (event == TS_EVENT_NET_ACCEPT) {
     if (cstate) {
@@ -215,7 +215,7 @@ static void
 cleanup(TSCont contp)
 {
   // shutdown vc and free memory
-  cache_scan_state *cstate = (cache_scan_state *)TSContDataGet(contp);
+  cache_scan_state *cstate = static_cast<cache_scan_state *>(TSContDataGet(contp));
 
   if (cstate) {
     // cancel any pending cache scan actions, since we will be destroying the
@@ -255,7 +255,7 @@ cleanup(TSCont contp)
 static int
 handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
-  cache_scan_state *cstate = (cache_scan_state *)TSContDataGet(contp);
+  cache_scan_state *cstate = static_cast<cache_scan_state *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
@@ -316,7 +316,7 @@ cache_intercept(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_NET_ACCEPT:
   case TS_EVENT_NET_ACCEPT_FAILED:
-    return handle_accept(contp, event, (TSVConn)edata);
+    return handle_accept(contp, event, static_cast<TSVConn>(edata));
   case TS_EVENT_VCONN_READ_READY:
   case TS_EVENT_VCONN_READ_COMPLETE:
   case TS_EVENT_VCONN_WRITE_READY:
@@ -359,7 +359,7 @@ unescapifyStr(char *buffer)
     if (*read == '%' && *(read + 1) != '\0' && *(read + 2) != '\0') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      *write    = (char)strtol(subStr, (char **)nullptr, 16);
+      *write    = static_cast<char>(strtol(subStr, (char **)nullptr, 16));
       read++;
       write++;
     } else if (*read == '+') {
@@ -418,13 +418,13 @@ setup_request(TSCont contp, TSHttpTxn txnp)
   if (path_len == 10 && !strncmp(path, "show-cache", 10)) {
     scan_contp = TSContCreate(cache_intercept, TSMutexCreate());
     TSHttpTxnIntercept(scan_contp, txnp);
-    cstate = (cache_scan_state *)TSmalloc(sizeof(cache_scan_state));
+    cstate = static_cast<cache_scan_state *>(TSmalloc(sizeof(cache_scan_state)));
     memset(cstate, 0, sizeof(cache_scan_state));
     cstate->http_txnp = txnp;
 
     if (query && query_len > 11) {
       char querybuf[2048];
-      query_len   = (unsigned)query_len > sizeof(querybuf) - 1 ? sizeof(querybuf) - 1 : query_len;
+      query_len   = static_cast<unsigned>(query_len) > sizeof(querybuf) - 1 ? sizeof(querybuf) - 1 : query_len;
       char *start = querybuf, *end = querybuf + query_len;
       size_t del_url_len;
       memcpy(querybuf, query, query_len);
@@ -482,11 +482,11 @@ cache_print_plugin(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    return setup_request(contp, (TSHttpTxn)edata);
+    return setup_request(contp, static_cast<TSHttpTxn>(edata));
   default:
     break;
   }
-  TSHttpTxnReenable((TSHttpTxn)edata, TS_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
   return TS_SUCCESS;
 }
 

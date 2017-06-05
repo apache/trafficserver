@@ -131,7 +131,7 @@ char *ptr_data;
 intptr_t
 CoreUtils::find_vaddr(intptr_t vaddr, intptr_t upper, intptr_t lower)
 {
-  intptr_t index = (intptr_t)floor((double)((upper + lower) / 2));
+  intptr_t index = static_cast<intptr_t>(floor(static_cast<double>((upper + lower) / 2)));
 
   // match in table, returns index to be inserted into
   if (arrayMem[index].vaddr == vaddr) {
@@ -174,9 +174,9 @@ CoreUtils::insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1)
 
   if (arrayMem.length() == 0) {
     arrayMem(0);
-    arrayMem[(intptr_t)0].vaddr  = vaddr1;
-    arrayMem[(intptr_t)0].offset = offset1;
-    arrayMem[(intptr_t)0].fsize  = fsize1;
+    arrayMem[static_cast<intptr_t>(0)].vaddr  = vaddr1;
+    arrayMem[static_cast<intptr_t>(0)].offset = offset1;
+    arrayMem[static_cast<intptr_t>(0)].fsize  = fsize1;
   } else {
     intptr_t index = find_vaddr(vaddr1, arrayMem.length(), 0);
     if (index == arrayMem.length()) {
@@ -191,9 +191,9 @@ CoreUtils::insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1)
         arrayMem[arrayMem.length() - i - 1].offset = arrayMem[arrayMem.length() - i - 2].offset;
         arrayMem[arrayMem.length() - i - 1].fsize  = arrayMem[arrayMem.length() - i - 2].fsize;
       }
-      arrayMem[(intptr_t)0].vaddr  = vaddr1;
-      arrayMem[(intptr_t)0].offset = offset1;
-      arrayMem[(intptr_t)0].fsize  = fsize1;
+      arrayMem[static_cast<intptr_t>(0)].vaddr  = vaddr1;
+      arrayMem[static_cast<intptr_t>(0)].offset = offset1;
+      arrayMem[static_cast<intptr_t>(0)].fsize  = fsize1;
     } else {
       arrayMem(arrayMem.length());
       for (intptr_t i = 1; i < arrayMem.length() - index; i++) {
@@ -224,7 +224,7 @@ CoreUtils::read_from_core(intptr_t vaddr, intptr_t bytes, char *buf)
   } else {
     if (fseek(fp, offset2 + offset, SEEK_SET) != -1) {
       char *frameoff;
-      if ((frameoff = (char *)ats_malloc(sizeof(char) * bytes))) {
+      if ((frameoff = static_cast<char *>(ats_malloc(sizeof(char) * bytes)))) {
         if (fread(frameoff, bytes, 1, fp) == 1) {
           memcpy(buf, frameoff, bytes);
           /*for(int j =0; j < bytes; j++) {
@@ -265,7 +265,7 @@ CoreUtils::get_base_frame(intptr_t framep, core_stack_state *coress)
   // seek to the framep offset
   if (fseek(fp, off + off2, SEEK_SET) != -1) {
     void **frameoff;
-    if ((frameoff = (void **)ats_malloc(sizeof(long)))) {
+    if ((frameoff = static_cast<void **>(ats_malloc(sizeof(long))))) {
       if (fread(frameoff, 4, 1, fp) == 1) {
         coress->framep = (intptr_t)*frameoff;
         if (fread(frameoff, 4, 1, fp) == 1) {
@@ -304,7 +304,7 @@ CoreUtils::get_next_frame(core_stack_state *coress)
   // seek to the framep offset
   if (fseek(fp, off + off2, SEEK_SET) != -1) {
     void **frameoff;
-    if ((frameoff = (void **)ats_malloc(sizeof(long)))) {
+    if ((frameoff = static_cast<void **>(ats_malloc(sizeof(long))))) {
       if (fread(frameoff, 4, 1, fp) == 1) {
         coress->framep = (intptr_t)*frameoff;
         if (*frameoff == nullptr) {
@@ -366,11 +366,11 @@ CoreUtils::find_stuff(StuffTest_f f)
 void
 CoreUtils::test_HdrHeap(void *arg)
 {
-  HdrHeap *hheap_test = (HdrHeap *)arg;
+  HdrHeap *hheap_test = static_cast<HdrHeap *>(arg);
   uint32_t *magic_ptr = &(hheap_test->m_magic);
   uint32_t magic      = 0;
 
-  if (read_from_core((intptr_t)magic_ptr, sizeof(uint32_t), (char *)&magic) != 0) {
+  if (read_from_core((intptr_t)magic_ptr, sizeof(uint32_t), reinterpret_cast<char *>(&magic)) != 0) {
     if (magic == HDR_BUF_MAGIC_ALIVE || magic == HDR_BUF_MAGIC_DEAD || magic == HDR_BUF_MAGIC_CORRUPT ||
         magic == HDR_BUF_MAGIC_MARSHALED) {
       printf("Found Hdr Heap @ 0x%p\n", arg);
@@ -387,19 +387,19 @@ CoreUtils::test_HdrHeap(void *arg)
 void
 CoreUtils::test_HttpSM_from_tunnel(void *arg)
 {
-  char *tmp        = (char *)arg;
+  char *tmp        = static_cast<char *>(arg);
   intptr_t offset  = (intptr_t) & (((HttpTunnel *)nullptr)->sm);
-  HttpSM **hsm_ptr = (HttpSM **)(tmp + offset);
+  HttpSM **hsm_ptr = reinterpret_cast<HttpSM **>(tmp + offset);
   HttpSM *hsm_test = nullptr;
 
-  if (read_from_core((intptr_t)hsm_ptr, sizeof(HttpSM *), (char *)&hsm_test) == 0) {
+  if (read_from_core((intptr_t)hsm_ptr, sizeof(HttpSM *), reinterpret_cast<char *>(&hsm_test)) == 0) {
     return;
   }
 
   unsigned int *magic_ptr = &(hsm_test->magic);
   unsigned int magic      = 0;
 
-  if (read_from_core((intptr_t)magic_ptr, sizeof(int), (char *)&magic) != 0) {
+  if (read_from_core((intptr_t)magic_ptr, sizeof(int), reinterpret_cast<char *>(&magic)) != 0) {
     if (magic == HTTP_SM_MAGIC_ALIVE || magic == HTTP_SM_MAGIC_DEAD) {
       process_HttpSM(hsm_test);
     }
@@ -412,11 +412,11 @@ CoreUtils::test_HttpSM_from_tunnel(void *arg)
 void
 CoreUtils::test_HttpSM(void *arg)
 {
-  HttpSM *hsm_test        = (HttpSM *)arg;
+  HttpSM *hsm_test        = static_cast<HttpSM *>(arg);
   unsigned int *magic_ptr = &(hsm_test->magic);
   unsigned int magic      = 0;
 
-  if (read_from_core((intptr_t)magic_ptr, sizeof(int), (char *)&magic) != 0) {
+  if (read_from_core((intptr_t)magic_ptr, sizeof(int), reinterpret_cast<char *>(&magic)) != 0) {
     if (magic == HTTP_SM_MAGIC_ALIVE || magic == HTTP_SM_MAGIC_DEAD) {
       printf("test_HttpSM:******MATCH*****\n");
       process_HttpSM(hsm_test);
@@ -429,9 +429,9 @@ CoreUtils::process_HttpSM(HttpSM *core_ptr)
 {
   // extracting the HttpSM from the core file
   if (last_seen_http_sm != core_ptr) {
-    HttpSM *http_sm = (HttpSM *)ats_malloc(sizeof(HttpSM));
+    HttpSM *http_sm = static_cast<HttpSM *>(ats_malloc(sizeof(HttpSM)));
 
-    if (read_from_core((intptr_t)core_ptr, sizeof(HttpSM), (char *)http_sm) < 0) {
+    if (read_from_core((intptr_t)core_ptr, sizeof(HttpSM), reinterpret_cast<char *>(http_sm)) < 0) {
       printf("ERROR: Failed to read httpSM @ 0x%p from core\n", core_ptr);
       ats_free(http_sm);
       return;
@@ -491,8 +491,8 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   char buf[sizeof(char) * sizeof(HdrHeap)];
   // Load HdrHeap chain
   HTTPHdr *http_hdr                 = core_hdr;
-  HdrHeap *heap                     = (HdrHeap *)core_hdr->m_heap;
-  HdrHeap *heap_ptr                 = (HdrHeap *)http_hdr->m_heap;
+  HdrHeap *heap                     = core_hdr->m_heap;
+  HdrHeap *heap_ptr                 = http_hdr->m_heap;
   intptr_t ptr_heaps                = 0;
   intptr_t ptr_heap_size            = 0;
   intptr_t ptr_xl_size              = 2;
@@ -512,15 +512,15 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
       printf("Cannot read from core\n");
       ::exit(0);
     }
-    heap      = (HdrHeap *)buf;
-    copy_size = (int)(heap->m_free_start - heap->m_data_start);
+    heap      = reinterpret_cast<HdrHeap *>(buf);
+    copy_size = static_cast<int>(heap->m_free_start - heap->m_data_start);
     ptr_heap_size += copy_size;
     heap = heap->m_next;
   } while (heap && ((intptr_t)heap != 0x1));
 
-  swizzle_heap     = (HdrHeap *)ats_malloc(sizeof(HdrHeap));
+  swizzle_heap     = static_cast<HdrHeap *>(ats_malloc(sizeof(HdrHeap)));
   live_hdr->m_heap = swizzle_heap;
-  ptr_data         = (char *)ats_malloc(sizeof(char) * ptr_heap_size);
+  ptr_data         = static_cast<char *>(ats_malloc(sizeof(char) * ptr_heap_size));
   // heap = (HdrHeap*)http_hdr->m_heap;
 
   //  Build Hdr Heap Translation Table
@@ -529,8 +529,8 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
       printf("Cannot read from core\n");
       ::exit(0);
     }
-    heap_ptr  = (HdrHeap *)buf;
-    copy_size = (int)(heap_ptr->m_free_start - heap_ptr->m_data_start);
+    heap_ptr  = reinterpret_cast<HdrHeap *>(buf);
+    copy_size = static_cast<int>(heap_ptr->m_free_start - heap_ptr->m_data_start);
 
     if (read_from_core((intptr_t)heap_ptr->m_data_start, copy_size, ptr_data) == -1) {
       printf("Cannot read from core\n");
@@ -554,15 +554,15 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
     heap_ptr = heap_ptr->m_next;
   } while (heap_ptr && ((intptr_t)heap_ptr != 0x1));
 
-  heap = (HdrHeap *)http_hdr->m_heap;
+  heap = http_hdr->m_heap;
   if (read_from_core((intptr_t)heap, sizeof(HdrHeap), buf) == -1) {
     printf("Cannot read from core\n");
     ::exit(0);
   }
-  heap = (HdrHeap *)buf;
+  heap = reinterpret_cast<HdrHeap *>(buf);
   // filling in the live_hdr
   swizzle_heap->m_free_start            = nullptr;
-  swizzle_heap->m_data_start            = (char *)ptr_data - ptr_heap_size; // offset
+  swizzle_heap->m_data_start            = ptr_data - ptr_heap_size; // offset
   swizzle_heap->m_magic                 = HDR_BUF_MAGIC_ALIVE;
   swizzle_heap->m_writeable             = false;
   swizzle_heap->m_size                  = ptr_heap_size;
@@ -571,7 +571,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   swizzle_heap->m_read_write_heap.m_ptr = nullptr;
 
   // We'have one read-only string heap after marshalling
-  swizzle_heap->m_ronly_heap[0].m_heap_start          = (char *)(intptr_t)swizzle_heap->m_size; // offset
+  swizzle_heap->m_ronly_heap[0].m_heap_start          = (char *)static_cast<intptr_t>(swizzle_heap->m_size); // offset
   swizzle_heap->m_ronly_heap[0].m_ref_count_ptr.m_ptr = nullptr;
 
   for (int i = 1; i < HDR_BUF_RONLY_HEAPS; i++) {
@@ -586,16 +586,16 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
 
   // Local String Heaps, building translation table
   if (heap->m_read_write_heap) {
-    HdrStrHeap *hdr  = (HdrStrHeap *)heap->m_read_write_heap.m_ptr;
-    char *copy_start = ((char *)heap->m_read_write_heap.m_ptr) + sizeof(HdrStrHeap);
-    char *str_hdr    = (char *)ats_malloc(sizeof(char) * sizeof(HdrStrHeap));
+    HdrStrHeap *hdr  = static_cast<HdrStrHeap *>(heap->m_read_write_heap.m_ptr);
+    char *copy_start = (reinterpret_cast<char *>(heap->m_read_write_heap.m_ptr)) + sizeof(HdrStrHeap);
+    char *str_hdr    = static_cast<char *>(ats_malloc(sizeof(char) * sizeof(HdrStrHeap)));
     if (read_from_core((intptr_t)hdr, sizeof(HdrStrHeap), str_hdr) == -1) {
       printf("Cannot read from core\n");
       ::exit(0);
     }
 
-    char *free_start = (char *)(((HdrStrHeap *)str_hdr)->m_free_start);
-    int nto_copy     = std::abs((char *)copy_start - free_start);
+    char *free_start = ((reinterpret_cast<HdrStrHeap *>(str_hdr))->m_free_start);
+    int nto_copy     = std::abs(copy_start - free_start);
     ats_free(str_hdr);
     char rw_heap[sizeof(char) * nto_copy];
     if (read_from_core((intptr_t)copy_start, nto_copy, rw_heap) == -1) {
@@ -637,7 +637,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   char *mheap_end = swizzle_heap->m_data_start + swizzle_heap->m_size;
 
   while (obj_data < mheap_end) {
-    HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
+    HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(obj_data);
     ink_assert(obj_is_aligned(obj));
 
     switch (obj->m_type) {
@@ -698,8 +698,8 @@ CoreUtils::dump_history(HttpSM *hsm)
   // Loop through the history and dump it
   for (int i = 0; i < hsm->history_pos; i++) {
     char loc[256];
-    int r          = (int)hsm->history[i].reentrancy;
-    int e          = (int)hsm->history[i].event;
+    int r          = static_cast<int>(hsm->history[i].reentrancy);
+    int e          = static_cast<int>(hsm->history[i].event);
     char *fileline = load_string(hsm->history[i].location.str(loc, sizeof(loc)));
 
     fileline = (fileline != nullptr) ? fileline : ats_strdup("UNKNOWN");
@@ -719,16 +719,16 @@ CoreUtils::dump_history(HttpSM *hsm)
 void
 CoreUtils::process_EThread(EThread *eth_test)
 {
-  char *buf = (char *)ats_malloc(sizeof(char) * sizeof(EThread));
+  char *buf = static_cast<char *>(ats_malloc(sizeof(char) * sizeof(EThread)));
 
   if (read_from_core((intptr_t)eth_test, sizeof(EThread), buf) != -1) {
-    EThread *loaded_eth = (EThread *)buf;
+    EThread *loaded_eth = reinterpret_cast<EThread *>(buf);
 
     printf("----------- EThread @ 0x%p ----------\n", eth_test);
 #if !defined(kfreebsd) && (defined(freebsd) || defined(darwin) || defined(openbsd))
     printf("   thread_id: %p\n", loaded_eth->tid);
 #else
-    printf("   thread_id: %i\n", (int)loaded_eth->tid);
+    printf("   thread_id: %i\n", static_cast<int>(loaded_eth->tid));
 #endif
     //    printf("   NetHandler: 0x%x\n\n", (int) loaded_eth->netHandler);
   }
@@ -741,17 +741,17 @@ CoreUtils::print_netstate(NetState *n)
 {
   printf("      enabled: %d\n", n->enabled);
   printf("      op: %d  _cont: 0x%p\n", n->vio.op, n->vio._cont);
-  printf("      nbytes: %d  done: %d\n", (int)n->vio.nbytes, (int)n->vio.ndone);
+  printf("      nbytes: %d  done: %d\n", static_cast<int>(n->vio.nbytes), static_cast<int>(n->vio.ndone));
   printf("      vc_server: 0x%p   mutex: 0x%p\n\n", n->vio.vc_server, n->vio.mutex.m_ptr);
 }
 
 void
 CoreUtils::process_NetVC(UnixNetVConnection *nvc_test)
 {
-  char *buf = (char *)ats_malloc(sizeof(char) * sizeof(UnixNetVConnection));
+  char *buf = static_cast<char *>(ats_malloc(sizeof(char) * sizeof(UnixNetVConnection)));
 
   if (read_from_core((intptr_t)nvc_test, sizeof(UnixNetVConnection), buf) != -1) {
-    UnixNetVConnection *loaded_nvc = (UnixNetVConnection *)buf;
+    UnixNetVConnection *loaded_nvc = reinterpret_cast<UnixNetVConnection *>(buf);
     char addrbuf[INET6_ADDRSTRLEN];
 
     printf("----------- UnixNetVConnection @ 0x%p ----------\n", nvc_test);
@@ -862,7 +862,7 @@ process_core(char *fname)
       printf("NOTE\n");
       if (fseek(fp, phdr.p_offset, SEEK_SET) != -1) {
         Elf32_Nhdr *nhdr, *thdr;
-        if ((nhdr = (Elf32_Nhdr *)ats_malloc(sizeof(Elf32_Nhdr) * phdr.p_filesz))) {
+        if ((nhdr = static_cast<Elf32_Nhdr *>(ats_malloc(sizeof(Elf32_Nhdr) * phdr.p_filesz)))) {
           if (fread(nhdr, phdr.p_filesz, 1, fp) == 1) {
             int size = phdr.p_filesz;
             int sum  = 0;
@@ -872,7 +872,7 @@ process_core(char *fname)
 
               len = sizeof *thdr + ((thdr->n_namesz + 3) & ~3) + ((thdr->n_descsz + 3) & ~3);
               // making sure the offset is byte aligned
-              char *offset = (char *)(thdr + 1) + ((thdr->n_namesz + 3) & ~3);
+              char *offset = reinterpret_cast<char *>(thdr + 1) + ((thdr->n_namesz + 3) & ~3);
 
               if (len < 0 || len > size) {
                 ::exit(1);
@@ -887,12 +887,12 @@ process_core(char *fname)
 
               switch (thdr->n_type) {
               case NT_PRSTATUS:
-                ps = (prstatus_t *)offset;
+                ps = reinterpret_cast<prstatus_t *>(offset);
                 memcpy(&pstat, ps, sizeof(prstatus_t));
                 printf("\n*** printing registers****\n");
                 for (j = 0; j < ELF_NGREG; j++) {
                   rinfo[j] = pstat.pr_reg[j];
-                  printf("%#x ", (unsigned int)rinfo[j]);
+                  printf("%#x ", static_cast<unsigned int>(rinfo[j]));
                 }
                 printf("\n");
 
@@ -906,16 +906,16 @@ process_core(char *fname)
                 // convert it using strsignal
                 // char *msg=strsignal(pstat.pr_cursig);
 
-                printf("stack pointer = %#x\n", (unsigned int)pstat.pr_reg[SP_REGNUM]); // UESP
+                printf("stack pointer = %#x\n", static_cast<unsigned int>(pstat.pr_reg[SP_REGNUM])); // UESP
                 framep = pstat.pr_reg[FP_REGNUM];
                 pc     = pstat.pr_reg[PC_REGNUM];
-                printf("frame pointer = %#x\n", (unsigned int)pstat.pr_reg[FP_REGNUM]); // EBP
-                printf("program counter if no save = %#x\n", (unsigned int)pstat.pr_reg[PC_REGNUM]);
+                printf("frame pointer = %#x\n", static_cast<unsigned int>(pstat.pr_reg[FP_REGNUM])); // EBP
+                printf("program counter if no save = %#x\n", static_cast<unsigned int>(pstat.pr_reg[PC_REGNUM]));
                 //}
                 break;
 
               case NT_PRPSINFO:
-                ist = (prpsinfo_t *)offset;
+                ist = reinterpret_cast<prpsinfo_t *>(offset);
                 memcpy(&infostat, ist, sizeof(prpsinfo_t));
 
                 if (is_debug_tag_set("note")) {
@@ -928,7 +928,7 @@ process_core(char *fname)
                 }
                 break;
               }
-              thdr = (Elf32_Nhdr *)((char *)thdr + len);
+              thdr = reinterpret_cast<Elf32_Nhdr *>(reinterpret_cast<char *>(thdr) + len);
               sum += len;
               size -= len;
             }
