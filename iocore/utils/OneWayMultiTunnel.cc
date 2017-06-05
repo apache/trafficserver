@@ -39,8 +39,9 @@
 
 ClassAllocator<OneWayMultiTunnel> OneWayMultiTunnelAllocator("OneWayMultiTunnelAllocator");
 
-OneWayMultiTunnel::OneWayMultiTunnel() : OneWayTunnel(), n_vioTargets(0), source_read_previously_completed(false)
+OneWayMultiTunnel::OneWayMultiTunnel() : OneWayTunnel()
 {
+  ink_zero(vioTargets);
 }
 
 OneWayMultiTunnel *
