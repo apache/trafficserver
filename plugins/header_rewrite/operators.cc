@@ -345,7 +345,7 @@ OperatorSetRedirect::exec(const Resources &res) const
     query             = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
     if ((get_oper_modifiers() & OPER_QSA) && (query_len > 0)) {
       TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
-      std::string connector = (value.find("?") == std::string::npos) ? "?" : "&";
+      std::string connector = (value.find('?') == std::string::npos) ? "?" : "&";
       value.append(connector);
       value.append(query, query_len);
     }
