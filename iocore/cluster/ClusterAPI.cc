@@ -94,7 +94,7 @@ public:
   {
     SET_HANDLER((MachineStatusSMHandler)&MachineStatusSM::MachineStatusSMEvent);
   }
-  ~MachineStatusSM() {}
+  ~MachineStatusSM() override {}
   int MachineStatusSMEvent(Event *e, void *d);
 
 private:
@@ -197,7 +197,7 @@ public:
   {
     SET_HANDLER((ClusterAPIPeriodicSMHandler)&ClusterAPIPeriodicSM::ClusterAPIPeriodicSMEvent);
   }
-  ~ClusterAPIPeriodicSM() {}
+  ~ClusterAPIPeriodicSM() override {}
   int ClusterAPIPeriodicSMEvent(int, void *);
   MachineStatusSM *GetNextSM();
 

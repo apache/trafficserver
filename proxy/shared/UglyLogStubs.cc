@@ -38,8 +38,8 @@ int fds_limit = 8000;
 
 class FakeUDPNetProcessor : public UDPNetProcessor
 {
-  virtual int
-  start(int, size_t)
+  int
+  start(int, size_t) override
   {
     ink_release_assert(false);
     return 0;

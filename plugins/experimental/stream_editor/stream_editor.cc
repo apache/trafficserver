@@ -207,9 +207,9 @@ class rxscope : public scope_t
 {
 private:
   regex_t rx;
-  virtual bool
+  bool
 
-  match(const char *str) const
+  match(const char *str) const override
   {
     return (regexec(&rx, str, 0, nullptr, 0) == 0) ? true : false;
   }
@@ -228,7 +228,7 @@ public:
     TSfree(str);
   }
 
-  virtual ~rxscope() { regfree(&rx); }
+  ~rxscope() override { regfree(&rx); }
 };
 
 class strscope : public scope_t
@@ -236,16 +236,16 @@ class strscope : public scope_t
 private:
   const bool icase;
   char *str;
-  virtual bool
+  bool
 
-  match(const char *p) const
+  match(const char *p) const override
   {
     return ((icase ? strncasecmp : strncmp)(str, p, strlen(str)) == 0) ? true : false;
   }
 
 public:
   strscope(const bool u, const bool i, const char *pattern, int len) : scope_t(u), icase(i) { str = TSstrndup(pattern, len); }
-  virtual ~strscope()
+  ~strscope() override
   {
     if (str) {
       TSfree(str);
@@ -268,8 +268,8 @@ class strmatch : public match_t
   const size_t slen;
 
 public:
-  virtual bool
-  find(const char *buf, size_t len, size_t &found, size_t &found_len, const char *to, std::string &repl) const
+  bool
+  find(const char *buf, size_t len, size_t &found, size_t &found_len, const char *to, std::string &repl) const override
   {
     const char *match = icase ? strcasestr(buf, str) : strstr(buf, str);
     if (match) {
@@ -283,15 +283,15 @@ public:
   }
 
   strmatch(const bool i, const char *pattern, int len) : icase(i), slen(len) { str = TSstrndup(pattern, len); }
-  virtual ~strmatch()
+  ~strmatch() override
   {
     if (str) {
       TSfree(str);
     }
   }
 
-  virtual size_t
-  cont_size() const
+  size_t
+  cont_size() const override
   {
     return slen;
   }
@@ -303,8 +303,8 @@ class rxmatch : public match_t
   regex_t rx;
 
 public:
-  virtual bool
-  find(const char *buf, size_t len, size_t &found, size_t &found_len, const char *tmpl, std::string &repl) const
+  bool
+  find(const char *buf, size_t len, size_t &found, size_t &found_len, const char *tmpl, std::string &repl) const override
   {
     regmatch_t pmatch[MAX_RX_MATCH];
     if (regexec(&rx, buf, MAX_RX_MATCH, pmatch, REG_NOTEOL) == 0) {
@@ -343,8 +343,8 @@ public:
     }
   }
 
-  virtual size_t
-  cont_size() const
+  size_t
+  cont_size() const override
   {
     return match_len;
   }
@@ -362,7 +362,7 @@ public:
     TSfree(str);
   }
 
-  virtual ~rxmatch() { regfree(&rx); }
+  ~rxmatch() override { regfree(&rx); }
 };
 
 #define PARSE_VERIFY(line, x, str) \

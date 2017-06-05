@@ -74,10 +74,10 @@ struct TimeMod : public ControlBase::Modifier {
 
   static const char *const NAME;
 
-  virtual Type type() const;
-  virtual const char *name() const;
-  virtual bool check(HttpRequestData *req) const;
-  virtual void print(FILE *f) const;
+  Type type() const override;
+  const char *name() const override;
+  bool check(HttpRequestData *req) const override;
+  void print(FILE *f) const override;
   static TimeMod *make(char *value, const char **error);
   static const char *timeOfDayToSeconds(const char *time_str, time_t *seconds);
 };
@@ -180,9 +180,9 @@ struct PortMod : public ControlBase::Modifier {
 
   static const char *const NAME;
 
-  virtual const char *name() const;
-  virtual bool check(HttpRequestData *req) const;
-  virtual void print(FILE *f) const;
+  const char *name() const override;
+  bool check(HttpRequestData *req) const override;
+  void print(FILE *f) const override;
 
   static PortMod *make(char *value, const char **error);
 };
@@ -244,9 +244,9 @@ struct IPortMod : public ControlBase::Modifier {
 
   IPortMod(int port);
 
-  virtual const char *name() const;
-  virtual bool check(HttpRequestData *req) const;
-  virtual void print(FILE *f) const;
+  const char *name() const override;
+  bool check(HttpRequestData *req) const override;
+  void print(FILE *f) const override;
   static IPortMod *make(char *value, const char **error);
 };
 
@@ -292,10 +292,10 @@ struct SrcIPMod : public ControlBase::Modifier {
 
   static const char *const NAME;
 
-  virtual Type type() const;
-  virtual const char *name() const;
-  virtual bool check(HttpRequestData *req) const;
-  virtual void print(FILE *f) const;
+  Type type() const override;
+  const char *name() const override;
+  bool check(HttpRequestData *req) const override;
+  void print(FILE *f) const override;
   static SrcIPMod *make(char *value, const char **error);
 };
 
@@ -343,10 +343,10 @@ struct SchemeMod : public ControlBase::Modifier {
 
   SchemeMod(int scheme);
 
-  virtual Type type() const;
-  virtual const char *name() const;
-  virtual bool check(HttpRequestData *req) const;
-  virtual void print(FILE *f) const;
+  Type type() const override;
+  const char *name() const override;
+  bool check(HttpRequestData *req) const override;
+  void print(FILE *f) const override;
 
   const char *getWksText() const;
 
@@ -405,10 +405,10 @@ struct TextMod : public ControlBase::Modifier {
   ts::Buffer text;
 
   TextMod();
-  ~TextMod();
+  ~TextMod() override;
 
   // Calls name() which the subclass must provide.
-  virtual void print(FILE *f) const;
+  void print(FILE *f) const override;
 
   // Copy the given NUL-terminated string to the text buffer.
   void set(const char *value);
@@ -438,13 +438,13 @@ TextMod::set(const char *value)
 struct MultiTextMod : public ControlBase::Modifier {
   Vec<ts::Buffer> text_vec;
   MultiTextMod();
-  ~MultiTextMod();
+  ~MultiTextMod() override;
 
   // Copy the value to the MultiTextMod buffer.
   void set(char *value);
 
   // Calls name() which the subclass must provide.
-  virtual void print(FILE *f) const;
+  void print(FILE *f) const override;
 };
 
 MultiTextMod::MultiTextMod()
@@ -479,9 +479,9 @@ MultiTextMod::set(char *value)
 struct MethodMod : public TextMod {
   static const char *const NAME;
 
-  virtual Type type() const;
-  virtual const char *name() const;
-  virtual bool check(HttpRequestData *req) const;
+  Type type() const override;
+  const char *name() const override;
+  bool check(HttpRequestData *req) const override;
 
   static MethodMod *make(char *value, const char **error);
 };
@@ -515,9 +515,9 @@ MethodMod::make(char *value, const char **)
 struct PrefixMod : public TextMod {
   static const char *const NAME;
 
-  virtual Type type() const;
-  virtual const char *name() const;
-  virtual bool check(HttpRequestData *req) const;
+  Type type() const override;
+  const char *name() const override;
+  bool check(HttpRequestData *req) const override;
   static PrefixMod *make(char *value, const char **error);
 };
 
@@ -563,9 +563,9 @@ PrefixMod::make(char *value, const char ** /* error ATS_UNUSED */)
 struct SuffixMod : public MultiTextMod {
   static const char *const NAME;
 
-  virtual Type type() const;
-  virtual const char *name() const;
-  virtual bool check(HttpRequestData *req) const;
+  Type type() const override;
+  const char *name() const override;
+  bool check(HttpRequestData *req) const override;
   static SuffixMod *make(char *value, const char **error);
 };
 const char *const SuffixMod::NAME = "Suffix";
@@ -611,9 +611,9 @@ SuffixMod::make(char *value, const char ** /* error ATS_UNUSED */)
 struct TagMod : public TextMod {
   static const char *const NAME;
 
-  virtual Type type() const;
-  virtual const char *name() const;
-  virtual bool check(HttpRequestData *req) const;
+  Type type() const override;
+  const char *name() const override;
+  bool check(HttpRequestData *req) const override;
   static TagMod *make(char *value, const char **error);
 };
 const char *const TagMod::NAME = "Tag";
@@ -645,23 +645,23 @@ struct InternalMod : public ControlBase::Modifier {
   bool flag;
   static const char *const NAME;
 
-  virtual Type
-  type() const
+  Type
+  type() const override
   {
     return MOD_INTERNAL;
   }
-  virtual const char *
-  name() const
+  const char *
+  name() const override
   {
     return NAME;
   }
-  virtual bool
-  check(HttpRequestData *req) const
+  bool
+  check(HttpRequestData *req) const override
   {
     return req->internal_txn == flag;
   }
-  virtual void
-  print(FILE *f) const
+  void
+  print(FILE *f) const override
   {
     fprintf(f, "%s=%s  ", this->name(), flag ? "true" : "false");
   }

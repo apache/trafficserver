@@ -33,8 +33,8 @@ class GlobalHookPlugin : public GlobalPlugin
 {
 public:
   GlobalHookPlugin() { registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
-  virtual void
-  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPreRemap(Transaction &transaction) override
   {
     std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;
     transaction.resume();

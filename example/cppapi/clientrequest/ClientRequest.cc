@@ -44,7 +44,7 @@ public:
   }
 
   void
-  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  handleReadRequestHeadersPreRemap(Transaction &transaction) override
   {
     cout << "Hello from handleReadRequesHeadersPreRemap!" << endl;
 
@@ -69,7 +69,7 @@ public:
   }
 
   void
-  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
     cout << "Hello from handleReadRequesHeadersPostRemap!" << endl;
 
@@ -123,7 +123,7 @@ public:
   }
 
   void
-  handleSendRequestHeaders(Transaction &transaction)
+  handleSendRequestHeaders(Transaction &transaction) override
   {
     cout << "Hello from handleSendRequestHeaders!" << endl;
     cout << "---------------------IP INFORMATION-----------------" << endl;

@@ -117,20 +117,20 @@ private:
 class ChancePolicy : public PromotionPolicy
 {
 public:
-  bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */)
+  bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */) override
   {
     TSDebug(PLUGIN_NAME, "ChancePolicy::doPromote(%f)", getSample());
     return true;
   }
 
   void
-  usage() const
+  usage() const override
   {
     TSError("[%s] Usage: @plugin=%s.so @pparam=--policy=chance @pparam=--sample=<x>%%", PLUGIN_NAME, PLUGIN_NAME);
   }
 
   const char *
-  policyName() const
+  policyName() const override
   {
     return "chance";
   }
@@ -197,7 +197,7 @@ class LRUPolicy : public PromotionPolicy
 {
 public:
   LRUPolicy() : PromotionPolicy(), _buckets(1000), _hits(10), _lock(TSMutexCreate()), _list_size(0), _freelist_size(0) {}
-  ~LRUPolicy()
+  ~LRUPolicy() override
   {
     TSDebug(PLUGIN_NAME, "deleting LRUPolicy object");
     TSMutexLock(_lock);
@@ -213,7 +213,7 @@ public:
   }
 
   bool
-  parseOption(int opt, char *optarg)
+  parseOption(int opt, char *optarg) override
   {
     switch (opt) {
     case 'b':
@@ -240,7 +240,7 @@ public:
   }
 
   bool
-  doPromote(TSHttpTxn txnp)
+  doPromote(TSHttpTxn txnp) override
   {
     LRUHash hash;
     LRUMap::iterator map_it;
@@ -321,14 +321,14 @@ public:
   }
 
   void
-  usage() const
+  usage() const override
   {
     TSError("[%s] Usage: @plugin=%s.so @pparam=--policy=lru @pparam=--buckets=<n> --hits=<m> --sample=<x>", PLUGIN_NAME,
             PLUGIN_NAME);
   }
 
   const char *
-  policyName() const
+  policyName() const override
   {
     return "LRU";
   }
