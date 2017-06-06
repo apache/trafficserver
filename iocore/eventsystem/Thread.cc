@@ -37,7 +37,7 @@
 
 static ink_thread_key init_thread_key();
 
-ink_hrtime Thread::cur_time                       = 0;
+ink_hrtime Thread::cur_time                       = ink_get_hrtime_internal();
 inkcoreapi ink_thread_key Thread::thread_data_key = init_thread_key();
 
 Thread::Thread()
@@ -54,16 +54,10 @@ Thread::~Thread()
   MUTEX_UNTAKE_LOCK(mutex, (EThread *)this);
 }
 
-static void
-key_destructor(void *value)
-{
-  (void)value;
-}
-
 ink_thread_key
 init_thread_key()
 {
-  ink_thread_key_create(&Thread::thread_data_key, key_destructor);
+  ink_thread_key_create(&Thread::thread_data_key, nullptr);
   return Thread::thread_data_key;
 }
 
@@ -72,42 +66,40 @@ init_thread_key()
 ///////////////////////////////////////////////
 
 struct thread_data_internal {
-  ThreadFunction f;
-  void *a;
-  Thread *me;
-  char name[MAX_THREAD_NAME_LENGTH];
+  ThreadFunction f;                  ///< Function to excecute in the thread.
+  Thread *me;                        ///< The class instance.
+  char name[MAX_THREAD_NAME_LENGTH]; ///< Name for the thread.
 };
 
 static void *
 spawn_thread_internal(void *a)
 {
-  thread_data_internal *p = (thread_data_internal *)a;
+  auto *p = static_cast<thread_data_internal *>(a);
 
   p->me->set_specific();
   ink_set_thread_name(p->name);
+
   if (p->f) {
-    p->f(p->a);
+    p->f();
   } else {
     p->me->execute();
   }
-  ats_free(a);
+
+  delete p;
   return nullptr;
 }
 
 ink_thread
-Thread::start(const char *name, size_t stacksize, ThreadFunction f, void *a, void *stack)
+Thread::start(const char *name, void *stack, size_t stacksize, ThreadFunction const &f)
 {
-  thread_data_internal *p = (thread_data_internal *)ats_malloc(sizeof(thread_data_internal));
+  auto *p = new thread_data_internal{f, this, ""};
 
-  p->f  = f;
-  p->a  = a;
-  p->me = this;
-  memset(p->name, 0, MAX_THREAD_NAME_LENGTH);
+  ink_zero(p->name);
   ink_strlcpy(p->name, name, MAX_THREAD_NAME_LENGTH);
   if (stacksize == 0) {
     stacksize = DEFAULT_STACKSIZE;
   }
-  tid = ink_thread_create(spawn_thread_internal, (void *)p, 0, stacksize, stack);
+  tid = ink_thread_create(spawn_thread_internal, p, 0, stacksize, stack);
 
   return tid;
 }

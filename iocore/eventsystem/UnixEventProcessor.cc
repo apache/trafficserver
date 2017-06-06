@@ -55,7 +55,7 @@ EventProcessor::spawn_event_threads(int n_threads, const char *et_name, size_t s
   n_threads_for_type[new_thread_group_id] = n_threads;
   for (i = 0; i < n_threads; i++) {
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[%s %d]", et_name, i);
-    eventthread[new_thread_group_id][i]->start(thr_name, stacksize, nullptr, nullptr, nullptr);
+    eventthread[new_thread_group_id][i]->start(thr_name, nullptr, stacksize);
   }
 
   n_thread_groups++;
@@ -237,7 +237,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 #endif // TS_USE_HWLOC
 
     // Start our new thread with our new stack.
-    tid   = all_ethreads[i]->start(thr_name, stacksize, nullptr, nullptr, stack);
+    tid   = all_ethreads[i]->start(thr_name, stack, stacksize);
     stack = nullptr;
 
 #if TS_USE_HWLOC
@@ -294,7 +294,7 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
     ++n_dthreads; // Be very sure this is after the array element update.
   }
 
-  e->ethread->start(thr_name, stacksize, nullptr, nullptr, nullptr);
+  e->ethread->start(thr_name, nullptr, stacksize);
 
   return e;
 }
