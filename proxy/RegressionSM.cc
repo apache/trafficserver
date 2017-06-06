@@ -23,6 +23,8 @@
 
 #include "P_EventSystem.h"
 #include "RegressionSM.h"
+#include <vector>
+#include <ts/ink_memory.h>
 
 #define REGRESSION_SM_RETRY (100 * HRTIME_MSECOND)
 
@@ -273,10 +275,16 @@ struct ReRegressionSM : public RegressionSM {
 
 REGRESSION_TEST(RegressionSM)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
+  // create 8 state machines
+  std::vector<std::unique_ptr<ReRegressionSM>> state_machines;
+  for (auto i = 0; i < 8; i++) {
+    state_machines.push_back(make_unique<ReRegressionSM>(t));
+  }
+
   RegressionSM *top_sm = r_sequential(
-    t, r_parallel(t, new ReRegressionSM(t), new ReRegressionSM(t), nullptr),
-    r_sequential(t, new ReRegressionSM(t), new ReRegressionSM(t), nullptr), r_parallel(t, 3, new ReRegressionSM(t)),
-    r_sequential(t, 3, new ReRegressionSM(t)),
-    r_parallel(t, r_sequential(t, 2, new ReRegressionSM(t)), r_parallel(t, 2, new ReRegressionSM(t)), nullptr), nullptr);
+    t, r_parallel(t, state_machines[0].get(), state_machines[1].get(), nullptr),
+    r_sequential(t, state_machines[2].get(), state_machines[3].get(), nullptr), r_parallel(t, 3, state_machines[4].get()),
+    r_sequential(t, 3, state_machines[5].get()),
+    r_parallel(t, r_sequential(t, 2, state_machines[6].get()), r_parallel(t, 2, state_machines[7].get()), nullptr), nullptr);
   top_sm->run(pstatus);
 }
