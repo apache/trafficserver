@@ -23,16 +23,25 @@
 
 #include "P_RecCore.h"
 #include "P_RecProcess.h"
+#include <ts/MemView.h>
 
 //-------------------------------------------------------------------------
 // raw_stat_get_total
 //-------------------------------------------------------------------------
+
+namespace
+{
+// Commonly used access to a raw stat, avoid typos.
+inline RecRawStat *
+thread_stat(EThread *et, RecRawStatBlock *rsb, int id)
+{
+  return (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(et) + rsb->ethr_stat_offset)) + id;
+}
+}
+
 static int
 raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
 {
-  int i;
-  RecRawStat *tlp;
-
   total->sum   = 0;
   total->count = 0;
 
@@ -41,14 +50,14 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
   total->count = rsb->global[id]->count;
 
   // get thread local values
-  for (i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+  for (EThread *et : eventProcessor.active_ethreads()) {
+    RecRawStat *tlp = thread_stat(et, rsb, id);
     total->sum += tlp->sum;
     total->count += tlp->count;
   }
 
-  for (i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+  for (EThread *et : eventProcessor.active_dthreads()) {
+    RecRawStat *tlp = thread_stat(et, rsb, id);
     total->sum += tlp->sum;
     total->count += tlp->count;
   }
@@ -66,22 +75,20 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
 static int
 raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
 {
-  int i;
-  RecRawStat *tlp;
   RecRawStat total;
 
   total.sum   = 0;
   total.count = 0;
 
   // sum the thread local values
-  for (i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+  for (EThread *et : eventProcessor.active_ethreads()) {
+    RecRawStat *tlp = thread_stat(et, rsb, id);
     total.sum += tlp->sum;
     total.count += tlp->count;
   }
 
-  for (i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+  for (EThread *et : eventProcessor.active_dthreads()) {
+    RecRawStat *tlp = thread_stat(et, rsb, id);
     total.sum += tlp->sum;
     total.count += tlp->count;
   }
@@ -91,27 +98,22 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
   }
 
   // lock so the setting of the globals and last values are atomic
-  ink_mutex_acquire(&(rsb->mutex));
+  {
+    ink_scoped_mutex_lock lock(rsb->mutex);
 
-  // get the delta from the last sync
-  RecRawStat delta;
-  delta.sum   = total.sum - rsb->global[id]->last_sum;
-  delta.count = total.count - rsb->global[id]->last_count;
+    // get the delta from the last sync
+    RecRawStat delta;
+    delta.sum   = total.sum - rsb->global[id]->last_sum;
+    delta.count = total.count - rsb->global[id]->last_count;
 
-  // This is too verbose now, so leaving it out / leif
-  // Debug("stats", "raw_stat_sync_to_global(): rsb pointer:%p id:%d delta:%" PRId64 " total:%" PRId64 " last:%" PRId64 " global:%"
-  // PRId64 "\n",
-  // rsb, id, delta.sum, total.sum, rsb->global[id]->last_sum, rsb->global[id]->sum);
+    // increment the global values by the delta
+    ink_atomic_increment(&(rsb->global[id]->sum), delta.sum);
+    ink_atomic_increment(&(rsb->global[id]->count), delta.count);
 
-  // increment the global values by the delta
-  ink_atomic_increment(&(rsb->global[id]->sum), delta.sum);
-  ink_atomic_increment(&(rsb->global[id]->count), delta.count);
-
-  // set the new totals as the last values seen
-  ink_atomic_swap(&(rsb->global[id]->last_sum), total.sum);
-  ink_atomic_swap(&(rsb->global[id]->last_count), total.count);
-
-  ink_mutex_release(&(rsb->mutex));
+    // set the new totals as the last values seen
+    ink_atomic_swap(&(rsb->global[id]->last_sum), total.sum);
+    ink_atomic_swap(&(rsb->global[id]->last_count), total.count);
+  }
 
   return REC_ERR_OKAY;
 }
@@ -126,23 +128,22 @@ raw_stat_clear(RecRawStatBlock *rsb, int id)
 
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
-  ink_mutex_acquire(&(rsb->mutex));
-  ink_atomic_swap(&(rsb->global[id]->sum), (int64_t)0);
-  ink_atomic_swap(&(rsb->global[id]->last_sum), (int64_t)0);
-  ink_atomic_swap(&(rsb->global[id]->count), (int64_t)0);
-  ink_atomic_swap(&(rsb->global[id]->last_count), (int64_t)0);
-  ink_mutex_release(&(rsb->mutex));
-
+  {
+    ink_scoped_mutex_lock lock(rsb->mutex);
+    ink_atomic_swap(&(rsb->global[id]->sum), (int64_t)0);
+    ink_atomic_swap(&(rsb->global[id]->last_sum), (int64_t)0);
+    ink_atomic_swap(&(rsb->global[id]->count), (int64_t)0);
+    ink_atomic_swap(&(rsb->global[id]->last_count), (int64_t)0);
+  }
   // reset the local stats
-  RecRawStat *tlp;
-  for (int i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+  for (EThread *et : eventProcessor.active_ethreads()) {
+    RecRawStat *tlp = thread_stat(et, rsb, id);
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
 
-  for (int i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+  for (EThread *et : eventProcessor.active_dthreads()) {
+    RecRawStat *tlp = thread_stat(et, rsb, id);
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
@@ -160,20 +161,20 @@ raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
 
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
-  ink_mutex_acquire(&(rsb->mutex));
-  ink_atomic_swap(&(rsb->global[id]->sum), (int64_t)0);
-  ink_atomic_swap(&(rsb->global[id]->last_sum), (int64_t)0);
-  ink_mutex_release(&(rsb->mutex));
+  {
+    ink_scoped_mutex_lock lock(rsb->mutex);
+    ink_atomic_swap(&(rsb->global[id]->sum), (int64_t)0);
+    ink_atomic_swap(&(rsb->global[id]->last_sum), (int64_t)0);
+  }
 
   // reset the local stats
-  RecRawStat *tlp;
-  for (int i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+  for (EThread *et : eventProcessor.active_ethreads()) {
+    RecRawStat *tlp = thread_stat(et, rsb, id);
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
   }
 
-  for (int i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+  for (EThread *et : eventProcessor.active_dthreads()) {
+    RecRawStat *tlp = thread_stat(et, rsb, id);
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
   }
 
@@ -190,20 +191,20 @@ raw_stat_clear_count(RecRawStatBlock *rsb, int id)
 
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
-  ink_mutex_acquire(&(rsb->mutex));
-  ink_atomic_swap(&(rsb->global[id]->count), (int64_t)0);
-  ink_atomic_swap(&(rsb->global[id]->last_count), (int64_t)0);
-  ink_mutex_release(&(rsb->mutex));
+  {
+    ink_scoped_mutex_lock lock(rsb->mutex);
+    ink_atomic_swap(&(rsb->global[id]->count), (int64_t)0);
+    ink_atomic_swap(&(rsb->global[id]->last_count), (int64_t)0);
+  }
 
   // reset the local stats
-  RecRawStat *tlp;
-  for (int i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+  for (EThread *et : eventProcessor.active_ethreads()) {
+    RecRawStat *tlp = thread_stat(et, rsb, id);
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
 
-  for (int i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+  for (EThread *et : eventProcessor.active_dthreads()) {
+    RecRawStat *tlp = thread_stat(et, rsb, id);
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
 

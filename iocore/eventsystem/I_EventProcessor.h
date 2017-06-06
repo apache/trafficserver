@@ -30,15 +30,15 @@
 #include "I_Event.h"
 
 #ifdef TS_MAX_THREADS_IN_EACH_THREAD_TYPE
-const int MAX_THREADS_IN_EACH_TYPE = TS_MAX_THREADS_IN_EACH_THREAD_TYPE;
+constexpr int MAX_THREADS_IN_EACH_TYPE = TS_MAX_THREADS_IN_EACH_THREAD_TYPE;
 #else
-const int MAX_THREADS_IN_EACH_TYPE = 3072;
+constexpr int MAX_THREADS_IN_EACH_TYPE = 3072;
 #endif
 
 #ifdef TS_MAX_NUMBER_EVENT_THREADS
-const int MAX_EVENT_THREADS = TS_MAX_NUMBER_EVENT_THREADS;
+constexpr int MAX_EVENT_THREADS = TS_MAX_NUMBER_EVENT_THREADS;
 #else
-const int MAX_EVENT_THREADS = 4096;
+constexpr int MAX_EVENT_THREADS = 4096;
 #endif
 
 class EThread;
@@ -295,7 +295,6 @@ public:
   */
   int n_thread_groups = 0;
 
-public:
   /*------------------------------------------------------*\
   | Unix & non NT Interface                                |
   \*------------------------------------------------------*/
@@ -307,6 +306,42 @@ public:
   volatile int n_dthreads       = 0; // No. of dedicated threads
   volatile int thread_data_used = 0;
   ink_mutex dedicated_spawn_thread_mutex;
+
+  /// Provide container style access to just the active threads, not the entire array.
+  class active_threads_type
+  {
+    using iterator = EThread *const *; ///< Internal iterator type, pointer to array element.
+  public:
+    iterator
+    begin() const
+    {
+      return _begin;
+    }
+    iterator
+    end() const
+    {
+      return _end;
+    }
+
+  private:
+    iterator _begin; ///< Start of threads.
+    iterator _end;   ///< End of threads.
+    /// Construct from base of the array (@a start) and the current valid count (@a n).
+    active_threads_type(iterator start, int n) : _begin(start), _end(start + n) {}
+    friend class EventProcessor;
+  };
+
+  // These can be used in container for loops and other range operations.
+  active_threads_type
+  active_ethreads() const
+  {
+    return {all_ethreads, n_ethreads};
+  }
+  active_threads_type
+  active_dthreads() const
+  {
+    return {all_dthreads, n_dthreads};
+  }
 };
 
 extern inkcoreapi class EventProcessor eventProcessor;
