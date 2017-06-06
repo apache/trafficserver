@@ -256,7 +256,6 @@ public:
   }
 
 protected:
-protected:
   ProxyClientSession *parent;
   HttpSM *current_reader;
   IOBufferReader *sm_reader;
