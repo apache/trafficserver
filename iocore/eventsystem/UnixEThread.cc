@@ -37,20 +37,18 @@ struct AIOCallback;
 #define MAX_HEARTBEATS_MISSED 10
 #define NO_HEARTBEAT -1
 #define THREAD_MAX_HEARTBEAT_MSECONDS 60
-#define NO_ETHREAD_ID -1
 
 volatile bool shutdown_event_system = false;
 
-EThread::EThread() : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this), id(NO_ETHREAD_ID)
+EThread::EThread()
 {
   memset(thread_private, 0, PER_THREAD_DATA);
 }
 
-EThread::EThread(ThreadType att, int anid)
-  : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this), id(anid), tt(att)
+EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
 {
   ethreads_to_be_signalled = (EThread **)ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *));
-  memset((char *)ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
+  memset(ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
   memset(thread_private, 0, PER_THREAD_DATA);
 #if HAVE_EVENTFD
   evfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -77,15 +75,7 @@ EThread::EThread(ThreadType att, int anid)
 #endif
 }
 
-EThread::EThread(ThreadType att, Event *e)
-  : generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this)),
-    ethreads_to_be_signalled(nullptr),
-    n_ethreads_to_be_signalled(0),
-    id(NO_ETHREAD_ID),
-    event_types(0),
-    signal_hook(nullptr),
-    tt(att),
-    oneevent(e)
+EThread::EThread(ThreadType att, Event *e) : tt(att), oneevent(e)
 {
   ink_assert(att == DEDICATED);
   memset(thread_private, 0, PER_THREAD_DATA);
@@ -112,7 +102,7 @@ EThread::is_event_type(EventType et)
 void
 EThread::set_event_type(EventType et)
 {
-  event_types |= (1 << (int)et);
+  event_types |= (1 << static_cast<int>(et));
 }
 
 void
