@@ -645,6 +645,8 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
       if (pseudo_header_count > expected_pseudo_header_count) {
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
+    } else if (len <= 0) {
+      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     } else {
       if (pseudo_header_count != expected_pseudo_header_count) {
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
