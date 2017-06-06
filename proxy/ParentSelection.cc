@@ -1342,7 +1342,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   RE(verify(result, PARENT_FAIL, nullptr, 80), 182);
 
   // wait long enough so that fuzzy is retryable.
-  sleep(params->policy.ParentRetryTime - 1);
+  sleep(params->policy.ParentRetryTime - 2);
 
   // Test 183
   ST(183);
