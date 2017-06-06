@@ -132,7 +132,7 @@ RecDataSet(RecDataT data_type, RecData *data_dst, RecData *data_src)
 
   switch (data_type) {
   case RECD_STRING:
-    if (data_src->rec_string == nullptr) {
+    if (data_src->rec_string == nullptr || strcmp(data_src->rec_string, "NULL") == 0) {
       if (data_dst->rec_string != nullptr) {
         ats_free(data_dst->rec_string);
         data_dst->rec_string = nullptr;
