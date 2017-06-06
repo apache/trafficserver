@@ -172,7 +172,7 @@ CongestionControlRecord::Init(matcher_line *line_info)
   /* initialize the rule to defaults */
   setdefault();
 
-  for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
+  for (int i = 0; i < line_info->num_el; i++) {
     label = line_info->line[0][i];
     val   = line_info->line[1][i];
 
