@@ -971,6 +971,7 @@ create_directory()
     while ((d = readdir(dir))) {
       if (remove(d->d_name) < 0) {
         TSError("[%s] Unable to remove '%s': %s", PLUGIN_NAME, d->d_name, strerror(errno));
+        closedir(dir);
         goto error_out;
       }
     }
