@@ -273,6 +273,7 @@ ts_lua_inject_ts_api(lua_State *L)
   ts_lua_inject_server_response_api(L);
   ts_lua_inject_client_response_api(L);
   ts_lua_inject_cached_response_api(L);
+  ts_http_lua_inject_shdict_api(L);
   ts_lua_inject_log_api(L);
 
   ts_lua_inject_context_api(L);

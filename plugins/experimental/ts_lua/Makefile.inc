@@ -45,4 +45,8 @@ experimental_ts_lua_tslua_la_SOURCES = \
   experimental/ts_lua/ts_lua_io.c \
   experimental/ts_lua/ts_lua_coroutine.c \
   experimental/ts_lua/ts_lua_fetch.c \
-  experimental/ts_lua/ts_lua_constant.c
+  experimental/ts_lua/ts_lua_constant.c \
+  experimental/ts_lua/ts_lua_slab.c \
+  experimental/ts_lua/ts_lua_shdict.c \
+  experimental/ts_lua/ts_lua_base_rbtree.c \
+  experimental/ts_lua/ts_lua_base_crc32.c 

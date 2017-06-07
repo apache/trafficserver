@@ -34,7 +34,7 @@ static ts_lua_main_ctx *ts_lua_g_main_ctx_array;
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
-  int ret;
+  // int ret;
 
   if (!api_info || api_info->size < sizeof(TSRemapInterface)) {
     strncpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
@@ -46,16 +46,16 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_SUCCESS;
   }
 
-  ts_lua_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
-  memset(ts_lua_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
+  //  ts_lua_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
+  //  memset(ts_lua_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
 
-  ret = ts_lua_create_vm(ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
+  //  ret = ts_lua_create_vm(ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
 
-  if (ret) {
-    ts_lua_destroy_vm(ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
-    TSfree(ts_lua_main_ctx_array);
-    return TS_ERROR;
-  }
+  //  if (ret) {
+  //    ts_lua_destroy_vm(ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
+  //    TSfree(ts_lua_main_ctx_array);
+  //    return TS_ERROR;
+  //  }
 
   return TS_SUCCESS;
 }
@@ -65,36 +65,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 {
   int fn;
   int ret;
-  int states                           = TS_LUA_MAX_STATE_COUNT;
-  static const struct option longopt[] = {
-    {"states", required_argument, 0, 's'}, {0, 0, 0, 0},
-  };
-
-  argc--;
-  argv++;
-
-  for (;;) {
-    int opt;
-
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
-    switch (opt) {
-    case 's':
-      states = atoi(optarg);
-      // set state
-      break;
-    }
-
-    if (opt == -1) {
-      break;
-    }
-  }
-
-  if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
-    snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - invalid state in option input");
-    return TS_ERROR;
-  }
-
-  if (argc - optind < 1) {
+  int states = TS_LUA_MAX_STATE_COUNT;
+  int dostat = 0;
+  if (argc < 3) {
     strncpy(errbuf, "[TSRemapNewInstance] - lua script file or string is required !!", errbuf_size - 1);
     errbuf[errbuf_size - 1] = '\0';
     return TS_ERROR;
@@ -102,32 +75,65 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   fn = 1;
 
-  if (argv[optind][0] != '/') {
+  if (argv[2][0] != '/') {
     fn = 0;
-  } else if (strlen(argv[optind]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16) {
+  } else if (strlen(argv[2]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16) {
     return TS_ERROR;
   }
 
   ts_lua_instance_conf *conf = TSmalloc(sizeof(ts_lua_instance_conf));
-  if (!conf) {
-    strncpy(errbuf, "[TSRemapNewInstance] TSmalloc failed!!", errbuf_size - 1);
-    errbuf[errbuf_size - 1] = '\0';
-    return TS_ERROR;
+  memset(conf, 0, sizeof(ts_lua_instance_conf));
+
+  if (fn) {
+    snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[2]);
+  } else {
+    conf->content = argv[2];
   }
 
-  memset(conf, 0, sizeof(ts_lua_instance_conf));
+  int i;
+  for (i = 3; i < argc; i++) {
+    if (!strncmp(argv[i], "shared_zone", 11)) {
+      char *p = argv[i] + 12;
+      p       = strchr(p, '=');
+      if (!p) {
+        TSError("shared memory format error: @pparam=shared_zone:name=size");
+        return TS_ERROR;
+      }
+
+      if (!ts_http_lua_shdict_init_zone(argv[i] + 12, p - (argv[i] + 12), atoi(p + 1))) {
+        TSError("shared memory init error");
+        return TS_ERROR;
+      }
+    } else if (!strncmp(argv[i], "state", 5)) {
+      char *p = argv[i] + 7;
+      states  = atoi(p);
+      dostat  = 1;
+      if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
+        snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - invalid state in option input");
+        return TS_ERROR;
+      }
+    }
+  }
+
   conf->states = states;
   conf->remap  = 1;
 
-  if (fn) {
-    snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[optind]);
-  } else {
-    conf->content = argv[optind];
-  }
-
   ts_lua_init_instance(conf);
 
-  ret = ts_lua_add_module(conf, ts_lua_main_ctx_array, conf->states, argc - optind, &argv[optind], errbuf, errbuf_size);
+  if (!ts_lua_main_ctx_array) {
+    ts_lua_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
+    memset(ts_lua_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
+  }
+
+  ret = ts_lua_create_vm(ts_lua_main_ctx_array, conf->states);
+  if (ret) {
+    ts_lua_destroy_vm(ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
+    TSfree(ts_lua_main_ctx_array);
+    return TS_ERROR;
+  }
+
+  ret = ts_lua_add_module(conf, ts_lua_main_ctx_array, conf->states, dostat ? argc - 3 : argc - 2, dostat ? &argv[3] : &argv[2],
+                          errbuf, errbuf_size);
 
   if (ret != 0) {
     return TS_ERROR;
