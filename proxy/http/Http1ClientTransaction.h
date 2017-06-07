@@ -35,87 +35,93 @@ public:
 
   Http1ClientTransaction() : super(), outbound_port(0), outbound_transparent(false) {}
   // Implement VConnection interface.
-  virtual VIO *
-  do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0)
+  VIO *
+  do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override
   {
     return parent->do_io_read(c, nbytes, buf);
   }
-  virtual VIO *
-  do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false)
+  VIO *
+  do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override
   {
     return parent->do_io_write(c, nbytes, buf, owner);
   }
 
-  virtual void
-  do_io_close(int lerrno = -1)
+  void
+  do_io_close(int lerrno = -1) override
   {
     parent->do_io_close(lerrno);
     // this->destroy(); Parent owns this data structure.  No need for separate destroy.
   }
 
   // Don't destroy your elements.  Rely on the Http1ClientSession to clean up the
-  // Http1ClientTransaction class as necessary
-  virtual void destroy();
-
-  // Clean up the transaction elements when the ClientSession shuts down
+  // Http1ClientTransaction class as necessary.  The super::destroy() clears the
+  // mutex, which Http1ClientSession owns.
   void
-  cleanup()
+  destroy() override
   {
-    super::destroy();
+    current_reader = nullptr;
   }
 
-  virtual void
-  do_io_shutdown(ShutdownHowTo_t howto)
+  void
+  do_io_shutdown(ShutdownHowTo_t howto) override
   {
     parent->do_io_shutdown(howto);
   }
-  virtual void
-  reenable(VIO *vio)
+
+  void
+  reenable(VIO *vio) override
   {
     parent->reenable(vio);
   }
+
   void
   set_reader(IOBufferReader *reader)
   {
     sm_reader = reader;
   }
-  void release(IOBufferReader *r);
-  virtual bool
-  ignore_keep_alive()
+
+  void release(IOBufferReader *r) override;
+
+  bool
+  ignore_keep_alive() override
   {
     return false;
   }
 
-  virtual bool
-  allow_half_open() const
+  bool
+  allow_half_open() const override
   {
     return true;
   }
 
-  void set_parent(ProxyClientSession *new_parent);
+  void set_parent(ProxyClientSession *new_parent) override;
 
-  virtual uint16_t
-  get_outbound_port() const
+  uint16_t
+  get_outbound_port() const override
   {
     return outbound_port;
   }
-  virtual IpAddr
-  get_outbound_ip4() const
+
+  IpAddr
+  get_outbound_ip4() const override
   {
     return outbound_ip4;
   }
-  virtual IpAddr
-  get_outbound_ip6() const
+
+  IpAddr
+  get_outbound_ip6() const override
   {
     return outbound_ip6;
   }
-  virtual void
-  set_outbound_port(uint16_t new_port)
+
+  void
+  set_outbound_port(uint16_t new_port) override
   {
     outbound_port = new_port;
   }
-  virtual void
-  set_outbound_ip(const IpAddr &new_addr)
+
+  void
+  set_outbound_ip(const IpAddr &new_addr) override
   {
     if (new_addr.isIp4()) {
       outbound_ip4 = new_addr;
@@ -125,43 +131,43 @@ public:
       clear_outbound_ip();
     }
   }
-  virtual void
+  void
   clear_outbound_ip()
   {
     outbound_ip4.invalidate();
     outbound_ip6.invalidate();
   }
-  virtual bool
-  is_outbound_transparent() const
+  bool
+  is_outbound_transparent() const override
   {
     return outbound_transparent;
   }
-  virtual void
-  set_outbound_transparent(bool flag)
+  void
+  set_outbound_transparent(bool flag) override
   {
     outbound_transparent = flag;
   }
 
   // Pass on the timeouts to the netvc
-  virtual void
-  set_active_timeout(ink_hrtime timeout_in)
+  void
+  set_active_timeout(ink_hrtime timeout_in) override
   {
     if (parent)
       parent->set_active_timeout(timeout_in);
   }
-  virtual void
-  set_inactivity_timeout(ink_hrtime timeout_in)
+  void
+  set_inactivity_timeout(ink_hrtime timeout_in) override
   {
     if (parent)
       parent->set_inactivity_timeout(timeout_in);
   }
-  virtual void
-  cancel_inactivity_timeout()
+  void
+  cancel_inactivity_timeout() override
   {
     if (parent)
       parent->cancel_inactivity_timeout();
   }
-  void transaction_done();
+  void transaction_done() override;
 
 protected:
   uint16_t outbound_port;
