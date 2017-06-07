@@ -351,10 +351,12 @@ SSLNetVConnection::read_raw_data()
   // If we have already moved some bytes successfully, adjust total_read to reflect reality
   // If any read succeeded, we should return success
   if (r != rattempted) {
-    if (r <= 0)
+    // If the first read failds, we should return error
+    if (r <= 0 && total_read > rattempted) {
       r = total_read - rattempted;
-    else
+    } else {
       r = total_read - rattempted + r;
+    }
   }
   NET_SUM_DYN_STAT(net_read_bytes_stat, r);
 
