@@ -1542,12 +1542,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
-  // Specific validity checks.
-  if (*conf_dir && command_index != find_cmd_index(CMD_VERIFY_CONFIG)) {
-    fprintf(stderr, "-D option can only be used with the %s command\n", CMD_VERIFY_CONFIG);
-    ::exit(1);
-  }
-
   // Bootstrap syslog.  Since we haven't read records.config
   //   yet we do not know where
   openlog("traffic_server", LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
