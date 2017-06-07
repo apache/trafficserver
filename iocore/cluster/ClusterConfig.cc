@@ -233,7 +233,7 @@ ClusterConfiguration::ClusterConfiguration() : n_machines(0), changed(0)
 // ConfigurationContinuation member functions (Internal Class)
 /*************************************************************************/
 struct ConfigurationContinuation;
-typedef int (ConfigurationContinuation::*CfgContHandler)(int, void *);
+using CfgContHandler = int (ConfigurationContinuation::*)(int, void *);
 struct ConfigurationContinuation : public Continuation {
   ClusterConfiguration *c;
   ClusterConfiguration *prev;

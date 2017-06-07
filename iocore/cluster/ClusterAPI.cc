@@ -72,7 +72,7 @@ typedef struct RPCHandle {
 #define RPC_HANDLE_MAGIC 0x12345678
 
 class MachineStatusSM;
-typedef int (MachineStatusSM::*MachineStatusSMHandler)(int, void *);
+using MachineStatusSMHandler = int (MachineStatusSM::*)(int, void *);
 class MachineStatusSM : public Continuation
 {
 public:
@@ -189,7 +189,7 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
 }
 
 class ClusterAPIPeriodicSM;
-typedef int (ClusterAPIPeriodicSM::*ClusterAPIPeriodicSMHandler)(int, void *);
+using ClusterAPIPeriodicSMHandler = int (ClusterAPIPeriodicSM::*)(int, void *);
 class ClusterAPIPeriodicSM : public Continuation
 {
 public:
