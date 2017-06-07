@@ -168,7 +168,7 @@ ClusterMachine::~ClusterMachine()
 }
 
 struct MachineTimeoutContinuation;
-typedef int (MachineTimeoutContinuation::*McTimeoutContHandler)(int, void *);
+using McTimeoutContHandler = int (MachineTimeoutContinuation::*)(int, void *);
 struct MachineTimeoutContinuation : public Continuation {
   ClusterMachine *m;
   int

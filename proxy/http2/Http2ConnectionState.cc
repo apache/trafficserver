@@ -33,7 +33,7 @@
 #define DebugHttp2Stream(ua_session, stream_id, fmt, ...) \
   DebugSsn(ua_session, "http2_con", "[%" PRId64 "] [%u] " fmt, ua_session->connection_id(), stream_id, ##__VA_ARGS__);
 
-typedef Http2Error (*http2_frame_dispatch)(Http2ConnectionState &, const Http2Frame &);
+using http2_frame_dispatch = Http2Error (*)(Http2ConnectionState &, const Http2Frame &);
 
 static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_DATA

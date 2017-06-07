@@ -1775,7 +1775,7 @@ CacheContinuation::tunnelClosedEvent(int /* event ATS_UNUSED */, void *c)
 // Retry DisposeOfDataBuffer continuation
 ////////////////////////////////////////////////////////////
 struct retryDisposeOfDataBuffer;
-typedef int (retryDisposeOfDataBuffer::*rtryDisOfDBufHandler)(int, void *);
+using rtryDisOfDBufHandler = int (retryDisposeOfDataBuffer::*)(int, void *);
 struct retryDisposeOfDataBuffer : public Continuation {
   CacheContinuation *c;
 

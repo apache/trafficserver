@@ -27,7 +27,7 @@
 #include <P_RecUtils.h>
 
 struct RecordDescriptionPolicy {
-  typedef TSConfigRecordDescription *entry_type;
+  using entry_type = TSConfigRecordDescription *;
 
   static void
   free(entry_type e)

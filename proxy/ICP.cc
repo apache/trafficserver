@@ -144,10 +144,10 @@ HTTPHdr gclient_request;
 //****************************************************************************
 
 // VC++ 5.0 is rather picky
-typedef int (ICPPeerReadCont::*ICPPeerReadContHandler)(int, void *);
-typedef int (ICPPeriodicCont::*ICPPeriodicContHandler)(int, void *);
-typedef int (ICPHandlerCont::*ICPHandlerContHandler)(int, void *);
-typedef int (ICPRequestCont::*ICPRequestContHandler)(int, void *);
+using ICPPeerReadContHandler = int (ICPPeerReadCont::*)(int, void *);
+using ICPPeriodicContHandler = int (ICPPeriodicCont::*)(int, void *);
+using ICPHandlerContHandler  = int (ICPHandlerCont::*)(int, void *);
+using ICPRequestContHandler  = int (ICPRequestCont::*)(int, void *);
 
 // Plugin freshness function
 PluginFreshnessCalcFunc pluginFreshnessCalcFunc = (PluginFreshnessCalcFunc) nullptr;

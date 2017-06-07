@@ -101,8 +101,8 @@
 #include "ts/ts.h"
 
 struct edit_t;
-typedef std::set<edit_t> editset_t;
-typedef editset_t::const_iterator edit_p;
+using editset_t = std::set<edit_t>;
+using edit_p    = editset_t::const_iterator;
 
 struct edit_t {
   const size_t start;
@@ -547,8 +547,8 @@ public:
     }
   }
 };
-typedef std::vector<rule_t> ruleset_t;
-typedef ruleset_t::const_iterator rule_p;
+using ruleset_t = std::vector<rule_t>;
+using rule_p    = ruleset_t::const_iterator;
 
 typedef struct contdata_t {
   TSCont cont;

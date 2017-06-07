@@ -24,7 +24,7 @@
 #include "traffic_ctl.h"
 
 struct AlarmListPolicy {
-  typedef char *entry_type;
+  using entry_type = char *;
 
   static void
   free(entry_type e)
@@ -39,7 +39,7 @@ struct AlarmListPolicy {
   }
 };
 
-typedef CtrlMgmtList<AlarmListPolicy> CtrlAlarmList;
+using CtrlAlarmList = CtrlMgmtList<AlarmListPolicy>;
 
 static int
 alarm_list(unsigned argc, const char **argv)

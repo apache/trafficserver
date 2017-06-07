@@ -397,7 +397,7 @@ ICPConfigUpdateCont::RetryICPconfigUpdate(int /* event ATS_UNUSED */, Event * /*
 // Class ICPConfiguration member functions
 //      Overall manager of ICP configuration data from TS configuration.
 //--------------------------------------------------------------------------
-typedef int (ICPConfigUpdateCont::*ICPCfgContHandler)(int, void *);
+using ICPCfgContHandler = int (ICPConfigUpdateCont::*)(int, void *);
 ICPConfiguration::ICPConfiguration() : _icp_config_callouts(0)
 {
   //*********************************************************
@@ -1188,7 +1188,7 @@ MultiCastPeer::FindMultiCastChild(IpAddr const &addr, uint16_t port)
 // Class PeriodicCont member functions (abstract base class)
 //      Look for TS ICP configuration changes by periodically looking.
 //-------------------------------------------------------------------------
-typedef int (ICPPeriodicCont::*ICPPeriodicContHandler)(int, void *);
+using ICPPeriodicContHandler = int (ICPPeriodicCont::*)(int, void *);
 PeriodicCont::PeriodicCont(ICPProcessor *icpP) : Continuation(nullptr), _ICPpr(icpP)
 {
   mutex = new_ProxyMutex();

@@ -22,7 +22,7 @@
 #include <openssl/x509.h>
 #include <openssl/pem.h>
 
-typedef void (*x509_expansion)(X509 *, BIO *);
+using x509_expansion = void (*)(X509 *, BIO *);
 
 static void
 x509_expand_none(X509 *, BIO *)
