@@ -317,6 +317,7 @@ public:
     {
       return _begin;
     }
+
     iterator
     end() const
     {
@@ -337,6 +338,7 @@ public:
   {
     return {all_ethreads, n_ethreads};
   }
+
   active_threads_type
   active_dthreads() const
   {
