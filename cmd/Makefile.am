@@ -24,6 +24,8 @@ SUBDIRS = \
   traffic_top \
   traffic_via
 
+TESTS = $(check_PROGRAMS)
+
 if BUILD_WCCP
 
 SUBDIRS += traffic_wccp

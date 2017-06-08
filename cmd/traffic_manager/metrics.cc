@@ -36,12 +36,12 @@
 #include "metrics.h"
 
 struct Evaluator {
-  Evaluator() : rec_name(nullptr), data_type(RECD_NULL), ref(-1) {}
-  ~Evaluator()
-  {
-    ats_free(this->rec_name);
-    ink_release_assert(this->ref == -1);
-  }
+  Evaluator() : rec_name(nullptr), data_type(RECD_NULL), ref(LUA_NOREF) {}
+
+  ~Evaluator() { ink_release_assert(this->ref == LUA_NOREF); }
+
+  Evaluator(const Evaluator &) = delete;
+  Evaluator &operator=(const Evaluator &) = delete;
 
   bool
   bind(lua_State *L, const char *metric, const char *expression)
@@ -69,6 +69,20 @@ struct Evaluator {
     this->ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
     return true;
+  }
+
+  void
+  unbind(lua_State *L)
+  {
+    if (this->ref != LUA_NOREF) {
+      luaL_unref(L, LUA_REGISTRYINDEX, this->ref);
+    }
+
+    ats_free(this->rec_name);
+
+    this->ref       = LUA_NOREF;
+    this->rec_name  = nullptr;
+    this->data_type = RECD_NULL;
   }
 
   void
@@ -137,10 +151,21 @@ struct EvaluatorList {
     }
   }
 
+  EvaluatorList(const EvaluatorList &) = delete;
+  EvaluatorList &operator=(const EvaluatorList &) = delete;
+
   void
   push_back(Evaluator *e)
   {
     evaluators.push_back(e);
+  }
+
+  void
+  unbind(lua_State *L) const
+  {
+    forv_Vec (Evaluator, e, this->evaluators) {
+      e->unbind(L);
+    }
   }
 
   void
@@ -278,9 +303,6 @@ metrics_create_float(lua_State *L)
 bool
 metrics_binding_initialize(BindingInstance &binding)
 {
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
-  ats_scoped_str config(Layout::get()->relative_to(sysconfdir, "metrics.config"));
-
   if (!binding.construct()) {
     mgmt_fatal(0, "failed to initialize Lua runtime\n");
   }
@@ -300,12 +322,7 @@ metrics_binding_initialize(BindingInstance &binding)
   // Stash a backpointer to the evaluators.
   binding.attach_ptr("evaluators", new EvaluatorList());
 
-  // Finally, execute the config file.
-  if (binding.require(config.get())) {
-    return true;
-  }
-
-  return false;
+  return true;
 }
 
 void
@@ -315,7 +332,18 @@ metrics_binding_destroy(BindingInstance &binding)
 
   evaluators = (EvaluatorList *)binding.retrieve_ptr("evaluators");
   binding.attach_ptr("evaluators", nullptr);
+
+  evaluators->unbind(binding.lua);
   delete evaluators;
+}
+
+bool
+metrics_binding_configure(BindingInstance &binding)
+{
+  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
+  ats_scoped_str config(Layout::get()->relative_to(sysconfdir, "metrics.config"));
+
+  return binding.require(config.get());
 }
 
 void
