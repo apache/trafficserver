@@ -453,7 +453,7 @@ NetHandler::mainNetEvent(int event, Event *e)
       if (cop_list.in(vc)) {
         cop_list.remove(vc);
       }
-      if (get_ev_events(pd, x) & EVENTIO_READ) {
+      if (get_ev_events(pd, x) & (EVENTIO_READ | EVENTIO_ERROR)) {
         vc->read.triggered = 1;
         if (get_ev_events(pd, x) & EVENTIO_ERROR) {
           vc->read.error = 1;
@@ -469,7 +469,7 @@ NetHandler::mainNetEvent(int event, Event *e)
         }
       }
       vc = epd->data.vc;
-      if (get_ev_events(pd, x) & EVENTIO_WRITE) {
+      if (get_ev_events(pd, x) & (EVENTIO_WRITE | EVENTIO_ERROR)) {
         vc->write.triggered = 1;
         if (get_ev_events(pd, x) & EVENTIO_ERROR) {
           vc->write.error = 1;
