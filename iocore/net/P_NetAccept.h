@@ -98,6 +98,7 @@ struct NetAccept : public Continuation {
   void init_accept_loop(const char *);
   virtual void init_accept(EThread *t = nullptr);
   virtual void init_accept_per_thread();
+  virtual void stop_accept();
   virtual NetAccept *clone() const;
 
   // 0 == success

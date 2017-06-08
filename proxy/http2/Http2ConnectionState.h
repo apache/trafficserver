@@ -38,7 +38,7 @@ enum Http2SendADataFrameResult {
   HTTP2_SEND_A_DATA_FRAME_DONE       = 3,
 };
 
-enum Http2ShutdownState { NOT_INITIATED, INITIATED, IN_PROGRESS };
+enum Http2ShutdownState { HTTP2_SHUTDOWN_NONE, HTTP2_SHUTDOWN_NOT_INITIATED, HTTP2_SHUTDOWN_INITIATED, HTTP2_SHUTDOWN_IN_PROGRESS };
 
 class Http2ConnectionSettings
 {
@@ -138,6 +138,9 @@ public:
   void
   destroy()
   {
+    if (shutdown_cont_event) {
+      shutdown_cont_event->cancel();
+    }
     cleanup_streams();
 
     mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
@@ -301,7 +304,8 @@ private:
   bool _scheduled                   = false;
   bool fini_received                = false;
   int recursion                     = 0;
-  Http2ShutdownState shutdown_state = NOT_INITIATED;
+  Http2ShutdownState shutdown_state = HTTP2_SHUTDOWN_NONE;
+  Event *shutdown_cont_event        = nullptr;
 };
 
 #endif // __HTTP2_CONNECTION_STATE_H__

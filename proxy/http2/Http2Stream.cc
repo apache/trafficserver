@@ -555,6 +555,19 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       case PARSE_RESULT_DONE: {
         this->response_header_done = true;
 
+        // Schedule session shutdown if response header has "Connection: close"
+        MIMEField *field = this->response_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+        if (field) {
+          int len;
+          const char *value = field->value_get(&len);
+          if (memcmp(HTTP_VALUE_CLOSE, value, HTTP_LEN_CLOSE) == 0) {
+            SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+            if (parent->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
+              parent->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
+            }
+          }
+        }
+
         // Send the response header back
         parent->connection_state.send_headers_frame(this);
 
