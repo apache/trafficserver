@@ -43,6 +43,8 @@ bSTOP = False
 hyper.tls._context = hyper.tls.init_context()
 hyper.tls._context.check_hostname = False
 hyper.tls._context.verify_mode = hyper.compat.ssl.CERT_NONE
+
+
 class _LockedObject(object):
     """
     A wrapper class that hides a specific object behind a lock.
@@ -52,6 +54,7 @@ class _LockedObject(object):
     intended use of this class is simple: take hold of it with a context
     manager, which returns the protected object.
     """
+
     def __init__(self, obj):
         self.lock = threading.RLock()
         self._obj = obj
@@ -65,8 +68,7 @@ class _LockedObject(object):
 
 
 class h2ATS(HTTP20Connection):
-    
-    
+
     def __init_state(self):
         """
         Initializes the 'mutable state' portions of the HTTP/2 connection
@@ -83,12 +85,10 @@ class h2ATS(HTTP20Connection):
         """
 
         config1 = H2Configuration(
-                client_side=True,
-                header_encoding='utf-8',
-                validate_outbound_headers=False,
-                validate_inbound_headers=False,
-
-            )
+            client_side=True,
+            header_encoding='utf-8',
+            validate_outbound_headers=False,
+            validate_inbound_headers=False,)
         self._conn = _LockedObject(h2.connection.H2Connection(config=config1))
 
         # Streams are stored in a dictionary keyed off their stream IDs. We
@@ -117,10 +117,10 @@ class h2ATS(HTTP20Connection):
 
         return
 
-    def __init__(self,host,**kwargs):
-        HTTP20Connection.__init__(self,host,**kwargs)
+    def __init__(self, host, **kwargs):
+        HTTP20Connection.__init__(self, host, **kwargs)
         self.__init_state()
-    
+
     def connect(self):
         """
         Connect to the server specified when the object was created. This is a
@@ -151,8 +151,7 @@ class h2ATS(HTTP20Connection):
 
             if self.secure:
                 #assert not self.proxy_host, "Proxy with HTTPS not supported."
-                sock, proto = wrap_socket(sock, sni, self.ssl_context,
-                                          force_proto=self.force_proto)
+                sock, proto = wrap_socket(sock, sni, self.ssl_context, force_proto=self.force_proto)
             else:
                 proto = H2C_PROTOCOL
 
@@ -163,28 +162,33 @@ class h2ATS(HTTP20Connection):
 
             self._send_preamble()
 
+
 def createDummyBodywithLength(numberOfbytes):
-    if numberOfbytes==0:
+    if numberOfbytes == 0:
         return None
-    body= 'a'
-    while numberOfbytes!=1:
+    body = 'a'
+    while numberOfbytes != 1:
         body += 'b'
         numberOfbytes -= 1
     return body
-    
-def handleResponse(response,*args, **kwargs):
+
+
+def handleResponse(response, *args, **kwargs):
     print(response.status_code)
     #resp=args[0]
     #expected_output_split = resp.getHeaders().split('\r\n')[ 0].split(' ', 2)
     #expected_output = (int(expected_output_split[1]), str( expected_output_split[2]))
     #r = result.Result(session_filename, expected_output[0], response.status_code)
     #print(r.getResultString(colorize=True))
+
+
 # make sure len of the message body is greater than length
 def gen():
     yield 'pforpersia,champaignurbana'.encode('utf-8')
     yield 'there'.encode('utf-8')
 
-def txn_replay(session_filename, txn, proxy, result_queue, h2conn,request_IDs):
+
+def txn_replay(session_filename, txn, proxy, result_queue, h2conn, request_IDs):
     """ Replays a single transaction
     :param request_session: has to be a valid requests session"""
     req = txn.getRequest()
@@ -203,7 +207,7 @@ def txn_replay(session_filename, txn, proxy, result_queue, h2conn,request_IDs):
         #                            headers=txn_req_headers_dict,stream=False) # making stream=False raises contentdecoding exception? kill me
         method = extractHeader.extract_txn_req_method(txn_req_headers)
         response = None
-        mbody=None
+        mbody = None
         #txn_req_headers_dict['Host'] = "localhost"
         if 'Transfer-Encoding' in txn_req_headers_dict:
             # deleting the host key, since the STUPID post/get functions are going to add host field anyway, so there will be multiple host fields in the header
@@ -215,14 +219,15 @@ def txn_replay(session_filename, txn, proxy, result_queue, h2conn,request_IDs):
                 del txn_req_headers_dict['Content-Length']
                 mbody = gen()
         if 'Content-Length' in txn_req_headers_dict:
-            nBytes=int(txn_req_headers_dict['Content-Length'])
+            nBytes = int(txn_req_headers_dict['Content-Length'])
             mbody = createDummyBodywithLength(nBytes)
         if 'Connection' in txn_req_headers_dict:
             del txn_req_headers_dict['Connection']
         #str2 = extractHeader.extract_host(txn_req_headers)+ extractHeader.extract_GET_path(txn_req_headers)
         #print(str2)
         if method == 'GET':
-            responseID = h2conn.request('GET',url=extractHeader.extract_GET_path(txn_req_headers),headers=txn_req_headers_dict, body=mbody)
+            responseID = h2conn.request(
+                'GET', url=extractHeader.extract_GET_path(txn_req_headers), headers=txn_req_headers_dict, body=mbody)
             #print("get response", responseID)
             return responseID
             #request_IDs.append(responseID)
@@ -230,43 +235,45 @@ def txn_replay(session_filename, txn, proxy, result_queue, h2conn,request_IDs):
             #print(response.headers)
             #if 'Content-Length' in response.headers:
             #        content = response.read()
-                    #print("len: {0} received {1}".format(response.headers['Content-Length'],content))
+            #        print("len: {0} received {1}".format(response.headers['Content-Length'],content))
 
         elif method == 'POST':
-            responseID = h2conn.request('POST',url=extractHeader.extract_GET_path(txn_req_headers),headers=txn_req_headers_dict, body=mbody)
+            responseID = h2conn.request(
+                'POST', url=extractHeader.extract_GET_path(txn_req_headers), headers=txn_req_headers_dict, body=mbody)
             print("get response", responseID)
             return responseID
-            
+
         elif method == 'HEAD':
-            responseID = h2conn.request('HEAD',url=extractHeader.extract_GET_path(txn_req_headers),headers=txn_req_headers_dict)
+            responseID = h2conn.request('HEAD', url=extractHeader.extract_GET_path(txn_req_headers), headers=txn_req_headers_dict)
             print("get response", responseID)
             return responseID
 
         #print(response.headers)
         #print("logged respose")
-        expected=extractHeader.responseHeader_to_dict(resp.getHeaders())
+        expected = extractHeader.responseHeader_to_dict(resp.getHeaders())
         #print(expected)
         if mainProcess.verbose:
-            expected_output_split = resp.getHeaders().split('\r\n')[ 0].split(' ', 2)
-            expected_output = (int(expected_output_split[1]), str( expected_output_split[2]))
+            expected_output_split = resp.getHeaders().split('\r\n')[0].split(' ', 2)
+            expected_output = (int(expected_output_split[1]), str(expected_output_split[2]))
             r = result.Result(session_filename, expected_output[0], response.status_code)
-            print(r.getResultString(response.headers,expected,colorize=True))
+            print(r.getResultString(response.headers, expected, colorize=True))
 
         #return responseID
-        
+
     except UnicodeEncodeError as e:
-        # these unicode errors are due to the interaction between Requests and our wiretrace data. 
+        # these unicode errors are due to the interaction between Requests and our wiretrace data.
         # TODO fix
         print("UnicodeEncodeError exception")
 
     except:
-        e=sys.exc_info()
-        print("ERROR in requests: ",e,response, session_filename)
+        e = sys.exc_info()
+        print("ERROR in requests: ", e, response, session_filename)
+
 
 def session_replay(input, proxy, result_queue):
     global bSTOP
-    ''' Replay all transactions in session 
-    
+    ''' Replay all transactions in session
+
     This entire session will be replayed in one requests.Session (so one socket / TCP connection)'''
     #if timing_control:
     #    time.sleep(float(session._timestamp))  # allow other threads to run
@@ -282,40 +289,43 @@ def session_replay(input, proxy, result_queue):
             # Construct HTTP request & fire it off
             txn_req_headers = req.getHeaders()
             txn_req_headers_dict = extractHeader.header_to_dict(txn_req_headers)
-            with h2ATS(txn_req_headers_dict['Host'], secure=True, proxy_host=Config.proxy_host,proxy_port=Config.proxy_ssl_port) as h2conn:
+            with h2ATS(
+                    txn_req_headers_dict['Host'], secure=True, proxy_host=Config.proxy_host,
+                    proxy_port=Config.proxy_ssl_port) as h2conn:
                 request_IDs = []
                 respList = []
                 for txn in session.getTransactionIter():
                     try:
-                        ret = txn_replay(session._filename, txn, proxy, result_queue, h2conn,request_IDs)
+                        ret = txn_replay(session._filename, txn, proxy, result_queue, h2conn, request_IDs)
                         respList.append(txn.getResponse())
                         request_IDs.append(ret)
                         #print("txn return value is ",ret)
                     except:
-                        e=sys.exc_info()
-                        print("ERROR in replaying: ",e,txn.getRequest().getHeaders())
+                        e = sys.exc_info()
+                        print("ERROR in replaying: ", e, txn.getRequest().getHeaders())
                 for id in request_IDs:
-                    expectedH = respList.pop(0);
+                    expectedH = respList.pop(0)
                     #print("extracting",id)
                     response = h2conn.get_response(id)
                     #print("code {0}:{1}".format(response.status,response.headers))
                     response_dict = {}
                     if mainProcess.verbose:
-                        for field,value in response.headers.items():
+                        for field, value in response.headers.items():
                             response_dict[field.decode('utf-8')] = value.decode('utf-8')
 
-                        expected_output_split = expectedH.getHeaders().split('\r\n')[ 0].split(' ', 2)
-                        expected_output = (int(expected_output_split[1]), str( expected_output_split[2]))
+                        expected_output_split = expectedH.getHeaders().split('\r\n')[0].split(' ', 2)
+                        expected_output = (int(expected_output_split[1]), str(expected_output_split[2]))
                         r = result.Result("", expected_output[0], response.status)
                         expected_Dict = extractHeader.responseHeader_to_dict(expectedH.getHeaders())
-                        print(r.getResultString(response_dict,expected_Dict,colorize=True))
+                        print(r.getResultString(response_dict, expected_Dict, colorize=True))
                         #r.Compare(response_dict,expected_Dict)
 
         bSTOP = True
         print("Queue is empty")
         input.put('STOP')
         break
-                  
+
+
 def client_replay(input, proxy, result_queue, nThread):
     Threads = []
     for i in range(nThread):

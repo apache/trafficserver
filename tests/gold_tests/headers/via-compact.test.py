@@ -25,22 +25,18 @@ Test.Summary = '''
 Check VIA header for protocol stack data.
 '''
 
-Test.SkipUnless(
-    Condition.HasATSFeature('TS_USE_TLS_ALPN'), 
-    Condition.HasCurlFeature('http2'), 
-    Condition.HasCurlFeature('IPv6') 
-) 
-Test.ContinueOnFail=True
+Test.SkipUnless(Condition.HasATSFeature('TS_USE_TLS_ALPN'), Condition.HasCurlFeature('http2'), Condition.HasCurlFeature('IPv6'))
+Test.ContinueOnFail = True
 
 # Define default ATS
-ts=Test.MakeATSProcess("ts",select_ports=False)
-server=Test.MakeOriginServer("server", options={'--load' : os.path.join(Test.TestDirectory, 'via-observer.py')})
+ts = Test.MakeATSProcess("ts", select_ports=False)
+server = Test.MakeOriginServer("server", options={'--load': os.path.join(Test.TestDirectory, 'via-observer.py')})
 
 testName = "VIA"
 
 # We only need one transaction as only the VIA header will be checked.
-request_header={"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header={"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # These should be promoted rather than other tests like this reaching around.
@@ -49,66 +45,74 @@ ts.addSSLfile("../remap/ssl/server.key")
 
 ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
-        'proxy.config.http.insert_request_via_str' : 1,
-        'proxy.config.http.insert_response_via_str' : 1,
-        'proxy.config.http.request_via_transport' : 'compact',
-        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.http.server_ports': 'ipv4:{0} ipv4:{1}:proto=http2;http:ssl ipv6:{0} ipv6:{1}:proto=http2;http:ssl'.format(ts.Variables.port,ts.Variables.ssl_port),
-    })
+    'proxy.config.http.insert_request_via_str':
+        1,
+    'proxy.config.http.insert_response_via_str':
+        1,
+    'proxy.config.http.request_via_transport':
+        'compact',
+    'proxy.config.ssl.server.cert.path':
+        '{0}'.format(ts.Variables.SSLDir),
+    'proxy.config.ssl.server.private_key.path':
+        '{0}'.format(ts.Variables.SSLDir),
+    'proxy.config.http.server_ports':
+        'ipv4:{0} ipv4:{1}:proto=http2;http:ssl ipv6:{0} ipv6:{1}:proto=http2;http:ssl'.format(
+            ts.Variables.port, ts.Variables.ssl_port),
+})
 
+ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    'map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port,ts.Variables.ssl_port)
-)
+    'map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
+ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
 # Set up to check the output after the tests have run.
 via_log_id = Test.Disk.File("via.log")
 via_log_id.Content = "via-compact.gold"
 
+
 # Ask the OS if the port is ready for connect()
-def CheckPort(Port) :
-    return lambda : 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
+def CheckPort(Port):
+    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
+
 
 # Basic HTTP 1.1
-tr=Test.AddTestRun()
+tr = Test.AddTestRun()
 # Wait for the micro server
 tr.Processes.Default.StartBefore(server, ready=CheckPort(server.Variables.Port))
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=CheckPort(ts.Variables.ssl_port))
 
-tr.Processes.Default.Command='curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.example.com'.format(ts.Variables.port)
-tr.Processes.Default.ReturnCode=0
+tr.Processes.Default.Command = 'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.example.com'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
 
-tr.StillRunningAfter=server
-tr.StillRunningAfter=ts
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
 
 # HTTP 1.0
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='curl --verbose --ipv4 --http1.0 --proxy localhost:{} http://www.example.com'.format(ts.Variables.port)
-tr.Processes.Default.ReturnCode=0
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --verbose --ipv4 --http1.0 --proxy localhost:{} http://www.example.com'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
 
-tr.StillRunningAfter=server
-tr.StillRunningAfter=ts
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
 
 # HTTP 2
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='curl --verbose --ipv4 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port)
-tr.Processes.Default.ReturnCode=0
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --verbose --ipv4 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
+    ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
 
-tr.StillRunningAfter=server
-tr.StillRunningAfter=ts
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
 
 # TLS
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='curl --verbose --ipv4 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port)
-tr.Processes.Default.ReturnCode=0
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --verbose --ipv4 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
+    ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
 
-tr.StillRunningAfter=server
-tr.StillRunningAfter=ts
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts

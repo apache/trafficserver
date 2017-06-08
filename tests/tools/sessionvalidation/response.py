@@ -1,5 +1,7 @@
 '''
 '''
+
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -28,9 +30,7 @@ class Response(object):
         return self._body
 
     def __repr__(self):
-        return "<Response: {{'timestamp': {0}, 'headers': {1}, 'body': {2}}}>".format(
-            self._timestamp, self._headers, self._body
-        )
+        return "<Response: {{'timestamp': {0}, 'headers': {1}, 'body': {2}}}>".format(self._timestamp, self._headers, self._body)
 
     def __init__(self, timestamp, headers, body):
         self._timestamp = timestamp

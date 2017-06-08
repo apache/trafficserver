@@ -1,5 +1,7 @@
 '''
 '''
+
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -24,9 +26,7 @@ class BadSession(object):
     '''
 
     def __repr__(self):
-        return "<Session {{'filename': {0}, 'reason': {1}>".format(
-            self._filename, self._reason
-        )
+        return "<Session {{'filename': {0}, 'reason': {1}>".format(self._filename, self._reason)
 
     def __init__(self, filename, reason):
         self._filename = filename

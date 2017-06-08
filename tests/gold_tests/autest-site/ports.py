@@ -55,8 +55,7 @@ def setup_port_queue(amount=1000):
     else:
         return
     try:
-        dmin, dmax = subprocess.check_output(
-            ["sysctl", "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
+        dmin, dmax = subprocess.check_output(["sysctl", "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
     except:
@@ -81,6 +80,7 @@ def setup_port_queue(amount=1000):
                 g_ports.put(port)
             port += 1
 
+
 def get_port(obj, name):
     '''
     Get a port and set it to a variable on the object
@@ -94,8 +94,7 @@ def get_port(obj, name):
         # assign to variable
         obj.Variables[name] = port
         # setup clean up step to recycle the port
-        obj.Setup.Lambda(func_cleanup=lambda: g_ports.put(
-            port), description="recycling port")
+        obj.Setup.Lambda(func_cleanup=lambda: g_ports.put(port), description="recycling port")
         return port
 
     # use old code

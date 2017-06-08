@@ -25,43 +25,23 @@ import subprocess
 import platform
 import sys
 
-pip_packages = [
-    "autest",
-    "hyper"
-]
-
+pip_packages = ["autest", "hyper"]
 
 distro_packages = {
-    "RHEL": [
-        "install epel-release",
-        "install python35",
-        "install rh-python35-python-virtualenv"
-    ],
+    "RHEL": ["install epel-release", "install python35", "install rh-python35-python-virtualenv"],
     "Fedora": [
         "install python3",
         "install python3-virtualenv",
         "install python-virtualenv",
     ],
-    "Ubuntu": [
-        "install python3",
-        "install python3-virtualenv",
-        "install virtualenv"
-    ],
-    "CentOS": [
-        "install epel-release",
-        "install rh-python35-python-virtualenv"
-    ]
+    "Ubuntu": ["install python3", "install python3-virtualenv", "install virtualenv"],
+    "CentOS": ["install epel-release", "install rh-python35-python-virtualenv"]
 }
 
 
 def command_output(cmd_str):
     print(cmd_str)
-    proc = subprocess.Popen(
-        cmd_str,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True)
+    proc = subprocess.Popen(cmd_str, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
 
     # while command runs get output
     while proc.poll() == None:
@@ -102,13 +82,11 @@ def distro():
 
 
 def isRedHatBased():
-    return get_distro()[0].startswith("Red Hat") or get_distro()[0].startswith(
-        "Fedora") or get_distro()[0].startswith("CentOS")
+    return get_distro()[0].startswith("Red Hat") or get_distro()[0].startswith("Fedora") or get_distro()[0].startswith("CentOS")
 
 
 def isInstalled(prog):
-    out = subprocess.Popen(
-        ["which", prog], stdout=subprocess.PIPE).communicate()
+    out = subprocess.Popen(["which", prog], stdout=subprocess.PIPE).communicate()
     if out[0] != '':
         return True
     return False
@@ -161,9 +139,10 @@ def gen_package_cmds(packages):
     return ret
 
 
-extra=''
+extra = ''
 if distro() == 'RHEL' or distro() == 'CentOS':
     extra = ". /opt/rh/rh-python35/enable ;"
+
 
 def venv_cmds(path):
     '''
@@ -174,23 +153,17 @@ def venv_cmds(path):
     return [
         # first command only needed for rhel and centos systems at this time
         extra + " virtualenv --python=python3 {0}".format(path),
-        extra +" {0}/bin/pip install pip --upgrade".format(path)
+        extra + " {0}/bin/pip install pip --upgrade".format(path)
     ]
-    
 
 
 def main():
     " main script logic"
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--use-pip", nargs='?', default="pip", help="Which pip to use")
+    parser.add_argument("--use-pip", nargs='?', default="pip", help="Which pip to use")
 
-    parser.add_argument(
-        "venv_path",
-        nargs='?',
-        default="env-test",
-        help="The directory to us to for the virtualenv")
+    parser.add_argument("venv_path", nargs='?', default="env-test", help="The directory to us to for the virtualenv")
 
     parser.add_argument(
         "--disable-virtualenv",
@@ -198,8 +171,7 @@ def main():
         action='store_true',
         help="Do not create virtual environment to install packages under")
 
-    parser.add_argument(
-        '-V', '--version', action='version', version='%(prog)s 1.0.0')
+    parser.add_argument('-V', '--version', action='version', version='%(prog)s 1.0.0')
 
     args = parser.parse_args()
     # print(args)
@@ -222,7 +194,7 @@ def main():
         cmds += venv_cmds(args.venv_path)
         if path_to_pip is None:
             path_to_pip = os.path.join(args.venv_path, "bin", args.use_pip)
-    
+
     cmds += [extra + "{0} install {1}".format(path_to_pip, " ".join(pip_packages))]
 
     run_cmds(cmds)

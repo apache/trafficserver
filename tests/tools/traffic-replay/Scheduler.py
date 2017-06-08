@@ -26,37 +26,38 @@ import sessionvalidation.sessionvalidation as sv
 import WorkerTask
 import time
 
-    
-def LaunchWorkers(path,nProcess,proxy,replay_type, nThread):
-    ms1=time.time()
+
+def LaunchWorkers(path, nProcess, proxy, replay_type, nThread):
+    ms1 = time.time()
     s = sv.SessionValidator(path)
     sessions = s.getSessionList()
     sessions.sort(key=lambda session: session._timestamp)
-    Processes=[]
-    Qsize = 25000 #int (1.5 * len(sessions)/(nProcess))
-    QList=[Queue(Qsize) for i in range(nProcess)]
-    print("Dropped {0} sessions for being malformed. Number of correct sessions {1}".format(len(s.getBadSessionList()),len(sessions)))
+    Processes = []
+    Qsize = 25000  #int (1.5 * len(sessions)/(nProcess))
+    QList = [Queue(Qsize) for i in range(nProcess)]
+    print("Dropped {0} sessions for being malformed. Number of correct sessions {1}".format(
+        len(s.getBadSessionList()), len(sessions)))
     print(range(nProcess))
-    OutputQ=Queue();
+    OutputQ = Queue()
     #======================================== Pre-load queues
     for session in sessions:
         #if nProcess == 1:
         #    QList[0].put(session)
-        #else:            
-        QList[random.randint(0,nProcess-1)].put(session)
+        #else:
+        QList[random.randint(0, nProcess - 1)].put(session)
         #if QList[0].qsize() > 10 :
         #    break
     #=============================================== Launch Processes
-    print("size",QList[0].qsize())
+    print("size", QList[0].qsize())
     for i in range(nProcess):
         QList[i].put('STOP')
     for i in range(nProcess):
-        p=Process(target=WorkerTask.worker, args=[QList[i],OutputQ,proxy,replay_type, nThread])
-        p.daemon=False
-        Processes.append(p);
+        p = Process(target=WorkerTask.worker, args=[QList[i], OutputQ, proxy, replay_type, nThread])
+        p.daemon = False
+        Processes.append(p)
         p.start()
-    
+
     for p in Processes:
         p.join()
-    ms2=time.time()
-    print("OK enough, it is time to exit, running time in seconds", (ms2-ms1)) 
+    ms2 = time.time()
+    print("OK enough, it is time to exit, running time in seconds", (ms2 - ms1))
