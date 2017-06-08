@@ -134,7 +134,7 @@ Http1ClientSession::free()
   this->do_io_write(nullptr, 0, nullptr);
 
   // Free the transaction resources
-  this->trans.cleanup();
+  this->trans.destroy();
 
   super::free();
   THREAD_FREE(this, http1ClientSessionAllocator, this_thread());
