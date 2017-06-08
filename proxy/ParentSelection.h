@@ -368,7 +368,7 @@ public:
   static ParentConfigParams *
   acquire()
   {
-    return (ParentConfigParams *)configProcessor.get(ParentConfig::m_id);
+    return static_cast<ParentConfigParams *>(configProcessor.get(ParentConfig::m_id));
   }
 
   static void
@@ -409,7 +409,7 @@ struct SocksServerConfig {
   static ParentConfigParams *
   acquire()
   {
-    return (ParentConfigParams *)configProcessor.get(SocksServerConfig::m_id);
+    return static_cast<ParentConfigParams *>(configProcessor.get(SocksServerConfig::m_id));
   }
   static void
   release(ParentConfigParams *params)

@@ -82,7 +82,7 @@ IpAllow::reconfigure()
 IpAllow *
 IpAllow::acquire()
 {
-  return (IpAllow *)configProcessor.get(configid);
+  return static_cast<IpAllow *>(configProcessor.get(configid));
 }
 
 void
