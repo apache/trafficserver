@@ -450,13 +450,8 @@ NetHandler::mainNetEvent(int event, Event *e)
       if (cop_list.in(vc)) {
         cop_list.remove(vc);
       }
-      if (get_ev_events(pd, x) & EVENTIO_READ) {
+      if (get_ev_events(pd, x) & (EVENTIO_READ | EVENTIO_ERROR)) {
         vc->read.triggered = 1;
-        if (get_ev_events(pd, x) & EVENTIO_ERROR) {
-          vc->read.error = 1;
-        } else {
-          vc->read.error = 0;
-        }
         if (!read_ready_list.in(vc)) {
           read_ready_list.enqueue(vc);
         } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
@@ -466,13 +461,8 @@ NetHandler::mainNetEvent(int event, Event *e)
         }
       }
       vc = epd->data.vc;
-      if (get_ev_events(pd, x) & EVENTIO_WRITE) {
+      if (get_ev_events(pd, x) & (EVENTIO_WRITE | EVENTIO_ERROR)) {
         vc->write.triggered = 1;
-        if (get_ev_events(pd, x) & EVENTIO_ERROR) {
-          vc->write.error = 1;
-        } else {
-          vc->write.error = 0;
-        }
         if (!write_ready_list.in(vc)) {
           write_ready_list.enqueue(vc);
         } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
@@ -505,7 +495,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     set_cont_flags(vc->control_flags);
     if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->read.triggered && (vc->read.enabled || (vc->read.error && vc->read.vio._cont != nullptr)))
+    else if (vc->read.enabled && vc->read.triggered)
       vc->net_read_io(this, trigger_event->ethread);
     else if (!vc->read.enabled) {
       read_ready_list.remove(vc);
@@ -522,7 +512,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     set_cont_flags(vc->control_flags);
     if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->write.triggered && (vc->write.enabled || (vc->write.error && vc->write.vio._cont != nullptr)))
+    else if (vc->write.enabled && vc->write.triggered)
       write_to_net(this, vc, trigger_event->ethread);
     else if (!vc->write.enabled) {
       write_ready_list.remove(vc);
@@ -540,7 +530,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     diags->set_override(vc->control.debug_override);
     if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->read.triggered && (vc->read.enabled || (vc->read.error && vc->read.vio._cont != nullptr)))
+    else if (vc->read.enabled && vc->read.triggered)
       vc->net_read_io(this, trigger_event->ethread);
     else if (!vc->read.enabled)
       vc->ep.modify(-EVENTIO_READ);
@@ -549,7 +539,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     diags->set_override(vc->control.debug_override);
     if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->write.triggered && (vc->write.enabled || (vc->write.error && vc->write.vio._cont != nullptr)))
+    else if (vc->write.enabled && vc->write.triggered)
       write_to_net(this, vc, trigger_event->ethread);
     else if (!vc->write.enabled)
       vc->ep.modify(-EVENTIO_WRITE);
