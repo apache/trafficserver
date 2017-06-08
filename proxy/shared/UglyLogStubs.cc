@@ -161,6 +161,12 @@ NetProcessor::main_accept(Continuation * /* cont ATS_UNUSED */, SOCKET /* fd ATS
   return nullptr;
 }
 
+void
+NetProcessor::stop_accept()
+{
+  ink_release_assert(false);
+}
+
 Action *
 UnixNetProcessor::accept_internal(Continuation * /* cont ATS_UNUSED */, int /* fd ATS_UNUSED */,
                                   AcceptOptions const & /* opt ATS_UNUSED */)

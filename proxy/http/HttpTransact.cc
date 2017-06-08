@@ -7772,6 +7772,10 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
 
+  if (s->state_machine->ua_session && s->state_machine->ua_session->get_parent()->is_draining()) {
+    HttpTransactHeaders::add_connection_close(outgoing_response);
+  }
+
   if (!s->cop_test_page && is_debug_tag_set("http_hdrs")) {
     if (base_response) {
       DUMP_HEADER("http_hdrs", base_response, s->state_machine_id, "Base Header for Building Response");

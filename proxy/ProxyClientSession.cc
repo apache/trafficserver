@@ -25,6 +25,8 @@
 #include "HttpDebugNames.h"
 #include "ProxyClientSession.h"
 
+bool http_client_session_draining = false;
+
 static int64_t next_cs_id = 0;
 
 ProxyClientSession::ProxyClientSession() : VConnection(nullptr)

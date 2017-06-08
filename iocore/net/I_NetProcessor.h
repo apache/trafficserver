@@ -152,6 +152,7 @@ public:
 
   */
   virtual Action *main_accept(Continuation *cont, SOCKET listen_socket_in, AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS);
+  virtual void stop_accept();
 
   /**
     Open a NetVConnection for connection oriented I/O. Connects

@@ -197,6 +197,14 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   return na->action_.get();
 }
 
+void
+NetProcessor::stop_accept()
+{
+  for (auto na = naVec.begin(); na != naVec.end(); ++na) {
+    (*na)->stop_accept();
+  }
+}
+
 Action *
 UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
 {

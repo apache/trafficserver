@@ -411,6 +411,19 @@ Thread Variables
    This setting specifies the number of active client connections
    for use by :option:`traffic_ctl server restart --drain`.
 
+.. ts:cv:: CONFIG proxy.config.restart.stop_listening INT 0
+   :reloadable:
+
+   This option specifies whether |TS| should close listening sockets while shutting down gracefully.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Listening sockets will be kept open.
+   ``1`` Listening sockets will be closed when |TS| starts shutting down.
+   ===== ======================================================================
+
+
 .. ts:cv:: CONFIG proxy.config.stop.shutdown_timeout INT 0
    :reloadable:
 

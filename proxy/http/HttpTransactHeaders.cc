@@ -1317,3 +1317,14 @@ HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams
     }
   }
 }
+
+void
+HttpTransactHeaders::add_connection_close(HTTPHdr *header)
+{
+  MIMEField *field = header->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+  if (!field) {
+    field = header->field_create(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+    header->field_attach(field);
+  }
+  header->field_value_set(field, HTTP_VALUE_CLOSE, HTTP_LEN_CLOSE);
+}
