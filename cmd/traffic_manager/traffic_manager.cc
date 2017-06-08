@@ -53,9 +53,6 @@
 
 #include "P_RecLocal.h"
 
-#include "bindings/bindings.h"
-#include "bindings/metrics.h"
-
 #include "metrics.h"
 
 #if TS_USE_POSIX_CAP
@@ -724,6 +721,7 @@ main(int argc, const char **argv)
 
   binding = new BindingInstance;
   metrics_binding_initialize(*binding);
+  metrics_binding_configure(*binding);
 
   int sleep_time = 0; // sleep_time given in sec
 
@@ -737,6 +735,8 @@ main(int argc, const char **argv)
 
       binding = new BindingInstance;
       metrics_binding_initialize(*binding);
+      metrics_binding_configure(*binding);
+
       binding_version = metrics_version;
     }
 
