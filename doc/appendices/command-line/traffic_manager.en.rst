@@ -57,7 +57,11 @@ Signals
 SIGHUP
   This signal causes a reconfiguration event, equivalent to running :program:`traffic_ctl config reload`.
 
+SIGINT, SIGTERM
+  These signals cause :program:`traffic_manager` to exit after also shutting down :program:`traffic_server`.
+
 See also
 ========
 
-:manpage:`traffic_ctl(8)`
+:manpage:`traffic_ctl(8)`,
+:manpage:`traffic_server(8)`

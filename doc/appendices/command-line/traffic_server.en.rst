@@ -109,11 +109,14 @@ startup. This is primarily useful for testing.
 Signals
 =======
 
-On `SIGTERM`, :program:`traffic_server` exits.
+SIGINT, SIGTERM
+  On `SIGINT` and `SIGTERM`, :program:`traffic_server` exits.
 
-On `SIGUSR1`, :program:`traffic_server` logs its current memory usage.
+SIGUSR1
+  On `SIGUSR1`, :program:`traffic_server` logs its current memory usage.
 
-On `SIGUSR2`, :program:`traffic_server` re-opens its standard error and standard out file descriptors.
+SIGUSR2
+  On `SIGUSR2`, :program:`traffic_server` re-opens its standard error and standard out file descriptors.
 
 See also
 ========
