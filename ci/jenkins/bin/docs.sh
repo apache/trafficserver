@@ -30,6 +30,10 @@ echo "Building English version"
 rm -rf docbuild/html
 ${ATS_MAKE} -e SPHINXOPTS="-D language='en'" html
 [ $? != 0 ] && exit 1
+
+# Only continue with the rsync and JA build if we're on the official docs updates.
+[ -w /home/docs ] || exit 0
+
 /usr/bin/rsync --delete -av docbuild/html/ /home/docs/en/${ATS_BRANCH}
 
 echo "Building JA version"
