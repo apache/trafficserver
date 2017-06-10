@@ -49,6 +49,8 @@ struct atscppapi::TransformationPluginState : noncopyable {
   TSIOBuffer output_buffer_;
   TSIOBufferReader output_buffer_reader_;
   int64_t bytes_written_;
+  bool paused_;
+  TSCont resume_cont_;
 
   // We can only send a single WRITE_COMPLETE even though
   // we may receive an immediate event after we've sent a
@@ -69,6 +71,8 @@ struct atscppapi::TransformationPluginState : noncopyable {
       output_buffer_(nullptr),
       output_buffer_reader_(nullptr),
       bytes_written_(0),
+      paused_(false),
+      resume_cont_(nullptr),
       input_complete_dispatched_(false)
   {
     output_buffer_        = TSIOBufferCreate();
@@ -85,6 +89,11 @@ struct atscppapi::TransformationPluginState : noncopyable {
     if (output_buffer_) {
       TSIOBufferDestroy(output_buffer_);
       output_buffer_ = nullptr;
+    }
+
+    // Cleanup pending cont
+    if (resume_cont_) {
+      TSContDataSet(resume_cont_, nullptr);
     }
   }
 };
@@ -106,6 +115,11 @@ handleTransformationPluginRead(TSCont contp, TransformationPluginState *state)
   // is actually the vio we read from.
   TSVIO write_vio = TSVConnWriteVIOGet(contp);
   if (write_vio) {
+    if (state->paused_) {
+      LOG_DEBUG("Transformation contp=%p write_vio=%p, is paused", contp, write_vio);
+      return 0;
+    }
+
     int64_t to_read = TSVIONTodoGet(write_vio);
     LOG_DEBUG("Transformation contp=%p write_vio=%p, to_read=%" PRId64, contp, write_vio, to_read);
 
@@ -242,7 +256,7 @@ handleTransformationPluginEvents(TSCont contp, TSEvent event, void *edata)
 } /* anonymous namespace */
 
 TransformationPlugin::TransformationPlugin(Transaction &transaction, TransformationPlugin::Type type)
-  : TransactionPlugin(transaction)
+  : TransactionPlugin(transaction), state_(nullptr)
 {
   state_         = new TransformationPluginState(transaction, *this, type, static_cast<TSHttpTxn>(transaction.getAtsHandle()));
   state_->vconn_ = TSTransformCreate(handleTransformationPluginEvents, state_->txn_);
@@ -257,6 +271,34 @@ TransformationPlugin::~TransformationPlugin()
   LOG_DEBUG("Destroying TransformationPlugin=%p", this);
   cleanupTransformation(state_->vconn_);
   delete state_;
+}
+
+TSCont
+TransformationPlugin::pause()
+{
+  if (state_->input_complete_dispatched_) {
+    LOG_ERROR("Can not pause transformation (transformation completed) TransformationPlugin=%p (vconn)contp=%p tshttptxn=%p", this,
+              state_->vconn_, state_->txn_);
+    return nullptr;
+  } else {
+    state_->paused_      = true;
+    state_->resume_cont_ = TSContCreate(&resumeCallback, TSContMutexGet(reinterpret_cast<TSCont>(state_->txn_)));
+    TSContDataSet(state_->resume_cont_, static_cast<void *>(state_));
+    return state_->resume_cont_;
+  }
+}
+
+int
+TransformationPlugin::resumeCallback(TSCont cont, TSEvent event, void *edata)
+{
+  auto state = static_cast<TransformationPluginState *>(TSContDataGet(cont));
+  if (state) {
+    state->paused_ = false;
+    handleTransformationPluginRead(state->vconn_, state);
+  }
+
+  TSContDestroy(cont);
+  return TS_SUCCESS;
 }
 
 size_t
