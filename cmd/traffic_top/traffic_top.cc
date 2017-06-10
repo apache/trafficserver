@@ -54,6 +54,7 @@
 #include "stats.h"
 
 #include "ts/I_Layout.h"
+#include "ts/ink_args.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
 
@@ -267,17 +268,6 @@ help(const string &host, const string &version)
   }
 }
 
-static void
-usage()
-{
-#if HAS_CURL
-  fprintf(stderr, "Usage: traffic_top [-s seconds] [URL|hostname|hostname:port]\n");
-#else
-  fprintf(stderr, "Usage: traffic_top [-s seconds]\n");
-#endif
-  exit(1);
-}
-
 //----------------------------------------------------------------------------
 void
 main_stats_page(Stats &stats)
@@ -395,45 +385,57 @@ main_stats_page(Stats &stats)
 
 //----------------------------------------------------------------------------
 int
-main(int argc, char **argv)
+main(int argc, const char **argv)
 {
+#if HAS_CURL
+  static const char USAGE[] = "Usage: traffic_top [-s seconds] [URL|hostname|hostname:port]";
+#else
+  static const char USAGE[] = "Usage: traffic_top [-s seconds]";
+#endif
+
   int sleep_time = 6000;
   bool absolute  = false;
-  int opt;
-  while ((opt = getopt(argc, argv, "s:")) != -1) {
-    switch (opt) {
-    case 's':
-      sleep_time = atoi(optarg) * 1000;
-      break;
-    default:
-      usage();
-    }
-  }
+  string url;
+
+  AppVersionInfo version;
+  version.setup(PACKAGE_NAME, "traffic_top", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+
+  const ArgumentDescription argument_descriptions[] = {
+    {"sleep", 's', "Enable debugging output", "I", &sleep_time, nullptr, nullptr},
+    HELP_ARGUMENT_DESCRIPTION(),
+    VERSION_ARGUMENT_DESCRIPTION(),
+  };
+
+  process_args(&version, argument_descriptions, countof(argument_descriptions), argv, USAGE);
 
   Layout::create();
   RecProcessInit(RECM_STAND_ALONE, nullptr /* diags */);
   LibRecordsConfigInit();
 
-  string url = "";
-#if HAS_CURL
-  if (optind >= argc) {
-#else
-  if (1) {
-#endif
-
+  switch (n_file_arguments) {
+  case 0: {
     ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
-    if (TS_ERR_OKAY != TSInit(rundir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS))) {
-#if HAS_CURL
-      fprintf(stderr, "Error: missing URL on command line or error connecting to the local manager\n");
-#else
-      fprintf(stderr, "Error: error connecting to the local manager\n");
-#endif
-      usage();
+    TSMgmtError err = TSInit(rundir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
+    if (err != TS_ERR_OKAY) {
+      fprintf(stderr, "Error: connecting to local manager: %s\n", TSGetErrorMessage(err));
+      exit(1);
     }
-  } else {
-    url = argv[optind];
+    break;
   }
+
+  case 1:
+#if HAS_CURL
+    url = file_arguments[0];
+#else
+    usage(argument_descriptions, countof(argument_descriptions), USAGE);
+#endif
+    break;
+
+  default:
+    usage(argument_descriptions, countof(argument_descriptions), USAGE);
+  }
+
   Stats stats(url);
   stats.getStats();
   const string &host = stats.getHost();
