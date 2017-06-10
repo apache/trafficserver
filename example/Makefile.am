@@ -67,6 +67,7 @@ example_Plugins += \
 	cppapi/ClientRequest.la \
 	cppapi/CustomErrorRemapPlugin.la \
 	cppapi/CustomResponse.la \
+	cppapi/DelayTransformationPlugin.la \
 	cppapi/GlobalHookPlugin.la \
 	cppapi/GzipTransformationPlugin.la \
 	cppapi/HelloWorldPlugin.la \
@@ -138,6 +139,7 @@ cppapi_ClientRedirect_la_SOURCES = cppapi/clientredirect/ClientRedirect.cc
 cppapi_ClientRequest_la_SOURCES = cppapi/clientrequest/ClientRequest.cc
 cppapi_CustomErrorRemapPlugin_la_SOURCES = cppapi/custom_error_remap_plugin/CustomErrorRemapPlugin.cc
 cppapi_CustomResponse_la_SOURCES = cppapi/customresponse/CustomResponse.cc
+cppapi_DelayTransformationPlugin_la_SOURCES = cppapi/delay_transformation_plugin/DelayTransformationPlugin.cc
 cppapi_GlobalHookPlugin_la_SOURCES = cppapi/globalhook/GlobalHookPlugin.cc
 cppapi_GzipTransformationPlugin_la_SOURCES = cppapi/gzip_transformation/GzipTransformationPlugin.cc
 cppapi_HelloWorldPlugin_la_SOURCES = cppapi/helloworld/HelloWorldPlugin.cc
@@ -162,6 +164,7 @@ cppapi_ClientRedirect_la_LIBADD = $(libatscppapi)
 cppapi_ClientRequest_la_LIBADD = $(libatscppapi)
 cppapi_CustomErrorRemapPlugin_la_LIBADD = $(libatscppapi)
 cppapi_CustomResponse_la_LIBADD = $(libatscppapi)
+cppapi_DelayTransformationPlugin_la_LIBADD = $(libatscppapi)
 cppapi_GlobalHookPlugin_la_LIBADD = $(libatscppapi)
 cppapi_GzipTransformationPlugin_la_LIBADD = $(libatscppapi)
 cppapi_HelloWorldPlugin_la_LIBADD = $(libatscppapi)
