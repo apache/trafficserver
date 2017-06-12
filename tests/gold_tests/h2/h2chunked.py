@@ -21,29 +21,31 @@ from hyper import HTTPConnection
 import hyper
 import argparse
 
+
 def getResponseString(response):
     typestr = str(type(response))
     if typestr.find('HTTP20') != -1:
         string = "HTTP/2 {0}\r\n".format(response.status)
     else:
         string = "HTTP {0}\r\n".format(response.status)
-    string+='date: '+response.headers.get('date')[0].decode('utf-8')+"\r\n"
-    string+='server: '+response.headers.get('Server')[0].decode('utf-8')+"\r\n"
+    string += 'date: ' + response.headers.get('date')[0].decode('utf-8') + "\r\n"
+    string += 'server: ' + response.headers.get('Server')[0].decode('utf-8') + "\r\n"
     return string
 
-def makerequest(port,_url):
+
+def makerequest(port, _url):
     hyper.tls._context = hyper.tls.init_context()
     hyper.tls._context.check_hostname = False
     hyper.tls._context.verify_mode = hyper.compat.ssl.CERT_NONE
 
     conn = HTTPConnection('localhost:{0}'.format(port), secure=True)
 
-    sites={'/'}
+    sites = {'/'}
     responses = []
     request_ids = []
     for site in sites:
-            request_id = conn.request('GET',url=_url)
-            request_ids.append(request_id)
+        request_id = conn.request('GET', url=_url)
+        request_ids.append(request_id)
 
     # get responses
     for req_id in request_ids:
@@ -52,17 +54,14 @@ def makerequest(port,_url):
         print(getResponseString(response))
         print(body.decode('utf-8'))
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port","-p",
-                        type=int,                        
-                        help="Port to use")
-    parser.add_argument("--url","-u",
-                    type=str,                        
-                    help="url")
-    args=parser.parse_args()
-    makerequest(args.port,args.url)
+    parser.add_argument("--port", "-p", type=int, help="Port to use")
+    parser.add_argument("--url", "-u", type=str, help="url")
+    args = parser.parse_args()
+    makerequest(args.port, args.url)
+
 
 if __name__ == '__main__':
     main()
-    

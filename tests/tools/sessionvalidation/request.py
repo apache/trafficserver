@@ -17,6 +17,7 @@
 #  limitations under the License.
 import hashlib
 
+
 class Request(object):
     ''' Request encapsulates a single request from the UA '''
 
@@ -38,8 +39,7 @@ class Request(object):
     def __repr__(self):
         #return str(self._timestamp)
         return "<Request: {{'timestamp': {0}, 'headers': {1}, 'body': {2}}}>".format(
-            str(self._timestamp), str(self._headers), str(self._body)
-        )
+            str(self._timestamp), str(self._headers), str(self._body))
 
     def __init__(self, timestamp, headers, body):
         self._timestamp = timestamp
