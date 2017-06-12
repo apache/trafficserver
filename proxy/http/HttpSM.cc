@@ -6119,10 +6119,10 @@ HttpSM::setup_100_continue_transfer()
 void
 HttpSM::setup_error_transfer()
 {
-  if (t_state.internal_msg_buffer) {
+  if (t_state.internal_msg_buffer || t_state.http_return_code == HTTP_STATUS_NO_CONTENT) {
     // Since we need to send the error message, call the API
     //   function
-    ink_assert(t_state.internal_msg_buffer_size > 0);
+    ink_assert(t_state.internal_msg_buffer_size > 0 || t_state.http_return_code == HTTP_STATUS_NO_CONTENT);
     t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
     do_api_callout();
   } else {
