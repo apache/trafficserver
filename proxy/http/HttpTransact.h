@@ -1363,7 +1363,7 @@ is_response_body_precluded(HTTPStatus status_code, int method)
 
   if (((status_code != HTTP_STATUS_OK) &&
        ((status_code == HTTP_STATUS_NOT_MODIFIED) || ((status_code < HTTP_STATUS_OK) && (status_code >= HTTP_STATUS_CONTINUE)) ||
-        (status_code == 204))) ||
+        (status_code == HTTP_STATUS_NO_CONTENT))) ||
       (method == HTTP_WKSIDX_HEAD)) {
     return true;
   } else {

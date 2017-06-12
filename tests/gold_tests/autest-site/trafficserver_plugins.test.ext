@@ -1,0 +1,44 @@
+'''
+Builds, installs, and enables an ATS plugin in the sandbox environment
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+import os
+
+def prepare_plugin(self, path, tsproc):
+    """Builds, installs, and enables an ATS plugin in the sandbox environment
+
+    The source file at the given path is copied to the sandbox directory of the
+    given traffic server process and compiled into a binary with the file
+    extensioned replaced with '.so'. An entry for this plugin is added to
+    the 'plugin.config' file."""
+
+    # Copy the source to the sandbox directory.
+    plugin_dir = tsproc.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']
+    tsproc.Setup.Copy(path, plugin_dir)
+
+    # Compile the plugin.
+    in_basename = os.path.basename(path)
+    in_path = os.path.join(plugin_dir, in_basename)
+    out_basename = os.path.splitext(in_basename)[0] + '.so'
+    out_path = os.path.join(plugin_dir, out_basename)
+    tsproc.Setup.RunCommand("tsxs -c {0} -o {1}".format(in_path, out_path))
+
+    # Add an entry to plugin.config.
+    tsproc.Disk.plugin_config.AddLine(out_basename)
+
+ExtendTest(prepare_plugin, name="prepare_plugin")
