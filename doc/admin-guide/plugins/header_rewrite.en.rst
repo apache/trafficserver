@@ -1089,3 +1089,12 @@ already set to some value, and the status code is a 2xx::
     cond %{STATUS} >199 [AND]
     cond %{STATUS} <300
     set-header Cache-Control "max-age=600, public"
+
+Add HSTS
+--------
+
+Add the HTTP Strict Transport Security (HSTS) header if it does not exist: ::
+
+    cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    cond %{HEADER:Strict-Transport-Security} =""
+    set-header Strict-Transport-Security "Strict-Transport-Security: max-age=63072000; includeSubDomains; preload"
