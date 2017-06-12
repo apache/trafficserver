@@ -7806,11 +7806,6 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
 
-  // auth-response update
-  // if (!s->state_machine->authAdapter.disabled()) {
-  //  s->state_machine->authAdapter.UpdateResponseHeaders(outgoing_response);
-  // }
-
   if (!s->cop_test_page && is_debug_tag_set("http_hdrs")) {
     if (base_response) {
       DUMP_HEADER("http_hdrs", base_response, s->state_machine_id, "Base Header for Building Response");
@@ -7995,9 +7990,15 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   s->internal_msg_buffer_size                = len;
   s->internal_msg_buffer_fast_allocator_size = -1;
 
-  s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, body_type, strlen(body_type));
-  s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE, body_language,
-                                        strlen(body_language));
+  if (!is_response_body_precluded(status_code, s->method) || len > 0) {
+    // Plugins may create response bodies despite an HTTP spec violation.
+    s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, body_type, strlen(body_type));
+    s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE, body_language,
+                                          strlen(body_language));
+  } else {
+    s->hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    s->hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE);
+  }
 
   ////////////////////////////////////////
   // log a description in the error log //
