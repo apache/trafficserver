@@ -86,6 +86,7 @@ lib/ts/test_Scalar
 lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
+iocore/net/test_UDPNet
 iocore/aio/test_AIO
 iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event

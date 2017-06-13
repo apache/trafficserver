@@ -104,6 +104,7 @@ struct EventIO {
   EventIO() { data.c = nullptr; }
 };
 
+#include "P_Net.h"
 #include "P_UnixNetProcessor.h"
 #include "P_UnixNetVConnection.h"
 #include "P_NetAccept.h"
