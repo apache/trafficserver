@@ -574,7 +574,9 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   int fd               = -1;
   UnixUDPConnection *n = nullptr;
   IpEndpoint myaddr;
-  int myaddr_len = sizeof(myaddr);
+  int myaddr_len     = sizeof(myaddr);
+  PollCont *pc       = nullptr;
+  PollDescriptor *pd = nullptr;
 
   if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
     goto Lerror;
@@ -615,6 +617,12 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   Debug("udpnet", "UDPNetProcessor::UDPBind: %p fd=%d", n, fd);
   n->setBinding(&myaddr.sa);
   n->bindToThread(cont);
+
+  pc = get_UDPPollCont(n->ethread);
+  pd = pc->pollDescriptor;
+
+  n->ethread->ep = (EventIO *)ats_malloc(sizeof(EventIO));
+  n->ethread->ep->start(pd, n, EVENTIO_READ);
 
   cont->handleEvent(NET_EVENT_DATAGRAM_OPEN, n);
   return ACTION_RESULT_DONE;
@@ -765,8 +773,8 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   msg.msg_controllen = 0;
   msg.msg_flags      = 0;
 #endif
-  msg.msg_name    = (caddr_t)&p->to;
-  msg.msg_namelen = sizeof(p->to);
+  msg.msg_name    = (caddr_t)&p->to.sa;
+  msg.msg_namelen = sizeof(p->to.sa);
   iov_len         = 0;
 
   for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
