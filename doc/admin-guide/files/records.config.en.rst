@@ -820,18 +820,19 @@ ip-resolve
 
    Set how the ``Via`` field is handled on a request to the origin server.
 
-   ===== ============================================
+   ===== ====================================================================
    Value Effect
-   ===== ============================================
+   ===== ====================================================================
    ``0`` Do not modify or set this Via header.
-   ``1`` Update the Via, with normal verbosity.
-   ``2`` Update the Via, with higher verbosity.
-   ``3`` Update the Via, with highest verbosity.
-   ===== ============================================
+   ``1`` Add the basic protocol and proxy identifier.
+   ``2`` And basic transaction codes.
+   ``3`` And detailed transaction codes.
+   ``4`` And full user agent connection :ref:`protocol tags <protocol_tags>`.
+   ===== ====================================================================
 
 .. note::
 
-   The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.request_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -845,18 +846,19 @@ ip-resolve
 
    Set how the ``Via`` field is handled on the response to the client.
 
-   ===== ============================================
+   ===== ==================================================================
    Value Effect
-   ===== ============================================
-   ``0`` Do not modify or set this via header.
-   ``1`` Update the via, with normal verbosity.
-   ``2`` Update the via, with higher verbosity.
-   ``3`` Update the via, with highest verbosity.
-   ===== ============================================
+   ===== ==================================================================
+   ``0`` Do not modify or set this Via header.
+   ``1`` Add the basic protocol and proxy identifier.
+   ``2`` And basic transaction codes.
+   ``3`` And detailed transaction codes.
+   ``4`` And full upstream connection :ref:`protocol tags <protocol_tags>`.
+   ===== ==================================================================
 
 .. note::
 
-   The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.response_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
