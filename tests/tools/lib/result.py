@@ -18,6 +18,8 @@
 #  limitations under the License.
 
 import sys
+
+
 class TermColors:
     ''' Collection of colors for printing out to terminal '''
     HEADER = '\033[95m'
@@ -29,7 +31,10 @@ class TermColors:
     UNDERLINE = '\033[4m'
     ENDC = '\033[0m'
 
-ignoredFields = {'age', 'set-cookie', 'server', 'date', 'last-modified', 'via', 'expires', 'cahe-control'} #all lower case
+
+ignoredFields = {'age', 'set-cookie', 'server', 'date', 'last-modified', 'via', 'expires', 'cahe-control'}  # all lower case
+
+
 class Result(object):
     ''' Result encapsulates the result of a single session replay '''
 
@@ -51,26 +56,28 @@ class Result(object):
             return self._received_response_body
         else:
             return ""
+
     def Compare(self, received_dict, expected_dict):
         global ignoredFields
         try:
             for key in received_dict:
-                #print(key)
+                # print(key)
                 if key.lower() in expected_dict and key.lower() not in ignoredFields:
                     #print("{0} ==? {1}".format(expected_dict[key.lower()],received_dict[key]))
-                    if received_dict[key]!=expected_dict[key.lower()]:
-                        print("{0}Difference in the field \"{1}\": \n received:\n{2}\n expected:\n{3}{4}".format(TermColors.FAIL,key,received_dict[key],expected_dict[key],TermColors.ENDC))
+                    if received_dict[key] != expected_dict[key.lower()]:
+                        print("{0}Difference in the field \"{1}\": \n received:\n{2}\n expected:\n{3}{4}".format(
+                            TermColors.FAIL, key, received_dict[key], expected_dict[key], TermColors.ENDC))
                         return False
 
         except:
-            e=sys.exc_info()
-            print("Error in comparing key ",e,key,expected_dict[key.lower()],received_dict[key])
+            e = sys.exc_info()
+            print("Error in comparing key ", e, key, expected_dict[key.lower()], received_dict[key])
         return True
-        
-    def getResultString(self, received_dict, expected_dict, colorize=False ):
+
+    def getResultString(self, received_dict, expected_dict, colorize=False):
         global ignoredFields
         ''' Return a nicely formatted result string with color if requested '''
-        if self.getResultBool() and self.Compare(received_dict,expected_dict):
+        if self.getResultBool() and self.Compare(received_dict, expected_dict):
             if colorize:
                 outstr = "{0}PASS{1}".format(
                     TermColors.OKGREEN, TermColors.ENDC)

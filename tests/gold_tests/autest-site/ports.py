@@ -81,6 +81,7 @@ def setup_port_queue(amount=1000):
                 g_ports.put(port)
             port += 1
 
+
 def get_port(obj, name):
     '''
     Get a port and set it to a variable on the object

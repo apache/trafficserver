@@ -23,30 +23,30 @@ Test.Summary = '''
 Tests that plugins may break HTTP by sending 204 respose bodies
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep","grep needs to be installed on system for this test to work"))
+Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
 
-ts=Test.MakeATSProcess("ts")
-server=Test.MakeOriginServer("server")
+ts = Test.MakeATSProcess("ts")
+server = Test.MakeOriginServer("server")
 
-CUSTOM_PLUGIN_204_HOST='www.customplugin204.test'
+CUSTOM_PLUGIN_204_HOST = 'www.customplugin204.test'
 
 ts.Disk.remap_config.AddLine(
     'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam=maps.reg @pparam=no-query-string @pparam=host'
-            .format(CUSTOM_PLUGIN_204_HOST, server.Variables.Port)
-    )
+    .format(CUSTOM_PLUGIN_204_HOST, server.Variables.Port)
+)
 ts.Disk.maps_reg.AddLine('//.*/ http://donotcare.test @status=204')
 
 Test.prepare_plugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'custom204plugin.cc'), ts)
 
-Test.Setup.Copy(os.path.join(os.pardir,os.pardir,'tools','tcp_client.py'))
+Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')
 
-tr=Test.AddTestRun("Test domain {0}".format(CUSTOM_PLUGIN_204_HOST))
+tr = Test.AddTestRun("Test domain {0}".format(CUSTOM_PLUGIN_204_HOST))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 
-tr.Processes.Default.Command="python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
     format(ts.Variables.port, 'data/{0}_get.txt'.format(CUSTOM_PLUGIN_204_HOST))
-tr.Processes.Default.TimeOut=5 # seconds
-tr.Processes.Default.ReturnCode=0
-tr.Processes.Default.Streams.stdout="gold/http-204-custom-plugin.gold"
+tr.Processes.Default.TimeOut = 5  # seconds
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/http-204-custom-plugin.gold"

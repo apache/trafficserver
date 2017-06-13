@@ -22,6 +22,7 @@ import re
 log = open('via.log', 'w')
 rxp = re.compile('(\S+)\s+(\S+)\s\((\S+)\s+\[([^]]+)\]\s\[([^]]+)\]\s*\)')
 
+
 def observe(headers):
     if 'via' in headers:
         via = headers['via']
@@ -33,5 +34,6 @@ def observe(headers):
         via = '---missing---'
     log.write("Via: {}\n".format(via))
     log.flush()
+
 
 Hooks.register(Hooks.ReadRequestHook, observe)

@@ -21,6 +21,7 @@ import argparse
 import socket
 import sys
 
+
 def tcp_client(host, port, data):
     pass
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,19 +29,21 @@ def tcp_client(host, port, data):
     s.sendall(data.encode())
     s.shutdown(socket.SHUT_WR)
     while True:
-        output = s.recv(4096) # suggested bufsize from docs.python.org
+        output = s.recv(4096)  # suggested bufsize from docs.python.org
         if len(output) <= 0:
             break
         else:
             sys.stdout.write(output.decode())
     s.close()
 
-DESCRIPTION=\
-"""A simple command line interface to send/receive bytes over TCP.
+
+DESCRIPTION =\
+    """A simple command line interface to send/receive bytes over TCP.
 
 The full contents of the given file are sent via a TCP connection to the given
 host and port. Then data is read from the connection and printed to standard
 output. Streaming is not supported."""
+
 
 def main(argv):
     parser = argparse.ArgumentParser(description=DESCRIPTION)
@@ -54,6 +57,7 @@ def main(argv):
         data = f.read()
 
     tcp_client(args.host, args.port, data)
+
 
 if __name__ == "__main__":
     main(sys.argv)

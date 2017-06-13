@@ -17,6 +17,7 @@
 #  limitations under the License.
 import hashlib
 
+
 class Request(object):
     ''' Request encapsulates a single request from the UA '''
 
@@ -36,7 +37,7 @@ class Request(object):
         return hashlib.md5(self._headers.encode()).hexdigest()
 
     def __repr__(self):
-        #return str(self._timestamp)
+        # return str(self._timestamp)
         return "<Request: {{'timestamp': {0}, 'headers': {1}, 'body': {2}}}>".format(
             str(self._timestamp), str(self._headers), str(self._body)
         )
