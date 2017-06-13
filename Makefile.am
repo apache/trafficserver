@@ -103,6 +103,9 @@ TESTS = tools/check-unused-dependencies
 rat:
 	java -jar $(top_srcdir)/ci/apache-rat-0.13-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
 
+autopep8:
+	@autopep8 -i -r $(top_srcdir)
+
 #
 # These are rules to make clang-format easy and fast to run. Run it with e.g.
 #    make -j clang-format
@@ -164,3 +167,4 @@ help:
 	@echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag'
 	@echo 'release          recreate a signed release source package and a signed git tag'
 	@echo 'tidy             run clang-tidy in fix-it mode'
+	@echo 'autopep8         run autopep8 over python files'
