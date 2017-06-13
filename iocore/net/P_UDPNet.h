@@ -31,8 +31,6 @@
 #ifndef __P_UDPNET_H_
 #define __P_UDPNET_H_
 
-extern EventType ET_UDP;
-
 #include "I_UDPNet.h"
 #include "P_UDPPacket.h"
 

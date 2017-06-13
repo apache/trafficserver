@@ -104,6 +104,7 @@ public:
 };
 
 inkcoreapi extern UDPNetProcessor &udpNet;
+extern EventType ET_UDP;
 
 #include "I_UDPPacket.h"
 #include "I_UDPConnection.h"
