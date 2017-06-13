@@ -17,15 +17,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-#SSL config
+# SSL config
 ca_certs = "/path/to/certfile"
 keyfile = "/path/to/keyfile"
 
-#Proxy config
+# Proxy config
 proxy_host = "127.0.0.1"
 proxy_ssl_port = 443
 proxy_nonssl_port = 8080
 
-#process and thread config
+# process and thread config
 nProcess = 4
 nThread = 4

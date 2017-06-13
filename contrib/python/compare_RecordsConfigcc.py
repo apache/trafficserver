@@ -43,41 +43,41 @@ ignore_keys = {
     "proxy.config.proxy_name": 1,
     "proxy.config.cluster.ethernet_interface": 1,
     "proxy.config.ssl.client.private_key.path": 1,
-    "proxy.config.net.defer_accept": 1 # Specified in RecordsConfig.cc funny
+    "proxy.config.net.defer_accept": 1  # Specified in RecordsConfig.cc funny
 }
 
 rc_cc = {}  # RecordsConfig.cc values
 rc_in = {}  # records.config.in values
-rc_doc = {} # documented values
+rc_doc = {}  # documented values
 
 # Process RecordsConfig.cc
 with open("%s/mgmt/RecordsConfig.cc" % src_dir) as fh:
-  cc_re = re.compile(r'\{RECT_(?:CONFIG|LOCAL), "([^"]+)", RECD_([A-Z]+), (.+?), ')
-  for line in fh:
-      m = cc_re.search(line)
-      if m:
-          value = m.group(3)
-          value = string.lstrip(value, '"')
-          value = string.rstrip(value, '"')
-          rc_cc[m.group(1)] = (m.group(2), value)
+    cc_re = re.compile(r'\{RECT_(?:CONFIG|LOCAL), "([^"]+)", RECD_([A-Z]+), (.+?), ')
+    for line in fh:
+        m = cc_re.search(line)
+        if m:
+            value = m.group(3)
+            value = string.lstrip(value, '"')
+            value = string.rstrip(value, '"')
+            rc_cc[m.group(1)] = (m.group(2), value)
 
 # Process records.config.default.in
 with open("%s/proxy/config/records.config.default.in" % src_dir) as fh:
-  in_re = re.compile(r'(?:CONFIG|LOCAL) (\S+)\s+(\S+)\s+(\S+)')
-  for line in fh:
-      m = in_re.match(line)
-      if m:
-          rc_in[m.group(1)] = (m.group(2), m.group(3))
+    in_re = re.compile(r'(?:CONFIG|LOCAL) (\S+)\s+(\S+)\s+(\S+)')
+    for line in fh:
+        m = in_re.match(line)
+        if m:
+            rc_in[m.group(1)] = (m.group(2), m.group(3))
 
 # Process records.comfig documentation.
 # eg. .. ts:cv:: CONFIG proxy.config.proxy_binary STRING traffic_server
 with open("%s/doc/admin-guide/files/records.config.en.rst" % src_dir) as fh:
-  doc_re = re.compile(r'ts:cv:: CONFIG (\S+)\s+(\S+)\s+(\S+)')
-  for line in fh:
-      m = doc_re.search(line)
-      if m:
-          rc_doc[m.group(1)] = (m.group(2), m.group(3))
-          rc_doc[m.group(1)] = (m.group(2), m.group(3))
+    doc_re = re.compile(r'ts:cv:: CONFIG (\S+)\s+(\S+)\s+(\S+)')
+    for line in fh:
+        m = doc_re.search(line)
+        if m:
+            rc_doc[m.group(1)] = (m.group(2), m.group(3))
+            rc_doc[m.group(1)] = (m.group(2), m.group(3))
 
 # Compare the two
 # If a value is in RecordsConfig.cc  and not records.config.default.in, it is
@@ -93,7 +93,7 @@ for key in rc_in:
         print "%s : %s -> %s" % (key, "%s %s" % rc_cc[key], "%s %s" % rc_in[key])
 
 # Search for undocumented variables ...
-missing = [ k for k in rc_cc if k not in rc_doc ]
+missing = [k for k in rc_cc if k not in rc_doc]
 if len(missing) > 0:
     print
     print "Undocumented configuration variables:"
@@ -101,7 +101,7 @@ if len(missing) > 0:
         print "\t%s %s" % (m, "%s %s" % rc_cc[m])
 
 # Search for incorrectly documented default values ...
-defaults = [ k for k in rc_cc if k in rc_doc and rc_cc[k] != rc_doc[k] ]
+defaults = [k for k in rc_cc if k in rc_doc and rc_cc[k] != rc_doc[k]]
 if len(defaults) > 0:
     print
     print "Incorrectly documented defaults:"
@@ -110,10 +110,9 @@ if len(defaults) > 0:
 
 
 # Search for stale documentation ...
-stale = [ k for k in rc_doc if k not in rc_cc ]
+stale = [k for k in rc_doc if k not in rc_cc]
 if (len(stale) > 0):
     print
     print "Stale documentation:"
     for s in sorted(stale):
-        print "\t%s" %(s)
-
+        print "\t%s" % (s)

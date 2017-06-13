@@ -23,70 +23,77 @@ print '''1..1 pipeliningDisconnect
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
 
-def callback():
-  print 'ok 1 - Did the connection close before the proxy made the second request?'
 
-  reactor.stop()
+def callback():
+    print 'ok 1 - Did the connection close before the proxy made the second request?'
+
+    reactor.stop()
+
 
 reactor.callLater(2, callback)
 
+
 class factory(http.HTTPFactory):
-  class protocol(http.HTTPChannel):
-    class requestFactory(http.Request):
-      def requestReceived(ctx, method, target, version):
+    class protocol(http.HTTPChannel):
         class requestFactory(http.Request):
-          def requestReceived(ctx, method, target, version):
+            def requestReceived(ctx, method, target, version):
+                class requestFactory(http.Request):
+                    def requestReceived(ctx, method, target, version):
 
-            ctx.client = None
-            ctx.clientproto = version
+                        ctx.client = None
+                        ctx.clientproto = version
 
-            ctx.write('pipeliningDisconnect')
-            ctx.finish()
+                        ctx.write('pipeliningDisconnect')
+                        ctx.finish()
 
-            # Open another connection
-            class factory(protocol.ClientFactory):
-              def clientConnectionFailed(ctx, connector, reason):
-                print 'not ok 1 - Did the proxy crash?  (Can\'t open another connection to it.)'
+                        # Open another connection
+                        class factory(protocol.ClientFactory):
+                            def clientConnectionFailed(ctx, connector, reason):
+                                print 'not ok 1 - Did the proxy crash?  (Can\'t open another connection to it.)'
 
-                reactor.stop()
+                                reactor.stop()
 
-              class protocol(protocol.Protocol):
-                def connectionMade(ctx):
-                  print 'ok 1 - The proxy didn\'t crash (opened another connection to it)'
+                            class protocol(protocol.Protocol):
+                                def connectionMade(ctx):
+                                    print 'ok 1 - The proxy didn\'t crash (opened another connection to it)'
 
-                  reactor.stop()
+                                    reactor.stop()
 
-            reactor.callLater(1, tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect)
+                        reactor.callLater(1, tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect)
 
-        ctx.channel.requestFactory = requestFactory
+                ctx.channel.requestFactory = requestFactory
 
-        ctx.client = None
-        ctx.clientproto = version
+                ctx.client = None
+                ctx.clientproto = version
 
-        ctx.write('pipeliningDisconnect')
-        ctx.finish()
+                ctx.write('pipeliningDisconnect')
+                ctx.finish()
+
 
 origin = tcp.Port(0, factory())
 origin.startListening()
 
 print '# Listening on {0}:{1}'.format(*origin.socket.getsockname())
 
+
 class factory(protocol.ClientFactory):
-  def clientConnectionFailed(ctx, connector, reason):
+    def clientConnectionFailed(ctx, connector, reason):
 
-    print 'Bail out!'
-    reason.printTraceback()
+        print 'Bail out!'
+        reason.printTraceback()
 
-    reactor.stop()
+        reactor.stop()
 
-  class protocol(protocol.Protocol):
-    def connectionMade(ctx):
+    class protocol(protocol.Protocol):
+        def connectionMade(ctx):
 
-      # Somehow these magic words frequently cause
-      # INKVConnInternal::do_io_close() to get called after a message
-      # is already complete
-      ctx.transport.write('GET {0}:{1}/pipeliningDisconnect0 HTTP/1.1\r\n\r\nGET {0}:{1}/pipeliningDisconnect1 HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
-      ctx.transport.loseConnection()
+            # Somehow these magic words frequently cause
+            # INKVConnInternal::do_io_close() to get called after a message
+            # is already complete
+            ctx.transport.write(
+                'GET {0}:{1}/pipeliningDisconnect0 HTTP/1.1\r\n\r\nGET {0}:{1}/pipeliningDisconnect1 HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+            ctx.transport.loseConnection()
+
 
 tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect()
 

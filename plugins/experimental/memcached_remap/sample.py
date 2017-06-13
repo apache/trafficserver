@@ -29,6 +29,5 @@ mc.set("http://127.0.0.1:80/", "http://127.0.0.1:8080");
 mc.set("http://localhost:80/", "http://localhost:8080");
 
 # Print the keys that are saved
-print "response-1 is '%s'" %(mc.get("http://127.0.0.1:80/"))
-print "response-2 is '%s'" %(mc.get("http://localhost:80/"))
-
+print "response-1 is '%s'" % (mc.get("http://127.0.0.1:80/"))
+print "response-2 is '%s'" % (mc.get("http://localhost:80/"))

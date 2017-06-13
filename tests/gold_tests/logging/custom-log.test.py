@@ -98,6 +98,6 @@ tr.Processes.Default.Command = 'curl "http://127.123.32.243:{0}" --verbose'.form
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.DelayStart=10
+tr.DelayStart = 10
 tr.Processes.Default.Command = 'echo "Delay"'
 tr.Processes.Default.ReturnCode = 0

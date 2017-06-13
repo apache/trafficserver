@@ -29,6 +29,7 @@ import urllib2
 
 log = logging.getLogger(__name__)
 
+
 class EchoServerHandler(SocketServer.BaseRequestHandler):
     """
     A subclass of RequestHandler which will return all data received back
@@ -52,10 +53,11 @@ class EchoServerHandler(SocketServer.BaseRequestHandler):
                     'Content-Type: text/html; charset=UTF-8\r\n'
                     'Connection: keep-alive\r\n'
                     '\r\n{data_string}'.format(
-                        data_length = len(cookie),
-                        data_string = cookie
+                        data_length=len(cookie),
+                        data_string=cookie
                     ))
             self.request.sendall(resp)
+
 
 class TestHeaderRewrite(helpers.EnvironmentCase):
     '''
@@ -71,7 +73,7 @@ class TestHeaderRewrite(helpers.EnvironmentCase):
         cls.socket_server.ready.wait()
 
         cls.configs['remap.config'].add_line(
-            'map / http://127.0.0.1:%d' %(cls.socket_server.port)
+            'map / http://127.0.0.1:%d' % (cls.socket_server.port)
         )
 
         # setup the plugin
@@ -79,18 +81,18 @@ class TestHeaderRewrite(helpers.EnvironmentCase):
         cls.test_config_path = helpers.tests_file_path(cls.config_file)
 
         cls.configs['plugin.config'].add_line('%s/header_rewrite.so %s' % (
-          cls.environment.layout.plugindir,
-          cls.test_config_path
+            cls.environment.layout.plugindir,
+            cls.test_config_path
         ))
 
     def test_cookie_rewrite(self):
 
         cookie_test_add_dict = {
-          '' : 'testkey=testaddvalue',
-          'testkey=somevalue' : 'testkey=somevalue',
-          'otherkey=testvalue' : 'otherkey=testvalue;testkey=testaddvalue',
-          'testkey = "other=value"; a = a' : 'testkey = "other=value"; a = a',
-          'testkeyx===' : 'testkeyx===;testkey=testaddvalue'
+            '': 'testkey=testaddvalue',
+            'testkey=somevalue': 'testkey=somevalue',
+            'otherkey=testvalue': 'otherkey=testvalue;testkey=testaddvalue',
+            'testkey = "other=value"; a = a': 'testkey = "other=value"; a = a',
+            'testkeyx===': 'testkeyx===;testkey=testaddvalue'
         }
         for key in cookie_test_add_dict:
             opener = urllib2.build_opener()
@@ -100,12 +102,12 @@ class TestHeaderRewrite(helpers.EnvironmentCase):
             self.assertEqual(resp, cookie_test_add_dict[key])
 
         cookie_test_rm_dict = {
-          '' : '',
-          '  testkey=somevalue' : '',
-          'otherkey=testvalue' : 'otherkey=testvalue',
-          'testkey = "other=value" ; a = a' : ' a = a',
-          'otherkey=othervalue= ; testkey===' : 'otherkey=othervalue= ',
-          'firstkey ="firstvalue" ; testkey = =; secondkey=\'\'' : 'firstkey ="firstvalue" ;  secondkey=\'\''
+            '': '',
+            '  testkey=somevalue': '',
+            'otherkey=testvalue': 'otherkey=testvalue',
+            'testkey = "other=value" ; a = a': ' a = a',
+            'otherkey=othervalue= ; testkey===': 'otherkey=othervalue= ',
+            'firstkey ="firstvalue" ; testkey = =; secondkey=\'\'': 'firstkey ="firstvalue" ;  secondkey=\'\''
         }
         for key in cookie_test_rm_dict:
             opener = urllib2.build_opener()
@@ -115,12 +117,12 @@ class TestHeaderRewrite(helpers.EnvironmentCase):
             self.assertEqual(resp, cookie_test_rm_dict[key])
 
         cookie_test_set_dict = {
-          '' : 'testkey=testsetvalue',
-          'testkey=somevalue' : 'testkey=testsetvalue',
-          'otherkey=testvalue' : 'otherkey=testvalue;testkey=testsetvalue',
-          'testkey = "other=value"; a = a' : 'testkey = testsetvalue; a = a',
-          'testkeyx===' : 'testkeyx===;testkey=testsetvalue',
-          'firstkey ="firstvalue" ; testkey = =; secondkey=\'\'' : 'firstkey ="firstvalue" ; testkey = testsetvalue; secondkey=\'\''
+            '': 'testkey=testsetvalue',
+            'testkey=somevalue': 'testkey=testsetvalue',
+            'otherkey=testvalue': 'otherkey=testvalue;testkey=testsetvalue',
+            'testkey = "other=value"; a = a': 'testkey = testsetvalue; a = a',
+            'testkeyx===': 'testkeyx===;testkey=testsetvalue',
+            'firstkey ="firstvalue" ; testkey = =; secondkey=\'\'': 'firstkey ="firstvalue" ; testkey = testsetvalue; secondkey=\'\''
         }
         for key in cookie_test_set_dict:
             opener = urllib2.build_opener()

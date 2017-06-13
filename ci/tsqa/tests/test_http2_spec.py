@@ -58,7 +58,7 @@ class TestH2Spec(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
         # get path to h2spec
         cls.h2spec = which('h2spec')
         if cls.h2spec is None:
-          raise helpers.unittest.SkipTest('Cannot find h2spec. skipping test.')
+            raise helpers.unittest.SkipTest('Cannot find h2spec. skipping test.')
 
         # get HTTP/2 server ports
         cls.http2_port = tsqa.utils.bind_unused_port()[1]
@@ -85,7 +85,7 @@ class TestH2Spec(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
         '''
         args = [self.h2spec, '-h', 'localhost', '-p', str(self.http2_port), '-t', '-k']
         if section is not None:
-          args.extend(['-s', section])
+            args.extend(['-s', section])
 
         log.info('full args = {0}'.format(args))
         p = subprocess.Popen(
