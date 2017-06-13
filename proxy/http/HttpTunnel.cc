@@ -589,8 +589,8 @@ HttpTunnel::kill_tunnel()
     ink_assert(producer.alive == false);
   }
   active = false;
-  this->deallocate_buffers();
   this->deallocate_redirect_postdata_buffers();
+  this->deallocate_buffers();
   this->reset();
 }
 
@@ -630,6 +630,9 @@ HttpTunnel::deallocate_buffers()
   for (auto &producer : producers) {
     if (producer.read_buffer != nullptr) {
       ink_assert(producer.vc != nullptr);
+      if (postbuf && postbuf->ua_buffer_reader && postbuf->ua_buffer_reader->mbuf == producer.read_buffer) {
+        postbuf->ua_buffer_reader = nullptr;
+      }
       free_MIOBuffer(producer.read_buffer);
       producer.read_buffer  = nullptr;
       producer.buffer_start = nullptr;
@@ -1758,6 +1761,12 @@ HttpTunnel::deallocate_redirect_postdata_buffers()
       postbuf->postdata_copy_buffer       = nullptr;
       postbuf->postdata_copy_buffer_start = nullptr; // deallocated by the buffer
     }
+
+    if (postbuf->ua_buffer_reader != nullptr) {
+      postbuf->ua_buffer_reader->mbuf->dealloc_reader(postbuf->ua_buffer_reader);
+      postbuf->ua_buffer_reader = nullptr;
+    }
+
     delete postbuf;
     postbuf = nullptr;
   }
