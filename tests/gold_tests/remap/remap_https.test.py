@@ -22,41 +22,42 @@ Test a basic remap of a http connection
 '''
 # need Curl
 Test.SkipUnless(
-    Condition.HasProgram("curl","Curl need to be installed on system for this test to work")
-    )
-Test.ContinueOnFail=True
+    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
+)
+Test.ContinueOnFail = True
 # Define default ATS
-ts=Test.MakeATSProcess("ts",select_ports=False)
-server=Test.MakeOriginServer("server")
+ts = Test.MakeATSProcess("ts", select_ports=False)
+server = Test.MakeOriginServer("server")
 
 #**testname is required**
 testName = ""
-request_header={"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-#desired response form the origin server
-response_header={"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+# desired response form the origin server
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-#add ssl materials like key, certificates for the server
+# add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
 ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'lm|ssl',
-        'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir), 
-        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.number.threads': 0,
-        'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port,ts.Variables.ssl_port),  # enable ssl port
-        'proxy.config.ssl.client.verify.server':  0,
-        'proxy.config.ssl.server.cipher_suite' : 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
-    })
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'lm|ssl',
+    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    'proxy.config.ssl.number.threads': 0,
+    # enable ssl port
+    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
+    'proxy.config.ssl.client.verify.server':  0,
+    'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+})
 
 ts.Disk.remap_config.AddLine(
     'map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 ts.Disk.remap_config.AddLine(
-    'map https://www.example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port,ts.Variables.ssl_port)
+    'map https://www.example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
 )
 
 
@@ -65,48 +66,51 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 # call localhost straight
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='curl --http1.1 -k https://127.0.0.1:{0} --verbose'.format(ts.Variables.ssl_port)
-tr.Processes.Default.ReturnCode=0
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} --verbose'.format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
 
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
 # Delay on readyness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
-tr.Processes.Default.Streams.stderr="gold/remap-hitATS-404.gold"
-tr.StillRunningAfter=server
-tr.StillRunningAfter=ts
+tr.Processes.Default.Streams.stderr = "gold/remap-hitATS-404.gold"
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
 
 
 # www.example.com host
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com" --verbose'.format(ts.Variables.ssl_port)
-tr.Processes.Default.ReturnCode=0
-tr.Processes.Default.Streams.stderr="gold/remap-https-200.gold"
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com" --verbose'.format(
+    ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
 
 
 # www.example.com:80 host
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:443" --verbose'.format(ts.Variables.ssl_port)
-tr.Processes.Default.ReturnCode=0
-tr.Processes.Default.Streams.stderr="gold/remap-https-200.gold"
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:443" --verbose'.format(
+    ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
 
 # www.example.com:8080 host
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:4443" --verbose'.format(ts.Variables.ssl_port)
-tr.Processes.Default.ReturnCode=0
-tr.Processes.Default.Streams.stderr="gold/remap-https-200.gold"
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:4443" --verbose'.format(
+    ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
 
 # no rule for this
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.test.com" --verbose'.format(ts.Variables.ssl_port)
-tr.Processes.Default.ReturnCode=0
-tr.Processes.Default.Streams.stderr="gold/remap-hitATS-404.gold"
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.test.com" --verbose'.format(
+    ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-hitATS-404.gold"
 
 # bad port
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:1234" --verbose'.format(ts.Variables.ssl_port)
-tr.Processes.Default.ReturnCode=0
-tr.Processes.Default.Streams.stderr="gold/remap-hitATS-404.gold"
-
-    
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:1234" --verbose'.format(
+    ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-hitATS-404.gold"

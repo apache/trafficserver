@@ -47,6 +47,7 @@ def kill_dns(dns_server):
 class StubDNSResolver(object):
     '''Resolver to serve defined responses from `response_dict` or return SOA
     '''
+
     def __init__(self, responses):
         self.responses = responses
         self.resp_headers = {}
@@ -270,7 +271,7 @@ class TestHostDBHostsFile(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
 class TestHostDB(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
     @classmethod
     def setUpEnv(cls, env):
-        cls.dns_sock = socket.socket (socket.AF_INET, socket.SOCK_DGRAM)
+        cls.dns_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         cls.dns_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         cls.dns_sock.bind(('', 0))  # bind to all interfaces on an ephemeral port
         dns_port = cls.dns_sock.getsockname()[1]
@@ -349,7 +350,6 @@ class TestHostDB(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
 
         self.assertEqual(len(self._hostdb_entries()['www.huge.com']['rr_records']), NUM_RECORDS)
 
-
     def test_basic(self):
         '''
         Test basic fnctionality of resolver
@@ -401,7 +401,7 @@ class TestHostDB(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
             # TODO: Fix this!
             # for whatever reason the failed DNS response is taking ~3.5s to timeout
             # even though the hostdb.lookup_timeout is set to 1 (meaning it should be ~1s)
-            #print end - end_working
+            # print end - end_working
             #self.assertTrue(end - start >= 2)
 
 
@@ -441,10 +441,9 @@ class TestHostDBSRV(helpers.EnvironmentCase):
                 ret['http'] = dst
         return ret
 
-
     @classmethod
     def setUpEnv(cls, env):
-        cls.dns_sock = socket.socket (socket.AF_INET, socket.SOCK_DGRAM)
+        cls.dns_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         cls.dns_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         cls.dns_sock.bind(('', 0))  # bind to all interfaces on an ephemeral port
         dns_port = cls.dns_sock.getsockname()[1]
@@ -494,7 +493,7 @@ class TestHostDBSRV(helpers.EnvironmentCase):
                 ss_dns_results.append(dnslib.server.RR(
                     name,
                     dnslib.dns.QTYPE.SRV,
-                    rdata = dnslib.dns.SRV(
+                    rdata=dnslib.dns.SRV(
                         priority=10,
                         weight=10,
                         port=ss.port,
@@ -574,7 +573,7 @@ class TestHostDBSRV(helpers.EnvironmentCase):
         NUM_REQUESTS = 10
         orig_responses = self.responses['_http._tcp.www.foo.com.']
         try:
-            self.responses['_http._tcp.www.foo.com.'][0].rdata.priority=1
+            self.responses['_http._tcp.www.foo.com.'][0].rdata.priority = 1
 
             request_distribution = {}
             for x in xrange(0, NUM_REQUESTS):
@@ -609,7 +608,7 @@ class TestHostDBSRV(helpers.EnvironmentCase):
         NUM_REQUESTS = 100
         orig_responses = self.responses['_http._tcp.www.foo.com.']
         try:
-            self.responses['_http._tcp.www.foo.com.'][0].rdata.weight=100
+            self.responses['_http._tcp.www.foo.com.'][0].rdata.weight = 100
 
             request_distribution = {}
             for x in xrange(0, NUM_REQUESTS):

@@ -94,11 +94,15 @@ class TestKeepAlive_Origin_Max_connections(helpers.EnvironmentCase):
         with open(noqueue_path, 'w') as fh:
             fh.write('CONFIG proxy.config.http.origin_max_connections_queue INT 0')
 
-        cls.configs['remap.config'].add_line('map /other/queue/ http://127.0.0.1:{0} @plugin=conf_remap.so @pparam={1}'.format(cls.socket_server_port2, queue_path))
-        cls.configs['remap.config'].add_line('map /other/noqueue/ http://127.0.0.1:{0} @plugin=conf_remap.so @pparam={1}'.format(cls.socket_server_port2, noqueue_path))
+        cls.configs['remap.config'].add_line(
+            'map /other/queue/ http://127.0.0.1:{0} @plugin=conf_remap.so @pparam={1}'.format(cls.socket_server_port2, queue_path))
+        cls.configs['remap.config'].add_line(
+            'map /other/noqueue/ http://127.0.0.1:{0} @plugin=conf_remap.so @pparam={1}'.format(cls.socket_server_port2, noqueue_path))
         cls.configs['remap.config'].add_line('map /other/ http://127.0.0.1:{0}'.format(cls.socket_server_port2))
-        cls.configs['remap.config'].add_line('map /queue/ http://127.0.0.1:{0} @plugin=conf_remap.so @pparam={1}'.format(cls.socket_server_port, queue_path))
-        cls.configs['remap.config'].add_line('map /noqueue/ http://127.0.0.1:{0} @plugin=conf_remap.so @pparam={1}'.format(cls.socket_server_port, noqueue_path))
+        cls.configs['remap.config'].add_line(
+            'map /queue/ http://127.0.0.1:{0} @plugin=conf_remap.so @pparam={1}'.format(cls.socket_server_port, queue_path))
+        cls.configs['remap.config'].add_line(
+            'map /noqueue/ http://127.0.0.1:{0} @plugin=conf_remap.so @pparam={1}'.format(cls.socket_server_port, noqueue_path))
         cls.configs['remap.config'].add_line('map / http://127.0.0.1:{0}'.format(cls.socket_server_port))
 
         cls.configs['records.config']['CONFIG'].update({
@@ -138,7 +142,6 @@ class TestKeepAlive_Origin_Max_connections(helpers.EnvironmentCase):
                 results2.append(e)
 
         return results, results2
-
 
     # TODO: enable after TS-4340 is merged
     # and re-enable `other` for the remaining queueing tests

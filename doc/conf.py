@@ -27,7 +27,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import sys
+import os
 from sphinx import version_info
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -47,19 +48,19 @@ from manpages import man_pages
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-  'sphinx.ext.graphviz',
-  'sphinx.ext.intersphinx',
-  'sphinx.ext.autodoc',
-  'sphinx.ext.todo',
-  'sphinx.ext.coverage',
-  'sphinx.ext.viewcode',
-  'traffic-server',
+    'sphinx.ext.graphviz',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
+    'sphinx.ext.viewcode',
+    'traffic-server',
 ]
 
-if version_info >= (1,4) :
-  extensions.append('sphinx.ext.imgmath')
-else :
-  extensions.append('sphinx.ext.pngmath')
+if version_info >= (1, 4):
+    extensions.append('sphinx.ext.imgmath')
+else:
+    extensions.append('sphinx.ext.pngmath')
 
 # XXX Disabling docxygen for now, since it make RTD documentation builds time
 # out, eg. https://readthedocs.org/projects/trafficserver/builds/3525976/
@@ -107,31 +108,31 @@ version = '.'.join(release.split('.', 2)[:2])
 locale_dirs = ['locale/']
 gettext_compact = False
 
-## HACK for Read-the-Docs
-##  Generate .mo files just in time
+# HACK for Read-the-Docs
+# Generate .mo files just in time
 if os.environ.get('READTHEDOCS') == 'True':
-  import polib
-  print "Generating .mo files",
-  for locale_dir in locale_dirs:
-    for path, dummy, filenames in os.walk(locale_dir):
-      for filename in filenames:
-        po_file = os.path.join(path, filename)
-        base, ext = os.path.splitext(po_file)
-        if ext == ".po":
-          mo_file = base + ".mo"
-          po = polib.pofile(po_file)
-          po.save_as_mofile(fpath=mo_file)
-  print "done"
+    import polib
+    print "Generating .mo files",
+    for locale_dir in locale_dirs:
+        for path, dummy, filenames in os.walk(locale_dir):
+            for filename in filenames:
+                po_file = os.path.join(path, filename)
+                base, ext = os.path.splitext(po_file)
+                if ext == ".po":
+                    mo_file = base + ".mo"
+                    po = polib.pofile(po_file)
+                    po.save_as_mofile(fpath=mo_file)
+    print "done"
 else:
-  # On RedHat-based distributions, install the python-sphinx_rtd_theme package
-  # to get an end result tht looks more like readthedoc.org.
-  try:
-    import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-  except:
-    pass
-## End of HACK
+    # On RedHat-based distributions, install the python-sphinx_rtd_theme package
+    # to get an end result tht looks more like readthedoc.org.
+    try:
+        import sphinx_rtd_theme
+        html_theme = 'sphinx_rtd_theme'
+        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    except:
+        pass
+# End of HACK
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -163,7 +164,7 @@ pygments_style = 'sphinx'
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
-nitpicky=1
+nitpicky = 1
 
 # Autolink issue references.
 # See Customizing the Parser in the docutils.parsers.rst module.
@@ -181,44 +182,47 @@ from docutils.utils import unescape
 
 # states.Inliner isn't a new-style class, so super() isn't an option.
 BaseInliner = states.Inliner
+
+
 class Inliner(states.Inliner):
-  def init_customizations(self, settings):
-    self.__class__ = BaseInliner
-    BaseInliner.init_customizations(self, settings)
-    self.__class__ = Inliner
+    def init_customizations(self, settings):
+        self.__class__ = BaseInliner
+        BaseInliner.init_customizations(self, settings)
+        self.__class__ = Inliner
 
-    # Copied from states.Inliner.init_customizations().
-    # In Docutils 0.13 these are locals.
-    if not hasattr(self, 'start_string_prefix'):
-      self.start_string_prefix = (u'(^|(?<=\\s|[%s%s]))' %
-                                  (punctuation_chars.openers,
-                                   punctuation_chars.delimiters))
-    if not hasattr(self, 'end_string_suffix'):
-      self.end_string_suffix = (u'($|(?=\\s|[\x00%s%s%s]))' %
-                                (punctuation_chars.closing_delimiters,
-                                 punctuation_chars.delimiters,
-                                 punctuation_chars.closers))
+        # Copied from states.Inliner.init_customizations().
+        # In Docutils 0.13 these are locals.
+        if not hasattr(self, 'start_string_prefix'):
+            self.start_string_prefix = (u'(^|(?<=\\s|[%s%s]))' %
+                                        (punctuation_chars.openers,
+                                         punctuation_chars.delimiters))
+        if not hasattr(self, 'end_string_suffix'):
+            self.end_string_suffix = (u'($|(?=\\s|[\x00%s%s%s]))' %
+                                      (punctuation_chars.closing_delimiters,
+                                       punctuation_chars.delimiters,
+                                       punctuation_chars.closers))
 
-    issue = re.compile(
-      ur'''
+        issue = re.compile(
+            ur'''
       {start_string_prefix}
       TS-\d+
       {end_string_suffix}'''.format(
-        start_string_prefix=self.start_string_prefix,
-        end_string_suffix=self.end_string_suffix),
-      re.VERBOSE | re.UNICODE)
+                start_string_prefix=self.start_string_prefix,
+                end_string_suffix=self.end_string_suffix),
+            re.VERBOSE | re.UNICODE)
 
-    self.implicit_dispatch.append((issue, self.issue_reference))
+        self.implicit_dispatch.append((issue, self.issue_reference))
 
-  def issue_reference(self, match, lineno):
-    text = match.group(0)
+    def issue_reference(self, match, lineno):
+        text = match.group(0)
 
-    rawsource = unescape(text, True)
-    text = unescape(text, False)
+        rawsource = unescape(text, True)
+        text = unescape(text, False)
 
-    refuri = 'https://issues.apache.org/jira/browse/' + text
+        refuri = 'https://issues.apache.org/jira/browse/' + text
 
-    return [nodes.reference(rawsource, text, refuri=refuri)]
+        return [nodes.reference(rawsource, text, refuri=refuri)]
+
 
 states.Inliner = Inliner
 
@@ -260,18 +264,18 @@ html_static_path = ['static']
 # Include a stylesheet that overrides default table styling, to provide
 # content wrapping.
 html_context = {
-  'css_files': [
-    '_static/override.css'
-  ]
+    'css_files': [
+        '_static/override.css'
+    ]
 }
 if os.environ.get('READTHEDOCS', None) == 'True':
-  html_context = {
-    'css_files': [
-      'https://media.readthedocs.org/css/sphinx_rtd_theme.css',
-      'https://media.readthedocs.org/css/readthedocs-doc-embed.css',
-      '_static/override.css'
-    ]
-  }
+    html_context = {
+        'css_files': [
+            'https://media.readthedocs.org/css/sphinx_rtd_theme.css',
+            'https://media.readthedocs.org/css/readthedocs-doc-embed.css',
+            '_static/override.css'
+        ]
+    }
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -320,21 +324,21 @@ htmlhelp_basename = 'ApacheTrafficServerdoc'
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
 
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
 
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # Additional stuff for the LaTeX preamble.
+    #'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'ApacheTrafficServer.tex', u'Apache Traffic Server Documentation',
-   u'dev@trafficserver.apache.org', 'manual'),
+    ('index', 'ApacheTrafficServer.tex', u'Apache Traffic Server Documentation',
+     u'dev@trafficserver.apache.org', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -376,41 +380,47 @@ from sphinx.writers import manpage
 # that Sphinx supports
 
 BaseWriter = manpage.ManualPageWriter
+
+
 class ManualPageWriter(BaseWriter):
-  def translate(self):
-    transform = frontmatter.DocTitle(self.document)
+    def translate(self):
+        transform = frontmatter.DocTitle(self.document)
 
-    section, index = transform.candidate_index(self.document)
-    if index:
+        section, index = transform.candidate_index(self.document)
+        if index:
 
-      # A sentence after the title is the manual page description
-      if len(section) > 1 and isinstance(section[1], nodes.paragraph):
+            # A sentence after the title is the manual page description
+            if len(section) > 1 and isinstance(section[1], nodes.paragraph):
 
-        description = section.pop(1).astext()
-        description = description[:1].lower() + description[1:]
-        description = description.rstrip('.')
+                description = section.pop(1).astext()
+                description = description[:1].lower() + description[1:]
+                description = description.rstrip('.')
 
-        self.document.settings.subtitle = description
+                self.document.settings.subtitle = description
 
-      # Instead of section_level = -1, use the standard Docutils
-      # DocTitle transform to hide the top level title
-      transform.promote_title(self.document)
+            # Instead of section_level = -1, use the standard Docutils
+            # DocTitle transform to hide the top level title
+            transform.promote_title(self.document)
 
-    # The title is the manual page name
-    transform.set_metadata()
+        # The title is the manual page name
+        transform.set_metadata()
 
-    BaseWriter.translate(self)
+        BaseWriter.translate(self)
+
 
 manpage.ManualPageWriter = ManualPageWriter
 
 BaseTranslator = manpage.ManualPageTranslator
-class ManualPageTranslator(BaseTranslator):
-  def __init__(self, builder, *args, **kwds):
-    BaseTranslator.__init__(self, builder, *args, **kwds)
 
-    # Instead of section_level = -1, use the standard Docutils
-    # DocTitle transform to hide the top level title
-    self.section_level = 0
+
+class ManualPageTranslator(BaseTranslator):
+    def __init__(self, builder, *args, **kwds):
+        BaseTranslator.__init__(self, builder, *args, **kwds)
+
+        # Instead of section_level = -1, use the standard Docutils
+        # DocTitle transform to hide the top level title
+        self.section_level = 0
+
 
 manpage.ManualPageTranslator = ManualPageTranslator
 
@@ -420,9 +430,9 @@ manpage.ManualPageTranslator = ManualPageTranslator
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'ApacheTrafficServer', u'Apache Traffic Server Documentation',
-   u'dev@trafficserver.apache.org', 'ApacheTrafficServer', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'ApacheTrafficServer', u'Apache Traffic Server Documentation',
+     u'dev@trafficserver.apache.org', 'ApacheTrafficServer', 'One line description of project.',
+     'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.

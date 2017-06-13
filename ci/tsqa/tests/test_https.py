@@ -231,7 +231,7 @@ class TestMix(helpers.EnvironmentCase, CertSelectionMixin):
     def setUpEnv(cls, env):
         # Temporarily skipping TestMix until we can figure out how to specify underlying open ssl versions
         # The behaviour of the intermediate cert chains depends on openssl version
-        raise helpers.unittest.SkipTest('Skip TestMix until we figure out openssl version tracking');
+        raise helpers.unittest.SkipTest('Skip TestMix until we figure out openssl version tracking')
         # add an SSL port to ATS
         cls.ssl_port = tsqa.utils.bind_unused_port()[1]
         cls.configs['records.config']['CONFIG']['proxy.config.http.server_ports'] += ' {0}:ssl'.format(cls.ssl_port)
@@ -320,7 +320,7 @@ class TestConfigFileGroup(helpers.EnvironmentCase, CertSelectionMixin):
         cert = self._get_cert(addr, ciphers=CIPHER_MAP['rsa'])
         self.assertEqual(cert.get_subject().commonName.decode(), 'www.test.com')
         with self.assertRaises(Exception):
-          self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
+            self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
         time.sleep(5)
         os.system('cp %s %s' % (helpers.tests_file_path('ec_keys/www.test.com.pem'), helpers.tests_file_path('www.unknown.com.pem')))
         log.info('cp %s %s' % (helpers.tests_file_path('ec_keys/www.test.com.pem'), helpers.tests_file_path('www.unknown.com.pem')))
@@ -329,17 +329,17 @@ class TestConfigFileGroup(helpers.EnvironmentCase, CertSelectionMixin):
         # waiting for the reconfiguration completed
         sec = 0
         while True:
-          time.sleep(5)
-          sec += 5
-          log.info("reloading: %d seconds" % (sec))
-          self.assertLess(sec, 30)
-          try:
-            self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
-            break
-          except:
-            continue
+            time.sleep(5)
+            sec += 5
+            log.info("reloading: %d seconds" % (sec))
+            self.assertLess(sec, 30)
+            try:
+                self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
+                break
+            except:
+                continue
         cert = self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
         self.assertEqual(cert.get_subject().commonName.decode(), 'www.test.com')
         with self.assertRaises(Exception):
-          self._get_cert(addr, ciphers=CIPHER_MAP['rsa'])
-        os.system('rm %s' %(helpers.tests_file_path('www.unknown.com.pem')))
+            self._get_cert(addr, ciphers=CIPHER_MAP['rsa'])
+        os.system('rm %s' % (helpers.tests_file_path('www.unknown.com.pem')))

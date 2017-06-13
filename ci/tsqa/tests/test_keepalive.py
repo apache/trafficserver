@@ -63,6 +63,7 @@ class KeepAliveInMixin(object):
 
        TODO: Allow protocol to be specified for ssl traffic
     """
+
     def _get_socket(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(('127.0.0.1', int(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])))
@@ -80,7 +81,8 @@ class KeepAliveInMixin(object):
         if headers is None:
             headers = {}
         with requests.Session() as s:
-            url = '{0}://127.0.0.1:{1}/'.format(protocol, int(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
+            url = '{0}://127.0.0.1:{1}/'.format(protocol,
+                                                int(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
             conn_id = None
             for x in xrange(1, 10):
                 ret = s.get(url, headers=headers)

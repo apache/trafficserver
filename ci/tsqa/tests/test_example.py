@@ -74,7 +74,8 @@ class TestNoOp(helpers.EnvironmentCase):
         you only need to excercise the code that you intend to test
         '''
         # for example, you could send a request to ATS and check the response
-        ret = requests.get('http://127.0.0.1:{0}/'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
+        ret = requests.get(
+            'http://127.0.0.1:{0}/'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
 
         self.assertEqual(ret.status_code, 404)
         self.assertIn('ATS', ret.headers['server'])
@@ -82,13 +83,15 @@ class TestNoOp(helpers.EnvironmentCase):
 
 class TestConfigureFlags(helpers.EnvironmentCase):
     feature_requirements = {'TS_HAS_WCCP': 0}
+
     def test_wccp(self):
         self.assertTrue(True)
 
 
 class TestBootstrap(helpers.EnvironmentCase):
     def test_default_404(self):
-        ret = requests.get('http://127.0.0.1:{0}/'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
+        ret = requests.get(
+            'http://127.0.0.1:{0}/'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
 
         self.assertEqual(ret.status_code, 404)
         self.assertIn('ATS', ret.headers['server'])
@@ -129,7 +132,8 @@ class TestServerIntercept(helpers.EnvironmentCase, tsqa.test_cases.DynamicHTTPEn
 
     def test_basic_intercept(self):
         for _ in xrange(0, 10):
-            ret = requests.get('http://127.0.0.1:{0}/'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
+            ret = requests.get(
+                'http://127.0.0.1:{0}/'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
 
             self.assertEqual(ret.status_code, 200)
 
@@ -151,7 +155,8 @@ class TestLogs(helpers.EnvironmentCase):
     def test_logs_exist(self):
         # send some requests
         for x in xrange(0, 10):
-            ret = requests.get('http://127.0.0.1:{0}/'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
+            ret = requests.get(
+                'http://127.0.0.1:{0}/'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
 
             self.assertEqual(ret.status_code, 404)
             self.assertIn('ATS', ret.headers['server'])

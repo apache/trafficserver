@@ -22,107 +22,114 @@ print '''1..2 location
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
 
-def callback():
-  print 'not ok 1 - Why didn\'t the test finish yet?'
 
-  reactor.stop()
+def callback():
+    print 'not ok 1 - Why didn\'t the test finish yet?'
+
+    reactor.stop()
+
 
 reactor.callLater(1, callback)
 
+
 class factory(http.HTTPFactory):
-  class protocol(http.HTTPChannel):
-    class requestFactory(http.Request):
-      def requestReceived(ctx, method, target, version):
+    class protocol(http.HTTPChannel):
+        class requestFactory(http.Request):
+            def requestReceived(ctx, method, target, version):
 
-        ctx.client = None
-        ctx.clientproto = version
+                ctx.client = None
+                ctx.clientproto = version
 
-        if target == '/location':
+                if target == '/location':
 
-          # Satisfy every case of
-          # proxy.config.http.cache.required_headers
-          ctx.setHeader('Cache-Control', 'max-age=1')
+                    # Satisfy every case of
+                    # proxy.config.http.cache.required_headers
+                    ctx.setHeader('Cache-Control', 'max-age=1')
 
-          ctx.write('location')
-          ctx.finish()
+                    ctx.write('location')
+                    ctx.finish()
 
-        else:
+                else:
 
-          ctx.setHeader('Digest', 'SHA-256=5urqGOiF4QeIKbVt80iWvlq1FDno8LoAyxYkssVywQ4=')
-          ctx.setHeader('Location', 'http://example.com')
-          ctx.finish()
+                    ctx.setHeader('Digest', 'SHA-256=5urqGOiF4QeIKbVt80iWvlq1FDno8LoAyxYkssVywQ4=')
+                    ctx.setHeader('Location', 'http://example.com')
+                    ctx.finish()
+
 
 origin = tcp.Port(0, factory())
 origin.startListening()
 
 print '# Listening on {0}:{1}'.format(*origin.socket.getsockname())
 
+
 class factory(protocol.ClientFactory):
-  def clientConnectionFailed(ctx, connector, reason):
+    def clientConnectionFailed(ctx, connector, reason):
 
-    print 'Bail out!'
-    reason.printTraceback()
+        print 'Bail out!'
+        reason.printTraceback()
 
-    reactor.stop()
-
-  class protocol(http.HTTPClient):
-    def connectionLost(ctx, reason):
-      try:
         reactor.stop()
 
-      except error.ReactorNotRunning:
-        pass
+    class protocol(http.HTTPClient):
+        def connectionLost(ctx, reason):
+            try:
+                reactor.stop()
 
-      else:
-        print 'not ok 1 - Did the proxy crash?  (The client connection closed.)'
+            except error.ReactorNotRunning:
+                pass
 
-    # Get a response with a Location and a Digest header and check
-    # that the Location header is not rewritten.  Then get the same
-    # response after caching a matching file from a different URL and
-    # check that this time the header is rewritten.
-    def connectionMade(ctx):
-      ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\nGET {0}:{1}/location HTTP/1.1\r\n\r\nGET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+            else:
+                print 'not ok 1 - Did the proxy crash?  (The client connection closed.)'
 
-    def handleResponsePart(ctx, data):
-      try:
-        h, r = data.split('0\r\n\r\n', 1)
+        # Get a response with a Location and a Digest header and check
+        # that the Location header is not rewritten.  Then get the same
+        # response after caching a matching file from a different URL and
+        # check that this time the header is rewritten.
+        def connectionMade(ctx):
+            ctx.transport.write(
+                'GET {0}:{1} HTTP/1.1\r\n\r\nGET {0}:{1}/location HTTP/1.1\r\n\r\nGET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
 
-      except ValueError:
-        pass
+        def handleResponsePart(ctx, data):
+            try:
+                h, r = data.split('0\r\n\r\n', 1)
 
-      else:
+            except ValueError:
+                pass
 
-        ctx.firstLine = True
-        ctx.setLineMode(r)
+            else:
 
-    def handleStatus(ctx, version, status, message):
-      def handleHeader(k, v):
-        if k.lower() == 'location':
-          if v != 'http://example.com':
-            print 'not',
+                ctx.firstLine = True
+                ctx.setLineMode(r)
 
-          print 'ok 1 - Before'
+        def handleStatus(ctx, version, status, message):
+            def handleHeader(k, v):
+                if k.lower() == 'location':
+                    if v != 'http://example.com':
+                        print 'not',
 
-      ctx.handleHeader = handleHeader
+                    print 'ok 1 - Before'
 
-      def handleStatus(version, status, message):
-        del ctx.handleHeader
+            ctx.handleHeader = handleHeader
 
-        def handleStatus(version, staus, message):
-          def handleHeader(k, v):
-            if k.lower() == 'location':
-              if v != 'http://{0}:{1}/location'.format(*origin.socket.getsockname()):
-                print 'not',
+            def handleStatus(version, status, message):
+                del ctx.handleHeader
 
-              print 'ok 2 - After'
+                def handleStatus(version, staus, message):
+                    def handleHeader(k, v):
+                        if k.lower() == 'location':
+                            if v != 'http://{0}:{1}/location'.format(*origin.socket.getsockname()):
+                                print 'not',
 
-              reactor.stop()
+                            print 'ok 2 - After'
 
-          ctx.handleHeader = handleHeader
+                            reactor.stop()
 
-        ctx.handleStatus = handleStatus
+                    ctx.handleHeader = handleHeader
 
-      ctx.handleStatus = handleStatus
+                ctx.handleStatus = handleStatus
+
+            ctx.handleStatus = handleStatus
+
 
 tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect()
 

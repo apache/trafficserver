@@ -44,26 +44,26 @@ class HeadRequestServerHandler(SocketServer.BaseRequestHandler):
                 break
             if 'TE' in data:
                 resp = ('HTTP/1.1 200 OK\r\n'
-                    'Server: Apache-Coyote/1.1\r\n'
-                    'Transfer-Encoding: chunked\r\n'
-                    'Vary: Accept-Encoding\r\n'
-                    '\r\n'
-                    )
+                        'Server: Apache-Coyote/1.1\r\n'
+                        'Transfer-Encoding: chunked\r\n'
+                        'Vary: Accept-Encoding\r\n'
+                        '\r\n'
+                        )
                 self.request.sendall(resp)
             elif 'CL' in data:
                 resp = ('HTTP/1.1 200 OK\r\n'
-                    'Server: Apache-Coyote/1.1\r\n'
-                    'Content-Length: 123\r\n'
-                    'Vary: Accept-Encoding\r\n'
-                    '\r\n'
-                    )
+                        'Server: Apache-Coyote/1.1\r\n'
+                        'Content-Length: 123\r\n'
+                        'Vary: Accept-Encoding\r\n'
+                        '\r\n'
+                        )
                 self.request.sendall(resp)
             else:
                 resp = ('HTTP/1.1 200 OK\r\n'
-                    'Server: Apache-Coyote/1.1\r\n'
-                    'Vary: Accept-Encoding\r\n'
-                    '\r\n'
-                    )
+                        'Server: Apache-Coyote/1.1\r\n'
+                        'Vary: Accept-Encoding\r\n'
+                        '\r\n'
+                        )
                 self.request.sendall(resp)
 
 
@@ -93,7 +93,7 @@ class TestHeadRequestWithoutTimeout(helpers.EnvironmentCase):
             conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             conn.connect((cls.proxy_host, cls.proxy_port))
             request_content = 'HEAD / HTTP/1.1\r\nConnection: close\r\nHost: 127.0.0.1\r\nContent-Length: %d\r\n\r\n%s' % (
-                    len(request_case), request_case)
+                len(request_case), request_case)
             conn.setblocking(1)
             conn.send(request_content)
             while 1:
@@ -109,7 +109,7 @@ class TestHeadRequestWithoutTimeout(helpers.EnvironmentCase):
             conn.close()
             end_time = time.time()
             log.info("head request with case(%s) costs %f seconds while the timout is %f seconds." % (
-                    request_case, end_time - begin_time, cls.timeout))
+                request_case, end_time - begin_time, cls.timeout))
             cls.assertGreater(cls.timeout, end_time - begin_time)
             if request_case == 'CL':
                 cls.assertIn('Content-Length', response_content)

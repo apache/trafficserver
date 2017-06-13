@@ -60,7 +60,8 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
 
         # configure SSL multicert
 
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_key_name={1} ticket_key_name={2}'.format(helpers.tests_file_path('rsa_keys/ca.crt'), helpers.tests_file_path('rsa_keys/ca.key'), helpers.tests_file_path('rsa_keys/ssl_ticket.key')))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_key_name={1} ticket_key_name={2}'.format(
+            helpers.tests_file_path('rsa_keys/ca.crt'), helpers.tests_file_path('rsa_keys/ca.key'), helpers.tests_file_path('rsa_keys/ssl_ticket.key')))
 
     def start_connection(self, addr):
         '''

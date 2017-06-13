@@ -46,21 +46,21 @@ class TestCustomLogField(helpers.EnvironmentCase):
         cls.configs['logging.config'].add_line('log.ascii(Format = "%<hii> %<hiih>", Filename = "test_log_field"')
 
     def ip_to_hex(self, ipstr):
-      num_list = ipstr.split('.')
-      int_value = (int(num_list[0]) << 24) + (int(num_list[1]) << 16) + (int(num_list[2]) << 8) + (int(num_list[3]))
-      return hex(int_value).upper()[2:]
+        num_list = ipstr.split('.')
+        int_value = (int(num_list[0]) << 24) + (int(num_list[1]) << 16) + (int(num_list[2]) << 8) + (int(num_list[3]))
+        return hex(int_value).upper()[2:]
 
     def test_log_field(self):
-      random.seed()
-      times = 10
-      for i in xrange(times):
-        request_ip = "127.%d.%d.%d" % (random.randint(1, 255), random.randint(1, 255), random.randint(1, 255))
-        url = 'http://%s:%s' % (request_ip, self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        requests.get(url)
-        # get the last line of the log file
-        time.sleep(10)
-        with open(self.log_file_path) as f:
-          for line in f:
-            pass
-        expected_line = "%s %s\n" % (request_ip, self.ip_to_hex(request_ip))
-        self.assertEqual(line, expected_line)
+        random.seed()
+        times = 10
+        for i in xrange(times):
+            request_ip = "127.%d.%d.%d" % (random.randint(1, 255), random.randint(1, 255), random.randint(1, 255))
+            url = 'http://%s:%s' % (request_ip, self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
+            requests.get(url)
+            # get the last line of the log file
+            time.sleep(10)
+            with open(self.log_file_path) as f:
+                for line in f:
+                    pass
+            expected_line = "%s %s\n" % (request_ip, self.ip_to_hex(request_ip))
+            self.assertEqual(line, expected_line)
