@@ -454,11 +454,9 @@ Rollback::internalUpdate(TextBuffer *buf, version_t newVersion, bool notifyChang
   //
   if (numVersions >= this->numberBackups && failedLink == false) {
     toRemove = versionQ.head;
-    ink_assert(toRemove != nullptr);
+    ink_release_assert(toRemove != nullptr);
     ink_assert((toRemove->version) < this->currentVersion);
-    if (toRemove != nullptr) {
-      removeVersion_ml(toRemove->version);
-    }
+    removeVersion_ml(toRemove->version);
   }
   // If we created a backup version add it to the
   //  List of backup Versions
