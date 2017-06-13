@@ -31,26 +31,32 @@ import mainProcess
 import json
 import gzip
 bSTOP = False
+
+
 def createDummyBodywithLength(numberOfbytes):
-    if numberOfbytes<=0:
+    if numberOfbytes <= 0:
         return None
-    body= 'a'
-    while numberOfbytes!=1:
+    body = 'a'
+    while numberOfbytes != 1:
         body += 'b'
         numberOfbytes -= 1
     return body
-    
-def handleResponse(response,*args, **kwargs):
+
+
+def handleResponse(response, *args, **kwargs):
     print(response.status_code)
-    #resp=args[0]
+    # resp=args[0]
     #expected_output_split = resp.getHeaders().split('\r\n')[ 0].split(' ', 2)
     #expected_output = (int(expected_output_split[1]), str( expected_output_split[2]))
     #r = result.Result(session_filename, expected_output[0], response.status_code)
-    #print(r.getResultString(colorize=True))
+    # print(r.getResultString(colorize=True))
 # make sure len of the message body is greater than length
+
+
 def gen():
     yield 'pforpersia,champaignurbana'.encode('utf-8')
     yield 'there'.encode('utf-8')
+
 
 def txn_replay(session_filename, txn, proxy, result_queue, request_session):
     """ Replays a single transaction
@@ -64,16 +70,16 @@ def txn_replay(session_filename, txn, proxy, result_queue, request_session):
     txn_req_headers_dict['Content-MD5'] = txn._uuid  # used as unique identifier
     if 'body' in txn_req_headers_dict:
         del txn_req_headers_dict['body']
-    
+
     #print("Replaying session")
     try:
-        #response = request_session.request(extractHeader.extract_txn_req_method(txn_req_headers),
+        # response = request_session.request(extractHeader.extract_txn_req_method(txn_req_headers),
         #                            'http://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers),
         #                            headers=txn_req_headers_dict,stream=False) # making stream=False raises contentdecoding exception? kill me
         method = extractHeader.extract_txn_req_method(txn_req_headers)
         response = None
-        body=None
-        content=None
+        body = None
+        content = None
         if 'Transfer-Encoding' in txn_req_headers_dict:
             # deleting the host key, since the STUPID post/get functions are going to add host field anyway, so there will be multiple host fields in the header
             # This confuses the ATS and it returns 400 "Invalid HTTP request". I don't believe this
@@ -84,61 +90,62 @@ def txn_replay(session_filename, txn, proxy, result_queue, request_session):
                 del txn_req_headers_dict['Content-Length']
                 body = gen()
         if 'Content-Length' in txn_req_headers_dict:
-            nBytes=int(txn_req_headers_dict['Content-Length'])
+            nBytes = int(txn_req_headers_dict['Content-Length'])
             body = createDummyBodywithLength(nBytes)
         #print("request session is",id(request_session))
-        if method == 'GET':     
+        if method == 'GET':
             response = request_session.get('http://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers),
-                                    headers=txn_req_headers_dict, stream=False, allow_redirects=False,data=body)
-            if 'Content-Length' in response.headers:
-                    content = response.raw
-                    #print("len: {0} received {1}".format(response.headers['Content-Length'],content))
-
-        elif method == 'POST':
-            response = request_session.post('http://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers), 
-                                             headers=txn_req_headers_dict, stream=False, data=body, allow_redirects=False)
-            
+                                           headers=txn_req_headers_dict, stream=False, allow_redirects=False, data=body)
             if 'Content-Length' in response.headers:
                 content = response.raw
-                #print("reading==========>>>>>>>>>>>>>.")
-                #print(content.data)
+                #print("len: {0} received {1}".format(response.headers['Content-Length'],content))
+
+        elif method == 'POST':
+            response = request_session.post('http://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers),
+                                            headers=txn_req_headers_dict, stream=False, data=body, allow_redirects=False)
+
+            if 'Content-Length' in response.headers:
+                content = response.raw
+                # print("reading==========>>>>>>>>>>>>>.")
+                # print(content.data)
                 #print("len: {0} received {1}".format(response.headers['Content-Length'],content))
         elif method == 'HEAD':
             response = request_session.head('http://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers),
-                                    headers=txn_req_headers_dict, stream=False)
+                                            headers=txn_req_headers_dict, stream=False)
 
             #gzip_file = gzip.GzipFile(fileobj=content)
             #shutil.copyfileobj(gzip_file, f)
-        expected=extractHeader.responseHeader_to_dict(resp.getHeaders())
-        #print(expected)
+        expected = extractHeader.responseHeader_to_dict(resp.getHeaders())
+        # print(expected)
         if mainProcess.verbose:
-            expected_output_split = resp.getHeaders().split('\r\n')[ 0].split(' ', 2)
-            expected_output = (int(expected_output_split[1]), str( expected_output_split[2]))
+            expected_output_split = resp.getHeaders().split('\r\n')[0].split(' ', 2)
+            expected_output = (int(expected_output_split[1]), str(expected_output_split[2]))
             r = result.Result(session_filename, expected_output[0], response.status_code)
-            print(r.getResultString(response.headers,expected,colorize=True))
-            r.Compare(response.headers,expected)
-        #result_queue.put(r)
+            print(r.getResultString(response.headers, expected, colorize=True))
+            r.Compare(response.headers, expected)
+        # result_queue.put(r)
     except UnicodeEncodeError as e:
-        # these unicode errors are due to the interaction between Requests and our wiretrace data. 
+        # these unicode errors are due to the interaction between Requests and our wiretrace data.
         # TODO fix
         print("UnicodeEncodeError exception")
 
     except requests.exceptions.ContentDecodingError as e:
-        print("ContentDecodingError",e)
+        print("ContentDecodingError", e)
     except:
-        e=sys.exc_info()
-        print("ERROR in requests: ",e,response, session_filename)
+        e = sys.exc_info()
+        print("ERROR in requests: ", e, response, session_filename)
+
 
 def session_replay(input, proxy, result_queue):
     global bSTOP
     ''' Replay all transactions in session 
     
     This entire session will be replayed in one requests.Session (so one socket / TCP connection)'''
-    #if timing_control:
+    # if timing_control:
     #    time.sleep(float(session._timestamp))  # allow other threads to run
     while bSTOP == False:
         for session in iter(input.get, 'STOP'):
-            #print(bSTOP)
+            # print(bSTOP)
             if session == 'STOP':
                 print("Queue is empty")
                 bSTOP = True
@@ -149,13 +156,14 @@ def session_replay(input, proxy, result_queue):
                     try:
                         txn_replay(session._filename, txn, proxy, result_queue, request_session)
                     except:
-                        e=sys.exc_info()
-                        print("ERROR in replaying: ",e,txn.getRequest().getHeaders())
+                        e = sys.exc_info()
+                        print("ERROR in replaying: ", e, txn.getRequest().getHeaders())
         bSTOP = True
         print("Queue is empty")
         input.put('STOP')
         break
-                  
+
+
 def client_replay(input, proxy, result_queue, nThread):
     Threads = []
     for i in range(nThread):
