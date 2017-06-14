@@ -24,3 +24,9 @@ Session Log format (in JSON):
   "timestamp": "....", 
   "encoding": "...."}
   Configuration: The configuration required to run traffic-replay can be specified in traffic-replay/Config.py
+
+# TCP Client
+
+A command line interface that sends and receives bytes over TCP, to aid in repeatable testing.
+
+Run `python3.5 tcp_client.py -h` to see example usage.
