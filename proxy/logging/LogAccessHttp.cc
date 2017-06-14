@@ -49,12 +49,27 @@
   -------------------------------------------------------------------------*/
 
 LogAccessHttp::LogAccessHttp(HttpSM *sm)
-  : m_http_sm(sm), m_arena(), m_client_request(NULL), m_proxy_response(NULL), m_proxy_request(NULL), m_server_response(NULL),
-    m_cache_response(NULL), m_client_req_url_str(NULL), m_client_req_url_len(0), m_client_req_url_canon_str(NULL),
-    m_client_req_url_canon_len(0), m_client_req_unmapped_url_canon_str(NULL), m_client_req_unmapped_url_canon_len(-1),
-    m_client_req_unmapped_url_path_str(NULL), m_client_req_unmapped_url_path_len(-1), m_client_req_unmapped_url_host_str(NULL),
-    m_client_req_unmapped_url_host_len(-1), m_client_req_url_path_str(NULL), m_client_req_url_path_len(0),
-    m_proxy_resp_content_type_str(NULL), m_proxy_resp_content_type_len(0)
+  : m_http_sm(sm),
+    m_arena(),
+    m_client_request(nullptr),
+    m_proxy_response(nullptr),
+    m_proxy_request(nullptr),
+    m_server_response(nullptr),
+    m_cache_response(nullptr),
+    m_client_req_url_str(nullptr),
+    m_client_req_url_len(0),
+    m_client_req_url_canon_str(nullptr),
+    m_client_req_url_canon_len(0),
+    m_client_req_unmapped_url_canon_str(nullptr),
+    m_client_req_unmapped_url_canon_len(0),
+    m_client_req_unmapped_url_path_str(nullptr),
+    m_client_req_unmapped_url_path_len(0),
+    m_client_req_unmapped_url_host_str(nullptr),
+    m_client_req_unmapped_url_host_len(0),
+    m_client_req_url_path_str(nullptr),
+    m_client_req_url_path_len(0),
+    m_proxy_resp_content_type_str(nullptr),
+    m_proxy_resp_content_type_len(0)
 {
   ink_assert(m_http_sm != NULL);
 }
@@ -281,7 +296,10 @@ LogAccessHttp::marshal_client_auth_user_name(char *buf)
 void
 LogAccessHttp::validate_unmapped_url(void)
 {
-  if (m_client_req_unmapped_url_canon_len < 0) {
+  if (m_client_req_unmapped_url_canon_str == nullptr) {
+    // prevent multiple validations
+    m_client_req_unmapped_url_canon_str = INVALID_STR;
+
     if (m_http_sm->t_state.pristine_url.valid()) {
       int unmapped_url_len;
       char *unmapped_url = m_http_sm->t_state.pristine_url.string_get_ref(&unmapped_url_len);
@@ -290,8 +308,6 @@ LogAccessHttp::validate_unmapped_url(void)
         m_client_req_unmapped_url_canon_str =
           LogUtils::escapify_url(&m_arena, unmapped_url, unmapped_url_len, &m_client_req_unmapped_url_canon_len);
       }
-    } else {
-      m_client_req_unmapped_url_canon_len = 0;
     }
   }
 }
@@ -307,10 +323,12 @@ LogAccessHttp::validate_unmapped_url_path(void)
   int len;
   char *c;
 
-  if (m_client_req_unmapped_url_path_len < 0 && m_client_req_unmapped_url_host_len < 0) {
+  if (m_client_req_unmapped_url_path_str == nullptr && m_client_req_unmapped_url_host_str == nullptr) {
     // Use unmapped canonical URL as default
     m_client_req_unmapped_url_path_str = m_client_req_unmapped_url_canon_str;
     m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_canon_len;
+    // Incase the code below fails, we prevent it from being used.
+    m_client_req_unmapped_url_host_str = INVALID_STR;
 
     if (m_client_req_unmapped_url_path_len >= 6) { // xxx:// - minimum schema size
       c = (char *)memchr((void *)m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1);
@@ -419,7 +437,7 @@ LogAccessHttp::marshal_client_req_unmapped_url_canon(char *buf)
   int len = INK_MIN_ALIGN;
 
   validate_unmapped_url();
-  if (0 >= m_client_req_unmapped_url_canon_len) {
+  if (m_client_req_unmapped_url_canon_str == INVALID_STR) {
     // If the unmapped URL isn't populated, we'll fall back to the original
     // client URL. This helps for example server intercepts to continue to
     // log the requests, even when there is no remap rule for it.
@@ -445,7 +463,7 @@ LogAccessHttp::marshal_client_req_unmapped_url_path(char *buf)
   validate_unmapped_url();
   validate_unmapped_url_path();
 
-  if (0 >= m_client_req_unmapped_url_path_len) {
+  if (m_client_req_unmapped_url_path_str == INVALID_STR) {
     len = marshal_client_req_url_path(buf);
   } else {
     len = round_strlen(m_client_req_unmapped_url_path_len + 1); // +1 for eos

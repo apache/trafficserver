@@ -92,6 +92,8 @@
 #define DEFAULT_STR "-"
 #define DEFAULT_STR_LEN 1
 
+extern char INVALID_STR[];
+
 #define DEFAULT_INT_FIELD  \
   {                        \
     if (buf) {             \
