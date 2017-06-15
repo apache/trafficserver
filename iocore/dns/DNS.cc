@@ -1397,10 +1397,9 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     u_char *cp        = ((u_char *)h) + HFIXEDSZ;
     u_char *eom       = (u_char *)h + len;
     int n;
-    ink_assert(buf->srv_hosts.srv_host_count == 0 && buf->srv_hosts.srv_hosts_length == 0);
-    buf->srv_hosts.srv_host_count   = 0;
+    ink_assert(buf->srv_hosts.hosts.size() == 0 && buf->srv_hosts.srv_hosts_length == 0);
+    buf->srv_hosts.hosts.clear();
     buf->srv_hosts.srv_hosts_length = 0;
-    unsigned &num_srv               = buf->srv_hosts.srv_host_count;
     int rname_len                   = -1;
 
     //
@@ -1574,7 +1573,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           buflen -= n;
         }
       } else if (type == T_SRV) {
-        if (num_srv >= HOST_DB_MAX_ROUND_ROBIN_INFO) {
+        if (buf->srv_hosts.hosts.size() >= hostdb_round_robin_max_count) {
           break;
         }
         cp         = here; /* hack */
@@ -1583,30 +1582,31 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         const unsigned char *srv_off = cp;
         cp += SRV_FIXEDSZ;
         cp += dn_skipname(cp, eom);
-        here     = cp; /* hack */
-        SRV *srv = &buf->srv_hosts.hosts[num_srv];
+        here = cp; /* hack */
+
+        SRV srv;
 
         // expand the name
-        n = ink_dn_expand((u_char *)h, eom, srv_off + SRV_SERVER, (u_char *)srv->host, MAXDNAME);
+        n = ink_dn_expand((u_char *)h, eom, srv_off + SRV_SERVER, (u_char *)srv.host, MAXDNAME);
         if (n < 0) {
           ++error;
           break;
         }
         Debug("dns_srv", "Discovered SRV record [from NS lookup] with cost:%d weight:%d port:%d with host:%s",
-              ink_get16(srv_off + SRV_COST), ink_get16(srv_off + SRV_WEIGHT), ink_get16(srv_off + SRV_PORT), srv->host);
+              ink_get16(srv_off + SRV_COST), ink_get16(srv_off + SRV_WEIGHT), ink_get16(srv_off + SRV_PORT), srv.host);
 
-        srv->port     = ink_get16(srv_off + SRV_PORT);
-        srv->priority = ink_get16(srv_off + SRV_COST);
-        srv->weight   = ink_get16(srv_off + SRV_WEIGHT);
-        srv->host_len = ::strlen(srv->host) + 1;
-        srv->key      = makeHostHash(srv->host);
+        srv.port     = ink_get16(srv_off + SRV_PORT);
+        srv.priority = ink_get16(srv_off + SRV_COST);
+        srv.weight   = ink_get16(srv_off + SRV_WEIGHT);
+        srv.host_len = ::strlen(srv.host) + 1;
+        srv.key      = makeHostHash(srv.host);
 
-        if (srv->host[0] != '\0') {
-          buf->srv_hosts.srv_hosts_length += srv->host_len;
+        if (srv.host[0] != '\0') {
+          buf->srv_hosts.srv_hosts_length += srv.host_len;
         } else {
           continue;
         }
-        ++num_srv;
+        buf->srv_hosts.hosts.push_back(srv);
       } else if (is_addr_query(type)) {
         if (answer) {
           if (n != buf->ent.h_length) {

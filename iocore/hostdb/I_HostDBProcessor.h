@@ -42,9 +42,6 @@
 #define EVENT_SRV_IP_REMOVED (SRV_EVENT_EVENTS_START + 1)
 #define EVENT_SRV_GET_RESPONSE (SRV_EVENT_EVENTS_START + 2)
 
-// TODO: make configurable
-#define HOST_DB_MAX_ROUND_ROBIN_INFO 16
-
 //
 // Data
 //
@@ -64,6 +61,7 @@ extern unsigned int hostdb_ip_stale_interval;
 extern unsigned int hostdb_ip_timeout_interval;
 extern unsigned int hostdb_ip_fail_timeout_interval;
 extern unsigned int hostdb_serve_stale_but_revalidate;
+extern unsigned int hostdb_round_robin_max_count;
 
 static inline unsigned int
 makeHostHash(const char *string)

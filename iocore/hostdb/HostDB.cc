@@ -51,6 +51,7 @@ int hostdb_lookup_timeout                      = 30;
 int hostdb_insert_timeout                      = 160;
 int hostdb_re_dns_on_reload                    = false;
 int hostdb_ttl_mode                            = TTL_OBEY;
+unsigned int hostdb_round_robin_max_count      = 16;
 unsigned int hostdb_ip_stale_interval          = HOST_DB_IP_STALE;
 unsigned int hostdb_ip_timeout_interval        = HOST_DB_IP_TIMEOUT;
 unsigned int hostdb_ip_fail_timeout_interval   = HOST_DB_IP_FAIL_TIMEOUT;
@@ -409,6 +410,7 @@ HostDBProcessor::start(int, size_t)
   REC_EstablishStaticConfigInt32U(hostdb_ip_fail_timeout_interval, "proxy.config.hostdb.fail.timeout");
   REC_EstablishStaticConfigInt32U(hostdb_serve_stale_but_revalidate, "proxy.config.hostdb.serve_stale_for");
   REC_EstablishStaticConfigInt32U(hostdb_hostfile_check_interval, "proxy.config.hostdb.host_file.interval");
+  REC_EstablishStaticConfigInt32U(hostdb_round_robin_max_count, "proxy.config.hostdb.round_robin_max_count");
 
   //
   // Set up hostdb_current_interval
@@ -1172,9 +1174,9 @@ HostDBContinuation::lookup_done(IpAddr const &ip, const char *aname, bool around
       }
       r->is_srv = false;
     } else if (is_srv()) {
-      ink_assert(srv && srv->srv_host_count > 0 && srv->srv_host_count <= 16 && around_robin);
+      ink_assert(srv && srv->hosts.size() && srv->hosts.size() <= hostdb_round_robin_max_count && around_robin);
 
-      r->data.srv.srv_offset = srv->srv_host_count;
+      r->data.srv.srv_offset = srv->hosts.size();
       r->reverse_dns         = false;
       r->is_srv              = true;
       r->round_robin         = around_robin;
@@ -1291,7 +1293,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     pending_action = nullptr;
 
     if (is_srv()) {
-      is_rr = !failed && (e->srv_hosts.srv_host_count > 0);
+      is_rr = !failed && (e->srv_hosts.hosts.size() > 0);
     } else if (!failed) {
       is_rr = nullptr != e->ent.h_addr_list[1];
     } else {
@@ -1319,11 +1321,11 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     // total number of records
     if (is_rr) {
       if (is_srv() && !failed) {
-        valid_records = e->srv_hosts.srv_host_count;
+        valid_records = e->srv_hosts.hosts.size();
       } else {
         void *ptr; // tmp for current entry.
         for (int total_records = 0;
-             total_records < HOST_DB_MAX_ROUND_ROBIN_INFO && nullptr != (ptr = e->ent.h_addr_list[total_records]);
+             total_records < (int)hostdb_round_robin_max_count && nullptr != (ptr = e->ent.h_addr_list[total_records]);
              ++total_records) {
           if (is_addr_valid(af, ptr)) {
             if (!first_record) {
@@ -1405,8 +1407,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       if (is_srv()) {
         int skip  = 0;
         char *pos = (char *)rr_data + sizeof(HostDBRoundRobin) + valid_records * sizeof(HostDBInfo);
-        SRV *q[HOST_DB_MAX_ROUND_ROBIN_INFO];
-        ink_assert(valid_records <= HOST_DB_MAX_ROUND_ROBIN_INFO);
+        SRV *q[valid_records];
+        ink_assert(valid_records <= (int)hostdb_round_robin_max_count);
         // sort
         for (int i = 0; i < valid_records; ++i) {
           q[i] = &e->srv_hosts.hosts[i];
