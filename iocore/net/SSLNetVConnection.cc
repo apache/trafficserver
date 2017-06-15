@@ -512,12 +512,23 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       }
       // move over to the socket if we haven't already
       if (this->handShakeBuffer) {
-        ink_release_assert(BIO_eof(SSL_get_rbio(this->ssl)) && !handShakeReader->is_read_avail_more_than(0));
-        // Done with the buffer after the first exchange, convert over to the socket buffer
-        BIO *rbio = BIO_new_fd(this->get_socket(), BIO_NOCLOSE);
-        BIO_set_mem_eof_return(rbio, -1);
-        SSL_set0_rbio(this->ssl, rbio);
-        free_handshake_buffers();
+        if (BIO_eof(SSL_get_rbio(this->ssl)) && !handShakeReader->is_read_avail_more_than(0)) {
+          // Done with the buffer after the first exchange, convert over to the socket buffer
+          BIO *rbio = BIO_new_fd(this->get_socket(), BIO_NOCLOSE);
+          BIO_set_mem_eof_return(rbio, -1);
+          SSL_set0_rbio(this->ssl, rbio);
+          free_handshake_buffers();
+        } else if (handShakeReader->is_read_avail_more_than(0)) {
+          this->handShakeReader->consume(this->handShakeBioStored);
+          this->handShakeBioStored = 0;
+          // Setup the next iobuffer block to drain
+          char *start              = this->handShakeReader->start();
+          char *end                = this->handShakeReader->end();
+          this->handShakeBioStored = end - start;
+          BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
+          BIO_set_mem_eof_return(rbio, -1);
+          SSL_set0_rbio(this->ssl, rbio);
+        } // Otherwise there is still data in the BIO mem buffer, let it keep going
       } else {
         Debug("ssl", "Want read from socket");
       }
