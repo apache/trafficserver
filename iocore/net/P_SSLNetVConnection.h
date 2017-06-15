@@ -274,6 +274,8 @@ private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection &operator=(const SSLNetVConnection &);
 
+  bool update_rbio(bool move_to_socket);
+
   bool sslHandShakeComplete;
   bool sslClientConnection;
   bool sslClientRenegotiationAbort;
