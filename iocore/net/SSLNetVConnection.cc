@@ -384,6 +384,40 @@ SSLNetVConnection::read_raw_data()
   return r;
 }
 
+//
+// Return true if we updated the rbio with another
+// memory chunk (should be ready for another read right away)
+//
+bool
+SSLNetVConnection::update_rbio(bool move_to_socket)
+{
+  bool retval = false;
+  if (BIO_eof(SSL_get_rbio(this->ssl))) {
+    this->handShakeReader->consume(this->handShakeBioStored);
+    this->handShakeBioStored = 0;
+    // Load up the next block if present
+    if (this->handShakeReader->is_read_avail_more_than(0)) {
+      // Setup the next iobuffer block to drain
+      char *start              = this->handShakeReader->start();
+      char *end                = this->handShakeReader->end();
+      this->handShakeBioStored = end - start;
+
+      // Sets up the buffer as a read only bio target
+      // Must be reset on each read
+      BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
+      BIO_set_mem_eof_return(rbio, -1);
+      SSL_set0_rbio(this->ssl, rbio);
+      retval = true;
+    } else if (move_to_socket) { // Handshake buffer is empty, move to the socket rbio
+      BIO *rbio = BIO_new_fd(this->get_socket(), BIO_NOCLOSE);
+      BIO_set_mem_eof_return(rbio, -1);
+      SSL_set0_rbio(this->ssl, rbio);
+      free_handshake_buffers();
+    }
+  }
+  return retval;
+}
+
 // changed by YTS Team, yamsat
 void
 SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
@@ -443,23 +477,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     if (this->handShakeReader) {
       if (this->attributes != HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
         // Check and consume data that has been read
-        if (BIO_eof(SSL_get_rbio(this->ssl))) {
-          this->handShakeReader->consume(this->handShakeBioStored);
-          this->handShakeBioStored = 0;
-          // Load up the next block if present
-          if (this->handShakeReader->is_read_avail_more_than(0)) {
-            // Setup the next iobuffer block to drain
-            char *start              = this->handShakeReader->start();
-            char *end                = this->handShakeReader->end();
-            this->handShakeBioStored = end - start;
-
-            // Sets up the buffer as a read only bio target
-            // Must be reset on each read
-            BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
-            BIO_set_mem_eof_return(rbio, -1);
-            SSL_set0_rbio(this->ssl, rbio);
-          }
-        }
+        update_rbio(false);
       } else {
         // Now in blind tunnel. Set things up to read what is in the buffer
         // Must send the READ_COMPLETE here before considering
@@ -512,18 +530,15 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         }
       }
       // move over to the socket if we haven't already
-      if (this->handShakeReader) {
-        ink_release_assert(BIO_eof(SSL_get_rbio(this->ssl)) && !handShakeReader->is_read_avail_more_than(0));
-        // Done with the buffer after the first exchange, convert over to the socket buffer
-        BIO *rbio = BIO_new_fd(this->get_socket(), BIO_NOCLOSE);
-        BIO_set_mem_eof_return(rbio, -1);
-        SSL_set0_rbio(this->ssl, rbio);
-        free_handshake_buffers();
+      if (this->handShakeBuffer) {
+        read.triggered = update_rbio(true);
       } else {
         Debug("ssl", "Want read from socket");
+        read.triggered = 0;
       }
-      read.triggered = 0;
-      nh->read_ready_list.remove(this);
+      if (!read.triggered) {
+        nh->read_ready_list.remove(this);
+      }
       readReschedule(nh);
     } else if (ret == SSL_HANDSHAKE_WANT_CONNECT || ret == SSL_HANDSHAKE_WANT_WRITE) {
       write.triggered = 0;
@@ -1075,20 +1090,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
           return EVENT_ERROR;
         }
       } else {
-        this->handShakeReader->consume(this->handShakeBioStored);
-        this->handShakeBioStored = 0;
-        // There is more data in the buffer, reset the memory buffer
-        if (this->handShakeReader->is_read_avail_more_than(0)) {
-          char *start              = this->handShakeReader->start();
-          char *end                = this->handShakeReader->end();
-          this->handShakeBioStored = end - start;
-
-          // Sets up the buffer as a read only bio target
-          // Must be reset on each read
-          BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
-          BIO_set_mem_eof_return(rbio, -1);
-          SSL_set0_rbio(this->ssl, rbio);
-        }
+        update_rbio(false);
       }
     } // Still data in the BIO
   }
