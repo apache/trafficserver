@@ -515,8 +515,6 @@ FileManager::readFile(const char *filePath, TextBuffer *contents)
     return SNAP_FILE_ACCESS_FAILED;
   }
 
-  fcntl(diskFD, F_SETFD, FD_CLOEXEC);
-
   while ((readResult = contents->readFromFD(diskFD)) > 0) {
     ;
   }
