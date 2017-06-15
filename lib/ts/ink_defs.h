@@ -128,9 +128,7 @@ max(const T a, const T b)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
-#if TS_USE_HWLOC
 #include <hwloc.h>
-#endif
 
 #ifndef ROUNDUP
 #define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
@@ -154,10 +152,8 @@ int ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
 int ink_number_of_processors();
 int ink_login_name_max();
 
-#if TS_USE_HWLOC
 // Get the hardware topology
 hwloc_topology_t ink_get_topology();
-#endif
 
 /** Constants.
  */
