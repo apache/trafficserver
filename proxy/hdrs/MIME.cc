@@ -1795,8 +1795,21 @@ uint32_t
 mime_field_value_get_uint(const MIMEField *field)
 {
   int length;
+  uint32_t val;
   const char *str = mime_field_value_get(field, &length);
-  return mime_parse_uint(str, str + length);
+  mime_parse_unsigned(str, str + length, val);
+  return val;
+}
+
+uint64_t
+mime_field_value_get_uint64(const MIMEField *field)
+{
+  int length;
+  uint64_t val;
+  const char *str = mime_field_value_get(field, &length);
+
+  mime_parse_unsigned(str, str + length, val);
+  return val;
 }
 
 int64_t
@@ -3165,31 +3178,32 @@ mime_parse_int(const char *buf, const char *end)
   }
 }
 
-uint32_t
-mime_parse_uint(const char *buf, const char *end)
+template <typename T>
+void
+mime_parse_unsigned(const char *buf, const char *end, T &x)
 {
-  uint32_t num;
+  x = 0;
 
   if (!buf || (buf == end)) {
-    return 0;
+    return;
   }
 
   if (is_digit(*buf)) // fast case
   {
-    num = *buf++ - '0';
+    x = *buf++ - '0';
     while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) + (*buf++ - '0');
+      x = (x * 10) + (*buf++ - '0');
     }
-    return num;
+    return;
   } else {
-    num = 0;
+    x = 0;
     while ((buf != end) && ParseRules::is_space(*buf)) {
       buf += 1;
     }
     while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) + (*buf++ - '0');
+      x = (x * 10) + (*buf++ - '0');
     }
-    return num;
+    return;
   }
 }
 

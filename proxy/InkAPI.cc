@@ -3259,13 +3259,15 @@ TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
   sdk_assert(sdk_sanity_check_field_handle(field, hdr) == TS_SUCCESS);
 
   int value_len;
+  unsigned int val;
   const char *value_str = TSMimeFieldValueGet(bufp, field, idx, &value_len);
 
   if (value_str == nullptr) {
     return 0;
   }
 
-  return mime_parse_uint(value_str, value_str + value_len);
+  mime_parse_unsigned(value_str, value_str + value_len, val);
+  return val;
 }
 
 TSReturnCode
