@@ -1158,11 +1158,14 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
         vc->add_to_keep_alive_queue();
       }
     }
-
-    if ((fini_received || shutdown_state == IN_PROGRESS) && total_client_streams_count == 0) {
-      // We were shutting down, go ahead and terminate the session
-      ua_session->destroy();
-      ua_session = nullptr;
+    if (total_client_streams_count == 0) {
+      if (fini_received) {
+        // We were shutting down, go ahead and terminate the session
+        ua_session->destroy();
+        ua_session = nullptr;
+      } else if (shutdown_state == IN_PROGRESS) {
+        this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+      }
     }
   }
 }

@@ -22,12 +22,12 @@
  */
 
 /*
- *   server-push.c:
+ *   server_push.c:
  *    an example of server push.
  *
  *
  *	Usage:
- * 	  server-push.so http://example.com/favicon.ico
+ * 	  server_push.so http://example.com/favicon.ico
  *
  *
  */
@@ -39,7 +39,8 @@
 #include "ts/experimental.h"
 #include "ts/ink_defs.h"
 
-const char *PLUGIN_NAME = "server-push";
+const char *PLUGIN_NAME = "server_push";
+
 char url[256];
 
 bool
@@ -100,9 +101,9 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "server-push";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[%s] Plugin registration failed", PLUGIN_NAME);

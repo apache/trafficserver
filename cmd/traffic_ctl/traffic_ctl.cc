@@ -23,6 +23,10 @@
 
 #include "traffic_ctl.h"
 
+#include "ts/I_Layout.h"
+#include "I_RecProcess.h"
+#include "RecordsConfig.h"
+
 AppVersionInfo CtrlVersionInfo;
 
 const char *
@@ -244,16 +248,20 @@ main(int argc, const char **argv)
     diags->show_location                      = SHOW_LOCATION_DEBUG;
   }
 
-  CtrlDebug("debug logging active");
-
   if (n_file_arguments < 1) {
     return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
   }
 
+  Layout::create();
+  RecProcessInit(RECM_STAND_ALONE, diags);
+  LibRecordsConfigInit();
+
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
+
   // Make a best effort to connect the control socket. If it turns out we are just displaying help or something then it
   // doesn't matter that we failed. If we end up performing some operation then that operation will fail and display the
   // error.
-  TSInit(nullptr, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
+  TSInit(rundir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
 
   for (unsigned i = 0; i < countof(commands); ++i) {
     if (strcmp(file_arguments[0], commands[i].name) == 0) {

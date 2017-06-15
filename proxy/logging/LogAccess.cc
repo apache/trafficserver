@@ -48,6 +48,8 @@
 #include "LogBuffer.h"
 #include "Log.h"
 
+char INVALID_STR[] = "!INVALID_STR!";
+
 #define LOG_ACCESS_DEFAULT_FIELD(name, impl) \
   int LogAccess::name(char *buf) { impl; }
 /*-------------------------------------------------------------------------

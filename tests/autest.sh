@@ -29,7 +29,7 @@ if [ ! -f ./env-test/bin/autest ]; then\
 # this is for rhel or centos systems
 test -r /opt/rh/rh-python35/enable && . /opt/rh/rh-python35/enable
 . env-test/bin/activate
-./env-test/bin/autest -D gold_tests $*
+./env-test/bin/autest -D gold_tests "$@"
 ret=$?
 popd > /dev/null
 exit $ret

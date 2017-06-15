@@ -43,6 +43,7 @@
 
 int SSLConfig::configid                                     = 0;
 int SSLCertificateConfig::configid                          = 0;
+int SSLTicketKeyConfig::configid                            = 0;
 int SSLConfigParams::ssl_maxrecord                          = 0;
 bool SSLConfigParams::ssl_allow_client_renegotiation        = false;
 bool SSLConfigParams::ssl_ocsp_enabled                      = false;
@@ -90,7 +91,6 @@ SSLConfigParams::reset()
   serverCertPathOnly = serverCertChainFilename = configFilePath = serverCACertFilename = serverCACertPath = clientCertPath =
     clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
       ticket_key_filename                                                                                     = nullptr;
-  default_global_keyblock                                                                                     = nullptr;
   client_ctx                                                                                                  = nullptr;
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
   ssl_ctx_options                                                     = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
@@ -122,7 +122,7 @@ SSLConfigParams::cleanup()
   dhparamsFile            = (char *)ats_free_null(dhparamsFile);
   ssl_wire_trace_ip       = (IpAddr *)ats_free_null(ssl_wire_trace_ip);
   ticket_key_filename     = (char *)ats_free_null(ticket_key_filename);
-  ticket_block_free(default_global_keyblock);
+
   freeCTXmap();
   SSLReleaseContext(client_ctx);
   reset();
@@ -268,17 +268,6 @@ SSLConfigParams::initialize()
   set_paths_helper(CACertRelativePath, ssl_server_ca_cert_filename, &serverCACertPath, &serverCACertFilename);
   ats_free(ssl_server_ca_cert_filename);
   ats_free(CACertRelativePath);
-
-#if HAVE_OPENSSL_SESSION_TICKETS
-
-  if (REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename") == REC_ERR_OKAY &&
-      this->ticket_key_filename != nullptr) {
-    ats_scoped_str ticket_key_path(Layout::relative_to(this->serverCertPathOnly, this->ticket_key_filename));
-    default_global_keyblock = ssl_create_ticket_keyblock(ticket_key_path);
-  } else {
-    default_global_keyblock = ssl_create_ticket_keyblock(nullptr);
-  }
-#endif
 
   // SSL session cache configurations
   REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");
@@ -477,12 +466,10 @@ SSLCertificateConfig::startup()
 {
   sslCertUpdate = new ConfigUpdateHandler<SSLCertificateConfig>();
   sslCertUpdate->attach("proxy.config.ssl.server.multicert.filename");
-  sslCertUpdate->attach("proxy.config.ssl.server.ticket_key.filename");
   sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
   sslCertUpdate->attach("proxy.config.ssl.server.cert_chain.filename");
   sslCertUpdate->attach("proxy.config.ssl.server.session_ticket.enable");
-
   // Exit if there are problems on the certificate loading and the
   // proxy.config.ssl.server.multicert.exit_on_load_fail is true
   SSLConfig::scoped_config params;
@@ -534,4 +521,57 @@ void
 SSLCertificateConfig::release(SSLCertLookup *lookup)
 {
   configProcessor.release(configid, lookup);
+}
+
+void
+SSLTicketParams::LoadTicket()
+{
+  cleanup();
+
+#if HAVE_OPENSSL_SESSION_TICKETS
+
+  SSLConfig::scoped_config params;
+
+  if (REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename") == REC_ERR_OKAY &&
+      ticket_key_filename != nullptr) {
+    ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
+    default_global_keyblock = ssl_create_ticket_keyblock(ticket_key_path);
+  } else {
+    default_global_keyblock = ssl_create_ticket_keyblock(nullptr);
+  }
+  if (!default_global_keyblock) {
+    Fatal("Could not load Ticket Key from %s", ticket_key_filename);
+    return;
+  }
+  Debug("ssl", "ticket key reloaded from %s", ticket_key_filename);
+
+#endif
+}
+
+void
+SSLTicketKeyConfig::startup()
+{
+  auto sslTicketKey = new ConfigUpdateHandler<SSLTicketKeyConfig>();
+
+  sslTicketKey->attach("proxy.config.ssl.server.ticket_key.filename");
+  reconfigure();
+}
+
+bool
+SSLTicketKeyConfig::reconfigure()
+{
+  SSLTicketParams *ticketKey = new SSLTicketParams();
+
+  if (ticketKey)
+    ticketKey->LoadTicket();
+
+  configid = configProcessor.set(configid, ticketKey);
+  return true;
+}
+
+void
+SSLTicketParams::cleanup()
+{
+  ticket_block_free(default_global_keyblock);
+  ticket_key_filename = (char *)ats_free_null(ticket_key_filename);
 }
