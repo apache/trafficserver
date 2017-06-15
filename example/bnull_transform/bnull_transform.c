@@ -183,10 +183,10 @@ handle_transform(TSCont contp)
      private data structure pointer is NULL, then we'll create it
      and initialize its internals. */
 
-  data = TSContDataGet(contp);
+  data = (MyData *)TSContDataGet(contp);
   if (!data) {
     data = my_data_alloc();
-    TSContDataSet(contp, data);
+    TSContDataSet(contp, (void *)data);
   }
 
   do {
@@ -211,7 +211,7 @@ bnull_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
      call to TSVConnClose. */
 
   if (TSVConnClosedGet(contp)) {
-    my_data_destroy(TSContDataGet(contp));
+    my_data_destroy((MyData *)TSContDataGet(contp));
     TSContDestroy(contp);
   } else {
     switch (event) {

@@ -82,9 +82,9 @@ configuration provided with the plugin's source)::
     gzip.so <path-to-plugin>/sample.gzip.config
 
 This can be used as remap plugin by pointing to config file in remap rule
-:file:`remap.config`::
+:file:`remap.config`:: (relative to the ts:cv:`proxy.config.config_dir`)
 
-    @plugin=gzip.so @pparam=<path-to-plugin>/sample.gzip.config
+    @plugin=gzip.so @pparam=sample.gzip.config
 
 The following sections detail the options you may specify in the plugin's
 configuration file. Options may be used globally, or may be specified on a
@@ -124,7 +124,8 @@ Provides a wildcard pattern which will be applied to request URLs. Any which
 match the pattern will be considered compressible, and only deflated versions
 of the objects will be cached and returned to clients. This may be useful for
 objects which already have their own compression built-in, to avoid the expense
-of multiple rounds of compression for trivial gains.
+of multiple rounds of compression for trivial gains. If the regex is preceeded by
+``!`` (for example ``allow !*/nothere/*``), it disables the plugin from those machine URLs.
 
 enabled
 -------
@@ -136,13 +137,14 @@ flush
 -----
 
 Enables (``true``) or disables (``false``) flushing of compressed objects to
-clients.
+clients. This calls the compression algorithm's mechanism (Z_SYNC_FLUSH and for gzip
+and BROTLI_OPERATION_FLUSH for brotli) to send compressed data early.
 
 remove-accept-encoding
 ----------------------
 
 When set to ``true`` this option causes the plugin to strip the request's
-``Accept`` encoding header when contacting the origin server. Setting this option to ``false``
+``Accept-Encoding`` header when contacting the origin server. Setting this option to ``false``
 will leave the header intact if the client provided it.
 
 - To ease the load on the origins.
@@ -153,10 +155,11 @@ will leave the header intact if the client provided it.
 supported-algorithms
 ----------------------
 
-Provides the compression algorithms that are supported. This will allow the proxy to selectively
-support certain compressions. The default is gzip. Multiple algorthims can be selected using ',' delimiter
-
--- To selectively support only certain compression algorithms.
+Provides the compression algorithms that are supported. This will allow |TS| to selectively
+support gzip, deflate, and brotli compression. The default is gzip. Multiple algorthims can be selected using ',' delimiter,
+for instance, ``supported-algorithms deflate,gzip,br``. Note that if
+ts:cv:`proxy.config.http.normalize_ae_gzip` is enabled (``1``), only gzip will be
+considered.
 
 Examples
 ========
@@ -205,3 +208,13 @@ the plugin would be enabled for |TS| in :file:`plugin.config` as::
 
     gzip.so /etc/trafficserver/gzip.config
 
+Alternatively, the gzip plugin can be used as a remap plugin: ::
+
+  map http://www.example.com http://origin.example.com \
+    @plugin=gzip.so @pparam=gzip.config
+
+    $ cat /etc/trafficserver/gzip.config
+    enabled true
+    cache true
+    compressible-content-type *xml
+    supported-algorithms

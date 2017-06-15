@@ -349,9 +349,38 @@ The next time Traffic Server receives a request for the removed object,
 it will contact the origin server to retrieve a new copy, which will replace
 the previously cached version in Traffic Server.
 
-This procedure only removes an object from a specific Traffic Server cache.
-Users may still see the old (removed) content if it was cached by intermediary
-caches or by the end-users' web browser.
+This procedure only removes the index to the object from a specific Traffic Server
+cache. While the object remains on disk, Traffic Server will no longer able to find
+the object. The next request for that object will result in a fresh copy of the
+object fetched. Users may still see the old (removed) content if it was cached by
+intermediary caches or by the end-users' web browser.
+
+Pushing an Object into the Cache
+================================
+
+Traffic Server accepts the custom HTTP request method ``PUSH`` to put an object
+into the the cache. If the object is successfully written to the cache, then
+Traffic Server responds with a ``200 OK`` HTTP message; otherwise a
+``400 Malformed Pushed Response Header`` message is returned.
+
+To push an object, first save the object headers and body into a file. For instance: ::
+
+      $ curl -s -i -o /path/to/file "http://example.com/push_me.html"
+      $ cat /path/to/file
+      HTTP/1.1 200 OK
+      Date: Wed, 31 May 2017 16:01:59 GMT
+      Access-Control-Allow-Origin: *
+      Cache-Control: max-age=10800, public
+      Last-Modified: Wed, 31 May 2017 16:01:59 GMT
+      Content-Type: text/html
+      Age: 0
+      Content-Length: 176970
+
+      <!DOCTYPE html><html id= ...
+
+Then, to push the object, post the object using the PUSH method: ::
+
+      $ curl -x -s -o /dev/null -X PUSH --data-binary /path/to/file "http://example.com/push_me.html"
 
 .. _inspecting-the-cache:
 
@@ -420,3 +449,46 @@ Regex Invalidate
     Only one administrator should delete and invalidate cache entries from the
     Cache Inspector at any point in time. Changes made by multiple
     administrators at the same time can lead to unpredictable results.
+
+If-Modified-Since/If-None-Match
+-------------------------------
+
+Traffic Server will respond to matching If-Modified-Since/If-None-Match requests
+with a ``304 Not Modified`` HTTP message.
+
+This table describes how Traffic Server handles these types of requests: ::
+
+    OS = Origin Server's respose HTTP message
+    IMS = A GET request w/ an If-Modified-Since header
+    LMs = Last-Modified header date returned by server
+    INM = A GET request w/ an If-None-Match header
+    E   = Etag header present
+    D, D' are Last modified dates returned by the origin server and are later used for IMS
+    The D date is earlier than the D' date
+
++----------+-----------+----------+-----------+--------------+
+| Client's | Cached    | Proxy's  |   Response to client     |
+| Request  | State     | Request  +-----------+--------------+
+|          |           |          | OS 200    |  OS 304      |
++==========+===========+==========+===========+==============+
+|  GET     | Fresh     | N/A      |  N/A      |  N/A         |
++----------+-----------+----------+-----------+--------------+
+|  GET     | Stale, D' | IMS  D'  | 200, new  | 200, cached  |
++----------+-----------+----------+-----------+--------------+
+|  GET     | Stale, E  | INM  E   | 200, new  | 200, cached  |
++----------+-----------+----------+-----------+--------------+
+|  INM E   | Stale, E  | INM  E   | 304       | 304          |
++----------+-----------+----------+-----------+--------------+
+|  INM E + | Stale,    | INM E    | 200, new *| 304          |
+|  IMS D'  | E + D'    | IMS D'   |           |              |
++----------+-----------+----------+-----------+--------------+
+|  IMS D   | None      | GET      | 200, new *|  N/A         |
++----------+-----------+----------+-----------+--------------+
+|  INM E   | None      | GET      | 200, new *|  N/A         |
++----------+-----------+----------+-----------+--------------+
+|  IMS D   | Stale, D' | IMS D'   | 200, new  | Compare      |
++----------+-----------+----------+-----------+ LMs & D'.    |
+|  IMS D'  | Stale, D' | IMS D'   | 200, new  | If match, 304|
++----------+-----------+----------+-----------+ If no match, |
+|  IMS D'  | Stale D   | IMS D    | 200, new *| 200, cached  |
++----------+-----------+----------+-----------+--------------+

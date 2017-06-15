@@ -326,8 +326,8 @@ public:
           _now       = now;
           _time_diff = _now - _old_time;
         } else {
-          fprintf(stderr, "Can't fetch url %s", _url.c_str());
-          abort();
+          fprintf(stderr, "Can't fetch url %s\n", _url.c_str());
+          exit(1);
         }
 
         /* always cleanup */

@@ -28,4 +28,5 @@ development team.
 .. toctree::
    :maxdepth: 2
 
-   memview.en.rst
+   memview.en
+   scalar.en

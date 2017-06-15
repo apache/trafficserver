@@ -595,7 +595,8 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
     }
     ink_assert(found);
     if (!(configFiles && configFiles->getRollbackObj(fname, &rb)) &&
-        (strcmp(data_raw, "proxy.config.body_factory.template_sets_dir") != 0)) {
+        (strcmp(data_raw, "proxy.config.body_factory.template_sets_dir") != 0) &&
+        (strcmp(data_raw, "proxy.config.ssl.server.ticket_key.filename") != 0)) {
       mgmt_fatal(0, "[LocalManager::sendMgmtMsgToProcesses] "
                     "Invalid 'data_raw' for MGMT_EVENT_CONFIG_FILE_UPDATE\n");
     }
@@ -733,7 +734,7 @@ LocalManager::processEventQueue()
         ink_assert(enqueue(mgmt_event_queue, mh));
         return;
       }
-      Debug("lm", "[TrafficManager] ==> Sending signal event '%d' payload=%d", mh->msg_id, mh->data_len);
+      Debug("lm", "[TrafficManager] ==> Sending signal event '%d' %s payload=%d", mh->msg_id, data_raw, mh->data_len);
       lmgmt->sendMgmtMsgToProcesses(mh);
     }
     ats_free(mh);

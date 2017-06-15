@@ -724,7 +724,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
     }
 
     if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_TRACE ||
-        (t_state.hdr_info.request_content_length <= 0 && t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING)) {
+        (t_state.hdr_info.client_request.get_content_length() == 0 &&
+         t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING)) {
       // Enable further IO to watch for client aborts
       ua_entry->read_vio->reenable();
     } else {
@@ -6118,10 +6119,10 @@ HttpSM::setup_100_continue_transfer()
 void
 HttpSM::setup_error_transfer()
 {
-  if (t_state.internal_msg_buffer) {
+  if (t_state.internal_msg_buffer || t_state.http_return_code == HTTP_STATUS_NO_CONTENT) {
     // Since we need to send the error message, call the API
     //   function
-    ink_assert(t_state.internal_msg_buffer_size > 0);
+    ink_assert(t_state.internal_msg_buffer_size > 0 || t_state.http_return_code == HTTP_STATUS_NO_CONTENT);
     t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
     do_api_callout();
   } else {
