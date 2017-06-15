@@ -37,7 +37,7 @@ ts.Disk.records_config.update({
     })
 
 # Create a template body for a 204.
-body_factory_dir=ts.Variables.body_factory_template_dir
+body_factory_dir=ts.Variables.BODYFACTORYTEMPLATEDIR
 ts.Disk.File(os.path.join(body_factory_dir, 'default', CUSTOM_TEMPLATE_204_HOST+'_default')).\
     WriteOn(
 """<HTML>

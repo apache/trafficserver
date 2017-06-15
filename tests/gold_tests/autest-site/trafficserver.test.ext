@@ -25,6 +25,7 @@ from ports import get_port
 def make_id(s):
     return s.replace(".", "_").replace('-', '_')
 
+
 # this forms is for the global process define
 
 
@@ -36,31 +37,31 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     ts_dir = os.path.join(obj.RunDirectory, name)
     # common bin directory
     bin_dir = 'bin'
-    # ideally we would use a value like config.. but there is a bug
-    # in which records.conf values are not loaded correctly from this location,
-    # so we use the expecetd "build" layout to correct the issue for the time
-    # being
-    config_dir = os.path.join(
-        ts_dir,
-        obj.Variables.SYSCONFDIR.replace(
-            obj.Variables.PREFIX + "/",
-            ""
-        )
-    )
+
+    # manually set up all directory for the test
+
+    # configuration directory
+    config_dir = os.path.join(ts_dir, 'etc/trafficserver')
+    
     # directory contains the html response templates
-    template_dir = os.path.join(config_dir, "body_factory")
+    template_dir = os.path.join(config_dir, 'body_factory')
+    
     # contains plugins
-    plugin_dir = os.path.join(
-        ts_dir, obj.Variables.PLUGINDIR.replace(obj.Variables.PREFIX + "/", ""))
+    plugin_dir = os.path.join(ts_dir, 'libexec/trafficserver')
+    
     # the log directory
     log_dir = os.path.join(ts_dir, 'log')
-    runtime_dir = os.path.join(
-        ts_dir, obj.Variables.RUNTIMEDIR.replace(obj.Variables.PREFIX + "/", ""))
+    
+    # runtime dir
+    runtime_dir = os.path.join(ts_dir, 'var/trafficserver')
+    
+    #ssl, storage & cache
     ssl_dir = os.path.join(ts_dir, 'ssl')
     storage_dir = os.path.join(ts_dir, 'storage')
+    cache_dir = os.path.join(ts_dir, 'cache')
+
     # create process
     p = obj.Processes.Process(name, command)
-
     # we want to have a few directories more fixed
     # this helps with debugging as location are common
     # we do this by overiding locations from the "layout"
@@ -80,22 +81,32 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     p.Env['PATH'] = bin_path + os.pathsep + p.ComposeEnv()['PATH']
     p.Setup.Copy(p.Variables.BINDIR, bin_path, True)
 
-    #########################################################
     # setup config directory
 
     # copy all basic config files we need to get this to work
     cfg_dir = os.path.join(AUTEST_SITE_PATH, "min_cfg")
+
     for f in os.listdir(cfg_dir):
         p.Setup.CopyAs(os.path.join(cfg_dir, f), config_dir)
 
+    #########################################################
+    # setup config directory
+    p.Env['PROXY_CONFIG_CONFIG_DIR'] = config_dir
+    p.Variables.CONFIGDIR = config_dir
     #########################################################
     # setup read-only data directory in config. Needed for response body
     # reponses
 
     p.Env['PROXY_CONFIG_BODY_FACTORY_TEMPLATE_SETS_DIR'] = template_dir
-    p.Variables.body_factory_template_dir = template_dir
-    p.Setup.Copy(os.path.join(p.Variables.SYSCONFDIR,
-                              'body_factory'), template_dir)
+    p.Variables.BODYFACTORYTEMPLATEDIR = template_dir
+    p.Setup.Copy(
+        os.path.join(p.Variables.SYSCONFDIR, 'body_factory'), template_dir)
+
+    #########################################################
+    # setup cache directory
+    p.Setup.MakeDir(cache_dir)
+    p.Env['PROXY_CONFIG_CACHE_DIR'] = cache_dir
+    p.Variables.CACHEDIR = cache_dir
 
     #########################################################
     # setup read-only data directory for plugins
@@ -115,14 +126,16 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
 
     # this is needed for cache and communication sockets
     # Below was to make shorter paths but the code in
-    # traffic_ctl is broken and ignores this.
-    # p.Env['PROXY_CONFIG_LOCAL_STATE_DIR']=runtime_dir
+    # set runtime directory(local state dir)
+    p.Env['PROXY_CONFIG_LOCAL_STATE_DIR'] = runtime_dir
     p.Env['PROXY_CONFIG_HOSTDB_STORAGE_PATH'] = runtime_dir
-    # p.Variables.RUNTIMEDIR=runtime_dir
+    p.Variables.RUNTIMEDIR = runtime_dir
+    p.Variables.LOCALSTATEDIR = runtime_dir
+
     p.Setup.MakeDir(runtime_dir)
     # will need this for traffic_manager is it runs
     p.Setup.MakeDir(os.path.join(config_dir, 'snapshots'))
-
+    p.Env['PROXY_CONFIG_SNAPSHOT_DIR'] = os.path.join(config_dir, 'snapshots')
     ##########################################################
     # create subdirectories that need to exist (but are empty)
     # ssl directory has to be created for keeping certs and keys
@@ -137,7 +150,6 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     # cache.db directory
     p.Setup.MakeDir(storage_dir)
     p.Setup.Chown(storage_dir, "nobody", "nobody", ignore=True)
-
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_STORAGE_DIR'] = storage_dir
     p.Variables.STORAGEDIR = storage_dir
@@ -258,11 +270,11 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT'] = str(p.Variables.admin_port)
     p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(
         p.Variables.admin_port)  # support pre ATS 6.x
-
     # since we always kill this
     p.ReturnCode = None
 
     return p
+
 
 ##################################
 # added to ats process object to help deal with config files
@@ -273,10 +285,23 @@ class Config(File):
     Class to represent a config file
     '''
 
-    def __init__(self, runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True, content=None):
+    def __init__(self,
+                 runable,
+                 name,
+                 exists=None,
+                 size=None,
+                 content_tester=None,
+                 execute=False,
+                 runtime=True,
+                 content=None):
         super(Config, self).__init__(
-            runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True
-        )
+            runable,
+            name,
+            exists=None,
+            size=None,
+            content_tester=None,
+            execute=False,
+            runtime=True)
 
         self.content = content
         self._added = False
@@ -289,8 +314,8 @@ class Config(File):
         '''
         Write contents to disk
         '''
-        host.WriteVerbosef('ats-config-file',
-                           "Writting out file {0}", self.Name)
+        host.WriteVerbosef('ats-config-file', "Writting out file {0}",
+                           self.Name)
         if self.content is not None:
             with open(name, 'w') as f:
                 f.write(self.content)
@@ -317,17 +342,30 @@ class RecordsConfig(Config, dict):
     rc['CONFIG']['proxy.config.log.hostname']
     '''
 
-    reverse_kind_map = {str: 'STRING',
-                        int: 'INT',
-                        float: 'FLOAT',
-                        }
+    reverse_kind_map = {
+        str: 'STRING',
+        int: 'INT',
+        float: 'FLOAT',
+    }
 
     line_template = 'CONFIG {name} {kind} {val}\n'
 
-    def __init__(self, runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True):
+    def __init__(self,
+                 runable,
+                 name,
+                 exists=None,
+                 size=None,
+                 content_tester=None,
+                 execute=False,
+                 runtime=True):
         super(RecordsConfig, self).__init__(
-            runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True
-        )
+            runable,
+            name,
+            exists=None,
+            size=None,
+            content_tester=None,
+            execute=False,
+            runtime=True)
         self.WriteCustomOn(self._do_write)
 
     def _do_write(self, name):
@@ -335,16 +373,23 @@ class RecordsConfig(Config, dict):
         if len(self) > 0:
             with open(name, 'w') as f:
                 for name, val in self.items():
-                    f.write(self.line_template.format(name=name,
-                                                      kind=self.reverse_kind_map[
-                                                          type(val)],
-                                                      val=val))
-        return (False, "Writing config file {0}".format(os.path.split(self.Name)[-1]), "Success")
+                    f.write(
+                        self.line_template.format(
+                            name=name,
+                            kind=self.reverse_kind_map[type(val)],
+                            val=val)
+                    )
+        return (False,
+                "Writing config file {0}".format(os.path.split(self.Name)[-1]),
+                "Success")
+
+
 ##########################################################################
 
 
 def addSSLfile(self, filename):
     self.Setup.CopyAs(filename, self.Variables.SSLDir)
+
 
 RegisterFileType(Config, "ats:config")
 RegisterFileType(RecordsConfig, "ats:config:records")
