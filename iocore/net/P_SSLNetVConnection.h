@@ -266,6 +266,7 @@ public:
 
 private:
   ts::StringView map_tls_protocol_to_tag(const char *proto_string) const;
+  bool update_rbio(bool move_to_socket);
 
   bool sslHandShakeComplete        = false;
   bool sslClientRenegotiationAbort = false;
