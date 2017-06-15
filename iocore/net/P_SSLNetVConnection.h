@@ -265,6 +265,7 @@ private:
   SSLNetVConnection &operator=(const SSLNetVConnection &);
 
   ts::StringView map_tls_protocol_to_tag(const char *proto_string) const;
+  bool update_rbio(bool move_to_socket);
 
   bool sslHandShakeComplete;
   bool sslClientRenegotiationAbort;
