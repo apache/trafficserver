@@ -36,7 +36,7 @@ ts.Disk.remap_config.AddLine(
 
 
 domain_directory = ['www.linkedin.com', '127.0.0.1', 'www.foobar.net']
-body_factory_dir = ts.Variables.body_factory_template_dir
+body_factory_dir=ts.Variables.BODY_FACTORY_TEMPLATE_DIR
 # for each domain
 set = False
 for directory_item in domain_directory:
