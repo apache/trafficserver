@@ -15,16 +15,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
 import os
 from future.utils import native_str
 
 
 class CopyATSConfig(SetupItem):
     def __init__(self, file, targetname=None, process=None):
-        super(CopyATSConfig, self).__init__(
-            itemname="CopyATSConfig"
-        )
+        super(CopyATSConfig, self).__init__(itemname="CopyATSConfig")
         self.file = file
         # some protection
         if process is None and not isinstance(targetname, native_str):
@@ -34,21 +31,24 @@ class CopyATSConfig(SetupItem):
         self.targetname = targetname
 
     def setup(self):
-
         process = self.process if self.process else self
         try:
             ts_dir = process.Env['TS_ROOT']
         except:
             if self.process:
                 raise SetupError(
-                    'TS_ROOT is not defined. Cannot copy ats config file without location to copy to.')
+                    'TS_ROOT is not defined. Cannot copy ats config file without location to copy to.'
+                )
             else:
                 raise SetupError(
-                    'TS_ROOT is not defined. Cannot copy ats config file without location to copy to. Please pass in an ATS process object')
-        config_dir = os.path.join(ts_dir, process.ComposeVariables(
-        ).SYSCONFDIR.replace(process.ComposeVariables().PREFIX + "/", ""))
-        host.WriteVerbose(
-            "CopyATSConfig", "Copying {0} to {1}".format(self.file, config_dir))
+                    'TS_ROOT is not defined. Cannot copy ats config file without location to copy to. Please pass in an ATS process object'
+                )
+
+        # set up the config path for test manually
+        config_dir = os.path.join(ts_dir, "config")
+        
+        host.WriteVerbose("CopyATSConfig", "Copying {0} to {1}".format(
+            self.file, config_dir))
         self.CopyAs(self.file, config_dir, self.targetname)
 
 
