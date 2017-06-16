@@ -1644,17 +1644,19 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   main_thread->set_specific();
 
   // Re-initialize diagsConfig based on records.config configuration
-  if (diagsConfig) {
-    RecDebugOff();
-    delete (diagsConfig);
-  }
-  diagsConfig = new DiagsConfig("Server", DIAGS_LOG_FILENAME, error_tags, action_tags, true);
-  diags       = diagsConfig->diags;
+  DiagsConfig *old_log = diagsConfig;
+  diagsConfig          = new DiagsConfig("Server", DIAGS_LOG_FILENAME, error_tags, action_tags, true);
+  diags                = diagsConfig->diags;
   RecSetDiags(diags);
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
   if (is_debug_tag_set("diags")) {
     diags->dump();
+  }
+
+  if (old_log) {
+    delete (old_log);
+    old_log = nullptr;
   }
 
   DebugCapabilities("privileges"); // Can do this now, logging is up.
