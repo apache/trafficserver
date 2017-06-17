@@ -1437,8 +1437,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   Debug("ssl", "callHooks sslHandshakeHookState=%d", this->sslHandshakeHookState);
 
   // First time through, set the type of the hook that is currently being invoked
-  if ((this->sslHandshakeHookState == HANDSHAKE_HOOKS_PRE || this->sslHandshakeHookState == HANDSHAKE_HOOKS_DONE) &&
-      eventId == TS_EVENT_SSL_CERT) {
+  if (this->sslHandshakeHookState == HANDSHAKE_HOOKS_PRE && eventId == TS_EVENT_SSL_CERT) {
     // the previous hook should be DONE and set curHook to nullptr before trigger the sni hook.
     ink_assert(curHook == nullptr);
     // set to HOOKS_CERT means CERT/SNI hooks has called by SSL_accept()
