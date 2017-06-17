@@ -1,0 +1,4 @@
+rio.example.com
+ 2002::/16
+sao.example.com
+ 18.0.0.00/8

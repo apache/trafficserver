@@ -104,6 +104,7 @@ proxy/logging/test_LogUtils
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/esi/*_test
 plugins/experimental/sslheaders/test_sslheaders
+plugins/experimental/alt_svc/*_test
 
 plugins/esi/docnode_test
 plugins/esi/gzip_test

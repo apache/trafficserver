@@ -1,0 +1,6 @@
+singapore.example.com
+ 7ee9::/16
+taiwan.example.com
+ 7e3a:f3f3::/32
+newyork.example.com
+ 28b7::/16

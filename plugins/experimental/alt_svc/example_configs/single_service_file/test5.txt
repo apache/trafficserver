@@ -1,0 +1,6 @@
+ireland.example.com
+ 64.77.00.00/16
+ 7e3a:f3f3:8c0b::/48
+france.example.com
+ 64.77.148.00/24
+ 7e3a:f3f3::/32
