@@ -102,6 +102,10 @@ As with the global method above, multiple configuration files may be listed,
 each with its own ``@pparam=<file>`` and their contents will be evaluated in
 the order the files were specified.
 
+Each ruleset that is configured per-mapping should have a special
+`Hook Conditions`_ defined. Without a defined hook, these rulesets will use the
+``REMAP_PSEUDO_HOOK``.
+
 Rewriting Rules
 ===============
 
@@ -705,6 +709,12 @@ Variable     Description
 %<cque>      Client effective URI
 %<cquup>     Client unmapped URI path
 ============ ==================================================================
+
+Variables to be expanded must be enclosed in double quotes ``"``, as in this example using the arbitrary header
+``Custom-Client-IP``::
+
+    set-header Custom-Client-IP "%<chi>"
+
 
 Header Values
 -------------
