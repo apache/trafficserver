@@ -126,6 +126,10 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   ///////////////////////////////////////////
 
   buffer = (format == nullptr) ? nullptr : ats_strndup(format, format_size);
+  if (buffer != nullptr && format_size > 0) {
+    *resulting_buffer_length = format_size > max_buffer_length ? 0 : format_size;
+    plain_flag               = true;
+  }
   /////////////////////////////////////////////////////////
   // try to fabricate the desired type of error response //
   /////////////////////////////////////////////////////////
