@@ -41,16 +41,17 @@ memcmp(MemView const &lhs, MemView const &rhs)
   size_t n;
 
   // Seems a bit ugly but size comparisons must be done anyway to get the memcmp args.
-  if (lhs.size() < rhs.size())
+  if (lhs.size() < rhs.size()) {
     zret = 1, n = lhs.size();
-  else {
+  } else {
     n    = rhs.size();
     zret = rhs.size() < lhs.size() ? -1 : 0;
   }
 
   int r = ::memcmp(lhs.ptr(), rhs.ptr(), n);
-  if (0 != r) // If we got a not-equal, override the size based result.
+  if (0 != r) { // If we got a not-equal, override the size based result.
     zret = r;
+  }
 
   return zret;
 }
@@ -61,10 +62,11 @@ strcasecmp(StringView lhs, StringView rhs)
   while (lhs && rhs) {
     char l = tolower(*lhs);
     char r = tolower(*rhs);
-    if (l < r)
+    if (l < r) {
       return -1;
-    else if (r < l)
+    } else if (r < l) {
       return 1;
+    }
     ++lhs, ++rhs;
   }
   return lhs ? 1 : rhs ? -1 : 0;
@@ -97,10 +99,12 @@ svtoi(StringView src, StringView *out, int base)
 
   intmax_t zret = 0;
 
-  if (out)
+  if (out) {
     out->clear();
-  if (!(1 < base && base <= 36))
+  }
+  if (!(1 < base && base <= 36)) {
     return 0;
+  }
   if (src.ltrim(&isspace)) {
     const char *start = src.ptr();
     int8_t v;
@@ -117,8 +121,9 @@ svtoi(StringView src, StringView *out, int base)
       out->setView(start, src.ptr());
     }
 
-    if (neg)
+    if (neg) {
       zret = -zret;
+    }
   }
   return zret;
 }

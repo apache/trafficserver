@@ -143,7 +143,7 @@ public:
   {
     if (cache_read_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
-      cache_read_vc->do_io(VIO::ABORT);
+      cache_read_vc->do_io_close(); // abort
       cache_read_vc = NULL;
     }
   }
@@ -152,7 +152,7 @@ public:
   {
     if (cache_write_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
-      cache_write_vc->do_io(VIO::ABORT);
+      cache_write_vc->do_io_close(); // abort
       cache_write_vc = NULL;
     }
   }
@@ -161,7 +161,7 @@ public:
   {
     if (cache_write_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
-      cache_write_vc->do_io(VIO::CLOSE);
+      cache_write_vc->do_io_close();
       cache_write_vc = NULL;
     }
   }
@@ -170,7 +170,7 @@ public:
   {
     if (cache_read_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
-      cache_read_vc->do_io(VIO::CLOSE);
+      cache_read_vc->do_io_close();
       cache_read_vc = NULL;
     }
   }

@@ -49,7 +49,6 @@ class Continuation;
 
 enum ThreadType {
   REGULAR = 0,
-  MONITOR,
   DEDICATED,
 };
 
@@ -253,28 +252,33 @@ public:
   */
   Event *schedule_every_local(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
+  /** Schedule an event called once when the thread is spawned.
+
+      This is useful only for regular threads and if called before @c Thread::start. The event will be
+      called first before the event loop.
+
+      @Note This will override the event for a dedicate thread so that this is called instead of the
+      event passed to the constructor.
+  */
+  Event *schedule_spawn(Continuation *c, int ev = EVENT_IMMEDIATE, void *cookie = nullptr);
+
   /* private */
 
   Event *schedule_local(Event *e);
 
-  InkRand generator;
-
-private:
-  // prevent unauthorized copies (Not implemented)
-  EThread(const EThread &);
-  EThread &operator=(const EThread &);
+  InkRand generator = static_cast<uint64_t>(Thread::get_hrtime_updated() ^ reinterpret_cast<uintptr_t>(this));
 
   /*-------------------------------------------------------*\
   |  UNIX Interface                                         |
   \*-------------------------------------------------------*/
 
-public:
   EThread();
   EThread(ThreadType att, int anid);
   EThread(ThreadType att, Event *e);
+  EThread(const EThread &) = delete;
+  EThread &operator=(const EThread &) = delete;
   virtual ~EThread();
 
-  Event *schedule_spawn(Continuation *cont);
   Event *schedule(Event *e, bool fast_signal = false);
 
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
@@ -292,27 +296,36 @@ public:
   EThread **ethreads_to_be_signalled = nullptr;
   int n_ethreads_to_be_signalled     = 0;
 
-  int id;
-  unsigned int event_types = 0;
+  static constexpr int NO_ETHREAD_ID = -1;
+  int id                             = NO_ETHREAD_ID;
+  unsigned int event_types           = 0;
   bool is_event_type(EventType et);
   void set_event_type(EventType et);
 
   // Private Interface
 
-  void execute();
+  void execute() override;
   void process_event(Event *e, int calling_code);
   void free_event(Event *e);
   void (*signal_hook)(EThread *) = nullptr;
 
 #if HAVE_EVENTFD
-  int evfd = -1;
+  int evfd = ts::NO_FD;
 #else
   int evpipe[2];
 #endif
   EventIO *ep = nullptr;
 
-  ThreadType tt   = REGULAR;
-  Event *oneevent = nullptr; // For dedicated event thread
+  ThreadType tt = REGULAR;
+  /** Initial event to call, before any scheduling.
+
+      For dedicated threads this is the only event called.
+      For regular threads this is called first before the event loop starts.
+      @internal For regular threads this is used by the EventProcessor to get called back after
+      the thread starts but before any other events can be dispatched to provide initializations
+      needed for the thread.
+  */
+  Event *start_event = nullptr;
 
   ServerSessionPool *server_session_pool = nullptr;
 };

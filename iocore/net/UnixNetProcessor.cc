@@ -127,8 +127,9 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   int should_filter_int         = 0;
   na->server.http_accept_filter = false;
   REC_ReadConfigInteger(should_filter_int, "proxy.config.net.defer_accept");
-  if (should_filter_int > 0 && opt.etype == ET_NET)
+  if (should_filter_int > 0 && opt.etype == ET_NET) {
     na->server.http_accept_filter = true;
+  }
 
   SessionAccept *sa = dynamic_cast<SessionAccept *>(cont);
   na->proxyPort     = sa ? sa->proxyPort : nullptr;
@@ -201,10 +202,11 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   EThread *t             = cont->mutex->thread_holding;
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
-  if (opt)
+  if (opt) {
     vc->options = *opt;
-  else
+  } else {
     opt = &vc->options;
+  }
 
   vc->set_context(NET_VCONNECTION_OUT);
   bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
@@ -259,10 +261,11 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
       if (lock2.is_locked()) {
         int ret;
         ret = vc->connectUp(t, NO_FD);
-        if ((using_socks) && (ret == CONNECT_SUCCESS))
+        if ((using_socks) && (ret == CONNECT_SUCCESS)) {
           return &socksEntry->action_;
-        else
+        } else {
           return ACTION_RESULT_DONE;
+        }
       }
     }
   }
@@ -274,8 +277,9 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   }
   if (using_socks) {
     return &socksEntry->action_;
-  } else
+  } else {
     return result;
+  }
 }
 
 Action *
@@ -310,8 +314,9 @@ struct CheckConnect : public Continuation {
 
     case NET_EVENT_OPEN_FAILED:
       Debug("iocore_net_connect", "connect Net open failed");
-      if (!action_.cancelled)
+      if (!action_.cancelled) {
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)e);
+      }
       break;
 
     case VC_EVENT_WRITE_READY:
@@ -337,22 +342,26 @@ struct CheckConnect : public Continuation {
         }
       }
       vc->do_io_close();
-      if (!action_.cancelled)
+      if (!action_.cancelled) {
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_CONNECT_FAILED);
+      }
       break;
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Debug("iocore_net_connect", "connect timed out");
       vc->do_io_close();
-      if (!action_.cancelled)
+      if (!action_.cancelled) {
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_CONNECT_TIMEOUT);
+      }
       break;
     default:
       ink_assert(!"unknown connect event");
-      if (!action_.cancelled)
+      if (!action_.cancelled) {
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_CONNECT_FAILED);
+      }
     }
-    if (!recursion)
+    if (!recursion) {
       delete this;
+    }
     return EVENT_DONE;
   }
 
@@ -364,9 +373,9 @@ struct CheckConnect : public Continuation {
     recursion++;
     netProcessor.connect_re(this, target, opt);
     recursion--;
-    if (connect_status != NET_EVENT_OPEN_FAILED)
+    if (connect_status != NET_EVENT_OPEN_FAILED) {
       return &action_;
-    else {
+    } else {
       delete this;
       return ACTION_RESULT_DONE;
     }
@@ -397,22 +406,19 @@ NetProcessor::connect_s(Continuation *cont, sockaddr const *target, int timeout,
 
 struct PollCont;
 
-// This is a little odd, in that the actual threads are created before calling the processor.
-int
-UnixNetProcessor::start(int, size_t)
+// This needs to be called before the ET_NET threads are started.
+void
+UnixNetProcessor::init()
 {
   EventType etype = ET_NET;
 
   netHandler_offset = eventProcessor.allocate(sizeof(NetHandler));
   pollCont_offset   = eventProcessor.allocate(sizeof(PollCont));
 
-  n_netthreads = eventProcessor.n_threads_for_type[etype];
-  netthreads   = eventProcessor.eventthread[etype];
-  for (int i = 0; i < n_netthreads; ++i) {
-    initialize_thread_for_net(netthreads[i]);
-    extern void initialize_thread_for_http_sessions(EThread * thread, int thread_index);
-    initialize_thread_for_http_sessions(netthreads[i], i);
-  }
+  if (0 == accept_mss)
+    REC_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
+
+  eventProcessor.schedule_spawn(&initialize_thread_for_net, etype);
 
   RecData d;
   d.rec_int = 0;
@@ -432,21 +438,13 @@ UnixNetProcessor::start(int, size_t)
     }
   }
 
-  // commented by vijay -  bug 2489945
-  /*if (use_accept_thread) // 0
-     { NetAccept * na = createNetAccept();
-     SET_CONTINUATION_HANDLER(na,&NetAccept::acceptLoopEvent);
-     accept_thread_event = eventProcessor.spawn_thread(na);
-     if (!accept_thread_event) delete na;
-     } */
-
   /*
    * Stat pages
    */
   extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
-  if (etype == ET_NET)
+  if (etype == ET_NET) {
     statPagesManager.register_http("net", register_ShowNet);
-  return 1;
+  }
 }
 
 // Virtual function allows creation of an

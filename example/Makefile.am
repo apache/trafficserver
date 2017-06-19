@@ -20,7 +20,8 @@ include $(top_srcdir)/build/tidy.mk
 AM_CXXFLAGS += -Wno-unused-variable
 AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
-libatscppai = $(top_builddir)/lib/cppapi/libatscppapi.la
+libatscppapi = $(top_builddir)/lib/cppapi/libatscppapi.la
+libtsconfig = $(top_builddir)/lib/tsconfig/libtsconfig.la
 
 example_Plugins = \
 	add_header.la \
@@ -47,7 +48,7 @@ example_Plugins = \
 	replace_header.la \
 	response_header_1.la \
 	secure_link.la \
-	server-push.la \
+	server_push.la \
 	server-transform.la \
 	ssl-preaccept.la \
 	ssl-sni-whitelist.la \
@@ -112,11 +113,13 @@ remap_la_SOURCES = remap/remap.cc
 replace_header_la_SOURCES = replace_header/replace_header.c
 response_header_1_la_SOURCES = response_header_1/response_header_1.c
 secure_link_la_SOURCES = secure_link/secure_link.c
-server_push_la_SOURCES = server-push/server-push.c
+server_push_la_SOURCES = server_push/server_push.c
 server_transform_la_SOURCES = server-transform/server-transform.c
 ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc
 ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc
+ssl_sni_la_LIBADD = $(libtsconfig)
 ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc
+ssl_sni_whitelist_la_LIBADD = $(libtsconfig)
 disable_http2_la_SOURCES = disable_http2/disable_http2.cc
 statistic_la_SOURCES = statistic/statistic.cc
 thread_1_la_SOURCES = thread-1/thread-1.c
@@ -152,29 +155,29 @@ cppapi_WebSocket_la_SOURCES = cppapi/websocket/WebSocket.cc cppapi/websocket/WSB
 cppapi_boom_la_SOURCES = cppapi/boom/boom.cc
 cppapi_intercept_la_SOURCES = cppapi/intercept/intercept.cc
 
-cppapi_AsyncHttpFetchStreaming_la_LIBADD = $(libatscppai)
-cppapi_AsyncHttpFetch_la_LIBADD = $(libatscppai)
-cppapi_AsyncTimer_la_LIBADD = $(libatscppai)
-cppapi_ClientRedirect_la_LIBADD = $(libatscppai)
-cppapi_ClientRequest_la_LIBADD = $(libatscppai)
-cppapi_CustomErrorRemapPlugin_la_LIBADD = $(libatscppai)
-cppapi_CustomResponse_la_LIBADD = $(libatscppai)
-cppapi_GlobalHookPlugin_la_LIBADD = $(libatscppai)
-cppapi_GzipTransformationPlugin_la_LIBADD = $(libatscppai)
-cppapi_HelloWorldPlugin_la_LIBADD = $(libatscppai)
-cppapi_InternalTransactionHandling_la_LIBADD = $(libatscppai)
-cppapi_LoggerExample_la_LIBADD = $(libatscppai)
-cppapi_MultipleTransactionHookPlugins_la_LIBADD = $(libatscppai)
-cppapi_NullTransformationPlugin_la_LIBADD = $(libatscppai)
-cppapi_PostBuffer_la_LIBADD = $(libatscppai)
-cppapi_RemapPlugin_la_LIBADD = $(libatscppai)
-cppapi_ServerResponse_la_LIBADD = $(libatscppai)
-cppapi_StatExample_la_LIBADD = $(libatscppai)
-cppapi_TimeoutExamplePlugin_la_LIBADD = $(libatscppai)
-cppapi_TransactionHookPlugin_la_LIBADD = $(libatscppai)
-cppapi_WebSocket_la_LIBADD = $(libatscppai)
-cppapi_boom_la_LIBADD = $(libatscppai)
-cppapi_intercept_la_LIBADD = $(libatscppai)
+cppapi_AsyncHttpFetchStreaming_la_LIBADD = $(libatscppapi)
+cppapi_AsyncHttpFetch_la_LIBADD = $(libatscppapi)
+cppapi_AsyncTimer_la_LIBADD = $(libatscppapi)
+cppapi_ClientRedirect_la_LIBADD = $(libatscppapi)
+cppapi_ClientRequest_la_LIBADD = $(libatscppapi)
+cppapi_CustomErrorRemapPlugin_la_LIBADD = $(libatscppapi)
+cppapi_CustomResponse_la_LIBADD = $(libatscppapi)
+cppapi_GlobalHookPlugin_la_LIBADD = $(libatscppapi)
+cppapi_GzipTransformationPlugin_la_LIBADD = $(libatscppapi)
+cppapi_HelloWorldPlugin_la_LIBADD = $(libatscppapi)
+cppapi_InternalTransactionHandling_la_LIBADD = $(libatscppapi)
+cppapi_LoggerExample_la_LIBADD = $(libatscppapi)
+cppapi_MultipleTransactionHookPlugins_la_LIBADD = $(libatscppapi)
+cppapi_NullTransformationPlugin_la_LIBADD = $(libatscppapi)
+cppapi_PostBuffer_la_LIBADD = $(libatscppapi)
+cppapi_RemapPlugin_la_LIBADD = $(libatscppapi)
+cppapi_ServerResponse_la_LIBADD = $(libatscppapi)
+cppapi_StatExample_la_LIBADD = $(libatscppapi)
+cppapi_TimeoutExamplePlugin_la_LIBADD = $(libatscppapi)
+cppapi_TransactionHookPlugin_la_LIBADD = $(libatscppapi)
+cppapi_WebSocket_la_LIBADD = $(libatscppapi)
+cppapi_boom_la_LIBADD = $(libatscppapi)
+cppapi_intercept_la_LIBADD = $(libatscppapi)
 
 tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

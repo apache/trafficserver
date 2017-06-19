@@ -63,7 +63,7 @@ public:
   ~Http2Stream() { this->destroy(); }
   int main_event_handler(int event, void *edata);
 
-  void destroy();
+  void destroy() override;
 
   bool
   is_body_done() const
@@ -137,20 +137,21 @@ public:
 
   Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle);
   void send_request(Http2ConnectionState &cstate);
-  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
-  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false);
-  void do_io_close(int lerrno = -1);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false) override;
+  void do_io_close(int lerrno = -1) override;
   void initiating_close();
-  void do_io_shutdown(ShutdownHowTo_t) {}
+  void do_io_shutdown(ShutdownHowTo_t) override {}
   void update_read_request(int64_t read_len, bool send_update);
   bool update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
-  void reenable(VIO *vio);
-  virtual void transaction_done();
+  void reenable(VIO *vio) override;
+  virtual void transaction_done() override;
   void send_response_body();
   void push_promise(URL &url);
 
   // Stream level window size
-  ssize_t client_rwnd, server_rwnd;
+  ssize_t client_rwnd;
+  ssize_t server_rwnd = Http2::initial_window_size;
 
   LINK(Http2Stream, link);
 
@@ -186,17 +187,17 @@ public:
     return chunked;
   }
 
-  void release(IOBufferReader *r);
+  void release(IOBufferReader *r) override;
 
   virtual bool
-  allow_half_open() const
+  allow_half_open() const override
   {
     return false;
   }
 
-  virtual void set_active_timeout(ink_hrtime timeout_in);
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in);
-  virtual void cancel_inactivity_timeout();
+  virtual void set_active_timeout(ink_hrtime timeout_in) override;
+  virtual void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  virtual void cancel_inactivity_timeout() override;
   void clear_inactive_timer();
   void clear_active_timer();
   void clear_timers();
@@ -216,7 +217,7 @@ public:
   }
 
   bool
-  is_first_transaction() const
+  is_first_transaction() const override
   {
     return is_first_transaction_flag;
   }
@@ -227,8 +228,8 @@ private:
   bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   HTTPParser http_parser;
-  ink_hrtime _start_time;
-  EThread *_thread = nullptr;
+  ink_hrtime _start_time = 0;
+  EThread *_thread       = nullptr;
   Http2StreamId _id;
   Http2StreamState _state = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
 

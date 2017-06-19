@@ -132,6 +132,7 @@ logf(ts::Errata &err, ts::Errata::Id id, ts::Errata::Code code, char const *form
 {
   va_list rest;
   va_start(rest, format);
+  va_end(rest);
   return vlogf(err, id, code, format, rest);
 }
 
@@ -141,6 +142,7 @@ logf(ts::Errata::Code code, char const *format, ...)
   ts::Errata err;
   va_list rest;
   va_start(rest, format);
+  va_end(rest);
   return vlogf(err, ts::Errata::Id(0), code, format, rest);
 }
 
@@ -149,6 +151,7 @@ logf(ts::Errata &err, ts::Errata::Code code, char const *format, ...)
 {
   va_list rest;
   va_start(rest, format);
+  va_end(rest);
   return vlogf(err, ts::Errata::Id(0), code, format, rest);
 }
 
@@ -186,6 +189,7 @@ logf_errno(ts::Errata::Code code, char const *format, ...)
 {
   va_list rest;
   va_start(rest, format);
+  va_end(rest);
   return vlogf_errno(code, format, rest);
 }
 // ------------------------------------------------------

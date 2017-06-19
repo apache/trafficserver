@@ -69,7 +69,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
 
     goto Lerror;
   }
@@ -86,5 +86,5 @@ TSPluginInit(int argc, const char *argv[])
   return;
 
 Lerror:
-  TSError("[%s] Unable to initialize plugin (disabled).", PLUGIN_NAME);
+  TSError("[%s] Unable to initialize plugin (disabled)", PLUGIN_NAME);
 }

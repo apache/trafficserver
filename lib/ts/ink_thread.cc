@@ -78,8 +78,9 @@ void
 ink_sem_wait(ink_semaphore *sp)
 {
   int r;
-  while (EINTR == (r = sem_wait(sp->get())))
+  while (EINTR == (r = sem_wait(sp->get()))) {
     ;
+  }
   ink_assert(!r);
 }
 
@@ -87,8 +88,9 @@ bool
 ink_sem_trywait(ink_semaphore *sp)
 {
   int r;
-  while (EINTR == (r = sem_trywait(sp->get())))
+  while (EINTR == (r = sem_trywait(sp->get()))) {
     ;
+  }
   ink_assert(r == 0 || (errno == EAGAIN));
   return r == 0;
 }

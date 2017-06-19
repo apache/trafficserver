@@ -224,17 +224,17 @@ private:
   /////////////////////////////////////
   // manager configuration variables //
   /////////////////////////////////////
-  int enable_customizations;     // 0:no custom,1:custom,2:language-targeted
-  bool enable_logging;           // the user wants body factory logging
-  int response_suppression_mode; // when to suppress responses
+  int enable_customizations     = 0;    // 0:no custom,1:custom,2:language-targeted
+  bool enable_logging           = true; // the user wants body factory logging
+  int response_suppression_mode = 0;    // when to suppress responses
 
   ////////////////////
   // internal state //
   ////////////////////
-  unsigned int magic;          // magic for sanity checks/debugging
-  ink_mutex mutex;             // prevents reconfig/read races
-  bool callbacks_established;  // all config variables present
-  RawHashTable *table_of_sets; // sets of template hash tables
+  unsigned int magic = HTTP_BODY_FACTORY_MAGIC; // magic for sanity checks/debugging
+  ink_mutex mutex;                              // prevents reconfig/read races
+  bool callbacks_established  = false;          // all config variables present
+  RawHashTable *table_of_sets = nullptr;        // sets of template hash tables
 };
 
 #endif

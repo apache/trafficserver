@@ -390,6 +390,7 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
   LogBuffer *buffer;
   LogBuffer *new_buffer;
   bool retry = true;
+  head_p old_h;
 
   do {
     // To avoid a race condition, we keep a count of held references in
@@ -416,7 +417,6 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
 
       // swap the new buffer for the old one
       INK_WRITE_MEMORY_BARRIER;
-      head_p old_h;
 
       do {
         INK_QUEUE_LD(old_h, m_log_buffer);
@@ -864,7 +864,7 @@ TextLogObject::va_write(const char *format, va_list ap)
 LogObjectManager::LogObjectManager()
 {
   _APImutex = new ink_mutex;
-  ink_mutex_init(_APImutex, "_APImutex");
+  ink_mutex_init(_APImutex);
 }
 
 LogObjectManager::~LogObjectManager()

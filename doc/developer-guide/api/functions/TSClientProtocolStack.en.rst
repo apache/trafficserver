@@ -77,6 +77,8 @@ matched with an anchor prefix search, as with debug tags. For instance if :arg:`
 will match "tls/1.2" or "tls/1.3". This makes checking for TLS or IP more convenient. If more precision
 is required the entire protocol stack can be retrieved and processed more thoroughly.
 
+.. _protocol_tags:
+
 The protocol tags defined by |TS|.
 
 =========== =========

@@ -38,7 +38,7 @@
 
 // Initialize a thread to handle HTTP session management
 void
-initialize_thread_for_http_sessions(EThread *thread, int /* thread_index ATS_UNUSED */)
+initialize_thread_for_http_sessions(EThread *thread)
 {
   thread->server_session_pool = new ServerSessionPool;
 }
@@ -246,6 +246,7 @@ void
 HttpSessionManager::init()
 {
   m_g_pool = new ServerSessionPool;
+  eventProcessor.schedule_spawn(&initialize_thread_for_http_sessions, ET_NET);
 }
 
 // TODO: Should this really purge all keep-alive sessions?

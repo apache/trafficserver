@@ -861,7 +861,7 @@ HdrHeap::check_marshalled(uint32_t buf_length)
 int
 HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref)
 {
-  bool obj_found = false;
+  *found_obj = nullptr;
 
   // Check out this heap and make sure it is OK
   if (m_magic != HDR_BUF_MAGIC_MARSHALED) {
@@ -929,7 +929,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
     HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
     ink_assert(obj_is_aligned(obj));
 
-    if (obj->m_type == (unsigned)obj_type && obj_found == false) {
+    if (obj->m_type == (unsigned)obj_type && *found_obj == nullptr) {
       *found_obj = obj;
     }
 

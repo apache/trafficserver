@@ -94,6 +94,8 @@
 #define DEFAULT_STR "-"
 #define DEFAULT_STR_LEN 1
 
+extern char INVALID_STR[];
+
 #define DEFAULT_INT_FIELD  \
   {                        \
     if (buf) {             \
@@ -167,12 +169,15 @@ public:
   //
   // client -> proxy fields
   //
-  inkcoreapi virtual int marshal_client_host_ip(char *);        // STR
-  inkcoreapi virtual int marshal_host_interface_ip(char *);     // STR
-  inkcoreapi virtual int marshal_client_host_port(char *);      // INT
-  inkcoreapi virtual int marshal_client_auth_user_name(char *); // STR
-  int marshal_client_req_timestamp_sec(char *);                 // INT
-
+  inkcoreapi virtual int marshal_client_host_ip(char *);                // STR
+  inkcoreapi virtual int marshal_host_interface_ip(char *);             // STR
+  inkcoreapi virtual int marshal_client_host_port(char *);              // INT
+  inkcoreapi virtual int marshal_client_auth_user_name(char *);         // STR
+  inkcoreapi virtual int marshal_client_req_timestamp_sec(char *);      // INT
+  inkcoreapi virtual int marshal_client_req_timestamp_squid(char *);    // STR
+  inkcoreapi virtual int marshal_client_req_timestamp_netscape(char *); // STR
+  inkcoreapi virtual int marshal_client_req_timestamp_date(char *);     // STR
+  inkcoreapi virtual int marshal_client_req_timestamp_time(char *);     // STR
   inkcoreapi virtual int marshal_client_req_text(char *);               // STR
   inkcoreapi virtual int marshal_client_req_http_method(char *);        // STR
   inkcoreapi virtual int marshal_client_req_url(char *);                // STR
@@ -302,6 +307,11 @@ public:
   // milestones access
   //
   inkcoreapi virtual int marshal_milestone(TSMilestonesType ms, char *buf);
+  inkcoreapi virtual int marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
+  inkcoreapi virtual int marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
+  inkcoreapi virtual int marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
+  inkcoreapi virtual int marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
+  inkcoreapi virtual int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
   inkcoreapi virtual int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
 
   //
@@ -350,10 +360,12 @@ public:
 
   bool initialized;
 
-private:
+  // noncopyable
   // -- member functions that are not allowed --
-  LogAccess(const LogAccess &rhs);      // no copies
-  LogAccess &operator=(LogAccess &rhs); // or assignment
+  LogAccess(const LogAccess &rhs) = delete;      // no copies
+  LogAccess &operator=(LogAccess &rhs) = delete; // or assignment
+
+private:
 };
 
 inline int

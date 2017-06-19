@@ -1308,8 +1308,9 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
     HttpTunnelProducer *srcp = p->flow_control_source;
 
     if (backlog >= flow_state.high_water) {
-      if (is_debug_tag_set("http_tunnel"))
+      if (is_debug_tag_set("http_tunnel")) {
         Debug("http_tunnel", "Throttle   %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
+      }
       p->throttle(); // p becomes srcp for future calls to this method
     } else {
       if (srcp && srcp->alive && c->is_sink()) {
@@ -1322,8 +1323,9 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
           backlog = srcp->backlog(flow_state.low_water);
         }
         if (backlog < flow_state.low_water) {
-          if (is_debug_tag_set("http_tunnel"))
+          if (is_debug_tag_set("http_tunnel")) {
             Debug("http_tunnel", "Unthrottle %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
+          }
           srcp->unthrottle();
           if (srcp->read_vio) {
             srcp->read_vio->reenable();
@@ -1430,8 +1432,9 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     }
     // [amc] I don't think this happens but we'll leave a debug trap
     // here just in case.
-    if (p->is_throttled())
+    if (p->is_throttled()) {
       Debug("http_tunnel", "Special event %s on %p with flow control on", HttpDebugNames::get_event_name(event), p);
+    }
     break;
 
   case VC_EVENT_READ_READY:

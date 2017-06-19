@@ -56,7 +56,7 @@ EventNotify::EventNotify()
   ink_release_assert(ret != -1);
 #else
   ink_cond_init(&m_cond);
-  ink_mutex_init(&m_mutex, nullptr);
+  ink_mutex_init(&m_mutex);
 #endif
 }
 
@@ -88,14 +88,16 @@ EventNotify::wait()
     nr_fd = epoll_wait(m_epoll_fd, &ev, 1, 500000);
   } while (nr_fd == -1 && errno == EINTR);
 
-  if (nr_fd == -1)
+  if (nr_fd == -1) {
     return errno;
+  }
 
   nr = read(m_event_fd, &value, sizeof(uint64_t));
-  if (nr == sizeof(uint64_t))
+  if (nr == sizeof(uint64_t)) {
     return 0;
-  else
+  } else {
     return errno;
+  }
 #else
   ink_cond_wait(&m_cond, &m_mutex);
   return 0;
@@ -114,23 +116,26 @@ int EventNotify::timedwait(int timeout) // milliseconds
   // pthread_cond_timedwait() will return ETIMEDOUT immediately.
   // We should keep compatible with pthread_cond_timedwait() here.
   //
-  if (timeout < 0)
+  if (timeout < 0) {
     return ETIMEDOUT;
+  }
 
   do {
     nr_fd = epoll_wait(m_epoll_fd, &ev, 1, timeout);
   } while (nr_fd == -1 && errno == EINTR);
 
-  if (nr_fd == 0)
+  if (nr_fd == 0) {
     return ETIMEDOUT;
-  else if (nr_fd == -1)
+  } else if (nr_fd == -1) {
     return errno;
+  }
 
   nr = read(m_event_fd, &value, sizeof(uint64_t));
-  if (nr == sizeof(uint64_t))
+  if (nr == sizeof(uint64_t)) {
     return 0;
-  else
+  } else {
     return errno;
+  }
 #else
   ink_timestruc abstime;
 

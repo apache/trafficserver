@@ -49,7 +49,7 @@ replace_header(TSHttpTxn txnp)
   TSMLoc field_loc;
 
   if (TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc) != TS_SUCCESS) {
-    TSError("[%s] Couldn't retrieve server response header.", PLUGIN_NAME);
+    TSError("[%s] Couldn't retrieve server response header", PLUGIN_NAME);
     goto done;
   }
 
@@ -105,7 +105,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(replace_header_plugin, NULL));

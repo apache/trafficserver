@@ -55,21 +55,24 @@ unsigned int const detail::Type_Property[N_VALUE_TYPES] = {
 // ---------------------------------------------------------------------------
 detail::ValueTableImpl::ValueTableImpl() : _generation(0) { }
 detail::ValueTableImpl::~ValueTableImpl() {
-  for (auto & _buffer : _buffers)
+  for (auto & _buffer : _buffers) {
     free(_buffer._ptr);
+}
 }
 // ---------------------------------------------------------------------------
 detail::ValueTable::ImplType*
 detail::ValueTable::instance() {
-  if (! _ptr) _ptr.reset(new ImplType);
+  if (! _ptr) { _ptr.reset(new ImplType);
+}
   return _ptr.get();
 }
 
 detail::ValueTable&
 detail::ValueTable::forceRootItem() {
   ImplType* imp = this->instance();
-  if (0 == imp->_values.size())
+  if (0 == imp->_values.size()) {
     imp->_values.push_back(ValueItem(GroupValue));
+}
   return *this;
 }
 
@@ -91,7 +94,8 @@ detail::ValueTable::make(ValueIndex pidx, ValueType type, ConstBuffer const& nam
         parent->_children.push_back(n);
         item->_local_index = parent->_children.size() - 1;
         // Only use the name if the parent is a group.
-        if (GroupValue == parent->_type) item->_name = name;
+        if (GroupValue == parent->_type) { item->_name = name;
+}
         zret = n; // mark for return to caller.
       } else {
         msg::log(zret.errata(), msg::WARN, "Add child failed because parent is not a container.");
@@ -114,7 +118,8 @@ Buffer
 detail::ValueTable::alloc(size_t n) {
   ImplType* imp = this->instance();
   Buffer zret(static_cast<char*>(malloc(n)), n);
-  if (zret._ptr) imp->_buffers.push_back(zret);
+  if (zret._ptr) { imp->_buffers.push_back(zret);
+}
   return zret;
 }
 
@@ -125,7 +130,8 @@ Value::operator [] (size_t idx) const {
   detail::ValueItem const* item = this->item();
   if (item && idx < item->_children.size()) {
     zret = Value(_config, item->_children[idx]);
-    if (PathValue == zret.getType()) zret = _config.getRoot().find(_config._table[zret._vidx]._path);
+    if (PathValue == zret.getType()) { zret = _config.getRoot().find(_config._table[zret._vidx]._path);
+}
   }
   return zret;
 }
@@ -138,7 +144,8 @@ Value::operator [] (ConstBuffer const& name) const {
     for (const auto & spot : item->_children) {
       if (_config._table[spot]._name == name) {
         zret = Value(_config, spot);
-        if (PathValue == zret.getType()) zret = _config.getRoot().find(_config._table[zret._vidx]._path);
+        if (PathValue == zret.getType()) { zret = _config.getRoot().find(_config._table[zret._vidx]._path);
+}
         break;
       }
     }
@@ -153,11 +160,13 @@ Value::find( ConstBuffer const& path ) {
   Rv<Path::Parser::Result> x;
   ConstBuffer elt;
   for ( x = parser.parse(&elt) ; zret && Path::Parser::EOP != x && Path::Parser::ERROR != x ; x = parser.parse(&elt) ) {
-    if (Path::Parser::TAG == x) zret = zret[elt];
-    else if (Path::Parser::INDEX == x) zret = zret[elt._size];
-    else zret.reset();
+    if (Path::Parser::TAG == x) { zret = zret[elt];
+    } else if (Path::Parser::INDEX == x) { zret = zret[elt._size];
+    } else { zret.reset();
+}
   }
-  if (Path::Parser::EOP != x) zret.reset();
+  if (Path::Parser::EOP != x) { zret.reset();
+}
   return zret;
 }
 
@@ -166,8 +175,9 @@ Value::find(Path const& path ) {
   Value zret = *this;
   for ( size_t i = 0, n = path.count() ; i < n && zret ; ++i ) {
     ConstBuffer const& elt = path[i];
-    if (elt._ptr) zret = zret[elt];
-    else zret = zret[elt._size];
+    if (elt._ptr) { zret = zret[elt];
+    } else { zret = zret[elt._size];
+}
   }
   return zret;
 }
@@ -176,8 +186,9 @@ Rv<Value>
 Value::makeChild(ValueType type, ConstBuffer const& name) {
   Rv<Value> zret;
   Rv<detail::ValueIndex> vr = _config._table.make(this->_vidx, type, name);
-  if (vr.isOK()) zret = Value(_config, vr.result());
-  else zret.errata() = vr.errata();
+  if (vr.isOK()) { zret = Value(_config, vr.result());
+  } else { zret.errata() = vr.errata();
+}
   return zret;
 }
 
@@ -194,29 +205,32 @@ Value::makeList(ConstBuffer const& name) {
 Rv<Value>
 Value::makeString(ConstBuffer const& text, ConstBuffer const& name) {
   Rv<Value> zret = this->makeChild(StringValue, name);
-  if (zret.isOK()) zret.result().setText(text);
+  if (zret.isOK()) { zret.result().setText(text);
+}
   return zret;
 }
 
 Rv<Value>
 Value::makeInteger(ConstBuffer const& text, ConstBuffer const& name) {
   Rv<Value> zret = this->makeChild(IntegerValue, name);
-  if (zret.isOK()) zret.result().setText(text);
+  if (zret.isOK()) { zret.result().setText(text);
+}
   return zret;
 }
 
 Rv<Value>
 Value::makePath(Path const& path, ConstBuffer const& name) {
   Rv<Value> zret = this->makeChild(PathValue, name);
-  if (zret.isOK()) _config._table[zret.result()._vidx]._path = path;
+  if (zret.isOK()) { _config._table[zret.result()._vidx]._path = path;
+}
   return zret;
 }
 // ---------------------------------------------------------------------------
 Path& Path::reset() {
   if (_ptr) {
     // If we're sharing the instance, make a new one for us.
-    if (_ptr.isShared()) _ptr = new ImplType;
-    else { // clear out the existing instance.
+    if (_ptr.isShared()) { _ptr = new ImplType;
+    } else { // clear out the existing instance.
       _ptr->_elements.clear();
     }
   }
@@ -242,22 +256,24 @@ Path::Parser::parse(ConstBuffer *cbuff) {
     C_DOT, // A dot (period).
   };
 
-  if (cbuff) cbuff->reset();
+  if (cbuff) { cbuff->reset();
+}
   char const* start = _c; // save starting character location.
   size_t idx = 0; // accumulator for index value.
 
   bool final = false;
   while (! final && this->hasInput()) {
     Bucket cb;
-    if (isdigit(*_c)) cb = C_DIGIT;
-    else if ('_' == *_c || isalpha(*_c)) cb = C_IDENT;
-    else if ('-' == *_c) cb = C_DASH;
-    else if ('.' == *_c) cb = C_DOT;
-    else cb = C_INVALID;
+    if (isdigit(*_c)) { cb = C_DIGIT;
+    } else if ('_' == *_c || isalpha(*_c)) { cb = C_IDENT;
+    } else if ('-' == *_c) { cb = C_DASH;
+    } else if ('.' == *_c) { cb = C_DOT;
+    } else { cb = C_INVALID;
+}
 
     if (C_INVALID == cb) {
       msg::logf(zret, msg::WARN, "Invalid character '%c' [%u] in path.", *_c, *_c);
-    } else switch (state) {
+    } else { switch (state) {
       case S_INIT:
         switch (cb) {
         case C_DIGIT: state = S_INDEX; idx = *_c - '0'; break;
@@ -268,25 +284,25 @@ Path::Parser::parse(ConstBuffer *cbuff) {
         }
         break;
       case S_INDEX: // reading an index.
-        if (C_DIGIT == cb) idx = 10 * idx + *_c - '0';
-        else if (C_DOT == cb) { final = true; }
+        if (C_DIGIT == cb) { idx = 10 * idx + *_c - '0';
+        } else if (C_DOT == cb) { final = true; }
         else {
           msg::logf(zret, msg::WARN, "Invalid character '%c' [%u] in index element.", *_c, *_c);
           final = true;
         }
         break;
       case S_TAG: // reading a tag.
-        if (C_IDENT == cb || C_DIGIT == cb) ; // continue
-        else if (C_DASH == cb) state = S_DASH;
-        else if (C_DOT == cb) { final = true; }
+        if (C_IDENT == cb || C_DIGIT == cb) { ; // continue
+        } else if (C_DASH == cb) { state = S_DASH;
+        } else if (C_DOT == cb) { final = true; }
         else { // should never happen, but be safe.
           msg::logf(zret, msg::WARN, "Invalid character '%c' [%u] in index element.", *_c, *_c);
           final = true;
         }
         break;
       case S_DASH: // dashes inside tag.
-        if (C_IDENT == cb || C_DIGIT == cb) state = S_TAG;
-        else if (C_DOT == cb) {
+        if (C_IDENT == cb || C_DIGIT == cb) { state = S_TAG;
+        } else if (C_DOT == cb) {
           msg::log(zret, msg::WARN, "Trailing dash not allowed in tag element.");
           final = true;
         } else if (C_DASH != cb) { // should never happen, but be safe.
@@ -295,11 +311,13 @@ Path::Parser::parse(ConstBuffer *cbuff) {
         }
         break;
       }
+}
     ++_c;
   }
   if (!zret.isOK()) {
     zret = ERROR;
-    if (cbuff) cbuff->set(_c - 1, 1);
+    if (cbuff) { cbuff->set(_c - 1, 1);
+}
     _c = nullptr;
     _input.reset();
   } else if (S_INIT == state) {
@@ -310,15 +328,18 @@ Path::Parser::parse(ConstBuffer *cbuff) {
       cbuff->set(start, _c - start);
       // if @a final is set, then we parsed a dot separator.
       // don't include it in the returned tag.
-      if (final) cbuff->_size -= 1;
+      if (final) { cbuff->_size -= 1;
+}
     }
   } else if (S_INDEX == state) {
     zret = INDEX;
-    if (cbuff) cbuff->_size = idx;
+    if (cbuff) { cbuff->_size = idx;
+}
   } else if (S_DASH == state) {
     zret = ERROR;
     msg::log(zret, msg::WARN, "Trailing dash not allowed in tag element.");
-    if (cbuff) cbuff->set(start, _c - start);
+    if (cbuff) { cbuff->set(start, _c - start);
+}
   }
   return zret;
 }

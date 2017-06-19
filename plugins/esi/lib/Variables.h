@@ -99,10 +99,11 @@ public:
 
   virtual ~Variables() { _releaseCookieJar(); };
 
-private:
-  Variables(const Variables &);            // non-copyable
-  Variables &operator=(const Variables &); // non-copyable
+  // noncopyable
+  Variables(const Variables &) = delete;            // non-copyable
+  Variables &operator=(const Variables &) = delete; // non-copyable
 
+private:
   static const std::string EMPTY_STRING;
   static const std::string TRUE_STRING;
   static const std::string VENDOR_STRING;

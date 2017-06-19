@@ -173,10 +173,12 @@ mgmt_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struc
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
     r = ::select(nfds, readfds, writefds, errorfds, timeout);
-    if (r >= 0)
+    if (r >= 0) {
       return r;
-    if (!mgmt_transient_error())
+    }
+    if (!mgmt_transient_error()) {
       break;
+    }
   }
   return r;
 #else

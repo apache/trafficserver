@@ -78,7 +78,7 @@ public:
 
 std::string ConfigPath;
 typedef std::pair<IpAddr, IpAddr> IpRange;
-typedef std::deque<IpRange> IpRangeQueue;
+using IpRangeQueue = std::deque<IpRange>;
 
 Configuration Config; // global configuration
 
@@ -259,6 +259,7 @@ int Parse_order = 0;
 void
 Parse_Config(Value &parent, ParsedSslValues &orig_values)
 {
+  bool inserted = false;
   ParsedSslValues cur_values(orig_values);
   Value val = parent.find("ssl-key-name");
 
@@ -299,6 +300,7 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
     // Store in appropriate table
     if (cur_values.server_name.length() > 0) {
       Lookup.tree.insert(cur_values.server_name, entry, Parse_order++);
+      inserted = true;
     }
     if (cur_values.server_ips.size() > 0) {
       for (auto &server_ip : cur_values.server_ips) {
@@ -309,11 +311,17 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
         char val1[256], val2[256];
         server_ip.first.toString(val1, sizeof(val1));
         server_ip.second.toString(val2, sizeof(val2));
+        inserted = true;
       }
     }
     if (entry != nullptr) {
-      for (const auto &cert_name : cert_names) {
-        Lookup.tree.insert(cert_name, entry, Parse_order++);
+      if (cert_names.size() > 0) {
+        for (const auto &cert_name : cert_names) {
+          Lookup.tree.insert(cert_name, entry, Parse_order++);
+        }
+      } else if (!inserted) {
+        delete entry;
+        TSError(PCP "cert_names is empty and entry not otherwise inserted!");
       }
     }
   }
@@ -510,15 +518,15 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError(PCP "registration failed.");
+    TSError(PCP "registration failed");
   } else if (TSTrafficServerVersionGetMajor() < 5) {
-    TSError(PCP "requires Traffic Server 5.0 or later.");
+    TSError(PCP "requires Traffic Server 5.0 or later");
   } else if (nullptr == (cb_pa = TSContCreate(&CB_Pre_Accept, TSMutexCreate()))) {
-    TSError(PCP "Failed to pre-accept callback.");
+    TSError(PCP "Failed to pre-accept callback");
   } else if (nullptr == (cb_lc = TSContCreate(&CB_Life_Cycle, TSMutexCreate()))) {
-    TSError(PCP "Failed to lifecycle callback.");
+    TSError(PCP "Failed to lifecycle callback");
   } else if (nullptr == (cb_sni = TSContCreate(&CB_servername, TSMutexCreate()))) {
-    TSError(PCP "Failed to create SNI callback.");
+    TSError(PCP "Failed to create SNI callback");
   } else {
     TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, cb_lc);
     TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb_pa);
@@ -545,7 +553,7 @@ TSPluginInit(int argc, const char *argv[])
 void
 TSPluginInit(int, const char *[])
 {
-  TSError(PCP "requires TLS SNI which is not available.");
+  TSError(PCP "requires TLS SNI which is not available");
 }
 
 #endif // TS_USE_TLS_SNI

@@ -323,11 +323,9 @@ public:
 
 public:
   static char *unescapify(Arena *arena, const char *str, int length);
-
-private:
   // No gratuitous copies!
-  URL(const URL &u);
-  URL &operator=(const URL &u);
+  URL(const URL &u) = delete;
+  URL &operator=(const URL &u) = delete;
 };
 
 /*-------------------------------------------------------------------------

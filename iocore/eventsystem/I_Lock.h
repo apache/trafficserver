@@ -270,7 +270,7 @@ public:
   void
   init(const char *name = "UnnamedMutex")
   {
-    ink_mutex_init(&the_mutex, name);
+    ink_mutex_init(&the_mutex);
   }
 };
 

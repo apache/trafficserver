@@ -173,10 +173,11 @@ DomainNameTree::insert(std::string key, void *payload, int order)
 
       new_node->parent = node->parent;
       new_node->children.push_back(node);
+      node->parent = new_node;
 
       // Replace the node with new_node in the child list of the parent;
-      for (std::deque<DomainNameNode *>::iterator iter = node->parent->children.begin(); iter != node->parent->children.end();
-           ++iter) {
+      for (std::deque<DomainNameNode *>::iterator iter = new_node->parent->children.begin();
+           iter != new_node->parent->children.end(); ++iter) {
         if (*(iter) == node) {
           *(iter) = new_node;
         }

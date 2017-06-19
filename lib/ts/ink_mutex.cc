@@ -52,7 +52,7 @@ public:
 static x_pthread_mutexattr_t attr;
 
 void
-ink_mutex_init(ink_mutex *m, const char * /* name */)
+ink_mutex_init(ink_mutex *m)
 {
   int error;
 

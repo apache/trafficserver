@@ -25,11 +25,11 @@
 #include "I_RecMutex.h"
 
 void
-rec_mutex_init(RecMutex *m, const char *name)
+rec_mutex_init(RecMutex *m, const char *)
 {
   m->nthread_holding = 0;
   m->thread_holding  = ink_thread_null();
-  ink_mutex_init(&(m->the_mutex), name);
+  ink_mutex_init(&(m->the_mutex));
 }
 
 void

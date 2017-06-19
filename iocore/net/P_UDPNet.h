@@ -281,14 +281,14 @@ private:
 
 class UDPQueue
 {
-  PacketQueue pipeInfo;
-  ink_hrtime last_report;
-  ink_hrtime last_service;
-  int packets;
-  int added;
+  PacketQueue pipeInfo{};
+  ink_hrtime last_report  = 0;
+  ink_hrtime last_service = 0;
+  int packets             = 0;
+  int added               = 0;
 
 public:
-  InkAtomicList atomicQueue;
+  InkAtomicList atomicQueue{};
 
   void service(UDPNetHandler *);
 
@@ -311,14 +311,14 @@ public:
   // to be called back with data
   Que(UnixUDPConnection, callback_link) udp_callbacks;
   // outgoing packets
-  InkAtomicList udpAtomicQueue;
-  UDPQueue udpOutQueue;
+  InkAtomicList udpAtomicQueue{};
+  UDPQueue udpOutQueue{};
   // to hold the newly created descriptors before scheduling them on
   // the servicing buckets.
   // atomically added to by a thread creating a new connection with
   // UDPBind
   InkAtomicList udpNewConnections;
-  Event *trigger_event;
+  Event *trigger_event = nullptr;
   ink_hrtime nextCheck;
   ink_hrtime lastCheck;
 

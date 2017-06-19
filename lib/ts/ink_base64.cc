@@ -44,8 +44,9 @@ ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outB
   char *obuf                   = outBuffer;
   char in_tail[4];
 
-  if (outBufSize < ATS_BASE64_ENCODE_DSTLEN(inBufferSize))
+  if (outBufSize < ATS_BASE64_ENCODE_DSTLEN(inBufferSize)) {
     return false;
+  }
 
   while (inBufferSize > 2) {
     *obuf++ = _codes[(inBuffer[0] >> 2) & 077];
@@ -67,8 +68,9 @@ ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outB
    */
   if (inBufferSize == 0) {
     *obuf = '\0';
-    if (length)
+    if (length) {
       *length = (obuf - outBuffer);
+    }
   } else {
     memset(in_tail, 0, sizeof(in_tail));
     memcpy(in_tail, inBuffer, inBufferSize);
@@ -78,13 +80,15 @@ ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outB
     *(obuf + 2) = _codes[((in_tail[1] & 017) << 2) | ((in_tail[2] >> 6) & 017)];
     *(obuf + 3) = _codes[in_tail[2] & 077];
 
-    if (inBufferSize == 1)
+    if (inBufferSize == 1) {
       *(obuf + 2) = '=';
-    *(obuf + 3)   = '=';
-    *(obuf + 4)   = '\0';
+    }
+    *(obuf + 3) = '=';
+    *(obuf + 4) = '\0';
 
-    if (length)
+    if (length) {
       *length = (obuf + 4) - outBuffer;
+    }
   }
 
   return true;
@@ -126,13 +130,15 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
   int inputBytesDecoded = 0;
 
   // Make sure there is sufficient space in the output buffer
-  if (outBufSize < ATS_BASE64_DECODE_DSTLEN(inBufferSize))
+  if (outBufSize < ATS_BASE64_DECODE_DSTLEN(inBufferSize)) {
     return false;
+  }
 
   // Ignore any trailing ='s or other undecodable characters.
   // TODO: Perhaps that ought to be an error instead?
-  while (printableToSixBit[(uint8_t)inBuffer[inBytes]] <= MAX_PRINT_VAL)
+  while (printableToSixBit[(uint8_t)inBuffer[inBytes]] <= MAX_PRINT_VAL) {
     ++inBytes;
+  }
 
   for (size_t i = 0; i < inBytes; i += 4) {
     buf[0] = (unsigned char)(DECODE(inBuffer[0]) << 2 | DECODE(inBuffer[1]) >> 4);
@@ -156,8 +162,9 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
   }
   outBuffer[decodedBytes] = '\0';
 
-  if (length)
+  if (length) {
     *length = decodedBytes;
+  }
 
   return true;
 }

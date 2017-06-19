@@ -46,7 +46,7 @@ msgid "Synopsis"
 msgstr "概要"
 
 #: ../../developer-guide/api/types/TSMilestonesType.en.rst:20
-msgid "TSMiletonesType"
+msgid "TSMilestonesType"
 msgstr ""
 
 #: ../../developer-guide/api/types/TSMilestonesType.en.rst:25

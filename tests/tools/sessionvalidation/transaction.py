@@ -19,6 +19,7 @@
 import sessionvalidation.request as request
 import sessionvalidation.response as response
 
+
 class Transaction(object):
     ''' Tranaction encapsulates a single UA transaction '''
 

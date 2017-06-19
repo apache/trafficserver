@@ -138,6 +138,11 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   // if failed, try to fabricate the default custom response //
   /////////////////////////////////////////////////////////////
   if (buffer == nullptr) {
+    if (is_response_body_precluded(context->http_return_code, context->method)) {
+      *resulting_buffer_length = 0;
+      unlock();
+      return nullptr;
+    }
     buffer = fabricate(&acpt_language_list, &acpt_charset_list, "default", context, resulting_buffer_length, &lang_ptr,
                        &charset_ptr, &set);
   }
@@ -334,14 +339,7 @@ HttpBodyFactory::HttpBodyFactory()
   ////////////////////////////////////
   // initialize first-time defaults //
   ////////////////////////////////////
-
-  magic = HTTP_BODY_FACTORY_MAGIC;
-  ink_mutex_init(&mutex, "HttpBodyFactory::lock");
-
-  table_of_sets         = nullptr;
-  enable_customizations = 0;
-  enable_logging        = true;
-  callbacks_established = false;
+  ink_mutex_init(&mutex);
 
   //////////////////////////////////////////////////////
   // set up management configuration-change callbacks //
@@ -413,6 +411,8 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
     set = determine_set_by_language(acpt_language_list, acpt_charset_list);
   } else if (enable_customizations == 3) {
     set = determine_set_by_host(context);
+  } else if (is_response_body_precluded(context->http_return_code, context->method)) {
+    return nullptr;
   } else {
     set = "default";
   }
@@ -431,6 +431,9 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
 
   // Check for base customizations if specializations didn't work.
   if (t == nullptr) {
+    if (is_response_body_precluded(context->http_return_code, context->method)) {
+      return nullptr;
+    }
     t = find_template(set, type, &body_set); // this executes if the template_base is wrong and doesn't exist
   }
 
@@ -730,8 +733,9 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
     ///////////////////////////////////////////////////////////////
 
     if (!(nullptr != strchr(dirEntry->d_name, '#') || (0 == strcmp(dirEntry->d_name, "default")) ||
-          (d_len >= sizeof(BASED_DEFAULT) && 0 == strcmp(dirEntry->d_name + d_len - (sizeof(BASED_DEFAULT) - 1), BASED_DEFAULT))))
+          (d_len >= sizeof(BASED_DEFAULT) && 0 == strcmp(dirEntry->d_name + d_len - (sizeof(BASED_DEFAULT) - 1), BASED_DEFAULT)))) {
       continue;
+    }
 
     snprintf(path, sizeof(path), "%s/%s", tmpl_dir, dirEntry->d_name);
     status = stat(path, &stat_buf);

@@ -113,7 +113,7 @@ struct PassthruIO {
     return consumed;
   }
 
-private:
+  // noncopyable
   PassthruIO(const PassthruIO &) = delete;
   PassthruIO &operator=(const PassthruIO &) = delete;
 };
@@ -157,7 +157,7 @@ struct PassthruSession {
     PassthruSessionDebug(this, "destroyed session");
   }
 
-private:
+  // noncopyable
   PassthruSession(const PassthruSession &) = delete;
   PassthruSession &operator=(const PassthruSession &) = delete;
 };
@@ -198,24 +198,22 @@ PassthruSessionEvent(TSCont cont, TSEvent event, void *edata)
       sp->server.writeio.write(sp->server.vconn, sp->contp);
     }
 
-    if (sp->server.vconn != nullptr) {
-      int64_t nbytes;
+    int64_t nbytes;
 
-      nbytes = sp->client.readio.transfer_to(sp->server.writeio);
-      PassthruSessionDebug(sp, "proxied %" PRId64 " bytes from client vconn=%p to server vconn=%p", nbytes, sp->client.vconn,
-                           sp->server.vconn);
-      if (nbytes) {
-        TSVIOReenable(sp->client.readio.vio);
-        TSVIOReenable(sp->server.writeio.vio);
-      }
+    nbytes = sp->client.readio.transfer_to(sp->server.writeio);
+    PassthruSessionDebug(sp, "proxied %" PRId64 " bytes from client vconn=%p to server vconn=%p", nbytes, sp->client.vconn,
+                         sp->server.vconn);
+    if (nbytes) {
+      TSVIOReenable(sp->client.readio.vio);
+      TSVIOReenable(sp->server.writeio.vio);
+    }
 
-      nbytes = sp->server.readio.transfer_to(sp->client.writeio);
-      PassthruSessionDebug(sp, "proxied %" PRId64 " bytes from server vconn=%p to client vconn=%p", nbytes, sp->server.vconn,
-                           sp->client.vconn);
-      if (nbytes) {
-        TSVIOReenable(sp->server.readio.vio);
-        TSVIOReenable(sp->client.writeio.vio);
-      }
+    nbytes = sp->server.readio.transfer_to(sp->client.writeio);
+    PassthruSessionDebug(sp, "proxied %" PRId64 " bytes from server vconn=%p to client vconn=%p", nbytes, sp->server.vconn,
+                         sp->client.vconn);
+    if (nbytes) {
+      TSVIOReenable(sp->server.readio.vio);
+      TSVIOReenable(sp->client.writeio.vio);
     }
 
     if (PassthruSessionIsFinished(sp)) {

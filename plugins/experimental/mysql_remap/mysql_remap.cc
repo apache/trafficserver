@@ -137,14 +137,17 @@ not_found:
     TSHandleStringRelease(reqp, hdr_loc, request_scheme);
 #endif
 release_field:
-  if (field_loc)
+  if (field_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, field_loc);
+  }
 release_url:
-  if (url_loc)
+  if (url_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, url_loc);
+  }
 release_hdr:
-  if (hdr_loc)
+  if (hdr_loc) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
+  }
 
   return ret_val;
 }
@@ -191,7 +194,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[mysql_remap] Plugin registration failed.");
+    TSError("[mysql_remap] Plugin registration failed");
   }
 
   if (argc != 2) {

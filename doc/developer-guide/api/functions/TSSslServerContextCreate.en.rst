@@ -47,8 +47,8 @@ Type
 
 .. type:: TSSslContext
 
-The SSL context object. This is an opaque type that can be cast to
-the underlying SSL library type (:code:`SSL_CTX *` for the OpenSSL library).
+	The SSL context object. This is an opaque type that can be cast to
+	the underlying SSL library type (:code:`SSL_CTX *` for the OpenSSL library).
 
 See also
 ========

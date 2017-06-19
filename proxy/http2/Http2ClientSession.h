@@ -143,10 +143,11 @@ public:
     }
   }
 
-private:
-  Http2Frame(Http2Frame &);                  // noncopyable
-  Http2Frame &operator=(const Http2Frame &); // noncopyable
+  // noncopyable
+  Http2Frame(Http2Frame &) = delete;
+  Http2Frame &operator=(const Http2Frame &) = delete;
 
+private:
   Http2FrameHeader hdr;       // frame header
   Ptr<IOBufferBlock> ioblock; // frame payload
   IOBufferReader *ioreader;
@@ -284,17 +285,18 @@ public:
     return retval;
   }
 
-  void set_half_close_flag(bool flag) override;
+  void set_half_close_local_flag(bool flag);
   bool
-  get_half_close_flag() const override
+  get_half_close_local_flag() const
   {
-    return half_close;
+    return half_close_local;
   }
 
-private:
-  Http2ClientSession(Http2ClientSession &);                  // noncopyable
-  Http2ClientSession &operator=(const Http2ClientSession &); // noncopyable
+  // noncopyable
+  Http2ClientSession(Http2ClientSession &) = delete;
+  Http2ClientSession &operator=(const Http2ClientSession &) = delete;
 
+private:
   int main_event_handler(int, void *);
 
   int state_read_connection_preface(int, void *);
@@ -322,11 +324,11 @@ private:
   // For Upgrade: h2c
   Http2UpgradeContext upgrade_context;
 
-  VIO *write_vio  = nullptr;
-  int dying_event = 0;
-  bool kill_me    = false;
-  bool half_close = false;
-  int recursion   = 0;
+  VIO *write_vio        = nullptr;
+  int dying_event       = 0;
+  bool kill_me          = false;
+  bool half_close_local = false;
+  int recursion         = 0;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;

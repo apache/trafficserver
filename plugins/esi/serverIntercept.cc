@@ -159,11 +159,6 @@ handleRead(SContData *cont_data, bool &read_complete)
           TSMLoc content_len_loc =
             TSMimeHdrFieldFind(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, -1);
           if (!content_len_loc) {
-            TSError("[server_intercept][%s] Error while searching content length header [%s]", __FUNCTION__,
-                    TS_MIME_FIELD_CONTENT_LENGTH);
-            return false;
-          }
-          if (!content_len_loc) {
             TSError("[server_intercept][%s] request doesn't contain content length header [%s]", __FUNCTION__,
                     TS_MIME_FIELD_CONTENT_TYPE);
             return false;

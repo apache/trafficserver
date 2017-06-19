@@ -60,8 +60,10 @@ SSLNetProcessor::start(int, size_t stacksize)
   SSLInitializeLibrary();
   SSLConfig::startup();
 
-  if (!SSLCertificateConfig::startup())
+  if (!SSLCertificateConfig::startup()) {
     return -1;
+  }
+  SSLTicketKeyConfig::startup();
 
   // Acquire a SSLConfigParams instance *after* we start SSL up.
   // SSLConfig::scoped_config params;
@@ -71,7 +73,7 @@ SSLNetProcessor::start(int, size_t stacksize)
 
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    EventType ET_OCSP = eventProcessor.spawn_event_threads(1, "ET_OCSP", stacksize);
+    EventType ET_OCSP = eventProcessor.spawn_event_threads("ET_OCSP", 1, stacksize);
     eventProcessor.schedule_every(new OCSPContinuation(), HRTIME_SECONDS(SSLConfigParams::ssl_ocsp_update_period), ET_OCSP);
   }
 #endif /* HAVE_OPENSSL_OCSP_STAPLING */

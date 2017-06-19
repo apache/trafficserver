@@ -1022,10 +1022,9 @@ public:
   void set_warning(int32_t value);
   void set_server(const char *server_id_tag, int server_id_tag_size);
 
-private:
   // No gratuitous copies & refcounts!
-  MIMEHdr(const MIMEHdr &m);
-  MIMEHdr &operator=(const MIMEHdr &m);
+  MIMEHdr(const MIMEHdr &m) = delete;
+  MIMEHdr &operator=(const MIMEHdr &m) = delete;
 };
 
 /*-------------------------------------------------------------------------

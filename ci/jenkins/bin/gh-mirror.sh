@@ -61,8 +61,7 @@ function checkBuild() {
     echo -n "$diff" | ${GREP} -F -v -e doc/ > /dev/null
     if [ 0 == $? ]; then
 	echo "Triggered main build for ${branch}"
-	${CURL} -o /dev/null -s ${BASE_URL}/view/${branch}/job/in_tree-${branch}/${token}
-	${CURL} -o /dev/null -s ${BASE_URL}/view/${branch}/job/out_of_tree-${branch}/${token}
+	${CURL} -o /dev/null -s ${BASE_URL}/view/${branch}/job/start-${branch}/${token}
     fi
 }
 

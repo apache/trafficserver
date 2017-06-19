@@ -560,7 +560,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
   TSCont cont = TSContCreate(cont_handle_response, nullptr);
@@ -576,7 +576,7 @@ TSPluginInit(int argc, const char *argv[])
       BgFetchState::getInstance().createLog(optarg);
       break;
     case 'c':
-      TSDebug(PLUGIN_NAME, "config file %s..", optarg);
+      TSDebug(PLUGIN_NAME, "config file '%s'", optarg);
       gConfig->readConfig(optarg);
       break;
     }
@@ -667,7 +667,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, config->getCont());
       TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, config->getCont());
 
-      TSDebug(PLUGIN_NAME, "background fetch TSRemapDoRemap...");
+      TSDebug(PLUGIN_NAME, "background fetch TSRemapDoRemap");
       TSHandleMLocRelease(bufp, req_hdrs, field_loc);
     }
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, req_hdrs);

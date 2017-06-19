@@ -103,7 +103,8 @@ enum HTTPWarningCode {
   HTTP_WARNING_CODE_MISC_WARNING           = 199
 };
 
-/* squild log codes */
+/* squild log codes
+   There is code (e.g. logstats) that depends on these errors coming at the end of this enum */
 enum SquidLogCode {
   SQUID_LOG_EMPTY                     = '0',
   SQUID_LOG_TCP_HIT                   = '1',
@@ -485,11 +486,12 @@ public:
   HTTPHdrImpl *m_http = nullptr;
   // This is all cached data and so is mutable.
   mutable URL m_url_cached;
-  mutable MIMEField *m_host_mime = nullptr;
-  mutable int m_host_length      = 0;     ///< Length of hostname.
-  mutable int m_port             = 0;     ///< Target port.
-  mutable bool m_target_cached   = false; ///< Whether host name and port are cached.
-  mutable bool m_target_in_url   = false; ///< Whether host name and port are in the URL.
+  mutable MIMEField *m_host_mime       = nullptr;
+  mutable int m_host_length            = 0;     ///< Length of hostname.
+  mutable int m_port                   = 0;     ///< Target port.
+  mutable bool m_target_cached         = false; ///< Whether host name and port are cached.
+  mutable bool m_target_in_url         = false; ///< Whether host name and port are in the URL.
+  mutable bool m_100_continue_required = false; ///< Whether 100_continue is in the Expect header.
   /// Set if the port was effectively specified in the header.
   /// @c true if the target (in the URL or the HOST field) also specified
   /// a port. That is, @c true if whatever source had the target host
@@ -639,11 +641,11 @@ protected:
 
   static Arena *const USE_HDR_HEAP_MAGIC;
 
-private:
   // No gratuitous copies!
-  HTTPHdr(const HTTPHdr &m);
-  HTTPHdr &operator=(const HTTPHdr &m);
+  HTTPHdr(const HTTPHdr &m) = delete;
+  HTTPHdr &operator=(const HTTPHdr &m) = delete;
 
+private:
   friend class UrlPrintHack; // don't ask.
 };
 

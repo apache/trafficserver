@@ -645,6 +645,8 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
       if (pseudo_header_count > expected_pseudo_header_count) {
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
+    } else if (len <= 0) {
+      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     } else {
       if (pseudo_header_count != expected_pseudo_header_count) {
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
@@ -750,12 +752,20 @@ Http2::init()
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_HEADER_TABLE_SIZE, header_table_size}));
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE, max_header_list_size}));
 
+#define HTTP2_CLEAR_DYN_STAT(x)          \
+  do {                                   \
+    RecSetRawStatSum(http2_rsb, x, 0);   \
+    RecSetRawStatCount(http2_rsb, x, 0); \
+  } while (0);
+
   // Setup statistics
   http2_rsb = RecAllocateRawStatBlock(static_cast<int>(HTTP2_N_STATS));
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME, RECD_INT, RECP_NON_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncSum);
+  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT), RecRawStatSyncSum);
+  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT), RecRawStatSyncCount);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME, RECD_INT, RECP_PERSISTENT,

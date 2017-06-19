@@ -67,7 +67,6 @@
 #define SSL_ACTION_TAG "action"
 #define SSL_ACTION_TUNNEL_TAG "tunnel"
 #define SSL_SESSION_TICKET_ENABLED "ssl_ticket_enabled"
-#define SSL_SESSION_TICKET_KEY_FILE_TAG "ticket_key_name"
 #define SSL_KEY_DIALOG "ssl_key_dialog"
 #define SSL_CERT_SEPARATE_DELIM ','
 
@@ -100,8 +99,6 @@ struct ssl_user_config {
   ssl_user_config() : opt(SSLCertContext::OPT_NONE)
   {
     REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
-    REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
-    Debug("ssl", "ticket  key filename %s", (const char *)ticket_key_filename);
   }
 
   int session_ticket_enabled;
@@ -110,7 +107,6 @@ struct ssl_user_config {
   ats_scoped_str first_cert;
   ats_scoped_str ca;
   ats_scoped_str key;
-  ats_scoped_str ticket_key_filename;
   ats_scoped_str dialog;
   SSLCertContext::Option opt;
 };
@@ -326,8 +322,9 @@ set_context_cert(SSL *ssl)
   // already made a best effort to find the best match.
   if (likely(servername)) {
     cc = lookup->find((char *)servername);
-    if (cc && cc->ctx)
+    if (cc && cc->ctx) {
       ctx = cc->ctx;
+    }
     if (cc && SSLCertContext::OPT_TUNNEL == cc->opt && netvc->get_is_transparent()) {
       netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       netvc->setSSLHandShakeComplete(true);
@@ -343,8 +340,9 @@ set_context_cert(SSL *ssl)
 
     safe_getsockname(netvc->get_socket(), &ip.sa, &namelen);
     cc = lookup->find(ip);
-    if (cc && cc->ctx)
+    if (cc && cc->ctx) {
       ctx = cc->ctx;
+    }
   }
 
   if (ctx != nullptr) {
@@ -749,8 +747,9 @@ ssl_private_key_validate_exec(const char *cmdLine)
   char *cmdLineCopy = ats_strdup(cmdLine);
   char *ptr         = cmdLineCopy;
 
-  while (*ptr && !isspace(*ptr))
+  while (*ptr && !isspace(*ptr)) {
     ++ptr;
+  }
   *ptr = 0;
   if (access(cmdLineCopy, X_OK) != -1) {
     bReturn = true;
@@ -863,7 +862,7 @@ SSLInitializeLibrary()
     mutex_buf = (ink_mutex *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ink_mutex));
 
     for (int i = 0; i < CRYPTO_num_locks(); i++) {
-      ink_mutex_init(&mutex_buf[i], nullptr);
+      ink_mutex_init(&mutex_buf[i]);
     }
 
     CRYPTO_set_locking_callback(SSL_locking_callback);
@@ -1379,8 +1378,9 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cer
       subj_name          = asn1_strdup(cn);
 
       Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certname);
-      if (lookup->insert(subj_name, cc) >= 0)
+      if (lookup->insert(subj_name, cc) >= 0) {
         inserted = true;
+      }
     }
   }
 
@@ -1398,8 +1398,9 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cer
         // only try to insert if the alternate name is not the main name
         if (strcmp(dns, subj_name) != 0) {
           Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
-          if (lookup->insert(dns, cc) >= 0)
+          if (lookup->insert(dns, cc) >= 0) {
             inserted = true;
+          }
         }
       }
     }
@@ -1714,6 +1715,8 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
     SSLError("EVP_DigestFinal_ex failed");
     goto fail;
   }
+  EVP_MD_CTX_free(digest);
+  digest = NULL;
 
   if (SSL_CTX_set_session_id_context(ctx, hash_buf, hash_len) == 0) {
     SSLError("SSL_CTX_set_session_id_context failed");
@@ -1768,7 +1771,8 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   return ctx;
 
 fail:
-  EVP_MD_CTX_free(digest);
+  if (digest)
+    EVP_MD_CTX_free(digest);
   SSL_CLEAR_PW_REFERENCES(ctx)
   SSLReleaseContext(ctx);
   for (unsigned int i = 0; i < certList.length(); i++) {
@@ -1810,11 +1814,8 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     }
   }
 
-  // Load the session ticket key if session tickets are not disabled and we have key name.
-  if (sslMultCertSettings->session_ticket_enabled != 0 && sslMultCertSettings->ticket_key_filename) {
-    ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings->ticket_key_filename));
-    keyblock = ssl_context_enable_tickets(ctx, ticket_key_path);
-  } else if (sslMultCertSettings->session_ticket_enabled != 0) {
+  // Load the session ticket key if session tickets are not disabled
+  if (sslMultCertSettings->session_ticket_enabled != 0) {
     keyblock = ssl_context_enable_tickets(ctx, nullptr);
   }
 
@@ -1936,10 +1937,6 @@ ssl_extract_certificate(const matcher_line *line_info, ssl_user_config &sslMultC
       sslMultCertSettings.session_ticket_enabled = atoi(value);
     }
 
-    if (strcasecmp(label, SSL_SESSION_TICKET_KEY_FILE_TAG) == 0) {
-      sslMultCertSettings.ticket_key_filename = ats_strdup(value);
-    }
-
     if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
       sslMultCertSettings.dialog = ats_strdup(value);
     }
@@ -2058,7 +2055,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
                             int enc)
 {
   SSLCertificateConfig::scoped_config lookup;
-  SSLConfig::scoped_config params;
+  SSLTicketKeyConfig::scoped_config params;
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   // Get the IP address to look up the keyblock
@@ -2095,8 +2092,9 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
         // Increase the total number of decrypted tickets.
         SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_stat);
 
-        if (i != 0) // The number of tickets decrypted with "older" keys.
+        if (i != 0) { // The number of tickets decrypted with "older" keys.
           SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_old_key_stat);
+        }
 
         SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
         netvc->setSSLSessionCacheHit(true);

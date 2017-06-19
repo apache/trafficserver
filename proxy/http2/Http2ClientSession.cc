@@ -210,7 +210,7 @@ Http2ClientSession::set_upgrade_context(HTTPHdr *h)
         // TODO ignore incoming invalid parameters and send suitable SETTINGS
         // frame.
       }
-      upgrade_context.client_settings.set((Http2SettingsIdentifier)param.id, param.value);
+      upgrade_context.client_settings.set(static_cast<Http2SettingsIdentifier>(param.id), param.value);
     }
   }
 
@@ -276,12 +276,12 @@ Http2ClientSession::reenable(VIO *vio)
 }
 
 void
-Http2ClientSession::set_half_close_flag(bool flag)
+Http2ClientSession::set_half_close_local_flag(bool flag)
 {
-  if (!half_close && flag) {
-    DebugHttp2Ssn("session half-close");
+  if (!half_close_local && flag) {
+    DebugHttp2Ssn("session half-close local");
   }
-  half_close = flag;
+  half_close_local = flag;
 }
 
 int
@@ -436,12 +436,6 @@ Http2ClientSession::do_start_frame_read(Http2ErrorCode &ret_error)
     return -1;
   }
 
-  // Allow only stream id = 0 or streams started by client.
-  if (this->current_hdr.streamid != 0 && !http2_is_client_streamid(this->current_hdr.streamid)) {
-    ret_error = Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-    return -1;
-  }
-
   // CONTINUATIONs MUST follow behind HEADERS which doesn't have END_HEADERS
   Http2StreamId continued_stream_id = this->connection_state.get_continued_stream_id();
 
@@ -500,7 +494,7 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
         SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
         if (!this->connection_state.is_state_closed()) {
           this->connection_state.send_goaway_frame(this->connection_state.get_latest_stream_id_in(), err);
-          this->set_half_close_flag(true);
+          this->set_half_close_local_flag(true);
           this->do_io_close();
         }
       }

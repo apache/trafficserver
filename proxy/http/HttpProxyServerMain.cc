@@ -222,20 +222,26 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   }
 }
 
+/// Do all pre-thread initialization / setup.
+void
+init_HttpProxyServer()
+{
+  httpSessionManager.init();
+}
+
 /** Set up all the accepts and sockets.
  */
 void
-init_HttpProxyServer(int n_accept_threads)
+init_accept_HttpProxyServer(int n_accept_threads)
 {
   HttpProxyPort::Group &proxy_ports = HttpProxyPort::global();
 
   init_reverse_proxy();
-  httpSessionManager.init();
   http_pages_init();
 
 #ifdef USE_HTTP_DEBUG_LISTS
-  ink_mutex_init(&debug_sm_list_mutex, "HttpSM Debug List");
-  ink_mutex_init(&debug_cs_list_mutex, "HttpCS Debug List");
+  ink_mutex_init(&debug_sm_list_mutex);
+  ink_mutex_init(&debug_cs_list_mutex);
 #endif
 
   // Used to give plugins the ability to create http requests

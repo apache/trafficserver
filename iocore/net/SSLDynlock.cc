@@ -27,7 +27,7 @@
 #include "ts/Diags.h"
 
 struct CRYPTO_dynlock_value {
-  CRYPTO_dynlock_value(const char *f, int l) : file(f), line(l) { ink_mutex_init(&mutex, nullptr); }
+  CRYPTO_dynlock_value(const char *f, int l) : file(f), line(l) { ink_mutex_init(&mutex); }
   ~CRYPTO_dynlock_value() { ink_mutex_destroy(&mutex); }
   const char *file;
   int line;

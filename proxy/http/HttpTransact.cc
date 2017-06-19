@@ -669,6 +669,11 @@ HttpTransact::StartRemapRequest(State *s)
 
     s->hdr_info.client_request.set_url_target_from_host_field();
 
+    // Since we're not doing remap, we still have to allow for these overridable
+    // configurations to modify follow-redirect behavior. Someone could for example
+    // have set them in a plugin other than conf_remap running in a prior hook.
+    s->state_machine->enable_redirection = (s->txn_conf->number_of_redirections > 0);
+
     if (s->is_upgrade_request && s->post_remap_upgrade_return_point) {
       TRANSACT_RETURN(SM_ACTION_POST_REMAP_SKIP, s->post_remap_upgrade_return_point);
     }
@@ -750,6 +755,12 @@ HttpTransact::EndRemapRequest(State *s)
   int host_len;
   const char *host = incoming_request->host_get(&host_len);
   DebugTxn("http_trans", "EndRemapRequest host is %.*s", host_len, host);
+
+  // Setting enable_redirection according to HttpConfig (master or overridable). We
+  // defer this as late as possible, to allow plugins to modify the overridable
+  // configurations (e.g. conf_remap.so). We intentionally only modify this if
+  // the configuration says so.
+  s->state_machine->enable_redirection = (s->txn_conf->number_of_redirections > 0);
 
   ////////////////////////////////////////////////////////////////
   // if we got back a URL to redirect to, vector the user there //
@@ -1648,13 +1659,13 @@ HttpTransact::OSDNSLookup(State *s)
     case EXPANSION_NOT_ALLOWED:
     case EXPANSION_FAILED:
     case DNS_ATTEMPTS_EXHAUSTED:
-      if (DNSLookupInfo::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
+      if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
         /*
          *  We tried to connect to client target address, failed and tried to use a different addr
          *  No HostDB data, just keep on with the CTA.
          */
         s->dns_info.lookup_success = true;
-        s->dns_info.os_addr_style  = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+        s->dns_info.os_addr_style  = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
         DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful, using client target address");
       } else {
         if (host_name_expansion == EXPANSION_NOT_ALLOWED) {
@@ -1685,7 +1696,7 @@ HttpTransact::OSDNSLookup(State *s)
   ink_assert(s->dns_info.lookup_success);
   DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup successful");
 
-  if (DNSLookupInfo::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
+  if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
     // We've backed off from a client supplied address and found some
     // HostDB addresses. We use those if they're different from the CTA.
     // In all cases we now commit to client or HostDB for our source.
@@ -1694,15 +1705,15 @@ HttpTransact::OSDNSLookup(State *s)
       if (cta) {
         // found another addr, lock in host DB.
         s->host_db_info           = *cta;
-        s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_HOSTDB;
+        s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB;
       } else {
         // nothing else there, continue with CTA.
-        s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+        s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
       }
     } else if (ats_ip_addr_eq(s->host_db_info.ip(), &s->server_info.dst_addr.sa)) {
-      s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+      s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
     } else {
-      s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_HOSTDB;
+      s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB;
     }
   }
 
@@ -1736,7 +1747,7 @@ HttpTransact::OSDNSLookup(State *s)
   // expansion, return a 302 response.
   // [amc] Also don't redirect if we backed off using HostDB instead of CTA.
   if (s->dns_info.attempts == max_dns_lookups && s->dns_info.looking_up == ORIGIN_SERVER &&
-      DNSLookupInfo::OS_ADDR_USE_CLIENT != s->dns_info.os_addr_style) {
+      DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT != s->dns_info.os_addr_style) {
     DebugTxn("http_trans", "[OSDNSLookup] DNS name resolution on expansion");
     DebugTxn("http_seq", "[OSDNSLookup] DNS name resolution on expansion - returning");
     build_redirect_response(s);
@@ -1760,8 +1771,8 @@ HttpTransact::OSDNSLookup(State *s)
     HttpTransactHeaders::convert_request(s->current.server->http_version, &s->hdr_info.server_request);
     DebugTxn("cdn", "outgoing version -- (post conversion) %d", s->hdr_info.server_request.m_http->m_version);
     TRANSACT_RETURN(s->cdn_saved_next_action, nullptr);
-  } else if (DNSLookupInfo::OS_ADDR_USE_CLIENT == s->dns_info.os_addr_style ||
-             DNSLookupInfo::OS_ADDR_USE_HOSTDB == s->dns_info.os_addr_style) {
+  } else if (DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT == s->dns_info.os_addr_style ||
+             DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB == s->dns_info.os_addr_style) {
     // we've come back after already trying the server to get a better address
     // and finished with all backtracking - return to trying the server.
     TRANSACT_RETURN(how_to_open_connection(s), HttpTransact::HandleResponse);
@@ -3560,13 +3571,13 @@ HttpTransact::handle_response_from_server(State *s)
     if (is_request_retryable(s) && s->current.attempts < max_connect_retries) {
       // If this is a round robin DNS entry & we're tried configured
       //    number of times, we should try another node
-      if (DNSLookupInfo::OS_ADDR_TRY_CLIENT == s->dns_info.os_addr_style) {
+      if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_CLIENT == s->dns_info.os_addr_style) {
         // attempt was based on client supplied server address. Try again
         // using HostDB.
         // Allow DNS attempt
         s->dns_info.lookup_success = false;
         // See if we can get data from HostDB for this.
-        s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_TRY_HOSTDB;
+        s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB;
         // Force host resolution to have the same family as the client.
         // Because this is a transparent connection, we can't switch address
         // families - that is locked in by the client source address.
@@ -3588,7 +3599,7 @@ HttpTransact::handle_response_from_server(State *s)
           // in OSDNSLoopkup, we back up to how_to_open_connections which
           // will tell HttpSM to connect the origin server.
 
-          s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+          s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
           TRANSACT_RETURN(SM_ACTION_API_OS_DNS, OSDNSLookup);
         }
         return;
@@ -3958,16 +3969,26 @@ HttpTransact::build_response_copy(State *s, HTTPHdr *base_response, HTTPHdr *out
 //          and are later used for IMS                                  //
 //       D < D'                                                         //
 //                                                                      //
-//  +------------------------------------------------------------+      //
-//  | Client's | Cached    | Proxy's  | Response to client       |      //
-//  | Request  |  State    | Request  |  OS 200    |   OS 304    |      //
-//  |------------------------------------------------------------|      //
+//  +----------+-----------+----------+-----------+--------------+      //
+//  | Client's | Cached    | Proxy's  |   Response to client     |      //
+//  | Request  | State     | Request  +-----------+--------------+      //
+//  |          |           |          | OS 200    |  OS 304      |      //
+//  +==========+===========+==========+===========+==============+      //
 //  |  GET     | Fresh     | N/A      |  N/A      |  N/A         |      //
-//  |------------------------------------------------------------|      //
+//  +----------+-----------+----------+-----------+--------------+      //
 //  |  GET     | Stale, D' | IMS  D'  | 200, new  | 200, cached  |      //
-//  |------------------------------------------------------------|      //
+//  +----------+-----------+----------+-----------+--------------+      //
+//  |  GET     | Stale, E  | INM  E   | 200, new  | 200, cached  |      //
+//  +----------+-----------+----------+-----------+--------------+      //
+//  |  INM E   | Stale, E  | INM  E   | 304       | 304          |      //
+//  +----------+-----------+----------+-----------+--------------+      //
+//  |  INM E + | Stale,    | INM E    | 200, new *| 304          |      //
+//  |  IMS D'  | E + D'    | IMS D'   |           |              |      //
+//  +----------+-----------+----------+-----------+--------------+      //
 //  |  IMS D   | None      | GET      | 200, new *|  N/A         |      //
-//  |------------------------------------------------------------|      //
+//  +----------+-----------+----------+-----------+--------------+      //
+//  |  INM E   | None      | GET      | 200, new *|  N/A         |      //
+//  +----------+-----------+----------+-----------+--------------+      //
 //  |  IMS D   | Stale, D' | IMS D'   | 200, new  | Compare      |      //
 //  |---------------------------------------------| LMs & D'     |      //
 //  |  IMS D'  | Stale, D' | IMS D'   | 200, new  | If match, 304|      //
@@ -6322,9 +6343,14 @@ HttpTransact::is_request_retryable(State *s)
   // If safe requests are  retryable, it should be safe to retry safe requests irrespective of bytes sent or connection state
   // according to RFC the following methods are safe (https://tools.ietf.org/html/rfc7231#section-4.2.1)
   // If there was no error establishing the connection (and we sent bytes)-- we cannot retry
-  if (!(s->txn_conf->safe_requests_retryable && HttpTransactHeaders::is_method_safe(s->method)) &&
+  if (!HttpTransactHeaders::is_method_safe(s->method) &&
       (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0 &&
        s->state_machine->get_server_session()->get_netvc()->outstanding() != s->state_machine->server_request_hdr_bytes)) {
+    return false;
+  }
+
+  // FIXME: disable the post transform retry currently.
+  if (s->state_machine->is_post_transform_request()) {
     return false;
   }
 
@@ -6731,7 +6757,6 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       // Note: if we are 1.1, we always need to send the close
       //  header since persistant connnections are the default
       break;
-    case KA_UNKNOWN:
     default:
       ink_assert(0);
       break;
@@ -6870,6 +6895,8 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     }
   }
 
+  ink_assert(ka_action != KA_UNKNOWN);
+
   // Insert K-A headers as necessary
   switch (ka_action) {
   case KA_CONNECTION:
@@ -6890,7 +6917,6 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // Note: if we are 1.1, we always need to send the close
     //  header since persistant connnections are the default
     break;
-  case KA_UNKNOWN:
   default:
     ink_assert(0);
     break;
@@ -7646,9 +7672,10 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
         DebugTxn("http_trans", "[build_request] "
                                "request like cacheable and conditional headers removed");
         HttpTransactHeaders::remove_conditional_headers(outgoing_request);
-      } else
+      } else {
         DebugTxn("http_trans", "[build_request] "
                                "request like cacheable but keep conditional headers");
+      }
     } else {
       // In this case, we send a conditional request
       // instead of the normal non-conditional request.
@@ -7775,8 +7802,9 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // If the response is prohibited from containing a body,
   //  we know the content length is trustable for keep-alive
-  if (is_response_body_precluded(status_code, s->method))
+  if (is_response_body_precluded(status_code, s->method)) {
     s->hdr_info.trust_response_cl = true;
+  }
 
   handle_response_keep_alive_headers(s, outgoing_version, outgoing_response);
 
@@ -7805,11 +7833,6 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
   }
 
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
-
-  // auth-response update
-  // if (!s->state_machine->authAdapter.disabled()) {
-  //  s->state_machine->authAdapter.UpdateResponseHeaders(outgoing_response);
-  // }
 
   if (!s->cop_test_page && is_debug_tag_set("http_hdrs")) {
     if (base_response) {
@@ -7995,9 +8018,15 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   s->internal_msg_buffer_size                = len;
   s->internal_msg_buffer_fast_allocator_size = -1;
 
-  s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, body_type, strlen(body_type));
-  s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE, body_language,
-                                        strlen(body_language));
+  if (!is_response_body_precluded(status_code, s->method) || len > 0) {
+    // Plugins may create response bodies despite an HTTP spec violation.
+    s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, body_type, strlen(body_type));
+    s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE, body_language,
+                                          strlen(body_language));
+  } else {
+    s->hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    s->hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE);
+  }
 
   ////////////////////////////////////////
   // log a description in the error log //

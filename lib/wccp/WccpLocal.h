@@ -326,7 +326,8 @@ public:
   typedef CapabilityElt self; ///< Self reference type.
 
   /// Capability types.
-  enum Type {
+  enum Type : uint16_t {
+    NO_METHOD               = 0, ///< Method not set.
     PACKET_FORWARD_METHOD   = 1, ///< Packet forwarding methods.
     CACHE_ASSIGNMENT_METHOD = 2, ///< Cache assignment methods.
     PACKET_RETURN_METHOD    = 3  ///< Packet return methods.
@@ -350,9 +351,9 @@ public:
                    );
   //@}
 protected:
-  uint16_t m_cap_type;   ///< Capability type.
-  uint16_t m_cap_length; ///< Length of capability data.
-  uint32_t m_cap_data;   ///< Capability data.
+  enum Type m_cap_type  = NO_METHOD; ///< Capability type.
+  uint16_t m_cap_length = 0;         ///< Length of capability data.
+  uint32_t m_cap_data   = 0;         ///< Capability data.
 };
 
 /// Sect 5.7.7: Mask element
@@ -391,10 +392,10 @@ public:
   //@}
 
 protected:
-  uint32_t m_src_addr; ///< Source address mask.
-  uint32_t m_dst_addr; ///< Destination address mask.
-  uint16_t m_src_port; ///< Source port mask.
-  uint16_t m_dst_port; ///< Destination port mask.
+  uint32_t m_src_addr = INADDR_ANY; ///< Source address mask.
+  uint32_t m_dst_addr = INADDR_ANY; ///< Destination address mask.
+  uint16_t m_src_port = 0;          ///< Source port mask.
+  uint16_t m_dst_port = 0;          ///< Destination port mask.
 };
 
 /// Sect 5.7.8: Value element.
@@ -576,9 +577,6 @@ class MaskAssignElt
 public:
   typedef MaskAssignElt self; ///< Self reference type.
 
-  /// Default constructor - @b no initialization.
-  MaskAssignElt();
-
   /** A minimalist insert iterator.
    */
   struct appender {
@@ -625,7 +623,7 @@ public:
   size_t getVarSize() const;
 
 protected:
-  uint32_t m_count; ///< # of sets (network order).
+  uint32_t m_count = 0; ///< # of sets (network order).
 
   friend struct appender;
 };
@@ -1973,14 +1971,14 @@ namespace detail
     struct GroupData {
       typedef GroupData self; ///< Self reference type.
 
-      ServiceGroup m_svc;       ///< The service definition.
-      uint32_t m_generation;    ///< Generation value (change number).
-      time_t m_generation_time; ///< Time of last view change.
+      ServiceGroup m_svc;           ///< The service definition.
+      uint32_t m_generation    = 0; ///< Generation value (change number).
+      time_t m_generation_time = 0; ///< Time of last view change.
 
-      bool m_use_security_opt;             ///< Use group local security.
-      SecurityComp::Option m_security_opt; ///< Type of security.
-      bool m_use_security_key;             ///< Use group local key.
-      SecurityComp::Key m_security_key;    ///< MD5 key.
+      bool m_use_security_opt             = false;         ///< Use group local security.
+      SecurityComp::Option m_security_opt = SECURITY_NONE; ///< Type of security.
+      bool m_use_security_key             = false;         ///< Use group local key.
+      SecurityComp::Key m_security_key;                    ///< MD5 key.
 
       /** Group assignment data.
           This is used as a place to generate an assignment or
@@ -1989,7 +1987,7 @@ namespace detail
       detail::Assignment m_assign_info;
 
       /// Default constructor.
-      GroupData();
+      GroupData() = default;
       /// Use @a key instead of global default.
       self &setKey(const char *key ///< Shared key.
                    );
@@ -2193,7 +2191,7 @@ public:
   typedef detail::endpoint::GroupData GroupData;
 
   /// Default constructor.
-  Impl();
+  Impl() = default;
   /** Set the local address used for this endpoint.
       If not set, an arbitrary local address will be
       @note This can only be called once, and must be called before
@@ -2250,13 +2248,13 @@ protected:
   /** Local address for this end point.
       This is set only when the socket is open.
    */
-  uint32_t m_addr;
-  int m_fd; ///< Our socket.
+  uint32_t m_addr = INADDR_ANY;
+  int m_fd        = ts::NO_FD; ///< Our socket.
 
-  bool m_use_security_opt;             ///< Use group local security.
-  SecurityComp::Option m_security_opt; ///< Type of security.
-  bool m_use_security_key;             ///< Use group local key.
-  SecurityComp::Key m_security_key;    ///< MD5 key.
+  bool m_use_security_opt             = false;         ///< Use group local security.
+  SecurityComp::Option m_security_opt = SECURITY_NONE; ///< Type of security.
+  bool m_use_security_key             = false;         ///< Use group local key.
+  SecurityComp::Key m_security_key;                    ///< MD5 key.
 
   /// Close the socket.
   void close();
@@ -2319,11 +2317,11 @@ namespace detail
       bool m_assign;    ///< Send a REDIRECT_ASSIGN.
       bool m_send_caps; ///< Send capabilities.
       /// Packet forwarding method selected.
-      ServiceGroup::PacketStyle m_packet_forward;
+      ServiceGroup::PacketStyle m_packet_forward = ServiceConstants::NO_PACKET_STYLE;
       /// Packet return method selected.
-      ServiceGroup::PacketStyle m_packet_return;
+      ServiceGroup::PacketStyle m_packet_return = ServiceConstants::NO_PACKET_STYLE;
       /// Cache assignment method selected.
-      ServiceGroup::CacheAssignmentStyle m_cache_assign;
+      ServiceGroup::CacheAssignmentStyle m_cache_assign = ServiceConstants::NO_CACHE_ASSIGN_STYLE;
     };
 
     /// Data for a seeded router.
@@ -2354,11 +2352,11 @@ namespace detail
       CacheIdBox m_id;
 
       /// Packet forwarding methods supported.
-      ServiceGroup::PacketStyle m_packet_forward;
+      ServiceGroup::PacketStyle m_packet_forward = ServiceConstants::NO_PACKET_STYLE;
       /// Packet return methods supported.
-      ServiceGroup::PacketStyle m_packet_return;
+      ServiceGroup::PacketStyle m_packet_return = ServiceConstants::NO_PACKET_STYLE;
       /// Cache assignment methods supported.
-      ServiceGroup::CacheAssignmentStyle m_cache_assign;
+      ServiceGroup::CacheAssignmentStyle m_cache_assign = ServiceConstants::NO_CACHE_ASSIGN_STYLE;
 
       /// Known caches.
       CacheBag m_caches;
@@ -3410,6 +3408,9 @@ RouterAssignListElt::getVarSize() const
 {
   return this->getSize() - sizeof(self);
 }
+// This is untainted because an overall size check is done when the packet is read. If any of the
+// counts are bogus, that size check will fail.
+// coverity[ -tainted_data_return]
 inline uint32_t
 RouterAssignListElt::getCount() const
 {
@@ -3422,6 +3423,9 @@ inline HashAssignElt::HashAssignElt()
 inline HashAssignElt::HashAssignElt(int n) : m_count(htonl(n))
 {
 }
+// This is untainted because an overall size check is done when the packet is read. If any of the
+// counts are bogus, that size check will fail.
+// coverity[ -tainted_data_return]
 inline uint32_t
 HashAssignElt::getCount() const
 {
@@ -3440,17 +3444,20 @@ HashAssignElt::getSize() const
 inline uint32_t
 HashAssignElt::getAddr(int idx) const
 {
+  // coverity[ptr_arith]
   return (&m_count)[idx + 1];
 }
 inline HashAssignElt &
 HashAssignElt::setAddr(int idx, uint32_t addr)
 {
+  // coverity[ptr_arith]
   (&m_count)[idx + 1] = addr;
   return *this;
 }
 inline HashAssignElt::Bucket *
 HashAssignElt::getBucketBase()
 {
+  // coverity[ptr_arith]
   return reinterpret_cast<Bucket *>((&m_count + 1 + this->getCount()));
 }
 inline HashAssignElt::Bucket &HashAssignElt::operator[](size_t idx)
@@ -3462,9 +3469,9 @@ inline HashAssignElt::Bucket const &HashAssignElt::operator[](size_t idx) const
   return (*(const_cast<self *>(this)))[idx];
 }
 
-inline MaskAssignElt::MaskAssignElt()
-{
-}
+// This is untainted because an overall size check is done when the packet is read. If any of the
+// counts are bogus, that size check will fail.
+// coverity[ -tainted_data_return]
 inline uint32_t
 MaskAssignElt::getCount() const
 {

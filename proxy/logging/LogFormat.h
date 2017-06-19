@@ -163,10 +163,12 @@ private:
 public:
   LINK(LogFormat, link);
 
+  // noncopyable
+  LogFormat &operator=(LogFormat &rhs) = delete;
+
 private:
   // -- member functions that are not allowed --
   LogFormat();
-  LogFormat &operator=(LogFormat &rhs);
 };
 
 // For text logs, there is no format string; we'll simply log the
@@ -175,7 +177,7 @@ private:
 static inline LogFormat *
 MakeTextLogFormat(const char *name = "text")
 {
-  return new LogFormat(name, NULL /* format_str */);
+  return new LogFormat(name, nullptr /* format_str */);
 }
 
 /*-------------------------------------------------------------------------
@@ -206,12 +208,13 @@ public:
   unsigned count();
   void display(FILE *fd = stdout);
 
+  // noncopyable
+  // -- member functions that are not allowed --
+  LogFormatList(const LogFormatList &rhs) = delete;
+  LogFormatList &operator=(const LogFormatList &rhs) = delete;
+
 private:
   Queue<LogFormat> m_format_list;
-
-  // -- member functions that are not allowed --
-  LogFormatList(const LogFormatList &rhs);
-  LogFormatList &operator=(const LogFormatList &rhs);
 };
 
 #endif

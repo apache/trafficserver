@@ -2299,8 +2299,6 @@ tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
    @param url_len the length of the URL
 */
 tsapi void TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len);
-//  This is deprecated as of v5.0.0.
-tsapi TS_DEPRECATED void TSRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len);
 
 /**
    Return the current (if set) redirection URL string. This is still owned by the

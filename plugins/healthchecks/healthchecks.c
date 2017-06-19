@@ -189,9 +189,9 @@ hc_thread(void *data ATS_UNUSED)
   while (1) {
     HCFileData *fdata = fl_head, *fdata_prev = NULL;
 
+    gettimeofday(&now, NULL);
     /* Read the inotify events, blocking until we get something */
     len = read(fd, buffer, INOTIFY_BUFLEN);
-    gettimeofday(&now, NULL);
 
     /* The fl_head is a linked list of previously released data entries. They
        are ordered "by time", so once we find one that is scheduled for deletion,
@@ -255,6 +255,7 @@ hc_thread(void *data ATS_UNUSED)
           old_data->_next  = fl_head;
           fl_head          = old_data;
         }
+        /* coverity[ -tainted_data_return] */
         i += sizeof(struct inotify_event) + event->len;
       }
     }
@@ -564,7 +565,7 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   if (2 != argc) {
-    TSError("[healthchecks] Must specify a configuration file.");
+    TSError("[healthchecks] Must specify a configuration file");
     return;
   }
 
@@ -573,7 +574,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError("[healthchecks] Plugin registration failed.");
+    TSError("[healthchecks] Plugin registration failed");
     return;
   }
 

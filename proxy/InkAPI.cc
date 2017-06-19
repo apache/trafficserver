@@ -931,7 +931,9 @@ FileImpl::fgets(char *buf, int length)
   if (!m_buf || (m_bufpos < (length - 1))) {
     pos = m_bufpos;
 
-    fread(nullptr, length - 1);
+    if (fread(nullptr, length - 1) < 0) {
+      return nullptr;
+    }
 
     if (!m_bufpos && (pos == m_bufpos)) {
       return nullptr;
@@ -2131,8 +2133,8 @@ TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
   return url_string_get(url_impl, nullptr, length, nullptr);
 }
 
-typedef const char *(URL::*URLPartGetF)(int *length);
-typedef void (URL::*URLPartSetF)(const char *value, int length);
+using URLPartGetF = const char *(URL::*)(int *);
+using URLPartSetF = void (URL::*)(const char *, int);
 
 static const char *
 URLPartGet(TSMBuffer bufp, TSMLoc obj, int *length, URLPartGetF url_f)
@@ -5761,8 +5763,9 @@ TSHttpTxnParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 
   u.m_heap     = ((HdrHeapSDKHandle *)bufp)->m_heap;
   u.m_url_impl = (URLImpl *)obj;
-  if (!u.valid())
+  if (!u.valid()) {
     return TS_ERROR;
+  }
 
   l_url = sm->t_state.cache_info.parent_selection_url;
   if (l_url && l_url->valid()) {
@@ -6552,7 +6555,7 @@ TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes)
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
   VConnection *vc = (VConnection *)connp;
 
-  return reinterpret_cast<TSVIO>(vc->do_io(VIO::READ, (INKContInternal *)contp, nbytes, (MIOBuffer *)bufp));
+  return reinterpret_cast<TSVIO>(vc->do_io_read((INKContInternal *)contp, nbytes, (MIOBuffer *)bufp));
 }
 
 TSVIO
@@ -7391,7 +7394,7 @@ TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
 
 // This API tells the core to follow normal (301/302) redirects using the
 // standard Location: URL. This does not need to be called if you set an
-// explicit URL using TSRedirectUrlSet().
+// explicit URL using TSHttpTxnRedirectUrlSet().
 TSReturnCode
 TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
 {
@@ -7400,6 +7403,11 @@ TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
   HttpSM *sm = (HttpSM *)txnp;
 
   sm->enable_redirection = (on ? true : false);
+  // Make sure we allow for at least one redirection.
+  if (0 == sm->redirection_tries) {
+    sm->redirection_tries = 1;
+  }
+
   return TS_SUCCESS;
 }
 
@@ -7421,32 +7429,10 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
   sm->redirect_url       = (char *)url;
   sm->redirect_url_len   = url_len;
   sm->enable_redirection = true;
-}
 
-// Deprecated, remove for v6.0.0
-void
-TSRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)url) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *)txnp;
-
-  if (sm->redirect_url != nullptr) {
-    ats_free(sm->redirect_url);
-    sm->redirect_url     = nullptr;
-    sm->redirect_url_len = 0;
-  }
-
-  sm->redirect_url = (char *)ats_malloc(url_len + 1);
-  ink_strlcpy(sm->redirect_url, url, url_len + 1);
-  sm->redirect_url_len = url_len;
-  // have to turn redirection on for this transaction if user wants to redirect to another URL
-  if (sm->enable_redirection == false) {
-    sm->enable_redirection = true;
-    // max-out "redirection_tries" to avoid the regular redirection being turned on in
-    // this transaction improperly. This variable doesn't affect the custom-redirection
-    sm->redirection_tries = sm->t_state.txn_conf->number_of_redirections;
+  // Make sure we allow for at least one redirection.
+  if (0 == sm->redirection_tries) {
+    sm->redirection_tries = 1;
   }
 }
 
@@ -8029,9 +8015,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_open_write_fail_action, typep);
     break;
-  case TS_CONFIG_HTTP_ENABLE_REDIRECTION:
-    ret = _memberp_to_generic(&overridableHttpConfig->redirection_enabled, typep);
-    break;
   case TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS:
     ret = _memberp_to_generic(&overridableHttpConfig->number_of_redirections, typep);
     break;
@@ -8043,9 +8026,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT:
     ret = _memberp_to_generic(&overridableHttpConfig->attach_server_session_to_client, typep);
-    break;
-  case TS_CONFIG_HTTP_SAFE_REQUESTS_RETRYABLE:
-    ret = _memberp_to_generic(&overridableHttpConfig->safe_requests_retryable, typep);
     break;
   case TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE:
     ret = _memberp_to_generic(&overridableHttpConfig->origin_max_connections_queue, typep);
@@ -8079,6 +8059,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
     ret = _memberp_to_generic(&overridableHttpConfig->parent_failures_update_hostdb, typep);
+    break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER:
+    ret = _memberp_to_generic(&overridableHttpConfig->ssl_client_verify_server, typep);
     break;
   case TS_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_enable_default_vary_headers, typep);
@@ -8254,6 +8237,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     if (value && length > 0) {
       s->t_state.txn_conf->client_cert_filepath = const_cast<char *>(value);
     }
+    break;
   default:
     return TS_ERROR;
     break;
@@ -8384,11 +8368,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 
   case 37:
     switch (name[length - 1]) {
-    case 'd':
-      if (!strncmp(name, "proxy.config.http.redirection_enabled", length)) {
-        cnf = TS_CONFIG_HTTP_ENABLE_REDIRECTION;
-      }
-      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.max_stale_age", length)) {
         cnf = TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE;
@@ -8404,6 +8383,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       if (!strncmp(name, "proxy.config.http.response_server_str", length)) {
         cnf = TS_CONFIG_HTTP_RESPONSE_SERVER_STR;
         typ = TS_RECORDDATATYPE_STRING;
+      } else if (!strncmp(name, "proxy.config.ssl.client.verify.server", length)) {
+        cnf = TS_CONFIG_SSL_CLIENT_VERIFY_SERVER;
       }
       break;
     case 't':
@@ -8428,7 +8409,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       } else if (!strncmp(name, "proxy.config.http.flow_control.enabled", length)) {
         cnf = TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED;
       }
-      break;
       break;
     case 's':
       if (!strncmp(name, "proxy.config.http.send_http11_requests", length)) {
@@ -8518,8 +8498,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE;
       } else if (!strncmp(name, "proxy.config.http.request_header_max_size", length)) {
         cnf = TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE;
-      } else if (!strncmp(name, "proxy.config.http.safe_requests_retryable", length)) {
-        cnf = TS_CONFIG_HTTP_SAFE_REQUESTS_RETRYABLE;
       }
       break;
     case 'r':
@@ -9337,8 +9315,9 @@ TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int 
   if (sm && n > 0) {
     auto mem = static_cast<ts::StringView *>(alloca(sizeof(ts::StringView) * n));
     count    = sm->populate_client_protocol(mem, n);
-    for (int i  = 0; i < count; ++i)
+    for (int i = 0; i < count; ++i) {
       result[i] = mem[i].ptr();
+    }
   }
   if (actual) {
     *actual = count;
@@ -9356,8 +9335,9 @@ TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int 
   if (cs && n > 0) {
     auto mem = static_cast<ts::StringView *>(alloca(sizeof(ts::StringView) * n));
     count    = cs->populate_protocol(mem, n);
-    for (int i  = 0; i < count; ++i)
+    for (int i = 0; i < count; ++i) {
       result[i] = mem[i].ptr();
+    }
   }
   if (actual) {
     *actual = count;

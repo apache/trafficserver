@@ -377,7 +377,6 @@ struct OverridableHttpConfigParams {
       fwd_proxy_auth_to_parent(0),
       uncacheable_requests_bypass_parent(1),
       attach_server_session_to_client(0),
-      safe_requests_retryable(1),
       forward_connect_method(0),
       insert_age_in_response(1),
       anonymize_remove_from(0),
@@ -415,9 +414,9 @@ struct OverridableHttpConfigParams {
       parent_failures_update_hostdb(0),
       cache_open_write_fail_action(0),
       post_check_content_length_enabled(1),
-      redirection_enabled(0),
+      ssl_client_verify_server(0),
       redirect_use_orig_cache_key(0),
-      number_of_redirections(1),
+      number_of_redirections(0),
       proxy_response_hsts_max_age(-1),
       negative_caching_lifetime(1800),
       negative_revalidating_lifetime(1800),
@@ -503,8 +502,6 @@ struct OverridableHttpConfigParams {
   MgmtByte uncacheable_requests_bypass_parent;
   MgmtByte attach_server_session_to_client;
 
-  MgmtByte safe_requests_retryable;
-
   MgmtByte forward_connect_method;
 
   MgmtByte insert_age_in_response;
@@ -581,16 +578,14 @@ struct OverridableHttpConfigParams {
   ////////////////////////
   MgmtByte post_check_content_length_enabled;
 
-  //##############################################################################
-  //#
-  //# Redirection
-  //#
-  //# 1. redirection_enabled: if set to 1, redirection is enabled.
-  //# 2. number_of_redirectionse: The maximum number of redirections YTS permits
-  //# 3. post_copy_size: The maximum POST data size YTS permits to copy
-  //#
-  //##############################################################################
-  MgmtByte redirection_enabled;
+  /////////////////////////////
+  // server verification mode//
+  /////////////////////////////
+  MgmtByte ssl_client_verify_server;
+
+  //////////////////
+  // Redirection  //
+  //////////////////
   MgmtByte redirect_use_orig_cache_key;
   MgmtInt number_of_redirections;
 
@@ -731,100 +726,100 @@ public:
   IpAddr inbound_ip4, inbound_ip6;
   IpAddr outbound_ip4, outbound_ip6;
 
-  MgmtInt server_max_connections;
-  MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
-  MgmtInt max_websocket_connections;
+  MgmtInt server_max_connections            = 0;
+  MgmtInt origin_min_keep_alive_connections = 0; // TODO: This one really ought to be overridable, but difficult right now.
+  MgmtInt max_websocket_connections         = -1;
 
-  char *proxy_request_via_string;
-  char *proxy_response_via_string;
-  int proxy_request_via_string_len;
-  int proxy_response_via_string_len;
+  char *proxy_request_via_string    = nullptr;
+  char *proxy_response_via_string   = nullptr;
+  int proxy_request_via_string_len  = 0;
+  int proxy_response_via_string_len = 0;
 
-  MgmtInt accept_no_activity_timeout;
+  MgmtInt accept_no_activity_timeout = 120;
 
   ////////////////////////////////////
   // origin server connect attempts //
   ////////////////////////////////////
-  MgmtInt per_parent_connect_attempts;
-  MgmtInt parent_connect_timeout;
+  MgmtInt per_parent_connect_attempts = 2;
+  MgmtInt parent_connect_timeout      = 30;
 
   ///////////////////////////////////////////////////////////////////
   // Privacy: fields which are removed from the user agent request //
   ///////////////////////////////////////////////////////////////////
-  char *anonymize_other_header_list;
+  char *anonymize_other_header_list = nullptr;
 
   ////////////////////////////////////////////
   // CONNECT ports (used to be == ssl_ports //
   ////////////////////////////////////////////
-  char *connect_ports_string;
-  HttpConfigPortRange *connect_ports;
+  char *connect_ports_string         = nullptr;
+  HttpConfigPortRange *connect_ports = nullptr;
 
-  char *reverse_proxy_no_host_redirect;
-  char *proxy_hostname;
-  int reverse_proxy_no_host_redirect_len;
-  int proxy_hostname_len;
+  char *reverse_proxy_no_host_redirect   = nullptr;
+  char *proxy_hostname                   = nullptr;
+  int reverse_proxy_no_host_redirect_len = 0;
+  int proxy_hostname_len                 = 0;
 
-  MgmtInt post_copy_size;
-  MgmtInt max_post_size;
+  MgmtInt post_copy_size = 2048;
+  MgmtInt max_post_size  = 0;
 
   ////////////////////
   // Local Manager  //
   ////////////////////
-  MgmtInt synthetic_port;
+  MgmtInt synthetic_port = 0;
 
   ///////////////////////////////////////////////////////////////////
   // Put all MgmtByte members down here, avoids additional padding //
   ///////////////////////////////////////////////////////////////////
-  MgmtByte session_auth_cache_keep_alive_enabled;
-  MgmtByte disable_ssl_parenting;
+  MgmtByte session_auth_cache_keep_alive_enabled = 1;
+  MgmtByte disable_ssl_parenting                 = 0;
 
-  MgmtByte no_dns_forward_to_parent;
-  MgmtByte no_origin_server_dns;
-  MgmtByte use_client_target_addr;
-  MgmtByte use_client_source_port;
+  MgmtByte no_dns_forward_to_parent = 0;
+  MgmtByte no_origin_server_dns     = 0;
+  MgmtByte use_client_target_addr   = 0;
+  MgmtByte use_client_source_port   = 0;
 
-  MgmtByte enable_http_stats; // Can be "slow"
+  MgmtByte enable_http_stats = 1; // Can be "slow"
 
-  MgmtByte cache_post_method;
+  MgmtByte cache_post_method = 0;
 
-  MgmtByte push_method_enabled;
+  MgmtByte push_method_enabled = 0;
 
-  MgmtByte referer_filter_enabled;
-  MgmtByte referer_format_redirect;
+  MgmtByte referer_filter_enabled  = 0;
+  MgmtByte referer_format_redirect = 0;
 
-  MgmtByte strict_uri_parsing;
+  MgmtByte strict_uri_parsing = 0;
 
-  MgmtByte reverse_proxy_enabled;
-  MgmtByte url_remap_required;
+  MgmtByte reverse_proxy_enabled = 0;
+  MgmtByte url_remap_required    = 1;
 
-  MgmtByte record_cop_page;
+  MgmtByte record_cop_page = 0;
 
-  MgmtByte errors_log_error_pages;
-  MgmtByte enable_http_info;
+  MgmtByte errors_log_error_pages = 1;
+  MgmtByte enable_http_info       = 0;
 
-  MgmtByte redirection_host_no_port;
+  MgmtByte redirection_host_no_port = 1;
 
-  MgmtByte send_100_continue_response;
-  MgmtByte disallow_post_100_continue;
-  MgmtByte parser_allow_non_http;
-  MgmtByte keepalive_internal_vc;
+  MgmtByte send_100_continue_response = 0;
+  MgmtByte disallow_post_100_continue = 0;
+  MgmtByte parser_allow_non_http      = 1;
+  MgmtByte keepalive_internal_vc      = 0;
 
-  MgmtByte server_session_sharing_pool;
+  MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 
-  MgmtByte forward_proxy_ftp_enabled;
+  MgmtByte forward_proxy_ftp_enabled = 0;
 
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
 
-  MgmtInt body_factory_response_max_size;
+  MgmtInt body_factory_response_max_size = 8192;
 
-private:
+  // noncopyable
   /////////////////////////////////////
   // operator = and copy constructor //
   /////////////////////////////////////
-  HttpConfigParams(const HttpConfigParams &);
-  HttpConfigParams &operator=(const HttpConfigParams &);
+  HttpConfigParams(const HttpConfigParams &) = delete;
+  HttpConfigParams &operator=(const HttpConfigParams &) = delete;
 };
 
 /////////////////////////////////////////////////////////////
@@ -863,51 +858,6 @@ public:
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
 inline HttpConfigParams::HttpConfigParams()
-  : server_max_connections(0),
-    origin_min_keep_alive_connections(0),
-    max_websocket_connections(-1),
-    proxy_request_via_string(NULL),
-    proxy_response_via_string(NULL),
-    proxy_request_via_string_len(0),
-    proxy_response_via_string_len(0),
-    accept_no_activity_timeout(120),
-    per_parent_connect_attempts(2),
-    parent_connect_timeout(30),
-    anonymize_other_header_list(NULL),
-    connect_ports_string(NULL),
-    connect_ports(NULL),
-    proxy_hostname(NULL),
-    proxy_hostname_len(0),
-    post_copy_size(2048),
-    max_post_size(0),
-    synthetic_port(0),
-
-    // MgmtByte's here
-    session_auth_cache_keep_alive_enabled(1),
-    disable_ssl_parenting(0),
-    no_dns_forward_to_parent(0),
-    no_origin_server_dns(0),
-    use_client_target_addr(0),
-    use_client_source_port(0),
-    enable_http_stats(1),
-    cache_post_method(0),
-    push_method_enabled(0),
-    referer_filter_enabled(0),
-    referer_format_redirect(0),
-    strict_uri_parsing(0),
-    reverse_proxy_enabled(0),
-    url_remap_required(1),
-    record_cop_page(0),
-    errors_log_error_pages(1),
-    enable_http_info(0),
-    redirection_host_no_port(1),
-    send_100_continue_response(0),
-    disallow_post_100_continue(0),
-    parser_allow_non_http(1),
-    keepalive_internal_vc(0),
-    server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD),
-    forward_proxy_ftp_enabled(0),
-    body_factory_response_max_size(8192)
 {
 }
 

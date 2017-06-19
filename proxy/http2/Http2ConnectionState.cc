@@ -33,7 +33,7 @@
 #define DebugHttp2Stream(ua_session, stream_id, fmt, ...) \
   DebugSsn(ua_session, "http2_con", "[%" PRId64 "] [%u] " fmt, ua_session->connection_id(), stream_id, ##__VA_ARGS__);
 
-typedef Http2Error (*http2_frame_dispatch)(Http2ConnectionState &, const Http2Frame &);
+using http2_frame_dispatch = Http2Error (*)(Http2ConnectionState &, const Http2Frame &);
 
 static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_DATA
@@ -429,7 +429,7 @@ rcv_rst_stream_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   // frame is received with a stream identifier of 0x0, the recipient MUST
   // treat this as a connection error (Section 5.4.1) of type
   // PROTOCOL_ERROR.
-  if (!http2_is_client_streamid(stream_id)) {
+  if (stream_id == 0) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                       "reset access stream with invalid id");
   }
@@ -541,7 +541,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       cstate.update_initial_rwnd(param.value);
     }
 
-    cstate.client_settings.set((Http2SettingsIdentifier)param.id, param.value);
+    cstate.client_settings.set(static_cast<Http2SettingsIdentifier>(param.id), param.value);
   }
 
   // [RFC 7540] 6.5. Once all values have been applied, the recipient MUST
@@ -902,18 +902,19 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
       const char *client_ip = ats_ip_ntop(ua_session->get_client_addr(), ipb, sizeof(ipb));
       if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION) {
         if (error.msg) {
-          Error("HTTP/2 connection error client_ip=%s session_id=%" PRId64 " %s", client_ip, ua_session->connection_id(),
-                error.msg);
+          Error("HTTP/2 connection error client_ip=%s session_id=%" PRId64 " stream_id=%u %s", client_ip,
+                ua_session->connection_id(), stream_id, error.msg);
         }
         this->send_goaway_frame(this->latest_streamid_in, error.code);
-        this->ua_session->set_half_close_flag(true);
+        this->ua_session->set_half_close_local_flag(true);
         this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
 
         // The streams will be cleaned up by the HTTP2_SESSION_EVENT_FINI event
         // The Http2ClientSession will shutdown because connection_state.is_state_closed() will be true
       } else if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM) {
         if (error.msg) {
-          Error("HTTP/2 stream error client_ip=%s session_id=%" PRId64 " %s", client_ip, ua_session->connection_id(), error.msg);
+          Error("HTTP/2 stream error client_ip=%s session_id=%" PRId64 " stream_id=%u %s", client_ip, ua_session->connection_id(),
+                stream_id, error.msg);
         }
         this->send_rst_stream_frame(stream_id, error.code);
       }
@@ -943,7 +944,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     send_goaway_frame(latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
     // Stop creating new streams
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-    this->ua_session->set_half_close_flag(true);
+    this->ua_session->set_half_close_local_flag(true);
   } break;
 
   default:
@@ -974,7 +975,7 @@ Http2Stream *
 Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
 {
   // In half_close state, TS doesn't create new stream. Because GOAWAY frame is sent to client
-  if (ua_session->get_half_close_flag()) {
+  if (ua_session->get_half_close_local_flag()) {
     error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
                        "refused to create new stream, because ua_session is in half_close state");
     return nullptr;
@@ -1157,11 +1158,14 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
         vc->add_to_keep_alive_queue();
       }
     }
-
-    if ((fini_received || shutdown_state == IN_PROGRESS) && total_client_streams_count == 0) {
-      // We were shutting down, go ahead and terminate the session
-      ua_session->destroy();
-      ua_session = nullptr;
+    if (total_client_streams_count == 0) {
+      if (fini_received) {
+        // We were shutting down, go ahead and terminate the session
+        ua_session->destroy();
+        ua_session = nullptr;
+      } else if (shutdown_state == IN_PROGRESS) {
+        this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+      }
     }
   }
 }
@@ -1390,7 +1394,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   // Change stream state
   if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, flags)) {
     this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
-    this->ua_session->set_half_close_flag(true);
+    this->ua_session->set_half_close_local_flag(true);
     this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
 
     h2_hdr.destroy();
@@ -1551,7 +1555,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   if (stream != nullptr) {
     if (!stream->change_state(HTTP2_FRAME_TYPE_RST_STREAM, 0)) {
       this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
-      this->ua_session->set_half_close_flag(true);
+      this->ua_session->set_half_close_local_flag(true);
       this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
 
       return;
@@ -1587,7 +1591,7 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
       // Write settings to send buffer
       if (!http2_write_settings(param, iov)) {
         this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
-        this->ua_session->set_half_close_flag(true);
+        this->ua_session->set_half_close_local_flag(true);
         this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
 
         return;

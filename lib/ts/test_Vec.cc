@@ -59,32 +59,41 @@ test_basic()
   Vec<void *> v, vv, vvv;
   int tt = 99 * 50, t = 0;
 
-  for (size_t i = 0; i < 100; i++)
+  for (size_t i = 0; i < 100; i++) {
     v.add((void *)(intptr_t)i);
-  for (size_t i = 0; i < 100; i++)
+  }
+  for (size_t i = 0; i < 100; i++) {
     t += (int)(intptr_t)v.v[i];
+  }
   ink_assert(t == tt);
 
   t = 0;
-  for (size_t i = 1; i < 100; i++)
+  for (size_t i = 1; i < 100; i++) {
     vv.set_add((void *)(intptr_t)i);
-  for (size_t i = 1; i < 100; i++)
+  }
+  for (size_t i = 1; i < 100; i++) {
     vvv.set_add((void *)(intptr_t)i);
-  for (size_t i = 1; i < 100; i++)
+  }
+  for (size_t i = 1; i < 100; i++) {
     vvv.set_add((void *)(intptr_t)(i * 1000));
+  }
   vv.set_union(vvv);
-  for (size_t i = 0; i < vv.n; i++)
-    if (vv.v[i])
+  for (size_t i = 0; i < vv.n; i++) {
+    if (vv.v[i]) {
       t += (int)(intptr_t)vv.v[i];
+    }
+  }
   ink_assert(t == tt + 1000 * tt);
 
   v.clear();
   v.reserve(1000);
   t = 0;
-  for (size_t i = 0; i < 1000; i++)
+  for (size_t i = 0; i < 1000; i++) {
     v.add((void *)(intptr_t)i);
-  for (size_t i = 0; i < 1000; i++)
+  }
+  for (size_t i = 0; i < 1000; i++) {
     t += (int)(intptr_t)v.v[i];
+  }
   ink_assert(t == 999 * 500);
   printf("%zu %zu\n", v.n, v.i);
 
@@ -133,11 +142,13 @@ static void
 test_sort()
 {
   Vec<void *> v;
-  for (long i = 1; i <= 1000; ++i)
+  for (long i = 1; i <= 1000; ++i) {
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(((i * 149) % 1000) + 1)));
+  }
   v.qsort(&compare);
-  for (int i = 0; i < 1000; ++i)
+  for (int i = 0; i < 1000; ++i) {
     ink_assert(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+  }
 
   v.clear();
   for (long i = 1; i <= 1000000; ++i) {
@@ -162,19 +173,23 @@ test_sort()
 
   // Very long array, already sorted. This is what broke before.
   v.clear();
-  for (long i = 1; i <= 10000000; ++i)
+  for (long i = 1; i <= 10000000; ++i) {
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(i)));
+  }
   v.qsort(&compare);
-  for (long i = 0; i < 10000000; ++i)
+  for (long i = 0; i < 10000000; ++i) {
     ink_assert(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+  }
 
   // very long, reverse sorted.
   v.clear();
-  for (long i = 10000000; i >= 1; --i)
+  for (long i = 10000000; i >= 1; --i) {
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(i)));
+  }
   v.qsort(&compare);
-  for (long i = 0; i < 10000000; ++i)
+  for (long i = 0; i < 10000000; ++i) {
     ink_assert(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+  }
 }
 
 int

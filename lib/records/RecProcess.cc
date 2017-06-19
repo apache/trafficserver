@@ -233,7 +233,7 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
    }
 
    ink_cond_init(&g_force_req_cond);
-   ink_mutex_init(&g_force_req_mutex, nullptr);
+   ink_mutex_init(&g_force_req_mutex);
    if (mode_type == RECM_CLIENT) {
    send_pull_message(RECG_PULL_REQ);
    ink_cond_wait(&g_force_req_cond, &g_force_req_mutex);

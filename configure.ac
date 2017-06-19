@@ -1857,6 +1857,17 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"],
 AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
   [ test "x$enable_experimental_plugins" = "xyes" -a "x$ac_cv_header_search_h" = "xyes" -a "x$ac_cv_type_struct_hsearch_data" = "xyes" -a "x$ac_cv_func_hcreate_r" = "xyes" -a "x$ac_cv_func_hsearch_r" = "xyes" ])
 
+AC_ARG_WITH([default-stack-size],
+  [AS_HELP_STRING([--with-default-stack-size],[specify the default stack size in bytes [default=1048576]])],
+  [
+  with_default_stack_size="$withval"
+  ],[
+  with_default_stack_size="1048576"
+  ]
+)
+
+AC_SUBST([default_stack_size], [$with_default_stack_size])
+
 #
 # use modular IOCORE
 #

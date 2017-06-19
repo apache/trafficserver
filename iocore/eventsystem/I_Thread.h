@@ -63,16 +63,18 @@
 #error "include I_EventSystem.h or P_EventSystem.h"
 #endif
 
+#include <functional>
+
 #include "ts/ink_platform.h"
 #include "ts/ink_thread.h"
 #include "I_ProxyAllocator.h"
 
-class Thread;
 class ProxyMutex;
-typedef void *(*ThreadFunction)(void *arg);
 
-static const int MAX_THREAD_NAME_LENGTH = 16;
-static const int DEFAULT_STACKSIZE      = 1048576; // 1MB
+constexpr int MAX_THREAD_NAME_LENGTH = 16;
+
+/// The signature of a function to be called by a thread.
+using ThreadFunction = std::function<void()>;
 
 /**
   Base class for the threads in the Event System. Thread is the base
@@ -113,9 +115,12 @@ public:
   Ptr<ProxyMutex> mutex;
 
   // PRIVATE
-  void set_specific();
   Thread();
+  Thread(const Thread &) = delete;
+  Thread &operator=(const Thread &) = delete;
   virtual ~Thread();
+
+  void set_specific();
 
   static ink_hrtime cur_time;
   inkcoreapi static ink_thread_key thread_data_key;
@@ -139,18 +144,16 @@ public:
   ProxyAllocator ioAllocator;
   ProxyAllocator ioBlockAllocator;
 
-private:
-  // prevent unauthorized copies (Not implemented)
-  Thread(const Thread &);
-  Thread &operator=(const Thread &);
-
 public:
-  ink_thread start(const char *name, size_t stacksize, ThreadFunction f, void *a, void *stack);
+  /** Start the underlying thread.
 
-  virtual void
-  execute()
-  {
-  }
+      The thread name is set to @a name. The stack for the thread is either @a stack or, if that is
+      @c nullptr a stack of size @a stacksize is allocated and used. If @a f is present and valid it
+      is called in the thread context. Otherwise the method @c execute is invoked.
+  */
+  ink_thread start(const char *name, void *stack, size_t stacksize, ThreadFunction const &f = ThreadFunction());
+
+  virtual void execute() = 0;
 
   /** Get the current ATS high resolution time.
       This gets a cached copy of the time so it is very fast and reasonably accurate.

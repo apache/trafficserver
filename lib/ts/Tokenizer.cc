@@ -71,8 +71,9 @@ Tokenizer::~Tokenizer()
 
   while (cur != nullptr) {
     if (options & COPY_TOKS) {
-      for (auto &i : cur->el)
+      for (auto &i : cur->el) {
         ats_free(i);
+      }
     }
 
     next = cur->next;
@@ -100,8 +101,9 @@ Tokenizer::isDelimiter(char c)
     quoteFound = !quoteFound;
   }
 
-  if (quoteFound)
+  if (quoteFound) {
     return 0;
+  }
 
   while (strOfDelimit[i] != '\0') {
     if (c == strOfDelimit[i]) {
@@ -196,14 +198,16 @@ Tokenizer::Initialize(char *str, unsigned opt)
       // Go till either we hit a delimiter or we've
       //   come to the end of the string, then
       //   set for copying
-      for (; *str != '\0' && !isDelimiter(*str); str++)
+      for (; *str != '\0' && !isDelimiter(*str); str++) {
         ;
+      }
       priorCharWasDelimit = 0;
 
     } else {
       // First, skip the delimiters
-      for (; *str != '\0' && isDelimiter(*str); str++)
+      for (; *str != '\0' && isDelimiter(*str); str++) {
         ;
+      }
 
       // If there are only delimiters remaining, bail and set
       //   so that we do not add the empty token
@@ -215,12 +219,14 @@ Tokenizer::Initialize(char *str, unsigned opt)
         priorCharWasDelimit = 0;
 
         // Advance until the end of the string
-        for (; *str != '\0'; str++)
+        for (; *str != '\0'; str++) {
           ;
+        }
 
         // Now back off all trailing delimiters
-        for (; isDelimiter(*(str - 1)); str--)
+        for (; isDelimiter(*(str - 1)); str--) {
           ;
+        }
       }
     }
   }
@@ -356,8 +362,9 @@ Tokenizer::ReUse()
 
   while (cur_node != nullptr) {
     if (options & COPY_TOKS) {
-      for (auto &i : cur_node->el)
+      for (auto &i : cur_node->el) {
         ats_free(i);
+      }
     }
     memset(cur_node->el, 0, sizeof(char *) * TOK_NODE_ELEMENTS);
     cur_node = cur_node->next;

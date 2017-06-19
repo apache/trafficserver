@@ -74,8 +74,9 @@ Server::accept(Connection *c)
   socklen_t sz = sizeof(c->addr);
 
   res = socketManager.accept4(fd, &c->addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
-  if (res < 0)
+  if (res < 0) {
     return res;
+  }
   c->fd = res;
   if (is_debug_tag_set("iocore_net_server")) {
     ip_port_text_buffer ipb1, ipb2;

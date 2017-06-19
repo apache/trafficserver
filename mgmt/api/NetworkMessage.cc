@@ -125,6 +125,9 @@ send_mgmt_request(const mgmt_message_sender &snd, OpType optype, ...)
   const MgmtMarshallType lenfield[] = {MGMT_MARSHALL_INT};
   const NetCmdOperation *cmd;
 
+  if (!snd.is_connected())
+    return TS_ERR_NET_ESTABLISH; // no connection.
+
   GETCMD(requests, optype, cmd);
 
   va_start(ap, optype);

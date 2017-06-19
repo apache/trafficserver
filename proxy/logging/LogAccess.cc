@@ -48,6 +48,8 @@
 #include "LogBuffer.h"
 #include "Log.h"
 
+char INVALID_STR[] = "!INVALID_STR!";
+
 #define LOG_ACCESS_DEFAULT_FIELD(name, impl) \
   int LogAccess::name(char *buf) { impl; }
 /*-------------------------------------------------------------------------
@@ -209,6 +211,15 @@ LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_id, DEFAULT_INT_FIELD)
   -------------------------------------------------------------------------*/
 
 LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_uuid, DEFAULT_STR_FIELD)
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_timestamp_sec, DEFAULT_INT_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_timestamp_squid, DEFAULT_STR_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_timestamp_netscape, DEFAULT_STR_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_timestamp_date, DEFAULT_STR_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_timestamp_time, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -454,14 +465,6 @@ LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_host_port, DEFAULT_INT_FIELD)
   -------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------
-  LogAccess::marshal_client_req_timestamp_sec
-
-  This does nothing because the timestamp is already in the LogEntryHeader.
-  -------------------------------------------------------------------------*/
-
-LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_timestamp_sec, DEFAULT_INT_FIELD)
-
-/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
@@ -524,6 +527,51 @@ int
 LogAccess::marshal_milestone(TSMilestonesType ms, char *buf)
 {
   DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_milestone_fmt_date(TSMilestonesType ms, char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_milestone_fmt_time(TSMilestonesType ms, char *buf)
+{
+  DEFAULT_STR_FIELD;
 }
 
 /*-------------------------------------------------------------------------

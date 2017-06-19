@@ -101,6 +101,11 @@ http_config_enum_read(const char *name, const ConfigEnumPair<T> (&list)[N], Mgmt
   return false;
 }
 
+////////////////////////////////////////////////////////////////
+//
+//  static variables
+//
+////////////////////////////////////////////////////////////////
 /// Session sharing match types.
 static const ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatchStrings[] = {
   {TS_SERVER_SESSION_SHARING_MATCH_NONE, "none"},
@@ -112,11 +117,6 @@ static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolSt
   {TS_SERVER_SESSION_SHARING_POOL_GLOBAL, "global"},
   {TS_SERVER_SESSION_SHARING_POOL_THREAD, "thread"}};
 
-////////////////////////////////////////////////////////////////
-//
-//  static variables
-//
-////////////////////////////////////////////////////////////////
 int HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
 
@@ -897,7 +897,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections_queue, "proxy.config.http.origin_max_connections_queue");
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
-  HttpEstablishStaticConfigByte(c.oride.safe_requests_retryable, "proxy.config.http.safe_requests_retryable");
 
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
   HttpEstablishStaticConfigByte(c.oride.forward_connect_method, "proxy.config.http.forward_connect_method");
@@ -1073,6 +1072,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.errors_log_error_pages, "proxy.config.http.errors.log_error_pages");
 
   HttpEstablishStaticConfigLongLong(c.oride.slow_log_threshold, "proxy.config.http.slow.log.threshold");
+  HttpEstablishStaticConfigByte(c.oride.ssl_client_verify_server, "proxy.config.ssl.client.verify.server");
 
   HttpEstablishStaticConfigByte(c.record_cop_page, "proxy.config.http.record_heartbeat");
 
@@ -1104,14 +1104,12 @@ HttpConfig::startup()
   //#
   //# Redirection
   //#
-  //# 1. redirection_enabled: if set to 1, redirection is enabled.
+  //# 1. number_of_redirections: The maximum number of redirections YTS permits. 0 == disabled
   //# 2. redirect_use_orig_cache_key: if set to 1, use original request cache key.
-  //# 3. number_of_redirections: The maximum number of redirections YTS permits
-  //# 4. post_copy_size: The maximum POST data size YTS permits to copy
-  //# 5. redirection_host_no_port: do not include default port in host header during redirection
+  //# 3. post_copy_size: The maximum POST data size YTS permits to copy
+  //# 4. redirection_host_no_port: do not include default port in host header during redirection
   //#
   //##############################################################################
-  HttpEstablishStaticConfigByte(c.oride.redirection_enabled, "proxy.config.http.redirection_enabled");
   HttpEstablishStaticConfigByte(c.oride.redirect_use_orig_cache_key, "proxy.config.http.redirect_use_orig_cache_key");
   HttpEstablishStaticConfigByte(c.redirection_host_no_port, "proxy.config.http.redirect_host_no_port");
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
@@ -1173,7 +1171,6 @@ HttpConfig::reconfigure()
   }
   params->origin_min_keep_alive_connections     = m_master.origin_min_keep_alive_connections;
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
-  params->oride.safe_requests_retryable         = m_master.oride.safe_requests_retryable;
 
   if (params->oride.origin_max_connections && params->oride.origin_max_connections < params->origin_min_keep_alive_connections) {
     Warning("origin_max_connections < origin_min_keep_alive_connections, setting min=max , please correct your records.config");
@@ -1349,6 +1346,7 @@ HttpConfig::reconfigure()
   params->errors_log_error_pages           = INT_TO_BOOL(m_master.errors_log_error_pages);
   params->oride.slow_log_threshold         = m_master.oride.slow_log_threshold;
   params->record_cop_page                  = INT_TO_BOOL(m_master.record_cop_page);
+  params->oride.ssl_client_verify_server   = INT_TO_BOOL(m_master.oride.ssl_client_verify_server);
   params->oride.send_http11_requests       = m_master.oride.send_http11_requests;
   params->oride.doc_in_cache_skip_dns      = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);
   params->oride.default_buffer_size_index  = m_master.oride.default_buffer_size_index;
@@ -1375,19 +1373,6 @@ HttpConfig::reconfigure()
   params->oride.negative_revalidating_enabled  = INT_TO_BOOL(m_master.oride.negative_revalidating_enabled);
   params->oride.negative_revalidating_lifetime = m_master.oride.negative_revalidating_lifetime;
 
-  //##############################################################################
-  //#
-  //# Redirection
-  //#
-  //# 1. redirection_enabled: if set to 1, redirection is enabled.
-  //# 2. redirect_use_orig_cache_key: if set to 1, use original request cache key.
-  //# 3. number_of_redirections: The maximum number of redirections YTS permits
-  //# 4. post_copy_size: The maximum POST data size YTS permits to copy
-  //# 5. redirection_host_no_port: do not include default port in host header during redirection
-  //#
-  //##############################################################################
-
-  params->oride.redirection_enabled         = INT_TO_BOOL(m_master.oride.redirection_enabled);
   params->oride.redirect_use_orig_cache_key = INT_TO_BOOL(m_master.oride.redirect_use_orig_cache_key);
   params->redirection_host_no_port          = INT_TO_BOOL(m_master.redirection_host_no_port);
   params->oride.number_of_redirections      = m_master.oride.number_of_redirections;

@@ -119,18 +119,24 @@ public:
   operator()(const std::string &code) const
   {
     TS_DEBUG(TAG, "Checking if %s matches code %s", current_code_string_.c_str(), code.c_str());
-    if (code == current_code_string_)
+    if (code == current_code_string_) {
       return true;
-    if (code == "2xx" && current_code_ >= 200 && current_code_ <= 299)
+    }
+    if (code == "2xx" && current_code_ >= 200 && current_code_ <= 299) {
       return true;
-    if (code == "3xx" && current_code_ >= 300 && current_code_ <= 399)
+    }
+    if (code == "3xx" && current_code_ >= 300 && current_code_ <= 399) {
       return true;
-    if (code == "4xx" && current_code_ >= 400 && current_code_ <= 499)
+    }
+    if (code == "4xx" && current_code_ >= 400 && current_code_ <= 499) {
       return true;
-    if (code == "5xx" && current_code_ >= 500 && current_code_ <= 599)
+    }
+    if (code == "5xx" && current_code_ >= 500 && current_code_ <= 599) {
       return true;
-    if (code == "6xx" && current_code_ >= 600 && current_code_ <= 699)
+    }
+    if (code == "6xx" && current_code_ >= 600 && current_code_ <= 699) {
       return true;
+    }
 
     return false;
   }
@@ -204,8 +210,9 @@ BoomResponseRegistry::populate_error_responses(const std::string &base_directory
   base_error_directory_ = base_directory;
 
   // Make sure we have a trailing / after the base directory
-  if (!base_error_directory_.empty() && base_error_directory_[base_error_directory_.length() - 1] != '/')
+  if (!base_error_directory_.empty() && base_error_directory_[base_error_directory_.length() - 1] != '/') {
     base_error_directory_.append("/"); // make sure we have a trailing /
+  }
 
   // Iterate over files in the base directory.
   // Filename (sans the .html suffix) becomes the entry to the
@@ -217,8 +224,9 @@ BoomResponseRegistry::populate_error_responses(const std::string &base_directory
   if (pDIR != nullptr) {
     while (true) {
       entry = readdir(pDIR);
-      if (entry == nullptr)
+      if (entry == nullptr) {
         break;
+      }
 
       if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
         std::string file_name(entry->d_name, strlen(entry->d_name));
@@ -248,16 +256,19 @@ BoomResponseRegistry::get_response_for_error_code(int http_status_code)
 {
   std::string code_str = code_from_status(http_status_code);
 
-  if (error_responses_.count(code_str))
+  if (error_responses_.count(code_str)) {
     return error_responses_[code_str];
+  }
 
   std::string gen_code_str = generic_code_from_status(http_status_code);
 
-  if (error_responses_.count(gen_code_str))
+  if (error_responses_.count(gen_code_str)) {
     return error_responses_[gen_code_str];
+  }
 
-  if (error_responses_.count(DEFAULT_ERROR_FILE))
+  if (error_responses_.count(DEFAULT_ERROR_FILE)) {
     return error_responses_[DEFAULT_ERROR_FILE];
+  }
 
   return DEFAULT_ERROR_RESPONSE;
 }
@@ -267,25 +278,27 @@ BoomResponseRegistry::has_code_registered(int http_status_code)
 {
   // Only rewritable codes are allowed.
   std::set<std::string>::iterator ii = std::find_if(error_codes_.begin(), error_codes_.end(), IsRewritableCode(http_status_code));
-  if (ii == error_codes_.end())
+  if (ii == error_codes_.end()) {
     return false;
-  else
+  } else {
     return true;
+  }
 }
 
 std::string
 BoomResponseRegistry::generic_code_from_status(int code)
 {
-  if (code >= 200 && code <= 299)
+  if (code >= 200 && code <= 299) {
     return "2xx";
-  else if (code >= 300 && code <= 399)
+  } else if (code >= 300 && code <= 399) {
     return "3xx";
-  else if (code >= 400 && code <= 499)
+  } else if (code >= 400 && code <= 499) {
     return "4xx";
-  else if (code >= 500 && code <= 599)
+  } else if (code >= 500 && code <= 599) {
     return "5xx";
-  else
+  } else {
     return "default";
+  }
 }
 
 std::string

@@ -93,8 +93,9 @@ data_alloc(int compression_type, int compression_algorithms)
   data->zstrm.data_type        = Z_ASCII;
 
   int window_bits = WINDOW_BITS_GZIP;
-  if (compression_type & COMPRESSION_TYPE_DEFLATE)
+  if (compression_type & COMPRESSION_TYPE_DEFLATE) {
     window_bits = WINDOW_BITS_DEFLATE;
+  }
 
   err = deflateInit2(&data->zstrm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, window_bits, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
 
@@ -697,16 +698,19 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
       }
 
       if (strncasecmp(value, "br", sizeof("br") - 1) == 0) {
-        if (*algorithms & ALGORITHM_BROTLI)
+        if (*algorithms & ALGORITHM_BROTLI) {
           compression_acceptable = 1;
+        }
         *compress_type |= COMPRESSION_TYPE_BROTLI;
       } else if (strncasecmp(value, "deflate", sizeof("deflate") - 1) == 0) {
-        if (*algorithms & ALGORITHM_DEFLATE)
+        if (*algorithms & ALGORITHM_DEFLATE) {
           compression_acceptable = 1;
+        }
         *compress_type |= COMPRESSION_TYPE_DEFLATE;
       } else if (strncasecmp(value, "gzip", sizeof("gzip") - 1) == 0) {
-        if (*algorithms & ALGORITHM_GZIP)
+        if (*algorithms & ALGORITHM_GZIP) {
           compression_acceptable = 1;
+        }
         *compress_type |= COMPRESSION_TYPE_GZIP;
       }
     }

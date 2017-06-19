@@ -161,9 +161,9 @@ public:
   static const char *memchr(const char *s, char c, int max_length);
   static const char *strchr(const char *s, char c);
 
-private:
-  ParseRules(const ParseRules &);
-  ParseRules &operator=(const ParseRules &);
+  // noncopyable
+  ParseRules(const ParseRules &) = delete;
+  ParseRules &operator=(const ParseRules &) = delete;
 };
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * *

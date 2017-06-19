@@ -48,10 +48,11 @@ Cache::link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheF
 
   SET_CONTINUATION_HANDLER(c, &CacheVC::linkWrite);
 
-  if (c->do_write_lock() == EVENT_DONE)
+  if (c->do_write_lock() == EVENT_DONE) {
     return ACTION_RESULT_DONE;
-  else
+  } else {
     return &c->_action;
+  }
 }
 
 int
@@ -60,12 +61,14 @@ CacheVC::linkWrite(int event, Event * /* e ATS_UNUSED */)
   ink_assert(event == AIO_EVENT_DONE);
   set_io_not_in_progress();
   dir_insert(&first_key, vol, &dir);
-  if (_action.cancelled)
+  if (_action.cancelled) {
     goto Ldone;
-  if (io.ok())
+  }
+  if (io.ok()) {
     _action.continuation->handleEvent(CACHE_EVENT_LINK, nullptr);
-  else
+  } else {
     _action.continuation->handleEvent(CACHE_EVENT_LINK_FAILED, nullptr);
+  }
 Ldone:
   return free_CacheVC(this);
 }
@@ -114,10 +117,11 @@ Cache::deref(Continuation *cont, const CacheKey *key, CacheFragType type, const 
     }
   }
 Lcallreturn:
-  if (c->handleEvent(AIO_EVENT_DONE, nullptr) == EVENT_DONE)
+  if (c->handleEvent(AIO_EVENT_DONE, nullptr) == EVENT_DONE) {
     return ACTION_RESULT_DONE;
-  else
+  } else {
     return &c->_action;
+  }
 }
 
 int
@@ -127,19 +131,23 @@ CacheVC::derefRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   cancel_trigger();
   set_io_not_in_progress();
-  if (_action.cancelled)
+  if (_action.cancelled) {
     return free_CacheVC(this);
-  if (!buf)
+  }
+  if (!buf) {
     goto Lcollision;
-  if ((int)io.aio_result != (int)io.aiocb.aio_nbytes)
+  }
+  if ((int)io.aio_result != (int)io.aiocb.aio_nbytes) {
     goto Ldone;
+  }
   if (!dir_agg_valid(vol, &dir)) {
     last_collision = nullptr;
     goto Lcollision;
   }
   doc = (Doc *)buf->data();
-  if (!(doc->first_key == key))
+  if (!(doc->first_key == key)) {
     goto Lcollision;
+  }
 #ifdef DEBUG
   ink_assert(!memcmp(doc->data(), &doc->key, sizeof(doc->key)));
 #endif
@@ -154,8 +162,9 @@ Lcollision : {
   }
   if (dir_probe(&key, vol, &dir, &last_collision)) {
     int ret = do_read_call(&first_key);
-    if (ret == EVENT_RETURN)
+    if (ret == EVENT_RETURN) {
       goto Lcallreturn;
+    }
     return ret;
   }
 }

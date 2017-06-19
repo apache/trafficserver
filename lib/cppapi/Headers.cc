@@ -346,8 +346,9 @@ HeaderField::operator!=(const std::string &field_name) const
 bool
 HeaderField::operator=(const std::string &field_value)
 {
-  if (!clear())
+  if (!clear()) {
     return false;
+  }
 
   return append(field_value);
 }
@@ -355,8 +356,9 @@ HeaderField::operator=(const std::string &field_value)
 bool
 HeaderField::operator=(const char *field_value)
 {
-  if (!clear())
+  if (!clear()) {
     return false;
+  }
 
   return append(field_value);
 }
@@ -382,8 +384,9 @@ operator<<(std::ostream &os, HeaderField &obj)
   int count = obj.size();
   for (HeaderField::iterator it = obj.begin(); it != obj.end(); ++it) {
     os << (*it);
-    if (--count > 0)
+    if (--count > 0) {
       os << ",";
+    }
   }
   return os;
 }
@@ -638,8 +641,9 @@ header_field_iterator
 Headers::find(const char *key, int length)
 {
   TSMLoc field_loc = TSMimeHdrFieldFind(state_->hdr_buf_, state_->hdr_loc_, key, length);
-  if (field_loc != TS_NULL_MLOC)
+  if (field_loc != TS_NULL_MLOC) {
     return header_field_iterator(state_->hdr_buf_, state_->hdr_loc_, field_loc);
+  }
 
   return end();
 }
@@ -654,8 +658,9 @@ Headers::append(const std::string &key, const std::string &value)
     TSMimeHdrFieldAppend(state_->hdr_buf_, state_->hdr_loc_, field_loc);
     TSMimeHdrFieldValueStringInsert(state_->hdr_buf_, state_->hdr_loc_, field_loc, 0, value.c_str(), value.length());
     return header_field_iterator(state_->hdr_buf_, state_->hdr_loc_, field_loc);
-  } else
+  } else {
     return end();
+  }
 }
 
 Headers::iterator

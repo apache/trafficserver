@@ -76,6 +76,11 @@ public:
   virtual int marshal_client_req_tcp_reused(char *);         // INT
   virtual int marshal_client_req_is_ssl(char *);             // INT
   virtual int marshal_client_req_ssl_reused(char *);         // INT
+  virtual int marshal_client_req_timestamp_sec(char *);      // INT
+  virtual int marshal_client_req_timestamp_squid(char *);    // STR
+  virtual int marshal_client_req_timestamp_netscape(char *); // STR
+  virtual int marshal_client_req_timestamp_date(char *);     // STR
+  virtual int marshal_client_req_timestamp_time(char *);     // STR
   virtual int marshal_client_security_protocol(char *);      // STR
   virtual int marshal_client_security_cipher_suite(char *);  // STR
   virtual int marshal_client_finish_status_code(char *);     // INT
@@ -159,6 +164,11 @@ public:
   virtual int marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf);
 
   virtual int marshal_milestone(TSMilestonesType ms, char *buf);
+  virtual int marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
+  virtual int marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
+  virtual int marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
+  virtual int marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
+  virtual int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
   virtual int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
 
   virtual void set_client_req_url(char *, int);                // STR
@@ -167,6 +177,11 @@ public:
   virtual void set_client_req_unmapped_url_path(char *, int);  // STR
   virtual void set_client_req_unmapped_url_host(char *, int);  // STR
   virtual void set_client_req_url_path(char *, int);           // STR
+
+  // noncopyable
+  // -- member functions that are not allowed --
+  LogAccessHttp(const LogAccessHttp &rhs) = delete;
+  LogAccessHttp &operator=(LogAccessHttp &rhs) = delete;
 
 private:
   HttpSM *m_http_sm;
@@ -201,10 +216,6 @@ private:
   void validate_unmapped_url_path(void);
 
   void validate_lookup_url(void);
-
-  // -- member functions that are not allowed --
-  LogAccessHttp(const LogAccessHttp &rhs);
-  LogAccessHttp &operator=(LogAccessHttp &rhs);
 };
 
 #endif

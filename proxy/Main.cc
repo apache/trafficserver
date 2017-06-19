@@ -164,10 +164,7 @@ static int cmd_line_dprintf_level = 0;  // default debug output level from ink_d
 static int poll_timeout           = -1; // No value set.
 static int cmd_disable_freelist   = 0;
 
-static int shutdown_timeout = 0;
-
-static volatile bool sigusr1_received = false;
-static volatile bool sigusr2_received = false;
+static volatile bool signal_received[NSIG];
 
 // 1: delay listen, wait for cache.
 // 0: Do not delay, start listen ASAP.
@@ -213,14 +210,25 @@ static ArgumentDescription argument_descriptions[] = {
   {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, nullptr, nullptr},
   {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()};
+  VERSION_ARGUMENT_DESCRIPTION(),
+};
+
+struct AutoStopCont : public Continuation {
+  int
+  mainEvent(int /* event */, Event * /* e */)
+  {
+    pmgmt->stop();
+    shutdown_event_system = true;
+    delete this;
+    return EVENT_CONT;
+  }
+
+  AutoStopCont() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AutoStopCont::mainEvent); }
+};
 
 class SignalContinuation : public Continuation
 {
 public:
-  char *end;
-  char *snap;
-
   SignalContinuation() : Continuation(new_ProxyMutex())
   {
     end = snap = nullptr;
@@ -230,36 +238,60 @@ public:
   int
   periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    if (sigusr1_received) {
-      sigusr1_received = false;
+    if (signal_received[SIGUSR1]) {
+      signal_received[SIGUSR1] = false;
 
       // TODO: TS-567 Integrate with debugging allocators "dump" features?
       ink_freelists_dump(stderr);
       ResourceTracker::dump(stderr);
+
       if (!end) {
         end = (char *)sbrk(0);
       }
+
       if (!snap) {
         snap = (char *)sbrk(0);
       }
+
       char *now = (char *)sbrk(0);
-      // TODO: Use logging instead directly writing to stderr
-      //       This is not error condition at the first place
-      //       so why stderr?
-      //
-      fprintf(stderr, "sbrk 0x%" PRIu64 " from first %" PRIu64 " from last %" PRIu64 "\n", (uint64_t)((ptrdiff_t)now),
-              (uint64_t)((ptrdiff_t)(now - end)), (uint64_t)((ptrdiff_t)(now - snap)));
+      Note("sbrk 0x%" PRIu64 " from first %" PRIu64 " from last %" PRIu64 "\n", (uint64_t)((ptrdiff_t)now),
+           (uint64_t)((ptrdiff_t)(now - end)), (uint64_t)((ptrdiff_t)(now - snap)));
       snap = now;
-    } else if (sigusr2_received) {
-      sigusr2_received = false;
+    }
+
+    if (signal_received[SIGUSR2]) {
+      signal_received[SIGUSR2] = false;
+
       Debug("log", "received SIGUSR2, reloading traffic.out");
+
       // reload output logfile (file is usually called traffic.out)
       diags->set_stdout_output(bind_stdout);
       diags->set_stderr_output(bind_stderr);
     }
 
+    if (signal_received[SIGTERM] || signal_received[SIGINT]) {
+      signal_received[SIGTERM] = false;
+      signal_received[SIGINT]  = false;
+
+      RecInt timeout = 0;
+      REC_ReadConfigInteger(timeout, "proxy.config.stop.shutdown_timeout");
+
+      if (timeout) {
+        http2_drain = true;
+      }
+
+      Debug("server", "received exit signal, shutting down in %" PRId64 "secs", timeout);
+
+      // Shutdown in `timeout` seconds (or now if that is 0).
+      eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(timeout));
+    }
+
     return EVENT_CONT;
   }
+
+private:
+  const char *end;
+  const char *snap;
 };
 
 class TrackerContinuation : public Continuation
@@ -426,14 +458,17 @@ init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecD
 static void
 proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
 {
+  if ((unsigned)signo < countof(signal_received)) {
+    signal_received[signo] = true;
+  }
+
+  // These signals are all handled by SignalContinuation.
   switch (signo) {
-  case SIGUSR1:
-    sigusr1_received = true;
-    return;
-  case SIGUSR2:
-    sigusr2_received = true;
-    return;
   case SIGHUP:
+  case SIGINT:
+  case SIGTERM:
+  case SIGUSR1:
+  case SIGUSR2:
     return;
   }
 
@@ -450,14 +485,6 @@ proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
   if (signal_is_crash(signo)) {
     signal_crash_handler(signo, info, ctx);
   }
-
-  if (shutdown_timeout) {
-    http2_drain = true;
-    sleep(shutdown_timeout);
-  }
-
-  shutdown_event_system = true;
-  sleep(1);
 }
 
 //
@@ -1278,26 +1305,6 @@ init_http_header()
   hpack_huffman_init();
 }
 
-struct AutoStopCont : public Continuation {
-  int
-  mainEvent(int event, Event *e)
-  {
-    (void)event;
-    (void)e;
-    ::exit(0);
-    return 0;
-  }
-  AutoStopCont() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AutoStopCont::mainEvent); }
-};
-
-static void
-run_AutoStop()
-{
-  if (getenv("PROXY_AUTO_EXIT")) {
-    eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(atoi(getenv("PROXY_AUTO_EXIT"))));
-  }
-}
-
 #if TS_HAS_TESTS
 struct RegressionCont : public Continuation {
   int initialized;
@@ -1537,12 +1544,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
-  // Specific validity checks.
-  if (*conf_dir && command_index != find_cmd_index(CMD_VERIFY_CONFIG)) {
-    fprintf(stderr, "-D option can only be used with the %s command\n", CMD_VERIFY_CONFIG);
-    ::exit(1);
-  }
-
   // Bootstrap syslog.  Since we haven't read records.config
   //   yet we do not know where
   openlog("traffic_server", LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
@@ -1666,8 +1667,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (mlock_flags == 2) {
     if (0 != mlockall(MCL_CURRENT | MCL_FUTURE)) {
       Warning("Unable to mlockall() on startup");
-    } else
+    } else {
       Debug("server", "Successfully called mlockall()");
+    }
   }
 #endif
 
@@ -1676,8 +1678,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     process_core(core_file);
     ::exit(0);
   }
-
-  REC_ReadConfigInteger(shutdown_timeout, "proxy.config.stop.shutdown_timeout");
 
   // We need to do this early so we can initialize the Machine
   // singleton, which depends on configuration values loaded in this.
@@ -1756,6 +1756,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   ink_hostdb_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER));
   ink_dns_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER));
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
+
+  // Do the inits for NetProcessors that use ET_NET threads. MUST be before starting those threads.
+  netProcessor.init();
+  init_HttpProxyServer();
+
+  // !! ET_NET threads start here !!
+  // This means any spawn scheduling must be done before this point.
   eventProcessor.start(num_of_net_threads, stacksize);
 
   int num_remap_threads = 0;
@@ -1805,13 +1812,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       HttpProxyPort::loadConfig();
     }
     HttpProxyPort::loadDefaultIfEmpty();
-
-    if (!accept_mss) {
-      REC_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
-    }
-
-    NetProcessor::accept_mss = accept_mss;
-    netProcessor.start(0, stacksize);
 
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
@@ -1870,9 +1870,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // main server logic initiated here //
     //////////////////////////////////////
 
+    init_accept_HttpProxyServer(num_accept_threads);
     transformProcessor.start();
-
-    init_HttpProxyServer(num_accept_threads);
 
     int http_enabled = 1;
     REC_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
@@ -1935,7 +1934,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     run_RegressionTest();
 #endif
 
-    run_AutoStop();
+    if (getenv("PROXY_AUTO_EXIT")) {
+      eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(atoi(getenv("PROXY_AUTO_EXIT"))));
+    }
   }
 
 #if !TS_USE_POSIX_CAP

@@ -202,7 +202,7 @@ CapabilityElt::getCapType() const
 inline CapabilityElt &
 CapabilityElt::setCapType(Type cap)
 {
-  m_cap_type = htons(cap);
+  m_cap_type = static_cast<Type>(htons(cap));
   return *this;
 }
 
@@ -449,14 +449,14 @@ SecurityComp &
 SecurityComp::setKey(char const *key)
 {
   m_local_key = true;
-  strncpy(m_key, key, KEY_SIZE);
+  ink_strlcpy(m_key, key, KEY_SIZE);
   return *this;
 }
 
 void
 SecurityComp::setDefaultKey(char const *key)
 {
-  strncpy(m_default_key, key, KEY_SIZE);
+  ink_strlcpy(m_default_key, key, KEY_SIZE);
 }
 
 SecurityComp &
@@ -783,12 +783,18 @@ RouterViewComp::setChangeNumber(uint32_t n)
   return *this;
 }
 
+// This is untainted because an overall size check is done when the packet is read. If any of the
+// counts are bogus, that size check will fail.
+// coverity[ -tainted_data_return]
 uint32_t
 RouterViewComp::getCacheCount() const
 {
   return ntohl(*m_cache_count);
 }
 
+// This is untainted because an overall size check is done when the packet is read. If any of the
+// counts are bogus, that size check will fail.
+// coverity[ -tainted_data_return]
 uint32_t
 RouterViewComp::getRouterCount() const
 {

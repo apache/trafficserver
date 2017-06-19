@@ -56,8 +56,9 @@ Regex::compile(const char *pattern, const unsigned flags)
   int options    = 0;
   int study_opts = 0;
 
-  if (regex)
+  if (regex) {
     return false;
+  }
 
   if (flags & RE_CASE_INSENSITIVE) {
     options |= PCRE_CASELESS;
@@ -80,8 +81,9 @@ Regex::compile(const char *pattern, const unsigned flags)
   regex_extra = pcre_study(regex, study_opts, &error);
 
 #ifdef PCRE_CONFIG_JIT
-  if (regex_extra)
+  if (regex_extra) {
     pcre_assign_jit_stack(regex_extra, &get_jit_stack, nullptr);
+  }
 #endif
 
   return true;
@@ -122,14 +124,16 @@ Regex::exec(const char *str, int length, int *ovector, int ovecsize)
 
 Regex::~Regex()
 {
-  if (regex_extra)
+  if (regex_extra) {
 #ifdef PCRE_CONFIG_JIT
     pcre_free_study(regex_extra);
 #else
     pcre_free(regex_extra);
 #endif
-  if (regex)
+  }
+  if (regex) {
     pcre_free(regex);
+  }
 }
 
 DFA::~DFA()
@@ -138,10 +142,12 @@ DFA::~DFA()
   dfa_pattern *t;
 
   while (p) {
-    if (p->_re)
+    if (p->_re) {
       delete p->_re;
-    if (p->_p)
+    }
+    if (p->_p) {
       ats_free(p->_p);
+    }
     t = p->_next;
     ats_free(p);
     p = t;
@@ -180,10 +186,11 @@ DFA::compile(const char *pattern, unsigned flags)
 {
   ink_assert(_my_patterns == nullptr);
   _my_patterns = build(pattern, flags);
-  if (_my_patterns)
+  if (_my_patterns) {
     return 0;
-  else
+  } else {
     return -1;
+  }
 }
 
 int

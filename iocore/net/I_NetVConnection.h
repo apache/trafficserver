@@ -184,6 +184,8 @@ struct NetVCOptions {
    */
   ats_scoped_str clientCertificate;
   /// Reset all values to defaults.
+
+  uint8_t clientVerificationFlag = 0;
   void reset();
 
   void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags, unsigned long _packet_mark = 0,
@@ -244,8 +246,8 @@ struct NetVCOptions {
   static const char *toString(addr_bind_style s);
   //@}
 
-private:
-  NetVCOptions(const NetVCOptions &);
+  // noncopyable
+  NetVCOptions(const NetVCOptions &) = delete;
 };
 
 /**
@@ -638,9 +640,9 @@ public:
     return nullptr;
   }
 
-private:
-  NetVConnection(const NetVConnection &);
-  NetVConnection &operator=(const NetVConnection &);
+  // noncopyable
+  NetVConnection(const NetVConnection &) = delete;
+  NetVConnection &operator=(const NetVConnection &) = delete;
 
 protected:
   IpEndpoint local_addr;

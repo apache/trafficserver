@@ -92,10 +92,11 @@ struct lua_scoped_stack {
     nvals++;
   }
 
-private:
-  lua_scoped_stack(const lua_scoped_stack &);            // Disabled.
-  lua_scoped_stack &operator=(const lua_scoped_stack &); // Disabled.
+  // noncopyable
+  lua_scoped_stack(const lua_scoped_stack &) = delete;            // Disabled.
+  lua_scoped_stack &operator=(const lua_scoped_stack &) = delete; // Disabled.
 
+private:
   lua_State *L;
   unsigned nvals;
 };

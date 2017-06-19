@@ -41,15 +41,12 @@ namespace wccp
 #endif
 
 // ------------------------------------------------------
-Impl::GroupData::GroupData() : m_generation(0), m_use_security_opt(false), m_use_security_key(false)
-{
-}
-
 Impl::GroupData &
 Impl::GroupData::setKey(const char *key)
 {
-  m_use_security_key = true;
-  strncpy(m_security_key, key, SecurityComp::KEY_SIZE);
+  if ((m_use_security_key = (key != nullptr))) {
+    ink_strlcpy(m_security_key, key, SecurityComp::KEY_SIZE);
+  }
   return *this;
 }
 
@@ -59,10 +56,6 @@ Impl::GroupData::setSecurity(SecurityOption style)
   m_use_security_opt = true;
   m_security_opt     = style;
   return *this;
-}
-
-Impl::Impl() : m_addr(INADDR_ANY), m_fd(ts::NO_FD)
-{
 }
 
 Impl::~Impl()
@@ -75,7 +68,7 @@ Impl::open(uint addr)
 {
   struct sockaddr saddr;
   sockaddr_in &in_addr = reinterpret_cast<sockaddr_in &>(saddr);
-  int fd;
+  ats_scoped_fd fd;
 
   if (ts::NO_FD != m_fd) {
     log(LVL_INFO, "Attempted to open already open WCCP Endpoint");
@@ -129,7 +122,7 @@ Impl::open(uint addr)
   }
 #endif
 
-  m_fd = fd;
+  m_fd = fd.release();
   return 0;
 }
 
@@ -215,6 +208,7 @@ Impl::handleMessage()
   recv_hdr.msg_iovlen     = 1;
   recv_hdr.msg_control    = anc_buffer;
   recv_hdr.msg_controllen = ANC_BUFFER_SIZE;
+  recv_hdr.msg_flags      = 0; // output only, make Coverity shut up.
 
   // coverity[uninit_use_in_call]
   n = recvmsg(m_fd, &recv_hdr, MSG_TRUNC);
@@ -434,21 +428,19 @@ CacheImpl::GroupData::processUp()
     zret = true; // No process to track, always chatter
   } else {
     // Look for the pid file
-    int fd = open(proc_pid_path, O_RDONLY);
-    if (fd > 0) {
+    ats_scoped_fd fd{open(proc_pid_path, O_RDONLY)};
+    if (fd >= 0) {
       char buffer[256];
       ssize_t read_count = read(fd, buffer, sizeof(buffer) - 1);
-      close(fd);
       if (read_count > 0) {
         buffer[read_count] = '\0';
         int pid            = atoi(buffer);
         if (pid > 0) {
           // If the process is still running, it has an entry in the proc file system, (Linux only)
           sprintf(buffer, "/proc/%d/status", pid);
-          fd = open(buffer, O_RDONLY);
-          if (fd > 0) {
+          ats_scoped_fd fd2{open(buffer, O_RDONLY)};
+          if (fd2 >= 0) {
             zret = true;
-            close(fd);
           }
         }
       }

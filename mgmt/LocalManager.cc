@@ -147,22 +147,14 @@ LocalManager::processRunning()
   }
 }
 
-LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), configFiles(nullptr)
+LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on)
 {
   bool found;
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
   ats_scoped_str bindir(RecConfigReadBinDir());
   ats_scoped_str sysconfdir(RecConfigReadConfigDir());
 
-  syslog_facility = 0;
-
-  proxy_recoverable         = true;
-  proxy_started_at          = -1;
-  proxy_launch_count        = 0;
-  manager_started_at        = time(nullptr);
-  proxy_launch_outstanding  = false;
-  mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
-  proxy_running             = 0;
+  manager_started_at = time(nullptr);
 
   RecRegisterStatInt(RECT_NODE, "proxy.node.proxy_running", 0, RECP_NON_PERSISTENT);
 
@@ -212,7 +204,6 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
   proxy_name                   = REC_readString("proxy.config.proxy_name", &found);
   proxy_binary                 = REC_readString("proxy.config.proxy_binary", &found);
   env_prep                     = REC_readString("proxy.config.env_prep", &found);
-  proxy_options                = nullptr;
 
   // Calculate proxy_binary from the absolute bin_path
   absolute_proxy_binary = Layout::relative_to(bindir, proxy_binary);
@@ -222,12 +213,6 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
     mgmt_log("[LocalManager::LocalManager] Unable to access() '%s': %d, %s\n", absolute_proxy_binary, errno, strerror(errno));
     mgmt_fatal(0, "[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
   }
-
-  watched_process_pid = -1;
-
-  process_server_sockfd = -1;
-  watched_process_fd    = -1;
-  proxy_launch_pid      = -1;
 
   return;
 }
@@ -610,7 +595,8 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
     }
     ink_assert(found);
     if (!(configFiles && configFiles->getRollbackObj(fname, &rb)) &&
-        (strcmp(data_raw, "proxy.config.body_factory.template_sets_dir") != 0)) {
+        (strcmp(data_raw, "proxy.config.body_factory.template_sets_dir") != 0) &&
+        (strcmp(data_raw, "proxy.config.ssl.server.ticket_key.filename") != 0)) {
       mgmt_fatal(0, "[LocalManager::sendMgmtMsgToProcesses] "
                     "Invalid 'data_raw' for MGMT_EVENT_CONFIG_FILE_UPDATE\n");
     }
@@ -748,7 +734,7 @@ LocalManager::processEventQueue()
         ink_assert(enqueue(mgmt_event_queue, mh));
         return;
       }
-      Debug("lm", "[TrafficManager] ==> Sending signal event '%d' payload=%d", mh->msg_id, mh->data_len);
+      Debug("lm", "[TrafficManager] ==> Sending signal event '%d' %s payload=%d", mh->msg_id, data_raw, mh->data_len);
       lmgmt->sendMgmtMsgToProcesses(mh);
     }
     ats_free(mh);

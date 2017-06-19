@@ -122,7 +122,7 @@ remove_event_client(EventClientT *client, InkHashTable *table)
 TSMgmtError
 init_mgmt_events()
 {
-  ink_mutex_init(&mgmt_events_lock, "mgmt_event_notice");
+  ink_mutex_init(&mgmt_events_lock);
 
   // initialize queue
   mgmt_events = create_queue();
@@ -516,7 +516,7 @@ done:
   return ret;
 }
 
-typedef TSMgmtError (*event_message_handler)(EventClientT *, void *, size_t);
+using event_message_handler = TSMgmtError (*)(EventClientT *, void *, size_t);
 
 static const event_message_handler handlers[] = {
   nullptr,                     // FILE_READ

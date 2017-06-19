@@ -33,7 +33,7 @@ using namespace atscppapi;
  * @private
  */
 struct atscppapi::GlobalPluginState : noncopyable {
-  TSCont cont_;
+  TSCont cont_ = nullptr;
   GlobalPlugin *global_plugin_;
   bool ignore_internal_transactions_;
 

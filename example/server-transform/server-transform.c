@@ -193,7 +193,7 @@ transform_connect(TSCont contp, TransformData *data)
   ip_addr.sin_family      = AF_INET;
   ip_addr.sin_addr.s_addr = server_ip; /* Should be in network byte order */
   ip_addr.sin_port        = server_port;
-  TSDebug("strans", "net connect..");
+  TSDebug("strans", "net connect.");
   action = TSNetConnect(contp, (struct sockaddr const *)&ip_addr);
 
   if (!TSActionDone(action)) {
@@ -519,7 +519,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
 
     data = (TransformData *)TSContDataGet(contp);
     if (data == NULL) {
-      TSError("[server_transform] Didn't get Continuation's Data. Ignoring Event..");
+      TSError("[server_transform] Didn't get Continuation's Data, ignoring event");
       return 0;
     }
     TSDebug("strans", "transform handler event [%d], data->state = [%d]", event, data->state);
@@ -647,7 +647,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[server_transform] Plugin registration failed.");
+    TSError("[server_transform] Plugin registration failed");
   }
 
   /* connect to the echo port on localhost */

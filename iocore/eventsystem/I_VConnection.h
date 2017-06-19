@@ -312,9 +312,6 @@ public:
   VConnection(ProxyMutex *aMutex);
   VConnection(Ptr<ProxyMutex> &aMutex);
 
-  /** @deprecated */
-  VIO *do_io(int op, Continuation *c = nullptr, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0, int data = 0);
-
   // Private
   // Set continuation on a given vio. The public interface
   // is through VIO::set_continuation()

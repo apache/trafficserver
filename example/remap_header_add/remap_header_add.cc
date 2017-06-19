@@ -92,7 +92,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *, int)
   TSDebug(PLUGIN_NAME, "TSRemapNewInstance()");
 
   if (!argv || !ih) {
-    TSError("[%s] Unable to load plugin because missing argv or ih.", PLUGIN_NAME);
+    TSError("[%s] Unable to load plugin because missing argv or ih", PLUGIN_NAME);
     return TS_ERROR;
   }
 
@@ -141,7 +141,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txn, TSRemapRequestInfo *rri)
   remap_line *rl = static_cast<remap_line *>(ih);
 
   if (!rl || !rri) {
-    TSError("[%s] rl or rri is null.", PLUGIN_NAME);
+    TSError("[%s] rl or rri is null", PLUGIN_NAME);
     return TSREMAP_NO_REMAP;
   }
 

@@ -164,8 +164,9 @@ RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
 #endif
     break;
   }
-  if (cache_config_ram_cache_compress_percent)
+  if (cache_config_ram_cache_compress_percent) {
     rc->compress_entries(e->ethread);
+  }
   return EVENT_CONT;
 }
 
@@ -186,8 +187,9 @@ RamCacheCLFUS::resize_hashtable()
   if (bucket) {
     for (int64_t i = 0; i < nbuckets; i++) {
       RamCacheCLFUSEntry *e = nullptr;
-      while ((e = bucket[i].pop()))
+      while ((e = bucket[i].pop())) {
         new_bucket[e->key.slice32(3) % anbuckets].push(e);
+      }
     }
     ats_free(bucket);
   }
@@ -208,8 +210,9 @@ RamCacheCLFUS::init(int64_t abytes, Vol *avol)
   vol       = avol;
   max_bytes = abytes;
   DDebug("ram_cache", "initializing ram_cache %" PRId64 " bytes", abytes);
-  if (!max_bytes)
+  if (!max_bytes) {
     return;
+  }
   resize_hashtable();
   if (cache_config_ram_cache_compress) {
     eventProcessor.schedule_every(new RamCacheCLFUSCompressor(this), HRTIME_SECOND, ET_TASK);
@@ -243,8 +246,9 @@ check_accounting(RamCacheCLFUS *c)
 int
 RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2)
 {
-  if (!max_bytes)
+  if (!max_bytes) {
     return 0;
+  }
   int64_t i             = key->slice32(3) % nbuckets;
   RamCacheCLFUSEntry *e = bucket[i].head;
   char *b               = nullptr;
@@ -265,16 +269,18 @@ RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, 
             goto Lfailed;
           case CACHE_COMPRESSION_FASTLZ: {
             int l = (int)e->len;
-            if ((l != (int)fastlz_decompress(e->data->data(), e->compressed_len, b, l)))
+            if ((l != (int)fastlz_decompress(e->data->data(), e->compressed_len, b, l))) {
               goto Lfailed;
+            }
             ram_hit_state = RAM_HIT_COMPRESS_FASTLZ;
             break;
           }
 #ifdef HAVE_ZLIB_H
           case CACHE_COMPRESSION_LIBZ: {
             uLongf l = e->len;
-            if (Z_OK != uncompress((Bytef *)b, &l, (Bytef *)e->data->data(), e->compressed_len))
+            if (Z_OK != uncompress((Bytef *)b, &l, (Bytef *)e->data->data(), e->compressed_len)) {
               goto Lfailed;
+            }
             ram_hit_state = RAM_HIT_COMPRESS_LIBZ;
             break;
           }
@@ -284,8 +290,9 @@ RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, 
             size_t l = (size_t)e->len, ipos = 0, opos = 0;
             uint64_t memlimit = e->len * 2 + LZMA_BASE_MEMLIMIT;
             if (LZMA_OK != lzma_stream_buffer_decode(&memlimit, 0, nullptr, (uint8_t *)e->data->data(), &ipos, e->compressed_len,
-                                                     (uint8_t *)b, &opos, l))
+                                                     (uint8_t *)b, &opos, l)) {
               goto Lfailed;
+            }
             ram_hit_state = RAM_HIT_COMPRESS_LIBLZMA;
             break;
           }
@@ -338,20 +345,24 @@ void
 RamCacheCLFUS::tick()
 {
   RamCacheCLFUSEntry *e = lru[1].dequeue();
-  if (!e)
+  if (!e) {
     return;
+  }
   e->hits >>= 1;
   if (e->hits) {
     e->hits = REQUEUE_HITS(e->hits);
     lru[1].enqueue(e);
-  } else
+  } else {
     goto Lfree;
-  if (history <= objects + HISTORY_HYSTERIA)
+  }
+  if (history <= objects + HISTORY_HYSTERIA) {
     return;
+  }
   e = lru[1].dequeue();
 Lfree:
-  if (!e) // e may be nullptr after e= lru[1].dequeue()
+  if (!e) { // e may be nullptr after e= lru[1].dequeue()
     return;
+  }
   e->flag_bits.lru = 0;
   history--;
   uint32_t b = e->key.slice32(3) % nbuckets;
@@ -375,9 +386,9 @@ void
 RamCacheCLFUS::move_compressed(RamCacheCLFUSEntry *e)
 {
   if (e == compressed) {
-    if (compressed->lru_link.next)
+    if (compressed->lru_link.next) {
       compressed = compressed->lru_link.next;
-    else {
+    } else {
       ncompressed--;
       compressed = compressed->lru_link.prev;
     }
@@ -395,8 +406,9 @@ RamCacheCLFUS::destroy(RamCacheCLFUSEntry *e)
     bytes -= e->size + ENTRY_OVERHEAD;
     CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -(int64_t)e->size);
     e->data = nullptr;
-  } else
+  } else {
     history--;
+  }
   uint32_t b = e->key.slice32(3) % nbuckets;
   bucket[b].remove(e);
   DDebug("ram_cache", "put %X %d %d DESTROYED", e->key.slice32(3), e->auxkey1, e->auxkey2);
@@ -407,8 +419,9 @@ RamCacheCLFUS::destroy(RamCacheCLFUSEntry *e)
 void
 RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
 {
-  if (!cache_config_ram_cache_compress)
+  if (!cache_config_ram_cache_compress) {
     return;
+  }
   ink_assert(vol != nullptr);
   MUTEX_TAKE_LOCK(vol->mutex, thread);
   if (!compressed) {
@@ -420,11 +433,13 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
   char *b = nullptr, *bb = nullptr;
   while (compressed && target > ncompressed) {
     RamCacheCLFUSEntry *e = compressed;
-    if (e->flag_bits.incompressible || e->flag_bits.compressed)
+    if (e->flag_bits.incompressible || e->flag_bits.compressed) {
       goto Lcontinue;
+    }
     n++;
-    if (do_at_most < n)
+    if (do_at_most < n) {
       break;
+    }
     {
       e->compressed_len = e->size;
       uint32_t l        = 0;
@@ -457,17 +472,20 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       default:
         goto Lfailed;
       case CACHE_COMPRESSION_FASTLZ:
-        if (e->len < 16)
+        if (e->len < 16) {
           goto Lfailed;
-        if ((l = fastlz_compress(edata->data(), elen, b)) <= 0)
+        }
+        if ((l = fastlz_compress(edata->data(), elen, b)) <= 0) {
           failed = true;
+        }
         break;
 #ifdef HAVE_ZLIB_H
       case CACHE_COMPRESSION_LIBZ: {
         uLongf ll = l;
-        if ((Z_OK != compress((Bytef *)b, &ll, (Bytef *)edata->data(), elen)))
+        if ((Z_OK != compress((Bytef *)b, &ll, (Bytef *)edata->data(), elen))) {
           failed = true;
-        l        = (int)ll;
+        }
+        l = (int)ll;
         break;
       }
 #endif
@@ -475,9 +493,10 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       case CACHE_COMPRESSION_LIBLZMA: {
         size_t pos = 0, ll = l;
         if (LZMA_OK != lzma_easy_buffer_encode(LZMA_PRESET_DEFAULT, LZMA_CHECK_NONE, nullptr, (uint8_t *)edata->data(), elen,
-                                               (uint8_t *)b, &pos, ll))
+                                               (uint8_t *)b, &pos, ll)) {
           failed = true;
-        l        = (int)pos;
+        }
+        l = (int)pos;
         break;
       }
 #endif
@@ -485,13 +504,15 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       MUTEX_TAKE_LOCK(vol->mutex, thread);
       // see if the entry is till around
       {
-        if (failed)
+        if (failed) {
           goto Lfailed;
+        }
         uint32_t i             = key.slice32(3) % nbuckets;
         RamCacheCLFUSEntry *ee = bucket[i].head;
         while (ee) {
-          if (ee->key == key && ee->data == edata)
+          if (ee->key == key && ee->data == edata) {
             break;
+          }
           ee = ee->hash_link.next;
         }
         if (!ee || ee != e) {
@@ -500,10 +521,12 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
           goto Lcontinue;
         }
       }
-      if (l > REQUIRED_COMPRESSION * e->len)
+      if (l > REQUIRED_COMPRESSION * e->len) {
         e->flag_bits.incompressible = true;
-      if (l > REQUIRED_SHRINK * e->size)
+      }
+      if (l > REQUIRED_SHRINK * e->size) {
         goto Lfailed;
+      }
       if (l < e->len) {
         e->flag_bits.compressed = cache_config_ram_cache_compress;
         bb                      = (char *)ats_malloc(l);
@@ -536,8 +559,9 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
   Lcontinue:;
     DDebug("ram_cache", "compress %X %d %d %d %d %d %d %d", e->key.slice32(3), e->auxkey1, e->auxkey2, e->flag_bits.incompressible,
            e->flag_bits.compressed, e->len, e->compressed_len, ncompressed);
-    if (!e->lru_link.next)
+    if (!e->lru_link.next) {
       break;
+    }
     compressed = e->lru_link.next;
     ncompressed++;
   }
@@ -559,17 +583,18 @@ void RamCacheCLFUS::requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims)
 int
 RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, uint32_t auxkey1, uint32_t auxkey2)
 {
-  if (!max_bytes)
+  if (!max_bytes) {
     return 0;
+  }
   uint32_t i            = key->slice32(3) % nbuckets;
   RamCacheCLFUSEntry *e = bucket[i].head;
   uint32_t size         = copy ? len : data->block_size();
   double victim_value   = 0;
   while (e) {
     if (e->key == *key) {
-      if (e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2)
+      if (e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2) {
         break;
-      else {
+      } else {
         e = destroy(e); // discard when aux keys conflict
         continue;
       }
@@ -611,9 +636,11 @@ RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, ui
   Que(RamCacheCLFUSEntry, lru_link) victims;
   RamCacheCLFUSEntry *victim = nullptr;
   int requeue_limit          = REQUEUE_LIMIT;
-  if (!lru[1].head) // initial fill
-    if (bytes + size <= max_bytes)
+  if (!lru[1].head) { // initial fill
+    if (bytes + size <= max_bytes) {
       goto Linsert;
+    }
+  }
   if (!e && cache_config_ram_cache_use_seen_filter) {
     uint32_t s  = key->slice32(3) % bucket_sizes[ibuckets];
     uint16_t k  = key->slice32(3) >> 16;
@@ -627,10 +654,12 @@ RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, ui
   while (true) {
     victim = lru[0].dequeue();
     if (!victim) {
-      if (bytes + size <= max_bytes)
+      if (bytes + size <= max_bytes) {
         goto Linsert;
-      if (e)
+      }
+      if (e) {
         lru[1].enqueue(e);
+      }
       requeue_victims(victims);
       DDebug("ram_cache", "put %X %d %d NO VICTIM", key->slice32(3), auxkey1, auxkey2);
       return 0;
@@ -643,15 +672,16 @@ RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, ui
     bytes -= victim->size + ENTRY_OVERHEAD;
     CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -(int64_t)victim->size);
     victims.enqueue(victim);
-    if (victim == compressed)
+    if (victim == compressed) {
       compressed = nullptr;
-    else
+    } else {
       ncompressed--;
+    }
     victim_value += CACHE_VALUE(victim);
     tick();
-    if (!e)
+    if (!e) {
       goto Lhistory;
-    else { // e from history
+    } else { // e from history
       DDebug("ram_cache_compare", "put %f %f", victim_value, CACHE_VALUE(e));
       if (bytes + victim->size + size > max_bytes && victim_value > CACHE_VALUE(e)) {
         requeue_victims(victims);
@@ -660,8 +690,9 @@ RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, ui
         return 0;
       }
     }
-    if (bytes + size <= max_bytes)
+    if (bytes + size <= max_bytes) {
       goto Linsert;
+    }
   }
 Linsert:
   while ((victim = victims.dequeue())) {
@@ -670,8 +701,9 @@ Linsert:
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, victim->size);
       victim->hits = REQUEUE_HITS(victim->hits);
       lru[0].enqueue(victim);
-    } else
+    } else {
       victimize(victim);
+    }
   }
   if (e) {
     history--; // move from history
@@ -689,9 +721,9 @@ Linsert:
   }
   check_accounting(this);
   e->flags = 0;
-  if (!copy)
+  if (!copy) {
     e->data = data;
-  else {
+  } else {
     char *b = (char *)ats_malloc(len);
     memcpy(b, data->data(), len);
     e->data            = new_xmalloc_IOBufferData(b, len);
@@ -728,8 +760,9 @@ Lhistory:
 int
 RamCacheCLFUS::fixup(const INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2)
 {
-  if (!max_bytes)
+  if (!max_bytes) {
     return 0;
+  }
   uint32_t i            = key->slice32(3) % nbuckets;
   RamCacheCLFUSEntry *e = bucket[i].head;
   while (e) {

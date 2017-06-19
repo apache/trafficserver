@@ -34,7 +34,6 @@ ink_hrtime last_transient_accept_error;
 
 extern "C" void fd_reify(struct ev_loop *);
 
-#ifndef INACTIVITY_TIMEOUT
 // INKqa10496
 // One Inactivity cop runs on each thread once every second and
 // loops through the list of NetVCs and calls the timeouts
@@ -97,8 +96,6 @@ public:
     return 0;
   }
 };
-
-#endif
 
 PollCont::PollCont(Ptr<ProxyMutex> &m, int pt)
   : Continuation(m.get()), net_handler(nullptr), nextPollDescriptor(nullptr), poll_timeout(pt)
@@ -231,13 +228,11 @@ initialize_thread_for_net(EThread *thread)
 
   thread->schedule_imm(get_NetHandler(thread));
 
-#ifndef INACTIVITY_TIMEOUT
   InactivityCop *inactivityCop = new InactivityCop(get_NetHandler(thread)->mutex);
   int cop_freq                 = 1;
 
   REC_ReadConfigInteger(cop_freq, "proxy.config.net.inactivity_check_frequency");
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
-#endif
 
   thread->signal_hook = net_signal_hook_function;
   thread->ep          = (EventIO *)ats_malloc(sizeof(EventIO));
@@ -362,8 +357,9 @@ NetHandler::process_enabled_list(NetHandler *nh)
     vc->ep.modify(EVENTIO_READ);
     vc->ep.refresh(EVENTIO_READ);
     vc->read.in_enabled_list = 0;
-    if ((vc->read.enabled && vc->read.triggered) || vc->closed)
+    if ((vc->read.enabled && vc->read.triggered) || vc->closed) {
       nh->read_ready_list.in_or_enqueue(vc);
+    }
   }
 
   SListM(UnixNetVConnection, NetState, write, enable_link) wq(nh->write_enable_list.popall());
@@ -371,8 +367,9 @@ NetHandler::process_enabled_list(NetHandler *nh)
     vc->ep.modify(EVENTIO_WRITE);
     vc->ep.refresh(EVENTIO_WRITE);
     vc->write.in_enabled_list = 0;
-    if ((vc->write.enabled && vc->write.triggered) || vc->closed)
+    if ((vc->write.enabled && vc->write.triggered) || vc->closed) {
       nh->write_ready_list.in_or_enqueue(vc);
+    }
   }
 }
 
@@ -393,10 +390,11 @@ NetHandler::mainNetEvent(int event, Event *e)
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
 
   process_enabled_list(this);
-  if (likely(!read_ready_list.empty() || !write_ready_list.empty() || !read_enable_list.empty() || !write_enable_list.empty()))
+  if (likely(!read_ready_list.empty() || !write_ready_list.empty() || !read_enable_list.empty() || !write_enable_list.empty())) {
     poll_timeout = 0; // poll immediately returns -- we have triggered stuff to process right now
-  else
+  } else {
     poll_timeout = net_config_poll_timeout;
+  }
 
   PollDescriptor *pd     = get_PollDescriptor(trigger_event->ethread);
   UnixNetVConnection *vc = nullptr;
@@ -450,13 +448,8 @@ NetHandler::mainNetEvent(int event, Event *e)
       if (cop_list.in(vc)) {
         cop_list.remove(vc);
       }
-      if (get_ev_events(pd, x) & EVENTIO_READ) {
+      if (get_ev_events(pd, x) & (EVENTIO_READ | EVENTIO_ERROR)) {
         vc->read.triggered = 1;
-        if (get_ev_events(pd, x) & EVENTIO_ERROR) {
-          vc->read.error = 1;
-        } else {
-          vc->read.error = 0;
-        }
         if (!read_ready_list.in(vc)) {
           read_ready_list.enqueue(vc);
         } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
@@ -466,13 +459,8 @@ NetHandler::mainNetEvent(int event, Event *e)
         }
       }
       vc = epd->data.vc;
-      if (get_ev_events(pd, x) & EVENTIO_WRITE) {
+      if (get_ev_events(pd, x) & (EVENTIO_WRITE | EVENTIO_ERROR)) {
         vc->write.triggered = 1;
-        if (get_ev_events(pd, x) & EVENTIO_ERROR) {
-          vc->write.error = 1;
-        } else {
-          vc->write.error = 0;
-        }
         if (!write_ready_list.in(vc)) {
           write_ready_list.enqueue(vc);
         } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
@@ -505,7 +493,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     set_cont_flags(vc->control_flags);
     if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->read.triggered && (vc->read.enabled || (vc->read.error && vc->read.vio._cont != nullptr)))
+    else if (vc->read.enabled && vc->read.triggered)
       vc->net_read_io(this, trigger_event->ethread);
     else if (!vc->read.enabled) {
       read_ready_list.remove(vc);
@@ -522,7 +510,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     set_cont_flags(vc->control_flags);
     if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->write.triggered && (vc->write.enabled || (vc->write.error && vc->write.vio._cont != nullptr)))
+    else if (vc->write.enabled && vc->write.triggered)
       write_to_net(this, vc, trigger_event->ethread);
     else if (!vc->write.enabled) {
       write_ready_list.remove(vc);
@@ -540,7 +528,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     diags->set_override(vc->control.debug_override);
     if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->read.triggered && (vc->read.enabled || (vc->read.error && vc->read.vio._cont != nullptr)))
+    else if (vc->read.enabled && vc->read.triggered)
       vc->net_read_io(this, trigger_event->ethread);
     else if (!vc->read.enabled)
       vc->ep.modify(-EVENTIO_READ);
@@ -549,7 +537,7 @@ NetHandler::mainNetEvent(int event, Event *e)
     diags->set_override(vc->control.debug_override);
     if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->write.triggered && (vc->write.enabled || (vc->write.error && vc->write.vio._cont != nullptr)))
+    else if (vc->write.enabled && vc->write.triggered)
       write_to_net(this, vc, trigger_event->ethread);
     else if (!vc->write.enabled)
       vc->ep.modify(-EVENTIO_WRITE);
@@ -603,7 +591,7 @@ void
 NetHandler::configure_per_thread()
 {
   // figure out the number of threads and calculate the number of connections per thread
-  int threads                          = eventProcessor.n_threads_for_type[ET_NET];
+  int threads                          = eventProcessor.thread_group[ET_NET]._count;
   max_connections_per_thread_in        = max_connections_in / threads;
   max_connections_active_per_thread_in = max_connections_active_in / threads;
   Debug("net_queue", "max_connections_per_thread_in updated to %d threads: %d", max_connections_per_thread_in, threads);

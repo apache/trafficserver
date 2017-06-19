@@ -26,8 +26,9 @@ using ts::config::Configuration;
 using ts::config::Value;
 
 inline std::ostream& operator << ( std::ostream& s, ts::ConstBuffer const& b ) {
-  if (b._ptr) s.write(b._ptr, b._size);
-  else s << b._size;
+  if (b._ptr) { s.write(b._ptr, b._size);
+  } else { s << b._size;
+}
   return s;
 }
 

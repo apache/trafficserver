@@ -187,7 +187,7 @@ struct LRUHashHasher {
 };
 
 typedef std::pair<LRUHash, unsigned> LRUEntry;
-typedef std::list<LRUEntry> LRUList;
+using LRUList = std::list<LRUEntry>;
 typedef std::unordered_map<const LRUHash *, LRUList::iterator, LRUHashHasher, LRUHashHasher> LRUMap;
 
 static LRUEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry

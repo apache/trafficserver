@@ -78,7 +78,18 @@
 extern "C" {
 #endif /* __cplusplus */
 
-typedef struct iovec IOVec;
+struct IOVec : public iovec {
+  IOVec()
+  {
+    iov_base = nullptr;
+    iov_len  = 0;
+  }
+  IOVec(void *base, size_t len)
+  {
+    iov_base = base;
+    iov_len  = len;
+  }
+};
 
 void *ats_malloc(size_t size);
 void *ats_calloc(size_t nelem, size_t elsize);
@@ -328,8 +339,8 @@ public:
 protected:
   value_type _r; ///< Resource.
 private:
-  ats_scoped_resource(self const &); ///< Copy constructor not permitted.
-  self &operator=(self const &);     ///< Self assignment not permitted.
+  ats_scoped_resource(self const &) = delete; ///< Copy constructor not permitted.
+  self &operator=(self const &) = delete;     ///< Self assignment not permitted.
 };
 
 namespace detail

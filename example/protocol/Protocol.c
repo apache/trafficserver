@@ -112,7 +112,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
 
     goto error;
   }
@@ -130,7 +130,7 @@ TSPluginInit(int argc, const char *argv[])
       accept_port = tmp;
       TSDebug(PLUGIN_NAME, "using accept_port %d", accept_port);
     } else {
-      TSError("[%s] Wrong argument for accept_port, using default port %d.", PLUGIN_NAME, accept_port);
+      TSError("[%s] Wrong argument for accept_port, using default port %d", PLUGIN_NAME, accept_port);
     }
 
     tmp = strtol(argv[2], &end, 10);
@@ -138,7 +138,7 @@ TSPluginInit(int argc, const char *argv[])
       server_port = tmp;
       TSDebug(PLUGIN_NAME, "using server_port %d", server_port);
     } else {
-      TSError("[%s] Wrong argument for server_port, using default port %d.", PLUGIN_NAME, server_port);
+      TSError("[%s] Wrong argument for server_port, using default port %d", PLUGIN_NAME, server_port);
     }
   }
 

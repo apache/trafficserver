@@ -79,22 +79,24 @@ ink_bvsprintf(char *buffer, const char *format, va_list ap)
     // handle non-% characters //
     /////////////////////////////
 
-    if (buffer) // if have output buffer
+    if (buffer) { // if have output buffer
       while (*s && (*s != '%')) {
         *d++ = *s++;
       } //   really copy, else
-    else
+    } else {
       while (*s && (*s != '%')) {
         d++;
         s++;
       } //   pass over string
+    }
 
     ///////////////////////////
     // handle NUL characters //
     ///////////////////////////
 
-    if (*s == NUL)
+    if (*s == NUL) {
       break; // end of string
+    }
 
     /////////////////////////
     // handle % characters //
@@ -108,42 +110,46 @@ ink_bvsprintf(char *buffer, const char *format, va_list ap)
       ++s;                              // consume 's'
       s_val = va_arg(ap_local, char *); // grab string argument
       p     = s_val;                    // temporary pointer
-      if (buffer)                       // if have output buffer
+      if (buffer) {                     // if have output buffer
         while (*p) {
           *d++ = *p++;
-        }  //   copy value
-      else // else
+        }      //   copy value
+      } else { // else
         while (*p) {
           d++;
           p++;
         } //   pass over value
+      }
       break;
     case 'd':                                            // %d pattern
       ++s;                                               // consume 'd'
       d_val = va_arg(ap_local, int);                     // grab integer argument
       snprintf(d_buffer, sizeof(d_buffer), "%d", d_val); // stringify integer
       p = d_buffer;                                      // temporary pointer
-      if (buffer)                                        // if have output buffer
+      if (buffer) {                                      // if have output buffer
         while (*p) {
           *d++ = *p++;
-        }  //   copy value
-      else // else
+        }      //   copy value
+      } else { // else
         while (*p) {
           d++;
           p++;
         } //   pass over value
+      }
       break;
     default: // something else
-      if (buffer)
+      if (buffer) {
         *d = *s; // copy unknown character
+      }
       ++d;
       ++s;
       break;
     }
   }
 
-  if (buffer)
+  if (buffer) {
     *d = NUL;
+  }
   ++d;
 
   va_end(ap_local);

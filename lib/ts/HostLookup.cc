@@ -554,7 +554,7 @@ charIndex::iter_next(charIndexIterState *s)
 
 // Since the only iter state is an index into the
 //   array typedef it
-typedef int hostArrayIterState;
+using hostArrayIterState = int;
 
 class hostArray
 {
@@ -623,8 +623,9 @@ hostArray::Lookup(const char *match_data_in, bool bNotProcess)
 
     if (bNotProcess && '!' == *pMD) {
       char *cp = ++pMD;
-      if ('\0' == *cp)
+      if ('\0' == *cp) {
         continue;
+      }
 
       if (strcmp(cp, match_data_in) != 0) {
         r = branch_array[i];

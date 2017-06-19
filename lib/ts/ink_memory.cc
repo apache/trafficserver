@@ -91,8 +91,9 @@ ats_memalign(size_t alignment, size_t size)
   void *ptr;
 
 #if HAVE_POSIX_MEMALIGN || TS_HAS_JEMALLOC
-  if (alignment <= 8)
+  if (alignment <= 8) {
     return ats_malloc(size);
+  }
 
 #if defined(openbsd)
   if (alignment > PAGE_SIZE)
@@ -122,23 +123,26 @@ ats_memalign(size_t alignment, size_t size)
 void
 ats_free(void *ptr)
 {
-  if (likely(ptr != nullptr))
+  if (likely(ptr != nullptr)) {
     free(ptr);
+  }
 } /* End ats_free */
 
 void *
 ats_free_null(void *ptr)
 {
-  if (likely(ptr != nullptr))
+  if (likely(ptr != nullptr)) {
     free(ptr);
+  }
   return nullptr;
 } /* End ats_free_null */
 
 void
 ats_memalign_free(void *ptr)
 {
-  if (likely(ptr))
+  if (likely(ptr)) {
     free(ptr);
+  }
 }
 
 // This effectively makes mallopt() a no-op (currently) when tcmalloc
@@ -172,8 +176,9 @@ ats_msync(caddr_t addr, size_t len, caddr_t end, int flags)
   caddr_t a = (caddr_t)(((uintptr_t)addr) & ~(pagesize - 1));
   // align length to page boundry covering region
   size_t l = (len + (addr - a) + (pagesize - 1)) & ~(pagesize - 1);
-  if ((a + l) > end)
+  if ((a + l) > end) {
     l = end - a; // strict limit
+  }
 #if defined(linux)
 /* Fix INKqa06500
    Under Linux, msync(..., MS_SYNC) calls are painfully slow, even on
@@ -262,8 +267,9 @@ _xstrdup(const char *str, int length, const char * /* path ATS_UNUSED */)
   char *newstr;
 
   if (likely(str)) {
-    if (length < 0)
+    if (length < 0) {
       length = strlen(str);
+    }
 
     newstr = (char *)ats_malloc(length + 1);
     // If this is a zero length string just null terminate and return.

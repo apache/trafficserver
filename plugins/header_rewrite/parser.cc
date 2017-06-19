@@ -82,7 +82,7 @@ Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
         extracting_token = false;
       } else {
         // Malformed expression / operation, ignore ...
-        TSError("[%s] malformed line \"%s\" ignoring...", PLUGIN_NAME, line.c_str());
+        TSError("[%s] malformed line \"%s\", ignoring", PLUGIN_NAME, line.c_str());
         _tokens.clear();
         _empty = true;
         return;
@@ -111,7 +111,7 @@ Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
       _tokens.push_back(line.substr(cur_token_start));
     } else {
       // unterminated quote, error case.
-      TSError("[%s] malformed line, unterminated quotation: \"%s\" ignoring...", PLUGIN_NAME, line.c_str());
+      TSError("[%s] malformed line, unterminated quotation: \"%s\", ignoring", PLUGIN_NAME, line.c_str());
       _tokens.clear();
       _empty = true;
       return;

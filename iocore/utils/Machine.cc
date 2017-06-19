@@ -188,8 +188,9 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
     if (0 != status) {
       ip_text_buffer ipbuff;
       Warning("Failed to find hostname for address '%s' - %s", ats_ip_ntop(addr, ipbuff, sizeof(ipbuff)), gai_strerror(status));
-    } else
+    } else {
       hostname = ats_strdup(localhost);
+    }
   }
 
   hostname_len = hostname ? strlen(hostname) : 0;

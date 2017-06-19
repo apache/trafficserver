@@ -71,7 +71,7 @@ Examples
       info.support_email = "ts-api-support@MyCompany.com";
 
       if (TSPluginRegister(&info) != TS_SUCCESS) {
-         TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+         TSError("[%s] Plugin registration failed", PLUGIN_NAME);
       }
    }
 

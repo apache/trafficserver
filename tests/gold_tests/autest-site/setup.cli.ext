@@ -22,8 +22,6 @@ import pprint
 if Arguments.ats_bin is not None:
     # Add environment variables
     ENV['ATS_BIN'] = Arguments.ats_bin
-    #if Arguments.ats_bin not in ENV['PATH']:
-        #ENV['PATH'] = Arguments.ats_bin + ':' + ENV['PATH']
     
 if ENV['ATS_BIN'] is not None:
     # Add variables for Tests
@@ -41,6 +39,11 @@ if ENV['ATS_BIN'] is not None:
         out[k]=v[:-1] if v.endswith('/') else v
     Variables.update(out)
     host.WriteVerbose(['ats'],"Traffic server layout Data:\n",pprint.pformat(out))
+    # if the above worked this should as well
+    out = subprocess.check_output([traffic_layout, "-f", "--json"])
+    out = json.loads(out.decode("utf-8"))
+    Variables.update(out)
+    host.WriteVerbose(['ats'],"Traffic server feature data:\n",pprint.pformat(out))
 
 Variables.AtsTestToolsDir = os.path.join(AutestSitePath,'../../tools')
 

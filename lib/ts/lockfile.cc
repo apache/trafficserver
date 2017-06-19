@@ -53,8 +53,9 @@ Lockfile::Open(pid_t *holding_pid)
     fd = open(fname, O_RDWR | O_CREAT, 0644);
   } while ((fd < 0) && (errno == EINTR));
 
-  if (fd < 0)
+  if (fd < 0) {
     return (-errno);
+  }
 
   // Lock it. Note that if we can't get the lock EAGAIN will be the
   // error we receive.
@@ -79,8 +80,9 @@ Lockfile::Open(pid_t *holding_pid)
 
       if (err < 0)
         FAIL(-errno);
-      if (err == 0)
+      if (err == 0) {
         break;
+      }
 
       size -= err;
       t += err;
@@ -135,8 +137,9 @@ Lockfile::Get(pid_t *holding_pid)
   // Open the Lockfile and get the lock. If we are successful, the
   // return value will be the file descriptor of the opened Lockfile.
   err = Open(holding_pid);
-  if (err != 1)
+  if (err != 1) {
     return err;
+  }
 
   if (fd < 0) {
     return -1;
@@ -204,8 +207,9 @@ lockfile_kill_internal(pid_t init_pid, int init_sig, pid_t pid, const char * /* 
     // Wait for children to exit
     do {
       err = waitpid(-1, &status, WNOHANG);
-      if (err == -1)
+      if (err == -1) {
         break;
+      }
     } while (!WIFEXITED(status) && !WIFSIGNALED(status));
   }
 

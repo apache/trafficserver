@@ -407,7 +407,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[ts_lua] Plugin registration failed.");
+    TSError("[ts_lua] Plugin registration failed");
   }
 
   int ret                 = 0;

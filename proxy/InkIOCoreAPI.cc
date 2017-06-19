@@ -98,7 +98,7 @@ TSReturnCode sdk_sanity_check_null_ptr(void *ptr);
 struct INKThreadInternal : public EThread {
   INKThreadInternal() : EThread(DEDICATED, -1)
   {
-    ink_mutex_init(&completion.lock, nullptr);
+    ink_mutex_init(&completion.lock);
     ink_cond_init(&completion.signal);
   }
 
@@ -114,7 +114,7 @@ struct INKThreadInternal : public EThread {
   struct {
     ink_mutex lock;
     ink_cond signal;
-    bool done;
+    bool done = false;
   } completion;
 };
 

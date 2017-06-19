@@ -197,15 +197,15 @@ public:
     _heap     = NULL;
   }
 
+  // noncopyable, non-assignable
+  UrlMappingContainer(const UrlMappingContainer &orig) = delete;
+  UrlMappingContainer &operator=(const UrlMappingContainer &rhs) = delete;
+
 private:
   url_mapping *_mapping;
   URL *_toURLPtr;
   URL _toURL;
   HdrHeap *_heap;
-
-  // non-copyable, non-assignable
-  UrlMappingContainer(const UrlMappingContainer &orig);
-  UrlMappingContainer &operator=(const UrlMappingContainer &rhs);
 };
 
 #endif

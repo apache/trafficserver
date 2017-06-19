@@ -16,13 +16,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Setup autoconf
+INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
+
+mkdir -p ${INSTALL}
 cd src
 autoreconf -if
 
-mkdir -p "${WORKSPACE}/${BUILD_NUMBER}/install"
-
-./configure --prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
+./configure --prefix="${INSTALL}" \
             --with-user=jenkins \
             --enable-experimental-plugins \
             --enable-example-plugins \
@@ -30,16 +30,11 @@ mkdir -p "${WORKSPACE}/${BUILD_NUMBER}/install"
             --enable-debug \
             --enable-werror
 
-# Test clang-format (but only where we have the local copy of clang-format, i.e. linux)
-if [ -d /usr/local/fmt ]; then
-    [ ! -d .git/fmt ] && cp -rp /usr/local/fmt .git
-    make clang-format
-    git diff --exit-code
-    [ "0" != "$?" ] && exit -1
-fi
-
 # Build and run regressions
-make -j4
-make check VERBOSE=Y && make install
+${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
+${ATS_MAKE} check VERBOSE=Y && ${ATS_MAKE} install
 
-"${WORKSPACE}/${BUILD_NUMBER}/install/bin/traffic_server" -K -k -R 1
+${INSTALL}/bin/traffic_server -K -k -R 1
+[ "0" != "$?" ] && exit -1
+
+exit 0

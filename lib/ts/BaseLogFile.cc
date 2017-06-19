@@ -27,9 +27,8 @@
  * This consturctor creates a BaseLogFile based on a given name.
  * This is the most common way BaseLogFiles are created.
  */
-BaseLogFile::BaseLogFile(const char *name) : m_signature(0), m_has_signature(false)
+BaseLogFile::BaseLogFile(const char *name) : m_name(ats_strdup(name))
 {
-  init(name);
   log_log_trace("exiting BaseLogFile constructor, m_name=%s, this=%p\n", m_name.get(), this);
 }
 
@@ -37,9 +36,8 @@ BaseLogFile::BaseLogFile(const char *name) : m_signature(0), m_has_signature(fal
  * This consturctor creates a BaseLogFile based on a given name.
  * Similar to above constructor, but is overloaded with the object signature
  */
-BaseLogFile::BaseLogFile(const char *name, uint64_t sig) : m_signature(sig), m_has_signature(true)
+BaseLogFile::BaseLogFile(const char *name, uint64_t sig) : m_name(ats_strdup(name)), m_signature(sig), m_has_signature(true)
 {
-  init(name);
   log_log_trace("exiting BaseLogFile signature constructor, m_name=%s, m_signature=%ld, this=%p\n", m_name.get(), m_signature,
                 this);
 }
@@ -52,13 +50,13 @@ BaseLogFile::BaseLogFile(const BaseLogFile &copy)
     m_start_time(copy.m_start_time),
     m_end_time(0L),
     m_bytes_written(0),
-    m_signature(copy.m_signature),
-    m_has_signature(copy.m_has_signature),
     m_name(ats_strdup(copy.m_name)),
     m_hostname(ats_strdup(copy.m_hostname)),
     m_is_regfile(false),
     m_is_init(copy.m_is_init),
-    m_meta_info(nullptr)
+    m_meta_info(nullptr),
+    m_signature(copy.m_signature),
+    m_has_signature(copy.m_has_signature)
 {
   log_log_trace("exiting BaseLogFile copy constructor, m_name=%s, this=%p\n", m_name.get(), this);
 }
@@ -70,29 +68,13 @@ BaseLogFile::~BaseLogFile()
 {
   log_log_trace("entering BaseLogFile destructor, m_name=%s, this=%p\n", m_name.get(), this);
 
-  if (m_is_regfile)
+  if (m_is_regfile) {
     close_file();
-  else
+  } else {
     log_log_trace("not a regular file, not closing, m_name=%s, this=%p\n", m_name.get(), this);
+  }
 
   log_log_trace("exiting BaseLogFile destructor, this=%p\n", this);
-}
-
-/*
- * Initializes the defaults of some of the common member values of this class
- */
-void
-BaseLogFile::init(const char *name)
-{
-  m_fp            = nullptr;
-  m_start_time    = time(nullptr);
-  m_end_time      = 0L;
-  m_bytes_written = 0;
-  m_name          = ats_strdup(name);
-  m_hostname      = nullptr;
-  m_is_regfile    = false;
-  m_is_init       = false;
-  m_meta_info     = nullptr;
 }
 
 /*
@@ -176,10 +158,11 @@ BaseLogFile::roll(long interval_start, long interval_end)
     // no easy way of keeping track of the timestamp of the first
     // transaction
     log_log_trace("in BaseLogFile::roll(..), didn't use metadata starttime, used earlist available starttime\n");
-    if (interval_start == 0)
+    if (interval_start == 0) {
       start = m_start_time;
-    else
+    } else {
       start = (m_start_time < interval_start) ? m_start_time : interval_start;
+    }
   }
   log_log_trace("in BaseLogFile::roll(..), start = %ld, m_start_time = %ld, interval_start = %ld\n", start, m_start_time,
                 interval_start);
@@ -241,8 +224,9 @@ BaseLogFile::roll()
   time_t start;
   time_t now = time(nullptr);
 
-  if (!m_meta_info || !m_meta_info->get_creation_time(&start))
+  if (!m_meta_info || !m_meta_info->get_creation_time(&start)) {
     start = 0L;
+  }
 
   return roll(start, now);
 }
@@ -319,10 +303,11 @@ BaseLogFile::open_file(int perm)
   } else {
     // The log file does not exist, so we create a new MetaInfo object
     //  which will save itself to disk right away (in the constructor)
-    if (m_has_signature)
+    if (m_has_signature) {
       m_meta_info = new BaseMetaInfo(m_name.get(), (long)time(nullptr), m_signature);
-    else
+    } else {
       m_meta_info = new BaseMetaInfo(m_name.get(), (long)time(nullptr));
+    }
   }
 
   // open actual log file (not metainfo)
@@ -343,8 +328,9 @@ BaseLogFile::open_file(int perm)
   if (perm != -1) {
     // means LogFile passed in some permissions we need to set
     log_log_trace("BaseLogFile attempting to change %s's permissions to %o\n", m_name.get(), perm);
-    if (elevating_chmod(m_name.get(), perm) != 0)
+    if (elevating_chmod(m_name.get(), perm) != 0) {
       log_log_error("Error changing logfile=%s permissions: %s\n", m_name.get(), strerror(errno));
+    }
   }
 
   // set m_bytes_written to force the rolling based on filesize.

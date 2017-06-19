@@ -33,7 +33,6 @@
 ////////////////////////////////////////////////////////////////////////////////////
 // proxy.config.http.cache.open_write_fail_action        1 /////////////////////////
 // proxy.config.cache.enable_read_while_writer           1 /////////////////////////
-// proxy.config.http.redirection_enabled                 1 /////////////////////////
 // proxy.config.http.number_of_redirections             10 /////////////////////////
 // proxy.config.http.redirect_use_orig_cache_key         1 /////////////////////////
 // proxy.config.http.background_fill_active_timeout      0 /////////////////////////
@@ -333,7 +332,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError("[%s] Plugin registration failed.", DEBUG_TAG);
+    TSError("[%s] Plugin registration failed", DEBUG_TAG);
   }
 
   process_args(argc, argv);

@@ -113,7 +113,8 @@ Errata::pre_write() {
 // Just create an instance if needed.
 Errata::Data*
 Errata::instance() {
-  if (!m_data) m_data = new Data;
+  if (!m_data) { m_data = new Data;
+}
   return m_data.get();
 }
 
@@ -220,15 +221,17 @@ Errata::write(
         spot != limit;
         ++spot
   ) {
-    if ((offset + indent) > 0)
+    if ((offset + indent) > 0) {
       out << std::setw(indent + offset) << std::setfill(' ')
           << ((indent > 0 && lead) ? lead : " ");
+}
 
     out << spot->m_id << " [" << spot->m_code << "]: " << spot->m_text
         << std::endl
       ;
-    if (spot->getErrata().size())
+    if (spot->getErrata().size()) {
       spot->getErrata().write(out, offset, indent+shift, shift, lead);
+}
 
   }
   return out;

@@ -133,7 +133,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
     goto error;
   }
 
@@ -151,12 +151,6 @@ TSPluginInit(int argc, const char *argv[])
   for (i = 1; i < argc; i++) {
     if (TSMimeHdrFieldCreate(hdr_bufp, hdr_loc, &field_loc) != TS_SUCCESS) {
       TSError("[%s] Unable to create field", PLUGIN_NAME);
-      goto error;
-    }
-
-    retval = TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
-    if (retval != TS_SUCCESS) {
-      TSError("[%s] Unable to add field", PLUGIN_NAME);
       goto error;
     }
 
@@ -183,6 +177,13 @@ TSPluginInit(int argc, const char *argv[])
         TSError("[%s] Unable to set field name", PLUGIN_NAME);
         goto error;
       }
+    }
+
+    // TSMimeHdrFieldAppend is used only after successfully inserting field names and values
+    retval = TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
+    if (retval != TS_SUCCESS) {
+      TSError("[%s] Unable to add field", PLUGIN_NAME);
+      goto error;
     }
   }
 

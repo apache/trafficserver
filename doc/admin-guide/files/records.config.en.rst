@@ -848,18 +848,19 @@ ip-resolve
 
    Set how the ``Via`` field is handled on a request to the origin server.
 
-   ===== ============================================
+   ===== ====================================================================
    Value Effect
-   ===== ============================================
+   ===== ====================================================================
    ``0`` Do not modify or set this Via header.
-   ``1`` Update the Via, with normal verbosity.
-   ``2`` Update the Via, with higher verbosity.
-   ``3`` Update the Via, with highest verbosity.
-   ===== ============================================
+   ``1`` Add the basic protocol and proxy identifier.
+   ``2`` Add basic transaction codes.
+   ``3`` Add detailed transaction codes.
+   ``4`` Add full user agent connection :ref:`protocol tags <protocol_tags>`.
+   ===== ====================================================================
 
 .. note::
 
-   The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.request_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -873,18 +874,19 @@ ip-resolve
 
    Set how the ``Via`` field is handled on the response to the client.
 
-   ===== ============================================
+   ===== ==================================================================
    Value Effect
-   ===== ============================================
-   ``0`` Do not modify or set this via header.
-   ``1`` Update the via, with normal verbosity.
-   ``2`` Update the via, with higher verbosity.
-   ``3`` Update the via, with highest verbosity.
-   ===== ============================================
+   ===== ==================================================================
+   ``0`` Do not modify or set this Via header.
+   ``1`` Add the basic protocol and proxy identifier.
+   ``2`` Add basic transaction codes.
+   ``3`` Add detailed transaction codes.
+   ``4`` Add full upstream connection :ref:`protocol tags <protocol_tags>`.
+   ===== ==================================================================
 
 .. note::
 
-   The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction acode can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.response_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -1090,19 +1092,6 @@ ip-resolve
    :ts:cv:`proxy.config.http.server_session_sharing.match` value. If the server session matches the next transaction
    according to this setting then it will be used, otherwise it will be released to the pool and a different session
    selected or created.
-
-.. ts:cv:: CONFIG proxy.config.http.safe_requests_retryable INT 1
-   :overridable:
-
-   This setting, on by default, allows requests which are considered safe to be retried on an error.
-   See https://tools.ietf.org/html/rfc7231#section-4.2.1 to RFC for details on which request methods are considered safe.
-
-   If this setting is ``0`` then ATS retries a failed origin server request only if the bytes sent by ATS
-   are not acknowledged by the origin server.
-
-   If this setting is ``1`` then ATS retries all the safe methods to a failed origin server irrespective of
-   previous connection failure status.
-
 
 .. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
    :reloadable:
@@ -1406,15 +1395,7 @@ HTTP Connection Timeouts
 HTTP Redirection
 ================
 
-.. ts:cv:: CONFIG proxy.config.http.redirection_enabled INT 0
-   :reloadable:
-   :overridable:
-
-   This setting indicates whether Trafficserver does a redirect follow location on receiving a 3XX Redirect response from the Origin
-   server. The redirection attempt is transparent to the client and the client is served the final response from the redirected-to
-   location.
-
-.. ts:cv:: CONFIG proxy.config.http.number_of_redirections INT 1
+.. ts:cv:: CONFIG proxy.config.http.number_of_redirections INT 0
    :reloadable:
    :overridable:
 
@@ -2928,6 +2909,7 @@ Diagnostic Logging Configuration
    for Debug() messages only. Set to 2 to enable for all messages.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.enabled INT 0
+   :reloadable:
 
    Enables logging for diagnostic messages whose log level is `diag` or `debug`.
 
@@ -3283,9 +3265,15 @@ Client-Related Configuration
 ----------------------------
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.verify.server INT 0
+   :reloadable:
+   :overridable:
 
    Configures Traffic Server to verify the origin server certificate
-   with the Certificate Authority (CA).
+   with the Certificate Authority (CA). This configuration takes a value between 0 to 2.
+
+:0: Server Certificate will not be verified
+:1: Certificate will be verified and the connection will not be established if verification fails.
+:2: The provided certificate will be verified and the connection will be established irrespective of the verification result. If verification fails the name of the server will be logged.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
 
@@ -3658,7 +3646,8 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.task_threads INT 2
 
    Specifies the number of task threads to run. These threads are used for
-   various tasks that should be off-loaded from the normal network threads.
+   various tasks that should be off-loaded from the normal network
+   threads. You must have at least one task thread available.
 
 .. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_size INT 512
 

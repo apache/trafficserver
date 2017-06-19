@@ -60,9 +60,9 @@ const Url &
 atscppapi::ClientRequest::getPristineUrl() const
 {
   if (!state_->pristine_url_loc_) {
-    TSHttpTxnPristineUrlGet(state_->txn_, &state_->pristine_hdr_buf_, &state_->pristine_url_loc_);
+    TSReturnCode ret = TSHttpTxnPristineUrlGet(state_->txn_, &state_->pristine_hdr_buf_, &state_->pristine_url_loc_);
 
-    if ((state_->pristine_hdr_buf_ != nullptr) && (state_->pristine_url_loc_ != nullptr)) {
+    if ((state_->pristine_hdr_buf_ != nullptr) && (state_->pristine_url_loc_ != nullptr) && ret == TS_SUCCESS) {
       state_->pristine_url_.init(state_->pristine_hdr_buf_, state_->pristine_url_loc_);
       LOG_DEBUG("Pristine URL initialized");
     } else {

@@ -53,8 +53,9 @@ PriorityEventQueue::check_ready(ink_hrtime now, EThread *t)
         EVENT_FREE(e, eventAllocator, t);
       } else {
         ink_hrtime tt = e->timeout_at - now;
-        for (j = i; j > 0 && tt <= PQ_BUCKET_TIME(j - 1);)
+        for (j = i; j > 0 && tt <= PQ_BUCKET_TIME(j - 1);) {
           j--;
+        }
         e->in_heap = j;
         after[j].enqueue(e);
       }

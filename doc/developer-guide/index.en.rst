@@ -43,6 +43,7 @@ duplicate bugs is encouraged, but not required.
    contributing/index.en
    testing-with-vagrant/index.en
    debugging/index.en
+   threads-and-events.en
    cache-architecture/index.en
    logging-architecture/index.en
    internal-libraries/index.en
@@ -52,4 +53,3 @@ duplicate bugs is encouraged, but not required.
    continuous-integration/index.en
    documentation/index.en
    host-resolution-proposal.en
-

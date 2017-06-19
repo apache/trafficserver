@@ -26,21 +26,16 @@
 using namespace atscppapi;
 
 struct atscppapi::AsyncTimerState {
-  TSCont cont_;
+  TSCont cont_ = nullptr;
   AsyncTimer::Type type_;
   int period_in_ms_;
   int initial_period_in_ms_;
-  TSAction initial_timer_action_;
-  TSAction periodic_timer_action_;
-  AsyncTimer *timer_;
-  std::shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
+  TSAction initial_timer_action_  = nullptr;
+  TSAction periodic_timer_action_ = nullptr;
+  AsyncTimer *timer_              = nullptr;
+  std::shared_ptr<AsyncDispatchControllerBase> dispatch_controller_{};
   AsyncTimerState(AsyncTimer::Type type, int period_in_ms, int initial_period_in_ms, AsyncTimer *timer)
-    : type_(type),
-      period_in_ms_(period_in_ms),
-      initial_period_in_ms_(initial_period_in_ms),
-      initial_timer_action_(nullptr),
-      periodic_timer_action_(nullptr),
-      timer_(timer)
+    : type_(type), period_in_ms_(period_in_ms), initial_period_in_ms_(initial_period_in_ms), timer_(timer)
   {
   }
 };

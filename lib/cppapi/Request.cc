@@ -186,8 +186,9 @@ Request::setHost(std::string const &host)
     Url &url = this->getUrl();
 
     // Update the URL if it has a host currently.
-    if (!url.getHost().empty())
+    if (!url.getHost().empty()) {
       url.setHost(host);
+    }
 
     // Force a HOST field.
     this->getHeaders().set(HOST_FIELD_NAME, host);

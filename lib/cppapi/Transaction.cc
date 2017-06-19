@@ -144,10 +144,11 @@ Transaction::configStringGet(TSOverridableConfigKey conf, std::string &value)
   const char *svalue;
   int length;
   bool zret = TS_SUCCESS == TSHttpTxnConfigStringGet(state_->txn_, conf, &svalue, &length);
-  if (zret)
+  if (zret) {
     value.assign(svalue, length);
-  else
+  } else {
     value.clear();
+  }
   return zret;
 }
 
@@ -262,8 +263,9 @@ Transaction::getEffectiveUrl()
     ret_val.assign(buf, length);
   }
 
-  if (buf)
+  if (buf) {
     TSfree(buf);
+  }
 
   return ret_val;
 }
@@ -415,7 +417,7 @@ namespace
 class initializeHandles
 {
 public:
-  typedef TSReturnCode (*GetterFunction)(TSHttpTxn, TSMBuffer *, TSMLoc *);
+  using GetterFunction = TSReturnCode (*)(TSHttpTxn, TSMBuffer *, TSMLoc *);
   initializeHandles(GetterFunction getter) : getter_(getter) {}
   bool
   operator()(TSHttpTxn txn, TSMBuffer &hdr_buf, TSMLoc &hdr_loc, const char *handles_name)

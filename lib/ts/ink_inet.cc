@@ -64,10 +64,11 @@ ink_inet_addr(const char *s)
     // handle hex, octal
 
     if (*pc == '0') {
-      if (*++pc == 'x' || *pc == 'X')
+      if (*++pc == 'x' || *pc == 'X') {
         base = 16, pc++;
-      else
+      } else {
         base = 8;
+      }
     }
     // handle hex, octal, decimal
 
@@ -84,29 +85,34 @@ ink_inet_addr(const char *s)
     }
 
     n++;
-    if (*pc == '.')
+    if (*pc == '.') {
       pc++;
-    else
+    } else {
       break;
+    }
   }
 
-  if (*pc && !ParseRules::is_wslfcr(*pc))
+  if (*pc && !ParseRules::is_wslfcr(*pc)) {
     return htonl((uint32_t)-1);
+  }
 
   switch (n) {
   case 1:
     return htonl(u[0]);
   case 2:
-    if (u[0] > 0xff || u[1] > 0xffffff)
+    if (u[0] > 0xff || u[1] > 0xffffff) {
       return htonl((uint32_t)-1);
+    }
     return htonl((u[0] << 24) | u[1]);
   case 3:
-    if (u[0] > 0xff || u[1] > 0xff || u[2] > 0xffff)
+    if (u[0] > 0xff || u[1] > 0xff || u[2] > 0xffff) {
       return htonl((uint32_t)-1);
+    }
     return htonl((u[0] << 24) | (u[1] << 16) | u[2]);
   case 4:
-    if (u[0] > 0xff || u[1] > 0xff || u[2] > 0xff || u[3] > 0xff)
+    if (u[0] > 0xff || u[1] > 0xff || u[2] > 0xff || u[3] > 0xff) {
       return htonl((uint32_t)-1);
+    }
     return htonl((u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3]);
   }
   return htonl((uint32_t)-1);
@@ -152,20 +158,24 @@ ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer *addr, ts::ConstBuffer *port, 
 {
   // In case the incoming arguments are null.
   ts::ConstBuffer localAddr, localPort;
-  if (!addr)
+  if (!addr) {
     addr = &localAddr;
-  if (!port)
+  }
+  if (!port) {
     port = &localPort;
+  }
   addr->reset();
   port->reset();
-  if (rest)
+  if (rest) {
     rest->reset();
+  }
 
   // Let's see if we can find out what's in the address string.
   if (src) {
     bool colon_p = false;
-    while (src && ParseRules::is_ws(*src))
+    while (src && ParseRules::is_ws(*src)) {
       ++src;
+    }
     // Check for brackets.
     if ('[' == *src) {
       /* Ugly. In a number of places we must use bracket notation
@@ -200,8 +210,9 @@ ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer *addr, ts::ConstBuffer *port, 
     }
     if (colon_p) {
       ts::ConstBuffer tmp(src);
-      while (src && ParseRules::is_digit(*src))
+      while (src && ParseRules::is_digit(*src)) {
         ++src;
+      }
 
       if (tmp.data() == src.data()) {            // no digits at all
         src.set(tmp.data() - 1, tmp.size() + 1); // back up to include colon
@@ -209,8 +220,9 @@ ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer *addr, ts::ConstBuffer *port, 
         *port = tmp.clip(src.data());
       }
     }
-    if (rest)
+    if (rest) {
       *rest = src;
+    }
   }
   return *addr ? 0 : -1; // true if we found an address.
 }
@@ -244,8 +256,9 @@ ats_ip_pton(const ts::ConstBuffer &src, sockaddr *ip)
       }
     }
     // If we had a successful conversion, set the port.
-    if (ats_is_ip(ip))
+    if (ats_is_ip(ip)) {
       ats_ip_port_cast(ip) = port ? htons(atoi(port.data())) : 0;
+    }
   }
 
   return zret;
@@ -311,12 +324,13 @@ ats_ip_to_hex(sockaddr const *src, char *dst, size_t len)
 sockaddr *
 ats_ip_set(sockaddr *dst, IpAddr const &addr, uint16_t port)
 {
-  if (AF_INET == addr._family)
+  if (AF_INET == addr._family) {
     ats_ip4_set(dst, addr._addr._ip4, port);
-  else if (AF_INET6 == addr._family)
+  } else if (AF_INET6 == addr._family) {
     ats_ip6_set(dst, addr._addr._ip6, port);
-  else
+  } else {
     ats_ip_invalidate(dst);
+  }
   return dst;
 }
 
@@ -397,12 +411,13 @@ IpAddr::cmp(self const &that) const
     if (AF_INET == rtype) {
       in_addr_t la = ntohl(_addr._ip4);
       in_addr_t ra = ntohl(that._addr._ip4);
-      if (la < ra)
+      if (la < ra) {
         zret = -1;
-      else if (la > ra)
+      } else if (la > ra) {
         zret = 1;
-      else
+      } else {
         zret = 0;
+      }
     } else if (AF_INET6 == rtype) { // IPv4 < IPv6
       zret = -1;
     } else { // IP > not IP
@@ -434,10 +449,12 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
   ts::ConstBuffer addr_text, port_text;
   ts::ConstBuffer src(host, strlen(host) + 1);
 
-  if (ip4)
+  if (ip4) {
     ats_ip_invalidate(ip4);
-  if (ip6)
+  }
+  if (ip6) {
     ats_ip_invalidate(ip6);
+  }
 
   if (0 == ats_ip_parse(src, &addr_text, &port_text)) {
     // Copy if not terminated.
@@ -468,21 +485,23 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
 
       for (addrinfo *ai_spot = ai_result; ai_spot; ai_spot = ai_spot->ai_next) {
         sockaddr const *ai_ip = ai_spot->ai_addr;
-        if (!ats_is_ip(ai_ip))
+        if (!ats_is_ip(ai_ip)) {
           spot_type = NA;
-        else if (ats_is_ip_loopback(ai_ip))
+        } else if (ats_is_ip_loopback(ai_ip)) {
           spot_type = LO;
-        else if (ats_is_ip_linklocal(ai_ip))
+        } else if (ats_is_ip_linklocal(ai_ip)) {
           spot_type = LL;
-        else if (ats_is_ip_private(ai_ip))
+        } else if (ats_is_ip_private(ai_ip)) {
           spot_type = PR;
-        else if (ats_is_ip_multicast(ai_ip))
+        } else if (ats_is_ip_multicast(ai_ip)) {
           spot_type = MC;
-        else
+        } else {
           spot_type = GL;
+        }
 
-        if (spot_type == NA)
+        if (spot_type == NA) {
           continue; // Next!
+        }
 
         if (ats_is_ip4(ai_ip)) {
           if (spot_type > ip4_type) {
@@ -496,10 +515,12 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
           }
         }
       }
-      if (ip4_type > NA)
+      if (ip4_type > NA) {
         ats_ip_copy(ip4, ip4_src);
-      if (ip6_type > NA)
+      }
+      if (ip6_type > NA) {
         ats_ip_copy(ip6, ip6_src);
+      }
       freeaddrinfo(ai_result); // free *after* the copy.
     }
   }
@@ -507,15 +528,19 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
   // We don't really care if the port is null terminated - the parser
   // would get all the digits so the next character is a non-digit (null or
   // not) and atoi will do the right thing in either case.
-  if (port_text.size())
+  if (port_text.size()) {
     port = htons(atoi(port_text.data()));
-  if (ats_is_ip(ip4))
+  }
+  if (ats_is_ip(ip4)) {
     ats_ip_port_cast(ip4) = port;
-  if (ats_is_ip(ip6))
+  }
+  if (ats_is_ip(ip6)) {
     ats_ip_port_cast(ip6) = port;
+  }
 
-  if (!ats_is_ip(ip4) && !ats_is_ip(ip6))
+  if (!ats_is_ip(ip4) && !ats_is_ip(ip6)) {
     zret = -1;
+  }
 
   return zret;
 }
@@ -525,15 +550,17 @@ ats_ip_check_characters(ts::ConstBuffer text)
 {
   bool found_colon = false;
   bool found_hex   = false;
-  for (const char *p = text.data(), *limit = p + text.size(); p < limit; ++p)
-    if (':' == *p)
+  for (const char *p = text.data(), *limit = p + text.size(); p < limit; ++p) {
+    if (':' == *p) {
       found_colon = true;
-    else if ('.' == *p || isdigit(*p)) /* empty */
+    } else if ('.' == *p || isdigit(*p)) { /* empty */
       ;
-    else if (isxdigit(*p))
+    } else if (isxdigit(*p)) {
       found_hex = true;
-    else
+    } else {
       return AF_UNSPEC;
+    }
+  }
 
   return found_hex && !found_colon ? AF_UNSPEC : found_colon ? AF_INET6 : AF_INET;
 }

@@ -15,4 +15,4 @@
 #  limitations under the License.
 
 pkglib_LTLIBRARIES += s3_auth/s3_auth.la
-s3_auth_s3_auth_la_SOURCES = s3_auth/s3_auth.cc
+s3_auth_s3_auth_la_SOURCES = s3_auth/s3_auth.cc s3_auth/aws_auth_v4.cc

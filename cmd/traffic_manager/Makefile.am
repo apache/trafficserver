@@ -16,6 +16,9 @@
 #  limitations under the License.
 
 bin_PROGRAMS = traffic_manager
+check_PROGRAMS = test_metrics
+
+TESTS = $(check_PROGRAMS)
 
 AM_CPPFLAGS += \
   $(LUAJIT_CPPFLAGS) \
@@ -84,6 +87,16 @@ traffic_manager_LDADD += \
   $(top_builddir)/lib/tsconfig/libtsconfig.la \
   @OPENSSL_LIBS@
 endif
+
+test_metrics_SOURCES = test_metrics.cc metrics.cc
+test_metrics_LDADD = \
+  $(top_builddir)/mgmt/libmgmt_lm.la \
+  $(top_builddir)/lib/records/librecords_lm.a \
+  $(top_builddir)/lib/bindings/libbindings.la \
+  $(top_builddir)/lib/luajit/src/libluajit.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  @LIBTCL@ @LIBPCRE@
 
 include $(top_srcdir)/build/tidy.mk
 

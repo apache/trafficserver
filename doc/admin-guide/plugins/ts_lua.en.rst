@@ -178,21 +178,22 @@ Here is an example:
 
 ts.debug
 --------
-**syntax:** *ts.debug(MESSAGE)*
+**syntax:** *ts.debug(TAG?, MESSAGE)*
 
 **context:** global
 
-**description**: Log the MESSAGE to traffic.out if debug is enabled.
+**description**: Log the MESSAGE to traffic.out if debug TAG is enabled(the default TAG is **ts_lua**).
 
 Here is an example:
 
 ::
 
        ts.debug('I am in do_remap now.')
+       ts.debug("scw", "hello world")
 
-The debug tag is **ts_lua** and we should write this in records.config:
+We should write this TAG in records.config(If TAG is missing, default TAG will be set):
 
-``CONFIG proxy.config.diags.debug.tags STRING ts_lua``
+``CONFIG proxy.config.diags.debug.tags STRING TAG``
 
 `TOP <#ts-lua-plugin>`_
 
@@ -3126,7 +3127,6 @@ Http config constants
     TS_LUA_CONFIG_HTTP_CACHE_GENERATION
     TS_LUA_CONFIG_BODY_FACTORY_TEMPLATE_BASE
     TS_LUA_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION
-    TS_LUA_CONFIG_HTTP_ENABLE_REDIRECTION
     TS_LUA_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS
     TS_LUA_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES
     TS_LUA_CONFIG_LAST_ENTRY

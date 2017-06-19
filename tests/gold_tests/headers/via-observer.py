@@ -20,18 +20,20 @@ Extract the protocol information from the VIA headers and store it in a log file
 import re
 
 log = open('via.log', 'w')
-rxp = re.compile('(^.*) [\w._-]+\[.*$')
+rxp = re.compile('(\S+)\s+(\S+)\s\((\S+)\s+\[([^]]+)\]\s\[([^]]+)\]\s*\)')
+
 
 def observe(headers):
     if 'via' in headers:
         via = headers['via']
         if via:
-            via = rxp.sub(r'\1', via)
+            via = rxp.sub(r'\1 = \5', via)
         else:
-            via = ''
+            via = '---empty---'
     else:
         via = '---missing---'
     log.write("Via: {}\n".format(via))
     log.flush()
+
 
 Hooks.register(Hooks.ReadRequestHook, observe)

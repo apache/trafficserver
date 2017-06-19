@@ -66,14 +66,14 @@ public:
   static float calculate_quality_of_accept_match(MIMEField *accept_field, MIMEField *content_field);
 
   static float calculate_quality_of_accept_charset_match(MIMEField *accept_field, MIMEField *content_field,
-                                                         MIMEField *cached_accept_field = NULL);
+                                                         MIMEField *cached_accept_field = nullptr);
 
   static float calculate_quality_of_accept_encoding_match(MIMEField *accept_field, MIMEField *content_field,
-                                                          MIMEField *cached_accept_field = NULL);
+                                                          MIMEField *cached_accept_field = nullptr);
   static ContentEncoding match_gzip(MIMEField *accept_field);
 
   static float calculate_quality_of_accept_language_match(MIMEField *accept_field, MIMEField *content_field,
-                                                          MIMEField *cached_accept_field = NULL);
+                                                          MIMEField *cached_accept_field = nullptr);
 
   ///////////////////////////////////////////////
   // variability & server negotiation routines //

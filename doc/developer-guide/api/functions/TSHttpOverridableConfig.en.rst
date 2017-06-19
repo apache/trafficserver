@@ -73,7 +73,6 @@ c:member:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM`                     :ts:cv:`prox
 c:member:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER`                  :ts:cv:`proxy.config.http.anonymize_remove_referer`
 c:member:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT`               :ts:cv:`proxy.config.http.anonymize_remove_user_agent`
 c:member:`TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT`           :ts:cv:`proxy.config.http.attach_server_session_to_client`
-c:member:`TS_CONFIG_HTTP_SAFE_REQUESTS_RETRYABLE`                   :ts:cv:`proxy.config.http.safe_requests_retryable`
 c:member:`TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE`               :ts:cv:`proxy.config.http.auth_server_session_private`
 c:member:`TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT`            :ts:cv:`proxy.config.http.background_fill_active_timeout`
 c:member:`TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD`       :ts:cv:`proxy.config.http.background_fill_completed_threshold`
@@ -114,7 +113,6 @@ c:member:`TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK`                 :ts:cv:`prox
 c:member:`TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS`                     :ts:cv:`proxy.config.http.doc_in_cache_skip_dns`
 c:member:`TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD`               :ts:cv:`proxy.config.http.down_server.abort_threshold`
 c:member:`TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME`                    :ts:cv:`proxy.config.http.down_server.cache_time`
-c:member:`TS_CONFIG_HTTP_ENABLE_REDIRECTION`                        :ts:cv:`proxy.config.http.redirection_enabled`
 c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`                      :ts:cv:`proxy.config.http.flow_control.enabled`
 c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK`              :ts:cv:`proxy.config.http.flow_control.high_water`
 c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK`               :ts:cv:`proxy.config.http.flow_control.low_water`

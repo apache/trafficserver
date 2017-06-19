@@ -664,7 +664,7 @@ handle_transform(TSCont contp)
         Job *new_job;
         /* Add a request to include a file into the jobs queue.. */
         /* We'll be called back once it's done with an EVENT_IMMEDIATE */
-        TSDebug(DBG_TAG, "Psi filename extracted. Adding an include job to thread queue.");
+        TSDebug(DBG_TAG, "Psi filename extracted, adding an include job to thread queue");
         data->state = STATE_READ_PSI;
 
         /* Create a new job request and add it to the queue */
@@ -982,7 +982,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[psi] Plugin registration failed.");
+    TSError("[psi] Plugin registration failed");
   }
 
   /* Initialize the psi directory = <plugin_path>/include */

@@ -32,7 +32,7 @@
 #include "P_Net.h"
 #include "P_UDPNet.h"
 
-typedef int (UDPNetHandler::*UDPNetContHandler)(int, void *);
+using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 
 inkcoreapi ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 EventType ET_UDP;
@@ -88,18 +88,16 @@ initialize_thread_for_udp_net(EThread *thread)
 int
 UDPNetProcessorInternal::start(int n_upd_threads, size_t stacksize)
 {
-  if (n_upd_threads < 1)
+  if (n_upd_threads < 1) {
     return -1;
+  }
 
-  ET_UDP = eventProcessor.spawn_event_threads(n_upd_threads, "ET_UDP", stacksize);
-  if (ET_UDP < 0) // Probably can't happen, maybe at some point EventType should be unsigned ?
-    return -1;
+  ET_UDP = eventProcessor.register_event_type("ET_UDP");
+  eventProcessor.schedule_spawn(&initialize_thread_for_udp_net, ET_UDP);
+  eventProcessor.spawn_event_threads(ET_UDP, n_upd_threads, stacksize);
 
   pollCont_offset      = eventProcessor.allocate(sizeof(PollCont));
   udpNetHandler_offset = eventProcessor.allocate(sizeof(UDPNetHandler));
-
-  for (int i = 0; i < eventProcessor.n_threads_for_type[ET_UDP]; i++)
-    initialize_thread_for_udp_net(eventProcessor.eventthread[ET_UDP][i]);
 
   return 0;
 }
@@ -170,6 +168,8 @@ UDPNetProcessorInternal::udp_callback(UDPNetHandler *nh, UDPConnection *xuc, ETh
   }
 }
 
+#define UNINITIALIZED_EVENT_PTR (Event *)0xdeadbeef
+
 // cheesy implementation of a asynchronous read and callback for Unix
 class UDPReadContinuation : public Continuation
 {
@@ -199,22 +199,20 @@ public:
   void setupPollDescriptor();
 
 private:
-  Event *event; // the completion event token created
+  Event *event = UNINITIALIZED_EVENT_PTR; // the completion event token created
   // on behalf of the client
-  Ptr<IOBufferBlock> readbuf;
-  int readlen;
-  struct sockaddr_in6 *fromaddr;
-  socklen_t *fromaddrlen;
-  int fd;            // fd we are reading from
-  int ifd;           // poll fd index
-  ink_hrtime period; // polling period
-  ink_hrtime elapsed_time;
-  ink_hrtime timeout_interval;
+  Ptr<IOBufferBlock> readbuf{nullptr};
+  int readlen                   = 0;
+  struct sockaddr_in6 *fromaddr = nullptr;
+  socklen_t *fromaddrlen        = nullptr;
+  int fd                        = NO_FD; // fd we are reading from
+  int ifd                       = NO_FD; // poll fd index
+  ink_hrtime period             = 0;     // polling period
+  ink_hrtime elapsed_time       = 0;
+  ink_hrtime timeout_interval   = 0;
 };
 
 ClassAllocator<UDPReadContinuation> udpReadContAllocator("udpReadContAllocator");
-
-#define UNINITIALIZED_EVENT_PTR (Event *)0xdeadbeef
 
 UDPReadContinuation::UDPReadContinuation(Event *completionToken)
   : Continuation(nullptr),
@@ -228,23 +226,14 @@ UDPReadContinuation::UDPReadContinuation(Event *completionToken)
     elapsed_time(0),
     timeout_interval(0)
 {
-  if (completionToken->continuation)
+  if (completionToken->continuation) {
     this->mutex = completionToken->continuation->mutex;
-  else
+  } else {
     this->mutex = new_ProxyMutex();
+  }
 }
 
-UDPReadContinuation::UDPReadContinuation()
-  : Continuation(nullptr),
-    event(UNINITIALIZED_EVENT_PTR),
-    readbuf(nullptr),
-    readlen(0),
-    fromaddrlen(nullptr),
-    fd(-1),
-    ifd(-1),
-    period(0),
-    elapsed_time(0),
-    timeout_interval(0)
+UDPReadContinuation::UDPReadContinuation() : Continuation(nullptr)
 {
 }
 
@@ -528,11 +517,13 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, sockad
   ink_assert(ats_ip_are_compatible(remote_addr, local_addr));
 
   *resfd = -1;
-  if ((res = socketManager.socket(remote_addr->sa_family, SOCK_DGRAM, 0)) < 0)
+  if ((res = socketManager.socket(remote_addr->sa_family, SOCK_DGRAM, 0)) < 0) {
     goto HardError;
+  }
   fd = res;
-  if ((res = safe_fcntl(fd, F_SETFL, O_NONBLOCK)) < 0)
+  if ((res = safe_fcntl(fd, F_SETFL, O_NONBLOCK)) < 0) {
     goto HardError;
+  }
   if ((res = socketManager.ink_bind(fd, remote_addr, ats_ip_size(remote_addr), IPPROTO_UDP)) < 0) {
     char buff[INET6_ADDRPORTSTRLEN];
     Debug("udpnet", "ink bind failed on %s", ats_ip_nptop(remote_addr, buff, sizeof(buff)));
@@ -540,12 +531,14 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, sockad
   }
 
   if (recv_bufsize) {
-    if (unlikely(socketManager.set_rcvbuf_size(fd, recv_bufsize)))
+    if (unlikely(socketManager.set_rcvbuf_size(fd, recv_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", recv_bufsize);
+    }
   }
   if (send_bufsize) {
-    if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize)))
+    if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", send_bufsize);
+    }
   }
   if ((res = safe_getsockname(fd, local_addr, local_addr_len)) < 0) {
     Debug("udpnet", "CreateUdpsocket: getsockname didnt' work");
@@ -558,15 +551,17 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, sockad
   return true;
 SoftError:
   Debug("udpnet", "creating a udp socket port = %d---soft failure", ats_ip_port_host_order(local_addr));
-  if (fd != -1)
+  if (fd != -1) {
     socketManager.close(fd);
+  }
   *resfd  = -1;
   *status = nullptr;
   return false;
 HardError:
   Debug("udpnet", "creating a udp socket port = %d---hard failure", ats_ip_port_host_order(local_addr));
-  if (fd != -1)
+  if (fd != -1) {
     socketManager.close(fd);
+  }
   *resfd  = -1;
   *status = ACTION_IO_ERROR;
   return false;
@@ -581,11 +576,13 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   IpEndpoint myaddr;
   int myaddr_len = sizeof(myaddr);
 
-  if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0)
+  if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
     goto Lerror;
+  }
   fd = res;
-  if ((res = fcntl(fd, F_SETFL, O_NONBLOCK) < 0))
+  if ((res = fcntl(fd, F_SETFL, O_NONBLOCK) < 0)) {
     goto Lerror;
+  }
 
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
   if (ats_is_ip_multicast(addr)) {
@@ -601,12 +598,14 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   }
 
   if (recv_bufsize) {
-    if (unlikely(socketManager.set_rcvbuf_size(fd, recv_bufsize)))
+    if (unlikely(socketManager.set_rcvbuf_size(fd, recv_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", recv_bufsize);
+    }
   }
   if (send_bufsize) {
-    if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize)))
+    if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", send_bufsize);
+    }
   }
   if ((res = safe_getsockname(fd, &myaddr.sa, &myaddr_len)) < 0) {
     goto Lerror;
@@ -620,14 +619,15 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   cont->handleEvent(NET_EVENT_DATAGRAM_OPEN, n);
   return ACTION_RESULT_DONE;
 Lerror:
-  if (fd != NO_FD)
+  if (fd != NO_FD) {
     socketManager.close(fd);
+  }
   cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, nullptr);
   return ACTION_IO_ERROR;
 }
 
 // send out all packets that need to be sent out as of time=now
-UDPQueue::UDPQueue() : last_report(0), last_service(0), packets(0), added(0)
+UDPQueue::UDPQueue()
 {
 }
 
@@ -713,10 +713,12 @@ sendPackets:
     p      = pipeInfo.getFirstPacket();
     pktLen = p->getPktLength();
 
-    if (p->conn->shouldDestroy())
+    if (p->conn->shouldDestroy()) {
       goto next_pkt;
-    if (p->conn->GetSendGenerationNumber() != p->reqGenerationNum)
+    }
+    if (p->conn->GetSendGenerationNumber() != p->reqGenerationNum) {
       goto next_pkt;
+    }
 
     SendUDPPacket(p, pktLen);
     bytesUsed += pktLen;
@@ -725,8 +727,9 @@ sendPackets:
     sentOne = true;
     p->free();
 
-    if (bytesThisPipe < 0)
+    if (bytesThisPipe < 0) {
       break;
+    }
   }
 
   bytesThisSlot -= bytesUsed;
@@ -779,9 +782,10 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   while (true) {
     // stupid Linux problem: sendmsg can return EAGAIN
     n = ::sendmsg(p->conn->getFd(), &msg, 0);
-    if ((n >= 0) || ((n < 0) && (errno != EAGAIN)))
+    if ((n >= 0) || ((n < 0) && (errno != EAGAIN))) {
       // send succeeded or some random error happened.
       break;
+    }
     if (errno == EAGAIN) {
       ++count;
       if ((g_udp_numSendRetries > 0) && (count >= g_udp_numSendRetries)) {

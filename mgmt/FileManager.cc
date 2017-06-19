@@ -36,15 +36,15 @@
 #define DIR_MODE S_IRWXU
 #define FILE_MODE S_IRWXU
 
-typedef fileEntry snapshot;
+using snapshot = fileEntry;
 
 FileManager::FileManager()
 {
   bindings = ink_hash_table_create(InkHashTableKeyType_String);
   ink_assert(bindings != nullptr);
 
-  ink_mutex_init(&accessLock, "File Manager Mutex");
-  ink_mutex_init(&cbListLock, "File Changed Callback Mutex");
+  ink_mutex_init(&accessLock);
+  ink_mutex_init(&cbListLock);
 
   ats_scoped_str snapshotDir(RecConfigReadSnapshotDir());
 
@@ -180,7 +180,7 @@ FileManager::fileChanged(const char *fileName, bool incVersion)
 {
   callbackListable *cb;
   char *filenameCopy;
-
+  Debug("lm", "filename changed %s", fileName);
   ink_mutex_acquire(&cbListLock);
 
   for (cb = cblist.head; cb != nullptr; cb = cb->link.next) {
@@ -667,6 +667,7 @@ FileManager::rereadConfig()
   if (found && enabled) {
     fileChanged("proxy.config.body_factory.template_sets_dir", true);
   }
+  fileChanged("proxy.config.ssl.server.ticket_key.filename", true);
 }
 
 bool

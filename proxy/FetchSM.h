@@ -43,19 +43,6 @@ public:
   void
   init_comm()
   {
-    is_internal_request    = true;
-    recursion              = 0;
-    req_finished           = 0;
-    is_method_head         = 0;
-    header_done            = 0;
-    user_data              = NULL;
-    has_sent_header        = false;
-    destroyed              = false;
-    req_content_length     = 0;
-    resp_is_chunked        = -1;
-    resp_content_length    = -1;
-    resp_received_body_len = 0;
-    resp_received_close    = -1;
     cont_mutex.clear();
     req_buffer  = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
     req_reader  = req_buffer->alloc_reader();
@@ -63,7 +50,6 @@ public:
     resp_reader = resp_buffer->alloc_reader();
     http_parser_init(&http_parser);
     client_response_hdr.create(HTTP_TYPE_RESPONSE);
-    client_response = NULL;
     SET_HANDLER(&FetchSM::fetch_handler);
   }
 
@@ -154,37 +140,37 @@ private:
   bool check_connection_close();
   int dechunk_body();
 
-  int recursion;
-  PluginVC *http_vc;
-  VIO *read_vio;
-  VIO *write_vio;
-  MIOBuffer *req_buffer;
-  IOBufferReader *req_reader;
-  char *client_response;
-  int client_bytes;
-  MIOBuffer *resp_buffer; // response to HttpConnect Call
-  IOBufferReader *resp_reader;
-  Continuation *contp;
+  int recursion               = 0;
+  PluginVC *http_vc           = nullptr;
+  VIO *read_vio               = nullptr;
+  VIO *write_vio              = nullptr;
+  MIOBuffer *req_buffer       = nullptr;
+  IOBufferReader *req_reader  = nullptr;
+  char *client_response       = nullptr;
+  int client_bytes            = -1;
+  MIOBuffer *resp_buffer      = nullptr; // response to HttpConnect Call
+  IOBufferReader *resp_reader = nullptr;
+  Continuation *contp         = nullptr;
   Ptr<ProxyMutex> cont_mutex;
   HTTPParser http_parser;
   HTTPHdr client_response_hdr;
   ChunkedHandler chunked_handler;
   TSFetchEvent callback_events;
-  TSFetchWakeUpOptions callback_options;
-  bool req_finished;
-  bool header_done;
-  bool is_method_head;
-  bool is_internal_request;
-  bool destroyed;
+  TSFetchWakeUpOptions callback_options = NO_CALLBACK;
+  bool req_finished                     = false;
+  bool header_done                      = false;
+  bool is_method_head                   = false;
+  bool is_internal_request              = true;
+  bool destroyed                        = false;
   IpEndpoint _addr;
-  int resp_is_chunked;
-  int resp_received_close;
-  int fetch_flags;
-  void *user_data;
-  bool has_sent_header;
-  int64_t req_content_length;
-  int64_t resp_content_length;
-  int64_t resp_received_body_len;
+  int resp_is_chunked            = -1;
+  int resp_received_close        = -1;
+  int fetch_flags                = 0;
+  void *user_data                = nullptr;
+  bool has_sent_header           = false;
+  int64_t req_content_length     = 0;
+  int64_t resp_content_length    = -1;
+  int64_t resp_received_body_len = 0;
 };
 
 #endif

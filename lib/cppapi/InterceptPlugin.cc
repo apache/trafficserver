@@ -42,7 +42,7 @@ using std::string;
  */
 struct InterceptPlugin::State {
   TSCont cont_;
-  TSVConn net_vc_;
+  TSVConn net_vc_ = nullptr;
 
   struct IoHandle {
     TSVIO vio_;
@@ -66,36 +66,25 @@ struct InterceptPlugin::State {
   /** the API doesn't recognize end of input; so we have to explicitly
    * figure out when to continue reading and when to stop */
   TSHttpParser http_parser_;
-  int expected_body_size_;
-  int num_body_bytes_read_;
-  bool hdr_parsed_;
+  int expected_body_size_  = 0;
+  int num_body_bytes_read_ = 0;
+  bool hdr_parsed_         = false;
 
-  TSMBuffer hdr_buf_;
-  TSMLoc hdr_loc_;
-  int num_bytes_written_;
+  TSMBuffer hdr_buf_     = nullptr;
+  TSMLoc hdr_loc_        = nullptr;
+  int num_bytes_written_ = 0;
   std::shared_ptr<Mutex> plugin_mutex_;
-  InterceptPlugin *plugin_;
+  InterceptPlugin *plugin_ = nullptr;
   Headers request_headers_;
 
   /** these two fields to be used by the continuation callback only */
-  TSEvent saved_event_;
-  void *saved_edata_;
+  TSEvent saved_event_ = TS_EVENT_NONE;
+  void *saved_edata_   = nullptr;
 
-  TSAction timeout_action_;
-  bool plugin_io_done_;
+  TSAction timeout_action_ = nullptr;
+  bool plugin_io_done_     = false;
 
-  State(TSCont cont, InterceptPlugin *plugin)
-    : cont_(cont),
-      net_vc_(nullptr),
-      expected_body_size_(0),
-      num_body_bytes_read_(0),
-      hdr_parsed_(false),
-      hdr_buf_(nullptr),
-      hdr_loc_(nullptr),
-      num_bytes_written_(0),
-      plugin_(plugin),
-      timeout_action_(nullptr),
-      plugin_io_done_(false)
+  State(TSCont cont, InterceptPlugin *plugin) : cont_(cont)
   {
     plugin_mutex_ = plugin->getMutex();
     http_parser_  = TSHttpParserCreate();

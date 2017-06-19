@@ -24,8 +24,16 @@
 #ifndef METRICS_H_D289E71B_AAC5_4CF3_9954_D54EDED60D1B
 #define METRICS_H_D289E71B_AAC5_4CF3_9954_D54EDED60D1B
 
+#include "bindings/bindings.h"
+#include "bindings/metrics.h"
+
 bool metrics_binding_initialize(BindingInstance &binding);
 void metrics_binding_destroy(BindingInstance &binding);
+
+// Configure metrics from the metrics.config configuration file.
+bool metrics_binding_configure(BindingInstance &binding);
+
+// Evaluate the metrics in this binding instance.
 void metrics_binding_evaluate(BindingInstance &binding);
 
 #endif /* METRICS_H_D289E71B_AAC5_4CF3_9954_D54EDED60D1B */
