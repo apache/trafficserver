@@ -690,7 +690,7 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       if (cstate.is_valid_streamid(stream_id)) {
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
       } else {
-        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                           "window update stream invalid id");
       }
     }
