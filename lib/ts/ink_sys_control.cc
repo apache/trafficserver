@@ -43,7 +43,7 @@ ink_max_out_rlimit(int which, bool max_it, bool unlim_it)
     if (rl.rlim_cur != rl.rlim_max) {
 #if defined(darwin)
       if (which == RLIMIT_NOFILE)
-        rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
+        rl.rlim_cur = (OPEN_MAX < rl.rlim_max) ? OPEN_MAX : rl.rlim_max;
       else
         rl.rlim_cur = rl.rlim_max;
 #else
