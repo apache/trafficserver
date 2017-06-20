@@ -22,7 +22,7 @@ cd "${WORKSPACE}/src"
 autoreconf -if
 
 INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
-SANDBOX="/tmp/ausb-$$"
+SANDBOX="/var/tmp/ausb-${ghprbPullId}"
 
 mkdir -p $INSTALL
 
@@ -40,7 +40,7 @@ ${ATS_MAKE} check VERBOSE=Y && ${ATS_MAKE} install
 
 /usr/bin/autest -D ./tests/gold_tests --sandbox "$SANDBOX" --ats-bin "${INSTALL}/bin"
 status="$?"
-[ -d "$SANDBOX" ] && rm -rf "$SANDBOX"
 
 [ "0" != "$status" ] && exit -1
 exit 0
+
