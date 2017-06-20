@@ -56,7 +56,6 @@ public:
 
 private:
   bool compile();
-  bool failed(const String &subject) const;
   void pcreFree();
 
   pcre *_re;          /**< @brief PCRE compiled info structure, computed during initialization */
@@ -114,9 +113,6 @@ public:
   // noncopyable
   NonMatchingMultiPattern(const NonMatchingMultiPattern &) = delete;            // disallow
   NonMatchingMultiPattern &operator=(const NonMatchingMultiPattern &) = delete; // disallow
-
-private:
-  NonMatchingMultiPattern(); // disallow
 };
 
 /**
