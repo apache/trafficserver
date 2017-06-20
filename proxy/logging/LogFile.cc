@@ -196,8 +196,6 @@ LogFile::open_file()
   int e = do_filesystem_checks();
   if (e != 0) {
     m_fd = -1; // reset to error condition
-    delete m_log;
-    m_log = nullptr;
     return LOG_FILE_FILESYSTEM_CHECKS_FAILED;
   }
 
@@ -579,10 +577,10 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 void
 LogFile::check_fd()
 {
-  static bool failure_last_call    = false;
-  static unsigned stat_check_count = 1;
+  static bool failure_last_call = false;
+  static int stat_check_count   = 1;
 
-  if ((stat_check_count % Log::config->file_stat_frequency) == 0) {
+  if (stat_check_count >= Log::config->file_stat_frequency) {
     //
     // It's time to see if the file really exists.  If we can't see
     // the file (via access), then we'll close our descriptor and
