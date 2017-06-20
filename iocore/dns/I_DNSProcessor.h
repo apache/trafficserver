@@ -26,12 +26,14 @@
 
 #include "SRV.h"
 
-#define MAX_DNS_PACKET_LEN 8192
-#define DNS_MAX_ALIASES 35
-#define DNS_MAX_ADDRS 35
-#define DNS_HOSTBUF_SIZE 8192
-#define DOMAIN_SERVICE_PORT 53
-#define DEFAULT_DOMAIN_NAME_SERVER 0 // use the default server
+const int DOMAIN_SERVICE_PORT        = NAMESERVER_PORT;
+const int DEFAULT_DOMAIN_NAME_SERVER = 0;
+
+const int MAX_DNS_PACKET_LEN = 8192;
+const int DNS_RR_MAX_COUNT   = (MAX_DNS_PACKET_LEN - HFIXEDSZ + RRFIXEDSZ - 1) / RRFIXEDSZ;
+const int DNS_MAX_ALIASES    = DNS_RR_MAX_COUNT;
+const int DNS_MAX_ADDRS      = DNS_RR_MAX_COUNT;
+const int DNS_HOSTBUF_SIZE   = MAX_DNS_PACKET_LEN;
 
 /**
   All buffering required to handle a DNS receipt. For asynchronous DNS,
