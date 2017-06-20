@@ -1,0 +1,25 @@
+HTTP/1.1 307 Temporary Redirect
+Connection: keep-alive
+Cache-Control: no-store
+Content-Type: text/html
+Content-Language: en
+Location: http://www.redirect307.test/
+Content-Length: 391
+
+<HTML>
+<HEAD>
+<TITLE>Unknown Host</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Unknown Host</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Unable to locate the server requested ---
+the server does not have a DNS entry.  Perhaps there is a misspelling
+in the server name, or the server no longer exists.  Double-check the
+name and try again.
+</B></FONT>
+<HR>
+</BODY>

@@ -746,7 +746,8 @@ Variable     Description
 %<chi>       Client IP
 %<cqhl>      Client request length
 %<cqhm>      Client HTTP method
-%<cquup>     Client unmapped URI
+%<cque>      Client effective URI
+%<cquup>     Client unmapped URI path
 ============ ==================================================================
 
 Variables to be expanded must be enclosed in double quotes ``"``, as in this example using the arbitrary header

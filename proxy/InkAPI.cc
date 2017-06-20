@@ -4707,6 +4707,8 @@ TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc)
 }
 
 // Shortcut to just get the URL.
+// The caller is responsible to free memory that is allocated for the string
+// that is returned.
 char *
 TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int *length)
 {
