@@ -771,11 +771,21 @@ HttpTransact::EndRemapRequest(State *s)
   ////////////////////////////////////////////////////////////////
   if (s->remap_redirect != nullptr) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    if (s->http_return_code == HTTP_STATUS_MOVED_PERMANENTLY) {
-      build_error_response(s, HTTP_STATUS_MOVED_PERMANENTLY, "Redirect", "redirect#moved_permanently");
-    } else {
-      build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect", "redirect#moved_temporarily");
+    const char *error_body_type;
+    switch (s->http_return_code) {
+    case HTTP_STATUS_MOVED_PERMANENTLY:
+    case HTTP_STATUS_PERMANENT_REDIRECT:
+      error_body_type = "redirect#moved_permanently";
+      break;
+    case HTTP_STATUS_MOVED_TEMPORARILY:
+    case HTTP_STATUS_TEMPORARY_REDIRECT:
+      error_body_type = "redirect#moved_temporarily";
+      break;
+    default:
+      Warning("Invalid status code for redirect '%d'. Building a response for a temporary redirect.", s->http_return_code);
+      error_body_type = "redirect#moved_temporarily";
     }
+    build_error_response(s, s->http_return_code, "Redirect", error_body_type);
     ats_free(s->remap_redirect);
     s->reverse_proxy = false;
     goto done;
@@ -7989,8 +7999,8 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   s->hdr_info.client_response.field_delete(MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES);
   s->hdr_info.client_response.field_delete(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED);
 
-  if ((status_code == HTTP_STATUS_TEMPORARY_REDIRECT || status_code == HTTP_STATUS_MOVED_TEMPORARILY ||
-       status_code == HTTP_STATUS_MOVED_PERMANENTLY) &&
+  if ((status_code == HTTP_STATUS_PERMANENT_REDIRECT || status_code == HTTP_STATUS_TEMPORARY_REDIRECT ||
+       status_code == HTTP_STATUS_MOVED_TEMPORARILY || status_code == HTTP_STATUS_MOVED_PERMANENTLY) &&
       s->remap_redirect) {
     s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, s->remap_redirect, strlen(s->remap_redirect));
   }
