@@ -742,7 +742,8 @@ Variable     Description
 %<chi>       Client IP
 %<cqhl>      Client request length
 %<cqhm>      Client HTTP method
-%<cquup>     Client unmapped URI
+%<cque>      Client effective URI
+%<cquup>     Client unmapped URI path
 ============ ==================================================================
 
 Header Values

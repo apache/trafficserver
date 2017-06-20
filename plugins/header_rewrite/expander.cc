@@ -113,6 +113,15 @@ VariableExpander::expand(const Resources &res)
         }
         TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
       }
+    } else if (variable == "%<cque>") {
+      // The client request effective URL.
+      int url_len = 0;
+      char *url   = TSHttpTxnEffectiveUrlStringGet(res.txnp, &url_len);
+      if (url && url_len) {
+        resolved_variable.assign(url, url_len);
+      }
+      free(url);
+      url = nullptr;
     }
 
     // TODO(SaveTheRbtz): Can be optimized
