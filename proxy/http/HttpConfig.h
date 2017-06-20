@@ -776,8 +776,7 @@ public:
   ///////////////////////////////////////////////////////////////////
   // Put all MgmtByte members down here, avoids additional padding //
   ///////////////////////////////////////////////////////////////////
-  MgmtByte session_auth_cache_keep_alive_enabled = 1;
-  MgmtByte disable_ssl_parenting                 = 0;
+  MgmtByte disable_ssl_parenting = 0;
 
   MgmtByte no_dns_forward_to_parent = 0;
   MgmtByte no_origin_server_dns     = 0;
@@ -834,17 +833,12 @@ public:
 class HttpConfig
 {
 public:
-  static int init_aeua_filter(char *config_fname);
-
   static void startup();
 
   static void reconfigure();
 
   inkcoreapi static HttpConfigParams *acquire();
   inkcoreapi static void release(HttpConfigParams *params);
-
-  // dump
-  static void dump_config();
 
   // parse ssl ports configuration string
   static HttpConfigPortRange *parse_ports_list(char *ports_str);
