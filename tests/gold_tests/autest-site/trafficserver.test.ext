@@ -101,7 +101,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     # setup read-only data directory for plugins
 
     p.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'] = plugin_dir
-    p.Setup.Copy(p.Variables.PLUGINDIR, plugin_dir)
+    p.Setup.Copy(p.Variables.PLUGINDIR, plugin_dir, True)
 
     #########################################################
     # create subdirectories that need to exist (but are empty)
