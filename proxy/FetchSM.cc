@@ -528,6 +528,7 @@ FetchSM::process_fetch_write(int event)
     }
     InvokePlugin(callback_events.failure_event_id, nullptr);
     cleanUp();
+    break;
   default:
     break;
   }
