@@ -282,6 +282,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
     if (node != nullptr) {
       stream->priority_node = node;
+      node->t               = stream;
     } else {
       DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
                        params.priority.stream_dependency, params.priority.weight, params.priority.exclusive_flag,
