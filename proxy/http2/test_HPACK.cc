@@ -33,6 +33,7 @@
 #include "ts/TestBox.h"
 
 const static int MAX_REQUEST_HEADER_SIZE = 131072;
+const static int MAX_TABLE_SIZE          = 4096;
 
 using namespace std;
 
@@ -197,7 +198,7 @@ test_decoding(const string &filename)
       case 'w':
         parse_line(line, 6, name, value);
         unpacked_len = unpack(value, unpacked);
-        hpack_decode_header_block(indexing_table, &decoded, unpacked, unpacked_len, MAX_REQUEST_HEADER_SIZE);
+        hpack_decode_header_block(indexing_table, &decoded, unpacked, unpacked_len, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
         break;
       }
       break;
@@ -252,7 +253,8 @@ test_encoding(const string &filename_in, const string &filename_out)
             result = seqnum;
             break;
           }
-          hpack_decode_header_block(indexing_table_for_decoding, &decoded, encoded, written, MAX_REQUEST_HEADER_SIZE);
+          hpack_decode_header_block(indexing_table_for_decoding, &decoded, encoded, written, MAX_REQUEST_HEADER_SIZE,
+                                    MAX_TABLE_SIZE);
           if (compare_header_fields(&decoded, &original) != 0) {
             result = seqnum;
             break;
@@ -297,7 +299,7 @@ test_encoding(const string &filename_in, const string &filename_out)
     result = seqnum;
     return result;
   }
-  hpack_decode_header_block(indexing_table_for_decoding, &decoded, encoded, written, MAX_REQUEST_HEADER_SIZE);
+  hpack_decode_header_block(indexing_table_for_decoding, &decoded, encoded, written, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
   if (compare_header_fields(&decoded, &original) != 0) {
     result = seqnum;
     return result;
