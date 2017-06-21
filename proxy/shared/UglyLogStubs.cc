@@ -84,23 +84,7 @@ LogCollationAccept::~LogCollationAccept()
 }
 
 #include "LogCollationClientSM.h"
-LogCollationClientSM::LogCollationClientSM(LogHost *log_host)
-  : Continuation(new_ProxyMutex()),
-    m_host_vc(nullptr),
-    m_host_vio(nullptr),
-    m_auth_buffer(nullptr),
-    m_auth_reader(nullptr),
-    m_send_buffer(nullptr),
-    m_send_reader(nullptr),
-    m_pending_action(nullptr),
-    m_pending_event(nullptr),
-    m_abort_vio(nullptr),
-    m_abort_buffer(nullptr),
-    m_buffer_send_list(nullptr),
-    m_buffer_in_iocore(nullptr),
-    m_flow(LOG_COLL_FLOW_ALLOW),
-    m_log_host(log_host),
-    m_id(0)
+LogCollationClientSM::LogCollationClientSM(LogHost *log_host) : Continuation(new_ProxyMutex()), m_log_host(log_host)
 {
 }
 
