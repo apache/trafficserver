@@ -27,6 +27,7 @@
 #include "ts/ink_platform.h"
 #include "ts/Vec.h"
 #include "ts/Diags.h"
+#include "ts/MemView.h"
 #include "HTTP.h"
 
 // It means that any header field can be compressed/decompressed by ATS
@@ -72,9 +73,21 @@ public:
   }
 
   void
+  name_set(ts::StringView const &name)
+  {
+    _field->name_set(_heap, _mh, name);
+  }
+
+  void
   value_set(const char *value, int value_len)
   {
     _field->value_set(_heap, _mh, value, value_len);
+  }
+
+  void
+  value_set(ts::StringView const &value)
+  {
+    _field->value_set(_heap, _mh, value);
   }
 
   const char *
@@ -83,10 +96,22 @@ public:
     return _field->name_get(length);
   }
 
+  ts::StringView
+  name_get() const
+  {
+    return _field->name_get();
+  }
+
   const char *
   value_get(int *length) const
   {
     return _field->value_get(length);
+  }
+
+  ts::StringView
+  value_get() const
+  {
+    return _field->value_get();
   }
 
   const MIMEField *
@@ -143,7 +168,7 @@ public:
   HpackIndexingTable(uint32_t size) { _dynamic_table = new HpackDynamicTable(size); }
   ~HpackIndexingTable() { delete _dynamic_table; }
   HpackLookupResult lookup(const MIMEFieldWrapper &field) const;
-  HpackLookupResult lookup(const char *name, int name_len, const char *value, int value_len) const;
+  HpackLookupResult lookup(ts::StringView name, ts::StringView value) const;
   int get_header_field(uint32_t index, MIMEFieldWrapper &header_field) const;
 
   void add_header_field(const MIMEField *field);

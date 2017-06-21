@@ -438,7 +438,8 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
         break;
       }
 
-      HpackLookupResult lookupResult = indexing_table.lookup(expected_name, expected_name_len, expected_value, expected_value_len);
+      HpackLookupResult lookupResult =
+        indexing_table.lookup(ts::StringView(expected_name, expected_name_len), ts::StringView(expected_value, expected_value_len));
       box.check(lookupResult.match_type == HpackMatch::EXACT && lookupResult.index_type == HpackIndex::DYNAMIC,
                 "the header field is not indexed");
 

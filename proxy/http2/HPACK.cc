@@ -24,6 +24,8 @@
 #include "HPACK.h"
 #include "HuffmanCodec.h"
 
+using ts::StringView;
+
 // [RFC 7541] 4.1. Calculating Table Size
 // The size of an entry is the sum of its name's length in octets (as defined in Section 5.2),
 // its value's length in octets, and 32.
@@ -95,76 +97,75 @@ typedef enum {
   TS_HPACK_STATIC_TABLE_ENTRY_NUM
 } TS_HPACK_STATIC_TABLE_ENTRY;
 
-struct StaticTable {
-  StaticTable(const char *n, const char *v) : name(n), value(v), name_size(strlen(name)), value_size(strlen(value)) {}
-  const char *name;
-  const char *value;
-  const int name_size;
-  const int value_size;
+constexpr struct StaticTableEntry {
+  // Clip one from the size because that includes the terminating null.
+  template <int X, int Y> constexpr StaticTableEntry(const char (&n)[X], const char (&v)[Y]) : name(n, X - 1), value(v, Y - 1) {}
+  const StringView name;
+  const StringView value;
+} STATIC_TABLE[] = {
+  {"", ""},
+  {":authority", ""},
+  {":method", "GET"},
+  {":method", "POST"},
+  {":path", "/"},
+  {":path", "/index.html"},
+  {":scheme", "http"},
+  {":scheme", "https"},
+  {":status", "200"},
+  {":status", "204"},
+  {":status", "206"},
+  {":status", "304"},
+  {":status", "400"},
+  {":status", "404"},
+  {":status", "500"},
+  {"accept-charset", ""},
+  {"accept-encoding", "gzip, deflate"},
+  {"accept-language", ""},
+  {"accept-ranges", ""},
+  {"accept", ""},
+  {"access-control-allow-origin", ""},
+  {"age", ""},
+  {"allow", ""},
+  {"authorization", ""},
+  {"cache-control", ""},
+  {"content-disposition", ""},
+  {"content-encoding", ""},
+  {"content-language", ""},
+  {"content-length", ""},
+  {"content-location", ""},
+  {"content-range", ""},
+  {"content-type", ""},
+  {"cookie", ""},
+  {"date", ""},
+  {"etag", ""},
+  {"expect", ""},
+  {"expires", ""},
+  {"from", ""},
+  {"host", ""},
+  {"if-match", ""},
+  {"if-modified-since", ""},
+  {"if-none-match", ""},
+  {"if-range", ""},
+  {"if-unmodified-since", ""},
+  {"last-modified", ""},
+  {"link", ""},
+  {"location", ""},
+  {"max-forwards", ""},
+  {"proxy-authenticate", ""},
+  {"proxy-authorization", ""},
+  {"range", ""},
+  {"referer", ""},
+  {"refresh", ""},
+  {"retry-after", ""},
+  {"server", ""},
+  {"set-cookie", ""},
+  {"strict-transport-security", ""},
+  {"transfer-encoding", ""},
+  {"user-agent", ""},
+  {"vary", ""},
+  {"via", ""},
+  {"www-authenticate", ""},
 };
-
-static const StaticTable STATIC_TABLE[] = {{"", ""},
-                                           {":authority", ""},
-                                           {":method", "GET"},
-                                           {":method", "POST"},
-                                           {":path", "/"},
-                                           {":path", "/index.html"},
-                                           {":scheme", "http"},
-                                           {":scheme", "https"},
-                                           {":status", "200"},
-                                           {":status", "204"},
-                                           {":status", "206"},
-                                           {":status", "304"},
-                                           {":status", "400"},
-                                           {":status", "404"},
-                                           {":status", "500"},
-                                           {"accept-charset", ""},
-                                           {"accept-encoding", "gzip, deflate"},
-                                           {"accept-language", ""},
-                                           {"accept-ranges", ""},
-                                           {"accept", ""},
-                                           {"access-control-allow-origin", ""},
-                                           {"age", ""},
-                                           {"allow", ""},
-                                           {"authorization", ""},
-                                           {"cache-control", ""},
-                                           {"content-disposition", ""},
-                                           {"content-encoding", ""},
-                                           {"content-language", ""},
-                                           {"content-length", ""},
-                                           {"content-location", ""},
-                                           {"content-range", ""},
-                                           {"content-type", ""},
-                                           {"cookie", ""},
-                                           {"date", ""},
-                                           {"etag", ""},
-                                           {"expect", ""},
-                                           {"expires", ""},
-                                           {"from", ""},
-                                           {"host", ""},
-                                           {"if-match", ""},
-                                           {"if-modified-since", ""},
-                                           {"if-none-match", ""},
-                                           {"if-range", ""},
-                                           {"if-unmodified-since", ""},
-                                           {"last-modified", ""},
-                                           {"link", ""},
-                                           {"location", ""},
-                                           {"max-forwards", ""},
-                                           {"proxy-authenticate", ""},
-                                           {"proxy-authorization", ""},
-                                           {"range", ""},
-                                           {"referer", ""},
-                                           {"refresh", ""},
-                                           {"retry-after", ""},
-                                           {"server", ""},
-                                           {"set-cookie", ""},
-                                           {"strict-transport-security", ""},
-                                           {"transfer-encoding", ""},
-                                           {"user-agent", ""},
-                                           {"vary", ""},
-                                           {"via", ""},
-                                           {"www-authenticate", ""}};
 
 /******************
  * Local functions
@@ -209,39 +210,33 @@ hpack_parse_field_type(uint8_t ftype)
 HpackLookupResult
 HpackIndexingTable::lookup(const MIMEFieldWrapper &field) const
 {
-  int target_name_len = 0, target_value_len = 0;
-  const char *target_name  = field.name_get(&target_name_len);
-  const char *target_value = field.value_get(&target_value_len);
-  return lookup(target_name, target_name_len, target_value, target_value_len);
+  return this->lookup(field.name_get(), field.value_get());
 }
 
 HpackLookupResult
-HpackIndexingTable::lookup(const char *name, int name_len, const char *value, int value_len) const
+HpackIndexingTable::lookup(StringView name, StringView value) const
 {
   HpackLookupResult result;
   const int entry_num = TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table->length();
 
   for (int index = 1; index < entry_num; ++index) {
-    const char *table_name, *table_value;
-    int table_name_len = 0, table_value_len = 0;
+    StringView table_name, table_value;
 
     if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
       // static table
-      table_name      = STATIC_TABLE[index].name;
-      table_value     = STATIC_TABLE[index].value;
-      table_name_len  = STATIC_TABLE[index].name_size;
-      table_value_len = STATIC_TABLE[index].value_size;
+      table_name  = STATIC_TABLE[index].name;
+      table_value = STATIC_TABLE[index].value;
     } else {
       // dynamic table
       const MIMEField *m_field = _dynamic_table->get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
 
-      table_name  = m_field->name_get(&table_name_len);
-      table_value = m_field->value_get(&table_value_len);
+      table_name  = m_field->name_get();
+      table_value = m_field->value_get();
     }
 
-    // Check whether name (and value) are matched
-    if (ptr_len_casecmp(name, name_len, table_name, table_name_len) == 0) {
-      if ((value_len == table_value_len) && (memcmp(value, table_value, value_len) == 0)) {
+    // Check whether name (and value) are matched. Size checks are purely for performance not correctness.
+    if (name.size() == table_name.size() && 0 == strcasecmp(name, table_name)) {
+      if ((value.size() == table_value.size()) && (memcmp(value, table_value) == 0)) {
         result.index      = index;
         result.match_type = HpackMatch::EXACT;
         break;
@@ -272,8 +267,8 @@ HpackIndexingTable::get_header_field(uint32_t index, MIMEFieldWrapper &field) co
 
   if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
     // static table
-    field.name_set(STATIC_TABLE[index].name, STATIC_TABLE[index].name_size);
-    field.value_set(STATIC_TABLE[index].value, STATIC_TABLE[index].value_size);
+    field.name_set(STATIC_TABLE[index].name);
+    field.value_set(STATIC_TABLE[index].value);
   } else if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table->length()) {
     // dynamic table
     const MIMEField *m_field = _dynamic_table->get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
