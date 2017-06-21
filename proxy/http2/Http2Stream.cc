@@ -41,6 +41,7 @@ Http2Stream::main_event_handler(int event, void *edata)
     }
     return 0;
   }
+  reentrancy_count++;
   ink_release_assert(this->get_thread() == this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   if (e == cross_thread_event) {
@@ -110,26 +111,20 @@ Http2Stream::main_event_handler(int event, void *edata)
       this->update_read_request(INT64_MAX, true);
     }
     break;
-  case VC_EVENT_EOS: {
-    // If there are active VIO's send the EOS through them
+  case VC_EVENT_EOS:
     if (e->cookie == &read_vio) {
       SCOPED_MUTEX_LOCK(lock, read_vio.mutex, this_ethread());
       read_vio._cont->handleEvent(VC_EVENT_EOS, &read_vio);
     } else if (e->cookie == &write_vio) {
       SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
       write_vio._cont->handleEvent(VC_EVENT_EOS, &write_vio);
-    } else {
-      // Otherwise, handle the EOS yourself and shut down
-      SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-      // Clean up after yourself if this was an EOS
-      ink_release_assert(this->closed);
-
-      // Safe to initiate SSN_CLOSE if this is the last stream
-      static_cast<Http2ClientSession *>(parent)->connection_state.release_stream(this);
-      this->destroy();
     }
     break;
   }
+  reentrancy_count--;
+  // Clean stream up if the terminate flag is set and we are at the bottom of the handler stack
+  if (terminate_stream && reentrancy_count == 0) {
+    destroy();
   }
 
   return 0;
@@ -319,17 +314,14 @@ void
 Http2Stream::do_io_close(int /* flags */)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  // disengage us from the SM
   super::release(nullptr);
-  if (!sent_delete) {
+  if (!closed) {
     Debug("http2_stream", "do_io_close stream %d", this->get_id());
 
     // When we get here, the SM has initiated the shutdown.  Either it received a WRITE_COMPLETE, or it is shutting down.  Any
     // remaining IO operations back to client should be abandoned.  The SM-side buffers backing these operations will be deleted
     // by the time this is called from transaction_done.
-
-    sent_delete = true;
-    closed      = true;
+    closed = true;
 
     if (parent && this->is_client_state_writeable()) {
       // Make sure any trailing end of stream frames are sent
@@ -365,7 +357,10 @@ Http2Stream::transaction_done()
     // Safe to initiate SSN_CLOSE if this is the last stream
     ink_assert(cross_thread_event == nullptr);
     // Schedule the destroy to occur after we unwind here.  IF we call directly, may delete with reference on the stack.
-    cross_thread_event = this->get_thread()->schedule_imm(this, VC_EVENT_EOS, nullptr);
+    terminate_stream = true;
+    if (terminate_stream && reentrancy_count == 0) {
+      destroy();
+    }
   }
 }
 
@@ -451,7 +446,7 @@ Http2Stream::send_tracked_event(Event *event, int send_event, VIO *vio)
 void
 Http2Stream::update_read_request(int64_t read_len, bool call_update)
 {
-  if (closed || sent_delete || parent == nullptr || current_reader == nullptr || read_vio.mutex == nullptr) {
+  if (closed || parent == nullptr || current_reader == nullptr || read_vio.mutex == nullptr) {
     return;
   }
   if (this->get_thread() != this_ethread()) {
@@ -508,7 +503,7 @@ bool
 Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool call_update)
 {
   bool retval = true;
-  if (!this->is_client_state_writeable() || closed || sent_delete || parent == nullptr || write_vio.mutex == nullptr) {
+  if (!this->is_client_state_writeable() || closed || parent == nullptr || write_vio.mutex == nullptr) {
     return retval;
   }
   if (this->get_thread() != this_ethread()) {
@@ -657,6 +652,28 @@ void
 Http2Stream::destroy()
 {
   Debug("http2_stream", "Destroy stream %d, sent %" PRIu64 " bytes", this->_id, this->bytes_sent);
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  // Clean up after yourself if this was an EOS
+  ink_release_assert(this->closed);
+  ink_release_assert(reentrancy_count == 0);
+
+  // Safe to initiate SSN_CLOSE if this is the last stream
+  if (parent) {
+    // release_stream and delete_stream indirectly call each other and seem to have a lot of commonality
+    // Should get resolved at somepoint.
+    Http2ClientSession *h2_parent = static_cast<Http2ClientSession *>(parent);
+    h2_parent->connection_state.release_stream(this);
+
+    // Current Http2ConnectionState implementation uses a memory pool for instantiating streams and DLL<> stream_list for storing
+    // active streams. Destroying a stream before deleting it from stream_list and then creating a new one + reusing the same chunk
+    // from the memory pool right away always leads to destroying the DLL structure (deadlocks, inconsistencies).
+    // The following is meant as a safety net since the consequences are disastrous. Until the design/implementation changes it
+    // seems
+    // less error prone to (double) delete before destroying (noop if already deleted).
+    if (h2_parent->connection_state.delete_stream(this)) {
+      Warning("Http2Stream was about to be deallocated without removing it from the active stream list");
+    }
+  }
 
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(nullptr, 0, nullptr);
@@ -680,17 +697,8 @@ Http2Stream::destroy()
   }
   chunked_handler.clear();
   super::destroy();
-
-  // Current Http2ConnectionState implementation uses a memory pool for instantiating streams and DLL<> stream_list for storing
-  // active streams. Destroying a stream before deleting it from stream_list and then creating a new one + reusing the same chunk
-  // from the memory pool right away always leads to destroying the DLL structure (deadlocks, inconsistencies).
-  // The following is meant as a safety net since the consequences are disastrous. Until the design/implementation changes it seems
-  // less error prone to (double) delete before destroying (noop if already deleted).
-  if (parent) {
-    if (static_cast<Http2ClientSession *>(parent)->connection_state.delete_stream(this)) {
-      Warning("Http2Stream was about to be deallocated without removing it from the active stream list");
-    }
-  }
+  clear_timers();
+  clear_io_events();
 
   THREAD_FREE(this, http2StreamAllocator, this_ethread());
 }
