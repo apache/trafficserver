@@ -151,23 +151,26 @@ hpack_huffman_fin()
 int64_t
 huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
 {
-  char *dst_end = dst_start;
-  uint8_t shift = 7;
-  Node *current = HUFFMAN_TREE_ROOT;
+  char *dst_end             = dst_start;
+  uint8_t shift             = 7;
+  Node *current             = HUFFMAN_TREE_ROOT;
   int byte_boundary_crossed = 0;
+  bool includes_zero        = false;
 
   while (src_len) {
     if (*src & (1 << shift)) {
       current = current->right;
     } else {
-      current = current->left;
+      current       = current->left;
+      includes_zero = true;
     }
 
     if (current->leaf_node == true) {
       *dst_end = current->ascii_code;
       ++dst_end;
-      current = HUFFMAN_TREE_ROOT;
+      current               = HUFFMAN_TREE_ROOT;
       byte_boundary_crossed = 0;
+      includes_zero         = false;
     }
     if (shift) {
       --shift;
@@ -182,6 +185,9 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
     }
   }
   if (byte_boundary_crossed > 1) {
+    return -1;
+  }
+  if (includes_zero) {
     return -1;
   }
 
