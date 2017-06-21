@@ -154,6 +154,7 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
   char *dst_end = dst_start;
   uint8_t shift = 7;
   Node *current = HUFFMAN_TREE_ROOT;
+  int byte_boundary_crossed = 0;
 
   while (src_len) {
     if (*src & (1 << shift)) {
@@ -166,6 +167,7 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
       *dst_end = current->ascii_code;
       ++dst_end;
       current = HUFFMAN_TREE_ROOT;
+      byte_boundary_crossed = 0;
     }
     if (shift) {
       --shift;
@@ -173,7 +175,14 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
       shift = 7;
       ++src;
       --src_len;
+      ++byte_boundary_crossed;
     }
+    if (byte_boundary_crossed > 3) {
+      return -1;
+    }
+  }
+  if (byte_boundary_crossed > 1) {
+    return -1;
   }
 
   return dst_end - dst_start;
