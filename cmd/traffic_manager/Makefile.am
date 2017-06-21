@@ -80,7 +80,7 @@ traffic_manager_LDADD += \
   @OPENSSL_LIBS@
 endif
 
-test_metrics_SOURCES = test_metrics.cc metrics.cc
+test_metrics_SOURCES = test_metrics.cc metrics.cc WebOverview.cc
 test_metrics_LDADD = \
   $(top_builddir)/mgmt/libmgmt_lm.la \
   $(top_builddir)/lib/records/librecords_lm.a \

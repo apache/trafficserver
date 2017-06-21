@@ -38,9 +38,7 @@
 
 struct Evaluator {
   Evaluator() : rec_name(nullptr), data_type(RECD_NULL), ref(LUA_NOREF) {}
-
   ~Evaluator() { ink_release_assert(this->ref == LUA_NOREF); }
-
   Evaluator(const Evaluator &) = delete;
   Evaluator &operator=(const Evaluator &) = delete;
 
