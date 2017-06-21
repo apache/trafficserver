@@ -854,7 +854,8 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 // [RFC 7541] 6.3. Dynamic Table Size Update
 //
 int64_t
-update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, HpackIndexingTable &indexing_table)
+update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, HpackIndexingTable &indexing_table,
+                          uint32_t maximum_table_size)
 {
   if (buf_start == buf_end) {
     return HPACK_ERROR_COMPRESSION_ERROR;
@@ -867,6 +868,10 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Hpac
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
+  if (size > maximum_table_size) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
+
   if (indexing_table.update_maximum_size(size) == false) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
@@ -876,7 +881,7 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Hpac
 
 int64_t
 hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len,
-                          uint32_t max_header_size)
+                          uint32_t max_header_size, uint32_t maximum_table_size)
 {
   const uint8_t *cursor           = in_buf;
   const uint8_t *const in_buf_end = in_buf + in_buf_len;
@@ -921,7 +926,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
       if (header_field_started) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
-      read_bytes = update_dynamic_table_size(cursor, in_buf_end, indexing_table);
+      read_bytes = update_dynamic_table_size(cursor, in_buf_end, indexing_table, maximum_table_size);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }

@@ -169,12 +169,13 @@ int64_t decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf
                                     HpackIndexingTable &indexing_table);
 int64_t decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
                                     HpackIndexingTable &indexing_table);
-int64_t update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, HpackIndexingTable &indexing_table);
+int64_t update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, HpackIndexingTable &indexing_table,
+                                  uint32_t maximum_table_size);
 
 // High level interfaces
 typedef HpackIndexingTable HpackHandle;
 int64_t hpack_decode_header_block(HpackHandle &handle, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len,
-                                  uint32_t max_header_size);
+                                  uint32_t max_header_size, uint32_t maximum_table_size);
 int64_t hpack_encode_header_block(HpackHandle &handle, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr,
                                   int32_t maximum_table_size = -1);
 int32_t hpack_get_maximum_table_size(HpackHandle &handle);

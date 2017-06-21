@@ -318,7 +318,8 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       empty_request = true;
     }
 
-    Http2ErrorCode result = stream->decode_header_blocks(*cstate.local_hpack_handle);
+    Http2ErrorCode result =
+      stream->decode_header_blocks(*cstate.local_hpack_handle, cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
     if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       if (result == Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR) {
@@ -791,7 +792,8 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                         "continuation no state change");
     }
 
-    Http2ErrorCode result = stream->decode_header_blocks(*cstate.local_hpack_handle);
+    Http2ErrorCode result =
+      stream->decode_header_blocks(*cstate.local_hpack_handle, cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
     if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       if (result == Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR) {
