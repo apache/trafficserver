@@ -210,7 +210,7 @@ def session_replay(input, proxy, result_queue):
             #sslSocket.bStop = False
 
         bSTOP = True
-        print("stopping now")
+        #print("stopping now")
         input.put('STOP')
         break
 

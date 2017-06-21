@@ -322,7 +322,7 @@ def session_replay(input, proxy, result_queue):
                         # r.Compare(response_dict,expected_Dict)
 
         bSTOP = True
-        print("Queue is empty")
+        #print("Queue is empty")
         input.put('STOP')
         break
 

@@ -8,7 +8,7 @@ Note these Tools require python 3.4 or better.
 Replay client to replay session logs.
 
 Usage: 
-python3.5 traffic-replay/ -type <ssl|h2|random> -log_dir /path/to/log -v
+python3.5 traffic-replay/ -type <nossl|ssl|h2|random> -log_dir /path/to/log -v
 
 Session Log format (in JSON): 
 
