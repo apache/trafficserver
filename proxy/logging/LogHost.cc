@@ -464,14 +464,3 @@ LogHostList::operator==(LogHostList &rhs)
   }
   return true;
 }
-
-int
-LogHostList::do_filesystem_checks()
-{
-  for (LogHost *host = first(); host; host = next(host)) {
-    if (host->do_filesystem_checks() < 0) {
-      return -1;
-    }
-  }
-  return 0;
-}

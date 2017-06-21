@@ -102,13 +102,6 @@ public:
       return 0;
   }
 
-  // TODO: this need to be tidy up when to redo the file checking
-  int
-  do_filesystem_checks()
-  {
-    return 0;
-  }
-
 public:
   bool is_open();
   void close_file();

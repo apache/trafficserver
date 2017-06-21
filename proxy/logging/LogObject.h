@@ -263,7 +263,6 @@ public:
   }
 
   bool operator==(LogObject &rhs);
-  int do_filesystem_checks();
 
 public:
   bool m_auto_created;
