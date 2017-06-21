@@ -135,7 +135,7 @@ public:
     return content_length == 0 || content_length == data_length;
   }
 
-  Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle);
+  Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size);
   void send_request(Http2ConnectionState &cstate);
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false) override;
