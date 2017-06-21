@@ -193,14 +193,6 @@ LogFile::open_file()
     }
   }
 
-  int e = do_filesystem_checks();
-  if (e != 0) {
-    m_fd = -1; // reset to error condition
-    delete m_log;
-    m_log = nullptr;
-    return LOG_FILE_FILESYSTEM_CHECKS_FAILED;
-  }
-
   //
   // If we've opened the file and it didn't already exist, then this is a
   // "new" file and we need to make some initializations.  This is the

@@ -791,18 +791,6 @@ LogObject::check_buffer_expiration(long time_now)
   }
 }
 
-// make sure that we will be able to write the logs to the disk
-//
-int
-LogObject::do_filesystem_checks()
-{
-  if (m_logFile) {
-    return m_logFile->do_filesystem_checks();
-  } else {
-    return m_host_list.do_filesystem_checks();
-  }
-}
-
 /*-------------------------------------------------------------------------
   TextLogObject::TextLogObject
   -------------------------------------------------------------------------*/
@@ -901,14 +889,7 @@ LogObjectManager::_manage_object(LogObject *log_object, bool is_api_object, int 
     if (col_client || (retVal = _solve_filename_conflicts(log_object, maxConflicts), retVal == NO_FILENAME_CONFLICTS)) {
       // do filesystem checks
       //
-      if (log_object->do_filesystem_checks() < 0) {
-        const char *msg = "The log file %s did not pass filesystem checks. "
-                          "No output will be produced for this log";
-        Error(msg, log_object->get_full_filename());
-        LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, log_object->get_full_filename());
-        retVal = ERROR_DOING_FILESYSTEM_CHECKS;
-
-      } else {
+      {
         // no conflicts, add object to the list of managed objects
         //
         REF_COUNT_OBJ_REFCOUNT_INC(log_object);

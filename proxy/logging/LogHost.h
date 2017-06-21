@@ -99,13 +99,6 @@ public:
     return m_orphan_file.get();
   }
 
-  // check if we will be able to write orphan file
-  int
-  do_filesystem_checks()
-  {
-    return m_orphan_file->do_filesystem_checks();
-  }
-
 private:
   void clear();
   bool authenticated();
@@ -163,7 +156,6 @@ public:
 
   void display(FILE *fd = stdout);
   bool operator==(LogHostList &rhs);
-  int do_filesystem_checks();
 
   // -- member functions not allowed --
   LogHostList(const LogHostList &) = delete;
