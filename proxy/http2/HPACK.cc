@@ -713,7 +713,7 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
     *str = arena.str_alloc(encoded_string_len * 2);
 
     len = huffman_decode(*str, p, encoded_string_len);
-    if (len == HPACK_ERROR_COMPRESSION_ERROR) {
+    if (len < 0) {
       return HPACK_ERROR_COMPRESSION_ERROR;
     }
     str_length = len;
