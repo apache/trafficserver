@@ -116,7 +116,7 @@ autopep8:
 	clang-format-plugins clang-format-proxy clang-format-tools
 
 clang-format: 	clang-format-cmd clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
-		clang-format-plugins clang-format-proxy clang-format-tools
+		clang-format-plugins clang-format-proxy clang-format-tools clang-format-tests
 
 clang-format-cmd:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/cmd
@@ -146,6 +146,9 @@ clang-format-proxy:
 
 clang-format-tools:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/tools
+
+clang-format-tests:
+	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/tests
 
 help:
 	@echo 'all              default target for building the package'
