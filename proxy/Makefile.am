@@ -26,6 +26,11 @@ bin_PROGRAMS = \
   traffic_logcat \
   traffic_logstats
 
+if BUILD_TESTS
+bin_PROGRAMS += \
+  traffic_udp_echo_server
+endif
+
 TESTS = \
   tests/test_logstats_json \
   tests/test_logstats_summary
@@ -269,6 +274,34 @@ traffic_logstats_LDADD += \
 
 if SYSTEM_LUAJIT
 traffic_logstats_LDADD += @LIBLUAJIT@
+endif
+
+if BUILD_TESTS
+traffic_udp_echo_server_LDADD = \
+  $(top_builddir)/iocore/net/libinknet.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @LIBTCL@ @HWLOC_LIBS@
+
+traffic_udp_echo_server_LDFLAGS = \
+  @AM_LDFLAGS@ \
+  @OPENSSL_LDFLAGS@
+
+traffic_udp_echo_server_CPPFLAGS = \
+  $(AM_CPPFLAGS) \
+  -I$(abs_top_srcdir)/iocore/net \
+  -I$(abs_top_srcdir)/proxy \
+  -I$(abs_top_srcdir)/proxy/hdrs \
+  -I$(abs_top_srcdir)/proxy/http \
+  -I$(abs_top_srcdir)/proxy/logging \
+  -I$(abs_top_srcdir)/mgmt \
+  -I$(abs_top_srcdir)/mgmt/utils \
+  @OPENSSL_INCLUDES@
+
+traffic_udp_echo_server_SOURCES = \
+  ../iocore/net/test_I_UDPNet.cc
 endif
 
 versiondir = $(pkgsysconfdir)

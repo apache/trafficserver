@@ -31,7 +31,7 @@ AM_CPPFLAGS += \
 
 TESTS = $(check_PROGRAMS)
 
-check_PROGRAMS = test_certlookup test_UDPNet
+check_PROGRAMS = test_certlookup
 noinst_LIBRARIES = libinknet.a
 
 test_certlookup_LDFLAGS = \
@@ -46,32 +46,6 @@ test_certlookup_LDADD = \
   @OPENSSL_LIBS@ \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a
-
-test_UDPNet_CPPFLAGS = \
-  $(AM_CPPFLAGS) \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/proxy/logging \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  @OPENSSL_INCLUDES@
-
-test_UDPNet_LDFLAGS = \
-  @AM_LDFLAGS@ \
-  @OPENSSL_LDFLAGS@
-
-test_UDPNet_LDADD = \
-  libinknet.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @HWLOC_LIBS@
-
-test_UDPNet_SOURCES = \
-  test_I_UDPNet.cc
 
 libinknet_a_SOURCES = \
   BIO_fastopen.cc \
