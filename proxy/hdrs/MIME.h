@@ -29,6 +29,7 @@
 #include "ts/ink_assert.h"
 #include "ts/ink_apidefs.h"
 #include "ts/ink_string++.h"
+#include "ts/MemView.h"
 #include "ts/ParseRules.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"
@@ -142,6 +143,7 @@ struct MIMEField {
   }
 
   const char *name_get(int *length) const;
+  ts::StringView name_get() const;
 
   /** Find the index of the value in the multi-value field.
 
@@ -158,6 +160,7 @@ struct MIMEField {
   int value_get_index(const char *value, int length) const;
 
   const char *value_get(int *length) const;
+  ts::StringView value_get() const;
   int32_t value_get_int() const;
   uint32_t value_get_uint() const;
   int64_t value_get_int64() const;
@@ -165,9 +168,11 @@ struct MIMEField {
   int value_get_comma_list(StrList *list) const;
 
   void name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length);
+  void name_set(HdrHeap *heap, MIMEHdrImpl *mh, ts::StringView const &name);
   bool name_is_valid() const;
 
   void value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length);
+  void value_set(HdrHeap *heap, MIMEHdrImpl *mh, ts::StringView const &value);
   void value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, int32_t value);
   void value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, uint32_t value);
   void value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, int64_t value);
@@ -747,6 +752,16 @@ MIMEField::name_get(int *length) const
   return (mime_field_name_get(this, length));
 }
 
+inline ts::StringView
+MIMEField::name_get() const
+{
+  if (m_wks_idx >= 0) {
+    return {hdrtoken_index_to_wks(m_wks_idx), m_len_name};
+  } else {
+    return {m_ptr_name, m_len_name};
+  }
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -763,6 +778,12 @@ MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length
     int field_name_wks_idx = hdrtoken_tokenize(name, length, &name_wks);
     mime_field_name_set(heap, mh, this, field_name_wks_idx, (field_name_wks_idx == -1 ? name : name_wks), length, true);
   }
+}
+
+inline void
+MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, ts::StringView const &name)
+{
+  this->name_set(heap, mh, name.ptr(), static_cast<int>(name.size()));
 }
 
 /*-------------------------------------------------------------------------
@@ -789,6 +810,12 @@ inline const char *
 MIMEField::value_get(int *length) const
 {
   return (mime_field_value_get(this, length));
+}
+
+inline ts::StringView
+MIMEField::value_get() const
+{
+  return {m_ptr_value, static_cast<size_t>(m_len_value)};
 }
 
 inline int32_t
@@ -828,6 +855,12 @@ inline void
 MIMEField::value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length)
 {
   mime_field_value_set(heap, mh, this, value, length, true);
+}
+
+inline void
+MIMEField::value_set(HdrHeap *heap, MIMEHdrImpl *mh, ts::StringView const &value)
+{
+  mime_field_value_set(heap, mh, this, value.ptr(), static_cast<int>(value.size()), true);
 }
 
 inline void
