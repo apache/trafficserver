@@ -27,26 +27,26 @@
 #define PLUGIN_NAME "custom204plugintest"
 
 static int
-local_handler(TSCont contp, TSEvent event, void *edata) {
-
-  const char *msg =
-"<HTML>\n"
-"<HEAD>\n"
-"<TITLE>Spec-breaking 204!</TITLE>\n"
-"</HEAD>\n"
-"\n"
-"<BODY>\n"
-"<H1>This is body content for a 204.</H1>\n"
-"<HR>\n"
-"\n"
-"Description: According to rfc7231 I should not have been sent to you!<BR/>\n"
-"This response was sent via the custom204plugin via a call to TSHttpTxnErrorBodySet.\n"
-"<HR>\n"
-"</BODY>";
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+local_handler(TSCont contp, TSEvent event, void *edata)
+{
+  const char *msg = "<HTML>\n"
+                    "<HEAD>\n"
+                    "<TITLE>Spec-breaking 204!</TITLE>\n"
+                    "</HEAD>\n"
+                    "\n"
+                    "<BODY>\n"
+                    "<H1>This is body content for a 204.</H1>\n"
+                    "<HR>\n"
+                    "\n"
+                    "Description: According to rfc7231 I should not have been sent to you!<BR/>\n"
+                    "This response was sent via the custom204plugin via a call to TSHttpTxnErrorBodySet.\n"
+                    "<HR>\n"
+                    "</BODY>";
+  TSHttpTxn txnp = (TSHttpTxn)edata;
   TSMBuffer bufp = nullptr;
   TSMLoc hdr_loc = nullptr;
-  TSMLoc url_loc = nullptr;;
+  TSMLoc url_loc = nullptr;
+  ;
   const char *host = nullptr;
   int host_length;
   const char *test_host = "www.customplugin204.test";
@@ -89,13 +89,12 @@ local_handler(TSCont contp, TSEvent event, void *edata) {
       return 0;
     }
     TSDebug(PLUGIN_NAME, "Host != expected host '%s'", test_host);
-  break;
+    break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     TSDebug(PLUGIN_NAME, "Returning 204 with custom response body.");
     TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_NO_CONTENT);
-    TSHttpTxnErrorBodySet(txnp, TSstrdup(msg), strlen(msg),
-        TSstrdup("text/html"));
-  break;
+    TSHttpTxnErrorBodySet(txnp, TSstrdup(msg), strlen(msg), TSstrdup("text/html"));
+    break;
 
   case TS_EVENT_HTTP_TXN_CLOSE:
     TSDebug(PLUGIN_NAME, "event TS_EVENT_HTTP_TXN_CLOSE received");
@@ -103,9 +102,8 @@ local_handler(TSCont contp, TSEvent event, void *edata) {
     break;
 
   default:
-     TSAssert(!"Unexpected event");
-     break;
-
+    TSAssert(!"Unexpected event");
+    break;
   }
 
 done:
@@ -116,11 +114,12 @@ done:
 }
 
 static int
-global_handler(TSCont contp, TSEvent event, void *edata) {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+global_handler(TSCont contp, TSEvent event, void *edata)
+{
+  TSHttpTxn txnp   = (TSHttpTxn)edata;
   TSCont txn_contp = nullptr;
 
-  switch(event) {
+  switch (event) {
   case TS_EVENT_HTTP_TXN_START:
     txn_contp = TSContCreate(local_handler, TSMutexCreate());
     TSHttpTxnHookAdd(txnp, TS_HTTP_PRE_REMAP_HOOK, txn_contp);
