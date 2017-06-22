@@ -6511,13 +6511,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnCache)(RegressionTest *test, int /* aty
 //                    TSHttpTxnUntransformedRespCache
 ///////////////////////////////////////////////////////
 
-/** Append Transform Data Structure **/
-typedef struct {
-  TSVIO output_vio;
-  TSIOBuffer output_buffer;
-  TSIOBufferReader output_reader;
-  int append_needed;
-} MyTransformData;
 /** Append Transform Data Structure Ends **/
 
 typedef struct {
@@ -6535,9 +6528,23 @@ typedef struct {
   bool test_passed_txn_untransformed_resp_cache;
   bool test_passed_transform_create;
   int req_no;
-  MyTransformData *transformData;
-  int magic;
+  uint32_t magic;
 } TransformTestData;
+
+/** Append Transform Data Structure **/
+struct AppendTransformTestData {
+  TSVIO output_vio               = nullptr;
+  TSIOBuffer output_buffer       = nullptr;
+  TSIOBufferReader output_reader = nullptr;
+  TransformTestData *test_data   = nullptr;
+  int append_needed              = 1;
+
+  ~AppendTransformTestData()
+  {
+    if (output_buffer)
+      TSIOBufferDestroy(output_buffer);
+  }
+};
 
 /**** Append Transform Code (Tailored to needs)****/
 
@@ -6545,38 +6552,11 @@ static TSIOBuffer append_buffer;
 static TSIOBufferReader append_buffer_reader;
 static int64_t append_buffer_length;
 
-static MyTransformData *
-my_data_alloc()
-{
-  MyTransformData *data;
-
-  data                = (MyTransformData *)TSmalloc(sizeof(MyTransformData));
-  data->output_vio    = nullptr;
-  data->output_buffer = nullptr;
-  data->output_reader = nullptr;
-  data->append_needed = 1;
-
-  return data;
-}
-
-static void
-my_data_destroy(MyTransformData *data)
-{
-  if (data) {
-    if (data->output_buffer) {
-      TSIOBufferDestroy(data->output_buffer);
-    }
-    TSfree(data);
-  }
-}
-
 static void
 handle_transform(TSCont contp)
 {
   TSVConn output_conn;
   TSVIO write_vio;
-  TransformTestData *contData;
-  MyTransformData *data;
   int64_t towrite;
   int64_t avail;
 
@@ -6590,25 +6570,19 @@ handle_transform(TSCont contp)
   write_vio = TSVConnWriteVIOGet(contp);
 
   /* Get our data structure for this operation. The private data
-     structure contains the output VIO and output buffer. If the
-     private data structure pointer is NULL, then we'll create it
-     and initialize its internals. */
-  contData = (TransformTestData *)TSContDataGet(contp);
-  data     = contData->transformData;
-  if (!data) {
+     structure contains the output VIO and output buffer.
+  */
+  auto *data = static_cast<AppendTransformTestData *>(TSContDataGet(contp));
+  if (!data->output_buffer) {
     towrite = TSVIONBytesGet(write_vio);
     if (towrite != INT64_MAX) {
       towrite += append_buffer_length;
     }
-    contData->transformData = my_data_alloc();
-    data                    = contData->transformData;
-    data->output_buffer     = TSIOBufferCreate();
-    data->output_reader     = TSIOBufferReaderAlloc(data->output_buffer);
-    data->output_vio        = TSVConnWrite(output_conn, contp, data->output_reader, towrite);
-    // Don't need this as the structure is encapsulated in another structure
-    // which is set to be Continuation's Data.
-    // TSContDataSet (contp, data);
+    data->output_buffer = TSIOBufferCreate();
+    data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
+    data->output_vio    = TSVConnWrite(output_conn, contp, data->output_reader, towrite);
   }
+  ink_assert(data->output_vio);
 
   /* We also check to see if the write VIO's buffer is non-NULL. A
      NULL buffer indicates that the write operation has been
@@ -6691,16 +6665,15 @@ handle_transform(TSCont contp)
 static int
 transformtest_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
-  TransformTestData *contData = (TransformTestData *)TSContDataGet(contp);
-  if (contData->test_passed_transform_create == false) {
-    contData->test_passed_transform_create = true;
-    SDK_RPRINT(contData->test, "TSTransformCreate", "TestCase1", TC_PASS, "ok");
+  auto *data = static_cast<AppendTransformTestData *>(TSContDataGet(contp));
+  if (data->test_data->test_passed_transform_create == false) {
+    data->test_data->test_passed_transform_create = true;
+    SDK_RPRINT(data->test_data->test, "TSTransformCreate", "TestCase1", TC_PASS, "ok");
   }
   /* Check to see if the transformation has been closed by a call to
      TSVConnClose. */
   if (TSVConnClosedGet(contp)) {
-    my_data_destroy(contData->transformData);
-    contData->transformData = nullptr;
+    delete data;
     TSContDestroy(contp);
     return 0;
   } else {
@@ -6764,14 +6737,16 @@ transformable(TSHttpTxn txnp, TransformTestData *data)
 }
 
 static void
-transform_add(TSHttpTxn txnp, TransformTestData *data)
+transform_add(TSHttpTxn txnp, TransformTestData *test_data)
 {
   TSVConn connp;
+  auto *data = new AppendTransformTestData;
 
-  connp = TSTransformCreate(transformtest_transform, txnp);
+  data->test_data = test_data;
+  connp           = TSTransformCreate(transformtest_transform, txnp);
   TSContDataSet(connp, data);
   if (connp == nullptr) {
-    SDK_RPRINT(data->test, "TSHttpTxnTransform", "", TC_FAIL, "Unable to create Transformation.");
+    SDK_RPRINT(data->test_data->test, "TSHttpTxnTransform", "", TC_FAIL, "Unable to create Transformation.");
     return;
   }
 
@@ -7034,7 +7009,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform)(RegressionTest *test, int /*
   socktest->test_passed_txn_transformed_resp_cache = false;
   socktest->test_passed_txn_transformed_resp_cache = false;
   socktest->test_passed_transform_create           = false;
-  socktest->transformData                          = nullptr;
   socktest->req_no                                 = 1;
   socktest->magic                                  = MAGIC_ALIVE;
   TSContDataSet(cont, socktest);
