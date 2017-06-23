@@ -5416,6 +5416,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
       done = incoming_hdr->print(s->internal_msg_buffer, s->internal_msg_buffer_size, &used, &offset);
       HTTP_RELEASE_ASSERT(done);
       s->internal_msg_buffer_size = used;
+      s->internal_msg_buffer_type = ats_strdup("message/http");
 
       s->hdr_info.client_response.set_content_length(used);
     } else {
