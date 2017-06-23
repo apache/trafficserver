@@ -6119,10 +6119,10 @@ HttpSM::setup_100_continue_transfer()
 void
 HttpSM::setup_error_transfer()
 {
-  if (t_state.internal_msg_buffer || t_state.http_return_code == HTTP_STATUS_NO_CONTENT) {
+  if (t_state.internal_msg_buffer) {
     // Since we need to send the error message, call the API
     //   function
-    ink_assert(t_state.internal_msg_buffer_size > 0 || t_state.http_return_code == HTTP_STATUS_NO_CONTENT);
+    ink_assert(t_state.internal_msg_buffer_size > 0);
     t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
     do_api_callout();
   } else {
@@ -6196,7 +6196,8 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
   // --> do not append the message onto the MIOBuffer and keep our pointer
   // to it so that it can be freed.
 
-  if (is_msg_buf_present && t_state.method != HTTP_WKSIDX_HEAD) {
+  if (is_msg_buf_present && t_state.method != HTTP_WKSIDX_HEAD &&
+      t_state.hdr_info.client_response.status_get() != HTTP_STATUS_NO_CONTENT) {
     nbytes += t_state.internal_msg_buffer_size;
 
     if (t_state.internal_msg_buffer_fast_allocator_size < 0) {
