@@ -6723,9 +6723,11 @@ transformable(TSHttpTxn txnp, TransformTestData *data)
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc;
+  int ret = 0;
 
   if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     SDK_RPRINT(data->test, "TSHttpTxnTransform", "", TC_FAIL, "[transformable]: TSHttpTxnServerRespGet return 0");
+    return ret;
   }
 
   /*
@@ -6733,7 +6735,7 @@ transformable(TSHttpTxn txnp, TransformTestData *data)
    */
 
   if (TS_HTTP_STATUS_OK == TSHttpHdrStatusGet(bufp, hdr_loc)) {
-    return 1;
+    ret = 1;
   }
   // XXX - Can't return TS_ERROR because that is a different type
   // -bcall 7/24/07
@@ -6741,7 +6743,8 @@ transformable(TSHttpTxn txnp, TransformTestData *data)
   //      SDK_RPRINT(data->test,"TSHttpTxnTransform","",TC_FAIL,"[transformable]: TSHttpHdrStatusGet returns TS_ERROR");
   //     }
 
-  return 0; /* not a 200 */
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+  return ret; /* not a 200 */
 }
 
 static void
