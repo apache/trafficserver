@@ -33,6 +33,7 @@
 
 #define SET_TCP_NO_DELAY
 #define SET_NO_LINGER
+#define SET_SO_KEEPALIVE
 // set in the OS
 // #define RECV_BUF_SIZE            (1024*64)
 // #define SEND_BUF_SIZE            (1024*64)
@@ -84,6 +85,8 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
 {
   ink_assert(fd == NO_FD);
   ink_assert(ats_is_ip(addr));
+  this->opt = opt;
+  this->tcp_data.reset();
 
   int res = 0;
   short Proto;
