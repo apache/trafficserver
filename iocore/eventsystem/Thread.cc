@@ -68,6 +68,7 @@ init_thread_key()
 struct thread_data_internal {
   ThreadFunction f;                  ///< Function to excecute in the thread.
   Thread *me;                        ///< The class instance.
+  ink_mutex mutex;                   ///< Startup mutex.
   char name[MAX_THREAD_NAME_LENGTH]; ///< Name for the thread.
 };
 
@@ -75,6 +76,11 @@ static void *
 spawn_thread_internal(void *a)
 {
   auto *p = static_cast<thread_data_internal *>(a);
+
+  { // force wait until parent thread is ready.
+    ink_scoped_mutex_lock lock(p->mutex);
+  }
+  ink_mutex_destroy(&p->mutex);
 
   p->me->set_specific();
   ink_set_thread_name(p->name);
@@ -92,14 +98,18 @@ spawn_thread_internal(void *a)
 ink_thread
 Thread::start(const char *name, void *stack, size_t stacksize, ThreadFunction const &f)
 {
-  auto *p = new thread_data_internal{f, this, ""};
+  auto *p = new thread_data_internal{f, this, {}, {0}};
 
   ink_zero(p->name);
   ink_strlcpy(p->name, name, MAX_THREAD_NAME_LENGTH);
+  ink_mutex_init(&p->mutex);
   if (stacksize == 0) {
     stacksize = DEFAULT_STACKSIZE;
   }
-  tid = ink_thread_create(spawn_thread_internal, p, 0, stacksize, stack);
+  { // must force assignment to complete before thread touches "this".
+    ink_scoped_mutex_lock lock(&p->mutex);
+    tid = ink_thread_create(spawn_thread_internal, p, 0, stacksize, stack);
+  }
 
   return tid;
 }
