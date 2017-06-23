@@ -35,10 +35,17 @@
 // Common Interface impl                     //
 ///////////////////////////////////////////////
 
-static ink_thread_key init_thread_key();
+ink_hrtime Thread::cur_time = ink_get_hrtime_internal();
+inkcoreapi ink_thread_key Thread::thread_data_key;
 
-ink_hrtime Thread::cur_time                       = ink_get_hrtime_internal();
-inkcoreapi ink_thread_key Thread::thread_data_key = init_thread_key();
+namespace
+{
+static bool initialized = ([]() -> bool {
+  // File scope initialization goes here.
+  ink_thread_key_create(&Thread::thread_data_key, nullptr);
+  return true;
+})();
+}
 
 Thread::Thread()
 {
@@ -52,13 +59,6 @@ Thread::~Thread()
   ink_release_assert(mutex->thread_holding == (EThread *)this);
   mutex->nthread_holding -= THREAD_MUTEX_THREAD_HOLDING;
   MUTEX_UNTAKE_LOCK(mutex, (EThread *)this);
-}
-
-ink_thread_key
-init_thread_key()
-{
-  ink_thread_key_create(&Thread::thread_data_key, nullptr);
-  return Thread::thread_data_key;
 }
 
 ///////////////////////////////////////////////
