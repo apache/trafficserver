@@ -21,7 +21,6 @@ import time
 import random
 import json
 from multiprocessing import Process, Queue, current_process
-from progress.bar import Bar
 import sessionvalidation.sessionvalidation as sv
 import WorkerTask
 import time

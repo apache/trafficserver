@@ -18,8 +18,8 @@
 #  limitations under the License.
 
 # SSL config
-ca_certs = "/path/to/certfile"
-keyfile = "/path/to/keyfile"
+ca_certs = None
+keyfile = None
 
 # Proxy config
 proxy_host = "127.0.0.1"
@@ -29,3 +29,6 @@ proxy_nonssl_port = 8080
 # process and thread config
 nProcess = 4
 nThread = 4
+
+#colorize output
+colorize = True

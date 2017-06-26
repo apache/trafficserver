@@ -25,7 +25,6 @@ import sys
 from multiprocessing import current_process
 import sessionvalidation.sessionvalidation as sv
 import lib.result as result
-from progress.bar import Bar
 import extractHeader
 import NonSSL
 import SSLReplay

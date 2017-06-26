@@ -17,7 +17,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import gevent
 import os
 from threading import Thread
 import sys
@@ -318,7 +317,7 @@ def session_replay(input, proxy, result_queue):
                         expected_output = (int(expected_output_split[1]), str(expected_output_split[2]))
                         r = result.Result("", expected_output[0], response.status)
                         expected_Dict = extractHeader.responseHeader_to_dict(expectedH.getHeaders())
-                        print(r.getResultString(response_dict, expected_Dict, colorize=True))
+                        print(r.getResultString(response_dict, expected_Dict, colorize=Config.colorize))
                         # r.Compare(response_dict,expected_Dict)
 
         bSTOP = True

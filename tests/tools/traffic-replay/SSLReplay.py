@@ -21,7 +21,6 @@ import http.client
 import socket
 import ssl
 import pprint
-import gevent
 import requests
 import os
 #import threading
@@ -30,7 +29,6 @@ from multiprocessing import current_process
 import sessionvalidation.sessionvalidation as sv
 import lib.result as result
 import extractHeader
-from gevent import monkey, sleep
 from threading import Thread
 import mainProcess
 import json
@@ -197,7 +195,8 @@ def session_replay(input, proxy, result_queue):
             txn_req_headers = req.getHeaders()
             txn_req_headers_dict = extractHeader.header_to_dict(txn_req_headers)
             sc = ssl.SSLContext(protocol=ssl.PROTOCOL_SSLv23)
-            sc.load_cert_chain(Config.ca_certs, keyfile=Config.keyfile)
+            if Config.ca_certs != None and Config.keyfile != None:
+                sc.load_cert_chain(Config.ca_certs, keyfile=Config.keyfile)
             conn = ProxyHTTPSConnection(Config.proxy_host, Config.proxy_ssl_port, cert_file=Config.ca_certs,
                                         key_file=Config.keyfile, context=sc, server_name=txn_req_headers_dict['Host'])
             for txn in session.getTransactionIter():

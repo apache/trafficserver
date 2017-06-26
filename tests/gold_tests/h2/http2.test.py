@@ -100,3 +100,11 @@ tr.Processes.Default.Command = 'python3 h2chunked.py -p {0}  -u /{1}'.format(ts.
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/chunked.gold"
 tr.StillRunningAfter = server
+
+# Test Case 4: Multiple request
+client_path= os.path.join(Test.Variables.AtsTestToolsDir,'traffic-replay/')
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = "python3 {0} -type {1} -log_dir {2} -port {3} -host '127.0.0.1' -s_port {4} -v -colorize False".format(client_path, 'h2', server.Variables.DataDir, ts.Variables.port,ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/replay.gold"
+tr.StillRunningAfter = server
