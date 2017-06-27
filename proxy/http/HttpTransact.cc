@@ -8235,8 +8235,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   s->internal_msg_buffer_size                = len;
   s->internal_msg_buffer_fast_allocator_size = -1;
 
-  if (!is_response_body_precluded(status_code, s->method) || len > 0) {
-    // Plugins may create response bodies despite an HTTP spec violation.
+  if (len > 0) {
     s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, body_type, strlen(body_type));
     s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE, body_language,
                                           strlen(body_language));

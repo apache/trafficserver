@@ -1348,23 +1348,31 @@ public:
 
 typedef void (*TransactEntryFunc_t)(HttpTransact::State *s);
 
+////////////////////////////////////////////////////////
+// the spec says about message body the following:    //
+// All responses to the HEAD request method MUST NOT  //
+// include a message-body, even though the presence   //
+// of entity-header fields might lead one to believe  //
+// they do. All 1xx (informational), 204 (no content),//
+// and 304 (not modified) responses MUST NOT include  //
+// a message-body.                                    //
+////////////////////////////////////////////////////////
+inline bool
+is_response_body_precluded(HTTPStatus status_code)
+{
+  if (((status_code != HTTP_STATUS_OK) &&
+       ((status_code == HTTP_STATUS_NOT_MODIFIED) || ((status_code < HTTP_STATUS_OK) && (status_code >= HTTP_STATUS_CONTINUE)) ||
+        (status_code == HTTP_STATUS_NO_CONTENT)))) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 inline bool
 is_response_body_precluded(HTTPStatus status_code, int method)
 {
-  ////////////////////////////////////////////////////////
-  // the spec says about message body the following:    //
-  // All responses to the HEAD request method MUST NOT  //
-  // include a message-body, even though the presence   //
-  // of entity-header fields might lead one to believe  //
-  // they do. All 1xx (informational), 204 (no content),//
-  // and 304 (not modified) responses MUST NOT include  //
-  // a message-body.                                    //
-  ////////////////////////////////////////////////////////
-
-  if (((status_code != HTTP_STATUS_OK) &&
-       ((status_code == HTTP_STATUS_NOT_MODIFIED) || ((status_code < HTTP_STATUS_OK) && (status_code >= HTTP_STATUS_CONTINUE)) ||
-        (status_code == HTTP_STATUS_NO_CONTENT))) ||
-      (method == HTTP_WKSIDX_HEAD)) {
+  if ((method == HTTP_WKSIDX_HEAD) || is_response_body_precluded(status_code)) {
     return true;
   } else {
     return false;
