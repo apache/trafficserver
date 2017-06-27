@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Content-Length: 47
+Age: 0
+Connection: keep-alive
+
+This body should be returned for a GET request.

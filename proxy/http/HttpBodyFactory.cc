@@ -138,7 +138,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   // if failed, try to fabricate the default custom response //
   /////////////////////////////////////////////////////////////
   if (buffer == nullptr) {
-    if (is_response_body_precluded(context->http_return_code, context->method)) {
+    if (is_response_body_precluded(context->http_return_code)) {
       *resulting_buffer_length = 0;
       unlock();
       return nullptr;
@@ -411,7 +411,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
     set = determine_set_by_language(acpt_language_list, acpt_charset_list);
   } else if (enable_customizations == 3) {
     set = determine_set_by_host(context);
-  } else if (is_response_body_precluded(context->http_return_code, context->method)) {
+  } else if (is_response_body_precluded(context->http_return_code)) {
     return nullptr;
   } else {
     set = "default";
@@ -431,7 +431,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
 
   // Check for base customizations if specializations didn't work.
   if (t == nullptr) {
-    if (is_response_body_precluded(context->http_return_code, context->method)) {
+    if (is_response_body_precluded(context->http_return_code)) {
       return nullptr;
     }
     t = find_template(set, type, &body_set); // this executes if the template_base is wrong and doesn't exist
