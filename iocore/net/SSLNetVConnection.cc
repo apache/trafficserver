@@ -848,7 +848,11 @@ SSLNetVConnection::do_io_close(int lerrno)
     char c;
     ssize_t x = recv(this->con.fd, &c, 1, MSG_PEEK);
     // x < 0 means error.  x == 0 means fin sent
-    if (x != 0) {
+    bool do_shutdown = (x > 0);
+    if (x < 0) {
+      do_shutdown = (errno == EAGAIN || errno == EWOULDBLOCK);
+    }
+    if (do_shutdown) {
       // Send the close-notify
       int ret = SSL_shutdown(ssl);
       Debug("ssl-shutdown", "SSL_shutdown %s", (ret) ? "success" : "failed");
