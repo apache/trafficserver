@@ -1107,7 +1107,7 @@ adjust_sys_settings()
 
   if (getrlimit(RLIMIT_NOFILE, &lim) == 0) {
     if (fds_throttle > (int)(lim.rlim_cur - THROTTLE_FD_HEADROOM)) {
-      lim.rlim_cur = (lim.rlim_max = (rlim_t)fds_throttle);
+      lim.rlim_cur = (lim.rlim_max = (rlim_t)(fds_throttle + THROTTLE_FD_HEADROOM));
       if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
         fds_limit = (int)lim.rlim_cur;
         syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
