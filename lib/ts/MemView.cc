@@ -30,7 +30,7 @@
 
 namespace ts
 {
-StringView::StringView(const char *s) : _ptr(s), _size(strlen(s))
+StringView::StringView(const char *s) : _ptr(s), _size(s ? strlen(s) : 0)
 {
 }
 
