@@ -651,7 +651,7 @@ retryCacheUrlLock(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata 
 static void
 addMutexRetry(CcTxnData *txn_data, TSEvent event, TSHRTime timeout)
 {
-  TSCont contp      = TSContCreate(retryCacheUrlLock, nullptr);
+  TSCont contp      = TSContCreate(retryCacheUrlLock, TSMutexCreate());
   TryLockData *data = static_cast<TryLockData *>(TSmalloc(sizeof(TryLockData)));
 
   data->event    = event;
