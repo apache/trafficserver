@@ -30,11 +30,14 @@ server=Test.MakeOriginServer("server")
 
 CUSTOM_PLUGIN_204_HOST='www.customplugin204.test'
 
+regex_remap_conf_file = "maps.reg"
+
 ts.Disk.remap_config.AddLine(
-    'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam=maps.reg @pparam=no-query-string @pparam=host'
-            .format(CUSTOM_PLUGIN_204_HOST, server.Variables.Port)
+    'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host'
+            .format(CUSTOM_PLUGIN_204_HOST, server.Variables.Port,
+              regex_remap_conf_file)
     )
-ts.Disk.maps_reg.AddLine('//.*/ http://donotcare.test @status=204')
+ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine('//.*/ http://donotcare.test @status=204')
 
 Test.prepare_plugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'custom204plugin.cc'), ts)
 
