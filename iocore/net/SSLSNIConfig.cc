@@ -150,7 +150,7 @@ SNIConfigParams::ParseSNIConfigLine(matcher_line const &line_info, ActionItem *&
     default:;
     }
 
-    if (id >= TS_VERIFY_SERVER && id <= TS_CLIENT_CERT) {
+    if (id >= TS_VERIFY_SERVER && id <= TS_CLIENT_CERT && param) {
       setPropertyConfig(id, sniname, param);
     }
     return sniname;
