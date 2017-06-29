@@ -97,6 +97,7 @@ def get_port(obj, name):
         # setup clean up step to recycle the port
         obj.Setup.Lambda(func_cleanup=lambda: g_ports.put(
             port), description="recycling port")
+        print("selected port ============================={0}",port)
         return port
 
     # use old code
