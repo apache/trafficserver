@@ -163,6 +163,13 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
         "FATAL:", "diags.log should not contain errors")
 
     # config files
+    def MakeConfigFile(self, fname):
+        tmpname = os.path.join(config_dir, fname)
+        return self.File(tmpname, id=make_id(fname), typename="ats:config")
+
+    AddMethodToInstance(p.Disk, MakeConfigFile)
+
+    # "Core" config files are pre-defined as variables.
     fname = "records.config"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config:records")
@@ -210,16 +217,6 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
     fname = "remap.config"
-    tmpname = os.path.join(config_dir, fname)
-    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
-
-    # This is for header_rewrite plugin.
-    fname = "header_rewrite_rules.conf"
-    tmpname = os.path.join(config_dir, fname)
-    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
-
-    # This is for regex_remap plugin.
-    fname = "maps.reg"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 

@@ -1,5 +1,5 @@
 HTTP/1.1 304 Not Modified
 Age: 0
 Connection: keep-alive
-Warning: 199 ApacheTrafficServer/8.0.0 Proxy received unexpected 304 response; content may be stale
+Warning: 199 ApacheTrafficServer/7.1.0 Proxy received unexpected 304 response; content may be stale
 
