@@ -18,6 +18,8 @@
 
 import socket
 import subprocess
+import hosts.output as host
+import sys
 
 try:
     import queue as Queue
@@ -52,14 +54,19 @@ def setup_port_queue(amount=1000):
     global g_ports
     if g_ports is None:
         g_ports = Queue.LifoQueue()
+        host.WriteMessagef(" before setting up queue============================={0}".format(g_ports.qsize()))
     else:
+        host.WriteMessagef("Retuning for no reason =========={0}".format(g_ports.qsize()))
         return
     try:
+        comm = subprocess.check_output(["which","sysctl"]).decode()[:-1]
         dmin, dmax = subprocess.check_output(
-            ["sysctl", "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
+            [comm, "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
+        host.WriteMessagef("dmin {0} =============================dmax {1}".format(dmin,dmax))
     except:
+        host.WriteMessagef("Exception{0}:{1}".format(sys.exc_info()[0],sys.exc_info()[1]))
         return
 
     rmin = dmin - 2000
@@ -80,7 +87,7 @@ def setup_port_queue(amount=1000):
             if not PortOpen(port):
                 g_ports.put(port)
             port += 1
-
+    host.WriteMessagef(" Number of ports avaialble ============================={0}".format(g_ports.qsize()))
 
 def get_port(obj, name):
     '''
@@ -97,6 +104,7 @@ def get_port(obj, name):
         # setup clean up step to recycle the port
         obj.Setup.Lambda(func_cleanup=lambda: g_ports.put(
             port), description="recycling port")
+        host.WriteMessagef("selected port ============================={0}".format(port))
         return port
 
     # use old code
@@ -105,4 +113,5 @@ def get_port(obj, name):
     sock.bind(('', 0))  # bind to all interfaces on an ephemeral port
     port = sock.getsockname()[1]
     obj.Variables[name] = port
+    host.WriteMessagef("using old code : selected port ============================={0}".format(port))
     return port
