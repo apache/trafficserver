@@ -20,6 +20,7 @@ import socket
 import subprocess
 import sys
 import hosts.output as host
+import os
 
 try:
     import queue as Queue
@@ -57,6 +58,8 @@ def setup_port_queue(amount=1000):
     else:
         return
     try:
+        thisEnv = os.environ;
+        thisEnv["PATH"] = "/usr/sbin:/sbin:"+thisEnv["PATH"]
         comm = subprocess.check_output(["which","sysctl"]).decode()[:-1]
         dmin, dmax = subprocess.check_output(
             [comm, "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
