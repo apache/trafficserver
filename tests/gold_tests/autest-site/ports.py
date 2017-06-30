@@ -59,8 +59,9 @@ def setup_port_queue(amount=1000):
         host.WriteMessagef("Retuning for no reason =========={0}".format(g_ports.qsize()))
         return
     try:
+        comm = subprocess.check_output(["which","sysctl"]).decode()[:-1]
         dmin, dmax = subprocess.check_output(
-            ["sysctl", "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
+            [comm, "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
         host.WriteMessagef("dmin {0} =============================dmax {1}".format(dmin,dmax))
