@@ -64,6 +64,7 @@ def setup_port_queue(amount=1000):
         dmax = int(dmax)
         host.WriteMessagef("dmin {0} =============================dmax {1}".format(dmin,dmax))
     except:
+        host.WriteMessagef("Exception{0}:{1}".format(sys.exc_info()[0],sys.exc_info()[1]))
         return
 
     rmin = dmin - 2000
