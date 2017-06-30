@@ -19,6 +19,7 @@
 import socket
 import subprocess
 import hosts.output as host
+import sys
 
 try:
     import queue as Queue
@@ -55,11 +56,11 @@ def setup_port_queue(amount=1000):
         g_ports = Queue.LifoQueue()
         host.WriteMessagef(" before setting up queue============================={0}".format(g_ports.qsize()))
     else:
-        host.WriteMessagef("Retuning for no reason ==========")
+        host.WriteMessagef("Retuning for no reason =========={0}".format(g_ports.qsize()))
         return
     try:
         dmin, dmax = subprocess.check_output(
-            ["sysctl", "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
+            ["/sbin/sysctl", "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
         host.WriteMessagef("dmin {0} =============================dmax {1}".format(dmin,dmax))
