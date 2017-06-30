@@ -60,7 +60,7 @@ def setup_port_queue(amount=1000):
         return
     try:
         dmin, dmax = subprocess.check_output(
-            ["/sbin/sysctl", "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
+            ["sysctl", "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
         host.WriteMessagef("dmin {0} =============================dmax {1}".format(dmin,dmax))
