@@ -107,4 +107,5 @@ def get_port(obj, name):
     sock.bind(('', 0))  # bind to all interfaces on an ephemeral port
     port = sock.getsockname()[1]
     obj.Variables[name] = port
+    host.WriteMessagef("using old code : selected port ============================={0}".format(port))
     return port
