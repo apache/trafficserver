@@ -53,7 +53,9 @@ def setup_port_queue(amount=1000):
     global g_ports
     if g_ports is None:
         g_ports = Queue.LifoQueue()
+        host.WriteMessagef(" before setting up queue============================={0}".format(g_ports.qsize()))
     else:
+        host.WriteMessagef("Retuning for no reason ==========")
         return
     try:
         dmin, dmax = subprocess.check_output(
