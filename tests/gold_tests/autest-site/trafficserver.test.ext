@@ -42,19 +42,19 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
 
     # configuration directory
     config_dir = os.path.join(ts_dir, 'config')
-    
+
     # directory contains the html response templates
     template_dir = os.path.join(config_dir, 'body_factory')
-    
+
     # contains plugins
     plugin_dir = os.path.join(ts_dir, 'plugin')
-    
+
     # the log directory
     log_dir = os.path.join(ts_dir, 'log')
-    
+
     # runtime dir
     runtime_dir = os.path.join(ts_dir, 'runtime')
-    
+
     #ssl, storage & cache
     ssl_dir = os.path.join(ts_dir, 'ssl')
     storage_dir = os.path.join(ts_dir, 'storage')
@@ -62,6 +62,9 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
 
     # create process
     p = obj.Processes.Process(name, command)
+    #p_debug = obj.Processes.Process("port-debug", "ss --listen --tcp --process")
+    #p_debug.Env['PATH'] = "/usr/sbin" + os.pathsep + p.ComposeEnv()['PATH']
+    #p.StartBefore(p_debug)
     # we want to have a few directories more fixed
     # this helps with debugging as location are common
     # we do this by overiding locations from the "layout"
@@ -79,7 +82,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     p.Env['PROXY_CONFIG_BIN_PATH'] = bin_dir
     bin_path = os.path.join(ts_dir, bin_dir)
     p.Env['PATH'] = bin_path + os.pathsep + p.ComposeEnv()['PATH']
-    p.Setup.Copy(p.Variables.BINDIR, bin_path, True)
+    p.Setup.Copy(p.Variables.BINDIR, bin_path, CopyLogic.SoftFiles)
 
     # setup config directory
 
@@ -112,7 +115,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     # setup read-only data directory for plugins
 
     p.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'] = plugin_dir
-    p.Setup.Copy(p.Variables.PLUGINDIR, plugin_dir, True)
+    p.Setup.Copy(p.Variables.PLUGINDIR, plugin_dir, CopyLogic.SoftFiles)
 
     #########################################################
     # create subdirectories that need to exist (but are empty)

@@ -18,6 +18,9 @@
 
 import socket
 import subprocess
+import os
+
+import hosts.output as host
 
 try:
     import queue as Queue
@@ -55,11 +58,17 @@ def setup_port_queue(amount=1000):
     else:
         return
     try:
+        # some docker setups don't have sbin setup correctly
+        new_env= os.environ.copy()
+        new_env['PATH']="/sbin:/usr/sbin:"+new_env['PATH']
         dmin, dmax = subprocess.check_output(
-            ["sysctl", "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
+            ["sysctl", "net.ipv4.ip_local_port_range"],
+            env=new_env
+            ).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
     except:
+        host.WriteWarning("Unable to call sysctrl!\n Tests may fail because of bad port selection!")
         return
 
     rmin = dmin - 2000
