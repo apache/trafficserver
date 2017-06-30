@@ -980,6 +980,14 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       } else {
         clientCTX = params->client_ctx;
       }
+
+      if (this->options.clientVerificationFlag && params->clientCACertFilename != nullptr && params->clientCACertPath != nullptr) {
+        if (!SSL_CTX_load_verify_locations(clientCTX, params->clientCACertFilename, params->clientCACertPath)) {
+          SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)", params->clientCACertFilename,
+                   params->clientCACertPath);
+          return EVENT_ERROR;
+        }
+      }
       this->ssl = make_ssl_connection(clientCTX, this);
       if (this->ssl != nullptr) {
         uint8_t clientVerify = this->options.clientVerificationFlag;
