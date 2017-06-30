@@ -60,6 +60,7 @@ def setup_port_queue(amount=1000):
             ["sysctl", "net.ipv4.ip_local_port_range"]).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
+        host.WriteMessagef("dmin {0} =============================dmax {1}".format(dmin,dmax))
     except:
         return
 
@@ -81,7 +82,7 @@ def setup_port_queue(amount=1000):
             if not PortOpen(port):
                 g_ports.put(port)
             port += 1
-
+    host.WriteMessagef(" Number of ports avaialble ============================={0}".format(g_ports.qsize()))
 
 def get_port(obj, name):
     '''
