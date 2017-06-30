@@ -24,6 +24,7 @@ Tests 304 responses
 '''
 
 Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
+Test.SkipUnless(Condition.HasProgram("sed", "grep needs to be installed on system for this test to work"))
 
 ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server")
@@ -49,8 +50,8 @@ tr = Test.AddTestRun("Test domain {0}".format(DEFAULT_304_HOST))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 
-tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
-    format(ts.Variables.port, 'data/{0}_get.txt'.format(DEFAULT_304_HOST))
+cmd_tpl = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/' | sed 's;ApacheTrafficServer\/[^ ]*;VERSION;'"
+tr.Processes.Default.Command = cmd_tpl.format(ts.Variables.port, 'data/{0}_get.txt'.format(DEFAULT_304_HOST))
 tr.Processes.Default.TimeOut = 5  # seconds
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http-304.gold"
