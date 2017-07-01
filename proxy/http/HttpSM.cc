@@ -1558,9 +1558,6 @@ HttpSM::state_api_callout(int event, void *data)
   api_timer     = 0;
   switch (api_next) {
   case API_RETURN_CONTINUE:
-    if (t_state.api_next_action == HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR) {
-      do_redirect();
-    }
     handle_api_return();
     break;
   case API_RETURN_DEFERED_CLOSE:
@@ -1632,6 +1629,16 @@ HttpSM::handle_api_return()
     // Set back the inactivity timeout
     if (ua_session) {
       ua_session->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
+    }
+
+    // We only follow 3xx when redirect_in_process == false. Otherwise the redirection has already been launched (in
+    // SM_ACTION_SERVE_FROM_CACHE or SM_ACTION_SERVER_READ).redirect_in_process is set before this logic if we need more direction.
+    // This redirection is only used with the build_error_reponse. Then, the redirection_tries will be increased by
+    // state_read_server_reponse_header and never get into this logic again.
+    if (enable_redirection && !t_state.redirect_info.redirect_in_process && is_redirect_required() &&
+        (redirection_tries <= t_state.txn_conf->number_of_redirections)) {
+      ++redirection_tries;
+      do_redirect();
     }
     // we have further processing to do
     //  based on what t_state.next_action is
