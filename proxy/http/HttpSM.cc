@@ -3369,7 +3369,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post_ua, event);
   client_request_body_bytes = p->init_bytes_done + p->bytes_read;
-  int64_t alloc_index, nbytes;
+  int64_t nbytes, buf_size;
   IOBufferReader *buf_start;
 
   switch (event) {
@@ -3389,7 +3389,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       }
 
       // send back 408 request timeout
-      alloc_index = buffer_size_to_index(len_408_request_timeout_response + t_state.internal_msg_buffer_size);
+      buf_size = index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX) + t_state.internal_msg_buffer_size;
       if (ua_entry->write_buffer) {
         if (t_state.hdr_info.client_request.m_100_continue_required) {
           ink_assert(ua_entry->write_vio && !ua_entry->write_vio->ntodo());
@@ -3397,13 +3397,28 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
         free_MIOBuffer(ua_entry->write_buffer);
         ua_entry->write_buffer = nullptr;
       }
-      ua_entry->write_buffer = new_MIOBuffer(alloc_index);
+      ua_entry->write_buffer = new_MIOBuffer(buffer_size_to_index(buf_size));
       buf_start              = ua_entry->write_buffer->alloc_reader();
 
       DebugSM("http_tunnel", "send 408 response to client to vc %p, tunnel vc %p", ua_session->get_netvc(), p->vc);
 
-      nbytes = ua_entry->write_buffer->write(str_408_request_timeout_response, len_408_request_timeout_response);
-      nbytes += ua_entry->write_buffer->write(t_state.internal_msg_buffer, t_state.internal_msg_buffer_size);
+      if (t_state.internal_msg_buffer && t_state.internal_msg_buffer_size) {
+        client_response_hdr_bytes = write_response_header_into_buffer(&t_state.hdr_info.client_response, ua_entry->write_buffer);
+        nbytes                    = client_response_hdr_bytes + t_state.internal_msg_buffer_size;
+        if (t_state.internal_msg_buffer_fast_allocator_size < 0) {
+          ua_entry->write_buffer->append_xmalloced(t_state.internal_msg_buffer, t_state.internal_msg_buffer_size);
+        } else {
+          ua_entry->write_buffer->append_fast_allocated(t_state.internal_msg_buffer, t_state.internal_msg_buffer_size,
+                                                        t_state.internal_msg_buffer_fast_allocator_size);
+        }
+        // The IOBufferBlock will free the msg buffer when necessary so
+        //  eliminate our pointer to it
+        t_state.internal_msg_buffer      = nullptr;
+        t_state.internal_msg_buffer_size = 0;
+      } else {
+        client_response_hdr_bytes = nbytes =
+          ua_entry->write_buffer->write(str_408_request_timeout_response, len_408_request_timeout_response);
+      }
 
       // The HttpSM default handler still is HttpSM::state_request_wait_for_transform_read.
       // However, WRITE_COMPLETE/TIMEOUT/ERROR event should be managed/handled by tunnel_handler_post.

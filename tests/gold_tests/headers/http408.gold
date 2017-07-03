@@ -1,0 +1,22 @@
+HTTP/1.1 408`` 
+Date:``
+Connection: close
+Server:``
+Cache-Control: no-store
+Content-Type: text/html; charset=utf-8
+Content-Language: en
+
+<HTML>
+<HEAD>
+<TITLE>Inactivity Timeout</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Inactivity Timeout</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Too much time has passed without sending any data for document.
+</B></FONT>
+<HR>
+</BODY>
