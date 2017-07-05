@@ -19,7 +19,7 @@ Builds, installs, and enables an ATS plugin in the sandbox environment
 
 import os
 
-def prepare_plugin(self, path, tsproc):
+def prepare_plugin(self, path, tsproc, plugin_args = ""):
     """Builds, installs, and enables an ATS plugin in the sandbox environment
 
     The source file at the given path is copied to the sandbox directory of the
@@ -39,6 +39,6 @@ def prepare_plugin(self, path, tsproc):
     tsproc.Setup.RunCommand("tsxs -c {0} -o {1}".format(in_path, out_path))
 
     # Add an entry to plugin.config.
-    tsproc.Disk.plugin_config.AddLine(out_basename)
+    tsproc.Disk.plugin_config.AddLine("{0} {1}".format(out_basename,plugin_args))
 
 ExtendTest(prepare_plugin, name="prepare_plugin")
