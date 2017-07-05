@@ -1,0 +1,5 @@
+``DIAG: (ssl_hook_test) Setup callbacks pa=2 sni=0 cert=0 cert_imm=0 pa_delay=1
+``DIAG: (ssl_hook_test) Pre accept callback 0 `` - event is good
+``DIAG: (ssl_hook_test) Pre accept callback 1 `` - event is good
+``DIAG: (ssl_hook_test) Pre accept delay callback 0 `` - event is good
+``DIAG: (ssl_hook_test) Callback reenable ssl_vc=``

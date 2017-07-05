@@ -215,7 +215,44 @@ public:
 
   // Returns true if we have already called at
   // least some of the hooks
-  bool calledHooks(TSEvent /* eventId */) const { return (this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE); }
+  bool
+  calledHooks(TSEvent eventId) const
+  {
+    bool retval = false;
+    switch (this->sslHandshakeHookState) {
+    case HANDSHAKE_HOOKS_PRE:
+    case HANDSHAKE_HOOKS_PRE_INVOKE:
+      if (eventId == TS_EVENT_VCONN_PRE_ACCEPT) {
+        if (curHook) {
+          retval = true;
+        }
+      }
+      break;
+    case HANDSHAKE_HOOKS_SNI:
+      if (eventId == TS_EVENT_VCONN_PRE_ACCEPT) {
+        retval = true;
+      } else if (eventId == TS_EVENT_SSL_SERVERNAME) {
+        if (curHook) {
+          retval = true;
+        }
+      }
+      break;
+    case HANDSHAKE_HOOKS_CERT:
+    case HANDSHAKE_HOOKS_CERT_INVOKE:
+      if (eventId == TS_EVENT_VCONN_PRE_ACCEPT || eventId == TS_EVENT_SSL_SERVERNAME) {
+        retval = true;
+      } else if (eventId == TS_EVENT_SSL_CERT) {
+        if (curHook) {
+          retval = true;
+        }
+      }
+      break;
+    case HANDSHAKE_HOOKS_DONE:
+      retval = true;
+      break;
+    }
+    return retval;
+  }
   bool
   getSSLTrace() const
   {
@@ -281,19 +318,12 @@ private:
   /// @note For @C SSL_HOOKS_INVOKE, this is the hook to invoke.
   class APIHook *curHook;
 
-  enum {
-    SSL_HOOKS_INIT,     ///< Initial state, no hooks called yet.
-    SSL_HOOKS_INVOKE,   ///< Waiting to invoke hook.
-    SSL_HOOKS_ACTIVE,   ///< Hook invoked, waiting for it to complete.
-    SSL_HOOKS_CONTINUE, ///< All hooks have been called and completed
-    SSL_HOOKS_DONE      ///< All hooks have been called and completed
-  } sslPreAcceptHookState;
-
   enum SSLHandshakeHookState {
     HANDSHAKE_HOOKS_PRE,
+    HANDSHAKE_HOOKS_PRE_INVOKE,
+    HANDSHAKE_HOOKS_SNI,
     HANDSHAKE_HOOKS_CERT,
-    HANDSHAKE_HOOKS_POST,
-    HANDSHAKE_HOOKS_INVOKE,
+    HANDSHAKE_HOOKS_CERT_INVOKE,
     HANDSHAKE_HOOKS_DONE
   } sslHandshakeHookState;
 
