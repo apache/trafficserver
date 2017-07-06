@@ -523,6 +523,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   if (total_written > 0) {
     NET_SUM_DYN_STAT(net_write_bytes_stat, total_written);
     s->vio.ndone += total_written;
+    net_activity(vc, thread);
   }
 
   // A write of 0 makes no sense since we tried to write more than 0.
@@ -557,8 +558,6 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     if (!(buf.reader()->is_read_avail_more_than(0))) {
       vc->write_buffer_empty_event = 0;
     }
-
-    net_activity(vc, thread);
 
     // If there are no more bytes to write, signal write complete,
     ink_assert(ntodo >= 0);
