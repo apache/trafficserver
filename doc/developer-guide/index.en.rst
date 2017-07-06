@@ -53,3 +53,4 @@ duplicate bugs is encouraged, but not required.
    continuous-integration/index.en
    documentation/index.en
    host-resolution-proposal.en
+   client-session-architecture.en
