@@ -464,7 +464,7 @@ PrefetchTransform::handle_event(int event, void *edata)
         return 0;
       }
 
-      ink_assert(m_output_vc != NULL);
+      ink_assert(m_output_vc != nullptr);
 
       MUTEX_TRY_LOCK(trylock, m_write_vio.mutex, this_ethread());
       if (!trylock.is_locked()) {

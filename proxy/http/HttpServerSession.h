@@ -133,7 +133,7 @@ public:
   IpEndpoint const &
   get_server_ip() const
   {
-    ink_release_assert(server_vc != NULL);
+    ink_release_assert(server_vc != nullptr);
     return server_vc->get_remote_endpoint();
   }
 
