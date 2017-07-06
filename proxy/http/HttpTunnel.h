@@ -542,7 +542,7 @@ inline bool
 HttpTunnel::has_cache_writer() const
 {
   for (int i = 0; i < MAX_CONSUMERS; i++) {
-    if (consumers[i].vc_type == HT_CACHE_WRITE && consumers[i].vc != NULL) {
+    if (consumers[i].vc_type == HT_CACHE_WRITE && consumers[i].vc != nullptr) {
       return true;
     }
   }

@@ -128,7 +128,7 @@ inline bool
 HttpVCTable::is_table_clear() const
 {
   for (int i = 0; i < vc_table_max_entries; i++) {
-    if (vc_table[i].vc != NULL) {
+    if (vc_table[i].vc != nullptr) {
       return false;
     }
   }
