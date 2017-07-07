@@ -1234,6 +1234,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     // ink_assert(next_inactivity_timeout_at < Thread::get_hrtime());
     if (!inactivity_timeout_in || next_inactivity_timeout_at > Thread::get_hrtime())
       return EVENT_CONT;
+    Warning("next_inactivity %" PRId64 " current time %" PRId64, next_inactivity_timeout_at, Thread::get_hrtime());
     signal_event      = VC_EVENT_INACTIVITY_TIMEOUT;
     signal_timeout_at = &next_inactivity_timeout_at;
   } else {

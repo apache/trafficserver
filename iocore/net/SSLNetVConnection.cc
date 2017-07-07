@@ -206,11 +206,17 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
   while (sslErr == SSL_ERROR_NONE) {
     int64_t block_write_avail = buf.writer()->block_write_avail();
     if (block_write_avail <= 0) {
-      buf.writer()->add_block();
-      block_write_avail = buf.writer()->block_write_avail();
-      if (block_write_avail <= 0) {
-        Warning("Cannot add new block");
+      // If we filled up one block, give back to the event loop so we don't
+      // overbuffer.  
+      if (bytes_read > 0) {
         break;
+      } else { // Make sure there is a block to write into
+        buf.writer()->add_block();
+        block_write_avail = buf.writer()->block_write_avail();
+        if (block_write_avail <= 0) {
+          Warning("Cannot add new block");
+          break;
+        }
       }
     }
 
@@ -239,6 +245,8 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       bytes_read += nread;
       if (nread > 0) {
         buf.writer()->fill(nread); // Tell the buffer, we've used the bytes
+        sslvc->netActivity(lthread);
+        //Warning("set next_inactivity %" PRId64 " current time %" PRId64, sslvc->next_inactivity_timeout_at, Thread::get_hrtime());
       }
       break;
     case SSL_ERROR_WANT_WRITE:
@@ -302,6 +310,10 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     ret = bytes_read;
 
     event = (s->vio.ntodo() <= 0) ? SSL_READ_COMPLETE : SSL_READ_READY;
+    if (sslErr == SSL_ERROR_NONE && s->vio.ntodo() > 0) {
+      // We stopped with data on the wire (to avoid overbuffering).  Make sure we are triggered
+     sslvc->read.triggered = 1;
+    }
   } else { // if( bytes_read > 0 )
 #if defined(_DEBUG)
     if (bytes_read == 0) {
