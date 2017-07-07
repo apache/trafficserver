@@ -498,4 +498,29 @@ private:
   IdQualifiers _id_qual;
 };
 
+/// Information about the inbound (client) session.
+class ConditionInbound : public Condition
+{
+  using MatcherType = Matchers<std::string>;
+  using self        = ConditionInbound;
+
+public:
+  explicit ConditionInbound() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionInbound"); };
+  ConditionInbound(self &) = delete;
+  self &operator=(self &) = delete;
+
+  void initialize(Parser &p);
+  void set_qualifier(const std::string &q);
+  void append_value(std::string &s, const Resources &res);
+  static void append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
+
+  static constexpr const char *TAG = "INBOUND";
+
+protected:
+  bool eval(const Resources &res);
+
+private:
+  NetworkSessionQualifiers _net_qual = NET_QUAL_STACK;
+};
+
 #endif // __CONDITIONS_H

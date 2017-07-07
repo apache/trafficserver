@@ -81,6 +81,19 @@ enum IpQualifiers {
   IP_QUAL_OUTBOUND,
 };
 
+enum NetworkSessionQualifiers {
+  NET_QUAL_LOCAL_ADDR,  ///< Local address.
+  NET_QUAL_LOCAL_PORT,  ///< Local port.
+  NET_QUAL_REMOTE_ADDR, ///< Remote address.
+  NET_QUAL_REMOTE_PORT, ///< Remote port.
+  NET_QUAL_TLS,         ///< TLS protocol
+  NET_QUAL_H2,          ///< 'h2' or not.
+  NET_QUAL_IPV4,        ///< 'ipv4' or not.
+  NET_QUAL_IPV6,        ///< 'ipv6' or not.
+  NET_QUAL_IP_FAMILY,   ///< IP protocol family.
+  NET_QUAL_STACK,       ///< Full protocol stack.
+};
+
 class Statement
 {
 public:
