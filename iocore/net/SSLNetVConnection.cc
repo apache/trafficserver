@@ -205,6 +205,9 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
 
   bytes_read = 0;
   while (sslErr == SSL_ERROR_NONE) {
+    if (bytes_read / (4 * 1024 * 1024) > 0) {
+      break;
+    }
     int64_t block_write_avail = buf.writer()->block_write_avail();
     if (block_write_avail <= 0) {
       buf.writer()->add_block();
