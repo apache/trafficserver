@@ -232,13 +232,13 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
 
     switch (sslErr) {
     case SSL_ERROR_NONE:
-
 #if DEBUG
       SSLDebugBufferPrint("ssl_buff", current_block, nread, "SSL Read");
 #endif
       ink_assert(nread);
       bytes_read += nread;
       if (nread > 0) {
+        sslvc->netActivity(lthread);
         buf.writer()->fill(nread); // Tell the buffer, we've used the bytes
       }
       break;
@@ -298,7 +298,6 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read=%" PRId64, bytes_read);
 
     s->vio.ndone += bytes_read;
-    sslvc->netActivity(lthread);
 
     ret = bytes_read;
 
