@@ -28,6 +28,7 @@
 #include "statement.h"
 #include "parser.h"
 #include "expander.h"
+#include "conditions.h"
 
 // Main expander method
 std::string
@@ -122,6 +123,26 @@ VariableExpander::expand(const Resources &res)
       }
       free(url);
       url = nullptr;
+    } else if (variable == "%<INBOUND:REMOTE-ADDR>") {
+      ConditionInbound::append_value(resolved_variable, res, NET_QUAL_REMOTE_ADDR);
+    } else if (variable == "%<INBOUND:REMOTE-PORT>") {
+      ConditionInbound::append_value(resolved_variable, res, NET_QUAL_REMOTE_PORT);
+    } else if (variable == "%<INBOUND:LOCAL-ADDR>") {
+      ConditionInbound::append_value(resolved_variable, res, NET_QUAL_LOCAL_ADDR);
+    } else if (variable == "%<INBOUND:LOCAL-PORT>") {
+      ConditionInbound::append_value(resolved_variable, res, NET_QUAL_LOCAL_PORT);
+    } else if (variable == "%<INBOUND:TLS>") {
+      ConditionInbound::append_value(resolved_variable, res, NET_QUAL_TLS);
+    } else if (variable == "%<INBOUND:H2>") {
+      ConditionInbound::append_value(resolved_variable, res, NET_QUAL_H2);
+    } else if (variable == "%<INBOUND:IPV4>") {
+      ConditionInbound::append_value(resolved_variable, res, NET_QUAL_IPV4);
+    } else if (variable == "%<INBOUND:IPV6>") {
+      ConditionInbound::append_value(resolved_variable, res, NET_QUAL_IPV6);
+    } else if (variable == "%<INBOUND:IP-FAMILY>") {
+      ConditionInbound::append_value(resolved_variable, res, NET_QUAL_IP_FAMILY);
+    } else if (variable == "%<INBOUND:STACK>") {
+      ConditionInbound::append_value(resolved_variable, res, NET_QUAL_STACK);
     }
 
     // TODO(SaveTheRbtz): Can be optimized
