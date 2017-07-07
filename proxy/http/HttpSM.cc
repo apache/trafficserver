@@ -3611,6 +3611,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     //   timeouts
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
     ua_entry->read_vio   = p->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
+    //ua_session->set_inactivity_timeout(0);
     break;
   default:
     ink_release_assert(0);
@@ -3697,6 +3698,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     //  on the user agent in order to get timeouts
     //  coming to the state machine and not the tunnel
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
+    //ua_session->set_inactivity_timeout(0);
 
     // YTS Team, yamsat Plugin
     // When event is VC_EVENT_ERROR,and when redirection is enabled
