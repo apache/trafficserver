@@ -235,6 +235,7 @@ SSLSessionBucket::removeSession(const SSLSessionID &id)
       delete node;
       return;
     }
+    node = node->link.next;
   }
 }
 
