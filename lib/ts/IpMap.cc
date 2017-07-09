@@ -500,9 +500,11 @@ namespace detail
         // Clip if overlap.
         if (n->_max >= min) {
           n->setMax(min_1);
-        } else if (next(n) && n->_max <= max) {
-          // request region covers next span so we can re-use that node.
-          x = next(n);
+        } else if (nullptr != (y = next(n)) && y->_max <= max) {
+          // because @a n was selected as the minimum it must be the case that
+          // y->min >= min (or y would have been selected). Therefore in this
+          // case the request covers the next node therefore it can be reused.
+          x = y;
           x->setMin(min).setMax(max).setData(payload);
           n = x; // this gets bumped again, which is correct.
         }
