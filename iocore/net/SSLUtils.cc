@@ -139,14 +139,16 @@ static InkHashTable *ssl_cipher_name_table = nullptr;
  * may use pthreads and openssl without confusing us here. (TS-2271).
  */
 
+#if !defined(CRYPTO_THREADID_set_callback)
 static void
 SSL_pthreads_thread_id(CRYPTO_THREADID *id)
 {
   CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
 }
+#endif
 
 // The locking callback goes away with openssl 1.1 and CRYPTO_LOCK is on longer defined
-#ifdef CRYPTO_LOCK
+#if defined(CRYPTO_LOCK) && !defined(CRYPTO_set_locking_callback)
 static void
 SSL_locking_callback(int mode, int type, const char *file, int line)
 {
@@ -863,7 +865,9 @@ SSLInitializeLibrary()
     }
 
     CRYPTO_set_locking_callback(SSL_locking_callback);
+#if !defined(CRYPTO_THREADID_set_callback)
     CRYPTO_THREADID_set_callback(SSL_pthreads_thread_id);
+#endif
     CRYPTO_set_dynlock_create_callback(ssl_dyn_create_callback);
     CRYPTO_set_dynlock_lock_callback(ssl_dyn_lock_callback);
     CRYPTO_set_dynlock_destroy_callback(ssl_dyn_destroy_callback);
