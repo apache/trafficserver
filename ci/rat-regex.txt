@@ -62,3 +62,4 @@ port\.h
 ^.*key$
 ^protocol_binary.h$
 ^override.css$
+^catch[.]hpp$
