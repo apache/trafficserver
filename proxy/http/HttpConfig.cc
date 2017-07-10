@@ -1348,7 +1348,7 @@ HttpConfig::reconfigure()
   params->errors_log_error_pages           = INT_TO_BOOL(m_master.errors_log_error_pages);
   params->oride.slow_log_threshold         = m_master.oride.slow_log_threshold;
   params->record_cop_page                  = INT_TO_BOOL(m_master.record_cop_page);
-  params->oride.ssl_client_verify_server   = INT_TO_BOOL(m_master.oride.ssl_client_verify_server);
+  params->oride.ssl_client_verify_server   = m_master.oride.ssl_client_verify_server;
   params->oride.send_http11_requests       = m_master.oride.send_http11_requests;
   params->oride.doc_in_cache_skip_dns      = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);
   params->oride.default_buffer_size_index  = m_master.oride.default_buffer_size_index;
