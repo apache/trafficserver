@@ -124,11 +124,31 @@ test_TSHashTable()
   }
 }
 
+class testHashMap
+{
+private:
+  HashMap<cchar *, StringHashFns, int> testsh;
+
+public:
+  int
+  get(cchar *ch) const
+  {
+    return testsh.get(ch);
+  }
+
+  void
+  put(cchar *key, int v)
+  {
+    testsh.put(key, v);
+  }
+};
+
 int
 main(int /* argc ATS_UNUSED */, char ** /*argv ATS_UNUSED */)
 {
   typedef Map<cchar *, cchar *> SSMap;
   typedef MapElem<cchar *, cchar *> SSMapElem;
+  testHashMap testsh;
 #define form_SSMap(_p, _v) form_Map(SSMapElem, _p, _v)
   SSMap ssm;
   ssm.put("a", "A");
@@ -173,8 +193,11 @@ main(int /* argc ATS_UNUSED */, char ** /*argv ATS_UNUSED */)
   HashMap<cchar *, StringHashFns, int> sh2(-99); // return -99 if key not found
   sh2.put("aa", 15);
   sh2.put("ab", 16);
+  testsh.put("aa", 15);
+  testsh.put("ab", 16);
   ink_assert(sh2.get("aa") == 15);
   ink_assert(sh2.get("ac") == -99);
+  ink_assert(testsh.get("aa") == 15);
   test_TSHashTable();
 
   printf("test_Map PASSED\n");
