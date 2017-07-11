@@ -111,8 +111,8 @@ public:
   using Map<K, C, A>::e;
   HashMap() {}
   HashMap(C c) : invalid_value(c) {}
-  MapElem<K, C> *get_internal(K akey);
-  C get(K akey);
+  MapElem<K, C> *get_internal(K akey) const;
+  C get(K akey) const;
   value_type *put(K akey, C avalue);
   void get_keys(Vec<K> &keys);
   void get_values(Vec<C> &values);
@@ -484,7 +484,7 @@ HashSet<K, AHashFns, C, A>::put(C avalue)
 
 template <class K, class AHashFns, class C, class A>
 inline MapElem<K, C> *
-HashMap<K, AHashFns, C, A>::get_internal(K akey)
+HashMap<K, AHashFns, C, A>::get_internal(K akey) const
 {
   if (!n)
     return 0;
@@ -509,7 +509,7 @@ HashMap<K, AHashFns, C, A>::get_internal(K akey)
 
 template <class K, class AHashFns, class C, class A>
 inline C
-HashMap<K, AHashFns, C, A>::get(K akey)
+HashMap<K, AHashFns, C, A>::get(K akey) const
 {
   MapElem<K, C> *x = get_internal(akey);
   if (!x)
