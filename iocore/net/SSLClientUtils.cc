@@ -61,8 +61,11 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
       if (netvc->options.sni_servername)
         Warning("Hostname verification failed for (%s) but still continuing with the connection establishment",
                 netvc->options.sni_servername.get());
-      else
-        Warning("Server certificate verification failed but still continuing with the connection establishment");
+      else {
+        char buff[INET6_ADDRSTRLEN];
+        ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
+        Warning("Server certificate verification failed for %s but still continuing with the connection establishment", buff);
+      }
       return 1;
     }
     return preverify_ok;
@@ -94,9 +97,12 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
       }
       Warning("IP verification failed for (%s)", buff);
     }
+
     if (netvc->options.clientVerificationFlag == 2) {
-      Warning("Server certificate verification failed but continuing with the connection establishment:%s",
-              netvc->options.sni_servername.get());
+      char buff[INET6_ADDRSTRLEN];
+      ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
+      Warning("Server certificate verification failed but continuing with the connection establishment:%s:%s",
+              netvc->options.sni_servername.get(), buff);
       return preverify_ok;
     }
     return 0;
