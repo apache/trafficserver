@@ -49,6 +49,7 @@ public:
   void append(RuleSet *rule);
   bool add_condition(Parser &p, const char *filename, int lineno);
   bool add_operator(Parser &p, const char *filename, int lineno);
+  ResourceIDs get_all_resource_ids() const;
 
   bool
   has_operator() const
@@ -75,7 +76,7 @@ public:
   }
 
   ResourceIDs
-  get_all_resource_ids() const
+  get_resource_ids() const
   {
     return _ids;
   }
