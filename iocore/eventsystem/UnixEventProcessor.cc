@@ -119,7 +119,8 @@ ThreadAffinityInitializer::init()
     obj_name = "NUMA Node";
     if (hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type) > 0) {
       break;
-    }
+    } // else default to sockets if no NUMA nodes.
+  // FALLTHROUGH
   case 2: // assign threads to sockets
     obj_type = HWLOC_OBJ_SOCKET;
     obj_name = "Socket";
