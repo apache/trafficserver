@@ -78,7 +78,7 @@ public:
   ME *put(K akey);
   C get(K akey);
   C *getp(K akey);
-  void get_keys(Vec<K> &keys);
+  void get_keys(Vec<K> &keys) const;
   void get_keys_set(Vec<K> &keys);
   void get_values(Vec<C> &values);
   void map_union(Map<K, C> &m);
@@ -114,7 +114,7 @@ public:
   MapElem<K, C> *get_internal(K akey) const;
   C get(K akey) const;
   value_type *put(K akey, C avalue);
-  void get_keys(Vec<K> &keys);
+  void get_keys(Vec<K> &keys) const;
   void get_values(Vec<C> &values);
 
 private:
@@ -351,7 +351,7 @@ Map<K, C, A>::put(K akey)
 
 template <class K, class C, class A>
 inline void
-Map<K, C, A>::get_keys(Vec<K> &keys)
+Map<K, C, A>::get_keys(Vec<K> &keys) const
 {
   for (size_t i = 0; i < n; i++)
     if (v[i].key)
@@ -558,7 +558,7 @@ HashMap<K, AHashFns, C, A>::put(K akey, C avalue)
 
 template <class K, class AHashFns, class C, class A>
 inline void
-HashMap<K, AHashFns, C, A>::get_keys(Vec<K> &keys)
+HashMap<K, AHashFns, C, A>::get_keys(Vec<K> &keys) const
 {
   Map<K, C, A>::get_keys(keys);
 }
