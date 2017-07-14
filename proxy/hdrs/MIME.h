@@ -160,6 +160,7 @@ struct MIMEField {
   const char *value_get(int *length) const;
   int32_t value_get_int() const;
   uint32_t value_get_uint() const;
+  uint64_t value_get_uint64() const;
   int64_t value_get_int64() const;
   time_t value_get_date() const;
   int value_get_comma_list(StrList *list) const;
@@ -662,6 +663,7 @@ void mime_field_name_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16
 inkcoreapi const char *mime_field_value_get(const MIMEField *field, int *length);
 int32_t mime_field_value_get_int(const MIMEField *field);
 uint32_t mime_field_value_get_uint(const MIMEField *field);
+uint64_t mime_field_value_get_uint64(const MIMEField *field);
 int64_t mime_field_value_get_int64(const MIMEField *field);
 time_t mime_field_value_get_date(const MIMEField *field);
 const char *mime_field_value_get_comma_val(const MIMEField *field, int *length, int idx);
@@ -721,8 +723,9 @@ void mime_days_since_epoch_to_mdy(unsigned int days_since_jan_1_1970, int *m_ret
 int mime_format_date(char *buffer, time_t value);
 
 int32_t mime_parse_int(const char *buf, const char *end = NULL);
-uint32_t mime_parse_uint(const char *buf, const char *end = NULL);
 int64_t mime_parse_int64(const char *buf, const char *end = NULL);
+template <typename T> void mime_parse_unsigned(const char *buf, const char *end, T &x);
+
 int mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp);
 time_t mime_parse_date(const char *buf, const char *end = NULL);
 int mime_parse_day(const char *&buf, const char *end, int *day);
@@ -801,6 +804,12 @@ inline uint32_t
 MIMEField::value_get_uint() const
 {
   return (mime_field_value_get_uint(this));
+}
+
+inline uint64_t
+MIMEField::value_get_uint64() const
+{
+  return (mime_field_value_get_uint64(this));
 }
 
 inline int64_t
@@ -955,6 +964,7 @@ public:
   const char *value_get(const char *name, int name_length, int *value_length) const;
   int32_t value_get_int(const char *name, int name_length) const;
   uint32_t value_get_uint(const char *name, int name_length) const;
+  uint64_t value_get_uint64(const char *name, int name_length) const;
   int64_t value_get_int64(const char *name, int name_length) const;
   time_t value_get_date(const char *name, int name_length) const;
   int value_get_comma_list(const char *name, int name_length, StrList *list) const;
@@ -1279,6 +1289,17 @@ MIMEHdr::value_get_uint(const char *name, int name_length) const
 
   if (field)
     return (mime_field_value_get_uint(field));
+  else
+    return (0);
+}
+
+inline uint64_t
+MIMEHdr::value_get_uint64(const char *name, int name_length) const
+{
+  const MIMEField *field = field_find(name, name_length);
+
+  if (field)
+    return (mime_field_value_get_uint64(field));
   else
     return (0);
 }
