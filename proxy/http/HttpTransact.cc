@@ -6600,6 +6600,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         if (s->range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
           break;
         }
+      // fallthrough
 
       case SOURCE_CACHE:
         // if we are doing a single Range: request, calculate the new
@@ -8271,6 +8272,8 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
 
   case SQUID_LOG_TCP_MEM_HIT:
     HTTP_INCREMENT_DYN_STAT(http_cache_hit_mem_fresh_stat);
+  // fallthrough
+
   case SQUID_LOG_TCP_HIT:
     // It's possible to have two stat's instead of one, if needed.
     HTTP_INCREMENT_DYN_STAT(http_cache_hit_fresh_stat);
@@ -8712,80 +8715,37 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   }
 
   // update milestones stats
-  if (http_ua_begin_time_stat) {
-    HTTP_SUM_DYN_STAT(http_ua_begin_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN));
-  }
-  if (http_ua_first_read_time_stat) {
-    HTTP_SUM_DYN_STAT(http_ua_first_read_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ));
-  }
-  if (http_ua_read_header_done_time_stat) {
-    HTTP_SUM_DYN_STAT(http_ua_read_header_done_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE));
-  }
-  if (http_ua_begin_write_time_stat) {
-    HTTP_SUM_DYN_STAT(http_ua_begin_write_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE));
-  }
-  if (http_ua_close_time_stat) {
-    HTTP_SUM_DYN_STAT(http_ua_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE));
-  }
-  if (http_server_first_connect_time_stat) {
-    HTTP_SUM_DYN_STAT(http_server_first_connect_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_CONNECT));
-  }
-  if (http_server_connect_time_stat) {
-    HTTP_SUM_DYN_STAT(http_server_connect_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT));
-  }
-  if (http_server_connect_end_time_stat) {
-    HTTP_SUM_DYN_STAT(http_server_connect_end_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END));
-  }
-  if (http_server_begin_write_time_stat) {
-    HTTP_SUM_DYN_STAT(http_server_begin_write_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_BEGIN_WRITE));
-  }
-  if (http_server_first_read_time_stat) {
-    HTTP_SUM_DYN_STAT(http_server_first_read_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ));
-  }
-  if (http_server_read_header_done_time_stat) {
-    HTTP_SUM_DYN_STAT(http_server_read_header_done_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE));
-  }
-  if (http_server_close_time_stat) {
-    HTTP_SUM_DYN_STAT(http_server_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE));
-  }
-  if (http_cache_open_read_begin_time_stat) {
-    HTTP_SUM_DYN_STAT(http_cache_open_read_begin_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN));
-  }
-  if (http_cache_open_read_end_time_stat) {
-    HTTP_SUM_DYN_STAT(http_cache_open_read_end_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END));
-  }
-  if (http_cache_open_write_begin_time_stat) {
-    HTTP_SUM_DYN_STAT(http_cache_open_write_begin_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN));
-  }
-  if (http_cache_open_write_end_time_stat) {
-    HTTP_SUM_DYN_STAT(http_cache_open_write_end_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_END));
-  }
-  if (http_dns_lookup_begin_time_stat) {
-    HTTP_SUM_DYN_STAT(http_dns_lookup_begin_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN));
-  }
-  if (http_dns_lookup_end_time_stat) {
-    HTTP_SUM_DYN_STAT(http_dns_lookup_end_time_stat,
-                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END));
-  }
-  if (http_sm_start_time_stat) {
-    HTTP_SUM_DYN_STAT(http_sm_start_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_START));
-  }
-  if (http_sm_finish_time_stat) {
-    HTTP_SUM_DYN_STAT(http_sm_finish_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
-  }
+  HTTP_SUM_DYN_STAT(http_ua_begin_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN));
+  HTTP_SUM_DYN_STAT(http_ua_first_read_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ));
+  HTTP_SUM_DYN_STAT(http_ua_read_header_done_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE));
+  HTTP_SUM_DYN_STAT(http_ua_begin_write_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE));
+  HTTP_SUM_DYN_STAT(http_ua_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE));
+  HTTP_SUM_DYN_STAT(http_server_first_connect_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_CONNECT));
+  HTTP_SUM_DYN_STAT(http_server_connect_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT));
+  HTTP_SUM_DYN_STAT(http_server_connect_end_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END));
+  HTTP_SUM_DYN_STAT(http_server_begin_write_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_BEGIN_WRITE));
+  HTTP_SUM_DYN_STAT(http_server_first_read_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ));
+  HTTP_SUM_DYN_STAT(http_server_read_header_done_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE));
+  HTTP_SUM_DYN_STAT(http_server_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE));
+  HTTP_SUM_DYN_STAT(http_cache_open_read_begin_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN));
+  HTTP_SUM_DYN_STAT(http_cache_open_read_end_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END));
+  HTTP_SUM_DYN_STAT(http_cache_open_write_begin_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN));
+  HTTP_SUM_DYN_STAT(http_cache_open_write_end_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_END));
+  HTTP_SUM_DYN_STAT(http_dns_lookup_begin_time_stat,
+                    milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN));
+  HTTP_SUM_DYN_STAT(http_dns_lookup_end_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END));
+  HTTP_SUM_DYN_STAT(http_sm_start_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_START));
+  HTTP_SUM_DYN_STAT(http_sm_finish_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
 }
 
 void

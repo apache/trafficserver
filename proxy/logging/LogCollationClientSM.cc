@@ -578,8 +578,7 @@ LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
     Debug("log-coll", "[%d]client::client_send - EVENT_IMMEDIATE", m_id);
     // callback complete, reset m_pending_event
     m_pending_event = nullptr;
-
-  // fall through to LOG_COLL_EVENT_SWITCH
+  // fallthrough
 
   case LOG_COLL_EVENT_SWITCH: {
     Debug("log-coll", "[%d]client::client_send - SWITCH", m_id);
