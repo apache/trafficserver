@@ -72,6 +72,7 @@ libtsutil_la_SOURCES = \
   HashMD5.h \
   HashSip.cc \
   HashSip.h \
+  History.h \
   HostLookup.cc \
   HostLookup.h \
   hugepages.cc \
@@ -233,6 +234,7 @@ test_X509HostnameValidator_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@ @OPENSSL_LIBS
 
 test_tsutil_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@
 test_tsutil_SOURCES = \
+	test_History.cc \
 	test_PriorityQueue.cc \
 	test_Ptr.cc \
 	test_Regex.cc \

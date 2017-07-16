@@ -42,6 +42,7 @@
 #include "../ProxyClientTransaction.h"
 #include "HdrUtils.h"
 #include <ts/MemView.h>
+#include <ts/History.h>
 //#include "AuthHttpAdapter.h"
 
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
@@ -141,7 +142,6 @@ struct HttpTransformInfo {
 
   HttpTransformInfo() : entry(NULL), vc(NULL) {}
 };
-#define HISTORY_SIZE 64
 
 enum {
   HTTP_SM_MAGIC_ALIVE = 0x0000FEED,
@@ -267,7 +267,6 @@ public:
   void txn_hook_prepend(TSHttpHookID id, INKContInternal *cont);
   APIHook *txn_hook_get(TSHttpHookID id);
 
-  void add_history_entry(const SourceLocation &location, int event, int reentrant);
   void add_cache_sm();
   bool is_private();
   bool is_redirect_required();
@@ -300,14 +299,6 @@ public:
 protected:
   int reentrancy_count = 0;
 
-  struct History {
-    SourceLocation location;
-    unsigned short event = 0;
-    short reentrancy     = 0;
-  };
-  History history[HISTORY_SIZE];
-  int history_pos = 0;
-
   HttpTunnel tunnel;
 
   HttpVCTable vc_table;
@@ -321,6 +312,8 @@ public:
   // AuthHttpAdapter authAdapter;
   void set_http_schedule(Continuation *);
   int get_http_schedule(int event, void *data);
+
+  History<HISTORY_DEFAULT_SIZE> history;
 
 protected:
   IOBufferReader *ua_buffer_reader     = nullptr;
@@ -615,15 +608,6 @@ HttpSM::write_response_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
   } else {
     return write_header_into_buffer(h, b);
   }
-}
-
-inline void
-HttpSM::add_history_entry(const SourceLocation &location, int event, int reentrant)
-{
-  int pos                 = history_pos++ % HISTORY_SIZE;
-  history[pos].location   = location;
-  history[pos].event      = (unsigned short)event;
-  history[pos].reentrancy = (short)reentrant;
 }
 
 inline int

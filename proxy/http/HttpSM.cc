@@ -234,18 +234,12 @@ HttpVCTable::cleanup_all()
   }
 }
 
-#define REMEMBER_EVENT_FILTER(e) 1
-
-#define RECORD_FILE_LINE() history[pos].location = MakeSourceLocation();
-
-#define REMEMBER(e, r)                               \
-  {                                                  \
-    if (REMEMBER_EVENT_FILTER(e)) {                  \
-      add_history_entry(MakeSourceLocation(), e, r); \
-    }                                                \
-  }
-
 #define DebugSM(tag, ...) DebugSpecific(debug_on, tag, __VA_ARGS__)
+
+#define REMEMBER(e, r)                             \
+  {                                                \
+    history.push_back(MakeSourceLocation(), e, r); \
+  }
 
 #ifdef STATE_ENTER
 #undef STATE_ENTER
@@ -256,10 +250,10 @@ HttpVCTable::cleanup_all()
     DebugSM("http", "[%" PRId64 "] [%s, %s]", sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
   }
 
-#define HTTP_SM_SET_DEFAULT_HANDLER(_h) \
-  {                                     \
-    REMEMBER(-1, reentrancy_count);     \
-    default_handler = _h;               \
+#define HTTP_SM_SET_DEFAULT_HANDLER(_h)   \
+  {                                       \
+    REMEMBER(NO_EVENT, reentrancy_count); \
+    default_handler = _h;                 \
   }
 
 static int next_sm_id = 0;
@@ -7037,13 +7031,11 @@ HttpSM::dump_state_on_assert()
 {
   Error("[%" PRId64 "] ------- begin http state dump -------", sm_id);
 
-  int hist_size = this->history_pos;
-  if (this->history_pos > HISTORY_SIZE) {
-    hist_size = HISTORY_SIZE;
-    Error("   History Wrap around. history_pos: %d", this->history_pos);
+  if (history.overflowed()) {
+    Error("   History Wrap around. history size: %d", history.size());
   }
   // Loop through the history and dump it
-  for (int i = 0; i < hist_size; i++) {
+  for (unsigned int i = 0; i < history.size(); i++) {
     char buf[256];
     int r = history[i].reentrancy;
     int e = history[i].event;
