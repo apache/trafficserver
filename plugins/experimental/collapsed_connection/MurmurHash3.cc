@@ -114,8 +114,12 @@ MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out)
   switch (len & 3) {
   case 3:
     k1 ^= tail[2] << 16;
+  // fallthrough
+
   case 2:
     k1 ^= tail[1] << 8;
+  // fallthrough
+
   case 1:
     k1 ^= tail[0];
     k1 *= c1;
@@ -213,47 +217,72 @@ MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *out)
   switch (len & 15) {
   case 15:
     k4 ^= tail[14] << 16;
+  // fallthrough
+
   case 14:
     k4 ^= tail[13] << 8;
+  // fallthrough
+
   case 13:
     k4 ^= tail[12] << 0;
     k4 *= c4;
     k4 = ROTL32(k4, 18);
     k4 *= c1;
     h4 ^= k4;
+  // fallthrough
 
   case 12:
     k3 ^= tail[11] << 24;
+  // fallthrough
+
   case 11:
     k3 ^= tail[10] << 16;
+  // fallthrough
+
   case 10:
     k3 ^= tail[9] << 8;
+  // fallthrough
+
   case 9:
     k3 ^= tail[8] << 0;
     k3 *= c3;
     k3 = ROTL32(k3, 17);
     k3 *= c4;
     h3 ^= k3;
+  // fallthrough
 
   case 8:
     k2 ^= tail[7] << 24;
+  // fallthrough
+
   case 7:
     k2 ^= tail[6] << 16;
+  // fallthrough
+
   case 6:
     k2 ^= tail[5] << 8;
+  // fallthrough
+
   case 5:
     k2 ^= tail[4] << 0;
     k2 *= c2;
     k2 = ROTL32(k2, 16);
     k2 *= c3;
     h2 ^= k2;
+  // fallthrough
 
   case 4:
     k1 ^= tail[3] << 24;
+  // fallthrough
+
   case 3:
     k1 ^= tail[2] << 16;
+  // fallthrough
+
   case 2:
     k1 ^= tail[1] << 8;
+  // fallthrough
+
   case 1:
     k1 ^= tail[0] << 0;
     k1 *= c1;

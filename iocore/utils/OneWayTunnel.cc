@@ -296,9 +296,13 @@ OneWayTunnel::startEvent(int event, void *data)
   Lerror:
   case VC_EVENT_ERROR:
     lerrno = ((VIO *)data)->vc_server->lerrno;
+  // fallthrough
+
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
     result = -1;
+  // fallthrough
+
   Ldone:
   case VC_EVENT_WRITE_COMPLETE:
     if (tunnel_peer) {

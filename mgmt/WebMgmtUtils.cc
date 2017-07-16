@@ -135,17 +135,22 @@ varSetFloat(const char *varName, RecFloat value, bool convert)
   case RECD_FLOAT:
     RecSetRecordFloat((char *)varName, (RecFloat)value, REC_SOURCE_EXPLICIT);
     break;
+
   case RECD_INT:
     if (convert) {
       value += 0.5; // rounding up
       RecSetRecordInt((char *)varName, (RecInt)value, REC_SOURCE_EXPLICIT);
       break;
     }
+  // fallthrough
+
   case RECD_COUNTER:
     if (convert) {
       RecSetRecordCounter((char *)varName, (RecCounter)value, REC_SOURCE_EXPLICIT);
       break;
     }
+  // fallthrough
+
   case RECD_STRING:
   case RECD_NULL:
   default:
@@ -181,16 +186,21 @@ varSetCounter(const char *varName, RecCounter value, bool convert)
   case RECD_COUNTER:
     RecSetRecordCounter((char *)varName, (RecCounter)value, REC_SOURCE_EXPLICIT);
     break;
+
   case RECD_INT:
     if (convert) {
       RecSetRecordInt((char *)varName, (RecInt)value, REC_SOURCE_EXPLICIT);
       break;
     }
+  // fallthrough
+
   case RECD_FLOAT:
     if (convert) {
       RecSetRecordFloat((char *)varName, (RecFloat)value, REC_SOURCE_EXPLICIT);
       break;
     }
+  // fallthrough
+
   case RECD_STRING:
   case RECD_NULL:
   default:
@@ -226,16 +236,21 @@ varSetInt(const char *varName, RecInt value, bool convert)
   case RECD_INT:
     RecSetRecordInt((char *)varName, (RecInt)value, REC_SOURCE_EXPLICIT);
     break;
+
   case RECD_COUNTER:
     if (convert) {
       RecSetRecordCounter((char *)varName, (RecCounter)value, REC_SOURCE_EXPLICIT);
       break;
     }
+  // fallthrough
+
   case RECD_FLOAT:
     if (convert) {
       RecSetRecordFloat((char *)varName, (RecFloat)value, REC_SOURCE_EXPLICIT);
       break;
     }
+  // fallthrough
+
   case RECD_STRING:
   case RECD_NULL:
   default:
