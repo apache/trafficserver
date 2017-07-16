@@ -1949,6 +1949,8 @@ HttpSM::state_read_server_response_header(int event, void *data)
     }
     // FALLTHROUGH (since we are allowing the parse error)
   }
+  // fallthrough
+
   case PARSE_RESULT_DONE:
     DebugSM("http_seq", "Done parsing server response header");
 
@@ -2078,7 +2080,9 @@ HttpSM::state_send_server_request_header(int event, void *data)
      } */
 
   // Nothing in the buffer
-  //  FALLTHROUGH to error
+  // proceed to error
+  // fallthrough
+
   case VC_EVENT_ERROR:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -3439,6 +3443,8 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
       // fall through for the case INT64_MAX read with VC_EVENT_EOS
       // callback (read successful)
     }
+  // fallthrough
+
   case VC_EVENT_READ_COMPLETE:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
   case HTTP_TUNNEL_EVENT_CONSUMER_DETACH:
@@ -7736,6 +7742,7 @@ HttpSM::set_next_state()
 
   case HttpTransact::SM_ACTION_CONTINUE: {
     ink_release_assert(!"Not implemented");
+    break;
   }
 
   default: {
