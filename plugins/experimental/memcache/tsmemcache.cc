@@ -372,11 +372,13 @@ MC::write_binary_response(const void *d, int hlen, int keylen, int dlen)
       case VC_EVENT_EOS:                             \
         if ((VIO *)data == rvio)                     \
           break;                                     \
+      /* fallthrough */                              \
       case VC_EVENT_READ_READY:                      \
         return EVENT_CONT;                           \
       case VC_EVENT_WRITE_READY:                     \
         if (wvio->buffer.reader()->read_avail() > 0) \
           return EVENT_CONT;                         \
+      /* fallthrough */                              \
       case VC_EVENT_WRITE_COMPLETE:                  \
         return EVENT_DONE;                           \
       default:                                       \

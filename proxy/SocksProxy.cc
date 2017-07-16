@@ -143,7 +143,8 @@ SocksProxy::mainEvent(int event, void *data)
 
     clientVC = (NetVConnection *)data;
     clientVC->socks_addr.reset();
-  // Fall through:
+  // fallthrough
+
   case VC_EVENT_WRITE_COMPLETE:
 
     switch (state) {
