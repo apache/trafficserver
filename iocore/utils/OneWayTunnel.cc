@@ -286,19 +286,25 @@ OneWayTunnel::startEvent(int event, void *data)
     // set write nbytes to the current buffer size
     //
     vioTarget->nbytes = vioTarget->ndone + vioTarget->buffer.reader()->read_avail();
-    if (vioTarget->nbytes == vioTarget->ndone)
+    if (vioTarget->nbytes == vioTarget->ndone) {
       goto Ldone;
+    }
     vioTarget->reenable();
-    if (!tunnel_peer)
+    if (!tunnel_peer) {
       close_source_vio(0);
+    }
     break;
 
   Lerror:
   case VC_EVENT_ERROR:
     lerrno = ((VIO *)data)->vc_server->lerrno;
+  // fallthrough
+
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
     result = -1;
+  // fallthrough
+
   Ldone:
   case VC_EVENT_WRITE_COMPLETE:
     if (tunnel_peer) {
