@@ -110,16 +110,20 @@ ThreadAffinityInitializer::init()
     obj_name = "Logical Processor";
     break;
 #endif
+
   case 3: // assign threads to real cores
     obj_type = HWLOC_OBJ_CORE;
     obj_name = "Core";
     break;
+
   case 1: // assign threads to NUMA nodes (often 1:1 with sockets)
     obj_type = HWLOC_OBJ_NODE;
     obj_name = "NUMA Node";
     if (hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type) > 0) {
       break;
     }
+  // fallthrough
+
   case 2: // assign threads to sockets
     obj_type = HWLOC_OBJ_SOCKET;
     obj_name = "Socket";

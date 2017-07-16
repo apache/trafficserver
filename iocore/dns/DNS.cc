@@ -1360,6 +1360,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       goto Lerror;
     case SERVFAIL: // recoverable error
       retry = true;
+      break;
     case FORMERR: // unrecoverable errors
     case REFUSED:
     case NOTIMP:

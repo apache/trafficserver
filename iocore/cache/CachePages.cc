@@ -416,6 +416,8 @@ ShowCache::handleCacheEvent(int event, Event *e)
     }
     // open success but no vector, that is the Cluster open read, pass through
   }
+  // fallthrough
+
   case VC_EVENT_READ_READY:
     if (!cvio) {
       buffer         = new_empty_MIOBuffer();
