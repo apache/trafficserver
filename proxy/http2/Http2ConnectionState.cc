@@ -1487,6 +1487,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
   Http2Error error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   stream = this->create_stream(id, error);
   if (!stream) {
+    h2_hdr.destroy();
     return;
   }
   if (Http2::stream_priority_enabled) {
