@@ -5170,7 +5170,7 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
   default:
     // The default is the "1" config, SEND_HTTP11_ALWAYS, but assert in debug builds since we shouldn't be here
     ink_assert(0);
-  // FALL THROUGH in a release build
+  // fallthrough
   case HttpConfigParams::SEND_HTTP11_ALWAYS:
     server_info->http_version = HTTPVersion(1, 1);
     break;
@@ -5213,7 +5213,7 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
   default:
     // The default is the "1" config, SEND_HTTP11_ALWAYS, but assert in debug builds since we shouldn't be here
     ink_assert(0);
-  // FALL THROUGH in a release build
+  // fallthrough
   case HttpConfigParams::SEND_HTTP11_ALWAYS:
     force_http11 = true;
     break;
