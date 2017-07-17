@@ -7641,6 +7641,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   URL url_obj;
   url_obj.create(nullptr);
   if (url_obj.parse(url, url_len) == PARSE_RESULT_ERROR) {
+    url_obj.destroy();
     return;
   }
   HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
@@ -7648,6 +7649,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   if (stream) {
     stream->push_promise(url_obj);
   }
+  url_obj.destroy();
 }
 
 TSReturnCode
