@@ -53,11 +53,11 @@ typedef HashMap<cchar *, StringHashFns, NextHopProperty *> NextHopPropertyTable;
 
 struct SNIConfigParams : public ConfigInfo {
   char *sni_filename = nullptr;
-  mutable SNIMap sni_action_map;
-  mutable SNIMap wild_sni_action_map;
-  mutable NextHopPropertyTable next_hop_table;
-  mutable NextHopPropertyTable wild_next_hop_table;
-  void setPropertyConfig(int id, char *servername, void *param);
+  SNIMap sni_action_map;
+  SNIMap wild_sni_action_map;
+  NextHopPropertyTable next_hop_table;
+  NextHopPropertyTable wild_next_hop_table;
+  void setPropertyConfig(PropertyActions id, char *servername, void *param);
   NextHopProperty *getPropertyConfig(cchar *servername) const;
   SNIConfigParams();
   virtual ~SNIConfigParams();
