@@ -7889,21 +7889,10 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 void
 HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null, const char *error_body_type)
 {
-  const char *reason_phrase;
-  char *url_string;
   char body_language[256], body_type[256];
 
   if (nullptr == error_body_type) {
     error_body_type = "default";
-  }
-
-  ////////////////////////////////////////////////////////////
-  // get the url --- remember this is dynamically allocated //
-  ////////////////////////////////////////////////////////////
-  if (s->hdr_info.client_request.valid()) {
-    url_string = s->hdr_info.client_request.url_string_get(&s->arena);
-  } else {
-    url_string = nullptr;
   }
 
   // Make sure that if this error occured before we initailzied the state variables that we do now.
@@ -7972,7 +7961,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     break;
   }
 
-  reason_phrase = (reason_phrase_or_null ? reason_phrase_or_null : (char *)(http_hdr_reason_lookup(status_code)));
+  const char *reason_phrase = (reason_phrase_or_null ? reason_phrase_or_null : (char *)(http_hdr_reason_lookup(status_code)));
   if (unlikely(!reason_phrase)) {
     reason_phrase = "Unknown HTTP Status";
 
@@ -8039,29 +8028,6 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   } else {
     s->hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     s->hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_LANGUAGE, MIME_LEN_CONTENT_LANGUAGE);
-  }
-
-  ////////////////////////////////////////
-  // log a description in the error log //
-  ////////////////////////////////////////
-
-  if (s->current.state == CONNECTION_ERROR) {
-    char *reason_buffer;
-    int buf_len   = sizeof(char) * (strlen(get_error_string(s->cause_of_death_errno)) + 50);
-    reason_buffer = (char *)alloca(buf_len);
-    snprintf(reason_buffer, buf_len, "Connect Error <%s/%d>", get_error_string(s->cause_of_death_errno), s->cause_of_death_errno);
-    reason_phrase = reason_buffer;
-  }
-
-  if (s->http_config_param->errors_log_error_pages && status_code >= HTTP_STATUS_BAD_REQUEST) {
-    char ip_string[INET6_ADDRSTRLEN];
-
-    Log::error("RESPONSE: sent %s status %d (%s) for '%s'", ats_ip_ntop(&s->client_info.src_addr.sa, ip_string, sizeof(ip_string)),
-               status_code, reason_phrase, (url_string ? url_string : "<none>"));
-  }
-
-  if (url_string) {
-    s->arena.str_free(url_string);
   }
 
   s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
