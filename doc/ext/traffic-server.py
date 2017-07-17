@@ -37,6 +37,14 @@ import sphinx
 import subprocess
 import re
 
+# 2/3 compat logic
+try :
+    basestring
+    def is_string_type(s) :
+        return isinstance(s, basestring)
+except NameError :
+    def is_string_type(s) :
+        return isinstance(s, str)
 
 class TSConfVar(std.Target):
     """
@@ -66,7 +74,7 @@ class TSConfVar(std.Target):
         field = nodes.field()
         field.append(nodes.field_name(text=tag))
         body = nodes.field_body()
-        if (isinstance(value, basestring)):
+        if is_string_type(value):
             body.append(sphinx.addnodes.compact_paragraph(text=value))
         else:
             body.append(value)
@@ -193,7 +201,7 @@ class TSStat(std.Target):
         field = nodes.field()
         field.append(nodes.field_name(text=tag))
         body = nodes.field_body()
-        if (isinstance(value, basestring)):
+        if is_string_type(value) :
             body.append(sphinx.addnodes.compact_paragraph(text=value))
         else:
             body.append(value)
@@ -346,11 +354,21 @@ class TrafficServerDomain(Domain):
         if (dst_doc):
             return sphinx.util.nodes.make_refnode(builder, src_doc, dst_doc, nodes.make_id(target), cont_node, 'records.config')
 
-    def get_objects(self):
-        for var, doc in self.data['cv'].iteritems():
-            yield var, var, 'cv', doc, var, 1
-        for var, doc in self.data['stat'].iteritems():
-            yield var, var, 'stat', doc, var, 1
+    # Python 2/3 compat - iteritems is 2, items is 3
+    # Although perhaps the lists are small enough items could be used in Python 2.
+    try :
+        {}.iteritems()
+        def get_objects(self):
+            for var, doc in self.data['cv'].iteritems():
+                yield var, var, 'cv', doc, var, 1
+            for var, doc in self.data['stat'].iteritems():
+                yield var, var, 'stat', doc, var, 1
+    except AttributeError :
+        def get_objects(self):
+            for var, doc in self.data['cv'].items():
+                yield var, var, 'cv', doc, var, 1
+            for var, doc in self.data['stat'].items():
+                yield var, var, 'stat', doc, var, 1
 
 
 # These types are ignored as missing references for the C++ domain.
