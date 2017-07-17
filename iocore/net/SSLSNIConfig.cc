@@ -64,7 +64,7 @@ SNIConfigParams::getEnum(char *actionTag)
 }
 
 void
-SNIConfigParams::setPropertyConfig(int id, char *servername, void *param)
+SNIConfigParams::setPropertyConfig(PropertyActions id, char *servername, void *param)
 {
   ats_wildcard_matcher w_Matcher;
   auto wildcard = w_Matcher.match(servername);
@@ -151,7 +151,7 @@ SNIConfigParams::ParseSNIConfigLine(matcher_line const &line_info, ActionItem *&
     }
 
     if (id >= TS_VERIFY_SERVER && id <= TS_CLIENT_CERT && param) {
-      setPropertyConfig(id, sniname, param);
+      setPropertyConfig(static_cast<PropertyActions>(id), sniname, param);
     }
     return sniname;
   }

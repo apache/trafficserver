@@ -46,9 +46,8 @@ ActionProcessor::PerformAction(Continuation *cont, cchar *servername)
     Debug("ssl_sni", "%s not available in the map", servername);
   else {
     for (auto it : *actionvec) {
-      ActionItem *ai = it;
-      if (ai)
-        ai->SNIAction(cont);
+      if (it)
+        it->SNIAction(cont);
     }
   }
 }
