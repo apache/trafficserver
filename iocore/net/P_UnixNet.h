@@ -353,6 +353,7 @@ accept_error_seriousness(int res)
 #endif
     ink_assert(!"throttling misconfigured: set too high");
 #ifdef ENOBUFS
+  // fallthrough
   case -ENOBUFS:
 #endif
 #ifdef ENFILE
@@ -446,6 +447,7 @@ EventIO::close()
   switch (type) {
   default:
     ink_assert(!"case");
+  // fallthrough
   case EVENTIO_DNS_CONNECTION:
     return data.dnscon->close();
     break;
