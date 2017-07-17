@@ -121,6 +121,7 @@ SocksEntry::findServer()
 
   default:
     ink_assert(!"Unexpected event");
+  // fallthrough
   case PARENT_DIRECT:
   case PARENT_FAIL:
     memset(&server_addr, 0, sizeof(server_addr));
