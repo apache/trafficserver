@@ -134,6 +134,7 @@ public:
 
   const char *scheme = nullptr;
   // private:
+  void PreProcessParents(const char *val, const int line_num, char *buf, size_t len);
   const char *ProcessParents(char *val, bool isPrimary);
   bool ignore_query                                                  = false;
   volatile uint32_t rr_next                                          = 0;
