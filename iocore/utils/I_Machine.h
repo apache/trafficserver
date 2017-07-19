@@ -33,6 +33,7 @@
 
 #include "ts/ink_inet.h"
 #include "ts/ink_uuid.h"
+#include "ts/ink_hash_table.h"
 
 /**
   The Machine is a simple place holder for the hostname and the ip
@@ -79,11 +80,18 @@ struct Machine {
                     );
   /// @return The global instance of this class.
   static self *instance();
+  bool is_self(const char *name);
+  bool is_self(const IpAddr *ipaddr);
+  void insert_id(char *id);
+  void insert_id(IpAddr *ipaddr);
 
 protected:
   Machine(char const *hostname, sockaddr const *addr);
 
   static self *_instance; ///< Singleton for the class.
+
+  InkHashTable *machine_id_strings;
+  InkHashTable *machine_id_ipaddrs;
 };
 
 #endif

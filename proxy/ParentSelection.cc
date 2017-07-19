@@ -29,6 +29,7 @@
 #include "ProxyConfig.h"
 #include "HTTP.h"
 #include "HttpTransact.h"
+#include "I_Machine.h"
 
 #define MAX_SIMPLE_RETRIES 5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5
@@ -333,6 +334,44 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
   std::sort(codes.begin(), codes.end());
 }
 
+void
+ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, size_t len)
+{
+  char *_val                      = static_cast<char *>(ats_strndup(val, strlen(val)));
+  char fqdn[TS_MAX_HOST_NAME_LEN] = {0}, *nm, *token, *savePtr;
+  std::string str;
+  Machine *machine = Machine::instance();
+
+  strncpy(_val, val, strlen(val));
+
+  token = strtok_r(_val, ";", &savePtr);
+  while (token != nullptr) {
+    if ((nm = strchr(token, ':')) != nullptr) {
+      size_t len = (nm - token);
+      ink_assert(len < sizeof(fqdn));
+      memset(fqdn, 0, sizeof(fqdn));
+      strncpy(fqdn, token, len);
+      if (machine->is_self(fqdn)) {
+        Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", fqdn, line_num);
+        token = strtok_r(nullptr, ";", &savePtr);
+        continue;
+      }
+    } else {
+      if (machine->is_self(token)) {
+        Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", token, line_num);
+        token = strtok_r(nullptr, ";", &savePtr);
+        continue;
+      }
+    }
+
+    str += token;
+    str += ";";
+    token = strtok_r(nullptr, ";", &savePtr);
+  }
+  strncpy(buf, str.c_str(), len);
+  ats_free(_val);
+}
+
 // const char* ParentRecord::ProcessParents(char* val, bool isPrimary)
 //
 //   Reads in the value of a "round-robin" or "order"
@@ -524,6 +563,7 @@ ParentRecord::Init(matcher_line *line_info)
   const char *tmp;
   char *label;
   char *val;
+  char parent_buf[16384] = {0};
   bool used              = false;
   ParentRR_t round_robin = P_NO_ROUND_ROBIN;
   char buf[128];
@@ -557,10 +597,12 @@ ParentRecord::Init(matcher_line *line_info)
       }
       used = true;
     } else if (strcasecmp(label, "parent") == 0 || strcasecmp(label, "primary_parent") == 0) {
-      errPtr = ProcessParents(val, true);
+      PreProcessParents(val, line_num, parent_buf, sizeof(parent_buf) - 1);
+      errPtr = ProcessParents(parent_buf, true);
       used   = true;
     } else if (strcasecmp(label, "secondary_parent") == 0) {
-      errPtr = ProcessParents(val, false);
+      PreProcessParents(val, line_num, parent_buf, sizeof(parent_buf) - 1);
+      errPtr = ProcessParents(parent_buf, false);
       used   = true;
     } else if (strcasecmp(label, "go_direct") == 0) {
       if (strcasecmp(val, "false") == 0) {

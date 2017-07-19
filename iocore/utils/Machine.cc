@@ -31,6 +31,22 @@
 #include <ifaddrs.h>
 #endif
 
+static void
+make_to_lower_case(const char *name, char *lower_case_name, int buf_len)
+{
+  int name_len = strlen(name);
+  int i;
+
+  if (name_len > (buf_len - 1)) {
+    name_len = buf_len - 1;
+  }
+
+  for (i = 0; i < name_len; i++) {
+    lower_case_name[i] = ParseRules::ink_tolower(name[i]);
+  }
+  lower_case_name[i] = '\0';
+}
+
 // Singleton
 Machine *Machine::_instance = nullptr;
 
@@ -50,9 +66,15 @@ Machine::init(char const *name, sockaddr const *ip)
 }
 
 Machine::Machine(char const *the_hostname, sockaddr const *addr)
-  : hostname(nullptr), hostname_len(0), ip_string_len(0), ip_hex_string_len(0)
+  : hostname(nullptr),
+    hostname_len(0),
+    ip_string_len(0),
+    ip_hex_string_len(0),
+    machine_id_strings(ink_hash_table_create(InkHashTableKeyType_String)),
+    machine_id_ipaddrs(ink_hash_table_create(InkHashTableKeyType_String))
 {
   char localhost[1024];
+  char ip_strbuf[INET6_ADDRSTRLEN];
   int status; // return for system calls.
 
   ip_string[0]     = 0;
@@ -148,15 +170,26 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
           continue; // Next!
         }
 
-        if (ats_is_ip4(ifip)) {
-          if (spot_type > ip4_type) {
-            ats_ip_copy(&ip4, ifip);
-            ip4_type = spot_type;
+        if (ats_is_ip4(ifip) || ats_is_ip6(ifip)) {
+          ink_zero(ip_strbuf);
+          ink_zero(localhost);
+          ats_ip_ntop(ifip, ip_strbuf, sizeof(ip_strbuf));
+          insert_id(ip_strbuf);
+          if (getnameinfo(ifip, ats_ip_size(ifip), localhost, sizeof(localhost) - 1, nullptr, 0, 0) == 0) {
+            insert_id(localhost);
           }
-        } else if (ats_is_ip6(ifip)) {
-          if (spot_type > ip6_type) {
-            ats_ip_copy(&ip6, ifip);
-            ip6_type = spot_type;
+          IpAddr *ipaddr = new IpAddr(ifip);
+          insert_id(ipaddr);
+          if (ats_is_ip4(ifip)) {
+            if (spot_type > ip4_type) {
+              ats_ip_copy(&ip4, ifip);
+              ip4_type = spot_type;
+            }
+          } else if (ats_is_ip6(ifip)) {
+            if (spot_type > ip6_type) {
+              ats_ip_copy(&ip6, ifip);
+              ip6_type = spot_type;
+            }
           }
         }
       }
@@ -203,4 +236,82 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
 Machine::~Machine()
 {
   ats_free(hostname);
+
+  // release machine_id_strings hash table.
+  InkHashTableIteratorState ht_iter;
+  InkHashTableEntry *ht_entry = nullptr;
+  ht_entry                    = ink_hash_table_iterator_first(machine_id_strings, &ht_iter);
+
+  while (ht_entry != nullptr) {
+    char *value = static_cast<char *>(ink_hash_table_entry_value(machine_id_strings, ht_entry));
+    ats_free(value);
+    ht_entry = ink_hash_table_iterator_next(machine_id_strings, &ht_iter);
+  }
+  ink_hash_table_destroy(machine_id_strings);
+
+  // release machine_id_ipaddrs hash table.
+  ht_entry = nullptr;
+  ht_entry = ink_hash_table_iterator_first(machine_id_ipaddrs, &ht_iter);
+  while (ht_entry != nullptr) {
+    IpAddr *ipaddr = static_cast<IpAddr *>(ink_hash_table_entry_value(machine_id_ipaddrs, ht_entry));
+    delete ipaddr;
+    ht_entry = ink_hash_table_iterator_next(machine_id_ipaddrs, &ht_iter);
+  }
+  ink_hash_table_destroy(machine_id_ipaddrs);
+}
+
+bool
+Machine::is_self(const char *name)
+{
+  char lower_case_name[TS_MAX_HOST_NAME_LEN + 1] = {0};
+  void *value                                    = nullptr;
+
+  if (name == nullptr) {
+    return false;
+  }
+
+  make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
+
+  return ink_hash_table_lookup(machine_id_strings, lower_case_name, &value) == 1 ? true : false;
+}
+
+bool
+Machine::is_self(const IpAddr *ipaddr)
+{
+  void *value                             = nullptr;
+  char string_value[INET6_ADDRSTRLEN + 1] = {0};
+
+  if (ipaddr == nullptr) {
+    return false;
+  }
+  ipaddr->toString(string_value, sizeof(string_value));
+  return ink_hash_table_lookup(machine_id_ipaddrs, string_value, &value) == 1 ? true : false;
+}
+
+void
+Machine::insert_id(char *id)
+{
+  char lower_case_name[TS_MAX_HOST_NAME_LEN + 1] = {0};
+  char *value                                    = nullptr;
+  size_t len                                     = strlen(id);
+
+  if (id != nullptr) {
+    value = static_cast<char *>(ats_malloc(len));
+    make_to_lower_case(id, lower_case_name, sizeof(lower_case_name));
+    strncpy(value, lower_case_name, strlen(lower_case_name));
+    ink_hash_table_insert(machine_id_strings, lower_case_name, value);
+  }
+}
+
+void
+Machine::insert_id(IpAddr *ipaddr)
+{
+  int length         = INET6_ADDRSTRLEN + 1;
+  char *string_value = static_cast<char *>(ats_calloc(length, 1));
+
+  if (ipaddr != nullptr) {
+    ipaddr->toString(string_value, length);
+    ink_hash_table_insert(machine_id_strings, string_value, string_value);
+    ink_hash_table_insert(machine_id_ipaddrs, string_value, ipaddr);
+  }
 }
