@@ -407,7 +407,7 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
 /*
  * Cannot stop this callback. Always reeneabled
  */
-extern ActionProcessor actionProcessor;
+extern SNIActionPerformer sni_action_performer;
 static int
 ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
@@ -415,7 +415,7 @@ ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   Debug("ssl", "Requested servername is %s", servername);
   if (servername != nullptr) {
-    actionProcessor.PerformAction(netvc, servername);
+    sni_action_performer.PerformAction(netvc, servername);
   }
   netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
   return SSL_TLSEXT_ERR_OK;

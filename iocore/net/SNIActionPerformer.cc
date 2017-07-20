@@ -22,13 +22,13 @@
  */
 
 /*************************** -*- Mod: C++ -*- ******************************
- ActionProcessor.cc
+ SNIActionPerformer.cc
    Created On      : 05/02/2017
 
    Description:
    SNI based Configuration in ATS
  ****************************************************************************/
-#include "P_ActionProcessor.h"
+#include "P_SNIActionPerformer.h"
 #include "ts/ink_memory.h"
 #include "P_SSLSNI.h"
 #include "P_Net.h"
@@ -38,7 +38,7 @@
 extern Map<int, SSLNextProtocolSet *> snpsMap;
 
 void
-ActionProcessor::PerformAction(Continuation *cont, cchar *servername)
+SNIActionPerformer::PerformAction(Continuation *cont, cchar *servername)
 {
   SNIConfig::scoped_config params;
   auto actionvec = params->get(servername);

@@ -74,7 +74,7 @@ test_UDPNet_SOURCES = \
   test_I_UDPNet.cc
 
 libinknet_a_SOURCES = \
-  ActionProcessor.cc \
+  SNIActionPerformer.cc \
   BIO_fastopen.cc \
   BIO_fastopen.h \
   Connection.cc \
@@ -90,7 +90,7 @@ libinknet_a_SOURCES = \
   SessionAccept.cc \
   Net.cc \
   NetVConnection.cc \
-  P_ActionProcessor.h \
+  P_SNIActionPerformer.h \
   P_CompletionUtil.h \
   P_Connection.h \
   P_InkBulkIO.h \
