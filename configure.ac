@@ -1979,7 +1979,6 @@ AC_CONFIG_FILES([
   rc/trafficserver.conf
   rc/trafficserver.service
   rc/trafficserver.xml
-  tests/unit_tests/Makefile
   tools/Makefile
   tools/trafficserver.pc
   tools/tsxs
