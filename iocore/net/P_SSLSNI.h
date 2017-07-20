@@ -33,7 +33,7 @@
 
 #include "ProxyConfig.h"
 #include "ts/Map.h"
-#include "P_ActionProcessor.h"
+#include "P_SNIActionPerformer.h"
 #include "ts/MatcherUtils.h"
 #include "openssl/ossl_typ.h"
 #include <vector>

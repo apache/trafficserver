@@ -89,10 +89,10 @@ public:
   }
 };
 
-class ActionProcessor
+class SNIActionPerformer
 {
 public:
-  ActionProcessor() = default;
+  SNIActionPerformer() = default;
   static void PerformAction(Continuation *cont, cchar *servername);
 };
 

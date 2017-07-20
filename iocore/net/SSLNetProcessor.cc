@@ -34,7 +34,7 @@
 
 SSLNetProcessor ssl_NetProcessor;
 NetProcessor &sslNetProcessor = ssl_NetProcessor;
-ActionProcessor actionProcessor;
+SNIActionPerformer sni_action_performer;
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
 struct OCSPContinuation : public Continuation {
   int
