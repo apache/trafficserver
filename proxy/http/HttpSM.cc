@@ -1533,13 +1533,6 @@ HttpSM::handle_api_return()
       setup_client_read_request_header();
     }
     return;
-  case HttpTransact::SM_ACTION_API_PRE_REMAP:
-  case HttpTransact::SM_ACTION_API_POST_REMAP:
-  case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
-  case HttpTransact::SM_ACTION_API_OS_DNS:
-  case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
-    call_transact_and_set_next_state(nullptr);
-    return;
 
   case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
   case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
@@ -1551,7 +1544,13 @@ HttpSM::handle_api_return()
       cache_sm.close_read();
       transform_cache_sm.close_read();
     }
+  // fallthrough
 
+  case HttpTransact::SM_ACTION_API_PRE_REMAP:
+  case HttpTransact::SM_ACTION_API_POST_REMAP:
+  case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
+  case HttpTransact::SM_ACTION_API_OS_DNS:
+  case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
     call_transact_and_set_next_state(nullptr);
     return;
   case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
