@@ -1,0 +1,13 @@
+``
+> GET ftp://127.0.0.1``/ HTTP/1.1
+> Host: 127.0.0.1:``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Date: ``
+< Proxy-Connection: keep-alive
+< Server: ATS/``
+< 
+``
+

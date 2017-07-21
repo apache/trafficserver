@@ -811,6 +811,8 @@ public:
 
   MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 
+  MgmtByte forward_proxy_ftp_enabled = 0;
+
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
