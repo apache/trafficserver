@@ -1029,7 +1029,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   ink_assert(nullptr != new_stream);
   ink_assert(!stream_list.in(new_stream));
 
-  stream_list.push(new_stream);
+  stream_list.enqueue(new_stream);
   if (client_streamid) {
     latest_streamid_in = new_id;
     ink_assert(client_streams_in_count < UINT32_MAX);
@@ -1055,7 +1055,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
 Http2Stream *
 Http2ConnectionState::find_stream(Http2StreamId id) const
 {
-  for (Http2Stream *s = stream_list.head; s; s = s->link.next) {
+  for (Http2Stream *s = stream_list.head; s; s = static_cast<Http2Stream *>(s->link.next)) {
     if (s->get_id() == id) {
       return s;
     }
@@ -1070,7 +1070,7 @@ Http2ConnectionState::restart_streams()
   Http2Stream *s = stream_list.head;
 
   while (s) {
-    Http2Stream *next = s->link.next;
+    Http2Stream *next = static_cast<Http2Stream *>(s->link.next);
     if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
         min(this->client_rwnd, s->client_rwnd) > 0) {
       s->send_response_body();
@@ -1085,7 +1085,7 @@ Http2ConnectionState::cleanup_streams()
 {
   Http2Stream *s = stream_list.head;
   while (s) {
-    Http2Stream *next = s->link.next;
+    Http2Stream *next = static_cast<Http2Stream *>(s->link.next);
     this->delete_stream(s);
     ink_assert(s != next);
     s = next;
@@ -1177,7 +1177,7 @@ void
 Http2ConnectionState::update_initial_rwnd(Http2WindowSize new_size)
 {
   // Update stream level window sizes
-  for (Http2Stream *s = stream_list.head; s; s = s->link.next) {
+  for (Http2Stream *s = stream_list.head; s; s = static_cast<Http2Stream *>(s->link.next)) {
     s->client_rwnd = new_size - (client_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - s->client_rwnd);
   }
 }
