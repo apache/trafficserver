@@ -88,8 +88,9 @@ object, but it does not need to be previously initialized.
 
 Finally, :func:`TSClientRequestUuidGet` can be used to extract
 the client request uuid from a transaction. The output buffer must be of
-sufficient length, minimum of ``TS_CRUUID_STRING_LEN``. This produces the same
-string as the log tag %<cruuid> generates.
+sufficient length, minimum of ``TS_CRUUID_STRING_LEN`` + 1 bytes. This
+produces the same string as the log tag %<cruuid> generates, and it will
+be NULL terminated.
 
 Return Values
 =============

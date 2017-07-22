@@ -788,20 +788,18 @@ LogAccessHttp::marshal_client_req_id(char *buf)
 int
 LogAccessHttp::marshal_client_req_uuid(char *buf)
 {
+  char str[TS_CRUUID_STRING_LEN + 1];
+  const char *uuid = Machine::instance()->uuid.getString();
+  int len          = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
+
+  ink_assert(len <= TS_CRUUID_STRING_LEN);
+  len = round_strlen(len + 1);
+
   if (buf) {
-    char str[TS_CRUUID_STRING_LEN + 1];
-    const char *uuid = (char *)Machine::instance()->uuid.getString();
-    int len;
-
-    len = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
-    ink_assert(len < (int)sizeof(str));
-
-    len = round_strlen(len + 1);
-    marshal_str(buf, str, len);
-    return len;
+    marshal_str(buf, str, len); // This will pad the remaning bytes properly ...
   }
 
-  return round_strlen(TS_CRUUID_STRING_LEN + 1);
+  return len;
 }
 
 /*-------------------------------------------------------------------------
