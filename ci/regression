@@ -105,7 +105,8 @@ build() {
 # Run extended (level 3) regressions.
 regress() {
   ( cd $OBJROOT && $MAKE check ) && \
-  $DSTROOT/bin/traffic_server -k -K -R 1
+  $DSTROOT/bin/traffic_server -k -K -R 1 && \
+  $SRCROOT/tests/autest.sh --ats-bin=$DSTROOT/bin
 }
 
 CC=${CC:-$(prog cc)}
