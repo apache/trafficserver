@@ -29,6 +29,7 @@
 #include <ts/remap.h>
 #include <getopt.h>
 #include <openssl/ssl.h>
+#include <strings.h>
 
 #define PN "ssl_hook_test"
 #define PCP "[" PN " Plugin] "
