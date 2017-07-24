@@ -183,6 +183,7 @@ libtsutil_la_SOURCES = \
   SourceLocation.cc \
   SourceLocation.h \
   string_view.h \
+  BufferWriter.h \
   TestBox.h \
   TextBuffer.cc \
   TextBuffer.h \
@@ -253,7 +254,8 @@ test_tslib_LDADD = libtsutil.la
 test_tslib_SOURCES = \
 	unit-tests/main.cpp \
 	unit-tests/test_IpMap.cc \
-	unit-tests/test_layout.cpp
+	unit-tests/test_layout.cpp \
+	unit-tests/BufferWriter.cpp
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
