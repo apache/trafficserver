@@ -44,32 +44,6 @@ static const char *const CHUNK_HEADER_FMT = "%" PRIx64 "\r\n";
 // a block in the input stream.
 static int const CHUNK_IOBUFFER_SIZE_INDEX = MIN_IOBUFFER_SIZE;
 
-char
-VcTypeCode(HttpTunnelType_t t)
-{
-  char zret = ' ';
-  switch (t) {
-  case HT_HTTP_CLIENT:
-    zret = 'U';
-    break;
-  case HT_HTTP_SERVER:
-    zret = 'S';
-    break;
-  case HT_TRANSFORM:
-    zret = 'T';
-    break;
-  case HT_CACHE_READ:
-    zret = 'R';
-    break;
-  case HT_CACHE_WRITE:
-    zret = 'W';
-    break;
-  default:
-    break;
-  }
-  return zret;
-}
-
 ChunkedHandler::ChunkedHandler()
   : action(ACTION_UNSET),
     chunked_reader(nullptr),
