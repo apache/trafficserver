@@ -27,9 +27,9 @@
 
 #include "ts/ink_platform.h"
 #include "I_EventSystem.h"
+
 #if !defined(I_VIO_h)
 #error "include I_VIO.h"
----include I_VIO.h
 #endif
 
 //
@@ -110,18 +110,18 @@
 #define VC_EVENT_DONE CONTINUATION_DONE
 #define VC_EVENT_CONT CONTINUATION_CONT
 
-   //////////////////////////////////////////////////////////////////////////////
-   //
-   //      Support Data Structures
-   //
-   //////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//
+//      Support Data Structures
+//
+//////////////////////////////////////////////////////////////////////////////
 
-   /** Used in VConnection::shutdown(). */
-   enum ShutdownHowTo_t {
-     IO_SHUTDOWN_READ = 0,
-     IO_SHUTDOWN_WRITE,
-     IO_SHUTDOWN_READWRITE
-   };
+/** Used in VConnection::shutdown(). */
+enum ShutdownHowTo_t {
+  IO_SHUTDOWN_READ = 0,
+  IO_SHUTDOWN_WRITE,
+  IO_SHUTDOWN_READWRITE,
+};
 
 /** Used in VConnection::get_data(). */
 enum TSApiDataType {
@@ -383,6 +383,7 @@ struct DummyVConnection : public VConnection {
                 "cannot use default implementation");
     return nullptr;
   }
+
   virtual VIO *
   do_io_read(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, MIOBuffer * /* buf ATS_UNUSED */)
   {
@@ -390,17 +391,20 @@ struct DummyVConnection : public VConnection {
                 "cannot use default implementation");
     return nullptr;
   }
+
   virtual void
   do_io_close(int /* alerrno ATS_UNUSED */)
   {
     ink_assert(!"VConnection::do_io_close -- "
                 "cannot use default implementation");
   }
+
   virtual void do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */)
   {
     ink_assert(!"VConnection::do_io_shutdown -- "
                 "cannot use default implementation");
   }
+
   DummyVConnection(ProxyMutex *m) : VConnection(m) {}
 };
 
