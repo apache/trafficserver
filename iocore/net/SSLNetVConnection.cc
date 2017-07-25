@@ -336,74 +336,59 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
 int64_t
 SSLNetVConnection::read_raw_data()
 {
-  int64_t r      = 0;
-  int64_t toread = INT_MAX;
+  int64_t r          = 0;
+  int64_t total_read = 0;
+  int64_t rattempted = 0;
+  char *buffer       = 0;
+  int buf_len;
+  IOBufferBlock *b = this->handShakeBuffer->first_write_block();
 
-  // read data
-  int64_t rattempted = 0, total_read = 0;
-  int niov = 0;
-  IOVec tiovec[NET_MAX_IOV];
-  if (toread) {
-    IOBufferBlock *b = this->handShakeBuffer->first_write_block();
-    do {
-      niov       = 0;
-      rattempted = 0;
-      while (b && niov < NET_MAX_IOV) {
-        int64_t a = b->write_avail();
-        if (a > 0) {
-          tiovec[niov].iov_base = b->_end;
-          int64_t togo          = toread - total_read - rattempted;
-          if (a > togo)
-            a                  = togo;
-          tiovec[niov].iov_len = a;
-          rattempted += a;
-          niov++;
-          if (a >= togo)
-            break;
-        }
-        b = b->next;
-      }
+  rattempted = b->write_avail();
+  while (rattempted) {
+    buffer  = b->_end;
+    buf_len = rattempted;
+    b       = b->next;
 
-      // If there was no room to write into the buffer then skip the read
-      if (niov > 0) {
-        r = socketManager.readv(this->con.fd, &tiovec[0], niov);
+    r = socketManager.read(this->con.fd, buffer, buf_len);
+    NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
+    total_read += rattempted;
 
-        NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
-        total_read += rattempted;
-      } else { // No more space to write, break out
-        r = 0;
-        break;
-      }
-    } while (rattempted && r == rattempted && total_read < toread);
-
-    // if we have already moved some bytes successfully, summarize in r
-    if (total_read != rattempted) {
-      if (r <= 0)
-        r = total_read - rattempted;
-      else
-        r = total_read - rattempted + r;
-    }
-    // check for errors
-    if (r <= 0) {
-      if (r == -EAGAIN || r == -ENOTCONN) {
-        NET_INCREMENT_DYN_STAT(net_calls_to_read_nodata_stat);
-      }
-      return r;
-    }
-    NET_SUM_DYN_STAT(net_read_bytes_stat, r);
-
-    this->handShakeBuffer->fill(r);
+    // last read failed or was incomplete
+    if (r != rattempted || !b)
+      break;
+    rattempted = b->write_avail();
   }
+  // If we have already moved some bytes successfully, adjust total_read to reflect reality
+  // If any read succeeded, we should return success
+  if (r != rattempted) {
+    if (r <= 0)
+      r = total_read - rattempted;
+    else
+      r = total_read - rattempted + r;
+  }
+  NET_SUM_DYN_STAT(net_read_bytes_stat, r);
 
-  char *start              = this->handShakeReader->start();
-  char *end                = this->handShakeReader->end();
-  this->handShakeBioStored = end - start;
+  if (r > 0) {
+    this->handShakeBuffer->fill(r);
 
-  // Sets up the buffer as a read only bio target
-  // Must be reset on each read
-  BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
-  BIO_set_mem_eof_return(rbio, -1);
-  SSL_set0_rbio(this->ssl, rbio);
+    char *start              = this->handShakeReader->start();
+    char *end                = this->handShakeReader->end();
+    this->handShakeBioStored = end - start;
+
+    // Sets up the buffer as a read only bio target
+    // Must be reset on each read
+    BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
+    BIO_set_mem_eof_return(rbio, -1);
+    SSL_set0_rbio(this->ssl, rbio);
+  }
+  Debug("ssl", "%p read r=%" PRId64 " total=%" PRId64 " bio=%d\n", this, r, total_read, this->handShakeBioStored);
+
+  // check for errors
+  if (r <= 0) {
+    if (r == -EAGAIN || r == -ENOTCONN) {
+      NET_INCREMENT_DYN_STAT(net_calls_to_read_nodata_stat);
+    }
+  }
 
   return r;
 }
@@ -464,45 +449,60 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       ret = sslStartHandShake(SSL_EVENT_SERVER, err);
     }
     // If we have flipped to blind tunnel, don't read ahead
-    if (this->handShakeReader && this->attributes != HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
-      // Check and consume data that has been read
-      if (BIO_eof(SSL_get_rbio(this->ssl))) {
-        this->handShakeReader->consume(this->handShakeBioStored);
-        this->handShakeBioStored = 0;
-      }
-    } else if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
-      // Now in blind tunnel. Set things up to read what is in the buffer
-      // Must send the READ_COMPLETE here before considering
-      // forwarding on the handshake buffer, so the
-      // SSLNextProtocolTrampoline has a chance to do its
-      // thing before forwarding the buffers.
-      this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+    if (this->handShakeReader) {
+      if (this->attributes != HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+        // Check and consume data that has been read
+        if (BIO_eof(SSL_get_rbio(this->ssl))) {
+          this->handShakeReader->consume(this->handShakeBioStored);
+          this->handShakeBioStored = 0;
+          // Load up the next block if present
+          if (this->handShakeReader->is_read_avail_more_than(0)) {
+            // Setup the next iobuffer block to drain
+            char *start              = this->handShakeReader->start();
+            char *end                = this->handShakeReader->end();
+            this->handShakeBioStored = end - start;
 
-      // If the handshake isn't set yet, this means the tunnel
-      // decision was make in the SNI callback.  We must move
-      // the client hello message back into the standard read.vio
-      // so it will get forwarded onto the origin server
-      if (!this->getSSLHandShakeComplete()) {
-        this->sslHandShakeComplete = 1;
-
-        // Copy over all data already read in during the SSL_accept
-        // (the client hello message)
-        NetState *s            = &this->read;
-        MIOBufferAccessor &buf = s->vio.buffer;
-        int64_t r              = buf.writer()->write(this->handShakeHolder);
-        s->vio.nbytes += r;
-        s->vio.ndone += r;
-
-        // Clean up the handshake buffers
-        this->free_handshake_buffers();
-
-        if (r > 0) {
-          // Kick things again, so the data that was copied into the
-          // vio.read buffer gets processed
-          this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+            // Sets up the buffer as a read only bio target
+            // Must be reset on each read
+            BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
+            BIO_set_mem_eof_return(rbio, -1);
+            SSL_set0_rbio(this->ssl, rbio);
+          }
         }
+      } else {
+        // Now in blind tunnel. Set things up to read what is in the buffer
+        // Must send the READ_COMPLETE here before considering
+        // forwarding on the handshake buffer, so the
+        // SSLNextProtocolTrampoline has a chance to do its
+        // thing before forwarding the buffers.
+        this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+
+        // If the handshake isn't set yet, this means the tunnel
+        // decision was make in the SNI callback.  We must move
+        // the client hello message back into the standard read.vio
+        // so it will get forwarded onto the origin server
+        if (!this->getSSLHandShakeComplete()) {
+          this->sslHandShakeComplete = 1;
+
+          // Copy over all data already read in during the SSL_accept
+          // (the client hello message)
+          NetState *s            = &this->read;
+          MIOBufferAccessor &buf = s->vio.buffer;
+          int64_t r              = buf.writer()->write(this->handShakeHolder);
+          s->vio.nbytes += r;
+          s->vio.ndone += r;
+
+          // Clean up the handshake buffers
+          this->free_handshake_buffers();
+
+          if (r > 0) {
+            // Kick things again, so the data that was copied into the
+            // vio.read buffer gets processed
+            this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+          }
+        }
+        return; // Leave if we are tunneling
       }
-      return;
     }
     if (ret == EVENT_ERROR) {
       this->read.triggered = 0;
@@ -519,6 +519,17 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
           readSignalError(nh, VC_EVENT_EOS);
           return;
         }
+      }
+      // move over to the socket if we haven't already
+      if (this->handShakeBuffer) {
+        ink_release_assert(BIO_eof(SSL_get_rbio(this->ssl)) && !handShakeReader->is_read_avail_more_than(0));
+        // Done with the buffer after the first exchange, convert over to the socket buffer
+        BIO *rbio = BIO_new_fd(this->get_socket(), BIO_NOCLOSE);
+        BIO_set_mem_eof_return(rbio, -1);
+        SSL_set0_rbio(this->ssl, rbio);
+        free_handshake_buffers();
+      } else {
+        Debug("ssl", "Want read from socket");
       }
       read.triggered = 0;
       nh->read_ready_list.remove(this);
@@ -553,36 +564,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   }
 
   // At this point we are at the post-handshake SSL processing
-  // If the read BIO is not already a socket, consider changing it
-  if (this->handShakeReader) {
-    // Check out if there is anything left in the current bio
-    if (!BIO_eof(SSL_get_rbio(this->ssl))) {
-      // Still data remaining in the current BIO block
-    } else {
-      // Consume what SSL has read so far.
-      this->handShakeReader->consume(this->handShakeBioStored);
-
-      // If we are empty now, switch over
-      if (this->handShakeReader->read_avail() <= 0) {
-        // Switch the read bio over to a socket bio
-        SSL_set_rfd(this->ssl, this->get_socket());
-        this->free_handshake_buffers();
-      } else {
-        // Setup the next iobuffer block to drain
-        char *start              = this->handShakeReader->start();
-        char *end                = this->handShakeReader->end();
-        this->handShakeBioStored = end - start;
-
-        // Sets up the buffer as a read only bio target
-        // Must be reset on each read
-        BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
-        BIO_set_mem_eof_return(rbio, -1);
-        SSL_set0_rbio(this->ssl, rbio);
-      }
-    }
-  }
-  // Otherwise, we already replaced the buffer bio with a socket bio
-
+  //
   // not sure if this do-while loop is really needed here, please replace
   // this comment if you know
   do {
@@ -1083,18 +1065,47 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     return EVENT_DONE;
   }
 
-  int retval = 1; // Initialze with a non-error value
-
   // All the pre-accept hooks have completed, proceed with the actual accept.
-  if (BIO_eof(SSL_get_rbio(this->ssl))) { // No more data in the buffer
-    // Read from socket to fill in the BIO buffer with the
-    // raw handshake data before calling the ssl accept calls.
-    retval = this->read_raw_data();
-    if (retval == 0) {
-      // EOF, go away, we stopped in the handshake
-      SSLDebugVC(this, "SSL handshake error: EOF");
-      return EVENT_ERROR;
-    }
+  if (this->handShakeReader) {
+    if (BIO_eof(SSL_get_rbio(this->ssl))) { // No more data in the buffer
+      // Is this the first read?
+      if (!this->handShakeReader->is_read_avail_more_than(0)) {
+        Debug("ssl", "%p first read\n", this);
+        // Read from socket to fill in the BIO buffer with the
+        // raw handshake data before calling the ssl accept calls.
+        int retval = this->read_raw_data();
+        if (retval < 0) {
+          if (retval == -EAGAIN) {
+            // No data at the moment, hang tight
+            // SSLDebugVC(this, "SSL handshake: EAGAIN");
+            return SSL_HANDSHAKE_WANT_READ;
+          } else {
+            // An error, make us go away
+            SSLDebugVC(this, "SSL handshake error: read_retval=%d", retval);
+            return EVENT_ERROR;
+          }
+        } else if (retval == 0) {
+          // EOF, go away, we stopped in the handshake
+          SSLDebugVC(this, "SSL handshake error: EOF");
+          return EVENT_ERROR;
+        }
+      } else {
+        this->handShakeReader->consume(this->handShakeBioStored);
+        this->handShakeBioStored = 0;
+        // There is more data in the buffer, reset the memory buffer
+        if (this->handShakeReader->is_read_avail_more_than(0)) {
+          char *start              = this->handShakeReader->start();
+          char *end                = this->handShakeReader->end();
+          this->handShakeBioStored = end - start;
+
+          // Sets up the buffer as a read only bio target
+          // Must be reset on each read
+          BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
+          BIO_set_mem_eof_return(rbio, -1);
+          SSL_set0_rbio(this->ssl, rbio);
+        }
+      }
+    } // Still data in the BIO
   }
 
   ssl_error_t ssl_error = SSLAccept(ssl);
@@ -1106,7 +1117,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     SSLDebugVC(this, "SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
 
     // start a blind tunnel if tr-pass is set and data does not look like ClientHello
-    char *buf = handShakeBuffer->buf();
+    char *buf = handShakeBuffer ? handShakeBuffer->buf() : NULL;
     if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
       SSLDebugVC(this, "Data does not look like SSL handshake, starting blind tunnel");
       this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
@@ -1192,15 +1203,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   case SSL_ERROR_WANT_READ:
     TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL server handshake ERROR_WANT_READ");
-    if (retval == -EAGAIN) {
-      // No data at the moment, hang tight
-      SSLDebugVC(this, "SSL handshake: EAGAIN");
-      return SSL_HANDSHAKE_WANT_READ;
-    } else if (retval < 0) {
-      // An error, make us go away
-      SSLDebugVC(this, "SSL handshake error: read_retval=%d", retval);
-      return EVENT_ERROR;
-    }
     return SSL_HANDSHAKE_WANT_READ;
 
 // This value is only defined in openssl has been patched to
