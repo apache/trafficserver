@@ -376,7 +376,7 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
   }
 
   if (result) {
-    strcpy(target, result->srvname(this));
+    ink_strlcpy(target, result->srvname(this), MAXDNAME);
     return result;
   }
   return nullptr;
