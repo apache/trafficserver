@@ -1,0 +1,404 @@
+Changes with Apache Traffic Server 7.1.0
+  #753 - TS-4705: Proposal: NetVC Context
+  #769 - TS 4593: Extend ip_allow.config to filter destination IPs
+  #771 - TS-4612: Proposal: InactivityCop Optimize
+  #824 - TS-4699: Adds a C++ API WebSocket example
+  #947 - TS-4796 Change UnixNetHandler to always bubble up epoll errors to the VConnection
+  #963 - TS-4815 - CID 1267839 dead code in /mgmt/api/CfgContextManager.cc: re…
+  #996 - TS-4834 Expose bad disk and disk access failures
+  #1009 - TS-4853 : Parent Consistent Hash Selection - add parent selection URL and API.
+  #1012 - TS-4840: Crash when reattaching to C++ API Stats.
+  #1021 - TS-4864 CID 1362769 - when pthread_create fails, ink_abort instead of…
+  #1024 - TS-4858: fix memory leak of global_default_keyblock
+  #1028 - TS-4870: Avoid marking storage offline multiple times
+  #1029 - Add a stub CONTRIBUTING file.
+  #1030 - TS-4875: Hoist SSL index creation into library initialization.
+  #1031 - TS-4877: Fix incorrect TSStat SDK assertions.
+  #1032 - TS-4878: Call SSL_set_tlsext_host_name just once.
+  #1033 - TS-4879: Checking con.fd == NO_FD while we get return from check_emergency_throttle()
+  #1035 - TS-4866: Makes traffic_cop killing optional
+  #1036 - TS-4882: TCP Fast Open support for server sessions.
+  #1037 - TS-4883: Fix Thread::start call in EventProcessor::start
+  #1038 - TS-4884: Remove a few unused variables/define in EThread
+  #1041 - TS-4887 : Clean up Parent Selection URL feature
+  #1042 - TS-4888: collapsed_forwarding plugin should return TSREMAP_NO_REMAP.
+  #1043 - TS-4875: Be more robust against SSL_new() failure.
+  #1047 - TS-4841:  Log field cqtr is inaccurate for HTTP/2
+  #1048 - TS-4883: Thread start signature
+  #1053 - TS-4898: Switch proxy.config.hostdb.timeout from minutes to seconds.
+  #1054 - TS-4558: ASAN buffer overflow in traffic_manager -h
+  #1055 - TS-4899: Http2ClientSession object leaks.
+  #1057 - TS-4699: Fix static analysis warnings
+  #1059 - TS-4626: LogFile::close_file should not delete m_log handle
+  #1060 - TS-4906: Ignore EVP return values
+  #1061 - TS-4903: EISCONN errors when using TCP Fast Open.
+  #1062 - [TS-4908] Remove duplicated cancelling event
+  #1063 - TS-4909: Throttling based on resident memory usage
+  #1066 - [TS-4457] Via header always reports http1
+  #1068 - TS-4920: Consolidate accept socket options.
+  #1069 - Fix possibility of NULL assignment to std::string
+  #1070 - TS-4509: Add `outstanding_bytes` to VConnection
+  #1072 - TS-4932: Add a passthru example plugin.
+  #1074 - TS-4925: Manager pollMgmtProcessServer stuck with EBADF.
+  #1076 - TS-4929: No loading of HostDB disk file if sync_frequency=0
+  #1077 - TS-4931: Add process limits to crash logs.
+  #1081 - TS-3204: Crash when body_factory file is empty
+  #1082 - TS-4939: Print the debug tag in diagnostic messages.
+  #1083 - TS-4938: Avoid crashes due to NULL vc dereferences.
+  #1085 - TS-4942: simple retry is not working correctly.
+  #1087 - TS-4945: Remove unused member variable, epoll_vc
+  #1088 - TS-4915: Crash from hostdb in PriorityQueueLess
+  #1089 - TS-4592: Add support for process ID and txn ID in ts_lua
+  #1090 - TS-4949: Disables the fuzzy revalidation logic by default
+  #1093 - TS-4954: Use TSIOBufferCopy in the passthru example plugin.
+  #1095 - TS-4956: Memory leaks in hostdb test
+  #1096 - TS-4955: Remove the global mutex from the plugin session acceptor.
+  #1097 - TS-4957: Make the use of madvise() with MADV_DONTDUMP configurable.
+  #1098 - TS-4961: Use default accept thread config for plugin accepts.
+  #1101 - TS-4959: Remove remnants of old UA configurations and handling
+  #1102 - TS-4963: Add option to obey keepalive on internal transactions.
+  #1103 - TS-4966: Fix process manager thread to support TS API.
+  #1104 - TS-4947: Fix log collation hosts configuration.
+  #1105 - TS-4968: Log a warning if connect_attempts_rr_retries is >= connect_attempts_max_retries
+  #1107 - TS-4967: Enable header_freq logging to a specific file.
+  #1110 - TS-4971: Change TSPluginRegistration to be const.
+  #1112 - TS-4977: Prefer nullptr to NULL.
+  #1113 - TS-4974: Bad debug assert in HttpSM::handle_server_setup_error
+  #1116 - TS-4979: Fix clang-analyzer complaint about potential null pointer.
+  #1117 - TS-4916 Add safety net to avoid H2-infinite-loop deadlock.
+  #1118 - TS-4980: Create ASAN leak suppression file for regression tests
+  #1119 - TS-4982: Fix memory leaks in test_Http2DependencyTree
+  #1120 - TS-4978: illegal memory access with ticket_key.filename
+  #1121 - TS-4983: Buffer overflow in esi plugin
+  #1122 - TS-4983: Buffer overflow in esi plugin
+  #1123 - TS-4984: Memory leaks in test_sslheaders
+  #1124 - TS-4985: Memory leak in test_X509HostnameValidator
+  #1125 - TS-4987: Don't prefer loopback over API set origin server address.
+  #1126 - TS-4988: Disable sign comparison warnings for TsConfigSyntax.c
+  #1127 - TS-4990: Support new apis in ts_lua.
+  #1129 - TS-4992: Do not build the static libraries
+  #1132 - TS-4995: Consolidate C++ API example plugins.
+  #1133 - TS-4993: Disables escaping and quotes inside regexes
+  #1134 - TS-4997: Move the C++ API to lib/cppapi.
+  #1136 - TS-5000: Moves experimental plugins to the new include mechanism
+  #1137 - TS-5000: Move sslheaders into the non-recursive plugins build.
+  #1138 - TS-5006: Fix CID 1364311
+  #1139 - TS-5006: Fix CID 1364096
+  #1140 - TS-5006: Fix CID 1356975
+  #1141 - TS-5003: Compile fail for 64 bit systems without 128 bit CAS.
+  #1142 - TS-5006: Fix CID 1306780
+  #1143 - TS-4582: Do not allow multiple --policy arguments
+  #1144 - TS-4865: Fix CID 1362785, CID 1362784
+  #1146 - TS-5005: CID 1364117: Explicit null dereferenced in HttpSM.cc
+  #1147 - TS-4855: Make `const char` consistent across the project.
+  #1148 - TS-5013: master does not build on omnios
+  #1149 - TS-5008 CID 1022007 Logically dead code
+  #1150 - TS-5007: 1356983 initialize test value properly
+  #1151 - TS-5010: Initialize the regex pointer properly
+  #1152 - TS-5009 CID 1022011 Logically dead code removal
+  #1154 - TS-5011: Fixes memory leak in CLFUS compression
+  #1155 - TS-5012 CID 1267812 Logically Dead Code fixed
+  #1159 - TS-4986: Memory leak in test_Map
+  #1160 - TS-5019: Add header length checks in HPACK
+  #1161 - TS-5018: Fix CID 1365301: Control flow issues (DEADCODE)
+  #1164 - TS-3939: Add a --enable-asan configure option
+  #1165 - TS-5023 Allow diags.log and traffic.out to be rotated by size or time
+  #1167 - TS-5025: Add 'setHost' method to 'atscppapi::Request'
+  #1179 - TS-5026: Update keep_alive_no_activity_timeout_in doc and template
+  #1181 - TS-5027: Replace readdir_r with readdir.
+  #1184 - TS-5030: Add API to get the unique client request uuid from a transaction.
+  #1186 - TestCase fix: Fix retry counter
+  #1187 - TS-5034: Add a --enable-tsan configure option
+  #1191 - TS-5035: plugin 'background_fetch' can be built normally.
+  #1192 - TS-5036: use absolute path in autoconf/automake files to support YCM-…
+  #1193 - TS-5037: Fix LogFormat object leak.
+  #1198 - TS-5042: Add failcount and threshold values in parent selection logging
+  #1201 - TS-4994: make state configuration in ts_lua plugin
+  #1202 - TS-5040: Forward CONNECT without parent proxying.
+  #1207 - Remove unneeded malloc from url_rewrite debug path for HOST header.
+  #1211 - TS-5045: Add ws and wss scheme constants.
+  #1214 - TS-5047: Fix unmapped URL logging tags.
+  #1217 - TS-5041: fix resource leak in ts_lua
+  #1219 - TS-1228: Support new Forwarded standard
+  #1220 - Docs: Minor tweaks to fix warnings.
+  #1223 - Add docs for the hostdb cache metrics
+  #1226 - TS-5022: Allow multiple client cert for ATS
+  #1228 - TS-5058: Fix CONNECT handling without parent proxying.
+  #1229 - TS-5061 TS use ats_malloc instead of malloc in log module
+  #1230 - Doc: Update to malloc, cache-promote plugin.
+  #1233 - TS-5062: Fix traffic_ctl to track plugin supplied configuration variables.
+  #1234 - TS-5063: Fixes coverity warnings and cleans up the temp string
+  #1235 - HostDB memory fixes
+  #1238 - TS-4429: Adds a --concise (-C) option for logstats, excludes % metrics
+  #1239 - TS-5069 enhance logstats to report stats per user
+  #1240 - Doc conditional build
+  #1241 - TS-5060: Add support for DNAME record type.
+  #1243 - TS-5076: Test and set the in_enabled_list by atomic function
+  #1246 - TS-5069: Fixes CID 1366771 and 1366771
+  #1247 - TS-5078: Support MADV_DONTDUMP even when the freelist is disabled
+  #1249 - TS-5061 TS use ats_malloc instead of malloc in log module
+  #1250 - TS-5060: Fix DNAME support for OSX and FreeBSD.
+  #1252 - TS-5082: define IOBufferReader::is_read_avail_more_than with TS_INLINE keyword
+  #1253 - TS-5084 Make logcat follow file rotation
+  #1254 - TS-5085 `posix_fadvise` is incorrectly used in traffic_logcat
+  #1256 - TS-2109: Allows CC: no-cache objects to be stored in cache
+  #1257 - TS-5053 const char **argv passed to TSPluginInit is not null terminated
+  #1258 - TS-5089: Add money_trace plugin.
+  #1259 - TS-5095: IOBufferReader::read_avail adds to CPU utilization
+  #1260 - TS-5093: Augment and fix crash in slow log
+  #1261 - TS-5096: Lua metrics crashes if the prefix is missing.
+  #1262 - TS-5092: ATS handling of too many concurrent streams too agressive
+  #1263 - TS-5091: Crash if server session from global pool is not alive
+  #1268 - TS-5097 Validate plugin argument count
+  #1269 - TS-5094: URL encoding in redirect pages
+  #1270 - TS-5102 parent metrics
+  #1271 - TS-5103: replace ua_raw_buffer_reader with ua_buffer_reader
+  #1273 - TS-5030: Fixes the sizeof issues, adds a constant
+  #1274 - TS-5106: Create ParentRoundRobin object as ParentRecord->selection_strategy for default parent proxy server
+  #1275 - TS-5105: Do vc->con.setRemote(target) before socksEntry->init()
+  #1277 - TS-5041: fix leak in ts_lua plugin
+  #1278 - TS-5101: fix error handling for ts_lua
+  #1293 - TS-5059: SSL_set_rbio() renamed SSL_set0_rbio()
+  #1294 - TS-5059: Port TCP Fast Open BIO to OpenSSL 1.1.0
+  #1295 - TS-5059: OpenSSL 1.1 EVP_MD_CTX and HMAC_CTX
+  #1297 - ISSUE 1283: Fix CID 1367526 and CID 1367525 in money_trace plugin.
+  #1300 - TS-5108-SSL requests might stall because enabled write is ignored
+  #1308 - CID 1368316 & 1368315: Leaks and NULL references
+  #1309 - Fixes for building with LibreSSL
+  #1310 - TS-5022: resource leak fix CID 1368316
+  #1311 - [openbsd] BaseLogFile.cc:244:61: error: invalid conversion from 'long int*' to 'time_t* {aka long long int*}' [-fpermissive]
+  #1313 - Use Autoconf checks vs. OPENSSL_VERSION_NUMBER
+  #1315 - TS-5022: fix silent exit problem
+  #1316 - TS-5022: remove goto in SSLConfig : getnewCTX
+  #1320 - Modify TSHttpTxnHookAdd to add hook only once
+  #1323 - NULL in records.config being interpreted as a string
+  #1325 - #1323 Restores the NULL string where appropriate
+  #1327 - get_creation_time() takes *time_t, not *long
+  #1334 - Do not reschedule the periodic inactive_event and cancel it after signal timeout event to SM
+  #1335 - Deadlock in HostDB
+  #1336 - cache promote plugin takes too much calculating size of LRUList
+  #1337 - This avoids some badness around some STL implementations
+  #1340 - new warning running 7.1
+  #1341 - openssl errors for every request
+  #1343 - Change connect_attempts_rr_retries test to match warning text
+  #1347 - TS-5022: nullptr check
+  #1349 - TS-5079: logging enhancements around OCSP
+  #1350 - TS-5080: log when remap.config is successfully reloaded
+  #1355 - TS-4716: OpenBSD mandir should be ${prefix}/man
+  #1361 - Issue #1358: Add server_connect_end in slow log
+  #1364 - Issue #1359: Flaw in TS-2157 port in server address may be unset
+  #1365 - TS-4896: TSHttp***ClientAddrGet/TSHttp***IncomingAddrGet may return NULL
+  #1366 - Issue #1360: REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) crash sometimes
+  #1368 - Issue #1367: HdrHeap potential corruption
+  #1373 - #1279 - CID 1367531: Uninitialized members (UNINIT_CTOR): proxy/main.cc
+  #1374 - Fix CID 1369398: Null pointer dereferences
+  #1375 - Incorrectly freeing Http1ClientSession setting up to return a error
+  #1376 - TSStringPercentDecode null-termination clipping on overflow. 
+  #1378 - 7.1.x TS-5107: Changes to autolinking in Docutils 0.13
+  #1379 - Make sure to schedule connect event on correct thread type.
+  #1380 - Fixed issue where somaxconn was being set to 0 on OSX and preventing
+  #1382 - TS-993: OpenBSD sbindir should be ${exec_prefix}/sbin
+  #1383 - This fixes build problems when using non-standard OpenSSL
+  #1384 - Warnings when compiling against OpenSSL 1.1.0d
+  #1385 - sslheaders plugin fails with OpenSSL v1.1.0d
+  #1386 - ATS hangs, possibly because of OpenSSL 1.1.0
+  #1388 - Fixes for building with OpenSSL 1.1
+  #1389 - SSL_CTX_remove_session() and external cache
+  #1396 - check if any of client cert path or file is null
+  #1397 - TS-1768: AC_SEARCH_LIBS vs. AC_CHECK_LIB
+  #1400 - traffic_via depends on the PCRE library
+  #1401 - Segfault in write_to_net_io with 7.1.x
+  #1404 - TS-1403 retry safe methods in case of server failures irrespective of connection state
+  #1407 - Fix potential spin loop in perl management library.
+  #1409 - Log crc field and psql field correctly with H2
+  #1419 - Extend body factory templates to have a default per custom template set.
+  #1421 - Segmentation fault on TLS when destination server issues Reset
+  #1426 - issue #1399 add code of tcp_congestion_control erased by TS-3612
+  #1428 - Fix a build issue that use of undeclared variables
+  #1438 - BoringSSL doesn't have BIO_sock_non_fatal_error()
+  #1439 - Add BIO_sock_non_fatal_error() attribution
+  #1441 - Mark the new span metrics as gauges in Epic plugin
+  #1443 - Assert on null t_state.transact_return_point
+  #1445 - Issue #1443 - Fix early or duplicate 404 error handling
+  #1446 - Need dedicated TS_SSL_SERVERNAME_HOOK
+  #1451 - Cleans up ICC options, and some build issues
+  #1455 - Set nullptr to ua_session after it is destoryed
+  #1459 - Mysterious uptick in user_agent SSL errors moving to 7.1
+  #1464 - TS-4747: make marking parent proxies down in hostdb configurable.
+  #1466 - Fixes the type for a few overridables
+  #1467 - Adds the OpenSSL license
+  #1475 - ASAN issue in traffic_manager metrics Lua bindings
+  #1476 - Crash in get_client_addr()
+  #1480 - Crash in Http1ClientSession::set_inactivity_timeout
+  #1494 - Allow configure option: --enable-system-luajit
+  #1502 - issue #1501: reconstruct to load the default value for member variables
+  #1503 - client cert should be added to netvcoptions only when needed
+  #1511 - heap-use-after-free: Access ua_session after HttpTunnel::chain_abort_all called due to bad post chunked data
+  #1512 - Don't push stack variables in lightuserdata
+  #1514 - Ensure 'service trafficserver stop’ is synchronous under load on redhat
+  #1515 - Logging cache code map size fix
+  #1518 - Ensure 'service trafficserver stop’ is synchronous under load on redhat
+  #1521 - Changes default RAM cache to the LRU + seen-filter
+  #1522 - Ignore read and write errors if vio has been cleared
+  #1523 - ASAN segv when ramping up traffic to a production host
+  #1524 - Seeing a lot of CPU being used on atomics
+  #1531 - Assertion in state_read_server_response_header (v7.1.0)
+  #1532 - ATS 7.1 release running out of memory
+  #1547 - Fix ssl hook state logic.
+  #1548 - Insure that parent health stats are updated properly on a markdown
+  #1557 - brotli support in gzip plugin
+  #1559 - Do not callback one SM EVENT_ERROR twice.
+  #1561 - A new 7.1 Crash with regex_revalidate config update handling.
+  #1565 - Fix Assertion failure in the regex_revalidate plugin.
+  #1573 - #1481 Makes %<cluc> work consistently, and at all
+  #1583 - Set HttpSM::tunnel_handler_post to handle write event for outputing HTTP 408 response.
+  #1585 - Reset inactive timeout everytime H2 DATA frames are sent
+  #1589 - glibc 2.25 will cause compile errors
+  #1590 - Fix a wrong option charactar for access_key
+  #1593 - Thread "hangs" on Docs
+  #1600 - fix , remove not used  array buf in rcv_data_frame()
+  #1610 - backport c4144 and 74fc4 to 7.1.x
+  #1612 - Changed some of the HTTP/2 enums to enum classes and found a bug
+  #1617 - The result of TSHttpTxnParentProxySet() maybe overwrite in ParentConfigParams::findParent()
+  #1619 - Perform the config reload on ET_TASK threads
+  #1633 - Avoid varargs warnings when compiling LuaJIT
+  #1639 - gzip plugin new config option for allow urls.
+  #1673 - Client never gets a GOAWAY frame
+  #1674 - TS-4195: double free on exit
+  #1697 - Fixes padding byte being part of the POST/PUT data
+  #1703 - Protect against LRUHash x = x
+  #1704 - Add half_close state in Http2ClientSession
+  #1705 - Fixes padding byte being part of the POST/PUT data (2nd try)
+  #1707 - Add a simple cache for the loaded configurations from file
+  #1710 - HTTP2 drain
+  #1711 - Send HPACK dynamic table size update at the beginning of header block
+  #1712 - Add --enable-sanity-check option
+  #1716 - Fix inactivity_timeout canceling
+  #1719 - Add refcounting around the S3 configuration
+  #1721 - obj_found is never be true in HdrHeap
+  #1729 - Fixes a race condition between config reloads
+  #1739 - HTTP/2 transaction thought it was being aborted by the client
+  #1742 - Fix Last-Stream-ID of GOAWAY frame
+  #1743 - Add new testing infra to ATS to 7.1
+  #1752 - h2spec: handling PRIORITY frame that depend on itself
+  #1754 - The Brotli buffer pointer is was not being set to a default value
+  #1756 - delay DNS for origin server until it is required
+  #1763 - Update changelog.pl to use github instead of Jira
+  #1765 - Fix double do_io_close in HttpTunnel::chain_abort_all()
+  #1767 - OpenSSL v1.1.0 build issues
+  #1768 - Crash when using OpenSSL v1.1.0
+  #1769 - issue #107 Fix crash using openssl 1.1
+  #1774 - Make sure we only capture merged PRs
+  #1777 - Assert when "Expect: 100-continue" header
+  #1795 - Coverity 1374845: Null pointer dereferences
+  #1810 - Coverity 1200018 & 1200017
+  #1842 - h2spec: The endpoint MUST ignore any flags that is undefined.
+  #1861 - New crash/hang after commit  daea3d765
+  #1864 - Rename half_close_flag to half_close_local_flag in Http2ClientSession
+  #1866 - Allow receiving H2 frames on server initiated streams
+  #1870 - Fix slow leak in traffic_manager caused by un-freed capabilities.
+  #1872 - Backport h2 half close (#1704 and #1864)
+  #1911 - Fix version and virtualhost config cache sync.
+  #1912 - remove the configuration to enable or disable safe requests retry
+  #1923 - Assertion with 100-continue
+  #1933 - Coredump with server_session
+  #1937 - Improve graceful shutdown.
+  #1939 - Make parent proxy per parent connect attempts and connect attempts timeout overridable.
+  #1941 - SSL handshake problems
+  #1943 - TLS session tickets broken in ATS 7
+  #1944 - Race condition in SSL hooks with new TS_SSL_SERVERNAME_HOOK in 7.1.x branch
+  #1949 - Issue_1943: get rid of ticket_key_name tag from ssl_multicert
+  #1959 - Continuation::handleEvent coredump
+  #1961 - coredump with handleEvent 
+  #1963 - Plugin ts_lua - Incorrect mapping of transaction configuration parame…
+  #1970 - 1962: Reload keyblock from key file on every config reload
+  #1978 - Server information should be cleared when following redirect
+  #1979 - The return of TSHttpTxnIsInternal changed.
+  #1988 - Via: Enable detail level in VIA protocol stack.
+  #1995 - Disable the post_transform retry due to coredump
+  #2009 - This should allow for per-version binaries
+  #2027 - Use our ATS server to proxy for Bintray
+  #2032 - Server information should be cleared when following redirect...
+  #2034 - Cleanup server_entry before do dns lookup
+  #2038 - tsxs generation uses AM_C*FLAGS instead of C*FLAGS
+  #2040 - HTTP2 non persistent metrics sticking over system crash.
+  #2042 - Prevents response body content with a 204
+  #2044 - Break fix.
+  #2048 - Prevent potential dispatch of HttpTunnel events to a dead consumer.
+  #2051 - Core dumps with MIME headers with no names
+  #2057 - fix memory leak in SSLInitServerContext
+  #2061 - Ran clang-tidy with modernize-deprecated-headers
+  #2062 - Ran clang-tidy with modernize-raw-string-literal
+  #2063 - Ran clang-tidy with modernize-redundant-void-arg
+  #2064 - Ran clang-tidy with modernize-use-nullptr
+  #2065 - Ran clang-tidy with modernize-use-bool-literals
+  #2066 - Ran clang-tidy with performance-faster-string-find
+  #2067 - Ran clang-tidy with performance-unnecessary-value-param
+  #2068 - Ran clang-tidy with modernize-use-override
+  #2069 - Ran clang-tidy with modernize-loop-convert
+  #2070 - clang-analyzer - Called C++ object pointer is null in get_ka_info_from_config
+  #2080 - fix intermittent mac os parent selection regression test failure.
+  #2082 - [BACKPORT] Fix SSL handshake problems.
+  #2086 - Fix handling read errors in TLS Handshake
+  #2088 - Add back in length check to fail H2 headers with no name.
+  #2089 - Ran clang-tidy with modernize-use-using
+  #2090 - remove bad check for configuration directory override (kill it with fire)
+  #2091 - Reloading metrics.config always asserts
+  #2092 - TS-4396: fix number_of_redirections off-by-one
+  #2093 - Revert PR #947
+  #2094 - Gracefully shut down traffic_server on SIGINT.
+  #2095 - Fix Lua metrics configuration reloading.
+  #2103 - Revert PR #947 - merge to 7.1.x
+  #2104 - Fix assertion with 100-continue --- 7.1.x
+  #2114 - request_content_length is used without initializing in state_read_client_request_header
+  #2116 - YTSATS-1127: update tls_proto to allow for override of port protoset
+  #2121 - Ran autopep8 to python files
+  #2128 - VIA changes for 7.1.x
+  #2129 - 7.1.x breaks TLS behavior
+  #2138 - adds effective client request url var expansion
+  #2147 - Convert an ink_release_assert into logic to reset the rbio to use the…
+  #2153 - Ran autopep8 to python files
+  #2156 - Convert an ink_release_assert into logic to reset the rbio 
+  #2157 - Configuration reload on master is crashing when built with ASAN
+  #2158 - Issue 2157: Configuration reload on master is crashing when built wit…
+  #2164 - Explicit std:: name space, seems to make compiler happy
+  #2166 - Ticket reload 7.1.x
+  #2169 - Replace fmin with a simple conditional (macOS is unhappy)
+  #2171 - Update H2 priority tree node with a created stream
+  #2172 - Check HPACK Huffman code strictly
+  #2174 - Limit HPACK indexing table size correctly
+  #2176 - have autest make hardlink or symlinks before doing a copy
+  #2177 - Add a dependency that is gone from master for these checks
+  #2178 - HTTP2 remove window between client stream shutdown and stream count
+  #2183 - OpenSSL v1.1.0 hangs ATS
+  #2184 - TS-4044: The server_vc should be established (writeable) before request transform start.
+  #2185 - For #2162 - fix occasional transform test crash.
+  #2193 - back port to 7.1.x to make additional parent proxy parameters overridable.
+  #2197 - Follow plugin redirection
+  #2198 - Issue 2173: fixes response to HEAD requests when origin is down
+  #2199 - HTTP2 remove window between client stream shutdown and ATS stream cou…
+  #2200 - Check HPACK Huffman code strictly
+  #2211 - Crash in StringView in 7.1.0
+  #2213 - Fix StringView constructor to not fail on a nulll pointer.
+  #2215 - Fix LIBTCL and HWLOC_LIBS linking for traffic_top for Ubuntu.
+  #2219 - Don't skip TLS marker on protocol string error.
+  #2221 - #2220 use parsed_hosts_file_ptr only if it has valid value
+  #2223 - handle 307 and 308 when building redirect response
+  #2225 - Backport 2219 to 7.1.x: Fix protocol stack to not skip TLS tag on error.
+  #2230 - omits version string when verifying test output
+  #2231 - set location for client CA cert file
+  #2232 - https cache misses timeout at proxy.config.http.transaction_no_activity_timeout_in
+  #2233 - Fix remap redirection with build_error_reponse
+  #2234 - Return 408 response with specified header
+  #2239 - Update inactivity if total_written is more than 0
+  #2243 - TS-3746: make proxy.config.ssl.client.verify.server overridable
+  #2244 - fix gold file
+  #2249 - Adjusting ssl_read_from_net to read limited amount of data in one go.
+  #2252 - Issue #2183 Fix openssl 1.1 hang
+  #2255 - Fix compile problem with openSSL 1.1.
+  #2256 - INT_TO_BOOL shouldn't be called here
+  #2261 - header_rewrite's STATUS gets 0'd after 1st READ_RESPONSE rule
+  #2263 - Make sure to add resources for all rules in a hook
+  #2265 - Fix/add autest fix to 7 1
+  #2271 - Fixed to build on Fedora 26 with gcc7
+  #2276 - Fix for URL obj leak in HTTP2 server push upon calling TSHttpTxnServerPush #2275
