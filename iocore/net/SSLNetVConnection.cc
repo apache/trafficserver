@@ -243,7 +243,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       bytes_read += nread;
       if (nread > 0) {
         buf.writer()->fill(nread); // Tell the buffer, we've used the bytes
-        sslvc->netActivity(lthread);
+        net_activity(sslvc, lthread);
       }
       break;
     case SSL_ERROR_WANT_WRITE:
@@ -302,7 +302,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read=%" PRId64, bytes_read);
 
     s->vio.ndone += bytes_read;
-    sslvc->netActivity(lthread);
+    net_activity(sslvc, lthread);
 
     ret = bytes_read;
 
@@ -448,7 +448,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
   if (!lock.is_locked()) {
-    readReschedule(nh);
+    nh->read_reschedule(this);
     return;
   }
   // Got closed by the HttpSessionManager thread during a migration
@@ -461,7 +461,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   // If the key renegotiation failed it's over, just signal the error and finish.
   if (sslClientRenegotiationAbort == true) {
     this->read.triggered = 0;
-    readSignalError(nh, (int)r);
+    nh->read_signal_error(this, (int)r);
     Debug("ssl", "[SSLNetVConnection::net_read_io] client renegotiation setting read signal error");
     return;
   }
@@ -470,7 +470,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   // a fast connection to speed match a slower connection by
   // shifting down in priority even if it could read.
   if (!s->enabled || s->vio.op != VIO::READ) {
-    read_disable(nh, this);
+    nh->read_disable(this);
     return;
   }
 
@@ -495,7 +495,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         // forwarding on the handshake buffer, so the
         // SSLNextProtocolTrampoline has a chance to do its
         // thing before forwarding the buffers.
-        this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+        nh->read_signal_done(VC_EVENT_READ_COMPLETE, this);
 
         // If the handshake isn't set yet, this means the tunnel
         // decision was make in the SNI callback.  We must move
@@ -518,7 +518,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
           if (r > 0) {
             // Kick things again, so the data that was copied into the
             // vio.read buffer gets processed
-            this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+            nh->read_signal_done(VC_EVENT_READ_COMPLETE, this);
           }
         }
         return; // Leave if we are tunneling
@@ -526,7 +526,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     }
     if (ret == EVENT_ERROR) {
       this->read.triggered = 0;
-      readSignalError(nh, err);
+      nh->read_signal_error(this, err);
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
       if (SSLConfigParams::ssl_handshake_timeout_in > 0) {
         double handshake_time = ((double)(Thread::get_hrtime() - sslHandshakeBeginTime) / 1000000000);
@@ -535,8 +535,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         if (handshake_time > SSLConfigParams::ssl_handshake_timeout_in) {
           Debug("ssl", "ssl handshake for vc %p, expired, release the connection", this);
           read.triggered = 0;
-          nh->read_ready_list.remove(this);
-          readSignalError(nh, VC_EVENT_EOS);
+          nh->read_signal_error(this, VC_EVENT_EOS);
           return;
         }
       }
@@ -546,37 +545,31 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       } else {
         read.triggered = 0;
       }
-      if (!read.triggered) {
-        nh->read_ready_list.remove(this);
-      }
-      readReschedule(nh);
+      nh->read_reschedule(this);
     } else if (ret == SSL_HANDSHAKE_WANT_CONNECT || ret == SSL_HANDSHAKE_WANT_WRITE) {
       write.triggered = 0;
-      nh->write_ready_list.remove(this);
-      writeReschedule(nh);
+      nh->write_reschedule(this);
     } else if (ret == EVENT_DONE) {
       // If this was driven by a zero length read, signal complete when
       // the handshake is complete. Otherwise set up for continuing read
       // operations.
       if (ntodo <= 0) {
-        readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+        nh->read_signal_done(VC_EVENT_READ_COMPLETE, this);
       } else {
         read.triggered = 1;
-        if (read.enabled) {
-          nh->read_ready_list.in_or_enqueue(this);
-        }
+        nh->read_reschedule(this);
       }
     } else if (ret == SSL_WAIT_FOR_HOOK) {
       // avoid readReschedule - done when the plugin calls us back to reenable
     } else {
-      readReschedule(nh);
+      nh->read_reschedule(this);
     }
     return;
   }
 
   // If there is nothing to do or no space available, disable connection
   if (ntodo <= 0 || !buf.writer()->write_avail()) {
-    read_disable(nh, this);
+    nh->read_disable(this);
     return;
   }
 
@@ -594,7 +587,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 
   if (bytes > 0) {
     if (ret == SSL_READ_WOULD_BLOCK || ret == SSL_READ_READY) {
-      if (readSignalAndUpdate(VC_EVENT_READ_READY) != EVENT_CONT) {
+      if (nh->read_signal_and_update(VC_EVENT_READ_READY, this) != EVENT_CONT) {
         Debug("ssl", "ssl_read_from_net, readSignal != EVENT_CONT");
         return;
       }
@@ -603,7 +596,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 
   switch (ret) {
   case SSL_READ_READY:
-    readReschedule(nh);
+    nh->read_reschedule(this);
     return;
     break;
   case SSL_WRITE_WOULD_BLOCK:
@@ -611,22 +604,22 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     if (lock.get_mutex() != s->vio.mutex.get()) {
       Debug("ssl", "ssl_read_from_net, mutex switched");
       if (ret == SSL_READ_WOULD_BLOCK) {
-        readReschedule(nh);
+        nh->read_reschedule(this);
       } else {
-        writeReschedule(nh);
+        nh->write_reschedule(this);
       }
       return;
     }
     // reset the trigger and remove from the ready queue
     // we will need to be retriggered to read from this socket again
     read.triggered = 0;
-    nh->read_ready_list.remove(this);
+    nh->read_reschedule(this);
     Debug("ssl", "read_from_net, read finished - would block");
 #ifdef TS_USE_PORT
     if (ret == SSL_READ_WOULD_BLOCK) {
-      readReschedule(nh);
+      nh->read_reschedule(this);
     } else {
-      writeReschedule(nh);
+      nh->write_reschedule(this);
     }
 #endif
     break;
@@ -636,7 +629,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     // SSL_ERROR_ZERO_RETURN from SSL_get_error()
     // SSL_ERROR_ZERO_RETURN means that the origin server closed the SSL connection
     read.triggered = 0;
-    readSignalDone(VC_EVENT_EOS, nh);
+    nh->read_signal_done(VC_EVENT_EOS, this);
 
     if (bytes > 0) {
       Debug("ssl", "read_from_net, read finished - EOS");
@@ -645,12 +638,12 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     }
     break;
   case SSL_READ_COMPLETE:
-    readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+    nh->read_signal_done(VC_EVENT_READ_COMPLETE, this);
     Debug("ssl", "read_from_net, read finished - signal done");
     break;
   case SSL_READ_ERROR:
     this->read.triggered = 0;
-    readSignalError(nh, (int)r);
+    nh->read_signal_error(this, (int)r);
     Debug("ssl", "read_from_net, read finished - read error");
     break;
   }
@@ -1273,7 +1266,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
     // if the handshake is complete and write is enabled reschedule the write
     if (closed == 0 && write.enabled) {
-      writeReschedule(nh);
+      nh->write_reschedule(this);
     }
 
     SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_out_stat);
@@ -1452,7 +1445,7 @@ SSLNetVConnection::reenable(NetHandler *nh)
     }
     Debug("ssl", "iterate from reenable curHook=%p %d", curHook, sslHandshakeHookState);
   }
-  this->readReschedule(nh);
+  nh->read_reschedule(this);
 }
 
 bool

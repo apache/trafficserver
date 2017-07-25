@@ -207,6 +207,17 @@ public:
 
   NetHandler();
 
+  void read_reschedule(UnixNetVConnection *vc);
+  void write_reschedule(UnixNetVConnection *vc);
+  int read_signal_and_update(int event, UnixNetVConnection *vc);
+  int write_signal_and_update(int event, UnixNetVConnection *vc);
+  int read_signal_done(int event, UnixNetVConnection *vc);
+  int write_signal_done(int event, UnixNetVConnection *vc);
+  int read_signal_error(UnixNetVConnection *vc, int lerrno);
+  int write_signal_error(UnixNetVConnection *vc, int lerrno);
+  void read_disable(UnixNetVConnection *vc);
+  void write_disable(UnixNetVConnection *vc);
+
 private:
   void _close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time,
                  int &total_idle_count);
@@ -390,29 +401,158 @@ check_transient_accept_error(int res)
 }
 
 //
+// Reschedule a UnixNetVConnection by moving it
+// onto or off of the ready_list
+//
+TS_INLINE void
+NetHandler::read_reschedule(UnixNetVConnection *vc)
+{
+  vc->ep.refresh(EVENTIO_READ);
+  if (vc->read.triggered && vc->read.enabled) {
+    read_ready_list.in_or_enqueue(vc);
+  } else {
+    read_ready_list.remove(vc);
+  }
+}
+
+TS_INLINE void
+NetHandler::write_reschedule(UnixNetVConnection *vc)
+{
+  vc->ep.refresh(EVENTIO_WRITE);
+  if (vc->write.triggered && vc->write.enabled) {
+    write_ready_list.in_or_enqueue(vc);
+  } else {
+    write_ready_list.remove(vc);
+  }
+}
+
+//
+// Signal an event
+//
+TS_INLINE int
+NetHandler::read_signal_and_update(int event, UnixNetVConnection *vc)
+{
+  vc->recursion++;
+  if (vc->read.vio._cont) {
+    vc->read.vio._cont->handleEvent(event, &vc->read.vio);
+  } else {
+    switch (event) {
+    case VC_EVENT_EOS:
+    case VC_EVENT_ERROR:
+    case VC_EVENT_ACTIVE_TIMEOUT:
+    case VC_EVENT_INACTIVITY_TIMEOUT:
+      Debug("inactivity_cop", "event %d: null read.vio cont, closing vc %p", event, vc);
+      vc->closed = 1;
+      break;
+    default:
+      Error("Unexpected event %d for vc %p", event, vc);
+      ink_release_assert(0);
+      break;
+    }
+  }
+  if (!--vc->recursion && vc->closed) {
+    /* BZ  31932 */
+    ink_assert(vc->thread == this_ethread());
+    close_UnixNetVConnection(vc, vc->thread);
+    return EVENT_DONE;
+  } else {
+    return EVENT_CONT;
+  }
+}
+
+TS_INLINE int
+NetHandler::write_signal_and_update(int event, UnixNetVConnection *vc)
+{
+  vc->recursion++;
+  if (vc->write.vio._cont) {
+    vc->write.vio._cont->handleEvent(event, &vc->write.vio);
+  } else {
+    switch (event) {
+    case VC_EVENT_EOS:
+    case VC_EVENT_ERROR:
+    case VC_EVENT_ACTIVE_TIMEOUT:
+    case VC_EVENT_INACTIVITY_TIMEOUT:
+      Debug("inactivity_cop", "event %d: null write.vio cont, closing vc %p", event, vc);
+      vc->closed = 1;
+      break;
+    default:
+      Error("Unexpected event %d for vc %p", event, vc);
+      ink_release_assert(0);
+      break;
+    }
+  }
+  if (!--vc->recursion && vc->closed) {
+    /* BZ  31932 */
+    ink_assert(vc->thread == this_ethread());
+    close_UnixNetVConnection(vc, vc->thread);
+    return EVENT_DONE;
+  } else {
+    return EVENT_CONT;
+  }
+}
+
+TS_INLINE int
+NetHandler::read_signal_done(int event, UnixNetVConnection *vc)
+{
+  vc->read.enabled = 0;
+  if (read_signal_and_update(event, vc) == EVENT_DONE) {
+    return EVENT_DONE;
+  } else {
+    read_reschedule(vc);
+    return EVENT_CONT;
+  }
+}
+
+TS_INLINE int
+NetHandler::write_signal_done(int event, UnixNetVConnection *vc)
+{
+  vc->write.enabled = 0;
+  if (write_signal_and_update(event, vc) == EVENT_DONE) {
+    return EVENT_DONE;
+  } else {
+    write_reschedule(vc);
+    return EVENT_CONT;
+  }
+}
+
+TS_INLINE int
+NetHandler::read_signal_error(UnixNetVConnection *vc, int lerrno)
+{
+  vc->lerrno = lerrno;
+  return read_signal_done(VC_EVENT_ERROR, vc);
+}
+
+TS_INLINE int
+NetHandler::write_signal_error(UnixNetVConnection *vc, int lerrno)
+{
+  vc->lerrno = lerrno;
+  return write_signal_done(VC_EVENT_ERROR, vc);
+}
+
+//
 // Disable a UnixNetVConnection
 //
-static inline void
-read_disable(NetHandler *nh, UnixNetVConnection *vc)
+TS_INLINE void
+NetHandler::read_disable(UnixNetVConnection *vc)
 {
   if (!vc->write.enabled) {
     vc->set_inactivity_timeout(0);
     Debug("socket", "read_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
   }
   vc->read.enabled = 0;
-  nh->read_ready_list.remove(vc);
+  read_ready_list.remove(vc);
   vc->ep.modify(-EVENTIO_READ);
 }
 
-static inline void
-write_disable(NetHandler *nh, UnixNetVConnection *vc)
+TS_INLINE void
+NetHandler::write_disable(UnixNetVConnection *vc)
 {
   if (!vc->read.enabled) {
     vc->set_inactivity_timeout(0);
     Debug("socket", "write_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
   }
   vc->write.enabled = 0;
-  nh->write_ready_list.remove(vc);
+  write_ready_list.remove(vc);
   vc->ep.modify(-EVENTIO_WRITE);
 }
 

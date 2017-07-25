@@ -500,8 +500,7 @@ NetHandler::mainNetEvent(int event, Event *e)
 #if defined(solaris)
       if (vc->read.triggered && vc->write.enabled) {
         vc->ep.modify(-EVENTIO_READ);
-        vc->ep.refresh(EVENTIO_WRITE);
-        vc->writeReschedule(this);
+        write_reschedule(vc);
       }
 #endif
     }
@@ -517,8 +516,7 @@ NetHandler::mainNetEvent(int event, Event *e)
 #if defined(solaris)
       if (vc->write.triggered && vc->read.enabled) {
         vc->ep.modify(-EVENTIO_WRITE);
-        vc->ep.refresh(EVENTIO_READ);
-        vc->readReschedule(this);
+        read_reschedule(vc);
       }
 #endif
     }
