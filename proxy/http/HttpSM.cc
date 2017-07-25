@@ -1593,8 +1593,12 @@ HttpSM::handle_api_return()
     if (unlikely(t_state.did_upgrade_succeed)) {
       // We've successfully handled the upgrade, let's now setup
       // a blind tunnel.
+      IOBufferReader *initial_data = nullptr;
       if (t_state.is_websocket) {
         HTTP_INCREMENT_DYN_STAT(http_websocket_current_active_client_connections_stat);
+        if (server_session) {
+          initial_data = server_session->get_reader();
+        }
 
         if (ua_session) {
           DebugSM("http_websocket",
@@ -1613,7 +1617,7 @@ HttpSM::handle_api_return()
         }
       }
 
-      setup_blind_tunnel(true);
+      setup_blind_tunnel(true, initial_data);
     } else {
       HttpTunnelProducer *p = setup_server_transfer();
       perform_cache_write_action();
@@ -6612,7 +6616,7 @@ HttpSM::setup_push_transfer_to_cache()
 }
 
 void
-HttpSM::setup_blind_tunnel(bool send_response_hdr)
+HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 {
   HttpTunnelConsumer *c_ua;
   HttpTunnelConsumer *c_os;
@@ -6626,6 +6630,11 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
   milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = Thread::get_hrtime();
   if (send_response_hdr) {
     client_response_hdr_bytes = write_response_header_into_buffer(&t_state.hdr_info.client_response, to_ua_buf);
+    if (initial && initial->read_avail()) {
+      int64_t avail = initial->read_avail();
+      to_ua_buf->write(initial, avail);
+      initial->consume(avail);
+    }
   } else {
     client_response_hdr_bytes = 0;
   }
