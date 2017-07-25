@@ -23,15 +23,15 @@ library_includedir=$(includedir)/ts
 library_include_HEADERS = apidefs.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_MemView test_Scalar
+check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_MemView test_Scalar test_tslib
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
 TESTS = $(check_PROGRAMS)
 
-AM_CPPFLAGS += -I$(abs_top_srcdir)/lib
-
 lib_LTLIBRARIES = libtsutil.la
+
+AM_CPPFLAGS += -I$(abs_top_srcdir)/lib 
 
 libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsutil_la_LIBADD = \
@@ -181,6 +181,7 @@ libtsutil_la_SOURCES = \
   SimpleTokenizer.h \
   SourceLocation.cc \
   SourceLocation.h \
+  string_view.h \
   TestBox.h \
   TextBuffer.cc \
   TextBuffer.h \
@@ -241,6 +242,15 @@ test_MemView_SOURCES = test_MemView.cc
 test_MemView_LDADD = libtsutil.la
 
 test_Scalar_SOURCES = test_Scalar.cc Scalar.h
+
+test_tslib_CPPFLAGS = $(AM_CPPFLAGS)\
+	-I$(abs_top_srcdir)/tests/include
+
+# add you catch based test file here for tslib
+test_tslib_LDADD = libtsutil.la
+test_tslib_SOURCES = \
+	unit-tests/main.cpp \
+	unit-tests/string_view.cpp
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
