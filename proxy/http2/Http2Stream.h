@@ -141,7 +141,7 @@ public:
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
   void initiating_close();
-  void do_io_shutdown(ShutdownHowTo_t) override {}
+  void do_io_shutdown(IOShutdown) override {}
   void update_read_request(int64_t read_len, bool send_update);
   bool update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
   void reenable(VIO *vio) override;

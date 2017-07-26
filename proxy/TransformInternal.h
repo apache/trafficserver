@@ -41,7 +41,7 @@ public:
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
   void do_io_close(int lerrno = -1);
-  void do_io_shutdown(ShutdownHowTo_t howto);
+  void do_io_shutdown(IOShutdown howto);
 
   void reenable(VIO *vio);
 
@@ -66,7 +66,7 @@ public:
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
   void do_io_close(int lerrno = -1);
-  void do_io_shutdown(ShutdownHowTo_t howto);
+  void do_io_shutdown(IOShutdown howto);
 
   void reenable(VIO *vio);
 

@@ -116,12 +116,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-/** Used in VConnection::shutdown(). */
-enum ShutdownHowTo_t {
-  IO_SHUTDOWN_READ = 0,
-  IO_SHUTDOWN_WRITE,
-  IO_SHUTDOWN_READWRITE,
+enum class IOShutdown {
+  READ      = SHUT_RD,
+  WRITE     = SHUT_WR,
+  READWRITE = SHUT_RDWR,
 };
+
+constexpr IOShutdown IO_SHUTDOWN_READ      = IOShutdown::READ;
+constexpr IOShutdown IO_SHUTDOWN_WRITE     = IOShutdown::WRITE;
+constexpr IOShutdown IO_SHUTDOWN_READWRITE = IOShutdown::READWRITE;
 
 /** Used in VConnection::get_data(). */
 enum TSApiDataType {
@@ -307,7 +310,7 @@ public:
       shutdown.
 
   */
-  virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
+  virtual void do_io_shutdown(IOShutdown howto) = 0;
 
   VConnection(ProxyMutex *aMutex);
   VConnection(Ptr<ProxyMutex> &aMutex);
@@ -399,7 +402,7 @@ struct DummyVConnection : public VConnection {
                 "cannot use default implementation");
   }
 
-  virtual void do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */)
+  virtual void do_io_shutdown(IOShutdown /* howto ATS_UNUSED */)
   {
     ink_assert(!"VConnection::do_io_shutdown -- "
                 "cannot use default implementation");

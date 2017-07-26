@@ -177,7 +177,7 @@ public:
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
   VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
+  void do_io_shutdown(IOShutdown howto) override;
   void reenable(VIO *vio) override;
 
   NetVConnection *

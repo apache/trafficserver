@@ -63,7 +63,7 @@ public:
   }
 
   void
-  do_io_shutdown(ShutdownHowTo_t howto) override
+  do_io_shutdown(IOShutdown howto) override
   {
     parent->do_io_shutdown(howto);
   }

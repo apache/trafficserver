@@ -109,7 +109,7 @@ HttpServerSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *
 }
 
 void
-HttpServerSession::do_io_shutdown(ShutdownHowTo_t howto)
+HttpServerSession::do_io_shutdown(IOShutdown howto)
 {
   server_vc->do_io_shutdown(howto);
 }

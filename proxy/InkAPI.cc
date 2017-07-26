@@ -1190,7 +1190,7 @@ INKVConnInternal::do_io_close(int error)
 }
 
 void
-INKVConnInternal::do_io_shutdown(ShutdownHowTo_t howto)
+INKVConnInternal::do_io_shutdown(IOShutdown howto)
 {
   if ((howto == IO_SHUTDOWN_READ) || (howto == IO_SHUTDOWN_READWRITE)) {
     m_read_vio.op = VIO::NONE;

@@ -239,7 +239,7 @@ Http2ClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 }
 
 void
-Http2ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
+Http2ClientSession::do_io_shutdown(IOShutdown howto)
 {
   this->client_vc->do_io_shutdown(howto);
 }

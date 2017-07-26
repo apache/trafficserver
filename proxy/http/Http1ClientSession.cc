@@ -256,7 +256,7 @@ Http1ClientSession::set_tcp_init_cwnd()
 }
 
 void
-Http1ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
+Http1ClientSession::do_io_shutdown(IOShutdown howto)
 {
   client_vc->do_io_shutdown(howto);
 }

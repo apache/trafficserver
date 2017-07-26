@@ -365,7 +365,7 @@ public:
     @param howto IO_SHUTDOWN_READ, IO_SHUTDOWN_WRITE, IO_SHUTDOWN_READWRITE
 
   */
-  virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
+  virtual void do_io_shutdown(IOShutdown howto) = 0;
 
   /**
     Sends out of band messages over the connection. This function
