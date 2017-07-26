@@ -203,3 +203,9 @@ CONFIG proxy.config.cluster.cluster_port INT 8086
 CONFIG proxy.config.cluster.rsport INT 8088
 CONFIG proxy.config.cluster.mcport INT 8089
 CONFIG proxy.config.cluster.mc_group_addr STRING 224.0.1.37
+
+##############################################################################
+# Http transaction plugin hook library path
+#
+##############################################################################
+CONFIG proxy.config.http.plugin_hook_library_path STRING NULL

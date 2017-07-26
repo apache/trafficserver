@@ -1389,6 +1389,13 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.plugin.load_elevated", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_READ_ONLY}
   ,
 
+  //############
+  //#
+  //# Http transaction plugin hook library path
+  //#
+  //############
+  {RECT_CONFIG, "proxy.config.http.plugin_hook_library_path", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_READ_ONLY}
+  ,
 
   //##############################################################################
   //#

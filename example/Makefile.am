@@ -26,6 +26,7 @@ plugins = \
   blacklist-1.la \
   bnull-transform.la \
   cache-scan.la \
+  debug-plugins.la \
   file-1.la \
   hello.la \
   intercept.la \
@@ -61,6 +62,7 @@ blacklist_0_la_SOURCES = blacklist-0/blacklist-0.c
 blacklist_1_la_SOURCES = blacklist-1/blacklist-1.c
 bnull_transform_la_SOURCES = bnull-transform/bnull-transform.c
 cache_scan_la_SOURCES = cache-scan/cache-scan.cc
+debug_plugins_la_SOURCES = debug-plugins/debug-plugins.cc
 file_1_la_SOURCES = file-1/file-1.c
 hello_la_SOURCES = hello/hello.c
 intercept_la_SOURCES = intercept/intercept.cc

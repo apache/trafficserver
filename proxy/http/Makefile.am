@@ -55,6 +55,8 @@ libhttp_a_SOURCES = \
   HttpDebugNames.h \
   HttpPages.cc \
   HttpPages.h \
+  HttpPluginHook.h \
+  HttpPluginHook.cc \
   HttpProxyServerMain.cc \
   HttpProxyServerMain.h \
   HttpSM.cc \

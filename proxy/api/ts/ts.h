@@ -2385,6 +2385,31 @@ tsapi const char *TSHttpHookNameLookup(TSHttpHookID hook);
 */
 tsapi const char *TSHttpEventNameLookup(TSEvent event);
 
+/**
+ * Declaration of Http transaction Begin/End.
+ * Definitions of the interfaces are in a library whose path is configured in records.config.
+ * TS will initialize two TxnSession function pointers of implementation of the interfaces in the library.
+ * Begin and End transaction execution, TS will call these two hooks respectively.
+ *
+ * @param txnp, current transaction
+ */
+tsapi void TSHttpTxnBegin(TSHttpTxn txnp);
+tsapi void TSHttpTxnEnd(TSHttpTxn txnp);
+
+/**
+ * Declaration of Http transaction plugin hook interfaces.
+ * Definitions of the interfaces are in a library whose path is configured in records.config.
+ * TS will initialize two PluginHook_t function pointers of implementation of the interfaces in the library.
+ * Pre and post plugin execution, TS will call these two hooks respectively.
+ *
+ * @param txnp, current transaction
+ * @param id current hook id
+ * @param funcp the event handle function, use this address to specify the execution plugin
+ * @param contp continuation that is called
+ */
+tsapi void TSHttpTxnPrePluginHook(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp, TSCont contp);
+tsapi void TSHttpTxnPostPluginHook(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp, TSCont contp);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

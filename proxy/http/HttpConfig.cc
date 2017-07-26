@@ -1112,6 +1112,10 @@ HttpConfig::startup()
   // Local Manager
   HttpEstablishStaticConfigLongLong(c.synthetic_port, "proxy.config.admin.synthetic_port");
 
+  // http transaction plugin hook
+  HttpEstablishStaticConfigStringAlloc(c.http_plugin_hook_library_path, "proxy.config.http.plugin_hook_library_path");
+  c.http_plugin_hook_library_path_len = -1;
+
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
   c.cluster_time_delta = 0;
@@ -1378,6 +1382,11 @@ HttpConfig::reconfigure()
   params->redirection_host_no_port          = INT_TO_BOOL(m_master.redirection_host_no_port);
   params->oride.number_of_redirections      = m_master.oride.number_of_redirections;
   params->post_copy_size                    = m_master.post_copy_size;
+
+  // Http transaction debug
+  params->http_plugin_hook_library_path = ats_strdup(m_master.http_plugin_hook_library_path);
+  params->http_plugin_hook_library_path_len =
+    (params->http_plugin_hook_library_path) ? strlen(params->http_plugin_hook_library_path) : 0;
 
   // Local Manager
   params->synthetic_port = m_master.synthetic_port;
