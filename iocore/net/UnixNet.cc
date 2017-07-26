@@ -587,7 +587,7 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
   int total_idle_count        = 0;
   for (; vc != NULL; vc = vc_next) {
     vc_next = vc->active_queue_link.next;
-    if ((vc->inactivity_timeout_in && vc->next_inactivity_timeout_at <= now) ||
+    if ((vc->inactivity_timeout_in && vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at <= now) ||
         (vc->active_timeout_in && vc->next_activity_timeout_at <= now)) {
       _close_vc(vc, now, handle_event, closed, total_idle_time, total_idle_count);
     }
