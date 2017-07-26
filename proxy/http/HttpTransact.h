@@ -687,7 +687,6 @@ public:
     }
 
     ConnectionAttributes() { clear(); }
-
     void
     clear()
     {
