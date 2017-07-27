@@ -63,8 +63,8 @@ protected:
 
 private:
   hwloc_obj_type_t obj_type;
-  int obj_count = 0;
-  char const *obj_name;
+  int obj_count        = 0;
+  char const *obj_name = nullptr;
 #endif
 };
 
