@@ -3132,7 +3132,8 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING ssl_ticket.key
 
    The filename of the default and global ticket key for SSL sessions. The location is relative to the
-   :ts:cv:`proxy.config.ssl.server.cert.path` directory.
+   :ts:cv:`proxy.config.ssl.server.cert.path` directory. One way to generate this would be to run
+   ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
 
