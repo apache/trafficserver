@@ -277,7 +277,7 @@ private:
   //   is CLOSED.
   //   If given Stream Identifier is not found in stream_list and it is greater
   //   than latest_streamid_in, the state of Stream is IDLE.
-  DLL<Http2Stream> stream_list;
+  Queue<Http2Stream> stream_list;
   Http2StreamId latest_streamid_in;
   Http2StreamId latest_streamid_out;
   int stream_requests;
