@@ -179,8 +179,6 @@ public:
   // Stream level window size
   ssize_t client_rwnd, server_rwnd;
 
-  LINK(Http2Stream, link);
-
   uint8_t *header_blocks;
   uint32_t header_blocks_length;  // total length of header blocks (not include
                                   // Padding or other fields)
