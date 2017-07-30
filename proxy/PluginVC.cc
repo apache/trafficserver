@@ -388,7 +388,7 @@ PluginVC::do_io_close(int /* flag ATS_UNUSED */)
 }
 
 void
-PluginVC::do_io_shutdown(ShutdownHowTo_t howto)
+PluginVC::do_io_shutdown(IOShutdown howto)
 {
   ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);

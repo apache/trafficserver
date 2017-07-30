@@ -121,7 +121,7 @@ struct SocketManager {
   int port_getn(int port, port_event_t *list, uint_t max, uint_t *nget, timespec_t *timeout);
 #endif
 
-  int shutdown(int s, int how);
+  int shutdown(int s, IOShutdown how);
   int dup(int s);
 
   // result is the fd or -errno

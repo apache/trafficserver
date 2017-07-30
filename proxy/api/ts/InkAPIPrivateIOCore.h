@@ -81,7 +81,7 @@ public:
 
   void do_io_close(int lerrno = -1);
 
-  void do_io_shutdown(ShutdownHowTo_t howto);
+  void do_io_shutdown(IOShutdown howto);
 
   void reenable(VIO *vio);
 

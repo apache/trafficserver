@@ -136,7 +136,7 @@ public:
   }
 
   void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
+  void do_io_shutdown(IOShutdown howto) override;
 
   ////////////////////////////////////////////////////////////
   // Set the timeouts associated with this connection.      //

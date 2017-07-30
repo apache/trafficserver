@@ -112,7 +112,7 @@ public:
   virtual VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false);
 
   virtual void do_io_close(int lerrno = -1);
-  virtual void do_io_shutdown(ShutdownHowTo_t howto);
+  virtual void do_io_shutdown(IOShutdown howto);
 
   virtual void reenable(VIO *vio);
 

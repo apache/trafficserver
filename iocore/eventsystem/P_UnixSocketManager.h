@@ -484,13 +484,16 @@ SocketManager::socket(int domain, int type, int protocol)
 }
 
 TS_INLINE int
-SocketManager::shutdown(int s, int how)
+SocketManager::shutdown(int s, IOShutdown how)
 {
   int res;
+
   do {
-    if (unlikely((res = ::shutdown(s, how)) < 0))
+    if (unlikely((res = ::shutdown(s, static_cast<int>(how))) < 0)) {
       res = -errno;
-  } while (res == -EINTR);
+    }
+  } while (transient_error());
+
   return res;
 }
 

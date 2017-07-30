@@ -180,7 +180,7 @@ struct CacheVConnection : public VConnection {
   void reenable(VIO *avio)          = 0;
   void reenable_re(VIO *avio)       = 0;
   void
-  do_io_shutdown(ShutdownHowTo_t howto)
+  do_io_shutdown(IOShutdown howto)
   {
     (void)howto;
     ink_assert(!"CacheVConnection::do_io_shutdown unsupported");

@@ -709,11 +709,11 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 }
 
 void
-UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
+UnixNetVConnection::do_io_shutdown(IOShutdown howto)
 {
   switch (howto) {
   case IO_SHUTDOWN_READ:
-    socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 0);
+    socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, IO_SHUTDOWN_READ);
     read.enabled = 0;
     read.vio.buffer.clear();
     read.vio.nbytes = 0;
@@ -721,7 +721,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     f.shutdown      = NET_VC_SHUTDOWN_READ;
     break;
   case IO_SHUTDOWN_WRITE:
-    socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 1);
+    socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, IO_SHUTDOWN_WRITE);
     write.enabled = 0;
     write.vio.buffer.clear();
     write.vio.nbytes = 0;
@@ -729,7 +729,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     f.shutdown       = NET_VC_SHUTDOWN_WRITE;
     break;
   case IO_SHUTDOWN_READWRITE:
-    socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 2);
+    socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, IO_SHUTDOWN_READWRITE);
     read.enabled  = 0;
     write.enabled = 0;
     read.vio.buffer.clear();

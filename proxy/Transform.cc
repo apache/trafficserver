@@ -348,7 +348,7 @@ TransformTerminus::do_io_close(int error)
   -------------------------------------------------------------------------*/
 
 void
-TransformTerminus::do_io_shutdown(ShutdownHowTo_t howto)
+TransformTerminus::do_io_shutdown(IOShutdown howto)
 {
   if ((howto == IO_SHUTDOWN_READ) || (howto == IO_SHUTDOWN_READWRITE)) {
     m_read_vio.op = VIO::NONE;
@@ -471,11 +471,11 @@ TransformVConnection::do_io_close(int error)
   -------------------------------------------------------------------------*/
 
 void
-TransformVConnection::do_io_shutdown(ShutdownHowTo_t howto)
+TransformVConnection::do_io_shutdown(IOShutdown howto)
 {
   ink_assert(howto == IO_SHUTDOWN_WRITE);
 
-  Debug("transform", "TransformVConnection do_io_shutdown: %d [0x%lx]", howto, (long)this);
+  Debug("transform", "TransformVConnection do_io_shutdown: %d [%p]", static_cast<int>(howto), this);
 
   m_transform->do_io_shutdown(howto);
 }
