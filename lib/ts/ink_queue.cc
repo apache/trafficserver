@@ -37,12 +37,7 @@
   ****************************************************************************/
 
 #include "ts/ink_config.h"
-#include <cassert>
-#include <memory.h>
-#include <cstdlib>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/mman.h>
+
 #include "ts/ink_atomic.h"
 #include "ts/ink_queue.h"
 #include "ts/ink_memory.h"
@@ -51,6 +46,10 @@
 #include "ts/ink_align.h"
 #include "ts/hugepages.h"
 #include "ts/Diags.h"
+
+// only refer to non-JEMALLOC version
+#undef HAVE_LIBJEMALLOC
+#include "ts/Allocator.h"
 
 #define DEBUG_TAG "freelist"
 

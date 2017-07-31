@@ -20,6 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include "ts/jemallctl.h"
+
 #include "ts/ink_platform.h"
 #include "ts/ink_memory.h"
 #include "ts/ink_defs.h"
@@ -57,7 +59,15 @@ ats_malloc(size_t size)
   // ink_stack_trace_dump();
   if (likely(size > 0)) {
     if (unlikely((ptr = malloc(size)) == nullptr)) {
+#ifndef HAVE_LIBJEMALLOC
       ink_abort("couldn't allocate %zu bytes", size);
+#else
+      auto arena = jemallctl::thread_arena();
+      ink_warning("ats_malloc: couldn't allocate %zu bytes in arena %d", size, arena);
+      ink_warning("ats_malloc: current alloced: %#lx", jemallctl::stats_allocated());
+      ink_warning("ats_malloc: current active: %#lx", jemallctl::stats_cactive()->operator uint64_t());
+      ink_abort("couldn't allocate %zu bytes", size);
+#endif
     }
   }
   return ptr;
@@ -153,18 +163,17 @@ ats_memalign_free(void *ptr)
 int
 ats_mallopt(int param ATS_UNUSED, int value ATS_UNUSED)
 {
-#if TS_HAS_JEMALLOC
-// TODO: jemalloc code ?
-#else
-#if TS_HAS_TCMALLOC
-// TODO: tcmalloc code ?
-#else
-#if defined(__GLIBC__)
-  return mallopt(param, value);
-#endif // ! defined(__GLIBC__)
-#endif // ! TS_HAS_TCMALLOC
-#endif // ! TS_HAS_JEMALLOC
+#if HAVE_LIBJEMALLOC
+  // TODO: jemalloc code ?
   return 0;
+#elif TS_HAS_TCMALLOC
+  // TODO: tcmalloc code ?
+  return 0;
+#elif defined(linux)
+  return mallopt(param, value);
+#else
+  return 0;
+#endif
 }
 
 int

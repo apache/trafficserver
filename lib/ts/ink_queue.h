@@ -146,36 +146,6 @@ union head_p {
 #error "unsupported processor"
 #endif
 
-struct _InkFreeList {
-  head_p head;
-  const char *name;
-  uint32_t type_size, chunk_size, used, allocated, alignment;
-  uint32_t allocated_base, used_base;
-  int advice;
-};
-
-typedef struct ink_freelist_ops InkFreeListOps;
-typedef struct _InkFreeList InkFreeList;
-
-const InkFreeListOps *ink_freelist_malloc_ops();
-const InkFreeListOps *ink_freelist_freelist_ops();
-void ink_freelist_init_ops(const InkFreeListOps *);
-
-/*
- * alignment must be a power of 2
- */
-InkFreeList *ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment);
-
-inkcoreapi void ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment);
-inkcoreapi void ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size,
-                                          uint32_t alignment, int advice);
-inkcoreapi void *ink_freelist_new(InkFreeList *f);
-inkcoreapi void ink_freelist_free(InkFreeList *f, void *item);
-inkcoreapi void ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item);
-void ink_freelists_dump(FILE *f);
-void ink_freelists_dump_baselinerel(FILE *f);
-void ink_freelists_snap_baseline();
-
 struct InkAtomicList {
   InkAtomicList() {}
   head_p head{};

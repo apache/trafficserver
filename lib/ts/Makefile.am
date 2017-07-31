@@ -41,11 +41,14 @@ libtsutil_la_LIBADD = \
   @OPENSSL_LIBS@ \
   @LIBTCL@ \
   @LIBRESOLV@ \
-  @LIBCAP@ \
-  -lc
+  @LIBCAP@
 
 libtsutil_la_SOURCES = \
+  jemallctl.cc \
+  jemallctl.h \
   Allocator.h \
+  JemAllocator.h \
+  JemAllocator.cc \
   Arena.cc \
   Arena.h \
   BaseLogFile.cc \
@@ -260,6 +263,7 @@ test_tslib_SOURCES = \
 	unit-tests/test_TextView.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
+CompileParseRules_LDADD = ;true            # link command doesn't need $(LIBS)
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper

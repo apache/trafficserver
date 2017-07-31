@@ -51,7 +51,7 @@
 #define BUILD_NUMBER "@build_number@"
 
 /* Libraries */
-#define TS_HAS_JEMALLOC @jemalloch@
+#define TS_HAS_JEMALLOC @has_jemalloc@
 #define TS_HAS_TCMALLOC @has_tcmalloc@
 
 /* Features */
