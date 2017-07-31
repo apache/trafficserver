@@ -65,7 +65,8 @@
 #else // no jemalloc includes used
 
 #define mallocx(...) nullptr
-#define sallocx(...) size_t()
+#define sallocx(...) \
+  size_t {}
 #define sdallocx(...)
 #define dallocx(...)
 

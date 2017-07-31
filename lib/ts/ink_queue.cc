@@ -47,7 +47,12 @@
 #include "ts/hugepages.h"
 #include "ts/Diags.h"
 
-// only refer to non-JEMALLOC version
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <cassert>
+#include <cstdlib>
+
+// in order to compile correctly
 #undef HAVE_LIBJEMALLOC
 #include "ts/Allocator.h"
 

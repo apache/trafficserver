@@ -167,15 +167,19 @@ Arena::str_store(const char *str, size_t len)
   return mem;
 }
 
+struct Arena_NoCache : public Arena {
+  std::allocator<uint64_t> m_alloc;
 
-struct Arena_NoCache : public Arena
-{
-  std::allocator<uint64_t>   m_alloc;
-
-  inkcoreapi void *alloc(size_t size, size_t alignment = sizeof(double))
-    { return m_alloc.allocate((size+1)/sizeof(uint64_t)); }
-  void free(void *mem, size_t size)
-    { m_alloc.deallocate(static_cast<uint64_t*>(mem), size); }
+  inkcoreapi void *
+  alloc(size_t size, size_t alignment = sizeof(double))
+  {
+    return m_alloc.allocate((size + 1) / sizeof(uint64_t));
+  }
+  void
+  free(void *mem, size_t size)
+  {
+    m_alloc.deallocate(static_cast<uint64_t *>(mem), size);
+  }
 };
 
 #if HAVE_LIBJEMALLOC

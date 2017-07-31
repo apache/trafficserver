@@ -46,71 +46,114 @@
 #include "ts/ink_align.h"
 #include "ts/ink_memory.h"
 
-#include <execinfo.h>    // for backtrace!
+#include <execinfo.h> // for backtrace!
 
 #include <new>
 #include <memory>
 #include <cstdlib>
 
-
 class AlignedAllocator
 {
   const char *_name = nullptr;
-  size_t      _sz = 0; // bytes and alignment (both)
-  size_t      _arena = 0; // jemalloc arena
+  size_t _sz        = 0; // bytes and alignment (both)
+  size_t _arena     = 0; // jemalloc arena
 
 public:
-  AlignedAllocator() { }
+  AlignedAllocator() {}
   AlignedAllocator(const char *name, unsigned int element_size);
 
-  void *alloc_void() { return allocate(); }
-  void free_void(void *ptr) { deallocate(ptr); }
-  void *alloc()  { return alloc_void(); }
-  void free(void *ptr) { free_void(ptr); }
+  void *
+  alloc_void()
+  {
+    return allocate();
+  }
+  void
+  free_void(void *ptr)
+  {
+    deallocate(ptr);
+  }
+  void *
+  alloc()
+  {
+    return alloc_void();
+  }
+  void
+  free(void *ptr)
+  {
+    free_void(ptr);
+  }
 
   void re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, int advice);
 
 protected:
-  void *allocate()
-    { return mallocx(_sz, (MALLOCX_ALIGN(_sz)|MALLOCX_ZERO|MALLOCX_ARENA(_arena)) ); }
-  void deallocate(void *p) 
-    { dallocx(p, MALLOCX_ARENA(_arena)); }
+  void *
+  allocate()
+  {
+    return mallocx(_sz, (MALLOCX_ALIGN(_sz) | MALLOCX_ZERO | MALLOCX_ARENA(_arena)));
+  }
+  void
+  deallocate(void *p)
+  {
+    dallocx(p, MALLOCX_ARENA(_arena));
+  }
 };
 
-template <typename T_OBJECT>
-class ObjAllocator : public std::allocator<T_OBJECT>
+template <typename T_OBJECT> class ObjAllocator : public std::allocator<T_OBJECT>
 {
- public: 
+public:
   using typename std::allocator<T_OBJECT>::value_type;
 
-  ObjAllocator(const char*name, unsigned chunk_size = 128) : _name(name) 
-  { 
+  ObjAllocator(const char *name, unsigned chunk_size = 128) : _name(name)
+  {
     value_type *preCached[chunk_size];
 
-    for ( int n = chunk_size ; n-- ; ) {
+    for (int n = chunk_size; n--;) {
       // create correct size and alignment
-      preCached[n] = static_cast<value_type*>( mallocx(sizeof(value_type), MALLOCX_ALIGN( alignof(value_type)) ) );
+      preCached[n] = static_cast<value_type *>(mallocx(sizeof(value_type), MALLOCX_ALIGN(alignof(value_type))));
     }
-    for ( int n = chunk_size ; n-- ; ) {
-      deallocate( preCached[n] );
+    for (int n = chunk_size; n--;) {
+      deallocate(preCached[n]);
     }
   }
 
-  void *alloc_void() { return allocate(); }
-  void free_void(void *ptr) { static_cast<value_type*>(ptr)->~value_type(); deallocate(ptr); }
-  value_type *alloc() { return allocate(); }
-  void free(value_type *ptr) { ptr->~value_type(); deallocate(ptr); }
-
- protected:
-  value_type *allocate()
+  void *
+  alloc_void()
   {
-    auto p = static_cast<value_type*>( mallocx(sizeof(value_type), MALLOCX_ALIGN( alignof(value_type))|MALLOCX_ZERO) );
+    return allocate();
+  }
+  void
+  free_void(void *ptr)
+  {
+    static_cast<value_type *>(ptr)->~value_type();
+    deallocate(ptr);
+  }
+  value_type *
+  alloc()
+  {
+    return allocate();
+  }
+  void
+  free(value_type *ptr)
+  {
+    ptr->~value_type();
+    deallocate(ptr);
+  }
+
+protected:
+  value_type *
+  allocate()
+  {
+    auto p = static_cast<value_type *>(mallocx(sizeof(value_type), MALLOCX_ALIGN(alignof(value_type)) | MALLOCX_ZERO));
     this->construct(p); // default constructor + pre-zeroed
     return p;
   }
 
-  void deallocate(value_type *p) { sdallocx(p, sizeof(value_type), 0); }
+  void
+  deallocate(value_type *p)
+  {
+    sdallocx(p, sizeof(value_type), 0);
+  }
 
- private:
+private:
   const char *_name;
 };
