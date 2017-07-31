@@ -1,6 +1,26 @@
 /** @file
 
-  A brief file description
+  @brief An example program that sends response content to a server to be transformed and sends the
+         transformed content to the client.
+
+  The protocol spoken with the server is simple. The plugin sends the
+  content-length of the document being transformed as a 4-byte
+  integer and then it sends the document itself. The first 4-bytes of
+  the server response are a status code/content length. If the code
+  is greater than 0 then the plugin assumes transformation was
+  successful and uses the code as the content length of the
+  transformed document. If the status code is less than or equal to 0
+  then the plugin bypasses transformation and sends the original
+  document on through.
+
+  The plugin does a fair amount of error checking and tries to bypass
+  transformation in many cases such as when it can't connect to the
+  server. This example plugin simply connects to port 7 on localhost,
+  which on our solaris machines (and most unix machines) is the echo
+  port. One nicety about the protocol is that simply having the
+  server echo back what it is sent results in a "null"
+  transformation. (i.e. A transformation which does not modify the
+  content).
 
   @section license License
 
@@ -19,37 +39,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/* server-transform.c:  an example program that sends response content
- *                      to a server to be transformed, and sends the
- *                      transformed content to the client
- *
- *
- *	Usage:
- *	  server-transform.so
- *
- *
- */
-
-/* The protocol spoken with the server is simple. The plugin sends the
-   content-length of the document being transformed as a 4-byte
-   integer and then it sends the document itself. The first 4-bytes of
-   the server response are a status code/content length. If the code
-   is greater than 0 then the plugin assumes transformation was
-   successful and uses the code as the content length of the
-   transformed document. If the status code is less than or equal to 0
-   then the plugin bypasses transformation and sends the original
-   document on through.
-
-   The plugin does a fair amount of error checking and tries to bypass
-   transformation in many cases such as when it can't connect to the
-   server. This example plugin simply connects to port 7 on localhost,
-   which on our solaris machines (and most unix machines) is the echo
-   port. One nicety about the protocol is that simply having the
-   server echo back what it is sent results in a "null"
-   transformation. (i.e. A transformation which does not modify the
-   content). */
+*/
 
 #include <string.h>
 #include <stdio.h>
@@ -58,6 +48,8 @@
 
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
+
+#define PLUGIN_NAME "server-transform"
 
 #define STATE_BUFFER 1
 #define STATE_CONNECT 2
@@ -141,7 +133,7 @@ transform_destroy(TSCont contp)
 
     TSfree(data);
   } else {
-    TSError("[server_transform] Unable to get Continuation's Data. TSContDataGet returns NULL");
+    TSError("[%s] Unable to get Continuation's Data. TSContDataGet returns NULL", PLUGIN_NAME);
   }
 
   TSContDestroy(contp);
@@ -183,7 +175,7 @@ transform_connect(TSCont contp, TransformData *data)
       data->input_reader = tempReader;
     }
   } else {
-    TSError("[server_transform] TSIOBufferReaderAvail returns TS_ERROR");
+    TSError("[%s] TSIOBufferReaderAvail returns TS_ERROR", PLUGIN_NAME);
     return 0;
   }
 
@@ -193,7 +185,7 @@ transform_connect(TSCont contp, TransformData *data)
   ip_addr.sin_family      = AF_INET;
   ip_addr.sin_addr.s_addr = server_ip; /* Should be in network byte order */
   ip_addr.sin_port        = server_port;
-  TSDebug("strans", "net connect.");
+  TSDebug(PLUGIN_NAME, "net connect.");
   action = TSNetConnect(contp, (struct sockaddr const *)&ip_addr);
 
   if (!TSActionDone(action)) {
@@ -214,7 +206,7 @@ transform_write(TSCont contp, TransformData *data)
   if (content_length >= 0) {
     data->server_vio = TSVConnWrite(data->server_vc, contp, TSIOBufferReaderClone(data->input_reader), content_length);
   } else {
-    TSError("[server_transform] TSIOBufferReaderAvail returns TS_ERROR");
+    TSError("[%s] TSIOBufferReaderAvail returns TS_ERROR", PLUGIN_NAME);
   }
   return 0;
 }
@@ -229,7 +221,7 @@ transform_read_status(TSCont contp, TransformData *data)
   if (data->output_reader != NULL) {
     data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, sizeof(int));
   } else {
-    TSError("[server_transform] Error in Allocating a Reader to output buffer. TSIOBufferReaderAlloc returns NULL");
+    TSError("[%s] Error in Allocating a Reader to output buffer. TSIOBufferReaderAlloc returns NULL", PLUGIN_NAME);
   }
 
   return 0;
@@ -247,11 +239,11 @@ transform_read(TSCont contp, TransformData *data)
   data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, data->content_length);
   data->output_vc  = TSTransformOutputVConnGet((TSVConn)contp);
   if (data->output_vc == NULL) {
-    TSError("[server_transform] TSTransformOutputVConnGet returns NULL");
+    TSError("[%s] TSTransformOutputVConnGet returns NULL", PLUGIN_NAME);
   } else {
     data->output_vio = TSVConnWrite(data->output_vc, contp, data->output_reader, data->content_length);
     if (data->output_vio == NULL) {
-      TSError("[server_transform] TSVConnWrite returns NULL");
+      TSError("[%s] TSVConnWrite returns NULL", PLUGIN_NAME);
     }
   }
 
@@ -278,11 +270,11 @@ transform_bypass(TSCont contp, TransformData *data)
   TSIOBufferReaderConsume(data->input_reader, sizeof(int));
   data->output_vc = TSTransformOutputVConnGet((TSVConn)contp);
   if (data->output_vc == NULL) {
-    TSError("[server_transform] TSTransformOutputVConnGet returns NULL");
+    TSError("[%s] TSTransformOutputVConnGet returns NULL", PLUGIN_NAME);
   } else {
     data->output_vio = TSVConnWrite(data->output_vc, contp, data->input_reader, TSIOBufferReaderAvail(data->input_reader));
     if (data->output_vio == NULL) {
-      TSError("[server_transform] TSVConnWrite returns NULL");
+      TSError("[%s] TSVConnWrite returns NULL", PLUGIN_NAME);
     }
   }
   return 1;
@@ -364,13 +356,13 @@ transform_connect_event(TSCont contp, TransformData *data, TSEvent event, void *
 {
   switch (event) {
   case TS_EVENT_NET_CONNECT:
-    TSDebug("strans", "connected");
+    TSDebug(PLUGIN_NAME, "connected");
 
     data->pending_action = NULL;
     data->server_vc      = (TSVConn)edata;
     return transform_write(contp, data);
   case TS_EVENT_NET_CONNECT_FAILED:
-    TSDebug("strans", "connect failed");
+    TSDebug(PLUGIN_NAME, "connect failed");
     data->pending_action = NULL;
     return transform_bypass(contp, data);
   default:
@@ -510,7 +502,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
   /* Check to see if the transformation has been closed by a call to
      TSVConnClose. */
   if (TSVConnClosedGet(contp)) {
-    TSDebug("strans", "transformation closed");
+    TSDebug(PLUGIN_NAME, "transformation closed");
     transform_destroy(contp);
     return 0;
   } else {
@@ -519,10 +511,10 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
 
     data = (TransformData *)TSContDataGet(contp);
     if (data == NULL) {
-      TSError("[server_transform] Didn't get Continuation's Data, ignoring event");
+      TSError("[%s] Didn't get Continuation's Data, ignoring event", PLUGIN_NAME);
       return 0;
     }
-    TSDebug("strans", "transform handler event [%d], data->state = [%d]", event, data->state);
+    TSDebug(PLUGIN_NAME, "transform handler event [%d], data->state = [%d]", event, data->state);
 
     do {
       switch (data->state) {
@@ -587,19 +579,19 @@ server_response_ok(TSHttpTxn txnp)
   TSHttpStatus resp_status;
 
   if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("[server_transform] Unable to get handle to Server Response");
+    TSError("[%s] Unable to get handle to Server Response", PLUGIN_NAME);
     return 0;
   }
 
   resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
   if (TS_HTTP_STATUS_OK == resp_status) {
     if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) != TS_SUCCESS) {
-      TSError("[server_transform] Unable to release handle to server request");
+      TSError("[%s] Unable to release handle to server request", PLUGIN_NAME);
     }
     return 1;
   } else {
     if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) != TS_SUCCESS) {
-      TSError("[server_transform] Unable to release handle to server request");
+      TSError("[%s] Unable to release handle to server request", PLUGIN_NAME);
     }
     return 0;
   }
@@ -642,12 +634,12 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   TSPluginRegistrationInfo info;
   TSCont cont;
 
-  info.plugin_name   = "server-transform";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[server_transform] Plugin registration failed");
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
   /* connect to the echo port on localhost */
