@@ -23,10 +23,11 @@
 
 #ifndef __ARENA_H__
 #define __ARENA_H__
+#include "ts/ink_assert.h"
+#include "ts/ink_memory.h"
 
 #include <sys/types.h>
 #include <memory.h>
-#include "ts/ink_assert.h"
 
 struct ArenaBlock {
   ArenaBlock *next;
@@ -165,5 +166,20 @@ Arena::str_store(const char *str, size_t len)
 
   return mem;
 }
+
+
+struct Arena_NoCache : public Arena
+{
+  std::allocator<uint64_t>   m_alloc;
+
+  inkcoreapi void *alloc(size_t size, size_t alignment = sizeof(double))
+    { return m_alloc.allocate((size+1)/sizeof(uint64_t)); }
+  void free(void *mem, size_t size)
+    { m_alloc.deallocate(static_cast<uint64_t*>(mem), size); }
+};
+
+#if HAVE_LIBJEMALLOC
+#define Arena Arena_NoCache
+#endif
 
 #endif /* __ARENA_H__ */
