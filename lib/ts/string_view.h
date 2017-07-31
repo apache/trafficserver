@@ -33,7 +33,6 @@
 #include <utility>
 #include <string>
 #include <ostream>
-#include <ts/ink_memory.h>
 
 #if __cplusplus < 201402
 #define CONSTEXPR14 inline
@@ -240,9 +239,6 @@ public:
 
   // std::string constructor
   constexpr basic_string_view(std::string const &rhs) noexcept : m_data(rhs.data()), m_size(rhs.size()) {}
-
-  // ats_scoped_str constructor
-  constexpr basic_string_view(ats_scoped_str const &rhs) noexcept : m_data(rhs.get()), m_size(traits_type::length(rhs.get())) {}
 
   // For iterator on string_view we don't need to deal with const and non-const as different types
   // they are all const iterators as the string values are immutable
