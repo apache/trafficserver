@@ -122,7 +122,7 @@ private:
 class Configs
 {
 public:
-  Configs() {}
+  Configs() : _prefixToBeRemoved(false), _pathToBeRemoved(false), _separator("/") {}
   /**
    * @brief initializes plugin configuration.
    * @param argc number of plugin parameters
@@ -136,6 +136,26 @@ public:
    * @return true if succesful, false if failure.
    */
   bool finalize();
+
+  /**
+   * @brief Tells the caller if the prefix is to be removed (not processed at all).
+   */
+  bool prefixToBeRemoved();
+
+  /**
+   * @brief Tells the caller if the path is to be removed (not processed at all).
+   */
+  bool pathToBeRemoved();
+
+  /**
+   * @brief set the cache key elements separator string.
+   */
+  void setSeparator(const char *arg);
+
+  /**
+   * @brief get the cache key elements separator string.
+   */
+  const String &getSeparator();
 
   /* Make the following members public to avoid unnecessary accessors */
   ConfigQuery _query;        /**< @brief query parameter related configuration */
@@ -157,6 +177,10 @@ private:
    * @return true if successful, false otherwise.
    */
   bool loadClassifiers(const String &args, bool blacklist = true);
+
+  bool _prefixToBeRemoved; /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
+  bool _pathToBeRemoved;   /**< @brief instructs the path not to added to the cache key */
+  String _separator;       /**< @brief a separator used to separate the cache key elements extracted from the URI */
 };
 
 #endif // PLUGINS_EXPERIMENTAL_CACHEKEY_CONFIGS_H_
