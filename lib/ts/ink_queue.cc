@@ -47,15 +47,6 @@
 #include "ts/hugepages.h"
 #include "ts/Diags.h"
 
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <cassert>
-#include <cstdlib>
-
-// in order to compile correctly
-#undef HAVE_LIBJEMALLOC
-#include "ts/Allocator.h"
-
 #define DEBUG_TAG "freelist"
 
 /*

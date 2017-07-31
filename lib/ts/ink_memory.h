@@ -34,7 +34,7 @@
 #include <inttypes.h>
 #include <string>
 
-#include "ts/string_view.h"
+#Include "ts/string_view.h"
 #include "ts/ink_config.h"
 
 #ifdef __cplusplus
@@ -65,7 +65,7 @@
 #else // no jemalloc includes used
 
 #define mallocx(...) nullptr
-#define sallocx(...) \
+#define sallocx(...) size_t()
   size_t {}
 #define sdallocx(...)
 #define dallocx(...)
