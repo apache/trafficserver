@@ -51,6 +51,7 @@
 #include <new>
 #include <cstdlib>
 
+
 #define RND16(_x) (((_x) + 15) & ~15)
 
 struct _InkFreeList {
