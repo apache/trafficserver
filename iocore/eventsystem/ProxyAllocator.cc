@@ -20,10 +20,16 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include "I_EventSystem.h"
-
 int thread_freelist_high_watermark = 512;
 int thread_freelist_low_watermark  = 32;
+
+// must include for defines
+#include "ts/ink_config.h"
+
+#undef HAVE_LIBJEMALLOC
+
+// safe to use older system
+#include "I_ProxyAllocator.h"
 
 void *
 thread_alloc(Allocator &a, ProxyAllocator &l)

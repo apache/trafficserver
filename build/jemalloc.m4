@@ -19,59 +19,71 @@ dnl jemalloc.m4: Trafficserver's jemalloc autoconf macros
 dnl
 
 AC_DEFUN([TS_CHECK_JEMALLOC], [
-enable_jemalloc=no
-AC_ARG_WITH([jemalloc], [AC_HELP_STRING([--with-jemalloc=DIR], [use a specific jemalloc library])],
-[
-  if test "$withval" != "no"; then
-    if test "x${enable_tcmalloc}" = "xyes"; then
-      AC_MSG_ERROR([Cannot compile with both jemalloc and tcmalloc])
-    fi
-    enable_jemalloc=yes
-    jemalloc_base_dir="$withval"
-    case "$withval" in
-      yes)
-        jemalloc_base_dir="/usr"
-        AC_MSG_CHECKING(checking for jemalloc includes standard directories)
-	;;
-      *":"*)
-        jemalloc_include="`echo $withval |sed -e 's/:.*$//'`"
-        jemalloc_ldflags="`echo $withval |sed -e 's/^.*://'`"
-        AC_MSG_CHECKING(checking for jemalloc includes in $jemalloc_include libs in $jemalloc_ldflags)
-        ;;
-      *)
-        jemalloc_include="$withval/include"
-        jemalloc_ldflags="$withval/lib"
-        AC_MSG_CHECKING(checking for jemalloc includes in $withval)
-        ;;
-    esac
+has_jemalloc=0
+AC_ARG_WITH([jemalloc], [AC_HELP_STRING([--with-jemalloc=DIR], [use a specific jemalloc library])])
+AS_IF([test -n "$with_jemalloc" -a "x$with_jemalloc" != "xno" -a "x$enable_tcmalloc" = "xyes"], 
+ [ AC_MSG_ERROR([Cannot compile with both jemalloc and tcmalloc]) ])
+
+AS_IF([test -n "$with_jemalloc" -a "x$with_jemalloc" != "xno" ],[
+  case "$withval" in
+    (yes)
+      PKG_CHECK_MODULES([JEMALLOC], [jemalloc >= 1.0], [have_jemalloc=yes], [:])
+      jemalloc_libdir="$($PKG_CONFIG jemalloc --variable=libdir)"
+      ;;
+    (*":"*)
+      jemalloc_incdir="$(echo $withval |sed -e 's/:.*$//')"
+      jemalloc_libdir="$(echo $withval |sed -e 's/^.*://')"
+      ;;
+    (*)
+      jemalloc_incdir="$withval/include"
+      jemalloc_libdir="$withval/lib"
+      ;;
+  esac
+
+  test -z "$jemalloc_libdir" -o -d "$jemalloc_libdir" || jemalloc_libdir=
+  test -z "$jemalloc_incdir" -o -d "$jemalloc_incdir" || jemalloc_incdir=
+
+  jemalloc_incdir="${jemalloc_incdir:+$(cd $jemalloc_incdir; pwd -P)}"
+  jemalloc_libdir="${jemalloc_libdir:+$(cd $jemalloc_libdir; pwd -P)}"
+
+  : ${JEMALLOC_CFLAGS:="${jemalloc_incdir:+ -I$jemalloc_incdir}"}
+  : ${JEMALLOC_LDFLAGS:="${jemalloc_libdir:+ -L$jemalloc_libdir}"}
+
+  save_cppflags="$CPPFLAGS"
+  save_ldflags="$LDFLAGS"
+  LDFLAGS="$LDFLAGS $JEMALLOC_LDFLAGS"
+  CPPFLAGS="$CPPFLAGS $JEMALLOC_CFLAGS"
+
+dnl
+dnl define HAVE_LIBJEMALLOC is to be set and -ljemalloc added into LIBS?
+dnl 
+  AC_CHECK_LIB([jemalloc],[je_malloc_stats_print],[], 
+    [AC_CHECK_LIB([jemalloc],[malloc_stats_print],[],
+    [have_jemalloc=no])])
+
+dnl
+dnl define HAVE_JEMALLOC_JEMALLOC_H is to be set?
+dnl define HAVE_JEMALLOC_H is to be set?
+dnl 
+  AC_CHECK_HEADERS(jemalloc/jemalloc.h, [], 
+    [AC_CHECK_HEADERS(jemalloc.h, [], [have_jemalloc=no])])
+
+  LDFLAGS="$save_ldflags"
+  CPPFLAGS="$save_cppflags"
+  LIBS="$(echo "$LIBS" | sed -e 's/ *-ljemalloc//' -e 's/$/ -ljemalloc/')"
+
+  AS_IF([test "x$have_jemalloc" == "xno" ], 
+     [AC_MSG_ERROR([Failed to compile with jemalloc.h and -ljemalloc]) ])
+
+  has_jemalloc=1
+#
+# flags must be global setting for all libs
+# 
+  TS_ADDTO(CPPFLAGS,$JEMALLOC_CFLAGS)
+  if test -n "$jemalloc_libdir"; then
+      TS_ADDTO_RPATH($jemalloc_libdir)
+      TS_ADDTO(LDFLAGS,$JEMALLOC_LDFLAGS)
   fi
 ])
-
-jemalloch=0
-if test "$enable_jemalloc" != "no"; then
-  saved_ldflags=$LDFLAGS
-  saved_cppflags=$CPPFLAGS
-  jemalloc_have_headers=0
-  jemalloc_have_libs=0
-  if test "$jemalloc_base_dir" != "/usr"; then
-    TS_ADDTO(CPPFLAGS, [-I${jemalloc_include}])
-    TS_ADDTO(LDFLAGS, [-L${jemalloc_ldflags}])
-    TS_ADDTO_RPATH(${jemalloc_ldflags})
-  fi
-  # On Darwin, jemalloc symbols are prefixed with je_. Search for that first, then fall back
-  # to unadorned symbols.
-  AC_SEARCH_LIBS([je_malloc_stats_print], [jemalloc], [jemalloc_have_libs=1],
-    [AC_SEARCH_LIBS([malloc_stats_print], [jemalloc], [jemalloc_have_libs=1])]
-  )
-  if test "$jemalloc_have_libs" != "0"; then
-    AC_CHECK_HEADERS(jemalloc/jemalloc.h, [jemalloc_have_headers=1])
-  fi
-  if test "$jemalloc_have_headers" != "0"; then
-    jemalloch=1
-  else
-    CPPFLAGS=$saved_cppflags
-    LDFLAGS=$saved_ldflags
-  fi
-fi
-AC_SUBST(jemalloch)
+AC_SUBST([has_jemalloc])
 ])

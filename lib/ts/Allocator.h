@@ -49,6 +49,39 @@
 
 #define RND16(_x) (((_x) + 15) & ~15)
 
+struct _InkFreeList {
+  volatile head_p head;
+  const char *name;
+  uint32_t type_size, chunk_size, used, allocated, alignment;
+  uint32_t allocated_base, used_base;
+  int advice;
+};
+
+typedef struct ink_freelist_ops InkFreeListOps;
+typedef struct _InkFreeList InkFreeList;
+
+extern "C" {
+
+const InkFreeListOps *ink_freelist_malloc_ops();
+const InkFreeListOps *ink_freelist_freelist_ops();
+void ink_freelist_init_ops(const InkFreeListOps *);
+
+/*
+ * alignment must be a power of 2
+ */
+InkFreeList *ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment);
+
+inkcoreapi void ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment);
+inkcoreapi void ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size,
+                                          uint32_t alignment, int advice);
+inkcoreapi void *ink_freelist_new(InkFreeList *f);
+inkcoreapi void ink_freelist_free(InkFreeList *f, void *item);
+inkcoreapi void ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item);
+void ink_freelists_dump(FILE *f);
+void ink_freelists_dump_baselinerel(FILE *f);
+void ink_freelists_snap_baseline();
+}
+
 /** Allocator for fixed size memory blocks. */
 class Allocator
 {
@@ -251,5 +284,35 @@ private:
   uint64_t allocations;
   ink_mutex trackerLock;
 };
+
+#if HAVE_LIBJEMALLOC
+
+// these calls can be removed
+#define ink_freelists_dump(...)
+#define ink_freelists_dump_baselinerel(...)
+#define ink_freelists_snap_baseline(...)
+
+#define ink_freelist_init_ops(...)
+
+#include "ts/StdAllocWrapper.h"
+
+// cover up use of original Allocators above
+#define Allocator AlignedAllocator
+#define ClassAllocator ObjAllocator
+#define ProxyAllocator ThreadAllocatorStub
+
+class ThreadAllocatorStub
+{
+};
+
+// define use of for thread Allocators
+#define THREAD_ALLOC(allocObj, t) (::allocObj.alloc())
+#define THREAD_ALLOC_INIT(allocObj, t) (::allocObj.alloc())
+#define THREAD_FREE(ptr, allocObj, t) (::allocObj.free(ptr))
+
+extern int thread_freelist_high_watermark;
+extern int thread_freelist_low_watermark;
+
+#endif
 
 #endif // _Allocator_h_

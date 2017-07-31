@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "ts/Allocator.h"
+
 #include <cstdlib>
 #include <cstring>
 #include "ts/ink_thread.h"
