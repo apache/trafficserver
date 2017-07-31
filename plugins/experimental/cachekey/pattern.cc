@@ -38,7 +38,7 @@ replaceString(String &str, const String &from, const String &to)
   }
 }
 
-Pattern::Pattern() : _re(NULL), _extra(NULL), _pattern(""), _replacement(""), _tokenCount(0)
+Pattern::Pattern() : _re(nullptr), _extra(nullptr), _pattern(""), _replacement(""), _replace(false), _tokenCount(0)
 {
 }
 
@@ -49,12 +49,13 @@ Pattern::Pattern() : _re(NULL), _extra(NULL), _pattern(""), _replacement(""), _t
  * @return true if successful, false if failure
  */
 bool
-Pattern::init(const String &pattern, const String &replacenemt)
+Pattern::init(const String &pattern, const String &replacenemt, bool replace)
 {
   pcreFree();
 
   _pattern.assign(pattern);
   _replacement.assign(replacenemt);
+  _replace = replace;
 
   _tokenCount = 0;
 
@@ -115,9 +116,9 @@ Pattern::init(const String &config)
     ::replaceString(pattern, "\\/", "/");
     ::replaceString(replacement, "\\/", "/");
 
-    return this->init(pattern, replacement);
+    return this->init(pattern, replacement, /* replace */ true);
   } else {
-    return this->init(config, "");
+    return this->init(config, /* replacement */ "", /*replace */ false);
   }
 
   /* Should never get here. */
@@ -170,7 +171,7 @@ Pattern::~Pattern()
 bool
 Pattern::process(const String &subject, StringVector &result)
 {
-  if (!_replacement.empty()) {
+  if (_replace) {
     /* Replacement pattern was provided in the configuration - capture and replace. */
     String element;
     if (replace(subject, element)) {
@@ -234,9 +235,10 @@ Pattern::capture(const String &subject, StringVector &result)
   int matchCount;
   int ovector[OVECOUNT];
 
-  CacheKeyDebug("matching '%s' to '%s'", _pattern.c_str(), subject.c_str());
+  CacheKeyDebug("capturing '%s' from '%s'", _pattern.c_str(), subject.c_str());
 
   if (!_re) {
+    CacheKeyError("regular expression not initialized");
     return false;
   }
 
@@ -272,9 +274,10 @@ Pattern::replace(const String &subject, String &result)
   int matchCount;
   int ovector[OVECOUNT];
 
-  CacheKeyDebug("matching '%s' to '%s'", _pattern.c_str(), subject.c_str());
+  CacheKeyDebug("replacing:'%s' in pattern:'%s', subject:'%s'", _replacement.c_str(), _pattern.c_str(), subject.c_str());
 
-  if (!_re) {
+  if (!_re || !_replace) {
+    CacheKeyError("regular expression not initialized or not configured to replace");
     return false;
   }
 
@@ -327,7 +330,8 @@ Pattern::compile()
   const char *errPtr; /* PCRE error */
   int errOffset;      /* PCRE error offset */
 
-  CacheKeyDebug("compiling pattern:'%s', replacement:'%s'", _pattern.c_str(), _replacement.c_str());
+  CacheKeyDebug("compiling pattern:'%s', replace: %s, replacement:'%s'", _pattern.c_str(), _replace ? "true" : "false",
+                _replacement.c_str());
 
   _re = pcre_compile(_pattern.c_str(), /* the pattern */
                      0,                /* options */
@@ -351,7 +355,7 @@ Pattern::compile()
     return false;
   }
 
-  if (_replacement.empty()) {
+  if (!_replace) {
     /* No replacement necessary - we are done. */
     return true;
   }

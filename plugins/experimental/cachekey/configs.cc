@@ -43,7 +43,7 @@ commaSeparateString(ContainerType &c, const String &input)
 static bool
 isTrue(const char *arg)
 {
-  return (0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
+  return (nullptr == arg || 0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
 }
 
 void
@@ -325,23 +325,26 @@ bool
 Configs::init(int argc, char *argv[])
 {
   static const struct option longopt[] = {
-    {const_cast<char *>("exclude-params"), optional_argument, 0, 'a'},
-    {const_cast<char *>("include-params"), optional_argument, 0, 'b'},
-    {const_cast<char *>("include-match-params"), optional_argument, 0, 'c'},
-    {const_cast<char *>("exclude-match-params"), optional_argument, 0, 'd'},
-    {const_cast<char *>("sort-params"), optional_argument, 0, 'e'},
-    {const_cast<char *>("remove-all-params"), optional_argument, 0, 'f'},
-    {const_cast<char *>("include-headers"), optional_argument, 0, 'g'},
-    {const_cast<char *>("include-cookies"), optional_argument, 0, 'h'},
-    {const_cast<char *>("ua-capture"), optional_argument, 0, 'i'},
-    {const_cast<char *>("ua-whitelist"), optional_argument, 0, 'j'},
-    {const_cast<char *>("ua-blacklist"), optional_argument, 0, 'k'},
-    {const_cast<char *>("static-prefix"), optional_argument, 0, 'l'},
-    {const_cast<char *>("capture-prefix"), optional_argument, 0, 'm'},
-    {const_cast<char *>("capture-prefix-uri"), optional_argument, 0, 'n'},
-    {const_cast<char *>("capture-path"), optional_argument, 0, 'o'},
-    {const_cast<char *>("capture-path-uri"), optional_argument, 0, 'p'},
-    {0, 0, 0, 0},
+    {const_cast<char *>("exclude-params"), optional_argument, nullptr, 'a'},
+    {const_cast<char *>("include-params"), optional_argument, nullptr, 'b'},
+    {const_cast<char *>("include-match-params"), optional_argument, nullptr, 'c'},
+    {const_cast<char *>("exclude-match-params"), optional_argument, nullptr, 'd'},
+    {const_cast<char *>("sort-params"), optional_argument, nullptr, 'e'},
+    {const_cast<char *>("remove-all-params"), optional_argument, nullptr, 'f'},
+    {const_cast<char *>("include-headers"), optional_argument, nullptr, 'g'},
+    {const_cast<char *>("include-cookies"), optional_argument, nullptr, 'h'},
+    {const_cast<char *>("ua-capture"), optional_argument, nullptr, 'i'},
+    {const_cast<char *>("ua-whitelist"), optional_argument, nullptr, 'j'},
+    {const_cast<char *>("ua-blacklist"), optional_argument, nullptr, 'k'},
+    {const_cast<char *>("static-prefix"), optional_argument, nullptr, 'l'},
+    {const_cast<char *>("capture-prefix"), optional_argument, nullptr, 'm'},
+    {const_cast<char *>("capture-prefix-uri"), optional_argument, nullptr, 'n'},
+    {const_cast<char *>("capture-path"), optional_argument, nullptr, 'o'},
+    {const_cast<char *>("capture-path-uri"), optional_argument, nullptr, 'p'},
+    {const_cast<char *>("remove-prefix"), optional_argument, nullptr, 'q'},
+    {const_cast<char *>("remove-path"), optional_argument, nullptr, 'r'},
+    {const_cast<char *>("separator"), optional_argument, nullptr, 's'},
+    {nullptr, 0, nullptr, 0},
   };
 
   bool status = true;
@@ -430,6 +433,15 @@ Configs::init(int argc, char *argv[])
         status = false;
       }
       break;
+    case 'q': /* remove-prefix */
+      _prefixToBeRemoved = isTrue(optarg);
+      break;
+    case 'r': /* remove-path */
+      _pathToBeRemoved = isTrue(optarg);
+      break;
+    case 's': /* separator */
+      setSeparator(optarg);
+      break;
     }
   }
 
@@ -447,4 +459,30 @@ bool
 Configs::finalize()
 {
   return _query.finalize() && _headers.finalize() && _cookies.finalize();
+}
+
+bool
+Configs::prefixToBeRemoved()
+{
+  return _prefixToBeRemoved;
+}
+
+bool
+Configs::pathToBeRemoved()
+{
+  return _pathToBeRemoved;
+}
+
+void
+Configs::setSeparator(const char *arg)
+{
+  if (nullptr != arg) {
+    _separator.assign(arg);
+  }
+}
+
+const String &
+Configs::getSeparator()
+{
+  return _separator;
 }

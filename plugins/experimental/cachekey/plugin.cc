@@ -92,11 +92,12 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
 
   if (NULL != config) {
     /* Initial cache key facility from the requested URL. */
-    CacheKey cachekey(txn, rri->requestBufp, rri->requestUrl, rri->requestHdrp);
+    CacheKey cachekey(txn, rri->requestBufp, rri->requestUrl, rri->requestHdrp, config->getSeparator());
 
     /* Append custom prefix or the host:port */
-    cachekey.appendPrefix(config->_prefix, config->_prefixCapture, config->_prefixCaptureUri);
-
+    if (!config->prefixToBeRemoved()) {
+      cachekey.appendPrefix(config->_prefix, config->_prefixCapture, config->_prefixCaptureUri);
+    }
     /* Classify User-Agent and append the class name to the cache key if matched. */
     cachekey.appendUaClass(config->_classifier);
 
@@ -110,8 +111,9 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
     cachekey.appendCookies(config->_cookies);
 
     /* Append the path to the cache key. */
-    cachekey.appendPath(config->_pathCapture, config->_pathCaptureUri);
-
+    if (!config->pathToBeRemoved()) {
+      cachekey.appendPath(config->_pathCapture, config->_pathCaptureUri);
+    }
     /* Append query parameters to the cache key. */
     cachekey.appendQuery(config->_query);
 
