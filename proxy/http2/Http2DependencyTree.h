@@ -316,7 +316,7 @@ Http2DependencyTree<T>::deactivate(Node *node, uint32_t sent)
   node->active = false;
 
   while (node->queue->empty() && node->parent != NULL) {
-    node->parent->queue->pop();
+    node->parent->queue->erase(node->entry);
     node->queued = false;
 
     node = node->parent;

@@ -367,12 +367,26 @@ REGRESSION_TEST(PriorityQueue_6)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->push(entry_b);
   pq->push(entry_c);
 
+  uint32_t index;
+
   box.check(pq->top() == entry_a, "top should be entry_a");
+
+  index = entry_a->index;
   pq->erase(entry_a);
+  box.check(entry_a->index == index, "index should be the same");
+
   box.check(pq->top() == entry_b, "top should be entry_b");
+
+  index = entry_c->index;
   pq->erase(entry_c);
+  box.check(entry_c->index == index, "index should be the same");
+
   box.check(pq->top() == entry_b, "top should be entry_b");
+
+  index = entry_b->index;
   pq->erase(entry_b);
+  box.check(entry_b->index == index, "index should be the same");
+
   box.check(pq->top() == nullptr, "top should be NULL");
   box.check(pq->empty(), "should be empty");
 
@@ -451,6 +465,55 @@ REGRESSION_TEST(PriorityQueue_7)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq2->erase(entry_y);
   box.check(pq2->top() == entry_z, "top should be entry_z");
 
+  delete pq2;
+
+  delete x;
+  delete y;
+  delete z;
+
+  delete entry_x;
+  delete entry_y;
+  delete entry_z;
+}
+
+// Test erase and pop method to ensure the index entries are correctly
+REGRESSION_TEST(PriorityQueue_pop_and_erase)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  PQ *pq1 = new PQ();
+  PQ *pq2 = new PQ();
+
+  N *x = new N(20, "X");
+  N *y = new N(30, "Y");
+  N *z = new N(40, "Z");
+
+  Entry *entry_x = new Entry(x);
+  Entry *entry_y = new Entry(y);
+  Entry *entry_z = new Entry(z);
+
+  pq2->push(entry_z);
+  pq2->push(entry_y);
+  pq2->push(entry_x);
+
+  x->weight = 40;
+  y->weight = 30;
+  z->weight = 20;
+
+  pq1->push(pq2->top());
+  pq2->pop();
+  box.check(pq1->top()->index == 0, "Top index should be zero, but got %d", pq1->top()->index);
+
+  pq1->push(pq2->top());
+  pq2->pop();
+  box.check(pq1->top()->index == 0, "Top index should be zero, but got %d", pq1->top()->index);
+
+  pq1->push(pq2->top());
+  pq2->pop();
+  box.check(pq1->top()->index == 0, "Top index should be zero, but got %d", pq1->top()->index);
+
+  delete pq1;
   delete pq2;
 
   delete x;
