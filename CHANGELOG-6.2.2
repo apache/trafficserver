@@ -1,0 +1,26 @@
+Changes with Apache Traffic Server 6.2.2
+  #1272 - TS-5104: Correct the calculation of max_dns_lookups in OSDNSLookup
+  #1276 - TS-5105: Do vc->con.setRemote(target) before socksEntry->init()
+  #1321 - 6.2.x TS-4435 and TS-5059: Fixes for building with OpenSSL 1.1
+  #1395 - Update client streams count in Http2ConnectionState::release_stream.
+  #1410 - 6.2.x: TS-4665: H2 not terminating stream with short chunked response
+  #1434 - Clang fixes
+  #1436 - Backport f71b75e and 734aa31 from master to 6.2.x
+  #1440 - Remove nullptr instances that were introduced from upstream backports…
+  #1485 - back port "fix TS-4195: double free when stop trafficserver" to 6.2.x
+  #1509 - TS-5106: Create ParentRoundRobin object as ParentRecord->selection_strategy for default parent proxy server
+  #1513 - TS-4747: make marking parent proxies down in hostdb configurable.
+  #1539 - Signals fix
+  #1541 - retry safe requests
+  #1543 - Remove nullptr instance that was introduced from upstream backport an…
+  #1636 - TS-4195: double free on exit
+  #1709 - Build fixes for Ubuntu 17
+  #1886 - Fix slow leak in traffic_manager caused by un-freed capabilities.
+  #1900 - delay DNS for origin server until it is required
+  #2011 - This should allow for per-version binaries
+  #2301 - Backport PR #1941, fix TLS handshake, to 6.2.x.
+  #2306 - Backport TS-5107
+  #2308 - TS-4375: Fix PCRE link issues on Darwin.
+  #2309 - Unfolds request headers that are using obs continuations
+  #2313 - Fix luajit build vaargs
+  #2316 - Uses an enum class for the Mgmt OpType
