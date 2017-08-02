@@ -53,6 +53,12 @@ union Alias64 {
 /** Default alignment */
 #define INK_ALIGN_DEFAULT(size) INK_ALIGN(size, INK_MIN_ALIGN)
 
+static inline size_t
+aligned_spacing(size_t len, size_t block = INK_MIN_ALIGN)
+{
+  return INK_ALIGN(len, block);
+}
+
 //
 // Move a pointer forward until it meets the alignment width.
 //

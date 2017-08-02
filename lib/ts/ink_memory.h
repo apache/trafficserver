@@ -23,6 +23,11 @@
 #ifndef _ink_memory_h_
 #define _ink_memory_h_
 
+#include "ts/ink_config.h"
+#include "ts/ink_defs.h"
+
+#include <memory>
+
 #include <ctype.h>
 #include <string.h>
 #include <strings.h>
@@ -48,13 +53,23 @@
 #include <sys/mman.h>
 #endif
 
-#if TS_HAS_JEMALLOC
+#if HAVE_JEMALLOC_JEMALLOC_H
 #include <jemalloc/jemalloc.h>
-#else
+#elif HAVE_JEMALLOC_H
+#include <jemalloc.h>
+
+#else // no jemalloc includes used
+
+#define mallocx(...) nullptr
+#define sallocx(...) \
+  size_t {}
+#define sdallocx(...)
+#define dallocx(...)
+
 #if HAVE_MALLOC_H
 #include <malloc.h>
-#endif // ! HAVE_MALLOC_H
-#endif // ! TS_HAS_JEMALLOC
+#endif
+#endif // ! HAVE_JEMALLOC_H && ! HAVE_JEMALLOC_JEMALLOC_H
 
 #ifndef MADV_NORMAL
 #define MADV_NORMAL 0

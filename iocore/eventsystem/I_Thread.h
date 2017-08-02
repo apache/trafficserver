@@ -63,11 +63,15 @@
 #error "include I_EventSystem.h or P_EventSystem.h"
 #endif
 
+#include "ts/Allocator.h"
+#if !HAVE_LIBJEMALLOC
+#include "I_ProxyAllocator.h"
+#endif
+
 #include <functional>
 
 #include "ts/ink_platform.h"
 #include "ts/ink_thread.h"
-#include "I_ProxyAllocator.h"
 
 class ProxyMutex;
 
