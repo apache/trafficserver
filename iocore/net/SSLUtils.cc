@@ -1421,7 +1421,7 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cer
 static void
 ssl_callback_info(const SSL *ssl, int where, int ret)
 {
-  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
+  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d State: %s", ssl, where, ret, SSL_state_string_long(ssl));
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
