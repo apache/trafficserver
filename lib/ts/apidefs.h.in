@@ -756,6 +756,7 @@ typedef enum {
   TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS,
   TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT,
   TS_CONFIG_HTTP_NORMALIZE_AE,
+  TS_CONFIG_HTTP_INSERT_FORWARDED,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 
@@ -1008,6 +1009,7 @@ extern tsapi const char *TS_MIME_FIELD_WARNING;
 extern tsapi const char *TS_MIME_FIELD_WWW_AUTHENTICATE;
 extern tsapi const char *TS_MIME_FIELD_XREF;
 extern tsapi const char *TS_MIME_FIELD_X_FORWARDED_FOR;
+extern tsapi const char *TS_MIME_FIELD_FORWARDED;
 
 /* --------------------------------------------------------------------------
    MIME fields string lengths */
@@ -1083,6 +1085,7 @@ extern tsapi int TS_MIME_LEN_WARNING;
 extern tsapi int TS_MIME_LEN_WWW_AUTHENTICATE;
 extern tsapi int TS_MIME_LEN_XREF;
 extern tsapi int TS_MIME_LEN_X_FORWARDED_FOR;
+extern tsapi int TS_MIME_LEN_FORWARDED;
 
 /* --------------------------------------------------------------------------
    HTTP values */

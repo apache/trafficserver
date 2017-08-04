@@ -36,6 +36,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <bitset>
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -44,6 +45,8 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_inet.h"
 #include "ts/Regex.h"
+#include "ts/string_view.h"
+#include "ts/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
 #include "P_RecProcess.h"
@@ -358,6 +361,34 @@ struct HttpConfigPortRange {
   }
 };
 
+namespace HttpForwarded
+{
+// Options for what parameters will be included in "Forwarded" field header.
+//
+enum Option {
+  FOR,
+  BY_IP,              // by=<numeric IP address>.
+  BY_UNKNOWN,         // by=unknown.
+  BY_SERVER_NAME,     // by=<configured server name>.
+  BY_UUID,            // Obfuscated value for by, by=_<UUID>.
+  PROTO,              // Basic protocol (http, https) of incoming message.
+  HOST,               // Host from URL before any remapping.
+  CONNECTION_COMPACT, // Same value as 'proto' parameter.
+  CONNECTION_STD,     // Verbose protocol from Via: field, with dashes instead of spaces.
+  CONNECTION_FULL,    // Ultra-verbose protocol from Via: field, with dashes instead of spaces.
+
+  NUM_OPTIONS // Number of options.
+};
+
+using OptionBitSet = std::bitset<NUM_OPTIONS>;
+
+// Converts string specifier for Forwarded options to bitset of options, and return the result.  If there are errors, an error
+// message will be inserted into 'error'.
+//
+OptionBitSet optStrToBitset(ts::string_view optConfigStr, ts::FixedBufferWriter &error);
+
+} // end HttpForwarded namespace
+
 /////////////////////////////////////////////////////////////
 // This is a little helper class, used by the HttpConfigParams
 // and State (txn) structure. It allows for certain configs
@@ -388,6 +419,7 @@ struct OverridableHttpConfigParams {
       proxy_response_server_enabled(1),
       proxy_response_hsts_include_subdomains(0),
       insert_squid_x_forwarded_for(1),
+      insert_forwarded(HttpForwarded::OptionBitSet()),
       send_http11_requests(1),
       cache_http(1),
       cache_ignore_client_no_cache(1),
@@ -527,6 +559,11 @@ struct OverridableHttpConfigParams {
   // X-Forwarded-For //
   /////////////////////
   MgmtByte insert_squid_x_forwarded_for;
+
+  ///////////////
+  // Forwarded //
+  ///////////////
+  HttpForwarded::OptionBitSet insert_forwarded;
 
   //////////////////////
   //  Version Hell    //

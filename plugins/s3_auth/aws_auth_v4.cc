@@ -470,6 +470,7 @@ createDefaultExcludeHeaders()
   StringSet m;
   /* exclude headers that are meant to be changed */
   m.insert("x-forwarded-for");
+  m.insert("forwarded");
   m.insert("via");
   return m;
 }
