@@ -7647,7 +7647,11 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
   Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_session);
   if (stream) {
-    stream->push_promise(url_obj);
+    Http2ClientSession *parent = static_cast<Http2ClientSession *>(stream->get_parent());
+    if (!parent->is_url_pushed(url, url_len)) {
+      stream->push_promise(url_obj);
+      parent->add_url_to_pushed_table(url, url_len);
+    }
   }
   url_obj.destroy();
 }
