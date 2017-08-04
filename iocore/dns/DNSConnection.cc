@@ -75,7 +75,7 @@ DNSConnection::close()
 void
 DNSConnection::trigger()
 {
-  handler->triggered.enqueue(this);
+  handler->triggered.push(this);
 }
 
 int

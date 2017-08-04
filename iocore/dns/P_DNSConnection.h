@@ -92,6 +92,7 @@ struct DNSConnection {
   DNSConnection();
 
   static Options const DEFAULT_OPTIONS;
+  SLINK(DNSConnection, triggered_link);
 };
 
 inline DNSConnection::Options::Options()

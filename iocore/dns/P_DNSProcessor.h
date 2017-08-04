@@ -190,7 +190,7 @@ struct DNSHandler : public Continuation {
   int n_con;
   DNSConnection con[MAX_NAMED];
   Queue<DNSEntry> entries;
-  Queue<DNSConnection> triggered;
+  ASLL(DNSConnection, triggered_link) triggered;
   int in_flight;
   int name_server;
   int in_write_dns;
