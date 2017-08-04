@@ -5545,7 +5545,8 @@ typedef enum {
   ORIG_TS_SSL_SERVERNAME_HOOK,
   ORIG_TS_SSL_SERVER_VERIFY_HOOK,
   ORIG_TS_SSL_SESSION_HOOK,
-  ORIG_TS_SSL_LAST_HOOK = ORIG_TS_SSL_SESSION_HOOK,
+  ORIG_TS_SSL_LAST_HOOK                          = ORIG_TS_SSL_SESSION_HOOK,
+  ORIG_TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK = 23,
   ORIG_TS_HTTP_LAST_HOOK
 } ORIG_TSHttpHookID;
 
@@ -7603,7 +7604,8 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {"proxy.config.url_r
                                                              "proxy.config.http.parent_proxy.connect_attempts_timeout",
                                                              "proxy.config.http.normalize_ae",
                                                              "proxy.config.http.insert_forwarded",
-                                                             "proxy.config.http.allow_multi_range"};
+                                                             "proxy.config.http.allow_multi_range",
+                                                             "proxy.config.http.request_buffer_enabled"};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
