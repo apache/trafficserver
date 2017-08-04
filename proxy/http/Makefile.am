@@ -72,12 +72,27 @@ libhttp_a_SOURCES = \
   HttpTunnel.cc \
   HttpTunnel.h \
   HttpUpdateSM.cc \
-  HttpUpdateSM.h
+  HttpUpdateSM.h \
+  ForwardedConfig.cc
 
 if BUILD_TESTS
   libhttp_a_SOURCES += HttpUpdateTester.cc \
     RegressionHttpTransact.cc
 endif
+
+check_PROGRAMS = \
+test_ForwardedConfig
+
+TESTS = $(check_PROGRAMS)
+
+test_ForwardedConfig_CPPFLAGS = $(AM_CPPFLAGS)\
+  -I$(abs_top_srcdir)/tests/include
+
+test_ForwardedConfig_SOURCES = \
+  unit-tests/test_ForwardedConfig.cc \
+  ForwardedConfig.cc \
+  unit-tests/test_ForwardedConfig_mocks.cc \
+  unit-tests/sym-links/MemView.cc
 
 tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
 	$(CXX_Clang_Tidy)
