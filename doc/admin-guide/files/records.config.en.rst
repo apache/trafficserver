@@ -3340,6 +3340,13 @@ HTTP/2 Configuration
 
    Enable the experimental HTTP/2 Stream Priority feature.
 
+.. ts:cv:: CONFIG proxy.config.http2.push_diary_size INT 256
+   :reloadable:
+
+   Indicates the maximum number of HTTP/2 server pushes that are remembered per
+   HTTP/2 connection to avoid duplicate pushes on the same connection. If the
+   maximum number is reached, new entries are not remembered.
+
 Plug-in Configuration
 =====================
 
