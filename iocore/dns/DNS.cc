@@ -753,7 +753,9 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   DNSConnection *dnsc = nullptr;
   ip_text_buffer ipbuff1, ipbuff2;
 
-  while ((dnsc = (DNSConnection *)triggered.dequeue())) {
+  SList(DNSConnection, triggered_link) cq(triggered.popall());
+
+  while ((dnsc = (DNSConnection *)cq.pop())) {
     while (true) {
       IpEndpoint from_ip;
       socklen_t from_length = sizeof(from_ip);
