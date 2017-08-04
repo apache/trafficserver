@@ -135,6 +135,7 @@ buildHdrMap()
   hdrMap["xref"]                      = "Xref";
   hdrMap["x-id"]                      = "X-ID";
   hdrMap["x-forwarded-for"]           = "X-Forwarded-For";
+  hdrMap["forwarded"]                 = "Forwarded";
   hdrMap["sec-websocket-key"]         = "Sec-WebSocket-Key";
   hdrMap["sec-websocket-version"]     = "Sec-WebSocket-Version";
 }
