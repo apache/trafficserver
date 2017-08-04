@@ -838,6 +838,48 @@ HttpSM::state_drain_client_request_body(int event, void *data)
 }
 #endif /* PROXY_DRAIN */
 
+void
+HttpSM::wait_for_full_body()
+{
+  is_waiting_for_full_body = true;
+  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
+  bool chunked = (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING);
+  int64_t alloc_index;
+  HttpTunnelProducer *p = nullptr;
+
+  // content length is undefined, use default buffer size
+  if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
+    alloc_index = (int)t_state.txn_conf->default_buffer_size_index;
+    if (alloc_index < MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index > MAX_BUFFER_SIZE_INDEX) {
+      alloc_index = DEFAULT_REQUEST_BUFFER_SIZE_INDEX;
+    }
+  } else {
+    alloc_index = buffer_size_to_index(t_state.hdr_info.request_content_length);
+  }
+  MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
+  IOBufferReader *buf_start = post_buffer->alloc_reader();
+
+  this->_postbuf.init(post_buffer->clone_reader(buf_start));
+
+  // Note: Many browsers, Netscape and IE included send two extra
+  //  bytes (CRLF) at the end of the post.  We just ignore those
+  //  bytes since the sending them is not spec
+
+  // Next order of business if copy the remaining data from the
+  //  header buffer into new buffer
+  int64_t post_bytes        = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
+  client_request_body_bytes = post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
+
+  ua_buffer_reader->consume(client_request_body_bytes);
+  p = tunnel.add_producer(ua_entry->vc, post_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_BUFFER_READ, "ua post buffer");
+  if (chunked) {
+    tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_CHUNKED_CONTENT);
+  }
+  ua_entry->in_tunnel = true;
+  ua_txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
+  tunnel.tunnel_run(p);
+}
+
 int
 HttpSM::state_watch_for_client_abort(int event, void *data)
 {
@@ -1601,6 +1643,7 @@ HttpSM::handle_api_return()
   case HttpTransact::SM_ACTION_API_PRE_REMAP:
   case HttpTransact::SM_ACTION_API_POST_REMAP:
   case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
+  case HttpTransact::SM_ACTION_REQUEST_BUFFER_READ_COMPLETE:
   case HttpTransact::SM_ACTION_API_OS_DNS:
   case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
     call_transact_and_set_next_state(nullptr);
@@ -2616,7 +2659,7 @@ HttpSM::main_handler(int event, void *data)
 void
 HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
 {
-  ink_assert(p->vc_type == HT_HTTP_CLIENT);
+  ink_assert(p->vc_type == HT_HTTP_CLIENT || (p->handler_state == HTTP_SM_POST_UA_FAIL && p->vc_type == HT_BUFFER_READ));
   HttpTunnelConsumer *c;
 
   // If there is a post transform, remove it's entry from the State
@@ -2715,7 +2758,12 @@ HttpSM::tunnel_handler_post(int event, void *data)
   // The tunnel calls this when it is done
 
   int p_handler_state = p->handler_state;
-  tunnel_handler_post_or_put(p);
+  if (is_waiting_for_full_body && !this->is_postbuf_valid()) {
+    p_handler_state = HTTP_SM_POST_SERVER_FAIL;
+  }
+  if (p->vc_type != HT_BUFFER_READ) {
+    tunnel_handler_post_or_put(p);
+  }
 
   switch (p_handler_state) {
   case HTTP_SM_POST_SERVER_FAIL:
@@ -2725,6 +2773,14 @@ HttpSM::tunnel_handler_post(int event, void *data)
     break;
   case HTTP_SM_POST_SUCCESS:
     // It's time to start reading the response
+    if (is_waiting_for_full_body) {
+      is_waiting_for_full_body  = false;
+      is_using_post_buffer      = true;
+      client_request_body_bytes = this->postbuf_buffer_avail();
+
+      call_transact_and_set_next_state(HttpTransact::HandleRequestBufferDone);
+      break;
+    }
     setup_server_read_response_header();
     break;
   default:
@@ -3462,7 +3518,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     //   we were setting it again to true but incorrectly in
     //   the case of a transform
     hsm_release_assert(ua_entry->in_tunnel == true);
-    if (p->consumer_list.head->vc_type == HT_TRANSFORM) {
+    if (p->consumer_list.head && p->consumer_list.head->vc_type == HT_TRANSFORM) {
       hsm_release_assert(post_transform_info.entry->in_tunnel == true);
     } else if (server_entry != nullptr) {
       hsm_release_assert(server_entry->in_tunnel == true);
@@ -3482,6 +3538,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
         tunnel.local_finish_all(p);
       }
     }
+
     // Initiate another read to watch catch aborts and
     //   timeouts
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
@@ -3507,6 +3564,7 @@ HttpSM::tunnel_handler_for_partial_post(int event, void * /* data ATS_UNUSED */)
   tunnel.reset();
 
   t_state.redirect_info.redirect_in_process = false;
+  is_using_post_buffer                      = false;
 
   if (post_failed) {
     post_failed = false;
@@ -5062,6 +5120,9 @@ HttpSM::do_api_callout_internal()
   case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
     cur_hook_id = TS_HTTP_READ_REQUEST_HDR_HOOK;
     break;
+  case HttpTransact::SM_ACTION_REQUEST_BUFFER_READ_COMPLETE:
+    cur_hook_id = TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK;
+    break;
   case HttpTransact::SM_ACTION_API_OS_DNS:
     cur_hook_id = TS_HTTP_OS_DNS_HOOK;
     break;
@@ -5302,8 +5363,12 @@ HttpSM::handle_post_failure()
   STATE_ENTER(&HttpSM::handle_post_failure, VC_EVENT_NONE);
 
   ink_assert(ua_entry->vc == ua_txn);
-  ink_assert(server_entry->eos == true);
+  ink_assert(is_waiting_for_full_body || server_entry->eos == true);
 
+  if (is_waiting_for_full_body) {
+    call_transact_and_set_next_state(HttpTransact::Forbidden);
+    return;
+  }
   // First order of business is to clean up from
   //  the tunnel
   // note: since the tunnel is providing the buffer for a lingering
@@ -5586,7 +5651,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
   // YTS Team, yamsat Plugin
   // if redirect_in_process and redirection is enabled add static producer
 
-  if (t_state.redirect_info.redirect_in_process && enable_redirection && (this->_postbuf.postdata_copy_buffer_start != nullptr)) {
+  if (is_using_post_buffer ||
+      (t_state.redirect_info.redirect_in_process && enable_redirection && this->_postbuf.postdata_copy_buffer_start != nullptr)) {
     post_redirect = true;
     // copy the post data into a new producer buffer for static producer
     MIOBuffer *postdata_producer_buffer      = new_empty_MIOBuffer();
@@ -7176,6 +7242,7 @@ HttpSM::set_next_state()
   case HttpTransact::SM_ACTION_API_PRE_REMAP:
   case HttpTransact::SM_ACTION_API_POST_REMAP:
   case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
+  case HttpTransact::SM_ACTION_REQUEST_BUFFER_READ_COMPLETE:
   case HttpTransact::SM_ACTION_API_OS_DNS:
   case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
   case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
@@ -7585,6 +7652,11 @@ HttpSM::set_next_state()
     break;
   }
 #endif /* PROXY_DRAIN */
+
+  case HttpTransact::SM_ACTION_WAIT_FOR_FULL_BODY: {
+    wait_for_full_body();
+    break;
+  }
 
   case HttpTransact::SM_ACTION_CONTINUE: {
     ink_release_assert(!"Not implemented");
@@ -8031,10 +8103,19 @@ HttpSM::find_proto_string(HTTPVersion version) const
 void
 PostDataBuffers::copy_partial_post_data()
 {
-  this->postdata_copy_buffer->write(this->ua_buffer_reader);
+  if (post_data_buffer_done) {
+    return;
+  }
   Debug("http_redirect", "[PostDataBuffers::copy_partial_post_data] wrote %" PRId64 " bytes to buffers %" PRId64 "",
         this->ua_buffer_reader->read_avail(), this->postdata_copy_buffer_start->read_avail());
+  this->postdata_copy_buffer->write(this->ua_buffer_reader);
   this->ua_buffer_reader->consume(this->ua_buffer_reader->read_avail());
+}
+
+IOBufferReader *
+PostDataBuffers::get_post_data_buffer_clone_reader()
+{
+  return this->postdata_copy_buffer->clone_reader(this->postdata_copy_buffer_start);
 }
 
 // YTS Team, yamsat Plugin
@@ -8047,6 +8128,7 @@ PostDataBuffers::init(IOBufferReader *ua_reader)
   this->ua_buffer_reader = ua_reader;
 
   if (this->postdata_copy_buffer == nullptr) {
+    this->post_data_buffer_done = false;
     ink_assert(this->postdata_copy_buffer_start == nullptr);
     this->postdata_copy_buffer       = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     this->postdata_copy_buffer_start = this->postdata_copy_buffer->alloc_reader();
@@ -8067,6 +8149,7 @@ PostDataBuffers::clear()
     this->postdata_copy_buffer       = nullptr;
     this->postdata_copy_buffer_start = nullptr; // deallocated by the buffer
   }
+  this->post_data_buffer_done = false;
 }
 
 PostDataBuffers::~PostDataBuffers()

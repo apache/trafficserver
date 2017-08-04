@@ -8115,6 +8115,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
     ret = _memberp_to_generic(&overridableHttpConfig->post_check_content_length_enabled, typep);
     break;
+  case TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED:
+    ret = _memberp_to_generic(&overridableHttpConfig->request_buffer_enabled, typep);
+    break;
   case TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER:
     ret = _memberp_to_generic(&overridableHttpConfig->global_user_agent_header, typep);
     break;
@@ -8595,6 +8598,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'd':
       if (!strncmp(name, "proxy.config.http.forward_connect_method", length)) {
         cnf = TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD;
+      } else if (!strncmp(name, "proxy.config.http.request_buffer_enabled", length)) {
+        cnf = TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED;
       }
       break;
     case 'e':
@@ -9629,4 +9634,12 @@ tsapi TSReturnCode
 TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
 {
   return remapUrlGet(txnp, urlLocp, &UrlMappingContainer::getToURL);
+}
+
+tsapi TSIOBufferReader
+TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *)txnp;
+  return (TSIOBufferReader)sm->get_postbuf_clone_reader();
 }
