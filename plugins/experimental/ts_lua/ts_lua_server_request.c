@@ -510,6 +510,8 @@ ts_lua_server_request_get_url_host(lua_State *L)
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
+  TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
+
   host = TSUrlHostGet(http_ctx->server_request_bufp, http_ctx->server_request_url, &len);
 
   if (len == 0) {
@@ -565,6 +567,7 @@ ts_lua_server_request_get_url_scheme(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
+  TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
 
   scheme = TSUrlSchemeGet(http_ctx->server_request_bufp, http_ctx->server_request_url, &len);
 
@@ -582,6 +585,7 @@ ts_lua_server_request_set_url_scheme(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
+  TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
 
   scheme = luaL_checklstring(L, 1, &len);
 
