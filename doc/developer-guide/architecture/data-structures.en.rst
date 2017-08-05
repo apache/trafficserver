@@ -178,7 +178,7 @@ Data Structures
       fragment containing the first byte in the range can be computed and loaded
       directly without further disk access.
 
-      Removed as of version 3.3.0.
+      Removed as of version 3.3.0. [#fragment-offset-table]_
 
    .. cpp:member:: uint32_t Doc::sync_serial
 
