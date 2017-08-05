@@ -243,7 +243,7 @@ ts_lua_server_response_set_status(lua_State *L)
 {
   int status;
   const char *reason;
-  int reason_len;
+  int reason_len = 0;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -254,7 +254,9 @@ ts_lua_server_response_set_status(lua_State *L)
   status = luaL_checkint(L, 1);
 
   reason     = TSHttpHdrReasonLookup(status);
-  reason_len = strlen(reason);
+  if (reason) {
+      reason_len = strlen(reason);
+  }
 
   TSHttpHdrStatusSet(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, status);
   TSHttpHdrReasonSet(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, reason, reason_len);
