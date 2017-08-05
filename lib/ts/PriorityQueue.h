@@ -48,6 +48,7 @@ public:
   PriorityQueue() {}
   ~PriorityQueue() {}
   bool empty();
+  bool in(PriorityQueueEntry<T> *entry);
   PriorityQueueEntry<T> *top();
   void pop();
   void push(PriorityQueueEntry<T> *);
@@ -69,6 +70,13 @@ const Vec<PriorityQueueEntry<T> *> &
 PriorityQueue<T, Comp>::dump() const
 {
   return _v;
+}
+
+template <typename T, typename Comp>
+bool
+PriorityQueue<T, Comp>::in(PriorityQueueEntry<T> *entry)
+{
+  return _v.in(entry) != NULL;
 }
 
 template <typename T, typename Comp>
