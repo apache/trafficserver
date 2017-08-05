@@ -301,9 +301,9 @@ ts_lua_server_response_set_status(lua_State *L)
 
   status = luaL_checkint(L, 1);
 
-  reason     = TSHttpHdrReasonLookup(status);
+  reason = TSHttpHdrReasonLookup(status);
   if (reason) {
-      reason_len = strlen(reason);
+    reason_len = strlen(reason);
   }
 
   TSHttpHdrStatusSet(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, status);
