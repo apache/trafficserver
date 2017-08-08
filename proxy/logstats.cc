@@ -2442,7 +2442,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
         if (end > start) {
           char *buf;
 
-          buf = ats_strdup(line.substr(start, end).c_str());
+          buf = ats_stringdup(line.substr(start, end));
           if (buf) {
             origin_set->insert(buf);
           }
@@ -2470,7 +2470,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   // Do the incremental parse of the default squid log.
   if (cl.incremental) {
     // Change directory to the log dir
-    if (chdir(Layout::get()->logdir) < 0) {
+    if (chdir(Layout::get()->logdir.c_str()) < 0) {
       exit_status.set(EXIT_CRITICAL, " can't chdir to ");
       exit_status.append(Layout::get()->logdir);
       my_exit(exit_status);
@@ -2573,7 +2573,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
       last_state.st_ino = stat_buf.st_ino;
 
       // Find the old log file.
-      dirp = opendir(Layout::get()->logdir);
+      dirp = opendir(Layout::get()->logdir.c_str());
       if (nullptr == dirp) {
         exit_status.set(EXIT_WARNING, " can't read log directory");
       } else {

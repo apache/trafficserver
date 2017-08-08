@@ -233,8 +233,8 @@ Rollback::createPathStr(version_t version)
 {
   int bufSize  = 0;
   char *buffer = nullptr;
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
-  bufSize = strlen(sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
+  std::string sysconfdir(RecConfigReadConfigDir());
+  bufSize = sysconfdir.size() + fileNameLen + MAX_VERSION_DIGITS + 1;
   buffer  = (char *)ats_malloc(bufSize);
   Layout::get()->relative_to(buffer, bufSize, sysconfdir, fileName);
   if (version != ACTIVE_VERSION) {

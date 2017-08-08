@@ -593,7 +593,7 @@ FileManager::WalkSnaps(ExpandingArray *snapList)
   MFresult r;
 
   // Make sure managedDir is the latest from proxy.config.snapshot_dir.
-  this->managedDir = RecConfigReadSnapshotDir();
+  this->managedDir = ats_stringdup(RecConfigReadSnapshotDir());
 
   ink_mutex_acquire(&accessLock);
 
