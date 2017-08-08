@@ -269,4 +269,6 @@ extern inkcoreapi NetProcessor &netProcessor;
 */
 extern inkcoreapi NetProcessor &sslNetProcessor;
 
+extern inkcoreapi NetProcessor &quicNetProcessor;
+
 #endif

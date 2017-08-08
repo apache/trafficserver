@@ -39,6 +39,7 @@
 #include "ProtocolProbeSessionAccept.h"
 #include "http2/Http2SessionAccept.h"
 #include "HttpConnectionCount.h"
+#include "hq/HQSessionAccept.h"
 
 HttpSessionAccept *plugin_http_accept             = nullptr;
 HttpSessionAccept *plugin_http_transparent_accept = nullptr;
@@ -218,6 +219,10 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     ssl_plugin_acceptors.push(ssl);
     ssl->proxyPort   = &port;
     acceptor._accept = ssl;
+  } else if (port.isQUIC()) {
+    // HTTP/QUIC
+    HQSessionAccept *hq = new HQSessionAccept(accept_opt);
+    acceptor._accept    = hq;
   } else {
     acceptor._accept = probe;
   }
@@ -286,7 +291,11 @@ start_HttpProxyServer()
   for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
     HttpProxyAcceptor &acceptor = HttpProxyAcceptors[i];
     HttpProxyPort &port         = proxy_ports[i];
-    if (port.isSSL()) {
+    if (port.isQUIC()) {
+      if (nullptr == quic_NetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
+        return;
+      }
+    } else if (port.isSSL()) {
       if (nullptr == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
       }

@@ -231,7 +231,8 @@ public:
     TRANSPORT_COMPRESSED,   ///< Compressed HTTP.
     TRANSPORT_BLIND_TUNNEL, ///< Blind tunnel (no processing).
     TRANSPORT_SSL,          ///< SSL connection.
-    TRANSPORT_PLUGIN        /// < Protocol plugin connection
+    TRANSPORT_PLUGIN,       /// < Protocol plugin connection
+    TRANSPORT_QUIC,         ///< SSL connection.
   };
 
   int m_fd;             ///< Pre-opened file descriptor if present.
@@ -272,6 +273,9 @@ public:
   /// Check for SSL port.
   bool isSSL() const;
 
+  /// Check for QUIC port.
+  bool isQUIC() const;
+
   /// Check for SSL port.
   bool isPlugin() const;
 
@@ -297,6 +301,15 @@ public:
   /// Check for SSL ports.
   /// @return @c true if any global port is an SSL port.
   static bool hasSSL();
+
+  /// Check for QUIC ports.
+  /// @return @c true if any port in @a ports is an QUIC port.
+  static bool hasQUIC(Group const &ports ///< Ports to check.
+                     );
+
+  /// Check for QUIC ports.
+  /// @return @c true if any global port is an QUIC port.
+  static bool hasQUIC();
 
   /** Load all relevant configuration data.
 
@@ -389,6 +402,7 @@ public:
   static const char *const OPT_TRANSPARENT_FULL;        ///< Full transparency.
   static const char *const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
   static const char *const OPT_SSL;                     ///< SSL (experimental)
+  static const char *const OPT_QUIC;                    ///< QUIC (experimental)
   static const char *const OPT_PLUGIN;                  ///< Protocol Plugin handle (experimental)
   static const char *const OPT_BLIND_TUNNEL;            ///< Blind tunnel.
   static const char *const OPT_COMPRESSED;              ///< Compressed.
@@ -419,6 +433,11 @@ inline bool
 HttpProxyPort::isSSL() const
 {
   return TRANSPORT_SSL == m_type;
+}
+inline bool
+HttpProxyPort::isQUIC() const
+{
+  return TRANSPORT_QUIC == m_type;
 }
 inline bool
 HttpProxyPort::isPlugin() const
@@ -462,6 +481,11 @@ inline bool
 HttpProxyPort::hasSSL()
 {
   return self::hasSSL(m_global);
+}
+inline bool
+HttpProxyPort::hasQUIC()
+{
+  return self::hasQUIC(m_global);
 }
 inline HttpProxyPort *
 HttpProxyPort::findHttp(uint16_t family)

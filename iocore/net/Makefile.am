@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+SUBDIRS = quic
+
 AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
@@ -112,6 +114,9 @@ libinknet_a_SOURCES = \
   P_UDPIOEvent.h \
   P_UDPNet.h \
   P_UDPPacket.h \
+  P_QUICPacketHandler.h \
+  P_QUICNetProcessor.h \
+  P_QUICNetVConnection.h \
   P_UnixCompletionUtil.h \
   P_UnixNet.h \
   P_UnixNetProcessor.h \
@@ -134,6 +139,9 @@ libinknet_a_SOURCES = \
   OCSPStapling.cc \
   Socks.cc \
   UDPIOEvent.cc \
+  QUICPacketHandler.cc \
+  QUICNetProcessor.cc \
+  QUICNetVConnection.cc \
   UnixConnection.cc \
   UnixNet.cc \
   UnixNetAccept.cc \

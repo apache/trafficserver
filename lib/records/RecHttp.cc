@@ -130,6 +130,7 @@ const char *const HttpProxyPort::OPT_SSL                     = "ssl";
 const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
 const char *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
 const char *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
+const char *const HttpProxyPort::OPT_QUIC                    = "quic";
 
 // File local constants.
 namespace
@@ -171,6 +172,18 @@ HttpProxyPort::hasSSL(Group const &ports)
   bool zret = false;
   for (int i = 0, n = ports.length(); i < n && !zret; ++i) {
     if (ports[i].isSSL()) {
+      zret = true;
+    }
+  }
+  return zret;
+}
+
+bool
+HttpProxyPort::hasQUIC(Group const &ports)
+{
+  bool zret = false;
+  for (int i = 0, n = ports.length(); i < n && !zret; ++i) {
+    if (ports[i].isQUIC()) {
       zret = true;
     }
   }
@@ -344,6 +357,8 @@ HttpProxyPort::processOptions(const char *opts)
       af_set_p = true;
     } else if (0 == strcasecmp(OPT_SSL, item)) {
       m_type = TRANSPORT_SSL;
+    } else if (0 == strcasecmp(OPT_QUIC, item)) {
+      m_type = TRANSPORT_QUIC;
     } else if (0 == strcasecmp(OPT_PLUGIN, item)) {
       m_type = TRANSPORT_PLUGIN;
     } else if (0 == strcasecmp(OPT_TRANSPARENT_INBOUND, item)) {
@@ -531,6 +546,8 @@ HttpProxyPort::print(char *out, size_t n)
     zret += snprintf(out + zret, n - zret, ":%s", OPT_BLIND_TUNNEL);
   } else if (TRANSPORT_SSL == m_type) {
     zret += snprintf(out + zret, n - zret, ":%s", OPT_SSL);
+  } else if (TRANSPORT_QUIC == m_type) {
+    zret += snprintf(out + zret, n - zret, ":%s", OPT_QUIC);
   } else if (TRANSPORT_PLUGIN == m_type) {
     zret += snprintf(out + zret, n - zret, ":%s", OPT_PLUGIN);
   } else if (TRANSPORT_COMPRESSED == m_type) {

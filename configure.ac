@@ -1174,6 +1174,31 @@ AC_CHECK_FUNC([EVP_MD_CTX_reset], [],
 AC_CHECK_FUNC([EVP_MD_CTX_free], [],
               [AC_DEFINE([EVP_MD_CTX_free], [EVP_MD_CTX_destroy], [Renamed in OpenSSL 1.1])])
 
+AC_MSG_CHECKING([for TLS 1.3 is supported])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
+                                   [[
+                                     #ifndef TLS1_3_VERSION
+                                     # error no TLS1_3 support
+                                     #endif
+                                   ]])
+                  ],
+                  [AC_MSG_RESULT([yes])],
+                  [AC_ERROR(OpenSSL 1.1.1+ or BoringSSL is required);
+                   AC_MSG_RESULT([no])])
+
+
+AC_MSG_CHECKING([for OpenSSL is BoringSSL])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/base.h>]],
+                                   [[
+                                     #ifndef OPENSSL_IS_BORINGSSL
+                                     # error not boringssl
+                                     #endif
+                                   ]])
+                  ],
+                  [AC_MSG_RESULT([yes]); openssl_is_boringssl=1],
+                  [AC_MSG_RESULT([no])])
+AM_CONDITIONAL([OPENSSL_IS_BORINGSSL], [test -n "$openssl_is_boringssl"])
+
 LIBS="$saved_LIBS"
 
 #
@@ -1875,6 +1900,7 @@ AC_SUBST([default_stack_size], [$with_default_stack_size])
 iocore_include_dirs="\
 -I\$(abs_top_srcdir)/iocore/eventsystem \
 -I\$(abs_top_srcdir)/iocore/net \
+-I\$(abs_top_srcdir)/iocore/net/quic \
 -I\$(abs_top_srcdir)/iocore/aio \
 -I\$(abs_top_srcdir)/iocore/hostdb \
 -I\$(abs_top_srcdir)/iocore/cache \
@@ -1932,6 +1958,8 @@ AC_CONFIG_FILES([
   iocore/eventsystem/Makefile
   iocore/hostdb/Makefile
   iocore/net/Makefile
+  iocore/net/quic/Makefile
+  iocore/net/quic/test/Makefile
   iocore/utils/Makefile
   lib/Makefile
   lib/cppapi/Makefile
@@ -1961,6 +1989,7 @@ AC_CONFIG_FILES([
   proxy/http/Makefile
   proxy/http/remap/Makefile
   proxy/http2/Makefile
+  proxy/hq/Makefile
   proxy/logging/Makefile
   proxy/shared/Makefile
   rc/Makefile

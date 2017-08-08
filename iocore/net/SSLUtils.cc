@@ -1965,6 +1965,81 @@ ssl_extract_certificate(const matcher_line *line_info, ssl_user_config &sslMultC
   return true;
 }
 
+// TODO: remove this function and setup SSL_CTX for QUIC somehow
+bool
+SSLParseCertificateConfiguration(const SSLConfigParams *params, SSL_CTX *ssl_ctx)
+{
+  char *tok_state = nullptr;
+  char *line      = nullptr;
+  ats_scoped_str file_buf;
+  unsigned line_num = 0;
+  matcher_line line_info;
+
+  const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
+
+  Note("loading SSL certificate configuration from %s", params->configFilePath);
+
+  if (params->configFilePath) {
+    file_buf = readIntoBuffer(params->configFilePath, __func__, nullptr);
+  }
+
+  if (!file_buf) {
+    Error("failed to read SSL certificate configuration from %s", params->configFilePath);
+    return false;
+  }
+
+  // Optionally elevate/allow file access to read root-only
+  // certificates. The destructor will drop privilege for us.
+  uint32_t elevate_setting = 0;
+  REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+  ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
+
+  line = tokLine(file_buf, &tok_state);
+  while (line != nullptr) {
+    line_num++;
+
+    // Skip all blank spaces at beginning of line.
+    while (*line && isspace(*line)) {
+      line++;
+    }
+
+    if (*line != '\0' && *line != '#') {
+      ssl_user_config sslMultiCertSettings;
+      const char *errPtr;
+
+      errPtr = parseConfigLine(line, &line_info, &sslCertTags);
+
+      if (errPtr != nullptr) {
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s", __func__, params->configFilePath,
+                         line_num, errPtr);
+      } else {
+        if (ssl_extract_certificate(&line_info, sslMultiCertSettings)) {
+          // There must be a certificate specified unless the tunnel action is set
+          if (sslMultiCertSettings.cert || sslMultiCertSettings.opt != SSLCertContext::OPT_TUNNEL) {
+            if (SSL_CTX_use_PrivateKey_file(ssl_ctx, sslMultiCertSettings.key.get(), SSL_FILETYPE_PEM) != 1) {
+              Error("Couldn't load private_key: %s", sslMultiCertSettings.key.get());
+              return false;
+            }
+
+            if (SSL_CTX_use_certificate_chain_file(ssl_ctx, sslMultiCertSettings.cert.get()) != 1) {
+              Error("Couldn't load cert: %s", sslMultiCertSettings.cert.get());
+              return false;
+            }
+
+            return true;
+
+          } else {
+            Warning("No ssl_cert_name specified and no tunnel action set");
+          }
+        }
+      }
+    }
+
+    line = tokLine(nullptr, &tok_state);
+  }
+  return true;
+}
+
 bool
 SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup)
 {

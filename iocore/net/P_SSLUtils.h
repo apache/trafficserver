@@ -161,6 +161,7 @@ void SSLDebugBufferPrint(const char *tag, const char *buffer, unsigned buflen, c
 
 // Load the SSL certificate configuration.
 bool SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup);
+bool SSLParseCertificateConfiguration(const SSLConfigParams *params, SSL_CTX *ssl_ctx);
 
 // Attach a SSL NetVC back pointer to a SSL session.
 void SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc);

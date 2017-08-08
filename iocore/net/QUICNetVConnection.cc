@@ -1,0 +1,530 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+#include <climits>
+#include <string>
+
+#include "ts/ink_config.h"
+#include "ts/EventNotify.h"
+#include "records/I_RecHttp.h"
+#include "ts/Diags.h"
+
+#include "P_Net.h"
+#include "InkAPIInternal.h" // Added to include the quic_hook definitions
+#include "BIO_fastopen.h"
+#include "Log.h"
+
+#include "QUICEchoApp.h"
+#include "QUICDebugNames.h"
+#include "QUICEvents.h"
+
+#define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
+#define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
+
+const static char *tag = "quic_net";
+
+const static uint32_t MINIMUM_MTU         = 1280;
+const static uint32_t MAX_PACKET_OVERHEAD = 25; // Max long header len(17) + FNV-1a hash len(8)
+
+ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
+
+QUICNetVConnection::QUICNetVConnection() : UnixNetVConnection()
+{
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
+}
+
+void
+QUICNetVConnection::init(UDPConnection *udp_con, QUICPacketHandler *packet_handler)
+{
+  this->_transmitter_mutex = new_ProxyMutex();
+  this->_udp_con           = udp_con;
+  this->_transmitter_mutex = new_ProxyMutex();
+  this->_packet_handler    = packet_handler;
+  this->_quic_connection_id.randomize();
+}
+
+VIO *
+QUICNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+{
+  return super::do_io_read(c, nbytes, buf);
+}
+
+VIO *
+QUICNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+{
+  return super::do_io_write(c, nbytes, buf, owner);
+}
+
+int
+QUICNetVConnection::startEvent(int /*event ATS_UNUSED */, Event *e)
+{
+  return EVENT_DONE;
+}
+
+// XXX This might be called on ET_UDP thread
+void
+QUICNetVConnection::start(SSL_CTX *ssl_ctx)
+{
+  this->_version_negotiator = new QUICVersionNegotiator(&this->_packet_factory, this);
+  this->_crypto             = new QUICCrypto(ssl_ctx, this->netvc_context);
+  this->_packet_factory.set_crypto_module(this->_crypto);
+
+  // FIXME Should these have to be shared_ptr?
+  this->_loss_detector  = std::make_shared<QUICLossDetector>(this);
+  this->_stream_manager = std::make_shared<QUICStreamManager>();
+  this->_stream_manager->init(this);
+  this->_stream_manager->set_connection(this); // FIXME Want to remove;
+
+  std::shared_ptr<QUICConnectionManager> connectionManager       = std::make_shared<QUICConnectionManager>(this);
+  std::shared_ptr<QUICFlowController> flowController             = std::make_shared<QUICFlowController>();
+  std::shared_ptr<QUICCongestionController> congestionController = std::make_shared<QUICCongestionController>();
+  this->_frame_dispatcher =
+    new QUICFrameDispatcher(connectionManager, this->_stream_manager, flowController, congestionController, this->_loss_detector);
+
+  // TODO set timeout from conf
+  this->set_active_timeout(0);
+  this->set_inactivity_timeout(2);
+}
+
+// TODO: call free when close connection
+void
+QUICNetVConnection::free(EThread *t)
+{
+  this->_udp_con        = nullptr;
+  this->_packet_handler = nullptr;
+
+  delete this->_version_negotiator;
+  delete this->_handshake_handler;
+  delete this->_application;
+  delete this->_crypto;
+  delete this->_frame_dispatcher;
+  // XXX _loss_detector and _stream_manager are std::shared_ptr
+
+  // TODO: clear member variables like `UnixNetVConnection::free(EThread *t)`
+  this->mutex.clear();
+
+  if (from_accept_thread) {
+    quicNetVCAllocator.free(this);
+  } else {
+    THREAD_FREE(this, quicNetVCAllocator, t);
+  }
+}
+
+void
+QUICNetVConnection::reenable(VIO *vio)
+{
+  return;
+}
+
+uint32_t
+QUICNetVConnection::minimum_quic_packet_size()
+{
+  if (this->options.ip_family == PF_INET6) {
+    return MINIMUM_MTU - 48;
+  } else {
+    return MINIMUM_MTU - 28;
+  }
+}
+
+uint32_t
+QUICNetVConnection::maximum_quic_packet_size()
+{
+  if (this->options.ip_family == PF_INET6) {
+    return this->_pmtu - 48;
+  } else {
+    return this->_pmtu - 28;
+  }
+}
+
+void
+QUICNetVConnection::transmit_packet(std::unique_ptr<const QUICPacket> packet)
+{
+  // TODO Remove const_cast
+  this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
+  eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+}
+
+void
+QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
+{
+  uint16_t size          = packet.payload_size();
+  const uint8_t *payload = packet.payload();
+
+  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame(nullptr, &QUICFrameDeleter::delete_null_frame);
+  uint16_t cursor = 0;
+
+  while (cursor < size) {
+    frame = QUICFrameFactory::create(payload + cursor, size - cursor);
+    cursor += frame->size();
+
+    switch (frame->type()) {
+    case QUICFrameType::PADDING:
+    case QUICFrameType::ACK:
+      break;
+    default:
+      frame = QUICFrameFactory::create_retransmission_frame(std::move(frame), packet);
+      this->transmit_frame(std::move(frame));
+      break;
+    }
+  }
+}
+
+Ptr<ProxyMutex>
+QUICNetVConnection::get_transmitter_mutex()
+{
+  return this->_transmitter_mutex;
+}
+
+void
+QUICNetVConnection::push_packet(std::unique_ptr<QUICPacket const> packet)
+{
+  Debug(tag, "Type=%s Size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
+  this->_packet_recv_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
+}
+
+void
+QUICNetVConnection::transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame)
+{
+  Debug(tag, "Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+  this->_frame_buffer.push(std::move(frame));
+  eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+}
+
+void
+QUICNetVConnection::close(QUICError error)
+{
+  this->transmit_frame(QUICFrameFactory::create_connection_close_frame(error.code, 0, ""));
+}
+
+int
+QUICNetVConnection::state_handshake(int event, Event *data)
+{
+  QUICError error;
+
+  if (!thread) {
+    thread = this_ethread();
+  }
+
+  if (!nh) {
+    nh = get_NetHandler(this_ethread());
+  }
+
+  switch (event) {
+  case QUIC_EVENT_PACKET_READ_READY: {
+    std::unique_ptr<const QUICPacket> p = std::unique_ptr<const QUICPacket>(this->_packet_recv_queue.dequeue());
+    switch (p->type()) {
+    case QUICPacketType::CLIENT_INITIAL:
+      error = this->_state_handshake_process_initial_client_packet(std::move(p));
+      break;
+    case QUICPacketType::CLIENT_CLEARTEXT:
+      error = this->_state_handshake_process_client_cleartext_packet(std::move(p));
+      break;
+    case QUICPacketType::ZERO_RTT_PROTECTED:
+      error = this->_state_handshake_process_zero_rtt_protected_packet(std::move(p));
+      break;
+    default:
+      error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+      break;
+    }
+
+    break;
+  }
+  case QUIC_EVENT_PACKET_WRITE_READY: {
+    error = this->_state_common_send_packet();
+    break;
+  }
+  default:
+    Debug(tag, "Unexpected event: %u", event);
+  }
+
+  if (error.cls != QUICErrorClass::NONE) {
+    // TODO: Send error if needed
+    Debug(tag, "QUICError: cls=%u, code=0x%x", error.cls, error.code);
+  }
+
+  if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+    Debug(tag, "Enter state_connection_established");
+    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
+  }
+
+  return EVENT_CONT;
+}
+
+int
+QUICNetVConnection::state_connection_established(int event, Event *data)
+{
+  QUICError error;
+  switch (event) {
+  case QUIC_EVENT_PACKET_READ_READY: {
+    std::unique_ptr<const QUICPacket> p = std::unique_ptr<const QUICPacket>(this->_packet_recv_queue.dequeue());
+    switch (p->type()) {
+    case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
+    case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
+      error = this->_state_connection_established_process_packet(std::move(p));
+      break;
+    default:
+      error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+      break;
+    }
+    break;
+  }
+  case QUIC_EVENT_PACKET_WRITE_READY: {
+    error = this->_state_common_send_packet();
+    break;
+  }
+  }
+
+  if (error.cls != QUICErrorClass::NONE) {
+    // TODO: Send error if needed
+    Debug(tag, "QUICError: cls=%u, code=0x%x", error.cls, error.code);
+  }
+
+  return EVENT_CONT;
+}
+
+UDPConnection *
+QUICNetVConnection::get_udp_con()
+{
+  return this->_udp_con;
+}
+
+QUICApplication *
+QUICNetVConnection::get_application(QUICStreamId stream_id)
+{
+  if (stream_id == STREAM_ID_FOR_HANDSHAKE) {
+    return static_cast<QUICApplication *>(this->_handshake_handler);
+  } else {
+    if (!this->_application) {
+      Debug(tag, "setup quic application");
+      // TODO: Instantiate negotiated application
+      const uint8_t *application = this->_handshake_handler->negotiated_application_name();
+      if (memcmp(application, "hq", 2) == 0) {
+        QUICEchoApp *echo_app = new QUICEchoApp(new_ProxyMutex(), this);
+        this->_application    = echo_app;
+      }
+    }
+  }
+  return this->_application;
+}
+
+QUICCrypto *
+QUICNetVConnection::get_crypto()
+{
+  return this->_crypto;
+}
+
+void
+QUICNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
+{
+  ink_assert(false);
+
+  return;
+}
+
+int64_t
+QUICNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs)
+{
+  ink_assert(false);
+
+  return 0;
+}
+
+QUICError
+QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_ptr<const QUICPacket> packet)
+{
+  if (packet->size() < this->minimum_quic_packet_size()) {
+    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+  }
+
+  // Negotiate version
+  if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
+    if (packet->type() != QUICPacketType::CLIENT_INITIAL) {
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+    }
+    if (packet->version()) {
+      if (this->_version_negotiator->negotiate(packet.get()) == QUICVersionNegotiationStatus::NEGOTIATED) {
+        Debug(tag, "Version negotiation succeeded: %x", packet->version());
+        this->_packet_factory.set_version(packet->version());
+        // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
+        if (packet->has_valid_fnv1a_hash()) {
+          this->_handshake_handler = new QUICHandshake(new_ProxyMutex(), this);
+          this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size());
+        } else {
+          Debug(tag, "Invalid FNV-1a hash value");
+        }
+      } else {
+        Debug(tag, "Version negotiation failed: %x", packet->version());
+      }
+    } else {
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+    }
+  }
+
+  return QUICError(QUICErrorClass::NONE);
+}
+
+QUICError
+QUICNetVConnection::_state_handshake_process_client_cleartext_packet(std::unique_ptr<const QUICPacket> packet)
+{
+  // The payload of this packet contains STREAM frames and could contain PADDING and ACK frames
+  if (packet->has_valid_fnv1a_hash()) {
+    this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
+  } else {
+    Debug(tag, "Invalid FNV-1a hash value");
+  }
+  return QUICError(QUICErrorClass::NONE);
+}
+
+QUICError
+QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(std::unique_ptr<const QUICPacket> packet)
+{
+  // TODO: Decrypt the packet
+  // decrypt(payload, p);
+  // TODO: Not sure what we have to do
+  return QUICError(QUICErrorClass::NONE);
+}
+
+QUICError
+QUICNetVConnection::_state_connection_established_process_packet(std::unique_ptr<const QUICPacket> packet)
+{
+  // TODO: fix size
+  size_t max_plain_txt_len = 2048;
+  ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
+  size_t plain_txt_len     = 0;
+
+  if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, packet->payload(), packet->payload_size(),
+                             packet->packet_number(), packet->header(), packet->header_size(), packet->key_phase())) {
+    Debug(tag, "Decrypt Packet, pkt_num: %llu, header_len: %hu, payload_len: %zu", packet->packet_number(), packet->header_size(),
+          plain_txt_len);
+
+    this->_recv_and_ack(plain_txt.get(), plain_txt_len, packet->packet_number());
+
+    return QUICError(QUICErrorClass::NONE);
+  } else {
+    Debug(tag, "CRYPTOGRAPHIC Error");
+
+    return QUICError(QUICErrorClass::CRYPTOGRAPHIC);
+  }
+}
+
+QUICError
+QUICNetVConnection::_state_common_send_packet()
+{
+  this->_packetize_frames();
+
+  const QUICPacket *packet;
+  while ((packet = this->_packet_send_queue.dequeue()) != nullptr) {
+    this->_packet_handler->send_packet(*packet, this);
+    this->_loss_detector->on_packet_sent(std::unique_ptr<const QUICPacket>(packet));
+  }
+
+  return QUICError(QUICErrorClass::NONE);
+}
+
+void
+QUICNetVConnection::_packetize_frames()
+{
+  uint32_t max_size = this->maximum_quic_packet_size();
+  uint32_t min_size = this->minimum_quic_packet_size();
+  ats_unique_buf buf(nullptr, [](void *p) { ats_free(p); });
+  size_t len = 0;
+
+  // Put frames into buf as many as possible
+  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame(nullptr, nullptr);
+  bool retransmittable                = false;
+  QUICPacketType previous_packet_type = QUICPacketType::UNINITIALIZED;
+  QUICPacketType current_packet_type  = QUICPacketType::UNINITIALIZED;
+
+  while (this->_frame_buffer.size() > 0) {
+    frame = std::move(this->_frame_buffer.front());
+    this->_frame_buffer.pop();
+    QUICRetransmissionFrame *rf = dynamic_cast<QUICRetransmissionFrame *>(frame.get());
+    previous_packet_type        = current_packet_type;
+    if (rf) {
+      current_packet_type = rf->packet_type();
+    } else {
+      current_packet_type = QUICPacketType::UNINITIALIZED;
+    }
+    if (len + frame->size() + MAX_PACKET_OVERHEAD > max_size || (previous_packet_type != current_packet_type && len > 0)) {
+      ink_assert(len > 0);
+      SCOPED_MUTEX_LOCK(transmitter_lock, this->get_transmitter_mutex().get(), this_ethread());
+      this->transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
+      len = 0;
+    }
+    retransmittable = retransmittable || (frame->type() != QUICFrameType::ACK && frame->type() != QUICFrameType::PADDING);
+
+    if (buf == nullptr) {
+      buf = ats_unique_malloc(max_size);
+    }
+    size_t l = 0;
+    Debug(tag, "type=%s", QUICDebugNames::frame_type(frame->type()));
+    frame->store(buf.get() + len, &l);
+    len += l;
+  }
+
+  if (len != 0) {
+    // Pad with PADDING frames
+    if (min_size > len) {
+      // FIXME QUICNetVConnection should not know the actual type value of PADDING frame
+      memset(buf.get() + len, 0, min_size - len);
+      len += min_size - len;
+    }
+    SCOPED_MUTEX_LOCK(transmitter_lock, this->get_transmitter_mutex().get(), this_ethread());
+    this->transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, current_packet_type));
+  }
+}
+
+void
+QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_num)
+{
+  bool should_send_ack = this->_frame_dispatcher->receive_frames(payload, size);
+  this->_ack_frame_creator.update(packet_num, should_send_ack);
+  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> ack_frame = this->_ack_frame_creator.create_if_needed();
+  if (ack_frame != nullptr) {
+    this->transmit_frame(std::move(ack_frame));
+    eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+  }
+}
+
+std::unique_ptr<QUICPacket>
+QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmittable, QUICPacketType type)
+{
+  std::unique_ptr<QUICPacket> packet;
+  Debug(tag, "retransmittable %u", retransmittable);
+
+  switch (type) {
+  case QUICPacketType::SERVER_CLEARTEXT:
+    packet = this->_packet_factory.create_server_cleartext_packet(this->_quic_connection_id, std::move(buf), len, retransmittable);
+    break;
+  default:
+    if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+      packet =
+        this->_packet_factory.create_server_protected_packet(this->_quic_connection_id, std::move(buf), len, retransmittable);
+    } else {
+      packet =
+        this->_packet_factory.create_server_cleartext_packet(this->_quic_connection_id, std::move(buf), len, retransmittable);
+    }
+    break;
+  }
+
+  return packet;
+}

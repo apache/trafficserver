@@ -91,6 +91,7 @@ extern "C" int plock(int);
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
 #include "HTTP2.h"
+#include "HQ.h"
 
 #include <ts/ink_cap.h>
 
@@ -1809,6 +1810,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     // Initialize HTTP/2
     Http2::init();
+    // Initialize HTTP/QUIC
+    HQ::init();
 
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor)) {
       HttpProxyPort::loadConfig();
@@ -1828,6 +1831,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(-1, stacksize);
+
+    quic_NetProcessor.start(-1, stacksize);
 
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
