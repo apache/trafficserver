@@ -485,19 +485,19 @@ init_system()
 static void
 check_lockfile()
 {
-  ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  ats_scoped_str lockfile;
+  std::string rundir(RecConfigReadRuntimeDir());
+  std::string lockfile;
   pid_t holding_pid;
   int err;
 
   lockfile = Layout::relative_to(rundir, SERVER_LOCK);
 
-  Lockfile server_lockfile(lockfile);
+  Lockfile server_lockfile(lockfile.c_str());
   err = server_lockfile.Get(&holding_pid);
 
   if (err != 1) {
     char *reason = strerror(-err);
-    fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", (const char *)lockfile);
+    fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", lockfile.c_str());
 
     if ((err == 0) && (holding_pid != -1)) {
       fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
@@ -515,17 +515,17 @@ check_lockfile()
 static void
 check_config_directories()
 {
-  ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
+  std::string rundir(RecConfigReadRuntimeDir());
+  std::string sysconfdir(RecConfigReadConfigDir());
 
-  if (access(sysconfdir, R_OK) == -1) {
-    fprintf(stderr, "unable to access() config dir '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
+  if (access(sysconfdir.c_str(), R_OK) == -1) {
+    fprintf(stderr, "unable to access() config dir '%s': %d, %s\n", sysconfdir.c_str(), errno, strerror(errno));
     fprintf(stderr, "please set the 'TS_ROOT' environment variable\n");
     ::exit(1);
   }
 
-  if (access(rundir, R_OK | W_OK) == -1) {
-    fprintf(stderr, "unable to access() local state dir '%s': %d, %s\n", (const char *)rundir, errno, strerror(errno));
+  if (access(rundir.c_str(), R_OK | W_OK) == -1) {
+    fprintf(stderr, "unable to access() local state dir '%s': %d, %s\n", rundir.c_str(), errno, strerror(errno));
     fprintf(stderr, "please set 'proxy.config.local_state_dir'\n");
     ::exit(1);
   }
@@ -742,12 +742,12 @@ cmd_clear(char *cmd)
   bool c_cache = !strcmp(cmd, "clear_cache");
 
   if (c_all || c_hdb) {
-    ats_scoped_str rundir(RecConfigReadRuntimeDir());
-    ats_scoped_str config(Layout::relative_to(rundir, "hostdb.config"));
+    std::string rundir(RecConfigReadRuntimeDir());
+    std::string config(Layout::relative_to(rundir, "hostdb.config"));
 
     Note("Clearing HostDB Configuration");
-    if (unlink(config) < 0) {
-      Note("unable to unlink %s", (const char *)config);
+    if (unlink(config.c_str()) < 0) {
+      Note("unable to unlink %s", config.c_str());
     }
   }
 
@@ -1357,15 +1357,15 @@ run_RegressionTest()
 static void
 chdir_root()
 {
-  const char *prefix = Layout::get()->prefix;
+  std::string prefix = Layout::get()->prefix;
 
-  if (chdir(prefix) < 0) {
-    fprintf(stderr, "%s: unable to change to root directory \"%s\" [%d '%s']\n", appVersionInfo.AppStr, prefix, errno,
+  if (chdir(prefix.c_str()) < 0) {
+    fprintf(stderr, "%s: unable to change to root directory \"%s\" [%d '%s']\n", appVersionInfo.AppStr, prefix.c_str(), errno,
             strerror(errno));
     fprintf(stderr, "%s: please correct the path or set the TS_ROOT environment variable\n", appVersionInfo.AppStr);
     ::exit(1);
   } else {
-    printf("%s: using root directory '%s'\n", appVersionInfo.AppStr, prefix);
+    printf("%s: using root directory '%s'\n", appVersionInfo.AppStr, prefix.c_str());
   }
 }
 

@@ -73,7 +73,7 @@ alarm_script_dir()
     return path;
   }
 
-  return RecConfigReadBinDir();
+  return ats_stringdup(RecConfigReadBinDir());
 }
 
 Alarms::Alarms()

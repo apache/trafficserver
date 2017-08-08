@@ -40,7 +40,7 @@ static char *
 create_logger_path()
 {
   RecString name;
-  ats_scoped_str bindir;
+  std::string bindir;
   ats_scoped_str fullpath;
 
   if (RecGetRecordString_Xmalloc("proxy.config.crash_log_helper", &name) != REC_ERR_OKAY) {

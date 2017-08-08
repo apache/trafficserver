@@ -387,7 +387,7 @@ bool
 metrics_binding_configure(BindingInstance &binding)
 {
   ats_scoped_str sysconfdir(RecConfigReadConfigDir());
-  ats_scoped_str config(Layout::get()->relative_to(sysconfdir, "metrics.config"));
+  ats_scoped_str config(Layout::get()->relative_to(sysconfdir.get(), "metrics.config"));
 
   return binding.require(config.get());
 }

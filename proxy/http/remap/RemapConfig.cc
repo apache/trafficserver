@@ -337,7 +337,7 @@ parse_include_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errb
           continue;
         }
 
-        subpath = Layout::relative_to(path, entrylist[j]->d_name);
+        subpath = Layout::relative_to(path.get(), entrylist[j]->d_name);
 
         if (ink_file_is_directory(subpath)) {
           continue;
