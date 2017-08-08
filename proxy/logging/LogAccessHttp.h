@@ -77,10 +77,7 @@ public:
   virtual int marshal_client_req_is_ssl(char *);             // INT
   virtual int marshal_client_req_ssl_reused(char *);         // INT
   virtual int marshal_client_req_timestamp_sec(char *);      // INT
-  virtual int marshal_client_req_timestamp_squid(char *);    // STR
-  virtual int marshal_client_req_timestamp_netscape(char *); // STR
-  virtual int marshal_client_req_timestamp_date(char *);     // STR
-  virtual int marshal_client_req_timestamp_time(char *);     // STR
+  virtual int marshal_client_req_timestamp_ms(char *);       // INT
   virtual int marshal_client_security_protocol(char *);      // STR
   virtual int marshal_client_security_cipher_suite(char *);  // STR
   virtual int marshal_client_finish_status_code(char *);     // INT
@@ -165,10 +162,7 @@ public:
 
   virtual int marshal_milestone(TSMilestonesType ms, char *buf);
   virtual int marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
-  virtual int marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
-  virtual int marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
-  virtual int marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
-  virtual int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
+  virtual int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
   virtual int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
 
   virtual void set_client_req_url(char *, int);                // STR
