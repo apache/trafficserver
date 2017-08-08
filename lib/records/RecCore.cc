@@ -210,17 +210,14 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   }
   // read configs
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
-    ink_mutex_init(&g_rec_config_lock, nullptr);
-    // Import the file into memory; try the following in this order:
-    // ./etc/trafficserver/records.config.shadow
-    // ./records.config.shadow
-    // ./etc/trafficserver/records.config
-    // ./records.config
-    bool file_exists   = true;
-    g_rec_config_fpath = RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE REC_SHADOW_EXT);
+    bool file_exists = true;
+
+    ink_mutex_init(&g_rec_config_lock);
+
+    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE REC_SHADOW_EXT));
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
       ats_free((char *)g_rec_config_fpath);
-      g_rec_config_fpath = RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE);
+      g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE));
       if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
         RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
         file_exists = false;
@@ -1120,10 +1117,11 @@ REC_readString(const char *name, bool *found, bool lock)
   return _tmp;
 }
 
-//-------------------------------------------------------------------------
-// RecConfigReadConfigDir
-//-------------------------------------------------------------------------
-char *
+// RecConfigReadConfigDir. Note that we handle environmental configuration
+// overrides specially here. Normally we would override the configuration
+// variable when we read records.config but to avoid the bootstrapping
+// problem, we make an explicit check here.
+std::string
 RecConfigReadConfigDir()
 {
   char buf[PATH_NAME_MAX];
@@ -1133,14 +1131,14 @@ RecConfigReadConfigDir()
   if (strlen(buf) > 0) {
     return Layout::get()->relative(buf);
   } else {
-    return ats_strdup(Layout::get()->sysconfdir);
+    return Layout::get()->sysconfdir;
   }
 }
 
 //-------------------------------------------------------------------------
 // RecConfigReadRuntimeDir
 //-------------------------------------------------------------------------
-char *
+std::string
 RecConfigReadRuntimeDir()
 {
   char buf[PATH_NAME_MAX];
@@ -1150,14 +1148,14 @@ RecConfigReadRuntimeDir()
   if (strlen(buf) > 0) {
     return Layout::get()->relative(buf);
   } else {
-    return ats_strdup(Layout::get()->runtimedir);
+    return Layout::get()->runtimedir;
   }
 }
 
 //-------------------------------------------------------------------------
 // RecConfigReadLogDir
 //-------------------------------------------------------------------------
-char *
+std::string
 RecConfigReadLogDir()
 {
   char buf[PATH_NAME_MAX];
@@ -1167,14 +1165,14 @@ RecConfigReadLogDir()
   if (strlen(buf) > 0) {
     return Layout::get()->relative(buf);
   } else {
-    return ats_strdup(Layout::get()->logdir);
+    return Layout::get()->logdir;
   }
 }
 
 //-------------------------------------------------------------------------
 // RecConfigReadBinDir
 //-------------------------------------------------------------------------
-char *
+std::string
 RecConfigReadBinDir()
 {
   char buf[PATH_NAME_MAX];
@@ -1184,14 +1182,23 @@ RecConfigReadBinDir()
   if (strlen(buf) > 0) {
     return Layout::get()->relative(buf);
   } else {
-    return ats_strdup(Layout::get()->bindir);
+    return Layout::get()->bindir;
   }
+}
+
+//-------------------------------------------------------------------------
+// RecConfigReadPluginDir
+//-------------------------------------------------------------------------
+std::string
+RecConfigReadPluginDir()
+{
+  return RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir");
 }
 
 //-------------------------------------------------------------------------
 // RecConfigReadSnapshotDir.
 //-------------------------------------------------------------------------
-char *
+std::string
 RecConfigReadSnapshotDir()
 {
   return RecConfigReadConfigPath("proxy.config.snapshot_dir", "snapshots");
@@ -1200,10 +1207,10 @@ RecConfigReadSnapshotDir()
 //-------------------------------------------------------------------------
 // RecConfigReadConfigPath
 //-------------------------------------------------------------------------
-char *
+std::string
 RecConfigReadConfigPath(const char *file_variable, const char *default_value)
 {
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
+  std::string sysconfdir(RecConfigReadConfigDir());
 
   // If the file name is in a configuration variable, look it up first ...
   if (file_variable) {
@@ -1221,13 +1228,13 @@ RecConfigReadConfigPath(const char *file_variable, const char *default_value)
     return Layout::get()->relative_to(sysconfdir, default_value);
   }
 
-  return nullptr;
+  return {};
 }
 
 //-------------------------------------------------------------------------
 // RecConfigReadPrefixPath
 //-------------------------------------------------------------------------
-char *
+std::string
 RecConfigReadPrefixPath(const char *file_variable, const char *default_value)
 {
   char buf[PATH_NAME_MAX];
@@ -1246,16 +1253,16 @@ RecConfigReadPrefixPath(const char *file_variable, const char *default_value)
     return Layout::get()->relative_to(Layout::get()->prefix, default_value);
   }
 
-  return nullptr;
+  return {};
 }
 
 //-------------------------------------------------------------------------
 // RecConfigReadPersistentStatsPath
 //-------------------------------------------------------------------------
-char *
+std::string
 RecConfigReadPersistentStatsPath()
 {
-  ats_scoped_str rundir(RecConfigReadRuntimeDir());
+  std::string rundir(RecConfigReadRuntimeDir());
   return Layout::relative_to(rundir, REC_RAW_STATS_FILE);
 }
 

@@ -196,7 +196,7 @@ Init(const char *socket_path, TSInitOptionT options)
   // libraries. The caller has to pass down the right socket path :(
   if (!socket_path) {
     Layout::create();
-    socket_path = Layout::get()->runtimedir;
+    socket_path = Layout::get()->runtimedir.c_str();
   }
 
   // store socket_path

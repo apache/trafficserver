@@ -65,7 +65,7 @@ crashlog_name()
 {
   char filename[64];
   struct tm now = timestamp();
-  ats_scoped_str logdir(RecConfigReadLogDir());
+  std::string logdir(RecConfigReadLogDir());
   ats_scoped_str pathname;
 
   strftime(filename, sizeof(filename), "crash-%Y-%m-%d-%H%M%S.log", &now);
