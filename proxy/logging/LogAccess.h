@@ -174,10 +174,7 @@ public:
   inkcoreapi virtual int marshal_client_host_port(char *);              // INT
   inkcoreapi virtual int marshal_client_auth_user_name(char *);         // STR
   inkcoreapi virtual int marshal_client_req_timestamp_sec(char *);      // INT
-  inkcoreapi virtual int marshal_client_req_timestamp_squid(char *);    // STR
-  inkcoreapi virtual int marshal_client_req_timestamp_netscape(char *); // STR
-  inkcoreapi virtual int marshal_client_req_timestamp_date(char *);     // STR
-  inkcoreapi virtual int marshal_client_req_timestamp_time(char *);     // STR
+  inkcoreapi virtual int marshal_client_req_timestamp_ms(char *);       // INT
   inkcoreapi virtual int marshal_client_req_text(char *);               // STR
   inkcoreapi virtual int marshal_client_req_http_method(char *);        // STR
   inkcoreapi virtual int marshal_client_req_url(char *);                // STR
@@ -327,6 +324,9 @@ public:
   static int unmarshal_int_to_str_hex(char **buf, char *dest, int len);
   static int unmarshal_str(char **buf, char *dest, int len, LogSlice *slice = NULL);
   static int unmarshal_ttmsf(char **buf, char *dest, int len);
+  static int unmarshal_int_to_date_str(char **buf, char *dest, int len);
+  static int unmarshal_int_to_time_str(char **buf, char *dest, int len);
+  static int unmarshal_int_to_netscape_str(char **buf, char *dest, int len);
   static int unmarshal_http_version(char **buf, char *dest, int len);
   static int unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice = NULL);
   static int unmarshal_http_status(char **buf, char *dest, int len);

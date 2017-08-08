@@ -436,33 +436,9 @@ LogAccessHttp::marshal_client_req_timestamp_sec(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccessHttp::marshal_client_req_timestamp_squid(char *buf)
+LogAccessHttp::marshal_client_req_timestamp_ms(char *buf)
 {
-  return marshal_milestone_fmt_squid(TS_MILESTONE_UA_BEGIN, buf);
-}
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-LogAccessHttp::marshal_client_req_timestamp_netscape(char *buf)
-{
-  return marshal_milestone_fmt_netscape(TS_MILESTONE_UA_BEGIN, buf);
-}
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-LogAccessHttp::marshal_client_req_timestamp_date(char *buf)
-{
-  return marshal_milestone_fmt_date(TS_MILESTONE_UA_BEGIN, buf);
-}
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-LogAccessHttp::marshal_client_req_timestamp_time(char *buf)
-{
-  return marshal_milestone_fmt_time(TS_MILESTONE_UA_BEGIN, buf);
+  return marshal_milestone_fmt_ms(TS_MILESTONE_UA_BEGIN, buf);
 }
 
 /*-------------------------------------------------------------------------
@@ -1710,70 +1686,20 @@ int
 LogAccessHttp::marshal_milestone_fmt_sec(TSMilestonesType type, char *buf)
 {
   if (buf) {
-    struct timeval tp = ink_hrtime_to_timeval(m_http_sm->milestones[type]);
-    marshal_int(buf, tp.tv_sec);
+    ink_hrtime tsec = ink_hrtime_to_sec(m_http_sm->milestones[type]);
+    marshal_int(buf, tsec);
   }
   return INK_MIN_ALIGN;
 }
 
 int
-LogAccessHttp::marshal_milestone_fmt_squid(TSMilestonesType type, char *buf)
+LogAccessHttp::marshal_milestone_fmt_ms(TSMilestonesType type, char *buf)
 {
-  struct timeval tp          = ink_hrtime_to_timeval(m_http_sm->milestones[type]);
-  const unsigned int val_len = 32;
-  char val[val_len]          = {0};
-
-  squid_timestamp_to_buf(val, val_len, tp.tv_sec, tp.tv_usec);
-
-  int len = LogAccess::strlen(val);
-
   if (buf) {
-    marshal_str(buf, val, len);
+    ink_hrtime tmsec = ink_hrtime_to_msec(m_http_sm->milestones[type]);
+    marshal_int(buf, tmsec);
   }
-
-  return len;
-}
-
-int
-LogAccessHttp::marshal_milestone_fmt_netscape(TSMilestonesType type, char *buf)
-{
-  struct timeval tp = ink_hrtime_to_timeval(m_http_sm->milestones[type]);
-  char *val         = LogUtils::timestamp_to_netscape_str(tp.tv_sec);
-  int len           = LogAccess::strlen(val);
-
-  if (buf) {
-    marshal_str(buf, val, len);
-  }
-
-  return len;
-}
-
-int
-LogAccessHttp::marshal_milestone_fmt_date(TSMilestonesType type, char *buf)
-{
-  struct timeval tp = ink_hrtime_to_timeval(m_http_sm->milestones[type]);
-  char *val         = LogUtils::timestamp_to_date_str(tp.tv_sec);
-  int len           = LogAccess::strlen(val);
-
-  if (buf) {
-    marshal_str(buf, val, len);
-  }
-
-  return len;
-}
-
-int
-LogAccessHttp::marshal_milestone_fmt_time(TSMilestonesType type, char *buf)
-{
-  struct timeval tp = ink_hrtime_to_timeval(m_http_sm->milestones[type]);
-  char *val         = LogUtils::timestamp_to_time_str(tp.tv_sec);
-  int len           = LogAccess::strlen(val);
-
-  if (buf) {
-    marshal_str(buf, val, len);
-  }
-
-  return len;
+  return INK_MIN_ALIGN;
 }
 
 int
