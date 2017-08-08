@@ -252,8 +252,8 @@ test_tslib_CPPFLAGS = $(AM_CPPFLAGS)\
 test_tslib_LDADD = libtsutil.la
 test_tslib_SOURCES = \
 	unit-tests/main.cpp \
-	unit-tests/string_view.cpp \
-	unit-tests/test_IpMap.cc 
+	unit-tests/test_IpMap.cc \
+	unit-tests/test_layout.cpp
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 

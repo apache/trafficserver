@@ -141,16 +141,16 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 {
   if (final_path) {
     if (path && path[0] != '/') {
-      *final_path = RecConfigReadPrefixPath(nullptr, path);
+      *final_path = ats_stringdup(RecConfigReadPrefixPath(nullptr, path));
     } else if (!path || path[0] == '\0') {
-      *final_path = RecConfigReadConfigDir();
+      *final_path = ats_stringdup(RecConfigReadConfigDir());
     } else {
       *final_path = ats_strdup(path);
     }
   }
 
   if (final_filename) {
-    *final_filename = filename ? Layout::get()->relative_to(path, filename) : nullptr;
+    *final_filename = filename ? ats_stringdup(Layout::get()->relative_to(path, filename)) : nullptr;
   }
 }
 
@@ -176,7 +176,7 @@ SSLConfigParams::initialize()
   REC_ReadConfigInt32(clientCertLevel, "proxy.config.ssl.client.certification_level");
   REC_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");
   REC_ReadConfigStringAlloc(client_cipherSuite, "proxy.config.ssl.client.cipher_suite");
-  dhparamsFile = RecConfigReadConfigPath("proxy.config.ssl.server.dhparams_file");
+  dhparamsFile = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.dhparams_file"));
 
   int options;
   int client_ssl_options = 0;
@@ -256,7 +256,7 @@ SSLConfigParams::initialize()
   set_paths_helper(serverCertRelativePath, nullptr, &serverCertPathOnly, nullptr);
   ats_free(serverCertRelativePath);
 
-  configFilePath = RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename");
+  configFilePath = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
   REC_ReadConfigInteger(configExitOnLoadError, "proxy.config.ssl.server.multicert.exit_on_load_fail");
 
   REC_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");

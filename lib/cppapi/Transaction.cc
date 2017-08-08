@@ -397,9 +397,9 @@ Transaction::getCacheStatus()
 void
 Transaction::redirectTo(std::string const &url)
 {
-  char *s = ats_strdup(url.c_str());
+  std::string s = url;
   // Must re-alloc the string locally because ownership is transferred to the transaction.
-  TSHttpTxnRedirectUrlSet(state_->txn_, s, url.length());
+  TSHttpTxnRedirectUrlSet(state_->txn_, s.c_str(), url.length());
 }
 
 namespace

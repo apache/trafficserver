@@ -49,40 +49,33 @@ void RecConfigFileInit(void);
 int RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_version);
 
 // Return a copy of the system's configuration directory, taking proxy.config.config_dir into account. The
-// caller MUST release the result with ats_free().
-char *RecConfigReadConfigDir();
+std::string RecConfigReadConfigDir();
 
 // Return a copy of the system's local state directory, taking proxy.config.local_state_dir into account. The
-// caller MUST release the result with ats_free().
-char *RecConfigReadRuntimeDir();
+std::string RecConfigReadRuntimeDir();
 
 // Return a copy of the system's snapshot directory, taking proxy.config.snapshot_dir into account. The caller
-// MUST release the result with ats_free().
-char *RecConfigReadSnapshotDir();
+std::string RecConfigReadSnapshotDir();
 
 // Return a copy of the system's log directory, taking proxy.config.log.logfile_dir into account. The caller
-// MUST release the result with ats_free().
-char *RecConfigReadLogDir();
+std::string RecConfigReadLogDir();
 
 // Return a copy of the system's bin directory, taking proxy.config.bin_path into account. The caller MUST
-// release the result with ats_free().
-char *RecConfigReadBinDir();
+std::string RecConfigReadBinDir();
 
 // Return a copy of the system's plugin directory, taking proxy.config.plugin.plugin_dir into account. The caller MUST
-// release the result with ats_free().
-char *RecConfigReadPluginDir();
+std::string RecConfigReadPluginDir();
 
 // Return a copy of a configuration file that is relative to sysconfdir. The relative path to the configuration
 // file is specified in the configuration variable named by "file_variable". If the configuration variable has no
-// value, nullptr is returned. The caller MUST release the result with ats_free().
-char *RecConfigReadConfigPath(const char *file_variable, const char *default_value = nullptr);
+// value, nullptr is returned.
+std::string RecConfigReadConfigPath(const char *file_variable, const char *default_value = nullptr);
 
 // This is the same as RecConfigReadConfigPath, except it makes the paths relative to $PREFIX.
-char *RecConfigReadPrefixPath(const char *file_variable, const char *default_value = nullptr);
+std::string RecConfigReadPrefixPath(const char *file_variable, const char *default_value = nullptr);
 
 // Return a copy of the persistent stats file. This is $RUNTIMEDIR/records.snap.
-// The caller MUST release the result with ats_free().
-char *RecConfigReadPersistentStatsPath();
+std::string RecConfigReadPersistentStatsPath();
 
 // Test whether the named configuration value is overridden by an environment variable. Return either
 // the overridden value, or the original value. Caller MUST NOT free the result.

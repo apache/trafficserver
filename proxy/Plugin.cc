@@ -231,7 +231,7 @@ plugin_init(bool validateOnly)
 
   if (INIT_ONCE) {
     api_init();
-    plugin_dir = RecConfigReadPluginDir();
+    plugin_dir = ats_stringdup(RecConfigReadPluginDir());
     INIT_ONCE  = false;
   }
 

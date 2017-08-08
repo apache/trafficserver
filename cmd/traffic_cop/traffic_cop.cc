@@ -543,7 +543,7 @@ ConfigIntFatalError:
   exit(1);
 }
 
-static char *
+static std::string
 config_read_runtime_dir()
 {
   char state_dir[PATH_NAME_MAX];
@@ -553,11 +553,11 @@ config_read_runtime_dir()
   if (strlen(state_dir) > 0) {
     return Layout::get()->relative(state_dir);
   } else {
-    return ats_strdup(Layout::get()->runtimedir);
+    return Layout::get()->runtimedir;
   }
 }
 
-static char *
+static std::string
 config_read_sysconfig_dir()
 {
   char sysconfig_dir[PATH_NAME_MAX];
@@ -567,11 +567,11 @@ config_read_sysconfig_dir()
   if (strlen(sysconfig_dir) > 0) {
     return Layout::get()->relative(sysconfig_dir);
   } else {
-    return ats_strdup(Layout::get()->sysconfdir);
+    return Layout::get()->sysconfdir;
   }
 }
 
-static char *
+static std::string
 config_read_bin_dir()
 {
   char bindir[PATH_NAME_MAX];
@@ -582,11 +582,11 @@ config_read_bin_dir()
   if (strlen(bindir) > 0) {
     return Layout::get()->relative(bindir);
   } else {
-    return ats_strdup(Layout::get()->bindir);
+    return Layout::get()->bindir;
   }
 }
 
-static char *
+static std::string
 config_read_log_dir()
 {
   char logdir[PATH_NAME_MAX];
@@ -596,7 +596,7 @@ config_read_log_dir()
   if (strlen(logdir) > 0) {
     return Layout::get()->relative(logdir);
   } else {
-    return ats_strdup(Layout::get()->logdir);
+    return Layout::get()->logdir;
   }
 }
 
@@ -608,8 +608,8 @@ config_reload_records()
   char log_filename[PATH_NAME_MAX];
   int tmp_int = 3;
 
-  ats_scoped_str bindir;
-  ats_scoped_str logdir;
+  std::string bindir;
+  std::string logdir;
 
   cop_log_trace("Entering %s()\n", __func__);
   // coverity[fs_check_call]
@@ -637,15 +637,15 @@ config_reload_records()
   get_admin_user();
 
   bindir = config_read_bin_dir();
-  if (access(bindir, R_OK) == -1) {
-    cop_log(COP_FATAL, "could not access() \"%s\"\n", (const char *)bindir);
+  if (access(bindir.c_str(), R_OK) == -1) {
+    cop_log(COP_FATAL, "could not access() \"%s\"\n", bindir.c_str());
     cop_log(COP_FATAL, "please set 'proxy.config.bin_path' \n");
     exit(1);
   }
 
   logdir = config_read_log_dir();
-  if (access(logdir, W_OK) == -1) {
-    cop_log(COP_FATAL, "could not access() \"%s\"\n", (const char *)logdir);
+  if (access(logdir.c_str(), W_OK) == -1) {
+    cop_log(COP_FATAL, "could not access() \"%s\"\n", logdir.c_str());
     cop_log(COP_FATAL, "please set 'proxy.config.log.logfile_dir' \n");
     exit(1);
   }
@@ -741,7 +741,7 @@ static void
 spawn_manager()
 {
   char prog[PATH_NAME_MAX];
-  ats_scoped_str bindir(config_read_bin_dir());
+  std::string bindir(config_read_bin_dir());
 
   cop_log_trace("Entering spawn_manager()\n");
 
@@ -1503,8 +1503,8 @@ check(void *arg)
 
     // We do this after the first round of checks, since the first "check" will spawn traffic_manager
     if (!mgmt_init) {
-      ats_scoped_str runtimedir(config_read_runtime_dir());
-      TSInit(runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS));
+      std::string runtimedir(config_read_runtime_dir());
+      TSInit(runtimedir.c_str(), static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS));
       mgmt_init = true;
 
       // Allow a configurable longer sleep init time
@@ -1627,13 +1627,13 @@ static void
 init_config_file()
 {
   struct stat info;
-  ats_scoped_str config_dir;
+  std::string config_dir;
 
   cop_log_trace("Entering init_config_file()\n");
 
   config_dir = config_read_sysconfig_dir();
-  if (stat(config_dir, &info) < 0) {
-    cop_log(COP_FATAL, "unable to locate config directory '%s'\n", (const char *)config_dir);
+  if (stat(config_dir.c_str(), &info) < 0) {
+    cop_log(COP_FATAL, "unable to locate config directory '%s'\n", config_dir.c_str());
     cop_log(COP_FATAL, " please try setting correct root path in env variable TS_ROOT \n");
     exit(1);
   }
@@ -1642,8 +1642,8 @@ init_config_file()
   if (stat(config_file, &info) < 0) {
     Layout::relative_to(config_file, sizeof(config_file), config_dir, "records.config");
     if (stat(config_file, &info) < 0) {
-      cop_log(COP_FATAL, "unable to locate \"%s/records.config\" or \"%s/records.config.shadow\"\n", (const char *)config_dir,
-              (const char *)config_dir);
+      cop_log(COP_FATAL, "unable to locate \"%s/records.config\" or \"%s/records.config.shadow\"\n", config_dir.c_str(),
+              config_dir.c_str());
       exit(1);
     }
   }
@@ -1667,7 +1667,7 @@ init()
   init_config_file();
   config_reload_records();
 
-  runtime_dir = config_read_runtime_dir();
+  runtime_dir = ats_stringdup(config_read_runtime_dir());
   if (stat(runtime_dir, &info) < 0) {
     cop_log(COP_FATAL, "unable to locate local state directory '%s'\n", runtime_dir);
     cop_log(COP_FATAL, " please try setting correct root path in either env variable TS_ROOT \n");

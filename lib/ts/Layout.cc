@@ -41,134 +41,95 @@ Layout::get()
 }
 
 void
-Layout::create(const char *prefix)
+Layout::create(ts::string_view const prefix)
 {
   if (layout == nullptr) {
     layout = new Layout(prefix);
   }
 }
 
-static char *
-layout_relative(const char *root, const char *file)
+static void
+_relative(char *path, size_t buffsz, ts::string_view root, ts::string_view file)
 {
-  char path[PATH_NAME_MAX];
-
-  if (ink_filepath_merge(path, PATH_NAME_MAX, root, file, INK_FILEPATH_TRUENAME)) {
+  if (ink_filepath_merge(path, buffsz, root.data(), file.data(), INK_FILEPATH_TRUENAME)) {
     int err = errno;
     // Log error
     if (err == EACCES) {
-      ink_error("Cannot merge path '%s' above the root '%s'\n", file, root);
+      ink_fatal("Cannot merge path '%s' above the root '%s'\n", file.data(), root.data());
     } else if (err == E2BIG) {
-      ink_error("Exceeding file name length limit of %d characters\n", PATH_NAME_MAX);
+      ink_fatal("Exceeding file name length limit of %d characters\n", PATH_NAME_MAX);
     } else {
       // TODO: Make some pretty errors.
-      ink_error("Cannot merge '%s' with '%s' error=%d\n", file, root, err);
+      ink_fatal("Cannot merge '%s' with '%s' error=%d\n", file.data(), root.data(), err);
     }
-    return nullptr;
   }
-  return ats_strdup(path);
 }
 
-char *
-Layout::relative(const char *file)
+static std::string
+layout_relative(ts::string_view root, ts::string_view file)
+{
+  char path[PATH_NAME_MAX];
+  std::string ret;
+  _relative(path, PATH_NAME_MAX, root, file);
+  ret = path;
+  return ret;
+}
+
+std::string
+Layout::relative(ts::string_view file)
 {
   return layout_relative(prefix, file);
 }
 
+// for updating the structure sysconfdir
 void
-Layout::relative(char *buf, size_t bufsz, const char *file)
+Layout::update_sysconfdir(ts::string_view dir)
 {
-  char path[PATH_NAME_MAX];
-
-  if (ink_filepath_merge(path, PATH_NAME_MAX, prefix, file, INK_FILEPATH_TRUENAME)) {
-    int err = errno;
-    // Log error
-    if (err == EACCES) {
-      ink_error("Cannot merge path '%s' above the root '%s'\n", file, prefix);
-    } else if (err == E2BIG) {
-      ink_error("Exceeding file name length limit of %d characters\n", PATH_NAME_MAX);
-    } else {
-      // TODO: Make some pretty errors.
-      ink_error("Cannot merge '%s' with '%s' error=%d\n", file, prefix, err);
-    }
-    return;
-  }
-  size_t path_len = strlen(path) + 1;
-  if (path_len > bufsz) {
-    ink_error("Provided buffer is too small: %zu, required %zu\n", bufsz, path_len);
-  } else {
-    ink_strlcpy(buf, path, bufsz);
-  }
+  sysconfdir.assign(dir.data(), dir.size());
 }
 
-void
-Layout::update_sysconfdir(const char *dir)
-{
-  if (sysconfdir) {
-    ats_free(sysconfdir);
-  }
-
-  sysconfdir = ats_strdup(dir);
-}
-
-char *
-Layout::relative_to(const char *dir, const char *file)
+std::string
+Layout::relative_to(ts::string_view dir, ts::string_view file)
 {
   return layout_relative(dir, file);
 }
 
 void
-Layout::relative_to(char *buf, size_t bufsz, const char *dir, const char *file)
+Layout::relative_to(char *buf, size_t bufsz, ts::string_view dir, ts::string_view file)
 {
   char path[PATH_NAME_MAX];
 
-  if (ink_filepath_merge(path, PATH_NAME_MAX, dir, file, INK_FILEPATH_TRUENAME)) {
-    int err = errno;
-    // Log error
-    if (err == EACCES) {
-      ink_error("Cannot merge path '%s' above the root '%s'\n", file, dir);
-    } else if (err == E2BIG) {
-      ink_error("Exceeding file name length limit of %d characters\n", PATH_NAME_MAX);
-    } else {
-      // TODO: Make some pretty errors.
-      ink_error("Cannot merge '%s' with '%s' error=%d\n", file, dir, err);
-    }
-    return;
-  }
+  _relative(path, PATH_NAME_MAX, dir, file);
   size_t path_len = strlen(path) + 1;
   if (path_len > bufsz) {
-    ink_error("Provided buffer is too small: %zu, required %zu\n", bufsz, path_len);
+    ink_fatal("Provided buffer is too small: %zu, required %zu\n", bufsz, path_len);
   } else {
     ink_strlcpy(buf, path, bufsz);
   }
 }
 
-Layout::Layout(const char *_prefix)
+Layout::Layout(ts::string_view const _prefix)
 {
-  if (_prefix) {
-    prefix = ats_strdup(_prefix);
+  if (_prefix.size() != 0) {
+    prefix.assign(_prefix.data(), _prefix.size());
   } else {
-    char *env_path;
-    char path[PATH_NAME_MAX];
+    std::string path;
     int len;
-
-    if ((env_path = getenv("TS_ROOT"))) {
-      len = strlen(env_path);
+    if (getenv("TS_ROOT") != nullptr) {
+      std::string env_path(getenv("TS_ROOT"));
+      len = env_path.size();
       if ((len + 1) > PATH_NAME_MAX) {
-        ink_error("TS_ROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
-        return;
+        ink_fatal("TS_ROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
       }
-      ink_strlcpy(path, env_path, sizeof(path));
-      while (len > 1 && path[len - 1] == '/') {
-        path[len - 1] = '\0';
-        --len;
+      path = env_path;
+      while (path.back() == '/') {
+        path.pop_back();
       }
     } else {
       // Use compile time --prefix
-      ink_strlcpy(path, TS_BUILD_PREFIX, sizeof(path));
+      path = TS_BUILD_PREFIX;
     }
-
-    prefix = ats_strdup(path);
+    prefix = path;
   }
   exec_prefix   = layout_relative(prefix, TS_BUILD_EXEC_PREFIX);
   bindir        = layout_relative(prefix, TS_BUILD_BINDIR);
@@ -188,19 +149,4 @@ Layout::Layout(const char *_prefix)
 
 Layout::~Layout()
 {
-  ats_free(prefix);
-  ats_free(exec_prefix);
-  ats_free(bindir);
-  ats_free(sbindir);
-  ats_free(sysconfdir);
-  ats_free(datadir);
-  ats_free(includedir);
-  ats_free(libdir);
-  ats_free(libexecdir);
-  ats_free(localstatedir);
-  ats_free(runtimedir);
-  ats_free(logdir);
-  ats_free(mandir);
-  ats_free(infodir);
-  ats_free(cachedir);
 }

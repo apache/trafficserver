@@ -133,6 +133,16 @@ static inline size_t __attribute__((const)) ats_pagesize(void)
 char *_xstrdup(const char *str, int length, const char *path);
 
 #define ats_strdup(p) _xstrdup((p), -1, nullptr)
+
+// this is to help with migration to a std::string issue with older code that
+// expects char* being copied. As more code moves to std::string, this can be
+// removed to avoid these extra copies.
+inline char *
+ats_stringdup(std::string const &p)
+{
+  return p.empty() ? nullptr : _xstrdup(p.c_str(), p.size(), nullptr);
+}
+
 #define ats_strndup(p, n) _xstrdup((p), n, nullptr)
 
 #ifdef __cplusplus
