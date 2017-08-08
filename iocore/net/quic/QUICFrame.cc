@@ -612,7 +612,7 @@ QUICAckFrame::AckBlockSection::const_iterator::const_iterator(uint8_t index, con
   this->_ack_blocks = ack_block;
   if (this->_ack_blocks->size()) {
     if (this->_ack_blocks->size() == this->_index) {
-      this->_current_block = {0, 0ULL};
+      this->_current_block = {static_cast<uint8_t>(0), 0ULL};
     } else {
       this->_current_block = this->_ack_blocks->at(this->_index);
     }

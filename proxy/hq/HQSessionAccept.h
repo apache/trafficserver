@@ -38,7 +38,8 @@
 //
 // CONFIG proxy.config.http.server_ports STRING 443:quic
 
-class HQSessionAccept : public SessionAccept {
+class HQSessionAccept : public SessionAccept
+{
 public:
   explicit HQSessionAccept(const HttpSessionAccept::Options &);
   ~HQSessionAccept();

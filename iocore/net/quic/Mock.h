@@ -9,9 +9,7 @@
 class MockQUICPacketTransmitter : public QUICPacketTransmitter
 {
 public:
-  MockQUICPacketTransmitter() : QUICPacketTransmitter() {
-    this->_mutex= new_ProxyMutex();
-  };
+  MockQUICPacketTransmitter() : QUICPacketTransmitter() { this->_mutex = new_ProxyMutex(); };
 
   void
   transmit_packet(std::unique_ptr<const QUICPacket> packet) override

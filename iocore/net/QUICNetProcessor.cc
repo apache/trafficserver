@@ -114,7 +114,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   // char thr_name[MAX_THREAD_NAME_LENGTH];
 
   NetAccept *na = createNetAccept(opt);
-  if (opt.accept_threads < 0) {
+  if (accept_threads < 0) {
     REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
   }
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);

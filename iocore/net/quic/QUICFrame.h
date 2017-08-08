@@ -125,7 +125,7 @@ public:
           // TODO Parse Ack Block
         } else {
           if (this->_ack_blocks->size() == this->_index) {
-            this->_current_block = {0, 0ULL};
+            this->_current_block = {static_cast<uint8_t>(0), 0ULL};
           } else {
             this->_current_block = this->_ack_blocks->at(this->_index);
           }
@@ -150,7 +150,7 @@ public:
       uint8_t _index;
       const uint8_t *_buf;
       const std::vector<QUICAckFrame::AckBlock> *_ack_blocks = nullptr;
-      QUICAckFrame::AckBlock _current_block                  = {0, 0ULL};
+      QUICAckFrame::AckBlock _current_block                  = {static_cast<uint8_t>(0), 0ULL};
     };
 
     AckBlockSection(uint64_t first_ack_block_length);

@@ -258,7 +258,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
   if (error.cls != QUICErrorClass::NONE) {
     // TODO: Send error if needed
-    Debug(tag, "QUICError: cls=%u, code=0x%x", error.cls, error.code);
+    Debug(tag, "QUICError: cls=%u, code=0x%x", static_cast<unsigned int>(error.cls), static_cast<unsigned int>(error.code));
   }
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
@@ -295,7 +295,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
 
   if (error.cls != QUICErrorClass::NONE) {
     // TODO: Send error if needed
-    Debug(tag, "QUICError: cls=%u, code=0x%x", error.cls, error.code);
+    Debug(tag, "QUICError: cls=%u, code=0x%x", static_cast<unsigned int>(error.cls), static_cast<unsigned int>(error.code));
   }
 
   return EVENT_CONT;
@@ -413,7 +413,7 @@ QUICNetVConnection::_state_connection_established_process_packet(std::unique_ptr
 
   if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, packet->payload(), packet->payload_size(),
                              packet->packet_number(), packet->header(), packet->header_size(), packet->key_phase())) {
-    Debug(tag, "Decrypt Packet, pkt_num: %llu, header_len: %hu, payload_len: %zu", packet->packet_number(), packet->header_size(),
+    Debug(tag, "Decrypt Packet, pkt_num: %lu, header_len: %hu, payload_len: %zu", packet->packet_number(), packet->header_size(),
           plain_txt_len);
 
     this->_recv_and_ack(plain_txt.get(), plain_txt_len, packet->packet_number());

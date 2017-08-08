@@ -64,7 +64,7 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size)
 
     // TODO: check debug build
     if (frame->type() != QUICFrameType::PADDING) {
-      Debug(tag, "frame type %d, size %zu", frame->type(), frame->size());
+      Debug(tag, "frame type %d, size %zu", static_cast<int>(frame->type()), frame->size());
     }
 
     // FIXME We should probably use a mapping table. All the objects has the common interface (QUICFrameHandler).
@@ -138,7 +138,7 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size)
     }
     default:
       // Unknown frame
-      Debug(tag, "Unknown frame type: %02x", frame->type());
+      Debug(tag, "Unknown frame type: %02x", static_cast<unsigned int>(frame->type()));
       ink_assert(false);
 
       break;

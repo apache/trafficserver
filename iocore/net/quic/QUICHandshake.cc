@@ -30,7 +30,7 @@
 #define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                           \
   {                                                                                                                               \
     int i, j;                                                                                                                     \
-    fprintf(stderr, "len=%lld\n", len);                                                                                           \
+    fprintf(stderr, "len=%ld\n", len);                                                                                            \
     for (i = 0; i < len / 8; i++) {                                                                                               \
       fprintf(stderr, "%02x %02x %02x %02x %02x %02x %02x %02x ", buf[i * 8 + 0], buf[i * 8 + 1], buf[i * 8 + 2], buf[i * 8 + 3], \
               buf[i * 8 + 4], buf[i * 8 + 5], buf[i * 8 + 6], buf[i * 8 + 7]);                                                    \
