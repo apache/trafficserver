@@ -284,7 +284,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       stream->priority_node = node;
       node->t               = stream;
     } else {
-      DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
+      DebugHttp2Stream(cstate.ua_session, stream_id, "HEADER PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
                        params.priority.stream_dependency, params.priority.weight, params.priority.exclusive_flag,
                        cstate.dependency_tree->size());
 
