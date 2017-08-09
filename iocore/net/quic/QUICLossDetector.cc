@@ -53,9 +53,19 @@ int
 QUICLossDetector::event_handler(int event, Event *edata)
 {
   switch (event) {
-  case EVENT_INTERVAL:
+  case EVENT_INTERVAL: {
     this->_on_loss_detection_alarm();
     break;
+  }
+  case QUIC_EVENT_LD_SHUTDOWN: {
+    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    Debug("quic_loss_detector", "Shutdown");
+
+    if (this->_loss_detection_alarm) {
+      this->_loss_detection_alarm->cancel();
+    }
+    break;
+  }
   default:
     break;
   }
@@ -121,7 +131,7 @@ QUICLossDetector::on_packet_sent(std::unique_ptr<const QUICPacket> packet)
 {
   bool is_handshake   = false;
   QUICPacketType type = packet->type();
-  if (type != QUICPacketType::ZERO_RTT_PROTECTED || type != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0 ||
+  if (type != QUICPacketType::ZERO_RTT_PROTECTED && type != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0 &&
       type != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
     is_handshake = true;
   }

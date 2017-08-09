@@ -93,6 +93,15 @@ typedef enum {
   QUIC_HOOK_OP_LAST = QUIC_HOOK_OP_TERMINATE ///< End marker value.
 } QuicVConnOp;
 
+enum class QUICConnectionState {
+  Open = 0,
+  Handshake,
+  Established,
+  TimeWait,
+  Closing,
+  Closed,
+};
+
 //////////////////////////////////////////////////////////////////
 //
 //  class NetVConnection
@@ -113,20 +122,23 @@ class QUICLossDetector;
  *
  * state_handshake()
  *  | READ:
- *  |  _state_handshake_process_initial_client_packet()
- *  |  _state_handshake_process_client_cleartext_packet()
- *  |  _state_handshake_process_zero_rtt_protected_packet()
+ *  |   _state_handshake_process_initial_client_packet()
+ *  |   _state_handshake_process_client_cleartext_packet()
+ *  |   _state_handshake_process_zero_rtt_protected_packet()
  *  | WRITE:
- *  |  _state_common_send_packet()
+ *  |   _state_common_send_packet()
  *  v
  * state_connection_established()
  *  | READ:
- *  |  _state_connection_established_process_packet()
+ *  |   _state_connection_established_process_packet()
  *  | WRITE:
- *  |  _state_common_send_packet()
+ *  |   _state_common_send_packet()
  *  v
- *  X
- *
+ * state_connection_close()
+ *    READ:
+ *      Do nothing
+ *    WRITE:
+ *      _state_common_send_packet()
  **/
 class QUICNetVConnection : public UnixNetVConnection, public QUICPacketTransmitter, public QUICFrameTransmitter
 {
@@ -143,6 +155,7 @@ public:
   int startEvent(int event, Event *e);
   int state_handshake(int event, Event *data);
   int state_connection_established(int event, Event *data);
+  int state_connection_closed(int event, Event *data);
   void start(SSL_CTX *);
   uint32_t maximum_quic_packet_size();
   uint32_t minimum_quic_packet_size();
@@ -168,6 +181,7 @@ private:
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
   QUICAckFrameCreator _ack_frame_creator;
+  QUICConnectionState _state = QUICConnectionState::Open;
 
   uint32_t _pmtu = 1280;
 

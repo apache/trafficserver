@@ -49,6 +49,7 @@ ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
 QUICNetVConnection::QUICNetVConnection() : UnixNetVConnection()
 {
+  this->_state = QUICConnectionState::Handshake;
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
 }
 
@@ -99,16 +100,13 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   std::shared_ptr<QUICCongestionController> congestionController = std::make_shared<QUICCongestionController>();
   this->_frame_dispatcher =
     new QUICFrameDispatcher(connectionManager, this->_stream_manager, flowController, congestionController, this->_loss_detector);
-
-  // TODO set timeout from conf
-  this->set_active_timeout(0);
-  this->set_inactivity_timeout(2);
 }
 
-// TODO: call free when close connection
 void
 QUICNetVConnection::free(EThread *t)
 {
+  Debug(tag, "Free connection: %p", this);
+
   this->_udp_con        = nullptr;
   this->_packet_handler = nullptr;
 
@@ -215,6 +213,7 @@ QUICNetVConnection::close(QUICError error)
   this->transmit_frame(QUICFrameFactory::create_connection_close_frame(error.code, 0, ""));
 }
 
+// TODO: Timeout by active_timeout / inactive_timeout
 int
 QUICNetVConnection::state_handshake(int event, Event *data)
 {
@@ -231,6 +230,8 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
     std::unique_ptr<const QUICPacket> p = std::unique_ptr<const QUICPacket>(this->_packet_recv_queue.dequeue());
+    net_activity(this, this_ethread());
+
     switch (p->type()) {
     case QUICPacketType::CLIENT_INITIAL:
       error = this->_state_handshake_process_initial_client_packet(std::move(p));
@@ -263,7 +264,14 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
     Debug(tag, "Enter state_connection_established");
+    this->_state = QUICConnectionState::Established;
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
+
+    // TODO: switch waiting for a CONNECTION_CLOSE frame for first implementation
+    // TODO: read idle_timeout from Transport Prameters
+    ink_hrtime idle_timeout = HRTIME_SECONDS(3);
+    this->set_inactivity_timeout(idle_timeout);
+    this->add_to_active_queue();
   }
 
   return EVENT_CONT;
@@ -276,6 +284,8 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
     std::unique_ptr<const QUICPacket> p = std::unique_ptr<const QUICPacket>(this->_packet_recv_queue.dequeue());
+    net_activity(this, this_ethread());
+
     switch (p->type()) {
     case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
     case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
@@ -291,6 +301,22 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     error = this->_state_common_send_packet();
     break;
   }
+
+  case EVENT_IMMEDIATE: {
+    // Start Implicit Shutdown. Because no network activity for the duration of the idle timeout.
+    this->remove_from_active_queue();
+
+    // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
+    Debug(tag, "Enter state_connection_close");
+    this->_state = QUICConnectionState::Closing;
+    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
+
+    this->close({QUICErrorClass::NONE, QUICErrorCode::QUIC_TRANSPORT_ERROR});
+
+    break;
+  }
+  default:
+    Debug(tag, "Unexpected event: %u", event);
   }
 
   if (error.cls != QUICErrorClass::NONE) {
@@ -299,6 +325,43 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   }
 
   return EVENT_CONT;
+}
+
+int
+QUICNetVConnection::state_connection_closed(int event, Event *data)
+{
+  switch (event) {
+  case QUIC_EVENT_PACKET_READ_READY: {
+    // TODO: send GOAWAY frame
+    break;
+  }
+  case QUIC_EVENT_PACKET_WRITE_READY: {
+    // TODO: Retransmit CONNECTION_CLOSE when Explicit Shutdown (Out of scope from first implementation)
+    // Inplicit Shutdown
+    if (this->_state == QUICConnectionState::Closing) {
+      this->_state_common_send_packet();
+      this->_state = QUICConnectionState::Closed;
+
+      this->next_inactivity_timeout_at = 0;
+      this->next_activity_timeout_at   = 0;
+
+      this->inactivity_timeout_in = 0;
+      this->active_timeout_in     = 0;
+
+      // TODO: Drop record from Connection-ID - QUICNetVConnection table in QUICPacketHandler
+      // Shutdown loss detector
+      this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
+
+      this->free(this_ethread());
+    }
+
+    break;
+  }
+  default:
+    Debug(tag, "Unexpected event: %u", event);
+  }
+
+  return EVENT_DONE;
 }
 
 UDPConnection *
@@ -436,6 +499,8 @@ QUICNetVConnection::_state_common_send_packet()
     this->_packet_handler->send_packet(*packet, this);
     this->_loss_detector->on_packet_sent(std::unique_ptr<const QUICPacket>(packet));
   }
+
+  net_activity(this, this_ethread());
 
   return QUICError(QUICErrorClass::NONE);
 }

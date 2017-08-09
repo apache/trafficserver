@@ -150,14 +150,14 @@ public:
   // called when handing an  event from this NetVConnection,//
   // or the NetVConnection creation callback.               //
   ////////////////////////////////////////////////////////////
-  void set_active_timeout(ink_hrtime timeout_in) override;
-  void set_inactivity_timeout(ink_hrtime timeout_in) override;
-  void cancel_active_timeout() override;
-  void cancel_inactivity_timeout() override;
+  virtual void set_active_timeout(ink_hrtime timeout_in) override;
+  virtual void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  virtual void cancel_active_timeout() override;
+  virtual void cancel_inactivity_timeout() override;
   void set_action(Continuation *c) override;
-  void add_to_keep_alive_queue() override;
-  void remove_from_keep_alive_queue() override;
-  bool add_to_active_queue() override;
+  virtual void add_to_keep_alive_queue() override;
+  virtual void remove_from_keep_alive_queue() override;
+  virtual bool add_to_active_queue() override;
   virtual void remove_from_active_queue();
 
   // The public interface is VIO::reenable()
@@ -432,5 +432,6 @@ UnixNetVConnection::set_action(Continuation *c)
 void close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t);
 void write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
 void write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
+void net_activity(UnixNetVConnection *vc, EThread *thread);
 
 #endif
