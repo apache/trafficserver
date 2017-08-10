@@ -524,3 +524,33 @@ REGRESSION_TEST(PriorityQueue_pop_and_erase)(RegressionTest *t, int /* atype ATS
   delete entry_y;
   delete entry_z;
 }
+
+REGRESSION_TEST(PriorityQueue_pop_and_erase_2)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  PQ *pq1 = new PQ();
+
+  N *x = new N(20, "X");
+  N *y = new N(30, "Y");
+
+  Entry *X = new Entry(x);
+  Entry *Y = new Entry(y);
+
+  box.check(X->index == 0 && Y->index == 0, "X and Y index should be 0");
+
+  pq1->push(X);
+
+  pq1->erase(Y);
+
+  box.check(pq1->top() == X, "X should be in queue");
+
+  delete x;
+  delete y;
+
+  delete X;
+  delete Y;
+
+  delete pq1;
+}
