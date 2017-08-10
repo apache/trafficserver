@@ -35,7 +35,7 @@ QUICConnectionManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
   case QUICFrameType::PING:
     break;
   default:
-    Debug(tag, "Unexpected frame type: %02x", frame->type());
+    Debug(tag, "Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
     ink_assert(false);
     break;
   }

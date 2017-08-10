@@ -34,7 +34,7 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter) : _transm
   this->_tlp_count            = 0;
   this->_rto_count            = 0;
   if (this->_time_loss_detection) {
-    this->_reordering_threshold     = INFINITY;
+    this->_reordering_threshold     = UINT32_MAX;
     this->_time_reordering_fraction = this->_TIME_REORDERING_FRACTION;
   } else {
     this->_reordering_threshold     = this->_REORDERING_THRESHOLD;
@@ -80,7 +80,7 @@ QUICLossDetector::handle_frame(std::shared_ptr<const QUICFrame> frame)
     this->_on_ack_received(std::dynamic_pointer_cast<const QUICAckFrame>(frame));
     break;
   default:
-    Debug("quic_loss_detector", "Unexpected frame type: %02x", frame->type());
+    Debug("quic_loss_detector", "Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
     ink_assert(false);
     break;
   }
@@ -188,7 +188,7 @@ void
 QUICLossDetector::_on_packet_acked(QUICPacketNumber acked_packet_number)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  Debug("quic_loss_detector", "Packet number %llu has been acked", acked_packet_number);
+  Debug("quic_loss_detector", "Packet number %" PRIu64 " has been acked", acked_packet_number);
   this->_largest_acked_packet = acked_packet_number;
   // If a packet sent prior to RTO was acked, then the RTO
   // was spurious.  Otherwise, inform congestion control.
