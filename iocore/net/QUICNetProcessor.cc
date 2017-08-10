@@ -24,6 +24,7 @@
 #include "P_Net.h"
 #include "ts/I_Layout.h"
 #include "I_RecHttp.h"
+#include "QUICConfig.h"
 // #include "P_QUICUtils.h"
 
 //
@@ -52,10 +53,7 @@ QUICNetProcessor::start(int, size_t stacksize)
 {
   // This initialization order matters ...
   // QUICInitializeLibrary();
-  // QUICConfig::startup();
-
-  // if (!QUICCertificateConfig::startup())
-  //   return -1;
+  QUICConfig::startup();
 
   // Acquire a QUICConfigParams instance *after* we start QUIC up.
   // QUICConfig::scoped_config params;

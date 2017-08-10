@@ -36,6 +36,7 @@
 #include "QUICEchoApp.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
+#include "QUICConfig.h"
 
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
@@ -267,9 +268,10 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     this->_state = QUICConnectionState::Established;
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
-    // TODO: switch waiting for a CONNECTION_CLOSE frame for first implementation
-    // TODO: read idle_timeout from Transport Prameters
-    ink_hrtime idle_timeout = HRTIME_SECONDS(3);
+    QUICConfig::scoped_config params;
+
+    // TODO:  use idle_timeout from negotiated Transport Prameters
+    ink_hrtime idle_timeout = HRTIME_SECONDS(params->no_activity_timeout_in());
     this->set_inactivity_timeout(idle_timeout);
     this->add_to_active_queue();
   }

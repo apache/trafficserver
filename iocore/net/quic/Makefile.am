@@ -56,6 +56,7 @@ libquic_a_SOURCES = \
   QUICCrypto.cc \
   $(QUICCrypto_impl) \
   QUICAckFrameCreator.cc \
+  QUICConfig.cc \
   QUICDebugNames.cc \
   QUICApplication.cc \
   QUICEchoApp.cc
