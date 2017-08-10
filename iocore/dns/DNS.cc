@@ -1238,7 +1238,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
     }
   }
 
-  if (ent || !ent->good) {
+  if (ent && ent->good) {
     DNS_INCREMENT_DYN_STAT(dns_lookup_success_stat);
   } else {
     DNS_INCREMENT_DYN_STAT(dns_lookup_fail_stat);
