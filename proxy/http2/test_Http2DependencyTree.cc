@@ -498,6 +498,38 @@ REGRESSION_TEST(Http2DependencyTree_remove_2)(RegressionTest *t, int /* atype AT
   delete tree;
 }
 
+/**
+ * Exclusive Dependency Creation
+ *
+ *       A            A
+ *      / \    =>     |
+ *     B   C          D
+ *                   / \
+ *                  B   C
+ */
+REGRESSION_TEST(Http2DependencyTree_exclusive_node)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Tree *tree = new Tree(100);
+  string a("A"), b("B"), c("C"), d("D");
+
+  Tree::Node *B = tree->add(0, 1, 0, false, &b);
+  tree->add(0, 3, 0, false, &c);
+
+  tree->activate(B);
+  // Add node with exclusive flag
+  tree->add(0, 5, 0, true, &d);
+
+  tree->deactivate(B, 0);
+  tree->remove(B);
+
+  box.check(tree->top() == NULL, "Tree top should be NULL");
+
+  delete tree;
+}
+
 REGRESSION_TEST(Http2DependencyTree_max_depth)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);

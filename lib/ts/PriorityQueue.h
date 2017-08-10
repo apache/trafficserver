@@ -125,6 +125,12 @@ PriorityQueue<T, Comp>::erase(PriorityQueueEntry<T> *entry)
     return;
   }
 
+  // If the entry doesn't belong to this queue just return.
+  if (entry != _v[entry->index]) {
+    ink_assert(!_v.in(entry));
+    return;
+  }
+
   ink_release_assert(entry->index < _v.length());
   const uint32_t original_index = entry->index;
   if (original_index != (_v.length() - 1)) {
