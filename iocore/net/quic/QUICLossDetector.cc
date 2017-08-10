@@ -135,8 +135,11 @@ QUICLossDetector::on_packet_sent(std::unique_ptr<const QUICPacket> packet)
       type != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
     is_handshake = true;
   }
-  return this->_on_packet_sent(packet->packet_number(), packet->is_retransmittable(), is_handshake, packet->size(),
-                               std::move(packet));
+
+  QUICPacketNumber packet_number = packet->packet_number();
+  bool is_retransmittable        = packet->is_retransmittable();
+  size_t sent_bytes              = packet->size();
+  return this->_on_packet_sent(packet_number, is_retransmittable, is_handshake, sent_bytes, std::move(packet));
 }
 
 void
