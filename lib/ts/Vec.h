@@ -149,7 +149,7 @@ public:
   int read(int fd);
   void qsort(bool (*lt)(C, C));
   void qsort(bool (*lt)(const C &, const C &));
-  void swap(C *p1, C *p2);
+  static void swap(C *p1, C *p2);
 
 private:
   void move_internal(Vec<C, A, S> &v);
@@ -950,9 +950,9 @@ Vec<C, A, S>::read(int fd)
   return t;
 }
 
-template <class C>
+template <class C, class A, int S>
 inline void
-swap(C *p1, C *p2)
+Vec<C, A, S>::swap(C *p1, C *p2)
 {
   C t = *p1;
   *p1 = *p2;
@@ -979,16 +979,16 @@ qsort_Vec(C *left, C *right, bool (*lt)(C, C))
 
     // find the median
     if (lt(*center, *left)) { // order left and center
-      swap(center, left);
+      Vec<C>::swap(center, left);
     }
     if (lt(*(right - 1), *left)) { // order left and right
-      swap(right - 1, left);
+      Vec<C>::swap(right - 1, left);
     }
     if (lt(*(right - 1), *center)) { // order right and center
-      swap((right - 1), center);
+      Vec<C>::swap((right - 1), center);
     }
-    swap(center, right - 2); // stash the median one from the right for now
-    median = *(right - 2);   // the median of left, center and right values
+    Vec<C>::swap(center, right - 2); // stash the median one from the right for now
+    median = *(right - 2);           // the median of left, center and right values
 
     // now partition, pivoting on the median value
     // l ptr is +1 b/c we already put the lowest of the incoming left, center
@@ -1011,12 +1011,12 @@ qsort_Vec(C *left, C *right, bool (*lt)(C, C))
       if (lt(*l, median)) {
         l++;
       } else {
-        swap(l, r - 1);
+        Vec<C>::swap(l, r - 1);
         r--;
       }
     }
 
-    swap(l, right - 2); // restore median to its rightful place
+    Vec<C>::swap(l, right - 2); // restore median to its rightful place
 
     // recurse for the littles (left segment)
     qsort_Vec<C>(left, l, lt);
@@ -1045,16 +1045,16 @@ qsort_VecRef(C *left, C *right, bool (*lt)(const C &, const C &), unsigned int *
 
     // find the median
     if (lt(*center, *left)) { // order left and center
-      swap(center, left);
+      Vec<C>::swap(center, left);
     }
     if (lt(*(right - 1), *left)) { // order left and right
-      swap(right - 1, left);
+      Vec<C>::swap(right - 1, left);
     }
     if (lt(*(right - 1), *center)) { // order right and center
-      swap((right - 1), center);
+      Vec<C>::swap((right - 1), center);
     }
-    swap(center, right - 2); // stash the median one from the right for now
-    median = *(right - 2);   // the median of left, center and right values
+    Vec<C>::swap(center, right - 2); // stash the median one from the right for now
+    median = *(right - 2);           // the median of left, center and right values
 
     // now partition, pivoting on the median value
     // l ptr is +1 b/c we already put the lowest of the incoming left, center
@@ -1077,12 +1077,12 @@ qsort_VecRef(C *left, C *right, bool (*lt)(const C &, const C &), unsigned int *
       if (lt(*l, median)) {
         l++;
       } else {
-        swap(l, r - 1);
+        Vec<C>::swap(l, r - 1);
         r--;
       }
     }
 
-    swap(l, right - 2); // restore median to its rightful place
+    Vec<C>::swap(l, right - 2); // restore median to its rightful place
 
     // recurse for the littles (left segment)
     qsort_VecRef<C>(left, l, lt, p_ctr);
