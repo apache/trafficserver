@@ -235,9 +235,10 @@ QUICStream::_write_to_read_vio(std::shared_ptr<const QUICStreamFrame> frame)
 void
 QUICStream::_reorder_data()
 {
-  while (auto frame = _request_stream_frame_buffer[this->_request_buffer_offset]) {
-    this->_request_stream_frame_buffer.erase(this->_request_buffer_offset);
-    this->_write_to_read_vio(frame);
+  auto frame = _request_stream_frame_buffer.find(this->_request_buffer_offset);
+  while (frame != this->_request_stream_frame_buffer.end()) {
+    this->_write_to_read_vio(frame->second);
+    frame = _request_stream_frame_buffer.find(this->_request_buffer_offset);
   }
 }
 
