@@ -35,6 +35,7 @@
 #include "RecordsConfig.h"
 #include "ts/ink_cap.h"
 #include "Cop.h"
+#include "ts/runroot.cc"
 
 #include <string>
 #include <map>
@@ -1685,7 +1686,8 @@ static const ArgumentDescription argument_descriptions[] = {
   {"stdout", 'o', "Print log messages to standard output", "F", &stdout_flag, nullptr, nullptr},
   {"stop", 's', "Send child processes SIGSTOP instead of SIGKILL", "F", &stop_flag, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()};
+  VERSION_ARGUMENT_DESCRIPTION(),
+  RUNROOT_ARGUMENT_DESCRIPTION()};
 
 int
 main(int /* argc */, const char *argv[])
@@ -1693,6 +1695,7 @@ main(int /* argc */, const char *argv[])
   int fd;
   appVersionInfo.setup(PACKAGE_NAME, "traffic_cop", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  runroot_handler(argv);
   // Before accessing file system initialize Layout engine
   Layout::create();
 

@@ -30,6 +30,7 @@
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
 #include "ts/BaseLogFile.h"
+#include "ts/runroot.cc"
 
 static int syslog_mode    = false;
 static int debug_mode     = false;
@@ -48,7 +49,8 @@ static const ArgumentDescription argument_descriptions[] = {
   {"syslog", '-', "Syslog after writing a crash log", "F", &syslog_mode, nullptr, nullptr},
   {"debug", '-', "Enable debugging mode", "F", &debug_mode, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()};
+  VERSION_ARGUMENT_DESCRIPTION(),
+  RUNROOT_ARGUMENT_DESCRIPTION()};
 
 static struct tm
 timestamp()
@@ -117,6 +119,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     ATS_UNUSED_RETURN(seteuid(0));
   }
 
+  runroot_handler(argv);
   Layout::create();
   RecProcessInit(RECM_STAND_ALONE, nullptr /* diags */);
   LibRecordsConfigInit();
