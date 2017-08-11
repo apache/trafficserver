@@ -149,7 +149,7 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
     }
   }
 
-  if (final_filename) {
+  if (final_filename && path) {
     *final_filename = filename ? ats_stringdup(Layout::get()->relative_to(path, filename)) : nullptr;
   }
 }
