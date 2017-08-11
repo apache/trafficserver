@@ -44,6 +44,12 @@ struct Layout {
   ~Layout();
 
   /**
+   return use runroot or not
+
+  */
+  bool check_runroot();
+
+  /**
    Return file path relative to Layout->prefix
 
   */

@@ -29,6 +29,7 @@
 #include "ts/HashFNV.h"
 #include "ts/ink_args.h"
 #include "ts/MatcherUtils.h"
+#include "ts/runroot.cc"
 
 // Includes and namespaces etc.
 #include "LogStandalone.cc"
@@ -653,7 +654,8 @@ static ArgumentDescription argument_descriptions[] = {
   {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags, nullptr, nullptr},
   {"report_per_user", 'r', "Report stats per user instead of host", "T", &cl.report_per_user, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()};
+  VERSION_ARGUMENT_DESCRIPTION(),
+  RUNROOT_ARGUMENT_DESCRIPTION()};
 
 static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-binshv]";
 
@@ -2380,6 +2382,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   // build the application information structure
   appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  runroot_handler(argv);
   // Before accessing file system initialize Layout engine
   Layout::create();
 

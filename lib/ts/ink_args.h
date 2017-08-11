@@ -75,6 +75,10 @@ struct ArgumentDescription {
   {                                                                          \
     "help", 'h', "Print usage information", nullptr, nullptr, nullptr, usage \
   }
+#define RUNROOT_ARGUMENT_DESCRIPTION()                                                 \
+  {                                                                                    \
+    "run-root", '-', "using TS_RUNROOT as sandbox", nullptr, nullptr, nullptr, nullptr \
+  }
 
 /* Global Data
 */

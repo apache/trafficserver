@@ -24,6 +24,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_args.h"
 #include "ts/I_Layout.h"
+#include "ts/runroot.cc"
 
 #define PROGRAM_NAME "traffic_logcat"
 #define MAX_LOGBUFFER_SIZE 65536
@@ -68,7 +69,8 @@ static const ArgumentDescription argument_descriptions[] = {
   {"overwrite_output", 'w', "Overwrite existing output file(s)", "T", &overwrite_existing_file, NULL, NULL},
   {"elf2", '2', "Convert to Extended2 Logging Format", "T", &elf2_flag, NULL, NULL},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()};
+  VERSION_ARGUMENT_DESCRIPTION(),
+  RUNROOT_ARGUMENT_DESCRIPTION()};
 
 /*
  * Gets the inode number of a given file
@@ -256,6 +258,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   //
   appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  runroot_handler(argv);
   // Before accessing file system initialize Layout engine
   Layout::create();
   // process command-line arguments
