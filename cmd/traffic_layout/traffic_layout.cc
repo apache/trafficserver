@@ -27,8 +27,7 @@
 #include "ts/I_Layout.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
-
-#include <iostream>
+#include "ts/runroot.cc"
 
 // Command line arguments (parsing)
 struct CommandLineArgs {
@@ -45,7 +44,8 @@ const ArgumentDescription argument_descriptions[] = {
   {"json", 'j', "Produce output in JSON format (when supported)", "T", &cl.json, nullptr, nullptr},
 
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()};
+  VERSION_ARGUMENT_DESCRIPTION(),
+  RUNROOT_ARGUMENT_DESCRIPTION()};
 
 // Produce output about compile time features, useful for checking how things were built, as well
 // as for our TSQA test harness.
@@ -177,6 +177,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   // Process command line arguments and dump into variables
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+
+  runroot_handler(argv);
 
   if (cl.features) {
     produce_features(0 != cl.json);

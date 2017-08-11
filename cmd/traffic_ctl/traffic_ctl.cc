@@ -26,6 +26,7 @@
 #include "ts/I_Layout.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
+#include "ts/runroot.cc"
 
 AppVersionInfo CtrlVersionInfo;
 
@@ -223,6 +224,7 @@ main(int argc, const char **argv)
     {"debug", '-', "Enable debugging output", "F", &debug, nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
+    RUNROOT_ARGUMENT_DESCRIPTION(),
   };
 
   const subcommand commands[] = {
@@ -253,6 +255,7 @@ main(int argc, const char **argv)
     return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
   }
 
+  runroot_handler(argv);
   Layout::create();
   RecProcessInit(RECM_STAND_ALONE, diags);
   LibRecordsConfigInit();
