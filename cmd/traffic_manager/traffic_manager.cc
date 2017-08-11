@@ -27,6 +27,7 @@
 #include "ts/ink_sock.h"
 #include "ts/ink_args.h"
 #include "ts/ink_syslog.h"
+#include "ts/runroot.cc"
 
 #include "WebMgmtUtils.h"
 #include "WebOverview.h"
@@ -419,6 +420,8 @@ main(int argc, const char **argv)
 {
   const long MAX_LOGIN = ink_login_name_max();
 
+  runroot_handler(argv);
+
   // Before accessing file system initialize Layout engine
   Layout::create();
   mgmt_path = Layout::get()->sysconfdir.c_str();
@@ -462,7 +465,8 @@ main(int argc, const char **argv)
 #endif
     {"nosyslog", '-', "Do not log to syslog", "F", &disable_syslog, nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
-    VERSION_ARGUMENT_DESCRIPTION()
+    VERSION_ARGUMENT_DESCRIPTION(),
+    RUNROOT_ARGUMENT_DESCRIPTION()
   };
 
   // Process command line arguments and dump into variables

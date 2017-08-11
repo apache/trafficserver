@@ -218,7 +218,10 @@ process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argume
 
     if ((*argv)[1] == '-') {
       // Deal with long options ...
-      for (i = 0; i < n_argument_descriptions; i++)
+      for (i = 0; i < n_argument_descriptions; i++) {
+        if (!strcmp(argument_descriptions[i].name, "run-root")) {
+          break;
+        }
         if (!strcmp(argument_descriptions[i].name, (*argv) + 2)) {
           *argv += strlen(*argv) - 1;
           if (!process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv)) {

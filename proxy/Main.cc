@@ -37,6 +37,7 @@
 #include "ts/ink_stack_trace.h"
 #include "ts/ink_syslog.h"
 #include "ts/hugepages.h"
+#include "ts/runroot.cc"
 
 #include <syslog.h>
 
@@ -219,7 +220,9 @@ static const ArgumentDescription argument_descriptions[] = {
   {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, nullptr, nullptr},
   {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()};
+  VERSION_ARGUMENT_DESCRIPTION(),
+  RUNROOT_ARGUMENT_DESCRIPTION(),
+};
 
 class SignalContinuation : public Continuation
 {
@@ -1523,6 +1526,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Define the version info
   appVersionInfo.setup(PACKAGE_NAME, "traffic_server", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  runroot_handler(argv);
   // Before accessing file system initialize Layout engine
   Layout::create();
   chdir_root(); // change directory to the install root of traffic server.
