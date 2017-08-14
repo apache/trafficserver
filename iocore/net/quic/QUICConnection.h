@@ -23,18 +23,10 @@
 
 #pragma once
 
-#include <QUICFrameHandler.h>
-#include <QUICFrame.h>
+#include "QUICPacketTransmitter.h"
 #include "QUICFrameTransmitter.h"
+#include "QUICFrameHandler.h"
 
-class QUICConnectionManager : public QUICFrameHandler
+class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
 {
-public:
-  QUICConnectionManager(QUICFrameTransmitter *tx) : _tx(tx){};
-  virtual void handle_frame(std::shared_ptr<const QUICFrame> frame) override;
-
-private:
-  QUICFrameTransmitter *_tx = nullptr;
-
-  void _handle_ping_frame(const QUICPingFrame *);
 };

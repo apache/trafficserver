@@ -636,8 +636,8 @@ QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id
   if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, packet->payload(), packet->payload_size(),
                              packet->packet_number(), ad, ad_len, packet->key_phase())) {
     packet->set_protected_payload(std::move(cipher_txt), cipher_txt_len);
-    Debug("quic_packet_factory", "Encrypt Packet, pkt_num: %" PRIu64 ", header_len: %zu payload: %zu", packet->packet_number(), ad_len,
-          cipher_txt_len);
+    Debug("quic_packet_factory", "Encrypt Packet, pkt_num: %" PRIu64 ", header_len: %zu payload: %zu", packet->packet_number(),
+          ad_len, cipher_txt_len);
     return packet;
   } else {
     Debug("quic_packet_factory", "CRYPTOGRAPHIC Error");

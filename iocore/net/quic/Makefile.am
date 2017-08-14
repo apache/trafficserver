@@ -45,7 +45,6 @@ libquic_a_SOURCES = \
   QUICFrame.cc \
   QUICFrameDispatcher.cc \
   QUICVersionNegotiator.cc \
-  QUICConnectionManager.cc \
   QUICLossDetector.cc \
   QUICStreamManager.cc \
   QUICFlowController.cc \

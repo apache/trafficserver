@@ -27,5 +27,6 @@
 
 class QUICFrameHandler
 {
+public:
   virtual void handle_frame(std::shared_ptr<const QUICFrame> frame) = 0;
 };

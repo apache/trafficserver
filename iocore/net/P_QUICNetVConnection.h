@@ -42,6 +42,7 @@
 #include "ts/apidefs.h"
 #include "ts/List.h"
 
+#include "quic/QUICConnection.h"
 #include "quic/QUICVersionNegotiator.h"
 #include "quic/QUICPacket.h"
 #include "quic/QUICFrame.h"
@@ -52,10 +53,7 @@
 #include "quic/QUICCrypto.h"
 #include "quic/QUICAckFrameCreator.h"
 #include "quic/QUICLossDetector.h"
-#include "quic/QUICPacketTransmitter.h"
-#include "quic/QUICFrameTransmitter.h"
 #include "quic/QUICStreamManager.h"
-#include "quic/QUICConnectionManager.h"
 #include "quic/QUICFlowController.h"
 #include "quic/QUICCongestionController.h"
 
@@ -134,13 +132,19 @@ class QUICLossDetector;
  *  | WRITE:
  *  |   _state_common_send_packet()
  *  v
+ * state_connection_closing() (If closing actively)
+ *  | READ:
+ *  |   _state_connection_established_process_packet()
+ *  | WRITE:
+ *  |   _state_common_send_packet()
+ *  v
  * state_connection_close()
  *    READ:
  *      Do nothing
  *    WRITE:
  *      _state_common_send_packet()
  **/
-class QUICNetVConnection : public UnixNetVConnection, public QUICPacketTransmitter, public QUICFrameTransmitter
+class QUICNetVConnection : public UnixNetVConnection, public QUICConnection
 {
   typedef UnixNetVConnection super; ///< Parent type.
 
@@ -155,15 +159,12 @@ public:
   int startEvent(int event, Event *e);
   int state_handshake(int event, Event *data);
   int state_connection_established(int event, Event *data);
+  int state_connection_closing(int event, Event *data);
   int state_connection_closed(int event, Event *data);
   void start(SSL_CTX *);
   uint32_t maximum_quic_packet_size();
   uint32_t minimum_quic_packet_size();
-  virtual void transmit_packet(std::unique_ptr<const QUICPacket> packet) override;
-  virtual void retransmit_packet(const QUICPacket &packet) override;
-  virtual Ptr<ProxyMutex> get_transmitter_mutex() override;
   void push_packet(std::unique_ptr<const QUICPacket> packet);
-  virtual void transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame) override;
   void close(QUICError error);
   void free(EThread *t) override;
 
@@ -173,6 +174,17 @@ public:
 
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
+
+  // QUICConnection (QUICPacketTransmitter)
+  virtual void transmit_packet(std::unique_ptr<const QUICPacket> packet) override;
+  virtual void retransmit_packet(const QUICPacket &packet) override;
+  virtual Ptr<ProxyMutex> get_transmitter_mutex() override;
+
+  // QUICConnection (QUICFrameTransmitter)
+  virtual void transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame) override;
+
+  // QUICConnection (QUICFrameHandler)
+  void handle_frame(std::shared_ptr<const QUICFrame> frame) override;
 
 private:
   QUICConnectionId _quic_connection_id;
@@ -209,6 +221,7 @@ private:
   QUICError _state_handshake_process_client_cleartext_packet(std::unique_ptr<const QUICPacket> packet);
   QUICError _state_handshake_process_zero_rtt_protected_packet(std::unique_ptr<const QUICPacket> packet);
   QUICError _state_connection_established_process_packet(std::unique_ptr<const QUICPacket> packet);
+  QUICError _state_common_receive_packet();
   QUICError _state_common_send_packet();
 
   Ptr<ProxyMutex> _transmitter_mutex;

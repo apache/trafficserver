@@ -97,11 +97,10 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   this->_stream_manager->init(this);
   this->_stream_manager->set_connection(this); // FIXME Want to remove;
 
-  std::shared_ptr<QUICConnectionManager> connectionManager       = std::make_shared<QUICConnectionManager>(this);
   std::shared_ptr<QUICFlowController> flowController             = std::make_shared<QUICFlowController>();
   std::shared_ptr<QUICCongestionController> congestionController = std::make_shared<QUICCongestionController>();
   this->_frame_dispatcher =
-    new QUICFrameDispatcher(connectionManager, this->_stream_manager, flowController, congestionController, this->_loss_detector);
+    new QUICFrameDispatcher(this, this->_stream_manager, flowController, congestionController, this->_loss_detector);
 }
 
 void
@@ -212,7 +211,29 @@ QUICNetVConnection::transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFu
 void
 QUICNetVConnection::close(QUICError error)
 {
-  this->transmit_frame(QUICFrameFactory::create_connection_close_frame(error.code, 0, ""));
+  if (this->handler == reinterpret_cast<ContinuationHandler>(&QUICNetVConnection::state_connection_closed) ||
+      this->handler == reinterpret_cast<ContinuationHandler>(&QUICNetVConnection::state_connection_closing)) {
+    // do nothing
+  } else {
+    DebugQUICCon("Enter state_connection_closing");
+    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
+    this->transmit_frame(QUICFrameFactory::create_connection_close_frame(error.code, 0, ""));
+  }
+}
+
+void
+QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
+{
+  switch (frame->type()) {
+  case QUICFrameType::CONNECTION_CLOSE:
+    DebugQUICCon("Enter state_connection_closed");
+    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
+    break;
+  default:
+    DebugQUICCon("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
+    ink_assert(false);
+    break;
+  }
 }
 
 // TODO: Timeout by active_timeout / inactive_timeout
@@ -286,18 +307,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   QUICError error;
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
-    std::unique_ptr<const QUICPacket> p = std::unique_ptr<const QUICPacket>(this->_packet_recv_queue.dequeue());
-    net_activity(this, this_ethread());
-
-    switch (p->type()) {
-    case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
-    case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
-      error = this->_state_connection_established_process_packet(std::move(p));
-      break;
-    default:
-      error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
-      break;
-    }
+    error = this->_state_common_receive_packet();
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
@@ -306,16 +316,11 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   }
 
   case EVENT_IMMEDIATE: {
-    // Start Implicit Shutdown. Because no network activity for the duration of the idle timeout.
+    // Start Implicit Shutdown. Because of no network activity for the duration of the idle timeout.
     this->remove_from_active_queue();
+    this->close({});
 
     // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
-    DebugQUICCon("Enter state_connection_close");
-    this->_state = QUICConnectionState::Closing;
-    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
-
-    this->close({QUICErrorClass::NONE, QUICErrorCode::QUIC_TRANSPORT_ERROR});
-
     break;
   }
   default:
@@ -331,6 +336,32 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
 }
 
 int
+QUICNetVConnection::state_connection_closing(int event, Event *data)
+{
+  QUICError error;
+  switch (event) {
+  case QUIC_EVENT_PACKET_READ_READY: {
+    error = this->_state_common_receive_packet();
+    break;
+  }
+  case QUIC_EVENT_PACKET_WRITE_READY: {
+    this->_state_common_send_packet();
+    break;
+  }
+  default:
+    DebugQUICCon("Unexpected event: %u", event);
+  }
+
+  // FIXME Enter closed state if CONNECTION_CLOSE was ACKed
+  if (true) {
+    DebugQUICCon("Enter state_connection_closed");
+    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
+  }
+
+  return EVENT_DONE;
+}
+
+int
 QUICNetVConnection::state_connection_closed(int event, Event *data)
 {
   switch (event) {
@@ -339,24 +370,17 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
-    // TODO: Retransmit CONNECTION_CLOSE when Explicit Shutdown (Out of scope from first implementation)
-    // Inplicit Shutdown
-    if (this->_state == QUICConnectionState::Closing) {
-      this->_state_common_send_packet();
-      this->_state = QUICConnectionState::Closed;
+    this->next_inactivity_timeout_at = 0;
+    this->next_activity_timeout_at   = 0;
 
-      this->next_inactivity_timeout_at = 0;
-      this->next_activity_timeout_at   = 0;
+    this->inactivity_timeout_in = 0;
+    this->active_timeout_in     = 0;
 
-      this->inactivity_timeout_in = 0;
-      this->active_timeout_in     = 0;
+    // TODO: Drop record from Connection-ID - QUICNetVConnection table in QUICPacketHandler
+    // Shutdown loss detector
+    this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
 
-      // TODO: Drop record from Connection-ID - QUICNetVConnection table in QUICPacketHandler
-      // Shutdown loss detector
-      this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
-
-      this->free(this_ethread());
-    }
+    this->free(this_ethread());
 
     break;
   }
@@ -490,6 +514,25 @@ QUICNetVConnection::_state_connection_established_process_packet(std::unique_ptr
 
     return QUICError(QUICErrorClass::CRYPTOGRAPHIC);
   }
+}
+
+QUICError
+QUICNetVConnection::_state_common_receive_packet()
+{
+  QUICError error;
+  std::unique_ptr<const QUICPacket> p = std::unique_ptr<const QUICPacket>(this->_packet_recv_queue.dequeue());
+  net_activity(this, this_ethread());
+
+  switch (p->type()) {
+  case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
+  case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
+    error = this->_state_connection_established_process_packet(std::move(p));
+    break;
+  default:
+    error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+    break;
+  }
+  return error;
 }
 
 QUICError

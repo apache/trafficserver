@@ -25,16 +25,16 @@
 
 #include "QUICFrame.h"
 
+class QUICConnection;
 class QUICStreamManager;
 class QUICFlowController;
-class QUICConnectionManager;
 class QUICCongestionController;
 class QUICLossDetector;
 
 class QUICFrameDispatcher
 {
 public:
-  QUICFrameDispatcher(const std::shared_ptr<QUICConnectionManager> cmgr, const std::shared_ptr<QUICStreamManager> smgr,
+  QUICFrameDispatcher(QUICConnection *connection, const std::shared_ptr<QUICStreamManager> smgr,
                       const std::shared_ptr<QUICFlowController> fctlr, const std::shared_ptr<QUICCongestionController> cctlr,
                       const std::shared_ptr<QUICLossDetector> ld);
   /*
@@ -42,12 +42,12 @@ public:
    */
   bool receive_frames(const uint8_t *payload, uint16_t size);
 
-  std::shared_ptr<QUICConnectionManager> connectionManager       = nullptr;
   std::shared_ptr<QUICStreamManager> streamManager               = nullptr;
   std::shared_ptr<QUICFlowController> flowController             = nullptr;
   std::shared_ptr<QUICCongestionController> congestionController = nullptr;
   std::shared_ptr<QUICLossDetector> lossDetector                 = nullptr;
 
 private:
+  QUICConnection *_connection = nullptr;
   QUICFrameFactory _frame_factory;
 };

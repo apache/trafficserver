@@ -143,7 +143,6 @@ test_QUICFrameDispatcher_SOURCES = \
   main.cc \
   test_QUICFrameDispatcher.cc \
   ../QUICFrameDispatcher.cc \
-  ../QUICConnectionManager.cc \
   ../QUICStreamManager.cc \
   ../QUICFlowController.cc \
   ../QUICCongestionController.cc \
@@ -210,7 +209,6 @@ test_QUICStream_SOURCES = \
   test_QUICStream.cc \
   ../QUICStream.cc \
   ../QUICFrameDispatcher.cc \
-  ../QUICConnectionManager.cc \
   ../QUICStreamManager.cc \
   ../QUICFlowController.cc \
   ../QUICCongestionController.cc

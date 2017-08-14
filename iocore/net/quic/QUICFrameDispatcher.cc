@@ -22,7 +22,7 @@
  */
 
 #include "QUICFrameDispatcher.h"
-#include "QUICConnectionManager.h"
+#include "QUICConnection.h"
 #include "QUICStreamManager.h"
 #include "QUICFlowController.h"
 #include "QUICCongestionController.h"
@@ -34,13 +34,12 @@ const static char *tag = "quic_frame_handler";
 //
 // Frame Dispatcher
 //
-QUICFrameDispatcher::QUICFrameDispatcher(const std::shared_ptr<QUICConnectionManager> cmgr,
-                                         const std::shared_ptr<QUICStreamManager> smgr,
+QUICFrameDispatcher::QUICFrameDispatcher(QUICConnection *connection, const std::shared_ptr<QUICStreamManager> smgr,
                                          const std::shared_ptr<QUICFlowController> fctlr,
                                          const std::shared_ptr<QUICCongestionController> cctlr,
                                          const std::shared_ptr<QUICLossDetector> ld)
 {
-  connectionManager    = cmgr;
+  this->_connection    = connection;
   streamManager        = smgr;
   flowController       = fctlr;
   congestionController = cctlr;
@@ -79,12 +78,11 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size)
       break;
     }
     case QUICFrameType::CONNECTION_CLOSE: {
-      connectionManager->handle_frame(frame);
+      this->_connection->handle_frame(frame);
       should_send_ack = true;
       break;
     }
     case QUICFrameType::GOAWAY: {
-      connectionManager->handle_frame(frame);
       should_send_ack = true;
       break;
     }
@@ -103,7 +101,6 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size)
       break;
     }
     case QUICFrameType::PING: {
-      connectionManager->handle_frame(frame);
       should_send_ack = true;
       break;
     }

@@ -32,15 +32,15 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   uint8_t payload[] = {0x01};
   QUICStreamFrame streamFrame(payload, 1, 0x03, 0);
 
-  auto connectionManager    = std::make_shared<MockQUICConnectionManager>();
+  auto connection           = new MockQUICConnection();
   auto streamManager        = std::make_shared<MockQUICStreamManager>();
   auto flowController       = std::make_shared<MockQUICFlowController>();
   auto congestionController = std::make_shared<MockQUICCongestionController>();
   auto lossDetector         = std::make_shared<MockQUICLossDetector>();
-  QUICFrameDispatcher quicFrameDispatcher(connectionManager, streamManager, flowController, congestionController, lossDetector);
+  QUICFrameDispatcher quicFrameDispatcher(connection, streamManager, flowController, congestionController, lossDetector);
 
   // Initial state
-  CHECK(connectionManager->getTotalFrameCount() == 0);
+  CHECK(connection->getTotalFrameCount() == 0);
   CHECK(streamManager->getTotalFrameCount() == 0);
   CHECK(flowController->getTotalFrameCount() == 0);
   CHECK(congestionController->getTotalFrameCount() == 0);
@@ -50,7 +50,7 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   size_t len        = 0;
   streamFrame.store(buf, &len);
   quicFrameDispatcher.receive_frames(buf, len);
-  CHECK(connectionManager->getTotalFrameCount() == 0);
+  CHECK(connection->getTotalFrameCount() == 0);
   CHECK(streamManager->getTotalFrameCount() == 1);
   CHECK(flowController->getTotalFrameCount() == 1);
   CHECK(congestionController->getTotalFrameCount() == 1);
