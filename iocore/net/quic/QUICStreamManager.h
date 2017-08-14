@@ -25,11 +25,10 @@
 
 #include "QUICTypes.h"
 #include "QUICStream.h"
+#include "QUICConnection.h"
 #include "QUICFrameHandler.h"
 #include "QUICFrame.h"
 #include "QUICFrameTransmitter.h"
-
-class QUICNetVConnection;
 
 class QUICStreamManager : public QUICFrameHandler
 {
@@ -37,7 +36,7 @@ public:
   QUICStreamManager(){};
 
   int init(QUICFrameTransmitter *tx);
-  void set_connection(QUICNetVConnection *vc); // FIXME Want to remove.
+  void set_connection(QUICConnection *qc); // FIXME Want to remove.
   virtual void handle_frame(std::shared_ptr<const QUICFrame>) override;
   void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame);
 
@@ -47,7 +46,7 @@ private:
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   QUICStream *_find_stream(QUICStreamId id);
 
-  QUICNetVConnection *_vc   = nullptr;
+  QUICConnection *_qc   = nullptr;
   QUICFrameTransmitter *_tx = nullptr;
 
 private:

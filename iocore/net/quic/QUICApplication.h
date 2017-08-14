@@ -23,10 +23,11 @@
 
 #pragma once
 
-#include "I_VConnection.h"
+#include "../../eventsystem/I_EventSystem.h"
+#include "../../eventsystem/I_IOBuffer.h"
 #include "QUICTypes.h"
 
-class QUICNetVConnection;
+class QUICConnection;
 class QUICStream;
 class QUICApplication;
 
@@ -62,7 +63,7 @@ private:
 class QUICApplication : public Continuation
 {
 public:
-  QUICApplication(ProxyMutex *m, QUICNetVConnection *vc);
+  QUICApplication(ProxyMutex *m, QUICConnection *qc);
 
   void set_stream(QUICStream *stream);
   bool is_stream_set(QUICStream *stream);
@@ -72,7 +73,7 @@ public:
 protected:
   QUICStreamIO *_find_stream_io(QUICStreamId id);
 
-  QUICNetVConnection *_client_vc = nullptr;
+  QUICConnection *_client_qc = nullptr;
 
 private:
   std::map<QUICStreamId, QUICStreamIO *> _stream_map;

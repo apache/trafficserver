@@ -24,10 +24,9 @@
 #ifndef __QUIC_HANDSHAKE__
 #define __QUIC_HANDSHAKE__
 
-#include "I_VConnection.h"
+#include "QUICConnection.h"
 #include "QUICApplication.h"
 
-class QUICNetVConnection;
 
 /**
  * @class QUICHandshake
@@ -49,7 +48,7 @@ class QUICNetVConnection;
 class QUICHandshake : public QUICApplication
 {
 public:
-  QUICHandshake(ProxyMutex *m, QUICNetVConnection *vc);
+  QUICHandshake(ProxyMutex *m, QUICConnection *qc);
 
   int state_read_client_hello(int event, Event *data);
   int state_read_client_finished(int event, Event *data);

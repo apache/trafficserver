@@ -81,9 +81,9 @@ QUICStreamIO::write_reenable()
 //
 // QUICApplication
 //
-QUICApplication::QUICApplication(ProxyMutex *m, QUICNetVConnection *vc) : Continuation(m)
+QUICApplication::QUICApplication(ProxyMutex *m, QUICConnection *qc) : Continuation(m)
 {
-  this->_client_vc = vc;
+  this->_client_qc = qc;
 }
 
 // @brief Bind stream and application

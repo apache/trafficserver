@@ -27,6 +27,13 @@
 #include "QUICFrameTransmitter.h"
 #include "QUICFrameHandler.h"
 
+class QUICApplication;
+class QUICCrypto;
+
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
 {
+public:
+  virtual QUICApplication *get_application(QUICStreamId stream_id) = 0;
+  virtual QUICCrypto *get_crypto() = 0;
+  virtual void close(QUICError error) = 0;
 };

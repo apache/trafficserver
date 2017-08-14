@@ -55,20 +55,3 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   CHECK(flowController->getTotalFrameCount() == 1);
   CHECK(congestionController->getTotalFrameCount() == 1);
 }
-
-// Stubs
-QUICApplication *QUICNetVConnection::get_application(QUICStreamId)
-{
-  return nullptr;
-}
-
-QUICCrypto *
-QUICNetVConnection::get_crypto()
-{
-  return nullptr;
-}
-
-void QUICNetVConnection::close(QUICError)
-{
-  return;
-}

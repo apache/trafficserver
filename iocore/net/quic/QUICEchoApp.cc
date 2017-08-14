@@ -24,12 +24,11 @@
 #include "QUICEchoApp.h"
 
 #include "P_Net.h"
-#include "P_QUICNetVConnection.h"
 #include "QUICDebugNames.h"
 
 const static char *tag = "quic_echo_app";
 
-QUICEchoApp::QUICEchoApp(ProxyMutex *m, QUICNetVConnection *vc) : QUICApplication(m, vc)
+QUICEchoApp::QUICEchoApp(ProxyMutex *m, QUICConnection *qc) : QUICApplication(m, qc)
 {
   SET_HANDLER(&QUICEchoApp::main_event_handler);
 }

@@ -156,15 +156,16 @@ public:
   uint32_t maximum_quic_packet_size();
   uint32_t minimum_quic_packet_size();
   void push_packet(std::unique_ptr<const QUICPacket> packet);
-  void close(QUICError error);
   void free(EThread *t) override;
 
   UDPConnection *get_udp_con();
-  QUICApplication *get_application(QUICStreamId stream_id);
-  QUICCrypto *get_crypto();
-
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
+
+  // QUICConnection
+  QUICApplication *get_application(QUICStreamId stream_id) override;
+  QUICCrypto *get_crypto() override;
+  void close(QUICError error) override;
 
   // QUICConnection (QUICPacketTransmitter)
   virtual void transmit_packet(std::unique_ptr<const QUICPacket> packet) override;

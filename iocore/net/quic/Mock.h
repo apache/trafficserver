@@ -38,6 +38,20 @@ public:
   {
   }
 
+  QUICApplication *get_application(QUICStreamId stream_id) override
+  {
+    return nullptr;
+  }
+
+  QUICCrypto *get_crypto() override
+  {
+    return nullptr;
+  }
+
+  void close(QUICError error) override
+  {
+  }
+
   int
   getTotalFrameCount()
   {

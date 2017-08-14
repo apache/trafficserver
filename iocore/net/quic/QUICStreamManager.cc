@@ -24,7 +24,6 @@
 #include <QUICStreamManager.h>
 
 #include <QUICApplication.h>
-#include <P_QUICNetVConnection.h>
 
 const static char *tag = "quic_stream_manager";
 
@@ -39,9 +38,9 @@ QUICStreamManager::init(QUICFrameTransmitter *tx)
 }
 
 void
-QUICStreamManager::set_connection(QUICNetVConnection *vc)
+QUICStreamManager::set_connection(QUICConnection *qc)
 {
-  this->_vc = vc;
+  this->_qc = qc;
 }
 
 void
@@ -62,7 +61,7 @@ void
 QUICStreamManager::_handle_stream_frame(std::shared_ptr<const QUICStreamFrame> frame)
 {
   QUICStream *stream           = this->_find_or_create_stream(frame->stream_id());
-  QUICApplication *application = this->_vc->get_application(frame->stream_id());
+  QUICApplication *application = this->_qc->get_application(frame->stream_id());
 
   if (!application->is_stream_set(stream)) {
     application->set_stream(stream);

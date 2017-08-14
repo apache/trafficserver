@@ -23,10 +23,6 @@
 
 #include "QUICHandshake.h"
 
-#include "P_Net.h"
-#include "P_QUICNetVConnection.h"
-#include "QUICApplication.h"
-
 #define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                           \
   {                                                                                                                               \
     int i, j;                                                                                                                     \
@@ -52,7 +48,7 @@ const static int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 const static int MAX_HANDSHAKE_MSG_LEN = 65527;
 
-QUICHandshake::QUICHandshake(ProxyMutex *m, QUICNetVConnection *vc) : QUICApplication(m, vc)
+QUICHandshake::QUICHandshake(ProxyMutex *m, QUICConnection *qc) : QUICApplication(m, qc)
 {
   SET_HANDLER(&QUICHandshake::state_read_client_hello);
 }
@@ -60,7 +56,7 @@ QUICHandshake::QUICHandshake(ProxyMutex *m, QUICNetVConnection *vc) : QUICApplic
 bool
 QUICHandshake::is_completed()
 {
-  QUICCrypto *crypto = this->_client_vc->get_crypto();
+  QUICCrypto *crypto = this->_client_qc->get_crypto();
   return crypto->is_handshake_finished();
 }
 
@@ -87,7 +83,7 @@ QUICHandshake::state_read_client_hello(int event, Event *data)
   }
 
   if (error.cls != QUICErrorClass::NONE) {
-    this->_client_vc->close(error);
+    this->_client_qc->close(error);
     Debug(tag, "Enter state_closed");
     SET_HANDLER(&QUICHandshake::state_closed);
   }
@@ -111,7 +107,7 @@ QUICHandshake::state_read_client_finished(int event, Event *data)
   }
 
   if (error.cls != QUICErrorClass::NONE) {
-    this->_client_vc->close(error);
+    this->_client_qc->close(error);
     Debug(tag, "Enter state_closed");
     SET_HANDLER(&QUICHandshake::state_closed);
   }
@@ -160,7 +156,7 @@ QUICHandshake::_process_client_hello()
   I_WANNA_DUMP_THIS_BUF(msg, msg_len);
   // <----- DEBUG -----
 
-  QUICCrypto *crypto = this->_client_vc->get_crypto();
+  QUICCrypto *crypto = this->_client_qc->get_crypto();
 
   uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t server_hello_len                     = 0;
@@ -204,7 +200,7 @@ QUICHandshake::_process_client_finished()
   I_WANNA_DUMP_THIS_BUF(msg, msg_len);
   // <----- DEBUG -----
 
-  QUICCrypto *crypto = this->_client_vc->get_crypto();
+  QUICCrypto *crypto = this->_client_qc->get_crypto();
 
   uint8_t out[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t out_len                     = 0;
@@ -236,7 +232,7 @@ QUICHandshake::_process_client_finished()
 QUICError
 QUICHandshake::_process_handshake_complete()
 {
-  QUICCrypto *crypto = this->_client_vc->get_crypto();
+  QUICCrypto *crypto = this->_client_qc->get_crypto();
   int r              = crypto->setup_session();
 
   if (r) {

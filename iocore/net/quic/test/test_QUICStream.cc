@@ -121,20 +121,3 @@ TEST_CASE("QUICStream_assembling_byte_stream_3", "[quic]")
   CHECK(memcmp(buf, payload, len) == 0);
 }
 }
-
-// Stubs
-QUICApplication *QUICNetVConnection::get_application(QUICStreamId)
-{
-  return nullptr;
-}
-
-QUICCrypto *
-QUICNetVConnection::get_crypto()
-{
-  return nullptr;
-}
-
-void QUICNetVConnection::close(QUICError)
-{
-  return;
-}

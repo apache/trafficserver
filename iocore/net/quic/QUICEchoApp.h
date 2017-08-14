@@ -24,7 +24,6 @@
 #ifndef __QUIC_ECHOAPP__
 #define __QUIC_ECHOAPP__
 
-#include "I_VConnection.h"
 #include "QUICApplication.h"
 
 /**
@@ -35,7 +34,7 @@
 class QUICEchoApp : public QUICApplication
 {
 public:
-  QUICEchoApp(ProxyMutex *m, QUICNetVConnection *vc);
+  QUICEchoApp(ProxyMutex *m, QUICConnection *qc);
 
   int main_event_handler(int event, Event *data);
 };
