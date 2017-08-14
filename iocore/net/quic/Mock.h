@@ -36,6 +36,8 @@ public:
   void
   handle_frame(std::shared_ptr<const QUICFrame> f) override
   {
+    ++_frameCount[static_cast<int>(f->type())];
+    ++_totalFrameCount;
   }
 
   QUICApplication *get_application(QUICStreamId stream_id) override
@@ -62,6 +64,7 @@ public:
   int _retransmit_count = 0;
   Ptr<ProxyMutex> _mutex;
   int _totalFrameCount = 0;
+  int _frameCount[256] = {0};
 };
 
 class MockQUICPacketTransmitter : public QUICPacketTransmitter

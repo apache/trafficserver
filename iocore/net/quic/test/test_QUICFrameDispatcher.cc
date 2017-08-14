@@ -54,4 +54,13 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   CHECK(streamManager->getTotalFrameCount() == 1);
   CHECK(flowController->getTotalFrameCount() == 1);
   CHECK(congestionController->getTotalFrameCount() == 1);
+
+  // CONNECTION_CLOSE frame
+  QUICConnectionCloseFrame connectionCloseFrame({});
+  connectionCloseFrame.store(buf, &len);
+  quicFrameDispatcher.receive_frames(buf, len);
+  CHECK(connection->getTotalFrameCount() == 1);
+  CHECK(streamManager->getTotalFrameCount() == 1);
+  CHECK(flowController->getTotalFrameCount() == 1);
+  CHECK(congestionController->getTotalFrameCount() == 1);
 }
