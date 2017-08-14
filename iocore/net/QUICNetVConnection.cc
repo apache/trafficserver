@@ -41,7 +41,8 @@
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
 
-const static char *tag = "quic_net";
+#define DebugQUICCon(fmt, ...) \
+  Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
 
 const static uint32_t MINIMUM_MTU         = 1280;
 const static uint32_t MAX_PACKET_OVERHEAD = 25; // Max long header len(17) + FNV-1a hash len(8)
@@ -106,7 +107,7 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 void
 QUICNetVConnection::free(EThread *t)
 {
-  Debug(tag, "Free connection: %p", this);
+  DebugQUICCon("Free connection");
 
   this->_udp_con        = nullptr;
   this->_packet_handler = nullptr;
@@ -196,14 +197,14 @@ QUICNetVConnection::get_transmitter_mutex()
 void
 QUICNetVConnection::push_packet(std::unique_ptr<QUICPacket const> packet)
 {
-  Debug(tag, "Type=%s Size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
+  DebugQUICCon("Type=%s Size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
   this->_packet_recv_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
 }
 
 void
 QUICNetVConnection::transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame)
 {
-  Debug(tag, "Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+  DebugQUICCon("Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
   this->_frame_buffer.push(std::move(frame));
   eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
 }
@@ -255,16 +256,16 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   }
   default:
-    Debug(tag, "Unexpected event: %u", event);
+    DebugQUICCon("Unexpected event: %u", event);
   }
 
   if (error.cls != QUICErrorClass::NONE) {
     // TODO: Send error if needed
-    Debug(tag, "QUICError: cls=%u, code=0x%x", static_cast<unsigned int>(error.cls), static_cast<unsigned int>(error.code));
+    DebugQUICCon("QUICError: cls=%u, code=0x%x", static_cast<unsigned int>(error.cls), static_cast<unsigned int>(error.code));
   }
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-    Debug(tag, "Enter state_connection_established");
+    DebugQUICCon("Enter state_connection_established");
     this->_state = QUICConnectionState::Established;
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
@@ -309,7 +310,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     this->remove_from_active_queue();
 
     // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
-    Debug(tag, "Enter state_connection_close");
+    DebugQUICCon("Enter state_connection_close");
     this->_state = QUICConnectionState::Closing;
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
 
@@ -318,12 +319,12 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   default:
-    Debug(tag, "Unexpected event: %u", event);
+    DebugQUICCon("Unexpected event: %u", event);
   }
 
   if (error.cls != QUICErrorClass::NONE) {
     // TODO: Send error if needed
-    Debug(tag, "QUICError: cls=%u, code=0x%x", static_cast<unsigned int>(error.cls), static_cast<unsigned int>(error.code));
+    DebugQUICCon("QUICError: cls=%u, code=0x%x", static_cast<unsigned int>(error.cls), static_cast<unsigned int>(error.code));
   }
 
   return EVENT_CONT;
@@ -360,7 +361,7 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     break;
   }
   default:
-    Debug(tag, "Unexpected event: %u", event);
+    DebugQUICCon("Unexpected event: %u", event);
   }
 
   return EVENT_DONE;
@@ -379,7 +380,7 @@ QUICNetVConnection::get_application(QUICStreamId stream_id)
     return static_cast<QUICApplication *>(this->_handshake_handler);
   } else {
     if (!this->_application) {
-      Debug(tag, "setup quic application");
+      DebugQUICCon("setup quic application");
       // TODO: Instantiate negotiated application
       const uint8_t *application = this->_handshake_handler->negotiated_application_name();
       if (memcmp(application, "hq", 2) == 0) {
@@ -427,17 +428,17 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
     }
     if (packet->version()) {
       if (this->_version_negotiator->negotiate(packet.get()) == QUICVersionNegotiationStatus::NEGOTIATED) {
-        Debug(tag, "Version negotiation succeeded: %x", packet->version());
+        DebugQUICCon("Version negotiation succeeded: %x", packet->version());
         this->_packet_factory.set_version(packet->version());
         // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
         if (packet->has_valid_fnv1a_hash()) {
           this->_handshake_handler = new QUICHandshake(new_ProxyMutex(), this);
           this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size());
         } else {
-          Debug(tag, "Invalid FNV-1a hash value");
+          DebugQUICCon("Invalid FNV-1a hash value");
         }
       } else {
-        Debug(tag, "Version negotiation failed: %x", packet->version());
+        DebugQUICCon("Version negotiation failed: %x", packet->version());
       }
     } else {
       return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
@@ -454,7 +455,7 @@ QUICNetVConnection::_state_handshake_process_client_cleartext_packet(std::unique
   if (packet->has_valid_fnv1a_hash()) {
     this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
   } else {
-    Debug(tag, "Invalid FNV-1a hash value");
+    DebugQUICCon("Invalid FNV-1a hash value");
   }
   return QUICError(QUICErrorClass::NONE);
 }
@@ -478,14 +479,14 @@ QUICNetVConnection::_state_connection_established_process_packet(std::unique_ptr
 
   if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, packet->payload(), packet->payload_size(),
                              packet->packet_number(), packet->header(), packet->header_size(), packet->key_phase())) {
-    Debug(tag, "Decrypt Packet, pkt_num: %" PRIu64 ", header_len: %hu, payload_len: %zu", packet->packet_number(),
-          packet->header_size(), plain_txt_len);
+    DebugQUICCon("Decrypt Packet, pkt_num: %" PRIu64 ", header_len: %hu, payload_len: %zu", packet->packet_number(),
+                 packet->header_size(), plain_txt_len);
 
     this->_recv_and_ack(plain_txt.get(), plain_txt_len, packet->packet_number());
 
     return QUICError(QUICErrorClass::NONE);
   } else {
-    Debug(tag, "CRYPTOGRAPHIC Error");
+    DebugQUICCon("CRYPTOGRAPHIC Error");
 
     return QUICError(QUICErrorClass::CRYPTOGRAPHIC);
   }
@@ -543,7 +544,7 @@ QUICNetVConnection::_packetize_frames()
       buf = ats_unique_malloc(max_size);
     }
     size_t l = 0;
-    Debug(tag, "type=%s", QUICDebugNames::frame_type(frame->type()));
+    DebugQUICCon("type=%s", QUICDebugNames::frame_type(frame->type()));
     frame->store(buf.get() + len, &l);
     len += l;
   }
@@ -576,7 +577,7 @@ std::unique_ptr<QUICPacket>
 QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmittable, QUICPacketType type)
 {
   std::unique_ptr<QUICPacket> packet;
-  Debug(tag, "retransmittable %u", retransmittable);
+  DebugQUICCon("retransmittable %u", retransmittable);
 
   switch (type) {
   case QUICPacketType::SERVER_CLEARTEXT:
