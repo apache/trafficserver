@@ -51,7 +51,6 @@ ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
 QUICNetVConnection::QUICNetVConnection() : UnixNetVConnection()
 {
-  this->_state = QUICConnectionState::Handshake;
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
 }
 
@@ -287,7 +286,6 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
     DebugQUICCon("Enter state_connection_established");
-    this->_state = QUICConnectionState::Established;
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
     QUICConfig::scoped_config params;

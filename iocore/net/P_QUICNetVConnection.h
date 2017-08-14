@@ -91,15 +91,6 @@ typedef enum {
   QUIC_HOOK_OP_LAST = QUIC_HOOK_OP_TERMINATE ///< End marker value.
 } QuicVConnOp;
 
-enum class QUICConnectionState {
-  Open = 0,
-  Handshake,
-  Established,
-  TimeWait,
-  Closing,
-  Closed,
-};
-
 //////////////////////////////////////////////////////////////////
 //
 //  class NetVConnection
@@ -193,7 +184,6 @@ private:
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
   QUICAckFrameCreator _ack_frame_creator;
-  QUICConnectionState _state = QUICConnectionState::Open;
 
   uint32_t _pmtu = 1280;
 
