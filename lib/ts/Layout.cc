@@ -29,7 +29,6 @@
 #include "ts/I_Layout.h"
 
 #include <fstream>
-#include <iostream>
 #include <unordered_map>
 
 static Layout *layout = nullptr;
@@ -125,7 +124,6 @@ Layout::check_runroot()
     if ((len + 1) > PATH_NAME_MAX) {
       ink_fatal("TS_RUNROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
     }
-    std::cout << "TS_RUNROOT initiated..." << std::endl;
     std::ifstream file;
     if (env_path.back() != '/') {
       env_path.append("/");
