@@ -184,7 +184,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Process command line arguments and dump into variables
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
-  runroot_handler(argv);
+  runroot_handler(argv, 0 != cl.json);
 
   if (cl.features) {
     produce_features(0 != cl.json);
