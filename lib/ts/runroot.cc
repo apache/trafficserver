@@ -41,7 +41,6 @@ datadir, libexecdir, libdir, runtimedir, infodir, cachedir.
 
 #include <vector>
 #include <string>
-#include <iostream>
 #include <fstream>
 #include <set>
 #include <unistd.h>
@@ -51,7 +50,7 @@ datadir, libexecdir, libdir, runtimedir, infodir, cachedir.
 // the function for the checking of the yaml file in parent path
 // if found return the parent path containing the yaml file
 static std::string
-check_parent_path(const std::string &path)
+check_parent_path(const std::string &path, bool json = false)
 {
   std::string whole_path = path;
   if (whole_path.back() == '/')
@@ -63,7 +62,8 @@ check_parent_path(const std::string &path)
     std::ifstream parent_check_file;
     parent_check_file.open(parent_yaml_path);
     if (parent_check_file.good()) {
-      std::cout << "using parent of bin/current working dir" << std::endl;
+      if (!json)
+        ink_notice("using parent of bin/current working dir");
       return whole_path;
     }
   }
@@ -72,7 +72,7 @@ check_parent_path(const std::string &path)
 
 // handler for ts runroot
 void
-runroot_handler(const char **argv)
+runroot_handler(const char **argv, bool json = false)
 {
   std::string command = {};
   std::string arg     = {};
@@ -102,31 +102,33 @@ runroot_handler(const char **argv)
     std::string yaml_path = path + "runroot_path.yaml";
     yaml_checkfile.open(yaml_path);
     if (yaml_checkfile.good()) {
-      std::cout << "using command line path as RUNROOT" << std::endl;
+      if (!json)
+        ink_notice("using command line path as RUNROOT");
       setenv("USING_RUNROOT", path.c_str(), true);
       return;
     } else {
-      ink_warning("bad RUNROOT");
+      if (!json)
+        ink_warning("bad RUNROOT");
     }
   }
   // 2. argv provided invalid/no yaml file, then check env variable
   if (getenv("TS_RUNROOT") != nullptr) {
     setenv("USING_RUNROOT", getenv("TS_RUNROOT"), true);
-    std::cout << "using the environment variable TS_RUNROOT" << std::endl;
+    if (!json)
+      ink_notice("using the environment variable TS_RUNROOT");
     return;
   }
   // 3. find parent path of bin/pwd to check
-  char cwd[MAX_CWD_LEN];
-  getcwd(cwd, sizeof(cwd));
-  std::string RealBinPath = realpath(argv[0], nullptr); // bin path
-
-  std::vector<std::string> TwoPath = {RealBinPath, cwd};
-  for (auto it : TwoPath) {
-    std::string path = check_parent_path(it);
-    if (!path.empty()) {
-      setenv("USING_RUNROOT", path.c_str(), true);
-      return;
+  char cwd[MAX_CWD_LEN]      = {0};
+  char RealBinPath[PATH_MAX] = {0};
+  if ((argv[0] != nullptr) && (getcwd(cwd, sizeof(cwd)) != nullptr) && (realpath(argv[0], RealBinPath) != nullptr)) {
+    std::vector<std::string> TwoPath = {RealBinPath, cwd};
+    for (auto it : TwoPath) {
+      std::string path = check_parent_path(it);
+      if (!path.empty()) {
+        setenv("USING_RUNROOT", path.c_str(), true);
+        return;
+      }
     }
   }
-  std::cout << "Failed to initialize TS_RUNROOT, using default path..." << std::endl;
 }
