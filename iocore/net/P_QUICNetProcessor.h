@@ -50,7 +50,7 @@ struct NetAccept;
 //  class QUICNetProcessor
 //
 //////////////////////////////////////////////////////////////////
-struct QUICNetProcessor : public UnixNetProcessor {
+class QUICNetProcessor : public UnixNetProcessor {
 public:
   QUICNetProcessor();
   virtual ~QUICNetProcessor();
