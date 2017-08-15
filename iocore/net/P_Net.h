@@ -109,9 +109,11 @@ extern RecRawStatBlock *net_rsb;
 #include "P_SSLNetAccept.h"
 #include "P_SSLCertLookup.h"
 
+#if TS_USE_QUIC == 1
 #include "P_QUICNetVConnection.h"
 #include "P_QUICNetProcessor.h"
 #include "P_QUICPacketHandler.h"
+#endif
 // #include "P_QUICCertLookup.h"
 
 #undef NET_SYSTEM_MODULE_VERSION
