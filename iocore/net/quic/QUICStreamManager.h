@@ -46,7 +46,7 @@ private:
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   QUICStream *_find_stream(QUICStreamId id);
 
-  QUICConnection *_qc   = nullptr;
+  QUICConnection *_qc       = nullptr;
   QUICFrameTransmitter *_tx = nullptr;
 
 private:

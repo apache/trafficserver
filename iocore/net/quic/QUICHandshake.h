@@ -27,7 +27,6 @@
 #include "QUICConnection.h"
 #include "QUICApplication.h"
 
-
 /**
  * @class QUICHandshake
  * @brief Do handshake as a QUIC application

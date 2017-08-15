@@ -134,6 +134,12 @@ QUICNetVConnection::reenable(VIO *vio)
 }
 
 uint32_t
+QUICNetVConnection::pmtu()
+{
+  return this->_pmtu;
+}
+
+uint32_t
 QUICNetVConnection::minimum_quic_packet_size()
 {
   if (this->options.ip_family == PF_INET6) {

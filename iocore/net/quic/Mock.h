@@ -40,17 +40,38 @@ public:
     ++_totalFrameCount;
   }
 
-  QUICApplication *get_application(QUICStreamId stream_id) override
+  QUICApplication *
+  get_application(QUICStreamId stream_id) override
   {
     return nullptr;
   }
 
-  QUICCrypto *get_crypto() override
+  QUICCrypto *
+  get_crypto() override
   {
     return nullptr;
   }
 
-  void close(QUICError error) override
+  uint32_t
+  minimum_quic_packet_size() override
+  {
+    return 1200;
+  }
+
+  uint32_t
+  maximum_quic_packet_size() override
+  {
+    return 1200;
+  }
+
+  uint32_t
+  pmtu() override
+  {
+    return 1280;
+  }
+
+  void
+  close(QUICError error) override
   {
   }
 

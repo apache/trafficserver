@@ -153,8 +153,6 @@ public:
   int state_connection_closing(int event, Event *data);
   int state_connection_closed(int event, Event *data);
   void start(SSL_CTX *);
-  uint32_t maximum_quic_packet_size();
-  uint32_t minimum_quic_packet_size();
   void push_packet(std::unique_ptr<const QUICPacket> packet);
   void free(EThread *t) override;
 
@@ -165,6 +163,9 @@ public:
   // QUICConnection
   QUICApplication *get_application(QUICStreamId stream_id) override;
   QUICCrypto *get_crypto() override;
+  uint32_t maximum_quic_packet_size() override;
+  uint32_t minimum_quic_packet_size() override;
+  uint32_t pmtu() override;
   void close(QUICError error) override;
 
   // QUICConnection (QUICPacketTransmitter)

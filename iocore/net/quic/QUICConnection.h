@@ -34,6 +34,9 @@ class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter
 {
 public:
   virtual QUICApplication *get_application(QUICStreamId stream_id) = 0;
-  virtual QUICCrypto *get_crypto() = 0;
-  virtual void close(QUICError error) = 0;
+  virtual QUICCrypto *get_crypto()                                 = 0;
+  virtual uint32_t maximum_quic_packet_size()                      = 0;
+  virtual uint32_t minimum_quic_packet_size()                      = 0;
+  virtual uint32_t pmtu()                                          = 0;
+  virtual void close(QUICError error)                              = 0;
 };

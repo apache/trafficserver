@@ -135,10 +135,13 @@ QUICPacketHandler::send_packet(const QUICPacket &packet, QUICNetVConnection *vc)
     this->_connections.put(packet.connection_id(), vc);
   }
 
-  uint8_t udp_payload[65536];
   size_t udp_len;
-  packet.store(udp_payload, &udp_len);
-  UDPPacket *udpPkt = new_UDPPacket(vc->con.addr, 0, reinterpret_cast<char *>(udp_payload), udp_len);
+  Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
+  udp_payload->alloc(iobuffer_size_to_index(vc->pmtu()));
+  packet.store(reinterpret_cast<uint8_t *>(udp_payload->end()), &udp_len);
+  udp_payload->fill(udp_len);
+
+  UDPPacket *udpPkt = new_UDPPacket(vc->con.addr, 0, udp_payload);
 
   // NOTE: p will be enqueued to udpOutQueue of UDPNetHandler
   ip_port_text_buffer ipb;
