@@ -327,7 +327,7 @@ QUICAckFrame::store(uint8_t *buf, size_t *len) const
     QUICTypeUtil::write_uint_as_nbytes(this->_largest_acknowledged, 4, p, &n);
   } else {
     buf[0] += 0x03 << 2;
-    QUICTypeUtil::write_uint_as_nbytes(this->_largest_acknowledged, 6, p, &n);
+    QUICTypeUtil::write_uint_as_nbytes(this->_largest_acknowledged, 8, p, &n);
   }
   p += n;
 
@@ -439,14 +439,10 @@ QUICAckFrame::_get_largest_acknowledged_length() const
    * 0 -> 1 byte
    * 1 -> 2 byte
    * 2 -> 4 byte
-   * 3 -> 6 byte
+   * 3 -> 8 byte
   */
   int n = (this->_buf[0] & 0x0c) >> 2;
-  if (n == 0) {
-    return 1;
-  } else {
-    return n * 2;
-  }
+  return 0x01 << n;
 }
 
 size_t

@@ -48,7 +48,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   CHECK(packet->type() == QUICPacketType::VERSION_NEGOTIATION);
   CHECK(packet->connection_id() == client_initial_packet.connection_id());
   CHECK(packet->packet_number() == client_initial_packet.packet_number());
-  CHECK(memcmp(packet->payload(), "\xff\x00\x00\x04", 4) == 0);
+  CHECK(memcmp(packet->payload(), "\xff\x00\x00\x05", 4) == 0);
 }
 
 TEST_CASE("QUICPacketFactory_Create_ServerCleartextPacket", "[quic]")

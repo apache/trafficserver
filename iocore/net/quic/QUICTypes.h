@@ -45,7 +45,13 @@ typedef uint32_t QUICVersion;
 typedef uint32_t QUICStreamId;
 typedef uint64_t QUICOffset;
 
-extern const QUICVersion QUIC_SUPPORTED_VERSIONS[1];
+// TODO: Update version number
+// Note: You also need to update tests for VersionNegotiationPacket, if you change the number of versions
+// Prefix for drafts (0xff000000) + draft number
+constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
+  0xff000005,
+};
+
 extern const QUICStreamId STREAM_ID_FOR_HANDSHAKE;
 
 enum class QUICPacketType : int {

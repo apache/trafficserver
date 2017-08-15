@@ -23,12 +23,6 @@
 
 #include "QUICTypes.h"
 
-// TODO: Update version number
-// Note: You need to update QUICTypes.h if you change the number of versions
-const QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
-  0xff000004, // Prefix for drafts (0xff000000) + draft number
-};
-
 const QUICStreamId STREAM_ID_FOR_HANDSHAKE = 0;
 
 bool

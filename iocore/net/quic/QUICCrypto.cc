@@ -36,11 +36,11 @@ constexpr static char tag[] = "quic_crypto";
 constexpr static ts::StringView exporter_label_client_1_rtt("EXPORTER-QUIC client 1-RTT Secret", ts::StringView::literal);
 constexpr static ts::StringView exporter_label_server_1_rtt("EXPORTER-QUIC server 1-RTT Secret", ts::StringView::literal);
 
-// [quic-tls draft-04] "TLS 1.3, " + Label
-// constexpr static ts::StringView expand_label_client_1_rtt("TLS 1.3, QUIC client 1-RTT secret", ts::StringView::literal);
-// constexpr static ts::StringView expand_label_server_1_rtt("TLS 1.3, QUIC server 1-RTT secret", ts::StringView::literal);
-constexpr static ts::StringView expand_label_key("TLS 1.3, key", ts::StringView::literal);
-constexpr static ts::StringView expand_label_iv("TLS 1.3, iv", ts::StringView::literal);
+// [quic-tls draft-05] "tls13 " + Label
+// constexpr static ts::StringView expand_label_client_1_rtt("tls13 QUIC client 1-RTT secret", ts::StringView::literal);
+// constexpr static ts::StringView expand_label_server_1_rtt("tls13 QUIC server 1-RTT secret", ts::StringView::literal);
+constexpr static ts::StringView expand_label_key("tls13 key", ts::StringView::literal);
+constexpr static ts::StringView expand_label_iv("tls13 iv", ts::StringView::literal);
 
 //
 // QUICPacketProtection
