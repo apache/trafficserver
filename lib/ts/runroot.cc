@@ -70,6 +70,15 @@ check_parent_path(const std::string &path, bool json = false)
   return {};
 }
 
+// until I get a <filesystem> impl in
+bool
+is_directory(const char *directory)
+{
+  struct stat buffer;
+  int result = stat(directory, &buffer);
+  return (!result && (S_IFDIR & buffer.st_mode)) ? true : false;
+}
+
 // handler for ts runroot
 void
 runroot_handler(const char **argv, bool json = false)
@@ -112,8 +121,9 @@ runroot_handler(const char **argv, bool json = false)
     }
   }
   // 2. argv provided invalid/no yaml file, then check env variable
-  if (getenv("TS_RUNROOT") != nullptr) {
-    setenv("USING_RUNROOT", getenv("TS_RUNROOT"), true);
+  char *env_val = getenv("TS_RUNROOT");
+  if ((env_val != nullptr) && is_directory(env_val)) {
+    setenv("USING_RUNROOT", env_val, true);
     if (!json)
       ink_notice("using the environment variable TS_RUNROOT");
     return;
