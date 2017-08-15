@@ -19,7 +19,11 @@
 include $(top_srcdir)/build/tidy.mk
 
 # Note that hdrs is targeted from ../Makefile.am
-SUBDIRS = congest http http2 hq logging config
+SUBDIRS = congest http http2 logging config
+if ENABLE_QUIC
+SUBDIRS += hq
+endif
+
 noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \
@@ -180,7 +184,6 @@ endif
 traffic_server_LDADD = \
   http/libhttp.a \
   http2/libhttp2.a \
-  hq/libhq.a \
   http/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
   logging/liblogging.a \
@@ -197,6 +200,12 @@ traffic_server_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/lib/bindings/libbindings.la
 
+if ENABLE_QUIC
+traffic_server_LDADD += \
+  hq/libhq.a \
+  $(top_builddir)/iocore/net/quic/libquic.a
+endif
+
 if BUILD_LUAJIT
 traffic_server_LDADD += \
   $(top_builddir)/lib/luajit/src/libluajit.a
@@ -204,7 +213,6 @@ endif
 
 traffic_server_LDADD += \
   $(top_builddir)/iocore/net/libinknet.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \

@@ -1143,6 +1143,15 @@ TS_CHECK_CRYPTO_DH_GET_2048_256
 # Check for TLS 1.3 support
 TS_CHECK_CRYPTO_TLS13
 
+# Check for QUIC support
+enable_quic=no
+AS_IF([test "x$enable_tls13" = "xyes"], [
+  enable_quic=yes
+])
+TS_ARG_ENABLE_VAR([use], [quic])
+AC_SUBST(use_quic)
+AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
+
 saved_LIBS="$LIBS"
 TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 

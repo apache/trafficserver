@@ -16,7 +16,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+if ENABLE_QUIC
 SUBDIRS = quic
+endif
 
 AM_CPPFLAGS += \
   $(iocore_include_dirs) \
@@ -114,9 +116,6 @@ libinknet_a_SOURCES = \
   P_UDPIOEvent.h \
   P_UDPNet.h \
   P_UDPPacket.h \
-  P_QUICPacketHandler.h \
-  P_QUICNetProcessor.h \
-  P_QUICNetVConnection.h \
   P_UnixCompletionUtil.h \
   P_UnixNet.h \
   P_UnixNetProcessor.h \
@@ -139,9 +138,6 @@ libinknet_a_SOURCES = \
   OCSPStapling.cc \
   Socks.cc \
   UDPIOEvent.cc \
-  QUICPacketHandler.cc \
-  QUICNetProcessor.cc \
-  QUICNetVConnection.cc \
   UnixConnection.cc \
   UnixNet.cc \
   UnixNetAccept.cc \
@@ -151,6 +147,16 @@ libinknet_a_SOURCES = \
   UnixUDPConnection.cc \
   UnixUDPNet.cc \
   SSLDynlock.cc
+
+if ENABLE_QUIC
+libinknet_a_SOURCES += \
+  P_QUICPacketHandler.h \
+  P_QUICNetProcessor.h \
+  P_QUICNetVConnection.h \
+  QUICPacketHandler.cc \
+  QUICNetProcessor.cc \
+  QUICNetVConnection.cc
+endif
 
 #test_UNUSED_SOURCES = \
 #  NetTest-http-server.c \

@@ -39,7 +39,9 @@
 #include "ProtocolProbeSessionAccept.h"
 #include "http2/Http2SessionAccept.h"
 #include "HttpConnectionCount.h"
+#if TS_USE_QUIC == 1
 #include "hq/HQSessionAccept.h"
+#endif
 
 HttpSessionAccept *plugin_http_accept             = nullptr;
 HttpSessionAccept *plugin_http_transparent_accept = nullptr;
@@ -219,10 +221,12 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     ssl_plugin_acceptors.push(ssl);
     ssl->proxyPort   = &port;
     acceptor._accept = ssl;
+#if TS_USE_QUIC == 1
   } else if (port.isQUIC()) {
     // HTTP/QUIC
     HQSessionAccept *hq = new HQSessionAccept(accept_opt);
     acceptor._accept    = hq;
+#endif
   } else {
     acceptor._accept = probe;
   }
@@ -291,14 +295,16 @@ start_HttpProxyServer()
   for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
     HttpProxyAcceptor &acceptor = HttpProxyAcceptors[i];
     HttpProxyPort &port         = proxy_ports[i];
-    if (port.isQUIC()) {
-      if (nullptr == quic_NetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
-        return;
-      }
-    } else if (port.isSSL()) {
+    if (port.isSSL()) {
       if (nullptr == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
       }
+#if TS_USE_QUIC == 1
+    } else if (port.isQUIC()) {
+      if (nullptr == quic_NetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
+        return;
+      }
+#endif
     } else if (!port.isPlugin()) {
       if (nullptr == netProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
