@@ -3400,6 +3400,24 @@ HTTP/2 Configuration
 
    Enable the experimental HTTP/2 Stream Priority feature.
 
+.. ts:cv:: CONFIG proxy.config.http2.accept_no_activity_timeout INT 120
+   :reloadable:
+   :overridable:
+
+   Specifies how long Traffic Server keeps connections to origin servers open
+   if the transaction stalls. Lowering this timeout can ease pressure on the
+   proxy if misconfigured or misbehaving clients are opening a large number of
+   connections without submitting requests.
+
+.. ts:cv:: CONFIG proxy.config.http2.no_activity_timeout_in INT 120
+   :reloadable:
+   :overridable:
+
+   Specifies how long Traffic Server keeps connections to clients open if a
+   transaction stalls. Lowering this timeout can ease pressure on the proxy if
+   misconfigured or misbehaving clients are opening a large number of
+   connections without submitting requests.
+
 Plug-in Configuration
 =====================
 
