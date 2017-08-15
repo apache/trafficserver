@@ -1140,6 +1140,9 @@ TS_CHECK_CRYPTO_SET_RBIO
 # Check for DH_get_2048_256
 TS_CHECK_CRYPTO_DH_GET_2048_256
 
+# Check for TLS 1.3 support
+TS_CHECK_CRYPTO_TLS13
+
 saved_LIBS="$LIBS"
 TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 
@@ -1173,19 +1176,6 @@ AC_CHECK_FUNC([EVP_MD_CTX_reset], [],
               [AC_DEFINE([EVP_MD_CTX_reset], [EVP_MD_CTX_cleanup], [Renamed in OpenSSL 1.1])])
 AC_CHECK_FUNC([EVP_MD_CTX_free], [],
               [AC_DEFINE([EVP_MD_CTX_free], [EVP_MD_CTX_destroy], [Renamed in OpenSSL 1.1])])
-
-AC_MSG_CHECKING([for TLS 1.3 is supported])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
-                                   [[
-                                     #ifndef TLS1_3_VERSION
-                                     # error no TLS1_3 support
-                                     #endif
-                                   ]])
-                  ],
-                  [AC_MSG_RESULT([yes])],
-                  [AC_ERROR(OpenSSL 1.1.1+ or BoringSSL is required);
-                   AC_MSG_RESULT([no])])
-
 
 AC_MSG_CHECKING([for OpenSSL is BoringSSL])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/base.h>]],

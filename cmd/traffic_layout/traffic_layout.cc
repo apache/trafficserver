@@ -108,6 +108,7 @@ produce_features(bool json)
   print_feature("TS_USE_CERT_CB", TS_USE_CERT_CB, json);
   print_feature("TS_USE_SET_RBIO", TS_USE_SET_RBIO, json);
   print_feature("TS_USE_TLS_ECKEY", TS_USE_TLS_ECKEY, json);
+  print_feature("TS_USE_TLS13", TS_USE_TLS13, json);
   print_feature("TS_USE_LINUX_NATIVE_AIO", TS_USE_LINUX_NATIVE_AIO, json);
   print_feature("TS_HAS_SO_PEERCRED", TS_HAS_SO_PEERCRED, json);
   print_feature("TS_USE_REMOTE_UNWINDING", TS_USE_REMOTE_UNWINDING, json);

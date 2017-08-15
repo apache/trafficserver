@@ -230,3 +230,31 @@ AC_DEFUN([TS_CHECK_CRYPTO_DH_GET_2048_256], [
   TS_ARG_ENABLE_VAR([use], [dh_get_2048_256])
   AC_SUBST(use_dh_get_2048_256)
 ])
+
+AC_DEFUN([TS_CHECK_CRYPTO_TLS13], [
+  enable_tls13=yes
+  _tls13_saved_LIBS=$LIBS
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_MSG_CHECKING([whether TLS 1.3 is supported])
+  AC_LINK_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#include <openssl/ssl.h>
+    ]],
+    [[
+#ifndef TLS1_3_VERSION
+# error no TLS1_3 support
+#endif
+    ]])
+  ],
+  [
+    AC_MSG_RESULT([yes])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    enable_tls13=no
+  ])
+  LIBS=$_tls13_saved_LIBS
+  TS_ARG_ENABLE_VAR([use], [tls13])
+  AC_SUBST(use_tls13)
+])
