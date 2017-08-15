@@ -136,7 +136,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   na->action_->server = &na->server;
   na->init_accept();
 
-  udpNet.UDPBind((Continuation *)na, &na->server.accept_addr.sa, 1024000, 1024000);
+  udpNet.UDPBind((Continuation *)na, &na->server.accept_addr.sa, 1048576, 1048576);
 
   return na->action_.get();
 }
