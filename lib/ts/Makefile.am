@@ -177,6 +177,8 @@ libtsutil_la_SOURCES = \
   Regression.cc \
   Regression.h \
   Result.h \
+  Scrubber.cc \
+  Scrubber.h \
   signals.cc \
   signals.h \
   SimpleTokenizer.h \

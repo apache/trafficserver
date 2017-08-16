@@ -67,19 +67,6 @@ location(const SourceLocation *loc, DiagsShowLocation show, DiagsLevel level)
   return false;
 }
 
-template <int Size>
-static void
-vprintline(FILE *fp, char (&buffer)[Size], va_list ap)
-{
-  int nbytes = strlen(buffer);
-
-  vfprintf(fp, buffer, ap);
-  if (nbytes > 0 && buffer[nbytes - 1] != '\n') {
-    ink_assert(nbytes < Size);
-    putc('\n', fp);
-  }
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      Diags::Diags(char *bdt, char *bat)
@@ -186,6 +173,10 @@ Diags::~Diags()
   if (stderr_log) {
     delete stderr_log;
     stderr_log = nullptr;
+  }
+
+  if (scrubber) {
+    delete scrubber;
   }
 
   ats_free((void *)base_debug_tags);
@@ -944,4 +935,30 @@ Diags::rebind_stderr(int new_fd)
     return true;
   }
   return false;
+}
+
+void
+Diags::vprintline(FILE *fp, char *buffer, va_list ap) const
+{
+  int nbytes = strlen(buffer);
+
+  // check if we need to scrub any patterns
+  if (unlikely(scrub_enabled)) {
+    char _buf[MAX_LOG_LINE_SIZE];
+    int r = vsnprintf(_buf, MAX_LOG_LINE_SIZE, buffer, ap);
+    if (r > MAX_LOG_LINE_SIZE) {
+      sprintf(_buf, "[WARN] Diags log line too long, dropping log\n");
+    } else if (r < 0) {
+      sprintf(_buf, "[WARN] Diags log line failed to encode with vsnprintf\n");
+    }
+    scrubber->scrub_buffer(_buf);
+    fprintf(fp, "%s", _buf);
+  } else {
+    vfprintf(fp, buffer, ap);
+  }
+
+  // add a newline if one didn't exist
+  if (nbytes > 0 && buffer[nbytes - 1] != '\n') {
+    putc('\n', fp);
+  }
 }

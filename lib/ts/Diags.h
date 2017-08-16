@@ -42,9 +42,11 @@
 #include "ink_inet.h"
 #include "BaseLogFile.h"
 #include "SourceLocation.h"
+#include "Scrubber.h"
 
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000
+#define MAX_LOG_LINE_SIZE (16 * 1024) // 16K
 
 class Diags;
 
@@ -201,6 +203,8 @@ public:
     va_end(ap);
   }
 
+  void vprintline(FILE *fp, char *buffer, va_list ap) const;
+
   void error_va(DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
 
   void dump(FILE *fp = stdout) const;
@@ -218,6 +222,18 @@ public:
   bool set_stdout_output(const char *_bind_stdout);
   bool set_stderr_output(const char *_bind_stderr);
 
+  /*
+   * Turn scrubbing on/off.
+   *
+   * This really shouldn't be called by anyone other than DiagsConfig b/c there's inherent race conditions.
+   */
+  void
+  scrub_config(bool enable, const char *config)
+  {
+    scrub_enabled = enable;
+    scrubber      = new Scrubber(config);
+  }
+
   const char *base_debug_tags;  // internal copy of default debug tags
   const char *base_action_tags; // internal copy of default action tags
 
@@ -225,6 +241,10 @@ private:
   const char *prefix_str;
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
   DFA *activated_tags[2];           // 1 table for debug, 1 for action
+
+  // Scrubbing variables -- replaces predefined regexp matches with the replacement string
+  bool scrub_enabled = false;
+  Scrubber *scrubber = nullptr;
 
   // These are the default logfile permissions
   int diags_logfile_perm  = -1;

@@ -25,6 +25,7 @@
 #include "ts/ink_memory.h"
 #include "ts/ink_file.h"
 #include "ts/I_Layout.h"
+#include "ts/MemView.h"
 #include "DiagsConfig.h"
 #include "P_RecCore.h"
 
@@ -310,9 +311,11 @@ DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const 
   char *output_perm      = REC_ConfigReadString("proxy.config.output.logfile_perm");
   int diags_perm_parsed  = diags_perm ? ink_fileperm_parse(diags_perm) : -1;
   int output_perm_parsed = diags_perm ? ink_fileperm_parse(output_perm) : -1;
-
   ats_free(diags_perm);
   ats_free(output_perm);
+
+  // Grab scrubs config
+  char *config_scrubs = REC_ConfigReadString("proxy.config.diags.scrubs");
 
   // Set up diags, FILE streams are opened in Diags constructor
   diags_log = new BaseLogFile(diags_logpath);
@@ -321,6 +324,10 @@ DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const 
   diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
 
   Status("opened %s", diags_logpath);
+
+  if (config_scrubs) {
+    diags->scrub_config(true, config_scrubs);
+  }
 
   register_diags_callbacks();
 

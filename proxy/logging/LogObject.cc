@@ -124,6 +124,13 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
   ink_assert(b);
   SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
+  // set up scrubbing object
+  char *conf_scrubs = REC_ConfigReadString("proxy.config.diags.scrubs");
+  if (conf_scrubs) {
+    scrub_enabled = true;
+    scrubber      = new Scrubber(conf_scrubs);
+  }
+
   _setup_rolling(rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
 
   Debug("log-config", "exiting LogObject constructor, filename=%s this=%p", m_filename, this);
@@ -165,6 +172,11 @@ LogObject::LogObject(LogObject &rhs)
     add_loghost(host);
   }
 
+  scrub_enabled = rhs.scrub_enabled;
+  if (scrub_enabled && rhs.scrubber) {
+    scrubber = new Scrubber(rhs.scrubber->get_config());
+  }
+
   // copy gets a fresh log buffer
   //
   LogBuffer *b = new LogBuffer(this, Log::config->log_buffer_size);
@@ -188,6 +200,11 @@ LogObject::~LogObject()
       m_host_list.clear();
     }
   }
+
+  if (scrubber) {
+    delete scrubber;
+  }
+
   ats_free(m_basename);
   ats_free(m_filename);
   ats_free(m_alt_filename);
@@ -590,6 +607,13 @@ LogObject::log(LogAccess *lad, const char *text_entry)
   } else if (lad) {
     bytes_needed = m_format->m_field_list.marshal_len(lad);
   } else if (text_entry) {
+    if (scrub_enabled) {
+      char _buf[strlen(text_entry) + 1];
+      strcpy(_buf, text_entry);
+      scrubber->scrub_buffer(_buf);
+      text_entry = _buf;
+      // we didn't leak memory here because the caller gave us a const buffer
+    }
     bytes_needed = LogAccess::strlen(text_entry);
   }
 
