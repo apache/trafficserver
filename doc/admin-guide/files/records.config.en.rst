@@ -3458,10 +3458,10 @@ HTTP/2 Configuration
    :reloadable:
    :overridable:
 
-   Specifies how long Traffic Server keeps connections to origin servers open
-   if the transaction stalls. Lowering this timeout can ease pressure on the
-   proxy if misconfigured or misbehaving clients are opening a large number of
-   connections without submitting requests.
+   Specifies how long Traffic Server keeps connections to clients open after
+   initial connection if no activity is received on the connection. Lowering
+   this timeout can ease pressure on the proxy if misconfigured or misbehaving
+   clients are opening a large number of connections without submitting requests.
 
 .. ts:cv:: CONFIG proxy.config.http2.no_activity_timeout_in INT 120
    :reloadable:
