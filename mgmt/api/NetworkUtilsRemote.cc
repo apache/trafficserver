@@ -57,8 +57,8 @@ set_socket_paths(const char *path)
   // construct paths based on user input
   // form by replacing "mgmtapi.sock" with "eventapi.sock"
   if (path) {
-    main_socket_path  = Layout::relative_to(path, MGMTAPI_MGMT_SOCKET_NAME);
-    event_socket_path = Layout::relative_to(path, MGMTAPI_EVENT_SOCKET_NAME);
+    main_socket_path  = ats_stringdup(Layout::relative_to(path, MGMTAPI_MGMT_SOCKET_NAME));
+    event_socket_path = ats_stringdup(Layout::relative_to(path, MGMTAPI_EVENT_SOCKET_NAME));
   } else {
     main_socket_path  = nullptr;
     event_socket_path = nullptr;

@@ -498,6 +498,164 @@ REGRESSION_TEST(Http2DependencyTree_remove_2)(RegressionTest *t, int /* atype AT
   delete tree;
 }
 
+/**
+ * Exclusive Dependency Creation
+ *
+ *       A            A
+ *      / \    =>     |
+ *     B   C          D
+ *                   / \
+ *                  B   C
+ */
+REGRESSION_TEST(Http2DependencyTree_exclusive_node)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Tree *tree = new Tree(100);
+  string a("A"), b("B"), c("C"), d("D");
+
+  Tree::Node *B = tree->add(0, 1, 0, false, &b);
+  tree->add(0, 3, 0, false, &c);
+
+  tree->activate(B);
+  // Add node with exclusive flag
+  tree->add(0, 5, 0, true, &d);
+
+  tree->deactivate(B, 0);
+  tree->remove(B);
+
+  box.check(tree->top() == NULL, "Tree top should be NULL");
+
+  delete tree;
+}
+
+/** test for reprioritize with active node
+*
+*     root                  root                   root
+*    /    \                /    \   (remove A)    /    \
+*   A      B   =======>   C      B   =======>    C      B
+*           \            /
+*            C          A
+*
+*/
+REGRESSION_TEST(Http2DependencyTree_reprioritize)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Tree *tree = new Tree(100);
+  string a("A"), b("B"), c("C");
+
+  Tree::Node *A = tree->add(0, 7, 70, false, &a);
+  Tree::Node *B = tree->add(0, 3, 10, false, &b);
+  Tree::Node *C = tree->add(3, 5, 30, false, &c);
+
+  tree->activate(A);
+  tree->activate(B);
+  tree->activate(C);
+
+  tree->reprioritize(A, 5, false);
+
+  tree->deactivate(A, 0);
+  tree->remove(A);
+
+  box.check(tree->top()->t != nullptr, "should not core dump");
+
+  delete tree;
+}
+
+/**
+ * Reprioritization (exclusive)
+ *
+ *    x              x
+ *    |              |
+ *    A              D
+ *   / \             |
+ *  B   C     ==>    A
+ *     / \          /|\
+ *    D   E        B C F
+ *    |              |
+ *    F              E
+ */
+REGRESSION_TEST(Http2DependencyTree_reprioritize_2)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Tree *tree = new Tree(100);
+  string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
+
+  tree->add(0, 1, 0, false, &a);
+  tree->add(1, 3, 0, false, &b);
+  tree->add(1, 5, 0, false, &c);
+  tree->add(5, 7, 0, false, &d);
+  tree->add(5, 9, 0, false, &e);
+  tree->add(7, 11, 0, false, &f);
+
+  Tree::Node *node_x = tree->find(0);
+  Tree::Node *node_a = tree->find(1);
+  Tree::Node *node_b = tree->find(3);
+  Tree::Node *node_d = tree->find(7);
+
+  tree->activate(node_b);
+  box.check(node_x->queue->in(node_a->entry), "A should be in x's queue");
+
+  tree->reprioritize(1, 7, true);
+
+  box.check(!node_x->queue->in(node_a->entry), "A should not be in x's queue");
+  box.check(node_x->queue->in(node_d->entry), "D should be in x's queue");
+  box.check(node_d->queue->in(node_a->entry), "A should be in d's queue");
+
+  delete tree;
+}
+
+/**
+ * Reprioritization (exclusive)
+ *
+ *    x              x
+ *    |              |
+ *    A              D
+ *   / \             |
+ *  B   C     ==>    A
+ *     / \          /|\
+ *    D   E        B C F
+ *    |              |
+ *    F              E
+ */
+REGRESSION_TEST(Http2DependencyTree_reprioritize_3)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Tree *tree = new Tree(100);
+  string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
+
+  tree->add(0, 1, 0, false, &a);
+  tree->add(1, 3, 0, false, &b);
+  tree->add(1, 5, 0, false, &c);
+  tree->add(5, 7, 0, false, &d);
+  tree->add(5, 9, 0, false, &e);
+  tree->add(7, 11, 0, false, &f);
+
+  Tree::Node *node_x = tree->find(0);
+  Tree::Node *node_a = tree->find(1);
+  Tree::Node *node_c = tree->find(5);
+  Tree::Node *node_d = tree->find(7);
+  Tree::Node *node_f = tree->find(11);
+
+  tree->activate(node_f);
+  tree->reprioritize(1, 7, true);
+
+  box.check(node_a->queue->in(node_f->entry), "F should be in A's queue");
+  box.check(node_d->queue->in(node_a->entry), "A should be in D's queue");
+  box.check(node_x->queue->in(node_d->entry), "D should be in x's queue");
+  box.check(!node_a->queue->in(node_c->entry), "C should not be in A's queue");
+  box.check(node_c->queue->empty(), "C's queue should be empty");
+
+  delete tree;
+}
+
 REGRESSION_TEST(Http2DependencyTree_max_depth)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);

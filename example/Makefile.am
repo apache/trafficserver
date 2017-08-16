@@ -49,7 +49,8 @@ example_Plugins = \
 	response_header_1.la \
 	secure_link.la \
 	server_push.la \
-	server-transform.la \
+	server_transform.la \
+	session_hooks.la \
 	ssl-preaccept.la \
 	ssl-sni-whitelist.la \
 	ssl-sni.la \
@@ -115,7 +116,7 @@ replace_header_la_SOURCES = replace_header/replace_header.c
 response_header_1_la_SOURCES = response_header_1/response_header_1.c
 secure_link_la_SOURCES = secure_link/secure_link.c
 server_push_la_SOURCES = server_push/server_push.c
-server_transform_la_SOURCES = server-transform/server-transform.c
+server_transform_la_SOURCES = server_transform/server_transform.c
 ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc
 ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc
 ssl_sni_la_LIBADD = $(libtsconfig)
@@ -127,10 +128,7 @@ thread_1_la_SOURCES = thread-1/thread-1.c
 txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
 version_la_SOURCES = version/version.c
 redirect_1_la_SOURCES = redirect_1/redirect_1.c
-
-# The following examples do not build:
-#
-# session_1_la_SOURCES = session-1/session-1.c
+session_hooks_la_SOURCES = session_hooks/session_hooks.c
 
 cppapi_AsyncHttpFetchStreaming_la_SOURCES = cppapi/async_http_fetch_streaming/AsyncHttpFetchStreaming.cc
 cppapi_AsyncHttpFetch_la_SOURCES = cppapi/async_http_fetch/AsyncHttpFetch.cc

@@ -43,7 +43,7 @@ commaSeparateString(ContainerType &c, const String &input)
 static bool
 isTrue(const char *arg)
 {
-  return (0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
+  return (nullptr == arg || 0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
 }
 
 void
@@ -341,6 +341,9 @@ Configs::init(int argc, char *argv[])
     {const_cast<char *>("capture-prefix-uri"), optional_argument, nullptr, 'n'},
     {const_cast<char *>("capture-path"), optional_argument, nullptr, 'o'},
     {const_cast<char *>("capture-path-uri"), optional_argument, nullptr, 'p'},
+    {const_cast<char *>("remove-prefix"), optional_argument, nullptr, 'q'},
+    {const_cast<char *>("remove-path"), optional_argument, nullptr, 'r'},
+    {const_cast<char *>("separator"), optional_argument, nullptr, 's'},
     {nullptr, 0, nullptr, 0},
   };
 
@@ -430,6 +433,15 @@ Configs::init(int argc, char *argv[])
         status = false;
       }
       break;
+    case 'q': /* remove-prefix */
+      _prefixToBeRemoved = isTrue(optarg);
+      break;
+    case 'r': /* remove-path */
+      _pathToBeRemoved = isTrue(optarg);
+      break;
+    case 's': /* separator */
+      setSeparator(optarg);
+      break;
     }
   }
 
@@ -447,4 +459,30 @@ bool
 Configs::finalize()
 {
   return _query.finalize() && _headers.finalize() && _cookies.finalize();
+}
+
+bool
+Configs::prefixToBeRemoved()
+{
+  return _prefixToBeRemoved;
+}
+
+bool
+Configs::pathToBeRemoved()
+{
+  return _pathToBeRemoved;
+}
+
+void
+Configs::setSeparator(const char *arg)
+{
+  if (nullptr != arg) {
+    _separator.assign(arg);
+  }
+}
+
+const String &
+Configs::getSeparator()
+{
+  return _separator;
 }

@@ -175,12 +175,20 @@ Http2DependencyTree<T>::add(uint32_t parent_id, uint32_t id, uint32_t weight, bo
 
   if (exclusive) {
     while (Node *child = parent->children.pop()) {
+      if (child->queued) {
+        parent->queue->erase(child->entry);
+        node->queue->push(child->entry);
+      }
       node->children.push(child);
       child->parent = node;
     }
   }
 
   parent->children.push(node);
+  if (!node->queue->empty()) {
+    parent->queue->push(node->entry);
+    node->queued = true;
+  }
 
   ++_node_count;
   return node;
@@ -242,6 +250,8 @@ Http2DependencyTree<T>::reprioritize(Node *node, uint32_t new_parent_id, bool ex
     // Do nothing
     return;
   }
+  // should not change the root node
+  ink_assert(node->parent);
 
   Node *new_parent = find(new_parent_id);
   if (new_parent == NULL) {
@@ -256,11 +266,29 @@ template <typename T>
 void
 Http2DependencyTree<T>::_change_parent(Node *node, Node *new_parent, bool exclusive)
 {
+  ink_release_assert(node->parent != NULL);
   node->parent->children.remove(node);
+  if (node->queued) {
+    node->parent->queue->erase(node->entry);
+    node->queued = false;
+
+    Node *current = node->parent;
+    while (current->queue->empty() && !current->active && current->parent != NULL) {
+      current->parent->queue->erase(current->entry);
+      current->queued = false;
+      current         = current->parent;
+    }
+  }
+
   node->parent = NULL;
 
   if (exclusive) {
     while (Node *child = new_parent->children.pop()) {
+      if (child->queued) {
+        child->parent->queue->erase(child->entry);
+        node->queue->push(child->entry);
+      }
+
       node->children.push(child);
       child->parent = node;
     }
@@ -268,6 +296,15 @@ Http2DependencyTree<T>::_change_parent(Node *node, Node *new_parent, bool exclus
 
   new_parent->children.push(node);
   node->parent = new_parent;
+
+  if (node->active || !node->queue->empty()) {
+    Node *current = node;
+    while (current->parent != NULL && !current->queued) {
+      current->parent->queue->push(current->entry);
+      current->queued = true;
+      current         = current->parent;
+    }
+  }
 }
 
 template <typename T>
@@ -316,9 +353,7 @@ Http2DependencyTree<T>::deactivate(Node *node, uint32_t sent)
   node->active = false;
 
   while (node->queue->empty() && node->parent != NULL) {
-    ink_assert(node->parent->queue->top() == node->entry);
-
-    node->parent->queue->pop();
+    node->parent->queue->erase(node->entry);
     node->queued = false;
 
     node = node->parent;

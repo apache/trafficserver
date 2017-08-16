@@ -45,7 +45,7 @@ ATSHash64Sip24::ATSHash64Sip24(const unsigned char key[16]) : k0(U8TO64_LE(key))
   this->clear();
 }
 
-ATSHash64Sip24::ATSHash64Sip24(uint64_t key0, uint64_t key1)
+ATSHash64Sip24::ATSHash64Sip24(uint64_t key0, uint64_t key1) : k0(key0), k1(key1)
 {
   this->clear();
 }

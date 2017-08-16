@@ -2422,6 +2422,20 @@ DNS
    in DNS Injection attacks), particularly in forward or transparent proxies, but
    requires that the resolver populates the queries section of the response properly.
 
+.. ts:cv:: CONFIG proxy.config.dns.connection_mode INT 0
+
+   Three connection modes between |TS| and nameservers can be set -- UDP_ONLY,
+   TCP_RETRY, TCP_ONLY.
+
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` UDP_ONLY:  |TS| always talks to nameservers over UDP.
+   ``1`` TCP_RETRY: |TS| first UDP, retries with TCP if UDP response is truncated.
+   ``2`` TCP_ONLY:  |TS| always talks to nameservers over TCP.
+   ===== ======================================================================
+
 HostDB
 ======
 
@@ -2457,6 +2471,10 @@ HostDB
 
    For values above ``200000``, you must increase :ts:cv:`proxy.config.hostdb.max_size`
    by at least 44 bytes per entry.
+
+.. ts:cv:: proxy.config.hostdb.round_robin_max_count INT 16
+
+   The maximum count of DNS answers per round robin hostdb record. The default variable is 16.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.ttl_mode INT 0
    :reloadable:
@@ -3132,7 +3150,9 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING ssl_ticket.key
 
    The filename of the default and global ticket key for SSL sessions. The location is relative to the
-   :ts:cv:`proxy.config.ssl.server.cert.path` directory.
+   :ts:cv:`proxy.config.ssl.server.cert.path` directory. One way to generate this would be to run
+   ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``. Also
+   note that OpenSSL session tickets are sensitive to the version of the ca-certificates.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
 
@@ -3399,6 +3419,24 @@ HTTP/2 Configuration
    :reloadable:
 
    Enable the experimental HTTP/2 Stream Priority feature.
+
+.. ts:cv:: CONFIG proxy.config.http2.accept_no_activity_timeout INT 120
+   :reloadable:
+   :overridable:
+
+   Specifies how long Traffic Server keeps connections to origin servers open
+   if the transaction stalls. Lowering this timeout can ease pressure on the
+   proxy if misconfigured or misbehaving clients are opening a large number of
+   connections without submitting requests.
+
+.. ts:cv:: CONFIG proxy.config.http2.no_activity_timeout_in INT 120
+   :reloadable:
+   :overridable:
+
+   Specifies how long Traffic Server keeps connections to clients open if a
+   transaction stalls. Lowering this timeout can ease pressure on the proxy if
+   misconfigured or misbehaving clients are opening a large number of
+   connections without submitting requests.
 
 Plug-in Configuration
 =====================

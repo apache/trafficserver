@@ -404,6 +404,7 @@ main(int argc, const char **argv)
     {"sleep", 's', "Enable debugging output", "I", &sleep_time, nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
+    RUNROOT_ARGUMENT_DESCRIPTION(),
   };
 
   process_args(&version, argument_descriptions, countof(argument_descriptions), argv, USAGE);

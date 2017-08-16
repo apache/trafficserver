@@ -53,7 +53,7 @@ public:
   // preprocess the given buffer data before sent to target host
   // and try to delete it when its reference become zero.
   //
-  int preproc_and_try_delete(LogBuffer *lb);
+  bool preproc_and_try_delete(LogBuffer *lb);
 
   //
   // write the given buffer data to orphan file and

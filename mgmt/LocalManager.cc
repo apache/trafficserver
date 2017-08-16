@@ -150,9 +150,9 @@ LocalManager::processRunning()
 LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on)
 {
   bool found;
-  ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  ats_scoped_str bindir(RecConfigReadBinDir());
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
+  std::string rundir(RecConfigReadRuntimeDir());
+  std::string bindir(RecConfigReadBinDir());
+  std::string sysconfdir(RecConfigReadConfigDir());
 
   manager_started_at = time(nullptr);
 
@@ -168,8 +168,8 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on)
   // Get the default IP binding values.
   RecHttpLoadIp("proxy.local.incoming_ip_to_bind", m_inbound_ip4, m_inbound_ip6);
 
-  if (access(sysconfdir, R_OK) == -1) {
-    mgmt_log("[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n", (const char *)sysconfdir, errno,
+  if (access(sysconfdir.c_str(), R_OK) == -1) {
+    mgmt_log("[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n", sysconfdir.c_str(), errno,
              strerror(errno));
     mgmt_fatal(0, "[LocalManager::LocalManager] please set the 'TS_ROOT' environment variable\n");
   }
@@ -206,7 +206,7 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on)
   env_prep                     = REC_readString("proxy.config.env_prep", &found);
 
   // Calculate proxy_binary from the absolute bin_path
-  absolute_proxy_binary = Layout::relative_to(bindir, proxy_binary);
+  absolute_proxy_binary = ats_stringdup(Layout::relative_to(bindir, proxy_binary));
 
   // coverity[fs_check_call]
   if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
@@ -240,8 +240,8 @@ LocalManager::initAlarm()
 void
 LocalManager::initMgmtProcessServer()
 {
-  ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  ats_scoped_str sockpath(Layout::relative_to(rundir, LM_CONNECTION_SERVER));
+  std::string rundir(RecConfigReadRuntimeDir());
+  std::string sockpath(Layout::relative_to(rundir, LM_CONNECTION_SERVER));
   mode_t oldmask = umask(0);
 
 #if TS_HAS_WCCP
@@ -251,9 +251,9 @@ LocalManager::initMgmtProcessServer()
   }
 #endif
 
-  process_server_sockfd = bind_unix_domain_socket(sockpath, 00700);
+  process_server_sockfd = bind_unix_domain_socket(sockpath.c_str(), 00700);
   if (process_server_sockfd == -1) {
-    mgmt_fatal(errno, "[LocalManager::initMgmtProcessServer] failed to bind socket at %s\n", (const char *)sockpath);
+    mgmt_fatal(errno, "[LocalManager::initMgmtProcessServer] failed to bind socket at %s\n", sockpath.c_str());
   }
 
   umask(oldmask);
@@ -791,9 +791,9 @@ LocalManager::startProxy(const char *onetime_options)
       int res;
 
       char env_prep_bin[MAXPATHLEN];
-      ats_scoped_str bindir(RecConfigReadBinDir());
+      std::string bindir(RecConfigReadBinDir());
 
-      ink_filepath_make(env_prep_bin, sizeof(env_prep_bin), bindir, env_prep);
+      ink_filepath_make(env_prep_bin, sizeof(env_prep_bin), bindir.c_str(), env_prep);
       res = execl(env_prep_bin, env_prep_bin, (char *)nullptr);
       _exit(res);
     }

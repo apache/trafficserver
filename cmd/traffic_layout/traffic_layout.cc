@@ -27,6 +27,7 @@
 #include "ts/I_Layout.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
+#include "ts/runroot.cc"
 
 // Command line arguments (parsing)
 struct CommandLineArgs {
@@ -43,7 +44,8 @@ const ArgumentDescription argument_descriptions[] = {
   {"json", 'j', "Produce output in JSON format (when supported)", "T", &cl.json, nullptr, nullptr},
 
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()};
+  VERSION_ARGUMENT_DESCRIPTION(),
+  RUNROOT_ARGUMENT_DESCRIPTION()};
 
 // Produce output about compile time features, useful for checking how things were built, as well
 // as for our TSQA test harness.
@@ -128,18 +130,14 @@ produce_features(bool json)
   }
 }
 
-static void
-print_var(const char *name, char *value, bool json, bool free = true, bool last = false)
+void
+print_var(ts::string_view const &name, ts::string_view const &value, bool json, bool last = false)
 {
-  if (json) {
-    printf(R"(    "%s": "%s"%s)", name, value, last ? "\n" : ",\n");
-  } else {
-    printf("%s: %s\n", name, value);
-  }
-
-  if (free) {
-    ats_free(value);
-  }
+  if (json)
+    printf(R"(    "%.*s": "%.*s"%s)", static_cast<int>(name.size()), name.data(), static_cast<int>(value.size()), value.data(),
+           last ? "\n" : ",\n");
+  else
+    printf("%.*s: %.*s\n", static_cast<int>(name.size()), name.data(), static_cast<int>(value.size()), value.data());
 }
 
 static void
@@ -153,14 +151,14 @@ produce_layout(bool json)
   if (json) {
     printf("{\n");
   }
-  print_var("PREFIX", Layout::get()->prefix, json, false); // Don't free this
+  print_var("PREFIX", Layout::get()->prefix, json);
   print_var("BINDIR", RecConfigReadBinDir(), json);
   print_var("SYSCONFDIR", RecConfigReadConfigDir(), json);
-  print_var("LIBDIR", Layout::get()->libdir, json, false); // Don't free this
+  print_var("LIBDIR", Layout::get()->libdir, json);
   print_var("LOGDIR", RecConfigReadLogDir(), json);
   print_var("RUNTIMEDIR", RecConfigReadRuntimeDir(), json);
   print_var("PLUGINDIR", RecConfigReadPluginDir(), json);
-  print_var("INCLUDEDIR", Layout::get()->includedir, json, false); // Dont' free this
+  print_var("INCLUDEDIR", Layout::get()->includedir, json);
   print_var("SNAPSHOTDIR", RecConfigReadSnapshotDir(), json);
 
   print_var("records.config", RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE), json);
@@ -170,7 +168,7 @@ produce_layout(bool json)
   print_var("storage.config", RecConfigReadConfigPath("proxy.config.cache.storage_filename"), json);
   print_var("hosting.config", RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
   print_var("volume.config", RecConfigReadConfigPath("proxy.config.cache.volume_filename"), json);
-  print_var("ip_allow.config", RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true, true);
+  print_var("ip_allow.config", RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);
   if (json) {
     printf("}\n");
   }
@@ -185,6 +183,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   // Process command line arguments and dump into variables
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+
+  runroot_handler(argv, 0 != cl.json);
 
   if (cl.features) {
     produce_features(0 != cl.json);

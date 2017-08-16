@@ -153,8 +153,6 @@ public:
   ssize_t client_rwnd;
   ssize_t server_rwnd = Http2::initial_window_size;
 
-  LINK(Http2Stream, link);
-
   uint8_t *header_blocks        = nullptr;
   uint32_t header_blocks_length = 0;  // total length of header blocks (not include
                                       // Padding or other fields)

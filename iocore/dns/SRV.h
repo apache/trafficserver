@@ -24,12 +24,12 @@
 #ifndef _SRV_h_
 #define _SRV_h_
 
+#include <vector>
 #include "ts/ink_platform.h"
 #include "I_HostDBProcessor.h"
 
 struct HostDBInfo;
 
-#define HOST_DB_MAX_ROUND_ROBIN_INFO 16
 #define RAND_INV_RANGE(r) ((int)((RAND_MAX + 1) / (r)))
 
 struct SRV {
@@ -50,9 +50,8 @@ operator<(const SRV &left, const SRV &right)
 }
 
 struct SRVHosts {
-  unsigned int srv_host_count   = 0;
   unsigned int srv_hosts_length = 0;
-  SRV hosts[HOST_DB_MAX_ROUND_ROBIN_INFO];
+  std::vector<SRV> hosts;
 };
 
 #endif

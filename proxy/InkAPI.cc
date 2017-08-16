@@ -1769,21 +1769,22 @@ TShrtime()
 const char *
 TSInstallDirGet(void)
 {
-  return Layout::get()->prefix;
+  static std::string prefix = Layout::get()->prefix;
+  return prefix.c_str();
 }
 
 const char *
 TSConfigDirGet(void)
 {
-  static const char *sysconfdir = RecConfigReadConfigDir();
-  return sysconfdir;
+  static std::string sysconfdir = RecConfigReadConfigDir();
+  return sysconfdir.c_str();
 }
 
 const char *
 TSRuntimeDirGet(void)
 {
-  static const char *runtimedir = RecConfigReadRuntimeDir();
-  return runtimedir;
+  static std::string runtimedir = RecConfigReadRuntimeDir();
+  return runtimedir.c_str();
 }
 
 const char *
@@ -1811,9 +1812,8 @@ TSTrafficServerVersionGetPatch()
 const char *
 TSPluginDirGet(void)
 {
-  static const char *path = RecConfigReadPluginDir();
-
-  return path;
+  static std::string path = RecConfigReadPluginDir();
+  return path.c_str();
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -9287,7 +9287,7 @@ TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
   const char *machine = (char *)Machine::instance()->uuid.getString();
   int len;
 
-  len = snprintf(uuid_str, TS_CRUUID_STRING_LEN, "%s-%" PRId64 "", machine, sm->sm_id);
+  len = snprintf(uuid_str, TS_CRUUID_STRING_LEN + 1, "%s-%" PRId64 "", machine, sm->sm_id);
   if (len > TS_CRUUID_STRING_LEN) {
     return TS_ERROR;
   }
