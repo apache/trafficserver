@@ -202,8 +202,7 @@ traffic_server_LDADD = \
 
 if ENABLE_QUIC
 traffic_server_LDADD += \
-  hq/libhq.a \
-  $(top_builddir)/iocore/net/quic/libquic.a
+  hq/libhq.a
 endif
 
 if BUILD_LUAJIT
@@ -212,7 +211,14 @@ traffic_server_LDADD += \
 endif
 
 traffic_server_LDADD += \
-  $(top_builddir)/iocore/net/libinknet.a \
+  $(top_builddir)/iocore/net/libinknet.a
+
+if ENABLE_QUIC
+traffic_server_LDADD += \
+  $(top_builddir)/iocore/net/quic/libquic.a
+endif
+
+traffic_server_LDADD += \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \

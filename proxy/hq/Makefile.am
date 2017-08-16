@@ -19,7 +19,7 @@
 
 include $(top_srcdir)/build/tidy.mk
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/proxy/api/ts \
   -I$(abs_top_srcdir)/lib \

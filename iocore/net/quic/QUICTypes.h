@@ -23,10 +23,12 @@
 
 #pragma once
 
-#ifdef __APPLE__
+#if defined(darwin)
 #include <libkern/OSByteOrder.h>
 #define be64toh(x) OSSwapBigToHostInt64(x)
 #define htobe64(x) OSSwapHostToBigInt64(x)
+#elif defined(freebsd)
+#include <sys/endian.h>
 #else
 #include <endian.h>
 #endif
