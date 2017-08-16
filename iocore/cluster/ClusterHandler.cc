@@ -2997,6 +2997,7 @@ ClusterHandler::process_write(ink_hrtime now, bool only_write_control_msgs)
           }
         }
       }
+    // fallthrough
     //////////////////
     default:
       //////////////////

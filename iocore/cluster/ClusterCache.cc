@@ -1433,6 +1433,7 @@ CacheContinuation::VCdataRead(int event, VIO *target_vio)
     }
     // Fall through
   }
+  // fallthrough
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
     int clone_bytes;
@@ -2184,7 +2185,7 @@ retry:
     MUTEX_UNTAKE_LOCK(remoteCacheContQueueMutex[hash], this_ethread());
     // Fall through
   }
-
+  // fallthrough
   case CACHE_EVENT_RESPONSE_RETRY: {
     // determine result code
 

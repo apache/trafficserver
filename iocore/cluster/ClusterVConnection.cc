@@ -482,9 +482,11 @@ ClusterVConnection::get_data(int id, void * /* data ATS_UNUSED */)
   case CACHE_DATA_HTTP_INFO: {
     ink_release_assert(!"ClusterVConnection::get_data CACHE_DATA_HTTP_INFO not supported");
   }
+  // fallthrough
   case CACHE_DATA_KEY: {
     ink_release_assert(!"ClusterVConnection::get_data CACHE_DATA_KEY not supported");
   }
+  // fallthrough
   default: {
     ink_release_assert(!"ClusterVConnection::get_data invalid id");
   }
