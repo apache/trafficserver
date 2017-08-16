@@ -290,6 +290,7 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   }
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     TSDebug("cache_iter", "write complete");
+  // fallthrough
   case TS_EVENT_VCONN_EOS:
   default:
     cstate->done = 1;
