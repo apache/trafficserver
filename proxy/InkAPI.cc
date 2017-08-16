@@ -8357,6 +8357,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     if (value && length > 0) {
       s->t_state.txn_conf->client_cert_filepath = const_cast<char *>(value);
     }
+  // fallthrough
   default:
     return TS_ERROR;
     break;

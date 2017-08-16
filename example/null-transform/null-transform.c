@@ -232,6 +232,7 @@ null_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
       break;
     case TS_EVENT_VCONN_WRITE_READY:
       TSDebug("null-transform", "\tEvent is TS_EVENT_VCONN_WRITE_READY");
+    // fallthrough
     default:
       TSDebug("null-transform", "\t(event is %d)", event);
       /* If we get a WRITE_READY event or any other type of
