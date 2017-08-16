@@ -1,0 +1,14 @@
+``
+> GET http://www.example.com``
+> User-Agent: curl/``
+> Host: www.example.com``
+> Accept: */*
+> Proxy-Connection: keep-alive
+``
+< HTTP/1.1 200 OK
+< Date:``
+< Content-Length: 26
+< Age: ``
+< Proxy-Connection: keep-alive
+< Server: ATS/``
+``
