@@ -604,6 +604,27 @@ public:
     QUICErrorCode error_code, uint16_t reason_phrase_length, const char *reason_phrase);
 
   /*
+   * Creates a MAX_DATA frame.
+   */
+  static std::unique_ptr<QUICMaxDataFrame, QUICFrameDeleterFunc> create_max_data_frame(uint64_t maximum_data);
+
+  /*
+   * Creates a MAX_STREAM_DATA frame.
+   */
+  static std::unique_ptr<QUICMaxStreamDataFrame, QUICFrameDeleterFunc> create_max_stream_data_frame(QUICStreamId stream_id,
+                                                                                                    uint64_t maximum_stream_data);
+
+  /*
+   * Creates a BLOCKED frame.
+   */
+  static std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc> create_blocked_frame();
+
+  /*
+   * Creates a STREAM_BLOCKED frame.
+   */
+  static std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc> create_stream_blocked_frame(QUICStreamId stream_id);
+
+  /*
    * Creates a retransmission frame, which is very special.
    * This retransmission frame will be used only for retransmission and it's not a standard frame type.
    */

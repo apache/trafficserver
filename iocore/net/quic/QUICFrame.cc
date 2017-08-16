@@ -1301,6 +1301,38 @@ QUICFrameFactory::create_connection_close_frame(QUICErrorCode error_code, uint16
   return std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_connection_close_frame);
 }
 
+std::unique_ptr<QUICMaxDataFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_max_data_frame(uint64_t maximum_data)
+{
+  QUICMaxDataFrame *frame = quicMaxDataFrameAllocator.alloc();
+  new (frame) QUICMaxDataFrame(maximum_data);
+  return std::unique_ptr<QUICMaxDataFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_data_frame);
+}
+
+std::unique_ptr<QUICMaxStreamDataFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_max_stream_data_frame(QUICStreamId stream_id, uint64_t maximum_data)
+{
+  QUICMaxStreamDataFrame *frame = quicMaxStreamDataFrameAllocator.alloc();
+  new (frame) QUICMaxStreamDataFrame(stream_id, maximum_data);
+  return std::unique_ptr<QUICMaxStreamDataFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_stream_data_frame);
+}
+
+std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_blocked_frame()
+{
+  QUICBlockedFrame *frame = quicBlockedFrameAllocator.alloc();
+  new (frame) QUICBlockedFrame();
+  return std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_blocked_frame);
+}
+
+std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_stream_blocked_frame(QUICStreamId stream_id)
+{
+  QUICStreamBlockedFrame *frame = quicStreamBlockedFrameAllocator.alloc();
+  new (frame) QUICStreamBlockedFrame(stream_id);
+  return std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stream_blocked_frame);
+}
+
 std::unique_ptr<QUICRetransmissionFrame, QUICFrameDeleterFunc>
 QUICFrameFactory::create_retransmission_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> original_frame,
                                               const QUICPacket &original_packet)
