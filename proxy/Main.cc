@@ -92,6 +92,8 @@ extern "C" int plock(int);
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
 #include "HTTP2.h"
+#include "ts/ink_config.h"
+#include "P_SSLSNI.h"
 
 #include <ts/ink_cap.h>
 
@@ -1900,7 +1902,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
       }
     }
-
+    SNIConfig::cloneProtoSet();
     // Plugins can register their own configuration names so now after they've done that
     // check for unexpected names. This is very late because remap plugins must be allowed to
     // fire up as well.
