@@ -1,0 +1,15 @@
+Changes with Apache Traffic Server 7.1.1
+  #1766 - Can't convert Cache Result to Cache MISS by TSHttpTxnCacheLookupStatusSet
+  #1980 - Issue #1685: Use TS_MILESTONE_UA_BEGIN for cqt* log fields
+  #2123 - ua_buffer_reader should be released in deallocate_redirect_postdata
+  #2217 - Be less aggressive in calling SSL_shutdown.
+  #2273 - Fixed debug build on Fedora 26 with gcc7
+  #2285 - Prevent HSTS headers from including the terminating null byte.
+  #2298 - Fix origin requests to default to HTTP 1.1
+  #2305 - Rework SSL handshake hooks and add tls_hooks tests.
+  #2315 - For 7.1.x, H2 Assertsion at Http2DependencyTree::deactivate
+  #2329 - Push triggered DNSConnections into an atomic queue to prevent DNSConnection lost.
+  #2331 - cqtq,cqtn,cqtd,cqtt timestamp blog format to be INT again
+  #2359 - Remove the correct entry from priority queue and insert the new node into the queue
+  #2369 - Backport PR 2336 to 7.1.x - Add missing checks for request url
+  #2370 - Backport PR 2338 to 7.1.x - Add null pointer check to server response set status in Lua plugin
