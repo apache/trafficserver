@@ -623,6 +623,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
     }
       ink_release_assert(0); // Should never happen
 
+    // fallthrough
     case PROCESS_READ_DATA:
     case ADD_PEER: {
       ink_release_assert(_recursion_depth == 0);
@@ -752,6 +753,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
     }
       ink_release_assert(0); // Should never happen
 
+    // fallthrough
     case AWAITING_CACHE_LOOKUP_RESPONSE: {
       int status  = 0;
       void *data  = s->_rICPmsg->un.query.URL;
@@ -793,6 +795,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
     }
       ink_release_assert(0); // Should never happen
 
+    // fallthrough
     case SEND_REPLY: {
       ink_release_assert(_recursion_depth == 0);
       //
@@ -825,6 +828,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       }
     }
       ink_release_assert(0); // Should never happen
+    // fallthrough
 
     case WRITE_DONE: {
       s->_peer->writeAction = nullptr;
@@ -852,6 +856,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       }
     }
       ink_release_assert(0); // Should never happen
+    // fallthrough
 
     case GET_ICP_REQUEST: {
       ink_release_assert(_recursion_depth == 0);
@@ -877,6 +882,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       break; // move to next_state
     }
       ink_release_assert(0); // Should never happen
+    // fallthrough
 
     case GET_ICP_REQUEST_MUTEX: {
       ink_release_assert(_recursion_depth == 0);
@@ -929,6 +935,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       break; // move to next_state
     }
       ink_release_assert(0); // Should never happen
+    // fallthrough
 
     case READ_NOT_ACTIVE:
     case READ_NOT_ACTIVE_EXIT: {
@@ -955,6 +962,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       }
     }
       ink_release_assert(0); // Should never happen
+    // fallthrough
 
     case READ_PROCESSING_COMPLETE:
     default:
@@ -1105,6 +1113,7 @@ ICPRequestCont::ICPRequestEvent(int event, Event *e)
     }
   }
     ink_release_assert(0); // should never happen
+  // fallthrough
 
   case ICP_DONE:
   default:
