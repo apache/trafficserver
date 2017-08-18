@@ -773,7 +773,12 @@ HttpTransact::EndRemapRequest(State *s)
       error_body_type = "redirect#moved_temporarily";
       break;
     default:
-      Warning("Invalid status code for redirect '%d'. Building a response for a temporary redirect.", s->http_return_code);
+      if (HTTP_STATUS_NONE == s->http_return_code) {
+        s->http_return_code = HTTP_STATUS_MOVED_TEMPORARILY;
+        Warning("Changed status code from '0' to '%d'.", s->http_return_code);
+      } else {
+        Warning("Using invalid status code for redirect '%d'. Building a response for a temporary redirect.", s->http_return_code);
+      }
       error_body_type = "redirect#moved_temporarily";
     }
     build_error_response(s, s->http_return_code, "Redirect", error_body_type, nullptr);

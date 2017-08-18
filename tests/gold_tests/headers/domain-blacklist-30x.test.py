@@ -32,6 +32,7 @@ REDIRECT_301_HOST='www.redirect301.test'
 REDIRECT_302_HOST='www.redirect302.test'
 REDIRECT_307_HOST='www.redirect307.test'
 REDIRECT_308_HOST='www.redirect308.test'
+REDIRECT_0_HOST='www.redirect0.test'
 PASSTHRU_HOST='www.passthrough.test'
 
 ts.Disk.records_config.update({
@@ -45,12 +46,13 @@ regex_map http://{0}/ http://{0}/ @plugin=header_rewrite.so @pparam=header_rewri
 regex_map http://{1}/ http://{1}/ @plugin=header_rewrite.so @pparam=header_rewrite_rules_302.conf
 regex_map http://{2}/ http://{2}/ @plugin=header_rewrite.so @pparam=header_rewrite_rules_307.conf
 regex_map http://{3}/ http://{3}/ @plugin=header_rewrite.so @pparam=header_rewrite_rules_308.conf
-""".format(REDIRECT_301_HOST, REDIRECT_302_HOST, REDIRECT_307_HOST, REDIRECT_308_HOST)
+regex_map http://{4}/ http://{4}/ @plugin=header_rewrite.so @pparam=header_rewrite_rules_0.conf
+""".format(REDIRECT_301_HOST, REDIRECT_302_HOST, REDIRECT_307_HOST, REDIRECT_308_HOST, REDIRECT_0_HOST)
 )
 
-for x in (1,2,7,8):
-  ts.Disk.MakeConfigFile("header_rewrite_rules_30{0}.conf".format(x)).AddLine("""\
-set-redirect 30{0} "%<cque>"
+for x in (0,301,302,307,308):
+  ts.Disk.MakeConfigFile("header_rewrite_rules_{0}.conf".format(x)).AddLine("""\
+set-redirect {0} "%<cque>"
 """.format(x))
 
 Test.Setup.Copy(os.path.join(os.pardir,os.pardir,'tools','tcp_client.py'))
@@ -92,6 +94,15 @@ redirect308tr.Processes.Default.Command="python tcp_client.py 127.0.0.1 {0} {1} 
 redirect308tr.Processes.Default.TimeOut=5 # seconds
 redirect308tr.Processes.Default.ReturnCode=0
 redirect308tr.Processes.Default.Streams.stdout="redirect308_get.gold"
+
+redirect0tr=Test.AddTestRun("Test domain {0}".format(REDIRECT_0_HOST))
+redirect0tr.StillRunningBefore = ts
+redirect0tr.StillRunningAfter = ts
+redirect0tr.Processes.Default.Command="python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+    format(ts.Variables.port, 'data/{0}_get.txt'.format(REDIRECT_0_HOST))
+redirect0tr.Processes.Default.TimeOut=5 # seconds
+redirect0tr.Processes.Default.ReturnCode=0
+redirect0tr.Processes.Default.Streams.stdout="redirect0_get.gold"
 
 passthroughtr=Test.AddTestRun("Test domain {0}".format(PASSTHRU_HOST))
 passthroughtr.StillRunningBefore = ts
