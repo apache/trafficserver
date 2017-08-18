@@ -115,6 +115,9 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     vc->set_context(NET_VCONNECTION_IN);
     vc->read.triggered = 1;
     vc->start(this->_ssl_ctx);
+    vc->options.ip_proto  = NetVCOptions::USE_UDP;
+    vc->options.ip_family = udpPacket->from.sa.sa_family;
+
     // TODO: Handle Connection ID of Client Cleartext / Non-Final Server Cleartext Packet
     this->_connections.put(qPkt->connection_id(), vc);
   }
