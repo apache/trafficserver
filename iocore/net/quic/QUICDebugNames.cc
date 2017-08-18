@@ -91,6 +91,46 @@ QUICDebugNames::frame_type(QUICFrameType type)
 }
 
 const char *
+QUICDebugNames::error_class(QUICErrorClass cls)
+{
+  switch (cls) {
+  case QUICErrorClass::NONE:
+    return "NONE";
+  case QUICErrorClass::AQPPLICATION_SPECIFIC:
+    return "AQPPLICATION_SPECIFIC";
+  case QUICErrorClass::HOST_LOCAL:
+    return "HOST_LOCAL";
+  case QUICErrorClass::QUIC_TRANSPORT:
+    return "QUIC_TRANSPORT";
+  case QUICErrorClass::CRYPTOGRAPHIC:
+    return "CRYPTOGRAPHIC";
+  default:
+    return "UNKNOWN";
+  }
+}
+
+const char *
+QUICDebugNames::error_code(QUICErrorCode code)
+{
+  switch (code) {
+  case QUICErrorCode::APPLICATION_SPECIFIC_ERROR:
+    return "APPLICATION_SPECIFIC_ERROR";
+  case QUICErrorCode::HOST_LOCAL_ERROR:
+    return "HOST_LOCAL_ERROR";
+  case QUICErrorCode::QUIC_TRANSPORT_ERROR:
+    return "QUIC_TRANSPORT_ERROR";
+  case QUICErrorCode::QUIC_INTERNAL_ERROR:
+    return "QUIC_INTERNAL_ERROR";
+  case QUICErrorCode::CRYPTOGRAPHIC_ERROR:
+    return "CRYPTOGRAPHIC_ERROR";
+  case QUICErrorCode::TLS_HANDSHAKE_FAILED:
+    return "TLS_HANDSHAKE_FAILED";
+  default:
+    return "UNKNOWN";
+  }
+}
+
+const char *
 QUICDebugNames::vc_event(int event)
 {
   switch (event) {

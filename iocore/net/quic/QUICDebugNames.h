@@ -30,6 +30,9 @@ class QUICDebugNames
 public:
   static const char *packet_type(QUICPacketType type);
   static const char *frame_type(QUICFrameType type);
+  static const char *error_class(QUICErrorClass cls);
+  static const char *error_code(QUICErrorCode code);
+
   // TODO: move to somewhere
   static const char *vc_event(int event);
 };
