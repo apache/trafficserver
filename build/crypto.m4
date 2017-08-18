@@ -242,6 +242,9 @@ AC_DEFUN([TS_CHECK_CRYPTO_TLS13], [
 #include <openssl/ssl.h>
     ]],
     [[
+#ifndef TLS1_3_VERSION
+# error no TLS1_3 support
+#endif
 #ifdef OPENSSL_NO_TLS1_3
 # error no TLS1_3 support
 #endif
