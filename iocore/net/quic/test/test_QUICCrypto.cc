@@ -33,6 +33,7 @@
 
 #include <openssl/ssl.h>
 
+#include "Mock.h"
 #include "QUICCrypto.h"
 
 const static uint32_t MAX_HANDSHAKE_MSG_LEN = 2048;
@@ -108,7 +109,7 @@ TEST_CASE("QUICCrypto 1-RTT", "[quic]")
   SSL_CTX *client_ssl_ctx = SSL_CTX_new(TLS_method());
   SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
-  QUICCrypto *client = new QUICCrypto(client_ssl_ctx, NET_VCONNECTION_OUT);
+  QUICCrypto *client = new QUICCrypto(client_ssl_ctx, new MockNetVConnection(NET_VCONNECTION_OUT));
 
   // Server
   SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
@@ -118,7 +119,7 @@ TEST_CASE("QUICCrypto 1-RTT", "[quic]")
   SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
   BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
   SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
-  QUICCrypto *server = new QUICCrypto(server_ssl_ctx, NET_VCONNECTION_IN);
+  QUICCrypto *server = new QUICCrypto(server_ssl_ctx, new MockNetVConnection(NET_VCONNECTION_IN));
 
   // Client Hello
   uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};

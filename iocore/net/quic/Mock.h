@@ -28,6 +28,74 @@
 #include "QUICEvents.h"
 #include "QUICPacketTransmitter.h"
 
+class MockNetVConnection : public NetVConnection
+{
+public:
+  MockNetVConnection(NetVConnectionContext_t context = NET_VCONNECTION_OUT) : NetVConnection() { netvc_context = context; }
+  VIO *
+  do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+  {
+    return nullptr;
+  };
+  VIO *
+  do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false)
+  {
+    return nullptr;
+  };
+  void do_io_close(int lerrno = -1){};
+  void do_io_shutdown(ShutdownHowTo_t howto){};
+  void reenable(VIO *vio){};
+  void reenable_re(VIO *vio){};
+  void set_active_timeout(ink_hrtime timeout_in){};
+  void set_inactivity_timeout(ink_hrtime timeout_in){};
+  void cancel_active_timeout(){};
+  void cancel_inactivity_timeout(){};
+  void add_to_keep_alive_queue(){};
+  void remove_from_keep_alive_queue(){};
+  bool
+  add_to_active_queue()
+  {
+    return true;
+  };
+  ink_hrtime
+  get_active_timeout()
+  {
+    return 0;
+  }
+  ink_hrtime
+  get_inactivity_timeout()
+  {
+    return 0;
+  }
+  void
+  apply_options()
+  {
+  }
+  SOCKET
+  get_socket()
+  {
+    return 0;
+  }
+  int
+  set_tcp_init_cwnd(int init_cwnd)
+  {
+    return 0;
+  }
+  int
+  set_tcp_congestion_control(int side)
+  {
+    return 0;
+  }
+  void set_local_addr(){};
+  void set_remote_addr(){};
+
+  NetVConnectionContext_t
+  get_context() const
+  {
+    return netvc_context;
+  }
+};
+
 class MockQUICConnection : public QUICConnection
 {
 public:
@@ -100,6 +168,17 @@ public:
   }
 
   void
+  set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp) override
+  {
+  }
+
+  const QUICTransportParameters &
+  local_transport_parameters() override
+  {
+    return dummy_transport_parameters;
+  }
+
+  void
   close(QUICError error) override
   {
   }
@@ -115,6 +194,8 @@ public:
   Ptr<ProxyMutex> _mutex;
   int _totalFrameCount = 0;
   int _frameCount[256] = {0};
+
+  QUICTransportParametersInEncryptedExtensions dummy_transport_parameters;
 };
 
 class MockQUICPacketTransmitter : public QUICPacketTransmitter
@@ -303,3 +384,10 @@ private:
   int _totalFrameCount = 0;
   int _frameCount[256] = {0};
 };
+
+void NetVConnection::cancel_OOB(){};
+Action *
+NetVConnection::send_OOB(Continuation *, char *, int)
+{
+  return nullptr;
+}

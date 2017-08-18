@@ -45,7 +45,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
     0xab, 0xcd,             // value
   };
 
-  QUICTransportParametersInClientHello params_in_ch(buf);
+  QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
   CHECK(params_in_ch.negotiated_version() == 0x01020304);
   CHECK(params_in_ch.initial_version() == 0x05060708);
   QUICTransportParameterValue value;
@@ -111,7 +111,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
     0xab, 0xcd,             // value
   };
 
-  QUICTransportParametersInEncryptedExtensions params_in_ee(buf);
+  QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
   const uint8_t *versions;
   uint16_t nversion;
   versions = params_in_ee.supported_versions(&nversion);

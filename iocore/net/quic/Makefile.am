@@ -40,6 +40,7 @@ QUICCrypto_impl = QUICCrypto_openssl.cc
 endif
 
 libquic_a_SOURCES = \
+  QUICGlobals.cc \
   QUICTypes.cc \
   QUICPacket.cc \
   QUICFrame.cc \
@@ -54,6 +55,7 @@ libquic_a_SOURCES = \
   QUICHandshake.cc \
   QUICCrypto.cc \
   $(QUICCrypto_impl) \
+  QUICTransportParameters.cc \
   QUICAckFrameCreator.cc \
   QUICConfig.cc \
   QUICDebugNames.cc \

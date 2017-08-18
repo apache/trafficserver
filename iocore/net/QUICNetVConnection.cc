@@ -88,7 +88,7 @@ void
 QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 {
   this->_version_negotiator = new QUICVersionNegotiator(&this->_packet_factory, this);
-  this->_crypto             = new QUICCrypto(ssl_ctx, this->netvc_context);
+  this->_crypto             = new QUICCrypto(ssl_ctx, this);
   this->_packet_factory.set_crypto_module(this->_crypto);
 
   // FIXME Should these have to be shared_ptr?
@@ -101,6 +101,19 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   std::shared_ptr<QUICCongestionController> congestionController = std::make_shared<QUICCongestionController>();
   this->_frame_dispatcher =
     new QUICFrameDispatcher(this, this->_stream_manager, flowController, congestionController, this->_loss_detector);
+
+  // FIXME Fill appropriate values
+  // MUSTs
+  QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions();
+  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, {reinterpret_cast<const uint8_t *>("\x00\x00\x00\x00"), 4});
+  tp->add(QUICTransportParameterId::INITIAL_MAX_DATA, {reinterpret_cast<const uint8_t *>("\x00\x00\x00\x00"), 4});
+  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, {reinterpret_cast<const uint8_t *>("\x00\x00\x00\x00"), 4});
+  tp->add(QUICTransportParameterId::IDLE_TIMEOUT, {reinterpret_cast<const uint8_t *>("\x00\x00"), 2});
+  tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
+  // MAYs
+  // this->_local_transport_parameters.add(QUICTransportParameterId::TRUNCATE_CONNECTION_ID, {});
+  // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
+  this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
 }
 
 void
@@ -138,6 +151,18 @@ uint32_t
 QUICNetVConnection::pmtu()
 {
   return this->_pmtu;
+}
+
+void
+QUICNetVConnection::set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp)
+{
+  this->_remote_transport_parameters = std::move(tp);
+}
+
+const QUICTransportParameters &
+QUICNetVConnection::local_transport_parameters()
+{
+  return *this->_local_transport_parameters;
 }
 
 uint32_t

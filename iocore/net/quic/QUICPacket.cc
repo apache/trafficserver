@@ -31,12 +31,6 @@ static const int OFFSET_PAYLOAD       = 17;
 static const int LONGHEADER_LENGTH    = 17;
 static const int FNV1A_HASH_LEN       = 8;
 
-ats_unique_buf
-ats_unique_malloc(size_t size)
-{
-  return ats_unique_buf(reinterpret_cast<uint8_t *>(ats_malloc(size)), [](void *p) { ats_free(p); });
-}
-
 const uint8_t *
 QUICPacketHeader::buf()
 {

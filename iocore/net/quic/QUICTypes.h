@@ -36,11 +36,16 @@
 
 #include <random>
 #include <cstdint>
+#include "ts/ink_memory.h"
 
 // These magical defines should be removed when we implement seriously
 #define MAGIC_NUMBER_0 0
 #define MAGIC_NUMBER_1 1
 #define MAGIC_NUMBER_TRUE true
+
+// TODO: move to lib/ts/ink_memory.h?
+using ats_unique_buf = std::unique_ptr<uint8_t, decltype(&ats_free)>;
+ats_unique_buf ats_unique_malloc(size_t size);
 
 typedef uint64_t QUICPacketNumber;
 typedef uint32_t QUICVersion;

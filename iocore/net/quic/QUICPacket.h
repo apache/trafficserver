@@ -36,10 +36,6 @@
 #define QUIC_FIELD_OFFSET_PACKET_NUMBER 4
 #define QUIC_FIELD_OFFSET_PAYLOAD 5
 
-// TODO: move to lib/ts/ink_memory.h?
-using ats_unique_buf = std::unique_ptr<uint8_t, decltype(&ats_free)>;
-ats_unique_buf ats_unique_malloc(size_t size);
-
 class QUICPacketHeader
 {
 public:

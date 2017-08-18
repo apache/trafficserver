@@ -22,13 +22,24 @@
  */
 
 #include <cstdlib>
+#include "QUICGlobals.h"
 #include "QUICTransportParameters.h"
+#include "QUICConnection.h"
+#include "../P_QUICNetVConnection.h"
+
+const static int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
+
+QUICTransportParameters::QUICTransportParameters(const uint8_t *buf, size_t len)
+{
+  this->_buf = ats_unique_malloc(len);
+  memcpy(this->_buf.get(), buf, len);
+}
 
 QUICTransportParameterValue
 QUICTransportParameters::get(QUICTransportParameterId tpid) const
 {
   QUICTransportParameterValue value;
-  const uint8_t *p = this->_buf + this->_parameters_offset();
+  const uint8_t *p = this->_buf.get() + this->_parameters_offset();
 
   uint16_t n = (p[0] << 8) + p[1];
   p += 2;
@@ -110,13 +121,13 @@ QUICTransportParametersInClientHello::_parameters_offset() const
 QUICVersion
 QUICTransportParametersInClientHello::negotiated_version() const
 {
-  return QUICTypeUtil::read_QUICVersion(this->_buf);
+  return QUICTypeUtil::read_QUICVersion(this->_buf.get());
 }
 
 QUICVersion
 QUICTransportParametersInClientHello::initial_version() const
 {
-  return QUICTypeUtil::read_QUICVersion(this->_buf + sizeof(QUICVersion));
+  return QUICTypeUtil::read_QUICVersion(this->_buf.get() + sizeof(QUICVersion));
 }
 
 void
@@ -138,8 +149,9 @@ QUICTransportParametersInEncryptedExtensions::_store(uint8_t *buf, uint16_t *len
 const uint8_t *
 QUICTransportParametersInEncryptedExtensions::supported_versions(uint16_t *n) const
 {
-  *n = (this->_buf[0] << 8) + this->_buf[1];
-  return this->_buf + 2;
+  uint8_t *b = this->_buf.get();
+  *n         = (b[0] << 8) + b[1];
+  return b + 2;
 }
 
 void
@@ -151,5 +163,41 @@ QUICTransportParametersInEncryptedExtensions::add_version(QUICVersion version)
 std::ptrdiff_t
 QUICTransportParametersInEncryptedExtensions::_parameters_offset() const
 {
-  return 2 + 4 * ((this->_buf[0] << 8) + this->_buf[1]);
+  const uint8_t *b = this->_buf.get();
+  return 2 + 4 * ((b[0] << 8) + b[1]);
+}
+
+//
+// QUICTransportParametersHandler
+//
+
+int
+QUICTransportParametersHandler::add(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char **out, size_t *outlen,
+                                    X509 *x, size_t chainidx, int *al, void *add_arg)
+{
+  QUICConnection *qc =
+    static_cast<QUICConnection *>(static_cast<QUICNetVConnection *>(SSL_get_ex_data(s, QUIC::ssl_quic_vc_index)));
+  *out = reinterpret_cast<const unsigned char *>(ats_malloc(TRANSPORT_PARAMETERS_MAXIMUM_SIZE));
+  qc->local_transport_parameters().store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
+
+  return 1;
+}
+
+void
+QUICTransportParametersHandler::free(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *out, void *add_arg)
+{
+  ats_free(const_cast<unsigned char *>(out));
+}
+
+int
+QUICTransportParametersHandler::parse(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *in, size_t inlen,
+                                      X509 *x, size_t chainidx, int *al, void *parse_arg)
+{
+  QUICConnection *qc =
+    static_cast<QUICConnection *>(static_cast<QUICNetVConnection *>(SSL_get_ex_data(s, QUIC::ssl_quic_vc_index)));
+  QUICTransportParametersInClientHello *tp     = new QUICTransportParametersInClientHello(in, inlen);
+  std::unique_ptr<QUICTransportParameters> utp = std::unique_ptr<QUICTransportParameters>(tp);
+  qc->set_transport_parameters(std::move(utp));
+
+  return 1;
 }

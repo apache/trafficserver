@@ -26,6 +26,7 @@
 #include "QUICPacketTransmitter.h"
 #include "QUICFrameTransmitter.h"
 #include "QUICFrameHandler.h"
+#include "QUICTransportParameters.h"
 
 class QUICApplication;
 class QUICCrypto;
@@ -33,10 +34,12 @@ class QUICCrypto;
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
 {
 public:
-  virtual QUICApplication *get_application(QUICStreamId stream_id) = 0;
-  virtual QUICCrypto *get_crypto()                                 = 0;
-  virtual uint32_t maximum_quic_packet_size()                      = 0;
-  virtual uint32_t minimum_quic_packet_size()                      = 0;
-  virtual uint32_t pmtu()                                          = 0;
-  virtual void close(QUICError error)                              = 0;
+  virtual QUICApplication *get_application(QUICStreamId stream_id)                   = 0;
+  virtual QUICCrypto *get_crypto()                                                   = 0;
+  virtual uint32_t maximum_quic_packet_size()                                        = 0;
+  virtual uint32_t minimum_quic_packet_size()                                        = 0;
+  virtual uint32_t pmtu()                                                            = 0;
+  virtual void set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp) = 0;
+  virtual const QUICTransportParameters &local_transport_parameters()                = 0;
+  virtual void close(QUICError error)                                                = 0;
 };

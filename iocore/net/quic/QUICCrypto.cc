@@ -20,6 +20,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#include "QUICGlobals.h"
 #include "QUICCrypto.h"
 
 #include <openssl/err.h>
@@ -82,9 +83,10 @@ QUICPacketProtection::key_phase() const
 //
 // QUICCrypto
 //
-QUICCrypto::QUICCrypto(SSL_CTX *ssl_ctx, NetVConnectionContext_t c) : _netvc_context(c)
+QUICCrypto::QUICCrypto(SSL_CTX *ssl_ctx, NetVConnection *vc) : _netvc_context(vc->get_context())
 {
   this->_ssl = SSL_new(ssl_ctx);
+  SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_vc_index, vc);
   if (this->_netvc_context == NET_VCONNECTION_IN) {
     SSL_set_accept_state(this->_ssl);
   } else if (this->_netvc_context == NET_VCONNECTION_OUT) {

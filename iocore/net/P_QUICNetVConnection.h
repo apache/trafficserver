@@ -167,6 +167,8 @@ public:
   uint32_t minimum_quic_packet_size() override;
   uint32_t maximum_stream_frame_data_size() override;
   uint32_t pmtu() override;
+  void set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp) override;
+  const QUICTransportParameters &local_transport_parameters() override;
   void close(QUICError error) override;
 
   // QUICConnection (QUICPacketTransmitter)
@@ -189,6 +191,9 @@ private:
   QUICAckFrameCreator _ack_frame_creator;
 
   uint32_t _pmtu = 1280;
+
+  std::unique_ptr<QUICTransportParameters> _local_transport_parameters;
+  std::unique_ptr<QUICTransportParameters> _remote_transport_parameters;
 
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.

@@ -120,6 +120,7 @@ test_QUICFrame_LDFLAGS = \
 test_QUICFrame_SOURCES = \
   main.cc \
   test_QUICFrame.cc \
+  ../QUICGlobals.cc \
   ../QUICFrame.cc \
   ../QUICPacket.cc \
   ../QUICCrypto.cc \
@@ -142,7 +143,9 @@ test_QUICFrameDispatcher_LDFLAGS = \
 test_QUICFrameDispatcher_SOURCES = \
   main.cc \
   test_QUICFrameDispatcher.cc \
+  ../QUICGlobals.cc \
   ../QUICFrameDispatcher.cc \
+  ../QUICTransportParameters.cc \
   ../QUICStreamManager.cc \
   ../QUICFlowController.cc \
   ../QUICCongestionController.cc \
@@ -236,11 +239,13 @@ test_QUICTransportParameters_LDFLAGS = \
 test_QUICTransportParameters_SOURCES = \
   main.cc \
   test_QUICTransportParameters.cc \
+  ../QUICGlobals.cc \
   ../QUICTransportParameters.cc \
   ../QUICTypes.cc
 
 test_QUICTransportParameters_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a
 
 #
@@ -256,6 +261,7 @@ test_QUICCrypto_LDFLAGS = \
 test_QUICCrypto_LDADD = \
   @OPENSSL_LIBS@ \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a
 
 test_QUICCrypto_SOURCES = \
@@ -263,7 +269,8 @@ test_QUICCrypto_SOURCES = \
   test_QUICCrypto.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
-  ../QUICCrypto.h
+  ../QUICCrypto.h \
+  ../QUICGlobals.cc
 
 #
 # test_QUICLossDetector
@@ -329,6 +336,7 @@ test_QUICAckFrameCreator_SOURCES = \
   main.cc \
   test_QUICAckFrameCreator.cc \
   ../QUICAckFrameCreator.cc \
+  ../QUICGlobals.cc \
   ../QUICTypes.cc \
   ../QUICFrame.cc \
   ../QUICPacket.cc \
@@ -354,6 +362,7 @@ test_QUICVersionNegotiator_LDADD = \
 test_QUICVersionNegotiator_SOURCES = \
   main.cc \
   test_QUICVersionNegotiator.cc \
+  ../QUICGlobals.cc \
   ../QUICTypes.cc \
   ../QUICPacket.cc \
   ../QUICCrypto.cc \

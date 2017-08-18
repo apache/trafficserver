@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <openssl/ssl.h>
 #include "QUICTypes.h"
 #include "ts/Map.h"
 #include <cstddef>
@@ -73,15 +74,16 @@ typedef struct _QUICTransportParameterValue {
 class QUICTransportParameters
 {
 public:
-  QUICTransportParameters(const uint8_t *buf) : _buf(buf){};
+  QUICTransportParameters(const uint8_t *buf, size_t len);
   QUICTransportParameterValue get(QUICTransportParameterId id) const;
   void add(QUICTransportParameterId id, QUICTransportParameterValue value);
   void store(uint8_t *buf, uint16_t *len) const;
 
 protected:
+  QUICTransportParameters(){};
   virtual std::ptrdiff_t _parameters_offset() const = 0;
   virtual void _store(uint8_t *buf, uint16_t *len) const = 0;
-  const uint8_t *_buf;
+  ats_unique_buf _buf = {nullptr, [](void *p) { ats_free(p); }};
   Map<QUICTransportParameterId, QUICTransportParameterValue> _parameters;
 };
 
@@ -89,8 +91,8 @@ class QUICTransportParametersInClientHello : public QUICTransportParameters
 {
 public:
   QUICTransportParametersInClientHello(QUICVersion negotiated_version, QUICVersion initial_version)
-    : QUICTransportParameters(nullptr), _negotiated_version(negotiated_version), _initial_version(initial_version){};
-  QUICTransportParametersInClientHello(const uint8_t *buf) : QUICTransportParameters(buf){};
+    : QUICTransportParameters(), _negotiated_version(negotiated_version), _initial_version(initial_version){};
+  QUICTransportParametersInClientHello(const uint8_t *buf, size_t len) : QUICTransportParameters(buf, len){};
   QUICVersion negotiated_version() const;
   QUICVersion initial_version() const;
 
@@ -106,8 +108,8 @@ private:
 class QUICTransportParametersInEncryptedExtensions : public QUICTransportParameters
 {
 public:
-  QUICTransportParametersInEncryptedExtensions() : QUICTransportParameters(nullptr){};
-  QUICTransportParametersInEncryptedExtensions(const uint8_t *buf) : QUICTransportParameters(buf){};
+  QUICTransportParametersInEncryptedExtensions() : QUICTransportParameters(){};
+  QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len) : QUICTransportParameters(buf, len){};
   const uint8_t *supported_versions(uint16_t *n) const;
   void add_version(QUICVersion version);
 
@@ -117,4 +119,18 @@ protected:
 
   uint8_t _n_versions        = 0;
   QUICVersion _versions[256] = {};
+};
+
+class QUICTransportParametersHandler
+{
+public:
+  static constexpr int TRANSPORT_PARAMETER_ID = 26;
+
+  static int add(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char **out, size_t *outlen, X509 *x,
+                 size_t chainidx, int *al, void *add_arg);
+
+  static void free(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *out, void *add_arg);
+
+  static int parse(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *in, size_t inlen, X509 *x,
+                   size_t chainidx, int *al, void *parse_arg);
 };

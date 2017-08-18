@@ -26,7 +26,8 @@
 #include "ts/ink_platform.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
-#include "P_QUICNetVConnection.h"
+
+class QUICNetVConnection;
 
 struct QUICPacketHandler : public NetAccept {
 public:

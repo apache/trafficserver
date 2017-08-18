@@ -66,7 +66,7 @@ private:
 class QUICCrypto
 {
 public:
-  QUICCrypto(SSL_CTX *, NetVConnectionContext_t);
+  QUICCrypto(SSL_CTX *, NetVConnection *);
   ~QUICCrypto();
 
   bool handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len);
