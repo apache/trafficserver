@@ -780,7 +780,7 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   msg.msg_flags      = 0;
 #endif
   msg.msg_name    = (caddr_t)&p->to.sa;
-  msg.msg_namelen = sizeof(p->to.sa);
+  msg.msg_namelen = ats_ip_size(p->to);
   iov_len         = 0;
 
   for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
@@ -798,6 +798,10 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
     n = ::sendmsg(p->conn->getFd(), &msg, 0);
     if ((n >= 0) || ((n < 0) && (errno != EAGAIN))) {
       // send succeeded or some random error happened.
+      if (n < 0) {
+        Debug("udp-send", "Error: %s (%d)", strerror(errno), errno);
+      }
+
       break;
     }
     if (errno == EAGAIN) {
