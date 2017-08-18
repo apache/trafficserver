@@ -595,6 +595,10 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
     }
   }
 
+  if (ats_is_ip6(addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
+    goto Lerror;
+  }
+
   if ((res = socketManager.ink_bind(fd, addr, ats_ip_size(addr))) < 0) {
     goto Lerror;
   }
@@ -630,6 +634,8 @@ Lerror:
   if (fd != NO_FD) {
     socketManager.close(fd);
   }
+  Debug("udpnet", "Error: %s (%d)", strerror(errno), errno);
+
   cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, nullptr);
   return ACTION_IO_ERROR;
 }
