@@ -31,6 +31,7 @@
 #include "QUICFrame.h"
 #include "QUICStreamState.h"
 
+class QUICConnection;
 class QUICStreamState;
 class QUICStreamManager;
 
@@ -44,7 +45,7 @@ public:
   QUICStream() : VConnection(nullptr) {}
   ~QUICStream() {}
 
-  void init(QUICStreamManager *manager, uint32_t id);
+  void init(QUICStreamManager *manager, QUICConnection *qc, uint32_t id);
   void start();
   int main_event_handler(int event, void *data);
 
@@ -94,5 +95,6 @@ private:
   // TODO: Consider to replace with ts/RbTree.h or other data structure
   std::map<QUICOffset, std::shared_ptr<const QUICStreamFrame>> _request_stream_frame_buffer;
 
-  QUICStreamManager *_streamManager;
+  QUICStreamManager *_streamManager = nullptr;
+  QUICConnection *_qc               = nullptr;
 };

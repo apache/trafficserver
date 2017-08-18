@@ -165,6 +165,7 @@ public:
   QUICCrypto *get_crypto() override;
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
+  uint32_t maximum_stream_frame_data_size() override;
   uint32_t pmtu() override;
   void close(QUICError error) override;
 

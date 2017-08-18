@@ -44,8 +44,9 @@
 #define DebugQUICCon(fmt, ...) \
   Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
 
-const static uint32_t MINIMUM_MTU         = 1280;
-const static uint32_t MAX_PACKET_OVERHEAD = 25; // Max long header len(17) + FNV-1a hash len(8)
+const static uint32_t MINIMUM_MTU               = 1280;
+const static uint32_t MAX_PACKET_OVERHEAD       = 25; // Max long header len(17) + FNV-1a hash len(8)
+const static uint32_t MAX_STREAM_FRAME_OVERHEAD = 15;
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
@@ -157,6 +158,12 @@ QUICNetVConnection::maximum_quic_packet_size()
   } else {
     return this->_pmtu - 28;
   }
+}
+
+uint32_t
+QUICNetVConnection::maximum_stream_frame_data_size()
+{
+  return this->maximum_quic_packet_size() - MAX_STREAM_FRAME_OVERHEAD - MAX_PACKET_OVERHEAD;
 }
 
 void
@@ -287,7 +294,8 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
   if (error.cls != QUICErrorClass::NONE) {
     // TODO: Send error if needed
-    DebugQUICCon("QUICError: cls=%u, code=0x%x", static_cast<unsigned int>(error.cls), static_cast<unsigned int>(error.code));
+    DebugQUICCon("QUICError: %s (%u), %s (0x%x)", QUICDebugNames::error_class(error.cls), static_cast<unsigned int>(error.cls),
+                 QUICDebugNames::error_code(error.code), static_cast<unsigned int>(error.code));
   }
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
@@ -446,6 +454,8 @@ QUICError
 QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_ptr<const QUICPacket> packet)
 {
   if (packet->size() < this->minimum_quic_packet_size()) {
+    DebugQUICCon("%" PRId32 ", %" PRId32, packet->size(), this->minimum_quic_packet_size());
+
     return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
   }
 

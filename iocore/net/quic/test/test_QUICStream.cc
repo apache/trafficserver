@@ -47,7 +47,7 @@ TEST_CASE("QUICStream_assembling_byte_stream_1", "[quic]")
   IOBufferReader *reader = read_buffer->alloc_reader();
 
   std::unique_ptr<QUICStream> stream(new QUICStream());
-  stream->init(nullptr, stream_id);
+  stream->init(nullptr, nullptr, stream_id);
   stream->do_io_read(nullptr, 0, read_buffer);
 
   stream->recv(frame_1);
@@ -73,7 +73,7 @@ TEST_CASE("QUICStream_assembling_byte_stream_2", "[quic]")
   IOBufferReader *reader = read_buffer->alloc_reader();
 
   std::unique_ptr<QUICStream> stream(new QUICStream());
-  stream->init(nullptr, stream_id);
+  stream->init(nullptr, nullptr, stream_id);
   stream->do_io_read(nullptr, 0, read_buffer);
 
   stream->recv(frame_8);
@@ -99,7 +99,7 @@ TEST_CASE("QUICStream_assembling_byte_stream_3", "[quic]")
   IOBufferReader *reader = read_buffer->alloc_reader();
 
   std::unique_ptr<QUICStream> stream(new QUICStream());
-  stream->init(nullptr, stream_id);
+  stream->init(nullptr, nullptr, stream_id);
   stream->do_io_read(nullptr, 0, read_buffer);
 
   stream->recv(frame_8);

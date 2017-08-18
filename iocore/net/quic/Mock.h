@@ -88,6 +88,12 @@ public:
   }
 
   uint32_t
+  maximum_stream_frame_data_size() override
+  {
+    return 1160;
+  }
+
+  uint32_t
   pmtu() override
   {
     return 1280;
@@ -142,8 +148,14 @@ public:
 class MockQUICFrameTransmitter : public QUICFrameTransmitter
 {
   void
-  transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame)
+  transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame) override
   {
+  }
+
+  uint32_t
+  maximum_stream_frame_data_size() override
+  {
+    return 1160;
   }
 };
 

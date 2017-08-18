@@ -104,7 +104,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
   if (!stream) {
     // TODO Free the stream somewhere
     stream = THREAD_ALLOC_INIT(quicStreamAllocator, this_ethread());
-    stream->init(this, stream_id);
+    stream->init(this, this->_qc, stream_id);
     stream->start();
 
     this->stream_list.push(stream);
