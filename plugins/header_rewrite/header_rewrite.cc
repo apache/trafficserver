@@ -153,11 +153,11 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
     ++lineno; // ToDo: we should probably use this for error messages ...
     TSDebug(PLUGIN_NAME_DBG, "Reading line: %d: %s", lineno, line.c_str());
 
-    while (std::isspace(line[0])) {
+    while (!line.empty() && line.length() > 0 && std::isspace(line[0])) {
       line.erase(0, 1);
     }
 
-    while (std::isspace(line[line.length() - 1])) {
+    while (!line.empty() && line.length() > 0 && std::isspace(line[line.length() - 1])) {
       line.erase(line.length() - 1, 1);
     }
 
