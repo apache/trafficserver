@@ -34,6 +34,7 @@
 #endif
 #include <cstring>
 
+#include <memory>
 #include <random>
 #include <cstdint>
 #include "ts/ink_memory.h"
