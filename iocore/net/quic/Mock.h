@@ -72,10 +72,7 @@ public:
   {
   }
   SOCKET
-  get_socket()
-  {
-    return 0;
-  }
+  get_socket() { return 0; }
   int
   set_tcp_init_cwnd(int init_cwnd)
   {
