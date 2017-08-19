@@ -1427,7 +1427,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
 }
 
 void
-Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
+Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding)
 {
   HTTPHdr h1_hdr, h2_hdr;
   uint8_t *buf                = nullptr;
@@ -1446,6 +1446,21 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
   h1_hdr.create(HTTP_TYPE_REQUEST);
   h1_hdr.url_set(&url);
   h1_hdr.method_set("GET", 3);
+  if (accept_encoding != nullptr) {
+    MIMEField *f;
+    const char *name;
+    int name_len;
+    const char *value;
+    int value_len;
+
+    name  = accept_encoding->name_get(&name_len);
+    f     = h1_hdr.field_create(name, name_len);
+    value = accept_encoding->value_get(&value_len);
+    f->value_set(h1_hdr.m_heap, h1_hdr.m_mime, value, value_len);
+
+    h1_hdr.field_attach(f);
+  }
+
   http2_generate_h2_header_from_1_1(&h1_hdr, &h2_hdr);
 
   buf_len = h1_hdr.length_get() * 2; // Make it double just in case

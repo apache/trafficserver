@@ -175,7 +175,7 @@ public:
   void reenable(VIO *vio);
   virtual void transaction_done();
   void send_response_body();
-  void push_promise(URL &url);
+  void push_promise(URL &url, const MIMEField *accept_encoding);
 
   // Stream level window size
   ssize_t client_rwnd, server_rwnd;

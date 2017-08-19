@@ -630,10 +630,10 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
 }
 
 void
-Http2Stream::push_promise(URL &url)
+Http2Stream::push_promise(URL &url, const MIMEField *accept_encoding)
 {
   Http2ClientSession *parent = static_cast<Http2ClientSession *>(this->get_parent());
-  parent->connection_state.send_push_promise_frame(this, url);
+  parent->connection_state.send_push_promise_frame(this, url, accept_encoding);
 }
 
 void
