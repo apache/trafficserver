@@ -153,7 +153,7 @@ public:
   void reenable(VIO *vio) override;
   virtual void transaction_done() override;
   void send_response_body();
-  void push_promise(URL &url);
+  void push_promise(URL &url, const MIMEField *accept_encoding);
 
   // Stream level window size
   ssize_t client_rwnd;
