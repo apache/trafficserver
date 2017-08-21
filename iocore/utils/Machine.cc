@@ -295,12 +295,10 @@ Machine::insert_id(char *id)
   char *value                                    = nullptr;
   size_t len                                     = strlen(id);
 
-  if (id != nullptr) {
-    value = static_cast<char *>(ats_malloc(len));
-    make_to_lower_case(id, lower_case_name, sizeof(lower_case_name));
-    strncpy(value, lower_case_name, strlen(lower_case_name));
-    ink_hash_table_insert(machine_id_strings, lower_case_name, value);
-  }
+  value = static_cast<char *>(ats_malloc(len + 1));
+  make_to_lower_case(id, lower_case_name, sizeof(lower_case_name));
+  strncpy(value, lower_case_name, strlen(lower_case_name));
+  ink_hash_table_insert(machine_id_strings, lower_case_name, value);
 }
 
 void
