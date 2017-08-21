@@ -208,13 +208,6 @@ public:
 
   virtual void net_read_io(NetHandler *nh, EThread *lthread);
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs);
-  void readDisable(NetHandler *nh);
-  void readSignalError(NetHandler *nh, int err);
-  int readSignalDone(int event, NetHandler *nh);
-  int readSignalAndUpdate(int event);
-  void readReschedule(NetHandler *nh);
-  void writeReschedule(NetHandler *nh);
-  void netActivity(EThread *lthread);
   /**
    * If the current object's thread does not match the t argument, create a new
    * NetVC in the thread t context based on the socket and ssl information in the

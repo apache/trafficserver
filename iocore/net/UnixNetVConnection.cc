@@ -34,32 +34,6 @@
 // Global
 ClassAllocator<UnixNetVConnection> netVCAllocator("netVCAllocator");
 
-//
-// Reschedule a UnixNetVConnection by moving it
-// onto or off of the ready_list
-//
-static inline void
-read_reschedule(NetHandler *nh, UnixNetVConnection *vc)
-{
-  vc->ep.refresh(EVENTIO_READ);
-  if (vc->read.triggered && vc->read.enabled) {
-    nh->read_ready_list.in_or_enqueue(vc);
-  } else {
-    nh->read_ready_list.remove(vc);
-  }
-}
-
-static inline void
-write_reschedule(NetHandler *nh, UnixNetVConnection *vc)
-{
-  vc->ep.refresh(EVENTIO_WRITE);
-  if (vc->write.triggered && vc->write.enabled) {
-    nh->write_ready_list.in_or_enqueue(vc);
-  } else {
-    nh->write_ready_list.remove(vc);
-  }
-}
-
 void
 net_activity(UnixNetVConnection *vc, EThread *thread)
 {
@@ -113,109 +87,6 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
   vc->free(t);
 }
 
-//
-// Signal an event
-//
-static inline int
-read_signal_and_update(int event, UnixNetVConnection *vc)
-{
-  vc->recursion++;
-  if (vc->read.vio._cont) {
-    vc->read.vio._cont->handleEvent(event, &vc->read.vio);
-  } else {
-    switch (event) {
-    case VC_EVENT_EOS:
-    case VC_EVENT_ERROR:
-    case VC_EVENT_ACTIVE_TIMEOUT:
-    case VC_EVENT_INACTIVITY_TIMEOUT:
-      Debug("inactivity_cop", "event %d: null read.vio cont, closing vc %p", event, vc);
-      vc->closed = 1;
-      break;
-    default:
-      Error("Unexpected event %d for vc %p", event, vc);
-      ink_release_assert(0);
-      break;
-    }
-  }
-  if (!--vc->recursion && vc->closed) {
-    /* BZ  31932 */
-    ink_assert(vc->thread == this_ethread());
-    close_UnixNetVConnection(vc, vc->thread);
-    return EVENT_DONE;
-  } else {
-    return EVENT_CONT;
-  }
-}
-
-static inline int
-write_signal_and_update(int event, UnixNetVConnection *vc)
-{
-  vc->recursion++;
-  if (vc->write.vio._cont) {
-    vc->write.vio._cont->handleEvent(event, &vc->write.vio);
-  } else {
-    switch (event) {
-    case VC_EVENT_EOS:
-    case VC_EVENT_ERROR:
-    case VC_EVENT_ACTIVE_TIMEOUT:
-    case VC_EVENT_INACTIVITY_TIMEOUT:
-      Debug("inactivity_cop", "event %d: null write.vio cont, closing vc %p", event, vc);
-      vc->closed = 1;
-      break;
-    default:
-      Error("Unexpected event %d for vc %p", event, vc);
-      ink_release_assert(0);
-      break;
-    }
-  }
-  if (!--vc->recursion && vc->closed) {
-    /* BZ  31932 */
-    ink_assert(vc->thread == this_ethread());
-    close_UnixNetVConnection(vc, vc->thread);
-    return EVENT_DONE;
-  } else {
-    return EVENT_CONT;
-  }
-}
-
-static inline int
-read_signal_done(int event, NetHandler *nh, UnixNetVConnection *vc)
-{
-  vc->read.enabled = 0;
-  if (read_signal_and_update(event, vc) == EVENT_DONE) {
-    return EVENT_DONE;
-  } else {
-    read_reschedule(nh, vc);
-    return EVENT_CONT;
-  }
-}
-
-static inline int
-write_signal_done(int event, NetHandler *nh, UnixNetVConnection *vc)
-{
-  vc->write.enabled = 0;
-  if (write_signal_and_update(event, vc) == EVENT_DONE) {
-    return EVENT_DONE;
-  } else {
-    write_reschedule(nh, vc);
-    return EVENT_CONT;
-  }
-}
-
-static inline int
-read_signal_error(NetHandler *nh, UnixNetVConnection *vc, int lerrno)
-{
-  vc->lerrno = lerrno;
-  return read_signal_done(VC_EVENT_ERROR, nh, vc);
-}
-
-static inline int
-write_signal_error(NetHandler *nh, UnixNetVConnection *vc, int lerrno)
-{
-  vc->lerrno = lerrno;
-  return write_signal_done(VC_EVENT_ERROR, nh, vc);
-}
-
 // Read the data for a UnixNetVConnection.
 // Rescheduling the UnixNetVConnection by moving the VC
 // onto or off of the ready_list.
@@ -230,7 +101,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
   if (!lock.is_locked()) {
-    read_reschedule(nh, vc);
+    nh->read_reschedule(vc);
     return;
   }
 
@@ -243,7 +114,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   }
   // if it is not enabled.
   if (!s->enabled || s->vio.op != VIO::READ) {
-    read_disable(nh, vc);
+    nh->read_disable(vc);
     return;
   }
 
@@ -253,7 +124,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // if there is nothing to do, disable connection
   int64_t ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
-    read_disable(nh, vc);
+    nh->read_disable(vc);
     return;
   }
   int64_t toread = buf.writer()->write_avail();
@@ -328,18 +199,18 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       if (r == -EAGAIN || r == -ENOTCONN) {
         NET_INCREMENT_DYN_STAT(net_calls_to_read_nodata_stat);
         vc->read.triggered = 0;
-        nh->read_ready_list.remove(vc);
+        nh->read_reschedule(vc);
         return;
       }
 
       if (!r || r == -ECONNRESET) {
         vc->read.triggered = 0;
-        nh->read_ready_list.remove(vc);
-        read_signal_done(VC_EVENT_EOS, nh, vc);
+        nh->read_reschedule(vc);
+        nh->read_signal_done(VC_EVENT_EOS, vc);
         return;
       }
       vc->read.triggered = 0;
-      read_signal_error(nh, vc, (int)-r);
+      nh->read_signal_error(vc, (int)-r);
       return;
     }
     NET_SUM_DYN_STAT(net_read_bytes_stat, r);
@@ -361,28 +232,28 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     // If there are no more bytes to read, signal read complete
     ink_assert(ntodo >= 0);
     if (s->vio.ntodo() <= 0) {
-      read_signal_done(VC_EVENT_READ_COMPLETE, nh, vc);
+      nh->read_signal_done(VC_EVENT_READ_COMPLETE, vc);
       Debug("iocore_net", "read_from_net, read finished - signal done");
       return;
     } else {
-      if (read_signal_and_update(VC_EVENT_READ_READY, vc) != EVENT_CONT) {
+      if (nh->read_signal_and_update(VC_EVENT_READ_READY, vc) != EVENT_CONT) {
         return;
       }
 
       // change of lock... don't look at shared variables!
       if (lock.get_mutex() != s->vio.mutex.get()) {
-        read_reschedule(nh, vc);
+        nh->read_reschedule(vc);
         return;
       }
     }
   }
   // If here are is no more room, or nothing to do, disable the connection
   if (s->vio.ntodo() <= 0 || !s->enabled || !buf.writer()->write_avail()) {
-    read_disable(nh, vc);
+    nh->read_disable(vc);
     return;
   }
 
-  read_reschedule(nh, vc);
+  nh->read_reschedule(vc);
 }
 
 //
@@ -409,7 +280,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
   if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.get()) {
-    write_reschedule(nh, vc);
+    nh->write_reschedule(vc);
     return;
   }
 
@@ -426,22 +297,20 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
     if (ret == EVENT_ERROR) {
       vc->write.triggered = 0;
-      write_signal_error(nh, vc, err);
+      nh->write_signal_error(vc, err);
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
       vc->read.triggered = 0;
-      nh->read_ready_list.remove(vc);
-      read_reschedule(nh, vc);
+      nh->read_reschedule(vc);
     } else if (ret == SSL_HANDSHAKE_WANT_CONNECT || ret == SSL_HANDSHAKE_WANT_WRITE) {
       vc->write.triggered = 0;
-      nh->write_ready_list.remove(vc);
-      write_reschedule(nh, vc);
+      nh->write_reschedule(vc);
     } else if (ret == EVENT_DONE) {
       vc->write.triggered = 1;
       if (vc->write.enabled) {
         nh->write_ready_list.in_or_enqueue(vc);
       }
     } else {
-      write_reschedule(nh, vc);
+      nh->write_reschedule(vc);
     }
 
     return;
@@ -449,14 +318,14 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
   // If it is not enabled,add to WaitList.
   if (!s->enabled || s->vio.op != VIO::WRITE) {
-    write_disable(nh, vc);
+    nh->write_disable(vc);
     return;
   }
 
   // If there is nothing to do, disable
   int64_t ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
-    write_disable(nh, vc);
+    nh->write_disable(vc);
     return;
   }
 
@@ -473,13 +342,13 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
   // signal write ready to allow user to fill the buffer
   if (towrite != ntodo && buf.writer()->write_avail()) {
-    if (write_signal_and_update(VC_EVENT_WRITE_READY, vc) != EVENT_CONT) {
+    if (nh->write_signal_and_update(VC_EVENT_WRITE_READY, vc) != EVENT_CONT) {
       return;
     }
 
     ntodo = s->vio.ntodo();
     if (ntodo <= 0) {
-      write_disable(nh, vc);
+      nh->write_disable(vc);
       return;
     }
 
@@ -495,7 +364,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // if there is nothing to do, disable
   ink_assert(towrite >= 0);
   if (towrite <= 0) {
-    write_disable(nh, vc);
+    nh->write_disable(vc);
     return;
   }
 
@@ -518,21 +387,19 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       NET_INCREMENT_DYN_STAT(net_calls_to_write_nodata_stat);
       if ((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
         vc->write.triggered = 0;
-        nh->write_ready_list.remove(vc);
-        write_reschedule(nh, vc);
+        nh->write_reschedule(vc);
       }
 
       if ((needs & EVENTIO_READ) == EVENTIO_READ) {
         vc->read.triggered = 0;
-        nh->read_ready_list.remove(vc);
-        read_reschedule(nh, vc);
+        nh->read_reschedule(vc);
       }
 
       return;
     }
 
     vc->write.triggered = 0;
-    write_signal_error(nh, vc, (int)-total_written);
+    nh->write_signal_error(vc, (int)-total_written);
     return;
   } else {                                        // Wrote data.  Finished without error
     int wbe_event = vc->write_buffer_empty_event; // save so we can clear if needed.
@@ -545,7 +412,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     // If there are no more bytes to write, signal write complete,
     ink_assert(ntodo >= 0);
     if (s->vio.ntodo() <= 0) {
-      write_signal_done(VC_EVENT_WRITE_COMPLETE, nh, vc);
+      nh->write_signal_done(VC_EVENT_WRITE_COMPLETE, vc);
       return;
     }
 
@@ -559,28 +426,28 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     }
 
     if (e) {
-      if (write_signal_and_update(e, vc) != EVENT_CONT) {
+      if (nh->write_signal_and_update(e, vc) != EVENT_CONT) {
         return;
       }
 
       // change of lock... don't look at shared variables!
       if (lock.get_mutex() != s->vio.mutex.get()) {
-        write_reschedule(nh, vc);
+        nh->write_reschedule(vc);
         return;
       }
     }
 
     if ((needs & EVENTIO_READ) == EVENTIO_READ) {
-      read_reschedule(nh, vc);
+      nh->read_reschedule(vc);
     }
 
     if (!(buf.reader()->is_read_avail_more_than(0))) {
-      write_disable(nh, vc);
+      nh->write_disable(vc);
       return;
     }
 
     if ((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
-      write_reschedule(nh, vc);
+      nh->write_reschedule(vc);
     }
 
     return;
@@ -822,20 +689,10 @@ UnixNetVConnection::reenable(VIO *vio)
   if (nh->mutex->thread_holding == t) {
     if (vio == &read.vio) {
       ep.modify(EVENTIO_READ);
-      ep.refresh(EVENTIO_READ);
-      if (read.triggered) {
-        nh->read_ready_list.in_or_enqueue(this);
-      } else {
-        nh->read_ready_list.remove(this);
-      }
+      nh->read_reschedule(this);
     } else {
       ep.modify(EVENTIO_WRITE);
-      ep.refresh(EVENTIO_WRITE);
-      if (write.triggered) {
-        nh->write_ready_list.in_or_enqueue(this);
-      } else {
-        nh->write_ready_list.remove(this);
-      }
+      nh->write_reschedule(this);
     }
   } else {
     MUTEX_TRY_LOCK(lock, nh->mutex, t);
@@ -857,20 +714,10 @@ UnixNetVConnection::reenable(VIO *vio)
     } else {
       if (vio == &read.vio) {
         ep.modify(EVENTIO_READ);
-        ep.refresh(EVENTIO_READ);
-        if (read.triggered) {
-          nh->read_ready_list.in_or_enqueue(this);
-        } else {
-          nh->read_ready_list.remove(this);
-        }
+        nh->read_reschedule(this);
       } else {
         ep.modify(EVENTIO_WRITE);
-        ep.refresh(EVENTIO_WRITE);
-        if (write.triggered) {
-          nh->write_ready_list.in_or_enqueue(this);
-        } else {
-          nh->write_ready_list.remove(this);
-        }
+        nh->write_reschedule(this);
       }
     }
   }
@@ -1055,51 +902,6 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
   return r;
 }
 
-void
-UnixNetVConnection::readDisable(NetHandler *nh)
-{
-  read_disable(nh, this);
-}
-
-void
-UnixNetVConnection::readSignalError(NetHandler *nh, int err)
-{
-  read_signal_error(nh, this, err);
-}
-
-int
-UnixNetVConnection::readSignalDone(int event, NetHandler *nh)
-{
-  return (read_signal_done(event, nh, this));
-}
-
-int
-UnixNetVConnection::readSignalAndUpdate(int event)
-{
-  return (read_signal_and_update(event, this));
-}
-
-// Interface so SSL inherited class can call some static in-line functions
-// without affecting regular net stuff or copying a bunch of code into
-// the header files.
-void
-UnixNetVConnection::readReschedule(NetHandler *nh)
-{
-  read_reschedule(nh, this);
-}
-
-void
-UnixNetVConnection::writeReschedule(NetHandler *nh)
-{
-  write_reschedule(nh, this);
-}
-
-void
-UnixNetVConnection::netActivity(EThread *lthread)
-{
-  net_activity(this, lthread);
-}
-
 int
 UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
 {
@@ -1226,14 +1028,14 @@ UnixNetVConnection::mainEvent(int event, Event *e)
 
   if (read.vio.op == VIO::READ && !(f.shutdown & NET_VC_SHUTDOWN_READ)) {
     reader_cont = read.vio._cont;
-    if (read_signal_and_update(signal_event, this) == EVENT_DONE) {
+    if (nh->read_signal_and_update(signal_event, this) == EVENT_DONE) {
       return EVENT_DONE;
     }
   }
 
   if (!*signal_timeout && !*signal_timeout_at && !closed && write.vio.op == VIO::WRITE && !(f.shutdown & NET_VC_SHUTDOWN_WRITE) &&
       reader_cont != write.vio._cont && writer_cont == write.vio._cont) {
-    if (write_signal_and_update(signal_event, this) == EVENT_DONE) {
+    if (nh->write_signal_and_update(signal_event, this) == EVENT_DONE) {
       return EVENT_DONE;
     }
   }
