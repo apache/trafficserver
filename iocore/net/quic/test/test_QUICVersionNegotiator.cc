@@ -42,6 +42,6 @@ TEST_CASE("QUICVersionNegotiator_Normal", "[quic]")
 
   // Revalidate version
   vn.revalidate(QUIC_SUPPORTED_VERSIONS[0]);
-  // FIXME Currently, revalidate() is not implemented yet
-  // CHECK(vn.status() == QUICVersionNegotiationStatus::REVALIDATED);
+  CHECK(vn.status() == QUICVersionNegotiationStatus::REVALIDATED);
+  CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
 }

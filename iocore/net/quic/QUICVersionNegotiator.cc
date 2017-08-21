@@ -36,7 +36,8 @@ QUICVersionNegotiationStatus
 QUICVersionNegotiator::negotiate(const QUICPacket *initial_packet)
 {
   if (this->_is_supported(initial_packet->version())) {
-    this->_status = QUICVersionNegotiationStatus::NEGOTIATED;
+    this->_status             = QUICVersionNegotiationStatus::NEGOTIATED;
+    this->_negotiated_version = initial_packet->version();
   } else {
     this->_tx->transmit_packet(this->_packet_factory->create_version_negotiation_packet(initial_packet));
   }
@@ -46,9 +47,19 @@ QUICVersionNegotiator::negotiate(const QUICPacket *initial_packet)
 QUICVersionNegotiationStatus
 QUICVersionNegotiator::revalidate(QUICVersion version)
 {
-  // TDOO revalidate the version
-  this->_status = QUICVersionNegotiationStatus::FAILED;
-  return _status;
+  if (this->_negotiated_version == version) {
+    this->_status = QUICVersionNegotiationStatus::REVALIDATED;
+  } else {
+    this->_status             = QUICVersionNegotiationStatus::FAILED;
+    this->_negotiated_version = 0;
+  }
+  return this->_status;
+}
+
+QUICVersion
+QUICVersionNegotiator::negotiated_version()
+{
+  return this->_negotiated_version;
 }
 
 bool

@@ -157,6 +157,36 @@ void
 QUICNetVConnection::set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp)
 {
   this->_remote_transport_parameters = std::move(tp);
+
+  const QUICTransportParametersInClientHello *tp_in_ch =
+    dynamic_cast<QUICTransportParametersInClientHello *>(this->_remote_transport_parameters.get());
+  if (tp_in_ch) {
+    // Version revalidation
+    QUICVersion version = tp_in_ch->negotiated_version();
+    if (this->_version_negotiator->revalidate(version) != QUICVersionNegotiationStatus::REVALIDATED) {
+      this->close({QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_VERSION_NEGOTIATION_MISMATCH});
+      return;
+    }
+    if (tp_in_ch->negotiated_version() != tp_in_ch->initial_version()) {
+      // FIXME Check initial_version
+      /* If the initial version is different from the negotiated_version, a
+       * stateless server MUST check that it would have sent a version
+       * negotiation packet if it had received a packet with the indicated
+       * initial_version. (Draft-04 7.3.4. Version Negotiation Validation)
+       */
+      this->close({QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_VERSION_NEGOTIATION_MISMATCH});
+      return;
+    }
+    DebugQUICCon("Version negotiation revalidated: %x", packet->version());
+    return;
+  }
+
+  const QUICTransportParametersInEncryptedExtensions *tp_in_ee =
+    dynamic_cast<QUICTransportParametersInEncryptedExtensions *>(this->_remote_transport_parameters.get());
+  if (tp_in_ee) {
+    // TODO Add client side implementation
+    return;
+  }
 }
 
 const QUICTransportParameters &
