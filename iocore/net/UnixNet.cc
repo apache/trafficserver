@@ -348,143 +348,38 @@ NetHandler::startNetEvent(int event, Event *e)
 // Move VC's enabled on a different thread to the ready list
 //
 void
-NetHandler::process_enabled_list(NetHandler *nh)
+NetHandler::process_enabled_list()
 {
   UnixNetVConnection *vc = nullptr;
 
-  SListM(UnixNetVConnection, NetState, read, enable_link) rq(nh->read_enable_list.popall());
+  SListM(UnixNetVConnection, NetState, read, enable_link) rq(read_enable_list.popall());
   while ((vc = rq.pop())) {
     vc->ep.modify(EVENTIO_READ);
     vc->ep.refresh(EVENTIO_READ);
     vc->read.in_enabled_list = 0;
     if ((vc->read.enabled && vc->read.triggered) || vc->closed) {
-      nh->read_ready_list.in_or_enqueue(vc);
+      read_ready_list.in_or_enqueue(vc);
     }
   }
 
-  SListM(UnixNetVConnection, NetState, write, enable_link) wq(nh->write_enable_list.popall());
+  SListM(UnixNetVConnection, NetState, write, enable_link) wq(write_enable_list.popall());
   while ((vc = wq.pop())) {
     vc->ep.modify(EVENTIO_WRITE);
     vc->ep.refresh(EVENTIO_WRITE);
     vc->write.in_enabled_list = 0;
     if ((vc->write.enabled && vc->write.triggered) || vc->closed) {
-      nh->write_ready_list.in_or_enqueue(vc);
+      write_ready_list.in_or_enqueue(vc);
     }
   }
 }
 
 //
-// The main event for NetHandler
-// This is called every proxy.config.net.event_period, and handles all IO operations scheduled
-// for this period.
+// Walk through the ready list
 //
-int
-NetHandler::mainNetEvent(int event, Event *e)
+void
+NetHandler::process_ready_list()
 {
-  ink_assert(trigger_event == e && (event == EVENT_INTERVAL || event == EVENT_POLL));
-  (void)event;
-  (void)e;
-  EventIO *epd = nullptr;
-  int poll_timeout;
-
-  NET_INCREMENT_DYN_STAT(net_handler_run_stat);
-
-  process_enabled_list(this);
-  if (likely(!read_ready_list.empty() || !write_ready_list.empty() || !read_enable_list.empty() || !write_enable_list.empty())) {
-    poll_timeout = 0; // poll immediately returns -- we have triggered stuff to process right now
-  } else {
-    poll_timeout = net_config_poll_timeout;
-  }
-
-  PollDescriptor *pd     = get_PollDescriptor(trigger_event->ethread);
   UnixNetVConnection *vc = nullptr;
-#if TS_USE_EPOLL
-  pd->result = epoll_wait(pd->epoll_fd, pd->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
-  NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] epoll_wait(%d,%d), result=%d", pd->epoll_fd, poll_timeout,
-           pd->result);
-#elif TS_USE_KQUEUE
-  struct timespec tv;
-  tv.tv_sec  = poll_timeout / 1000;
-  tv.tv_nsec = 1000000 * (poll_timeout % 1000);
-  pd->result = kevent(pd->kqueue_fd, nullptr, 0, pd->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
-  NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] kevent(%d,%d), result=%d", pd->kqueue_fd, poll_timeout, pd->result);
-#elif TS_USE_PORT
-  int retval;
-  timespec_t ptimeout;
-  ptimeout.tv_sec  = poll_timeout / 1000;
-  ptimeout.tv_nsec = 1000000 * (poll_timeout % 1000);
-  unsigned nget    = 1;
-  if ((retval = port_getn(pd->port_fd, pd->Port_Triggered_Events, POLL_DESCRIPTOR_SIZE, &nget, &ptimeout)) < 0) {
-    pd->result = 0;
-    switch (errno) {
-    case EINTR:
-    case EAGAIN:
-    case ETIME:
-      if (nget > 0) {
-        pd->result = (int)nget;
-      }
-      break;
-    default:
-      ink_assert(!"unhandled port_getn() case:");
-      break;
-    }
-  } else {
-    pd->result = (int)nget;
-  }
-  NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)", retval,
-           retval < 0 ? strerror(errno) : "ok", pd->port_fd, pd->Port_Triggered_Events, POLL_DESCRIPTOR_SIZE, nget, poll_timeout,
-           pd->result);
-
-#else
-#error port me
-#endif
-
-  vc = nullptr;
-  for (int x = 0; x < pd->result; x++) {
-    epd = (EventIO *)get_ev_data(pd, x);
-    if (epd->type == EVENTIO_READWRITE_VC) {
-      vc = epd->data.vc;
-      // Remove triggered NetVC from cop_list because it won't be timeout before next InactivityCop runs.
-      if (cop_list.in(vc)) {
-        cop_list.remove(vc);
-      }
-      if (get_ev_events(pd, x) & (EVENTIO_READ | EVENTIO_ERROR)) {
-        vc->read.triggered = 1;
-        if (!read_ready_list.in(vc)) {
-          read_ready_list.enqueue(vc);
-        } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
-          // check for unhandled epoll events that should be handled
-          Debug("iocore_net_main", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%d",
-                get_ev_events(pd, x), vc->read.enabled, vc->closed, read_ready_list.in(vc));
-        }
-      }
-      vc = epd->data.vc;
-      if (get_ev_events(pd, x) & (EVENTIO_WRITE | EVENTIO_ERROR)) {
-        vc->write.triggered = 1;
-        if (!write_ready_list.in(vc)) {
-          write_ready_list.enqueue(vc);
-        } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
-          // check for unhandled epoll events that should be handled
-          Debug("iocore_net_main", "Unhandled epoll event on write: 0x%04x write.enabled=%d closed=%d write.netready_queue=%d",
-                get_ev_events(pd, x), vc->write.enabled, vc->closed, write_ready_list.in(vc));
-        }
-      } else if (!(get_ev_events(pd, x) & EVENTIO_READ)) {
-        Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd, x));
-      }
-    } else if (epd->type == EVENTIO_DNS_CONNECTION) {
-      if (epd->data.dnscon != nullptr) {
-        epd->data.dnscon->trigger(); // Make sure the DNSHandler for this con knows we triggered
-#if defined(USE_EDGE_TRIGGER)
-        epd->refresh(EVENTIO_READ);
-#endif
-      }
-    } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
-      net_signal_hook_callback(trigger_event->ethread);
-    }
-    ev_next_event(pd, x);
-  }
-
-  pd->result = 0;
 
 #if defined(USE_EDGE_TRIGGER)
   // UnixNetVConnection *
@@ -543,6 +438,78 @@ NetHandler::mainNetEvent(int event, Event *e)
       vc->ep.modify(-EVENTIO_WRITE);
   }
 #endif /* !USE_EDGE_TRIGGER */
+}
+//
+// The main event for NetHandler
+// This is called every proxy.config.net.event_period, and handles all IO operations scheduled
+// for this period.
+//
+int
+NetHandler::mainNetEvent(int event, Event *e)
+{
+  ink_assert(trigger_event == e && (event == EVENT_INTERVAL || event == EVENT_POLL));
+  (void)event;
+  (void)e;
+  EventIO *epd = nullptr;
+
+  NET_INCREMENT_DYN_STAT(net_handler_run_stat);
+
+  process_enabled_list();
+
+  // Polling event by PollCont
+  PollCont *p = get_PollCont(trigger_event->ethread);
+  p->handleEvent(EVENT_NONE, nullptr);
+
+  // Get & Process polling result
+  PollDescriptor *pd     = get_PollDescriptor(trigger_event->ethread);
+  UnixNetVConnection *vc = nullptr;
+  for (int x = 0; x < pd->result; x++) {
+    epd = (EventIO *)get_ev_data(pd, x);
+    if (epd->type == EVENTIO_READWRITE_VC) {
+      vc = epd->data.vc;
+      // Remove triggered NetVC from cop_list because it won't be timeout before next InactivityCop runs.
+      if (cop_list.in(vc)) {
+        cop_list.remove(vc);
+      }
+      if (get_ev_events(pd, x) & (EVENTIO_READ | EVENTIO_ERROR)) {
+        vc->read.triggered = 1;
+        if (!read_ready_list.in(vc)) {
+          read_ready_list.enqueue(vc);
+        } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
+          // check for unhandled epoll events that should be handled
+          Debug("iocore_net_main", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%d",
+                get_ev_events(pd, x), vc->read.enabled, vc->closed, read_ready_list.in(vc));
+        }
+      }
+      vc = epd->data.vc;
+      if (get_ev_events(pd, x) & (EVENTIO_WRITE | EVENTIO_ERROR)) {
+        vc->write.triggered = 1;
+        if (!write_ready_list.in(vc)) {
+          write_ready_list.enqueue(vc);
+        } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
+          // check for unhandled epoll events that should be handled
+          Debug("iocore_net_main", "Unhandled epoll event on write: 0x%04x write.enabled=%d closed=%d write.netready_queue=%d",
+                get_ev_events(pd, x), vc->write.enabled, vc->closed, write_ready_list.in(vc));
+        }
+      } else if (!(get_ev_events(pd, x) & EVENTIO_READ)) {
+        Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd, x));
+      }
+    } else if (epd->type == EVENTIO_DNS_CONNECTION) {
+      if (epd->data.dnscon != nullptr) {
+        epd->data.dnscon->trigger(); // Make sure the DNSHandler for this con knows we triggered
+#if defined(USE_EDGE_TRIGGER)
+        epd->refresh(EVENTIO_READ);
+#endif
+      }
+    } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
+      net_signal_hook_callback(trigger_event->ethread);
+    }
+    ev_next_event(pd, x);
+  }
+
+  pd->result = 0;
+
+  process_ready_list();
 
   return EVENT_CONT;
 }
