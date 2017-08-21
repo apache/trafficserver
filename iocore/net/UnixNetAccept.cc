@@ -330,10 +330,10 @@ NetAccept::acceptEvent(int event, void *ep)
     if ((res = accept_fn(this, e, false)) < 0) {
       NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
       /* INKqa11179 */
-      Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.addr), res);
+      Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.accept_addr), res);
       Warning("Traffic Server may be unable to accept more network"
               "connections on %d",
-              ats_ip_port_host_order(&server.addr));
+              ats_ip_port_host_order(&server.accept_addr));
       e->cancel();
       delete this;
       return EVENT_DONE;
