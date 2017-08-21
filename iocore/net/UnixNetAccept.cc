@@ -470,6 +470,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     } else {
       close_UnixNetVConnection(vc, e->ethread);
     }
+    vc = nullptr;
   } while (loop);
 
 Ldone:
