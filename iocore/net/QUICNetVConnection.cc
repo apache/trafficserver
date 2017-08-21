@@ -177,7 +177,7 @@ QUICNetVConnection::set_transport_parameters(std::unique_ptr<QUICTransportParame
       this->close({QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_VERSION_NEGOTIATION_MISMATCH});
       return;
     }
-    DebugQUICCon("Version negotiation revalidated: %x", packet->version());
+    DebugQUICCon("Version negotiation revalidated: %x", tp_in_ch->negotiated_version());
     return;
   }
 
