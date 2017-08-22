@@ -128,12 +128,6 @@ public:
     ++_totalFrameCount;
   }
 
-  QUICApplication *
-  get_application(QUICStreamId stream_id) override
-  {
-    return nullptr;
-  }
-
   uint32_t
   minimum_quic_packet_size() override
   {

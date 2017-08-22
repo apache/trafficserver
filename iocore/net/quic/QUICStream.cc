@@ -30,10 +30,10 @@
 const static char *tag = "quic_stream";
 
 void
-QUICStream::init(QUICStreamManager *manager, QUICConnection *qc, QUICStreamId id)
+QUICStream::init(QUICStreamManager *manager, QUICFrameTransmitter *tx, QUICStreamId id)
 {
   this->_streamManager = manager;
-  this->_qc            = qc;
+  this->_tx            = tx;
   this->_id            = id;
 
   this->mutex = new_ProxyMutex();
@@ -286,7 +286,7 @@ QUICStream::_send()
   IOBufferReader *reader = this->_write_vio.get_reader();
   int64_t bytes_avail    = reader->read_avail();
   int64_t total_len      = 0;
-  uint32_t max_size      = this->_qc->maximum_stream_frame_data_size();
+  uint32_t max_size      = this->_tx->maximum_stream_frame_data_size();
 
   while (total_len < bytes_avail) {
     int64_t data_len = reader->block_read_avail();

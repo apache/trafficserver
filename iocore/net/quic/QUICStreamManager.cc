@@ -31,16 +31,11 @@ ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerA
 ClassAllocator<QUICStream> quicStreamAllocator("quicStreamAllocator");
 
 int
-QUICStreamManager::init(QUICFrameTransmitter *tx)
+QUICStreamManager::init(QUICFrameTransmitter *tx, QUICApplicationMap *app_map)
 {
   this->_tx = tx;
+  this->_app_map = app_map;
   return 0;
-}
-
-void
-QUICStreamManager::set_connection(QUICConnection *qc)
-{
-  this->_qc = qc;
 }
 
 void
@@ -61,7 +56,7 @@ void
 QUICStreamManager::_handle_stream_frame(std::shared_ptr<const QUICStreamFrame> frame)
 {
   QUICStream *stream           = this->_find_or_create_stream(frame->stream_id());
-  QUICApplication *application = this->_qc->get_application(frame->stream_id());
+  QUICApplication *application = this->_app_map->get(frame->stream_id());
 
   if (!application->is_stream_set(stream)) {
     application->set_stream(stream);
@@ -104,7 +99,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
   if (!stream) {
     // TODO Free the stream somewhere
     stream = THREAD_ALLOC_INIT(quicStreamAllocator, this_ethread());
-    stream->init(this, this->_qc, stream_id);
+    stream->init(this, this->_tx, stream_id);
     stream->start();
 
     this->stream_list.push(stream);

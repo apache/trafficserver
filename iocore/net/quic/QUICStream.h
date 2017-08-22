@@ -31,7 +31,7 @@
 #include "QUICFrame.h"
 #include "QUICStreamState.h"
 
-class QUICConnection;
+class QUICFrameTransmitter;
 class QUICStreamState;
 class QUICStreamManager;
 
@@ -45,7 +45,7 @@ public:
   QUICStream() : VConnection(nullptr) {}
   ~QUICStream() {}
 
-  void init(QUICStreamManager *manager, QUICConnection *qc, uint32_t id);
+  void init(QUICStreamManager *manager, QUICFrameTransmitter *tx, uint32_t id);
   void start();
   int main_event_handler(int event, void *data);
 
@@ -96,5 +96,5 @@ private:
   std::map<QUICOffset, std::shared_ptr<const QUICStreamFrame>> _request_stream_frame_buffer;
 
   QUICStreamManager *_streamManager = nullptr;
-  QUICConnection *_qc               = nullptr;
+  QUICFrameTransmitter *_tx         = nullptr;
 };

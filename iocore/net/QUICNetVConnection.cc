@@ -94,8 +94,7 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   // FIXME Should these have to be shared_ptr?
   this->_loss_detector  = std::make_shared<QUICLossDetector>(this);
   this->_stream_manager = std::make_shared<QUICStreamManager>();
-  this->_stream_manager->init(this);
-  this->_stream_manager->set_connection(this); // FIXME Want to remove;
+  this->_stream_manager->init(this, &this->_application_map);
 
   std::shared_ptr<QUICFlowController> flowController             = std::make_shared<QUICFlowController>();
   std::shared_ptr<QUICCongestionController> congestionController = std::make_shared<QUICCongestionController>();
@@ -126,7 +125,6 @@ QUICNetVConnection::free(EThread *t)
 
   delete this->_version_negotiator;
   delete this->_handshake_handler;
-  delete this->_application;
   delete this->_crypto;
   delete this->_frame_dispatcher;
   // XXX _loss_detector and _stream_manager are std::shared_ptr
@@ -354,6 +352,8 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   }
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+    DebugQUICCon("setup quic application");
+    this->_application_map.set_default(this->_create_application());
     DebugQUICCon("Enter state_connection_established");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
@@ -464,25 +464,6 @@ QUICNetVConnection::get_udp_con()
   return this->_udp_con;
 }
 
-QUICApplication *
-QUICNetVConnection::get_application(QUICStreamId stream_id)
-{
-  if (stream_id == STREAM_ID_FOR_HANDSHAKE) {
-    return static_cast<QUICApplication *>(this->_handshake_handler);
-  } else {
-    if (!this->_application) {
-      DebugQUICCon("setup quic application");
-      // TODO: Instantiate negotiated application
-      const uint8_t *application = this->_handshake_handler->negotiated_application_name();
-      if (memcmp(application, "hq", 2) == 0) {
-        QUICEchoApp *echo_app = new QUICEchoApp(this);
-        this->_application    = echo_app;
-      }
-    }
-  }
-  return this->_application;
-}
-
 void
 QUICNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 {
@@ -519,7 +500,10 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
         this->_packet_factory.set_version(packet->version());
         // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
         if (packet->has_valid_fnv1a_hash()) {
+          // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
           this->_handshake_handler = new QUICHandshake(this, this->_crypto);
+          this->_application_map.set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
+
           this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size());
         } else {
           DebugQUICCon("Invalid FNV-1a hash value");
@@ -701,4 +685,17 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   }
 
   return packet;
+}
+
+QUICApplication *
+QUICNetVConnection::_create_application()
+{
+  const uint8_t *application = this->_handshake_handler->negotiated_application_name();
+  if (memcmp(application, "hq", 2) == 0) {
+    return new QUICEchoApp(this);
+  } else {
+    DebugQUICCon("Unknown application has been negotiated: %s", application);
+    ink_assert(false);
+    return nullptr;
+  }
 }

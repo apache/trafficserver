@@ -56,6 +56,7 @@
 #include "quic/QUICStreamManager.h"
 #include "quic/QUICFlowController.h"
 #include "quic/QUICCongestionController.h"
+#include "quic/QUICApplicationMap.h"
 
 // These are included here because older OpenQUIC libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -161,7 +162,6 @@ public:
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
 
   // QUICConnection
-  QUICApplication *get_application(QUICStreamId stream_id) override;
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
   uint32_t maximum_stream_frame_data_size() override;
@@ -188,6 +188,7 @@ private:
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
   QUICAckFrameCreator _ack_frame_creator;
+  QUICApplicationMap _application_map;
 
   uint32_t _pmtu = 1280;
 
@@ -198,7 +199,6 @@ private:
   // or make them just member variables.
   QUICVersionNegotiator *_version_negotiator         = nullptr;
   QUICHandshake *_handshake_handler                  = nullptr;
-  QUICApplication *_application                      = nullptr;
   QUICCrypto *_crypto                                = nullptr;
   std::shared_ptr<QUICLossDetector> _loss_detector   = nullptr;
   std::shared_ptr<QUICStreamManager> _stream_manager = nullptr;
@@ -222,6 +222,8 @@ private:
   QUICError _state_common_send_packet();
 
   Ptr<ProxyMutex> _transmitter_mutex;
+
+  QUICApplication *_create_application();
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);
