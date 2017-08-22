@@ -483,12 +483,6 @@ QUICNetVConnection::get_application(QUICStreamId stream_id)
   return this->_application;
 }
 
-QUICCrypto *
-QUICNetVConnection::get_crypto()
-{
-  return this->_crypto;
-}
-
 void
 QUICNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 {
@@ -525,7 +519,7 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
         this->_packet_factory.set_version(packet->version());
         // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
         if (packet->has_valid_fnv1a_hash()) {
-          this->_handshake_handler = new QUICHandshake(new_ProxyMutex(), this);
+          this->_handshake_handler = new QUICHandshake(new_ProxyMutex(), this, this->_crypto);
           this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size());
         } else {
           DebugQUICCon("Invalid FNV-1a hash value");

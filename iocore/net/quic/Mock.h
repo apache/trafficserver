@@ -134,12 +134,6 @@ public:
     return nullptr;
   }
 
-  QUICCrypto *
-  get_crypto() override
-  {
-    return nullptr;
-  }
-
   uint32_t
   minimum_quic_packet_size() override
   {

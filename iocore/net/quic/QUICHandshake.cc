@@ -48,7 +48,7 @@ const static int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 const static int MAX_HANDSHAKE_MSG_LEN = 65527;
 
-QUICHandshake::QUICHandshake(ProxyMutex *m, QUICConnection *qc) : QUICApplication(m, qc)
+QUICHandshake::QUICHandshake(ProxyMutex *m, QUICConnection *qc, QUICCrypto *c) : QUICApplication(m, qc), _crypto(c)
 {
   SET_HANDLER(&QUICHandshake::state_read_client_hello);
 }
@@ -56,7 +56,7 @@ QUICHandshake::QUICHandshake(ProxyMutex *m, QUICConnection *qc) : QUICApplicatio
 bool
 QUICHandshake::is_completed()
 {
-  QUICCrypto *crypto = this->_client_qc->get_crypto();
+  QUICCrypto *crypto = this->_crypto;
   return crypto->is_handshake_finished();
 }
 
@@ -156,7 +156,7 @@ QUICHandshake::_process_client_hello()
   I_WANNA_DUMP_THIS_BUF(msg, msg_len);
   // <----- DEBUG -----
 
-  QUICCrypto *crypto = this->_client_qc->get_crypto();
+  QUICCrypto *crypto = this->_crypto;
 
   uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t server_hello_len                     = 0;
@@ -200,7 +200,7 @@ QUICHandshake::_process_client_finished()
   I_WANNA_DUMP_THIS_BUF(msg, msg_len);
   // <----- DEBUG -----
 
-  QUICCrypto *crypto = this->_client_qc->get_crypto();
+  QUICCrypto *crypto = this->_crypto;
 
   uint8_t out[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t out_len                     = 0;
@@ -232,7 +232,7 @@ QUICHandshake::_process_client_finished()
 QUICError
 QUICHandshake::_process_handshake_complete()
 {
-  QUICCrypto *crypto = this->_client_qc->get_crypto();
+  QUICCrypto *crypto = this->_crypto;
   int r              = crypto->setup_session();
 
   if (r) {

@@ -162,7 +162,6 @@ public:
 
   // QUICConnection
   QUICApplication *get_application(QUICStreamId stream_id) override;
-  QUICCrypto *get_crypto() override;
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
   uint32_t maximum_stream_frame_data_size() override;

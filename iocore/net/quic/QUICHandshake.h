@@ -47,7 +47,7 @@
 class QUICHandshake : public QUICApplication
 {
 public:
-  QUICHandshake(ProxyMutex *m, QUICConnection *qc);
+  QUICHandshake(ProxyMutex *m, QUICConnection *qc, QUICCrypto *c);
 
   int state_read_client_hello(int event, Event *data);
   int state_read_client_finished(int event, Event *data);
@@ -58,6 +58,7 @@ public:
   const uint8_t *negotiated_application_name();
 
 private:
+  QUICCrypto *_crypto = nullptr;
   QUICError _process_client_hello();
   QUICError _process_client_finished();
   QUICError _process_handshake_complete();
