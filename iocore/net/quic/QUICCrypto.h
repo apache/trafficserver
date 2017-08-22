@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef __QUIC_CRYPTO__
-#define __QUIC_CRYPTO__
+#pragma once
 
 #include <openssl/ssl.h>
 
@@ -117,5 +116,3 @@ private:
   QUICPacketProtection *_server_pp       = nullptr;
   NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;
 };
-
-#endif // __QUIC_CRYPTO__

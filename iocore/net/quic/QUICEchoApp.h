@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef __QUIC_ECHOAPP__
-#define __QUIC_ECHOAPP__
+#pragma once
 
 #include "QUICApplication.h"
 
@@ -38,4 +37,3 @@ public:
 
   int main_event_handler(int event, Event *data);
 };
-#endif // __QUIC_HANDSHAKE__

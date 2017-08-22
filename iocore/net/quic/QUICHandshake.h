@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef __QUIC_HANDSHAKE__
-#define __QUIC_HANDSHAKE__
+#pragma once
 
 #include "QUICConnection.h"
 #include "QUICApplication.h"
@@ -63,5 +62,3 @@ private:
   QUICError _process_client_finished();
   QUICError _process_handshake_complete();
 };
-
-#endif // __QUIC_HANDSHAKE__
