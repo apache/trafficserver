@@ -352,7 +352,7 @@ EventProcessor::initThreadState(EThread *t)
       // To avoid race conditions on the event in the spawn queue, create a local one to actually send.
       // Use the spawn queue event as a read only model.
       Event *nev = eventAllocator.alloc();
-      for (Event *ev = thread_group[i]._spawnQueue.head; NULL != ev; ev = ev->link.next) {
+      for (Event *ev = thread_group[i]._spawnQueue.head; nullptr != ev; ev = ev->link.next) {
         nev->init(ev->continuation, 0, 0);
         nev->ethread        = t;
         nev->callback_event = ev->callback_event;

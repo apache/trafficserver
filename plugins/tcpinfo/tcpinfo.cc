@@ -337,7 +337,7 @@ TSPluginInit(int argc, const char *argv[])
   for (;;) {
     unsigned long lval;
 
-    switch (getopt_long(argc, (char *const *)argv, "r:f:l:h:e:H:S:M:", longopts, NULL)) {
+    switch (getopt_long(argc, (char *const *)argv, "r:f:l:h:e:H:S:M:", longopts, nullptr)) {
     case 'r':
       if (parse_unsigned(optarg, lval)) {
         config->sample = atoi(optarg);

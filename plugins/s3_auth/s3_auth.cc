@@ -646,7 +646,7 @@ TSHttpStatus
 S3Request::authorizeV4(S3Config *s3)
 {
   TsApi api(_bufp, _hdr_loc, _url_loc);
-  time_t now = time(0);
+  time_t now = time(nullptr);
 
   AwsAuthV4 util(api, &now, /* signPayload */ false, s3->keyid(), s3->keyid_len(), s3->secret(), s3->secret_len(), "s3", 2,
                  s3->v4includeHeaders(), s3->v4excludeHeaders(), s3->v4RegionMap());
