@@ -1722,7 +1722,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
     goto fail;
   }
   EVP_MD_CTX_free(digest);
-  digest = NULL;
+  digest = nullptr;
 
   if (SSL_CTX_set_session_id_context(ctx, hash_buf, hash_len) == 0) {
     SSLError("SSL_CTX_set_session_id_context failed");

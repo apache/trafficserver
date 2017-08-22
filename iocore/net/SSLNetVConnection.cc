@@ -336,7 +336,7 @@ SSLNetVConnection::read_raw_data()
   int64_t r          = 0;
   int64_t total_read = 0;
   int64_t rattempted = 0;
-  char *buffer       = 0;
+  char *buffer       = nullptr;
   int buf_len;
   IOBufferBlock *b = this->handShakeBuffer->first_write_block();
 
@@ -1111,7 +1111,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     SSLDebugVC(this, "SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
 
     // start a blind tunnel if tr-pass is set and data does not look like ClientHello
-    char *buf = handShakeBuffer ? handShakeBuffer->buf() : NULL;
+    char *buf = handShakeBuffer ? handShakeBuffer->buf() : nullptr;
     if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
       SSLDebugVC(this, "Data does not look like SSL handshake, starting blind tunnel");
       this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;

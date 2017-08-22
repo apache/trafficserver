@@ -525,7 +525,7 @@ REGRESSION_TEST(Http2DependencyTree_exclusive_node)(RegressionTest *t, int /* at
   tree->deactivate(B, 0);
   tree->remove(B);
 
-  box.check(tree->top() == NULL, "Tree top should be NULL");
+  box.check(tree->top() == nullptr, "Tree top should be NULL");
 
   delete tree;
 }
