@@ -1,0 +1,104 @@
+X-Au-Test: www.no-oride.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+X-Au-Test: www.ae-0.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+x-gzip
+-
+br
+-
+gzip, br
+-
+gzip;q=0.3, whatever;q=0.666, br;q=0.7
+-
+X-Au-Test: www.ae-1.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+X-Au-Test: www.ae-2.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br
+-
+br
+-
+X-Au-Test: www.no-oride.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+x-gzip
+-
+br
+-
+gzip, br
+-
+gzip;q=0.3, whatever;q=0.666, br;q=0.7
+-
+X-Au-Test: www.ae-0.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+x-gzip
+-
+br
+-
+gzip, br
+-
+gzip;q=0.3, whatever;q=0.666, br;q=0.7
+-
+X-Au-Test: www.ae-1.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+X-Au-Test: www.ae-2.com
+ACCEPT-ENCODING MISSING
+-
+gzip
+-
+gzip
+-
+br
+-
+br
+-
+br
+-

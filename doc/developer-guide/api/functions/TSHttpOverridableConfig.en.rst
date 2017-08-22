@@ -132,7 +132,6 @@ c:member:`TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED`                  :ts:cv:`prox
 c:member:`TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME`                 :ts:cv:`proxy.config.http.negative_caching_lifetime`
 c:member:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED`             :ts:cv:`proxy.config.http.negative_revalidating_enabled`
 c:member:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME`            :ts:cv:`proxy.config.http.negative_revalidating_lifetime`
-c:member:`TS_CONFIG_HTTP_NORMALIZE_AE_GZIP`                         :ts:cv:`proxy.config.http.normalize_ae_gzip`
 c:member:`TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS`                    :ts:cv:`proxy.config.http.number_of_redirections`
 c:member:`TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS`                    :ts:cv:`proxy.config.http.origin_max_connections`
 c:member:`TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE`              :ts:cv:`proxy.config.http.origin_max_connections_queue`
@@ -171,6 +170,7 @@ c:member:`TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD`               :ts:cv:`prox
 c:member:`TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME`                   :ts:cv:`proxy.config.http.parent_proxy.retry_time`
 c:member:`TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS`               :ts:cv:`proxy.config.http.parent_proxy.per_parent_connect_attempts`
 c:member:`TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT`            :ts:cv:`proxy.config.http.parent_proxy.connect_attempts_timeout`
+c:member:`TS_CONFIG_HTTP_NORMALIZE_AE`                              :ts:cv:`proxy.config.http.normalize_ae`
 ==================================================================  ====================================================================
 
 Examples

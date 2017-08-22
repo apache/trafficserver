@@ -1073,3 +1073,45 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_
     }
   }
 }
+
+void
+HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams *ohcp, HTTPHdr *header)
+{
+  int normalize_ae = ohcp->normalize_ae;
+
+  if (normalize_ae) {
+    MIMEField *ae_field = header->field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
+
+    if (ae_field) {
+      if (normalize_ae == 1) {
+        // Force Accept-Encoding header to gzip or no header.
+        if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
+          header->field_value_set(ae_field, "gzip", 4);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
+        } else {
+          header->field_delete(ae_field);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-gzip Accept-Encoding");
+        }
+      } else if (normalize_ae == 2) {
+        // Force Accept-Encoding header to br (Brotli) or no header.
+        if (HttpTransactCache::match_content_encoding(ae_field, "br")) {
+          header->field_value_set(ae_field, "br", 2);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to br");
+        } else if (HttpTransactCache::match_content_encoding(ae_field, "gzip")) {
+          header->field_value_set(ae_field, "gzip", 4);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] normalized Accept-Encoding to gzip");
+        } else {
+          header->field_delete(ae_field);
+          Debug("http_trans", "[Headers::normalize_accept_encoding] removed non-br Accept-Encoding");
+        }
+      } else {
+        static bool logged = false;
+
+        if (!logged) {
+          Error("proxy.config.http.normalize_ae value out of range");
+          logged = true;
+        }
+      }
+    }
+  }
+}

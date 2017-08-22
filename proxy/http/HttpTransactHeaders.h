@@ -77,6 +77,8 @@ public:
 
   static bool is_request_proxy_authorized(HTTPHdr *incoming_hdr);
 
+  static void normalize_accept_encoding(const OverridableHttpConfigParams *ohcp, HTTPHdr *header);
+
   static void insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr *header, bool bRevPrxy);
 
   static void remove_conditional_headers(HTTPHdr *outgoing);

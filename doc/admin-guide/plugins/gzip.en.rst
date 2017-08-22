@@ -158,8 +158,8 @@ supported-algorithms
 Provides the compression algorithms that are supported. This will allow |TS| to selectively
 support gzip, deflate, and brotli compression. The default is gzip. Multiple algorthims can be selected using ',' delimiter,
 for instance, ``supported-algorithms deflate,gzip,br``. Note that if
-ts:cv:`proxy.config.http.normalize_ae_gzip` is enabled (``1``), only gzip will be
-considered.
+ts:cv:`proxy.config.http.normalize_ae` is ``1``, only gzip will be
+considered, and if it is ``2``, only br or gzip will be considered.
 
 Examples
 ========
