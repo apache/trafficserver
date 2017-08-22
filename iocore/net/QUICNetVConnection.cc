@@ -475,7 +475,7 @@ QUICNetVConnection::get_application(QUICStreamId stream_id)
       // TODO: Instantiate negotiated application
       const uint8_t *application = this->_handshake_handler->negotiated_application_name();
       if (memcmp(application, "hq", 2) == 0) {
-        QUICEchoApp *echo_app = new QUICEchoApp(new_ProxyMutex(), this);
+        QUICEchoApp *echo_app = new QUICEchoApp(this);
         this->_application    = echo_app;
       }
     }
@@ -519,7 +519,7 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
         this->_packet_factory.set_version(packet->version());
         // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
         if (packet->has_valid_fnv1a_hash()) {
-          this->_handshake_handler = new QUICHandshake(new_ProxyMutex(), this, this->_crypto);
+          this->_handshake_handler = new QUICHandshake(this, this->_crypto);
           this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size());
         } else {
           DebugQUICCon("Invalid FNV-1a hash value");

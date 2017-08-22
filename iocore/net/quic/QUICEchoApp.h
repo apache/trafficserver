@@ -34,7 +34,7 @@
 class QUICEchoApp : public QUICApplication
 {
 public:
-  QUICEchoApp(ProxyMutex *m, QUICConnection *qc);
+  QUICEchoApp(QUICConnection *qc);
 
   int main_event_handler(int event, Event *data);
 };

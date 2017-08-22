@@ -28,7 +28,7 @@
 
 const static char *tag = "quic_echo_app";
 
-QUICEchoApp::QUICEchoApp(ProxyMutex *m, QUICConnection *qc) : QUICApplication(m, qc)
+QUICEchoApp::QUICEchoApp(QUICConnection *qc) : QUICApplication(qc)
 {
   SET_HANDLER(&QUICEchoApp::main_event_handler);
 }

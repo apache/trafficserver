@@ -48,7 +48,7 @@ const static int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 const static int MAX_HANDSHAKE_MSG_LEN = 65527;
 
-QUICHandshake::QUICHandshake(ProxyMutex *m, QUICConnection *qc, QUICCrypto *c) : QUICApplication(m, qc), _crypto(c)
+QUICHandshake::QUICHandshake(QUICConnection *qc, QUICCrypto *c) : QUICApplication(qc), _crypto(c)
 {
   SET_HANDLER(&QUICHandshake::state_read_client_hello);
 }

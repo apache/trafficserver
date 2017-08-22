@@ -63,7 +63,7 @@ private:
 class QUICApplication : public Continuation
 {
 public:
-  QUICApplication(ProxyMutex *m, QUICConnection *qc);
+  QUICApplication(QUICConnection *qc);
 
   void set_stream(QUICStream *stream);
   bool is_stream_set(QUICStream *stream);

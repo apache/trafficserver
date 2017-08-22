@@ -47,7 +47,7 @@
 class QUICHandshake : public QUICApplication
 {
 public:
-  QUICHandshake(ProxyMutex *m, QUICConnection *qc, QUICCrypto *c);
+  QUICHandshake(QUICConnection *qc, QUICCrypto *c);
 
   int state_read_client_hello(int event, Event *data);
   int state_read_client_finished(int event, Event *data);
