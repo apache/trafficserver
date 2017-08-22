@@ -97,7 +97,7 @@ CONFIG proxy.config.http.cache.http INT 1
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/cache.config.en.html
 ##############################################################################
 CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
-CONFIG proxy.config.http.normalize_ae_gzip INT 1
+CONFIG proxy.config.http.normalize_ae INT 1
 CONFIG proxy.config.http.cache.cache_responses_to_cookies INT 1
 CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT 1
     # https://docs.trafficserver.apache.org/records.config#proxy-config-http-cache-when-to-revalidate
