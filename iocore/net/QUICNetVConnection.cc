@@ -104,10 +104,33 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   // FIXME Fill appropriate values
   // MUSTs
   QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions();
-  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, {reinterpret_cast<const uint8_t *>("\x00\x00\x00\x00"), 4});
-  tp->add(QUICTransportParameterId::INITIAL_MAX_DATA, {reinterpret_cast<const uint8_t *>("\x00\x00\x00\x00"), 4});
-  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, {reinterpret_cast<const uint8_t *>("\x00\x00\x00\x00"), 4});
-  tp->add(QUICTransportParameterId::IDLE_TIMEOUT, {reinterpret_cast<const uint8_t *>("\x00\x00"), 2});
+
+  size_t max_stream_data_buf_len     = 4;
+  ats_unique_buf max_stream_data_buf = ats_unique_malloc(max_stream_data_buf_len);
+  memcpy(max_stream_data_buf.get(), "\x00\x00\x00\x00", max_stream_data_buf_len);
+  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
+          std::unique_ptr<QUICTransportParameterValue>(
+            new QUICTransportParameterValue(std::move(max_stream_data_buf), max_stream_data_buf_len)));
+
+  size_t max_data_buf_len     = 4;
+  ats_unique_buf max_data_buf = ats_unique_malloc(max_data_buf_len);
+  memcpy(max_data_buf.get(), "\x00\x00\x00\x00", max_data_buf_len);
+  tp->add(QUICTransportParameterId::INITIAL_MAX_DATA,
+          std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(std::move(max_data_buf), max_data_buf_len)));
+
+  uint16_t max_stream_id_buf_len   = 4;
+  ats_unique_buf max_stream_id_buf = ats_unique_malloc(max_stream_id_buf_len);
+  memcpy(max_stream_id_buf.get(), "\x00\x00\x00\x00", max_stream_id_buf_len);
+  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_ID,
+          std::unique_ptr<QUICTransportParameterValue>(
+            new QUICTransportParameterValue(std::move(max_stream_id_buf), max_stream_id_buf_len)));
+
+  uint16_t idle_timeout_buf_len   = 2;
+  ats_unique_buf idle_timeout_buf = ats_unique_malloc(idle_timeout_buf_len);
+  memcpy(idle_timeout_buf.get(), "\x00\x00", idle_timeout_buf_len);
+  tp->add(QUICTransportParameterId::IDLE_TIMEOUT, std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(
+                                                    std::move(idle_timeout_buf), idle_timeout_buf_len)));
+
   tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
   // MAYs
   // this->_local_transport_parameters.add(QUICTransportParameterId::TRUNCATE_CONNECTION_ID, {});

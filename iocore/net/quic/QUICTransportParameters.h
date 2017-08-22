@@ -23,9 +23,11 @@
 
 #pragma once
 
+#include <map>
+// #include "ts/Map.h"
+
 #include <openssl/ssl.h>
 #include "QUICTypes.h"
-#include "ts/Map.h"
 #include <cstddef>
 
 class QUICTransportParameterId
@@ -65,9 +67,10 @@ private:
 
 typedef struct _QUICTransportParameterValue {
   _QUICTransportParameterValue(){};
-  _QUICTransportParameterValue(const uint8_t *str) : data(str), len(str ? strlen(reinterpret_cast<const char *>(str)) : 0){};
-  _QUICTransportParameterValue(const uint8_t *_data, uint16_t _len) : data(_data), len(_len){};
-  const uint8_t *data = nullptr;
+  _QUICTransportParameterValue(ats_unique_buf str)
+    : data(std::move(str)), len(str ? strlen(reinterpret_cast<const char *>(str.get())) : 0){};
+  _QUICTransportParameterValue(ats_unique_buf _data, uint16_t _len) : data(std::move(_data)), len(_len){};
+  ats_unique_buf data = {nullptr, [](void *p) { ats_free(p); }};
   uint16_t len        = 0;
 } QUICTransportParameterValue;
 
@@ -75,8 +78,10 @@ class QUICTransportParameters
 {
 public:
   QUICTransportParameters(const uint8_t *buf, size_t len);
-  QUICTransportParameterValue get(QUICTransportParameterId id) const;
-  void add(QUICTransportParameterId id, QUICTransportParameterValue value);
+  const uint8_t *get(QUICTransportParameterId id, uint16_t &len) const;
+  uint32_t initial_max_stream_data() const;
+  uint32_t initial_max_data() const;
+  void add(QUICTransportParameterId id, std::unique_ptr<QUICTransportParameterValue> value);
   void store(uint8_t *buf, uint16_t *len) const;
 
 protected:
@@ -84,7 +89,8 @@ protected:
   virtual std::ptrdiff_t _parameters_offset() const = 0;
   virtual void _store(uint8_t *buf, uint16_t *len) const = 0;
   ats_unique_buf _buf = {nullptr, [](void *p) { ats_free(p); }};
-  Map<QUICTransportParameterId, QUICTransportParameterValue> _parameters;
+
+  std::map<QUICTransportParameterId, std::unique_ptr<QUICTransportParameterValue>> _parameters;
 };
 
 class QUICTransportParametersInClientHello : public QUICTransportParameters
@@ -110,7 +116,7 @@ class QUICTransportParametersInEncryptedExtensions : public QUICTransportParamet
 public:
   QUICTransportParametersInEncryptedExtensions() : QUICTransportParameters(){};
   QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len) : QUICTransportParameters(buf, len){};
-  const uint8_t *supported_versions(uint16_t *n) const;
+  const uint8_t *supported_versions_len(uint16_t *n) const;
   void add_version(QUICVersion version);
 
 protected:
