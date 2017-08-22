@@ -821,7 +821,7 @@ public:
     CacheAuth_t www_auth_content = CACHE_AUTH_NONE;
 
     // INK API/Remap API plugin interface
-    void *remap_plugin_instance = 0;
+    void *remap_plugin_instance = nullptr;
     void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
     remap_plugin_info::_tsremap_os_response *fp_tsremap_os_response = nullptr;
     HTTPStatus http_return_code                                     = HTTP_STATUS_NONE;
