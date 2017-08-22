@@ -293,21 +293,19 @@ Machine::insert_id(char *id)
 {
   char lower_case_name[TS_MAX_HOST_NAME_LEN + 1] = {0};
   char *value                                    = nullptr;
-  size_t len                                     = strlen(id);
 
-  value = static_cast<char *>(ats_malloc(len + 1));
   make_to_lower_case(id, lower_case_name, sizeof(lower_case_name));
-  strncpy(value, lower_case_name, strlen(lower_case_name));
+  value = ats_strndup(lower_case_name, strlen(lower_case_name));
   ink_hash_table_insert(machine_id_strings, lower_case_name, value);
 }
 
 void
 Machine::insert_id(IpAddr *ipaddr)
 {
-  int length         = INET6_ADDRSTRLEN + 1;
-  char *string_value = static_cast<char *>(ats_calloc(length, 1));
+  int length = INET6_ADDRSTRLEN + 1;
 
   if (ipaddr != nullptr) {
+    char *string_value = static_cast<char *>(ats_calloc(length, 1));
     ipaddr->toString(string_value, length);
     ink_hash_table_insert(machine_id_strings, string_value, string_value);
     ink_hash_table_insert(machine_id_ipaddrs, string_value, ipaddr);
