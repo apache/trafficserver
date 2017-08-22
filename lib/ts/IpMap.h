@@ -191,7 +191,7 @@ public:
   */
   self &mark(sockaddr const *min, ///< Minimum value in range.
              sockaddr const *max, ///< Maximum value in range.
-             void *data = 0       ///< Client data payload.
+             void *data = nullptr ///< Client data payload.
              );
 
   /** Mark a range.
@@ -199,9 +199,9 @@ public:
       @note Convenience overload for IPv4 addresses.
       @return This object.
   */
-  self &mark(in_addr_t min, ///< Minimum address (network order).
-             in_addr_t max, ///< Maximum address (network order).
-             void *data = 0 ///< Client data.
+  self &mark(in_addr_t min,       ///< Minimum address (network order).
+             in_addr_t max,       ///< Maximum address (network order).
+             void *data = nullptr ///< Client data.
              );
 
   /** Mark a range.
@@ -209,9 +209,9 @@ public:
       @note Convenience overload for IPv4 addresses.
       @return This object.
   */
-  self &mark(IpAddr const &min, ///< Minimum address (network order).
-             IpAddr const &max, ///< Maximum address (network order).
-             void *data = 0     ///< Client data.
+  self &mark(IpAddr const &min,   ///< Minimum address (network order).
+             IpAddr const &max,   ///< Maximum address (network order).
+             void *data = nullptr ///< Client data.
              );
 
   /** Mark an IPv4 address @a addr with @a data.
@@ -219,8 +219,8 @@ public:
       @note Convenience overload for IPv4 addresses.
       @return This object.
   */
-  self &mark(in_addr_t addr, ///< Address (network order).
-             void *data = 0  ///< Client data.
+  self &mark(in_addr_t addr,      ///< Address (network order).
+             void *data = nullptr ///< Client data.
              );
 
   /** Mark a range.
@@ -230,7 +230,7 @@ public:
   */
   self &mark(IpEndpoint const *min, ///< Minimum address (network order).
              IpEndpoint const *max, ///< Maximum address (network order).
-             void *data = 0         ///< Client data.
+             void *data = nullptr   ///< Client data.
              );
 
   /** Mark an address @a addr with @a data.
@@ -239,7 +239,7 @@ public:
       @return This object.
   */
   self &mark(IpEndpoint const *addr, ///< Address (network order).
-             void *data = 0          ///< Client data.
+             void *data = nullptr    ///< Client data.
              );
 
   /** Unmark addresses.
@@ -270,11 +270,11 @@ public:
 
       @return This object.
   */
-  self &fill(sockaddr const *min, sockaddr const *max, void *data = 0);
+  self &fill(sockaddr const *min, sockaddr const *max, void *data = nullptr);
   /// Fill addresses (overload).
-  self &fill(IpEndpoint const *min, IpEndpoint const *max, void *data = 0);
+  self &fill(IpEndpoint const *min, IpEndpoint const *max, void *data = nullptr);
   /// Fill addresses (overload).
-  self &fill(in_addr_t min, in_addr_t max, void *data = 0);
+  self &fill(in_addr_t min, in_addr_t max, void *data = nullptr);
 
   /** Test for membership.
 
@@ -283,7 +283,7 @@ public:
       is set to the client data for the address.
   */
   bool contains(sockaddr const *target, ///< Search target (network order).
-                void **ptr = 0          ///< Client data return.
+                void **ptr = nullptr    ///< Client data return.
                 ) const;
 
   /** Test for membership.
@@ -294,8 +294,8 @@ public:
       If the address is in the map and @a ptr is not @c nullptr, @c *ptr
       is set to the client data for the address.
   */
-  bool contains(in_addr_t target, ///< Search target (network order).
-                void **ptr = 0    ///< Client data return.
+  bool contains(in_addr_t target,    ///< Search target (network order).
+                void **ptr = nullptr ///< Client data return.
                 ) const;
 
   /** Test for membership.
@@ -307,7 +307,7 @@ public:
       is set to the client data for the address.
   */
   bool contains(IpEndpoint const *target, ///< Search target (network order).
-                void **ptr = 0            ///< Client data return.
+                void **ptr = nullptr      ///< Client data return.
                 ) const;
 
   /** Test for membership.
@@ -319,7 +319,7 @@ public:
       is set to the client data for the address.
   */
   bool contains(IpAddr const &target, ///< Search target (network order).
-                void **ptr = 0        ///< Client data return.
+                void **ptr = nullptr  ///< Client data return.
                 ) const;
 
   /** Remove all addresses from the map.

@@ -148,7 +148,7 @@ public:
 
   */
   int
-  handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = 0)
+  handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr)
   {
     return (this->*handler)(event, data);
   }
