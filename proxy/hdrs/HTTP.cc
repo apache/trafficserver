@@ -1544,6 +1544,7 @@ HTTPHdr::_fill_target_cache() const
 {
   URL *url = this->url_get();
   const char *port_ptr;
+  int port_len;
 
   m_target_in_url  = false;
   m_port_in_header = false;
@@ -1555,10 +1556,10 @@ HTTPHdr::_fill_target_cache() const
     m_port_in_header = 0 != url->port_get_raw();
     m_host_mime      = nullptr;
   } else if (nullptr !=
-             (m_host_mime = const_cast<HTTPHdr *>(this)->get_host_port_values(nullptr, &m_host_length, &port_ptr, nullptr))) {
+             (m_host_mime = const_cast<HTTPHdr *>(this)->get_host_port_values(nullptr, &m_host_length, &port_ptr, &port_len))) {
     m_port = 0;
     if (port_ptr) {
-      for (; is_digit(*port_ptr); ++port_ptr) {
+      for (; port_len > 0 && is_digit(*port_ptr); ++port_ptr, --port_len) {
         m_port = m_port * 10 + *port_ptr - '0';
       }
     }
