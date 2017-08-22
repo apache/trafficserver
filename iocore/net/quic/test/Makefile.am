@@ -215,6 +215,7 @@ test_QUICStream_SOURCES = \
   ../QUICFrameDispatcher.cc \
   ../QUICStreamManager.cc \
   ../QUICFlowController.cc \
+  ../QUICApplicationMap.cc \
   ../QUICCongestionController.cc
 
 test_QUICStream_LDADD = \
