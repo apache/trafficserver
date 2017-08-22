@@ -1119,18 +1119,20 @@ UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
 int
 UnixNetVConnection::acceptEvent(int event, Event *e)
 {
-  thread = e->ethread;
+  EThread *t = (e == nullptr) ? this_ethread() : e->ethread;
 
-  MUTEX_TRY_LOCK(lock, get_NetHandler(thread)->mutex, e->ethread);
+  MUTEX_TRY_LOCK(lock, get_NetHandler(t)->mutex, t);
   if (!lock.is_locked()) {
     if (event == EVENT_NONE) {
-      thread->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
+      t->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
       return EVENT_DONE;
     } else {
       e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
       return EVENT_CONT;
     }
   }
+
+  thread = t;
 
   if (action_.cancelled) {
     free(thread);
