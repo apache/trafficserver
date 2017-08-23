@@ -41,13 +41,15 @@ std::shared_ptr<QUICStreamFrame> frame_6 = std::make_shared<QUICStreamFrame>(pay
 std::shared_ptr<QUICStreamFrame> frame_7 = std::make_shared<QUICStreamFrame>(payload + 12, 2, stream_id, 12);
 std::shared_ptr<QUICStreamFrame> frame_8 = std::make_shared<QUICStreamFrame>(payload + 14, 2, stream_id, 14);
 
+MockQUICStreamManager *manager = new MockQUICStreamManager();
+
 TEST_CASE("QUICStream_assembling_byte_stream_1", "[quic]")
 {
   MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
   IOBufferReader *reader = read_buffer->alloc_reader();
 
   std::unique_ptr<QUICStream> stream(new QUICStream());
-  stream->init(nullptr, nullptr, stream_id);
+  stream->init(manager, nullptr, stream_id, 1024, 1024);
   stream->do_io_read(nullptr, 0, read_buffer);
 
   stream->recv(frame_1);
@@ -73,7 +75,7 @@ TEST_CASE("QUICStream_assembling_byte_stream_2", "[quic]")
   IOBufferReader *reader = read_buffer->alloc_reader();
 
   std::unique_ptr<QUICStream> stream(new QUICStream());
-  stream->init(nullptr, nullptr, stream_id);
+  stream->init(manager, nullptr, stream_id);
   stream->do_io_read(nullptr, 0, read_buffer);
 
   stream->recv(frame_8);
@@ -99,7 +101,7 @@ TEST_CASE("QUICStream_assembling_byte_stream_3", "[quic]")
   IOBufferReader *reader = read_buffer->alloc_reader();
 
   std::unique_ptr<QUICStream> stream(new QUICStream());
-  stream->init(nullptr, nullptr, stream_id);
+  stream->init(manager, nullptr, stream_id);
   stream->do_io_read(nullptr, 0, read_buffer);
 
   stream->recv(frame_8);

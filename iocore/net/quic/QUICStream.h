@@ -45,8 +45,10 @@ public:
   QUICStream() : VConnection(nullptr) {}
   ~QUICStream() {}
 
-  void init(QUICStreamManager *manager, QUICFrameTransmitter *tx, uint32_t id);
+  void init(QUICStreamManager *manager, QUICFrameTransmitter *tx, uint32_t id, uint64_t recv_max_stream_data = 0,
+            uint64_t send_max_stream_data = 0);
   void start();
+  void init_flow_control_params(uint32_t recv_max_stream_data, uint32_t send_max_stream_data);
   int main_event_handler(int event, void *data);
 
   uint32_t id();
@@ -58,7 +60,10 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
-  void recv(std::shared_ptr<const QUICStreamFrame> frame);
+  QUICError recv(std::shared_ptr<const QUICStreamFrame> frame);
+  QUICError recv(std::shared_ptr<const QUICMaxStreamDataFrame> frame);
+  QUICError recv(std::shared_ptr<const QUICStreamBlockedFrame> frame);
+
   void reset();
 
   bool is_read_ready();
@@ -81,10 +86,18 @@ private:
 
   Event *_send_tracked_event(Event *event, int send_event, VIO *vio);
 
+  void _slide_recv_max_stream_data();
+  QUICError _recv_flow_control(uint64_t new_offset);
+  bool _send_flow_control(uint64_t len);
+
   QUICStreamId _id                = 0;
   QUICOffset _recv_offset         = 0;
   QUICOffset _recv_largest_offset = 0;
   QUICOffset _send_offset         = 0;
+
+  uint64_t _recv_max_stream_data        = 0;
+  uint64_t _recv_max_stream_data_deleta = 0;
+  uint64_t _send_max_stream_data        = 0;
 
   VIO _read_vio;
   VIO _write_vio;

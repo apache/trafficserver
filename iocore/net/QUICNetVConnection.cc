@@ -94,7 +94,7 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 
   // Create frame handlers
   this->_stream_manager = new QUICStreamManager();
-  this->_stream_manager->init(this, &this->_application_map);
+  this->_stream_manager->init(this, this, &this->_application_map);
   this->_flow_controller       = new QUICFlowController();
   this->_congestion_controller = new QUICCongestionController();
   this->_loss_detector         = new QUICLossDetector(this);
@@ -174,6 +174,7 @@ void
 QUICNetVConnection::set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp)
 {
   this->_remote_transport_parameters = std::move(tp);
+  this->_stream_manager->init_flow_control_params(*this->_local_transport_parameters, *this->_remote_transport_parameters);
 
   const QUICTransportParametersInClientHello *tp_in_ch =
     dynamic_cast<QUICTransportParametersInClientHello *>(this->_remote_transport_parameters.get());
@@ -210,6 +211,12 @@ const QUICTransportParameters &
 QUICNetVConnection::local_transport_parameters()
 {
   return *this->_local_transport_parameters;
+}
+
+const QUICTransportParameters &
+QUICNetVConnection::remote_transport_parameters()
+{
+  return *this->_remote_transport_parameters;
 }
 
 uint32_t

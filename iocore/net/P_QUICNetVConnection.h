@@ -168,6 +168,7 @@ public:
   uint32_t pmtu() override;
   void set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp) override;
   const QUICTransportParameters &local_transport_parameters() override;
+  const QUICTransportParameters &remote_transport_parameters() override;
   void close(QUICError error) override;
 
   // QUICConnection (QUICPacketTransmitter)
@@ -193,8 +194,8 @@ private:
 
   uint32_t _pmtu = 1280;
 
-  std::unique_ptr<QUICTransportParameters> _local_transport_parameters;
-  std::unique_ptr<QUICTransportParameters> _remote_transport_parameters;
+  std::unique_ptr<QUICTransportParameters> _local_transport_parameters  = nullptr;
+  std::unique_ptr<QUICTransportParameters> _remote_transport_parameters = nullptr;
 
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.

@@ -122,14 +122,16 @@ enum class QUICErrorClass {
   CRYPTOGRAPHIC,
 };
 
+// TODO: fix for draft-05
 enum class QUICErrorCode : uint32_t {
-  APPLICATION_SPECIFIC_ERROR        = 0,
-  HOST_LOCAL_ERROR                  = 0x40000000,
-  QUIC_TRANSPORT_ERROR              = 0x80000000,
-  QUIC_INTERNAL_ERROR               = 0x80000001,
-  QUIC_VERSION_NEGOTIATION_MISMATCH = 0x80000037,
-  CRYPTOGRAPHIC_ERROR               = 0xC0000000,
-  TLS_HANDSHAKE_FAILED              = 0xC000001C,
+  APPLICATION_SPECIFIC_ERROR               = 0,
+  HOST_LOCAL_ERROR                         = 0x40000000,
+  QUIC_TRANSPORT_ERROR                     = 0x80000000,
+  QUIC_INTERNAL_ERROR                      = 0x80000001,
+  QUIC_VERSION_NEGOTIATION_MISMATCH        = 0x80000037,
+  QUIC_FLOW_CONTROL_RECEIVED_TOO_MUCH_DATA = 0x8000003b,
+  CRYPTOGRAPHIC_ERROR                      = 0xC0000000,
+  TLS_HANDSHAKE_FAILED                     = 0xC000001C,
   // TODO Add error codes
 };
 
@@ -166,6 +168,61 @@ public:
 
 private:
   uint64_t _id;
+};
+
+class QUICMaximumData
+{
+public:
+  QUICMaximumData(uint64_t d) : _data(d) {}
+
+  bool
+  operator>(uint64_t r) const
+  {
+    return this->_data > (r / 1024);
+  }
+
+  bool
+  operator<(uint64_t r) const
+  {
+    return this->_data < (r / 1024);
+  }
+
+  bool
+  operator>=(uint64_t r) const
+  {
+    return this->_data >= (r / 1024);
+  }
+
+  bool
+  operator<=(uint64_t r) const
+  {
+    return this->_data <= (r / 1024);
+  }
+
+  bool
+  operator==(uint64_t r) const
+  {
+    return this->_data == (r / 1024);
+  }
+
+  QUICMaximumData &
+  operator=(uint64_t d)
+  {
+    this->_data = d;
+    return *this;
+  }
+
+  QUICMaximumData &
+  operator+=(uint64_t d)
+  {
+    this->_data += d;
+    return *this;
+  }
+
+  operator uint64_t() const { return _data; }
+
+private:
+  uint64_t _data = 0; // in units of 1024 octets
 };
 
 class QUICTypeUtil

@@ -169,6 +169,12 @@ public:
     return dummy_transport_parameters;
   }
 
+  const QUICTransportParameters &
+  remote_transport_parameters() override
+  {
+    return dummy_transport_parameters;
+  }
+
   void
   close(QUICError error) override
   {
@@ -284,6 +290,10 @@ public:
   {
     return _totalFrameCount;
   }
+
+  bool is_recv_avail_more_than(uint64_t /* size */) override { return true; }
+
+  void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> /* frame */) override { return; }
 
 private:
   int _totalFrameCount = 0;

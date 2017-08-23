@@ -38,5 +38,6 @@ public:
   virtual uint32_t pmtu()                                                            = 0;
   virtual void set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp) = 0;
   virtual const QUICTransportParameters &local_transport_parameters()                = 0;
+  virtual const QUICTransportParameters &remote_transport_parameters()               = 0;
   virtual void close(QUICError error)                                                = 0;
 };
