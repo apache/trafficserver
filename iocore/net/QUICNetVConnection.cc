@@ -62,7 +62,6 @@ QUICNetVConnection::init(UDPConnection *udp_con, QUICPacketHandler *packet_handl
 {
   this->_transmitter_mutex = new_ProxyMutex();
   this->_udp_con           = udp_con;
-  this->_transmitter_mutex = new_ProxyMutex();
   this->_packet_handler    = packet_handler;
   this->_quic_connection_id.randomize();
 
