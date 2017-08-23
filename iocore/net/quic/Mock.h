@@ -22,7 +22,6 @@
  */
 
 #include "QUICStreamManager.h"
-#include "QUICFlowController.h"
 #include "QUICCongestionController.h"
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
@@ -304,49 +303,6 @@ class MockQUICCongestionController : public QUICCongestionController
 {
 public:
   MockQUICCongestionController() : QUICCongestionController() {}
-
-  // Override
-  virtual void
-  handle_frame(std::shared_ptr<const QUICFrame> f) override
-  {
-    ++_frameCount[static_cast<int>(f->type())];
-    ++_totalFrameCount;
-  }
-
-  // for Test
-  int
-  getStreamFrameCount()
-  {
-    return _frameCount[static_cast<int>(QUICFrameType::STREAM)];
-  }
-
-  int
-  getAckFrameCount()
-  {
-    return _frameCount[static_cast<int>(QUICFrameType::ACK)];
-  }
-
-  int
-  getPingFrameCount()
-  {
-    return _frameCount[static_cast<int>(QUICFrameType::PING)];
-  }
-
-  int
-  getTotalFrameCount()
-  {
-    return _totalFrameCount;
-  }
-
-private:
-  int _totalFrameCount = 0;
-  int _frameCount[256] = {0};
-};
-
-class MockQUICFlowController : public QUICFlowController
-{
-public:
-  MockQUICFlowController() {}
 
   // Override
   virtual void

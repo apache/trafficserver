@@ -95,13 +95,11 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   // Create frame handlers
   this->_stream_manager = new QUICStreamManager();
   this->_stream_manager->init(this, this, &this->_application_map);
-  this->_flow_controller       = new QUICFlowController();
   this->_congestion_controller = new QUICCongestionController();
   this->_loss_detector         = new QUICLossDetector(this);
 
   this->_frame_dispatcher->add_handler(this);
   this->_frame_dispatcher->add_handler(this->_stream_manager);
-  this->_frame_dispatcher->add_handler(this->_flow_controller);
   this->_frame_dispatcher->add_handler(this->_congestion_controller);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
@@ -145,7 +143,6 @@ QUICNetVConnection::free(EThread *t)
   delete this->_loss_detector;
   delete this->_frame_dispatcher;
   delete this->_stream_manager;
-  delete this->_flow_controller;
   delete this->_congestion_controller;
 
   // TODO: clear member variables like `UnixNetVConnection::free(EThread *t)`

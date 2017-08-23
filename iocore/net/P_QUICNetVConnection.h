@@ -54,7 +54,6 @@
 #include "quic/QUICAckFrameCreator.h"
 #include "quic/QUICLossDetector.h"
 #include "quic/QUICStreamManager.h"
-#include "quic/QUICFlowController.h"
 #include "quic/QUICCongestionController.h"
 #include "quic/QUICApplicationMap.h"
 
@@ -205,7 +204,6 @@ private:
   QUICLossDetector *_loss_detector                 = nullptr;
   QUICFrameDispatcher *_frame_dispatcher           = nullptr;
   QUICStreamManager *_stream_manager               = nullptr;
-  QUICFlowController *_flow_controller             = nullptr;
   QUICCongestionController *_congestion_controller = nullptr;
 
   Queue<QUICPacket> _packet_recv_queue;

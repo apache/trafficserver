@@ -148,7 +148,6 @@ test_QUICFrameDispatcher_SOURCES = \
   ../QUICTransportParameters.cc \
   ../QUICStreamManager.cc \
   ../QUICApplicationMap.cc \
-  ../QUICFlowController.cc \
   ../QUICCongestionController.cc \
   ../QUICLossDetector.cc \
   ../QUICFrame.cc \
@@ -208,7 +207,6 @@ test_QUICStream_SOURCES = \
   ../QUICStream.cc \
   ../QUICFrameDispatcher.cc \
   ../QUICStreamManager.cc \
-  ../QUICFlowController.cc \
   ../QUICApplicationMap.cc \
   ../QUICCongestionController.cc
 

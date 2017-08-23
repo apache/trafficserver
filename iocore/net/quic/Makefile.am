@@ -48,7 +48,6 @@ libquic_a_SOURCES = \
   QUICVersionNegotiator.cc \
   QUICLossDetector.cc \
   QUICStreamManager.cc \
-  QUICFlowController.cc \
   QUICCongestionController.cc \
   QUICStreamState.cc \
   QUICStream.cc \

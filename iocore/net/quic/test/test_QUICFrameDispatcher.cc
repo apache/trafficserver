@@ -34,20 +34,17 @@ TEST_CASE("QUICFrameHandler", "[quic]")
 
   auto connection           = new MockQUICConnection();
   auto streamManager        = new MockQUICStreamManager();
-  auto flowController       = new MockQUICFlowController();
   auto congestionController = new MockQUICCongestionController();
   auto lossDetector         = new MockQUICLossDetector();
   QUICFrameDispatcher quicFrameDispatcher;
   quicFrameDispatcher.add_handler(connection);
   quicFrameDispatcher.add_handler(streamManager);
-  quicFrameDispatcher.add_handler(flowController);
   quicFrameDispatcher.add_handler(congestionController);
   quicFrameDispatcher.add_handler(lossDetector);
 
   // Initial state
   CHECK(connection->getTotalFrameCount() == 0);
   CHECK(streamManager->getTotalFrameCount() == 0);
-  CHECK(flowController->getTotalFrameCount() == 0);
   CHECK(congestionController->getTotalFrameCount() == 0);
 
   // STREAM frame
@@ -57,7 +54,6 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   quicFrameDispatcher.receive_frames(buf, len);
   CHECK(connection->getTotalFrameCount() == 0);
   CHECK(streamManager->getTotalFrameCount() == 1);
-  CHECK(flowController->getTotalFrameCount() == 1);
   CHECK(congestionController->getTotalFrameCount() == 1);
 
   // CONNECTION_CLOSE frame
@@ -66,6 +62,5 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   quicFrameDispatcher.receive_frames(buf, len);
   CHECK(connection->getTotalFrameCount() == 1);
   CHECK(streamManager->getTotalFrameCount() == 1);
-  CHECK(flowController->getTotalFrameCount() == 1);
   CHECK(congestionController->getTotalFrameCount() == 1);
 }
