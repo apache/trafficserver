@@ -34,4 +34,8 @@ public:
     ssl_quic_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", nullptr, nullptr, nullptr);
   }
   static int ssl_quic_vc_index;
+
+  // SSL callbacks
+  static int ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
+                                      unsigned inlen, void *);
 };

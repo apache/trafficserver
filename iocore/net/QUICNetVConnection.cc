@@ -33,6 +33,8 @@
 #include "BIO_fastopen.h"
 #include "Log.h"
 
+#include "P_SSLNextProtocolSet.h"
+
 #include "QUICEchoApp.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
@@ -63,6 +65,11 @@ QUICNetVConnection::init(UDPConnection *udp_con, QUICPacketHandler *packet_handl
   this->_transmitter_mutex = new_ProxyMutex();
   this->_packet_handler    = packet_handler;
   this->_quic_connection_id.randomize();
+
+  // FIXME These should be done by HttpProxyServerMain
+  SSLNextProtocolSet *next_protocol_set = new SSLNextProtocolSet();
+  next_protocol_set->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, nullptr);
+  this->registerNextProtocolSet(next_protocol_set);
 }
 
 VIO *
@@ -509,6 +516,18 @@ QUICNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
   return 0;
 }
 
+void
+QUICNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s)
+{
+  this->_next_protocol_set = s;
+}
+
+SSLNextProtocolSet *
+QUICNetVConnection::next_protocol_set()
+{
+  return this->_next_protocol_set;
+}
+
 QUICError
 QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_ptr<const QUICPacket> packet)
 {
@@ -719,12 +738,20 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
 QUICApplication *
 QUICNetVConnection::_create_application()
 {
-  const uint8_t *application = this->_handshake_handler->negotiated_application_name();
-  if (memcmp(application, "hq", 2) == 0) {
-    return new QUICEchoApp(this);
+  const uint8_t *app_name;
+  unsigned int app_name_len = 0;
+  this->_handshake_handler->negotiated_application_name(&app_name, &app_name_len);
+  if (app_name) {
+    DebugQUICCon("ALPN: %.*s", app_name_len, app_name);
+    if (memcmp(TS_ALPN_PROTOCOL_HTTP_QUIC, app_name, app_name_len) == 0) {
+      return new QUICEchoApp(this);
+    } else {
+      DebugQUICCon("Negotiated application is not available");
+      ink_assert(false);
+      return nullptr;
+    }
   } else {
-    DebugQUICCon("Unknown application has been negotiated: %s", application);
-    ink_assert(false);
+    DebugQUICCon("Failed to negotiate application");
     return nullptr;
   }
 }

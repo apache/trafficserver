@@ -224,8 +224,11 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
 #if TS_USE_QUIC == 1
   } else if (port.isQUIC()) {
     // HTTP/QUIC
-    HQSessionAccept *hq = new HQSessionAccept(accept_opt);
-    acceptor._accept    = hq;
+    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC)) {
+      HQSessionAccept *hq = new HQSessionAccept(accept_opt);
+      // FIXME hq should be registered to QUICNextProtocolAccept like SSL
+      acceptor._accept    = hq;
+    }
 #endif
   } else {
     acceptor._accept = probe;

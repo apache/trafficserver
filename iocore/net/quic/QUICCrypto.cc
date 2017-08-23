@@ -242,6 +242,12 @@ QUICCrypto::update_server_keymaterial()
   // return 1;
 }
 
+SSL *
+QUICCrypto::ssl_handle()
+{
+  return this->_ssl;
+}
+
 bool
 QUICCrypto::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
                     uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const

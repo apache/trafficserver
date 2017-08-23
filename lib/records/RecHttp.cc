@@ -40,6 +40,7 @@ const char *const TS_ALPN_PROTOCOL_HTTP_0_9 = IP_PROTO_TAG_HTTP_0_9.ptr();
 const char *const TS_ALPN_PROTOCOL_HTTP_1_0 = IP_PROTO_TAG_HTTP_1_0.ptr();
 const char *const TS_ALPN_PROTOCOL_HTTP_1_1 = IP_PROTO_TAG_HTTP_1_1.ptr();
 const char *const TS_ALPN_PROTOCOL_HTTP_2_0 = IP_PROTO_TAG_HTTP_2_0.ptr();
+const char *const TS_ALPN_PROTOCOL_HTTP_QUIC = IP_PROTO_TAG_HTTP_QUIC.ptr();
 
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
@@ -47,6 +48,7 @@ const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
 const char *const TS_PROTO_TAG_HTTP_1_0 = TS_ALPN_PROTOCOL_HTTP_1_0;
 const char *const TS_PROTO_TAG_HTTP_1_1 = TS_ALPN_PROTOCOL_HTTP_1_1;
 const char *const TS_PROTO_TAG_HTTP_2_0 = TS_ALPN_PROTOCOL_HTTP_2_0;
+const char *const TS_PROTO_TAG_HTTP_QUIC = TS_ALPN_PROTOCOL_HTTP_QUIC;
 const char *const TS_PROTO_TAG_TLS_1_3  = IP_PROTO_TAG_TLS_1_3.ptr();
 const char *const TS_PROTO_TAG_TLS_1_2  = IP_PROTO_TAG_TLS_1_2.ptr();
 const char *const TS_PROTO_TAG_TLS_1_1  = IP_PROTO_TAG_TLS_1_1.ptr();
@@ -63,12 +65,14 @@ int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC = SessionProtocolNameRegistry::INVALID;
 
 // Predefined protocol sets for ease of use.
 SessionProtocolSet HTTP_PROTOCOL_SET;
 SessionProtocolSet HTTP2_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
+SessionProtocolSet DEFAULT_QUIC_SESSION_PROTOCOL_SET;
 
 void
 RecHttpLoadIp(const char *value_name, IpAddr &ip4, IpAddr &ip6)
@@ -432,7 +436,13 @@ HttpProxyPort::processOptions(const char *opts)
 
   // Set the default session protocols.
   if (!sp_set_p) {
-    m_session_protocol_preference = this->isSSL() ? DEFAULT_TLS_SESSION_PROTOCOL_SET : DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
+    if (this->isSSL()) {
+      m_session_protocol_preference = DEFAULT_TLS_SESSION_PROTOCOL_SET;
+    } else if (this->isQUIC()) {
+      m_session_protocol_preference = DEFAULT_QUIC_SESSION_PROTOCOL_SET;
+    } else {
+      m_session_protocol_preference = DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
+    }
   }
 
   return zret;
@@ -587,6 +597,8 @@ HttpProxyPort::print(char *out, size_t n)
     sp_set.markOut(DEFAULT_NON_TLS_SESSION_PROTOCOL_SET);
   } else if (sp_set == DEFAULT_TLS_SESSION_PROTOCOL_SET && this->isSSL()) {
     sp_set.markOut(DEFAULT_TLS_SESSION_PROTOCOL_SET);
+  } else if (sp_set == DEFAULT_QUIC_SESSION_PROTOCOL_SET && this->isQUIC()) {
+    sp_set.markOut(DEFAULT_QUIC_SESSION_PROTOCOL_SET);
   }
 
   // pull out groups.
@@ -644,6 +656,7 @@ ts_session_protocol_well_known_name_indices_init()
   TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_1_0);
   TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_1_1);
   TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_2_0);
+  TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_QUIC);
 
   // Now do the predefined protocol sets.
   HTTP_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_0_9);
@@ -652,6 +665,9 @@ ts_session_protocol_well_known_name_indices_init()
   HTTP2_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
 
   DEFAULT_TLS_SESSION_PROTOCOL_SET.markAllIn();
+  DEFAULT_TLS_SESSION_PROTOCOL_SET.markOut(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC);
+
+  DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC);
 
   DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
 
@@ -659,6 +675,7 @@ ts_session_protocol_well_known_name_indices_init()
   ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_1_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_1_0)));
   ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_1_1, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_1_1)));
   ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_2_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_2_0)));
+  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_QUIC, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_QUIC)));
   ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_3, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_3)));
   ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_2, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_2)));
   ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_1, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_1)));

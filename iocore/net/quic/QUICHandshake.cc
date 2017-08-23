@@ -60,11 +60,10 @@ QUICHandshake::is_completed()
   return crypto->is_handshake_finished();
 }
 
-const uint8_t *
-QUICHandshake::negotiated_application_name()
+void
+QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *len)
 {
-  // TODO Use the protocol name negotiated on ALPN
-  return reinterpret_cast<const uint8_t *>("hq");
+  SSL_get0_alpn_selected(this->_crypto->ssl_handle(), name, len);
 }
 
 int

@@ -78,6 +78,9 @@ public:
   int update_client_keymaterial();
   int update_server_keymaterial();
 
+  // FIXME SSL handle should not be exported
+  SSL *ssl_handle();
+
 private:
   int _export_secret(uint8_t *dst, size_t dst_len, const char *label, size_t label_len) const;
   int _export_client_keymaterial(size_t secret_len, size_t key_len, size_t iv_len);

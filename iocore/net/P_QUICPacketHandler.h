@@ -28,6 +28,7 @@
 #include "P_NetAccept.h"
 
 class QUICNetVConnection;
+class QUICPacket;
 
 struct QUICPacketHandler : public NetAccept {
 public:

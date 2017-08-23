@@ -104,6 +104,8 @@ typedef std::unique_ptr<uint8_t> ats_uint8_t_unique_ptr;
 struct QUICPacketHandler;
 class QUICLossDetector;
 
+class SSLNextProtocolSet;
+
 /**
  * @class QUICNetVConnection
  * @brief A NetVConnection for a QUIC network socket
@@ -160,6 +162,9 @@ public:
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
 
+  SSLNextProtocolSet *next_protocol_set();
+  void registerNextProtocolSet(SSLNextProtocolSet *s);
+
   // QUICConnection
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
@@ -192,6 +197,8 @@ private:
   QUICApplicationMap _application_map;
 
   uint32_t _pmtu = 1280;
+
+  SSLNextProtocolSet *_next_protocol_set = nullptr;
 
   std::unique_ptr<QUICTransportParameters> _local_transport_parameters  = nullptr;
   std::unique_ptr<QUICTransportParameters> _remote_transport_parameters = nullptr;

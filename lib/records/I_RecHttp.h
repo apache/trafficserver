@@ -135,6 +135,7 @@ extern SessionProtocolSet HTTP_PROTOCOL_SET;
 extern SessionProtocolSet HTTP2_PROTOCOL_SET;
 extern SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 extern SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
+extern SessionProtocolSet DEFAULT_QUIC_SESSION_PROTOCOL_SET;
 
 const char *RecNormalizeProtoTag(const char *tag);
 

@@ -58,6 +58,7 @@ extern const ts::StringView IP_PROTO_TAG_HTTP_0_9;
 extern const ts::StringView IP_PROTO_TAG_HTTP_1_0;
 extern const ts::StringView IP_PROTO_TAG_HTTP_1_1;
 extern const ts::StringView IP_PROTO_TAG_HTTP_2_0;
+extern const ts::StringView IP_PROTO_TAG_HTTP_QUIC;
 
 struct IpAddr; // forward declare.
 

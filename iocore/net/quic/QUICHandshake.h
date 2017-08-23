@@ -54,7 +54,7 @@ public:
   int state_complete(int event, void *data);
   int state_closed(int event, void *data);
   bool is_completed();
-  const uint8_t *negotiated_application_name();
+  void negotiated_application_name(const uint8_t **name, unsigned int *len);
 
 private:
   QUICCrypto *_crypto = nullptr;
