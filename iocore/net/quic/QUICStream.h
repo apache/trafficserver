@@ -81,9 +81,10 @@ private:
 
   Event *_send_tracked_event(Event *event, int send_event, VIO *vio);
 
-  QUICStreamId _id                   = 0;
-  QUICOffset _request_buffer_offset  = 0;
-  QUICOffset _response_buffer_offset = 0;
+  QUICStreamId _id                = 0;
+  QUICOffset _recv_offset         = 0;
+  QUICOffset _recv_largest_offset = 0;
+  QUICOffset _send_offset         = 0;
 
   VIO _read_vio;
   VIO _write_vio;

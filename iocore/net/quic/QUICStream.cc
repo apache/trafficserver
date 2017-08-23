@@ -229,16 +229,16 @@ QUICStream::_write_to_read_vio(std::shared_ptr<const QUICStreamFrame> frame)
 
   int bytes_added = this->_read_vio.buffer.writer()->write(frame->data(), frame->data_length());
   this->_read_vio.nbytes += bytes_added;
-  this->_request_buffer_offset += frame->data_length();
+  this->_recv_offset += frame->data_length();
 }
 
 void
 QUICStream::_reorder_data()
 {
-  auto frame = _request_stream_frame_buffer.find(this->_request_buffer_offset);
+  auto frame = _request_stream_frame_buffer.find(this->_recv_offset);
   while (frame != this->_request_stream_frame_buffer.end()) {
     this->_write_to_read_vio(frame->second);
-    frame = _request_stream_frame_buffer.find(this->_request_buffer_offset);
+    frame = _request_stream_frame_buffer.find(this->_recv_offset);
   }
 }
 
@@ -260,10 +260,14 @@ QUICStream::recv(std::shared_ptr<const QUICStreamFrame> frame)
   }
   this->_state.update_with_received_frame(*frame);
 
-  if (this->_request_buffer_offset > frame->offset()) {
+  if (frame->offset() > this->_recv_largest_offset) {
+    this->_recv_largest_offset = frame->offset();
+  }
+
+  if (this->_recv_offset > frame->offset()) {
     // Do nothing. Just ignore STREAM frame.
     return;
-  } else if (this->_request_buffer_offset == frame->offset()) {
+  } else if (this->_recv_offset == frame->offset()) {
     this->_write_to_read_vio(frame);
     this->_reorder_data();
   } else {
@@ -298,10 +302,10 @@ QUICStream::_send()
       len = data_len;
     }
 
-    std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame = QUICFrameFactory::create_stream_frame(
-      reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id, this->_response_buffer_offset);
+    std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame =
+      QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id, this->_send_offset);
 
-    this->_response_buffer_offset += len;
+    this->_send_offset += len;
     reader->consume(len);
     this->_write_vio.ndone += len;
     total_len += len;
