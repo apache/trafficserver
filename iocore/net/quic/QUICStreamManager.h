@@ -36,6 +36,7 @@ public:
   QUICStreamManager(){};
 
   int init(QUICFrameTransmitter *tx, QUICApplicationMap *app_map);
+  virtual std::vector<QUICFrameType> interests() override;
   virtual void handle_frame(std::shared_ptr<const QUICFrame>) override;
   void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame);
 
@@ -45,8 +46,8 @@ private:
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   QUICStream *_find_stream(QUICStreamId id);
 
-  QUICApplicationMap *_app_map  = nullptr;
-  QUICFrameTransmitter *_tx     = nullptr;
+  QUICApplicationMap *_app_map = nullptr;
+  QUICFrameTransmitter *_tx    = nullptr;
 
 private:
   void _handle_stream_frame(std::shared_ptr<const QUICStreamFrame>);

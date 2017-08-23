@@ -25,6 +25,12 @@
 
 const static char *tag = "quic_congestion_controller";
 
+std::vector<QUICFrameType>
+QUICCongestionController::interests()
+{
+  return {QUICFrameType::ACK, QUICFrameType::STREAM};
+}
+
 void
 QUICCongestionController::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {

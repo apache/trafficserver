@@ -72,6 +72,12 @@ QUICLossDetector::event_handler(int event, Event *edata)
   return EVENT_CONT;
 }
 
+std::vector<QUICFrameType>
+QUICLossDetector::interests()
+{
+  return {QUICFrameType::ACK};
+}
+
 void
 QUICLossDetector::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {

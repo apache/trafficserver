@@ -121,6 +121,12 @@ public:
   {
   }
 
+  std::vector<QUICFrameType>
+  interests() override
+  {
+    return {QUICFrameType::CONNECTION_CLOSE};
+  }
+
   void
   handle_frame(std::shared_ptr<const QUICFrame> f) override
   {

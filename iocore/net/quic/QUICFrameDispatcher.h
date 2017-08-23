@@ -24,30 +24,20 @@
 #pragma once
 
 #include "QUICFrame.h"
-
-class QUICConnection;
-class QUICStreamManager;
-class QUICFlowController;
-class QUICCongestionController;
-class QUICLossDetector;
+#include "QUICFrameHandler.h"
+#include <vector>
 
 class QUICFrameDispatcher
 {
 public:
-  QUICFrameDispatcher(QUICConnection *connection, const std::shared_ptr<QUICStreamManager> smgr,
-                      const std::shared_ptr<QUICFlowController> fctlr, const std::shared_ptr<QUICCongestionController> cctlr,
-                      const std::shared_ptr<QUICLossDetector> ld);
   /*
    * Returns true if ACK frame should be sent
    */
   bool receive_frames(const uint8_t *payload, uint16_t size);
 
-  std::shared_ptr<QUICStreamManager> streamManager               = nullptr;
-  std::shared_ptr<QUICFlowController> flowController             = nullptr;
-  std::shared_ptr<QUICCongestionController> congestionController = nullptr;
-  std::shared_ptr<QUICLossDetector> lossDetector                 = nullptr;
+  void add_handler(QUICFrameHandler *handler);
 
 private:
-  QUICConnection *_connection = nullptr;
   QUICFrameFactory _frame_factory;
+  std::vector<QUICFrameHandler *> _handlers[256];
 };

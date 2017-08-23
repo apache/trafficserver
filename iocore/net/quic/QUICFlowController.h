@@ -27,9 +27,10 @@
 
 // TODO Implement flow controll
 // Flow controll will be required for the 2nd implementation draft
-class QUICFlowController : QUICFrameHandler
+class QUICFlowController : public QUICFrameHandler
 {
 public:
+  virtual std::vector<QUICFrameType> interests() override;
   virtual void handle_frame(std::shared_ptr<const QUICFrame>) override;
 
 private:

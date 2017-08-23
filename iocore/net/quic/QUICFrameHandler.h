@@ -23,10 +23,13 @@
 
 #pragma once
 
+#include <vector>
 #include <QUICFrame.h>
 
 class QUICFrameHandler
 {
 public:
+  virtual ~QUICFrameHandler(){};
+  virtual std::vector<QUICFrameType> interests()                    = 0;
   virtual void handle_frame(std::shared_ptr<const QUICFrame> frame) = 0;
 };

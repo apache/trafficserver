@@ -166,9 +166,6 @@ test_QUICFrameDispatcher_SOURCES = \
 test_QUICFrameDispatcher_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBTCL@ \
   @HWLOC_LIBS@
@@ -192,9 +189,6 @@ test_QUICStreamState_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBTCL@ \
   @HWLOC_LIBS@

@@ -33,9 +33,15 @@ ClassAllocator<QUICStream> quicStreamAllocator("quicStreamAllocator");
 int
 QUICStreamManager::init(QUICFrameTransmitter *tx, QUICApplicationMap *app_map)
 {
-  this->_tx = tx;
+  this->_tx      = tx;
   this->_app_map = app_map;
   return 0;
+}
+
+std::vector<QUICFrameType>
+QUICStreamManager::interests()
+{
+  return {QUICFrameType::STREAM, QUICFrameType::RST_STREAM};
 }
 
 void

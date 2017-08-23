@@ -179,6 +179,7 @@ public:
   virtual void transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame) override;
 
   // QUICConnection (QUICFrameHandler)
+  std::vector<QUICFrameType> interests() override;
   void handle_frame(std::shared_ptr<const QUICFrame> frame) override;
 
 private:
@@ -197,12 +198,14 @@ private:
 
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.
-  QUICVersionNegotiator *_version_negotiator         = nullptr;
-  QUICHandshake *_handshake_handler                  = nullptr;
-  QUICCrypto *_crypto                                = nullptr;
-  std::shared_ptr<QUICLossDetector> _loss_detector   = nullptr;
-  std::shared_ptr<QUICStreamManager> _stream_manager = nullptr;
-  QUICFrameDispatcher *_frame_dispatcher             = nullptr;
+  QUICVersionNegotiator *_version_negotiator       = nullptr;
+  QUICHandshake *_handshake_handler                = nullptr;
+  QUICCrypto *_crypto                              = nullptr;
+  QUICLossDetector *_loss_detector                 = nullptr;
+  QUICFrameDispatcher *_frame_dispatcher           = nullptr;
+  QUICStreamManager *_stream_manager               = nullptr;
+  QUICFlowController *_flow_controller             = nullptr;
+  QUICCongestionController *_congestion_controller = nullptr;
 
   Queue<QUICPacket> _packet_recv_queue;
   Queue<QUICPacket> _packet_send_queue;

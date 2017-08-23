@@ -34,16 +34,13 @@ const static char *tag = "quic_frame_handler";
 //
 // Frame Dispatcher
 //
-QUICFrameDispatcher::QUICFrameDispatcher(QUICConnection *connection, const std::shared_ptr<QUICStreamManager> smgr,
-                                         const std::shared_ptr<QUICFlowController> fctlr,
-                                         const std::shared_ptr<QUICCongestionController> cctlr,
-                                         const std::shared_ptr<QUICLossDetector> ld)
+
+void
+QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
 {
-  this->_connection    = connection;
-  streamManager        = smgr;
-  flowController       = fctlr;
-  congestionController = cctlr;
-  lossDetector         = ld;
+  for (QUICFrameType t : handler->interests()) {
+    this->_handlers[static_cast<uint8_t>(t)].push_back(handler);
+  }
 }
 
 bool
@@ -61,84 +58,18 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size)
     }
     cursor += frame->size();
 
+    QUICFrameType type = frame->type();
+
     // TODO: check debug build
-    if (frame->type() != QUICFrameType::PADDING) {
+    if (type != QUICFrameType::PADDING) {
       Debug(tag, "frame type %d, size %zu", static_cast<int>(frame->type()), frame->size());
     }
 
-    // FIXME We should probably use a mapping table. All the objects has the common interface (QUICFrameHandler).
-    switch (frame->type()) {
-    case QUICFrameType::PADDING: {
-      // NOTE: do nothing
-      break;
-    }
-    case QUICFrameType::RST_STREAM: {
-      streamManager->handle_frame(frame);
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::CONNECTION_CLOSE: {
-      this->_connection->handle_frame(frame);
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::GOAWAY: {
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::MAX_DATA: {
-      flowController->handle_frame(frame);
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::MAX_STREAM_DATA: {
-      flowController->handle_frame(frame);
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::MAX_STREAM_ID: {
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::PING: {
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::BLOCKED: {
-      flowController->handle_frame(frame);
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::STREAM_BLOCKED: {
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::STREAM_ID_NEEDED: {
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::NEW_CONNECTION_ID: {
-      should_send_ack = true;
-      break;
-    }
-    case QUICFrameType::ACK: {
-      congestionController->handle_frame(frame);
-      this->lossDetector->handle_frame(frame);
-      break;
-    }
-    case QUICFrameType::STREAM: {
-      streamManager->handle_frame(frame);
-      flowController->handle_frame(frame);
-      congestionController->handle_frame(frame);
-      should_send_ack = true;
-      break;
-    }
-    default:
-      // Unknown frame
-      Debug(tag, "Unknown frame type: %02x", static_cast<unsigned int>(frame->type()));
-      ink_assert(false);
+    should_send_ack |= (type != QUICFrameType::PADDING && type != QUICFrameType::ACK);
 
-      break;
+    std::vector<QUICFrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
+    for (auto h : handlers) {
+      h->handle_frame(frame);
     }
   }
   return should_send_ack;

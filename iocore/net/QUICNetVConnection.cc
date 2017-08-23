@@ -89,17 +89,21 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 {
   this->_version_negotiator = new QUICVersionNegotiator(&this->_packet_factory, this);
   this->_crypto             = new QUICCrypto(ssl_ctx, this);
+  this->_frame_dispatcher   = new QUICFrameDispatcher();
   this->_packet_factory.set_crypto_module(this->_crypto);
 
-  // FIXME Should these have to be shared_ptr?
-  this->_loss_detector  = std::make_shared<QUICLossDetector>(this);
-  this->_stream_manager = std::make_shared<QUICStreamManager>();
+  // Create frame handlers
+  this->_stream_manager = new QUICStreamManager();
   this->_stream_manager->init(this, &this->_application_map);
+  this->_flow_controller       = new QUICFlowController();
+  this->_congestion_controller = new QUICCongestionController();
+  this->_loss_detector         = new QUICLossDetector(this);
 
-  std::shared_ptr<QUICFlowController> flowController             = std::make_shared<QUICFlowController>();
-  std::shared_ptr<QUICCongestionController> congestionController = std::make_shared<QUICCongestionController>();
-  this->_frame_dispatcher =
-    new QUICFrameDispatcher(this, this->_stream_manager, flowController, congestionController, this->_loss_detector);
+  this->_frame_dispatcher->add_handler(this);
+  this->_frame_dispatcher->add_handler(this->_stream_manager);
+  this->_frame_dispatcher->add_handler(this->_flow_controller);
+  this->_frame_dispatcher->add_handler(this->_congestion_controller);
+  this->_frame_dispatcher->add_handler(this->_loss_detector);
 
   QUICConfig::scoped_config params;
 
@@ -153,8 +157,11 @@ QUICNetVConnection::free(EThread *t)
   delete this->_version_negotiator;
   delete this->_handshake_handler;
   delete this->_crypto;
+  delete this->_loss_detector;
   delete this->_frame_dispatcher;
-  // XXX _loss_detector and _stream_manager are std::shared_ptr
+  delete this->_stream_manager;
+  delete this->_flow_controller;
+  delete this->_congestion_controller;
 
   // TODO: clear member variables like `UnixNetVConnection::free(EThread *t)`
   this->mutex.clear();
@@ -311,6 +318,12 @@ QUICNetVConnection::close(QUICError error)
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
     this->transmit_frame(QUICFrameFactory::create_connection_close_frame(error.code, 0, ""));
   }
+}
+
+std::vector<QUICFrameType>
+QUICNetVConnection::interests()
+{
+  return {QUICFrameType::CONNECTION_CLOSE};
 }
 
 void

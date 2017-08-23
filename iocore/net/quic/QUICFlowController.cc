@@ -25,6 +25,12 @@
 
 const static char *tag = "quic_flow_controller";
 
+std::vector<QUICFrameType>
+QUICFlowController::interests()
+{
+  return {QUICFrameType::MAX_DATA, QUICFrameType::MAX_STREAM_DATA, QUICFrameType::BLOCKED, QUICFrameType::STREAM};
+}
+
 void
 QUICFlowController::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {
