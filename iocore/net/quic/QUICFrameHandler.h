@@ -30,6 +30,6 @@ class QUICFrameHandler
 {
 public:
   virtual ~QUICFrameHandler(){};
-  virtual std::vector<QUICFrameType> interests()                    = 0;
-  virtual void handle_frame(std::shared_ptr<const QUICFrame> frame) = 0;
+  virtual std::vector<QUICFrameType> interests()                         = 0;
+  virtual QUICError handle_frame(std::shared_ptr<const QUICFrame> frame) = 0;
 };

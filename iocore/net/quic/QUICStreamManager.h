@@ -39,7 +39,7 @@ public:
 
   int init(QUICFrameTransmitter *tx, QUICConnection *qc, QUICApplicationMap *app_map);
   virtual std::vector<QUICFrameType> interests() override;
-  virtual void handle_frame(std::shared_ptr<const QUICFrame>) override;
+  virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
   virtual void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame);
   void send_stream_frame(std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame);
   virtual bool is_send_avail_more_than(uint64_t size);

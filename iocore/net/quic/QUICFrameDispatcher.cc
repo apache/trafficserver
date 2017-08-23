@@ -42,12 +42,13 @@ QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
   }
 }
 
-bool
-QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size)
+QUICError
+QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size, bool &should_send_ack)
 {
   std::shared_ptr<const QUICFrame> frame(nullptr);
-  uint16_t cursor      = 0;
-  bool should_send_ack = false;
+  uint16_t cursor = 0;
+  should_send_ack = false;
+  QUICError error = QUICError(QUICErrorClass::NONE);
 
   while (cursor < size) {
     frame = this->_frame_factory.fast_create(payload + cursor, size - cursor);
@@ -68,8 +69,13 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size)
 
     std::vector<QUICFrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
     for (auto h : handlers) {
-      h->handle_frame(frame);
+      error = h->handle_frame(frame);
+      // TODO: is there any case to continue this loop even if error?
+      if (error.cls != QUICErrorClass::NONE) {
+        return error;
+      }
     }
   }
-  return should_send_ack;
+
+  return error;
 }

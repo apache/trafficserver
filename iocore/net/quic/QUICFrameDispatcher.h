@@ -33,7 +33,7 @@ public:
   /*
    * Returns true if ACK frame should be sent
    */
-  bool receive_frames(const uint8_t *payload, uint16_t size);
+  QUICError receive_frames(const uint8_t *payload, uint16_t size, bool &should_send_ack);
 
   void add_handler(QUICFrameHandler *handler);
 

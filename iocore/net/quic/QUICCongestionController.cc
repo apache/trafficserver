@@ -31,9 +31,11 @@ QUICCongestionController::interests()
   return {QUICFrameType::ACK, QUICFrameType::STREAM};
 }
 
-void
+QUICError
 QUICCongestionController::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {
+  QUICError error = QUICError(QUICErrorClass::NONE);
+
   switch (frame->type()) {
   case QUICFrameType::STREAM:
   case QUICFrameType::ACK:
@@ -43,4 +45,6 @@ QUICCongestionController::handle_frame(std::shared_ptr<const QUICFrame> frame)
     ink_assert(false);
     break;
   }
+
+  return error;
 }

@@ -322,9 +322,11 @@ QUICNetVConnection::interests()
   return {QUICFrameType::CONNECTION_CLOSE};
 }
 
-void
+QUICError
 QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {
+  QUICError error = QUICError(QUICErrorClass::NONE);
+
   switch (frame->type()) {
   case QUICFrameType::CONNECTION_CLOSE:
     DebugQUICCon("Enter state_connection_closed");
@@ -335,6 +337,8 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
     ink_assert(false);
     break;
   }
+
+  return error;
 }
 
 // TODO: Timeout by active_timeout / inactive_timeout
@@ -542,26 +546,30 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
     if (packet->type() != QUICPacketType::CLIENT_INITIAL) {
       return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
     }
-    if (packet->version()) {
-      if (this->_version_negotiator->negotiate(packet.get()) == QUICVersionNegotiationStatus::NEGOTIATED) {
-        DebugQUICCon("Version negotiation succeeded: %x", packet->version());
-        this->_packet_factory.set_version(packet->version());
-        // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
-        if (packet->has_valid_fnv1a_hash()) {
-          // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
-          this->_handshake_handler = new QUICHandshake(this, this->_crypto);
-          this->_application_map.set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
 
-          this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size());
-        } else {
-          DebugQUICCon("Invalid FNV-1a hash value");
-        }
-      } else {
-        DebugQUICCon("Version negotiation failed: %x", packet->version());
-      }
-    } else {
+    if (!packet->version()) {
       return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
     }
+
+    if (this->_version_negotiator->negotiate(packet.get()) != QUICVersionNegotiationStatus::NEGOTIATED) {
+      DebugQUICCon("Version negotiation failed: %x", packet->version());
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_VERSION_NEGOTIATION_MISMATCH);
+    }
+
+    DebugQUICCon("Version negotiation succeeded: %x", packet->version());
+    this->_packet_factory.set_version(packet->version());
+    // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
+    if (!packet->has_valid_fnv1a_hash()) {
+      DebugQUICCon("Invalid FNV-1a hash value");
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::CRYPTOGRAPHIC_ERROR);
+    }
+
+    // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
+    this->_handshake_handler = new QUICHandshake(this, this->_crypto);
+    this->_application_map.set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
+    bool should_send_ack;
+
+    return this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size(), should_send_ack);
   }
 
   return QUICError(QUICErrorClass::NONE);
@@ -570,13 +578,16 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
 QUICError
 QUICNetVConnection::_state_handshake_process_client_cleartext_packet(std::unique_ptr<const QUICPacket> packet)
 {
+  QUICError error = QUICError(QUICErrorClass::NONE);
+
   // The payload of this packet contains STREAM frames and could contain PADDING and ACK frames
   if (packet->has_valid_fnv1a_hash()) {
-    this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
+    error = this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
   } else {
     DebugQUICCon("Invalid FNV-1a hash value");
+    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::CRYPTOGRAPHIC_ERROR);
   }
-  return QUICError(QUICErrorClass::NONE);
+  return error;
 }
 
 QUICError
@@ -601,9 +612,7 @@ QUICNetVConnection::_state_connection_established_process_packet(std::unique_ptr
     DebugQUICCon("Decrypt Packet, pkt_num: %" PRIu64 ", header_len: %hu, payload_len: %zu", packet->packet_number(),
                  packet->header_size(), plain_txt_len);
 
-    this->_recv_and_ack(plain_txt.get(), plain_txt_len, packet->packet_number());
-
-    return QUICError(QUICErrorClass::NONE);
+    return this->_recv_and_ack(plain_txt.get(), plain_txt_len, packet->packet_number());
   } else {
     DebugQUICCon("CRYPTOGRAPHIC Error");
 
@@ -699,16 +708,20 @@ QUICNetVConnection::_packetize_frames()
   }
 }
 
-void
+QUICError
 QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_num)
 {
-  bool should_send_ack = this->_frame_dispatcher->receive_frames(payload, size);
+  bool should_send_ack;
+  QUICError error = this->_frame_dispatcher->receive_frames(payload, size, should_send_ack);
+
   this->_ack_frame_creator.update(packet_num, should_send_ack);
   std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> ack_frame = this->_ack_frame_creator.create_if_needed();
   if (ack_frame != nullptr) {
     this->transmit_frame(std::move(ack_frame));
     eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
   }
+
+  return error;
 }
 
 std::unique_ptr<QUICPacket>

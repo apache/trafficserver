@@ -61,7 +61,7 @@ QUICStreamManager::init_flow_control_params(const QUICTransportParameters &local
   stream->init_flow_control_params(local_tp.initial_max_stream_data(), remote_tp.initial_max_stream_data());
 }
 
-void
+QUICError
 QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {
   QUICError error = QUICError(QUICErrorClass::NONE);
@@ -92,9 +92,7 @@ QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
     break;
   }
 
-  if (error.cls != QUICErrorClass::NONE) {
-    // TODO return error
-  }
+  return error;
 }
 
 QUICError

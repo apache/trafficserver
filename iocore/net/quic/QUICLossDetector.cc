@@ -78,9 +78,11 @@ QUICLossDetector::interests()
   return {QUICFrameType::ACK};
 }
 
-void
+QUICError
 QUICLossDetector::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {
+  QUICError error = QUICError(QUICErrorClass::NONE);
+
   switch (frame->type()) {
   case QUICFrameType::ACK:
     this->_on_ack_received(std::dynamic_pointer_cast<const QUICAckFrame>(frame));
@@ -90,6 +92,8 @@ QUICLossDetector::handle_frame(std::shared_ptr<const QUICFrame> frame)
     ink_assert(false);
     break;
   }
+
+  return error;
 }
 
 void

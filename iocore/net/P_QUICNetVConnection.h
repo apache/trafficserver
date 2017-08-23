@@ -185,7 +185,7 @@ public:
 
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
-  void handle_frame(std::shared_ptr<const QUICFrame> frame) override;
+  QUICError handle_frame(std::shared_ptr<const QUICFrame> frame) override;
 
 private:
   QUICConnectionId _quic_connection_id;
@@ -221,7 +221,7 @@ private:
   std::unique_ptr<QUICPacket> _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
                                             QUICPacketType type = QUICPacketType::UNINITIALIZED);
 
-  void _recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_num);
+  QUICError _recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_numm);
 
   QUICError _state_handshake_process_initial_client_packet(std::unique_ptr<const QUICPacket> packet);
   QUICError _state_handshake_process_client_cleartext_packet(std::unique_ptr<const QUICPacket> packet);

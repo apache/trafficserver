@@ -46,7 +46,7 @@ public:
   int event_handler(int event, Event *edata);
 
   std::vector<QUICFrameType> interests() override;
-  virtual void handle_frame(std::shared_ptr<const QUICFrame>) override;
+  virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
   void on_packet_sent(std::unique_ptr<const QUICPacket> packet);
 
 private:
