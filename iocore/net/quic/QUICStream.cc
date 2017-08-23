@@ -400,7 +400,7 @@ QUICStream::_send()
       break;
     }
     this->_state.update_with_sent_frame(*frame);
-    this->_streamManager->send_stream_frame(std::move(frame));
+    this->_streamManager->send_frame(std::move(frame));
   }
 
   return;

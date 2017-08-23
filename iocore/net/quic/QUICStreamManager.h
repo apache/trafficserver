@@ -41,7 +41,7 @@ public:
   virtual std::vector<QUICFrameType> interests() override;
   virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
   virtual void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame);
-  void send_stream_frame(std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame);
+  virtual void send_frame(std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame);
   virtual bool is_send_avail_more_than(uint64_t size);
   virtual bool is_recv_avail_more_than(uint64_t size);
   void add_recv_total_offset(uint64_t delta);
@@ -57,10 +57,10 @@ public:
 private:
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   QUICStream *_find_stream(QUICStreamId id);
-  QUICError _handle_max_data_frame(std::shared_ptr<const QUICMaxDataFrame>);
-  QUICError _handle_stream_frame(std::shared_ptr<const QUICStreamFrame>);
-  QUICError _handle_max_stream_data_frame(std::shared_ptr<const QUICMaxStreamDataFrame>);
-  QUICError _handle_stream_blocked_frame(std::shared_ptr<const QUICStreamBlockedFrame>);
+  QUICError _handle_frame(std::shared_ptr<const QUICMaxDataFrame>);
+  QUICError _handle_frame(std::shared_ptr<const QUICStreamFrame>);
+  QUICError _handle_frame(std::shared_ptr<const QUICMaxStreamDataFrame>);
+  QUICError _handle_frame(std::shared_ptr<const QUICStreamBlockedFrame>);
 
   QUICApplicationMap *_app_map = nullptr;
   QUICFrameTransmitter *_tx    = nullptr;

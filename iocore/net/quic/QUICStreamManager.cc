@@ -68,7 +68,7 @@ QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
 
   switch (frame->type()) {
   case QUICFrameType::MAX_DATA: {
-    error = this->_handle_max_data_frame(std::dynamic_pointer_cast<const QUICMaxDataFrame>(frame));
+    error = this->_handle_frame(std::dynamic_pointer_cast<const QUICMaxDataFrame>(frame));
     break;
   }
   case QUICFrameType::BLOCKED: {
@@ -76,15 +76,15 @@ QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
     break;
   }
   case QUICFrameType::MAX_STREAM_DATA: {
-    error = this->_handle_max_stream_data_frame(std::dynamic_pointer_cast<const QUICMaxStreamDataFrame>(frame));
+    error = this->_handle_frame(std::dynamic_pointer_cast<const QUICMaxStreamDataFrame>(frame));
     break;
   }
   case QUICFrameType::STREAM_BLOCKED: {
-    error = this->_handle_stream_blocked_frame(std::dynamic_pointer_cast<const QUICStreamBlockedFrame>(frame));
+    error = this->_handle_frame(std::dynamic_pointer_cast<const QUICStreamBlockedFrame>(frame));
     break;
   }
   case QUICFrameType::STREAM:
-    error = this->_handle_stream_frame(std::dynamic_pointer_cast<const QUICStreamFrame>(frame));
+    error = this->_handle_frame(std::dynamic_pointer_cast<const QUICStreamFrame>(frame));
     break;
   default:
     Debug(tag, "Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
@@ -96,7 +96,7 @@ QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
 }
 
 QUICError
-QUICStreamManager::_handle_max_data_frame(std::shared_ptr<const QUICMaxDataFrame> frame)
+QUICStreamManager::_handle_frame(std::shared_ptr<const QUICMaxDataFrame> frame)
 {
   this->_send_max_data = frame->maximum_data();
   return QUICError(QUICErrorClass::NONE);
@@ -111,7 +111,7 @@ QUICStreamManager::slide_recv_max_data()
 }
 
 QUICError
-QUICStreamManager::_handle_max_stream_data_frame(std::shared_ptr<const QUICMaxStreamDataFrame> frame)
+QUICStreamManager::_handle_frame(std::shared_ptr<const QUICMaxStreamDataFrame> frame)
 {
   QUICStream *stream = this->_find_stream(frame->stream_id());
   if (stream) {
@@ -124,7 +124,7 @@ QUICStreamManager::_handle_max_stream_data_frame(std::shared_ptr<const QUICMaxSt
 }
 
 QUICError
-QUICStreamManager::_handle_stream_blocked_frame(std::shared_ptr<const QUICStreamBlockedFrame> frame)
+QUICStreamManager::_handle_frame(std::shared_ptr<const QUICStreamBlockedFrame> frame)
 {
   QUICStream *stream = this->_find_stream(frame->stream_id());
   if (stream) {
@@ -137,7 +137,7 @@ QUICStreamManager::_handle_stream_blocked_frame(std::shared_ptr<const QUICStream
 }
 
 QUICError
-QUICStreamManager::_handle_stream_frame(std::shared_ptr<const QUICStreamFrame> frame)
+QUICStreamManager::_handle_frame(std::shared_ptr<const QUICStreamFrame> frame)
 {
   QUICStream *stream           = this->_find_or_create_stream(frame->stream_id());
   QUICApplication *application = this->_app_map->get(frame->stream_id());
@@ -159,7 +159,7 @@ QUICStreamManager::_handle_stream_frame(std::shared_ptr<const QUICStreamFrame> f
  * @brief Send stream frame
  */
 void
-QUICStreamManager::send_stream_frame(std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame)
+QUICStreamManager::send_frame(std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame)
 {
   // XXX The offset of sending frame is always largest offset by sending side
   if (frame->stream_id() != STREAM_ID_FOR_HANDSHAKE) {
