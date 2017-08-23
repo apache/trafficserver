@@ -42,6 +42,24 @@ QUICConfigParams::no_activity_timeout_in() const
   return this->_no_activity_timeout_in;
 }
 
+uint32_t
+QUICConfigParams::initial_max_data() const
+{
+  return this->_initial_max_data;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_data() const
+{
+  return this->_initial_max_stream_data;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_id() const
+{
+  return this->_initial_max_stream_id;
+}
+
 //
 // QUICConfig
 //

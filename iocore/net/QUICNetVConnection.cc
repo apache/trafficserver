@@ -101,33 +101,37 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   this->_frame_dispatcher =
     new QUICFrameDispatcher(this, this->_stream_manager, flowController, congestionController, this->_loss_detector);
 
-  // FIXME Fill appropriate values
+  QUICConfig::scoped_config params;
+
   // MUSTs
   QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions();
 
   size_t max_stream_data_buf_len     = 4;
   ats_unique_buf max_stream_data_buf = ats_unique_malloc(max_stream_data_buf_len);
-  memcpy(max_stream_data_buf.get(), "\x00\x00\x00\x00", max_stream_data_buf_len);
+  QUICTypeUtil::write_uint_as_nbytes(params->initial_max_stream_data(), max_stream_data_buf_len, max_stream_data_buf.get(),
+                                     &max_stream_data_buf_len);
   tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
           std::unique_ptr<QUICTransportParameterValue>(
             new QUICTransportParameterValue(std::move(max_stream_data_buf), max_stream_data_buf_len)));
 
   size_t max_data_buf_len     = 4;
   ats_unique_buf max_data_buf = ats_unique_malloc(max_data_buf_len);
-  memcpy(max_data_buf.get(), "\x00\x00\x00\x00", max_data_buf_len);
+  QUICTypeUtil::write_uint_as_nbytes(params->initial_max_data(), max_data_buf_len, max_data_buf.get(), &max_data_buf_len);
   tp->add(QUICTransportParameterId::INITIAL_MAX_DATA,
           std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(std::move(max_data_buf), max_data_buf_len)));
 
-  uint16_t max_stream_id_buf_len   = 4;
+  size_t max_stream_id_buf_len     = 4;
   ats_unique_buf max_stream_id_buf = ats_unique_malloc(max_stream_id_buf_len);
-  memcpy(max_stream_id_buf.get(), "\x00\x00\x00\x00", max_stream_id_buf_len);
+  QUICTypeUtil::write_uint_as_nbytes(params->initial_max_stream_id(), max_stream_id_buf_len, max_stream_id_buf.get(),
+                                     &max_stream_id_buf_len);
   tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_ID,
           std::unique_ptr<QUICTransportParameterValue>(
             new QUICTransportParameterValue(std::move(max_stream_id_buf), max_stream_id_buf_len)));
 
-  uint16_t idle_timeout_buf_len   = 2;
+  size_t idle_timeout_buf_len     = 2;
   ats_unique_buf idle_timeout_buf = ats_unique_malloc(idle_timeout_buf_len);
-  memcpy(idle_timeout_buf.get(), "\x00\x00", idle_timeout_buf_len);
+  QUICTypeUtil::write_uint_as_nbytes(params->no_activity_timeout_in(), idle_timeout_buf_len, idle_timeout_buf.get(),
+                                     &idle_timeout_buf_len);
   tp->add(QUICTransportParameterId::IDLE_TIMEOUT, std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(
                                                     std::move(idle_timeout_buf), idle_timeout_buf_len)));
 

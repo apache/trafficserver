@@ -31,9 +31,16 @@ public:
   void initialize();
 
   uint32_t no_activity_timeout_in() const;
+  uint32_t initial_max_data() const;
+  uint32_t initial_max_stream_data() const;
+  uint32_t initial_max_stream_id() const;
 
 private:
-  uint32_t _no_activity_timeout_in = 0;
+  // FIXME Fill appropriate values
+  uint32_t _no_activity_timeout_in  = 0;
+  uint32_t _initial_max_data        = 100; // in units of 1024 octets
+  uint32_t _initial_max_stream_data = 2048;
+  uint32_t _initial_max_stream_id   = 100;
 };
 
 class QUICConfig
