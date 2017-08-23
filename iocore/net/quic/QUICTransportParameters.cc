@@ -29,6 +29,35 @@
 
 const static int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 
+//
+// QUICTransportParameterValue
+//
+QUICTransportParameterValue::QUICTransportParameterValue(ats_unique_buf d, uint16_t l) : _data(std::move(d)), _len(l){};
+
+QUICTransportParameterValue::QUICTransportParameterValue(uint64_t raw_data, uint16_t l)
+{
+  this->_data = ats_unique_malloc(l);
+  size_t len  = 0;
+  QUICTypeUtil::write_uint_as_nbytes(raw_data, l, this->_data.get(), &len);
+  this->_len = len;
+};
+
+const uint8_t *
+QUICTransportParameterValue::data() const
+{
+  return this->_data.get();
+}
+
+uint16_t
+QUICTransportParameterValue::len() const
+{
+  return this->_len;
+}
+
+//
+// QUICTransportParameters
+//
+
 QUICTransportParameters::QUICTransportParameters(const uint8_t *buf, size_t len)
 {
   this->_buf = ats_unique_malloc(len);
@@ -57,8 +86,8 @@ QUICTransportParameters::get(QUICTransportParameterId tpid, uint16_t &len) const
   } else {
     auto p = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
     if (p != this->_parameters.end()) {
-      len = p->second->len;
-      return p->second->data.get();
+      len = p->second->len();
+      return p->second->data();
     }
   }
 
@@ -109,11 +138,11 @@ QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
     p[1] = it.first & 0xff;
     p += 2;
     const QUICTransportParameterValue *value = it.second.get();
-    p[0]                                     = (value->len & 0xff00) >> 8;
-    p[1]                                     = value->len & 0xff;
+    p[0]                                     = (value->len() & 0xff00) >> 8;
+    p[1]                                     = value->len() & 0xff;
     p += 2;
-    memcpy(p, value->data.get(), value->len);
-    p += value->len;
+    memcpy(p, value->data(), value->len());
+    p += value->len();
   }
 
   ptrdiff_t n = p - parameters_size - sizeof(uint16_t);
@@ -123,6 +152,10 @@ QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
 
   *len = (p - buf);
 }
+
+//
+// QUICTransportParametersInClientHello
+//
 
 void
 QUICTransportParametersInClientHello::_store(uint8_t *buf, uint16_t *len) const
@@ -153,6 +186,10 @@ QUICTransportParametersInClientHello::initial_version() const
 {
   return QUICTypeUtil::read_QUICVersion(this->_buf.get() + sizeof(QUICVersion));
 }
+
+//
+// QUICTransportParametersInEncryptedExtensions
+//
 
 void
 QUICTransportParametersInEncryptedExtensions::_store(uint8_t *buf, uint16_t *len) const

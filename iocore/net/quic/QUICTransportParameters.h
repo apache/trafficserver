@@ -65,14 +65,19 @@ private:
   uint16_t _id = 0;
 };
 
-typedef struct _QUICTransportParameterValue {
-  _QUICTransportParameterValue(){};
-  _QUICTransportParameterValue(ats_unique_buf str)
-    : data(std::move(str)), len(str ? strlen(reinterpret_cast<const char *>(str.get())) : 0){};
-  _QUICTransportParameterValue(ats_unique_buf _data, uint16_t _len) : data(std::move(_data)), len(_len){};
-  ats_unique_buf data = {nullptr, [](void *p) { ats_free(p); }};
-  uint16_t len        = 0;
-} QUICTransportParameterValue;
+class QUICTransportParameterValue
+{
+public:
+  QUICTransportParameterValue(ats_unique_buf d, uint16_t l);
+  QUICTransportParameterValue(uint64_t raw_data, uint16_t l);
+
+  const uint8_t *data() const;
+  uint16_t len() const;
+
+private:
+  ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
+  uint16_t _len        = 0;
+};
 
 class QUICTransportParameters
 {

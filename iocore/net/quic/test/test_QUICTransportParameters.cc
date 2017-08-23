@@ -92,19 +92,15 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
 
   QUICTransportParametersInClientHello params_in_ch(0x01020304, 0x05060708);
 
-  size_t max_stream_data_buf_len     = 4;
-  ats_unique_buf max_stream_data_buf = ats_unique_malloc(max_stream_data_buf_len);
-  memcpy(max_stream_data_buf.get(), "\x11\x22\x33\x44", max_stream_data_buf_len);
-  params_in_ch.add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
-                   std::unique_ptr<QUICTransportParameterValue>(
-                     new QUICTransportParameterValue(std::move(max_stream_data_buf), max_stream_data_buf_len)));
+  uint32_t max_stream_data = 0x11223344;
+  params_in_ch.add(
+    QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
+    std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(max_stream_data, sizeof(max_stream_data))));
 
-  uint16_t max_packet_size_buf_len   = 2;
-  ats_unique_buf max_packet_size_buf = ats_unique_malloc(max_packet_size_buf_len);
-  memcpy(max_packet_size_buf.get(), "\xab\xcd", max_packet_size_buf_len);
-  params_in_ch.add(QUICTransportParameterId::MAX_PACKET_SIZE,
-                   std::unique_ptr<QUICTransportParameterValue>(
-                     new QUICTransportParameterValue(std::move(max_packet_size_buf), max_packet_size_buf_len)));
+  uint16_t max_packet_size = 0xabcd;
+  params_in_ch.add(
+    QUICTransportParameterId::MAX_PACKET_SIZE,
+    std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(max_packet_size, sizeof(max_packet_size))));
 
   params_in_ch.store(buf, &len);
   CHECK(len == 24);
@@ -182,19 +178,15 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
 
   QUICTransportParametersInEncryptedExtensions params_in_ee;
 
-  size_t max_stream_data_buf_len     = 4;
-  ats_unique_buf max_stream_data_buf = ats_unique_malloc(max_stream_data_buf_len);
-  memcpy(max_stream_data_buf.get(), "\x11\x22\x33\x44", max_stream_data_buf_len);
-  params_in_ee.add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
-                   std::unique_ptr<QUICTransportParameterValue>(
-                     new QUICTransportParameterValue(std::move(max_stream_data_buf), max_stream_data_buf_len)));
+  uint32_t max_stream_data = 0x11223344;
+  params_in_ee.add(
+    QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
+    std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(max_stream_data, sizeof(max_stream_data))));
 
-  uint16_t max_packet_size_buf_len   = 2;
-  ats_unique_buf max_packet_size_buf = ats_unique_malloc(max_packet_size_buf_len);
-  memcpy(max_packet_size_buf.get(), "\xab\xcd", max_packet_size_buf_len);
-  params_in_ee.add(QUICTransportParameterId::MAX_PACKET_SIZE,
-                   std::unique_ptr<QUICTransportParameterValue>(
-                     new QUICTransportParameterValue(std::move(max_packet_size_buf), max_packet_size_buf_len)));
+  uint16_t max_packet_size = 0xabcd;
+  params_in_ee.add(
+    QUICTransportParameterId::MAX_PACKET_SIZE,
+    std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(max_packet_size, sizeof(max_packet_size))));
 
   params_in_ee.add_version(0x01020304);
   params_in_ee.add_version(0x05060708);
