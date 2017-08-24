@@ -339,10 +339,17 @@ QUICLossDetector::_retransmit_handshake_packets()
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  std::set<QUICPacketNumber> retransmitted_handshake_packets;
+
   for (auto &info : this->_sent_packets) {
     if (!info.second->handshake) {
       break;
     }
+    retransmitted_handshake_packets.insert(info.first);
     this->_transmitter->retransmit_packet(*info.second->packet);
+  }
+
+  for (auto packet_number : retransmitted_handshake_packets) {
+    this->_sent_packets.erase(packet_number);
   }
 }
