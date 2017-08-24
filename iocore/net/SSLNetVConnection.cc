@@ -935,17 +935,22 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
   case SSL_EVENT_SERVER:
     if (this->ssl == nullptr) {
       SSLCertificateConfig::scoped_config lookup;
-      IpEndpoint ip;
-      int namelen = sizeof(ip);
-      safe_getsockname(this->get_socket(), &ip.sa, &namelen);
-      SSLCertContext *cc = lookup->find(ip);
+      IpEndpoint dst;
+      int namelen = sizeof(dst);
+      if (0 != safe_getsockname(this->get_socket(), &dst.sa, &namelen)) {
+        Debug("ssl", "Failed to get dest ip, errno = [%d]", errno);
+        return EVENT_ERROR;
+      }
+      SSLCertContext *cc = lookup->find(dst);
       if (is_debug_tag_set("ssl")) {
-        IpEndpoint src, dst;
+        IpEndpoint src;
         ip_port_text_buffer ipb1, ipb2;
-        int ip_len;
+        int ip_len = sizeof(src);
 
-        safe_getsockname(this->get_socket(), &dst.sa, &(ip_len = sizeof ip));
-        safe_getpeername(this->get_socket(), &src.sa, &(ip_len = sizeof ip));
+        if (0 != safe_getpeername(this->get_socket(), &src.sa, &ip_len)) {
+          Debug("ssl", "Failed to get src ip, errno = [%d]", errno);
+          return EVENT_ERROR;
+        }
         ats_ip_nptop(&dst, ipb1, sizeof(ipb1));
         ats_ip_nptop(&src, ipb2, sizeof(ipb2));
         Debug("ssl", "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, lookup->defaultContext());

@@ -339,8 +339,9 @@ set_context_cert(SSL *ssl)
     IpEndpoint ip;
     int namelen = sizeof(ip);
 
-    safe_getsockname(netvc->get_socket(), &ip.sa, &namelen);
-    cc = lookup->find(ip);
+    if (0 == safe_getsockname(netvc->get_socket(), &ip.sa, &namelen)) {
+      cc = lookup->find(ip);
+    }
     if (cc && cc->ctx)
       ctx = cc->ctx;
   }
@@ -2062,9 +2063,11 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 
   // Get the IP address to look up the keyblock
   IpEndpoint ip;
-  int namelen = sizeof(ip);
-  safe_getsockname(netvc->get_socket(), &ip.sa, &namelen);
-  SSLCertContext *cc             = lookup->find(ip);
+  int namelen        = sizeof(ip);
+  SSLCertContext *cc = nullptr;
+  if (0 == safe_getsockname(netvc->get_socket(), &ip.sa, &namelen)) {
+    cc = lookup->find(ip);
+  }
   ssl_ticket_key_block *keyblock = nullptr;
   if (cc == nullptr || cc->keyblock == nullptr) {
     // Try the default
