@@ -67,10 +67,10 @@ private:
   uint32_t _MAX_TLPS               = 2;
   uint32_t _REORDERING_THRESHOLD   = 3;
   double _TIME_REORDERING_FRACTION = 1 / 8;
-  uint32_t _MIN_TLP_TIMEOUT        = HRTIME_MSECONDS(10);
-  uint32_t _MIN_RTO_TIMEOUT        = HRTIME_MSECONDS(200);
-  uint32_t _DELAYED_ACK_TIMEOUT    = HRTIME_MSECONDS(25);
-  uint32_t _DEFAULT_INITIAL_RTT    = HRTIME_MSECONDS(100);
+  ink_hrtime _MIN_TLP_TIMEOUT      = HRTIME_MSECONDS(10);
+  ink_hrtime _MIN_RTO_TIMEOUT      = HRTIME_MSECONDS(200);
+  ink_hrtime _DELAYED_ACK_TIMEOUT  = HRTIME_MSECONDS(25);
+  ink_hrtime _DEFAULT_INITIAL_RTT  = HRTIME_MSECONDS(100);
 
   // 3.2.2.  Variables of interest
   Action *_loss_detection_alarm;
@@ -81,12 +81,12 @@ private:
   uint32_t _largest_sent_packet;
   uint32_t _largest_acked_packet;
   uint32_t _time_of_last_sent_packet;
-  uint32_t _latest_rtt;
-  uint32_t _smoothed_rtt;
+  ink_hrtime _latest_rtt;
+  ink_hrtime _smoothed_rtt;
   uint32_t _rttvar;
   uint32_t _reordering_threshold;
   double _time_reordering_fraction;
-  uint32_t _loss_time;
+  ink_hrtime _loss_time;
   std::map<QUICPacketNumber, std::unique_ptr<PacketInfo>> _sent_packets;
 
   uint32_t _handshake_outstanding       = 0;

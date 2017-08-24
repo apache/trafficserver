@@ -273,7 +273,7 @@ QUICLossDetector::_update_rtt(uint32_t latest_rtt)
 void
 QUICLossDetector::_set_loss_detection_alarm()
 {
-  uint32_t alarm_duration;
+  ink_hrtime alarm_duration;
   if (!this->_retransmittable_outstanding && this->_loss_detection_alarm) {
     this->_loss_detection_alarm->cancel();
     this->_loss_detection_alarm = nullptr;
@@ -288,7 +288,7 @@ QUICLossDetector::_set_loss_detection_alarm()
       alarm_duration = 2 * this->_smoothed_rtt;
     }
     alarm_duration = max(alarm_duration, this->_MIN_TLP_TIMEOUT);
-    alarm_duration = alarm_duration * (2 ^ this->_handshake_count);
+    alarm_duration = alarm_duration * (1 << this->_handshake_count);
     Debug("quic_loss_detection", "Handshake retransmission alarm will be set");
   } else if (this->_loss_time != 0) {
     // Early retransmit timer or time loss detection.
@@ -307,7 +307,7 @@ QUICLossDetector::_set_loss_detection_alarm()
     // RTO alarm
     alarm_duration = this->_smoothed_rtt + 4 * this->_rttvar;
     alarm_duration = max(alarm_duration, this->_MIN_RTO_TIMEOUT);
-    alarm_duration = alarm_duration * (2 ^ this->_rto_count);
+    alarm_duration = alarm_duration * (1 << this->_rto_count);
     Debug("quic_loss_detection", "RTO alarm will be set");
   }
 
@@ -315,7 +315,7 @@ QUICLossDetector::_set_loss_detection_alarm()
     this->_loss_detection_alarm->cancel();
   }
   this->_loss_detection_alarm = eventProcessor.schedule_in(this, alarm_duration);
-  Debug("quic_loss_detection", "Loss detection alarm has been set to %u", alarm_duration);
+  Debug("quic_loss_detection", "Loss detection alarm has been set to %" PRId64, alarm_duration);
 }
 
 std::set<QUICPacketNumber>
