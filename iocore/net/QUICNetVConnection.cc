@@ -54,9 +54,10 @@ ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
 QUICNetVConnection::QUICNetVConnection() : UnixNetVConnection()
 {
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
 }
 
+// XXX This might be called on ET_UDP thread
 void
 QUICNetVConnection::init(UDPConnection *udp_con, QUICPacketHandler *packet_handler)
 {
@@ -340,19 +341,34 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
   return error;
 }
 
-// TODO: Timeout by active_timeout / inactive_timeout
+// XXX Setup QUICNetVConnection on regular EThread.
+// QUICNetVConnection::init() and QUICNetVConnection::start() might be called on ET_UDP EThread.
+int
+QUICNetVConnection::state_pre_handshake(int event, Event *data)
+{
+  if (!this->thread) {
+    this->thread = this_ethread();
+  }
+
+  if (!this->nh) {
+    this->nh = get_NetHandler(this_ethread());
+  }
+
+  // FIXME: Should be accept_no_activity_timeout?
+  QUICConfig::scoped_config params;
+
+  this->set_inactivity_timeout(HRTIME_SECONDS(params->no_activity_timeout_in()));
+  this->add_to_active_queue();
+
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
+  return this->handleEvent(event, data);
+}
+
+// TODO: Timeout by active_timeout
 int
 QUICNetVConnection::state_handshake(int event, Event *data)
 {
   QUICError error;
-
-  if (!thread) {
-    thread = this_ethread();
-  }
-
-  if (!nh) {
-    nh = get_NetHandler(this_ethread());
-  }
 
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
@@ -360,15 +376,18 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     net_activity(this, this_ethread());
 
     switch (p->type()) {
-    case QUICPacketType::CLIENT_INITIAL:
+    case QUICPacketType::CLIENT_INITIAL: {
       error = this->_state_handshake_process_initial_client_packet(std::move(p));
       break;
-    case QUICPacketType::CLIENT_CLEARTEXT:
+    }
+    case QUICPacketType::CLIENT_CLEARTEXT: {
       error = this->_state_handshake_process_client_cleartext_packet(std::move(p));
       break;
-    case QUICPacketType::ZERO_RTT_PROTECTED:
+    }
+    case QUICPacketType::ZERO_RTT_PROTECTED: {
       error = this->_state_handshake_process_zero_rtt_protected_packet(std::move(p));
       break;
+    }
     default:
       error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
       break;
@@ -380,6 +399,15 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     error = this->_state_common_send_packet();
     break;
   }
+  case EVENT_IMMEDIATE: {
+    // Start Implicit Shutdown. Because of no network activity for the duration of the idle timeout.
+    this->remove_from_active_queue();
+    this->close({});
+
+    // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
+    break;
+  }
+
   default:
     DebugQUICCon("Unexpected event: %u", event);
   }
@@ -395,13 +423,6 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     this->_application_map.set_default(this->_create_application());
     DebugQUICCon("Enter state_connection_established");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
-
-    QUICConfig::scoped_config params;
-
-    // TODO:  use idle_timeout from negotiated Transport Prameters
-    ink_hrtime idle_timeout = HRTIME_SECONDS(params->no_activity_timeout_in());
-    this->set_inactivity_timeout(idle_timeout);
-    this->add_to_active_queue();
   }
 
   return EVENT_CONT;

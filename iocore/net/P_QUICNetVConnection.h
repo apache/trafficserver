@@ -111,6 +111,9 @@ class SSLNextProtocolSet;
  * @brief A NetVConnection for a QUIC network socket
  * @detail
  *
+ * state_pre_handshake()
+ *  |
+ *  v
  * state_handshake()
  *  | READ:
  *  |   _state_handshake_process_initial_client_packet()
@@ -150,6 +153,7 @@ public:
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
   int startEvent(int event, Event *e);
+  int state_pre_handshake(int event, Event *data);
   int state_handshake(int event, Event *data);
   int state_connection_established(int event, Event *data);
   int state_connection_closing(int event, Event *data);
