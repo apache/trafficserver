@@ -24,6 +24,7 @@
 #pragma once
 
 #include "QUICTypes.h"
+#include "QUICTransportParameters.h"
 
 class QUICDebugNames
 {
@@ -32,6 +33,7 @@ public:
   static const char *frame_type(QUICFrameType type);
   static const char *error_class(QUICErrorClass cls);
   static const char *error_code(QUICErrorCode code);
+  static const char *transport_parameter_id(QUICTransportParameterId id);
 
   // TODO: move to somewhere
   static const char *vc_event(int event);

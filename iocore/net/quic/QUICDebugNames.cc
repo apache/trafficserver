@@ -156,3 +156,24 @@ QUICDebugNames::vc_event(int event)
     return "UNKNOWN";
   }
 }
+
+const char *
+QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
+{
+  switch (id) {
+  case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA:
+    return "INITIAL_MAX_STREAM_DATA";
+  case QUICTransportParameterId::INITIAL_MAX_DATA:
+    return "INITIAL_MAX_DATA";
+  case QUICTransportParameterId::INITIAL_MAX_STREAM_ID:
+    return "INITIAL_MAX_STREAM_ID";
+  case QUICTransportParameterId::IDLE_TIMEOUT:
+    return "IDLE_TIMEOUT";
+  case QUICTransportParameterId::TRUNCATE_CONNECTION_ID:
+    return "TRUNCATE_CONNECTION_ID";
+  case QUICTransportParameterId::MAX_PACKET_SIZE:
+    return "MAX_PACKET_SIZE";
+  default:
+    return "UNKNOWN";
+  }
+}
