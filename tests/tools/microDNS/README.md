@@ -34,13 +34,13 @@ A DNS request for `host1.example.com` could return the A-record associated with 
 
 Running
 ------
-`python3 uDNS.py port zone_file [--rr]`
+`python3 uDNS.py ip_addr port zone_file [--rr]`
 
 For a detailed description of flags, see `python3 uDNS.py -h`
 
 
 Use with Apache Traffic Server
 ------
-1. In `records.config`, add configuration lines: `CONFIG proxy.config.dns.nameservers STRING 127.0.0.1:PORT` and `CONFIG proxy.config.dns.round_robin_nameservers INT 0`, where `PORT` is whatever port you want uDNS to serve on.
-2. Run uDNS on `PORT`
+1. In `records.config`, add configuration lines: `CONFIG proxy.config.dns.nameservers STRING ip_address:PORT` and `CONFIG proxy.config.dns.round_robin_nameservers INT 0`, where `PORT` is whatever port you want uDNS to serve on.
+2. Run uDNS on `Ip_addr`:`PORT`
 3. Now all domains mapped in the uDNS JSON config file should be mapped by ATS as well
