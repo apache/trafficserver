@@ -302,6 +302,11 @@ ProcessManager::initLMConnection()
   int servlen;
   struct sockaddr_un serv_addr;
 
+  if (sockpath.length() > sizeof(serv_addr.sun_path) - 1) {
+    errno = ENAMETOOLONG;
+    Fatal("Unable to create socket '%s': %s", sockpath.c_str(), strerror(errno));
+  }
+
   /* Setup Connection to LocalManager */
   memset((char *)&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sun_family = AF_UNIX;
