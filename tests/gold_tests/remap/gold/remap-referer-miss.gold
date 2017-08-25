@@ -1,0 +1,15 @@
+``
+> GET http://test4.com``
+> Host: test4.com``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 302 Redirect
+< Date: ``
+< Proxy-Connection: ``
+< Server: ATS/``
+< Cache-Control: ``
+< Location: http://httpbin.org
+``
+< Content-Length: ``
+``

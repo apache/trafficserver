@@ -39,6 +39,7 @@ server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'url.*',
+    'proxy.config.http.referer_filter': 1,
 })
 
 ts.Disk.remap_config.AddLine(
@@ -46,6 +47,12 @@ ts.Disk.remap_config.AddLine(
 )
 ts.Disk.remap_config.AddLine(
     'map http://www.example.com:8080 http://127.0.0.1:{0}'.format(server.Variables.Port)
+)
+ts.Disk.remap_config.AddLine(
+    'redirect http://test3.com http://httpbin.org'.format(server.Variables.Port)
+)
+ts.Disk.remap_config.AddLine(
+    'map_with_referer http://test4.com http://127.0.0.1:{0} http://httpbin.org (.*[.])?persia[.]com'.format(server.Variables.Port)
 )
 
 # call localhost straight
@@ -86,9 +93,29 @@ tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://www.test.com
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-404.gold"
 
-# bad port
+# redirect result
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://www.example.com:1234/"  -H "Proxy-Connection: keep-alive" --verbose'.format(
+tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://test3.com" --verbose'.format(ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-redirect.gold"
+
+# referer hit
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: persia.com" --verbose'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/remap-404.gold"
+tr.Processes.Default.Streams.stderr = "gold/remap-referer-hit.gold"
+
+# referer miss
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: monkey.com" --verbose'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-referer-miss.gold"
+
+# referer hit
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: www.persia.com" --verbose'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-referer-hit.gold"
