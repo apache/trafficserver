@@ -45,8 +45,8 @@ public:
   virtual bool is_recv_avail_more_than(uint64_t size);
   void add_recv_total_offset(uint64_t delta);
   void slide_recv_max_data();
-  void init_flow_control_params(std::shared_ptr<const QUICTransportParameters> local_tp,
-                                std::shared_ptr<const QUICTransportParameters> remote_tp);
+  void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters>& local_tp,
+                                const std::shared_ptr<const QUICTransportParameters>& remote_tp);
   uint64_t recv_max_data() const;
   uint64_t send_max_data() const;
   uint64_t recv_total_offset() const;
@@ -57,10 +57,10 @@ public:
 private:
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   QUICStream *_find_stream(QUICStreamId id);
-  QUICError _handle_frame(std::shared_ptr<const QUICMaxDataFrame>);
-  QUICError _handle_frame(std::shared_ptr<const QUICStreamFrame>);
-  QUICError _handle_frame(std::shared_ptr<const QUICMaxStreamDataFrame>);
-  QUICError _handle_frame(std::shared_ptr<const QUICStreamBlockedFrame>);
+  QUICError _handle_frame(const std::shared_ptr<const QUICMaxDataFrame>&);
+  QUICError _handle_frame(const std::shared_ptr<const QUICStreamFrame>&);
+  QUICError _handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame>&);
+  QUICError _handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame>&);
 
   QUICFrameTransmitter *_tx                                 = nullptr;
   QUICApplicationMap *_app_map                              = nullptr;

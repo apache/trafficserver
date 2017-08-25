@@ -237,7 +237,7 @@ QUICStream::_signal_write_event(bool direct)
 }
 
 void
-QUICStream::_write_to_read_vio(std::shared_ptr<const QUICStreamFrame> frame)
+QUICStream::_write_to_read_vio(const std::shared_ptr<const QUICStreamFrame>& frame)
 {
   SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
 
@@ -297,14 +297,14 @@ QUICStream::recv(std::shared_ptr<const QUICStreamFrame> frame)
 }
 
 QUICError
-QUICStream::recv(std::shared_ptr<const QUICMaxStreamDataFrame> frame)
+QUICStream::recv(const std::shared_ptr<const QUICMaxStreamDataFrame>& frame)
 {
   this->_send_max_stream_data += frame->maximum_stream_data();
   return QUICError(QUICErrorClass::NONE);
 }
 
 QUICError
-QUICStream::recv(std::shared_ptr<const QUICStreamBlockedFrame> frame)
+QUICStream::recv(const std::shared_ptr<const QUICStreamBlockedFrame>& frame)
 {
   this->_slide_recv_max_stream_data();
   return QUICError(QUICErrorClass::NONE);

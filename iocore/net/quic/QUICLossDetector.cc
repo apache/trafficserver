@@ -174,7 +174,7 @@ QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool is_retran
 }
 
 void
-QUICLossDetector::_on_ack_received(std::shared_ptr<const QUICAckFrame> ack_frame)
+QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame>& ack_frame)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   // If the largest acked is newly acked, update the RTT.

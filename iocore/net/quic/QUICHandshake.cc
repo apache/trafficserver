@@ -23,6 +23,8 @@
 
 #include "QUICGlobals.h"
 #include "QUICHandshake.h"
+
+#include <utility>
 #include "QUICVersionNegotiator.h"
 #include "QUICConfig.h"
 #include "P_SSLNextProtocolSet.h"
@@ -126,7 +128,7 @@ QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *l
 void
 QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters> tp)
 {
-  this->_remote_transport_parameters = tp;
+  this->_remote_transport_parameters = std::move(tp);
 
   const QUICTransportParametersInClientHello *tp_in_ch =
     dynamic_cast<const QUICTransportParametersInClientHello *>(this->_remote_transport_parameters.get());
