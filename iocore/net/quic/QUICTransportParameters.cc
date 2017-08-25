@@ -72,16 +72,19 @@ QUICTransportParameters::get(QUICTransportParameterId tpid, uint16_t &len) const
 
     uint16_t n = (p[0] << 8) + p[1];
     p += 2;
-    for (; n > 0; --n) {
+    while (n > 0) {
       uint16_t _id = (p[0] << 8) + p[1];
       p += 2;
+      n -= 2;
       uint16_t _value_len = (p[0] << 8) + p[1];
       p += 2;
+      n -= 2;
       if (tpid == _id) {
         len = _value_len;
         return p;
       }
       p += _value_len;
+      n -= _value_len;
     }
   } else {
     auto p = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
