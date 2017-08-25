@@ -217,6 +217,7 @@ public:
   }
 
   operator uint64_t() const { return _data; }
+
 private:
   uint64_t _data = 0; // in units of 1024 octets
 };

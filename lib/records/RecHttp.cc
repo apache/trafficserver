@@ -36,35 +36,35 @@ SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
    These are also used for NPN setup.
 */
 
-const char *const TS_ALPN_PROTOCOL_HTTP_0_9 = IP_PROTO_TAG_HTTP_0_9.ptr();
-const char *const TS_ALPN_PROTOCOL_HTTP_1_0 = IP_PROTO_TAG_HTTP_1_0.ptr();
-const char *const TS_ALPN_PROTOCOL_HTTP_1_1 = IP_PROTO_TAG_HTTP_1_1.ptr();
-const char *const TS_ALPN_PROTOCOL_HTTP_2_0 = IP_PROTO_TAG_HTTP_2_0.ptr();
+const char *const TS_ALPN_PROTOCOL_HTTP_0_9  = IP_PROTO_TAG_HTTP_0_9.ptr();
+const char *const TS_ALPN_PROTOCOL_HTTP_1_0  = IP_PROTO_TAG_HTTP_1_0.ptr();
+const char *const TS_ALPN_PROTOCOL_HTTP_1_1  = IP_PROTO_TAG_HTTP_1_1.ptr();
+const char *const TS_ALPN_PROTOCOL_HTTP_2_0  = IP_PROTO_TAG_HTTP_2_0.ptr();
 const char *const TS_ALPN_PROTOCOL_HTTP_QUIC = IP_PROTO_TAG_HTTP_QUIC.ptr();
 
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
 
-const char *const TS_PROTO_TAG_HTTP_1_0 = TS_ALPN_PROTOCOL_HTTP_1_0;
-const char *const TS_PROTO_TAG_HTTP_1_1 = TS_ALPN_PROTOCOL_HTTP_1_1;
-const char *const TS_PROTO_TAG_HTTP_2_0 = TS_ALPN_PROTOCOL_HTTP_2_0;
+const char *const TS_PROTO_TAG_HTTP_1_0  = TS_ALPN_PROTOCOL_HTTP_1_0;
+const char *const TS_PROTO_TAG_HTTP_1_1  = TS_ALPN_PROTOCOL_HTTP_1_1;
+const char *const TS_PROTO_TAG_HTTP_2_0  = TS_ALPN_PROTOCOL_HTTP_2_0;
 const char *const TS_PROTO_TAG_HTTP_QUIC = TS_ALPN_PROTOCOL_HTTP_QUIC;
-const char *const TS_PROTO_TAG_TLS_1_3  = IP_PROTO_TAG_TLS_1_3.ptr();
-const char *const TS_PROTO_TAG_TLS_1_2  = IP_PROTO_TAG_TLS_1_2.ptr();
-const char *const TS_PROTO_TAG_TLS_1_1  = IP_PROTO_TAG_TLS_1_1.ptr();
-const char *const TS_PROTO_TAG_TLS_1_0  = IP_PROTO_TAG_TLS_1_0.ptr();
-const char *const TS_PROTO_TAG_TCP      = IP_PROTO_TAG_TCP.ptr();
-const char *const TS_PROTO_TAG_UDP      = IP_PROTO_TAG_UDP.ptr();
-const char *const TS_PROTO_TAG_IPV4     = IP_PROTO_TAG_IPV4.ptr();
-const char *const TS_PROTO_TAG_IPV6     = IP_PROTO_TAG_IPV6.ptr();
+const char *const TS_PROTO_TAG_TLS_1_3   = IP_PROTO_TAG_TLS_1_3.ptr();
+const char *const TS_PROTO_TAG_TLS_1_2   = IP_PROTO_TAG_TLS_1_2.ptr();
+const char *const TS_PROTO_TAG_TLS_1_1   = IP_PROTO_TAG_TLS_1_1.ptr();
+const char *const TS_PROTO_TAG_TLS_1_0   = IP_PROTO_TAG_TLS_1_0.ptr();
+const char *const TS_PROTO_TAG_TCP       = IP_PROTO_TAG_TCP.ptr();
+const char *const TS_PROTO_TAG_UDP       = IP_PROTO_TAG_UDP.ptr();
+const char *const TS_PROTO_TAG_IPV4      = IP_PROTO_TAG_IPV4.ptr();
+const char *const TS_PROTO_TAG_IPV6      = IP_PROTO_TAG_IPV6.ptr();
 
 InkHashTable *TSProtoTags;
 
 // Precomputed indices for ease of use.
-int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9  = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0  = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1  = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0  = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC = SessionProtocolNameRegistry::INVALID;
 
 // Predefined protocol sets for ease of use.
@@ -652,10 +652,10 @@ void
 ts_session_protocol_well_known_name_indices_init()
 {
   // register all the well known protocols and get the indices set.
-  TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_0_9);
-  TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_1_0);
-  TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_1_1);
-  TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_2_0);
+  TS_ALPN_PROTOCOL_INDEX_HTTP_0_9  = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_0_9);
+  TS_ALPN_PROTOCOL_INDEX_HTTP_1_0  = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_1_0);
+  TS_ALPN_PROTOCOL_INDEX_HTTP_1_1  = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_1_1);
+  TS_ALPN_PROTOCOL_INDEX_HTTP_2_0  = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_2_0);
   TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_QUIC);
 
   // Now do the predefined protocol sets.

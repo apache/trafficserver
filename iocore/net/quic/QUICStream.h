@@ -60,8 +60,8 @@ public:
   void reenable(VIO *vio) override;
 
   QUICError recv(std::shared_ptr<const QUICStreamFrame> frame);
-  QUICError recv(const std::shared_ptr<const QUICMaxStreamDataFrame>& frame);
-  QUICError recv(const std::shared_ptr<const QUICStreamBlockedFrame>& frame);
+  QUICError recv(const std::shared_ptr<const QUICMaxStreamDataFrame> &frame);
+  QUICError recv(const std::shared_ptr<const QUICStreamBlockedFrame> &frame);
 
   void reset();
 
@@ -74,7 +74,7 @@ private:
 
   void _send();
 
-  void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame>&);
+  void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
   void _reorder_data();
   // NOTE: Those are called update_read_request/update_write_request in Http2Stream
   // void _read_from_net(uint64_t read_len, bool direct);

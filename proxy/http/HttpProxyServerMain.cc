@@ -227,7 +227,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC)) {
       HQSessionAccept *hq = new HQSessionAccept(accept_opt);
       // FIXME hq should be registered to QUICNextProtocolAccept like SSL
-      acceptor._accept    = hq;
+      acceptor._accept = hq;
     }
 #endif
   } else {

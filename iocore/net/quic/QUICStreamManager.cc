@@ -44,8 +44,8 @@ QUICStreamManager::interests()
 }
 
 void
-QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTransportParameters>& local_tp,
-                                            const std::shared_ptr<const QUICTransportParameters>& remote_tp)
+QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
+                                            const std::shared_ptr<const QUICTransportParameters> &remote_tp)
 {
   this->_local_tp  = local_tp;
   this->_remote_tp = remote_tp;
@@ -94,7 +94,7 @@ QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
 }
 
 QUICError
-QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxDataFrame>& frame)
+QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxDataFrame> &frame)
 {
   this->_send_max_data = frame->maximum_data();
   return QUICError(QUICErrorClass::NONE);
@@ -109,7 +109,7 @@ QUICStreamManager::slide_recv_max_data()
 }
 
 QUICError
-QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame>& frame)
+QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame> &frame)
 {
   QUICStream *stream = this->_find_stream(frame->stream_id());
   if (stream) {
@@ -122,7 +122,7 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxStreamDataFr
 }
 
 QUICError
-QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame>& frame)
+QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &frame)
 {
   QUICStream *stream = this->_find_stream(frame->stream_id());
   if (stream) {
@@ -135,7 +135,7 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamBlockedFr
 }
 
 QUICError
-QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamFrame>& frame)
+QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamFrame> &frame)
 {
   QUICStream *stream           = this->_find_or_create_stream(frame->stream_id());
   QUICApplication *application = this->_app_map->get(frame->stream_id());

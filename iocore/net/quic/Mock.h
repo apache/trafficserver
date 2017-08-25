@@ -95,7 +95,10 @@ public:
 class MockQUICConnection : public QUICConnection
 {
 public:
-  MockQUICConnection(NetVConnectionContext_t context = NET_VCONNECTION_OUT) : QUICConnection(), _direction(context) { this->_mutex = new_ProxyMutex(); };
+  MockQUICConnection(NetVConnectionContext_t context = NET_VCONNECTION_OUT) : QUICConnection(), _direction(context)
+  {
+    this->_mutex = new_ProxyMutex();
+  };
   void
   transmit_packet(std::unique_ptr<const QUICPacket> packet) override
   {
@@ -288,6 +291,7 @@ public:
 
   bool is_recv_avail_more_than(uint64_t /* size */) override { return true; }
   void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> /* frame */) override { return; }
+
 private:
   int _totalFrameCount = 0;
   int _frameCount[256] = {0};

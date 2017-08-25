@@ -43,7 +43,7 @@ const ts::StringView IP_PROTO_TAG_TLS_1_3("tls/1.3", ts::StringView::literal);
 const ts::StringView IP_PROTO_TAG_HTTP_0_9("http/0.9", ts::StringView::literal);
 const ts::StringView IP_PROTO_TAG_HTTP_1_0("http/1.0", ts::StringView::literal);
 const ts::StringView IP_PROTO_TAG_HTTP_1_1("http/1.1", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_HTTP_2_0("h2", ts::StringView::literal); // HTTP/2 over TLS
+const ts::StringView IP_PROTO_TAG_HTTP_2_0("h2", ts::StringView::literal);     // HTTP/2 over TLS
 const ts::StringView IP_PROTO_TAG_HTTP_QUIC("hq-05", ts::StringView::literal); // HTTP over QUIC
 
 uint32_t

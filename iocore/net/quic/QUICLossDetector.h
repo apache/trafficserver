@@ -95,7 +95,7 @@ private:
 
   void _on_packet_sent(QUICPacketNumber packet_number, bool is_retransmittable, bool is_handshake, size_t sent_bytes,
                        std::unique_ptr<const QUICPacket> packet);
-  void _on_ack_received(const std::shared_ptr<const QUICAckFrame>& ack_frame);
+  void _on_ack_received(const std::shared_ptr<const QUICAckFrame> &ack_frame);
   void _on_packet_acked(QUICPacketNumber acked_packet_number);
   void _update_rtt(uint32_t latest_rtt);
   void _detect_lost_packets(QUICPacketNumber largest_acked);
