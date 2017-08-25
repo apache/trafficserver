@@ -660,6 +660,12 @@ HttpTransact::StartRemapRequest(State *s)
     obj_describe(s->hdr_info.client_request.m_http, true);
   }
 
+  if (s->http_config_param->referer_filter_enabled) {
+    s->filter_mask = URL_REMAP_FILTER_REFERER;
+    if (s->http_config_param->referer_format_redirect)
+      s->filter_mask |= URL_REMAP_FILTER_REDIRECT_FMT;
+  }
+
   DebugTxn("http_trans", "END HttpTransact::StartRemapRequest");
   TRANSACT_RETURN(SM_ACTION_API_PRE_REMAP, HttpTransact::PerformRemap);
 }
