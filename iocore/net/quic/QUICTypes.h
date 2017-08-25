@@ -48,10 +48,10 @@
 using ats_unique_buf = std::unique_ptr<uint8_t, decltype(&ats_free)>;
 ats_unique_buf ats_unique_malloc(size_t size);
 
-typedef uint64_t QUICPacketNumber;
-typedef uint32_t QUICVersion;
-typedef uint32_t QUICStreamId;
-typedef uint64_t QUICOffset;
+using QUICPacketNumber = uint64_t;
+using QUICVersion      = uint32_t;
+using QUICStreamId     = uint32_t;
+using QUICOffset       = uint64_t;
 
 // TODO: Update version number
 // Note: You also need to update tests for VersionNegotiationPacket, if you change the number of versions

@@ -99,8 +99,6 @@ typedef enum {
 //
 //////////////////////////////////////////////////////////////////
 
-typedef std::unique_ptr<uint8_t> ats_uint8_t_unique_ptr;
-
 struct QUICPacketHandler;
 class QUICLossDetector;
 
@@ -142,7 +140,7 @@ class SSLNextProtocolSet;
  **/
 class QUICNetVConnection : public UnixNetVConnection, public QUICConnection
 {
-  typedef UnixNetVConnection super; ///< Parent type.
+  using super = UnixNetVConnection; ///< Parent type.
 
 public:
   QUICNetVConnection();
@@ -234,7 +232,5 @@ private:
 
   QUICApplication *_create_application();
 };
-
-typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);
 
 extern ClassAllocator<QUICNetVConnection> quicNetVCAllocator;

@@ -428,7 +428,7 @@ private:
   QUICConnectionId _connection_id = 0;
 };
 
-typedef void (*QUICFrameDeleterFunc)(QUICFrame *p);
+using QUICFrameDeleterFunc = void (*)(QUICFrame *p);
 
 //
 // Retransmission Frame
