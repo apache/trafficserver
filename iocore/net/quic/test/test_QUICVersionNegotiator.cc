@@ -29,7 +29,7 @@
 TEST_CASE("QUICVersionNegotiator_Normal", "[quic]")
 {
   QUICPacketFactory packet_factory;
-  QUICVersionNegotiator vn(&packet_factory, new MockQUICPacketTransmitter());
+  QUICVersionNegotiator vn;
 
   // Check initial state
   CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
@@ -41,7 +41,8 @@ TEST_CASE("QUICVersionNegotiator_Normal", "[quic]")
   CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
 
   // Revalidate version
-  vn.revalidate(QUIC_SUPPORTED_VERSIONS[0]);
+  QUICTransportParametersInClientHello tp(QUIC_SUPPORTED_VERSIONS[0], QUIC_SUPPORTED_VERSIONS[0]);
+  vn.revalidate(&tp);
   CHECK(vn.status() == QUICVersionNegotiationStatus::REVALIDATED);
   CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
 }

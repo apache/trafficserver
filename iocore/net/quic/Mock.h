@@ -95,7 +95,7 @@ public:
 class MockQUICConnection : public QUICConnection
 {
 public:
-  MockQUICConnection() : QUICConnection() { this->_mutex = new_ProxyMutex(); };
+  MockQUICConnection(NetVConnectionContext_t context = NET_VCONNECTION_OUT) : QUICConnection(), _direction(context) { this->_mutex = new_ProxyMutex(); };
   void
   transmit_packet(std::unique_ptr<const QUICPacket> packet) override
   {
@@ -158,21 +158,16 @@ public:
     return 1280;
   }
 
-  void
-  set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp) override
+  NetVConnectionContext_t
+  direction() override
   {
+    return _direction;
   }
 
-  const QUICTransportParameters &
-  local_transport_parameters() override
+  SSLNextProtocolSet *
+  next_protocol_set() override
   {
-    return dummy_transport_parameters;
-  }
-
-  const QUICTransportParameters &
-  remote_transport_parameters() override
-  {
-    return dummy_transport_parameters;
+    return nullptr;
   }
 
   void
@@ -193,6 +188,7 @@ public:
   int _frameCount[256] = {0};
 
   QUICTransportParametersInEncryptedExtensions dummy_transport_parameters;
+  NetVConnectionContext_t _direction;
 };
 
 class MockQUICPacketTransmitter : public QUICPacketTransmitter

@@ -178,13 +178,21 @@ QUICTransportParametersInClientHello::_parameters_offset() const
 QUICVersion
 QUICTransportParametersInClientHello::negotiated_version() const
 {
-  return QUICTypeUtil::read_QUICVersion(this->_buf.get());
+  if (this->_buf) {
+    return QUICTypeUtil::read_QUICVersion(this->_buf.get());
+  } else {
+    return this->_negotiated_version;
+  }
 }
 
 QUICVersion
 QUICTransportParametersInClientHello::initial_version() const
 {
-  return QUICTypeUtil::read_QUICVersion(this->_buf.get() + sizeof(QUICVersion));
+  if (this->_buf) {
+    return QUICTypeUtil::read_QUICVersion(this->_buf.get() + sizeof(QUICVersion));
+  } else {
+    return this->_initial_version;
+  }
 }
 
 //

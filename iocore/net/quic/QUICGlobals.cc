@@ -23,7 +23,7 @@
 
 #include <cstring>
 #include "QUICGlobals.h"
-#include "P_QUICNetVConnection.h"
+#include "QUICConnection.h"
 #include "P_SSLNextProtocolSet.h"
 
 int QUIC::ssl_quic_qc_index = -1;

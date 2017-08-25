@@ -125,7 +125,8 @@ test_QUICFrame_SOURCES = \
   ../QUICPacket.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
-  ../QUICTypes.cc
+  ../QUICTypes.cc \
+  ../../SSLNextProtocolSet.cc
 
 test_QUICFrame_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -144,6 +145,8 @@ test_QUICFrameDispatcher_SOURCES = \
   main.cc \
   test_QUICFrameDispatcher.cc \
   ../QUICGlobals.cc \
+  ../QUICConfig.cc \
+  ../QUICVersionNegotiator.cc \
   ../QUICFrameDispatcher.cc \
   ../QUICTransportParameters.cc \
   ../QUICStreamManager.cc \
@@ -160,11 +163,15 @@ test_QUICFrameDispatcher_SOURCES = \
   ../QUICEchoApp.cc \
   ../QUICDebugNames.cc \
   ../QUICCrypto.cc \
-  $(QUICCrypto_impl)
+  $(QUICCrypto_impl) \
+  ../../SSLNextProtocolSet.cc
 
 test_QUICFrameDispatcher_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBTCL@ \
   @HWLOC_LIBS@
@@ -208,7 +215,8 @@ test_QUICStream_SOURCES = \
   ../QUICFrameDispatcher.cc \
   ../QUICStreamManager.cc \
   ../QUICApplicationMap.cc \
-  ../QUICCongestionController.cc
+  ../QUICCongestionController.cc \
+  ../../SSLNextProtocolSet.cc
 
 test_QUICStream_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -234,12 +242,29 @@ test_QUICTransportParameters_SOURCES = \
   main.cc \
   test_QUICTransportParameters.cc \
   ../QUICGlobals.cc \
+  ../QUICConfig.cc \
+  ../QUICApplication.cc \
+  ../QUICApplicationMap.cc \
+  ../QUICHandshake.cc \
+  ../QUICVersionNegotiator.cc \
+  ../QUICCrypto.cc \
+  $(QUICCrypto_impl) \
+  ../QUICStream.cc \
+  ../QUICStreamState.cc \
+  ../QUICStreamManager.cc \
+  ../QUICPacket.cc \
+  ../QUICFrame.cc \
+  ../QUICDebugNames.cc \
   ../QUICTransportParameters.cc \
-  ../QUICTypes.cc
+  ../QUICTypes.cc \
+  ../../SSLNextProtocolSet.cc
 
 test_QUICTransportParameters_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a
 
 #
@@ -264,7 +289,8 @@ test_QUICCrypto_SOURCES = \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICCrypto.h \
-  ../QUICGlobals.cc
+  ../QUICGlobals.cc \
+  ../../SSLNextProtocolSet.cc
 
 #
 # test_QUICLossDetector
@@ -335,7 +361,8 @@ test_QUICAckFrameCreator_SOURCES = \
   ../QUICFrame.cc \
   ../QUICPacket.cc \
   ../QUICCrypto.cc \
-  $(QUICCrypto_impl)
+  $(QUICCrypto_impl) \
+  ../../SSLNextProtocolSet.cc
 
 #
 # test_QUICTypeUtil
@@ -349,6 +376,9 @@ test_QUICVersionNegotiator_LDFLAGS = \
 test_QUICVersionNegotiator_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBTCL@ \
   @HWLOC_LIBS@
@@ -361,7 +391,18 @@ test_QUICVersionNegotiator_SOURCES = \
   ../QUICPacket.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
-  ../QUICVersionNegotiator.cc
+  ../QUICApplication.cc \
+  ../QUICApplicationMap.cc \
+  ../QUICHandshake.cc \
+  ../QUICStream.cc \
+  ../QUICStreamState.cc \
+  ../QUICStreamManager.cc \
+  ../QUICFrame.cc \
+  ../QUICDebugNames.cc \
+  ../QUICVersionNegotiator.cc \
+  ../QUICTransportParameters.cc \
+  ../QUICConfig.cc \
+  ../../SSLNextProtocolSet.cc
 
 include $(top_srcdir)/build/tidy.mk
 
