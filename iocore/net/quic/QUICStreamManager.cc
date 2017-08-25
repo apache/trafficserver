@@ -32,14 +32,8 @@ const static char *tag = "quic_stream_manager";
 ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerAllocator");
 ClassAllocator<QUICStream> quicStreamAllocator("quicStreamAllocator");
 
-int
-QUICStreamManager::init(QUICFrameTransmitter *tx, QUICConnection *qc, QUICApplicationMap *app_map)
+QUICStreamManager::QUICStreamManager(QUICFrameTransmitter *tx, QUICApplicationMap *app_map) : _tx(tx), _app_map(app_map)
 {
-  this->_tx      = tx;
-  this->_qc      = qc;
-  this->_app_map = app_map;
-
-  return 0;
 }
 
 std::vector<QUICFrameType>
@@ -50,15 +44,19 @@ QUICStreamManager::interests()
 }
 
 void
-QUICStreamManager::init_flow_control_params(const QUICTransportParameters &local_tp, const QUICTransportParameters &remote_tp)
+QUICStreamManager::init_flow_control_params(std::shared_ptr<const QUICTransportParameters> local_tp,
+                                            std::shared_ptr<const QUICTransportParameters> remote_tp)
 {
+  this->_local_tp  = local_tp;
+  this->_remote_tp = remote_tp;
+
   // Connection level
-  this->_recv_max_data = QUICMaximumData(local_tp.initial_max_data());
-  this->_send_max_data = QUICMaximumData(remote_tp.initial_max_data());
+  this->_recv_max_data = QUICMaximumData(local_tp->initial_max_data());
+  this->_send_max_data = QUICMaximumData(remote_tp->initial_max_data());
 
   // Setup a stream for Handshake
   QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
-  stream->init_flow_control_params(local_tp.initial_max_stream_data(), remote_tp.initial_max_stream_data());
+  stream->init_flow_control_params(local_tp->initial_max_stream_data(), remote_tp->initial_max_stream_data());
 }
 
 QUICError
@@ -106,7 +104,7 @@ void
 QUICStreamManager::slide_recv_max_data()
 {
   // TODO: How much should this be increased?
-  this->_recv_max_data += this->_qc->local_transport_parameters().initial_max_data();
+  this->_recv_max_data += this->_local_tp->initial_max_data();
   this->send_frame(QUICFrameFactory::create_max_data_frame(this->_recv_max_data));
 }
 
@@ -221,8 +219,8 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
       // XXX rece/send max_stream_data are going to be set by init_flow_control_params()
       stream->init(this, this->_tx, stream_id);
     } else {
-      const QUICTransportParameters &local_tp  = this->_qc->local_transport_parameters();
-      const QUICTransportParameters &remote_tp = this->_qc->remote_transport_parameters();
+      const QUICTransportParameters &local_tp  = *this->_local_tp;
+      const QUICTransportParameters &remote_tp = *this->_remote_tp;
 
       // TODO: check local_tp and remote_tp is initialized
       stream->init(this, this->_tx, stream_id, local_tp.initial_max_stream_data(), remote_tp.initial_max_stream_data());

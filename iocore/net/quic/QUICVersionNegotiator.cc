@@ -22,9 +22,7 @@
  */
 
 #include "QUICVersionNegotiator.h"
-
-QUICVersionNegotiator::QUICVersionNegotiator(QUICPacketFactory *packet_factory, QUICPacketTransmitter *tx)
-  : _packet_factory(packet_factory), _tx(tx){};
+#include "QUICTransportParameters.h"
 
 QUICVersionNegotiationStatus
 QUICVersionNegotiator::status()
@@ -38,16 +36,25 @@ QUICVersionNegotiator::negotiate(const QUICPacket *initial_packet)
   if (this->_is_supported(initial_packet->version())) {
     this->_status             = QUICVersionNegotiationStatus::NEGOTIATED;
     this->_negotiated_version = initial_packet->version();
-  } else {
-    this->_tx->transmit_packet(this->_packet_factory->create_version_negotiation_packet(initial_packet));
   }
   return this->_status;
 }
 
 QUICVersionNegotiationStatus
-QUICVersionNegotiator::revalidate(QUICVersion version)
+QUICVersionNegotiator::revalidate(const QUICTransportParametersInClientHello *tp)
 {
+  QUICVersion version = tp->negotiated_version();
   if (this->_negotiated_version == version) {
+    if (tp->negotiated_version() != tp->initial_version()) {
+      // FIXME Check initial_version
+      /* If the initial version is different from the negotiated_version, a
+       * stateless server MUST check that it would have sent a version
+       * negotiation packet if it had received a packet with the indicated
+       * initial_version. (Draft-04 7.3.4. Version Negotiation Validation)
+       */
+      this->_status             = QUICVersionNegotiationStatus::FAILED;
+      this->_negotiated_version = 0;
+    }
     this->_status = QUICVersionNegotiationStatus::REVALIDATED;
   } else {
     this->_status             = QUICVersionNegotiationStatus::FAILED;

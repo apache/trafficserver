@@ -43,7 +43,6 @@ public:
   };
 
   explicit operator bool() const { return true; }
-
   bool
   operator==(const QUICTransportParameterId &x) const
   {
@@ -57,7 +56,6 @@ public:
   }
 
   operator uint16_t() const { return _id; };
-
   QUICTransportParameterId() : _id(0){};
   QUICTransportParameterId(uint16_t id) : _id(id){};
 

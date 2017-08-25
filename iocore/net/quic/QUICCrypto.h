@@ -38,7 +38,6 @@
 
 struct KeyMaterial {
   KeyMaterial(size_t secret_len, size_t key_len, size_t iv_len) : secret_len(secret_len), key_len(key_len), iv_len(iv_len) {}
-
   uint8_t secret[EVP_MAX_MD_SIZE] = {0};
   uint8_t key[EVP_MAX_KEY_LENGTH] = {0};
   uint8_t iv[EVP_MAX_IV_LENGTH]   = {0};
@@ -65,8 +64,8 @@ private:
 class QUICCrypto
 {
 public:
-  QUICCrypto(SSL_CTX *, NetVConnection *);
-  ~QUICCrypto();
+  QUICCrypto(SSL *, NetVConnectionContext_t);
+  virtual ~QUICCrypto();
 
   bool handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len);
   bool is_handshake_finished() const;

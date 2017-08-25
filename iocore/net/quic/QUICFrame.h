@@ -116,7 +116,6 @@ public:
 
       const QUICAckFrame::AckBlock &operator*() const { return this->_current_block; };
       const QUICAckFrame::AckBlock *operator->() const { return &this->_current_block; };
-
       const QUICAckFrame::AckBlock &operator++()
       {
         ++(this->_index);

@@ -43,21 +43,47 @@
  *  v
  * state_closed()
  */
+
+class QUICVersionNegotiator;
+class SSLNextProtocolSet;
+
 class QUICHandshake : public QUICApplication
 {
 public:
-  QUICHandshake(QUICConnection *qc, QUICCrypto *c);
+  QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx);
+  ~QUICHandshake();
 
+  QUICError start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
+
+  // States
   int state_read_client_hello(int event, Event *data);
   int state_read_client_finished(int event, Event *data);
   int state_address_validation(int event, void *data);
   int state_complete(int event, void *data);
   int state_closed(int event, void *data);
-  bool is_completed();
+
+  // Getters
+  QUICCrypto *crypto_module();
+  QUICVersion negotiated_version();
   void negotiated_application_name(const uint8_t **name, unsigned int *len);
+  std::shared_ptr<const QUICTransportParameters> local_transport_parameters();
+  std::shared_ptr<const QUICTransportParameters> remote_transport_parameters();
+
+  bool is_version_negotiated();
+  bool is_completed();
+
+  void set_transport_parameters(std::shared_ptr<QUICTransportParameters> tp);
 
 private:
-  QUICCrypto *_crypto = nullptr;
+  SSL *_ssl                                                             = nullptr;
+  QUICCrypto *_crypto                                                   = nullptr;
+  std::shared_ptr<QUICTransportParameters> _local_transport_parameters  = nullptr;
+  std::shared_ptr<QUICTransportParameters> _remote_transport_parameters = nullptr;
+
+  QUICVersionNegotiator *_version_negotiator = nullptr;
+
+  void _load_local_transport_parameters();
+
   QUICError _process_client_hello();
   QUICError _process_client_finished();
   QUICError _process_handshake_complete();

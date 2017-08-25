@@ -64,6 +64,7 @@ class QUICApplication : public Continuation
 {
 public:
   QUICApplication(QUICConnection *qc);
+  virtual ~QUICApplication(){};
 
   void set_stream(QUICStream *stream);
   bool is_stream_set(QUICStream *stream);

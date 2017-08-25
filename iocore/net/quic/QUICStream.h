@@ -44,7 +44,6 @@ class QUICStream : public VConnection
 public:
   QUICStream() : VConnection(nullptr) {}
   ~QUICStream() {}
-
   void init(QUICStreamManager *manager, QUICFrameTransmitter *tx, uint32_t id, uint64_t recv_max_stream_data = 0,
             uint64_t send_max_stream_data = 0);
   void start();

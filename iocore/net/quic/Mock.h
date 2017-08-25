@@ -96,7 +96,6 @@ class MockQUICConnection : public QUICConnection
 {
 public:
   MockQUICConnection() : QUICConnection() { this->_mutex = new_ProxyMutex(); };
-
   void
   transmit_packet(std::unique_ptr<const QUICPacket> packet) override
   {
@@ -200,7 +199,6 @@ class MockQUICPacketTransmitter : public QUICPacketTransmitter
 {
 public:
   MockQUICPacketTransmitter() : QUICPacketTransmitter() { this->_mutex = new_ProxyMutex(); };
-
   void
   transmit_packet(std::unique_ptr<const QUICPacket> packet) override
   {
@@ -242,7 +240,6 @@ class MockQUICLossDetector : public QUICLossDetector
 {
 public:
   MockQUICLossDetector() : QUICLossDetector(new MockQUICPacketTransmitter()) {}
-
   void
   rcv_frame(std::shared_ptr<const QUICFrame>)
   {
@@ -258,7 +255,6 @@ class MockQUICStreamManager : public QUICStreamManager
 {
 public:
   MockQUICStreamManager() : QUICStreamManager() {}
-
   // Override
   virtual QUICError
   handle_frame(std::shared_ptr<const QUICFrame> f) override
@@ -295,9 +291,7 @@ public:
   }
 
   bool is_recv_avail_more_than(uint64_t /* size */) override { return true; }
-
   void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> /* frame */) override { return; }
-
 private:
   int _totalFrameCount = 0;
   int _frameCount[256] = {0};
@@ -307,7 +301,6 @@ class MockQUICCongestionController : public QUICCongestionController
 {
 public:
   MockQUICCongestionController() : QUICCongestionController() {}
-
   // Override
   virtual QUICError
   handle_frame(std::shared_ptr<const QUICFrame> f) override

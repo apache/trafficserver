@@ -29,15 +29,15 @@
 #include "QUICTransportParameters.h"
 
 class QUICApplication;
+class SSLNextProtocolSet;
 
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
 {
 public:
-  virtual uint32_t maximum_quic_packet_size()                                        = 0;
-  virtual uint32_t minimum_quic_packet_size()                                        = 0;
-  virtual uint32_t pmtu()                                                            = 0;
-  virtual void set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp) = 0;
-  virtual const QUICTransportParameters &local_transport_parameters()                = 0;
-  virtual const QUICTransportParameters &remote_transport_parameters()               = 0;
-  virtual void close(QUICError error)                                                = 0;
+  virtual uint32_t maximum_quic_packet_size()     = 0;
+  virtual uint32_t minimum_quic_packet_size()     = 0;
+  virtual uint32_t pmtu()                         = 0;
+  virtual NetVConnectionContext_t direction()     = 0;
+  virtual SSLNextProtocolSet *next_protocol_set() = 0;
+  virtual void close(QUICError error)             = 0;
 };

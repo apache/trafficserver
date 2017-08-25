@@ -153,9 +153,7 @@ class QUICConnectionId
 {
 public:
   explicit operator bool() const { return true; }
-
   operator uint64_t() const { return _id; };
-
   QUICConnectionId() { this->randomize(); };
   QUICConnectionId(uint64_t id) : _id(id){};
 
@@ -174,7 +172,6 @@ class QUICMaximumData
 {
 public:
   QUICMaximumData(uint64_t d) : _data(d) {}
-
   bool
   operator>(uint64_t r) const
   {
@@ -220,7 +217,6 @@ public:
   }
 
   operator uint64_t() const { return _data; }
-
 private:
   uint64_t _data = 0; // in units of 1024 octets
 };

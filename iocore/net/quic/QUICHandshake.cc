@@ -21,7 +21,11 @@
  *  limitations under the License.
  */
 
+#include "QUICGlobals.h"
 #include "QUICHandshake.h"
+#include "QUICVersionNegotiator.h"
+#include "QUICConfig.h"
+#include "P_SSLNextProtocolSet.h"
 
 #define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                           \
   {                                                                                                                               \
@@ -48,22 +52,114 @@ const static int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 const static int MAX_HANDSHAKE_MSG_LEN = 65527;
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, QUICCrypto *c) : QUICApplication(qc), _crypto(c)
+QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICApplication(qc)
 {
+  this->_ssl = SSL_new(ssl_ctx);
+  SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_qc_index, qc);
+  SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_hs_index, this);
+  this->_crypto             = new QUICCrypto(this->_ssl, qc->direction());
+  this->_version_negotiator = new QUICVersionNegotiator();
+
+  this->_load_local_transport_parameters();
+
   SET_HANDLER(&QUICHandshake::state_read_client_hello);
+}
+
+QUICHandshake::~QUICHandshake()
+{
+  SSL_free(this->_ssl);
+}
+
+QUICError
+QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory)
+{
+  // Negotiate version
+  if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
+    if (initial_packet->type() != QUICPacketType::CLIENT_INITIAL) {
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+    }
+    if (initial_packet->version()) {
+      if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
+        Debug(tag, "Version negotiation succeeded: %x", initial_packet->version());
+        packet_factory->set_version(this->_version_negotiator->negotiated_version());
+      } else {
+        this->_client_qc->transmit_packet(packet_factory->create_version_negotiation_packet(initial_packet));
+        Debug(tag, "Version negotiation failed: %x", initial_packet->version());
+      }
+    } else {
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+    }
+  }
+  return QUICError(QUICErrorClass::NONE);
+}
+
+bool
+QUICHandshake::is_version_negotiated()
+{
+  return (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NEGOTIATED);
 }
 
 bool
 QUICHandshake::is_completed()
 {
-  QUICCrypto *crypto = this->_crypto;
-  return crypto->is_handshake_finished();
+  return this->_crypto->is_handshake_finished();
+}
+
+QUICVersion
+QUICHandshake::negotiated_version()
+{
+  return this->_version_negotiator->negotiated_version();
+}
+
+QUICCrypto *
+QUICHandshake::crypto_module()
+{
+  return this->_crypto;
 }
 
 void
 QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *len)
 {
   SSL_get0_alpn_selected(this->_crypto->ssl_handle(), name, len);
+}
+
+void
+QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters> tp)
+{
+  this->_remote_transport_parameters = tp;
+
+  const QUICTransportParametersInClientHello *tp_in_ch =
+    dynamic_cast<const QUICTransportParametersInClientHello *>(this->_remote_transport_parameters.get());
+  if (tp_in_ch) {
+    // Version revalidation
+    if (this->_version_negotiator->revalidate(tp_in_ch) != QUICVersionNegotiationStatus::REVALIDATED) {
+      this->_client_qc->close({QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_VERSION_NEGOTIATION_MISMATCH});
+      Debug(tag, "Enter state_closed");
+      SET_HANDLER(&QUICHandshake::state_closed);
+      return;
+    }
+    Debug(tag, "Version negotiation revalidated: %x", tp_in_ch->negotiated_version());
+    return;
+  }
+
+  const QUICTransportParametersInEncryptedExtensions *tp_in_ee =
+    dynamic_cast<const QUICTransportParametersInEncryptedExtensions *>(this->_remote_transport_parameters.get());
+  if (tp_in_ee) {
+    // TODO Add client side implementation
+    return;
+  }
+}
+
+std::shared_ptr<const QUICTransportParameters>
+QUICHandshake::local_transport_parameters()
+{
+  return this->_local_transport_parameters;
+}
+
+std::shared_ptr<const QUICTransportParameters>
+QUICHandshake::remote_transport_parameters()
+{
+  return this->_remote_transport_parameters;
 }
 
 int
@@ -134,6 +230,35 @@ int
 QUICHandshake::state_closed(int event, void *data)
 {
   return EVENT_CONT;
+}
+
+void
+QUICHandshake::_load_local_transport_parameters()
+{
+  QUICConfig::scoped_config params;
+
+  // MUSTs
+  QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions();
+
+  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
+          std::unique_ptr<QUICTransportParameterValue>(
+            new QUICTransportParameterValue(params->initial_max_stream_data(), sizeof(params->initial_max_stream_data()))));
+
+  tp->add(QUICTransportParameterId::INITIAL_MAX_DATA, std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(
+                                                        params->initial_max_data(), sizeof(params->initial_max_data()))));
+
+  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_ID,
+          std::unique_ptr<QUICTransportParameterValue>(
+            new QUICTransportParameterValue(params->initial_max_stream_id(), sizeof(params->initial_max_stream_id()))));
+
+  tp->add(QUICTransportParameterId::IDLE_TIMEOUT, std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(
+                                                    params->no_activity_timeout_in(), sizeof(uint16_t))));
+
+  tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
+  // MAYs
+  // this->_local_transport_parameters.add(QUICTransportParameterId::TRUNCATE_CONNECTION_ID, {});
+  // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
+  this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
 }
 
 QUICError

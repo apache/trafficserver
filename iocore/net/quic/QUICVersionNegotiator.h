@@ -24,7 +24,8 @@
 #pragma once
 
 #include "QUICTypes.h"
-#include "QUICPacketTransmitter.h"
+#include "QUICPacket.h"
+#include "QUICTransportParameters.h"
 
 /**
  * @brief Abstruct QUIC Application Class
@@ -33,16 +34,13 @@
 class QUICVersionNegotiator
 {
 public:
-  QUICVersionNegotiator(QUICPacketFactory *packet_factory, QUICPacketTransmitter *tx);
   QUICVersionNegotiationStatus status();
   QUICVersionNegotiationStatus negotiate(const QUICPacket *initial_packet);
-  QUICVersionNegotiationStatus revalidate(QUICVersion version);
+  QUICVersionNegotiationStatus revalidate(const QUICTransportParametersInClientHello *tp);
   QUICVersion negotiated_version();
 
 private:
   QUICVersion _negotiated_version      = 0;
-  QUICPacketFactory *_packet_factory   = nullptr;
-  QUICPacketTransmitter *_tx           = nullptr;
   QUICVersionNegotiationStatus _status = QUICVersionNegotiationStatus::NOT_NEGOTIATED;
 
   bool _is_supported(QUICVersion version);

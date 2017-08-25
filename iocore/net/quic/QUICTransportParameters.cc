@@ -235,10 +235,9 @@ int
 QUICTransportParametersHandler::add(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char **out, size_t *outlen,
                                     X509 *x, size_t chainidx, int *al, void *add_arg)
 {
-  QUICConnection *qc =
-    static_cast<QUICConnection *>(static_cast<QUICNetVConnection *>(SSL_get_ex_data(s, QUIC::ssl_quic_vc_index)));
-  *out = reinterpret_cast<const unsigned char *>(ats_malloc(TRANSPORT_PARAMETERS_MAXIMUM_SIZE));
-  qc->local_transport_parameters().store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
+  QUICHandshake *hs = static_cast<QUICHandshake *>(SSL_get_ex_data(s, QUIC::ssl_quic_hs_index));
+  *out              = reinterpret_cast<const unsigned char *>(ats_malloc(TRANSPORT_PARAMETERS_MAXIMUM_SIZE));
+  hs->local_transport_parameters()->store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
 
   return 1;
 }
@@ -253,11 +252,8 @@ int
 QUICTransportParametersHandler::parse(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *in, size_t inlen,
                                       X509 *x, size_t chainidx, int *al, void *parse_arg)
 {
-  QUICConnection *qc =
-    static_cast<QUICConnection *>(static_cast<QUICNetVConnection *>(SSL_get_ex_data(s, QUIC::ssl_quic_vc_index)));
-  QUICTransportParametersInClientHello *tp     = new QUICTransportParametersInClientHello(in, inlen);
-  std::unique_ptr<QUICTransportParameters> utp = std::unique_ptr<QUICTransportParameters>(tp);
-  qc->set_transport_parameters(std::move(utp));
+  QUICHandshake *hs = static_cast<QUICHandshake *>(SSL_get_ex_data(s, QUIC::ssl_quic_hs_index));
+  hs->set_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(in, inlen));
 
   return 1;
 }

@@ -31,9 +31,11 @@ public:
   static void
   init()
   {
-    ssl_quic_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", nullptr, nullptr, nullptr);
+    ssl_quic_qc_index = SSL_get_ex_new_index(0, (void *)"QUICConnection index", nullptr, nullptr, nullptr);
+    ssl_quic_hs_index = SSL_get_ex_new_index(0, (void *)"QUICHandshake index", nullptr, nullptr, nullptr);
   }
-  static int ssl_quic_vc_index;
+  static int ssl_quic_qc_index;
+  static int ssl_quic_hs_index;
 
   // SSL callbacks
   static int ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,

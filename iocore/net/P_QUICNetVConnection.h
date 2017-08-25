@@ -166,7 +166,7 @@ public:
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
 
-  SSLNextProtocolSet *next_protocol_set();
+  // QUICNetVConnection
   void registerNextProtocolSet(SSLNextProtocolSet *s);
 
   // QUICConnection
@@ -174,9 +174,8 @@ public:
   uint32_t minimum_quic_packet_size() override;
   uint32_t maximum_stream_frame_data_size() override;
   uint32_t pmtu() override;
-  void set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp) override;
-  const QUICTransportParameters &local_transport_parameters() override;
-  const QUICTransportParameters &remote_transport_parameters() override;
+  NetVConnectionContext_t direction() override;
+  SSLNextProtocolSet *next_protocol_set() override;
   void close(QUICError error) override;
 
   // QUICConnection (QUICPacketTransmitter)
@@ -203,9 +202,6 @@ private:
   uint32_t _pmtu = 1280;
 
   SSLNextProtocolSet *_next_protocol_set = nullptr;
-
-  std::unique_ptr<QUICTransportParameters> _local_transport_parameters  = nullptr;
-  std::unique_ptr<QUICTransportParameters> _remote_transport_parameters = nullptr;
 
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.

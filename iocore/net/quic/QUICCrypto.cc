@@ -83,10 +83,8 @@ QUICPacketProtection::key_phase() const
 //
 // QUICCrypto
 //
-QUICCrypto::QUICCrypto(SSL_CTX *ssl_ctx, NetVConnection *vc) : _netvc_context(vc->get_context())
+QUICCrypto::QUICCrypto(SSL *ssl, NetVConnectionContext_t nvc_ctx) : _ssl(ssl), _netvc_context(nvc_ctx)
 {
-  this->_ssl = SSL_new(ssl_ctx);
-  SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_vc_index, vc);
   if (this->_netvc_context == NET_VCONNECTION_IN) {
     SSL_set_accept_state(this->_ssl);
   } else if (this->_netvc_context == NET_VCONNECTION_OUT) {
@@ -101,7 +99,6 @@ QUICCrypto::QUICCrypto(SSL_CTX *ssl_ctx, NetVConnection *vc) : _netvc_context(vc
 
 QUICCrypto::~QUICCrypto()
 {
-  SSL_free(this->_ssl);
   delete this->_client_pp;
   delete this->_server_pp;
 }

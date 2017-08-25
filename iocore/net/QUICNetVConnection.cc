@@ -94,14 +94,16 @@ QUICNetVConnection::startEvent(int /*event ATS_UNUSED */, Event *e)
 void
 QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 {
-  this->_version_negotiator = new QUICVersionNegotiator(&this->_packet_factory, this);
-  this->_crypto             = new QUICCrypto(ssl_ctx, this);
-  this->_frame_dispatcher   = new QUICFrameDispatcher();
+  // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
+  this->_handshake_handler = new QUICHandshake(this, ssl_ctx);
+  this->_application_map.set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
+
+  this->_crypto           = this->_handshake_handler->crypto_module();
+  this->_frame_dispatcher = new QUICFrameDispatcher();
   this->_packet_factory.set_crypto_module(this->_crypto);
 
   // Create frame handlers
-  this->_stream_manager = new QUICStreamManager();
-  this->_stream_manager->init(this, this, &this->_application_map);
+  this->_stream_manager        = new QUICStreamManager(this, &this->_application_map);
   this->_congestion_controller = new QUICCongestionController();
   this->_loss_detector         = new QUICLossDetector(this);
 
@@ -109,31 +111,6 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   this->_frame_dispatcher->add_handler(this->_stream_manager);
   this->_frame_dispatcher->add_handler(this->_congestion_controller);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
-
-  QUICConfig::scoped_config params;
-
-  // MUSTs
-  QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions();
-
-  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
-          std::unique_ptr<QUICTransportParameterValue>(
-            new QUICTransportParameterValue(params->initial_max_stream_data(), sizeof(params->initial_max_stream_data()))));
-
-  tp->add(QUICTransportParameterId::INITIAL_MAX_DATA, std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(
-                                                        params->initial_max_data(), sizeof(params->initial_max_data()))));
-
-  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_ID,
-          std::unique_ptr<QUICTransportParameterValue>(
-            new QUICTransportParameterValue(params->initial_max_stream_id(), sizeof(params->initial_max_stream_id()))));
-
-  tp->add(QUICTransportParameterId::IDLE_TIMEOUT, std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(
-                                                    params->no_activity_timeout_in(), sizeof(uint16_t))));
-
-  tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
-  // MAYs
-  // this->_local_transport_parameters.add(QUICTransportParameterId::TRUNCATE_CONNECTION_ID, {});
-  // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
-  this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
 }
 
 void
@@ -174,53 +151,10 @@ QUICNetVConnection::pmtu()
   return this->_pmtu;
 }
 
-void
-QUICNetVConnection::set_transport_parameters(std::unique_ptr<QUICTransportParameters> tp)
+NetVConnectionContext_t
+QUICNetVConnection::direction()
 {
-  this->_remote_transport_parameters = std::move(tp);
-  this->_stream_manager->init_flow_control_params(*this->_local_transport_parameters, *this->_remote_transport_parameters);
-
-  const QUICTransportParametersInClientHello *tp_in_ch =
-    dynamic_cast<QUICTransportParametersInClientHello *>(this->_remote_transport_parameters.get());
-  if (tp_in_ch) {
-    // Version revalidation
-    QUICVersion version = tp_in_ch->negotiated_version();
-    if (this->_version_negotiator->revalidate(version) != QUICVersionNegotiationStatus::REVALIDATED) {
-      this->close({QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_VERSION_NEGOTIATION_MISMATCH});
-      return;
-    }
-    if (tp_in_ch->negotiated_version() != tp_in_ch->initial_version()) {
-      // FIXME Check initial_version
-      /* If the initial version is different from the negotiated_version, a
-       * stateless server MUST check that it would have sent a version
-       * negotiation packet if it had received a packet with the indicated
-       * initial_version. (Draft-04 7.3.4. Version Negotiation Validation)
-       */
-      this->close({QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_VERSION_NEGOTIATION_MISMATCH});
-      return;
-    }
-    DebugQUICCon("Version negotiation revalidated: %x", tp_in_ch->negotiated_version());
-    return;
-  }
-
-  const QUICTransportParametersInEncryptedExtensions *tp_in_ee =
-    dynamic_cast<QUICTransportParametersInEncryptedExtensions *>(this->_remote_transport_parameters.get());
-  if (tp_in_ee) {
-    // TODO Add client side implementation
-    return;
-  }
-}
-
-const QUICTransportParameters &
-QUICNetVConnection::local_transport_parameters()
-{
-  return *this->_local_transport_parameters;
-}
-
-const QUICTransportParameters &
-QUICNetVConnection::remote_transport_parameters()
-{
-  return *this->_remote_transport_parameters;
+  return this->netvc_context;
 }
 
 uint32_t
@@ -419,8 +353,10 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   }
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-    DebugQUICCon("setup quic application");
     this->_application_map.set_default(this->_create_application());
+    this->_stream_manager->init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
+                                                    this->_handshake_handler->remote_transport_parameters());
+
     DebugQUICCon("Enter state_connection_established");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
   }
@@ -557,42 +493,22 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
 {
   if (packet->size() < this->minimum_quic_packet_size()) {
     DebugQUICCon("%" PRId32 ", %" PRId32, packet->size(), this->minimum_quic_packet_size());
-
     return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
   }
 
-  // Negotiate version
-  if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
-    if (packet->type() != QUICPacketType::CLIENT_INITIAL) {
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
-    }
-
-    if (!packet->version()) {
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
-    }
-
-    if (this->_version_negotiator->negotiate(packet.get()) != QUICVersionNegotiationStatus::NEGOTIATED) {
-      DebugQUICCon("Version negotiation failed: %x", packet->version());
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_VERSION_NEGOTIATION_MISMATCH);
-    }
-
-    DebugQUICCon("Version negotiation succeeded: %x", packet->version());
-    this->_packet_factory.set_version(packet->version());
+  // Start handshake
+  QUICError error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
+  if (this->_handshake_handler->is_version_negotiated()) {
     // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
-    if (!packet->has_valid_fnv1a_hash()) {
+    if (packet->has_valid_fnv1a_hash()) {
+      bool should_send_ack;
+      this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size(), should_send_ack);
+    } else {
       DebugQUICCon("Invalid FNV-1a hash value");
       return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::CRYPTOGRAPHIC_ERROR);
     }
-
-    // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
-    this->_handshake_handler = new QUICHandshake(this, this->_crypto);
-    this->_application_map.set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
-    bool should_send_ack;
-
-    return this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size(), should_send_ack);
   }
-
-  return QUICError(QUICErrorClass::NONE);
+  return error;
 }
 
 QUICError

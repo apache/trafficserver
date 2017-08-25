@@ -26,17 +26,18 @@
 #include "P_QUICNetVConnection.h"
 #include "P_SSLNextProtocolSet.h"
 
-int QUIC::ssl_quic_vc_index = -1;
+int QUIC::ssl_quic_qc_index = -1;
+int QUIC::ssl_quic_hs_index = -1;
 
 int
 QUIC::ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen,
                                void *)
 {
   const unsigned char *npn;
-  unsigned npnsz           = 0;
-  QUICNetVConnection *qnvc = static_cast<QUICNetVConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_vc_index));
+  unsigned npnsz     = 0;
+  QUICConnection *qc = static_cast<QUICConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_qc_index));
 
-  qnvc->next_protocol_set()->advertiseProtocols(&npn, &npnsz);
+  qc->next_protocol_set()->advertiseProtocols(&npn, &npnsz);
   if (SSL_select_next_proto((unsigned char **)out, outlen, npn, npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
     return SSL_TLSEXT_ERR_OK;
   }
