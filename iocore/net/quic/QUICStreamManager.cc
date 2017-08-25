@@ -27,7 +27,7 @@
 #include "QUICTransportParameters.h"
 #include "QUICConnection.h"
 
-const static char *tag = "quic_stream_manager";
+static constexpr char tag[] = "quic_stream_manager";
 
 ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerAllocator");
 ClassAllocator<QUICStream> quicStreamAllocator("quicStreamAllocator");

@@ -30,7 +30,7 @@
 class QUICAckFrameCreator
 {
 public:
-  static const int MAXIMUM_PACKET_COUNT = 256;
+  static constexpr int MAXIMUM_PACKET_COUNT = 256;
   QUICAckFrameCreator(){};
 
   /*

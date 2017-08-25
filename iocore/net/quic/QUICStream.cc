@@ -28,10 +28,10 @@
 #include "QUICDebugNames.h"
 #include "QUICConfig.h"
 
-const static char *tag = "quic_stream";
+static constexpr char tag[] = "quic_stream";
 
-constexpr uint64_t MAX_DATA_HEADSPACE        = 10240; // in uints of octets
-constexpr uint64_t MAX_STREAM_DATA_HEADSPACE = 1024;
+static constexpr uint64_t MAX_DATA_HEADSPACE        = 10240; // in uints of octets
+static constexpr uint64_t MAX_STREAM_DATA_HEADSPACE = 1024;
 
 void
 QUICStream::init(QUICStreamManager *manager, QUICFrameTransmitter *tx, QUICStreamId id, uint64_t recv_max_stream_data,

@@ -49,10 +49,10 @@
     }                                                                                                                             \
   }
 
-const static char *tag                    = "quic_handshake";
-const static int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
+static constexpr char tag[]                   = "quic_handshake";
+static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
-const static int MAX_HANDSHAKE_MSG_LEN = 65527;
+static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
 
 QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICApplication(qc)
 {

@@ -23,7 +23,7 @@
 
 #include <QUICCongestionController.h>
 
-const static char *tag = "quic_congestion_controller";
+static constexpr char tag[] = "quic_congestion_controller";
 
 std::vector<QUICFrameType>
 QUICCongestionController::interests()

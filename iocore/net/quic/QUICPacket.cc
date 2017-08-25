@@ -24,12 +24,12 @@
 #include <ts/ink_assert.h>
 #include "QUICPacket.h"
 
-static const int OFFSET_CONNECTION_ID = 1;
-static const int OFFSET_PACKET_NUMBER = 9;
-static const int OFFSET_VERSION       = 13;
-static const int OFFSET_PAYLOAD       = 17;
-static const int LONGHEADER_LENGTH    = 17;
-static const int FNV1A_HASH_LEN       = 8;
+static constexpr int OFFSET_CONNECTION_ID = 1;
+static constexpr int OFFSET_PACKET_NUMBER = 9;
+static constexpr int OFFSET_VERSION       = 13;
+static constexpr int OFFSET_PAYLOAD       = 17;
+static constexpr int LONGHEADER_LENGTH    = 17;
+static constexpr int FNV1A_HASH_LEN       = 8;
 
 const uint8_t *
 QUICPacketHeader::buf()

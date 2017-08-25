@@ -28,7 +28,7 @@
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
 
-const static char *tag = "quic_frame_handler";
+static constexpr char tag[] = "quic_frame_handler";
 
 //
 // Frame Dispatcher

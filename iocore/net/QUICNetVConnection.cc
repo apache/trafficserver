@@ -46,9 +46,9 @@
 #define DebugQUICCon(fmt, ...) \
   Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
 
-const static uint32_t MINIMUM_MTU               = 1280;
-const static uint32_t MAX_PACKET_OVERHEAD       = 25; // Max long header len(17) + FNV-1a hash len(8)
-const static uint32_t MAX_STREAM_FRAME_OVERHEAD = 15;
+static constexpr uint32_t MINIMUM_MTU               = 1280;
+static constexpr uint32_t MAX_PACKET_OVERHEAD       = 25; // Max long header len(17) + FNV-1a hash len(8)
+static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 15;
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 

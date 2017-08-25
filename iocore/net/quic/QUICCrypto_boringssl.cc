@@ -29,7 +29,7 @@
 #include <openssl/hkdf.h>
 #include <openssl/aead.h>
 
-const static char tag[] = "quic_crypto";
+static constexpr char tag[] = "quic_crypto";
 
 const EVP_AEAD *
 QUICCrypto::_get_evp_aead(const SSL_CIPHER *cipher) const

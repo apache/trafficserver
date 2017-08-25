@@ -26,7 +26,7 @@
 #include "ts/MemView.h"
 #include "QUICStream.h"
 
-const static char *tag = "quic_app";
+static constexpr char tag[] = "quic_app";
 
 //
 // QUICStreamIO

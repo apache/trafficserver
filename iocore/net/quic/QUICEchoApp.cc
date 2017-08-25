@@ -26,7 +26,7 @@
 #include "P_Net.h"
 #include "QUICDebugNames.h"
 
-const static char *tag = "quic_echo_app";
+static constexpr char tag[] = "quic_echo_app";
 
 QUICEchoApp::QUICEchoApp(QUICConnection *qc) : QUICApplication(qc)
 {

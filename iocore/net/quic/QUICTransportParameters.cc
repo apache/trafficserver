@@ -27,7 +27,7 @@
 #include "QUICConnection.h"
 #include "../P_QUICNetVConnection.h"
 
-const static int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
+static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 
 //
 // QUICTransportParameterValue
