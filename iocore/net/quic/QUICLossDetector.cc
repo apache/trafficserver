@@ -351,5 +351,6 @@ QUICLossDetector::_retransmit_handshake_packets()
 
   for (auto packet_number : retransmitted_handshake_packets) {
     this->_sent_packets.erase(packet_number);
+    --this->_handshake_outstanding;
   }
 }
