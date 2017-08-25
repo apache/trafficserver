@@ -53,7 +53,7 @@ example_Plugins = \
 	session_hooks.la \
 	ssl_preaccept.la \
 	ssl-sni-whitelist.la \
-	ssl-sni.la \
+	ssl_sni.la \
 	statistic.la \
 	thread-1.la \
 	txn-data-sink.la \
@@ -118,7 +118,7 @@ secure_link_la_SOURCES = secure_link/secure_link.c
 server_push_la_SOURCES = server_push/server_push.c
 server_transform_la_SOURCES = server_transform/server_transform.c
 ssl_preaccept_la_SOURCES = ssl_preaccept/ssl_preaccept.cc
-ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc
+ssl_sni_la_SOURCES = ssl_sni/ssl_sni.cc
 ssl_sni_la_LIBADD = $(libtsconfig)
 ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc
 ssl_sni_whitelist_la_LIBADD = $(libtsconfig)
