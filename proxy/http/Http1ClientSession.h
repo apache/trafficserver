@@ -62,8 +62,8 @@ public:
   virtual void
   start()
   {
-    // Create a new transaction object and kick it off
-    this->new_transaction();
+    // Troll for data to get a new transaction
+    this->release(&trans);
   }
 
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
