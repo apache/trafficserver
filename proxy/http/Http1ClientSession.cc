@@ -443,7 +443,7 @@ Http1ClientSession::reenable(VIO *vio)
 void
 Http1ClientSession::release(ProxyClientTransaction *trans)
 {
-  ink_assert(read_state == HCS_ACTIVE_READER);
+  ink_assert(read_state == HCS_ACTIVE_READER || read_state == HCS_INIT);
 
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(nullptr, 0, nullptr);
