@@ -18,6 +18,7 @@
 
 Test.Summary = 'Test that Trafficserver starts with default configurations.'
 Test.SkipUnless(Condition.HasProgram('curl', 'Curl need to be installed on system for this test to work'))
+Test.SkipUnless(Condition.HasProgram('gdb', 'GDB need to be installed on system for this test to work'))
 Test.ContinueOnFail = True
 
 ts = Test.MakeATSProcess('ts')
@@ -49,6 +50,13 @@ ts.Disk.remap_config.AddLine(
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl --proxy http://127.0.0.1:{0} http://www.example.com -H "Proxy-Connection: Keep-Alive" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Streams.stderr = 'http_200.gold'
+tr.Processes.Default.Streams.stderr = 'gold/http_200.gold'
+
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'python3 {0} {1}'.format(Test.TestDirectory + '/start_gdb.py', Test.TestDirectory + '/gdb_cmd.txt')
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = 'gold/thread_100_10.gold'
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression('\[ET\_NET 100\]', 'there should be more than 100 threads')
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression('\[ACCEPT 10\:', 'there should be more than 10 threads')
