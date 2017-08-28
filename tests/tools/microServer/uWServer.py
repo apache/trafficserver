@@ -418,6 +418,12 @@ class MyHandler(BaseHTTPRequestHandler):
                 status_code = self.get_response_code(headers[0])
                 self.send_response(status_code)
 
+                if resp.getAction() != '' and 'delay' in resp.getAction():
+                    delay_action = resp.getAction()
+                    delay_time = int(delay_action.split(":")[1].strip())
+
+                    time.sleep(delay_time)
+
                 # set headers
                 for header in headers[1:]:  # skip first one b/c it's response code
                     if header == '':

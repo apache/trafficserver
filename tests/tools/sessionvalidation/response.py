@@ -29,12 +29,16 @@ class Response(object):
     def getBody(self):
         return self._body
 
+    def getAction(self):
+        return self._action
+
     def __repr__(self):
-        return "<Response: {{'timestamp': {0}, 'headers': {1}, 'body': {2}}}>".format(
-            self._timestamp, self._headers, self._body
+        return "<Response: {{'timestamp': {0}, 'headers': {1}, 'body': {2}, 'action': {3}}}>".format(
+            self._timestamp, self._headers, self._body, self._action
         )
 
-    def __init__(self, timestamp, headers, body):
+    def __init__(self, timestamp, headers, body, action):
         self._timestamp = timestamp
         self._headers = headers
         self._body = body
+        self._action = action
