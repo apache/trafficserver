@@ -30,5 +30,5 @@ proxy_nonssl_port = 8080
 nProcess = 4
 nThread = 4
 
-#colorize output
+# colorize output
 colorize = True

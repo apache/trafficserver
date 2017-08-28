@@ -65,7 +65,7 @@ def check_for_ats(hostname, port):
 # Hopefully this isn't an issue because multi-line headers are deprecated now
 
 
-def main(path, replay_type, Bverbose, pHost = Config.proxy_host, pNSSLport = Config.proxy_nonssl_port, pSSL = Config.proxy_ssl_port):
+def main(path, replay_type, Bverbose, pHost=Config.proxy_host, pNSSLport=Config.proxy_nonssl_port, pSSL=Config.proxy_ssl_port):
     global verbose
     verbose = Bverbose
     check_for_ats(pHost, pNSSLport)

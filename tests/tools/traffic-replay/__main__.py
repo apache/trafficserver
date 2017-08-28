@@ -28,15 +28,16 @@ if __name__ == '__main__':
     parser.add_argument("-type", action='store', dest='replay_type', help="Replay type: ssl/random/h2/nossl")
     parser.add_argument("-log_dir", type=str, help="directory of JSON replay files")
     parser.add_argument("-v", dest="verbose", help="verify response status code", action="store_true")
-    parser.add_argument("-host", help="proxy/host to send the requests to",default=Config.proxy_host)
-    parser.add_argument("-port",type=int,help=" The non secure port of ATS to send the request to",default=Config.proxy_nonssl_port)
-    parser.add_argument("-s_port",type=int,help="secure port",default=Config.proxy_ssl_port)
-    parser.add_argument("-ca_cert",help="Certificate to present",default=Config.ca_certs)
-    parser.add_argument("-colorize",type=str,help="specify whether to use colorize the output",default='True')
+    parser.add_argument("-host", help="proxy/host to send the requests to", default=Config.proxy_host)
+    parser.add_argument("-port", type=int, help=" The non secure port of ATS to send the request to",
+                        default=Config.proxy_nonssl_port)
+    parser.add_argument("-s_port", type=int, help="secure port", default=Config.proxy_ssl_port)
+    parser.add_argument("-ca_cert", help="Certificate to present", default=Config.ca_certs)
+    parser.add_argument("-colorize", type=str, help="specify whether to use colorize the output", default='True')
 
     args = parser.parse_args()
 
     # Let 'er loose
     #main(args.log_dir, args.hostname, int(args.port), args.threads, args.timing, args.verbose)
     Config.colorize = True if args.colorize == 'True' else False
-    mainProcess.main(args.log_dir, args.replay_type, args.verbose, pHost = args.host, pNSSLport = args.port, pSSL = args.s_port)
+    mainProcess.main(args.log_dir, args.replay_type, args.verbose, pHost=args.host, pNSSLport=args.port, pSSL=args.s_port)

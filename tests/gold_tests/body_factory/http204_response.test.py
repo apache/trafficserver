@@ -37,8 +37,8 @@ ts.Disk.records_config.update({
 })
 
 # Create a template body for a 204.
-body_factory_dir=ts.Variables.BODY_FACTORY_TEMPLATE_DIR
-ts.Disk.File(os.path.join(body_factory_dir, 'default', CUSTOM_TEMPLATE_204_HOST+'_default')).\
+body_factory_dir = ts.Variables.BODY_FACTORY_TEMPLATE_DIR
+ts.Disk.File(os.path.join(body_factory_dir, 'default', CUSTOM_TEMPLATE_204_HOST + '_default')).\
     WriteOn(
     """<HTML>
 <HEAD>
@@ -61,11 +61,11 @@ regex_remap_conf_file = "maps.reg"
 ts.Disk.remap_config.AddLine(
     'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host'
                     .format(DEFAULT_204_HOST, server.Variables.Port, regex_remap_conf_file)
-    )
+)
 ts.Disk.remap_config.AddLine(
     'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host @plugin=conf_remap.so @pparam=proxy.config.body_factory.template_base={0}'
                     .format(CUSTOM_TEMPLATE_204_HOST, server.Variables.Port, regex_remap_conf_file)
-    )
+)
 ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine(
     '//.*/ http://127.0.0.1:{0} @status=204'
     .format(server.Variables.Port)
