@@ -78,6 +78,7 @@ protected:
 class QUICPacketLongHeader : public QUICPacketHeader
 {
 public:
+  QUICPacketLongHeader() : QUICPacketHeader(){};
   QUICPacketLongHeader(const uint8_t *buf, size_t len) : QUICPacketHeader(buf, len) {}
   QUICPacketLongHeader(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number, QUICVersion version,
                        ats_unique_buf buf, size_t len);
@@ -97,6 +98,7 @@ public:
 class QUICPacketShortHeader : public QUICPacketHeader
 {
 public:
+  QUICPacketShortHeader() : QUICPacketHeader(){};
   QUICPacketShortHeader(const uint8_t *buf, size_t len) : QUICPacketHeader(buf, len) {}
   QUICPacketShortHeader(QUICPacketType type, QUICPacketNumber packet_number, ats_unique_buf buf, size_t len);
   QUICPacketShortHeader(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number, ats_unique_buf buf,
@@ -128,6 +130,7 @@ public:
   QUICPacket(QUICPacketType type, QUICPacketNumber packet_number, ats_unique_buf payload, size_t len, bool retransmittable);
   QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number, ats_unique_buf payload,
              size_t len, bool retransmittabl);
+  ~QUICPacket();
 
   void set_protected_payload(ats_unique_buf cipher_txt, size_t cipher_txt_len);
   QUICPacketType type() const;
@@ -168,6 +171,8 @@ private:
 using QUICPacketDeleterFunc = void (*)(QUICPacket *p);
 
 extern ClassAllocator<QUICPacket> quicPacketAllocator;
+extern ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator;
+extern ClassAllocator<QUICPacketShortHeader> quicPacketShortHeaderAllocator;
 
 class QUICPacketDeleter
 {

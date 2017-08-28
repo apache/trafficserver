@@ -25,6 +25,8 @@
 #include "QUICPacket.h"
 
 ClassAllocator<QUICPacket> quicPacketAllocator("quicPacketAllocator");
+ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator("quicPacketLongHeaderAllocator");
+ClassAllocator<QUICPacketShortHeader> quicPacketShortHeaderAllocator("quicPacketShortHeaderAllocator");
 
 static constexpr int OFFSET_CONNECTION_ID = 1;
 static constexpr int OFFSET_PACKET_NUMBER = 9;
@@ -43,9 +45,13 @@ QUICPacketHeader *
 QUICPacketHeader::load(const uint8_t *buf, size_t len)
 {
   if (QUICTypeUtil::hasLongHeader(buf)) {
-    return new QUICPacketLongHeader(buf, len);
+    QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
+    new (long_header) QUICPacketLongHeader(buf, len);
+    return long_header;
   } else {
-    return new QUICPacketShortHeader(buf, len);
+    QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
+    new (short_header) QUICPacketShortHeader(buf, len);
+    return short_header;
   }
 }
 
@@ -53,20 +59,26 @@ QUICPacketHeader *
 QUICPacketHeader::build(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number, QUICVersion version,
                         ats_unique_buf payload, size_t len)
 {
-  return new QUICPacketLongHeader(type, connection_id, packet_number, version, std::move(payload), len);
+  QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
+  new (long_header) QUICPacketLongHeader(type, connection_id, packet_number, version, std::move(payload), len);
+  return long_header;
 }
 
 QUICPacketHeader *
 QUICPacketHeader::build(QUICPacketType type, QUICPacketNumber packet_number, ats_unique_buf payload, size_t len)
 {
-  return new QUICPacketShortHeader(type, packet_number, std::move(payload), len);
+  QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
+  new (short_header) QUICPacketShortHeader(type, packet_number, std::move(payload), len);
+  return short_header;
 }
 
 QUICPacketHeader *
 QUICPacketHeader::build(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number, ats_unique_buf payload,
                         size_t len)
 {
-  return new QUICPacketShortHeader(type, connection_id, packet_number, std::move(payload), len);
+  QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
+  new (short_header) QUICPacketShortHeader(type, connection_id, packet_number, std::move(payload), len);
+  return short_header;
 }
 
 // QUICPacketLongHeader
@@ -454,6 +466,15 @@ QUICPacket::QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUIC
     this->_size += FNV1A_HASH_LEN;
   }
   this->_is_retransmittable = retransmittable;
+}
+
+QUICPacket::~QUICPacket()
+{
+  if (this->_header->has_version()) {
+    quicPacketLongHeaderAllocator.free(static_cast<QUICPacketLongHeader *>(this->_header));
+  } else {
+    quicPacketShortHeaderAllocator.free(static_cast<QUICPacketShortHeader *>(this->_header));
+  }
 }
 
 /**
