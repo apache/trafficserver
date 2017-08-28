@@ -60,7 +60,5 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl -i http://127.0.0.1:{0}/no_timeout'.format(ts.Variables.port)
-# tr.Processes.Default.StartBefore(ts)
-# tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.Streams.stdout = "gold/no_timeout.gold"
 tr.Processes.Default.ReturnCode = 0
