@@ -99,8 +99,8 @@ protected:
 class QUICTransportParametersInClientHello : public QUICTransportParameters
 {
 public:
-  QUICTransportParametersInClientHello(QUICVersion negotiated_version, QUICVersion initial_version) : QUICTransportParameters(), _negotiated_version(negotiated_version), _initial_version(initial_version)
-{};
+  QUICTransportParametersInClientHello(QUICVersion negotiated_version, QUICVersion initial_version)
+    : QUICTransportParameters(), _negotiated_version(negotiated_version), _initial_version(initial_version){};
   QUICTransportParametersInClientHello(const uint8_t *buf, size_t len);
   QUICVersion negotiated_version() const;
   QUICVersion initial_version() const;

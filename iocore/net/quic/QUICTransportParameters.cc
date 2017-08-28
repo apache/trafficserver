@@ -162,11 +162,12 @@ QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
 // QUICTransportParametersInClientHello
 //
 
-QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const uint8_t *buf, size_t len) : QUICTransportParameters(buf, len)
+QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const uint8_t *buf, size_t len)
+  : QUICTransportParameters(buf, len)
 {
   // Print all parameters
   const uint8_t *p = this->_buf.get() + this->_parameters_offset();
-  uint16_t n = (p[0] << 8) + p[1];
+  uint16_t n       = (p[0] << 8) + p[1];
   p += 2;
   while (n > 0) {
     uint16_t _id = (p[0] << 8) + p[1];
@@ -178,7 +179,8 @@ QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const
     if (_value_len == 0) {
       Debug("quic_handsahke", "%s: (no value)", QUICDebugNames::transport_parameter_id(_id));
     } else if (_value_len <= 8) {
-      Debug("quic_handsahke", "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(_id), QUICTypeUtil::read_nbytes_as_uint(p, _value_len), QUICTypeUtil::read_nbytes_as_uint(p, _value_len));
+      Debug("quic_handsahke", "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(_id),
+            QUICTypeUtil::read_nbytes_as_uint(p, _value_len), QUICTypeUtil::read_nbytes_as_uint(p, _value_len));
     } else {
       Debug("quic_handsahke", "%s: (long data)", QUICDebugNames::transport_parameter_id(_id));
     }

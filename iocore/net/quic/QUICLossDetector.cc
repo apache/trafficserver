@@ -137,7 +137,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
 }
 
 void
-QUICLossDetector::on_packet_sent(std::unique_ptr<const QUICPacket> packet)
+QUICLossDetector::on_packet_sent(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
   bool is_handshake   = false;
   QUICPacketType type = packet->type();
@@ -154,7 +154,7 @@ QUICLossDetector::on_packet_sent(std::unique_ptr<const QUICPacket> packet)
 
 void
 QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool is_retransmittable, bool is_handshake, size_t sent_bytes,
-                                  std::unique_ptr<const QUICPacket> packet)
+                                  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   this->_largest_sent_packet      = packet_number;

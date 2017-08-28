@@ -121,6 +121,7 @@ private:
 class QUICPacket
 {
 public:
+  QUICPacket(){};
   QUICPacket(IOBufferBlock *block);
   QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number, QUICVersion version,
              ats_unique_buf payload, size_t len, bool retransmittable);
@@ -164,17 +165,40 @@ private:
   QUICPacketNumber _current = 0;
 };
 
+using QUICPacketDeleterFunc = void (*)(QUICPacket *p);
+
+extern ClassAllocator<QUICPacket> quicPacketAllocator;
+
+class QUICPacketDeleter
+{
+public:
+  // TODO Probably these methods should call destructor
+  static void
+  delete_null_packet(QUICPacket *packet)
+  {
+  }
+
+  static void
+  delete_packet(QUICPacket *packet)
+  {
+    quicPacketAllocator.free(packet);
+  }
+};
+
 class QUICPacketFactory
 {
 public:
-  static QUICPacket *create(IOBufferBlock *block);
-  std::unique_ptr<QUICPacket> create_version_negotiation_packet(const QUICPacket *packet_sent_by_client);
-  std::unique_ptr<QUICPacket> create_server_cleartext_packet(QUICConnectionId connection_id, ats_unique_buf payload, size_t len,
-                                                             bool retransmittable);
-  std::unique_ptr<QUICPacket> create_server_protected_packet(QUICConnectionId connection_id, ats_unique_buf payload, size_t len,
-                                                             bool retransmittable);
-  std::unique_ptr<QUICPacket> create_client_initial_packet(QUICConnectionId connection_id, QUICVersion version,
-                                                           ats_unique_buf payload, size_t len);
+  static std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create(IOBufferBlock *block);
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create_version_negotiation_packet(const QUICPacket *packet_sent_by_client);
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create_server_cleartext_packet(QUICConnectionId connection_id,
+                                                                                    ats_unique_buf payload, size_t len,
+                                                                                    bool retransmittable);
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create_server_protected_packet(QUICConnectionId connection_id,
+                                                                                    ats_unique_buf payload, size_t len,
+                                                                                    bool retransmittable);
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create_client_initial_packet(QUICConnectionId connection_id,
+                                                                                  QUICVersion version, ats_unique_buf payload,
+                                                                                  size_t len);
   void set_version(QUICVersion negotiated_version);
   void set_crypto_module(QUICCrypto *crypto);
 

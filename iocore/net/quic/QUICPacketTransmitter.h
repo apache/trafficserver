@@ -33,7 +33,7 @@ public:
    *
    * This sends QUIC_PACKET_WRITE_READY event.
    */
-  virtual void transmit_packet(std::unique_ptr<const QUICPacket> packet) = 0;
+  virtual void transmit_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet) = 0;
 
   /*
    * Enqueue a packet for retransmission

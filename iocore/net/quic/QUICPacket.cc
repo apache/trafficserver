@@ -24,6 +24,8 @@
 #include <ts/ink_assert.h>
 #include "QUICPacket.h"
 
+ClassAllocator<QUICPacket> quicPacketAllocator("quicPacketAllocator");
+
 static constexpr int OFFSET_CONNECTION_ID = 1;
 static constexpr int OFFSET_PACKET_NUMBER = 9;
 static constexpr int OFFSET_VERSION       = 13;
@@ -571,14 +573,15 @@ QUICPacket::set_protected_payload(ats_unique_buf cipher_txt, size_t cipher_txt_l
   this->_protected_payload_size = cipher_txt_len;
 }
 
-QUICPacket *
+std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
 QUICPacketFactory::create(IOBufferBlock *block)
 {
-  // TODO: Use custom allocator
-  return new QUICPacket(block);
+  QUICPacket *packet = quicPacketAllocator.alloc();
+  new (packet) QUICPacket(block);
+  return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(packet, &QUICPacketDeleter::delete_packet);
 }
 
-std::unique_ptr<QUICPacket>
+std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
 QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_sent_by_client)
 {
   size_t len = sizeof(QUICVersion) * countof(QUIC_SUPPORTED_VERSIONS);
@@ -591,31 +594,32 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
     p += n;
   }
 
-  // TODO: Use custom allocator
-  return std::unique_ptr<QUICPacket>(new QUICPacket(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(),
-                                                    packet_sent_by_client->packet_number(), packet_sent_by_client->version(),
-                                                    std::move(versions), len, false));
+  QUICPacket *packet = quicPacketAllocator.alloc();
+  new (packet)
+    QUICPacket(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(), packet_sent_by_client->packet_number(),
+               packet_sent_by_client->version(), std::move(versions), len, false);
+  return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(packet, QUICPacketDeleter::delete_packet);
 }
 
-std::unique_ptr<QUICPacket>
+std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
 QUICPacketFactory::create_server_cleartext_packet(QUICConnectionId connection_id, ats_unique_buf payload, size_t len,
                                                   bool retransmittable)
 {
-  // TODO: Use custom allocator
-  return std::unique_ptr<QUICPacket>(new QUICPacket(QUICPacketType::SERVER_CLEARTEXT, connection_id,
-                                                    this->_packet_number_generator.next(), this->_version, std::move(payload), len,
-                                                    retransmittable));
+  QUICPacket *p = quicPacketAllocator.alloc();
+  new (p) QUICPacket(QUICPacketType::SERVER_CLEARTEXT, connection_id, this->_packet_number_generator.next(), this->_version,
+                     std::move(payload), len, retransmittable);
+  return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(p, &QUICPacketDeleter::delete_packet);
 }
 
-std::unique_ptr<QUICPacket>
+std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
 QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id, ats_unique_buf payload, size_t len,
                                                   bool retransmittable)
 {
   // TODO Key phase should be picked up from QUICCrypto, probably
-  // TODO Use class allocator
-  auto packet =
-    std::unique_ptr<QUICPacket>(new QUICPacket(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, connection_id,
-                                               this->_packet_number_generator.next(), std::move(payload), len, retransmittable));
+  QUICPacket *p = quicPacketAllocator.alloc();
+  new (p) QUICPacket(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, connection_id, this->_packet_number_generator.next(),
+                     std::move(payload), len, retransmittable);
+  auto packet = std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(p, &QUICPacketDeleter::delete_packet);
 
   // TODO: use pmtu of UnixNetVConnection
   size_t max_cipher_txt_len = 2048;
@@ -635,16 +639,18 @@ QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id
     return packet;
   } else {
     Debug("quic_packet_factory", "CRYPTOGRAPHIC Error");
-    return nullptr;
+    return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(nullptr, &QUICPacketDeleter::delete_null_packet);
   }
 }
 
-std::unique_ptr<QUICPacket>
+std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
 QUICPacketFactory::create_client_initial_packet(QUICConnectionId connection_id, QUICVersion version, ats_unique_buf payload,
                                                 size_t len)
 {
-  return std::unique_ptr<QUICPacket>(new QUICPacket(QUICPacketType::CLIENT_INITIAL, connection_id,
-                                                    this->_packet_number_generator.next(), version, std::move(payload), len, true));
+  QUICPacket *packet = quicPacketAllocator.alloc();
+  new (packet) QUICPacket(QUICPacketType::CLIENT_INITIAL, connection_id, this->_packet_number_generator.next(), version,
+                          std::move(payload), len, true);
+  return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(packet, &QUICPacketDeleter::delete_packet);
 }
 
 void

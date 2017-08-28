@@ -96,8 +96,8 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
 {
   IOBufferBlock *block = udpPacket->getIOBlockChain();
 
-  std::unique_ptr<QUICPacket> qPkt = std::unique_ptr<QUICPacket>(QUICPacketFactory::create(block));
-  QUICNetVConnection *vc           = this->_connections.get(qPkt->connection_id());
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> qPkt = QUICPacketFactory::create(block);
+  QUICNetVConnection *vc = this->_connections.get(qPkt->connection_id());
 
   if (!vc) {
     // Unknown Connection ID

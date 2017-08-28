@@ -184,7 +184,7 @@ QUICNetVConnection::maximum_stream_frame_data_size()
 }
 
 void
-QUICNetVConnection::transmit_packet(std::unique_ptr<const QUICPacket> packet)
+QUICNetVConnection::transmit_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
   // TODO Remove const_cast
   this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
@@ -223,7 +223,7 @@ QUICNetVConnection::get_transmitter_mutex()
 }
 
 void
-QUICNetVConnection::push_packet(std::unique_ptr<QUICPacket const> packet)
+QUICNetVConnection::push_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
   DebugQUICCon("Type=%s Size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
   this->_packet_recv_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
@@ -306,7 +306,8 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
-    std::unique_ptr<const QUICPacket> p = std::unique_ptr<const QUICPacket>(this->_packet_recv_queue.dequeue());
+    std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> p =
+      std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(this->_packet_recv_queue.dequeue(), &QUICPacketDeleter::delete_packet);
     net_activity(this, this_ethread());
 
     switch (p->type()) {
@@ -489,7 +490,7 @@ QUICNetVConnection::next_protocol_set()
 }
 
 QUICError
-QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_ptr<const QUICPacket> packet)
+QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
   if (packet->size() < this->minimum_quic_packet_size()) {
     DebugQUICCon("%" PRId32 ", %" PRId32, packet->size(), this->minimum_quic_packet_size());
@@ -512,7 +513,7 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
 }
 
 QUICError
-QUICNetVConnection::_state_handshake_process_client_cleartext_packet(std::unique_ptr<const QUICPacket> packet)
+QUICNetVConnection::_state_handshake_process_client_cleartext_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
   QUICError error = QUICError(QUICErrorClass::NONE);
 
@@ -527,7 +528,7 @@ QUICNetVConnection::_state_handshake_process_client_cleartext_packet(std::unique
 }
 
 QUICError
-QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(std::unique_ptr<const QUICPacket> packet)
+QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
   // TODO: Decrypt the packet
   // decrypt(payload, p);
@@ -536,7 +537,7 @@ QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(std::uniq
 }
 
 QUICError
-QUICNetVConnection::_state_connection_established_process_packet(std::unique_ptr<const QUICPacket> packet)
+QUICNetVConnection::_state_connection_established_process_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
   // TODO: fix size
   size_t max_plain_txt_len = 2048;
@@ -560,7 +561,8 @@ QUICError
 QUICNetVConnection::_state_common_receive_packet()
 {
   QUICError error;
-  std::unique_ptr<const QUICPacket> p = std::unique_ptr<const QUICPacket>(this->_packet_recv_queue.dequeue());
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> p =
+    std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(this->_packet_recv_queue.dequeue(), &QUICPacketDeleter::delete_packet);
   net_activity(this, this_ethread());
 
   switch (p->type()) {
@@ -580,10 +582,11 @@ QUICNetVConnection::_state_common_send_packet()
 {
   this->_packetize_frames();
 
-  const QUICPacket *packet;
+  QUICPacket *packet;
   while ((packet = this->_packet_send_queue.dequeue()) != nullptr) {
     this->_packet_handler->send_packet(*packet, this);
-    this->_loss_detector->on_packet_sent(std::unique_ptr<const QUICPacket>(packet));
+    this->_loss_detector->on_packet_sent(
+      std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(packet, &QUICPacketDeleter::delete_packet));
   }
 
   net_activity(this, this_ethread());
@@ -660,10 +663,10 @@ QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPac
   return error;
 }
 
-std::unique_ptr<QUICPacket>
+std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
 QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmittable, QUICPacketType type)
 {
-  std::unique_ptr<QUICPacket> packet;
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet(nullptr, &QUICPacketDeleter::delete_null_packet);
   DebugQUICCon("retransmittable %u", retransmittable);
 
   switch (type) {
