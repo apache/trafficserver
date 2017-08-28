@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os 
+import os
 Test.Summary = '''
 Test basic redirection
 '''
@@ -25,7 +25,7 @@ Test basic redirection
 MAX_REDIRECT = 99
 
 Test.SkipUnless(
-	Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
+    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
 )
 
 Test.ContinueOnFail = True
@@ -35,22 +35,23 @@ redirect_serv = Test.MakeOriginServer("re_server")
 dest_serv = Test.MakeOriginServer("dest_server")
 
 ts.Disk.records_config.update({
-	'proxy.config.http.redirection_enabled': 1,
-	'proxy.config.http.number_of_redirections': MAX_REDIRECT,
-	'proxy.config.http.cache.http': 0#,
-	# 'proxy.config.diags.debug.enabled': 1
+    'proxy.config.http.redirection_enabled': 1,
+    'proxy.config.http.number_of_redirections': MAX_REDIRECT,
+    'proxy.config.http.cache.http': 0  # ,
+    # 'proxy.config.diags.debug.enabled': 1
 })
 
-redirect_request_header={"headers": "GET /redirect HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "5678", "body": ""}
-redirect_response_header={"headers": "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{0}/redirectDest\r\n\r\n".format(dest_serv.Variables.Port), "timestamp": "5678", "body": ""}
-dest_request_header={"headers": "GET /redirectDest HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "11", "body": ""}
-dest_response_header={"headers": "HTTP/1.1 204 No Content\r\n\r\n", "timestamp": "22", "body": ""}
+redirect_request_header = {"headers": "GET /redirect HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "5678", "body": ""}
+redirect_response_header = {"headers": "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{0}/redirectDest\r\n\r\n".format(
+    dest_serv.Variables.Port), "timestamp": "5678", "body": ""}
+dest_request_header = {"headers": "GET /redirectDest HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "11", "body": ""}
+dest_response_header = {"headers": "HTTP/1.1 204 No Content\r\n\r\n", "timestamp": "22", "body": ""}
 
 redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_response_header)
 dest_serv.addResponse("sessionfile.log", dest_request_header, dest_response_header)
 
 ts.Disk.remap_config.AddLine(
-	'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, redirect_serv.Variables.Port)
+    'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, redirect_serv.Variables.Port)
 )
 
 tr = Test.AddTestRun()
@@ -60,4 +61,3 @@ tr.Processes.Default.StartBefore(redirect_serv)
 tr.Processes.Default.StartBefore(dest_serv)
 tr.Processes.Default.Streams.stdout = "gold/redirect.gold"
 tr.Processes.Default.ReturnCode = 0
-

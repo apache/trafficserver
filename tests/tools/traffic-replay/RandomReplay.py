@@ -38,6 +38,7 @@ import itertools
 import random
 bSTOP = False
 
+
 def session_replay(input, proxy, result_queue):
     global bSTOP
     ''' Replay all transactions in session 
@@ -55,13 +56,13 @@ def session_replay(input, proxy, result_queue):
             with requests.Session() as request_session:
                 request_session.proxies = proxy
                 for txn in session.getTransactionIter():
-                    type = random.randint(1,1000)
+                    type = random.randint(1, 1000)
                     try:
-                        if type%3 == 0:
+                        if type % 3 == 0:
                             NonSSL.txn_replay(session._filename, txn, proxy, result_queue, request_session)
-                        elif type%3 == 1:
+                        elif type % 3 == 1:
                             SSLReplay.txn_replay(session._filename, txn, proxy, result_queue, request_session)
-                        elif type%3 == 2:
+                        elif type % 3 == 2:
                             h2Replay.txn_replay(session._filename, txn, proxy, result_queue, request_session)
                     except:
                         e = sys.exc_info()
@@ -71,10 +72,11 @@ def session_replay(input, proxy, result_queue):
         input.put('STOP')
         break
 
+
 def client_replay(input, proxy, result_queue, nThread):
     Threads = []
     for i in range(nThread):
-    
+
         t2 = Thread(target=SSLReplay.session_replay, args=[input, proxy, result_queue])
         t = Thread(target=NonSSL.session_replay, args=[input, proxy, result_queue])
         t1 = Thread(target=h2Replay.session_replay, args=[input, proxy, result_queue])
@@ -84,7 +86,6 @@ def client_replay(input, proxy, result_queue, nThread):
         Threads.append(t)
         Threads.append(t2)
         Threads.append(t1)
-
 
     for t1 in Threads:
         t1.join()

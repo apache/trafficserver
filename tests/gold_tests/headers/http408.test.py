@@ -40,11 +40,11 @@ server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.Disk.remap_config.AddLine(
     'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-    )
+)
 
 ts.Disk.records_config.update({
-    'proxy.config.http.transaction_no_activity_timeout_in' : 2,
-    })
+    'proxy.config.http.transaction_no_activity_timeout_in': 2,
+})
 
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_408_client.py'))
 
