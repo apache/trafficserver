@@ -108,6 +108,7 @@ struct EventIO {
   }
 };
 
+#include "P_Net.h"
 #include "P_UnixNetProcessor.h"
 #include "P_UnixNetVConnection.h"
 #include "P_NetAccept.h"
@@ -172,9 +173,12 @@ struct PollCont : public Continuation {
 // A NetHandler handles the Network IO operations.  It maintains
 // lists of operations at multiples of it's periodicity.
 //
-class NetHandler : public Continuation
+class NetHandler : public Continuation, public EThread::LoopTailHandler
 {
 public:
+  // @a thread and @a trigger_event are redundant - you can get the former from the latter.
+  // If we don't get rid of @a trigger_event we should remove @a thread.
+  EThread *thread;
   Event *trigger_event;
   QueM(UnixNetVConnection, NetState, read, ready_link) read_ready_list;
   QueM(UnixNetVConnection, NetState, write, ready_link) write_ready_list;
@@ -199,7 +203,7 @@ public:
 
   int startNetEvent(int event, Event *data);
   int mainNetEvent(int event, Event *data);
-  int mainNetEventExt(int event, Event *data);
+  int waitForActivity(ink_hrtime timeout);
   void process_enabled_list(NetHandler *);
   void manage_keep_alive_queue();
   bool manage_active_queue(bool ignore_queue_size);
@@ -208,6 +212,9 @@ public:
   bool add_to_active_queue(UnixNetVConnection *vc);
   void remove_from_active_queue(UnixNetVConnection *vc);
   void configure_per_thread();
+
+  // Signal the epoll_wait to terminate.
+  void signalActivity();
 
   NetHandler();
 

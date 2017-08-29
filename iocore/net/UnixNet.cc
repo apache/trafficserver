@@ -205,31 +205,18 @@ net_signal_hook_callback(EThread *thread)
 #endif
 }
 
-static void
-net_signal_hook_function(EThread *thread)
-{
-#if HAVE_EVENTFD
-  uint64_t counter = 1;
-  ATS_UNUSED_RETURN(write(thread->evfd, &counter, sizeof(uint64_t)));
-#elif TS_USE_PORT
-  PollDescriptor *pd = get_PollDescriptor(thread);
-  ATS_UNUSED_RETURN(port_send(pd->port_fd, 0, thread->ep));
-#else
-  char dummy = 1;
-  ATS_UNUSED_RETURN(write(thread->evpipe[1], &dummy, 1));
-#endif
-}
-
 void
 initialize_thread_for_net(EThread *thread)
 {
-  new ((ink_dummy_for_new *)get_NetHandler(thread)) NetHandler();
-  new ((ink_dummy_for_new *)get_PollCont(thread)) PollCont(thread->mutex, get_NetHandler(thread));
-  get_NetHandler(thread)->mutex = new_ProxyMutex();
-  PollCont *pc                  = get_PollCont(thread);
-  PollDescriptor *pd            = pc->pollDescriptor;
+  NetHandler *nh = get_NetHandler(thread);
 
-  thread->schedule_imm(get_NetHandler(thread));
+  new ((ink_dummy_for_new *)nh) NetHandler();
+  new ((ink_dummy_for_new *)get_PollCont(thread)) PollCont(thread->mutex, nh);
+  nh->mutex  = new_ProxyMutex();
+  nh->thread = thread;
+
+  PollCont *pc       = get_PollCont(thread);
+  PollDescriptor *pd = pc->pollDescriptor;
 
 #ifndef INACTIVITY_TIMEOUT
   InactivityCop *inactivityCop = new InactivityCop(get_NetHandler(thread)->mutex);
@@ -239,9 +226,9 @@ initialize_thread_for_net(EThread *thread)
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
 #endif
 
-  thread->signal_hook = net_signal_hook_function;
-  thread->ep          = (EventIO *)ats_malloc(sizeof(EventIO));
-  thread->ep->type    = EVENTIO_ASYNC_SIGNAL;
+  thread->set_tail_handler(nh);
+  thread->ep       = (EventIO *)ats_malloc(sizeof(EventIO));
+  thread->ep->type = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
   thread->ep->start(pd, thread->evfd, nullptr, EVENTIO_READ);
 #else
@@ -343,9 +330,7 @@ NetHandler::startNetEvent(int event, Event *e)
   configure_per_thread();
 
   (void)event;
-  SET_HANDLER((NetContHandler)&NetHandler::mainNetEvent);
-  e->schedule_every(-HRTIME_MSECONDS(net_event_period));
-  trigger_event = e;
+
   return EVENT_CONT;
 }
 
@@ -387,18 +372,29 @@ NetHandler::mainNetEvent(int event, Event *e)
   ink_assert(trigger_event == e && (event == EVENT_INTERVAL || event == EVENT_POLL));
   (void)event;
   (void)e;
+  return this->waitForActivity(-1);
+}
+
+// Perform all I/O operations.
+int
+NetHandler::waitForActivity(ink_hrtime timeout)
+{
   EventIO *epd = nullptr;
   int poll_timeout;
 
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
+  SCOPED_MUTEX_LOCK(lock, mutex, this->thread);
 
   process_enabled_list(this);
   if (likely(!read_ready_list.empty() || !write_ready_list.empty() || !read_enable_list.empty() || !write_enable_list.empty()))
     poll_timeout = 0; // poll immediately returns -- we have triggered stuff to process right now
+  else if (timeout >= 0)
+    poll_timeout = ink_hrtime_to_msec(timeout);
   else
     poll_timeout = net_config_poll_timeout;
 
-  PollDescriptor *pd     = get_PollDescriptor(trigger_event->ethread);
+  // Get & Process polling result
+  PollDescriptor *pd     = get_PollDescriptor(this->thread);
   UnixNetVConnection *vc = nullptr;
 #if TS_USE_EPOLL
   pd->result = epoll_wait(pd->epoll_fd, pd->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
@@ -481,7 +477,7 @@ NetHandler::mainNetEvent(int event, Event *e)
 #endif
       }
     } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
-      net_signal_hook_callback(trigger_event->ethread);
+      net_signal_hook_callback(this->thread);
     }
     ev_next_event(pd, x);
   }
@@ -494,9 +490,9 @@ NetHandler::mainNetEvent(int event, Event *e)
     // Initialize the thread-local continuation flags
     set_cont_flags(vc->control_flags);
     if (vc->closed)
-      close_UnixNetVConnection(vc, trigger_event->ethread);
+      close_UnixNetVConnection(vc, this->thread);
     else if (vc->read.enabled && vc->read.triggered)
-      vc->net_read_io(this, trigger_event->ethread);
+      vc->net_read_io(this, this->thread);
     else if (!vc->read.enabled) {
       read_ready_list.remove(vc);
 #if defined(solaris)
@@ -511,9 +507,9 @@ NetHandler::mainNetEvent(int event, Event *e)
   while ((vc = write_ready_list.dequeue())) {
     set_cont_flags(vc->control_flags);
     if (vc->closed)
-      close_UnixNetVConnection(vc, trigger_event->ethread);
+      close_UnixNetVConnection(vc, this->thread);
     else if (vc->write.enabled && vc->write.triggered)
-      write_to_net(this, vc, trigger_event->ethread);
+      write_to_net(this, vc, this->thread);
     else if (!vc->write.enabled) {
       write_ready_list.remove(vc);
 #if defined(solaris)
@@ -529,24 +525,39 @@ NetHandler::mainNetEvent(int event, Event *e)
   while ((vc = read_ready_list.dequeue())) {
     diags->set_override(vc->control.debug_override);
     if (vc->closed)
-      close_UnixNetVConnection(vc, trigger_event->ethread);
+      close_UnixNetVConnection(vc, this->thread);
     else if (vc->read.enabled && vc->read.triggered)
-      vc->net_read_io(this, trigger_event->ethread);
+      vc->net_read_io(this, this->thread);
     else if (!vc->read.enabled)
       vc->ep.modify(-EVENTIO_READ);
   }
   while ((vc = write_ready_list.dequeue())) {
     diags->set_override(vc->control.debug_override);
     if (vc->closed)
-      close_UnixNetVConnection(vc, trigger_event->ethread);
+      close_UnixNetVConnection(vc, this->thread);
     else if (vc->write.enabled && vc->write.triggered)
-      write_to_net(this, vc, trigger_event->ethread);
+      write_to_net(this, vc, this->thread);
     else if (!vc->write.enabled)
       vc->ep.modify(-EVENTIO_WRITE);
   }
 #endif /* !USE_EDGE_TRIGGER */
 
   return EVENT_CONT;
+}
+
+void
+NetHandler::signalActivity()
+{
+#if HAVE_EVENTFD
+  uint64_t counter = 1;
+  ATS_UNUSED_RETURN(write(thread->evfd, &counter, sizeof(uint64_t)));
+#elif TS_USE_PORT
+  PollDescriptor *pd = get_PollDescriptor(thread);
+  ATS_UNUSED_RETURN(port_send(pd->port_fd, 0, thread->ep));
+#else
+  char dummy = 1;
+  ATS_UNUSED_RETURN(write(thread->evpipe[1], &dummy, 1));
+#endif
 }
 
 bool
