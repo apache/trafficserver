@@ -847,40 +847,8 @@ SSLNetVConnection::do_io_close(int lerrno)
 }
 
 void
-SSLNetVConnection::free(EThread *t)
+SSLNetVConnection::clear()
 {
-  got_remote_addr = false;
-  got_local_addr  = false;
-  read.vio.mutex.clear();
-  write.vio.mutex.clear();
-  this->mutex.clear();
-  action_.mutex.clear();
-  this->ep.stop();
-  this->con.close();
-  flags = 0;
-
-  SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
-
-  if (nh) {
-    nh->read_ready_list.remove(this);
-    nh->write_ready_list.remove(this);
-    nh = nullptr;
-  }
-
-  read.triggered      = 0;
-  write.triggered     = 0;
-  read.enabled        = 0;
-  write.enabled       = 0;
-  read.vio._cont      = nullptr;
-  write.vio._cont     = nullptr;
-  read.vio.vc_server  = nullptr;
-  write.vio.vc_server = nullptr;
-
-  closed = 0;
-  options.reset();
-
-  ink_assert(con.fd == NO_FD);
-
   if (ssl != nullptr) {
     SSL_free(ssl);
     ssl = nullptr;
@@ -900,6 +868,21 @@ SSLNetVConnection::free(EThread *t)
   sslHandShakeComplete = false;
   free_handshake_buffers();
   sslTrace = false;
+
+  super::clear();
+}
+void
+SSLNetVConnection::free(EThread *t)
+{
+  ink_release_assert(t == this_ethread());
+
+  // close socket fd
+  con.close();
+
+  clear();
+  SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
+  ink_assert(con.fd == NO_FD);
+  ink_assert(t == this_ethread());
 
   if (from_accept_thread) {
     sslNetVCAllocator.free(this);

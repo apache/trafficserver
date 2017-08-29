@@ -90,6 +90,7 @@ class SSLNetVConnection : public UnixNetVConnection
 
 public:
   int sslStartHandShake(int event, int &err) override;
+  void clear() override;
   void free(EThread *t) override;
 
   virtual void

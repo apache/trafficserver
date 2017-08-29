@@ -206,6 +206,24 @@ public:
   void remove_from_active_queue(UnixNetVConnection *vc);
   void configure_per_thread();
 
+  /**
+    Start to handle read & write event on a UnixNetVConnection.
+    Initial the socket fd of netvc for polling system.
+    Only be called when holding the mutex of this NetHandler.
+
+    @param netvc UnixNetVConnection to be managed by this NetHandler.
+    @return 0 on success, -ERRNO on failure.
+   */
+  int startIO(UnixNetVConnection *netvc);
+  /**
+    Stop to handle read & write event on a UnixNetVConnection.
+    Remove the socket fd of netvc from polling system.
+    Only be called when holding the mutex of this NetHandler.
+
+    @param netvc UnixNetVConnection to be released.
+   */
+  void stopIO(UnixNetVConnection *netvc);
+
   NetHandler();
 
 private:
@@ -639,4 +657,48 @@ EventIO::stop()
   return 0;
 }
 
+TS_INLINE int
+NetHandler::startIO(UnixNetVConnection *netvc)
+{
+  ink_assert(this->mutex->thread_holding == this_ethread());
+  ink_assert(netvc->thread == this_ethread());
+  int res = 0;
+
+  PollDescriptor *pd = get_PollDescriptor(trigger_event->ethread);
+  if (netvc->ep.start(pd, netvc, EVENTIO_READ | EVENTIO_WRITE) < 0) {
+    res = errno;
+    // EEXIST should be ok, though it should have been cleared before we got back here
+    if (errno != EEXIST) {
+      Debug("iocore_net", "NetHandler::startIO : failed on EventIO::start, errno = [%d](%s)", errno, strerror(errno));
+      return -res;
+    }
+  }
+
+  if (netvc->read.triggered == 1) {
+    read_ready_list.enqueue(netvc);
+  }
+  netvc->nh = this;
+  return res;
+}
+
+TS_INLINE void
+NetHandler::stopIO(UnixNetVConnection *netvc)
+{
+  ink_release_assert(netvc->nh == this);
+
+  netvc->ep.stop();
+
+  read_ready_list.remove(netvc);
+  write_ready_list.remove(netvc);
+  if (netvc->read.in_enabled_list) {
+    read_enable_list.remove(netvc);
+    netvc->read.in_enabled_list = 0;
+  }
+  if (netvc->write.in_enabled_list) {
+    write_enable_list.remove(netvc);
+    netvc->write.in_enabled_list = 0;
+  }
+
+  netvc->nh = nullptr;
+}
 #endif
