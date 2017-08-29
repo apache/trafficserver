@@ -178,4 +178,10 @@ EThread::free_event(Event *e)
   EVENT_FREE(e, eventAllocator, this);
 }
 
+TS_INLINE void
+EThread::set_tail_handler(LoopTailHandler *handler)
+{
+  ink_atomic_swap(&tail_cb, handler);
+}
+
 #endif /*_EThread_h_*/
