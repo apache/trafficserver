@@ -2473,8 +2473,9 @@ ClusterHandler::mainClusterEvent(int event, Event *e)
     // Process deferred open_local requests
     /////////////////////////////////////////
     if (!on_stolen_thread) {
-      if (do_open_local_requests())
-        thread->signal_hook(thread);
+      if (do_open_local_requests()) {
+        thread->tail_cb->signalActivity();
+      }
     }
   }
 

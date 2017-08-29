@@ -37,13 +37,6 @@
 const int DELAY_FOR_RETRY = HRTIME_MSECONDS(10);
 
 TS_INLINE Event *
-EThread::schedule_spawn(Continuation *cont)
-{
-  Event *e = EVENT_ALLOC(eventAllocator, this);
-  return schedule(e->init(cont, 0, 0));
-}
-
-TS_INLINE Event *
 EThread::schedule_imm(Continuation *cont, int callback_event, void *cookie)
 {
   Event *e          = ::eventAllocator.alloc();
@@ -156,6 +149,21 @@ EThread::schedule_local(Event *e)
   return e;
 }
 
+TS_INLINE Event *
+EThread::schedule_spawn(Continuation *c, int ev, void *cookie)
+{
+  ink_assert(this != this_ethread()); // really broken to call this from the same thread.
+  if (start_event)
+    free_event(start_event);
+  start_event          = EVENT_ALLOC(eventAllocator, this);
+  start_event->ethread = this;
+  start_event->mutex   = this->mutex;
+  start_event->init(c);
+  start_event->callback_event = ev;
+  start_event->cookie         = cookie;
+  return start_event;
+}
+
 TS_INLINE EThread *
 this_ethread()
 {
@@ -168,6 +176,12 @@ EThread::free_event(Event *e)
   ink_assert(!e->in_the_priority_queue && !e->in_the_prot_queue);
   e->mutex = nullptr;
   EVENT_FREE(e, eventAllocator, this);
+}
+
+TS_INLINE void
+EThread::set_tail_handler(LoopTailHandler *handler)
+{
+  ink_atomic_swap(&tail_cb, handler);
 }
 
 #endif /*_EThread_h_*/
