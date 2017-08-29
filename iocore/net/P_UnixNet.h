@@ -220,9 +220,12 @@ struct PollCont : public Continuation {
 // A NetHandler handles the Network IO operations.  It maintains
 // lists of operations at multiples of it's periodicity.
 //
-class NetHandler : public Continuation
+class NetHandler : public Continuation, public EThread::LoopTailHandler
 {
 public:
+  // @a thread and @a trigger_event are redundant - you can get the former from the latter.
+  // If we don't get rid of @a trigger_event we should remove @a thread.
+  EThread *thread;
   Event *trigger_event;
   QueM(UnixNetVConnection, NetState, read, ready_link) read_ready_list;
   QueM(UnixNetVConnection, NetState, write, ready_link) write_ready_list;
@@ -247,7 +250,7 @@ public:
 
   int startNetEvent(int event, Event *data);
   int mainNetEvent(int event, Event *data);
-  int mainNetEventExt(int event, Event *data);
+  int waitForActivity(ink_hrtime timeout);
   void process_enabled_list();
   void process_ready_list();
   void manage_keep_alive_queue();
@@ -295,6 +298,9 @@ public:
     @param netvc UnixNetVConnection to be released.
    */
   void stopCop(UnixNetVConnection *netvc);
+
+  // Signal the epoll_wait to terminate.
+  void signalActivity();
 
   /**
     Release a netvc and free it.
@@ -742,7 +748,7 @@ NetHandler::startIO(UnixNetVConnection *netvc)
   ink_assert(netvc->thread == this_ethread());
   int res = 0;
 
-  PollDescriptor *pd = get_PollDescriptor(trigger_event->ethread);
+  PollDescriptor *pd = get_PollDescriptor(this->thread);
   if (netvc->ep.start(pd, netvc, EVENTIO_READ | EVENTIO_WRITE) < 0) {
     res = errno;
     // EEXIST should be ok, though it should have been cleared before we got back here
