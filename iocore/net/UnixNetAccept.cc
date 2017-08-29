@@ -92,6 +92,12 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->action_     = *na->action_;
     vc->set_is_transparent(na->opt.f_inbound_transparent);
     vc->set_context(NET_VCONNECTION_IN);
+#ifdef USE_EDGE_TRIGGER
+    // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
+    if (na->server.http_accept_filter) {
+      vc->read.triggered = 1;
+    }
+#endif
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
 
     if (e->ethread->is_event_type(na->opt.etype)) {
@@ -292,6 +298,12 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
     vc->accept_object = this;
+#ifdef USE_EDGE_TRIGGER
+    // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
+    if (server.http_accept_filter) {
+      vc->read.triggered = 1;
+    }
+#endif
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
     // eventProcessor.schedule_imm(vc, getEtype());
     eventProcessor.schedule_imm_signal(vc, opt.etype);
@@ -440,6 +452,12 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
     vc->action_ = *action_;
+#ifdef USE_EDGE_TRIGGER
+    // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
+    if (server.http_accept_filter) {
+      vc->read.triggered = 1;
+    }
+#endif
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
     // We must be holding the lock already to do later do_io_read's
     SCOPED_MUTEX_LOCK(lock, vc->mutex, e->ethread);
