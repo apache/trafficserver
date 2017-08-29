@@ -68,6 +68,39 @@ TEST_CASE("uriEncode(): encode reserved chars in an object name", "[AWS][auth][u
   CHECK_FALSE(encoded.compare("%20/%21%22%23%24%25%26%27%28%29%2A%2B%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"));
 }
 
+TEST_CASE("uriDecode(): decode empty input", "[AWS][auth][utility]")
+{
+  String encoded("");
+  String decoded = uriDecode(encoded);
+  CHECK(0 == decoded.length()); /* 0 encoded because of the invalid input */
+}
+
+TEST_CASE("uriDecode(): decode unreserved chars", "[AWS][auth][utility]")
+{
+  const String encoded = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                         "abcdefghijklmnopqrstuvwxyz"
+                         "0123456789"
+                         "-._~";
+  String decoded = uriDecode(encoded);
+
+  CHECK(encoded.length() == encoded.length());
+  CHECK_FALSE(decoded.compare("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                              "abcdefghijklmnopqrstuvwxyz"
+                              "0123456789"
+                              "-._~"));
+}
+
+TEST_CASE("uriDecode(): decode reserved chars", "[AWS][auth][utility]")
+{
+  const String encoded =
+    "%20%2F%21%22%23%24%25%26%27%28%29%2A%2B%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"; /* some printable but
+                                                                                                  reserved chars */
+  String decoded = uriDecode(encoded);
+
+  CHECK(3 * decoded.length() == encoded.length()); /* size of "%NN" = 3 */
+  CHECK_FALSE(decoded.compare(" /!\"#$%&'()*+,:;<=>?@[\\]^`{|}"));
+}
+
 /* base16Encode() ************************************************************************************************************** */
 
 TEST_CASE("base16Encode(): base16 encode empty string", "[utility]")
@@ -265,15 +298,18 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
   AwsAuthV4 util(api, now, signPayload, awsAccessKeyId, strlen(awsAccessKeyId), awsSecretAccessKey, strlen(awsSecretAccessKey),
                  awsService, strlen(awsService), includedHeaders, excludedHeaders, defaultDefaultRegionMap);
   String authorizationHeader = util.getAuthorizationHeader();
+  CAPTURE(authorizationHeader);
   CHECK_FALSE(authorizationHeader.compare(bench[0]));
 
   /* Test payload hash */
   String payloadHash = util.getPayloadHash();
+  CAPTURE(payloadHash);
   CHECK_FALSE(payloadHash.compare(bench[5]));
 
   /* Test the date time header content */
   size_t dateLen   = 0;
   const char *date = util.getDateTime(&dateLen);
+  CAPTURE(String(date, dateLen));
   CHECK_FALSE(String(date, dateLen).compare(bench[2]));
 
   /* Now test particular test points to pinpoint problems easier in case of regression */
@@ -281,12 +317,15 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
   /* test the canonization of the request */
   String signedHeaders;
   String canonicalReq = getCanonicalRequestSha256Hash(api, signPayload, includedHeaders, excludedHeaders, signedHeaders);
+  CAPTURE(canonicalReq);
   CHECK_FALSE(canonicalReq.compare(bench[1]));
+  CAPTURE(signedHeaders);
   CHECK_FALSE(signedHeaders.compare(bench[6]));
 
   /* Test the formating of the date and time */
   char dateTime[sizeof("20170428T010203Z")];
   size_t dateTimeLen = getIso8601Time(now, dateTime, sizeof(dateTime));
+  CAPTURE(String(dateTime, dateTimeLen));
   CHECK_FALSE(String(dateTime, dateTimeLen).compare(bench[2]));
 
   /* Test the region name */
@@ -297,6 +336,7 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
   /* Test string to sign calculation */
   String stringToSign = getStringToSign(host, hostLen, dateTime, dateTimeLen, awsRegion.c_str(), awsRegion.length(), awsService,
                                         strlen(awsService), canonicalReq.c_str(), canonicalReq.length());
+  CAPTURE(stringToSign);
   CHECK_FALSE(stringToSign.compare(bench[3]));
 
   /* Test the signature calculation */
@@ -305,6 +345,7 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
     getSignature(awsSecretAccessKey, strlen(awsSecretAccessKey), awsRegion.c_str(), awsRegion.length(), awsService,
                  strlen(awsService), dateTime, 8, stringToSign.c_str(), stringToSign.length(), signature, EVP_MAX_MD_SIZE);
   String base16Signature = base16Encode(signature, signatureLen);
+  CAPTURE(base16Signature);
   CHECK_FALSE(base16Signature.compare(bench[4]));
 }
 
@@ -532,6 +573,56 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, unsigned pay-load, exc
     "host;x-amz-content-sha256;x-amz-date",
   };
 
+  ValidateBench(api, /*signePayload */ false, &now, bench, defaultIncludeHeaders, defaultExcludeHeaders);
+}
+
+/**
+ * Test based on docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
+ * but this time query param value is already encoded, it should not URI encode it twice
+ * according to AWS real behavior undocumented in the specification.
+ */
+TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, query param value already URI encoded", "[AWS][auth]")
+{
+  time_t now = 1369353600; /* 5/24/2013 00:00:00 GMT */
+
+  /* Define the HTTP request elements */
+  MockTsInterface api;
+  api._method.assign("GET");
+  api._host.assign("examplebucket.s3.amazonaws.com");
+  api._path.assign("");
+  api._query.assign("key=TEST==");
+  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
+  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
+  api._headers["x-amz-date"]           = "20130524T000000Z";
+
+  const char *bench[] = {
+    /* Authorization Header */
+    "AWS4-HMAC-SHA256 "
+    "Credential=AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request,"
+    "SignedHeaders=host;x-amz-content-sha256;x-amz-date,"
+    "Signature=60b410f6a0ffe09b91c2aef1f179945916b45ea215278e6b8f6cfb8d461e3706",
+    /* Canonical Request sha256 */
+    "1035b1d75dad9e94fa99fa6edc2cf7d489f38796109a132721621977737a41cc",
+    /* Date and time*/
+    "20130524T000000Z",
+    /* String to sign */
+    "AWS4-HMAC-SHA256\n"
+    "20130524T000000Z\n"
+    "20130524/us-east-1/s3/aws4_request\n"
+    "1035b1d75dad9e94fa99fa6edc2cf7d489f38796109a132721621977737a41cc",
+    /* Signature */
+    "60b410f6a0ffe09b91c2aef1f179945916b45ea215278e6b8f6cfb8d461e3706",
+    /* Payload hash */
+    "UNSIGNED-PAYLOAD",
+    /* Signed Headers */
+    "host;x-amz-content-sha256;x-amz-date",
+  };
+
+  ValidateBench(api, /*signePayload */ false, &now, bench, defaultIncludeHeaders, defaultExcludeHeaders);
+
+  /* Now make query param value encoded beforehand and expect the same result,
+   * it should not URI encode it twice according to AWS real behavior undocumented in the specification.*/
+  api._query.assign("key=TEST%3D%3D");
   ValidateBench(api, /*signePayload */ false, &now, bench, defaultIncludeHeaders, defaultExcludeHeaders);
 }
 
