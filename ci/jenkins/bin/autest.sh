@@ -16,31 +16,43 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-cd "${WORKSPACE}/src"
+# Setup autoconf
+cd src
 [ -d tests ] || exit 0
 
 autoreconf -if
 
 INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
-SANDBOX="/var/tmp/ausb-${ghprbPullId}"
+
+URL="https://ci.trafficserver.apache.org/files/autest"
+AUSB="ausb-${ghprbPullId}.${BUILD_NUMBER}"
+SANDBOX="/var/tmp/${AUSB}"
 
 mkdir -p $INSTALL
 
 ./configure --prefix="$INSTALL" \
             --with-user=jenkins \
             --enable-experimental-plugins \
-            --enable-example-plugins \
             --enable-ccache \
             --enable-debug \
             --enable-werror
 
 # Build and run regressions
-${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
-${ATS_MAKE} check VERBOSE=Y && ${ATS_MAKE} install
-
+${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q= || exit -1
+${ATS_MAKE} install
 /usr/bin/autest -D ./tests/gold_tests --sandbox "$SANDBOX" --ats-bin "${INSTALL}/bin"
-status="$?"
+status=$?
 
-[ "0" != "$status" ] && exit -1
-exit 0
-
+# Cleanup
+cd /var/tmp # To be safer
+if [ "0" != "$status" ]; then
+    if [ -d "$SANDBOX" ]; then
+        find "$SANDBOX" -name \*.db  -exec rm {} \;
+        mv "$SANDBOX" /CA/autest
+        echo "Sandbox is available at ${URL}/${AUSB}/"
+    fi
+    exit -1
+else
+    [ -d "$SANDBOX" ] && rmdir "$SANDBOX"
+    exit 0
+fi
