@@ -1145,7 +1145,7 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   PollDescriptor *pd = get_PollDescriptor(thread);
   if (ep.start(pd, this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
     Debug("iocore_net", "acceptEvent : failed EventIO::start");
-    close_UnixNetVConnection(this, e->ethread);
+    close_UnixNetVConnection(this, t);
     return EVENT_DONE;
   }
 
