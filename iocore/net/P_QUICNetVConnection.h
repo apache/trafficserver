@@ -195,7 +195,7 @@ private:
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
   QUICAckFrameCreator _ack_frame_creator;
-  QUICApplicationMap _application_map;
+  QUICApplicationMap *_application_map = nullptr;
 
   uint32_t _pmtu = 1280;
 

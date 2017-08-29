@@ -96,14 +96,15 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 {
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   this->_handshake_handler = new QUICHandshake(this, ssl_ctx);
-  this->_application_map.set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
+  this->_application_map   = new QUICApplicationMap();
+  this->_application_map->set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
 
   this->_crypto           = this->_handshake_handler->crypto_module();
   this->_frame_dispatcher = new QUICFrameDispatcher();
   this->_packet_factory.set_crypto_module(this->_crypto);
 
   // Create frame handlers
-  this->_stream_manager        = new QUICStreamManager(this, &this->_application_map);
+  this->_stream_manager        = new QUICStreamManager(this, this->_application_map);
   this->_congestion_controller = new QUICCongestionController();
   this->_loss_detector         = new QUICLossDetector(this);
 
@@ -123,6 +124,7 @@ QUICNetVConnection::free(EThread *t)
 
   delete this->_version_negotiator;
   delete this->_handshake_handler;
+  delete this->_application_map;
   delete this->_crypto;
   delete this->_loss_detector;
   delete this->_frame_dispatcher;
@@ -354,7 +356,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   }
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-    this->_application_map.set_default(this->_create_application());
+    this->_application_map->set_default(this->_create_application());
     this->_stream_manager->init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
                                                     this->_handshake_handler->remote_transport_parameters());
 
