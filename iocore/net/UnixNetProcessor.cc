@@ -150,11 +150,12 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
           NetAccept *a = na->clone();
           snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i - 1, ats_ip_port_host_order(&accept_ip));
           a->init_accept_loop(thr_name);
-          Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, ats_ip_port_host_order(&accept_ip));
+          Debug("iocore_net_accept_start", "Created accept thread #%d for port %d", i, ats_ip_port_host_order(&accept_ip));
         }
 
         // Start the "template" accept thread last.
-        Debug("iocore_net_accept", "Created accept thread #%d for port %d", accept_threads, ats_ip_port_host_order(&accept_ip));
+        Debug("iocore_net_accept_start", "Created accept thread #%d for port %d", accept_threads,
+              ats_ip_port_host_order(&accept_ip));
         snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", accept_threads - 1, ats_ip_port_host_order(&accept_ip));
         na->init_accept_loop(thr_name);
 #if !TS_USE_POSIX_CAP
