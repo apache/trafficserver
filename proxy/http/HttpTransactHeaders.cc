@@ -593,7 +593,7 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     log_code = SQUID_LOG_ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_CONNECTION:
-    if (log_code == SQUID_LOG_TCP_MISS) {
+    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_REFRESH_MISS) {
       log_code = SQUID_LOG_ERR_CONNECT_FAIL;
     }
     break;

@@ -2417,8 +2417,10 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
   }
 
   ink_assert(s->cache_lookup_result != HttpTransact::CACHE_LOOKUP_MISS);
-  if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_HIT_STALE)
+  if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_HIT_STALE) {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
+    SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
+  }
 
   if (!s->force_dns) { // If DNS is not performed before
     if (need_to_revalidate(s)) {
