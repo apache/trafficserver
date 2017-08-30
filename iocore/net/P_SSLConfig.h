@@ -162,7 +162,7 @@ private:
 struct SSLTicketParams : public ConfigInfo {
   ssl_ticket_key_block *default_global_keyblock;
   char *ticket_key_filename;
-  void LoadTicket();
+  bool LoadTicket();
   void cleanup();
 
   ~SSLTicketParams() { cleanup(); }

@@ -515,27 +515,31 @@ SSLCertificateConfig::release(SSLCertLookup *lookup)
   configProcessor.release(configid, lookup);
 }
 
-void
+bool
 SSLTicketParams::LoadTicket()
 {
   cleanup();
 
 #if HAVE_OPENSSL_SESSION_TICKETS
+  ssl_ticket_key_block *keyblock = nullptr;
 
   SSLConfig::scoped_config params;
 
   if (REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename") == REC_ERR_OKAY &&
       ticket_key_filename != nullptr) {
     ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
-    default_global_keyblock = ssl_create_ticket_keyblock(ticket_key_path);
+    keyblock = ssl_create_ticket_keyblock(ticket_key_path);
   } else {
-    default_global_keyblock = ssl_create_ticket_keyblock(nullptr);
+    keyblock = ssl_create_ticket_keyblock(nullptr);
   }
-  if (!default_global_keyblock) {
-    Fatal("Could not load Ticket Key from %s", ticket_key_filename);
-    return;
+  if (!keyblock) {
+    Error("ticket key reloaded from %s", ticket_key_filename);
+    return false;
   }
+  default_global_keyblock = keyblock;
+
   Debug("ssl", "ticket key reloaded from %s", ticket_key_filename);
+  return true;
 
 #endif
 }
@@ -546,7 +550,10 @@ SSLTicketKeyConfig::startup()
   auto sslTicketKey = new ConfigUpdateHandler<SSLTicketKeyConfig>();
 
   sslTicketKey->attach("proxy.config.ssl.server.ticket_key.filename");
-  reconfigure();
+  SSLConfig::scoped_config params;
+  if (!reconfigure() && params->configExitOnLoadError) {
+    Fatal("Failed to load SSL ticket key file");
+  }
 }
 
 bool
@@ -554,8 +561,10 @@ SSLTicketKeyConfig::reconfigure()
 {
   SSLTicketParams *ticketKey = new SSLTicketParams();
 
-  if (ticketKey)
-    ticketKey->LoadTicket();
+  if (ticketKey) {
+    if (!ticketKey->LoadTicket())
+      return false;
+  }
 
   configid = configProcessor.set(configid, ticketKey);
   return true;
