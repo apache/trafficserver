@@ -84,7 +84,6 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
   NetHandler *nh = vc->nh;
   vc->cancel_OOB();
   vc->ep.stop();
-  vc->con.close();
 
   ink_release_assert(vc->thread == t);
 
@@ -1141,14 +1140,14 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
 
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::mainEvent);
 
-  nh                 = get_NetHandler(thread);
   PollDescriptor *pd = get_PollDescriptor(thread);
   if (ep.start(pd, this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
     Debug("iocore_net", "acceptEvent : failed EventIO::start");
-    close_UnixNetVConnection(this, t);
+    free(t);
     return EVENT_DONE;
   }
 
+  nh = get_NetHandler(thread);
   set_inactivity_timeout(0);
   nh->open_list.enqueue(this);
 
@@ -1372,6 +1371,9 @@ void
 UnixNetVConnection::free(EThread *t)
 {
   ink_release_assert(t == this_ethread());
+
+  // close socket fd
+  con.close();
   // clear variables for reuse
   this->mutex.clear();
   action_.mutex.clear();
