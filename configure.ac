@@ -498,13 +498,13 @@ PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++], [
 AM_CONDITIONAL([BUILD_WEBP_TRANSFORM_PLUGIN], [test "x${enable_webp_transform_plugin}" = "xyes"])
 
 #
-# Example plugins. The example plugins are always built, but not always installed. Installing
+# Example plugins. The example plugins are only built and installed if this is enabled. Installing
 # them is useful for QA, but not useful for most users, so we default this to disabled.
 #
 
 AC_MSG_CHECKING([whether to install example plugins])
 AC_ARG_ENABLE([example-plugins],
-  [AS_HELP_STRING([--enable-example-plugins],[install example plugins])],
+  [AS_HELP_STRING([--enable-example-plugins],[build and install example plugins])],
   [],
   [enable_example_plugins=no]
 )

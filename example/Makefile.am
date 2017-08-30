@@ -23,6 +23,8 @@ AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 libatscppapi = $(top_builddir)/lib/cppapi/libatscppapi.la
 libtsconfig = $(top_builddir)/lib/tsconfig/libtsconfig.la
 
+if BUILD_EXAMPLE_PLUGINS
+
 example_Plugins = \
 	add_header.la \
 	append_transform.la \
@@ -86,10 +88,8 @@ example_Plugins += \
 	cppapi/boom.la \
 	cppapi/intercept.la
 
-if BUILD_EXAMPLE_PLUGINS
 pkglib_LTLIBRARIES = $(example_Plugins)
-else
-noinst_LTLIBRARIES = $(example_Plugins)
+
 endif
 
 add_header_la_SOURCES = add_header/add_header.c
