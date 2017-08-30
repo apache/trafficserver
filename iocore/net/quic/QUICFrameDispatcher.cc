@@ -27,6 +27,7 @@
 #include "QUICCongestionController.h"
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
+#include "QUICDebugNames.h"
 
 static constexpr char tag[] = "quic_frame_handler";
 
@@ -62,7 +63,7 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size, bool 
 
     // TODO: check debug build
     if (type != QUICFrameType::PADDING) {
-      Debug(tag, "frame type %d, size %zu", static_cast<int>(frame->type()), frame->size());
+      Debug(tag, "Received %s frame, size %zu", QUICDebugNames::frame_type(frame->type()), frame->size());
     }
 
     should_send_ack |= (type != QUICFrameType::PADDING && type != QUICFrameType::ACK);

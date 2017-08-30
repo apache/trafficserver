@@ -296,6 +296,7 @@ QUICNetVConnection::state_pre_handshake(int event, Event *data)
   this->set_inactivity_timeout(HRTIME_SECONDS(params->no_activity_timeout_in()));
   this->add_to_active_queue();
 
+  DebugQUICCon("Enter state_handshake");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
   return this->handleEvent(event, data);
 }
@@ -669,7 +670,6 @@ std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
 QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmittable, QUICPacketType type)
 {
   std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet(nullptr, &QUICPacketDeleter::delete_null_packet);
-  DebugQUICCon("retransmittable %u", retransmittable);
 
   switch (type) {
   case QUICPacketType::SERVER_CLEARTEXT:

@@ -28,7 +28,8 @@
 #include "QUICDebugNames.h"
 #include "QUICConfig.h"
 
-static constexpr char tag[] = "quic_stream";
+#define DebugQUICStream(fmt, ...) \
+  Debug("quic_stream", "[%" PRIx64 "] [%s] " fmt, static_cast<uint64_t>(this->_id), QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
 static constexpr uint64_t MAX_DATA_HEADSPACE        = 10240; // in uints of octets
 static constexpr uint64_t MAX_STREAM_DATA_HEADSPACE = 1024;
@@ -43,6 +44,7 @@ QUICStream::init(QUICStreamManager *manager, QUICFrameTransmitter *tx, QUICStrea
   init_flow_control_params(recv_max_stream_data, send_max_stream_data);
 
   this->mutex = new_ProxyMutex();
+  DebugQUICStream("Initialized");
 }
 
 void
@@ -68,7 +70,7 @@ QUICStream::id()
 int
 QUICStream::main_event_handler(int event, void *data)
 {
-  Debug(tag, "%s", QUICDebugNames::vc_event(event));
+  DebugQUICStream("%s", QUICDebugNames::vc_event(event));
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -94,7 +96,7 @@ QUICStream::main_event_handler(int event, void *data)
     break;
   }
   default:
-    Debug(tag, "unknown event");
+    DebugQUICStream("unknown event");
     ink_assert(false);
   }
 
@@ -396,7 +398,7 @@ QUICStream::_send()
     total_len += len;
 
     if (!this->_state.is_allowed_to_send(*frame)) {
-      Debug(tag, "Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
+      DebugQUICStream("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
       break;
     }
     this->_state.update_with_sent_frame(*frame);

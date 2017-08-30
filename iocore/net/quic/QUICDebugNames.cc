@@ -177,3 +177,24 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "UNKNOWN";
   }
 }
+
+const char *
+QUICDebugNames::stream_state(QUICStreamState state)
+{
+  switch (state.get()) {
+  case QUICStreamState::State::idle:
+    return "IDLE";
+  case QUICStreamState::State::open:
+    return "OPEN";
+  case QUICStreamState::State::half_closed_remote:
+    return "HC_REMOTE";
+  case QUICStreamState::State::half_closed_local:
+    return "HC_LOCAL";
+  case QUICStreamState::State::closed:
+    return "CLOSED";
+  case QUICStreamState::State::illegal:
+    return "ILLEGAL";
+  default:
+    return "UNKNOWN";
+  }
+}
