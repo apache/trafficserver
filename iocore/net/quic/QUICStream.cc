@@ -396,7 +396,7 @@ QUICStream::_send()
     total_len += len;
 
     if (!this->_state.is_allowed_to_send(*frame)) {
-      // FIXME: What should we do?
+      Debug(tag, "Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
       break;
     }
     this->_state.update_with_sent_frame(*frame);

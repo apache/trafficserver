@@ -33,12 +33,52 @@ QUICStreamState::get() const
 bool
 QUICStreamState::is_allowed_to_send(const QUICFrame &frame) const
 {
+  switch (this->_state) {
+  case State::idle:
+    break;
+  case State::open:
+    break;
+  case State::half_closed_local:
+    if (frame.type() == QUICFrameType::STREAM) {
+      return false;
+    }
+    break;
+  case State::half_closed_remote:
+    break;
+  case State::closed:
+    // Once a stream reaches this state, no frames can be sent that mention the stream
+    if (frame.type() == QUICFrameType::STREAM) {
+      return false;
+    } else if (frame.type() == QUICFrameType::RST_STREAM) {
+      return false;
+    } else if (frame.type() == QUICFrameType::MAX_STREAM_DATA) {
+      return false;
+    }
+    break;
+  case State::illegal:
+    return false;
+  }
   return true;
 }
 
 bool
 QUICStreamState::is_allowed_to_receive(const QUICFrame &frame) const
 {
+  switch (this->_state) {
+  case State::idle:
+    break;
+  case State::open:
+    break;
+  case State::half_closed_local:
+    break;
+  case State::half_closed_remote:
+    break;
+  case State::closed:
+    // Reordering might cause frames to be received after closing
+    break;
+  case State::illegal:
+    return false;
+  }
   return true;
 }
 
@@ -47,18 +87,46 @@ QUICStreamState::update_with_received_frame(const QUICFrame &frame)
 {
   switch (this->_state) {
   case State::idle:
-    this->_set_state(State::open);
-  // fall through
-  case State::open: {
-    if (frame.type() == QUICFrameType::STREAM && dynamic_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
+    if (frame.type() == QUICFrameType::STREAM) {
+      if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
+        this->_set_state(State::half_closed_remote);
+      } else {
+        this->_set_state(State::open);
+      }
+    } else if (frame.type() == QUICFrameType::RST_STREAM) {
       this->_set_state(State::half_closed_remote);
+    } else if (frame.type() == QUICFrameType::MAX_STREAM_DATA || frame.type() == QUICFrameType::STREAM_BLOCKED) {
+      this->_set_state(State::open);
+    } else {
+      this->_set_state(State::illegal);
+    }
+    break;
+  case State::open:
+    if (frame.type() == QUICFrameType::STREAM) {
+      if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
+        this->_set_state(State::half_closed_remote);
+      }
+    } else if (frame.type() == QUICFrameType::RST_STREAM) {
+      this->_set_state(State::half_closed_remote);
+    } else {
+      this->_set_state(State::illegal);
+    }
+    break;
+  case State::half_closed_local:
+    if (frame.type() == QUICFrameType::STREAM) {
+      if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
+        this->_set_state(State::closed);
+      }
     } else if (frame.type() == QUICFrameType::RST_STREAM) {
       this->_set_state(State::closed);
+    } else {
+      this->_set_state(State::illegal);
     }
-  } break;
-  case State::half_closed_local:
+    break;
   case State::half_closed_remote:
+    break;
   case State::closed:
+    break;
   case State::illegal:
     // Once we get illegal state, no way to recover it
     break;
@@ -70,6 +138,52 @@ QUICStreamState::update_with_received_frame(const QUICFrame &frame)
 void
 QUICStreamState::update_with_sent_frame(const QUICFrame &frame)
 {
+  switch (this->_state) {
+  case State::idle:
+    if (frame.type() == QUICFrameType::STREAM) {
+      if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
+        this->_set_state(State::half_closed_local);
+      } else {
+        this->_set_state(State::open);
+      }
+    } else if (frame.type() == QUICFrameType::RST_STREAM) {
+      this->_set_state(State::half_closed_local);
+    } else {
+      this->_set_state(State::illegal);
+    }
+    break;
+  case State::open:
+    if (frame.type() == QUICFrameType::STREAM) {
+      if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
+        this->_set_state(State::half_closed_local);
+      }
+    } else if (frame.type() == QUICFrameType::RST_STREAM) {
+      this->_set_state(State::half_closed_local);
+    } else {
+      this->_set_state(State::illegal);
+    }
+    break;
+  case State::half_closed_local:
+    break;
+  case State::half_closed_remote:
+    if (frame.type() == QUICFrameType::STREAM) {
+      if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
+        this->_set_state(State::closed);
+      }
+    } else if (frame.type() == QUICFrameType::RST_STREAM) {
+      this->_set_state(State::closed);
+    } else {
+      this->_set_state(State::illegal);
+    }
+    break;
+  case State::closed:
+    break;
+  case State::illegal:
+    // Once we get illegal state, no way to recover it
+    break;
+  default:
+    break;
+  }
 }
 
 void

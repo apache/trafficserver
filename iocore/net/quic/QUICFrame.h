@@ -58,7 +58,7 @@ class QUICStreamFrame : public QUICFrame
 public:
   QUICStreamFrame() : QUICFrame() {}
   QUICStreamFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICStreamFrame(const uint8_t *buf, size_t len, QUICStreamId streamid, QUICOffset offset);
+  QUICStreamFrame(const uint8_t *buf, size_t len, QUICStreamId streamid, QUICOffset offset, bool last = false);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
@@ -589,7 +589,8 @@ public:
    * You have to make sure that the data size won't exceed the maximum size of QUIC packet.
    */
   static std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> create_stream_frame(const uint8_t *data, size_t data_len,
-                                                                                    QUICStreamId stream_id, QUICOffset offset);
+                                                                                    QUICStreamId stream_id, QUICOffset offset,
+                                                                                    bool last = false);
   /*
    * Creates a ACK frame.
    * You shouldn't call this directly but through QUICAckFrameCreator because QUICAckFrameCreator manages packet numbers that we
@@ -623,6 +624,13 @@ public:
    * Creates a STREAM_BLOCKED frame.
    */
   static std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc> create_stream_blocked_frame(QUICStreamId stream_id);
+
+  /*
+   * Creates a RST_STREAM frame.
+   */
+  static std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> create_rst_stream_frame(QUICStreamId stream_id,
+                                                                                           QUICErrorCode error_code,
+                                                                                           QUICOffset final_offset);
 
   /*
    * Creates a retransmission frame, which is very special.

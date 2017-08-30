@@ -70,12 +70,13 @@ QUICFrame::reset(const uint8_t *buf, size_t len)
 // STREAM Frame
 //
 
-QUICStreamFrame::QUICStreamFrame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset)
+QUICStreamFrame::QUICStreamFrame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last)
 {
   this->_data      = data;
   this->_data_len  = data_len;
   this->_stream_id = stream_id;
   this->_offset    = offset;
+  this->_fin       = last;
 }
 
 QUICFrameType
@@ -107,6 +108,11 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, bool include_length_field) con
   // Build Frame Type: "11FSSOOD"
   buf[0] = static_cast<uint8_t>(QUICFrameType::STREAM);
   *len   = 1;
+
+  // "F" of "11FSSOOD"
+  if (this->has_fin_flag()) {
+    buf[0] += (0x01 << 5);
+  }
 
   // "SS" of "11FSSOOD"
   // use 32 bit length for now
@@ -1278,10 +1284,10 @@ QUICFrameFactory::fast_create(const uint8_t *buf, size_t len)
 }
 
 std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset)
+QUICFrameFactory::create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last)
 {
   QUICStreamFrame *frame = quicStreamFrameAllocator.alloc();
-  new (frame) QUICStreamFrame(data, data_len, stream_id, offset);
+  new (frame) QUICStreamFrame(data, data_len, stream_id, offset, last);
   return std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stream_frame);
 }
 
@@ -1331,6 +1337,14 @@ QUICFrameFactory::create_stream_blocked_frame(QUICStreamId stream_id)
   QUICStreamBlockedFrame *frame = quicStreamBlockedFrameAllocator.alloc();
   new (frame) QUICStreamBlockedFrame(stream_id);
   return std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stream_blocked_frame);
+}
+
+std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_rst_stream_frame(QUICStreamId stream_id, QUICErrorCode error_code, QUICOffset final_offset)
+{
+  QUICRstStreamFrame *frame = quicRstStreamFrameAllocator.alloc();
+  new (frame) QUICRstStreamFrame(error_code, stream_id, final_offset);
+  return std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_rst_stream_frame);
 }
 
 std::unique_ptr<QUICRetransmissionFrame, QUICFrameDeleterFunc>
