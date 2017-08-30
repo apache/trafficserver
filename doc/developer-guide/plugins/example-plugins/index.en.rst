@@ -47,7 +47,11 @@ understand the following topics:
 -  Working with HTTP header functions
 
 The two sample plugins discussed in this chapter are ``blacklist_1.c``
-and ``basic_auth.c``.
+and ``basic_auth.c``. To build and install the example plugins use ::
+
+   ./configure --enable-example-plugins
+
+when :ref:`setting the build configuration <admin-configuration-options>` for |TS|.
 
 Overview
 --------
