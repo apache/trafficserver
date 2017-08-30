@@ -161,6 +161,7 @@ struct HostDBInfo : public RefCountObj {
   void
   free()
   {
+    Debug("hostdb", "freeing %d bytes at [%p]", (1 << (7 + iobuffer_index)), this);
     ioBufAllocator[iobuffer_index].free_void((void *)(this));
   }
 

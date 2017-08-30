@@ -1304,8 +1304,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
 
     int allocSize = s_size + rrsize; // The extra space we need for the rest of the things
 
-    Debug("hostdb", "allocating %d bytes for %s with %d RR records", allocSize, aname, valid_records);
     HostDBInfo *r = HostDBInfo::alloc(allocSize);
+    Debug("hostdb", "allocating %d bytes for %s with %d RR records at [%p]", allocSize, aname, valid_records, r);
     // set up the record
     r->key = md5.hash.fold(); // always set the key
 
@@ -1317,6 +1317,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     // which is okay with being served stale-- lets continue to serve the stale record as long as
     // the record is willing to be served.
     if (failed && old_r && old_r->serve_stale_but_revalidate()) {
+      r->free();
       r = old_r.get();
     } else if (is_byname()) {
       if (first_record)
