@@ -65,7 +65,6 @@ namespace _private_
     friend basic_string_view<value_type, _CharTraits>;
 
     constexpr explicit string_view_iterator(const pointer rhs) noexcept : m_ptr(rhs) {}
-
   public:
     constexpr reference operator*() const noexcept
     { // return designated object
@@ -220,7 +219,6 @@ public:
   static constexpr size_type npos{~0ULL};
 
   constexpr basic_string_view() noexcept {}
-
   constexpr basic_string_view(basic_string_view const &) noexcept = default;
   CONSTEXPR14 basic_string_view &operator=(basic_string_view const &) noexcept = default;
 
@@ -231,15 +229,14 @@ public:
   // at compile time. With c++ 17 the constexpr guarrentee
   // that the literal length is optimized out
   constexpr basic_string_view(const_pointer rhs) noexcept : m_data(rhs), m_size(traits_type::length(rhs)) {}
-
   constexpr basic_string_view(const_pointer rhs, const size_type length) noexcept // strengthened
-    : m_data(rhs), m_size(length)
+    : m_data(rhs),
+      m_size(length)
   {
   }
 
   // std::string constructor
   constexpr basic_string_view(std::string const &rhs) noexcept : m_data(rhs.data()), m_size(rhs.size()) {}
-
   // For iterator on string_view we don't need to deal with const and non-const as different types
   // they are all const iterators as the string values are immutable
   // keep in mind that the string view is mutable in what it points to
