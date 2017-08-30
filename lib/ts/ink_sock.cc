@@ -292,7 +292,7 @@ bind_unix_domain_socket(const char *path, mode_t mode)
 
   if (strlen(path) > sizeof(sockaddr.sun_path) - 1) {
     errno = ENAMETOOLONG;
-    return -1;
+    goto fail;
   }
 
   ink_zero(sockaddr);
