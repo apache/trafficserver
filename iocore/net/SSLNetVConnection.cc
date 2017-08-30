@@ -878,7 +878,6 @@ SSLNetVConnection::free(EThread *t)
 
   closed = 0;
   options.reset();
-  con.close();
 
   ink_assert(con.fd == NO_FD);
 
