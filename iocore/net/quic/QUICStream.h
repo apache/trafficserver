@@ -50,7 +50,7 @@ public:
   void init_flow_control_params(uint32_t recv_max_stream_data, uint32_t send_max_stream_data);
   int main_event_handler(int event, void *data);
 
-  uint32_t id();
+  QUICStreamId id();
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
@@ -94,9 +94,9 @@ private:
   QUICOffset _recv_largest_offset = 0;
   QUICOffset _send_offset         = 0;
 
-  uint64_t _recv_max_stream_data        = 0;
-  uint64_t _recv_max_stream_data_deleta = 0;
-  uint64_t _send_max_stream_data        = 0;
+  uint64_t _recv_max_stream_data       = 0;
+  uint64_t _recv_max_stream_data_delta = 0;
+  uint64_t _send_max_stream_data       = 0;
 
   VIO _read_vio;
   VIO _write_vio;
@@ -108,6 +108,6 @@ private:
   // TODO: Consider to replace with ts/RbTree.h or other data structure
   std::map<QUICOffset, std::shared_ptr<const QUICStreamFrame>> _request_stream_frame_buffer;
 
-  QUICStreamManager *_streamManager = nullptr;
-  QUICFrameTransmitter *_tx         = nullptr;
+  QUICStreamManager *_stream_manager = nullptr;
+  QUICFrameTransmitter *_tx          = nullptr;
 };

@@ -28,8 +28,9 @@
 #include "QUICDebugNames.h"
 #include "QUICConfig.h"
 
-#define DebugQUICStream(fmt, ...) \
-  Debug("quic_stream", "[%" PRIx64 "] [%s] " fmt, static_cast<uint64_t>(this->_id), QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
+#define DebugQUICStream(fmt, ...)                                                                                               \
+  Debug("quic_stream", "[%" PRIx64 "] [%s] " fmt, static_cast<uint64_t>(this->_id), QUICDebugNames::stream_state(this->_state), \
+        ##__VA_ARGS__)
 
 static constexpr uint64_t MAX_DATA_HEADSPACE        = 10240; // in uints of octets
 static constexpr uint64_t MAX_STREAM_DATA_HEADSPACE = 1024;
@@ -38,9 +39,9 @@ void
 QUICStream::init(QUICStreamManager *manager, QUICFrameTransmitter *tx, QUICStreamId id, uint64_t recv_max_stream_data,
                  uint64_t send_max_stream_data)
 {
-  this->_streamManager = manager;
-  this->_tx            = tx;
-  this->_id            = id;
+  this->_stream_manager = manager;
+  this->_tx             = tx;
+  this->_id             = id;
   init_flow_control_params(recv_max_stream_data, send_max_stream_data);
 
   this->mutex = new_ProxyMutex();
@@ -56,12 +57,12 @@ QUICStream::start()
 void
 QUICStream::init_flow_control_params(uint32_t recv_max_stream_data, uint32_t send_max_stream_data)
 {
-  this->_recv_max_stream_data        = recv_max_stream_data;
-  this->_recv_max_stream_data_deleta = recv_max_stream_data;
-  this->_send_max_stream_data        = send_max_stream_data;
+  this->_recv_max_stream_data       = recv_max_stream_data;
+  this->_recv_max_stream_data_delta = recv_max_stream_data;
+  this->_send_max_stream_data       = send_max_stream_data;
 }
 
-uint32_t
+QUICStreamId
 QUICStream::id()
 {
   return this->_id;
@@ -316,8 +317,8 @@ void
 QUICStream::_slide_recv_max_stream_data()
 {
   // TODO: How much should this be increased?
-  this->_recv_max_stream_data += this->_recv_max_stream_data_deleta;
-  this->_streamManager->send_frame(QUICFrameFactory::create_max_stream_data_frame(this->_id, this->_recv_max_stream_data));
+  this->_recv_max_stream_data += this->_recv_max_stream_data_delta;
+  this->_stream_manager->send_frame(QUICFrameFactory::create_max_stream_data_frame(this->_id, this->_recv_max_stream_data));
 }
 
 QUICError
@@ -330,20 +331,20 @@ QUICStream::_recv_flow_control(uint64_t new_offset)
   uint64_t delta = new_offset - this->_recv_largest_offset;
 
   Debug("quic_flow_ctrl", "Con: %" PRIu64 "/%" PRIu64 " Stream: %" PRIu64 "/%" PRIu64,
-        (this->_streamManager->recv_total_offset() + delta) / 1024, this->_streamManager->recv_max_data(), new_offset,
+        (this->_stream_manager->recv_total_offset() + delta) / 1024, this->_stream_manager->recv_max_data(), new_offset,
         this->_recv_max_stream_data);
 
   // Connection Level Flow Control
   if (this->_id != STREAM_ID_FOR_HANDSHAKE) {
-    if (!this->_streamManager->is_recv_avail_more_than(delta)) {
+    if (!this->_stream_manager->is_recv_avail_more_than(delta)) {
       return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_FLOW_CONTROL_RECEIVED_TOO_MUCH_DATA);
     }
 
-    if (!this->_streamManager->is_recv_avail_more_than(delta + MAX_DATA_HEADSPACE)) {
-      this->_streamManager->slide_recv_max_data();
+    if (!this->_stream_manager->is_recv_avail_more_than(delta + MAX_DATA_HEADSPACE)) {
+      this->_stream_manager->slide_recv_max_data();
     }
 
-    this->_streamManager->add_recv_total_offset(delta);
+    this->_stream_manager->add_recv_total_offset(delta);
   }
 
   // Stream Level Flow Control
@@ -402,7 +403,7 @@ QUICStream::_send()
       break;
     }
     this->_state.update_with_sent_frame(*frame);
-    this->_streamManager->send_frame(std::move(frame));
+    this->_stream_manager->send_frame(std::move(frame));
   }
 
   return;
@@ -412,21 +413,21 @@ bool
 QUICStream::_send_flow_control(uint64_t len)
 {
   Debug("quic_flow_ctrl", "Con: %" PRIu64 "/%" PRIu64 " Stream: %" PRIu64 "/%" PRIu64,
-        (this->_streamManager->send_total_offset() + len) / 1024, this->_streamManager->send_max_data(), this->_send_offset + len,
+        (this->_stream_manager->send_total_offset() + len) / 1024, this->_stream_manager->send_max_data(), this->_send_offset + len,
         this->_send_max_stream_data);
 
   // Stream Level Flow Control
   // TODO: remove check of _send_max_stream_data when moved to Second Implementation completely
   if (this->_send_max_stream_data > 0 && len > this->_send_max_stream_data) {
-    this->_streamManager->send_frame(QUICFrameFactory::create_stream_blocked_frame(this->_id));
+    this->_stream_manager->send_frame(QUICFrameFactory::create_stream_blocked_frame(this->_id));
 
     return false;
   }
 
   // Connection Level Flow Control
   if (this->_id != STREAM_ID_FOR_HANDSHAKE) {
-    if (!this->_streamManager->is_send_avail_more_than(len)) {
-      this->_streamManager->send_frame(QUICFrameFactory::create_blocked_frame());
+    if (!this->_stream_manager->is_send_avail_more_than(len)) {
+      this->_stream_manager->send_frame(QUICFrameFactory::create_blocked_frame());
 
       return false;
     }
