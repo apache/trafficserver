@@ -505,7 +505,7 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
     // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
     if (packet->has_valid_fnv1a_hash()) {
       bool should_send_ack;
-      this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size(), should_send_ack);
+      error = this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size(), should_send_ack);
     } else {
       DebugQUICCon("Invalid FNV-1a hash value");
       return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::CRYPTOGRAPHIC_ERROR);

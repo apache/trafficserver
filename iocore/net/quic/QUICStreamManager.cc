@@ -113,7 +113,7 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxStreamDataFr
 {
   QUICStream *stream = this->_find_stream(frame->stream_id());
   if (stream) {
-    stream->recv(frame);
+    return stream->recv(frame);
   } else {
     // TODO: connection error?
   }
@@ -126,7 +126,7 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamBlockedFr
 {
   QUICStream *stream = this->_find_stream(frame->stream_id());
   if (stream) {
-    stream->recv(frame);
+    return stream->recv(frame);
   } else {
     // TODO: connection error?
   }
