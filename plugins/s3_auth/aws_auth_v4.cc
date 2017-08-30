@@ -78,7 +78,7 @@ base16Encode(const char *in, size_t inLen)
  * @return encoded string.
  */
 String
-uriEncode(const String in, bool isObjectName)
+uriEncode(const String &in, bool isObjectName)
 {
   std::stringstream result;
 
@@ -114,7 +114,7 @@ uriEncode(const String in, bool isObjectName)
  * @return encoded string.
  */
 String
-uriDecode(const String in)
+uriDecode(const String &in)
 {
   std::string result;
   result.reserve(in.length());

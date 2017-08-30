@@ -119,8 +119,8 @@ public:
 
 /* Expose the following methods only to the unit tests */
 String base16Encode(const char *in, size_t inLen);
-String uriEncode(const String in, bool isObjectName = false);
-String uriDecode(const String in);
+String uriEncode(const String &in, bool isObjectName = false);
+String uriDecode(const String &in);
 String lowercase(const char *in, size_t inLen);
 const char *trimWhiteSpaces(const char *in, size_t inLen, size_t &newLen);
 
