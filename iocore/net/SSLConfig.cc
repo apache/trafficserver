@@ -562,8 +562,10 @@ SSLTicketKeyConfig::reconfigure()
   SSLTicketParams *ticketKey = new SSLTicketParams();
 
   if (ticketKey) {
-    if (!ticketKey->LoadTicket())
+    if (!ticketKey->LoadTicket()) {
+      delete ticketKey;
       return false;
+    }
   }
 
   configid = configProcessor.set(configid, ticketKey);
