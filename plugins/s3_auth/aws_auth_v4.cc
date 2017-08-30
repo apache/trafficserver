@@ -114,7 +114,7 @@ uriEncode(const String &in, bool isObjectName)
  * @return encoded string.
  */
 String
-uriDecode(const String in)
+uriDecode(const String &in)
 {
   std::string result;
   result.reserve(in.length());
