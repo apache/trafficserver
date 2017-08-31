@@ -1242,7 +1242,9 @@ Parent Proxy Configuration
 
    The total number of connection attempts for a specific transaction allowed to
    a parent cache before Traffic Server bypasses the parent or fails the request
-   (depending on the ``go_direct`` option in the :file:`parent.config` file).
+   (depending on the ``go_direct`` option in the :file:`parent.config` file). The
+   number of parents tried is
+   ``proxy.config.http.parent_proxy.fail_threshold / proxy.config.http.parent_proxy.total_connect_attempts``
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.per_parent_connect_attempts INT 2
    :reloadable:
