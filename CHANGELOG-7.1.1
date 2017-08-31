@@ -1,5 +1,6 @@
 Changes with Apache Traffic Server 7.1.1
   #1766 - Can't convert Cache Result to Cache MISS by TSHttpTxnCacheLookupStatusSet
+  #1953 - Unit Tests for Issue #1605 AWS Signature Version 4
   #1980 - Issue #1685: Use TS_MILESTONE_UA_BEGIN for cqt* log fields
   #2123 - ua_buffer_reader should be released in deallocate_redirect_postdata
   #2217 - Be less aggressive in calling SSL_shutdown.
@@ -17,3 +18,11 @@ Changes with Apache Traffic Server 7.1.1
   #2396 - Fedora 26 and gcc7 support for ATS 7.1.1
   #2401 - Prefer setting AM_CPPFLAGS vs. CPPFLAGS, etc.
   #2402 - Added more fallthrough comments for Fedora 26 and gcc7 for ICP
+  #2413 - Correctly Handle EVENT_NONE in UnixNetVConnection::acceptEvent
+  #2414 - Out-of-bounds while get port from host field
+  #2443 - AWS auth v4: fixed query param value URI-encoding
+  #2452 - Ticket file reload shouldn't kill traffic_server process
+  #2453 - FD leaks when ep.start() failed or cancelled in acceptEvent or con.connect() failed
+  #2457 - Cherry pick a set of Catch based commits to 7.1
+  #2458 - Coverity: CID 1380042:Resource leaks  (RESOURCE_LEAK)
+  #2460 - S3_auth:uri(En|De)code() pass by ref,not val(master)
