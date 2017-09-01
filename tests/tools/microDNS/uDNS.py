@@ -1,12 +1,12 @@
 # coding=utf-8
 
-#  
+#
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
-#  
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-#  
+#
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,9 +29,11 @@ round_robin = False
 default_records = list()
 records = dict()
 
+
 class DomainName(str):
     def __getattr__(self, item):
         return DomainName(item + '.' + self)
+
 
 class BaseRequestHandler(socketserver.BaseRequestHandler):
 
@@ -44,7 +46,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
         now = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
         print("\n\n%s request %s (%s %s):" % (self.__class__.__name__[:3], now, self.client_address[0],
-                                               self.client_address[1]))
+                                              self.client_address[1]))
         try:
             data = self.get_data()
             self.send_data(dns_response(data))
@@ -76,6 +78,7 @@ class UDPRequestHandler(BaseRequestHandler):
     def send_data(self, data):
         return self.request[1].sendto(data, self.client_address)
 
+
 def build_domain_mappings(path):
     with open(path) as f:
         zone_file = json.load(f)
@@ -83,17 +86,19 @@ def build_domain_mappings(path):
     for domain in zone_file['mappings']:
         for d in iter(domain.keys()):
             # this loop only runs once, kind of a hack to access the only key in the dict
-            domain_name = DomainName(d)            
-            print("Domain name:",domain_name)
+            domain_name = DomainName(d)
+            print("Domain name:", domain_name)
             records[domain_name] = [A(x) for x in domain[domain_name]]
             print(records[domain_name])
 
     default_records.extend([A(d) for d in zone_file['otherwise']])
 
+
 def add_authoritative_records(reply, domain):
     # ns1 and ns1 are hardcoded in, change if necessary
     reply.add_auth(RR(rname=domain, rtype=QTYPE.NS, rclass=1, ttl=TTL, rdata=NS(domain.ns1)))
     reply.add_auth(RR(rname=domain, rtype=QTYPE.NS, rclass=1, ttl=TTL, rdata=NS(domain.ns2)))
+
 
 def dns_response(data):
     ''' dns_response takes in the raw bytes from the socket and does all the logic behind what 
@@ -113,11 +118,11 @@ def dns_response(data):
     # first look for a specific mapping
     for domain, rrs in records.items():
         if domain == qn or qn.endswith('.' + domain):
-        # we are the authoritative name server for this domain and all subdomains
+            # we are the authoritative name server for this domain and all subdomains
             for rdata in rrs:
                 # only include requested record types (ie. A, MX, etc)
                 rqt = rdata.__class__.__name__
-                if qt in ['*', rqt]:  
+                if qt in ['*', rqt]:
                     found_specific = True
                     reply.add_answer(RR(rname=qname, rtype=getattr(QTYPE, str(rqt)), rclass=1, ttl=TTL, rdata=rdata))
 
@@ -140,11 +145,12 @@ def dns_response(data):
 
 if __name__ == '__main__':
     # handle cmd line args
-    parser = argparse.ArgumentParser()    
-    parser.add_argument("ip_addr",type=str, help="Interface",default="127.0.0.1")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("ip_addr", type=str, help="Interface", default="127.0.0.1")
     parser.add_argument("port", type=int, help="port uDNS should listen on")
     parser.add_argument("zone_file", help="path to zone file")
-    parser.add_argument("--rr", action='store_true', help='round robin load balances if multiple IP addresses are present for 1 domain')
+    parser.add_argument("--rr", action='store_true',
+                        help='round robin load balances if multiple IP addresses are present for 1 domain')
     args = parser.parse_args()
 
     if args.rr:
