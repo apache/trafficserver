@@ -429,6 +429,7 @@ private:
 };
 
 using QUICFrameDeleterFunc = void (*)(QUICFrame *p);
+using QUICFramePtr         = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
 
 //
 // Retransmission Frame
@@ -444,7 +445,7 @@ public:
   QUICPacketType packet_type() const;
 
 private:
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> _frame = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>(nullptr, nullptr);
+  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> _frame = QUICFramePtr(nullptr, nullptr);
   ats_unique_buf _data = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   size_t _size;
   QUICPacketType _packet_type;
