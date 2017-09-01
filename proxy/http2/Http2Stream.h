@@ -33,7 +33,7 @@
 class Http2Stream;
 class Http2ConnectionState;
 
-typedef Http2DependencyTree<Http2Stream *> DependencyTree;
+typedef Http2DependencyTree::Tree<Http2Stream *> DependencyTree;
 
 class Http2Stream : public ProxyClientTransaction
 {
@@ -167,10 +167,10 @@ public:
   bool is_first_transaction_flag = false;
 
   HTTPHdr response_header;
-  IOBufferReader *response_reader     = nullptr;
-  IOBufferReader *request_reader      = nullptr;
-  MIOBuffer request_buffer            = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
-  DependencyTree::Node *priority_node = nullptr;
+  IOBufferReader *response_reader          = nullptr;
+  IOBufferReader *request_reader           = nullptr;
+  MIOBuffer request_buffer                 = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  Http2DependencyTree::Node *priority_node = nullptr;
 
   EThread *
   get_thread()

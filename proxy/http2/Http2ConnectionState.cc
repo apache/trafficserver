@@ -279,7 +279,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   }
 
   if (new_stream && Http2::stream_priority_enabled) {
-    DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
+    Http2DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
     if (node != nullptr) {
       stream->priority_node = node;
       node->t               = stream;
@@ -398,7 +398,7 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
                    priority.stream_dependency, priority.weight, priority.exclusive_flag, cstate.dependency_tree->size());
 
-  DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
+  Http2DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
 
   if (node != nullptr) {
     // [RFC 7540] 5.3.3 Reprioritization
@@ -1114,7 +1114,7 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
   DebugHttp2Stream(ua_session, stream->get_id(), "Delete stream");
 
   if (Http2::stream_priority_enabled) {
-    DependencyTree::Node *node = stream->priority_node;
+    Http2DependencyTree::Node *node = stream->priority_node;
     if (node != nullptr) {
       if (node->active) {
         dependency_tree->deactivate(node, 0);
@@ -1187,7 +1187,7 @@ Http2ConnectionState::schedule_stream(Http2Stream *stream)
 {
   DebugHttp2Stream(ua_session, stream->get_id(), "Scheduled");
 
-  DependencyTree::Node *node = stream->priority_node;
+  Http2DependencyTree::Node *node = stream->priority_node;
   ink_release_assert(node != nullptr);
 
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
@@ -1204,14 +1204,14 @@ Http2ConnectionState::schedule_stream(Http2Stream *stream)
 void
 Http2ConnectionState::send_data_frames_depends_on_priority()
 {
-  DependencyTree::Node *node = dependency_tree->top();
+  Http2DependencyTree::Node *node = dependency_tree->top();
 
   // No node to send or no connection level window left
   if (node == nullptr || client_rwnd <= 0) {
     return;
   }
 
-  Http2Stream *stream = node->t;
+  Http2Stream *stream = static_cast<Http2Stream *>(node->t);
   ink_release_assert(stream != nullptr);
   DebugHttp2Stream(ua_session, stream->get_id(), "top node, point=%d", node->point);
 
@@ -1519,7 +1519,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
     return;
   }
   if (Http2::stream_priority_enabled) {
-    DependencyTree::Node *node = this->dependency_tree->find(id);
+    Http2DependencyTree::Node *node = this->dependency_tree->find(id);
     if (node != nullptr) {
       stream->priority_node = node;
     } else {
