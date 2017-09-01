@@ -326,21 +326,17 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
           UnixNetVConnection *server_vc = dynamic_cast<UnixNetVConnection *>(to_return->get_netvc());
           if (server_vc) {
             UnixNetVConnection *new_vc = server_vc->migrateToCurrentThread(sm, ethread);
-            // The VC moved, free up the original one
-            if (new_vc != server_vc) {
-              ink_assert(new_vc == nullptr || new_vc->nh != nullptr);
-              if (!new_vc) {
-                // Close out to_return, we were't able to get a connection
-                to_return->do_io_close();
-                to_return = nullptr;
-                retval    = HSM_NOT_FOUND;
-              } else {
-                // Keep things from timing out on us
-                new_vc->set_inactivity_timeout(new_vc->get_inactivity_timeout());
-                to_return->set_netvc(new_vc);
-              }
+            if (new_vc->thread != ethread) {
+              // Failed to migrate, put it back to global session pool
+              m_g_pool->releaseSession(to_return);
+              to_return = nullptr;
+              retval    = HSM_NOT_FOUND;
+            } else if (new_vc != server_vc) {
+              // The VC migrated, keep things from timing out on us
+              new_vc->set_inactivity_timeout(new_vc->get_inactivity_timeout());
+              to_return->set_netvc(new_vc);
             } else {
-              // Keep things from timing out on us
+              // The VC moved, keep things from timing out on us
               server_vc->set_inactivity_timeout(server_vc->get_inactivity_timeout());
             }
           }
