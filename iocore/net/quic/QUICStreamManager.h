@@ -41,16 +41,10 @@ public:
   virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
   virtual void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame);
   virtual void send_frame(std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame);
-  virtual bool is_send_avail_more_than(uint64_t size);
-  virtual bool is_recv_avail_more_than(uint64_t size);
-  void add_recv_total_offset(uint64_t delta);
-  void slide_recv_max_data();
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
-  uint64_t recv_max_data() const;
-  uint64_t send_max_data() const;
-  uint64_t recv_total_offset() const;
-  uint64_t send_total_offset() const;
+  uint64_t total_offset_received() const;
+  uint64_t total_offset_sent() const;
 
   DLL<QUICStream> stream_list;
 
@@ -72,6 +66,6 @@ private:
 
   // TODO: Maximum Data is in units of 1024 octets, but those total offset are in units of octets.
   // Add new uint16_t fields for remainder and treat those total offset in units of 1024 octets if needed
-  uint64_t _recv_total_offset = 0;
-  uint64_t _send_total_offset = 0;
+  uint64_t _total_offset_received = 0;
+  uint64_t _total_offset_sent     = 0;
 };

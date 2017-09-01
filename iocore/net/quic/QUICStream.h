@@ -30,6 +30,7 @@
 
 #include "QUICFrame.h"
 #include "QUICStreamState.h"
+#include "QUICFlowController.h"
 
 class QUICFrameTransmitter;
 class QUICStreamState;
@@ -59,20 +60,23 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
-  QUICError recv(std::shared_ptr<const QUICStreamFrame> frame);
-  QUICError recv(const std::shared_ptr<const QUICMaxStreamDataFrame> &frame);
-  QUICError recv(const std::shared_ptr<const QUICStreamBlockedFrame> &frame);
+  QUICError recv(const std::shared_ptr<const QUICStreamFrame> frame);
+  QUICError recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame);
+  QUICError recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame);
 
   void reset();
 
   bool is_read_ready();
+
+  QUICOffset largest_offset_received();
+  QUICOffset largest_offset_sent();
 
   LINK(QUICStream, link);
 
 private:
   QUICStreamState _state;
 
-  void _send();
+  QUICError _send();
 
   void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
   void _reorder_data();
@@ -85,18 +89,13 @@ private:
 
   Event *_send_tracked_event(Event *event, int send_event, VIO *vio);
 
-  void _slide_recv_max_stream_data();
-  QUICError _recv_flow_control(uint64_t new_offset);
-  bool _send_flow_control(uint64_t len);
+  QUICStreamId _id        = 0;
+  QUICOffset _recv_offset = 0;
+  QUICOffset _send_offset = 0;
 
-  QUICStreamId _id                = 0;
-  QUICOffset _recv_offset         = 0;
-  QUICOffset _recv_largest_offset = 0;
-  QUICOffset _send_offset         = 0;
-
-  uint64_t _recv_max_stream_data       = 0;
-  uint64_t _recv_max_stream_data_delta = 0;
-  uint64_t _send_max_stream_data       = 0;
+  QUICRemoteStreamFlowController *_remote_flow_controller;
+  QUICLocalStreamFlowController *_local_flow_controller;
+  uint64_t _flow_control_buffer_size = 1024;
 
   VIO _read_vio;
   VIO _write_vio;

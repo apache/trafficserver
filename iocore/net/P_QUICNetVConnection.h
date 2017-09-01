@@ -203,13 +203,15 @@ private:
 
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.
-  QUICVersionNegotiator *_version_negotiator       = nullptr;
-  QUICHandshake *_handshake_handler                = nullptr;
-  QUICCrypto *_crypto                              = nullptr;
-  QUICLossDetector *_loss_detector                 = nullptr;
-  QUICFrameDispatcher *_frame_dispatcher           = nullptr;
-  QUICStreamManager *_stream_manager               = nullptr;
-  QUICCongestionController *_congestion_controller = nullptr;
+  QUICVersionNegotiator *_version_negotiator        = nullptr;
+  QUICHandshake *_handshake_handler                 = nullptr;
+  QUICCrypto *_crypto                               = nullptr;
+  QUICLossDetector *_loss_detector                  = nullptr;
+  QUICFrameDispatcher *_frame_dispatcher            = nullptr;
+  QUICStreamManager *_stream_manager                = nullptr;
+  QUICCongestionController *_congestion_controller  = nullptr;
+  QUICRemoteFlowController *_remote_flow_controller = nullptr;
+  QUICLocalFlowController *_local_flow_controller   = nullptr;
 
   Queue<QUICPacket> _packet_recv_queue;
   Queue<QUICPacket> _packet_send_queue;
@@ -231,6 +233,8 @@ private:
   Ptr<ProxyMutex> _transmitter_mutex;
 
   QUICApplication *_create_application();
+  void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
+                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
 };
 
 extern ClassAllocator<QUICNetVConnection> quicNetVCAllocator;

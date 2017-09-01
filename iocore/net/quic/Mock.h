@@ -223,16 +223,20 @@ public:
 
 class MockQUICFrameTransmitter : public QUICFrameTransmitter
 {
+public:
   void
   transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame) override
   {
+    ++frameCount[static_cast<int>(frame->type())];
   }
 
   uint32_t
   maximum_stream_frame_data_size() override
   {
-    return 1160;
+    return 1200;
   }
+
+  int frameCount[256] = {0};
 };
 
 class MockQUICLossDetector : public QUICLossDetector
@@ -289,7 +293,6 @@ public:
     return _totalFrameCount;
   }
 
-  bool is_recv_avail_more_than(uint64_t /* size */) override { return true; }
   void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> /* frame */) override { return; }
 
 private:

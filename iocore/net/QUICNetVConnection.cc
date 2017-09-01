@@ -104,14 +104,19 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   this->_packet_factory.set_crypto_module(this->_crypto);
 
   // Create frame handlers
-  this->_stream_manager        = new QUICStreamManager(this, this->_application_map);
-  this->_congestion_controller = new QUICCongestionController();
-  this->_loss_detector         = new QUICLossDetector(this);
+  this->_stream_manager         = new QUICStreamManager(this, this->_application_map);
+  this->_congestion_controller  = new QUICCongestionController();
+  this->_loss_detector          = new QUICLossDetector(this);
+  this->_remote_flow_controller = new QUICRemoteConnectionFlowController(0, this);
+  this->_local_flow_controller  = new QUICLocalConnectionFlowController(0, this);
 
   this->_frame_dispatcher->add_handler(this);
   this->_frame_dispatcher->add_handler(this->_stream_manager);
   this->_frame_dispatcher->add_handler(this->_congestion_controller);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
+
+  this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
+                                  this->_handshake_handler->remote_transport_parameters());
 }
 
 void
@@ -255,7 +260,7 @@ QUICNetVConnection::close(QUICError error)
 std::vector<QUICFrameType>
 QUICNetVConnection::interests()
 {
-  return {QUICFrameType::CONNECTION_CLOSE};
+  return {QUICFrameType::CONNECTION_CLOSE, QUICFrameType::BLOCKED, QUICFrameType::MAX_DATA};
 }
 
 QUICError
@@ -264,6 +269,15 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
   QUICError error = QUICError(QUICErrorClass::NONE);
 
   switch (frame->type()) {
+  case QUICFrameType::MAX_DATA:
+    this->_remote_flow_controller->forward_limit(std::static_pointer_cast<const QUICMaxDataFrame>(frame)->maximum_data());
+    Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
+          static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
+          this->_remote_flow_controller->current_limit());
+    break;
+  case QUICFrameType::BLOCKED:
+    // BLOCKED frame is for debugging. Nothing to do here.
+    break;
   case QUICFrameType::CONNECTION_CLOSE:
     DebugQUICCon("Enter state_connection_closed");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
@@ -358,8 +372,8 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
     this->_application_map->set_default(this->_create_application());
-    this->_stream_manager->init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
-                                                    this->_handshake_handler->remote_transport_parameters());
+    this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
+                                    this->_handshake_handler->remote_transport_parameters());
 
     DebugQUICCon("Enter state_connection_established");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
@@ -507,6 +521,16 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
     if (packet->has_valid_fnv1a_hash()) {
       bool should_send_ack;
       error = this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size(), should_send_ack);
+      if (error.cls != QUICErrorClass::NONE) {
+        return error;
+      }
+      error = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
+      Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64,
+            static_cast<uint64_t>(this->_quic_connection_id), this->_local_flow_controller->current_offset(),
+            this->_local_flow_controller->current_limit());
+      if (error.cls != QUICErrorClass::NONE) {
+        return error;
+      }
     } else {
       DebugQUICCon("Invalid FNV-1a hash value");
       return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::CRYPTOGRAPHIC_ERROR);
@@ -586,6 +610,13 @@ QUICNetVConnection::_state_common_send_packet()
   this->_packetize_frames();
 
   QUICPacket *packet;
+  QUICError error = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
+  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
+        static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
+        this->_remote_flow_controller->current_limit());
+  if (error.cls != QUICErrorClass::NONE) {
+    return error;
+  }
   while ((packet = this->_packet_send_queue.dequeue()) != nullptr) {
     this->_packet_handler->send_packet(*packet, this);
     this->_loss_detector->on_packet_sent(
@@ -654,7 +685,21 @@ QUICError
 QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_num)
 {
   bool should_send_ack;
-  QUICError error = this->_frame_dispatcher->receive_frames(payload, size, should_send_ack);
+
+  QUICError error;
+
+  error = this->_frame_dispatcher->receive_frames(payload, size, should_send_ack);
+  if (error.cls != QUICErrorClass::NONE) {
+    return error;
+  }
+
+  error = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
+  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, static_cast<uint64_t>(this->_quic_connection_id),
+        this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
+  if (error.cls != QUICErrorClass::NONE) {
+    return error;
+  }
+  // this->_local_flow_controller->forward_limit();
 
   this->_ack_frame_creator.update(packet_num, should_send_ack);
   std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> ack_frame = this->_ack_frame_creator.create_if_needed();
@@ -708,4 +753,28 @@ QUICNetVConnection::_create_application()
     DebugQUICCon("Failed to negotiate application");
     return nullptr;
   }
+}
+
+void
+QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
+                                              const std::shared_ptr<const QUICTransportParameters> &remote_tp)
+{
+  this->_stream_manager->init_flow_control_params(local_tp, remote_tp);
+
+  uint32_t local_initial_max_data  = 0;
+  uint32_t remote_initial_max_data = 0;
+  if (local_tp) {
+    local_initial_max_data = local_tp->initial_max_data();
+  }
+  if (remote_tp) {
+    remote_initial_max_data = remote_tp->initial_max_data();
+  }
+
+  this->_local_flow_controller->forward_limit(local_initial_max_data);
+  this->_remote_flow_controller->forward_limit(remote_initial_max_data);
+  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, static_cast<uint64_t>(this->_quic_connection_id),
+        this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
+  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
+        static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
+        this->_remote_flow_controller->current_limit());
 }

@@ -29,7 +29,8 @@ check_PROGRAMS = \
   test_QUICLossDetector \
   test_QUICTypeUtil \
   test_QUICAckFrameCreator \
-  test_QUICVersionNegotiator
+  test_QUICVersionNegotiator \
+  test_QUICFlowController
 
 
 AM_CPPFLAGS += \
@@ -152,6 +153,7 @@ test_QUICFrameDispatcher_SOURCES = \
   ../QUICStreamManager.cc \
   ../QUICApplicationMap.cc \
   ../QUICCongestionController.cc \
+  ../QUICFlowController.cc \
   ../QUICLossDetector.cc \
   ../QUICFrame.cc \
   ../QUICPacket.cc \
@@ -252,6 +254,7 @@ test_QUICTransportParameters_SOURCES = \
   ../QUICStream.cc \
   ../QUICStreamState.cc \
   ../QUICStreamManager.cc \
+  ../QUICFlowController.cc \
   ../QUICPacket.cc \
   ../QUICFrame.cc \
   ../QUICDebugNames.cc \
@@ -397,12 +400,42 @@ test_QUICVersionNegotiator_SOURCES = \
   ../QUICStream.cc \
   ../QUICStreamState.cc \
   ../QUICStreamManager.cc \
+  ../QUICFlowController.cc \
   ../QUICFrame.cc \
   ../QUICDebugNames.cc \
   ../QUICVersionNegotiator.cc \
   ../QUICTransportParameters.cc \
   ../QUICConfig.cc \
   ../../SSLNextProtocolSet.cc
+
+#
+# test_QUICFlowController
+#
+test_QUICFlowController_CPPFLAGS = \
+  $(AM_CPPFLAGS)
+
+test_QUICFlowController_LDFLAGS = \
+  @AM_LDFLAGS@
+
+test_QUICFlowController_LDADD = \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  @LIBTCL@ \
+  @HWLOC_LIBS@
+
+test_QUICFlowController_SOURCES = \
+  main.cc \
+  test_QUICFlowController.cc \
+  ../QUICFlowController.cc \
+  ../QUICTypes.cc \
+  ../QUICPacket.cc \
+  ../QUICCrypto.cc \
+  $(QUICCrypto_impl) \
+  ../QUICFrame.cc
 
 include $(top_srcdir)/build/tidy.mk
 

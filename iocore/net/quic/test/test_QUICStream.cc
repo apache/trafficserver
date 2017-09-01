@@ -47,9 +47,10 @@ TEST_CASE("QUICStream_assembling_byte_stream_1", "[quic]")
 {
   MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
   IOBufferReader *reader = read_buffer->alloc_reader();
+  MockQUICFrameTransmitter tx;
 
   std::unique_ptr<QUICStream> stream(new QUICStream());
-  stream->init(manager, nullptr, stream_id, 1024, 1024);
+  stream->init(manager, &tx, stream_id, 1024, 1024);
   stream->do_io_read(nullptr, 0, read_buffer);
 
   stream->recv(frame_1);
@@ -73,9 +74,10 @@ TEST_CASE("QUICStream_assembling_byte_stream_2", "[quic]")
 {
   MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
   IOBufferReader *reader = read_buffer->alloc_reader();
+  MockQUICFrameTransmitter tx;
 
   std::unique_ptr<QUICStream> stream(new QUICStream());
-  stream->init(manager, nullptr, stream_id);
+  stream->init(manager, &tx, stream_id);
   stream->do_io_read(nullptr, 0, read_buffer);
 
   stream->recv(frame_8);
@@ -99,9 +101,10 @@ TEST_CASE("QUICStream_assembling_byte_stream_3", "[quic]")
 {
   MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
   IOBufferReader *reader = read_buffer->alloc_reader();
+  MockQUICFrameTransmitter tx;
 
   std::unique_ptr<QUICStream> stream(new QUICStream());
-  stream->init(manager, nullptr, stream_id);
+  stream->init(manager, &tx, stream_id);
   stream->do_io_read(nullptr, 0, read_buffer);
 
   stream->recv(frame_8);

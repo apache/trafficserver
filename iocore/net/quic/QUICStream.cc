@@ -28,23 +28,21 @@
 #include "QUICDebugNames.h"
 #include "QUICConfig.h"
 
-#define DebugQUICStream(fmt, ...)                                                                                               \
-  Debug("quic_stream", "[%" PRIx64 "] [%s] " fmt, static_cast<uint64_t>(this->_id), QUICDebugNames::stream_state(this->_state), \
-        ##__VA_ARGS__)
-
-static constexpr uint64_t MAX_DATA_HEADSPACE        = 10240; // in uints of octets
-static constexpr uint64_t MAX_STREAM_DATA_HEADSPACE = 1024;
+#define DebugQUICStream(fmt, ...) \
+  Debug("quic_stream", "[%" PRIx32 "] [%s] " fmt, this->_id, QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
 void
 QUICStream::init(QUICStreamManager *manager, QUICFrameTransmitter *tx, QUICStreamId id, uint64_t recv_max_stream_data,
                  uint64_t send_max_stream_data)
 {
-  this->_stream_manager = manager;
-  this->_tx             = tx;
-  this->_id             = id;
-  init_flow_control_params(recv_max_stream_data, send_max_stream_data);
+  this->mutex                   = new_ProxyMutex();
+  this->_stream_manager         = manager;
+  this->_tx                     = tx;
+  this->_id                     = id;
+  this->_remote_flow_controller = new QUICRemoteStreamFlowController(send_max_stream_data, _tx, _id);
+  this->_local_flow_controller  = new QUICLocalStreamFlowController(recv_max_stream_data, _tx, _id);
+  this->init_flow_control_params(recv_max_stream_data, send_max_stream_data);
 
-  this->mutex = new_ProxyMutex();
   DebugQUICStream("Initialized");
 }
 
@@ -57,9 +55,15 @@ QUICStream::start()
 void
 QUICStream::init_flow_control_params(uint32_t recv_max_stream_data, uint32_t send_max_stream_data)
 {
-  this->_recv_max_stream_data       = recv_max_stream_data;
-  this->_recv_max_stream_data_delta = recv_max_stream_data;
-  this->_send_max_stream_data       = send_max_stream_data;
+  this->_flow_control_buffer_size = recv_max_stream_data;
+  this->_local_flow_controller->forward_limit(recv_max_stream_data);
+  this->_remote_flow_controller->forward_limit(send_max_stream_data);
+  Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [LOCAL] %" PRIu64 "/%" PRIu64, this->_id,
+        QUICDebugNames::stream_state(this->_state), this->_local_flow_controller->current_offset(),
+        this->_local_flow_controller->current_limit());
+  Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [REMOTE] %" PRIu64 "/%" PRIu64, this->_id,
+        QUICDebugNames::stream_state(this->_state), this->_remote_flow_controller->current_offset(),
+        this->_remote_flow_controller->current_limit());
 }
 
 QUICStreamId
@@ -72,6 +76,7 @@ int
 QUICStream::main_event_handler(int event, void *data)
 {
   DebugQUICStream("%s", QUICDebugNames::vc_event(event));
+  QUICError error;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -83,7 +88,7 @@ QUICStream::main_event_handler(int event, void *data)
   }
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE: {
-    this->_send();
+    error = this->_send();
     this->_signal_write_event(true);
     this->_write_event = nullptr;
 
@@ -99,6 +104,12 @@ QUICStream::main_event_handler(int event, void *data)
   default:
     DebugQUICStream("unknown event");
     ink_assert(false);
+  }
+
+  if (error.cls != QUICErrorClass::NONE) {
+    // TODO Send error if needed
+    DebugQUICStream("QUICError: %s (%u), %s (0x%x)", QUICDebugNames::error_class(error.cls), static_cast<unsigned int>(error.cls),
+                    QUICDebugNames::error_code(error.code), static_cast<unsigned int>(error.code));
   }
 
   return EVENT_CONT;
@@ -247,6 +258,10 @@ QUICStream::_write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &fra
   int bytes_added = this->_read_vio.buffer.writer()->write(frame->data(), frame->data_length());
   this->_read_vio.nbytes += bytes_added;
   this->_recv_offset += frame->data_length();
+  this->_local_flow_controller->forward_limit(frame->offset() + this->_flow_control_buffer_size);
+  Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [LOCAL] %" PRIu64 "/%" PRIu64, this->_id,
+        QUICDebugNames::stream_state(this->_state), this->_local_flow_controller->current_offset(),
+        this->_local_flow_controller->current_limit());
 }
 
 void
@@ -266,24 +281,28 @@ QUICStream::_reorder_data()
  * which is called by application via do_io_read() or reenable().
  */
 QUICError
-QUICStream::recv(std::shared_ptr<const QUICStreamFrame> frame)
+QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
 {
   ink_assert(_id == frame->stream_id());
   ink_assert(this->_read_vio.op == VIO::READ);
 
+  // Check stream state - Do this first before accept the frame
   if (!this->_state.is_allowed_to_receive(*frame)) {
     this->reset();
     return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
   }
   this->_state.update_with_received_frame(*frame);
 
-  // Flow Control
-  QUICError error = this->_recv_flow_control(frame->offset());
+  // Flow Control - Even if it's allowed to receive on the state, it may exceed the limit
+  QUICError error = this->_local_flow_controller->update(frame->offset() + frame->data_length());
+  Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [LOCAL] %" PRIu64 "/%" PRIu64, this->_id,
+        QUICDebugNames::stream_state(this->_state), this->_local_flow_controller->current_offset(),
+        this->_local_flow_controller->current_limit());
   if (error.cls != QUICErrorClass::NONE) {
     return error;
   }
 
-  // Reordering
+  // Reordering - Some frames may be delayed or be dropped
   if (this->_recv_offset > frame->offset()) {
     // Do nothing. Just ignore STREAM frame.
     return QUICError(QUICErrorClass::NONE);
@@ -300,77 +319,31 @@ QUICStream::recv(std::shared_ptr<const QUICStreamFrame> frame)
 }
 
 QUICError
-QUICStream::recv(const std::shared_ptr<const QUICMaxStreamDataFrame> &frame)
+QUICStream::recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame)
 {
-  this->_send_max_stream_data += frame->maximum_stream_data();
+  this->_remote_flow_controller->forward_limit(frame->maximum_stream_data());
+  Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [REMOTE] %" PRIu64 "/%" PRIu64, this->_id,
+        QUICDebugNames::stream_state(this->_state), this->_remote_flow_controller->current_offset(),
+        this->_remote_flow_controller->current_limit());
   return QUICError(QUICErrorClass::NONE);
 }
 
 QUICError
-QUICStream::recv(const std::shared_ptr<const QUICStreamBlockedFrame> &frame)
+QUICStream::recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame)
 {
-  this->_slide_recv_max_stream_data();
-  return QUICError(QUICErrorClass::NONE);
-}
-
-void
-QUICStream::_slide_recv_max_stream_data()
-{
-  // TODO: How much should this be increased?
-  this->_recv_max_stream_data += this->_recv_max_stream_data_delta;
-  this->_stream_manager->send_frame(QUICFrameFactory::create_max_stream_data_frame(this->_id, this->_recv_max_stream_data));
-}
-
-QUICError
-QUICStream::_recv_flow_control(uint64_t new_offset)
-{
-  if (this->_recv_largest_offset > new_offset) {
-    return QUICError(QUICErrorClass::NONE);
-  }
-
-  uint64_t delta = new_offset - this->_recv_largest_offset;
-
-  Debug("quic_flow_ctrl", "Con: %" PRIu64 "/%" PRIu64 " Stream: %" PRIu64 "/%" PRIu64,
-        (this->_stream_manager->recv_total_offset() + delta) / 1024, this->_stream_manager->recv_max_data(), new_offset,
-        this->_recv_max_stream_data);
-
-  // Connection Level Flow Control
-  if (this->_id != STREAM_ID_FOR_HANDSHAKE) {
-    if (!this->_stream_manager->is_recv_avail_more_than(delta)) {
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_FLOW_CONTROL_RECEIVED_TOO_MUCH_DATA);
-    }
-
-    if (!this->_stream_manager->is_recv_avail_more_than(delta + MAX_DATA_HEADSPACE)) {
-      this->_stream_manager->slide_recv_max_data();
-    }
-
-    this->_stream_manager->add_recv_total_offset(delta);
-  }
-
-  // Stream Level Flow Control
-  if (this->_recv_max_stream_data > 0) {
-    if (this->_recv_max_stream_data < new_offset) {
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_FLOW_CONTROL_RECEIVED_TOO_MUCH_DATA);
-    }
-
-    if (this->_recv_max_stream_data < new_offset + MAX_STREAM_DATA_HEADSPACE) {
-      this->_slide_recv_max_stream_data();
-    }
-  }
-
-  this->_recv_largest_offset = new_offset;
-
+  // STREAM_BLOCKED frames are for debugging. Nothing to do here.
   return QUICError(QUICErrorClass::NONE);
 }
 
 /**
  * @brief Send STREAM DATA from _response_buffer
  */
-void
+QUICError
 QUICStream::_send()
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
+  QUICError error;
   IOBufferReader *reader = this->_write_vio.get_reader();
   int64_t bytes_avail    = reader->read_avail();
   int64_t total_len      = 0;
@@ -386,7 +359,11 @@ QUICStream::_send()
       len = data_len;
     }
 
-    if (!this->_send_flow_control(len)) {
+    QUICError error = this->_remote_flow_controller->update(this->_send_offset + len);
+    Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [REMOTE] %" PRIu64 "/%" PRIu64, this->_id,
+          QUICDebugNames::stream_state(this->_state), this->_remote_flow_controller->current_offset(),
+          this->_remote_flow_controller->current_limit());
+    if (error.cls != QUICErrorClass::NONE) {
       break;
     }
 
@@ -406,34 +383,7 @@ QUICStream::_send()
     this->_stream_manager->send_frame(std::move(frame));
   }
 
-  return;
-}
-
-bool
-QUICStream::_send_flow_control(uint64_t len)
-{
-  Debug("quic_flow_ctrl", "Con: %" PRIu64 "/%" PRIu64 " Stream: %" PRIu64 "/%" PRIu64,
-        (this->_stream_manager->send_total_offset() + len) / 1024, this->_stream_manager->send_max_data(), this->_send_offset + len,
-        this->_send_max_stream_data);
-
-  // Stream Level Flow Control
-  // TODO: remove check of _send_max_stream_data when moved to Second Implementation completely
-  if (this->_send_max_stream_data > 0 && len > this->_send_max_stream_data) {
-    this->_stream_manager->send_frame(QUICFrameFactory::create_stream_blocked_frame(this->_id));
-
-    return false;
-  }
-
-  // Connection Level Flow Control
-  if (this->_id != STREAM_ID_FOR_HANDSHAKE) {
-    if (!this->_stream_manager->is_send_avail_more_than(len)) {
-      this->_stream_manager->send_frame(QUICFrameFactory::create_blocked_frame());
-
-      return false;
-    }
-  }
-
-  return true;
+  return error;
 }
 
 void
@@ -446,4 +396,16 @@ bool
 QUICStream::is_read_ready()
 {
   return this->_read_vio.nbytes > 0;
+}
+
+QUICOffset
+QUICStream::largest_offset_received()
+{
+  return this->_local_flow_controller->current_offset();
+}
+
+QUICOffset
+QUICStream::largest_offset_sent()
+{
+  return this->_remote_flow_controller->current_offset();
 }

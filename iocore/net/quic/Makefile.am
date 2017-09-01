@@ -49,6 +49,7 @@ libquic_a_SOURCES = \
   QUICLossDetector.cc \
   QUICStreamManager.cc \
   QUICCongestionController.cc \
+  QUICFlowController.cc \
   QUICStreamState.cc \
   QUICStream.cc \
   QUICHandshake.cc \
