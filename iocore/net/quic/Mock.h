@@ -348,7 +348,27 @@ private:
 class MockQUICApplication : public QUICApplication
 {
 public:
-  MockQUICApplication() : QUICApplication(new MockQUICConnection) {}
+  MockQUICApplication() : QUICApplication(new MockQUICConnection) {
+    SET_HANDLER(&MockQUICApplication::main_event_handler);
+  }
+
+  int
+  main_event_handler(int event, Event *data)
+  {
+    if (event == 12345) {
+      QUICStreamIO *stream_io = static_cast<QUICStreamIO *>(data->cookie);
+      stream_io->write_reenable();
+    }
+    return EVENT_CONT;
+  }
+
+  void
+  send(const uint8_t *data, size_t size, QUICStreamId stream_id)
+  {
+    QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
+    stream_io->write(data, size);
+    eventProcessor.schedule_imm(this, ET_CALL, 12345, stream_io);
+  }
 };
 
 void NetVConnection::cancel_OOB(){};

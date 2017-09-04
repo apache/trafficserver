@@ -41,7 +41,7 @@ public:
 
   int64_t read_avail();
   int64_t read(uint8_t *buf, int64_t len);
-  int64_t write(uint8_t *buf, int64_t len);
+  int64_t write(const uint8_t *buf, int64_t len);
   void read_reenable();
   void write_reenable();
 

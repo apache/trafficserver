@@ -56,7 +56,7 @@ QUICStreamIO::read(uint8_t *buf, int64_t len)
 }
 
 int64_t
-QUICStreamIO::write(uint8_t *buf, int64_t len)
+QUICStreamIO::write(const uint8_t *buf, int64_t len)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());
 

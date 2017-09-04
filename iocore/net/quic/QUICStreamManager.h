@@ -64,7 +64,4 @@ private:
   QUICApplicationMap *_app_map                              = nullptr;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
   std::shared_ptr<const QUICTransportParameters> _remote_tp = nullptr;
-
-  QUICMaximumData _recv_max_data = {0};
-  QUICMaximumData _send_max_data = {0};
 };
