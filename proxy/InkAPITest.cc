@@ -1622,12 +1622,13 @@ REGRESSION_TEST(SDK_API_TSMutexCreate)(RegressionTest *test, int /* atype ATS_UN
   TSMutexLock(mutexp);
 
   /* This is normal because all locking is from the same thread */
-  TSReturnCode lock = TS_ERROR;
+  TSReturnCode lock1 = TS_ERROR;
+  TSReturnCode lock2 = TS_ERROR;
 
-  TSMutexLockTry(mutexp);
-  lock = TSMutexLockTry(mutexp);
+  lock1 = TSMutexLockTry(mutexp);
+  lock2 = TSMutexLockTry(mutexp);
 
-  if (TS_SUCCESS == lock) {
+  if (TS_SUCCESS == lock1 && TS_SUCCESS == lock2) {
     SDK_RPRINT(test, "TSMutexCreate", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSMutexLock", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSMutexLockTry", "TestCase1", TC_PASS, "ok");
