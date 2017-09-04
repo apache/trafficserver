@@ -348,9 +348,7 @@ private:
 class MockQUICApplication : public QUICApplication
 {
 public:
-  MockQUICApplication() : QUICApplication(new MockQUICConnection) {
-    SET_HANDLER(&MockQUICApplication::main_event_handler);
-  }
+  MockQUICApplication() : QUICApplication(new MockQUICConnection) { SET_HANDLER(&MockQUICApplication::main_event_handler); }
 
   int
   main_event_handler(int event, Event *data)
@@ -377,4 +375,3 @@ NetVConnection::send_OOB(Continuation *, char *, int)
 {
   return nullptr;
 }
-
