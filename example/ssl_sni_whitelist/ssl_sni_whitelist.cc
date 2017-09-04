@@ -35,10 +35,8 @@
 using ts::config::Configuration;
 using ts::config::Value;
 
-#define PN "ssl-sni-whitelist"
-#define PCP "[" PN " Plugin] "
-
-#if TS_USE_TLS_SNI
+#define PLUGIN_NAME "ssl_sni_whitelist"
+#define PCP "[" PLUGIN_NAME "] "
 
 namespace
 {
@@ -112,9 +110,9 @@ TSPluginInit(int argc, const char *argv[])
     {const_cast<char *>("config"), required_argument, nullptr, 'c'}, {nullptr, no_argument, nullptr, '\0'},
   };
 
-  info.plugin_name   = const_cast<char *>("SSL SNI whitelist");
-  info.vendor_name   = const_cast<char *>("Network Geographics");
-  info.support_email = const_cast<char *>("shinrich@network-geographics.com");
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   int opt = 0;
   while (opt >= 0) {
@@ -129,7 +127,7 @@ TSPluginInit(int argc, const char *argv[])
   if (ConfigPath.length() == 0) {
     static const char *const DEFAULT_CONFIG_PATH = "ssl_sni_whitelist.config";
     ConfigPath                                   = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
-    TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
+    TSDebug(PLUGIN_NAME, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
   }
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
@@ -148,17 +146,7 @@ TSPluginInit(int argc, const char *argv[])
   if (!success) {
     TSError(PCP "not initialized");
   }
-  TSDebug(PN, "Plugin %s", success ? "online" : "offline");
+  TSDebug(PLUGIN_NAME, "Plugin %s", success ? "online" : "offline");
 
   return;
 }
-
-#else // ! TS_USE_TLS_SNI
-
-void
-TSPluginInit(int, const char *[])
-{
-  TSError(PCP "requires TLS SNI which is not available");
-}
-
-#endif // TS_USE_TLS_SNI
