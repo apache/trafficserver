@@ -21,6 +21,7 @@
  *  limitations under the License.
  */
 
+#include "QUICApplication.h"
 #include "QUICStreamManager.h"
 #include "QUICCongestionController.h"
 #include "QUICLossDetector.h"
@@ -344,9 +345,16 @@ private:
   int _frameCount[256] = {0};
 };
 
+class MockQUICApplication : public QUICApplication
+{
+public:
+  MockQUICApplication() : QUICApplication(new MockQUICConnection) {}
+};
+
 void NetVConnection::cancel_OOB(){};
 Action *
 NetVConnection::send_OOB(Continuation *, char *, int)
 {
   return nullptr;
 }
+

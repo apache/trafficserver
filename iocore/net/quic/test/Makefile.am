@@ -24,6 +24,7 @@ check_PROGRAMS = \
   test_QUICFrameDispatcher \
   test_QUICStreamState \
   test_QUICStream \
+  test_QUICStreamManager \
   test_QUICTransportParameters \
   test_QUICCrypto \
   test_QUICLossDetector \
@@ -221,6 +222,36 @@ test_QUICStream_SOURCES = \
   ../../SSLNextProtocolSet.cc
 
 test_QUICStream_LDADD = \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  @LIBTCL@ \
+  @HWLOC_LIBS@
+
+#
+# test_QUICStreamManager
+#
+test_QUICStreamManager_CPPFLAGS = \
+  $(AM_CPPFLAGS)
+
+test_QUICStreamManager_LDFLAGS = \
+  @AM_LDFLAGS@
+
+test_QUICStreamManager_SOURCES = \
+  event_processor_main.cc \
+  test_QUICStreamManager.cc \
+  ../QUICStream.cc \
+  ../QUICFrameDispatcher.cc \
+  ../QUICStreamManager.cc \
+  ../QUICApplicationMap.cc \
+  ../QUICCongestionController.cc \
+  ../../SSLNextProtocolSet.cc
+
+test_QUICStreamManager_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/iocore/net/quic/libquic.a \

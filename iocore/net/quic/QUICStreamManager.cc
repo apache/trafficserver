@@ -84,6 +84,9 @@ QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
   case QUICFrameType::STREAM:
     error = this->_handle_frame(std::dynamic_pointer_cast<const QUICStreamFrame>(frame));
     break;
+  case QUICFrameType::RST_STREAM:
+    error = this->_handle_frame(std::dynamic_pointer_cast<const QUICRstStreamFrame>(frame));
+    break;
   default:
     Debug(tag, "Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
     ink_assert(false);
@@ -96,7 +99,7 @@ QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
 QUICError
 QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame> &frame)
 {
-  QUICStream *stream = this->_find_stream(frame->stream_id());
+  QUICStream *stream = this->_find_or_create_stream(frame->stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
@@ -109,7 +112,7 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxStreamDataFr
 QUICError
 QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &frame)
 {
-  QUICStream *stream = this->_find_stream(frame->stream_id());
+  QUICStream *stream = this->_find_or_create_stream(frame->stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
@@ -136,6 +139,19 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamFrame> &f
   this_ethread()->schedule_imm(application, VC_EVENT_READ_READY, stream);
 
   return error;
+}
+
+QUICError
+QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICRstStreamFrame> &frame)
+{
+  QUICStream *stream = this->_find_or_create_stream(frame->stream_id());
+  if (stream) {
+    // TODO Reset the stream
+  } else {
+    // TODO: connection error?
+  }
+
+  return QUICError(QUICErrorClass::NONE);
 }
 
 /**
@@ -206,7 +222,7 @@ QUICStreamManager::total_offset_received() const
   // FIXME Iterating all (open + closed) streams is expensive
   for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
     if (s->id() != 0) {
-      total_offset_received += s->largest_offset_received();
+      total_offset_received += s->largest_offset_received() / 1024;
     }
   }
   return total_offset_received;
@@ -220,8 +236,18 @@ QUICStreamManager::total_offset_sent() const
   // FIXME Iterating all (open + closed) streams is expensive
   for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
     if (s->id() != 0) {
-      total_offset_sent += s->largest_offset_sent();
+      total_offset_sent += s->largest_offset_sent() / 1024;
     }
   }
-  return this->_total_offset_sent;
+  return total_offset_sent;
+}
+
+uint32_t
+QUICStreamManager::stream_count() const
+{
+  uint32_t count = 0;
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+    ++count;
+  }
+  return count;
 }

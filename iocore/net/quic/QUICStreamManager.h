@@ -37,22 +37,26 @@ class QUICStreamManager : public QUICFrameHandler
 public:
   QUICStreamManager(){};
   QUICStreamManager(QUICFrameTransmitter *tx, QUICApplicationMap *app_map);
-  virtual std::vector<QUICFrameType> interests() override;
-  virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
+
   virtual void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame);
   virtual void send_frame(std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame);
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   uint64_t total_offset_received() const;
   uint64_t total_offset_sent() const;
+  uint32_t stream_count() const;
 
   DLL<QUICStream> stream_list;
+
+  // QUICFrameHandler
+  virtual std::vector<QUICFrameType> interests() override;
+  virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
 
 private:
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   QUICStream *_find_stream(QUICStreamId id);
-  QUICError _handle_frame(const std::shared_ptr<const QUICMaxDataFrame> &);
   QUICError _handle_frame(const std::shared_ptr<const QUICStreamFrame> &);
+  QUICError _handle_frame(const std::shared_ptr<const QUICRstStreamFrame> &);
   QUICError _handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame> &);
   QUICError _handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &);
 
@@ -63,9 +67,4 @@ private:
 
   QUICMaximumData _recv_max_data = {0};
   QUICMaximumData _send_max_data = {0};
-
-  // TODO: Maximum Data is in units of 1024 octets, but those total offset are in units of octets.
-  // Add new uint16_t fields for remainder and treat those total offset in units of 1024 octets if needed
-  uint64_t _total_offset_received = 0;
-  uint64_t _total_offset_sent     = 0;
 };

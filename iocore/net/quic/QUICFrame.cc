@@ -691,7 +691,11 @@ QUICRstStreamFrame::error_code() const
 QUICStreamId
 QUICRstStreamFrame::stream_id() const
 {
-  return QUICTypeUtil::read_QUICStreamId(this->_buf + 5, 4);
+  if (this->_buf) {
+    return QUICTypeUtil::read_QUICStreamId(this->_buf + 5, 4);
+  } else {
+    return this->_stream_id;
+  }
 }
 
 QUICOffset
