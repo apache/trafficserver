@@ -761,6 +761,20 @@ QUICPacketFactory::set_crypto_module(QUICCrypto *crypto)
 //
 // QUICPacketNumberGenerator
 //
+QUICPacketNumberGenerator::QUICPacketNumberGenerator()
+{
+  this->randomize();
+}
+
+QUICPacketNumber
+QUICPacketNumberGenerator::randomize()
+{
+  std::random_device rnd;
+  this->_current = rnd() & 0x7FFFFFFF;
+
+  return this->_current;
+}
+
 QUICPacketNumber
 QUICPacketNumberGenerator::next()
 {

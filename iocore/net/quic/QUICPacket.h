@@ -170,7 +170,8 @@ private:
 class QUICPacketNumberGenerator
 {
 public:
-  QUICPacketNumberGenerator(QUICPacketNumber initial_number = 0) : _current(initial_number){};
+  QUICPacketNumberGenerator();
+  QUICPacketNumber randomize();
   QUICPacketNumber next();
 
 private:

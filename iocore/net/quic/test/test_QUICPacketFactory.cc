@@ -65,6 +65,6 @@ TEST_CASE("QUICPacketFactory_Create_ServerCleartextPacket", "[quic]")
   CHECK(packet->type() == QUICPacketType::SERVER_CLEARTEXT);
   CHECK(packet->connection_id() == 0x01020304);
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
-  CHECK(packet->packet_number() == 0);
+  CHECK((packet->packet_number() & 0xFFFFFFFF80000000) == 0);
   CHECK(packet->version() == 0x11223344);
 }
