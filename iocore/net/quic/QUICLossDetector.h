@@ -48,6 +48,7 @@ public:
   std::vector<QUICFrameType> interests() override;
   virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
   void on_packet_sent(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet);
+  QUICPacketNumber largest_acked_packet_number();
 
 private:
   struct PacketInfo {

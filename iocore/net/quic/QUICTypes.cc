@@ -40,6 +40,7 @@ QUICTypeUtil::hasLongHeader(const uint8_t *buf)
 QUICConnectionId
 QUICTypeUtil::read_QUICConnectionId(const uint8_t *buf, uint8_t len)
 {
+  // Should be QUICConnectionId(read_nbytes_as_uint(buf, len));
   return static_cast<QUICPacketNumber>(read_nbytes_as_uint(buf, len));
 }
 

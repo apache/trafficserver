@@ -91,13 +91,42 @@ QUICPacketHandler::init_accept(EThread *t = nullptr)
   SET_HANDLER(&QUICPacketHandler::acceptEvent);
 }
 
+// TODO: Integrate with QUICPacketHeader::connection_id()
+bool
+QUICPacketHandler::_read_connection_id(QUICConnectionId &cid, IOBufferBlock *block)
+{
+  const uint8_t *buf       = reinterpret_cast<const uint8_t *>(block->buf());
+  const uint8_t cid_offset = 1;
+  const uint8_t cid_len    = 8;
+
+  if (QUICTypeUtil::hasLongHeader(buf)) {
+    cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
+  } else {
+    if (buf[0] & 0x40) {
+      cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
+    } else {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void
 QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
 {
   IOBufferBlock *block = udpPacket->getIOBlockChain();
 
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> qPkt = QUICPacketFactory::create(block);
-  QUICNetVConnection *vc = this->_connections.get(qPkt->connection_id());
+  QUICConnectionId cid;
+  bool res = this->_read_connection_id(cid, block);
+
+  QUICNetVConnection *vc = nullptr;
+  if (res) {
+    vc = this->_connections.get(cid);
+  } else {
+    // TODO: find vc from five tuples
+    ink_assert(false);
+  }
 
   if (!vc) {
     // Unknown Connection ID
@@ -119,9 +148,10 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     vc->options.ip_family = udpPacket->from.sa.sa_family;
 
     // TODO: Handle Connection ID of Client Cleartext / Non-Final Server Cleartext Packet
-    this->_connections.put(qPkt->connection_id(), vc);
+    this->_connections.put(cid, vc);
   }
 
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> qPkt = QUICPacketFactory::create(block, vc->largest_received_packet_number());
   vc->push_packet(std::move(qPkt));
 
   // send to EThread

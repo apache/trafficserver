@@ -175,6 +175,8 @@ public:
   NetVConnectionContext_t direction() override;
   SSLNextProtocolSet *next_protocol_set() override;
   void close(QUICError error) override;
+  QUICPacketNumber largest_received_packet_number() override;
+  QUICPacketNumber largest_acked_packet_number() override;
 
   // QUICConnection (QUICPacketTransmitter)
   virtual void transmit_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet) override;
@@ -190,8 +192,9 @@ public:
 
 private:
   QUICConnectionId _quic_connection_id;
-  UDPConnection *_udp_con            = nullptr;
-  QUICPacketHandler *_packet_handler = nullptr;
+  QUICPacketNumber _largest_received_packet_number = 0;
+  UDPConnection *_udp_con                          = nullptr;
+  QUICPacketHandler *_packet_handler               = nullptr;
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
   QUICAckFrameCreator _ack_frame_creator;

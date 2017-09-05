@@ -85,7 +85,8 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
         Debug(tag, "Version negotiation succeeded: %x", initial_packet->version());
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
-        this->_client_qc->transmit_packet(packet_factory->create_version_negotiation_packet(initial_packet));
+        this->_client_qc->transmit_packet(
+          packet_factory->create_version_negotiation_packet(initial_packet, _client_qc->largest_acked_packet_number()));
         Debug(tag, "Version negotiation failed: %x", initial_packet->version());
       }
     } else {

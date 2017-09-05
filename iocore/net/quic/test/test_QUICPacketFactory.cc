@@ -42,9 +42,9 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   memcpy(block->end(), client_initial_packet_data, sizeof(client_initial_packet_data));
   block->fill(sizeof(client_initial_packet_data));
 
-  QUICPacket client_initial_packet(block);
+  QUICPacket client_initial_packet(block, 0);
 
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet = factory.create_version_negotiation_packet(&client_initial_packet);
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet = factory.create_version_negotiation_packet(&client_initial_packet, 0);
   CHECK(packet->type() == QUICPacketType::VERSION_NEGOTIATION);
   CHECK(packet->connection_id() == client_initial_packet.connection_id());
   CHECK(packet->packet_number() == client_initial_packet.packet_number());
@@ -61,7 +61,7 @@ TEST_CASE("QUICPacketFactory_Create_ServerCleartextPacket", "[quic]")
   memcpy(payload.get(), raw, sizeof(raw));
 
   std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet =
-    factory.create_server_cleartext_packet(0x01020304, std::move(payload), sizeof(raw), true);
+    factory.create_server_cleartext_packet(0x01020304, 0, std::move(payload), sizeof(raw), true);
   CHECK(packet->type() == QUICPacketType::SERVER_CLEARTEXT);
   CHECK(packet->connection_id() == 0x01020304);
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);

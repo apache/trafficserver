@@ -96,6 +96,12 @@ QUICLossDetector::handle_frame(std::shared_ptr<const QUICFrame> frame)
   return error;
 }
 
+QUICPacketNumber
+QUICLossDetector::largest_acked_packet_number()
+{
+  return this->_largest_acked_packet;
+}
+
 void
 QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_number)
 {

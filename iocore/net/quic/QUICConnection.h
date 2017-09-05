@@ -34,10 +34,12 @@ class SSLNextProtocolSet;
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
 {
 public:
-  virtual uint32_t maximum_quic_packet_size()     = 0;
-  virtual uint32_t minimum_quic_packet_size()     = 0;
-  virtual uint32_t pmtu()                         = 0;
-  virtual NetVConnectionContext_t direction()     = 0;
-  virtual SSLNextProtocolSet *next_protocol_set() = 0;
-  virtual void close(QUICError error)             = 0;
+  virtual uint32_t maximum_quic_packet_size()               = 0;
+  virtual uint32_t minimum_quic_packet_size()               = 0;
+  virtual uint32_t pmtu()                                   = 0;
+  virtual NetVConnectionContext_t direction()               = 0;
+  virtual SSLNextProtocolSet *next_protocol_set()           = 0;
+  virtual void close(QUICError error)                       = 0;
+  virtual QUICPacketNumber largest_received_packet_number() = 0;
+  virtual QUICPacketNumber largest_acked_packet_number()    = 0;
 };

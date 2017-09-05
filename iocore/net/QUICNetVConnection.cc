@@ -232,7 +232,8 @@ QUICNetVConnection::get_transmitter_mutex()
 void
 QUICNetVConnection::push_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
-  DebugQUICCon("Type=%s Size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
+  DebugQUICCon("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
+               packet->size());
   this->_packet_recv_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
 }
 
@@ -506,6 +507,18 @@ QUICNetVConnection::next_protocol_set()
   return this->_next_protocol_set;
 }
 
+QUICPacketNumber
+QUICNetVConnection::largest_received_packet_number()
+{
+  return this->_largest_received_packet_number;
+}
+
+QUICPacketNumber
+QUICNetVConnection::largest_acked_packet_number()
+{
+  return this->_loss_detector->largest_acked_packet_number();
+}
+
 QUICError
 QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
@@ -684,6 +697,10 @@ QUICNetVConnection::_packetize_frames()
 QUICError
 QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_num)
 {
+  if (packet_num > this->_largest_received_packet_number) {
+    this->_largest_received_packet_number = packet_num;
+  }
+
   bool should_send_ack;
 
   QUICError error;
@@ -718,15 +735,16 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
 
   switch (type) {
   case QUICPacketType::SERVER_CLEARTEXT:
-    packet = this->_packet_factory.create_server_cleartext_packet(this->_quic_connection_id, std::move(buf), len, retransmittable);
+    packet = this->_packet_factory.create_server_cleartext_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
+                                                                  std::move(buf), len, retransmittable);
     break;
   default:
     if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-      packet =
-        this->_packet_factory.create_server_protected_packet(this->_quic_connection_id, std::move(buf), len, retransmittable);
+      packet = this->_packet_factory.create_server_protected_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
+                                                                    std::move(buf), len, retransmittable);
     } else {
-      packet =
-        this->_packet_factory.create_server_cleartext_packet(this->_quic_connection_id, std::move(buf), len, retransmittable);
+      packet = this->_packet_factory.create_server_cleartext_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
+                                                                    std::move(buf), len, retransmittable);
     }
     break;
   }

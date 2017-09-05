@@ -32,7 +32,7 @@ TEST_CASE("Loading Long Header Packet", "[quic]")
   memcpy(payload.get(), raw, sizeof(raw));
 
   // Cleartext packet with a long header
-  QUICPacket packet1(QUICPacketType::CLIENT_CLEARTEXT, 0xffddbb9977553311ULL, 0xffcc9966, 0x00112233, std::move(payload),
+  QUICPacket packet1(QUICPacketType::CLIENT_CLEARTEXT, 0xffddbb9977553311ULL, 0xffcc9966, 0, 0x00112233, std::move(payload),
                      sizeof(raw), true);
 
   uint8_t buf[65536];
@@ -44,7 +44,7 @@ TEST_CASE("Loading Long Header Packet", "[quic]")
   memcpy(block->end(), buf, len);
   block->fill(len);
 
-  const QUICPacket packet2(block);
+  const QUICPacket packet2(block, 0);
 
   CHECK(packet2.type() == QUICPacketType::CLIENT_CLEARTEXT);
   CHECK(packet2.connection_id() == 0xffddbb9977553311ULL);
@@ -66,7 +66,7 @@ TEST_CASE("Loading Short Header Packet", "[quic]")
   memcpy(protected_payload.get(), protected_raw, sizeof(protected_raw));
 
   // Cleartext packet with a long header
-  QUICPacket packet1(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, 0xffcc9966, std::move(payload), sizeof(raw), true);
+  QUICPacket packet1(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, 0xffcc9966, 0, std::move(payload), sizeof(raw), true);
   packet1.set_protected_payload(std::move(protected_payload), sizeof(protected_raw));
 
   uint8_t buf[65536];
@@ -78,7 +78,7 @@ TEST_CASE("Loading Short Header Packet", "[quic]")
   memcpy(block->end(), buf, len);
   block->fill(len);
 
-  const QUICPacket packet2(block);
+  const QUICPacket packet2(block, 0);
 
   CHECK(packet2.type() == QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0);
   CHECK(packet2.packet_number() == 0xffcc9966);
@@ -90,7 +90,7 @@ TEST_CASE("Loading Short Header Packet", "[quic]")
 TEST_CASE("Loading Unknown Packet", "[quic]")
 {
   const uint8_t buf[]      = {0xff};
-  QUICPacketHeader *header = QUICPacketHeader::load(buf, sizeof(buf));
+  QUICPacketHeader *header = QUICPacketHeader::load(buf, sizeof(buf), 0);
 
   CHECK(header->type() == QUICPacketType::UNINITIALIZED);
 }

@@ -41,8 +41,8 @@ TEST_CASE("QUICLossDetector_Loss_in_Handshake", "[quic]")
   memcpy(payload.get(), raw, sizeof(raw));
 
   std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet = std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(
-    new QUICPacket(QUICPacketType::SERVER_CLEARTEXT, 0xffddbb9977553311ULL, 0x00000001, 0x00112233, std::move(payload), sizeof(raw),
-                   true),
+    new QUICPacket(QUICPacketType::SERVER_CLEARTEXT, 0xffddbb9977553311ULL, 0x00000001, 0, 0x00112233, std::move(payload),
+                   sizeof(raw), true),
     [](QUICPacket *p) { delete p; });
   detector.on_packet_sent(std::move(packet));
   ink_hrtime_sleep(HRTIME_MSECONDS(1000));

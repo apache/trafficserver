@@ -43,6 +43,7 @@ public:
 
 private:
   void _recv_packet(int event, UDPPacket *udpPacket);
+  bool _read_connection_id(QUICConnectionId &cid, IOBufferBlock *block);
 
   Map<int64_t, QUICNetVConnection *> _connections;
   SSL_CTX *_ssl_ctx;
