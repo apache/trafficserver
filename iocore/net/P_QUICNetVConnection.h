@@ -220,6 +220,8 @@ private:
   Queue<QUICPacket> _packet_send_queue;
   std::queue<std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>> _frame_buffer;
 
+  Event *_packet_write_ready = nullptr;
+
   void _packetize_frames();
   std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
                                                                    QUICPacketType type = QUICPacketType::UNINITIALIZED);

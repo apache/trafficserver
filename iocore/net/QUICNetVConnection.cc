@@ -195,7 +195,9 @@ QUICNetVConnection::transmit_packet(std::unique_ptr<QUICPacket, QUICPacketDelete
 {
   // TODO Remove const_cast
   this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
-  eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+  if (!this->_packet_write_ready) {
+    this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+  }
 }
 
 void
@@ -242,7 +244,9 @@ QUICNetVConnection::transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFu
 {
   DebugQUICCon("Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
   this->_frame_buffer.push(std::move(frame));
-  eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+  if (!this->_packet_write_ready) {
+    this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+  }
 }
 
 void
@@ -350,6 +354,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
     error = this->_state_common_send_packet();
+    this->_packet_write_ready = nullptr;
     break;
   }
   case EVENT_IMMEDIATE: {
@@ -394,6 +399,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
     error = this->_state_common_send_packet();
+    this->_packet_write_ready = nullptr;
     break;
   }
 
@@ -428,6 +434,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
     this->_state_common_send_packet();
+    this->_packet_write_ready = nullptr;
     break;
   }
   default:
@@ -452,6 +459,7 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
+    this->_packet_write_ready = nullptr;
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;
 
@@ -722,7 +730,6 @@ QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPac
   std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> ack_frame = this->_ack_frame_creator.create_if_needed();
   if (ack_frame != nullptr) {
     this->transmit_frame(std::move(ack_frame));
-    eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
   }
 
   return error;
