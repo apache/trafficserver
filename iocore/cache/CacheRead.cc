@@ -245,7 +245,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
           continue;
         }
       }
-      ink_assert(w->alternate.valid());
+
       if (w->alternate.valid())
         vector.insert(&w->alternate, alt_ndx);
     }
