@@ -94,3 +94,42 @@ TEST_CASE("Loading Unknown Packet", "[quic]")
 
   CHECK(header->type() == QUICPacketType::UNINITIALIZED);
 }
+
+TEST_CASE("Encoded Packet Number Length", "[quic]")
+{
+  QUICPacketNumber base = 0x6afa2f;
+
+  CHECK(QUICPacket::calc_packet_number_len(0x6b4264, base) == 2);
+  CHECK(QUICPacket::calc_packet_number_len(0x6bc107, base) == 4);
+}
+
+TEST_CASE("Encoding Packet Number", "[quic]")
+{
+  QUICPacketNumber dst = 0;
+  QUICPacketNumber src = 0xaa831f94;
+
+  QUICPacket::encode_packet_number(dst, src, 2);
+  CHECK(dst == 0x1f94);
+}
+
+TEST_CASE("Decoding Packet Number 1", "[quic]")
+{
+  QUICPacketNumber dst  = 0;
+  QUICPacketNumber src  = 0x1f94;
+  size_t len            = 2;
+  QUICPacketNumber base = 0xaa82f30e;
+
+  QUICPacket::decode_packet_number(dst, src, len, base);
+  CHECK(dst == 0xaa831f94);
+}
+
+TEST_CASE("Decoding Packet Number 2", "[quic]")
+{
+  QUICPacketNumber dst  = 0;
+  QUICPacketNumber src  = 0xf1;
+  size_t len            = 1;
+  QUICPacketNumber base = 0x18bf54f0;
+
+  QUICPacket::decode_packet_number(dst, src, len, base);
+  CHECK(dst == 0x18bf54f1);
+}

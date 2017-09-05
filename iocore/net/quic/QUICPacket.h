@@ -147,6 +147,10 @@ public:
   void store_header(uint8_t *buf, size_t *len) const;
   bool has_valid_fnv1a_hash() const;
   QUICKeyPhase key_phase() const;
+  static uint8_t calc_packet_number_len(QUICPacketNumber num, QUICPacketNumber base);
+  static bool encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len);
+  static bool decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber largest_acked_num);
+
   LINK(QUICPacket, link);
 
 private:

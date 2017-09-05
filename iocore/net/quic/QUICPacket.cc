@@ -594,6 +594,57 @@ QUICPacket::set_protected_payload(ats_unique_buf cipher_txt, size_t cipher_txt_l
   this->_protected_payload_size = cipher_txt_len;
 }
 
+uint8_t
+QUICPacket::calc_packet_number_len(QUICPacketNumber num, QUICPacketNumber base)
+{
+  ink_assert(num > base);
+
+  uint64_t d  = (num - base) * 2;
+  uint8_t len = 0;
+
+  if (d > 0xFFFF) {
+    len = 4;
+  } else if (d > 0xFF) {
+    len = 2;
+  } else {
+    len = 1;
+  }
+
+  return len;
+}
+
+bool
+QUICPacket::encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len)
+{
+  ink_assert(len == 1 || len == 2 || len == 4);
+
+  uint64_t mask = (1ULL << (len * 8)) - 1;
+  dst           = src & mask;
+  return true;
+}
+
+bool
+QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber base)
+{
+  ink_assert(len == 1 || len == 2 || len == 4);
+
+  QUICPacketNumber expected = base + 1;
+
+  uint64_t p              = 1ULL << (len * 8);
+  QUICPacketNumber masked = base & (~(p - 1));
+  dst                     = masked + src;
+
+  if (dst >= expected) {
+    return true;
+  }
+
+  dst += p;
+  return true;
+}
+
+//
+// QUICPacketFactory
+//
 std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
 QUICPacketFactory::create(IOBufferBlock *block)
 {
@@ -687,6 +738,9 @@ QUICPacketFactory::set_crypto_module(QUICCrypto *crypto)
   this->_crypto = crypto;
 }
 
+//
+// QUICPacketNumberGenerator
+//
 QUICPacketNumber
 QUICPacketNumberGenerator::next()
 {
