@@ -605,7 +605,7 @@ dir_insert(const CacheKey *key, Vol *d, Dir *to_part)
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s  = key->slice32(0) % d->segments, l;
   int bi = key->slice32(1) % d->buckets;
-  ink_assert(dir_approx_size(to_part) <= MAX_FRAG_SIZE + sizeofDoc);
+  ink_assert(dir_approx_size(to_part) <= MAX_FRAG_SIZE + sizeof(Doc));
   Dir *seg = dir_segment(s, d);
   Dir *e   = nullptr;
   Dir *b   = dir_bucket(bi, seg);
@@ -671,7 +671,7 @@ dir_overwrite(const CacheKey *key, Vol *d, Dir *dir, Dir *overwrite, bool must_o
   Vol *vol = d;
   CHECK_DIR(d);
 
-  ink_assert((unsigned int)dir_approx_size(dir) <= (unsigned int)(MAX_FRAG_SIZE + sizeofDoc)); // XXX - size should be unsigned
+  ink_assert((unsigned int)dir_approx_size(dir) <= (unsigned int)(MAX_FRAG_SIZE + sizeof(Doc))); // XXX - size should be unsigned
 Lagain:
   // find entry to overwrite
   e = b;
