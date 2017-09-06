@@ -838,6 +838,16 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "fsiz", field);
 
+  field = new LogField("client_connection_id", "ccid", LogField::sINT, &LogAccess::marshal_client_http_connection_id,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "ccid", field);
+
+  field = new LogField("client_transaction_id", "ctid", LogField::sINT, &LogAccess::marshal_client_http_transaction_id,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "ctid", field);
+
   Ptr<LogFieldAliasTable> entry_type_map = make_ptr(new LogFieldAliasTable);
   entry_type_map->init(N_LOG_ENTRY_TYPES, LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP");
   field = new LogField("log_entry_type", "etype", LogField::sINT, &LogAccess::marshal_entry_type, &LogAccess::unmarshal_entry_type,

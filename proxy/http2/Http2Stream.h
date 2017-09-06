@@ -89,6 +89,12 @@ public:
     return _id;
   }
 
+  int
+  get_transaction_id() const override
+  {
+    return _id;
+  }
+
   Http2StreamState
   get_state() const
   {
