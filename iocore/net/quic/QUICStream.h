@@ -105,7 +105,7 @@ private:
 
   // Fragments of received STREAM frame (offset is unmatched)
   // TODO: Consider to replace with ts/RbTree.h or other data structure
-  std::map<QUICOffset, std::shared_ptr<const QUICStreamFrame>> _request_stream_frame_buffer;
+  std::map<QUICOffset, std::shared_ptr<const QUICStreamFrame>> _received_stream_frame_buffer;
 
   QUICStreamManager *_stream_manager = nullptr;
   QUICFrameTransmitter *_tx          = nullptr;

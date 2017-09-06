@@ -267,10 +267,10 @@ QUICStream::_write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &fra
 void
 QUICStream::_reorder_data()
 {
-  auto frame = _request_stream_frame_buffer.find(this->_recv_offset);
-  while (frame != this->_request_stream_frame_buffer.end()) {
+  auto frame = _received_stream_frame_buffer.find(this->_recv_offset);
+  while (frame != this->_received_stream_frame_buffer.end()) {
     this->_write_to_read_vio(frame->second);
-    frame = _request_stream_frame_buffer.find(this->_recv_offset);
+    frame = _received_stream_frame_buffer.find(this->_recv_offset);
   }
 }
 
@@ -310,9 +310,9 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
     this->_write_to_read_vio(frame);
     this->_reorder_data();
   } else {
-    // NOTE: push fragments in _request_stream_frame_buffer temporally.
+    // NOTE: push fragments in _received_stream_frame_buffer temporally.
     // They will be reordered when missing data is filled and offset is matched.
-    this->_request_stream_frame_buffer.insert(std::make_pair(frame->offset(), frame));
+    this->_received_stream_frame_buffer.insert(std::make_pair(frame->offset(), frame));
   }
 
   return QUICError(QUICErrorClass::NONE);
