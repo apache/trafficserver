@@ -52,7 +52,9 @@ QUICStreamIO::read_avail()
 int64_t
 QUICStreamIO::read(uint8_t *buf, int64_t len)
 {
-  return this->_read_buffer_reader->read(const_cast<uint8_t *>(buf), len);
+  int64_t read_len = this->_read_buffer_reader->read(const_cast<uint8_t *>(buf), len);
+  this->_read_vio->ndone += read_len;
+  return read_len;
 }
 
 int64_t

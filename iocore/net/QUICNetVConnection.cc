@@ -353,7 +353,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
-    error = this->_state_common_send_packet();
+    error                     = this->_state_common_send_packet();
     this->_packet_write_ready = nullptr;
     break;
   }
@@ -398,7 +398,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
-    error = this->_state_common_send_packet();
+    error                     = this->_state_common_send_packet();
     this->_packet_write_ready = nullptr;
     break;
   }
@@ -459,7 +459,7 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
-    this->_packet_write_ready = nullptr;
+    this->_packet_write_ready        = nullptr;
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;
 

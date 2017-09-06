@@ -66,7 +66,7 @@ public:
 
   void reset();
 
-  bool is_read_ready();
+  size_t nbytes_to_read();
 
   QUICOffset largest_offset_received();
   QUICOffset largest_offset_sent();

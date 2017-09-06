@@ -132,11 +132,12 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamFrame> &f
     application->set_stream(stream);
   }
 
-  QUICError error = stream->recv(frame);
-
-  // FIXME: schedule VC_EVENT_READ_READY to application every single frame?
-  // If application reading buffer continuously, do not schedule event.
-  this_ethread()->schedule_imm(application, VC_EVENT_READ_READY, stream);
+  size_t nbytes_to_read = stream->nbytes_to_read();
+  QUICError error       = stream->recv(frame);
+  // Prevent trigger read events multiple times
+  if (nbytes_to_read == 0) {
+    this_ethread()->schedule_imm(application, VC_EVENT_READ_READY, stream);
+  }
 
   return error;
 }

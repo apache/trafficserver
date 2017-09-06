@@ -392,10 +392,10 @@ QUICStream::reset()
   // TODO: Create a RST_STREAM frame and pass it to Stream Manager
 }
 
-bool
-QUICStream::is_read_ready()
+size_t
+QUICStream::nbytes_to_read()
 {
-  return this->_read_vio.nbytes > 0;
+  return this->_read_vio.ntodo();
 }
 
 QUICOffset
