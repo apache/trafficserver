@@ -169,6 +169,16 @@ public:
   }
   void transaction_done() override;
 
+  int
+  get_transaction_id() const override
+  {
+    // For HTTP/1 there is only one on-going transaction at a time per session/connection.  Therefore, the transaction count can be
+    // presumed not to increase during the lifetime of a transaction, thus this function will return a consistent unique transaction
+    // identifier.
+    //
+    return get_transact_count();
+  }
+
 protected:
   uint16_t outbound_port;
   IpAddr outbound_ip4;
