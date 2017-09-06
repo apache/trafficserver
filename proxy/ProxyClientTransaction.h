@@ -251,6 +251,11 @@ public:
     return parent ? parent->protocol_contains(tag_prefix) : nullptr;
   }
 
+  // This function must return a non-negative number that is different for two in-progress transactions with the same parent
+  // session.
+  //
+  virtual int get_transaction_id() const = 0;
+
 protected:
 protected:
   ProxyClientSession *parent;
