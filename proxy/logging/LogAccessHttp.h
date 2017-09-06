@@ -147,12 +147,14 @@ public:
   //
   // other fields
   //
-  virtual int marshal_transfer_time_ms(char *);       // INT
-  virtual int marshal_transfer_time_s(char *);        // INT
-  virtual int marshal_file_size(char *);              // INT
-  virtual int marshal_plugin_identity_id(char *);     // INT
-  virtual int marshal_plugin_identity_tag(char *);    // STR
-  virtual int marshal_cache_lookup_url_canon(char *); // STR
+  int marshal_transfer_time_ms(char *) override;           // INT
+  int marshal_transfer_time_s(char *) override;            // INT
+  int marshal_file_size(char *) override;                  // INT
+  int marshal_plugin_identity_id(char *) override;         // INT
+  int marshal_plugin_identity_tag(char *) override;        // STR
+  int marshal_cache_lookup_url_canon(char *) override;     // STR
+  int marshal_client_http_connection_id(char *) override;  // INT
+  int marshal_client_http_transaction_id(char *) override; // INT
 
   //
   // named fields from within a http header

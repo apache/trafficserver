@@ -179,19 +179,28 @@ Connections and Transactions
 
 .. _sca:
 .. _sstc:
+.. _ccid:
+.. _ctid:
 
 The following log fields are used to list various details of connections and
 transactions between |TS| proxies and origin servers.
 
-===== ====== ==================================================================
-Field Source Description
-===== ====== ==================================================================
-sca   Proxy  Number of attempts within the current transaction by |TS|
-             in connecting to the origin server.
-sstc  Proxy  Number of transactions between the |TS| proxy and the origin
-             server from a single session. Any value greater than zero
-             indicates connection reuse.
-===== ====== ==================================================================
+===== ============== ==================================================================
+Field Source         Description
+===== ============== ==================================================================
+sca   Proxy          Number of attempts within the current transaction by |TS|
+                     in connecting to the origin server.
+sstc  Proxy          Number of transactions between the |TS| proxy and the origin
+                     server from a single session. Any value greater than zero
+                     indicates connection reuse.
+ccid  Client Request Client Connection ID, a non-negative number for a connection,
+                     which is different for all currently-active connections to
+                     clients.
+ctid  Client Request Client Transaction ID, a non-negative number for a transaction,
+                     which is different for all currently-active transactions on the
+                     same client connection.  For client HTTP/2 transactions, this
+                     value is the stream ID for the transaction.
+===== ============== ==================================================================
 
 .. _admin-logging-fields-content-type:
 
