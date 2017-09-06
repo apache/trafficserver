@@ -240,6 +240,8 @@ private:
   QUICApplication *_create_application();
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
+
+  QUICStatelessToken _token;
 };
 
 extern ClassAllocator<QUICNetVConnection> quicNetVCAllocator;

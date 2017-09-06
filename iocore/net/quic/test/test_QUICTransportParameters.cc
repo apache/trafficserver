@@ -79,15 +79,19 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   uint16_t len;
 
   uint8_t expected[] = {
-    0x01, 0x02, 0x03, 0x04, // negotiated version
-    0x05, 0x06, 0x07, 0x08, // iinitial version
-    0x00, 0x0e,             // size of parameters
-    0x00, 0x00,             // parameter id
-    0x00, 0x04,             // length of value
-    0x11, 0x22, 0x33, 0x44, // value
-    0x00, 0x05,             // parameter id
-    0x00, 0x02,             // length of value
-    0xab, 0xcd,             // value
+    0x01, 0x02, 0x03, 0x04,                         // negotiated version
+    0x05, 0x06, 0x07, 0x08,                         // iinitial version
+    0x00, 0x22,                                     // size of parameters
+    0x00, 0x00,                                     // parameter id
+    0x00, 0x04,                                     // length of value
+    0x11, 0x22, 0x33, 0x44,                         // value
+    0x00, 0x05,                                     // parameter id
+    0x00, 0x02,                                     // length of value
+    0xab, 0xcd,                                     // value
+    0x00, 0x06,                                     // parameter id
+    0x00, 0x10,                                     // length of value
+    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, // value
+    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, // value
   };
 
   QUICTransportParametersInClientHello params_in_ch(0x01020304, 0x05060708);
@@ -102,8 +106,12 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
     QUICTransportParameterId::MAX_PACKET_SIZE,
     std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(max_packet_size, sizeof(max_packet_size))));
 
+  uint64_t stateless_retry_token[2] = {0x0011223344556677, 0x0011223344556677};
+  params_in_ch.add(QUICTransportParameterId::STATELESS_RETRY_TOKEN,
+                   std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(stateless_retry_token, 16)));
+
   params_in_ch.store(buf, &len);
-  CHECK(len == 24);
+  CHECK(len == 44);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 

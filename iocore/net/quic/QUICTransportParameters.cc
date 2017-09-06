@@ -44,6 +44,21 @@ QUICTransportParameterValue::QUICTransportParameterValue(uint64_t raw_data, uint
   this->_len = len;
 };
 
+QUICTransportParameterValue::QUICTransportParameterValue(uint64_t raw_data[2], uint16_t l)
+{
+  this->_data = ats_unique_malloc(l);
+  size_t len  = 0;
+  if (l > 8) {
+    QUICTypeUtil::write_uint_as_nbytes(raw_data[0], 8, this->_data.get(), &len);
+    this->_len += len;
+    QUICTypeUtil::write_uint_as_nbytes(raw_data[1], l - 8, this->_data.get() + 8, &len);
+    this->_len += len;
+  } else {
+    QUICTypeUtil::write_uint_as_nbytes(raw_data[0], l, this->_data.get(), &len);
+    this->_len += len;
+  }
+}
+
 const uint8_t *
 QUICTransportParameterValue::data() const
 {

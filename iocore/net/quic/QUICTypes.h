@@ -37,6 +37,7 @@
 #include <memory>
 #include <random>
 #include <cstdint>
+#include "ts/INK_MD5.h"
 #include "ts/ink_memory.h"
 
 // These magical defines should be removed when we implement seriously
@@ -147,6 +148,28 @@ struct QUICError {
   QUICErrorClass cls;
   QUICErrorCode code;
   const char *msg;
+};
+
+class QUICStatelessToken
+{
+public:
+  void
+  gen_token(const char *key, uint64_t data)
+  {
+    MD5Context ctx;
+    ctx.update(key, strlen(key));
+    ctx.update(reinterpret_cast<void *>(&data), 8);
+    ctx.finalize(_md5);
+  }
+
+  const INK_MD5
+  get() const
+  {
+    return _md5;
+  }
+
+private:
+  INK_MD5 _md5;
 };
 
 class QUICConnectionId

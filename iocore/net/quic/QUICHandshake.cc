@@ -54,7 +54,7 @@ static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICApplication(qc)
+QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, INK_MD5 token) : QUICApplication(qc), _token(token)
 {
   this->_ssl = SSL_new(ssl_ctx);
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_qc_index, qc);
@@ -256,6 +256,9 @@ QUICHandshake::_load_local_transport_parameters()
 
   tp->add(QUICTransportParameterId::IDLE_TIMEOUT, std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(
                                                     params->no_activity_timeout_in(), sizeof(uint16_t))));
+
+  tp->add(QUICTransportParameterId::STATELESS_RETRY_TOKEN,
+          std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(this->_token.u64, 16)));
 
   tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
   // MAYs
