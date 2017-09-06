@@ -2215,7 +2215,7 @@ upgrade_doc_version(Ptr<IOBufferData> &buf)
         char *dst;
         char *hdr_limit = doc->data();
         HTTPInfo::FragOffset *frags =
-          reinterpret_cast<HTTPInfo::FragOffset *>(static_cast<char *>(buf->data()) + cache_bc::sizeofDoc_v23);
+          reinterpret_cast<HTTPInfo::FragOffset *>(static_cast<char *>(buf->data()) + sizeof(cache_bc::Doc_v23));
         int frag_count      = doc->_flen / sizeof(HTTPInfo::FragOffset);
         size_t n            = 0;
         size_t content_size = doc->data_len();
@@ -2229,10 +2229,10 @@ upgrade_doc_version(Ptr<IOBufferData> &buf)
 
         src = buf->data();
         dst = d_buf->data();
-        memcpy(dst, src, sizeofDoc);
-        src += sizeofDoc + doc->_flen;
-        dst += sizeofDoc;
-        n -= sizeofDoc;
+        memcpy(dst, src, sizeof(Doc));
+        src += sizeof(Doc) + doc->_flen;
+        dst += sizeof(Doc);
+        n -= sizeof(Doc);
 
         // We copy the fragment table iff there is a fragment table and there is only one alternate.
         if (frag_count > 0 && cache_bc::HTTPInfo_v21::marshalled_length(src) > doc->hlen) {
@@ -2247,7 +2247,7 @@ upgrade_doc_version(Ptr<IOBufferData> &buf)
           // Must update new Doc::len and Doc::hlen
           // dst points at the first byte of the content, or one past the last byte of the alt header.
           d_doc->len  = (dst - reinterpret_cast<char *>(d_doc)) + content_size;
-          d_doc->hlen = (dst - reinterpret_cast<char *>(d_doc)) - sizeofDoc;
+          d_doc->hlen = (dst - reinterpret_cast<char *>(d_doc)) - sizeof(Doc);
           buf         = d_buf; // replace original buffer with new buffer.
         } else {
           zret = false;
