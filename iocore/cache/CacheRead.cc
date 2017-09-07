@@ -1094,7 +1094,7 @@ CacheVC::openReadStartHead(int event, Event *e)
             }
           }
           Note("OpenReadHead failed for cachekey %X : vector inconsistency - "
-               "unmarshalled %d expecting %d in %d (base=%" PRIu64 ", ver=%d:%d) "
+               "unmarshalled %d expecting %d in %d (base=%zu, ver=%d:%d) "
                "- vector n=%d size=%d"
                "first alt=%d[%s]",
                key.slice32(0), uml, doc->hlen, doc->len, sizeof(Doc), doc->v_major, doc->v_minor, vector.count(), alt_length,
