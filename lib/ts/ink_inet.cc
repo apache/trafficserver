@@ -28,7 +28,7 @@
 #include "ts/ink_code.h"
 #include "ts/ink_assert.h"
 #include "ts/TestBox.h"
-#include "ts/TextBuffer.h"
+#include <fstream>
 
 IpAddr const IpAddr::INVALID;
 
@@ -649,7 +649,6 @@ REGRESSION_TEST(Ink_Inet)(RegressionTest *t, int /* atype */, int *pstatus)
 int
 ats_tcp_somaxconn()
 {
-  int fd;
   int value = 0;
 
 /* Darwin version ... */
@@ -660,20 +659,15 @@ ats_tcp_somaxconn()
   }
 #endif
 
-  fd = open("/proc/sys/net/ipv4/tcp_max_syn_backlog", O_RDONLY);
-  if (fd != -1) {
-    TextBuffer text(0);
-    text.slurp(fd);
-    if (!text.empty()) {
-      value = strtoul(text.bufPtr(), nullptr, 10);
-    }
-    close(fd);
+  std::ifstream f("/proc/sys/net/ipv4/tcp_max_syn_backlog", std::ifstream::in);
+  if (f.good()) {
+    f >> value;
   }
 
   // Default to the compatible value we used before detection. SOMAXCONN is the right
   // macro to use, but most systems set this to 128, which is just too small.
   if (value <= 0) {
-    return 1024;
+    value = 1024;
   }
 
   return value;
