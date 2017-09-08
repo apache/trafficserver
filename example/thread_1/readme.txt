@@ -1,5 +1,3 @@
-About thread-plugin.c
-
 This plugin sets up a callback to a continuation whose
 handler function creates a thread.
 
