@@ -110,6 +110,17 @@ class OperatorSetRedirect : public Operator
 public:
   OperatorSetRedirect() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetRedirect"); }
   void initialize(Parser &p);
+  TSHttpStatus
+  get_status()
+  {
+    return static_cast<TSHttpStatus>(_status.get_int_value());
+  }
+  std::string
+  get_location(int &size)
+  {
+    size = (int)_location.size();
+    return static_cast<std::string>(_location.get_value());
+  }
 
 protected:
   void exec(const Resources &res) const;
