@@ -1623,14 +1623,15 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
         fld = fld->m_next_dup;
 
         // Dups need to be comma separated.  So if there's another
-        // dup, then add a comma and a space ...
-        //
+        // dup, then add a comma and an escapified space ...
+        constexpr const char SEP[] = ",%20";
+        constexpr size_t SEP_LEN   = sizeof(SEP) - 1;
         if (fld != nullptr) {
           if (buf) {
-            memcpy(buf, ", ", 2);
-            buf += 2;
+            memcpy(buf, SEP, SEP_LEN);
+            buf += SEP_LEN;
           }
-          running_len += 2;
+          running_len += SEP_LEN;
         }
       }
 
