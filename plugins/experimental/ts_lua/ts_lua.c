@@ -90,7 +90,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
 
   if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
-    snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - invalid state in option input");
+    snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - invalid state in option input. Must be between 1 and %d",
+             TS_LUA_MAX_STATE_COUNT);
     return TS_ERROR;
   }
 
@@ -444,7 +445,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
-    TSError("[ts_lua][%s] invalid # of states from option input", __FUNCTION__);
+    TSError("[ts_lua][%s] invalid # of states from option input. Must be between 1 and %d", __FUNCTION__, TS_LUA_MAX_STATE_COUNT);
     return;
   }
 

@@ -90,7 +90,7 @@ ts_lua_log_object_write(lua_State *L)
   if (log) {
     TSTextLogObjectWrite(log, (char *)text, NULL);
   } else {
-    TSError("[ts_lua][%s] log is not exsited!", __FUNCTION__);
+    TSError("[ts_lua][%s] log object does not exist for write", __FUNCTION__);
   }
 
   return 0;
