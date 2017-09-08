@@ -1,5 +1,15 @@
 /** @file
 
+  Statistics example plugin.
+
+  This plugin demonstrates the statistics API and also serves as a
+  regression test for TS-4840. If traffic_server is restarted, a
+  plugin ought to be able to safely reattach to its statistics.
+
+  This source is included as an example in the developers so if you
+  change it, you may have to update the line numbers on
+  doc/developer-guide/plugins/adding-statistics.en.rst
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -18,14 +28,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-// This plugin demonstrates the statistics API and also serves as a
-// regression test for TS-4840. If traffic_server is restarted, a
-// plugin ought to be able to safely reattach to its statistics.
-//
-// This source is included as an example in the developers so if you
-// change it, you may have to update the line numbers on
-// doc/developer-guide/plugins/adding-statistics.en.rst
 
 #include <ts/ts.h>
 #include <cinttypes>
