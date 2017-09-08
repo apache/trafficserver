@@ -1,6 +1,8 @@
 /** @file
 
-  A brief file description
+  An example plugin that creates a thread.
+
+  The thread is created on the DNS lookup hook and simply re-enables the transaction from the thread.
 
   @section license License
 
@@ -21,21 +23,13 @@
   limitations under the License.
  */
 
-/* thread-1.c:  an example program that creates a thread
- *
- *
- *
- *	Usage:
- *	  thread-1.so
- *
- *
- */
-
 #include <stdio.h>
 #include <string.h>
 
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
+
+#define PLUGIN_NAME "thread_1"
 
 static void *
 reenable_txn(void *data)
@@ -55,7 +49,7 @@ thread_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
      * If the thread has not been created successfully, assert.
      */
     if (!TSThreadCreate(reenable_txn, edata)) {
-      TSReleaseAssert(!"Failure in thread creation");
+      TSReleaseAssert(!PLUGIN_NAME " - Failure in thread creation");
     }
     return 0;
   default:
@@ -69,12 +63,12 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = "thread-1";
-  info.vendor_name   = "MyCompany";
-  info.support_email = "ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[thread-1] Plugin registration failed");
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
   TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(thread_plugin, NULL));
