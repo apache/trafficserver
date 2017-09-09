@@ -68,6 +68,26 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   CHECK(sm.stream_count() == 5);
 }
 
+TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
+{
+  MockQUICFrameTransmitter tx;
+  QUICApplicationMap app_map;
+  MockQUICApplication mock_app;
+  app_map.set_default(&mock_app);
+  QUICStreamManager sm(&tx, &app_map);
+  std::shared_ptr<QUICTransportParameters> local_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
+  std::shared_ptr<QUICTransportParameters> remote_tp =
+    std::make_shared<QUICTransportParametersInClientHello>(static_cast<QUICVersion>(0), static_cast<QUICVersion>(0));
+  sm.init_flow_control_params(local_tp, remote_tp);
+
+  // STREAM frames create new streams
+  std::shared_ptr<QUICFrame> stream_frame_0 =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("abc"), 3, 0, 7);
+
+  sm.handle_frame(stream_frame_0);
+  CHECK("succeed");
+}
+
 TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
 {
   MockQUICFrameTransmitter tx;
