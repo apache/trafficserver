@@ -196,7 +196,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
   QUICStream *stream = this->_find_stream(stream_id);
   if (!stream) {
     // TODO Free the stream somewhere
-    stream = THREAD_ALLOC_INIT(quicStreamAllocator, this_ethread());
+    stream = new (THREAD_ALLOC(quicStreamAllocator, this_ethread())) QUICStream();
     if (stream_id == STREAM_ID_FOR_HANDSHAKE) {
       // XXX rece/send max_stream_data are going to be set by init_flow_control_params()
       stream->init(this, this->_tx, stream_id, this->_local_tp->initial_max_stream_data());
