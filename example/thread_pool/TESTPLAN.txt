@@ -1,4 +1,4 @@
-	Thread-Pool Sample Plugin Testing
+	Thread_Pool Sample Plugin Testing
 	=================================
 
 
@@ -10,7 +10,7 @@ boundary testing.
 
 List of tests:
 --------------
-Test case are under thread-pool/test/SynTest/Tests/Psi
+Test case are under thread_pool/test/SynTest/Tests/Psi
 1.cfg:Description: PSI Plugin - Include tag at the beginning of doc
 2.cfg:Description: PSI Plugin - include tag middle of body doc
 3.cfg:Description: PSI Plugin - include tag end of body doc
@@ -27,14 +27,14 @@ Test case are under thread-pool/test/SynTest/Tests/Psi
 
 SynTest config file:
 --------------------
-SynTest config files are under thread-pool/test/SynTest
+SynTest config files are under thread_pool/test/SynTest
  - system.cfg: master SynTest config file
  - tests_psi.cfg: test plan for SynTest
 
 Tests setup:
 ------------
  - Update plugin.config to add the psi plugin
- - Generate the include files using the gen_inc.sh tool in thread-pool/include
+ - Generate the include files using the gen_inc.sh tool in thread_pool/include
  - Copy the include files into $TS_HOME/etc/trafficserver/plugins/include
  - Start TS
  - Start SynTest
@@ -52,7 +52,7 @@ SDKTest is used for load testing.
 A SDKTest server plugin is required to exercise the plugin (the server
 must send back responses with 'X-Psi' header).
 
-The SDKTest server plugin is located under thread-pool/test/SDKTest
+The SDKTest server plugin is located under thread_pool/test/SDKTest
 A SDKTest configuration file is also provided (allows to change the ratio
 of X-Psi responses).
 
@@ -60,7 +60,7 @@ Tests setup:
 ------------
 TS setup:
  - Update plugin.config to add the psi plugin
- - Generate the include files using the gen_inc.sh tool in thread-pool/include
+ - Generate the include files using the gen_inc.sh tool in thread_pool/include
  - Copy the include files into $TS_HOME/etc/trafficserver/plugins/include
  - Start TS
 

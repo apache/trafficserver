@@ -2,6 +2,16 @@
 
   Proxy Side Include plugin (PSI)
 
+  Synopsis:
+
+  This plugin allows to insert the content of a file stored on the proxy disk
+  into the body of an html response.
+
+  The plugin illustrates how to use a pool of threads in order to do blocking
+  calls (here, some disk i/o) in a Traffic Server plugin.
+
+  Further details: Refer to README file.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -21,30 +31,6 @@
   limitations under the License.
  */
 
-/*
- *
- *
- *
- *	Usage:
- *	  psi.so
- *
- *  Proxy Side Include plugin (PSI)
- *
- *   Synopsis:
- *
- *  This plugin allows to insert the content of a file stored on the proxy disk
- *  into the body of an html response.
- *
- *  The plugin illustrates how to use a pool of threads in order to do blocking
- *  calls (here, some disk i/o) in a Traffic Server plugin.
- *
- *
- *   Details:
- *
- *  Refer to README file.
- *
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -53,8 +39,6 @@
 #include "ts/ts.h"
 #include "thread.h"
 #include "ts/ink_defs.h"
-
-#define DBG_TAG "xpsi"
 
 /* This is the number of threads spawned by the plugin.
    Should be tuned based on performance requirements,
@@ -167,7 +151,7 @@ cont_data_alloc()
 static void
 cont_data_destroy(ContData *data)
 {
-  TSDebug(DBG_TAG, "Destroying continuation data");
+  TSDebug(PLUGIN_NAME, "Destroying continuation data");
   if (data) {
     TSAssert(data->magic == MAGIC_ALIVE);
     if (data->output_reader) {
@@ -242,13 +226,13 @@ strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
 
   *nparse -= index; /* Adjust nparse so it doesn't include matching chars */
   if (index == slen) {
-    TSDebug(DBG_TAG, "strfind: match for %s at position %d", pattern, *nparse);
+    TSDebug(PLUGIN_NAME, "strfind: match for %s at position %d", pattern, *nparse);
     return STR_SUCCESS;
   } else if (index > 0) {
-    TSDebug(DBG_TAG, "strfind: partial match for %s at position %d", pattern, *nparse);
+    TSDebug(PLUGIN_NAME, "strfind: partial match for %s at position %d", pattern, *nparse);
     return STR_PARTIAL;
   } else {
-    TSDebug(DBG_TAG, "strfind no match for %s", pattern);
+    TSDebug(PLUGIN_NAME, "strfind no match for %s", pattern);
     return STR_FAIL;
   }
 }
@@ -317,7 +301,7 @@ strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern
 
   /* Error, could not read end of filename */
   if (buf_idx >= PSI_FILENAME_MAX_SIZE) {
-    TSDebug(DBG_TAG, "strextract: filename too long");
+    TSDebug(PLUGIN_NAME, "strextract: filename too long");
     *buflen = 0;
     return STR_FAIL;
   }
@@ -327,12 +311,12 @@ strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern
     /* Nul terminate the filename, remove the end_pattern copied into the buffer */
     *buflen         = buf_idx - plen;
     buffer[*buflen] = '\0';
-    TSDebug(DBG_TAG, "strextract: filename = |%s|", buffer);
+    TSDebug(PLUGIN_NAME, "strextract: filename = |%s|", buffer);
     return STR_SUCCESS;
   }
   /* End of filename not yet reached we need to read some more data */
   else {
-    TSDebug(DBG_TAG, "strextract: partially extracted filename");
+    TSDebug(PLUGIN_NAME, "strextract: partially extracted filename");
     *buflen = buf_idx - p_idx;
     return STR_PARTIAL;
   }
@@ -485,7 +469,7 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
 
   /* Read the include file and copy content into iobuffer */
   if ((filep = TSfopen(inc_file, "r")) != NULL) {
-    TSDebug(DBG_TAG, "Reading include file %s", inc_file);
+    TSDebug(PLUGIN_NAME, "Reading include file %s", inc_file);
 
     while (TSfgets(filep, buf, BUFFER_SIZE) != NULL) {
       TSIOBufferBlock block;
@@ -564,7 +548,7 @@ wake_up_streams(TSCont contp)
     TSVIOReenable(data->output_vio);
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
   } else {
-    TSDebug(DBG_TAG, "Total bytes produced by transform = %d", data->transform_bytes);
+    TSDebug(PLUGIN_NAME, "Total bytes produced by transform = %d", data->transform_bytes);
     TSVIONBytesSet(data->output_vio, data->transform_bytes);
     TSVIOReenable(data->output_vio);
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
@@ -615,7 +599,7 @@ handle_transform(TSCont contp)
 
   /* If the input VIO's buffer is NULL, the transformation is over */
   if (!TSVIOBufferGet(input_vio)) {
-    TSDebug(DBG_TAG, "input_vio NULL, terminating transformation");
+    TSDebug(PLUGIN_NAME, "input_vio NULL, terminating transformation");
     TSVIONBytesSet(data->output_vio, data->transform_bytes);
     TSVIOReenable(data->output_vio);
     return 1;
@@ -664,7 +648,7 @@ handle_transform(TSCont contp)
         Job *new_job;
         /* Add a request to include a file into the jobs queue.. */
         /* We'll be called back once it's done with an EVENT_IMMEDIATE */
-        TSDebug(DBG_TAG, "Psi filename extracted, adding an include job to thread queue");
+        TSDebug(PLUGIN_NAME, "Psi filename extracted, adding an include job to thread queue");
         data->state = STATE_READ_PSI;
 
         /* Create a new job request and add it to the queue */
@@ -718,7 +702,7 @@ dump_psi(TSCont contp)
     if (psi_output_len > 0) {
       data->transform_bytes += psi_output_len;
 
-      TSDebug(DBG_TAG, "Inserting %d bytes from include file", psi_output_len);
+      TSDebug(PLUGIN_NAME, "Inserting %d bytes from include file", psi_output_len);
       /* TODO: Should we check the return value of TSIOBufferCopy() ? */
       TSIOBufferCopy(TSVIOBufferGet(data->output_vio), data->psi_reader, psi_output_len, 0);
       /* Consume all the output data */
@@ -881,7 +865,7 @@ transformable(TSHttpTxn txnp)
 
     field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
     if (field_loc == TS_NULL_MLOC) {
-      TSError("[psi] Unable to search Content-Type field");
+      TSError("[%s] Unable to search Content-Type field", PLUGIN_NAME);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       return 0;
     }
@@ -948,7 +932,7 @@ read_response_handler(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     if (transformable(txnp)) {
-      TSDebug(DBG_TAG, "Add a transformation");
+      TSDebug(PLUGIN_NAME, "Add a transformation");
       transform_add(txnp);
     }
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -982,7 +966,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[psi] Plugin registration failed");
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
   /* Initialize the psi directory = <plugin_path>/include */
@@ -991,7 +975,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   /* create an TSTextLogObject to log any psi include */
   retval = TSTextLogObjectCreate("psi", TS_LOG_MODE_ADD_TIMESTAMP, &log);
   if (retval == TS_ERROR) {
-    TSError("[psi] Failed creating log for psi plugin");
+    TSError("[%s] Failed creating log for psi plugin", PLUGIN_NAME);
     log = NULL;
   }
 
@@ -1003,11 +987,11 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
     char *thread_name = (char *)TSmalloc(64);
     sprintf(thread_name, "Thread[%d]", i);
     if (!TSThreadCreate((TSThreadFunc)thread_loop, thread_name)) {
-      TSError("[psi] Failed creating threads");
+      TSError("[%s] Failed creating threads", PLUGIN_NAME);
       return;
     }
   }
 
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_response_handler, TSMutexCreate()));
-  TSDebug(DBG_TAG, "Plugin started");
+  TSDebug(PLUGIN_NAME, "Plugin started");
 }

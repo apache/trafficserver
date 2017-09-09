@@ -24,6 +24,8 @@
 #ifndef _THREAD_H_
 #define _THREAD_H_
 
+#define PLUGIN_NAME "psi"
+
 #define MAGIC_ALIVE 0xfeedbabe
 #define MAGIC_DEAD 0xdeadbeef
 
