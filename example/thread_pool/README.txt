@@ -108,7 +108,7 @@ Plugin Testing
  Sample include file generation
  ------------------------------
  A basic utility ('gen')to generate files to be inserted is provided
- in the directory thread-pool/include.
+ in the directory thread_pool/include.
  This create text files of various sizes.
  Compile gen the execute gen_inc.sh to generate files:
  > cd include
@@ -128,6 +128,5 @@ Plugin Testing
  The rate of responses with X-Psi header is configurable thru a SDKTest config file.
 
  A SDKTest server plugin as well as a SDKTest configuration file
- are provided in the directory thread-pool/test/SDKTest.
+ are provided in the directory thread_pool/test/SDKTest.
  Refer to the SDKTest manual for detailed setup instructions.
-

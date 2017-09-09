@@ -28,8 +28,6 @@
 #include "thread.h"
 #include "ts/ink_defs.h"
 
-#define DBGTAG "xthread"
-
 struct timespec tp1;
 struct timespec tp2;
 
@@ -77,7 +75,7 @@ add_to_queue(Queue *q, void *data)
     TSMutexUnlock(q->mutex);
 
     if (n > MAX_JOBS_ALARM) {
-      TSError("[thread_pool] Warning:Too many jobs in plugin thread pool queue (%d). Maximum allowed is %d", n, MAX_JOBS_ALARM);
+      TSError("[%s] Warning:Too many jobs in plugin thread pool queue (%d). Maximum allowed is %d", PLUGIN_NAME, n, MAX_JOBS_ALARM);
     }
   }
 }
