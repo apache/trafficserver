@@ -667,9 +667,9 @@ QUICRstStreamFrame::store(uint8_t *buf, size_t *len) const
   uint8_t *p = buf;
   *p         = 0x01;
   ++p;
-  QUICTypeUtil::write_QUICErrorCode(this->_error_code, p, &n);
-  p += n;
   QUICTypeUtil::write_QUICStreamId(this->_stream_id, 4, p, &n);
+  p += n;
+  QUICTypeUtil::write_QUICErrorCode(this->_error_code, p, &n);
   p += n;
   QUICTypeUtil::write_QUICOffset(this->_final_offset, 8, p, &n);
   p += n;
@@ -680,14 +680,18 @@ QUICRstStreamFrame::store(uint8_t *buf, size_t *len) const
 QUICErrorCode
 QUICRstStreamFrame::error_code() const
 {
-  return QUICTypeUtil::read_QUICErrorCode(this->_buf + 1);
+  if (this->_buf) {
+    return QUICTypeUtil::read_QUICErrorCode(this->_buf + 5);
+  } else {
+    return this->_error_code;
+  }
 }
 
 QUICStreamId
 QUICRstStreamFrame::stream_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICStreamId(this->_buf + 5, 4);
+    return QUICTypeUtil::read_QUICStreamId(this->_buf + 1, 4);
   } else {
     return this->_stream_id;
   }
@@ -696,7 +700,11 @@ QUICRstStreamFrame::stream_id() const
 QUICOffset
 QUICRstStreamFrame::final_offset() const
 {
-  return QUICTypeUtil::read_QUICOffset(this->_buf + 9, 8);
+  if (this->_buf) {
+    return QUICTypeUtil::read_QUICOffset(this->_buf + 9, 8);
+  } else {
+    return this->_final_offset;
+  }
 }
 
 //
