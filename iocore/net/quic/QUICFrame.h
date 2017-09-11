@@ -219,7 +219,7 @@ class QUICRstStreamFrame : public QUICFrame
 public:
   QUICRstStreamFrame() : QUICFrame() {}
   QUICRstStreamFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICRstStreamFrame(QUICErrorCode error_code, QUICStreamId stream_id, QUICOffset final_offset);
+  QUICRstStreamFrame(QUICStreamId stream_id, QUICErrorCode error_code, QUICOffset final_offset);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
@@ -228,8 +228,8 @@ public:
   QUICOffset final_offset() const;
 
 private:
+  QUICStreamId _stream_id = 0;
   QUICErrorCode _error_code;
-  QUICStreamId _stream_id  = 0;
   QUICOffset _final_offset = 0;
 };
 

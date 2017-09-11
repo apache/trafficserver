@@ -204,11 +204,11 @@ TEST_CASE("Load RST_STREAM Frame", "[quic]")
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::RST_STREAM);
   CHECK(frame1->size() == 17);
-  std::shared_ptr<const QUICRstStreamFrame> rstStreamFrame1 = std::dynamic_pointer_cast<const QUICRstStreamFrame>(frame1);
-  CHECK(rstStreamFrame1 != nullptr);
-  CHECK(rstStreamFrame1->error_code() == QUICErrorCode::QUIC_TRANSPORT_ERROR);
-  CHECK(rstStreamFrame1->stream_id() == 0x12345678);
-  CHECK(rstStreamFrame1->final_offset() == 0x1122334455667788);
+  std::shared_ptr<const QUICRstStreamFrame> rst_stream_frame1 = std::dynamic_pointer_cast<const QUICRstStreamFrame>(frame1);
+  CHECK(rst_stream_frame1 != nullptr);
+  CHECK(rst_stream_frame1->error_code() == QUICErrorCode::QUIC_TRANSPORT_ERROR);
+  CHECK(rst_stream_frame1->stream_id() == 0x12345678);
+  CHECK(rst_stream_frame1->final_offset() == 0x1122334455667788);
 }
 
 TEST_CASE("Store RST_STREAM Frame", "[quic]")
@@ -222,8 +222,8 @@ TEST_CASE("Store RST_STREAM Frame", "[quic]")
     0x80, 0x00, 0x00, 0x00,                        // Error Code
     0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
   };
-  QUICRstStreamFrame rstStreamFrame(QUICErrorCode::QUIC_TRANSPORT_ERROR, 0x12345678, 0x1122334455667788);
-  rstStreamFrame.store(buf, &len);
+  QUICRstStreamFrame rst_stream_frame(0x12345678, QUICErrorCode::QUIC_TRANSPORT_ERROR, 0x1122334455667788);
+  rst_stream_frame.store(buf, &len);
   CHECK(len == 17);
   CHECK(memcmp(buf, expected, len) == 0);
 }

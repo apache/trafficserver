@@ -645,8 +645,8 @@ QUICAckFrame::TimestampSection::store(uint8_t *buf, size_t *len) const
 // RST_STREAM frame
 //
 
-QUICRstStreamFrame::QUICRstStreamFrame(QUICErrorCode error_code, QUICStreamId stream_id, QUICOffset final_offset)
-  : _error_code(error_code), _stream_id(stream_id), _final_offset(final_offset)
+QUICRstStreamFrame::QUICRstStreamFrame(QUICStreamId stream_id, QUICErrorCode error_code, QUICOffset final_offset)
+  : _stream_id(stream_id), _error_code(error_code), _final_offset(final_offset)
 {
 }
 
@@ -667,7 +667,7 @@ QUICRstStreamFrame::store(uint8_t *buf, size_t *len) const
 {
   size_t n;
   uint8_t *p = buf;
-  *p         = 0x01;
+  *p         = static_cast<uint8_t>(QUICFrameType::RST_STREAM);
   ++p;
   QUICTypeUtil::write_QUICStreamId(this->_stream_id, 4, p, &n);
   p += n;
@@ -727,7 +727,7 @@ QUICPingFrame::size() const
 void
 QUICPingFrame::store(uint8_t *buf, size_t *len) const
 {
-  buf[0] = 0x07;
+  buf[0] = static_cast<uint8_t>(QUICFrameType::PING);
   *len   = 1;
 }
 
@@ -749,7 +749,7 @@ QUICPaddingFrame::size() const
 void
 QUICPaddingFrame::store(uint8_t *buf, size_t *len) const
 {
-  buf[0] = 0x00;
+  buf[0] = static_cast<uint8_t>(QUICFrameType::PADDING);
   *len   = 1;
 }
 
@@ -782,7 +782,7 @@ QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len) const
 {
   size_t n;
   uint8_t *p = buf;
-  *p         = 0x02;
+  *p         = static_cast<uint8_t>(QUICFrameType::CONNECTION_CLOSE);
   ++p;
   QUICTypeUtil::write_QUICErrorCode(this->_error_code, p, &n);
   p += n;
@@ -849,7 +849,7 @@ QUICMaxDataFrame::store(uint8_t *buf, size_t *len) const
 {
   size_t n;
   uint8_t *p = buf;
-  *p         = 0x04;
+  *p         = static_cast<uint8_t>(QUICFrameType::MAX_DATA);
   ++p;
   QUICTypeUtil::write_uint_as_nbytes(this->_maximum_data, 8, p, &n);
   p += n;
@@ -893,9 +893,9 @@ QUICMaxStreamDataFrame::store(uint8_t *buf, size_t *len) const
 {
   size_t n;
   uint8_t *p = buf;
-  *p         = 0x05;
+  *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_DATA);
   ++p;
-  QUICTypeUtil::write_uint_as_nbytes(this->_stream_id, 4, p, &n);
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, 4, p, &n);
   p += n;
   QUICTypeUtil::write_uint_as_nbytes(this->_maximum_stream_data, 8, p, &n);
   p += n;
@@ -948,7 +948,7 @@ QUICMaxStreamIdFrame::store(uint8_t *buf, size_t *len) const
 {
   size_t n;
   uint8_t *p = buf;
-  *p         = 0x06;
+  *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_ID);
   ++p;
   QUICTypeUtil::write_uint_as_nbytes(this->_maximum_stream_id, 4, p, &n);
   p += n;
@@ -984,7 +984,7 @@ QUICBlockedFrame::size() const
 void
 QUICBlockedFrame::store(uint8_t *buf, size_t *len) const
 {
-  buf[0] = 0x08;
+  buf[0] = static_cast<uint8_t>(QUICFrameType::BLOCKED);
   *len   = 1;
 }
 
@@ -1013,9 +1013,9 @@ QUICStreamBlockedFrame::store(uint8_t *buf, size_t *len) const
 {
   size_t n;
   uint8_t *p = buf;
-  *p         = 0x09;
+  *p         = static_cast<uint8_t>(QUICFrameType::STREAM_BLOCKED);
   ++p;
-  QUICTypeUtil::write_uint_as_nbytes(this->_stream_id, 4, p, &n);
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, 4, p, &n);
   p += n;
 
   *len = p - buf;
@@ -1049,7 +1049,7 @@ QUICStreamIdNeededFrame::size() const
 void
 QUICStreamIdNeededFrame::store(uint8_t *buf, size_t *len) const
 {
-  buf[0] = 0x0a;
+  buf[0] = static_cast<uint8_t>(QUICFrameType::STREAM_ID_NEEDED);
   *len   = 1;
 }
 
@@ -1080,7 +1080,7 @@ QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len) const
 {
   size_t n;
   uint8_t *p = buf;
-  *p         = 0x0b;
+  *p         = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
   ++p;
   QUICTypeUtil::write_uint_as_nbytes(this->_sequence, 2, p, &n);
   p += n;
@@ -1352,7 +1352,7 @@ std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>
 QUICFrameFactory::create_rst_stream_frame(QUICStreamId stream_id, QUICErrorCode error_code, QUICOffset final_offset)
 {
   QUICRstStreamFrame *frame = quicRstStreamFrameAllocator.alloc();
-  new (frame) QUICRstStreamFrame(error_code, stream_id, final_offset);
+  new (frame) QUICRstStreamFrame(stream_id, error_code, final_offset);
   return std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_rst_stream_frame);
 }
 
