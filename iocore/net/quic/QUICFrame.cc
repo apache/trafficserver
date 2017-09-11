@@ -467,14 +467,10 @@ QUICAckFrame::_get_ack_block_length() const
    * 0 -> 1 byte
    * 1 -> 2 byte
    * 2 -> 4 byte
-   * 3 -> 6 byte
+   * 3 -> 8 byte
   */
   int n = this->_buf[0] & 0x03;
-  if (n == 0) {
-    return 1;
-  } else {
-    return n * 2;
-  }
+  return 0x01 << n;
 }
 
 size_t
