@@ -28,7 +28,6 @@ ClassAllocator<QUICAckFrame> quicAckFrameAllocator("quicAckFrameAllocator");
 ClassAllocator<QUICPaddingFrame> quicPaddingFrameAllocator("quicPaddingFrameAllocator");
 ClassAllocator<QUICRstStreamFrame> quicRstStreamFrameAllocator("quicRstStreamFrameAllocator");
 ClassAllocator<QUICConnectionCloseFrame> quicConnectionCloseFrameAllocator("quicConnectionCloseFrameAllocator");
-ClassAllocator<QUICGoawayFrame> quicGoawayFrameAllocator("quicGoawayAllocator");
 ClassAllocator<QUICMaxDataFrame> quicMaxDataFrameAllocator("quicMaxDataFrameAllocator");
 ClassAllocator<QUICMaxStreamDataFrame> quicMaxStreamDataFrameAllocator("quicMaxStreamDataFrameAllocator");
 ClassAllocator<QUICMaxStreamIdFrame> quicMaxStreamIdFrameAllocator("quicMaxStreamDataIdAllocator");
@@ -745,62 +744,6 @@ QUICPaddingFrame::store(uint8_t *buf, size_t *len) const
 }
 
 //
-// GOAWAY frame
-//
-
-QUICGoawayFrame::QUICGoawayFrame(QUICStreamId client_stream_id, QUICStreamId server_stream_id)
-{
-  this->_client_stream_id = client_stream_id;
-  this->_server_stream_id = server_stream_id;
-}
-
-QUICFrameType
-QUICGoawayFrame::type() const
-{
-  return QUICFrameType::GOAWAY;
-}
-
-size_t
-QUICGoawayFrame::size() const
-{
-  return 9;
-}
-
-void
-QUICGoawayFrame::store(uint8_t *buf, size_t *len) const
-{
-  size_t n;
-  uint8_t *p = buf;
-  *p         = 0x03;
-  ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_client_stream_id, 4, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICStreamId(this->_server_stream_id, 4, p, &n);
-  p += n;
-  *len = p - buf;
-}
-
-QUICStreamId
-QUICGoawayFrame::client_stream_id() const
-{
-  if (this->_buf) {
-    return QUICTypeUtil::read_QUICStreamId(this->_buf + 1, 4);
-  } else {
-    return this->_client_stream_id;
-  }
-}
-
-QUICStreamId
-QUICGoawayFrame::server_stream_id() const
-{
-  if (this->_buf) {
-    return QUICTypeUtil::read_QUICStreamId(this->_buf + 5, 4);
-  } else {
-    return this->_server_stream_id;
-  }
-}
-
-//
 // CONNECTION_CLOSE frame
 //
 
@@ -1220,10 +1163,6 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     frame = quicConnectionCloseFrameAllocator.alloc();
     new (frame) QUICConnectionCloseFrame(buf, len);
     return std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_connection_close_frame);
-  case QUICFrameType::GOAWAY:
-    frame = quicGoawayFrameAllocator.alloc();
-    new (frame) QUICGoawayFrame(buf, len);
-    return std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_goaway_frame);
   case QUICFrameType::MAX_DATA:
     frame = quicMaxDataFrameAllocator.alloc();
     new (frame) QUICMaxDataFrame(buf, len);

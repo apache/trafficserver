@@ -279,38 +279,6 @@ TEST_CASE("Store Padding Frame", "[quic]")
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
-TEST_CASE("Load Goaway Frame", "[quic]")
-{
-  uint8_t buf1[] = {
-    0x03,                   // Type
-    0x12, 0x34, 0x56, 0x78, // Latest Client Stream ID
-    0xAA, 0xBB, 0xCC, 0xDD, // Latest Server Stream ID
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::GOAWAY);
-  CHECK(frame1->size() == 9);
-  std::shared_ptr<const QUICGoawayFrame> goawayFrame1 = std::dynamic_pointer_cast<const QUICGoawayFrame>(frame1);
-  CHECK(goawayFrame1 != nullptr);
-  CHECK(goawayFrame1->client_stream_id() == 0x12345678);
-  CHECK(goawayFrame1->server_stream_id() == 0xAABBCCDD);
-}
-
-TEST_CASE("Store Goaway Frame", "[quic]")
-{
-  uint8_t buf[65535];
-  size_t len;
-
-  uint8_t expected[] = {
-    0x03,                   // Type
-    0x12, 0x34, 0x56, 0x78, // Latest Client Stream ID
-    0xAA, 0xBB, 0xCC, 0xDD, // Latest Server Stream ID
-  };
-  QUICGoawayFrame goawayFrame(0x12345678, 0xAABBCCDD);
-  goawayFrame.store(buf, &len);
-  CHECK(len == 9);
-  CHECK(memcmp(buf, expected, len) == 0);
-}
-
 TEST_CASE("Load ConnectionClose Frame", "[quic]")
 {
   uint8_t buf1[] = {
@@ -568,29 +536,26 @@ TEST_CASE("QUICFrameFactory Fast Create Frame", "[quic]")
   QUICFrameFactory factory;
 
   uint8_t buf1[] = {
-    0x03,                   // Type
-    0x12, 0x34, 0x56, 0x78, // Latest Client Stream ID
-    0xAA, 0xBB, 0xCC, 0xDD, // Latest Server Stream ID
+    0x06,                   // Type
+    0x01, 0x02, 0x03, 0x04, // Stream Data
   };
   uint8_t buf2[] = {
-    0x03,                   // Type
-    0x11, 0x22, 0x33, 0x44, // Latest Client Stream ID
-    0x0A, 0x0B, 0x0C, 0x0D, // Latest Server Stream ID
+    0x06,                   // Type
+    0x05, 0x06, 0x07, 0x08, // Stream Data
   };
   std::shared_ptr<const QUICFrame> frame1 = factory.fast_create(buf1, sizeof(buf1));
   CHECK(frame1 != nullptr);
 
-  std::shared_ptr<const QUICGoawayFrame> goawayFrame1 = std::dynamic_pointer_cast<const QUICGoawayFrame>(frame1);
-  CHECK(goawayFrame1 != nullptr);
-  CHECK(goawayFrame1->client_stream_id() == 0x12345678);
-  CHECK(goawayFrame1->server_stream_id() == 0xAABBCCDD);
+  std::shared_ptr<const QUICMaxStreamIdFrame> max_stream_id_frame1 = std::dynamic_pointer_cast<const QUICMaxStreamIdFrame>(frame1);
+  CHECK(max_stream_id_frame1 != nullptr);
+  CHECK(max_stream_id_frame1->maximum_stream_id() == 0x01020304);
 
   std::shared_ptr<const QUICFrame> frame2 = factory.fast_create(buf2, sizeof(buf2));
   CHECK(frame2 != nullptr);
-  std::shared_ptr<const QUICGoawayFrame> goawayFrame2 = std::dynamic_pointer_cast<const QUICGoawayFrame>(frame2);
-  CHECK(goawayFrame2 != nullptr);
-  CHECK(goawayFrame2->client_stream_id() == 0x11223344);
-  CHECK(goawayFrame2->server_stream_id() == 0x0A0B0C0D);
+
+  std::shared_ptr<const QUICMaxStreamIdFrame> max_stream_id_frame2 = std::dynamic_pointer_cast<const QUICMaxStreamIdFrame>(frame2);
+  CHECK(max_stream_id_frame2 != nullptr);
+  CHECK(max_stream_id_frame2->maximum_stream_id() == 0x05060708);
 
   CHECK(frame1 == frame2);
 }

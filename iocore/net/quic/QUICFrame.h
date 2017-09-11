@@ -260,27 +260,6 @@ public:
 };
 
 //
-// GOAWAY
-//
-
-class QUICGoawayFrame : public QUICFrame
-{
-public:
-  QUICGoawayFrame() : QUICFrame() {}
-  QUICGoawayFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICGoawayFrame(QUICStreamId client_stream_id, QUICStreamId server_stream_id);
-  virtual QUICFrameType type() const override;
-  virtual size_t size() const override;
-  virtual void store(uint8_t *buf, size_t *len) const override;
-  QUICStreamId client_stream_id() const;
-  QUICStreamId server_stream_id() const;
-
-private:
-  QUICStreamId _client_stream_id = 0;
-  QUICStreamId _server_stream_id = 0;
-};
-
-//
 // CONNECTION_CLOSE
 //
 
@@ -456,7 +435,6 @@ extern ClassAllocator<QUICAckFrame> quicAckFrameAllocator;
 extern ClassAllocator<QUICPaddingFrame> quicPaddingFrameAllocator;
 extern ClassAllocator<QUICRstStreamFrame> quicRstStreamFrameAllocator;
 extern ClassAllocator<QUICConnectionCloseFrame> quicConnectionCloseFrameAllocator;
-extern ClassAllocator<QUICGoawayFrame> quicGoawayFrameAllocator;
 extern ClassAllocator<QUICMaxDataFrame> quicMaxDataFrameAllocator;
 extern ClassAllocator<QUICMaxStreamDataFrame> quicMaxStreamDataFrameAllocator;
 extern ClassAllocator<QUICMaxStreamIdFrame> quicMaxStreamIdFrameAllocator;
@@ -504,12 +482,6 @@ public:
   delete_connection_close_frame(QUICFrame *frame)
   {
     quicConnectionCloseFrameAllocator.free(static_cast<QUICConnectionCloseFrame *>(frame));
-  }
-
-  static void
-  delete_goaway_frame(QUICFrame *frame)
-  {
-    quicGoawayFrameAllocator.free(static_cast<QUICGoawayFrame *>(frame));
   }
 
   static void
