@@ -46,10 +46,10 @@
 #define DebugQUICCon(fmt, ...) \
   Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
 
-static constexpr uint32_t MINIMUM_MTU               = 1280;
-static constexpr uint32_t MAX_PACKET_OVERHEAD       = 25; // Max long header len(17) + FNV-1a hash len(8)
-static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 15;
-static constexpr char STATELESS_RETRY_TOKEN_KEY[]   = "stateless_token_retry_key";
+static constexpr uint32_t MAX_PACKET_OVERHEAD                = 25; // Max long header len(17) + FNV-1a hash len(8)
+static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD          = 15;
+static constexpr uint32_t MINIMUM_INITIAL_CLIENT_PACKET_SIZE = 1200;
+static constexpr char STATELESS_RETRY_TOKEN_KEY[]            = "stateless_token_retry_key";
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
@@ -170,10 +170,13 @@ QUICNetVConnection::direction()
 uint32_t
 QUICNetVConnection::minimum_quic_packet_size()
 {
-  if (this->options.ip_family == PF_INET6) {
-    return MINIMUM_MTU - 48;
+  if (netvc_context == NET_VCONNECTION_OUT) {
+    // FIXME Only the first packet need to be 1200 bytes at least
+    return MINIMUM_INITIAL_CLIENT_PACKET_SIZE;
   } else {
-    return MINIMUM_MTU - 28;
+    // FIXME This size should be configurable and should have some randomness
+    // This is just for providing protection against packet analysis for protected packets
+    return 32 + (this->_rnd() & 0x3f); // 32 to 96
   }
 }
 
@@ -533,8 +536,8 @@ QUICNetVConnection::largest_acked_packet_number()
 QUICError
 QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
 {
-  if (packet->size() < this->minimum_quic_packet_size()) {
-    DebugQUICCon("%" PRId32 ", %" PRId32, packet->size(), this->minimum_quic_packet_size());
+  if (packet->size() < MINIMUM_INITIAL_CLIENT_PACKET_SIZE) {
+    DebugQUICCon("Packet size is smaller than the minimum initial client packet size");
     return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
   }
 

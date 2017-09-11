@@ -191,6 +191,7 @@ public:
   QUICError handle_frame(std::shared_ptr<const QUICFrame> frame) override;
 
 private:
+  std::random_device _rnd;
   QUICConnectionId _quic_connection_id;
   QUICPacketNumber _largest_received_packet_number = 0;
   UDPConnection *_udp_con                          = nullptr;
