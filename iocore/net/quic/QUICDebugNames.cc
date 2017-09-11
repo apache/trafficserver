@@ -62,8 +62,6 @@ QUICDebugNames::frame_type(QUICFrameType type)
     return "RST_STREAM";
   case QUICFrameType::CONNECTION_CLOSE:
     return "CONNECTION_CLOSE";
-  case QUICFrameType::GOAWAY:
-    return "GOAWAY";
   case QUICFrameType::MAX_DATA:
     return "MAX_DATA";
   case QUICFrameType::MAX_STREAM_DATA:
