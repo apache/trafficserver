@@ -84,6 +84,7 @@ enum class QUICPacketShortHeaderType : int {
   UNINITIALIZED,
 };
 
+// XXX If you add or remove QUICFrameType, you might also need to change QUICFrame::type(const uint8_t *)
 enum class QUICFrameType : int {
   PADDING = 0x00,
   RST_STREAM,
@@ -96,6 +97,7 @@ enum class QUICFrameType : int {
   STREAM_BLOCKED,
   STREAM_ID_NEEDED,
   NEW_CONNECTION_ID,
+  STOP_SENDING,
   ACK     = 0xA0,
   STREAM  = 0xC0,
   UNKNOWN = 0x100,

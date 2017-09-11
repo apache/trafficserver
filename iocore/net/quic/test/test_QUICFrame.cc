@@ -38,8 +38,10 @@ TEST_CASE("QUICFrame Type", "[quic]")
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x09")) == QUICFrameType::STREAM_BLOCKED);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0a")) == QUICFrameType::STREAM_ID_NEEDED);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0b")) == QUICFrameType::NEW_CONNECTION_ID);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0c")) == QUICFrameType::STOP_SENDING);
   // Undefined ragne
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0c")) == QUICFrameType::UNKNOWN);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x03")) == QUICFrameType::UNKNOWN);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0d")) == QUICFrameType::UNKNOWN);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x9f")) == QUICFrameType::UNKNOWN);
   // Range of ACK
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xa0")) == QUICFrameType::ACK);
@@ -518,6 +520,39 @@ TEST_CASE("Store NewConnectionId Frame", "[quic]")
   QUICNewConnectionIdFrame newConnectionIdFrame(0x0102, 0x1122334455667788ULL);
   newConnectionIdFrame.store(buf, &len);
   CHECK(len == 11);
+  CHECK(memcmp(buf, expected, len) == 0);
+}
+
+TEST_CASE("Load STOP_SENDING Frame", "[quic]")
+{
+  uint8_t buf[] = {
+    0x0c,                   // Type
+    0x12, 0x34, 0x56, 0x78, // Stream ID
+    0x80, 0x00, 0x00, 0x00, // Error Code
+  };
+  std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+  CHECK(frame->type() == QUICFrameType::STOP_SENDING);
+  CHECK(frame->size() == 9);
+
+  std::shared_ptr<const QUICStopSendingFrame> stop_sending_frame = std::dynamic_pointer_cast<const QUICStopSendingFrame>(frame);
+  CHECK(stop_sending_frame != nullptr);
+  CHECK(stop_sending_frame->stream_id() == 0x12345678);
+  CHECK(stop_sending_frame->error_code() == QUICErrorCode::QUIC_TRANSPORT_ERROR);
+}
+
+TEST_CASE("Store STOP_SENDING Frame", "[quic]")
+{
+  uint8_t buf[65535];
+  size_t len;
+
+  uint8_t expected[] = {
+    0x0c,                   // Type
+    0x12, 0x34, 0x56, 0x78, // Stream ID
+    0x80, 0x00, 0x00, 0x00, // Error Code
+  };
+  QUICStopSendingFrame stop_sending_frame(0x12345678, QUICErrorCode::QUIC_TRANSPORT_ERROR);
+  stop_sending_frame.store(buf, &len);
+  CHECK(len == 9);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 

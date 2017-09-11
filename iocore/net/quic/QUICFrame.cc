@@ -36,6 +36,7 @@ ClassAllocator<QUICBlockedFrame> quicBlockedFrameAllocator("quicBlockedFrameAllo
 ClassAllocator<QUICStreamBlockedFrame> quicStreamBlockedFrameAllocator("quicStreamBlockedFrameAllocator");
 ClassAllocator<QUICStreamIdNeededFrame> quicStreamIdNeededFrameAllocator("quicStreamIdNeededFrameAllocator");
 ClassAllocator<QUICNewConnectionIdFrame> quicNewConnectionIdFrameAllocator("quicNewConnectionIdFrameAllocator");
+ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator("quicStopSendingFrameAllocator");
 ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator("quicRetransmissionFrameAllocator");
 
 QUICFrameType
@@ -44,6 +45,7 @@ QUICFrame::type() const
   return QUICFrame::type(this->_buf);
 }
 
+// XXX QUICFrameType: 0x03 (GOAWAY frame) is removed
 QUICFrameType
 QUICFrame::type(const uint8_t *buf)
 {
@@ -51,7 +53,7 @@ QUICFrame::type(const uint8_t *buf)
     return QUICFrameType::STREAM;
   } else if (buf[0] >= static_cast<uint8_t>(QUICFrameType::ACK)) {
     return QUICFrameType::ACK;
-  } else if (static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID) < buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::ACK)) {
+  } else if (buf[0] > static_cast<uint8_t>(QUICFrameType::STOP_SENDING) || buf[0] == 0x03) {
     return QUICFrameType::UNKNOWN;
   } else {
     return static_cast<QUICFrameType>(buf[0]);
@@ -1109,6 +1111,62 @@ QUICNewConnectionIdFrame::connection_id() const
 }
 
 //
+// STOP_SENDING frame
+//
+
+QUICStopSendingFrame::QUICStopSendingFrame(QUICStreamId stream_id, QUICErrorCode error_code)
+  : _stream_id(stream_id), _error_code(error_code)
+{
+}
+
+QUICFrameType
+QUICStopSendingFrame::type() const
+{
+  return QUICFrameType::STOP_SENDING;
+}
+
+size_t
+QUICStopSendingFrame::size() const
+{
+  return 9;
+}
+
+void
+QUICStopSendingFrame::store(uint8_t *buf, size_t *len) const
+{
+  size_t n;
+  uint8_t *p = buf;
+  *p         = static_cast<uint8_t>(QUICFrameType::STOP_SENDING);
+  ++p;
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, 4, p, &n);
+  p += n;
+  QUICTypeUtil::write_QUICErrorCode(this->_error_code, p, &n);
+  p += n;
+
+  *len = p - buf;
+}
+
+QUICErrorCode
+QUICStopSendingFrame::error_code() const
+{
+  if (this->_buf) {
+    return QUICTypeUtil::read_QUICErrorCode(this->_buf + 5);
+  } else {
+    return this->_error_code;
+  }
+}
+
+QUICStreamId
+QUICStopSendingFrame::stream_id() const
+{
+  if (this->_buf) {
+    return QUICTypeUtil::read_QUICStreamId(this->_buf + 1, 4);
+  } else {
+    return this->_stream_id;
+  }
+}
+
+//
 // QUICRetransmissionFrame
 //
 QUICRetransmissionFrame::QUICRetransmissionFrame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> original_frame,
@@ -1203,6 +1261,10 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     frame = quicNewConnectionIdFrameAllocator.alloc();
     new (frame) QUICNewConnectionIdFrame(buf, len);
     return std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_new_connection_id_frame);
+  case QUICFrameType::STOP_SENDING:
+    frame = quicStopSendingFrameAllocator.alloc();
+    new (frame) QUICStopSendingFrame(buf, len);
+    return std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stop_sending_frame);
   default:
     // Unknown frame
     return std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>(nullptr, &QUICFrameDeleter::delete_null_frame);
@@ -1292,6 +1354,14 @@ QUICFrameFactory::create_rst_stream_frame(QUICStreamId stream_id, QUICErrorCode 
   QUICRstStreamFrame *frame = quicRstStreamFrameAllocator.alloc();
   new (frame) QUICRstStreamFrame(error_code, stream_id, final_offset);
   return std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_rst_stream_frame);
+}
+
+std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_stop_sending_frame(QUICStreamId stream_id, QUICErrorCode error_code)
+{
+  QUICStopSendingFrame *frame = quicStopSendingFrameAllocator.alloc();
+  new (frame) QUICStopSendingFrame(stream_id, error_code);
+  return std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stop_sending_frame);
 }
 
 std::unique_ptr<QUICRetransmissionFrame, QUICFrameDeleterFunc>

@@ -407,6 +407,27 @@ private:
   QUICConnectionId _connection_id = 0;
 };
 
+//
+// STOP_SENDING
+//
+
+class QUICStopSendingFrame : public QUICFrame
+{
+public:
+  QUICStopSendingFrame() : QUICFrame() {}
+  QUICStopSendingFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICStopSendingFrame(QUICStreamId stream_id, QUICErrorCode error_code);
+  virtual QUICFrameType type() const override;
+  virtual size_t size() const override;
+  virtual void store(uint8_t *buf, size_t *len) const override;
+  QUICStreamId stream_id() const;
+  QUICErrorCode error_code() const;
+
+private:
+  QUICStreamId _stream_id = 0;
+  QUICErrorCode _error_code;
+};
+
 using QUICFrameDeleterFunc = void (*)(QUICFrame *p);
 using QUICFramePtr         = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
 
@@ -443,6 +464,7 @@ extern ClassAllocator<QUICBlockedFrame> quicBlockedFrameAllocator;
 extern ClassAllocator<QUICStreamBlockedFrame> quicStreamBlockedFrameAllocator;
 extern ClassAllocator<QUICStreamIdNeededFrame> quicStreamIdNeededFrameAllocator;
 extern ClassAllocator<QUICNewConnectionIdFrame> quicNewConnectionIdFrameAllocator;
+extern ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator;
 extern ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator;
 
 class QUICFrameDeleter
@@ -533,6 +555,12 @@ public:
   }
 
   static void
+  delete_stop_sending_frame(QUICFrame *frame)
+  {
+    quicStopSendingFrameAllocator.free(static_cast<QUICStopSendingFrame *>(frame));
+  }
+
+  static void
   delete_retransmission_frame(QUICFrame *frame)
   {
     quicRetransmissionFrameAllocator.free(static_cast<QUICRetransmissionFrame *>(frame));
@@ -603,6 +631,12 @@ public:
   static std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> create_rst_stream_frame(QUICStreamId stream_id,
                                                                                            QUICErrorCode error_code,
                                                                                            QUICOffset final_offset);
+
+  /*
+   * Creates a STOP_SENDING frame.
+   */
+  static std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc> create_stop_sending_frame(QUICStreamId stream_id,
+                                                                                               QUICErrorCode error_code);
 
   /*
    * Creates a retransmission frame, which is very special.
