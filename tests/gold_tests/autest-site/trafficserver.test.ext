@@ -121,7 +121,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     # create subdirectories that need to exist (but are empty)
     # log directory has to be created with correct permissions
     p.Setup.MakeDir(log_dir)  # log directory has to be created
-    p.Setup.Chown(log_dir, "nobody", "nobody", ignore=True)
+    p.Setup.Chown(log_dir, "nobody", "nogroup", ignore=True)
 
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_LOG_LOGFILE_DIR'] = log_dir

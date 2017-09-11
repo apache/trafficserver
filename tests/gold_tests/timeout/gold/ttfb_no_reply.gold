@@ -1,10 +1,10 @@
-HTTP/1.1 502 internal error ``
-Date: ``
+HTTP/1.1 504 Connection Timed Out
+Date:``
 Connection: ``
 Server: ATS/``
-Cache-Control: ``
+Cache-Control:``
 Content-Type: ``
 Content-Language: ``
 Content-Length: ``
 
-``Could Not Connect``
+``Inactivity Timeout``
