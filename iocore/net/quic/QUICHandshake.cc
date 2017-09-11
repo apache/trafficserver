@@ -78,7 +78,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
   // Negotiate version
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
     if (initial_packet->type() != QUICPacketType::CLIENT_INITIAL) {
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
     }
     if (initial_packet->version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
@@ -90,7 +90,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
         Debug(tag, "Version negotiation failed: %x", initial_packet->version());
       }
     } else {
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
     }
   }
   return QUICError(QUICErrorClass::NONE);
@@ -136,7 +136,7 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters>
   if (tp_in_ch) {
     // Version revalidation
     if (this->_version_negotiator->revalidate(tp_in_ch) != QUICVersionNegotiationStatus::REVALIDATED) {
-      this->_client_qc->close({QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_VERSION_NEGOTIATION_MISMATCH});
+      this->_client_qc->close({QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::VERSION_NEGOTIATION_ERROR});
       Debug(tag, "Enter state_closed");
       SET_HANDLER(&QUICHandshake::state_closed);
       return;

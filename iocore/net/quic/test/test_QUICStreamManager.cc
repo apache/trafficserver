@@ -53,7 +53,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   CHECK(sm.stream_count() == 2);
 
   // RST_STREAM frames create new streams
-  std::shared_ptr<QUICFrame> rst_stream_frame = QUICFrameFactory::create_rst_stream_frame(2, QUICErrorCode::QUIC_INTERNAL_ERROR, 0);
+  std::shared_ptr<QUICFrame> rst_stream_frame = QUICFrameFactory::create_rst_stream_frame(2, QUICErrorCode::INTERNAL_ERROR, 0);
   sm.handle_frame(rst_stream_frame);
   CHECK(sm.stream_count() == 3);
 

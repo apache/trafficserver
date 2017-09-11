@@ -115,15 +115,39 @@ QUICDebugNames::error_code(QUICErrorCode code)
     return "APPLICATION_SPECIFIC_ERROR";
   case QUICErrorCode::HOST_LOCAL_ERROR:
     return "HOST_LOCAL_ERROR";
-  case QUICErrorCode::QUIC_TRANSPORT_ERROR:
-    return "QUIC_TRANSPORT_ERROR";
-  case QUICErrorCode::QUIC_INTERNAL_ERROR:
-    return "QUIC_INTERNAL_ERROR";
+  case QUICErrorCode::NO_ERROR:
+    return "NO_ERROR";
+  case QUICErrorCode::INTERNAL_ERROR:
+    return "INTERNAL_ERROR";
+  case QUICErrorCode::CANCELLED:
+    return "CANCELLED";
+  case QUICErrorCode::FLOW_CONTROL_ERROR:
+    return "FLOW_CONTROL_ERROR";
+  case QUICErrorCode::STREAM_ID_ERROR:
+    return "STREAM_ID_ERROR";
+  case QUICErrorCode::STREAM_STATE_ERROR:
+    return "STREAM_STATE_ERROR";
+  case QUICErrorCode::FINAL_OFFSET_ERROR:
+    return "FINAL_OFFSET_ERROR";
+  case QUICErrorCode::FRAME_FORMAT_ERROR:
+    return "FRAME_FORMAT_ERROR";
+  case QUICErrorCode::TRANSPORT_PARAMETER_ERROR:
+    return "TRANSPORT_PARAMETER_ERROR";
+  case QUICErrorCode::VERSION_NEGOTIATION_ERROR:
+    return "VERSION_NEGOTIATION_ERROR";
+  case QUICErrorCode::PROTOCOL_VIOLATION:
+    return "PROTOCOL_VIOLATION";
+  case QUICErrorCode::QUIC_RECEIVED_RST:
+    return "QUIC_RECEIVED_RST";
   case QUICErrorCode::CRYPTOGRAPHIC_ERROR:
     return "CRYPTOGRAPHIC_ERROR";
   case QUICErrorCode::TLS_HANDSHAKE_FAILED:
     return "TLS_HANDSHAKE_FAILED";
   default:
+    if ((static_cast<uint32_t>(code) & 0xFFFFFF00) == static_cast<uint32_t>(QUICErrorCode::FRAME_ERROR)) {
+      // TODO: Add frame type
+      return "FRAME_ERROR";
+    }
     return "UNKNOWN";
   }
 }

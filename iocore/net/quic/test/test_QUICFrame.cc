@@ -206,7 +206,7 @@ TEST_CASE("Load RST_STREAM Frame", "[quic]")
   CHECK(frame1->size() == 17);
   std::shared_ptr<const QUICRstStreamFrame> rst_stream_frame1 = std::dynamic_pointer_cast<const QUICRstStreamFrame>(frame1);
   CHECK(rst_stream_frame1 != nullptr);
-  CHECK(rst_stream_frame1->error_code() == QUICErrorCode::QUIC_TRANSPORT_ERROR);
+  CHECK(rst_stream_frame1->error_code() == QUICErrorCode::NO_ERROR);
   CHECK(rst_stream_frame1->stream_id() == 0x12345678);
   CHECK(rst_stream_frame1->final_offset() == 0x1122334455667788);
 }
@@ -222,7 +222,7 @@ TEST_CASE("Store RST_STREAM Frame", "[quic]")
     0x80, 0x00, 0x00, 0x00,                        // Error Code
     0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
   };
-  QUICRstStreamFrame rst_stream_frame(0x12345678, QUICErrorCode::QUIC_TRANSPORT_ERROR, 0x1122334455667788);
+  QUICRstStreamFrame rst_stream_frame(0x12345678, QUICErrorCode::NO_ERROR, 0x1122334455667788);
   rst_stream_frame.store(buf, &len);
   CHECK(len == 17);
   CHECK(memcmp(buf, expected, len) == 0);
@@ -294,7 +294,7 @@ TEST_CASE("Load ConnectionClose Frame", "[quic]")
   std::shared_ptr<const QUICConnectionCloseFrame> connectionCloseFrame1 =
     std::dynamic_pointer_cast<const QUICConnectionCloseFrame>(frame1);
   CHECK(connectionCloseFrame1 != nullptr);
-  CHECK(connectionCloseFrame1->error_code() == QUICErrorCode::QUIC_TRANSPORT_ERROR);
+  CHECK(connectionCloseFrame1->error_code() == QUICErrorCode::NO_ERROR);
   CHECK(connectionCloseFrame1->reason_phrase_length() == 5);
   CHECK(memcmp(connectionCloseFrame1->reason_phrase(), buf1 + 7, 5) == 0);
 }
@@ -310,7 +310,7 @@ TEST_CASE("Store ConnectionClose Frame", "[quic]")
     0x00, 0x05,                  // Reason Phrase Length
     0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
   };
-  QUICConnectionCloseFrame connectionCloseFrame(QUICErrorCode::QUIC_TRANSPORT_ERROR, 5, "ABCDE");
+  QUICConnectionCloseFrame connectionCloseFrame(QUICErrorCode::NO_ERROR, 5, "ABCDE");
   connectionCloseFrame.store(buf, &len);
   CHECK(len == 12);
   CHECK(memcmp(buf, expected, len) == 0);
@@ -537,7 +537,7 @@ TEST_CASE("Load STOP_SENDING Frame", "[quic]")
   std::shared_ptr<const QUICStopSendingFrame> stop_sending_frame = std::dynamic_pointer_cast<const QUICStopSendingFrame>(frame);
   CHECK(stop_sending_frame != nullptr);
   CHECK(stop_sending_frame->stream_id() == 0x12345678);
-  CHECK(stop_sending_frame->error_code() == QUICErrorCode::QUIC_TRANSPORT_ERROR);
+  CHECK(stop_sending_frame->error_code() == QUICErrorCode::NO_ERROR);
 }
 
 TEST_CASE("Store STOP_SENDING Frame", "[quic]")
@@ -550,7 +550,7 @@ TEST_CASE("Store STOP_SENDING Frame", "[quic]")
     0x12, 0x34, 0x56, 0x78, // Stream ID
     0x80, 0x00, 0x00, 0x00, // Error Code
   };
-  QUICStopSendingFrame stop_sending_frame(0x12345678, QUICErrorCode::QUIC_TRANSPORT_ERROR);
+  QUICStopSendingFrame stop_sending_frame(0x12345678, QUICErrorCode::NO_ERROR);
   stop_sending_frame.store(buf, &len);
   CHECK(len == 9);
   CHECK(memcmp(buf, expected, len) == 0);

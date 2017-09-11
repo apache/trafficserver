@@ -352,7 +352,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
       break;
     }
     default:
-      error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+      error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
       break;
     }
 
@@ -538,7 +538,7 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(std::unique_p
 {
   if (packet->size() < MINIMUM_INITIAL_CLIENT_PACKET_SIZE) {
     DebugQUICCon("Packet size is smaller than the minimum initial client packet size");
-    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
   }
 
   // Start handshake
@@ -625,7 +625,7 @@ QUICNetVConnection::_state_common_receive_packet()
     error = this->_state_connection_established_process_packet(std::move(p));
     break;
   default:
-    error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+    error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
     break;
   }
   return error;

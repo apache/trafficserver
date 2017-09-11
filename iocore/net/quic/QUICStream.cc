@@ -289,7 +289,7 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
   // Check stream state - Do this first before accept the frame
   if (!this->_state.is_allowed_to_receive(*frame)) {
     this->reset();
-    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_INTERNAL_ERROR);
+    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
   }
   this->_state.update_with_received_frame(*frame);
 

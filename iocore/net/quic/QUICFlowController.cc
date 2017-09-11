@@ -43,7 +43,7 @@ QUICFlowController::update(QUICOffset offset)
   if (this->_offset <= offset) {
     // Assume flow control is not initialized if the limit was 0
     if (this->_limit != 0 && offset > this->_limit) {
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::QUIC_FLOW_CONTROL_RECEIVED_TOO_MUCH_DATA);
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::FLOW_CONTROL_ERROR);
     }
     this->_offset = offset;
   }
