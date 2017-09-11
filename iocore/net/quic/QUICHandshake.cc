@@ -262,7 +262,7 @@ QUICHandshake::_load_local_transport_parameters()
 
   tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
   // MAYs
-  // this->_local_transport_parameters.add(QUICTransportParameterId::TRUNCATE_CONNECTION_ID, {});
+  // this->_local_transport_parameters.add(QUICTransportParameterId::OMIT_CONNECTION_ID, {});
   // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
   this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
 }

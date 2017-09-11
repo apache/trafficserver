@@ -169,8 +169,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "INITIAL_MAX_STREAM_ID";
   case QUICTransportParameterId::IDLE_TIMEOUT:
     return "IDLE_TIMEOUT";
-  case QUICTransportParameterId::TRUNCATE_CONNECTION_ID:
-    return "TRUNCATE_CONNECTION_ID";
+  case QUICTransportParameterId::OMIT_CONNECTION_ID:
+    return "OMIT_CONNECTION_ID";
   case QUICTransportParameterId::MAX_PACKET_SIZE:
     return "MAX_PACKET_SIZE";
   default:
