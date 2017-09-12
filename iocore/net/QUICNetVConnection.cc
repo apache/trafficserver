@@ -373,7 +373,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   }
 
   default:
-    DebugQUICCon("Unexpected event: %u", event);
+    DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
   if (error.cls != QUICErrorClass::NONE) {
@@ -418,7 +418,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   default:
-    DebugQUICCon("Unexpected event: %u", event);
+    DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
   if (error.cls != QUICErrorClass::NONE) {
@@ -444,7 +444,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     break;
   }
   default:
-    DebugQUICCon("Unexpected event: %u", event);
+    DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
   // FIXME Enter closed state if CONNECTION_CLOSE was ACKed
@@ -478,7 +478,7 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     break;
   }
   default:
-    DebugQUICCon("Unexpected event: %u", event);
+    DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
   return EVENT_DONE;

@@ -153,6 +153,23 @@ QUICDebugNames::error_code(QUICErrorCode code)
 }
 
 const char *
+QUICDebugNames::quic_event(int event)
+{
+  switch (event) {
+  case QUIC_EVENT_PACKET_READ_READY:
+    return "QUIC_EVENT_PACKET_READ_READY";
+  case QUIC_EVENT_PACKET_WRITE_READY:
+    return "QUIC_EVENT_PACKET_WRITE_READY";
+  case QUIC_EVENT_SHUTDOWN:
+    return "QUIC_EVENT_SHUTDOWN";
+  case QUIC_EVENT_LD_SHUTDOWN:
+    return "QUIC_EVENT_LD_SHUTDOWN";
+  default:
+    return "UNKNOWN";
+  }
+}
+
+const char *
 QUICDebugNames::vc_event(int event)
 {
   switch (event) {
