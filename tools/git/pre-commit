@@ -18,7 +18,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-ROOT=$(git rev-parse --show-toplevel)/.git/fmt
+GIT_TOP="$(git rev-parse --show-toplevel)"
+source "$GIT_TOP/tools/clang-format.sh"
+
 case $(uname -s) in
 Darwin)
     FORMAT=${FORMAT:-${ROOT}/clang-format/clang-format.osx}
