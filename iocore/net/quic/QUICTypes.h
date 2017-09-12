@@ -148,8 +148,8 @@ enum class QUICErrorCode : uint32_t {
 };
 
 struct QUICError {
-  QUICError(const QUICErrorClass error_class = QUICErrorClass::NONE,
-            const QUICErrorCode error_code = QUICErrorCode::APPLICATION_SPECIFIC_ERROR, const char *err_msg = nullptr)
+  QUICError(const QUICErrorClass error_class = QUICErrorClass::NONE, const QUICErrorCode error_code = QUICErrorCode::NO_ERROR,
+            const char *err_msg = nullptr)
   {
     cls  = error_class;
     code = error_code;
