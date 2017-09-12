@@ -73,37 +73,6 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
 }
 
 //
-// Function used to close a UnixNetVConnection and free the vc
-//
-void
-close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
-{
-  if (vc->con.fd != NO_FD) {
-    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
-  }
-  NetHandler *nh = vc->nh;
-  vc->cancel_OOB();
-
-  ink_release_assert(vc->thread == t);
-
-  // 1. Cancel timeout
-  vc->next_inactivity_timeout_at = 0;
-  vc->next_activity_timeout_at   = 0;
-
-  vc->inactivity_timeout_in = 0;
-  vc->active_timeout_in     = 0;
-
-  if (nh) {
-    // 2. Release vc from InactivityCop.
-    nh->stopCop(vc);
-    // 3. Release vc from NetHandler.
-    nh->stopIO(vc);
-  }
-  // 4. Clear then deallocate vc.
-  vc->free(t);
-}
-
-//
 // Signal an event
 //
 static inline int
@@ -130,7 +99,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
     ink_assert(vc->thread == this_ethread());
-    close_UnixNetVConnection(vc, vc->thread);
+    vc->nh->free_netvc(vc);
     return EVENT_DONE;
   } else {
     return EVENT_CONT;
@@ -161,7 +130,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
     ink_assert(vc->thread == this_ethread());
-    close_UnixNetVConnection(vc, vc->thread);
+    vc->nh->free_netvc(vc);
     return EVENT_DONE;
   } else {
     return EVENT_CONT;
@@ -228,7 +197,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // global session pool case.  If so, the closed flag should be stable once we get the
   // s->vio.mutex (the global session pool mutex).
   if (vc->closed) {
-    close_UnixNetVConnection(vc, thread);
+    vc->nh->free_netvc(vc);
     return;
   }
   // if it is not enabled.
@@ -669,6 +638,9 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 void
 UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 {
+  // FIXME: the nh must not nullptr.
+  ink_assert(nh);
+
   read.enabled  = 0;
   write.enabled = 0;
   read.vio.buffer.clear();
@@ -694,7 +666,11 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   }
 
   if (close_inline) {
-    close_UnixNetVConnection(this, t);
+    if (nh) {
+      nh->free_netvc(this);
+    } else {
+      free(t);
+    }
   }
 }
 
@@ -1207,7 +1183,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   writer_cont        = write.vio._cont;
 
   if (closed) {
-    close_UnixNetVConnection(this, thread);
+    nh->free_netvc(this);
     return EVENT_DONE;
   }
 
@@ -1304,11 +1280,6 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   }
 
   if (check_emergency_throttle(con)) {
-    // The `con' could be closed if there is hyper emergency
-    if (fd == NO_FD) {
-      // We need to decrement the stat because close_UnixNetVConnection only decrements with a valid connection descriptor.
-      NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
-    }
     // Set errno force to EMFILE (reached limit for open file descriptors)
     errno = EMFILE;
     res   = -errno;
@@ -1354,6 +1325,12 @@ fail:
 void
 UnixNetVConnection::clear()
 {
+  // clear timeout variables
+  next_inactivity_timeout_at = 0;
+  next_activity_timeout_at   = 0;
+  inactivity_timeout_in      = 0;
+  active_timeout_in          = 0;
+
   // clear variables for reuse
   this->mutex.clear();
   action_.mutex.clear();
@@ -1387,7 +1364,12 @@ UnixNetVConnection::free(EThread *t)
 {
   ink_release_assert(t == this_ethread());
 
+  // cancel OOB
+  cancel_OOB();
   // close socket fd
+  if (con.fd != NO_FD) {
+    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
+  }
   con.close();
 
   clear();
