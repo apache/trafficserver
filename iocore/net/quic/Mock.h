@@ -306,8 +306,6 @@ public:
     return _totalFrameCount;
   }
 
-  void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> /* frame */) override { return; }
-
 private:
   int _totalFrameCount = 0;
   int _frameCount[256] = {0};

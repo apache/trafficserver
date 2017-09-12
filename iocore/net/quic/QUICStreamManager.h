@@ -38,8 +38,6 @@ public:
   QUICStreamManager(){};
   QUICStreamManager(QUICFrameTransmitter *tx, QUICApplicationMap *app_map);
 
-  virtual void send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame);
-  virtual void send_frame(std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame);
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   uint64_t total_offset_received() const;

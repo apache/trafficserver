@@ -32,11 +32,9 @@
   Debug("quic_stream", "[%" PRIx32 "] [%s] " fmt, this->_id, QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
 void
-QUICStream::init(QUICStreamManager *manager, QUICFrameTransmitter *tx, QUICStreamId id, uint64_t recv_max_stream_data,
-                 uint64_t send_max_stream_data)
+QUICStream::init(QUICFrameTransmitter *tx, QUICStreamId id, uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
 {
   this->mutex                   = new_ProxyMutex();
-  this->_stream_manager         = manager;
   this->_tx                     = tx;
   this->_id                     = id;
   this->_remote_flow_controller = new QUICRemoteStreamFlowController(send_max_stream_data, _tx, _id);
@@ -380,7 +378,7 @@ QUICStream::_send()
       break;
     }
     this->_state.update_with_sent_frame(*frame);
-    this->_stream_manager->send_frame(std::move(frame));
+    this->_tx->transmit_frame(std::move(frame));
   }
 
   return error;

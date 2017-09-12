@@ -155,30 +155,6 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICRstStreamFrame>
   return QUICError(QUICErrorClass::NONE);
 }
 
-/**
- * @brief Send stream frame
- */
-void
-QUICStreamManager::send_frame(std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame)
-{
-  if (frame->stream_id() != STREAM_ID_FOR_HANDSHAKE) {
-  }
-  this->_tx->transmit_frame(std::move(frame));
-
-  return;
-}
-
-/**
- * @brief Send frame
- */
-void
-QUICStreamManager::send_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame)
-{
-  this->_tx->transmit_frame(std::move(frame));
-
-  return;
-}
-
 QUICStream *
 QUICStreamManager::_find_stream(QUICStreamId id)
 {
@@ -199,13 +175,13 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
     stream = new (THREAD_ALLOC(quicStreamAllocator, this_ethread())) QUICStream();
     if (stream_id == STREAM_ID_FOR_HANDSHAKE) {
       // XXX rece/send max_stream_data are going to be set by init_flow_control_params()
-      stream->init(this, this->_tx, stream_id, this->_local_tp->initial_max_stream_data());
+      stream->init(this->_tx, stream_id, this->_local_tp->initial_max_stream_data());
     } else {
       const QUICTransportParameters &local_tp  = *this->_local_tp;
       const QUICTransportParameters &remote_tp = *this->_remote_tp;
 
       // TODO: check local_tp and remote_tp is initialized
-      stream->init(this, this->_tx, stream_id, local_tp.initial_max_stream_data(), remote_tp.initial_max_stream_data());
+      stream->init(this->_tx, stream_id, local_tp.initial_max_stream_data(), remote_tp.initial_max_stream_data());
     }
 
     stream->start();
