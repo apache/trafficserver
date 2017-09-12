@@ -60,7 +60,7 @@ public:
       }
 
       if (vc->closed) {
-        close_UnixNetVConnection(vc, e->ethread);
+        nh.free_netvc(vc);
         continue;
       }
 
@@ -305,6 +305,25 @@ update_nethandler_config(const char *name, RecDataT data_type ATS_UNUSED, RecDat
 
   return REC_ERR_OKAY;
 }
+//
+// Function used to release a UnixNetVConnection and free it.
+//
+void
+NetHandler::free_netvc(UnixNetVConnection *netvc)
+{
+  EThread *t = trigger_event->ethread;
+
+  ink_assert(t == this_ethread());
+  ink_release_assert(netvc->thread == t);
+  ink_release_assert(netvc->nh == this);
+
+  // Release netvc from InactivityCop
+  stopCop(netvc);
+  // Release netvc from NetHandler
+  stopIO(netvc);
+  // Clear and deallocate netvc
+  netvc->free(t);
+}
 
 //
 // Initialization here, in the thread in which we will be executing
@@ -387,7 +406,7 @@ NetHandler::process_ready_list()
     // Initialize the thread-local continuation flags
     set_cont_flags(vc->control_flags);
     if (vc->closed)
-      close_UnixNetVConnection(vc, trigger_event->ethread);
+      free_netvc(vc);
     else if (vc->read.enabled && vc->read.triggered)
       vc->net_read_io(this, trigger_event->ethread);
     else if (!vc->read.enabled) {
@@ -404,7 +423,7 @@ NetHandler::process_ready_list()
   while ((vc = write_ready_list.dequeue())) {
     set_cont_flags(vc->control_flags);
     if (vc->closed)
-      close_UnixNetVConnection(vc, trigger_event->ethread);
+      free_netvc(vc);
     else if (vc->write.enabled && vc->write.triggered)
       write_to_net(this, vc, trigger_event->ethread);
     else if (!vc->write.enabled) {
@@ -422,7 +441,7 @@ NetHandler::process_ready_list()
   while ((vc = read_ready_list.dequeue())) {
     diags->set_override(vc->control.debug_override);
     if (vc->closed)
-      close_UnixNetVConnection(vc, trigger_event->ethread);
+      free_netvc(vc);
     else if (vc->read.enabled && vc->read.triggered)
       vc->net_read_io(this, trigger_event->ethread);
     else if (!vc->read.enabled)
@@ -431,7 +450,7 @@ NetHandler::process_ready_list()
   while ((vc = write_ready_list.dequeue())) {
     diags->set_override(vc->control.debug_override);
     if (vc->closed)
-      close_UnixNetVConnection(vc, trigger_event->ethread);
+      free_netvc(vc);
     else if (vc->write.enabled && vc->write.triggered)
       write_to_net(this, vc, trigger_event->ethread);
     else if (!vc->write.enabled)
@@ -624,7 +643,7 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
         keep_alive_queue_size, ink_hrtime_to_sec(now), ink_hrtime_to_sec(vc->next_inactivity_timeout_at),
         ink_hrtime_to_sec(vc->inactivity_timeout_in), diff);
   if (vc->closed) {
-    close_UnixNetVConnection(vc, this_ethread());
+    free_netvc(vc);
     ++closed;
   } else {
     vc->next_inactivity_timeout_at = now;

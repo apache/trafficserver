@@ -162,6 +162,58 @@ struct PollCont : public Continuation {
   int pollEvent(int event, Event *e);
 };
 
+/**
+  NetHandler is the processor of NetVC for the Net sub-system. The NetHandler
+  is the core component of the Net sub-system. Once started, it is responsible
+  for polling socket fds and perform the I/O tasks in NetVC.
+
+  The NetHandler is executed periodically to perform read/write tasks for
+  NetVConnection. The NetHandler::mainNetEvent() should be viewed as a part of
+  EThread::execute() loop. This is the reason that Net System is a sub-system.
+
+  By get_NetHandler(this_ethread()), you can get the NetHandler object that
+  runs inside the current EThread and then @c startIO / @c stopIO which
+  assign/release a NetVC to/from NetHandler. Before you call these functions,
+  holding the mutex of this NetHandler is required.
+
+  The NetVConnection provides a set of do_io functions through which you can
+  specify continuations to be called back by its NetHandler. These function
+  calls do not block. Instead they return an VIO object and schedule the
+  callback to the continuation passed in when there are I/O events occurred.
+
+  Multi-thread scheduler:
+
+  The NetHandler should be viewed as multi-threaded schedulers which process
+  NetVCs from their queues. The NetVC can be made of NetProcessor (allocate_vc)
+  either by directly adding a NetVC to the queue (NetHandler::startIO), or more
+  conveniently, calling a method service call (NetProcessor::connect_re) which
+  synthesizes the NetVC and places it in the queue.
+
+  Callback event codes:
+
+  These event codes for do_io_read and reenable(read VIO) task:
+    VC_EVENT_READ_READY, VC_EVENT_READ_COMPLETE,
+    VC_EVENT_EOS, VC_EVENT_ERROR
+
+  These event codes for do_io_write and reenable(write VIO) task:
+    VC_EVENT_WRITE_READY, VC_EVENT_WRITE_COMPLETE
+    VC_EVENT_ERROR
+
+  There is no event and callback for do_io_shutdown / do_io_close task.
+
+  NetVConnection allocation policy:
+
+  NetVCs are allocated by the NetProcessor and deallocated by NetHandler.
+  A state machine may access the returned, non-recurring NetVC / VIO until
+  it is closed by do_io_close. For recurring NetVC, the NetVC may be
+  accessed until it is closed. Once the NetVC is closed, it's the
+  NetHandler's responsibility to deallocate it.
+
+  Before assign to NetHandler or after release from NetHandler, it's the
+  NetVC's responsibility to deallocate itself.
+
+ */
+
 //
 // NetHandler
 //
@@ -234,7 +286,7 @@ public:
     @param netvc UnixNetVConnection to be managed by InactivityCop
    */
   void startCop(UnixNetVConnection *netvc);
-  /* *
+  /**
     Stop to handle active timeout and inactivity on a UnixNetVConnection.
     Remove the netvc from open_list and cop_list.
     Also remove the netvc from keep_alive_queue and active_queue if its context is IN.
@@ -243,6 +295,13 @@ public:
     @param netvc UnixNetVConnection to be released.
    */
   void stopCop(UnixNetVConnection *netvc);
+
+  /**
+    Release a netvc and free it.
+
+    @param netvc UnixNetVConnection to be deattached.
+   */
+  void free_netvc(UnixNetVConnection *netvc);
 
   NetHandler();
 

@@ -430,7 +430,6 @@ UnixNetVConnection::set_action(Continuation *c)
 
 // declarations for local use (within the net module)
 
-void close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t);
 void write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
 void write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
 
