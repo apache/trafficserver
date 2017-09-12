@@ -22,7 +22,7 @@
 records.config
 **************
 
-The :file:`records.config` file (by default, located in
+The :file:`records.config` file (by default (:ts:cv:`proxy.config.config_dir`), located in
 ``/usr/local/etc/trafficserver/``) is a list of configurable variables used by
 the |TS| software. Many of the variables in :file:`records.config` are set
 automatically when you set configuration options with :option:`traffic_ctl config set`. After you
@@ -226,7 +226,8 @@ System Variables
    This is a read-only configuration option that contains the
    ``SYSCONFDIR`` value specified at build time relative to the
    installation prefix. The ``$TS_ROOT`` environment variable can
-   be used alter the installation prefix at run time.
+   be used alter the installation prefix at run time. The directory must
+   allow read/write access for configuration reloads.
 
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
