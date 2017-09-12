@@ -1263,13 +1263,27 @@ else
 fi
 AC_SUBST(has_backtrace)
 
-# Remote process unwinding is only implemented on Linux because it depends on various Linux-specific
-# features such as /proc filesystem nodes, ptrace(2) and waitpid(2) extensions.
-AS_IF([test "$host_os_def" = "linux"], [
-  PKG_CHECK_MODULES([LIBUNWIND], [libunwind-ptrace], [
-    enable_remote_unwinding=yes
+#
+# use unwind library when possible (can be disabled)
+#
+AC_MSG_CHECKING([whether to use unwind library])
+AC_ARG_ENABLE([unwind],
+  AS_HELP_STRING([--disable-unwind],[Don't use the unwind library]), [
   ], [
-    dnl no remote unwind support
+    enable_unwind="yes"
+])
+AC_MSG_RESULT([$enable_unwind])
+
+AS_IF([test "x$enable_unwind" = "xyes"], [
+  # Remote process unwinding is only implemented on Linux because it depends on various Linux-specific
+  # features such as /proc filesystem nodes, ptrace(2) and waitpid(2) extensions.
+  AS_IF([test "$host_os_def" = "linux"], [
+    PKG_CHECK_MODULES([LIBUNWIND], [libunwind-ptrace], [
+      enable_remote_unwinding=yes
+    ], [
+      AC_MSG_WARN([unwind not found, try disabling it --disable-unwind])
+    ])], [
+    AC_MSG_WARN([unwind only available on linux, try disabling it --disable-unwind])
   ])
 ])
 TS_ARG_ENABLE_VAR([use], [remote_unwinding])
