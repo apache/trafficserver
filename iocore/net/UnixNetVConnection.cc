@@ -95,10 +95,7 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
 
   if (nh) {
     // 2. Release vc from InactivityCop.
-    nh->open_list.remove(vc);
-    nh->cop_list.remove(vc);
-    vc->remove_from_keep_alive_queue();
-    vc->remove_from_active_queue();
+    nh->stopCop(vc);
     // 3. Release vc from NetHandler.
     nh->stopIO(vc);
   }
@@ -1142,8 +1139,8 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   // Setup a timeout callback handler.
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::mainEvent);
 
-  // All NetVCs in the open_list is checked for timeout by InactivityCop.
-  nh->open_list.enqueue(this);
+  // Send this netvc to InactivityCop.
+  nh->startCop(this);
 
   if (inactivity_timeout_in) {
     UnixNetVConnection::set_inactivity_timeout(inactivity_timeout_in);
@@ -1253,8 +1250,7 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
 
   ink_assert(this->nh != nullptr);
   SET_HANDLER(&UnixNetVConnection::mainEvent);
-  ink_assert(!nh->open_list.in(this));
-  this->nh->open_list.enqueue(this);
+  this->nh->startCop(this);
   ink_assert(this->con.fd != NO_FD);
   return EVENT_DONE;
 }
@@ -1335,8 +1331,8 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
   // Setup a timeout callback handler.
   SET_HANDLER(&UnixNetVConnection::mainEvent);
-  // All NetVCs in the open_list is checked for timeout by InactivityCop.
-  nh->open_list.enqueue(this);
+  // Send this netvc to InactivityCop.
+  nh->startCop(this);
 
   set_inactivity_timeout(0);
   ink_assert(!active_timeout_in);
