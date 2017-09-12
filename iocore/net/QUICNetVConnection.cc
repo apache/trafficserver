@@ -291,6 +291,7 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
   case QUICFrameType::CONNECTION_CLOSE:
     DebugQUICCon("Enter state_connection_closed");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
+    this_ethread()->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
     break;
   default:
     DebugQUICCon("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
@@ -450,6 +451,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
   if (true) {
     DebugQUICCon("Enter state_connection_closed");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
+    this_ethread()->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
   }
 
   return EVENT_DONE;
@@ -459,11 +461,7 @@ int
 QUICNetVConnection::state_connection_closed(int event, Event *data)
 {
   switch (event) {
-  case QUIC_EVENT_PACKET_READ_READY: {
-    // TODO: send GOAWAY frame
-    break;
-  }
-  case QUIC_EVENT_PACKET_WRITE_READY: {
+  case QUIC_EVENT_SHUTDOWN: {
     this->_packet_write_ready        = nullptr;
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;

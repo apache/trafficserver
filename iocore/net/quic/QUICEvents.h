@@ -23,10 +23,12 @@
 
 #pragma once
 
+#include "I_EventSystem.h"
 #include "I_Event.h"
 
 enum {
   QUIC_EVENT_PACKET_READ_READY = QUIC_EVENT_EVENTS_START,
   QUIC_EVENT_PACKET_WRITE_READY,
+  QUIC_EVENT_SHUTDOWN,
   QUIC_EVENT_LD_SHUTDOWN,
 };
