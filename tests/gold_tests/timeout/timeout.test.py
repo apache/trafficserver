@@ -26,8 +26,19 @@ TIMEOUT = 3
 
 # Test.SkipIf(Condition.true("Skipping this test since running it requires superuser privilege, which introduces other problems"))
 
-if os.geteuid() != 0:
-    Test.SkipIf(Condition.true("Must be run with superuser privileges"))
+if os.name == 'nt':
+    import ctypes
+
+    try:
+        if not ctypes.windll.shell32.IsUserAnAdmin():
+            Test.SkipIf(Condition.true("Must be run with Administrator privileges"))
+    except:
+        Test.SkipIf(Condition.true("Administrator check failed. Assuming not an admin."))
+elif os.name == 'posix':
+    if os.geteuid() != 0:
+        Test.SkipIf(Condition.true("Must be run with superuser privileges"))
+else:
+    Test.SkipIf(Condition.true("OS not recognized. Can't perform superuser check."))
 
 Test.SkipUnless(
     Condition.HasProgram("ip", "ip (from iproute2) must be installed.")
