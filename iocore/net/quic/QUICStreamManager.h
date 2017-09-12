@@ -40,6 +40,7 @@ public:
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
+  void set_max_stream_id(QUICStreamId id);
   uint64_t total_offset_received() const;
   uint64_t total_offset_sent() const;
   uint32_t stream_count() const;
@@ -57,9 +58,12 @@ private:
   QUICError _handle_frame(const std::shared_ptr<const QUICRstStreamFrame> &);
   QUICError _handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame> &);
   QUICError _handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &);
+  QUICError _handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &);
 
   QUICFrameTransmitter *_tx                                 = nullptr;
   QUICApplicationMap *_app_map                              = nullptr;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
   std::shared_ptr<const QUICTransportParameters> _remote_tp = nullptr;
+  QUICStreamId _local_maximum_stream_id                     = 0;
+  QUICStreamId _remote_maximum_stream_id                    = 0;
 };

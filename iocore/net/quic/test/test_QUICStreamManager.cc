@@ -66,6 +66,12 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   std::shared_ptr<QUICFrame> stream_blocked_frame = QUICFrameFactory::create_stream_blocked_frame(4);
   sm.handle_frame(stream_blocked_frame);
   CHECK(sm.stream_count() == 5);
+
+  // Set local maximum stream id
+  sm.set_max_stream_id(4);
+  std::shared_ptr<QUICFrame> stream_blocked_frame_x = QUICFrameFactory::create_stream_blocked_frame(5);
+  sm.handle_frame(stream_blocked_frame_x);
+  CHECK(sm.stream_count() == 5);
 }
 
 TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")

@@ -40,7 +40,7 @@ std::vector<QUICFrameType>
 QUICStreamManager::interests()
 {
   return {
-    QUICFrameType::STREAM, QUICFrameType::RST_STREAM, QUICFrameType::MAX_STREAM_DATA,
+    QUICFrameType::STREAM, QUICFrameType::RST_STREAM, QUICFrameType::MAX_STREAM_DATA, QUICFrameType::MAX_STREAM_ID,
   };
 }
 
@@ -64,6 +64,25 @@ QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTran
     }
     stream->init_flow_control_params(local_initial_max_stream_data, remote_initial_max_stream_data);
   }
+
+  uint16_t len;
+  const uint8_t *tp_value;
+  if (this->_local_tp) {
+    tp_value                       = this->_local_tp->get(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, len);
+    this->_local_maximum_stream_id = QUICTypeUtil::read_QUICStreamId(tp_value, len);
+  }
+  if (this->_remote_tp) {
+    tp_value                        = this->_remote_tp->get(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, len);
+    this->_remote_maximum_stream_id = QUICTypeUtil::read_QUICStreamId(tp_value, len);
+  }
+}
+
+void
+QUICStreamManager::set_max_stream_id(QUICStreamId id)
+{
+  if (this->_local_maximum_stream_id <= id) {
+    this->_local_maximum_stream_id = id;
+  }
 }
 
 QUICError
@@ -72,20 +91,21 @@ QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
   QUICError error = QUICError(QUICErrorClass::NONE);
 
   switch (frame->type()) {
-  case QUICFrameType::MAX_STREAM_DATA: {
-    error = this->_handle_frame(std::dynamic_pointer_cast<const QUICMaxStreamDataFrame>(frame));
+  case QUICFrameType::MAX_STREAM_DATA:
+    error = this->_handle_frame(std::static_pointer_cast<const QUICMaxStreamDataFrame>(frame));
     break;
-  }
-  case QUICFrameType::STREAM_BLOCKED: {
+  case QUICFrameType::STREAM_BLOCKED:
     // STREAM_BLOCKED frame is for debugging. Just propagate to streams
-    error = this->_handle_frame(std::dynamic_pointer_cast<const QUICStreamBlockedFrame>(frame));
+    error = this->_handle_frame(std::static_pointer_cast<const QUICStreamBlockedFrame>(frame));
     break;
-  }
   case QUICFrameType::STREAM:
-    error = this->_handle_frame(std::dynamic_pointer_cast<const QUICStreamFrame>(frame));
+    error = this->_handle_frame(std::static_pointer_cast<const QUICStreamFrame>(frame));
     break;
   case QUICFrameType::RST_STREAM:
-    error = this->_handle_frame(std::dynamic_pointer_cast<const QUICRstStreamFrame>(frame));
+    error = this->_handle_frame(std::static_pointer_cast<const QUICRstStreamFrame>(frame));
+    break;
+  case QUICFrameType::MAX_STREAM_ID:
+    error = this->_handle_frame(std::static_pointer_cast<const QUICMaxStreamIdFrame>(frame));
     break;
   default:
     Debug(tag, "Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
@@ -103,10 +123,8 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxStreamDataFr
   if (stream) {
     return stream->recv(frame);
   } else {
-    // TODO: connection error?
+    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR);
   }
-
-  return QUICError(QUICErrorClass::NONE);
 }
 
 QUICError
@@ -116,16 +134,18 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamBlockedFr
   if (stream) {
     return stream->recv(frame);
   } else {
-    // TODO: connection error?
+    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR);
   }
-
-  return QUICError(QUICErrorClass::NONE);
 }
 
 QUICError
 QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamFrame> &frame)
 {
-  QUICStream *stream           = this->_find_or_create_stream(frame->stream_id());
+  QUICStream *stream = this->_find_or_create_stream(frame->stream_id());
+  if (!stream) {
+    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR);
+  }
+
   QUICApplication *application = this->_app_map->get(frame->stream_id());
 
   if (!application->is_stream_set(stream)) {
@@ -148,10 +168,16 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICRstStreamFrame>
   QUICStream *stream = this->_find_or_create_stream(frame->stream_id());
   if (stream) {
     // TODO Reset the stream
+    return QUICError(QUICErrorClass::NONE);
   } else {
-    // TODO: connection error?
+    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR);
   }
+}
 
+QUICError
+QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &frame)
+{
+  this->_remote_maximum_stream_id = frame->maximum_stream_id();
   return QUICError(QUICErrorClass::NONE);
 }
 
@@ -171,6 +197,10 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 {
   QUICStream *stream = this->_find_stream(stream_id);
   if (!stream) {
+    if ((stream_id > this->_local_maximum_stream_id && this->_local_maximum_stream_id != 0) ||
+        (stream_id > this->_remote_maximum_stream_id && this->_remote_maximum_stream_id != 0)) {
+      return nullptr;
+    }
     // TODO Free the stream somewhere
     stream = new (THREAD_ALLOC(quicStreamAllocator, this_ethread())) QUICStream();
     if (stream_id == STREAM_ID_FOR_HANDSHAKE) {
