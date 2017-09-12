@@ -18,65 +18,74 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-set -e # exit on error
-
 # Update the PKGDATE with the new version date when making a new clang-format binary package.
 PKGDATE="20170404"
-DIR=${1:-.}
-ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/${PKGDATE}}
-PACKAGE="clang-format-${PKGDATE}.tar.bz2"
-VERSION="clang-format version 4.0.1 (http://llvm.org/git/clang.git 559aa046fe3260d8640791f2249d7b0d458b5700) (http://llvm.org/git/llvm.git 08142cb734b8d2cefec8b1629f6bb170b3f94610)"
 
-URL=${URL:-https://ci.trafficserver.apache.org/bintray/${PACKAGE}}
+function main() {
+  set -e # exit on error
+  ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/${PKGDATE}}
 
-TAR=${TAR:-tar}
-CURL=${CURL:-curl}
+  DIR=${1:-.}
+  PACKAGE="clang-format-${PKGDATE}.tar.bz2"
+  VERSION="clang-format version 4.0.1 (http://llvm.org/git/clang.git 559aa046fe3260d8640791f2249d7b0d458b5700) (http://llvm.org/git/llvm.git 08142cb734b8d2cefec8b1629f6bb170b3f94610)"
 
-# default to using native sha1sum command when available
-if [ $(which sha1sum) ] ; then
-  SHASUM=${SHASUM:-sha1sum}
-else
-  SHASUM=${SHASUM:-shasum}
-fi
+  URL=${URL:-https://ci.trafficserver.apache.org/bintray/${PACKAGE}}
 
-ARCHIVE=$ROOT/$(basename ${URL})
+  TAR=${TAR:-tar}
+  CURL=${CURL:-curl}
 
-case $(uname -s) in
-Darwin)
-  FORMAT=${FORMAT:-${ROOT}/clang-format/clang-format.osx}
-  ;;
-Linux)
-  FORMAT=${FORMAT:-${ROOT}/clang-format/clang-format.linux}
-  ;;
-*)
-  echo "Leif needs to build a clang-format for $(uname -s)"
-  exit 2
-esac
+  # default to using native sha1sum command when available
+  if [ $(which sha1sum) ] ; then
+    SHASUM=${SHASUM:-sha1sum}
+  else
+    SHASUM=${SHASUM:-shasum}
+  fi
 
-mkdir -p ${ROOT}
+  ARCHIVE=$ROOT/$(basename ${URL})
 
-# Note that the two spaces between the hash and ${ARCHIVE) is needed
-if [ ! -e ${FORMAT} -o ! -e ${ROOT}/${PACKAGE} ] ; then
-  ${CURL} -L --progress-bar -o ${ARCHIVE} ${URL}
-  ${TAR} -x -C ${ROOT} -f ${ARCHIVE}
-  cat > ${ROOT}/sha1 << EOF
+  case $(uname -s) in
+  Darwin)
+    FORMAT=${FORMAT:-${ROOT}/clang-format/clang-format.osx}
+    ;;
+  Linux)
+    FORMAT=${FORMAT:-${ROOT}/clang-format/clang-format.linux}
+    ;;
+  *)
+    echo "Leif needs to build a clang-format for $(uname -s)"
+    exit 2
+  esac
+
+  mkdir -p ${ROOT}
+
+  # Note that the two spaces between the hash and ${ARCHIVE) is needed
+  if [ ! -e ${FORMAT} -o ! -e ${ROOT}/${PACKAGE} ] ; then
+    ${CURL} -L --progress-bar -o ${ARCHIVE} ${URL}
+    ${TAR} -x -C ${ROOT} -f ${ARCHIVE}
+    cat > ${ROOT}/sha1 << EOF
 ebd00097e5e16d6895d6572638cf354d705f9fcf  ${ARCHIVE}
 EOF
-  ${SHASUM} -c ${ROOT}/sha1
-  chmod +x ${FORMAT}
-fi
+    ${SHASUM} -c ${ROOT}/sha1
+    chmod +x ${FORMAT}
+  fi
 
 
-# Make sure we only run this with our exact version
-ver=$(${FORMAT} --version)
-if [ "$ver" != "$VERSION" ]; then
-    echo "Wrong version of clang-format!"
-    echo "See https://bintray.com/apache/trafficserver/clang-format-tools/view for a newer version,"
-    echo "or alternatively, undefine the FORMAT environment variable"
-    exit 1
+  # Make sure we only run this with our exact version
+  ver=$(${FORMAT} --version)
+  if [ "$ver" != "$VERSION" ]; then
+      echo "Wrong version of clang-format!"
+      echo "See https://bintray.com/apache/trafficserver/clang-format-tools/view for a newer version,"
+      echo "or alternatively, undefine the FORMAT environment variable"
+      exit 1
+  else
+      for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc); do
+    echo $file
+    ${FORMAT} -i $file
+      done
+  fi
+}
+
+if [[ "$(basename -- "$0")" == 'clang-format.sh' ]]; then
+  main "$@"
 else
-    for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc); do
-	echo $file
-	${FORMAT} -i $file
-    done
+  ROOT=${ROOT:-$(git rev-parse --show-toplevel)/.git/fmt/${PKGDATE}}
 fi
