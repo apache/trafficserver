@@ -45,6 +45,7 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter) : _transm
   this->_rttvar                   = 0;
   this->_largest_sent_before_rto  = 0;
   this->_time_of_last_sent_packet = 0;
+  this->_largest_sent_packet      = 0;
 
   SET_HANDLER(&QUICLossDetector::event_handler);
 }
@@ -183,6 +184,7 @@ void
 QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ack_frame)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  this->_largest_acked_packet = ack_frame->largest_acknowledged();
   // If the largest acked is newly acked, update the RTT.
   auto pi = this->_sent_packets.find(ack_frame->largest_acknowledged());
   if (pi != this->_sent_packets.end()) {
@@ -208,7 +210,6 @@ QUICLossDetector::_on_packet_acked(QUICPacketNumber acked_packet_number)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   Debug("quic_loss_detector", "Packet number %" PRIu64 " has been acked", acked_packet_number);
-  this->_largest_acked_packet = acked_packet_number;
   // If a packet sent prior to RTO was acked, then the RTO
   // was spurious.  Otherwise, inform congestion control.
   if (this->_rto_count > 0 && acked_packet_number > this->_largest_sent_before_rto) {
