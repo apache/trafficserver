@@ -256,7 +256,7 @@ QUICStream::_write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &fra
   int bytes_added = this->_read_vio.buffer.writer()->write(frame->data(), frame->data_length());
   this->_read_vio.nbytes += bytes_added;
   this->_recv_offset += frame->data_length();
-  this->_local_flow_controller->forward_limit(frame->offset() + this->_flow_control_buffer_size);
+  this->_local_flow_controller->forward_limit(this->_recv_offset + this->_flow_control_buffer_size);
   Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [LOCAL] %" PRIu64 "/%" PRIu64, this->_id,
         QUICDebugNames::stream_state(this->_state), this->_local_flow_controller->current_offset(),
         this->_local_flow_controller->current_limit());
