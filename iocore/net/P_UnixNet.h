@@ -212,17 +212,37 @@ public:
     Only be called when holding the mutex of this NetHandler.
 
     @param netvc UnixNetVConnection to be managed by this NetHandler.
-    @return 0 on success, -ERRNO on failure.
+    @return 0 on success, netvc->nh set to this NetHandler.
+            -ERRNO on failure.
    */
   int startIO(UnixNetVConnection *netvc);
   /**
     Stop to handle read & write event on a UnixNetVConnection.
     Remove the socket fd of netvc from polling system.
+    Only be called when holding the mutex of this NetHandler and must call stopCop(netvc) first.
+
+    @param netvc UnixNetVConnection to be released.
+    @return netvc->nh set to nullptr.
+   */
+  void stopIO(UnixNetVConnection *netvc);
+
+  /**
+    Start to handle active timeout and inactivity timeout on a UnixNetVConnection.
+    Put the netvc into open_list. All NetVCs in the open_list is checked for timeout by InactivityCop.
+    Only be called when holding the mutex of this NetHandler and must call startIO(netvc) first.
+
+    @param netvc UnixNetVConnection to be managed by InactivityCop
+   */
+  void startCop(UnixNetVConnection *netvc);
+  /* *
+    Stop to handle active timeout and inactivity on a UnixNetVConnection.
+    Remove the netvc from open_list and cop_list.
+    Also remove the netvc from keep_alive_queue and active_queue if its context is IN.
     Only be called when holding the mutex of this NetHandler.
 
     @param netvc UnixNetVConnection to be released.
    */
-  void stopIO(UnixNetVConnection *netvc);
+  void stopCop(UnixNetVConnection *netvc);
 
   NetHandler();
 
@@ -701,4 +721,26 @@ NetHandler::stopIO(UnixNetVConnection *netvc)
 
   netvc->nh = nullptr;
 }
+
+TS_INLINE void
+NetHandler::startCop(UnixNetVConnection *netvc)
+{
+  ink_assert(this->mutex->thread_holding == this_ethread());
+  ink_release_assert(netvc->nh == this);
+  ink_assert(!open_list.in(netvc));
+
+  open_list.enqueue(netvc);
+}
+
+TS_INLINE void
+NetHandler::stopCop(UnixNetVConnection *netvc)
+{
+  ink_release_assert(netvc->nh == this);
+
+  open_list.remove(netvc);
+  cop_list.remove(netvc);
+  remove_from_keep_alive_queue(netvc);
+  remove_from_active_queue(netvc);
+}
+
 #endif
