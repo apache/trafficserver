@@ -254,6 +254,8 @@ QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICConnection
     this->_key_phase = QUICKeyPhase::PHASE_0;
   } else if (type == QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
     this->_key_phase = QUICKeyPhase::PHASE_1;
+  } else if (type == QUICPacketType::STATELESS_RESET) {
+    this->_key_phase = QUICKeyPhase::PHASE_UNINITIALIZED;
   } else {
     ink_assert(false);
     this->_key_phase = QUICKeyPhase::PHASE_UNINITIALIZED;
@@ -273,8 +275,7 @@ QUICPacketShortHeader::type() const
     return QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1;
   }
   default:
-    ink_assert(false);
-    return QUICPacketType::UNINITIALIZED;
+    return QUICPacketType::STATELESS_RESET;
   }
 }
 
@@ -488,6 +489,25 @@ QUICPacket::QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUIC
   this->_is_retransmittable = retransmittable;
 }
 
+QUICPacket::QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token)
+{
+  const uint8_t *token                     = stateless_reset_token.get_u8();
+  QUICPacketNumber fake_packet_number      = token[0];
+  QUICPacketNumber fake_base_packet_number = token[0];
+  ats_unique_buf fake_payload              = ats_unique_malloc(15 + 8);
+  memcpy(fake_payload.get(), token + 1, 15);
+  // Append random bytes
+  std::random_device rnd;
+  for (int i = 15; i < 23; ++i) {
+    fake_payload.get()[i] = rnd() & 0xFF;
+  }
+
+  this->_header =
+    QUICPacketHeader::build(type, connection_id, fake_packet_number, fake_base_packet_number, std::move(fake_payload), 15 + 8);
+  this->_size               = this->_header->length() + 15 + 8;
+  this->_is_retransmittable = false;
+}
+
 QUICPacket::~QUICPacket()
 {
   if (this->_header->has_version()) {
@@ -559,8 +579,10 @@ uint16_t
 QUICPacket::payload_size() const
 {
   // FIXME Protected packets may / may not contain something at the end
-  if (this->type() != QUICPacketType::ZERO_RTT_PROTECTED && this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0 &&
-      this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
+  if (this->type() == QUICPacketType::STATELESS_RESET) {
+    return this->_size - this->_header->length();
+  } else if (this->type() != QUICPacketType::ZERO_RTT_PROTECTED && this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0 &&
+             this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
     return this->_size - this->_header->length() - FNV1A_HASH_LEN;
   } else {
     return this->_size - this->_header->length();
@@ -579,8 +601,11 @@ QUICPacket::store(uint8_t *buf, size_t *len) const
   this->_header->store(buf, len);
   ink_assert(this->size() >= *len);
 
-  if (this->type() != QUICPacketType::ZERO_RTT_PROTECTED && this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0 &&
-      this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
+  if (this->type() == QUICPacketType::STATELESS_RESET) {
+    memcpy(buf + *len, this->payload(), this->payload_size());
+    *len += this->payload_size();
+  } else if (this->type() != QUICPacketType::ZERO_RTT_PROTECTED && this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0 &&
+             this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
     memcpy(buf + *len, this->payload(), this->payload_size());
     *len += this->payload_size();
 
@@ -742,6 +767,14 @@ QUICPacketFactory::create_client_initial_packet(QUICConnectionId connection_id, 
   QUICPacket *packet = quicPacketAllocator.alloc();
   new (packet) QUICPacket(QUICPacketType::CLIENT_INITIAL, connection_id, this->_packet_number_generator.next(), base_packet_number,
                           version, std::move(payload), len, true);
+  return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(packet, &QUICPacketDeleter::delete_packet);
+}
+
+std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
+QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token)
+{
+  QUICPacket *packet = quicPacketAllocator.alloc();
+  new (packet) QUICPacket(QUICPacketType::STATELESS_RESET, connection_id, stateless_reset_token);
   return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(packet, &QUICPacketDeleter::delete_packet);
 }
 

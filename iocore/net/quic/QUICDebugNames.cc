@@ -44,8 +44,8 @@ QUICDebugNames::packet_type(QUICPacketType type)
     return "ONE_RTT_PROTECTED_KEY_PHASE_0";
   case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
     return "ONE_RTT_PROTECTED_KEY_PHASE_1";
-  case QUICPacketType::PUBLIC_RESET:
-    return "PUBLIC_RESET";
+  case QUICPacketType::STATELESS_RESET:
+    return "STATELESS_RESET";
   case QUICPacketType::UNINITIALIZED:
   default:
     return "UNKNOWN";

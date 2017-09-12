@@ -72,7 +72,7 @@ enum class QUICPacketType : int {
   ZERO_RTT_PROTECTED,
   ONE_RTT_PROTECTED_KEY_PHASE_0,
   ONE_RTT_PROTECTED_KEY_PHASE_1,
-  PUBLIC_RESET,
+  STATELESS_RESET,
   UNINITIALIZED,
 };
 
@@ -173,10 +173,16 @@ public:
     ctx.finalize(_md5);
   }
 
-  const INK_MD5
-  get() const
+  const uint8_t *
+  get_u8() const
   {
-    return _md5;
+    return _md5.u8;
+  }
+
+  const uint64_t *
+  get_u64() const
+  {
+    return _md5.u64;
   }
 
 private:

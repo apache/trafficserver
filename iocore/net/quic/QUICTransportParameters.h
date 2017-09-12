@@ -69,7 +69,7 @@ class QUICTransportParameterValue
 public:
   QUICTransportParameterValue(ats_unique_buf d, uint16_t l);
   QUICTransportParameterValue(uint64_t raw_data, uint16_t l);
-  QUICTransportParameterValue(uint64_t raw_data[2], uint16_t l);
+  QUICTransportParameterValue(const uint64_t raw_data[2], uint16_t l);
 
   const uint8_t *data() const;
   uint16_t len() const;

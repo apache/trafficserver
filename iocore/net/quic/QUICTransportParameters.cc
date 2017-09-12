@@ -44,7 +44,7 @@ QUICTransportParameterValue::QUICTransportParameterValue(uint64_t raw_data, uint
   this->_len = len;
 };
 
-QUICTransportParameterValue::QUICTransportParameterValue(uint64_t raw_data[2], uint16_t l)
+QUICTransportParameterValue::QUICTransportParameterValue(const uint64_t raw_data[2], uint16_t l)
 {
   this->_data = ats_unique_malloc(l);
   size_t len  = 0;

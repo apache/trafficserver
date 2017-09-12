@@ -56,6 +56,7 @@ public:
                                  ats_unique_buf payload, size_t len);
   static QUICPacketHeader *build(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
                                  QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len);
+  static QUICPacketHeader *build(QUICPacketType, QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token);
   virtual bool has_key_phase() const     = 0;
   virtual bool has_connection_id() const = 0;
   virtual bool has_version() const       = 0;
@@ -135,6 +136,7 @@ public:
              size_t len, bool retransmittable);
   QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
              QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len, bool retransmittabl);
+  QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token);
   ~QUICPacket();
 
   void set_protected_payload(ats_unique_buf cipher_txt, size_t cipher_txt_len);
@@ -218,6 +220,8 @@ public:
                                                                                   QUICPacketNumber base_packet_number,
                                                                                   QUICVersion version, ats_unique_buf payload,
                                                                                   size_t len);
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create_stateless_reset_packet(QUICConnectionId connection_id,
+                                                                                   QUICStatelessToken stateless_reset_token);
   void set_version(QUICVersion negotiated_version);
   void set_crypto_module(QUICCrypto *crypto);
 

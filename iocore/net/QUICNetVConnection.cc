@@ -98,7 +98,7 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   this->_token.gen_token(STATELESS_RETRY_TOKEN_KEY, _quic_connection_id ^ id);
 
-  this->_handshake_handler = new QUICHandshake(this, ssl_ctx, this->_token.get());
+  this->_handshake_handler = new QUICHandshake(this, ssl_ctx, this->_token);
   this->_application_map   = new QUICApplicationMap();
   this->_application_map->set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
 

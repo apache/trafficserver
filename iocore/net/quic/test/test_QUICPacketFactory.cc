@@ -68,3 +68,31 @@ TEST_CASE("QUICPacketFactory_Create_ServerCleartextPacket", "[quic]")
   CHECK((packet->packet_number() & 0xFFFFFFFF80000000) == 0);
   CHECK(packet->version() == 0x11223344);
 }
+
+TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
+{
+  QUICPacketFactory factory;
+  QUICStatelessToken token;
+  token.gen_token("test", 12345);
+  uint8_t expected_output[] = {
+    0x41, // 0CK0001
+    0x00, 0x00, 0x00, 0x00, 0x01,
+    0x02, 0x03, 0x04, // Connection ID
+    0x40, 0x01, 0x57, 0x55, 0x21,
+    0x9c, 0x24, 0x24, // Token
+    0xc7, 0x9f, 0x79, 0xa2, 0x72,
+    0xcb, 0x55, 0xe6
+    // Random data
+  };
+  uint8_t output[1024];
+  size_t out_len = 0;
+
+  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet = factory.create_stateless_reset_packet(0x01020304, token);
+  CHECK(packet->type() == QUICPacketType::STATELESS_RESET);
+  CHECK(packet->connection_id() == 0x01020304);
+  CHECK(packet->packet_number() == token.get_u8()[0]);
+  CHECK(memcmp(packet->payload(), token.get_u8() + 1, 15) == 0);
+  packet->store(output, &out_len);
+  CHECK(memcmp(output, expected_output, 25) == 0);
+  CHECK(out_len > 25); // Check existence of random bytes at the end
+}

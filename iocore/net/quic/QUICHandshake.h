@@ -50,7 +50,7 @@ class SSLNextProtocolSet;
 class QUICHandshake : public QUICApplication
 {
 public:
-  QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, INK_MD5 token);
+  QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessToken token);
   ~QUICHandshake();
 
   QUICError start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
@@ -88,5 +88,5 @@ private:
   QUICError _process_client_finished();
   QUICError _process_handshake_complete();
 
-  INK_MD5 _token;
+  QUICStatelessToken _token;
 };
