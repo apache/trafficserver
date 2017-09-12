@@ -49,7 +49,6 @@
 static constexpr uint32_t MAX_PACKET_OVERHEAD                = 25; // Max long header len(17) + FNV-1a hash len(8)
 static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD          = 15;
 static constexpr uint32_t MINIMUM_INITIAL_CLIENT_PACKET_SIZE = 1200;
-static constexpr char STATELESS_RETRY_TOKEN_KEY[]            = "stateless_token_retry_key";
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
@@ -96,7 +95,7 @@ void
 QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 {
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
-  this->_token.gen_token(STATELESS_RETRY_TOKEN_KEY, _quic_connection_id ^ id);
+  this->_token.gen_token(_quic_connection_id ^ id);
 
   this->_handshake_handler = new QUICHandshake(this, ssl_ctx, this->_token);
   this->_application_map   = new QUICApplicationMap();

@@ -165,10 +165,11 @@ class QUICStatelessToken
 {
 public:
   void
-  gen_token(const char *key, uint64_t data)
+  gen_token(uint64_t data)
   {
+    static constexpr char STATELESS_RETRY_TOKEN_KEY[] = "stateless_token_retry_key";
     MD5Context ctx;
-    ctx.update(key, strlen(key));
+    ctx.update(STATELESS_RETRY_TOKEN_KEY, strlen(STATELESS_RETRY_TOKEN_KEY));
     ctx.update(reinterpret_cast<void *>(&data), 8);
     ctx.finalize(_md5);
   }

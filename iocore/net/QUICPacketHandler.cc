@@ -129,9 +129,19 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
   }
 
   if (!vc) {
-    // Unknown Connection ID
     Connection con;
     con.setRemote(&udpPacket->from.sa);
+
+    // Send stateless reset if the packet is not a initial packet
+    if (!QUICTypeUtil::hasLongHeader(reinterpret_cast<const uint8_t *>(block->buf()))) {
+      QUICStatelessToken token;
+      token.gen_token(cid);
+      auto packet = QUICPacketFactory::create_stateless_reset_packet(cid, token);
+      this->send_packet(*packet, udpPacket->getConnection(), con.addr, 1200);
+      return;
+    }
+
+    // Create a new NetVConnection
     vc =
       static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(((UnixUDPConnection *)udpPacket->getConnection())->ethread));
     vc->init(udpPacket->getConnection(), this);
@@ -147,7 +157,6 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     vc->options.ip_proto  = NetVCOptions::USE_UDP;
     vc->options.ip_family = udpPacket->from.sa.sa_family;
 
-    // TODO: Handle Connection ID of Client Cleartext / Non-Final Server Cleartext Packet
     this->_connections.put(cid, vc);
   }
 
@@ -168,17 +177,24 @@ QUICPacketHandler::send_packet(const QUICPacket &packet, QUICNetVConnection *vc)
     this->_connections.put(packet.connection_id(), vc);
   }
 
+  this->send_packet(packet, vc->get_udp_con(), vc->con.addr, vc->pmtu());
+}
+
+void
+QUICPacketHandler::send_packet(const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu)
+{
   size_t udp_len;
   Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
-  udp_payload->alloc(iobuffer_size_to_index(vc->pmtu()));
+  udp_payload->alloc(iobuffer_size_to_index(pmtu));
   packet.store(reinterpret_cast<uint8_t *>(udp_payload->end()), &udp_len);
   udp_payload->fill(udp_len);
 
-  UDPPacket *udpPkt = new_UDPPacket(vc->con.addr, 0, udp_payload);
+  UDPPacket *udpPkt = new_UDPPacket(addr, 0, udp_payload);
 
   // NOTE: p will be enqueued to udpOutQueue of UDPNetHandler
   ip_port_text_buffer ipb;
   Debug("quic_sec", "send %s packet to %s, size=%" PRId64, QUICDebugNames::packet_type(packet.type()),
         ats_ip_nptop(&udpPkt->to.sa, ipb, sizeof(ipb)), udpPkt->getPktLength());
-  vc->get_udp_con()->send(this, udpPkt);
+
+  udp_con->send(this, udpPkt);
 }
