@@ -116,9 +116,18 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, bool include_length_field) con
   }
 
   // "SS" of "11FSSOOD"
-  // use 32 bit length for now
-  buf[0] += (0x03 << 3);
-  QUICTypeUtil::write_QUICStreamId(this->stream_id(), 4, buf + *len, &n);
+  uint8_t stream_id_width = 0;
+  if (this->_stream_id > 0xFFFFFF) {
+    stream_id_width = 4;
+  } else if (this->_stream_id > 0xFFFF) {
+    stream_id_width = 3;
+  } else if (this->_stream_id > 0xFF) {
+    stream_id_width = 2;
+  } else {
+    stream_id_width = 1;
+  }
+  buf[0] += ((stream_id_width - 1) << 3);
+  QUICTypeUtil::write_QUICStreamId(this->stream_id(), stream_id_width, buf + *len, &n);
   *len += n;
 
   // "OO" of "11FSSOOD"
