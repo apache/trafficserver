@@ -37,8 +37,8 @@ with :c:func:`TSStatIntSet`, and increment it with :c:func:`TSStatIntIncrement` 
 :c:func:`TSStatIntDecrement`.
 
 .. literalinclude:: ../../../example/statistic/statistic.cc
-   :language: c
-   :lines: 30-
+   :language: cpp
+   :lines: 32-
 
 If this plugin is loaded, then the statistic can be accessed with ::
 
