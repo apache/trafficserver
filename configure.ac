@@ -1271,6 +1271,7 @@ AC_ARG_ENABLE([unwind],
   AS_HELP_STRING([--disable-unwind],[Don't use the unwind library]), [
   ], [
     enable_unwind="yes"
+    enable_unwind_default="yes"
 ])
 AC_MSG_RESULT([$enable_unwind])
 
@@ -1281,9 +1282,17 @@ AS_IF([test "x$enable_unwind" = "xyes"], [
     PKG_CHECK_MODULES([LIBUNWIND], [libunwind-ptrace], [
       enable_remote_unwinding=yes
     ], [
-      AC_MSG_WARN([unwind not found, try disabling it --disable-unwind])
+      AS_IF([test "x$enable_unwind_default" = "xyes"], [
+        AC_MSG_WARN([unwind not found, try disabling it --disable-unwind])
+      ], [
+        AC_MSG_ERROR([unwind not found, try disabling it --disable-unwind])
+      ])
     ])], [
-    AC_MSG_WARN([unwind only available on linux, try disabling it --disable-unwind])
+    AS_IF([test "x$enable_unwind_default" = "xyes"], [
+      AC_MSG_WARN([unwind only available on linux, try disabling it --disable-unwind])
+    ], [
+      AC_MSG_ERROR([unwind only available on linux, try disabling it --disable-unwind])
+    ])
   ])
 ])
 TS_ARG_ENABLE_VAR([use], [remote_unwinding])
