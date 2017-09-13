@@ -110,57 +110,95 @@ TEST_CASE("Store STREAM Frame", "[quic]")
   uint8_t buf[65535];
   size_t len;
 
-  // 8bit stream id, 64bit offset
+  // 8bit stream id, 0bit offset
   uint8_t expected1[] = {
-    0xC7,                                           // 11FSSOOD
-    0x01,                                           // Stream ID
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Offset
-    0x00, 0x05,                                     // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+    0xC1,                         // 11FSSOOD
+    0x01,                         // Stream ID
+    0x00, 0x05,                   // Data Length
+    0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
   };
   QUICStreamFrame streamFrame1(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01, 0x00);
   streamFrame1.store(buf, &len);
-  CHECK(len == 17);
+  CHECK(len == 9);
   CHECK(memcmp(buf, expected1, len) == 0);
 
-  // 16bit stream id, 64bit offset
+  // 8bit stream id, 16bit offset
   uint8_t expected2[] = {
-    0xCF,                                           // 11FSSOOD
-    0x01, 0x00,                                     // Stream ID
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Offset
-    0x00, 0x05,                                     // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+    0xC3,                         // 11FSSOOD
+    0x01,                         // Stream ID
+    0x00, 0x01,                   // Offset
+    0x00, 0x05,                   // Data Length
+    0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
   };
-  QUICStreamFrame streamFrame2(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x0100, 0x00);
+  QUICStreamFrame streamFrame2(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01, 0x01);
   streamFrame2.store(buf, &len);
-  CHECK(len == 18);
+  CHECK(len == 11);
   CHECK(memcmp(buf, expected2, len) == 0);
 
-  // 24bit stream id, 64bit offset
+  // 8bit stream id, 32bit offset
   uint8_t expected3[] = {
-    0xD7,                                           // 11FSSOOD
-    0x01, 0x00, 0x00,                               // Stream ID
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Offset
-    0x00, 0x05,                                     // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+    0xC5,                         // 11FSSOOD
+    0x01,                         // Stream ID
+    0x00, 0x01, 0x00, 0x00,       // Offset
+    0x00, 0x05,                   // Data Length
+    0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
   };
-  QUICStreamFrame streamFrame3(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x010000, 0x00);
+  QUICStreamFrame streamFrame3(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01, 0x010000);
   streamFrame3.store(buf, &len);
-  CHECK(len == 19);
+  CHECK(len == 13);
   CHECK(memcmp(buf, expected3, len) == 0);
 
-  // 32bit stream id, 64bit offset
+  // 8bit stream id, 64bit offset
   uint8_t expected4[] = {
-    0xDF,                                           // 11FSSOOD
-    0x01, 0x00, 0x00, 0x00,                         // Stream ID
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Offset
+    0xC7,                                           // 11FSSOOD
+    0x01,                                           // Stream ID
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
     0x00, 0x05,                                     // Data Length
     0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
   };
-  QUICStreamFrame streamFrame4(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01000000, 0x00);
+  QUICStreamFrame streamFrame4(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01, 0x0100000000);
   streamFrame4.store(buf, &len);
-  CHECK(len == 20);
+  CHECK(len == 17);
   CHECK(memcmp(buf, expected4, len) == 0);
+
+  // 16bit stream id, 64bit offset
+  uint8_t expected5[] = {
+    0xCF,                                           // 11FSSOOD
+    0x01, 0x00,                                     // Stream ID
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+    0x00, 0x05,                                     // Data Length
+    0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+  };
+  QUICStreamFrame streamFrame5(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x0100, 0x0100000000);
+  streamFrame5.store(buf, &len);
+  CHECK(len == 18);
+  CHECK(memcmp(buf, expected5, len) == 0);
+
+  // 24bit stream id, 64bit offset
+  uint8_t expected6[] = {
+    0xD7,                                           // 11FSSOOD
+    0x01, 0x00, 0x00,                               // Stream ID
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+    0x00, 0x05,                                     // Data Length
+    0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+  };
+  QUICStreamFrame streamFrame6(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x010000, 0x0100000000);
+  streamFrame6.store(buf, &len);
+  CHECK(len == 19);
+  CHECK(memcmp(buf, expected6, len) == 0);
+
+  // 32bit stream id, 64bit offset
+  uint8_t expected7[] = {
+    0xDF,                                           // 11FSSOOD
+    0x01, 0x00, 0x00, 0x00,                         // Stream ID
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+    0x00, 0x05,                                     // Data Length
+    0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+  };
+  QUICStreamFrame streamFrame7(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01000000, 0x0100000000);
+  streamFrame7.store(buf, &len);
+  CHECK(len == 20);
+  CHECK(memcmp(buf, expected7, len) == 0);
 }
 
 TEST_CASE("Load Ack Frame 1", "[quic]")

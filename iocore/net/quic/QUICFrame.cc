@@ -118,22 +118,31 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, bool include_length_field) con
   // "SS" of "11FSSOOD"
   uint8_t stream_id_width = 0;
   if (this->_stream_id > 0xFFFFFF) {
-    stream_id_width = 4;
-  } else if (this->_stream_id > 0xFFFF) {
     stream_id_width = 3;
-  } else if (this->_stream_id > 0xFF) {
+  } else if (this->_stream_id > 0xFFFF) {
     stream_id_width = 2;
-  } else {
+  } else if (this->_stream_id > 0xFF) {
     stream_id_width = 1;
+  } else {
+    stream_id_width = 0;
   }
-  buf[0] += ((stream_id_width - 1) << 3);
-  QUICTypeUtil::write_QUICStreamId(this->stream_id(), stream_id_width, buf + *len, &n);
+  buf[0] += (stream_id_width << 3);
+  QUICTypeUtil::write_QUICStreamId(this->stream_id(), stream_id_width + 1, buf + *len, &n);
   *len += n;
 
   // "OO" of "11FSSOOD"
-  // use 64 bit length for now
-  buf[0] += (0x03 << 1);
-  QUICTypeUtil::write_QUICOffset(this->offset(), 8, buf + *len, &n);
+  uint8_t offset_width = 0;
+  if (this->offset() > 0xFFFFFFFF) {
+    offset_width = 3;
+  } else if (this->offset() > 0xFFFF) {
+    offset_width = 2;
+  } else if (this->offset() > 0x00) {
+    offset_width = 1;
+  } else {
+    offset_width = 0;
+  }
+  buf[0] += (offset_width << 1);
+  QUICTypeUtil::write_QUICOffset(this->offset(), offset_width ? 1 << offset_width : 0, buf + *len, &n);
   *len += n;
 
   // "D" of "11FSSOOD"
