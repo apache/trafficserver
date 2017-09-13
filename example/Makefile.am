@@ -58,7 +58,7 @@ example_Plugins = \
 	ssl_sni.la \
 	statistic.la \
 	thread_1.la \
-	txn-data-sink.la \
+	txn_data_sink.la \
 	version.la \
 	disable_http2.la
 
@@ -125,7 +125,7 @@ ssl_sni_whitelist_la_LIBADD = $(libtsconfig)
 disable_http2_la_SOURCES = disable_http2/disable_http2.cc
 statistic_la_SOURCES = statistic/statistic.cc
 thread_1_la_SOURCES = thread_1/thread_1.c
-txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
+txn_data_sink_la_SOURCES = txn_data_sink/txn_data_sink.c
 version_la_SOURCES = version/version.c
 redirect_1_la_SOURCES = redirect_1/redirect_1.c
 session_hooks_la_SOURCES = session_hooks/session_hooks.c
