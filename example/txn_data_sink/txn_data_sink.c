@@ -36,8 +36,8 @@
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 
-#define PLUGIN_NAME "txn-data-sink"
-#define PCP "[" PLUGIN_NAME "]"
+#define PLUGIN_NAME "txn_data_sink"
+#define PCP "[" PLUGIN_NAME "] "
 
 // Activate the data sink if this field is present in the request.
 static const char FLAG_MIME_FIELD[] = "TS-Agent";
