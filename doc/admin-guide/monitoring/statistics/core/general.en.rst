@@ -117,3 +117,8 @@ General
    A shortened string containing the release number of the running instance of
    |TS|.
 
+.. ts:stat:: global proxy.process.traffic_server.memory.rss integer
+   :units: bytes
+
+   The resident set size (RSS) of the ``traffic_server`` process. This is
+   basically the amount of memory this process is consuming.
