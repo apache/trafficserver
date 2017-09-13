@@ -38,9 +38,9 @@ int
 ReenableSSL(TSCont cont, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(TSContDataGet(cont));
+  TSDebug(PN, "Callback reenable ssl_vc=%p", ssl_vc);
   TSVConnReenable(ssl_vc);
   TSContDestroy(cont);
-  TSDebug(PN, "Callback reenable ssl_vc=%p", ssl_vc);
   return TS_SUCCESS;
 }
 
