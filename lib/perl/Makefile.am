@@ -27,9 +27,12 @@ install-exec-local: Makefile-pl
 
 # The perl build needs to have the source files in the current working directory, so we need to
 # copy them to the build directory if we are building out of tree.
-Makefile-pl: Makefile.PL
+Makefile-pl: Makefile.PL $(top_builddir)/config.status
 	test -f "$(top_builddir)/$(subdir)/Makefile.PL" || cp -rf "$(srcdir)/." "$(top_builddir)/$(subdir)/"
 	$(PERL) Makefile.PL INSTALLDIRS=$(INSTALLDIRS) INSTALL_BASE=$(prefix) PREFIX=
+
+clean-local:
+	-rm Makefile-pl
 
 distclean-local:
 	-rm -rf Makefile-pl MYMETA.* blip
