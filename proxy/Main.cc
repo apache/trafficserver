@@ -381,8 +381,11 @@ public:
   {
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
+    RecRegisterStatInt(RECT_PROCESS, "proxy.process.traffic_server.memory.rss", static_cast<RecInt>(0), RECP_NON_PERSISTENT);
   }
+
   ~MemoryLimit() override { mutex = nullptr; }
+
   int
   periodic(int event, Event *e)
   {
@@ -392,14 +395,15 @@ public:
       delete this;
       return EVENT_DONE;
     }
-    if (_memory_limit == 0) {
-      // first time it has been run
-      _memory_limit = REC_ConfigReadInteger("proxy.config.memory.max_usage");
-      _memory_limit = _memory_limit >> 10; // divide by 1024
-    }
-    if (_memory_limit > 0) {
-      if (getrusage(RUSAGE_SELF, &_usage) == 0) {
-        Debug("server", "memory usage - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
+
+    // "reload" the setting, we don't do this often so not expensive
+    _memory_limit = REC_ConfigReadInteger("proxy.config.memory.max_usage");
+    _memory_limit = _memory_limit >> 10; // divide by 1024
+
+    if (getrusage(RUSAGE_SELF, &_usage) == 0) {
+      RecSetRecordInt("proxy.process.traffic_server.memory.rss", _usage.ru_maxrss << 10, REC_SOURCE_DEFAULT); // * 1024
+      Debug("server", "memory usage - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
+      if (_memory_limit > 0) {
         if (_usage.ru_maxrss > _memory_limit) {
           if (net_memory_throttle == false) {
             net_memory_throttle = true;
@@ -411,13 +415,13 @@ public:
             Debug("server", "memory usage under limit - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
           }
         }
+      } else {
+        // this feature has not been enabled
+        Debug("server", "limiting connections based on memory usage has been disabled");
+        e->cancel();
+        delete this;
+        return EVENT_DONE;
       }
-    } else {
-      // this feature has not be enabled
-      Debug("server", "limiting connections based on memory usage has been disabled");
-      e->cancel();
-      delete this;
-      return EVENT_DONE;
     }
     return EVENT_CONT;
   }
@@ -1783,7 +1787,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
-  eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND, ET_TASK);
+  eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND * 10, ET_TASK);
   REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
