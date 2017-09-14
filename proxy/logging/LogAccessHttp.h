@@ -83,55 +83,60 @@ public:
   int marshal_client_finish_status_code(char *) override;     // INT
   int marshal_client_req_id(char *) override;                 // INT
   int marshal_client_req_uuid(char *) override;               // STR
+  int marshal_client_req_all_header_fields(char *) override;  // STR
 
   //
   // proxy -> client fields
   //
-  int marshal_proxy_resp_content_type(char *) override;  // STR
-  int marshal_proxy_resp_header_len(char *) override;    // INT
-  int marshal_proxy_resp_content_len(char *) override;   // INT
-  int marshal_proxy_resp_squid_len(char *) override;     // INT
-  int marshal_proxy_resp_status_code(char *) override;   // INT
-  int marshal_proxy_finish_status_code(char *) override; // INT
-  int marshal_cache_result_code(char *) override;        // INT
-  int marshal_cache_hit_miss(char *) override;           // INT
+  int marshal_proxy_resp_content_type(char *) override;      // STR
+  int marshal_proxy_resp_header_len(char *) override;        // INT
+  int marshal_proxy_resp_content_len(char *) override;       // INT
+  int marshal_proxy_resp_squid_len(char *) override;         // INT
+  int marshal_proxy_resp_status_code(char *) override;       // INT
+  int marshal_proxy_finish_status_code(char *) override;     // INT
+  int marshal_cache_result_code(char *) override;            // INT
+  int marshal_cache_hit_miss(char *) override;               // INT
+  int marshal_proxy_resp_all_header_fields(char *) override; // STR
 
   //
   // proxy -> server fields
   //
-  int marshal_proxy_req_header_len(char *) override;  // INT
-  int marshal_proxy_req_content_len(char *) override; // INT
-  int marshal_proxy_req_squid_len(char *) override;   // INT
-  int marshal_proxy_req_server_name(char *) override; // STR
-  int marshal_proxy_req_server_ip(char *) override;   // INT
-  int marshal_proxy_req_server_port(char *) override; // INT
-  int marshal_proxy_hierarchy_route(char *) override; // INT
-  int marshal_proxy_host_port(char *) override;       // INT
-  int marshal_proxy_req_is_ssl(char *) override;      // INT
+  int marshal_proxy_req_header_len(char *) override;        // INT
+  int marshal_proxy_req_content_len(char *) override;       // INT
+  int marshal_proxy_req_squid_len(char *) override;         // INT
+  int marshal_proxy_req_server_name(char *) override;       // STR
+  int marshal_proxy_req_server_ip(char *) override;         // INT
+  int marshal_proxy_req_server_port(char *) override;       // INT
+  int marshal_proxy_hierarchy_route(char *) override;       // INT
+  int marshal_proxy_host_port(char *) override;             // INT
+  int marshal_proxy_req_is_ssl(char *) override;            // INT
+  int marshal_proxy_req_all_header_fields(char *) override; // STR
 
   //
   // server -> proxy fields
   //
-  int marshal_server_host_ip(char *) override;           // INT
-  int marshal_server_host_name(char *) override;         // STR
-  int marshal_server_resp_status_code(char *) override;  // INT
-  int marshal_server_resp_header_len(char *) override;   // INT
-  int marshal_server_resp_content_len(char *) override;  // INT
-  int marshal_server_resp_squid_len(char *) override;    // INT
-  int marshal_server_resp_http_version(char *) override; // INT
-  int marshal_server_resp_time_ms(char *) override;      // INT
-  int marshal_server_resp_time_s(char *) override;       // INT
-  int marshal_server_transact_count(char *) override;    // INT
-  int marshal_server_connect_attempts(char *) override;  // INT
+  int marshal_server_host_ip(char *) override;                // INT
+  int marshal_server_host_name(char *) override;              // STR
+  int marshal_server_resp_status_code(char *) override;       // INT
+  int marshal_server_resp_header_len(char *) override;        // INT
+  int marshal_server_resp_content_len(char *) override;       // INT
+  int marshal_server_resp_squid_len(char *) override;         // INT
+  int marshal_server_resp_http_version(char *) override;      // INT
+  int marshal_server_resp_time_ms(char *) override;           // INT
+  int marshal_server_resp_time_s(char *) override;            // INT
+  int marshal_server_transact_count(char *) override;         // INT
+  int marshal_server_connect_attempts(char *) override;       // INT
+  int marshal_server_resp_all_header_fields(char *) override; // STR
 
   //
   // cache -> client fields
   //
-  int marshal_cache_resp_status_code(char *) override;  // INT
-  int marshal_cache_resp_header_len(char *) override;   // INT
-  int marshal_cache_resp_content_len(char *) override;  // INT
-  int marshal_cache_resp_squid_len(char *) override;    // INT
-  int marshal_cache_resp_http_version(char *) override; // INT
+  int marshal_cache_resp_status_code(char *) override;       // INT
+  int marshal_cache_resp_header_len(char *) override;        // INT
+  int marshal_cache_resp_content_len(char *) override;       // INT
+  int marshal_cache_resp_squid_len(char *) override;         // INT
+  int marshal_cache_resp_http_version(char *) override;      // INT
+  int marshal_cache_resp_all_header_fields(char *) override; // STR
 
   //
   // congestion control client_retry_after_time

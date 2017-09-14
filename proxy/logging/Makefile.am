@@ -71,7 +71,10 @@ liblogging_a_SOURCES = \
   LogSock.cc \
   LogSock.h \
   LogUtils.cc \
-  LogUtils.h
+  LogUtils.h \
+  LogUtilsHttp.cc \
+  LogCatUtilsHttp.cc \
+  LogUtilsHttp.h
 
 liblogcollation_a_SOURCES = \
   LogCollationAccept.cc \
@@ -83,10 +86,11 @@ liblogcollation_a_SOURCES = \
   LogCollationHostSM.h
 
 check_PROGRAMS = \
-  test_LogUtils
+  test_LogUtils \
+  test_LogUtilsHttp
 
 TESTS = \
-  test_LogUtils
+  $(check_PROGRAMS)
 
 test_LogUtils_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -94,6 +98,15 @@ test_LogUtils_LDADD = \
 
 test_LogUtils_SOURCES = \
   test_LogUtils.cc
+
+test_LogUtilsHttp_CPPFLAGS =  $(AM_CPPFLAGS)\
+  -DTEST_LOG_UTILS_HTTP \
+  -I$(abs_top_srcdir)/tests/include
+
+test_LogUtilsHttp_SOURCES = \
+  LogUtilsHttp.cc \
+  LogCatUtilsHttp.cc \
+  unit-tests/test_LogUtilsHttp.cc
 
 tidy-local: $(liblogging_a_SOURCES) $(liblogcollation_a_SOURCES) $(EXTRA_DIST)
 	$(CXX_Clang_Tidy)
