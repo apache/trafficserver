@@ -27,6 +27,40 @@
 
 #include "ts/ink_config.h"
 
+// Gnu C++ doesn't define __STDC__ == 0 as needed to
+// have ip_hl be defined.
+#if defined(__GNUC__) && !defined(__STDC__)
+#define __STDC__ 0
+#endif
+
+#include <fcntl.h>
+#include <limits.h>
+#include <assert.h>
+#include <time.h>
+#include <sys/time.h>
+#include <sys/uio.h>
+#include <sys/file.h>
+#include <sys/resource.h>
+#include <errno.h>
+#include <syslog.h>
+#include <pwd.h>
+#include <poll.h>
+#include <dirent.h>
+
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+
+#include <sys/param.h>
+#include <sys/un.h>
+
+#include <sys/socket.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
+
+struct ifafilt;
+#include <net/if.h>
+
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -37,38 +71,15 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
-#include <errno.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#include <fcntl.h>
-
-#include <limits.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <sys/stat.h>
-#include <assert.h>
-#include <time.h>
-#include <sys/time.h>
-#include <sys/uio.h>
-#include <sys/file.h>
-#include <sys/resource.h>
-
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/sem.h>
-
-#include <sys/param.h>
-#include <sys/un.h>
-
-#include <sys/wait.h>
-#include <sys/socket.h>
-#include <sys/mman.h>
-
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
@@ -101,13 +112,6 @@
 #ifdef HAVE_SIGINFO_H
 #include <siginfo.h>
 #endif
-#ifdef HAVE_WAIT_H
-#include <wait.h>
-#endif
-
-#include <syslog.h>
-#include <pwd.h>
-#include <poll.h>
 
 #if TS_USE_EPOLL
 #include <sys/epoll.h>
@@ -126,26 +130,12 @@
 #include <alloca.h>
 #endif
 
-#include <errno.h>
-#include <dirent.h>
-
 #ifdef HAVE_CPIO_H
 #include <cpio.h>
 #endif
 
-struct ifafilt;
-#include <net/if.h>
-
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
-#endif
-
-//
-// Gnu C++ doesn't define __STDC__ == 0 as needed to
-// have ip_hl be defined.
-//
-#if defined(__GNUC__) && !defined(__STDC__)
-#define __STDC__ 0
 #endif
 
 #ifdef HAVE_MACHINE_ENDIAN_H
@@ -164,8 +154,6 @@ struct ifafilt;
 #ifdef HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>
 #endif
-
-#include <resolv.h>
 
 #if defined(linux)
 typedef unsigned int in_addr_t;
@@ -198,6 +186,9 @@ typedef unsigned int in_addr_t;
 #ifdef HAVE_SYS_PRCTL_H
 #include <sys/prctl.h>
 #endif
+
+// Unconditionally included headers that depend on conditionally included ones.
+#include <resolv.h> // Must go after the netinet includes for FreeBSD
 
 #ifndef PATH_NAME_MAX
 #define PATH_NAME_MAX 4096 // instead of PATH_MAX which is inconsistent
