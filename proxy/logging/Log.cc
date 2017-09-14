@@ -535,6 +535,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ctec", field);
 
+  field = new LogField("client_request_all_header_fields", "cqah", LogField::STRING,
+                       &LogAccess::marshal_client_req_all_header_fields, &LogUtils::unmarshalMimeHdr);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqah", field);
+
   // proxy -> client fields
   field = new LogField("proxy_resp_content_type", "psct", LogField::STRING, &LogAccess::marshal_proxy_resp_content_type,
                        (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
@@ -632,6 +637,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("chm", field);
 
+  field = new LogField("proxy_response_all_header_fields", "psah", LogField::STRING,
+                       &LogAccess::marshal_proxy_resp_all_header_fields, &LogUtils::unmarshalMimeHdr);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("psah", field);
+
   // proxy -> server fields
   field = new LogField("proxy_req_header_len", "pqhl", LogField::sINT, &LogAccess::marshal_proxy_req_header_len,
                        &LogAccess::unmarshal_int_to_str);
@@ -710,6 +720,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("pqssl", field);
 
+  field = new LogField("proxy_request_all_header_fields", "pqah", LogField::STRING, &LogAccess::marshal_proxy_req_all_header_fields,
+                       &LogUtils::unmarshalMimeHdr);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("pqah", field);
+
   // server -> proxy fields
   field = new LogField("server_host_ip", "shi", LogField::IP, &LogAccess::marshal_server_host_ip, &LogAccess::unmarshal_ip_to_str);
 
@@ -776,6 +791,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("sca", field);
 
+  field = new LogField("origin_response_all_header_fields", "ssah", LogField::STRING,
+                       &LogAccess::marshal_server_resp_all_header_fields, &LogUtils::unmarshalMimeHdr);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("ssah", field);
+
   field = new LogField("cached_resp_status_code", "csssc", LogField::sINT, &LogAccess::marshal_cache_resp_status_code,
                        &LogAccess::unmarshal_http_status);
   global_field_list.add(field, false);
@@ -800,6 +820,11 @@ Log::init_fields()
                        &LogAccess::unmarshal_http_version);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("csshv", field);
+
+  field = new LogField("cache_origin_response_all_header_fields", "cssah", LogField::STRING,
+                       &LogAccess::marshal_cache_resp_all_header_fields, &LogUtils::unmarshalMimeHdr);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cssah", field);
 
   field = new LogField("client_retry_after_time", "crat", LogField::sINT, &LogAccess::marshal_client_retry_after_time,
                        &LogAccess::unmarshal_int_to_str);
