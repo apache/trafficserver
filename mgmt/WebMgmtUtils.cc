@@ -29,7 +29,6 @@
 #include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
-#include "MultiFile.h"
 #include "ts/Regex.h"
 
 /****************************************************************************
@@ -1235,95 +1234,4 @@ recordRestartCheck(const char *varName)
   }
 
   return false;
-}
-
-//-------------------------------------------------------------------------
-// getFilesInDirectory
-//
-// copied from MultiFiles::WalkFiles - but slightly modified
-// returns -1 if directory does not exit
-// returns 1 if everything is ok
-//-------------------------------------------------------------------------
-int
-getFilesInDirectory(char *managedDir, ExpandingArray *fileList)
-{
-  struct dirent *dirEntry;
-  DIR *dir;
-
-  char *fileName;
-  char *filePath;
-  struct stat fileInfo;
-  //  struct stat records_config_fileInfo;
-  fileEntry *fileListEntry;
-
-  if ((dir = opendir(managedDir)) == nullptr) {
-    mgmt_log("[getFilesInDirectory] Unable to open %s directory: %s\n", managedDir, strerror(errno));
-    return -1;
-  }
-
-  while ((dirEntry = readdir(dir))) {
-    fileName = dirEntry->d_name;
-
-    filePath = newPathString(managedDir, fileName);
-    if (stat(filePath, &fileInfo) < 0) {
-      mgmt_log("[getFilesInDirectory] Stat of a %s failed : %s\n", fileName, strerror(errno));
-    } else {
-      // Ignore ., .., and any dot files
-      if (fileName && *fileName != '.') {
-        fileListEntry         = (fileEntry *)ats_malloc(sizeof(fileEntry));
-        fileListEntry->c_time = fileInfo.st_ctime;
-        ink_strlcpy(fileListEntry->name, fileName, sizeof(fileListEntry->name));
-        fileList->addEntry(fileListEntry);
-      }
-    }
-    delete[] filePath;
-  }
-
-  closedir(dir);
-
-  fileList->sortWithFunction(fileEntryCmpFunc);
-  return 1;
-}
-
-//-------------------------------------------------------------------------
-// newPathString
-//
-// copied from MultiFile::newPathString
-// Note: uses C++ new/delete for memory allocation/deallocation
-//-------------------------------------------------------------------------
-char *
-newPathString(const char *s1, const char *s2)
-{
-  char *newStr;
-  int srcLen; // is the length of the src rootpath
-  int addLen; // maximum total path length
-
-  // Treat null as an empty path.
-  if (!s2) {
-    s2 = "";
-  }
-  addLen = strlen(s2) + 1;
-  if (*s2 == '/') {
-    // If addpath is rooted, then rootpath is unused.
-    newStr = new char[addLen];
-    ink_strlcpy(newStr, s2, addLen);
-    return newStr;
-  }
-  if (!s1 || !*s1) {
-    // If there's no rootpath return the addpath
-    newStr = new char[addLen];
-    ink_strlcpy(newStr, s2, addLen);
-    return newStr;
-  }
-  srcLen = strlen(s1);
-  newStr = new char[srcLen + addLen + 1];
-  ink_assert(newStr != nullptr);
-
-  ink_strlcpy(newStr, s1, srcLen + addLen + 1);
-  if (newStr[srcLen - 1] != '/') {
-    newStr[srcLen++] = '/';
-  }
-  ink_strlcpy(&newStr[srcLen], s2, srcLen + addLen + 1);
-
-  return newStr;
 }

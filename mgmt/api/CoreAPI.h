@@ -83,14 +83,6 @@ TSMgmtError EventIsActive(const char *event_name, bool *is_current);
 TSMgmtError EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data);
 TSMgmtError EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func);
 
-/***************************************************************************
- * Snapshots
- ***************************************************************************/
-TSMgmtError SnapshotTake(const char *snapshot_name);
-TSMgmtError SnapshotRestore(const char *snapshot_name);
-TSMgmtError SnapshotRemove(const char *snapshot_name);
-TSMgmtError SnapshotGetMlt(LLQ *snapshots);
-
 TSMgmtError StatsReset(const char *name = NULL);
 
 #endif

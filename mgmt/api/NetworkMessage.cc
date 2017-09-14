@@ -54,10 +54,6 @@ static const struct NetCmdOperation requests[] = {
   /* EVENT_UNREG_CALLBACK       */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* EVENT_NOTIFY               */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING}}, // only msg sent from TM to
                                                                                                          // client
-  /* SNAPSHOT_TAKE              */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
-  /* SNAPSHOT_RESTORE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
-  /* SNAPSHOT_REMOVE            */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
-  /* SNAPSHOT_GET_MLT           */ {1, {MGMT_MARSHALL_INT}},
   /* STATS_RESET_NODE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* RECORD_MATCH_GET           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
@@ -85,10 +81,6 @@ static const struct NetCmdOperation responses[] = {
   /* EVENT_REG_CALLBACK         */ {0, {}}, // no reply
   /* EVENT_UNREG_CALLBACK       */ {0, {}}, // no reply
   /* EVENT_NOTIFY               */ {0, {}}, // no reply
-  /* SNAPSHOT_TAKE              */ {1, {MGMT_MARSHALL_INT}},
-  /* SNAPSHOT_RESTORE           */ {1, {MGMT_MARSHALL_INT}},
-  /* SNAPSHOT_REMOVE            */ {1, {MGMT_MARSHALL_INT}},
-  /* SNAPSHOT_GET_MLT           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* STATS_RESET_NODE           */ {1, {MGMT_MARSHALL_INT}},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {1, {MGMT_MARSHALL_INT}},
   /* RECORD_MATCH_GET           */
@@ -208,9 +200,6 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
   case OpType::PROXY_STATE_SET:
   case OpType::RECONFIGURE:
   case OpType::RESTART:
-  case OpType::SNAPSHOT_REMOVE:
-  case OpType::SNAPSHOT_RESTORE:
-  case OpType::SNAPSHOT_TAKE:
   case OpType::STATS_RESET_NODE:
   case OpType::STORAGE_DEVICE_CMD_OFFLINE:
     ink_release_assert(responses[static_cast<unsigned>(optype)].nfields == 1);
@@ -223,7 +212,6 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
     return send_mgmt_response(fd, optype, &ecode, &intval);
 
   case OpType::EVENT_GET_MLT:
-  case OpType::SNAPSHOT_GET_MLT:
   case OpType::SERVER_BACKTRACE:
     ink_release_assert(responses[static_cast<unsigned>(optype)].nfields == 2);
     return send_mgmt_response(fd, optype, &ecode, &strval);

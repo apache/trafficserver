@@ -60,8 +60,6 @@ libmgmt_lm_la_SOURCES = \
   FileManager.h \
   LocalManager.cc \
   LocalManager.h \
-  MultiFile.cc \
-  MultiFile.h \
   Rollback.cc \
   Rollback.h \
   WebMgmtUtils.cc \

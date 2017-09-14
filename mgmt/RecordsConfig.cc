@@ -107,8 +107,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.output.logfile.rolling_size_mb", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_STR, "^0*[1-9][0-9]*$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.snapshot_dir", RECD_STRING, "snapshots", RECU_DYNAMIC, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
-  ,
   //# 0 = disable
   {RECT_CONFIG, "proxy.config.res_track_memory", RECD_INT, "0", RECU_RESTART_TS, RR_REQUIRED, RECC_INT,  "[0-2]", RECA_NULL}
   ,

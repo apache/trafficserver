@@ -905,31 +905,6 @@ tsapi TSMgmtError TSReadFromUrl(char *url, char **header, int *headerSize, char 
  */
 tsapi TSMgmtError TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout);
 
-/*--- snapshot operations -------------------------------------------------*/
-/* TSSnapshotTake: takes snapshot of configuration at that instant in time
- * Input:  snapshot_name - name to call new snapshot
- * Output: TSMgmtError
- */
-tsapi TSMgmtError TSSnapshotTake(char *snapshot_name);
-
-/* TSSnapshotRestore: restores configuration to when the snapshot was taken
- * Input:  snapshot_name - name of snapshot to restore
- * Output: TSMgmtError
- */
-tsapi TSMgmtError TSSnapshotRestore(char *snapshot_name);
-
-/* TSSnapshotRemove: removes the snapshot
- * Input:  snapshot_name - name of snapshot to remove
- * Output: TSMgmtError
- */
-tsapi TSMgmtError TSSnapshotRemove(char *snapshot_name);
-
-/* TSSnapshotsGet: restores configuration to when the snapshot was taken
- * Input:  snapshots - the list which will store all snapshot names currently taken
- * Output: TSMgmtError
- */
-tsapi TSMgmtError TSSnapshotGetMlt(TSStringList snapshots);
-
 /*--- statistics operations -----------------------------------------------*/
 /* TSStatsReset: sets all the statistics variables to their default values
  * Outpue: TSErrr

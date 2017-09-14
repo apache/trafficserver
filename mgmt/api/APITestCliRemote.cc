@@ -72,13 +72,6 @@
  *           prints out the event name whenever an event is signalled
  * unregister: unregisters the generic callback function eventCallbackFn
  *
- * Snapshot Operations:
- * --------------------
- * take_snap:<snap_name> - takes the snapshot snap_name
- * restore_snap:<snap_name> restores the snapshot snap_name
- * remove_snap:<snap_name> - removes the snapshot snap_name
- * snapshots - lists all snapshots in etc/trafficserver/snapshot directory
- *
  * Diags
  * ----
  * diags - uses STATUS, NOTE, FATAL, ERROR diags
@@ -1804,85 +1797,6 @@ unregister_event_callback()
 }
 
 /***************************************************************************
- * Snapshots Testing
- ***************************************************************************/
-
-void
-print_snapshots()
-{
-  TSStringList list;
-  TSMgmtError err;
-  char *name;
-
-  list = TSStringListCreate();
-  err  = TSSnapshotGetMlt(list);
-  print_err("TSSnapshotGetMlt", err);
-
-  printf("All Snapshots:\n");
-  if (err == TS_ERR_OKAY) {
-    int num = TSStringListLen(list);
-    for (int i = 0; i < num; i++) {
-      name = TSStringListDequeue(list);
-      if (name) {
-        printf("%s\n", name);
-      }
-      TSfree(name);
-    }
-  }
-
-  TSStringListDestroy(list);
-  return;
-}
-
-void
-add_snapshot(char *args)
-{
-  char *snap_name;
-
-  strtok(args, ":");
-  snap_name = strtok(nullptr, ":");
-  fprintf(stderr, "add snapshot: %s\n", snap_name);
-  char *name = TSstrdup(snap_name);
-
-  TSMgmtError err = TSSnapshotTake(name);
-  print_err("TSSnapshotTake", err);
-
-  TSfree(name);
-}
-
-void
-remove_snapshot(char *args)
-{
-  char *snap_name;
-
-  strtok(args, ":");
-  snap_name = strtok(nullptr, ":");
-  fprintf(stderr, "remove snapshot: %s\n", snap_name);
-  char *name = TSstrdup(snap_name);
-
-  TSMgmtError err = TSSnapshotRemove(name);
-  print_err("TSSnapshotRemove", err);
-
-  TSfree(name);
-}
-
-void
-restore_snapshot(char *args)
-{
-  char *snap_name;
-
-  strtok(args, ":");
-  snap_name = strtok(nullptr, ":");
-  fprintf(stderr, "resotre snapshot: %s\n", snap_name);
-  char *name = TSstrdup(snap_name);
-
-  TSMgmtError err = TSSnapshotRestore(name);
-  print_err("TSSnapshotRestore", err);
-
-  TSfree(name);
-}
-
-/***************************************************************************
  * Statistics
  ***************************************************************************/
 
@@ -2063,14 +1977,6 @@ runInteractive()
       register_event_callback();
     } else if (strstr(buf, "unregister")) {
       unregister_event_callback();
-    } else if (strstr(buf, "snapshots")) {
-      print_snapshots();
-    } else if (strstr(buf, "take_snap")) {
-      add_snapshot(buf);
-    } else if (strstr(buf, "remove_snap")) {
-      remove_snapshot(buf);
-    } else if (strstr(buf, "restore_snap")) {
-      restore_snapshot(buf);
     } else if (strstr(buf, "read_url")) {
       test_read_url(true);
     } else if (strstr(buf, "test_url")) {
