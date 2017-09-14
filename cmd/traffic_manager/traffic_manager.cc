@@ -743,7 +743,7 @@ main(int argc, const char **argv)
 
     if (lmgmt->run_proxy && !lmgmt->processRunning() && lmgmt->proxy_recoverable) { /* Make sure we still have a proxy up */
       const uint64_t now = static_cast<uint64_t>(time(nullptr));
-      if (sleep_time && now - last_start_epoc_s < MAX_SLEEP_S) {
+      if (sleep_time && ((now - last_start_epoc_s) < MAX_SLEEP_S)) {
         mgmt_log("Relaunching proxy after %d sec...", sleep_time);
         millisleep(1000 * sleep_time); // we use millisleep instead of sleep because it doesnt interfere with signals
         sleep_time = MIN(sleep_time * 2, MAX_SLEEP_S);
