@@ -25,6 +25,15 @@
 #include "LogUtils.cc"
 #include <string.h>
 
+#if 0
+// Stub
+EThread *
+this_ethread()
+{
+  return nullptr;
+}
+#endif
+
 REGRESSION_TEST(LogUtils_pure_escapify_url)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);
