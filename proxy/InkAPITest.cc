@@ -2155,9 +2155,9 @@ static int
 checkHttpTxnIncomingAddrGet(SocketTest *test, void *data)
 {
   uint16_t port;
-  HttpProxyPort *proxy_port = HttpProxyPort::findHttp(AF_INET);
-  TSHttpTxn txnp            = (TSHttpTxn)data;
-  sockaddr const *ptr       = TSHttpTxnIncomingAddrGet(txnp);
+  const HttpProxyPort *proxy_port = HttpProxyPort::findHttp(AF_INET);
+  TSHttpTxn txnp                  = (TSHttpTxn)data;
+  sockaddr const *ptr             = TSHttpTxnIncomingAddrGet(txnp);
 
   if (nullptr == proxy_port) {
     SDK_RPRINT(test->regtest, "TSHttpTxnIncomingPortGet", "TestCase1", TC_FAIL,

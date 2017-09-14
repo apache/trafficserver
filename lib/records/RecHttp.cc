@@ -168,22 +168,16 @@ HttpProxyPort::HttpProxyPort()
 bool
 HttpProxyPort::hasSSL(Group const &ports)
 {
-  bool zret = false;
-  for (int i = 0, n = ports.length(); i < n && !zret; ++i) {
-    if (ports[i].isSSL()) {
-      zret = true;
-    }
-  }
-  return zret;
+  return std::any_of(ports.begin(), ports.end(), [](HttpProxyPort const &port) { return port.isSSL(); });
 }
 
-HttpProxyPort *
+const HttpProxyPort *
 HttpProxyPort::findHttp(Group const &ports, uint16_t family)
 {
   bool check_family_p = ats_is_ip(family);
-  self *zret          = nullptr;
-  for (int i = 0, n = ports.length(); i < n && !zret; ++i) {
-    HttpProxyPort &p = ports[i];
+  const self *zret    = nullptr;
+  for (int i = 0, n = ports.size(); i < n && !zret; ++i) {
+    const self &p = ports[i];
     if (p.m_port &&                               // has a valid port
         TRANSPORT_DEFAULT == p.m_type &&          // is normal HTTP
         (!check_family_p || p.m_family == family) // right address family
@@ -209,7 +203,7 @@ HttpProxyPort::checkPrefix(const char *src, char const *prefix, size_t prefix_le
 }
 
 bool
-HttpProxyPort::loadConfig(Vec<self> &entries)
+HttpProxyPort::loadConfig(std::vector<self> &entries)
 {
   char *text;
   bool found_p;
@@ -220,23 +214,23 @@ HttpProxyPort::loadConfig(Vec<self> &entries)
   }
   ats_free(text);
 
-  return 0 < entries.length();
+  return 0 < entries.size();
 }
 
 bool
 HttpProxyPort::loadDefaultIfEmpty(Group &ports)
 {
-  if (0 == ports.length()) {
+  if (0 == ports.size()) {
     self::loadValue(ports, DEFAULT_VALUE);
   }
 
-  return 0 < ports.length();
+  return 0 < ports.size();
 }
 
 bool
-HttpProxyPort::loadValue(Vec<self> &ports, const char *text)
+HttpProxyPort::loadValue(std::vector<self> &ports, const char *text)
 {
-  unsigned old_port_length = ports.length(); // remember this.
+  unsigned old_port_length = ports.size(); // remember this.
   if (text && *text) {
     Tokenizer tokens(", ");
     int n_ports = tokens.Initialize(text);
@@ -252,7 +246,7 @@ HttpProxyPort::loadValue(Vec<self> &ports, const char *text)
       }
     }
   }
-  return ports.length() > old_port_length; // we added at least one port.
+  return ports.size() > old_port_length; // we added at least one port.
 }
 
 bool
@@ -265,7 +259,7 @@ HttpProxyPort::processOptions(const char *opts)
   bool bracket_p      = false; // found an open bracket in the input?
   const char *value;           // Temp holder for value of a prefix option.
   IpAddr ip;                   // temp for loading IP addresses.
-  Vec<char *> values;          // Pointers to single option values.
+  std::vector<char *> values;  // Pointers to single option values.
 
   // Make a copy we can modify safely.
   size_t opts_len = strlen(opts) + 1;
@@ -297,7 +291,7 @@ HttpProxyPort::processOptions(const char *opts)
     return zret;
   }
 
-  for (int i = 0, n_items = values.length(); i < n_items; ++i) {
+  for (int i = 0, n_items = values.size(); i < n_items; ++i) {
     const char *item = values[i];
     if (isdigit(item[0])) { // leading digit -> port value
       char *ptr;

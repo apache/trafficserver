@@ -22,11 +22,11 @@
  */
 
 #include <cmath>
+#include <vector>
 
 #include "ts/ink_config.h"
 #include "ts/ink_memory.h"
 #include "ts/Ptr.h"
-#include "ts/Vec.h"
 #include "ts/I_Layout.h"
 #include "bindings/bindings.h"
 #include "bindings/metrics.h"
@@ -146,7 +146,7 @@ struct EvaluatorList {
   EvaluatorList() : update(true), passes(0) {}
   ~EvaluatorList()
   {
-    forv_Vec (Evaluator, e, this->evaluators) {
+    for (auto &e : this->evaluators) {
       delete e;
     }
   }
@@ -163,7 +163,7 @@ struct EvaluatorList {
   void
   unbind(lua_State *L) const
   {
-    forv_Vec (Evaluator, e, this->evaluators) {
+    for (auto &e : this->evaluators) {
       e->unbind(L);
     }
   }
@@ -174,17 +174,17 @@ struct EvaluatorList {
     ink_hrtime start = ink_get_hrtime_internal();
     ink_hrtime elapsed;
 
-    forv_Vec (Evaluator, e, this->evaluators) {
+    for (auto &e : this->evaluators) {
       e->eval(L);
     }
 
     elapsed = ink_hrtime_diff(ink_get_hrtime_internal(), start);
-    Debug("lua", "evaluated %u metrics in %fmsec", evaluators.length(), ink_hrtime_to_usec(elapsed) / 1000.0);
+    Debug("lua", "evaluated %lu metrics in %fmsec", evaluators.size(), ink_hrtime_to_usec(elapsed) / 1000.0);
   }
 
   bool update;
   int64_t passes;
-  Vec<Evaluator *> evaluators;
+  std::vector<Evaluator *> evaluators;
 };
 
 static int

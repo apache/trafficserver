@@ -34,11 +34,11 @@
 #include "Main.h"
 #include "hdrs/HTTP.h"
 #include "ts/IpMap.h"
-#include "ts/Vec.h"
 #include "ProxyConfig.h"
 
 #include <string>
 #include <set>
+#include <vector>
 
 // forward declare in name only so it can be a friend.
 struct IpAllowUpdate;
@@ -168,8 +168,8 @@ private:
   const char *action;
   IpMap _src_map;
   IpMap _dest_map;
-  Vec<AclRecord> _src_acls;
-  Vec<AclRecord> _dest_acls;
+  std::vector<AclRecord> _src_acls;
+  std::vector<AclRecord> _dest_acls;
 };
 
 inline AclRecord *

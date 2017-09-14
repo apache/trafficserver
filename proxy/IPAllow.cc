@@ -284,11 +284,11 @@ IpAllow::BuildTable()
           }
 
           if (method_found) {
-            Vec<AclRecord> &acls = is_dest_ip ? _dest_acls : _src_acls;
-            IpMap &map           = is_dest_ip ? _dest_map : _src_map;
+            std::vector<AclRecord> &acls = is_dest_ip ? _dest_acls : _src_acls;
+            IpMap &map                   = is_dest_ip ? _dest_map : _src_map;
             acls.push_back(AclRecord(acl_method_mask, line_num, nonstandard_methods, deny_nonstandard_methods));
             // Color with index in acls because at this point the address is volatile.
-            map.fill(&addr1, &addr2, reinterpret_cast<void *>(acls.length() - 1));
+            map.fill(&addr1, &addr2, reinterpret_cast<void *>(acls.size() - 1));
           } else {
             snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s", module_name, config_file_path, line_num,
                      "Invalid action/method specified"); // changed by YTS Team, yamsat bug id -59022

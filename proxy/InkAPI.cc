@@ -9002,7 +9002,7 @@ TSPluginDescriptorAccept(TSCont contp)
   Action *action = nullptr;
 
   HttpProxyPort::Group &proxy_ports = HttpProxyPort::global();
-  for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
+  for (int i = 0, n = proxy_ports.size(); i < n; ++i) {
     HttpProxyPort &port = proxy_ports[i];
     if (port.isPlugin()) {
       NetProcessor::AcceptOptions net(make_net_accept_options(&port, -1 /* nthreads */));

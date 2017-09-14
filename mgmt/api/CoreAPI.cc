@@ -49,6 +49,8 @@
 #include "ts/I_Layout.h"
 #include "ts/ink_cap.h"
 
+#include <vector>
+
 // global variable
 static CallbackTable *local_event_callbacks;
 
@@ -209,7 +211,7 @@ Lerror:
 #include <sys/ptrace.h>
 #include <cxxabi.h>
 
-typedef Vec<pid_t> threadlist;
+typedef std::vector<pid_t> threadlist;
 
 static threadlist
 threads_for_process(pid_t proc)
@@ -338,9 +340,9 @@ ServerBacktrace(unsigned /* options */, char **trace)
   threadlist threads(threads_for_process(lmgmt->watched_process_pid));
   TextBuffer text(0);
 
-  Debug("backtrace", "tracing %zd threads for traffic_server PID %ld", threads.count(), (long)lmgmt->watched_process_pid);
+  Debug("backtrace", "tracing %zd threads for traffic_server PID %ld", threads.size(), (long)lmgmt->watched_process_pid);
 
-  for_Vec (pid_t, threadid, threads) {
+  for (auto threadid : threads) {
     Debug("backtrace", "tracing thread %ld", (long)threadid);
     // Get the thread name using /proc/PID/comm
     ats_scoped_fd fd;

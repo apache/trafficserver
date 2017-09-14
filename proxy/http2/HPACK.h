@@ -25,9 +25,10 @@
 #define __HPACK_H__
 
 #include "ts/ink_platform.h"
-#include "ts/Vec.h"
 #include "ts/Diags.h"
 #include "HTTP.h"
+
+#include <vector>
 
 // It means that any header field can be compressed/decompressed by ATS
 const static int HPACK_ERROR_COMPRESSION_ERROR   = -1;
@@ -133,7 +134,7 @@ private:
   uint32_t _maximum_size;
 
   MIMEHdr *_mhdr;
-  Vec<MIMEField *> _headers;
+  std::vector<MIMEField *> _headers;
 };
 
 // [RFC 7541] 2.3. Indexing Table

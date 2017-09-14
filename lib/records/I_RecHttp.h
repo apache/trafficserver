@@ -27,8 +27,10 @@
 #include <ts/ink_inet.h>
 #include <ts/ink_resolver.h>
 #include <ts/apidefs.h>
-#include <ts/Vec.h>
 #include <ts/apidefs.h>
+#include <ts/ink_assert.h>
+#include <algorithm>
+#include <vector>
 
 /// Load default inbound IP addresses from the configuration file.
 void RecHttpLoadIp(const char *name, ///< Name of value in configuration file.
@@ -222,7 +224,7 @@ private:
   typedef HttpProxyPort self; ///< Self reference type.
 public:
   /// Explicitly supported collection of proxy ports.
-  typedef Vec<self> Group;
+  typedef std::vector<self> Group;
 
   /// Type of transport on the connection.
   enum TransportType {
@@ -287,7 +289,7 @@ public:
       This is provided because most of the work with this data is used as a singleton
       and it's handy to encapsulate it here.
   */
-  static Vec<self> &global();
+  static std::vector<self> &global();
 
   /// Check for SSL ports.
   /// @return @c true if any port in @a ports is an SSL port.
@@ -307,7 +309,7 @@ public:
       @return @c true if at least one valid port description was
       found, @c false if none.
   */
-  static bool loadConfig(Vec<self> &ports ///< Destination for found port data.
+  static bool loadConfig(std::vector<self> &ports ///< Destination for found port data.
                          );
 
   /** Load all relevant configuration data into the global ports.
@@ -325,8 +327,8 @@ public:
       @note This is used primarily internally but is available if needed.
       @return @c true if a valid port was found, @c false if none.
   */
-  static bool loadValue(Vec<self> &ports, ///< Destination for found port data.
-                        const char *value ///< Source port data.
+  static bool loadValue(std::vector<self> &ports, ///< Destination for found port data.
+                        const char *value         ///< Source port data.
                         );
 
   /** Load ports from a value string into the global ports.
@@ -341,7 +343,7 @@ public:
 
   /// Load default value if @a ports is empty.
   /// @return @c true if the default was needed / loaded.
-  static bool loadDefaultIfEmpty(Vec<self> &ports ///< Load target.
+  static bool loadDefaultIfEmpty(std::vector<self> &ports ///< Load target.
                                  );
 
   /// Load default value into the global set if it is empty.
@@ -353,16 +355,16 @@ public:
       are checked.
       @return The port if found, @c nullptr if not.
   */
-  static self *findHttp(Group const &ports,         ///< Group to search.
-                        uint16_t family = AF_UNSPEC ///< Desired address family.
-                        );
+  static const self *findHttp(Group const &ports,         ///< Group to search.
+                              uint16_t family = AF_UNSPEC ///< Desired address family.
+                              );
 
   /** Find an HTTP port in the global ports.
       If @a family is specified then only ports for that family
       are checked.
       @return The port if found, @c nullptr if not.
   */
-  static self *findHttp(uint16_t family = AF_UNSPEC);
+  static const self *findHttp(uint16_t family = AF_UNSPEC);
 
   /** Create text description to be used for inter-process access.
       Prints the file descriptor and then any options.
@@ -395,7 +397,7 @@ public:
   static const char *const OPT_HOST_RES_PREFIX;         ///< Set DNS family preference.
   static const char *const OPT_PROTO_PREFIX;            ///< Transport layer protocols.
 
-  static Vec<self> &m_global; ///< Global ("default") data.
+  static std::vector<self> &m_global; ///< Global ("default") data.
 
 protected:
   /// Process @a value for DNS resolution family preferences.
@@ -453,7 +455,7 @@ HttpProxyPort::loadDefaultIfEmpty()
 {
   return self::loadDefaultIfEmpty(m_global);
 }
-inline Vec<HttpProxyPort> &
+inline std::vector<HttpProxyPort> &
 HttpProxyPort::global()
 {
   return m_global;
@@ -463,7 +465,7 @@ HttpProxyPort::hasSSL()
 {
   return self::hasSSL(m_global);
 }
-inline HttpProxyPort *
+inline const HttpProxyPort *
 HttpProxyPort::findHttp(uint16_t family)
 {
   return self::findHttp(m_global, family);

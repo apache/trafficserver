@@ -40,6 +40,8 @@
 #include "http2/Http2SessionAccept.h"
 #include "HttpConnectionCount.h"
 
+#include <vector>
+
 HttpSessionAccept *plugin_http_accept             = nullptr;
 HttpSessionAccept *plugin_http_transparent_accept = nullptr;
 
@@ -105,7 +107,7 @@ struct HttpProxyAcceptor {
     @c SSLNextProtocolAccept is a subclass of @c Cont instead of @c
     HttpAccept.
 */
-Vec<HttpProxyAcceptor> HttpProxyAcceptors;
+std::vector<HttpProxyAcceptor> HttpProxyAcceptors;
 
 // Called from InkAPI.cc
 NetProcessor::AcceptOptions
@@ -265,8 +267,10 @@ init_accept_HttpProxyServer(int n_accept_threads)
   }
 
   // Do the configuration defined ports.
-  for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
-    MakeHttpProxyAcceptor(HttpProxyAcceptors.add(), proxy_ports[i], n_accept_threads);
+  // Assign temporary empty objects of proxy ports size
+  HttpProxyAcceptors.assign(proxy_ports.size(), HttpProxyAcceptor());
+  for (int i = 0, n = proxy_ports.size(); i < n; ++i) {
+    MakeHttpProxyAcceptor(HttpProxyAcceptors.at(i), proxy_ports[i], n_accept_threads);
   }
 }
 
@@ -281,9 +285,9 @@ start_HttpProxyServer()
   ///////////////////////////////////
 
   ink_assert(!called_once);
-  ink_assert(proxy_ports.length() == HttpProxyAcceptors.length());
+  ink_assert(proxy_ports.size() == HttpProxyAcceptors.size());
 
-  for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
+  for (int i = 0, n = proxy_ports.size(); i < n; ++i) {
     HttpProxyAcceptor &acceptor = HttpProxyAcceptors[i];
     HttpProxyPort &port         = proxy_ports[i];
     if (port.isSSL()) {
