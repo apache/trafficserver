@@ -1586,7 +1586,6 @@ AC_CHECK_HEADERS([sys/types.h \
                   ctype.h \
                   siginfo.h \
                   malloc.h \
-                  wait.h \
                   float.h \
                   libgen.h \
                   values.h \
