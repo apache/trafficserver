@@ -113,8 +113,4 @@ bool recordRangeCheck(const char *pattern, const char *value);
 bool recordIPCheck(const char *pattern, const char *value);
 bool recordRestartCheck(const char *varName);
 
-// file management
-int getFilesInDirectory(char *managedDir, ExpandingArray *fileList);
-char *newPathString(const char *s1, const char *s2);
-
 #endif

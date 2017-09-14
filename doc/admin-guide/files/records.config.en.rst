@@ -334,12 +334,6 @@ System Variables
 
    Specifies at what size to roll the output log at.
 
-.. ts:cv:: CONFIG proxy.config.snapshot_dir STRING snapshots
-
-   The directory in which Traffic Server stores configuration
-   snapshots on the local system. Unless you specify an absolute
-   path, this directory is located in the Traffic Server ``SYSCONFDIR``
-   directory.
 
 Thread Variables
 ----------------

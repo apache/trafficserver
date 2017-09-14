@@ -2079,31 +2079,6 @@ END:
   return err;
 }
 
-/*--- snapshot operations -------------------------------------------------*/
-tsapi TSMgmtError
-TSSnapshotTake(char *snapshot_name)
-{
-  return SnapshotTake(snapshot_name);
-}
-
-tsapi TSMgmtError
-TSSnapshotRestore(char *snapshot_name)
-{
-  return SnapshotRestore(snapshot_name);
-}
-
-tsapi TSMgmtError
-TSSnapshotRemove(char *snapshot_name)
-{
-  return SnapshotRemove(snapshot_name);
-}
-
-tsapi TSMgmtError
-TSSnapshotGetMlt(TSStringList snapshots)
-{
-  return SnapshotGetMlt((LLQ *)snapshots);
-}
-
 /*--- events --------------------------------------------------------------*/
 tsapi TSMgmtError
 TSEventSignal(char *event_name, ...)

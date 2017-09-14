@@ -1073,52 +1073,6 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
   return TS_ERR_OKAY;
 }
 
-/***************************************************************************
- * Snapshots
- ***************************************************************************/
-static TSMgmtError
-snapshot_message(OpType op, const char *snapshot_name)
-{
-  TSMgmtError ret;
-  OpType optype           = op;
-  MgmtMarshallString name = const_cast<MgmtMarshallString>(snapshot_name);
-
-  if (!snapshot_name) {
-    return TS_ERR_PARAMS;
-  }
-
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype, &name);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
-}
-
-TSMgmtError
-SnapshotTake(const char *snapshot_name)
-{
-  return snapshot_message(OpType::SNAPSHOT_TAKE, snapshot_name);
-}
-
-TSMgmtError
-SnapshotRestore(const char *snapshot_name)
-{
-  return snapshot_message(OpType::SNAPSHOT_RESTORE, snapshot_name);
-}
-
-TSMgmtError
-SnapshotRemove(const char *snapshot_name)
-{
-  return snapshot_message(OpType::SNAPSHOT_REMOVE, snapshot_name);
-}
-
-TSMgmtError
-SnapshotGetMlt(LLQ *snapshots)
-{
-  if (!snapshots) {
-    return TS_ERR_PARAMS;
-  }
-
-  return send_and_parse_list(OpType::SNAPSHOT_GET_MLT, snapshots);
-}
-
 TSMgmtError
 StatsReset(const char *stat_name)
 {

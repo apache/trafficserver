@@ -54,9 +54,6 @@ std::string RecConfigReadConfigDir();
 // Return a copy of the system's local state directory, taking proxy.config.local_state_dir into account. The
 std::string RecConfigReadRuntimeDir();
 
-// Return a copy of the system's snapshot directory, taking proxy.config.snapshot_dir into account. The caller
-std::string RecConfigReadSnapshotDir();
-
 // Return a copy of the system's log directory, taking proxy.config.log.logfile_dir into account. The caller
 std::string RecConfigReadLogDir();
 

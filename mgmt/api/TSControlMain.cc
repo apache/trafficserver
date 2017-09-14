@@ -807,101 +807,6 @@ done:
 }
 
 /**************************************************************************
- * handle_snapshot
- *
- * purpose: handles request to take/remove/restore a snapshot
- * output: TS_ERR_xx
- *************************************************************************/
-static TSMgmtError
-handle_snapshot(int fd, void *req, size_t reqlen)
-{
-  OpType optype;
-  MgmtMarshallString name = nullptr;
-
-  MgmtMarshallInt err;
-
-  err = recv_mgmt_request(req, reqlen, OpType::SNAPSHOT_TAKE, &optype, &name);
-  if (err != TS_ERR_OKAY) {
-    goto done;
-  }
-
-  if (strlen(name) == 0) {
-    err = TS_ERR_PARAMS;
-    goto done;
-  }
-
-  // call CoreAPI call on Traffic Manager side
-  switch (optype) {
-  case OpType::SNAPSHOT_TAKE:
-    err = SnapshotTake(name);
-    break;
-  case OpType::SNAPSHOT_RESTORE:
-    err = SnapshotRestore(name);
-    break;
-  case OpType::SNAPSHOT_REMOVE:
-    err = SnapshotRemove(name);
-    break;
-  default:
-    err = TS_ERR_FAIL;
-    break;
-  }
-
-done:
-  ats_free(name);
-  return send_mgmt_response(fd, (OpType)optype, &err);
-}
-
-/**************************************************************************
- * handle_snapshot_get_mlt
- *
- * purpose: handles request to get list of snapshots
- * output: TS_ERR_xx
- * note: the req should be the event name
- *************************************************************************/
-static TSMgmtError
-handle_snapshot_get_mlt(int fd, void *req, size_t reqlen)
-{
-  LLQ *snap_list = create_queue();
-  char buf[MAX_BUF_SIZE];
-  char *snap_name;
-  int buf_pos = 0;
-
-  MgmtMarshallInt optype;
-  MgmtMarshallInt err;
-  MgmtMarshallString list = nullptr;
-
-  err = recv_mgmt_request(req, reqlen, OpType::SNAPSHOT_GET_MLT, &optype);
-  if (err != TS_ERR_OKAY) {
-    goto done;
-  }
-
-  // call CoreAPI call on Traffic Manager side; req == event_name
-  err = SnapshotGetMlt(snap_list);
-  if (err != TS_ERR_OKAY) {
-    goto done;
-  }
-
-  // iterate through list and put into a delimited string list
-  memset(buf, 0, MAX_BUF_SIZE);
-  while (!queue_is_empty(snap_list)) {
-    snap_name = (char *)dequeue(snap_list);
-    if (snap_name) {
-      snprintf(buf + buf_pos, (MAX_BUF_SIZE - buf_pos), "%s%c", snap_name, REMOTE_DELIM);
-      buf_pos += (strlen(snap_name) + 1);
-      ats_free(snap_name); // free the llq entry
-    }
-  }
-  buf[buf_pos] = '\0'; // end the string
-
-  // Point the send list to the filled buffer.
-  list = buf;
-
-done:
-  delete_queue(snap_list);
-  return send_mgmt_response(fd, OpType::SNAPSHOT_GET_MLT, &err, &list);
-}
-
-/**************************************************************************
  * handle_stats_reset
  *
  * purpose: handles request to reset statistics to default values
@@ -1133,10 +1038,6 @@ static const control_message_handler handlers[] = {
   /* EVENT_REG_CALLBACK         */ {0, nullptr},
   /* EVENT_UNREG_CALLBACK       */ {0, nullptr},
   /* EVENT_NOTIFY               */ {0, nullptr},
-  /* SNAPSHOT_TAKE              */ {MGMT_API_PRIVILEGED, handle_snapshot},
-  /* SNAPSHOT_RESTORE           */ {MGMT_API_PRIVILEGED, handle_snapshot},
-  /* SNAPSHOT_REMOVE            */ {MGMT_API_PRIVILEGED, handle_snapshot},
-  /* SNAPSHOT_GET_MLT           */ {0, handle_snapshot_get_mlt},
   /* STATS_RESET_NODE           */ {MGMT_API_PRIVILEGED, handle_stats_reset},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {MGMT_API_PRIVILEGED, handle_storage_device_cmd_offline},
   /* RECORD_MATCH_GET           */ {0, handle_record_match},
