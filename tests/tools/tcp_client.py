@@ -22,7 +22,7 @@ import socket
 import sys
 
 
-def tcp_client(host, port, data):
+def tcp_client(host, port, data, writable=sys.stdout):
     pass
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
@@ -33,7 +33,7 @@ def tcp_client(host, port, data):
         if len(output) <= 0:
             break
         else:
-            sys.stdout.write(output.decode())
+            writable.write(output.decode())
     s.close()
 
 

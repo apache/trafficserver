@@ -1,0 +1,28 @@
+{
+    "Test that 100 expected headers are replied to": {
+        "transactions": [
+            {
+                "steps": [
+                    {
+                        "Client -> TrafficServer": "GET http://www.example.com/ HTTP/1.1\r\n\r\n"
+                    },
+                    {
+                        "Client <- TrafficServer": "HTTP/1.1 100 continue\r\n\r\n"
+                    },
+                    {
+                        "Client -> TrafficServer": "some content"
+                    },
+                    {
+                        "TrafficServer -> Origin": "POST http://www.example.com/ HTTP/1.1\r\n\r\nsome content"
+                    },
+                    {
+                        "TrafficServer <- Origin": "HTTP/1.1 200 OK\r\n\r\n"
+                    },
+                    {
+                        "Client <- TrafficServer": "HTTP/1.1 200 OK\r\n\r\n"
+                    }
+                ]
+            }
+        ]
+    }
+}
