@@ -103,6 +103,7 @@ proxy/http2/test_Http2DependencyTree
 proxy/http2/test_HPACK
 proxy/http2/hpack-tests/results
 proxy/logging/test_LogUtils
+proxy/logging/test_LogUtils2
 
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/esi/*_test

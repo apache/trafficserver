@@ -79,18 +79,37 @@ liblogcollation_a_SOURCES = \
 	LogCollationHostSM.h
 
 check_PROGRAMS = \
-	test_LogUtils
+	test_LogUtils \
+	test_LogUtils2
 
 TESTS = \
-	test_LogUtils
+	test_LogUtils \
+	test_LogUtils2
+
+test_LogUtils_CPPFLAGS =  $(AM_CPPFLAGS)\
+	-DTEST_LOG_UTILS
+
+test_LogUtils_SOURCES = \
+	test_LogUtils.cc
 
 test_LogUtils_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a
 
-test_LogUtils_SOURCES = \
-	test_LogUtils.cc
+test_LogUtils2_CPPFLAGS =  $(AM_CPPFLAGS)\
+	-DTEST_LOG_UTILS \
+	-I$(abs_top_srcdir)/tests/include
+
+test_LogUtils2_SOURCES = \
+	LogUtils.cc \
+	unit-tests/BufferWriterFormat.cc \
+	unit-tests/test_LogUtils2.cc
+
+test_LogUtils2_LDADD = \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a
 
 clang-tidy-local: $(liblogging_a_SOURCES) $(liblogcollation_a_SOURCES) $(EXTRA_DIST)
 	$(CXX_Clang_Tidy)

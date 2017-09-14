@@ -21,8 +21,22 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+
+#include <tscore/ink_align.h>
 #include "tscore/ink_config.h"
 #include "tscore/ink_string.h"
+#include <tscore/ink_assert.h>
+#include <tscore/BufferWriter.h>
+
+#ifdef TEST_LOG_UTILS
+
+#include "unit-tests/test_LogUtils.h"
+
+#else
+
+#include <MIME.h>
+
+#endif
 
 #include <cassert>
 #include <cstdio>
@@ -30,6 +44,8 @@
 #include <cstdarg>
 #include <cstring>
 #include <ctime>
+#include <string_view>
+#include <cstdint>
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -571,3 +587,158 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
 
   return ret_val;
 }
+
+namespace
+{
+// Get a string out of a MIMEField using one of its member funcitions, and put it into a buffer writer, terminated with a nul.
+//
+void
+marshalStr(ts::FixedBufferWriter &bw, const MIMEField &mf, const char *(MIMEField::*get_func)(int *length) const)
+{
+  int length;
+  const char *data = (mf.*get_func)(&length);
+
+  if (!data or (*data == '\0')) {
+    // Empty string.  This is a problem, since it would result in two successive nul characters, which indicates the end of the
+    // marshaled hearer.  Change the string to a single blank character.
+
+    static const char Blank[] = " ";
+    data                      = Blank;
+    length                    = 1;
+  }
+
+  bw << std::string_view(data, length) << '\0';
+}
+
+void
+unmarshalStr(ts::FixedBufferWriter &bw, const char *&data)
+{
+  bw << '{';
+
+  while (*data) {
+    bw << *(data++);
+  }
+
+  // Skip over terminal nul.
+  ++data;
+
+  bw << '}';
+}
+
+} // end anonymous namespace
+
+namespace LogUtils
+{
+// Marshals header tags and values together, with a single terminating nul character.  Returns buffer space required.  'buf' points
+// to where to put the marshaled data.  If 'buf' is null, no data is marshaled, but the function returns the amount of space that
+// would have been used.
+//
+int
+marshalMimeHdr(MIMEHdr *hdr, char *buf)
+{
+  std::size_t bwSize = buf ? SIZE_MAX : 0;
+
+  ts::FixedBufferWriter bw(buf, bwSize);
+
+  if (hdr) {
+    MIMEFieldIter mfIter;
+    const MIMEField *mfp = hdr->iter_get_first(&mfIter);
+
+    while (mfp) {
+      marshalStr(bw, *mfp, &MIMEField::name_get);
+      marshalStr(bw, *mfp, &MIMEField::value_get);
+
+      mfp = hdr->iter_get_next(&mfIter);
+    }
+  }
+
+  bw << '\0';
+
+  return int(INK_ALIGN_DEFAULT(bw.extent()));
+}
+
+// Unmarshaled/printable format is {{{tag1}:{value1}}{{tag2}:{value2}} ... }
+//
+int
+unmarshalMimeHdr(char **buf, char *dest, int destLength)
+{
+  ink_assert(*buf != nullptr);
+
+  const char *data{*buf};
+
+  ink_assert(data != nullptr);
+
+  ts::FixedBufferWriter bw(dest, destLength);
+
+  bw << '{';
+
+  int pairEndFallback{0}, pairEndFallback2{0}, pairSeparatorFallback{0};
+
+  while (*data) {
+    if (!bw.error()) {
+      pairEndFallback2 = pairEndFallback;
+      pairEndFallback  = bw.size();
+    }
+
+    // Add open bracket of pair.
+    //
+    bw << '{';
+
+    // Unmarshal field name.
+    unmarshalStr(bw, data);
+
+    bw << ':';
+
+    if (!bw.error()) {
+      pairSeparatorFallback = bw.size();
+    }
+
+    // Unmarshal field value.
+    unmarshalStr(bw, data);
+
+    // Add close bracket of pair.
+    bw << '}';
+
+  } // end for loop
+
+  bw << '}';
+
+  if (bw.error()) {
+    // The output buffer wasn't big enough.
+
+    static std::string_view FULL_ELLIPSES("...}}}");
+
+    if ((pairSeparatorFallback > pairEndFallback) and ((pairSeparatorFallback + 7) <= destLength)) {
+      // In the report, we can show the existence of the last partial tag/value pair, and maybe part of the value.  If we only
+      // show part of the value, we want to end it with an elipsis, to make it clear it's not complete.
+
+      bw.reduce(destLength - FULL_ELLIPSES.size());
+      bw << FULL_ELLIPSES;
+
+    } else if (pairEndFallback and (pairEndFallback < destLength)) {
+      bw.reduce(pairEndFallback);
+      bw << '}';
+
+    } else if ((pairSeparatorFallback > pairEndFallback2) and ((pairSeparatorFallback + 7) <= destLength)) {
+      bw.reduce(destLength - FULL_ELLIPSES.size());
+      bw << FULL_ELLIPSES;
+
+    } else if (pairEndFallback2 and (pairEndFallback2 < destLength)) {
+      bw.reduce(pairEndFallback2);
+      bw << '}';
+
+    } else if (destLength > 1) {
+      bw.reduce(1);
+      bw << '}';
+
+    } else {
+      bw.reduce(0);
+    }
+  }
+
+  *buf += INK_ALIGN_DEFAULT(data - *buf + 1);
+
+  return bw.size();
+}
+
+} // end namespace LogUtils

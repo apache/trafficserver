@@ -27,6 +27,8 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Arena.h"
 
+class MIMEHdr;
+
 namespace LogUtils
 {
 enum AlarmType {
@@ -59,4 +61,16 @@ int timestamp_to_hex_str(unsigned timestamp, char *str, size_t len, size_t *n_ch
 int seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_interval);
 int file_is_writeable(const char *full_filename, off_t *size_bytes = nullptr, bool *has_size_limit = nullptr,
                       uint64_t *current_size_limit_bytes = nullptr);
+
+// Marshals header tags and values together, with a single terminating nul character.  Returns buffer space required.  'buf' points
+// to where to put the marshaled data.  If 'buf' is null, no data is marshaled, but the function returns the amount of space that
+// would have been used.
+int marshalMimeHdr(MIMEHdr *hdr, char *buf);
+
+// Unmarshelled/printable format is {{{tag1}:{value1}}{{tag2}:{value2}} ... }
+//
+// Returns -1 if data corruption is detected, otherwise the actual amount of data put into the 'dest' buffer.  '*buf' is advanced
+// to byte after the last byte consumed.
+int unmarshalMimeHdr(char **buf, char *dest, int destLength);
+
 }; // namespace LogUtils
