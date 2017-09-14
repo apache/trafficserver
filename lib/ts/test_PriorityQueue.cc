@@ -52,9 +52,9 @@ using PQ    = PriorityQueue<N *>;
 void
 dump(PQ *pq)
 {
-  Vec<Entry *> v = pq->dump();
+  std::vector<Entry *> v = pq->dump();
 
-  for (uint32_t i = 0; i < v.length(); i++) {
+  for (uint32_t i = 0; i < v.size(); i++) {
     cout << v[i]->index << "," << v[i]->node->weight << "," << v[i]->node->content << endl;
   }
   cout << "--------" << endl;

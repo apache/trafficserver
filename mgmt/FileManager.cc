@@ -24,7 +24,6 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_file.h"
 #include "ts/I_Layout.h"
-#include "ts/Vec.h"
 #include "FileManager.h"
 #include "Main.h"
 #include "Rollback.h"
@@ -32,6 +31,9 @@
 #include "MgmtUtils.h"
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"
+
+#include <vector>
+#include <algorithm>
 
 #define DIR_MODE S_IRWXU
 #define FILE_MODE S_IRWXU
@@ -188,8 +190,9 @@ FileManager::rereadConfig()
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  Vec<Rollback *> changedFiles;
-  Vec<Rollback *> parentFileNeedChange;
+  std::vector<Rollback *> changedFiles;
+  std::vector<Rollback *> parentFileNeedChange;
+  size_t n;
   ink_mutex_acquire(&accessLock);
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
@@ -197,13 +200,17 @@ FileManager::rereadConfig()
     if (rb->checkForUserUpdate(rb->isVersioned() ? ROLLBACK_CHECK_AND_UPDATE : ROLLBACK_CHECK_ONLY)) {
       changedFiles.push_back(rb);
       if (rb->isChildRollback()) {
-        parentFileNeedChange.add_exclusive(rb->getParentRollback());
+        if (std::find(parentFileNeedChange.begin(), parentFileNeedChange.end(), rb->getParentRollback()) ==
+            parentFileNeedChange.end()) {
+          parentFileNeedChange.push_back(rb->getParentRollback());
+        }
       }
     }
   }
 
-  Vec<Rollback *> childFileNeedDelete;
-  for (size_t i = 0; i < changedFiles.n; i++) {
+  std::vector<Rollback *> childFileNeedDelete;
+  n = changedFiles.size();
+  for (size_t i = 0; i < n; i++) {
     if (changedFiles[i]->isChildRollback()) {
       continue;
     }
@@ -212,18 +219,22 @@ FileManager::rereadConfig()
          entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
       rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
       if (rb->getParentRollback() == changedFiles[i]) {
-        childFileNeedDelete.add_exclusive(rb);
+        if (std::find(childFileNeedDelete.begin(), childFileNeedDelete.end(), rb) == childFileNeedDelete.end()) {
+          childFileNeedDelete.push_back(rb);
+        }
       }
     }
   }
-  for (size_t i = 0; i < childFileNeedDelete.n; i++) {
+  n = childFileNeedDelete.size();
+  for (size_t i = 0; i < n; i++) {
     ink_hash_table_delete(bindings, childFileNeedDelete[i]->getFileName());
     delete childFileNeedDelete[i];
   }
   ink_mutex_release(&accessLock);
 
-  for (size_t i = 0; i < parentFileNeedChange.n; i++) {
-    if (!changedFiles.in(parentFileNeedChange[i])) {
+  n = parentFileNeedChange.size();
+  for (size_t i = 0; i < n; i++) {
+    if (std::find(changedFiles.begin(), changedFiles.end(), parentFileNeedChange[i]) == changedFiles.end()) {
       fileChanged(parentFileNeedChange[i]->getFileName(), true);
     }
   }

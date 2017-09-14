@@ -41,7 +41,7 @@
 #include <openssl/bn.h>
 #include <unistd.h>
 #include <termios.h>
-#include "ts/Vec.h"
+#include <vector>
 
 #if HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
@@ -1473,7 +1473,7 @@ ssl_set_handshake_callbacks(SSL_CTX *ctx)
 }
 
 SSL_CTX *
-SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMultCertSettings, Vec<X509 *> &certList)
+SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMultCertSettings, std::vector<X509 *> &certList)
 {
   int server_verify_client;
   ats_scoped_str completeServerCertPath;
@@ -1782,9 +1782,8 @@ fail:
     EVP_MD_CTX_free(digest);
   SSL_CLEAR_PW_REFERENCES(ctx)
   SSLReleaseContext(ctx);
-  for (unsigned int i = 0; i < certList.length(); i++) {
-    X509_free(certList[i]);
-  }
+  for (auto cert : certList)
+    X509_free(cert);
 
   return nullptr;
 }
@@ -1792,16 +1791,16 @@ fail:
 SSL_CTX *
 SSLCreateServerContext(const SSLConfigParams *params)
 {
-  Vec<X509 *> cert_list;
+  std::vector<X509 *> cert_list;
   SSL_CTX *ctx = SSLInitServerContext(params, nullptr, cert_list);
-  ink_assert(cert_list.length() == 0);
+  ink_assert(cert_list.empty());
   return ctx;
 }
 
 static SSL_CTX *
 ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, const ssl_user_config *sslMultCertSettings)
 {
-  Vec<X509 *> cert_list;
+  std::vector<X509 *> cert_list;
   SSL_CTX *ctx                   = SSLInitServerContext(params, sslMultCertSettings, cert_list);
   ssl_ticket_key_block *keyblock = nullptr;
   bool inserted                  = false;
@@ -1812,8 +1811,8 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   }
 
   const char *certname = sslMultCertSettings->cert.get();
-  for (unsigned i = 0; i < cert_list.length(); ++i) {
-    if (0 > SSLCheckServerCertNow(cert_list[i], certname)) {
+  for (auto cert : cert_list) {
+    if (0 > SSLCheckServerCertNow(cert, certname)) {
       /* At this point, we know cert is bad, and we've already printed a
          descriptive reason as to why cert is bad to the log file */
       Debug("ssl", "Marking certificate as NOT VALID: %s", certname);
@@ -1868,8 +1867,8 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   if (SSLConfigParams::ssl_ocsp_enabled) {
     Debug("ssl", "ssl ocsp stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
-    for (unsigned i = 0; i < cert_list.length(); ++i) {
-      if (!ssl_stapling_init_cert(ctx, cert_list[i], certname)) {
+    for (auto cert : cert_list) {
+      if (!ssl_stapling_init_cert(ctx, cert, certname)) {
         Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
       }
     }
@@ -1886,8 +1885,8 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
   Debug("ssl", "importing SNI names from %s", (const char *)certname);
-  for (unsigned i = 0; i < cert_list.length(); ++i) {
-    if (ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings->opt), cert_list[i], certname)) {
+  for (auto cert : cert_list) {
+    if (ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings->opt), cert, certname)) {
       inserted = true;
     }
   }
@@ -1903,7 +1902,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     ctx = nullptr;
   }
 
-  for (unsigned int i = 0; i < cert_list.length(); i++) {
+  for (unsigned int i = 0; i < cert_list.size(); i++) {
     X509_free(cert_list[i]);
   }
 

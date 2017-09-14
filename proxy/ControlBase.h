@@ -33,7 +33,7 @@
 #define _CONTROL_BASE_H_
 
 #include "ts/ink_platform.h"
-#include "ts/Vec.h"
+#include "vector"
 
 class HttpRequestData;
 class Tokenizer;
@@ -88,7 +88,7 @@ protected:
   const char *getSchemeModText() const;
 
 private:
-  typedef Vec<Modifier *> Array;
+  typedef std::vector<Modifier *> Array;
   Array _mods;
   const char *ProcessSrcIp(char *val, void **opaque_ptr);
   const char *ProcessTimeOfDay(char *val, void **opaque_ptr);

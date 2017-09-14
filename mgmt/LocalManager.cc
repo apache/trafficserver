@@ -834,7 +834,7 @@ LocalManager::startProxy(const char *onetime_options)
 
     // Check if we need to pass down port/fd information to
     // traffic_server by seeing if there are any open ports.
-    for (int i = 0, limit = m_proxy_ports.length(); !open_ports_p && i < limit; ++i) {
+    for (int i = 0, limit = m_proxy_ports.size(); !open_ports_p && i < limit; ++i) {
       if (ts::NO_FD != m_proxy_ports[i].m_fd) {
         open_ports_p = true;
       }
@@ -845,7 +845,7 @@ LocalManager::startProxy(const char *onetime_options)
       bool need_comma_p = false;
 
       ink_strlcat(real_proxy_options, " --httpport ", OPTIONS_SIZE);
-      for (int i = 0, limit = m_proxy_ports.length(); i < limit; ++i) {
+      for (int i = 0, limit = m_proxy_ports.size(); i < limit; ++i) {
         HttpProxyPort &p = m_proxy_ports[i];
         if (ts::NO_FD != p.m_fd) {
           if (need_comma_p) {
@@ -883,7 +883,7 @@ LocalManager::startProxy(const char *onetime_options)
 void
 LocalManager::closeProxyPorts()
 {
-  for (int i = 0, n = lmgmt->m_proxy_ports.length(); i < n; ++i) {
+  for (int i = 0, n = lmgmt->m_proxy_ports.size(); i < n; ++i) {
     HttpProxyPort &p = lmgmt->m_proxy_ports[i];
     if (ts::NO_FD != p.m_fd) {
       close_socket(p.m_fd);
@@ -903,7 +903,7 @@ LocalManager::listenForProxy()
   }
 
   // We are not already bound, bind the port
-  for (int i = 0, n = lmgmt->m_proxy_ports.length(); i < n; ++i) {
+  for (int i = 0, n = lmgmt->m_proxy_ports.size(); i < n; ++i) {
     HttpProxyPort &p = lmgmt->m_proxy_ports[i];
     if (ts::NO_FD == p.m_fd) {
       this->bindProxyPort(p);
