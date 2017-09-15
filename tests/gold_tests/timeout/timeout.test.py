@@ -26,20 +26,8 @@ TIMEOUT = 3
 
 # Test.SkipIf(Condition.true("Skipping this test since running it requires superuser privilege, which introduces other problems"))
 
-# Windows admin checking temporarily using a deprecated API. When Autest upgrades on jenkins, we can switch to Condition.IsElevated
-if os.name == 'nt':
-    import ctypes
-
-    try:
-        if not ctypes.windll.shell32.IsUserAnAdmin():
-            Test.SkipIf(Condition.true("Must be run with Administrator privileges"))
-    except:
-        Test.SkipIf(Condition.true("Administrator check failed. Assuming not an admin."))
-elif os.name == 'posix':
-    if os.geteuid() != 0:
-        Test.SkipIf(Condition.true("Must be run with superuser privileges"))
-else:
-    Test.SkipIf(Condition.true("OS not recognized. Can't perform superuser check."))
+if os.geteuid() != 0:
+    Test.SkipIf(Condition.true("Must be run with superuser privileges"))
 
 # Fix: not stable
 Test.SkipUnless(
