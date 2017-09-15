@@ -68,7 +68,7 @@ test_UDPNet_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @HWLOC_LIBS@
+  @LIBTCL@ @HWLOC_LIBS@ @OPENSSL_LIBS@
 
 test_UDPNet_SOURCES = \
   test_I_UDPNet.cc
