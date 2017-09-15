@@ -762,15 +762,6 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
 
     break;
 
-  case TS_EVENT_HTTP_SELECT_ALT:
-
-    lua_getglobal(L, TS_LUA_FUNCTION_SELECT_ALT);
-    if (lua_type(L, -1) == LUA_TFUNCTION) {
-      ret = lua_resume(L, 0);
-    }
-
-    break;
-
   case TS_EVENT_HTTP_READ_CACHE_HDR:
 
     lua_getglobal(L, TS_LUA_FUNCTION_READ_CACHE);

@@ -107,7 +107,6 @@ each lua script:
 - **'do_global_send_response'**
 - **'do_global_cache_lookup_complete'**
 - **'do_global_read_cache'**
-- **'do_global_select_alt'**
 
 We can write this in plugin.config:
 
@@ -391,7 +390,6 @@ Hook point constants
     TS_LUA_HOOK_OS_DNS
     TS_LUA_HOOK_PRE_REMAP
     TS_LUA_HOOK_READ_CACHE_HDR
-    TS_LUA_HOOK_SELECT_ALT
     TS_LUA_HOOK_TXN_CLOSE
     TS_LUA_HOOK_POST_REMAP
     TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE
@@ -423,9 +421,6 @@ Additional Information:
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_POST          | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
 | _REMAP_HOOK           | _POST_REMAP               |                      |                    |                      |
-+-----------------------+---------------------------+----------------------+--------------------+----------------------+
-| TS_HTTP_SELECT        | TS_LUA_HOOK               |     NO               |    NO              |    NO                |
-| _ALT_HOOK             | _SELECT_ALT               |                      |                    |                      |
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_READ          | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
 | _CACHE_HDR_HOOK       | _READ_CACHE_HDR           |                      |                    |                      |

@@ -44,7 +44,6 @@
 #define TS_LUA_FUNCTION_PRE_REMAP "do_pre_remap"
 #define TS_LUA_FUNCTION_POST_REMAP "do_post_remap"
 #define TS_LUA_FUNCTION_OS_DNS "do_os_dns"
-#define TS_LUA_FUNCTION_SELECT_ALT "do_select_alt"
 #define TS_LUA_FUNCTION_READ_CACHE "do_read_cache"
 #define TS_LUA_FUNCTION_TXN_CLOSE "do_txn_close"
 
@@ -57,7 +56,6 @@
 #define TS_LUA_FUNCTION_G_PRE_REMAP "do_global_pre_remap"
 #define TS_LUA_FUNCTION_G_POST_REMAP "do_global_post_remap"
 #define TS_LUA_FUNCTION_G_OS_DNS "do_global_os_dns"
-#define TS_LUA_FUNCTION_G_SELECT_ALT "do_global_select_alt"
 #define TS_LUA_FUNCTION_G_READ_CACHE "do_global_read_cache"
 #define TS_LUA_FUNCTION_G_TXN_CLOSE "do_global_txn_close"
 
