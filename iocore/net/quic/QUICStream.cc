@@ -268,6 +268,7 @@ QUICStream::_reorder_data()
   auto frame = _received_stream_frame_buffer.find(this->_recv_offset);
   while (frame != this->_received_stream_frame_buffer.end()) {
     this->_write_to_read_vio(frame->second);
+    this->_received_stream_frame_buffer.erase(frame);
     frame = _received_stream_frame_buffer.find(this->_recv_offset);
   }
 }
