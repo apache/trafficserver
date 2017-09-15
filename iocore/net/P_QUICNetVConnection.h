@@ -219,7 +219,7 @@ private:
 
   Queue<QUICPacket> _packet_recv_queue;
   Queue<QUICPacket> _packet_send_queue;
-  std::queue<std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>> _frame_buffer;
+  std::queue<QUICFramePtr> _frame_send_queue;
 
   Event *_packet_write_ready = nullptr;
 

@@ -248,7 +248,7 @@ void
 QUICNetVConnection::transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame)
 {
   DebugQUICCon("Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
-  this->_frame_buffer.push(std::move(frame));
+  this->_frame_send_queue.push(std::move(frame));
   if (!this->_packet_write_ready) {
     this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
   }
@@ -666,9 +666,9 @@ QUICNetVConnection::_packetize_frames()
   QUICPacketType previous_packet_type = QUICPacketType::UNINITIALIZED;
   QUICPacketType current_packet_type  = QUICPacketType::UNINITIALIZED;
 
-  while (this->_frame_buffer.size() > 0) {
-    frame = std::move(this->_frame_buffer.front());
-    this->_frame_buffer.pop();
+  while (this->_frame_send_queue.size() > 0) {
+    frame = std::move(this->_frame_send_queue.front());
+    this->_frame_send_queue.pop();
     QUICRetransmissionFrame *rf = dynamic_cast<QUICRetransmissionFrame *>(frame.get());
     previous_packet_type        = current_packet_type;
     if (rf) {
