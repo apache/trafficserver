@@ -2428,6 +2428,19 @@ TSUrlPercentEncode(TSMBuffer bufp, TSMLoc obj, char *dst, size_t dst_size, size_
   return ret;
 }
 
+// pton
+TSReturnCode
+TSIpAddrParse(const char *str, size_t str_len, sockaddr *addr)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
+
+  if (0 != ats_ip_pton(ts::ConstBuffer(str, str_len), addr)) {
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // MIME Headers
