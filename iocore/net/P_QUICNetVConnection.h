@@ -223,6 +223,9 @@ private:
 
   Event *_packet_write_ready = nullptr;
 
+  void _transmit_packet(QUICPacketPtr);
+  void _transmit_frame(QUICFramePtr);
+
   void _packetize_frames();
   std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
                                                                    QUICPacketType type = QUICPacketType::UNINITIALIZED);

@@ -181,6 +181,7 @@ private:
 };
 
 using QUICPacketDeleterFunc = void (*)(QUICPacket *p);
+using QUICPacketPtr         = std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>;
 
 extern ClassAllocator<QUICPacket> quicPacketAllocator;
 extern ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator;

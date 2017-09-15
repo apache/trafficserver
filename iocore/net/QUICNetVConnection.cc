@@ -197,10 +197,19 @@ QUICNetVConnection::maximum_stream_frame_data_size()
 }
 
 void
-QUICNetVConnection::transmit_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
+QUICNetVConnection::_transmit_packet(QUICPacketPtr packet)
 {
+  DebugQUICCon("Packet Type=%s Size=%hu", QUICDebugNames::packet_type(packet->type()), packet->size());
+
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   // TODO Remove const_cast
   this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
+}
+
+void
+QUICNetVConnection::transmit_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
+{
+  this->_transmit_packet(std::move(packet));
   if (!this->_packet_write_ready) {
     this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
   }
@@ -246,13 +255,20 @@ QUICNetVConnection::push_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFun
 }
 
 void
-QUICNetVConnection::transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame)
+QUICNetVConnection::_transmit_frame(QUICFramePtr frame)
 {
-  DebugQUICCon("Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+  DebugQUICCon("Frame Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
 
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
   this->_frame_send_queue.push(std::move(frame));
+}
+
+void
+QUICNetVConnection::transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame)
+{
+  this->_transmit_frame(std::move(frame));
   if (!this->_packet_write_ready) {
+    DebugQUICCon("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
     this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
   }
 }
@@ -362,8 +378,10 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
-    error                     = this->_state_common_send_packet();
-    this->_packet_write_ready = nullptr;
+    if (this->_packet_write_ready == data) {
+      this->_packet_write_ready = nullptr;
+    }
+    error = this->_state_common_send_packet();
     break;
   }
   case EVENT_IMMEDIATE: {
@@ -407,11 +425,12 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
-    error                     = this->_state_common_send_packet();
-    this->_packet_write_ready = nullptr;
+    if (this->_packet_write_ready == data) {
+      this->_packet_write_ready = nullptr;
+    }
+    error = this->_state_common_send_packet();
     break;
   }
-
   case EVENT_IMMEDIATE: {
     // Start Implicit Shutdown. Because of no network activity for the duration of the idle timeout.
     this->remove_from_active_queue();
@@ -442,8 +461,10 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
+    if (this->_packet_write_ready == data) {
+      this->_packet_write_ready = nullptr;
+    }
     this->_state_common_send_packet();
-    this->_packet_write_ready = nullptr;
     break;
   }
   default:
@@ -645,7 +666,7 @@ QUICNetVConnection::_state_common_send_packet()
     return error;
   }
 
-  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->get_packet_transmitter_mutex().get(), this_ethread());
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   while ((packet = this->_packet_send_queue.dequeue()) != nullptr) {
     this->_packet_handler->send_packet(*packet, this);
     this->_loss_detector->on_packet_sent(
@@ -684,8 +705,7 @@ QUICNetVConnection::_packetize_frames()
     }
     if (len + frame->size() + MAX_PACKET_OVERHEAD > max_size || (previous_packet_type != current_packet_type && len > 0)) {
       ink_assert(len > 0);
-      SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->get_packet_transmitter_mutex().get(), this_ethread());
-      this->transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
+      this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
       len = 0;
     }
     retransmittable = retransmittable || (frame->type() != QUICFrameType::ACK && frame->type() != QUICFrameType::PADDING);
@@ -706,8 +726,7 @@ QUICNetVConnection::_packetize_frames()
       memset(buf.get() + len, 0, min_size - len);
       len += min_size - len;
     }
-    SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->get_packet_transmitter_mutex().get(), this_ethread());
-    this->transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, current_packet_type));
+    this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, current_packet_type));
   }
 }
 
