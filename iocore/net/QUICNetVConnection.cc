@@ -61,9 +61,10 @@ QUICNetVConnection::QUICNetVConnection() : UnixNetVConnection()
 void
 QUICNetVConnection::init(UDPConnection *udp_con, QUICPacketHandler *packet_handler)
 {
-  this->_transmitter_mutex = new_ProxyMutex();
-  this->_udp_con           = udp_con;
-  this->_packet_handler    = packet_handler;
+  this->_packet_transmitter_mutex = new_ProxyMutex();
+  this->_frame_transmitter_mutex  = new_ProxyMutex();
+  this->_udp_con                  = udp_con;
+  this->_packet_handler           = packet_handler;
   this->_quic_connection_id.randomize();
 
   // FIXME These should be done by HttpProxyServerMain
@@ -231,9 +232,9 @@ QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
 }
 
 Ptr<ProxyMutex>
-QUICNetVConnection::get_transmitter_mutex()
+QUICNetVConnection::get_packet_transmitter_mutex()
 {
-  return this->_transmitter_mutex;
+  return this->_packet_transmitter_mutex;
 }
 
 void
@@ -248,6 +249,8 @@ void
 QUICNetVConnection::transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame)
 {
   DebugQUICCon("Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+
+  SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
   this->_frame_send_queue.push(std::move(frame));
   if (!this->_packet_write_ready) {
     this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
@@ -641,6 +644,8 @@ QUICNetVConnection::_state_common_send_packet()
   if (error.cls != QUICErrorClass::NONE) {
     return error;
   }
+
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->get_packet_transmitter_mutex().get(), this_ethread());
   while ((packet = this->_packet_send_queue.dequeue()) != nullptr) {
     this->_packet_handler->send_packet(*packet, this);
     this->_loss_detector->on_packet_sent(
@@ -666,6 +671,7 @@ QUICNetVConnection::_packetize_frames()
   QUICPacketType previous_packet_type = QUICPacketType::UNINITIALIZED;
   QUICPacketType current_packet_type  = QUICPacketType::UNINITIALIZED;
 
+  SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
   while (this->_frame_send_queue.size() > 0) {
     frame = std::move(this->_frame_send_queue.front());
     this->_frame_send_queue.pop();
@@ -678,7 +684,7 @@ QUICNetVConnection::_packetize_frames()
     }
     if (len + frame->size() + MAX_PACKET_OVERHEAD > max_size || (previous_packet_type != current_packet_type && len > 0)) {
       ink_assert(len > 0);
-      SCOPED_MUTEX_LOCK(transmitter_lock, this->get_transmitter_mutex().get(), this_ethread());
+      SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->get_packet_transmitter_mutex().get(), this_ethread());
       this->transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
       len = 0;
     }
@@ -700,7 +706,7 @@ QUICNetVConnection::_packetize_frames()
       memset(buf.get() + len, 0, min_size - len);
       len += min_size - len;
     }
-    SCOPED_MUTEX_LOCK(transmitter_lock, this->get_transmitter_mutex().get(), this_ethread());
+    SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->get_packet_transmitter_mutex().get(), this_ethread());
     this->transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, current_packet_type));
   }
 }

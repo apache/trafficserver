@@ -344,7 +344,7 @@ QUICLossDetector::_determine_newly_acked_packets(const QUICAckFrame &ack_frame)
 void
 QUICLossDetector::_retransmit_handshake_packets()
 {
-  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_transmitter_mutex().get(), this_ethread());
+  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   std::set<QUICPacketNumber> retransmitted_handshake_packets;
 

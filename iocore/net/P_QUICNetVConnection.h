@@ -181,7 +181,7 @@ public:
   // QUICConnection (QUICPacketTransmitter)
   virtual void transmit_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet) override;
   virtual void retransmit_packet(const QUICPacket &packet) override;
-  virtual Ptr<ProxyMutex> get_transmitter_mutex() override;
+  virtual Ptr<ProxyMutex> get_packet_transmitter_mutex() override;
 
   // QUICConnection (QUICFrameTransmitter)
   virtual void transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame) override;
@@ -236,7 +236,8 @@ private:
   QUICError _state_common_receive_packet();
   QUICError _state_common_send_packet();
 
-  Ptr<ProxyMutex> _transmitter_mutex;
+  Ptr<ProxyMutex> _packet_transmitter_mutex;
+  Ptr<ProxyMutex> _frame_transmitter_mutex;
 
   QUICApplication *_create_application();
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,

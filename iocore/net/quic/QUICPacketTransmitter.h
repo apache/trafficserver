@@ -46,5 +46,5 @@ public:
    * Returns a mutex for transmitter interfaces.
    * You have to acquire a lock with this mutex before calling any methods provieded by QUICPacketTransmitter
    */
-  virtual Ptr<ProxyMutex> get_transmitter_mutex() = 0;
+  virtual Ptr<ProxyMutex> get_packet_transmitter_mutex() = 0;
 };
