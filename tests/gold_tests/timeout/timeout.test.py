@@ -26,6 +26,7 @@ TIMEOUT = 3
 
 # Test.SkipIf(Condition.true("Skipping this test since running it requires superuser privilege, which introduces other problems"))
 
+# Windows admin checking temporarily using a deprecated API. When Autest upgrades on jenkins, we can switch to Condition.IsElevated
 if os.name == 'nt':
     import ctypes
 
@@ -40,8 +41,9 @@ elif os.name == 'posix':
 else:
     Test.SkipIf(Condition.true("OS not recognized. Can't perform superuser check."))
 
+# Fix: not stable
 Test.SkipUnless(
-    Condition.HasProgram("ip", "ip (from iproute2) must be installed.")
+    Condition.HasProgram("/usr/sbin/ip", "ip (from iproute2) must be installed.")
 )
 Test.SkipUnless(
     Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
