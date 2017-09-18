@@ -113,7 +113,7 @@ public:
   }
 
   Ptr<ProxyMutex>
-  get_transmitter_mutex() override
+  get_packet_transmitter_mutex() override
   {
     return this->_mutex;
   }
@@ -224,7 +224,7 @@ public:
   }
 
   Ptr<ProxyMutex>
-  get_transmitter_mutex() override
+  get_packet_transmitter_mutex() override
   {
     return this->_mutex;
   }
