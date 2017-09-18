@@ -58,6 +58,8 @@ Http2Stream::main_event_handler(int event, void *edata)
     read_event = nullptr;
   } else if (e == write_event) {
     write_event = nullptr;
+  } else if (e == buffer_full_write_event) {
+    buffer_full_write_event = nullptr;
   }
 
   switch (event) {
@@ -532,6 +534,16 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     if (bytes_avail > num_to_write) {
       bytes_avail = num_to_write;
     }
+
+    if (static_cast<Http2ClientSession *>(parent)->write_buffer_size() > HTTP2_MAX_BUFFER_USAGE ||
+        response_buffer.max_read_avail() > HTTP2_MAX_BUFFER_USAGE ||
+        (chunked_handler.dechunked_buffer && chunked_handler.dechunked_buffer->max_read_avail() > HTTP2_MAX_BUFFER_USAGE)) {
+      if (buffer_full_write_event == nullptr) {
+        buffer_full_write_event = get_thread()->schedule_imm(this, VC_EVENT_WRITE_READY);
+      }
+      return true;
+    }
+
     while (total_added < bytes_avail) {
       int64_t bytes_added = response_buffer.write(buf_reader, bytes_avail);
       buf_reader->consume(bytes_added);
@@ -842,6 +854,11 @@ Http2Stream::clear_io_events()
     write_event->cancel();
   }
   write_event = nullptr;
+
+  if (buffer_full_write_event) {
+    buffer_full_write_event->cancel();
+    buffer_full_write_event = nullptr;
+  }
 }
 
 void
