@@ -21,10 +21,11 @@ import argparse
 import socket
 import sys
 
+def get_socket():
+    return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def tcp_client(host, port, data, writable=sys.stdout):
-    pass
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = get_socket()
     s.connect((host, port))
     s.sendall(data.encode())
     s.shutdown(socket.SHUT_WR)

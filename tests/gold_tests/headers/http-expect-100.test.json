@@ -4,13 +4,13 @@
             {
                 "steps": [
                     {
-                        "Client -> TrafficServer": "GET http://www.example.com/ HTTP/1.1\r\n\r\n"
+                        "Client -> TrafficServer": "POST http://www.example.com/ HTTP/1.1\r\nExpect: 100-continue\r\nContent-Length: 20\r\n\r\n"
                     },
                     {
                         "Client <- TrafficServer": "HTTP/1.1 100 continue\r\n\r\n"
                     },
                     {
-                        "Client -> TrafficServer": "some content"
+                        "Client -> TrafficServer": "Content of length 20"
                     },
                     {
                         "TrafficServer -> Origin": "POST http://www.example.com/ HTTP/1.1\r\n\r\nsome content"
