@@ -26,6 +26,8 @@ ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _roun
 {
   round_robin_type = _round_robin_type;
   latched_parent   = 0;
+  parents          = parent_record->parents;
+  num_parents      = parent_record->num_parents;
 
   if (is_debug_tag_set("parent_select")) {
     switch (round_robin_type) {
@@ -64,10 +66,10 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
 
   HttpRequestData *request_info = static_cast<HttpRequestData *>(rdata);
 
-  ink_assert(numParents(result) > 0 || result->rec->go_direct == true);
+  ink_assert(num_parents > 0 || result->rec->go_direct == true);
 
   if (first_call) {
-    if (result->rec->parents == nullptr) {
+    if (parents == nullptr) {
       // We should only get into this state if
       //   if we are supposed to go direct
       ink_assert(result->rec->go_direct == true);
@@ -90,14 +92,14 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
         // preserved for now anyway as ats_ip_hash returns the 32-bit address in
         // that case.
         if (rdata->get_client_ip() != nullptr) {
-          cur_index = result->start_parent = ntohl(ats_ip_hash(rdata->get_client_ip())) % result->rec->num_parents;
+          cur_index = result->start_parent = ntohl(ats_ip_hash(rdata->get_client_ip())) % num_parents;
         } else {
           cur_index = 0;
         }
         break;
       case P_STRICT_ROUND_ROBIN:
         cur_index = ink_atomic_increment((int32_t *)&result->rec->rr_next, 1);
-        cur_index = result->start_parent = cur_index % result->rec->num_parents;
+        cur_index = result->start_parent = cur_index % num_parents;
         break;
       case P_NO_ROUND_ROBIN:
         cur_index = result->start_parent = 0;
@@ -111,7 +113,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
     }
   } else {
     // Move to next parent due to failure
-    latched_parent = cur_index = (result->last_parent + 1) % result->rec->num_parents;
+    latched_parent = cur_index = (result->last_parent + 1) % num_parents;
 
     // Check to see if we have wrapped around
     if ((unsigned int)cur_index == result->start_parent) {
@@ -134,22 +136,19 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
   do {
     Debug("parent_select", "cur_index: %d, result->start_parent: %d", cur_index, result->start_parent);
     // DNS ParentOnly inhibits bypassing the parent so always return that t
-    if ((result->rec->parents[cur_index].failedAt == 0) ||
-        (result->rec->parents[cur_index].failCount < static_cast<int>(fail_threshold))) {
+    if ((parents[cur_index].failedAt == 0) || (parents[cur_index].failCount < static_cast<int>(fail_threshold))) {
       Debug("parent_select", "FailThreshold = %d", fail_threshold);
       Debug("parent_select", "Selecting a parent due to little failCount (faileAt: %u failCount: %d)",
-            (unsigned)result->rec->parents[cur_index].failedAt, result->rec->parents[cur_index].failCount);
+            (unsigned)parents[cur_index].failedAt, parents[cur_index].failCount);
       parentUp = true;
     } else {
-      if ((result->wrap_around) || ((result->rec->parents[cur_index].failedAt + retry_time) < request_info->xact_start)) {
+      if ((result->wrap_around) || ((parents[cur_index].failedAt + retry_time) < request_info->xact_start)) {
         Debug("parent_select", "Parent[%d].failedAt = %u, retry = %u,xact_start = %" PRId64 " but wrap = %d", cur_index,
-              (unsigned)result->rec->parents[cur_index].failedAt, retry_time, (int64_t)request_info->xact_start,
-              result->wrap_around);
+              (unsigned)parents[cur_index].failedAt, retry_time, (int64_t)request_info->xact_start, result->wrap_around);
         // Reuse the parent
         parentUp    = true;
         parentRetry = true;
-        Debug("parent_select", "Parent marked for retry %s:%d", result->rec->parents[cur_index].hostname,
-              result->rec->parents[cur_index].port);
+        Debug("parent_select", "Parent marked for retry %s:%d", parents[cur_index].hostname, parents[cur_index].port);
       } else {
         parentUp = false;
       }
@@ -157,8 +156,8 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
 
     if (parentUp == true) {
       result->result      = PARENT_SPECIFIED;
-      result->hostname    = result->rec->parents[cur_index].hostname;
-      result->port        = result->rec->parents[cur_index].port;
+      result->hostname    = parents[cur_index].hostname;
+      result->port        = parents[cur_index].port;
       result->last_parent = cur_index;
       result->retry       = parentRetry;
       ink_assert(result->hostname != nullptr);
@@ -166,7 +165,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       Debug("parent_select", "Chosen parent = %s.%d", result->hostname, result->port);
       return;
     }
-    latched_parent = cur_index = (cur_index + 1) % result->rec->num_parents;
+    latched_parent = cur_index = (cur_index + 1) % num_parents;
   } while ((unsigned int)cur_index != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
@@ -182,108 +181,5 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
 uint32_t
 ParentRoundRobin::numParents(ParentResult *result) const
 {
-  return result->rec->num_parents;
-}
-
-void
-ParentRoundRobin::markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time)
-{
-  time_t now;
-  pRecord *pRec;
-  int new_fail_count = 0;
-
-  Debug("parent_select", "Starting ParentRoundRobin::markParentDown()");
-  //  Make sure that we are being called back with with a
-  //   result structure with a parent
-  ink_assert(result->result == PARENT_SPECIFIED);
-  if (result->result != PARENT_SPECIFIED) {
-    return;
-  }
-  // If we were set through the API we currently have not failover
-  //   so just return fail
-  if (result->is_api_result()) {
-    return;
-  }
-
-  ink_assert((int)(result->last_parent) < result->rec->num_parents);
-  pRec = result->rec->parents + result->last_parent;
-
-  // If the parent has already been marked down, just increment
-  //   the failure count.  If this is the first mark down on a
-  //   parent we need to both set the failure time and set
-  //   count to one.  It's possible for the count and time get out
-  //   sync due there being no locks.  Therefore the code should
-  //   handle this condition.  If this was the result of a retry, we
-  //   must update move the failedAt timestamp to now so that we continue
-  //   negative cache the parent
-  if (pRec->failedAt == 0 || result->retry == true) {
-    // Reread the current time.  We want this to be accurate since
-    //   it relates to how long the parent has been down.
-    now = time(nullptr);
-
-    // Mark the parent failure time.
-    ink_atomic_swap(&pRec->failedAt, now);
-
-    // If this is clean mark down and not a failed retry, we
-    //   must set the count to reflect this
-    if (result->retry == false) {
-      new_fail_count = pRec->failCount = 1;
-    }
-
-    Note("Parent %s marked as down %s:%d", (result->retry) ? "retry" : "initially", pRec->hostname, pRec->port);
-
-  } else {
-    int old_count = 0;
-    now           = time(nullptr);
-
-    // if the last failure was outside the retry window, set the failcount to 1
-    // and failedAt to now.
-    if ((pRec->failedAt + retry_time) < now) {
-      ink_atomic_swap(&pRec->failCount, 1);
-      ink_atomic_swap(&pRec->failedAt, now);
-    } else {
-      old_count = ink_atomic_increment(&pRec->failCount, 1);
-    }
-
-    Debug("parent_select", "Parent fail count increased to %d for %s:%d", old_count + 1, pRec->hostname, pRec->port);
-    new_fail_count = old_count + 1;
-  }
-
-  if (new_fail_count > 0 && new_fail_count >= static_cast<int>(fail_threshold)) {
-    Note("Failure threshold met failcount:%d >= threshold:%d, http parent proxy %s:%d marked down", new_fail_count, fail_threshold,
-         pRec->hostname, pRec->port);
-    ink_atomic_swap(&pRec->available, false);
-    Debug("parent_select", "Parent marked unavailable, pRec->available=%d", pRec->available);
-  }
-}
-
-void
-ParentRoundRobin::markParentUp(ParentResult *result)
-{
-  pRecord *pRec;
-
-  //  Make sure that we are being called back with with a
-  //   result structure with a parent that is being retried
-  ink_release_assert(result->retry == true);
-  ink_assert(result->result == PARENT_SPECIFIED);
-  if (result->result != PARENT_SPECIFIED) {
-    return;
-  }
-  // If we were set through the API we currently have not failover
-  //   so just return fail
-  if (result->is_api_result()) {
-    ink_assert(0);
-    return;
-  }
-
-  ink_assert((int)(result->last_parent) < result->rec->num_parents);
-  pRec = result->rec->parents + result->last_parent;
-  ink_atomic_swap(&pRec->available, true);
-
-  ink_atomic_swap(&pRec->failedAt, (time_t)0);
-  int old_count = ink_atomic_swap(&pRec->failCount, 0);
-
-  if (old_count > 0) {
-    Note("http parent proxy %s:%d restored", pRec->hostname, pRec->port);
-  }
+  return num_parents;
 }
