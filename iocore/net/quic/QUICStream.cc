@@ -260,6 +260,8 @@ QUICStream::_write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &fra
   Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [LOCAL] %" PRIu64 "/%" PRIu64, this->_id,
         QUICDebugNames::stream_state(this->_state), this->_local_flow_controller->current_offset(),
         this->_local_flow_controller->current_limit());
+
+  this->_state.update_with_received_frame(*frame);
 }
 
 void
@@ -290,7 +292,6 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
     this->reset();
     return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
   }
-  this->_state.update_with_received_frame(*frame);
 
   // Flow Control - Even if it's allowed to receive on the state, it may exceed the limit
   QUICError error = this->_local_flow_controller->update(frame->offset() + frame->data_length());
