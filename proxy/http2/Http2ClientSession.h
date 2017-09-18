@@ -303,6 +303,12 @@ public:
     }
   }
 
+  int64_t
+  write_buffer_size()
+  {
+    return write_buffer->max_read_avail();
+  }
+
 private:
   Http2ClientSession(Http2ClientSession &);                  // noncopyable
   Http2ClientSession &operator=(const Http2ClientSession &); // noncopyable
