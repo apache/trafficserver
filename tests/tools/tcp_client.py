@@ -21,11 +21,10 @@ import argparse
 import socket
 import sys
 
-def get_socket():
-    return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-def tcp_client(host, port, data, writable=sys.stdout):
-    s = get_socket()
+def tcp_client(host, port, data):
+    pass
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
     s.sendall(data.encode())
     s.shutdown(socket.SHUT_WR)
@@ -34,7 +33,7 @@ def tcp_client(host, port, data, writable=sys.stdout):
         if len(output) <= 0:
             break
         else:
-            writable.write(output.decode())
+            sys.stdout.write(output.decode())
     s.close()
 
 
