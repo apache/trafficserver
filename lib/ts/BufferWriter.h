@@ -309,13 +309,13 @@ protected:
   char _arr[N];
 };
 
-BufferWriter &
+inline BufferWriter &
 operator<<(BufferWriter &b, char c)
 {
   return b.write(c);
 }
 
-BufferWriter &
+inline BufferWriter &
 operator<<(BufferWriter &b, const string_view &sv)
 {
   return b.write(sv);
