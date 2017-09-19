@@ -293,6 +293,12 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
     return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
   }
 
+  // Reordering - Some frames may be delayed or be dropped
+  if (this->_recv_offset > frame->offset()) {
+    // Do nothing. Just ignore STREAM frame.
+    return QUICError(QUICErrorClass::NONE);
+  }
+
   // Flow Control - Even if it's allowed to receive on the state, it may exceed the limit
   QUICError error = this->_local_flow_controller->update(frame->offset() + frame->data_length());
   Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [LOCAL] %" PRIu64 "/%" PRIu64, this->_id,
@@ -302,11 +308,7 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
     return error;
   }
 
-  // Reordering - Some frames may be delayed or be dropped
-  if (this->_recv_offset > frame->offset()) {
-    // Do nothing. Just ignore STREAM frame.
-    return QUICError(QUICErrorClass::NONE);
-  } else if (this->_recv_offset == frame->offset()) {
+  if (this->_recv_offset == frame->offset()) {
     this->_write_to_read_vio(frame);
     this->_reorder_data();
   } else {
