@@ -264,15 +264,20 @@ QUICStream::_write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &fra
   this->_state.update_with_received_frame(*frame);
 }
 
-void
+QUICError
 QUICStream::_reorder_data()
 {
   auto frame = _received_stream_frame_buffer.find(this->_recv_offset);
   while (frame != this->_received_stream_frame_buffer.end()) {
     this->_write_to_read_vio(frame->second);
     this->_received_stream_frame_buffer.erase(frame);
+    if (this->is_remote_closed() && !this->_received_stream_frame_buffer.empty()) {
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::FINAL_OFFSET_ERROR);
+    }
     frame = _received_stream_frame_buffer.find(this->_recv_offset);
   }
+
+  return QUICError(QUICErrorClass::NONE);
 }
 
 /**
@@ -293,8 +298,13 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
     return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
   }
 
+  QUICError error = this->_check_and_set_fin_offset(frame->offset(), frame->has_fin_flag());
+  if (error.cls != QUICErrorClass::NONE) {
+    return error;
+  }
+
   // Flow Control - Even if it's allowed to receive on the state, it may exceed the limit
-  QUICError error = this->_local_flow_controller->update(frame->offset() + frame->data_length());
+  error = this->_local_flow_controller->update(frame->offset() + frame->data_length());
   Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [LOCAL] %" PRIu64 "/%" PRIu64, this->_id,
         QUICDebugNames::stream_state(this->_state), this->_local_flow_controller->current_offset(),
         this->_local_flow_controller->current_limit());
@@ -308,14 +318,17 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
     return QUICError(QUICErrorClass::NONE);
   } else if (this->_recv_offset == frame->offset()) {
     this->_write_to_read_vio(frame);
-    this->_reorder_data();
+    if (this->is_remote_closed() && !this->_received_stream_frame_buffer.empty()) {
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::FINAL_OFFSET_ERROR);
+    }
+
+    error = this->_reorder_data();
   } else {
     // NOTE: push fragments in _received_stream_frame_buffer temporally.
     // They will be reordered when missing data is filled and offset is matched.
     this->_received_stream_frame_buffer.insert(std::make_pair(frame->offset(), frame));
   }
-
-  return QUICError(QUICErrorClass::NONE);
+  return error;
 }
 
 QUICError
@@ -408,4 +421,64 @@ QUICOffset
 QUICStream::largest_offset_sent()
 {
   return this->_remote_flow_controller->current_offset();
+}
+
+bool
+QUICStream::is_valid_fin_offset(QUICOffset fin_offset) const
+{
+  // {sector 11.3. Stream Final Offset}
+  // Once a final offset for a stream is known, it cannot change.
+  // If a RST_STREAM or STREAM frame causes the final offset to change for a stream,
+  // an endpoint SHOULD respond with a FINAL_OFFSET_ERROR error (see Section 12).
+  // A receiver SHOULD treat receipt of data at or beyond the final offset as a
+  if (this->_fin_offset == UINT64_MAX) {
+    return true;
+  }
+
+  if (this->_fin_offset != fin_offset) {
+    return false;
+  }
+
+  return true;
+}
+
+QUICErrorCode
+QUICStream::get_error_code() const
+{
+  return this->_rst_error_code;
+}
+
+bool
+QUICStream::is_remote_closed() const
+{
+  return this->_state.get() == QUICStreamState::State::half_closed_remote || this->_state.get() == QUICStreamState::State::closed;
+}
+
+bool
+QUICStream::is_local_closed() const
+{
+  return this->_state.get() == QUICStreamState::State::half_closed_local || this->_state.get() == QUICStreamState::State::closed;
+}
+
+QUICError
+QUICStream::_check_and_set_fin_offset(QUICOffset offset, bool set_fin_offset)
+{
+  if (set_fin_offset) {
+    if (!this->is_valid_fin_offset(offset)) {
+      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::FINAL_OFFSET_ERROR);
+    }
+
+    this->_fin_offset = offset;
+    return QUICError(QUICErrorClass::NONE);
+  }
+
+  // normal stream frame
+  if (offset >= this->_fin_offset) {
+    // {11.3. Stream Final Offset}
+    // A receiver SHOULD treat receipt of data at or beyond the final offset as a
+    // FINAL_OFFSET_ERROR error, even after a stream is closed.
+    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::FINAL_OFFSET_ERROR);
+  }
+
+  return QUICError(QUICErrorClass::NONE);
 }
