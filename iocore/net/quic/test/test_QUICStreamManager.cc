@@ -165,3 +165,33 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   sleep(2);
   CHECK(sm.total_offset_sent() == 1);
 }
+
+TEST_CASE("QUICStreamManager_flow_control_check", "[quic]")
+{
+  MockQUICFrameTransmitter tx;
+  QUICApplicationMap app_map;
+  MockQUICApplication mock_app;
+  app_map.set_default(&mock_app);
+  QUICStreamManager sm(&tx, &app_map);
+  std::shared_ptr<QUICTransportParameters> local_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
+  local_tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
+                std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(1024, 4)));
+  std::shared_ptr<QUICTransportParameters> remote_tp =
+    std::make_shared<QUICTransportParametersInClientHello>(static_cast<QUICVersion>(0), static_cast<QUICVersion>(0));
+  sm.init_flow_control_params(local_tp, remote_tp);
+  char data[1024] = {0};
+
+  // Create a stream with STREAM_BLOCKED (== noop)
+  std::shared_ptr<QUICFrame> stream_frame_1_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 1, 0);
+  // dup frame
+  std::shared_ptr<QUICFrame> stream_frame_2_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 1, 0);
+  std::shared_ptr<QUICFrame> stream_frame_3_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 1, 1024);
+  sm.handle_frame(stream_frame_1_r);
+  sm.handle_frame(stream_frame_2_r);
+
+  QUICError err = sm.handle_frame(stream_frame_3_r);
+  CHECK(err.cls == QUICErrorClass::NONE);
+}
