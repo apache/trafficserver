@@ -26,7 +26,6 @@
 #include <cstring>
 
 #include "ts/I_Layout.h"
-#include "ts/TestBox.h"
 
 #include "I_EventSystem.h"
 #include "I_Net.h"
@@ -36,8 +35,7 @@
 
 #include "diags.i"
 
-static const int port       = 4443;
-static const char payload[] = "hello";
+static const int port = 4443;
 
 /*This implements a standard Unix echo server: just send every udp packet you
   get back to where it came from*/
@@ -111,8 +109,8 @@ signal_handler(int signum)
   std::exit(EXIT_SUCCESS);
 }
 
-void
-udp_echo_server()
+int
+main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   Layout::create();
   RecModeT mode_type = RECM_STAND_ALONE;
@@ -134,80 +132,6 @@ udp_echo_server()
   eventProcessor.schedule_imm(&server, ET_UDP);
 
   this_thread()->execute();
-}
-
-void
-udp_client(char *buf)
-{
-  int sock = socket(AF_INET, SOCK_DGRAM, 0);
-  if (sock < 0) {
-    std::cout << "Couldn't create socket" << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-
-  struct timeval tv;
-  tv.tv_sec  = 1;
-  tv.tv_usec = 0;
-
-  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv));
-  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
-
-  sockaddr_in addr;
-  addr.sin_family      = AF_INET;
-  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  addr.sin_port        = htons(port);
-
-  ssize_t n = sendto(sock, payload, sizeof(payload), 0, (struct sockaddr *)&addr, sizeof(addr));
-  if (n < 0) {
-    std::cout << "Couldn't send udp packet" << std::endl;
-    close(sock);
-    std::exit(EXIT_FAILURE);
-  }
-
-  ssize_t l = recv(sock, buf, sizeof(buf), 0);
-  if (l < 0) {
-    std::cout << "Couldn't recv udp packet" << std::endl;
-    close(sock);
-    std::exit(EXIT_FAILURE);
-  }
-
-  close(sock);
-}
-
-REGRESSION_TEST(UDPNet_echo)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  box         = REGRESSION_TEST_PASSED;
-  char buf[8] = {0};
-
-  pid_t pid = fork();
-  if (pid < 0) {
-    std::cout << "Couldn't fork" << std::endl;
-    std::exit(EXIT_FAILURE);
-  } else if (pid == 0) {
-    udp_echo_server();
-  } else {
-    sleep(1);
-    udp_client(buf);
-
-    kill(pid, SIGTERM);
-    int status;
-    wait(&status);
-
-    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-      box.check(strncmp(buf, payload, sizeof(payload)) == 0, "echo doesn't match");
-    } else {
-      std::cout << "UDP Echo Server exit failure" << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-  }
-}
-
-int
-main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
-{
-  RegressionTest::run("UDPNet", REGRESSION_TEST_QUICK);
-  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
 }
 
 //

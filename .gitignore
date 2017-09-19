@@ -86,7 +86,6 @@ lib/ts/test_Scalar
 lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
-iocore/net/test_UDPNet
 iocore/aio/test_AIO
 iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event
@@ -126,6 +125,7 @@ proxy/traffic_logcat
 proxy/traffic_logstats
 proxy/traffic_server
 proxy/test_xml_parser
+proxy/traffic_udp_echo_server
 
 libtool
 m4/libtool.m4

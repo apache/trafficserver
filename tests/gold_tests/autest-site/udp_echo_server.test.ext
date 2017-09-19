@@ -1,0 +1,62 @@
+'''
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from __future__ import print_function
+import os
+import socket
+
+# this forms is for the global process define
+
+
+def MakeUDPEchoServerProcess(obj, name, command='traffic_udp_echo_server'):
+    # common locations
+
+    # directory we will setup for the ATS to run under
+    ts_dir = os.path.join(obj.RunDirectory, name)
+    # common bin directory
+    bin_dir = 'bin'
+
+    # runtime dir
+    runtime_dir = os.path.join(ts_dir, 'runtime')
+
+    # create process
+    p = obj.Processes.Process(name, command)
+    # we want to have a few directories more fixed
+    # this helps with debugging as location are common
+    # we do this by overiding locations from the "layout"
+    # used as part of build. This means loctaion such as
+    # PROXY_CONFIG_BIN_PATH with alway be $root/bin
+    # not something else such as bin64
+
+    # set root for this test
+    p.Env['TS_ROOT'] = ts_dir
+    p.Setup.MakeDir(ts_dir)
+
+    # set bin location
+    p.Env['PROXY_CONFIG_BIN_PATH'] = bin_dir
+    bin_path = os.path.join(ts_dir, bin_dir)
+    p.Env['PATH'] = bin_path + os.pathsep + p.ComposeEnv()['PATH']
+    p.Setup.Copy(p.Variables.BINDIR, bin_path, True)
+
+    # since we always kill this
+    p.ReturnCode = None
+
+    return p
+
+
+AddTestRunSet(MakeUDPEchoServerProcess, name="MakeUDPEchoServerProcess")
