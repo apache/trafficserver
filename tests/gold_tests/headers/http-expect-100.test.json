@@ -4,22 +4,22 @@
             {
                 "steps": [
                     {
-                        "Client -> TrafficServer": "POST http://www.example.com/ HTTP/1.1\r\nExpect: 100-continue\r\nContent-Length: 20\r\n\r\n"
+                        "Client -> TrafficServer": "POST / HTTP/1.1\r\nHost: www.example.com\r\nExpect: 100-continue\r\nContent-Length: 20\r\n\r\n"
                     },
                     {
-                        "Client <- TrafficServer": "HTTP/1.1 100 continue\r\n\r\n"
+                        "Client <- TrafficServer": "HTTP/1.1 100 Continue\r\n\r\n"
                     },
                     {
                         "Client -> TrafficServer": "Content of length 20"
                     },
                     {
-                        "TrafficServer -> Origin": "POST http://www.example.com/ HTTP/1.1\r\n\r\nsome content"
+                        "TrafficServer -> Origin": "POST / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 20\r\n\r\nContent of length 20"
                     },
                     {
                         "TrafficServer <- Origin": "HTTP/1.1 200 OK\r\n\r\n"
                     },
                     {
-                        "Client <- TrafficServer": "HTTP/1.1 200 OK\r\n\r\n"
+                        "Client <- TrafficServer": "HTTP/1.1 200 OK\r\nDate: [^\r]*\r\nAge: 0\r\nTransfer-Encoding: chunked\r\nConnection: keep-alive\r\nServer: ATS/[^\r]*\r\n\r\n"
                     }
                 ]
             }
