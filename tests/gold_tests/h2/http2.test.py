@@ -30,7 +30,6 @@ Test.ContinueOnFail = True
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server")
 
-
 requestLocation = "test2"
 reHost = "www.example.com"
 
@@ -66,17 +65,20 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|remap',
+    'proxy.config.diags.debug.tags': 'http|socket',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     # enable ssl port
     'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.ssl.client.verify.server':  0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+    'proxy.config.http2.active_timeout_in': 3,
+    'proxy.config.http2.max_concurrent_streams_in': 65535,
 })
 ts.Setup.CopyAs('h2client.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2bigclient.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2chunked.py', Test.RunDirectory)
+ts.Setup.CopyAs('h2active_timeout.py', Test.RunDirectory)
 
 # Test Case 1:  basic H2 interaction
 tr = Test.AddTestRun()
@@ -109,4 +111,11 @@ tr.Processes.Default.Command = "python3 {0} -type {1} -log_dir {2} -port {3} -ho
     client_path, 'h2', server.Variables.DataDir, ts.Variables.port, ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/replay.gold"
+tr.StillRunningAfter = server
+
+# Test Case 5:h2_active_timeout
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'python3 h2active_timeout.py -p {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
 tr.StillRunningAfter = server
