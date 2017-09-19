@@ -1,4 +1,5 @@
 '''
+Test handling of Expect: 100-continue header field.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -22,9 +23,9 @@ import re
 import subprocess
 
 Test.Summary = '''
+Test handling of Expect: 100-continue header field.
 '''
 
-Test.SkipUnless(Condition.HasProgram("netstat", "netstat needs to be installed on system for this test to work"))
 Test.ContinueOnFail = True
 
 # Define default ATS
@@ -34,14 +35,17 @@ server = Test.MakeOriginServer("server")
 test_json_name = Test.Name + '.test.json'
 test_json_desc = 'Test that 100 expected headers are replied to'
 test_json = json.load(open(os.path.join(Test.TestDirectory, test_json_name), 'r'))
-headers = test_json[test_json_desc]\
+
+# Using the explicit index into 'steps' here, since there are only two steps for
+# which we must configure the microserver.
+req_data = test_json[test_json_desc]\
         ['transactions'][0]['steps'][-3]['TrafficServer -> Origin']
-match = re.match('(.*?)(\r\n\r\n)(.*)', headers, re.DOTALL)
-request_header = {"headers": match.group(1)+match.group(2), "body": match.group(3), "timestamp": "1469733493.993"}
-headers = test_json[test_json_desc]\
+match = re.match('(.*?)(\r\n\r\n)(.*)', req_data, re.DOTALL)
+request = {"headers": match.group(1)+match.group(2), "body": match.group(3), "timestamp": "1469733493.993"}
+res_data = test_json[test_json_desc]\
         ['transactions'][0]['steps'][-2]['TrafficServer <- Origin']
-response_header = {"headers": headers, "timestamp": "1469733493.993"}
-server.addResponse("sessionlog.json", request_header, response_header)
+response = {"headers": res_data, "timestamp": "1469733493.993"}
+server.addResponse("sessionlog.json", request, response)
 
 ts.Disk.records_config.update({
     'proxy.config.http.server_ports': 'ipv4:{0}'.format(ts.Variables.port),
@@ -54,22 +58,19 @@ ts.Disk.remap_config.AddLine(
     'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
-# Ask the OS if the port is ready for connect()
-def CheckPort(Port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
-
+# Setup
 tr = Test.AddTestRun()
-# Wait for the micro server
-tr.Processes.Default.StartBefore(server, ready=CheckPort(server.Variables.Port))
-# Delay on readiness of our ssl ports
+tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'json_runner.py'))
 Test.Setup.Copy(test_json_name)
+
+# Run
 tr.Processes.Default.Command = "python json_runner.py '{}'".format(json.dumps(ts.Variables))
-tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5  # seconds
 
+# Verify
+tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 expected_output = test_json[test_json_desc]\
