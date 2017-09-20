@@ -588,7 +588,7 @@ http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t
                            int32_t maximum_table_size)
 {
   // Limit the maximum table size to 64kB, which is the size advertised by major clients
-  maximum_table_size = min(maximum_table_size, HTTP2_MAX_TABLE_SIZE_LIMIT);
+  maximum_table_size = std::min(maximum_table_size, HTTP2_MAX_TABLE_SIZE_LIMIT);
   // Set maximum table size only if it is different from current maximum size
   if (maximum_table_size == hpack_get_maximum_table_size(handle)) {
     maximum_table_size = -1;

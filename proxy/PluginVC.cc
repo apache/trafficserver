@@ -432,7 +432,7 @@ PluginVC::transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, 
 
   while (act_on > 0) {
     int64_t block_read_avail = transfer_from->block_read_avail();
-    int64_t to_move          = MIN(act_on, block_read_avail);
+    int64_t to_move          = std::min(act_on, block_read_avail);
     int64_t moved            = 0;
 
     if (to_move <= 0) {
@@ -507,7 +507,7 @@ PluginVC::process_write_side(bool other_side_call)
 
   IOBufferReader *reader = write_state.vio.get_reader();
   int64_t bytes_avail    = reader->read_avail();
-  int64_t act_on         = MIN(bytes_avail, ntodo);
+  int64_t act_on         = std::min(bytes_avail, ntodo);
 
   Debug("pvc", "[%u] %s: process_write_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
 
@@ -532,7 +532,7 @@ PluginVC::process_write_side(bool other_side_call)
     Debug("pvc", "[%u] %s: process_write_side no buffer space", core_obj->id, PVC_TYPE);
     return;
   }
-  act_on = MIN(act_on, buf_space);
+  act_on = std::min(act_on, buf_space);
 
   int64_t added = transfer_bytes(core_buffer, reader, act_on);
   if (added < 0) {
@@ -625,7 +625,7 @@ PluginVC::process_read_side(bool other_side_call)
   }
 
   int64_t bytes_avail = core_reader->read_avail();
-  int64_t act_on      = MIN(bytes_avail, ntodo);
+  int64_t act_on      = std::min(bytes_avail, ntodo);
 
   Debug("pvc", "[%u] %s: process_read_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
 
@@ -641,13 +641,13 @@ PluginVC::process_read_side(bool other_side_call)
   MIOBuffer *output_buffer = read_state.vio.get_writer();
 
   int64_t water_mark = output_buffer->water_mark;
-  water_mark         = MAX(water_mark, PVC_DEFAULT_MAX_BYTES);
+  water_mark         = std::max(water_mark, static_cast<int64_t>(PVC_DEFAULT_MAX_BYTES));
   int64_t buf_space  = water_mark - output_buffer->max_read_avail();
   if (buf_space <= 0) {
     Debug("pvc", "[%u] %s: process_read_side no buffer space", core_obj->id, PVC_TYPE);
     return;
   }
-  act_on = MIN(act_on, buf_space);
+  act_on = std::min(act_on, buf_space);
 
   int64_t added = transfer_bytes(output_buffer, core_reader, act_on);
   if (added <= 0) {

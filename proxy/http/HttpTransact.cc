@@ -2317,8 +2317,8 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
   // for it. this is just to deal with the effects
   // of the skew by setting minimum and maximum times
   // so that ages are not negative, etc.
-  s->request_sent_time      = min(s->client_request_time, s->request_sent_time);
-  s->response_received_time = min(s->client_request_time, s->response_received_time);
+  s->request_sent_time      = std::min(s->client_request_time, s->request_sent_time);
+  s->response_received_time = std::min(s->client_request_time, s->response_received_time);
 
   ink_assert(s->request_sent_time <= s->response_received_time);
 
@@ -4572,7 +4572,7 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
     // If the cached response has an Age: we should update it
     // We could use calculate_document_age but my guess is it's overkill
     // Just use 'now' - 304's Date: + Age: (response's Age: if there)
-    date_value = max(s->current.now - date_value, (ink_time_t)0);
+    date_value = std::max(s->current.now - date_value, (ink_time_t)0);
     if (s->hdr_info.server_response.presence(MIME_PRESENCE_AGE)) {
       time_t new_age = s->hdr_info.server_response.get_age();
 
@@ -7005,7 +7005,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
       freshness_limit = (int)response->get_cooked_cc_max_age();
       DebugTxn("http_match", "calculate_document_freshness_limit --- max_age set, freshness_limit = %d", freshness_limit);
     }
-    freshness_limit = min(max(0, freshness_limit), (int)s->txn_conf->cache_guaranteed_max_lifetime);
+    freshness_limit = std::min(std::max(0, freshness_limit), (int)s->txn_conf->cache_guaranteed_max_lifetime);
   } else {
     date_set = last_modified_set = false;
 
@@ -7042,7 +7042,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
       DebugTxn("http_match", "calculate_document_freshness_limit --- Expires: %" PRId64 ", Date: %" PRId64 ", freshness_limit = %d",
                (int64_t)expires_value, (int64_t)date_value, freshness_limit);
 
-      freshness_limit = min(max(0, freshness_limit), (int)s->txn_conf->cache_guaranteed_max_lifetime);
+      freshness_limit = std::min(std::max(0, freshness_limit), (int)s->txn_conf->cache_guaranteed_max_lifetime);
     } else {
       last_modified_value = 0;
       if (response->presence(MIME_PRESENCE_LAST_MODIFIED)) {
@@ -7066,7 +7066,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
         ink_assert((f >= 0.0) && (f <= 1.0));
         ink_time_t time_since_last_modify = date_value - last_modified_value;
         int h_freshness                   = (int)(time_since_last_modify * f);
-        freshness_limit                   = max(h_freshness, 0);
+        freshness_limit                   = std::max(h_freshness, 0);
         DebugTxn("http_match", "calculate_document_freshness_limit --- heuristic: date=%" PRId64 ", lm=%" PRId64
                                ", time_since_last_modify=%" PRId64 ", f=%g, freshness_limit = %d",
                  (int64_t)date_value, (int64_t)last_modified_value, (int64_t)time_since_last_modify, f, freshness_limit);
@@ -7078,13 +7078,13 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
   }
 
   // The freshness limit must always fall within the min and max guaranteed bounds.
-  min_freshness_bounds = max((MgmtInt)0, s->txn_conf->cache_guaranteed_min_lifetime);
+  min_freshness_bounds = std::max((MgmtInt)0, s->txn_conf->cache_guaranteed_min_lifetime);
   max_freshness_bounds = s->txn_conf->cache_guaranteed_max_lifetime;
 
   // Heuristic freshness can be more strict.
   if (*heuristic) {
-    min_freshness_bounds = max(min_freshness_bounds, s->txn_conf->cache_heuristic_min_lifetime);
-    max_freshness_bounds = min(max_freshness_bounds, s->txn_conf->cache_heuristic_max_lifetime);
+    min_freshness_bounds = std::max(min_freshness_bounds, s->txn_conf->cache_heuristic_min_lifetime);
+    max_freshness_bounds = std::min(max_freshness_bounds, s->txn_conf->cache_heuristic_max_lifetime);
   }
   // Now clip the freshness limit.
   if (freshness_limit > max_freshness_bounds) {
@@ -7171,7 +7171,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   if (current_age < 0) {
     current_age = s->txn_conf->cache_guaranteed_max_lifetime;
   } else {
-    current_age = min((time_t)s->txn_conf->cache_guaranteed_max_lifetime, current_age);
+    current_age = std::min((time_t)s->txn_conf->cache_guaranteed_max_lifetime, current_age);
   }
 
   DebugTxn("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %" PRId64, fresh_limit, (int64_t)current_age);
@@ -7248,7 +7248,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
     // if min-fresh set, constrain the freshness limit //
     /////////////////////////////////////////////////////
     if (cooked_cc_mask & MIME_COOKED_MASK_CC_MIN_FRESH) {
-      age_limit = min(age_limit, fresh_limit - client_request->get_cooked_cc_min_fresh());
+      age_limit = std::min(age_limit, fresh_limit - client_request->get_cooked_cc_min_fresh());
       DebugTxn("http_match", "[..._document_freshness] min_fresh set, age limit: %d", age_limit);
     }
     ///////////////////////////////////////////////////
@@ -7259,7 +7259,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
       if (age_val == 0) {
         do_revalidate = true;
       }
-      age_limit = min(age_limit, age_val);
+      age_limit = std::min(age_limit, age_val);
       DebugTxn("http_match", "[..._document_freshness] min_fresh set, age limit: %d", age_limit);
     }
   }
@@ -8500,7 +8500,7 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   switch (s->state_machine->background_fill) {
   case BACKGROUND_FILL_COMPLETED: {
     int64_t bg_size = origin_server_response_body_size - user_agent_response_body_size;
-    bg_size         = max((int64_t)0, bg_size);
+    bg_size         = std::max((int64_t)0, bg_size);
     HTTP_SUM_DYN_STAT(http_background_fill_bytes_completed_stat, bg_size);
     break;
   }

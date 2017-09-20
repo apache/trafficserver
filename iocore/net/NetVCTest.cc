@@ -308,7 +308,7 @@ NetVCTest::write_handler(int event)
     if (write_vio->ndone < bytes_to_send) {
       int left_to_send = bytes_to_send - actual_bytes_sent;
       ink_assert(left_to_send >= 0);
-      int to_fill = MIN(left_to_send, write_bytes_to_add_per);
+      int to_fill = std::min(left_to_send, write_bytes_to_add_per);
       actual_bytes_sent += fill_buffer(write_buffer, &write_seed, to_fill);
       write_vio->reenable();
     }

@@ -667,7 +667,7 @@ synclient_txn_write_request(TSCont contp)
   while (ntodo > 0) {
     block     = TSIOBufferStart(txn->req_buffer);
     ptr_block = TSIOBufferBlockWriteStart(block, &avail);
-    towrite   = MIN(ntodo, avail);
+    towrite   = std::min(ntodo, avail);
     memcpy(ptr_block, txn->request + ndone, towrite);
     TSIOBufferProduce(txn->req_buffer, towrite);
     ntodo -= towrite;
@@ -962,7 +962,7 @@ synserver_txn_write_response(TSCont contp)
   while (ntodo > 0) {
     block     = TSIOBufferStart(txn->resp_buffer);
     ptr_block = TSIOBufferBlockWriteStart(block, &avail);
-    towrite   = MIN(ntodo, avail);
+    towrite   = std::min(ntodo, avail);
     memcpy(ptr_block, response + ndone, towrite);
     TSIOBufferProduce(txn->resp_buffer, towrite);
     ntodo -= towrite;
