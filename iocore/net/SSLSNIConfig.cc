@@ -192,7 +192,7 @@ SNIConfigParams::Initialize()
   ats_scoped_str fileBuffer;
   char *line;
   char *tok_state = nullptr;
-  sni_filename    = RecConfigReadConfigPath("proxy.config.ssl.SNI.filename");
+  sni_filename    = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.SNI.filename"));
   Debug("ssl", "Loading configuration from %s", sni_filename);
   const matcher_tags sniTags = {SNI_NAME_TAG, nullptr, nullptr, nullptr, nullptr, nullptr, false};
   matcher_line line_info;
