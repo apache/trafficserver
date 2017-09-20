@@ -2430,7 +2430,7 @@ TSUrlPercentEncode(TSMBuffer bufp, TSMLoc obj, char *dst, size_t dst_size, size_
 
 // pton
 TSReturnCode
-TSIpAddrParse(const char *str, size_t str_len, sockaddr *addr)
+TSIpStringToAddr(const char *str, size_t str_len, sockaddr *addr)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
 

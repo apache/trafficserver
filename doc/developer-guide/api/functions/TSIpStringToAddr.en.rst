@@ -18,15 +18,15 @@
 
 .. default-domain:: c
 
-TSIpAddrParse
-*************
+TSIpStringToAddr
+****************
 
 Synopsis
 ========
 
 `#include <ts/experimental.h>`
 
-.. function:: TSReturnCode TSIpAddrParse(const char * str, int str_len, sockaddr* addr)
+.. function:: TSReturnCode TSIpStringToAddr(const char * str, int str_len, sockaddr* addr)
 
 Description
 ===========
