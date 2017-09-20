@@ -32,7 +32,7 @@ autoreconf -if
 
 # Build and run regressions
 ${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
-${ATS_MAKE} check VERBOSE=Y && ${ATS_MAKE} install
+${ATS_MAKE} check VERBOSE=Y V=1 && ${ATS_MAKE} install
 
 ${INSTALL}/bin/traffic_server -K -k -R 1
 [ "0" != "$?" ] && exit -1
