@@ -676,10 +676,10 @@ UDPQueue::service(UDPNetHandler *nh)
       // insert into our queue.
       Debug("udp-send", "Adding %p", p);
       if (p->conn->lastPktStartTime == 0) {
-        pktSendStartTime = MAX(now, p->delivery_time);
+        pktSendStartTime = std::max(now, p->delivery_time);
       } else {
         pktSendTime      = p->delivery_time;
-        pktSendStartTime = MAX(MAX(now, pktSendTime), p->delivery_time);
+        pktSendStartTime = std::max(std::max(now, pktSendTime), p->delivery_time);
       }
       p->conn->lastPktStartTime = pktSendStartTime;
       p->delivery_time          = pktSendStartTime;

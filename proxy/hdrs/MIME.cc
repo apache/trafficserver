@@ -2802,7 +2802,7 @@ mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, in
     }
   }
 
-  copy_l = min(buf_length - *buf_index_inout, src_l);
+  copy_l = std::min(buf_length - *buf_index_inout, src_l);
   if (copy_l > 0) {
     memcpy(buf_start + *buf_index_inout, src_d, copy_l);
     *buf_index_inout += copy_l;
