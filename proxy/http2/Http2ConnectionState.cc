@@ -167,7 +167,7 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   myreader->writer()->dealloc_reader(myreader);
 
   uint32_t initial_rwnd = cstate.server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-  uint32_t min_rwnd     = min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
+  uint32_t min_rwnd     = std::min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
   // Connection level WINDOW UPDATE
   if (cstate.server_rwnd <= min_rwnd) {
     Http2WindowSize diff_size = initial_rwnd - cstate.server_rwnd;
@@ -713,7 +713,7 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
 
     stream->client_rwnd += size;
-    ssize_t wnd = min(cstate.client_rwnd, stream->client_rwnd);
+    ssize_t wnd = std::min(cstate.client_rwnd, stream->client_rwnd);
 
     if (!stream->is_closed() && stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && wnd > 0) {
       stream->send_response_body();
@@ -1067,7 +1067,7 @@ Http2ConnectionState::restart_streams()
       s = next;
     }
     if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
-        min(this->client_rwnd, s->client_rwnd) > 0) {
+        std::min(this->client_rwnd, s->client_rwnd) > 0) {
       s->send_response_body();
     }
 
@@ -1240,9 +1240,9 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
 Http2SendADataFrameResult
 Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_length)
 {
-  const ssize_t window_size         = min(this->client_rwnd, stream->client_rwnd);
+  const ssize_t window_size         = std::min(this->client_rwnd, stream->client_rwnd);
   const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
-  const size_t write_available_size = min(buf_len, static_cast<size_t>(window_size));
+  const size_t write_available_size = std::min(buf_len, static_cast<size_t>(window_size));
   size_t read_available_size        = 0;
 
   uint8_t flags = 0x00;
@@ -1408,8 +1408,8 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   flags = 0;
   while (sent < header_blocks_size) {
     DebugHttp2Stream(ua_session, stream->get_id(), "Send CONTINUATION frame");
-    payload_length = MIN(static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])),
-                         header_blocks_size - sent);
+    payload_length = std::min(static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])),
+                              static_cast<uint32_t>(header_blocks_size - sent));
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
     }
@@ -1490,8 +1490,8 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
   flags = 0;
   while (sent < header_blocks_size) {
     DebugHttp2Stream(ua_session, stream->get_id(), "Send CONTINUATION frame");
-    payload_length = MIN(static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])),
-                         header_blocks_size - sent);
+    payload_length = std::min(static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])),
+                              static_cast<uint32_t>(header_blocks_size - sent));
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
     }

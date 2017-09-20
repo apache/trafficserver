@@ -1304,7 +1304,7 @@ HttpConfig::reconfigure()
 
   params->oride.cache_heuristic_min_lifetime = m_master.oride.cache_heuristic_min_lifetime;
   params->oride.cache_heuristic_max_lifetime = m_master.oride.cache_heuristic_max_lifetime;
-  params->oride.cache_heuristic_lm_factor    = min(max(m_master.oride.cache_heuristic_lm_factor, 0.0f), 1.0f);
+  params->oride.cache_heuristic_lm_factor    = std::min(std::max(m_master.oride.cache_heuristic_lm_factor, 0.0f), 1.0f);
 
   params->oride.cache_guaranteed_min_lifetime = m_master.oride.cache_guaranteed_min_lifetime;
   params->oride.cache_guaranteed_max_lifetime = m_master.oride.cache_guaranteed_max_lifetime;

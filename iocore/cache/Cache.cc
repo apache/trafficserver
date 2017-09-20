@@ -3407,7 +3407,7 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   // Extra data is fragment table - set that if we have it.
   if (n_frags) {
     static size_t const IFT_SIZE = HTTPCacheAlt_v23::N_INTEGRAL_FRAG_OFFSETS * sizeof(FragOffset);
-    size_t ift_actual            = min(n_frags, HTTPCacheAlt_v23::N_INTEGRAL_FRAG_OFFSETS) * sizeof(FragOffset);
+    size_t ift_actual            = std::min(n_frags, HTTPCacheAlt_v23::N_INTEGRAL_FRAG_OFFSETS) * sizeof(FragOffset);
 
     if (length < (HTTP_ALT_MARSHAL_SIZE + n_frags * sizeof(FragOffset) - IFT_SIZE))
       return false; // can't place fragment table.

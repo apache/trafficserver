@@ -1816,6 +1816,8 @@ ClassAllocator<HTTPCacheAlt> httpCacheAltAllocator("httpCacheAltAllocator");
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
+int constexpr HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS;
+
 HTTPCacheAlt::HTTPCacheAlt()
   : m_magic(CACHE_ALT_MAGIC_ALIVE),
     m_writeable(1),

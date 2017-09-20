@@ -233,7 +233,7 @@ ChunkedHandler::transfer_bytes()
 
   // Handle the case where we are doing chunked passthrough.
   if (!dechunked_buffer) {
-    moved = MIN(bytes_left, chunked_reader->read_avail());
+    moved = std::min(bytes_left, chunked_reader->read_avail());
     chunked_reader->consume(moved);
     bytes_left = bytes_left - moved;
     return moved;
@@ -242,7 +242,7 @@ ChunkedHandler::transfer_bytes()
   while (bytes_left > 0) {
     block_read_avail = chunked_reader->block_read_avail();
 
-    to_move = MIN(bytes_left, block_read_avail);
+    to_move = std::min(bytes_left, block_read_avail);
     if (to_move <= 0) {
       break;
     }
@@ -374,7 +374,7 @@ ChunkedHandler::generate_chunked_content()
   }
 
   while ((r_avail = dechunked_reader->read_avail()) > 0 && state != CHUNK_WRITE_DONE) {
-    int64_t write_val = MIN(max_chunk_size, r_avail);
+    int64_t write_val = std::min(max_chunk_size, r_avail);
 
     state = CHUNK_WRITE_CHUNK;
     Debug("http_chunk", "creating a chunk of size %" PRId64 " bytes", write_val);

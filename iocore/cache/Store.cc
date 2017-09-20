@@ -561,7 +561,7 @@ Span::init(const char *path, int64_t size)
 
   // The actual size of a span always trumps the configured size.
   if (size > 0 && this->size() != size) {
-    int64_t newsz = MIN(size, this->size());
+    int64_t newsz = std::min(size, this->size());
 
     Note("cache %s '%s' is %" PRId64 " bytes, but the configured size is %" PRId64 " bytes, using the minimum",
          span_file_typename(sbuf.st_mode), path, this->size(), size);
