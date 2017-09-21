@@ -350,8 +350,8 @@ private:
   bool half_close_local = false;
   int recursion         = 0;
 
-  InkHashTable *h2_pushed_urls;
-  uint32_t h2_pushed_urls_size;
+  InkHashTable *h2_pushed_urls = nullptr;
+  uint32_t h2_pushed_urls_size = 0;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
