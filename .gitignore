@@ -92,6 +92,7 @@ iocore/net/test_UDPNet
 iocore/aio/test_AIO
 iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event
+iocore/eventsystem/test_MIOBufferWriter
 iocore/hostdb/test_RefCountCache
 
 proxy/config/records.config.default
