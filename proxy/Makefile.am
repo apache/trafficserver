@@ -230,6 +230,7 @@ traffic_server_LDADD += \
   @LIBLZMA@ \
   @LIBPROFILER@ \
   @OPENSSL_LIBS@ \
+  @LIBTBB@ \
   -lm
 
 if BUILD_LUAJIT
