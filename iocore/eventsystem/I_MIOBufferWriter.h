@@ -24,10 +24,8 @@
     limitations under the License.
  */
 
-// TEMP #include <utility>
 #include <cstring>
 
-#include <ts/string_view.h>
 #include <ts/ink_assert.h>
 #include <ts/BufferWriter.h>
 
