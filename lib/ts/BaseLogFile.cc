@@ -120,6 +120,8 @@ BaseLogFile::roll(long interval_start, long interval_end)
     m_meta_info = new BaseMetaInfo(m_name.get());
   }
 
+  close_file();
+
   // Create the new file name, which consists of a timestamp and rolled
   // extension added to the previous file name.  The timestamp format is
   // ".%Y%m%d.%Hh%Mm%Ss-%Y%m%d.%Hh%Mm%Ss", where the two date/time values
