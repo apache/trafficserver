@@ -21,13 +21,6 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_memory.h"
-
-// compile this regardless of global use
-#ifndef HAVE_LIBJEMALLOC
-#define HAVE_LIBJEMALLOC   1
-#endif 
 #include "ts/jemallctl.h"
 
 #include "ts/ink_platform.h"
@@ -126,6 +119,32 @@ SetObjFxn<bool, 1>::operator()(void) const
   ink_assert(!r);
   return r;
 }
+
+#if !HAVE_LIBJEMALLOC
+objpath_t
+objpath(const std::string &path)
+{
+  return objpath_t();
+}
+auto
+mallctl_void(const objpath_t &oid) -> int
+{
+  return -1;
+}
+template <typename T_VALUE>
+auto
+mallctl_set(const objpath_t &oid, const T_VALUE &v) -> int
+{
+  return -1;
+}
+template <typename T_VALUE>
+auto
+mallctl_get(const objpath_t &oid) -> T_VALUE
+{
+  return std::move(T_VALUE{});
+}
+
+#else
 
 objpath_t
 objpath(const std::string &path)
@@ -238,40 +257,7 @@ mallctl_set<chunk_hooks_t>(const objpath_t &baseOid, const chunk_hooks_t &hooks)
   ink_assert(!r);
   return 0;
 }
-
-namespace
-{
-  chunk_alloc_t *s_origAllocHook = nullptr; // safe pre-main
-}
-
-int
-create_global_nodump_arena()
-{
-  auto origArena = jemallctl::thread_arena();
-
-  // fork from base nodes set (id#0)
-  auto newArena = jemallctl::do_arenas_extend();
-
-  jemallctl::set_thread_arena(newArena);
-
-  chunk_hooks_t origHooks = jemallctl::thread_arena_hooks();
-  s_origAllocHook         = origHooks.alloc;
-
-  origHooks.alloc = [](void *old, size_t len, size_t aligned, bool *zero, bool *commit, unsigned arena) {
-    void *r = (*s_origAllocHook)(old, len, aligned, zero, commit, arena);
-
-    if (r) {
-      madvise(r, aligned_size(len, aligned), MADV_DONTDUMP);
-    }
-
-    return r;
-  };
-
-  jemallctl::set_thread_arena_hooks(origHooks);
-
-  jemallctl::set_thread_arena(origArena); // default again
-  return newArena;
-}
+#endif
 
 template struct GetObjFxn<uint64_t>;
 template struct GetObjFxn<uint64_t *>;

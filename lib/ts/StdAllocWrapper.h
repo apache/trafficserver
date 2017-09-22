@@ -38,8 +38,6 @@
 
 #pragma once
 
-#include "ts/jemallctl.h"
-
 #include "ts/ink_queue.h"
 #include "ts/ink_defs.h"
 #include "ts/ink_resource.h"
@@ -98,22 +96,44 @@ protected:
   }
 };
 
-template <typename T_OBJECT> class ObjAllocator : public std::allocator<T_OBJECT>
+class ObjAllocatorBase
 {
 public:
-  using typename std::allocator<T_OBJECT>::value_type;
-
-  ObjAllocator(const char *name, unsigned chunk_size = 128) : _name(name)
+  ObjAllocatorBase(const char *name, unsigned size, unsigned aligned, unsigned chunk_size = 128) : _name(name)
   {
-    value_type *preCached[chunk_size];
+    void *preCached[chunk_size];
 
     for (int n = chunk_size; n--;) {
       // create correct size and alignment
-      preCached[n] = static_cast<value_type *>(mallocx(sizeof(value_type), MALLOCX_ALIGN(alignof(value_type))));
+      preCached[n] = mallocx(size, MALLOCX_ALIGN(aligned));
     }
     for (int n = chunk_size; n--;) {
-      deallocate(preCached[n]);
+      deallocate(preCached[n], size);
     }
+  }
+
+protected:
+  void
+  deallocate(void *p, unsigned size)
+  {
+    sdallocx(p, size, 0);
+  }
+
+private:
+  const char *_name;
+};
+
+//
+// type-specialized wrapper
+//
+template <typename T_OBJECT> class ObjAllocator : public ObjAllocatorBase
+{
+public:
+  using value_type = T_OBJECT;
+
+  ObjAllocator(const char *name, unsigned chunk_size = 128)
+    : ObjAllocatorBase(name, sizeof(value_type), alignof(value_type), chunk_size)
+  {
   }
 
   void *
@@ -125,7 +145,7 @@ public:
   free_void(void *ptr)
   {
     static_cast<value_type *>(ptr)->~value_type();
-    deallocate(ptr);
+    ObjAllocatorBase::deallocate(ptr, sizeof(value_type));
   }
   value_type *
   alloc()
@@ -135,8 +155,8 @@ public:
   void
   free(value_type *ptr)
   {
-    ptr->~value_type();
-    deallocate(ptr);
+    ptr->~value_type(); // dtor called
+    ObjAllocatorBase::deallocate(ptr, sizeof(value_type));
   }
 
 protected:
@@ -144,16 +164,13 @@ protected:
   allocate()
   {
     auto p = static_cast<value_type *>(mallocx(sizeof(value_type), MALLOCX_ALIGN(alignof(value_type)) | MALLOCX_ZERO));
-    this->construct(p); // default constructor + pre-zeroed
+    std::allocator<T_OBJECT>().construct(p); // ctor called
     return p;
   }
 
   void
   deallocate(value_type *p)
   {
-    sdallocx(p, sizeof(value_type), 0);
+    ObjAllocatorBase::deallocate(p, sizeof(value_type));
   }
-
-private:
-  const char *_name;
 };

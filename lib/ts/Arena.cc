@@ -23,10 +23,6 @@
 
 #include "ts/ink_platform.h"
 #include "ts/ink_memory.h"
-
-// need standard Allocator for this
-#undef HAVE_LIBJEMALLOC
-
 #include "ts/Allocator.h"
 #include "ts/Arena.h"
 

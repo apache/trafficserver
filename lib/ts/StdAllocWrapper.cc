@@ -37,9 +37,10 @@ AlignedAllocator::re_init(const char *name, unsigned int element_size, unsigned 
   _sz   = aligned_spacing(element_size, std::max(sizeof(uint64_t), alignment + 0UL)); // increase to aligned size
 
   if (advice == MADV_DONTDUMP) {
-    _arena = jemallctl::proc_arena_nodump;
+    static int arena_nodump = numa::create_global_nodump_arena();
+    _arena                  = arena_nodump;
   } else if (advice == MADV_NORMAL) {
-    _arena = jemallctl::proc_arena;
+    _arena = 0; // default arena
   } else {
     ink_abort("allocator re_init: unknown madvise() flags: %x", advice);
   }
