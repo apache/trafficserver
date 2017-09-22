@@ -64,6 +64,11 @@ public:
   QUICError recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame);
   QUICError recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame);
 
+  bool is_valid_fin_offset(QUICOffset fin_offset) const;
+
+  bool is_local_closed() const;
+  bool is_remote_closed() const;
+
   void reset();
   void shutdown();
 
@@ -74,13 +79,16 @@ public:
 
   LINK(QUICStream, link);
 
+  QUICErrorCode get_error_code() const;
+
 private:
   QUICStreamState _state;
 
   QUICError _send();
 
+  QUICError _reorder_data();
+  QUICError _check_and_set_fin_offset(QUICOffset offset, bool set_fin_offset = false);
   void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
-  void _reorder_data();
   // NOTE: Those are called update_read_request/update_write_request in Http2Stream
   // void _read_from_net(uint64_t read_len, bool direct);
   // void _write_to_net(IOBufferReader *buf_reader, int64_t write_len, bool direct);
@@ -94,6 +102,9 @@ private:
   QUICStreamId _id        = 0;
   QUICOffset _recv_offset = 0;
   QUICOffset _send_offset = 0;
+  QUICOffset _fin_offset  = UINT64_MAX;
+
+  QUICErrorCode _rst_error_code = QUICErrorCode::APPLICATION_SPECIFIC_ERROR;
 
   QUICRemoteStreamFlowController *_remote_flow_controller;
   QUICLocalStreamFlowController *_local_flow_controller;

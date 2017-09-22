@@ -165,3 +165,85 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   sleep(2);
   CHECK(sm.total_offset_sent() == 1);
 }
+
+TEST_CASE("QUICStreamManager_stream_last_offset", "[quic]")
+{
+  MockQUICFrameTransmitter tx;
+  QUICApplicationMap app_map;
+  QUICError err;
+  MockQUICApplication mock_app;
+  app_map.set_default(&mock_app);
+  QUICStreamManager sm(&tx, &app_map);
+  std::shared_ptr<QUICTransportParameters> local_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
+  local_tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
+                std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(4096, 4)));
+  std::shared_ptr<QUICTransportParameters> remote_tp =
+    std::make_shared<QUICTransportParametersInClientHello>(static_cast<QUICVersion>(0), static_cast<QUICVersion>(0));
+
+  sm.init_flow_control_params(local_tp, remote_tp);
+  char data[1024] = {0};
+
+  // Create a stream with STREAM_BLOCKED (== noop)
+  std::shared_ptr<QUICFrame> stream1_frame_0_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 1, 0);
+  std::shared_ptr<QUICFrame> stream1_frame_1_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 1, 1024);
+  std::shared_ptr<QUICFrame> stream1_frame_2_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 1, 2048, true);
+  std::shared_ptr<QUICFrame> stream1_frame_3_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 1, 3072, true);
+  sm.handle_frame(stream1_frame_0_r);
+  sm.handle_frame(stream1_frame_1_r);
+  sm.handle_frame(stream1_frame_2_r);
+
+  err = sm.handle_frame(stream1_frame_3_r);
+  CHECK(err.code == QUICErrorCode::FINAL_OFFSET_ERROR);
+
+  // dup last stream
+  std::shared_ptr<QUICFrame> stream2_frame_0_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 2, 0);
+  std::shared_ptr<QUICFrame> stream2_frame_1_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 2, 1024);
+  std::shared_ptr<QUICFrame> stream2_frame_2_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 2, 2048, true);
+  std::shared_ptr<QUICFrame> stream2_frame_3_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 2, 2048, true);
+  sm.handle_frame(stream2_frame_0_r);
+  sm.handle_frame(stream2_frame_1_r);
+  sm.handle_frame(stream2_frame_2_r);
+
+  err = sm.handle_frame(stream2_frame_3_r);
+  CHECK(err.cls == QUICErrorClass::NONE);
+
+  // received stream after fin stream
+  std::shared_ptr<QUICFrame> stream3_frame_0_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 3, 0);
+  std::shared_ptr<QUICFrame> stream3_frame_1_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 3, 1024);
+  std::shared_ptr<QUICFrame> stream3_frame_2_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 3, 2048, true);
+  std::shared_ptr<QUICFrame> stream3_frame_3_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 3, 3072);
+  sm.handle_frame(stream3_frame_0_r);
+  sm.handle_frame(stream3_frame_1_r);
+  sm.handle_frame(stream3_frame_2_r);
+
+  err = sm.handle_frame(stream3_frame_3_r);
+  CHECK(err.code == QUICErrorCode::FINAL_OFFSET_ERROR);
+
+  // Disorder fin frame
+  std::shared_ptr<QUICFrame> stream4_frame_0_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 4, 0);
+  std::shared_ptr<QUICFrame> stream4_frame_1_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 4, 1024);
+  std::shared_ptr<QUICFrame> stream4_frame_2_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 4, 2048);
+  std::shared_ptr<QUICFrame> stream4_frame_3_r =
+    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(data), 1024, 4, 3072, true);
+  sm.handle_frame(stream4_frame_3_r);
+  sm.handle_frame(stream4_frame_0_r);
+  sm.handle_frame(stream4_frame_1_r);
+
+  err = sm.handle_frame(stream4_frame_2_r);
+  CHECK(err.cls == QUICErrorClass::NONE);
+}
