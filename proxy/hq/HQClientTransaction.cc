@@ -243,7 +243,7 @@ HQClientTransaction::_write_response()
 {
   IOBufferReader *reader = this->_write_vio.get_reader();
 
-  if (memcmp(reader->start(), http_1_1_version, sizeof(http_1_1_version)) == 0) {
+  if (memcmp(reader->start(), http_1_1_version, sizeof(http_1_1_version) - 1) == 0) {
     // Skip HTTP/1.1 response headers
     IOBufferBlock *headers = reader->get_current_block();
     int64_t headers_size   = headers->read_avail();
