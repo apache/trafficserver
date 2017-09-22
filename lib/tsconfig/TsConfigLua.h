@@ -29,6 +29,7 @@ class TsConfigDescriptor {
 };
 
 class TsConfigBase {
+public:
    TsConfigBase(TsConfigDescriptor const& d) : descriptor(d) {}
    TsConfigDescriptor const& descriptor;
 
@@ -44,19 +45,32 @@ class TsConfigInt : public TsConfigBase {
 
 template < typename T >
 class TsConfigString : public TsConfigBase {
+public:
    TsConfigString(TsConfigDescriptor const& d, std::string& str) : TsConfigBase(d), ref(str) {}
     std::string& ref;
+    TsConfigString& operator= (const TsConfigString& other)
+    {
+        ref = other.ref;
+        return *this;
+    }
    ts::Errata loader(lua_State* s) override;
 };
 
 template < typename T, typename E >
 class TsConfigEnum : public TsConfigBase {
-   TsConfigEnum(TsConfigDescriptor const& d, typename T::E& i) : TsConfigBase(d), ref(i) {}
-   typename T::E & ref;
+public:
+   TsConfigEnum(TsConfigDescriptor const& d, E& i) : TsConfigBase(d), ref(i) {}
+   E& ref;
+   TsConfigEnum& operator= (const TsConfigEnum& other)
+    {
+        ref = other.ref;
+        return *this;
+    }
    ts::Errata loader(lua_State* s) override;
 };
 
 class TsConfigArrayDescriptor : public TsConfigDescriptor {
+public:
    TsConfigArrayDescriptor(TsConfigDescriptor const& d) : item(d) {}
    TsConfigDescriptor const& item;
 };
