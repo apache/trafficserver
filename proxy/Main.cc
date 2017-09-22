@@ -37,7 +37,7 @@
 #include "ts/ink_stack_trace.h"
 #include "ts/ink_syslog.h"
 #include "ts/hugepages.h"
-#include "ts/runroot.cc"
+#include "ts/runroot.h"
 
 #include "api/ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 

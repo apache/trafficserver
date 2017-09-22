@@ -30,7 +30,7 @@
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
 #include "ts/BaseLogFile.h"
-#include "ts/runroot.cc"
+#include "ts/runroot.h"
 
 static int syslog_mode    = false;
 static int debug_mode     = false;
