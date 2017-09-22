@@ -37,7 +37,8 @@ noinst_LIBRARIES = libhq.a
 libhq_a_SOURCES = \
   HQ.cc \
   HQSessionAccept.cc \
-  HQSessionAccept.h
+  HQClientSession.cc \
+  HQClientTransaction.cc
 
 tidy-local: $(libhq_a_SOURCES) \
 	$(CXX_Clang_Tidy)

@@ -32,6 +32,7 @@
 #include "QUICStreamState.h"
 #include "QUICFlowController.h"
 
+class QUICNetVConnection;
 class QUICFrameTransmitter;
 class QUICStreamState;
 class QUICStreamManager;

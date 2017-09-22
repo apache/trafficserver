@@ -42,8 +42,10 @@ public:
   int64_t read_avail();
   int64_t read(uint8_t *buf, int64_t len);
   int64_t write(const uint8_t *buf, int64_t len);
+  int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
   void read_reenable();
   void write_reenable();
+  IOBufferReader *get_read_buffer_reader();
 
 private:
   MIOBuffer *_read_buffer  = nullptr;

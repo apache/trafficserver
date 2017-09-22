@@ -26,9 +26,10 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/proxy/hdrs \
   -I$(abs_top_srcdir)/proxy/shared \
   -I$(abs_top_srcdir)/proxy/logging \
+  -I$(abs_top_srcdir)/proxy/http \
+  -I$(abs_top_srcdir)/proxy/hq \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/proxy/http \
   @OPENSSL_INCLUDES@
 
 noinst_LIBRARIES = libquic.a
@@ -61,7 +62,8 @@ libquic_a_SOURCES = \
   QUICDebugNames.cc \
   QUICApplication.cc \
   QUICApplicationMap.cc \
-  QUICEchoApp.cc
+  QUICEchoApp.cc \
+  QUICSimpleApp.cc
 
 include $(top_srcdir)/build/tidy.mk
 

@@ -36,6 +36,7 @@
 #include "P_SSLNextProtocolSet.h"
 
 #include "QUICEchoApp.h"
+#include "QUICSimpleApp.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
 #include "QUICConfig.h"
@@ -76,13 +77,15 @@ QUICNetVConnection::init(UDPConnection *udp_con, QUICPacketHandler *packet_handl
 VIO *
 QUICNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  return super::do_io_read(c, nbytes, buf);
+  ink_assert(false);
+  return nullptr;
 }
 
 VIO *
 QUICNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
-  return super::do_io_write(c, nbytes, buf, owner);
+  ink_assert(false);
+  return nullptr;
 }
 
 int
@@ -796,7 +799,7 @@ QUICNetVConnection::_create_application()
   if (app_name) {
     DebugQUICCon("ALPN: %.*s", app_name_len, app_name);
     if (memcmp(TS_ALPN_PROTOCOL_HTTP_QUIC, app_name, app_name_len) == 0) {
-      return new QUICEchoApp(this);
+      return new QUICSimpleApp(this, this);
     } else {
       DebugQUICCon("Negotiated application is not available");
       ink_assert(false);

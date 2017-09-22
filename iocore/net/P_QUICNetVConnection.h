@@ -147,9 +147,11 @@ public:
 
   void init(UDPConnection *, QUICPacketHandler *);
 
+  // UnixNetVConnection
   void reenable(VIO *vio) override;
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
+
   int startEvent(int event, Event *e);
   int state_pre_handshake(int event, Event *data);
   int state_handshake(int event, Event *data);

@@ -281,8 +281,8 @@ public:
   ink_hrtime get_inactivity_timeout() override;
   ink_hrtime get_active_timeout() override;
 
-  void set_local_addr() override;
-  void set_remote_addr() override;
+  virtual void set_local_addr() override;
+  virtual void set_remote_addr() override;
   int set_tcp_init_cwnd(int init_cwnd) override;
   int set_tcp_congestion_control(int side) override;
   void apply_options() override;
