@@ -29,7 +29,7 @@
 #include "ts/HashFNV.h"
 #include "ts/ink_args.h"
 #include "ts/MatcherUtils.h"
-#include "ts/runroot.cc"
+#include "ts/runroot.h"
 
 // Includes and namespaces etc.
 #include "LogStandalone.cc"

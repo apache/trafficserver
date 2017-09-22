@@ -178,6 +178,8 @@ libtsutil_la_SOURCES = \
   Regression.cc \
   Regression.h \
   Result.h \
+  runroot.cc \
+  runroot.h \
   signals.cc \
   signals.h \
   SimpleTokenizer.h \

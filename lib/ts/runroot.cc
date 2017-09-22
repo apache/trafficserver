@@ -38,19 +38,17 @@ datadir, libexecdir, libdir, runtimedir, infodir, cachedir.
 */
 
 #include "ts/ink_error.h"
+#include "runroot.h"
 
 #include <vector>
-#include <string>
 #include <fstream>
 #include <set>
 #include <unistd.h>
 
-#define MAX_CWD_LEN 1024
-
 // the function for the checking of the yaml file in parent path
 // if found return the parent path containing the yaml file
-static std::string
-check_parent_path(const std::string &path, bool json = false)
+std::string
+check_parent_path(const std::string &path, bool json)
 {
   std::string whole_path = path;
   if (whole_path.back() == '/')
@@ -81,7 +79,7 @@ is_directory(const char *directory)
 
 // handler for ts runroot
 void
-runroot_handler(const char **argv, bool json = false)
+runroot_handler(const char **argv, bool json)
 {
   std::string command = {};
   std::string arg     = {};
