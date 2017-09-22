@@ -171,6 +171,8 @@ void SSLNetVCDetach(SSL *ssl);
 // Return the SSLNetVConnection (if any) attached to this SSL session.
 SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
 
+void setClientCertLevel(SSL *ssl, uint8_t certLevel);
+
 namespace ssl
 {
 namespace detail
@@ -214,6 +216,25 @@ namespace detail
   };
 /* namespace ssl */ } /* namespace detail */
 }
+
+struct ats_wildcard_matcher {
+  ats_wildcard_matcher()
+  {
+    if (regex.compile("^\\*\\.[^\\*.]+") != 0) {
+      Fatal("failed to compile TLS wildcard matching regex");
+    }
+  }
+
+  ~ats_wildcard_matcher() {}
+  bool
+  match(const char *hostname) const
+  {
+    return regex.match(hostname) != -1;
+  }
+
+private:
+  DFA regex;
+};
 
 typedef ats_scoped_resource<ssl::detail::SCOPED_X509_TRAITS> scoped_X509;
 typedef ats_scoped_resource<ssl::detail::SCOPED_BIO_TRAITS> scoped_BIO;

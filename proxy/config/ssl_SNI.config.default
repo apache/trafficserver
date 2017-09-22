@@ -1,0 +1,21 @@
+#
+# ssl_SNI.default
+#This configuration file
+#    - sets the SSL actions to be performed based on the servername provided during SSL handhshake phase (SNI extension)
+#    - sets the SSL properties required to make SSL connection with the next hop or origin server.
+#
+#
+# Format : dest_host=server_name action=Action param=Parameter
+# Actions available:
+#   TS_DISABLE_H2 - removes H2 from the protocol list advertised by ATS; parameter required = None
+#   TS_VERIFY_CLIENT - sets the verification flag for verifying the client certificate; parameters = Integer [0-2]
+#   TS_VERIFY_SERVER - sets the verification flag for verifying the server certificate; parameters = Integer [0-2]
+#   TS_CLIENT_CERT - sets the client certificate to present to the server specified in dest_host; parameters = certificate file .
+#                     The location of the certificate file is relative to proxy.config.ssl.server.cert.path directory.
+#      
+# Example:
+# -----------------------------------
+#dest_host=abc.xyz.yahoo.com action=TS_DISABLE_H2 param=NULL
+#dest_host=abc.xyz.yahoo.com action=TS_VERIFY_CLIENT param=2
+#dest_host=abc.xyz.yahoo.com action=TS_VERIFY_SERVER param=1
+#dest_host=abc.xyz.yahoo.com action=TS_CLIENT_CERT param=/path/to/somecert.pem

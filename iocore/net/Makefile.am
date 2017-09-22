@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
+  $(LUAJIT_CPPFLAGS) \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/lib/records \
@@ -74,6 +75,7 @@ test_UDPNet_SOURCES = \
   test_I_UDPNet.cc
 
 libinknet_a_SOURCES = \
+  SNIActionPerformer.cc \
   BIO_fastopen.cc \
   BIO_fastopen.h \
   Connection.cc \
@@ -87,8 +89,10 @@ libinknet_a_SOURCES = \
   Inline.cc \
   I_SessionAccept.h \
   SessionAccept.cc \
+  LuaSNIConfig.h \
   Net.cc \
   NetVConnection.cc \
+  P_SNIActionPerformer.h \
   P_CompletionUtil.h \
   P_Connection.h \
   P_InkBulkIO.h \
@@ -104,6 +108,7 @@ libinknet_a_SOURCES = \
   P_SSLNetVConnection.h \
   P_SSLNextProtocolAccept.h \
   P_SSLNextProtocolSet.h \
+  P_SSLSNI.h \
   P_SSLUtils.h \
   P_SSLClientUtils.h \
   P_OCSPStapling.h \
@@ -129,6 +134,7 @@ libinknet_a_SOURCES = \
   SSLNetVConnection.cc \
   SSLNextProtocolAccept.cc \
   SSLNextProtocolSet.cc \
+  SSLSNIConfig.cc \
   SSLUtils.cc \
   SSLClientUtils.cc \
   OCSPStapling.cc \
