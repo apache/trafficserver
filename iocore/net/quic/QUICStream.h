@@ -65,6 +65,7 @@ public:
   QUICError recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame);
 
   void reset();
+  void set_fin();
 
   size_t nbytes_to_read();
 
@@ -89,6 +90,7 @@ private:
 
   Event *_send_tracked_event(Event *event, int send_event, VIO *vio);
 
+  bool _fin;
   QUICStreamId _id        = 0;
   QUICOffset _recv_offset = 0;
   QUICOffset _send_offset = 0;

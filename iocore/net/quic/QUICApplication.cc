@@ -31,7 +31,7 @@ static constexpr char tag[] = "quic_app";
 //
 // QUICStreamIO
 //
-QUICStreamIO::QUICStreamIO(QUICApplication *app, QUICStream *stream)
+QUICStreamIO::QUICStreamIO(QUICApplication *app, QUICStream *stream) : _stream(stream)
 {
   this->_read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
   this->_write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
@@ -95,6 +95,12 @@ IOBufferReader *
 QUICStreamIO::get_read_buffer_reader()
 {
   return this->_read_buffer_reader;
+}
+
+void
+QUICStreamIO::set_fin()
+{
+  return this->_stream->set_fin();
 }
 
 //

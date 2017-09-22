@@ -351,12 +351,16 @@ QUICStream::_send()
 
   while (total_len < bytes_avail) {
     int64_t data_len = reader->block_read_avail();
-    size_t len       = 0;
+    int64_t len      = 0;
+    bool fin         = false;
 
     if (data_len > max_size) {
       len = max_size;
     } else {
       len = data_len;
+      if (total_len + len >= bytes_avail) {
+        fin = this->_fin;
+      }
     }
 
     QUICError error = this->_remote_flow_controller->update(this->_send_offset + len);
@@ -367,8 +371,8 @@ QUICStream::_send()
       break;
     }
 
-    std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame =
-      QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id, this->_send_offset);
+    std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame = QUICFrameFactory::create_stream_frame(
+      reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id, this->_send_offset, fin);
 
     this->_send_offset += len;
     reader->consume(len);
@@ -390,6 +394,12 @@ void
 QUICStream::reset()
 {
   // TODO: Create a RST_STREAM frame and pass it to Stream Manager
+}
+
+void
+QUICStream::set_fin()
+{
+  this->_fin = true;
 }
 
 size_t

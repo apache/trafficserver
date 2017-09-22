@@ -46,8 +46,11 @@ public:
   void read_reenable();
   void write_reenable();
   IOBufferReader *get_read_buffer_reader();
+  void set_fin();
 
 private:
+  QUICStream *_stream = nullptr;
+
   MIOBuffer *_read_buffer  = nullptr;
   MIOBuffer *_write_buffer = nullptr;
 

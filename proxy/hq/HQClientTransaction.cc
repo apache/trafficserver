@@ -248,6 +248,7 @@ HQClientTransaction::_write_response()
     IOBufferBlock *headers = reader->get_current_block();
     int64_t headers_size   = headers->read_avail();
     reader->consume(headers_size);
+    this->_write_vio.ndone += headers_size;
   }
 
   // Write HTTP/1.1 response body
@@ -260,12 +261,17 @@ HQClientTransaction::_write_response()
     total_written += bytes_written;
   }
 
+  // NOTE: When Chunked Transfer Coding is supported, check ChunkedState of ChunkedHandler
+  // is CHUNK_READ_DONE and set FIN flag
+  if (this->_write_vio.ntodo() == 0) {
+    this->_stream_io->set_fin();
+  }
   this->_stream_io->write_reenable();
 }
 
 void
 HQClientTransaction::transaction_done()
 {
-  // TODO: set FIN flag
+  // TODO: start closing transaction
   return;
 }
