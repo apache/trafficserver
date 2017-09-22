@@ -397,7 +397,7 @@ QUICStream::reset()
 }
 
 void
-QUICStream::set_fin()
+QUICStream::shutdown()
 {
   this->_fin = true;
 }

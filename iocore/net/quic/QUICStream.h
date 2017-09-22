@@ -65,7 +65,7 @@ public:
   QUICError recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame);
 
   void reset();
-  void set_fin();
+  void shutdown();
 
   size_t nbytes_to_read();
 

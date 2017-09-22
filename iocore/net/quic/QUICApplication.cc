@@ -98,9 +98,9 @@ QUICStreamIO::get_read_buffer_reader()
 }
 
 void
-QUICStreamIO::set_fin()
+QUICStreamIO::shutdown()
 {
-  return this->_stream->set_fin();
+  return this->_stream->shutdown();
 }
 
 //

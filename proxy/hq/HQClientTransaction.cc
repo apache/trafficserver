@@ -264,7 +264,7 @@ HQClientTransaction::_write_response()
   // NOTE: When Chunked Transfer Coding is supported, check ChunkedState of ChunkedHandler
   // is CHUNK_READ_DONE and set FIN flag
   if (this->_write_vio.ntodo() == 0) {
-    this->_stream_io->set_fin();
+    this->_stream_io->shutdown();
   }
   this->_stream_io->write_reenable();
 }
