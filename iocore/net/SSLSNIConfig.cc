@@ -34,6 +34,8 @@
 #include "ts/SimpleTokenizer.h"
 #include "P_SSLConfig.h"
 #include "ts/ink_memory.h"
+#include "LuaSNIConfig.h"
+
 #define SNI_NAME_TAG "dest_host"
 #define SNI_ACTION_TAG "action"
 #define SNI_PARAM_TAG "param"

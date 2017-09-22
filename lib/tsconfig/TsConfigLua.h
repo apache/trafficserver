@@ -18,6 +18,7 @@
 
 #include "Errata.h"
 #include "lua.h"
+#include <unordered_map>
 
 class TsConfigDescriptor {
    enum class Type { ARRAY, OBJECT, INT, FLOAT, STRING, ENUM };
@@ -28,7 +29,6 @@ class TsConfigDescriptor {
 };
 
 class TsConfigBase {
-    TsConfigBase() {}
    TsConfigBase(TsConfigDescriptor const& d) : descriptor(d) {}
    TsConfigDescriptor const& descriptor;
 
@@ -37,17 +37,38 @@ class TsConfigBase {
 
 template < typename T >
 class TsConfigInt : public TsConfigBase {
-   TsConfigInt(TsConfigDescriptor const& d, (T::int)& i) : TsConfigBase(d), ref(i) {}
-   T::int & ref;
+   TsConfigInt(TsConfigDescriptor const& d, int& i) : TsConfigBase(d), ref(i) {}
+   int & ref;
    ts::Errata loader(lua_State* s) override;
-}
+};
+
+template < typename T >
+class TsConfigString : public TsConfigBase {
+   TsConfigString(TsConfigDescriptor const& d, std::string& str) : TsConfigBase(d), ref(str) {}
+    std::string& ref;
+   ts::Errata loader(lua_State* s) override;
+};
 
 template < typename T, typename E >
 class TsConfigEnum : public TsConfigBase {
-   TsConfigInt(TsConfigDescriptor const& d, (T::E)& i) : TsConfigBase(d), ref(i) {}
-   T::E & ref;
+   TsConfigEnum(TsConfigDescriptor const& d, typename T::E& i) : TsConfigBase(d), ref(i) {}
+   typename T::E & ref;
    ts::Errata loader(lua_State* s) override;
-}
+};
+
+class TsConfigArrayDescriptor : public TsConfigDescriptor {
+   TsConfigArrayDescriptor(TsConfigDescriptor const& d) : item(d) {}
+   TsConfigDescriptor const& item;
+};
+
+class TsConfigEnumDescriptor : public TsConfigDescriptor {
+   std::unordered_map<std::string, int> values;
+   std::unordered_map<int, std::string> keys;
+};
+
+class TsConfigObjectDescriptor : public TsConfigDescriptor {
+   std::unordered_map<std::string, TsConfigDescriptor const*> fields;
+};
 
 #endif /* TSCONFIGLUA_H */
 
