@@ -26,6 +26,7 @@
 
 #include <ts/ink_platform.h>
 #include <ts/BufferWriter.h>
+#include <ts/string_view.h>
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
@@ -37,7 +38,6 @@
 #include "I_Machine.h"
 
 #include <array>
-#include <ts/MemView.h>
 
 bool
 HttpTransactHeaders::is_method_cacheable(const HttpConfigParams *http_config_param, const int method)

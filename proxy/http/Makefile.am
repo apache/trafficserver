@@ -92,7 +92,7 @@ test_ForwardedConfig_SOURCES = \
   unit-tests/test_ForwardedConfig.cc \
   ForwardedConfig.cc \
   unit-tests/test_ForwardedConfig_mocks.cc \
-  unit-tests/sym-links/MemView.cc
+  ../../lib/ts/TextView.cc
 
 tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
 	$(CXX_Clang_Tidy)

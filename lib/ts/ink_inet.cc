@@ -27,9 +27,8 @@
 #include "ts/ParseRules.h"
 #include "ts/ink_code.h"
 #include "ts/ink_assert.h"
-#include "ts/TestBox.h"
 #include <fstream>
-#include <ts/MemView.h>
+#include <ts/TextView.h>
 
 IpAddr const IpAddr::INVALID;
 
@@ -156,25 +155,28 @@ ats_ip_nptop(sockaddr const *addr, char *dst, size_t size)
 int
 ats_ip_parse(ts::string_view str, ts::string_view *addr, ts::string_view *port, ts::string_view *rest)
 {
-  // In case the incoming arguments are null.
-  ts::string_view localAddr, localPort;
-  ts::StringView src(str);
+  ts::TextView src(str); /// Easier to work with for parsing.
+  // In case the incoming arguments are null, set them here and only check for null once.
+  // it doesn't matter if it's all the same, the results will be thrown away.
+  ts::string_view local;
   if (!addr) {
-    addr = &localAddr;
+    addr = &local;
   }
   if (!port) {
-    port = &localPort;
+    port = &local;
   }
+  if (!rest) {
+    rest = &local;
+  }
+
   ink_zero(*addr);
   ink_zero(*port);
-  if (rest) {
-    ink_zero(*rest);
-  }
+  ink_zero(*rest);
 
   // Let's see if we can find out what's in the address string.
   if (src) {
     bool colon_p = false;
-    src.ltrim(&ParseRules::is_ws);
+    src.ltrim_if(&ParseRules::is_ws);
     // Check for brackets.
     if ('[' == *src) {
       /* Ugly. In a number of places we must use bracket notation
@@ -192,15 +194,16 @@ ats_ip_parse(ts::string_view str, ts::string_view *addr, ts::string_view *port, 
          So we can't depend on that sizing.
       */
       ++src; // skip bracket.
-      *addr = src.extractPrefix(']');
+      *addr = src.take_prefix_at(']');
       if (':' == *src) {
         colon_p = true;
         ++src;
       }
     } else {
-      ts::StringView post = src.suffix(':');
-      if (post.ptr() && !post.find(':')) {
-        *addr   = src.extractPrefix(post.ptr() - 1);
+      ts::TextView::size_type last = src.rfind(':');
+      if (last != ts::TextView::npos && last == src.find(':')) {
+        // Exactly one colon - leave post colon stuff in @a src.
+        *addr   = src.take_prefix_at(last);
         colon_p = true;
       } else { // presume no port, use everything.
         *addr = src;
@@ -208,18 +211,16 @@ ats_ip_parse(ts::string_view str, ts::string_view *addr, ts::string_view *port, 
       }
     }
     if (colon_p) {
-      ts::StringView tmp(src);
-      src.ltrim(&ParseRules::is_digit);
+      ts::TextView tmp{src};
+      src.ltrim_if(&ParseRules::is_digit);
 
-      if (tmp.ptr() == src.ptr()) {                 // no digits at all
-        src.setView(tmp.ptr() - 1, tmp.size() + 1); // back up to include colon
+      if (tmp.data() == src.data()) {                 // no digits at all
+        src.set_view(tmp.data() - 1, tmp.size() + 1); // back up to include colon
       } else {
-        *port = ts::string_view(tmp.ptr(), src.ptr() - tmp.ptr());
+        *port = ts::string_view(tmp.data(), src.data() - tmp.data());
       }
     }
-    if (rest) {
-      *rest = src;
-    }
+    *rest = src;
   }
   return addr->empty() ? -1 : 0; // true if we found an address.
 }
@@ -547,12 +548,12 @@ ats_ip_check_characters(ts::string_view text)
 {
   bool found_colon = false;
   bool found_hex   = false;
-  for (const char *p = text.data(), *limit = p + text.size(); p < limit; ++p) {
-    if (':' == *p) {
+  for (char c : text) {
+    if (':' == c) {
       found_colon = true;
-    } else if ('.' == *p || isdigit(*p)) { /* empty */
+    } else if ('.' == c || isdigit(c)) { /* empty */
       ;
-    } else if (isxdigit(*p)) {
+    } else if (isxdigit(c)) {
       found_hex = true;
     } else {
       return AF_UNSPEC;
@@ -560,87 +561,6 @@ ats_ip_check_characters(ts::string_view text)
   }
 
   return found_hex && !found_colon ? AF_UNSPEC : found_colon ? AF_INET6 : AF_INET;
-}
-
-// Need to declare this type globally so gcc 4.4 can use it in the countof() template ...
-struct ip_parse_spec {
-  const char *hostspec;
-  const char *host;
-  const char *port;
-  const char *rest;
-};
-
-REGRESSION_TEST(Ink_Inet)(RegressionTest *t, int /* atype */, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  IpEndpoint ep;
-  IpAddr addr;
-
-  box = REGRESSION_TEST_PASSED;
-
-  // Test ats_ip_parse() ...
-  {
-    struct ip_parse_spec names[] = {
-      {"::", "::", nullptr, nullptr},
-      {"[::1]:99", "::1", "99", nullptr},
-      {"127.0.0.1:8080", "127.0.0.1", "8080", nullptr},
-      {"127.0.0.1:8080-Bob", "127.0.0.1", "8080", "-Bob"},
-      {"127.0.0.1:", "127.0.0.1", nullptr, ":"},
-      {"foo.example.com", "foo.example.com", nullptr, nullptr},
-      {"foo.example.com:99", "foo.example.com", "99", nullptr},
-      {"ffee::24c3:3349:3cee:0143", "ffee::24c3:3349:3cee:0143", nullptr, nullptr},
-      {"fe80:88b5:4a:20c:29ff:feae:1c33:8080", "fe80:88b5:4a:20c:29ff:feae:1c33:8080", nullptr, nullptr},
-      {"[ffee::24c3:3349:3cee:0143]", "ffee::24c3:3349:3cee:0143", nullptr, nullptr},
-      {"[ffee::24c3:3349:3cee:0143]:80", "ffee::24c3:3349:3cee:0143", "80", nullptr},
-      {"[ffee::24c3:3349:3cee:0143]:8080x", "ffee::24c3:3349:3cee:0143", "8080", "x"},
-    };
-
-    for (unsigned i = 0; i < countof(names); ++i) {
-      ip_parse_spec const &s = names[i];
-      ts::string_view host, port, rest;
-      size_t len;
-
-      box.check(ats_ip_parse(ts::string_view(s.hostspec, strlen(s.hostspec)), &host, &port, &rest) == 0, "ats_ip_parse(%s)",
-                s.hostspec);
-      len = strlen(s.host);
-      box.check(len == host.size() && strncmp(host.data(), s.host, host.size()) == 0, "ats_ip_parse(%s) gave addr '%.*s'",
-                s.hostspec, static_cast<int>(host.size()), host.data());
-      if (s.port) {
-        len = strlen(s.port);
-        box.check(len == port.size() && strncmp(port.data(), s.port, port.size()) == 0, "ats_ip_parse(%s) gave port '%.*s'",
-                  s.hostspec, static_cast<int>(port.size()), port.data());
-      } else {
-        box.check(port.size() == 0, "ats_ip_parse(%s) gave port '%.*s' instead of empty", s.hostspec, static_cast<int>(port.size()),
-                  port.data());
-      }
-
-      if (s.rest) {
-        len = strlen(s.rest);
-        box.check(len == rest.size() && strncmp(rest.data(), s.rest, len) == 0, "ats_ip_parse(%s) gave rest '%.*s' instead of '%s'",
-                  s.hostspec, static_cast<int>(rest.size()), rest.data(), s.rest);
-      } else {
-        box.check(rest.size() == 0, "ats_ip_parse(%s) gave rest '%.*s' instead of empty", s.hostspec, static_cast<int>(rest.size()),
-                  rest.data());
-      }
-    }
-  }
-
-  // Test ats_ip_pton() ...
-  {
-    box.check(ats_ip_pton("76.14.64.156", &ep.sa) == 0, "ats_ip_pton()");
-    box.check(addr.load("76.14.64.156") == 0, "IpAddr::load()");
-    box.check(addr.family() == ep.family(), "mismatched address family");
-
-    switch (addr.family()) {
-    case AF_INET:
-      box.check(ep.sin.sin_addr.s_addr == addr._addr._ip4, "IPv4 address mismatch");
-      break;
-    case AF_INET6:
-      box.check(memcmp(&ep.sin6.sin6_addr, &addr._addr._ip6, sizeof(in6_addr)) == 0, "IPv6 address mismatch");
-      break;
-    default:;
-    }
-  }
 }
 
 int

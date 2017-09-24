@@ -25,7 +25,7 @@
 #define __PROXY_CLIENT_TRANSACTION_H__
 
 #include "ProxyClientSession.h"
-#include <ts/MemView.h>
+#include <ts/string_view.h>
 
 class HttpSM;
 class HttpServerSession;

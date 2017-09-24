@@ -26,9 +26,9 @@
 #include <ts/ink_defs.h>
 #include <ts/ink_hash_table.h>
 #include <ts/Tokenizer.h>
-#include <ts/MemView.h>
 #include <strings.h>
 #include <ts/ink_inet.h>
+#include <ts/string_view.h>
 
 SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 

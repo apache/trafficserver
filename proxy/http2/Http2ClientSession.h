@@ -28,7 +28,7 @@
 #include "Plugin.h"
 #include "ProxyClientSession.h"
 #include "Http2ConnectionState.h"
-#include <ts/MemView.h>
+#include <ts/string_view.h>
 #include <ts/ink_inet.h>
 
 // Name                       Edata                 Description

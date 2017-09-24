@@ -26,7 +26,7 @@
 #include <cctype>
 
 #include <ts/string_view.h>
-#include <ts/MemView.h>
+#include <ts/TextView.h>
 
 #include <HttpConfig.h>
 
@@ -42,7 +42,7 @@ public:
   // Add a bad option.
   //
   void
-  add(ts::StringView badOpt)
+  add(ts::TextView badOpt)
   {
     if (_count == 0) {
       _err << "\"Forwarded\" configuration: ";
@@ -81,24 +81,24 @@ public:
 
 private:
   void
-  _addQuoted(ts::StringView sv)
+  _addQuoted(ts::TextView sv)
   {
-    _err << '\"' << ts::string_view(sv.begin(), sv.size()) << '\"';
+    _err << '\"' << sv << '\"';
   }
 
   ts::FixedBufferWriter &_err;
 
-  ts::StringView _saveLast;
+  ts::TextView _saveLast;
 
   int _count;
 };
 
-// Compare a StringView to a nul-termimated string, converting the StringView to lower case and ignoring whitespace in it.
+// Compare a TextView to a nul-termimated string, converting the TextView to lower case and ignoring whitespace in it.
 //
 bool
-eqIgnoreCaseWs(ts::StringView sv, const char *target)
+eqIgnoreCaseWs(ts::TextView sv, const char *target)
 {
-  const char *s = sv.begin();
+  const char *s = sv.data();
 
   std::size_t skip = 0;
   std::size_t i    = 0;
@@ -123,13 +123,13 @@ namespace HttpForwarded
 OptionBitSet
 optStrToBitset(ts::string_view optConfigStr, ts::FixedBufferWriter &error)
 {
-  const ts::StringView Delimiters(":|");
+  const ts::TextView Delimiters(":|");
 
   OptionBitSet optBS;
 
-  // Convert to TS StringView to be able to use parsing members.
+  // Convert to TS TextView to be able to use parsing members.
   //
-  ts::StringView oCS(optConfigStr.data(), optConfigStr.size());
+  ts::TextView oCS{optConfigStr};
 
   if (eqIgnoreCaseWs(oCS, "none")) {
     return OptionBitSet();
@@ -138,7 +138,7 @@ optStrToBitset(ts::string_view optConfigStr, ts::FixedBufferWriter &error)
   BadOptionsErrMsg em(error);
 
   do {
-    ts::StringView optStr = oCS.extractPrefix(Delimiters);
+    ts::TextView optStr = oCS.take_prefix_at(Delimiters);
 
     if (eqIgnoreCaseWs(optStr, "for")) {
       optBS.set(FOR);

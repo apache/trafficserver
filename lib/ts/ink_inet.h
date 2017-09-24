@@ -28,8 +28,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/socket.h>
-#include "ts/ink_memory.h"
-#include "ts/ink_apidefs.h"
+#include <ts/ink_memory.h>
+#include <ts/ink_apidefs.h>
 #include <ts/string_view.h>
 
 #if !TS_HAS_IN6_IS_ADDR_UNSPECIFIED

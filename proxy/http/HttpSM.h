@@ -41,7 +41,7 @@
 #include "InkAPIInternal.h"
 #include "../ProxyClientTransaction.h"
 #include "HdrUtils.h"
-#include <ts/MemView.h>
+#include <ts/string_view.h>
 #include <ts/History.h>
 //#include "AuthHttpAdapter.h"
 

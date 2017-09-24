@@ -115,9 +115,9 @@ TEST_CASE("Forwarded", "[FWD]")
 
   test("\t", "\"Forwarded\" configuration: \"\t   \" is a bad option.", OptionBitSet());
 
-  test(":", "\"Forwarded\" configuration: \"   \" is a bad option.", OptionBitSet());
+  test(":", "\"Forwarded\" configuration: \"\" and \"   \" are bad options.", OptionBitSet());
 
-  test("|", "\"Forwarded\" configuration: \"   \" is a bad option.", OptionBitSet());
+  test("|", "\"Forwarded\" configuration: \"\" and \"   \" are bad options.", OptionBitSet());
 
   test("by=ip", "", OptionBitSetListInit{BY_IP});
 
