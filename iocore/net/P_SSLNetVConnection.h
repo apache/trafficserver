@@ -32,15 +32,16 @@
 #if !defined(_SSLNetVConnection_h_)
 #define _SSLNetVConnection_h_
 
-#include "ts/ink_platform.h"
-#include "P_EventSystem.h"
-#include "P_UnixNetVConnection.h"
-#include "P_UnixNet.h"
-#include "ts/apidefs.h"
-#include <ts/MemView.h>
+#include <ts/ink_platform.h>
+#include <ts/apidefs.h>
+#include <ts/string_view.h>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+
+#include "P_EventSystem.h"
+#include "P_UnixNetVConnection.h"
+#include "P_UnixNet.h"
 
 // These are included here because older OpenSSL libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely

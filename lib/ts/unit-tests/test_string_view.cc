@@ -91,6 +91,10 @@ TEST_CASE("constructor calls", "[string_view] [constructor]")
     REQUIRE(sv.length() == 5);
     REQUIRE(sv.empty() == false);
     REQUIRE(sv == "hello");
+
+    ts::string_view sv2("0123456789", 6);
+    REQUIRE(sv2.size() == 6);
+    REQUIRE(sv2 == "012345");
   }
 
   SECTION("Literal length equal 0")
@@ -528,6 +532,7 @@ TEST_CASE("Find", "[string_view] [find]")
     REQUIRE(sv.find_last_not_of(svtest) == 6);
     REQUIRE(sv.find_last_not_of("abcdxyz") == 6);
     REQUIRE(sv.find_last_not_of("abcdefg") == npos);
+    REQUIRE("abcdexyzqqq"_sv.find_last_not_of('q') == 7);
 
     REQUIRE(sv.find_last_not_of("abcdxyz", 1, 0) == 1);
     REQUIRE(sv.find_last_not_of("abcdxyz", 1, 5) == npos);

@@ -24,8 +24,9 @@
 #ifndef __PROXY_CLIENT_SESSION_H__
 #define __PROXY_CLIENT_SESSION_H__
 
-#include "ts/ink_platform.h"
-#include "ts/ink_resolver.h"
+#include <ts/ink_platform.h>
+#include <ts/ink_resolver.h>
+#include <ts/string_view.h>
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "http/HttpServerSession.h"

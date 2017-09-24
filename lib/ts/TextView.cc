@@ -23,19 +23,13 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include <ts/MemView.h>
+#include <ts/TextView.h>
 #include <sstream>
 #include <cctype>
 #include <ts/ink_platform.h>
 
-namespace ts
-{
-StringView::StringView(const char *s) : _ptr(s), _size(s ? strlen(s) : 0)
-{
-}
-
 int
-memcmp(MemView const &lhs, MemView const &rhs)
+ts::memcmp(TextView const &lhs, TextView const &rhs)
 {
   int zret;
   size_t n;
@@ -48,7 +42,7 @@ memcmp(MemView const &lhs, MemView const &rhs)
     zret = rhs.size() < lhs.size() ? -1 : 0;
   }
 
-  int r = ::memcmp(lhs.ptr(), rhs.ptr(), n);
+  int r = ::memcmp(lhs.data(), rhs.data(), n);
   if (0 != r) { // If we got a not-equal, override the size based result.
     zret = r;
   }
@@ -57,7 +51,7 @@ memcmp(MemView const &lhs, MemView const &rhs)
 }
 
 int
-strcasecmp(StringView lhs, StringView rhs)
+ts::strcasecmp(TextView lhs, TextView rhs)
 {
   while (lhs && rhs) {
     char l = tolower(*lhs);
@@ -73,7 +67,7 @@ strcasecmp(StringView lhs, StringView rhs)
 }
 
 intmax_t
-svtoi(StringView src, StringView *out, int base)
+ts::svtoi(TextView src, TextView *out, int base)
 {
   static const int8_t convert[256] = {
     /* [can't do this nicely because clang format won't allow exdented comments]
@@ -105,8 +99,8 @@ svtoi(StringView src, StringView *out, int base)
   if (!(1 < base && base <= 36)) {
     return 0;
   }
-  if (src.ltrim(&isspace)) {
-    const char *start = src.ptr();
+  if (src.ltrim_if(&isspace)) {
+    const char *start = src.data();
     int8_t v;
     bool neg = false;
     if ('-' == *src) {
@@ -117,8 +111,8 @@ svtoi(StringView src, StringView *out, int base)
       zret = zret * base + v;
       ++src;
     }
-    if (out && (src.ptr() > (neg ? start + 1 : start))) {
-      out->setView(start, src.ptr());
+    if (out && (src.data() > (neg ? start + 1 : start))) {
+      out->set_view(start, src.data());
     }
 
     if (neg) {
@@ -129,25 +123,12 @@ svtoi(StringView src, StringView *out, int base)
 }
 
 // Do the template instantions.
-template void detail::stream_fill(std::ostream &, std::size_t);
-template std::ostream &StringView::stream_write(std::ostream &, const StringView &) const;
-}
+template std::ostream &ts::TextView::stream_write(std::ostream &, const ts::TextView &) const;
 
 namespace std
 {
 ostream &
-operator<<(ostream &os, const ts::MemView &b)
-{
-  if (os.good()) {
-    ostringstream out;
-    out << b.size() << '@' << hex << b.ptr();
-    os << out.str();
-  }
-  return os;
-}
-
-ostream &
-operator<<(ostream &os, const ts::StringView &b)
+operator<<(ostream &os, const ts::TextView &b)
 {
   if (os.good()) {
     b.stream_write<ostream>(os, b);
