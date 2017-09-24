@@ -693,30 +693,29 @@ HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, in
 /// If @a detailed then do the full stack, otherwise just the "top level" protocol.
 /// Returns the number of characters appended to hdr_string (no nul appended).
 int
-HttpTransactHeaders::write_hdr_protocol_stack(char *hdr_string, size_t len, ProtocolStackDetail pSDetail, ts::StringView *proto_buf,
-                                              int n_proto, char separator)
+HttpTransactHeaders::write_hdr_protocol_stack(char *hdr_string, size_t len, ProtocolStackDetail pSDetail,
+                                              ts::string_view *proto_buf, int n_proto, char separator)
 {
   char *hdr   = hdr_string; // keep original pointer for size computation later.
   char *limit = hdr_string + len;
-  static constexpr ts::StringView tls_prefix{"tls/", ts::StringView::literal};
 
   if (n_proto <= 0 || hdr == nullptr || len <= 0) {
     // nothing
   } else if (ProtocolStackDetail::Full == pSDetail) {
-    for (ts::StringView *v = proto_buf, *v_limit = proto_buf + n_proto; v < v_limit && (hdr + v->size() + 1) < limit; ++v) {
+    for (ts::string_view *v = proto_buf, *v_limit = proto_buf + n_proto; v < v_limit && (hdr + v->size() + 1) < limit; ++v) {
       if (v != proto_buf) {
         *hdr++ = separator;
       }
-      memcpy(hdr, v->ptr(), v->size());
+      memcpy(hdr, v->data(), v->size());
       hdr += v->size();
     }
   } else {
-    ts::StringView *proto_end = proto_buf + n_proto;
-    bool http_1_0_p           = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_0) != proto_end;
-    bool http_1_1_p           = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_1) != proto_end;
+    ts::string_view *proto_end = proto_buf + n_proto;
+    bool http_1_0_p            = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_0) != proto_end;
+    bool http_1_1_p            = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_1) != proto_end;
 
     if ((http_1_0_p || http_1_1_p) && hdr + 10 < limit) {
-      bool tls_p = std::find_if(proto_buf, proto_end, [](ts::StringView tag) { return tls_prefix.isPrefixOf(tag); }) != proto_end;
+      bool tls_p = std::find_if(proto_buf, proto_end, [](ts::string_view tag) { return IsPrefixOf("tls/"_sv, tag); }) != proto_end;
 
       memcpy(hdr, "http", 4);
       hdr += 4;
@@ -800,7 +799,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   }
 
   char *incoming_via = s->via_string;
-  std::array<ts::StringView, 10> proto_buf; // 10 seems like a reasonable number of protos to print
+  std::array<ts::string_view, 10> proto_buf; // 10 seems like a reasonable number of protos to print
   int n_proto = s->state_machine->populate_client_protocol(proto_buf.data(), proto_buf.size());
 
   via_string +=
@@ -882,7 +881,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   }
 
   char *incoming_via = s->via_string;
-  std::array<ts::StringView, 10> proto_buf; // 10 seems like a reasonable number of protos to print
+  std::array<ts::string_view, 10> proto_buf; // 10 seems like a reasonable number of protos to print
   int n_proto = 0;
 
   // Should suffice - if we're adding a response VIA, the connection is HTTP and only 1.0 and 1.1 are supported outbound.
@@ -1102,8 +1101,8 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       }
     }
 
-    std::array<ts::StringView, 10> protoBuf; // 10 seems like a reasonable number of protos to print
-    int nProto = 0;                          // Indulge clang's incorrect claim that this need to be initialized.
+    std::array<ts::string_view, 10> protoBuf; // 10 seems like a reasonable number of protos to print
+    int n_proto = 0;                          // Indulge clang's incorrect claim that this need to be initialized.
 
     static const HttpForwarded::OptionBitSet OptionsNeedingProtocol = HttpForwarded::OptionBitSet()
                                                                         .set(HttpForwarded::PROTO)
@@ -1112,18 +1111,18 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
                                                                         .set(HttpForwarded::CONNECTION_FULL);
 
     if ((optSet bitand OptionsNeedingProtocol).any()) {
-      nProto = s->state_machine->populate_client_protocol(protoBuf.data(), protoBuf.size());
+      n_proto = s->state_machine->populate_client_protocol(protoBuf.data(), protoBuf.size());
     }
 
-    if (optSet[HttpForwarded::PROTO] and (nProto > 0)) {
+    if (optSet[HttpForwarded::PROTO] and (n_proto > 0)) {
       if (hdr.size()) {
         hdr << ';';
       }
 
       hdr << "proto=";
 
-      int numChars = HttpTransactHeaders::write_hdr_protocol_stack(
-        hdr.auxBuffer(), hdr.remaining(), HttpTransactHeaders::ProtocolStackDetail::Compact, protoBuf.data(), nProto, '-');
+      int numChars = HttpTransactHeaders::write_hdr_protocol_stack(hdr.auxBuffer(), hdr.remaining(), ProtocolStackDetail::Compact,
+                                                                   protoBuf.data(), n_proto, '-');
       if (numChars > 0) {
         hdr.write(size_t(numChars));
       }
@@ -1152,7 +1151,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       }
     }
 
-    if (nProto > 0) {
+    if (n_proto > 0) {
       auto Conn = [&](HttpForwarded::Option opt, HttpTransactHeaders::ProtocolStackDetail detail) -> void {
         if (optSet[opt]) {
           int revert = hdr.size();
@@ -1164,7 +1163,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
           hdr << "connection=";
 
           int numChars =
-            HttpTransactHeaders::write_hdr_protocol_stack(hdr.auxBuffer(), hdr.remaining(), detail, protoBuf.data(), nProto, '-');
+            HttpTransactHeaders::write_hdr_protocol_stack(hdr.auxBuffer(), hdr.remaining(), detail, protoBuf.data(), n_proto, '-');
           if (numChars > 0) {
             hdr.write(size_t(numChars));
           }

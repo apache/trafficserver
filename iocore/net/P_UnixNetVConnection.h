@@ -175,8 +175,8 @@ public:
   /////////////////////////////////////////////////////////////////
   UnixNetVConnection();
 
-  int populate_protocol(ts::StringView *results, int n) const override;
-  const char *protocol_contains(ts::StringView tag) const override;
+  int populate_protocol(ts::string_view *results, int n) const override;
+  const char *protocol_contains(ts::string_view tag) const override;
 
   // noncopyable
   UnixNetVConnection(const NetVConnection &) = delete;

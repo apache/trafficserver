@@ -33,6 +33,7 @@
 #include <memory.h>
 #include <algorithm>
 #include <string>
+#include <ts/string_view.h>
 
 /// Apache Traffic Server commons.
 namespace ts
@@ -344,6 +345,10 @@ public:
                        const char *end    ///< First byte not in the view.
                        );
 
+  /** Construct from standard string view.
+   */
+  constexpr StringView(ts::string_view const &that);
+
   /** Constructor from literal string.
 
       Construct directly from a literal string. This avoids a call to :c strlen and therefore is
@@ -387,6 +392,9 @@ public:
   /// Construct from @c std::string, referencing the entire string contents.
   /// @internal Not all compilers make @c std::string methods called @c constexpr
   StringView(std::string const &str);
+
+  /// Convert to standard string view.
+  operator ts::string_view() const;
 
   /** Equality.
 
@@ -935,6 +943,15 @@ template <size_t N> constexpr StringView::StringView(const char (&s)[N], literal
 
 template <size_t N> constexpr StringView::StringView(const char (&s)[N], array_t) : _ptr(s), _size(N)
 {
+}
+
+inline constexpr StringView::StringView(ts::string_view const &that) : _ptr(that.data()), _size(that.size())
+{
+}
+
+inline StringView::operator ts::string_view() const
+{
+  return {_ptr, _size};
 }
 
 inline void StringView::initDelimiterSet(std::bitset<256> &set)

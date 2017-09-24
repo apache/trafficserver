@@ -26,6 +26,7 @@
 
 #include "ts/ink_platform.h"
 #include "ts/List.h"
+#include <ts/TsBuffer.h>
 #include "LogFieldAliasMap.h"
 #include "Milestones.h"
 
