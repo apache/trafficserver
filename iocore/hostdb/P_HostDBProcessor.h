@@ -29,6 +29,7 @@
 #define _P_HostDBProcessor_h_
 
 #include "I_HostDBProcessor.h"
+#include <ts/TsBuffer.h>
 
 //
 // Data

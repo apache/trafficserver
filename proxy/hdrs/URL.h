@@ -30,7 +30,7 @@
 #include "ts/INK_MD5.h"
 #include "ts/MMH.h"
 #include "MIME.h"
-#include "ts/TsBuffer.h"
+#include <ts/string_view.h>
 
 #include "ts/ink_apidefs.h"
 
@@ -194,7 +194,7 @@ extern int URL_LEN_MMST;
 void url_adjust(MarshalXlate *str_xlate, int num_xlate);
 
 /* Public */
-bool validate_host_name(ts::ConstBuffer addr);
+bool validate_host_name(ts::string_view addr);
 void url_init();
 
 URLImpl *url_create(HdrHeap *heap);

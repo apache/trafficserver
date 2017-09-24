@@ -109,15 +109,9 @@ is_host_char(char c)
 
 // Checks if `addr` is a valid FQDN string
 bool
-validate_host_name(ts::ConstBuffer addr)
+validate_host_name(ts::string_view addr)
 {
-  while (addr) {
-    if (!(is_host_char(*addr))) {
-      return false;
-    }
-    ++addr;
-  }
-  return true;
+  return std::all_of(addr.begin(), addr.end(), &is_host_char);
 }
 
 /*-------------------------------------------------------------------------
@@ -1337,7 +1331,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     }
   }
   if (host._size) {
-    if (validate_host_name(host)) {
+    if (validate_host_name(ts::string_view(host._ptr, host._size))) {
       url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
     } else {
       return PARSE_RESULT_ERROR;
@@ -1856,8 +1850,7 @@ REGRESSION_TEST(VALIDATE_HDR_FIELD)(RegressionTest *t, int /* level ATS_UNUSED *
 
   for (auto i : http_validate_hdr_field_test_case) {
     const char *const txt = i.text;
-    ts::ConstBuffer tmp   = ts::ConstBuffer(txt, strlen(txt));
-    box.check(validate_host_name(tmp) == i.valid, "Validation of FQDN (host) header: \"%s\", expected %s, but not", txt,
+    box.check(validate_host_name({txt}) == i.valid, "Validation of FQDN (host) header: \"%s\", expected %s, but not", txt,
               (i.valid ? "true" : "false"));
   }
 }

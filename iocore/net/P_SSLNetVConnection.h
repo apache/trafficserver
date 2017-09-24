@@ -280,8 +280,8 @@ public:
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
   }
 
-  int populate_protocol(ts::StringView *results, int n) const override;
-  const char *protocol_contains(ts::StringView tag) const override;
+  int populate_protocol(ts::string_view *results, int n) const override;
+  const char *protocol_contains(ts::string_view tag) const override;
 
   /**
    * Populate the current object based on the socket information in in the
@@ -304,7 +304,7 @@ public:
   SSLNetVConnection &operator=(const SSLNetVConnection &) = delete;
 
 private:
-  ts::StringView map_tls_protocol_to_tag(const char *proto_string) const;
+  ts::string_view map_tls_protocol_to_tag(const char *proto_string) const;
   bool update_rbio(bool move_to_socket);
 
   bool sslHandShakeComplete        = false;

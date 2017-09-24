@@ -29,21 +29,22 @@
 #include "ts/ink_assert.h"
 #include "ts/TestBox.h"
 #include <fstream>
+#include <ts/MemView.h>
 
 IpAddr const IpAddr::INVALID;
 
-const ts::StringView IP_PROTO_TAG_IPV4("ipv4", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_IPV6("ipv6", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_UDP("udp", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_TCP("tcp", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_TLS_1_0("tls/1.0", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_TLS_1_1("tls/1.1", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_TLS_1_2("tls/1.2", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_TLS_1_3("tls/1.3", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_HTTP_0_9("http/0.9", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_HTTP_1_0("http/1.0", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_HTTP_1_1("http/1.1", ts::StringView::literal);
-const ts::StringView IP_PROTO_TAG_HTTP_2_0("h2", ts::StringView::literal); // HTTP/2 over TLS
+const ts::string_view IP_PROTO_TAG_IPV4("ipv4"_sv);
+const ts::string_view IP_PROTO_TAG_IPV6("ipv6"_sv);
+const ts::string_view IP_PROTO_TAG_UDP("udp"_sv);
+const ts::string_view IP_PROTO_TAG_TCP("tcp"_sv);
+const ts::string_view IP_PROTO_TAG_TLS_1_0("tls/1.0"_sv);
+const ts::string_view IP_PROTO_TAG_TLS_1_1("tls/1.1"_sv);
+const ts::string_view IP_PROTO_TAG_TLS_1_2("tls/1.2"_sv);
+const ts::string_view IP_PROTO_TAG_TLS_1_3("tls/1.3"_sv);
+const ts::string_view IP_PROTO_TAG_HTTP_0_9("http/0.9"_sv);
+const ts::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"_sv);
+const ts::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"_sv);
+const ts::string_view IP_PROTO_TAG_HTTP_2_0("h2"_sv); // HTTP/2 over TLS
 
 uint32_t
 ink_inet_addr(const char *s)
@@ -138,11 +139,10 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
   return zret;
 }
 
-ts::StringView
+ts::string_view
 ats_ip_family_name(int family)
 {
-  static const ts::StringView UNSPEC("Unspec", ts::StringView::literal);
-  return AF_INET == family ? IP_PROTO_TAG_IPV4 : AF_INET6 == family ? IP_PROTO_TAG_IPV6 : UNSPEC;
+  return AF_INET == family ? IP_PROTO_TAG_IPV4 : AF_INET6 == family ? IP_PROTO_TAG_IPV6 : "Unspec"_sv;
 }
 
 const char *
@@ -154,28 +154,27 @@ ats_ip_nptop(sockaddr const *addr, char *dst, size_t size)
 }
 
 int
-ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer *addr, ts::ConstBuffer *port, ts::ConstBuffer *rest)
+ats_ip_parse(ts::string_view str, ts::string_view *addr, ts::string_view *port, ts::string_view *rest)
 {
   // In case the incoming arguments are null.
-  ts::ConstBuffer localAddr, localPort;
+  ts::string_view localAddr, localPort;
+  ts::StringView src(str);
   if (!addr) {
     addr = &localAddr;
   }
   if (!port) {
     port = &localPort;
   }
-  addr->reset();
-  port->reset();
+  ink_zero(*addr);
+  ink_zero(*port);
   if (rest) {
-    rest->reset();
+    ink_zero(*rest);
   }
 
   // Let's see if we can find out what's in the address string.
   if (src) {
     bool colon_p = false;
-    while (src && ParseRules::is_ws(*src)) {
-      ++src;
-    }
+    src.ltrim(&ParseRules::is_ws);
     // Check for brackets.
     if ('[' == *src) {
       /* Ugly. In a number of places we must use bracket notation
@@ -193,45 +192,43 @@ ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer *addr, ts::ConstBuffer *port, 
          So we can't depend on that sizing.
       */
       ++src; // skip bracket.
-      *addr = src.splitOn(']');
+      *addr = src.extractPrefix(']');
       if (':' == *src) {
         colon_p = true;
         ++src;
       }
     } else {
-      ts::ConstBuffer post = src.after(':');
-      if (post.data() && !post.find(':')) {
-        *addr   = src.splitOn(post.data() - 1);
+      ts::StringView post = src.suffix(':');
+      if (post.ptr() && !post.find(':')) {
+        *addr   = src.extractPrefix(post.ptr() - 1);
         colon_p = true;
       } else { // presume no port, use everything.
         *addr = src;
-        src.reset();
+        src.clear();
       }
     }
     if (colon_p) {
-      ts::ConstBuffer tmp(src);
-      while (src && ParseRules::is_digit(*src)) {
-        ++src;
-      }
+      ts::StringView tmp(src);
+      src.ltrim(&ParseRules::is_digit);
 
-      if (tmp.data() == src.data()) {            // no digits at all
-        src.set(tmp.data() - 1, tmp.size() + 1); // back up to include colon
+      if (tmp.ptr() == src.ptr()) {                 // no digits at all
+        src.setView(tmp.ptr() - 1, tmp.size() + 1); // back up to include colon
       } else {
-        *port = tmp.clip(src.data());
+        *port = ts::string_view(tmp.ptr(), src.ptr() - tmp.ptr());
       }
     }
     if (rest) {
       *rest = src;
     }
   }
-  return *addr ? 0 : -1; // true if we found an address.
+  return addr->empty() ? -1 : 0; // true if we found an address.
 }
 
 int
-ats_ip_pton(const ts::ConstBuffer &src, sockaddr *ip)
+ats_ip_pton(const ts::string_view &src, sockaddr *ip)
 {
   int zret = -1;
-  ts::ConstBuffer addr, port;
+  ts::string_view addr, port;
 
   ats_ip_invalidate(ip);
   if (0 == ats_ip_parse(src, &addr, &port)) {
@@ -240,9 +237,9 @@ ats_ip_pton(const ts::ConstBuffer &src, sockaddr *ip)
       char *tmp = static_cast<char *>(alloca(addr.size() + 1));
       memcpy(tmp, addr.data(), addr.size());
       tmp[addr.size()] = 0;
-      addr.set(tmp, addr.size());
+      addr             = ts::string_view(tmp, addr.size());
     }
-    if (addr.find(':')) { // colon -> IPv6
+    if (addr.find(':') != ts::string_view::npos) { // colon -> IPv6
       in6_addr addr6;
       if (inet_pton(AF_INET6, addr.data(), &addr6)) {
         zret = 0;
@@ -257,7 +254,7 @@ ats_ip_pton(const ts::ConstBuffer &src, sockaddr *ip)
     }
     // If we had a successful conversion, set the port.
     if (ats_is_ip(ip)) {
-      ats_ip_port_cast(ip) = port ? htons(atoi(port.data())) : 0;
+      ats_ip_port_cast(ip) = port.empty() ? 0 : htons(atoi(port.data()));
     }
   }
 
@@ -344,7 +341,7 @@ IpAddr::load(const char *text)
 }
 
 int
-IpAddr::load(ts::ConstBuffer const &text)
+IpAddr::load(ts::string_view const &text)
 {
   IpEndpoint ip;
   int zret = ats_ip_pton(text, &ip.sa);
@@ -446,8 +443,8 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
   int port = 0; // port value to assign if we find an address.
   addrinfo ai_hints;
   addrinfo *ai_result;
-  ts::ConstBuffer addr_text, port_text;
-  ts::ConstBuffer src(host, strlen(host) + 1);
+  ts::string_view addr_text, port_text;
+  ts::string_view src(host, strlen(host) + 1);
 
   if (ip4) {
     ats_ip_invalidate(ip4);
@@ -462,7 +459,7 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
       char *tmp = static_cast<char *>(alloca(addr_text.size() + 1));
       memcpy(tmp, addr_text.data(), addr_text.size());
       tmp[addr_text.size()] = 0;
-      addr_text.set(tmp, addr_text.size());
+      addr_text             = ts::string_view(tmp, addr_text.size());
     }
     ink_zero(ai_hints);
     ai_hints.ai_family = AF_UNSPEC;
@@ -546,7 +543,7 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
 }
 
 int
-ats_ip_check_characters(ts::ConstBuffer text)
+ats_ip_check_characters(ts::string_view text)
 {
   bool found_colon = false;
   bool found_hex   = false;
@@ -600,10 +597,10 @@ REGRESSION_TEST(Ink_Inet)(RegressionTest *t, int /* atype */, int *pstatus)
 
     for (unsigned i = 0; i < countof(names); ++i) {
       ip_parse_spec const &s = names[i];
-      ts::ConstBuffer host, port, rest;
+      ts::string_view host, port, rest;
       size_t len;
 
-      box.check(ats_ip_parse(ts::ConstBuffer(s.hostspec, strlen(s.hostspec)), &host, &port, &rest) == 0, "ats_ip_parse(%s)",
+      box.check(ats_ip_parse(ts::string_view(s.hostspec, strlen(s.hostspec)), &host, &port, &rest) == 0, "ats_ip_parse(%s)",
                 s.hostspec);
       len = strlen(s.host);
       box.check(len == host.size() && strncmp(host.data(), s.host, host.size()) == 0, "ats_ip_parse(%s) gave addr '%.*s'",

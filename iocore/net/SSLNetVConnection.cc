@@ -1597,13 +1597,10 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   return EVENT_DONE;
 }
 
-ts::StringView
+ts::string_view
 SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 {
-  // tag to use if something goes wrong with fetching the TLS protocol string.
-  static constexpr ts::StringView UNKNOWN("tls/?.?", ts::StringView::literal);
-
-  ts::StringView retval{UNKNOWN}; // return this if the protocol lookup doesn't work.
+  ts::string_view retval{"tls/?.?"_sv}; // return this if the protocol lookup doesn't work.
 
   if (proto_string) {
     // openSSL guarantees the case of the protocol string.
@@ -1632,12 +1629,12 @@ SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 }
 
 int
-SSLNetVConnection::populate_protocol(ts::StringView *results, int n) const
+SSLNetVConnection::populate_protocol(ts::string_view *results, int n) const
 {
   int retval = 0;
   if (n > retval) {
     results[retval] = map_tls_protocol_to_tag(getSSLProtocol());
-    if (results[retval]) {
+    if (!results[retval].empty()) {
       ++retval;
     }
     if (n > retval) {
@@ -1648,12 +1645,12 @@ SSLNetVConnection::populate_protocol(ts::StringView *results, int n) const
 }
 
 const char *
-SSLNetVConnection::protocol_contains(ts::StringView prefix) const
+SSLNetVConnection::protocol_contains(ts::string_view prefix) const
 {
-  const char *retval = nullptr;
-  ts::StringView tag = map_tls_protocol_to_tag(getSSLProtocol());
-  if (prefix.size() <= tag.size() && strncmp(tag.ptr(), prefix.ptr(), prefix.size()) == 0) {
-    retval = tag.ptr();
+  const char *retval  = nullptr;
+  ts::string_view tag = map_tls_protocol_to_tag(getSSLProtocol());
+  if (prefix.size() <= tag.size() && strncmp(tag.data(), prefix.data(), prefix.size()) == 0) {
+    retval = tag.data();
   } else {
     retval = super::protocol_contains(prefix);
   }

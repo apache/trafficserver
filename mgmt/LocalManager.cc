@@ -31,6 +31,7 @@
 #include "MgmtSocket.h"
 #include "ts/ink_cap.h"
 #include "FileManager.h"
+#include <ts/MemView.h>
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>

@@ -33,7 +33,7 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 #include <ts/apidefs.h>
-#include <ts/MemView.h>
+#include <ts/string_view.h>
 
 #define CONNECT_SUCCESS 1
 #define CONNECT_FAILURE 0
@@ -202,7 +202,7 @@ struct NetVCOptions {
     IpEndpoint ip;
 
     // Literal IPv4 and IPv6 addresses are not permitted in "HostName".(rfc6066#section-3)
-    if (name && len && ats_ip_pton(ts::ConstBuffer(name, len), &ip) != 0) {
+    if (name && len && ats_ip_pton(ts::string_view(name, len), &ip) != 0) {
       sni_servername = ats_strndup(name, len);
     } else {
       sni_servername = nullptr;
@@ -236,9 +236,9 @@ struct NetVCOptions {
     return *this;
   }
 
-  ts::StringView get_family_string() const;
+  ts::string_view get_family_string() const;
 
-  ts::StringView get_proto_string() const;
+  ts::string_view get_proto_string() const;
 
   /// @name Debugging
   //@{
@@ -629,13 +629,13 @@ public:
   }
 
   virtual int
-  populate_protocol(ts::StringView *results, int n) const
+  populate_protocol(ts::string_view *results, int n) const
   {
     return 0;
   }
 
   virtual const char *
-  protocol_contains(ts::StringView prefix) const
+  protocol_contains(ts::string_view prefix) const
   {
     return nullptr;
   }

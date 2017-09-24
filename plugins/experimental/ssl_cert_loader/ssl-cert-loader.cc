@@ -83,18 +83,17 @@ using IpRangeQueue = std::deque<IpRange>;
 Configuration Config; // global configuration
 
 void
-Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range)
+Parse_Addr_String(ts::string_view const &text, IpRange &range)
 {
   IpAddr newAddr;
-  std::string textstr(text._ptr, text._size);
   // Is there a hyphen?
-  size_t hyphen_pos = textstr.find('-');
+  size_t hyphen_pos = text.find('-');
 
-  if (hyphen_pos != std::string::npos) {
-    std::string addr1 = textstr.substr(0, hyphen_pos);
-    std::string addr2 = textstr.substr(hyphen_pos + 1);
-    range.first.load(ts::ConstBuffer(addr1.c_str(), addr1.length()));
-    range.second.load(ts::ConstBuffer(addr2.c_str(), addr2.length()));
+  if (hyphen_pos != ts::string_view::npos) {
+    ts::string_view addr1 = text.substr(0, hyphen_pos);
+    ts::string_view addr2 = text.substr(hyphen_pos + 1);
+    range.first.load(addr1);
+    range.second.load(addr2);
   } else { // Assume it is a single address
     newAddr.load(text);
     range.first  = newAddr;
@@ -269,8 +268,9 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
   val = parent.find("server-ip");
   if (val) {
     IpRange ipRange;
+    auto txt = val.getText();
 
-    Parse_Addr_String(val.getText(), ipRange);
+    Parse_Addr_String(ts::string_view(txt._ptr, txt._size), ipRange);
     cur_values.server_ips.push_back(ipRange);
   }
   val = parent.find("server-name");

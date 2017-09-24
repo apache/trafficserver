@@ -260,7 +260,7 @@ public:
   }
 
   virtual int
-  populate_protocol(ts::StringView *result, int size) const override
+  populate_protocol(ts::string_view *result, int size) const override
   {
     int retval = 0;
     if (size > retval) {
@@ -273,12 +273,12 @@ public:
   }
 
   virtual const char *
-  protocol_contains(ts::StringView prefix) const override
+  protocol_contains(ts::string_view prefix) const override
   {
     const char *retval = nullptr;
 
-    if (prefix.size() <= IP_PROTO_TAG_HTTP_2_0.size() && strncmp(IP_PROTO_TAG_HTTP_2_0.ptr(), prefix.ptr(), prefix.size()) == 0) {
-      retval = IP_PROTO_TAG_HTTP_2_0.ptr();
+    if (prefix.size() <= IP_PROTO_TAG_HTTP_2_0.size() && strncmp(IP_PROTO_TAG_HTTP_2_0.data(), prefix.data(), prefix.size()) == 0) {
+      retval = IP_PROTO_TAG_HTTP_2_0.data();
     } else {
       retval = super::protocol_contains(prefix);
     }
