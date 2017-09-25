@@ -101,8 +101,6 @@ Arena::str_alloc(size_t len)
   size_t size;
   size_t tmp;
 
-  ++len; // add one every time
-
   size = len + 1 + 1;
   tmp  = len;
 
