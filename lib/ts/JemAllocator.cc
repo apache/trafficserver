@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "JEMAllocator.h"
+#include "ts/JemAllocator.h"
 #include "ts/jemallctl.h"
 
 #include "ts/ink_queue.h"
