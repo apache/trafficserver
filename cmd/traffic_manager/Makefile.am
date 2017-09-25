@@ -80,14 +80,6 @@ traffic_manager_LDADD +=\
   @LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
   -lm
 
-# Must do it this way or the dependencies aren't detected.
-if BUILD_WCCP
-traffic_manager_LDADD += \
-  $(top_builddir)/lib/wccp/libwccp.a \
-  $(top_builddir)/lib/tsconfig/libtsconfig.la \
-  @OPENSSL_LIBS@
-endif
-
 test_metrics_SOURCES = test_metrics.cc metrics.cc
 test_metrics_LDADD = \
   $(top_builddir)/mgmt/libmgmt_lm.la \
@@ -97,6 +89,21 @@ test_metrics_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   @LIBTCL@ @LIBPCRE@
+
+# Must do it this way or the dependencies aren't detected.
+if BUILD_WCCP
+
+traffic_manager_LDADD += \
+  $(top_builddir)/lib/wccp/libwccp.a \
+  $(top_builddir)/lib/tsconfig/libtsconfig.la \
+  @OPENSSL_LIBS@
+
+test_metrics_LDADD += \
+  $(top_builddir)/lib/wccp/libwccp.a \
+  $(top_builddir)/lib/tsconfig/libtsconfig.la \
+  @OPENSSL_LIBS@
+
+endif
 
 include $(top_srcdir)/build/tidy.mk
 
