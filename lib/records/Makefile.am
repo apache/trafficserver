@@ -27,6 +27,15 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/lib
 
 noinst_LIBRARIES = librecords_lm.a librecords_p.a librecords_cop.a
+check_PROGRAMS = test_librecords_p
+
+TESTS = $(check_PROGRAMS)
+test_librecords_p_CPPFLAGS = $(AM_CPPFLAGS) \
+	-I$(abs_top_srcdir)/tests/include
+test_librecords_p_LDADD = RecProtoTags.o -L$(top_builddir)/lib/ts -ltsutil
+test_librecords_p_SOURCES = \
+	unit-tests/main.cc \
+	unit-tests/RecProtoTagsTest.cc
 
 librecords_COMMON = \
   I_RecAlarms.h \
@@ -50,6 +59,7 @@ librecords_COMMON = \
   RecHttp.cc \
   RecMessage.cc \
   RecMutex.cc \
+  RecProtoTags.cc \
   RecRawStats.cc \
   RecUtils.cc
 
