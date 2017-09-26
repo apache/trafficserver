@@ -1210,3 +1210,12 @@ operator<<(std::basic_ostream<_Type, _Traits> &os, const basic_string_view<_Type
 using string_view = basic_string_view<char>;
 
 } // namespace ts
+
+/// Literal suffix for string_view.
+/// @note This enables @c string_view literals from C++ string literals in @c constexpr contexts, which
+/// is not the case for the character pointer constructor.
+/// @internal This must be in the global namespace to be found.
+constexpr ts::string_view operator"" _sv(const char *str, size_t len) noexcept
+{
+  return ts::string_view(str, len);
+}

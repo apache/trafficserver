@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+
 using namespace std;
 
 constexpr auto npos = ts::string_view::npos;
@@ -44,6 +45,19 @@ TEST_CASE("constructor calls", "[string_view] [constructor]")
     REQUIRE(sv.length() == 5);
     REQUIRE(sv.empty() == false);
     REQUIRE(sv == "hello");
+
+    constexpr ts::string_view a{"evil dave"_sv};
+    REQUIRE(a.size() == 9);
+    REQUIRE(a.length() == 9);
+    REQUIRE(a.empty() == false);
+    REQUIRE(a == "evil dave");
+
+    auto b = "grigor rulz"_sv;
+    REQUIRE((std::is_same<decltype(b), ts::string_view>::value) == true);
+    REQUIRE(b.size() == 11);
+    REQUIRE(b.length() ==11);
+    REQUIRE(b.empty() == false);
+    REQUIRE(b == "grigor rulz");
   }
 
   SECTION("operator =")
@@ -131,7 +145,7 @@ TEST_CASE("operators", "[string_view] [operator]")
 
     REQUIRE(str2 == str3);
     REQUIRE(str1 == str3);
-    
+
     REQUIRE(sv == "hello");
     REQUIRE(sv == str1);
     REQUIRE(sv == str2);
