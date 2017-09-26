@@ -36,7 +36,7 @@ class HQClientSession;
 class QUICSimpleApp : public QUICApplication
 {
 public:
-  QUICSimpleApp(QUICNetVConnection *client_vc, QUICConnection *qc);
+  QUICSimpleApp(QUICNetVConnection *client_vc);
   ~QUICSimpleApp();
 
   int main_event_handler(int event, Event *data);

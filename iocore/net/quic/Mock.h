@@ -28,6 +28,50 @@
 #include "QUICEvents.h"
 #include "QUICPacketTransmitter.h"
 
+class MockQUICStreamManager : public QUICStreamManager
+{
+public:
+  MockQUICStreamManager() : QUICStreamManager() {}
+  // Override
+  virtual QUICError
+  handle_frame(std::shared_ptr<const QUICFrame> f) override
+  {
+    ++_frameCount[static_cast<int>(f->type())];
+    ++_totalFrameCount;
+
+    return QUICError(QUICErrorClass::NONE);
+  }
+
+  // for Test
+  int
+  getStreamFrameCount()
+  {
+    return _frameCount[static_cast<int>(QUICFrameType::STREAM)];
+  }
+
+  int
+  getAckFrameCount()
+  {
+    return _frameCount[static_cast<int>(QUICFrameType::ACK)];
+  }
+
+  int
+  getPingFrameCount()
+  {
+    return _frameCount[static_cast<int>(QUICFrameType::PING)];
+  }
+
+  int
+  getTotalFrameCount()
+  {
+    return _totalFrameCount;
+  }
+
+private:
+  int _totalFrameCount = 0;
+  int _frameCount[256] = {0};
+};
+
 class MockNetVConnection : public NetVConnection
 {
 public:
@@ -197,11 +241,18 @@ public:
     return _totalFrameCount;
   }
 
+  QUICStreamManager *
+  stream_manager() override
+  {
+    return &_stream_manager;
+  }
+
   int _transmit_count   = 0;
   int _retransmit_count = 0;
   Ptr<ProxyMutex> _mutex;
   int _totalFrameCount = 0;
   int _frameCount[256] = {0};
+  MockQUICStreamManager _stream_manager;
 
   QUICTransportParametersInEncryptedExtensions dummy_transport_parameters;
   NetVConnectionContext_t _direction;
@@ -265,50 +316,6 @@ public:
   on_packet_sent(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
   {
   }
-};
-
-class MockQUICStreamManager : public QUICStreamManager
-{
-public:
-  MockQUICStreamManager() : QUICStreamManager() {}
-  // Override
-  virtual QUICError
-  handle_frame(std::shared_ptr<const QUICFrame> f) override
-  {
-    ++_frameCount[static_cast<int>(f->type())];
-    ++_totalFrameCount;
-
-    return QUICError(QUICErrorClass::NONE);
-  }
-
-  // for Test
-  int
-  getStreamFrameCount()
-  {
-    return _frameCount[static_cast<int>(QUICFrameType::STREAM)];
-  }
-
-  int
-  getAckFrameCount()
-  {
-    return _frameCount[static_cast<int>(QUICFrameType::ACK)];
-  }
-
-  int
-  getPingFrameCount()
-  {
-    return _frameCount[static_cast<int>(QUICFrameType::PING)];
-  }
-
-  int
-  getTotalFrameCount()
-  {
-    return _totalFrameCount;
-  }
-
-private:
-  int _totalFrameCount = 0;
-  int _frameCount[256] = {0};
 };
 
 class MockQUICCongestionController : public QUICCongestionController

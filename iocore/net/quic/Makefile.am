@@ -61,9 +61,7 @@ libquic_a_SOURCES = \
   QUICConfig.cc \
   QUICDebugNames.cc \
   QUICApplication.cc \
-  QUICApplicationMap.cc \
-  QUICEchoApp.cc \
-  QUICSimpleApp.cc
+  QUICApplicationMap.cc
 
 include $(top_srcdir)/build/tidy.mk
 

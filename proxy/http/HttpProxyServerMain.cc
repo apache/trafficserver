@@ -40,6 +40,7 @@
 #include "http2/Http2SessionAccept.h"
 #include "HttpConnectionCount.h"
 #if TS_USE_QUIC == 1
+#include "P_QUICNextProtocolAccept.h"
 #include "hq/HQSessionAccept.h"
 #endif
 
@@ -223,12 +224,15 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     acceptor._accept = ssl;
 #if TS_USE_QUIC == 1
   } else if (port.isQUIC()) {
+    QUICNextProtocolAccept *quic = new QUICNextProtocolAccept();
+
     // HTTP/QUIC
     if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC)) {
-      HQSessionAccept *hq = new HQSessionAccept(accept_opt);
-      // FIXME hq should be registered to QUICNextProtocolAccept like SSL
-      acceptor._accept = hq;
+      quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, new HQSessionAccept(accept_opt));
     }
+
+    quic->proxyPort  = &port;
+    acceptor._accept = quic;
 #endif
   } else {
     acceptor._accept = probe;

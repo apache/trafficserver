@@ -29,6 +29,7 @@
 #include "QUICTransportParameters.h"
 
 class QUICApplication;
+class QUICStreamManager;
 class SSLNextProtocolSet;
 
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
@@ -48,6 +49,8 @@ public:
    * this return the minimum size for it, which is 1200.
    */
   virtual uint32_t minimum_quic_packet_size() = 0;
+
+  virtual QUICStreamManager *stream_manager() = 0;
 
   virtual uint32_t pmtu()                                   = 0;
   virtual NetVConnectionContext_t direction()               = 0;

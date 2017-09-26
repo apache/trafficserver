@@ -258,3 +258,9 @@ QUICStreamManager::stream_count() const
   }
   return count;
 }
+
+void
+QUICStreamManager::set_default_application(QUICApplication *app)
+{
+  this->_app_map->set_default(app);
+}

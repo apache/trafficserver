@@ -26,6 +26,7 @@
 #include "P_Net.h"
 #include "I_Machine.h"
 #include "../IPAllow.h"
+#include "QUICSimpleApp.h"
 
 HQSessionAccept::HQSessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)
 {
@@ -55,13 +56,7 @@ HQSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader 
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
-  ink_assert(false);
-  // Not implemented yet
-
-  // HQClientSession *new_session = THREAD_ALLOC_INIT(quicClientSessionAllocator, this_ethread());
-  // new_session->acl_record         = session_acl_record;
-  // new_session->new_connection(netvc, iobuf, reader, false /* backdoor */);
-  // static_cast<QUICNetVConnection *>(netvc)->set_application(new_session);
+  new QUICSimpleApp(static_cast<QUICNetVConnection *>(netvc));
 
   return true;
 }

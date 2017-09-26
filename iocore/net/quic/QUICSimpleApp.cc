@@ -32,14 +32,16 @@
 
 static constexpr char tag[] = "quic_simple_app";
 
-QUICSimpleApp::QUICSimpleApp(QUICNetVConnection *client_vc, QUICConnection *qc) : QUICApplication(qc)
+QUICSimpleApp::QUICSimpleApp(QUICNetVConnection *client_vc) : QUICApplication(client_vc)
 {
-  // FIXME: initialize on HQSessionAccept
   sockaddr const *client_ip           = client_vc->get_remote_addr();
   const AclRecord *session_acl_record = SessionAccept::testIpAllowPolicy(client_ip);
 
   this->_client_session             = new HQClientSession(client_vc);
   this->_client_session->acl_record = session_acl_record;
+  this->_client_session->new_connection(client_vc, nullptr, nullptr, false);
+
+  this->_client_qc->stream_manager()->set_default_application(this);
 
   SET_HANDLER(&QUICSimpleApp::main_event_handler);
 }

@@ -35,8 +35,6 @@
 
 #include "P_SSLNextProtocolSet.h"
 
-#include "QUICEchoApp.h"
-#include "QUICSimpleApp.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
 #include "QUICConfig.h"
@@ -67,11 +65,6 @@ QUICNetVConnection::init(UDPConnection *udp_con, QUICPacketHandler *packet_handl
   this->_udp_con                  = udp_con;
   this->_packet_handler           = packet_handler;
   this->_quic_connection_id.randomize();
-
-  // FIXME These should be done by HttpProxyServerMain
-  SSLNextProtocolSet *next_protocol_set = new SSLNextProtocolSet();
-  next_protocol_set->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, nullptr);
-  this->registerNextProtocolSet(next_protocol_set);
 }
 
 VIO *
@@ -197,6 +190,12 @@ uint32_t
 QUICNetVConnection::maximum_stream_frame_data_size()
 {
   return this->maximum_quic_packet_size() - MAX_STREAM_FRAME_OVERHEAD - MAX_PACKET_OVERHEAD;
+}
+
+QUICStreamManager *
+QUICNetVConnection::stream_manager()
+{
+  return this->_stream_manager;
 }
 
 void
@@ -407,12 +406,17 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   }
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-    this->_application_map->set_default(this->_create_application());
     this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
                                     this->_handshake_handler->remote_transport_parameters());
 
     DebugQUICCon("Enter state_connection_established");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
+
+    const uint8_t *app_name;
+    unsigned int app_name_len = 0;
+    this->_handshake_handler->negotiated_application_name(&app_name, &app_name_len);
+    Continuation *endpoint = this->_next_protocol_set->findEndpoint(app_name, app_name_len);
+    endpoint->handleEvent(NET_EVENT_ACCEPT, this);
   }
 
   return EVENT_CONT;
@@ -788,27 +792,6 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   }
 
   return packet;
-}
-
-QUICApplication *
-QUICNetVConnection::_create_application()
-{
-  const uint8_t *app_name;
-  unsigned int app_name_len = 0;
-  this->_handshake_handler->negotiated_application_name(&app_name, &app_name_len);
-  if (app_name) {
-    DebugQUICCon("ALPN: %.*s", app_name_len, app_name);
-    if (memcmp(TS_ALPN_PROTOCOL_HTTP_QUIC, app_name, app_name_len) == 0) {
-      return new QUICSimpleApp(this, this);
-    } else {
-      DebugQUICCon("Negotiated application is not available");
-      ink_assert(false);
-      return nullptr;
-    }
-  } else {
-    DebugQUICCon("Failed to negotiate application");
-    return nullptr;
-  }
 }
 
 void

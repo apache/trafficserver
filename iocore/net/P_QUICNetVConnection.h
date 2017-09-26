@@ -173,6 +173,7 @@ public:
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
   uint32_t maximum_stream_frame_data_size() override;
+  QUICStreamManager *stream_manager() override;
   uint32_t pmtu() override;
   NetVConnectionContext_t direction() override;
   SSLNextProtocolSet *next_protocol_set() override;
@@ -244,7 +245,6 @@ private:
   Ptr<ProxyMutex> _packet_transmitter_mutex;
   Ptr<ProxyMutex> _frame_transmitter_mutex;
 
-  QUICApplication *_create_application();
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
 

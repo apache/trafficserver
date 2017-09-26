@@ -45,6 +45,8 @@ public:
   uint64_t total_offset_sent() const;
   uint32_t stream_count() const;
 
+  void set_default_application(QUICApplication *app);
+
   DLL<QUICStream> stream_list;
 
   // QUICFrameHandler

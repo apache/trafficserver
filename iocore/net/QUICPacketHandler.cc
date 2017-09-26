@@ -158,6 +158,7 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     vc->options.ip_family = udpPacket->from.sa.sa_family;
 
     this->_connections.put(cid, vc);
+    this->action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
   }
 
   std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> qPkt = QUICPacketFactory::create(block, vc->largest_received_packet_number());
