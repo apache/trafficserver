@@ -1,5 +1,5 @@
 /** @file
-    
+
   This file used for catch based tests. It is the main() stub.
 
   @section license License
@@ -21,5 +21,5 @@
   limitations under the License.
  */
 
-#define CATCH_CONFIG_MAIN 
+#define CATCH_CONFIG_MAIN
 #include "catch.hpp"

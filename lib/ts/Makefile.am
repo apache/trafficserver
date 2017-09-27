@@ -252,11 +252,11 @@ test_tslib_CPPFLAGS = $(AM_CPPFLAGS)\
 # add you catch based test file here for tslib
 test_tslib_LDADD = libtsutil.la
 test_tslib_SOURCES = \
-	unit-tests/main.cpp \
+	unit-tests/unit_test_main.cc \
+	unit-tests/test_BufferWriter.cc \
 	unit-tests/test_IpMap.cc \
-	unit-tests/test_layout.cpp \
-	unit-tests/string_view.cpp \
-	unit-tests/BufferWriter.cpp
+	unit-tests/test_layout.cc \
+	unit-tests/test_string_view.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
