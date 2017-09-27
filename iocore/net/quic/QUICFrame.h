@@ -430,6 +430,7 @@ private:
 
 using QUICFrameDeleterFunc = void (*)(QUICFrame *p);
 using QUICFramePtr         = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
+using QUICStreamFramePtr   = std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>;
 
 //
 // Retransmission Frame

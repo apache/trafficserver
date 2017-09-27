@@ -52,6 +52,10 @@ class QUICRemoteFlowController : public QUICFlowController
 public:
   QUICRemoteFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx) : QUICFlowController(initial_limit, tx) {}
   QUICError update(QUICOffset offset) override;
+  void forward_limit(QUICOffset limit) override;
+
+private:
+  bool _blocked = false;
 };
 
 class QUICLocalFlowController : public QUICFlowController

@@ -238,15 +238,14 @@ QUICStreamManager::total_offset_received() const
 uint64_t
 QUICStreamManager::total_offset_sent() const
 {
-  uint64_t total_offset_sent = 0;
+  return this->_total_offset_sent;
+}
 
-  // FIXME Iterating all (open + closed) streams is expensive
-  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
-    if (s->id() != 0) {
-      total_offset_sent += s->largest_offset_sent() / 1024;
-    }
-  }
-  return total_offset_sent;
+void
+QUICStreamManager::add_total_offset_sent(uint32_t sent_byte)
+{
+  // FIXME: use atomic increment
+  this->_total_offset_sent += sent_byte;
 }
 
 uint32_t

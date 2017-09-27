@@ -25,6 +25,9 @@
 #include "QUICFrame.h"
 #include "QUICFrameTransmitter.h"
 
+//
+// QUICFlowController
+//
 QUICOffset
 QUICFlowController::current_offset()
 {
@@ -68,6 +71,16 @@ QUICFlowController::set_threshold(uint64_t threshold)
   this->_threshold = threshold;
 }
 
+//
+// QUICRemoteFlowController
+//
+void
+QUICRemoteFlowController::forward_limit(QUICOffset offset)
+{
+  QUICFlowController::forward_limit(offset);
+  this->_blocked = false;
+}
+
 QUICError
 QUICRemoteFlowController::update(QUICOffset offset)
 {
@@ -79,13 +92,17 @@ QUICRemoteFlowController::update(QUICOffset offset)
   }
 
   // Send BLOCKED(_STREAM) frame
-  if (offset > this->_limit) {
+  if (!this->_blocked && offset > this->_limit) {
     this->_tx->transmit_frame(this->_create_frame());
+    this->_blocked = true;
   }
 
   return error;
 }
 
+//
+// QUICLocalFlowController
+//
 void
 QUICLocalFlowController::forward_limit(QUICOffset offset)
 {
@@ -97,6 +114,9 @@ QUICLocalFlowController::forward_limit(QUICOffset offset)
   }
 }
 
+//
+// QUIC[Remote|Local][Connection|Stream]FlowController
+//
 std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>
 QUICRemoteConnectionFlowController::_create_frame()
 {

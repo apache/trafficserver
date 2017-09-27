@@ -262,11 +262,22 @@ QUICNetVConnection::_transmit_frame(QUICFramePtr frame)
   DebugQUICCon("Frame Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
 
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
-  this->_frame_send_queue.push(std::move(frame));
+
+  if (frame->type() == QUICFrameType::STREAM) {
+    QUICStreamFrame &stream_frame = static_cast<QUICStreamFrame &>(*frame);
+    // XXX: Stream 0 is exempt from the connection-level flow control window.
+    if (stream_frame.stream_id() == STREAM_ID_FOR_HANDSHAKE) {
+      this->_frame_send_queue.push(std::move(frame));
+    } else {
+      this->_stream_frame_send_queue.push(std::move(frame));
+    }
+  } else {
+    this->_frame_send_queue.push(std::move(frame));
+  }
 }
 
 void
-QUICNetVConnection::transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame)
+QUICNetVConnection::transmit_frame(QUICFramePtr frame)
 {
   this->_transmit_frame(std::move(frame));
   if (!this->_packet_write_ready) {
@@ -305,6 +316,11 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
     Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
           static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
           this->_remote_flow_controller->current_limit());
+
+    if (!this->_packet_write_ready) {
+      this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+    }
+
     break;
   case QUICFrameType::BLOCKED:
     // BLOCKED frame is for debugging. Nothing to do here.
@@ -665,13 +681,6 @@ QUICNetVConnection::_state_common_send_packet()
   this->_packetize_frames();
 
   QUICPacket *packet;
-  QUICError error = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
-  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
-        static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
-        this->_remote_flow_controller->current_limit());
-  if (error.cls != QUICErrorClass::NONE) {
-    return error;
-  }
 
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   while ((packet = this->_packet_send_queue.dequeue()) != nullptr) {
@@ -685,49 +694,98 @@ QUICNetVConnection::_state_common_send_packet()
   return QUICError(QUICErrorClass::NONE);
 }
 
+// Schedule sending BLOCKED frame when offset exceed the limit
+bool
+QUICNetVConnection::_is_send_frame_avail_more_than(uint32_t size)
+{
+  QUICError error = this->_remote_flow_controller->update((this->_stream_manager->total_offset_sent() + size) / 1024);
+  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
+        static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
+        this->_remote_flow_controller->current_limit());
+
+  if (error.cls != QUICErrorClass::NONE) {
+    // Flow Contoroller blocked sending STREAM frame
+    return false;
+  }
+
+  return true;
+}
+
+// Store frame data to buffer for packet. When remaining buffer is too small to store frame data or packet type is different from
+// previous one, build packet and transmit it. After that, allocate new buffer.
+void
+QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
+                                 QUICFramePtr frame)
+{
+  uint32_t max_size = this->maximum_quic_packet_size();
+
+  QUICPacketType previous_packet_type = current_packet_type;
+  QUICRetransmissionFrame *rf         = dynamic_cast<QUICRetransmissionFrame *>(frame.get());
+  if (rf) {
+    current_packet_type = rf->packet_type();
+  } else {
+    current_packet_type = QUICPacketType::UNINITIALIZED;
+  }
+
+  if (len + frame->size() + MAX_PACKET_OVERHEAD > max_size || (previous_packet_type != current_packet_type && len > 0)) {
+    ink_assert(len > 0);
+    this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
+    retransmittable = false;
+    len             = 0;
+  }
+
+  retransmittable = retransmittable || (frame->type() != QUICFrameType::ACK && frame->type() != QUICFrameType::PADDING);
+
+  if (buf == nullptr) {
+    buf = ats_unique_malloc(max_size);
+  }
+
+  size_t l = 0;
+  DebugQUICCon("type=%s", QUICDebugNames::frame_type(frame->type()));
+  frame->store(buf.get() + len, &l);
+  len += l;
+
+  return;
+}
+
+// 1. Dequeue frame from _stream_frame_send_queue and _frame_send_queue
+// 2. Put frames into buffer as many as possible
+// 3. Build packet with the buffer
+// 4. Enqueue the packet via transmit_packet
 void
 QUICNetVConnection::_packetize_frames()
 {
-  uint32_t max_size = this->maximum_quic_packet_size();
-  uint32_t min_size = this->minimum_quic_packet_size();
-  ats_unique_buf buf(nullptr, [](void *p) { ats_free(p); });
   size_t len = 0;
+  ats_unique_buf buf(nullptr, [](void *p) { ats_free(p); });
+  QUICPacketType current_packet_type = QUICPacketType::UNINITIALIZED;
 
-  // Put frames into buf as many as possible
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame(nullptr, nullptr);
-  bool retransmittable                = false;
-  QUICPacketType previous_packet_type = QUICPacketType::UNINITIALIZED;
-  QUICPacketType current_packet_type  = QUICPacketType::UNINITIALIZED;
+  QUICFramePtr frame(nullptr, nullptr);
+  bool retransmittable = false;
 
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
+
   while (this->_frame_send_queue.size() > 0) {
     frame = std::move(this->_frame_send_queue.front());
     this->_frame_send_queue.pop();
-    QUICRetransmissionFrame *rf = dynamic_cast<QUICRetransmissionFrame *>(frame.get());
-    previous_packet_type        = current_packet_type;
-    if (rf) {
-      current_packet_type = rf->packet_type();
-    } else {
-      current_packet_type = QUICPacketType::UNINITIALIZED;
-    }
-    if (len + frame->size() + MAX_PACKET_OVERHEAD > max_size || (previous_packet_type != current_packet_type && len > 0)) {
-      ink_assert(len > 0);
-      this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
-      len = 0;
-    }
-    retransmittable = retransmittable || (frame->type() != QUICFrameType::ACK && frame->type() != QUICFrameType::PADDING);
+    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+  }
 
-    if (buf == nullptr) {
-      buf = ats_unique_malloc(max_size);
+  while (this->_stream_frame_send_queue.size() > 0) {
+    const QUICFramePtr &f = this->_stream_frame_send_queue.front();
+    uint32_t frame_size   = f->size();
+    if (!this->_is_send_frame_avail_more_than(frame_size)) {
+      break;
     }
-    size_t l = 0;
-    DebugQUICCon("type=%s", QUICDebugNames::frame_type(frame->type()));
-    frame->store(buf.get() + len, &l);
-    len += l;
+
+    frame = std::move(this->_stream_frame_send_queue.front());
+    this->_stream_frame_send_queue.pop();
+    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+    this->_stream_manager->add_total_offset_sent(frame_size);
   }
 
   if (len != 0) {
     // Pad with PADDING frames
+    uint32_t min_size = this->minimum_quic_packet_size();
     if (min_size > len) {
       // FIXME QUICNetVConnection should not know the actual type value of PADDING frame
       memset(buf.get() + len, 0, min_size - len);

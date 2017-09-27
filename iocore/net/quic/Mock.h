@@ -382,6 +382,7 @@ public:
   {
     QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
     stream_io->write(data, size);
+
     eventProcessor.schedule_imm(this, ET_CALL, 12345, stream_io);
   }
 };

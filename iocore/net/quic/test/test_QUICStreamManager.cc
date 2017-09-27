@@ -159,9 +159,10 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   sleep(2);
   CHECK(sm.total_offset_sent() == 0);
 
-  // total_offset should be a integer in unit of 1024 octets
+  // total_offset should be a integer in unit of octets
   std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> stream_frame_1 = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
   mock_app.send(data, 1024, 1);
+  sm.add_total_offset_sent(1024);
   sleep(2);
-  CHECK(sm.total_offset_sent() == 1);
+  CHECK(sm.total_offset_sent() == 1024);
 }

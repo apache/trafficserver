@@ -29,8 +29,6 @@ ats_unique_malloc(size_t size)
   return ats_unique_buf(reinterpret_cast<uint8_t *>(ats_malloc(size)), [](void *p) { ats_free(p); });
 }
 
-const QUICStreamId STREAM_ID_FOR_HANDSHAKE = 0;
-
 bool
 QUICTypeUtil::hasLongHeader(const uint8_t *buf)
 {

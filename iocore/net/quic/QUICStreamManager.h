@@ -43,6 +43,8 @@ public:
   void set_max_stream_id(QUICStreamId id);
   uint64_t total_offset_received() const;
   uint64_t total_offset_sent() const;
+  void add_total_offset_sent(uint32_t sent_byte);
+
   uint32_t stream_count() const;
 
   void set_default_application(QUICApplication *app);
@@ -68,4 +70,5 @@ private:
   std::shared_ptr<const QUICTransportParameters> _remote_tp = nullptr;
   QUICStreamId _local_maximum_stream_id                     = 0;
   QUICStreamId _remote_maximum_stream_id                    = 0;
+  uint64_t _total_offset_sent                               = 0;
 };

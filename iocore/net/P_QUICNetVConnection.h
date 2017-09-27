@@ -187,7 +187,7 @@ public:
   virtual Ptr<ProxyMutex> get_packet_transmitter_mutex() override;
 
   // QUICConnection (QUICFrameTransmitter)
-  virtual void transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame) override;
+  virtual void transmit_frame(QUICFramePtr frame) override;
 
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
@@ -222,13 +222,20 @@ private:
 
   Queue<QUICPacket> _packet_recv_queue;
   Queue<QUICPacket> _packet_send_queue;
+  // `_frame_send_queue` is the queue for any type of frame except STREAM frame.
+  // The flow contorl doesn't blcok frames in this queue.
+  // `_stream_frame_send_queue` is the queue for STREAM frame.
   std::queue<QUICFramePtr> _frame_send_queue;
+  std::queue<QUICFramePtr> _stream_frame_send_queue;
 
   Event *_packet_write_ready = nullptr;
 
   void _transmit_packet(QUICPacketPtr);
   void _transmit_frame(QUICFramePtr);
 
+  bool _is_send_frame_avail_more_than(uint32_t size);
+  void _store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
+                    QUICFramePtr frame);
   void _packetize_frames();
   std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
                                                                    QUICPacketType type = QUICPacketType::UNINITIALIZED);

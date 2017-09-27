@@ -60,8 +60,7 @@ using QUICOffset       = uint64_t;
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
   0xff000005,
 };
-
-extern const QUICStreamId STREAM_ID_FOR_HANDSHAKE;
+constexpr QUICStreamId STREAM_ID_FOR_HANDSHAKE = 0;
 
 enum class QUICPacketType : int {
   VERSION_NEGOTIATION = 1,
