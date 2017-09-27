@@ -178,6 +178,7 @@ ticket_block_create(char *ticket_key_data, int ticket_key_len)
     Error("SSL session ticket key is too short (>= 48 bytes are required)");
     goto fail;
   }
+  Debug("ssl", "Create %d ticket key blocks", num_ticket_keys);
 
   keyblock = ticket_block_alloc(num_ticket_keys);
 

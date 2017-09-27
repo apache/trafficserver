@@ -31,16 +31,15 @@
 #include "ts/ink_platform.h"
 #include "P_SSLUtils.h"
 #include "ts/RbTree.h"
+#include "ts/apidefs.h"
 #include <openssl/ssl.h>
 
 #define SSL_MAX_SESSION_SIZE 256
 
-struct SSLSessionID {
-  char bytes[SSL_MAX_SSL_SESSION_ID_LENGTH];
-  size_t len;
-
-  SSLSessionID(const unsigned char *s, size_t l) : len(l)
+struct SSLSessionID : public TSSslSessionID {
+  SSLSessionID(const unsigned char *s, size_t l)
   {
+    len = l;
     ink_release_assert(l <= sizeof(bytes));
     memcpy(bytes, s, l);
   }
@@ -102,13 +101,15 @@ struct SSLSessionID {
   uint64_t
   hash() const
   {
-    // because the session ids should be uniformly random let's just use the upper 64 bits as the hash.
-    if (len >= sizeof(uint64_t))
-      return *reinterpret_cast<uint64_t *>(const_cast<char *>(bytes));
-    else if (len)
+    // because the session ids should be uniformly random let's just use the last 64 bits as the hash.
+    // The first bytes could be interpreted as a name, and so not random.
+    if (len >= sizeof(uint64_t)) {
+      return *reinterpret_cast<uint64_t *>(const_cast<char *>(bytes + len - sizeof(uint64_t)));
+    } else if (len) {
       return static_cast<uint64_t>(bytes[0]);
-    else
+    } else {
       return 0;
+    }
   }
 };
 
@@ -134,6 +135,7 @@ public:
   ~SSLSessionBucket();
   void insertSession(const SSLSessionID &, SSL_SESSION *ctx);
   bool getSession(const SSLSessionID &, SSL_SESSION **ctx);
+  int getSessionBuffer(const SSLSessionID &, char *buffer, int &len);
   void removeSession(const SSLSessionID &);
 
 private:
@@ -149,6 +151,7 @@ class SSLSessionCache
 {
 public:
   bool getSession(const SSLSessionID &sid, SSL_SESSION **sess) const;
+  int getSessionBuffer(const SSLSessionID &sid, char *buffer, int &len) const;
   void insertSession(const SSLSessionID &sid, SSL_SESSION *sess);
   void removeSession(const SSLSessionID &sid);
   SSLSessionCache();
