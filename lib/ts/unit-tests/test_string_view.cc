@@ -18,15 +18,10 @@
 
 #include "catch.hpp"
 
-#ifndef _DEBUG
-#define _DEBUG
-#endif
-
 #include "string_view.h"
 #include <iostream>
 #include <string>
 #include <vector>
-
 
 using namespace std;
 
@@ -55,7 +50,7 @@ TEST_CASE("constructor calls", "[string_view] [constructor]")
     auto b = "grigor rulz"_sv;
     REQUIRE((std::is_same<decltype(b), ts::string_view>::value) == true);
     REQUIRE(b.size() == 11);
-    REQUIRE(b.length() ==11);
+    REQUIRE(b.length() == 11);
     REQUIRE(b.empty() == false);
     REQUIRE(b == "grigor rulz");
   }
@@ -120,11 +115,11 @@ TEST_CASE("constructor calls", "[string_view] [constructor]")
 
   SECTION("= operator")
   {
-    string std_string = "hello";
-    ts::string_view sv = std_string;
-    char str1[10] = "hello";
+    string std_string   = "hello";
+    ts::string_view sv  = std_string;
+    char str1[10]       = "hello";
     ts::string_view sv2 = str1;
-    char const *str2 = "hello";
+    char const *str2    = "hello";
     ts::string_view sv3 = str2;
 
     REQUIRE(sv == "hello");
@@ -136,12 +131,12 @@ TEST_CASE("constructor calls", "[string_view] [constructor]")
 TEST_CASE("operators", "[string_view] [operator]")
 {
   SECTION("==")
- {
+  {
     ts::string_view sv("hello");
 
-    char str1[10] = "hello";
+    char str1[10]    = "hello";
     char const *str2 = "hello";
-    string str3 = "hello";
+    string str3      = "hello";
 
     REQUIRE(str2 == str3);
     REQUIRE(str1 == str3);
@@ -155,9 +150,9 @@ TEST_CASE("operators", "[string_view] [operator]")
   {
     ts::string_view sv("hello");
 
-    char str1[10] = "hhhhhhhhh";
+    char str1[10]    = "hhhhhhhhh";
     char const *str2 = "hella";
-    string str3 = "";
+    string str3      = "";
 
     REQUIRE(str2 != str3);
     REQUIRE(str1 != str3);
@@ -170,9 +165,9 @@ TEST_CASE("operators", "[string_view] [operator]")
   {
     ts::string_view sv("hello");
 
-    char str1[10] = "a";
+    char str1[10]    = "a";
     char const *str2 = "abcdefg";
-    string str3 = "";
+    string str3      = "";
 
     REQUIRE(sv > str1);
     REQUIRE(sv > str2);
@@ -182,9 +177,9 @@ TEST_CASE("operators", "[string_view] [operator]")
   {
     ts::string_view sv("hello");
 
-    char str1[10] = "z";
+    char str1[10]    = "z";
     char const *str2 = "zaaaaaa";
-    string str3 = "hellz";
+    string str3      = "hellz";
 
     REQUIRE(sv < str1);
     REQUIRE(sv < str2);
@@ -194,9 +189,9 @@ TEST_CASE("operators", "[string_view] [operator]")
   {
     ts::string_view sv("hello");
 
-    char str1[10] = "hello";
+    char str1[10]    = "hello";
     char const *str2 = "abcdefg";
-    string str3 = "";
+    string str3      = "";
 
     REQUIRE(sv >= str1);
     REQUIRE(sv >= str2);
@@ -206,9 +201,9 @@ TEST_CASE("operators", "[string_view] [operator]")
   {
     ts::string_view sv("hello");
 
-    char str1[10] = "hello";
+    char str1[10]    = "hello";
     char const *str2 = "zaaaaaa";
-    string str3 = "hellz";
+    string str3      = "hellz";
 
     REQUIRE(sv <= str1);
     REQUIRE(sv <= str2);
@@ -264,8 +259,7 @@ TEST_CASE("Access & iterators", "[string_view] [access]")
     REQUIRE(*sv.crend() == '\0');
 
     int n = 0;
-    for (auto it : sv)
-    {
+    for (auto it : sv) {
       REQUIRE(it == sv[n]);
       n++;
     }
@@ -293,8 +287,13 @@ TEST_CASE("Access & iterators", "[string_view] [access]")
     REQUIRE_THROWS_AS(sv.at(100), std::out_of_range);
     REQUIRE_THROWS_AS(sv.at(-1), std::out_of_range);
 
+#if defined(_DEBUG)
     REQUIRE_THROWS_AS(sv[100], std::out_of_range);
     REQUIRE_THROWS_AS(sv[-1], std::out_of_range);
+#else
+    REQUIRE_NOTHROW(sv[100]);
+    REQUIRE_NOTHROW(sv[-1]);
+#endif
   }
 }
 
@@ -365,7 +364,7 @@ TEST_CASE("Operations", "[string_view] [operation]")
 {
   SECTION("copy")
   {
-    //weird copy
+    // weird copy
 
     // char str[10];
     // ts::string_view sv("hello");

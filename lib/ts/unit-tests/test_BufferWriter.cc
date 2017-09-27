@@ -31,9 +31,7 @@
 
 namespace
 {
-
 ts::string_view three[] = {"a", "", "bcd"};
-
 }
 
 TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
@@ -71,10 +69,18 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     }
 
     // Dummies.
-    size_t capacity() const override { return 0; }
-    size_t extent() const override { return 0; }
-    X & clip(size_t) override { return *this; }
-    X & extend(size_t) override { return *this; }
+    size_t
+    capacity() const override
+    {
+      return 0;
+    }
+    size_t
+    extent() const override
+    {
+      return 0;
+    }
+    X &clip(size_t) override { return *this; }
+    X &extend(size_t) override { return *this; }
   };
 
   X x;
@@ -114,9 +120,9 @@ TEST_CASE("Minimal Local Buffer Writer", "[BWLM]")
 
 namespace
 {
-
 template <class BWType>
-bool twice(BWType &bw)
+bool
+twice(BWType &bw)
 {
   if ((bw.capacity() != 20) or (bw.size() != 0) or bw.error() or (bw.remaining() != 20)) {
     return false;
@@ -258,11 +264,11 @@ TEST_CASE("Concrete Buffer Writers 2", "[BWC2]")
 
 TEST_CASE("Discard Buffer Writer", "[BWD]")
 {
-  char scratch[1] = { '!' };
+  char scratch[1] = {'!'};
   ts::FixedBufferWriter bw(scratch, 0);
 
   REQUIRE(bw.size() == 0);
-  REQUIRE (bw.extent() == 0);
+  REQUIRE(bw.extent() == 0);
 
   bw.write('T');
 
