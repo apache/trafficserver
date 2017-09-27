@@ -91,8 +91,8 @@ SSLConfigParams::reset()
 {
   serverCertPathOnly = serverCertChainFilename = configFilePath = serverCACertFilename = serverCACertPath = clientCertPath =
     clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
-      ticket_key_filename                                                                                     = nullptr;
-  client_ctx                                                                                                  = nullptr;
+      nullptr;
+  client_ctx      = nullptr;
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
   ssl_ctx_options                                                     = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
   ssl_client_ctx_protocols                                            = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
@@ -122,7 +122,6 @@ SSLConfigParams::cleanup()
   client_cipherSuite      = (char *)ats_free_null(client_cipherSuite);
   dhparamsFile            = (char *)ats_free_null(dhparamsFile);
   ssl_wire_trace_ip       = (IpAddr *)ats_free_null(ssl_wire_trace_ip);
-  ticket_key_filename     = (char *)ats_free_null(ticket_key_filename);
 
   freeCTXmap();
   SSLReleaseContext(client_ctx);
@@ -542,13 +541,32 @@ SSLTicketParams::LoadTicket()
   ssl_ticket_key_block *keyblock = nullptr;
 
   SSLConfig::scoped_config params;
+  time_t last_load_time    = 0;
+  bool no_default_keyblock = true;
+  SSLTicketKeyConfig::scoped_config ticket_params;
+  if (ticket_params) {
+    last_load_time      = ticket_params->load_time;
+    no_default_keyblock = ticket_params->default_global_keyblock != nullptr;
+  }
 
   if (REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename") == REC_ERR_OKAY &&
       ticket_key_filename != nullptr) {
     ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
+    // See if the file changed since we last loaded
+    struct stat sdata;
+    if (stat(ticket_key_filename, &sdata) >= 0) {
+      if (sdata.st_mtim.tv_sec <= last_load_time) {
+        // No updates since last load
+        return false;
+      }
+    }
     keyblock = ssl_create_ticket_keyblock(ticket_key_path);
-  } else {
+    // Initialize if we don't have one yet
+  } else if (no_default_keyblock) {
     keyblock = ssl_create_ticket_keyblock(nullptr);
+  } else {
+    // No need to update.  Keep the previous ticket param
+    return false;
   }
   if (!keyblock) {
     Error("ticket key reloaded from %s", ticket_key_filename);
@@ -559,6 +577,20 @@ SSLTicketParams::LoadTicket()
   Debug("ssl", "ticket key reloaded from %s", ticket_key_filename);
   return true;
 
+#endif
+}
+
+void
+SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
+{
+  cleanup();
+#if HAVE_OPENSSL_SESSION_TICKETS
+  if (ticket_data != nullptr && ticket_data_len > 0) {
+    default_global_keyblock = ticket_block_create(ticket_data, ticket_data_len);
+  } else {
+    default_global_keyblock = ssl_create_ticket_keyblock(nullptr);
+  }
+  load_time = time(nullptr);
 #endif
 }
 
@@ -585,7 +617,17 @@ SSLTicketKeyConfig::reconfigure()
       return false;
     }
   }
+  configid = configProcessor.set(configid, ticketKey);
+  return true;
+}
 
+bool
+SSLTicketKeyConfig::reconfigure_data(char *ticket_data, int ticket_data_len)
+{
+  SSLTicketParams *ticketKey = new SSLTicketParams();
+  if (ticketKey) {
+    ticketKey->LoadTicketData(ticket_data, ticket_data_len);
+  }
   configid = configProcessor.set(configid, ticketKey);
   return true;
 }

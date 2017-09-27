@@ -168,7 +168,6 @@ ConfigProcessor::get(unsigned int id)
   ConfigInfo *info;
   int idx;
 
-  ink_assert(id != 0);
   ink_assert(id <= MAX_CONFIGS);
 
   if (id == 0 || id > MAX_CONFIGS) {

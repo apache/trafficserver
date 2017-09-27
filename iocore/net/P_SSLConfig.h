@@ -69,7 +69,6 @@ struct SSLConfigParams : public ConfigInfo {
   char *dhparamsFile;
   char *cipherSuite;
   char *client_cipherSuite;
-  char *ticket_key_filename;
   int configExitOnLoadError;
   int clientCertLevel;
   int verify_depth;
@@ -161,9 +160,11 @@ private:
 };
 
 struct SSLTicketParams : public ConfigInfo {
-  ssl_ticket_key_block *default_global_keyblock;
+  ssl_ticket_key_block *default_global_keyblock = nullptr;
+  time_t load_time                              = 0;
   char *ticket_key_filename;
   bool LoadTicket();
+  void LoadTicketData(char *ticket_data, int ticket_data_len);
   void cleanup();
 
   ~SSLTicketParams() { cleanup(); }
@@ -172,6 +173,7 @@ struct SSLTicketParams : public ConfigInfo {
 struct SSLTicketKeyConfig {
   static void startup();
   static bool reconfigure();
+  static bool reconfigure_data(char *ticket_data, int ticket_data_len);
 
   static SSLTicketParams *
   acquire()
@@ -182,7 +184,9 @@ struct SSLTicketKeyConfig {
   static void
   release(SSLTicketParams *params)
   {
-    configProcessor.release(configid, params);
+    if (configid > 0) {
+      configProcessor.release(configid, params);
+    }
   }
 
   typedef ConfigProcessor::scoped_config<SSLTicketKeyConfig, SSLTicketParams> scoped_config;
