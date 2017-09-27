@@ -804,7 +804,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.net.inactivity_check_frequency", RECD_INT, "1", RECU_RESTART_TC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.net.event_period", RECD_INT, "10", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.net.event_period", RECD_INT, "100", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.accept_period", RECD_INT, "10", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

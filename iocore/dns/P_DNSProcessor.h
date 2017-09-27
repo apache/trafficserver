@@ -62,7 +62,9 @@ extern unsigned int dns_sequence_number;
 // Constants
 //
 
-#define DNS_PERIOD HRTIME_MSECONDS(-100)
+// In order to guarantee DNSHandler running after NetHandler,
+// DNS_PERIOD should less than proxy.config.net.event_period.
+#define DNS_PERIOD HRTIME_MSECONDS(-101)
 #define DNS_DELAY_PERIOD HRTIME_MSECONDS(10)
 #define DNS_SEQUENCE_NUMBER_RESTART_OFFSET 4000
 #define DNS_PRIMARY_RETRY_PERIOD HRTIME_SECONDS(5)
