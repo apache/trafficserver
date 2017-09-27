@@ -325,6 +325,9 @@ QUICStream::recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame)
   Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [REMOTE] %" PRIu64 "/%" PRIu64, this->_id,
         QUICDebugNames::stream_state(this->_state), this->_remote_flow_controller->current_offset(),
         this->_remote_flow_controller->current_limit());
+
+  this->reenable(&this->_write_vio);
+
   return QUICError(QUICErrorClass::NONE);
 }
 
