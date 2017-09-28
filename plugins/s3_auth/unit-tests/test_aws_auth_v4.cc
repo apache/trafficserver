@@ -23,6 +23,7 @@
 
 #include <string.h>
 #include <openssl/hmac.h>   /* EVP_MAX_MD_SIZE */
+#define CATCH_CONFIG_MAIN   /* include main function */
 #include <catch.hpp>        /* catch unit-test framework */
 #include "../aws_auth_v4.h" /* S3 auth v4 utility */
 
