@@ -42,7 +42,8 @@ server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'ssntxnorder_verify.*',
-
+    'proxy.config.http.cache.http' : 0, #disable cache to simply the test.
+    'proxy.config.cache.enable_read_while_writer' : 0
 })
 
 ts.Disk.remap_config.AddLine(
@@ -53,7 +54,7 @@ numberOfRequests = randint(1000, 1500)
 
 # Make a *ton* of calls to the proxy!
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'ab -n {0} -c 10 http://127.0.0.1:{1}/'.format(numberOfRequests, ts.Variables.port)
+tr.Processes.Default.Command = 'ab -n {0} -c 10 http://127.0.0.1:{1}/;sleep 5'.format(numberOfRequests, ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))

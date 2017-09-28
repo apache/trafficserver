@@ -36,7 +36,7 @@
 
 #include "diags.i"
 
-static const int port       = 4443;
+static const int port       = 56912;
 static const char payload[] = "hello";
 
 /*This implements a standard Unix echo server: just send every udp packet you
@@ -98,7 +98,7 @@ EchoServer::handle_packet(int event, void *data)
   }
 
   default:
-    std::cout << "got unknown event" << std::endl;
+    std::cout << "got unknown event [" << event << "]" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
