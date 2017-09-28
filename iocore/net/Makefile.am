@@ -107,7 +107,6 @@ libinknet_a_SOURCES = \
   P_SSLNetProcessor.h \
   P_SSLNetVConnection.h \
   P_SSLNextProtocolAccept.h \
-  P_QUICNextProtocolAccept.h \
   P_SSLNextProtocolSet.h \
   P_SSLUtils.h \
   P_SSLClientUtils.h \
@@ -133,7 +132,6 @@ libinknet_a_SOURCES = \
   SSLNetProcessor.cc \
   SSLNetVConnection.cc \
   SSLNextProtocolAccept.cc \
-  QUICNextProtocolAccept.cc \
   SSLNextProtocolSet.cc \
   SSLUtils.cc \
   SSLClientUtils.cc \
@@ -155,9 +153,11 @@ libinknet_a_SOURCES += \
   P_QUICPacketHandler.h \
   P_QUICNetProcessor.h \
   P_QUICNetVConnection.h \
+  P_QUICNextProtocolAccept.h \
   QUICPacketHandler.cc \
   QUICNetProcessor.cc \
-  QUICNetVConnection.cc
+  QUICNetVConnection.cc \
+  QUICNextProtocolAccept.cc
 endif
 
 #test_UNUSED_SOURCES = \
