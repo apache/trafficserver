@@ -60,6 +60,9 @@ public:
     return write(sV.data(), sV.size());
   }
 
+  /// Return the written buffer.
+  virtual const char *data() const = 0;
+
   // Returns true if the instance is in an error state.
   //
   virtual bool error() const = 0;
@@ -169,6 +172,13 @@ public:
   // resolving calls to a 'write' member ( wkaras@oath.com ).
   //
   using BufferWriter::write;
+
+  /// Return the written buffer.
+  const char *
+  data() const override
+  {
+    return _buf;
+  }
 
   bool
   error() const override
