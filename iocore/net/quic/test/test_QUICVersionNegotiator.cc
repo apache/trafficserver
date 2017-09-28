@@ -35,7 +35,7 @@ TEST_CASE("QUICVersionNegotiator_Normal", "[quic]")
   CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
   // Negotiate version
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> initial_packet =
+  QUICPacketUPtr initial_packet =
     packet_factory.create_client_initial_packet({}, 0, QUIC_SUPPORTED_VERSIONS[0], ats_unique_malloc(0), 0);
   vn.negotiate(initial_packet.get());
   CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);

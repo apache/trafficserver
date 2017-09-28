@@ -145,7 +145,7 @@ public:
     this->_mutex = new_ProxyMutex();
   };
   void
-  transmit_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet) override
+  transmit_packet(QUICPacketUPtr packet) override
   {
     ++_transmit_count;
   }
@@ -263,7 +263,7 @@ class MockQUICPacketTransmitter : public QUICPacketTransmitter
 public:
   MockQUICPacketTransmitter() : QUICPacketTransmitter() { this->_mutex = new_ProxyMutex(); };
   void
-  transmit_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet) override
+  transmit_packet(QUICPacketUPtr packet) override
   {
     ++_transmit_count;
   }
@@ -313,7 +313,7 @@ public:
   }
 
   void
-  on_packet_sent(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet)
+  on_packet_sent(QUICPacketUPtr packet)
   {
   }
 };

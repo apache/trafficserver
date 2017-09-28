@@ -161,7 +161,7 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     this->action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
   }
 
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> qPkt = QUICPacketFactory::create(block, vc->largest_received_packet_number());
+  QUICPacketUPtr qPkt = QUICPacketFactory::create(block, vc->largest_received_packet_number());
   vc->push_packet(std::move(qPkt));
 
   // send to EThread

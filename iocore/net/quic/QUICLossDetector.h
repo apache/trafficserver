@@ -47,7 +47,7 @@ public:
 
   std::vector<QUICFrameType> interests() override;
   virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
-  void on_packet_sent(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet);
+  void on_packet_sent(QUICPacketUPtr packet);
   QUICPacketNumber largest_acked_packet_number();
 
 private:
@@ -57,7 +57,7 @@ private:
     bool retransmittable;
     bool handshake;
     size_t bytes;
-    std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet;
+    QUICPacketUPtr packet;
   };
 
   bool _time_loss_detection = false;
@@ -95,7 +95,7 @@ private:
   void _decrement_packet_count(QUICPacketNumber packet_number);
 
   void _on_packet_sent(QUICPacketNumber packet_number, bool is_retransmittable, bool is_handshake, size_t sent_bytes,
-                       std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet);
+                       QUICPacketUPtr packet);
   void _on_ack_received(const std::shared_ptr<const QUICAckFrame> &ack_frame);
   void _on_packet_acked(QUICPacketNumber acked_packet_number);
   void _update_rtt(uint32_t latest_rtt);

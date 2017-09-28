@@ -44,7 +44,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 
   QUICPacket client_initial_packet(block, 0);
 
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet = factory.create_version_negotiation_packet(&client_initial_packet, 0);
+  QUICPacketUPtr packet = factory.create_version_negotiation_packet(&client_initial_packet, 0);
   CHECK(packet->type() == QUICPacketType::VERSION_NEGOTIATION);
   CHECK(packet->connection_id() == client_initial_packet.connection_id());
   CHECK(packet->packet_number() == client_initial_packet.packet_number());
@@ -60,8 +60,7 @@ TEST_CASE("QUICPacketFactory_Create_ServerCleartextPacket", "[quic]")
   ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
   memcpy(payload.get(), raw, sizeof(raw));
 
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet =
-    factory.create_server_cleartext_packet(0x01020304, 0, std::move(payload), sizeof(raw), true);
+  QUICPacketUPtr packet = factory.create_server_cleartext_packet(0x01020304, 0, std::move(payload), sizeof(raw), true);
   CHECK(packet->type() == QUICPacketType::SERVER_CLEARTEXT);
   CHECK(packet->connection_id() == 0x01020304);
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
@@ -84,7 +83,7 @@ TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
   uint8_t output[1024];
   size_t out_len = 0;
 
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet = factory.create_stateless_reset_packet(0x01020304, token);
+  QUICPacketUPtr packet = factory.create_stateless_reset_packet(0x01020304, token);
   CHECK(packet->type() == QUICPacketType::STATELESS_RESET);
   CHECK(packet->connection_id() == 0x01020304);
   CHECK(packet->packet_number() == token.get_u8()[0]);

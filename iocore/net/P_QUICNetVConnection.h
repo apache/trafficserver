@@ -159,7 +159,7 @@ public:
   int state_connection_closing(int event, Event *data);
   int state_connection_closed(int event, Event *data);
   void start(SSL_CTX *);
-  void push_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet);
+  void push_packet(QUICPacketUPtr packet);
   void free(EThread *t) override;
 
   UDPConnection *get_udp_con();
@@ -182,7 +182,7 @@ public:
   QUICPacketNumber largest_acked_packet_number() override;
 
   // QUICConnection (QUICPacketTransmitter)
-  virtual void transmit_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet) override;
+  virtual void transmit_packet(QUICPacketUPtr packet) override;
   virtual void retransmit_packet(const QUICPacket &packet) override;
   virtual Ptr<ProxyMutex> get_packet_transmitter_mutex() override;
 
@@ -230,22 +230,22 @@ private:
 
   Event *_packet_write_ready = nullptr;
 
-  void _transmit_packet(QUICPacketPtr);
+  void _transmit_packet(QUICPacketUPtr);
   void _transmit_frame(QUICFrameUPtr);
 
   bool _is_send_frame_avail_more_than(uint32_t size);
   void _store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
                     QUICFrameUPtr frame);
   void _packetize_frames();
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
-                                                                   QUICPacketType type = QUICPacketType::UNINITIALIZED);
+  QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
+                               QUICPacketType type = QUICPacketType::UNINITIALIZED);
 
   QUICError _recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_numm);
 
-  QUICError _state_handshake_process_initial_client_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet);
-  QUICError _state_handshake_process_client_cleartext_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet);
-  QUICError _state_handshake_process_zero_rtt_protected_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet);
-  QUICError _state_connection_established_process_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> packet);
+  QUICError _state_handshake_process_initial_client_packet(QUICPacketUPtr packet);
+  QUICError _state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet);
+  QUICError _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
+  QUICError _state_connection_established_process_packet(QUICPacketUPtr packet);
   QUICError _state_common_receive_packet();
   QUICError _state_common_send_packet();
 

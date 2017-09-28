@@ -181,7 +181,7 @@ private:
 };
 
 using QUICPacketDeleterFunc = void (*)(QUICPacket *p);
-using QUICPacketPtr         = std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>;
+using QUICPacketUPtr        = std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>;
 
 extern ClassAllocator<QUICPacket> quicPacketAllocator;
 extern ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator;
@@ -206,23 +206,15 @@ public:
 class QUICPacketFactory
 {
 public:
-  static std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create(IOBufferBlock *block, QUICPacketNumber base_packet_number);
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create_version_negotiation_packet(const QUICPacket *packet_sent_by_client,
-                                                                                       QUICPacketNumber base_packet_number);
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create_server_cleartext_packet(QUICConnectionId connection_id,
-                                                                                    QUICPacketNumber base_packet_number,
-                                                                                    ats_unique_buf payload, size_t len,
-                                                                                    bool retransmittable);
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create_server_protected_packet(QUICConnectionId connection_id,
-                                                                                    QUICPacketNumber base_packet_number,
-                                                                                    ats_unique_buf payload, size_t len,
-                                                                                    bool retransmittable);
-  std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create_client_initial_packet(QUICConnectionId connection_id,
-                                                                                  QUICPacketNumber base_packet_number,
-                                                                                  QUICVersion version, ats_unique_buf payload,
-                                                                                  size_t len);
-  static std::unique_ptr<QUICPacket, QUICPacketDeleterFunc> create_stateless_reset_packet(QUICConnectionId connection_id,
-                                                                                          QUICStatelessToken stateless_reset_token);
+  static QUICPacketUPtr create(IOBufferBlock *block, QUICPacketNumber base_packet_number);
+  QUICPacketUPtr create_version_negotiation_packet(const QUICPacket *packet_sent_by_client, QUICPacketNumber base_packet_number);
+  QUICPacketUPtr create_server_cleartext_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
+                                                ats_unique_buf payload, size_t len, bool retransmittable);
+  QUICPacketUPtr create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
+                                                ats_unique_buf payload, size_t len, bool retransmittable);
+  QUICPacketUPtr create_client_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
+                                              QUICVersion version, ats_unique_buf payload, size_t len);
+  static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token);
   void set_version(QUICVersion negotiated_version);
   void set_crypto_module(QUICCrypto *crypto);
 

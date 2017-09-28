@@ -690,15 +690,15 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 //
 // QUICPacketFactory
 //
-std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
+QUICPacketUPtr
 QUICPacketFactory::create(IOBufferBlock *block, QUICPacketNumber base_packet_number)
 {
   QUICPacket *packet = quicPacketAllocator.alloc();
   new (packet) QUICPacket(block, base_packet_number);
-  return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(packet, &QUICPacketDeleter::delete_packet);
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 
-std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
+QUICPacketUPtr
 QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_sent_by_client, QUICPacketNumber base_packet_number)
 {
   size_t len = sizeof(QUICVersion) * countof(QUIC_SUPPORTED_VERSIONS);
@@ -715,20 +715,20 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
   new (packet)
     QUICPacket(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(), packet_sent_by_client->packet_number(),
                base_packet_number, packet_sent_by_client->version(), std::move(versions), len, false);
-  return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(packet, QUICPacketDeleter::delete_packet);
+  return QUICPacketUPtr(packet, QUICPacketDeleter::delete_packet);
 }
 
-std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
+QUICPacketUPtr
 QUICPacketFactory::create_server_cleartext_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                   ats_unique_buf payload, size_t len, bool retransmittable)
 {
   QUICPacket *p = quicPacketAllocator.alloc();
   new (p) QUICPacket(QUICPacketType::SERVER_CLEARTEXT, connection_id, this->_packet_number_generator.next(), base_packet_number,
                      this->_version, std::move(payload), len, retransmittable);
-  return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(p, &QUICPacketDeleter::delete_packet);
+  return QUICPacketUPtr(p, &QUICPacketDeleter::delete_packet);
 }
 
-std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
+QUICPacketUPtr
 QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                   ats_unique_buf payload, size_t len, bool retransmittable)
 {
@@ -736,7 +736,7 @@ QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id
   QUICPacket *p = quicPacketAllocator.alloc();
   new (p) QUICPacket(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, connection_id, this->_packet_number_generator.next(),
                      base_packet_number, std::move(payload), len, retransmittable);
-  auto packet = std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(p, &QUICPacketDeleter::delete_packet);
+  auto packet = QUICPacketUPtr(p, &QUICPacketDeleter::delete_packet);
 
   // TODO: use pmtu of UnixNetVConnection
   size_t max_cipher_txt_len = 2048;
@@ -756,26 +756,26 @@ QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id
     return packet;
   } else {
     Debug("quic_packet_factory", "CRYPTOGRAPHIC Error");
-    return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(nullptr, &QUICPacketDeleter::delete_null_packet);
+    return QUICPacketUPtr(nullptr, &QUICPacketDeleter::delete_null_packet);
   }
 }
 
-std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
+QUICPacketUPtr
 QUICPacketFactory::create_client_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                 QUICVersion version, ats_unique_buf payload, size_t len)
 {
   QUICPacket *packet = quicPacketAllocator.alloc();
   new (packet) QUICPacket(QUICPacketType::CLIENT_INITIAL, connection_id, this->_packet_number_generator.next(), base_packet_number,
                           version, std::move(payload), len, true);
-  return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(packet, &QUICPacketDeleter::delete_packet);
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 
-std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
+QUICPacketUPtr
 QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token)
 {
   QUICPacket *packet = quicPacketAllocator.alloc();
   new (packet) QUICPacket(QUICPacketType::STATELESS_RESET, connection_id, stateless_reset_token);
-  return std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>(packet, &QUICPacketDeleter::delete_packet);
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 
 void
