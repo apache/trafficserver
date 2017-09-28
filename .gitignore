@@ -53,6 +53,7 @@ cmd/traffic_ctl/traffic_ctl
 cmd/traffic_crashlog/traffic_crashlog
 cmd/traffic_top/traffic_top
 cmd/traffic_manager/traffic_manager
+cmd/traffic_manager/test_metrics
 cmd/traffic_layout/traffic_layout
 cmd/traffic_via/traffic_via
 cmd/traffic_wccp/traffic_wccp
@@ -83,6 +84,7 @@ lib/ts/test_X509HostnameValidator
 lib/ts/test_tsutil
 lib/ts/test_MemView
 lib/ts/test_Scalar
+lib/ts/test_tslib
 lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
@@ -104,6 +106,7 @@ proxy/logging/test_LogUtils
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/esi/*_test
 plugins/experimental/sslheaders/test_sslheaders
+plugins/s3_auth/test_s3auth
 
 plugins/esi/docnode_test
 plugins/esi/gzip_test
