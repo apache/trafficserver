@@ -49,17 +49,20 @@ static volatile int n_stat_pages = 0;
 void
 StatPagesManager::init()
 {
+  ink_mutex_init(&stat_pages_mutex);
   REC_EstablishStaticConfigInt32(m_enabled, "proxy.config.http_ui_enabled");
 }
 
 void
 StatPagesManager::register_http(const char *module, StatPagesFunc func)
 {
+  ink_mutex_acquire(&stat_pages_mutex);
   ink_release_assert(n_stat_pages < MAX_STAT_PAGES);
 
   stat_pages[n_stat_pages].module = (char *)ats_malloc(strlen(module) + 3);
   snprintf(stat_pages[n_stat_pages].module, strlen(module) + 3, "{%s}", module);
   stat_pages[n_stat_pages++].func = func;
+  ink_mutex_release(&stat_pages_mutex);
 }
 
 Action *
