@@ -39,7 +39,7 @@ libhq_a_SOURCES = \
   HQSessionAccept.cc \
   HQClientSession.cc \
   HQClientTransaction.cc \
-  $(abs_top_srcdir)/iocore/net/quic/QUICSimpleApp.cc
+  QUICSimpleApp.cc
 
 tidy-local: $(libhq_a_SOURCES) \
 	$(CXX_Clang_Tidy)
