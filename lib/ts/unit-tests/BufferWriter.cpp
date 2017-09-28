@@ -71,10 +71,23 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     }
 
     // Dummies.
-    size_t capacity() const override { return 0; }
-    size_t extent() const override { return 0; }
-    X & clip(size_t) override { return *this; }
-    X & extend(size_t) override { return *this; }
+    const char *
+    data() const override
+    {
+      return nullptr;
+    }
+    size_t
+    capacity() const override
+    {
+      return 0;
+    }
+    size_t
+    extent() const override
+    {
+      return 0;
+    }
+    X &clip(size_t) override { return *this; }
+    X &extend(size_t) override { return *this; }
   };
 
   X x;
