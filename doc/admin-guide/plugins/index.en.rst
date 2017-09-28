@@ -123,6 +123,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 .. toctree::
    :hidden:
 
+   Alternative Services <alt-svc.en>
    Balancer <balancer.en>
    Buffer Upload <buffer_upload.en>
    Cache Key Manipulation <cachekey.en>
@@ -144,6 +145,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Stale While Revalidate <stale_while_revalidate.en>
    TS Lua <ts_lua.en>
    WebP Transform <webp_transform.en>
+
+:doc:`Alternative Services <alt-svc.en>`
+   Routes to closest proxy server.
 
 :doc:`Balancer <balancer.en>`
    Balances requests across multiple origin servers.

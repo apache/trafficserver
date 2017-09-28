@@ -1,0 +1,6 @@
+egypt.example.com
+ 7ee9::/16
+ 18.0.0.0/8
+morocco.example.com
+ 7e3a:f3f3::/32
+ 64.77.0.0/16

@@ -1,0 +1,4 @@
+buffalo.example.com
+ 63.128.1.0/24
+washington.example.com
+ 192.168.1.0/24
