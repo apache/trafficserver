@@ -374,8 +374,8 @@ QUICStream::_send()
       break;
     }
 
-    std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> frame = QUICFrameFactory::create_stream_frame(
-      reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id, this->_send_offset, fin);
+    QUICStreamFrameUPtr frame = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len,
+                                                                      this->_id, this->_send_offset, fin);
 
     this->_send_offset += len;
     reader->consume(len);

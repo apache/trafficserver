@@ -429,8 +429,8 @@ private:
 };
 
 using QUICFrameDeleterFunc = void (*)(QUICFrame *p);
-using QUICFramePtr         = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
-using QUICStreamFramePtr   = std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>;
+using QUICFrameUPtr        = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
+using QUICStreamFrameUPtr  = std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>;
 
 //
 // Retransmission Frame
@@ -440,13 +440,13 @@ class QUICRetransmissionFrame : public QUICFrame
 {
 public:
   QUICRetransmissionFrame() : QUICFrame() {}
-  QUICRetransmissionFrame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> original_frame, const QUICPacket &original_packet);
+  QUICRetransmissionFrame(QUICFrameUPtr original_frame, const QUICPacket &original_packet);
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
   QUICPacketType packet_type() const;
 
 private:
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> _frame = QUICFramePtr(nullptr, nullptr);
+  QUICFrameUPtr _frame = QUICFrameUPtr(nullptr, nullptr);
   ats_unique_buf _data = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   size_t _size;
   QUICPacketType _packet_type;
@@ -577,7 +577,7 @@ public:
   /*
    * This is used for creating a QUICFrame object based on received data.
    */
-  static std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> create(const uint8_t *buf, size_t len);
+  static QUICFrameUPtr create(const uint8_t *buf, size_t len);
 
   /*
    * This works almost the same as create() but it reuses created objects for performance.
@@ -589,9 +589,8 @@ public:
    * Creates a STREAM frame.
    * You have to make sure that the data size won't exceed the maximum size of QUIC packet.
    */
-  static std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc> create_stream_frame(const uint8_t *data, size_t data_len,
-                                                                                    QUICStreamId stream_id, QUICOffset offset,
-                                                                                    bool last = false);
+  static QUICStreamFrameUPtr create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset,
+                                                 bool last = false);
   /*
    * Creates a ACK frame.
    * You shouldn't call this directly but through QUICAckFrameCreator because QUICAckFrameCreator manages packet numbers that we
@@ -644,7 +643,7 @@ public:
    * This retransmission frame will be used only for retransmission and it's not a standard frame type.
    */
   static std::unique_ptr<QUICRetransmissionFrame, QUICFrameDeleterFunc> create_retransmission_frame(
-    std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> original_frame, const QUICPacket &original_packet);
+    QUICFrameUPtr original_frame, const QUICPacket &original_packet);
 
 private:
   // FIXME Actual number of frame types is several but some of the values are not sequential.

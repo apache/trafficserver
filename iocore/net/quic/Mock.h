@@ -163,7 +163,7 @@ public:
   }
 
   void
-  transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame) override
+  transmit_frame(QUICFrameUPtr frame) override
   {
   }
 
@@ -289,7 +289,7 @@ class MockQUICFrameTransmitter : public QUICFrameTransmitter
 {
 public:
   void
-  transmit_frame(std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame) override
+  transmit_frame(QUICFrameUPtr frame) override
   {
     ++frameCount[static_cast<int>(frame->type())];
   }

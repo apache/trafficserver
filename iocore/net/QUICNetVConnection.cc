@@ -223,7 +223,7 @@ QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
   uint16_t size          = packet.payload_size();
   const uint8_t *payload = packet.payload();
 
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> frame(nullptr, &QUICFrameDeleter::delete_null_frame);
+  QUICFrameUPtr frame(nullptr, &QUICFrameDeleter::delete_null_frame);
   uint16_t cursor = 0;
 
   while (cursor < size) {
@@ -257,7 +257,7 @@ QUICNetVConnection::push_packet(std::unique_ptr<QUICPacket, QUICPacketDeleterFun
 }
 
 void
-QUICNetVConnection::_transmit_frame(QUICFramePtr frame)
+QUICNetVConnection::_transmit_frame(QUICFrameUPtr frame)
 {
   DebugQUICCon("Frame Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
 
@@ -277,7 +277,7 @@ QUICNetVConnection::_transmit_frame(QUICFramePtr frame)
 }
 
 void
-QUICNetVConnection::transmit_frame(QUICFramePtr frame)
+QUICNetVConnection::transmit_frame(QUICFrameUPtr frame)
 {
   this->_transmit_frame(std::move(frame));
   if (!this->_packet_write_ready) {
@@ -715,7 +715,7 @@ QUICNetVConnection::_is_send_frame_avail_more_than(uint32_t size)
 // previous one, build packet and transmit it. After that, allocate new buffer.
 void
 QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
-                                 QUICFramePtr frame)
+                                 QUICFrameUPtr frame)
 {
   uint32_t max_size = this->maximum_quic_packet_size();
 
@@ -759,7 +759,7 @@ QUICNetVConnection::_packetize_frames()
   ats_unique_buf buf(nullptr, [](void *p) { ats_free(p); });
   QUICPacketType current_packet_type = QUICPacketType::UNINITIALIZED;
 
-  QUICFramePtr frame(nullptr, nullptr);
+  QUICFrameUPtr frame(nullptr, nullptr);
   bool retransmittable = false;
 
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
@@ -771,8 +771,8 @@ QUICNetVConnection::_packetize_frames()
   }
 
   while (this->_stream_frame_send_queue.size() > 0) {
-    const QUICFramePtr &f = this->_stream_frame_send_queue.front();
-    uint32_t frame_size   = f->size();
+    const QUICFrameUPtr &f = this->_stream_frame_send_queue.front();
+    uint32_t frame_size    = f->size();
     if (!this->_is_send_frame_avail_more_than(frame_size)) {
       break;
     }
@@ -820,7 +820,7 @@ QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPac
   // this->_local_flow_controller->forward_limit();
 
   this->_ack_frame_creator.update(packet_num, should_send_ack);
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> ack_frame = this->_ack_frame_creator.create_if_needed();
+  QUICFrameUPtr ack_frame = this->_ack_frame_creator.create_if_needed();
   if (ack_frame != nullptr) {
     this->transmit_frame(std::move(ack_frame));
   }

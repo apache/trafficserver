@@ -117,25 +117,25 @@ QUICLocalFlowController::forward_limit(QUICOffset offset)
 //
 // QUIC[Remote|Local][Connection|Stream]FlowController
 //
-std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>
+QUICFrameUPtr
 QUICRemoteConnectionFlowController::_create_frame()
 {
   return QUICFrameFactory::create_blocked_frame();
 }
 
-std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>
+QUICFrameUPtr
 QUICLocalConnectionFlowController::_create_frame()
 {
   return QUICFrameFactory::create_max_data_frame(this->_limit);
 }
 
-std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>
+QUICFrameUPtr
 QUICRemoteStreamFlowController::_create_frame()
 {
   return QUICFrameFactory::create_stream_blocked_frame(this->_stream_id);
 }
 
-std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>
+QUICFrameUPtr
 QUICLocalStreamFlowController::_create_frame()
 {
   return QUICFrameFactory::create_max_stream_data_frame(this->_stream_id, this->_limit);

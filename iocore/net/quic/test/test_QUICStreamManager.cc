@@ -154,13 +154,13 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   CHECK(sm.total_offset_sent() == 0);
 
   // Stream 0 shoud be out of flow control
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> stream_frame_0 = QUICFrameFactory::create_stream_frame(data, 1024, 0, 0);
+  QUICFrameUPtr stream_frame_0 = QUICFrameFactory::create_stream_frame(data, 1024, 0, 0);
   mock_app.send(data, 1024, 0);
   sleep(2);
   CHECK(sm.total_offset_sent() == 0);
 
   // total_offset should be a integer in unit of octets
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> stream_frame_1 = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
+  QUICFrameUPtr stream_frame_1 = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
   mock_app.send(data, 1024, 1);
   sm.add_total_offset_sent(1024);
   sleep(2);

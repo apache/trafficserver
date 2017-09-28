@@ -39,7 +39,7 @@ public:
 
 protected:
   QUICFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx) : _limit(initial_limit), _tx(tx) {}
-  virtual std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> _create_frame() = 0;
+  virtual QUICFrameUPtr _create_frame() = 0;
 
   QUICOffset _offset        = 0;
   QUICOffset _limit         = 0;
@@ -71,7 +71,7 @@ public:
   QUICRemoteConnectionFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx) : QUICRemoteFlowController(initial_limit, tx)
   {
   }
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> _create_frame() override;
+  QUICFrameUPtr _create_frame() override;
 };
 
 class QUICLocalConnectionFlowController : public QUICLocalFlowController
@@ -80,7 +80,7 @@ public:
   QUICLocalConnectionFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx) : QUICLocalFlowController(initial_limit, tx)
   {
   }
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> _create_frame() override;
+  QUICFrameUPtr _create_frame() override;
 };
 
 class QUICRemoteStreamFlowController : public QUICRemoteFlowController
@@ -90,7 +90,7 @@ public:
     : QUICRemoteFlowController(initial_limit, tx), _stream_id(stream_id)
   {
   }
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> _create_frame() override;
+  QUICFrameUPtr _create_frame() override;
 
 private:
   QUICStreamId _stream_id = 0;
@@ -103,7 +103,7 @@ public:
     : QUICLocalFlowController(initial_limit, tx), _stream_id(stream_id)
   {
   }
-  std::unique_ptr<QUICFrame, QUICFrameDeleterFunc> _create_frame() override;
+  QUICFrameUPtr _create_frame() override;
 
 private:
   QUICStreamId _stream_id = 0;
