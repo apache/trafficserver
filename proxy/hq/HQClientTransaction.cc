@@ -41,8 +41,8 @@ dump_io_buffer(IOBufferReader *reader)
 HQClientTransaction::HQClientTransaction(HQClientSession *session, QUICStreamIO *stream_io) : super(), _stream_io(stream_io)
 
 {
-  this->mutex     = new_ProxyMutex();
-  this->parent    = session; //       trans.set_parent();
+  this->mutex = new_ProxyMutex();
+  this->set_parent(session);
   this->sm_reader = this->_read_vio_buf.alloc_reader();
   static_cast<HQClientSession *>(this->parent)->add_transaction(this);
 
