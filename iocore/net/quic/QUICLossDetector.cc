@@ -81,10 +81,10 @@ QUICLossDetector::interests()
   return {QUICFrameType::ACK};
 }
 
-QUICError
+QUICErrorUPtr
 QUICLossDetector::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {
-  QUICError error = QUICError(QUICErrorClass::NONE);
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   switch (frame->type()) {
   case QUICFrameType::ACK:

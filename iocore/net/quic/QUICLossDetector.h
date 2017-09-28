@@ -46,7 +46,7 @@ public:
   int event_handler(int event, Event *edata);
 
   std::vector<QUICFrameType> interests() override;
-  virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
+  virtual QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame>) override;
   void on_packet_sent(QUICPacketUPtr packet);
   QUICPacketNumber largest_acked_packet_number();
 

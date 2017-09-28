@@ -72,13 +72,13 @@ QUICHandshake::~QUICHandshake()
   SSL_free(this->_ssl);
 }
 
-QUICError
+QUICErrorUPtr
 QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory)
 {
   // Negotiate version
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
     if (initial_packet->type() != QUICPacketType::CLIENT_INITIAL) {
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
+      return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION));
     }
     if (initial_packet->version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
@@ -90,10 +90,10 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
         Debug(tag, "Version negotiation failed: %x", initial_packet->version());
       }
     } else {
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
+      return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION));
     }
   }
-  return QUICError(QUICErrorClass::NONE);
+  return QUICErrorUPtr(new QUICNoError());
 }
 
 bool
@@ -136,7 +136,8 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters>
   if (tp_in_ch) {
     // Version revalidation
     if (this->_version_negotiator->revalidate(tp_in_ch) != QUICVersionNegotiationStatus::REVALIDATED) {
-      this->_client_qc->close({QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::VERSION_NEGOTIATION_ERROR});
+      this->_client_qc->close(
+        QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::VERSION_NEGOTIATION_ERROR)));
       Debug(tag, "Enter state_closed");
       SET_HANDLER(&QUICHandshake::state_closed);
       return;
@@ -168,7 +169,7 @@ QUICHandshake::remote_transport_parameters()
 int
 QUICHandshake::state_read_client_hello(int event, Event *data)
 {
-  QUICError error;
+  QUICErrorUPtr error;
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
@@ -180,8 +181,13 @@ QUICHandshake::state_read_client_hello(int event, Event *data)
     break;
   }
 
-  if (error.cls != QUICErrorClass::NONE) {
-    this->_client_qc->close(error);
+  if (error->cls != QUICErrorClass::NONE) {
+    if (dynamic_cast<QUICConnectionError *>(error.get()) != nullptr) {
+      this->_client_qc->close(QUICConnectionErrorUPtr(static_cast<QUICConnectionError *>(error.release())));
+    } else {
+      this->_client_qc->close(
+        QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION)));
+    }
     Debug(tag, "Enter state_closed");
     SET_HANDLER(&QUICHandshake::state_closed);
   }
@@ -192,7 +198,7 @@ QUICHandshake::state_read_client_hello(int event, Event *data)
 int
 QUICHandshake::state_read_client_finished(int event, Event *data)
 {
-  QUICError error;
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
@@ -204,8 +210,13 @@ QUICHandshake::state_read_client_finished(int event, Event *data)
     break;
   }
 
-  if (error.cls != QUICErrorClass::NONE) {
-    this->_client_qc->close(error);
+  if (error->cls != QUICErrorClass::NONE) {
+    if (dynamic_cast<QUICConnectionError *>(error.get()) != nullptr) {
+      this->_client_qc->close(QUICConnectionErrorUPtr(static_cast<QUICConnectionError *>(error.release())));
+    } else {
+      this->_client_qc->close(
+        QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION)));
+    }
     Debug(tag, "Enter state_closed");
     SET_HANDLER(&QUICHandshake::state_closed);
   }
@@ -267,7 +278,7 @@ QUICHandshake::_load_local_transport_parameters()
   this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
 }
 
-QUICError
+QUICErrorUPtr
 QUICHandshake::_process_client_hello()
 {
   QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
@@ -279,7 +290,7 @@ QUICHandshake::_process_client_hello()
 
   if (msg_len <= 0) {
     Debug(tag, "No message");
-    return QUICError(QUICErrorClass::NONE);
+    return QUICErrorUPtr(new QUICNoError());
   }
 
   // ----- DEBUG ----->
@@ -305,13 +316,13 @@ QUICHandshake::_process_client_hello()
     stream_io->write_reenable();
     stream_io->read_reenable();
 
-    return QUICError(QUICErrorClass::NONE);
+    return QUICErrorUPtr(new QUICNoError());
   } else {
-    return QUICError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::TLS_HANDSHAKE_FAILED);
+    return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::TLS_HANDSHAKE_FAILED));
   }
 }
 
-QUICError
+QUICErrorUPtr
 QUICHandshake::_process_client_finished()
 {
   QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
@@ -323,7 +334,7 @@ QUICHandshake::_process_client_finished()
 
   if (msg_len <= 0) {
     Debug(tag, "No message");
-    return QUICError(QUICErrorClass::NONE);
+    return QUICErrorUPtr(new QUICNoError());
   }
 
   // ----- DEBUG ----->
@@ -353,13 +364,13 @@ QUICHandshake::_process_client_finished()
     stream_io->write_reenable();
     stream_io->read_reenable();
 
-    return QUICError(QUICErrorClass::NONE);
+    return QUICErrorUPtr(new QUICNoError());
   } else {
-    return QUICError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::TLS_HANDSHAKE_FAILED);
+    return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::TLS_HANDSHAKE_FAILED));
   }
 }
 
-QUICError
+QUICErrorUPtr
 QUICHandshake::_process_handshake_complete()
 {
   QUICCrypto *crypto = this->_crypto;
@@ -371,5 +382,5 @@ QUICHandshake::_process_handshake_complete()
     Debug(tag, "Failed to export Keying Materials");
   }
 
-  return QUICError(QUICErrorClass::NONE);
+  return QUICErrorUPtr(new QUICNoError());
 }

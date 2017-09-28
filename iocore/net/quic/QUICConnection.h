@@ -55,7 +55,7 @@ public:
   virtual uint32_t pmtu()                                   = 0;
   virtual NetVConnectionContext_t direction()               = 0;
   virtual SSLNextProtocolSet *next_protocol_set()           = 0;
-  virtual void close(QUICError error)                       = 0;
+  virtual void close(QUICConnectionErrorUPtr error)         = 0;
   virtual QUICPacketNumber largest_received_packet_number() = 0;
   virtual QUICPacketNumber largest_acked_packet_number()    = 0;
 };

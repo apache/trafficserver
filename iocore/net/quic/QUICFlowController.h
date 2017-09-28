@@ -33,7 +33,7 @@ class QUICFlowController
 public:
   QUICOffset current_offset();
   QUICOffset current_limit();
-  virtual QUICError update(QUICOffset offset);
+  virtual QUICErrorUPtr update(QUICOffset offset);
   virtual void forward_limit(QUICOffset limit);
   void set_threshold(uint64_t threshold);
 
@@ -51,7 +51,7 @@ class QUICRemoteFlowController : public QUICFlowController
 {
 public:
   QUICRemoteFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx) : QUICFlowController(initial_limit, tx) {}
-  QUICError update(QUICOffset offset) override;
+  QUICErrorUPtr update(QUICOffset offset) override;
   void forward_limit(QUICOffset limit) override;
 
 private:

@@ -53,7 +53,7 @@ public:
   QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessToken token);
   ~QUICHandshake();
 
-  QUICError start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
+  QUICErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
 
   // States
   int state_read_client_hello(int event, Event *data);
@@ -84,9 +84,9 @@ private:
 
   void _load_local_transport_parameters();
 
-  QUICError _process_client_hello();
-  QUICError _process_client_finished();
-  QUICError _process_handshake_complete();
+  QUICErrorUPtr _process_client_hello();
+  QUICErrorUPtr _process_client_finished();
+  QUICErrorUPtr _process_handshake_complete();
 
   QUICStatelessToken _token;
 };

@@ -22,6 +22,7 @@
  */
 
 #include "QUICFrame.h"
+#include "QUICStream.h"
 
 ClassAllocator<QUICStreamFrame> quicStreamFrameAllocator("quicStreamFrameAllocator");
 ClassAllocator<QUICAckFrame> quicAckFrameAllocator("quicAckFrameAllocator");
@@ -1333,6 +1334,12 @@ QUICFrameFactory::create_connection_close_frame(QUICErrorCode error_code, uint16
   return std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_connection_close_frame);
 }
 
+std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_connection_close_frame(QUICConnectionErrorUPtr error)
+{
+  return QUICFrameFactory::create_connection_close_frame(error->code, strlen(error->msg), error->msg);
+}
+
 std::unique_ptr<QUICMaxDataFrame, QUICFrameDeleterFunc>
 QUICFrameFactory::create_max_data_frame(uint64_t maximum_data)
 {
@@ -1371,6 +1378,12 @@ QUICFrameFactory::create_rst_stream_frame(QUICStreamId stream_id, QUICErrorCode 
   QUICRstStreamFrame *frame = quicRstStreamFrameAllocator.alloc();
   new (frame) QUICRstStreamFrame(stream_id, error_code, final_offset);
   return std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_rst_stream_frame);
+}
+
+std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_rst_stream_frame(QUICStreamErrorUPtr error)
+{
+  return QUICFrameFactory::create_rst_stream_frame(error->stream->id(), error->code, error->stream->final_offset());
 }
 
 std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc>

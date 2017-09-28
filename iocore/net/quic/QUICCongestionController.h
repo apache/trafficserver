@@ -31,7 +31,7 @@ class QUICCongestionController : public QUICFrameHandler
 {
 public:
   virtual std::vector<QUICFrameType> interests() override;
-  virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
+  virtual QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame>) override;
 
 private:
 };

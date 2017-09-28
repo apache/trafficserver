@@ -70,11 +70,18 @@ QUICStream::id()
   return this->_id;
 }
 
+QUICOffset
+QUICStream::final_offset()
+{
+  // TODO Return final offset
+  return 0;
+}
+
 int
 QUICStream::main_event_handler(int event, void *data)
 {
   DebugQUICStream("%s", QUICDebugNames::vc_event(event));
-  QUICError error;
+  QUICErrorUPtr error = std::unique_ptr<QUICError>(new QUICNoError());
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -104,10 +111,17 @@ QUICStream::main_event_handler(int event, void *data)
     ink_assert(false);
   }
 
-  if (error.cls != QUICErrorClass::NONE) {
-    // TODO Send error if needed
-    DebugQUICStream("QUICError: %s (%u), %s (0x%x)", QUICDebugNames::error_class(error.cls), static_cast<unsigned int>(error.cls),
-                    QUICDebugNames::error_code(error.code), static_cast<unsigned int>(error.code));
+  if (error->cls != QUICErrorClass::NONE) {
+    DebugQUICStream("QUICError: %s (%u), %s (0x%x)", QUICDebugNames::error_class(error->cls), static_cast<unsigned int>(error->cls),
+                    QUICDebugNames::error_code(error->code), static_cast<unsigned int>(error->code));
+    if (dynamic_cast<QUICStreamError *>(error.get()) != nullptr) {
+      // Stream Error
+      QUICStreamErrorUPtr serror = QUICStreamErrorUPtr(static_cast<QUICStreamError *>(error.get()));
+      this->reset(std::move(serror));
+    } else {
+      // Connection Error
+      // TODO Close connection (Does this really happen?)
+    }
   }
 
   return EVENT_CONT;
@@ -281,7 +295,7 @@ QUICStream::_reorder_data()
  * If the reordering or writting operation is heavy, split out them to read function,
  * which is called by application via do_io_read() or reenable().
  */
-QUICError
+QUICErrorUPtr
 QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
 {
   ink_assert(_id == frame->stream_id());
@@ -289,23 +303,22 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
 
   // Check stream state - Do this first before accept the frame
   if (!this->_state.is_allowed_to_receive(*frame)) {
-    this->reset();
-    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
+    return QUICErrorUPtr(new QUICStreamError(this, QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_STATE_ERROR));
   }
 
   // Flow Control - Even if it's allowed to receive on the state, it may exceed the limit
-  QUICError error = this->_local_flow_controller->update(frame->offset() + frame->data_length());
+  QUICErrorUPtr error = this->_local_flow_controller->update(frame->offset() + frame->data_length());
   Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [LOCAL] %" PRIu64 "/%" PRIu64, this->_id,
         QUICDebugNames::stream_state(this->_state), this->_local_flow_controller->current_offset(),
         this->_local_flow_controller->current_limit());
-  if (error.cls != QUICErrorClass::NONE) {
+  if (error->cls != QUICErrorClass::NONE) {
     return error;
   }
 
   // Reordering - Some frames may be delayed or be dropped
   if (this->_recv_offset > frame->offset()) {
     // Do nothing. Just ignore STREAM frame.
-    return QUICError(QUICErrorClass::NONE);
+    return QUICErrorUPtr(new QUICNoError());
   } else if (this->_recv_offset == frame->offset()) {
     this->_write_to_read_vio(frame);
     this->_reorder_data();
@@ -315,10 +328,10 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
     this->_received_stream_frame_buffer.insert(std::make_pair(frame->offset(), frame));
   }
 
-  return QUICError(QUICErrorClass::NONE);
+  return QUICErrorUPtr(new QUICNoError());
 }
 
-QUICError
+QUICErrorUPtr
 QUICStream::recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame)
 {
   this->_remote_flow_controller->forward_limit(frame->maximum_stream_data());
@@ -328,25 +341,26 @@ QUICStream::recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame)
 
   this->reenable(&this->_write_vio);
 
-  return QUICError(QUICErrorClass::NONE);
+  return QUICErrorUPtr(new QUICNoError());
 }
 
-QUICError
+QUICErrorUPtr
 QUICStream::recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame)
 {
   // STREAM_BLOCKED frames are for debugging. Nothing to do here.
-  return QUICError(QUICErrorClass::NONE);
+  return QUICErrorUPtr(new QUICNoError());
 }
 
 /**
  * @brief Send STREAM DATA from _response_buffer
  */
-QUICError
+QUICErrorUPtr
 QUICStream::_send()
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
-  QUICError error;
+  QUICErrorUPtr error = std::unique_ptr<QUICError>(new QUICNoError());
+
   IOBufferReader *reader = this->_write_vio.get_reader();
   int64_t bytes_avail    = reader->read_avail();
   int64_t total_len      = 0;
@@ -366,11 +380,11 @@ QUICStream::_send()
       }
     }
 
-    QUICError error = this->_remote_flow_controller->update(this->_send_offset + len);
+    error = this->_remote_flow_controller->update(this->_send_offset + len);
     Debug("quic_flow_ctrl", "Stream [%" PRIx32 "] [%s] [REMOTE] %" PRIu64 "/%" PRIu64, this->_id,
           QUICDebugNames::stream_state(this->_state), this->_remote_flow_controller->current_offset(),
           this->_remote_flow_controller->current_limit());
-    if (error.cls != QUICErrorClass::NONE) {
+    if (error->cls != QUICErrorClass::NONE) {
       break;
     }
 
@@ -394,9 +408,9 @@ QUICStream::_send()
 }
 
 void
-QUICStream::reset()
+QUICStream::reset(QUICStreamErrorUPtr error)
 {
-  // TODO: Create a RST_STREAM frame and pass it to Stream Manager
+  this->_tx->transmit_frame(QUICFrameFactory::create_rst_stream_frame(std::move(error)));
 }
 
 void

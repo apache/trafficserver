@@ -146,19 +146,46 @@ enum class QUICErrorCode : uint32_t {
   // TODO Add error codes
 };
 
-struct QUICError {
-  QUICError(const QUICErrorClass error_class = QUICErrorClass::NONE, const QUICErrorCode error_code = QUICErrorCode::NO_ERROR,
-            const char *err_msg = nullptr)
-  {
-    cls  = error_class;
-    code = error_code;
-    msg  = err_msg;
-  };
-
+class QUICError
+{
+public:
+  virtual ~QUICError() {}
   QUICErrorClass cls;
   QUICErrorCode code;
   const char *msg;
+
+protected:
+  QUICError(const QUICErrorClass error_class = QUICErrorClass::NONE, const QUICErrorCode error_code = QUICErrorCode::NO_ERROR,
+            const char *error_msg = nullptr)
+    : cls(error_class), code(error_code), msg(error_msg){};
 };
+
+class QUICNoError : public QUICError
+{
+public:
+  QUICNoError() : QUICError() {}
+};
+
+class QUICConnectionError : public QUICError
+{
+public:
+  QUICConnectionError(const QUICErrorClass error_class, const QUICErrorCode error_code, const char *error_msg = nullptr)
+    : QUICError(error_class, error_code, error_msg){};
+};
+
+class QUICStream;
+
+class QUICStreamError : public QUICError
+{
+public:
+  QUICStreamError(QUICStream *s, const QUICErrorClass error_class, const QUICErrorCode error_code, const char *error_msg = nullptr)
+    : QUICError(error_class, error_code, error_msg), stream(s){};
+  QUICStream *stream;
+};
+
+using QUICErrorUPtr           = std::unique_ptr<QUICError>;
+using QUICConnectionErrorUPtr = std::unique_ptr<QUICConnectionError>;
+using QUICStreamErrorUPtr     = std::unique_ptr<QUICStreamError>;
 
 class QUICStatelessToken
 {

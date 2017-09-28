@@ -53,16 +53,16 @@ public:
 
   // QUICFrameHandler
   virtual std::vector<QUICFrameType> interests() override;
-  virtual QUICError handle_frame(std::shared_ptr<const QUICFrame>) override;
+  virtual QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame>) override;
 
 private:
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   QUICStream *_find_stream(QUICStreamId id);
-  QUICError _handle_frame(const std::shared_ptr<const QUICStreamFrame> &);
-  QUICError _handle_frame(const std::shared_ptr<const QUICRstStreamFrame> &);
-  QUICError _handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame> &);
-  QUICError _handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &);
-  QUICError _handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &);
+  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStreamFrame> &);
+  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICRstStreamFrame> &);
+  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame> &);
+  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &);
+  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &);
 
   QUICFrameTransmitter *_tx                                 = nullptr;
   QUICApplicationMap *_app_map                              = nullptr;

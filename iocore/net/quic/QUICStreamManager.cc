@@ -85,10 +85,10 @@ QUICStreamManager::set_max_stream_id(QUICStreamId id)
   }
 }
 
-QUICError
+QUICErrorUPtr
 QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {
-  QUICError error = QUICError(QUICErrorClass::NONE);
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   switch (frame->type()) {
   case QUICFrameType::MAX_STREAM_DATA:
@@ -116,34 +116,34 @@ QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
   return error;
 }
 
-QUICError
+QUICErrorUPtr
 QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame> &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame->stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
-    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR);
+    return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR));
   }
 }
 
-QUICError
+QUICErrorUPtr
 QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame->stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
-    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR);
+    return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR));
   }
 }
 
-QUICError
+QUICErrorUPtr
 QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamFrame> &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame->stream_id());
   if (!stream) {
-    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR);
+    return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR));
   }
 
   QUICApplication *application = this->_app_map->get(frame->stream_id());
@@ -153,7 +153,7 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamFrame> &f
   }
 
   size_t nbytes_to_read = stream->nbytes_to_read();
-  QUICError error       = stream->recv(frame);
+  QUICErrorUPtr error   = stream->recv(frame);
   // Prevent trigger read events multiple times
   if (nbytes_to_read == 0) {
     this_ethread()->schedule_imm(application, VC_EVENT_READ_READY, stream);
@@ -162,23 +162,23 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamFrame> &f
   return error;
 }
 
-QUICError
+QUICErrorUPtr
 QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICRstStreamFrame> &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame->stream_id());
   if (stream) {
     // TODO Reset the stream
-    return QUICError(QUICErrorClass::NONE);
+    return QUICErrorUPtr(new QUICNoError());
   } else {
-    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR);
+    return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::STREAM_ID_ERROR));
   }
 }
 
-QUICError
+QUICErrorUPtr
 QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &frame)
 {
   this->_remote_maximum_stream_id = frame->maximum_stream_id();
-  return QUICError(QUICErrorClass::NONE);
+  return QUICErrorUPtr(new QUICNoError());
 }
 
 QUICStream *

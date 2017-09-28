@@ -177,7 +177,7 @@ public:
   uint32_t pmtu() override;
   NetVConnectionContext_t direction() override;
   SSLNextProtocolSet *next_protocol_set() override;
-  void close(QUICError error) override;
+  void close(QUICConnectionErrorUPtr error) override;
   QUICPacketNumber largest_received_packet_number() override;
   QUICPacketNumber largest_acked_packet_number() override;
 
@@ -191,7 +191,7 @@ public:
 
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
-  QUICError handle_frame(std::shared_ptr<const QUICFrame> frame) override;
+  QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame> frame) override;
 
 private:
   std::random_device _rnd;
@@ -240,20 +240,21 @@ private:
   QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
                                QUICPacketType type = QUICPacketType::UNINITIALIZED);
 
-  QUICError _recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_numm);
+  QUICErrorUPtr _recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_numm);
 
-  QUICError _state_handshake_process_initial_client_packet(QUICPacketUPtr packet);
-  QUICError _state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet);
-  QUICError _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
-  QUICError _state_connection_established_process_packet(QUICPacketUPtr packet);
-  QUICError _state_common_receive_packet();
-  QUICError _state_common_send_packet();
+  QUICErrorUPtr _state_handshake_process_initial_client_packet(QUICPacketUPtr packet);
+  QUICErrorUPtr _state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet);
+  QUICErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
+  QUICErrorUPtr _state_connection_established_process_packet(QUICPacketUPtr packet);
+  QUICErrorUPtr _state_common_receive_packet();
+  QUICErrorUPtr _state_common_send_packet();
 
   Ptr<ProxyMutex> _packet_transmitter_mutex;
   Ptr<ProxyMutex> _frame_transmitter_mutex;
 
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
+  void _handle_error(QUICErrorUPtr error);
 
   QUICStatelessToken _token;
 };

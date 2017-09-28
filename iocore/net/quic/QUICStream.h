@@ -52,6 +52,7 @@ public:
   int main_event_handler(int event, void *data);
 
   QUICStreamId id();
+  QUICOffset final_offset();
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
@@ -60,11 +61,11 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
-  QUICError recv(const std::shared_ptr<const QUICStreamFrame> frame);
-  QUICError recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame);
-  QUICError recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame);
+  QUICErrorUPtr recv(const std::shared_ptr<const QUICStreamFrame> frame);
+  QUICErrorUPtr recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame);
+  QUICErrorUPtr recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame);
 
-  void reset();
+  void reset(QUICStreamErrorUPtr error);
   void shutdown();
 
   size_t nbytes_to_read();
@@ -77,7 +78,7 @@ public:
 private:
   QUICStreamState _state;
 
-  QUICError _send();
+  QUICErrorUPtr _send();
 
   void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
   void _reorder_data();

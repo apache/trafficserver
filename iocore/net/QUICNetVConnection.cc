@@ -287,7 +287,7 @@ QUICNetVConnection::transmit_frame(QUICFrameUPtr frame)
 }
 
 void
-QUICNetVConnection::close(QUICError error)
+QUICNetVConnection::close(QUICConnectionErrorUPtr error)
 {
   if (this->handler == reinterpret_cast<ContinuationHandler>(&QUICNetVConnection::state_connection_closed) ||
       this->handler == reinterpret_cast<ContinuationHandler>(&QUICNetVConnection::state_connection_closing)) {
@@ -295,7 +295,7 @@ QUICNetVConnection::close(QUICError error)
   } else {
     DebugQUICCon("Enter state_connection_closing");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
-    this->transmit_frame(QUICFrameFactory::create_connection_close_frame(error.code, 0, ""));
+    this->transmit_frame(QUICFrameFactory::create_connection_close_frame(std::move(error)));
   }
 }
 
@@ -305,10 +305,10 @@ QUICNetVConnection::interests()
   return {QUICFrameType::CONNECTION_CLOSE, QUICFrameType::BLOCKED, QUICFrameType::MAX_DATA};
 }
 
-QUICError
+QUICErrorUPtr
 QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {
-  QUICError error = QUICError(QUICErrorClass::NONE);
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   switch (frame->type()) {
   case QUICFrameType::MAX_DATA:
@@ -367,7 +367,7 @@ QUICNetVConnection::state_pre_handshake(int event, Event *data)
 int
 QUICNetVConnection::state_handshake(int event, Event *data)
 {
-  QUICError error;
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
@@ -388,7 +388,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
       break;
     }
     default:
-      error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
+      error = QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR));
       break;
     }
 
@@ -414,10 +414,8 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
-  if (error.cls != QUICErrorClass::NONE) {
-    // TODO: Send error if needed
-    DebugQUICCon("QUICError: %s (%u), %s (0x%x)", QUICDebugNames::error_class(error.cls), static_cast<unsigned int>(error.cls),
-                 QUICDebugNames::error_code(error.code), static_cast<unsigned int>(error.code));
+  if (error->cls != QUICErrorClass::NONE) {
+    this->_handle_error(std::move(error));
   }
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
@@ -440,7 +438,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 int
 QUICNetVConnection::state_connection_established(int event, Event *data)
 {
-  QUICError error;
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
     error = this->_state_common_receive_packet();
@@ -465,9 +463,9 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
-  if (error.cls != QUICErrorClass::NONE) {
-    // TODO: Send error if needed
-    DebugQUICCon("QUICError: cls=%u, code=0x%x", static_cast<unsigned int>(error.cls), static_cast<unsigned int>(error.code));
+  if (error->cls != QUICErrorClass::NONE) {
+    DebugQUICCon("QUICError: cls=%u, code=0x%x", static_cast<unsigned int>(error->cls), static_cast<unsigned int>(error->code));
+    this->_handle_error(std::move(error));
   }
 
   return EVENT_CONT;
@@ -476,7 +474,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
 int
 QUICNetVConnection::state_connection_closing(int event, Event *data)
 {
-  QUICError error;
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
     error = this->_state_common_receive_packet();
@@ -576,64 +574,65 @@ QUICNetVConnection::largest_acked_packet_number()
   return this->_loss_detector->largest_acked_packet_number();
 }
 
-QUICError
+QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPtr packet)
 {
   if (packet->size() < MINIMUM_INITIAL_CLIENT_PACKET_SIZE) {
     DebugQUICCon("Packet size is smaller than the minimum initial client packet size");
-    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
+    // Ignore the packet
+    return QUICErrorUPtr(new QUICNoError());
   }
 
   // Start handshake
-  QUICError error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
+  QUICErrorUPtr error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
   if (this->_handshake_handler->is_version_negotiated()) {
     // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
     if (packet->has_valid_fnv1a_hash()) {
       bool should_send_ack;
       error = this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size(), should_send_ack);
-      if (error.cls != QUICErrorClass::NONE) {
+      if (error->cls != QUICErrorClass::NONE) {
         return error;
       }
       error = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
       Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64,
             static_cast<uint64_t>(this->_quic_connection_id), this->_local_flow_controller->current_offset(),
             this->_local_flow_controller->current_limit());
-      if (error.cls != QUICErrorClass::NONE) {
+      if (error->cls != QUICErrorClass::NONE) {
         return error;
       }
     } else {
       DebugQUICCon("Invalid FNV-1a hash value");
-      return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::CRYPTOGRAPHIC_ERROR);
+      // Discard the packet
     }
   }
   return error;
 }
 
-QUICError
+QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet)
 {
-  QUICError error = QUICError(QUICErrorClass::NONE);
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   // The payload of this packet contains STREAM frames and could contain PADDING and ACK frames
   if (packet->has_valid_fnv1a_hash()) {
     error = this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
   } else {
     DebugQUICCon("Invalid FNV-1a hash value");
-    return QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::CRYPTOGRAPHIC_ERROR);
+    // Discard the packet
   }
   return error;
 }
 
-QUICError
+QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet)
 {
   // TODO: Decrypt the packet
   // decrypt(payload, p);
   // TODO: Not sure what we have to do
-  return QUICError(QUICErrorClass::NONE);
+  return QUICErrorUPtr(new QUICNoError());
 }
 
-QUICError
+QUICErrorUPtr
 QUICNetVConnection::_state_connection_established_process_packet(QUICPacketUPtr packet)
 {
   // TODO: fix size
@@ -650,15 +649,15 @@ QUICNetVConnection::_state_connection_established_process_packet(QUICPacketUPtr 
   } else {
     DebugQUICCon("CRYPTOGRAPHIC Error");
 
-    return QUICError(QUICErrorClass::CRYPTOGRAPHIC);
+    return QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::CRYPTOGRAPHIC_ERROR));
   }
 }
 
-QUICError
+QUICErrorUPtr
 QUICNetVConnection::_state_common_receive_packet()
 {
-  QUICError error;
-  QUICPacketUPtr p = QUICPacketUPtr(this->_packet_recv_queue.dequeue(), &QUICPacketDeleter::delete_packet);
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  QUICPacketUPtr p    = QUICPacketUPtr(this->_packet_recv_queue.dequeue(), &QUICPacketDeleter::delete_packet);
   net_activity(this, this_ethread());
 
   switch (p->type()) {
@@ -667,13 +666,13 @@ QUICNetVConnection::_state_common_receive_packet()
     error = this->_state_connection_established_process_packet(std::move(p));
     break;
   default:
-    error = QUICError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR);
+    error = QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR));
     break;
   }
   return error;
 }
 
-QUICError
+QUICErrorUPtr
 QUICNetVConnection::_state_common_send_packet()
 {
   this->_packetize_frames();
@@ -688,19 +687,19 @@ QUICNetVConnection::_state_common_send_packet()
 
   net_activity(this, this_ethread());
 
-  return QUICError(QUICErrorClass::NONE);
+  return QUICErrorUPtr(new QUICNoError());
 }
 
 // Schedule sending BLOCKED frame when offset exceed the limit
 bool
 QUICNetVConnection::_is_send_frame_avail_more_than(uint32_t size)
 {
-  QUICError error = this->_remote_flow_controller->update((this->_stream_manager->total_offset_sent() + size) / 1024);
+  QUICErrorUPtr error = this->_remote_flow_controller->update((this->_stream_manager->total_offset_sent() + size) / 1024);
   Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
         static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
         this->_remote_flow_controller->current_limit());
 
-  if (error.cls != QUICErrorClass::NONE) {
+  if (error->cls != QUICErrorClass::NONE) {
     // Flow Contoroller blocked sending STREAM frame
     return false;
   }
@@ -792,7 +791,7 @@ QUICNetVConnection::_packetize_frames()
   }
 }
 
-QUICError
+QUICErrorUPtr
 QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_num)
 {
   if (packet_num > this->_largest_received_packet_number) {
@@ -801,17 +800,17 @@ QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPac
 
   bool should_send_ack;
 
-  QUICError error;
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   error = this->_frame_dispatcher->receive_frames(payload, size, should_send_ack);
-  if (error.cls != QUICErrorClass::NONE) {
+  if (error->cls != QUICErrorClass::NONE) {
     return error;
   }
 
   error = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
   Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, static_cast<uint64_t>(this->_quic_connection_id),
         this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
-  if (error.cls != QUICErrorClass::NONE) {
+  if (error->cls != QUICErrorClass::NONE) {
     return error;
   }
   // this->_local_flow_controller->forward_limit();
@@ -871,4 +870,20 @@ QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTr
   Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
         static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
         this->_remote_flow_controller->current_limit());
+}
+
+void
+QUICNetVConnection::_handle_error(QUICErrorUPtr error)
+{
+  DebugQUICCon("QUICError: %s (%u), %s (0x%x)", QUICDebugNames::error_class(error->cls), static_cast<unsigned int>(error->cls),
+               QUICDebugNames::error_code(error->code), static_cast<unsigned int>(error->code));
+  if (dynamic_cast<QUICStreamError *>(error.get()) != nullptr) {
+    // Stream Error
+    QUICStreamError *serror = static_cast<QUICStreamError *>(error.release());
+    serror->stream->reset(QUICStreamErrorUPtr(serror));
+  } else {
+    // Connection Error
+    QUICConnectionError *cerror = static_cast<QUICConnectionError *>(error.release());
+    this->close(QUICConnectionErrorUPtr(cerror));
+  }
 }
