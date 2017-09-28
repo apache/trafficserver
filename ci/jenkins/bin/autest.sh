@@ -45,6 +45,7 @@ status=$?
 
 # Cleanup
 cd /var/tmp # To be safer
+chmod -R a+r ${SANDBOX}
 if [ "0" != "$status" ]; then
     if [ -d "$SANDBOX" ]; then
         find "$SANDBOX" -name \*.db  -exec rm {} \;
