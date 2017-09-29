@@ -351,6 +351,17 @@ elevating_chmod(const char *path, int perm)
   return ret;
 }
 
+int
+elevating_stat(const char *path, struct stat *buff)
+{
+  int ret = stat(path, buff);
+  if (ret != 0 && (EPERM == errno || EACCES == errno)) {
+    ElevateAccess access(ElevateAccess::FILE_PRIVILEGE);
+    return stat(path, buff);
+  }
+  return ret;
+}
+
 #if TS_USE_POSIX_CAP
 /** Acquire file access privileges to bypass DAC.
     @a level is a mask of the specific file access capabilities to acquire.

@@ -89,7 +89,7 @@ test_HPACK_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBTCL@ \
-  @HWLOC_LIBS@
+  @HWLOC_LIBS@ @LIBCAP@
 
 test_HPACK_SOURCES = \
   test_HPACK.cc \
