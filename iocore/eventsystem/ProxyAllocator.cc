@@ -20,9 +20,6 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-int thread_freelist_high_watermark = 512;
-int thread_freelist_low_watermark  = 32;
-
 // must include for defines
 #include "ts/ink_config.h"
 
@@ -30,6 +27,9 @@ int thread_freelist_low_watermark  = 32;
 
 // safe to use older system
 #include "I_ProxyAllocator.h"
+
+int thread_freelist_high_watermark = 512;
+int thread_freelist_low_watermark  = 32;
 
 void *
 thread_alloc(Allocator &a, ProxyAllocator &l)

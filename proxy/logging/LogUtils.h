@@ -28,8 +28,6 @@
 #include "ts/ink_platform.h"
 #include "ts/Arena.h"
 
-#include "ts/apidefs.h"
-
 namespace LogUtils
 {
 enum AlarmType {
