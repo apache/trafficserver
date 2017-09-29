@@ -272,7 +272,7 @@ QUICLossDetector::_update_rtt(uint32_t latest_rtt)
     this->_smoothed_rtt = latest_rtt;
     this->_rttvar       = latest_rtt / 2;
   } else {
-    this->_rttvar       = 3 / 4 * this->_rttvar + 1 / 4 * (this->_smoothed_rtt - latest_rtt);
+    this->_rttvar       = 3 / 4 * this->_rttvar + 1 / 4 * ABS(this->_smoothed_rtt - latest_rtt);
     this->_smoothed_rtt = 7 / 8 * this->_smoothed_rtt + 1 / 8 * latest_rtt;
   }
 }
