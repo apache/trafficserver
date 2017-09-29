@@ -53,6 +53,8 @@ extern FILE *elevating_fopen(const char *path, const char *mode);
 
 // chmod a file, elevating if necessary
 extern int elevating_chmod(const char *path, int perm);
+/// @c stat a file, evelating only if needed.
+extern int elevating_stat(const char *path, struct stat *buff);
 
 /** Control generate of core file on crash.
     @a flag sets whether core files are enabled on crash.
