@@ -33,13 +33,13 @@ class MockQUICStreamManager : public QUICStreamManager
 public:
   MockQUICStreamManager() : QUICStreamManager() {}
   // Override
-  virtual QUICError
+  virtual QUICErrorUPtr
   handle_frame(std::shared_ptr<const QUICFrame> f) override
   {
     ++_frameCount[static_cast<int>(f->type())];
     ++_totalFrameCount;
 
-    return QUICError(QUICErrorClass::NONE);
+    return QUICErrorUPtr(new QUICNoError());
   }
 
   // for Test
@@ -173,13 +173,13 @@ public:
     return {QUICFrameType::CONNECTION_CLOSE};
   }
 
-  QUICError
+  QUICErrorUPtr
   handle_frame(std::shared_ptr<const QUICFrame> f) override
   {
     ++_frameCount[static_cast<int>(f->type())];
     ++_totalFrameCount;
 
-    return QUICError(QUICErrorClass::NONE);
+    return QUICErrorUPtr(new QUICNoError());
   }
 
   uint32_t
@@ -231,7 +231,7 @@ public:
   }
 
   void
-  close(QUICError error) override
+  close(QUICConnectionErrorUPtr error) override
   {
   }
 
@@ -323,13 +323,13 @@ class MockQUICCongestionController : public QUICCongestionController
 public:
   MockQUICCongestionController() : QUICCongestionController() {}
   // Override
-  virtual QUICError
+  virtual QUICErrorUPtr
   handle_frame(std::shared_ptr<const QUICFrame> f) override
   {
     ++_frameCount[static_cast<int>(f->type())];
     ++_totalFrameCount;
 
-    return QUICError(QUICErrorClass::NONE);
+    return QUICErrorUPtr(new QUICNoError());
   }
 
   // for Test
