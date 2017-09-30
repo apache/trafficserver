@@ -807,8 +807,10 @@ QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len) const
   p += n;
   QUICTypeUtil::write_uint_as_nbytes(this->_reason_phrase_length, 2, p, &n);
   p += n;
-  memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
-  p += this->_reason_phrase_length;
+  if (this->_reason_phrase_length > 0) {
+    memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
+    p += this->_reason_phrase_length;
+  }
 
   *len = p - buf;
 }
@@ -1337,7 +1339,11 @@ QUICFrameFactory::create_connection_close_frame(QUICErrorCode error_code, uint16
 std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>
 QUICFrameFactory::create_connection_close_frame(QUICConnectionErrorUPtr error)
 {
-  return QUICFrameFactory::create_connection_close_frame(error->code, strlen(error->msg), error->msg);
+  if (error->msg) {
+    return QUICFrameFactory::create_connection_close_frame(error->code, strlen(error->msg), error->msg);
+  } else {
+    return QUICFrameFactory::create_connection_close_frame(error->code);
+  }
 }
 
 std::unique_ptr<QUICMaxDataFrame, QUICFrameDeleterFunc>

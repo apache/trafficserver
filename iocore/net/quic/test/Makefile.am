@@ -117,6 +117,7 @@ test_QUICFrame_CPPFLAGS = \
   $(AM_CPPFLAGS)
 
 test_QUICFrame_LDFLAGS = \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @AM_LDFLAGS@
 
 test_QUICFrame_SOURCES = \

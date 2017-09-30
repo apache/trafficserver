@@ -602,7 +602,7 @@ public:
    * Creates a CONNECTION_CLOSE frame.
    */
   static std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> create_connection_close_frame(
-    QUICErrorCode error_code, uint16_t reason_phrase_length, const char *reason_phrase);
+    QUICErrorCode error_code, uint16_t reason_phrase_length = 0, const char *reason_phrase = nullptr);
   static std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> create_connection_close_frame(
     QUICConnectionErrorUPtr error);
 

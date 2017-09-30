@@ -23,7 +23,9 @@
 
 #include "catch.hpp"
 
+#include "quic/Mock.h"
 #include "quic/QUICFrame.h"
+#include "quic/QUICStream.h"
 
 TEST_CASE("QUICFrame Type", "[quic]")
 {
@@ -374,6 +376,21 @@ TEST_CASE("Load ConnectionClose Frame", "[quic]")
   CHECK(connectionCloseFrame1->error_code() == QUICErrorCode::NO_ERROR);
   CHECK(connectionCloseFrame1->reason_phrase_length() == 5);
   CHECK(memcmp(connectionCloseFrame1->reason_phrase(), buf1 + 7, 5) == 0);
+
+  // No reason phrase
+  uint8_t buf2[] = {
+    0x02,                   // Type
+    0x80, 0x00, 0x00, 0x00, // Error Code
+    0x00, 0x00,             // Reason Phrase Length
+  };
+  std::shared_ptr<const QUICFrame> frame2 = QUICFrameFactory::create(buf2, sizeof(buf1));
+  CHECK(frame2->type() == QUICFrameType::CONNECTION_CLOSE);
+  CHECK(frame2->size() == 7);
+  std::shared_ptr<const QUICConnectionCloseFrame> connectionCloseFrame2 =
+    std::dynamic_pointer_cast<const QUICConnectionCloseFrame>(frame2);
+  CHECK(connectionCloseFrame2 != nullptr);
+  CHECK(connectionCloseFrame2->error_code() == QUICErrorCode::NO_ERROR);
+  CHECK(connectionCloseFrame2->reason_phrase_length() == 0);
 }
 
 TEST_CASE("Store ConnectionClose Frame", "[quic]")
@@ -381,16 +398,26 @@ TEST_CASE("Store ConnectionClose Frame", "[quic]")
   uint8_t buf[65535];
   size_t len;
 
-  uint8_t expected[] = {
+  uint8_t expected1[] = {
     0x02,                        // Type
     0x80, 0x00, 0x00, 0x00,      // Error Code
     0x00, 0x05,                  // Reason Phrase Length
     0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
   };
-  QUICConnectionCloseFrame connectionCloseFrame(QUICErrorCode::NO_ERROR, 5, "ABCDE");
-  connectionCloseFrame.store(buf, &len);
+  QUICConnectionCloseFrame connectionCloseFrame1(QUICErrorCode::NO_ERROR, 5, "ABCDE");
+  connectionCloseFrame1.store(buf, &len);
   CHECK(len == 12);
-  CHECK(memcmp(buf, expected, len) == 0);
+  CHECK(memcmp(buf, expected1, len) == 0);
+
+  uint8_t expected2[] = {
+    0x02,                   // Type
+    0x80, 0x00, 0x00, 0x00, // Error Code
+    0x00, 0x00,             // Reason Phrase Length
+  };
+  QUICConnectionCloseFrame connectionCloseFrame2(QUICErrorCode::NO_ERROR, 0, nullptr);
+  connectionCloseFrame2.store(buf, &len);
+  CHECK(len == 7);
+  CHECK(memcmp(buf, expected2, len) == 0);
 }
 
 TEST_CASE("Load MaxData Frame", "[quic]")
@@ -680,4 +707,36 @@ TEST_CASE("QUICFrameFactory Fast Create Unknown Frame", "[quic]")
   };
   std::shared_ptr<const QUICFrame> frame1 = factory.fast_create(buf1, sizeof(buf1));
   CHECK(frame1 == nullptr);
+}
+
+TEST_CASE("QUICFrameFactory Create CONNECTION_CLOSE with a QUICConnectionError", "[quic]")
+{
+  std::unique_ptr<QUICConnectionError> error =
+    std::unique_ptr<QUICConnectionError>(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR));
+  std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> connection_close_frame1 =
+    QUICFrameFactory::create_connection_close_frame(std::move(error));
+  CHECK(connection_close_frame1->error_code() == QUICErrorCode::INTERNAL_ERROR);
+  CHECK(connection_close_frame1->reason_phrase_length() == 0);
+  CHECK(connection_close_frame1->reason_phrase() == nullptr);
+
+  error = std::unique_ptr<QUICConnectionError>(
+    new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR, "test"));
+  std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> connection_close_frame2 =
+    QUICFrameFactory::create_connection_close_frame(std::move(error));
+  CHECK(connection_close_frame2->error_code() == QUICErrorCode::INTERNAL_ERROR);
+  CHECK(connection_close_frame2->reason_phrase_length() == 4);
+  CHECK(memcmp(connection_close_frame2->reason_phrase(), "test", 4) == 0);
+}
+
+TEST_CASE("QUICFrameFactory Create RST_STREAM with a QUICStreamError", "[quic]")
+{
+  QUICStream stream;
+  stream.init(new MockQUICFrameTransmitter(), 0x1234, 0, 0);
+  std::unique_ptr<QUICStreamError> error =
+    std::unique_ptr<QUICStreamError>(new QUICStreamError(&stream, QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR));
+  std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> rst_stream_frame1 =
+    QUICFrameFactory::create_rst_stream_frame(std::move(error));
+  CHECK(rst_stream_frame1->error_code() == QUICErrorCode::INTERNAL_ERROR);
+  CHECK(rst_stream_frame1->stream_id() == 0x1234);
+  CHECK(rst_stream_frame1->final_offset() == 0);
 }
