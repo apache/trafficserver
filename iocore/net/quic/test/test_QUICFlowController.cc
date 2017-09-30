@@ -29,7 +29,7 @@
 
 TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
 {
-  QUICError error;
+  std::unique_ptr<QUICError> error = nullptr;
   MockQUICFrameTransmitter tx;
   QUICLocalConnectionFlowController fc(1024, &tx);
 
@@ -40,35 +40,35 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
   error = fc.update(256);
   CHECK(fc.current_offset() == 256);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   error = fc.update(512);
   CHECK(fc.current_offset() == 512);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Retransmit
   error = fc.update(512);
   CHECK(fc.current_offset() == 512);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   error = fc.update(1024);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Delay
   error = fc.update(512);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Exceed limit
   error = fc.update(1280);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.code == QUICErrorCode::FLOW_CONTROL_ERROR);
+  CHECK(error->code == QUICErrorCode::FLOW_CONTROL_ERROR);
 
   // MAX_STREAM_DATA
   CHECK(tx.frameCount[static_cast<int>(QUICFrameType::MAX_DATA)] == 0);
@@ -80,12 +80,12 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
   error = fc.update(1280);
   CHECK(fc.current_offset() == 1280);
   CHECK(fc.current_limit() == 2048);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 }
 
 TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
 {
-  QUICError error;
+  std::unique_ptr<QUICError> error = nullptr;
   MockQUICFrameTransmitter tx;
   QUICRemoteConnectionFlowController fc(1024, &tx);
 
@@ -96,36 +96,36 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
   error = fc.update(256);
   CHECK(fc.current_offset() == 256);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   error = fc.update(512);
   CHECK(fc.current_offset() == 512);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Retransmit
   error = fc.update(512);
   CHECK(fc.current_offset() == 512);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   error = fc.update(1024);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Delay
   error = fc.update(512);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Exceed limit
   CHECK(tx.frameCount[static_cast<int>(QUICFrameType::BLOCKED)] == 0);
   error = fc.update(1280);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls != QUICErrorClass::NONE);
+  CHECK(error->cls != QUICErrorClass::NONE);
   CHECK(tx.frameCount[static_cast<int>(QUICFrameType::BLOCKED)] == 1);
 
   // MAX_STREAM_DATA
@@ -136,12 +136,12 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
   error = fc.update(1280);
   CHECK(fc.current_offset() == 1280);
   CHECK(fc.current_limit() == 2048);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 }
 
 TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
 {
-  QUICError error;
+  std::unique_ptr<QUICError> error = nullptr;
   MockQUICFrameTransmitter tx;
   QUICLocalStreamFlowController fc(1024, &tx, 0);
 
@@ -152,35 +152,35 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
   error = fc.update(256);
   CHECK(fc.current_offset() == 256);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   error = fc.update(512);
   CHECK(fc.current_offset() == 512);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Retransmit
   error = fc.update(512);
   CHECK(fc.current_offset() == 512);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   error = fc.update(1024);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Delay
   error = fc.update(512);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Exceed limit
   error = fc.update(1280);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.code == QUICErrorCode::FLOW_CONTROL_ERROR);
+  CHECK(error->code == QUICErrorCode::FLOW_CONTROL_ERROR);
 
   // MAX_STREAM_DATA
   CHECK(tx.frameCount[static_cast<int>(QUICFrameType::MAX_STREAM_DATA)] == 0);
@@ -192,12 +192,12 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
   error = fc.update(1280);
   CHECK(fc.current_offset() == 1280);
   CHECK(fc.current_limit() == 2048);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 }
 
 TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
 {
-  QUICError error;
+  std::unique_ptr<QUICError> error = nullptr;
   MockQUICFrameTransmitter tx;
   QUICRemoteStreamFlowController fc(1024, &tx, 0);
 
@@ -208,36 +208,36 @@ TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
   error = fc.update(256);
   CHECK(fc.current_offset() == 256);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   error = fc.update(512);
   CHECK(fc.current_offset() == 512);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Retransmit
   error = fc.update(512);
   CHECK(fc.current_offset() == 512);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   error = fc.update(1024);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Delay
   error = fc.update(512);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 
   // Exceed limit
   CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM_BLOCKED)] == 0);
   error = fc.update(1280);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error.cls != QUICErrorClass::NONE);
+  CHECK(error->cls != QUICErrorClass::NONE);
   CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM_BLOCKED)] == 1);
 
   // MAX_STREAM_DATA
@@ -248,5 +248,5 @@ TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
   error = fc.update(1280);
   CHECK(fc.current_offset() == 1280);
   CHECK(fc.current_limit() == 2048);
-  CHECK(error.cls == QUICErrorClass::NONE);
+  CHECK(error->cls == QUICErrorClass::NONE);
 }

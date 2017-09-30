@@ -128,6 +128,10 @@ test_QUICFrame_SOURCES = \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICTypes.cc \
+  ../QUICStream.cc \
+  ../QUICStreamState.cc \
+  ../QUICDebugNames.cc \
+  ../QUICFlowController.cc \
   ../../SSLNextProtocolSet.cc
 
 test_QUICFrame_LDADD = \
@@ -366,11 +370,20 @@ test_QUICTypeUtil_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICTypeUtil_LDADD = \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la
 
 test_QUICTypeUtil_SOURCES = \
   main.cc \
   test_QUICTypeUtil.cc \
+  ../QUICStream.cc \
+  ../QUICStreamState.cc \
+  ../QUICFlowController.cc \
+  ../QUICDebugNames.cc \
+  ../QUICFrame.cc \
+  ../QUICPacket.cc \
+  ../QUICCrypto.cc \
+  $(QUICCrypto_impl) \
   ../QUICTypes.cc
 
 #
@@ -394,6 +407,10 @@ test_QUICAckFrameCreator_SOURCES = \
   ../QUICTypes.cc \
   ../QUICFrame.cc \
   ../QUICPacket.cc \
+  ../QUICStream.cc \
+  ../QUICStreamState.cc \
+  ../QUICFlowController.cc \
+  ../QUICDebugNames.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../../SSLNextProtocolSet.cc
@@ -462,6 +479,9 @@ test_QUICFlowController_SOURCES = \
   main.cc \
   test_QUICFlowController.cc \
   ../QUICFlowController.cc \
+  ../QUICStream.cc \
+  ../QUICStreamState.cc \
+  ../QUICDebugNames.cc \
   ../QUICTypes.cc \
   ../QUICPacket.cc \
   ../QUICCrypto.cc \
