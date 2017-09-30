@@ -54,7 +54,8 @@ struct Request {
   std::unique_ptr<ats::io::IO> io;
 
   Request(const std::string &, const TSMBuffer, const TSMLoc);
-  Request(const Request &);
+  Request(const Request &) = delete;
+  Request(Request &&);
   Request &operator=(const Request &);
 };
 

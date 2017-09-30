@@ -289,7 +289,7 @@ get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const in
   }
   TSVConn vconn = TSHttpConnect(reinterpret_cast<sockaddr *>(&socket));
   assert(vconn != NULL);
-  TSCont contp = TSContCreate(Transaction::handle, NULL);
+  TSCont contp = TSContCreate(Transaction::handle, TSMutexCreate());
   assert(contp != NULL);
   Transaction *transaction = new Transaction(vconn, contp, i, l, t);
   TSContDataSet(contp, transaction);
