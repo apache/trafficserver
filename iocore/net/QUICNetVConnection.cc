@@ -123,6 +123,8 @@ QUICNetVConnection::free(EThread *t)
 {
   DebugQUICCon("Free connection");
 
+  this->_packet_handler->forget(this);
+
   this->_udp_con        = nullptr;
   this->_packet_handler = nullptr;
 
@@ -149,6 +151,12 @@ void
 QUICNetVConnection::reenable(VIO *vio)
 {
   return;
+}
+
+QUICConnectionId
+QUICNetVConnection::connection_id()
+{
+  return this->_quic_connection_id;
 }
 
 uint32_t

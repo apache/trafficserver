@@ -199,3 +199,9 @@ QUICPacketHandler::send_packet(const QUICPacket &packet, UDPConnection *udp_con,
 
   udp_con->send(this, udpPkt);
 }
+
+void
+QUICPacketHandler::forget(QUICNetVConnection *vc)
+{
+  this->_connections.put(vc->connection_id(), nullptr);
+}

@@ -144,6 +144,13 @@ public:
   {
     this->_mutex = new_ProxyMutex();
   };
+
+  QUICConnectionId
+  connection_id() override
+  {
+    return 0;
+  }
+
   void
   transmit_packet(QUICPacketUPtr packet) override
   {

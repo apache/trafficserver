@@ -170,6 +170,7 @@ public:
   void registerNextProtocolSet(SSLNextProtocolSet *s);
 
   // QUICConnection
+  QUICConnectionId connection_id() override;
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
   uint32_t maximum_stream_frame_data_size() override;

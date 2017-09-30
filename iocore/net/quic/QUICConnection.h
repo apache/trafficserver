@@ -35,6 +35,8 @@ class SSLNextProtocolSet;
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
 {
 public:
+  virtual QUICConnectionId connection_id() = 0;
+
   /*
    * Retruns the maximum packet size at the time called
    *
