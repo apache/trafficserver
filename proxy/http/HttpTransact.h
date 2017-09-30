@@ -75,30 +75,6 @@
     }                                                           \
   }
 
-#define TRANSACT_SETUP_RETURN(n, r) \
-  s->next_action           = n;     \
-  s->transact_return_point = r;     \
-  DebugSpecific((s->state_machine && s->state_machine->debug_on), "http_trans", "Next action %s; %s", #n, #r);
-
-#define TRANSACT_RETURN(n, r) \
-  TRANSACT_SETUP_RETURN(n, r) \
-  return;
-
-#define TRANSACT_RETURN_VAL(n, r, v) \
-  TRANSACT_SETUP_RETURN(n, r)        \
-  return v;
-
-#define SET_UNPREPARE_CACHE_ACTION(C)                               \
-  {                                                                 \
-    if (C.action == HttpTransact::CACHE_PREPARE_TO_DELETE) {        \
-      C.action = HttpTransact::CACHE_DO_DELETE;                     \
-    } else if (C.action == HttpTransact::CACHE_PREPARE_TO_UPDATE) { \
-      C.action = HttpTransact::CACHE_DO_UPDATE;                     \
-    } else {                                                        \
-      C.action = HttpTransact::CACHE_DO_WRITE;                      \
-    }                                                               \
-  }
-
 typedef time_t ink_time_t;
 
 struct HttpConfigParams;
