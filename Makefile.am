@@ -96,7 +96,9 @@ install-examples: examples
 	@cd example && $(MAKE) $(AM_MAKEFLAGS) install pkglibdir=$(pkglibexecdir)
 
 install-data-hook:
+if BUILD_DOCS
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) install-man
+endif
 
 TESTS = tools/check-unused-dependencies
 
