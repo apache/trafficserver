@@ -90,6 +90,7 @@ Enumeration Members
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR
+.. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_INSERT_FORWARDED
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN

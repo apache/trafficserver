@@ -61,7 +61,7 @@ ink_freelist_free(InkFreeList *f, void *item){STUB} inkcoreapi
 void ink_mutex_destroy(pthread_mutex_t *){STUB} inkcoreapi ClassAllocator<ProxyMutex> mutexAllocator("ARGH");
 inkcoreapi ink_thread_key Thread::thread_data_key;
 int res_track_memory;
-void ResourceTracker::increment(const char *, long){STUB} inkcoreapi Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
+void ResourceTracker::increment(const char *, int64_t){STUB} inkcoreapi Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 void
 ats_free(void *)
 {
