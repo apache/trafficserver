@@ -31,10 +31,6 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter) : _transm
 {
   this->mutex = new_ProxyMutex();
 
-  this->_loss_detection_alarm = nullptr;
-  this->_handshake_count      = 0;
-  this->_tlp_count            = 0;
-  this->_rto_count            = 0;
   if (this->_time_loss_detection) {
     this->_reordering_threshold     = UINT32_MAX;
     this->_time_reordering_fraction = this->_TIME_REORDERING_FRACTION;
@@ -42,12 +38,6 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter) : _transm
     this->_reordering_threshold     = this->_REORDERING_THRESHOLD;
     this->_time_reordering_fraction = INFINITY;
   }
-  this->_loss_time                = 0;
-  this->_smoothed_rtt             = 0;
-  this->_rttvar                   = 0;
-  this->_largest_sent_before_rto  = 0;
-  this->_time_of_last_sent_packet = 0;
-  this->_largest_sent_packet      = 0;
 
   SET_HANDLER(&QUICLossDetector::event_handler);
 }
