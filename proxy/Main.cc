@@ -165,12 +165,12 @@ static int cmd_line_dprintf_level = 0;  // default debug output level from ink_d
 static int poll_timeout           = -1; // No value set.
 static int cmd_disable_freelist   = 0;
 
-static volatile bool signal_received[NSIG];
+static bool signal_received[NSIG];
 
 // 1: delay listen, wait for cache.
 // 0: Do not delay, start listen ASAP.
 // -1: cache is already initialized, don't delay.
-static volatile int delay_listen_for_cache_p = 0;
+static int delay_listen_for_cache_p;
 
 AppVersionInfo appVersionInfo; // Build info for this application
 

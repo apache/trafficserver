@@ -44,7 +44,7 @@ struct atscppapi::LoggerState : noncopyable {
   std::string filename_;
   bool add_timestamp_;
   bool rename_file_;
-  volatile Logger::LogLevel level_;
+  Logger::LogLevel level_;
   bool rolling_enabled_;
   int rolling_interval_seconds_;
   TSTextLogObject text_log_obj_;

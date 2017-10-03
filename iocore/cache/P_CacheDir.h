@@ -233,8 +233,8 @@ struct OpenDirEntry {
   uint16_t max_writers;                            // max number of simultaneous writers allowed
   bool dont_update_directory;                      // if set, the first_dir is not updated.
   bool move_resident_alt;                          // if set, single_doc_dir is inserted.
-  volatile bool reading_vec;                       // somebody is currently reading the vector
-  volatile bool writing_vec;                       // somebody is currently writing the vector
+  bool reading_vec;                                // somebody is currently reading the vector
+  bool writing_vec;                                // somebody is currently writing the vector
 
   LINK(OpenDirEntry, link);
 

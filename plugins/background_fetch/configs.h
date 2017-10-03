@@ -82,7 +82,7 @@ private:
 
   TSCont _cont;
   BgFetchRule *_rules;
-  volatile int _ref_count;
+  int _ref_count;
 };
 
 #endif /* CONFIGS_H_DEBFCE23_D6E9_40C2_AAA5_32B32586A3DA */

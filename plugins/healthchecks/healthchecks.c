@@ -43,11 +43,8 @@ static const char SEPARATORS[]  = " \t\n";
 #define MAX_BODY_LEN 16384
 #define FREELIST_TIMEOUT 300
 
-/* Some atomic stuff, from ATS core */
-typedef volatile void *vvoidp;
-
 static inline void *
-ink_atomic_swap_ptr(vvoidp mem, void *value)
+ink_atomic_swap_ptr(void *mem, void *value)
 {
   return __sync_lock_test_and_set((void **)mem, value);
 }

@@ -28,7 +28,7 @@
 #include <map>
 #include <string>
 
-extern volatile int res_track_memory; /* set this to zero to disable resource tracking */
+extern int res_track_memory; /* set this to zero to disable resource tracking */
 extern uint64_t ssl_memory_allocated;
 extern uint64_t ssl_memory_freed;
 

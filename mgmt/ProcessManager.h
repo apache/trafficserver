@@ -84,7 +84,7 @@ private:
   pid_t pid;
 
   ink_thread poll_thread = ink_thread_null();
-  volatile int running   = 0;
+  int running            = 0;
 
   /// Thread initialization callback.
   /// This allows @c traffic_server and @c traffic_manager to perform different initialization in the thread.

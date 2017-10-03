@@ -88,14 +88,14 @@ public:
 
   bool processRunning();
 
-  volatile bool run_proxy;
-  volatile bool proxy_recoverable = true; // false if traffic_server cannot recover with a reboot
-  volatile time_t manager_started_at;
-  volatile time_t proxy_started_at                              = -1;
-  volatile int proxy_launch_count                               = 0;
-  volatile bool proxy_launch_outstanding                        = false;
-  volatile ManagementPendingOperation mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
-  volatile int proxy_running                                    = 0;
+  bool run_proxy;
+  bool proxy_recoverable = true; // false if traffic_server cannot recover with a reboot
+  time_t manager_started_at;
+  time_t proxy_started_at                              = -1;
+  int proxy_launch_count                               = 0;
+  bool proxy_launch_outstanding                        = false;
+  ManagementPendingOperation mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+  int proxy_running                                    = 0;
   HttpProxyPort::Group m_proxy_ports;
   // Local inbound addresses to bind, if set.
   IpAddr m_inbound_ip4;
@@ -110,14 +110,14 @@ public:
   char *proxy_options = nullptr; // These options should persist across proxy reboots
   char *env_prep;
 
-  int process_server_sockfd       = ts::NO_FD;
-  volatile int watched_process_fd = ts::NO_FD;
-  volatile pid_t proxy_launch_pid = -1;
+  int process_server_sockfd = ts::NO_FD;
+  int watched_process_fd    = ts::NO_FD;
+  pid_t proxy_launch_pid    = -1;
 
   Alarms *alarm_keeper     = nullptr;
   FileManager *configFiles = nullptr;
 
-  volatile pid_t watched_process_pid = -1;
+  pid_t watched_process_pid = -1;
 
   int syslog_facility = LOG_DAEMON;
 

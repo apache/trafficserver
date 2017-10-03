@@ -302,7 +302,7 @@ struct Doc {
 // Global Data
 
 extern Vol **gvol;
-extern volatile int gnvol;
+extern int gnvol;
 extern ClassAllocator<OpenDirEntry> openDirEntryAllocator;
 extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
 extern ClassAllocator<EvacuationKey> evacuationKeyAllocator;

@@ -202,10 +202,10 @@ struct CongestionEntry : public RequestData {
   FailHistory m_history;
   Ptr<ProxyMutex> m_hist_lock;
   ink_hrtime m_last_congested;
-  volatile int m_congested; // 0 | 1
+  int m_congested; // 0 | 1
   int m_stat_congested_conn_failures;
 
-  volatile int m_M_congested;
+  int m_M_congested;
   ink_hrtime m_last_M_congested;
 
   // State -- concorrent connections

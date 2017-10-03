@@ -52,7 +52,7 @@ enum {
 };
 
 struct AIO_Device;
-volatile int n_accessors = 0;
+int n_accessors = 0;
 int orig_n_accessors;
 AIO_Device *dev[MAX_DISK_THREADS];
 

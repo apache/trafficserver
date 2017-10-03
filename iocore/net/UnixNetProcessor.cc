@@ -29,7 +29,7 @@
 // For Stat Pages
 #include "StatPages.h"
 
-volatile int net_accept_number = 0;
+int net_accept_number = 0;
 extern std::vector<NetAccept *> naVec;
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 

@@ -26,7 +26,7 @@
 #include "ts/ink_resource.h"
 #include <execinfo.h>
 
-volatile int res_track_memory = 0; // Disabled by default
+int res_track_memory          = 0; // Disabled by default
 uint64_t ssl_memory_allocated = 0;
 uint64_t ssl_memory_freed     = 0;
 

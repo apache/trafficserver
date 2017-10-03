@@ -97,9 +97,9 @@ struct LogBufferHeader {
 
 union LB_State {
   LB_State() : ival(0) {}
-  LB_State(volatile LB_State &vs) { ival = vs.ival; }
+  LB_State(LB_State &vs) { ival = vs.ival; }
   LB_State &
-  operator=(volatile LB_State &vs)
+  operator=(LB_State &vs)
   {
     ival = vs.ival;
     return *this;
@@ -183,7 +183,7 @@ public:
   LINK(LogBuffer, link);
 
   // static variables
-  static vint32 M_ID;
+  static int32_t M_ID;
 
   // static functions
   static size_t max_entry_bytes();
@@ -222,8 +222,8 @@ private:
 
   uint32_t m_id; // unique buffer id (for debugging)
 public:
-  volatile LB_State m_state; // buffer state
-  volatile int m_references; // oustanding checkout_write references.
+  LB_State m_state; // buffer state
+  int m_references; // oustanding checkout_write references.
 
   // noncopyable
   // -- member functions that are not allowed --

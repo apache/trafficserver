@@ -37,7 +37,7 @@
 #define MAX_ALIST_ARRAY 100000
 InkAtomicList al[MAX_ALIST_TEST];
 void *al_test[MAX_ALIST_TEST][MAX_ALIST_ARRAY];
-volatile int al_done = 0;
+int al_done = 0;
 
 void *
 testalist(void *ame)
@@ -171,7 +171,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   printf("changed to: %d,  result=%d\n", n, m);
 
   printf("Atomic Fetch-and-Add 2 to pointer to '%s'\n", m2);
-  n2 = (char *)ink_atomic_increment((pvvoidp)&m2, (void *)2);
+  n2 = (char *)ink_atomic_increment((void **)&m2, (void *)2);
   printf("changed to: %s,  result=%s\n", m2, n2);
 
   printf("Testing atomic lists\n");
