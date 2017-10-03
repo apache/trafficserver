@@ -1,0 +1,11 @@
+``
+> POST / HTTP/1.1
+> Host: www.anotherexample.com``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/2 200``
+< server: ATS/``
+< date:``
+< age:``
+``
