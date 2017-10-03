@@ -47,21 +47,21 @@ public:
   SLINK(UnixUDPConnection, newconn_alink);
 
   InkAtomicList inQueue;
-  int onCallbackQueue;
-  Action *callbackAction;
-  EThread *ethread;
+  int onCallbackQueue    = 0;
+  Action *callbackAction = nullptr;
+  EThread *ethread       = nullptr;
   EventIO ep;
 
   UnixUDPConnection(int the_fd);
   virtual ~UnixUDPConnection();
 
 private:
-  int m_errno;
+  int m_errno = 0;
   virtual void UDPConnection_is_abstract(){};
 };
 
 TS_INLINE
-UnixUDPConnection::UnixUDPConnection(int the_fd) : onCallbackQueue(0), callbackAction(nullptr), ethread(nullptr), m_errno(0)
+UnixUDPConnection::UnixUDPConnection(int the_fd)
 {
   fd = the_fd;
   UDPPacketInternal p;
