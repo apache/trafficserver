@@ -75,7 +75,7 @@ QUICAckFrameCreator::_create_ack_frame()
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = {nullptr, QUICFrameDeleter::delete_null_frame};
   this->_sort_packet_numbers();
   uint16_t start = this->_packet_numbers[0];
-  uint8_t gap;
+  uint8_t gap = 0;
   int i;
   uint64_t length = 0;
   for (i = 0, length = 0; i < this->_packet_count; ++i, ++length) {
