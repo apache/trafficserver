@@ -50,7 +50,7 @@ struct PinnedDocTable : public Continuation {
 
 struct CacheTestHost {
   char *name;
-  volatile unsigned int xlast_cachable_id;
+  unsigned int xlast_cachable_id;
   double xprev_host_prob;
   double xnext_host_prob;
 

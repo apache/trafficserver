@@ -141,7 +141,7 @@ private:
   bool remove_accept_encoding_;
   bool flush_;
   int compression_algorithms_;
-  volatile int ref_count_;
+  int ref_count_;
 
   StringContainer compressible_content_types_;
   StringContainer disallows_;

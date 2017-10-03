@@ -39,7 +39,7 @@ int ts_config_with_inkdiskio = 0;
 /* structure to hold information about each file descriptor */
 AIO_Reqs *aio_reqs[MAX_DISKS_POSSIBLE];
 /* number of unique file descriptors in the aio_reqs array */
-volatile int num_filedes = 1;
+int num_filedes = 1;
 
 // acquire this mutex before inserting a new entry in the aio_reqs array.
 // Don't need to acquire this for searching the array

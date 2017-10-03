@@ -87,7 +87,7 @@ public:
   }
 
 private:
-  volatile int m_refcount;
+  int m_refcount;
 };
 
 #define REF_COUNT_OBJ_REFCOUNT_INC(_x) (_x)->refcount_inc()

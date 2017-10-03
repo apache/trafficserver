@@ -87,26 +87,26 @@ int cache_config_compatibility_4_2_0_fixup = 1;
 
 // Globals
 
-RecRawStatBlock *cache_rsb          = nullptr;
-Cache *theStreamCache               = nullptr;
-Cache *theCache                     = nullptr;
-CacheDisk **gdisks                  = nullptr;
-int gndisks                         = 0;
-static volatile int initialize_disk = 0;
+RecRawStatBlock *cache_rsb = nullptr;
+Cache *theStreamCache      = nullptr;
+Cache *theCache            = nullptr;
+CacheDisk **gdisks         = nullptr;
+int gndisks                = 0;
+static int initialize_disk;
 Cache *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
 CacheSync *cacheDirSync             = nullptr;
 Store theCacheStore;
-volatile int CacheProcessor::initialized      = CACHE_INITIALIZING;
-volatile uint32_t CacheProcessor::cache_ready = 0;
-volatile int CacheProcessor::start_done       = 0;
-bool CacheProcessor::clear                    = false;
-bool CacheProcessor::fix                      = false;
-bool CacheProcessor::check                    = false;
-int CacheProcessor::start_internal_flags      = 0;
-int CacheProcessor::auto_clear_flag           = 0;
+int CacheProcessor::initialized          = CACHE_INITIALIZING;
+uint32_t CacheProcessor::cache_ready     = 0;
+int CacheProcessor::start_done           = 0;
+bool CacheProcessor::clear               = false;
+bool CacheProcessor::fix                 = false;
+bool CacheProcessor::check               = false;
+int CacheProcessor::start_internal_flags = 0;
+int CacheProcessor::auto_clear_flag      = 0;
 CacheProcessor cacheProcessor;
-Vol **gvol         = nullptr;
-volatile int gnvol = 0;
+Vol **gvol = nullptr;
+int gnvol  = 0;
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
 ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
@@ -277,7 +277,7 @@ static int
 update_cache_config(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
                     void * /* cookie ATS_UNUSED */)
 {
-  volatile int new_value         = validate_rww(data.rec_int);
+  int new_value                  = validate_rww(data.rec_int);
   cache_config_read_while_writer = new_value;
 
   return 0;

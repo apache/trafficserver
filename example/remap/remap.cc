@@ -35,6 +35,8 @@
 #include <cstdarg>
 #include <cerrno>
 #include <pthread.h>
+#include <cstdint>
+#include <atomic>
 
 #include "ts/ink_defs.h"
 #include "ts/ts.h"
@@ -210,8 +212,8 @@ TSRemapDeleteInstance(void *ih)
   delete ri;
 }
 
-static volatile unsigned long processing_counter = 0; // sequential counter
-static int arg_index                             = 0;
+static std::atomic<uint64_t> processing_counter; // sequential counter
+static int arg_index;
 
 /* -------------------------- TSRemapDoRemap -------------------------------- */
 TSRemapStatus
@@ -221,8 +223,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   const char *temp2;
   int len, len2, port;
   TSMLoc cfield;
-  unsigned long _processing_counter =
-    ++processing_counter; // one more function call (in real life use mutex to protect this counter)
+  uint64_t _processing_counter = processing_counter++;
 
   remap_entry *ri = (remap_entry *)ih;
   TSDebug(PLUGIN_NAME, "enter");
@@ -275,7 +276,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     TSHttpTxnArgSet((TSHttpTxn)rh, arg_index, (void *)_processing_counter); // save counter
   }
   // How to cancel request processing and return error message to the client
-  // We wiil do it each other request
+  // We wiil do it every other request
   if (_processing_counter & 1) {
     char *tmp                   = (char *)TSmalloc(256);
     static int my_local_counter = 0;

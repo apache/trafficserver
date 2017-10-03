@@ -122,11 +122,11 @@ struct AIO_Reqs {
   InkAtomicList aio_temp_list;
   ink_mutex aio_mutex;
   ink_cond aio_cond;
-  int index;            /* position of this struct in the aio_reqs array */
-  volatile int pending; /* number of outstanding requests on the disk */
-  volatile int queued;  /* total number of aio_todo and http_todo requests */
-  volatile int filedes; /* the file descriptor for the requests */
-  volatile int requests_queued;
+  int index;   /* position of this struct in the aio_reqs array */
+  int pending; /* number of outstanding requests on the disk */
+  int queued;  /* total number of aio_todo and http_todo requests */
+  int filedes; /* the file descriptor for the requests */
+  int requests_queued;
 };
 
 #endif // AIO_MODE == AIO_MODE_NATIVE

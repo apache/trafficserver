@@ -223,7 +223,7 @@ public:
   UnixNetVConnection *migrateToCurrentThread(Continuation *c, EThread *t);
 
   Action action_;
-  volatile int closed;
+  int closed;
   NetState read;
   NetState write;
 

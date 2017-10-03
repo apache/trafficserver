@@ -28,9 +28,8 @@
 #endif
 #define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
-using NetAcceptHandler      = int (NetAccept::*)(int, void *);
-volatile int dummy_volatile = 0;
-int accept_till_done        = 1;
+using NetAcceptHandler = int (NetAccept::*)(int, void *);
+int accept_till_done   = 1;
 
 std::vector<NetAccept *> naVec;
 static void

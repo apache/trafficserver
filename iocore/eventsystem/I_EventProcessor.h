@@ -332,8 +332,8 @@ public:
   EThread *assign_thread(EventType etype);
 
   EThread *all_dthreads[MAX_EVENT_THREADS];
-  volatile int n_dthreads       = 0; // No. of dedicated threads
-  volatile int thread_data_used = 0;
+  int n_dthreads       = 0; // No. of dedicated threads
+  int thread_data_used = 0;
 
   /// Provide container style access to just the active threads, not the entire array.
   class active_threads_type

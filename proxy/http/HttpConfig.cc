@@ -120,7 +120,7 @@ static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolSt
 int HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
 
-static volatile int http_config_changes = 1;
+static int http_config_changes          = 1;
 static HttpConfigCont *http_config_cont = nullptr;
 
 HttpConfigCont::HttpConfigCont() : Continuation(new_ProxyMutex())

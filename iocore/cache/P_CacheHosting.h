@@ -49,8 +49,8 @@ struct CacheHostRecord {
 
   CacheType type;
   Vol **vols;
-  volatile int good_num_vols;
-  volatile int num_vols;
+  int good_num_vols;
+  int num_vols;
   int num_initialized;
   unsigned short *vol_hash_table;
   CacheVol **cp;

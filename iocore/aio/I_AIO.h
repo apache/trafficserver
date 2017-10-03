@@ -70,10 +70,10 @@ typedef struct io_event ink_io_event_t;
 #else
 
 struct ink_aiocb {
-  int aio_fildes         = 0;
-  volatile void *aio_buf = nullptr; /* buffer location */
-  size_t aio_nbytes      = 0;       /* length of transfer */
-  off_t aio_offset       = 0;       /* file offset */
+  int aio_fildes    = 0;
+  void *aio_buf     = nullptr; /* buffer location */
+  size_t aio_nbytes = 0;       /* length of transfer */
+  off_t aio_offset  = 0;       /* file offset */
 
   int aio_reqprio    = 0; /* request priority offset */
   int aio_lio_opcode = 0; /* listio operation */

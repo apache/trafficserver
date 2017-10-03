@@ -121,7 +121,7 @@ public:
   BaseLogFile *stderr_log;
 
   const unsigned int magic;
-  volatile DiagsConfigState config;
+  DiagsConfigState config;
   DiagsShowLocation show_location;
   DiagsCleanupFunc cleanup_func;
 

@@ -52,7 +52,7 @@ extern ShowCacheInternal *theshowcacheInternal;
 Action *register_ShowCacheInternal(Continuation *c, HTTPHdr *h);
 
 extern Vol **gvol;
-extern volatile int gnvol;
+extern int gnvol;
 
 // Stat Pages
 ShowCacheInternal *theshowcacheInternal = nullptr;

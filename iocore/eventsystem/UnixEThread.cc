@@ -38,7 +38,7 @@ struct AIOCallback;
 #define NO_HEARTBEAT -1
 #define THREAD_MAX_HEARTBEAT_MSECONDS 60
 
-volatile bool shutdown_event_system = false;
+bool shutdown_event_system = false;
 
 EThread::EThread()
 {

@@ -49,9 +49,9 @@ public:
   TransformVConnection *m_tvc;
   VIO m_read_vio;
   VIO m_write_vio;
-  volatile int m_event_count;
-  volatile int m_deletable;
-  volatile int m_closed;
+  int m_event_count;
+  int m_deletable;
+  int m_closed;
   int m_called_user;
 };
 
@@ -79,7 +79,7 @@ public:
   VConnection *m_transform;
   Continuation *m_cont;
   TransformTerminus m_terminus;
-  volatile int m_closed;
+  int m_closed;
 };
 
 class TransformControl : public Continuation

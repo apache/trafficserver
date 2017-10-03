@@ -42,7 +42,7 @@
 struct ink_aiocb {
   int aio_fildes;
 #if defined(__STDC__)
-  volatile void *aio_buf; /* buffer location */
+  void *aio_buf; /* buffer location */
 #else
   void *aio_buf; /* buffer location */
 #endif
