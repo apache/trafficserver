@@ -29,24 +29,49 @@
 #include "QUICConfig.h"
 #include "P_SSLNextProtocolSet.h"
 
-#define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                           \
-  {                                                                                                                               \
-    int i, j;                                                                                                                     \
-    fprintf(stderr, "len=%" PRId64 "\n", len);                                                                                    \
-    for (i = 0; i < len / 8; i++) {                                                                                               \
-      fprintf(stderr, "%02x %02x %02x %02x %02x %02x %02x %02x ", buf[i * 8 + 0], buf[i * 8 + 1], buf[i * 8 + 2], buf[i * 8 + 3], \
-              buf[i * 8 + 4], buf[i * 8 + 5], buf[i * 8 + 6], buf[i * 8 + 7]);                                                    \
-      if ((i + 1) % 4 == 0 || (len % 8 == 0 && i + 1 == len / 8)) {                                                               \
-        fprintf(stderr, "\n");                                                                                                    \
-      }                                                                                                                           \
-    }                                                                                                                             \
-    if (len % 8 != 0) {                                                                                                           \
-      fprintf(stderr, "%0x", buf[i * 8 + 0]);                                                                                     \
-      for (j = 1; j < len % 8; j++) {                                                                                             \
-        fprintf(stderr, " %02x", buf[i * 8 + j]);                                                                                 \
-      }                                                                                                                           \
-      fprintf(stderr, "\n");                                                                                                      \
-    }                                                                                                                             \
+static constexpr char dump_tag[] = "quic_handshake_dump_pkt";
+
+#define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                            \
+  {                                                                                                                                \
+    int i;                                                                                                                         \
+    Debug(dump_tag, "len=%" PRId64 "\n", len);                                                                                     \
+    for (i = 0; i < len / 8; i++) {                                                                                                \
+      Debug(dump_tag, "%02x %02x %02x %02x %02x %02x %02x %02x ", buf[i * 8 + 0], buf[i * 8 + 1], buf[i * 8 + 2], buf[i * 8 + 3],  \
+            buf[i * 8 + 4], buf[i * 8 + 5], buf[i * 8 + 6], buf[i * 8 + 7]);                                                       \
+    }                                                                                                                              \
+    switch (len % 8) {                                                                                                             \
+    case 1:                                                                                                                        \
+      Debug(dump_tag, "%02x", buf[i * 8 + 0]);                                                                                     \
+      break;                                                                                                                       \
+    case 2:                                                                                                                        \
+      Debug(dump_tag, "%02x %02x", buf[i * 8 + 0], buf[i * 8 + 1]);                                                                \
+                                                                                                                                   \
+      break;                                                                                                                       \
+    case 3:                                                                                                                        \
+      Debug(dump_tag, "%02x %02x %02x", buf[i * 8 + 0], buf[i * 8 + 1], buf[i * 8 + 2]);                                           \
+                                                                                                                                   \
+      break;                                                                                                                       \
+    case 4:                                                                                                                        \
+      Debug(dump_tag, "%02x %02x %02x %02x", buf[i * 8 + 0], buf[i * 8 + 1], buf[i * 8 + 2], buf[i * 8 + 3]);                      \
+                                                                                                                                   \
+      break;                                                                                                                       \
+    case 5:                                                                                                                        \
+      Debug(dump_tag, "%02x %02x %02x %02x %02x", buf[i * 8 + 0], buf[i * 8 + 1], buf[i * 8 + 2], buf[i * 8 + 3], buf[i * 8 + 4]); \
+                                                                                                                                   \
+      break;                                                                                                                       \
+    case 6:                                                                                                                        \
+      Debug(dump_tag, "%02x %02x %02x %02x %02x %02x", buf[i * 8 + 0], buf[i * 8 + 1], buf[i * 8 + 2], buf[i * 8 + 3],             \
+            buf[i * 8 + 4], buf[i * 8 + 5]);                                                                                       \
+                                                                                                                                   \
+      break;                                                                                                                       \
+    case 7:                                                                                                                        \
+      Debug(dump_tag, "%02x %02x %02x %02x %02x %02x %02x", buf[i * 8 + 0], buf[i * 8 + 1], buf[i * 8 + 2], buf[i * 8 + 3],        \
+            buf[i * 8 + 4], buf[i * 8 + 5], buf[i * 8 + 6]);                                                                       \
+                                                                                                                                   \
+      break;                                                                                                                       \
+    default:                                                                                                                       \
+      break;                                                                                                                       \
+    }                                                                                                                              \
   }
 
 static constexpr char tag[]                   = "quic_handshake";
