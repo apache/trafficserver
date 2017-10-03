@@ -436,8 +436,18 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     const uint8_t *app_name;
     unsigned int app_name_len = 0;
     this->_handshake_handler->negotiated_application_name(&app_name, &app_name_len);
+    if (app_name == nullptr) {
+      app_name     = reinterpret_cast<const uint8_t *>(IP_PROTO_TAG_HTTP_QUIC.ptr());
+      app_name_len = IP_PROTO_TAG_HTTP_QUIC.size();
+    }
+
     Continuation *endpoint = this->_next_protocol_set->findEndpoint(app_name, app_name_len);
-    endpoint->handleEvent(NET_EVENT_ACCEPT, this);
+    if (endpoint == nullptr) {
+      this->_handle_error(
+        QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::VERSION_NEGOTIATION_ERROR)));
+    } else {
+      endpoint->handleEvent(NET_EVENT_ACCEPT, this);
+    }
   }
 
   return EVENT_CONT;
