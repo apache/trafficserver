@@ -495,7 +495,11 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
-    error = this->_state_common_receive_packet();
+    if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+      error = this->_state_common_receive_packet();
+    } else {
+      // FIXME Just ignore for now but it has to be acked (GitHub#2609)
+    }
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
@@ -683,6 +687,9 @@ QUICNetVConnection::_state_common_receive_packet()
   case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
     error = this->_state_connection_established_process_packet(std::move(p));
     break;
+  case QUICPacketType::CLIENT_CLEARTEXT:
+    // FIXME Just ignore for now but it has to be acked (GitHub#2609)
+   break;
   default:
     error = QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR));
     break;
