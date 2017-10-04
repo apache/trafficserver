@@ -30,6 +30,10 @@
 
 #include "ts/ink_config.h"
 
+#ifdef __cplusplus
+#include "ink_std_compat.h"
+#endif
+
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
