@@ -90,6 +90,7 @@ class SSLNetVConnection : public UnixNetVConnection
 
 public:
   int sslStartHandShake(int event, int &err) override;
+  void clear() override;
   void free(EThread *t) override;
 
   virtual void
@@ -291,6 +292,7 @@ public:
 
   SSL *ssl                         = nullptr;
   ink_hrtime sslHandshakeBeginTime = 0;
+  ink_hrtime sslHandshakeEndTime   = 0;
   ink_hrtime sslLastWriteTime      = 0;
   int64_t sslTotalBytesSent        = 0;
 

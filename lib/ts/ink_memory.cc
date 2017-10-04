@@ -159,9 +159,9 @@ ats_mallopt(int param ATS_UNUSED, int value ATS_UNUSED)
 #if TS_HAS_TCMALLOC
 // TODO: tcmalloc code ?
 #else
-#if defined(linux)
+#if defined(__GLIBC__)
   return mallopt(param, value);
-#endif // ! defined(linux)
+#endif // ! defined(__GLIBC__)
 #endif // ! TS_HAS_TCMALLOC
 #endif // ! TS_HAS_JEMALLOC
   return 0;

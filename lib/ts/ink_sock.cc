@@ -290,6 +290,11 @@ bind_unix_domain_socket(const char *path, mode_t mode)
     return sockfd;
   }
 
+  if (strlen(path) > sizeof(sockaddr.sun_path) - 1) {
+    errno = ENAMETOOLONG;
+    goto fail;
+  }
+
   ink_zero(sockaddr);
   sockaddr.sun_family = AF_UNIX;
   ink_strlcpy(sockaddr.sun_path, path, sizeof(sockaddr.sun_path));

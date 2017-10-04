@@ -23,6 +23,7 @@
  */
 
 #include <cstring>        /* strlen() */
+#include <string>         /* stoi() */
 #include <ctime>          /* strftime(), time(), gmtime_r() */
 #include <iomanip>        /* std::setw */
 #include <sstream>        /* std::stringstream */
@@ -69,12 +70,15 @@ base16Encode(const char *in, size_t inLen)
  *
  * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
  *
+ * @todo Consider reusing / converting to TSStringPercentEncode() using a custom map to account for the AWS specific rules.
+ *       Currently we don't build a library/archive so we could link with the unit-test binary. Also using
+ *       different sets of encode/decode functions during runtime and unit-testing did not seem as a good idea.
  * @param in string to be URI encoded
  * @param isObjectName if true don't encode '/', keep it as it is.
  * @return encoded string.
  */
 String
-uriEncode(const String in, bool isObjectName)
+uriEncode(const String &in, bool isObjectName)
 {
   std::stringstream result;
 
@@ -96,6 +100,35 @@ uriEncode(const String in, bool isObjectName)
   }
 
   return result.str();
+}
+
+/**
+ * @brief URI-decode a character string (AWS specific version, see spec)
+ *
+ * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
+ *
+ * @todo Consider reusing / converting to TSStringPercentDecode()
+ *       Currently we don't build a library/archive so we could link with the unit-test binary. Also using
+ *       different sets of encode/decode functions during runtime and unit-testing did not seem as a good idea.
+ * @param in string to be URI decoded
+ * @return encoded string.
+ */
+String
+uriDecode(const String &in)
+{
+  std::string result;
+  result.reserve(in.length());
+  size_t i = 0;
+  while (i < in.length()) {
+    if (in[i] == '%') {
+      result += static_cast<char>(std::stoi(in.substr(i + 1, 2), nullptr, 16));
+      i += 3;
+    } else {
+      result += in[i];
+      i++;
+    }
+  }
+  return result;
 }
 
 /**
@@ -256,7 +289,18 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
     String encodedParam = uriEncode(param, /* isObjectName */ false);
 
     paramNames.insert(encodedParam);
-    paramsMap[encodedParam] = uriEncode(value, /* isObjectName */ false);
+
+    /* Look for '%' first trying to avoid as many uri-decode calls as possible.
+     * it is hard to estimate which is more likely use-case - (1) URIs with uri-encoded query parameter
+     * values or (2) with unencoded which defines the success of this optimization */
+    if (nullptr == memchr(value.c_str(), '%', value.length()) || 0 == uriDecode(value).compare(value)) {
+      /* Not URI-encoded */
+      paramsMap[encodedParam] = uriEncode(value, /* isObjectName */ false);
+    } else {
+      /* URI-encoded, then don't encode since AWS does not encode which is not mentioned in the spec,
+       * asked AWS, still waiting for confirmation */
+      paramsMap[encodedParam] = value;
+    }
   }
 
   String queryStr;
@@ -426,6 +470,7 @@ createDefaultExcludeHeaders()
   StringSet m;
   /* exclude headers that are meant to be changed */
   m.insert("x-forwarded-for");
+  m.insert("forwarded");
   m.insert("via");
   return m;
 }

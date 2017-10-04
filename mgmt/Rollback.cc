@@ -233,8 +233,8 @@ Rollback::createPathStr(version_t version)
 {
   int bufSize  = 0;
   char *buffer = nullptr;
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
-  bufSize = strlen(sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
+  std::string sysconfdir(RecConfigReadConfigDir());
+  bufSize = sysconfdir.size() + fileNameLen + MAX_VERSION_DIGITS + 1;
   buffer  = (char *)ats_malloc(bufSize);
   Layout::get()->relative_to(buffer, bufSize, sysconfdir, fileName);
   if (version != ACTIVE_VERSION) {
@@ -261,9 +261,8 @@ Rollback::statFile(version_t version, struct stat *buf)
   }
 
   ats_scoped_str filePath(createPathStr(version));
-  ElevateAccess access(root_access_needed ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-  statResult = stat(filePath, buf);
+  statResult = root_access_needed ? elevating_stat(filePath, buf) : stat(filePath, buf);
 
   return statResult;
 }
@@ -279,12 +278,10 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
   int fd;
 
   ats_scoped_str filePath(createPathStr(version));
-  ElevateAccess access(root_access_needed ? ElevateAccess::FILE_PRIVILEGE : 0);
-
   // TODO: Use the original permissions
   //       Anyhow the _1 files should not be created inside Syconfdir.
   //
-  fd = mgmt_open_mode(filePath, oflags, 0644);
+  fd = mgmt_open_mode_elevate(filePath, oflags, 0644, root_access_needed);
 
   if (fd < 0) {
     if (errnoPtr != nullptr) {

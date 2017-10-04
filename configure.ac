@@ -498,13 +498,13 @@ PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++], [
 AM_CONDITIONAL([BUILD_WEBP_TRANSFORM_PLUGIN], [test "x${enable_webp_transform_plugin}" = "xyes"])
 
 #
-# Example plugins. The example plugins are always built, but not always installed. Installing
+# Example plugins. The example plugins are only built and installed if this is enabled. Installing
 # them is useful for QA, but not useful for most users, so we default this to disabled.
 #
 
 AC_MSG_CHECKING([whether to install example plugins])
 AC_ARG_ENABLE([example-plugins],
-  [AS_HELP_STRING([--enable-example-plugins],[install example plugins])],
+  [AS_HELP_STRING([--enable-example-plugins],[build and install example plugins])],
   [],
   [enable_example_plugins=no]
 )
@@ -1287,13 +1287,36 @@ else
 fi
 AC_SUBST(has_backtrace)
 
-# Remote process unwinding is only implemented on Linux because it depends on various Linux-specific
-# features such as /proc filesystem nodes, ptrace(2) and waitpid(2) extensions.
-AS_IF([test "$host_os_def" = "linux"], [
-  PKG_CHECK_MODULES([LIBUNWIND], [libunwind-ptrace], [
-    enable_remote_unwinding=yes
+#
+# use unwind library when possible (can be disabled)
+#
+AC_MSG_CHECKING([whether to use unwind library])
+AC_ARG_ENABLE([unwind],
+  AS_HELP_STRING([--disable-unwind],[Don't use the unwind library]), [
   ], [
-    dnl no remote unwind support
+    enable_unwind="yes"
+    enable_unwind_default="yes"
+])
+AC_MSG_RESULT([$enable_unwind])
+
+AS_IF([test "x$enable_unwind" = "xyes"], [
+  # Remote process unwinding is only implemented on Linux because it depends on various Linux-specific
+  # features such as /proc filesystem nodes, ptrace(2) and waitpid(2) extensions.
+  AS_IF([test "$host_os_def" = "linux"], [
+    PKG_CHECK_MODULES([LIBUNWIND], [libunwind-ptrace], [
+      enable_remote_unwinding=yes
+    ], [
+      AS_IF([test "x$enable_unwind_default" = "xyes"], [
+        AC_MSG_WARN([unwind not found, try disabling it --disable-unwind])
+      ], [
+        AC_MSG_ERROR([unwind not found, try disabling it --disable-unwind])
+      ])
+    ])], [
+    AS_IF([test "x$enable_unwind_default" = "xyes"], [
+      AC_MSG_WARN([unwind only available on linux, try disabling it --disable-unwind])
+    ], [
+      AC_MSG_ERROR([unwind only available on linux, try disabling it --disable-unwind])
+    ])
   ])
 ])
 TS_ARG_ENABLE_VAR([use], [remote_unwinding])
@@ -1587,7 +1610,6 @@ AC_CHECK_HEADERS([sys/types.h \
                   ctype.h \
                   siginfo.h \
                   malloc.h \
-                  wait.h \
                   float.h \
                   libgen.h \
                   values.h \
@@ -1999,6 +2021,7 @@ AC_CONFIG_FILES([
   tools/Makefile
   tools/trafficserver.pc
   tools/tsxs
+  tests/unit_tests/Makefile
 ])
 
 # -----------------------------------------------------------------------------

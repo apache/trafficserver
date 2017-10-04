@@ -52,14 +52,6 @@ is successful.
 
 		The client connection is accepted.
 
-	.. macro:: TS_MILESTONE_PLUGIN_ACTIVE
-
-		Amount of time plugins were active plus start time.
-
-	.. macro:: TS_MILESTONE_PLUGIN_TOTAL
-
-		Wall time while plugins were active plus start time.
-
 	.. macro:: TS_MILESTONE_UA_READ_HEADER_DONE
 
 		The request header from the client has been read and parsed.
@@ -135,6 +127,14 @@ is successful.
 	.. macro:: TS_MILESTONE_PLUGIN_TOTAL
 
 		Amount of time spent in or waiting for plugins.
+
+   .. macro:: TS_MILESTONE_TLS_HANDSHAKE_START
+
+      Timestamp when the server starts the TLS handshake. 0 if no handshake is performed (connection reuse).
+
+   .. macro:: TS_MILESTONE_TLS_HANDSHAKE_END
+
+      Timestamp when the server completes the TLS handshake. 0 if no handshake is performed (connection reuse).
 
 	.. macro:: TS_MILESTONE_LAST_ENTRY
 

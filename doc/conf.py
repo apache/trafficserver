@@ -335,6 +335,11 @@ latex_elements = {
     #'preamble': '',
 }
 
+if tags.has('latex_a4'):
+    latex_elements['papersize'] = 'a4paper'
+elif tags.has('latex_paper'):
+    latex_elements['papersiize'] = 'letterpaper'
+
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [

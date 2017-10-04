@@ -276,6 +276,7 @@ public:
    * This is logic is invoked when the NetVC object is created in a new thread context
    */
   virtual int populate(Connection &con, Continuation *c, void *arg);
+  virtual void clear();
   virtual void free(EThread *t);
 
   ink_hrtime get_inactivity_timeout() override;

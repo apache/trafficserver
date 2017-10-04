@@ -631,7 +631,7 @@ HttpProxyPort::print(char *out, size_t n)
     }
   }
 
-  return min(zret, n);
+  return std::min(zret, n);
 }
 
 void

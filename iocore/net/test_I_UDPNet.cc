@@ -36,8 +36,9 @@
 
 #include "diags.i"
 
-static const int port       = 4443;
 static const char payload[] = "hello";
+in_port_t port              = 0;
+int pfd[2]; // Pipe used to signal client with transient port.
 
 /*This implements a standard Unix echo server: just send every udp packet you
   get back to where it came from*/
@@ -58,7 +59,7 @@ EchoServer::start()
   sockaddr_in addr;
   addr.sin_family      = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  addr.sin_port        = htons(port);
+  addr.sin_port        = 0;
 
   udpNet.UDPBind(static_cast<Continuation *>(this), reinterpret_cast<sockaddr const *>(&addr), 1048576, 1048576);
 
@@ -71,7 +72,12 @@ EchoServer::handle_packet(int event, void *data)
   switch (event) {
   case NET_EVENT_DATAGRAM_OPEN: {
     UDPConnection *con = reinterpret_cast<UDPConnection *>(data);
-    std::cout << "port: " << con->getPortNum() << std::endl;
+    port               = con->getPortNum(); // store this for later signalling.
+    /* For some reason the UDP packet handling isn't fully set up at this time. We need another
+       pass through the event loop for that or the packet is never read even thought it arrives
+       on the port (as reported by ss --udp --numeric --all).
+    */
+    eventProcessor.schedule_in(this, 1, ET_UDP);
     break;
   }
 
@@ -97,8 +103,14 @@ EchoServer::handle_packet(int event, void *data)
     std::exit(EXIT_FAILURE);
   }
 
+  case EVENT_INTERVAL:
+    // Done the extra event loop, signal the client to start.
+    std::cout << "Echo Server port: " << port << std::endl;
+    write(pfd[1], &port, sizeof(port));
+    break;
+
   default:
-    std::cout << "got unknown event" << std::endl;
+    std::cout << "got unknown event [" << event << "]" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
@@ -131,7 +143,7 @@ udp_echo_server()
   signal(SIGTERM, signal_handler);
 
   EchoServer server;
-  eventProcessor.schedule_imm(&server, ET_UDP);
+  eventProcessor.schedule_in(&server, 1, ET_UDP);
 
   this_thread()->execute();
 }
@@ -146,7 +158,7 @@ udp_client(char *buf)
   }
 
   struct timeval tv;
-  tv.tv_sec  = 1;
+  tv.tv_sec  = 20;
   tv.tv_usec = 0;
 
   setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv));
@@ -180,14 +192,25 @@ REGRESSION_TEST(UDPNet_echo)(RegressionTest *t, int /* atype ATS_UNUSED */, int 
   box         = REGRESSION_TEST_PASSED;
   char buf[8] = {0};
 
+  int z = pipe(pfd);
+  if (z < 0) {
+    std::cout << "Unable to create pipe" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
   pid_t pid = fork();
   if (pid < 0) {
     std::cout << "Couldn't fork" << std::endl;
     std::exit(EXIT_FAILURE);
   } else if (pid == 0) {
+    close(pfd[0]);
     udp_echo_server();
   } else {
-    sleep(1);
+    close(pfd[1]);
+    if (read(pfd[0], &port, sizeof(port)) <= 0) {
+      std::cout << "Failed to get signal with port data [" << errno << ']' << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
     udp_client(buf);
 
     kill(pid, SIGTERM);

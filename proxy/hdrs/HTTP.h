@@ -1338,7 +1338,7 @@ struct HTTPCacheAlt {
   /// for the last fragment.
   FragOffset *m_frag_offsets;
   /// # of fragment offsets built in to object.
-  static int const N_INTEGRAL_FRAG_OFFSETS = 4;
+  static int constexpr N_INTEGRAL_FRAG_OFFSETS = 4;
   /// Integral fragment offset table.
   FragOffset m_integral_frag_offsets[N_INTEGRAL_FRAG_OFFSETS];
 

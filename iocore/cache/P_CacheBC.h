@@ -119,21 +119,20 @@ struct Doc_v23 {
   size_t data_len();
 };
 
-static size_t const sizeofDoc_v23 = sizeof(Doc_v23);
 char *
 Doc_v23::data()
 {
-  return reinterpret_cast<char *>(this) + sizeofDoc_v23 + _flen + hlen;
+  return reinterpret_cast<char *>(this) + sizeof(Doc_v23) + _flen + hlen;
 }
 size_t
 Doc_v23::data_len()
 {
-  return len - sizeofDoc_v23 - hlen;
+  return len - sizeof(Doc_v23) - hlen;
 }
 char *
 Doc_v23::hdr()
 {
-  return reinterpret_cast<char *>(this) + sizeofDoc_v23;
+  return reinterpret_cast<char *>(this) + sizeof(Doc_v23);
 }
 
 } // namespace cache_bc

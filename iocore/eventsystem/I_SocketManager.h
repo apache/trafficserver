@@ -77,9 +77,9 @@ struct SocketManager {
 
   // result is the number of bytes or -errno
   int64_t read(int fd, void *buf, int len, void *pOLP = nullptr);
-  int64_t vector_io(int fd, struct iovec *vector, size_t count, int read_request, void *pOLP = 0);
+  int64_t vector_io(int fd, struct iovec *vector, size_t count, int read_request, void *pOLP = nullptr);
   int64_t readv(int fd, struct iovec *vector, size_t count);
-  int64_t read_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
+  int64_t read_vector(int fd, struct iovec *vector, size_t count, void *pOLP = nullptr);
   int64_t pread(int fd, void *buf, int len, off_t offset, char *tag = nullptr);
 
   int recv(int s, void *buf, int len, int flags);
@@ -87,12 +87,12 @@ struct SocketManager {
 
   int64_t write(int fd, void *buf, int len, void *pOLP = nullptr);
   int64_t writev(int fd, struct iovec *vector, size_t count);
-  int64_t write_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
+  int64_t write_vector(int fd, struct iovec *vector, size_t count, void *pOLP = nullptr);
   int64_t pwrite(int fd, void *buf, int len, off_t offset, char *tag = nullptr);
 
   int send(int fd, void *buf, int len, int flags);
   int sendto(int fd, void *buf, int len, int flags, struct sockaddr const *to, int tolen);
-  int sendmsg(int fd, struct msghdr *m, int flags, void *pOLP = 0);
+  int sendmsg(int fd, struct msghdr *m, int flags, void *pOLP = nullptr);
   int64_t lseek(int fd, off_t offset, int whence);
   int fstat(int fd, struct stat *);
   int unlink(char *buf);

@@ -749,14 +749,14 @@ does_encoding_match(char *enc1, const char *enc2)
   return false;
 }
 
-ContentEncoding
-HttpTransactCache::match_gzip(MIMEField *accept_field)
+bool
+HttpTransactCache::match_content_encoding(MIMEField *accept_field, const char *encoding_identifier)
 {
   Str *a_value;
   const char *a_raw;
   StrList a_values_list;
   if (!accept_field) {
-    return NO_GZIP;
+    return false;
   }
   // TODO: Should we check the return value (count) here?
   accept_field->value_get_comma_list(&a_values_list);
@@ -773,11 +773,11 @@ HttpTransactCache::match_gzip(MIMEField *accept_field)
     }
     float q;
     q = HttpCompat::find_Q_param_in_strlist(&a_param_list);
-    if (q != 0 && does_encoding_match(a_encoding, "gzip")) {
-      return GZIP;
+    if (q != 0 && does_encoding_match(a_encoding, encoding_identifier)) {
+      return true;
     }
   }
-  return NO_GZIP;
+  return false;
 }
 
 // TODO: This used to take a length for c_raw, but that was never used, so removed it from the prototype.
@@ -910,8 +910,8 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
   if (!content_field) {
     if (!match_accept_content_encoding("identity", accept_field, &wildcard_present, &wildcard_q, &q)) {
       // CE was not returned, and AE does not have identity
-      if (match_gzip(accept_field) == GZIP && match_gzip(cached_accept_field) == GZIP) {
-        return (float)1.0;
+      if (match_content_encoding(accept_field, "gzip") and match_content_encoding(cached_accept_field, "gzip")) {
+        return 1.0f;
       }
       goto encoding_wildcard;
     }
@@ -949,17 +949,17 @@ encoding_wildcard:
   // still okay, but otherwise, this is just not a match at all.         //
   /////////////////////////////////////////////////////////////////////////
   if ((q == -1.0) && is_identity_encoding) {
-    if (match_gzip(accept_field) == GZIP) {
-      if (match_gzip(cached_accept_field) == GZIP) {
-        return (float)1.0;
+    if (match_content_encoding(accept_field, "gzip")) {
+      if (match_content_encoding(cached_accept_field, "gzip")) {
+        return 1.0f;
       } else {
         // always try to fetch GZIP content if we have not tried sending AE before
-        return (float)-1.0;
+        return -1.0f;
       }
-    } else if (cached_accept_field && match_gzip(cached_accept_field) != GZIP) {
-      return (float)0.001;
+    } else if (cached_accept_field && !match_content_encoding(cached_accept_field, "gzip")) {
+      return 0.001f;
     } else {
-      return (float)-1.0;
+      return -1.0f;
     }
   }
   //      q = (float)-1.0;

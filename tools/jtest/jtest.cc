@@ -548,7 +548,7 @@ max_limit_fd()
   if (getrlimit(RLIMIT_NOFILE, &rl) >= 0) {
 #ifdef OPEN_MAX
     // Darwin
-    rl.rlim_cur = MIN(OPEN_MAX, rl.rlim_max);
+    rl.rlim_cur = std::min(static_cast<rlim_t>(OPEN_MAX), rl.rlim_max);
 #else
     rl.rlim_cur = rl.rlim_max;
 #endif
@@ -2140,7 +2140,7 @@ compose_all_urls(const char *tag, char *buf, char *start, char *end, int buflen,
   char old;
   while ((start = find_href_start(tag, end, buflen - (end - buf)))) {
     char newurl[512];
-    end = (char *)find_href_end(start, MIN(buflen - (start - buf), 512 - 10));
+    end = (char *)find_href_end(start, std::min(static_cast<int>(buflen - (start - buf)), 512 - 10));
     if (!end) {
       end = start + strlen(tag);
       continue;

@@ -23,6 +23,8 @@ AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 libatscppapi = $(top_builddir)/lib/cppapi/libatscppapi.la
 libtsconfig = $(top_builddir)/lib/tsconfig/libtsconfig.la
 
+if BUILD_EXAMPLE_PLUGINS
+
 example_Plugins = \
 	add_header.la \
 	append_transform.la \
@@ -49,13 +51,14 @@ example_Plugins = \
 	response_header_1.la \
 	secure_link.la \
 	server_push.la \
-	server-transform.la \
-	ssl-preaccept.la \
-	ssl-sni-whitelist.la \
-	ssl-sni.la \
+	server_transform.la \
+	session_hooks.la \
+	ssl_preaccept.la \
+	ssl_sni_whitelist.la \
+	ssl_sni.la \
 	statistic.la \
-	thread-1.la \
-	txn-data-sink.la \
+	thread_1.la \
+	txn_data_sink.la \
 	version.la \
 	disable_http2.la
 
@@ -85,10 +88,8 @@ example_Plugins += \
 	cppapi/boom.la \
 	cppapi/intercept.la
 
-if BUILD_EXAMPLE_PLUGINS
 pkglib_LTLIBRARIES = $(example_Plugins)
-else
-noinst_LTLIBRARIES = $(example_Plugins)
+
 endif
 
 add_header_la_SOURCES = add_header/add_header.c
@@ -107,7 +108,7 @@ output_header_la_SOURCES = output_header/output_header.c
 passthru_la_SOURCES = passthru/passthru.cc
 protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
 protocol_stack_la_SOURCES = protocol_stack/protocol_stack.cc
-psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
+psi_la_SOURCES = thread_pool/psi.c thread_pool/thread.c
 query_remap_la_SOURCES = query_remap/query_remap.c
 remap_header_add_la_SOURCES = remap_header_add/remap_header_add.cc
 remap_la_SOURCES = remap/remap.cc
@@ -115,22 +116,19 @@ replace_header_la_SOURCES = replace_header/replace_header.c
 response_header_1_la_SOURCES = response_header_1/response_header_1.c
 secure_link_la_SOURCES = secure_link/secure_link.c
 server_push_la_SOURCES = server_push/server_push.c
-server_transform_la_SOURCES = server-transform/server-transform.c
-ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc
-ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc
+server_transform_la_SOURCES = server_transform/server_transform.c
+ssl_preaccept_la_SOURCES = ssl_preaccept/ssl_preaccept.cc
+ssl_sni_la_SOURCES = ssl_sni/ssl_sni.cc
 ssl_sni_la_LIBADD = $(libtsconfig)
-ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc
+ssl_sni_whitelist_la_SOURCES = ssl_sni_whitelist/ssl_sni_whitelist.cc
 ssl_sni_whitelist_la_LIBADD = $(libtsconfig)
 disable_http2_la_SOURCES = disable_http2/disable_http2.cc
 statistic_la_SOURCES = statistic/statistic.cc
-thread_1_la_SOURCES = thread-1/thread-1.c
-txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
+thread_1_la_SOURCES = thread_1/thread_1.c
+txn_data_sink_la_SOURCES = txn_data_sink/txn_data_sink.c
 version_la_SOURCES = version/version.c
 redirect_1_la_SOURCES = redirect_1/redirect_1.c
-
-# The following examples do not build:
-#
-# session_1_la_SOURCES = session-1/session-1.c
+session_hooks_la_SOURCES = session_hooks/session_hooks.c
 
 cppapi_AsyncHttpFetchStreaming_la_SOURCES = cppapi/async_http_fetch_streaming/AsyncHttpFetchStreaming.cc
 cppapi_AsyncHttpFetch_la_SOURCES = cppapi/async_http_fetch/AsyncHttpFetch.cc

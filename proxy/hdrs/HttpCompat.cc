@@ -851,7 +851,7 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
       // index, preferring values earlier in Accept-Language list.   //
       /////////////////////////////////////////////////////////////////
 
-      Q = min(Ql, Qc);
+      Q = std::min(Ql, Qc);
 
       //////////////////////////////////////////////////////////
       // normally the Q for default pages should be slightly  //

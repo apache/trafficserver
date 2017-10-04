@@ -179,7 +179,8 @@ classifyUserAgent(const Classifier &c, TSMBuffer buf, TSMLoc hdrs, String &class
  * @param url URI handle
  * @param hdrs headers handle
  */
-CacheKey::CacheKey(TSHttpTxn txn, TSMBuffer buf, TSMLoc url, TSMLoc hdrs) : _txn(txn), _buf(buf), _url(url), _hdrs(hdrs)
+CacheKey::CacheKey(TSHttpTxn txn, TSMBuffer buf, TSMLoc url, TSMLoc hdrs, String separator)
+  : _txn(txn), _buf(buf), _url(url), _hdrs(hdrs), _separator(separator)
 {
   _key.reserve(512);
 }
@@ -191,7 +192,7 @@ CacheKey::CacheKey(TSHttpTxn txn, TSMBuffer buf, TSMLoc url, TSMLoc hdrs) : _txn
 void
 CacheKey::append(unsigned n)
 {
-  _key.append("/");
+  _key.append(_separator);
   ::append(_key, n);
 }
 
@@ -202,7 +203,7 @@ CacheKey::append(unsigned n)
 void
 CacheKey::append(const String &s)
 {
-  _key.append("/");
+  _key.append(_separator);
   ::appendEncoded(_key, s.data(), s.size());
 }
 
@@ -213,7 +214,7 @@ CacheKey::append(const String &s)
 void
 CacheKey::append(const char *s)
 {
-  _key.append("/");
+  _key.append(_separator);
   ::appendEncoded(_key, s, strlen(s));
 }
 
@@ -225,7 +226,7 @@ CacheKey::append(const char *s)
 void
 CacheKey::append(const char *s, unsigned n)
 {
-  _key.append("/");
+  _key.append(_separator);
   ::appendEncoded(_key, s, n);
 }
 
@@ -417,7 +418,7 @@ CacheKey::appendHeaders(const ConfigHeaders &config)
   }
 
   /* It doesn't make sense to have the headers unordered in the cache key. */
-  String headers_key = containerToString<StringSet, StringSet::const_iterator>(hset, "", "/");
+  String headers_key = containerToString<StringSet, StringSet::const_iterator>(hset, "", _separator);
   if (!headers_key.empty()) {
     append(headers_key);
   }

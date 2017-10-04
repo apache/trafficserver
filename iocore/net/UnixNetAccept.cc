@@ -92,6 +92,12 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->action_     = *na->action_;
     vc->set_is_transparent(na->opt.f_inbound_transparent);
     vc->set_context(NET_VCONNECTION_IN);
+#ifdef USE_EDGE_TRIGGER
+    // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
+    if (na->server.http_accept_filter) {
+      vc->read.triggered = 1;
+    }
+#endif
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
 
     if (e->ethread->is_event_type(na->opt.etype)) {
@@ -292,6 +298,12 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
     vc->accept_object = this;
+#ifdef USE_EDGE_TRIGGER
+    // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
+    if (server.http_accept_filter) {
+      vc->read.triggered = 1;
+    }
+#endif
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
     // eventProcessor.schedule_imm(vc, getEtype());
     eventProcessor.schedule_imm_signal(vc, opt.etype);
@@ -352,7 +364,6 @@ NetAccept::acceptFastEvent(int event, void *ep)
   int bufsz, res = 0;
   Connection con;
 
-  PollDescriptor *pd     = get_PollDescriptor(e->ethread);
   UnixNetVConnection *vc = nullptr;
   int loop               = accept_till_done;
 
@@ -440,36 +451,18 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->options.ip_family   = opt.ip_family;
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
-    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::mainEvent);
-
-    // set thread and nh as acceptEvent does
-    vc->thread = e->ethread;
-    vc->nh     = get_NetHandler(e->ethread);
-
-    if (vc->ep.start(pd, vc, EVENTIO_READ | EVENTIO_WRITE) < 0) {
-      Warning("[NetAccept::acceptFastEvent]: Error in inserting fd[%d] in kevent\n", vc->con.fd);
-      close_UnixNetVConnection(vc, e->ethread);
-      return EVENT_DONE;
-    }
-
-    ink_assert(vc->nh->mutex->thread_holding == this_ethread());
-    vc->set_inactivity_timeout(0);
-    vc->nh->open_list.enqueue(vc);
-
+    vc->action_ = *action_;
 #ifdef USE_EDGE_TRIGGER
-    // Set the vc as triggered and place it in the read ready queue in case there is already data on the socket.
-    Debug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
-    vc->read.triggered = 1;
-    vc->nh->read_ready_list.enqueue(vc);
-#endif
-
-    if (!action_->cancelled) {
-      // We must be holding the lock already to do later do_io_read's
-      SCOPED_MUTEX_LOCK(lock, vc->mutex, e->ethread);
-      action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
-    } else {
-      close_UnixNetVConnection(vc, e->ethread);
+    // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
+    if (server.http_accept_filter) {
+      vc->read.triggered = 1;
     }
+#endif
+    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
+    // We must be holding the lock already to do later do_io_read's
+    SCOPED_MUTEX_LOCK(lock, vc->mutex, e->ethread);
+    vc->handleEvent(EVENT_NONE, nullptr);
+    vc = nullptr;
   } while (loop);
 
 Ldone:
@@ -478,9 +471,6 @@ Ldone:
 Lerror:
   server.close();
   e->cancel();
-  if (vc) {
-    vc->free(e->ethread);
-  }
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
   delete this;
   return EVENT_DONE;

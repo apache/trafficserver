@@ -1421,7 +1421,7 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cer
 static void
 ssl_callback_info(const SSL *ssl, int where, int ret)
 {
-  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
+  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d State: %s", ssl, where, ret, SSL_state_string_long(ssl));
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
@@ -1626,13 +1626,15 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
         // Now, load any additional certificate chains specified in this entry.
         if (sslMultCertSettings->ca) {
           const char *ca_name = ca_tok.getNext();
-          ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_name));
-          if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-            SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
-            goto fail;
-          }
-          if (SSLConfigParams::load_ssl_file_cb) {
-            SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+          if (ca_name != nullptr) {
+            ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_name));
+            if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+              SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
+              goto fail;
+            }
+            if (SSLConfigParams::load_ssl_file_cb) {
+              SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+            }
           }
         }
       }
@@ -1720,7 +1722,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
     goto fail;
   }
   EVP_MD_CTX_free(digest);
-  digest = NULL;
+  digest = nullptr;
 
   if (SSL_CTX_set_session_id_context(ctx, hash_buf, hash_len) == 0) {
     SSLError("SSL_CTX_set_session_id_context failed");

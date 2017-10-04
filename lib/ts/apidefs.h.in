@@ -709,7 +709,6 @@ typedef enum {
   TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK,
   TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK,
   TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP,
-  TS_CONFIG_HTTP_NORMALIZE_AE_GZIP,
   TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE,
   TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK,
   TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE,
@@ -756,6 +755,8 @@ typedef enum {
   TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME,
   TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS,
   TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT,
+  TS_CONFIG_HTTP_NORMALIZE_AE,
+  TS_CONFIG_HTTP_INSERT_FORWARDED,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 
@@ -800,6 +801,8 @@ typedef enum {
   TS_MILESTONE_SM_FINISH,
   TS_MILESTONE_PLUGIN_ACTIVE,
   TS_MILESTONE_PLUGIN_TOTAL,
+  TS_MILESTONE_TLS_HANDSHAKE_START,
+  TS_MILESTONE_TLS_HANDSHAKE_END,
   TS_MILESTONE_LAST_ENTRY
 } TSMilestonesType;
 
@@ -1006,6 +1009,7 @@ extern tsapi const char *TS_MIME_FIELD_WARNING;
 extern tsapi const char *TS_MIME_FIELD_WWW_AUTHENTICATE;
 extern tsapi const char *TS_MIME_FIELD_XREF;
 extern tsapi const char *TS_MIME_FIELD_X_FORWARDED_FOR;
+extern tsapi const char *TS_MIME_FIELD_FORWARDED;
 
 /* --------------------------------------------------------------------------
    MIME fields string lengths */
@@ -1081,6 +1085,7 @@ extern tsapi int TS_MIME_LEN_WARNING;
 extern tsapi int TS_MIME_LEN_WWW_AUTHENTICATE;
 extern tsapi int TS_MIME_LEN_XREF;
 extern tsapi int TS_MIME_LEN_X_FORWARDED_FOR;
+extern tsapi int TS_MIME_LEN_FORWARDED;
 
 /* --------------------------------------------------------------------------
    HTTP values */
@@ -1207,7 +1212,7 @@ typedef enum {
 } TSUuidVersion;
 
 #define TS_UUID_STRING_LEN 36
-#define TS_CRUUID_STRING_LEN (TS_UUID_STRING_LEN + 20 + 1) /* UUID-len + len(int64_t) + '-' */
+#define TS_CRUUID_STRING_LEN (TS_UUID_STRING_LEN + 19 + 1) /* UUID-len + len(uint64_t) + '-' */
 typedef struct tsapi_uuid *TSUuid;
 
 #ifdef __cplusplus

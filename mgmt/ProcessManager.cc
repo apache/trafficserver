@@ -100,7 +100,7 @@ ProcessManager::start(std::function<void()> const &cb)
 
   ink_release_assert(running == 0);
   ink_atomic_increment(&running, 1);
-  poll_thread = ink_thread_create(processManagerThread, NULL, 0, 0, NULL);
+  poll_thread = ink_thread_create(processManagerThread, nullptr, 0, 0, nullptr);
 }
 
 void
@@ -293,8 +293,8 @@ ProcessManager::processSignalQueue()
 void
 ProcessManager::initLMConnection()
 {
-  ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  ats_scoped_str sockpath(Layout::relative_to(rundir, LM_CONNECTION_SERVER));
+  std::string rundir(RecConfigReadRuntimeDir());
+  std::string sockpath(Layout::relative_to(rundir, LM_CONNECTION_SERVER));
 
   MgmtMessageHdr *mh_full;
   int data_len;
@@ -302,11 +302,16 @@ ProcessManager::initLMConnection()
   int servlen;
   struct sockaddr_un serv_addr;
 
+  if (sockpath.length() > sizeof(serv_addr.sun_path) - 1) {
+    errno = ENAMETOOLONG;
+    Fatal("Unable to create socket '%s': %s", sockpath.c_str(), strerror(errno));
+  }
+
   /* Setup Connection to LocalManager */
   memset((char *)&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sun_family = AF_UNIX;
 
-  ink_strlcpy(serv_addr.sun_path, sockpath, sizeof(serv_addr.sun_path));
+  ink_strlcpy(serv_addr.sun_path, sockpath.c_str(), sizeof(serv_addr.sun_path));
 #if defined(darwin) || defined(freebsd)
   servlen = sizeof(sockaddr_un);
 #else
@@ -314,7 +319,7 @@ ProcessManager::initLMConnection()
 #endif
 
   if ((local_manager_sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-    Fatal("Unable to create socket '%s': %s", (const char *)sockpath, strerror(errno));
+    Fatal("Unable to create socket '%s': %s", sockpath.c_str(), strerror(errno));
   }
 
   if (fcntl(local_manager_sockfd, F_SETFD, FD_CLOEXEC) < 0) {
@@ -322,7 +327,7 @@ ProcessManager::initLMConnection()
   }
 
   if ((connect(local_manager_sockfd, (struct sockaddr *)&serv_addr, servlen)) < 0) {
-    Fatal("failed to connect management socket '%s': %s", (const char *)sockpath, strerror(errno));
+    Fatal("failed to connect management socket '%s': %s", sockpath.c_str(), strerror(errno));
   }
 
   data_len          = sizeof(pid_t);

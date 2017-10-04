@@ -40,7 +40,9 @@ typedef enum {
   TS_LUA_MILESTONE_SM_START                = TS_MILESTONE_SM_START,
   TS_LUA_MILESTONE_SM_FINISH               = TS_MILESTONE_SM_FINISH,
   TS_LUA_MILESTONE_PLUGIN_ACTIVE           = TS_MILESTONE_PLUGIN_ACTIVE,
-  TS_LUA_MILESTONE_PLUGIN_TOTAL            = TS_MILESTONE_PLUGIN_TOTAL
+  TS_LUA_MILESTONE_PLUGIN_TOTAL            = TS_MILESTONE_PLUGIN_TOTAL,
+  TS_LUA_MILESTONE_TLS_HANDSHAKE_START     = TS_MILESTONE_TLS_HANDSHAKE_START,
+  TS_LUA_MILESTONE_TLS_HANDSHAKE_END       = TS_MILESTONE_TLS_HANDSHAKE_END
 } TSLuaMilestoneType;
 
 ts_lua_var_item ts_lua_milestone_type_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_BEGIN),
@@ -64,7 +66,9 @@ ts_lua_var_item ts_lua_milestone_type_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILE
                                                 TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SM_START),
                                                 TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SM_FINISH),
                                                 TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_PLUGIN_ACTIVE),
-                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_PLUGIN_TOTAL)};
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_PLUGIN_TOTAL),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_TLS_HANDSHAKE_START),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_TLS_HANDSHAKE_END)};
 
 static void ts_lua_inject_http_milestone_variables(lua_State *L);
 

@@ -216,6 +216,7 @@ tsapi const char *TS_MIME_FIELD_WARNING;
 tsapi const char *TS_MIME_FIELD_WWW_AUTHENTICATE;
 tsapi const char *TS_MIME_FIELD_XREF;
 tsapi const char *TS_MIME_FIELD_X_FORWARDED_FOR;
+tsapi const char *TS_MIME_FIELD_FORWARDED;
 
 /* MIME fields string lengths */
 tsapi int TS_MIME_LEN_ACCEPT;
@@ -290,6 +291,7 @@ tsapi int TS_MIME_LEN_WARNING;
 tsapi int TS_MIME_LEN_WWW_AUTHENTICATE;
 tsapi int TS_MIME_LEN_XREF;
 tsapi int TS_MIME_LEN_X_FORWARDED_FOR;
+tsapi int TS_MIME_LEN_FORWARDED;
 
 /* HTTP miscellaneous values */
 tsapi const char *TS_HTTP_VALUE_BYTES;
@@ -1500,6 +1502,7 @@ api_init()
     TS_MIME_FIELD_WWW_AUTHENTICATE          = MIME_FIELD_WWW_AUTHENTICATE;
     TS_MIME_FIELD_XREF                      = MIME_FIELD_XREF;
     TS_MIME_FIELD_X_FORWARDED_FOR           = MIME_FIELD_X_FORWARDED_FOR;
+    TS_MIME_FIELD_FORWARDED                 = MIME_FIELD_FORWARDED;
 
     TS_MIME_LEN_ACCEPT                    = MIME_LEN_ACCEPT;
     TS_MIME_LEN_ACCEPT_CHARSET            = MIME_LEN_ACCEPT_CHARSET;
@@ -1573,6 +1576,7 @@ api_init()
     TS_MIME_LEN_WWW_AUTHENTICATE          = MIME_LEN_WWW_AUTHENTICATE;
     TS_MIME_LEN_XREF                      = MIME_LEN_XREF;
     TS_MIME_LEN_X_FORWARDED_FOR           = MIME_LEN_X_FORWARDED_FOR;
+    TS_MIME_LEN_FORWARDED                 = MIME_LEN_FORWARDED;
 
     /* HTTP methods */
     TS_HTTP_METHOD_CONNECT = HTTP_METHOD_CONNECT;
@@ -1769,21 +1773,22 @@ TShrtime()
 const char *
 TSInstallDirGet(void)
 {
-  return Layout::get()->prefix;
+  static std::string prefix = Layout::get()->prefix;
+  return prefix.c_str();
 }
 
 const char *
 TSConfigDirGet(void)
 {
-  static const char *sysconfdir = RecConfigReadConfigDir();
-  return sysconfdir;
+  static std::string sysconfdir = RecConfigReadConfigDir();
+  return sysconfdir.c_str();
 }
 
 const char *
 TSRuntimeDirGet(void)
 {
-  static const char *runtimedir = RecConfigReadRuntimeDir();
-  return runtimedir;
+  static std::string runtimedir = RecConfigReadRuntimeDir();
+  return runtimedir.c_str();
 }
 
 const char *
@@ -1811,9 +1816,8 @@ TSTrafficServerVersionGetPatch()
 const char *
 TSPluginDirGet(void)
 {
-  static const char *path = RecConfigReadPluginDir();
-
-  return path;
+  static std::string path = RecConfigReadPluginDir();
+  return path.c_str();
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -7644,10 +7648,21 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
     url_obj.destroy();
     return;
   }
+
   HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
   Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_session);
   if (stream) {
-    stream->push_promise(url_obj);
+    Http2ClientSession *parent = static_cast<Http2ClientSession *>(stream->get_parent());
+    if (!parent->is_url_pushed(url, url_len)) {
+      HTTPHdr *hptr = &(sm->t_state.hdr_info.client_request);
+      TSMLoc obj    = reinterpret_cast<TSMLoc>(hptr->m_http);
+
+      MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
+      MIMEField *f    = mime_hdr_field_find(mh, MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
+      stream->push_promise(url_obj, f);
+
+      parent->add_url_to_pushed_table(url, url_len);
+    }
   }
   url_obj.destroy();
 }
@@ -7830,6 +7845,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR:
     ret = _memberp_to_generic(&overridableHttpConfig->insert_squid_x_forwarded_for, typep);
     break;
+  case TS_CONFIG_HTTP_INSERT_FORWARDED:
+    ret = _memberp_to_generic(&overridableHttpConfig->insert_forwarded, typep);
+    break;
   case TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND:
     ret = _memberp_to_generic(&overridableHttpConfig->server_tcp_init_cwnd, typep);
     break;
@@ -7962,8 +7980,8 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP:
     ret = _memberp_to_generic(&overridableHttpConfig->cache_range_lookup, typep);
     break;
-  case TS_CONFIG_HTTP_NORMALIZE_AE_GZIP:
-    ret = _memberp_to_generic(&overridableHttpConfig->normalize_ae_gzip, typep);
+  case TS_CONFIG_HTTP_NORMALIZE_AE:
+    ret = _memberp_to_generic(&overridableHttpConfig->normalize_ae, typep);
     break;
   case TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE:
     ret = _memberp_to_generic(&overridableHttpConfig->default_buffer_size_index, typep);
@@ -8254,6 +8272,17 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       s->t_state.txn_conf->client_cert_filepath = const_cast<char *>(value);
     }
     break;
+  case TS_CONFIG_HTTP_INSERT_FORWARDED:
+    if (value && length > 0) {
+      ts::LocalBufferWriter<1024> error;
+      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(ts::string_view(value, length), error);
+      if (!error.size()) {
+        s->t_state.txn_conf->insert_forwarded = bs;
+      } else {
+        Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
+      }
+    }
+    break;
   default:
     return TS_ERROR;
     break;
@@ -8324,6 +8353,12 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     }
     break;
 
+  case 30:
+    if (!strncmp(name, "proxy.config.http.normalize_ae", length)) {
+      cnf = TS_CONFIG_HTTP_NORMALIZE_AE;
+    }
+    break;
+
   case 31:
     if (!strncmp(name, "proxy.config.http.chunking.size", length)) {
       cnf = TS_CONFIG_HTTP_CHUNKING_SIZE;
@@ -8344,21 +8379,15 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       cnf = TS_CONFIG_HTTP_CACHE_GENERATION;
     } else if (!strncmp(name, "proxy.config.http.insert_client_ip", length)) {
       cnf = TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP;
+    } else if (!strncmp(name, "proxy.config.http.insert_forwarded", length)) {
+      cnf = TS_CONFIG_HTTP_INSERT_FORWARDED;
+      typ = TS_RECORDDATATYPE_STRING;
     }
     break;
 
   case 35:
-    switch (name[length - 1]) {
-    case 'e':
-      if (!strncmp(name, "proxy.config.http.cache.range.write", length)) {
-        cnf = TS_CONFIG_HTTP_CACHE_RANGE_WRITE;
-      }
-      break;
-    case 'p':
-      if (!strncmp(name, "proxy.config.http.normalize_ae_gzip", length)) {
-        cnf = TS_CONFIG_HTTP_NORMALIZE_AE_GZIP;
-      }
-      break;
+    if (!strncmp(name, "proxy.config.http.cache.range.write", length)) {
+      cnf = TS_CONFIG_HTTP_CACHE_RANGE_WRITE;
     }
     break;
 
@@ -9287,7 +9316,7 @@ TSClientRequestUuidGet(TSHttpTxn txnp, char *uuid_str)
   const char *machine = (char *)Machine::instance()->uuid.getString();
   int len;
 
-  len = snprintf(uuid_str, TS_CRUUID_STRING_LEN, "%s-%" PRId64 "", machine, sm->sm_id);
+  len = snprintf(uuid_str, TS_CRUUID_STRING_LEN + 1, "%s-%" PRId64 "", machine, sm->sm_id);
   if (len > TS_CRUUID_STRING_LEN) {
     return TS_ERROR;
   }

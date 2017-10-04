@@ -392,20 +392,18 @@ Store::read_config()
       }
     }
 
-    char *pp = Layout::get()->relative(path);
+    std::string pp = Layout::get()->relative(path);
 
     ns = new Span;
-    Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%d%s%s", pp, size,
+    Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%d%s%s", pp.c_str(), size,
           volume_num, seed ? " id=" : "", seed ? seed : "");
-    if ((err = ns->init(pp, size))) {
-      RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "could not initialize storage \"%s\" [%s]", pp, err);
-      Debug("cache_init", "Store::read_config - could not initialize storage \"%s\" [%s]", pp, err);
+    if ((err = ns->init(pp.c_str(), size))) {
+      RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "could not initialize storage \"%s\" [%s]", pp.c_str(), err);
+      Debug("cache_init", "Store::read_config - could not initialize storage \"%s\" [%s]", pp.c_str(), err);
       delete ns;
-      ats_free(pp);
       continue;
     }
 
-    ats_free(pp);
     n_dsstore++;
 
     // Set side values if present.
@@ -575,7 +573,7 @@ Span::init(const char *path, int64_t size)
 
   // The actual size of a span always trumps the configured size.
   if (size > 0 && this->size() != size) {
-    int64_t newsz = MIN(size, this->size());
+    int64_t newsz = std::min(size, this->size());
 
     Note("cache %s '%s' is %" PRId64 " bytes, but the configured size is %" PRId64 " bytes, using the minimum",
          span_file_typename(sbuf.st_mode), path, this->size(), size);

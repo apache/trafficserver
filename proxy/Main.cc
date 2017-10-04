@@ -37,6 +37,7 @@
 #include "ts/ink_stack_trace.h"
 #include "ts/ink_syslog.h"
 #include "ts/hugepages.h"
+#include "ts/runroot.cc"
 
 #include "api/ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 
@@ -214,6 +215,7 @@ static ArgumentDescription argument_descriptions[] = {
   {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION(),
+  RUNROOT_ARGUMENT_DESCRIPTION(),
 };
 
 struct AutoStopCont : public Continuation {
@@ -268,8 +270,8 @@ public:
       Debug("log", "received SIGUSR2, reloading traffic.out");
 
       // reload output logfile (file is usually called traffic.out)
-      diags->set_stdout_output(bind_stdout);
-      diags->set_stderr_output(bind_stderr);
+      diags->set_std_output(StdStream::STDOUT, bind_stdout);
+      diags->set_std_output(StdStream::STDERR, bind_stderr);
     }
 
     if (signal_received[SIGTERM] || signal_received[SIGINT]) {
@@ -382,8 +384,11 @@ public:
   {
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
+    RecRegisterStatInt(RECT_PROCESS, "proxy.process.traffic_server.memory.rss", static_cast<RecInt>(0), RECP_NON_PERSISTENT);
   }
+
   ~MemoryLimit() override { mutex = nullptr; }
+
   int
   periodic(int event, Event *e)
   {
@@ -393,14 +398,15 @@ public:
       delete this;
       return EVENT_DONE;
     }
-    if (_memory_limit == 0) {
-      // first time it has been run
-      _memory_limit = REC_ConfigReadInteger("proxy.config.memory.max_usage");
-      _memory_limit = _memory_limit >> 10; // divide by 1024
-    }
-    if (_memory_limit > 0) {
-      if (getrusage(RUSAGE_SELF, &_usage) == 0) {
-        Debug("server", "memory usage - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
+
+    // "reload" the setting, we don't do this often so not expensive
+    _memory_limit = REC_ConfigReadInteger("proxy.config.memory.max_usage");
+    _memory_limit = _memory_limit >> 10; // divide by 1024
+
+    if (getrusage(RUSAGE_SELF, &_usage) == 0) {
+      RecSetRecordInt("proxy.process.traffic_server.memory.rss", _usage.ru_maxrss << 10, REC_SOURCE_DEFAULT); // * 1024
+      Debug("server", "memory usage - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
+      if (_memory_limit > 0) {
         if (_usage.ru_maxrss > _memory_limit) {
           if (net_memory_throttle == false) {
             net_memory_throttle = true;
@@ -412,13 +418,13 @@ public:
             Debug("server", "memory usage under limit - ru_maxrss: %ld memory limit: %" PRId64, _usage.ru_maxrss, _memory_limit);
           }
         }
+      } else {
+        // this feature has not been enabled
+        Debug("server", "limiting connections based on memory usage has been disabled");
+        e->cancel();
+        delete this;
+        return EVENT_DONE;
       }
-    } else {
-      // this feature has not be enabled
-      Debug("server", "limiting connections based on memory usage has been disabled");
-      e->cancel();
-      delete this;
-      return EVENT_DONE;
     }
     return EVENT_CONT;
   }
@@ -511,19 +517,19 @@ init_system()
 static void
 check_lockfile()
 {
-  ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  ats_scoped_str lockfile;
+  std::string rundir(RecConfigReadRuntimeDir());
+  std::string lockfile;
   pid_t holding_pid;
   int err;
 
   lockfile = Layout::relative_to(rundir, SERVER_LOCK);
 
-  Lockfile server_lockfile(lockfile);
+  Lockfile server_lockfile(lockfile.c_str());
   err = server_lockfile.Get(&holding_pid);
 
   if (err != 1) {
     char *reason = strerror(-err);
-    fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", (const char *)lockfile);
+    fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", lockfile.c_str());
 
     if ((err == 0) && (holding_pid != -1)) {
       fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
@@ -541,17 +547,17 @@ check_lockfile()
 static void
 check_config_directories()
 {
-  ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
+  std::string rundir(RecConfigReadRuntimeDir());
+  std::string sysconfdir(RecConfigReadConfigDir());
 
-  if (access(sysconfdir, R_OK) == -1) {
-    fprintf(stderr, "unable to access() config dir '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
+  if (access(sysconfdir.c_str(), R_OK) == -1) {
+    fprintf(stderr, "unable to access() config dir '%s': %d, %s\n", sysconfdir.c_str(), errno, strerror(errno));
     fprintf(stderr, "please set the 'TS_ROOT' environment variable\n");
     ::exit(1);
   }
 
-  if (access(rundir, R_OK | W_OK) == -1) {
-    fprintf(stderr, "unable to access() local state dir '%s': %d, %s\n", (const char *)rundir, errno, strerror(errno));
+  if (access(rundir.c_str(), R_OK | W_OK) == -1) {
+    fprintf(stderr, "unable to access() local state dir '%s': %d, %s\n", rundir.c_str(), errno, strerror(errno));
     fprintf(stderr, "please set 'proxy.config.local_state_dir'\n");
     ::exit(1);
   }
@@ -770,12 +776,12 @@ cmd_clear(char *cmd)
   bool c_cache = !strcmp(cmd, "clear_cache");
 
   if (c_all || c_hdb) {
-    ats_scoped_str rundir(RecConfigReadRuntimeDir());
-    ats_scoped_str config(Layout::relative_to(rundir, "hostdb.config"));
+    std::string rundir(RecConfigReadRuntimeDir());
+    std::string config(Layout::relative_to(rundir, "hostdb.config"));
 
     Note("Clearing HostDB Configuration");
-    if (unlink(config) < 0) {
-      Note("unable to unlink %s", (const char *)config);
+    if (unlink(config.c_str()) < 0) {
+      Note("unable to unlink %s", config.c_str());
     }
   }
 
@@ -1358,15 +1364,15 @@ run_RegressionTest()
 static void
 chdir_root()
 {
-  const char *prefix = Layout::get()->prefix;
+  std::string prefix = Layout::get()->prefix;
 
-  if (chdir(prefix) < 0) {
-    fprintf(stderr, "%s: unable to change to root directory \"%s\" [%d '%s']\n", appVersionInfo.AppStr, prefix, errno,
+  if (chdir(prefix.c_str()) < 0) {
+    fprintf(stderr, "%s: unable to change to root directory \"%s\" [%d '%s']\n", appVersionInfo.AppStr, prefix.c_str(), errno,
             strerror(errno));
     fprintf(stderr, "%s: please correct the path or set the TS_ROOT environment variable\n", appVersionInfo.AppStr);
     ::exit(1);
   } else {
-    printf("%s: using root directory '%s'\n", appVersionInfo.AppStr, prefix);
+    printf("%s: using root directory '%s'\n", appVersionInfo.AppStr, prefix.c_str());
   }
 }
 
@@ -1524,6 +1530,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Define the version info
   appVersionInfo.setup(PACKAGE_NAME, "traffic_server", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  runroot_handler(argv);
   // Before accessing file system initialize Layout engine
   Layout::create();
   chdir_root(); // change directory to the install root of traffic server.
@@ -1564,8 +1571,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // related errors and if diagsConfig isn't get up yet that will crash on a NULL pointer.
   diagsConfig = new DiagsConfig("Server", DIAGS_LOG_FILENAME, error_tags, action_tags, false);
   diags       = diagsConfig->diags;
-  diags->set_stdout_output(bind_stdout);
-  diags->set_stderr_output(bind_stderr);
+  diags->set_std_output(StdStream::STDOUT, bind_stdout);
+  diags->set_std_output(StdStream::STDERR, bind_stderr);
   if (is_debug_tag_set("diags")) {
     diags->dump();
   }
@@ -1651,8 +1658,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   diagsConfig          = new DiagsConfig("Server", DIAGS_LOG_FILENAME, error_tags, action_tags, true);
   diags                = diagsConfig->diags;
   RecSetDiags(diags);
-  diags->set_stdout_output(bind_stdout);
-  diags->set_stderr_output(bind_stderr);
+  diags->set_std_output(StdStream::STDOUT, bind_stdout);
+  diags->set_std_output(StdStream::STDERR, bind_stderr);
   if (is_debug_tag_set("diags")) {
     diags->dump();
   }
@@ -1783,7 +1790,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
-  eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND, ET_TASK);
+  eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND * 10, ET_TASK);
   REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 

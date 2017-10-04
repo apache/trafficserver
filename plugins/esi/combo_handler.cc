@@ -30,6 +30,7 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <limits>
+#include <getopt.h>
 
 #include "ts/ts.h"
 #include "ts/experimental.h"
@@ -46,8 +47,18 @@ using namespace EsiLib;
 #define DEBUG_TAG "combo_handler"
 #define FEAT_GATE_8_0
 
-#define MAX_FILE_COUNT 30
-#define MAX_QUERY_LENGTH 3000
+// Because STL vs. C library leads to ugly casting, fix it once.
+inline int
+length(std::string const &str)
+{
+  return static_cast<int>(str.size());
+}
+
+constexpr unsigned DEFAULT_MAX_FILE_COUNT = 100;
+constexpr int MAX_QUERY_LENGTH            = 4096;
+
+unsigned MaxFileCount = DEFAULT_MAX_FILE_COUNT;
+
 // We hardcode "immutable" here because it's not yet defined in the ATS API
 #define HTTP_IMMUTABLE "immutable"
 
@@ -56,8 +67,7 @@ static string SIG_KEY_NAME;
 static vector<string> HEADER_WHITELIST;
 
 #define DEFAULT_COMBO_HANDLER_PATH "admin/v1/combo"
-static string COMBO_HANDLER_PATH;
-static int COMBO_HANDLER_PATH_SIZE;
+static string COMBO_HANDLER_PATH{DEFAULT_COMBO_HANDLER_PATH};
 
 #define LOG_ERROR(fmt, args...)                                                               \
   do {                                                                                        \
@@ -323,8 +333,38 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  if ((argc > 1) && (strcmp(argv[1], "-") != 0)) {
-    COMBO_HANDLER_PATH = argv[1];
+  if (argc > 1) {
+    int c;
+    static const struct option longopts[] = {
+      {"max-files", required_argument, nullptr, 'f'}, {nullptr, 0, nullptr, 0},
+    };
+
+    int longindex = 0;
+    optind        = 1; // Force restart to avoid problems with other plugins.
+    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "f:", longopts, &longindex)) != -1) {
+      switch (c) {
+      case 'f': {
+        char *tmp = nullptr;
+        long n    = strtol(optarg, &tmp, 0);
+        if (tmp == optarg) {
+          TSError("[%s] %s requires a numeric argument", DEBUG_TAG, longopts[longindex].name);
+        } else if (n < 1) {
+          TSError("[%s] %s must be a positive number", DEBUG_TAG, longopts[longindex].name);
+        } else {
+          MaxFileCount = n;
+          TSDebug(DEBUG_TAG, "Max files set to %u", MaxFileCount);
+        }
+        break;
+      }
+      default:
+        TSError("[%s] Unrecognized option '%s'", DEBUG_TAG, argv[optind - 1]);
+        break;
+      }
+    }
+  }
+
+  if (argc >= optind && (argv[optind][0] != '-' || argv[optind][1])) {
+    COMBO_HANDLER_PATH = argv[optind];
     if (COMBO_HANDLER_PATH == "/") {
       COMBO_HANDLER_PATH.clear();
     } else {
@@ -335,22 +375,22 @@ TSPluginInit(int argc, const char *argv[])
         COMBO_HANDLER_PATH.erase(COMBO_HANDLER_PATH.size() - 1, 1);
       }
     }
-  } else {
-    COMBO_HANDLER_PATH = DEFAULT_COMBO_HANDLER_PATH;
   }
-  COMBO_HANDLER_PATH_SIZE = static_cast<int>(COMBO_HANDLER_PATH.size());
-  LOG_DEBUG("Combo handler path is [%s]", COMBO_HANDLER_PATH.c_str());
+  ++optind;
+  LOG_DEBUG("Combo handler path is [%.*s]", length(COMBO_HANDLER_PATH), COMBO_HANDLER_PATH.data());
 
-  SIG_KEY_NAME = ((argc > 2) && (strcmp(argv[2], "-") != 0)) ? argv[2] : "";
-  LOG_DEBUG("Signature key is [%s]", SIG_KEY_NAME.c_str());
+  SIG_KEY_NAME = (argc > optind && (argv[optind][0] != '-' || argv[optind][1])) ? argv[optind] : "";
+  ++optind;
+  LOG_DEBUG("Signature key is [%.*s]", length(SIG_KEY_NAME), SIG_KEY_NAME.data());
 
-  if ((argc > 3) && (strcmp(argv[3], "-") != 0)) {
-    stringstream strstream(argv[3]);
+  if (argc > optind && (argv[optind][0] != '-' || argv[optind][1])) {
+    stringstream strstream(argv[optind++]);
     string header;
     while (getline(strstream, header, ':')) {
       HEADER_WHITELIST.push_back(header);
     }
   }
+  ++optind;
 
   for (unsigned int i = 0; i < HEADER_WHITELIST.size(); i++) {
     LOG_DEBUG("WhiteList: %s", HEADER_WHITELIST[i].c_str());
@@ -370,7 +410,7 @@ TSPluginInit(int argc, const char *argv[])
     LOG_ERROR("failed to reserve private data slot");
     return;
   } else {
-    LOG_DEBUG("arg_idx: %d", arg_idx);
+    LOG_DEBUG("txn_arg_idx: %d", arg_idx);
   }
 
   Utils::init(&TSDebug, &TSError);
@@ -465,8 +505,8 @@ isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc)
         LOG_ERROR("Could not get path from request URL");
         retval = false;
       } else {
-        retval =
-          (path_len == COMBO_HANDLER_PATH_SIZE) && (strncasecmp(path, COMBO_HANDLER_PATH.c_str(), COMBO_HANDLER_PATH_SIZE) == 0);
+        retval = (path_len == length(COMBO_HANDLER_PATH)) &&
+                 (strncasecmp(path, COMBO_HANDLER_PATH.data(), COMBO_HANDLER_PATH.size()) == 0);
         LOG_DEBUG("Path [%.*s] is %s combo handler path", path_len, path, (retval ? "a" : "not a"));
       }
     }
@@ -648,7 +688,7 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
     creq.file_urls.clear();
   }
 
-  if (creq.file_urls.size() > MAX_FILE_COUNT) {
+  if (creq.file_urls.size() > MaxFileCount) {
     creq.status = TS_HTTP_STATUS_BAD_REQUEST;
     LOG_ERROR("too many files in url");
     creq.file_urls.clear();

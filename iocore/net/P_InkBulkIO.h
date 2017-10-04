@@ -141,7 +141,7 @@ struct InkBulkIORequest {
  */
 #define INKBIO_MAX_PKTS_PER_REQ_BLOCK                                                              \
   ((INKBIO_PKT_SIZE_WO_UDPHDR - (sizeof(struct InkBulkIORequest) + sizeof(struct InkBulkIOPkt))) / \
-   MAX((sizeof(struct InkBulkIORequest)), (sizeof(struct InkBulkIOPkt))))
+   std::max((sizeof(struct InkBulkIORequest)), (sizeof(struct InkBulkIOPkt))))
 
 /*
  * Requests are just block-ids---the block id points to the inkbio-block

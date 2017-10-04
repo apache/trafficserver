@@ -59,12 +59,12 @@ def setup_port_queue(amount=1000):
         return
     try:
         # some docker setups don't have sbin setup correctly
-        new_env= os.environ.copy()
-        new_env['PATH']="/sbin:/usr/sbin:"+new_env['PATH']
+        new_env = os.environ.copy()
+        new_env['PATH'] = "/sbin:/usr/sbin:" + new_env['PATH']
         dmin, dmax = subprocess.check_output(
             ["sysctl", "net.ipv4.ip_local_port_range"],
             env=new_env
-            ).decode().split("=")[1].split()
+        ).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
     except:

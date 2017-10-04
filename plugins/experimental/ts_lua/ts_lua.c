@@ -90,7 +90,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
 
   if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
-    snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - invalid state in option input");
+    snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - invalid state in option input. Must be between 1 and %d",
+             TS_LUA_MAX_STATE_COUNT);
     return TS_ERROR;
   }
 
@@ -336,10 +337,6 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
     lua_getglobal(l, TS_LUA_FUNCTION_G_POST_REMAP);
     break;
 
-  case TS_EVENT_HTTP_SELECT_ALT:
-    lua_getglobal(l, TS_LUA_FUNCTION_G_SELECT_ALT);
-    break;
-
   case TS_EVENT_HTTP_OS_DNS:
     lua_getglobal(l, TS_LUA_FUNCTION_G_OS_DNS);
     break;
@@ -444,7 +441,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
-    TSError("[ts_lua][%s] invalid # of states from option input", __FUNCTION__);
+    TSError("[ts_lua][%s] invalid # of states from option input. Must be between 1 and %d", __FUNCTION__, TS_LUA_MAX_STATE_COUNT);
     return;
   }
 
@@ -546,13 +543,6 @@ TSPluginInit(int argc, const char *argv[])
   if (lua_type(l, -1) == LUA_TFUNCTION) {
     TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, global_contp);
     TSDebug(TS_LUA_DEBUG_TAG, "post_remap_hook added");
-  }
-  lua_pop(l, 1);
-
-  lua_getglobal(l, TS_LUA_FUNCTION_G_SELECT_ALT);
-  if (lua_type(l, -1) == LUA_TFUNCTION) {
-    TSHttpHookAdd(TS_HTTP_SELECT_ALT_HOOK, global_contp);
-    TSDebug(TS_LUA_DEBUG_TAG, "select_alt_hook added");
   }
   lua_pop(l, 1);
 

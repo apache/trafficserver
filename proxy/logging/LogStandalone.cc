@@ -148,12 +148,12 @@ check_lockfile()
   pid_t holding_pid;
   char *lockfile = nullptr;
 
-  if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
-    fprintf(stderr, "unable to access() dir'%s': %d, %s\n", Layout::get()->runtimedir, errno, strerror(errno));
+  if (access(Layout::get()->runtimedir.c_str(), R_OK | W_OK) == -1) {
+    fprintf(stderr, "unable to access() dir'%s': %d, %s\n", Layout::get()->runtimedir.c_str(), errno, strerror(errno));
     fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
     ::exit(1);
   }
-  lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
+  lockfile = ats_stringdup(Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK));
 
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Get(&holding_pid);

@@ -71,7 +71,7 @@ test_mime_LDADD = -L. -lhdrs \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @HWLOC_LIBS@ \
-  @LIBTCL@
+  @LIBTCL@ @LIBCAP@
 
 test_mime_SOURCES = test_mime.cc
 

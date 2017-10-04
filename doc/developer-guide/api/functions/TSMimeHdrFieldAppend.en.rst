@@ -31,17 +31,10 @@ Synopsis
 Description
 ===========
 
-Returns the :c:type:`TSMLoc` location of a specified MIME field from
-within the MIME header located at :arg:`hdr`.
+Attaches a MIME :arg:`field` to a header. The header is represented by the :arg:`bufp` and :arg:`hdr`
+arguments which should have been obtained by a call to :func:`TSHttpTxnClientReqGet` or similar. If
+the field in :arg:`field` was created by calling :func:`TSMimeHdrFieldCreateNamed` the same
+:arg:`bufp` and :arg:`hdr` passed to that should be passed to this function.
 
-The retrieved_str parameter specifies which field to retrieve.  For
-each MIME field in the MIME header, a pointer comparison is done
-between the field name and retrieved_str.  This is a much quicker
-retrieval function than :c:func:`TSMimeHdrFieldFind` since it obviates
-the need for a string comparison.  However, retrieved_str must be one
-of the predefined field names of the form ``TS_MIME_FIELD_XXX``
-for the call to succeed.  Release the returned :c:type:`TSMLoc` handle
-with a call to :c:func:`TSHandleMLocRelease`.
-
-.. XXX The above is surely from the documentation of another function. Confirm
-       and remove from here (or relocate to the appropriate function's doc).
+Returns :code:`TS_SUCCESS` if the :arg:`field` was attached to the header, :code:`TS_ERROR` if it
+was not. Fields cannot be attached to read only headers.

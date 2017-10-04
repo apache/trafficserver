@@ -388,23 +388,23 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqth", field);
 
-  field = new LogField("client_req_timestamp_squid", "cqtq", LogField::STRING, &LogAccess::marshal_client_req_timestamp_squid,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  field = new LogField("client_req_timestamp_squid", "cqtq", LogField::sINT, &LogAccess::marshal_client_req_timestamp_ms,
+                       &LogAccess::unmarshal_ttmsf);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtq", field);
 
-  field = new LogField("client_req_timestamp_netscape", "cqtn", LogField::STRING, &LogAccess::marshal_client_req_timestamp_netscape,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  field = new LogField("client_req_timestamp_netscape", "cqtn", LogField::sINT, &LogAccess::marshal_client_req_timestamp_sec,
+                       &LogAccess::unmarshal_int_to_netscape_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtn", field);
 
-  field = new LogField("client_req_timestamp_date", "cqtd", LogField::STRING, &LogAccess::marshal_client_req_timestamp_date,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  field = new LogField("client_req_timestamp_date", "cqtd", LogField::sINT, &LogAccess::marshal_client_req_timestamp_sec,
+                       &LogAccess::unmarshal_int_to_date_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtd", field);
 
-  field = new LogField("client_req_timestamp_time", "cqtt", LogField::STRING, &LogAccess::marshal_client_req_timestamp_time,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  field = new LogField("client_req_timestamp_time", "cqtt", LogField::sINT, &LogAccess::marshal_client_req_timestamp_sec,
+                       &LogAccess::unmarshal_int_to_time_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqtt", field);
 
@@ -837,6 +837,16 @@ Log::init_fields()
   field = new LogField("file_size", "fsiz", LogField::sINT, &LogAccess::marshal_file_size, &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "fsiz", field);
+
+  field = new LogField("client_connection_id", "ccid", LogField::sINT, &LogAccess::marshal_client_http_connection_id,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "ccid", field);
+
+  field = new LogField("client_transaction_id", "ctid", LogField::sINT, &LogAccess::marshal_client_http_transaction_id,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "ctid", field);
 
   Ptr<LogFieldAliasTable> entry_type_map = make_ptr(new LogFieldAliasTable);
   entry_type_map->init(N_LOG_ENTRY_TYPES, LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP");

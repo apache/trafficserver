@@ -743,13 +743,13 @@ Diags::should_roll_outputlog()
         if (stdout_log->roll()) {
           char *oldname = ats_strdup(stdout_log->get_name());
           log_log_trace("in %s(), oldname=%s\n", __func__, oldname);
-          set_stdout_output(oldname);
+          set_std_output(StdStream::STDOUT, oldname);
 
           // if stderr and stdout are redirected to the same place, we should
           // update the stderr_log object as well
           if (!strcmp(oldname, stderr_log->get_name())) {
             log_log_trace("oldname == stderr_log->get_name()\n");
-            set_stderr_output(oldname);
+            set_std_output(StdStream::STDERR, oldname);
             need_consider_stderr = false;
           }
           ats_free(oldname);
@@ -773,13 +773,13 @@ Diags::should_roll_outputlog()
           outputlog_time_last_roll = now;
           char *oldname            = ats_strdup(stdout_log->get_name());
           log_log_trace("in %s, oldname=%s\n", __func__, oldname);
-          set_stdout_output(oldname);
+          set_std_output(StdStream::STDOUT, oldname);
 
           // if stderr and stdout are redirected to the same place, we should
           // update the stderr_log object as well
           if (!strcmp(oldname, stderr_log->get_name())) {
             log_log_trace("oldname == stderr_log->get_name()\n");
-            set_stderr_output(oldname);
+            set_std_output(StdStream::STDERR, oldname);
             need_consider_stderr = false;
           }
           ats_free(oldname);
@@ -806,53 +806,64 @@ Diags::should_roll_outputlog()
 }
 
 /*
- * Binds stdout to stdout_path, provided that stdout_path != "".
- * Also sets up a BaseLogFile for stdout.
+ * Sets up a BaseLogFile for the specified file. Then it binds the specified standard steam
+ * to the aforementioned BaseLogFile.
  *
- * Returns true on binding and setup, false otherwise
- *
- * TODO make this a generic function (ie combine set_stdout_output and
- * set_stderr_output
+ * Returns true on successful binding and setup, false otherwise
  */
 bool
-Diags::set_stdout_output(const char *stdout_path)
+Diags::set_std_output(StdStream stream, const char *file)
 {
-  if (strcmp(stdout_path, "") == 0) {
+  const char *target_stream;
+  BaseLogFile **current;
+  BaseLogFile *old_log, *new_log;
+
+  // If the caller is stupid, we give up
+  if (strcmp(file, "") == 0) {
     return false;
   }
 
-  BaseLogFile *old_stdout_log = stdout_log;
-  BaseLogFile *new_stdout_log = new BaseLogFile(stdout_path);
+  // Figure out which standard stream we want to redirect
+  if (stream == StdStream::STDOUT) {
+    target_stream = "stdout";
+    current       = &stdout_log;
+  } else {
+    target_stream = "stderr";
+    current       = &stderr_log;
+  }
+  (void)target_stream; // silence clang-analyzer for now
+  old_log = *current;
+  new_log = new BaseLogFile(file);
 
-  // on any errors we quit
-  if (!new_stdout_log || new_stdout_log->open_file(output_logfile_perm) != BaseLogFile::LOG_FILE_NO_ERROR) {
-    log_log_error("[Warning]: unable to open file=%s to bind stdout to\n", stdout_path);
-    log_log_error("[Warning]: stdout is currently not bound to anything\n");
-    delete new_stdout_log;
+  // On any errors we quit
+  if (!new_log || new_log->open_file(output_logfile_perm) != BaseLogFile::LOG_FILE_NO_ERROR) {
+    log_log_error("[Warning]: unable to open file=%s to bind %s to\n", file, target_stream);
+    log_log_error("[Warning]: %s is currently not bound to anything\n", target_stream);
+    delete new_log;
     lock();
-    stdout_log = nullptr;
+    *current = nullptr;
     unlock();
     return false;
   }
-  if (!new_stdout_log->is_open()) {
-    log_log_error("[Warning]: file pointer for stdout %s = nullptr\n", stdout_path);
-    log_log_error("[Warning]: stdout is currently not bound to anything\n");
-    delete new_stdout_log;
+  if (!new_log->is_open()) {
+    log_log_error("[Warning]: file pointer for %s %s = nullptr\n", target_stream, file);
+    log_log_error("[Warning]: %s is currently not bound to anything\n", target_stream);
+    delete new_log;
     lock();
-    stdout_log = nullptr;
+    *current = nullptr;
     unlock();
     return false;
   }
 
-  // now exchange the stdout_log pointer
+  // Now exchange the pointer to the standard stream in question
   lock();
-  stdout_log = new_stdout_log;
-  bool ret   = rebind_stdout(fileno(new_stdout_log->m_fp));
+  *current = new_log;
+  bool ret = rebind_std_stream(stream, fileno(new_log->m_fp));
   unlock();
 
-  if (old_stdout_log) {
-    delete old_stdout_log;
-  }
+  // Free the BaseLogFile we rotated out
+  if (old_log)
+    delete old_log;
 
   // "this should never happen"^{TM}
   ink_release_assert(ret);
@@ -861,86 +872,30 @@ Diags::set_stdout_output(const char *stdout_path)
 }
 
 /*
- * Binds stderr to stderr_path, provided that stderr_path != "".
- * Also sets up a BaseLogFile for stderr.
- *
- * Returns true on binding and setup, false otherwise
- */
-bool
-Diags::set_stderr_output(const char *stderr_path)
-{
-  if (strcmp(stderr_path, "") == 0) {
-    return false;
-  }
-
-  BaseLogFile *old_stderr_log = stderr_log;
-  BaseLogFile *new_stderr_log = new BaseLogFile(stderr_path);
-
-  // on any errors we quit
-  if (!new_stderr_log || new_stderr_log->open_file(output_logfile_perm) != BaseLogFile::LOG_FILE_NO_ERROR) {
-    log_log_error("[Warning]: unable to open file=%s to bind stderr to\n", stderr_path);
-    log_log_error("[Warning]: stderr is currently not bound to anything\n");
-    delete new_stderr_log;
-    lock();
-    stderr_log = nullptr;
-    unlock();
-    return false;
-  }
-  if (!new_stderr_log->is_open()) {
-    log_log_error("[Warning]: file pointer for stderr %s = nullptr\n", stderr_path);
-    log_log_error("[Warning]: stderr is currently not bound to anything\n");
-    delete new_stderr_log;
-    lock();
-    stderr_log = nullptr;
-    unlock();
-    return false;
-  }
-
-  // now exchange the stderr_log pointer
-  lock();
-  stderr_log = new_stderr_log;
-  bool ret   = rebind_stderr(fileno(stderr_log->m_fp));
-  unlock();
-
-  if (old_stderr_log) {
-    delete old_stderr_log;
-  }
-
-  // "this should never happen"^{TM}
-  ink_release_assert(ret);
-
-  return ret;
-}
-
-/*
- * Helper function that rebinds stdout to specified file descriptor
+ * Helper function that rebinds a specified stream to specified file descriptor
  *
  * Returns true on success, false otherwise
  */
 bool
-Diags::rebind_stdout(int new_fd)
+Diags::rebind_std_stream(StdStream stream, int new_fd)
 {
-  if (new_fd < 0) {
-    log_log_error("[Warning]: TS unable to bind stdout to new file descriptor=%d", new_fd);
-  } else {
-    dup2(new_fd, STDOUT_FILENO);
-    return true;
-  }
-  return false;
-}
+  const char *target_stream;
+  int stream_fd;
 
-/*
- * Helper function that rebinds stderr to specified file descriptor
- *
- * Returns true on success, false otherwise
- */
-bool
-Diags::rebind_stderr(int new_fd)
-{
-  if (new_fd < 0) {
-    log_log_error("[Warning]: TS unable to bind stderr to new file descriptor=%d", new_fd);
+  // Figure out which stream to dup2
+  if (stream == StdStream::STDOUT) {
+    target_stream = "stdout";
+    stream_fd     = STDOUT_FILENO;
   } else {
-    dup2(new_fd, STDERR_FILENO);
+    target_stream = "stderr";
+    stream_fd     = STDERR_FILENO;
+  }
+  (void)target_stream; // silence clang-analyzer for now
+
+  if (new_fd < 0)
+    log_log_error("[Warning]: TS unable to bind %s to new file descriptor=%d", target_stream, new_fd);
+  else {
+    dup2(new_fd, stream_fd);
     return true;
   }
   return false;

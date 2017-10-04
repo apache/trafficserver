@@ -61,6 +61,12 @@ int mgmt_open(const char *path, int oflag);
 int mgmt_open_mode(const char *path, int oflag, mode_t mode);
 
 //-------------------------------------------------------------------------
+// mgmt_open_mode_elevate
+//-------------------------------------------------------------------------
+
+int mgmt_open_mode_elevate(const char *path, int oflag, mode_t mode, bool elevate_p = false);
+
+//-------------------------------------------------------------------------
 // mgmt_select
 //-------------------------------------------------------------------------
 

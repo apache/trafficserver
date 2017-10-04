@@ -31,7 +31,6 @@ typedef enum {
   TS_LUA_HOOK_PRE_REMAP,
   TS_LUA_HOOK_POST_REMAP,
   TS_LUA_HOOK_OS_DNS,
-  TS_LUA_HOOK_SELECT_ALT,
   TS_LUA_HOOK_READ_CACHE_HDR,
   TS_LUA_HOOK_TXN_CLOSE,
   TS_LUA_REQUEST_TRANSFORM,
@@ -49,7 +48,6 @@ char *ts_lua_hook_id_string[] = {"TS_LUA_HOOK_DUMMY",
                                  "TS_LUA_HOOK_PRE_REMAP",
                                  "TS_LUA_HOOK_POST_REMAP",
                                  "TS_LUA_HOOK_OS_DNS",
-                                 "TS_LUA_HOOK_SELECT_ALT",
                                  "TS_LUA_HOOK_READ_CACHE_HDR",
                                  "TS_LUA_HOOK_TXN_CLOSE",
                                  "TS_LUA_REQUEST_TRANSFORM",
@@ -202,18 +200,6 @@ ts_lua_add_hook(lua_State *L)
     } else {
       lua_pushvalue(L, 2);
       lua_setglobal(L, TS_LUA_FUNCTION_G_OS_DNS);
-    }
-    break;
-
-  case TS_LUA_HOOK_SELECT_ALT:
-    if (http_ctx) {
-      TSHttpTxnHookAdd(http_ctx->txnp, TS_HTTP_SELECT_ALT_HOOK, http_ctx->cinfo.contp);
-      http_ctx->has_hook = 1;
-      lua_pushvalue(L, 2);
-      lua_setglobal(L, TS_LUA_FUNCTION_SELECT_ALT);
-    } else {
-      lua_pushvalue(L, 2);
-      lua_setglobal(L, TS_LUA_FUNCTION_G_SELECT_ALT);
     }
     break;
 

@@ -51,6 +51,8 @@ of subcommands that control different aspects of Traffic Server:
 :program:`traffic_ctl plugin`
     Interact with plugins.
 
+To use :program:`traffic_ctl`, :ref:`traffic_manager` needs to be running.
+
 Options
 =======
 

@@ -22,7 +22,7 @@
 records.config
 **************
 
-The :file:`records.config` file (by default, located in
+The :file:`records.config` file (by default (:ts:cv:`proxy.config.config_dir`), located in
 ``/usr/local/etc/trafficserver/``) is a list of configurable variables used by
 the |TS| software. Many of the variables in :file:`records.config` are set
 automatically when you set configuration options with :option:`traffic_ctl config set`. After you
@@ -226,7 +226,8 @@ System Variables
    This is a read-only configuration option that contains the
    ``SYSCONFDIR`` value specified at build time relative to the
    installation prefix. The ``$TS_ROOT`` environment variable can
-   be used alter the installation prefix at run time.
+   be used alter the installation prefix at run time. The directory must
+   allow read/write access for configuration reloads.
 
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
@@ -1257,7 +1258,9 @@ Parent Proxy Configuration
 
    The total number of connection attempts for a specific transaction allowed to
    a parent cache before Traffic Server bypasses the parent or fails the request
-   (depending on the ``go_direct`` option in the :file:`parent.config` file).
+   (depending on the ``go_direct`` option in the :file:`parent.config` file). The
+   number of parents tried is
+   ``proxy.config.http.parent_proxy.fail_threshold / proxy.config.http.parent_proxy.total_connect_attempts``
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.per_parent_connect_attempts INT 2
    :reloadable:
@@ -1663,17 +1666,54 @@ Proxy User Variables
 
    When enabled (``1``), Traffic Server adds the client IP address to the ``X-Forwarded-For`` header.
 
-.. ts:cv:: CONFIG proxy.config.http.normalize_ae_gzip INT 1
+.. ts:cv:: CONFIG proxy.config.http.insert_forwarded STRING none
    :reloadable:
    :overridable:
 
-   Enable (``1``) to normalize all ``Accept-Encoding:`` headers to one of the following:
+   The default value (``none``) means that Traffic Server does not insert or append information to any
+   ``Forwarded`` header (described in IETF RFC 7239) in the request message.  To put information into a
+   ``Forwarded`` header in the request, the value of this variable must be a list of the ``Forwarded``
+   parameters to be inserted.
 
-   -  ``Accept-Encoding: gzip`` (if the header has ``gzip`` or ``x-gzip`` with any ``q``) **OR**
-   -  *blank* (for any header that does not include ``gzip``)
+   ==================  ===============================================================
+   Parameter           Value of parameter place in outgoing Forwarded header
+   ==================  ===============================================================
+   for                 Client IP address
+   by=ip               Proxy IP address
+   by=unknown          The literal string ``unknown``
+   by=servername       Proxy server name
+   by=uuid             Server UUID prefixed with ``_``
+   proto               Protocol of incoming request
+   host                The host specified in the incoming request
+   connection=compact  Connection with basic transaction codes.
+   connection=std      Connection with detailed transaction codes.
+   connection=full     Full user agent connection :ref:`protocol tags <protocol_tags>`
+   ==================  ===============================================================
 
-   This is useful for minimizing cached alternates of documents (e.g. ``gzip, deflate`` vs. ``deflate, gzip``). Enabling this option is
-   recommended if your origin servers use no encodings other than ``gzip``.
+   Each paramater in the list must be separated by ``|`` or ``:``.  For example, ``for|by=uuid|proto`` is
+   a valid value for this variable.  Note that the ``connection`` parameter is a non-standard extension to
+   RFC 7239.  Also note that, while Traffic Server allows multiple ``by`` parameters for the same proxy, this
+   is prohibited by RFC 7239. Currently, for the ``host`` parameter to provide the original host from the
+   incoming client request, `proxy.config.url_remap.pristine_host_hdr`_ must be enabled.
+
+.. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
+   :reloadable:
+   :overridable:
+
+   Specifies normalization, if any, of ``Accept-Encoding:`` headers.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` No normalization.
+   ``1`` ``Accept-Encoding: gzip`` (if the header has ``gzip`` or ``x-gzip`` with any ``q``) **OR**
+         *blank* (for any header that does not include ``gzip``)
+   ``2`` ``Accept-Encoding: br`` if the header has ``br`` (with any ``q``) **ELSE**
+         normalize as for value ``1``
+   ===== ======================================================================
+
+   This is useful for minimizing cached alternates of documents (e.g. ``gzip, deflate`` vs. ``deflate, gzip``).
+   Enabling this option is recommended if your origin servers use no encodings other than ``gzip`` or ``br`` (Brotli).
 
 Security
 ========
@@ -2422,6 +2462,20 @@ DNS
    in DNS Injection attacks), particularly in forward or transparent proxies, but
    requires that the resolver populates the queries section of the response properly.
 
+.. ts:cv:: CONFIG proxy.config.dns.connection_mode INT 0
+
+   Three connection modes between |TS| and nameservers can be set -- UDP_ONLY,
+   TCP_RETRY, TCP_ONLY.
+
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` UDP_ONLY:  |TS| always talks to nameservers over UDP.
+   ``1`` TCP_RETRY: |TS| first UDP, retries with TCP if UDP response is truncated.
+   ``2`` TCP_ONLY:  |TS| always talks to nameservers over TCP.
+   ===== ======================================================================
+
 HostDB
 ======
 
@@ -2457,6 +2511,10 @@ HostDB
 
    For values above ``200000``, you must increase :ts:cv:`proxy.config.hostdb.max_size`
    by at least 44 bytes per entry.
+
+.. ts:cv:: proxy.config.hostdb.round_robin_max_count INT 16
+
+   The maximum count of DNS answers per round robin hostdb record. The default variable is 16.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.ttl_mode INT 0
    :reloadable:
@@ -3133,7 +3191,8 @@ SSL Termination
 
    The filename of the default and global ticket key for SSL sessions. The location is relative to the
    :ts:cv:`proxy.config.ssl.server.cert.path` directory. One way to generate this would be to run
-   ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``.
+   ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``. Also
+   note that OpenSSL session tickets are sensitive to the version of the ca-certificates.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
 
@@ -3400,6 +3459,31 @@ HTTP/2 Configuration
    :reloadable:
 
    Enable the experimental HTTP/2 Stream Priority feature.
+
+.. ts:cv:: CONFIG proxy.config.http2.accept_no_activity_timeout INT 120
+   :reloadable:
+   :overridable:
+
+   Specifies how long Traffic Server keeps connections to origin servers open
+   if the transaction stalls. Lowering this timeout can ease pressure on the
+   proxy if misconfigured or misbehaving clients are opening a large number of
+   connections without submitting requests.
+
+.. ts:cv:: CONFIG proxy.config.http2.no_activity_timeout_in INT 120
+   :reloadable:
+   :overridable:
+
+   Specifies how long Traffic Server keeps connections to clients open if a
+   transaction stalls. Lowering this timeout can ease pressure on the proxy if
+   misconfigured or misbehaving clients are opening a large number of
+   connections without submitting requests.
+
+.. ts:cv:: CONFIG proxy.config.http2.push_diary_size INT 256
+   :reloadable:
+
+   Indicates the maximum number of HTTP/2 server pushes that are remembered per
+   HTTP/2 connection to avoid duplicate pushes on the same connection. If the
+   maximum number is reached, new entries are not remembered.
 
 Plug-in Configuration
 =====================

@@ -18,6 +18,13 @@ The arguments in the plugin.config line in order represent
 A "-" can be supplied as a value for any of these arguments to request
 default value be applied.
 
+Optional arguments:
+
+  --max-files N
+
+    If present in the plugin.config args, this sets the maximum number of
+    files to process in a request to N. This cannot be changed per remap.
+
 Also, just like the original combohandler, this plugin generates URLs
 of the form 'http://localhost/<dir>/<file-path>'. <dir> here defaults
 to "Host" header unless specified by the file path in the query parameter using

@@ -198,15 +198,17 @@ struct HostDBCache {
 
   // TODO configurable number of items in the cache
   Queue<HostDBContinuation, Continuation::Link_link> *pending_dns;
-  Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(INK_MD5 &md5);
+  Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(const INK_MD5 &md5);
   Queue<HostDBContinuation, Continuation::Link_link> *remoteHostDBQueue;
   HostDBCache();
+  bool is_pending_dns_for_hash(const INK_MD5 &md5);
 };
 
 inline int
 HostDBRoundRobin::index_of(sockaddr const *ip)
 {
-  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || (unsigned int)rrcount > hostdb_round_robin_max_count || good <= 0 ||
+              (unsigned int)good > hostdb_round_robin_max_count);
   if (bad) {
     ink_assert(!"bad round robin size");
     return -1;
@@ -245,7 +247,8 @@ HostDBRoundRobin::select_next(sockaddr const *ip)
 inline HostDBInfo *
 HostDBRoundRobin::find_target(const char *target)
 {
-  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || (unsigned int)rrcount > hostdb_round_robin_max_count || good <= 0 ||
+              (unsigned int)good > hostdb_round_robin_max_count);
   if (bad) {
     ink_assert(!"bad round robin size");
     return nullptr;
@@ -262,7 +265,8 @@ HostDBRoundRobin::find_target(const char *target)
 inline HostDBInfo *
 HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, int32_t fail_window)
 {
-  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || (unsigned int)rrcount > hostdb_round_robin_max_count || good <= 0 ||
+              (unsigned int)good > hostdb_round_robin_max_count);
 
   if (bad) {
     ink_assert(!"bad round robin size");
@@ -331,7 +335,8 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
 inline HostDBInfo *
 HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, int32_t fail_window)
 {
-  bool bad = (rrcount <= 0 || rrcount > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+  bool bad = (rrcount <= 0 || (unsigned int)rrcount > hostdb_round_robin_max_count || good <= 0 ||
+              (unsigned int)good > hostdb_round_robin_max_count);
 
   if (bad) {
     ink_assert(!"bad round robin size");
@@ -344,11 +349,11 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
   }
 #endif
 
-  int i = 0, len = 0;
+  int i           = 0;
+  int len         = 0;
   uint32_t weight = 0, p = INT32_MAX;
   HostDBInfo *result = nullptr;
-  HostDBInfo *infos[HOST_DB_MAX_ROUND_ROBIN_INFO];
-
+  HostDBInfo *infos[good];
   do {
     // if the real isn't alive-- exclude it from selection
     if (!info(i).is_alive(now, fail_window)) {
@@ -519,7 +524,7 @@ is_dotted_form_hostname(const char *c)
 }
 
 inline Queue<HostDBContinuation> &
-HostDBCache::pending_dns_for_hash(INK_MD5 &md5)
+HostDBCache::pending_dns_for_hash(const INK_MD5 &md5)
 {
   return pending_dns[this->refcountcache->partition_for_key(md5.fold())];
 }

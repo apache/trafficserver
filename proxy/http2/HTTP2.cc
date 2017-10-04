@@ -588,7 +588,7 @@ http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t
                            int32_t maximum_table_size)
 {
   // Limit the maximum table size to 64kB, which is the size advertised by major clients
-  maximum_table_size = min(maximum_table_size, HTTP2_MAX_TABLE_SIZE_LIMIT);
+  maximum_table_size = std::min(maximum_table_size, HTTP2_MAX_TABLE_SIZE_LIMIT);
   // Set maximum table size only if it is different from current maximum size
   if (maximum_table_size == hpack_get_maximum_table_size(handle)) {
     maximum_table_size = -1;
@@ -727,6 +727,7 @@ uint32_t Http2::max_request_header_size    = 131072;
 uint32_t Http2::accept_no_activity_timeout = 120;
 uint32_t Http2::no_activity_timeout_in     = 120;
 uint32_t Http2::active_timeout_in          = 0;
+uint32_t Http2::push_diary_size            = 256;
 
 void
 Http2::init()
@@ -743,6 +744,7 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(accept_no_activity_timeout, "proxy.config.http2.accept_no_activity_timeout");
   REC_EstablishStaticConfigInt32U(no_activity_timeout_in, "proxy.config.http2.no_activity_timeout_in");
   REC_EstablishStaticConfigInt32U(active_timeout_in, "proxy.config.http2.active_timeout_in");
+  REC_EstablishStaticConfigInt32U(push_diary_size, "proxy.config.http2.push_diary_size");
 
   // If any settings is broken, ATS should not start
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams_in}));

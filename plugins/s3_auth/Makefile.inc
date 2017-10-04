@@ -16,3 +16,11 @@
 
 pkglib_LTLIBRARIES += s3_auth/s3_auth.la
 s3_auth_s3_auth_la_SOURCES = s3_auth/s3_auth.cc s3_auth/aws_auth_v4.cc
+
+check_PROGRAMS +=  s3_auth/test_s3auth
+
+s3_auth_test_s3auth_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DAWS_AUTH_V4_UNIT_TEST
+s3_auth_test_s3auth_LDADD = $(OPENSSL_LIBS)
+s3_auth_test_s3auth_SOURCES = \
+    s3_auth/unit-tests/test_aws_auth_v4.cc \
+    s3_auth/aws_auth_v4.cc

@@ -436,33 +436,9 @@ LogAccessHttp::marshal_client_req_timestamp_sec(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccessHttp::marshal_client_req_timestamp_squid(char *buf)
+LogAccessHttp::marshal_client_req_timestamp_ms(char *buf)
 {
-  return marshal_milestone_fmt_squid(TS_MILESTONE_UA_BEGIN, buf);
-}
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-LogAccessHttp::marshal_client_req_timestamp_netscape(char *buf)
-{
-  return marshal_milestone_fmt_netscape(TS_MILESTONE_UA_BEGIN, buf);
-}
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-LogAccessHttp::marshal_client_req_timestamp_date(char *buf)
-{
-  return marshal_milestone_fmt_date(TS_MILESTONE_UA_BEGIN, buf);
-}
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-LogAccessHttp::marshal_client_req_timestamp_time(char *buf)
-{
-  return marshal_milestone_fmt_time(TS_MILESTONE_UA_BEGIN, buf);
+  return marshal_milestone_fmt_ms(TS_MILESTONE_UA_BEGIN, buf);
 }
 
 /*-------------------------------------------------------------------------
@@ -812,20 +788,18 @@ LogAccessHttp::marshal_client_req_id(char *buf)
 int
 LogAccessHttp::marshal_client_req_uuid(char *buf)
 {
+  char str[TS_CRUUID_STRING_LEN + 1];
+  const char *uuid = Machine::instance()->uuid.getString();
+  int len          = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
+
+  ink_assert(len <= TS_CRUUID_STRING_LEN);
+  len = round_strlen(len + 1);
+
   if (buf) {
-    char str[TS_CRUUID_STRING_LEN + 1];
-    const char *uuid = (char *)Machine::instance()->uuid.getString();
-    int len;
-
-    len = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
-    ink_assert(len < (int)sizeof(str));
-
-    len = round_strlen(len + 1);
-    marshal_str(buf, str, len);
-    return len;
+    marshal_str(buf, str, len); // This will pad the remaning bytes properly ...
   }
 
-  return round_strlen(TS_CRUUID_STRING_LEN + 1);
+  return len;
 }
 
 /*-------------------------------------------------------------------------
@@ -1494,6 +1468,47 @@ LogAccessHttp::marshal_file_size(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessHttp::marshal_client_http_connection_id(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      auto p = m_http_sm->ua_session;
+      if (p) {
+        auto p2 = p->get_parent();
+        if (p2) {
+          id = p2->connection_id();
+        }
+      }
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_client_http_transaction_id(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      auto p = m_http_sm->ua_session;
+      if (p) {
+        id = p->get_transaction_id();
+      }
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessHttp::marshal_http_header_field(LogField::Container container, char *field, char *buf)
 {
   char *str        = nullptr;
@@ -1649,14 +1664,15 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
         fld = fld->m_next_dup;
 
         // Dups need to be comma separated.  So if there's another
-        // dup, then add a comma and a space ...
-        //
+        // dup, then add a comma and an escapified space ...
+        constexpr const char SEP[] = ",%20";
+        constexpr size_t SEP_LEN   = sizeof(SEP) - 1;
         if (fld != nullptr) {
           if (buf) {
-            memcpy(buf, ", ", 2);
-            buf += 2;
+            memcpy(buf, SEP, SEP_LEN);
+            buf += SEP_LEN;
           }
-          running_len += 2;
+          running_len += SEP_LEN;
         }
       }
 
@@ -1710,70 +1726,20 @@ int
 LogAccessHttp::marshal_milestone_fmt_sec(TSMilestonesType type, char *buf)
 {
   if (buf) {
-    struct timeval tp = ink_hrtime_to_timeval(m_http_sm->milestones[type]);
-    marshal_int(buf, tp.tv_sec);
+    ink_hrtime tsec = ink_hrtime_to_sec(m_http_sm->milestones[type]);
+    marshal_int(buf, tsec);
   }
   return INK_MIN_ALIGN;
 }
 
 int
-LogAccessHttp::marshal_milestone_fmt_squid(TSMilestonesType type, char *buf)
+LogAccessHttp::marshal_milestone_fmt_ms(TSMilestonesType type, char *buf)
 {
-  struct timeval tp          = ink_hrtime_to_timeval(m_http_sm->milestones[type]);
-  const unsigned int val_len = 32;
-  char val[val_len]          = {0};
-
-  squid_timestamp_to_buf(val, val_len, tp.tv_sec, tp.tv_usec);
-
-  int len = LogAccess::strlen(val);
-
   if (buf) {
-    marshal_str(buf, val, len);
+    ink_hrtime tmsec = ink_hrtime_to_msec(m_http_sm->milestones[type]);
+    marshal_int(buf, tmsec);
   }
-
-  return len;
-}
-
-int
-LogAccessHttp::marshal_milestone_fmt_netscape(TSMilestonesType type, char *buf)
-{
-  struct timeval tp = ink_hrtime_to_timeval(m_http_sm->milestones[type]);
-  char *val         = LogUtils::timestamp_to_netscape_str(tp.tv_sec);
-  int len           = LogAccess::strlen(val);
-
-  if (buf) {
-    marshal_str(buf, val, len);
-  }
-
-  return len;
-}
-
-int
-LogAccessHttp::marshal_milestone_fmt_date(TSMilestonesType type, char *buf)
-{
-  struct timeval tp = ink_hrtime_to_timeval(m_http_sm->milestones[type]);
-  char *val         = LogUtils::timestamp_to_date_str(tp.tv_sec);
-  int len           = LogAccess::strlen(val);
-
-  if (buf) {
-    marshal_str(buf, val, len);
-  }
-
-  return len;
-}
-
-int
-LogAccessHttp::marshal_milestone_fmt_time(TSMilestonesType type, char *buf)
-{
-  struct timeval tp = ink_hrtime_to_timeval(m_http_sm->milestones[type]);
-  char *val         = LogUtils::timestamp_to_time_str(tp.tv_sec);
-  int len           = LogAccess::strlen(val);
-
-  if (buf) {
-    marshal_str(buf, val, len);
-  }
-
-  return len;
+  return INK_MIN_ALIGN;
 }
 
 int

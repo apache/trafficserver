@@ -196,7 +196,8 @@ public:
   int startNetEvent(int event, Event *data);
   int mainNetEvent(int event, Event *data);
   int mainNetEventExt(int event, Event *data);
-  void process_enabled_list(NetHandler *);
+  void process_enabled_list();
+  void process_ready_list();
   void manage_keep_alive_queue();
   bool manage_active_queue(bool ignore_queue_size);
   void add_to_keep_alive_queue(UnixNetVConnection *vc);
@@ -204,6 +205,44 @@ public:
   bool add_to_active_queue(UnixNetVConnection *vc);
   void remove_from_active_queue(UnixNetVConnection *vc);
   void configure_per_thread();
+
+  /**
+    Start to handle read & write event on a UnixNetVConnection.
+    Initial the socket fd of netvc for polling system.
+    Only be called when holding the mutex of this NetHandler.
+
+    @param netvc UnixNetVConnection to be managed by this NetHandler.
+    @return 0 on success, netvc->nh set to this NetHandler.
+            -ERRNO on failure.
+   */
+  int startIO(UnixNetVConnection *netvc);
+  /**
+    Stop to handle read & write event on a UnixNetVConnection.
+    Remove the socket fd of netvc from polling system.
+    Only be called when holding the mutex of this NetHandler and must call stopCop(netvc) first.
+
+    @param netvc UnixNetVConnection to be released.
+    @return netvc->nh set to nullptr.
+   */
+  void stopIO(UnixNetVConnection *netvc);
+
+  /**
+    Start to handle active timeout and inactivity timeout on a UnixNetVConnection.
+    Put the netvc into open_list. All NetVCs in the open_list is checked for timeout by InactivityCop.
+    Only be called when holding the mutex of this NetHandler and must call startIO(netvc) first.
+
+    @param netvc UnixNetVConnection to be managed by InactivityCop
+   */
+  void startCop(UnixNetVConnection *netvc);
+  /* *
+    Stop to handle active timeout and inactivity on a UnixNetVConnection.
+    Remove the netvc from open_list and cop_list.
+    Also remove the netvc from keep_alive_queue and active_queue if its context is IN.
+    Only be called when holding the mutex of this NetHandler.
+
+    @param netvc UnixNetVConnection to be released.
+   */
+  void stopCop(UnixNetVConnection *netvc);
 
   NetHandler();
 
@@ -636,6 +675,72 @@ EventIO::stop()
     return retval;
   }
   return 0;
+}
+
+TS_INLINE int
+NetHandler::startIO(UnixNetVConnection *netvc)
+{
+  ink_assert(this->mutex->thread_holding == this_ethread());
+  ink_assert(netvc->thread == this_ethread());
+  int res = 0;
+
+  PollDescriptor *pd = get_PollDescriptor(trigger_event->ethread);
+  if (netvc->ep.start(pd, netvc, EVENTIO_READ | EVENTIO_WRITE) < 0) {
+    res = errno;
+    // EEXIST should be ok, though it should have been cleared before we got back here
+    if (errno != EEXIST) {
+      Debug("iocore_net", "NetHandler::startIO : failed on EventIO::start, errno = [%d](%s)", errno, strerror(errno));
+      return -res;
+    }
+  }
+
+  if (netvc->read.triggered == 1) {
+    read_ready_list.enqueue(netvc);
+  }
+  netvc->nh = this;
+  return res;
+}
+
+TS_INLINE void
+NetHandler::stopIO(UnixNetVConnection *netvc)
+{
+  ink_release_assert(netvc->nh == this);
+
+  netvc->ep.stop();
+
+  read_ready_list.remove(netvc);
+  write_ready_list.remove(netvc);
+  if (netvc->read.in_enabled_list) {
+    read_enable_list.remove(netvc);
+    netvc->read.in_enabled_list = 0;
+  }
+  if (netvc->write.in_enabled_list) {
+    write_enable_list.remove(netvc);
+    netvc->write.in_enabled_list = 0;
+  }
+
+  netvc->nh = nullptr;
+}
+
+TS_INLINE void
+NetHandler::startCop(UnixNetVConnection *netvc)
+{
+  ink_assert(this->mutex->thread_holding == this_ethread());
+  ink_release_assert(netvc->nh == this);
+  ink_assert(!open_list.in(netvc));
+
+  open_list.enqueue(netvc);
+}
+
+TS_INLINE void
+NetHandler::stopCop(UnixNetVConnection *netvc)
+{
+  ink_release_assert(netvc->nh == this);
+
+  open_list.remove(netvc);
+  cop_list.remove(netvc);
+  remove_from_keep_alive_queue(netvc);
+  remove_from_active_queue(netvc);
 }
 
 #endif

@@ -48,6 +48,7 @@ public:
   PriorityQueue() {}
   ~PriorityQueue() {}
   bool empty();
+  bool in(PriorityQueueEntry<T> *entry);
   PriorityQueueEntry<T> *top();
   void pop();
   void push(PriorityQueueEntry<T> *);
@@ -69,6 +70,13 @@ const Vec<PriorityQueueEntry<T> *> &
 PriorityQueue<T, Comp>::dump() const
 {
   return _v;
+}
+
+template <typename T, typename Comp>
+bool
+PriorityQueue<T, Comp>::in(PriorityQueueEntry<T> *entry)
+{
+  return _v.in(entry) != NULL;
 }
 
 template <typename T, typename Comp>
@@ -110,7 +118,9 @@ PriorityQueue<T, Comp>::pop()
     return;
   }
 
+  const uint32_t original_index = _v[0]->index;
   _swap(0, _v.length() - 1);
+  _v[_v.length() - 1]->index = original_index;
   _v.pop();
   _bubble_down(0);
 }
@@ -123,11 +133,19 @@ PriorityQueue<T, Comp>::erase(PriorityQueueEntry<T> *entry)
     return;
   }
 
+  // If the entry doesn't belong to this queue just return.
+  if (entry != _v[entry->index]) {
+    ink_assert(!_v.in(entry));
+    return;
+  }
+
   ink_release_assert(entry->index < _v.length());
   const uint32_t original_index = entry->index;
   if (original_index != (_v.length() - 1)) {
     // Move the erased item to the end to be popped off
     _swap(original_index, _v.length() - 1);
+    // Fix the index before we pop it
+    _v[_v.length() - 1]->index = original_index;
     _v.pop();
     _bubble_down(original_index);
     _bubble_up(original_index);

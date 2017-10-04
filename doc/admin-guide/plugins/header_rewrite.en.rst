@@ -1174,3 +1174,8 @@ Add the HTTP Strict Transport Security (HSTS) header if it does not exist and th
     cond %{HEADER:Strict-Transport-Security} ="" [AND]
     cond %{INBOUND:TLS} /./
     set-header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+
+This is mostly used by being attached to a remap rule that maps to a host known to support TLS. If
+the parallel `OUTBOUND` supported is added then this could be done by checking for inbound TLS both
+outbound TLS in the `SEND_REQUEST_HDR_HOOK`. However this technique may be used for a non-TLS
+upstream if the goal is to require the user agent to connect to |TS| over TLS.

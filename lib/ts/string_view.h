@@ -33,7 +33,6 @@
 #include <utility>
 #include <string>
 #include <ostream>
-#include <ts/ink_memory.h>
 
 #if __cplusplus < 201402
 #define CONSTEXPR14 inline
@@ -240,9 +239,6 @@ public:
 
   // std::string constructor
   constexpr basic_string_view(std::string const &rhs) noexcept : m_data(rhs.data()), m_size(rhs.size()) {}
-
-  // ats_scoped_str constructor
-  constexpr basic_string_view(ats_scoped_str const &rhs) noexcept : m_data(rhs.get()), m_size(traits_type::length(rhs.get())) {}
 
   // For iterator on string_view we don't need to deal with const and non-const as different types
   // they are all const iterators as the string values are immutable
@@ -1214,3 +1210,12 @@ operator<<(std::basic_ostream<_Type, _Traits> &os, const basic_string_view<_Type
 using string_view = basic_string_view<char>;
 
 } // namespace ts
+
+/// Literal suffix for string_view.
+/// @note This enables @c string_view literals from C++ string literals in @c constexpr contexts, which
+/// is not the case for the character pointer constructor.
+/// @internal This must be in the global namespace to be found.
+constexpr ts::string_view operator"" _sv(const char *str, size_t len) noexcept
+{
+  return ts::string_view(str, len);
+}

@@ -84,6 +84,7 @@ struct StatPagesManager {
   bool is_stat_page(URL *url);
   bool is_cache_inspector_page(URL *url);
   int m_enabled;
+  ink_mutex stat_pages_mutex;
 };
 
 inkcoreapi extern StatPagesManager statPagesManager;

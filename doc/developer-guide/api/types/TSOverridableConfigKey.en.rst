@@ -99,7 +99,6 @@ Enumeration Members
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME
-.. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_NORMALIZE_AE_GZIP
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE
@@ -131,6 +130,7 @@ Enumeration Members
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT
+.. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_NORMALIZE_AE
 
 Description
 ===========

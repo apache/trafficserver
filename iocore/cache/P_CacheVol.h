@@ -41,7 +41,7 @@
 #define MAX_VOL_SIZE ((off_t)512 * 1024 * 1024 * 1024 * 1024)
 #define STORE_BLOCKS_PER_CACHE_BLOCK (STORE_BLOCK_SIZE / CACHE_BLOCK_SIZE)
 #define MAX_VOL_BLOCKS (MAX_VOL_SIZE / CACHE_BLOCK_SIZE)
-#define MAX_FRAG_SIZE (AGG_SIZE - sizeofDoc) // true max
+#define MAX_FRAG_SIZE (AGG_SIZE - sizeof(Doc)) // true max
 #define LEAVE_FREE DEFAULT_MAX_BUFFER_SIZE
 #define PIN_SCAN_EVERY 16 // scan every 1/16 of disk
 #define VOL_HASH_TABLE_SIZE 32707
@@ -52,8 +52,8 @@
 #define RECOVERY_SIZE EVACUATION_SIZE                // 8MB
 #define AIO_NOT_IN_PROGRESS 0
 #define AIO_AGG_WRITE_IN_PROGRESS -1
-#define AUTO_SIZE_RAM_CACHE -1                             // 1-1 with directory size
-#define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeofDoc) // 1MB
+#define AUTO_SIZE_RAM_CACHE -1                               // 1-1 with directory size
+#define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeof(Doc)) // 1MB
 
 #define dir_offset_evac_bucket(_o) (_o / (EVACUATION_BUCKET_SIZE / CACHE_BLOCK_SIZE))
 #define dir_evac_bucket(_e) dir_offset_evac_bucket(dir_offset(_e))
@@ -65,8 +65,6 @@
 #define DOC_MAGIC ((uint32_t)0x5F129B13)
 #define DOC_CORRUPT ((uint32_t)0xDEADBABE)
 #define DOC_NO_CHECKSUM ((uint32_t)0xA0B0C0D0)
-
-#define sizeofDoc (((uint32_t)(uintptr_t) & ((Doc *)0)->checksum) + (uint32_t)sizeof(uint32_t))
 
 struct Cache;
 struct Vol;
@@ -277,7 +275,6 @@ struct CacheVol {
 };
 
 // Note : hdr() needs to be 8 byte aligned.
-// If you change this, change sizeofDoc above
 struct Doc {
   uint32_t magic;        // DOC_MAGIC
   uint32_t len;          // length of this fragment (including hlen & sizeof(Doc), unrounded)
@@ -395,13 +392,13 @@ vol_relative_length(Vol *v, off_t start_offset)
 TS_INLINE uint32_t
 Doc::prefix_len()
 {
-  return sizeofDoc + hlen;
+  return sizeof(Doc) + hlen;
 }
 
 TS_INLINE uint32_t
 Doc::data_len()
 {
-  return len - sizeofDoc - hlen;
+  return len - sizeof(Doc) - hlen;
 }
 
 TS_INLINE int
@@ -413,7 +410,7 @@ Doc::single_fragment()
 TS_INLINE char *
 Doc::hdr()
 {
-  return reinterpret_cast<char *>(this) + sizeofDoc;
+  return reinterpret_cast<char *>(this) + sizeof(Doc);
 }
 
 TS_INLINE char *

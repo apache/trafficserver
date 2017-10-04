@@ -28,6 +28,7 @@ Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server")
+dns = Test.MakeDNServer("dns", filename="dns_file.json")
 
 Test.testName = ""
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -38,7 +39,10 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'url.*',
+    'proxy.config.diags.debug.tags': 'http.*|dns',
+    'proxy.config.http.referer_filter': 1,
+    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+    'proxy.config.dns.resolv_conf': 'NULL'
 })
 
 ts.Disk.remap_config.AddLine(
@@ -47,13 +51,25 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.remap_config.AddLine(
     'map http://www.example.com:8080 http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
+ts.Disk.remap_config.AddLine(
+    'redirect http://test3.com http://httpbin.org'.format(server.Variables.Port)
+)
+ts.Disk.remap_config.AddLine(
+    'map_with_referer http://test4.com http://127.0.0.1:{0} http://httpbin.org (.*[.])?persia[.]com'.format(server.Variables.Port)
+)
+ts.Disk.remap_config.AddLine(
+    'map http://testDNS.com http://audrey.hepburn.com:{0}'.format(server.Variables.Port)
+)
 
+# dns.addRecordtoDNS(filename="dns_file.json",hostname="wonderwoman",list_ip_addr=["127.0.0.1","127.0.1.1"])
+dns.addRecordtoDNS(filename="dns_file.json", hostname="audrey.hepburn.com", list_ip_addr=["127.0.0.1", "127.0.1.1"])
 # call localhost straight
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr = "gold/remap-hitATS-404.gold"
 tr.StillRunningAfter = server
@@ -86,9 +102,36 @@ tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://www.test.com
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-404.gold"
 
-# bad port
+# redirect result
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://www.example.com:1234/"  -H "Proxy-Connection: keep-alive" --verbose'.format(
+tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://test3.com" --verbose'.format(ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-redirect.gold"
+
+# referer hit
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: persia.com" --verbose'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/remap-404.gold"
+tr.Processes.Default.Streams.stderr = "gold/remap-referer-hit.gold"
+
+# referer miss
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: monkey.com" --verbose'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-referer-miss.gold"
+
+# referer hit
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://test4.com" --header "Referer: www.persia.com" --verbose'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-referer-hit.gold"
+
+# DNS test
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://testDNS.com" --verbose'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/remap-DNS-200.gold"

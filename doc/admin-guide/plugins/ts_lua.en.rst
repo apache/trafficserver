@@ -107,7 +107,6 @@ each lua script:
 - **'do_global_send_response'**
 - **'do_global_cache_lookup_complete'**
 - **'do_global_read_cache'**
-- **'do_global_select_alt'**
 
 We can write this in plugin.config:
 
@@ -391,7 +390,6 @@ Hook point constants
     TS_LUA_HOOK_OS_DNS
     TS_LUA_HOOK_PRE_REMAP
     TS_LUA_HOOK_READ_CACHE_HDR
-    TS_LUA_HOOK_SELECT_ALT
     TS_LUA_HOOK_TXN_CLOSE
     TS_LUA_HOOK_POST_REMAP
     TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE
@@ -423,9 +421,6 @@ Additional Information:
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_POST          | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
 | _REMAP_HOOK           | _POST_REMAP               |                      |                    |                      |
-+-----------------------+---------------------------+----------------------+--------------------+----------------------+
-| TS_HTTP_SELECT        | TS_LUA_HOOK               |     NO               |    NO              |    NO                |
-| _ALT_HOOK             | _SELECT_ALT               |                      |                    |                      |
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 | TS_HTTP_READ          | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
 | _CACHE_HDR_HOOK       | _READ_CACHE_HDR           |                      |                    |                      |
@@ -3108,7 +3103,6 @@ Http config constants
     TS_LUA_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK
     TS_LUA_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK
     TS_LUA_CONFIG_HTTP_CACHE_RANGE_LOOKUP
-    TS_LUA_CONFIG_HTTP_NORMALIZE_AE_GZIP
     TS_LUA_CONFIG_HTTP_DEFAULT_BUFFER_SIZE
     TS_LUA_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK
     TS_LUA_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE
@@ -3129,6 +3123,7 @@ Http config constants
     TS_LUA_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION
     TS_LUA_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS
     TS_LUA_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES
+    TS_LUA_CONFIG_HTTP_NORMALIZE_AE
     TS_LUA_CONFIG_LAST_ENTRY
 
 `TOP <#ts-lua-plugin>`_
@@ -3374,6 +3369,8 @@ Milestone constants
     TS_LUA_MILESTONE_SM_FINISH
     TS_LUA_MILESTONE_PLUGIN_ACTIVE
     TS_LUA_MILESTONE_PLUGIN_TOTAL
+    TS_LUA_MILESTONE_TLS_HANDSHAKE_START
+    TS_LUA_MILESTONE_TLS_HANDSHAKE_END
 
 
 `TOP <#ts-lua-plugin>`_

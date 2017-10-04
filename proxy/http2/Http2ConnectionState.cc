@@ -167,7 +167,7 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   myreader->writer()->dealloc_reader(myreader);
 
   uint32_t initial_rwnd = cstate.server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-  uint32_t min_rwnd     = min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
+  uint32_t min_rwnd     = std::min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
   // Connection level WINDOW UPDATE
   if (cstate.server_rwnd <= min_rwnd) {
     Http2WindowSize diff_size = initial_rwnd - cstate.server_rwnd;
@@ -279,12 +279,12 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   }
 
   if (new_stream && Http2::stream_priority_enabled) {
-    DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
+    Http2DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
     if (node != nullptr) {
       stream->priority_node = node;
       node->t               = stream;
     } else {
-      DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
+      DebugHttp2Stream(cstate.ua_session, stream_id, "HEADER PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
                        params.priority.stream_dependency, params.priority.weight, params.priority.exclusive_flag,
                        cstate.dependency_tree->size());
 
@@ -398,7 +398,7 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
                    priority.stream_dependency, priority.weight, priority.exclusive_flag, cstate.dependency_tree->size());
 
-  DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
+  Http2DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
 
   if (node != nullptr) {
     // [RFC 7540] 5.3.3 Reprioritization
@@ -713,7 +713,7 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
 
     stream->client_rwnd += size;
-    ssize_t wnd = min(cstate.client_rwnd, stream->client_rwnd);
+    ssize_t wnd = std::min(cstate.client_rwnd, stream->client_rwnd);
 
     if (!stream->is_closed() && stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && wnd > 0) {
       stream->send_response_body();
@@ -1072,7 +1072,7 @@ Http2ConnectionState::restart_streams()
   while (s) {
     Http2Stream *next = static_cast<Http2Stream *>(s->link.next);
     if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
-        min(this->client_rwnd, s->client_rwnd) > 0) {
+        std::min(this->client_rwnd, s->client_rwnd) > 0) {
       s->send_response_body();
     }
     ink_assert(s != next);
@@ -1114,7 +1114,7 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
   DebugHttp2Stream(ua_session, stream->get_id(), "Delete stream");
 
   if (Http2::stream_priority_enabled) {
-    DependencyTree::Node *node = stream->priority_node;
+    Http2DependencyTree::Node *node = stream->priority_node;
     if (node != nullptr) {
       if (node->active) {
         dependency_tree->deactivate(node, 0);
@@ -1187,7 +1187,7 @@ Http2ConnectionState::schedule_stream(Http2Stream *stream)
 {
   DebugHttp2Stream(ua_session, stream->get_id(), "Scheduled");
 
-  DependencyTree::Node *node = stream->priority_node;
+  Http2DependencyTree::Node *node = stream->priority_node;
   ink_release_assert(node != nullptr);
 
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
@@ -1204,14 +1204,14 @@ Http2ConnectionState::schedule_stream(Http2Stream *stream)
 void
 Http2ConnectionState::send_data_frames_depends_on_priority()
 {
-  DependencyTree::Node *node = dependency_tree->top();
+  Http2DependencyTree::Node *node = dependency_tree->top();
 
   // No node to send or no connection level window left
   if (node == nullptr || client_rwnd <= 0) {
     return;
   }
 
-  Http2Stream *stream = node->t;
+  Http2Stream *stream = static_cast<Http2Stream *>(node->t);
   ink_release_assert(stream != nullptr);
   DebugHttp2Stream(ua_session, stream->get_id(), "top node, point=%d", node->point);
 
@@ -1246,9 +1246,9 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
 Http2SendADataFrameResult
 Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_length)
 {
-  const ssize_t window_size         = min(this->client_rwnd, stream->client_rwnd);
+  const ssize_t window_size         = std::min(this->client_rwnd, stream->client_rwnd);
   const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
-  const size_t write_available_size = min(buf_len, static_cast<size_t>(window_size));
+  const size_t write_available_size = std::min(buf_len, static_cast<size_t>(window_size));
   size_t read_available_size        = 0;
 
   uint8_t flags = 0x00;
@@ -1414,8 +1414,8 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   flags = 0;
   while (sent < header_blocks_size) {
     DebugHttp2Stream(ua_session, stream->get_id(), "Send CONTINUATION frame");
-    payload_length = MIN(static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])),
-                         header_blocks_size - sent);
+    payload_length = std::min(static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])),
+                              static_cast<uint32_t>(header_blocks_size - sent));
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
     }
@@ -1435,7 +1435,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
 }
 
 void
-Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
+Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding)
 {
   HTTPHdr h1_hdr, h2_hdr;
   uint8_t *buf                = nullptr;
@@ -1454,6 +1454,21 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
   h1_hdr.create(HTTP_TYPE_REQUEST);
   h1_hdr.url_set(&url);
   h1_hdr.method_set("GET", 3);
+  if (accept_encoding != nullptr) {
+    MIMEField *f;
+    const char *name;
+    int name_len;
+    const char *value;
+    int value_len;
+
+    name  = accept_encoding->name_get(&name_len);
+    f     = h1_hdr.field_create(name, name_len);
+    value = accept_encoding->value_get(&value_len);
+    f->value_set(h1_hdr.m_heap, h1_hdr.m_mime, value, value_len);
+
+    h1_hdr.field_attach(f);
+  }
+
   http2_generate_h2_header_from_1_1(&h1_hdr, &h2_hdr);
 
   buf_len = h1_hdr.length_get() * 2; // Make it double just in case
@@ -1496,8 +1511,8 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
   flags = 0;
   while (sent < header_blocks_size) {
     DebugHttp2Stream(ua_session, stream->get_id(), "Send CONTINUATION frame");
-    payload_length = MIN(static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])),
-                         header_blocks_size - sent);
+    payload_length = std::min(static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])),
+                              static_cast<uint32_t>(header_blocks_size - sent));
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
     }
@@ -1519,7 +1534,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url)
     return;
   }
   if (Http2::stream_priority_enabled) {
-    DependencyTree::Node *node = this->dependency_tree->find(id);
+    Http2DependencyTree::Node *node = this->dependency_tree->find(id);
     if (node != nullptr) {
       stream->priority_node = node;
     } else {

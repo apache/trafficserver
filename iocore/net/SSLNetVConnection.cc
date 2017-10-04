@@ -336,7 +336,7 @@ SSLNetVConnection::read_raw_data()
   int64_t r          = 0;
   int64_t total_read = 0;
   int64_t rattempted = 0;
-  char *buffer       = 0;
+  char *buffer       = nullptr;
   int buf_len;
   IOBufferBlock *b = this->handShakeBuffer->first_write_block();
 
@@ -847,41 +847,8 @@ SSLNetVConnection::do_io_close(int lerrno)
 }
 
 void
-SSLNetVConnection::free(EThread *t)
+SSLNetVConnection::clear()
 {
-  got_remote_addr = false;
-  got_local_addr  = false;
-  read.vio.mutex.clear();
-  write.vio.mutex.clear();
-  this->mutex.clear();
-  action_.mutex.clear();
-  this->ep.stop();
-  this->con.close();
-  flags = 0;
-
-  SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
-
-  if (nh) {
-    nh->read_ready_list.remove(this);
-    nh->write_ready_list.remove(this);
-    nh = nullptr;
-  }
-
-  read.triggered      = 0;
-  write.triggered     = 0;
-  read.enabled        = 0;
-  write.enabled       = 0;
-  read.vio._cont      = nullptr;
-  write.vio._cont     = nullptr;
-  read.vio.vc_server  = nullptr;
-  write.vio.vc_server = nullptr;
-
-  closed = 0;
-  options.reset();
-  con.close();
-
-  ink_assert(con.fd == NO_FD);
-
   if (ssl != nullptr) {
     SSL_free(ssl);
     ssl = nullptr;
@@ -901,6 +868,21 @@ SSLNetVConnection::free(EThread *t)
   sslHandShakeComplete = false;
   free_handshake_buffers();
   sslTrace = false;
+
+  super::clear();
+}
+void
+SSLNetVConnection::free(EThread *t)
+{
+  ink_release_assert(t == this_ethread());
+
+  // close socket fd
+  con.close();
+
+  clear();
+  SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
+  ink_assert(con.fd == NO_FD);
+  ink_assert(t == this_ethread());
 
   if (from_accept_thread) {
     sslNetVCAllocator.free(this);
@@ -1111,7 +1093,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     SSLDebugVC(this, "SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
 
     // start a blind tunnel if tr-pass is set and data does not look like ClientHello
-    char *buf = handShakeBuffer ? handShakeBuffer->buf() : NULL;
+    char *buf = handShakeBuffer ? handShakeBuffer->buf() : nullptr;
     if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
       SSLDebugVC(this, "Data does not look like SSL handshake, starting blind tunnel");
       this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
@@ -1139,9 +1121,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // do we want to include cert info in trace?
 
     if (sslHandshakeBeginTime) {
-      const ink_hrtime ssl_handshake_time = Thread::get_hrtime() - sslHandshakeBeginTime;
+      sslHandshakeEndTime                 = Thread::get_hrtime();
+      const ink_hrtime ssl_handshake_time = sslHandshakeEndTime - sslHandshakeBeginTime;
+
       Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
-      sslHandshakeBeginTime = 0;
       SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);
       SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_in_stat);
     }

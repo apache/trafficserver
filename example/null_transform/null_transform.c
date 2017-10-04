@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  An example program that does a null transform of response body content.
 
   @section license License
 
@@ -19,17 +19,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/* null_transform.c:  an example program that does a null transform
- *                    of response body content
- *
- *
- *
- *	Usage:
- *	  null_transform.so
- *
- *
  */
 
 #include <stdio.h>

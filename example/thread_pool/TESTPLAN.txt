@@ -1,0 +1,74 @@
+	Thread_Pool Sample Plugin Testing
+	=================================
+
+
+Functional testing
+==================
+
+SynTest test cases are provided for functional testing as well as
+boundary testing.
+
+List of tests:
+--------------
+Test case are under thread_pool/test/SynTest/Tests/Psi
+1.cfg:Description: PSI Plugin - Include tag at the beginning of doc
+2.cfg:Description: PSI Plugin - include tag middle of body doc
+3.cfg:Description: PSI Plugin - include tag end of body doc
+4.cfg:Description: PSI Plugin - 2 include tags in the same body
+5.cfg:Description: PSI Plugin - Boundary case: no filename in include
+6.cfg:Description: PSI Plugin - Boundary case: include tag doesn't end
+7.cfg:Description: PSI Plugin - Boundary case: include file doesn't exist
+8.cfg:Description: PSI Plugin - Boundary case: tag similar to include but slightly different
+9.cfg:Description: PSI Plugin - Boundary case: include file is empty
+10.cfg:Description: PSI Plugin - Boundary case: huge file to include
+11.cfg:Description: PSI Plugin - Boundary case: no X-Psi header
+12.cfg:Description: PSI Plugin - Boundary case: Server Aborts in middle of header
+13.cfg:Description: PSI Plugin - Boundary case: Server Aborts in middle of body
+
+SynTest config file:
+--------------------
+SynTest config files are under thread_pool/test/SynTest
+ - system.cfg: master SynTest config file
+ - tests_psi.cfg: test plan for SynTest
+
+Tests setup:
+------------
+ - Update plugin.config to add the psi plugin
+ - Generate the include files using the gen_inc.sh tool in thread_pool/include
+ - Copy the include files into $TS_HOME/etc/trafficserver/plugins/include
+ - Start TS
+ - Start SynTest
+
+Expected tests result:
+----------------------
+All tests should pass.
+
+
+Load Testing
+============
+
+SDKTest is used for load testing.
+
+A SDKTest server plugin is required to exercise the plugin (the server
+must send back responses with 'X-Psi' header).
+
+The SDKTest server plugin is located under thread_pool/test/SDKTest
+A SDKTest configuration file is also provided (allows to change the ratio
+of X-Psi responses).
+
+Tests setup:
+------------
+TS setup:
+ - Update plugin.config to add the psi plugin
+ - Generate the include files using the gen_inc.sh tool in thread_pool/include
+ - Copy the include files into $TS_HOME/etc/trafficserver/plugins/include
+ - Start TS
+
+SDKTest setup (Refer to SDKTest manual for detailed instructions):
+ - Compile and install the SDKTest server plugin
+ - Configure SDKTest using the provided config file
+ - Start SDKTest
+
+Expected tests result:
+----------------------
+Load testing should run for 24hours with no crash and no mem leak.

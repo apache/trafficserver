@@ -57,8 +57,8 @@ set_socket_paths(const char *path)
   // construct paths based on user input
   // form by replacing "mgmtapi.sock" with "eventapi.sock"
   if (path) {
-    main_socket_path  = Layout::relative_to(path, MGMTAPI_MGMT_SOCKET_NAME);
-    event_socket_path = Layout::relative_to(path, MGMTAPI_EVENT_SOCKET_NAME);
+    main_socket_path  = ats_stringdup(Layout::relative_to(path, MGMTAPI_MGMT_SOCKET_NAME));
+    event_socket_path = ats_stringdup(Layout::relative_to(path, MGMTAPI_EVENT_SOCKET_NAME));
   } else {
     main_socket_path  = nullptr;
     event_socket_path = nullptr;
@@ -114,7 +114,14 @@ ts_connect()
   if (!main_socket_path || !event_socket_path) {
     goto ERROR;
   }
-
+  // make sure the length of main_socket_path do not exceed the sizeof(sun_path)
+  if (strlen(main_socket_path) > sizeof(client_sock.sun_path) - 1) {
+    goto ERROR;
+  }
+  // make sure the length of event_socket_path do not exceed the sizeof(sun_path)
+  if (strlen(event_socket_path) > sizeof(client_event_sock.sun_path) - 1) {
+    goto ERROR;
+  }
   // create a socket
   main_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (main_socket_fd < 0) {
@@ -146,7 +153,7 @@ ts_connect()
   // setup Unix domain socket
   memset(&client_event_sock, 0, sizeof(sockaddr_un));
   client_event_sock.sun_family = AF_UNIX;
-  ink_strlcpy(client_event_sock.sun_path, event_socket_path, sizeof(client_sock.sun_path));
+  ink_strlcpy(client_event_sock.sun_path, event_socket_path, sizeof(client_event_sock.sun_path));
 #if defined(darwin) || defined(freebsd)
   sockaddr_len = sizeof(sockaddr_un);
 #else
