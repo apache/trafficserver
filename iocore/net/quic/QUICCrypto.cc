@@ -166,7 +166,7 @@ QUICCrypto::setup_session()
 
   size_t secret_len = EVP_MD_size(this->_digest);
   size_t key_len    = _get_aead_key_len(this->_aead);
-  size_t iv_len     = max(static_cast<size_t>(8), _get_aead_nonce_len(this->_aead));
+  size_t iv_len     = std::max(static_cast<size_t>(8), _get_aead_nonce_len(this->_aead));
 
   int r = 0;
 

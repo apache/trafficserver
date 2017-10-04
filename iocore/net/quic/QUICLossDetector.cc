@@ -104,10 +104,10 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
   uint32_t delay_until_lost = UINT32_MAX;
 
   if (this->_time_reordering_fraction != INFINITY) {
-    delay_until_lost = (1 + this->_time_reordering_fraction) * max(this->_latest_rtt, this->_smoothed_rtt);
+    delay_until_lost = (1 + this->_time_reordering_fraction) * std::max(this->_latest_rtt, this->_smoothed_rtt);
   } else if (largest_acked_packet_number == this->_largest_sent_packet) {
     // Early retransmit alarm.
-    delay_until_lost = 9 / 8 * max(this->_latest_rtt, this->_smoothed_rtt);
+    delay_until_lost = 9 / 8 * std::max(this->_latest_rtt, this->_smoothed_rtt);
   }
   for (auto &unacked : this->_sent_packets) {
     if (unacked.first >= largest_acked_packet_number) {
@@ -284,7 +284,7 @@ QUICLossDetector::_set_loss_detection_alarm()
     } else {
       alarm_duration = 2 * this->_smoothed_rtt;
     }
-    alarm_duration = max(alarm_duration, this->_MIN_TLP_TIMEOUT);
+    alarm_duration = std::max(alarm_duration, this->_MIN_TLP_TIMEOUT);
     alarm_duration = alarm_duration * (1 << this->_handshake_count);
     Debug(tag, "Handshake retransmission alarm will be set");
   } else if (this->_loss_time != 0) {
@@ -298,12 +298,12 @@ QUICLossDetector::_set_loss_detection_alarm()
     } else {
       alarm_duration = this->_MIN_TLP_TIMEOUT;
     }
-    alarm_duration = max(alarm_duration, 2 * this->_smoothed_rtt);
+    alarm_duration = std::max(alarm_duration, 2 * this->_smoothed_rtt);
     Debug(tag, "TLP alarm will be set");
   } else {
     // RTO alarm
     alarm_duration = this->_smoothed_rtt + 4 * this->_rttvar;
-    alarm_duration = max(alarm_duration, this->_MIN_RTO_TIMEOUT);
+    alarm_duration = std::max(alarm_duration, this->_MIN_RTO_TIMEOUT);
     alarm_duration = alarm_duration * (1 << this->_rto_count);
     Debug(tag, "RTO alarm will be set");
   }
