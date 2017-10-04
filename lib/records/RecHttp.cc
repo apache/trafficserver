@@ -23,8 +23,8 @@
 
 #include <records/I_RecCore.h>
 #include <records/I_RecHttp.h>
+#include <records/RecProtoTags.h>
 #include <ts/ink_defs.h>
-#include <ts/ink_hash_table.h>
 #include <ts/Tokenizer.h>
 #include <ts/MemView.h>
 #include <strings.h>
@@ -32,31 +32,8 @@
 
 SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 
-/* Protocol session well-known protocol names.
-   These are also used for NPN setup.
-*/
-
-const char *const TS_ALPN_PROTOCOL_HTTP_0_9 = IP_PROTO_TAG_HTTP_0_9.ptr();
-const char *const TS_ALPN_PROTOCOL_HTTP_1_0 = IP_PROTO_TAG_HTTP_1_0.ptr();
-const char *const TS_ALPN_PROTOCOL_HTTP_1_1 = IP_PROTO_TAG_HTTP_1_1.ptr();
-const char *const TS_ALPN_PROTOCOL_HTTP_2_0 = IP_PROTO_TAG_HTTP_2_0.ptr();
-
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
-
-const char *const TS_PROTO_TAG_HTTP_1_0 = TS_ALPN_PROTOCOL_HTTP_1_0;
-const char *const TS_PROTO_TAG_HTTP_1_1 = TS_ALPN_PROTOCOL_HTTP_1_1;
-const char *const TS_PROTO_TAG_HTTP_2_0 = TS_ALPN_PROTOCOL_HTTP_2_0;
-const char *const TS_PROTO_TAG_TLS_1_3  = IP_PROTO_TAG_TLS_1_3.ptr();
-const char *const TS_PROTO_TAG_TLS_1_2  = IP_PROTO_TAG_TLS_1_2.ptr();
-const char *const TS_PROTO_TAG_TLS_1_1  = IP_PROTO_TAG_TLS_1_1.ptr();
-const char *const TS_PROTO_TAG_TLS_1_0  = IP_PROTO_TAG_TLS_1_0.ptr();
-const char *const TS_PROTO_TAG_TCP      = IP_PROTO_TAG_TCP.ptr();
-const char *const TS_PROTO_TAG_UDP      = IP_PROTO_TAG_UDP.ptr();
-const char *const TS_PROTO_TAG_IPV4     = IP_PROTO_TAG_IPV4.ptr();
-const char *const TS_PROTO_TAG_IPV6     = IP_PROTO_TAG_IPV6.ptr();
-
-InkHashTable *TSProtoTags;
 
 // Precomputed indices for ease of use.
 int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
@@ -638,30 +615,7 @@ ts_session_protocol_well_known_name_indices_init()
 
   DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
 
-  TSProtoTags = ink_hash_table_create(InkHashTableKeyType_String);
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_1_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_1_0)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_1_1, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_1_1)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_2_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_2_0)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_3, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_3)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_2, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_2)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_1, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_1)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_0)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TCP, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TCP)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_UDP, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_UDP)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_IPV4, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_IPV4)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_IPV6, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_IPV6)));
-}
-
-const char *
-RecNormalizeProtoTag(const char *tag)
-{
-  InkHashTableValue value;
-
-  if (ink_hash_table_lookup(TSProtoTags, tag, &value)) {
-    return reinterpret_cast<const char *>(value);
-  }
-
-  return nullptr;
+  ts_session_protocol_well_known_name_tags_init();
 }
 
 SessionProtocolNameRegistry::SessionProtocolNameRegistry() : m_n(0)

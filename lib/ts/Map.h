@@ -438,7 +438,7 @@ HashSet<K, AHashFns, C, A>::get(K akey)
   }
   uintptr_t h = AHashFns::hash(akey);
   h           = h % n;
-  for (int k = h, j = 0; j < i + 3; j++) {
+  for (size_t k = h, j = 0; j < i + 3; j++) {
     if (!v[k])
       return 0;
     else if (AHashFns::equal(akey, v[k]))
@@ -455,7 +455,7 @@ HashSet<K, AHashFns, C, A>::put(C avalue)
   if (n < MAP_INTEGRAL_SIZE) {
     if (!v)
       v = e;
-    for (int i = 0; i < n; i++)
+    for (size_t i = 0; i < n; i++)
       if (AHashFns::equal(avalue, v[i]))
         return &v[i];
     v[n] = avalue;
@@ -465,7 +465,7 @@ HashSet<K, AHashFns, C, A>::put(C avalue)
   if (n > MAP_INTEGRAL_SIZE) {
     uintptr_t h = AHashFns::hash(avalue);
     h           = h % n;
-    for (int k = h, j = 0; j < i + 3; j++) {
+    for (size_t k = h, j = 0; j < i + 3; j++) {
       if (!v[k]) {
         v[k] = avalue;
         return &v[k];
@@ -476,7 +476,7 @@ HashSet<K, AHashFns, C, A>::put(C avalue)
     i = SET_INITIAL_INDEX - 1; // will be incremented in set_expand
   HashSet<K, AHashFns, C, A> vv(*this);
   Vec<C, A>::set_expand();
-  for (int i = 0; i < vv.n; i++)
+  for (size_t i = 0; i < vv.n; i++)
     if (vv.v[i])
       put(vv.v[i]);
   return put(avalue);
