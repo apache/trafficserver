@@ -25,6 +25,7 @@
 #define _HttpTransact_h_
 
 #include "ts/ink_platform.h"
+#include "ts/ink_assert.h"
 #include "P_HostDB.h"
 #include "P_Net.h"
 #include "HttpConfig.h"
@@ -694,7 +695,9 @@ public:
     _DNSLookupInfo() {}
   } DNSLookupInfo;
 
-  typedef struct _HeaderInfo {
+  class HeaderInfo
+  {
+  public:
     HTTPHdr client_request;
     HTTPHdr client_response;
     HTTPHdr server_request;
@@ -710,8 +713,35 @@ public:
     ResponseError_t response_error  = NO_RESPONSE_HEADER_ERROR;
     bool extension_method           = false;
 
-    _HeaderInfo() {}
-  } HeaderInfo;
+    // Call this member function when client_request has been filled in with the original (pristine) header values.
+    void
+    save_pristine_client_request()
+    {
+      ink_assert(!_pristine_client_request.valid());
+      _pristine_client_request.copy(&client_request);
+    }
+
+    // Call this value to get the pristine header, only after save_pristine_client_request() has been called.  The pristine
+    // header should not be altered.  This is a member function returning a reference, rather than a public data member, in
+    // hopes that it can someday return a const reference.
+    HTTPHdr &
+    pristine_client_request()
+    {
+      ink_assert(_pristine_client_request.valid());
+      return _pristine_client_request;
+    }
+
+    void
+    pristine_client_request_destroy()
+    {
+      _pristine_client_request.destroy();
+    }
+
+    // TODO: See if pristine host header logic can be changed to use pristine client request.
+
+  private:
+    HTTPHdr _pristine_client_request;
+  };
 
   typedef struct _SquidLogInfo {
     SquidLogCode log_code          = SQUID_LOG_ERR_UNKNOWN;
@@ -936,6 +966,7 @@ public:
       hdr_info.server_response.destroy();
       hdr_info.transform_response.destroy();
       hdr_info.cache_response.destroy();
+      hdr_info.pristine_client_request_destroy();
       cache_info.lookup_url_storage.destroy();
       cache_info.parent_selection_url_storage.destroy();
       cache_info.original_url.destroy();

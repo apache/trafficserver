@@ -695,6 +695,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
   case PARSE_RESULT_DONE:
     DebugSM("http", "[%" PRId64 "] done parsing client request header", sm_id);
 
+    t_state.hdr_info.save_pristine_client_request();
+
     ua_session->set_session_active();
 
     if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1) &&
