@@ -26,9 +26,9 @@
 #include "../../eventsystem/I_EventSystem.h"
 #include "../../eventsystem/I_IOBuffer.h"
 #include "QUICTypes.h"
+#include "QUICStream.h"
 
 class QUICConnection;
-class QUICStream;
 class QUICApplication;
 
 /**
@@ -48,6 +48,12 @@ public:
   IOBufferReader *get_read_buffer_reader();
   void shutdown();
 
+  int
+  get_transaction_id() const
+  {
+    return _stream->id();
+  }
+
 private:
   QUICStream *_stream = nullptr;
 
@@ -62,7 +68,7 @@ private:
 };
 
 /**
- * @brief Abstruct QUIC Application Class
+ * @brief Abstract QUIC Application Class
  * @detail Every quic application must inherits this class
  */
 class QUICApplication : public Continuation

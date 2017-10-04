@@ -65,7 +65,7 @@ QUICStream::init_flow_control_params(uint32_t recv_max_stream_data, uint32_t sen
 }
 
 QUICStreamId
-QUICStream::id()
+QUICStream::id() const
 {
   return this->_id;
 }

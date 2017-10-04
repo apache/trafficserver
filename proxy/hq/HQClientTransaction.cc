@@ -279,7 +279,5 @@ HQClientTransaction::transaction_done()
 int
 HQClientTransaction::get_transaction_id() const
 {
-  // TODO: not implemented
-  ink_release_assert(false);
-  return 0;
+  return this->_stream_io->get_transaction_id();
 }

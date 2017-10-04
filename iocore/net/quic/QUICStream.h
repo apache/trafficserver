@@ -51,7 +51,7 @@ public:
   void init_flow_control_params(uint32_t recv_max_stream_data, uint32_t send_max_stream_data);
   int main_event_handler(int event, void *data);
 
-  QUICStreamId id();
+  QUICStreamId id() const;
   QUICOffset final_offset();
 
   // Implement VConnection interface.
@@ -91,20 +91,20 @@ private:
 
   Event *_send_tracked_event(Event *event, int send_event, VIO *vio);
 
-  bool _fin;
+  bool _fin               = false;
   QUICStreamId _id        = 0;
   QUICOffset _recv_offset = 0;
   QUICOffset _send_offset = 0;
 
-  QUICRemoteStreamFlowController *_remote_flow_controller;
-  QUICLocalStreamFlowController *_local_flow_controller;
-  uint64_t _flow_control_buffer_size = 1024;
+  QUICRemoteStreamFlowController *_remote_flow_controller = nullptr;
+  QUICLocalStreamFlowController *_local_flow_controller   = nullptr;
+  uint64_t _flow_control_buffer_size                      = 1024;
 
   VIO _read_vio;
   VIO _write_vio;
 
-  Event *_read_event;
-  Event *_write_event;
+  Event *_read_event  = nullptr;
+  Event *_write_event = nullptr;
 
   // Fragments of received STREAM frame (offset is unmatched)
   // TODO: Consider to replace with ts/RbTree.h or other data structure
