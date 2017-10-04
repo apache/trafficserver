@@ -169,6 +169,7 @@ public:
 class QUICConnectionError : public QUICError
 {
 public:
+  QUICConnectionError() : QUICError() {}
   QUICConnectionError(const QUICErrorClass error_class, const QUICErrorCode error_code, const char *error_msg = nullptr)
     : QUICError(error_class, error_code, error_msg){};
 };

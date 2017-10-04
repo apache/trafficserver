@@ -412,7 +412,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   case EVENT_IMMEDIATE: {
     // Start Implicit Shutdown. Because of no network activity for the duration of the idle timeout.
     this->remove_from_active_queue();
-    this->close({});
+    this->close(std::make_unique<QUICConnectionError>());
 
     // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
     break;
@@ -472,7 +472,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   case EVENT_IMMEDIATE: {
     // Start Implicit Shutdown. Because of no network activity for the duration of the idle timeout.
     this->remove_from_active_queue();
-    this->close({});
+    this->close(std::make_unique<QUICConnectionError>());
 
     // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
     break;
