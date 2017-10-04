@@ -29,7 +29,7 @@
 #include "QUICConfig.h"
 #include "P_SSLNextProtocolSet.h"
 
-static constexpr char dump_tag[] = "quic_handshake_dump_pkt";
+static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";
 
 #define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                            \
   {                                                                                                                                \
