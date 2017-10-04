@@ -35,6 +35,7 @@
 
 #include "P_SSLNextProtocolSet.h"
 
+#include "QUICConfig.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
 #include "QUICConfig.h"
@@ -92,7 +93,10 @@ void
 QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 {
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
-  this->_token.gen_token(_quic_connection_id ^ id);
+  {
+    QUICConfig::scoped_config params;
+    this->_token.gen_token(_quic_connection_id ^ params->server_id());
+  }
 
   this->_handshake_handler = new QUICHandshake(this, ssl_ctx, this->_token);
   this->_application_map   = new QUICApplicationMap();
@@ -689,7 +693,7 @@ QUICNetVConnection::_state_common_receive_packet()
     break;
   case QUICPacketType::CLIENT_CLEARTEXT:
     // FIXME Just ignore for now but it has to be acked (GitHub#2609)
-   break;
+    break;
   default:
     error = QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR));
     break;

@@ -34,12 +34,19 @@ void
 QUICConfigParams::initialize()
 {
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
+  REC_EstablishStaticConfigInt32U(this->_server_id, "proxy.config.quic.server_id");
 }
 
 uint32_t
 QUICConfigParams::no_activity_timeout_in() const
 {
   return this->_no_activity_timeout_in;
+}
+
+uint32_t
+QUICConfigParams::server_id() const
+{
+  return this->_server_id;
 }
 
 uint32_t

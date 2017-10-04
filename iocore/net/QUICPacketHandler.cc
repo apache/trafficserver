@@ -22,6 +22,7 @@
 #include "ts/ink_config.h"
 #include "P_Net.h"
 
+#include "QUICConfig.h"
 #include "QUICPacket.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
@@ -135,7 +136,10 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     // Send stateless reset if the packet is not a initial packet
     if (!QUICTypeUtil::hasLongHeader(reinterpret_cast<const uint8_t *>(block->buf()))) {
       QUICStatelessToken token;
-      token.gen_token(cid);
+      {
+        QUICConfig::scoped_config params;
+        token.gen_token(cid ^ params->server_id());
+      }
       auto packet = QUICPacketFactory::create_stateless_reset_packet(cid, token);
       this->send_packet(*packet, udpPacket->getConnection(), con.addr, 1200);
       return;
