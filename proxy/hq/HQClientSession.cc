@@ -124,6 +124,19 @@ HQClientSession::release(ProxyClientTransaction *trans)
   return;
 }
 
+int
+HQClientSession::populate_protocol(ts::StringView *result, int size) const
+{
+  int retval = 0;
+  if (size > retval) {
+    result[retval++] = IP_PROTO_TAG_HTTP_QUIC;
+    if (size > retval) {
+      retval += super::populate_protocol(result + retval, size - retval);
+    }
+  }
+  return retval;
+}
+
 void
 HQClientSession::add_transaction(HQClientTransaction *trans)
 {

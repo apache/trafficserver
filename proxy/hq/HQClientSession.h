@@ -29,6 +29,8 @@
 class HQClientSession : public ProxyClientSession
 {
 public:
+  typedef ProxyClientSession super; ///< Parent type.
+
   HQClientSession(NetVConnection *vc);
   ~HQClientSession();
 
@@ -48,6 +50,7 @@ public:
   int get_transact_count() const override;
   const char *get_protocol_string() const override;
   void release(ProxyClientTransaction *trans) override;
+  int populate_protocol(ts::StringView *result, int size) const override;
 
   // HQClientSession specific methods
   void add_transaction(HQClientTransaction *);

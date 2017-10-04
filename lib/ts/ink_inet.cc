@@ -36,6 +36,7 @@ const ts::StringView IP_PROTO_TAG_IPV4("ipv4", ts::StringView::literal);
 const ts::StringView IP_PROTO_TAG_IPV6("ipv6", ts::StringView::literal);
 const ts::StringView IP_PROTO_TAG_UDP("udp", ts::StringView::literal);
 const ts::StringView IP_PROTO_TAG_TCP("tcp", ts::StringView::literal);
+const ts::StringView IP_PROTO_TAG_QUIC("quic", ts::StringView::literal);
 const ts::StringView IP_PROTO_TAG_TLS_1_0("tls/1.0", ts::StringView::literal);
 const ts::StringView IP_PROTO_TAG_TLS_1_1("tls/1.1", ts::StringView::literal);
 const ts::StringView IP_PROTO_TAG_TLS_1_2("tls/1.2", ts::StringView::literal);

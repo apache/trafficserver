@@ -50,6 +50,7 @@ extern const ts::StringView IP_PROTO_TAG_IPV4;
 extern const ts::StringView IP_PROTO_TAG_IPV6;
 extern const ts::StringView IP_PROTO_TAG_UDP;
 extern const ts::StringView IP_PROTO_TAG_TCP;
+extern const ts::StringView IP_PROTO_TAG_QUIC;
 extern const ts::StringView IP_PROTO_TAG_TLS_1_0;
 extern const ts::StringView IP_PROTO_TAG_TLS_1_1;
 extern const ts::StringView IP_PROTO_TAG_TLS_1_2;

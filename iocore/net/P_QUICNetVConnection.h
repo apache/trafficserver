@@ -166,6 +166,9 @@ public:
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
 
+  int populate_protocol(ts::StringView *results, int n) const override;
+  const char *protocol_contains(ts::StringView tag) const override;
+
   // QUICNetVConnection
   void registerNextProtocolSet(SSLNextProtocolSet *s);
 

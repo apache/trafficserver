@@ -576,6 +576,35 @@ QUICNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
   return 0;
 }
 
+int
+QUICNetVConnection::populate_protocol(ts::StringView *results, int n) const
+{
+  int retval = 0;
+  if (n > retval) {
+    results[retval] = IP_PROTO_TAG_QUIC;
+    if (results[retval]) {
+      ++retval;
+    }
+    if (n > retval) {
+      retval += super::populate_protocol(results + retval, n - retval);
+    }
+  }
+  return retval;
+}
+
+const char *
+QUICNetVConnection::protocol_contains(ts::StringView prefix) const
+{
+  const char *retval = nullptr;
+  ts::StringView tag = IP_PROTO_TAG_QUIC;
+  if (prefix.size() <= tag.size() && strncmp(tag.ptr(), prefix.ptr(), prefix.size()) == 0) {
+    retval = tag.ptr();
+  } else {
+    retval = super::protocol_contains(prefix);
+  }
+  return retval;
+}
+
 void
 QUICNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s)
 {
