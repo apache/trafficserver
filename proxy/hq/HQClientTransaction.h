@@ -50,6 +50,7 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
   void release(IOBufferReader *r) override;
+  int get_transaction_id() const override;
 
   // HQClientTransaction specific methods
   int main_event_handler(int event, void *edata);

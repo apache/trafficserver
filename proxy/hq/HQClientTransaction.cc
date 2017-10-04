@@ -275,3 +275,11 @@ HQClientTransaction::transaction_done()
   // TODO: start closing transaction
   return;
 }
+
+int
+HQClientTransaction::get_transaction_id() const
+{
+  // TODO: not implemented
+  ink_release_assert(false);
+  return 0;
+}
