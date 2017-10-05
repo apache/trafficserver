@@ -124,7 +124,7 @@ free_state_info(StateInfo *state)
   if (state->req_info)
     free_request_info(&state->req_info_obj);
 
-  state->req_info  = NULL;
+  state->req_info = NULL;
 
   TSfree(state);
 }
@@ -153,8 +153,8 @@ get_cached_header_info(CachedHeaderInfo *chi, TSHttpTxn txn)
       TSHandleMLocRelease(cr_buf, cr_hdr_loc, cr_date_loc);
     }
 
-    chi->date = ( chi->date ? : chi->rmt_date );
-    chi->rmt_date = ( chi->rmt_date ? : chi->date );
+    chi->date     = (chi->date ?: chi->rmt_date);
+    chi->rmt_date = (chi->rmt_date ?: chi->date);
 
     cr_cache_control_loc = TSMimeHdrFieldFind(cr_buf, cr_hdr_loc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL);
 
@@ -217,7 +217,7 @@ parse_response(TSIOBufferReader reader)
 {
   TSIOBufferBlock block;
   int64_t avail = 0;
-  char *start = NULL;
+  char *start   = NULL;
   char *srch;
 
   block = TSIOBufferReaderStart(reader);
@@ -226,13 +226,12 @@ parse_response(TSIOBufferReader reader)
     start = (char *)TSIOBufferBlockReadStart(block, reader, &avail);
   }
 
-  if (! start || ! (srch=memchr(start,'\n',avail)) 
-              || ! (srch=memchr(start,' ',srch-start)) ) {
+  if (!start || !(srch = memchr(start, '\n', avail)) || !(srch = memchr(start, ' ', srch - start))) {
     return -1; // cannot find valid status line...
   }
 
   // first line / first space is before resp status
-  int status = atoi(srch+1);
+  int status = atoi(srch + 1);
   TSDebug(PLUGIN_NAME, "HTTP Status: %d", status);
   return status;
 }
@@ -242,7 +241,7 @@ consume_data(StateInfo *state)
 {
   int64_t avail;
 
-  if (! state->rmt_resp_status ) {
+  if (!state->rmt_resp_status) {
     state->rmt_resp_status = parse_response(state->resp_io_buf_reader);
   }
 
@@ -300,10 +299,10 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     TSIOBufferReaderFree(state->resp_io_buf_reader);
     TSIOBufferDestroy(state->resp_io_buf);
 
-    state->req_io_buf_reader = NULL;
-    state->req_io_buf = NULL;
+    state->req_io_buf_reader  = NULL;
+    state->req_io_buf         = NULL;
     state->resp_io_buf_reader = NULL;
-    state->resp_io_buf = NULL;
+    state->resp_io_buf        = NULL;
 
     TSContDestroy(cont); // events are done
     cont = NULL;
@@ -321,35 +320,35 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
       //////////////// RETURN (async done)
     }
 
-    // state->async_req == false 
-    //    ---> state->resp_info / state->txn / state->main_cont are valid 
+    // state->async_req == false
+    //    ---> state->resp_info / state->txn / state->main_cont are valid
 
     TSDebug(PLUGIN_NAME, "In sync path. setting fresh and re-enabling");
 
-    switch ( state->rmt_resp_status ) {
-      case TS_HTTP_STATUS_INTERNAL_SERVER_ERROR:
-      case TS_HTTP_STATUS_BAD_GATEWAY:
-      case TS_HTTP_STATUS_SERVICE_UNAVAILABLE:
-      case TS_HTTP_STATUS_GATEWAY_TIMEOUT:
+    switch (state->rmt_resp_status) {
+    case TS_HTTP_STATUS_INTERNAL_SERVER_ERROR:
+    case TS_HTTP_STATUS_BAD_GATEWAY:
+    case TS_HTTP_STATUS_SERVICE_UNAVAILABLE:
+    case TS_HTTP_STATUS_GATEWAY_TIMEOUT:
 
-        TSDebug(PLUGIN_NAME, "Sending stale data as fresh");
+      TSDebug(PLUGIN_NAME, "Sending stale data as fresh");
 
-         if (state->plugin_config->log_info.object &&
-              (state->plugin_config->log_info.all || state->plugin_config->log_info.stale_if_error)) {
-            CachedHeaderInfo *chi = get_cached_header_info(&chi_obj, state->txn);
-            TSTextLogObjectWrite(state->plugin_config->log_info.object, "stale-if-error: %ld - %ld < %ld + %ld %s", state->txn_start,
-                                 chi->date, chi->max_age, chi->stale_on_error, state->req_info->effective_url);
-         }
-         TSHttpTxnHookAdd(state->txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, state->main_cont);
-         TSHttpTxnCacheLookupStatusSet(state->txn, TS_CACHE_LOOKUP_HIT_FRESH);
-         break;
+      if (state->plugin_config->log_info.object &&
+          (state->plugin_config->log_info.all || state->plugin_config->log_info.stale_if_error)) {
+        CachedHeaderInfo *chi = get_cached_header_info(&chi_obj, state->txn);
+        TSTextLogObjectWrite(state->plugin_config->log_info.object, "stale-if-error: %ld - %ld < %ld + %ld %s", state->txn_start,
+                             chi->date, chi->max_age, chi->stale_on_error, state->req_info->effective_url);
+      }
+      TSHttpTxnHookAdd(state->txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, state->main_cont);
+      TSHttpTxnCacheLookupStatusSet(state->txn, TS_CACHE_LOOKUP_HIT_FRESH);
+      break;
 
-      case TS_HTTP_STATUS_NOT_MODIFIED: // should change to fresh
-         TSHttpTxnCacheLookupStatusSet(state->txn, TS_CACHE_LOOKUP_HIT_FRESH);
-         break;
+    case TS_HTTP_STATUS_NOT_MODIFIED: // should change to fresh
+      TSHttpTxnCacheLookupStatusSet(state->txn, TS_CACHE_LOOKUP_HIT_FRESH);
+      break;
 
-      default:
-         break; // stay with TS_CACHE_LOOKUP_HIT_STALE 
+    default:
+      break; // stay with TS_CACHE_LOOKUP_HIT_STALE
     }
     TSHttpTxnReenable(state->txn, TS_EVENT_HTTP_CONTINUE); // unblock txn
     break;
@@ -361,14 +360,12 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
   return 0;
 }
 
-static void 
-override_hdr_field(TSMBuffer buffp, TSMLoc hdr_loc, const char *wksField, unsigned wksFieldLen,
-                   const char *str, unsigned len)
+static void
+override_hdr_field(TSMBuffer buffp, TSMLoc hdr_loc, const char *wksField, unsigned wksFieldLen, const char *str, unsigned len)
 {
   TSMLoc fld_loc = TSMimeHdrFieldFind(buffp, hdr_loc, wksField, wksFieldLen);
 
-  while (fld_loc != TS_NULL_MLOC) 
-  {
+  while (fld_loc != TS_NULL_MLOC) {
     TSMLoc tmp = TSMimeHdrFieldNextDup(buffp, hdr_loc, fld_loc);
     TSMimeHdrFieldRemove(buffp, hdr_loc, fld_loc);
     TSMimeHdrFieldDestroy(buffp, hdr_loc, fld_loc);
@@ -426,14 +423,12 @@ fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
       // If-Modified-Since: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
       static const char *const fmt = "%A, %d %b %Y %T GMT";
 
-      datelen = strftime(date,sizeof(date),fmt,gmtime(&state->rmt_resp_date));
+      datelen = strftime(date, sizeof(date), fmt, gmtime(&state->rmt_resp_date));
 
-      override_hdr_field(state->req_info->buf, state->req_info->http_hdr_loc, 
-                           TS_MIME_FIELD_CONNECTION, TS_MIME_LEN_CONNECTION,
-                           "close", strlen("close"));
-      override_hdr_field(state->req_info->buf, state->req_info->http_hdr_loc, 
-                           TS_MIME_FIELD_IF_MODIFIED_SINCE, TS_MIME_LEN_IF_MODIFIED_SINCE,
-                           date, datelen);
+      override_hdr_field(state->req_info->buf, state->req_info->http_hdr_loc, TS_MIME_FIELD_CONNECTION, TS_MIME_LEN_CONNECTION,
+                         "close", strlen("close"));
+      override_hdr_field(state->req_info->buf, state->req_info->http_hdr_loc, TS_MIME_FIELD_IF_MODIFIED_SINCE,
+                         TS_MIME_LEN_IF_MODIFIED_SINCE, date, datelen);
     }
 
     // only revalidate or detect a server error ... without a full download
@@ -455,7 +450,7 @@ fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     state->r_vio = TSVConnRead(state->vconn, consume_cont, state->resp_io_buf, INT64_MAX);
 
     int64_t rdAvail = TSIOBufferReaderAvail(state->req_io_buf_reader);
-    state->w_vio = TSVConnWrite(state->vconn, consume_cont, state->req_io_buf_reader, rdAvail);
+    state->w_vio    = TSVConnWrite(state->vconn, consume_cont, state->req_io_buf_reader, rdAvail);
   }
   return 0;
 }
@@ -480,8 +475,8 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
 
     if (TSHttpTxnIsInternal(txn) != TS_SUCCESS) {
       TSDebug(PLUGIN_NAME, "External Request");
-      plugin_config        = (config_t *)TSContDataGet(cont);
-      state                = TSmalloc(sizeof(StateInfo));
+      plugin_config = (config_t *)TSContDataGet(cont);
+      state         = TSmalloc(sizeof(StateInfo));
       memset(state, 0, sizeof(*state));
       state->plugin_config = plugin_config;
       time(&state->txn_start);
@@ -506,7 +501,7 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
       if (status == TS_CACHE_LOOKUP_HIT_STALE) {
         TSDebug(PLUGIN_NAME, "CacheLookupStatus is STALE");
         // Get headers
-        chi = get_cached_header_info(&chi_obj,txn);
+        chi                  = get_cached_header_info(&chi_obj, txn);
         state->rmt_resp_date = chi->rmt_date;
 
         if (state->plugin_config->stale_if_error_override > chi->stale_on_error)
@@ -519,7 +514,7 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
             TSTextLogObjectWrite(state->plugin_config->log_info.object, "stale-while-revalidate: %d - %d < %d + %d %s",
                                  (int)state->txn_start, (int)chi->date, (int)chi->max_age, (int)chi->stale_while_revalidate,
                                  state->req_info->effective_url);
-// lookup async
+          // lookup async
 
           TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, 1);
           // Set warning header
@@ -563,14 +558,14 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     if (TS_SUCCESS == TSHttpTxnServerRespGet(txn, &buf, &loc)) {
       http_status = TSHttpHdrStatusGet(buf, loc);
-      switch ( http_status ) {
-        case TS_HTTP_STATUS_INTERNAL_SERVER_ERROR:
-        case TS_HTTP_STATUS_BAD_GATEWAY:
-        case TS_HTTP_STATUS_SERVICE_UNAVAILABLE:
-        case TS_HTTP_STATUS_GATEWAY_TIMEOUT:
-          // if so ... don't retain it
-          TSDebug(PLUGIN_NAME, "Set non-cachable");
-          TSHttpTxnServerRespNoStoreSet(txn, 1);
+      switch (http_status) {
+      case TS_HTTP_STATUS_INTERNAL_SERVER_ERROR:
+      case TS_HTTP_STATUS_BAD_GATEWAY:
+      case TS_HTTP_STATUS_SERVICE_UNAVAILABLE:
+      case TS_HTTP_STATUS_GATEWAY_TIMEOUT:
+        // if so ... don't retain it
+        TSDebug(PLUGIN_NAME, "Set non-cachable");
+        TSHttpTxnServerRespNoStoreSet(txn, 1);
         break;
       default:
         break;
