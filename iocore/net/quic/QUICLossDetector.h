@@ -51,6 +51,8 @@ public:
   QUICPacketNumber largest_acked_packet_number();
 
 private:
+  QUICConnectionId _connection_id = 0;
+
   struct PacketInfo {
     QUICPacketNumber packet_number;
     ink_hrtime time;
