@@ -469,6 +469,9 @@ fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     TSHandleMLocRelease(state->req_info->buf, state->req_info->http_hdr_loc, connection_hdr_loc);
     */
 
+    // only revalidate or detect a server error ... without a full download
+    TSHttpHdrMethodSet(state->req_info->buf, state->req_info->http_hdr_loc, TS_HTTP_METHOD_HEAD, -1);
+
     TSDebug(PLUGIN_NAME, "Create Buffers");
     state->req_io_buf         = TSIOBufferCreate();
     state->req_io_buf_reader  = TSIOBufferReaderAlloc(state->req_io_buf);
