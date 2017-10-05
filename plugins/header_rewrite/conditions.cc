@@ -25,6 +25,7 @@
 #include <cctype>
 #include <sstream>
 #include <array>
+#include <atomic>
 
 #include "ts/ts.h"
 
@@ -175,7 +176,7 @@ ConditionAccess::eval(const Resources & /* res ATS_UNUSED */)
     bool check = !access(_qualifier.c_str(), R_OK);
 
     tv.tv_sec += 2;
-    mb();
+    std::atomic_thread_fence(std::memory_order_seq_cst);
     _next = tv.tv_sec; // I hope this is an atomic "set"...
     _last = check;     // This sure ought to be
   }
