@@ -42,7 +42,7 @@ traffic_ctl_LDADD = \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @HWLOC_LIBS@
+  @LIBTCL@ @HWLOC_LIBS@ @LIBCAP@
 
 include $(top_srcdir)/build/tidy.mk
 

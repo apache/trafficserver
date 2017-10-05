@@ -213,6 +213,7 @@ traffic_server_LDADD += \
   @LIBLZMA@ \
   @LIBPROFILER@ \
   @OPENSSL_LIBS@ \
+  @LIBCAP@\
   -lm
 
 if BUILD_LUAJIT
@@ -241,6 +242,7 @@ endif
 
 traffic_logcat_LDADD += \
   @LIBTCL@ @HWLOC_LIBS@\
+  @LIBCAP@\
   @LIBPROFILER@ -lm
 
 if SYSTEM_LUAJIT
@@ -256,7 +258,8 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/lib/bindings/libbindings.la
+  $(top_builddir)/lib/bindings/libbindings.la\
+  @LIBCAP@
 
 if BUILD_LUAJIT
 traffic_logstats_LDADD += \
