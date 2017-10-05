@@ -66,10 +66,7 @@ QUICPacketHandler::acceptEvent(int event, void *data)
   } else if (event == NET_EVENT_DATAGRAM_READ_READY) {
     Queue<UDPPacket> *queue = (Queue<UDPPacket> *)data;
     UDPPacket *packet_r;
-    ip_port_text_buffer ipb;
     while ((packet_r = queue->dequeue())) {
-      Debug("quic_sec", "received packet from %s, size=%" PRId64, ats_ip_nptop(&packet_r->from.sa, ipb, sizeof(ipb)),
-            packet_r->getPktLength());
       this->_recv_packet(event, packet_r);
     }
     return EVENT_CONT;
@@ -120,6 +117,10 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
 
   QUICConnectionId cid;
   bool res = this->_read_connection_id(cid, block);
+
+  ip_port_text_buffer ipb;
+  Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, static_cast<uint64_t>(cid),
+        ats_ip_nptop(&udpPacket->from.sa, ipb, sizeof(ipb)), udpPacket->getPktLength());
 
   QUICNetVConnection *vc = nullptr;
   if (res) {
@@ -198,8 +199,8 @@ QUICPacketHandler::send_packet(const QUICPacket &packet, UDPConnection *udp_con,
 
   // NOTE: p will be enqueued to udpOutQueue of UDPNetHandler
   ip_port_text_buffer ipb;
-  Debug("quic_sec", "send %s packet to %s, size=%" PRId64, QUICDebugNames::packet_type(packet.type()),
-        ats_ip_nptop(&udpPkt->to.sa, ipb, sizeof(ipb)), udpPkt->getPktLength());
+  Debug("quic_sec", "[%" PRIx64 "] send %s packet to %s, size=%" PRId64, static_cast<uint64_t>(packet.connection_id()),
+        QUICDebugNames::packet_type(packet.type()), ats_ip_nptop(&udpPkt->to.sa, ipb, sizeof(ipb)), udpPkt->getPktLength());
 
   udp_con->send(this, udpPkt);
 }
