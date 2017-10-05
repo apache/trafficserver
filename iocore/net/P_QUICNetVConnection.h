@@ -143,7 +143,7 @@ class QUICNetVConnection : public UnixNetVConnection, public QUICConnection
   using super = UnixNetVConnection; ///< Parent type.
 
 public:
-  QUICNetVConnection();
+  QUICNetVConnection() {}
 
   void init(UDPConnection *, QUICPacketHandler *);
 

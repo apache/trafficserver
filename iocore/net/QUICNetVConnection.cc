@@ -52,15 +52,11 @@ static constexpr uint32_t MINIMUM_INITIAL_CLIENT_PACKET_SIZE = 1200;
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
-QUICNetVConnection::QUICNetVConnection() : UnixNetVConnection()
-{
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
-}
-
 // XXX This might be called on ET_UDP thread
 void
 QUICNetVConnection::init(UDPConnection *udp_con, QUICPacketHandler *packet_handler)
 {
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
   this->_packet_transmitter_mutex = new_ProxyMutex();
   this->_frame_transmitter_mutex  = new_ProxyMutex();
   this->_udp_con                  = udp_con;
