@@ -159,6 +159,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   lua_getglobal(L, TS_LUA_FUNCTION_REMAP);
   if (lua_type(L, -1) != LUA_TFUNCTION) {
+    lua_pop(L, 1);
+    ts_lua_destroy_http_ctx(http_ctx);
     TSMutexUnlock(main_ctx->mutexp);
     return TSREMAP_NO_REMAP;
   }
