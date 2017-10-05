@@ -35,7 +35,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(&tx, &app_map);
+  QUICStreamManager sm(0, &tx, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
   std::shared_ptr<QUICTransportParameters> remote_tp =
     std::make_shared<QUICTransportParametersInClientHello>(static_cast<QUICVersion>(0), static_cast<QUICVersion>(0));
@@ -80,7 +80,7 @@ TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(&tx, &app_map);
+  QUICStreamManager sm(0, &tx, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
   std::shared_ptr<QUICTransportParameters> remote_tp =
     std::make_shared<QUICTransportParametersInClientHello>(static_cast<QUICVersion>(0), static_cast<QUICVersion>(0));
@@ -100,7 +100,7 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(&tx, &app_map);
+  QUICStreamManager sm(0, &tx, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
   local_tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
                 std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(4096, 4)));
@@ -134,7 +134,7 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(&tx, &app_map);
+  QUICStreamManager sm(0, &tx, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
   local_tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
                 std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(4096, 4)));

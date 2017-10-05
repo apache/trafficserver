@@ -46,7 +46,8 @@ class QUICStream : public VConnection
 public:
   QUICStream() : VConnection(nullptr) {}
   ~QUICStream() {}
-  void init(QUICFrameTransmitter *tx, uint32_t id, uint64_t recv_max_stream_data = 0, uint64_t send_max_stream_data = 0);
+  void init(QUICFrameTransmitter *tx, QUICConnectionId cid, QUICStreamId id, uint64_t recv_max_stream_data = 0,
+            uint64_t send_max_stream_data = 0);
   void start();
   void init_flow_control_params(uint32_t recv_max_stream_data, uint32_t send_max_stream_data);
   int main_event_handler(int event, void *data);
@@ -91,10 +92,11 @@ private:
 
   Event *_send_tracked_event(Event *event, int send_event, VIO *vio);
 
-  bool _fin               = false;
-  QUICStreamId _id        = 0;
-  QUICOffset _recv_offset = 0;
-  QUICOffset _send_offset = 0;
+  bool _fin                       = false;
+  QUICConnectionId _connection_id = 0;
+  QUICStreamId _id                = 0;
+  QUICOffset _recv_offset         = 0;
+  QUICOffset _send_offset         = 0;
 
   QUICRemoteStreamFlowController *_remote_flow_controller = nullptr;
   QUICLocalStreamFlowController *_local_flow_controller   = nullptr;

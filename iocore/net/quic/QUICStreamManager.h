@@ -36,7 +36,7 @@ class QUICStreamManager : public QUICFrameHandler
 {
 public:
   QUICStreamManager(){};
-  QUICStreamManager(QUICFrameTransmitter *tx, QUICApplicationMap *app_map);
+  QUICStreamManager(QUICConnectionId cid, QUICFrameTransmitter *tx, QUICApplicationMap *app_map);
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
@@ -64,6 +64,7 @@ private:
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &);
 
+  QUICConnectionId _connection_id                           = 0;
   QUICFrameTransmitter *_tx                                 = nullptr;
   QUICApplicationMap *_app_map                              = nullptr;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;

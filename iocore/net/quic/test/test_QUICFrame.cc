@@ -731,7 +731,7 @@ TEST_CASE("QUICFrameFactory Create CONNECTION_CLOSE with a QUICConnectionError",
 TEST_CASE("QUICFrameFactory Create RST_STREAM with a QUICStreamError", "[quic]")
 {
   QUICStream stream;
-  stream.init(new MockQUICFrameTransmitter(), 0x1234, 0, 0);
+  stream.init(new MockQUICFrameTransmitter(), 0, 0x1234, 0, 0);
   std::unique_ptr<QUICStreamError> error =
     std::unique_ptr<QUICStreamError>(new QUICStreamError(&stream, QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR));
   std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> rst_stream_frame1 =

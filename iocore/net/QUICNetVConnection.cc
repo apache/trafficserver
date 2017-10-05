@@ -107,7 +107,7 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   this->_packet_factory.set_crypto_module(this->_crypto);
 
   // Create frame handlers
-  this->_stream_manager         = new QUICStreamManager(this, this->_application_map);
+  this->_stream_manager         = new QUICStreamManager(this->connection_id(), this, this->_application_map);
   this->_congestion_controller  = new QUICCongestionController();
   this->_loss_detector          = new QUICLossDetector(this);
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(0, this);
