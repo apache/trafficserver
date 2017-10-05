@@ -23,7 +23,7 @@
 
 #include "ts/ink_platform.h"
 #include "ts/ink_assert.h"
-#include <ts/ink_cap.cc>
+#include "ts/ink_cap.h"
 #include "MgmtSocket.h"
 
 #if HAVE_UCRED_H

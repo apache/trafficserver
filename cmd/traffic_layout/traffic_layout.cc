@@ -27,7 +27,12 @@
 #include "ts/I_Layout.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
-#include "ts/runroot.cc"
+#include "ts/runroot.h"
+#include "engine.h"
+#include "file_system.h"
+
+#include <iostream>
+#include <fstream>
 
 // Command line arguments (parsing)
 struct CommandLineArgs {
@@ -42,6 +47,9 @@ const ArgumentDescription argument_descriptions[] = {
   {"layout", 'l', "Show the layout (this is the default with no options given)", "T", &cl.layout, nullptr, nullptr},
   {"features", 'f', "Show the compiled features", "T", &cl.features, nullptr, nullptr},
   {"json", 'j', "Produce output in JSON format (when supported)", "T", &cl.json, nullptr, nullptr},
+  {"init", 'i', "Initialize the ts_runroot sandbox (details in traffic_layout --init -h)", nullptr, nullptr, nullptr, nullptr},
+  {"remove", 'r', "remove the ts_runroot sandbox (details in traffic_layout --remove -h)", nullptr, nullptr, nullptr, nullptr},
+  {"force", '-', "force flag for init (details in traffic_layout --force -h)", nullptr, nullptr, nullptr, nullptr},
 
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION(),
@@ -175,9 +183,85 @@ produce_layout(bool json)
   }
 }
 
-int
-main(int /* argc ATS_UNUSED */, const char **argv)
+void
+traffic_runroot(int argc, const char **argv)
 {
+  // runroot engine for operations
+  RunrootEngine engine;
+  engine._argc = argc;
+  int i        = 0;
+  while (argv[i]) {
+    engine._argv.push_back(argv[i]);
+    ++i;
+  }
+
+  // parse the command line & put into global variable
+  engine.runroot_parse();
+
+  // check to clean the runroot or not
+  if (engine.clean_runroot())
+    return;
+
+  // start the runroot creating stuff
+  std::string original_root = TS_BUILD_PREFIX;
+  append_slash(original_root);
+
+  // setting up ts_runroot
+  // Use passed in parameter, else use ENV variable
+  std::string ts_runroot;
+  if (!engine.run_path.empty()) {
+    ts_runroot = engine.run_path;
+  } else {
+    if (getenv("TS_RUNROOT") != nullptr) {
+      ts_runroot = getenv("TS_RUNROOT");
+      ink_notice("Using TS_RUNROOT Env variable");
+    } else {
+      ink_fatal("Invalid ts_runroot path\n(please set command line path or Environment variable $TS_RUNROOT)");
+    }
+  }
+
+  // handle the ts_runroot
+  // ts runroot must be an accessible path
+  append_slash(ts_runroot);
+  std::ifstream check_file(ts_runroot + "runroot_path.yaml");
+  if (check_file.good()) {
+    // if the path already ts_runroot, use it
+    ink_notice("Using existing TS_RUNROOT...");
+    ink_notice("Please remove the old TS_RUNROOT if new runroot is needed \n(usage: traffic_runroot rm /path/...)");
+    return;
+  } else if (exists(ts_runroot) && is_directory(ts_runroot)) {
+    ink_fatal("directory already exist");
+  }
+
+  // create new root & copy from original to new runroot. then fill in the map
+  engine.copy_runroot(original_root, ts_runroot);
+
+  // create and emit to yaml file the key value pairs of path
+  std::ofstream yamlfile;
+  std::string yaml_path = ts_runroot + "runroot_path.yaml";
+  yamlfile.open(yaml_path);
+
+  for (auto it : engine.path_map) {
+    // out put key value pairs of path
+    yamlfile << it.first << ": " << it.second << std::endl;
+  }
+  ink_notice("\nTS runroot initialized");
+
+  return;
+}
+
+int
+main(int argc, const char **argv)
+{
+  // check for traffic_runroot operations
+  for (int i = 0; i < argc; i++) {
+    if (!strcmp(argv[i], "--init") || !strcmp(argv[i], "--remove") || !strcmp(argv[i], "-i") || !strcmp(argv[i], "-r") ||
+        !strcmp(argv[i], "--force")) {
+      traffic_runroot(argc, argv);
+      exit(0);
+    }
+  }
+  // normal print out layout operation
   AppVersionInfo appVersionInfo;
 
   appVersionInfo.setup(PACKAGE_NAME, "traffic_layout", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");

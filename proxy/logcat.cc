@@ -24,7 +24,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_args.h"
 #include "ts/I_Layout.h"
-#include "ts/runroot.cc"
+#include "ts/runroot.h"
 
 #define PROGRAM_NAME "traffic_logcat"
 #define MAX_LOGBUFFER_SIZE 65536

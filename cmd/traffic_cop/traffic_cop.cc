@@ -35,7 +35,7 @@
 #include "RecordsConfig.h"
 #include "ts/ink_cap.h"
 #include "Cop.h"
-#include "ts/runroot.cc"
+#include "ts/runroot.h"
 
 #include <string>
 #include <map>

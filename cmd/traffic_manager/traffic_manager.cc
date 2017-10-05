@@ -27,7 +27,7 @@
 #include "ts/ink_sock.h"
 #include "ts/ink_args.h"
 #include "ts/ink_syslog.h"
-#include "ts/runroot.cc"
+#include "ts/runroot.h"
 
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"

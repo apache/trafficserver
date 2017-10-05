@@ -26,7 +26,7 @@
 #include "ts/I_Layout.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
-#include "ts/runroot.cc"
+#include "ts/runroot.h"
 
 AppVersionInfo CtrlVersionInfo;
 

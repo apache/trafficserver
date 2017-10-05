@@ -28,7 +28,11 @@ AM_LDFLAGS += \
   @OPENSSL_LDFLAGS@
 
 traffic_layout_SOURCES = \
-  traffic_layout.cc
+  traffic_layout.cc \
+  file_system.cc \
+  file_system.h \
+  engine.cc \
+  engine.h
 
 traffic_layout_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
