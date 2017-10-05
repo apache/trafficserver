@@ -31,6 +31,9 @@
 
 static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";
 
+#define DebugQHS(fmt, ...) \
+  Debug("quic_handshake", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_client_qc->connection_id()), ##__VA_ARGS__)
+
 #define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                            \
   {                                                                                                                                \
     int i;                                                                                                                         \
@@ -74,7 +77,6 @@ static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";
     }                                                                                                                              \
   }
 
-static constexpr char tag[]                   = "quic_handshake";
 static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
@@ -107,12 +109,12 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
     }
     if (initial_packet->version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
-        Debug(tag, "Version negotiation succeeded: %x", initial_packet->version());
+        DebugQHS("Version negotiation succeeded: %x", initial_packet->version());
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
         this->_client_qc->transmit_packet(
           packet_factory->create_version_negotiation_packet(initial_packet, _client_qc->largest_acked_packet_number()));
-        Debug(tag, "Version negotiation failed: %x", initial_packet->version());
+        DebugQHS("Version negotiation failed: %x", initial_packet->version());
       }
     } else {
       return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION));
@@ -163,11 +165,11 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters>
     if (this->_version_negotiator->revalidate(tp_in_ch) != QUICVersionNegotiationStatus::REVALIDATED) {
       this->_client_qc->close(
         QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::VERSION_NEGOTIATION_ERROR)));
-      Debug(tag, "Enter state_closed");
+      DebugQHS("Enter state_closed");
       SET_HANDLER(&QUICHandshake::state_closed);
       return;
     }
-    Debug(tag, "Version negotiation revalidated: %x", tp_in_ch->negotiated_version());
+    DebugQHS("Version negotiation revalidated: %x", tp_in_ch->negotiated_version());
     return;
   }
 
@@ -202,7 +204,7 @@ QUICHandshake::state_read_client_hello(int event, Event *data)
     break;
   }
   default:
-    Debug(tag, "event: %d", event);
+    DebugQHS("event: %d", event);
     break;
   }
 
@@ -213,7 +215,7 @@ QUICHandshake::state_read_client_hello(int event, Event *data)
       this->_client_qc->close(
         QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION)));
     }
-    Debug(tag, "Enter state_closed");
+    DebugQHS("Enter state_closed");
     SET_HANDLER(&QUICHandshake::state_closed);
   }
 
@@ -231,7 +233,7 @@ QUICHandshake::state_read_client_finished(int event, Event *data)
     break;
   }
   default:
-    Debug(tag, "event: %d", event);
+    DebugQHS("event: %d", event);
     break;
   }
 
@@ -242,7 +244,7 @@ QUICHandshake::state_read_client_finished(int event, Event *data)
       this->_client_qc->close(
         QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION)));
     }
-    Debug(tag, "Enter state_closed");
+    DebugQHS("Enter state_closed");
     SET_HANDLER(&QUICHandshake::state_closed);
   }
 
@@ -259,8 +261,8 @@ QUICHandshake::state_address_validation(int event, void *data)
 int
 QUICHandshake::state_complete(int event, void *data)
 {
-  Debug(tag, "event: %d", event);
-  Debug(tag, "Got an event on complete state. Ignoring it for now.");
+  DebugQHS("event: %d", event);
+  DebugQHS("Got an event on complete state. Ignoring it for now.");
 
   return EVENT_CONT;
 }
@@ -314,7 +316,7 @@ QUICHandshake::_process_client_hello()
   stream_io->read(msg, msg_len);
 
   if (msg_len <= 0) {
-    Debug(tag, "No message");
+    DebugQHS("No message");
     return QUICErrorUPtr(new QUICNoError());
   }
 
@@ -334,7 +336,7 @@ QUICHandshake::_process_client_hello()
     I_WANNA_DUMP_THIS_BUF(server_hello, static_cast<int64_t>(server_hello_len));
     // <----- DEBUG -----
 
-    Debug(tag, "Enter state_read_client_finished");
+    DebugQHS("Enter state_read_client_finished");
     SET_HANDLER(&QUICHandshake::state_read_client_finished);
 
     stream_io->write(server_hello, server_hello_len);
@@ -358,7 +360,7 @@ QUICHandshake::_process_client_finished()
   stream_io->read(msg, msg_len);
 
   if (msg_len <= 0) {
-    Debug(tag, "No message");
+    DebugQHS("No message");
     return QUICErrorUPtr(new QUICNoError());
   }
 
@@ -379,9 +381,9 @@ QUICHandshake::_process_client_finished()
     // <----- DEBUG -----
 
     ink_assert(this->is_completed());
-    Debug(tag, "Handshake is completed");
+    DebugQHS("Handshake is completed");
 
-    Debug(tag, "Enter state_complete");
+    DebugQHS("Enter state_complete");
     SET_HANDLER(&QUICHandshake::state_complete);
     _process_handshake_complete();
 
@@ -402,9 +404,9 @@ QUICHandshake::_process_handshake_complete()
   int r              = crypto->setup_session();
 
   if (r) {
-    Debug(tag, "Keying Materials are exported");
+    DebugQHS("Keying Materials are exported");
   } else {
-    Debug(tag, "Failed to export Keying Materials");
+    DebugQHS("Failed to export Keying Materials");
   }
 
   return QUICErrorUPtr(new QUICNoError());
