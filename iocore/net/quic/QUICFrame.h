@@ -40,6 +40,7 @@ public:
   virtual void store(uint8_t *buf, size_t *len) const = 0;
   virtual void reset(const uint8_t *buf, size_t len);
   static QUICFrameType type(const uint8_t *buf);
+  virtual ~QUICFrame() {}
 
   LINK(QUICFrame, link);
 
@@ -182,7 +183,7 @@ public:
   QUICAckFrame() : QUICFrame() {}
   QUICAckFrame(const uint8_t *buf, size_t len);
   QUICAckFrame(QUICPacketNumber largest_acknowledged, uint16_t ack_delay, uint64_t first_ack_block_length);
-  ~QUICAckFrame();
+  virtual ~QUICAckFrame();
   virtual void reset(const uint8_t *buf, size_t len) override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -486,6 +487,7 @@ public:
   static void
   delete_ack_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicAckFrameAllocator.free(static_cast<QUICAckFrame *>(frame));
   }
 
