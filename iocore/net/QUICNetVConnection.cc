@@ -399,6 +399,12 @@ QUICNetVConnection::state_handshake(int event, Event *data)
       error = this->_state_handshake_process_zero_rtt_protected_packet(std::move(p));
       break;
     }
+    case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
+    case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
+      // Postpone processing the packet
+      this->push_packet(std::move(p));
+      this_ethread()->schedule_imm_local(this, event);
+      break;
     default:
       error = QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR));
       break;
