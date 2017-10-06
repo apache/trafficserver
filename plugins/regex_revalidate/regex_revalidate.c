@@ -34,6 +34,8 @@
 #include <unistd.h>
 #include <ts/ts.h>
 
+#define MIN(a,b) ( a < b ? a : b )
+
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
 #else
