@@ -164,7 +164,9 @@ copy_function(const char *src_path, const struct stat *sb, int flag)
       std::ifstream src(src_path, std::ios::binary);
       std::ofstream dst(dst_path, std::ios::binary);
       dst << src.rdbuf();
-      chmod(dst_path.c_str(), sb->st_mode);
+      if (chmod(dst_path.c_str(), sb->st_mode) == -1) {
+        ink_warning("failed chomd the destination path: %s", strerror(errno));
+      }
     }
   }
   return 0;
