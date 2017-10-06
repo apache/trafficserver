@@ -127,7 +127,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
   int idx;
 
   if (id == 0) {
-    id = ink_atomic_increment((int *)&ninfos, 1) + 1;
+    id = ++ninfos;
     ink_assert(id != 0);
     ink_assert(id <= MAX_CONFIGS);
   }
@@ -147,7 +147,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
   }
 
   idx      = id - 1;
-  old_info = ink_atomic_swap(&infos[idx], info);
+  old_info = (infos[idx]).exchange(info);
 
   Debug("config", "Set for slot %d 0x%" PRId64 " was 0x%" PRId64 " with ref count %d", id, (int64_t)info, (int64_t)old_info,
         (old_info) ? old_info->refcount() : 0);
@@ -214,7 +214,7 @@ enum {
 };
 
 struct RegressionConfig : public ConfigInfo {
-  static int nobjects; // count of outstanding RegressionConfig objects (not-reentrant)
+  static std::atomic<int> nobjects; // count of outstanding RegressionConfig objects (not-reentrant)
 
   // DeferredCall is a simple function call wrapper that defers itself until the RegressionConfig
   // object count drops below the specified count.
@@ -251,7 +251,7 @@ struct RegressionConfig : public ConfigInfo {
       box.check(this->refcount() == 1, "invalid refcount %d (should be 1)", this->refcount());
     }
 
-    ink_atomic_increment(&nobjects, 1);
+    nobjects++;
   }
 
   ~RegressionConfig() override
@@ -268,7 +268,7 @@ struct RegressionConfig : public ConfigInfo {
       box.check(*this->pstatus == REGRESSION_TEST_INPROGRESS, "intermediate config out of sequence, *pstatus is %d", *pstatus);
     }
 
-    ink_atomic_increment(&nobjects, -1);
+    nobjects--;
   }
 
   RegressionTest *test;
@@ -276,7 +276,7 @@ struct RegressionConfig : public ConfigInfo {
   unsigned flags;
 };
 
-int RegressionConfig::nobjects = 0;
+std::atomic<int> RegressionConfig::nobjects{0};
 
 struct ProxyConfig_Set_Completion {
   ProxyConfig_Set_Completion(int _id, RegressionConfig *_c) : configid(_id), config(_c) {}

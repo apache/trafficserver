@@ -23,6 +23,7 @@
 
 #include "I_EventSystem.h"
 #include "ts/I_Layout.h"
+#include "ts/ink_atomic.h"
 
 #include "diags.i"
 

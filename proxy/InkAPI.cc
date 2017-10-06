@@ -83,11 +83,11 @@
   _HDR.m_mime = _HDR.m_http->m_fields_impl;
 
 // Globals for new librecords stats
-static int api_rsb_index;
+static int api_rsb_index = 0;
 static RecRawStatBlock *api_rsb;
 
 // Globals for the Sessions/Transaction index registry
-static int next_argv_index;
+static int next_argv_index = 0;
 
 static std::type_info const &TYPE_INFO_MGMT_INT   = typeid(MgmtInt);
 static std::type_info const &TYPE_INFO_MGMT_BYTE  = typeid(MgmtByte);

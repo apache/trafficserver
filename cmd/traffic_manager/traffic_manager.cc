@@ -105,7 +105,7 @@ static void SignalHandler(int sig);
 static void SignalAlrmHandler(int sig);
 #endif
 
-static std::atomic<int> sigHupNotifier;
+static std::atomic<int> sigHupNotifier{0};
 static void SigChldHandler(int sig);
 
 static void

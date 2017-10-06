@@ -92,8 +92,8 @@ public:
   void release(unsigned int id, ConfigInfo *data);
 
 public:
-  ConfigInfo *infos[MAX_CONFIGS];
-  int ninfos;
+  std::atomic<ConfigInfo *> infos[MAX_CONFIGS];
+  std::atomic<int> ninfos;
 };
 
 // A Continuation wrapper that calls the static reconfigure() method of the given class.

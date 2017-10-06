@@ -26,7 +26,6 @@
 #include <sys/types.h>
 
 #include "ts/ink_defs.h"
-#include "ts/ink_atomic.h"
 
 // Used for Debug etc.
 static const char *PLUGIN_NAME = "geoip_acl";

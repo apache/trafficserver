@@ -24,7 +24,7 @@
 #ifndef PTR_H_FBBD7DC3_CA5D_4715_9162_5E4DDA93353F
 #define PTR_H_FBBD7DC3_CA5D_4715_9162_5E4DDA93353F
 
-#include "ts/ink_atomic.h"
+#include <atomic>
 
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
@@ -64,14 +64,14 @@ public:
   int
   refcount_inc()
   {
-    return ink_atomic_increment((int *)&m_refcount, 1) + 1;
+    return ++m_refcount;
   }
 
   // Decrement the reference count, returning the new count.
   int
   refcount_dec()
   {
-    return ink_atomic_increment((int *)&m_refcount, -1) - 1;
+    return --m_refcount;
   }
 
   int
@@ -87,7 +87,7 @@ public:
   }
 
 private:
-  int m_refcount;
+  std::atomic<int> m_refcount;
 };
 
 #define REF_COUNT_OBJ_REFCOUNT_INC(_x) (_x)->refcount_inc()
@@ -164,7 +164,7 @@ public:
   detach()
   {
     T *tmp = m_ptr;
-    m_ptr  = NULL;
+    m_ptr  = nullptr;
     return tmp;
   }
 
@@ -246,7 +246,7 @@ Ptr<T>::clear()
   if (m_ptr) {
     if (!m_ptr->refcount_dec())
       m_ptr->free();
-    m_ptr = NULL;
+    m_ptr = nullptr;
   }
 }
 

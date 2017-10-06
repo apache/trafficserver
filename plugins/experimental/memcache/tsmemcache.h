@@ -24,6 +24,8 @@
 #ifndef tsmemcache_h
 #define tsmemcache_h
 
+#include <atomic>
+
 #include "I_EventSystem.h"
 #include "I_Net.h"
 #include "I_Cache.h"
@@ -155,8 +157,8 @@ struct MC : Continuation {
   uint64_t delta;
 
   static int32_t verbosity;
-  static ink_hrtime last_flush;
-  static int64_t next_cas;
+  static std::atomic<ink_hrtime> last_flush;
+  static std::atomic<int64_t> next_cas;
 
   int write_to_client(int64_t ntowrite = -1);
   int write_then_read_from_client(int64_t ntowrite = -1);

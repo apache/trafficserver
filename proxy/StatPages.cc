@@ -44,7 +44,7 @@ static struct {
   StatPagesFunc func;
 } stat_pages[MAX_STAT_PAGES];
 
-static int n_stat_pages;
+static int n_stat_pages = 0;
 
 void
 StatPagesManager::init()

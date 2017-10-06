@@ -55,7 +55,7 @@ enum {
 
 FieldListCacheElement fieldlist_cache[FIELDLIST_CACHE_SIZE];
 int fieldlist_cache_entries = 0;
-int32_t LogBuffer::M_ID;
+int32_t LogBuffer::M_ID     = 0;
 
 /*-------------------------------------------------------------------------
   The following LogBufferHeader routines are used to grab strings out from

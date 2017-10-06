@@ -15,13 +15,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+
+#include <atomic>
 #include <fstream>
 #include <string>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-
-#include "ts/ink_atomic.h"
 
 #include "parser.h"
 #include "ruleset.h"
@@ -98,12 +98,12 @@ public:
   void
   hold()
   {
-    ink_atomic_increment(&_ref_count, 1);
+    _ref_count++;
   }
   void
   release()
   {
-    if (1 >= ink_atomic_decrement(&_ref_count, 1)) {
+    if (1 >= _ref_count--) {
       delete this;
     }
   }
@@ -120,7 +120,7 @@ private:
   bool add_rule(RuleSet *rule);
 
   TSCont _cont;
-  int _ref_count;
+  std::atomic<int> _ref_count;
   RuleSet *_rules[TS_HTTP_LAST_HOOK + 1];
   ResourceIDs _resids[TS_HTTP_LAST_HOOK + 1];
 };

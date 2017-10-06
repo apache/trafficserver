@@ -170,7 +170,7 @@ static bool signal_received[NSIG];
 // 1: delay listen, wait for cache.
 // 0: Do not delay, start listen ASAP.
 // -1: cache is already initialized, don't delay.
-static int delay_listen_for_cache_p;
+static int delay_listen_for_cache_p = 0;
 
 AppVersionInfo appVersionInfo; // Build info for this application
 

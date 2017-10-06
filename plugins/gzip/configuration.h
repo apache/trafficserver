@@ -24,10 +24,10 @@
 #ifndef GZIP_CONFIGURATION_H_
 #define GZIP_CONFIGURATION_H_
 
+#include <atomic>
 #include <string>
 #include <vector>
 #include "debug_macros.h"
-#include "ts/ink_atomic.h"
 
 namespace Gzip
 {
@@ -123,12 +123,12 @@ public:
   void
   hold()
   {
-    ink_atomic_increment(&ref_count_, 1);
+    ref_count_++;
   }
   void
   release()
   {
-    if (1 >= ink_atomic_decrement(&ref_count_, 1)) {
+    if (1 >= ref_count_--) {
       debug("released and deleting HostConfiguration for %s settings", host_.size() > 0 ? host_.c_str() : "global");
       delete this;
     }
@@ -141,7 +141,7 @@ private:
   bool remove_accept_encoding_;
   bool flush_;
   int compression_algorithms_;
-  int ref_count_;
+  std::atomic<int> ref_count_;
 
   StringContainer compressible_content_types_;
   StringContainer disallows_;
