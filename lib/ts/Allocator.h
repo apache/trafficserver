@@ -54,7 +54,7 @@
 #define RND16(_x) (((_x) + 15) & ~15)
 
 struct _InkFreeList {
-  volatile head_p head;
+  head_p head;
   const char *name;
   uint32_t type_size, chunk_size, used, allocated, alignment;
   uint32_t allocated_base, used_base;
