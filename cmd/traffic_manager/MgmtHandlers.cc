@@ -268,7 +268,7 @@ mgmt_synthetic_main(void *)
     } else {
       ink_thread thrId = ink_thread_create(synthetic_thread, (void *)&clientFD, 1);
 
-      if (thrId <= 0) {
+      if (!thrId) {
         mgmt_log(stderr, "[SyntheticHealthServer] Failed to create worker thread");
       }
     }
