@@ -501,6 +501,11 @@ LOG_ACCESS_DEFAULT_FIELD(marshal_client_http_transaction_id, DEFAULT_INT_FIELD)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+LOG_ACCESS_DEFAULT_FIELD(marshal_url_remap_config_line_num, DEFAULT_INT_FIELD)
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
 int
 LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {

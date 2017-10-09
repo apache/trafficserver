@@ -277,6 +277,7 @@ public:
   inkcoreapi virtual int marshal_process_uuid(char *);               // STR
   inkcoreapi virtual int marshal_client_http_connection_id(char *);  // INT
   inkcoreapi virtual int marshal_client_http_transaction_id(char *); // INT
+  inkcoreapi virtual int marshal_url_remap_config_line_num(char *);  // INT
 
   // These two are special, in that they are shared for all log types / implementations
   inkcoreapi int marshal_entry_type(char *);                     // INT

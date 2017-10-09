@@ -28,7 +28,7 @@
 /**
  *
 **/
-url_mapping::url_mapping()
+url_mapping::url_mapping(int config_file_line_num) : _config_file_line_num(config_file_line_num)
 {
   memset(_plugin_list, 0, sizeof(_plugin_list));
   memset(_instance_data, 0, sizeof(_instance_data));
