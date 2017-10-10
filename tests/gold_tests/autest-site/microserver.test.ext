@@ -97,13 +97,19 @@ def makeHeader(self,requestString, **kwargs):
     return headerStr
 
 
-def MakeOriginServer(obj, name,public_ip=False,ssl=False,options={}):
+def MakeOriginServer(obj, name,port=False, ip=False, delay=False, public_ip=False,ssl=False,options={}):
     server_path= os.path.join(obj.Variables.AtsTestToolsDir,'microServer/uWServer.py')
     data_dir = os.path.join(obj.RunDirectory, name)
     # create Process
     p = obj.Processes.Process(name)
-    port=get_port(p,"Port")
-    command = "python3 {0} --data-dir {1} --port {2} --public {3} -m test --ssl {4}".format(server_path, data_dir, port, public_ip,ssl)
+    if (port == False):
+        port=get_port(p,"Port")
+        print("port num",port)
+    if (ip == False):
+        ip = '127.0.0.1'
+    if (delay == False):
+        delay = 0
+    command = "python3 {0} --data-dir {1} --port {2} --ip_address {3} --delay {4} --public {5} -m test --ssl {6}".format(server_path, data_dir, port, ip, delay, public_ip,ssl)
     for flag,value in options.items() :
         command += " {} {}".format(flag,value)
 
@@ -111,7 +117,8 @@ def MakeOriginServer(obj, name,public_ip=False,ssl=False,options={}):
     p.Command = command
     p.Setup.MakeDir(data_dir)
     p.Variables.DataDir = data_dir
-    p.Ready = When.PortOpen(port)
+    p.Ready = When.PortOpen(port,ip)
+    p.ReturnCode = None
     AddMethodToInstance(p,addResponse)
     AddMethodToInstance(p,addTransactionToSession)
 
