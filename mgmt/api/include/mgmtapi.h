@@ -856,17 +856,6 @@ char *TSGetErrorMessage(TSMgmtError error_id);
  */
 tsapi TSMgmtError TSConfigFileRead(TSFileNameT file, char **text, int *size, int *version);
 
-/* TSConfigFileWrite: writes a config file into a buffer
- * Input:  file - the config file to write
- *         text - text buffer to write
- *         size - the size of the buffer to write
- *         version - the current version level; new file will have the
- *                  version number above this one  (if version < 0, then
- *                  just uses the next version number in the sequence)
- * Output: TSMgmtError
- */
-tsapi TSMgmtError TSConfigFileWrite(TSFileNameT file, char *text, int size, int version);
-
 /* TSReadFromUrl: reads a remotely located config file into a buffer
  * Input:  url        - remote location of the file
  *         header     - a buffer is allocated on the header char* pointer
@@ -1049,15 +1038,6 @@ tsapi TSCfgContext TSCfgContextCreate(TSFileNameT file);
  * Output: TSMgmtError
  */
 tsapi TSMgmtError TSCfgContextDestroy(TSCfgContext ctx);
-
-/* TSCfgContextCommit: write new file copy based on ele's listed in ctx
- * Input:  ctx - where all the file's eles are stored
- *         *action_need - indicates which operation required by user for changes to take effect
- * Output: TSMgmtError
- * Note: If you do not call TSCfgContextGet before calling TSCfgContextCommit, then
- * you could possibly overwrite all the old rules in the config file!!
- */
-tsapi TSMgmtError TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT *action_need, TSIntList errRules);
 
 /* TSCfgContextGet: retrieves all the Ele's for the file specified in the ctx and
  *                puts them into ctx; note that the ele's in the TSCfgContext don't
