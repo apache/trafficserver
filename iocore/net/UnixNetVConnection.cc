@@ -1305,14 +1305,14 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
   if (check_emergency_throttle(con)) {
     // The `con' could be closed if there is hyper emergency
-    if (con.fd == NO_FD) {
+    if (fd == NO_FD) {
       // We need to decrement the stat because close_UnixNetVConnection only decrements with a valid connection descriptor.
       NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
-      // Set errno force to EMFILE (reached limit for open file descriptors)
-      errno = EMFILE;
-      res   = -errno;
-      goto fail;
     }
+    // Set errno force to EMFILE (reached limit for open file descriptors)
+    errno = EMFILE;
+    res   = -errno;
+    goto fail;
   }
 
   // Must connect after EventIO::Start() to avoid a race condition
@@ -1344,6 +1344,9 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 fail:
   lerrno = -res;
   action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)res);
+  if (fd != NO_FD) {
+    con.fd = NO_FD;
+  }
   free(t);
   return CONNECT_FAILURE;
 }

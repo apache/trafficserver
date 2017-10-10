@@ -335,8 +335,7 @@ check_throttle_warning()
 // of emergency throttle).
 //
 // Hyper Emergency throttle when we are very close to exhausting file
-// descriptors.  Close the connection immediately, the upper levels
-// will recover.
+// descriptors.
 //
 TS_INLINE bool
 check_emergency_throttle(Connection &con)
@@ -348,9 +347,9 @@ check_emergency_throttle(Connection &con)
     emergency_throttle_time = Thread::get_hrtime() + (over * over) * HRTIME_SECOND;
     RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many open file descriptors, emergency throttling");
     int hyper_emergency = fds_limit - HYPER_EMERGENCY_THROTTLE;
-    if (fd > hyper_emergency)
-      con.close();
-    return true;
+    if (fd > hyper_emergency) {
+      return true;
+    }
   }
   return false;
 }
