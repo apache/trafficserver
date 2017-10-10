@@ -53,13 +53,15 @@ def addRecordtoDNS(self,filename,hostname,list_ip_addr=[]):
 
 
 
-def MakeDNServer(obj, name,filename,IP='127.0.0.1',rr=False,options={}):
+
+def MakeDNServer(obj, name,filename,IP='127.0.0.1',port=False,rr=False,options={}):
     server_path= os.path.join(obj.Variables.AtsTestToolsDir,'microDNS/uDNS.py')
     data_dir = os.path.join(obj.RunDirectory, name)
     filepath = os.path.join(data_dir,filename)
     # create Process
     p = obj.Processes.Process(name)
-    port=get_port(p,"Port")
+    if (port == False):
+        port=get_port(p,"Port")
     command = "python3 {3} {0} {1} {2}".format(IP, port,filepath,server_path)
 
 
@@ -67,6 +69,7 @@ def MakeDNServer(obj, name,filename,IP='127.0.0.1',rr=False,options={}):
     p.Command = command
     p.Setup.MakeDir(data_dir)
     p.Variables.DataDir = data_dir
+    p.ReturnCode = None
     p.Ready = When.PortOpen(port)
     AddMethodToInstance(p,AddRecord)
     AddMethodToInstance(p,addRecordtoDNS)
