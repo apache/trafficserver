@@ -271,10 +271,8 @@ NetAccept::do_blocking_accept(EThread *t)
 
     // The con.fd may exceed the limitation of check_net_throttle() because we do blocking accept here.
     if (check_emergency_throttle(con)) {
-      // The `con' could be closed if there is hyper emergency
-      if (con.fd == NO_FD) {
-        return 0;
-      }
+      con.close();
+      return 0;
     }
 
     // Use 'nullptr' to Bypass thread allocator

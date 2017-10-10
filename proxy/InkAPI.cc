@@ -6478,12 +6478,13 @@ TSVConn
 TSVConnFdCreate(int fd)
 {
   UnixNetVConnection *vc;
+  EThread *t = this_ethread();
 
   if (unlikely(fd == NO_FD)) {
     return nullptr;
   }
 
-  vc = (UnixNetVConnection *)netProcessor.allocate_vc(this_ethread());
+  vc = (UnixNetVConnection *)netProcessor.allocate_vc(t);
   if (vc == nullptr) {
     return nullptr;
   }
@@ -6496,11 +6497,15 @@ TSVConnFdCreate(int fd)
 
   vc->id          = net_next_connection_number();
   vc->submit_time = Thread::get_hrtime();
+  vc->mutex       = new_ProxyMutex();
   vc->set_is_transparent(false);
-  vc->mutex = new_ProxyMutex();
   vc->set_context(NET_VCONNECTION_OUT);
 
-  if (vc->connectUp(this_ethread(), fd) != CONNECT_SUCCESS) {
+  // We should take the nh's lock and vc's lock before we get into the connectUp
+  SCOPED_MUTEX_LOCK(lock, get_NetHandler(t)->mutex, t);
+  SCOPED_MUTEX_LOCK(lock2, vc->mutex, t);
+
+  if (vc->connectUp(t, fd) != CONNECT_SUCCESS) {
     return nullptr;
   }
 
