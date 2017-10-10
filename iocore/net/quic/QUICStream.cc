@@ -273,23 +273,12 @@ QUICStream::_write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &fra
 
   int bytes_added = this->_read_vio.buffer.writer()->write(frame->data(), frame->data_length());
   this->_read_vio.nbytes += bytes_added;
-  this->_recv_offset += frame->data_length();
-  this->_local_flow_controller->forward_limit(this->_recv_offset + this->_flow_control_buffer_size);
+  // frame->offset() + frame->data_length() == this->_recv_offset
+  this->_local_flow_controller->forward_limit(frame->offset() + frame->data_length() + this->_flow_control_buffer_size);
   DebugQUICStreamFC("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
                     this->_local_flow_controller->current_limit());
 
   this->_state.update_with_received_frame(*frame);
-}
-
-void
-QUICStream::_reorder_data()
-{
-  auto frame = _received_stream_frame_buffer.find(this->_recv_offset);
-  while (frame != this->_received_stream_frame_buffer.end()) {
-    this->_write_to_read_vio(frame->second);
-    this->_received_stream_frame_buffer.erase(frame);
-    frame = _received_stream_frame_buffer.find(this->_recv_offset);
-  }
 }
 
 /**
@@ -317,17 +306,16 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
     return error;
   }
 
-  // Reordering - Some frames may be delayed or be dropped
-  if (this->_recv_offset > frame->offset()) {
-    // Do nothing. Just ignore STREAM frame.
-    return QUICErrorUPtr(new QUICNoError());
-  } else if (this->_recv_offset == frame->offset()) {
-    this->_write_to_read_vio(frame);
-    this->_reorder_data();
-  } else {
-    // NOTE: push fragments in _received_stream_frame_buffer temporally.
-    // They will be reordered when missing data is filled and offset is matched.
-    this->_received_stream_frame_buffer.insert(std::make_pair(frame->offset(), frame));
+  error = this->_received_stream_frame_buffer.insert(frame);
+  if (error->cls != QUICErrorClass::NONE) {
+    this->_received_stream_frame_buffer.clear();
+    return error;
+  }
+
+  auto new_frame = this->_received_stream_frame_buffer.pop();
+  while (new_frame != nullptr) {
+    this->_write_to_read_vio(new_frame);
+    new_frame = this->_received_stream_frame_buffer.pop();
   }
 
   return QUICErrorUPtr(new QUICNoError());

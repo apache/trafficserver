@@ -31,7 +31,8 @@ check_PROGRAMS = \
   test_QUICTypeUtil \
   test_QUICAckFrameCreator \
   test_QUICVersionNegotiator \
-  test_QUICFlowController
+  test_QUICFlowController \
+  test_QUICIncomingFrameBuffer
 
 
 AM_CPPFLAGS += \
@@ -220,6 +221,7 @@ test_QUICStream_SOURCES = \
   event_processor_main.cc \
   test_QUICStream.cc \
   ../QUICStream.cc \
+  ../QUICIncomingFrameBuffer.cc \
   ../QUICFrameDispatcher.cc \
   ../QUICStreamManager.cc \
   ../QUICApplicationMap.cc \
@@ -488,6 +490,37 @@ test_QUICFlowController_SOURCES = \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICFrame.cc
+
+#
+# test_QUICIncomingFrameBuffer
+#
+test_QUICIncomingFrameBuffer_CPPFLAGS = \
+  $(AM_CPPFLAGS)
+
+test_QUICIncomingFrameBuffer_LDFLAGS = \
+  @AM_LDFLAGS@
+
+test_QUICIncomingFrameBuffer_SOURCES = \
+  event_processor_main.cc \
+  ../QUICStream.cc \
+  ../QUICFrameDispatcher.cc \
+  ../QUICStreamManager.cc \
+  ../QUICApplicationMap.cc \
+  ../QUICCongestionController.cc \
+  ../../SSLNextProtocolSet.cc \
+  ../QUICIncomingFrameBuffer.cc \
+  test_QUICIncomingFrameBuffer.cc
+
+test_QUICIncomingFrameBuffer_LDADD = \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  @LIBTCL@ \
+  @HWLOC_LIBS@
 
 include $(top_srcdir)/build/tidy.mk
 
