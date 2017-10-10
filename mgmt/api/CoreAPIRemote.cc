@@ -871,34 +871,6 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   return TS_ERR_OKAY;
 }
 
-/*-------------------------------------------------------------------------
- * WriteFile
- *-------------------------------------------------------------------------
- * Purpose: replaces the current file with the file passed in;
- *  does forceUpdate for Rollback and FileManager so correct file
- *  versioning is maintained
- * Input: file - the config file to write
- *        text - text buffer to write
- *        size - the size of the buffer to write
- *
- * Marshals a write file request that can be sent over the unix domain socket.
- * Connects to the socket and sends request over. Parses the response from
- * Traffic Manager.
- */
-TSMgmtError
-WriteFile(TSFileNameT file, const char *text, int size, int version)
-{
-  TSMgmtError ret;
-
-  OpType optype         = OpType::FILE_WRITE;
-  MgmtMarshallInt fid   = file;
-  MgmtMarshallInt vers  = version;
-  MgmtMarshallData data = {(void *)text, (size_t)size};
-
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::FILE_WRITE, &optype, &fid, &vers, &data);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::FILE_WRITE, main_socket_fd) : ret;
-}
-
 /***************************************************************************
  * Events
  ***************************************************************************/

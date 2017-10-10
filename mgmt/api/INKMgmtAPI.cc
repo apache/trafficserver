@@ -1755,12 +1755,6 @@ TSConfigFileRead(TSFileNameT file, char **text, int *size, int *version)
   return ReadFile(file, text, size, version);
 }
 
-tsapi TSMgmtError
-TSConfigFileWrite(TSFileNameT file, char *text, int size, int version)
-{
-  return WriteFile(file, text, size, version);
-}
-
 /* ReadFromUrl: reads a remotely located config file into a buffer
  * Input:  url        - remote location of the file
  *         header     - a buffer is allocated on the header char* pointer
@@ -2140,12 +2134,6 @@ tsapi TSMgmtError
 TSCfgContextDestroy(TSCfgContext ctx)
 {
   return (CfgContextDestroy((CfgContext *)ctx));
-}
-
-tsapi TSMgmtError
-TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT * /* action_need ATS_UNUSED */, TSIntList errRules)
-{
-  return (CfgContextCommit((CfgContext *)ctx, (LLQ *)errRules));
 }
 
 tsapi TSMgmtError

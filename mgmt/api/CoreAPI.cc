@@ -744,66 +744,6 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   return TS_ERR_OKAY;
 }
 
-/*-------------------------------------------------------------------------
- * WriteFile
- *-------------------------------------------------------------------------
- * Purpose: replaces the current file with the file passed in;
- *  does forceUpdate for Rollback and FileManager so correct file
- *  versioning is maintained
- * Input: file - the config file to write
- *        text - text buffer to write
- *        size - the size of the buffer to write
- *        version - the current version level; new file will have the
- *                  version number above this one
- */
-TSMgmtError
-WriteFile(TSFileNameT file, const char *text, int size, int version)
-{
-  const char *fname;
-  Rollback *file_rb;
-  TextBuffer *file_content;
-  int ret;
-  version_t ver;
-
-  fname = filename_to_string(file);
-  if (!fname) {
-    return TS_ERR_WRITE_FILE;
-  }
-
-  // get rollback object for config file
-  mgmt_log("[CfgFileIO::WriteFile] %s\n", fname);
-  if (!(configFiles->getRollbackObj(fname, &file_rb))) {
-    mgmt_log("[CfgFileIO::WriteFile] ERROR getting rollback object\n");
-    // goto generate_error_msg;
-  }
-
-  // if version < 0 then, just use next version in sequence;
-  // otherwise check if trying to commit an old version
-  if (version >= 0) {
-    // check that the current version is equal to or less than the version
-    // that wants to be written
-    ver = file_rb->getCurrentVersion();
-    if (ver != version) { // trying to commit an old version
-      return TS_ERR_WRITE_FILE;
-    }
-  }
-  // use rollback object to update file with new content
-  file_content = new TextBuffer(size + 1);
-  ret          = file_content->copyFrom(text, size);
-  if (ret < 0) {
-    delete file_content;
-    return TS_ERR_WRITE_FILE;
-  }
-
-  if ((file_rb->forceUpdate(file_content, -1)) != OK_ROLLBACK) {
-    delete file_content;
-    return TS_ERR_WRITE_FILE;
-  }
-
-  delete file_content;
-  return TS_ERR_OKAY;
-}
-
 /**************************************************************************
  * EVENTS
  *************************************************************************/

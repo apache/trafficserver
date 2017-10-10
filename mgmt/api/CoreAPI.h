@@ -70,7 +70,6 @@ TSMgmtError MgmtConfigRecordDescribeMatching(const char *regex, unsigned flags, 
  * File Operations
  ***************************************************************************/
 TSMgmtError ReadFile(TSFileNameT file, char **text, int *size, int *version);
-TSMgmtError WriteFile(TSFileNameT file, const char *text, int size, int version);
 
 /***************************************************************************
  * Events
