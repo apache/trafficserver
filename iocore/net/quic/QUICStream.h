@@ -31,6 +31,7 @@
 #include "QUICFrame.h"
 #include "QUICStreamState.h"
 #include "QUICFlowController.h"
+#include "QUICIncomingFrameBuffer.h"
 
 class QUICNetVConnection;
 class QUICFrameTransmitter;
@@ -44,7 +45,7 @@ class QUICStreamManager;
 class QUICStream : public VConnection
 {
 public:
-  QUICStream() : VConnection(nullptr) {}
+  QUICStream() : VConnection(nullptr), _received_stream_frame_buffer(this) {}
   ~QUICStream() {}
   void init(QUICFrameTransmitter *tx, QUICConnectionId cid, QUICStreamId id, uint64_t recv_max_stream_data = 0,
             uint64_t send_max_stream_data = 0);
@@ -82,7 +83,6 @@ private:
   QUICErrorUPtr _send();
 
   void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
-  void _reorder_data();
   // NOTE: Those are called update_read_request/update_write_request in Http2Stream
   // void _read_from_net(uint64_t read_len, bool direct);
   // void _write_to_net(IOBufferReader *buf_reader, int64_t write_len, bool direct);
@@ -95,7 +95,6 @@ private:
   bool _fin                       = false;
   QUICConnectionId _connection_id = 0;
   QUICStreamId _id                = 0;
-  QUICOffset _recv_offset         = 0;
   QUICOffset _send_offset         = 0;
 
   QUICRemoteStreamFlowController *_remote_flow_controller = nullptr;
@@ -110,7 +109,7 @@ private:
 
   // Fragments of received STREAM frame (offset is unmatched)
   // TODO: Consider to replace with ts/RbTree.h or other data structure
-  std::map<QUICOffset, std::shared_ptr<const QUICStreamFrame>> _received_stream_frame_buffer;
+  QUICIncomingFrameBuffer _received_stream_frame_buffer;
 
   QUICStreamManager *_stream_manager = nullptr;
   QUICFrameTransmitter *_tx          = nullptr;
