@@ -576,6 +576,26 @@ HttpTransact::BadRequest(State *s)
 }
 
 void
+HttpTransact::PostActiveTimeoutResponse(State *s)
+{
+  DebugTxn("http_trans", "[PostActiveTimeoutResponse]"
+                         "post active timeout");
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  build_error_response(s, HTTP_STATUS_REQUEST_TIMEOUT, "Active Timeout", "timeout#activity", nullptr);
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+}
+
+void
+HttpTransact::PostInactiveTimeoutResponse(State *s)
+{
+  DebugTxn("http_trans", "[PostInactiveTimeoutResponse]"
+                         "post inactive timeout");
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  build_error_response(s, HTTP_STATUS_REQUEST_TIMEOUT, "Inactive Timeout", "timeout#inactivity", nullptr);
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+}
+
+void
 HttpTransact::Forbidden(State *s)
 {
   DebugTxn("http_trans", "[Forbidden]"

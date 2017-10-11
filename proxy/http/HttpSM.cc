@@ -84,9 +84,6 @@ static const int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
 static const int len_100_continue_response   = strlen(str_100_continue_response);
 
-static const char *str_408_request_timeout_response = "HTTP/1.1 408 Request Timeout\r\nConnection: close\r\n\r\n";
-static const int len_408_request_timeout_response   = strlen(str_408_request_timeout_response);
-
 namespace
 {
 /// Update the milestone state given the milestones and timer.
@@ -2786,6 +2783,19 @@ HttpSM::tunnel_handler_post(int event, void *data)
 
   switch (event) {
   case HTTP_TUNNEL_EVENT_DONE: // Tunnel done.
+    if (p->handler_state == HTTP_SM_POST_UA_FAIL && client_response_hdr_bytes == 0) {
+      // post failed
+      switch (t_state.client_info.state) {
+      case HttpTransact::ACTIVE_TIMEOUT:
+        call_transact_and_set_next_state(HttpTransact::PostActiveTimeoutResponse);
+        return 0;
+      case HttpTransact::INACTIVE_TIMEOUT:
+        call_transact_and_set_next_state(HttpTransact::PostInactiveTimeoutResponse);
+        return 0;
+      default:
+        break;
+      }
+    }
     break;
   case VC_EVENT_WRITE_READY: // iocore may callback first before send.
     return 0;
@@ -2798,18 +2808,6 @@ HttpSM::tunnel_handler_post(int event, void *data)
       free_MIOBuffer(ua_entry->write_buffer);
       ua_entry->write_buffer = nullptr;
       ua_entry->vc->do_io_write(this, 0, nullptr);
-    }
-    // The if statement will always true since these codes are all for HTTP 408 response sending. - by oknet xu
-    if (p->handler_state == HTTP_SM_POST_UA_FAIL) {
-      Debug("http_tunnel", "cleanup tunnel in tunnel_handler_post");
-      hsm_release_assert(ua_entry->in_tunnel == true);
-      tunnel_handler_post_or_put(p);
-      vc_table.cleanup_all();
-      tunnel.chain_abort_all(p);
-      p->read_vio = nullptr;
-      p->vc->do_io_close(EHTTP_ERROR);
-      tunnel.kill_tunnel();
-      return 0;
     }
     break;
   case VC_EVENT_READ_READY:
@@ -3515,8 +3513,6 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post_ua, event);
   client_request_body_bytes = p->init_bytes_done + p->bytes_read;
-  int64_t nbytes, buf_size;
-  IOBufferReader *buf_start;
 
   switch (event) {
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -3525,56 +3521,17 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       p->handler_state = HTTP_SM_POST_UA_FAIL;
       set_ua_abort(HttpTransact::ABORTED, event);
 
-      switch (event) {
-      case VC_EVENT_INACTIVITY_TIMEOUT:
-        HttpTransact::build_error_response(&t_state, HTTP_STATUS_REQUEST_TIMEOUT, "POST Request timeout", "timeout#inactivity",
-                                           nullptr);
-        break;
-      case VC_EVENT_ACTIVE_TIMEOUT:
-        HttpTransact::build_error_response(&t_state, HTTP_STATUS_REQUEST_TIMEOUT, "POST Request timeout", "timeout#activity",
-                                           nullptr);
-        break;
-      }
-
-      // send back 408 request timeout
-      buf_size = index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX) + t_state.internal_msg_buffer_size;
-      if (ua_entry->write_buffer) {
-        if (t_state.hdr_info.client_request.m_100_continue_required) {
-          ink_assert(ua_entry->write_vio && !ua_entry->write_vio->ntodo());
-        }
-        free_MIOBuffer(ua_entry->write_buffer);
-        ua_entry->write_buffer = nullptr;
-      }
-      ua_entry->write_buffer = new_MIOBuffer(buffer_size_to_index(buf_size));
-      buf_start              = ua_entry->write_buffer->alloc_reader();
-
       DebugSM("http_tunnel", "send 408 response to client to vc %p, tunnel vc %p", ua_session->get_netvc(), p->vc);
 
-      if (t_state.internal_msg_buffer && t_state.internal_msg_buffer_size) {
-        client_response_hdr_bytes = write_response_header_into_buffer(&t_state.hdr_info.client_response, ua_entry->write_buffer);
-        nbytes                    = client_response_hdr_bytes + t_state.internal_msg_buffer_size;
-        if (t_state.internal_msg_buffer_fast_allocator_size < 0) {
-          ua_entry->write_buffer->append_xmalloced(t_state.internal_msg_buffer, t_state.internal_msg_buffer_size);
-        } else {
-          ua_entry->write_buffer->append_fast_allocated(t_state.internal_msg_buffer, t_state.internal_msg_buffer_size,
-                                                        t_state.internal_msg_buffer_fast_allocator_size);
-        }
-        // The IOBufferBlock will free the msg buffer when necessary so
-        //  eliminate our pointer to it
-        t_state.internal_msg_buffer      = nullptr;
-        t_state.internal_msg_buffer_size = 0;
-      } else {
-        client_response_hdr_bytes = nbytes =
-          ua_entry->write_buffer->write(str_408_request_timeout_response, len_408_request_timeout_response);
-      }
-
-      // The HttpSM default handler still is HttpSM::state_request_wait_for_transform_read.
-      // However, WRITE_COMPLETE/TIMEOUT/ERROR event should be managed/handled by tunnel_handler_post.
-      ua_entry->vc_handler = &HttpSM::tunnel_handler_post;
-      ua_entry->write_vio  = p->vc->do_io_write(this, nbytes, buf_start);
+      tunnel.chain_abort_all(p);
       // Reset the inactivity timeout, otherwise the InactivityCop will callback again in the next second.
       ua_session->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
+      // if it is active timeout case, we need to give another chance to send 408 response;
+      ua_session->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_in));
+
+      p->vc->do_io_write(this, 0, nullptr);
       p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+
       return 0;
     }
   // fall through
