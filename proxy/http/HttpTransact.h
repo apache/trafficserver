@@ -1206,6 +1206,8 @@ public:
   static void HandleRequestAuthorized(State *s);
   static void BadRequest(State *s);
   static void Forbidden(State *s);
+  static void PostActiveTimeoutResponse(State *s);
+  static void PostInactiveTimeoutResponse(State *s);
   static void HandleFiltering(State *s);
   static void DecideCacheLookup(State *s);
   static void LookupSkipOpenServer(State *s);

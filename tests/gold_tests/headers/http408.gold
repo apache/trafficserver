@@ -3,8 +3,9 @@ Date:``
 Connection: close
 Server:``
 Cache-Control: no-store
-Content-Type: text/html; charset=utf-8
+Content-Type: text/html``
 Content-Language: en
+Content-Length:``
 
 <HTML>
 <HEAD>
