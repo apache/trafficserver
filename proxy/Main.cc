@@ -357,7 +357,6 @@ public:
   }
 
   ~MemoryLimit() override { mutex = nullptr; }
-
   int
   periodic(int event, Event *e)
   {
