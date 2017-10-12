@@ -29,8 +29,11 @@
 
 TEST_CASE("QUICFrameHandler", "[quic]")
 {
-  uint8_t payload[] = {0x01};
-  QUICStreamFrame streamFrame(payload, 1, 0x03, 0);
+  uint8_t raw[]          = {0x01};
+  ats_unique_buf payload = ats_unique_malloc(1);
+  memcpy(payload.get(), raw, 1);
+
+  QUICStreamFrame streamFrame(std::move(payload), 1, 0x03, 0);
 
   auto connection           = new MockQUICConnection();
   auto streamManager        = new MockQUICStreamManager();

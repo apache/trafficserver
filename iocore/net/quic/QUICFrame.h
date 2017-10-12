@@ -59,7 +59,7 @@ class QUICStreamFrame : public QUICFrame
 public:
   QUICStreamFrame() : QUICFrame() {}
   QUICStreamFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICStreamFrame(const uint8_t *buf, size_t len, QUICStreamId streamid, QUICOffset offset, bool last = false);
+  QUICStreamFrame(ats_unique_buf buf, size_t len, QUICStreamId streamid, QUICOffset offset, bool last = false);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
@@ -74,7 +74,7 @@ public:
   LINK(QUICStreamFrame, link);
 
 private:
-  const uint8_t *_data    = nullptr;
+  ats_unique_buf _data    = {nullptr, [](void *p) { ats_free(p); }};
   size_t _data_len        = 0;
   QUICStreamId _stream_id = 0;
   QUICOffset _offset      = 0;

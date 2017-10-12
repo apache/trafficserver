@@ -55,11 +55,14 @@ TEST_CASE("QUICFrame Type", "[quic]")
 
 TEST_CASE("Construct QUICFrame", "[quic]")
 {
-  uint8_t payload[] = "foo";
+  uint8_t raw[]          = "foo";
+  ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
+  memcpy(payload.get(), raw, sizeof(raw));
+
   uint8_t buf[65536];
   size_t len;
 
-  QUICStreamFrame frame1(payload, sizeof(payload), 0xffcc9966, 0xffddbb9977553311);
+  QUICStreamFrame frame1(std::move(payload), sizeof(raw), 0xffcc9966, 0xffddbb9977553311);
   frame1.store(buf, &len);
   CHECK(frame1.type() == QUICFrameType::STREAM);
   CHECK(frame1.size() == 19);
@@ -119,7 +122,12 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     0x00, 0x05,                   // Data Length
     0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
   };
-  QUICStreamFrame streamFrame1(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01, 0x00);
+
+  uint8_t raw1[]          = "\x01\x02\x03\x04\x05";
+  ats_unique_buf payload1 = ats_unique_malloc(5);
+  memcpy(payload1.get(), raw1, 5);
+
+  QUICStreamFrame streamFrame1(std::move(payload1), 5, 0x01, 0x00);
   streamFrame1.store(buf, &len);
   CHECK(len == 9);
   CHECK(memcmp(buf, expected1, len) == 0);
@@ -132,7 +140,11 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     0x00, 0x05,                   // Data Length
     0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
   };
-  QUICStreamFrame streamFrame2(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01, 0x01);
+  uint8_t raw2[]          = "\x01\x02\x03\x04\x05";
+  ats_unique_buf payload2 = ats_unique_malloc(5);
+  memcpy(payload2.get(), raw2, 5);
+
+  QUICStreamFrame streamFrame2(std::move(payload2), 5, 0x01, 0x01);
   streamFrame2.store(buf, &len);
   CHECK(len == 11);
   CHECK(memcmp(buf, expected2, len) == 0);
@@ -145,7 +157,11 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     0x00, 0x05,                   // Data Length
     0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
   };
-  QUICStreamFrame streamFrame3(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01, 0x010000);
+  uint8_t raw3[]          = "\x01\x02\x03\x04\x05";
+  ats_unique_buf payload3 = ats_unique_malloc(5);
+  memcpy(payload3.get(), raw3, 5);
+
+  QUICStreamFrame streamFrame3(std::move(payload3), 5, 0x01, 0x010000);
   streamFrame3.store(buf, &len);
   CHECK(len == 13);
   CHECK(memcmp(buf, expected3, len) == 0);
@@ -158,7 +174,11 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     0x00, 0x05,                                     // Data Length
     0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
   };
-  QUICStreamFrame streamFrame4(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01, 0x0100000000);
+  uint8_t raw4[]          = "\x01\x02\x03\x04\x05";
+  ats_unique_buf payload4 = ats_unique_malloc(5);
+  memcpy(payload4.get(), raw4, 5);
+
+  QUICStreamFrame streamFrame4(std::move(payload4), 5, 0x01, 0x0100000000);
   streamFrame4.store(buf, &len);
   CHECK(len == 17);
   CHECK(memcmp(buf, expected4, len) == 0);
@@ -171,7 +191,11 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     0x00, 0x05,                                     // Data Length
     0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
   };
-  QUICStreamFrame streamFrame5(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x0100, 0x0100000000);
+  uint8_t raw5[]          = "\x01\x02\x03\x04\x05";
+  ats_unique_buf payload5 = ats_unique_malloc(5);
+  memcpy(payload5.get(), raw5, 5);
+
+  QUICStreamFrame streamFrame5(std::move(payload5), 5, 0x0100, 0x0100000000);
   streamFrame5.store(buf, &len);
   CHECK(len == 18);
   CHECK(memcmp(buf, expected5, len) == 0);
@@ -184,7 +208,11 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     0x00, 0x05,                                     // Data Length
     0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
   };
-  QUICStreamFrame streamFrame6(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x010000, 0x0100000000);
+  uint8_t raw6[]          = "\x01\x02\x03\x04\x05";
+  ats_unique_buf payload6 = ats_unique_malloc(5);
+  memcpy(payload6.get(), raw6, 5);
+
+  QUICStreamFrame streamFrame6(std::move(payload6), 5, 0x010000, 0x0100000000);
   streamFrame6.store(buf, &len);
   CHECK(len == 19);
   CHECK(memcmp(buf, expected6, len) == 0);
@@ -197,7 +225,11 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     0x00, 0x05,                                     // Data Length
     0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
   };
-  QUICStreamFrame streamFrame7(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05"), 5, 0x01000000, 0x0100000000);
+  uint8_t raw7[]          = "\x01\x02\x03\x04\x05";
+  ats_unique_buf payload7 = ats_unique_malloc(5);
+  memcpy(payload7.get(), raw7, 5);
+
+  QUICStreamFrame streamFrame7(std::move(payload7), 5, 0x01000000, 0x0100000000);
   streamFrame7.store(buf, &len);
   CHECK(len == 20);
   CHECK(memcmp(buf, expected7, len) == 0);

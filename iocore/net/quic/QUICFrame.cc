@@ -72,9 +72,9 @@ QUICFrame::reset(const uint8_t *buf, size_t len)
 // STREAM Frame
 //
 
-QUICStreamFrame::QUICStreamFrame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last)
+QUICStreamFrame::QUICStreamFrame(ats_unique_buf data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last)
 {
-  this->_data      = data;
+  this->_data      = std::move(data);
   this->_data_len  = data_len;
   this->_stream_id = stream_id;
   this->_offset    = offset;
@@ -183,7 +183,7 @@ QUICStreamFrame::data() const
   if (this->_buf) {
     return this->_buf + this->_get_data_offset();
   } else {
-    return this->_data;
+    return this->_data.get();
   }
 }
 
@@ -1315,8 +1315,11 @@ QUICFrameFactory::fast_create(const uint8_t *buf, size_t len)
 QUICStreamFrameUPtr
 QUICFrameFactory::create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last)
 {
+  ats_unique_buf buf = ats_unique_malloc(data_len);
+  memcpy(buf.get(), data, data_len);
+
   QUICStreamFrame *frame = quicStreamFrameAllocator.alloc();
-  new (frame) QUICStreamFrame(data, data_len, stream_id, offset, last);
+  new (frame) QUICStreamFrame(std::move(buf), data_len, stream_id, offset, last);
   return QUICStreamFrameUPtr(frame, &QUICFrameDeleter::delete_stream_frame);
 }
 
