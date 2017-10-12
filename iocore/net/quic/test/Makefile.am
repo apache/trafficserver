@@ -132,6 +132,7 @@ test_QUICFrame_SOURCES = \
   ../QUICTypes.cc \
   ../QUICStream.cc \
   ../QUICStreamState.cc \
+  ../QUICIncomingFrameBuffer.cc \
   ../QUICDebugNames.cc \
   ../QUICFlowController.cc \
   ../../SSLNextProtocolSet.cc
@@ -166,6 +167,7 @@ test_QUICFrameDispatcher_SOURCES = \
   ../QUICPacket.cc \
   ../QUICStream.cc \
   ../QUICStreamState.cc \
+  ../QUICIncomingFrameBuffer.cc \
   ../QUICApplication.cc \
   ../QUICHandshake.cc \
   ../QUICTypes.cc \
@@ -252,6 +254,7 @@ test_QUICStreamManager_SOURCES = \
   event_processor_main.cc \
   test_QUICStreamManager.cc \
   ../QUICStream.cc \
+  ../QUICIncomingFrameBuffer.cc \
   ../QUICFrameDispatcher.cc \
   ../QUICStreamManager.cc \
   ../QUICApplicationMap.cc \
@@ -290,6 +293,7 @@ test_QUICTransportParameters_SOURCES = \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICStream.cc \
+  ../QUICIncomingFrameBuffer.cc \
   ../QUICStreamState.cc \
   ../QUICStreamManager.cc \
   ../QUICFlowController.cc \
@@ -380,6 +384,7 @@ test_QUICTypeUtil_SOURCES = \
   main.cc \
   test_QUICTypeUtil.cc \
   ../QUICStream.cc \
+  ../QUICIncomingFrameBuffer.cc \
   ../QUICStreamState.cc \
   ../QUICFlowController.cc \
   ../QUICDebugNames.cc \
@@ -411,6 +416,7 @@ test_QUICAckFrameCreator_SOURCES = \
   ../QUICFrame.cc \
   ../QUICPacket.cc \
   ../QUICStream.cc \
+  ../QUICIncomingFrameBuffer.cc \
   ../QUICStreamState.cc \
   ../QUICFlowController.cc \
   ../QUICDebugNames.cc \
@@ -449,6 +455,7 @@ test_QUICVersionNegotiator_SOURCES = \
   ../QUICApplicationMap.cc \
   ../QUICHandshake.cc \
   ../QUICStream.cc \
+  ../QUICIncomingFrameBuffer.cc \
   ../QUICStreamState.cc \
   ../QUICStreamManager.cc \
   ../QUICFlowController.cc \
@@ -483,6 +490,7 @@ test_QUICFlowController_SOURCES = \
   test_QUICFlowController.cc \
   ../QUICFlowController.cc \
   ../QUICStream.cc \
+  ../QUICIncomingFrameBuffer.cc \
   ../QUICStreamState.cc \
   ../QUICDebugNames.cc \
   ../QUICTypes.cc \

@@ -103,6 +103,7 @@ iocore/net/quic/test/test_QUICTypeUtil
 iocore/net/quic/test/test_QUICAckFrameCreator
 iocore/net/quic/test/test_QUICVersionNegotiator
 iocore/net/quic/test/test_QUICFlowController
+iocore/net/quic/test/test_QUICIncomingFrameBuffer
 iocore/net/quic/ts_quic_client
 iocore/aio/test_AIO
 iocore/eventsystem/test_Buffer
