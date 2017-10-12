@@ -36,8 +36,6 @@ lib_LTLIBRARIES = libtsmgmt.la
 libmgmtapi_la_SOURCES = \
   CfgContextImpl.cc \
   CfgContextImpl.h \
-  CfgContextManager.cc \
-  CfgContextManager.h \
   CfgContextUtils.cc \
   CfgContextUtils.h \
   CoreAPI.h \

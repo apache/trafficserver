@@ -36,7 +36,6 @@
 #include "ts/I_Layout.h"
 
 #include "mgmtapi.h"
-#include "CfgContextManager.h"
 #include "CfgContextImpl.h"
 #include "CfgContextUtils.h"
 #include "CoreAPI.h"
@@ -2114,96 +2113,6 @@ tsapi TSMgmtError
 TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func)
 {
   return EventSignalCbUnregister(event_name, func);
-}
-
-/***************************************************************************
- * API Helper Functions for Data Carrier Structures
- ***************************************************************************/
-
-/*--- abstracted file operations ------------------------------------------*/
-
-/* calls teh CfgContext class constructor */
-tsapi TSCfgContext
-TSCfgContextCreate(TSFileNameT file)
-{
-  return ((void *)CfgContextCreate(file));
-}
-
-/* calls the CfgContext class destructor */
-tsapi TSMgmtError
-TSCfgContextDestroy(TSCfgContext ctx)
-{
-  return (CfgContextDestroy((CfgContext *)ctx));
-}
-
-tsapi TSMgmtError
-TSCfgContextGet(TSCfgContext ctx)
-{
-  return (CfgContextGet((CfgContext *)ctx));
-}
-
-/*--- helper operations ---------------------------------------------------*/
-/* returns number of ele's in the TSCfgContext */
-int
-TSCfgContextGetCount(TSCfgContext ctx)
-{
-  return CfgContextGetCount((CfgContext *)ctx);
-}
-
-/* user must typecast the TSCfgEle to appropriate TSEle before using */
-TSCfgEle *
-TSCfgContextGetEleAt(TSCfgContext ctx, int index)
-{
-  return CfgContextGetEleAt((CfgContext *)ctx, index);
-}
-
-/* iterator */
-TSCfgEle *
-TSCfgContextGetFirst(TSCfgContext ctx, TSCfgIterState *state)
-{
-  return CfgContextGetFirst((CfgContext *)ctx, state);
-}
-
-TSCfgEle *
-TSCfgContextGetNext(TSCfgContext ctx, TSCfgIterState *state)
-{
-  return CfgContextGetNext((CfgContext *)ctx, state);
-}
-
-TSMgmtError
-TSCfgContextMoveEleUp(TSCfgContext ctx, int index)
-{
-  return CfgContextMoveEleUp((CfgContext *)ctx, index);
-}
-
-TSMgmtError
-TSCfgContextMoveEleDown(TSCfgContext ctx, int index)
-{
-  return CfgContextMoveEleDown((CfgContext *)ctx, index);
-}
-
-TSMgmtError
-TSCfgContextAppendEle(TSCfgContext ctx, TSCfgEle *ele)
-{
-  return CfgContextAppendEle((CfgContext *)ctx, ele);
-}
-
-TSMgmtError
-TSCfgContextInsertEleAt(TSCfgContext ctx, TSCfgEle *ele, int index)
-{
-  return CfgContextInsertEleAt((CfgContext *)ctx, ele, index);
-}
-
-TSMgmtError
-TSCfgContextRemoveEleAt(TSCfgContext ctx, int index)
-{
-  return CfgContextRemoveEleAt((CfgContext *)ctx, index);
-}
-
-TSMgmtError
-TSCfgContextRemoveAll(TSCfgContext ctx)
-{
-  return CfgContextRemoveAll((CfgContext *)ctx);
 }
 
 /* checks if the fields in the ele are all valid */
