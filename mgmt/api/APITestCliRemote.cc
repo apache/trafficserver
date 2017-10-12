@@ -726,68 +726,6 @@ print_storage_ele(TSStorageEle *ele)
   }
 }
 
-//
-// print_ele_list
-//
-// prints a list of Ele's
-//
-
-void
-print_ele_list(TSFileNameT file, TSCfgContext ctx)
-{
-  TSFileNameT filename = file;
-  TSCfgEle *ele;
-
-  if (!ctx) {
-    printf("[print_ele_list] invalid TSCFgContext\n");
-    return;
-  }
-
-  int count = TSCfgContextGetCount(ctx);
-  printf("\n[print_ele_list] %d rules\n", count);
-  for (int i = 0; i < count; i++) {
-    ele = TSCfgContextGetEleAt(ctx, i);
-
-    switch (filename) {
-    case TS_FNAME_CACHE_OBJ:
-      print_cache_ele((TSCacheEle *)ele);
-      break;
-    case TS_FNAME_HOSTING:
-      print_hosting_ele((TSHostingEle *)ele);
-      break;
-    case TS_FNAME_IP_ALLOW:
-      print_ip_allow_ele((TSIpAllowEle *)ele);
-      break;
-    case TS_FNAME_PARENT_PROXY:
-      print_parent_ele((TSParentProxyEle *)ele);
-      break;
-    case TS_FNAME_VOLUME:
-      print_volume_ele((TSVolumeEle *)ele);
-      break;
-    case TS_FNAME_PLUGIN:
-      print_plugin_ele((TSPluginEle *)ele);
-      break;
-    case TS_FNAME_REMAP:
-      print_remap_ele((TSRemapEle *)ele);
-      break;
-    case TS_FNAME_SOCKS:
-      print_socks_ele((TSSocksEle *)ele);
-      break;
-    case TS_FNAME_SPLIT_DNS:
-      print_split_dns_ele((TSSplitDnsEle *)ele);
-      break;
-    case TS_FNAME_STORAGE:
-      print_storage_ele((TSStorageEle *)ele);
-      break;
-    default:
-      printf("[print_ele_list] invalid file type \n");
-      return;
-    }
-  }
-
-  return;
-}
-
 /***************************************************************************
  * Control Testing
  ***************************************************************************/
@@ -1355,68 +1293,6 @@ test_read_file()
 }
 
 /***************************************************************************
- * TSCfgContext Testing
- ***************************************************************************/
-// tests the TSCfgContextMoveEleUp/Down functions (which end up calling
-// the new "copy" utility functions in CfgContextUtils.cc
-
-// uses TSCfgContextGet to read in a file and print out all the rules
-void
-test_cfg_context_get(char *args)
-{
-  TSCfgContext ctx;
-  TSFileNameT file;
-  char *filename;
-
-  strtok(args, ":");
-  filename = strtok(nullptr, ":");
-  fprintf(stderr, "modify file: %s\n", filename);
-  char *name = TSstrdup(filename);
-
-  // convert file name to TSFileNameT
-  if (strcmp(name, "cache.config") == 0) {
-    file = TS_FNAME_CACHE_OBJ;
-  } else if (strcmp(name, "congestion.config") == 0) {
-    file = TS_FNAME_CONGESTION;
-  } else if (strcmp(name, "hosting.config") == 0) {
-    file = TS_FNAME_HOSTING;
-  } else if (strcmp(name, "ip_allow.config") == 0) {
-    file = TS_FNAME_IP_ALLOW;
-  } else if (strcmp(name, "parent.config") == 0) {
-    file = TS_FNAME_PARENT_PROXY;
-  } else if (strcmp(name, "volume.config") == 0) {
-    file = TS_FNAME_VOLUME;
-  } else if (strcmp(name, "plugin.config") == 0) {
-    file = TS_FNAME_PLUGIN;
-  } else if (strcmp(name, "remap.config") == 0) {
-    file = TS_FNAME_REMAP;
-  } else if (strcmp(name, "socks.config") == 0) {
-    file = TS_FNAME_SOCKS;
-  } else if (strcmp(name, "storage.config") == 0) {
-    file = TS_FNAME_STORAGE;
-  } else if (strcmp(name, "splitdns.config") == 0) {
-    file = TS_FNAME_SPLIT_DNS;
-  } else {
-    TSfree(name);
-    return;
-  }
-
-  ctx = TSCfgContextCreate(file);
-  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
-    printf("ERROR READING FILE\n");
-  }
-
-  int count = TSCfgContextGetCount(ctx);
-  printf("%d rules in file: %s\n", count, name);
-
-  print_ele_list(file, ctx);
-
-  TSCfgContextDestroy(ctx);
-  TSfree(name);
-  return;
-}
-
-/***************************************************************************
  * Events Testing
  ***************************************************************************/
 /* ------------------------------------------------------------------------
@@ -1736,8 +1612,6 @@ runInteractive()
       test_read_url(true);
     } else if (strstr(buf, "test_url")) {
       test_read_url(false);
-    } else if (strstr(buf, "cfg_get:")) {
-      test_cfg_context_get(buf);
     } else if (strstr(buf, "reset_stats")) {
       reset_stats();
     } else if (strstr(buf, "set_stats")) {

@@ -1022,118 +1022,11 @@ tsapi TSMgmtError TSEventSignalCbRegister(char *event_name, TSEventSignalFunc fu
  */
 tsapi TSMgmtError TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func);
 
-/*--- abstracted file operations ------------------------------------------*/
-/* TSCfgContextCreate: allocates memory for an empty TSCfgContext for the specified file
- * Input:  file - the file
- * Output: TSCfgContext
- * Note: This function does not read the current rules in the file into
- * the TSCfgContext (must call TSCfgContextGet to do this). If you
- * do not call TSCfgContextGet before calling TSCfgContextCommit, then
- * you will overwite all the old rules in the config file!
- */
-tsapi TSCfgContext TSCfgContextCreate(TSFileNameT file);
-
-/* TSCfgContextDestroy: deallocates all memory for the TSCfgContext
- * Input:  ctx - the TSCfgContext to destroy
- * Output: TSMgmtError
- */
-tsapi TSMgmtError TSCfgContextDestroy(TSCfgContext ctx);
-
-/* TSCfgContextGet: retrieves all the Ele's for the file specified in the ctx and
- *                puts them into ctx; note that the ele's in the TSCfgContext don't
- *                all have to be of the same ele type
- * Input: ctx - where all the most currfile's eles are stored
- * Output: TSMgmtError
- *
- */
-tsapi TSMgmtError TSCfgContextGet(TSCfgContext ctx);
-
 /*--- TSCfgContext Operations --------------------------------------------*/
 /*
  * These operations are used to manipulate the opaque TSCfgContext type,
  * eg. when want to modify a file
  */
-
-/* TSCfgContextGetCount: returns number of Ele's in the TSCfgContext
- * Input:  ctx - the TSCfgContext to count the number of ele's in
- * Output: the number of Ele's
- */
-int TSCfgContextGetCount(TSCfgContext ctx);
-
-/* TSCfgContextGetEleAt: retrieves the Ele at the specified index; user must
- *                        typecast the TSCfgEle to appropriate TSEle before using
- * Input:  ctx   - the TSCfgContext to retrieve the ele from
- *         index - the Ele position desired; first Ele located at index 0
- * Output: the Ele (typecasted as an TSCfgEle)
- */
-TSCfgEle *TSCfgContextGetEleAt(TSCfgContext ctx, int index);
-
-/* TSCfgContextGetFirst: retrieves the first Ele in the TSCfgContext
- * Input:  ctx   - the TSCfgContext
- *         state - the current position in the Ele that the iterator is at
- * Output: returns first Ele in the ctx (typecasted as an TSCfgEle)
- */
-TSCfgEle *TSCfgContextGetFirst(TSCfgContext ctx, TSCfgIterState *state);
-
-/* TSCfgContextGetNext: retrieves the next ele in the ctx that's located after
- *                       the one pointed to by the TSCfgIterState
- * Input:  ctx   - the TSCfgContext
- *         state - the current position in the Ele that the iterator is at
- * Output: returns the next Ele in the ctx (typecasted as an TSCfgEle)
- */
-TSCfgEle *TSCfgContextGetNext(TSCfgContext ctx, TSCfgIterState *state);
-
-/* TSCfgContextMoveEleUp: shifts the Ele at the specified index one position up;
- *                         does nothing if Ele is at first position in the TSCfgContext
- * Input:  ctx   - the TSCfgContext
- *         index - the position of the Ele that needs to be shifted up
- * Output: TSMgmtError
- */
-TSMgmtError TSCfgContextMoveEleUp(TSCfgContext ctx, int index);
-
-/* TSCfgContextMoveEleDown: shifts the Ele at the specified index one position down;
- *                           does nothing if Ele is last in the TSCfgContext
- * Input:  ctx   - the TSCfgContext
- *         index - the position of the Ele that needs to be shifted down
- * Output: TSMgmtError
- */
-TSMgmtError TSCfgContextMoveEleDown(TSCfgContext ctx, int index);
-
-/* TSCfgContextAppendEle: appends the ele to the end of the TSCfgContext
- * Input:  ctx   - the TSCfgContext
- *         ele - the Ele (typecasted as an TSCfgEle) to append to ctx
- * Output: TSMgmtError
- * Note: When appending the ele to the TSCfgContext, this function does NOT
- *       make a copy of the ele passed in; it uses the same memory! So you probably
- *       do not want to append the ele and then free the memory for the ele
- *       without first removing the ele from the TSCfgContext
- */
-TSMgmtError TSCfgContextAppendEle(TSCfgContext ctx, TSCfgEle *ele);
-
-/* TSCfgContextInsertEleAt: inserts the ele at the specified index
- * Input:  ctx   - the TSCfgContext
- *         ele   - the Ele (typecasted as an TSCfgEle) to insert into ctx
- *         index - the position in ctx to insert the Ele
- * Output: TSMgmtError
- * Note: When inserting the ele into the TSCfgContext, this function does NOT
- *       make a copy of the ele passed in; it uses the same memory! So you probably
- *       do not want to insert the ele and then free the memory for the ele
- *       without first removing the ele from the TSCfgContext
- */
-TSMgmtError TSCfgContextInsertEleAt(TSCfgContext ctx, TSCfgEle *ele, int index);
-
-/* TSCfgContextRemoveEleAt: removes the Ele at the specified index from the TSCfgContext
- * Input:  ctx   - the TSCfgContext
- *         index - the position of the Ele in the ctx to remove
- * Output: TSMgmtError
- */
-TSMgmtError TSCfgContextRemoveEleAt(TSCfgContext ctx, int index);
-
-/* TSCfgContextRemoveAll: removes all Eles from the TSCfgContext
- * Input:  ctx   - the TSCfgContext
- * Output: TSMgmtError
- */
-TSMgmtError TSCfgContextRemoveAll(TSCfgContext ctx);
 
 /*--- TS Cache Inspector Operations --------------------------------------------*/
 
