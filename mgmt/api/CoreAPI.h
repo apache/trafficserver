@@ -30,8 +30,12 @@
 #include "MgmtDefs.h" // MgmtInt, MgmtFloat, etc
 
 #include "mgmtapi.h"
-#include "CfgContextDefs.h"
 #include "ts/Tokenizer.h"
+
+// for buffer used temporarily to parse incoming commands.
+#ifndef MAX_BUF_SIZE
+#define MAX_BUF_SIZE 4098
+#endif
 
 TSMgmtError Init(const char *socket_path = NULL, TSInitOptionT options = TS_MGMT_OPT_DEFAULTS);
 TSMgmtError Terminate();
@@ -65,11 +69,6 @@ TSMgmtError MgmtRecordGetMatching(const char *regex, TSList rec_vals);
 
 TSMgmtError MgmtConfigRecordDescribe(const char *rec_name, unsigned flags, TSConfigRecordDescription *val);
 TSMgmtError MgmtConfigRecordDescribeMatching(const char *regex, unsigned flags, TSList rec_vals);
-
-/***************************************************************************
- * File Operations
- ***************************************************************************/
-TSMgmtError ReadFile(TSFileNameT file, char **text, int *size, int *version);
 
 /***************************************************************************
  * Events

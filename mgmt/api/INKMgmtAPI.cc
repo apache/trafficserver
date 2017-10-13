@@ -31,13 +31,12 @@
  ***************************************************************************/
 #include "ts/ink_platform.h"
 #include "ts/ink_code.h"
+#include "ts/ink_memory.h"
 #include "ts/ParseRules.h"
 #include <climits>
 #include "ts/I_Layout.h"
 
 #include "mgmtapi.h"
-#include "CfgContextImpl.h"
-#include "CfgContextUtils.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
 
@@ -254,31 +253,6 @@ TSIpAddrListIsEmpty(TSIpAddrList ip_addrl)
   return queue_is_empty((LLQ *)ip_addrl);
 }
 
-// returns false if any of the IpAddrEle is not an valid IP address by making
-// use of ccu_checkIpAddrEle; if return false, the ip's may be reordered
-// from the original list
-tsapi bool
-TSIpAddrListIsValid(TSIpAddrList ip_addrl)
-{
-  int i, len;
-  TSIpAddrEle *ele;
-
-  if (!ip_addrl) {
-    return false;
-  }
-
-  len = queue_len((LLQ *)ip_addrl);
-  for (i = 0; i < len; i++) {
-    ele = (TSIpAddrEle *)dequeue((LLQ *)ip_addrl);
-    if (!ccu_checkIpAddrEle(ele)) {
-      enqueue((LLQ *)ip_addrl, ele);
-      return false;
-    }
-    enqueue((LLQ *)ip_addrl, ele);
-  }
-  return true;
-}
-
 /*--- TSPortList operations ----------------------------------------------*/
 tsapi TSPortList
 TSPortListCreate()
@@ -359,31 +333,6 @@ TSPortListIsEmpty(TSPortList portl)
   }
 
   return queue_is_empty((LLQ *)portl);
-}
-
-// returns false if any of the PortEle's has a port_a <= 0;
-// if returns false, then will return the entire port list
-// intact, although the ports may not be ordered in the same way
-tsapi bool
-TSPortListIsValid(TSPortList portl)
-{
-  int i, len;
-  TSPortEle *ele;
-
-  if (!portl) {
-    return false;
-  }
-
-  len = queue_len((LLQ *)portl);
-  for (i = 0; i < len; i++) {
-    ele = (TSPortEle *)dequeue((LLQ *)portl);
-    if (!ccu_checkPortEle(ele)) {
-      enqueue((LLQ *)portl, ele);
-      return false;
-    }
-    enqueue((LLQ *)portl, ele);
-  }
-  return true;
 }
 
 /*--- TSDomainList operations -----------------------------------------*/
@@ -1747,13 +1696,6 @@ TSGetErrorMessage(TSMgmtError err_id)
   return err_msg;
 }
 
-/*--- direct file operations ----------------------------------------------*/
-tsapi TSMgmtError
-TSConfigFileRead(TSFileNameT file, char **text, int *size, int *version)
-{
-  return ReadFile(file, text, size, version);
-}
-
 /* ReadFromUrl: reads a remotely located config file into a buffer
  * Input:  url        - remote location of the file
  *         header     - a buffer is allocated on the header char* pointer
@@ -2113,20 +2055,6 @@ tsapi TSMgmtError
 TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func)
 {
   return EventSignalCbUnregister(event_name, func);
-}
-
-/* checks if the fields in the ele are all valid */
-bool
-TSIsValid(TSCfgEle *ele)
-{
-  CfgEleObj *ele_obj;
-
-  if (!ele) {
-    return false;
-  }
-
-  ele_obj = create_ele_obj_from_ele(ele);
-  return (ele_obj->isValid());
 }
 
 TSConfigRecordDescription *

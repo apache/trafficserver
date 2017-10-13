@@ -34,10 +34,6 @@ noinst_LTLIBRARIES = libmgmtapilocal.la libmgmtapi.la
 lib_LTLIBRARIES = libtsmgmt.la
 
 libmgmtapi_la_SOURCES = \
-  CfgContextImpl.cc \
-  CfgContextImpl.h \
-  CfgContextUtils.cc \
-  CfgContextUtils.h \
   CoreAPI.h \
   CoreAPIShared.cc \
   CoreAPIShared.h \
@@ -55,7 +51,6 @@ if BUILD_TESTS
 endif
 
 libmgmtapilocal_la_SOURCES = \
-  CfgContextDefs.h \
   CoreAPI.cc \
   EventControlMain.cc \
   EventControlMain.h \

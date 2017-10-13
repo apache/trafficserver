@@ -42,10 +42,11 @@
 #include "ts/ink_string.h"
 #include "ts/I_Layout.h"
 #include "ts/ParseRules.h"
+#include "ts/ink_memory.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
-#include "CfgContextUtils.h"
 #include "NetworkUtilsRemote.h"
+
 #include "EventCallback.h"
 #include "MgmtMarshall.h"
 
@@ -811,64 +812,6 @@ MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT 
 
   ret = mgmt_record_set(rec_name, string_val, action_need);
   return ret;
-}
-
-/***************************************************************************
- * File Operations
- ***************************************************************************/
-/*-------------------------------------------------------------------------
- * ReadFile
- *-------------------------------------------------------------------------
- * Purpose: returns copy of the most recent version of the file
- * Input:   file - the config file to read
- *          text - a buffer is allocated on the text char* pointer
- *          size - the size of the buffer is returned
- * Output:
- *
- * Marshals a read file request that can be sent over the unix domain socket.
- * Connects to the socket and sends request over. Parses the response from
- * Traffic Manager.
- */
-TSMgmtError
-ReadFile(TSFileNameT file, char **text, int *size, int *version)
-{
-  TSMgmtError ret;
-  OpType optype       = OpType::FILE_READ;
-  MgmtMarshallInt fid = file;
-
-  MgmtMarshallData reply = {nullptr, 0};
-  MgmtMarshallInt err;
-  MgmtMarshallInt vers;
-  MgmtMarshallData data = {nullptr, 0};
-
-  *text = nullptr;
-  *size = *version = 0;
-
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::FILE_READ, &optype, &fid);
-  if (ret != TS_ERR_OKAY) {
-    return ret;
-  }
-
-  ret = recv_mgmt_message(main_socket_fd, reply);
-  if (ret != TS_ERR_OKAY) {
-    return ret;
-  }
-
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::FILE_READ, &err, &vers, &data);
-  ats_free(reply.ptr);
-
-  if (ret != TS_ERR_OKAY) {
-    return ret;
-  }
-
-  if (err != TS_ERR_OKAY) {
-    return (TSMgmtError)err;
-  }
-
-  *version = vers;
-  *text    = (char *)data.ptr;
-  *size    = (int)data.len;
-  return TS_ERR_OKAY;
 }
 
 /***************************************************************************

@@ -44,7 +44,6 @@
 
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
-#include "CfgContextUtils.h"
 #include "EventCallback.h"
 #include "ts/I_Layout.h"
 #include "ts/ink_cap.h"
@@ -692,58 +691,6 @@ TSMgmtError
 MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT *action_need)
 {
   return MgmtRecordSet(rec_name, string_val, action_need);
-}
-
-/**************************************************************************
- * FILE OPERATIONS
- *************************************************************************/
-
-/*-------------------------------------------------------------------------
- * ReadFile (MgmtAPILocal::get_lines_from_file)
- *-------------------------------------------------------------------------
- * Purpose: returns copy of the most recent version of the file
- * Input:   file - the config file to read
- *          text - a buffer is allocated on the text char* pointer
- *          size - the size of the buffer is returned
- *          ver  - the version number of file being read
- * Note: CALLEE must DEALLOCATE text memory returned
- */
-TSMgmtError
-ReadFile(TSFileNameT file, char **text, int *size, int *version)
-{
-  const char *fname;
-  Rollback *file_rb;
-  int ret, old_file_len;
-  TextBuffer *old_file_content;
-  char *old_file_lines;
-  version_t ver;
-
-  Debug("FileOp", "[get_lines_from_file] START");
-
-  fname = filename_to_string(file);
-  if (!fname) {
-    return TS_ERR_READ_FILE;
-  }
-
-  ret = configFiles->getRollbackObj(fname, &file_rb);
-  if (ret != true) {
-    Debug("FileOp", "[get_lines_from_file] Can't get Rollback for file: %s", fname);
-    return TS_ERR_READ_FILE;
-  }
-  ver = file_rb->getCurrentVersion();
-  file_rb->getVersion(ver, &old_file_content);
-  *version = ver;
-
-  // don't need to allocate memory b/c "getVersion" allocates memory
-  old_file_lines = old_file_content->bufPtr();
-  old_file_len   = strlen(old_file_lines);
-
-  *text = ats_strdup(old_file_lines); // make copy before deleting TextBuffer
-  *size = old_file_len;
-
-  delete old_file_content; // delete TextBuffer
-
-  return TS_ERR_OKAY;
 }
 
 /**************************************************************************
