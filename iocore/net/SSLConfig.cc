@@ -508,6 +508,12 @@ SSLCertificateConfig::reconfigure()
     delete lookup;
   }
 
+  if (retStatus) {
+    Note("ssl_multicert.config done reloading!");
+  } else {
+    Note("failed to reload ssl_multicert.config");
+  }
+
   return retStatus;
 }
 
