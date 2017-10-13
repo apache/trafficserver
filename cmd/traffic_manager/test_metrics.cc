@@ -68,6 +68,43 @@ integer 'proxy.node.test.value' [[
   metrics_binding_destroy(binding);
 }
 
+// Check that we can bind a constant and set the value based on that.
+// Also check that we can bind the constant again and get the updated value.
+REGRESSION_TEST(EvalBoundedMetrics)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+
+  box = REGRESSION_TEST_PASSED;
+
+  const char *config = R"(
+integer 'proxy.node.test.value' [[
+  return test
+]]
+  )";
+
+  BindingInstance binding;
+
+  box.check(metrics_binding_initialize(binding), "initialize metrics");
+  box.check(binding.bind_constant("test", 100), "binding for a constant");
+  box.check(binding.eval(config), "load metrics config");
+
+  metrics_binding_evaluate(binding);
+
+  RecInt value = 0;
+  box.check(RecGetRecordInt("proxy.node.test.value", &value) == REC_ERR_OKAY, "read value (100) from proxy.node.test.value");
+  box.check(value == 100, "proxy.node.test.value was %" PRId64 ", wanted 100", value);
+
+  box.check(binding.bind_constant("test", 101), "update binding for the constant");
+
+  metrics_binding_evaluate(binding);
+
+  value = 0;
+  box.check(RecGetRecordInt("proxy.node.test.value", &value) == REC_ERR_OKAY, "read value (101) from proxy.node.test.value");
+  box.check(value == 101, "proxy.node.test.value was %" PRId64 ", wanted 101", value);
+
+  metrics_binding_destroy(binding);
+}
+
 int
 main(int argc, const char **argv)
 {
