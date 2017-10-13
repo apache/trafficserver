@@ -118,9 +118,6 @@ typedef char *TSIpAddr;
 
 typedef void *TSHandle;
 typedef TSHandle TSList;
-typedef TSHandle TSIpAddrList; /* contains TSIpAddrEle *'s */
-typedef TSHandle TSPortList;   /* conatins TSPortEle *'s   */
-typedef TSHandle TSDomainList; /* contains TSDomain *'s    */
 typedef TSHandle TSStringList; /* contains char* 's         */
 typedef TSHandle TSIntList;    /* contains int* 's          */
 
@@ -173,95 +170,7 @@ typedef enum {
   TS_REC_UNDEFINED,
 } TSRecordT;
 
-typedef enum {
-  TS_IP_SINGLE, /* single ip address */
-  TS_IP_RANGE,  /* range ip address, eg. 1.1.1.1-2.2.2.2 */
-  TS_IP_UNDEFINED
-} TSIpAddrT;
-
-typedef enum {
-  TS_CON_TCP, /* TCP connection */
-  TS_CON_UDP, /* UDP connection */
-  TS_CON_UNDEFINED
-} TSConnectT;
-
-typedef enum       /* primary destination types */
-{ TS_PD_DOMAIN,    /* domain name */
-  TS_PD_HOST,      /* hostname */
-  TS_PD_IP,        /* ip address */
-  TS_PD_URL_REGEX, /* regular expression in url */
-  TS_PD_URL,       /* regular expression in url */
-  TS_PD_UNDEFINED } TSPrimeDestT;
-
-typedef enum /* header information types */
-{ TS_HDR_DATE,
-  TS_HDR_HOST,
-  TS_HDR_COOKIE,
-  TS_HDR_CLIENT_IP,
-  TS_HDR_UNDEFINED } TSHdrT;
-
-/* TODO: This should be removed */
-typedef enum /* access privileges to news articles cached by Traffic Server  */
-{ TS_IP_ALLOW_ALLOW,
-  TS_IP_ALLOW_DENY,
-  TS_IP_ALLOW_UNDEFINED } TSIpAllowT;
-
-typedef enum               /* multicast time to live options */
-{ TS_MC_TTL_SINGLE_SUBNET, /* forward multicast datagrams to single subnet */
-  TS_MC_TTL_MULT_SUBNET,   /* deliver multicast to more than one subnet */
-  TS_MC_TTL_UNDEFINED } TSMcTtlT;
-
-typedef enum              /* methods of specifying groups of clients */
-{ TS_CLIENT_GRP_IP,       /* ip range */
-  TS_CLIENT_GRP_DOMAIN,   /* domain */
-  TS_CLIENT_GRP_HOSTNAME, /* hostname */
-  TS_CLIENT_GRP_UNDEFINED } TSClientGroupT;
-
-typedef enum {
-  TS_RR_TRUE,   /* go through parent cache list in round robin */
-  TS_RR_STRICT, /* Traffic Server machines serve requests striclty in turn */
-  TS_RR_FALSE,  /* no round robin selection */
-  TS_RR_NONE,   /* no round-robin action tag specified */
-  TS_RR_UNDEFINED
-} TSRrT;
-
-typedef enum /* a request URL method; used in Secondary Specifiers */
-{ TS_METHOD_NONE,
-  TS_METHOD_GET,
-  TS_METHOD_POST,
-  TS_METHOD_PUT,
-  TS_METHOD_TRACE,
-  TS_METHOD_PUSH,
-  TS_METHOD_UNDEFINED } TSMethodT;
-
-typedef enum /*  possible URL schemes */
-{ TS_SCHEME_NONE,
-  TS_SCHEME_HTTP,
-  TS_SCHEME_HTTPS,
-  TS_SCHEME_UNDEFINED } TSSchemeT;
-
-typedef enum /* possible schemes to divide volume by */
-{ TS_VOLUME_HTTP,
-  TS_VOLUME_UNDEFINED } TSVolumeSchemeT;
-
-/* specifies how size is specified */
-typedef enum {
-  TS_SIZE_FMT_PERCENT,  /* as a percentage */
-  TS_SIZE_FMT_ABSOLUTE, /* as an absolute value */
-  TS_SIZE_FMT_UNDEFINED,
-} TSSizeFormatT;
-
-typedef enum {
-  TS_HTTP_CONGEST_PER_IP,
-  TS_HTTP_CONGEST_PER_HOST,
-  TS_HTTP_CONGEST_UNDEFINED,
-} TSCongestionSchemeT;
-
-typedef enum {
-  TS_PROTOCOL_DNS,
-  TS_PROTOCOL_UNDEFINED,
-} TSProtocolT;
-
+/* ToDo: This should be moved over to the core, into the GenericParser.h */
 typedef enum {
   TS_FNAME_CACHE_OBJ,       /* cache.config */
   TS_FNAME_CONGESTION,      /* congestion.config */
@@ -280,39 +189,6 @@ typedef enum {
   TS_FNAME_UNDEFINED
 } TSFileNameT;
 
-/* Each rule type within a file has its own enumeration.
- * Need this enumeration because it's possible there are different Ele's used
- * for rule types within the same file
- */
-typedef enum {
-  TS_CACHE_NEVER, /* cache.config */
-  TS_CACHE_IGNORE_NO_CACHE,
-  TS_CACHE_IGNORE_CLIENT_NO_CACHE,
-  TS_CACHE_IGNORE_SERVER_NO_CACHE,
-  TS_CACHE_PIN_IN_CACHE,
-  TS_CACHE_REVALIDATE,
-  TS_CACHE_TTL_IN_CACHE,
-  TS_CACHE_AUTH_CONTENT,
-  TS_CONGESTION, /* congestion.config */
-  TS_HOSTING,    /* hosting.config */
-  TS_IP_ALLOW,   /* ip_allow.config */
-  TS_PP_PARENT,  /* parent.config */
-  TS_PP_GO_DIRECT,
-  TS_VOLUME,    /* volume.config */
-  TS_PLUGIN,    /* plugin.config */
-  TS_REMAP_MAP, /* remap.config */
-  TS_REMAP_REVERSE_MAP,
-  TS_REMAP_REDIRECT,
-  TS_REMAP_REDIRECT_TEMP,
-  TS_SOCKS_BYPASS, /* socks.config */
-  TS_SOCKS_AUTH,
-  TS_SOCKS_MULTIPLE,
-  TS_SPLIT_DNS, /* splitdns.config */
-  TS_STORAGE,   /* storage.config */
-  TS_TYPE_UNDEFINED,
-  TS_TYPE_COMMENT /* for internal use only */
-} TSRuleTypeT;
-
 /* These are initialization options for the Init() function. */
 typedef enum {
   TS_MGMT_OPT_DEFAULTS = 0,
@@ -329,17 +205,7 @@ typedef enum {
  * Structures
  ***************************************************************************/
 
-/*--- general -------------------------------------------------------------*/
-
-typedef struct {
-  int d; /* days */
-  int h; /* hours */
-  int m; /* minutes */
-  int s; /* seconds */
-} TSHmsTime;
-
 /*--- records -------------------------------------------------------------*/
-
 typedef union { /* record value */
   TSInt int_val;
   TSCounter counter_val;
@@ -404,202 +270,9 @@ typedef struct {
   /*unsigned long timestamp; */ /* only applies to active events */
 } TSActiveEvent;
 
-/*--- abstract file operations --------------------------------------------*/
-
-typedef struct {
-  TSIpAddrT type; /* single ip or an ip-range */
-  TSIpAddr ip_a;  /* first ip */
-  int cidr_a;     /* CIDR value, 0 if not defined */
-  int port_a;     /* port, 0 if not defined */
-  TSIpAddr ip_b;  /* second ip (if ip-range) */
-  int cidr_b;     /* CIDR value, 0 if not defined */
-  int port_b;     /* port, 0 if not defined */
-} TSIpAddrEle;
-
-typedef struct {
-  int port_a; /* first port */
-  int port_b; /* second port (0 if not a port range) */
-} TSPortEle;
-
-typedef struct {
-  char *domain_val; /* a server name can be specified by name or IP address */
-  /* used for www.host.com:8080 or 11.22.33.44:8000 */
-  int port; /* (optional) */
-} TSDomain;
-
-/* there are a variety of secondary specifiers that can be used in a rule; more than
- * one secondary specifier can be used per rule, but a secondary specifier can only
- * be used once per rule (eg. time, src_ip, prefix, suffix, port, method, scheme)
- */
-typedef struct {
-  uint32_t active; /* valid field: TS_SSPEC_xxx */
-  struct {         /* time range */
-    int hour_a;
-    int min_a;
-    int hour_b;
-    int min_b;
-  } time;
-  TSIpAddr src_ip;  /* client/source ip */
-  char *prefix;     /* prefix in path part of URL */
-  char *suffix;     /* suffix in the URL */
-  TSPortEle *port;  /* requested URL port */
-  TSMethodT method; /* get, post, put, trace */
-  TSSchemeT scheme; /* HTTP */
-} TSSspec;          /* Sspec = Secondary Specifier */
-
-typedef struct {
-  TSPrimeDestT pd_type; /* primary destination type: TS_PD_xxx */
-  char *pd_val;         /* primary destination value; refers to the requested domain name,
-                           host name, ip address, or regular expression to
-                           be found in a URL  */
-  TSSspec sec_spec;     /* secondary specifier */
-} TSPdSsFormat;         /* PdSs = Primary Destination Secondary Specifier */
-
-/* Generic Ele struct which is used as first member in all other Ele structs.
- * The TSCfgContext operations deal with TSCfgEle* type, so must typecast
- * all Ele's to an TSCfgEle*
- */
-typedef struct {
-  TSRuleTypeT type;
-  TSMgmtError error;
-} TSCfgEle;
-
-/* cache.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  TSPdSsFormat cache_info; /* general PdSs information */
-  TSHmsTime time_period;   /* only valid if cache_act == TS_CACHE_PIN_IN_CACHE */
-} TSCacheEle;
-
-/* congestion.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  TSPrimeDestT pd_type;
-  char *pd_val;
-  char *prefix;               /* optional */
-  int port;                   /* optional */
-  TSCongestionSchemeT scheme; /* per_ip or per_host */
-  int max_connection_failures;
-  int fail_window;
-  int proxy_retry_interval;
-  int client_wait_interval;
-  int wait_interval_alpha;
-  int live_os_conn_timeout;
-  int live_os_conn_retries;
-  int dead_os_conn_timeout;
-  int dead_os_conn_retries;
-  int max_connection;
-  char *error_page_uri;
-} TSCongestionEle;
-
-/* hosting.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  TSPrimeDestT pd_type;
-  char *pd_val;      /* domain or hostname  */
-  TSIntList volumes; /* must be a list of ints */
-} TSHostingEle;
-
-/* ip_allow.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  TSIpAddrEle *src_ip_addr; /* source ip address (single or range) */
-  TSIpAllowT action;
-} TSIpAllowEle;
-
-/* parent.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  TSPdSsFormat parent_info; /* general PdSs information */
-  TSRrT rr;                 /*  possible values are TS_RRT_TRUE (go through proxy
-                                parent list in round robin),TS_RRT_STRICT (server
-                                requests striclty in turn), or TS_RRT_FALSE (no
-                                round robin selection) */
-  TSDomainList proxy_list;  /* ordered list of parent proxies */
-  bool direct;              /* indicate if go directly to origin server, default = false and does
-                               not bypass parent heirarchies */
-} TSParentProxyEle;         /* exactly one of rr or parent_proxy_act must be defined */
-
-/* volume.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  int volume_num;            /* must be in range 1 - 255 */
-  TSVolumeSchemeT scheme;    /* http */
-  int volume_size;           /* >= 128 MB, multiple of 128 */
-  TSSizeFormatT size_format; /* percentage or absolute */
-} TSVolumeEle;
-
-/* plugin.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  char *name;        /* name of plugin */
-  TSStringList args; /* list of arguments */
-} TSPluginEle;
-
-/* remap.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  bool map;               /* if true: map, if false: remap */
-  TSSchemeT from_scheme;  /* http, https, <scheme>://<host>:<port>/<path_prefix> */
-  char *from_host;        /* from host */
-  int from_port;          /* from port (can be 0) */
-  char *from_path_prefix; /* from path_prefix (can be NULL) */
-  TSSchemeT to_scheme;
-  char *to_host;        /* to host */
-  int to_port;          /* to port (can be 0) */
-  char *to_path_prefix; /* to path_prefix (can be NULL) */
-} TSRemapEle;
-
-/* socks.config */
-/* TSqa10915: supports two rules types - the first rule type specifies the
-   IP addresses of origin servers that TS should bypass SOCKS and access
-   directly (this is when ip_addrs is used); the second rule
-   type specifies which SOCKS servers to use for the addresses specified
-   in dest_ip_addr; so this means that either ip_addrs is specified OR
-   dest_ip_addr/socks_servers/rr are */
-typedef struct {
-  TSCfgEle cfg_ele;
-  TSIpAddrList ip_addrs;      /* list of ip addresses to bypass SOCKS server (TS_SOCKS_BYPASS) */
-  TSIpAddrEle *dest_ip_addr;  /* ip address(es) that will use the socks server
-                                  specified in parent_list (TS_SOCKS_MULTIPLE rule) */
-  TSDomainList socks_servers; /* ordered list of SOCKS servers (TS_SOCKS_MULTIPLE rule) */
-  TSRrT rr;                   /* possible values are TS_RRT_TRUE (go through proxy
-                                  parent list in round robin),TS_RRT_STRICT (server
-                                  requests striclty in turn), or TS_RRT_FALSE (no
-                                  round robin selection) (TS_SOCKS_MULTIPLE rule) */
-  char *username;             /* used for TS_SOCKS_AUTH rule */
-  char *password;             /* used for TS_SOCKS_AUTH rule */
-} TSSocksEle;
-
-/* splitdns.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  TSPrimeDestT pd_type;           /* TS_PD_DOMAIN, TS_PD_HOST, TS_PD_URL_REGEX only */
-  char *pd_val;                   /* primary destination value */
-  TSDomainList dns_servers_addrs; /* list of dns servers */
-  char *def_domain;               /* (optional) default domain name (can be NULL) */
-  TSDomainList search_list;       /* (optinal) domain search list (can be INVALID) */
-} TSSplitDnsEle;
-
-/* storage.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  char *pathname; /* the name of a disk partition, directory, or file */
-  int size;       /* size of the named pathname (in bytes); optional if raw disk partitions */
-} TSStorageEle;
-
-/* rmserver.cfg */
-typedef struct {
-  TSCfgEle cfg_ele;
-  char *Vname;
-  char *str_val;
-  int int_val;
-} TSRmServerEle;
-
 /***************************************************************************
  * Function Types
  ***************************************************************************/
-
 typedef void (*TSEventSignalFunc)(char *name, char *msg, int pri, void *data);
 typedef void (*TSDisconnectFunc)(void *data);
 
@@ -630,23 +303,6 @@ tsapi bool TSListIsEmpty(TSList l);
 tsapi int TSListLen(TSList l); /* returns -1 if list is invalid */
 tsapi bool TSListIsValid(TSList l);
 
-/*--- TSIpAddrList operations --------------------------------------------*/
-tsapi TSIpAddrList TSIpAddrListCreate();
-tsapi void TSIpAddrListDestroy(TSIpAddrList ip_addrl);
-tsapi TSMgmtError TSIpAddrListEnqueue(TSIpAddrList ip_addrl, TSIpAddrEle *ip_addr);
-tsapi TSIpAddrEle *TSIpAddrListDequeue(TSIpAddrList ip_addrl);
-tsapi int TSIpAddrListLen(TSIpAddrList ip_addrl);
-tsapi bool TSIpAddrListIsEmpty(TSIpAddrList ip_addrl);
-tsapi int TSIpAddrListLen(TSIpAddrList ip_addrl);
-
-/*--- TSPortList operations ----------------------------------------------*/
-tsapi TSPortList TSPortListCreate();
-tsapi void TSPortListDestroy(TSPortList portl);
-tsapi TSMgmtError TSPortListEnqueue(TSPortList portl, TSPortEle *port);
-tsapi TSPortEle *TSPortListDequeue(TSPortList portl);
-tsapi bool TSPortListIsEmpty(TSPortList portl);
-tsapi int TSPortListLen(TSPortList portl);
-
 /*--- TSStringList operations --------------------------------------------*/
 tsapi TSStringList TSStringListCreate();
 tsapi void TSStringListDestroy(TSStringList strl);
@@ -665,71 +321,10 @@ tsapi bool TSIntListIsEmpty(TSIntList intl);
 tsapi int TSIntListLen(TSIntList intl);
 tsapi bool TSIntListIsValid(TSIntList intl, int min, int max);
 
-/*--- TSDomainList operations --------------------------------------------*/
-tsapi TSDomainList TSDomainListCreate();
-tsapi void TSDomainListDestroy(TSDomainList domainl);
-tsapi TSMgmtError TSDomainListEnqueue(TSDomainList domainl, TSDomain *domain);
-tsapi TSDomain *TSDomainListDequeue(TSDomainList domainl);
-tsapi bool TSDomainListIsEmpty(TSDomainList domainl);
-tsapi int TSDomainListLen(TSDomainList domainl);
-tsapi bool TSDomainListIsValid(TSDomainList domainl);
-
-/*--- allocate/deallocate operations -------------------------------------*/
-/* NOTE:
- * 1) Default values for TSxxEleCreate functions:
- *    - for all lists, default value is TS_INVALID_LIST. NO memory is
- *      allocated for an Ele's  list type member. The user must
- *      explicity call the TSxxListCreate() function to initialize it.
- *    - for char*'s and TSIpAddr the default is NULL (or TS_INVALID_IP_ADDR
- *      for TSIpAddr's); user must assign allocated memory to initialize any
- *      string or TSIpAddr members of an TSxxxEle
- *
- * 2) An Ele corresponds to a rule type in a file; this is why each Ele has an
- * TSRuleType to identify which type of rule it corresponds to.
- * For config files which only have one rule type, we can easily set the
- * rule type of the Ele in the EleCreate function since there's only one possible
- * option. However, note that for those config files with more than one rule
- * type, we cannot set the rule type in the EleCreate function since
- * we don't know which rule type the Ele corresponds to yet. Thus, the user must
- * specify the TSRuleTypeT when he/she creates the Ele.
- */
-
 tsapi TSMgmtEvent *TSEventCreate();
 tsapi void TSEventDestroy(TSMgmtEvent *event);
 tsapi TSRecordEle *TSRecordEleCreate();
 tsapi void TSRecordEleDestroy(TSRecordEle *ele);
-tsapi TSIpAddrEle *TSIpAddrEleCreate();
-tsapi void TSIpAddrEleDestroy(TSIpAddrEle *ele);
-tsapi TSPortEle *TSPortEleCreate();
-tsapi void TSPortEleDestroy(TSPortEle *ele);
-tsapi TSDomain *TSDomainCreate();
-tsapi void TSDomainDestroy(TSDomain *ele);
-tsapi TSSspec *TSSspecCreate();
-tsapi void TSSspecDestroy(TSSspec *ele);
-tsapi TSPdSsFormat *TSPdSsFormatCreate();
-tsapi void TSPdSsFormatDestroy(TSPdSsFormat &ele);
-tsapi TSCacheEle *TSCacheEleCreate(TSRuleTypeT type);
-tsapi void TSCacheEleDestroy(TSCacheEle *ele);
-tsapi TSCongestionEle *TSCongestionEleCreate();
-tsapi void TSCongestionEleDestroy(TSCongestionEle *ele);
-tsapi TSHostingEle *TSHostingEleCreate();
-tsapi void TSHostingEleDestroy(TSHostingEle *ele);
-tsapi TSIpAllowEle *TSIpAllowEleCreate();
-tsapi void TSIpAllowEleDestroy(TSIpAllowEle *ele);
-tsapi TSParentProxyEle *TSParentProxyEleCreate(TSRuleTypeT type);
-tsapi void TSParentProxyEleDestroy(TSParentProxyEle *ele);
-tsapi TSVolumeEle *TSVolumeEleCreate();
-tsapi void TSVolumeEleDestroy(TSVolumeEle *ele);
-tsapi TSPluginEle *TSPluginEleCreate();
-tsapi void TSPluginEleDestroy(TSPluginEle *ele);
-tsapi TSRemapEle *TSRemapEleCreate(TSRuleTypeT type);
-tsapi void TSRemapEleDestroy(TSRemapEle *ele);
-tsapi TSSocksEle *TSSocksEleCreate(TSRuleTypeT type);
-tsapi void TSSocksEleDestroy(TSSocksEle *ele);
-tsapi TSSplitDnsEle *TSSplitDnsEleCreate();
-tsapi void TSSplitDnsEleDestroy(TSSplitDnsEle *ele);
-tsapi TSStorageEle *TSStorageEleCreate();
-tsapi void TSStorageEleDestroy(TSStorageEle *ele);
 
 /***************************************************************************
  * API Core
