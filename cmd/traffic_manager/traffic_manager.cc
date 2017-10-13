@@ -723,7 +723,9 @@ main(int argc, const char **argv)
   metrics_binding_initialize(*binding);
   metrics_binding_configure(*binding);
 
-  int sleep_time = 0; // sleep_time given in sec
+  const int MAX_SLEEP_S      = 60; // Max sleep duration
+  int sleep_time             = 0;  // sleep_time given in sec
+  uint64_t last_start_epoc_s = 0;  // latest start attempt in seconds since epoc
 
   for (;;) {
     lmgmt->processEventQueue();
@@ -800,16 +802,17 @@ main(int argc, const char **argv)
     }
 
     if (lmgmt->run_proxy && !lmgmt->processRunning() && lmgmt->proxy_recoverable) { /* Make sure we still have a proxy up */
-      if (sleep_time) {
+      const uint64_t now = static_cast<uint64_t>(time(nullptr));
+      if (sleep_time && ((now - last_start_epoc_s) < MAX_SLEEP_S)) {
         mgmt_log("Relaunching proxy after %d sec...", sleep_time);
         millisleep(1000 * sleep_time); // we use millisleep instead of sleep because it doesnt interfere with signals
-        sleep_time = (sleep_time > 30) ? 60 : sleep_time * 2;
+        sleep_time = std::min(sleep_time * 2, MAX_SLEEP_S);
       } else {
         sleep_time = 1;
       }
       if (ProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_NONE) == TS_ERR_OKAY) {
-        just_started = 0;
-        sleep_time   = 0;
+        just_started      = 0;
+        last_start_epoc_s = static_cast<uint64_t>(time(nullptr));
       } else {
         just_started++;
       }
