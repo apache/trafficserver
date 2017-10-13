@@ -124,9 +124,6 @@ typedef TSHandle TSDomainList; /* contains TSDomain *'s    */
 typedef TSHandle TSStringList; /* contains char* 's         */
 typedef TSHandle TSIntList;    /* contains int* 's          */
 
-typedef TSHandle TSCfgContext;
-typedef TSHandle TSCfgIterState;
-
 /*--- basic control operations --------------------------------------------*/
 
 typedef enum {
@@ -641,7 +638,6 @@ tsapi TSIpAddrEle *TSIpAddrListDequeue(TSIpAddrList ip_addrl);
 tsapi int TSIpAddrListLen(TSIpAddrList ip_addrl);
 tsapi bool TSIpAddrListIsEmpty(TSIpAddrList ip_addrl);
 tsapi int TSIpAddrListLen(TSIpAddrList ip_addrl);
-tsapi bool TSIpAddrListIsValid(TSIpAddrList ip_addrl);
 
 /*--- TSPortList operations ----------------------------------------------*/
 tsapi TSPortList TSPortListCreate();
@@ -650,7 +646,6 @@ tsapi TSMgmtError TSPortListEnqueue(TSPortList portl, TSPortEle *port);
 tsapi TSPortEle *TSPortListDequeue(TSPortList portl);
 tsapi bool TSPortListIsEmpty(TSPortList portl);
 tsapi int TSPortListLen(TSPortList portl);
-tsapi bool TSPortListIsValid(TSPortList portl);
 
 /*--- TSStringList operations --------------------------------------------*/
 tsapi TSStringList TSStringListCreate();
@@ -735,13 +730,6 @@ tsapi TSSplitDnsEle *TSSplitDnsEleCreate();
 tsapi void TSSplitDnsEleDestroy(TSSplitDnsEle *ele);
 tsapi TSStorageEle *TSStorageEleCreate();
 tsapi void TSStorageEleDestroy(TSStorageEle *ele);
-/*--- Ele helper operations -------------------------------------*/
-
-/* TSIsValid: checks if the fields in the ele are all valid
- * Input:  ele - the ele to check (typecast any of the TSxxxEle's to an TSCfgEle)
- * Output: true if ele has valid fields for its rule type, false otherwise
- */
-bool TSIsValid(TSCfgEle *ele);
 
 /***************************************************************************
  * API Core
@@ -846,15 +834,6 @@ tsapi TSMgmtError TSLifecycleMessage(const char *tag, void const *data, size_t d
  * Output: corresponding error message (allocated memory)
  */
 char *TSGetErrorMessage(TSMgmtError error_id);
-
-/*--- direct file operations ----------------------------------------------*/
-/* TSConfigFileRead: reads a config file into a buffer
- * Input:  file - the config file to read
- *         text - a buffer is allocated on the text char* pointer
- *         size - the size of the buffer is returned
- * Output: TSMgmtError
- */
-tsapi TSMgmtError TSConfigFileRead(TSFileNameT file, char **text, int *size, int *version);
 
 /* TSReadFromUrl: reads a remotely located config file into a buffer
  * Input:  url        - remote location of the file
@@ -1021,12 +1000,6 @@ tsapi TSMgmtError TSEventSignalCbRegister(char *event_name, TSEventSignalFunc fu
  * Output: TSMgmtError
  */
 tsapi TSMgmtError TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func);
-
-/*--- TSCfgContext Operations --------------------------------------------*/
-/*
- * These operations are used to manipulate the opaque TSCfgContext type,
- * eg. when want to modify a file
- */
 
 /*--- TS Cache Inspector Operations --------------------------------------------*/
 

@@ -519,7 +519,6 @@ done:
 using event_message_handler = TSMgmtError (*)(EventClientT *, void *, size_t);
 
 static const event_message_handler handlers[] = {
-  nullptr,                     // FILE_READ
   nullptr,                     // RECORD_SET
   nullptr,                     // RECORD_GET
   nullptr,                     // PROXY_STATE_GET
