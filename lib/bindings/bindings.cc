@@ -98,7 +98,6 @@ BindingInstance::bind_value(const char *name, int value)
 {
   const char *start = name;
   const char *end   = name;
-  bool bound        = false;
 
   int depth = 0;
 
@@ -174,48 +173,24 @@ BindingInstance::bind_value(const char *name, int value)
   // If we pushed a series of tables onto the stack, bind the name to a table
   // entry. otherwise bind it as a global name.
   if (depth) {
-    bool isnil;
-
     // At this point the top of stack should be something indexable.
     ink_assert(is_indexable(this->lua, -1));
 
     Debug("lua", "stack depth is %d (expected %d)", lua_gettop(this->lua), depth);
-    // Push the index name.
+
     lua_pushstring(this->lua, start);
-
-    Debug("lua", "stack depth is %d (expected %d)", lua_gettop(this->lua), depth);
-    // Fetch the index (without metamethods);
-    lua_gettable(this->lua, -2);
-
-    // Only push the value if it is currently nil.
-    isnil = lua_isnil(this->lua, -1);
-    lua_pop(this->lua, 1);
-    Debug("lua", "isnil? %s", isnil ? "yes" : "no");
-
-    if (isnil) {
-      lua_pushstring(this->lua, start);
-      lua_pushvalue(this->lua, value);
-      lua_settable(this->lua, -3);
-      bound = true;
-    }
+    lua_pushvalue(this->lua, value);
+    lua_settable(this->lua, -3);
 
     Debug("lua", "stack depth is %d (expected %d)", lua_gettop(this->lua), depth);
     lua_pop(this->lua, depth);
   } else {
-    bool isnil;
-
-    lua_getglobal(this->lua, start);
-    isnil = lua_isnil(this->lua, -1);
-    lua_pop(this->lua, 1);
-
-    if (isnil) {
-      lua_pushvalue(this->lua, value);
-      lua_setglobal(this->lua, start);
-      bound = true;
-    }
+    // Always push the value so we can get the update
+    lua_pushvalue(this->lua, value);
+    lua_setglobal(this->lua, start);
   }
 
-  return bound;
+  return true;
 }
 
 bool
