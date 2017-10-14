@@ -50,8 +50,8 @@ def HasATSFeature(self, feature):
 #test if a plugin exists in the libexec folder
 def PluginExists(self, pluginname):
 
-    path = self.Variables.PLUGINDIR + "/"
-    return self.Condition(lambda: os.path.isfile(path + pluginname) == True, "The plugin: " + pluginname + " does not exist in " + path )
+    path = os.path.join(self.Variables.PLUGINDIR, pluginname)
+    return self.Condition(lambda: os.path.isfile(path) == True, path + " not found." )
 
 
 ExtendCondition(HasATSFeature)
