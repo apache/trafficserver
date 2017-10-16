@@ -111,34 +111,42 @@ EThread::process_event(Event *e, int calling_code)
   ink_assert((!e->in_the_prot_queue && !e->in_the_priority_queue));
   MUTEX_TRY_LOCK_FOR(lock, e->mutex, this, e->continuation);
   if (!lock.is_locked()) {
-    e->timeout_at = cur_time + DELAY_FOR_RETRY;
-    EventQueueExternal.enqueue_local(e);
-  } else {
-    if (e->cancelled) {
-      free_event(e);
+    if (e->period > -HRTIME_MSECONDS(100)) {
+      if (e->period < 0) {
+        e->timeout_at = e->period;
+      } else {
+        e->timeout_at = cur_time + DELAY_FOR_RETRY;
+      }
+      EventQueueExternal.enqueue_local(e);
       return;
     }
-    Continuation *c_temp = e->continuation;
-    e->continuation->handleEvent(calling_code, e);
-    ink_assert(!e->in_the_priority_queue);
-    ink_assert(c_temp == e->continuation);
-    MUTEX_RELEASE(lock);
-    if (e->period) {
-      if (!e->in_the_prot_queue && !e->in_the_priority_queue) {
-        if (e->period < 0) {
-          e->timeout_at = e->period;
-        } else {
-          this->get_hrtime_updated();
-          e->timeout_at = cur_time + e->period;
-          if (e->timeout_at < cur_time) {
-            e->timeout_at = cur_time;
-          }
+    lock.acquire(this);
+  }
+
+  if (e->cancelled) {
+    free_event(e);
+    return;
+  }
+  Continuation *c_temp = e->continuation;
+  e->continuation->handleEvent(calling_code, e);
+  ink_assert(!e->in_the_priority_queue);
+  ink_assert(c_temp == e->continuation);
+  MUTEX_RELEASE(lock);
+  if (e->period) {
+    if (!e->in_the_prot_queue && !e->in_the_priority_queue) {
+      if (e->period < 0) {
+        e->timeout_at = e->period;
+      } else {
+        this->get_hrtime_updated();
+        e->timeout_at = cur_time + e->period;
+        if (e->timeout_at < cur_time) {
+          e->timeout_at = cur_time;
         }
-        EventQueueExternal.enqueue_local(e);
       }
-    } else if (!e->in_the_prot_queue && !e->in_the_priority_queue) {
-      free_event(e);
+      EventQueueExternal.enqueue_local(e);
     }
+  } else if (!e->in_the_prot_queue && !e->in_the_priority_queue) {
+    free_event(e);
   }
 }
 
