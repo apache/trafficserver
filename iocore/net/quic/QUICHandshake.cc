@@ -132,7 +132,7 @@ QUICHandshake::is_version_negotiated()
 bool
 QUICHandshake::is_completed()
 {
-  return this->_crypto->is_handshake_finished();
+  return this->handler == &QUICHandshake::state_complete;
 }
 
 QUICVersion
@@ -380,16 +380,17 @@ QUICHandshake::_process_client_finished()
     I_WANNA_DUMP_THIS_BUF(out, static_cast<int64_t>(out_len));
     // <----- DEBUG -----
 
-    ink_assert(this->is_completed());
+    ink_assert(this->_crypto->is_handshake_finished());
     DebugQHS("Handshake is completed");
 
-    DebugQHS("Enter state_complete");
-    SET_HANDLER(&QUICHandshake::state_complete);
     _process_handshake_complete();
 
     stream_io->write(out, out_len);
     stream_io->write_reenable();
     stream_io->read_reenable();
+
+    DebugQHS("Enter state_complete");
+    SET_HANDLER(&QUICHandshake::state_complete);
 
     return QUICErrorUPtr(new QUICNoError());
   } else {
