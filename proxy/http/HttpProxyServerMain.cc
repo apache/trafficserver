@@ -131,7 +131,7 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
     net.f_inbound_transparent = port->m_inbound_transparent_p;
     net.ip_family             = port->m_family;
     net.local_port            = port->m_port;
-
+    net.f_no_throttle         = port->m_no_throttle;
     if (port->m_inbound_ip.isValid()) {
       net.local_ip = port->m_inbound_ip;
     } else if (AF_INET6 == port->m_family && HttpConfig::m_master.inbound_ip6.isIp6()) {

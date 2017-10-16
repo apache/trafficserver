@@ -98,6 +98,13 @@ public:
     return parent ? parent->hooks_enabled() : false;
   }
 
+  // Return no-throttle port config
+  bool
+  no_throttle() const
+  {
+    return parent ? parent->no_throttle() : false;
+  }
+
   APIHook *
   ssn_hook_get(TSHttpHookID id) const
   {

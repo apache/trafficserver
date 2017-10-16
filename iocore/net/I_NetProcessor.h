@@ -97,6 +97,8 @@ public:
     */
     bool f_inbound_transparent;
 
+    bool f_no_throttle;
+    
     /// Default constructor.
     /// Instance is constructed with default values.
     AcceptOptions() { this->reset(); }

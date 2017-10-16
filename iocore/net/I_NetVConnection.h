@@ -142,6 +142,8 @@ struct NetVCOptions {
   bool f_blocking;
   /// Make socket block on connect (default: @c false)
   bool f_blocking_connect;
+  // No throttle
+  bool f_no_throttle;
 
   // Use TCP Fast Open on this socket. The connect(2) call will be omitted.
   bool f_tcp_fastopen = false;

@@ -120,6 +120,17 @@ public:
     return m_active;
   }
 
+  // Return no-throttle config option for port
+  bool
+  no_throttle() const
+  {
+    UnixNetVConnection *unix_netvc = dynamic_cast<UnixNetVConnection *>(get_netvc());
+    if (unix_netvc == nullptr) 
+      return false;
+    NetAccept *na = unix_netvc->accept_object;
+    return na ? na->no_throttle() : false;
+  }
+
   // Initiate an API hook invocation.
   void do_api_callout(TSHttpHookID id);
 

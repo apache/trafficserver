@@ -108,6 +108,7 @@ struct NetAccept : public Continuation {
   virtual int acceptFastEvent(int event, void *e);
   int acceptLoopEvent(int event, Event *e);
   void cancel();
+  bool no_throttle() const { return server.no_throttle; }
 
   explicit NetAccept(const NetProcessor::AcceptOptions &);
   virtual ~NetAccept() { action_ = nullptr; }
