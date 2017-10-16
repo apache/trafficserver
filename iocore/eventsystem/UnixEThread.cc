@@ -111,7 +111,11 @@ EThread::process_event(Event *e, int calling_code)
   ink_assert((!e->in_the_prot_queue && !e->in_the_priority_queue));
   MUTEX_TRY_LOCK_FOR(lock, e->mutex, this, e->continuation);
   if (!lock.is_locked()) {
-    e->timeout_at = cur_time + DELAY_FOR_RETRY;
+    if (e->period < 0) {
+      e->timeout_at = e->period;
+    } else {
+      e->timeout_at = cur_time + DELAY_FOR_RETRY;
+    }
     EventQueueExternal.enqueue_local(e);
   } else {
     if (e->cancelled) {
