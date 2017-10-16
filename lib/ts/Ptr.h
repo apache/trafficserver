@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Reference-counting shared pointer, like std::shared_ptr.
 
   @section license License
 
@@ -100,13 +100,6 @@ private:
 ////////////////////////////////////////////////////////////////////////
 template <class T> class Ptr
 {
-  // https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Safe_bool.
-  typedef void (Ptr::*bool_type)() const;
-  void
-  this_type_does_not_support_comparisons() const
-  {
-  }
-
 public:
   explicit Ptr(T *p = 0);
   Ptr(const Ptr<T> &);
@@ -118,7 +111,10 @@ public:
 
   T *operator->() const { return (m_ptr); }
   T &operator*() const { return (*m_ptr); }
-  operator bool_type() const { return m_ptr ? &Ptr::this_type_does_not_support_comparisons : 0; }
+
+  // Making this explicit avoids unwanted conversions.  See https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Safe_bool .
+  explicit operator bool() const { return m_ptr != nullptr; }
+
   int
   operator==(const T *p)
   {
