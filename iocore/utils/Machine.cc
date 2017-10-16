@@ -26,6 +26,7 @@
 #include "ts/ink_assert.h"
 #include "ts/Diags.h"
 #include "I_Machine.h"
+#include "I_RecCore.h"
 
 #if HAVE_IFADDRS_H
 #include <ifaddrs.h>
@@ -175,8 +176,14 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
           ink_zero(localhost);
           ats_ip_ntop(ifip, ip_strbuf, sizeof(ip_strbuf));
           insert_id(ip_strbuf);
-          if (getnameinfo(ifip, ats_ip_size(ifip), localhost, sizeof(localhost) - 1, nullptr, 0, 0) == 0) {
-            insert_id(localhost);
+
+          // XXX: #2565 mitigate slow getnameinfo(3) problem on macOS
+          bool parent_proxy_routing_enable = false;
+          REC_ReadConfigInteger(parent_proxy_routing_enable, "proxy.config.http.parent_proxy_routing_enable");
+          if (parent_proxy_routing_enable) {
+            if (getnameinfo(ifip, ats_ip_size(ifip), localhost, sizeof(localhost) - 1, nullptr, 0, 0) == 0) {
+              insert_id(localhost);
+            }
           }
           IpAddr *ipaddr = new IpAddr(ifip);
           insert_id(ipaddr);
