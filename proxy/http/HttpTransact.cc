@@ -558,10 +558,8 @@ HttpTransact::HandleBlindTunnel(State *s)
   u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
   s->hdr_info.client_request.url_set(&u);
 
-  // We set the version to 0.9 because once we know where we are going
-  //   this blind ssl tunnel is indistinguishable from a "CONNECT 0.9"
-  //   except for the need to suppression error messages
-  HTTPVersion ver(0, 9);
+  // We set the version to 1.0
+  HTTPVersion ver(1, 0);
   s->hdr_info.client_request.version_set(ver);
 
   char new_host[INET6_ADDRSTRLEN];
