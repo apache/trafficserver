@@ -669,21 +669,23 @@ QUICPacket::encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 }
 
 bool
-QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber base)
+QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len,
+                                 QUICPacketNumber largest_acked)
 {
   ink_assert(len == 1 || len == 2 || len == 4);
 
-  QUICPacketNumber expected = base + 1;
+  uint64_t maximum_diff       = 1ULL << (len * 8);
+  QUICPacketNumber base       = largest_acked & (~(maximum_diff - 1));
+  QUICPacketNumber candidate1 = base + src;
+  QUICPacketNumber candidate2 = base + src + maximum_diff;
 
-  uint64_t p              = 1ULL << (len * 8);
-  QUICPacketNumber masked = base & (~(p - 1));
-  dst                     = masked + src;
-
-  if (dst >= expected) {
-    return true;
+  if (((candidate1 > largest_acked) ? (candidate1 - largest_acked) : (largest_acked - candidate1)) <
+      ((candidate2 > largest_acked) ? (candidate2 - largest_acked) : (largest_acked - candidate2))) {
+    dst = candidate1;
+  } else {
+    dst = candidate2;
   }
 
-  dst += p;
   return true;
 }
 

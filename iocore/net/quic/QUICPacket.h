@@ -156,7 +156,8 @@ public:
   QUICKeyPhase key_phase() const;
   static uint8_t calc_packet_number_len(QUICPacketNumber num, QUICPacketNumber base);
   static bool encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len);
-  static bool decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber largest_acked_num);
+  static bool decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len,
+                                   QUICPacketNumber largest_acked);
 
   LINK(QUICPacket, link);
 

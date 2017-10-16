@@ -133,3 +133,13 @@ TEST_CASE("Decoding Packet Number 2", "[quic]")
   QUICPacket::decode_packet_number(dst, src, len, base);
   CHECK(dst == 0x18bf54f1);
 }
+
+TEST_CASE("Decoding Packet Number 3", "[quic]")
+{
+  QUICPacketNumber dst  = 0;
+  QUICPacketNumber src  = 0x5694;
+  size_t len            = 2;
+  QUICPacketNumber base = 0x44D35695;
+  QUICPacket::decode_packet_number(dst, src, len, base);
+  CHECK(dst == 0x44D35694);
+}
