@@ -1240,7 +1240,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
   thread = t;
   // Look for no-throttle option
-  if (!options.f_no_throttle){
+  if (!options.f_no_throttle) {
     if (check_net_throttle(CONNECT, submit_time)) {
       check_throttle_warning(CONNECT);
       res = -ENET_THROTTLING;

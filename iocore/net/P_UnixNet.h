@@ -380,8 +380,10 @@ check_throttle_warning(ThrottleType type)
   ink_hrtime t = Thread::get_hrtime();
   if (t - last_throttle_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_throttle_warning = t;
-    int connections = net_connections_to_throttle(type);
-    RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many connections, throttling.  connection_type=%s, current_connections=%d, net_connections_throttle=%d", type == ACCEPT ? "ACCEPT" : "CONNECT", connections, net_connections_throttle);
+    int connections       = net_connections_to_throttle(type);
+    RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR,
+                     "too many connections, throttling.  connection_type=%s, current_connections=%d, net_connections_throttle=%d",
+                     type == ACCEPT ? "ACCEPT" : "CONNECT", connections, net_connections_throttle);
   }
 }
 

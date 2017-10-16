@@ -4946,8 +4946,8 @@ HttpSM::do_http_server_open(bool raw)
   opt.ip_family = ip_family;
 
   if (ua_session) {
-    opt.local_port = ua_session->get_outbound_port();
-    opt.f_no_throttle = ua_session->no_throttle();
+    opt.local_port            = ua_session->get_outbound_port();
+    opt.f_no_throttle         = ua_session->no_throttle();
     const IpAddr &outbound_ip = AF_INET6 == ip_family ? ua_session->get_outbound_ip6() : ua_session->get_outbound_ip4();
     if (outbound_ip.isValid()) {
       opt.addr_binding = NetVCOptions::INTF_ADDR;

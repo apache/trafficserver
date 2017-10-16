@@ -44,7 +44,7 @@ drain_throttled_accepts(NetAccept *na)
   struct pollfd afd;
   Connection con[100];
 
-  afd.fd = na->server.fd;
+  afd.fd     = na->server.fd;
   afd.events = POLLIN;
 
   int n = 0;

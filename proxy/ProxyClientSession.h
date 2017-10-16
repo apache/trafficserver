@@ -125,7 +125,7 @@ public:
   no_throttle() const
   {
     UnixNetVConnection *unix_netvc = dynamic_cast<UnixNetVConnection *>(get_netvc());
-    if (unix_netvc == nullptr) 
+    if (unix_netvc == nullptr)
       return false;
     NetAccept *na = unix_netvc->accept_object;
     return na ? na->no_throttle() : false;
