@@ -7972,6 +7972,8 @@ HttpSM::find_proto_string(HTTPVersion version) const
     return IP_PROTO_TAG_HTTP_1_1;
   } else if (version == HTTPVersion(1, 0)) {
     return IP_PROTO_TAG_HTTP_1_0;
+  } else if (version == HTTPVersion(0, 9)) {
+    return IP_PROTO_TAG_HTTP_0_9;
   }
   return nullptr;
 }
