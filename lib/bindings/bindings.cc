@@ -327,7 +327,7 @@ BindingInstance::typecheck(lua_State *lua, const char *name, ...)
 }
 
 void
-BindingInstance::register_metatable(lua_State *lua, const char *name, const luaL_reg *metatable)
+BindingInstance::register_metatable(lua_State *lua, const char *name, const luaL_Reg *metatable)
 {
   // Create a metatable, adding it to the Lua registry.
   luaL_newmetatable(lua, name);

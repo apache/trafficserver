@@ -196,7 +196,7 @@ lua_metrics_new(const char *prefix, lua_State *L)
 void
 lua_metrics_register(lua_State *L)
 {
-  static const luaL_reg metatable[] = {
+  static const luaL_Reg metatable[] = {
     {"__gc", metrics_gc}, {"__index", metrics_index}, {"__newindex", metrics_newindex}, {nullptr, nullptr},
   };
 
