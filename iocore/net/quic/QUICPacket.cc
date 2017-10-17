@@ -684,12 +684,6 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
     dst = candidate2;
   }
 
-  Debug("quic_packet_factory", "----------------------- src: %" PRIu64, src);
-  Debug("quic_packet_factory", "----------------------- base: %" PRIu64, base);
-  Debug("quic_packet_factory", "----------------------- c1: %" PRIu64, candidate1);
-  Debug("quic_packet_factory", "----------------------- c2: %" PRIu64, candidate2);
-  Debug("quic_packet_factory", "----------------------- dst: %" PRIu64, dst);
-
   return true;
 }
 
