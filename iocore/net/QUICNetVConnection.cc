@@ -380,6 +380,9 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
     QUICPacketUPtr p = this->_dequeue_recv_packet();
+    if (!p) {
+      break;
+    }
     net_activity(this, this_ethread());
 
     switch (p->type()) {
@@ -713,6 +716,9 @@ QUICNetVConnection::_state_common_receive_packet()
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   QUICPacketUPtr p    = this->_dequeue_recv_packet();
+  if (!p) {
+    return error;
+  }
   net_activity(this, this_ethread());
 
   switch (p->type()) {
@@ -970,7 +976,9 @@ QUICNetVConnection::_dequeue_recv_packet()
     this->_quic_packet_recv_queue.push(std::move(quic_packet));
     quic_packet.reset(p.release());
   }
-  DebugQUICCon("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
-               quic_packet->packet_number(), quic_packet->size());
+  if (quic_packet) {
+    DebugQUICCon("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
+                 quic_packet->packet_number(), quic_packet->size());
+  }
   return quic_packet;
 }
