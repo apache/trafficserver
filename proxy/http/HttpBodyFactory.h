@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Header file for HttpBodyFactory module.
 
   @section license License
 
@@ -36,205 +36,31 @@
   variables which are inline-substituted with curent values.  The resulting
   body is dynamically allocated and returned.
 
-  The major data types implemented in this file are:
-
-    HttpBodyFactory       The main data structure which is the machine
-                          that maintains configuration information, reads
-                          user error message template files, and performs
-                          the substitution to generate the message bodies.
-
-    HttpBodySet           The data structure representing a set of
-                          templates, including the templates and metadata.
-
-    HttpBodyTemplate      The template loaded from the directory to be
-                          instantiated with variables, producing a body.
-
-
  ****************************************************************************/
 
 #ifndef _HttpBodyFactory_h_
 #define _HttpBodyFactory_h_
 
-#include <strings.h>
-#include <sys/types.h>
-#include "ts/ink_platform.h"
-#include "HTTP.h"
-#include "HttpConfig.h"
-#include "HttpCompat.h"
 #include "HttpTransact.h"
-#include "Main.h"
-#include "ts/RawHashTable.h"
-#include "ts/ink_sprintf.h"
-
-#define HTTP_BODY_TEMPLATE_MAGIC 0xB0DFAC00
-#define HTTP_BODY_SET_MAGIC 0xB0DFAC55
-#define HTTP_BODY_FACTORY_MAGIC 0xB0DFACFF
 
 ////////////////////////////////////////////////////////////////////////
 //
-//      class HttpBodyTemplate
+//      The HttpBodyFactory module keeps track of all the response body
+//      templates, and provides the methods to create response bodies.
 //
-//      An HttpBodyTemplate object represents a template with HTML
-//      text, and unexpanded log fields.  The object also has methods
-//      to dump out the contents of the template, and to instantiate
-//      the template into a buffer given a context.
+//      Once the HttpBodyFactory module is initialized, and the template
+//      data has been loaded, the module allows the caller to make error
+//      message bodies w/fabricate_with_old_api
 //
 ////////////////////////////////////////////////////////////////////////
 
-class HttpBodyTemplate
+namespace HttpBodyFactory
 {
-public:
-  HttpBodyTemplate();
-  ~HttpBodyTemplate();
+void init();
 
-  void reset();
-  int load_from_file(char *dir, char *file);
-  bool
-  is_sane()
-  {
-    return (magic == HTTP_BODY_TEMPLATE_MAGIC);
-  }
-  char *build_instantiated_buffer(HttpTransact::State *context, int64_t *length_return);
-
-  unsigned int magic;
-  int64_t byte_count;
-  char *template_buffer;
-  char *template_pathname;
-};
-
-////////////////////////////////////////////////////////////////////////
-//
-//      class HttpBodySet
-//
-//      An HttpBodySet object represents a set of body factory
-//      templates.  It includes operators to get the hash table of
-//      templates, and the associated metadata for the set.
-//
-//      The raw data members come from HttpBodySetRawData, which
-//      is defined in proxy/hdrs/HttpCompat.h
-//
-////////////////////////////////////////////////////////////////////////
-
-class HttpBodySet : public HttpBodySetRawData
-{
-public:
-  HttpBodySet();
-  ~HttpBodySet();
-
-  int init(char *set_name, char *dir);
-  bool
-  is_sane()
-  {
-    return (magic == HTTP_BODY_SET_MAGIC);
-  }
-
-  HttpBodyTemplate *get_template_by_name(const char *name);
-  void set_template_by_name(const char *name, HttpBodyTemplate *t);
-};
-
-////////////////////////////////////////////////////////////////////////
-//
-//      class HttpBodyFactory
-//
-//      An HttpBodyFactory object is the main object which keeps track
-//      of all the response body templates, and which provides the
-//      methods to create response bodies.
-//
-//      Once an HttpBodyFactory object is initialized, and the template
-//      data has been loaded, the HttpBodyFactory object allows the
-//      caller to make error message bodies w/fabricate_with_old_api
-//
-////////////////////////////////////////////////////////////////////////
-
-class HttpBodyFactory
-{
-public:
-  HttpBodyFactory();
-  ~HttpBodyFactory();
-
-  ///////////////////////
-  // primary user APIs //
-  ///////////////////////
-  char *fabricate_with_old_api(const char *type, HttpTransact::State *context, int64_t max_buffer_length,
-                               int64_t *resulting_buffer_length, char *content_language_out_buf, size_t content_language_buf_size,
-                               char *content_type_out_buf, size_t content_type_buf_size, int format_size, const char *format);
-
-  char *
-  getFormat(int64_t max_buffer_length, int64_t *resulting_buffer_length, const char *format, ...)
-  {
-    char *msg = nullptr;
-    va_list ap;
-    if (format) {
-      // The length from ink_bvsprintf includes the trailing NUL, so adjust the final
-      // length accordingly.
-      int l = ink_bvsprintf(nullptr, format, ap);
-      if (l <= max_buffer_length) {
-        msg                      = (char *)ats_malloc(l);
-        *resulting_buffer_length = ink_bvsprintf(msg, format, ap) - 1;
-      }
-    }
-    return msg;
-  }
-
-  void dump_template_tables(FILE *fp = stderr);
-  void reconfigure();
-
-private:
-  char *fabricate(StrList *acpt_language_list, StrList *acpt_charset_list, const char *type, HttpTransact::State *context,
-                  int64_t *resulting_buffer_length, const char **content_language_return, const char **content_charset_return,
-                  const char **set_return = NULL);
-
-  const char *determine_set_by_language(StrList *acpt_language_list, StrList *acpt_charset_list);
-  const char *determine_set_by_host(HttpTransact::State *context);
-  HttpBodyTemplate *find_template(const char *set, const char *type, HttpBodySet **body_set_return);
-  bool is_response_suppressed(HttpTransact::State *context);
-  bool
-  is_sane()
-  {
-    return (magic == HTTP_BODY_FACTORY_MAGIC);
-  }
-  void
-  sanity_check()
-  {
-    ink_assert(is_sane());
-  }
-
-private:
-  ////////////////////////////
-  // initialization methods //
-  ////////////////////////////
-  void nuke_template_tables();
-  RawHashTable *load_sets_from_directory(char *set_dir);
-  HttpBodySet *load_body_set_from_directory(char *set_name, char *tmpl_dir);
-
-  /////////////////////////////////////////////////
-  // internal data structure concurrency control //
-  /////////////////////////////////////////////////
-  void
-  lock()
-  {
-    ink_mutex_acquire(&mutex);
-  }
-  void
-  unlock()
-  {
-    ink_mutex_release(&mutex);
-  }
-
-  /////////////////////////////////////
-  // manager configuration variables //
-  /////////////////////////////////////
-  int enable_customizations     = 0;    // 0:no custom,1:custom,2:language-targeted
-  bool enable_logging           = true; // the user wants body factory logging
-  int response_suppression_mode = 0;    // when to suppress responses
-
-  ////////////////////
-  // internal state //
-  ////////////////////
-  unsigned int magic = HTTP_BODY_FACTORY_MAGIC; // magic for sanity checks/debugging
-  ink_mutex mutex;                              // prevents reconfig/read races
-  bool callbacks_established  = false;          // all config variables present
-  RawHashTable *table_of_sets = nullptr;        // sets of template hash tables
-};
+char *fabricate_with_old_api(const char *type, HttpTransact::State *context, int64_t max_buffer_length,
+                             int64_t *resulting_buffer_length, char *content_language_out_buf, size_t content_language_buf_size,
+                             char *content_type_out_buf, size_t content_type_buf_size, int format_size, const char *format);
+}
 
 #endif
