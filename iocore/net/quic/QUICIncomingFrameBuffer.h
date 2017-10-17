@@ -33,7 +33,6 @@ class QUICIncomingFrameBuffer
 {
 public:
   QUICIncomingFrameBuffer(QUICStream *stream) : _stream(stream) {}
-
   ~QUICIncomingFrameBuffer();
 
   std::shared_ptr<const QUICStreamFrame> pop();

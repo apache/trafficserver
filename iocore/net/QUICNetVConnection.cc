@@ -259,11 +259,9 @@ QUICNetVConnection::get_packet_transmitter_mutex()
 }
 
 void
-QUICNetVConnection::push_packet(QUICPacketUPtr packet)
+QUICNetVConnection::push_packet(UDPPacket *packet)
 {
-  DebugQUICCon("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
-               packet->size());
-  this->_packet_recv_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
+  this->_packet_recv_queue.enqueue(packet);
 }
 
 void
@@ -381,7 +379,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
-    QUICPacketUPtr p = QUICPacketUPtr(this->_packet_recv_queue.dequeue(), &QUICPacketDeleter::delete_packet);
+    QUICPacketUPtr p = this->_dequeue_recv_packet();
     net_activity(this, this_ethread());
 
     switch (p->type()) {
@@ -400,7 +398,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
     case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
       // Postpone processing the packet
-      this->push_packet(std::move(p));
+      this->_quic_packet_recv_queue.push(std::move(p));
       this_ethread()->schedule_imm_local(this, event);
       break;
     default:
@@ -703,11 +701,9 @@ QUICNetVConnection::_state_connection_established_process_packet(QUICPacketUPtr 
                              packet->packet_number(), packet->header(), packet->header_size(), packet->key_phase())) {
     DebugQUICCon("Decrypt Packet, pkt_num: %" PRIu64 ", header_len: %hu, payload_len: %zu", packet->packet_number(),
                  packet->header_size(), plain_txt_len);
-
     return this->_recv_and_ack(plain_txt.get(), plain_txt_len, packet->packet_number());
   } else {
     DebugQUICCon("CRYPTOGRAPHIC Error");
-
     return QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::CRYPTOGRAPHIC_ERROR));
   }
 }
@@ -716,7 +712,7 @@ QUICErrorUPtr
 QUICNetVConnection::_state_common_receive_packet()
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
-  QUICPacketUPtr p    = QUICPacketUPtr(this->_packet_recv_queue.dequeue(), &QUICPacketDeleter::delete_packet);
+  QUICPacketUPtr p    = this->_dequeue_recv_packet();
   net_activity(this, this_ethread());
 
   switch (p->type()) {
@@ -948,4 +944,33 @@ QUICNetVConnection::_handle_error(QUICErrorUPtr error)
     QUICConnectionError *cerror = static_cast<QUICConnectionError *>(error.release());
     this->close(QUICConnectionErrorUPtr(cerror));
   }
+}
+
+QUICPacketUPtr
+QUICNetVConnection::_dequeue_recv_packet()
+{
+  QUICPacketUPtr quic_packet = QUICPacketUPtr(nullptr, &QUICPacketDeleter::delete_null_packet);
+  UDPPacket *udp_packet      = this->_packet_recv_queue.dequeue();
+  if (udp_packet) {
+    ats_unique_buf pkt = ats_unique_malloc(udp_packet->getPktLength());
+    IOBufferBlock *b   = udp_packet->getIOBlockChain();
+    size_t written     = 0;
+    while (b) {
+      memcpy(pkt.get() + written, b->buf(), b->read_avail());
+      written += b->read_avail();
+      b = b->next.get();
+    }
+    udp_packet->free();
+    quic_packet = QUICPacketFactory::create(std::move(pkt), written, this->largest_received_packet_number());
+  }
+
+  if (this->_quic_packet_recv_queue.size() > 0) {
+    QUICPacketUPtr p = std::move(this->_quic_packet_recv_queue.front());
+    this->_quic_packet_recv_queue.pop();
+    this->_quic_packet_recv_queue.push(std::move(quic_packet));
+    quic_packet.reset(p.release());
+  }
+  DebugQUICCon("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
+               quic_packet->packet_number(), quic_packet->size());
+  return quic_packet;
 }

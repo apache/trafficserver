@@ -41,7 +41,6 @@ public:
   virtual void reset(const uint8_t *buf, size_t len);
   static QUICFrameType type(const uint8_t *buf);
   virtual ~QUICFrame() {}
-
   LINK(QUICFrame, link);
 
 protected:

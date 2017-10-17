@@ -445,11 +445,10 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
 //
 // QUICPacket
 //
-QUICPacket::QUICPacket(IOBufferBlock *block, QUICPacketNumber base_packet_number) : _block(block)
+QUICPacket::QUICPacket(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number)
 {
-  this->_size = block->size();
-  this->_header =
-    QUICPacketHeader::load(reinterpret_cast<const uint8_t *>(this->_block->buf()), this->_block->size(), base_packet_number);
+  this->_size   = len;
+  this->_header = QUICPacketHeader::load(reinterpret_cast<const uint8_t *>(buf.release()), len, base_packet_number);
 }
 
 QUICPacket::QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
@@ -628,8 +627,8 @@ bool
 QUICPacket::has_valid_fnv1a_hash() const
 {
   uint8_t hash[FNV1A_HASH_LEN];
-  fnv1a(reinterpret_cast<const uint8_t *>(this->_block->buf()), this->_block->size() - FNV1A_HASH_LEN, hash);
-  return memcmp(this->_block->buf() + this->_block->size() - FNV1A_HASH_LEN, hash, 8) == 0;
+  fnv1a(reinterpret_cast<const uint8_t *>(this->_header->buf()), this->size() - FNV1A_HASH_LEN, hash);
+  return memcmp(this->_header->buf() + this->size() - FNV1A_HASH_LEN, hash, 8) == 0;
 }
 
 void
@@ -669,8 +668,7 @@ QUICPacket::encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 }
 
 bool
-QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len,
-                                 QUICPacketNumber largest_acked)
+QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber largest_acked)
 {
   ink_assert(len == 1 || len == 2 || len == 4);
 
@@ -686,6 +684,12 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
     dst = candidate2;
   }
 
+  Debug("quic_packet_factory", "----------------------- src: %" PRIu64, src);
+  Debug("quic_packet_factory", "----------------------- base: %" PRIu64, base);
+  Debug("quic_packet_factory", "----------------------- c1: %" PRIu64, candidate1);
+  Debug("quic_packet_factory", "----------------------- c2: %" PRIu64, candidate2);
+  Debug("quic_packet_factory", "----------------------- dst: %" PRIu64, dst);
+
   return true;
 }
 
@@ -693,10 +697,10 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 // QUICPacketFactory
 //
 QUICPacketUPtr
-QUICPacketFactory::create(IOBufferBlock *block, QUICPacketNumber base_packet_number)
+QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number)
 {
   QUICPacket *packet = quicPacketAllocator.alloc();
-  new (packet) QUICPacket(block, base_packet_number);
+  new (packet) QUICPacket(std::move(buf), len, base_packet_number);
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 

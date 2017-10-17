@@ -373,7 +373,6 @@ class MockQUICApplication : public QUICApplication
 {
 public:
   MockQUICApplication() : QUICApplication(new MockQUICConnection) { SET_HANDLER(&MockQUICApplication::main_event_handler); }
-
   int
   main_event_handler(int event, Event *data)
   {

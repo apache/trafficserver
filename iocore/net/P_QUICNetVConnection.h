@@ -144,7 +144,6 @@ class QUICNetVConnection : public UnixNetVConnection, public QUICConnection
 
 public:
   QUICNetVConnection() {}
-
   void init(UDPConnection *, QUICPacketHandler *);
 
   // UnixNetVConnection
@@ -159,7 +158,7 @@ public:
   int state_connection_closing(int event, Event *data);
   int state_connection_closed(int event, Event *data);
   void start(SSL_CTX *);
-  void push_packet(QUICPacketUPtr packet);
+  void push_packet(UDPPacket *packet);
   void free(EThread *t) override;
 
   UDPConnection *get_udp_con();
@@ -224,8 +223,9 @@ private:
   QUICRemoteFlowController *_remote_flow_controller = nullptr;
   QUICLocalFlowController *_local_flow_controller   = nullptr;
 
-  Queue<QUICPacket> _packet_recv_queue;
+  Queue<UDPPacket> _packet_recv_queue;
   Queue<QUICPacket> _packet_send_queue;
+  std::queue<QUICPacketUPtr> _quic_packet_recv_queue;
   // `_frame_send_queue` is the queue for any type of frame except STREAM frame.
   // The flow contorl doesn't blcok frames in this queue.
   // `_stream_frame_send_queue` is the queue for STREAM frame.
@@ -259,6 +259,7 @@ private:
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   void _handle_error(QUICErrorUPtr error);
+  QUICPacketUPtr _dequeue_recv_packet();
 
   QUICStatelessToken _token;
 };

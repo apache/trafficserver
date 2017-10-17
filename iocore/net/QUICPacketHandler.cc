@@ -166,8 +166,7 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     this->action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
   }
 
-  QUICPacketUPtr qPkt = QUICPacketFactory::create(block, vc->largest_received_packet_number());
-  vc->push_packet(std::move(qPkt));
+  vc->push_packet(udpPacket);
 
   // send to EThread
   eventProcessor.schedule_imm(vc, ET_CALL, QUIC_EVENT_PACKET_READ_READY, nullptr);

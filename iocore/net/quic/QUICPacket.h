@@ -129,7 +129,7 @@ class QUICPacket
 {
 public:
   QUICPacket(){};
-  QUICPacket(IOBufferBlock *block, QUICPacketNumber base_packet_number);
+  QUICPacket(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number);
   QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
              QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len, bool retransmittable);
   QUICPacket(QUICPacketType type, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, ats_unique_buf payload,
@@ -156,13 +156,11 @@ public:
   QUICKeyPhase key_phase() const;
   static uint8_t calc_packet_number_len(QUICPacketNumber num, QUICPacketNumber base);
   static bool encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len);
-  static bool decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len,
-                                   QUICPacketNumber largest_acked);
+  static bool decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber largest_acked);
 
   LINK(QUICPacket, link);
 
 private:
-  IOBufferBlock *_block             = nullptr;
   ats_unique_buf _protected_payload = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   size_t _size                      = 0;
   size_t _protected_payload_size    = 0;
@@ -207,7 +205,7 @@ public:
 class QUICPacketFactory
 {
 public:
-  static QUICPacketUPtr create(IOBufferBlock *block, QUICPacketNumber base_packet_number);
+  static QUICPacketUPtr create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number);
   QUICPacketUPtr create_version_negotiation_packet(const QUICPacket *packet_sent_by_client, QUICPacketNumber base_packet_number);
   QUICPacketUPtr create_server_cleartext_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                 ats_unique_buf payload, size_t len, bool retransmittable);

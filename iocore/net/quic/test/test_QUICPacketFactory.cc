@@ -29,7 +29,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 {
   QUICPacketFactory factory;
 
-  const uint8_t client_initial_packet_data[] = {
+  uint8_t client_initial_packet_data[] = {
     0x82,                                           // Type
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection id
     0x00, 0x00, 0x00, 0x00,                         // Packet number
@@ -37,12 +37,8 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
     0x00                                            // Payload
   };
 
-  IOBufferBlock *block = new_IOBufferBlock();
-  block->alloc(iobuffer_size_to_index(sizeof(client_initial_packet_data)));
-  memcpy(block->end(), client_initial_packet_data, sizeof(client_initial_packet_data));
-  block->fill(sizeof(client_initial_packet_data));
-
-  QUICPacket client_initial_packet(block, 0);
+  QUICPacket client_initial_packet(ats_unique_buf(client_initial_packet_data, [](void *p) { ats_free(p); }),
+                                   sizeof(client_initial_packet_data), 0);
 
   QUICPacketUPtr packet = factory.create_version_negotiation_packet(&client_initial_packet, 0);
   CHECK(packet->type() == QUICPacketType::VERSION_NEGOTIATION);

@@ -97,9 +97,11 @@ QUICNetProcessor::allocate_vc(EThread *t)
   QUICNetVConnection *vc;
 
   if (t) {
-    vc = THREAD_ALLOC_INIT(quicNetVCAllocator, t);
+    vc = THREAD_ALLOC(quicNetVCAllocator, t);
+    new (vc) QUICNetVConnection();
   } else {
     if (likely(vc = quicNetVCAllocator.alloc())) {
+      new (vc) QUICNetVConnection();
       vc->from_accept_thread = true;
     }
   }

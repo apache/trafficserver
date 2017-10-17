@@ -62,7 +62,6 @@ class PacketQueue
 {
 public:
   PacketQueue() { init(); }
-
   virtual ~PacketQueue() {}
   int nPackets                 = 0;
   ink_hrtime lastPullLongTermQ = 0;

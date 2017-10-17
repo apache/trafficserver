@@ -39,12 +39,7 @@ TEST_CASE("Loading Long Header Packet", "[quic]")
   size_t len;
   packet1.store(buf, &len);
 
-  IOBufferBlock *block = new_IOBufferBlock();
-  block->alloc(iobuffer_size_to_index(len));
-  memcpy(block->end(), buf, len);
-  block->fill(len);
-
-  const QUICPacket packet2(block, 0);
+  const QUICPacket packet2(ats_unique_buf(buf, [](void *p) { ats_free(p); }), len, 0);
 
   CHECK(packet2.type() == QUICPacketType::CLIENT_CLEARTEXT);
   CHECK(packet2.connection_id() == 0xffddbb9977553311ULL);
@@ -73,12 +68,7 @@ TEST_CASE("Loading Short Header Packet", "[quic]")
   size_t len;
   packet1.store(buf, &len);
 
-  IOBufferBlock *block = new_IOBufferBlock();
-  block->alloc(iobuffer_size_to_index(len));
-  memcpy(block->end(), buf, len);
-  block->fill(len);
-
-  const QUICPacket packet2(block, 0);
+  const QUICPacket packet2(ats_unique_buf(buf, [](void *p) { ats_free(p); }), len, 0);
 
   CHECK(packet2.type() == QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0);
   CHECK(packet2.packet_number() == 0xffcc9966);
