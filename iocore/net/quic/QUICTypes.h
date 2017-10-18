@@ -236,6 +236,8 @@ private:
   uint64_t _id;
 };
 
+enum class QUICStreamType { CLIENT, SERVER, HANDSHAKE };
+
 class QUICMaximumData
 {
 public:
@@ -294,6 +296,7 @@ class QUICTypeUtil
 {
 public:
   static bool hasLongHeader(const uint8_t *buf);
+  static QUICStreamType detect_stream_type(QUICStreamId id);
 
   static QUICConnectionId read_QUICConnectionId(const uint8_t *buf, uint8_t n);
   static QUICPacketNumber read_QUICPacketNumber(const uint8_t *buf, uint8_t n);
