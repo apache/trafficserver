@@ -236,7 +236,7 @@ private:
   uint64_t _id;
 };
 
-enum class QUICStreamType { CLIENT, SERVER, HANDSHAKE };
+enum class QUICStreamType { SERVER, CLIENT, HANDSHAKE };
 
 class QUICMaximumData
 {

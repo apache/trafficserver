@@ -200,7 +200,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
     QUICStreamType type = QUICTypeUtil::detect_stream_type(stream_id);
     if (type == QUICStreamType::CLIENT && stream_id > this->_local_maximum_stream_id && this->_local_maximum_stream_id != 0) {
       return nullptr;
-    } else if (type == QUICStreamType::CLIENT && stream_id > this->_remote_maximum_stream_id &&
+    } else if (type == QUICStreamType::SERVER && stream_id > this->_remote_maximum_stream_id &&
                this->_remote_maximum_stream_id != 0) {
       return nullptr;
     }
