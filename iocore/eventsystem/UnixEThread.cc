@@ -38,6 +38,14 @@ struct AIOCallback;
 #define NO_HEARTBEAT -1
 #define THREAD_MAX_HEARTBEAT_MSECONDS 60
 
+// !! THIS MUST BE IN THE ENUM ORDER !!
+char const *const EThread::STAT_NAME[] = {"proxy.process.eventloop.count",      "proxy.process.eventloop.events",
+                                          "proxy.process.eventloop.events.min", "proxy.process.eventloop.events.max",
+                                          "proxy.process.eventloop.wait",       "proxy.process.eventloop.time.min",
+                                          "proxy.process.eventloop.time.max"};
+
+int const EThread::SAMPLE_COUNT[N_EVENT_TIMESCALES] = {10, 100, 1000};
+
 bool shutdown_event_system = false;
 
 EThread::EThread()
@@ -142,7 +150,8 @@ EThread::process_event(Event *e, int calling_code)
   }
 }
 
-void EThread::process_queue(Que(Event, link) * NegativeQueue)
+void
+EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count)
 {
   Event *e;
 
@@ -152,6 +161,7 @@ void EThread::process_queue(Que(Event, link) * NegativeQueue)
   // execute all the available external events that have
   // already been dequeued
   while ((e = EventQueueExternal.dequeue_local())) {
+    ++(*ev_count);
     if (e->cancelled) {
       free_event(e);
     } else if (!e->timeout_at) { // IMMEDIATE
@@ -172,6 +182,7 @@ void EThread::process_queue(Que(Event, link) * NegativeQueue)
         NegativeQueue->insert(e, p);
       }
     }
+    ++(*nq_count);
   }
 }
 
@@ -181,6 +192,18 @@ EThread::execute_regular()
   Event *e;
   Que(Event, link) NegativeQueue;
   ink_hrtime next_time = 0;
+  ink_hrtime delta     = 0;    // time spent in the event loop
+  ink_hrtime loop_start_time;  // Time the loop started.
+  ink_hrtime loop_finish_time; // Time at the end of the loop.
+
+  // Track this so we can update on boundary crossing.
+  EventMetrics *prev_metric = this->prev(metrics + (ink_get_hrtime_internal() / HRTIME_SECOND) % N_EVENT_METRICS);
+
+  int nq_count = 0;
+  int ev_count = 0;
+
+  // A statically initialized instance we can use as a prototype for initializing other instances.
+  static EventMetrics METRIC_INIT;
 
   // give priority to immediate events
   for (;;) {
@@ -188,7 +211,22 @@ EThread::execute_regular()
       return;
     }
 
-    process_queue(&NegativeQueue);
+    loop_start_time = Thread::get_hrtime_updated();
+    nq_count        = 0; // count # of elements put on negative queue.
+    ev_count        = 0; // # of events handled.
+
+    current_metric = metrics + (loop_start_time / HRTIME_SECOND) % N_EVENT_METRICS;
+    if (current_metric != prev_metric) {
+      // Mixed feelings - really this shouldn't be needed, but just in case more than one entry is
+      // skipped, clear them all.
+      do {
+        memcpy((prev_metric = this->next(prev_metric)), &METRIC_INIT, sizeof(METRIC_INIT));
+      } while (current_metric != prev_metric);
+      current_metric->_loop_time._start = loop_start_time;
+    }
+    ++(current_metric->_count);
+
+    process_queue(&NegativeQueue, &ev_count, &nq_count);
 
     bool done_one;
     do {
@@ -209,7 +247,7 @@ EThread::execute_regular()
 
     // execute any negative (poll) events
     if (NegativeQueue.head) {
-      process_queue(&NegativeQueue);
+      process_queue(&NegativeQueue, &ev_count, &nq_count);
 
       // execute poll events
       while ((e = NegativeQueue.dequeue())) {
@@ -221,6 +259,7 @@ EThread::execute_regular()
     ink_hrtime sleep_time = next_time - Thread::get_hrtime_updated();
     if (sleep_time > 0) {
       sleep_time = std::min(sleep_time, HRTIME_MSECONDS(THREAD_MAX_HEARTBEAT_MSECONDS));
+      ++(current_metric->_wait);
     } else {
       sleep_time = 0;
     }
@@ -230,6 +269,29 @@ EThread::execute_regular()
     }
 
     tail_cb->waitForActivity(sleep_time);
+
+    // loop cleanup
+    loop_finish_time = this->get_hrtime_updated();
+    delta            = loop_finish_time - loop_start_time;
+
+    // This can happen due to time of day adjustments (which apparently happen quite frequently). I
+    // tried using the monotonic clock to get around this but it was *very* stuttery (up to hundreds
+    // of milliseconds), far too much to be actually used.
+    if (delta > 0) {
+      if (delta > current_metric->_loop_time._max) {
+        current_metric->_loop_time._max = delta;
+      }
+      if (delta < current_metric->_loop_time._min) {
+        current_metric->_loop_time._min = delta;
+      }
+    }
+    if (ev_count < current_metric->_events._min) {
+      current_metric->_events._min = ev_count;
+    }
+    if (ev_count > current_metric->_events._max) {
+      current_metric->_events._max = ev_count;
+    }
+    current_metric->_events._total += ev_count;
   }
 }
 
@@ -270,4 +332,41 @@ EThread::execute()
     break;
   } /* End switch */
   // coverity[missing_unlock]
+}
+
+EThread::EventMetrics &
+EThread::EventMetrics::operator+=(EventMetrics const &that)
+{
+  this->_events._max = std::max(this->_events._max, that._events._max);
+  this->_events._min = std::min(this->_events._min, that._events._min);
+  this->_events._total += that._events._total;
+  this->_loop_time._min = std::min(this->_loop_time._min, that._loop_time._min);
+  this->_loop_time._max = std::max(this->_loop_time._max, that._loop_time._max);
+  this->_count += that._count;
+  this->_wait += that._wait;
+  return *this;
+}
+
+void
+EThread::summarize_stats(EventMetrics summary[N_EVENT_TIMESCALES])
+{
+  // Accumulate in local first so each sample only needs to be processed once,
+  // not N_EVENT_TIMESCALES times.
+  EventMetrics sum;
+
+  // To avoid race conditions, we back up one from the current metric block. It's close enough
+  // and won't be updated during the time this method runs so it should be thread safe.
+  EventMetrics *m = this->prev(current_metric);
+
+  for (int t = 0; t < N_EVENT_TIMESCALES; ++t) {
+    int count = SAMPLE_COUNT[t];
+    if (t > 0)
+      count -= SAMPLE_COUNT[t - 1];
+    while (--count >= 0) {
+      if (0 != m->_loop_time._start)
+        sum += *m;
+      m = this->prev(m);
+    }
+    summary[t] += sum; // push out to return vector.
+  }
 }
