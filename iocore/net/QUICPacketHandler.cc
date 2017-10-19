@@ -166,10 +166,15 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     this->action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
   }
 
-  vc->push_packet(udpPacket);
-
-  // send to EThread
-  eventProcessor.schedule_imm(vc, ET_CALL, QUIC_EVENT_PACKET_READ_READY, nullptr);
+  if (vc->is_closed()) {
+    this->_connections.put(vc->connection_id(), nullptr);
+    // FIXME QUICNetVConnection is NOT freed to prevent crashes. #2674
+    // QUICNetVConnections are going to be freed by QUICNetHandler
+    // vc->free(vc->thread);
+  } else {
+    vc->push_packet(udpPacket);
+    eventProcessor.schedule_imm(vc, ET_CALL, QUIC_EVENT_PACKET_READ_READY, nullptr);
+  }
 }
 
 // TODO: Should be called via eventProcessor?
@@ -202,10 +207,4 @@ QUICPacketHandler::send_packet(const QUICPacket &packet, UDPConnection *udp_con,
         QUICDebugNames::packet_type(packet.type()), ats_ip_nptop(&udpPkt->to.sa, ipb, sizeof(ipb)), udpPkt->getPktLength());
 
   udp_con->send(this, udpPkt);
-}
-
-void
-QUICPacketHandler::forget(QUICNetVConnection *vc)
-{
-  this->_connections.put(vc->connection_id(), nullptr);
 }
