@@ -36,7 +36,7 @@
 #include "ts/Allocator.h"
 
 #ifdef ProxyAllocator
-#error "cannot compile together with new JEMalloc includes"
+#error "cannot compile together with new jemalloc includes"
 #endif
 
 class EThread;

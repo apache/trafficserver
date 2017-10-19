@@ -74,6 +74,22 @@
 #endif
 #endif // ! HAVE_JEMALLOC_H && ! HAVE_JEMALLOC_JEMALLOC_H
 
+#if HAVE_LIBJEMALLOC
+#ifdef __cplusplus
+// c++: inline-override stdc++ version
+extern "C" {
+inline void* malloc(size_t n) throw() { return ( n ? mallocx(n,MALLOCX_ZERO) : NULL ); }
+inline void free(void *p) throw() { p ? dallocx(p,0) : (void)0; }
+}
+inline void* operator new(size_t n) { return mallocx(n,MALLOCX_ZERO); }
+inline void* operator new[](size_t n) { return mallocx(n,MALLOCX_ZERO); }
+inline void operator delete(void* p) noexcept { p ? dallocx(p,0) : (void)0; }
+inline void operator delete[](void* p) noexcept { p ? dallocx(p,0) : (void)0; }
+inline void operator delete(void* p, size_t n) noexcept { p ? sdallocx(p,n,0) : (void)0; }
+inline void operator delete[](void* p, size_t n) noexcept { p ? sdallocx(p,n,0) : (void)0; }
+#endif
+#endif
+
 #ifndef MADV_NORMAL
 #define MADV_NORMAL 0
 #endif

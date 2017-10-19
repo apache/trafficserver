@@ -155,12 +155,12 @@ protected:
   }
 
 private:
-  static thread_local int32_t tm_preCached; // shared for same-thread + same-size
+  static thread_local uint32_t tm_preCached; // shared for same-thread + same-size
   uint32_t                    _chunkSize; // per all instances
 };
 
 template <size_t N_LENGTH, size_t N_ALIGN>
-thread_local int SizeCacheAllocator<N_LENGTH,N_ALIGN>::tm_preCached = 0;
+thread_local uint32_t SizeCacheAllocator<N_LENGTH,N_ALIGN>::tm_preCached = 0U;
 
 //
 // type-specialized wrapper
