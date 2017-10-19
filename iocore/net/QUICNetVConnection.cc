@@ -444,7 +444,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     unsigned int app_name_len = 0;
     this->_handshake_handler->negotiated_application_name(&app_name, &app_name_len);
     if (app_name == nullptr) {
-      app_name     = reinterpret_cast<const uint8_t *>(IP_PROTO_TAG_HTTP_QUIC.ptr());
+      app_name     = reinterpret_cast<const uint8_t *>(IP_PROTO_TAG_HTTP_QUIC.data());
       app_name_len = IP_PROTO_TAG_HTTP_QUIC.size();
     }
 
@@ -581,14 +581,11 @@ QUICNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
 }
 
 int
-QUICNetVConnection::populate_protocol(ts::StringView *results, int n) const
+QUICNetVConnection::populate_protocol(ts::string_view *results, int n) const
 {
   int retval = 0;
   if (n > retval) {
-    results[retval] = IP_PROTO_TAG_QUIC;
-    if (results[retval]) {
-      ++retval;
-    }
+    results[retval++] = IP_PROTO_TAG_QUIC;
     if (n > retval) {
       retval += super::populate_protocol(results + retval, n - retval);
     }
@@ -597,12 +594,12 @@ QUICNetVConnection::populate_protocol(ts::StringView *results, int n) const
 }
 
 const char *
-QUICNetVConnection::protocol_contains(ts::StringView prefix) const
+QUICNetVConnection::protocol_contains(ts::string_view prefix) const
 {
-  const char *retval = nullptr;
-  ts::StringView tag = IP_PROTO_TAG_QUIC;
-  if (prefix.size() <= tag.size() && strncmp(tag.ptr(), prefix.ptr(), prefix.size()) == 0) {
-    retval = tag.ptr();
+  const char *retval  = nullptr;
+  ts::string_view tag = IP_PROTO_TAG_QUIC;
+  if (prefix.size() <= tag.size() && strncmp(tag.data(), prefix.data(), prefix.size()) == 0) {
+    retval = tag.data();
   } else {
     retval = super::protocol_contains(prefix);
   }

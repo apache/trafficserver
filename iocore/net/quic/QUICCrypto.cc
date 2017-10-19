@@ -28,20 +28,20 @@
 #include <openssl/bio.h>
 
 #include "ts/Diags.h"
-#include "ts/MemView.h"
+#include "ts/string_view.h"
 #include "QUICTypes.h"
 
 constexpr static char tag[] = "quic_crypto";
 
 // constexpr static ts::StringView _exporter_label_0_rtt("EXPORTER-QUIC 0-RTT Secret", ts::StringView::literal);
-constexpr static ts::StringView exporter_label_client_1_rtt("EXPORTER-QUIC client 1-RTT Secret", ts::StringView::literal);
-constexpr static ts::StringView exporter_label_server_1_rtt("EXPORTER-QUIC server 1-RTT Secret", ts::StringView::literal);
+constexpr static ts::string_view exporter_label_client_1_rtt("EXPORTER-QUIC client 1-RTT Secret"_sv);
+constexpr static ts::string_view exporter_label_server_1_rtt("EXPORTER-QUIC server 1-RTT Secret"_sv);
 
 // [quic-tls draft-05] "tls13 " + Label
 // constexpr static ts::StringView expand_label_client_1_rtt("tls13 QUIC client 1-RTT secret", ts::StringView::literal);
 // constexpr static ts::StringView expand_label_server_1_rtt("tls13 QUIC server 1-RTT secret", ts::StringView::literal);
-constexpr static ts::StringView expand_label_key("tls13 key", ts::StringView::literal);
-constexpr static ts::StringView expand_label_iv("tls13 iv", ts::StringView::literal);
+constexpr static ts::string_view expand_label_key("tls13 key"_sv);
+constexpr static ts::string_view expand_label_iv("tls13 iv"_sv);
 
 //
 // QUICPacketProtection
@@ -310,19 +310,19 @@ QUICCrypto::_export_client_keymaterial(size_t secret_len, size_t key_len, size_t
   KeyMaterial *km = new KeyMaterial(secret_len, key_len, iv_len);
   int r           = 0;
 
-  r = _export_secret(km->secret, secret_len, exporter_label_client_1_rtt.ptr(), exporter_label_client_1_rtt.size());
+  r = _export_secret(km->secret, secret_len, exporter_label_client_1_rtt.data(), exporter_label_client_1_rtt.size());
   if (r != 1) {
     Debug(tag, "Failed to export secret");
     return r;
   }
 
-  r = _hkdf_expand_label(km->key, key_len, km->secret, secret_len, expand_label_key.ptr(), expand_label_key.size(), this->_digest);
+  r = _hkdf_expand_label(km->key, key_len, km->secret, secret_len, expand_label_key.data(), expand_label_key.size(), this->_digest);
   if (r != 1) {
     Debug(tag, "Failed to expand label for key");
     return r;
   }
 
-  r = _hkdf_expand_label(km->iv, iv_len, km->secret, secret_len, expand_label_iv.ptr(), expand_label_iv.size(), this->_digest);
+  r = _hkdf_expand_label(km->iv, iv_len, km->secret, secret_len, expand_label_iv.data(), expand_label_iv.size(), this->_digest);
   if (r != 1) {
     Debug(tag, "Failed to expand label for iv");
     return r;
@@ -342,18 +342,18 @@ QUICCrypto::_export_server_keymaterial(size_t secret_len, size_t key_len, size_t
   KeyMaterial *km = new KeyMaterial(secret_len, key_len, iv_len);
   int r           = 0;
 
-  r = _export_secret(km->secret, secret_len, exporter_label_server_1_rtt.ptr(), exporter_label_server_1_rtt.size());
+  r = _export_secret(km->secret, secret_len, exporter_label_server_1_rtt.data(), exporter_label_server_1_rtt.size());
   if (r != 1) {
     return r;
   }
 
-  r = _hkdf_expand_label(km->key, key_len, km->secret, secret_len, expand_label_key.ptr(), expand_label_key.size(), this->_digest);
+  r = _hkdf_expand_label(km->key, key_len, km->secret, secret_len, expand_label_key.data(), expand_label_key.size(), this->_digest);
   if (r != 1) {
     Debug(tag, "Failed to expand label for key");
     return r;
   }
 
-  r = _hkdf_expand_label(km->iv, iv_len, km->secret, secret_len, expand_label_iv.ptr(), expand_label_iv.size(), this->_digest);
+  r = _hkdf_expand_label(km->iv, iv_len, km->secret, secret_len, expand_label_iv.data(), expand_label_iv.size(), this->_digest);
   if (r != 1) {
     Debug(tag, "Failed to expand label for iv");
     return r;

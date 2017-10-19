@@ -22,8 +22,6 @@
  */
 
 #include "QUICApplication.h"
-
-#include "ts/MemView.h"
 #include "QUICStream.h"
 
 static constexpr char tag[] = "quic_app";
