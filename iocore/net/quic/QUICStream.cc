@@ -360,6 +360,10 @@ QUICStream::_send()
     int64_t len      = 0;
     bool fin         = false;
 
+    int64_t credit = this->_remote_flow_controller->current_limit() - this->_remote_flow_controller->current_offset();
+    if (credit != 0 && max_size > credit) {
+      max_size = credit;
+    }
     if (data_len > max_size) {
       len = max_size;
     } else {

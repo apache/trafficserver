@@ -146,4 +146,106 @@ TEST_CASE("QUICStream", "[quic]")
     CHECK(len == 16);
     CHECK(memcmp(buf, payload, len) == 0);
   }
+
+  SECTION("QUICStream_flow_control_local", "[quic]")
+  {
+    std::unique_ptr<QUICError> error = nullptr;
+
+    MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
+    IOBufferReader *reader = read_buffer->alloc_reader();
+    MockQUICFrameTransmitter tx;
+
+    std::unique_ptr<QUICStream> stream(new QUICStream());
+    stream->init(&tx, 0, stream_id);
+    stream->init_flow_control_params(4096, 4096);
+    stream->do_io_read(nullptr, 0, read_buffer);
+
+    // Start with 1024 but not 0 so received frames won't be processed
+    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
+    CHECK(error->cls == QUICErrorClass::NONE);
+    // duplicate
+    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
+    CHECK(error->cls == QUICErrorClass::NONE);
+    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 3072));
+    CHECK(error->cls == QUICErrorClass::NONE);
+    // delay
+    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 2048));
+    CHECK(error->cls == QUICErrorClass::NONE);
+    // all frames should be processed
+    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 0));
+    CHECK(error->cls == QUICErrorClass::NONE);
+    // start again without the first block
+    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 5120));
+    CHECK(error->cls == QUICErrorClass::NONE);
+    // this should exceed the limit
+    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 8192));
+    CHECK(error->code == QUICErrorCode::FLOW_CONTROL_ERROR);
+  }
+
+  SECTION("QUICStream_flow_control_remote", "[quic]")
+  {
+    std::unique_ptr<QUICError> error = nullptr;
+
+    MIOBuffer *read_buffer              = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
+    MIOBuffer *write_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
+    IOBufferReader *read_buffer_reader  = read_buffer->alloc_reader();
+    IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
+    MockQUICFrameTransmitter tx;
+
+    std::unique_ptr<QUICStream> stream(new QUICStream());
+    stream->init(&tx, 0, stream_id);
+    stream->init_flow_control_params(4096, 4096);
+    MockContinuation mock_cont(stream->mutex);
+    stream->do_io_read(nullptr, 0, read_buffer);
+    stream->do_io_write(&mock_cont, 0, write_buffer_reader);
+
+    // Check the initial state
+    CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 0);
+
+    const char data[1024] = {0};
+    write_buffer->write(data, 1024);
+    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 1);
+
+    write_buffer->write(data, 1024);
+    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 2);
+
+    write_buffer->write(data, 1024);
+    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 3);
+
+    write_buffer->write(data, 1024);
+    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 4);
+
+    // This should not send a frame because of flow control
+    write_buffer->write(data, 1024);
+    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 4);
+
+    // Update window
+    stream->recv(std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5120));
+
+    // This should send a frame
+    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 5);
+
+    // Update window
+    stream->recv(std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5632));
+
+    // This should send a frame
+    write_buffer->write(data, 1024);
+    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 6);
+
+    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 6);
+
+    // Update window
+    stream->recv(std::make_shared<QUICMaxStreamDataFrame>(stream_id, 6144));
+
+    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 7);
+  }
 }

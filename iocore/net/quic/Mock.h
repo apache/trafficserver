@@ -399,3 +399,14 @@ NetVConnection::send_OOB(Continuation *, char *, int)
 {
   return nullptr;
 }
+
+class MockContinuation : public Continuation
+{
+public:
+  MockContinuation(Ptr<ProxyMutex> m) : Continuation(m) { SET_HANDLER(&MockContinuation::event_handler); }
+  int
+  event_handler(int event, Event *data)
+  {
+    return EVENT_CONT;
+  }
+};
