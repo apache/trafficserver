@@ -27,6 +27,11 @@
 #include "pattern.h"
 #include "common.h"
 
+enum CacheKeyUriType {
+  REMAP,
+  PRISTINE,
+};
+
 /**
  * @brief Plug-in configuration elements (query / headers / cookies).
  *
@@ -122,7 +127,7 @@ private:
 class Configs
 {
 public:
-  Configs() : _prefixToBeRemoved(false), _pathToBeRemoved(false), _separator("/") {}
+  Configs() {}
   /**
    * @brief initializes plugin configuration.
    * @param argc number of plugin parameters
@@ -157,6 +162,16 @@ public:
    */
   const String &getSeparator();
 
+  /**
+   * @brief sets the URI Type.
+   */
+  void setUriType(const char *arg);
+
+  /**
+   * @brief get URI type.
+   */
+  CacheKeyUriType getUriType();
+
   /* Make the following members public to avoid unnecessary accessors */
   ConfigQuery _query;        /**< @brief query parameter related configuration */
   ConfigHeaders _headers;    /**< @brief headers related configuration */
@@ -178,9 +193,10 @@ private:
    */
   bool loadClassifiers(const String &args, bool blacklist = true);
 
-  bool _prefixToBeRemoved; /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
-  bool _pathToBeRemoved;   /**< @brief instructs the path not to added to the cache key */
-  String _separator;       /**< @brief a separator used to separate the cache key elements extracted from the URI */
+  bool _prefixToBeRemoved  = false; /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
+  bool _pathToBeRemoved    = false; /**< @brief instructs the path not to added to the cache key */
+  String _separator        = "/";   /**< @brief a separator used to separate the cache key elements extracted from the URI */
+  CacheKeyUriType _uriType = REMAP; /**< @brief shows which URI the cache key will be based on */
 };
 
 #endif // PLUGINS_EXPERIMENTAL_CACHEKEY_CONFIGS_H_

@@ -344,6 +344,7 @@ Configs::init(int argc, char *argv[])
     {const_cast<char *>("remove-prefix"), optional_argument, nullptr, 'q'},
     {const_cast<char *>("remove-path"), optional_argument, nullptr, 'r'},
     {const_cast<char *>("separator"), optional_argument, nullptr, 's'},
+    {const_cast<char *>("uri-type"), optional_argument, nullptr, 't'},
     {nullptr, 0, nullptr, 0},
   };
 
@@ -442,6 +443,9 @@ Configs::init(int argc, char *argv[])
     case 's': /* separator */
       setSeparator(optarg);
       break;
+    case 't': /* uri-type */
+      setUriType(optarg);
+      break;
     }
   }
 
@@ -485,4 +489,28 @@ const String &
 Configs::getSeparator()
 {
   return _separator;
+}
+
+void
+Configs::setUriType(const char *arg)
+{
+  if (nullptr != arg) {
+    if (5 == strlen(arg) && 0 == strncasecmp(arg, "remap", 5)) {
+      _uriType = CacheKeyUriType::REMAP;
+      CacheKeyDebug("using remap URI type");
+    } else if (8 == strlen(arg) && 0 == strncasecmp(arg, "pristine", 8)) {
+      _uriType = CacheKeyUriType::PRISTINE;
+      CacheKeyDebug("using pristine URI type");
+    } else {
+      CacheKeyError("unrecognized URI type '%s', using default 'remap'", arg);
+    }
+  } else {
+    CacheKeyError("found an empty URI type, using default 'remap'");
+  }
+}
+
+CacheKeyUriType
+Configs::getUriType()
+{
+  return _uriType;
 }
