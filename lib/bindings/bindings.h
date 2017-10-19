@@ -62,7 +62,7 @@ struct BindingInstance {
   static BindingInstance *self(lua_State *);
 
   // Register a Lua metatable for a custom type.
-  static void register_metatable(lua_State *, const char *, const luaL_reg *);
+  static void register_metatable(lua_State *, const char *, const luaL_Reg *);
 
   lua_State *lua;
 

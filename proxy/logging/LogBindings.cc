@@ -179,7 +179,7 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
   if (lua_istable(L, value)) {
     lua_scoped_stack saved(L);
 
-    int count   = luaL_getn(L, value);
+    int count   = lua_objlen(L, value);
     LogHost *lh = nullptr;
 
     saved.push_value(value); // Push the table to -1.
@@ -257,7 +257,7 @@ log_object_add_filters(lua_State *L, LogObject *log, int value)
   if (lua_istable(L, value)) {
     lua_scoped_stack saved(L);
     LogFilter *filter;
-    int count = luaL_getn(L, value);
+    int count = lua_objlen(L, value);
 
     saved.push_value(value); // Push the table to -1.
 
@@ -391,7 +391,7 @@ create_pipe_log_object(lua_State *L)
 bool
 MakeLogBindings(BindingInstance &binding, LogConfig *conf)
 {
-  static const luaL_reg metatable[] = {
+  static const luaL_Reg metatable[] = {
     {"__gc", refcount_object_gc}, {nullptr, nullptr},
   };
 
