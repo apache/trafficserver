@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <tbb/concurrent_unordered_map.h>
+
 #include "ts/ink_platform.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
@@ -47,6 +49,6 @@ private:
   void _recv_packet(int event, UDPPacket *udpPacket);
   bool _read_connection_id(QUICConnectionId &cid, IOBufferBlock *block);
 
-  Map<int64_t, QUICNetVConnection *> _connections;
+  tbb::concurrent_unordered_map<int64_t, QUICNetVConnection *> _connections;
   SSL_CTX *_ssl_ctx;
 };

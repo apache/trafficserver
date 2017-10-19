@@ -77,6 +77,7 @@
 #define TS_USE_TLS_ECKEY @use_tls_eckey@
 #define TS_USE_TLS13 @use_tls13@
 #define TS_USE_QUIC @use_quic@
+#define TS_USE_TBB @use_tbb@
 #define TS_USE_LINUX_NATIVE_AIO @use_linux_native_aio@
 #define TS_USE_REMOTE_UNWINDING @use_remote_unwinding@
 #define TS_USE_SSLV3_CLIENT @use_sslv3_client@

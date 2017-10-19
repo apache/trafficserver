@@ -124,7 +124,10 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
 
   QUICNetVConnection *vc = nullptr;
   if (res) {
-    vc = this->_connections.get(cid);
+    auto iter = this->_connections.find(cid);
+    if (this->_connections.end() != iter) {
+      vc = (*iter).second;
+    }
   } else {
     // TODO: find vc from five tuples
     ink_assert(false);
@@ -162,7 +165,7 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     vc->options.ip_proto  = NetVCOptions::USE_UDP;
     vc->options.ip_family = udpPacket->from.sa.sa_family;
 
-    this->_connections.put(cid, vc);
+    this->_connections[cid] = vc;
     this->action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
   }
 
@@ -178,8 +181,8 @@ QUICPacketHandler::send_packet(const QUICPacket &packet, QUICNetVConnection *vc)
 {
   // TODO: remove a connection which is created by Client Initial
   //       or update key to new one
-  if (!this->_connections.get(packet.connection_id())) {
-    this->_connections.put(packet.connection_id(), vc);
+  if (this->_connections.end() == this->_connections.find(packet.connection_id())) {
+    this->_connections[packet.connection_id()] = vc;
   }
 
   this->send_packet(packet, vc->get_udp_con(), vc->con.addr, vc->pmtu());
@@ -207,5 +210,5 @@ QUICPacketHandler::send_packet(const QUICPacket &packet, UDPConnection *udp_con,
 void
 QUICPacketHandler::forget(QUICNetVConnection *vc)
 {
-  this->_connections.put(vc->connection_id(), nullptr);
+  this->_connections[vc->connection_id()] = nullptr;
 }

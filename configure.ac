@@ -1143,11 +1143,21 @@ TS_CHECK_CRYPTO_DH_GET_2048_256
 # Check for TLS 1.3 support
 TS_CHECK_CRYPTO_TLS13
 
+#
+# Check for tbb library
+#
+AC_MSG_CHECKING([whether to enable intel tbb])
+TS_CHECK_TBB
+AC_MSG_RESULT([$enable_tbb])
+TS_ARG_ENABLE_VAR([use], [tbb])
+
+
 # Check for QUIC support
 enable_quic=no
-AS_IF([test "x$enable_tls13" = "xyes"], [
+AS_IF([test "x$enable_tls13" = "xyes" -a "x$enable_tbb" = "xyes"], [
   enable_quic=yes
 ])
+
 TS_ARG_ENABLE_VAR([use], [quic])
 AC_SUBST(use_quic)
 AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
