@@ -39,6 +39,13 @@ This plugin allows some common cache key manipulations based on various HTTP req
 * capture and replace strings from the URI and include them in the cache key
 * do more - please find more examples below.
 
+URI type
+========
+
+The plugin manipulates the ``remap`` URI (value set during URI remap) by default. If manipulation needs to be based on the ``pristine`` URI (the value before URI remapping takes place) one could use the following option:
+
+* ``--uri-type=[remap|pristine]`` (default: ``remap``)
+
 Cache key structure and related plugin parameters
 =================================================
 
