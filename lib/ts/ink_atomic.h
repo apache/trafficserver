@@ -46,22 +46,6 @@
 #include "ts/ink_apidefs.h"
 #include "ts/ink_mutex.h"
 
-typedef volatile int8_t vint8;
-typedef volatile int16_t vint16;
-typedef volatile int32_t vint32;
-typedef volatile int64_t vint64;
-typedef volatile uint64_t vuint64;
-typedef volatile long vlong;
-typedef volatile void *vvoidp;
-
-typedef vint8 *pvint8;
-typedef vint16 *pvint16;
-typedef vint32 *pvint32;
-typedef vint64 *pvint64;
-typedef vuint64 *pvuint64;
-typedef vlong *pvlong;
-typedef vvoidp *pvvoidp;
-
 /* GCC compiler >= 4.1 */
 #if defined(__GNUC__) && (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 1)) || (__GNUC__ >= 5))
 
@@ -71,7 +55,7 @@ typedef vvoidp *pvvoidp;
 // Writes @value into @ptr, returning the previous value.
 template <typename T>
 static inline T
-ink_atomic_swap(volatile T *mem, T value)
+ink_atomic_swap(T *mem, T value)
 {
   return __sync_lock_test_and_set(mem, value);
 }
@@ -81,7 +65,7 @@ ink_atomic_swap(volatile T *mem, T value)
 // Returns true if @next was successfully stored.
 template <typename T>
 static inline bool
-ink_atomic_cas(volatile T *mem, T prev, T next)
+ink_atomic_cas(T *mem, T prev, T next)
 {
   return __sync_bool_compare_and_swap(mem, prev, next);
 }
@@ -90,7 +74,7 @@ ink_atomic_cas(volatile T *mem, T prev, T next)
 // Increment @ptr by @count, returning the previous value.
 template <typename Type, typename Amount>
 static inline Type
-ink_atomic_increment(volatile Type *mem, Amount count)
+ink_atomic_increment(Type *mem, Amount count)
 {
   return __sync_fetch_and_add(mem, (Type)count);
 }
@@ -99,7 +83,7 @@ ink_atomic_increment(volatile Type *mem, Amount count)
 // Decrement @ptr by @count, returning the previous value.
 template <typename Type, typename Amount>
 static inline Type
-ink_atomic_decrement(volatile Type *mem, Amount count)
+ink_atomic_decrement(Type *mem, Amount count)
 {
   return __sync_fetch_and_sub(mem, (Type)count);
 }

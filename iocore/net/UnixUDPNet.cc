@@ -625,8 +625,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   pc = get_UDPPollCont(n->ethread);
   pd = pc->pollDescriptor;
 
-  n->ethread->ep = (EventIO *)ats_malloc(sizeof(EventIO));
-  n->ethread->ep->start(pd, n, EVENTIO_READ);
+  n->ep.start(pd, n, EVENTIO_READ);
 
   cont->handleEvent(NET_EVENT_DATAGRAM_OPEN, n);
   return ACTION_RESULT_DONE;

@@ -26,9 +26,9 @@
 #include <ts/ink_defs.h>
 #include <ts/ink_hash_table.h>
 #include <ts/Tokenizer.h>
-#include <ts/MemView.h>
 #include <strings.h>
 #include <ts/ink_inet.h>
+#include <ts/string_view.h>
 
 SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 
@@ -36,11 +36,11 @@ SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
    These are also used for NPN setup.
 */
 
-const char *const TS_ALPN_PROTOCOL_HTTP_0_9  = IP_PROTO_TAG_HTTP_0_9.ptr();
-const char *const TS_ALPN_PROTOCOL_HTTP_1_0  = IP_PROTO_TAG_HTTP_1_0.ptr();
-const char *const TS_ALPN_PROTOCOL_HTTP_1_1  = IP_PROTO_TAG_HTTP_1_1.ptr();
-const char *const TS_ALPN_PROTOCOL_HTTP_2_0  = IP_PROTO_TAG_HTTP_2_0.ptr();
-const char *const TS_ALPN_PROTOCOL_HTTP_QUIC = IP_PROTO_TAG_HTTP_QUIC.ptr();
+const char *const TS_ALPN_PROTOCOL_HTTP_0_9  = IP_PROTO_TAG_HTTP_0_9.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_1_0  = IP_PROTO_TAG_HTTP_1_0.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_1_1  = IP_PROTO_TAG_HTTP_1_1.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_2_0  = IP_PROTO_TAG_HTTP_2_0.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_QUIC = IP_PROTO_TAG_HTTP_QUIC.data();
 
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
@@ -49,14 +49,14 @@ const char *const TS_PROTO_TAG_HTTP_1_0  = TS_ALPN_PROTOCOL_HTTP_1_0;
 const char *const TS_PROTO_TAG_HTTP_1_1  = TS_ALPN_PROTOCOL_HTTP_1_1;
 const char *const TS_PROTO_TAG_HTTP_2_0  = TS_ALPN_PROTOCOL_HTTP_2_0;
 const char *const TS_PROTO_TAG_HTTP_QUIC = TS_ALPN_PROTOCOL_HTTP_QUIC;
-const char *const TS_PROTO_TAG_TLS_1_3   = IP_PROTO_TAG_TLS_1_3.ptr();
-const char *const TS_PROTO_TAG_TLS_1_2   = IP_PROTO_TAG_TLS_1_2.ptr();
-const char *const TS_PROTO_TAG_TLS_1_1   = IP_PROTO_TAG_TLS_1_1.ptr();
-const char *const TS_PROTO_TAG_TLS_1_0   = IP_PROTO_TAG_TLS_1_0.ptr();
-const char *const TS_PROTO_TAG_TCP       = IP_PROTO_TAG_TCP.ptr();
-const char *const TS_PROTO_TAG_UDP       = IP_PROTO_TAG_UDP.ptr();
-const char *const TS_PROTO_TAG_IPV4      = IP_PROTO_TAG_IPV4.ptr();
-const char *const TS_PROTO_TAG_IPV6      = IP_PROTO_TAG_IPV6.ptr();
+const char *const TS_PROTO_TAG_TLS_1_3   = IP_PROTO_TAG_TLS_1_3.data();
+const char *const TS_PROTO_TAG_TLS_1_2   = IP_PROTO_TAG_TLS_1_2.data();
+const char *const TS_PROTO_TAG_TLS_1_1   = IP_PROTO_TAG_TLS_1_1.data();
+const char *const TS_PROTO_TAG_TLS_1_0   = IP_PROTO_TAG_TLS_1_0.data();
+const char *const TS_PROTO_TAG_TCP       = IP_PROTO_TAG_TCP.data();
+const char *const TS_PROTO_TAG_UDP       = IP_PROTO_TAG_UDP.data();
+const char *const TS_PROTO_TAG_IPV4      = IP_PROTO_TAG_IPV4.data();
+const char *const TS_PROTO_TAG_IPV6      = IP_PROTO_TAG_IPV6.data();
 
 InkHashTable *TSProtoTags;
 
@@ -405,11 +405,11 @@ HttpProxyPort::processOptions(const char *opts)
 
   if (af_set_p) {
     if (in_ip_set_p && m_family != m_inbound_ip.family()) {
-      ts::StringView iname{ats_ip_family_name(m_inbound_ip.family())};
-      ts::StringView fname{ats_ip_family_name(m_family)};
+      ts::string_view iname{ats_ip_family_name(m_inbound_ip.family())};
+      ts::string_view fname{ats_ip_family_name(m_family)};
       Warning("Invalid port descriptor '%s' - the inbound adddress family [%.*s] is not the same type as the explicit family value "
               "[%.*s]",
-              opts, static_cast<int>(iname.size()), iname.ptr(), static_cast<int>(fname.size()), fname.ptr());
+              opts, static_cast<int>(iname.size()), iname.data(), static_cast<int>(fname.size()), fname.data());
       zret = false;
     }
   } else if (in_ip_set_p) {

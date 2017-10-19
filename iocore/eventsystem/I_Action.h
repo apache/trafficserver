@@ -119,7 +119,7 @@ public:
     machine.
 
   */
-  volatile int cancelled = false;
+  int cancelled = false;
 
   /**
     Cancels the asynchronous operation represented by this action.

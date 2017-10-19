@@ -57,8 +57,8 @@ protected:
 public:
   void *mdata;
   TSEventFunc m_event_func;
-  volatile int m_event_count;
-  volatile int m_closed;
+  int m_event_count;
+  int m_closed;
   int m_deletable;
   int m_deleted;
   // INKqa07670: Nokia memory leak bug fix

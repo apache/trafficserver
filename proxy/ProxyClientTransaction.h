@@ -25,7 +25,7 @@
 #define __PROXY_CLIENT_TRANSACTION_H__
 
 #include "ProxyClientSession.h"
-#include <ts/MemView.h>
+#include <ts/string_view.h>
 
 class HttpSM;
 class HttpServerSession;
@@ -240,13 +240,13 @@ public:
   }
 
   virtual int
-  populate_protocol(ts::StringView *result, int size) const
+  populate_protocol(ts::string_view *result, int size) const
   {
     return parent ? parent->populate_protocol(result, size) : 0;
   }
 
   virtual const char *
-  protocol_contains(ts::StringView tag_prefix) const
+  protocol_contains(ts::string_view tag_prefix) const
   {
     return parent ? parent->protocol_contains(tag_prefix) : nullptr;
   }

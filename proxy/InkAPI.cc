@@ -60,7 +60,7 @@
 #include "I_RecCore.h"
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
-#include <ts/MemView.h>
+#include <ts/string_view.h>
 
 #include "api/ts/ts.h"
 
@@ -83,11 +83,11 @@
   _HDR.m_mime = _HDR.m_http->m_fields_impl;
 
 // Globals for new librecords stats
-static volatile int api_rsb_index = 0;
+static int api_rsb_index;
 static RecRawStatBlock *api_rsb;
 
 // Globals for the Sessions/Transaction index registry
-static volatile int next_argv_index = 0;
+static int next_argv_index;
 
 static std::type_info const &TYPE_INFO_MGMT_INT   = typeid(MgmtInt);
 static std::type_info const &TYPE_INFO_MGMT_BYTE  = typeid(MgmtByte);
@@ -6478,12 +6478,13 @@ TSVConn
 TSVConnFdCreate(int fd)
 {
   UnixNetVConnection *vc;
+  EThread *t = this_ethread();
 
   if (unlikely(fd == NO_FD)) {
     return nullptr;
   }
 
-  vc = (UnixNetVConnection *)netProcessor.allocate_vc(this_ethread());
+  vc = (UnixNetVConnection *)netProcessor.allocate_vc(t);
   if (vc == nullptr) {
     return nullptr;
   }
@@ -6496,11 +6497,15 @@ TSVConnFdCreate(int fd)
 
   vc->id          = net_next_connection_number();
   vc->submit_time = Thread::get_hrtime();
+  vc->mutex       = new_ProxyMutex();
   vc->set_is_transparent(false);
-  vc->mutex = new_ProxyMutex();
   vc->set_context(NET_VCONNECTION_OUT);
 
-  if (vc->connectUp(this_ethread(), fd) != CONNECT_SUCCESS) {
+  // We should take the nh's lock and vc's lock before we get into the connectUp
+  SCOPED_MUTEX_LOCK(lock, get_NetHandler(t)->mutex, t);
+  SCOPED_MUTEX_LOCK(lock2, vc->mutex, t);
+
+  if (vc->connectUp(t, fd) != CONNECT_SUCCESS) {
     return nullptr;
   }
 
@@ -9366,10 +9371,10 @@ TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   int count  = 0;
   if (sm && n > 0) {
-    auto mem = static_cast<ts::StringView *>(alloca(sizeof(ts::StringView) * n));
+    auto mem = static_cast<ts::string_view *>(alloca(sizeof(ts::string_view) * n));
     count    = sm->populate_client_protocol(mem, n);
     for (int i = 0; i < count; ++i) {
-      result[i] = mem[i].ptr();
+      result[i] = mem[i].data();
     }
   }
   if (actual) {
@@ -9386,10 +9391,10 @@ TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int 
   ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
   int count              = 0;
   if (cs && n > 0) {
-    auto mem = static_cast<ts::StringView *>(alloca(sizeof(ts::StringView) * n));
+    auto mem = static_cast<ts::string_view *>(alloca(sizeof(ts::string_view) * n));
     count    = cs->populate_protocol(mem, n);
     for (int i = 0; i < count; ++i) {
-      result[i] = mem[i].ptr();
+      result[i] = mem[i].data();
     }
   }
   if (actual) {
@@ -9409,7 +9414,7 @@ TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
-  return sm->client_protocol_contains(ts::StringView(tag));
+  return sm->client_protocol_contains(ts::string_view{tag});
 }
 
 const char *
@@ -9417,7 +9422,7 @@ TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
-  return cs->protocol_contains(ts::StringView(tag));
+  return cs->protocol_contains(ts::string_view{tag});
 }
 
 const char *

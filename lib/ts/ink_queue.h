@@ -147,7 +147,7 @@ union head_p {
 #endif
 
 struct _InkFreeList {
-  volatile head_p head;
+  head_p head;
   const char *name;
   uint32_t type_size, chunk_size, used, allocated, alignment;
   uint32_t allocated_base, used_base;
@@ -178,7 +178,7 @@ void ink_freelists_snap_baseline();
 
 struct InkAtomicList {
   InkAtomicList() {}
-  volatile head_p head{};
+  head_p head{};
   const char *name = nullptr;
   uint32_t offset  = 0;
 };

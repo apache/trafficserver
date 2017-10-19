@@ -520,7 +520,6 @@ using event_message_handler = TSMgmtError (*)(EventClientT *, void *, size_t);
 
 static const event_message_handler handlers[] = {
   nullptr,                     // FILE_READ
-  nullptr,                     // FILE_WRITE
   nullptr,                     // RECORD_SET
   nullptr,                     // RECORD_GET
   nullptr,                     // PROXY_STATE_GET
@@ -534,10 +533,6 @@ static const event_message_handler handlers[] = {
   handle_event_reg_callback,   // EVENT_REG_CALLBACK
   handle_event_unreg_callback, // EVENT_UNREG_CALLBACK
   nullptr,                     // EVENT_NOTIFY
-  nullptr,                     // SNAPSHOT_TAKE
-  nullptr,                     // SNAPSHOT_RESTORE
-  nullptr,                     // SNAPSHOT_REMOVE
-  nullptr,                     // SNAPSHOT_GET_MLT
   nullptr,                     // DIAGS
   nullptr,                     // STATS_RESET_NODE
   nullptr,                     // STORAGE_DEVICE_CMD_OFFLINE

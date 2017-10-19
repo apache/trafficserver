@@ -282,7 +282,7 @@ ink_freelist_free(InkFreeList *f, void *item)
 static void
 freelist_free(InkFreeList *f, void *item)
 {
-  volatile void **adr_of_next = (volatile void **)ADDRESS_OF_NEXT(item, 0);
+  void **adr_of_next = (void **)ADDRESS_OF_NEXT(item, 0);
   head_p h;
   head_p item_pair;
   int result = 0;
@@ -338,7 +338,7 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 static void
 freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
 {
-  volatile void **adr_of_next = (volatile void **)ADDRESS_OF_NEXT(tail, 0);
+  void **adr_of_next = (void **)ADDRESS_OF_NEXT(tail, 0);
   head_p h;
   head_p item_pair;
   int result = 0;
@@ -522,11 +522,11 @@ ink_atomiclist_popall(InkAtomicList *l)
 void *
 ink_atomiclist_push(InkAtomicList *l, void *item)
 {
-  volatile void **adr_of_next = (volatile void **)ADDRESS_OF_NEXT(item, l->offset);
+  void **adr_of_next = (void **)ADDRESS_OF_NEXT(item, l->offset);
   head_p head;
   head_p item_pair;
-  int result       = 0;
-  volatile void *h = nullptr;
+  int result = 0;
+  void *h    = nullptr;
   do {
     INK_QUEUE_LD(head, l->head);
     h            = FREELIST_POINTER(head);

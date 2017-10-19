@@ -871,34 +871,6 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   return TS_ERR_OKAY;
 }
 
-/*-------------------------------------------------------------------------
- * WriteFile
- *-------------------------------------------------------------------------
- * Purpose: replaces the current file with the file passed in;
- *  does forceUpdate for Rollback and FileManager so correct file
- *  versioning is maintained
- * Input: file - the config file to write
- *        text - text buffer to write
- *        size - the size of the buffer to write
- *
- * Marshals a write file request that can be sent over the unix domain socket.
- * Connects to the socket and sends request over. Parses the response from
- * Traffic Manager.
- */
-TSMgmtError
-WriteFile(TSFileNameT file, const char *text, int size, int version)
-{
-  TSMgmtError ret;
-
-  OpType optype         = OpType::FILE_WRITE;
-  MgmtMarshallInt fid   = file;
-  MgmtMarshallInt vers  = version;
-  MgmtMarshallData data = {(void *)text, (size_t)size};
-
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::FILE_WRITE, &optype, &fid, &vers, &data);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::FILE_WRITE, main_socket_fd) : ret;
-}
-
 /***************************************************************************
  * Events
  ***************************************************************************/
@@ -1071,52 +1043,6 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
   }
 
   return TS_ERR_OKAY;
-}
-
-/***************************************************************************
- * Snapshots
- ***************************************************************************/
-static TSMgmtError
-snapshot_message(OpType op, const char *snapshot_name)
-{
-  TSMgmtError ret;
-  OpType optype           = op;
-  MgmtMarshallString name = const_cast<MgmtMarshallString>(snapshot_name);
-
-  if (!snapshot_name) {
-    return TS_ERR_PARAMS;
-  }
-
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype, &name);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
-}
-
-TSMgmtError
-SnapshotTake(const char *snapshot_name)
-{
-  return snapshot_message(OpType::SNAPSHOT_TAKE, snapshot_name);
-}
-
-TSMgmtError
-SnapshotRestore(const char *snapshot_name)
-{
-  return snapshot_message(OpType::SNAPSHOT_RESTORE, snapshot_name);
-}
-
-TSMgmtError
-SnapshotRemove(const char *snapshot_name)
-{
-  return snapshot_message(OpType::SNAPSHOT_REMOVE, snapshot_name);
-}
-
-TSMgmtError
-SnapshotGetMlt(LLQ *snapshots)
-{
-  if (!snapshots) {
-    return TS_ERR_PARAMS;
-  }
-
-  return send_and_parse_list(OpType::SNAPSHOT_GET_MLT, snapshots);
 }
 
 TSMgmtError

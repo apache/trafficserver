@@ -56,55 +56,7 @@ ProtectedQueue::enqueue(Event *e, bool fast_signal)
     // queue e->ethread in the list of threads to be signalled
     // inserting_thread == 0 means it is not a regular EThread
     if (inserting_thread != e_ethread) {
-      if (!inserting_thread || !inserting_thread->ethreads_to_be_signalled) {
-        signal();
-        if (fast_signal) {
-          if (e_ethread->signal_hook) {
-            e_ethread->signal_hook(e_ethread);
-          }
-        }
-      } else {
-#ifdef EAGER_SIGNALLING
-        // Try to signal now and avoid deferred posting.
-        if (e_ethread->EventQueueExternal.try_signal())
-          return;
-#endif
-        if (fast_signal) {
-          if (e_ethread->signal_hook) {
-            e_ethread->signal_hook(e_ethread);
-          }
-        }
-        int &t          = inserting_thread->n_ethreads_to_be_signalled;
-        EThread **sig_e = inserting_thread->ethreads_to_be_signalled;
-        if ((t + 1) >= eventProcessor.n_ethreads) {
-          // we have run out of room
-          if ((t + 1) == eventProcessor.n_ethreads) {
-            // convert to direct map, put each ethread (sig_e[i]) into
-            // the direct map loation: sig_e[sig_e[i]->id]
-            for (int i = 0; i < t; i++) {
-              EThread *cur = sig_e[i]; // put this ethread
-              while (cur) {
-                EThread *next = sig_e[cur->id]; // into this location
-                if (next == cur) {
-                  break;
-                }
-                sig_e[cur->id] = cur;
-                cur            = next;
-              }
-              // if not overwritten
-              if (sig_e[i] && sig_e[i]->id != i) {
-                sig_e[i] = nullptr;
-              }
-            }
-            t++;
-          }
-          // we have a direct map, insert this EThread
-          sig_e[e_ethread->id] = e_ethread;
-        } else {
-          // insert into vector
-          sig_e[t++] = e_ethread;
-        }
-      }
+      e_ethread->tail_cb->signalActivity();
     }
   }
 }
@@ -119,24 +71,9 @@ flush_signals(EThread *thr)
   }
   int i;
 
-// Since the lock is only there to prevent a race in ink_cond_timedwait
-// the lock is taken only for a short time, thus it is unlikely that
-// this code has any effect.
-#ifdef EAGER_SIGNALLING
-  for (i = 0; i < n; i++) {
-    // Try to signal as many threads as possible without blocking.
-    if (thr->ethreads_to_be_signalled[i]) {
-      if (thr->ethreads_to_be_signalled[i]->EventQueueExternal.try_signal())
-        thr->ethreads_to_be_signalled[i] = 0;
-    }
-  }
-#endif
   for (i = 0; i < n; i++) {
     if (thr->ethreads_to_be_signalled[i]) {
-      thr->ethreads_to_be_signalled[i]->EventQueueExternal.signal();
-      if (thr->ethreads_to_be_signalled[i]->signal_hook) {
-        thr->ethreads_to_be_signalled[i]->signal_hook(thr->ethreads_to_be_signalled[i]);
-      }
+      thr->ethreads_to_be_signalled[i]->tail_cb->signalActivity();
       thr->ethreads_to_be_signalled[i] = nullptr;
     }
   }
@@ -147,17 +84,16 @@ void
 ProtectedQueue::dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool sleep)
 {
   (void)cur_time;
-  Event *e;
   if (sleep) {
-    ink_mutex_acquire(&lock);
-    if (INK_ATOMICLIST_EMPTY(al)) {
-      timespec ts = ink_hrtime_to_timespec(timeout);
-      ink_cond_timedwait(&might_have_data, &lock, &ts);
-    }
-    ink_mutex_release(&lock);
+    this->wait(timeout);
   }
+  this->dequeue_external();
+}
 
-  e = (Event *)ink_atomiclist_popall(&al);
+void
+ProtectedQueue::dequeue_external()
+{
+  Event *e = (Event *)ink_atomiclist_popall(&al);
   // invert the list, to preserve order
   SLL<Event, Event::Link_link> l, t;
   t.head = e;
@@ -173,4 +109,15 @@ ProtectedQueue::dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool slee
       eventAllocator.free(e);
     }
   }
+}
+
+void
+ProtectedQueue::wait(ink_hrtime timeout)
+{
+  ink_mutex_acquire(&lock);
+  if (INK_ATOMICLIST_EMPTY(al)) {
+    timespec ts = ink_hrtime_to_timespec(timeout);
+    ink_cond_timedwait(&might_have_data, &lock, &ts);
+  }
+  ink_mutex_release(&lock);
 }

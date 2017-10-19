@@ -294,7 +294,7 @@ private:
   long m_last_roll_time;   // the last time this object rolled
   // its files
 
-  volatile head_p m_log_buffer; // current work buffer
+  head_p m_log_buffer; // current work buffer
   unsigned m_buffer_manager_idx;
   LogBufferManager *m_buffer_manager;
 

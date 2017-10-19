@@ -200,7 +200,10 @@ clean_parent(const std::string &bin_path)
 {
   char cwd[MAX_CWD_LEN];
   getcwd(cwd, sizeof(cwd));
-  std::string RealBinPath = realpath(bin_path.c_str(), nullptr); // bin path
+
+  char resolved_binpath[MAX_CWD_LEN];
+  realpath(bin_path.c_str(), resolved_binpath); // bin path
+  std::string RealBinPath = resolved_binpath;
 
   std::vector<std::string> TwoPath = {RealBinPath, cwd};
   for (auto it : TwoPath) {

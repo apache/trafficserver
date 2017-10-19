@@ -57,9 +57,14 @@
 #include <sys/capability.h>
 #endif
 #include <grp.h>
+#include <atomic>
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 #define DIAGS_LOG_FILENAME "manager.log"
+
+#if ATOMIC_INT_LOCK_FREE != 2
+#error "Need lock free std::atomic<int>"
+#endif
 
 // These globals are still referenced directly by management API.
 LocalManager *lmgmt = nullptr;
@@ -100,7 +105,7 @@ static void SignalHandler(int sig);
 static void SignalAlrmHandler(int sig);
 #endif
 
-static volatile int sigHupNotifier = 0;
+static std::atomic<int> sigHupNotifier;
 static void SigChldHandler(int sig);
 
 static void
@@ -704,7 +709,7 @@ main(int argc, const char **argv)
     rotateLogs();
 
     // Check for a SIGHUP
-    if (sigHupNotifier != 0) {
+    if (sigHupNotifier) {
       mgmt_log("[main] Reading Configuration Files due to SIGHUP\n");
       Reconfigure();
       sigHupNotifier = 0;

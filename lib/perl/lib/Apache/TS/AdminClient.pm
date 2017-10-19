@@ -30,27 +30,28 @@ use Apache::TS;
 
 # Mgmt API command constants, should track ts/mgmtapi.h
 use constant {
-    TS_FILE_READ            => 0,
-    TS_FILE_WRITE           => 1,
-    TS_RECORD_SET           => 2,
-    TS_RECORD_GET           => 3,
-    TS_PROXY_STATE_GET      => 4,
-    TS_PROXY_STATE_SET      => 5,
-    TS_RECONFIGURE          => 6,
-    TS_RESTART              => 7,
-    TS_BOUNCE               => 8,
-    TS_EVENT_RESOLVE        => 9,
-    TS_EVENT_GET_MLT        => 10,
-    TS_EVENT_ACTIVE         => 11,
-    TS_EVENT_REG_CALLBACK   => 12,
-    TS_EVENT_UNREG_CALLBACK => 13,
-    TS_EVENT_NOTIFY         => 14,
-    TS_SNAPSHOT_TAKE        => 15,
-    TS_SNAPSHOT_RESTORE     => 16,
-    TS_SNAPSHOT_REMOVE      => 17,
-    TS_SNAPSHOT_GET_MLT     => 18,
-    TS_DIAGS                => 19,
-    TS_STATS_RESET          => 20
+    TS_FILE_READ                  => 0,
+    TS_RECORD_SET                 => 1,
+    TS_RECORD_GET                 => 2,
+    TS_PROXY_STATE_GET            => 3,
+    TS_PROXY_STATE_SET            => 4,
+    TS_RECONFIGURE                => 5,
+    TS_RESTART                    => 6,
+    TS_BOUNCE                     => 7,
+    TS_EVENT_RESOLVE              => 8,
+    TS_EVENT_GET_MLT              => 9,
+    TS_EVENT_ACTIVE               => 10,
+    TS_EVENT_REG_CALLBACK         => 11,
+    TS_EVENT_UNREG_CALLBACK       => 12,
+    TS_EVENT_NOTIFY               => 13,
+    TS_STATS_RESET_NODE           => 14,
+    TS_STORAGE_DEVICE_CMD_OFFLINE => 15,
+    TS_RECORD_MATCH_GET           => 16,
+    TS_API_PING                   => 17,
+    TS_SERVER_BACKTRACE           => 18,
+    TS_RECORD_DESCRIBE_CONFIG     => 19,
+    TS_LIFECYCLE_MESSAGE          => 20,
+    TS_UNDEFINED_OP               => 21
 };
 
 use constant {
@@ -590,7 +591,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.res_track_memory
  proxy.config.reverse_proxy.enabled
  proxy.config.reverse_proxy.oldasxbehavior
- proxy.config.snapshot_dir
  proxy.config.socks.accept_enabled
  proxy.config.socks.accept_port
  proxy.config.socks.connection_attempts

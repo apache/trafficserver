@@ -137,7 +137,7 @@ public:
   void PreProcessParents(const char *val, const int line_num, char *buf, size_t len);
   const char *ProcessParents(char *val, bool isPrimary);
   bool ignore_query                                                  = false;
-  volatile uint32_t rr_next                                          = 0;
+  uint32_t rr_next                                                   = 0;
   bool go_direct                                                     = true;
   bool parent_is_proxy                                               = true;
   ParentSelectionStrategy *selection_strategy                        = nullptr;

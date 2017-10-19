@@ -108,11 +108,13 @@ iocore/net/quic/ts_quic_client
 iocore/aio/test_AIO
 iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event
+iocore/eventsystem/test_MIOBufferWriter
 iocore/hostdb/test_RefCountCache
 
 proxy/config/records.config.default
 proxy/config/storage.config.default
 proxy/hdrs/test_mime
+proxy/http/test_ForwardedConfig
 proxy/http2/test_Huffmancode
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_HPACK

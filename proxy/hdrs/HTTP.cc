@@ -1130,9 +1130,9 @@ validate_hdr_host(HTTPHdrImpl *hh)
     } else {
       int host_len         = 0;
       const char *host_val = host_field->value_get(&host_len);
-      ts::ConstBuffer addr, port, rest, host(host_val, host_len);
+      ts::string_view addr, port, rest, host(host_val, host_len);
       if (0 == ats_ip_parse(host, &addr, &port, &rest)) {
-        if (port) {
+        if (!port.empty()) {
           if (port.size() > 5) {
             return PARSE_RESULT_ERROR;
           }
@@ -1144,11 +1144,8 @@ validate_hdr_host(HTTPHdrImpl *hh)
         if (!validate_host_name(addr)) {
           return PARSE_RESULT_ERROR;
         }
-        while (rest && PARSE_RESULT_DONE == ret) {
-          if (!ParseRules::is_ws(*rest)) {
-            return PARSE_RESULT_ERROR;
-          }
-          ++rest;
+        if (PARSE_RESULT_DONE == ret && !std::all_of(rest.begin(), rest.end(), &ParseRules::is_ws)) {
+          return PARSE_RESULT_ERROR;
         }
       } else {
         ret = PARSE_RESULT_ERROR;

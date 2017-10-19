@@ -1,0 +1,13 @@
+``
+> POST / HTTP/1.1
+> Host: www.yetanotherexample.com``
+> User-Agent: curl/``
+> Accept: */*``
+``
+``
+< HTTP/1.1 200 OK
+< Server: ATS/``
+< Date:``
+< Age:``
+< Transfer-Encoding: chunked``
+``

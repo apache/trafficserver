@@ -92,8 +92,10 @@ test_ForwardedConfig_CPPFLAGS = $(AM_CPPFLAGS)\
 test_ForwardedConfig_SOURCES = \
   unit-tests/test_ForwardedConfig.cc \
   ForwardedConfig.cc \
-  unit-tests/test_ForwardedConfig_mocks.cc \
-  unit-tests/sym-links/MemView.cc
+  unit-tests/test_ForwardedConfig_mocks.cc
+
+test_ForwardedConfig_LDADD = \
+  $(top_builddir)/lib/ts/libtsutil.la
 
 tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
 	$(CXX_Clang_Tidy)

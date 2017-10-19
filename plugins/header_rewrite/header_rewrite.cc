@@ -120,7 +120,7 @@ private:
   bool add_rule(RuleSet *rule);
 
   TSCont _cont;
-  volatile int _ref_count;
+  int _ref_count;
   RuleSet *_rules[TS_HTTP_LAST_HOOK + 1];
   ResourceIDs _resids[TS_HTTP_LAST_HOOK + 1];
 };

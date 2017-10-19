@@ -47,6 +47,14 @@ def HasATSFeature(self, feature):
         "ATS feature not enabled: {feature}".format(feature=feature)
     )
 
+#test if a plugin exists in the libexec folder
+def PluginExists(self, pluginname):
+
+    path = os.path.join(self.Variables.PLUGINDIR, pluginname)
+    return self.Condition(lambda: os.path.isfile(path) == True, path + " not found." )
+
 
 ExtendCondition(HasATSFeature)
 ExtendCondition(HasCurlFeature)
+ExtendCondition(PluginExists)
+

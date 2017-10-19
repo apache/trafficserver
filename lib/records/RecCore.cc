@@ -1203,15 +1203,6 @@ RecConfigReadPluginDir()
 }
 
 //-------------------------------------------------------------------------
-// RecConfigReadSnapshotDir.
-//-------------------------------------------------------------------------
-std::string
-RecConfigReadSnapshotDir()
-{
-  return RecConfigReadConfigPath("proxy.config.snapshot_dir", "snapshots");
-}
-
-//-------------------------------------------------------------------------
 // RecConfigReadConfigPath
 //-------------------------------------------------------------------------
 std::string

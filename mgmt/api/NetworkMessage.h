@@ -34,7 +34,6 @@
 // the possible operations or msg types sent from remote client to TM
 enum class OpType : MgmtMarshallInt {
   FILE_READ,
-  FILE_WRITE,
   RECORD_SET,
   RECORD_GET,
   PROXY_STATE_GET,
@@ -48,10 +47,6 @@ enum class OpType : MgmtMarshallInt {
   EVENT_REG_CALLBACK,
   EVENT_UNREG_CALLBACK,
   EVENT_NOTIFY, /* only msg sent from TM to client */
-  SNAPSHOT_TAKE,
-  SNAPSHOT_RESTORE,
-  SNAPSHOT_REMOVE,
-  SNAPSHOT_GET_MLT,
   STATS_RESET_NODE,
   STORAGE_DEVICE_CMD_OFFLINE,
   RECORD_MATCH_GET,

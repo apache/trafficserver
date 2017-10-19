@@ -44,7 +44,7 @@ class Event;
 class UnixNetVConnection;
 
 struct NetState {
-  volatile int enabled;
+  int enabled;
   VIO vio;
   Link<UnixNetVConnection> ready_link;
   SLink<UnixNetVConnection> enable_link;

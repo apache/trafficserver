@@ -219,10 +219,10 @@ public:
     LOG_FILE_COULD_NOT_OPEN_FILE,
   };
 
-  FILE *m_fp                        = nullptr;
-  long m_start_time                 = time(nullptr);
-  long m_end_time                   = 0L;
-  volatile uint64_t m_bytes_written = 0;
+  FILE *m_fp               = nullptr;
+  long m_start_time        = time(nullptr);
+  long m_end_time          = 0L;
+  uint64_t m_bytes_written = 0;
 
 private:
   // member functions

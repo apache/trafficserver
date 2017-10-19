@@ -78,7 +78,7 @@ plugins to build large scale web applications.
     openssl-devel
     tcl-devel
     pcre-devel
-    ncurses-devel and libcurl-devl(optional, needed for traffic_top)
+    ncurses-devel and libcurl-devel(optional, needed for traffic_top)
     libcap-devel (optional, highly recommended)
     hwloc-devel (optional, highly recommended)
     flex (optional, needed for e.g. WCCP)

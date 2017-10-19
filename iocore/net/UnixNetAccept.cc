@@ -28,9 +28,8 @@
 #endif
 #define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
-using NetAcceptHandler      = int (NetAccept::*)(int, void *);
-volatile int dummy_volatile = 0;
-int accept_till_done        = 1;
+using NetAcceptHandler = int (NetAccept::*)(int, void *);
+int accept_till_done   = 1;
 
 std::vector<NetAccept *> naVec;
 static void
@@ -272,10 +271,8 @@ NetAccept::do_blocking_accept(EThread *t)
 
     // The con.fd may exceed the limitation of check_net_throttle() because we do blocking accept here.
     if (check_emergency_throttle(con)) {
-      // The `con' could be closed if there is hyper emergency
-      if (con.fd == NO_FD) {
-        return 0;
-      }
+      con.close();
+      return 0;
     }
 
     // Use 'nullptr' to Bypass thread allocator

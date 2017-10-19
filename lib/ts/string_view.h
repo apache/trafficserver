@@ -33,6 +33,7 @@
 #include <utility>
 #include <string>
 #include <ostream>
+#include <cstring>
 
 #if __cplusplus < 201402
 #define CONSTEXPR14 inline
@@ -1218,4 +1219,21 @@ using string_view = basic_string_view<char>;
 constexpr ts::string_view operator"" _sv(const char *str, size_t len) noexcept
 {
   return ts::string_view(str, len);
+}
+
+// TS local extensions, not dependent on our local implementation of std::string_view.
+
+/// Check for prefix.
+/// @return @c true if @a lhs is a prefix (ignoring case) of @a rhs.
+inline bool
+IsNoCasePrefixOf(ts::string_view const &lhs, ts::string_view const &rhs)
+{
+  return lhs.size() <= rhs.size() && 0 == strncasecmp(lhs.data(), rhs.data(), lhs.size());
+}
+/// Check for prefix.
+/// @return @c true if @a lhs is a prefix of @a rhs.
+inline bool
+IsPrefixOf(ts::string_view const &lhs, ts::string_view const &rhs)
+{
+  return lhs.size() <= rhs.size() && 0 == memcmp(lhs.data(), rhs.data(), lhs.size());
 }

@@ -361,7 +361,7 @@ LogObject::display(FILE *fd)
 }
 
 static head_p
-increment_pointer_version(volatile head_p *dst)
+increment_pointer_version(head_p *dst)
 {
   head_p h;
   head_p new_h;
@@ -375,7 +375,7 @@ increment_pointer_version(volatile head_p *dst)
 }
 
 static bool
-write_pointer_version(volatile head_p *dst, head_p old_h, void *ptr, head_p::version_type vers)
+write_pointer_version(head_p *dst, head_p old_h, void *ptr, head_p::version_type vers)
 {
   head_p tmp_h;
 

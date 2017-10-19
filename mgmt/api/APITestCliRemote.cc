@@ -43,7 +43,6 @@
  * File operations:
  * ---------------
  * read_file:  reads hosting.config file
- * write_file: write some made-up text to hosting.config file
  * proxy.config.xxx (a records.config variable): returns value of that record
  * records: tests get/set/get a record of each different type
  *          (int, float, counter, string)
@@ -71,13 +70,6 @@
  * register: registers a generic callback (=eventCallbackFn) which
  *           prints out the event name whenever an event is signalled
  * unregister: unregisters the generic callback function eventCallbackFn
- *
- * Snapshot Operations:
- * --------------------
- * take_snap:<snap_name> - takes the snapshot snap_name
- * restore_snap:<snap_name> restores the snapshot snap_name
- * remove_snap:<snap_name> - removes the snapshot snap_name
- * snapshots - lists all snapshots in etc/trafficserver/snapshot directory
  *
  * Diags
  * ----
@@ -1362,38 +1354,6 @@ test_read_file()
   }
 }
 
-/* ------------------------------------------------------------------------
- * test_write_file
- * ------------------------------------------------------------------------
- * writes hosting.config with some garbage text then reads the file and
- * prints the new file to stdout
- */
-void
-test_write_file()
-{
-  char *f_text      = nullptr;
-  int f_size        = -1;
-  int f_ver         = -1;
-  char new_f_text[] = "blah, blah blah\n I hope this works. please!!!   \n";
-  int new_f_size    = strlen(new_f_text);
-
-  printf("\n");
-  if (TSConfigFileWrite(TS_FNAME_HOSTING, new_f_text, new_f_size, -1) != TS_ERR_OKAY) {
-    printf("[TSConfigFileWrite] FAILED!\n");
-  } else {
-    printf("[TSConfigFileWrite] SUCCESS!\n");
-  }
-  printf("\n");
-
-  // should free f_text???
-  if (TSConfigFileRead(TS_FNAME_HOSTING, &f_text, &f_size, &f_ver) != TS_ERR_OKAY) {
-    printf("[TSConfigFileRead] FAILED!\n");
-  } else {
-    printf("[TSConfigFileRead]\n\tFile Size=%d, Version=%d\n%s\n", f_size, f_ver, f_text);
-    TSfree(f_text);
-  }
-}
-
 /***************************************************************************
  * TSCfgContext Testing
  ***************************************************************************/
@@ -1454,216 +1414,6 @@ test_cfg_context_get(char *args)
   TSCfgContextDestroy(ctx);
   TSfree(name);
   return;
-}
-
-//
-// tests the TSCfgContextMoveEleUp/Down functions (which end up calling
-// the new "copy" utility functions in CfgContextUtils.cc
-// depending on the file specified, this will move the top rule to the bottom,
-// and the second to the last rule to the top
-// essentially, the original top and bottom rules switch places!!
-//
-void
-test_cfg_context_move(char *args)
-{
-  TSCfgContext ctx;
-  TSFileNameT file;
-  int i;
-  TSMgmtError err;
-  char *filename;
-
-  strtok(args, ":");
-  filename = strtok(nullptr, ":");
-  fprintf(stderr, "modify file: %s\n", filename);
-  char *name = TSstrdup(filename);
-
-  // convert file name to TSFileNameT
-  if (strcmp(name, "cache.config") == 0) {
-    file = TS_FNAME_CACHE_OBJ;
-  } else if (strcmp(name, "congestion.config") == 0) {
-    file = TS_FNAME_CONGESTION;
-  } else if (strcmp(name, "hosting.config") == 0) {
-    file = TS_FNAME_HOSTING;
-  } else if (strcmp(name, "ip_allow.config") == 0) {
-    file = TS_FNAME_IP_ALLOW;
-  } else if (strcmp(name, "parent.config") == 0) {
-    file = TS_FNAME_PARENT_PROXY;
-  } else if (strcmp(name, "volume.config") == 0) {
-    file = TS_FNAME_VOLUME;
-  } else if (strcmp(name, "remap.config") == 0) {
-    file = TS_FNAME_REMAP;
-  } else if (strcmp(name, "socks.config") == 0) {
-    file = TS_FNAME_SOCKS;
-  } else if (strcmp(name, "storage.config") == 0) {
-    file = TS_FNAME_STORAGE;
-  } else if (strcmp(name, "splitdns.config") == 0) {
-    file = TS_FNAME_SPLIT_DNS;
-  } else {
-    TSfree(name);
-    return;
-  }
-
-  ctx = TSCfgContextCreate(file);
-  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
-    printf("ERROR READING FILE\n");
-  }
-
-  int count = TSCfgContextGetCount(ctx);
-  printf("%d rules in file: %s\n", count, name);
-
-  // shift all the ele's up so that the top ele is now the bottom ele
-  printf("\nShift all ele's up so that top ele is now bottom ele\n");
-  for (i = 1; i < count; i++) {
-    err = TSCfgContextMoveEleUp(ctx, i);
-    if (err != TS_ERR_OKAY) {
-      printf("ERROR moving ele at index %d up \n", i);
-      goto END;
-    }
-  }
-
-  // shift all the ele's down so that the next to bottom ele is now top ele
-  // move all ele's above the last ele down; bottom ele becomes top ele
-  printf("\nShift all Ele's above second to last ele down; bottom ele becomes top ele\n");
-  for (i = count - 3; i >= 0; i--) {
-    err = TSCfgContextMoveEleDown(ctx, i);
-    if (err != TS_ERR_OKAY) {
-      printf("ERROR: moving ele down at index %d\n", i);
-      goto END;
-    }
-  }
-
-  // clean up; commit change
-  TSCfgContextCommit(ctx, nullptr, nullptr);
-
-END:
-  TSCfgContextDestroy(ctx);
-  TSfree(name);
-  return;
-}
-
-/* ------------------------------------------------------------------------
- * test_cfg_plugin
- * ------------------------------------------------------------------------
- * Gets all the Ele's from plugin.config, modifies them, and commits the changes
- * to file
- */
-void
-test_cfg_plugin()
-{
-  // Not used here.
-  // TSCfgIterState iter_state;
-  TSCfgContext ctx;
-  TSCfgEle *cfg_ele;
-  TSPluginEle *ele;
-
-  ctx = TSCfgContextCreate(TS_FNAME_PLUGIN);
-  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
-    printf("ERROR READING FILE\n");
-  }
-
-  // retrieve and modify ele
-  printf("test_cfg_plugin: modifying the first ele...\n");
-  cfg_ele = TSCfgContextGetEleAt(ctx, 0);
-  ele     = (TSPluginEle *)cfg_ele;
-  if (ele) {
-    // free(ele->name);
-    ele->name = ats_strdup("change-plugin.so");
-  }
-
-  // remove the second ele
-  printf("test_cfg_plugin: removing the second ele...\n");
-  TSCfgContextRemoveEleAt(ctx, 1);
-
-  // create and add new ele
-  printf("test_socks_set: appending a new ele...\n");
-  ele = TSPluginEleCreate();
-
-  ele->name = ats_strdup("new-plugin.so");
-
-  ele->args = TSStringListCreate();
-  TSStringListEnqueue(ele->args, ats_strdup("arg1"));
-  TSStringListEnqueue(ele->args, ats_strdup("arg2"));
-  TSCfgContextAppendEle(ctx, (TSCfgEle *)ele);
-
-  // commit change
-  TSCfgContextCommit(ctx, nullptr, nullptr);
-
-  TSCfgContextDestroy(ctx);
-}
-
-/* ------------------------------------------------------------------------
- * test_cfg_socks
- * ------------------------------------------------------------------------
- * Gets all the Ele's from socks, modifies them, and commits the changes
- * to file
- */
-void
-test_cfg_socks()
-{
-  // Not used here.
-  // TSCfgIterState iter_state;
-  TSCfgContext ctx;
-  TSCfgEle *cfg_ele;
-  TSSocksEle *ele;
-
-  ctx = TSCfgContextCreate(TS_FNAME_SOCKS);
-  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
-    printf("ERROR READING FILE\n");
-  }
-
-  // retrieving an ele
-  printf("test_socks_set: modifying the fourth ele...\n");
-  cfg_ele = TSCfgContextGetEleAt(ctx, 3);
-  ele     = (TSSocksEle *)cfg_ele;
-  if (ele) {
-    if (ele->rr != TS_RR_NONE) {
-      ele->rr = TS_RR_FALSE;
-    }
-  }
-
-  // remove the second ele
-  printf("test_socks_set: removing the second ele...\n");
-  TSCfgContextRemoveEleAt(ctx, 1);
-
-  // create new structs for new rules
-  TSIpAddrEle *ip1 = TSIpAddrEleCreate();
-  ip1->type        = TS_IP_SINGLE;
-  ip1->ip_a        = TSstrdup("1.1.1.1");
-
-  TSDomainList dlist = TSDomainListCreate();
-  TSDomain *dom1     = TSDomainCreate();
-  dom1->domain_val   = TSstrdup("www.mucky.com");
-  dom1->port         = 8888;
-  TSDomainListEnqueue(dlist, dom1);
-
-  TSDomain *dom2   = TSDomainCreate();
-  dom2->domain_val = TSstrdup("freakazoid.com");
-  dom2->port       = 2222;
-  TSDomainListEnqueue(dlist, dom2);
-
-  TSDomain *dom3   = TSDomainCreate();
-  dom3->domain_val = TSstrdup("hong.kong.com");
-  dom3->port       = 3333;
-  TSDomainListEnqueue(dlist, dom3);
-
-  // create and add new ele
-  printf("test_socks_set: appending a new ele...\n");
-  ele = TSSocksEleCreate(TS_TYPE_UNDEFINED);
-  if (ele) {
-    ele->cfg_ele.type  = TS_SOCKS_MULTIPLE;
-    ele->dest_ip_addr  = ip1;
-    ele->socks_servers = dlist;
-    ele->rr            = TS_RR_STRICT;
-
-    TSCfgContextAppendEle(ctx, (TSCfgEle *)ele);
-  } else {
-    printf("Can't create SocksEle\n");
-  }
-
-  // commit change
-  TSCfgContextCommit(ctx, nullptr, nullptr);
-
-  TSCfgContextDestroy(ctx);
 }
 
 /***************************************************************************
@@ -1801,85 +1551,6 @@ unregister_event_callback()
   printf("\n[unregister_event_callback]\n");
   err = TSEventSignalCbUnregister(nullptr, eventCallbackFn);
   print_err("TSEventSignalCbUnregister", err);
-}
-
-/***************************************************************************
- * Snapshots Testing
- ***************************************************************************/
-
-void
-print_snapshots()
-{
-  TSStringList list;
-  TSMgmtError err;
-  char *name;
-
-  list = TSStringListCreate();
-  err  = TSSnapshotGetMlt(list);
-  print_err("TSSnapshotGetMlt", err);
-
-  printf("All Snapshots:\n");
-  if (err == TS_ERR_OKAY) {
-    int num = TSStringListLen(list);
-    for (int i = 0; i < num; i++) {
-      name = TSStringListDequeue(list);
-      if (name) {
-        printf("%s\n", name);
-      }
-      TSfree(name);
-    }
-  }
-
-  TSStringListDestroy(list);
-  return;
-}
-
-void
-add_snapshot(char *args)
-{
-  char *snap_name;
-
-  strtok(args, ":");
-  snap_name = strtok(nullptr, ":");
-  fprintf(stderr, "add snapshot: %s\n", snap_name);
-  char *name = TSstrdup(snap_name);
-
-  TSMgmtError err = TSSnapshotTake(name);
-  print_err("TSSnapshotTake", err);
-
-  TSfree(name);
-}
-
-void
-remove_snapshot(char *args)
-{
-  char *snap_name;
-
-  strtok(args, ":");
-  snap_name = strtok(nullptr, ":");
-  fprintf(stderr, "remove snapshot: %s\n", snap_name);
-  char *name = TSstrdup(snap_name);
-
-  TSMgmtError err = TSSnapshotRemove(name);
-  print_err("TSSnapshotRemove", err);
-
-  TSfree(name);
-}
-
-void
-restore_snapshot(char *args)
-{
-  char *snap_name;
-
-  strtok(args, ":");
-  snap_name = strtok(nullptr, ":");
-  fprintf(stderr, "resotre snapshot: %s\n", snap_name);
-  char *name = TSstrdup(snap_name);
-
-  TSMgmtError err = TSSnapshotRestore(name);
-  print_err("TSSnapshotRestore", err);
-
-  TSfree(name);
 }
 
 /***************************************************************************
@@ -2051,8 +1722,6 @@ runInteractive()
       test_record_set_mlt();
     } else if (strstr(buf, "read_file")) {
       test_read_file();
-    } else if (strstr(buf, "write_file")) {
-      test_write_file();
     } else if (strstr(buf, "proxy.")) {
       test_rec_get(buf);
     } else if (strstr(buf, "active_events")) {
@@ -2063,26 +1732,12 @@ runInteractive()
       register_event_callback();
     } else if (strstr(buf, "unregister")) {
       unregister_event_callback();
-    } else if (strstr(buf, "snapshots")) {
-      print_snapshots();
-    } else if (strstr(buf, "take_snap")) {
-      add_snapshot(buf);
-    } else if (strstr(buf, "remove_snap")) {
-      remove_snapshot(buf);
-    } else if (strstr(buf, "restore_snap")) {
-      restore_snapshot(buf);
     } else if (strstr(buf, "read_url")) {
       test_read_url(true);
     } else if (strstr(buf, "test_url")) {
       test_read_url(false);
     } else if (strstr(buf, "cfg_get:")) {
       test_cfg_context_get(buf);
-    } else if (strstr(buf, "cfg:")) {
-      test_cfg_context_move(buf);
-    } else if (strstr(buf, "cfg_socks")) {
-      test_cfg_socks();
-    } else if (strstr(buf, "cfg_plugin")) {
-      test_cfg_plugin();
     } else if (strstr(buf, "reset_stats")) {
       reset_stats();
     } else if (strstr(buf, "set_stats")) {

@@ -1003,7 +1003,7 @@ PluginVC::set_data(int id, void *data)
 
 // PluginVCCore
 
-vint32 PluginVCCore::nextid = 0;
+int32_t PluginVCCore::nextid;
 
 PluginVCCore::~PluginVCCore()
 {

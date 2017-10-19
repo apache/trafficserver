@@ -55,7 +55,7 @@ enum {
 
 FieldListCacheElement fieldlist_cache[FIELDLIST_CACHE_SIZE];
 int fieldlist_cache_entries = 0;
-vint32 LogBuffer::M_ID      = 0;
+int32_t LogBuffer::M_ID;
 
 /*-------------------------------------------------------------------------
   The following LogBufferHeader routines are used to grab strings out from
@@ -137,7 +137,7 @@ LogBuffer::LogBuffer(LogObject *owner, size_t size, size_t buf_align, size_t wri
   m_state.s.offset = hdr_size;
 
   // update the buffer id (m_id gets the old value)
-  m_id = (uint32_t)ink_atomic_increment((pvint32)&M_ID, 1);
+  m_id = (uint32_t)ink_atomic_increment((int32_t *)&M_ID, 1);
 
   m_expiration_time = LogUtils::timestamp() + Log::config->max_secs_per_buffer;
 
@@ -164,7 +164,7 @@ LogBuffer::LogBuffer(LogObject *owner, LogBufferHeader *header)
 
   // update the buffer id (m_id gets the old value)
   //
-  m_id = (uint32_t)ink_atomic_increment((pvint32)&M_ID, 1);
+  m_id = (uint32_t)ink_atomic_increment((int32_t *)&M_ID, 1);
 
   Debug("log-logbuffer", "[%p] Created repurposed buffer %u for %s at address %p", this_ethread(), m_id,
         m_owner->get_base_filename(), m_buffer);

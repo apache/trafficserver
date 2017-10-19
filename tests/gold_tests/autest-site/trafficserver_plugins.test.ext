@@ -31,12 +31,20 @@ def prepare_plugin(self, path, tsproc, plugin_args = ""):
     plugin_dir = tsproc.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']
     tsproc.Setup.Copy(path, plugin_dir)
 
+    tsxs = os.path.join(self.Variables.BINDIR,'tsxs')
+    # get the top level object ( ie Test) to add a condition
+    # need to change this API in AuTest to be a better name as it now has value 
+    # to be called by user API - dragon512
+    self._RootRunable.SkipUnless(
+        Condition.HasProgram(tsxs, "tsxs needs be installed with trafficserver package for this test to run")
+        )
+
     # Compile the plugin.
     in_basename = os.path.basename(path)
     in_path = os.path.join(plugin_dir, in_basename)
     out_basename = os.path.splitext(in_basename)[0] + '.so'
     out_path = os.path.join(plugin_dir, out_basename)
-    tsproc.Setup.RunCommand("tsxs -c {0} -o {1}".format(in_path, out_path))
+    tsproc.Setup.RunCommand("{tsxs} -c {0} -o {1}".format(in_path, out_path, tsxs=tsxs))
 
     # Add an entry to plugin.config.
     tsproc.Disk.plugin_config.AddLine("{0} {1}".format(out_basename,plugin_args))

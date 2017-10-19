@@ -34,39 +34,6 @@ std::string getIP(sockaddr const *s_sockaddr);
 char *getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN]);
 uint16_t getPort(sockaddr const *s_sockaddr);
 
-// Memory barriers
-#if defined(__i386__)
-#define mb() __asm__ __volatile__("lock; addl $0,0(%%esp)" : : : "memory")
-#define rmb() __asm__ __volatile__("lock; addl $0,0(%%esp)" : : : "memory")
-#define wmb() __asm__ __volatile__("" : : : "memory")
-#elif defined(__x86_64__)
-#define mb() __asm__ __volatile__("mfence" : : : "memory")
-#define rmb() __asm__ __volatile__("lfence" : : : "memory")
-#define wmb() __asm__ __volatile__("" : : : "memory")
-#elif defined(__mips__)
-#define mb() __asm__ __volatile__("sync" : : : "memory")
-#define rmb() __asm__ __volatile__("sync" : : : "memory")
-#define wmb() __asm__ __volatile__("" : : : "memory")
-#elif defined(__arm__)
-#define mb() __asm__ __volatile__("dmb" : : : "memory")
-#define rmb() __asm__ __volatile__("dmb" : : : "memory")
-#define wmb() __asm__ __volatile__("" : : : "memory")
-#elif defined(__mips__)
-#define mb() __asm__ __volatile__("sync" : : : "memory")
-#define rmb() __asm__ __volatile__("sync" : : : "memory")
-#define wmb() __asm__ __volatile__("" : : : "memory")
-#elif defined(__powerpc64__)
-#define mb() __asm__ __volatile__("sync" : : : "memory")
-#define rmb() __asm__ __volatile__("sync" : : : "memory")
-#define wmb() __asm__ __volatile__("sync" : : : "memory")
-#elif defined(__aarch64__)
-#define mb() __asm__ __volatile__("dsb sy" : : : "memory")
-#define rmb() __asm__ __volatile__("dsb ld" : : : "memory")
-#define wmb() __asm__ __volatile__("dsb st" : : : "memory")
-#else
-#error "Define barriers"
-#endif
-
 extern const char PLUGIN_NAME[];
 extern const char PLUGIN_NAME_DBG[];
 

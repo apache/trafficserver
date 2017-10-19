@@ -69,9 +69,9 @@ typedef struct invalidate_t {
 } invalidate_t;
 
 typedef struct {
-  invalidate_t *volatile invalidate_list;
+  invalidate_t *invalidate_list;
   char *config_file;
-  volatile time_t last_load;
+  time_t last_load;
   TSTextLogObject log;
 } plugin_state_t;
 

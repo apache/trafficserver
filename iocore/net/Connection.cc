@@ -263,7 +263,6 @@ Lerror:
   // coverity[check_after_sink]
   if (fd != NO_FD) {
     close();
-    fd = NO_FD;
   }
 
   return res;

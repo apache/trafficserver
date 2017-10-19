@@ -45,6 +45,8 @@ struct ProtectedQueue {
   void remove(Event *e);
   Event *dequeue_local();
   void dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool sleep);
+  void dequeue_external();       // Dequeue any external events.
+  void wait(ink_hrtime timeout); // Wait for @a timeout nanoseconds on a condition variable if there are no events.
 
   InkAtomicList al;
   ink_mutex lock;

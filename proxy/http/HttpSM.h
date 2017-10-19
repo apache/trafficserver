@@ -41,7 +41,7 @@
 #include "InkAPIInternal.h"
 #include "../ProxyClientTransaction.h"
 #include "HdrUtils.h"
-#include <ts/MemView.h>
+#include <ts/string_view.h>
 #include <ts/History.h>
 //#include "AuthHttpAdapter.h"
 
@@ -274,9 +274,9 @@ public:
   /// Get the protocol stack for the inbound (client, user agent) connection.
   /// @arg result [out] Array to store the results
   /// @arg n [in] Size of the array @a result.
-  int populate_client_protocol(ts::StringView *result, int n) const;
-  const char *client_protocol_contains(ts::StringView tag_prefix) const;
-  ts::StringView find_proto_string(HTTPVersion version) const;
+  int populate_client_protocol(ts::string_view *result, int n) const;
+  const char *client_protocol_contains(ts::string_view tag_prefix) const;
+  ts::string_view find_proto_string(HTTPVersion version) const;
 
   int64_t sm_id      = -1;
   unsigned int magic = HTTP_SM_MAGIC_DEAD;

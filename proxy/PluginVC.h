@@ -170,7 +170,7 @@ private:
   bool need_read_process;
   bool need_write_process;
 
-  volatile bool closed;
+  bool closed;
   Event *sm_lock_retry_event;
   Event *core_lock_retry_event;
 
@@ -259,7 +259,7 @@ private:
   void *passive_data;
   void *active_data;
 
-  static vint32 nextid;
+  static int32_t nextid;
   unsigned id;
 };
 

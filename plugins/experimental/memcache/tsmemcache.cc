@@ -39,9 +39,9 @@ ClassAllocator<MC> theMCAllocator("MC");
 static time_t base_day_time;
 
 // These should be persistent.
-volatile int32_t MC::verbosity     = 0;
-volatile ink_hrtime MC::last_flush = 0;
-volatile int64_t MC::next_cas      = 1;
+int32_t MC::verbosity     = 0;
+ink_hrtime MC::last_flush = 0;
+int64_t MC::next_cas      = 1;
 
 static void
 tsmemcache_constants()

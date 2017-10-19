@@ -52,7 +52,7 @@ enum ThreadType {
   DEDICATED,
 };
 
-extern volatile bool shutdown_event_system;
+extern bool shutdown_event_system;
 
 /**
   Event System specific type of thread.
@@ -86,6 +86,27 @@ extern volatile bool shutdown_event_system;
 class EThread : public Thread
 {
 public:
+  /** Handler for tail of event loop.
+
+      The event loop should not spin. To avoid that a tail handler is called to block for a limited time.
+      This is a protocol class that defines the interface to the handler.
+  */
+  class LoopTailHandler
+  {
+  public:
+    /** Called at the end of the event loop to block.
+        @a timeout is the maximum length of time (in ns) to block.
+    */
+    virtual int waitForActivity(ink_hrtime timeout) = 0;
+    /** Unblock.
+
+        This is required to unblock (wake up) the block created by calling @a cb.
+    */
+    virtual void signalActivity() = 0;
+
+    virtual ~LoopTailHandler() {}
+  };
+
   /*-------------------------------------------------------*\
   |  Common Interface                                       |
   \*-------------------------------------------------------*/
@@ -262,6 +283,9 @@ public:
   */
   Event *schedule_spawn(Continuation *c, int ev = EVENT_IMMEDIATE, void *cookie = nullptr);
 
+  // Set the tail handler.
+  void set_tail_handler(LoopTailHandler *handler);
+
   /* private */
 
   Event *schedule_local(Event *e);
@@ -305,9 +329,11 @@ public:
   // Private Interface
 
   void execute() override;
+  void execute_regular();
+  void process_queue(Que(Event, link) * NegativeQueue);
   void process_event(Event *e, int calling_code);
   void free_event(Event *e);
-  void (*signal_hook)(EThread *) = nullptr;
+  LoopTailHandler *tail_cb = &DEFAULT_TAIL_HANDLER;
 
 #if HAVE_EVENTFD
   int evfd = ts::NO_FD;
@@ -328,6 +354,31 @@ public:
   Event *start_event = nullptr;
 
   ServerSessionPool *server_session_pool = nullptr;
+
+  /** Default handler used until it is overridden.
+
+      This uses the cond var wait in @a ExternalQueue.
+  */
+  class DefaultTailHandler : public LoopTailHandler
+  {
+    DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
+
+    int
+    waitForActivity(ink_hrtime timeout)
+    {
+      _q.wait(Thread::get_hrtime() + timeout);
+      return 0;
+    }
+    void
+    signalActivity()
+    {
+      _q.signal();
+    }
+
+    ProtectedQueue &_q;
+
+    friend class EThread;
+  } DEFAULT_TAIL_HANDLER = EventQueueExternal;
 };
 
 /**
