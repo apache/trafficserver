@@ -225,7 +225,7 @@ class NetHandler : public Continuation, public EThread::LoopTailHandler
 public:
   // @a thread and @a trigger_event are redundant - you can get the former from the latter.
   // If we don't get rid of @a trigger_event we should remove @a thread.
-  EThread *thread;
+  EThread *thread = nullptr;
   Event *trigger_event;
   QueM(UnixNetVConnection, NetState, read, ready_link) read_ready_list;
   QueM(UnixNetVConnection, NetState, write, ready_link) write_ready_list;
