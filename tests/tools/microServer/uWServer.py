@@ -33,7 +33,7 @@ import argparse
 import ssl
 import socket
 import importlib.util
-
+import time
 test_mode_enabled = True
 __version__ = "1.0"
 
@@ -51,6 +51,7 @@ import sessionvalidation.sessionvalidation as sv
 
 
 SERVER_PORT = 5005  # default port
+SERVER_DELAY = 0 # default delay
 HTTP_VERSION = 'HTTP/1.1'
 G_replay_dict = {}
 
@@ -368,6 +369,7 @@ class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         global G_replay_dict, test_mode_enabled
         if test_mode_enabled:
+            time.sleep(time_delay)
             request_hash = self.getTestName(self.requestline)
         else:
             request_hash, __ = cgi.parse_header(self.headers.get('Content-MD5'))
@@ -620,6 +622,11 @@ def main():
                         default=SERVER_PORT,
                         help="Port to use")
 
+    parser.add_argument("--delay", "-dy",
+                        type=float,
+                        default=SERVER_DELAY,
+                        help="Response delay")
+
     parser.add_argument("--timeout", "-t",
                         type=float,
                         default=None,
@@ -655,6 +662,8 @@ def main():
 
     args = parser.parse_args()
     options = args
+    global time_delay
+    time_delay = options.delay
 
     # set up global dictionary of {uuid (string): response (Response object)}
     s = sv.SessionValidator(args.data_dir)
