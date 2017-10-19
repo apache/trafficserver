@@ -42,7 +42,6 @@ public:
   void init_accept(EThread *t) override;
   void send_packet(const QUICPacket &packet, QUICNetVConnection *vc);
   void send_packet(const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu);
-  void forget(QUICNetVConnection *vc);
 
 private:
   void _recv_packet(int event, UDPPacket *udpPacket);

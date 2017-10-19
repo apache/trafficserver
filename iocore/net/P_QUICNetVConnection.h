@@ -170,6 +170,7 @@ public:
 
   // QUICNetVConnection
   void registerNextProtocolSet(SSLNextProtocolSet *s);
+  bool is_closed();
 
   // QUICConnection
   QUICConnectionId connection_id() override;

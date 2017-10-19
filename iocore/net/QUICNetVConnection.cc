@@ -123,8 +123,6 @@ QUICNetVConnection::free(EThread *t)
 {
   DebugQUICCon("Free connection");
 
-  this->_packet_handler->forget(this);
-
   this->_udp_con        = nullptr;
   this->_packet_handler = nullptr;
 
@@ -537,7 +535,10 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
 {
   switch (event) {
   case QUIC_EVENT_SHUTDOWN: {
-    this->_packet_write_ready        = nullptr;
+    if (this->_packet_write_ready) {
+      this->_packet_write_ready->cancel();
+      this->_packet_write_ready = nullptr;
+    }
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;
 
@@ -547,8 +548,6 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     // TODO: Drop record from Connection-ID - QUICNetVConnection table in QUICPacketHandler
     // Shutdown loss detector
     this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
-
-    this->free(this_ethread());
 
     break;
   }
@@ -614,6 +613,12 @@ void
 QUICNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s)
 {
   this->_next_protocol_set = s;
+}
+
+bool
+QUICNetVConnection::is_closed()
+{
+  return this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closed);
 }
 
 SSLNextProtocolSet *
