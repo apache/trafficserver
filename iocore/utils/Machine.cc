@@ -175,7 +175,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
           ink_zero(localhost);
           ats_ip_ntop(ifip, ip_strbuf, sizeof(ip_strbuf));
           insert_id(ip_strbuf);
-          if (getnameinfo(ifip, ats_ip_size(ifip), localhost, sizeof(localhost) - 1, nullptr, 0, 0) == 0) {
+          if (spot_type != LL && getnameinfo(ifip, ats_ip_size(ifip), localhost, sizeof(localhost) - 1, nullptr, 0, 0) == 0) {
             insert_id(localhost);
           }
           IpAddr *ipaddr = new IpAddr(ifip);
