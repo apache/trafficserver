@@ -24,15 +24,10 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_memory.h"
 
-// compile this regardless of global use
-#ifndef HAVE_LIBJEMALLOC
-#define HAVE_LIBJEMALLOC   1
-#endif 
+// uses config flags
 #include "ts/jemallctl.h"
 
-#include "ts/ink_platform.h"
-
-// includes jemalloc.h
+// includes jemalloc.h if present..
 #include "ts/ink_memory.h"
 #include "ts/ink_defs.h"
 #include "ts/ink_stack_trace.h"
@@ -55,6 +50,54 @@
 
 namespace jemallctl
 {
+
+// instantiations here
+template struct GetObjFxn<uint64_t>;
+template struct GetObjFxn<uint64_t *>;
+template struct GetObjFxn<std::atomic_ulong *>;
+template struct GetObjFxn<unsigned>;
+template struct GetObjFxn<bool>;
+template struct GetObjFxn<bool *>;
+template struct GetObjFxn<std::string>;
+
+template struct SetObjFxn<uint64_t>;
+template struct SetObjFxn<unsigned>;
+template struct SetObjFxn<bool>;
+template struct SetObjFxn<std::string>;
+
+// request-or-sense new values in statistics
+const GetObjFxn<uint64_t> epoch{"epoch"};
+
+// request separated page sets for each NUMA node (when created)
+const GetObjFxn<unsigned> do_arenas_extend{"arenas.extend"}; // unsigned r-
+
+// assigned arena for local thread
+const GetObjFxn<unsigned> thread_arena{"thread.arena"};     // unsigned rw
+const SetObjFxn<unsigned> set_thread_arena{"thread.arena"}; // unsigned rw
+const DoObjFxn do_thread_tcache_flush{"thread.tcache.flush"};
+
+const GetObjFxn<std::string> config_malloc_conf{"config.malloc_conf"};
+
+const GetObjFxn<std::string> thread_prof_name{"thread.prof.name"};
+const SetObjFxn<std::string> set_thread_prof_name{"thread.prof.name"};
+
+// for profiling only
+const GetObjFxn<bool> prof_active{"prof.active"};
+const EnableObjFxn enable_prof_active{"prof.active"};
+const DisableObjFxn disable_prof_active{"prof.active"};
+
+const GetObjFxn<bool> thread_prof_active{"thread.prof.active"};
+const EnableObjFxn enable_thread_prof_active{"thread.prof.active"};
+const DisableObjFxn disable_thread_prof_active{"thread.prof.active"};
+
+const GetObjFxn<uint64_t *> thread_allocatedp{"thread.allocatedp"};
+const GetObjFxn<uint64_t *> thread_deallocatedp{"thread.deallocatedp"};
+
+const GetObjFxn<std::atomic_ulong *> stats_cactive{"stats.cactive"};
+const GetObjFxn<uint64_t> stats_active{"stats.active"};
+const GetObjFxn<uint64_t> stats_allocated{"stats.allocated"};
+const GetObjFxn<bool *> arenas_initialized{"arenas.initialized"};
+const GetObjFxn<unsigned> arenas_narenas{"arenas.narenas"};
 // internal read/write functions
 
 int mallctl_void(const objpath_t &oid);
@@ -67,6 +110,7 @@ template <typename T_VALUE> auto mallctl_set(const objpath_t &oid, const T_VALUE
 
 objpath_t objpath(const std::string &path);
 
+#if HAVE_LIBJEMALLOC
 ObjBase::ObjBase(const char *name) : _oid(objpath(name)), _name(name)
 {
 }
@@ -273,55 +317,12 @@ create_global_nodump_arena()
   return newArena;
 }
 
-template struct GetObjFxn<uint64_t>;
-template struct GetObjFxn<uint64_t *>;
-template struct GetObjFxn<std::atomic_ulong *>;
-template struct GetObjFxn<unsigned>;
-template struct GetObjFxn<bool>;
-template struct GetObjFxn<bool *>;
+#endif
+#if HAVE_LIBJEMALLOC
 template struct GetObjFxn<chunk_hooks_t>;
-template struct GetObjFxn<std::string>;
-
-template struct SetObjFxn<uint64_t>;
-template struct SetObjFxn<unsigned>;
-template struct SetObjFxn<bool>;
 template struct SetObjFxn<chunk_hooks_t>;
-template struct SetObjFxn<std::string>;
-
 const GetObjFxn<chunk_hooks_t> thread_arena_hooks{"arena.0.chunk_hooks"};
 const SetObjFxn<chunk_hooks_t> set_thread_arena_hooks{"arena.0.chunk_hooks"};
+#endif
 
-// request-or-sense new values in statistics
-const GetObjFxn<uint64_t> epoch{"epoch"};
-
-// request separated page sets for each NUMA node (when created)
-const GetObjFxn<unsigned> do_arenas_extend{"arenas.extend"}; // unsigned r-
-
-// assigned arena for local thread
-const GetObjFxn<unsigned> thread_arena{"thread.arena"};     // unsigned rw
-const SetObjFxn<unsigned> set_thread_arena{"thread.arena"}; // unsigned rw
-const DoObjFxn do_thread_tcache_flush{"thread.tcache.flush"};
-
-const GetObjFxn<std::string> config_malloc_conf{"config.malloc_conf"};
-
-const GetObjFxn<std::string> thread_prof_name{"thread.prof.name"};
-const SetObjFxn<std::string> set_thread_prof_name{"thread.prof.name"};
-
-// for profiling only
-const GetObjFxn<bool> prof_active{"prof.active"};
-const EnableObjFxn enable_prof_active{"prof.active"};
-const DisableObjFxn disable_prof_active{"prof.active"};
-
-const GetObjFxn<bool> thread_prof_active{"thread.prof.active"};
-const EnableObjFxn enable_thread_prof_active{"thread.prof.active"};
-const DisableObjFxn disable_thread_prof_active{"thread.prof.active"};
-
-const GetObjFxn<uint64_t *> thread_allocatedp{"thread.allocatedp"};
-const GetObjFxn<uint64_t *> thread_deallocatedp{"thread.deallocatedp"};
-
-const GetObjFxn<std::atomic_ulong *> stats_cactive{"stats.cactive"};
-const GetObjFxn<uint64_t> stats_active{"stats.active"};
-const GetObjFxn<uint64_t> stats_allocated{"stats.allocated"};
-const GetObjFxn<bool *> arenas_initialized{"arenas.initialized"};
-const GetObjFxn<unsigned> arenas_narenas{"arenas.narenas"};
 } // namespace jemallctl

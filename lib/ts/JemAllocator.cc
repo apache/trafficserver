@@ -31,32 +31,36 @@
 #include "ts/ink_memory.h"
 #include "ts/hugepages.h"
 
+#if !HAVE_LIBJEMALLOC
+#define MALLOCX_ALIGN(a) 0
+#define MALLOCX_ARENA(a) 0
+#endif
+
 //
 // waits until first alloc ... to be in correct thread / use context
 //
 void
 AlignedAllocator::init_premapped(std::atomic_uint *preMappedP, unsigned len, unsigned align, unsigned chunk_size, unsigned arena)
 {
-  auto pgsz = ats_hugepage_enabled() ? ats_hugepage_size() : ats_pagesize();
-  unsigned lastPreMapped = 0;
-  unsigned olastPreMapped = lastPreMapped; 
+  auto pgsz               = ats_hugepage_enabled() ? ats_hugepage_size() : ats_pagesize();
+  unsigned lastPreMapped  = 0;
+  unsigned olastPreMapped = lastPreMapped;
 
   // align up to number that fit into one (or more) pages
   chunk_size = aligned_size(chunk_size * len, pgsz) / len;
 
   // continue until satisfied or substituted
-  do
-  {
-    olastPreMapped = *preMappedP; 
+  do {
+    olastPreMapped = *preMappedP;
     // check if value should be substituted
 
-    if ( olastPreMapped >= chunk_size ) {
+    if (olastPreMapped >= chunk_size) {
       return; // RETURN done by other thread
     }
-    
-    lastPreMapped = preMappedP->compare_exchange_strong(olastPreMapped,chunk_size);// try 
-    
-  } while ( lastPreMapped != olastPreMapped ); // repeat to test again..
+
+    lastPreMapped = preMappedP->compare_exchange_strong(olastPreMapped, chunk_size); // try
+
+  } while (lastPreMapped != olastPreMapped); // repeat to test again..
 
   // value was changed by this thread...
 
@@ -70,11 +74,11 @@ AlignedAllocator::init_precached(unsigned len, unsigned align, unsigned chunk_si
   void *preCached[chunk_size];
 
   // must shrink alignment if not a power-of-two
-  for( auto t = align ; (t&=(t-1)) ; ) {
+  for (auto t = align; (t &= (t - 1));) {
     align = t; // top-set-bit isn't gone
   }
 
-  auto flags = MALLOCX_ALIGN(align) | ( arena != ~0U ? MALLOCX_ARENA(arena) : 0 );
+  auto flags = MALLOCX_ALIGN(align) | (arena != ~0U ? MALLOCX_ARENA(arena) : 0);
 
   for (int n = chunk_size; n--;) {
     preCached[n] = mallocx(len, flags);
@@ -87,19 +91,21 @@ AlignedAllocator::init_precached(unsigned len, unsigned align, unsigned chunk_si
 void
 AlignedAllocator::re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, int advice)
 {
-  _name = name;
+  _name      = name;
   _chunkSize = chunk_size;
-  _sz   = aligned_size(element_size, std::max(sizeof(uint64_t), alignment + 0UL)); // increase to aligned size
-  _align = alignment;
+  _sz        = aligned_size(element_size, std::max(sizeof(uint64_t), alignment + 0UL)); // increase to aligned size
+  _align     = alignment;
 
+  _arena = 0; // default arena
+
+#if HAVE_LIBJEMALLOC
   if (advice == MADV_DONTDUMP) {
     static int arena_nodump = jemallctl::create_global_nodump_arena();
-    _arena = arena_nodump;
-  } else if (advice == MADV_NORMAL) {
-    _arena = 0; // default arena always
-  } else {
+    _arena                  = arena_nodump;
+  } else if (advice != MADV_NORMAL) {
     ink_abort("allocator re_init: unknown madvise() flags: %x", advice);
   }
 
   init_premapped(&_preMapped, _sz, _align, _chunkSize, _arena);
+#endif
 }

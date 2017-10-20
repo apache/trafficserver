@@ -71,8 +71,7 @@ template <> struct GetObjFxn<void, 0> : public ObjBase {
 };
 
 #if !HAVE_LIBJEMALLOC
-inline ObjBase::ObjBase(const char *name) 
-   : _name(name)
+inline ObjBase::ObjBase(const char *name) : _name(name)
 {
 }
 
@@ -80,7 +79,7 @@ template <typename T_VALUE, size_t N_DIFF>
 inline T_VALUE
 GetObjFxn<T_VALUE, N_DIFF>::operator()(void) const
 {
-  return -1;
+  return T_VALUE{};
 }
 
 template <typename T_VALUE, size_t N_DIFF>

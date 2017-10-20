@@ -53,17 +53,16 @@
 
 class AlignedAllocator
 {
-  const char *_name = nullptr;
-  unsigned _sz       = 0; // size with alignment from page bound
-  unsigned _align    = sizeof(uint64_t); // size with alignment from page bound
-  unsigned _arena    = 0; // jemalloc arena
-  unsigned _chunkSize = 128; // default
-  std::atomic_uint _preMapped{}; // all-process limit
+  const char *_name   = nullptr;
+  unsigned _sz        = 0;                // size with alignment from page bound
+  unsigned _align     = sizeof(uint64_t); // size with alignment from page bound
+  unsigned _arena     = 0;                // jemalloc arena
+  unsigned _chunkSize = 128;              // default
+  std::atomic_uint _preMapped{};          // all-process limit
 
 public:
   AlignedAllocator() {}
-  AlignedAllocator(const char *name, unsigned int element_size)
-    : _name(name), _sz(aligned_size(element_size, sizeof(uint64_t)))
+  AlignedAllocator(const char *name, unsigned int element_size) : _name(name), _sz(aligned_size(element_size, sizeof(uint64_t)))
   {
     // no cache-warming until first alloc
   }
@@ -83,8 +82,8 @@ public:
   void *
   alloc_void()
   {
-    if (unlikely( _preMapped < _chunkSize)) {
-      init_premapped(&_preMapped,_sz,_align,_chunkSize);
+    if (unlikely(_preMapped < _chunkSize)) {
+      init_premapped(&_preMapped, _sz, _align, _chunkSize);
     }
     return allocate();
   }
@@ -96,8 +95,8 @@ public:
   void *
   alloc()
   {
-    if (unlikely( _preMapped < _chunkSize)) {
-      init_premapped(&_preMapped,_sz,_align,_chunkSize);
+    if (unlikely(_preMapped < _chunkSize)) {
+      init_premapped(&_preMapped, _sz, _align, _chunkSize);
     }
     return alloc_void();
   }
@@ -128,19 +127,17 @@ protected:
   }
 };
 
-
-template <size_t N_LENGTH, size_t N_ALIGN>
-class SizeCacheAllocator
+template <size_t N_LENGTH, size_t N_ALIGN> class SizeCacheAllocator
 {
 public:
-  SizeCacheAllocator(unsigned chunk_size = 128) : _chunkSize(128) { }
-  
+  SizeCacheAllocator(unsigned chunk_size = 128) : _chunkSize(128) {}
+
 protected:
   void *
   allocate()
   {
     // pre-caching needed?
-    if (unlikely( tm_preCached < _chunkSize )) {
+    if (unlikely(tm_preCached < _chunkSize)) {
       AlignedAllocator::init_precached(N_LENGTH, N_ALIGN, _chunkSize - tm_preCached);
       tm_preCached = _chunkSize; // up to spec now
     }
@@ -156,26 +153,22 @@ protected:
 
 private:
   static thread_local uint32_t tm_preCached; // shared for same-thread + same-size
-  uint32_t                    _chunkSize; // per all instances
+  uint32_t _chunkSize;                       // per all instances
 };
 
-template <size_t N_LENGTH, size_t N_ALIGN>
-thread_local uint32_t SizeCacheAllocator<N_LENGTH,N_ALIGN>::tm_preCached = 0U;
+template <size_t N_LENGTH, size_t N_ALIGN> thread_local uint32_t SizeCacheAllocator<N_LENGTH, N_ALIGN>::tm_preCached = 0U;
 
 //
 // type-specialized wrapper
 //
-template <class T_OBJECT, size_t N_SIZE = aligned_size(sizeof(T_OBJECT),alignof(T_OBJECT)) > 
-class ObjAllocator : public SizeCacheAllocator<N_SIZE,alignof(T_OBJECT)>
+template <class T_OBJECT, size_t N_SIZE = aligned_size(sizeof(T_OBJECT), alignof(T_OBJECT))>
+class ObjAllocator : public SizeCacheAllocator<N_SIZE, alignof(T_OBJECT)>
 {
 public:
-  using value_type = T_OBJECT;
-  using Allocator_t = SizeCacheAllocator<N_SIZE,alignof(T_OBJECT)>;
+  using value_type  = T_OBJECT;
+  using Allocator_t = SizeCacheAllocator<N_SIZE, alignof(T_OBJECT)>;
 
-  ObjAllocator(const char *name, size_t chunk_size = 128)
-     : Allocator_t(chunk_size), _name(name)
-  {
-  }
+  ObjAllocator(const char *name, size_t chunk_size = 128) : Allocator_t(chunk_size), _name(name) {}
 
   void *
   alloc_void()
@@ -185,7 +178,7 @@ public:
   void
   free_void(void *ptr)
   {
-    free(static_cast<value_type*>(ptr));
+    free(static_cast<value_type *>(ptr));
   }
 
   value_type *
@@ -206,7 +199,7 @@ public:
   }
 
 private:
-  const char *               _name = nullptr;
-  std::atomic_int            _active{}; // init state
-  std::allocator<T_OBJECT>   _cxxAllocator; // likely no-memory size
+  const char *_name = nullptr;
+  std::atomic_int _active{};              // init state
+  std::allocator<T_OBJECT> _cxxAllocator; // likely no-memory size
 };
