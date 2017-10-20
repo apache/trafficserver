@@ -38,6 +38,7 @@ datadir, libexecdir, libdir, runtimedir, infodir, cachedir.
 */
 
 #include "ts/ink_error.h"
+#include "ts/I_Layout.h"
 #include "runroot.h"
 
 #include <vector>
@@ -54,16 +55,14 @@ check_parent_path(const std::string &path, bool json)
   if (whole_path.back() == '/')
     whole_path.pop_back();
 
-  while (whole_path != "") {
-    whole_path                   = whole_path.substr(0, whole_path.find_last_of("/"));
-    std::string parent_yaml_path = whole_path + "/runroot_path.yaml";
-    std::ifstream parent_check_file;
-    parent_check_file.open(parent_yaml_path);
-    if (parent_check_file.good()) {
-      if (!json)
-        ink_notice("using parent of bin/current working dir");
-      return whole_path;
-    }
+  whole_path                   = whole_path.substr(0, whole_path.find_last_of("/"));
+  std::string parent_yaml_path = Layout::relative_to(whole_path, "runroot_path.yml");
+  std::ifstream parent_check_file;
+  parent_check_file.open(parent_yaml_path);
+  if (parent_check_file.good()) {
+    if (!json)
+      ink_notice("using parent of bin/current working dir");
+    return whole_path;
   }
   return {};
 }
@@ -101,12 +100,8 @@ runroot_handler(const char **argv, bool json)
   prefix += "=";
   if (arg.substr(0, prefix.size()) == prefix) {
     std::ifstream yaml_checkfile;
-    std::string path = arg.substr(prefix.size(), arg.size() - 1);
-
-    if (path.back() != '/')
-      path.append("/");
-
-    std::string yaml_path = path + "runroot_path.yaml";
+    std::string path      = arg.substr(prefix.size(), arg.size() - 1);
+    std::string yaml_path = Layout::relative_to(path, "runroot_path.yml");
     yaml_checkfile.open(yaml_path);
     if (yaml_checkfile.good()) {
       if (!json)

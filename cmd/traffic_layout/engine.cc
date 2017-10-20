@@ -112,21 +112,21 @@ static void
 help_message(const int versionflag, const int runflag, const int cleanflag, const int forceflag)
 {
   std::cout << "if no path provided, please set Environment variable $TS_RUNROOT" << std::endl;
-  std::cout << "traffic_runroot usage: traffic_runroot [switch] [<path>]" << std::endl;
-  std::cout << "                       traffic_runroot -f [switch] [<path>]\n" << std::endl;
+  std::cout << "traffic_layout runroot usage: traffic_layout [switch] [<path>]" << std::endl;
+  std::cout << "                       traffic_layout --force [switch] [<path>]\n" << std::endl;
   std::cout << "==option=====switch=====description=====================================" << std::endl;
   std::cout << "Run:      --init(-i)     (Initialize the ts_runroot sandbox)" << std::endl;
   std::cout << "Remove:   --remove(-r)   (remove the ts_runroot sandbox)\n" << std::endl;
   std::cout << "==flag=======key=========description======================================" << std::endl;
-  std::cout << "Force:    --force   (force to create ts_runroot, only works with init)\n" << std::endl;
-  std::cout << "Program information: traffic_runroot [switch]" << std::endl;
+  std::cout << "force:    --force   (force to create ts_runroot, only works with init)\n" << std::endl;
+  std::cout << "Program information: traffic_layout [switch] -h" << std::endl;
 
   if (runflag)
-    std::cout << "\ninit example: traffic_runroot init /path/to/sandbox" << std::endl;
+    std::cout << "\ninit example: traffic_layout --init(-i) /path/to/sandbox" << std::endl;
   if (cleanflag)
-    std::cout << "\nremove example: traffic_runroot rm /path/to/sandbox" << std::endl;
+    std::cout << "\nremove example: traffic_layout --remove(-r) /path/to/sandbox" << std::endl;
   if (forceflag)
-    std::cout << "\nforce example: traffic_runroot --force init /path/to/sandbox" << std::endl;
+    std::cout << "\nforce example: traffic_layout --force init /path/to/sandbox" << std::endl;
 }
 
 // the parsing function for traffic runroot program
@@ -144,7 +144,7 @@ RunrootEngine::runroot_parse()
     if (argument == "-V" || argument == "--version") {
       version_flag = 1;
     }
-    if (argument == "-f" || argument == "--force") {
+    if (argument == "--force") {
       force_flag = 1;
     }
     // set init flag & sandbox path
@@ -234,16 +234,15 @@ RunrootEngine::clean_runroot()
           ink_fatal("Nothing to clean");
       }
     }
-    append_slash(clean_root);
 
     // if we can find the yaml, then clean it
-    std::ifstream check_file(clean_root + "runroot_path.yaml");
+    std::ifstream check_file(Layout::relative_to(clean_root, "runroot_path.yml"));
     if (check_file.good()) {
       if (!remove_directory(clean_root)) {
         ink_fatal("Error cleaning directory - %s", strerror(errno));
       }
     } else {
-      ink_fatal("invalid path to clean (no yaml file found)");
+      ink_fatal("invalid path to clean (no runroot_path.yml file found)");
     }
     return true;
   }
@@ -279,13 +278,14 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
   // symlink the executables
   // set up path_map for yaml to emit key-value pairs
   ink_notice("Copying from the original root...");
+
   for (auto it : original_map) {
     std::string old_path = Layout::relative_to(original_root, it.second);
-    std::string new_path = ts_runroot + it.second;
+    std::string new_path = Layout::relative_to(ts_runroot, it.second);
     if (!copy_directory(old_path, new_path)) {
       ink_warning("Copy failed for %s - %s", it.first.c_str(), strerror(errno));
     }
-    path_map[it.first] = ts_runroot + it.second;
+    path_map[it.first] = new_path;
   }
   path_map["prefix"] = ts_runroot;
 }
