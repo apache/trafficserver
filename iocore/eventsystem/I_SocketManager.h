@@ -84,6 +84,7 @@ struct SocketManager {
 
   int recv(int s, void *buf, int len, int flags);
   int recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen);
+  int recvmsg(int fd, struct msghdr *m, int flags, void *pOLP = nullptr);
 
   int64_t write(int fd, void *buf, int len, void *pOLP = nullptr);
   int64_t writev(int fd, struct iovec *vector, size_t count);

@@ -114,26 +114,91 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
 
   // receive packet and queue onto UDPConnection.
   // don't call back connection at this time.
-  int r;
-  int iters = 0;
+  int64_t r;
+  int iters         = 0;
+  unsigned max_niov = NET_MAX_IOV;
+
+  struct msghdr msg;
+  Ptr<IOBufferBlock> chain, next_chain;
+  struct iovec tiovec[NET_MAX_IOV];
+  int64_t size_index  = BUFFER_SIZE_INDEX_4K;
+  int64_t buffer_size = BUFFER_SIZE_FOR_INDEX(size_index);
+  // The max length of receive buffer is NET_MAX_IOV (16) * buffer_size (4096) = 65536 bytes.
+  // Because the 'UDP Length' is type of uint16_t defined in RFC 768.
+  // And there is 8 octets in 'User Datagram Header' which means the max length of payload is no more than 65527 bytes.
   do {
+    // create IOBufferBlock chain to receive data
+    unsigned int niov;
+    IOBufferBlock *b, *last;
+
+    // build struct iov
+    // reuse the block in chain if available
+    b    = chain.get();
+    last = nullptr;
+    for (niov = 0; niov < max_niov; niov++) {
+      if (b == nullptr) {
+        b = new_IOBufferBlock();
+        b->alloc(size_index);
+        if (last == nullptr) {
+          chain = b;
+        } else {
+          last->next = b;
+        }
+      }
+
+      tiovec[niov].iov_base = b->buf();
+      tiovec[niov].iov_len  = b->block_size();
+
+      last = b;
+      b    = b->next.get();
+    }
+
+    // build struct msghdr
     sockaddr_in6 fromaddr;
-    socklen_t fromlen = sizeof(fromaddr);
-    // XXX: want to be 0 copy.
-    // XXX: really should read into next contiguous region of an IOBufferData
-    // which gets referenced by IOBufferBlock.
-    char buf[65536];
-    int buflen = sizeof(buf);
-    r          = socketManager.recvfrom(uc->getFd(), buf, buflen, 0, (struct sockaddr *)&fromaddr, &fromlen);
+    msg.msg_name       = &fromaddr;
+    msg.msg_namelen    = sizeof(fromaddr);
+    msg.msg_iov        = tiovec;
+    msg.msg_iovlen     = niov;
+    msg.msg_control    = nullptr;
+    msg.msg_controllen = 0;
+
+    // receive data by recvmsg
+    r = socketManager.recvmsg(uc->getFd(), &msg, 0);
     if (r <= 0) {
       // error
       break;
     }
+
+    // truncated check
+    if (msg.msg_flags & MSG_TRUNC) {
+      Debug("udp-read", "The UDP packet is truncated");
+    }
+
+    // fill the IOBufferBlock chain
+    int64_t saved = r;
+    b             = chain.get();
+    while (b && saved > 0) {
+      if (saved > buffer_size) {
+        b->fill(buffer_size);
+        saved -= buffer_size;
+        b = b->next.get();
+      } else {
+        b->fill(saved);
+        saved      = 0;
+        next_chain = b->next.get();
+        b->next    = nullptr;
+      }
+    }
+
     // create packet
-    UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), buf, r);
+    UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), chain);
     p->setConnection(uc);
     // queue onto the UDPConnection
     uc->inQueue.push((UDPPacketInternal *)p);
+
+    // reload the unused block
+    chain      = next_chain;
+    next_chain = nullptr;
     iters++;
   } while (r > 0);
   if (iters >= 1) {

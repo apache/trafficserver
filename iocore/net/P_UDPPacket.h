@@ -207,7 +207,7 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, IOBufferBlock *buf, in
 }
 
 TS_INLINE UDPPacket *
-new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> buf)
+new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
 
@@ -241,6 +241,20 @@ new_incoming_UDPPacket(struct sockaddr *from, char *buf, int len)
   memcpy(body->end(), buf, len);
   body->fill(len);
   p->append_block(body);
+
+  return p;
+}
+
+TS_INLINE UDPPacket *
+new_incoming_UDPPacket(struct sockaddr *from, Ptr<IOBufferBlock> &block)
+{
+  UDPPacketInternal *p = udpPacketAllocator.alloc();
+
+  p->in_the_priority_queue = 0;
+  p->in_heap               = 0;
+  p->delivery_time         = 0;
+  ats_ip_copy(&p->from, from);
+  p->chain = block;
 
   return p;
 }
