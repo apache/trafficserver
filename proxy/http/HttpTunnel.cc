@@ -563,8 +563,8 @@ HttpTunnel::kill_tunnel()
     ink_assert(producer.alive == false);
   }
   active = false;
-  this->deallocate_redirect_postdata_buffers();
   this->deallocate_buffers();
+  this->deallocate_redirect_postdata_buffers();
   this->reset();
 }
 
@@ -604,9 +604,6 @@ HttpTunnel::deallocate_buffers()
   for (auto &producer : producers) {
     if (producer.read_buffer != nullptr) {
       ink_assert(producer.vc != nullptr);
-      if (postbuf && postbuf->ua_buffer_reader && postbuf->ua_buffer_reader->mbuf == producer.read_buffer) {
-        postbuf->ua_buffer_reader = nullptr;
-      }
       free_MIOBuffer(producer.read_buffer);
       producer.read_buffer  = nullptr;
       producer.buffer_start = nullptr;
@@ -701,6 +698,7 @@ HttpTunnel::add_producer(VConnection *vc, int64_t nbytes_arg, IOBufferReader *re
       ink_assert(p->ntodo == 0);
       p->alive        = false;
       p->read_success = true;
+      Debug("http_redirect", "Add static producer, there is %lu in Buffer", reader_start->read_avail());
     } else {
       p->alive = true;
     }
@@ -973,6 +971,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       Debug("http_redirect", "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
             p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
       sm->enable_redirection = false;
+      deallocate_redirect_postdata_buffers();
     } else {
       // allocate post buffers with a new reader. The reader will be freed when p->read_buffer is freed
       allocate_redirect_postdata_buffers(p->read_buffer->clone_reader(p->buffer_start));
@@ -1186,8 +1185,8 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     }
   } // end of added logic for partial copy of POST
 
-  Debug("http_redirect", "[HttpTunnel::producer_handler] enable_redirection: [%d %d %d] event: %d", p->alive == true,
-        sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event);
+  Debug("http_redirect", "[HttpTunnel::producer_handler] enable_redirection: [%d %d %d %d] event: %d", p->alive == true,
+        sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), sm->redirection_tries, event);
 
   switch (event) {
   case VC_EVENT_READ_READY:
