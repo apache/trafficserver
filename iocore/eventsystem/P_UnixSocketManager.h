@@ -177,6 +177,17 @@ SocketManager::recvfrom(int fd, void *buf, int size, int flags, struct sockaddr 
   return r;
 }
 
+TS_INLINE int
+SocketManager::recvmsg(int fd, struct msghdr *m, int flags, void * /* pOLP ATS_UNUSED */)
+{
+  int r;
+  do {
+    if (unlikely((r = ::recvmsg(fd, m, flags)) < 0))
+      r = -errno;
+  } while (r == -EINTR);
+  return r;
+}
+
 TS_INLINE int64_t
 SocketManager::write(int fd, void *buf, int size, void * /* pOLP ATS_UNUSED */)
 {
