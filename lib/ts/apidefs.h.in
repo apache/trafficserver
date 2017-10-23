@@ -1212,6 +1212,12 @@ typedef enum {
 #define TS_CRUUID_STRING_LEN (TS_UUID_STRING_LEN + 19 + 1) /* UUID-len + len(uint64_t) + '-' */
 typedef struct tsapi_uuid *TSUuid;
 
+typedef struct {
+  /* The fields in this structure are placeholders only.  Their names should never be used, neither in plugin or core code. */
+  void *_a[2];
+  size_t _b;
+} TSIOBufferWriter;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

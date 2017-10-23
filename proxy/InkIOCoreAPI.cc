@@ -39,6 +39,7 @@
 #endif
 #include "I_Cache.h"
 #include "I_HostDB.h"
+#include "I_MIOBufferWriter.h"
 
 // This assert is for internal API use only.
 #if TS_USE_FAST_SDK
@@ -818,4 +819,41 @@ TSIOBufferReaderAvail(TSIOBufferReader readerp)
 
   IOBufferReader *r = (IOBufferReader *)readerp;
   return r->read_avail();
+}
+
+static_assert((sizeof(TSIOBufferWriter) == sizeof(MIOBufferWriter)) and (alignof(TSIOBufferWriter) == alignof(MIOBufferWriter)),
+              "size or alignment of TS/MIOBufferWriter do not match");
+
+void
+TSIOBufferWriterInit(TSIOBufferWriter *bwp, TSIOBuffer bufp)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
+
+  // Call MIOBufferWriter constructor with placement new.
+  //
+  new (static_cast<void *>(bwp)) MIOBufferWriter(*reinterpret_cast<MIOBuffer *>(bufp));
+}
+
+void
+TSIOBufferWriterWrite(TSIOBufferWriter *bwp, const void *buf, size_t length)
+{
+  MIOBufferWriter *miobwp = reinterpret_cast<MIOBufferWriter *>(bwp);
+
+  // Throw an exception if bwp pointer is invalid.
+  //
+  static_cast<void>(dynamic_cast<ts::BufferWriter *>(miobwp));
+
+  miobwp->write(buf, length);
+}
+
+size_t
+TSIOBufferWriterCount(TSIOBufferWriter *bwp)
+{
+  MIOBufferWriter *miobwp = reinterpret_cast<MIOBufferWriter *>(bwp);
+
+  // Throw an exception if bwp pointer is invalid.
+  //
+  static_cast<void>(dynamic_cast<ts::BufferWriter *>(miobwp));
+
+  return miobwp->extent();
 }
