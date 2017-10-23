@@ -2919,7 +2919,19 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
         tunnel.append_message_to_producer_buffer(p, reason, reason_len);
         }
       */
-      tunnel.local_finish_all(p);
+      // add fix code for caching incompleted chunked response case under some terrible network circumstances
+      // disable cache write for the malformed chunked response
+      if ((p->do_dechunking || p->do_chunked_passthru) && p->chunked_handler.truncation) {
+        DebugSM("http", "[%" PRId64 "] [HttpSM::tunnel_handler_server] disable cache write due to server truncation but still send "
+                        "partial response to client",
+                sm_id);
+        tunnel.abort_cache_write_finish_others(p);
+        // We couldn't read all chunks successfully, disable keep-alive.
+        t_state.client_info.keep_alive     = HTTP_NO_KEEPALIVE;
+        t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
+      } else {
+        tunnel.local_finish_all(p);
+      }
     }
     break;
 
