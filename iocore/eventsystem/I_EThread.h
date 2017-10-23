@@ -414,7 +414,7 @@ public:
   */
   static int const N_EVENT_METRICS = 1024;
 
-  volatile EventMetrics *current_metric; ///< The current element of @a metrics
+  volatile EventMetrics *current_metric = nullptr; ///< The current element of @a metrics
   EventMetrics metrics[N_EVENT_METRICS];
 
   /** The various stats provided to the administrator.
