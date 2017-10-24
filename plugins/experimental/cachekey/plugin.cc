@@ -91,8 +91,26 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
   Configs *config = (Configs *)instance;
 
   if (nullptr != config) {
+    TSMBuffer bufp;
+    TSMLoc urlLoc;
+    TSMLoc hdrLoc;
+
+    /* Get the URI and header to base the cachekey on.
+     * @TODO it might make sense to add more supported URI types */
+    if (PRISTINE == config->getUriType()) {
+      if (TS_SUCCESS != TSHttpTxnPristineUrlGet(txn, &bufp, &urlLoc)) {
+        /* Failing here is unlikely. No action seems the only reasonable thing to do from within this plug-in */
+        CacheKeyError("failed to get pristine URI handle");
+        return TSREMAP_NO_REMAP;
+      }
+    } else {
+      bufp   = rri->requestBufp;
+      urlLoc = rri->requestUrl;
+    }
+    hdrLoc = rri->requestHdrp;
+
     /* Initial cache key facility from the requested URL. */
-    CacheKey cachekey(txn, rri->requestBufp, rri->requestUrl, rri->requestHdrp, config->getSeparator());
+    CacheKey cachekey(txn, bufp, urlLoc, hdrLoc, config->getSeparator());
 
     /* Append custom prefix or the host:port */
     if (!config->prefixToBeRemoved()) {
@@ -125,6 +143,12 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
       url = TSHttpTxnEffectiveUrlStringGet(txn, &len);
       CacheKeyError("failed to set cache key for url %.*s", len, url);
       TSfree(url);
+    }
+
+    if (PRISTINE == config->getUriType()) {
+      if (TS_SUCCESS != TSHandleMLocRelease(bufp, TS_NULL_MLOC, urlLoc)) {
+        CacheKeyError("failed to release pristine URI handle");
+      }
     }
   }
 

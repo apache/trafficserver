@@ -1212,6 +1212,19 @@ using string_view = basic_string_view<char>;
 
 } // namespace ts
 
+namespace std
+{
+template <class _Type, class _Traits> struct hash<ts::basic_string_view<_Type, _Traits>> {
+  using string_type = ts::basic_string_view<_Type, _Traits>;
+
+  size_t
+  operator()(string_type const &x) const
+  {
+    return hash<typename string_type::const_pointer>()(x.data());
+  }
+};
+}
+
 /// Literal suffix for string_view.
 /// @note This enables @c string_view literals from C++ string literals in @c constexpr contexts, which
 /// is not the case for the character pointer constructor.
@@ -1221,6 +1234,7 @@ constexpr ts::string_view operator"" _sv(const char *str, size_t len) noexcept
   return ts::string_view(str, len);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
 // TS local extensions, not dependent on our local implementation of std::string_view.
 
 /// Check for prefix.
