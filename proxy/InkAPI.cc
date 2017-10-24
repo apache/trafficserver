@@ -2434,7 +2434,7 @@ TSIpStringToAddr(const char *str, size_t str_len, sockaddr *addr)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
 
-  if (0 != ats_ip_pton(ts::ConstBuffer(str, str_len), addr)) {
+  if (0 != ats_ip_pton(ts::string_view(str, str_len), addr)) {
     return TS_ERROR;
   }
 
