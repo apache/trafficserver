@@ -147,6 +147,7 @@ public:
     ats_free(continued_buffer.iov_base);
 
     delete dependency_tree;
+    this->ua_session = nullptr;
   }
 
   // Event handlers
