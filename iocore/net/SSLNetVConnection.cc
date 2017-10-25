@@ -225,7 +225,6 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     ink_release_assert(current_block != nullptr);
     sslErr = SSLReadBuffer(sslvc->ssl, current_block, amount_to_read, nread);
 
-    Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] nread=%d", (int)nread);
     if (!sslvc->origin_trace) {
       TraceIn((0 < nread && trace), sslvc->get_remote_addr(), sslvc->get_remote_port(), "WIRE TRACE\tbytes=%d\n%.*s", (int)nread,
               (int)nread, current_block);
@@ -236,18 +235,23 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
               origin_trace_ip, sslvc->origin_trace_port, (int)nread, (int)nread, current_block);
     }
 
-    switch (sslErr) {
-    case SSL_ERROR_NONE:
-
+    if (nread > 0) {
 #if DEBUG
       SSLDebugBufferPrint("ssl_buff", current_block, nread, "SSL Read");
 #endif
-      ink_assert(nread);
       bytes_read += nread;
-      if (nread > 0) {
-        buf.writer()->fill(nread); // Tell the buffer, we've used the bytes
-        sslvc->netActivity(lthread);
-      }
+      buf.writer()->fill(nread); // Tell the buffer, we've used the bytes
+      sslvc->netActivity(lthread);
+      Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] nread=%d", (int)(nread));
+    } else if (nread == 0) {
+      Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] connection reset by peer");
+    } else {
+      Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] failed, errno=%d", (int)(-nread));
+    }
+
+    switch (sslErr) {
+    case SSL_ERROR_NONE:
+      ink_assert(nread > 0);
       break;
     case SSL_ERROR_WANT_WRITE:
       event = SSL_WRITE_WOULD_BLOCK;
@@ -266,20 +270,11 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
       break;
     case SSL_ERROR_SYSCALL:
-      TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "Syscall Error: %s", strerror(errno));
       SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
-      if (nread != 0) {
-        // not EOF
-        event = SSL_READ_ERROR;
-        ret   = errno;
-        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
-        TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "Underlying IO error: %d", errno);
-      } else {
-        // then EOF observed, treat it as EOS
-        // Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, EOF observed violating SSL protocol");
-        TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "EOF observed violating SSL protocol");
-        event = SSL_READ_EOS;
-      }
+      event = SSL_READ_ERROR;
+      ret   = (int)(-nread);
+      Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO fatal error: %s", strerror(ret));
+      TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "Underlying IO fatal error: %d", (int)(ret));
       break;
     case SSL_ERROR_ZERO_RETURN:
       TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "Connection closed by peer");
@@ -289,14 +284,14 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       break;
     case SSL_ERROR_SSL:
     default: {
+      event = SSL_READ_ERROR;
+      ret   = (int)(-nread);
       char buf[512];
       unsigned long e = ERR_peek_last_error();
       ERR_error_string_n(e, buf, sizeof(buf));
       TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "SSL Error: sslErr=%d, ERR_get_error=%ld (%s) errno=%d",
-              sslErr, e, buf, errno);
-      event = SSL_READ_ERROR;
-      ret   = errno;
-      SSL_CLR_ERR_INCR_DYN_STAT(sslvc, ssl_error_ssl, "[SSL_NetVConnection::ssl_read_from_net]: errno=%d", errno);
+              sslErr, e, buf, (int)(ret));
+      SSL_CLR_ERR_INCR_DYN_STAT(sslvc, ssl_error_ssl, "[SSL_NetVConnection::ssl_read_from_net]: errno=%d", (int)(ret));
     } break;
     } // switch
   }   // while
@@ -742,10 +737,11 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     if (num_really_written > 0) {
       total_written += num_really_written;
       buf.reader()->consume(num_really_written);
+      Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, Number of bytes written=%" PRId64 " , total=%" PRId64 "",
+            num_really_written, total_written);
+    } else {
+      Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, errno=%" PRId64 "", -num_really_written);
     }
-
-    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written=%" PRId64 " , total=%" PRId64 "",
-          num_really_written, total_written);
     NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
   } while (num_really_written == try_to_write && total_written < towrite);
 
@@ -781,15 +777,13 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       break;
     }
     case SSL_ERROR_SYSCALL:
-      TraceOut(trace, get_remote_addr(), get_remote_port(), "Syscall Error: %s", strerror(errno));
-      num_really_written = -errno;
+      TraceOut(trace, get_remote_addr(), get_remote_port(), "Syscall Error: %s", strerror((int)(-num_really_written)));
       SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
       Debug("ssl.error", "SSL_write-SSL_ERROR_SYSCALL");
       break;
     // end of stream
     case SSL_ERROR_ZERO_RETURN:
       TraceOut(trace, get_remote_addr(), get_remote_port(), "SSL Error: zero return");
-      num_really_written = -errno;
       SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
       Debug("ssl.error", "SSL_write-SSL_ERROR_ZERO_RETURN");
       break;
@@ -798,11 +792,11 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       char buf[512];
       unsigned long e = ERR_peek_last_error();
       ERR_error_string_n(e, buf, sizeof(buf));
-      TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL Error: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", err, e, buf,
-              errno);
+      TraceOut(trace, get_remote_addr(), get_remote_port(), "SSL Error: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", err, e, buf,
+               (int)(-num_really_written));
       // Treat SSL_ERROR_SSL as EPIPE error.
       num_really_written = -EPIPE;
-      SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSL_write-SSL_ERROR_SSL errno=%d", errno);
+      SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSL_write-SSL_ERROR_SSL errno=%d", (int)(-num_really_written));
     } break;
     }
   }
@@ -1114,11 +1108,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     } // Still data in the BIO
   }
 
-  ssl_error_t ssl_error = SSLAccept(ssl);
+  ssl_error_t ssl_error = SSLAccept(ssl, err);
   bool trace            = getSSLTrace();
 
   if (ssl_error != SSL_ERROR_NONE) {
-    err = errno;
     SSLVCDebug(this, "SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
 
     // start a blind tunnel if tr-pass is set and data does not look like ClientHello
@@ -1239,12 +1232,12 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     return EVENT_CONT;
 
   case SSL_ERROR_SSL: {
-    SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslServerHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
+    SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslServerHandShakeEvent, SSL_ERROR_SSL errno=%d", err);
     char buf[512];
     unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
     TraceIn(trace, get_remote_addr(), get_remote_port(),
-            "SSL server handshake ERROR_SSL: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", ssl_error, e, buf, errno);
+            "SSL server handshake ERROR_SSL: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", ssl_error, e, buf, err);
     return EVENT_ERROR;
   }
 
@@ -1268,7 +1261,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   ink_assert(SSLNetVCAccess(ssl) == this);
 
-  ssl_error = SSLConnect(ssl);
+  ssl_error = SSLConnect(ssl, err);
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (is_debug_tag_set("ssl")) {
@@ -1329,25 +1322,24 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     return EVENT_ERROR;
 
   case SSL_ERROR_SYSCALL:
-    err = errno;
     SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
     Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, syscall");
-    TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL client handshake Syscall Error: %s", strerror(errno));
+    TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL client handshake Syscall Error: %s", strerror(err));
     return EVENT_ERROR;
     break;
 
   case SSL_ERROR_SSL:
   default: {
-    err = (errno) ? errno : -ENET_CONNECT_FAILED;
+    err = (err) ? err : -ENET_CONNECT_FAILED;
     // FIXME -- This triggers a retry on cases of cert validation errors....
     Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
-    SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
+    SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", err);
     Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     char buf[512];
     unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
     TraceIn(trace, get_remote_addr(), get_remote_port(),
-            "SSL client handshake ERROR_SSL: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", ssl_error, e, buf, errno);
+            "SSL client handshake ERROR_SSL: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", ssl_error, e, buf, err);
     return EVENT_ERROR;
   } break;
   }
