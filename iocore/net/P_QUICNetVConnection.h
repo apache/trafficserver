@@ -70,17 +70,6 @@
 
 #define QUIC_OP_HANDSHAKE 0x16
 
-// TS-2503: dynamic TLS record sizing
-// For smaller records, we should also reserve space for various TCP options
-// (timestamps, SACKs.. up to 40 bytes [1]), and account for TLS record overhead
-// (another 20-60 bytes on average, depending on the negotiated ciphersuite [2]).
-// All in all: 1500 - 40 (IP) - 20 (TCP) - 40 (TCP options) - TLS overhead (60-100)
-// For larger records, the size is determined by TLS protocol record size
-#define QUIC_DEF_TLS_RECORD_SIZE 1300  // 1500 - 40 (IP) - 20 (TCP) - 40 (TCP options) - TLS overhead (60-100)
-#define QUIC_MAX_TLS_RECORD_SIZE 16383 // 2^14 - 1
-#define QUIC_DEF_TLS_RECORD_BYTE_THRESHOLD 1000000
-#define QUIC_DEF_TLS_RECORD_MSEC_THRESHOLD 1000
-
 // class QUICNextProtocolSet;
 // struct QUICCertLookup;
 
