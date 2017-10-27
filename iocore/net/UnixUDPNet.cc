@@ -652,39 +652,31 @@ UDPQueue::service(UDPNetHandler *nh)
   ink_hrtime now     = Thread::get_hrtime_updated();
   uint64_t timeSpent = 0;
   uint64_t pktSendStartTime;
-  UDPPacketInternal *p;
   ink_hrtime pktSendTime;
+  UDPPacketInternal *p = nullptr;
 
-  p = (UDPPacketInternal *)ink_atomiclist_popall(&atomicQueue);
-  if (p) {
-    UDPPacketInternal *pnext = nullptr;
-    Queue<UDPPacketInternal> stk;
+  SList(UDPPacketInternal, alink) aq(outQueue.popall());
+  Queue<UDPPacketInternal> stk;
+  while ((p = aq.pop())) {
+    stk.push(p);
+  }
 
-    while (p) {
-      pnext         = p->alink.next;
-      p->alink.next = nullptr;
-      stk.push(p);
-      p = pnext;
+  // walk backwards down list since this is actually an atomic stack.
+  while ((p = stk.pop())) {
+    ink_assert(p->link.prev == nullptr);
+    ink_assert(p->link.next == nullptr);
+    // insert into our queue.
+    Debug("udp-send", "Adding %p", p);
+    if (p->conn->lastPktStartTime == 0) {
+      pktSendStartTime = std::max(now, p->delivery_time);
+    } else {
+      pktSendTime      = p->delivery_time;
+      pktSendStartTime = std::max(std::max(now, pktSendTime), p->delivery_time);
     }
+    p->conn->lastPktStartTime = pktSendStartTime;
+    p->delivery_time          = pktSendStartTime;
 
-    // walk backwards down list since this is actually an atomic stack.
-    while (stk.head) {
-      p = stk.pop();
-      ink_assert(p->link.prev == nullptr);
-      ink_assert(p->link.next == nullptr);
-      // insert into our queue.
-      Debug("udp-send", "Adding %p", p);
-      if (p->conn->lastPktStartTime == 0) {
-        pktSendStartTime = std::max(now, p->delivery_time);
-      } else {
-        pktSendTime      = p->delivery_time;
-        pktSendStartTime = std::max(std::max(now, pktSendTime), p->delivery_time);
-      }
-      p->conn->lastPktStartTime = pktSendStartTime;
-      p->delivery_time          = pktSendStartTime;
-
-      pipeInfo.addPacket(p, now);
-    }
+    pipeInfo.addPacket(p, now);
   }
 
   pipeInfo.advanceNow(now);
@@ -808,7 +800,7 @@ void
 UDPQueue::send(UDPPacket *p)
 {
   // XXX: maybe fastpath for immediate send?
-  ink_atomiclist_push(&atomicQueue, p);
+  outQueue.push((UDPPacketInternal *)p);
 }
 
 #undef LINK
@@ -816,7 +808,6 @@ UDPQueue::send(UDPPacket *p)
 UDPNetHandler::UDPNetHandler()
 {
   mutex = new_ProxyMutex();
-  ink_atomiclist_init(&udpOutQueue.atomicQueue, "Outgoing UDP Packet queue", offsetof(UDPPacketInternal, alink.next));
   ink_atomiclist_init(&udpNewConnections, "UDP Connection queue", offsetof(UnixUDPConnection, newconn_alink.next));
   nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
