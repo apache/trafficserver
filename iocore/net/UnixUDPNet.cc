@@ -64,8 +64,13 @@ sockaddr_in6 G_bwGrapherLoc;
 void
 initialize_thread_for_udp_net(EThread *thread)
 {
+  UDPNetHandler *nh = get_UDPNetHandler(thread);
+
+  new ((ink_dummy_for_new *)nh) UDPNetHandler;
   new ((ink_dummy_for_new *)get_UDPPollCont(thread)) PollCont(thread->mutex);
-  new ((ink_dummy_for_new *)get_UDPNetHandler(thread)) UDPNetHandler;
+  // The UDPNetHandler cannot be accessed across EThreads.
+  // Because the UDPNetHandler should be called back immediately after UDPPollCont.
+  nh->mutex = thread->mutex.get();
 
   // This variable controls how often we cleanup the cancelled packets.
   // If it is set to 0, then cleanup never occurs.
@@ -807,8 +812,6 @@ UDPQueue::send(UDPPacket *p)
 
 UDPNetHandler::UDPNetHandler()
 {
-  mutex = new_ProxyMutex();
-  ink_atomiclist_init(&udpNewConnections, "UDP Connection queue", offsetof(UnixUDPConnection, newconn_alink.next));
   nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
   SET_HANDLER((UDPNetContHandler)&UDPNetHandler::startNetEvent);
@@ -831,44 +834,80 @@ UDPNetHandler::mainNetEvent(int event, Event *e)
   (void)event;
   (void)e;
 
-  PollCont *pc = get_UDPPollCont(e->ethread);
+  UnixUDPConnection *uc;
+
+  /* Notice: the race between traversal of newconn_list and UDPBind()
+   *
+   * If the UDPBind() is called after the traversal of newconn_list,
+   * the UDPConnection, the one from the pollDescriptor->result, did not push into the open_list.
+   *
+   * TODO:
+   *
+   * Take UnixNetVConnection::acceptEvent() as reference to create UnixUDPConnection::newconnEvent().
+   */
+
+  // handle new UDP connection
+  SList(UnixUDPConnection, newconn_alink) ncq(newconn_list.popall());
+  while ((uc = ncq.pop())) {
+    if (uc->shouldDestroy()) {
+      open_list.remove(uc); // due to the above race
+      uc->Release();
+    } else {
+      ink_assert(uc->mutex && uc->continuation);
+      open_list.in_or_enqueue(uc); // due to the above race
+    }
+  }
 
   // handle UDP outgoing engine
   udpOutQueue.service(this);
 
   // handle UDP read operations
-  UnixUDPConnection *uc, *next;
-  int i;
-  int nread = 0;
-
-  EventIO *temp_eptr = nullptr;
+  int i, nread = 0;
+  PollCont *pc = get_UDPPollCont(e->ethread);
+  EventIO *epd = nullptr;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
-    temp_eptr = (EventIO *)get_ev_data(pc->pollDescriptor, i);
-    if ((get_ev_events(pc->pollDescriptor, i) & EVENTIO_READ) && temp_eptr->type == EVENTIO_UDP_CONNECTION) {
-      uc = temp_eptr->data.uc;
-      ink_assert(uc && uc->mutex && uc->continuation);
-      ink_assert(uc->refcount >= 1);
-      if (uc->shouldDestroy()) {
-        // udp_polling->remove(uc,uc->polling_link);
-        uc->Release();
+    epd = (EventIO *)get_ev_data(pc->pollDescriptor, i);
+    if (epd->type == EVENTIO_UDP_CONNECTION) {
+      // TODO: handle EVENTIO_ERROR
+      if (get_ev_events(pc->pollDescriptor, i) & EVENTIO_READ) {
+        uc = epd->data.uc;
+        ink_assert(uc && uc->mutex && uc->continuation);
+        ink_assert(uc->refcount >= 1);
+        open_list.in_or_enqueue(uc); // due to the above race
+        if (uc->shouldDestroy()) {
+          open_list.remove(uc);
+          uc->Release();
+        } else {
+          udpNetInternal.udp_read_from_net(this, uc);
+          nread++;
+        }
       } else {
-        udpNetInternal.udp_read_from_net(this, uc);
-        nread++;
+        Debug("iocore_udp_main", "Unhandled epoll event: 0x%04x", get_ev_events(pc->pollDescriptor, i));
       }
-    } // if EPOLLIN
-  }   // end for
+    } else if (epd->type == EVENTIO_DNS_CONNECTION) {
+      // TODO: handle DNS conn if there is ET_UDP
+      if (epd->data.dnscon != nullptr) {
+        epd->data.dnscon->trigger();
+#if defined(USE_EDGE_TRIGGER)
+        epd->refresh(EVENTIO_READ);
+#endif
+      }
+    } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
+      // TODO: receive signal from event system
+      // net_signal_hook_callback(this->trigger_event->ethread);
+    }
+  } // end for
 
   // remove dead UDP connections
   ink_hrtime now = Thread::get_hrtime_updated();
   if (now >= nextCheck) {
-    for (uc = udp_polling.head; uc; uc = next) {
-      ink_assert(uc->mutex && uc->continuation);
-      ink_assert(uc->refcount >= 1);
-      next = uc->polling_link.next;
-      if (uc->shouldDestroy()) {
-        // changed by YTS Team, yamsat
-        // udp_polling->remove(uc,uc->polling_link);
-        uc->Release();
+    forl_LL(UnixUDPConnection, xuc, open_list)
+    {
+      ink_assert(xuc->mutex && xuc->continuation);
+      ink_assert(xuc->refcount >= 1);
+      if (xuc->shouldDestroy()) {
+        open_list.remove(xuc);
+        xuc->Release();
       }
     }
     nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);

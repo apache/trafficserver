@@ -42,9 +42,8 @@ public:
   void errorAndDie(int e);
   int callbackHandler(int event, void *data);
 
-  LINK(UnixUDPConnection, polling_link);
-  LINK(UnixUDPConnection, callback_link);
   SLINK(UnixUDPConnection, newconn_alink);
+  LINK(UnixUDPConnection, callback_link);
 
   // Incoming UDP Packet Queue
   ASLL(UDPPacketInternal, alink) inQueue;

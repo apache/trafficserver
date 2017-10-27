@@ -109,7 +109,7 @@ UDPConnection::bindToThread(Continuation *c)
   AddRef();
   uc->continuation = c;
   mutex            = c->mutex;
-  ink_atomiclist_push(&get_UDPNetHandler(t)->udpNewConnections, uc);
+  get_UDPNetHandler(t)->newconn_list.push(uc);
 }
 
 Action *
@@ -145,8 +145,8 @@ UDPConnection::Release()
 
     ink_assert(p->callback_link.next == nullptr);
     ink_assert(p->callback_link.prev == nullptr);
-    ink_assert(p->polling_link.next == nullptr);
-    ink_assert(p->polling_link.prev == nullptr);
+    ink_assert(p->link.next == nullptr);
+    ink_assert(p->link.prev == nullptr);
     ink_assert(p->newconn_alink.next == nullptr);
 
     delete this;
