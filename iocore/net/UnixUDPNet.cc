@@ -128,7 +128,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
     UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), buf, r);
     p->setConnection(uc);
     // queue onto the UDPConnection
-    ink_atomiclist_push(&uc->inQueue, p);
+    uc->inQueue.push((UDPPacketInternal *)p);
     iters++;
   } while (r > 0);
   if (iters >= 1) {

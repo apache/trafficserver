@@ -46,7 +46,8 @@ public:
   LINK(UnixUDPConnection, callback_link);
   SLINK(UnixUDPConnection, newconn_alink);
 
-  InkAtomicList inQueue;
+  // Incoming UDP Packet Queue
+  ASLL(UDPPacketInternal, alink) inQueue;
   int onCallbackQueue;
   Action *callbackAction;
   EThread *ethread;
@@ -64,8 +65,6 @@ TS_INLINE
 UnixUDPConnection::UnixUDPConnection(int the_fd) : onCallbackQueue(0), callbackAction(nullptr), ethread(nullptr), m_errno(0)
 {
   fd = the_fd;
-  UDPPacketInternal p;
-  ink_atomiclist_init(&inQueue, "Incoming UDP Packet queue", (char *)&p.alink.next - (char *)&p);
   SET_HANDLER(&UnixUDPConnection::callbackHandler);
 }
 
@@ -78,8 +77,6 @@ UnixUDPConnection::init(int the_fd)
   ethread         = nullptr;
   m_errno         = 0;
 
-  UDPPacketInternal p;
-  ink_atomiclist_init(&inQueue, "Incoming UDP Packet queue", (char *)&p.alink.next - (char *)&p);
   SET_HANDLER(&UnixUDPConnection::callbackHandler);
 }
 
