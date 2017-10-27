@@ -286,7 +286,8 @@ class UDPQueue
   int added               = 0;
 
 public:
-  InkAtomicList atomicQueue{};
+  // Outgoing UDP Packet Queue
+  ASLL(UDPPacketInternal, alink) outQueue;
 
   void service(UDPNetHandler *);
 
@@ -309,7 +310,6 @@ public:
   // to be called back with data
   Que(UnixUDPConnection, callback_link) udp_callbacks;
   // outgoing packets
-  InkAtomicList udpAtomicQueue{};
   UDPQueue udpOutQueue{};
   // to hold the newly created descriptors before scheduling them on
   // the servicing buckets.
