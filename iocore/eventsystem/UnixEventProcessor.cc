@@ -62,9 +62,9 @@ protected:
   void *alloc_numa_stack(EThread *t, size_t stacksize);
 
 private:
-  hwloc_obj_type_t obj_type;
-  int obj_count        = 0;
-  char const *obj_name = nullptr;
+  hwloc_obj_type_t obj_type = HWLOC_OBJ_MACHINE;
+  int obj_count             = 0;
+  char const *obj_name      = nullptr;
 #endif
 };
 
