@@ -34,20 +34,16 @@
 
 UnixUDPConnection::~UnixUDPConnection()
 {
-  UDPPacketInternal *p = (UDPPacketInternal *)ink_atomiclist_popall(&inQueue);
+  UDPPacketInternal *p = nullptr;
+
+  SList(UDPPacketInternal, alink) aq(inQueue.popall());
 
   if (!tobedestroyed) {
     tobedestroyed = 1;
   }
 
-  if (p) {
-    UDPPacketInternal *pnext = nullptr;
-    while (p) {
-      pnext         = p->alink.next;
-      p->alink.next = nullptr;
-      p->free();
-      p = pnext;
-    }
+  while ((p = aq.pop())) {
+    p->free();
   }
   if (callbackAction) {
     callbackAction->cancel();
@@ -80,23 +76,20 @@ UnixUDPConnection::callbackHandler(int event, void *data)
     Release();
     return EVENT_CONT;
   } else {
-    UDPPacketInternal *p = (UDPPacketInternal *)ink_atomiclist_popall(&inQueue);
-    if (p) {
-      Debug("udpnet", "UDPConnection::callbackHandler");
-      UDPPacketInternal *pnext = nullptr;
-      Queue<UDPPacketInternal> result;
-      while (p) {
-        pnext         = p->alink.next;
-        p->alink.next = nullptr;
-        result.push(p);
-        p = pnext;
-      }
-      if (!shouldDestroy()) {
-        continuation->handleEvent(NET_EVENT_DATAGRAM_READ_READY, &result);
-      } else {
-        while ((p = result.dequeue())) {
-          p->free();
-        }
+    UDPPacketInternal *p = nullptr;
+    SList(UDPPacketInternal, alink) aq(inQueue.popall());
+
+    Debug("udpnet", "UDPConnection::callbackHandler");
+    Queue<UDPPacketInternal> result;
+    while ((p = aq.pop())) {
+      result.push(p);
+    }
+
+    if (!shouldDestroy()) {
+      continuation->handleEvent(NET_EVENT_DATAGRAM_READ_READY, &result);
+    } else {
+      while ((p = result.dequeue())) {
+        p->free();
       }
     }
   }
