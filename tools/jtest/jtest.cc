@@ -284,7 +284,6 @@ static const ArgumentDescription argument_descriptions[] = {
   {"drop_after_CL", 'T', "Drop after Content-Length", "F", &drop_after_CL, "JTEST_DROP", nullptr},
   {"verbose", 'v', "Verbose Flag", "F", &verbose, "JTEST_VERBOSE", nullptr},
   {"verbose_errors", 'E', "Verbose Errors Flag", "f", &verbose_errors, "JTEST_VERBOSE_ERRORS", nullptr},
-  {"drand", 'D', "Random Number Seed", "I", &drand_seed, "JTEST_DRAND", nullptr},
   {"ims_rate", 'I', "IMS Not-Changed Rate", "D", &ims_rate, "JTEST_IMS_RATE", nullptr},
   {"client_abort_rate", 'g', "Client Abort Rate", "D", &client_abort_rate, "JTEST_CLIENT_ABORT_RATE", nullptr},
   {"server_abort_rate", 'G', "Server Abort Rate", "D", &server_abort_rate, "JTEST_SERVER_ABORT_RATE", nullptr},
