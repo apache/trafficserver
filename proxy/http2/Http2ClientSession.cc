@@ -272,7 +272,11 @@ Http2ClientSession::do_io_close(int alerrno)
     client_vc->do_io_close();
     client_vc = nullptr;
   }
-  this->connection_state.release_stream(nullptr);
+
+  {
+    SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
+    this->connection_state.release_stream(nullptr);
+  }
 }
 
 void
