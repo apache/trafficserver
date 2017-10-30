@@ -662,6 +662,7 @@ Http2Stream::destroy()
     // release_stream and delete_stream indirectly call each other and seem to have a lot of commonality
     // Should get resolved at somepoint.
     Http2ClientSession *h2_parent = static_cast<Http2ClientSession *>(parent);
+    SCOPED_MUTEX_LOCK(lock, h2_parent->connection_state.mutex, this_ethread());
     h2_parent->connection_state.release_stream(this);
 
     // Current Http2ConnectionState implementation uses a memory pool for instantiating streams and DLL<> stream_list for storing
