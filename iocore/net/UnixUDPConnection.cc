@@ -140,9 +140,9 @@ UDPConnection::Release()
 {
   UnixUDPConnection *p = (UnixUDPConnection *)this;
 
-  p->ep.stop();
-
   if (ink_atomic_increment(&p->refcount, -1) == 1) {
+    p->ep.stop();
+
     ink_assert(p->callback_link.next == nullptr);
     ink_assert(p->callback_link.prev == nullptr);
     ink_assert(p->polling_link.next == nullptr);
