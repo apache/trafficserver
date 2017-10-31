@@ -1042,16 +1042,36 @@ Http2ConnectionState::find_stream(Http2StreamId id) const
 void
 Http2ConnectionState::restart_streams()
 {
-  Http2Stream *s = stream_list.head;
+  // This is a static variable, so it is shared in Http2ConnectionState instances and will get incremented in subsequent calls.
+  // It doesn't need to be initialized with rand() nor time(), and doesn't need to be accessed with a lock, because it doesn't need
+  // that randomness and accuracy.
+  static uint16_t starting_point = 0;
 
-  while (s) {
-    Http2Stream *next = static_cast<Http2Stream *>(s->link.next);
+  Http2Stream *s   = stream_list.head;
+  Http2Stream *end = s;
+  if (s) {
+    // Change the start point randomly
+    for (int i = starting_point % total_client_streams_count; i >= 0; --i) {
+      end = static_cast<Http2Stream *>(end->link.next ? end->link.next : stream_list.head);
+    }
+    s = static_cast<Http2Stream *>(end->link.next ? end->link.next : stream_list.head);
+
+    // Call send_response_body() for each streams
+    while (s != end) {
+      Http2Stream *next = static_cast<Http2Stream *>(s->link.next ? s->link.next : stream_list.head);
+      if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
+          std::min(this->client_rwnd, s->client_rwnd) > 0) {
+        s->send_response_body();
+      }
+      ink_assert(s != next);
+      s = next;
+    }
     if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
         min(this->client_rwnd, s->client_rwnd) > 0) {
       s->send_response_body();
     }
-    ink_assert(s != next);
-    s = next;
+
+    ++starting_point;
   }
 }
 
