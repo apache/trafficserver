@@ -72,7 +72,7 @@ public:
   // off
   // static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
   static void insert_warning_header(HttpConfigParams *http_config_param, HTTPHdr *header, HTTPWarningCode code,
-                                    const char *warn_text = NULL, int warn_text_len = 0);
+                                    const char *warn_text = nullptr, int warn_text_len = 0);
   static void insert_time_and_age_headers_in_response(ink_time_t request_sent_time, ink_time_t response_received_time,
                                                       ink_time_t now, HTTPHdr *base, HTTPHdr *outgoing);
   static void insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr *header);
