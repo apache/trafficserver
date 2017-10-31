@@ -25,6 +25,7 @@
 #include <sstream>   /* std::istringstream */
 #include <getopt.h>  /* getopt_long() */
 #include <strings.h> /* strncasecmp() */
+#include <cstring>   /* strlen() */
 
 #include "configs.h"
 
