@@ -220,7 +220,7 @@ enum ViaString_t {
 };
 
 struct HttpApiInfo {
-  char *parent_proxy_name       = NULL;
+  char *parent_proxy_name       = nullptr;
   int parent_proxy_port         = -1;
   bool cache_untransformed      = false;
   bool cache_transformed        = true;
@@ -928,7 +928,7 @@ public:
       ats_free(internal_msg_buffer_type);
 
       ParentConfig::release(parent_params);
-      parent_params = NULL;
+      parent_params = nullptr;
 
       hdr_info.client_request.destroy();
       hdr_info.client_response.destroy();
@@ -949,7 +949,7 @@ public:
           pCongestionEntry->connection_closed();
           congestion_connection_opened = 0;
         }
-        pCongestionEntry->put(), pCongestionEntry = NULL;
+        pCongestionEntry->put(), pCongestionEntry = nullptr;
       }
 
       url_map.clear();
@@ -958,7 +958,7 @@ public:
       hostdb_entry.clear();
 
       delete[] ranges;
-      ranges      = NULL;
+      ranges      = nullptr;
       range_setup = RANGE_NONE;
       return;
     }
@@ -983,7 +983,7 @@ public:
         } else {
           ats_free(internal_msg_buffer);
         }
-        internal_msg_buffer = NULL;
+        internal_msg_buffer = nullptr;
       }
       internal_msg_buffer_size = 0;
     }
@@ -1102,10 +1102,10 @@ public:
 
   static void build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_request, HTTPVersion outgoing_version);
   static void build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing_response, HTTPVersion outgoing_version,
-                             HTTPStatus status_code, const char *reason_phrase = NULL);
+                             HTTPStatus status_code, const char *reason_phrase = nullptr);
   static void build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing_response, HTTPVersion outgoing_version);
   static void build_response(State *s, HTTPHdr *outgoing_response, HTTPVersion outgoing_version, HTTPStatus status_code,
-                             const char *reason_phrase = NULL);
+                             const char *reason_phrase = nullptr);
 
   static void build_response_copy(State *s, HTTPHdr *base_response, HTTPHdr *outgoing_response, HTTPVersion outgoing_version);
   static void handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *base);
