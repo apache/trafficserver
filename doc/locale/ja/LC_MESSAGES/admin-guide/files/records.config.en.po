@@ -4830,9 +4830,7 @@ msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:3117
 msgid ""
-"This specifies the server name for which wire_traces should be printed. "
-"This only works if traffic_server is built with TS_USE_TLS_SNI flag set to "
-"true."
+"This specifies the server name for which wire_traces should be printed."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:3122

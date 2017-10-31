@@ -43,8 +43,6 @@ using ts::config::Value;
 #define PN "ssl-cert-loader"
 #define PCP "[" PN " Plugin] "
 
-#if TS_USE_TLS_SNI
-
 namespace
 {
 class CertLookup
@@ -547,13 +545,3 @@ TSPluginInit(int argc, const char *argv[])
 
   return;
 }
-
-#else // ! TS_USE_TLS_SNI
-
-void
-TSPluginInit(int, const char *[])
-{
-  TSError(PCP "requires TLS SNI which is not available");
-}
-
-#endif // TS_USE_TLS_SNI
