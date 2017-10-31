@@ -154,8 +154,8 @@ the installation with
 
   mkdir -p ~/dev         # make yourself a development dir
   cd ~/dev               # enter your development dir
-  git clone ...          # get the source code from ASF Git repo
-  cd trafficserver       # enter the checkout dir
+  git clone ...          # get the source code from ASF Git repository
+  cd trafficserver       # enter the checkout directory
   autoreconf -if         # generate the configure script and Makefile.in files
   ./configure            # configure the build environment to create Makefiles
   make                   # execute the compile
