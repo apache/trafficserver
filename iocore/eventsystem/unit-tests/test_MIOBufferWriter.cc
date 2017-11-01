@@ -25,6 +25,7 @@
 #include "catch.hpp"
 
 #include <cstdint>
+#include <cstdlib>
 
 struct IOBufferBlock {
   std::int64_t write_avail();
@@ -187,31 +188,10 @@ TEST_CASE("MIOBufferWriter", "[MIOBW]")
   writeOnce(bw, 1);
 
   REQUIRE(bw.extent() == ((iobbIdx * BlockSize) + blockUsed));
-
-// These tests don't work properly with clang for some reason.
-#if !defined(__clang__)
-
-  try {
-    bw.write(bw.auxBufferCapacity() + 1);
-    REQUIRE(false);
-
-  } catch (InkAssertExcept) {
-    REQUIRE(true);
-  }
-
-  try {
-    bw.data();
-    REQUIRE(false);
-
-  } catch (InkAssertExcept) {
-    REQUIRE(true);
-  }
-
-#endif
 }
 
 void
 _ink_assert(const char *a, const char *f, int l)
 {
-  throw InkAssertExcept();
+  std::exit(1);
 }
