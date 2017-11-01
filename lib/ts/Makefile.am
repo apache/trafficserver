@@ -194,8 +194,6 @@ libtsutil_la_SOURCES = \
   Tokenizer.h \
   Trie.h \
   TsBuffer.h \
-  Vec.cc \
-  Vec.h \
   Version.cc \
   X509HostnameValidator.cc \
   X509HostnameValidator.h
