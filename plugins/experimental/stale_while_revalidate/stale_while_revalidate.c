@@ -67,7 +67,11 @@ typedef struct {
   char *effective_url;
   TSMBuffer buf;
   TSMLoc http_hdr_loc;
-  struct sockaddr client_addr;
+  union {
+    struct sockaddr sa;
+    struct sockaddr_in sin;
+    struct sockaddr_in6 sin6;
+  } client_addr;
 } RequestInfo;
 
 typedef struct {
@@ -93,6 +97,8 @@ init_request_info(RequestInfo *pobj, TSHttpTxn txn)
   TSMBuffer buf;
   TSMLoc loc;
 
+  const struct sockaddr *sa;
+
   if (TSHttpTxnClientReqGet(txn, &buf, &loc) == TS_SUCCESS) {
     req_info = pobj;
     memset(req_info, 0, sizeof(RequestInfo));
@@ -105,8 +111,17 @@ init_request_info(RequestInfo *pobj, TSHttpTxn txn)
     TSHttpHdrClone(req_info->buf, buf, loc, &(req_info->http_hdr_loc));
     TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
 
-    // src is IpEndpoint (union w/struct sockaddr)
-    memmove(&req_info->client_addr, TSHttpTxnClientAddrGet(txn), sizeof(struct sockaddr));
+    sa = TSHttpTxnClientAddrGet(txn);
+    switch (sa->sa_family) {
+    case AF_INET:
+      memcpy(&req_info->client_addr.sin, sa, sizeof(struct sockaddr_in));
+      break;
+    case AF_INET6:
+      memcpy(&req_info->client_addr.sin6, sa, sizeof(struct sockaddr_in6));
+      break;
+    default:
+      break;
+    }
   }
 
   return req_info;
@@ -452,7 +467,7 @@ fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     TSHttpHdrPrint(state->req_info->buf, state->req_info->http_hdr_loc, state->req_io_buf);
     TSIOBufferWrite(state->req_io_buf, "\r\n", 2);
 
-    state->vconn = TSHttpConnectWithPluginId(&state->req_info->client_addr, PLUGIN_NAME, 0);
+    state->vconn = TSHttpConnectWithPluginId(&state->req_info->client_addr.sa, PLUGIN_NAME, 0);
 
     state->r_vio = TSVConnRead(state->vconn, consume_cont, state->resp_io_buf, INT64_MAX);
     state->w_vio =
