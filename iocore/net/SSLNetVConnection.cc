@@ -795,7 +795,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       ERR_error_string_n(e, buf, sizeof(buf));
       TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL Error: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", err, e, buf,
               errno);
-      num_really_written = -errno;
+      // Treat SSL_ERROR_SSL as EPIPE error.
+      num_really_written = -EPIPE;
       SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSL_write-SSL_ERROR_SSL errno=%d", errno);
     } break;
     }
