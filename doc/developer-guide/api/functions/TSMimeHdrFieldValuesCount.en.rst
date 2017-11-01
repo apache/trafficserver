@@ -30,3 +30,5 @@ Synopsis
 
 Description
 ===========
+
+:func:`TSMimeHdrFieldValuesCount` returns the number of elements in a multi-valued :arg:`field`.
