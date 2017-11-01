@@ -46,14 +46,14 @@ public:
   void
   acquire()
   {
-    _ref_count++;
+    _ref_count.fetch_add(1);
   }
 
   void
   release()
   {
     TSDebug(PLUGIN_NAME, "ref_count is %d", (int)_ref_count);
-    if (1 >= _ref_count--) {
+    if (1 >= _ref_count.fetch_sub(1)) {
       TSDebug(PLUGIN_NAME, "configuration deleted, due to ref-counting");
       delete this;
     }

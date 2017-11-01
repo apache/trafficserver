@@ -99,7 +99,7 @@ ProcessManager::start(std::function<void()> const &cb)
   init = cb;
 
   ink_release_assert(running == 0);
-  running++;
+  running.fetch_add(1);
   poll_thread = ink_thread_create(processManagerThread, nullptr, 0, 0, nullptr);
 }
 
@@ -109,7 +109,7 @@ ProcessManager::stop()
   Debug("pmgmt", "stopping process manager");
 
   ink_release_assert(running == 1);
-  running--;
+  running.fetch_sub(1);
 
   int tmp = local_manager_sockfd;
 

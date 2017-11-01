@@ -64,14 +64,14 @@ public:
   int
   refcount_inc()
   {
-    return ++m_refcount;
+    return m_refcount.fetch_add(1) + 1;
   }
 
   // Decrement the reference count, returning the new count.
   int
   refcount_dec()
   {
-    return --m_refcount;
+    return m_refcount.fetch_sub(1) - 1;
   }
 
   int

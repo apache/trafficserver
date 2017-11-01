@@ -127,7 +127,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
   int idx;
 
   if (id == 0) {
-    id = ++ninfos;
+    id = ninfos.fetch_add(1) + 1;
     ink_assert(id != 0);
     ink_assert(id <= MAX_CONFIGS);
   }
@@ -251,7 +251,7 @@ struct RegressionConfig : public ConfigInfo {
       box.check(this->refcount() == 1, "invalid refcount %d (should be 1)", this->refcount());
     }
 
-    nobjects++;
+    nobjects.fetch_add(1);
   }
 
   ~RegressionConfig() override
@@ -268,7 +268,7 @@ struct RegressionConfig : public ConfigInfo {
       box.check(*this->pstatus == REGRESSION_TEST_INPROGRESS, "intermediate config out of sequence, *pstatus is %d", *pstatus);
     }
 
-    nobjects--;
+    nobjects.fetch_sub(1);
   }
 
   RegressionTest *test;
