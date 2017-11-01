@@ -25,6 +25,7 @@
 #include "catch.hpp"
 
 #include <cstdint>
+#include <csetjmp>
 
 struct IOBufferBlock {
   std::int64_t write_avail();
@@ -156,62 +157,61 @@ writeOnce(MIOBufferWriter &bw, std::size_t len)
   REQUIRE(bw.auxBufferCapacity() <= BlockSize);
 }
 
-class InkAssertExcept
-{
-};
+std::jmp_buf jmpBuf;
 
 TEST_CASE("MIOBufferWriter", "[MIOBW]")
 {
   MIOBufferWriter bw(theMIOBuffer);
 
-  REQUIRE(bw.auxBufferCapacity() == BlockSize);
+  if (setjmp(jmpBuf)) {
+    // Unexpectedly triggered ink_assert().
+    REQUIRE(false);
 
-  writeOnce(bw, 0);
-  writeOnce(bw, 1);
-  writeOnce(bw, 1);
-  writeOnce(bw, 1);
-  writeOnce(bw, 10);
-  writeOnce(bw, 1000);
-  writeOnce(bw, 1);
-  writeOnce(bw, 0);
-  writeOnce(bw, 1);
-  writeOnce(bw, 2000);
-  writeOnce(bw, 69);
-  writeOnce(bw, 666);
+  } else {
+    REQUIRE(bw.auxBufferCapacity() == BlockSize);
 
-  for (int i = 0; i < 3000; i += 13) {
-    writeOnce(bw, i);
+    writeOnce(bw, 0);
+    writeOnce(bw, 1);
+    writeOnce(bw, 1);
+    writeOnce(bw, 1);
+    writeOnce(bw, 10);
+    writeOnce(bw, 1000);
+    writeOnce(bw, 1);
+    writeOnce(bw, 0);
+    writeOnce(bw, 1);
+    writeOnce(bw, 2000);
+    writeOnce(bw, 69);
+    writeOnce(bw, 666);
+
+    for (int i = 0; i < 3000; i += 13) {
+      writeOnce(bw, i);
+    }
+
+    writeOnce(bw, 0);
+    writeOnce(bw, 1);
+
+    REQUIRE(bw.extent() == ((iobbIdx * BlockSize) + blockUsed));
   }
 
-  writeOnce(bw, 0);
-  writeOnce(bw, 1);
-
-  REQUIRE(bw.extent() == ((iobbIdx * BlockSize) + blockUsed));
-
-// These tests don't work properly with clang for some reason.
-#if !defined(__clang__)
-
-  try {
+  if (!setjmp(jmpBuf)) {
+    // This should cause ink_assert().
     bw.write(bw.auxBufferCapacity() + 1);
-    REQUIRE(false);
 
-  } catch (InkAssertExcept) {
-    REQUIRE(true);
+    // Will only reach this point if ink_assert() was not triggered.
+    REQUIRE(false);
   }
 
-  try {
+  if (!setjmp(jmpBuf)) {
+    // This should cause ink_assert().
     bw.data();
+
+    // Will only reach this point if ink_assert() was not triggered.
     REQUIRE(false);
-
-  } catch (InkAssertExcept) {
-    REQUIRE(true);
   }
-
-#endif
 }
 
 void
 _ink_assert(const char *a, const char *f, int l)
 {
-  throw InkAssertExcept();
+  std::longjmp(jmpBuf, 1);
 }
