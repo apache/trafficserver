@@ -85,7 +85,7 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   if (stream == nullptr) {
     if (cstate.is_valid_streamid(id)) {
       // This error occurs fairly often, and is probably innocuous (SM initiates the shutdown)
-      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED, nullptr);
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED, nullptr);
     } else {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data stream freed with invalid id");
