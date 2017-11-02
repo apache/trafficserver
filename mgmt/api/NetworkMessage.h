@@ -33,7 +33,6 @@
 
 // the possible operations or msg types sent from remote client to TM
 enum class OpType : MgmtMarshallInt {
-  FILE_READ,
   RECORD_SET,
   RECORD_GET,
   PROXY_STATE_GET,

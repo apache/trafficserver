@@ -22,7 +22,8 @@ Test experimental/multiplexer.
 '''
 # need Curl
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
+    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
+    Condition.PluginExists('multiplexer.so')
 )
 Test.ContinueOnFail = False
 # Define default ATS

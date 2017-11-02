@@ -62,9 +62,9 @@ protected:
   void *alloc_numa_stack(EThread *t, size_t stacksize);
 
 private:
-  hwloc_obj_type_t obj_type;
-  int obj_count        = 0;
-  char const *obj_name = nullptr;
+  hwloc_obj_type_t obj_type = HWLOC_OBJ_MACHINE;
+  int obj_count             = 0;
+  char const *obj_name      = nullptr;
 #endif
 };
 
@@ -377,6 +377,7 @@ EventProcessor::spawn_event_threads(EventType ev_type, int n_threads, size_t sta
   // the group. Some thread set up depends on knowing the total number of threads but that can't be
   // safely updated until all the EThread instances are created and stored in the table.
   for (i = 0; i < n_threads; ++i) {
+    Debug("iocore_thread_start", "Created %s thread #%d", tg->_name.get(), i + 1);
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[%s %d]", tg->_name.get(), i);
     void *stack = Thread_Affinity_Initializer.alloc_stack(tg->_thread[i], stacksize);
     tg->_thread[i]->start(thr_name, stack, stacksize);

@@ -114,28 +114,24 @@ Layout::relative_to(char *buf, size_t bufsz, ts::string_view dir, ts::string_vie
 bool
 Layout::check_runroot()
 {
-  std::string yaml_path = {};
-
   if (getenv("USING_RUNROOT") == nullptr) {
     return false;
-  } else {
-    std::string env_path = getenv("USING_RUNROOT");
-    int len              = env_path.size();
-    if ((len + 1) > PATH_NAME_MAX) {
-      ink_fatal("TS_RUNROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
-    }
-    std::ifstream file;
-    if (env_path.back() != '/') {
-      env_path.append("/");
-    }
-    yaml_path = env_path + "runroot_path.yaml";
-
-    file.open(yaml_path);
-    if (!file.good()) {
-      ink_warning("Bad env path, continue with default value");
-      return false;
-    }
   }
+
+  std::string env_path = getenv("USING_RUNROOT");
+  int len              = env_path.size();
+  if ((len + 1) > PATH_NAME_MAX) {
+    ink_fatal("TS_RUNROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
+  }
+  std::ifstream file;
+  std::string yaml_path = layout_relative(env_path, "runroot_path.yml");
+
+  file.open(yaml_path);
+  if (!file.good()) {
+    ink_warning("Bad env path, continue with default value");
+    return false;
+  }
+
   std::ifstream yamlfile(yaml_path);
   std::unordered_map<std::string, std::string> runroot_map;
   std::string str;
@@ -143,23 +139,22 @@ Layout::check_runroot()
     int pos = str.find(':');
     runroot_map[str.substr(0, pos)] = str.substr(pos + 2);
   }
-  for (auto it : runroot_map) {
-    prefix        = runroot_map["prefix"];
-    exec_prefix   = runroot_map["exec_prefix"];
-    bindir        = runroot_map["bindir"];
-    sbindir       = runroot_map["sbindir"];
-    sysconfdir    = runroot_map["sysconfdir"];
-    datadir       = runroot_map["datadir"];
-    includedir    = runroot_map["includedir"];
-    libdir        = runroot_map["libdir"];
-    libexecdir    = runroot_map["libexecdir"];
-    localstatedir = runroot_map["localstatedir"];
-    runtimedir    = runroot_map["runtimedir"];
-    logdir        = runroot_map["logdir"];
-    mandir        = runroot_map["mandir"];
-    infodir       = runroot_map["infodir"];
-    cachedir      = runroot_map["cachedir"];
-  }
+
+  prefix        = runroot_map["prefix"];
+  exec_prefix   = runroot_map["exec_prefix"];
+  bindir        = runroot_map["bindir"];
+  sbindir       = runroot_map["sbindir"];
+  sysconfdir    = runroot_map["sysconfdir"];
+  datadir       = runroot_map["datadir"];
+  includedir    = runroot_map["includedir"];
+  libdir        = runroot_map["libdir"];
+  libexecdir    = runroot_map["libexecdir"];
+  localstatedir = runroot_map["localstatedir"];
+  runtimedir    = runroot_map["runtimedir"];
+  logdir        = runroot_map["logdir"];
+  mandir        = runroot_map["mandir"];
+  infodir       = runroot_map["infodir"];
+  cachedir      = runroot_map["cachedir"];
 
   // // for yaml lib operations
   // YAML::Node yamlfile = YAML::LoadFile(yaml_path);

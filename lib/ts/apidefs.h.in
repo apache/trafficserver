@@ -225,7 +225,6 @@ typedef enum {
     The following hooks can ONLY be added globally:
      - TS_HTTP_SELECT_ALT_HOOK
      - TS_HTTP_SSN_START_HOOK
-     - TS_HTTP_SSN_CLOSE_HOOK
 
     TSHttpSsnHookAdd: adds a transaction hook to each transaction
     within a session. You can only use transaction hooks with this call:
@@ -240,6 +239,7 @@ typedef enum {
      - TS_HTTP_RESPONSE_CLIENT_HOOK
      - TS_HTTP_TXN_START_HOOK
      - TS_HTTP_TXN_CLOSE_HOOK
+     - TS_HTTP_SSN_CLOSE_HOOK
 
     TSHttpTxnHookAdd: adds a callback at a specific point within
     an HTTP transaction. The following hooks can be used with this

@@ -836,7 +836,7 @@ The URL part names which may be used for these conditions and actions are:
 Part     Description
 ======== ======================================================================
 HOST     Full hostname.
-PATH     URL substring beginning with the first ``/`` after the hostname up to,
+PATH     URL substring beginning with (but not including) the first ``/`` after the hostname up to,
          but not including, the query string.
 PORT     Port number.
 QUERY    URL substring from the ``?``, signifying the beginning of the query
@@ -1136,10 +1136,10 @@ path.  One provides a max age and the other provides a “no-cache” statement 
 two different file paths. ::
 
     cond %{SEND_RESPONSE_HDR_HOOK}
-    cond %{PATH} /examplepath1/
+    cond %{CLIENT-URL:PATH} /examplepath1/
     add-header Cache-Control "max-age=3600" [L]
     cond %{SEND_RESPONSE_HDR_HOOK}
-    cond %{PATH} /examplepath2\/examplepath3\/.*/
+    cond %{CLIENT-URL:PATH} /examplepath2\/examplepath3\/.*/
     add-header Cache-Control "no-cache" [L]
 
 Redirect when the Origin Server Times Out
@@ -1151,7 +1151,7 @@ Query string when the Origin server times out or the connection is refused::
     cond %{SEND_RESPONSE_HDR_HOOK}
     cond %{STATUS} =502 [OR]
     cond %{STATUS} =504
-    set-redirect 302 http://different_origin.example.com/%{PATH} [QSA]
+    set-redirect 302 http://different_origin.example.com/%{CLIENT-URL:PATH} [QSA]
 
 Check for existence of a header
 -------------------------------
@@ -1179,3 +1179,26 @@ This is mostly used by being attached to a remap rule that maps to a host known 
 the parallel `OUTBOUND` supported is added then this could be done by checking for inbound TLS both
 outbound TLS in the `SEND_REQUEST_HDR_HOOK`. However this technique may be used for a non-TLS
 upstream if the goal is to require the user agent to connect to |TS| over TLS.
+
+Close Connections for draining
+------------------------------
+
+When a healthcheck file is missing (in this example, ``/path/to/the/healthcheck/file.txt``),
+add a Connection: close header to have HTTP/1.1 clients drop their connection,
+allowing the server to drain. This should be a global configuration.
+
+    cond %{SEND_RESPONSE_HDR_HOOK}
+    cond %{ACCESS:/path/to/the/healthcheck/file.txt}    [NOT,OR]
+      set-header Connection "close"
+
+Use Internal header to pass data
+--------------------------------
+
+In |TS|, a header that begins with ``@`` does not leave |TS|. Thus, you can use
+this to pass data to different |TS| systems. For instance, a series of remap rules
+could each be tagged with a consistent name to make finding logs easier.
+
+    cond %{REMAP_PSEUDO_HOOK}
+        set-header @PropertyName "someproperty"
+
+(Then in :file:`logging.config`, log ``%<{@PropertyName}cqh>``)

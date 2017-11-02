@@ -219,9 +219,9 @@ HpackLookupResult
 HpackIndexingTable::lookup(const char *name, int name_len, const char *value, int value_len) const
 {
   HpackLookupResult result;
-  const int entry_num = TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table->length();
+  const unsigned int entry_num = TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table->length();
 
-  for (int index = 1; index < entry_num; ++index) {
+  for (unsigned int index = 1; index < entry_num; ++index) {
     const char *table_name, *table_value;
     int table_name_len = 0, table_value_len = 0;
 
@@ -321,7 +321,7 @@ HpackIndexingTable::update_maximum_size(uint32_t new_size)
 const MIMEField *
 HpackDynamicTable::get_header_field(uint32_t index) const
 {
-  return _headers.get(index);
+  return _headers.at(index);
 }
 
 void
@@ -344,13 +344,13 @@ HpackDynamicTable::add_header_field(const MIMEField *field)
     _current_size += header_size;
     while (_current_size > _maximum_size) {
       int last_name_len, last_value_len;
-      MIMEField *last_field = _headers.last();
+      MIMEField *last_field = _headers.back();
 
       last_field->name_get(&last_name_len);
       last_field->value_get(&last_value_len);
       _current_size -= ADDITIONAL_OCTETS + last_name_len + last_value_len;
 
-      _headers.remove_index(_headers.length() - 1);
+      _headers.erase(_headers.begin() + _headers.size() - 1);
       _mhdr->field_delete(last_field, false);
     }
 
@@ -358,7 +358,7 @@ HpackDynamicTable::add_header_field(const MIMEField *field)
     new_field->value_set(_mhdr->m_heap, _mhdr->m_mime, value, value_len);
     _mhdr->field_attach(new_field);
     // XXX Because entire Vec instance is copied, Its too expensive!
-    _headers.insert(0, new_field);
+    _headers.insert(_headers.begin(), new_field);
   }
 }
 
@@ -385,17 +385,17 @@ bool
 HpackDynamicTable::update_maximum_size(uint32_t new_size)
 {
   while (_current_size > new_size) {
-    if (_headers.n <= 0) {
+    if (_headers.size() <= 0) {
       return false;
     }
     int last_name_len, last_value_len;
-    MIMEField *last_field = _headers.last();
+    MIMEField *last_field = _headers.back();
 
     last_field->name_get(&last_name_len);
     last_field->value_get(&last_value_len);
     _current_size -= ADDITIONAL_OCTETS + last_name_len + last_value_len;
 
-    _headers.remove_index(_headers.length() - 1);
+    _headers.erase(_headers.begin() + _headers.size() - 1);
     _mhdr->field_delete(last_field, false);
   }
 
@@ -406,7 +406,7 @@ HpackDynamicTable::update_maximum_size(uint32_t new_size)
 uint32_t
 HpackDynamicTable::length() const
 {
-  return _headers.length();
+  return _headers.size();
 }
 
 //

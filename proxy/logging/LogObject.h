@@ -33,7 +33,7 @@
 #include "LogBuffer.h"
 #include "LogAccess.h"
 #include "LogFilter.h"
-#include "ts/Vec.h"
+#include <vector>
 
 /*-------------------------------------------------------------------------
   LogObject
@@ -352,7 +352,7 @@ public:
   };
 
 private:
-  typedef Vec<LogObject *> LogObjectList;
+  typedef std::vector<LogObject *> LogObjectList;
 
   LogObjectList _objects;    // array of configured objects
   LogObjectList _APIobjects; // array of API objects
@@ -408,12 +408,12 @@ public:
   bool
   has_api_objects() const
   {
-    return _APIobjects.length() > 0;
+    return _APIobjects.size() > 0;
   }
   unsigned
   get_num_objects() const
   {
-    return _objects.length();
+    return _objects.size();
   }
   unsigned get_num_collation_clients() const;
 };

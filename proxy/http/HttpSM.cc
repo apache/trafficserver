@@ -3387,6 +3387,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       DebugSM("http_tunnel", "send 408 response to client to vc %p, tunnel vc %p", ua_session->get_netvc(), p->vc);
 
       tunnel.chain_abort_all(p);
+      server_session = nullptr;
       // Reset the inactivity timeout, otherwise the InactivityCop will callback again in the next second.
       ua_session->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
       // if it is active timeout case, we need to give another chance to send 408 response;
@@ -3408,7 +3409,8 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     set_ua_abort(HttpTransact::ABORTED, event);
 
     tunnel.chain_abort_all(p);
-    p->read_vio = nullptr;
+    server_session = nullptr;
+    p->read_vio    = nullptr;
     p->vc->do_io_close(EHTTP_ERROR);
 
     // the in_tunnel status on both the ua & and

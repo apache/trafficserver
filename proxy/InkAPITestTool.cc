@@ -482,7 +482,7 @@ get_response_id(TSHttpTxn txnp)
 static ClientTxn *
 synclient_txn_create(void)
 {
-  HttpProxyPort *proxy_port;
+  const HttpProxyPort *proxy_port;
 
   ClientTxn *txn = (ClientTxn *)TSmalloc(sizeof(ClientTxn));
 

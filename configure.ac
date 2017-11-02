@@ -639,6 +639,9 @@ case $host_os in
     host_os_def="freebsd"
     AM_LDFLAGS="-rdynamic"
     TS_ADDTO(AM_CPPFLAGS, [-I/usr/local/include])
+    TS_ADDTO(AM_CPPFLAGS, [-D_GLIBCXX_USE_C99])
+    TS_ADDTO(AM_CPPFLAGS, [-D_GLIBCXX_USE_C99_MATH])
+    TS_ADDTO(AM_CPPFLAGS, [-D_GLIBCXX_USE_C99_MATH_TR1])
     ;;
   kfreebsd*)
     host_os_def="freebsd"

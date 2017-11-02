@@ -8037,7 +8037,7 @@ HttpTransact::build_redirect_response(State *s)
   // template redirect#temporarily can not be used here since there is no way to pass the computed url to the template.
   s->internal_msg_buffer = body_factory->getFormat(8192, &s->internal_msg_buffer_size, "%s <a href=\"%s\">%s</a>.  %s.",
                                                    "The document you requested is now", new_url, new_url,
-                                                   "Please update your documents and bookmarks accordingly", NULL);
+                                                   "Please update your documents and bookmarks accordingly", nullptr);
 
   h->set_content_length(s->internal_msg_buffer_size);
   h->value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/html", 9);

@@ -40,9 +40,10 @@
 #include "HTTP.h"
 #include "ControlMatcher.h"
 #include "HdrUtils.h"
-#include "ts/Vec.h"
 
 #include <ts/TsBuffer.h>
+
+#include <vector>
 
 /** Used for printing IP address.
     @code
@@ -436,7 +437,7 @@ TextMod::set(const char *value)
 }
 
 struct MultiTextMod : public ControlBase::Modifier {
-  Vec<ts::Buffer> text_vec;
+  std::vector<ts::Buffer> text_vec;
   MultiTextMod();
   ~MultiTextMod() override;
 
@@ -458,7 +459,7 @@ MultiTextMod::~MultiTextMod()
 void
 MultiTextMod::print(FILE *f) const
 {
-  for_Vec (ts::Buffer, text_iter, this->text_vec) {
+  for (auto text_iter : this->text_vec) {
     fprintf(f, "%s=%*s ", this->name(), static_cast<int>(text_iter.size()), text_iter.data());
   }
 }
@@ -585,12 +586,12 @@ SuffixMod::check(HttpRequestData *req) const
   int path_len;
   const char *path = req->hdr->url_get()->path_get(&path_len);
 
-  if (1 == static_cast<int>(this->text_vec.count()) && 1 == static_cast<int>(this->text_vec[0].size()) &&
+  if (1 == static_cast<int>(this->text_vec.size()) && 1 == static_cast<int>(this->text_vec[0].size()) &&
       0 == strcmp(this->text_vec[0].data(), "*")) {
     return true;
   }
 
-  for_Vec (ts::Buffer, text_iter, this->text_vec) {
+  for (auto text_iter : this->text_vec) {
     if (path_len >= static_cast<int>(text_iter.size()) &&
         0 == strncasecmp(path + path_len - text_iter.size(), text_iter.data(), text_iter.size())) {
       return true;
@@ -701,7 +702,7 @@ ControlBase::~ControlBase()
 void
 ControlBase::clear()
 {
-  _mods.delete_and_clear();
+  _mods.clear();
 }
 
 // static const modifier_el default_el = { MOD_INVALID, NULL };
@@ -709,7 +710,7 @@ ControlBase::clear()
 void
 ControlBase::Print()
 {
-  int n = _mods.length();
+  int n = _mods.size();
 
   if (0 >= n) {
     return;
@@ -754,7 +755,7 @@ ControlBase::CheckModifiers(HttpRequestData *request_data)
     return false;
   }
 
-  forv_Vec (Modifier, cur_mod, _mods) {
+  for (auto &cur_mod : _mods) {
     if (cur_mod && !cur_mod->check(request_data)) {
       return false;
     }
@@ -777,7 +778,7 @@ static const char *errorFormats[] = {
 ControlBase::Modifier *
 ControlBase::findModOfType(Modifier::Type t) const
 {
-  forv_Vec (Modifier, m, _mods) {
+  for (auto &m : _mods) {
     if (m && t == m->type()) {
       return m;
     }

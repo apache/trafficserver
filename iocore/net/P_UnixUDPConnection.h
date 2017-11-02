@@ -42,11 +42,11 @@ public:
   void errorAndDie(int e);
   int callbackHandler(int event, void *data);
 
-  LINK(UnixUDPConnection, polling_link);
-  LINK(UnixUDPConnection, callback_link);
   SLINK(UnixUDPConnection, newconn_alink);
+  LINK(UnixUDPConnection, callback_link);
 
-  InkAtomicList inQueue;
+  // Incoming UDP Packet Queue
+  ASLL(UDPPacketInternal, alink) inQueue;
   int onCallbackQueue    = 0;
   Action *callbackAction = nullptr;
   EThread *ethread       = nullptr;
@@ -64,8 +64,6 @@ TS_INLINE
 UnixUDPConnection::UnixUDPConnection(int the_fd)
 {
   fd = the_fd;
-  UDPPacketInternal p;
-  ink_atomiclist_init(&inQueue, "Incoming UDP Packet queue", (char *)&p.alink.next - (char *)&p);
   SET_HANDLER(&UnixUDPConnection::callbackHandler);
 }
 
@@ -78,8 +76,6 @@ UnixUDPConnection::init(int the_fd)
   ethread         = nullptr;
   m_errno         = 0;
 
-  UDPPacketInternal p;
-  ink_atomiclist_init(&inQueue, "Incoming UDP Packet queue", (char *)&p.alink.next - (char *)&p);
   SET_HANDLER(&UnixUDPConnection::callbackHandler);
 }
 

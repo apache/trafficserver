@@ -500,45 +500,6 @@ fail:
 }
 
 /**************************************************************************
- * handle_file_read
- *
- * purpose: handles request to read a file
- * output: SUCC or ERR
- * note: None
- *************************************************************************/
-static TSMgmtError
-handle_file_read(int fd, void *req, size_t reqlen)
-{
-  int size, version;
-  char *text;
-
-  MgmtMarshallInt optype;
-  MgmtMarshallInt fid;
-
-  MgmtMarshallInt err;
-  MgmtMarshallInt vers  = 0;
-  MgmtMarshallData data = {nullptr, 0};
-
-  err = recv_mgmt_request(req, reqlen, OpType::FILE_READ, &optype, &fid);
-  if (err != TS_ERR_OKAY) {
-    return (TSMgmtError)err;
-  }
-
-  // make CoreAPI call on Traffic Manager side
-  err = ReadFile((TSFileNameT)fid, &text, &size, &version);
-  if (err == TS_ERR_OKAY) {
-    vers     = version;
-    data.ptr = text;
-    data.len = size;
-  }
-
-  err = send_mgmt_response(fd, OpType::FILE_READ, &err, &vers, &data);
-
-  ats_free(text); // free memory allocated by ReadFile
-  return (TSMgmtError)err;
-}
-
-/**************************************************************************
  * handle_proxy_state_get
  *
  * purpose: handles request to get the state of the proxy (TS)
@@ -988,7 +949,6 @@ struct control_message_handler {
 };
 
 static const control_message_handler handlers[] = {
-  /* FILE_READ                  */ {MGMT_API_PRIVILEGED, handle_file_read},
   /* RECORD_SET                 */ {MGMT_API_PRIVILEGED, handle_record_set},
   /* RECORD_GET                 */ {0, handle_record_get},
   /* PROXY_STATE_GET            */ {0, handle_proxy_state_get},
