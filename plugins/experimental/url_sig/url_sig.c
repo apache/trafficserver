@@ -101,7 +101,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
-  char config_file[PATH_MAX];
+  char config_filepath_buf[PATH_MAX], *config_file;
   struct config *cfg;
 
   if (argc != 3) {
@@ -111,8 +111,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
   TSDebug(PLUGIN_NAME, "Initializing remap function of %s -> %s with config from %s", argv[0], argv[1], argv[2]);
 
-  const char *install_dir = TSInstallDirGet();
-  snprintf(config_file, sizeof(config_file), "%s/%s/%s", install_dir, "etc/trafficserver", argv[2]);
+  if (argv[2][0] == '/') {
+    config_file = argv[2];
+  } else {
+    snprintf(config_filepath_buf, sizeof(config_filepath_buf), "%s/%s", TSConfigDirGet(), argv[2]);
+    config_file = config_filepath_buf;
+  }
   TSDebug(PLUGIN_NAME, "config file name: %s", config_file);
   FILE *file = fopen(config_file, "r");
   if (file == NULL) {
