@@ -212,6 +212,9 @@ initialize_thread_for_net(EThread *thread)
   nh->mutex  = new_ProxyMutex();
   nh->thread = thread;
 
+  // This is needed to initialize NetHandler
+  thread->schedule_imm(nh);
+
   PollCont *pc       = get_PollCont(thread);
   PollDescriptor *pd = pc->pollDescriptor;
 
