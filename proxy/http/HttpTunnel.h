@@ -253,26 +253,6 @@ struct HttpTunnelProducer {
                         );
 };
 
-class PostDataBuffers
-{
-public:
-  PostDataBuffers()
-    : postdata_producer_buffer(NULL),
-      postdata_copy_buffer(NULL),
-      postdata_producer_reader(NULL),
-      postdata_copy_buffer_start(NULL),
-      ua_buffer_reader(NULL)
-  {
-    Debug("http_redirect", "[PostDataBuffers::PostDataBuffers]");
-  }
-
-  MIOBuffer *postdata_producer_buffer;
-  MIOBuffer *postdata_copy_buffer;
-  IOBufferReader *postdata_producer_reader;
-  IOBufferReader *postdata_copy_buffer_start;
-  IOBufferReader *ua_buffer_reader;
-};
-
 class HttpTunnel : public Continuation
 {
   friend class HttpPagesHandler;
@@ -310,12 +290,6 @@ public:
   }
   bool is_tunnel_alive() const;
   bool has_cache_writer() const;
-
-  // YTS Team, yamsat Plugin
-  void copy_partial_post_data();
-  void allocate_redirect_postdata_producer_buffer();
-  void allocate_redirect_postdata_buffers(IOBufferReader *ua_reader);
-  void deallocate_redirect_postdata_buffers();
 
   HttpTunnelProducer *add_producer(VConnection *vc, int64_t nbytes, IOBufferReader *reader_start, HttpProducerHandler sm_handler,
                                    HttpTunnelType_t vc_type, const char *name);
@@ -373,23 +347,20 @@ private:
   HttpTunnelProducer *alloc_producer();
   HttpTunnelConsumer *alloc_consumer();
 
-  int num_producers;
-  int num_consumers;
+  int num_producers = 0;
+  int num_consumers = 0;
   HttpTunnelConsumer consumers[MAX_CONSUMERS];
   HttpTunnelProducer producers[MAX_PRODUCERS];
-  HttpSM *sm;
+  HttpSM *sm = nullptr;
 
-  bool active;
+  bool active = false;
 
   /// State data about flow control.
   FlowControl flow_state;
 
-public:
-  PostDataBuffers *postbuf;
-
 private:
-  int reentrancy_count;
-  bool call_sm;
+  int reentrancy_count = 0;
+  bool call_sm         = false;
 };
 
 // void HttpTunnel::abort_cache_write_finish_others
