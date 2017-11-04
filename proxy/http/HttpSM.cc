@@ -1984,8 +1984,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     if (enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections)) {
       ++redirection_tries;
     } else {
-      tunnel.deallocate_redirect_postdata_buffers();
-      enable_redirection = false;
+      this->disable_redirect();
     }
 
     do_api_callout();
@@ -2852,7 +2851,7 @@ HttpSM::tunnel_handler_cache_fill(int event, void *data)
   ink_release_assert(cache_sm.cache_write_vc);
 
   tunnel.deallocate_buffers();
-  tunnel.deallocate_redirect_postdata_buffers();
+  this->postbuf_clear();
   tunnel.reset();
 
   setup_server_transfer_to_cache_only();
@@ -2879,7 +2878,7 @@ HttpSM::tunnel_handler_100_continue(int event, void *data)
     //  does not free the memory from the header
     t_state.hdr_info.client_response.destroy();
     tunnel.deallocate_buffers();
-    tunnel.deallocate_redirect_postdata_buffers();
+    this->postbuf_clear();
     tunnel.reset();
 
     if (server_entry->eos) {
@@ -2930,7 +2929,7 @@ HttpSM::tunnel_handler_push(int event, void *data)
   // Reset tunneling state since we need to send a response
   //  to client as whether we succeeded
   tunnel.deallocate_buffers();
-  tunnel.deallocate_redirect_postdata_buffers();
+  this->postbuf_clear();
   tunnel.reset();
 
   if (cache_write_success) {
@@ -3595,8 +3594,6 @@ HttpSM::tunnel_handler_for_partial_post(int event, void * /* data ATS_UNUSED */)
   STATE_ENTER(&HttpSM::tunnel_handler_for_partial_post, event);
   tunnel.deallocate_buffers();
   tunnel.reset();
-
-  tunnel.allocate_redirect_postdata_producer_buffer();
 
   t_state.redirect_info.redirect_in_process = false;
 
@@ -5406,8 +5403,7 @@ HttpSM::handle_post_failure()
 
   // disable redirection in case we got a partial response and then EOS, because the buffer might not
   // have the full post and it's deallocating the post buffers here
-  enable_redirection = false;
-  tunnel.deallocate_redirect_postdata_buffers();
+  this->disable_redirect();
 
   // Don't even think about doing keep-alive after this debacle
   t_state.client_info.keep_alive     = HTTP_NO_KEEPALIVE;
@@ -5681,19 +5677,17 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
   // YTS Team, yamsat Plugin
   // if redirect_in_process and redirection is enabled add static producer
 
-  if (t_state.redirect_info.redirect_in_process && enable_redirection &&
-      (tunnel.postbuf && tunnel.postbuf->postdata_copy_buffer_start != nullptr &&
-       tunnel.postbuf->postdata_producer_buffer != nullptr)) {
+  if (t_state.redirect_info.redirect_in_process && enable_redirection && (this->_postbuf.postdata_copy_buffer_start != nullptr)) {
     post_redirect = true;
     // copy the post data into a new producer buffer for static producer
-    tunnel.postbuf->postdata_producer_buffer->write(tunnel.postbuf->postdata_copy_buffer_start);
-    int64_t post_bytes = tunnel.postbuf->postdata_producer_reader->read_avail();
+    MIOBuffer *postdata_producer_buffer      = new_empty_MIOBuffer();
+    IOBufferReader *postdata_producer_reader = postdata_producer_buffer->alloc_reader();
+
+    postdata_producer_buffer->write(this->_postbuf.postdata_copy_buffer_start);
+    int64_t post_bytes = postdata_producer_reader->read_avail();
     transfered_bytes   = post_bytes;
-    p                  = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, tunnel.postbuf->postdata_producer_reader,
-                            (HttpProducerHandler) nullptr, HT_STATIC, "redirect static agent post");
-    // the tunnel has taken over the buffer and will free it
-    tunnel.postbuf->postdata_producer_buffer = nullptr;
-    tunnel.postbuf->postdata_producer_reader = nullptr;
+    p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, postdata_producer_reader, (HttpProducerHandler) nullptr,
+                            HT_STATIC, "redirect static agent post");
   } else {
     int64_t alloc_index;
     // content length is undefined, use default buffer size
@@ -5708,6 +5702,10 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
     IOBufferReader *buf_start = post_buffer->alloc_reader();
     int64_t post_bytes        = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
+
+    if (enable_redirection) {
+      this->_postbuf.init(post_buffer->clone_reader(buf_start));
+    }
 
     // Note: Many browsers, Netscape and IE included send two extra
     //  bytes (CRLF) at the end of the post.  We just ignore those
@@ -6849,7 +6847,7 @@ void
 HttpSM::kill_this()
 {
   ink_release_assert(reentrancy_count == 1);
-  tunnel.deallocate_redirect_postdata_buffers();
+  this->postbuf_clear();
   enable_redirection = false;
 
   if (kill_this_async_done == false) {
@@ -7766,7 +7764,7 @@ HttpSM::do_redirect()
 {
   DebugSM("http_redirect", "[HttpSM::do_redirect]");
   if (!enable_redirection || redirection_tries > t_state.txn_conf->number_of_redirections) {
-    tunnel.deallocate_redirect_postdata_buffers();
+    this->postbuf_clear();
     return;
   }
 
@@ -8152,4 +8150,52 @@ HttpSM::find_proto_string(HTTPVersion version) const
     return IP_PROTO_TAG_HTTP_1_0;
   }
   return nullptr;
+}
+
+// YTS Team, yamsat Plugin
+// Function to copy the partial Post data while tunnelling
+void
+PostDataBuffers::copy_partial_post_data()
+{
+  this->postdata_copy_buffer->write(this->ua_buffer_reader);
+  Debug("http_redirect", "[PostDataBuffers::copy_partial_post_data] wrote %" PRId64 " bytes to buffers %" PRId64 "",
+        this->ua_buffer_reader->read_avail(), this->postdata_copy_buffer_start->read_avail());
+  this->ua_buffer_reader->consume(this->ua_buffer_reader->read_avail());
+}
+
+// YTS Team, yamsat Plugin
+// Allocating the post data buffers
+void
+PostDataBuffers::init(IOBufferReader *ua_reader)
+{
+  Debug("http_redirect", "[PostDataBuffers::init]");
+
+  this->ua_buffer_reader = ua_reader;
+
+  if (this->postdata_copy_buffer == nullptr) {
+    ink_assert(this->postdata_copy_buffer_start == nullptr);
+    this->postdata_copy_buffer       = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_4K);
+    this->postdata_copy_buffer_start = this->postdata_copy_buffer->alloc_reader();
+  }
+
+  ink_assert(this->ua_buffer_reader != nullptr);
+}
+
+// YTS Team, yamsat Plugin
+// Deallocating the post data buffers
+void
+PostDataBuffers::clear()
+{
+  Debug("http_redirect", "[PostDataBuffers::clear]");
+
+  if (this->postdata_copy_buffer != nullptr) {
+    free_MIOBuffer(this->postdata_copy_buffer);
+    this->postdata_copy_buffer       = nullptr;
+    this->postdata_copy_buffer_start = nullptr; // deallocated by the buffer
+  }
+}
+
+PostDataBuffers::~PostDataBuffers()
+{
+  this->clear();
 }
