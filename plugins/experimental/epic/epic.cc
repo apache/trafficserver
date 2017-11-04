@@ -220,6 +220,7 @@ static const std::set<std::string> epic_gauges = {
   "proxy.process.cache.span.failing",
   "proxy.process.cache.span.offline",
   "proxy.process.cache.span.online",
+  "proxy.process.traffic_server.memory.rss",
 };
 
 struct epic_sample_context {
