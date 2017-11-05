@@ -226,7 +226,8 @@ DNSProcessor::start(int, size_t stacksize)
 
   if (dns_thread > 0) {
     // TODO: Hmmm, should we just get a single thread some other way?
-    ET_DNS = eventProcessor.register_event_type("ET_DNS");
+    ET_DNS                                  = eventProcessor.register_event_type("ET_DNS");
+    NetHandler::active_thread_types[ET_DNS] = true;
     eventProcessor.schedule_spawn(&initialize_thread_for_net, ET_DNS);
     eventProcessor.spawn_event_threads(ET_DNS, 1, stacksize);
   } else {
