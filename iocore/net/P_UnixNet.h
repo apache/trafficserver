@@ -24,6 +24,8 @@
 #ifndef __P_UNIXNET_H__
 #define __P_UNIXNET_H__
 
+#include <bitset>
+
 #include "ts/ink_platform.h"
 
 #define USE_EDGE_TRIGGER_EPOLL 1
@@ -111,6 +113,7 @@ struct EventIO {
 #include "P_DNSConnection.h"
 #include "P_UnixUDPConnection.h"
 #include "P_UnixPollDescriptor.h"
+#include <limits>
 
 class UnixNetVConnection;
 class NetHandler;
@@ -223,11 +226,12 @@ struct PollCont : public Continuation {
 //
 class NetHandler : public Continuation, public EThread::LoopTailHandler
 {
+  using self_type = NetHandler; ///< Self reference type.
 public:
   // @a thread and @a trigger_event are redundant - you can get the former from the latter.
   // If we don't get rid of @a trigger_event we should remove @a thread.
-  EThread *thread = nullptr;
-  Event *trigger_event;
+  EThread *thread      = nullptr;
+  Event *trigger_event = nullptr;
   QueM(UnixNetVConnection, NetState, read, ready_link) read_ready_list;
   QueM(UnixNetVConnection, NetState, write, ready_link) write_ready_list;
   Que(UnixNetVConnection, link) open_list;
@@ -235,21 +239,50 @@ public:
   ASLLM(UnixNetVConnection, NetState, read, enable_link) read_enable_list;
   ASLLM(UnixNetVConnection, NetState, write, enable_link) write_enable_list;
   Que(UnixNetVConnection, keep_alive_queue_link) keep_alive_queue;
-  uint32_t keep_alive_queue_size;
+  uint32_t keep_alive_queue_size = 0;
   Que(UnixNetVConnection, active_queue_link) active_queue;
-  uint32_t active_queue_size;
-  uint32_t max_connections_per_thread_in;
-  uint32_t max_connections_active_per_thread_in;
+  uint32_t active_queue_size = 0;
 
-  // configuration settings for managing the active and keep-alive queues
-  uint32_t max_connections_in;
-  uint32_t max_connections_active_in;
-  uint32_t inactive_threashold_in;
-  uint32_t transaction_no_activity_timeout_in;
-  uint32_t keep_alive_no_activity_timeout_in;
-  uint32_t default_inactivity_timeout;
+  /// configuration settings for managing the active and keep-alive queues
+  struct Config {
+    uint32_t max_connections_in                 = 0;
+    uint32_t max_connections_active_in          = 0;
+    uint32_t inactive_threshold_in              = 0;
+    uint32_t transaction_no_activity_timeout_in = 0;
+    uint32_t keep_alive_no_activity_timeout_in  = 0;
+    uint32_t default_inactivity_timeout         = 0;
 
-  int startNetEvent(int event, Event *data);
+    /** Return the address of the first value in this struct.
+
+        Doing updates is much easier if we treat this config struct as an array.
+        Making it a method means the knowledge of which member is the first one
+        is localized to this struct, not scattered about.
+     */
+    uint32_t &operator[](int n) { return *(&max_connections_in + n); }
+  };
+  /** Static global config, set and updated per process.
+
+      This is updated asynchronously and then events are sent to the NetHandler instances per thread
+      to copy to the per thread config at a convenient time. Because these are updated independently
+      from the command line, the update events just copy a single value from the global to the
+      local. This mechanism relies on members being identical types.
+  */
+  static Config global_config;
+  Config config; ///< Per thread copy of the @c global_config
+  // Active and keep alive queue values that depend on other configuration values.
+  // These are never updated directly, they are computed from other config values.
+  uint32_t max_connections_per_thread_in        = 0;
+  uint32_t max_connections_active_per_thread_in = 0;
+  /// Number of configuration items in @c Config.
+  static constexpr int CONFIG_ITEM_COUNT = sizeof(Config) / sizeof(uint32_t);
+  /// Which members of @c Config the per thread values depend on.
+  /// If one of these is updated, the per thread values must also be updated.
+  static const std::bitset<CONFIG_ITEM_COUNT> config_value_affects_per_thread_value;
+  /// Set of thread types in which nethandlers are active.
+  /// This enables signaling the correct instances when the configuration is updated.
+  /// Event type threads that use @c NetHandler must set the corresponding bit.
+  static std::bitset<std::numeric_limits<unsigned int>::digits> active_thread_types;
+
   int mainNetEvent(int event, Event *data);
   int waitForActivity(ink_hrtime timeout);
   void process_enabled_list();
@@ -260,7 +293,11 @@ public:
   void remove_from_keep_alive_queue(UnixNetVConnection *vc);
   bool add_to_active_queue(UnixNetVConnection *vc);
   void remove_from_active_queue(UnixNetVConnection *vc);
-  void configure_per_thread();
+
+  /// Per process initialization logic.
+  static void init_for_process();
+  /// Update configuration values that are per thread and depend on other configuration values.
+  void configure_per_thread_values();
 
   /**
     Start to handle read & write event on a UnixNetVConnection.
@@ -315,6 +352,9 @@ public:
 private:
   void _close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time,
                  int &total_idle_count);
+
+  /// Static method used as the callbackf for runtime configuration updates.
+  static int update_nethandler_config(const char *name, RecDataT, RecData data, void *);
 };
 
 static inline NetHandler *
