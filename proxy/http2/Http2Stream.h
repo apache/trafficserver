@@ -168,6 +168,7 @@ public:
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false);
   void do_io_close(int lerrno = -1);
   void initiating_close();
+  void terminate_if_possible();
   void do_io_shutdown(ShutdownHowTo_t) {}
   void update_read_request(int64_t read_len, bool send_update);
   bool update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
