@@ -124,11 +124,15 @@ PollCont::~PollCont()
 // and stores the resultant events in ePoll_Triggered_Events
 //
 int
-PollCont::pollEvent(int event, Event *e)
+PollCont::pollEvent(int, Event *)
 {
-  (void)event;
-  (void)e;
+  this->do_poll(-1);
+  return EVENT_CONT;
+}
 
+void
+PollCont::do_poll(ink_hrtime timeout)
+{
   if (likely(net_handler)) {
     /* checking to see whether there are connections on the ready_queue (either read or write) that need processing [ebalsa] */
     if (likely(!net_handler->read_ready_list.empty() || !net_handler->write_ready_list.empty() ||
@@ -137,6 +141,8 @@ PollCont::pollEvent(int event, Event *e)
                net_handler->write_ready_list.empty(), net_handler->read_enable_list.empty(),
                net_handler->write_enable_list.empty());
       poll_timeout = 0; // poll immediately returns -- we have triggered stuff to process right now
+    } else if (timeout >= 0) {
+      poll_timeout = ink_hrtime_to_msec(timeout);
     } else {
       poll_timeout = net_config_poll_timeout;
     }
@@ -185,7 +191,6 @@ PollCont::pollEvent(int event, Event *e)
 #else
 #error port me
 #endif
-  return EVENT_CONT;
 }
 
 static void
@@ -469,7 +474,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
 
   // Polling event by PollCont
   PollCont *p = get_PollCont(this->thread);
-  p->handleEvent(EVENT_NONE, nullptr);
+  p->do_poll(timeout);
 
   // Get & Process polling result
   PollDescriptor *pd     = get_PollDescriptor(this->thread);
