@@ -1,0 +1,17 @@
+``
+> GET http://www.103earlyhints.test/ HTTP/1.1
+> Host: www.103earlyhints.test
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 103 Early Hints
+< Link: </style.css>; rel=preload; as=style
+< Date: ``
+< Server: ATS/``
+``
+< HTTP/1.1 200 OK
+< Date:``
+< Age:``
+< Content-Length:``
+< Server: ATS/``
+``
