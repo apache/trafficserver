@@ -749,6 +749,7 @@ http_hdr_reason_lookup(unsigned status)
     HTTP_STATUS_ENTRY(100, Continue);            // [RFC2616]
     HTTP_STATUS_ENTRY(101, Switching Protocols); // [RFC2616]
     HTTP_STATUS_ENTRY(102, Processing);          // [RFC2518]
+    HTTP_STATUS_ENTRY(103, Early Hints);         // TODO: add RFC number
     // 103-199 Unassigned
     HTTP_STATUS_ENTRY(200, OK);                              // [RFC2616]
     HTTP_STATUS_ENTRY(201, Created);                         // [RFC2616]
