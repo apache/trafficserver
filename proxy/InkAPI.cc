@@ -9121,7 +9121,7 @@ TSSslContextFindByName(const char *name)
   TSSslContext ret      = nullptr;
   SSLCertLookup *lookup = SSLCertificateConfig::acquire();
   if (lookup != nullptr) {
-    SSLCertContext *cc = lookup->find(name);
+    const SSLCertContext *cc = lookup->find(name);
     if (cc && cc->ctx) {
       ret = reinterpret_cast<TSSslContext>(cc->ctx);
     }
@@ -9137,7 +9137,7 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
   if (lookup != nullptr) {
     IpEndpoint ip;
     ip.assign(addr);
-    SSLCertContext *cc = lookup->find(ip);
+    const SSLCertContext *cc = lookup->find(ip);
     if (cc && cc->ctx) {
       ret = reinterpret_cast<TSSslContext>(cc->ctx);
     }

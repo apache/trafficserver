@@ -396,7 +396,7 @@ ocsp_update()
   const unsigned ctxCount = certLookup->count();
 
   for (unsigned i = 0; i < ctxCount; i++) {
-    SSLCertContext *cc = certLookup->get(i);
+    const SSLCertContext *cc = certLookup->get(i);
     if (cc && cc->ctx) {
       ctx  = cc->ctx;
       cinf = stapling_get_cert_info(ctx);

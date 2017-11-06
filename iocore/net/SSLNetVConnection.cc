@@ -916,7 +916,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         Debug("ssl", "Failed to get dest ip, errno = [%d]", errno);
         return EVENT_ERROR;
       }
-      SSLCertContext *cc = lookup->find(dst);
+      const SSLCertContext *cc = lookup->find(dst);
       if (is_debug_tag_set("ssl")) {
         IpEndpoint src;
         ip_port_text_buffer ipb1, ipb2;

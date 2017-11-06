@@ -296,8 +296,8 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 int
 set_context_cert(SSL *ssl)
 {
-  SSL_CTX *ctx       = nullptr;
-  SSLCertContext *cc = nullptr;
+  SSL_CTX *ctx             = nullptr;
+  const SSLCertContext *cc = nullptr;
   SSLCertificateConfig::scoped_config lookup;
   const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
@@ -776,7 +776,7 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   if (certLookup) {
     const unsigned ctxCount = certLookup->count();
     for (size_t i = 0; i < ctxCount; i++) {
-      SSLCertContext *cc = certLookup->get(i);
+      const SSLCertContext *cc = certLookup->get(i);
       if (cc && cc->ctx) {
         sessions += SSL_CTX_sess_accept_good(cc->ctx);
         hits += SSL_CTX_sess_hits(cc->ctx);
@@ -2066,8 +2066,8 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 
   // Get the IP address to look up the keyblock
   IpEndpoint ip;
-  int namelen        = sizeof(ip);
-  SSLCertContext *cc = nullptr;
+  int namelen              = sizeof(ip);
+  const SSLCertContext *cc = nullptr;
   if (0 == safe_getsockname(netvc->get_socket(), &ip.sa, &namelen)) {
     cc = lookup->find(ip);
   }

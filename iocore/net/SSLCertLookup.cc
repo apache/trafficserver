@@ -33,6 +33,9 @@
 #include "ts/Trie.h"
 #include "ts/TestBox.h"
 
+#include <vector>
+#include <cstdlib>
+
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb
 
@@ -99,15 +102,15 @@ public:
   /// cert context.
   /// @return @a idx
   int insert(const char *name, int idx);
-  SSLCertContext *lookup(const char *name) const;
+  const SSLCertContext *lookup(const char *name) const;
   void printWildDomains() const;
   void freeWildDomains() const;
   unsigned
   count() const
   {
-    return this->ctx_store.length();
+    return this->ctx_store.size();
   }
-  SSLCertContext *
+  const SSLCertContext *
   get(unsigned i) const
   {
     return &this->ctx_store[i];
@@ -137,7 +140,7 @@ private:
   InkHashTable *hostnames;
   /// List for cleanup.
   /// Exactly one pointer to each SSL context is stored here.
-  Vec<SSLCertContext> ctx_store;
+  std::vector<SSLCertContext> ctx_store;
 
   /// Add a context to the clean up list.
   /// @return The index of the added context.
@@ -253,16 +256,16 @@ SSLCertLookup::~SSLCertLookup()
   delete this->ssl_storage;
 }
 
-SSLCertContext *
+const SSLCertContext *
 SSLCertLookup::find(const char *address) const
 {
   return this->ssl_storage->lookup(address);
 }
 
-SSLCertContext *
+const SSLCertContext *
 SSLCertLookup::find(const IpEndpoint &address) const
 {
-  SSLCertContext *cc;
+  const SSLCertContext *cc;
   SSLAddressLookupKey key(address);
 
   // First try the full address.
@@ -298,7 +301,7 @@ SSLCertLookup::count() const
   return ssl_storage->count();
 }
 
-SSLCertContext *
+const SSLCertContext *
 SSLCertLookup::get(unsigned i) const
 {
   return ssl_storage->get(i);
@@ -373,24 +376,22 @@ SSLContextStorage::SSLContextStorage() : wilddomains(-1), hostnames(ink_hash_tab
 {
 }
 
-bool
-SSLCtxCompare(SSLCertContext const &cc1, SSLCertContext const &cc2)
-{
-  // Either they are both real ctx pointers and cc1 has the smaller pointer
-  // Or only cc2 has a non-null pointer
-  return cc1.ctx < cc2.ctx;
-}
-
 SSLContextStorage::~SSLContextStorage()
 {
   // First sort the array so we can efficiently detect duplicates
   // and avoid the double free
-  this->ctx_store.qsort(SSLCtxCompare);
+  std::qsort(&this->ctx_store, this->ctx_store.size(), sizeof(SSLCertContext), [](const void *a, const void *b) {
+    SSLCertContext const &cc1 = reinterpret_cast<SSLCertContext const &>(a);
+    SSLCertContext const &cc2 = reinterpret_cast<SSLCertContext const &>(b);
+    return cc1.ctx < cc2.ctx ? 1 : 0;
+  });
+
   SSL_CTX *last_ctx = nullptr;
-  for (unsigned i = 0; i < this->ctx_store.length(); ++i) {
-    if (this->ctx_store[i].ctx != last_ctx) {
-      last_ctx = this->ctx_store[i].ctx;
-      this->ctx_store[i].release();
+
+  for (auto &i : this->ctx_store) {
+    if (i.ctx != last_ctx) {
+      last_ctx = i.ctx;
+      i.release();
     }
   }
 
@@ -401,8 +402,8 @@ SSLContextStorage::~SSLContextStorage()
 int
 SSLContextStorage::store(SSLCertContext const &cc)
 {
-  int idx = this->ctx_store.length();
-  this->ctx_store.add(cc);
+  int idx = this->ctx_store.size();
+  this->ctx_store.push_back(cc);
   return idx;
 }
 
@@ -412,7 +413,7 @@ SSLContextStorage::insert(const char *name, SSLCertContext const &cc)
   int idx = this->store(cc);
   idx     = this->insert(name, idx);
   if (idx < 0) {
-    this->ctx_store.drop();
+    this->ctx_store.clear();
   }
   return idx;
 }
@@ -476,7 +477,7 @@ SSLContextStorage::freeWildDomains() const
   this->wilddomains.clear();
 }
 
-SSLCertContext *
+const SSLCertContext *
 SSLContextStorage::lookup(const char *name) const
 {
   InkHashTableValue value;

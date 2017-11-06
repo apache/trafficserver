@@ -85,13 +85,13 @@ struct SSLCertLookup : public ConfigInfo {
       Exact matches have priority, then wildcards. The destination address is preferred to the source address.
       @return @c A pointer to the matched context, @c nullptr if no match is found.
   */
-  SSLCertContext *find(const IpEndpoint &address) const;
+  const SSLCertContext *find(const IpEndpoint &address) const;
 
   /** Find certificate context by name (FQDN).
       Exact matches have priority, then wildcards. Only destination based matches are checked.
       @return @c A pointer to the matched context, @c nullptr if no match is found.
   */
-  SSLCertContext *find(const char *name) const;
+  const SSLCertContext *find(const char *name) const;
 
   // Return the last-resort default TLS context if there is no name or address match.
   SSL_CTX *
@@ -101,7 +101,7 @@ struct SSLCertLookup : public ConfigInfo {
   }
 
   unsigned count() const;
-  SSLCertContext *get(unsigned i) const;
+  const SSLCertContext *get(unsigned i) const;
 
   SSLCertLookup();
   virtual ~SSLCertLookup();
