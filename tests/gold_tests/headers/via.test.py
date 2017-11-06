@@ -28,7 +28,8 @@ Check VIA header for protocol stack data.
 Test.SkipUnless(
     Condition.HasATSFeature('TS_USE_TLS_ALPN'),
     Condition.HasCurlFeature('http2'),
-    Condition.HasCurlFeature('IPv6')
+    Condition.HasCurlFeature('IPv6'),
+    Condition.HasProgram("netstat", "netstat need to be installed on system for this test to work")
 )
 Test.ContinueOnFail = True
 
