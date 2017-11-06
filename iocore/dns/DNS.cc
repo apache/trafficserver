@@ -645,8 +645,6 @@ DNSHandler::failover()
     switch_named(name_server);
   } else {
     ip_text_buffer buff;
-    con[name_server].eio.stop();
-    con[name_server].close();
     Warning("failover: connection to DNS server %s lost, retrying", ats_ip_ntop(&ip.sa, buff, sizeof(buff)));
   }
 }
