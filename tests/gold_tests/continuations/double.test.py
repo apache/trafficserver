@@ -61,7 +61,7 @@ tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
 tr.StillRunningAfter = ts
 
 comparator_command = '''
-if [ "`traffic_ctl metric get continuations_verify.{0}.close.1 | cut -d ' ' -f 2`" == "`traffic_ctl metric get continuations_verify.{0}.close.2 | cut -d ' ' -f 2`" ]; then\
+if test "`traffic_ctl metric get continuations_verify.{0}.close.1 | cut -d ' ' -f 2`" -eq "`traffic_ctl metric get continuations_verify.{0}.close.2 | cut -d ' ' -f 2`" ; then\
      echo yes;\
     else \
     echo no; \
