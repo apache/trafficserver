@@ -43,12 +43,6 @@ static const char SEPARATORS[]  = " \t\n";
 #define MAX_BODY_LEN 16384
 #define FREELIST_TIMEOUT 300
 
-static inline void *
-ink_atomic_swap_ptr(void *mem, void *value)
-{
-  return __sync_lock_test_and_set((void **)mem, value);
-}
-
 /* Directories that we are watching for inotify IN_CREATE events. */
 typedef struct HCDirEntry_t {
   char dname[MAX_PATH_LEN];   /* Directory name */
@@ -245,7 +239,8 @@ hc_thread(void *data ATS_UNUSED)
           memset(new_data, 0, sizeof(HCFileData));
           reload_status_file(finfo, new_data);
           TSDebug(PLUGIN_NAME, "Reloaded %s, len == %d, exists == %d", finfo->fname, new_data->b_len, new_data->exists);
-          old_data = ink_atomic_swap_ptr(&(finfo->data), new_data);
+
+          old_data = __sync_lock_test_and_set(&(finfo->data), new_data);
 
           /* Add the old data to the head of the freelist */
           old_data->remove = now.tv_sec + FREELIST_TIMEOUT;

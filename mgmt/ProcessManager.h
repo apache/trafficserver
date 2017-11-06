@@ -41,6 +41,7 @@
 #include "ts/ink_sock.h"
 
 #include "ts/ink_apidefs.h"
+#include <atomic>
 #include <functional>
 
 class ConfigUpdateCbTable;
@@ -84,7 +85,7 @@ private:
   pid_t pid;
 
   ink_thread poll_thread = ink_thread_null();
-  int running            = 0;
+  std::atomic<int> running{0};
 
   /// Thread initialization callback.
   /// This allows @c traffic_server and @c traffic_manager to perform different initialization in the thread.

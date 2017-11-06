@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <sys/time.h>
 
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <climits>
@@ -42,7 +43,6 @@
 #include <ts/ink_config.h>
 
 // Special snowflake here, only availbale when building inside the ATS source tree.
-#include "ts/ink_atomic.h"
 #include "aws_auth_v4.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -212,14 +212,14 @@ public:
   void
   acquire()
   {
-    ink_atomic_increment(&_ref_count, 1);
+    _ref_count++;
   }
 
   void
   release()
   {
-    TSDebug(PLUGIN_NAME, "ref_count is %d", _ref_count);
-    if (1 >= ink_atomic_decrement(&_ref_count, 1)) {
+    TSDebug(PLUGIN_NAME, "ref_count is %d", static_cast<int>(_ref_count));
+    if (1 >= _ref_count--) {
       TSDebug(PLUGIN_NAME, "configuration deleted, due to ref-counting");
       delete this;
     }
@@ -397,7 +397,7 @@ private:
   bool _version_modified   = false;
   bool _virt_host_modified = false;
   TSCont _cont             = nullptr;
-  int _ref_count           = 1;
+  std::atomic<int> _ref_count{1};
   StringSet _v4includeHeaders;
   bool _v4includeHeaders_modified = false;
   StringSet _v4excludeHeaders;

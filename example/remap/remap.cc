@@ -212,8 +212,8 @@ TSRemapDeleteInstance(void *ih)
   delete ri;
 }
 
-static std::atomic<uint64_t> processing_counter; // sequential counter
-static int arg_index;
+static std::atomic<uint64_t> processing_counter{0}; // sequential counter
+static int arg_index = 0;
 
 /* -------------------------- TSRemapDoRemap -------------------------------- */
 TSRemapStatus
@@ -223,7 +223,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   const char *temp2;
   int len, len2, port;
   TSMLoc cfield;
-  uint64_t _processing_counter = processing_counter++;
+  uint64_t _processing_counter = processing_counter.fetch_add(1) + 1;
 
   remap_entry *ri = (remap_entry *)ih;
   TSDebug(PLUGIN_NAME, "enter");

@@ -37,10 +37,10 @@
 #include <cctype>
 #include <memory>
 #include <sstream>
+#include <atomic>
 
 // Get some specific stuff from libts, yes, we can do that now that we build inside the core.
 #include "ts/ink_platform.h"
-#include "ts/ink_atomic.h"
 #include "ts/ink_time.h"
 #include "ts/ink_inet.h"
 
@@ -146,7 +146,7 @@ public:
   void
   increment()
   {
-    ink_atomic_increment(&(_hits), 1);
+    _hits++;
   }
   void
   print(int ix, int max, const char *now)
@@ -272,9 +272,9 @@ private:
   char *_subst      = nullptr;
   int _subst_len    = 0;
   int _num_subs     = -1;
-  int _hits         = 0;
-  int _options      = 0;
-  int _order        = -1;
+  std::atomic<int> _hits{0};
+  int _options = 0;
+  int _order   = -1;
 
   bool _lowercase_substitutions = false;
 
@@ -664,8 +664,8 @@ struct RemapInstance {
   bool query_string;
   bool matrix_params;
   bool host;
-  int hits;
-  int misses;
+  std::atomic<int> hits;
+  std::atomic<int> misses;
   std::string filename;
 };
 
@@ -898,8 +898,8 @@ TSRemapDeleteInstance(void *ih)
     }
 
     fprintf(stderr, "[%s]: Profiling information for regex_remap file `%s':\n", now, (ri->filename).c_str());
-    fprintf(stderr, "[%s]:    Total hits (matches): %d\n", now, ri->hits);
-    fprintf(stderr, "[%s]:    Total missed (no regex matches): %d\n", now, ri->misses);
+    fprintf(stderr, "[%s]:    Total hits (matches): %d\n", now, (int)ri->hits);
+    fprintf(stderr, "[%s]:    Total missed (no regex matches): %d\n", now, (int)ri->misses);
 
     if (ri->hits > 0) { // Avoid divide by zeros...
       int ix = 1;
@@ -1058,7 +1058,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       // Update profiling if requested
       if (ri->profile) {
         re->increment();
-        ink_atomic_increment(&(ri->hits), 1);
+        ri->hits++;
       }
 
       if (new_len > 0) {
@@ -1105,7 +1105,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     if (re == nullptr) {
       retval = TSREMAP_NO_REMAP; // No match
       if (ri->profile) {
-        ink_atomic_increment(&(ri->misses), 1);
+        ri->misses++;
       }
     }
   }

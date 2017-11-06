@@ -39,9 +39,9 @@ ClassAllocator<MC> theMCAllocator("MC");
 static time_t base_day_time;
 
 // These should be persistent.
-int32_t MC::verbosity     = 0;
-ink_hrtime MC::last_flush = 0;
-int64_t MC::next_cas      = 1;
+int32_t MC::verbosity = 0;
+std::atomic<ink_hrtime> MC::last_flush{0};
+std::atomic<int64_t> MC::next_cas{1};
 
 static void
 tsmemcache_constants()
@@ -444,7 +444,7 @@ MC::cache_read_event(int event, void *data)
     }
     {
       ink_hrtime t = Thread::get_hrtime();
-      if (((ink_hrtime)rcache_header->settime) <= last_flush ||
+      if (((ink_hrtime)rcache_header->settime) <= last_flush.load() ||
           t >= ((ink_hrtime)rcache_header->settime) + HRTIME_SECONDS(rcache_header->exptime)) {
         goto Lfail;
       }
@@ -777,7 +777,7 @@ MC::ascii_set_event(int event, void *data)
         goto Lfail;
       }
       ink_hrtime t = Thread::get_hrtime();
-      if (((ink_hrtime)wcache_header->settime) <= last_flush ||
+      if (((ink_hrtime)wcache_header->settime) <= last_flush.load() ||
           t >= ((ink_hrtime)wcache_header->settime) + HRTIME_SECONDS(wcache_header->exptime)) {
         goto Lstale;
       }
@@ -813,7 +813,7 @@ MC::ascii_set_event(int event, void *data)
         return ASCII_RESPONSE("EXISTS");
       }
     }
-    header.cas = ink_atomic_increment(&next_cas, 1);
+    header.cas = next_cas.fetch_add(1);
     if (f.set_append || f.set_prepend) {
       header.nbytes = nbytes + rcache_header->nbytes;
     } else {
@@ -937,7 +937,7 @@ MC::ascii_incr_decr_event(int event, void *data)
           goto Lfail;
         }
         ink_hrtime t = Thread::get_hrtime();
-        if (((ink_hrtime)wcache_header->settime) <= last_flush ||
+        if (((ink_hrtime)wcache_header->settime) <= last_flush.load() ||
             t >= ((ink_hrtime)wcache_header->settime) + HRTIME_SECONDS(wcache_header->exptime)) {
           goto Lfail;
         }
@@ -960,7 +960,7 @@ MC::ascii_incr_decr_event(int event, void *data)
         header.exptime = UINT32_MAX; // 136 years
       }
     }
-    header.cas = ink_atomic_increment(&next_cas, 1);
+    header.cas = next_cas.fetch_add(1);
     {
       char *data = 0;
       int len    = 0;
@@ -1385,11 +1385,7 @@ MC::read_ascii_from_client_event(int event, void *data)
     }
     f.noreply                 = is_noreply(&s, e);
     ink_hrtime new_last_flush = Thread::get_hrtime() + HRTIME_SECONDS(time_offset);
-#if __WORDSIZE == 64
-    last_flush = new_last_flush; // this will be atomic for native word size
-#else
-    ink_atomic_swap(&last_flush, new_last_flush);
-#endif
+    last_flush.store(new_last_flush);
     if (!is_end_of_cmd(s, e)) {
       break;
     }

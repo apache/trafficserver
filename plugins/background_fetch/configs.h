@@ -25,10 +25,13 @@
 #ifndef CONFIGS_H_DEBFCE23_D6E9_40C2_AAA5_32B32586A3DA
 #define CONFIGS_H_DEBFCE23_D6E9_40C2_AAA5_32B32586A3DA
 
-#include <stdlib.h>
+#include <atomic>
+#include <cinttypes>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "rules.h"
-#include "ts/ink_atomic.h"
 
 // Constants
 const char PLUGIN_NAME[] = "background_fetch";
@@ -43,14 +46,14 @@ public:
   void
   acquire()
   {
-    ink_atomic_increment(&_ref_count, 1);
+    _ref_count.fetch_add(1);
   }
 
   void
   release()
   {
-    TSDebug(PLUGIN_NAME, "ref_count is %d", _ref_count);
-    if (1 >= ink_atomic_decrement(&_ref_count, 1)) {
+    TSDebug(PLUGIN_NAME, "ref_count is %d", (int)_ref_count);
+    if (1 >= _ref_count.fetch_sub(1)) {
       TSDebug(PLUGIN_NAME, "configuration deleted, due to ref-counting");
       delete this;
     }
@@ -82,7 +85,7 @@ private:
 
   TSCont _cont;
   BgFetchRule *_rules;
-  int _ref_count;
+  std::atomic<int> _ref_count;
 };
 
 #endif /* CONFIGS_H_DEBFCE23_D6E9_40C2_AAA5_32B32586A3DA */

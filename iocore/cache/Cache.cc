@@ -87,12 +87,12 @@ int cache_config_compatibility_4_2_0_fixup = 1;
 
 // Globals
 
-RecRawStatBlock *cache_rsb = nullptr;
-Cache *theStreamCache      = nullptr;
-Cache *theCache            = nullptr;
-CacheDisk **gdisks         = nullptr;
-int gndisks                = 0;
-static int initialize_disk;
+RecRawStatBlock *cache_rsb          = nullptr;
+Cache *theStreamCache               = nullptr;
+Cache *theCache                     = nullptr;
+CacheDisk **gdisks                  = nullptr;
+int gndisks                         = 0;
+static int initialize_disk          = 0;
 Cache *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
 CacheSync *cacheDirSync             = nullptr;
 Store theCacheStore;
