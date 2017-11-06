@@ -138,6 +138,7 @@ info_t methods[] = {
 info_t statuses[] = {
   {"100", "HTTP_STATUS_CONTINUE", -1},
   {"101", "HTTP_STATUS_SWITCHING_PROTOCOL", -1},
+  {"103", "HTTP_STATUS_EARLY_HINTS", -1},
   {"200", "HTTP_STATUS_OK", -1},
   {"201", "HTTP_STATUS_CREATED", -1},
   {"202", "HTTP_STATUS_ACCEPTED", -1},

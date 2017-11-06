@@ -3272,12 +3272,21 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
   }
 
   if (strcmp("Not Modified", TSHttpHdrReasonLookup(TS_HTTP_STATUS_NOT_MODIFIED)) != 0) {
-    SDK_RPRINT(test, "TSHttpHdrReasonLookup", "TestCase2", TC_FAIL, "TSHttpHdrReasonLookup returns Value's mismatch");
+    SDK_RPRINT(test, "TSHttpHdrReasonLookup", "TestCase4", TC_FAIL, "TSHttpHdrReasonLookup returns Value's mismatch");
     if (test_passed_Http_Hdr_Reason_Lookup == true) {
       test_passed_Http_Hdr_Reason_Lookup = false;
     }
   } else {
     SDK_RPRINT(test, "TSHttpHdrReasonLookup", "TestCase4", TC_PASS, "ok");
+  }
+
+  if (strcmp("Early Hints", TSHttpHdrReasonLookup(TS_HTTP_STATUS_EARLY_HINTS)) != 0) {
+    SDK_RPRINT(test, "TSHttpHdrReasonLookup", "TestCase5", TC_FAIL, "TSHttpHdrReasonLookup returns Value's mismatch");
+    if (test_passed_Http_Hdr_Reason_Lookup == true) {
+      test_passed_Http_Hdr_Reason_Lookup = false;
+    }
+  } else {
+    SDK_RPRINT(test, "TSHttpHdrReasonLookup", "TestCase5", TC_PASS, "ok");
   }
 
   // Copy
@@ -5488,6 +5497,7 @@ typedef enum {
 
   ORIG_TS_HTTP_STATUS_CONTINUE           = 100,
   ORIG_TS_HTTP_STATUS_SWITCHING_PROTOCOL = 101,
+  ORIG_TS_HTTP_STATUS_EARLY_HINTS        = 103,
 
   ORIG_TS_HTTP_STATUS_OK                            = 200,
   ORIG_TS_HTTP_STATUS_CREATED                       = 201,
@@ -5657,6 +5667,8 @@ REGRESSION_TEST(SDK_API_TSConstant)(RegressionTest *test, int /* atype ATS_UNUSE
   PRINT_DIFF(TS_HTTP_STATUS_NONE);
   PRINT_DIFF(TS_HTTP_STATUS_CONTINUE);
   PRINT_DIFF(TS_HTTP_STATUS_SWITCHING_PROTOCOL);
+  PRINT_DIFF(TS_HTTP_STATUS_EARLY_HINTS);
+
   PRINT_DIFF(TS_HTTP_STATUS_OK);
   PRINT_DIFF(TS_HTTP_STATUS_CREATED);
 

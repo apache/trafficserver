@@ -155,6 +155,7 @@ typedef enum {
   TS_HTTP_STATUS_NONE                            = 0,
   TS_HTTP_STATUS_CONTINUE                        = 100,
   TS_HTTP_STATUS_SWITCHING_PROTOCOL              = 101,
+  TS_HTTP_STATUS_EARLY_HINTS                     = 103,
   TS_HTTP_STATUS_OK                              = 200,
   TS_HTTP_STATUS_CREATED                         = 201,
   TS_HTTP_STATUS_ACCEPTED                        = 202,

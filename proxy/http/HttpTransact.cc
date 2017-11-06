@@ -4071,7 +4071,8 @@ HttpTransact::handle_forward_server_connection_open(State *s)
     // dont update the hostdb. let us try again with what we currently think.
   }
 
-  if (s->hdr_info.server_response.status_get() == HTTP_STATUS_CONTINUE) {
+  if (s->hdr_info.server_response.status_get() == HTTP_STATUS_CONTINUE ||
+      s->hdr_info.server_response.status_get() == HTTP_STATUS_EARLY_HINTS) {
     handle_100_continue_response(s);
     return;
   }

@@ -37,6 +37,7 @@ enum HttpStatus {
 
   HTTP_STATUS_CONTINUE           = 100,
   HTTP_STATUS_SWITCHING_PROTOCOL = 101,
+  HTTP_STATUS_EARLY_HINTS        = 103,
 
   HTTP_STATUS_OK                            = 200,
   HTTP_STATUS_CREATED                       = 201,
