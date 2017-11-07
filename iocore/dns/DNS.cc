@@ -483,7 +483,6 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tc
   Debug("dns", "open_con: opening connection %s", ats_ip_nptop(target, ip_text, sizeof ip_text));
 
   if (cur_con.fd != NO_FD) { // Remove old FD from epoll fd
-    cur_con.eio.stop();
     cur_con.close();
   }
 
@@ -719,6 +718,12 @@ DNSHandler::failover()
     }
     switch_named(name_server);
   } else {
+    if (dns_conn_mode != DNS_CONN_MODE::TCP_ONLY) {
+      udpcon[0].close();
+    }
+    if (dns_conn_mode != DNS_CONN_MODE::UDP_ONLY) {
+      tcpcon[0].close();
+    }
     ip_text_buffer buff;
     Warning("failover: connection to DNS server %s lost, retrying", ats_ip_ntop(&ip.sa, buff, sizeof(buff)));
   }
