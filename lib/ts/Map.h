@@ -51,10 +51,10 @@ template <class C, class A = DefaultAlloc, int S = VEC_INTEGRAL_SHIFT_DEFAULT> /
 class Vec
 {
 public:
-  size_t n;
-  size_t i; // size index for sets, reserve for vectors
-  C *v;
-  C e[VEC_INTEGRAL_SIZE];
+  size_t n;               // total number of elements in vector
+  size_t i;               // size index for sets, reserve for vectors
+  C *v;                   // allocated vector for elements
+  C e[VEC_INTEGRAL_SIZE]; // buffer that holds elements of a vector
 
   Vec();
   Vec<C, A, S>(const Vec<C, A, S> &vv);
@@ -1394,7 +1394,7 @@ inline C
 Map<K, C, A>::get(K akey)
 {
   MapElem<K, C> e(akey, (C)0);
-  MapElem<K, C> *x = this->set_in(e);
+  MapElem<K, C> *x = PType::set_in(e);
   if (x)
     return x->value;
   return (C)0;
@@ -1405,7 +1405,7 @@ inline C *
 Map<K, C, A>::getp(K akey)
 {
   MapElem<K, C> e(akey, (C)0);
-  MapElem<K, C> *x = this->set_in(e);
+  MapElem<K, C> *x = PType::set_in(e);
   if (x)
     return &x->value;
   return 0;
@@ -1416,12 +1416,12 @@ inline MapElem<K, C> *
 Map<K, C, A>::put(K akey, C avalue)
 {
   MapElem<K, C> e(akey, avalue);
-  MapElem<K, C> *x = this->set_in(e);
+  MapElem<K, C> *x = PType::set_in(e);
   if (x) {
     x->value = avalue;
     return x;
   } else
-    return this->set_add(e);
+    return PType::set_add(e);
 }
 
 template <class K, class C, class A>
@@ -1429,11 +1429,11 @@ inline MapElem<K, C> *
 Map<K, C, A>::put(K akey)
 {
   MapElem<K, C> e(akey, 0);
-  MapElem<K, C> *x = this->set_in(e);
+  MapElem<K, C> *x = PType::set_in(e);
   if (x)
     return x;
   else
-    return this->set_add(e);
+    return PType::set_add(e);
 }
 
 template <class K, class C, class A>
@@ -1545,8 +1545,10 @@ HashSet<K, AHashFns, C, A>::put(C avalue)
     for (int i = 0; i < n; i++)
       if (AHashFns::equal(avalue, v[i]))
         return &v[i];
+
     v[n] = avalue;
     n++;
+
     return &v[n - 1];
   }
   if (n > MAP_INTEGRAL_SIZE) {

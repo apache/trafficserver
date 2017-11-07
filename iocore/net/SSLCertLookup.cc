@@ -35,6 +35,7 @@
 
 #include <vector>
 #include <cstdlib>
+#include <unordered_map>
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb
@@ -135,7 +136,8 @@ private:
 
   /// We can only match one layer with the wildcards
   /// This table stores the wildcarded subdomain
-  mutable HashMap<cchar *, StringHashFns, int> wilddomains;
+  mutable std::unordered_map<cchar *, int> wilddomains;
+
   /// Contexts stored by IP address or FQDN
   InkHashTable *hostnames;
   /// List for cleanup.
@@ -372,7 +374,7 @@ reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1
   return ptr;
 }
 
-SSLContextStorage::SSLContextStorage() : wilddomains(-1), hostnames(ink_hash_table_create(InkHashTableKeyType_String))
+SSLContextStorage::SSLContextStorage() : wilddomains(0), hostnames(ink_hash_table_create(InkHashTableKeyType_String))
 {
 }
 
@@ -434,12 +436,13 @@ SSLContextStorage::insert(const char *name, int idx)
       subdomain = nullptr;
     }
     if (subdomain) {
-      auto index = this->wilddomains.get(subdomain);
-      if (index != -1) {
-        Warning("previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name, index, idx);
+      auto index = this->wilddomains.find(subdomain);
+      if (index != this->wilddomains.end()) {
+        Warning("previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name, index->second,
+                idx);
         idx = -1;
       } else {
-        this->wilddomains.put(ats_strdup(subdomain), idx);
+        this->wilddomains.insert({ats_strdup(subdomain), idx});
         Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, this->ctx_store[idx].ctx, idx);
       }
     }
@@ -458,22 +461,14 @@ SSLContextStorage::insert(const char *name, int idx)
 void
 SSLContextStorage::printWildDomains() const
 {
-  Vec<cchar *> keys;
-  this->wilddomains.get_keys(keys);
-  for (size_t i = 0; i < keys.length(); i++) {
-    Debug("ssl", "Stored wilddomain %s", keys.get(i));
+  for (auto &i : this->wilddomains) {
+    Debug("ssl", "Stored wilddomain %s", i.first);
   }
 }
 
 void
 SSLContextStorage::freeWildDomains() const
 {
-  Vec<cchar *> keys;
-  this->wilddomains.get_keys(keys);
-  size_t n = keys.length();
-  for (size_t i = 0; i < n; i++) {
-    ats_free((char *)keys.get(i));
-  }
   this->wilddomains.clear();
 }
 
@@ -496,9 +491,9 @@ SSLContextStorage::lookup(const char *name) const
   const char *subdomain = index(lower_case_name, '.');
   if (subdomain) {
     ++subdomain; // Move beyond the '.'
-    auto index = this->wilddomains.get(subdomain);
-    if (index >= 0) {
-      return &(this->ctx_store[index]);
+    auto index = this->wilddomains.find(subdomain);
+    if (index != this->wilddomains.end()) {
+      return &(this->ctx_store[index->second]);
     }
   }
   return nullptr;
