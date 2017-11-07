@@ -596,7 +596,15 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     log_code = SQUID_LOG_ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_CONNECTION:
-    if (log_code == SQUID_LOG_TCP_MISS || log_code == SQUID_LOG_TCP_REFRESH_MISS) {
+    // When the content is expired in the cache but ATS is unable to
+    // refresh from the origin due to the DNS server being down, then
+    // (1) the error is 'C' here instead of 'D' below and (2) the
+    // log_code is TCP hit. This overrides the TCP hit with
+    // error-connect-fail based on the error and miss-expired results.
+    if (hit_miss_code == SQUID_MISS_PRE_EXPIRED) {
+      log_code = SQUID_LOG_ERR_CONNECT_FAIL;
+    }
+    if (log_code == SQUID_LOG_TCP_MISS) {
       log_code = SQUID_LOG_ERR_CONNECT_FAIL;
     }
     break;
