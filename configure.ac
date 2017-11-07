@@ -444,12 +444,6 @@ AC_ARG_WITH([max-threads-per-type],
 )
 AC_SUBST(max_threads_per_type)
 
-# Check Brotli
-AC_CHECK_HEADERS([brotli/encode.h], [has_brotli=1],[has_brotli=0])
-AC_CHECK_LIB([brotlienc],[BrotliEncoderCreateInstance],[AC_SUBST([LIB_BROTLIENC],["-lbrotlienc"])],[has_brotli=0])
-AC_SUBST(has_brotli)
-AM_CONDITIONAL([HAS_BROTLI], [ test "x${has_brotli}" = "x1" ])
-
 #
 # Experimental plugins
 #
@@ -1226,8 +1220,14 @@ if test "x${enable_pcre}" != "xyes"; then
   AC_MSG_ERROR([Cannot find pcre library. Configure --with-pcre=DIR])
 fi
 
-has_backtrace=0
+# Check Brotli
+AC_CHECK_HEADERS([brotli/encode.h], [has_brotli=1],[has_brotli=0])
+AC_CHECK_LIB([brotlienc],[BrotliEncoderCreateInstance],[AC_SUBST([LIB_BROTLIENC],["-lbrotlienc"])],[has_brotli=0])
+AC_SUBST(has_brotli)
+AM_CONDITIONAL([HAS_BROTLI], [ test "x${has_brotli}" = "x1" ])
+
 # Check for backtrace() support
+has_backtrace=0
 AC_CHECK_HEADERS([execinfo.h], [has_backtrace=1],[])
 if test "${has_backtrace}" = "1"; then
   # FreeBSD requires '/usr/ports/devel/libexecinfo' for gdb style backtrace() support
