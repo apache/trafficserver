@@ -110,12 +110,14 @@ To require a valid signature, verified by a key from the list you generated
 earlier, modify your :file:`remap.config` configuration to include this plugin
 for any rules you wish it to affect.
 
-Two parameters for each remap rule are required::
+Two parameters for each remap rule are required, and a third one is optional::
 
-    @plugin=url_sig.so @pparam=<config file>
+    @plugin=url_sig.so @pparam=<config file> @pparam=pristineurl
 
 The first simply enables this plugin for the rule. The second specifies the
-location of the configuration file containing your signing keys.
+location of the configuration file containing your signing keys.  The third one,
+if present, causes authentication to be performed on the original (pristine) URL
+as received from the client. (The value of the parameter is not case sensitive.)
 
 For example, if we wanted to restrict all paths under a ``/download`` directory
 on our website ``foo.com`` we might have a remap line like this::
@@ -184,7 +186,7 @@ Key Index
 
 Parts
     Configures which components of the URL to use for signature verification.
-    The value of this paramerts is a string of ones and zeroes, each enabling
+    The value of this parameter is a string of ones and zeroes, each enabling
     or disabling the use of a URL part for signatures. The URL scheme (e.g.
     ``http://``) is never part of the signature. The first number of this
     parameter's value indicates whether to include the FQDN, and all remaining
