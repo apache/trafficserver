@@ -671,21 +671,14 @@ Http2Stream::destroy()
 
   // Safe to initiate SSN_CLOSE if this is the last stream
   if (parent) {
-    // release_stream and delete_stream indirectly call each other and seem to have a lot of commonality
-    // Should get resolved at somepoint.
     Http2ClientSession *h2_parent = static_cast<Http2ClientSession *>(parent);
     SCOPED_MUTEX_LOCK(lock, h2_parent->connection_state.mutex, this_ethread());
-    h2_parent->connection_state.release_stream(this);
+    // Make sure the stream is removed from the stream list and priority tree
+    // In many cases, this has been called earlier, so this call is a no-op
+    h2_parent->connection_state.delete_stream(this);
 
-    // Current Http2ConnectionState implementation uses a memory pool for instantiating streams and DLL<> stream_list for storing
-    // active streams. Destroying a stream before deleting it from stream_list and then creating a new one + reusing the same chunk
-    // from the memory pool right away always leads to destroying the DLL structure (deadlocks, inconsistencies).
-    // The following is meant as a safety net since the consequences are disastrous. Until the design/implementation changes it
-    // seems
-    // less error prone to (double) delete before destroying (noop if already deleted).
-    if (h2_parent->connection_state.delete_stream(this)) {
-      Warning("Http2Stream was about to be deallocated without removing it from the active stream list");
-    }
+    // Update session's stream counts, so it accurately goes into keep-alive state
+    h2_parent->connection_state.release_stream(this);
   }
 
   // Clean up the write VIO in case of inactivity timeout
