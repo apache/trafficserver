@@ -32,7 +32,7 @@ ink_max_out_rlimit(int which, bool max_it, bool unlim_it)
 {
   struct rlimit rl;
 
-#if defined(linux)
+#if defined(__GLIBC__)
 #define MAGIC_CAST(x) (enum __rlimit_resource)(x)
 #else
 #define MAGIC_CAST(x) x
