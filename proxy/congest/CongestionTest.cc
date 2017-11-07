@@ -185,20 +185,15 @@ struct CCFailHistoryTestCont : public Continuation {
   enum {
     FAIL_WINDOW = 300,
   };
+
   enum {
     SIMPLE_TEST,
     MULTIPLE_THREAD_TEST,
     ROTATING_TEST,
   };
-  int test_mode;
-  int final_status;
-  bool complete;
-  RegressionTest *test;
+
   int mainEvent(int event, Event *e);
-  CCFailHistoryTestCont()
-    : Continuation(new_ProxyMutex()), test_mode(SIMPLE_TEST), final_status(0), complete(false), failEvents(NULL), entry(NULL)
-  {
-  }
+  CCFailHistoryTestCont() : Continuation(new_ProxyMutex()) {}
 
   CCFailHistoryTestCont(Ptr<ProxyMutex> _mutex, RegressionTest *_test)
     : Continuation(_mutex),
@@ -236,10 +231,15 @@ struct CCFailHistoryTestCont : public Continuation {
     time_t time;
     Link<FailEvents> link;
   };
-  InkAtomicList *failEvents;
-  CongestionControlRecord *rule;
-  CongestionEntry *entry;
-  Action *pending_action;
+
+  int test_mode                 = SIMPLE_TEST;
+  int final_status              = 0;
+  bool complete                 = false;
+  RegressionTest *test          = nullptr;
+  InkAtomicList *failEvents     = nullptr;
+  CongestionControlRecord *rule = nullptr;
+  CongestionEntry *entry        = nullptr;
+  Action *pending_action        = nullptr;
 };
 
 void
