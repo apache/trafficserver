@@ -47,6 +47,8 @@ Enumeration Members
 
 .. c:member:: TSHttpStatus TS_HTTP_STATUS_SWITCHING_PROTOCOL
 
+.. c:member:: TSHttpStatus TS_HTTP_STATUS_EARLY_HINTS
+
 .. c:member:: TSHttpStatus TS_HTTP_STATUS_OK
 
 .. c:member:: TSHttpStatus TS_HTTP_STATUS_CREATED

@@ -123,9 +123,7 @@ Http2Stream::main_event_handler(int event, void *edata)
   }
   reentrancy_count--;
   // Clean stream up if the terminate flag is set and we are at the bottom of the handler stack
-  if (terminate_stream && reentrancy_count == 0) {
-    destroy();
-  }
+  terminate_if_possible();
 
   return 0;
 }
@@ -359,9 +357,18 @@ Http2Stream::transaction_done()
     ink_assert(cross_thread_event == nullptr);
     // Schedule the destroy to occur after we unwind here.  IF we call directly, may delete with reference on the stack.
     terminate_stream = true;
-    if (terminate_stream && reentrancy_count == 0) {
-      destroy();
-    }
+    terminate_if_possible();
+  }
+}
+
+void
+Http2Stream::terminate_if_possible()
+{
+  if (terminate_stream && reentrancy_count == 0) {
+    Http2ClientSession *h2_parent = static_cast<Http2ClientSession *>(parent);
+    SCOPED_MUTEX_LOCK(lock, h2_parent->connection_state.mutex, this_ethread());
+    h2_parent->connection_state.delete_stream(this);
+    destroy();
   }
 }
 

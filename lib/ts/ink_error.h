@@ -33,8 +33,14 @@
 #define _ink_error_h_
 
 #include <stdarg.h>
+#include <stdio.h>
 #include "ts/ink_platform.h"
 #include "ts/ink_apidefs.h"
+
+// throw isn't available in every libc (musl, ..)
+#ifndef __THROW
+#define __THROW
+#endif
 
 // This magic exit code is used to signal that the crashing process cannot
 // be recovered from a restart of said process

@@ -62,6 +62,7 @@ DNSConnection::~DNSConnection()
 int
 DNSConnection::close()
 {
+  eio.stop();
   // don't close any of the standards
   if (fd >= 2) {
     int fd_save = fd;

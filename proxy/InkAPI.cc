@@ -4559,6 +4559,20 @@ TSHttpSsnTransactionCount(TSHttpSsn ssnp)
   return cs->get_transact_count();
 }
 
+TSVConn
+TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
+{
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  return reinterpret_cast<TSVConn>(cs->get_netvc());
+}
+
+TSVConn
+TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
+{
+  HttpServerSession *ss = reinterpret_cast<HttpServerSession *>(ssnp);
+  return reinterpret_cast<TSVConn>(ss->get_netvc());
+}
+
 class TSHttpSsnCallback : public Continuation
 {
 public:

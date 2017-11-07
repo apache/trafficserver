@@ -250,6 +250,7 @@ test_tslib_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
 # add you catch based test file here for tslib
+test_tslib_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tslib_LDADD = libtsutil.la
 test_tslib_SOURCES = \
 	unit-tests/unit_test_main.cc \

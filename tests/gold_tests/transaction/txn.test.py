@@ -82,7 +82,7 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
 tr.StillRunningAfter = ts
 
 comparator_command = '''
-if [ "`traffic_ctl metric get ssntxnorder_verify.{0}.start | cut -d ' ' -f 2`" == "`traffic_ctl metric get ssntxnorder_verify.{0}.close | cut -d ' ' -f 2`" ]; then\
+if test "`traffic_ctl metric get ssntxnorder_verify.{0}.start | cut -d ' ' -f 2`" -eq "`traffic_ctl metric get ssntxnorder_verify.{0}.close | cut -d ' ' -f 2`" ; then\
      echo yes;\
     else \
     echo no; \

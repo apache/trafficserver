@@ -27,7 +27,8 @@ Test FORWARDED header.
 Test.SkipUnless(
     Condition.HasATSFeature('TS_USE_TLS_ALPN'),
     Condition.HasCurlFeature('http2'),
-    Condition.HasCurlFeature('IPv6')
+    Condition.HasCurlFeature('IPv6'),
+    Condition.HasProgram("netstat", "netstat need to be installed on system for this test to work")
 )
 Test.ContinueOnFail = True
 
@@ -78,6 +79,7 @@ server.addResponse("sessionlog.json", request_header, response_header)
 forwarded_log_id = Test.Disk.File("forwarded.log")
 forwarded_log_id.Content = "forwarded.gold"
 
+
 def baselineTsSetup(ts, sslPort):
 
     ts.addSSLfile("../remap/ssl/server.pem")
@@ -87,14 +89,14 @@ def baselineTsSetup(ts, sslPort):
 
     ts.Disk.records_config.update({
         # 'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.url_remap.pristine_host_hdr': 1, # Retain Host header in original incoming client request.
-        'proxy.config.http.cache.http': 0, # Make sure each request is forwarded to the origin server.
-        'proxy.config.proxy_name': 'Poxy_Proxy', # This will be the server name.
+        'proxy.config.url_remap.pristine_host_hdr': 1,  # Retain Host header in original incoming client request.
+        'proxy.config.http.cache.http': 0,  # Make sure each request is forwarded to the origin server.
+        'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.http.server_ports': (
             'ipv4:{0} ipv4:{1}:proto=http2;http:ssl ipv6:{0} ipv6:{1}:proto=http2;http:ssl'
-                .format(ts.Variables.port, ts.Variables.ssl_port))
+            .format(ts.Variables.port, ts.Variables.ssl_port))
     })
 
     ts.Disk.ssl_multicert_config.AddLine(
@@ -104,6 +106,7 @@ def baselineTsSetup(ts, sslPort):
     ts.Disk.remap_config.AddLine(
         'map http://www.no-oride.com http://127.0.0.1:{0}'.format(server.Variables.Port)
     )
+
 
 ts = Test.MakeATSProcess("ts", select_ports=False)
 
@@ -156,8 +159,11 @@ ts.Disk.remap_config.AddLine(
 
 # Ask the OS if the port is ready for connect()
 #
+
+
 def CheckPort(Port):
     return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
+
 
 # Basic HTTP 1.1 -- No Forwarded by default
 tr = Test.AddTestRun()
@@ -167,9 +173,10 @@ tr.Processes.Default.StartBefore(server, ready=CheckPort(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=CheckPort(ts.Variables.ssl_port))
 #
 tr.Processes.Default.Command = (
-  'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts.Variables.port)
+    'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts.Variables.port)
 )
 tr.Processes.Default.ReturnCode = 0
+
 
 def TestHttp1_1(host):
 
@@ -178,6 +185,7 @@ def TestHttp1_1(host):
         'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://{}'.format(ts.Variables.port, host)
     )
     tr.Processes.Default.ReturnCode = 0
+
 
 # Basic HTTP 1.1 -- No Forwarded -- explicit configuration.
 #
@@ -207,7 +215,7 @@ ts2.Variables.port += 1
 baselineTsSetup(ts2, 4444)
 
 ts2.Disk.records_config.update({
-    'proxy.config.url_remap.pristine_host_hdr': 1, # Retain Host header in original incoming client request.
+    'proxy.config.url_remap.pristine_host_hdr': 1,  # Retain Host header in original incoming client request.
     'proxy.config.http.insert_forwarded': 'by=uuid'})
 
 ts2.Disk.remap_config.AddLine(
@@ -270,7 +278,7 @@ tr.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http1.1 --insecure --header "Host: www.no-oride.com" https://localhost:{}'
-        .format(ts2.Variables.ssl_port)
+    .format(ts2.Variables.ssl_port)
 )
 tr.Processes.Default.ReturnCode = 0
 
@@ -284,6 +292,7 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    'curl --verbose --ipv6 --http1.1 --insecure --header "Host: www.no-oride.com" https://localhost:{}'.format(ts2.Variables.ssl_port)
+    'curl --verbose --ipv6 --http1.1 --insecure --header "Host: www.no-oride.com" https://localhost:{}'.format(
+        ts2.Variables.ssl_port)
 )
 tr.Processes.Default.ReturnCode = 0
