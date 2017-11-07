@@ -814,6 +814,8 @@ void
 SSLNetVConnection::do_io_close(int lerrno)
 {
   if (this->ssl != nullptr && sslHandShakeComplete) {
+    callHooks(TS_EVENT_SSL_CLOSE_HOOK); // invoke ssl close hook before ssl structures are freed.
+
     int shutdown_mode = SSL_get_shutdown(ssl);
     Debug("ssl-shutdown", "previous shutdown state 0x%x", shutdown_mode);
     int new_shutdown_mode = shutdown_mode | SSL_RECEIVED_SHUTDOWN;
@@ -1469,7 +1471,8 @@ bool
 SSLNetVConnection::callHooks(TSEvent eventId)
 {
   // Only dealing with the SNI/CERT hook so far.
-  ink_assert(eventId == TS_EVENT_SSL_CERT || eventId == TS_EVENT_SSL_SERVERNAME || eventId == TS_EVENT_SSL_SERVER_VERIFY_HOOK);
+  ink_assert(eventId == TS_EVENT_SSL_CERT || eventId == TS_EVENT_SSL_SERVERNAME ||
+             eventId == TS_EVENT_SSL_SERVER_VERIFY_HOOK || eventId == TS_EVENT_SSL_CLOSE_HOOK);
   Debug("ssl", "callHooks sslHandshakeHookState=%d", this->sslHandshakeHookState);
 
   // Move state if it is appropriate
@@ -1521,6 +1524,11 @@ SSLNetVConnection::callHooks(TSEvent eventId)
       this->sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
     } else {
       this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT_INVOKE;
+    }
+    break;
+  case HANDSHAKE_HOOKS_DONE:
+    if (eventId == TS_EVENT_SSL_CLOSE_HOOK) {
+      curHook = ssl_hooks->get(TS_SSL_CLOSE_INTERNAL_HOOK);
     }
     break;
   default:

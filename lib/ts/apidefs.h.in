@@ -290,7 +290,8 @@ typedef enum {
   TS_SSL_CERT_HOOK = TS_SSL_SNI_HOOK,
   TS_SSL_SERVERNAME_HOOK,
   TS_SSL_SERVER_VERIFY_HOOK,
-  TS_SSL_LAST_HOOK = TS_SSL_SERVER_VERIFY_HOOK,
+  TS_SSL_CLOSE_HOOK,
+  TS_SSL_LAST_HOOK = TS_SSL_CLOSE_HOOK,
   TS_HTTP_LAST_HOOK
 } TSHttpHookID;
 
@@ -452,7 +453,8 @@ typedef enum {
   TS_EVENT_INTERNAL_60202                       = 60202,
   TS_EVENT_SSL_CERT                             = 60203,
   TS_EVENT_SSL_SERVERNAME                       = 60204,
-  TS_EVENT_SSL_SERVER_VERIFY_HOOK               = 60205
+  TS_EVENT_SSL_SERVER_VERIFY_HOOK               = 60205,
+  TS_EVENT_SSL_CLOSE_HOOK                       = 60206
 } TSEvent;
 #define TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP TS_EVENT_HTTP_PRE_REMAP /* backwards compat */
 
