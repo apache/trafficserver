@@ -33,6 +33,7 @@
 #define _ink_error_h_
 
 #include <stdarg.h>
+#include <stdio.h>
 #include "ts/ink_platform.h"
 #include "ts/ink_apidefs.h"
 
