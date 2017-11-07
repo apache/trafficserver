@@ -119,6 +119,7 @@ public:
   void activate(Node *node);
   void deactivate(Node *node, uint32_t sent);
   void update(Node *node, uint32_t sent);
+  bool in(Node *current, Node *node);
   uint32_t size() const;
 
 private:
@@ -202,12 +203,34 @@ Tree<T>::add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T
 
   parent->children.push(node);
   if (!node->queue->empty()) {
+    ink_release_assert(!node->queued);
     parent->queue->push(node->entry);
     node->queued = true;
   }
 
   ++_node_count;
   return node;
+}
+
+template <typename T>
+bool
+Tree<T>::in(Node *current, Node *node)
+{
+  bool retval = false;
+  if (current == nullptr)
+    current = _root;
+  if (current->queue->in(node->entry)) {
+    return true;
+  } else {
+    Node *child = current->children.head;
+    while (child) {
+      if (in(child, node)) {
+        return true;
+      }
+      child = child->link.next;
+    }
+  }
+  return retval;
 }
 
 template <typename T>
@@ -241,6 +264,8 @@ Tree<T>::remove(Node *node)
   if (parent->is_shadow() && parent->children.empty() && parent->queue->empty()) {
     remove(parent);
   }
+
+  // ink_release_assert(!this->in(nullptr, node));
 
   --_node_count;
   delete node;
