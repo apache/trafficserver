@@ -136,7 +136,7 @@ private:
 
   /// We can only match one layer with the wildcards
   /// This table stores the wildcarded subdomain
-  mutable std::unordered_map<cchar *, int> wilddomains;
+  mutable std::unordered_map<cchar *, int, StringHashFunc, StringEqualToFunc> wilddomains;
 
   /// Contexts stored by IP address or FQDN
   InkHashTable *hostnames;

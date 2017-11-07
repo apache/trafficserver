@@ -1226,6 +1226,28 @@ public:
   C *put(C avalue);
 };
 
+class StringHashFunc
+{
+public:
+  std::size_t operator()(cchar *s) const
+  {
+    std::size_t h = 0;
+    // 31 changed to 27, to avoid prime2 in vec.cpp
+    while (*s)
+      h = h * 27 + (unsigned char)*s++;
+    return h;
+  }
+};
+
+class StringEqualToFunc
+{
+public:
+  bool operator()(cchar *a, cchar *b) const
+  {
+    return !strcmp(a, b);
+  }
+};
+
 class StringHashFns
 {
 public:
