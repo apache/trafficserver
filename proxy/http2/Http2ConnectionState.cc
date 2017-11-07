@@ -1100,6 +1100,7 @@ bool
 Http2ConnectionState::delete_stream(Http2Stream *stream)
 {
   ink_assert(nullptr != stream);
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   // If stream has already been removed from the list, just go on
   if (!stream_list.in(stream)) {
@@ -1115,7 +1116,9 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
         dependency_tree->deactivate(node, 0);
       }
       dependency_tree->remove(node);
+      // ink_release_assert(dependency_tree->find(stream->get_id()) == nullptr);
     }
+    stream->priority_node = nullptr;
   }
 
   if (stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
@@ -1141,7 +1144,6 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
       ink_assert(client_streams_out_count > 0);
       --client_streams_out_count;
     }
-    stream_list.remove(stream);
   }
 
   if (ua_session) {
