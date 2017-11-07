@@ -1710,6 +1710,8 @@ tsapi TSVIO TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, 
 tsapi void TSVConnClose(TSVConn connp);
 tsapi void TSVConnAbort(TSVConn connp, int error);
 tsapi void TSVConnShutdown(TSVConn connp, int read, int write);
+tsapi bool TSVConnSetUserData(TSVConn connp, const char *name, void *data);
+tsapi void *TSVConnGetUserData(TSVConn connp, const char *name);
 
 /* --------------------------------------------------------------------------
    Cache VConnections */

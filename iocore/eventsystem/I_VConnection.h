@@ -363,6 +363,20 @@ public:
     return false;
   }
 
+  virtual void *
+  get_user_data(const char *name)
+  {
+    ink_assert(!"VConnection::get_user_arg -- cannot use default implementation");
+    return NULL;
+  }
+
+  virtual bool
+  set_user_data(const char *name, void *arg)
+  {
+    ink_assert(!"VConnection::set_user_arg -- cannot use default implementation");
+    return false;
+  }
+
 public:
   /**
     The error code from the last error.
