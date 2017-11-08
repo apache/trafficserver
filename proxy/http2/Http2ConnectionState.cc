@@ -1143,7 +1143,7 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
     }
   }
 
-  if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
+  if (stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
     send_rst_stream_frame(stream->get_id(), Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
   }
 
