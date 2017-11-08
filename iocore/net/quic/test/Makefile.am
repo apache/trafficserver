@@ -139,6 +139,8 @@ test_QUICFrame_SOURCES = \
 
 test_QUICFrame_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a
 
 #
@@ -205,6 +207,8 @@ test_QUICStreamState_SOURCES = \
 test_QUICStreamState_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBTCL@ \
@@ -378,6 +382,9 @@ test_QUICTypeUtil_LDFLAGS = \
 
 test_QUICTypeUtil_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   $(top_builddir)/lib/ts/libtsutil.la
 
 test_QUICTypeUtil_SOURCES = \
@@ -405,6 +412,9 @@ test_QUICAckFrameCreator_LDFLAGS = \
 
 test_QUICAckFrameCreator_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   $(top_builddir)/lib/ts/libtsutil.la
 
 test_QUICAckFrameCreator_SOURCES = \
