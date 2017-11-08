@@ -99,6 +99,17 @@ plugins to build large scale web applications.
     libcurl4-openssl-dev (optional, required for e.g.: traffic_top)
     flex (optional, required for e.g. WCCP)
 
+  Alpine Linux
+    build-base
+    libexecinfo-dev
+    pcre-dev
+    libressl-dev
+    autoconf
+    automake
+    libtool
+    tcl-dev
+    linux-headers
+  
   OSX (we recommend HomeBrew):
     autoconf
     automake
