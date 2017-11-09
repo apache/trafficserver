@@ -29,31 +29,34 @@ ConnectionCountQueue ConnectionCountQueue::_connectionCount;
 std::string
 ConnectionCount::dumpToJSON()
 {
-  Vec<ConnAddr> keys;
   ink_mutex_acquire(&_mutex);
-  _hostCount.get_keys(keys);
   std::ostringstream oss;
+  size_t n = _hostCount.size();
+  size_t i = 0;
   oss << '{';
-  appendJSONPair(oss, "connectionCountSize", keys.n);
+  appendJSONPair(oss, "connectionCountSize", n);
   oss << ", \"connectionCountList\": [";
-  for (size_t i = 0; i < keys.n; i++) {
+
+  for (auto &it : _hostCount) {
     oss << '{';
 
-    appendJSONPair(oss, "ip", keys[i].getIpStr());
+    appendJSONPair(oss, "ip", it.first.getIpStr());
     oss << ',';
 
-    appendJSONPair(oss, "port", keys[i]._addr.host_order_port());
+    appendJSONPair(oss, "port", it.first._addr.host_order_port());
     oss << ',';
 
-    appendJSONPair(oss, "hostname_hash", keys[i].getHostnameHashStr());
+    appendJSONPair(oss, "hostname_hash", it.first.getHostnameHashStr());
     oss << ',';
 
-    appendJSONPair(oss, "connection_count", _hostCount.get(keys[i]));
+    appendJSONPair(oss, "connection_count", it.second);
     oss << "}";
 
-    if (i < keys.n - 1)
+    if (i < n - 1)
       oss << ',';
+    i++;
   }
+
   ink_mutex_release(&_mutex);
   oss << "]}";
   return oss.str();

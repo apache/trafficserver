@@ -136,7 +136,7 @@ private:
 
   /// We can only match one layer with the wildcards
   /// This table stores the wildcarded subdomain
-  mutable std::unordered_map<cchar *, int, StringHashFunc, StringEqualToFunc> wilddomains;
+  mutable std::unordered_map<const char *, int, StringHashFunc, StringEqualToFunc> wilddomains;
 
   /// Contexts stored by IP address or FQDN
   InkHashTable *hostnames;
@@ -237,8 +237,36 @@ fail:
   return nullptr;
 #endif /* HAVE_OPENSSL_SESSION_TICKETS */
 }
+
+
+
+
+
+#if 1
 void
-SSLCertContext::release()
+SSLCertContext::release(SSL_CTX *ctx)
+{
+  SSLReleaseContext(ctx);
+  ctx = nullptr;
+  Warning("***************************** Calling %s()", __func__);
+
+}
+
+SSLCertContext::/*release*/~SSLCertContext()
+{
+  if (keyblock) {
+    ticket_block_free(keyblock);
+    keyblock = nullptr;
+  }
+
+  //SSLReleaseContext(ctx);
+  //ctx = nullptr;
+  Warning("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ Calling %s()", __func__);
+
+}
+#else
+void
+SSLCertContext::release(SSL_CTX *ctx)
 {
   if (keyblock) {
     ticket_block_free(keyblock);
@@ -249,13 +277,26 @@ SSLCertContext::release()
   ctx = nullptr;
 }
 
+SSLCertContext::~SSLCertContext()
+{
+}
+#endif /* 0 */
+
+
+
+
+
+
 SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(nullptr), is_valid(true)
 {
 }
 
 SSLCertLookup::~SSLCertLookup()
 {
+#warning "this causes SIGSEGV"
   delete this->ssl_storage;
+  Warning("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ Calling %s()", __func__);
+
 }
 
 const SSLCertContext *
@@ -385,7 +426,7 @@ SSLContextStorage::~SSLContextStorage()
   std::qsort(&this->ctx_store, this->ctx_store.size(), sizeof(SSLCertContext), [](const void *a, const void *b) {
     SSLCertContext const &cc1 = reinterpret_cast<SSLCertContext const &>(a);
     SSLCertContext const &cc2 = reinterpret_cast<SSLCertContext const &>(b);
-    return cc1.ctx < cc2.ctx ? 1 : 0;
+    return cc1.ctx < cc2.ctx ? 0 : 1;
   });
 
   SSL_CTX *last_ctx = nullptr;
@@ -393,12 +434,17 @@ SSLContextStorage::~SSLContextStorage()
   for (auto &i : this->ctx_store) {
     if (i.ctx != last_ctx) {
       last_ctx = i.ctx;
-      i.release();
+      i.release(last_ctx);
     }
   }
 
+  this->ctx_store.clear();
+
   ink_hash_table_destroy(this->hostnames);
+
+#warning "this causes SIGSEGV"
   freeWildDomains();
+  Warning("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ Calling %s()", __func__);
 }
 
 int
@@ -414,6 +460,7 @@ SSLContextStorage::insert(const char *name, SSLCertContext const &cc)
 {
   int idx = this->store(cc);
   idx     = this->insert(name, idx);
+  // Not deleting vec.erase(vec.begin() + 1);
   if (idx < 0) {
     this->ctx_store.clear();
   }
@@ -438,21 +485,24 @@ SSLContextStorage::insert(const char *name, int idx)
     if (subdomain) {
       auto index = this->wilddomains.find(subdomain);
       if (index != this->wilddomains.end()) {
-        Warning("previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name, index->second,
+        Warning("%d: previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", __LINE__, lower_case_name, index->second,
                 idx);
         idx = -1;
       } else {
         this->wilddomains.insert({ats_strdup(subdomain), idx});
         Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, this->ctx_store[idx].ctx, idx);
+        printf("%d: indexed '%s' with SSL_CTX %p [%d]\n\r", __LINE__, lower_case_name, this->ctx_store[idx].ctx, idx);
       }
     }
   } else {
     if (ink_hash_table_lookup(this->hostnames, lower_case_name, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
-      Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", lower_case_name, value, idx);
+      Warning("%d: previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", __LINE__, lower_case_name, value, idx);
       idx = -1;
     } else {
       ink_hash_table_insert(this->hostnames, lower_case_name, reinterpret_cast<void *>(static_cast<intptr_t>(idx)));
       Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, this->ctx_store[idx].ctx, idx);
+      printf("%d: indexed '%s' with SSL_CTX %p [%d]\n\r", __LINE__, lower_case_name, this->ctx_store[idx].ctx, idx);
+
     }
   }
   return idx;
@@ -469,6 +519,11 @@ SSLContextStorage::printWildDomains() const
 void
 SSLContextStorage::freeWildDomains() const
 {
+  for (auto i = this->wilddomains.begin(); i != this->wilddomains.end(); i++) {
+    //const void* to void*
+    ats_free((void *)i->first);
+    //this->wilddomains.erase(i);
+  }
   this->wilddomains.clear();
 }
 

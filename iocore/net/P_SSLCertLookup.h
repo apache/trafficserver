@@ -65,7 +65,8 @@ struct SSLCertContext {
   explicit SSLCertContext(SSL_CTX *c) : ctx(c), opt(OPT_NONE), keyblock(nullptr) {}
   SSLCertContext(SSL_CTX *c, Option o) : ctx(c), opt(o), keyblock(nullptr) {}
   SSLCertContext(SSL_CTX *c, Option o, ssl_ticket_key_block *kb) : ctx(c), opt(o), keyblock(kb) {}
-  void release();
+  void release(SSL_CTX *ctx);
+  ~SSLCertContext();
 
   SSL_CTX *ctx;                   ///< openSSL context.
   Option opt;                     ///< Special handling option.
