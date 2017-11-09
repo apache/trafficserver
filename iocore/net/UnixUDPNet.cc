@@ -116,14 +116,14 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
   // don't call back connection at this time.
   int64_t r;
   int iters         = 0;
-  unsigned max_niov = NET_MAX_IOV;
+  unsigned max_niov = 32;
 
   struct msghdr msg;
   Ptr<IOBufferBlock> chain, next_chain;
-  struct iovec tiovec[NET_MAX_IOV];
-  int64_t size_index  = BUFFER_SIZE_INDEX_4K;
+  struct iovec tiovec[max_niov];
+  int64_t size_index  = BUFFER_SIZE_INDEX_2K;
   int64_t buffer_size = BUFFER_SIZE_FOR_INDEX(size_index);
-  // The max length of receive buffer is NET_MAX_IOV (16) * buffer_size (4096) = 65536 bytes.
+  // The max length of receive buffer is 32 * buffer_size (2048) = 65536 bytes.
   // Because the 'UDP Length' is type of uint16_t defined in RFC 768.
   // And there is 8 octets in 'User Datagram Header' which means the max length of payload is no more than 65527 bytes.
   do {
