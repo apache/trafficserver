@@ -266,7 +266,7 @@ mgmt_synthetic_main(void *)
       mgmt_log("[SyntheticHealthServer] Connect by disallowed client %s, closing\n", inet_ntoa(clientInfo.sin_addr));
       close_socket(clientFD);
     } else {
-      ink_thread_create(synthetic_thread, (void *)&clientFD, 1, 0, nullptr);
+      ink_thread_create(nullptr, synthetic_thread, (void *)&clientFD, 1, 0, nullptr);
     }
   }
 

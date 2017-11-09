@@ -127,12 +127,16 @@ ink_thread_key_delete(ink_thread_key key)
   ink_assert(!pthread_key_delete(key));
 }
 
-static inline ink_thread
-ink_thread_create(void *(*f)(void *), void *a, int detached, size_t stacksize, void *stack)
+static inline void
+ink_thread_create(ink_thread *tid, void *(*f)(void *), void *a, int detached, size_t stacksize, void *stack)
 {
   ink_thread t;
   int ret;
   pthread_attr_t attr;
+
+  if (tid == nullptr) {
+    tid = &t;
+  }
 
   pthread_attr_init(&attr);
   pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
@@ -149,13 +153,11 @@ ink_thread_create(void *(*f)(void *), void *a, int detached, size_t stacksize, v
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   }
 
-  ret = pthread_create(&t, &attr, f, a);
+  ret = pthread_create(tid, &attr, f, a);
   if (ret != 0) {
     ink_abort("pthread_create() failed: %s (%d)", strerror(ret), ret);
   }
   pthread_attr_destroy(&attr);
-
-  return t;
 }
 
 static inline void

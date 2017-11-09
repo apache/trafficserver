@@ -215,8 +215,8 @@ RecLocalInitMessage()
 int
 RecLocalStart(FileManager *configFiles)
 {
-  ink_thread_create(sync_thr, configFiles, 0, 0, nullptr);
-  ink_thread_create(config_update_thr, nullptr, 0, 0, nullptr);
+  ink_thread_create(nullptr, sync_thr, configFiles, 0, 0, nullptr);
+  ink_thread_create(nullptr, config_update_thr, nullptr, 0, 0, nullptr);
   return REC_ERR_OKAY;
 }
 

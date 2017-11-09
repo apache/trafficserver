@@ -151,7 +151,7 @@ public:
       @c nullptr a stack of size @a stacksize is allocated and used. If @a f is present and valid it
       is called in the thread context. Otherwise the method @c execute is invoked.
   */
-  ink_thread start(const char *name, void *stack, size_t stacksize, ThreadFunction const &f = ThreadFunction());
+  void start(const char *name, void *stack, size_t stacksize, ThreadFunction const &f = ThreadFunction());
 
   virtual void execute() = 0;
 
