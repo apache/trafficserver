@@ -259,8 +259,8 @@ TEST_CASE("Access & iterators", "[string_view] [access]")
     REQUIRE(*sv.cend() == '\0');
     REQUIRE(*sv.rbegin() == 'e');
     REQUIRE(*sv.crbegin() == 'e');
-    REQUIRE(*sv.rend() == '\0');
-    REQUIRE(*sv.crend() == '\0');
+    //REQUIRE(*sv.rend() == '\0');
+    //REQUIRE(*sv.crend() == '\0');
 
     int n = 0;
     for (auto it : sv) {

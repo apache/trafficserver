@@ -34,8 +34,10 @@ make_endpoint(const char *address)
   return ip;
 }
 
+#if 1
 REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
+  //return;
   TestBox box(t, pstatus);
   SSLCertLookup lookup;
 
@@ -58,11 +60,16 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
   assert(foo != nullptr);
   assert(all_com != nullptr);
 
+  //return;
+
   box.check(lookup.insert("www.foo.com", foo_cc) >= 0, "insert host context");
+
+  //return;
   // Insert the same SSL_CTX instance under another name too
   // Should be ok, but also need to make sure that the cleanup does not
   // double free the SSL_CTX
   box.check(lookup.insert("www.foo2.com", foo_cc) >= 0, "insert host context");
+  //return;
   box.check(lookup.insert("*.wild.com", wild_cc) >= 0, "insert wildcard context");
   box.check(lookup.insert("*.notwild.com", notwild_cc) >= 0, "insert wildcard context");
   box.check(lookup.insert("*.b.notwild.com", b_notwild_cc) >= 0, "insert wildcard context");
@@ -98,6 +105,7 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
   box.check(lookup.find("Mixed.Case.Com")->ctx == foo, "mixed case lookup 2 for Mixed.Case.Com");
   box.check(lookup.find("mixed.case.com")->ctx == foo, "lower case lookup for Mixed.Case.Com");
 }
+#endif /* ndif */
 
 REGRESSION_TEST(SSLAddressLookup)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
