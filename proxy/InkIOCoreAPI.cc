@@ -143,6 +143,7 @@ TSThread
 TSThreadCreate(TSThreadFunc func, void *data)
 {
   INKThreadInternal *thread;
+  ink_thread tid = 0;
 
   thread = new INKThreadInternal;
 
@@ -152,7 +153,8 @@ TSThreadCreate(TSThreadFunc func, void *data)
   thread->func = func;
   thread->data = data;
 
-  if (!(ink_thread_create(ink_thread_trampoline, (void *)thread, 1, 0, nullptr))) {
+  ink_thread_create(&tid, ink_thread_trampoline, (void *)thread, 1, 0, nullptr);
+  if (!tid) {
     return (TSThread) nullptr;
   }
 
