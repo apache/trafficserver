@@ -512,7 +512,7 @@ test_record_get_mlt()
   TSStringList name_list;
   TSList rec_list;
   int i, num;
-  char *v1, *v2, *v3, *v6, *v7;
+  char *v1, *v3, *v6, *v7;
   TSMgmtError ret;
 
   name_list = TSStringListCreate();
@@ -521,9 +521,6 @@ test_record_get_mlt()
   const size_t v1_size = (sizeof(char) * (strlen("proxy.config.proxy_name") + 1));
   v1                   = (char *)TSmalloc(v1_size);
   ink_strlcpy(v1, "proxy.config.proxy_name", v1_size);
-  const size_t v2_size = (sizeof(char) * (strlen("proxy.config.bin_path") + 1));
-  v2                   = (char *)TSmalloc(v2_size);
-  ink_strlcpy(v2, "proxy.config.bin_path", v2_size);
   const size_t v3_size = (sizeof(char) * (strlen("proxy.config.manager_binary") + 1));
   v3                   = (char *)TSmalloc(v3_size);
   ink_strlcpy(v3, "proxy.config.manager_binary", v3_size);
@@ -536,7 +533,6 @@ test_record_get_mlt()
 
   // add the names to the get_list
   TSStringListEnqueue(name_list, v1);
-  TSStringListEnqueue(name_list, v2);
   TSStringListEnqueue(name_list, v3);
   TSStringListEnqueue(name_list, v6);
   TSStringListEnqueue(name_list, v7);

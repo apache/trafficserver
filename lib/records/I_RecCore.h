@@ -48,19 +48,19 @@ typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const 
 void RecConfigFileInit(void);
 int RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_version);
 
-// Return a copy of the system's configuration directory, taking proxy.config.config_dir into account. The
+// Return a copy of the system's configuration directory with Env variable overwrite.
 std::string RecConfigReadConfigDir();
 
-// Return a copy of the system's local state directory, taking proxy.config.local_state_dir into account. The
+// Return a copy of the system's local state directory with Env variable overwrite.
 std::string RecConfigReadRuntimeDir();
 
-// Return a copy of the system's log directory, taking proxy.config.log.logfile_dir into account. The caller
+// Return a copy of the system's log directory with Env variable overwrite.
 std::string RecConfigReadLogDir();
 
-// Return a copy of the system's bin directory, taking proxy.config.bin_path into account. The caller MUST
+// Return a copy of the system's bin directory with Env variable overwrite.
 std::string RecConfigReadBinDir();
 
-// Return a copy of the system's plugin directory, taking proxy.config.plugin.plugin_dir into account. The caller MUST
+// Return a copy of the system's plugin directory with Env variable overwrite.
 std::string RecConfigReadPluginDir();
 
 // Return a copy of a configuration file that is relative to sysconfdir. The relative path to the configuration

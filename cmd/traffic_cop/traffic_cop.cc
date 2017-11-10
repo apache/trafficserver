@@ -547,12 +547,8 @@ ConfigIntFatalError:
 static std::string
 config_read_runtime_dir()
 {
-  char state_dir[PATH_NAME_MAX];
-
-  state_dir[0] = '\0';
-  config_read_string("proxy.config.local_state_dir", state_dir, sizeof(state_dir), true);
-  if (strlen(state_dir) > 0) {
-    return Layout::get()->relative(state_dir);
+  if (const char *env = getenv("PROXY_CONFIG_LOCAL_STATE_DIR")) {
+    return Layout::get()->relative(env);
   } else {
     return Layout::get()->runtimedir;
   }
@@ -561,12 +557,8 @@ config_read_runtime_dir()
 static std::string
 config_read_sysconfig_dir()
 {
-  char sysconfig_dir[PATH_NAME_MAX];
-
-  sysconfig_dir[0] = '\0';
-  config_read_string("proxy.config.config_dir", sysconfig_dir, sizeof(sysconfig_dir), true);
-  if (strlen(sysconfig_dir) > 0) {
-    return Layout::get()->relative(sysconfig_dir);
+  if (const char *env = getenv("PROXY_CONFIG_CONFIG_DIR")) {
+    return Layout::get()->relative(env);
   } else {
     return Layout::get()->sysconfdir;
   }
@@ -575,13 +567,8 @@ config_read_sysconfig_dir()
 static std::string
 config_read_bin_dir()
 {
-  char bindir[PATH_NAME_MAX];
-
-  bindir[0] = '\0';
-  config_read_string("proxy.config.bin_path", bindir, sizeof(bindir), true);
-  cop_log(COP_DEBUG, "binpath is %s\n", bindir);
-  if (strlen(bindir) > 0) {
-    return Layout::get()->relative(bindir);
+  if (const char *env = getenv("PROXY_CONFIG_BIN_PATH")) {
+    return Layout::get()->relative(env);
   } else {
     return Layout::get()->bindir;
   }
@@ -590,12 +577,8 @@ config_read_bin_dir()
 static std::string
 config_read_log_dir()
 {
-  char logdir[PATH_NAME_MAX];
-
-  logdir[0] = '\0';
-  config_read_string("proxy.config.log.logfile_dir", logdir, sizeof(logdir), true);
-  if (strlen(logdir) > 0) {
-    return Layout::get()->relative(logdir);
+  if (const char *env = getenv("PROXY_CONFIG_LOG_LOGFILE_DIR")) {
+    return Layout::get()->relative(env);
   } else {
     return Layout::get()->logdir;
   }

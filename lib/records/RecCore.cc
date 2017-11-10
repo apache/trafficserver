@@ -1120,23 +1120,14 @@ REC_readString(const char *name, bool *found, bool lock)
   return _tmp;
 }
 
-// RecConfigReadConfigDir. Note that we handle environmental configuration
-// overrides specially here. Normally we would override the configuration
-// variable when we read records.config but to avoid the bootstrapping
-// problem, we make an explicit check here.
+//-------------------------------------------------------------------------
+// RecConfigReadConfigDir
+//-------------------------------------------------------------------------
 std::string
 RecConfigReadConfigDir()
 {
-  char buf[PATH_NAME_MAX] = {0};
-
   if (const char *env = getenv("PROXY_CONFIG_CONFIG_DIR")) {
-    ink_strlcpy(buf, env, sizeof(buf));
-  } else {
-    RecGetRecordString("proxy.config.config_dir", buf, sizeof(buf));
-  }
-
-  if (strlen(buf) > 0) {
-    return Layout::get()->relative(buf);
+    return Layout::get()->relative(env);
   } else {
     return Layout::get()->sysconfdir;
   }
@@ -1148,12 +1139,8 @@ RecConfigReadConfigDir()
 std::string
 RecConfigReadRuntimeDir()
 {
-  char buf[PATH_NAME_MAX];
-
-  buf[0] = '\0';
-  RecGetRecordString("proxy.config.local_state_dir", buf, PATH_NAME_MAX);
-  if (strlen(buf) > 0) {
-    return Layout::get()->relative(buf);
+  if (const char *env = getenv("PROXY_CONFIG_LOCAL_STATE_DIR")) {
+    return Layout::get()->relative(env);
   } else {
     return Layout::get()->runtimedir;
   }
@@ -1165,12 +1152,8 @@ RecConfigReadRuntimeDir()
 std::string
 RecConfigReadLogDir()
 {
-  char buf[PATH_NAME_MAX];
-
-  buf[0] = '\0';
-  RecGetRecordString("proxy.config.log.logfile_dir", buf, PATH_NAME_MAX);
-  if (strlen(buf) > 0) {
-    return Layout::get()->relative(buf);
+  if (const char *env = getenv("PROXY_CONFIG_LOG_LOGFILE_DIR")) {
+    return Layout::get()->relative(env);
   } else {
     return Layout::get()->logdir;
   }
@@ -1182,12 +1165,8 @@ RecConfigReadLogDir()
 std::string
 RecConfigReadBinDir()
 {
-  char buf[PATH_NAME_MAX];
-
-  buf[0] = '\0';
-  RecGetRecordString("proxy.config.bin_path", buf, PATH_NAME_MAX);
-  if (strlen(buf) > 0) {
-    return Layout::get()->relative(buf);
+  if (const char *env = getenv("PROXY_CONFIG_BIN_PATH")) {
+    return Layout::get()->relative(env);
   } else {
     return Layout::get()->bindir;
   }
@@ -1199,7 +1178,11 @@ RecConfigReadBinDir()
 std::string
 RecConfigReadPluginDir()
 {
-  return RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir");
+  if (const char *env = getenv("PROXY_CONFIG_PLUGIN_PLUGIN_DIR")) {
+    return Layout::get()->relative(env);
+  } else {
+    return Layout::get()->libexecdir;
+  }
 }
 
 //-------------------------------------------------------------------------
