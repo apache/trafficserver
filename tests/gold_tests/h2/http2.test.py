@@ -94,6 +94,8 @@ tr.StillRunningAfter = server
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'python3 h2bigclient.py -p {0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stdout = "gold/bigfile.gold"
 tr.StillRunningAfter = server
 
@@ -101,6 +103,8 @@ tr.StillRunningAfter = server
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'python3 h2chunked.py -p {0}  -u /{1}'.format(ts.Variables.ssl_port, requestLocation)
 tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stdout = "gold/chunked.gold"
 tr.StillRunningAfter = server
 
@@ -110,6 +114,8 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = "python3 {0} -type {1} -log_dir {2} -port {3} -host '127.0.0.1' -s_port {4} -v -colorize False".format(
     client_path, 'h2', server.Variables.DataDir, ts.Variables.port, ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stdout = "gold/replay.gold"
 tr.StillRunningAfter = server
 
@@ -117,5 +123,7 @@ tr.StillRunningAfter = server
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'python3 h2active_timeout.py -p {0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
 tr.StillRunningAfter = server
