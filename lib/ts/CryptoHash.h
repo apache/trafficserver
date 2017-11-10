@@ -1,5 +1,5 @@
 /** @file
-    Protocol class for crypto hashes.
+    Wrapper class for crypto hashes.
 
     @section license License
 
@@ -25,30 +25,32 @@
 
 /// Apache Traffic Server commons.
 
-#include "ts/ink_code.h"
+#ifdef TS_ENABLE_FIPS
+// #include "ts/SHA256.h"
+#define CRYPTO_HASH_SIZE (256 / 8)
+#else
+// #include "ts/ink_code.h"
+#define CRYPTO_HASH_SIZE (128 / 8)
+#endif
+#define CRYPTO_HEX_SIZE ((CRYPTO_HASH_SIZE * 2) + 1)
 
 namespace ats
 {
 /// Crypto hash output.
 union CryptoHash {
-  uint64_t b[2]; // Legacy placeholder
-  uint64_t u64[2];
-  uint32_t u32[4];
-  uint8_t u8[16];
+  uint64_t b[CRYPTO_HASH_SIZE / sizeof(uint64_t)]; // Legacy placeholder
+  uint64_t u64[CRYPTO_HASH_SIZE / sizeof(uint64_t)];
+  uint32_t u32[CRYPTO_HASH_SIZE / sizeof(uint32_t)];
+  uint8_t u8[CRYPTO_HASH_SIZE / sizeof(uint8_t)];
 
   /// Default constructor - init to zero.
-  CryptoHash()
-  {
-    u64[0] = 0;
-    u64[1] = 0;
-  }
+  CryptoHash() { memset(this, 0, sizeof(*this)); }
 
   /// Assignment - bitwise copy.
   CryptoHash &
   operator=(CryptoHash const &that)
   {
-    u64[0] = that.u64[0];
-    u64[1] = that.u64[1];
+    memcpy(this, &that, sizeof(*this));
     return *this;
   }
 
@@ -56,7 +58,7 @@ union CryptoHash {
   bool
   operator==(CryptoHash const &that) const
   {
-    return u64[0] == that.u64[0] && u64[1] == that.u64[1];
+    return memcmp(this, &that, sizeof(*this)) == 0;
   }
 
   /// Equality - bitwise identical.
@@ -70,7 +72,11 @@ union CryptoHash {
   uint64_t
   fold() const
   {
+#if CRYPTO_HASH_SIZE == 16
     return u64[0] ^ u64[1];
+#elif CRYPTO_HASH_SIZE == 32
+    return u64[0] ^ u64[1] ^ u64[2] ^ u64[3];
+#endif
   }
 
   /// Access 64 bit slice.
@@ -91,11 +97,7 @@ union CryptoHash {
   }
 
   /// Fast conversion to hex in fixed sized string.
-  char *
-  toHexStr(char buffer[33])
-  {
-    return ink_code_to_hex_str(buffer, u8);
-  }
+  char *toHexStr(char buffer[(CRYPTO_HASH_SIZE * 2) + 1]);
 };
 
 extern CryptoHash const CRYPTO_HASH_ZERO;
@@ -104,12 +106,12 @@ extern CryptoHash const CRYPTO_HASH_ZERO;
 
     A hash of this type is used for strong hashing, such as for URLs.
 */
-class CryptoContext
+class CryptoContextBase
 {
-  typedef CryptoContext self; ///< Self reference type.
+  typedef CryptoContextBase self; ///< Self reference type.
 public:
   /// Destructor (force virtual)
-  virtual ~CryptoContext() {}
+  virtual ~CryptoContextBase() {}
   /// Update the hash with @a data of @a length bytes.
   virtual bool update(void const *data, int length) = 0;
   /// Finalize and extract the @a hash.
@@ -121,23 +123,61 @@ public:
   /// Convenience - compute final @a hash for @a data.
   /// @note This is just as fast as the previous style, as a new context must be initialized
   /// everytime this is done.
-  virtual bool hash_immediate(CryptoHash &hash, void const *data, int length);
+  bool hash_immediate(CryptoHash &hash, void const *data, int length);
 };
 
 inline bool
-CryptoContext::hash_immediate(CryptoHash &hash, void const *data, int length)
+CryptoContextBase::hash_immediate(CryptoHash &hash, void const *data, int length)
 {
   return this->update(data, length) && this->finalize(hash);
 }
+
 inline bool
-CryptoContext::finalize(CryptoHash *hash)
+CryptoContextBase::finalize(CryptoHash *hash)
 {
   return this->finalize(*hash);
 }
 
+class CryptoContext : public CryptoContextBase
+{
+public:
+  CryptoContext();
+  /// Update the hash with @a data of @a length bytes.
+  virtual bool update(void const *data, int length);
+  /// Finalize and extract the @a hash.
+  virtual bool finalize(CryptoHash &hash);
+
+  enum HashType {
+    UNSPECIFIED,
+#ifndef TS_ENABLE_FIPS
+    MD5,
+    MMH,
+#endif
+    SHA256,
+  }; ///< What type of hash we really are.
+  static HashType Setting;
+
+  /// Size of storage for placement @c new of hashing context.
+  static size_t const OBJ_SIZE = 256;
+
+protected:
+  char _obj[OBJ_SIZE]; ///< Raw storage for instantiated context.
+};
+
+inline bool
+CryptoContext::update(void const *data, int length)
+{
+  return reinterpret_cast<CryptoContextBase *>(_obj)->update(data, length);
+}
+
+inline bool
+CryptoContext::finalize(CryptoHash &hash)
+{
+  return reinterpret_cast<CryptoContextBase *>(_obj)->finalize(hash);
+}
+
 } // end namespace
 
-// Promote for the primitives who don't use namespaces...
 using ats::CryptoHash;
 using ats::CryptoContext;
 using ats::CRYPTO_HASH_ZERO;
