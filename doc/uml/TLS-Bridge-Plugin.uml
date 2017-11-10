@@ -1,0 +1,81 @@
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+' Unless required by  applicable law or agreed to in writing, software distributed under the License is distributed
+' on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and limitations under the License.
+
+@startuml
+
+scale max 720 width
+
+ReadRequestHdr : Check for ""CONNECT""
+ReadRequestHdr : =====
+ReadRequestHdr : Find Peer for Service.
+
+Intercept : Intercept Client Transaction.
+Intercept : =====
+Intercept : Initialize Bridge Context.
+
+Accept : Initialize ""VConn"" data.
+Accept : =====
+Accept : Create internal transaction.
+Accept : =====
+Accept : Set up Client side tunnel.
+Accept : =====
+Accept : ""CONNECT"" to Peer via internal transaction.
+
+Tunnel : Move data.
+
+state "Flow To Peer" as FlowToPeer
+FlowToPeer : Move data from Client ""TSIOBufferReader""\nto Peer ""TSIOBuffer"".
+FlowToPeer : =====
+FlowToPeer : Reenable VIOs
+
+state "Flow To Client" as FlowToClient
+FlowToClient : Move data from Peer ""TSIOBufferReader""\nto Client ""TSIOBuffer"".
+FlowToClient : =====
+FlowToClient : Reenable VIOs
+
+state "Wait For Peer Response" as WaitForPeerResponse {
+  WaitForStatusCode : Parse for status code.
+
+  WaitForResponseEnd : Parse for double newline.
+
+  BadStatus : Set error data\nin Client Response.
+
+  PeerReady : Update Client Response.
+  PeerReady : =====
+  PeerReady : Set up peer tunnel.
+  PeerReady : =====
+  PeerReady : Start Tunneling.
+
+  [*] --> WaitForStatusCode
+  WaitForStatusCode --> WaitForResponseEnd
+  WaitForStatusCode --> BadStatus
+  BadStatus --> [*]
+  WaitForResponseEnd --> PeerReady
+  PeerReady --> [*]
+}
+
+[*] --> ReadRequestHdr : ""CONNECT"" Service
+ReadRequestHdr --> [*] : Not matched.
+ReadRequestHdr --> Intercept
+Intercept --> Accept : ""TS_EVENT_NET_ACCEPT""
+Accept -r-> WaitForPeerResponse
+WaitForPeerResponse --> WaitForPeerResponse : ""TS_EVENT_VCONN_READ_READY""
+WaitForPeerResponse --> Tunnel : 200 OK
+WaitForPeerResponse -u-> [*] : Peer connect failure
+
+Tunnel --> FlowToClient : ""TS_EVENT_VCONN_READ_READY""\nPeer VIO
+FlowToClient --> Tunnel
+Tunnel --> FlowToPeer : ""TS_EVENT_VCONN_READY_READY""\nClient VIO
+FlowToPeer --> Tunnel
+
+Tunnel -right-> Shutdown : ""TS_EVENT_VCONN_EOS""
+
+Shutdown : Close Client VConn
+Shutdown : =====
+Shutdown : Close Upstream VConn
+
+@enduml
