@@ -26,7 +26,7 @@
 
 #include "ts/HashFNV.h"
 #include "ts/ink_time.h"
-#include "ts/INK_MD5.h"
+#include "ts/CryptoHash.h"
 #include "ts/ink_align.h"
 #include "ts/ink_resolver.h"
 #include "I_EventSystem.h"

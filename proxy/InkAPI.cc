@@ -4064,7 +4064,7 @@ TSCacheKeyDigestSet(TSCacheKey key, const char *input, int length)
     return TS_ERROR;
   }
 
-  MD5Context().hash_immediate(ci->cache_key, input, length);
+  CryptoContext().hash_immediate(ci->cache_key, input, length);
   return TS_SUCCESS;
 }
 
@@ -4077,7 +4077,7 @@ TSCacheKeyDigestFromUrlSet(TSCacheKey key, TSMLoc url)
     return TS_ERROR;
   }
 
-  url_MD5_get((URLImpl *)url, &((CacheInfo *)key)->cache_key);
+  url_CryptoHash_get((URLImpl *)url, &((CacheInfo *)key)->cache_key);
   return TS_SUCCESS;
 }
 
@@ -5122,7 +5122,7 @@ TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
   sdk_assert(sdk_sanity_check_url_handle(url_loc) == TS_SUCCESS);
 
   URL new_url, *client_url, *l_url, *o_url;
-  INK_MD5 md51, md52;
+  CryptoHash crypto_hash1, crypto_hash2;
 
   new_url.m_heap     = ((HdrHeapSDKHandle *)bufp)->m_heap;
   new_url.m_url_impl = (URLImpl *)url_loc;
@@ -5146,9 +5146,9 @@ TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
     s->cache_info.lookup_url = &(s->cache_info.lookup_url_storage);
     l_url                    = s->cache_info.lookup_url;
   } else {
-    l_url->hash_get(&md51);
-    new_url.hash_get(&md52);
-    if (md51 == md52) {
+    l_url->hash_get(&crypto_hash1);
+    new_url.hash_get(&crypto_hash2);
+    if (crypto_hash1 == crypto_hash2) {
       return TS_ERROR;
     }
     o_url = &(s->cache_info.original_url);
@@ -7465,7 +7465,7 @@ TSCacheHttpInfoKeySet(TSCacheHttpInfo infop, TSCacheKey keyp)
 {
   // TODO: Check input ?
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
-  INK_MD5 *key        = (INK_MD5 *)keyp;
+  CryptoHash *key     = (CryptoHash *)keyp;
 
   info->object_key_set(*key);
 }
