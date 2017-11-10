@@ -95,7 +95,7 @@ protected:
   /// Interface class for FQDN map.
   struct HostHashing {
     typedef uint64_t ID;
-    typedef INK_MD5 const &Key;
+    typedef CryptoHash const &Key;
     typedef HttpServerSession Value;
     typedef DList(HttpServerSession, host_hash_link) ListHead;
 
@@ -122,7 +122,7 @@ protected:
 public:
   /** Check if a session matches address and host name.
    */
-  static bool match(HttpServerSession *ss, sockaddr const *addr, INK_MD5 const &host_hash,
+  static bool match(HttpServerSession *ss, sockaddr const *addr, CryptoHash const &host_hash,
                     TSServerSessionSharingMatchType match_style);
 
   /** Get a session from the pool.
@@ -132,7 +132,7 @@ public:
 
       @return A pointer to the session or @c NULL if not matching session was found.
   */
-  HSMresult_t acquireSession(sockaddr const *addr, INK_MD5 const &host_hash, TSServerSessionSharingMatchType match_style,
+  HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &host_hash, TSServerSessionSharingMatchType match_style,
                              HttpSM *sm, HttpServerSession *&server_session);
   /** Release a session to to pool.
    */

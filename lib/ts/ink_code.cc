@@ -28,6 +28,7 @@
 #include "ts/ink_assert.h"
 
 ats::CryptoHash const ats::CRYPTO_HASH_ZERO; // default constructed is correct.
+#ifndef TS_ENABLE_FIPS
 
 MD5Context::MD5Context()
 {
@@ -89,40 +90,4 @@ ink_code_md5(unsigned const char *input, int input_length, unsigned char *sixtee
 
   return (0);
 }
-
-/**
-  @brief Converts a MD5 to a null-terminated string
-
-  Externalizes an INK_MD5 as a null-terminated string into the first argument.
-  Does so without intenal procedure calls.
-  Side Effects: none.
-  Reentrancy:     n/a.
-  Thread Safety:  safe.
-  Mem Management: stomps the passed dest char*.
-
-  @return returns the passed destination string ptr.
-*/
-/* reentrant version */
-char *
-ink_code_to_hex_str(char *dest33, uint8_t const *hash)
-{
-  int i;
-  char *d;
-
-  static char hex_digits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
-  d = dest33;
-  for (i = 0; i < 16; i += 4) {
-    *(d + 0) = hex_digits[hash[i + 0] >> 4];
-    *(d + 1) = hex_digits[hash[i + 0] & 15];
-    *(d + 2) = hex_digits[hash[i + 1] >> 4];
-    *(d + 3) = hex_digits[hash[i + 1] & 15];
-    *(d + 4) = hex_digits[hash[i + 2] >> 4];
-    *(d + 5) = hex_digits[hash[i + 2] & 15];
-    *(d + 6) = hex_digits[hash[i + 3] >> 4];
-    *(d + 7) = hex_digits[hash[i + 3] & 15];
-    d += 8;
-  }
-  *d = '\0';
-  return (dest33);
-}
+#endif

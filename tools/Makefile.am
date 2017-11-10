@@ -33,7 +33,7 @@ noinst_PROGRAMS = jtest/jtest
 endif
 
 jtest_jtest_SOURCES = jtest/jtest.cc
-jtest_jtest_LDADD = $(top_builddir)/lib/ts/libtsutil.la
+jtest_jtest_LDADD = $(top_builddir)/lib/ts/libtsutil.la -lssl -lcrypto
 
 if BUILD_HTTP_LOAD
 

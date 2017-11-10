@@ -59,6 +59,7 @@
 #define TS_HAS_BACKTRACE @has_backtrace@
 #define TS_HAS_PROFILER @has_profiler@
 #define TS_USE_FAST_SDK @use_fast_sdk@
+#define TS_ENABLE_FIPS @enable_fips@
 #define TS_USE_DIAGS @use_diags@
 #define TS_USE_EPOLL @use_epoll@
 #define TS_USE_KQUEUE @use_kqueue@

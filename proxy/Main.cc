@@ -691,6 +691,7 @@ CB_After_Cache_Init()
 
   start = ink_atomic_swap(&delay_listen_for_cache_p, -1);
 
+#ifndef TS_ENABLE_FIPS
   // Check for cache BC after the cache is initialized and before listen, if possible.
   if (cacheProcessor.min_stripe_version.ink_major < CACHE_DB_MAJOR_VERSION) {
     // Versions before 23 need the MMH hash.
@@ -700,6 +701,7 @@ CB_After_Cache_Init()
       URLHashContext::Setting = URLHashContext::MMH;
     }
   }
+#endif
 
   if (1 == start) {
     Debug("http_listen", "Delayed listen enable, cache initialization finished");

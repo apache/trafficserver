@@ -255,6 +255,19 @@ AC_MSG_RESULT([$enable_diags])
 TS_ARG_ENABLE_VAR([use], [diags])
 
 #
+# FIPS
+#
+
+AC_MSG_CHECKING([whether to enable fips])
+AC_ARG_ENABLE([fips],
+  [AS_HELP_STRING([--enable-fips],[turn on FIPS compliance])],
+  [],
+  [enable_fips=no]
+)
+AC_MSG_RESULT([$enable_fips])
+TS_ARG_ENABLE_VAR([enable], [fips])
+
+#
 # Build regression tests?
 #
 

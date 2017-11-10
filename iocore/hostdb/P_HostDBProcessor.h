@@ -199,10 +199,10 @@ struct HostDBCache {
 
   // TODO configurable number of items in the cache
   Queue<HostDBContinuation, Continuation::Link_link> *pending_dns;
-  Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(const INK_MD5 &md5);
+  Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(const CryptoHash &hash);
   Queue<HostDBContinuation, Continuation::Link_link> *remoteHostDBQueue;
   HostDBCache();
-  bool is_pending_dns_for_hash(const INK_MD5 &md5);
+  bool is_pending_dns_for_hash(const CryptoHash &hash);
 };
 
 inline int
@@ -392,30 +392,30 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
 // Types
 //
 
-/** Container for an MD5 hash and its dependent data.
+/** Container for a hash and its dependent data.
     This handles both the host name and raw address cases.
 */
-struct HostDBMD5 {
-  typedef HostDBMD5 self; ///< Self reference type.
+struct HostDBHash {
+  typedef HostDBHash self; ///< Self reference type.
 
-  INK_MD5 hash; ///< The hash value.
+  CryptoHash hash; ///< The hash value.
 
   const char *host_name; ///< Host name.
   int host_len;          ///< Length of @a _host_name
   IpAddr ip;             ///< IP address.
   in_port_t port;        ///< IP port (host order).
-  /// DNS server. Not strictly part of the MD5 data but
+  /// DNS server. Not strictly part of the hash data but
   /// it's both used by @c HostDBContinuation and provides access to
-  /// MD5 data. It's just handier to store it here for both uses.
+  /// hash data. It's just handier to store it here for both uses.
   DNSServer *dns_server;
   SplitDNS *pSD;      ///< Hold the container for @a dns_server.
   HostDBMark db_mark; ///< Mark / type of record.
 
   /// Default constructor.
-  HostDBMD5();
+  HostDBHash();
   /// Destructor.
-  ~HostDBMD5();
-  /// Recompute and update the MD5 hash.
+  ~HostDBHash();
+  /// Recompute and update the hash.
   void refresh();
   /** Assign a hostname.
       This updates the split DNS data as well.
@@ -431,24 +431,23 @@ typedef int (HostDBContinuation::*HostDBContHandler)(int, void *);
 
 struct HostDBContinuation : public Continuation {
   Action action;
-  HostDBMD5 md5;
+  HostDBHash hash;
   //  IpEndpoint ip;
   unsigned int ttl = 0;
   //  HostDBMark db_mark; ///< Target type.
   /// Original IP address family style. Note this will disagree with
-  /// @a md5.db_mark when doing a retry on an alternate family. The retry
+  /// @a hash.db_mark when doing a retry on an alternate family. The retry
   /// logic depends on it to avoid looping.
   HostResStyle host_res_style = DEFAULT_OPTIONS.host_res_style; ///< Address family priority.
   int dns_lookup_timeout      = DEFAULT_OPTIONS.timeout;
-  //  INK_MD5 md5;
-  Event *timeout          = nullptr;
-  Continuation *from_cont = nullptr;
+  Event *timeout              = nullptr;
+  Continuation *from_cont     = nullptr;
   HostDBApplicationInfo app;
   int probe_depth            = 0;
   size_t current_iterate_pos = 0;
   //  char name[MAXDNAME];
   //  int namelen;
-  char md5_host_name_store[MAXDNAME + 1]; // used as backing store for @a md5
+  char hash_host_name_store[MAXDNAME + 1]; // used as backing store for @a hash
   char srv_target_name[MAXDNAME];
   //  void *m_pDS;
   Action *pending_action = nullptr;
@@ -466,18 +465,18 @@ struct HostDBContinuation : public Continuation {
   int removeEvent(int event, Event *e);
   int setbyEvent(int event, Event *e);
 
-  /// Recompute the MD5 and update ancillary values.
-  void refresh_MD5();
+  /// Recompute the hash and update ancillary values.
+  void refresh_hash();
   void do_dns();
   bool
   is_byname()
   {
-    return md5.db_mark == HOSTDB_MARK_IPV4 || md5.db_mark == HOSTDB_MARK_IPV6;
+    return hash.db_mark == HOSTDB_MARK_IPV4 || hash.db_mark == HOSTDB_MARK_IPV6;
   }
   bool
   is_srv()
   {
-    return md5.db_mark == HOSTDB_MARK_SRV;
+    return hash.db_mark == HOSTDB_MARK_SRV;
   }
   HostDBInfo *lookup_done(IpAddr const &ip, const char *aname, bool round_robin, unsigned int attl, SRVHosts *s = nullptr,
                           HostDBInfo *r = nullptr);
@@ -500,22 +499,22 @@ struct HostDBContinuation : public Continuation {
     Options() : timeout(0), host_res_style(HOST_RES_NONE), force_dns(false), cont(0) {}
   };
   static const Options DEFAULT_OPTIONS; ///< Default defaults.
-  void init(HostDBMD5 const &md5, Options const &opt = DEFAULT_OPTIONS);
+  void init(HostDBHash const &hash, Options const &opt = DEFAULT_OPTIONS);
   int make_get_message(char *buf, int len);
   int make_put_message(HostDBInfo *r, Continuation *c, char *buf, int len);
 
   HostDBContinuation() : missing(false), force_dns(DEFAULT_OPTIONS.force_dns), round_robin(false)
   {
-    ink_zero(md5_host_name_store);
-    ink_zero(md5.hash);
+    ink_zero(hash_host_name_store);
+    ink_zero(hash.hash);
     SET_HANDLER((HostDBContHandler)&HostDBContinuation::probeEvent);
   }
 };
 
 inline unsigned int
-master_hash(INK_MD5 const &md5)
+master_hash(CryptoHash const &hash)
 {
-  return static_cast<int>(md5[1] >> 32);
+  return static_cast<int>(hash[1] >> 32);
 }
 
 inline bool
@@ -525,15 +524,15 @@ is_dotted_form_hostname(const char *c)
 }
 
 inline Queue<HostDBContinuation> &
-HostDBCache::pending_dns_for_hash(const INK_MD5 &md5)
+HostDBCache::pending_dns_for_hash(const CryptoHash &hash)
 {
-  return pending_dns[this->refcountcache->partition_for_key(md5.fold())];
+  return pending_dns[this->refcountcache->partition_for_key(hash.fold())];
 }
 
 inline int
 HostDBContinuation::key_partition()
 {
-  return hostDB.refcountcache->partition_for_key(md5.hash.fold());
+  return hostDB.refcountcache->partition_for_key(hash.hash.fold());
 }
 
 #endif /* _P_HostDBProcessor_h_ */

@@ -24,7 +24,7 @@
 #include "P_Cache.h"
 
 struct RamCacheLRUEntry {
-  INK_MD5 key;
+  CryptoHash key;
   uint32_t auxkey1;
   uint32_t auxkey2;
   LINK(RamCacheLRUEntry, lru_link);
@@ -40,9 +40,10 @@ struct RamCacheLRU : public RamCache {
   int64_t objects   = 0;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
-  int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0) override;
-  int put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy = false, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0) override;
-  int fixup(const INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2) override;
+  int get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0) override;
+  int put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint32_t auxkey1 = 0,
+          uint32_t auxkey2 = 0) override;
+  int fixup(const CryptoHash *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2) override;
   int64_t size() const override;
 
   void init(int64_t max_bytes, Vol *vol) override;
@@ -118,7 +119,7 @@ RamCacheLRU::init(int64_t abytes, Vol *avol)
 }
 
 int
-RamCacheLRU::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2)
+RamCacheLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2)
 {
   if (!max_bytes) {
     return 0;
@@ -159,7 +160,7 @@ RamCacheLRU::remove(RamCacheLRUEntry *e)
 
 // ignore 'copy' since we don't touch the data
 int
-RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint32_t auxkey1, uint32_t auxkey2)
+RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool, uint32_t auxkey1, uint32_t auxkey2)
 {
   if (!max_bytes) {
     return 0;
@@ -215,7 +216,7 @@ RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint32_t 
 }
 
 int
-RamCacheLRU::fixup(const INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2)
+RamCacheLRU::fixup(const CryptoHash *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2)
 {
   if (!max_bytes) {
     return 0;
