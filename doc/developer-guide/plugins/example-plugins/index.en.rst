@@ -28,6 +28,7 @@ Example Plugins
    basic-authorization/index.en
    blacklist/index.en
    query_remap/index.en
+   tls_bridge.en
 
 .. _developer-plugins-header-based-examples:
 
