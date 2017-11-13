@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "ts/HKDF.h"
 #include <openssl/ssl.h>
 
 #ifdef OPENSSL_IS_BORINGSSL
@@ -39,11 +40,14 @@
 struct KeyMaterial {
   KeyMaterial(size_t secret_len, size_t key_len, size_t iv_len) : secret_len(secret_len), key_len(key_len), iv_len(iv_len) {}
   uint8_t secret[EVP_MAX_MD_SIZE] = {0};
-  uint8_t key[EVP_MAX_KEY_LENGTH] = {0};
-  uint8_t iv[EVP_MAX_IV_LENGTH]   = {0};
-  size_t secret_len               = 0;
-  size_t key_len                  = 0;
-  size_t iv_len                   = 0;
+  // These constant sizes are not enough somehow
+  // uint8_t key[EVP_MAX_KEY_LENGTH] = {0};
+  // uint8_t iv[EVP_MAX_IV_LENGTH]   = {0};
+  uint8_t key[512]  = {0};
+  uint8_t iv[512]   = {0};
+  size_t secret_len = 0;
+  size_t key_len    = 0;
+  size_t iv_len     = 0;
 };
 
 class QUICPacketProtection
@@ -81,13 +85,13 @@ public:
   SSL *ssl_handle();
 
 private:
+  HKDF *_hkdf = nullptr;
   int _export_secret(uint8_t *dst, size_t dst_len, const char *label, size_t label_len) const;
   int _export_client_keymaterial(size_t secret_len, size_t key_len, size_t iv_len);
   int _export_server_keymaterial(size_t secret_len, size_t key_len, size_t iv_len);
   void _gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, const uint8_t *iv, size_t iv_len) const;
-  bool _gen_info(uint8_t *info, size_t &info_len, const char *label, size_t label_len, size_t length) const;
-  int _hkdf_expand_label(uint8_t *dst, size_t dst_len, const uint8_t *secret, size_t secret_len, const char *label,
-                         size_t label_len, const EVP_MD *digest) const;
+  int _hkdf_expand_label(const uint8_t *dst, size_t dst_len, const uint8_t *secret, size_t secret_len, const char *label,
+                         size_t label_len, const EVP_MD *digest);
 #ifdef OPENSSL_IS_BORINGSSL
   const EVP_AEAD *_get_evp_aead(const SSL_CIPHER *cipher) const;
   size_t _get_aead_key_len(const EVP_AEAD *aead) const;

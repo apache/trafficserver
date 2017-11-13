@@ -97,40 +97,6 @@ QUICCrypto::_get_aead_nonce_len(const EVP_CIPHER *aead) const
   return EVP_CIPHER_iv_length(aead);
 }
 
-int
-QUICCrypto::_hkdf_expand_label(uint8_t *dst, size_t dst_len, const uint8_t *secret, size_t secret_len, const char *label,
-                               size_t label_len, const EVP_MD *digest) const
-{
-  uint8_t info[256] = {0};
-  size_t info_len   = 0;
-  _gen_info(info, info_len, label, label_len, dst_len);
-
-  EVP_PKEY_CTX *pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
-  if (!EVP_PKEY_derive_init(pctx)) {
-    return -1;
-  }
-  if (!EVP_PKEY_CTX_hkdf_mode(pctx, EVP_PKEY_HKDEF_MODE_EXPAND_ONLY)) {
-    return -1;
-  }
-  if (!EVP_PKEY_CTX_set_hkdf_md(pctx, digest)) {
-    return -1;
-  }
-  if (!EVP_PKEY_CTX_set1_hkdf_salt(pctx, "", 0)) {
-    return -1;
-  }
-  if (!EVP_PKEY_CTX_set1_hkdf_key(pctx, secret, secret_len)) {
-    return -1;
-  }
-  if (!EVP_PKEY_CTX_add1_hkdf_info(pctx, info, info_len)) {
-    return -1;
-  }
-  if (!EVP_PKEY_derive(pctx, dst, &dst_len)) {
-    return -1;
-  }
-
-  return 1;
-}
-
 bool
 QUICCrypto::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
                      uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key, size_t key_len, const uint8_t *iv,

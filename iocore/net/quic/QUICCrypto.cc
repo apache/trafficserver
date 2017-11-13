@@ -27,6 +27,7 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 
+#include "ts/HKDF.h"
 #include "ts/Diags.h"
 #include "ts/string_view.h"
 #include "QUICTypes.h"
@@ -99,6 +100,7 @@ QUICCrypto::QUICCrypto(SSL *ssl, NetVConnectionContext_t nvc_ctx) : _ssl(ssl), _
 
 QUICCrypto::~QUICCrypto()
 {
+  delete this->_hkdf;
   delete this->_client_pp;
   delete this->_server_pp;
 }
@@ -163,6 +165,7 @@ QUICCrypto::setup_session()
   const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
   this->_digest            = _get_handshake_digest(cipher);
   this->_aead              = _get_evp_aead(cipher);
+  this->_hkdf              = new HKDF(this->_digest);
 
   size_t secret_len = EVP_MD_size(this->_digest);
   size_t key_len    = _get_aead_key_len(this->_aead);
@@ -316,13 +319,15 @@ QUICCrypto::_export_client_keymaterial(size_t secret_len, size_t key_len, size_t
     return r;
   }
 
-  r = _hkdf_expand_label(km->key, key_len, km->secret, secret_len, expand_label_key.data(), expand_label_key.size(), this->_digest);
+  r = this->_hkdf->expand_label(km->key, &key_len, km->secret, secret_len, expand_label_key.data(), expand_label_key.size(),
+                                EVP_MD_size(this->_digest));
   if (r != 1) {
     Debug(tag, "Failed to expand label for key");
     return r;
   }
 
-  r = _hkdf_expand_label(km->iv, iv_len, km->secret, secret_len, expand_label_iv.data(), expand_label_iv.size(), this->_digest);
+  r = this->_hkdf->expand_label(km->iv, &iv_len, km->secret, secret_len, expand_label_iv.data(), expand_label_iv.size(),
+                                EVP_MD_size(this->_digest));
   if (r != 1) {
     Debug(tag, "Failed to expand label for iv");
     return r;
@@ -347,13 +352,15 @@ QUICCrypto::_export_server_keymaterial(size_t secret_len, size_t key_len, size_t
     return r;
   }
 
-  r = _hkdf_expand_label(km->key, key_len, km->secret, secret_len, expand_label_key.data(), expand_label_key.size(), this->_digest);
+  r = this->_hkdf->expand_label(km->key, &key_len, km->secret, secret_len, expand_label_key.data(), expand_label_key.size(),
+                                EVP_MD_size(this->_digest));
   if (r != 1) {
     Debug(tag, "Failed to expand label for key");
     return r;
   }
 
-  r = _hkdf_expand_label(km->iv, iv_len, km->secret, secret_len, expand_label_iv.data(), expand_label_iv.size(), this->_digest);
+  r = this->_hkdf->expand_label(km->iv, &iv_len, km->secret, secret_len, expand_label_iv.data(), expand_label_iv.size(),
+                                EVP_MD_size(this->_digest));
   if (r != 1) {
     Debug(tag, "Failed to expand label for iv");
     return r;
@@ -390,21 +397,4 @@ QUICCrypto::_gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, cons
   for (size_t i = 0; i < 8; ++i) {
     nonce[iv_len - 8 + i] ^= p[i];
   }
-}
-
-bool
-QUICCrypto::_gen_info(uint8_t *info, size_t &info_len, const char *label, size_t label_len, size_t length) const
-{
-  info[0] = length / 256;
-  info[1] = length % 256;
-  info[2] = label_len;
-  info_len += 3;
-
-  memcpy(info + info_len, label, label_len);
-  info_len += label_len;
-
-  info[info_len] = 0x00;
-  ++info_len;
-
-  return true;
 }

@@ -44,6 +44,12 @@ libtsutil_la_LIBADD = \
   @LIBCAP@ \
   -lc
 
+if OPENSSL_IS_BORINGSSL
+HKDF_impl = HKDF_boringssl.cc
+else
+HKDF_impl = HKDF_openssl.cc
+endif
+
 libtsutil_la_SOURCES = \
   Allocator.h \
   Arena.cc \
@@ -73,6 +79,9 @@ libtsutil_la_SOURCES = \
   HashSip.cc \
   HashSip.h \
   History.h \
+  HKDF.h \
+  HKDF.cc \
+  $(HKDF_impl) \
   HostLookup.cc \
   HostLookup.h \
   hugepages.cc \
@@ -259,7 +268,8 @@ test_tslib_SOURCES = \
 	unit-tests/test_IpMap.cc \
 	unit-tests/test_layout.cc \
 	unit-tests/test_string_view.cc \
-	unit-tests/test_TextView.cc
+	unit-tests/test_TextView.cc \
+	unit-tests/test_HKDF.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
