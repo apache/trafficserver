@@ -21,7 +21,6 @@ Test.Summary = '''
 Test basic redirection
 '''
 
-# TODO figure out how to use this
 MAX_REDIRECT = 99
 
 Test.SkipUnless(
@@ -33,12 +32,15 @@ Test.ContinueOnFail = True
 ts = Test.MakeATSProcess("ts")
 redirect_serv = Test.MakeOriginServer("re_server")
 dest_serv = Test.MakeOriginServer("dest_server")
+dns = Test.MakeDNServer("dns")
 
 ts.Disk.records_config.update({
     'proxy.config.http.redirection_enabled': 1,
     'proxy.config.http.number_of_redirections': MAX_REDIRECT,
-    'proxy.config.http.cache.http': 0  # ,
-    # 'proxy.config.diags.debug.enabled': 1
+    'proxy.config.http.cache.http': 0,
+    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+    'proxy.config.dns.resolv_conf': 'NULL',
+    'proxy.config.url_remap.remap_required': 0  # need this so the domain gets a chance to be evaluated through DNS
 })
 
 redirect_request_header = {"headers": "GET /redirect HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "5678", "body": ""}
@@ -50,14 +52,21 @@ dest_response_header = {"headers": "HTTP/1.1 204 No Content\r\n\r\n", "timestamp
 redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_response_header)
 dest_serv.addResponse("sessionfile.log", dest_request_header, dest_response_header)
 
-ts.Disk.remap_config.AddLine(
-    'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, redirect_serv.Variables.Port)
-)
+# we don't really need these two lines, since DNS by default will redirect any unknown domains back to 127.0.0.1
+# dns.addRecords(records={"iwillredirect.com":["127.0.0.1"]})
+# dns.addRecords(jsonFile="zone.json")
+
+# if we don't disable remap_required, we can also just remap a domain to the domain recognized by DNS
+# ts.Disk.remap_config.AddLine(
+#     'map http://example.com http://iwillredirect.com:{1}/redirect'.format(redirect_serv.Variables.Port)
+# )
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -i http://127.0.0.1:{0}/redirect'.format(ts.Variables.port)
+tr.Processes.Default.Command = 'curl -i --proxy 127.0.0.1:{0} "http://iwillredirect.com:{1}/redirect"'.format(
+    ts.Variables.port, redirect_serv.Variables.Port)
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(redirect_serv)
 tr.Processes.Default.StartBefore(dest_serv)
+tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.Streams.stdout = "gold/redirect.gold"
 tr.Processes.Default.ReturnCode = 0

@@ -28,7 +28,7 @@ Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server")
-dns = Test.MakeDNServer("dns", filename="dns_file.json")
+dns = Test.MakeDNServer("dns")
 
 Test.testName = ""
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -61,8 +61,6 @@ ts.Disk.remap_config.AddLine(
     'map http://testDNS.com http://audrey.hepburn.com:{0}'.format(server.Variables.Port)
 )
 
-# dns.addRecordtoDNS(filename="dns_file.json",hostname="wonderwoman",list_ip_addr=["127.0.0.1","127.0.1.1"])
-dns.addRecordtoDNS(filename="dns_file.json", hostname="audrey.hepburn.com", list_ip_addr=["127.0.0.1", "127.0.1.1"])
 # call localhost straight
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/" --verbose'.format(ts.Variables.port)
