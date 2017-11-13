@@ -60,7 +60,8 @@ example_Plugins = \
 	thread_1.la \
 	txn_data_sink.la \
 	version.la \
-	disable_http2.la
+	disable_http2.la \
+	verify_cert.la
 
 example_Plugins += \
 	cppapi/AsyncHttpFetch.la \
@@ -123,6 +124,7 @@ ssl_sni_la_LIBADD = $(libtsconfig)
 ssl_sni_whitelist_la_SOURCES = ssl_sni_whitelist/ssl_sni_whitelist.cc
 ssl_sni_whitelist_la_LIBADD = $(libtsconfig)
 disable_http2_la_SOURCES = disable_http2/disable_http2.cc
+verify_cert_la_SOURCES = verify_cert/verify_cert.cc
 statistic_la_SOURCES = statistic/statistic.cc
 thread_1_la_SOURCES = thread_1/thread_1.c
 txn_data_sink_la_SOURCES = txn_data_sink/txn_data_sink.c
