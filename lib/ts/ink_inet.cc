@@ -573,19 +573,19 @@ ats_tcp_somaxconn()
 /* Darwin version ... */
 #if HAVE_SYSCTLBYNAME
   size_t value_size = sizeof(value);
-  if (sysctlbyname("kern.ipc.somaxconn", &value, &value_size, nullptr, 0) == 0) {
-    return value;
+  if (sysctlbyname("kern.ipc.somaxconn", &value, &value_size, nullptr, 0) < 0) {
+    value = 0;
   }
-#endif
-
-  std::ifstream f("/proc/sys/net/ipv4/tcp_max_syn_backlog", std::ifstream::in);
+#else
+  std::ifstream f("/proc/sys/net/core/somaxconn", std::ifstream::in);
   if (f.good()) {
     f >> value;
   }
+#endif
 
   // Default to the compatible value we used before detection. SOMAXCONN is the right
   // macro to use, but most systems set this to 128, which is just too small.
-  if (value <= 0) {
+  if (value <= 0 || value > 65535) {
     value = 1024;
   }
 

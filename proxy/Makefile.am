@@ -153,6 +153,7 @@ traffic_server_SOURCES = \
   ParentConsistentHash.h \
   ParentRoundRobin.cc \
   ParentRoundRobin.h \
+	ParentSelectionStrategy.cc \
   ParentSelection.cc \
   ParentSelection.h \
   Plugin.cc \

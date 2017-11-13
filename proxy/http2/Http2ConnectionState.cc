@@ -1046,8 +1046,6 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   new_stream->is_first_transaction_flag = get_stream_requests() == 0;
   increment_stream_requests();
   ua_session->get_netvc()->add_to_active_queue();
-  // reset the activity timeout everytime a new stream is created
-  ua_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(Http2::active_timeout_in));
 
   return new_stream;
 }
@@ -1116,8 +1114,10 @@ Http2ConnectionState::cleanup_streams()
   if (!is_state_closed()) {
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
 
-    ua_session->get_netvc()->add_to_keep_alive_queue();
-    ua_session->get_netvc()->cancel_active_timeout();
+    UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
+    if (vc && vc->active_timeout_in == 0) {
+      vc->add_to_keep_alive_queue();
+    }
   }
 }
 
@@ -1125,6 +1125,7 @@ bool
 Http2ConnectionState::delete_stream(Http2Stream *stream)
 {
   ink_assert(nullptr != stream);
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   // If stream has already been removed from the list, just go on
   if (!stream_list.in(stream)) {
@@ -1140,10 +1141,12 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
         dependency_tree->deactivate(node, 0);
       }
       dependency_tree->remove(node);
+      // ink_release_assert(dependency_tree->find(stream->get_id()) == nullptr);
     }
+    stream->priority_node = nullptr;
   }
 
-  if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
+  if (stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
     send_rst_stream_frame(stream->get_id(), Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
   }
 
@@ -1166,7 +1169,6 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
       ink_assert(client_streams_out_count > 0);
       --client_streams_out_count;
     }
-    stream_list.remove(stream);
   }
 
   if (ua_session) {
@@ -1176,8 +1178,7 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
     if (total_client_streams_count == 0 && ua_session->is_active()) {
       ua_session->clear_session_active();
       UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
-      if (vc) {
-        vc->cancel_active_timeout();
+      if (vc && vc->active_timeout_in == 0) {
         vc->add_to_keep_alive_queue();
       }
     }

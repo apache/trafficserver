@@ -567,7 +567,7 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
       open_cons(nullptr); // use current target address.
       n_con = 1;
     }
-    e->ethread->schedule_every(this, DNS_PERIOD);
+    e->ethread->schedule_every(this, -DNS_PERIOD);
 
     return EVENT_CONT;
   } else {
@@ -590,7 +590,7 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
   open_cons(&ip.sa, false, n_con);
   ++n_con; // TODO should n_con be zeroed?
 
-  e->schedule_every(DNS_PERIOD);
+  e->schedule_every(-DNS_PERIOD);
   return EVENT_CONT;
 }
 
@@ -1368,7 +1368,7 @@ Lretry:
   if (e->timeout) {
     e->timeout->cancel();
   }
-  e->timeout = h->mutex->thread_holding->schedule_in(e, DNS_PERIOD);
+  e->timeout = h->mutex->thread_holding->schedule_in(e, MUTEX_RETRY_DELAY);
 }
 
 int

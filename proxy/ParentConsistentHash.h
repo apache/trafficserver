@@ -52,6 +52,11 @@ public:
   static const int SECONDARY = 1;
   ParentConsistentHash(ParentRecord *_parent_record);
   ~ParentConsistentHash();
+  pRecord *
+  getParents(ParentResult *result)
+  {
+    return parents[result->last_lookup];
+  }
   uint64_t getPathHash(HttpRequestData *hrdata, ATSHash64 *h);
   void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold, unsigned int retry_time);
   void markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time);
