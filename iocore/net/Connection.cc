@@ -45,7 +45,7 @@ get_listen_backlog()
   int listen_backlog;
 
   REC_ReadConfigInteger(listen_backlog, "proxy.config.net.listen_backlog");
-  return listen_backlog >= 0 ? listen_backlog : ats_tcp_somaxconn();
+  return (0 < listen_backlog && listen_backlog <= 65535) ? listen_backlog : ats_tcp_somaxconn();
 }
 
 //

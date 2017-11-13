@@ -675,18 +675,17 @@ REGRESSION_TEST(Ink_Inet)(RegressionTest *t, int /* atype */, int *pstatus)
 int
 ats_tcp_somaxconn()
 {
-  int fd;
   int value = 0;
 
 /* Darwin version ... */
 #if HAVE_SYSCTLBYNAME
   size_t value_size = sizeof(value);
-  if (sysctlbyname("kern.ipc.somaxconn", &value, &value_size, nullptr, 0) == 0) {
-    return value;
+  if (sysctlbyname("kern.ipc.somaxconn", &value, &value_size, nullptr, 0) < 0) {
+    value = 0;
   }
-#endif
-
-  fd = open("/proc/sys/net/ipv4/tcp_max_syn_backlog", O_RDONLY);
+#else
+  int fd;
+  fd = open("/proc/sys/net/core/somaxconn", O_RDONLY);
   if (fd != -1) {
     textBuffer text(0);
     text.slurp(fd);
@@ -695,11 +694,12 @@ ats_tcp_somaxconn()
     }
     close(fd);
   }
+#endif
 
   // Default to the compatible value we used before detection. SOMAXCONN is the right
   // macro to use, but most systems set this to 128, which is just too small.
-  if (value <= 0) {
-    return 1024;
+  if (value <= 0 || value > 65535) {
+    value = 1024;
   }
 
   return value;
