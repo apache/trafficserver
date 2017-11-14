@@ -9289,12 +9289,13 @@ TSAcceptorGet(TSVConn sslp)
   return ssl_vc ? reinterpret_cast<TSAcceptor>(ssl_vc->accept_object) : nullptr;
 }
 
-extern std::vector<NetAccept *> naVec;
 TSAcceptor
 TSAcceptorGetbyID(int ID)
 {
-  Debug("ssl", "getNetAccept in INK API.cc %p", naVec.at(ID));
-  return reinterpret_cast<TSAcceptor>(naVec.at(ID));
+  SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
+  auto ret = naVec.at(ID);
+  Debug("ssl", "getNetAccept in INK API.cc %p", ret);
+  return reinterpret_cast<TSAcceptor>(ret);
 }
 
 int
@@ -9307,6 +9308,7 @@ TSAcceptorIDGet(TSAcceptor acceptor)
 int
 TSAcceptorCount()
 {
+  SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
   return naVec.size();
 }
 

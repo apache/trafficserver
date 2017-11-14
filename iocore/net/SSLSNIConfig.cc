@@ -42,7 +42,6 @@
 
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 struct NetAccept;
-extern std::vector<NetAccept *> naVec;
 Map<int, SSLNextProtocolSet *> snpsMap;
 extern TunnelHashMap TunnelMap;
 NextHopProperty::NextHopProperty()
@@ -226,6 +225,7 @@ SNIConfig::startup()
 void
 SNIConfig::cloneProtoSet()
 {
+  SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
   for (auto na : naVec) {
     if (na->snpa) {
       auto snps = na->snpa->cloneProtoSet();
