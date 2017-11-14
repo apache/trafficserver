@@ -73,6 +73,7 @@ include experimental/ssl_cert_loader/Makefile.inc
 include experimental/sslheaders/Makefile.inc
 include experimental/stale_while_revalidate/Makefile.inc
 include experimental/stream_editor/Makefile.inc
+include experimental/system_stats/Makefile.inc
 include experimental/ts_lua/Makefile.inc
 include experimental/url_sig/Makefile.inc
 
