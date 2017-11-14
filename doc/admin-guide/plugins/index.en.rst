@@ -142,6 +142,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Signed URLs <url_sig.en>
    SSL Headers <sslheaders.en>
    Stale While Revalidate <stale_while_revalidate.en>
+   System Statistics <system_stats.en>
    TS Lua <ts_lua.en>
    WebP Transform <webp_transform.en>
 
@@ -205,6 +206,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    :deprecated:
 
    Refresh content asynchronously while serving stale data.
+
+:doc:`System Stats <system_stats.en>`
+    Inserts system statistics in to the stats list
 
 :doc:`TS Lua <ts_lua.en>`
    Allows plugins to be written in Lua instead of C code.
