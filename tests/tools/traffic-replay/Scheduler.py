@@ -47,7 +47,6 @@ def LaunchWorkers(path, nProcess, proxy, replay_type, nThread):
         # if QList[0].qsize() > 10 :
         #    break
     #=============================================== Launch Processes
-    print("size", QList[0].qsize())
     for i in range(nProcess):
         QList[i].put('STOP')
     for i in range(nProcess):
