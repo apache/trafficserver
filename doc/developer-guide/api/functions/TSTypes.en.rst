@@ -58,6 +58,8 @@ more widely. Those are described on this page.
 
 .. type:: TSHostLookupResult
 
+   A type representing the result of a call to :func:`TSHostLookup`. Use with :func:`TSHostLookupResultAddrGet`.
+
 .. type:: TSHRTime
 
    "High Resolution Time"
