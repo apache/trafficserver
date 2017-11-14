@@ -97,7 +97,7 @@ public:
   TsConfigBase(TsConfigDescriptor const& d) : descriptor(d) {}
   TsConfigDescriptor const& descriptor; ///< Static schema data.
   Source source = Source::NONE; ///< Where the instance data came from.
-  ~TsConfigBase()
+  virtual ~TsConfigBase()
   {}
   /// Load the instance data from the Lua stack.
   virtual ts::Errata loader(lua_State* s) = 0;
