@@ -42,7 +42,6 @@
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>
 #include "HttpPages.h"
-#include <unordered_map>
 
 #include "IPAllow.h"
 //#include "I_Auth.h"
