@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  An example program that does a null transform of response body content.
 
   @section license License
 
@@ -21,22 +21,11 @@
   limitations under the License.
  */
 
-/* null_transform.c:  an example program that does a null transform
- *                    of response body content
- *
- *
- *
- *	Usage:
- *	  null_transform.so
- *
- *
- */
-
 #include <stdio.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include "ts/ts.h"
-#include "ts/ink_defs.h"
 
 #define PLUGIN_NAME "null_transform"
 
@@ -194,7 +183,7 @@ handle_transform(TSCont contp)
 }
 
 static int
-null_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
+null_transform(TSCont contp, TSEvent event, void *edata)
 {
   /* Check to see if the transformation has been closed by a call to
    * TSVConnClose.
@@ -286,7 +275,7 @@ transform_add(TSHttpTxn txnp)
 }
 
 static int
-transform_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
+transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
 
@@ -308,7 +297,7 @@ transform_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 }
 
 void
-TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
+TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
