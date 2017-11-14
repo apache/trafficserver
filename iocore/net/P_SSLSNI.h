@@ -37,7 +37,6 @@
 #include "ts/MatcherUtils.h"
 #include "openssl/ossl_typ.h"
 #include <vector>
-#include <unordered_map>
 #include <strings.h>
 #include "LuaSNIConfig.h"
 
