@@ -1144,7 +1144,7 @@ ClusterHandler::startClusterEvent(int event, Event *e)
       //  external_incoming_control.
 
       int procs_online    = ink_number_of_processors();
-      int total_callbacks = min(procs_online, MAX_COMPLETION_CALLBACK_EVENTS);
+      int total_callbacks = std::min(procs_online, MAX_COMPLETION_CALLBACK_EVENTS);
       for (int n = 0; n < total_callbacks; ++n) {
         callout_cont[n]   = new ClusterCalloutContinuation(this);
         callout_events[n] = eventProcessor.schedule_every(callout_cont[n], COMPLETION_CALLBACK_PERIOD, ET_NET);

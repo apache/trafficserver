@@ -7388,12 +7388,12 @@ HttpTransact::calculate_freshness_fuzz(State *s, int fresh_limit)
     if (s->txn_conf->freshness_fuzz_min_time > 0) {
       // Complicated calculations to try to find a reasonable fuzz time between fuzz_min_time and fuzz_time
       int fresh_small = (int)rint((double)s->txn_conf->freshness_fuzz_min_time *
-                                  pow(2, min((double)fresh_limit / (double)s->txn_conf->freshness_fuzz_time,
-                                             sqrt((double)s->txn_conf->freshness_fuzz_time))));
-      int fresh_large = max((int)s->txn_conf->freshness_fuzz_min_time,
-                            (int)rint(s->txn_conf->freshness_fuzz_time *
-                                      log10((double)(fresh_limit - s->txn_conf->freshness_fuzz_min_time) / LOG_YEAR)));
-      result = min(fresh_small, fresh_large);
+                                  pow(2, std::min((double)fresh_limit / (double)s->txn_conf->freshness_fuzz_time,
+                                                  sqrt((double)s->txn_conf->freshness_fuzz_time))));
+      int fresh_large = std::max((int)s->txn_conf->freshness_fuzz_min_time,
+                                 (int)rint(s->txn_conf->freshness_fuzz_time *
+                                           log10((double)(fresh_limit - s->txn_conf->freshness_fuzz_min_time) / LOG_YEAR)));
+      result = std::min(fresh_small, fresh_large);
       DebugTxn("http_match", "calculate_freshness_fuzz using min/max --- freshness fuzz = %d", result);
     } else {
       result = s->txn_conf->freshness_fuzz_time;
@@ -7473,8 +7473,8 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   //  documents at the same time
   if ((s->txn_conf->freshness_fuzz_time > 0) && (s->txn_conf->freshness_fuzz_prob > 0.0)) {
     fresh_limit = fresh_limit - calculate_freshness_fuzz(s, fresh_limit);
-    fresh_limit = max(0, fresh_limit);
-    fresh_limit = min((int)s->txn_conf->cache_guaranteed_max_lifetime, fresh_limit);
+    fresh_limit = std::max(0, fresh_limit);
+    fresh_limit = std::min((int)s->txn_conf->cache_guaranteed_max_lifetime, fresh_limit);
   }
 
   current_age = HttpTransactHeaders::calculate_document_age(s->request_sent_time, s->response_received_time, cached_obj_response,

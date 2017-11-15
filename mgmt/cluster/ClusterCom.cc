@@ -658,7 +658,7 @@ ClusterCom::generateClusterDelta()
 
     // is the node alive?
     if (tmp->num_virt_addrs != -1) {
-      highest_delta = max(highest_delta, tmp->delta);
+      highest_delta = std::max(highest_delta, tmp->delta);
     }
   }
   ink_mutex_release(&(mutex));
