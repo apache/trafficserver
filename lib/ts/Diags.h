@@ -38,7 +38,6 @@
 #include "ink_mutex.h"
 #include "Regex.h"
 #include "ink_apidefs.h"
-#include "ContFlags.h"
 #include "ink_inet.h"
 #include "BaseLogFile.h"
 #include "SourceLocation.h"
@@ -128,13 +127,6 @@ public:
   ///////////////////////////
   // conditional debugging //
   ///////////////////////////
-
-  bool
-  get_override() const
-  {
-    return get_cont_flag(ContFlags::DEBUG_OVERRIDE);
-  }
-
   bool
   on(DiagsTagType mode = DiagsTagType_Debug) const
   {

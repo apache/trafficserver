@@ -397,7 +397,6 @@ NetHandler::process_ready_list()
   // UnixNetVConnection *
   while ((vc = read_ready_list.dequeue())) {
     // Initialize the thread-local continuation flags
-    set_cont_flags(vc->control_flags);
     if (vc->closed)
       free_netvc(vc);
     else if (vc->read.enabled && vc->read.triggered)
@@ -414,7 +413,6 @@ NetHandler::process_ready_list()
     }
   }
   while ((vc = write_ready_list.dequeue())) {
-    set_cont_flags(vc->control_flags);
     if (vc->closed)
       free_netvc(vc);
     else if (vc->write.enabled && vc->write.triggered)

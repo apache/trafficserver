@@ -5836,9 +5836,7 @@ HttpSM::attach_server_session(HttpServerSession *s)
   server_session        = s;
   server_transact_count = server_session->transact_count++;
   // Propagate the per client IP debugging
-  if (ua_session) {
-    s->get_netvc()->control_flags = get_cont_flags();
-  } else { // If there is no ua_session no sense in continuing to attach the server session
+  if (ua_session == nullptr) {
     return;
   }
 
