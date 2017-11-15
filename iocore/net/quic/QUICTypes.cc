@@ -147,20 +147,6 @@ QUICTypeUtil::write_uint_as_nbytes(uint64_t value, uint8_t n, uint8_t *buf, size
   *len = n;
 }
 
-void
-fnv1a(const uint8_t *data, size_t len, uint8_t *hash)
-{
-  uint64_t h     = 0xcbf29ce484222325ULL;
-  uint64_t prime = 0x100000001b3ULL;
-  size_t n;
-
-  for (size_t i = 0; i < len; ++i) {
-    h ^= data[i];
-    h *= prime;
-  }
-  return QUICTypeUtil::write_uint_as_nbytes(h, 8, hash, &n);
-}
-
 uint16_t
 QUICError::code()
 {

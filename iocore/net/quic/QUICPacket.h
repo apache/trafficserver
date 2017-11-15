@@ -39,13 +39,14 @@
 class QUICPacketHeader
 {
 public:
-  QUICPacketHeader(const uint8_t *buf, size_t len, QUICPacketNumber base) : _buf(buf), _base_packet_number(base) {}
+  QUICPacketHeader(const uint8_t *buf, size_t len, QUICPacketNumber base) : _buf(buf), _buf_len(len), _base_packet_number(base) {}
   const uint8_t *buf();
   virtual QUICPacketType type() const            = 0;
   virtual QUICConnectionId connection_id() const = 0;
   virtual QUICPacketNumber packet_number() const = 0;
   virtual QUICVersion version() const            = 0;
   virtual const uint8_t *payload() const         = 0;
+  uint16_t payload_size() const;
   virtual QUICKeyPhase key_phase() const         = 0;
   virtual uint16_t length() const                = 0;
   virtual void store(uint8_t *buf, size_t *len) const = 0;
@@ -65,9 +66,10 @@ protected:
   QUICPacketHeader(){};
 
   const uint8_t *_buf                  = nullptr;
+  size_t _buf_len = 0;
   ats_unique_buf _payload              = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   QUICPacketType _type                 = QUICPacketType::UNINITIALIZED;
-  QUICKeyPhase _key_phase              = QUICKeyPhase::PHASE_UNINITIALIZED;
+  QUICKeyPhase _key_phase              = QUICKeyPhase::CLEARTEXT;
   QUICConnectionId _connection_id      = 0;
   QUICPacketNumber _packet_number      = 0;
   QUICPacketNumber _base_packet_number = 0;
@@ -129,7 +131,7 @@ class QUICPacket
 {
 public:
   QUICPacket(){};
-  QUICPacket(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number);
+  QUICPacket(QUICPacketHeader *header, ats_unique_buf unprotected_payload, size_t unprotected_payload_len, QUICPacketNumber base_packet_number);
   QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
              QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len, bool retransmittable);
   QUICPacket(QUICPacketType type, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, ats_unique_buf payload,
@@ -152,7 +154,6 @@ public:
   uint16_t payload_size() const;
   void store(uint8_t *buf, size_t *len) const;
   void store_header(uint8_t *buf, size_t *len) const;
-  bool has_valid_fnv1a_hash() const;
   QUICKeyPhase key_phase() const;
   static uint8_t calc_packet_number_len(QUICPacketNumber num, QUICPacketNumber base);
   static bool encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len);
@@ -164,6 +165,8 @@ private:
   ats_unique_buf _protected_payload = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   size_t _size                      = 0;
   size_t _protected_payload_size    = 0;
+  ats_unique_buf _unprotected_payload = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
+  size_t _unprotected_payload_len = 0;
   QUICPacketHeader *_header;
   bool _is_retransmittable = false;
 };
@@ -205,7 +208,7 @@ public:
 class QUICPacketFactory
 {
 public:
-  static QUICPacketUPtr create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number);
+  QUICPacketUPtr create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number, QUICPacketCreationResult &result);
   QUICPacketUPtr create_version_negotiation_packet(const QUICPacket *packet_sent_by_client, QUICPacketNumber base_packet_number);
   QUICPacketUPtr create_server_cleartext_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                 ats_unique_buf payload, size_t len, bool retransmittable);
@@ -222,5 +225,3 @@ private:
   QUICCrypto *_crypto  = nullptr;
   QUICPacketNumberGenerator _packet_number_generator;
 };
-
-void fnv1a(const uint8_t *data, size_t len, uint8_t *hash);

@@ -103,9 +103,10 @@ class SSLNextProtocolSet;
  *  v
  * state_handshake()
  *  | READ:
- *  |   _state_handshake_process_initial_client_packet()
- *  |   _state_handshake_process_client_cleartext_packet()
- *  |   _state_handshake_process_zero_rtt_protected_packet()
+ *  |   _state_handshake_process__packet()
+ *  |     _state_handshake_process_initial_client_packet()
+ *  |     _state_handshake_process_client_cleartext_packet()
+ *  |     _state_handshake_process_zero_rtt_protected_packet()
  *  | WRITE:
  *  |   _state_common_send_packet()
  *  v
@@ -236,6 +237,7 @@ private:
 
   QUICErrorUPtr _recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_numm);
 
+  QUICErrorUPtr _state_handshake_process_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_initial_client_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
@@ -249,7 +251,7 @@ private:
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   void _handle_error(QUICErrorUPtr error);
-  QUICPacketUPtr _dequeue_recv_packet();
+  QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
 
   QUICStatelessToken _token;
 };

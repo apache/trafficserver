@@ -381,36 +381,15 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
-    QUICPacketUPtr p = this->_dequeue_recv_packet();
-    if (!p) {
-      break;
+    QUICPacketCreationResult result;
+    QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
+    if (result == QUICPacketCreationResult::NOT_READY) {
+      error = QUICErrorUPtr(new QUICNoError());
+    } else if (result == QUICPacketCreationResult::FAILED) {
+      error = QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
+    } else {
+      error = this->_state_handshake_process_packet(std::move(packet));
     }
-    net_activity(this, this_ethread());
-
-    switch (p->type()) {
-    case QUICPacketType::CLIENT_INITIAL: {
-      error = this->_state_handshake_process_initial_client_packet(std::move(p));
-      break;
-    }
-    case QUICPacketType::CLIENT_CLEARTEXT: {
-      error = this->_state_handshake_process_client_cleartext_packet(std::move(p));
-      break;
-    }
-    case QUICPacketType::ZERO_RTT_PROTECTED: {
-      error = this->_state_handshake_process_zero_rtt_protected_packet(std::move(p));
-      break;
-    }
-    case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
-    case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
-      // Postpone processing the packet
-      this->_quic_packet_recv_queue.push(std::move(p));
-      this_ethread()->schedule_imm_local(this, event);
-      break;
-    default:
-      error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
-      break;
-    }
-
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
@@ -640,6 +619,27 @@ QUICNetVConnection::largest_acked_packet_number()
 }
 
 QUICErrorUPtr
+QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
+{
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  switch (packet->type()) {
+  case QUICPacketType::CLIENT_INITIAL:
+    error = this->_state_handshake_process_initial_client_packet(std::move(packet));
+    break;
+  case QUICPacketType::CLIENT_CLEARTEXT:
+    error = this->_state_handshake_process_client_cleartext_packet(std::move(packet));
+    break;
+  case QUICPacketType::ZERO_RTT_PROTECTED:
+    error = this->_state_handshake_process_zero_rtt_protected_packet(std::move(packet));
+    break;
+  default:
+    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
+    break;
+  }
+  return error;
+}
+
+QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPtr packet)
 {
   if (packet->size() < MINIMUM_INITIAL_CLIENT_PACKET_SIZE) {
@@ -651,23 +651,17 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPt
   // Start handshake
   QUICErrorUPtr error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
   if (this->_handshake_handler->is_version_negotiated()) {
-    // Check integrity (QUIC-TLS-04: 6.1. Integrity Check Processing)
-    if (packet->has_valid_fnv1a_hash()) {
-      bool should_send_ack;
-      error = this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size(), should_send_ack);
-      if (error->cls != QUICErrorClass::NONE) {
-        return error;
-      }
-      error = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
-      Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64,
-            static_cast<uint64_t>(this->_quic_connection_id), this->_local_flow_controller->current_offset(),
-            this->_local_flow_controller->current_limit());
-      if (error->cls != QUICErrorClass::NONE) {
-        return error;
-      }
-    } else {
-      DebugQUICCon("Invalid FNV-1a hash value");
-      // Discard the packet
+    bool should_send_ack;
+    error = this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size(), should_send_ack);
+    if (error->cls != QUICErrorClass::NONE) {
+      return error;
+    }
+    error = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
+    Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64,
+          static_cast<uint64_t>(this->_quic_connection_id), this->_local_flow_controller->current_offset(),
+          this->_local_flow_controller->current_limit());
+    if (error->cls != QUICErrorClass::NONE) {
+      return error;
     }
   }
   return error;
@@ -676,23 +670,12 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPt
 QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet)
 {
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
-
-  // The payload of this packet contains STREAM frames and could contain PADDING and ACK frames
-  if (packet->has_valid_fnv1a_hash()) {
-    error = this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
-  } else {
-    DebugQUICCon("Invalid FNV-1a hash value");
-    // Discard the packet
-  }
-  return error;
+  return this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
 }
 
 QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet)
 {
-  // TODO: Decrypt the packet
-  // decrypt(payload, p);
   // TODO: Not sure what we have to do
   return QUICErrorUPtr(new QUICNoError());
 }
@@ -700,29 +683,19 @@ QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(QUICPacke
 QUICErrorUPtr
 QUICNetVConnection::_state_connection_established_process_packet(QUICPacketUPtr packet)
 {
-  // TODO: fix size
-  size_t max_plain_txt_len = 2048;
-  ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
-  size_t plain_txt_len     = 0;
-
-  if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, packet->payload(), packet->payload_size(),
-                             packet->packet_number(), packet->header(), packet->header_size(), packet->key_phase())) {
-    DebugQUICCon("Decrypt Packet, pkt_num: %" PRIu64 ", header_len: %hu, payload_len: %zu", packet->packet_number(),
-                 packet->header_size(), plain_txt_len);
-    return this->_recv_and_ack(plain_txt.get(), plain_txt_len, packet->packet_number());
-  } else {
-    DebugQUICCon("Decrypt Error");
-    return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
-  }
+  return this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
 }
 
 QUICErrorUPtr
 QUICNetVConnection::_state_common_receive_packet()
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
-  QUICPacketUPtr p    = this->_dequeue_recv_packet();
-  if (!p) {
-    return error;
+  QUICPacketCreationResult result;
+  QUICPacketUPtr p    = this->_dequeue_recv_packet(result);
+  if (result == QUICPacketCreationResult::FAILED) {
+    return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
+  } else if (result == QUICPacketCreationResult::NOT_READY) {
+    return QUICErrorUPtr(new QUICNoError());
   }
   net_activity(this, this_ethread());
 
@@ -964,32 +937,39 @@ QUICNetVConnection::_handle_error(QUICErrorUPtr error)
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_dequeue_recv_packet()
+QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
 {
   QUICPacketUPtr quic_packet = QUICPacketUPtr(nullptr, &QUICPacketDeleter::delete_null_packet);
   UDPPacket *udp_packet      = this->_packet_recv_queue.dequeue();
-  if (udp_packet) {
-    ats_unique_buf pkt = ats_unique_malloc(udp_packet->getPktLength());
-    IOBufferBlock *b   = udp_packet->getIOBlockChain();
-    size_t written     = 0;
-    while (b) {
-      memcpy(pkt.get() + written, b->buf(), b->read_avail());
-      written += b->read_avail();
-      b = b->next.get();
-    }
+  if (!udp_packet) {
+    result = QUICPacketCreationResult::NOT_READY;
+    return quic_packet;
+  }
+  net_activity(this, this_ethread());
+
+  // Create a QUIC packet
+  ats_unique_buf pkt = ats_unique_malloc(udp_packet->getPktLength());
+  IOBufferBlock *b   = udp_packet->getIOBlockChain();
+  size_t written     = 0;
+  while (b) {
+    memcpy(pkt.get() + written, b->buf(), b->read_avail());
+    written += b->read_avail();
+    b = b->next.get();
+  }
+  quic_packet = this->_packet_factory.create(std::move(pkt), written, this->largest_received_packet_number(), result);
+  if (result == QUICPacketCreationResult::NOT_READY) {
+    DebugQUICCon("Not ready to decrypt the packet");
+    // Retry later
+    this->_packet_recv_queue.enqueue(udp_packet);
+    this_ethread()->schedule_imm_local(this, QUIC_EVENT_PACKET_READ_READY);
+  } else {
     udp_packet->free();
-    quic_packet = QUICPacketFactory::create(std::move(pkt), written, this->largest_received_packet_number());
+    if (result == QUICPacketCreationResult::SUCCESS) {
+      DebugQUICCon("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()), quic_packet->packet_number(), quic_packet->size());
+    } else {
+      DebugQUICCon("Failed to decrypt the packet");
+    }
   }
 
-  if (this->_quic_packet_recv_queue.size() > 0) {
-    QUICPacketUPtr p = std::move(this->_quic_packet_recv_queue.front());
-    this->_quic_packet_recv_queue.pop();
-    this->_quic_packet_recv_queue.push(std::move(quic_packet));
-    quic_packet.reset(p.release());
-  }
-  if (quic_packet) {
-    DebugQUICCon("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
-                 quic_packet->packet_number(), quic_packet->size());
-  }
   return quic_packet;
 }

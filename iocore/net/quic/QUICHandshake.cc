@@ -89,6 +89,7 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
   this->_crypto             = new QUICCrypto(this->_ssl, qc->direction());
   this->_version_negotiator = new QUICVersionNegotiator();
 
+  this->_crypto->initialize_key_materials(this->_client_qc->connection_id());
   this->_load_local_transport_parameters();
 
   SET_HANDLER(&QUICHandshake::state_read_client_hello);
@@ -321,12 +322,10 @@ QUICHandshake::_process_client_hello()
   I_WANNA_DUMP_THIS_BUF(msg, msg_len);
   // <----- DEBUG -----
 
-  QUICCrypto *crypto = this->_crypto;
-
   uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t server_hello_len                     = 0;
   bool result                                 = false;
-  result = crypto->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, msg, msg_len);
+  result = this->_crypto->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, msg, msg_len);
 
   if (result) {
     // ----- DEBUG ----->
@@ -365,12 +364,10 @@ QUICHandshake::_process_client_finished()
   I_WANNA_DUMP_THIS_BUF(msg, msg_len);
   // <----- DEBUG -----
 
-  QUICCrypto *crypto = this->_crypto;
-
   uint8_t out[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t out_len                     = 0;
   bool result                        = false;
-  result                             = crypto->handshake(out, out_len, MAX_HANDSHAKE_MSG_LEN, msg, msg_len);
+  result                             = this->_crypto->handshake(out, out_len, MAX_HANDSHAKE_MSG_LEN, msg, msg_len);
 
   if (result) {
     // ----- DEBUG ----->
@@ -398,10 +395,7 @@ QUICHandshake::_process_client_finished()
 QUICErrorUPtr
 QUICHandshake::_process_handshake_complete()
 {
-  QUICCrypto *crypto = this->_crypto;
-  int r              = crypto->setup_session();
-
-  if (r) {
+  if (this->_crypto->update_key_materials()) {
     DebugQHS("Keying Materials are exported");
   } else {
     DebugQHS("Failed to export Keying Materials");

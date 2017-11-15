@@ -26,6 +26,7 @@ check_PROGRAMS = \
   test_QUICStream \
   test_QUICStreamManager \
   test_QUICTransportParameters \
+  test_QUICKeyGenerator \
   test_QUICCrypto \
   test_QUICLossDetector \
   test_QUICTypeUtil \
@@ -50,8 +51,10 @@ AM_CPPFLAGS += \
   @OPENSSL_INCLUDES@
 
 if OPENSSL_IS_BORINGSSL
+QUICKeyGenerator_impl = ../QUICKeyGenerator_boringssl.cc
 QUICCrypto_impl = ../QUICCrypto_boringssl.cc
 else
+QUICKeyGenerator_impl = ../QUICKeyGenerator_openssl.cc
 QUICCrypto_impl = ../QUICCrypto_openssl.cc
 endif
 
@@ -315,6 +318,29 @@ test_QUICTransportParameters_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a
+
+#
+# test_QUICKeyGenerator
+#
+test_QUICKeyGenerator_CPPFLAGS = \
+  $(AM_CPPFLAGS)
+
+test_QUICKeyGenerator_LDFLAGS = \
+  @AM_LDFLAGS@ \
+  @OPENSSL_LDFLAGS@
+
+test_QUICKeyGenerator_LDADD = \
+  @OPENSSL_LIBS@ \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a
+
+test_QUICKeyGenerator_SOURCES = \
+  main.cc \
+  test_QUICKeyGenerator.cc \
+  ../QUICKeyGenerator.cc \
+  $(QUICKeyGenerator_impl) \
+  ../QUICTypes.cc
 
 #
 # test_QUICCrypto

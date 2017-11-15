@@ -97,6 +97,7 @@ iocore/net/quic/test/test_QUICStream
 iocore/net/quic/test/test_QUICStreamState
 iocore/net/quic/test/test_QUICStreamManager
 iocore/net/quic/test/test_QUICTransportParameters
+iocore/net/quic/test/test_QUICKeyGenerator
 iocore/net/quic/test/test_QUICCrypto
 iocore/net/quic/test/test_QUICLossDetector
 iocore/net/quic/test/test_QUICTypeUtil

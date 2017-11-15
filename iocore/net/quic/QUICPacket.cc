@@ -174,6 +174,16 @@ QUICPacketLongHeader::payload() const
   }
 }
 
+uint16_t
+QUICPacketHeader::payload_size() const
+{
+  if (this->_buf) {
+    return this->_buf_len - this->length();
+  } else {
+    return this->_payload_len;
+  }
+}
+
 bool
 QUICPacketLongHeader::has_key_phase() const
 {
@@ -233,7 +243,6 @@ QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICPacketNumb
     this->_key_phase = QUICKeyPhase::PHASE_1;
   } else {
     ink_assert(false);
-    this->_key_phase = QUICKeyPhase::PHASE_UNINITIALIZED;
   }
 }
 
@@ -254,11 +263,8 @@ QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICConnection
     this->_key_phase = QUICKeyPhase::PHASE_0;
   } else if (type == QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
     this->_key_phase = QUICKeyPhase::PHASE_1;
-  } else if (type == QUICPacketType::STATELESS_RESET) {
-    this->_key_phase = QUICKeyPhase::PHASE_UNINITIALIZED;
   } else {
     ink_assert(false);
-    this->_key_phase = QUICKeyPhase::PHASE_UNINITIALIZED;
   }
 }
 
@@ -445,10 +451,12 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
 //
 // QUICPacket
 //
-QUICPacket::QUICPacket(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number)
+QUICPacket::QUICPacket(QUICPacketHeader *header, ats_unique_buf unprotected_payload, size_t unprotected_payload_len, QUICPacketNumber base_packet_number)
 {
-  this->_size   = len;
-  this->_header = QUICPacketHeader::load(reinterpret_cast<const uint8_t *>(buf.release()), len, base_packet_number);
+  this->_size   = unprotected_payload_len;
+  this->_header = header;
+  this->_unprotected_payload     = std::move(unprotected_payload);
+  this->_unprotected_payload_len = unprotected_payload_len;
 }
 
 QUICPacket::QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
@@ -577,7 +585,6 @@ QUICPacket::header_size() const
 uint16_t
 QUICPacket::payload_size() const
 {
-  // FIXME Protected packets may / may not contain something at the end
   if (this->type() == QUICPacketType::STATELESS_RESET) {
     return this->_size - this->_header->length();
   } else if (this->type() != QUICPacketType::ZERO_RTT_PROTECTED && this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0 &&
@@ -608,8 +615,8 @@ QUICPacket::store(uint8_t *buf, size_t *len) const
     memcpy(buf + *len, this->payload(), this->payload_size());
     *len += this->payload_size();
 
-    fnv1a(buf, *len, buf + *len);
-    *len += FNV1A_HASH_LEN;
+    // fnv1a(buf, *len, buf + *len);
+    // *len += FNV1A_HASH_LEN;
   } else {
     ink_assert(this->_protected_payload);
     memcpy(buf + *len, this->_protected_payload.get(), this->_protected_payload_size);
@@ -621,14 +628,6 @@ void
 QUICPacket::store_header(uint8_t *buf, size_t *len) const
 {
   this->_header->store(buf, len);
-}
-
-bool
-QUICPacket::has_valid_fnv1a_hash() const
-{
-  uint8_t hash[FNV1A_HASH_LEN];
-  fnv1a(reinterpret_cast<const uint8_t *>(this->_header->buf()), this->size() - FNV1A_HASH_LEN, hash);
-  return memcmp(this->_header->buf() + this->size() - FNV1A_HASH_LEN, hash, 8) == 0;
 }
 
 void
@@ -691,10 +690,55 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 // QUICPacketFactory
 //
 QUICPacketUPtr
-QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number)
+QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number, QUICPacketCreationResult &result)
 {
-  QUICPacket *packet = quicPacketAllocator.alloc();
-  new (packet) QUICPacket(std::move(buf), len, base_packet_number);
+  size_t max_plain_txt_len = 2048;
+  ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
+  size_t plain_txt_len     = 0;
+
+  QUICPacketHeader *header = QUICPacketHeader::load(buf.release(), len, base_packet_number);
+
+  switch (header->type()) {
+  case QUICPacketType::VERSION_NEGOTIATION:
+  case QUICPacketType::STATELESS_RESET:
+    // These packets are unprotected. Just copy the payload
+    memcpy(plain_txt.get(), header->payload(), header->payload_size());
+    plain_txt_len = header->payload_size();
+    result = QUICPacketCreationResult::SUCCESS;
+    break;
+  case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
+  case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
+    if (this->_crypto->is_handshake_finished()) {
+      if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
+                                 header->packet_number(), header->buf(), header->length(), header->key_phase())) {
+        result = QUICPacketCreationResult::SUCCESS;
+      } else {
+        result = QUICPacketCreationResult::FAILED;
+      }
+    } else {
+      result = QUICPacketCreationResult::NOT_READY;
+    }
+    break;
+  case QUICPacketType::CLIENT_INITIAL:
+  case QUICPacketType::CLIENT_CLEARTEXT:
+  case QUICPacketType::SERVER_CLEARTEXT:
+      if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
+                                 header->packet_number(), header->buf(), header->length(), QUICKeyPhase::CLEARTEXT)) {
+        result = QUICPacketCreationResult::SUCCESS;
+      } else {
+        result = QUICPacketCreationResult::FAILED;
+      }
+  default:
+    result = QUICPacketCreationResult::FAILED;
+    break;
+  }
+
+  QUICPacket *packet = nullptr;
+  if (result == QUICPacketCreationResult::SUCCESS) {
+    packet = quicPacketAllocator.alloc();
+    new (packet) QUICPacket(header, std::move(plain_txt), plain_txt_len, base_packet_number);
+  }
+
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 

@@ -25,12 +25,16 @@
 
 HKDF::HKDF(const EVP_MD *digest) : _digest(digest)
 {
-  this->_pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
+  // XXX We cannot reuse pctx now due to a bug in OpenSSL
+  // this->_pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
 }
 
 int
 HKDF::extract(uint8_t *dst, size_t *dst_len, const uint8_t *salt, size_t salt_len, const uint8_t *ikm, size_t ikm_len)
 {
+  // XXX See comments in the constructor
+  this->_pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
+
   if (EVP_PKEY_derive_init(this->_pctx) != 1) {
     return -1;
   }
@@ -49,13 +53,23 @@ HKDF::extract(uint8_t *dst, size_t *dst_len, const uint8_t *salt, size_t salt_le
   if (EVP_PKEY_derive(this->_pctx, dst, dst_len) != 1) {
     return -6;
   }
+
+  /// XXX See comments in constuctor.
+  EVP_PKEY_CTX_free(this->_pctx);
+
   return 1;
+
+  // XXX See comments in the constructor
+  EVP_PKEY_CTX_free(this->_pctx);
 }
 
 int
 HKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *prk, size_t prk_len, const uint8_t *info, size_t info_len,
              uint16_t length)
 {
+  // XXX See comments in the constructor
+  this->_pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
+
   if (EVP_PKEY_derive_init(this->_pctx) != 1) {
     return -1;
   }
@@ -75,6 +89,9 @@ HKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *prk, size_t prk_len, 
   if (EVP_PKEY_derive(this->_pctx, dst, dst_len) != 1) {
     return -7;
   }
+
+  // XXX See comments in the constructor
+  EVP_PKEY_CTX_free(this->_pctx);
 
   return 1;
 }

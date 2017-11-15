@@ -36,8 +36,10 @@ noinst_LIBRARIES = libquic.a
 
 if OPENSSL_IS_BORINGSSL
 QUICCrypto_impl = QUICCrypto_boringssl.cc
+QUICKeyGenerator_impl = QUICKeyGenerator_boringssl.cc
 else
 QUICCrypto_impl = QUICCrypto_openssl.cc
+QUICKeyGenerator_impl = QUICKeyGenerator_openssl.cc
 endif
 
 libquic_a_SOURCES = \
@@ -56,6 +58,9 @@ libquic_a_SOURCES = \
   QUICHandshake.cc \
   QUICCrypto.cc \
   $(QUICCrypto_impl) \
+  QUICKeyGenerator.cc \
+  $(QUICKeyGenerator_impl) \
+  QUICKeyGenerator.cc \
   QUICTransportParameters.cc \
   QUICAckFrameCreator.cc \
   QUICConfig.cc \

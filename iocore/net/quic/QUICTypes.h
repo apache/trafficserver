@@ -113,7 +113,13 @@ enum class QUICVersionNegotiationStatus {
 enum class QUICKeyPhase : int {
   PHASE_0 = 0,
   PHASE_1,
-  PHASE_UNINITIALIZED,
+  CLEARTEXT,
+};
+
+enum class QUICPacketCreationResult {
+  SUCCESS,
+  FAILED,
+  NOT_READY,
 };
 
 enum class QUICErrorClass {

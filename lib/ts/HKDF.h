@@ -40,7 +40,7 @@ public:
 
   // This function is technically a part of TLS 1.3
   int expand_label(uint8_t *dst, size_t *dst_len, const uint8_t *secret, size_t secret_len, const char *label, size_t label_len,
-                   uint16_t length);
+                   const char *hash_value, size_t hash_value_len, uint16_t length);
 
 private:
   const EVP_MD *_digest = nullptr;
