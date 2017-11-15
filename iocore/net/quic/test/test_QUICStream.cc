@@ -179,7 +179,8 @@ TEST_CASE("QUICStream", "[quic]")
     CHECK(error->cls == QUICErrorClass::NONE);
     // this should exceed the limit
     error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 8192));
-    CHECK(error->code == QUICErrorCode::FLOW_CONTROL_ERROR);
+    CHECK(error->cls == QUICErrorClass::TRANSPORT);
+    CHECK(error->trans_error_code == QUICTransErrorCode::FLOW_CONTROL_ERROR);
   }
 
   SECTION("QUICStream_flow_control_remote", "[quic]")

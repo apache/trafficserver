@@ -301,7 +301,11 @@ QUICNetVConnection::close(QUICConnectionErrorUPtr error)
   } else {
     DebugQUICCon("Enter state_connection_closing");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
-    this->transmit_frame(QUICFrameFactory::create_connection_close_frame(std::move(error)));
+    if (error->cls == QUICErrorClass::APPLICATION) {
+      this->transmit_frame(QUICFrameFactory::create_application_close_frame(std::move(error)));
+    } else {
+      this->transmit_frame(QUICFrameFactory::create_connection_close_frame(std::move(error)));
+    }
   }
 }
 
@@ -403,7 +407,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
       this_ethread()->schedule_imm_local(this, event);
       break;
     default:
-      error = QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR));
+      error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
       break;
     }
 
@@ -450,8 +454,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
     Continuation *endpoint = this->_next_protocol_set->findEndpoint(app_name, app_name_len);
     if (endpoint == nullptr) {
-      this->_handle_error(
-        QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::VERSION_NEGOTIATION_ERROR)));
+      this->_handle_error(QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR)));
     } else {
       endpoint->handleEvent(NET_EVENT_ACCEPT, this);
     }
@@ -489,7 +492,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   }
 
   if (error->cls != QUICErrorClass::NONE) {
-    DebugQUICCon("QUICError: cls=%u, code=0x%x", static_cast<unsigned int>(error->cls), static_cast<unsigned int>(error->code));
+    DebugQUICCon("QUICError: cls=%u, code=0x%" PRIu16, static_cast<unsigned int>(error->cls), error->code());
     this->_handle_error(std::move(error));
   }
 
@@ -708,8 +711,8 @@ QUICNetVConnection::_state_connection_established_process_packet(QUICPacketUPtr 
                  packet->header_size(), plain_txt_len);
     return this->_recv_and_ack(plain_txt.get(), plain_txt_len, packet->packet_number());
   } else {
-    DebugQUICCon("CRYPTOGRAPHIC Error");
-    return QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::CRYPTOGRAPHIC_ERROR));
+    DebugQUICCon("Decrypt Error");
+    return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
   }
 }
 
@@ -732,7 +735,7 @@ QUICNetVConnection::_state_common_receive_packet()
     // FIXME Just ignore for now but it has to be acked (GitHub#2609)
     break;
   default:
-    error = QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::INTERNAL_ERROR));
+    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
     break;
   }
   return error;
@@ -941,8 +944,14 @@ QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTr
 void
 QUICNetVConnection::_handle_error(QUICErrorUPtr error)
 {
-  DebugQUICCon("QUICError: %s (%u), %s (0x%x)", QUICDebugNames::error_class(error->cls), static_cast<unsigned int>(error->cls),
-               QUICDebugNames::error_code(error->code), static_cast<unsigned int>(error->code));
+  if (error->cls == QUICErrorClass::APPLICATION) {
+    DebugQUICCon("QUICError: %s (%u), APPLICATION ERROR (0x%" PRIu16 ")", QUICDebugNames::error_class(error->cls),
+                 static_cast<unsigned int>(error->cls), error->code());
+  } else {
+    DebugQUICCon("QUICError: %s (%u), %s (0x%" PRIu16 ")", QUICDebugNames::error_class(error->cls),
+                 static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->trans_error_code), error->code());
+  }
+
   if (dynamic_cast<QUICStreamError *>(error.get()) != nullptr) {
     // Stream Error
     QUICStreamError *serror = static_cast<QUICStreamError *>(error.release());

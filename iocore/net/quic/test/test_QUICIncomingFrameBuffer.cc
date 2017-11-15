@@ -45,7 +45,7 @@ TEST_CASE("QUICIncomingFrameBuffer_fin_offset", "[quic]")
   buffer.insert(stream1_frame_1_r);
   buffer.insert(stream1_frame_2_r);
   err = buffer.insert(stream1_frame_3_r);
-  CHECK(err->code == QUICErrorCode::FINAL_OFFSET_ERROR);
+  CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
 
   QUICIncomingFrameBuffer buffer2(stream);
 
@@ -53,13 +53,13 @@ TEST_CASE("QUICIncomingFrameBuffer_fin_offset", "[quic]")
   buffer2.insert(stream1_frame_0_r);
   buffer2.insert(stream1_frame_1_r);
   err = buffer2.insert(stream1_frame_2_r);
-  CHECK(err->code == QUICErrorCode::FINAL_OFFSET_ERROR);
+  CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
 
   QUICIncomingFrameBuffer buffer3(stream);
 
   buffer3.insert(stream1_frame_4_r);
   err = buffer3.insert(stream1_frame_3_r);
-  CHECK(err->code == QUICErrorCode::FINAL_OFFSET_ERROR);
+  CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
 
   delete stream;
 }

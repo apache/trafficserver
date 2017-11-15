@@ -77,10 +77,16 @@ QUICTypeUtil::read_QUICOffset(const uint8_t *buf, uint8_t len)
   return static_cast<QUICOffset>(read_nbytes_as_uint(buf, len));
 }
 
-QUICErrorCode
-QUICTypeUtil::read_QUICErrorCode(const uint8_t *buf)
+QUICTransErrorCode
+QUICTypeUtil::read_QUICTransErrorCode(const uint8_t *buf)
 {
-  return static_cast<QUICErrorCode>(read_nbytes_as_uint(buf, 4));
+  return static_cast<QUICTransErrorCode>(read_nbytes_as_uint(buf, 2));
+}
+
+QUICAppErrorCode
+QUICTypeUtil::read_QUICAppErrorCode(const uint8_t *buf)
+{
+  return static_cast<QUICAppErrorCode>(read_nbytes_as_uint(buf, 2));
 }
 
 uint64_t
@@ -122,9 +128,15 @@ QUICTypeUtil::write_QUICOffset(QUICOffset offset, uint8_t n, uint8_t *buf, size_
 }
 
 void
-QUICTypeUtil::write_QUICErrorCode(QUICErrorCode error_code, uint8_t *buf, size_t *len)
+QUICTypeUtil::write_QUICTransErrorCode(QUICTransErrorCode error_code, uint8_t *buf, size_t *len)
 {
-  write_uint_as_nbytes(static_cast<uint64_t>(error_code), 4, buf, len);
+  write_uint_as_nbytes(static_cast<uint64_t>(error_code), 2, buf, len);
+}
+
+void
+QUICTypeUtil::write_QUICAppErrorCode(QUICAppErrorCode error_code, uint8_t *buf, size_t *len)
+{
+  write_uint_as_nbytes(static_cast<uint64_t>(error_code), 2, buf, len);
 }
 
 void
@@ -147,4 +159,10 @@ fnv1a(const uint8_t *data, size_t len, uint8_t *hash)
     h *= prime;
   }
   return QUICTypeUtil::write_uint_as_nbytes(h, 8, hash, &n);
+}
+
+uint16_t
+QUICError::code()
+{
+  return static_cast<uint16_t>(this->trans_error_code);
 }

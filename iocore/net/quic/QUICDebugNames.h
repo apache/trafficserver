@@ -34,7 +34,7 @@ public:
   static const char *packet_type(QUICPacketType type);
   static const char *frame_type(QUICFrameType type);
   static const char *error_class(QUICErrorClass cls);
-  static const char *error_code(QUICErrorCode code);
+  static const char *error_code(QUICTransErrorCode code);
   static const char *transport_parameter_id(QUICTransportParameterId id);
   static const char *stream_state(QUICStreamState state);
   static const char *quic_event(int event);

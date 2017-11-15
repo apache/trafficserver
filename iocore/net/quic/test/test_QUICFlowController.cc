@@ -68,7 +68,8 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
   error = fc.update(1280);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error->code == QUICErrorCode::FLOW_CONTROL_ERROR);
+  CHECK(error->cls == QUICErrorClass::TRANSPORT);
+  CHECK(error->trans_error_code == QUICTransErrorCode::FLOW_CONTROL_ERROR);
 
   // MAX_STREAM_DATA
   CHECK(tx.frameCount[static_cast<int>(QUICFrameType::MAX_DATA)] == 0);
@@ -180,7 +181,8 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
   error = fc.update(1280);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
-  CHECK(error->code == QUICErrorCode::FLOW_CONTROL_ERROR);
+  CHECK(error->cls == QUICErrorClass::TRANSPORT);
+  CHECK(error->trans_error_code == QUICTransErrorCode::FLOW_CONTROL_ERROR);
 
   // MAX_STREAM_DATA
   CHECK(tx.frameCount[static_cast<int>(QUICFrameType::MAX_STREAM_DATA)] == 0);

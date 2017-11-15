@@ -88,7 +88,8 @@ enum class QUICFrameType : int {
   PADDING = 0x00,
   RST_STREAM,
   CONNECTION_CLOSE,
-  MAX_DATA = 0x04,
+  APPLICATION_CLOSE,
+  MAX_DATA,
   MAX_STREAM_DATA,
   MAX_STREAM_ID,
   PING,
@@ -117,47 +118,49 @@ enum class QUICKeyPhase : int {
 
 enum class QUICErrorClass {
   NONE,
-  AQPPLICATION_SPECIFIC,
-  HOST_LOCAL,
-  QUIC_TRANSPORT,
-  CRYPTOGRAPHIC,
+  TRANSPORT,
+  APPLICATION,
 };
 
-enum class QUICErrorCode : uint32_t {
-  APPLICATION_SPECIFIC_ERROR = 0,
-  HOST_LOCAL_ERROR           = 0x40000000,
-  NO_ERROR                   = 0x80000000,
+enum class QUICTransErrorCode : uint16_t {
+  NO_ERROR = 0x00,
   INTERNAL_ERROR,
-  CANCELLED,
-  FLOW_CONTROL_ERROR,
+  FLOW_CONTROL_ERROR = 0x03,
   STREAM_ID_ERROR,
   STREAM_STATE_ERROR,
   FINAL_OFFSET_ERROR,
   FRAME_FORMAT_ERROR,
   TRANSPORT_PARAMETER_ERROR,
   VERSION_NEGOTIATION_ERROR,
-  PROTOCOL_VIOLATION   = 0x8000000A,
-  QUIC_RECEIVED_RST    = 0x80000035,
-  FRAME_ERROR          = 0x80000100,
-  CRYPTOGRAPHIC_ERROR  = 0xC0000000,
-  TLS_HANDSHAKE_FAILED = 0xC000001C,
+  PROTOCOL_VIOLATION   = 0x0A,
+  FRAME_ERROR          = 0x0100, // 0x100 - 0x1FF
+  TLS_HANDSHAKE_FAILED = 0x0201,
   TLS_FATAL_ALERT_GENERATED,
   TLS_FATAL_ALERT_RECEIVED,
-  // TODO Add error codes
 };
+
+// Application Protocol Error Codes defined in application
+using QUICAppErrorCode = uint16_t;
 
 class QUICError
 {
 public:
   virtual ~QUICError() {}
-  QUICErrorClass cls;
-  QUICErrorCode code;
-  const char *msg;
+  uint16_t code();
+
+  QUICErrorClass cls = QUICErrorClass::NONE;
+  union {
+    QUICTransErrorCode trans_error_code = QUICTransErrorCode::NO_ERROR;
+    QUICAppErrorCode app_error_code;
+  };
+  const char *msg = nullptr;
 
 protected:
-  QUICError(const QUICErrorClass error_class = QUICErrorClass::NONE, const QUICErrorCode error_code = QUICErrorCode::NO_ERROR,
-            const char *error_msg = nullptr)
-    : cls(error_class), code(error_code), msg(error_msg){};
+  QUICError(){};
+  QUICError(const QUICTransErrorCode error_code, const char *error_msg = nullptr)
+    : cls(QUICErrorClass::TRANSPORT), trans_error_code(error_code), msg(error_msg){};
+  QUICError(const QUICAppErrorCode error_code, const char *error_msg = nullptr)
+    : cls(QUICErrorClass::APPLICATION), app_error_code(error_code), msg(error_msg){};
 };
 
 class QUICNoError : public QUICError
@@ -170,8 +173,8 @@ class QUICConnectionError : public QUICError
 {
 public:
   QUICConnectionError() : QUICError() {}
-  QUICConnectionError(const QUICErrorClass error_class, const QUICErrorCode error_code, const char *error_msg = nullptr)
-    : QUICError(error_class, error_code, error_msg){};
+  QUICConnectionError(const QUICTransErrorCode error_code, const char *error_msg = nullptr) : QUICError(error_code, error_msg){};
+  QUICConnectionError(const QUICAppErrorCode error_code, const char *error_msg = nullptr) : QUICError(error_code, error_msg){};
 };
 
 class QUICStream;
@@ -179,8 +182,12 @@ class QUICStream;
 class QUICStreamError : public QUICError
 {
 public:
-  QUICStreamError(QUICStream *s, const QUICErrorClass error_class, const QUICErrorCode error_code, const char *error_msg = nullptr)
-    : QUICError(error_class, error_code, error_msg), stream(s){};
+  QUICStreamError() : QUICError() {}
+  QUICStreamError(QUICStream *s, const QUICTransErrorCode error_code, const char *error_msg = nullptr)
+    : QUICError(error_code, error_msg), stream(s){};
+  QUICStreamError(QUICStream *s, const QUICAppErrorCode error_code, const char *error_msg = nullptr)
+    : QUICError(error_code, error_msg), stream(s){};
+
   QUICStream *stream;
 };
 
@@ -303,14 +310,16 @@ public:
   static QUICVersion read_QUICVersion(const uint8_t *buf);
   static QUICStreamId read_QUICStreamId(const uint8_t *buf, uint8_t n);
   static QUICOffset read_QUICOffset(const uint8_t *buf, uint8_t n);
-  static QUICErrorCode read_QUICErrorCode(const uint8_t *buf);
+  static QUICTransErrorCode read_QUICTransErrorCode(const uint8_t *buf);
+  static QUICAppErrorCode read_QUICAppErrorCode(const uint8_t *buf);
 
   static void write_QUICConnectionId(QUICConnectionId connection_id, uint8_t n, uint8_t *buf, size_t *len);
   static void write_QUICPacketNumber(QUICPacketNumber packet_number, uint8_t n, uint8_t *buf, size_t *len);
   static void write_QUICVersion(QUICVersion version, uint8_t *buf, size_t *len);
   static void write_QUICStreamId(QUICStreamId stream_id, uint8_t n, uint8_t *buf, size_t *len);
   static void write_QUICOffset(QUICOffset offset, uint8_t n, uint8_t *buf, size_t *len);
-  static void write_QUICErrorCode(QUICErrorCode error_code, uint8_t *buf, size_t *len);
+  static void write_QUICTransErrorCode(QUICTransErrorCode error_code, uint8_t *buf, size_t *len);
+  static void write_QUICAppErrorCode(QUICAppErrorCode error_code, uint8_t *buf, size_t *len);
 
   static uint64_t read_nbytes_as_uint(const uint8_t *buf, uint8_t n);
   static void write_uint_as_nbytes(uint64_t value, uint8_t n, uint8_t *buf, size_t *len);

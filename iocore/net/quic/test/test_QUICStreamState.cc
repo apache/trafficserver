@@ -31,7 +31,7 @@
 TEST_CASE("QUICStreamState_Idle", "[quic]")
 {
   auto stream_frame          = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("foo"), 4, 1, 0);
-  auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, QUICErrorCode::NO_ERROR, 0);
+  auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
   auto max_stream_data_frame = QUICFrameFactory::create_max_stream_data_frame(0, 0);
   auto stream_blocked_frame  = QUICFrameFactory::create_stream_blocked_frame(0);
 
@@ -70,7 +70,7 @@ TEST_CASE("QUICStreamState_Open", "[quic]")
 {
   auto stream_frame          = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("foo"), 4, 1, 0);
   auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("bar"), 4, 1, 0, true);
-  auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, QUICErrorCode::NO_ERROR, 0);
+  auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
 
   // Case1. Send FIN in a STREAM
   QUICStreamState ss1;
@@ -105,7 +105,7 @@ TEST_CASE("QUICStreamState_Half_Closed_Remote", "[quic]")
 {
   auto stream_frame          = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("foo"), 4, 1, 0);
   auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("bar"), 4, 1, 0, true);
-  auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, QUICErrorCode::NO_ERROR, 0);
+  auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
 
   // Case1. Send FIN in a STREAM
   QUICStreamState ss1;
@@ -126,7 +126,7 @@ TEST_CASE("QUICStreamState_Half_Closed_Local", "[quic]")
 {
   auto stream_frame          = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("foo"), 4, 1, 0);
   auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("bar"), 4, 1, 0, true);
-  auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, QUICErrorCode::NO_ERROR, 0);
+  auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
 
   // Case1. Recv FIN in a STREAM
   QUICStreamState ss1;

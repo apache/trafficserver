@@ -116,17 +116,17 @@ QUICIncomingFrameBuffer::_check_and_set_fin_flag(QUICOffset offset, size_t len, 
         // dup fin frame
         return QUICErrorUPtr(new QUICNoError());
       }
-      return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::FINAL_OFFSET_ERROR));
+      return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICTransErrorCode::FINAL_OFFSET_ERROR));
     }
 
     this->_fin_offset = offset;
 
     if (this->_max_offset >= this->_fin_offset) {
-      return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::FINAL_OFFSET_ERROR));
+      return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICTransErrorCode::FINAL_OFFSET_ERROR));
     }
 
   } else if (this->_fin_offset != UINT64_MAX && this->_fin_offset <= offset) {
-    return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::FINAL_OFFSET_ERROR));
+    return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICTransErrorCode::FINAL_OFFSET_ERROR));
   }
 
   this->_max_offset = std::max(offset, this->_max_offset);

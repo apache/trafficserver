@@ -219,18 +219,18 @@ class QUICRstStreamFrame : public QUICFrame
 public:
   QUICRstStreamFrame() : QUICFrame() {}
   QUICRstStreamFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICRstStreamFrame(QUICStreamId stream_id, QUICErrorCode error_code, QUICOffset final_offset);
+  QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICOffset final_offset);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
-  QUICErrorCode error_code() const;
+  QUICAppErrorCode error_code() const;
   QUICStreamId stream_id() const;
   QUICOffset final_offset() const;
 
 private:
-  QUICStreamId _stream_id = 0;
-  QUICErrorCode _error_code;
-  QUICOffset _final_offset = 0;
+  QUICStreamId _stream_id      = 0;
+  QUICAppErrorCode _error_code = 0;
+  QUICOffset _final_offset     = 0;
 };
 
 //
@@ -268,16 +268,39 @@ class QUICConnectionCloseFrame : public QUICFrame
 public:
   QUICConnectionCloseFrame() : QUICFrame() {}
   QUICConnectionCloseFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICConnectionCloseFrame(QUICErrorCode error_code, uint16_t reason_phrase_length, const char *reason_phrase);
+  QUICConnectionCloseFrame(QUICTransErrorCode error_code, uint16_t reason_phrase_length, const char *reason_phrase);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
-  QUICErrorCode error_code() const;
+  QUICTransErrorCode error_code() const;
   uint16_t reason_phrase_length() const;
   const char *reason_phrase() const;
 
 private:
-  QUICErrorCode _error_code;
+  QUICTransErrorCode _error_code;
+  uint16_t _reason_phrase_length = 0;
+  const char *_reason_phrase     = nullptr;
+};
+
+//
+// APPLICATION_CLOSE
+//
+
+class QUICApplicationCloseFrame : public QUICFrame
+{
+public:
+  QUICApplicationCloseFrame() : QUICFrame() {}
+  QUICApplicationCloseFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint16_t reason_phrase_length, const char *reason_phrase);
+  virtual QUICFrameType type() const override;
+  virtual size_t size() const override;
+  virtual void store(uint8_t *buf, size_t *len) const override;
+  QUICAppErrorCode error_code() const;
+  uint16_t reason_phrase_length() const;
+  const char *reason_phrase() const;
+
+private:
+  QUICAppErrorCode _error_code   = 0;
   uint16_t _reason_phrase_length = 0;
   const char *_reason_phrase     = nullptr;
 };
@@ -416,16 +439,16 @@ class QUICStopSendingFrame : public QUICFrame
 public:
   QUICStopSendingFrame() : QUICFrame() {}
   QUICStopSendingFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICStopSendingFrame(QUICStreamId stream_id, QUICErrorCode error_code);
+  QUICStopSendingFrame(QUICStreamId stream_id, QUICAppErrorCode error_code);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
   QUICStreamId stream_id() const;
-  QUICErrorCode error_code() const;
+  QUICAppErrorCode error_code() const;
 
 private:
   QUICStreamId _stream_id = 0;
-  QUICErrorCode _error_code;
+  QUICAppErrorCode _error_code;
 };
 
 using QUICFrameDeleterFunc = void (*)(QUICFrame *p);
@@ -457,6 +480,7 @@ extern ClassAllocator<QUICAckFrame> quicAckFrameAllocator;
 extern ClassAllocator<QUICPaddingFrame> quicPaddingFrameAllocator;
 extern ClassAllocator<QUICRstStreamFrame> quicRstStreamFrameAllocator;
 extern ClassAllocator<QUICConnectionCloseFrame> quicConnectionCloseFrameAllocator;
+extern ClassAllocator<QUICApplicationCloseFrame> quicApplicationCloseFrameAllocator;
 extern ClassAllocator<QUICMaxDataFrame> quicMaxDataFrameAllocator;
 extern ClassAllocator<QUICMaxStreamDataFrame> quicMaxStreamDataFrameAllocator;
 extern ClassAllocator<QUICMaxStreamIdFrame> quicMaxStreamIdFrameAllocator;
@@ -506,6 +530,12 @@ public:
   delete_connection_close_frame(QUICFrame *frame)
   {
     quicConnectionCloseFrameAllocator.free(static_cast<QUICConnectionCloseFrame *>(frame));
+  }
+
+  static void
+  delete_application_close_frame(QUICFrame *frame)
+  {
+    quicApplicationCloseFrameAllocator.free(static_cast<QUICApplicationCloseFrame *>(frame));
   }
 
   static void
@@ -603,8 +633,16 @@ public:
    * Creates a CONNECTION_CLOSE frame.
    */
   static std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> create_connection_close_frame(
-    QUICErrorCode error_code, uint16_t reason_phrase_length = 0, const char *reason_phrase = nullptr);
+    QUICTransErrorCode error_code, uint16_t reason_phrase_length = 0, const char *reason_phrase = nullptr);
   static std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> create_connection_close_frame(
+    QUICConnectionErrorUPtr error);
+
+  /*
+   * Creates a APPLICATION_CLOSE frame.
+   */
+  static std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc> create_application_close_frame(
+    QUICAppErrorCode error_code, uint16_t reason_phrase_length = 0, const char *reason_phrase = nullptr);
+  static std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc> create_application_close_frame(
     QUICConnectionErrorUPtr error);
 
   /*
@@ -632,7 +670,7 @@ public:
    * Creates a RST_STREAM frame.
    */
   static std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> create_rst_stream_frame(QUICStreamId stream_id,
-                                                                                           QUICErrorCode error_code,
+                                                                                           QUICAppErrorCode error_code,
                                                                                            QUICOffset final_offset);
   static std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> create_rst_stream_frame(QUICStreamErrorUPtr error);
 
@@ -640,7 +678,7 @@ public:
    * Creates a STOP_SENDING frame.
    */
   static std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc> create_stop_sending_frame(QUICStreamId stream_id,
-                                                                                               QUICErrorCode error_code);
+                                                                                               QUICAppErrorCode error_code);
 
   /*
    * Creates a retransmission frame, which is very special.

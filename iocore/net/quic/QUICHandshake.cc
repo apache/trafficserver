@@ -105,7 +105,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
   // Negotiate version
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
     if (initial_packet->type() != QUICPacketType::CLIENT_INITIAL) {
-      return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION));
+      return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
     }
     if (initial_packet->version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
@@ -117,7 +117,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
         DebugQHS("Version negotiation failed: %x", initial_packet->version());
       }
     } else {
-      return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION));
+      return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
     }
   }
   return QUICErrorUPtr(new QUICNoError());
@@ -163,8 +163,7 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters>
   if (tp_in_ch) {
     // Version revalidation
     if (this->_version_negotiator->revalidate(tp_in_ch) != QUICVersionNegotiationStatus::REVALIDATED) {
-      this->_client_qc->close(
-        QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::VERSION_NEGOTIATION_ERROR)));
+      this->_client_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR)));
       DebugQHS("Enter state_closed");
       SET_HANDLER(&QUICHandshake::state_closed);
       return;
@@ -212,8 +211,7 @@ QUICHandshake::state_read_client_hello(int event, Event *data)
     if (dynamic_cast<QUICConnectionError *>(error.get()) != nullptr) {
       this->_client_qc->close(QUICConnectionErrorUPtr(static_cast<QUICConnectionError *>(error.release())));
     } else {
-      this->_client_qc->close(
-        QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION)));
+      this->_client_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION)));
     }
     DebugQHS("Enter state_closed");
     SET_HANDLER(&QUICHandshake::state_closed);
@@ -241,8 +239,7 @@ QUICHandshake::state_read_client_finished(int event, Event *data)
     if (dynamic_cast<QUICConnectionError *>(error.get()) != nullptr) {
       this->_client_qc->close(QUICConnectionErrorUPtr(static_cast<QUICConnectionError *>(error.release())));
     } else {
-      this->_client_qc->close(
-        QUICConnectionErrorUPtr(new QUICConnectionError(QUICErrorClass::QUIC_TRANSPORT, QUICErrorCode::PROTOCOL_VIOLATION)));
+      this->_client_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION)));
     }
     DebugQHS("Enter state_closed");
     SET_HANDLER(&QUICHandshake::state_closed);
@@ -345,7 +342,7 @@ QUICHandshake::_process_client_hello()
 
     return QUICErrorUPtr(new QUICNoError());
   } else {
-    return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::TLS_HANDSHAKE_FAILED));
+    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
   }
 }
 
@@ -394,7 +391,7 @@ QUICHandshake::_process_client_finished()
 
     return QUICErrorUPtr(new QUICNoError());
   } else {
-    return QUICErrorUPtr(new QUICConnectionError(QUICErrorClass::CRYPTOGRAPHIC, QUICErrorCode::TLS_HANDSHAKE_FAILED));
+    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
   }
 }
 

@@ -94,58 +94,48 @@ QUICDebugNames::error_class(QUICErrorClass cls)
   switch (cls) {
   case QUICErrorClass::NONE:
     return "NONE";
-  case QUICErrorClass::AQPPLICATION_SPECIFIC:
-    return "AQPPLICATION_SPECIFIC";
-  case QUICErrorClass::HOST_LOCAL:
-    return "HOST_LOCAL";
-  case QUICErrorClass::QUIC_TRANSPORT:
-    return "QUIC_TRANSPORT";
-  case QUICErrorClass::CRYPTOGRAPHIC:
-    return "CRYPTOGRAPHIC";
+  case QUICErrorClass::TRANSPORT:
+    return "TRANSPORT";
+  case QUICErrorClass::APPLICATION:
+    return "APPLICATION";
   default:
     return "UNKNOWN";
   }
 }
 
 const char *
-QUICDebugNames::error_code(QUICErrorCode code)
+QUICDebugNames::error_code(QUICTransErrorCode code)
 {
   switch (code) {
-  case QUICErrorCode::APPLICATION_SPECIFIC_ERROR:
-    return "APPLICATION_SPECIFIC_ERROR";
-  case QUICErrorCode::HOST_LOCAL_ERROR:
-    return "HOST_LOCAL_ERROR";
-  case QUICErrorCode::NO_ERROR:
+  case QUICTransErrorCode::NO_ERROR:
     return "NO_ERROR";
-  case QUICErrorCode::INTERNAL_ERROR:
+  case QUICTransErrorCode::INTERNAL_ERROR:
     return "INTERNAL_ERROR";
-  case QUICErrorCode::CANCELLED:
-    return "CANCELLED";
-  case QUICErrorCode::FLOW_CONTROL_ERROR:
+  case QUICTransErrorCode::FLOW_CONTROL_ERROR:
     return "FLOW_CONTROL_ERROR";
-  case QUICErrorCode::STREAM_ID_ERROR:
+  case QUICTransErrorCode::STREAM_ID_ERROR:
     return "STREAM_ID_ERROR";
-  case QUICErrorCode::STREAM_STATE_ERROR:
+  case QUICTransErrorCode::STREAM_STATE_ERROR:
     return "STREAM_STATE_ERROR";
-  case QUICErrorCode::FINAL_OFFSET_ERROR:
+  case QUICTransErrorCode::FINAL_OFFSET_ERROR:
     return "FINAL_OFFSET_ERROR";
-  case QUICErrorCode::FRAME_FORMAT_ERROR:
+  case QUICTransErrorCode::FRAME_FORMAT_ERROR:
     return "FRAME_FORMAT_ERROR";
-  case QUICErrorCode::TRANSPORT_PARAMETER_ERROR:
+  case QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR:
     return "TRANSPORT_PARAMETER_ERROR";
-  case QUICErrorCode::VERSION_NEGOTIATION_ERROR:
+  case QUICTransErrorCode::VERSION_NEGOTIATION_ERROR:
     return "VERSION_NEGOTIATION_ERROR";
-  case QUICErrorCode::PROTOCOL_VIOLATION:
+  case QUICTransErrorCode::PROTOCOL_VIOLATION:
     return "PROTOCOL_VIOLATION";
-  case QUICErrorCode::QUIC_RECEIVED_RST:
-    return "QUIC_RECEIVED_RST";
-  case QUICErrorCode::CRYPTOGRAPHIC_ERROR:
-    return "CRYPTOGRAPHIC_ERROR";
-  case QUICErrorCode::TLS_HANDSHAKE_FAILED:
+  case QUICTransErrorCode::TLS_HANDSHAKE_FAILED:
     return "TLS_HANDSHAKE_FAILED";
+  case QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED:
+    return "TLS_FATAL_ALERT_GENERATED";
+  case QUICTransErrorCode::TLS_FATAL_ALERT_RECEIVED:
+    return "TLS_FATAL_ALERT_RECEIVED";
   default:
-    if ((static_cast<uint32_t>(code) & 0xFFFFFF00) == static_cast<uint32_t>(QUICErrorCode::FRAME_ERROR)) {
-      // TODO: Add frame type
+    if (0x0100 <= static_cast<uint16_t>(code) && static_cast<uint16_t>(code) <= 0x01FF) {
+      // TODO: Add frame types
       return "FRAME_ERROR";
     }
     return "UNKNOWN";
