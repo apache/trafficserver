@@ -131,6 +131,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Epic <epic.en>
    Escalate <escalate.en>
    GeoIP ACL <geoip_acl.en>
+   FQ Pacing <fq_pacing.en>
    Header Frequency <header_freq.en>
    HIPES <hipes.en>
    Hook Trace <hook-trace.en>
@@ -167,6 +168,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Escalate <escalate.en>`
    Escalate: when the origin returns specific status codes, retry the request at a secondary origin (failover/fail-action)
+
+:doc:`FQ Pacing <fq_pacing.en>`
+   FQ Pacing: Rate Limit TCP connections using Linux's Fair Queuing queue discipline
 
 :doc:`GeoIP ACL <geoip_acl.en>`
    Deny or allow requests based on the source IP geo-location.
