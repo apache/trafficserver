@@ -85,7 +85,7 @@ spawn_same_session_send(void *arg)
   fcntl(sfd, F_SETFL, O_NONBLOCK);
   // Make sure we are nagling
   int one = 0;
-  setsockopt(sfd, SOL_TCP, TCP_NODELAY, &one, sizeof(one));
+  setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 
   SSL_CTX *client_ctx = SSL_CTX_new(SSLv23_client_method());
   SSL *ssl            = SSL_new(client_ctx);
@@ -220,7 +220,7 @@ main(int argc, char *argv[])
   }
   char *host       = argv[1];
   int header_count = atoi(argv[3]);
-  snprintf(req_buf, sizeof(req_buf), "POST /post HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nContent-length:%d\r\n", host,
+  snprintf(req_buf, sizeof(req_buf), "POST /post HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nContent-length:%ld\r\n", host,
            sizeof(post_buf));
   int i;
   for (i = 0; i < header_count; i++) {
@@ -318,7 +318,7 @@ main(int argc, char *argv[])
     retval = NULL;
     pthread_join(threads[i], &retval);
     if (retval != NULL) {
-      printf("Thread %d failed 0x%x\n", i, retval);
+      printf("Thread %d failed %p\n", i, retval);
     }
   }
 
