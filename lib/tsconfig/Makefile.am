@@ -18,7 +18,7 @@
 
 lib_LTLIBRARIES = libtsconfig.la
 check_PROGRAMS = test-tsconfig
-libtsconfig_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
+libtsconfig_la_LDFLAGS = -version-info @TS_LIBTOOL_VERSION@
 
 AM_CFLAGS += @FLEX_CFLAGS@
 AM_YFLAGS = --yacc -d -p tsconfig
