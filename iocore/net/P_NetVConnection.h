@@ -20,6 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#ifndef __P_NETVCONNECTION_H__
+#define __P_NETVCONNECTION_H__
 
 #include "I_NetVConnection.h"
 
@@ -81,3 +83,51 @@ NetVConnection::get_local_port()
 {
   return ats_ip_port_host_order(this->get_local_addr());
 }
+
+TS_INLINE void *
+NetVConnection::get_user_data(const char *name)
+{
+  int len         = strlen(name);
+  void *user_data = NULL;
+
+  ink_mutex_acquire(&user_data_mutex);
+  for (int ix = 0; ix < user_data_next_index; ++ix) {
+    if ((len == user_data_table[ix].name_len) && (0 == strcmp(name, user_data_table[ix].name))) {
+      user_data = user_data_table[ix].data;
+      break;
+    }
+  }
+
+  ink_mutex_release(&user_data_mutex);
+  return user_data;
+}
+
+TS_INLINE bool
+NetVConnection::set_user_data(const char *name, void *arg)
+{
+  ink_mutex_acquire(&user_data_mutex);
+
+  if (user_data_next_index >= MAX_CONN_USER_DATA) {
+    ink_mutex_release(&user_data_mutex);
+    return false;
+  }
+
+  int len = strlen(name);
+  for (int ix = 0; ix < user_data_next_index; ++ix) {
+    if ((len == user_data_table[ix].name_len) && (0 == strcmp(name, user_data_table[ix].name))) {
+      user_data_table[ix].data = arg;
+      ink_mutex_release(&user_data_mutex);
+      return true;
+    }
+  }
+
+  user_data_table[user_data_next_index].name     = ats_strdup(name);
+  user_data_table[user_data_next_index].name_len = strlen(name);
+  user_data_table[user_data_next_index].data     = arg;
+  user_data_next_index += 1; // index range is 0 - (MAX_CONN_USER_DATA-1)
+
+  ink_mutex_release(&user_data_mutex);
+  return true;
+}
+
+#endif // __P_NETVCONNECTION_H__

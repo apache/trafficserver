@@ -82,6 +82,7 @@ example_Plugins += \
 	cppapi/RemapPlugin.la \
 	cppapi/ServerResponse.la \
 	cppapi/StatExample.la \
+	cppapi/SslCloseHook.la \
 	cppapi/TimeoutExamplePlugin.la \
 	cppapi/TransactionHookPlugin.la \
 	cppapi/WebSocket.la \
@@ -149,6 +150,7 @@ cppapi_PostBuffer_la_SOURCES = cppapi/post_buffer/PostBuffer.cc
 cppapi_RemapPlugin_la_SOURCES = cppapi/remap_plugin/RemapPlugin.cc
 cppapi_ServerResponse_la_SOURCES = cppapi/serverresponse/ServerResponse.cc
 cppapi_StatExample_la_SOURCES = cppapi/stat_example/StatExample.cc
+cppapi_SslCloseHook_la_SOURCES = cppapi/ssl_close_hook/SslCloseHook.cc
 cppapi_TimeoutExamplePlugin_la_SOURCES = cppapi/timeout_example/TimeoutExamplePlugin.cc
 cppapi_TransactionHookPlugin_la_SOURCES = cppapi/transactionhook/TransactionHookPlugin.cc
 cppapi_WebSocket_la_SOURCES = cppapi/websocket/WebSocket.cc cppapi/websocket/WSBuffer.cc
@@ -174,6 +176,7 @@ cppapi_PostBuffer_la_LIBADD = $(libatscppapi)
 cppapi_RemapPlugin_la_LIBADD = $(libatscppapi)
 cppapi_ServerResponse_la_LIBADD = $(libatscppapi)
 cppapi_StatExample_la_LIBADD = $(libatscppapi)
+cppapi_SslCloseHook_la_LIBADD = $(libatscppapi)
 cppapi_TimeoutExamplePlugin_la_LIBADD = $(libatscppapi)
 cppapi_TransactionHookPlugin_la_LIBADD = $(libatscppapi)
 cppapi_WebSocket_la_LIBADD = $(libatscppapi)

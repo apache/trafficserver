@@ -26,6 +26,7 @@
 #define __NETVCONNECTION_H__
 
 #include "ts/ink_inet.h"
+#include "ts/ink_mutex.h"
 #include "I_Action.h"
 #include "I_VConnection.h"
 #include "I_Event.h"
@@ -261,6 +262,10 @@ struct NetVCOptions {
 class NetVConnection : public VConnection
 {
 public:
+  enum {
+    MAX_CONN_USER_DATA = 8
+  };
+
   // How many bytes have been queued to the OS for sending by haven't been sent yet
   // Not all platforms support this, and if they don't we'll return -1 for them
   virtual int64_t
@@ -578,7 +583,8 @@ public:
   virtual void reenable_re(VIO *vio) = 0;
 
   /// PRIVATE
-  virtual ~NetVConnection() {}
+  virtual ~NetVConnection();
+
   /**
     PRIVATE: instances of NetVConnection cannot be created directly
     by the state machines. The objects are created by NetProcessor
@@ -644,6 +650,9 @@ public:
   NetVConnection(const NetVConnection &) = delete;
   NetVConnection &operator=(const NetVConnection &) = delete;
 
+  void *get_user_data(const char *name);
+  bool set_user_data(const char *name, void *arg);
+
 protected:
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
@@ -658,6 +667,17 @@ protected:
   int write_buffer_empty_event;
   /// NetVConnection Context.
   NetVConnectionContext_t netvc_context;
+
+private:
+  struct user_data {
+    uint8_t name_len;
+    char *name;
+    void *data;
+  };
+
+  ink_mutex user_data_mutex;
+  uint8_t user_data_next_index;
+  struct user_data user_data_table[MAX_CONN_USER_DATA];
 };
 
 inline NetVConnection::NetVConnection()
@@ -669,16 +689,28 @@ inline NetVConnection::NetVConnection()
     is_internal_request(false),
     is_transparent(false),
     write_buffer_empty_event(0),
-    netvc_context(NET_VCONNECTION_UNSET)
+    netvc_context(NET_VCONNECTION_UNSET),
+    user_data_next_index(0)
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);
+  ink_mutex_init(&user_data_mutex);
 }
 
 inline void
 NetVConnection::trapWriteBufferEmpty(int event)
 {
   write_buffer_empty_event = event;
+}
+
+inline NetVConnection::~NetVConnection()
+{
+  ink_mutex_acquire(&user_data_mutex);
+  for (uint8_t ix = 0; ix < user_data_next_index; ++ix) {
+    if (user_data_table[ix].name)
+      ats_free(user_data_table[ix].name);
+  }
+  ink_mutex_release(&user_data_mutex);
 }
 
 #endif

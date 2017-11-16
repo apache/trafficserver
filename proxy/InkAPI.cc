@@ -6610,6 +6610,24 @@ TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbyt
   return reinterpret_cast<TSVIO>(vc->do_io_write((INKContInternal *)contp, nbytes, (IOBufferReader *)readerp));
 }
 
+bool
+TSVConnSetUserData(TSVConn connp, const char *name, void *data)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
+
+  NetVConnection *vc = (NetVConnection *)connp;
+  return vc->set_user_data(name, data);
+}
+
+void *
+TSVConnGetUserData(TSVConn connp, const char *name)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
+
+  NetVConnection *vc = (NetVConnection *)connp;
+  return vc->get_user_data(name);
+}
+
 void
 TSVConnClose(TSVConn connp)
 {
