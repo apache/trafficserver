@@ -416,7 +416,7 @@ extern SNIActionPerformer sni_action_performer;
 static int
 ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
-  SSLNetVConnection *netvc = reinterpret_cast<SSLNetVConnection *>(SSL_get_app_data(ssl));
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   Debug("ssl", "Requested servername is %s", servername);
   if (servername != nullptr) {
