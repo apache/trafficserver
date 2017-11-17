@@ -100,5 +100,5 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, IP='127.0.0.1'
     return p
 
 
-AddTestRunSet(MakeDNServer, name="MakeDNServer")
-AddTestRunSet(MakeDNServer, name="MakeDNS")
+ExtendTest(MakeDNServer, name="MakeDNServer")
+ExtendTest(MakeDNServer, name="MakeDNS")

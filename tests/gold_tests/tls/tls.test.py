@@ -21,31 +21,18 @@ Test.Summary = '''
 Test tls
 '''
 
-
-def Build(Test, filename, host):
-    tr = Test.AddTestRun("Build", "Build test file: {0}".format(filename))
-    tr.Command = 'gcc -o ssl-post -O2 -g {0} -lssl -lpthread -lcrypto'.format(filename)
-    tr.ReturnCode = 0
-    tr = Test.addTestRun("Run-Test")
-    tr.Command = './ssl-post {0} 40 378'.format(host)
-
-# ExtendTest(Build)
-
-
 # need Curl
 Test.SkipUnless(
     Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
 )
-Test.ContinueOnFail = True
+
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server")
 
-
-tr = Test.AddTestRun("Build-Test", "build test file: ssl-post.c")
-tr.Command = 'gcc -o ssl-post -O2 -g {0}/ssl-post.c -lssl -lpthread -lcrypto'.format(Test.RunDirectory)
-tr.ReturnCode = 0
-tr.Setup.CopyAs('ssl-post.c', Test.RunDirectory)
+# build test code
+tr=Test.Build(target='ssl-post',sources=['ssl-post.c'])
+tr.Setup.Copy('ssl-post.c')
 
 requestLocation = "test2"
 reHost = "www.example.com"

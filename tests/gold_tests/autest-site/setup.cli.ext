@@ -16,37 +16,60 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import json, subprocess
+import json
+import subprocess
 import pprint
 
 if Arguments.ats_bin is not None:
     # Add environment variables
     ENV['ATS_BIN'] = Arguments.ats_bin
-    
+
 if ENV['ATS_BIN'] is not None:
     # Add variables for Tests
     traffic_layout = os.path.join(ENV['ATS_BIN'], "traffic_layout")
+    tsxs = os.path.join(ENV['ATS_BIN'], "tsxs")
     if not os.path.isdir(ENV['ATS_BIN']):
         host.WriteError("--ats-bin requires a directory", show_stack=False)
+    # setting up data from traffic_layout
+    # this is getting layout structure
     if not os.path.isfile(traffic_layout):
         host.WriteError("traffic_layout is not found. Aborting tests - Bad build or install.", show_stack=False)
     try:
         out = subprocess.check_output([traffic_layout, "--json"])
     except subprocess.CalledProcessError:
-        host.WriteError("traffic_layout is broken. Aborting tests - The build of traffic server is bad.", show_stack=False) 
+        host.WriteError("traffic_layout is broken. Aborting tests - The build of traffic server is bad.", show_stack=False)
     out = json.loads(out.decode("utf-8"))
-    for k,v in out.items():
-        out[k]=v[:-1] if v.endswith('/') else v
+    for k, v in out.items():
+        out[k] = v[:-1] if v.endswith('/') else v
     Variables.update(out)
-    host.WriteVerbose(['ats'],"Traffic server layout Data:\n",pprint.pformat(out))
+    host.WriteVerbose(['ats'], "Traffic server layout Data:\n", pprint.pformat(out))
     # if the above worked this should as well
+    # this gets feature data
     out = subprocess.check_output([traffic_layout, "-f", "--json"])
     out = json.loads(out.decode("utf-8"))
     Variables.update(out)
-    host.WriteVerbose(['ats'],"Traffic server feature data:\n",pprint.pformat(out))
+    host.WriteVerbose(['ats'], "Traffic server feature data:\n", pprint.pformat(out))
 
-Variables.AtsTestToolsDir = os.path.join(AutestSitePath,'../../tools')
+    # this querys tsxs for build flags so we can build code for the tests and get certain
+    # useful flags as which openssl to use when we don't use the system version
+    out = {
+        'CPPFLAGS': '',
+        'LIBS': '',
+        'LDFLAGS': '',
+        'CXX': ''
+    }
+    if os.path.isfile(tsxs):
+        for flag in out.keys():
+            try:
+                data = subprocess.check_output([tsxs, "-q", flag])
+                out[flag] = data.decode("utf-8")[:-1]
+            except subprocess.CalledProcessError:
+                # error if something goes wrong as the test will break if this exists and is broken
+                host.WriteError("tsxs is broken. Aborting tests", show_stack=False)
+    host.WriteVerbose(['ats'], "Traffic server build flags:\n", pprint.pformat(out))
+    Variables.update(out)
+Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '../../tools')
 
 # modify delay times as we always have to kill Trafficserver
 # no need to wait
-Variables.Autest.StopProcessLongDelaySeconds=0
+Variables.Autest.StopProcessLongDelaySeconds = 0

@@ -131,5 +131,6 @@ def MakeOriginServer(obj, name, port=False, ip=False, delay=False, public_ip=Fal
     return p
 
 
-AddTestRunSet(MakeOriginServer, name="MakeOriginServer")
-AddTestRunSet(MakeOriginServer, name="MakeOrigin")
+ExtendTest(MakeOriginServer, name="MakeOriginServer")
+ExtendTest(MakeOriginServer, name="MakeOrigin")
+
