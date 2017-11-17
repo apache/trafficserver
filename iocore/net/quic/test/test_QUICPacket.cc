@@ -25,56 +25,38 @@
 
 #include "quic/QUICPacket.h"
 
-TEST_CASE("Loading Long Header Packet", "[quic]")
+TEST_CASE("QUICPacketHeader", "[quic]")
 {
-  uint8_t raw[]          = {0x01, 0x02, 0x03, 0x04};
-  ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
-  memcpy(payload.get(), raw, sizeof(raw));
+  SECTION("Long Header")
+  {
+    const uint8_t input[] = {
+      0x81, // Long header, Type
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Connection ID
+      0x12, 0x34, 0x56, 0x78, // Packet number
+      0x11, 0x22, 0x33, 0x44, // Version
+      0xff, 0xff, // Payload (dummy)
+    };
 
-  // Cleartext packet with a long header
-  QUICPacket packet1(QUICPacketType::CLIENT_CLEARTEXT, 0xffddbb9977553311ULL, 0xffcc9966, 0, 0x00112233, std::move(payload),
-                     sizeof(raw), true);
+    QUICPacketHeader *header = QUICPacketHeader::load(input, sizeof(input), 0);
+    CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
+    CHECK(header->connection_id() == 0x01020304050607);
+    CHECK(header->packet_number() == 0);
+    CHECK(header->version() == 0x11223344);
+  }
 
-  uint8_t buf[65536];
-  size_t len;
-  packet1.store(buf, &len);
+  SECTION("Short Header")
+  {
+    const uint8_t input[] = {
+      0x41, // Short header, with Connection ID, KeyPhse 0, Type
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Connection ID
+      0x12, 0x34, 0x56, 0x78, // Packet number
+      0xff, 0xff, // Payload (dummy)
+    };
 
-  const QUICPacket packet2(ats_unique_buf(buf, [](void *p) { ats_free(p); }), len, 0);
-
-  CHECK(packet2.type() == QUICPacketType::CLIENT_CLEARTEXT);
-  CHECK(packet2.connection_id() == 0xffddbb9977553311ULL);
-  CHECK(packet2.packet_number() == 0xffcc9966);
-  CHECK(packet2.version() == 0x00112233);
-  CHECK(packet2.size() == 29);
-  CHECK(packet2.payload_size() == sizeof(raw));
-  CHECK(memcmp(packet2.payload(), raw, sizeof(raw)) == 0);
-}
-
-TEST_CASE("Loading Short Header Packet", "[quic]")
-{
-  uint8_t raw[]          = {0x01, 0x02, 0x03, 0x04};
-  ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
-  memcpy(payload.get(), raw, sizeof(raw));
-
-  uint8_t protected_raw[]          = {0x04, 0x03, 0x02, 0x01, 0x00};
-  ats_unique_buf protected_payload = ats_unique_malloc(sizeof(protected_raw));
-  memcpy(protected_payload.get(), protected_raw, sizeof(protected_raw));
-
-  // Cleartext packet with a long header
-  QUICPacket packet1(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, 0xffcc9966, 0, std::move(payload), sizeof(raw), true);
-  packet1.set_protected_payload(std::move(protected_payload), sizeof(protected_raw));
-
-  uint8_t buf[65536];
-  size_t len;
-  packet1.store(buf, &len);
-
-  const QUICPacket packet2(ats_unique_buf(buf, [](void *p) { ats_free(p); }), len, 0);
-
-  CHECK(packet2.type() == QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0);
-  CHECK(packet2.packet_number() == 0xffcc9966);
-  CHECK(packet2.size() == 10);
-  CHECK(packet2.payload_size() == sizeof(protected_raw));
-  CHECK(memcmp(packet2.payload(), protected_raw, sizeof(protected_raw)) == 0);
+    QUICPacketHeader *header = QUICPacketHeader::load(input, sizeof(input), 0);
+    CHECK(header->connection_id() == 0x01020304050607);
+    CHECK(header->packet_number() == 0);
+  }
 }
 
 TEST_CASE("Loading Unknown Packet", "[quic]")

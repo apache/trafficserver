@@ -130,6 +130,8 @@ test_QUICFrame_SOURCES = \
   ../QUICGlobals.cc \
   ../QUICFrame.cc \
   ../QUICPacket.cc \
+  ../QUICKeyGenerator.cc \
+  $(QUICKeyGenerator_impl) \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICTypes.cc \
@@ -180,6 +182,8 @@ test_QUICFrameDispatcher_SOURCES = \
   ../QUICDebugNames.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
+  ../QUICKeyGenerator.cc \
+  $(QUICKeyGenerator_impl) \
   ../../SSLNextProtocolSet.cc
 
 test_QUICFrameDispatcher_LDADD = \
@@ -299,6 +303,8 @@ test_QUICTransportParameters_SOURCES = \
   ../QUICVersionNegotiator.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
+  ../QUICKeyGenerator.cc \
+  $(QUICKeyGenerator_impl) \
   ../QUICStream.cc \
   ../QUICIncomingFrameBuffer.cc \
   ../QUICStreamState.cc \
@@ -361,9 +367,12 @@ test_QUICCrypto_LDADD = \
 test_QUICCrypto_SOURCES = \
   main.cc \
   test_QUICCrypto.cc \
+  ../QUICKeyGenerator.cc \
+  $(QUICKeyGenerator_impl) \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICCrypto.h \
+  ../QUICTypes.cc \
   ../QUICGlobals.cc \
   ../../SSLNextProtocolSet.cc
 
@@ -423,6 +432,8 @@ test_QUICTypeUtil_SOURCES = \
   ../QUICDebugNames.cc \
   ../QUICFrame.cc \
   ../QUICPacket.cc \
+  ../QUICKeyGenerator.cc \
+  $(QUICKeyGenerator_impl) \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICTypes.cc
@@ -456,6 +467,8 @@ test_QUICAckFrameCreator_SOURCES = \
   ../QUICStreamState.cc \
   ../QUICFlowController.cc \
   ../QUICDebugNames.cc \
+  ../QUICKeyGenerator.cc \
+  $(QUICKeyGenerator_impl) \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../../SSLNextProtocolSet.cc
@@ -485,6 +498,8 @@ test_QUICVersionNegotiator_SOURCES = \
   ../QUICGlobals.cc \
   ../QUICTypes.cc \
   ../QUICPacket.cc \
+  ../QUICKeyGenerator.cc \
+  $(QUICKeyGenerator_impl) \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICApplication.cc \
@@ -531,6 +546,8 @@ test_QUICFlowController_SOURCES = \
   ../QUICDebugNames.cc \
   ../QUICTypes.cc \
   ../QUICPacket.cc \
+  ../QUICKeyGenerator.cc \
+  $(QUICKeyGenerator_impl) \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICFrame.cc

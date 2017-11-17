@@ -66,17 +66,13 @@ TEST_CASE("QUICKeyGenerator", "[quic]")
       0x55, 0x44, 0x0d, 0x5f, 0xf7, 0x50, 0x3d, 0xe4,
       0x99, 0x7b, 0xfd, 0x6b
     };
-    uint8_t actual_client_key[128];
-    size_t actual_client_key_len = sizeof(actual_client_key);
-    uint8_t actual_client_iv[128];
-    size_t actual_client_iv_len = sizeof(actual_client_iv);
 
-    keygen.generate(cid, actual_client_key, &actual_client_key_len, actual_client_iv, &actual_client_iv_len);
+    std::unique_ptr<KeyMaterial> actual_km = keygen.generate(cid);
 
-    CHECK(actual_client_key_len == sizeof(expected_client_key));
-    CHECK(memcmp(actual_client_key, expected_client_key, sizeof(expected_client_key)) == 0);
-    CHECK(actual_client_iv_len == sizeof(expected_client_iv));
-    CHECK(memcmp(actual_client_iv, expected_client_iv, sizeof(expected_client_iv)) == 0);
+    CHECK(actual_km->key_len == sizeof(expected_client_key));
+    CHECK(memcmp(actual_km->key, expected_client_key, sizeof(expected_client_key)) == 0);
+    CHECK(actual_km->iv_len == sizeof(expected_client_iv));
+    CHECK(memcmp(actual_km->iv, expected_client_iv, sizeof(expected_client_iv)) == 0);
   }
 
   SECTION("SERVER Cleartext")
@@ -92,16 +88,12 @@ TEST_CASE("QUICKeyGenerator", "[quic]")
       0x57, 0x82, 0x3b, 0x85, 0x2c, 0x7e, 0xf9, 0xe3,
       0x80, 0x2b, 0x69, 0x0b
     };
-    uint8_t actual_server_key[128];
-    size_t actual_server_key_len = sizeof(actual_server_key);
-    uint8_t actual_server_iv[128];
-    size_t actual_server_iv_len = sizeof(actual_server_iv);
 
-    keygen.generate(cid, actual_server_key, &actual_server_key_len, actual_server_iv, &actual_server_iv_len);
+    std::unique_ptr<KeyMaterial> actual_km = keygen.generate(cid);
 
-    CHECK(actual_server_key_len == sizeof(expected_server_key));
-    CHECK(memcmp(actual_server_key, expected_server_key, sizeof(expected_server_key)) == 0);
-    CHECK(actual_server_iv_len == sizeof(expected_server_iv));
-    CHECK(memcmp(actual_server_iv, expected_server_iv, sizeof(expected_server_iv)) == 0);
+    CHECK(actual_km->key_len == sizeof(expected_server_key));
+    CHECK(memcmp(actual_km->key, expected_server_key, sizeof(expected_server_key)) == 0);
+    CHECK(actual_km->iv_len == sizeof(expected_server_iv));
+    CHECK(memcmp(actual_km->iv, expected_server_iv, sizeof(expected_server_iv)) == 0);
   }
 }

@@ -29,16 +29,19 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 {
   QUICPacketFactory factory;
 
-  uint8_t client_initial_packet_data[] = {
+  uint8_t client_initial_packet_header[] = {
     0x82,                                           // Type
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection id
     0x00, 0x00, 0x00, 0x00,                         // Packet number
     0xaa, 0xbb, 0xcc, 0xdd,                         // Version
+  };
+  uint8_t client_initial_packet_payload[] = {
     0x00                                            // Payload
   };
 
-  QUICPacket client_initial_packet(ats_unique_buf(client_initial_packet_data, [](void *p) { ats_free(p); }),
-                                   sizeof(client_initial_packet_data), 0);
+  QUICPacketHeader *header = QUICPacketHeader::load(client_initial_packet_header, sizeof(client_initial_packet_header), 0);
+  QUICPacket client_initial_packet(header, ats_unique_buf(client_initial_packet_payload, [](void *p) { ats_free(p); }),
+                                   sizeof(client_initial_packet_payload), 0);
 
   QUICPacketUPtr packet = factory.create_version_negotiation_packet(&client_initial_packet, 0);
   CHECK(packet->type() == QUICPacketType::VERSION_NEGOTIATION);

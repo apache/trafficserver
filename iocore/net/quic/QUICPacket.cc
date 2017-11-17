@@ -85,6 +85,12 @@ QUICPacketHeader::build(QUICPacketType type, QUICConnectionId connection_id, QUI
   return short_header;
 }
 
+QUICPacketHeader *
+QUICPacketHeader::clone() const
+{
+  return nullptr;
+}
+
 //
 // QUICPacketLongHeader
 //
@@ -451,12 +457,13 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
 //
 // QUICPacket
 //
-QUICPacket::QUICPacket(QUICPacketHeader *header, ats_unique_buf unprotected_payload, size_t unprotected_payload_len, QUICPacketNumber base_packet_number)
+
+QUICPacket::QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len, QUICPacketNumber base_packet_number)
 {
-  this->_size   = unprotected_payload_len;
-  this->_header = header;
-  this->_unprotected_payload     = std::move(unprotected_payload);
-  this->_unprotected_payload_len = unprotected_payload_len;
+  this->_header       = header;
+  this->_size         = this->_header->length() + payload_len;
+  this->_payload      = std::move(payload);
+  this->_payload_size = payload_len;
 }
 
 QUICPacket::QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
@@ -546,10 +553,10 @@ QUICPacket::packet_number() const
   return this->_header->packet_number();
 }
 
-const uint8_t *
+const QUICPacketHeader *
 QUICPacket::header() const
 {
-  return this->_header->buf();
+  return this->_header;
 }
 
 const uint8_t *
@@ -604,37 +611,8 @@ QUICPacket::key_phase() const
 void
 QUICPacket::store(uint8_t *buf, size_t *len) const
 {
-  this->_header->store(buf, len);
-  ink_assert(this->size() >= *len);
-
-  if (this->type() == QUICPacketType::STATELESS_RESET) {
-    memcpy(buf + *len, this->payload(), this->payload_size());
-    *len += this->payload_size();
-  } else if (this->type() != QUICPacketType::ZERO_RTT_PROTECTED && this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0 &&
-             this->type() != QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
-    memcpy(buf + *len, this->payload(), this->payload_size());
-    *len += this->payload_size();
-
-    // fnv1a(buf, *len, buf + *len);
-    // *len += FNV1A_HASH_LEN;
-  } else {
-    ink_assert(this->_protected_payload);
-    memcpy(buf + *len, this->_protected_payload.get(), this->_protected_payload_size);
-    *len += this->_protected_payload_size;
-  }
-}
-
-void
-QUICPacket::store_header(uint8_t *buf, size_t *len) const
-{
-  this->_header->store(buf, len);
-}
-
-void
-QUICPacket::set_protected_payload(ats_unique_buf cipher_txt, size_t cipher_txt_len)
-{
-  this->_protected_payload      = std::move(cipher_txt);
-  this->_protected_payload_size = cipher_txt_len;
+  memcpy(buf + *len, this->payload(), this->payload_size());
+  *len = this->payload_size();
 }
 
 uint8_t
@@ -790,11 +768,14 @@ QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id
   // TODO: do not dump header twice
   uint8_t ad[17] = {0};
   size_t ad_len  = 0;
-  packet->store_header(ad, &ad_len);
+  packet->header()->store(ad, &ad_len);
 
   if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, packet->payload(), packet->payload_size(),
                              packet->packet_number(), ad, ad_len, packet->key_phase())) {
-    packet->set_protected_payload(std::move(cipher_txt), cipher_txt_len);
+    QUICPacket *ep = quicPacketAllocator.alloc();
+    new (ep) QUICPacket(packet->header()->clone(), std::move(cipher_txt), cipher_txt_len, base_packet_number);
+    packet = QUICPacketUPtr(ep, &QUICPacketDeleter::delete_packet);
+
     Debug("quic_packet_factory", "Encrypt Packet, pkt_num: %" PRIu64 ", header_len: %zu payload: %zu", packet->packet_number(),
           ad_len, cipher_txt_len);
     return packet;

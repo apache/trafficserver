@@ -149,8 +149,8 @@ TEST_CASE("QUICCrypto 1-RTT", "[quic]")
   std::cout << "Post Handshake Message" << std::endl;
   print_hex(post_handshake_msg, post_handshake_msg_len);
 
-  CHECK(client->setup_session());
-  CHECK(server->setup_session());
+  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
+  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
 
   // encrypt - decrypt
   uint8_t original[] = {
