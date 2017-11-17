@@ -70,6 +70,9 @@ QUICPacketProtection::get_key(QUICKeyPhase phase) const
   case QUICKeyPhase::CLEARTEXT:
     return *this->_cleartext_key;
   }
+
+  ink_release_assert(!"Bad phase");
+  return *this->_cleartext_key;
 }
 
 QUICKeyPhase
