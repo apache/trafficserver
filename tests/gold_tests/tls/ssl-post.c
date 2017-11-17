@@ -231,7 +231,7 @@ main(int argc, char *argv[])
 
   int thread_count = atoi(argv[2]);
 
-  char *port = argc == 5 ? argv[4] : "443";
+  const char *port = argc == 5 ? argv[4] : "443";
 
   /* Obtain address(es) matching host/port */
 
@@ -308,7 +308,7 @@ main(int argc, char *argv[])
   struct thread_info tinfo;
   tinfo.rp           = rp;
   tinfo.session      = session;
-  pthread_t *threads = malloc(thread_count * sizeof(pthread_t));
+  pthread_t *threads = (pthread_t *)malloc(thread_count * sizeof(pthread_t));
   for (i = 0; i < thread_count; i++) {
     pthread_create(threads + i, NULL, spawn_same_session_send, &tinfo);
   }

@@ -402,4 +402,4 @@ def addSSLfile(self, filename):
 
 RegisterFileType(Config, "ats:config")
 RegisterFileType(RecordsConfig, "ats:config:records")
-AddTestRunSet(MakeATSProcess, name="MakeATSProcess")
+ExtendTest(MakeATSProcess, name="MakeATSProcess")
