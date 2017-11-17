@@ -1209,11 +1209,11 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
   ink_release_assert(stream != nullptr);
   Http2StreamDebug(ua_session, stream->get_id(), "top node, point=%d", node->point);
 
-  size_t len                      = 0;
-  Http2SendDataFrameResult result = send_a_data_frame(stream, len);
+  size_t len                       = 0;
+  Http2SendADataFrameResult result = send_a_data_frame(stream, len);
 
   switch (result) {
-  case Http2SendDataFrameResult::NO_ERROR: {
+  case HTTP2_SEND_A_DATA_FRAME_NO_ERROR: {
     // No response body to send
     if (len == 0 && !stream->is_body_done()) {
       dependency_tree->deactivate(node, len);
@@ -1222,7 +1222,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
     }
     break;
   }
-  case Http2SendDataFrameResult::DONE: {
+  case HTTP2_SEND_A_DATA_FRAME_DONE: {
     dependency_tree->deactivate(node, len);
     delete_stream(stream);
     break;
@@ -1237,7 +1237,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
   return;
 }
 
-Http2SendDataFrameResult
+Http2SendADataFrameResult
 Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_length)
 {
   const ssize_t window_size         = std::min(this->client_rwnd, stream->client_rwnd);
@@ -1259,7 +1259,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   if (read_available_size > 0) {
     // We only need to check for window size when there is a payload
     if (window_size <= 0) {
-      return Http2SendDataFrameResult::NO_WINDOW;
+      return HTTP2_SEND_A_DATA_FRAME_NO_WINDOW;
     }
     // Copy into the payload buffer. Seems like we should be able to skip this copy step
     payload_length = current_reader->read(payload_buffer, write_available_size);
@@ -1271,7 +1271,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   // If we return here, we never send the END_STREAM in the case of a early terminating OS.
   // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
   if (!stream->is_body_done() && payload_length == 0) {
-    return Http2SendDataFrameResult::NO_PAYLOAD;
+    return HTTP2_SEND_A_DATA_FRAME_NO_PAYLOAD;
   }
 
   if (stream->is_body_done() && read_available_size <= write_available_size) {
@@ -1303,13 +1303,13 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     // Setting to the same state shouldn't be erroneous
     stream->change_state(data.header().type, data.header().flags);
 
-    return Http2SendDataFrameResult::DONE;
+    return HTTP2_SEND_A_DATA_FRAME_DONE;
   }
 
-  return Http2SendDataFrameResult::NO_ERROR;
+  return HTTP2_SEND_A_DATA_FRAME_NO_ERROR;
 }
 
-Http2SendDataFrameResult
+void
 Http2ConnectionState::send_data_frames(Http2Stream *stream)
 {
   // To follow RFC 7540 must not send more frames other than priority on
@@ -1318,25 +1318,27 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
       stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
     Http2StreamDebug(this->ua_session, stream->get_id(), "Shutdown half closed local stream");
     this->delete_stream(stream);
-    return Http2SendDataFrameResult::NO_ERROR;
+    return;
   }
 
-  size_t len                      = 0;
-  Http2SendDataFrameResult result = Http2SendDataFrameResult::NO_ERROR;
-  while (result == Http2SendDataFrameResult::NO_ERROR) {
-    result = send_a_data_frame(stream, len);
+  size_t len = 0;
+  while (true) {
+    Http2SendADataFrameResult result = send_a_data_frame(stream, len);
 
-    if (result == Http2SendDataFrameResult::DONE) {
+    if (result == HTTP2_SEND_A_DATA_FRAME_DONE) {
       // Delete a stream immediately
       // TODO its should not be deleted for a several time to handling
       // RST_STREAM and WINDOW_UPDATE.
       // See 'closed' state written at [RFC 7540] 5.1.
       Http2StreamDebug(this->ua_session, stream->get_id(), "Shutdown stream");
       this->delete_stream(stream);
+      break;
+    } else if (result == HTTP2_SEND_A_DATA_FRAME_NO_ERROR) {
+      continue;
+    } else {
+      break;
     }
   }
-
-  return result;
 }
 
 void
