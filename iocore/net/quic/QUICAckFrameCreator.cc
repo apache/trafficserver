@@ -28,14 +28,11 @@
 int
 QUICAckFrameCreator::update(QUICPacketNumber packet_number, bool acknowledgable)
 {
-  if (this->_packet_count == MAXIMUM_PACKET_COUNT) {
+  if (this->_packet_numbers.size() == MAXIMUM_PACKET_COUNT) {
     return -1;
   }
-  if (packet_number > this->_largest_ack_number) {
-    this->_largest_ack_number        = packet_number;
-    this->_largest_ack_received_time = Thread::get_hrtime();
-  }
-  this->_packet_numbers[this->_packet_count++] = packet_number - this->_last_ack_number;
+
+  this->_packet_numbers.push_back(packet_number);
   if (acknowledgable && !this->_can_send) {
     this->_can_send = true;
   }
@@ -48,10 +45,10 @@ QUICAckFrameCreator::create()
 {
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = {nullptr, QUICFrameDeleter::delete_null_frame};
   if (this->_can_send) {
-    ack_frame              = this->_create_ack_frame();
-    this->_last_ack_number = this->_largest_ack_number;
-    this->_can_send        = false;
-    this->_packet_count    = 0;
+    ack_frame           = this->_create_ack_frame();
+    this->_can_send     = false;
+    this->_packet_count = 0;
+    this->_packet_numbers.clear();
   }
   return ack_frame;
 }
@@ -67,37 +64,102 @@ void
 QUICAckFrameCreator::_sort_packet_numbers()
 {
   // TODO Find more smart way
-  std::sort(this->_packet_numbers, this->_packet_numbers + this->_packet_count);
 }
 
 std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
 QUICAckFrameCreator::_create_ack_frame()
 {
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = {nullptr, QUICFrameDeleter::delete_null_frame};
-  this->_sort_packet_numbers();
-  uint16_t start = this->_packet_numbers[0];
-  uint8_t gap    = 0;
-  int i;
+  this->_packet_numbers.sort();
+  QUICPacketNumber largest_ack_number = this->_packet_numbers.largest_ack_number();
+  QUICPacketNumber last_ack_number    = largest_ack_number;
+
+  size_t i        = 0;
+  uint8_t gap     = 0;
   uint64_t length = 0;
-  for (i = 0, length = 0; i < this->_packet_count; ++i, ++length) {
-    if (this->_packet_numbers[i] == start + length) {
+
+  while (i < this->_packet_numbers.size()) {
+    if (this->_packet_numbers[i] == last_ack_number) {
+      last_ack_number--;
+      length++;
+      i++;
       continue;
     }
+
     if (ack_frame) {
       ack_frame->ack_block_section()->add_ack_block({gap, length});
     } else {
-      uint16_t delay = (Thread::get_hrtime() - this->_largest_ack_received_time) / 1000; // TODO Milliseconds?
-      ack_frame      = QUICFrameFactory::create_ack_frame(this->_largest_ack_number, delay, length);
+      uint16_t delay = (Thread::get_hrtime() - this->_packet_numbers.largest_ack_received_time()) / 1000; // TODO Milliseconds?
+      ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length);
     }
-    gap    = this->_packet_numbers[i] - this->_packet_numbers[i - 1] - 1;
-    start  = this->_packet_numbers[i];
-    length = 0;
+
+    gap             = last_ack_number - this->_packet_numbers[i];
+    last_ack_number = this->_packet_numbers[i];
+    length          = 0;
   }
+
   if (ack_frame) {
     ack_frame->ack_block_section()->add_ack_block({gap, length});
   } else {
-    uint16_t delay = (Thread::get_hrtime() - this->_largest_ack_received_time) / 1000; // TODO Milliseconds?
-    ack_frame      = QUICFrameFactory::create_ack_frame(this->_largest_ack_number, delay, length);
+    uint16_t delay = (Thread::get_hrtime() - this->_packet_numbers.largest_ack_received_time()) / 1000; // TODO Milliseconds?
+    ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length);
   }
   return ack_frame;
+}
+
+void
+QUICAckPacketNumbers::push_back(QUICPacketNumber packet_number)
+{
+  if (packet_number > this->_largest_ack_number) {
+    this->_largest_ack_received_time = Thread::get_hrtime();
+    this->_largest_ack_number        = packet_number;
+  }
+
+  this->_packet_numbers.push_back(packet_number);
+}
+
+QUICPacketNumber
+QUICAckPacketNumbers::front()
+{
+  return this->_packet_numbers.front();
+}
+
+QUICPacketNumber
+QUICAckPacketNumbers::back()
+{
+  return this->_packet_numbers.back();
+}
+
+size_t
+QUICAckPacketNumbers::size()
+{
+  return this->_packet_numbers.size();
+}
+
+void
+QUICAckPacketNumbers::clear()
+{
+  this->_packet_numbers.clear();
+  this->_largest_ack_number        = 0;
+  this->_largest_ack_received_time = 0;
+}
+
+QUICPacketNumber
+QUICAckPacketNumbers::largest_ack_number()
+{
+  return this->_largest_ack_number;
+}
+
+ink_hrtime
+QUICAckPacketNumbers::largest_ack_received_time()
+{
+  return this->_largest_ack_received_time;
+}
+
+void
+QUICAckPacketNumbers::sort()
+{
+  //  TODO Find more smart way
+  std::sort(this->_packet_numbers.begin(), this->_packet_numbers.end(),
+            [](QUICPacketNumber a, QUICPacketNumber b) -> bool { return b < a; });
 }
