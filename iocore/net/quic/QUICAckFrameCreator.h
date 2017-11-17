@@ -27,6 +27,28 @@
 #include "QUICTypes.h"
 #include "QUICFrame.h"
 
+class QUICAckPacketNumbers
+{
+public:
+  void push_back(QUICPacketNumber packet_number);
+  QUICPacketNumber front();
+  QUICPacketNumber back();
+  size_t size();
+  void clear();
+  void sort();
+
+  QUICPacketNumber largest_ack_number();
+  ink_hrtime largest_ack_received_time();
+
+  const QUICPacketNumber &operator[](int i) const { return this->_packet_numbers[i]; }
+
+private:
+  QUICPacketNumber _largest_ack_number  = 0;
+  ink_hrtime _largest_ack_received_time = 0;
+
+  std::vector<QUICPacketNumber> _packet_numbers;
+};
+
 class QUICAckFrameCreator
 {
 public:
@@ -57,11 +79,7 @@ public:
 private:
   bool _can_send = false;
 
-  QUICPacketNumber _largest_ack_number  = 0;
-  QUICPacketNumber _last_ack_number     = 0;
-  ink_hrtime _largest_ack_received_time = 0;
-
-  uint16_t _packet_numbers[MAXIMUM_PACKET_COUNT];
+  QUICAckPacketNumbers _packet_numbers;
   uint16_t _packet_count = 0;
 
   void _sort_packet_numbers();
