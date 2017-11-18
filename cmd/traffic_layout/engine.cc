@@ -30,6 +30,7 @@
 #include "ts/ink_args.h"
 #include "ts/I_Version.h"
 #include "ts/ink_file.h"
+#include "ts/ink_assert.h"
 
 #include "engine.h"
 #include "file_system.h"
@@ -193,16 +194,18 @@ RunrootEngine::runroot_parse()
   }
 }
 
-// for cleanning the parent of bin / cwd
+// for cleaning the parent of bin / cwd
 // return the path if we can clean the bin / cwd
 const static std::string
 clean_parent(const std::string &bin_path)
 {
   char cwd[MAX_CWD_LEN];
-  getcwd(cwd, sizeof(cwd));
+  ink_release_assert(getcwd(cwd, sizeof(cwd)) == nullptr);
 
   char resolved_binpath[MAX_CWD_LEN];
-  realpath(bin_path.c_str(), resolved_binpath); // bin path
+  if (realpath(bin_path.c_str(), resolved_binpath) == nullptr) { // bin path
+    return "";
+  }
   std::string RealBinPath = resolved_binpath;
 
   std::vector<std::string> TwoPath = {RealBinPath, cwd};
