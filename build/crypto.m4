@@ -231,6 +231,17 @@ AC_DEFUN([TS_CHECK_CRYPTO_DH_GET_2048_256], [
   AC_SUBST(use_dh_get_2048_256)
 ])
 
+AC_DEFUN([TS_CHECK_CRYPTO_HKDF], [
+  enable_hkdf=yes
+  AC_CHECK_HEADERS([openssl/kdf.h openssl/hkdf.h], [
+    break
+  ], [
+    enable_hkdf=no
+  ])
+  TS_ARG_ENABLE_VAR([use], [hkdf])
+  AC_SUBST(use_hkdf)
+])
+
 AC_DEFUN([TS_CHECK_CRYPTO_TLS13], [
   enable_tls13=yes
   _tls13_saved_LIBS=$LIBS

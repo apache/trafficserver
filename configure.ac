@@ -1137,6 +1137,10 @@ TS_CHECK_CRYPTO_SET_RBIO
 # Check for DH_get_2048_256
 TS_CHECK_CRYPTO_DH_GET_2048_256
 
+# Check for HKDF support
+TS_CHECK_CRYPTO_HKDF
+AM_CONDITIONAL([HAS_HKDF], [test "x$enable_hkdf" = "xyes"])
+
 # Check for TLS 1.3 support
 TS_CHECK_CRYPTO_TLS13
 

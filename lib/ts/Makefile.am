@@ -44,12 +44,6 @@ libtsutil_la_LIBADD = \
   @LIBCAP@ \
   -lc
 
-if OPENSSL_IS_BORINGSSL
-HKDF_impl = HKDF_boringssl.cc
-else
-HKDF_impl = HKDF_openssl.cc
-endif
-
 libtsutil_la_SOURCES = \
   Allocator.h \
   Arena.cc \
@@ -79,9 +73,6 @@ libtsutil_la_SOURCES = \
   HashSip.cc \
   HashSip.h \
   History.h \
-  HKDF.h \
-  HKDF.cc \
-  $(HKDF_impl) \
   HostLookup.cc \
   HostLookup.h \
   hugepages.cc \
@@ -208,6 +199,19 @@ libtsutil_la_SOURCES = \
   Version.cc \
   X509HostnameValidator.cc \
   X509HostnameValidator.h
+
+if HAS_HKDF
+if OPENSSL_IS_BORINGSSL
+HKDF_impl = HKDF_boringssl.cc
+else
+HKDF_impl = HKDF_openssl.cc
+endif
+libtsutil_la_SOURCES += \
+  HKDF.h \
+  HKDF.cc \
+  $(HKDF_impl)
+endif
+
 
 #test_UNUSED_SOURCES = \
 #  load_http_hdr.cc \
