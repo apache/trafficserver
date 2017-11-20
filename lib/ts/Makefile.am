@@ -272,8 +272,12 @@ test_tslib_SOURCES = \
 	unit-tests/test_IpMap.cc \
 	unit-tests/test_layout.cc \
 	unit-tests/test_string_view.cc \
-	unit-tests/test_TextView.cc \
+	unit-tests/test_TextView.cc
+
+if HAS_HKDF
+test_tslib_SOURCES += \
 	unit-tests/test_HKDF.cc
+endif
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
