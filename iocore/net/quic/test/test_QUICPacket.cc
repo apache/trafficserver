@@ -30,32 +30,32 @@ TEST_CASE("QUICPacketHeader", "[quic]")
   SECTION("Long Header")
   {
     const uint8_t input[] = {
-      0x81, // Long header, Type
-      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Connection ID
-      0x12, 0x34, 0x56, 0x78, // Packet number
-      0x11, 0x22, 0x33, 0x44, // Version
-      0xff, 0xff, // Payload (dummy)
+      0x81,                                           // Long header, Type
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection ID
+      0x12, 0x34, 0x56, 0x78,                         // Packet number
+      0x11, 0x22, 0x33, 0x44,                         // Version
+      0xff, 0xff,                                     // Payload (dummy)
     };
 
     QUICPacketHeader *header = QUICPacketHeader::load(input, sizeof(input), 0);
     CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
-    CHECK(header->connection_id() == 0x01020304050607);
-    CHECK(header->packet_number() == 0);
+    CHECK(header->connection_id() == 0x0102030405060708);
+    CHECK(header->packet_number() == 0x12345678);
     CHECK(header->version() == 0x11223344);
   }
 
   SECTION("Short Header")
   {
     const uint8_t input[] = {
-      0x41, // Short header, with Connection ID, KeyPhse 0, Type
-      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Connection ID
-      0x12, 0x34, 0x56, 0x78, // Packet number
-      0xff, 0xff, // Payload (dummy)
+      0x43,                                           // Short header, with Connection ID, KeyPhse 0, Type
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection ID
+      0x12, 0x34, 0x56, 0x78,                         // Packet number
+      0xff, 0xff,                                     // Payload (dummy)
     };
 
     QUICPacketHeader *header = QUICPacketHeader::load(input, sizeof(input), 0);
-    CHECK(header->connection_id() == 0x01020304050607);
-    CHECK(header->packet_number() == 0);
+    CHECK(header->connection_id() == 0x0102030405060708);
+    CHECK(header->packet_number() == 0x12345678);
   }
 }
 

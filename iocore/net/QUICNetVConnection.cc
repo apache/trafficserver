@@ -691,7 +691,7 @@ QUICNetVConnection::_state_common_receive_packet()
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   QUICPacketCreationResult result;
-  QUICPacketUPtr p    = this->_dequeue_recv_packet(result);
+  QUICPacketUPtr p = this->_dequeue_recv_packet(result);
   if (result == QUICPacketCreationResult::FAILED) {
     return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
   } else if (result == QUICPacketCreationResult::NOT_READY) {
@@ -965,7 +965,8 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
   } else {
     udp_packet->free();
     if (result == QUICPacketCreationResult::SUCCESS) {
-      DebugQUICCon("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()), quic_packet->packet_number(), quic_packet->size());
+      DebugQUICCon("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
+                   quic_packet->packet_number(), quic_packet->size());
     } else {
       DebugQUICCon("Failed to decrypt the packet");
     }

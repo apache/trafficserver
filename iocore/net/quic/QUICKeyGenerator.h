@@ -36,18 +36,16 @@ struct KeyMaterial {
   // These constant sizes are not enough somehow
   // uint8_t key[EVP_MAX_KEY_LENGTH] = {0};
   // uint8_t iv[EVP_MAX_IV_LENGTH]   = {0};
-  uint8_t key[512]  = {0};
-  uint8_t iv[512]   = {0};
-  size_t key_len    = 512;
-  size_t iv_len     = 512;
+  uint8_t key[512] = {0};
+  uint8_t iv[512]  = {0};
+  size_t key_len   = 512;
+  size_t iv_len    = 512;
 };
 
 class QUICKeyGenerator
 {
 public:
-  enum class Context {
-    SERVER, CLIENT
-  };
+  enum class Context { SERVER, CLIENT };
 
   QUICKeyGenerator(Context ctx) : _ctx(ctx) {}
 
@@ -58,18 +56,29 @@ public:
 
   /*
    * Generate a key and an IV for Packet Protection
-   * 
+   *
    * On the first call, this generates a secret with the constatnt label and generate a key material with the secret.
-   * On the following call, this regenerates a new secret based on the last secret and genereate a new key material with the new secret.
+   * On the following call, this regenerates a new secret based on the last secret and genereate a new key material with the new
+   * secret.
    */
-  std::unique_ptr<KeyMaterial> generate();
+  std::unique_ptr<KeyMaterial> generate(SSL *ssl);
 
 private:
   Context _ctx = Context::SERVER;
-  int _generate(uint8_t *key, size_t *key_len, uint8_t *iv, size_t *iv_len, HKDF &hkdf, const uint8_t *secret, size_t secret_len, const char *label, size_t label_len, const EVP_MD *md, const QUIC_EVP_CIPHER *cipher);
+
+  uint8_t _last_secret[256];
+  size_t _last_secret_len = 0;
+
+  int _generate(uint8_t *key, size_t *key_len, uint8_t *iv, size_t *iv_len, HKDF &hkdf, const uint8_t *secret, size_t secret_len,
+                const QUIC_EVP_CIPHER *cipher);
+  int _generate_cleartext_secret(uint8_t *out, size_t *out_len, HKDF &hkdf, QUICConnectionId cid, const char *label,
+                                 size_t label_len, size_t length);
+  int _generate_pp_secret(uint8_t *out, size_t *out_len, HKDF &hkdf, SSL *ssl, const char *label, size_t label_len, size_t length);
   int _generate_key(uint8_t *out, size_t *out_len, HKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t key_length) const;
   int _generate_iv(uint8_t *out, size_t *out_len, HKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t iv_length) const;
   size_t _get_key_len(const QUIC_EVP_CIPHER *cipher) const;
   size_t _get_iv_len(const QUIC_EVP_CIPHER *cipher) const;
   const QUIC_EVP_CIPHER *_get_cipher_for_cleartext() const;
+  const QUIC_EVP_CIPHER *_get_cipher_for_protected_packet(const SSL *ssl) const;
+  const EVP_MD *_get_handshake_digest(const SSL *ssl) const;
 };

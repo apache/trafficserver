@@ -49,7 +49,7 @@ public:
   /*
    * Returns a pointer for the payload
    */
-  virtual const uint8_t *payload() const         = 0;
+  virtual const uint8_t *payload() const = 0;
 
   /*
    * Returns a payload size based on header length and buffer size that is specified to the constructo.
@@ -59,12 +59,12 @@ public:
   /*
    * Returns a header size
    */
-  virtual uint16_t length() const                = 0;
+  virtual uint16_t length() const = 0;
 
   /*
    * Returns a key phase
    */
-  virtual QUICKeyPhase key_phase() const         = 0;
+  virtual QUICKeyPhase key_phase() const = 0;
 
   /*
    * Stores serialized header
@@ -87,7 +87,6 @@ public:
    * This creates either a QUICPacketShortHeader or a QUICPacketLongHeader.
    */
   static QUICPacketHeader *load(const uint8_t *buf, size_t len, QUICPacketNumber base);
-
 
   /*
    * Build a QUICPacketHeader
@@ -117,8 +116,8 @@ protected:
   QUICPacketHeader(){};
 
   // These two are used only if the instance was created with a buffer
-  const uint8_t *_buf           = nullptr;
-  size_t _buf_len               = 0;
+  const uint8_t *_buf = nullptr;
+  size_t _buf_len     = 0;
 
   ats_unique_buf _payload              = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   QUICPacketType _type                 = QUICPacketType::UNINITIALIZED;
@@ -187,7 +186,7 @@ public:
 
   /*
    * Creates a QUICPacket with a QUICPacketHeader and a buffer that contains payload
-   * 
+   *
    * QUICPacket class doesn't care about whether the payload is protected (encrypted) or not.
    */
   QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len, QUICPacketNumber base_packet_number);

@@ -36,11 +36,11 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
     0xaa, 0xbb, 0xcc, 0xdd,                         // Version
   };
   uint8_t client_initial_packet_payload[] = {
-    0x00                                            // Payload
+    0x00 // Payload
   };
 
   QUICPacketHeader *header = QUICPacketHeader::load(client_initial_packet_header, sizeof(client_initial_packet_header), 0);
-  QUICPacket client_initial_packet(header, ats_unique_buf(client_initial_packet_payload, [](void *p) { ats_free(p); }),
+  QUICPacket client_initial_packet(header, ats_unique_buf(client_initial_packet_payload, [](void *) {}),
                                    sizeof(client_initial_packet_payload), 0);
 
   QUICPacketUPtr packet = factory.create_version_negotiation_packet(&client_initial_packet, 0);
@@ -86,8 +86,4 @@ TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
   CHECK(packet->type() == QUICPacketType::STATELESS_RESET);
   CHECK(packet->connection_id() == 0x01020304);
   CHECK(packet->packet_number() == token.get_u8()[0]);
-  CHECK(memcmp(packet->payload(), token.get_u8() + 1, 15) == 0);
-  packet->store(output, &out_len);
-  CHECK(memcmp(output, expected_output, 25) == 0);
-  CHECK(out_len > 25); // Check existence of random bytes at the end
 }

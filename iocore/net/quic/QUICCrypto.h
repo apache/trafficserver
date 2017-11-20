@@ -43,14 +43,14 @@ public:
   QUICPacketProtection(){};
   ~QUICPacketProtection();
   void set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phase);
-  const KeyMaterial& get_key(QUICKeyPhase phase) const;
+  const KeyMaterial &get_key(QUICKeyPhase phase) const;
   QUICKeyPhase key_phase() const;
 
 private:
   std::unique_ptr<KeyMaterial> _cleartext_key = nullptr;
-  std::unique_ptr<KeyMaterial> _phase_0_key = nullptr;
-  std::unique_ptr<KeyMaterial> _phase_1_key = nullptr;
-  QUICKeyPhase _key_phase   = QUICKeyPhase::CLEARTEXT;
+  std::unique_ptr<KeyMaterial> _phase_0_key   = nullptr;
+  std::unique_ptr<KeyMaterial> _phase_1_key   = nullptr;
+  QUICKeyPhase _key_phase                     = QUICKeyPhase::CLEARTEXT;
 };
 
 class QUICCrypto
@@ -86,7 +86,6 @@ private:
   size_t _get_aead_key_len(const EVP_CIPHER *aead) const;
   size_t _get_aead_nonce_len(const EVP_CIPHER *aead) const;
 #endif // OPENSSL_IS_BORINGSSL
-  const EVP_MD *_get_handshake_digest(const SSL_CIPHER *cipher) const;
   size_t _get_aead_tag_len() const;
 
   bool _encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,

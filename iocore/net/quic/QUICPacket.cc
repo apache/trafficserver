@@ -270,7 +270,7 @@ QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICConnection
   } else if (type == QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
     this->_key_phase = QUICKeyPhase::PHASE_1;
   } else {
-    ink_assert(false);
+    this->_key_phase = QUICKeyPhase::CLEARTEXT;
   }
 }
 
@@ -611,7 +611,7 @@ QUICPacket::key_phase() const
 void
 QUICPacket::store(uint8_t *buf, size_t *len) const
 {
-  memcpy(buf + *len, this->payload(), this->payload_size());
+  memcpy(buf, this->payload(), this->payload_size());
   *len = this->payload_size();
 }
 
@@ -682,7 +682,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     // These packets are unprotected. Just copy the payload
     memcpy(plain_txt.get(), header->payload(), header->payload_size());
     plain_txt_len = header->payload_size();
-    result = QUICPacketCreationResult::SUCCESS;
+    result        = QUICPacketCreationResult::SUCCESS;
     break;
   case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
   case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
@@ -700,12 +700,12 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
   case QUICPacketType::CLIENT_INITIAL:
   case QUICPacketType::CLIENT_CLEARTEXT:
   case QUICPacketType::SERVER_CLEARTEXT:
-      if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
-                                 header->packet_number(), header->buf(), header->length(), QUICKeyPhase::CLEARTEXT)) {
-        result = QUICPacketCreationResult::SUCCESS;
-      } else {
-        result = QUICPacketCreationResult::FAILED;
-      }
+    if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
+                               header->packet_number(), header->buf(), header->length(), QUICKeyPhase::CLEARTEXT)) {
+      result = QUICPacketCreationResult::SUCCESS;
+    } else {
+      result = QUICPacketCreationResult::FAILED;
+    }
   default:
     result = QUICPacketCreationResult::FAILED;
     break;

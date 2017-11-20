@@ -43,10 +43,10 @@ QUICPacketProtection::~QUICPacketProtection()
 }
 
 void
-QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial>km, QUICKeyPhase phase)
+QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phase)
 {
   this->_key_phase = phase;
-  switch(phase) {
+  switch (phase) {
   case QUICKeyPhase::PHASE_0:
     this->_phase_0_key = std::move(km);
     break;
@@ -59,10 +59,10 @@ QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial>km, QUICKeyPhase phase
   }
 }
 
-const KeyMaterial&
+const KeyMaterial &
 QUICPacketProtection::get_key(QUICKeyPhase phase) const
 {
-  switch(phase) {
+  switch (phase) {
   case QUICKeyPhase::PHASE_0:
     return *this->_phase_0_key;
   case QUICKeyPhase::PHASE_1:
@@ -161,21 +161,24 @@ QUICCrypto::is_handshake_finished() const
 int
 QUICCrypto::initialize_key_materials(QUICConnectionId cid)
 {
-  this->_aead              = _get_evp_aead();
-
+  // Generate keys
   std::unique_ptr<KeyMaterial> km;
-  // for decryption
   km = this->_keygen_for_client.generate(cid);
   this->_client_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
-  // for encryption
   km = this->_keygen_for_server.generate(cid);
   this->_server_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
+
+  // Update algorithm
+  this->_aead = _get_evp_aead();
+
   return 1;
 }
 
 int
 QUICCrypto::update_key_materials()
 {
+  ink_assert(this->is_handshake_finished());
+  // Switch key phase
   QUICKeyPhase next_key_phase;
   switch (this->_client_pp->key_phase()) {
   case QUICKeyPhase::PHASE_0:
@@ -188,23 +191,17 @@ QUICCrypto::update_key_materials()
     next_key_phase = QUICKeyPhase::PHASE_0;
     break;
   }
-  const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
-  this->_aead              = _get_evp_aead();
 
-  size_t secret_len = EVP_MD_size(_get_handshake_digest(cipher));
-  size_t key_len    = _get_aead_key_len(this->_aead);
-  size_t iv_len     = std::max(static_cast<size_t>(8), _get_aead_nonce_len(this->_aead));
-
+  // Generate keys
   std::unique_ptr<KeyMaterial> km;
-  // for decryption
-  km = this->_keygen_for_client.generate();
+  km = this->_keygen_for_client.generate(this->_ssl);
   this->_client_pp->set_key(std::move(km), next_key_phase);
-  // for encryption
-  km = this->_keygen_for_server.generate();
+  km = this->_keygen_for_server.generate(this->_ssl);
   this->_server_pp->set_key(std::move(km), next_key_phase);
 
-  Debug(tag, "Negotiated ciper: %s, secret_len: %zu, key_len: %zu, iv_len: %zu", SSL_CIPHER_get_name(cipher), secret_len, key_len,
-        iv_len);
+  // Update algorithm
+  this->_aead = _get_evp_aead();
+
   return 1;
 }
 
