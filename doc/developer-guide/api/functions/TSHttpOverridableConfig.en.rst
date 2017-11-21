@@ -78,9 +78,6 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD`       :ts:cv:`proxy.config.http.background_fill_completed_threshold`
 :c:macro:`TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES`          :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies`
 :c:macro:`TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC`        :ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic`
-:c:macro:`TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL`                 :ts:cv:`proxy.config.http.cache.cluster_cache_local`
-:c:macro:`TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY`                    :ts:cv:`proxy.config.http.cache.fuzz.probability`
-:c:macro:`TS_CONFIG_HTTP_CACHE_FUZZ_TIME`                           :ts:cv:`proxy.config.http.cache.fuzz.time`
 :c:macro:`TS_CONFIG_HTTP_CACHE_GENERATION`                          :ts:cv:`proxy.config.http.cache.generation`
 :c:macro:`TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME`             :ts:cv:`proxy.config.http.cache.guaranteed_max_lifetime`
 :c:macro:`TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME`             :ts:cv:`proxy.config.http.cache.guaranteed_min_lifetime`
@@ -126,7 +123,7 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_INSERT_FORWARDED`                          :ts:cv:`proxy.config.http.insert_forwarded`
 :c:macro:`TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN`                     :ts:cv:`proxy.config.http.keep_alive_enabled_in`
 :c:macro:`TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT`                    :ts:cv:`proxy.config.http.keep_alive_enabled_out`
-:c:macro:`TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TlMEOUT_IN`         :ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_in`
+:c:macro:`TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN`         :ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_in`
 :c:macro:`TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT`        :ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_out`
 :c:macro:`TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT`                       :ts:cv:`proxy.config.http.keep_alive_post_out`
 :c:macro:`TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED`                  :ts:cv:`proxy.config.http.negative_caching_enabled`
