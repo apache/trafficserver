@@ -56,7 +56,7 @@ ts.Disk.remap_config.AddLine(
     'map https://example.com:4443 http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
-Test.prepare_plugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_hook_test.cc'), ts, '-preaccept=2')
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_hook_test.cc'), ts, '-preaccept=2')
 
 tr = Test.AddTestRun("Test two preaccept hooks")
 tr.Processes.Default.StartBefore(server)
