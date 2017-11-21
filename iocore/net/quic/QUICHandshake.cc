@@ -379,17 +379,15 @@ QUICHandshake::_process_client_finished()
     I_WANNA_DUMP_THIS_BUF(out, static_cast<int64_t>(out_len));
     // <----- DEBUG -----
 
-    ink_assert(this->_crypto->is_handshake_finished());
-    DebugQHS("Handshake is completed");
-
     _process_handshake_complete();
+    DebugQHS("Handshake has been completed");
+
+    DebugQHS("Enter state_complete");
+    SET_HANDLER(&QUICHandshake::state_complete);
 
     stream_io->write(out, out_len);
     stream_io->write_reenable();
     stream_io->read_reenable();
-
-    DebugQHS("Enter state_complete");
-    SET_HANDLER(&QUICHandshake::state_complete);
 
     return QUICErrorUPtr(new QUICNoError());
   } else {

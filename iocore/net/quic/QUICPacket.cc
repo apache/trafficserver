@@ -481,20 +481,6 @@ QUICPacket::QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t 
   this->_is_retransmittable = retransmittable;
 }
 
-QUICPacket::QUICPacket(QUICPacketType type, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
-                       ats_unique_buf payload, size_t len, bool retransmittable)
-{
-  this->_header             = QUICPacketHeader::build(type, packet_number, base_packet_number, std::move(payload), len);
-  this->_is_retransmittable = retransmittable;
-}
-
-QUICPacket::QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-                       QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len, bool retransmittable)
-{
-  this->_header = QUICPacketHeader::build(type, connection_id, packet_number, base_packet_number, std::move(payload), len);
-  this->_is_retransmittable = retransmittable;
-}
-
 QUICPacket::QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token)
 {
   const uint8_t *token                     = stateless_reset_token.get_u8();
@@ -762,35 +748,24 @@ QUICPacketUPtr
 QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                   ats_unique_buf payload, size_t len, bool retransmittable)
 {
-  // TODO Key phase should be picked up from QUICCrypto, probably
-  QUICPacket *p = quicPacketAllocator.alloc();
-  new (p) QUICPacket(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, connection_id, this->_packet_number_generator.next(),
-                     base_packet_number, std::move(payload), len, retransmittable);
-  auto packet = QUICPacketUPtr(p, &QUICPacketDeleter::delete_packet);
-
   // TODO: use pmtu of UnixNetVConnection
   size_t max_cipher_txt_len = 2048;
   ats_unique_buf cipher_txt = ats_unique_malloc(max_cipher_txt_len);
   size_t cipher_txt_len     = 0;
 
-  // TODO: do not dump header twice
-  uint8_t ad[17] = {0};
-  size_t ad_len  = 0;
-  packet->header()->store(ad, &ad_len);
+  // TODO Key phase should be picked up from QUICCrypto, probably
+  QUICPacket *packet = nullptr;
+  QUICPacketHeader *header =
+    QUICPacketHeader::build(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, connection_id, this->_packet_number_generator.next(),
+                            base_packet_number, std::move(payload), len);
 
-  if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, packet->payload(), packet->payload_size(),
-                             packet->packet_number(), ad, ad_len, packet->key_phase())) {
-    QUICPacket *ep = quicPacketAllocator.alloc();
-    new (ep) QUICPacket(packet->header()->clone(), std::move(cipher_txt), cipher_txt_len, base_packet_number);
-    packet = QUICPacketUPtr(ep, &QUICPacketDeleter::delete_packet);
-
-    Debug("quic_packet_factory", "Encrypt Packet, pkt_num: %" PRIu64 ", header_len: %zu payload: %zu", packet->packet_number(),
-          ad_len, cipher_txt_len);
-    return packet;
-  } else {
-    Debug("quic_packet_factory", "CRYPTOGRAPHIC Error");
-    return QUICPacketUPtr(nullptr, &QUICPacketDeleter::delete_null_packet);
+  if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
+                             header->packet_number(), header->buf(), header->length(), header->key_phase())) {
+    packet = quicPacketAllocator.alloc();
+    new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, retransmittable);
   }
+
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 
 QUICPacketUPtr

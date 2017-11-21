@@ -23,6 +23,7 @@
 
 #include <openssl/ssl.h>
 #include "QUICKeyGenerator.h"
+#include "ts/ink_assert.h"
 #include "ts/HKDF.h"
 
 constexpr static uint8_t QUIC_VERSION_1_SALT[] = {
@@ -126,15 +127,15 @@ int
 QUICKeyGenerator::_generate_pp_secret(uint8_t *out, size_t *out_len, HKDF &hkdf, SSL *ssl, const char *label, size_t label_len,
                                       size_t length)
 {
-  uint8_t secret[512];
-  size_t secret_len = length;
+  *out_len = length;
   if (this->_last_secret_len == 0) {
-    SSL_export_keying_material(ssl, secret, secret_len, label, label_len, reinterpret_cast<const uint8_t *>(""), 0, 1);
+    SSL_export_keying_material(ssl, out, *out_len, label, label_len, reinterpret_cast<const uint8_t *>(""), 0, 1);
   } else {
+    ink_assert(!"not implemented");
   }
-  memcpy(this->_last_secret, secret, secret_len);
-  this->_last_secret_len = secret_len;
-  *out_len               = length;
+
+  memcpy(this->_last_secret, out, *out_len);
+  this->_last_secret_len = *out_len;
 
   return 0;
 }

@@ -155,7 +155,7 @@ QUICCryptoTls::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, cons
 bool
 QUICCryptoTls::is_handshake_finished() const
 {
-  return SSL_is_init_finished(this->_ssl);
+  return (this->_client_pp->key_phase() != QUICKeyPhase::CLEARTEXT && this->_server_pp->key_phase() != QUICKeyPhase::CLEARTEXT);
 }
 
 int
@@ -177,7 +177,7 @@ QUICCryptoTls::initialize_key_materials(QUICConnectionId cid)
 int
 QUICCryptoTls::update_key_materials()
 {
-  ink_assert(this->is_handshake_finished());
+  ink_assert(SSL_is_init_finished(this->_ssl));
   // Switch key phase
   QUICKeyPhase next_key_phase;
   switch (this->_client_pp->key_phase()) {
@@ -256,7 +256,11 @@ QUICCryptoTls::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, 
   }
 
   size_t tag_len = this->_get_aead_tag_len();
-  return _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, pp->get_key(phase), tag_len);
+  bool ret       = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, pp->get_key(phase), tag_len);
+  if (!ret) {
+    Debug(tag, "Failed to decrypt a packet: pkt_num=%" PRIu64, pkt_num);
+  }
+  return ret;
 }
 
 /**

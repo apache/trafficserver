@@ -195,25 +195,13 @@ public:
   QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len);
 
   /*
-   * Creates a QUICPacket with a QUICPacketHeader, a buffer that contains payload and a flag that indicates whether the packet can
+   * Creates a QUICPacket with a QUICPacketHeader, a buffer that contains payload and a flag that indicates whether the packet is
    * retransmittable
    *
    * This will be used for sending packets. Therefore, it is expected that payload is already encrypted.
    * However, QUICPacket class itself doesn't care about whether the payload is protected (encrypted) or not.
    */
   QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len, bool retransmittable);
-
-  /*
-   * Creates a QUICPacket that has a Short Header
-   */
-  QUICPacket(QUICPacketType type, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, ats_unique_buf payload,
-             size_t len, bool retransmittable);
-
-  /*
-   * Creates a QUICPacket that has a Short Header with a Connection ID
-   */
-  QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-             QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len, bool retransmittabl);
 
   /*
    * Creates a QUICpacket for stateless reset
