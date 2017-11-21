@@ -119,6 +119,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   na->accept_fn = net_accept; // All callers used this.
   na->server.fd = fd;
   ats_ip_copy(&na->server.accept_addr, &accept_ip);
+  na->server.no_throttle = opt.f_no_throttle;
 
   if (opt.f_inbound_transparent) {
     Debug("http_tproxy", "Marked accept server %p on port %d as inbound transparent", na, opt.local_port);

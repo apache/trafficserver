@@ -1802,6 +1802,9 @@ HttpSM::state_http_server_open(int event, void *data)
       }
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE; // part of the problem, clear it.
       terminate_sm                   = true;
+    } else if (ENET_THROTTLING == t_state.current.server->connect_result) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+      send_origin_throttled_response();
     } else {
       call_transact_and_set_next_state(HttpTransact::HandleResponse);
     }
@@ -4943,8 +4946,8 @@ HttpSM::do_http_server_open(bool raw)
   opt.ip_family = ip_family;
 
   if (ua_session) {
-    opt.local_port = ua_session->get_outbound_port();
-
+    opt.local_port            = ua_session->get_outbound_port();
+    opt.f_no_throttle         = ua_session->no_throttle();
     const IpAddr &outbound_ip = AF_INET6 == ip_family ? ua_session->get_outbound_ip6() : ua_session->get_outbound_ip4();
     if (outbound_ip.isValid()) {
       opt.addr_binding = NetVCOptions::INTF_ADDR;

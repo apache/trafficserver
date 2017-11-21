@@ -52,6 +52,7 @@ NetVCOptions::reset()
   addr_binding       = ANY_ADDR;
   f_blocking         = false;
   f_blocking_connect = false;
+  f_no_throttle      = false;
   socks_support      = NORMAL_SOCKS;
   socks_version      = SOCKS_DEFAULT_VERSION;
   socket_recv_bufsize =

@@ -38,6 +38,28 @@ safe_delay(int msec)
   socketManager.poll(nullptr, 0, msec);
 }
 
+static int
+drain_throttled_accepts(NetAccept *na)
+{
+  struct pollfd afd;
+  Connection con[100];
+
+  afd.fd     = na->server.fd;
+  afd.events = POLLIN;
+
+  int n = 0;
+  while (check_net_throttle(ACCEPT, Thread::get_hrtime()) && n < THROTTLE_AT_ONCE - 1 && socketManager.poll(&afd, 1, 0) > 0) {
+    int res = 0;
+    if ((res = na->server.accept(&con[n])) < 0) {
+      return res;
+    }
+
+    con[n].close();
+    n++;
+  }
+  return n;
+}
+
 //
 // General case network connection accept code
 //
@@ -244,7 +266,21 @@ NetAccept::do_blocking_accept(EThread *t)
   do {
     ink_hrtime now = Thread::get_hrtime();
 
+    // Throttle accepts
+    if (!this->no_throttle()) {
+      while (!opt.backdoor && check_net_throttle(ACCEPT, now)) {
+        check_throttle_warning(ACCEPT);
+        int num_throttled = drain_throttled_accepts(this);
+        if (num_throttled < 0) {
+          goto Lerror;
+        }
+        NET_SUM_DYN_STAT(net_connections_throttled_in_stat, num_throttled);
+        now = Thread::get_hrtime();
+      }
+    }
+
     if ((res = server.accept(&con)) < 0) {
+    Lerror:
       int seriousness = accept_error_seriousness(res);
       if (seriousness >= 0) { // not so bad
         if (!seriousness) {   // bad enough to warn about
@@ -259,20 +295,6 @@ NetAccept::do_blocking_accept(EThread *t)
         Warning("accept thread received fatal error: errno = %d", errno);
       }
       return -1;
-    }
-
-    // Throttle accepts
-    if (!opt.backdoor && (check_net_throttle(ACCEPT, now) || net_memory_throttle)) {
-      Debug("net_accept", "Too many connections or too much memory used, throttling");
-      check_throttle_warning();
-      con.close();
-      continue;
-    }
-
-    // The con.fd may exceed the limitation of check_net_throttle() because we do blocking accept here.
-    if (check_emergency_throttle(con)) {
-      con.close();
-      return 0;
     }
 
     // Use 'nullptr' to Bypass thread allocator

@@ -163,6 +163,9 @@ struct Server : public Connection {
   /// If set, a kernel HTTP accept filter
   bool http_accept_filter;
 
+  // If set this server is free from connection throttling
+  bool no_throttle;
+
   int accept(Connection *c);
 
   //
@@ -174,7 +177,7 @@ struct Server : public Connection {
   int listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
   int setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
 
-  Server() : Connection(), http_accept_filter(false) { ink_zero(accept_addr); }
+  Server() : Connection(), http_accept_filter(false), no_throttle(false) { ink_zero(accept_addr); }
 };
 
 #endif /*_Connection_h*/

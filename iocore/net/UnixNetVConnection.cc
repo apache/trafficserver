@@ -1239,10 +1239,15 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   int res;
 
   thread = t;
-  if (check_net_throttle(CONNECT, submit_time)) {
-    check_throttle_warning();
-    res = -ENET_THROTTLING;
-    goto fail;
+  // Look for no-throttle option
+  if (!options.f_no_throttle) {
+    if (check_net_throttle(CONNECT, submit_time)) {
+      check_throttle_warning(CONNECT);
+      res = -ENET_THROTTLING;
+
+      NET_INCREMENT_DYN_STAT(net_connections_throttled_out_stat);
+      goto fail;
+    }
   }
 
   // Force family to agree with remote (server) address.
@@ -1279,12 +1284,12 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     con.is_bound     = true;
   }
 
-  if (check_emergency_throttle(con)) {
-    // Set errno force to EMFILE (reached limit for open file descriptors)
-    errno = EMFILE;
-    res   = -errno;
-    goto fail;
-  }
+//  if (check_emergency_throttle(con)) {
+//    // Set errno force to EMFILE (reached limit for open file descriptors)
+//    errno = EMFILE;
+//    res   = -errno;
+//    goto fail;
+//  }
 
   // Must connect after EventIO::Start() to avoid a race condition
   // when edge triggering is used.

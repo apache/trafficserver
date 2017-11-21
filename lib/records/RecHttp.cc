@@ -130,7 +130,7 @@ const char *const HttpProxyPort::OPT_SSL                     = "ssl";
 const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
 const char *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
 const char *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
-
+const char *const HttpProxyPort::OPT_NO_THROTTLE             = "no-throttle";
 // File local constants.
 namespace
 {
@@ -160,7 +160,8 @@ HttpProxyPort::HttpProxyPort()
     m_family(AF_INET),
     m_inbound_transparent_p(false),
     m_outbound_transparent_p(false),
-    m_transparent_passthrough(false)
+    m_transparent_passthrough(false),
+    m_no_throttle(false)
 {
   memcpy(m_host_res_preference, host_res_default_preference_order, sizeof(m_host_res_preference));
 }
@@ -365,6 +366,8 @@ HttpProxyPort::processOptions(const char *opts)
 #else
       Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 #endif
+    } else if (0 == strcasecmp(OPT_NO_THROTTLE, item)) {
+      m_no_throttle = true;
     } else if (nullptr != (value = this->checkPrefix(item, OPT_HOST_RES_PREFIX, OPT_HOST_RES_PREFIX_LEN))) {
       this->processFamilyPreference(value);
       host_res_set_p = true;

@@ -246,6 +246,8 @@ public:
   bool m_outbound_transparent_p;
   // True if transparent pass-through is enabled on this port.
   bool m_transparent_passthrough;
+  // True if the port should not be throttled when connection limits are encountered
+  bool m_no_throttle;
   /// Local address for inbound connections (listen address).
   IpAddr m_inbound_ip;
   /// Local address for outbound connections (to origin server).
@@ -394,6 +396,7 @@ public:
   static const char *const OPT_PLUGIN;                  ///< Protocol Plugin handle (experimental)
   static const char *const OPT_BLIND_TUNNEL;            ///< Blind tunnel.
   static const char *const OPT_COMPRESSED;              ///< Compressed.
+  static const char *const OPT_NO_THROTTLE;             ///< Port should not be throttled
   static const char *const OPT_HOST_RES_PREFIX;         ///< Set DNS family preference.
   static const char *const OPT_PROTO_PREFIX;            ///< Transport layer protocols.
 
