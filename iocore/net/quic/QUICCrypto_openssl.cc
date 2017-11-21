@@ -20,7 +20,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#include "QUICCrypto.h"
+#include "QUICCryptoTls.h"
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -31,7 +31,7 @@
 static constexpr char tag[] = "quic_crypto";
 
 const EVP_CIPHER *
-QUICCrypto::_get_evp_aead() const
+QUICCryptoTls::_get_evp_aead() const
 {
   if (this->is_handshake_finished()) {
     switch (SSL_CIPHER_get_id(SSL_get_current_cipher(this->_ssl))) {
@@ -54,7 +54,7 @@ QUICCrypto::_get_evp_aead() const
 }
 
 size_t
-QUICCrypto::_get_aead_tag_len() const
+QUICCryptoTls::_get_aead_tag_len() const
 {
   if (this->is_handshake_finished()) {
     switch (SSL_CIPHER_get_id(SSL_get_current_cipher(this->_ssl))) {
@@ -77,20 +77,20 @@ QUICCrypto::_get_aead_tag_len() const
 }
 
 size_t
-QUICCrypto::_get_aead_key_len(const EVP_CIPHER *aead) const
+QUICCryptoTls::_get_aead_key_len(const EVP_CIPHER *aead) const
 {
   return EVP_CIPHER_key_length(aead);
 }
 
 size_t
-QUICCrypto::_get_aead_nonce_len(const EVP_CIPHER *aead) const
+QUICCryptoTls::_get_aead_nonce_len(const EVP_CIPHER *aead) const
 {
   return EVP_CIPHER_iv_length(aead);
 }
 
 bool
-QUICCrypto::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                     uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, size_t tag_len) const
+QUICCryptoTls::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
+                        uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, size_t tag_len) const
 {
   uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
   size_t nonce_len                 = 0;
@@ -138,8 +138,8 @@ QUICCrypto::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len,
 }
 
 bool
-QUICCrypto::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
-                     uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, size_t tag_len) const
+QUICCryptoTls::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
+                        uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, size_t tag_len) const
 {
   uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
   size_t nonce_len                 = 0;

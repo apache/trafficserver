@@ -46,7 +46,7 @@
 #define DebugQUICCon(fmt, ...) \
   Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
 
-static constexpr uint32_t MAX_PACKET_OVERHEAD                = 25; // Max long header len(17) + FNV-1a hash len(8)
+static constexpr uint32_t MAX_PACKET_OVERHEAD                = 17; // Max long header len(17)
 static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD          = 15;
 static constexpr uint32_t MINIMUM_INITIAL_CLIENT_PACKET_SIZE = 1200;
 
@@ -54,13 +54,14 @@ ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
 // XXX This might be called on ET_UDP thread
 void
-QUICNetVConnection::init(UDPConnection *udp_con, QUICPacketHandler *packet_handler)
+QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, QUICPacketHandler *packet_handler)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
-  this->_packet_transmitter_mutex = new_ProxyMutex();
-  this->_frame_transmitter_mutex  = new_ProxyMutex();
-  this->_udp_con                  = udp_con;
-  this->_packet_handler           = packet_handler;
+  this->_packet_transmitter_mutex    = new_ProxyMutex();
+  this->_frame_transmitter_mutex     = new_ProxyMutex();
+  this->_udp_con                     = udp_con;
+  this->_packet_handler              = packet_handler;
+  this->_original_quic_connection_id = original_cid;
   this->_quic_connection_id.randomize();
 }
 
@@ -149,6 +150,12 @@ void
 QUICNetVConnection::reenable(VIO *vio)
 {
   return;
+}
+
+QUICConnectionId
+QUICNetVConnection::original_connection_id()
+{
+  return this->_original_quic_connection_id;
 }
 
 QUICConnectionId

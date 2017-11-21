@@ -149,7 +149,7 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     // Create a new NetVConnection
     vc =
       static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(((UnixUDPConnection *)udpPacket->getConnection())->ethread));
-    vc->init(udpPacket->getConnection(), this);
+    vc->init(cid, udpPacket->getConnection(), this);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();

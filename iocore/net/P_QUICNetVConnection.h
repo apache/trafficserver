@@ -134,7 +134,7 @@ class QUICNetVConnection : public UnixNetVConnection, public QUICConnection
 
 public:
   QUICNetVConnection() {}
-  void init(UDPConnection *, QUICPacketHandler *);
+  void init(QUICConnectionId cid, UDPConnection *, QUICPacketHandler *);
 
   // UnixNetVConnection
   void reenable(VIO *vio) override;
@@ -163,6 +163,7 @@ public:
   bool is_closed();
 
   // QUICConnection
+  QUICConnectionId original_connection_id() override;
   QUICConnectionId connection_id() override;
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
@@ -189,6 +190,7 @@ public:
 
 private:
   std::random_device _rnd;
+  QUICConnectionId _original_quic_connection_id;
   QUICConnectionId _quic_connection_id;
   QUICPacketNumber _largest_received_packet_number = 0;
   UDPConnection *_udp_con                          = nullptr;

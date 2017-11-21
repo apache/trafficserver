@@ -151,6 +151,12 @@ public:
     return 0;
   }
 
+  QUICConnectionId
+  original_connection_id() override
+  {
+    return 0;
+  }
+
   void
   transmit_packet(QUICPacketUPtr packet) override
   {
@@ -390,6 +396,52 @@ public:
     stream_io->write(data, size);
 
     eventProcessor.schedule_imm(this, ET_CALL, 12345, stream_io);
+  }
+};
+
+class MockQUICCrypto : public QUICCrypto
+{
+public:
+  MockQUICCrypto() : QUICCrypto() {}
+
+  bool
+  handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len) override
+  {
+    return true;
+  }
+
+  bool
+  is_handshake_finished() const override
+  {
+    return true;
+  }
+
+  int
+  initialize_key_materials(QUICConnectionId cid) override
+  {
+    return 0;
+  }
+
+  int
+  update_key_materials() override
+  {
+    return 0;
+  }
+
+  bool
+  encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len, uint64_t pkt_num,
+          const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override
+  {
+    memcpy(cipher, plain, plain_len);
+    return true;
+  }
+
+  bool
+  decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
+          const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override
+  {
+    memcpy(plain, cipher, cipher_len);
+    return true;
   }
 };
 

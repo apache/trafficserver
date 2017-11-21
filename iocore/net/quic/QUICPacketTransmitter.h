@@ -24,6 +24,7 @@
 #pragma once
 
 #include "QUICPacket.h"
+#include "I_EventSystem.h"
 
 class QUICPacketTransmitter
 {

@@ -29,6 +29,8 @@
 TEST_CASE("QUICVersionNegotiator_Normal", "[quic]")
 {
   QUICPacketFactory packet_factory;
+  MockQUICCrypto crypto;
+  packet_factory.set_crypto_module(&crypto);
   QUICVersionNegotiator vn;
 
   // Check initial state

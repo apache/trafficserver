@@ -21,6 +21,7 @@
  *  limitations under the License.
  */
 
+#include "I_EventSystem.h"
 #include "QUICAckFrameCreator.h"
 #include <algorithm>
 

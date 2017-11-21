@@ -119,6 +119,8 @@ protected:
   const uint8_t *_buf = nullptr;
   size_t _buf_len     = 0;
 
+  // These are used only if the instance was created without a buffer
+  uint8_t _serialized[16];
   ats_unique_buf _payload              = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   QUICPacketType _type                 = QUICPacketType::UNINITIALIZED;
   QUICKeyPhase _key_phase              = QUICKeyPhase::CLEARTEXT;
@@ -187,15 +189,19 @@ public:
   /*
    * Creates a QUICPacket with a QUICPacketHeader and a buffer that contains payload
    *
-   * QUICPacket class doesn't care about whether the payload is protected (encrypted) or not.
+   * This will be used for receiving packets. Therefore, it is expected that payload is already decrypted.
+   * However,  QUICPacket class itself doesn't care about whether the payload is protected (encrypted) or not.
    */
-  QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len, QUICPacketNumber base_packet_number);
+  QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len);
 
   /*
-   * Creates a QUICPacket that has a Long Header
+   * Creates a QUICPacket with a QUICPacketHeader, a buffer that contains payload and a flag that indicates whether the packet can
+   * retransmittable
+   *
+   * This will be used for sending packets. Therefore, it is expected that payload is already encrypted.
+   * However, QUICPacket class itself doesn't care about whether the payload is protected (encrypted) or not.
    */
-  QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-             QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len, bool retransmittable);
+  QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len, bool retransmittable);
 
   /*
    * Creates a QUICPacket that has a Short Header
@@ -240,7 +246,6 @@ private:
   QUICPacketHeader *_header;
   ats_unique_buf _payload  = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   size_t _payload_size     = 0;
-  size_t _size             = 0;
   bool _is_retransmittable = false;
 };
 

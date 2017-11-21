@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 #include "QUICGlobals.h"
-#include "QUICCrypto.h"
+#include "QUICCryptoTls.h"
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -84,7 +84,7 @@ QUICPacketProtection::key_phase() const
 //
 // QUICCrypto
 //
-QUICCrypto::QUICCrypto(SSL *ssl, NetVConnectionContext_t nvc_ctx) : _ssl(ssl), _netvc_context(nvc_ctx)
+QUICCryptoTls::QUICCryptoTls(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICCrypto(), _ssl(ssl), _netvc_context(nvc_ctx)
 {
   if (this->_netvc_context == NET_VCONNECTION_IN) {
     SSL_set_accept_state(this->_ssl);
@@ -98,14 +98,14 @@ QUICCrypto::QUICCrypto(SSL *ssl, NetVConnectionContext_t nvc_ctx) : _ssl(ssl), _
   this->_server_pp = new QUICPacketProtection();
 }
 
-QUICCrypto::~QUICCrypto()
+QUICCryptoTls::~QUICCryptoTls()
 {
   delete this->_client_pp;
   delete this->_server_pp;
 }
 
 bool
-QUICCrypto::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len)
+QUICCryptoTls::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len)
 {
   ink_assert(this->_ssl != nullptr);
 
@@ -153,13 +153,13 @@ QUICCrypto::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const u
 }
 
 bool
-QUICCrypto::is_handshake_finished() const
+QUICCryptoTls::is_handshake_finished() const
 {
   return SSL_is_init_finished(this->_ssl);
 }
 
 int
-QUICCrypto::initialize_key_materials(QUICConnectionId cid)
+QUICCryptoTls::initialize_key_materials(QUICConnectionId cid)
 {
   // Generate keys
   std::unique_ptr<KeyMaterial> km;
@@ -175,7 +175,7 @@ QUICCrypto::initialize_key_materials(QUICConnectionId cid)
 }
 
 int
-QUICCrypto::update_key_materials()
+QUICCryptoTls::update_key_materials()
 {
   ink_assert(this->is_handshake_finished());
   // Switch key phase
@@ -206,14 +206,14 @@ QUICCrypto::update_key_materials()
 }
 
 SSL *
-QUICCrypto::ssl_handle()
+QUICCryptoTls::ssl_handle()
 {
   return this->_ssl;
 }
 
 bool
-QUICCrypto::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                    uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
+QUICCryptoTls::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
+                       uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
 {
   QUICPacketProtection *pp = nullptr;
 
@@ -236,8 +236,8 @@ QUICCrypto::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, 
 }
 
 bool
-QUICCrypto::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
-                    uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
+QUICCryptoTls::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
+                       uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
 {
   QUICPacketProtection *pp = nullptr;
 
@@ -274,7 +274,7 @@ QUICCrypto::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, con
  *
  */
 void
-QUICCrypto::_gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, const uint8_t *iv, size_t iv_len) const
+QUICCryptoTls::_gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, const uint8_t *iv, size_t iv_len) const
 {
   nonce_len = iv_len;
   memcpy(nonce, iv, iv_len);

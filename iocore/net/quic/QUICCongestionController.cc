@@ -21,6 +21,7 @@
  *  limitations under the License.
  */
 
+#include <ts/Diags.h>
 #include <QUICCongestionController.h>
 
 static constexpr char tag[] = "quic_congestion_controller";

@@ -24,10 +24,13 @@
 #include "catch.hpp"
 
 #include "quic/QUICPacket.h"
+#include "quic/Mock.h"
 
 TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 {
   QUICPacketFactory factory;
+  MockQUICCrypto crypto;
+  factory.set_crypto_module(&crypto);
 
   uint8_t client_initial_packet_header[] = {
     0x82,                                           // Type
@@ -47,12 +50,14 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   CHECK(packet->type() == QUICPacketType::VERSION_NEGOTIATION);
   CHECK(packet->connection_id() == client_initial_packet.connection_id());
   CHECK(packet->packet_number() == client_initial_packet.packet_number());
-  CHECK(memcmp(packet->payload(), "\xff\x00\x00\x05", 4) == 0);
+  CHECK(memcmp(packet->payload(), "\xff\x00\x00\x07", 4) == 0);
 }
 
 TEST_CASE("QUICPacketFactory_Create_ServerCleartextPacket", "[quic]")
 {
   QUICPacketFactory factory;
+  MockQUICCrypto crypto;
+  factory.set_crypto_module(&crypto);
   factory.set_version(0x11223344);
 
   uint8_t raw[]          = {0xaa, 0xbb, 0xcc, 0xdd};
@@ -70,6 +75,8 @@ TEST_CASE("QUICPacketFactory_Create_ServerCleartextPacket", "[quic]")
 TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
 {
   QUICPacketFactory factory;
+  MockQUICCrypto crypto;
+  factory.set_crypto_module(&crypto);
   QUICStatelessToken token;
   token.gen_token(12345);
   uint8_t expected_output[] = {

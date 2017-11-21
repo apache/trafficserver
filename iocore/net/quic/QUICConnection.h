@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "I_EventSystem.h"
+#include "I_NetVConnection.h"
 #include "QUICPacketTransmitter.h"
 #include "QUICFrameTransmitter.h"
 #include "QUICFrameHandler.h"
@@ -35,7 +37,8 @@ class SSLNextProtocolSet;
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
 {
 public:
-  virtual QUICConnectionId connection_id() = 0;
+  virtual QUICConnectionId original_connection_id() = 0;
+  virtual QUICConnectionId connection_id()          = 0;
 
   /*
    * Retruns the maximum packet size at the time called

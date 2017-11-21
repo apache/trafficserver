@@ -23,6 +23,7 @@
 
 #include "QUICGlobals.h"
 #include "QUICHandshake.h"
+#include "QUICCryptoTls.h"
 
 #include <utility>
 #include "QUICVersionNegotiator.h"
@@ -86,10 +87,10 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
   this->_ssl = SSL_new(ssl_ctx);
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_qc_index, qc);
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_hs_index, this);
-  this->_crypto             = new QUICCrypto(this->_ssl, qc->direction());
+  this->_crypto             = new QUICCryptoTls(this->_ssl, qc->direction());
   this->_version_negotiator = new QUICVersionNegotiator();
 
-  this->_crypto->initialize_key_materials(this->_client_qc->connection_id());
+  this->_crypto->initialize_key_materials(this->_client_qc->original_connection_id());
   this->_load_local_transport_parameters();
 
   SET_HANDLER(&QUICHandshake::state_read_client_hello);
@@ -151,7 +152,11 @@ QUICHandshake::crypto_module()
 void
 QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *len)
 {
-  SSL_get0_alpn_selected(this->_crypto->ssl_handle(), name, len);
+  // FIXME Generalize and remove dynamic_cast
+  QUICCryptoTls *crypto_tls = dynamic_cast<QUICCryptoTls *>(this->_crypto);
+  if (crypto_tls) {
+    SSL_get0_alpn_selected(crypto_tls->ssl_handle(), name, len);
+  }
 }
 
 void
