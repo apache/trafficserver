@@ -65,7 +65,7 @@ public:
   SNIAction(Continuation *cont) override
   {
     auto ssl_vc     = reinterpret_cast<SSLNetVConnection *>(cont);
-    auto accept_obj = ssl_vc->accept_object;
+    auto accept_obj = ssl_vc ? ssl_vc->accept_object : nullptr;
     if (accept_obj && accept_obj->snpa && ssl_vc) {
       auto nps = snpsMap.get(accept_obj->id);
       ssl_vc->registerNextProtocolSet(reinterpret_cast<SSLNextProtocolSet *>(nps));
