@@ -26,7 +26,7 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSSslSession TSSslSessionGet(const TSSslSessionID * sessionid) 
+.. function:: TSSslSession TSSslSessionGet(const TSSslSessionID * sessionid)
 .. function:: int TSSslSessionGetBuffer(const TSSslSessionID * sessionid, char * buffer, int * len_ptr)
 .. function:: TSReturnCode TSSslSessionInsert(const TSSslSessionID * sessionid, TSSslSession addSession)
 .. function:: TSReturnCode TSSslSessionRemove(const TSSslSessionID * sessionid)
@@ -38,19 +38,19 @@ Description
 These functions work with the internal ATS session cache.  These functions are only useful if the ATS internal
 session cache is enabled by setting :ts:cv:`proxy.config.ssl.session_cache` has been set to 2.
 
-These functions tend to be used with the :macro:`TS_SSL_SESSION_HOOK`. 
+These functions tend to be used with the :macro:`TS_SSL_SESSION_HOOK`.
 
 The functions work with the :type:`TSSslSessionID` object to identify sessions to retrieve, insert, or delete.
 
-The functions also work with the :type:`TSSSlSession` object which can be cast to a pointer to the openssl SSL_SESSION object.
+The functions also work with the :type:`TSSslSession` object which can be cast to a pointer to the openssl SSL_SESSION object.
 
 These functions perform the appropriate locking on the session cache to avoid errors.
 
 The :func:`TSSslSessionGet` and :func:`TSSslSessionGetBuffer` functions retreive the :type:`TSSslSession` object that is identifed by the
 :type:`TSSslSessionID` object.  If there is no matching sesion object, :func:`TSSslSessionGet` returns NULL and :func:`TSSslSessionGetBuffer`
-returns 0.  
+returns 0.
 
-:func:`TSSslSessionGetBuffer` returns the session information serialized in a buffer that can be shared between processes.  
+:func:`TSSslSessionGetBuffer` returns the session information serialized in a buffer that can be shared between processes.
 When the function is called len_ptr should point to the amount of space
 available in the buffer parameter.  The function returns the amount of data really needed to encode the session.  len_ptr is updated with the amount of data actually stored in the buffer.
 
@@ -59,11 +59,9 @@ If there is already an entry in the cache for the session id key, it is first re
 
 :func:`TSSslSessionRemove` removes the session entry from the session cache that is keyed by sessionid.
 
-:func:`TSsslTicketKeyUpdate` updates the running ATS process to use a new set of Session Ticket Encryption keys.  This behaves the same way as 
+:func:`TSSslTicketKeyUpdate` updates the running ATS process to use a new set of Session Ticket Encryption keys.  This behaves the same way as
 updating the session ticket encrypt key file with new data and reloading the current ATS process.  However, this API does not
-require writing session ticket encryption keys to disk.  
+require writing session ticket encryption keys to disk.
 
 If both the ticket key files and :func:`TSSslTicketKeyUpdate` are used to update session ticket encryption keys, ATS will use the most recent update
 reguarless if whether it was made by file and configuration reload or API.
-
-
