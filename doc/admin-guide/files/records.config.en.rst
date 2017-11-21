@@ -3194,6 +3194,11 @@ SSL Termination
    ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``. Also
    note that OpenSSL session tickets are sensitive to the version of the ca-certificates.
 
+.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.config
+
+   The filename of the :file:`ssl_server_name.config` configuration file. If relative, it is relative to the
+   configuration directory (ts:cv:`proxy.config.config_dir`).
+
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
 
   This configuration specifies the maximum number of bytes to write
