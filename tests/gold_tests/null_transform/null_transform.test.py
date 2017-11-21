@@ -55,7 +55,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 # Load plugin
-Test.prepare_plugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'null_transform.c'), ts)
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'null_transform.c'), ts)
 
 # www.example.com Host
 tr = Test.AddTestRun()

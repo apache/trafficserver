@@ -15,6 +15,10 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
+def HasOpenSSLVersion(self, version):
+    return self.EnsureVersion(["openssl","version"],min_version=version)
+
 def HasCurlFeature(self, feature):
 
     def default(output):
@@ -54,6 +58,7 @@ def PluginExists(self, pluginname):
     return self.Condition(lambda: os.path.isfile(path) == True, path + " not found." )
 
 
+ExtendCondition(HasOpenSSLVersion)
 ExtendCondition(HasATSFeature)
 ExtendCondition(HasCurlFeature)
 ExtendCondition(PluginExists)

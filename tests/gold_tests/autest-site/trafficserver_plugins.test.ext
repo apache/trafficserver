@@ -49,4 +49,7 @@ def prepare_plugin(self, path, tsproc, plugin_args = ""):
     # Add an entry to plugin.config.
     tsproc.Disk.plugin_config.AddLine("{0} {1}".format(out_basename,plugin_args))
 
+# remove this later
 ExtendTest(prepare_plugin, name="prepare_plugin")
+
+ExtendTest(prepare_plugin, name="PreparePlugin")
