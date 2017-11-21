@@ -38,6 +38,7 @@ Configuration Files
    remap.config.en
    splitdns.config.en
    ssl_multicert.config.en
+   ssl_server_name.config.en
    storage.config.en
    vaddrs.config.en
    volume.config.en
@@ -88,9 +89,12 @@ Configuration Files
    Configures |TS| to use different server certificates for SSL termination
    when listening on multiple addresses or when clients employ SNI.
 
+:doc:`ssl_server_name.config.en`
+   Configures SNI based Layer 4 routing.
+
 :doc:`storage.config.en`
    Configures all storage devices and paths to be used for the |TS| cache.
-    
+
 :doc:`vaddrs.config.en`
    Deprecated file formerly used for cluster configuration.
 
