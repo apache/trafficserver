@@ -976,6 +976,8 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 
   case SSL_EVENT_CLIENT:
 
+    char buff[INET6_ADDRSTRLEN];
+
     if (this->ssl == nullptr) {
       // Making the check here instead of later, so we only
       // do this setting immediately after we create the SSL object
@@ -983,7 +985,6 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       int8_t clientVerify = 0;
       cchar *serverKey    = this->options.sni_servername;
       if (!serverKey) {
-        char buff[INET6_ADDRSTRLEN];
         ats_ip_ntop(this->get_remote_addr(), buff, INET6_ADDRSTRLEN);
         serverKey = buff;
       }
