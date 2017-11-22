@@ -76,6 +76,7 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
     // if the last failure was outside the retry window, set the failcount to 1
     // and failedAt to now.
     if ((pRec->failedAt + retry_time) < now) {
+      // coverity[checked_return]
       ink_atomic_swap(&pRec->failCount, 1);
       ink_atomic_swap(&pRec->failedAt, now);
     } else {
