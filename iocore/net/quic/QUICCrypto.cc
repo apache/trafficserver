@@ -190,6 +190,10 @@ QUICCryptoTls::update_key_materials()
   case QUICKeyPhase::CLEARTEXT:
     next_key_phase = QUICKeyPhase::PHASE_0;
     break;
+  default:
+    Error("QUICKeyPhase value is undefined");
+    ink_assert(false);
+    next_key_phase = QUICKeyPhase::PHASE_0;
   }
 
   // Generate keys
