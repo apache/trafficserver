@@ -128,10 +128,26 @@ int
 SNIConfigParams::Initialize()
 {
   sni_filename = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.servername.filename"));
+  struct stat sbuf;
+  if (stat(sni_filename, &sbuf) == -1 && errno == ENOENT) {
+    Warning("Loading SNI configuration - filename: %s doesn't exist", sni_filename);
+    return 1;
+  }
+
   lua_State *L = lua_open(); /* opens Lua */
   luaL_openlibs(L);
-  luaL_loadfile(L, sni_filename);
-  lua_pcall(L, 0, 0, 0);
+  if (luaL_loadfile(L, sni_filename)) {
+    Error("Loading SNI configuration - luaL_loadfile: %s", lua_tostring(L, -1));
+    lua_pop(L, 1);
+    return 1;
+  }
+
+  if (lua_pcall(L, 0, 0, 0)) {
+    Error("Loading SNI configuration - luap_pcall: %s failed: %s", sni_filename, lua_tostring(L, -1));
+    lua_pop(L, 1);
+    return 1;
+  }
+
   L_sni.loader(L);
   loadSNIConfig();
   return 0;
