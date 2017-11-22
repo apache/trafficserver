@@ -7523,6 +7523,11 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
         base_request->url_get()->copy(o_url);
       }
     }
+
+    // Peform any configured normalization (including per-remap-rule configuration overrides) of the Accept-Encoding header
+    // field (if any).  This has to be done in the request from the client, for the benefit of the gzip plugin.
+    //
+    HttpTransactHeaders::normalize_accept_encoding(s->txn_conf, base_request);
   }
 
   HttpTransactHeaders::copy_header_fields(base_request, outgoing_request, s->txn_conf->fwd_proxy_auth_to_parent);
@@ -7623,12 +7628,9 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     TxnDebug("http_trans", "[build_request] request expect 100-continue headers removed");
   }
 
-  // Peform any configured normalization (including per-remap-rule configuration overrides) of the Accept-Encoding header
-  // field (if any).
-  HttpTransactHeaders::normalize_accept_encoding(s->txn_conf, outgoing_request);
-
   s->request_sent_time = ink_local_time();
   s->current.now       = s->request_sent_time;
+
   // The assert is backwards in this case because request is being (re)sent.
   ink_assert(s->request_sent_time >= s->response_received_time);
 
