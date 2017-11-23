@@ -1262,6 +1262,8 @@ tsapi TSHttpSsn TSHttpTxnSsnGet(TSHttpTxn txnp);
 
 /* Gets the client request header for a specified HTTP transaction. */
 tsapi TSReturnCode TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+/* Gets the pristine (original headers sent by client) client request header for a specified HTTP transaction. */
+tsapi TSReturnCode TSHttpTxnPristineClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
 /* Gets the client response header for a specified HTTP transaction. */
 tsapi TSReturnCode TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
 /* Gets the server request header from a specified HTTP transaction. */
