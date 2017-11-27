@@ -316,6 +316,7 @@ Http2Stream::do_io_close(int /* flags */)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   super::release(nullptr);
+
   if (!closed) {
     Http2StreamDebug("do_io_close");
 
@@ -533,8 +534,8 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   // WRITE_COMPLETE event
   SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
   int64_t total_added = 0;
-  if (write_vio.nbytes > 0 && write_vio.ndone < write_vio.nbytes) {
-    int64_t num_to_write = write_vio.nbytes - write_vio.ndone;
+  if (write_vio.nbytes > 0 && write_vio.ntodo() > 0) {
+    int64_t num_to_write = write_vio.ntodo();
     if (num_to_write > write_len) {
       num_to_write = write_len;
     }
@@ -549,18 +550,25 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     }
   }
 
+  IOBufferReader *response_reader = this->response_get_data_reader();
+  int64_t response_buffer_size    = response_reader->read_avail();
+  Http2StreamDebug("write_vio.nbytes=%" PRId64 ", write_vio.ndone=%" PRId64 ", buf_reader.read_avail=%" PRId64
+                   ", total_added=%" PRId64 ", response_buffer=%" PRId64,
+                   write_vio.nbytes, write_vio.ndone, buf_reader->read_avail(), total_added, response_buffer_size);
+
   bool is_done = false;
   this->response_process_data(is_done);
   if (total_added > 0 || is_done) {
-    write_vio.ndone += total_added;
-    int send_event = (write_vio.nbytes == write_vio.ndone || is_done) ? VC_EVENT_WRITE_COMPLETE : VC_EVENT_WRITE_READY;
+    int send_event = (write_vio.ntodo() == response_buffer_size || is_done) ? VC_EVENT_WRITE_COMPLETE : VC_EVENT_WRITE_READY;
 
     // Process the new data
     if (!this->response_header_done) {
       // Still parsing the response_header
       int bytes_used = 0;
       int state      = this->response_header.parse_resp(&http_parser, this->response_reader, &bytes_used, false);
-      // this->response_reader->consume(bytes_used);
+      // HTTPHdr::parse_resp() consumed the response_reader in above
+      write_vio.ndone += this->response_header.length_get();
+
       switch (state) {
       case PARSE_RESULT_DONE: {
         this->response_header_done = true;
@@ -643,7 +651,6 @@ Http2Stream::send_response_body()
   if (Http2::stream_priority_enabled) {
     parent->connection_state.schedule_stream(this);
   } else {
-    // Send DATA frames directly
     parent->connection_state.send_data_frames(this);
   }
   inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;

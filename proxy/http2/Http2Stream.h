@@ -81,6 +81,7 @@ public:
   update_sent_count(unsigned num_bytes)
   {
     bytes_sent += num_bytes;
+    this->write_vio.ndone += num_bytes;
   }
 
   Http2StreamId
