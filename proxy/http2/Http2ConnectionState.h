@@ -31,11 +31,12 @@
 
 class Http2ClientSession;
 
-enum Http2SendADataFrameResult {
-  HTTP2_SEND_A_DATA_FRAME_NO_ERROR   = 0,
-  HTTP2_SEND_A_DATA_FRAME_NO_WINDOW  = 1,
-  HTTP2_SEND_A_DATA_FRAME_NO_PAYLOAD = 2,
-  HTTP2_SEND_A_DATA_FRAME_DONE       = 3,
+enum class Http2SendDataFrameResult {
+  NO_ERROR = 0,
+  NO_WINDOW,
+  NO_PAYLOAD,
+  ERROR,
+  DONE,
 };
 
 enum Http2ShutdownState { NOT_INITIATED, INITIATED, IN_PROGRESS };
@@ -219,7 +220,7 @@ public:
   void schedule_stream(Http2Stream *stream);
   void send_data_frames_depends_on_priority();
   void send_data_frames(Http2Stream *stream);
-  Http2SendADataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
+  Http2SendDataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(Http2Stream *stream);
   void send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
