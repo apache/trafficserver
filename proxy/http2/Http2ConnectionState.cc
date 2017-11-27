@@ -1209,11 +1209,11 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
   ink_release_assert(stream != nullptr);
   Http2StreamDebug(ua_session, stream->get_id(), "top node, point=%d", node->point);
 
-  size_t len                       = 0;
-  Http2SendADataFrameResult result = send_a_data_frame(stream, len);
+  size_t len                      = 0;
+  Http2SendDataFrameResult result = send_a_data_frame(stream, len);
 
   switch (result) {
-  case HTTP2_SEND_A_DATA_FRAME_NO_ERROR: {
+  case Http2SendDataFrameResult::NO_ERROR: {
     // No response body to send
     if (len == 0 && !stream->is_body_done()) {
       dependency_tree->deactivate(node, len);
@@ -1222,7 +1222,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
     }
     break;
   }
-  case HTTP2_SEND_A_DATA_FRAME_DONE: {
+  case Http2SendDataFrameResult::DONE: {
     dependency_tree->deactivate(node, len);
     delete_stream(stream);
     break;
@@ -1237,13 +1237,14 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
   return;
 }
 
-Http2SendADataFrameResult
+Http2SendDataFrameResult
 Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_length)
 {
   const ssize_t window_size         = std::min(this->client_rwnd, stream->client_rwnd);
   const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
   const size_t write_available_size = std::min(buf_len, static_cast<size_t>(window_size));
   size_t read_available_size        = 0;
+  payload_length                    = 0;
 
   uint8_t flags = 0x00;
   uint8_t payload_buffer[buf_len];
@@ -1253,16 +1254,21 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   if (current_reader) {
     read_available_size = static_cast<size_t>(current_reader->read_avail());
+  } else {
+    Http2StreamDebug(this->ua_session, stream->get_id(), "couldn't get data reader");
+    return Http2SendDataFrameResult::ERROR;
   }
 
   // Select appropriate payload length
   if (read_available_size > 0) {
     // We only need to check for window size when there is a payload
     if (window_size <= 0) {
-      return HTTP2_SEND_A_DATA_FRAME_NO_WINDOW;
+      Http2StreamDebug(this->ua_session, stream->get_id(), "No window");
+      return Http2SendDataFrameResult::NO_WINDOW;
     }
     // Copy into the payload buffer. Seems like we should be able to skip this copy step
-    payload_length = current_reader->read(payload_buffer, write_available_size);
+    payload_length = std::min(read_available_size, write_available_size);
+    current_reader->memcpy(payload_buffer, static_cast<int64_t>(payload_length));
   } else {
     payload_length = 0;
   }
@@ -1271,7 +1277,8 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   // If we return here, we never send the END_STREAM in the case of a early terminating OS.
   // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
   if (!stream->is_body_done() && payload_length == 0) {
-    return HTTP2_SEND_A_DATA_FRAME_NO_PAYLOAD;
+    Http2StreamDebug(this->ua_session, stream->get_id(), "No payload");
+    return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
   if (stream->is_body_done() && read_available_size <= write_available_size) {
@@ -1283,8 +1290,8 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   stream->client_rwnd -= payload_length;
 
   // Create frame
-  Http2StreamDebug(ua_session, stream->get_id(), "Send a DATA frame - client window con: %zd stream: %zd payload: %zd", client_rwnd,
-                   stream->client_rwnd, payload_length);
+  Http2StreamDebug(ua_session, stream->get_id(), "Send a DATA frame - client window con: %5zd stream: %5zd payload: %5zd",
+                   client_rwnd, stream->client_rwnd, payload_length);
 
   Http2Frame data(HTTP2_FRAME_TYPE_DATA, stream->get_id(), flags);
   data.alloc(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
@@ -1292,6 +1299,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   data.finalize(payload_length);
 
   stream->update_sent_count(payload_length);
+  current_reader->consume(payload_length);
 
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
@@ -1303,10 +1311,10 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     // Setting to the same state shouldn't be erroneous
     stream->change_state(data.header().type, data.header().flags);
 
-    return HTTP2_SEND_A_DATA_FRAME_DONE;
+    return Http2SendDataFrameResult::DONE;
   }
 
-  return HTTP2_SEND_A_DATA_FRAME_NO_ERROR;
+  return Http2SendDataFrameResult::NO_ERROR;
 }
 
 void
@@ -1321,24 +1329,22 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
     return;
   }
 
-  size_t len = 0;
-  while (true) {
-    Http2SendADataFrameResult result = send_a_data_frame(stream, len);
+  size_t len                      = 0;
+  Http2SendDataFrameResult result = Http2SendDataFrameResult::NO_ERROR;
+  while (result == Http2SendDataFrameResult::NO_ERROR) {
+    result = send_a_data_frame(stream, len);
 
-    if (result == HTTP2_SEND_A_DATA_FRAME_DONE) {
+    if (result == Http2SendDataFrameResult::DONE) {
       // Delete a stream immediately
       // TODO its should not be deleted for a several time to handling
       // RST_STREAM and WINDOW_UPDATE.
       // See 'closed' state written at [RFC 7540] 5.1.
       Http2StreamDebug(this->ua_session, stream->get_id(), "Shutdown stream");
       this->delete_stream(stream);
-      break;
-    } else if (result == HTTP2_SEND_A_DATA_FRAME_NO_ERROR) {
-      continue;
-    } else {
-      break;
     }
   }
+
+  return;
 }
 
 void
