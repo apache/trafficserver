@@ -6149,6 +6149,10 @@ HttpSM::setup_100_continue_transfer()
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_100_continue);
 
+  // Clear the decks before we set up new producers.  As things stand, we cannot have two static operators
+  // at once
+  tunnel.reset();
+
   // Setup the tunnel to the client
   HttpTunnelProducer *p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, client_response_hdr_bytes, buf_start,
                                               (HttpProducerHandler) nullptr, HT_STATIC, "internal msg - 100 continue");
