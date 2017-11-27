@@ -317,32 +317,26 @@ void
 Http2Stream::do_io_close(int /* flags */)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-
+  super::release(nullptr);
   if (!closed) {
-    if (parent && this->is_client_state_writeable()) {
-      // Make sure any trailing end of stream frames are sent
-      // Wee will be removed at send_data_frames or closing connection phase
-      Http2SendDataFrameResult result = static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
-      if (result == Http2SendDataFrameResult::NO_WINDOW) {
-        Http2StreamDebug("cancel closing");
-        return;
-      } else {
-        Http2StreamDebug("continue closing");
-      }
-    }
+    Http2StreamDebug("do_io_close");
 
     // When we get here, the SM has initiated the shutdown.  Either it received a WRITE_COMPLETE, or it is shutting down.  Any
     // remaining IO operations back to client should be abandoned.  The SM-side buffers backing these operations will be deleted
     // by the time this is called from transaction_done.
     closed = true;
 
+    if (parent && this->is_client_state_writeable()) {
+      // Make sure any trailing end of stream frames are sent
+      // Wee will be removed at send_data_frames or closing connection phase
+      static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
+    }
+
     clear_timers();
     clear_io_events();
 
     // Wait until transaction_done is called from HttpSM to signal that the TXN_CLOSE hook has been executed
   }
-
-  super::release(nullptr);
 }
 
 /*
