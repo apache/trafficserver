@@ -223,7 +223,7 @@ public:
     }
 
     if (s != now_slot)
-      Debug("udpnet-service", "Advancing by (%d slots): behind by %" PRId64 " ms", s - now_slot,
+      Debug("v_udpnet-service", "Advancing by (%d slots): behind by %" PRId64 " ms", s - now_slot,
             ink_hrtime_to_msec(t - delivery_time[now_slot]));
     now_slot = s;
   }
