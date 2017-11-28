@@ -316,8 +316,9 @@ size_t
 QUICAckFrame::size() const
 {
   if (this->_buf) {
-    return this->_get_timestamp_section_offset() + this->timestamp_section()->size();
+    return this->_get_ack_block_section_offset() + this->ack_block_section()->size();
   } else {
+    // TODO Not implemented
     return 0;
   }
 }
@@ -338,9 +339,6 @@ QUICAckFrame::store(uint8_t *buf, size_t *len) const
     *p = this->_ack_block_section->count();
     p += 1;
   }
-
-  *p = this->_timestamp_section->count();
-  p += 1;
 
   // "LL" of "101NLLMM"
   if (this->_largest_acknowledged <= 0xff) {
@@ -367,9 +365,6 @@ QUICAckFrame::store(uint8_t *buf, size_t *len) const
   this->_ack_block_section->store(p, &n);
   p += n;
 
-  this->_timestamp_section->store(p, &n);
-  p += n;
-
   *len = p - buf;
 }
 
@@ -385,12 +380,6 @@ QUICAckFrame::num_blocks() const
   } else {
     return 0;
   }
-}
-
-uint8_t
-QUICAckFrame::num_timestamps() const
-{
-  return this->_buf[this->_get_num_timestamp_offset()];
 }
 
 QUICPacketNumber
@@ -439,22 +428,6 @@ QUICAckFrame::ack_block_section() const
   return this->_ack_block_section;
 }
 
-const QUICAckFrame::TimestampSection *
-QUICAckFrame::timestamp_section() const
-{
-  return this->_timestamp_section;
-}
-
-size_t
-QUICAckFrame::_get_num_timestamp_offset() const
-{
-  if (this->has_ack_blocks()) {
-    return 2;
-  } else {
-    return 1;
-  }
-}
-
 /**
  * LL of 101NLLMM
  */
@@ -474,7 +447,11 @@ QUICAckFrame::_get_largest_acknowledged_length() const
 size_t
 QUICAckFrame::_get_largest_acknowledged_offset() const
 {
-  return this->_get_num_timestamp_offset() + 1;
+  if (this->has_ack_blocks()) {
+    return 2;
+  } else {
+    return 1;
+  }
 }
 
 /**
@@ -503,12 +480,6 @@ size_t
 QUICAckFrame::_get_ack_block_section_offset() const
 {
   return this->_get_ack_delay_offset() + 2;
-}
-
-size_t
-QUICAckFrame::_get_timestamp_section_offset() const
-{
-  return this->_get_ack_block_section_offset() + this->ack_block_section()->size();
 }
 
 QUICAckFrame::AckBlockSection::AckBlockSection(const uint8_t *buf, uint8_t num_blocks, uint8_t ack_block_length)
@@ -635,29 +606,6 @@ QUICAckFrame::AckBlockSection::const_iterator::const_iterator(uint8_t index, con
       this->_current_block = this->_ack_blocks->at(this->_index);
     }
   }
-}
-
-uint8_t
-QUICAckFrame::TimestampSection::count() const
-{
-  return 0;
-}
-
-size_t
-QUICAckFrame::TimestampSection::size() const
-{
-  return 0;
-}
-
-void
-QUICAckFrame::TimestampSection::store(uint8_t *buf, size_t *len) const
-{
-  if (this->count() == 0) {
-    *len = 0;
-    return;
-  }
-
-  // TODO: Store timestamp data
 }
 
 //

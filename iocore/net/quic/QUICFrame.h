@@ -170,15 +170,6 @@ public:
     std::vector<QUICAckFrame::AckBlock> _ack_blocks;
   };
 
-  class TimestampSection
-  {
-  public:
-    uint8_t count() const;
-    size_t size() const;
-    void store(uint8_t *buf, size_t *len) const;
-    void add_timestamp();
-  };
-
   QUICAckFrame() : QUICFrame() {}
   QUICAckFrame(const uint8_t *buf, size_t len);
   QUICAckFrame(QUICPacketNumber largest_acknowledged, uint16_t ack_delay, uint64_t first_ack_block_length);
@@ -188,26 +179,21 @@ public:
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
   uint8_t num_blocks() const;
-  uint8_t num_timestamps() const;
   QUICPacketNumber largest_acknowledged() const;
   uint16_t ack_delay() const;
   const AckBlockSection *ack_block_section() const;
   AckBlockSection *ack_block_section();
-  const TimestampSection *timestamp_section() const;
   bool has_ack_blocks() const;
 
 private:
-  size_t _get_num_timestamp_offset() const;
   size_t _get_largest_acknowledged_offset() const;
   size_t _get_largest_acknowledged_length() const;
   size_t _get_ack_block_length() const;
   size_t _get_ack_delay_offset() const;
   size_t _get_ack_block_section_offset() const;
-  size_t _get_timestamp_section_offset() const;
   QUICPacketNumber _largest_acknowledged = 0;
   uint16_t _ack_delay                    = 0;
   AckBlockSection *_ack_block_section    = nullptr;
-  TimestampSection *_timestamp_section   = nullptr;
 };
 
 //

@@ -237,50 +237,44 @@ TEST_CASE("Store STREAM Frame", "[quic]")
 
 TEST_CASE("Load Ack Frame 1", "[quic]")
 {
-  // 0 Ack Block, 0 Timestamp, 8 bit packet number length, 8 bit block length
+  // 0 Ack Block, 8 bit packet number length, 8 bit block length
   uint8_t buf1[] = {
     0xA0,       // 101NLLMM
-    0x00,       // NumTS
     0x12,       // Largest Acknowledged
     0x34, 0x56, // Ack Delay
     0x00,       // Ack Block Section
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::ACK);
-  CHECK(frame1->size() == 6);
+  CHECK(frame1->size() == 5);
   std::shared_ptr<const QUICAckFrame> ackFrame1 = std::dynamic_pointer_cast<const QUICAckFrame>(frame1);
   CHECK(ackFrame1 != nullptr);
   CHECK(ackFrame1->has_ack_blocks() == false);
-  CHECK(ackFrame1->num_timestamps() == 0);
   CHECK(ackFrame1->largest_acknowledged() == 0x12);
   CHECK(ackFrame1->ack_delay() == 0x3456);
 
-  // TODO: 1 Ack Block, 0 Timestamp
-  // TODO: 1 Ack Block, 1 Timestamp
+  // TODO: 1 Ack Block
 }
 
 TEST_CASE("Load Ack Frame 2", "[quic]")
 {
-  // 0 Ack Block, 0 Timestamp, 8 bit packet number length, 8 bit block length
+  // 0 Ack Block, 8 bit packet number length, 8 bit block length
   uint8_t buf1[] = {
     0xAA,                   // 101NLLMM '0b10101010' { N: 0, LL: 10, MM:10 }
-    0x00,                   // NumTS
     0x00, 0x00, 0x00, 0x01, // Largest Acknowledged
     0x01, 0x71,             // Ack Delay
     0x00, 0x00, 0x00, 0x01, // ACK Block
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::ACK);
-  CHECK(frame1->size() == 12);
+  CHECK(frame1->size() == 11);
   std::shared_ptr<const QUICAckFrame> ackFrame1 = std::dynamic_pointer_cast<const QUICAckFrame>(frame1);
   CHECK(ackFrame1 != nullptr);
   CHECK(ackFrame1->has_ack_blocks() == false);
-  CHECK(ackFrame1->num_timestamps() == 0);
   CHECK(ackFrame1->largest_acknowledged() == 0x01);
   CHECK(ackFrame1->ack_delay() == 0x0171);
 
-  // TODO: 1 Ack Block, 0 Timestamp
-  // TODO: 1 Ack Block, 1 Timestamp
+  // TODO: 1 Ack Block
 }
 
 TEST_CASE("Store Ack Frame", "[quic]")
@@ -288,20 +282,19 @@ TEST_CASE("Store Ack Frame", "[quic]")
   uint8_t buf[65535];
   size_t len;
 
-  // 0 Ack Block, 0 Timestamp, 8 bit packet number length, 8 bit block length
+  // 0 Ack Block, 8 bit packet number length, 8 bit block length
   uint8_t expected[] = {
     0xA2,                   // 101NLLMM
-    0x00,                   // NumTS
     0x12,                   // Largest Acknowledged
     0x34, 0x56,             // Ack Delay
     0x00, 0x00, 0x00, 0x00, // Ack Block Section
   };
   QUICAckFrame ackFrame(0x12, 0x3456, 0);
   ackFrame.store(buf, &len);
-  CHECK(len == 9);
+  CHECK(len == 8);
   CHECK(memcmp(buf, expected, len) == 0);
 
-  // TODO: Add ack blocks and timestamps
+  // TODO: Add ack blocks
 }
 
 TEST_CASE("Load RST_STREAM Frame", "[quic]")
