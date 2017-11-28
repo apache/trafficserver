@@ -51,6 +51,12 @@ QUICPacketHeader::buf()
   }
 }
 
+uint16_t
+QUICPacketHeader::packet_size() const
+{
+  return this->_buf_len;
+}
+
 QUICPacketHeader *
 QUICPacketHeader::load(const uint8_t *buf, size_t len, QUICPacketNumber base)
 {
@@ -557,7 +563,8 @@ QUICPacket::is_retransmittable() const
 uint16_t
 QUICPacket::size() const
 {
-  return this->header_size() + this->payload_size();
+  // This includes not only header size and payload size but also AEAD tag length
+  return this->_header->packet_size();
 }
 
 uint16_t

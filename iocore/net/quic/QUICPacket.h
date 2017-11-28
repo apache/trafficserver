@@ -52,14 +52,19 @@ public:
   virtual const uint8_t *payload() const = 0;
 
   /*
-   * Returns a payload size based on header length and buffer size that is specified to the constructo.
+   * Returns its payload size based on header length and buffer size that is specified to the constructo.
    */
   uint16_t payload_size() const;
 
   /*
-   * Returns a header size
+   * Returns its header size
    */
   virtual uint16_t length() const = 0;
+
+  /*
+   * Returns its packet size
+   */
+  uint16_t packet_size() const;
 
   /*
    * Returns a key phase
@@ -216,9 +221,22 @@ public:
   const QUICPacketHeader *header() const;
   const uint8_t *payload() const;
   bool is_retransmittable() const;
+
+  /*
+   * Size of whole QUIC packet (header + payload + integrity check)
+   */
   uint16_t size() const;
+
+  /*
+   * Size of header
+   */
   uint16_t header_size() const;
+
+  /*
+   * Size of payload
+   */
   uint16_t payload_size() const;
+
   void store(uint8_t *buf, size_t *len) const;
   QUICKeyPhase key_phase() const;
 
