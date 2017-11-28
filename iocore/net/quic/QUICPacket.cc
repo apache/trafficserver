@@ -732,7 +732,6 @@ QUICPacketUPtr
 QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                   ats_unique_buf payload, size_t len, bool retransmittable)
 {
-
   // TODO Key phase should be picked up from QUICCrypto, probably
   QUICPacketHeader *header =
     QUICPacketHeader::build(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, connection_id, this->_packet_number_generator.next(),
