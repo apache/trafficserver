@@ -773,7 +773,6 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
   }
 
   if (len + frame->size() + MAX_PACKET_OVERHEAD > max_size || (previous_packet_type != current_packet_type && len > 0)) {
-    ink_assert(len > 0);
     this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
     retransmittable = false;
     len             = 0;
