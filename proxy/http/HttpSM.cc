@@ -2967,15 +2967,7 @@ bool
 HttpSM::is_http_server_eos_truncation(HttpTunnelProducer *p)
 {
   if ((p->do_dechunking || p->do_chunked_passthru) && p->chunked_handler.truncation) {
-    // TS-3054 - In the chunked cases, chunked data that is incomplete
-    // should not be cached, but it should be passed onto the client
-    // This makes ATS more transparent in the case of non-standard
-    // servers.  The cache aborts are dealt with in other checks
-    // on the truncation flag elsewhere in the code.  This return value
-    // invalidates the current data being passed over to the client.
-    // So changing it from return true to return false, so the partial data
-    // is passed onto the client.
-    return false;
+    return true;
   }
 
   //////////////////////////////////////////////////////////////
