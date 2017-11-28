@@ -279,8 +279,17 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT'] = str(p.Variables.admin_port)
     p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(
         p.Variables.admin_port)  # support pre ATS 6.x
-    # since we always kill this
-    p.ReturnCode = None
+    # This is a hack to deal with a leak issue in traffic_cop
+    # I need to address this better in AuTest, however it is more complex at the 
+    # moment to deal with a rogue process in a process group than it is to do "old" behavior
+    if command == "traffic_cop":
+        p.ReturnCode = None
+        p.Variables.Autest.KillDelaySecond = 0
+    if command == "traffic_manager":
+        p.ReturnCode = 2
+    else:
+        p.ReturnCode = 0
+        
 
     return p
 
