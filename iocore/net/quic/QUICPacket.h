@@ -308,4 +308,6 @@ private:
   QUICVersion _version = 0;
   QUICCrypto *_crypto  = nullptr;
   QUICPacketNumberGenerator _packet_number_generator;
+
+  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeader *header);
 };

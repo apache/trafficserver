@@ -702,10 +702,6 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
 QUICPacketUPtr
 QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_sent_by_client, QUICPacketNumber base_packet_number)
 {
-  size_t max_cipher_txt_len = 2048;
-  ats_unique_buf cipher_txt = ats_unique_malloc(max_cipher_txt_len);
-  size_t cipher_txt_len     = 0;
-
   size_t len = sizeof(QUICVersion) * countof(QUIC_SUPPORTED_VERSIONS);
   ats_unique_buf versions(reinterpret_cast<uint8_t *>(ats_malloc(len)), [](void *p) { ats_free(p); });
   uint8_t *p = versions.get();
@@ -716,77 +712,53 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
     p += n;
   }
 
-  QUICPacket *packet       = nullptr;
   QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(),
                                                      packet_sent_by_client->packet_number(), base_packet_number,
                                                      packet_sent_by_client->version(), std::move(versions), len);
-  if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
-                             header->packet_number(), header->buf(), header->size(), header->key_phase())) {
-    packet = quicPacketAllocator.alloc();
-    new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, false);
-  }
-
-  return QUICPacketUPtr(packet, QUICPacketDeleter::delete_packet);
+  return this->_create_encrypted_packet(header);
 }
 
 QUICPacketUPtr
 QUICPacketFactory::create_server_cleartext_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                   ats_unique_buf payload, size_t len, bool retransmittable)
 {
-  size_t max_cipher_txt_len = 2048;
-  ats_unique_buf cipher_txt = ats_unique_malloc(max_cipher_txt_len);
-  size_t cipher_txt_len     = 0;
-
-  QUICPacket *packet = nullptr;
   QUICPacketHeader *header =
     QUICPacketHeader::build(QUICPacketType::SERVER_CLEARTEXT, connection_id, this->_packet_number_generator.next(),
                             base_packet_number, this->_version, std::move(payload), len);
-
-  if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
-                             header->packet_number(), header->buf(), header->size(), header->key_phase())) {
-    packet = quicPacketAllocator.alloc();
-    new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, retransmittable);
-  }
-
-  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
+  return this->_create_encrypted_packet(header);
 }
 
 QUICPacketUPtr
 QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                   ats_unique_buf payload, size_t len, bool retransmittable)
 {
-  // TODO: use pmtu of UnixNetVConnection
-  size_t max_cipher_txt_len = 2048;
-  ats_unique_buf cipher_txt = ats_unique_malloc(max_cipher_txt_len);
-  size_t cipher_txt_len     = 0;
 
   // TODO Key phase should be picked up from QUICCrypto, probably
-  QUICPacket *packet = nullptr;
   QUICPacketHeader *header =
     QUICPacketHeader::build(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, connection_id, this->_packet_number_generator.next(),
                             base_packet_number, std::move(payload), len);
-
-  if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
-                             header->packet_number(), header->buf(), header->size(), header->key_phase())) {
-    packet = quicPacketAllocator.alloc();
-    new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, retransmittable);
-  }
-
-  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
+  return this->_create_encrypted_packet(header);
 }
 
 QUICPacketUPtr
 QUICPacketFactory::create_client_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                 QUICVersion version, ats_unique_buf payload, size_t len)
 {
+  QUICPacketHeader *header =
+    QUICPacketHeader::build(QUICPacketType::CLIENT_INITIAL, connection_id, this->_packet_number_generator.next(),
+                            base_packet_number, version, std::move(payload), len);
+  return this->_create_encrypted_packet(header);
+}
+
+QUICPacketUPtr
+QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header)
+{
+  // TODO: use pmtu of UnixNetVConnection
   size_t max_cipher_txt_len = 2048;
   ats_unique_buf cipher_txt = ats_unique_malloc(max_cipher_txt_len);
   size_t cipher_txt_len     = 0;
 
   QUICPacket *packet = nullptr;
-  QUICPacketHeader *header =
-    QUICPacketHeader::build(QUICPacketType::CLIENT_INITIAL, connection_id, this->_packet_number_generator.next(),
-                            base_packet_number, version, std::move(payload), len);
   if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
                              header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
