@@ -38,7 +38,7 @@ TEST_CASE("QUICPacketHeader", "[quic]")
     };
 
     QUICPacketHeader *header = QUICPacketHeader::load(input, sizeof(input), 0);
-    CHECK(header->length() == 17);
+    CHECK(header->size() == 17);
     CHECK(header->packet_size() == 19);
     CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
     CHECK(header->connection_id() == 0x0102030405060708);
@@ -56,7 +56,7 @@ TEST_CASE("QUICPacketHeader", "[quic]")
     };
 
     QUICPacketHeader *header = QUICPacketHeader::load(input, sizeof(input), 0);
-    CHECK(header->length() == 13);
+    CHECK(header->size() == 13);
     CHECK(header->packet_size() == 15);
     CHECK(header->connection_id() == 0x0102030405060708);
     CHECK(header->packet_number() == 0x12345678);

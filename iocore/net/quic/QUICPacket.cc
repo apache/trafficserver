@@ -197,7 +197,7 @@ uint16_t
 QUICPacketHeader::payload_size() const
 {
   if (this->_buf) {
-    return this->_buf_len - this->length();
+    return this->_buf_len - this->size();
   } else {
     return this->_payload_len;
   }
@@ -217,7 +217,7 @@ QUICPacketLongHeader::key_phase() const
 }
 
 uint16_t
-QUICPacketLongHeader::length() const
+QUICPacketLongHeader::size() const
 {
   return LONGHEADER_LENGTH;
 }
@@ -399,7 +399,7 @@ const uint8_t *
 QUICPacketShortHeader::payload() const
 {
   if (this->_buf) {
-    return this->_buf + length();
+    return this->_buf + this->size();
   } else {
     return this->_payload.get();
   }
@@ -429,7 +429,7 @@ QUICPacketShortHeader::key_phase() const
  * Header Length (doesn't include payload length)
  */
 uint16_t
-QUICPacketShortHeader::length() const
+QUICPacketShortHeader::size() const
 {
   uint16_t len = 1;
 
@@ -570,7 +570,7 @@ QUICPacket::size() const
 uint16_t
 QUICPacket::header_size() const
 {
-  return this->_header->length();
+  return this->_header->size();
 }
 
 uint16_t
@@ -588,9 +588,9 @@ QUICPacket::key_phase() const
 void
 QUICPacket::store(uint8_t *buf, size_t *len) const
 {
-  memcpy(buf, this->_header->buf(), this->_header->length());
-  memcpy(buf + this->_header->length(), this->payload(), this->payload_size());
-  *len = this->_header->length() + this->payload_size();
+  memcpy(buf, this->_header->buf(), this->_header->size());
+  memcpy(buf + this->_header->size(), this->payload(), this->payload_size());
+  *len = this->_header->size() + this->payload_size();
 }
 
 uint8_t
@@ -666,7 +666,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
   case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
     if (this->_crypto->is_handshake_finished()) {
       if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
-                                 header->packet_number(), header->buf(), header->length(), header->key_phase())) {
+                                 header->packet_number(), header->buf(), header->size(), header->key_phase())) {
         result = QUICPacketCreationResult::SUCCESS;
       } else {
         result = QUICPacketCreationResult::FAILED;
@@ -679,7 +679,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
   case QUICPacketType::CLIENT_CLEARTEXT:
   case QUICPacketType::SERVER_CLEARTEXT:
     if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
-                               header->packet_number(), header->buf(), header->length(), QUICKeyPhase::CLEARTEXT)) {
+                               header->packet_number(), header->buf(), header->size(), QUICKeyPhase::CLEARTEXT)) {
       result = QUICPacketCreationResult::SUCCESS;
     } else {
       result = QUICPacketCreationResult::FAILED;
@@ -721,7 +721,7 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
                                                      packet_sent_by_client->packet_number(), base_packet_number,
                                                      packet_sent_by_client->version(), std::move(versions), len);
   if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
-                             header->packet_number(), header->buf(), header->length(), header->key_phase())) {
+                             header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
     new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, false);
   }
@@ -743,7 +743,7 @@ QUICPacketFactory::create_server_cleartext_packet(QUICConnectionId connection_id
                             base_packet_number, this->_version, std::move(payload), len);
 
   if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
-                             header->packet_number(), header->buf(), header->length(), header->key_phase())) {
+                             header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
     new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, retransmittable);
   }
@@ -767,7 +767,7 @@ QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id
                             base_packet_number, std::move(payload), len);
 
   if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
-                             header->packet_number(), header->buf(), header->length(), header->key_phase())) {
+                             header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
     new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, retransmittable);
   }
@@ -788,7 +788,7 @@ QUICPacketFactory::create_client_initial_packet(QUICConnectionId connection_id, 
     QUICPacketHeader::build(QUICPacketType::CLIENT_INITIAL, connection_id, this->_packet_number_generator.next(),
                             base_packet_number, version, std::move(payload), len);
   if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
-                             header->packet_number(), header->buf(), header->length(), header->key_phase())) {
+                             header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
     new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, false);
   }

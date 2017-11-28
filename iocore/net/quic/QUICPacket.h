@@ -59,7 +59,7 @@ public:
   /*
    * Returns its header size
    */
-  virtual uint16_t length() const = 0;
+  virtual uint16_t size() const = 0;
 
   /*
    * Returns its packet size
@@ -155,7 +155,7 @@ public:
   bool has_connection_id() const;
   QUICKeyPhase key_phase() const;
   bool has_key_phase() const;
-  uint16_t length() const;
+  uint16_t size() const;
   void store(uint8_t *buf, size_t *len) const;
 };
 
@@ -177,7 +177,7 @@ public:
   bool has_connection_id() const;
   QUICKeyPhase key_phase() const;
   bool has_key_phase() const;
-  uint16_t length() const;
+  uint16_t size() const;
   void store(uint8_t *buf, size_t *len) const;
 
 private:
