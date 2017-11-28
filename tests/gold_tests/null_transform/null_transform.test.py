@@ -55,20 +55,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 # Load plugin
-plugin_args = ""
-lib_dir = os.path.join(Test.Variables.AtsTestToolsDir, '../../lib')
-plugin_dir = ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']
-plugin_dir_src = os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'null_transform.c')
-ts.Setup.Copy(plugin_dir_src, plugin_dir)
-
-in_basename = os.path.basename(plugin_dir_src)
-in_path = os.path.join(plugin_dir, in_basename)
-out_basename = os.path.splitext(in_basename)[0] + '.so'
-out_path = os.path.join(plugin_dir, out_basename)
-
-ts.Setup.RunCommand('tsxs -c {0} -o {1} -I {2}'.format(in_path, out_path, lib_dir))
-ts.Disk.plugin_config.AddLine("{0} {1}".format(out_basename, plugin_args))
-
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'null_transform.c'), ts)
 
 # www.example.com Host
 tr = Test.AddTestRun()

@@ -1004,34 +1004,34 @@ Condition A
 
 This condition will match using a direct equality operand::
 
-    cond %{HEADER:X-Foo} =bar
+   cond %{HEADER:X-Foo} =bar
 
 Condition B
 ~~~~~~~~~~~
 
 This condition will match using an unanchored regular expression::
 
-    cond %{HEADER:X-Foo} /bar/
+   cond %{HEADER:X-Foo} /bar/
 
 Sample Headers
 ~~~~~~~~~~~~~~
 
 Both conditions A and B will match this response::
 
-    HTTP/1.1 200 OK
-    Date: Mon, 08 Feb 2016 18:11:30 GMT
-    Content-Length: 1234
-    Content-Type: text/html
-    X-Foo: bar
+   HTTP/1.1 200 OK
+   Date: Mon, 08 Feb 2016 18:11:30 GMT
+   Content-Length: 1234
+   Content-Type: text/html
+   X-Foo: bar
 
 Only condition B will match this response::
 
-    HTTP/1.1 200 OK
-    Date: Mon, 08 Feb 2016 18:11:30 GMT
-    Content-Length: 1234
-    Content-Type: text/html
-    X-Foo: bar
-    X-Foo: baz
+   HTTP/1.1 200 OK
+   Date: Mon, 08 Feb 2016 18:11:30 GMT
+   Content-Length: 1234
+   Content-Type: text/html
+   X-Foo: bar
+   X-Foo: baz
 
 That is because the `HEADER`_ condition will see the value of ``X-Foo`` as
 ``bar,baz``. Condition B will still match this because the regular expression,
@@ -1050,9 +1050,9 @@ response before caching it or returning it to the client. This is accomplished
 by setting the hook context and then removing the cookie and basic
 authentication headers.::
 
-    cond %{READ_RESPONSE_HDR_HOOK}
-    rm-header Set-Cookie
-    rm-header WWW-Authenticate
+   cond %{READ_RESPONSE_HDR_HOOK}
+   rm-header Set-Cookie
+   rm-header WWW-Authenticate
 
 Count Teapots
 -------------
@@ -1060,8 +1060,8 @@ Count Teapots
 Maintains a counter statistic, which is incremented every time an origin server
 has decided to be funny by returning HTTP 418::
 
-    cond %{STATUS} =418
-    counter plugin.header_rewrite.teapots
+   cond %{STATUS} =418
+   counter plugin.header_rewrite.teapots
 
 Normalize Statuses
 ------------------
@@ -1071,10 +1071,10 @@ to delivering the response back to the client, but after all processing and
 possible cache updates have occurred), replaces all 4xx HTTP status codes from
 the origin server with ``404``::
 
-    cond %{SEND_RESPONSE_HDR_HOOK}
-    cond %{STATUS} >399
-    cond %{STATUS} <500
-    set-status 404
+   cond %{SEND_RESPONSE_HDR_HOOK}
+   cond %{STATUS} >399
+   cond %{STATUS} <500
+   set-status 404
 
 Remove Cache Control to Origins
 -------------------------------
@@ -1082,9 +1082,9 @@ Remove Cache Control to Origins
 Removes cache control related headers from requests before sending them to an
 origin server::
 
-    cond %{SEND_REQUEST_HDR_HOOK}
-    rm-header Cache-Control
-    rm-header Pragma
+   cond %{SEND_REQUEST_HDR_HOOK}
+   rm-header Cache-Control
+   rm-header Pragma
 
 Enable Debugging Per-Request
 ----------------------------
@@ -1092,9 +1092,9 @@ Enable Debugging Per-Request
 Turns on |TS| debugging statements for a transaction, but only when a special
 header is present in the client request::
 
-    cond %{READ_REQUEST_HDR_HOOK}
-    cond %{CLIENT-HEADER:X-Debug} =supersekret
-    set-debug
+   cond %{READ_REQUEST_HDR_HOOK}
+   cond %{CLIENT-HEADER:X-Debug} =supersekret
+   set-debug
 
 Remove Internal Headers
 -----------------------
@@ -1102,9 +1102,9 @@ Remove Internal Headers
 Removes special internal/development headers from origin responses, unless the
 client request included a special debug header::
 
-    cond %{CLIENT-HEADER:X-Debug} =keep [NOT]
-    rm-header X-Debug-Foo
-    rm-header X-Debug-Bar
+   cond %{CLIENT-HEADER:X-Debug} =keep [NOT]
+   rm-header X-Debug-Foo
+   rm-header X-Debug-Bar
 
 Return Original Method in Response Header
 -----------------------------------------
@@ -1112,8 +1112,8 @@ Return Original Method in Response Header
 This rule copies the original HTTP method that was used by the client into a
 custom response header::
 
-    cond %{SEND_RESPONSE_HDR_HOOK}
-    set-header X-Original-Method %{METHOD}
+   cond %{SEND_RESPONSE_HDR_HOOK}
+   set-header X-Original-Method %{METHOD}
 
 Useless Example From Purpose
 ----------------------------
@@ -1121,12 +1121,12 @@ Useless Example From Purpose
 Even that useless example from `Purpose`_ in the beginning of this document is
 possible to accomplish::
 
-    cond %{INBOUND:LOCAL-PORT} =8090
-    cond %{METHOD} =HEAD
-    cond %{CLIENT-HEADER:Accept-Language} /es-py/ [NOT]
-    cond %{STATUS} =304 [OR]
-    cond %{RANDOM:500} >290
-    set-status 403
+   cond %{INBOUND:LOCAL-PORT} =8090
+   cond %{METHOD} =HEAD
+   cond %{CLIENT-HEADER:Accept-Language} /es-py/ [NOT]
+   cond %{STATUS} =304 [OR]
+   cond %{RANDOM:500} >290
+   set-status 403
 
 Add Cache Control Headers Based on Origin Path
 ----------------------------------------------
@@ -1135,12 +1135,12 @@ This rule adds cache control headers to CDN responses based matching the origin
 path.  One provides a max age and the other provides a “no-cache” statement to
 two different file paths. ::
 
-    cond %{SEND_RESPONSE_HDR_HOOK}
-    cond %{CLIENT-URL:PATH} /examplepath1/
-    add-header Cache-Control "max-age=3600" [L]
-    cond %{SEND_RESPONSE_HDR_HOOK}
-    cond %{CLIENT-URL:PATH} /examplepath2\/examplepath3\/.*/
-    add-header Cache-Control "no-cache" [L]
+   cond %{SEND_RESPONSE_HDR_HOOK}
+   cond %{CLIENT-URL:PATH} /examplepath1/
+   add-header Cache-Control "max-age=3600" [L]
+   cond %{SEND_RESPONSE_HDR_HOOK}
+   cond %{CLIENT-URL:PATH} /examplepath2\/examplepath3\/.*/
+   add-header Cache-Control "no-cache" [L]
 
 Redirect when the Origin Server Times Out
 -----------------------------------------
@@ -1148,10 +1148,10 @@ Redirect when the Origin Server Times Out
 This rule sends a 302 redirect to the client with the requested URI's Path and
 Query string when the Origin server times out or the connection is refused::
 
-    cond %{SEND_RESPONSE_HDR_HOOK}
-    cond %{STATUS} =502 [OR]
-    cond %{STATUS} =504
-    set-redirect 302 http://different_origin.example.com/%{CLIENT-URL:PATH} [QSA]
+   cond %{SEND_RESPONSE_HDR_HOOK}
+   cond %{STATUS} =502 [OR]
+   cond %{STATUS} =504
+   set-redirect 302 http://different_origin.example.com/%{CLIENT-URL:PATH} [QSA]
 
 Check for existence of a header
 -------------------------------
@@ -1159,21 +1159,21 @@ Check for existence of a header
 This rule will modify the ``Cache-Control`` header, but only if it is not
 already set to some value, and the status code is a 2xx::
 
-    cond %{READ_RESPONSE_HDR_HOOK} [AND]
-    cond %{HEADER:Cache-Control} ="" [AND]
-    cond %{STATUS} >199 [AND]
-    cond %{STATUS} <300
-    set-header Cache-Control "max-age=600, public"
+   cond %{READ_RESPONSE_HDR_HOOK} [AND]
+   cond %{HEADER:Cache-Control} ="" [AND]
+   cond %{STATUS} >199 [AND]
+   cond %{STATUS} <300
+   set-header Cache-Control "max-age=600, public"
 
 Add HSTS
 --------
 
 Add the HTTP Strict Transport Security (HSTS) header if it does not exist and the inbound connection is TLS::
 
-    cond %{READ_RESPONSE_HDR_HOOK} [AND]
-    cond %{HEADER:Strict-Transport-Security} ="" [AND]
-    cond %{INBOUND:TLS} /./
-    set-header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+   cond %{READ_RESPONSE_HDR_HOOK} [AND]
+   cond %{HEADER:Strict-Transport-Security} ="" [AND]
+   cond %{INBOUND:TLS} /./
+   set-header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
 
 This is mostly used by being attached to a remap rule that maps to a host known to support TLS. If
 the parallel `OUTBOUND` supported is added then this could be done by checking for inbound TLS both
@@ -1184,21 +1184,21 @@ Close Connections for draining
 ------------------------------
 
 When a healthcheck file is missing (in this example, ``/path/to/the/healthcheck/file.txt``),
-add a Connection: close header to have HTTP/1.1 clients drop their connection,
-allowing the server to drain. This should be a global configuration.
+add a ``Connection: close`` header to have HTTP/1.1 clients drop their connection,
+allowing the server to drain. This should be a global configuration.::
 
-    cond %{SEND_RESPONSE_HDR_HOOK}
-    cond %{ACCESS:/path/to/the/healthcheck/file.txt}    [NOT,OR]
-      set-header Connection "close"
+   cond %{SEND_RESPONSE_HDR_HOOK}
+   cond %{ACCESS:/path/to/the/healthcheck/file.txt}    [NOT,OR]
+   set-header Connection "close"
 
 Use Internal header to pass data
 --------------------------------
 
 In |TS|, a header that begins with ``@`` does not leave |TS|. Thus, you can use
 this to pass data to different |TS| systems. For instance, a series of remap rules
-could each be tagged with a consistent name to make finding logs easier.
+could each be tagged with a consistent name to make finding logs easier.::
 
-    cond %{REMAP_PSEUDO_HOOK}
-        set-header @PropertyName "someproperty"
+   cond %{REMAP_PSEUDO_HOOK}
+   set-header @PropertyName "someproperty"
 
 (Then in :file:`logging.config`, log ``%<{@PropertyName}cqh>``)

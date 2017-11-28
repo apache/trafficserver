@@ -72,7 +72,7 @@ EchoServer::handle_packet(int event, void *data)
   switch (event) {
   case NET_EVENT_DATAGRAM_OPEN: {
     UDPConnection *con = reinterpret_cast<UDPConnection *>(data);
-    port               = con->getPortNum(); // store this for later signalling.
+    port               = con->getPortNum(); // store this for later signaling.
     /* For some reason the UDP packet handling isn't fully set up at this time. We need another
        pass through the event loop for that or the packet is never read even thought it arrives
        on the port (as reported by ss --udp --numeric --all).
@@ -106,7 +106,7 @@ EchoServer::handle_packet(int event, void *data)
   case EVENT_INTERVAL:
     // Done the extra event loop, signal the client to start.
     std::cout << "Echo Server port: " << port << std::endl;
-    write(pfd[1], &port, sizeof(port));
+    ink_release_assert(write(pfd[1], &port, sizeof(port)) == sizeof(port));
     break;
 
   default:

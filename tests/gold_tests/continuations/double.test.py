@@ -28,6 +28,7 @@ Test.SkipUnless(
 Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts", command="traffic_manager")
+
 server = Test.MakeOriginServer("server")
 
 Test.testName = ""
@@ -35,7 +36,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.
 # expected response from the origin server
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
-Test.prepare_plugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'continuations_verify.cc'), ts)
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'continuations_verify.cc'), ts)
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
@@ -77,11 +78,10 @@ def file_is_ready():
 
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun()
-tr.Processes.Process("filesleeper", "python -c 'from time import sleep; sleep(10)'")
+tr.DelayStart=10 
 tr.Processes.Default.Command = comparator_command.format('ssn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.StartBefore(tr.Processes.filesleeper, ready=file_is_ready)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should verify contents')
 tr.StillRunningAfter = ts
 # for debugging session number

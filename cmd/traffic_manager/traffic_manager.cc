@@ -962,6 +962,8 @@ fileUpdated(char *fname, bool incVersion)
     lmgmt->signalFileChange("proxy.config.http.congestion_control.filename");
   } else if (strcmp(fname, "proxy.config.ssl.server.ticket_key.filename") == 0) {
     lmgmt->signalFileChange("proxy.config.ssl.server.ticket_key.filename");
+  } else if (strcmp(fname, SSL_SERVER_NAME_CONFIG) == 0) {
+    lmgmt->signalFileChange("proxy.config.ssl.servername.filename");
   } else {
     mgmt_log("[fileUpdated] Unknown config file updated '%s'\n", fname);
   }

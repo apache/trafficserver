@@ -231,6 +231,11 @@ struct OriginStats {
   } schemes;
 
   struct {
+    StatsCounter ipv4;
+    StatsCounter ipv6;
+  } protocols;
+
+  struct {
     StatsCounter options;
     StatsCounter get;
     StatsCounter head;
@@ -1170,6 +1175,18 @@ update_schemes(OriginStats *stat, int scheme, int size)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Update the "protocols" stats for a particular record
+inline void
+update_protocols(OriginStats *stat, bool ipv6, int size)
+{
+  if (ipv6) {
+    update_counter(stat->protocols.ipv6, size);
+  } else {
+    update_counter(stat->protocols.ipv4, size);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Finds or creates a stats structures if missing
 OriginStats *
 find_or_create_stats(const char *key)
@@ -1202,18 +1219,20 @@ find_or_create_stats(const char *key)
 // Update the stats
 void
 update_stats(OriginStats *o_stats, const HTTPMethod method, URLScheme scheme, int http_code, int size, int result, int hier,
-             int elapsed)
+             int elapsed, bool ipv6)
 {
   update_results_elapsed(&totals, result, elapsed, size);
   update_codes(&totals, http_code, size);
   update_methods(&totals, method, size);
   update_schemes(&totals, scheme, size);
+  update_protocols(&totals, ipv6, size);
   update_counter(totals.total, size);
   if (nullptr != o_stats) {
     update_results_elapsed(o_stats, result, elapsed, size);
     update_codes(o_stats, http_code, size);
     update_methods(o_stats, method, size);
     update_schemes(o_stats, scheme, size);
+    update_protocols(o_stats, ipv6, size);
     update_counter(o_stats->total, size);
   }
 }
@@ -1238,6 +1257,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
 
   // Parsed results
   int http_code = 0, size = 0, result = 0, hier = 0, elapsed = 0;
+  bool ipv6 = false;
   OriginStats *o_stats;
   HTTPMethod method;
   URLScheme scheme;
@@ -1278,9 +1298,11 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
           LogFieldIp *ip = reinterpret_cast<LogFieldIp *>(read_from);
           int len        = sizeof(LogFieldIp);
           if (AF_INET == ip->_family) {
-            len = sizeof(LogFieldIp4);
+            ipv6 = false;
+            len  = sizeof(LogFieldIp4);
           } else if (AF_INET6 == ip->_family) {
-            len = sizeof(LogFieldIp6);
+            ipv6 = true;
+            len  = sizeof(LogFieldIp6);
           }
           read_from += INK_ALIGN_DEFAULT(len);
         }
@@ -1409,7 +1431,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
         }
         read_from += LogAccess::round_strlen(tok_len + 1);
         if (!aggregate_per_userid) {
-          update_stats(o_stats, method, scheme, http_code, size, result, hier, elapsed);
+          update_stats(o_stats, method, scheme, http_code, size, result, hier, elapsed, ipv6);
         }
         break;
 
@@ -1420,7 +1442,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
           if (!summary) {
             o_stats = find_or_create_stats(read_from);
           }
-          update_stats(o_stats, method, scheme, http_code, size, result, hier, elapsed);
+          update_stats(o_stats, method, scheme, http_code, size, result, hier, elapsed, ipv6);
         }
 
         if ('-' == *read_from) {
@@ -2128,6 +2150,16 @@ print_detail_stats(const OriginStats *stat, bool json, bool concise)
   format_line(json ? "scheme.https" : "HTTPS (port 443)", stat->schemes.https, stat->total, json, concise);
   format_line(json ? "scheme.none" : "none", stat->schemes.none, stat->total, json, concise);
   format_line(json ? "scheme.other" : "other", stat->schemes.other, stat->total, json, concise);
+
+  if (!json) {
+    std::cout << std::endl << std::endl;
+
+    // Protocol familes
+    format_detail_header("Protocols");
+  }
+
+  format_line(json ? "proto.ipv4" : "IPv4", stat->protocols.ipv4, stat->total, json, concise);
+  format_line(json ? "proto.ipv6" : "IPv6", stat->protocols.ipv6, stat->total, json, concise);
 
   if (!json) {
     std::cout << std::endl << std::endl;

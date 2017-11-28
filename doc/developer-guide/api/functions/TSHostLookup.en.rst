@@ -30,3 +30,9 @@ Synopsis
 
 Description
 ===========
+
+Attempts host name resolution for the given :arg:`hostname` with length :arg:`namelen`. When a result is ready the handler of :arg:`contp` is called with the :macro:`TS_EVENT_HOST_LOOKUP` event and a :type:`TSHostLookupResult`. Use :func:`TSHostLookupResultAddrGet` to retrieve the resulting address from the :type:`TSHostLookupResult`.
+
+A call to :func:`TSHostLookup` may be synchronous—in which case the handler for :arg:`contp` will be called with the answer before the call to :func:`TSHostLookup` returns—or the call to :func:`TSHostLookup` may be asynchronous—in which case it returns immediately with a :type:`TSAction`, and the handler :arg:`contp` will be called in the future. See :doc:`../../plugins/actions/index.en` for guidance.
+
+In particular, :arg:`contp` must have been created with a :type:`TSMutex`; see :func:`TSContCreate`

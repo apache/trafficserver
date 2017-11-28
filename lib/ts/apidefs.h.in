@@ -291,7 +291,8 @@ typedef enum {
   TS_SSL_CERT_HOOK = TS_SSL_SNI_HOOK,
   TS_SSL_SERVERNAME_HOOK,
   TS_SSL_SERVER_VERIFY_HOOK,
-  TS_SSL_LAST_HOOK = TS_SSL_SERVER_VERIFY_HOOK,
+  TS_SSL_SESSION_HOOK,
+  TS_SSL_LAST_HOOK = TS_SSL_SESSION_HOOK,
   TS_HTTP_LAST_HOOK
 } TSHttpHookID;
 
@@ -421,6 +422,9 @@ typedef enum {
   TS_EVENT_CACHE_READ_READY                     = 1134,
   TS_EVENT_CACHE_READ_COMPLETE                  = 1135,
   TS_EVENT_INTERNAL_1200                        = 1200,
+  TS_EVENT_SSL_SESSION_GET                      = 2000,
+  TS_EVENT_SSL_SESSION_NEW                      = 2001,
+  TS_EVENT_SSL_SESSION_REMOVE                   = 2002,
   TS_AIO_EVENT_DONE                             = 3900,
   TS_EVENT_HTTP_CONTINUE                        = 60000,
   TS_EVENT_HTTP_ERROR                           = 60001,
@@ -831,6 +835,7 @@ typedef struct tsapi_mbuffer *TSMBuffer;
 typedef struct tsapi_httpssn *TSHttpSsn;
 typedef struct tsapi_httptxn *TSHttpTxn;
 typedef struct tsapi_ssl_obj *TSSslConnection;
+typedef struct tsapi_ssl_session *TSSslSession;
 typedef struct tsapi_httpaltinfo *TSHttpAltInfo;
 typedef struct tsapi_mimeparser *TSMimeParser;
 typedef struct tsapi_httpparser *TSHttpParser;
@@ -876,6 +881,16 @@ typedef struct TSFetchUrlParams {
   TSFetchWakeUpOptions options;
   struct TSFetchUrlParams *next;
 } TSFetchUrlParams_t;
+
+// This is a duplicate of the SSL_MAX_SSL_SESSION_ID_LENGTH constant
+// Redefining here so we don't include the openssl/ssl.h file here
+#define TS_SSL_MAX_SSL_SESSION_ID_LENGTH 32
+
+// This mirrors the internal data structure SSLSessionID
+typedef struct TSSslSessionID_s {
+  size_t len;
+  char bytes[TS_SSL_MAX_SSL_SESSION_ID_LENGTH];
+} TSSslSessionID;
 
 /* --------------------------------------------------------------------------
    Init */

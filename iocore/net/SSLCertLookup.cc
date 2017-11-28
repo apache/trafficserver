@@ -178,6 +178,7 @@ ticket_block_create(char *ticket_key_data, int ticket_key_len)
     Error("SSL session ticket key is too short (>= 48 bytes are required)");
     goto fail;
   }
+  Debug("ssl", "Create %d ticket key blocks", num_ticket_keys);
 
   keyblock = ticket_block_alloc(num_ticket_keys);
 
@@ -303,25 +304,6 @@ SSLCertLookup::get(unsigned i) const
 {
   return ssl_storage->get(i);
 }
-
-struct ats_wildcard_matcher {
-  ats_wildcard_matcher()
-  {
-    if (regex.compile(R"(^\*\.[^\*.]+)") != 0) {
-      Fatal("failed to compile TLS wildcard matching regex");
-    }
-  }
-
-  ~ats_wildcard_matcher() {}
-  bool
-  match(const char *hostname) const
-  {
-    return regex.match(hostname) != -1;
-  }
-
-private:
-  DFA regex;
-};
 
 static void
 make_to_lower_case(const char *name, char *lower_case_name, int buf_len)

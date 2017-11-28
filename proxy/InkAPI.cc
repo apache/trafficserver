@@ -43,6 +43,7 @@
 #include "P_HostDB.h"
 #include "P_Cache.h"
 #include "I_RecCore.h"
+#include "P_SSLConfig.h"
 #include "ProxyConfig.h"
 #include "Plugin.h"
 #include "LogObject.h"
@@ -2426,6 +2427,19 @@ TSUrlPercentEncode(TSMBuffer bufp, TSMLoc obj, char *dst, size_t dst_size, size_
   ats_free(url);
 
   return ret;
+}
+
+// pton
+TSReturnCode
+TSIpStringToAddr(const char *str, size_t str_len, sockaddr *addr)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
+
+  if (0 != ats_ip_pton(ts::string_view(str, str_len), addr)) {
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -9178,6 +9192,12 @@ TSSslContextDestroy(TSSslContext ctx)
   SSLReleaseContext(reinterpret_cast<SSL_CTX *>(ctx));
 }
 
+tsapi void
+TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen)
+{
+  SSLTicketKeyConfig::reconfigure_data(ticketData, ticketDataLen);
+}
+
 void
 TSRegisterProtocolSet(TSVConn sslp, TSNextProtocolSet ps)
 {
@@ -9262,6 +9282,62 @@ TSVConnReenable(TSVConn vconn)
       // We schedule the reenable to the home thread of ssl_vc.
       ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc));
     }
+  }
+}
+
+extern SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
+
+TSSslSession
+TSSslSessionGet(const TSSslSessionID *session_id)
+{
+  SSL_SESSION *session = NULL;
+  if (session_id && session_cache) {
+    session_cache->getSession(reinterpret_cast<const SSLSessionID &>(*session_id), &session);
+  }
+  return reinterpret_cast<TSSslSession>(session);
+}
+
+int
+TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr)
+{
+  int true_len = 0;
+  // Don't get if there is no session id or the cache is not yet set up
+  if (session_id && session_cache && len_ptr) {
+    true_len = session_cache->getSessionBuffer(reinterpret_cast<const SSLSessionID &>(*session_id), buffer, *len_ptr);
+  }
+  return true_len;
+}
+
+TSReturnCode
+TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session)
+{
+  // Don't insert if there is no session id or the cache is not yet set up
+  if (session_id && session_cache) {
+    if (is_debug_tag_set("ssl.session_cache")) {
+      const SSLSessionID *sid = reinterpret_cast<const SSLSessionID *>(session_id);
+      char buf[sid->len * 2 + 1];
+      sid->toString(buf, sizeof(buf));
+      Debug("ssl.session_cache.insert", "TSSslSessionInsert: Inserting session '%s' ", buf);
+    }
+    SSL_SESSION *session = reinterpret_cast<SSL_SESSION *>(add_session);
+    session_cache->insertSession(reinterpret_cast<const SSLSessionID &>(*session_id), session);
+    // insertSession returns void, assume all went well
+    return TS_SUCCESS;
+  } else {
+    return TS_ERROR;
+  }
+}
+
+TSReturnCode
+TSSslSessionRemove(const TSSslSessionID *session_id)
+{
+  // Don't remove if there is no session id or the cache is not yet set up
+  if (session_id && session_cache) {
+    session_cache->removeSession(reinterpret_cast<const SSLSessionID &>(*session_id));
+    // removeSession returns void, assume all went well
+    return TS_SUCCESS;
+  } else {
+    return TS_ERROR;
   }
 }
 

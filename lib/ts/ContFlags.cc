@@ -23,50 +23,28 @@
 
 #include "ContFlags.h"
 
-static ink_thread_key init_thread_key();
-static inkcoreapi ink_thread_key flags_data_key = init_thread_key();
-
-static ink_thread_key
-init_thread_key()
-{
-  ink_thread_key_create(&flags_data_key, nullptr);
-  return flags_data_key;
-}
-
-/* Set up a cont_flags entry for this threa */
-void
-init_cont_flags()
-{
-  ContFlags new_flags;
-  void *val = reinterpret_cast<void *>(static_cast<intptr_t>((new_flags.get_flags())));
-  ink_thread_setspecific(flags_data_key, val);
-}
+thread_local ContFlags local_flags;
 
 void
 set_cont_flags(const ContFlags &flags)
 {
-  void *val = reinterpret_cast<void *>(static_cast<intptr_t>((flags.get_flags())));
-  ink_thread_setspecific(flags_data_key, val);
+  local_flags.set_flags(flags.get_flags());
 }
 
 void
 set_cont_flag(ContFlags::flags flag_bit, bool value)
 {
-  ContFlags new_flags(reinterpret_cast<intptr_t>(ink_thread_getspecific(flags_data_key)));
-  new_flags.set_flag(flag_bit, value);
-  void *val = reinterpret_cast<void *>(static_cast<intptr_t>((new_flags.get_flags())));
-  ink_thread_setspecific(flags_data_key, val);
+  local_flags.set_flag(flag_bit, value);
 }
 
 ContFlags
 get_cont_flags()
 {
-  return ContFlags(reinterpret_cast<intptr_t>(ink_thread_getspecific(flags_data_key)));
+  return local_flags;
 }
 
 bool
 get_cont_flag(ContFlags::flags flag_bit)
 {
-  ContFlags flags(reinterpret_cast<intptr_t>(ink_thread_getspecific(flags_data_key)));
-  return flags.get_flag(flag_bit);
+  return local_flags.get_flag(flag_bit);
 }

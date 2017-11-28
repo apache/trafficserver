@@ -66,9 +66,9 @@ tr.Processes.Default.Env=ts.Env
 #### Variables
 These are the current variable that are define dynamically 
 
-port - the ipv4 port to listen on
-portv6 - the ipv4 port to listen on
-manager_port - the manager port used. This is set even is select_port is False
+port - the ipv4 port to listen on  
+portv6 - the ipv4 port to listen on  
+manager_port - the manager port used. This is set even is select_port is False  
 admin_port - the admin port used. This is set even is select_port is False
 
 #### File objects
@@ -165,7 +165,7 @@ Test.Setup.ts.CopyConfig('config/records_8090.config','records.config',ts1)
 Test.Setup.ts.CopyConfig('config/records_8090.config','records.config',Test.Processes.ts1)
 ```
 
-## Setup Origin Server
+## Setting up Origin Server
 ### Test.MakeOriginServer(Name)
  * name - A name for this instance of Origin Server.
  
@@ -193,11 +193,85 @@ ts.Disk.remap_config.AddLine(
     'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 ```
+
+## Setting up DNS
+### Test.MakeDNServer(name)
+ * name - A name for this instance of the DNS.
+
+ This function returns a AuTest process object that launches the python-based microDNS (uDNS). uDNS is a mock DNS which responds to DNS queries. uDNS needs to be setup for the tests that require made-up domains. The server reads a JSON-formatted data file that contains mappings of domain to IP addresses. uDNS responds with the approriate IP addresses if the requested domain is in uDNS' mappings, otherwise responds with default IP address 127.0.0.1.  
+
+ * addRecords(records=None, jsonFile=None)
+ 
+ This function adds records using either a dictionary, *records*, or a json file, *jsonFile*.  
+
+ The supplied dictionary must be in the form of ```{ 'domain A': [IP1, IP2], 'domain B': [IP3, IP4] }```.  
+
+ The supplied json file must take the form of 
+ ```
+ {
+     "mappings": [
+         {domain A: [IP1, IP2]},
+         {domain B: [IP3, IP4]}
+     ]
+ }
+ ```
+
+ ### Examples
+ There are 3 ways to utilize uDNS -
+
+ Easy way if everything is done on localhost:  
+ *uDNS by default returns 127.0.0.1 for any unknown mappings*
+
+ ```python
+    # create TrafficServer and uDNS processes
+    ts = Test.MakeATSProcess("ts")
+    dns = Test.MakeDNServer("dns")
+
+    ts.Disk.records_config.update({
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port), # let TrafficServer know where the DNS is located
+        'proxy.config.url_remap.remap_required': 0  # need this so TrafficServer won't return error upon not finding the domain in its remap file
+    })
+ ```
+
+ Using the *addRecords* method:
+ ```python
+    # create TrafficServer and uDNS processes
+    ts = Test.MakeATSProcess("ts")
+    dns = Test.MakeDNServer("dns")
+
+    ts.Disk.records_config.update({
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port), # let TrafficServer know where the DNS is located
+        'proxy.config.url_remap.remap_required': 0  # need this so TrafficServer won't return error upon not finding the domain in its remap file
+    })
+
+    dns.addRecords(records={"foo.com":["127.0.0.1", "127.0.1.1"]})
+    # AND/OR
+    dns.addRecords(jsonFile="zone.json") # where zone.json is in the format described above
+ ```
+
+ Without disabling remap_required:
+ ```python
+    # create TrafficServer and uDNS processes
+    ts = Test.MakeATSProcess("ts")
+    dns = Test.MakeDNServer("dns")
+
+    ts.Disk.records_config.update({
+        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port) # let TrafficServer know where the DNS is located
+    })
+
+    # if we don't disable remap_required, we can also just remap a domain to a domain recognized by DNS
+    ts.Disk.remap_config.AddLine(
+        'map http://example.com http://foo.com'
+    )
+
+    dns.addRecords(records={"foo.com":["127.0.0.1", "127.0.1.1"]})
+ ```
+
 ## Condition Testing
 ### Condition.HasATSFeature(feature)
  * feature - The feature to test for
  
- This function test for Traffic server for possible feature it has been compiled with. Current Features you can test for are:
+ This function tests for Traffic server for possible feature it has been compiled with. Current Features you can test for are:
  * TS_HAS_LIBZ
  * TS_HAS_LZMA
  * TS_HAS_JEMALLOC
@@ -240,12 +314,24 @@ Test.SkipUnless(
 ### Condition.HasCurlFeature(feature)
  * feature - The feature to test for
  
- This function test for Curl for possible feature it has been compiled with. Consult Curl documenation for feature set.
+ This function tests for Curl for possible feature it has been compiled with. Consult Curl documenation for feature set.
                                 
 ### Example
 ```python
 #create the origin server process
 Test.SkipUnless(
     Condition.HasCurlFeature('http2'),
+)
+```
+
+### Condition.PluginExists(pluginname)
+ * pluginname - The plugin to test for
+ 
+ This function tests for existence of a certain plugin in TrafficServer.
+                                
+### Example
+```python
+Test.SkipUnless(
+    Condition.PluginExists('a-plugin.so'),
 )
 ```

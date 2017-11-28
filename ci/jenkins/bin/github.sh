@@ -28,6 +28,7 @@ autoreconf -if
             --enable-example-plugins \
             --enable-ccache \
             --enable-debug \
+	    --enable-wccp \
             --enable-werror
 
 # Build and run regressions

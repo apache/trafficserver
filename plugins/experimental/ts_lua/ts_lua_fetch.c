@@ -16,17 +16,13 @@
   limitations under the License.
 */
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
 #include "ts_lua_util.h"
 #include "ts_lua_io.h"
 #include "ts_lua_fetch.h"
 
 #define TS_LUA_EVENT_FETCH_OVER 20010
-#define TS_LUA_FETCH_CLIENT_ADDRESS "127.0.0.1"
-#define TS_LUA_FETCH_CLIENT_PORT 33333
+#define TS_LUA_FETCH_CLIENT_ADDRPORT "127.0.0.1:33333"
+#define TS_LUA_FETCH_CLIENT_ADDRPORT_LEN 15
 #define TS_LUA_FETCH_USER_AGENT "TS Fetcher/1.0"
 
 static int ts_lua_fetch(lua_State *L);
@@ -203,15 +199,14 @@ static int
 ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetch_info *fi)
 {
   TSCont contp;
-  int tb, flags, host_len, port, n;
+  int tb, flags, host_len, n;
   int cl, ht, ua;
   const char *method, *key, *value, *body, *opt;
   const char *addr, *ptr, *host;
   size_t method_len, key_len, value_len, body_len;
   size_t addr_len, opt_len, i, left;
   char c;
-  struct sockaddr_in clientaddr;
-  char ipstr[32];
+  struct sockaddr clientaddr;
   char buf[32];
 
   tb = lua_istable(L, -1);
@@ -252,8 +247,6 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
 
   /* cliaddr */
   memset(&clientaddr, 0, sizeof(clientaddr));
-  clientaddr.sin_family = AF_INET;
-  const char *p         = NULL;
 
   if (tb) {
     lua_pushlstring(L, "cliaddr", sizeof("cliaddr") - 1);
@@ -261,30 +254,17 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
 
     if (lua_isstring(L, -1)) {
       addr = luaL_checklstring(L, -1, &addr_len);
-      p    = strstr(addr, ":");
-      if (p && p - addr < 32) {
-        port = atoi(p + 1);
-        strncpy(ipstr, addr, p - addr);
-        ipstr[p - addr]     = 0;
-        clientaddr.sin_port = htons(port);
-        if (!inet_aton(ipstr, (struct in_addr *)&clientaddr.sin_addr.s_addr)) {
-          p = NULL;
-          TSError("[%s] Client ip parse failed! Using default. [ip: %s]", TS_LUA_DEBUG_TAG, ipstr);
+
+      if (TS_ERROR == TSIpStringToAddr(addr, addr_len, &clientaddr)) {
+        TSError("[%s] Client ip parse failed! Using default.", TS_LUA_DEBUG_TAG);
+        if (TS_ERROR == TSIpStringToAddr(TS_LUA_FETCH_CLIENT_ADDRPORT, TS_LUA_FETCH_CLIENT_ADDRPORT_LEN, &clientaddr)) {
+          TSError("[%s] Default client ip parse failed!", TS_LUA_DEBUG_TAG);
+          return 0;
         }
-      } else {
-        p = NULL;
-        TSError("[%s] Client ip parse failed! Using default. [addrstr: %s]", TS_LUA_DEBUG_TAG, addr);
       }
     }
 
     lua_pop(L, 1);
-  }
-
-  if (!p) {
-    clientaddr.sin_port = htons(TS_LUA_FETCH_CLIENT_PORT);
-    if (!inet_aton(TS_LUA_FETCH_CLIENT_ADDRESS, (struct in_addr *)&clientaddr.sin_addr.s_addr)) {
-      TSError("[%s] Error using default for client ip in fetch API. [ip: %s]", TS_LUA_DEBUG_TAG, TS_LUA_FETCH_CLIENT_ADDRESS);
-    }
   }
 
   /* option */

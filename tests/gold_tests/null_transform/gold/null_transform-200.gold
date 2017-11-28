@@ -1,14 +1,11 @@
 ``
 > GET http://www.example.com/ HTTP/1.1
+``
 > Host: www.example.com``
-> User-Agent: curl/``
-> Accept: */*
-> Proxy-Connection:``
 ``
 < HTTP/1.1 200 OK
-< Date:``
+``
 < Content-Length: 26
-< Age: ``
-< Proxy-Connection: keep-alive
+``
 < Server: ATS/``
 ``

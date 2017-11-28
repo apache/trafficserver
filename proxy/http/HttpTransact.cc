@@ -542,33 +542,17 @@ HttpTransact::Forbidden(State *s)
 void
 HttpTransact::HandleBlindTunnel(State *s)
 {
-  NetVConnection *vc         = s->state_machine->ua_session->get_netvc();
-  bool inbound_transparent_p = vc->get_is_transparent();
   URL u;
   // IpEndpoint dest_addr;
   // ip_text_buffer new_host;
 
   DebugTxn("http_trans", "[HttpTransact::HandleBlindTunnel]");
 
-  // We've received a request on a port which we blind forward
-  //  For logging purposes we create a fake request
-  s->hdr_info.client_request.create(HTTP_TYPE_REQUEST);
-  s->hdr_info.client_request.method_set(HTTP_METHOD_CONNECT, HTTP_LEN_CONNECT);
-  s->hdr_info.client_request.url_create(&u);
-  u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
-  s->hdr_info.client_request.url_set(&u);
-
   // We set the version to 0.9 because once we know where we are going
   //   this blind ssl tunnel is indistinguishable from a "CONNECT 0.9"
   //   except for the need to suppression error messages
   HTTPVersion ver(0, 9);
   s->hdr_info.client_request.version_set(ver);
-
-  char new_host[INET6_ADDRSTRLEN];
-  ats_ip_ntop(vc->get_local_addr(), new_host, sizeof(new_host));
-
-  s->hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
-  s->hdr_info.client_request.url_get()->port_set(vc->get_local_port());
 
   // Initialize the state vars necessary to sending error responses
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
@@ -579,35 +563,7 @@ HttpTransact::HandleBlindTunnel(State *s)
     DebugTxn("http_trans", "[HandleBlindTunnel] destination set to %.*s:%d", host_len, host,
              s->hdr_info.client_request.url_get()->port_get());
   }
-  // Now we need to run the url remapping engine to find the where
-  //   this request really goes since we were sent was bound for
-  //   machine we are running on
 
-  bool url_remap_success = false;
-  char *remap_redirect   = nullptr;
-
-  if (s->transparent_passthrough) {
-    url_remap_success = true;
-  }
-  // We must have mapping or we will self loop since the this
-  //    request was addressed to us to begin with.  Remap directs
-  //    are something used in the normal reverse proxy and if we
-  //    get them here they indicate a very bad misconfiguration!
-  if (!(inbound_transparent_p || url_remap_success) || remap_redirect != nullptr) {
-    // The error message we send back will be suppressed so
-    //  the only important thing in selecting the error is what
-    //  status code it gets logged as
-    build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Port Forwarding Error", "default");
-
-    int host_len;
-    const char *host = s->hdr_info.client_request.url_get()->host_get(&host_len);
-
-    Log::error("Forwarded port error: request with destination %.*s:%d "
-               "does not have a mapping",
-               host_len, host, s->hdr_info.client_request.url_get()->port_get());
-
-    TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-  }
   // Set the mode to tunnel so that we don't lookup the cache
   s->current.mode = TUNNELLING_PROXY;
 
@@ -7404,7 +7360,7 @@ HttpTransact::handle_server_died(State *s)
     break;
   case CONNECTION_ERROR:
     status    = HTTP_STATUS_BAD_GATEWAY;
-    reason    = (char *)get_error_string(s->cause_of_death_errno);
+    reason    = get_error_string(s->cause_of_death_errno == 0 ? -ENET_CONNECT_FAILED : s->cause_of_death_errno);
     body_type = "connect#failed_connect";
     break;
   case OPEN_RAW_ERROR:

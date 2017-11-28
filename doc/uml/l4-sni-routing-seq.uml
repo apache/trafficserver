@@ -1,0 +1,28 @@
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+' Unless required by  applicable law or agreed to in writing, software distributed under the License is distributed
+' on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and limitations under the License.
+
+@startuml
+
+actor Inbound
+participant "Traffic\nServer" as TS
+entity "app-server-56:4443" as Outbound
+
+Inbound <-[#green]> TS : <font color="green">//TCP//</font> Handshake
+Inbound -[#blue]> TS : <font color="blue">//TLS//</font> Client HELLO\nSNI=service-2.example.com
+note over TS : Examine SNI value\nSelect Outbound
+TS <-[#green]> Outbound : <font color="green">//TCP//</font> Handshake
+TS -> Outbound : <font color="red">//HTTP//</font> ""CONNECT"" app-server-56:4443
+Outbound -> TS : ""200 OK""
+TS -[#blue]> Outbound : <font color="blue">//TLS//</font> Client HELLO\nSNI=service-2.example.com
+note left : Duplicate of Inbound HELLO
+note over TS : Forward bytes\nInbound <&arrow-thick-left> <&arrow-thick-right> Outbound
+note over Inbound, Outbound : <font color="blue">TLS negotiation</font>
+Inbound <-[#blue]-> Outbound
+note over Inbound, Outbound : Transactions
+Inbound <-[#black]-> Outbound
+
+@enduml

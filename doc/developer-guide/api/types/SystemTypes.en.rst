@@ -49,6 +49,9 @@ These types are provided by the compiler ("built-in") or from a required operati
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
 
+.. cpp:type:: uint16_t
+
+   `Reference <https://linux.die.net/include/stdint.h>`__.
 .. cpp:type:: uint8_t
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
@@ -64,3 +67,7 @@ These types are provided by the compiler ("built-in") or from a required operati
 .. cpp:type:: unspecified_type
 
    This represents a type whose name is not known to, nor needed by, the API user. Usually this is a complex template which is consumed by other elements of the API and not intended for explicit use.
+
+.. cpp:type:: time_t
+
+   Epoch time, in seconds.

@@ -1,0 +1,5 @@
+## Directory for images generated from UML diagrams.
+# Ignore everything - files are only checked in / updated here manually using `git add -f`.
+# That may change if requiring Java to build the docs for plantuml is approved.
+*
+!.gitignore

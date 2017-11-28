@@ -92,6 +92,9 @@ extern "C" int plock(int);
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
 #include "HTTP2.h"
+#include "ts/ink_config.h"
+#include "P_SSLSNI.h"
+
 #if TS_USE_QUIC == 1
 #include "HQ.h"
 #endif
@@ -433,6 +436,23 @@ private:
   int64_t _memory_limit;
   struct rusage _usage;
 };
+
+void
+set_debug_ip(const char *ip_string)
+{
+  if (ip_string)
+    diags->debug_client_ip.load(ip_string);
+  else
+    diags->debug_client_ip.invalidate();
+}
+
+static int
+update_debug_client_ip(const char * /*name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
+                       void * /* data_type ATS_UNUSED */)
+{
+  set_debug_ip(data.rec_string);
+  return 0;
+}
 
 static int
 init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecData data, void * /* cookie ATS_UNUSED */)
@@ -1794,6 +1814,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
+  char *p = REC_ConfigReadString("proxy.config.diags.debug.client_ip");
+  if (p) {
+    // Translate string to IpAddr
+    set_debug_ip(p);
+  }
+  REC_RegisterConfigUpdateFunc("proxy.config.diags.debug.client_ip", update_debug_client_ip, NULL);
+
   // log initialization moved down
 
   if (command_flag) {
@@ -1913,7 +1940,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
       }
     }
-
+    SNIConfig::cloneProtoSet();
     // Plugins can register their own configuration names so now after they've done that
     // check for unexpected names. This is very late because remap plugins must be allowed to
     // fire up as well.

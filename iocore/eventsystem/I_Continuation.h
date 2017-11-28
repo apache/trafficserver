@@ -98,15 +98,15 @@ public:
     The current continuation handler function.
 
     The current handler should not be set directly. In order to
-    change it, first aquire the Continuation's lock and then use
+    change it, first acquire the Continuation's lock and then use
     the SET_HANDLER macro which takes care of the type casting
     issues.
 
   */
-  ContinuationHandler handler;
+  ContinuationHandler handler = nullptr;
 
 #ifdef DEBUG
-  const char *handler_name;
+  const char *handler_name = nullptr;
 #endif
 
   /**
@@ -154,7 +154,7 @@ public:
   }
 
   /**
-    Contructor of the Continuation object. It should not be used
+    Constructor of the Continuation object. It should not be used
     directly. Instead create an object of a derived type.
 
     @param amutex Lock to be set for this Continuation.
@@ -192,23 +192,13 @@ public:
 #define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = ((ContinuationHandler)_h))
 #endif
 
-inline Continuation::Continuation(Ptr<ProxyMutex> &amutex)
-  : handler(nullptr),
-#ifdef DEBUG
-    handler_name(nullptr),
-#endif
-    mutex(amutex)
+inline Continuation::Continuation(Ptr<ProxyMutex> &amutex) : mutex(amutex)
 {
   // Pick up the control flags from the creating thread
   this->control_flags.set_flags(get_cont_flags().get_flags());
 }
 
-inline Continuation::Continuation(ProxyMutex *amutex)
-  : handler(nullptr),
-#ifdef DEBUG
-    handler_name(nullptr),
-#endif
-    mutex(amutex)
+inline Continuation::Continuation(ProxyMutex *amutex) : mutex(amutex)
 {
   // Pick up the control flags from the creating thread
   this->control_flags.set_flags(get_cont_flags().get_flags());

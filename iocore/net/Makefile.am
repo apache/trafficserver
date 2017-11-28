@@ -54,6 +54,7 @@ test_certlookup_LDADD = \
 
 test_UDPNet_CPPFLAGS = \
   $(AM_CPPFLAGS) \
+  $(LUAJIT_CPPFLAGS) \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/proxy/hdrs \
@@ -74,6 +75,8 @@ test_UDPNet_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/ParentSelectionStrategy.o \
+  $(top_builddir)/lib/tsconfig/libtsconfig.la \
+  $(top_builddir)/lib/luajit/src/libluajit.a \
   @LIBTCL@ @HWLOC_LIBS@ @OPENSSL_LIBS@
 
 test_UDPNet_SOURCES = \
@@ -93,8 +96,11 @@ libinknet_a_SOURCES = \
   Inline.cc \
   I_SessionAccept.h \
   SessionAccept.cc \
+  LuaSNIConfig.h \
+  LuaSNIConfig.cc \
   Net.cc \
   NetVConnection.cc \
+  P_SNIActionPerformer.h \
   P_CompletionUtil.h \
   P_Connection.h \
   P_InkBulkIO.h \
@@ -110,6 +116,7 @@ libinknet_a_SOURCES = \
   P_SSLNetVConnection.h \
   P_SSLNextProtocolAccept.h \
   P_SSLNextProtocolSet.h \
+  P_SSLSNI.h \
   P_SSLUtils.h \
   P_SSLClientUtils.h \
   P_OCSPStapling.h \
@@ -126,6 +133,7 @@ libinknet_a_SOURCES = \
   P_UnixPollDescriptor.h \
   P_UnixUDPConnection.h \
   Socks.cc \
+  SNIActionPerformer.cc \
   SSLCertLookup.cc \
   SSLSessionCache.cc \
   SSLConfig.cc \
@@ -135,6 +143,7 @@ libinknet_a_SOURCES = \
   SSLNetVConnection.cc \
   SSLNextProtocolAccept.cc \
   SSLNextProtocolSet.cc \
+  SSLSNIConfig.cc \
   SSLUtils.cc \
   SSLClientUtils.cc \
   OCSPStapling.cc \
@@ -172,6 +181,10 @@ if BUILD_TESTS
      NetVCTest.cc \
      P_NetVCTest.h
 endif
+
+libinknet_a_LIBADD = \
+   $(top_builddir)/lib/luajit/src/libluajit.a \
+   $(top_builddir)/lib/tsconfig/libtsconfig.la
 
 include $(top_srcdir)/build/tidy.mk
 

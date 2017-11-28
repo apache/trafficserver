@@ -474,6 +474,8 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
     return "TS_SSL_SERVERNAME_HOOK";
   case TS_SSL_SERVER_VERIFY_HOOK:
     return "TS_SSL_SERVER_VERIFY_HOOK";
+  case TS_SSL_SESSION_HOOK:
+    return "TS_SSL_SESSION_HOOK";
   }
 
   return "unknown hook";

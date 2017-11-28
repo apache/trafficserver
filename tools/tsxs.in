@@ -24,10 +24,10 @@ localstatedir="@localstatedir@"
 
 INSTALLDIR=`eval echo "@libexecdir@"`
 INCLUDEDIR=`eval echo "@includedir@"`
-CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR"
+CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR @OPENSSL_INCLUDES@"
 CFLAGS="$CFLAGS @AM_CFLAGS@"
 CXXFLAGS="$CXXFLAGS @AM_CXXFLAGS@"
-LIBS="$LIBS @LIBS@"
+LIBS="$LIBS @LIBS@ @OPENSSL_LIBS@"
 BUILD=
 DEBUGECHO=
 
@@ -78,8 +78,11 @@ query() {
   case $1 in
     CC) echo @CC@ ;;
     CXX) echo @CXX@ ;;
-    CFLAGS) echo @AM_CFLAGS@ ;;
-    CXXFLAGS) echo @AM_CXXFLAGS@ ;;
+    CFLAGS) echo $CFLAGS ;;
+    CXXFLAGS) echo $CXXFLAGS ;;
+	CPPFLAGS) echo $CPPFLAGS ;;
+	LIBS) echo $LIBS ;;
+	LDFLAGS) echo $LDFLAGS ;;
     PREFIX) echo @prefix@ ;;
     SYSCONFDIR) echo @sysconfdir@ ;;
     INCLUDEDIR) echo @includedir@ ;;
@@ -145,7 +148,7 @@ case $host in
         NOWHOLE_ARCHIVE="-Wl,-z -Wl,defaultextract"
         ;;
 *-*-linux*)
-        LDFLAGS="$LDFLAGS -Wl,-E"
+        LDFLAGS="$LDFLAGS @OPENSSL_LDFLAGS@ -Wl,-E"
         CPPFLAGS="$CPPFLAGS"
         PICFLAGS="-fpic"
         MODULELD="$CC -shared"

@@ -56,6 +56,7 @@ bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
+bool SSLConfigParams::sni_map_enable                        = false;
 
 // TS-3534 Wiretracing for SSL Connections
 int SSLConfigParams::ssl_wire_trace_enabled       = 0;
@@ -90,8 +91,8 @@ SSLConfigParams::reset()
 {
   serverCertPathOnly = serverCertChainFilename = configFilePath = serverCACertFilename = serverCACertPath = clientCertPath =
     clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
-      ticket_key_filename                                                                                     = nullptr;
-  client_ctx                                                                                                  = nullptr;
+      nullptr;
+  client_ctx      = nullptr;
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
   ssl_ctx_options                                                     = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
   ssl_client_ctx_protocols                                            = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
@@ -121,7 +122,6 @@ SSLConfigParams::cleanup()
   client_cipherSuite      = (char *)ats_free_null(client_cipherSuite);
   dhparamsFile            = (char *)ats_free_null(dhparamsFile);
   ssl_wire_trace_ip       = (IpAddr *)ats_free_null(ssl_wire_trace_ip);
-  ticket_key_filename     = (char *)ats_free_null(ticket_key_filename);
 
   freeCTXmap();
   SSLReleaseContext(client_ctx);
@@ -298,6 +298,7 @@ SSLConfigParams::initialize()
 
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;
+  REC_EstablishStaticConfigByte(clientVerify, "proxy.config.ssl.client.verify.server");
 
   ssl_client_cert_filename = nullptr;
   ssl_client_cert_path     = nullptr;
@@ -320,6 +321,9 @@ SSLConfigParams::initialize()
   set_paths_helper(clientCACertRelativePath, ssl_client_ca_cert_filename, &clientCACertPath, &clientCACertFilename);
   ats_free(clientCACertRelativePath);
   ats_free(ssl_client_ca_cert_filename);
+
+  // Enable/disable sni mapping
+  REC_ReadConfigInteger(sni_map_enable, "proxy.config.ssl.sni.map.enable");
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 
@@ -379,13 +383,12 @@ SSLConfigParams::InsertCTX(cchar *client_cert, SSL_CTX *cctx) const
 }
 
 void
-SSLConfigParams::printCTXmap()
+SSLConfigParams::printCTXmap() const
 {
   Vec<cchar *> keys;
   ctx_map.get_keys(keys);
-  for (size_t i = 0; i < keys.length(); i++) {
-    Debug("ssl", "Client certificates in the map %s", keys.get(i));
-  }
+  for (size_t i = 0; i < keys.length(); i++)
+    Debug("ssl", "Client certificates in the map %s: %p", keys.get(i), ctx_map.get(keys.get(i)));
 }
 void
 SSLConfigParams::freeCTXmap() const
@@ -404,7 +407,7 @@ SSLConfigParams::freeCTXmap() const
 }
 // creates a new context attaching the provided certificate
 SSL_CTX *
-SSLConfigParams::getNewCTX(char *client_cert) const
+SSLConfigParams::getNewCTX(cchar *client_cert) const
 {
   SSL_CTX *nclient_ctx = nullptr;
   nclient_ctx          = SSLInitClientContext(this);
@@ -538,13 +541,32 @@ SSLTicketParams::LoadTicket()
   ssl_ticket_key_block *keyblock = nullptr;
 
   SSLConfig::scoped_config params;
+  time_t last_load_time    = 0;
+  bool no_default_keyblock = true;
+  SSLTicketKeyConfig::scoped_config ticket_params;
+  if (ticket_params) {
+    last_load_time      = ticket_params->load_time;
+    no_default_keyblock = ticket_params->default_global_keyblock != nullptr;
+  }
 
   if (REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename") == REC_ERR_OKAY &&
       ticket_key_filename != nullptr) {
     ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
+    // See if the file changed since we last loaded
+    struct stat sdata;
+    if (stat(ticket_key_filename, &sdata) >= 0) {
+      if (sdata.st_mtime <= last_load_time) {
+        // No updates since last load
+        return false;
+      }
+    }
     keyblock = ssl_create_ticket_keyblock(ticket_key_path);
-  } else {
+    // Initialize if we don't have one yet
+  } else if (no_default_keyblock) {
     keyblock = ssl_create_ticket_keyblock(nullptr);
+  } else {
+    // No need to update.  Keep the previous ticket param
+    return false;
   }
   if (!keyblock) {
     Error("ticket key reloaded from %s", ticket_key_filename);
@@ -555,6 +577,20 @@ SSLTicketParams::LoadTicket()
   Debug("ssl", "ticket key reloaded from %s", ticket_key_filename);
   return true;
 
+#endif
+}
+
+void
+SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
+{
+  cleanup();
+#if HAVE_OPENSSL_SESSION_TICKETS
+  if (ticket_data != nullptr && ticket_data_len > 0) {
+    default_global_keyblock = ticket_block_create(ticket_data, ticket_data_len);
+  } else {
+    default_global_keyblock = ssl_create_ticket_keyblock(nullptr);
+  }
+  load_time = time(nullptr);
 #endif
 }
 
@@ -581,7 +617,17 @@ SSLTicketKeyConfig::reconfigure()
       return false;
     }
   }
+  configid = configProcessor.set(configid, ticketKey);
+  return true;
+}
 
+bool
+SSLTicketKeyConfig::reconfigure_data(char *ticket_data, int ticket_data_len)
+{
+  SSLTicketParams *ticketKey = new SSLTicketParams();
+  if (ticketKey) {
+    ticketKey->LoadTicketData(ticket_data, ticket_data_len);
+  }
   configid = configProcessor.set(configid, ticketKey);
   return true;
 }

@@ -124,12 +124,13 @@ def MakeOriginServer(obj, name, port=False, ip=False, delay=False, public_ip=Fal
     p.Setup.MakeDir(data_dir)
     p.Variables.DataDir = data_dir
     p.Ready = When.PortOpen(port, ip)
-    p.ReturnCode = None
+    p.ReturnCode = Any(None,0)
     AddMethodToInstance(p, addResponse)
     AddMethodToInstance(p, addTransactionToSession)
 
     return p
 
 
-AddTestRunSet(MakeOriginServer, name="MakeOriginServer")
-AddTestRunSet(MakeOriginServer, name="MakeOrigin")
+ExtendTest(MakeOriginServer, name="MakeOriginServer")
+ExtendTest(MakeOriginServer, name="MakeOrigin")
+

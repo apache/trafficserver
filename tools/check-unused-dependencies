@@ -92,9 +92,9 @@ for filename in config_files.split():
                         dependencies = list(get_dependencies(program))
                         if len(dependencies) > 1:
                             success = False
-                            print program
+                            print (program)
                             for dependency in dependencies:
-                                print dependency
+                                print (dependency)
 
 if not success:
     sys.exit(1)

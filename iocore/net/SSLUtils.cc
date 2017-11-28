@@ -28,6 +28,7 @@
 #include "ts/ink_mutex.h"
 #include "P_OCSPStapling.h"
 #include "SSLSessionCache.h"
+#include "InkAPIInternal.h"
 #include "SSLDynlock.h"
 
 #include <string>
@@ -42,6 +43,7 @@
 #include <unistd.h>
 #include <termios.h>
 #include <vector>
+#include "P_SNIActionPerformer.h"
 
 #if HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
@@ -68,6 +70,7 @@
 #define SSL_ACTION_TUNNEL_TAG "tunnel"
 #define SSL_SESSION_TICKET_ENABLED "ssl_ticket_enabled"
 #define SSL_KEY_DIALOG "ssl_key_dialog"
+#define SSL_SERVERNAME "dest_fqdn"
 #define SSL_CERT_SEPARATE_DELIM ','
 
 // openssl version must be 0.9.4 or greater
@@ -83,6 +86,7 @@
 #endif
 #endif
 
+TunnelHashMap TunnelMap; // stores the name of the servers to tunnel to
 /*
  * struct ssl_user_config: gather user provided settings from ssl_multicert.config in to this single struct
    * ssl_ticket_enabled - session ticket enabled
@@ -94,6 +98,7 @@
    * ssl_key_name - Private key
    * ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
    * ssl_key_dialog - Private key dialog
+   * servername - Destination server
    */
 struct ssl_user_config {
   ssl_user_config() : opt(SSLCertContext::OPT_NONE)
@@ -108,6 +113,7 @@ struct ssl_user_config {
   ats_scoped_str ca;
   ats_scoped_str key;
   ats_scoped_str dialog;
+  ats_scoped_str servername;
   SSLCertContext::Option opt;
 };
 
@@ -231,8 +237,13 @@ ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
     Debug("ssl.session_cache.get", "ssl_get_cached_session cached session '%s' context %p", printable_buf, SSL_get_SSL_CTX(ssl));
   }
 
-  SSL_SESSION *session = nullptr;
+  APIHook *hook = ssl_hooks->get(TS_SSL_SESSION_INTERNAL_HOOK);
+  while (hook) {
+    hook->invoke(TS_EVENT_SSL_SESSION_GET, &sid);
+    hook = hook->m_link.next;
+  }
 
+  SSL_SESSION *session = nullptr;
   if (session_cache->getSession(sid, &session)) {
     ink_assert(session);
 
@@ -243,8 +254,8 @@ ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
 // from the openssl built-in hash table.  The external remove cb is not called
 #if 0 // This is currently eliminated, since it breaks things in odd ways (see TS-3710)
       ssl_rm_cached_session(SSL_get_SSL_CTX(ssl), session);
-      session = nullptr;
 #endif
+      session = nullptr;
     } else {
       SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
       SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
@@ -273,6 +284,13 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
   SSL_INCREMENT_DYN_STAT(ssl_session_cache_new_session);
   session_cache->insertSession(sid, sess);
 
+  // Call hook after new session is created
+  APIHook *hook = ssl_hooks->get(TS_SSL_SESSION_INTERNAL_HOOK);
+  while (hook) {
+    hook->invoke(TS_EVENT_SSL_SESSION_NEW, &sid);
+    hook = hook->m_link.next;
+  }
+
   return 0;
 }
 
@@ -282,6 +300,13 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
   unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
   SSLSessionID sid(id, len);
+
+  // Call hook before session is removed
+  APIHook *hook = ssl_hooks->get(TS_SSL_SESSION_INTERNAL_HOOK);
+  while (hook) {
+    hook->invoke(TS_EVENT_SSL_SESSION_REMOVE, &sid);
+    hook = hook->m_link.next;
+  }
 
   if (diags->tag_activated("ssl.session_cache")) {
     char printable_buf[(len * 2) + 1];
@@ -407,10 +432,16 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
 /*
  * Cannot stop this callback. Always reeneabled
  */
+extern SNIActionPerformer sni_action_performer;
 static int
 ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  Debug("ssl", "Requested servername is %s", servername);
+  if (servername != nullptr) {
+    sni_action_performer.PerformAction(netvc, servername);
+  }
   netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
   return SSL_TLSEXT_ERR_OK;
 }
@@ -1472,6 +1503,23 @@ ssl_set_handshake_callbacks(SSL_CTX *ctx)
 #endif
 }
 
+void
+setClientCertLevel(SSL *ssl, uint8_t certLevel)
+{
+  SSLConfig::scoped_config params;
+  int server_verify_client = SSL_VERIFY_NONE;
+
+  if (certLevel == 2) {
+    server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE;
+  } else if (certLevel == 1) {
+    server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE;
+  }
+
+  Debug("ssl", "setting cert level to %d", server_verify_client);
+  SSL_set_verify(ssl, server_verify_client, nullptr);
+  SSL_set_verify_depth(ssl, params->verify_depth); // might want to make configurable at some point.
+}
+
 SSL_CTX *
 SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMultCertSettings, std::vector<X509 *> &certList)
 {
@@ -1946,6 +1994,11 @@ ssl_extract_certificate(const matcher_line *line_info, ssl_user_config &sslMultC
     if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
       sslMultCertSettings.dialog = ats_strdup(value);
     }
+
+    if (strcasecmp(label, SSL_SERVERNAME) == 0) {
+      sslMultCertSettings.servername = ats_strdup(value);
+    }
+
     if (strcasecmp(label, SSL_ACTION_TAG) == 0) {
       if (strcasecmp(SSL_ACTION_TUNNEL_TAG, value) == 0) {
         sslMultCertSettings.opt = SSLCertContext::OPT_TUNNEL;
@@ -2055,6 +2108,8 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
 
   Note("loading SSL certificate configuration from %s", params->configFilePath);
 
+  //  TunnelMap.clear();
+
   if (params->configFilePath) {
     file_buf = readIntoBuffer(params->configFilePath, __func__, nullptr);
   }
@@ -2084,7 +2139,7 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
       const char *errPtr;
 
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
-
+      Debug("ssl", "currently parsing %s", line);
       if (errPtr != nullptr) {
         RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s", __func__, params->configFilePath,
                          line_num, errPtr);

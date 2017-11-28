@@ -18,63 +18,87 @@
 
 from ports import get_port
 import json
+import os
 
 
 # AddRecord registers a list of ip address against hostname
-def AddRecord(self,filename,hostname,list_ip_addr):
+def AddRecord(hostname, list_ip_addr):
 
     record = dict()
     record[hostname] = list_ip_addr
     return record
 
+# dict in format {'domain': [IPs]}
+# json file in the same mappings/otherwise format that uDNS takes
 
-#adds transaction in json format to the specified file
-def addRecordtoDNS(self,filename,hostname,list_ip_addr=[]):
-    jsondata=None
-    JFile = os.path.join(self.Variables.DataDir, filename)
-    rec = AddRecord(self,filename,hostname,list_ip_addr)
-    if not os.path.exists(os.path.dirname(JFile)):
-        os.makedirs(os.path.dirname(JFile))
-    if os.path.exists(JFile):
-        jf = open(JFile,'r')
-        jsondata = json.load(jf)
 
-    if jsondata == None:
-        jsondata = dict()
-        jsondata["mappings"]=list()
-        jsondata["mappings"].append(rec)
-        jsondata["otherwise"]=list()
-        jsondata["otherwise"].append("127.0.0.1")
-        jsondata["otherwise"].append("127.1.1.1")
+def addRecords(self, records=None, jsonFile=None):
+    jsondata = None
+
+    # at this point the default file and fields should have been created
+    if os.path.exists(self.Variables.zone_file):
+        with open(self.Variables.zone_file, 'r') as f:
+            jsondata = json.load(f)
     else:
-        jsondata["mappings"].append(rec)
-    with open(JFile,'w+') as jf:
-        jf.write(json.dumps(jsondata))
+        raise FileNotFoundError("default zone file doesn't exist, but it should.")
+
+    if records:
+        for domain in records:
+            record = AddRecord(domain, records[domain])
+
+            jsondata["mappings"].append(record)
+
+    if jsonFile:
+        jsonFile = os.path.join(self.TestDirectory, jsonFile)
+        self.Setup.Copy(jsonFile, self.Variables.DataDir)
+
+        with open(jsonFile, 'r') as f:
+            entries = json.load(f)
+
+            if entries:
+                # not copying over entries['otherwise']. dont see the need to
+                for record in entries["mappings"]:
+                    jsondata["mappings"].append(record)
+
+    with open(self.Variables.zone_file, 'w+') as f:
+        f.write(json.dumps(jsondata))
 
 
-
-
-def MakeDNServer(obj, name,filename,IP='127.0.0.1',port=False,rr=False,options={}):
-    server_path= os.path.join(obj.Variables.AtsTestToolsDir,'microDNS/uDNS.py')
+def MakeDNServer(obj, name, filename="dns_file.json", port=False, IP='127.0.0.1', rr=False, options={}):
+    server_path = os.path.join(obj.Variables.AtsTestToolsDir, 'microDNS/uDNS.py')
     data_dir = os.path.join(obj.RunDirectory, name)
-    filepath = os.path.join(data_dir,filename)
+    filepath = os.path.join(data_dir, filename)
+    obj.Variables.zone_file = filepath
+
+    # provided file doesn't exist, so we create it and fill it in with the 'otherwise' values
+    if not os.path.exists(os.path.dirname(filepath)):
+        os.makedirs(os.path.dirname(filepath))
+
+        jsondata = {'otherwise': ['127.0.0.1'], 'mappings': []}
+
+        with open(filepath, 'w') as f:
+            f.write(json.dumps(jsondata))
+
     # create Process
     p = obj.Processes.Process(name)
     if (port == False):
-        port=get_port(p,"Port")
-    command = "python3 {3} {0} {1} {2}".format(IP, port,filepath,server_path)
+        port = get_port(p, "Port")
+    command = "python3 {3} {0} {1} {2}".format(IP, port, filepath, server_path)
 
+    if rr:
+        command += " --rr"
 
     # create process
     p.Command = command
     p.Setup.MakeDir(data_dir)
     p.Variables.DataDir = data_dir
-    p.ReturnCode = None
+    p.ReturnCode = 0
     p.Ready = When.PortOpen(port)
-    AddMethodToInstance(p,AddRecord)
-    AddMethodToInstance(p,addRecordtoDNS)
+    AddMethodToInstance(p, AddRecord)
+    AddMethodToInstance(p, addRecords)
 
     return p
 
-AddTestRunSet(MakeDNServer,name="MakeDNServer")
-AddTestRunSet(MakeDNServer,name="MakeDNS")
+
+ExtendTest(MakeDNServer, name="MakeDNServer")
+ExtendTest(MakeDNServer, name="MakeDNS")

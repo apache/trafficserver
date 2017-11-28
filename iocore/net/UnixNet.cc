@@ -32,6 +32,10 @@ int fds_throttle;
 int fds_limit = 8000;
 ink_hrtime last_transient_accept_error;
 
+NetHandler::Config NetHandler::global_config;
+std::bitset<std::numeric_limits<unsigned int>::digits> NetHandler::active_thread_types;
+const std::bitset<NetHandler::CONFIG_ITEM_COUNT> NetHandler::config_value_affects_per_thread_value{0x3};
+
 extern "C" void fd_reify(struct ev_loop *);
 
 // INKqa10496
@@ -217,9 +221,6 @@ initialize_thread_for_net(EThread *thread)
   nh->mutex  = new_ProxyMutex();
   nh->thread = thread;
 
-  // This is needed to initialize NetHandler
-  thread->schedule_imm(nh);
-
   PollCont *pc       = get_PollCont(thread);
   PollDescriptor *pd = pc->pollDescriptor;
 
@@ -227,6 +228,8 @@ initialize_thread_for_net(EThread *thread)
   int cop_freq                 = 1;
 
   REC_ReadConfigInteger(cop_freq, "proxy.config.net.inactivity_check_frequency");
+  memcpy(&nh->config, &NetHandler::global_config, sizeof(NetHandler::global_config));
+  nh->configure_per_thread_values();
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
 
   thread->set_tail_handler(nh);
@@ -241,65 +244,86 @@ initialize_thread_for_net(EThread *thread)
 
 // NetHandler method definitions
 
-NetHandler::NetHandler()
-  : Continuation(nullptr),
-    trigger_event(nullptr),
-    keep_alive_queue_size(0),
-    active_queue_size(0),
-    max_connections_per_thread_in(0),
-    max_connections_active_per_thread_in(0),
-    max_connections_in(0),
-    max_connections_active_in(0),
-    inactive_threashold_in(0),
-    transaction_no_activity_timeout_in(0),
-    keep_alive_no_activity_timeout_in(0),
-    default_inactivity_timeout(0)
+NetHandler::NetHandler() : Continuation(nullptr)
 {
-  SET_HANDLER((NetContHandler)&NetHandler::startNetEvent);
+  SET_HANDLER((NetContHandler)&NetHandler::mainNetEvent);
 }
 
 int
-update_nethandler_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data, void *cookie)
+NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, void *)
 {
-  NetHandler *nh = static_cast<NetHandler *>(cookie);
-  ink_assert(nh != nullptr);
-  bool update_per_thread_configuration = false;
+  uint32_t *updated_member = nullptr; // direct pointer to config member for update.
+  ts::string_view name{str};
 
-  if (nh != nullptr) {
-    if (strcmp(name, "proxy.config.net.max_connections_in") == 0) {
-      Debug("net_queue", "proxy.config.net.max_connections_in updated to %" PRId64, data.rec_int);
-      nh->max_connections_in          = data.rec_int;
-      update_per_thread_configuration = true;
-    }
-    if (strcmp(name, "proxy.config.net.max_active_connections_in") == 0) {
-      Debug("net_queue", "proxy.config.net.max_active_connections_in updated to %" PRId64, data.rec_int);
-      nh->max_connections_active_in   = data.rec_int;
-      update_per_thread_configuration = true;
-    }
-    if (strcmp(name, "proxy.config.net.inactive_threashold_in") == 0) {
-      Debug("net_queue", "proxy.config.net.inactive_threashold_in updated to %" PRId64, data.rec_int);
-      nh->inactive_threashold_in = data.rec_int;
-    }
-    if (strcmp(name, "proxy.config.net.transaction_no_activity_timeout_in") == 0) {
-      Debug("net_queue", "proxy.config.net.transaction_no_activity_timeout_in updated to %" PRId64, data.rec_int);
-      nh->transaction_no_activity_timeout_in = data.rec_int;
-    }
-    if (strcmp(name, "proxy.config.net.keep_alive_no_activity_timeout_in") == 0) {
-      Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %" PRId64, data.rec_int);
-      nh->keep_alive_no_activity_timeout_in = data.rec_int;
-    }
-    if (strcmp(name, "proxy.config.net.default_inactivity_timeout") == 0) {
-      Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
-      nh->default_inactivity_timeout = data.rec_int;
-    }
+  if (name == "proxy.config.net.max_connections_in"_sv) {
+    updated_member = &NetHandler::global_config.max_connections_in;
+    Debug("net_queue", "proxy.config.net.max_connections_in updated to %" PRId64, data.rec_int);
+  } else if (name == "proxy.config.net.max_active_connections_in"_sv) {
+    updated_member = &NetHandler::global_config.max_connections_active_in;
+    Debug("net_queue", "proxy.config.net.max_active_connections_in updated to %" PRId64, data.rec_int);
+  } else if (name == "proxy.config.net.inactive_threshold_in"_sv) {
+    updated_member = &NetHandler::global_config.inactive_threshold_in;
+    Debug("net_queue", "proxy.config.net.inactive_threshold_in updated to %" PRId64, data.rec_int);
+  } else if (name == "proxy.config.net.transaction_no_activity_timeout_in"_sv) {
+    updated_member = &NetHandler::global_config.transaction_no_activity_timeout_in;
+    Debug("net_queue", "proxy.config.net.transaction_no_activity_timeout_in updated to %" PRId64, data.rec_int);
+  } else if (name == "proxy.config.net.keep_alive_no_activity_timeout_in"_sv) {
+    updated_member = &NetHandler::global_config.keep_alive_no_activity_timeout_in;
+    Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %" PRId64, data.rec_int);
+  } else if (name == "proxy.config.net.default_inactivity_timeout"_sv) {
+    updated_member = &NetHandler::global_config.default_inactivity_timeout;
+    Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
   }
 
-  if (update_per_thread_configuration == true) {
-    nh->configure_per_thread();
+  if (updated_member) {
+    *updated_member = data.rec_int; // do the actual update.
+    // portable form of the update, an index converted to <void*> so it can be passed as an event cookie.
+    void *idx = reinterpret_cast<void *>(static_cast<intptr_t>(updated_member - &global_config[0]));
+    // Signal the NetHandler instances, passing the index of the updated config value.
+    for (int i = 0; i < eventProcessor.n_thread_groups; ++i) {
+      if (!active_thread_types[i])
+        continue;
+      for (EThread **tp    = eventProcessor.thread_group[i]._thread,
+                   **limit = eventProcessor.thread_group[i]._thread + eventProcessor.thread_group[i]._count;
+           tp < limit; ++tp) {
+        NetHandler *nh = get_NetHandler(*tp);
+        if (nh)
+          nh->thread->schedule_imm(nh, TS_EVENT_MGMT_UPDATE, idx);
+      }
+    }
   }
 
   return REC_ERR_OKAY;
 }
+
+void
+NetHandler::init_for_process()
+{
+  // read configuration values and setup callbacks for when they change
+  REC_ReadConfigInt32(global_config.max_connections_in, "proxy.config.net.max_connections_in");
+  REC_ReadConfigInt32(global_config.max_connections_active_in, "proxy.config.net.max_connections_active_in");
+  REC_ReadConfigInt32(global_config.inactive_threshold_in, "proxy.config.net.inactive_threshold_in");
+  REC_ReadConfigInt32(global_config.transaction_no_activity_timeout_in, "proxy.config.net.transaction_no_activity_timeout_in");
+  REC_ReadConfigInt32(global_config.keep_alive_no_activity_timeout_in, "proxy.config.net.keep_alive_no_activity_timeout_in");
+  REC_ReadConfigInt32(global_config.default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
+
+  RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_nethandler_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.max_active_connections_in", update_nethandler_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.inactive_threshold_in", update_nethandler_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.transaction_no_activity_timeout_in", update_nethandler_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.keep_alive_no_activity_timeout_in", update_nethandler_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_nethandler_config, nullptr);
+
+  Debug("net_queue", "proxy.config.net.max_connections_in updated to %d", global_config.max_connections_in);
+  Debug("net_queue", "proxy.config.net.max_active_connections_in updated to %d", global_config.max_connections_active_in);
+  Debug("net_queue", "proxy.config.net.inactive_threshold_in updated to %d", global_config.inactive_threshold_in);
+  Debug("net_queue", "proxy.config.net.transaction_no_activity_timeout_in updated to %d",
+        global_config.transaction_no_activity_timeout_in);
+  Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %d",
+        global_config.keep_alive_no_activity_timeout_in);
+  Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %d", global_config.default_inactivity_timeout);
+}
+
 //
 // Function used to release a UnixNetVConnection and free it.
 //
@@ -318,42 +342,6 @@ NetHandler::free_netvc(UnixNetVConnection *netvc)
   stopIO(netvc);
   // Clear and deallocate netvc
   netvc->free(t);
-}
-
-//
-// Initialization here, in the thread in which we will be executing
-// from now on.
-//
-int
-NetHandler::startNetEvent(int event, Event *e)
-{
-  // read configuration values and setup callbacks for when they change
-  REC_ReadConfigInt32(max_connections_in, "proxy.config.net.max_connections_in");
-  REC_ReadConfigInt32(max_connections_active_in, "proxy.config.net.max_connections_active_in");
-  REC_ReadConfigInt32(inactive_threashold_in, "proxy.config.net.inactive_threashold_in");
-  REC_ReadConfigInt32(transaction_no_activity_timeout_in, "proxy.config.net.transaction_no_activity_timeout_in");
-  REC_ReadConfigInt32(keep_alive_no_activity_timeout_in, "proxy.config.net.keep_alive_no_activity_timeout_in");
-  REC_ReadConfigInt32(default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
-
-  RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_nethandler_config, (void *)this);
-  RecRegisterConfigUpdateCb("proxy.config.net.max_active_connections_in", update_nethandler_config, (void *)this);
-  RecRegisterConfigUpdateCb("proxy.config.net.inactive_threashold_in", update_nethandler_config, (void *)this);
-  RecRegisterConfigUpdateCb("proxy.config.net.transaction_no_activity_timeout_in", update_nethandler_config, (void *)this);
-  RecRegisterConfigUpdateCb("proxy.config.net.keep_alive_no_activity_timeout_in", update_nethandler_config, (void *)this);
-  RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_nethandler_config, (void *)this);
-
-  Debug("net_queue", "proxy.config.net.max_connections_in updated to %d", max_connections_in);
-  Debug("net_queue", "proxy.config.net.max_active_connections_in updated to %d", max_connections_active_in);
-  Debug("net_queue", "proxy.config.net.inactive_threashold_in updated to %d", inactive_threashold_in);
-  Debug("net_queue", "proxy.config.net.transaction_no_activity_timeout_in updated to %d", transaction_no_activity_timeout_in);
-  Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %d", keep_alive_no_activity_timeout_in);
-  Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %d", default_inactivity_timeout);
-
-  configure_per_thread();
-
-  (void)event;
-
-  return EVENT_CONT;
 }
 
 //
@@ -432,7 +420,7 @@ NetHandler::process_ready_list()
   }
 #else  /* !USE_EDGE_TRIGGER */
   while ((vc = read_ready_list.dequeue())) {
-    diags->set_override(vc->control.debug_override);
+    set_cont_flags(vc->control_flags);
     if (vc->closed)
       free_netvc(vc);
     else if (vc->read.enabled && vc->read.triggered)
@@ -441,7 +429,7 @@ NetHandler::process_ready_list()
       vc->ep.modify(-EVENTIO_READ);
   }
   while ((vc = write_ready_list.dequeue())) {
-    diags->set_override(vc->control.debug_override);
+    set_cont_flags(vc->control_flags);
     if (vc->closed)
       free_netvc(vc);
     else if (vc->write.enabled && vc->write.triggered)
@@ -451,18 +439,23 @@ NetHandler::process_ready_list()
   }
 #endif /* !USE_EDGE_TRIGGER */
 }
+
 //
 // The main event for NetHandler
-// This is called every proxy.config.net.event_period, and handles all IO operations scheduled
-// for this period.
-//
 int
 NetHandler::mainNetEvent(int event, Event *e)
 {
-  ink_assert(trigger_event == e && (event == EVENT_INTERVAL || event == EVENT_POLL));
-  (void)event;
-  (void)e;
-  return this->waitForActivity(-1);
+  if (TS_EVENT_MGMT_UPDATE == event) {
+    intptr_t idx = reinterpret_cast<intptr_t>(e->cookie);
+    // Copy to the same offset in the instance struct.
+    config[idx] = global_config[idx];
+    if (config_value_affects_per_thread_value[idx])
+      this->configure_per_thread_values();
+    return EVENT_CONT;
+  } else {
+    ink_assert(trigger_event == e && (event == EVENT_INTERVAL || event == EVENT_POLL));
+    return this->waitForActivity(-1);
+  }
 }
 
 int
@@ -589,12 +582,12 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
 }
 
 void
-NetHandler::configure_per_thread()
+NetHandler::configure_per_thread_values()
 {
   // figure out the number of threads and calculate the number of connections per thread
   int threads                          = eventProcessor.thread_group[ET_NET]._count;
-  max_connections_per_thread_in        = max_connections_in / threads;
-  max_connections_active_per_thread_in = max_connections_active_in / threads;
+  max_connections_per_thread_in        = config.max_connections_in / threads;
+  max_connections_active_per_thread_in = config.max_connections_active_in / threads;
   Debug("net_queue", "max_connections_per_thread_in updated to %d threads: %d", max_connections_per_thread_in, threads);
   Debug("net_queue", "max_connections_active_per_thread_in updated to %d threads: %d", max_connections_active_per_thread_in,
         threads);

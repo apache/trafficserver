@@ -441,7 +441,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 #define MATCH(line, name) \
   (!strncmp(line, name, sizeof(name) - 1) && (line[sizeof(name) - 1] == ' ' || line[sizeof(name) - 1] == '\t'))
 
-  if ((fp = fopen(pResolvConf, "r")) != nullptr) {
+  if (pResolvConf && ((fp = fopen(pResolvConf, "r")) != nullptr)) {
     /* read the config file */
     while (fgets(buf, sizeof(buf), fp) != nullptr) {
       /* skip comments */

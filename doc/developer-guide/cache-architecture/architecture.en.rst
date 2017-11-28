@@ -25,7 +25,7 @@ Cache Architecture
 ******************
 
 Introduction
-~~~~~~~~~~~~
+============
 
 In addition to being an HTTP proxy, |ATS| is also an HTTP cache. |TS| can cache
 any octet stream, although it currently supports only those octet streams
@@ -48,7 +48,7 @@ document will frequently use terms in different ways than they are used in the
 code in an attempt to create some consistency.
 
 Cache Layout
-~~~~~~~~~~~~
+============
 
 The following sections describe how persistent cache data is structured. |TS|
 treats its persisent storage as an undifferentiated collection of bytes,
@@ -57,7 +57,7 @@ system of the host operating system. If a file is used it is used only to mark
 out the set of bytes to be used.
 
 Cache storage
-=============
+-------------
 
 The raw storage for the |TS| cache is configured in :file:`storage.config`. Each
 line in the file defines a :term:`cache span` which is treated as a uniform
@@ -68,15 +68,15 @@ persistent store.
 
    Two cache spans
 
-This storage organized into a set of :term:`cache volumes <cache volume>` which
-are defined in :file:`volume.config`. These are the units that are used for all
-other administator level configuration.
+This storage organized into a set of administrative units which are called :term:`cache volumes
+<cache volume>`. These are defined in :file:`volume.config`. Cache volumes can be assigned
+different properties in :file:`hosting.config`.
 
-Cache volumes can be defined by a percentage of the total storage or as an
-absolute amount of storage. By default, each cache volume is spread across all
-of the cache spans for robustness. The intersection of a cache volume and a
-cache span is a :term:`cache stripe`. Each cache span is divided into cache
-stripes and each cache volume is a collection of those stripes.
+Cache volumes can be defined by a percentage of the total storage or as an absolute amount of
+storage. By default, each cache volume is spread across all of the cache spans for robustness. The
+intersection of a cache volume and a cache span is a :term:`cache stripe`. Each cache span is
+divided into cache stripes and each cache volume is a collection of those stripes. Every cache
+stripe is in a single cache span and part of a single cache volume.
 
 If the cache volumes for the example cache spans were defined as:
 
@@ -104,12 +104,27 @@ stripes that compose them are derived entirely from :file:`storage.config` and
 :program:`traffic_server` is started. Therefore, any change to those files can
 (and almost always will) invalidate the existing cache in its entirety.
 
+Span Structure
+--------------
+
+Each cache span is marked at the front with a span header of type :class:`DiskHeader`. Each span is
+divided in to *span blocks*. These can be thought of similarly to normal disk partitions, marking
+out blocks of storage. Span blocks can v ary in size, subject only to being a multiple of the
+*volume block size* which is currently 128MB and, of course, being no larger than the span. The
+relationship between a span block and a cache stripe is the same as between a disk partition and a
+file system. A cache stripe is structured data contained in a span block and always occupies the
+entire span block.
+
+.. image:: images/span-header.svg
+   :align: center
+
 Stripe Structure
-================
+----------------
 
 |TS| treats the storage associated with a cache stripe as an undifferentiated
 span of bytes. Internally each stripe is treated almost entirely independently.
 The data structures described in this section are duplicated for each stripe.
+
 Internally the term *volume* is used for these stripes and implemented primarily
 in :cpp:class:`Vol`. What a user thinks of as a volume (and what this document
 calls a *cache volume*) is represented by :cpp:class:`CacheVol`.
@@ -273,6 +288,22 @@ data length
    there are at least three different metrics (bytes, cache blocks, store
    blocks) used in various places.
 
+The header for a stripe is a variably sized instance of :class:`VolHeaderFooter`.
+The variable trailing section contains the head indices of the directory entry
+free lists for the segments.
+
+.. image:: images/stripe-header.svg
+
+The trailing :member:`VolHeaderFooter::freelist` array overlays the disk storage with
+an entry for every segment, even though the array is declared to have length `1`.
+Each free list entry is a 16 bit value that is the index of the first directory entry
+in the free list for that segment. E.g. :code:`freelist[4]` is the index of the
+directory entry in segment `4` that is the first directory entry in the free list for
+segment `4`. The rest of the free list is chained from that directory entry.
+
+The segment freelist is attached only to the header - the trailer, although of the same class, does
+not have a freelist and is always a fixed size.
+
 The total size of the directory (the number of :term:`entries <directory entry>`)
 is computed by taking the size of the :term:`cache stripe` and dividing by the
 average object size. The directory always consumes this amount of memory which
@@ -312,7 +343,7 @@ from cache, only the directory needs to be changed. No other work (and
 particularly, no disk I/O) needs to be done.
 
 Object Structure
-================
+----------------
 
 Objects are stored as two types of data: metadata and content data. Metadata is
 all the data about the object and the content and includes the HTTP headers.
@@ -437,7 +468,7 @@ explicit ``pinned`` bit in :cpp:class:`Dir`.
 .. [#multiple-alternates] It could, under certain circumstances, be accurate for none of the alternates.
 
 Additional Notes
-====================
+----------------
 
 Some general observations on the data structures.
 
@@ -488,7 +519,7 @@ storage unit is added to a running system. The mechanism for this, if any, is
 still under investigation.
 
 Implementation Details
-======================
+-------------------------
 
 Stripe Directory
 ----------------
@@ -673,7 +704,7 @@ attempted. If either the lookup or the read fails and the content is considered
 cacheable then a `cache write`_ is attempted.
 
 Cacheability
-============
+-------------------------
 
 The first thing done with a request with respect to cache is to determine
 whether it is potentially a valid object for the cache. After initial parsing
@@ -741,7 +772,7 @@ be viewed as cache valid.
    caching of the object.
 
 Cache Lookup
-============
+-------------------------
 
 If the initial request is not determined to be cache invalid then a lookup is
 done. Cache lookup determines if an object is in the cache and if so, where it
@@ -781,7 +812,7 @@ for an already extant ``OpenDir`` which, if found, is returned without
 additional work.
 
 Cache Read
-==========
+-------------------------
 
 Cache read starts after a successful `cache lookup`_. At this point the first
 ``Doc`` has been loaded in to memory and can be consulted for additional
@@ -844,7 +875,7 @@ This allows loading the fragment containing the first requested byte immediately
 rather than performing reads on the intermediate fragments.
 
 Cache Write
-===========
+-------------------------
 
 Writing to the cache is handled by an instance of the class :cpp:class:`CacheVC`.
 This is a virtual connection which receives data and writes it to cache, acting
@@ -1067,7 +1098,7 @@ appropriate evacuation bucket.
 .. _cache-initialization:
 
 Initialization
-==============
+-------------------------
 
 Initialization starts with an instance of :cpp:class:`Store` reading the storage
 configuration file, by default :file:`storage.config`. For each valid element in

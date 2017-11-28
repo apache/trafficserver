@@ -40,7 +40,7 @@ inkcoreapi ink_thread_key Thread::thread_data_key;
 
 namespace
 {
-static bool initialized = ([]() -> bool {
+static bool initialized ATS_UNUSED = ([]() -> bool {
   // File scope initialization goes here.
   ink_thread_key_create(&Thread::thread_data_key, nullptr);
   return true;
