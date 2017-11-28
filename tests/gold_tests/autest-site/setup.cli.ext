@@ -73,3 +73,4 @@ Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '../../tools')
 # modify delay times as we always have to kill Trafficserver
 # no need to wait
 Variables.Autest.StopProcessLongDelaySeconds = 0
+Variables.Autest.KillDelaySecond = 30
