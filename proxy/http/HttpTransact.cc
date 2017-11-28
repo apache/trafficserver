@@ -7359,9 +7359,8 @@ HttpTransact::handle_server_died(State *s)
     body_type = "response#bad_response";
     break;
   case CONNECTION_ERROR:
-    status = HTTP_STATUS_BAD_GATEWAY;
-    reason =
-      static_cast<const char *>(get_error_string(s->cause_of_death_errno == 0 ? -ENET_CONNECT_FAILED : s->cause_of_death_errno));
+    status    = HTTP_STATUS_BAD_GATEWAY;
+    reason    = get_error_string(s->cause_of_death_errno == 0 ? -ENET_CONNECT_FAILED : s->cause_of_death_errno);
     body_type = "connect#failed_connect";
     break;
   case OPEN_RAW_ERROR:

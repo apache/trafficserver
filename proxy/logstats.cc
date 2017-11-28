@@ -1257,10 +1257,10 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
 
   // Parsed results
   int http_code = 0, size = 0, result = 0, hier = 0, elapsed = 0;
+  bool ipv6 = false;
   OriginStats *o_stats;
   HTTPMethod method;
   URLScheme scheme;
-  bool ipv6;
 
   if (!fieldlist) {
     fieldlist = new LogFieldList;
