@@ -126,6 +126,7 @@ QUICNetVConnection::free(EThread *t)
 
   this->_udp_con        = nullptr;
   this->_packet_handler = nullptr;
+  _unschedule_packet_write_ready();
 
   delete this->_version_negotiator;
   delete this->_handshake_handler;
@@ -225,9 +226,7 @@ void
 QUICNetVConnection::transmit_packet(QUICPacketUPtr packet)
 {
   this->_transmit_packet(std::move(packet));
-  if (!this->_packet_write_ready) {
-    this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
-  }
+  this->_schedule_packet_write_ready();
 }
 
 void
@@ -293,10 +292,7 @@ void
 QUICNetVConnection::transmit_frame(QUICFrameUPtr frame)
 {
   this->_transmit_frame(std::move(frame));
-  if (!this->_packet_write_ready) {
-    DebugQUICCon("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
-    this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
-  }
+  this->_schedule_packet_write_ready();
 }
 
 void
@@ -333,10 +329,7 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
     Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
           static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
           this->_remote_flow_controller->current_limit());
-
-    if (!this->_packet_write_ready) {
-      this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
-    }
+    this->_schedule_packet_write_ready();
 
     break;
   case QUICFrameType::BLOCKED:
@@ -361,6 +354,8 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
 int
 QUICNetVConnection::state_pre_handshake(int event, Event *data)
 {
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+
   if (!this->thread) {
     this->thread = this_ethread();
   }
@@ -384,6 +379,7 @@ QUICNetVConnection::state_pre_handshake(int event, Event *data)
 int
 QUICNetVConnection::state_handshake(int event, Event *data)
 {
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   switch (event) {
@@ -452,6 +448,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 int
 QUICNetVConnection::state_connection_established(int event, Event *data)
 {
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
@@ -488,6 +485,8 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
 int
 QUICNetVConnection::state_connection_closing(int event, Event *data)
 {
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
@@ -522,12 +521,10 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
 int
 QUICNetVConnection::state_connection_closed(int event, Event *data)
 {
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   switch (event) {
   case QUIC_EVENT_SHUTDOWN: {
-    if (this->_packet_write_ready) {
-      this->_packet_write_ready->cancel();
-      this->_packet_write_ready = nullptr;
-    }
+    this->_unschedule_packet_write_ready();
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;
 
@@ -542,6 +539,9 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
   }
   default:
     DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
+    if (this->_packet_write_ready == data) {
+      this->_packet_write_ready = nullptr;
+    }
   }
 
   return EVENT_DONE;
@@ -979,4 +979,24 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
   }
 
   return quic_packet;
+}
+
+void
+QUICNetVConnection::_schedule_packet_write_ready()
+{
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  if (!this->_packet_write_ready) {
+    DebugQUICCon("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
+    this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+  }
+}
+
+void
+QUICNetVConnection::_unschedule_packet_write_ready()
+{
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  if (this->_packet_write_ready) {
+    this->_packet_write_ready->cancel();
+    this->_packet_write_ready = nullptr;
+  }
 }

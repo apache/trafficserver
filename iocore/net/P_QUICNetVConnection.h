@@ -225,6 +225,8 @@ private:
   std::queue<QUICFrameUPtr> _frame_send_queue;
   std::queue<QUICFrameUPtr> _stream_frame_send_queue;
 
+  void _schedule_packet_write_ready();
+  void _unschedule_packet_write_ready();
   Event *_packet_write_ready = nullptr;
 
   void _transmit_packet(QUICPacketUPtr);
