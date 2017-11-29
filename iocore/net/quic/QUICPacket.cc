@@ -715,7 +715,7 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
   QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(),
                                                      packet_sent_by_client->packet_number(), base_packet_number,
                                                      packet_sent_by_client->version(), std::move(versions), len);
-  return this->_create_encrypted_packet(header);
+  return this->_create_unprotected_packet(header);
 }
 
 QUICPacketUPtr
@@ -747,6 +747,19 @@ QUICPacketFactory::create_client_initial_packet(QUICConnectionId connection_id, 
     QUICPacketHeader::build(QUICPacketType::CLIENT_INITIAL, connection_id, this->_packet_number_generator.next(),
                             base_packet_number, version, std::move(payload), len);
   return this->_create_encrypted_packet(header);
+}
+
+QUICPacketUPtr
+QUICPacketFactory::_create_unprotected_packet(QUICPacketHeader *header)
+{
+  ats_unique_buf cleartext = ats_unique_malloc(2048);
+  size_t cleartext_len     = header->payload_size();
+
+  memcpy(cleartext.get(), header->payload(), cleartext_len);
+  QUICPacket *packet = quicPacketAllocator.alloc();
+  new (packet) QUICPacket(header, std::move(cleartext), cleartext_len, false);
+
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 
 QUICPacketUPtr
