@@ -707,8 +707,7 @@ QUICNetVConnection::_state_common_receive_packet()
   net_activity(this, this_ethread());
 
   switch (p->type()) {
-  case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
-  case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
+  case QUICPacketType::PROTECTED:
     error = this->_state_connection_established_process_packet(std::move(p));
     break;
   case QUICPacketType::CLIENT_CLEARTEXT:

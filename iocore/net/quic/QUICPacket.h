@@ -106,16 +106,17 @@ public:
    *
    * This creates a QUICPacketShortHeader that contains a ConnectionID.
    */
-  static QUICPacketHeader *build(QUICPacketType type, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
-                                 ats_unique_buf payload, size_t len);
+  static QUICPacketHeader *build(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
+                                 QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len);
 
   /*
    * Build a QUICPacketHeader
    *
    * This creates a QUICPacketShortHeader that doesn't contain a ConnectionID..
    */
-  static QUICPacketHeader *build(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-                                 QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len);
+  static QUICPacketHeader *build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id,
+                                 QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, ats_unique_buf payload,
+                                 size_t len);
 
 protected:
   QUICPacketHeader(){};
@@ -164,9 +165,9 @@ class QUICPacketShortHeader : public QUICPacketHeader
 public:
   QUICPacketShortHeader() : QUICPacketHeader(){};
   QUICPacketShortHeader(const uint8_t *buf, size_t len, QUICPacketNumber base) : QUICPacketHeader(buf, len, base) {}
-  QUICPacketShortHeader(QUICPacketType type, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
-                        ats_unique_buf buf, size_t len);
-  QUICPacketShortHeader(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
+  QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
+                        QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
+  QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
   QUICPacketType type() const;
   QUICConnectionId connection_id() const;

@@ -69,10 +69,9 @@ enum class QUICPacketType : int {
   SERVER_CLEARTEXT,
   CLIENT_CLEARTEXT,
   ZERO_RTT_PROTECTED,
-  ONE_RTT_PROTECTED_KEY_PHASE_0,
-  ONE_RTT_PROTECTED_KEY_PHASE_1,
-  STATELESS_RESET,
-  UNINITIALIZED,
+  PROTECTED,       // Not on the spec. but just for convenience
+  STATELESS_RESET, // Not on the spec. but just for convenience
+  UNINITIALIZED,   // Not on the spec. but just for convenience
 };
 
 // To detect length of Packet Number

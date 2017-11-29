@@ -40,10 +40,8 @@ QUICDebugNames::packet_type(QUICPacketType type)
     return "CLIENT_CLEARTEXT";
   case QUICPacketType::ZERO_RTT_PROTECTED:
     return "ZERO_RTT_PROTECTED";
-  case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
-    return "ONE_RTT_PROTECTED_KEY_PHASE_0";
-  case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
-    return "ONE_RTT_PROTECTED_KEY_PHASE_1";
+  case QUICPacketType::PROTECTED:
+    return "PROTECTED";
   case QUICPacketType::STATELESS_RESET:
     return "STATELESS_RESET";
   case QUICPacketType::UNINITIALIZED:

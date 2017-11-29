@@ -81,20 +81,21 @@ QUICPacketHeader::build(QUICPacketType type, QUICConnectionId connection_id, QUI
 }
 
 QUICPacketHeader *
-QUICPacketHeader::build(QUICPacketType type, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
-                        ats_unique_buf payload, size_t len)
+QUICPacketHeader::build(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
+                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len)
 {
   QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
-  new (short_header) QUICPacketShortHeader(type, packet_number, base_packet_number, std::move(payload), len);
+  new (short_header) QUICPacketShortHeader(type, key_phase, packet_number, base_packet_number, std::move(payload), len);
   return short_header;
 }
 
 QUICPacketHeader *
-QUICPacketHeader::build(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
+QUICPacketHeader::build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len)
 {
   QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
-  new (short_header) QUICPacketShortHeader(type, connection_id, packet_number, base_packet_number, std::move(payload), len);
+  new (short_header)
+    QUICPacketShortHeader(type, key_phase, connection_id, packet_number, base_packet_number, std::move(payload), len);
   return short_header;
 }
 
@@ -246,31 +247,26 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
 //
 // QUICPacketShortHeader
 //
-QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICPacketNumber packet_number,
+QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
                                              QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len)
 {
   this->_type               = type;
   this->_has_key_phase      = true;
+  this->_key_phase          = key_phase;
   this->_packet_number      = packet_number;
   this->_base_packet_number = base_packet_number;
   this->_packet_number_type = this->_discover_packet_number_type(packet_number, base_packet_number);
   this->_payload            = std::move(buf);
   this->_payload_len        = len;
-
-  if (type == QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0) {
-    this->_key_phase = QUICKeyPhase::PHASE_0;
-  } else if (type == QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
-    this->_key_phase = QUICKeyPhase::PHASE_1;
-  } else {
-    ink_assert(false);
-  }
 }
 
-QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-                                             QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len)
+QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id,
+                                             QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
+                                             ats_unique_buf buf, size_t len)
 {
   this->_type               = type;
   this->_has_key_phase      = true;
+  this->_key_phase          = key_phase;
   this->_has_connection_id  = true;
   this->_connection_id      = connection_id;
   this->_packet_number      = packet_number;
@@ -278,14 +274,6 @@ QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICConnection
   this->_packet_number_type = this->_discover_packet_number_type(packet_number, base_packet_number);
   this->_payload            = std::move(buf);
   this->_payload_len        = len;
-
-  if (type == QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0) {
-    this->_key_phase = QUICKeyPhase::PHASE_0;
-  } else if (type == QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1) {
-    this->_key_phase = QUICKeyPhase::PHASE_1;
-  } else {
-    this->_key_phase = QUICKeyPhase::CLEARTEXT;
-  }
 }
 
 QUICPacketType
@@ -295,10 +283,10 @@ QUICPacketShortHeader::type() const
 
   switch (key_phase) {
   case QUICKeyPhase::PHASE_0: {
-    return QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0;
+    return QUICPacketType::PROTECTED;
   }
   case QUICKeyPhase::PHASE_1: {
-    return QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1;
+    return QUICPacketType::PROTECTED;
   }
   default:
     return QUICPacketType::STATELESS_RESET;
@@ -644,8 +632,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     plain_txt_len = header->payload_size();
     result        = QUICPacketCreationResult::SUCCESS;
     break;
-  case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0:
-  case QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_1:
+  case QUICPacketType::PROTECTED:
     if (this->_crypto->is_handshake_finished()) {
       if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
                                  header->packet_number(), header->buf(), header->size(), header->key_phase())) {
@@ -716,7 +703,7 @@ QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id
 {
   // TODO Key phase should be picked up from QUICCrypto, probably
   QUICPacketHeader *header =
-    QUICPacketHeader::build(QUICPacketType::ONE_RTT_PROTECTED_KEY_PHASE_0, connection_id, this->_packet_number_generator.next(),
+    QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, connection_id, this->_packet_number_generator.next(),
                             base_packet_number, std::move(payload), len);
   return this->_create_encrypted_packet(header);
 }
@@ -748,8 +735,9 @@ QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id,
   // Copy stateless reset token into payload
   memcpy(naked_payload + payload_len - 16, stateless_reset_token.buf(), 16);
 
-  QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, connection_id, random_packet_number, 0,
-                                                     std::move(payload), payload_len);
+  // KeyPhase won't be used
+  QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, QUICKeyPhase::CLEARTEXT, connection_id,
+                                                     random_packet_number, 0, std::move(payload), payload_len);
   return QUICPacketFactory::_create_unprotected_packet(header);
 }
 
