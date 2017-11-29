@@ -1543,15 +1543,11 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer *p, bool chain)
       if (chain == true && c->self_producer) {
         chain_finish_all(c->self_producer);
       }
-      // add fixed code for caching incompleted chunked response case under some terrible network circumstances
-      if (c->vc_type == HT_HTTP_CLIENT && p->chunked_handler.truncation == true) {
-        consumer_handler(VC_EVENT_EOS, c);
-      }
       // The IO Core will not call us back if there
       //   is nothing to do.  Check to see if there is
       //   nothing to do and take the appripriate
       //   action
-      else if (c->write_vio && c->write_vio->nbytes == c->write_vio->ndone) {
+      if (c->write_vio && c->write_vio->nbytes == c->write_vio->ndone) {
         consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
       }
     }
