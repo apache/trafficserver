@@ -34,6 +34,7 @@
 #include "ts/SimpleTokenizer.h"
 #include "P_SSLConfig.h"
 #include "ts/ink_memory.h"
+#include <ts/TextView.h>
 
 #define SNI_NAME_TAG "dest_host"
 #define SNI_ACTION_TAG "action"
@@ -73,7 +74,14 @@ SNIConfigParams::loadSNIConfig()
     aiVec->push_back(ai1);
     auto ai2 = new VerifyClient(item.verify_client_level);
     aiVec->push_back(ai2);
-    sni_action_map.put(ats_strdup(servername), aiVec);
+    if (wildcard) {
+      ts::TextView domain{servername, strlen(servername)};
+      domain.take_prefix_at('.');
+      if (!domain.empty())
+        wild_sni_action_map.put(ats_stringdup(domain), aiVec);
+    } else {
+      sni_action_map.put(ats_strdup(servername), aiVec);
+    }
 
     if (item.tunnel_destination.length()) {
       TunnelMap.emplace(item.fqdn.data(), item.tunnel_destination);
@@ -108,8 +116,17 @@ actionVector *
 SNIConfigParams::get(cchar *servername) const
 {
   auto actionVec = sni_action_map.get(servername);
-  if (!actionVec)
-    actionVec = wild_sni_action_map.get(servername);
+  if (!actionVec) {
+    Vec<cchar *> keys;
+    wild_sni_action_map.get_keys(keys);
+    for (int i = 0; i < static_cast<int>(keys.length()); i++) {
+      ts::string_view sv{servername, strlen(servername)};
+      ts::string_view key_sv{keys.get(i)};
+      if (sv.size() >= key_sv.size() && sv.substr(sv.size() - key_sv.size()) == key_sv) {
+        return wild_sni_action_map.get(key_sv.data());
+      }
+    }
+  }
   return actionVec;
 }
 
