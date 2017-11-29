@@ -139,7 +139,7 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
       QUICStatelessToken token;
       {
         QUICConfig::scoped_config params;
-        token.gen_token(cid ^ params->server_id());
+        token.generate(cid ^ params->server_id());
       }
       auto packet = QUICPacketFactory::create_stateless_reset_packet(cid, token);
       this->send_packet(*packet, udpPacket->getConnection(), con.addr, 1200);

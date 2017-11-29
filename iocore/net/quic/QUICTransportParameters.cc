@@ -36,6 +36,13 @@ static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 //
 QUICTransportParameterValue::QUICTransportParameterValue(ats_unique_buf d, uint16_t l) : _data(std::move(d)), _len(l){};
 
+QUICTransportParameterValue::QUICTransportParameterValue(const uint8_t *raw_data, uint16_t l)
+{
+  this->_data = ats_unique_malloc(l);
+  this->_len  = l;
+  memcpy(this->_data.get(), raw_data, l);
+}
+
 QUICTransportParameterValue::QUICTransportParameterValue(uint64_t raw_data, uint16_t l)
 {
   this->_data = ats_unique_malloc(l);

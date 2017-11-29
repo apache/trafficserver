@@ -78,7 +78,7 @@ TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
   MockQUICCrypto crypto;
   factory.set_crypto_module(&crypto);
   QUICStatelessToken token;
-  token.gen_token(12345);
+  token.generate(12345);
   uint8_t expected_output[] = {
     0x41,                                           // 0CK0001
     0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, // Connection ID
@@ -92,5 +92,4 @@ TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
   QUICPacketUPtr packet = factory.create_stateless_reset_packet(0x01020304, token);
   CHECK(packet->type() == QUICPacketType::STATELESS_RESET);
   CHECK(packet->connection_id() == 0x01020304);
-  CHECK(packet->packet_number() == token.get_u8()[0]);
 }

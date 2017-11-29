@@ -205,29 +205,21 @@ class QUICStatelessToken
 {
 public:
   void
-  gen_token(uint64_t data)
+  generate(uint64_t data)
   {
-    static constexpr char STATELESS_RETRY_TOKEN_KEY[] = "stateless_token_retry_key";
-    MD5Context ctx;
-    ctx.update(STATELESS_RETRY_TOKEN_KEY, strlen(STATELESS_RETRY_TOKEN_KEY));
-    ctx.update(reinterpret_cast<void *>(&data), 8);
-    ctx.finalize(_md5);
+    this->_gen_token(data);
   }
 
   const uint8_t *
-  get_u8() const
+  buf() const
   {
-    return _md5.u8;
-  }
-
-  const uint64_t *
-  get_u64() const
-  {
-    return _md5.u64;
+    return _token;
   }
 
 private:
-  INK_MD5 _md5;
+  uint8_t _token[16] = {0};
+
+  void _gen_token(uint64_t data);
 };
 
 class QUICConnectionId

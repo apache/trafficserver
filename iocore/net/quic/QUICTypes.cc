@@ -147,6 +147,21 @@ QUICTypeUtil::write_uint_as_nbytes(uint64_t value, uint8_t n, uint8_t *buf, size
   *len = n;
 }
 
+void
+QUICStatelessToken::_gen_token(uint64_t data)
+{
+  INK_MD5 _md5;
+  static constexpr char STATELESS_RETRY_TOKEN_KEY[] = "stateless_token_retry_key";
+  MD5Context ctx;
+  ctx.update(STATELESS_RETRY_TOKEN_KEY, strlen(STATELESS_RETRY_TOKEN_KEY));
+  ctx.update(reinterpret_cast<void *>(&data), 8);
+  ctx.finalize(_md5);
+
+  size_t dummy;
+  QUICTypeUtil::write_uint_as_nbytes(_md5.u64[0], 8, _token, &dummy);
+  QUICTypeUtil::write_uint_as_nbytes(_md5.u64[1], 8, _token + 8, &dummy);
+}
+
 uint16_t
 QUICError::code()
 {

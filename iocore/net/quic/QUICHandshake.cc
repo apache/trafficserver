@@ -299,7 +299,7 @@ QUICHandshake::_load_local_transport_parameters()
                                                     params->no_activity_timeout_in(), sizeof(uint16_t))));
 
   tp->add(QUICTransportParameterId::STATELESS_RETRY_TOKEN,
-          std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(this->_token.get_u64(), 16)));
+          std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(this->_token.buf(), 16)));
 
   tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
   // MAYs

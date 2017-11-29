@@ -487,24 +487,6 @@ QUICPacket::QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t 
   this->_is_retransmittable = retransmittable;
 }
 
-QUICPacket::QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token)
-{
-  const uint8_t *token                     = stateless_reset_token.get_u8();
-  QUICPacketNumber fake_packet_number      = token[0];
-  QUICPacketNumber fake_base_packet_number = token[0];
-  ats_unique_buf fake_payload              = ats_unique_malloc(15 + 8);
-  memcpy(fake_payload.get(), token + 1, 15);
-  // Append random bytes
-  std::random_device rnd;
-  for (int i = 15; i < 23; ++i) {
-    fake_payload.get()[i] = rnd() & 0xFF;
-  }
-  // TODO stateless packet format changed
-  this->_header =
-    QUICPacketHeader::build(type, connection_id, fake_packet_number, fake_base_packet_number, std::move(fake_payload), 15 + 8);
-  this->_is_retransmittable = false;
-}
-
 QUICPacket::~QUICPacket()
 {
   if (this->_header->has_version()) {
@@ -715,7 +697,7 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
   QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(),
                                                      packet_sent_by_client->packet_number(), base_packet_number,
                                                      packet_sent_by_client->version(), std::move(versions), len);
-  return this->_create_unprotected_packet(header);
+  return QUICPacketFactory::_create_unprotected_packet(header);
 }
 
 QUICPacketUPtr
@@ -750,6 +732,28 @@ QUICPacketFactory::create_client_initial_packet(QUICConnectionId connection_id, 
 }
 
 QUICPacketUPtr
+QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token)
+{
+  std::random_device rnd;
+
+  uint8_t random_packet_number = static_cast<uint8_t>(rnd() & 0xFF);
+  size_t payload_len           = static_cast<uint8_t>(rnd() & 0xFF);
+  ats_unique_buf payload       = ats_unique_malloc(payload_len + 16);
+  uint8_t *naked_payload       = payload.get();
+
+  // Generate random octets
+  for (int i = payload_len - 1; i >= 0; --i) {
+    naked_payload[i] = static_cast<uint8_t>(rnd() & 0xFF);
+  }
+  // Copy stateless reset token into payload
+  memcpy(naked_payload + payload_len - 16, stateless_reset_token.buf(), 16);
+
+  QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, connection_id, random_packet_number, 0,
+                                                     std::move(payload), payload_len);
+  return QUICPacketFactory::_create_unprotected_packet(header);
+}
+
+QUICPacketUPtr
 QUICPacketFactory::_create_unprotected_packet(QUICPacketHeader *header)
 {
   ats_unique_buf cleartext = ats_unique_malloc(2048);
@@ -777,14 +781,6 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header)
     new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, false);
   }
 
-  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
-}
-
-QUICPacketUPtr
-QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token)
-{
-  QUICPacket *packet = quicPacketAllocator.alloc();
-  new (packet) QUICPacket(QUICPacketType::STATELESS_RESET, connection_id, stateless_reset_token);
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 

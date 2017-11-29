@@ -208,10 +208,6 @@ public:
    */
   QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len, bool retransmittable);
 
-  /*
-   * Creates a QUICpacket for stateless reset
-   */
-  QUICPacket(QUICPacketType type, QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token);
   ~QUICPacket();
 
   QUICPacketType type() const;
@@ -309,6 +305,6 @@ private:
   QUICCrypto *_crypto  = nullptr;
   QUICPacketNumberGenerator _packet_number_generator;
 
-  QUICPacketUPtr _create_unprotected_packet(QUICPacketHeader *header);
+  static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeader *header);
   QUICPacketUPtr _create_encrypted_packet(QUICPacketHeader *header);
 };
