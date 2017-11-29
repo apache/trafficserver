@@ -644,10 +644,15 @@ OperatorRMCookie::exec(const Resources &res) const
     int cookies_len     = 0;
     const char *cookies = TSMimeHdrFieldValueStringGet(res.bufp, res.hdr_loc, field_loc, -1, &cookies_len);
     std::string updated_cookie;
-    if (CookieHelper::cookieModifyHelper(cookies, cookies_len, updated_cookie, CookieHelper::COOKIE_OP_DEL, _cookie) &&
-        TS_SUCCESS ==
-          TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, updated_cookie.c_str(), updated_cookie.size())) {
-      TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
+    if (CookieHelper::cookieModifyHelper(cookies, cookies_len, updated_cookie, CookieHelper::COOKIE_OP_DEL, _cookie)) {
+      if (updated_cookie.empty()) {
+        if (TS_SUCCESS == TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc)) {
+          TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec, empty cookie deleted");
+        }
+      } else if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, updated_cookie.c_str(),
+                                                            updated_cookie.size())) {
+        TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
+      }
     }
     TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
   }
