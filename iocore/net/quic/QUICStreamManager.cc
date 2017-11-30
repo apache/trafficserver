@@ -233,7 +233,7 @@ QUICStreamManager::total_offset_received() const
   // FIXME Iterating all (open + closed) streams is expensive
   for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
     if (s->id() != 0) {
-      total_offset_received += s->largest_offset_received() / 1024;
+      total_offset_received += s->largest_offset_received();
     }
   }
   return total_offset_received;

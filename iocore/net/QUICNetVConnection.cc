@@ -325,7 +325,7 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
 
   switch (frame->type()) {
   case QUICFrameType::MAX_DATA:
-    this->_remote_flow_controller->forward_limit(std::static_pointer_cast<const QUICMaxDataFrame>(frame)->maximum_data());
+    this->_remote_flow_controller->forward_limit(std::static_pointer_cast<const QUICMaxDataFrame>(frame)->maximum_data() * 1024);
     Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
           static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
           this->_remote_flow_controller->current_limit());
@@ -738,23 +738,6 @@ QUICNetVConnection::_state_common_send_packet()
   return QUICErrorUPtr(new QUICNoError());
 }
 
-// Schedule sending BLOCKED frame when offset exceed the limit
-bool
-QUICNetVConnection::_is_send_frame_avail_more_than(uint32_t size)
-{
-  QUICErrorUPtr error = this->_remote_flow_controller->update((this->_stream_manager->total_offset_sent() + size) / 1024);
-  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
-        static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
-        this->_remote_flow_controller->current_limit());
-
-  if (error->cls != QUICErrorClass::NONE) {
-    // Flow Contoroller blocked sending STREAM frame
-    return false;
-  }
-
-  return true;
-}
-
 // Store frame data to buffer for packet. When remaining buffer is too small to store frame data or packet type is different from
 // previous one, build packet and transmit it. After that, allocate new buffer.
 void
@@ -816,7 +799,14 @@ QUICNetVConnection::_packetize_frames()
   while (this->_stream_frame_send_queue.size() > 0) {
     const QUICFrameUPtr &f = this->_stream_frame_send_queue.front();
     uint32_t frame_size    = f->size();
-    if (!this->_is_send_frame_avail_more_than(frame_size)) {
+
+    QUICErrorUPtr error = this->_remote_flow_controller->update((this->_stream_manager->total_offset_sent() + frame_size));
+    Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
+          static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
+          this->_remote_flow_controller->current_limit());
+
+    if (error->cls != QUICErrorClass::NONE) {
+      // Flow Contoroller blocked sending STREAM frame
       break;
     }
 
@@ -910,8 +900,8 @@ QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTr
     remote_initial_max_data = remote_tp->initial_max_data();
   }
 
-  this->_local_flow_controller->forward_limit(local_initial_max_data);
-  this->_remote_flow_controller->forward_limit(remote_initial_max_data);
+  this->_local_flow_controller->forward_limit(local_initial_max_data * 1024);
+  this->_remote_flow_controller->forward_limit(remote_initial_max_data * 1024);
   Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, static_cast<uint64_t>(this->_quic_connection_id),
         this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
   Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
