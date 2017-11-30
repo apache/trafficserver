@@ -56,7 +56,7 @@ NetVCOptions::get_proto_string() const
   default:
     break;
   }
-  return nullptr;
+  return {};
 }
 
 ts::string_view
@@ -70,5 +70,5 @@ NetVCOptions::get_family_string() const
   default:
     break;
   }
-  return nullptr;
+  return {};
 }
