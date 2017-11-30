@@ -64,8 +64,11 @@
 
 #else // no jemalloc includes used
 
+// fail these with zeros
 #define mallocx(...) nullptr
 #define sallocx(...) size_t()
+
+// no-ops
 #define sdallocx(...)
 #define dallocx(...)
 
@@ -222,7 +225,6 @@ ats_stringdup(ts::string_view const &p)
   return p.empty() ? nullptr : _xstrdup(p.data(), p.size(), nullptr);
 }
 
-#ifdef __cplusplus
 namespace numa
 {
 int create_global_nodump_arena();
