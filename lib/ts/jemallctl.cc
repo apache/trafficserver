@@ -50,7 +50,6 @@
 
 namespace jemallctl
 {
-
 // instantiations here
 template struct GetObjFxn<uint64_t>;
 template struct GetObjFxn<uint64_t *>;
@@ -67,7 +66,7 @@ template struct SetObjFxn<std::string>;
 
 // some inlines need implementing after all
 template uint64_t GetObjFxn<uint64_t>::operator()() const;
-template uint64_t *GetObjFxn<uint64_t*>::operator()() const;
+template uint64_t *GetObjFxn<uint64_t *>::operator()() const;
 template std::atomic_ulong *GetObjFxn<std::atomic_ulong *>::operator()() const;
 template unsigned GetObjFxn<unsigned>::operator()() const;
 template bool GetObjFxn<bool>::operator()() const;
