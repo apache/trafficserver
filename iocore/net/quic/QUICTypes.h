@@ -242,60 +242,6 @@ private:
 
 enum class QUICStreamType { SERVER, CLIENT, HANDSHAKE };
 
-class QUICMaximumData
-{
-public:
-  QUICMaximumData(uint64_t d) : _data(d) {}
-  bool
-  operator>(uint64_t r) const
-  {
-    return this->_data > (r / 1024);
-  }
-
-  bool
-  operator<(uint64_t r) const
-  {
-    return this->_data < (r / 1024);
-  }
-
-  bool
-  operator>=(uint64_t r) const
-  {
-    return this->_data >= (r / 1024);
-  }
-
-  bool
-  operator<=(uint64_t r) const
-  {
-    return this->_data <= (r / 1024);
-  }
-
-  bool
-  operator==(uint64_t r) const
-  {
-    return this->_data == (r / 1024);
-  }
-
-  QUICMaximumData &
-  operator=(uint64_t d)
-  {
-    this->_data = d;
-    return *this;
-  }
-
-  QUICMaximumData &
-  operator+=(uint64_t d)
-  {
-    this->_data += d;
-    return *this;
-  }
-
-  operator uint64_t() const { return _data; }
-
-private:
-  uint64_t _data = 0; // in units of 1024 octets
-};
-
 class QUICTypeUtil
 {
 public:
