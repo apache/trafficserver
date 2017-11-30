@@ -127,7 +127,7 @@ QUICCryptoTls::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, cons
       case SSL_ERROR_WANT_WRITE:
         break;
       default:
-        char err_buf[32] = {0};
+        char err_buf[256] = {0};
         ERR_error_string_n(err, err_buf, sizeof(err_buf));
         Debug(tag, "Handshake error: %s (%d)", err_buf, err);
         return false;
