@@ -380,6 +380,12 @@ int
 QUICNetVConnection::state_handshake(int event, Event *data)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+
+  if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+    this->_switch_to_established_state();
+    return this->state_connection_established(event, data);
+  }
+
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   switch (event) {
@@ -396,50 +402,23 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
-    if (this->_packet_write_ready == data) {
-      this->_packet_write_ready = nullptr;
-    }
+    this->_close_packet_write_ready(data);
     error = this->_state_common_send_packet();
     break;
   }
-  case EVENT_IMMEDIATE: {
+  case EVENT_IMMEDIATE:
     // Start Implicit Shutdown. Because of no network activity for the duration of the idle timeout.
     this->remove_from_active_queue();
     this->close(std::make_unique<QUICConnectionError>());
 
     // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
     break;
-  }
-
   default:
     DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
   if (error->cls != QUICErrorClass::NONE) {
     this->_handle_error(std::move(error));
-  }
-
-  if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-    this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
-                                    this->_handshake_handler->remote_transport_parameters());
-
-    DebugQUICCon("Enter state_connection_established");
-    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
-
-    const uint8_t *app_name;
-    unsigned int app_name_len = 0;
-    this->_handshake_handler->negotiated_application_name(&app_name, &app_name_len);
-    if (app_name == nullptr) {
-      app_name     = reinterpret_cast<const uint8_t *>(IP_PROTO_TAG_HTTP_QUIC.data());
-      app_name_len = IP_PROTO_TAG_HTTP_QUIC.size();
-    }
-
-    Continuation *endpoint = this->_next_protocol_set->findEndpoint(app_name, app_name_len);
-    if (endpoint == nullptr) {
-      this->_handle_error(QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR)));
-    } else {
-      endpoint->handleEvent(NET_EVENT_ACCEPT, this);
-    }
   }
 
   return EVENT_CONT;
@@ -456,9 +435,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
-    if (this->_packet_write_ready == data) {
-      this->_packet_write_ready = nullptr;
-    }
+    this->_close_packet_write_ready(data);
     error = this->_state_common_send_packet();
     break;
   }
@@ -498,9 +475,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
-    if (this->_packet_write_ready == data) {
-      this->_packet_write_ready = nullptr;
-    }
+    this->_close_packet_write_ready(data);
     this->_state_common_send_packet();
     break;
   }
@@ -537,11 +512,12 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
 
     break;
   }
+  case QUIC_EVENT_PACKET_WRITE_READY: {
+    this->_close_packet_write_ready(data);
+    break;
+  }
   default:
     DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
-    if (this->_packet_write_ready == data) {
-      this->_packet_write_ready = nullptr;
-    }
   }
 
   return EVENT_DONE;
@@ -973,7 +949,7 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
 void
 QUICNetVConnection::_schedule_packet_write_ready()
 {
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   if (!this->_packet_write_ready) {
     DebugQUICCon("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
     this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
@@ -983,9 +959,42 @@ QUICNetVConnection::_schedule_packet_write_ready()
 void
 QUICNetVConnection::_unschedule_packet_write_ready()
 {
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   if (this->_packet_write_ready) {
     this->_packet_write_ready->cancel();
     this->_packet_write_ready = nullptr;
   }
+}
+
+void
+QUICNetVConnection::_close_packet_write_ready(Event *data)
+{
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
+  ink_assert(this->_packet_write_ready == data);
+  this->_packet_write_ready = nullptr;
+}
+
+void
+QUICNetVConnection::_switch_to_established_state()
+{
+  this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
+                                  this->_handshake_handler->remote_transport_parameters());
+
+  const uint8_t *app_name;
+  unsigned int app_name_len = 0;
+  this->_handshake_handler->negotiated_application_name(&app_name, &app_name_len);
+  if (app_name == nullptr) {
+    app_name     = reinterpret_cast<const uint8_t *>(IP_PROTO_TAG_HTTP_QUIC.data());
+    app_name_len = IP_PROTO_TAG_HTTP_QUIC.size();
+  }
+
+  Continuation *endpoint = this->_next_protocol_set->findEndpoint(app_name, app_name_len);
+  if (endpoint == nullptr) {
+    this->_handle_error(QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR)));
+  } else {
+    endpoint->handleEvent(NET_EVENT_ACCEPT, this);
+  }
+
+  DebugQUICCon("Enter state_connection_established");
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 }

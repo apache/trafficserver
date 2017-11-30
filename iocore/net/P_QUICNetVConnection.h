@@ -227,6 +227,7 @@ private:
 
   void _schedule_packet_write_ready();
   void _unschedule_packet_write_ready();
+  void _close_packet_write_ready(Event *data);
   Event *_packet_write_ready = nullptr;
 
   void _transmit_packet(QUICPacketUPtr);
@@ -255,6 +256,8 @@ private:
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   void _handle_error(QUICErrorUPtr error);
   QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
+
+  void _switch_to_established_state();
 
   QUICStatelessToken _token;
 };
