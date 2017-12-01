@@ -126,7 +126,7 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   // total_offset should be a integer in unit of 1024 octets
   std::shared_ptr<QUICFrame> stream_frame_1 = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
   sm.handle_frame(stream_frame_1);
-  CHECK(sm.total_offset_received() == 1);
+  CHECK(sm.total_offset_received() == 1024);
 }
 
 TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
