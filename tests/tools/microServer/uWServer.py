@@ -605,12 +605,6 @@ def main():
                         help="Directory with data file"
                         )
 
-    parser.add_argument("--public", "-P",
-                        type=_bool,
-                        default=False,
-                        help="Bind server to public IP 0.0.0.0 vs private IP of 127.0.0.1"
-                        )
-
     parser.add_argument("--ip_address", "-ip",
                         type=str,
                         default='',
