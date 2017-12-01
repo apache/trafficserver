@@ -69,9 +69,9 @@ QUICIncomingFrameBuffer::insert(const std::shared_ptr<const QUICStreamFrame> fra
     return QUICErrorUPtr(new QUICNoError());
   } else if (this->_recv_offset == offset) {
     this->_recv_offset = offset + len;
-    this->_recv_buffer.push(frame);
+    this->_recv_buffer.push(this->_clone(frame));
   } else {
-    this->_out_of_order_queue.insert(std::make_pair(offset, frame));
+    this->_out_of_order_queue.insert(std::make_pair(offset, this->_clone(frame)));
   }
 
   return QUICErrorUPtr(new QUICNoError());
@@ -95,6 +95,13 @@ bool
 QUICIncomingFrameBuffer::empty()
 {
   return this->_out_of_order_queue.empty() && this->_recv_buffer.empty();
+}
+
+std::shared_ptr<const QUICStreamFrame>
+QUICIncomingFrameBuffer::_clone(std::shared_ptr<const QUICStreamFrame> frame)
+{
+  return QUICFrameFactory::create_stream_frame(frame->data(), frame->data_length(), frame->stream_id(), frame->offset(),
+                                               frame->has_fin_flag());
 }
 
 QUICErrorUPtr
