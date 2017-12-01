@@ -257,7 +257,11 @@ private:
   void _handle_error(QUICErrorUPtr error);
   QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
 
+  int _complete_handshake_if_possible();
+  void _switch_to_handshake_state();
   void _switch_to_established_state();
+  void _switch_to_closing_state();
+  void _switch_to_close_state();
 
   QUICStatelessToken _token;
 };

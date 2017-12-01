@@ -302,8 +302,7 @@ QUICNetVConnection::close(QUICConnectionErrorUPtr error)
       this->handler == reinterpret_cast<ContinuationHandler>(&QUICNetVConnection::state_connection_closing)) {
     // do nothing
   } else {
-    DebugQUICCon("Enter state_connection_closing");
-    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
+    this->_switch_to_closing_state();
     if (error->cls == QUICErrorClass::APPLICATION) {
       this->transmit_frame(QUICFrameFactory::create_application_close_frame(std::move(error)));
     } else {
@@ -336,9 +335,7 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
     // BLOCKED frame is for debugging. Nothing to do here.
     break;
   case QUICFrameType::CONNECTION_CLOSE:
-    DebugQUICCon("Enter state_connection_closed");
-    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
-    this_ethread()->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
+    this->_switch_to_close_state();
     break;
   default:
     DebugQUICCon("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
@@ -370,8 +367,7 @@ QUICNetVConnection::state_pre_handshake(int event, Event *data)
   this->set_inactivity_timeout(HRTIME_SECONDS(params->no_activity_timeout_in()));
   this->add_to_active_queue();
 
-  DebugQUICCon("Enter state_handshake");
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
+  this->_switch_to_handshake_state();
   return this->handleEvent(event, data);
 }
 
@@ -383,7 +379,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
   if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
     this->_switch_to_established_state();
-    return this->state_connection_established(event, data);
+    return this->handleEvent(event, data);
   }
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
@@ -485,9 +481,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
 
   // FIXME Enter closed state if CONNECTION_CLOSE was ACKed
   if (true) {
-    DebugQUICCon("Enter state_connection_closed");
-    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
-    this_ethread()->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
+    this->_switch_to_close_state();
   }
 
   return EVENT_DONE;
@@ -974,9 +968,17 @@ QUICNetVConnection::_close_packet_write_ready(Event *data)
   this->_packet_write_ready = nullptr;
 }
 
-void
-QUICNetVConnection::_switch_to_established_state()
+int
+QUICNetVConnection::_complete_handshake_if_possible()
 {
+  if (this->handler != reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_handshake)) {
+    return 0;
+  }
+
+  if (!(this->_handshake_handler && this->_handshake_handler->is_completed())) {
+    return -1;
+  }
+
   this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
                                   this->_handshake_handler->remote_transport_parameters());
 
@@ -995,6 +997,45 @@ QUICNetVConnection::_switch_to_established_state()
     endpoint->handleEvent(NET_EVENT_ACCEPT, this);
   }
 
-  DebugQUICCon("Enter state_connection_established");
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
+  return 0;
+}
+
+void
+QUICNetVConnection::_switch_to_handshake_state()
+{
+  DebugQUICCon("Enter state_handshake");
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
+}
+
+void
+QUICNetVConnection::_switch_to_established_state()
+{
+  if (this->_complete_handshake_if_possible() == 0) {
+    DebugQUICCon("Enter state_connection_established");
+    SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
+  } else {
+    // Illegal state change
+    ink_assert(!"Handshake has to be completed");
+  }
+}
+
+void
+QUICNetVConnection::_switch_to_closing_state()
+{
+  if (this->_complete_handshake_if_possible() != 0) {
+    DebugQUICCon("Switching state without handshake completion");
+  }
+  DebugQUICCon("Enter state_connection_closing");
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
+}
+
+void
+QUICNetVConnection::_switch_to_close_state()
+{
+  if (this->_complete_handshake_if_possible() != 0) {
+    DebugQUICCon("Switching state without handshake completion");
+  }
+  DebugQUICCon("Enter state_connection_closed");
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
+  this_ethread()->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
 }
