@@ -932,7 +932,7 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     DebugQUICCon("Not ready to decrypt the packet");
     // Retry later
     this->_packet_recv_queue.enqueue(udp_packet);
-    this_ethread()->schedule_imm_local(this, QUIC_EVENT_PACKET_READ_READY);
+    this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
   } else {
     udp_packet->free();
     if (result == QUICPacketCreationResult::SUCCESS) {
