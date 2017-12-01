@@ -1120,6 +1120,8 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name   = const_cast<char *>(PLUGIN_VENDOR);
   info.support_email = const_cast<char *>(PLUGIN_SUPPORT);
 
+  TSError("[collapsed_connection] This plugin is deprecated as of ATS v7.1, use collapsed_forwarding instead!");
+
   if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError("[collapsed_connection] Plugin registration failed");
     return;
