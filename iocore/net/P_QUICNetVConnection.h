@@ -260,8 +260,10 @@ private:
   int _complete_handshake_if_possible();
   void _switch_to_handshake_state();
   void _switch_to_established_state();
-  void _switch_to_closing_state();
+  void _switch_to_closing_state(QUICConnectionErrorUPtr error);
   void _switch_to_close_state();
+
+  void _handle_idle_timeout();
 
   QUICStatelessToken _token;
 };

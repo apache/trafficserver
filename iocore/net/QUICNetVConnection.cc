@@ -302,12 +302,7 @@ QUICNetVConnection::close(QUICConnectionErrorUPtr error)
       this->handler == reinterpret_cast<ContinuationHandler>(&QUICNetVConnection::state_connection_closing)) {
     // do nothing
   } else {
-    this->_switch_to_closing_state();
-    if (error->cls == QUICErrorClass::APPLICATION) {
-      this->transmit_frame(QUICFrameFactory::create_application_close_frame(std::move(error)));
-    } else {
-      this->transmit_frame(QUICFrameFactory::create_connection_close_frame(std::move(error)));
-    }
+    this->_switch_to_closing_state(std::move(error));
   }
 }
 
@@ -403,11 +398,8 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   }
   case EVENT_IMMEDIATE:
-    // Start Implicit Shutdown. Because of no network activity for the duration of the idle timeout.
-    this->remove_from_active_queue();
-    this->close(std::make_unique<QUICConnectionError>());
-
-    // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
+    // Start Immediate Close because of Idle Timeout
+    this->_handle_idle_timeout();
     break;
   default:
     DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
@@ -436,11 +428,8 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   case EVENT_IMMEDIATE: {
-    // Start Implicit Shutdown. Because of no network activity for the duration of the idle timeout.
-    this->remove_from_active_queue();
-    this->close(std::make_unique<QUICConnectionError>());
-
-    // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
+    // Start Immediate Close because of Idle Timeout
+    this->_handle_idle_timeout();
     break;
   }
   default:
@@ -479,7 +468,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
-  // FIXME Enter closed state if CONNECTION_CLOSE was ACKed
+  // FIXME Enter closed state if CONNECTION_CLOSE was ACKed and draining period end
   if (true) {
     this->_switch_to_close_state();
   }
@@ -1020,10 +1009,15 @@ QUICNetVConnection::_switch_to_established_state()
 }
 
 void
-QUICNetVConnection::_switch_to_closing_state()
+QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
 {
   if (this->_complete_handshake_if_possible() != 0) {
     DebugQUICCon("Switching state without handshake completion");
+  }
+  if (error->cls == QUICErrorClass::APPLICATION) {
+    this->transmit_frame(QUICFrameFactory::create_application_close_frame(std::move(error)));
+  } else {
+    this->transmit_frame(QUICFrameFactory::create_connection_close_frame(std::move(error)));
   }
   DebugQUICCon("Enter state_connection_closing");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
@@ -1038,4 +1032,13 @@ QUICNetVConnection::_switch_to_close_state()
   DebugQUICCon("Enter state_connection_closed");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
   this_ethread()->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
+}
+
+void
+QUICNetVConnection::_handle_idle_timeout()
+{
+  this->remove_from_active_queue();
+  this->close(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
+
+  // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
 }
