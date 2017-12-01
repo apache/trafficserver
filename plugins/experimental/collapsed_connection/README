@@ -1,3 +1,7 @@
+NOTE: This plugin is deprecated as of ATS v7.x. Instead, look at the new
+``collapsed_forwardin'' plugin instead!
+
+
 ATS (Apache Traffic Server) Collapsed Connection Handling Plugin
 ------------------------------------------------------------------------------
 
