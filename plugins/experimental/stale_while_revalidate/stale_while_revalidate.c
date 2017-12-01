@@ -758,7 +758,7 @@ TSPluginInit(int argc, const char *argv[])
     }
 
     // proxy.config.http.insert_age_in_response
-    TSHttpArgIndexReserve(PLUGIN_NAME, "txn state info", &(plugin_config->txn_slot));
+    TSHttpTxnArgIndexReserve(PLUGIN_NAME, "txn state info", &(plugin_config->txn_slot));
     main_cont = TSContCreate(main_plugin, NULL);
     TSContDataSet(main_cont, (void *)plugin_config);
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, main_cont);

@@ -282,7 +282,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
-  TSHttpArgIndexReserve(PLUGIN_NAME, "txn data", &(config->txn_slot));
+  TSHttpTxnArgIndexReserve(PLUGIN_NAME, "txn data", &(config->txn_slot));
 
   if (!config->post_remap_host) {
     pre_remap_cont = TSContCreate(handle_read_req_hdr, NULL);
