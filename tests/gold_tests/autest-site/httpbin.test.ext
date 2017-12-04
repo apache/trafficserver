@@ -1,0 +1,47 @@
+'''
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from ports import get_port
+
+
+def MakeHttpBinServer(obj, name, port=False, ip=False, delay=False, public_ip=False, ssl=False, options={}):
+    data_dir = os.path.join(obj.RunDirectory, name)
+    # create Process
+    p = obj.Processes.Process(name)
+    if (port == False):
+        port = get_port(p, "Port")
+    if (ip == False):
+        ip = '127.0.0.1'
+    if (delay == False):
+        delay = 0
+
+    command = "gunicorn -b {0}:{1} httpbin:app".format(ip, port)
+    for flag, value in options.items():
+        command += " {} {}".format(flag, value)
+
+    # create process
+    p.Command = command
+    p.Setup.MakeDir(data_dir)
+    p.Variables.DataDir = data_dir
+    p.Ready = When.PortOpen(port, ip)
+    p.ReturnCode = Any(None, 0)
+
+    return p
+
+
+ExtendTest(MakeHttpBinServer, name="MakeHttpBinServer")
