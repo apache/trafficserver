@@ -269,6 +269,26 @@ do_stop()
     return "$RETVAL"
 }
 
+#
+# RedHat/Fedora:  Wrapper for killproc command with retry.
+#
+redhat_killproc_with_retry()
+{
+local rc
+killproc "$@"
+rc="$?"
+if [ "$rc" != 0 ] ; then
+    # Retry.
+    killproc "$@"
+    rc="$?"
+    if [ "$rc" = 7 ] ; then
+        # Process died before kill retried, success.
+        rc=0
+    fi
+fi
+return "$rc"
+}
+
 # main
 case "$1" in
     start)
@@ -314,9 +334,9 @@ case "$1" in
             test "x$VERBOSE" != "xno" && log_end_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE -d 35 $TC_DAEMON
-            action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE -d 35 $TM_DAEMON
-            action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE -d 35 $TS_DAEMON
+            action "Stopping ${TC_NAME}:" redhat_killproc_with_retry -p $TC_PIDFILE -d 35 $TC_DAEMON
+            action "Stopping ${TM_NAME}:" redhat_killproc_with_retry -p $TM_PIDFILE -d 35 $TM_DAEMON
+            action "Stopping ${TS_NAME}:" redhat_killproc_with_retry -p $TS_PIDFILE -d 35 $TS_DAEMON
         elif [ "$DISTRIB_ID" = "gentoo" ]; then
 	    ebegin "Starting ${TS_PACKAGE_NAME}"
 	    do_stop
