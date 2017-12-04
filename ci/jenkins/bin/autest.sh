@@ -16,31 +16,37 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Setup autoconf
-cd src
 [ -d tests ] || exit 0
 
-autoreconf -if
-
+# Setup autoconf
 INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
+mkdir -p $INSTALL
+cd src
+autoreconf -if
 
 URL="https://ci.trafficserver.apache.org/files/autest"
 AUSB="ausb-${ghprbPullId}.${BUILD_NUMBER}"
 SANDBOX="/var/tmp/${AUSB}"
 
-mkdir -p $INSTALL
-
-./configure --prefix="$INSTALL" \
+./configure --prefix="${INSTALL}" \
             --with-user=jenkins \
             --enable-experimental-plugins \
+            --enable-example-plugins \
             --enable-ccache \
             --enable-debug \
+	    --enable-wccp \
             --enable-werror
 
 # Build and run regressions
-${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q= || exit -1
-${ATS_MAKE} install
-/usr/bin/autest -D ./tests/gold_tests --sandbox "$SANDBOX" --ats-bin "${INSTALL}/bin"
+${ATS_MAKE} -j4 && ${ATS_MAKE} install
+${INSTALL}/bin/traffic_server -K -k -R 1
+[ "0" != "$?" ] && exit -1
+
+# Now run autest
+AUTEST="/usr/bin/autest"
+[ ! -x ${AUTEST} ] && AUTEST="/usr/local/bin/autest"
+
+${AUTEST} -D ./tests/gold_tests --sandbox "$SANDBOX" --ats-bin "${INSTALL}/bin"
 status=$?
 
 # Cleanup
