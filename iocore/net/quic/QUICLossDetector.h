@@ -96,6 +96,12 @@ private:
   uint32_t _retransmittable_outstanding = 0;
   void _decrement_packet_count(QUICPacketNumber packet_number);
 
+  /*
+   * Because this alarm will be reset on every packet transmission, to reduce number of events,
+   * Loss Detector uses schedule_every() and checks if it has to be triggered.
+   */
+  ink_hrtime _loss_detection_alarm_at = 0;
+
   void _on_packet_sent(QUICPacketNumber packet_number, bool is_retransmittable, bool is_handshake, size_t sent_bytes,
                        QUICPacketUPtr packet);
   void _on_ack_received(const std::shared_ptr<const QUICAckFrame> &ack_frame);

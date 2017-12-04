@@ -48,7 +48,9 @@ QUICLossDetector::event_handler(int event, Event *edata)
 {
   switch (event) {
   case EVENT_INTERVAL: {
-    this->_on_loss_detection_alarm();
+    if (this->_loss_detection_alarm_at <= Thread::get_hrtime()) {
+      this->_on_loss_detection_alarm();
+    }
     break;
   }
   case QUIC_EVENT_LD_SHUTDOWN: {
@@ -278,6 +280,7 @@ QUICLossDetector::_set_loss_detection_alarm()
 {
   ink_hrtime alarm_duration;
   if (!this->_retransmittable_outstanding && this->_loss_detection_alarm) {
+    this->_loss_detection_alarm_at = 0;
     this->_loss_detection_alarm->cancel();
     this->_loss_detection_alarm = nullptr;
     DebugQUICLD("Loss detection alarm has been unset");
@@ -314,11 +317,12 @@ QUICLossDetector::_set_loss_detection_alarm()
     DebugQUICLD("RTO alarm will be set");
   }
 
-  if (this->_loss_detection_alarm) {
-    this->_loss_detection_alarm->cancel();
-  }
-  this->_loss_detection_alarm = eventProcessor.schedule_in(this, alarm_duration);
+  this->_loss_detection_alarm_at = Thread::get_hrtime() + alarm_duration;
   DebugQUICLD("Loss detection alarm has been set to %" PRId64, alarm_duration);
+
+  if (!this->_loss_detection_alarm) {
+    this->_loss_detection_alarm = eventProcessor.schedule_every(this, HRTIME_MSECONDS(100));
+  }
 }
 
 std::set<QUICPacketNumber>
