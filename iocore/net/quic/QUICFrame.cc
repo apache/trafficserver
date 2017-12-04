@@ -1311,6 +1311,7 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_stop_sending_frame);
   default:
     // Unknown frame
+    Debug("quic_frame_factory", "Unknown frame type %x", buf[0]);
     return QUICFrameUPtr(nullptr, &QUICFrameDeleter::delete_null_frame);
   }
 }

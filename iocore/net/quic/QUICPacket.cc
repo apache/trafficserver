@@ -694,7 +694,7 @@ QUICPacketFactory::create_server_cleartext_packet(QUICConnectionId connection_id
   QUICPacketHeader *header =
     QUICPacketHeader::build(QUICPacketType::SERVER_CLEARTEXT, connection_id, this->_packet_number_generator.next(),
                             base_packet_number, this->_version, std::move(payload), len);
-  return this->_create_encrypted_packet(header);
+  return this->_create_encrypted_packet(header, retransmittable);
 }
 
 QUICPacketUPtr
@@ -705,7 +705,7 @@ QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id
   QUICPacketHeader *header =
     QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, connection_id, this->_packet_number_generator.next(),
                             base_packet_number, std::move(payload), len);
-  return this->_create_encrypted_packet(header);
+  return this->_create_encrypted_packet(header, retransmittable);
 }
 
 QUICPacketUPtr
@@ -715,7 +715,7 @@ QUICPacketFactory::create_client_initial_packet(QUICConnectionId connection_id, 
   QUICPacketHeader *header =
     QUICPacketHeader::build(QUICPacketType::CLIENT_INITIAL, connection_id, this->_packet_number_generator.next(),
                             base_packet_number, version, std::move(payload), len);
-  return this->_create_encrypted_packet(header);
+  return this->_create_encrypted_packet(header, true);
 }
 
 QUICPacketUPtr
@@ -755,7 +755,7 @@ QUICPacketFactory::_create_unprotected_packet(QUICPacketHeader *header)
 }
 
 QUICPacketUPtr
-QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header)
+QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header, bool retransmittable)
 {
   // TODO: use pmtu of UnixNetVConnection
   size_t max_cipher_txt_len = 2048;
@@ -766,7 +766,7 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header)
   if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
                              header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
-    new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, false);
+    new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, retransmittable);
   }
 
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);

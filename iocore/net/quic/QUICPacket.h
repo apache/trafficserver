@@ -126,7 +126,7 @@ protected:
   size_t _buf_len     = 0;
 
   // These are used only if the instance was created without a buffer
-  uint8_t _serialized[16];
+  uint8_t _serialized[17];
   ats_unique_buf _payload              = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   QUICPacketType _type                 = QUICPacketType::UNINITIALIZED;
   QUICKeyPhase _key_phase              = QUICKeyPhase::CLEARTEXT;
@@ -307,5 +307,5 @@ private:
   QUICPacketNumberGenerator _packet_number_generator;
 
   static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeader *header);
-  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeader *header);
+  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeader *header, bool retransmittable);
 };

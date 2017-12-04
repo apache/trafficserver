@@ -232,10 +232,12 @@ QUICNetVConnection::transmit_packet(QUICPacketUPtr packet)
 void
 QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
 {
+  DebugQUICCon("Retransmit packet #%" PRIu64 " type %s", packet.packet_number(), QUICDebugNames::packet_type(packet.type()));
   ink_assert(packet.type() != QUICPacketType::VERSION_NEGOTIATION && packet.type() != QUICPacketType::UNINITIALIZED);
 
-  uint16_t size          = packet.payload_size();
-  const uint8_t *payload = packet.payload();
+  // Get payload from a header because packet.payload() is encrypted
+  uint16_t size          = packet.header()->payload_size();
+  const uint8_t *payload = packet.header()->payload();
 
   QUICFrameUPtr frame(nullptr, &QUICFrameDeleter::delete_null_frame);
   uint16_t cursor = 0;
@@ -629,6 +631,9 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPt
     if (error->cls != QUICErrorClass::NONE) {
       return error;
     }
+  } else {
+    // Perhaps response packets for initial client packet were lost, but no need to start handshake again because loss detector will
+    // retransmit the packets.
   }
   return error;
 }
