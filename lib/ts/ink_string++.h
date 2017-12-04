@@ -33,7 +33,7 @@
 #if !defined(_ink_string_pp_h_)
 #define _ink_string_pp_h_
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 
 /***********************************************************************
  *                                                                     *

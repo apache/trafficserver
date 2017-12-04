@@ -160,7 +160,6 @@ static char error_tags[1024]               = "";
 static char action_tags[1024]              = "";
 static int show_statistics                 = 0;
 static inkcoreapi DiagsConfig *diagsConfig = nullptr;
-HttpBodyFactory *body_factory              = nullptr;
 
 static int accept_mss             = 0;
 static int cmd_line_dprintf_level = 0;  // default debug output level from ink_dprintf function
@@ -1883,7 +1882,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // pmgmt->start();
 
     // Initialize Response Body Factory
-    body_factory = new HttpBodyFactory;
+    HttpBodyFactory::init();
 
     // Start IP to userName cache processor used
     // by RADIUS and FW1 plug-ins.

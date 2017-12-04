@@ -44,6 +44,8 @@
 #include "StatPages.h"
 #include "../IPAllow.h"
 #include "I_Machine.h"
+#include "ts/BufferWriter.h"
+#include "ts/string_view.h"
 
 static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 #define RANGE_NUMBERS_LENGTH 60
@@ -74,8 +76,6 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 
 #define DebugTxn(tag, fmt, ...) \
   DebugSpecific((s->state_machine->debug_on), tag, "[%" PRId64 "] " fmt, s->state_machine->sm_id, ##__VA_ARGS__)
-
-extern HttpBodyFactory *body_factory;
 
 inline static bool
 is_localhost(const char *name, int len)
@@ -7930,9 +7930,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   int64_t len;
   char *new_msg;
 
-  new_msg = body_factory->fabricate_with_old_api(error_body_type, s, 8192, &len, body_language, sizeof(body_language), body_type,
-                                                 sizeof(body_type), s->internal_msg_buffer_size,
-                                                 s->internal_msg_buffer_size ? s->internal_msg_buffer : nullptr);
+  new_msg = HttpBodyFactory::fabricate_with_old_api(error_body_type, s, 8192, &len, body_language, sizeof(body_language), body_type,
+                                                    sizeof(body_type), s->internal_msg_buffer_size,
+                                                    s->internal_msg_buffer_size ? s->internal_msg_buffer : nullptr);
 
   // After the body factory is called, a new "body" is allocated, and we must replace it. It is
   // unfortunate that there's no way to avoid this fabrication even when there is no substitutions...
@@ -8005,10 +8005,34 @@ HttpTransact::build_redirect_response(State *s)
   //////////////////////////
   s->free_internal_msg_buffer();
   s->internal_msg_buffer_fast_allocator_size = -1;
+
   // template redirect#temporarily can not be used here since there is no way to pass the computed url to the template.
-  s->internal_msg_buffer = body_factory->getFormat(8192, &s->internal_msg_buffer_size, "%s <a href=\"%s\">%s</a>.  %s.",
-                                                   "The document you requested is now", new_url, new_url,
-                                                   "Please update your documents and bookmarks accordingly", nullptr);
+
+  ts::string_view new_url_sv(new_url);
+
+  auto GenMsg = [new_url_sv](ts::FixedBufferWriter &bw) -> void {
+    bw << "The document you requested is now <a href=\"" << new_url_sv << "\">" << new_url_sv
+       << "</a>.  Please update your documents and bookmarks accordingly" << '\0';
+  };
+
+  // "Generate" the message the first time just to see how long it will be.
+  ts::FixedBufferWriter bw(nullptr, 0);
+  GenMsg(bw);
+
+  if (bw.extent() <= (1 << 13)) {
+    s->internal_msg_buffer = static_cast<char *>(ats_malloc(bw.extent()));
+
+    // Now generate it for real.
+    ts::FixedBufferWriter bw2(s->internal_msg_buffer, bw.extent());
+    GenMsg(bw2);
+
+    // Terminal nul must not be included in internal buffer size.
+    s->internal_msg_buffer_size = bw2.extent() - 1;
+
+  } else {
+    // Huge URL, resulting message would exceed 8K, so no message.
+    s->internal_msg_buffer = nullptr;
+  }
 
   h->set_content_length(s->internal_msg_buffer_size);
   h->value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/html", 9);
