@@ -275,7 +275,8 @@ private:
   uint64_t bytes_sent  = 0;
 
   ChunkedHandler chunked_handler;
-  Event *cross_thread_event = nullptr;
+  Event *cross_thread_event      = nullptr;
+  Event *buffer_full_write_event = nullptr;
 
   // Support stream-specific timeouts
   ink_hrtime active_timeout = 0;

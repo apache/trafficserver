@@ -1283,6 +1283,35 @@ AC_CHECK_LIB([brotlienc],[BrotliEncoderCreateInstance],[AC_SUBST([LIB_BROTLIENC]
 AC_SUBST(has_brotli)
 AM_CONDITIONAL([HAS_BROTLI], [ test "x${has_brotli}" = "x1" ])
 
+#
+# Enable experimental/uri_singing plugin
+# This is here, instead of above, because it needs to know if PCRE is available.
+#
+AC_CHECK_HEADERS([jansson.h], [
+  AC_MSG_CHECKING([whether jansson is dynamic])
+  TS_LINK_WITH_FLAGS_IFELSE([-shared -fPIC -l:libjansson.a],[AC_LANG_PROGRAM(
+                            [#include <jansson.h>],
+                            [(void) json_object();])],
+                            [AC_MSG_RESULT([no]);  LIBJANSSON=-l:libjansson.a],
+                            [AC_MSG_RESULT([yes]); LIBJANSSON=-ljansson])
+  ],
+  [LIBJANSSON=])
+
+AC_CHECK_HEADERS([cjose/cjose.h], [
+  AC_MSG_CHECKING([whether cjose is dynamic])
+  TS_LINK_WITH_FLAGS_IFELSE([-shared -fPIC -l:libcjose.a],[AC_LANG_PROGRAM(
+                            [#include <cjose/cjose.h>],
+                            [(void) cjose_jws_import("", 0, NULL);])],
+                            [AC_MSG_RESULT([no]);  LIBCJOSE=-l:libcjose.a],
+                            [AC_MSG_RESULT([yes]); LIBCJOSE=-lcjose])
+  ],
+  [LIBCJOSE=])
+AC_CHECK_LIB([crypto],[HMAC],[has_libcrypto=1],[has_libcrypto=0])
+
+AM_CONDITIONAL([BUILD_URI_SIGNING_PLUGIN], [test ! -z "${LIBCJOSE}" -a ! -z "${LIBJANSSON}" -a "x${enable_pcre}" = "xyes" -a "x${has_libcrypto}" = "x1"])
+AC_SUBST([LIBCJOSE])
+AC_SUBST([LIBJANSSON])
+
 # Check for backtrace() support
 has_backtrace=0
 AC_CHECK_HEADERS([execinfo.h], [has_backtrace=1],[])

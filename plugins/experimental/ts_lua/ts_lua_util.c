@@ -98,6 +98,81 @@ ts_lua_new_state()
   return L;
 }
 
+ts_lua_instance_conf *
+ts_lua_script_registered(lua_State *L, char *script)
+{
+  TSMgmtInt curr_time;
+  ts_lua_instance_conf *conf = NULL;
+
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] checking if script [%s] is registered", __FUNCTION__, script);
+
+  // first check the reconfigure_time for the script. if it is not found, then it is new
+  // if it matches the current reconfigure_time, then it is loaded already
+  // And we return the conf pointer of it. Otherwise it can be loaded again.
+  if (TS_SUCCESS == TSMgmtIntGet("proxy.node.config.reconfigure_time", &curr_time)) {
+    lua_pushliteral(L, "__scriptTime");
+    lua_pushstring(L, script);
+    lua_concat(L, 2);
+    lua_rawget(L, LUA_REGISTRYINDEX);
+    if (lua_isnil(L, -1)) {
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] failed to get script time for [%s]", __FUNCTION__, script);
+      lua_pop(L, -1);
+      return NULL;
+    } else {
+      int time = lua_tonumber(L, -1);
+      lua_pop(L, -1);
+
+      if (time == curr_time) {
+        lua_pushliteral(L, "__scriptPtr");
+        lua_pushstring(L, script);
+        lua_concat(L, 2);
+        lua_rawget(L, LUA_REGISTRYINDEX);
+        if (lua_isnil(L, -1)) {
+          TSDebug(TS_LUA_DEBUG_TAG, "[%s] failed to get script ptr for [%s]", __FUNCTION__, script);
+          lua_pop(L, -1);
+          return NULL;
+        } else {
+          conf = lua_touserdata(L, -1);
+          lua_pop(L, -1);
+          return conf;
+        }
+      } else {
+        TSDebug(TS_LUA_DEBUG_TAG, "[%s] script time not matching for [%s]", __FUNCTION__, script);
+        return NULL;
+      }
+    }
+
+  } else {
+    TSError("[ts_lua][%s] failed to get node's reconfigure time while checking script registration", __FUNCTION__);
+    return NULL;
+  }
+}
+
+void
+ts_lua_script_register(lua_State *L, char *script, ts_lua_instance_conf *conf)
+{
+  TSMgmtInt time;
+
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] registering script [%s]", __FUNCTION__, script);
+
+  // we recorded the script reconfigure_time and its conf pointer in registry
+  if (TS_SUCCESS == TSMgmtIntGet("proxy.node.config.reconfigure_time", &time)) {
+    lua_pushliteral(L, "__scriptTime");
+    lua_pushstring(L, script);
+    lua_concat(L, 2);
+    lua_pushnumber(L, time);
+    lua_rawset(L, LUA_REGISTRYINDEX);
+
+    lua_pushliteral(L, "__scriptPtr");
+    lua_pushstring(L, script);
+    lua_concat(L, 2);
+    lua_pushlightuserdata(L, conf);
+    lua_rawset(L, LUA_REGISTRYINDEX);
+  } else {
+    TSError("[ts_lua][%s] failed to get node's reconfigure time while registering script", __FUNCTION__);
+  }
+}
+
 int
 ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int argc, char *argv[], char *errbuf, int errbuf_size)
 {

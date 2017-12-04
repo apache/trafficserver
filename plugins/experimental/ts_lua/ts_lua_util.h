@@ -24,6 +24,9 @@
 int ts_lua_create_vm(ts_lua_main_ctx *arr, int n);
 void ts_lua_destroy_vm(ts_lua_main_ctx *arr, int n);
 
+ts_lua_instance_conf *ts_lua_script_registered(lua_State *L, char *script);
+void ts_lua_script_register(lua_State *L, char *script, ts_lua_instance_conf *conf);
+
 int ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int argc, char *argv[], char *errbuf,
                       int errbuf_len);
 
