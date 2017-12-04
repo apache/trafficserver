@@ -1740,14 +1740,16 @@ url_CryptoHash_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &h
   if (p != buffer) {
     ctx.update(buffer, p - buffer);
   }
-
-  port = url_canonicalize_port(url->m_url_type, url->m_port);
+  int buffer_len = static_cast<int>(p - buffer);
+  port           = url_canonicalize_port(url->m_url_type, url->m_port);
 
   ctx.update(&port, sizeof(port));
   if (generation != -1) {
     ctx.update(&generation, sizeof(generation));
+    Debug("url_cachekey", "Final url string for cache hash key %.*s%d%d", buffer_len, buffer, port, static_cast<int>(generation));
+  } else {
+    Debug("url_cachekey", "Final url string for cache hash key %.*s%d", buffer_len, buffer, port);
   }
-
   ctx.finalize(hash);
 }
 
