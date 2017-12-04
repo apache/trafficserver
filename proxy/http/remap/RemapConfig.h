@@ -23,58 +23,166 @@
 
 #pragma once
 
+#include <list>
 #include "AclFiltering.h"
+#include "tscore/MemArena.h"
+#include "tscore/ts_file.h"
 
 class UrlRewrite;
+class url_mapping;
 
-#define BUILD_TABLE_MAX_ARGS 2048
+// remap rule types
+static constexpr ts::TextView REMAP_REGEX_PREFIX{"regex_"};
+static constexpr ts::TextView REMAP_MAP_TAG{"map"};
+static constexpr ts::TextView REMAP_REDIRECT_TAG{"redirect"};
+static constexpr ts::TextView REMAP_TEMPORARY_REDIRECT_TAG{"redirect_temporary"};
+static constexpr ts::TextView REMAP_REVERSE_MAP_TAG{"reverse_map"};
+static constexpr ts::TextView REMAP_WITH_REFERER_TAG{"map_with_referer"};
+static constexpr ts::TextView REMAP_WITH_RECV_PORT_TAG{"map_with_recv_port"};
 
-// Remap inline options
-#define REMAP_OPTFLG_MAP_WITH_REFERER 0x0001u /* "map_with_referer" option */
-#define REMAP_OPTFLG_PLUGIN 0x0002u           /* "plugin=" option (per remap plugin) */
-#define REMAP_OPTFLG_PPARAM 0x0004u           /* "pparam=" option (per remap plugin option) */
-#define REMAP_OPTFLG_METHOD 0x0008u           /* "method=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_SRC_IP 0x0010u           /* "src_ip=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_ACTION 0x0020u           /* "action=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_INTERNAL 0x0040u         /* only allow internal requests to hit this remap */
-#define REMAP_OPTFLG_IN_IP 0x0080u            /* "in_ip=" option (used for ACL filtering)*/
-#define REMAP_OPTFLG_MAP_ID 0x0800u           /* associate a map ID with this rule */
-#define REMAP_OPTFLG_INVERT 0x80000000u       /* "invert" the rule (for src_ip at least) */
-#define REMAP_OPTFLG_ALL_FILTERS (REMAP_OPTFLG_METHOD | REMAP_OPTFLG_SRC_IP | REMAP_OPTFLG_ACTION | REMAP_OPTFLG_INTERNAL)
+static constexpr ts::TextView REMAP_FILTER_IP_ALLOW_TAG{"ip_allow"};
 
-struct BUILD_TABLE_INFO {
-  BUILD_TABLE_INFO();
-  ~BUILD_TABLE_INFO();
+/** Configuration load time information for building the remap table.
 
-  unsigned long remap_optflg;
-  int paramc;
-  int argc;
-  char *paramv[BUILD_TABLE_MAX_ARGS];
-  char *argv[BUILD_TABLE_MAX_ARGS];
+    This is not a persistent structure, it is used only while the configuration is being loaded.
+*/
+struct RemapBuilder {
+  using self_type = RemapBuilder; ///< Self reference type.
+  using TextView  = ts::TextView;
+  /// List of parameter, the direct remap values in a configuration rule.
+  using ParamList = std::vector<std::string_view>;
+  /// List of arguments, which are modifiers for the configuration rule. Almost all require a
+  /// value, therefore this list a list of (key,value) tuples.
+  using ArgList = std::vector<RemapArg>;
+  /// Used to report errors. Need to switch to @c Errata if I ever get the updated version back ported here.
+  using ErrBuff = ts::FixedBufferWriter;
 
-  bool ip_allow_check_enabled_p;
-  bool accept_check_p;
-  acl_filter_rule *rules_list; // all rules defined in config files as .define_filter foobar @src_ip=.....
-  UrlRewrite *rewrite;         // Pointer to the UrlRewrite object we are parsing for.
+  /** Constructor.
+   *
+   * @param url_rewriter The persistent store of remap information.
+   */
+  RemapBuilder(UrlRewrite *url_rewriter) : rewrite(url_rewriter) {}
 
-  // Clear the argument vector.
-  void reset();
+  RemapBuilder(const RemapBuilder &) = delete;
+  RemapBuilder &operator=(const RemapBuilder &) = delete;
 
-  // noncopyable
-  BUILD_TABLE_INFO(const BUILD_TABLE_INFO &) = delete;            // disabled
-  BUILD_TABLE_INFO &operator=(const BUILD_TABLE_INFO &) = delete; // disabled
+  /** Parse the configuration file.
+   *
+   * @param path Path to the configuration file.
+   * @param rewriter The persistent store of remap information.
+   * @return @c true if the file was parsed successfully, @c false if not.
+   *
+   * This is a static function, it creates a temporary instance of this class to do the parsing
+   * and puts the persistent data in @a rewriter.
+   */
+  static bool parse_config(ts::file::path const &path, UrlRewrite * rewriter);
+
+  /** Parse and load a remap configuration file.
+   *
+   * @param path Path to the file.
+   * @param errw Error reporting buffer.
+   * @return An error string on failure, an emtpy view on success.
+   *
+   * This is used to handle included configuration files.
+   */
+  TextView parse_remap_fragment(ts::file::path const &path, RemapBuilder::ErrBuff &errw);
+
+  TextView process_filter_opt(url_mapping &mapping, ErrBuff &errw);
+
+  /** Handle a directive.
+   *
+   * @param errw Error buffer.
+   * @return An error on failure, an empty view on success.
+   *
+   * This determines the type of directive and dispatches it to the correct handler.
+   */
+  TextView parse_directive(ErrBuff &errw);
+
+  /** Parse a filter definition.
+   *
+   * @param directive The directive token.
+   * @param errw Error reporting buffer.
+   * @return An error, or an empty view if successful.
+   *
+   * This updates the filter list with a new named filter based on the parsed data.
+   */
+  TextView parse_define_directive(TextView directive, ErrBuff &errw);
+
+  /** Parse a filter delete.
+   *
+   * @param directive The directive token.
+   * @param errw Error reporting buffer.
+   * @return An error, or an empty view if successful.
+   */
+  TextView parse_delete_directive(TextView directive, ErrBuff &errw);
+
+  /** Parse a filter activation.
+   *
+   * @param directive The directive token.
+   * @param errw Error reporting buffer.
+   * @return An error, or an empty view if successful.
+   */
+  TextView parse_activate_directive(TextView directive, ErrBuff &errw);
+
+  /** Parse a filter deactivation.
+   *
+   * @param directive The directive token.
+   * @param errw Error reporting buffer.
+   * @return An error, or an empty view if successful.
+   */
+  TextView parse_deactivate_directive(TextView directive, ErrBuff &errw);
+
+  /** Parse include directive.
+   *
+   * @param directive The directive token.
+   * @param errw Error reporting buffer.
+   * @return An error, or an empty view if successful.
+   */
+  TextView parse_include_directive(TextView directive, ErrBuff &errw);
+
+  /** Load the plugins for the current arguments.
+   *
+   * @param errw Error reporting buffer.
+   * @return An error string, or an empty view on success.
+   *
+   * This walks the argument list, finding plugin arguments and loading the specified plugin.
+   */
+  TextView load_plugins(ErrBuff & errw);
+
+  /** Find a filter by name.
+   *
+   * @param name Name of filter.
+   * @return A pointer to the filter, or @c nullptr if not found.
+   */
+  RemapFilter *find_filter(TextView name);
+
+  void clear();
+
+  // These are views in to the configuration file. Copies are made when storing them in the
+  // persistent remap store (generally by assignment to a @c std::string). It is critical that
+  // the result can be passed to the plugin API as a C string.
+  ParamList paramv; ///< Parameter list.
+  ArgList argv;     ///< Argument list.
+
+  bool ip_allow_check_enabled_p = true;
+  bool accept_check_p           = true;
+  UrlRewrite *rewrite           = nullptr; // Pointer to the UrlRewrite object we are parsing for.
+  RemapFilterList filters;
+  std::list<RemapFilter *> active_filters;
+  ts::MemArena arena{512};
+
+  /** Copy the @a token to the local memory arena and return the localized data.
+   *
+   * @param token String to localize.
+   * @return A new view of the localized string.
+   *
+   * This adds a null terminator so the view can be used as a C string.
+   */
+  TextView localize(TextView token);
 };
 
-const char *remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize);
-
-const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf,
-                                       size_t errStrBufSize);
-
-unsigned long remap_check_option(const char **argv, int argc, unsigned long findmode = 0, int *_ret_idx = nullptr,
-                                 const char **argptr = nullptr);
+const char *remap_validate_filter_args(RemapFilter **rule_pp, const char **argv, int argc, char *errStrBuf, size_t errStrBufSize);
 
 bool remap_parse_config(const char *path, UrlRewrite *rewrite);
 
-typedef void (*load_remap_file_func)(const char *);
-
-extern load_remap_file_func load_remap_file_cb;
+extern std::function<void(char const *)> load_remap_file_cb;

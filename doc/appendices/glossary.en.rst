@@ -136,6 +136,9 @@ Glossary
       corresponding :term:`directory entry` which describes its location in the
       cache storage.
 
+   client request
+      The request sent by a client to |TS|.
+
    object store
       The database of :term:`cache objects <cache object>`.
 
@@ -163,6 +166,16 @@ Glossary
    global plugin
       A plugin which operates on all transactions. Contrast with
       :term:`remap plugin`.
+
+   proxy request
+      The request sent from |TS| to the upstream destination.
+
+   remap filter
+      A filter that controls matching of a remap rule.
+
+   remap rule
+      A rule that specifies matching criteria for a :term:`client request` and how to transform
+      the URL for the :term:`proxy request` if there is a match.
 
    remap plugin
       A plugin which operates only on transactions matching specific remap

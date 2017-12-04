@@ -374,18 +374,18 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
 
     ink_release_assert(ats_is_ip(&s->client_info.src_addr));
 
-    for (acl_filter_rule *rp = map->filter; rp && client_enabled_flag; rp = rp->next) {
+    for (RemapFilter *rp = map->filter; rp && client_enabled_flag; rp = rp->next) {
       bool match = true;
 
       if (rp->method_restriction_enabled) {
         if (method_wksidx >= 0 && method_wksidx < HTTP_WKSIDX_METHODS_CNT) {
-          match = rp->standard_method_lookup[method_wksidx];
-        } else if (!rp->nonstandard_methods.empty()) {
+          match = rp->wk_method[method_wksidx];
+        } else if (!rp->methods.empty()) {
           match = false;
         } else {
           int method_str_len;
           const char *method_str = s->hdr_info.client_request.method_get(&method_str_len);
-          match                  = rp->nonstandard_methods.count(std::string(method_str, method_str_len));
+          match                  = rp->methods.count(std::string(method_str, method_str_len));
         }
       }
 

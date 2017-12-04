@@ -28,14 +28,13 @@
 #include "UrlMappingPathIndex.h"
 #include "HttpTransact.h"
 #include "tscore/Regex.h"
+#include "tscore/MemArena.h"
 
 #include <memory>
 
 #define URL_REMAP_FILTER_NONE 0x00000000
 #define URL_REMAP_FILTER_REFERER 0x00000001      /* enable "referer" header validation */
 #define URL_REMAP_FILTER_REDIRECT_FMT 0x00010000 /* enable redirect URL formatting */
-
-struct BUILD_TABLE_INFO;
 
 /**
  * used for redirection, mapping, and reverse mapping
@@ -55,6 +54,8 @@ enum mapping_type {
  **/
 class UrlRewrite : public RefCountObj
 {
+  friend class RemapBuilder;
+
 public:
   using URLTable = std::unordered_map<std::string, UrlMappingPathIndex *>;
   UrlRewrite()   = default;
@@ -150,6 +151,7 @@ public:
   {
     _destroyTable(store.hash_lookup);
     _destroyList(store.regex_list);
+    arena.clear();
   }
 
   bool InsertForwardMapping(mapping_type maptype, url_mapping *mapping, const char *src_host);
@@ -207,6 +209,9 @@ public:
   int num_rules_redirect_permanent     = 0;
   int num_rules_redirect_temporary     = 0;
   int num_rules_forward_with_recv_port = 0;
+
+protected:
+  ts::MemArena arena;
 
 private:
   bool _valid = false;

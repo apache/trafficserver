@@ -23,85 +23,167 @@
 
 #pragma once
 
-#include "tscore/ink_inet.h"
-
 #include <string>
+#include <string_view>
 #include <set>
 #include <vector>
+#include <bitset>
 
-// ===============================================================================
-// ACL like filtering defs (per one remap rule)
+#include "tscpp/util/TextView.h"
+#include "tscpp/util/IntrusiveDList.h"
+#include "tscore/ink_inet.h"
+#include "tscore/IpMap.h"
+#include "tscore/BufferWriter.h"
 
-static int const ACL_FILTER_MAX_SRC_IP = 128;
-static int const ACL_FILTER_MAX_IN_IP  = 8;
-static int const ACL_FILTER_MAX_ARGV   = 512;
+extern int HTTP_WKSIDX_METHODS_CNT;
 
-struct src_ip_info_t {
-  IpAddr start; ///< Minimum value in range.
-  IpAddr end;   ///< Maximum value in range.
-  bool invert;  ///< Should we "invert" the meaning of this IP range ("not in range")
+/** An argument to a remap rule.
+ * This stores strings by reference - for persistent structures strings must be copied elsewhere.
+ */
+struct RemapArg {
+  /// Type of argument (feature based).
+  enum Type : int8_t {
+    INVALID,      ///< Invalid / uninitialized.
+    INTERNAL,     ///< Filter for internal requests.
+    PLUGIN,       ///< Specify a plugin.
+    PLUGIN_PARAM, ///< Specific a plugin parameter.
+    METHOD,       ///< Filter by method.
+    MAP_ID,       ///< Assign a rule ID.
+    ACTION,       ///< ACL action.
+    SRC_IP,       ///< Check user agent IP address.
+    PROXY_IP,     ///< Check local inbound IP address (proxy address).
+  };
 
-  void
-  reset()
-  {
-    start.invalidate();
-    end.invalidate();
-    invert = false;
-  }
+  /** A description of an argument.
+   * This enables mapping from string names to argument types.
+   */
+  struct Descriptor {
+    ts::TextView name;     ///< Argument name.
+    Type type;             ///< Type of argument of this @a name.
+    bool value_required_p; ///< Argument must have a value.
+  };
+  /// List of supported arguments.
+  static constexpr std::array<Descriptor, 9> Args = {{{"internal", INTERNAL, false},
+                                                      {"plugin", PLUGIN, true},
+                                                      {"pparam", PLUGIN_PARAM, true},
+                                                      {"method", METHOD, true},
+                                                      {"src-ip", SRC_IP, true},
+                                                      {"proxy-ip", PROXY_IP, true},
+                                                      {"in-ip", PROXY_IP, true},
+                                                      {"action", ACTION, true},
+                                                      {"mapid", MAP_ID, true}}};
 
-  /// @return @c true if @a ip is inside @a this range.
-  bool
-  contains(IpEndpoint const &ip)
-  {
-    IpAddr addr{ip};
-    return addr.cmp(start) >= 0 && addr.cmp(end) <= 0;
-  }
+  /** Construct from argument @a key and @a value.
+   *
+   * @param key Key.
+   * @param value Value [depends on @a key].
+   *
+   * If the @a key is invalid or a value is required and not provided, the instance is
+   * constructed with a @a type of @c INVALID.
+   */
+  RemapArg(ts::TextView key, ts::TextView value);
+
+  /** Explicit construct with all values.
+   *
+   * @param t Type.
+   * @param k Tag.
+   * @param v Value.
+   */
+  RemapArg(Type t, ts::TextView k, ts::TextView v) : type(t), tag(k), value(v) {}
+
+  Type type = INVALID; ///< Type of argument.
+  ts::TextView tag;    ///< Name of the argument.
+  ts::TextView value;  ///< Value. [depends on @a type]
 };
 
-/**
+/** A filter for a remap rule.
  *
  **/
-class acl_filter_rule
+class RemapFilter
 {
 private:
-  void reset(void);
+  void reset();
 
 public:
-  acl_filter_rule *next;
-  char *filter_name;           // optional filter name
-  unsigned int allow_flag : 1, // action allow deny
-    src_ip_valid : 1,          // src_ip range valid
-    in_ip_valid : 1,
-    active_queue_flag : 1, // filter is in active state (used by .useflt directive)
-    internal : 1;          // filter internal HTTP requests
+  using self_type = RemapFilter; ///< Self reference type.
 
-  // we need arguments as string array for directive processing
-  int argc;                        // argument counter (only for filter defs)
-  char *argv[ACL_FILTER_MAX_ARGV]; // argument strings (only for filter defs)
+  /// Default constructor.
+  RemapFilter();
+
+  /** Set the name for the filter.
+   *
+   * @param text Name.
+   * @return @a this
+   *
+   * Instances are not required to have names.
+   */
+  self_type &set_name(ts::TextView const &text);
+
+  /** Add an argument to the filter.
+   *
+   * @param arg The argument instance.
+   * @param errw Error buffer for reporting.
+   * @return An error string on failure, an empty view on success.
+   *
+   * The @c RemapArg instances have views, not strings, and so must point to strings with a lifetime
+   * longer than that of this instance. This is the responsibility of the caller (presumably the
+   * instance owner).
+   */
+  ts::textView add_arg(RemapArg const &arg, ts::FixedBufferWriter &errw);
+
+  ts::BufferWriter &inscribe(ts::BufferWriter &w, ts::BWFSpec const &spec) const;
+
+  self_type *_next = nullptr; ///< Forward intrusive link.
+  self_type *_prev = nullptr; ///< Backward instrusive link.
+  using Linkage    = ts::IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev>;
+
+  enum Action : uint8_t { ALLOW, DENY } action = ALLOW;
+  bool internal_p                              = false;
+
+  std::string name; // optional filter name
+
+  /** Array of arguments for the filter.
+   * Each element is a tuple of (key, value).
+   * These must be C-string compatible because the plugin API requires that.
+   */
+  std::vector<RemapArg> argv;
 
   // methods
-  bool method_restriction_enabled;
-  std::vector<bool> standard_method_lookup;
+  /// Flag vector for well known methods.
+  std::vector<bool> wk_method;
+  /// Set of method names.
+  using MethodSet = std::set<std::string>;
+  /// Set for methods that are not well known (built in to TS).
+  MethodSet methods;
 
-  typedef std::set<std::string> MethodMap;
-  MethodMap nonstandard_methods;
-
-  // src_ip
-  int src_ip_cnt; // how many valid src_ip rules we have
-  src_ip_info_t src_ip_array[ACL_FILTER_MAX_SRC_IP];
-
-  // in_ip
-  int in_ip_cnt; // how many valid dest_ip rules we have
-  src_ip_info_t in_ip_array[ACL_FILTER_MAX_IN_IP];
-
-  acl_filter_rule();
-  ~acl_filter_rule();
-  void name(const char *_name = nullptr);
-  int add_argv(int _argc, char *_argv[]);
-  void print(void);
-
-  static acl_filter_rule *find_byname(acl_filter_rule *list, const char *name);
-  static void delete_byname(acl_filter_rule **list, const char *name);
-  static void requeue_in_active_list(acl_filter_rule **list, acl_filter_rule *rp);
-  static void requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule *rp);
+  /// Map of remote inbound addresses of interest.
+  IpMap src_ip;
+  /// Map of local inbound addresses of interest.
+  IpMap proxy_ip;
 };
+
+using RemapFilterList = ts::IntrusiveDList<RemapFilter::Linkage>;
+
+inline size_t
+RemapFilter::add_arg(RemapArg const &arg)
+{
+  argv.emplace_back(arg);
+  return argv.size();
+}
+
+inline RemapFilter &
+RemapFilter::set_name(ts::TextView const &text)
+{
+  name = text;
+  return *this;
+}
+
+namespace ts
+{
+inline BufferWriter &
+bwformat(ts::BufferWriter &w, BWFSpec const &spec, RemapFilter const &rule)
+{
+  return rule.inscribe(w, spec);
+}
+
+} // namespace ts

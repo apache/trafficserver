@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  ACL descriptors for remap rules.
 
   @section license License
 
@@ -21,181 +21,178 @@
   limitations under the License.
  */
 
+#include "tscore/Diags.h"
+#include "tscore/ink_inet.h"
 #include "AclFiltering.h"
-#include "HTTP.h"
+#include "hdrs/HTTP.h"
+#include "tscore/BufferWriter.h"
+#include "tscore/bwf_std_format.h"
+
+using ts::BufferWriter;
 
 // ===============================================================================
-//                              acl_filter_rule
+//                              RemapFilter
 // ===============================================================================
 
 void
-acl_filter_rule::reset()
+RemapFilter::reset()
 {
-  int i;
-  for (i = (argc = 0); i < ACL_FILTER_MAX_ARGV; i++) {
-    argv[i] = (char *)ats_free_null(argv[i]);
-  }
-  method_restriction_enabled = false;
-  for (i = 0; i < HTTP_WKSIDX_METHODS_CNT; i++) {
-    standard_method_lookup[i] = false;
-  }
-  nonstandard_methods.clear();
-  for (i = (src_ip_cnt = 0); i < ACL_FILTER_MAX_SRC_IP; i++) {
-    src_ip_array[i].reset();
-  }
-  src_ip_valid = 0;
-  for (i = (in_ip_cnt = 0); i < ACL_FILTER_MAX_IN_IP; i++) {
-    in_ip_array[i].reset();
-  }
-  in_ip_valid = 0;
-  internal    = 0;
+  argv.clear();
+
+  action     = ALLOW;
+  internal_p = false;
+
+  name.clear();
+  // This should force all elements to @c false.
+  wk_method.assign(HTTP_WKSIDX_METHODS_CNT, false);
+  methods.clear();
+  src_ip.clear();
+  proxy_ip.clear();
 }
 
-acl_filter_rule::acl_filter_rule()
-  : next(nullptr), filter_name(nullptr), allow_flag(1), src_ip_valid(0), active_queue_flag(0), internal(0), argc(0)
+RemapFilter::RemapFilter() : wk_method(HTTP_WKSIDX_METHODS_CNT, false) {}
+
+BufferWriter &
+bwformat(BufferWriter &w, ts::BWFSpec const &spec, RemapFilter::Action action)
 {
-  standard_method_lookup.resize(HTTP_WKSIDX_METHODS_CNT);
-  ink_zero(argv);
-  reset();
+  return w.write(action == RemapFilter::ALLOW ? "allow" : "deny");
 }
 
-acl_filter_rule::~acl_filter_rule()
+ts::TextView
+RemapFilter::add_arg(RemapArg const &arg, ts::FixedBufferWriter &errw)
 {
-  reset();
-  name();
-}
+  switch (arg.type) {
+  case RemapArg::METHOD: {
+    // Please remember that the order of hash idx creation is very important and it is defined
+    // in HTTP.cc file. 0 in our array is the first method, CONNECT
+    int m = hdrtoken_tokenize(arg.value.data(), arg.value.size(), nullptr) - HTTP_WKSIDX_CONNECT;
 
-int
-acl_filter_rule::add_argv(int _argc, char *_argv[])
-{
-  int real_cnt = 0;
-  if (likely(_argv)) {
-    for (int i = 0; i < _argc && argc < ACL_FILTER_MAX_ARGV; i++) {
-      if (likely(_argv[i] && (argv[argc] = ats_strdup(_argv[i])) != nullptr)) {
-        real_cnt++;
-        argc++;
-      }
+    if (m >= 0 && m < HTTP_WKSIDX_METHODS_CNT) {
+      wk_method[m] = true;
+    } else {
+      Debug("url_rewrite", "[validate_filter_args] Using nonstandard method [%.*s]", static_cast<int>(arg.value.size()),
+            arg.value.data());
+      methods.emplace(arg.value);
     }
   }
-  return real_cnt;
-}
-
-void
-acl_filter_rule::name(const char *_name)
-{
-  filter_name = (char *)ats_free_null(filter_name);
-  if (_name) {
-    filter_name = ats_strdup(_name);
-  }
-}
-
-void
-acl_filter_rule::print()
-{
-  int i;
-  printf("-----------------------------------------------------------------------------------------\n");
-  printf("Filter \"%s\" status: allow_flag=%s, src_ip_valid=%s, in_ip_valid=%s, internal=%s, active_queue_flag=%d\n",
-         filter_name ? filter_name : "<NONAME>", allow_flag ? "true" : "false", src_ip_valid ? "true" : "false",
-         in_ip_valid ? "true" : "false", internal ? "true" : "false", (int)active_queue_flag);
-  printf("standard methods=");
-  for (i = 0; i < HTTP_WKSIDX_METHODS_CNT; i++) {
-    if (standard_method_lookup[i]) {
-      printf("0x%x ", HTTP_WKSIDX_CONNECT + i);
+  case RemapArg::SRC_IP: {
+    bool invert_p = false;
+    IpAddr min, max;
+    auto range = arg.value; // may need to modify
+    if (*range == '~') {
+      invert_p = true;
+      ++range;
     }
-  }
-  printf("nonstandard methods=");
-  for (const auto &nonstandard_method : nonstandard_methods) {
-    printf("%s ", nonstandard_method.c_str());
-  }
-  printf("\n");
-  printf("src_ip_cnt=%d\n", src_ip_cnt);
-  for (i = 0; i < src_ip_cnt; i++) {
-    ip_text_buffer b1, b2;
-    printf("%s - %s", src_ip_array[i].start.toString(b1, sizeof(b1)), src_ip_array[i].end.toString(b2, sizeof(b2)));
-  }
-  printf("\n");
-  printf("in_ip_cnt=%d\n", in_ip_cnt);
-  for (i = 0; i < in_ip_cnt; i++) {
-    ip_text_buffer b1, b2;
-    printf("%s - %s", in_ip_array[i].start.toString(b1, sizeof(b1)), in_ip_array[i].end.toString(b2, sizeof(b2)));
-  }
-  printf("\n");
-  for (i = 0; i < argc; i++) {
-    printf("argv[%d] = \"%s\"\n", i, argv[i]);
-  }
-}
-
-acl_filter_rule *
-acl_filter_rule::find_byname(acl_filter_rule *list, const char *_name)
-{
-  int _name_size      = 0;
-  acl_filter_rule *rp = nullptr;
-  if (likely(list && _name && (_name_size = strlen(_name)) > 0)) {
-    for (rp = list; rp; rp = rp->next) {
-      if (strcasecmp(rp->filter_name, _name) == 0) {
-        break;
-      }
-    }
-  }
-  return rp;
-}
-
-void
-acl_filter_rule::delete_byname(acl_filter_rule **rpp, const char *_name)
-{
-  int _name_size = 0;
-  acl_filter_rule *rp;
-  if (likely(rpp && _name && (_name_size = strlen(_name)) > 0)) {
-    for (; (rp = *rpp) != nullptr; rpp = &rp->next) {
-      if (strcasecmp(rp->filter_name, _name) == 0) {
-        *rpp = rp->next;
-        delete rp;
-        break;
-      }
-    }
-  }
-}
-
-void
-acl_filter_rule::requeue_in_active_list(acl_filter_rule **list, acl_filter_rule *rp)
-{
-  if (likely(list && rp)) {
-    if (rp->active_queue_flag == 0) {
-      acl_filter_rule *r, **rpp;
-      for (rpp = list; ((r = *rpp) != nullptr); rpp = &(r->next)) {
-        if (r == rp) {
-          *rpp = r->next;
-          break;
+    if (0 == ats_ip_range_parse(range, min, max)) {
+      if (invert_p) {
+        // This is a bit ugly, but these values are actually hard to compute in a general and safe
+        // manner.
+        IpMap tmp;
+        tmp.mark(IpMap::IP4_MIN_ADDR, IpMap::IP4_MAX_ADDR, this);
+        tmp.unmark(min, max);
+        for (auto const &r : tmp) {
+          src_ip.fill(r.min(), r.max());
         }
+      } else {
+        src_ip.fill(min, max, this);
       }
-      for (rpp = list; ((r = *rpp) != nullptr); rpp = &(r->next)) {
-        if (r->active_queue_flag == 0) {
-          break;
-        }
-      }
-      (*rpp = rp)->next     = r;
-      rp->active_queue_flag = 1;
+    } else {
+      errw.print("malformed IP address '{}' in filter option '{}'", arg.value, arg.tag);
+      return errw.view();
     }
   }
+  case RemapArg::PROXY_IP: {
+    bool invert_p = false;
+    IpAddr min, max;
+    auto range = arg.value; // may need to modify
+    if (*range == '~') {
+      invert_p = true;
+      ++range;
+    }
+    if (0 == ats_ip_range_parse(range, min, max)) {
+      if (invert_p) {
+        // This is a bit ugly, but these values are actually hard to compute in a general and safe
+        // manner.
+        IpMap tmp;
+        tmp.mark(IpMap::IP4_MIN_ADDR, IpMap::IP4_MAX_ADDR, this);
+        tmp.unmark(min, max);
+        for (auto const &r : tmp) {
+          src_ip.fill(r.min(), r.max());
+        }
+      } else {
+        src_ip.fill(min, max, this);
+      }
+    } else {
+      errw.print("malformed IP address '{}' in filter option '{}'", arg.value, arg.tag);
+      return errw.view();
+    }
+  }
+  case RemapArg::ACTION: {
+    static constexpr std::array<std::string_view, 4> DENY_TAG  = {{"0", "off", "deny", "disable"}};
+    static constexpr std::array<std::string_view, 4> ALLOW_TAG = {{"1", "on", "allow", "enable"}};
+    if (DENY_TAG.end() != std::find_if(DENY_TAG.begin(), DENY_TAG.end(),
+                                       [&](std::string_view tag) -> bool { return 0 == strcasecmp(tag, argv.value); })) {
+      action = DENY;
+    } else if (ALLOW_TAG.end() != std::find_if(DENY_TAG.begin(), DENY_TAG.end(),
+                                               [&](std::string_view tag) -> bool { return 0 == strcasecmp(tag, argv.value); })) {
+      action = ALLOW;
+    } else {
+      errw.print("Unrecognized value '{}' for filter option '{}'", arg.value, arg.tag);
+      Debug("url_rewrite", "[validate_filter_args] %.*s", static_cast<int>(err.size()), errw.data());
+      return errw.view();
+    }
+  }
+  case RemapArg::INTERNAL: {
+    internal_p = true;
+  }
+  }
+  return {};
 }
 
-void
-acl_filter_rule::requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule *rp)
+BufferWriter &
+RemapFilter::inscribe(BufferWriter &w, ts::BWFSpec const &spec) const
 {
-  if (likely(list && rp)) {
-    if (rp->active_queue_flag) {
-      acl_filter_rule **rpp;
-      for (rpp = list; *rpp; rpp = &((*rpp)->next)) {
-        if (*rpp == rp) {
-          *rpp = rp->next;
-          break;
-        }
+  w.print("Filter {}: flags - action={} internal={:s}", ts::bwf::FirstOf(name, "N/A"), action, internal_p);
+  w.print("\nArgs: ");
+  auto pos = w.extent();
+  for (auto const &arg : argv) {
+    if (w.extent() > pos) {
+      w.write(", ");
+    }
+    w.print("{}{}", arg.tag, ts::bwf::OptionalAffix(arg.value, "", "="));
+  }
+  if (w.extent() == pos) {
+    w.write("N/A");
+  }
+
+  w.write("\nMethods: ");
+  pos = w.extent();
+  for (unsigned idx = 0; idx < wk_method.size(); ++idx) {
+    if (wk_method[idx]) {
+      if (w.extent() > pos) {
+        w.write(", ");
       }
-      for (rpp = list; *rpp; rpp = &((*rpp)->next)) {
-        ;
-      }
-      (*rpp = rp)->next     = nullptr;
-      rp->active_queue_flag = 0;
+      w.write(hdrtoken_index_to_wks(idx + HTTP_WKSIDX_CONNECT));
     }
   }
+  for (auto const &name : methods) {
+    if (w.extent() > pos) {
+      w.write(", ");
+    }
+    w.write(name);
+  }
+
+  if (w.extent() == pos) {
+    w.write("N/A");
+  }
+  w.write('\n');
+
+  if (src_ip.count() > 0) {
+    w.print("Source IP map: {}", src_ip);
+  }
+  if (proxy_ip.count() > 0) {
+    w.print("Proxy IP map: {}", proxy_ip);
+  }
+
+  return w;
 }

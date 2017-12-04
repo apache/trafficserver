@@ -81,7 +81,7 @@ url_mapping::~url_mapping()
 {
   referer_info *r;
   redirect_tag_str *rc;
-  acl_filter_rule *afr;
+  RemapFilter *afr;
 
   tag                 = (char *)ats_free_null(tag);
   filter_redirect_url = (char *)ats_free_null(filter_redirect_url);

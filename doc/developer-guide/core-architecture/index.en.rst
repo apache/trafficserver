@@ -26,4 +26,5 @@ Core Architecture
    :maxdepth: 1
 
    heap.en
+   remap-architecture.en
    rpc.en
