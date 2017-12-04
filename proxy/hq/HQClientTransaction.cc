@@ -266,7 +266,13 @@ HQClientTransaction::_write_response()
   if (this->_write_vio.ntodo() == 0) {
     this->_stream_io->shutdown();
   }
+
   this->_stream_io->write_reenable();
+
+  // Send back WRITE_READY event to HttpTunnel
+  if (this->_write_vio.ntodo() > 0 && this->_write_vio.get_writer()->write_avail()) {
+    this->_write_vio._cont->handleEvent(VC_EVENT_WRITE_READY, &this->_write_vio);
+  }
 }
 
 void
