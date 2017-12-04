@@ -190,6 +190,9 @@ netStatsInfo(TSMutex stat_creation_mutex)
     setNetStat(stat_creation_mutex, dent->d_name, "tx_packets", STATISTICS_DIR);
     setNetStat(stat_creation_mutex, dent->d_name, "tx_window_errors", STATISTICS_DIR);
   }
+
+  closedir(srcdir);
+
   return 0;
 }
 
