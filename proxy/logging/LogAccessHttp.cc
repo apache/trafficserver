@@ -1509,6 +1509,25 @@ LogAccessHttp::marshal_client_http_transaction_id(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessHttp::marshal_url_remap_config_line_num(char *buf)
+{
+  if (buf) {
+    int64_t line_num = 0;
+    if (m_http_sm) {
+      auto m = m_http_sm->t_state.url_map.getMapping();
+      if (m) {
+        line_num = m->config_file_line_num();
+      }
+    }
+    marshal_int(buf, line_num);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessHttp::marshal_http_header_field(LogField::Container container, char *field, char *buf)
 {
   char *str        = nullptr;

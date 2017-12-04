@@ -1161,7 +1161,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       goto MAP_ERROR;
     }
 
-    new_mapping = new url_mapping();
+    new_mapping = new url_mapping(cln + 1);
 
     // apply filter rules if we have to
     if ((errStr = process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf))) != nullptr) {
@@ -1361,7 +1361,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
             url_mapping *u_mapping;
 
             ats_ip_ntop(ai_spot->ai_addr, ipb, sizeof ipb);
-            u_mapping = new url_mapping;
+            u_mapping = new url_mapping(cln + 1);
             u_mapping->fromURL.create(nullptr);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
             u_mapping->fromURL.host_set(ipb, strlen(ipb));

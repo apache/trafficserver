@@ -155,6 +155,7 @@ public:
   int marshal_cache_lookup_url_canon(char *) override;     // STR
   int marshal_client_http_connection_id(char *) override;  // INT
   int marshal_client_http_transaction_id(char *) override; // INT
+  int marshal_url_remap_config_line_num(char *) override;  // INT
 
   //
   // named fields from within a http header

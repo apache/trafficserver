@@ -144,7 +144,7 @@ UrlRewrite::SetupBackdoorMapping()
   const char from_url[] = "/ink/rh";
   const char to_url[]   = "http://{backdoor}/ink/rh";
 
-  url_mapping *mapping = new url_mapping;
+  url_mapping *mapping = new url_mapping(0);
 
   mapping->fromURL.create(nullptr);
   mapping->fromURL.parse(from_url, sizeof(from_url) - 1);

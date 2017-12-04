@@ -79,7 +79,10 @@ public:
 class url_mapping
 {
 public:
-  url_mapping();
+  // Constructor parameter is the line number of the remapping from the configured url_remap file.  The value should be zero if
+  // the remapping was not configured in this file.
+  //
+  url_mapping(int config_file_line_num);
   ~url_mapping();
 
   bool add_plugin(remap_plugin_info *i, void *ih);
@@ -122,11 +125,17 @@ public:
   {
     _rank = rank;
   };
+  int
+  config_file_line_num() const
+  {
+    return _config_file_line_num;
+  }
 
 private:
   remap_plugin_info *_plugin_list[MAX_REMAP_PLUGIN_CHAIN];
   void *_instance_data[MAX_REMAP_PLUGIN_CHAIN];
   int _rank = 0;
+  int _config_file_line_num;
 };
 
 /**

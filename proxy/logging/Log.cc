@@ -484,6 +484,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "puuid", field);
 
+  field = new LogField("remap_config_file_line_number", "rcfln", LogField::sINT, &LogAccess::marshal_url_remap_config_line_num,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "rcfln", field);
+
   // TS-4765: This alias is deprecated to be removed in 8.0.
   field = new LogField("client_req_body_len", "cqbl", LogField::sINT, &LogAccess::marshal_client_req_content_len,
                        &LogAccess::unmarshal_int_to_str);
