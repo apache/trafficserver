@@ -40,18 +40,18 @@ QUICFlowController::current_limit()
   return this->_limit;
 }
 
-QUICErrorUPtr
+int
 QUICFlowController::update(QUICOffset offset)
 {
   if (this->_offset <= offset) {
     // Assume flow control is not initialized if the limit was 0
     if (this->_limit != 0 && offset > this->_limit) {
-      return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
+      return -1;
     }
     this->_offset = offset;
   }
 
-  return QUICErrorUPtr(new QUICNoError());
+  return 0;
 }
 
 void
@@ -81,14 +81,14 @@ QUICRemoteFlowController::forward_limit(QUICOffset offset)
   this->_blocked = false;
 }
 
-QUICErrorUPtr
+int
 QUICRemoteFlowController::update(QUICOffset offset)
 {
-  QUICErrorUPtr error = QUICFlowController::update(offset);
+  int ret = QUICFlowController::update(offset);
 
   // Assume flow control is not initialized if the limit was 0
   if (this->_limit == 0) {
-    return error;
+    return ret;
   }
 
   // Send BLOCKED(_STREAM) frame
@@ -97,7 +97,7 @@ QUICRemoteFlowController::update(QUICOffset offset)
     this->_blocked = true;
   }
 
-  return error;
+  return ret;
 }
 
 //

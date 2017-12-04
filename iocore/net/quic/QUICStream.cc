@@ -305,14 +305,14 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
   }
 
   // Flow Control - Even if it's allowed to receive on the state, it may exceed the limit
-  QUICErrorUPtr error = this->_local_flow_controller->update(frame->offset() + frame->data_length());
+  int ret = this->_local_flow_controller->update(frame->offset() + frame->data_length());
   DebugQUICStreamFC("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
                     this->_local_flow_controller->current_limit());
-  if (error->cls != QUICErrorClass::NONE) {
-    return error;
+  if (ret != 0) {
+    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
   }
 
-  error = this->_received_stream_frame_buffer.insert(frame);
+  QUICErrorUPtr error = this->_received_stream_frame_buffer.insert(frame);
   if (error->cls != QUICErrorClass::NONE) {
     this->_received_stream_frame_buffer.clear();
     return error;
@@ -379,10 +379,11 @@ QUICStream::_send()
       }
     }
 
-    error = this->_remote_flow_controller->update(this->_send_offset + len);
+    int ret = this->_remote_flow_controller->update(this->_send_offset + len);
     DebugQUICStreamFC("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
                       this->_remote_flow_controller->current_limit());
-    if (error->cls != QUICErrorClass::NONE) {
+    if (ret != 0) {
+      DebugQUICStream("Flow Controller blocked sending a STREAM frame");
       break;
     }
 

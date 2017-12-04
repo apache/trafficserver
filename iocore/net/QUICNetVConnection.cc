@@ -629,12 +629,12 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPt
     if (error->cls != QUICErrorClass::NONE) {
       return error;
     }
-    error = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
+    int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
     Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64,
           static_cast<uint64_t>(this->_quic_connection_id), this->_local_flow_controller->current_offset(),
           this->_local_flow_controller->current_limit());
-    if (error->cls != QUICErrorClass::NONE) {
-      return error;
+    if (ret != 0) {
+      return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
     }
   } else {
     // Perhaps response packets for initial client packet were lost, but no need to start handshake again because loss detector will
@@ -769,13 +769,13 @@ QUICNetVConnection::_packetize_frames()
     const QUICFrameUPtr &f = this->_stream_frame_send_queue.front();
     uint32_t frame_size    = f->size();
 
-    QUICErrorUPtr error = this->_remote_flow_controller->update((this->_stream_manager->total_offset_sent() + frame_size));
+    int ret = this->_remote_flow_controller->update((this->_stream_manager->total_offset_sent() + frame_size));
     Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
           static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
           this->_remote_flow_controller->current_limit());
 
-    if (error->cls != QUICErrorClass::NONE) {
-      // Flow Contoroller blocked sending STREAM frame
+    if (ret != 0) {
+      DebugQUICCon("Flow Controller blocked sending a STREAM frame");
       break;
     }
 
@@ -813,11 +813,11 @@ QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPac
     return error;
   }
 
-  error = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
+  int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
   Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, static_cast<uint64_t>(this->_quic_connection_id),
         this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
-  if (error->cls != QUICErrorClass::NONE) {
-    return error;
+  if (ret != 0) {
+    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
   }
   // this->_local_flow_controller->forward_limit();
 
