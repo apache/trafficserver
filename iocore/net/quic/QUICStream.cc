@@ -379,6 +379,13 @@ QUICStream::_send()
       }
     }
 
+    QUICStreamFrameUPtr frame = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len,
+                                                                      this->_id, this->_send_offset, fin);
+    if (!this->_state.is_allowed_to_send(*frame)) {
+      DebugQUICStream("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
+      break;
+    }
+
     int ret = this->_remote_flow_controller->update(this->_send_offset + len);
     DebugQUICStreamFC("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
                       this->_remote_flow_controller->current_limit());
@@ -386,19 +393,13 @@ QUICStream::_send()
       DebugQUICStream("Flow Controller blocked sending a STREAM frame");
       break;
     }
-
-    QUICStreamFrameUPtr frame = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len,
-                                                                      this->_id, this->_send_offset, fin);
+    // We cannot cancel sending the frame after updating the flow controller
 
     this->_send_offset += len;
     reader->consume(len);
     this->_write_vio.ndone += len;
     total_len += len;
 
-    if (!this->_state.is_allowed_to_send(*frame)) {
-      DebugQUICStream("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
-      break;
-    }
     this->_state.update_with_sent_frame(*frame);
     this->_tx->transmit_frame(std::move(frame));
   }
