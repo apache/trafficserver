@@ -24,6 +24,7 @@
 #pragma once
 
 #include <memory>
+#include <atomic>
 #include <cstddef>
 
 #include "ts/List.h"
@@ -260,7 +261,7 @@ public:
   QUICPacketNumber next();
 
 private:
-  QUICPacketNumber _current = 0;
+  std::atomic<QUICPacketNumber> _current;
 };
 
 using QUICPacketDeleterFunc = void (*)(QUICPacket *p);
