@@ -19,16 +19,20 @@
 from ports import get_port
 
 
-def MakeHttpBinServer(obj, name, port=False, ip=False, delay=False, public_ip=False, ssl=False, options={}):
-    data_dir = os.path.join(obj.RunDirectory, name)
+def MakeHttpBinServer(self, name, port=False, ip=False, delay=False, public_ip=False, ssl=False, options={}):
+    data_dir = os.path.join(self.RunDirectory, name)
     # create Process
-    p = obj.Processes.Process(name)
+    p = self.Processes.Process(name)
     if (port == False):
         port = get_port(p, "Port")
     if (ip == False):
         ip = '127.0.0.1'
     if (delay == False):
         delay = 0
+
+    self._RootRunable.SkipUnless(
+        Condition.HasProgram("gunicorn", "gunicorn needs be installed with httpbin package for this extension to run")
+    )
 
     command = "gunicorn -b {0}:{1} httpbin:app".format(ip, port)
     for flag, value in options.items():
@@ -45,3 +49,4 @@ def MakeHttpBinServer(obj, name, port=False, ip=False, delay=False, public_ip=Fa
 
 
 ExtendTest(MakeHttpBinServer, name="MakeHttpBinServer")
+ExtendTestRun(MakeHttpBinServer, name="MakeHttpBinServer")
