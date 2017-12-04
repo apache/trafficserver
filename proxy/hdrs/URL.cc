@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  URL-related utilities.
 
   @section license License
 
@@ -29,7 +29,9 @@
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
-#include "ts/Diags.h"
+#include <ts/Diags.h>
+#include <ts/BufferWriter.h>
+#include <ts/ThrowSkipFBW.h>
 
 const char *URL_SCHEME_FILE;
 const char *URL_SCHEME_FTP;
@@ -1537,31 +1539,26 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
  *                                                                     *
  ***********************************************************************/
 
-int
-url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+void
+url_print(URLImpl *url, ts::BufferWriter &bw)
 {
-#define TRY(x) \
-  if (!x)      \
-  return 0
-
   if (url->m_ptr_scheme) {
-    TRY(mime_mem_print(url->m_ptr_scheme, url->m_len_scheme, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    bw.write(url->m_ptr_scheme, url->m_len_scheme);
     // [amc] Why is "file:" special cased to be wrong?
     //    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
-    //      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    //      bw << ":";
     //    } else {
-    TRY(mime_mem_print("://", 3, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    bw << "://";
     //    }
   }
 
   if (url->m_ptr_user) {
-    TRY(mime_mem_print(url->m_ptr_user, url->m_len_user, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    bw.write(url->m_ptr_user, url->m_len_user);
     if (url->m_ptr_password) {
-      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(
-        mime_mem_print(url->m_ptr_password, url->m_len_password, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      bw << ':';
+      bw.write(url->m_ptr_password, url->m_len_password);
     }
-    TRY(mime_mem_print("@", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    bw << '@';
   }
 
   if (url->m_ptr_host) {
@@ -1570,42 +1567,57 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     int n          = url->m_len_host;
     bool bracket_p = '[' != *url->m_ptr_host && (nullptr != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
     if (bracket_p) {
-      TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      bw << '[';
     }
-    TRY(mime_mem_print(url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    bw.write(url->m_ptr_host, url->m_len_host);
     if (bracket_p) {
-      TRY(mime_mem_print("]", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      bw << ']';
     }
     if (url->m_ptr_port && url->m_port) {
-      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(mime_mem_print(url->m_ptr_port, url->m_len_port, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      bw << ':';
+      bw.write(url->m_ptr_port, url->m_len_port);
     }
   }
 
-  TRY(mime_mem_print("/", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+  bw << '/';
 
   if (url->m_ptr_path) {
-    TRY(mime_mem_print(url->m_ptr_path, url->m_len_path, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    bw.write(url->m_ptr_path, url->m_len_path);
   }
 
   if (url->m_ptr_params && url->m_len_params > 0) {
-    TRY(mime_mem_print(";", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    TRY(mime_mem_print(url->m_ptr_params, url->m_len_params, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    bw << ';';
+    bw.write(url->m_ptr_params, url->m_len_params);
   }
 
   if (url->m_ptr_query && url->m_len_query > 0) {
-    TRY(mime_mem_print("?", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    TRY(mime_mem_print(url->m_ptr_query, url->m_len_query, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    bw << '?';
+    bw.write(url->m_ptr_query, url->m_len_query);
   }
 
   if (url->m_ptr_fragment && url->m_len_fragment > 0) {
-    TRY(mime_mem_print("#", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    TRY(mime_mem_print(url->m_ptr_fragment, url->m_len_fragment, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    bw << "#";
+    bw.write(url->m_ptr_fragment, url->m_len_fragment);
+  }
+}
+
+bool
+url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+{
+  ts::TestThrowSkipFixedBufferWriter bw(buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout);
+
+  bool done = true;
+
+  try {
+    url_print(url, bw);
+
+  } catch (ts::TestThrowSkipFixedBufferWriter::OverflowException) {
+    done = false;
   }
 
-  return 1;
+  bw.legacyAdjust(buf_index_inout, buf_chars_to_skip_inout);
 
-#undef TRY
+  return done;
 }
 
 void

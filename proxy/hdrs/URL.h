@@ -205,8 +205,15 @@ URLImpl *url_copy(URLImpl *s_url, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit
 void url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
 void url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
 
-int url_print(URLImpl *u, char *buf, int bufsize, int *bufindex, int *dumpoffset);
+bool url_print(URLImpl *u, char *buf, int bufsize, int *bufindex, int *dumpoffset); // deprecated
 void url_describe(HdrHeapObjImpl *raw, bool recurse);
+
+namespace ts
+{
+// Predefine.
+class BufferWriter;
+};
+void url_print(URLImpl *u, ts::BufferWriter &bw);
 
 int url_length_get(URLImpl *url);
 char *url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap);
@@ -280,7 +287,9 @@ public:
   // Note that URL::destroy() is inherited from HdrHeapSDKHandle.
   void nuke_proxy_stuff();
 
-  int print(char *buf, int bufsize, int *bufindex, int *dumpoffset);
+  bool print(char *buf, int bufsize, int *bufindex, int *dumpoffset); // deprecated
+
+  void print(ts::BufferWriter &bw);
 
   int length_get();
   void clear_string_ref();
@@ -416,11 +425,21 @@ URL::nuke_proxy_stuff()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int
+inline bool
 URL::print(char *buf, int bufsize, int *bufindex, int *dumpoffset)
 {
   ink_assert(valid());
   return url_print(m_url_impl, buf, bufsize, bufindex, dumpoffset);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline void
+URL::print(ts::BufferWriter &bw)
+{
+  ink_assert(valid());
+  url_print(m_url_impl, bw);
 }
 
 /*-------------------------------------------------------------------------
