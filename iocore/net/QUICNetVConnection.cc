@@ -46,6 +46,10 @@
 #define DebugQUICCon(fmt, ...) \
   Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
 
+#define QUICError(fmt, ...)                                                                                 \
+  Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__); \
+  Error("quic_net [%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
+
 static constexpr uint32_t MAX_PACKET_OVERHEAD                = 17; // Max long header len(17)
 static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD          = 15;
 static constexpr uint32_t MINIMUM_INITIAL_CLIENT_PACKET_SIZE = 1200;
@@ -877,11 +881,11 @@ void
 QUICNetVConnection::_handle_error(QUICErrorUPtr error)
 {
   if (error->cls == QUICErrorClass::APPLICATION) {
-    DebugQUICCon("QUICError: %s (%u), APPLICATION ERROR (0x%" PRIu16 ")", QUICDebugNames::error_class(error->cls),
-                 static_cast<unsigned int>(error->cls), error->code());
+    QUICError("QUICError: %s (%u), APPLICATION ERROR (0x%" PRIu16 ")", QUICDebugNames::error_class(error->cls),
+              static_cast<unsigned int>(error->cls), error->code());
   } else {
-    DebugQUICCon("QUICError: %s (%u), %s (0x%" PRIu16 ")", QUICDebugNames::error_class(error->cls),
-                 static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->trans_error_code), error->code());
+    QUICError("QUICError: %s (%u), %s (0x%" PRIu16 ")", QUICDebugNames::error_class(error->cls),
+              static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->trans_error_code), error->code());
   }
 
   if (dynamic_cast<QUICStreamError *>(error.get()) != nullptr) {
