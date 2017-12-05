@@ -43,7 +43,7 @@
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
 
-#define DebugQUICCon(fmt, ...) \
+#define QUICConDebug(fmt, ...) \
   Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
 
 #define QUICError(fmt, ...)                                                                                 \
@@ -126,7 +126,7 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 void
 QUICNetVConnection::free(EThread *t)
 {
-  DebugQUICCon("Free connection");
+  QUICConDebug("Free connection");
 
   this->_udp_con        = nullptr;
   this->_packet_handler = nullptr;
@@ -221,7 +221,7 @@ QUICNetVConnection::_transmit_packet(QUICPacketUPtr packet)
 {
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
 
-  DebugQUICCon("Packet Number=%" PRIu64 " Type=%s Size=%hu", packet->packet_number(), QUICDebugNames::packet_type(packet->type()),
+  QUICConDebug("Packet Number=%" PRIu64 " Type=%s Size=%hu", packet->packet_number(), QUICDebugNames::packet_type(packet->type()),
                packet->size());
   // TODO Remove const_cast
   this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
@@ -237,7 +237,7 @@ QUICNetVConnection::transmit_packet(QUICPacketUPtr packet)
 void
 QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
 {
-  DebugQUICCon("Retransmit packet #%" PRIu64 " type %s", packet.packet_number(), QUICDebugNames::packet_type(packet.type()));
+  QUICConDebug("Retransmit packet #%" PRIu64 " type %s", packet.packet_number(), QUICDebugNames::packet_type(packet.type()));
   ink_assert(packet.type() != QUICPacketType::VERSION_NEGOTIATION && packet.type() != QUICPacketType::UNINITIALIZED);
 
   // Get payload from a header because packet.payload() is encrypted
@@ -278,7 +278,7 @@ QUICNetVConnection::push_packet(UDPPacket *packet)
 void
 QUICNetVConnection::_transmit_frame(QUICFrameUPtr frame)
 {
-  DebugQUICCon("Frame Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+  QUICConDebug("Frame Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
 
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
@@ -340,7 +340,7 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
     this->_switch_to_close_state();
     break;
   default:
-    DebugQUICCon("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
+    QUICConDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
     ink_assert(false);
     break;
   }
@@ -409,7 +409,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     this->_handle_idle_timeout();
     break;
   default:
-    DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
+    QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
   if (error->cls != QUICErrorClass::NONE) {
@@ -440,11 +440,11 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   default:
-    DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
+    QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
   if (error->cls != QUICErrorClass::NONE) {
-    DebugQUICCon("QUICError: cls=%u, code=0x%" PRIu16, static_cast<unsigned int>(error->cls), error->code());
+    QUICConDebug("QUICError: cls=%u, code=0x%" PRIu16, static_cast<unsigned int>(error->cls), error->code());
     this->_handle_error(std::move(error));
   }
 
@@ -472,7 +472,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     break;
   }
   default:
-    DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
+    QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
   // FIXME Enter closed state if CONNECTION_CLOSE was ACKed and draining period end
@@ -507,7 +507,7 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     break;
   }
   default:
-    DebugQUICCon("Unexpected event: %s", QUICDebugNames::quic_event(event));
+    QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
   return EVENT_DONE;
@@ -616,7 +616,7 @@ QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPtr packet)
 {
   if (packet->size() < MINIMUM_INITIAL_CLIENT_PACKET_SIZE) {
-    DebugQUICCon("Packet size is smaller than the minimum initial client packet size");
+    QUICConDebug("Packet size is smaller than the minimum initial client packet size");
     // Ignore the packet
     return QUICErrorUPtr(new QUICNoError());
   }
@@ -736,7 +736,7 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
   }
 
   size_t l = 0;
-  DebugQUICCon("type=%s", QUICDebugNames::frame_type(frame->type()));
+  QUICConDebug("type=%s", QUICDebugNames::frame_type(frame->type()));
   frame->store(buf.get() + len, &l);
   len += l;
 
@@ -775,7 +775,7 @@ QUICNetVConnection::_packetize_frames()
           this->_remote_flow_controller->current_limit());
 
     if (ret != 0) {
-      DebugQUICCon("Flow Controller blocked sending a STREAM frame");
+      QUICConDebug("Flow Controller blocked sending a STREAM frame");
       break;
     }
 
@@ -922,17 +922,17 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
   }
   quic_packet = this->_packet_factory.create(std::move(pkt), written, this->largest_received_packet_number(), result);
   if (result == QUICPacketCreationResult::NOT_READY) {
-    DebugQUICCon("Not ready to decrypt the packet");
+    QUICConDebug("Not ready to decrypt the packet");
     // Retry later
     this->_packet_recv_queue.enqueue(udp_packet);
     this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
   } else {
     udp_packet->free();
     if (result == QUICPacketCreationResult::SUCCESS) {
-      DebugQUICCon("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
+      QUICConDebug("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
                    quic_packet->packet_number(), quic_packet->size());
     } else {
-      DebugQUICCon("Failed to decrypt the packet");
+      QUICConDebug("Failed to decrypt the packet");
     }
   }
 
@@ -944,7 +944,7 @@ QUICNetVConnection::_schedule_packet_write_ready()
 {
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   if (!this->_packet_write_ready) {
-    DebugQUICCon("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
+    QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
     this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
   }
 }
@@ -1002,7 +1002,7 @@ QUICNetVConnection::_complete_handshake_if_possible()
 void
 QUICNetVConnection::_switch_to_handshake_state()
 {
-  DebugQUICCon("Enter state_handshake");
+  QUICConDebug("Enter state_handshake");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
 }
 
@@ -1010,7 +1010,7 @@ void
 QUICNetVConnection::_switch_to_established_state()
 {
   if (this->_complete_handshake_if_possible() == 0) {
-    DebugQUICCon("Enter state_connection_established");
+    QUICConDebug("Enter state_connection_established");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
   } else {
     // Illegal state change
@@ -1022,14 +1022,14 @@ void
 QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
 {
   if (this->_complete_handshake_if_possible() != 0) {
-    DebugQUICCon("Switching state without handshake completion");
+    QUICConDebug("Switching state without handshake completion");
   }
   if (error->cls == QUICErrorClass::APPLICATION) {
     this->transmit_frame(QUICFrameFactory::create_application_close_frame(std::move(error)));
   } else {
     this->transmit_frame(QUICFrameFactory::create_connection_close_frame(std::move(error)));
   }
-  DebugQUICCon("Enter state_connection_closing");
+  QUICConDebug("Enter state_connection_closing");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
 }
 
@@ -1037,9 +1037,9 @@ void
 QUICNetVConnection::_switch_to_close_state()
 {
   if (this->_complete_handshake_if_possible() != 0) {
-    DebugQUICCon("Switching state without handshake completion");
+    QUICConDebug("Switching state without handshake completion");
   }
-  DebugQUICCon("Enter state_connection_closed");
+  QUICConDebug("Enter state_connection_closed");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
   this_ethread()->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
 }

@@ -25,7 +25,7 @@
 #include "QUICEvents.h"
 #include "ts/ink_assert.h"
 
-#define DebugQUICLD(fmt, ...) \
+#define QUICLDDebug(fmt, ...) \
   Debug("quic_loss_detector", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_connection_id), ##__VA_ARGS__)
 
 QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter) : _transmitter(transmitter)
@@ -55,7 +55,7 @@ QUICLossDetector::event_handler(int event, Event *edata)
   }
   case QUIC_EVENT_LD_SHUTDOWN: {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    DebugQUICLD("Shutdown");
+    QUICLDDebug("Shutdown");
 
     if (this->_loss_detection_alarm) {
       this->_loss_detection_alarm->cancel();
@@ -84,7 +84,7 @@ QUICLossDetector::handle_frame(std::shared_ptr<const QUICFrame> frame)
     this->_on_ack_received(std::dynamic_pointer_cast<const QUICAckFrame>(frame));
     break;
   default:
-    DebugQUICLD("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
+    QUICLDDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
     ink_assert(false);
     break;
   }
@@ -200,7 +200,7 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
   }
 
   this->_detect_lost_packets(ack_frame->largest_acknowledged());
-  DebugQUICLD("Unacked handshake pkt %u, retransmittable pkt %u", this->_handshake_outstanding, this->_retransmittable_outstanding);
+  QUICLDDebug("Unacked handshake pkt %u, retransmittable pkt %u", this->_handshake_outstanding, this->_retransmittable_outstanding);
   this->_set_loss_detection_alarm();
 }
 
@@ -208,7 +208,7 @@ void
 QUICLossDetector::_on_packet_acked(QUICPacketNumber acked_packet_number)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  DebugQUICLD("Packet number %" PRIu64 " has been acked", acked_packet_number);
+  QUICLDDebug("Packet number %" PRIu64 " has been acked", acked_packet_number);
   // If a packet sent prior to RTO was acked, then the RTO
   // was spurious.  Otherwise, inform congestion control.
   if (this->_rto_count > 0 && acked_packet_number > this->_largest_sent_before_rto) {
@@ -258,7 +258,7 @@ QUICLossDetector::_on_loss_detection_alarm()
     // eventProcessor.schedule_imm(this->_handler, ET_CALL, QUIC_EVENT_RETRANSMIT_TWO_PACKET);
     this->_rto_count++;
   }
-  DebugQUICLD("Unacked handshake pkt %u, retransmittable pkt %u", this->_handshake_outstanding, this->_retransmittable_outstanding);
+  QUICLDDebug("Unacked handshake pkt %u, retransmittable pkt %u", this->_handshake_outstanding, this->_retransmittable_outstanding);
   this->_set_loss_detection_alarm();
 }
 
@@ -283,7 +283,7 @@ QUICLossDetector::_set_loss_detection_alarm()
     this->_loss_detection_alarm_at = 0;
     this->_loss_detection_alarm->cancel();
     this->_loss_detection_alarm = nullptr;
-    DebugQUICLD("Loss detection alarm has been unset");
+    QUICLDDebug("Loss detection alarm has been unset");
     return;
   }
   if (this->_handshake_outstanding) {
@@ -295,11 +295,11 @@ QUICLossDetector::_set_loss_detection_alarm()
     }
     alarm_duration = std::max(alarm_duration, this->_MIN_TLP_TIMEOUT);
     alarm_duration = alarm_duration * (1 << this->_handshake_count);
-    DebugQUICLD("Handshake retransmission alarm will be set");
+    QUICLDDebug("Handshake retransmission alarm will be set");
   } else if (this->_loss_time != 0) {
     // Early retransmit timer or time loss detection.
     alarm_duration = this->_loss_time - Thread::get_hrtime();
-    DebugQUICLD("Early retransmit timer or time loss detection will be set");
+    QUICLDDebug("Early retransmit timer or time loss detection will be set");
   } else if (this->_tlp_count < this->_MAX_TLPS) {
     // Tail Loss Probe
     if (this->_retransmittable_outstanding) {
@@ -308,17 +308,17 @@ QUICLossDetector::_set_loss_detection_alarm()
       alarm_duration = this->_MIN_TLP_TIMEOUT;
     }
     alarm_duration = std::max(alarm_duration, 2 * this->_smoothed_rtt);
-    DebugQUICLD("TLP alarm will be set");
+    QUICLDDebug("TLP alarm will be set");
   } else {
     // RTO alarm
     alarm_duration = this->_smoothed_rtt + 4 * this->_rttvar;
     alarm_duration = std::max(alarm_duration, this->_MIN_RTO_TIMEOUT);
     alarm_duration = alarm_duration * (1 << this->_rto_count);
-    DebugQUICLD("RTO alarm will be set");
+    QUICLDDebug("RTO alarm will be set");
   }
 
   this->_loss_detection_alarm_at = Thread::get_hrtime() + alarm_duration;
-  DebugQUICLD("Loss detection alarm has been set to %" PRId64, alarm_duration);
+  QUICLDDebug("Loss detection alarm has been set to %" PRId64, alarm_duration);
 
   if (!this->_loss_detection_alarm) {
     this->_loss_detection_alarm = eventProcessor.schedule_every(this, HRTIME_MSECONDS(100));
