@@ -115,7 +115,7 @@ cache file with::
 
 .. note::
     When using on-filesystem cache disk storage, you can only have one such
-    directory specified. This will be address in a future version.
+    directory specified. This will be addressed in a future version.
 
 
 Solaris Example
