@@ -534,7 +534,11 @@ uint16_t
 QUICPacket::size() const
 {
   // This includes not only header size and payload size but also AEAD tag length
-  return this->_header->packet_size();
+  uint16_t size = this->_header->packet_size();
+  if (size == 0) {
+    size = this->header_size() + this->payload_size();
+  }
+  return size;
 }
 
 uint16_t

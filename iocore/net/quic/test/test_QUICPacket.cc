@@ -27,7 +27,7 @@
 
 TEST_CASE("QUICPacketHeader", "[quic]")
 {
-  SECTION("Long Header")
+  SECTION("Long Header (load)")
   {
     const uint8_t input[] = {
       0x81,                                           // Long header, Type
@@ -41,12 +41,35 @@ TEST_CASE("QUICPacketHeader", "[quic]")
     CHECK(header->size() == 17);
     CHECK(header->packet_size() == 19);
     CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
+    CHECK(header->has_connection_id() == true);
     CHECK(header->connection_id() == 0x0102030405060708);
     CHECK(header->packet_number() == 0x12345678);
+    CHECK(header->has_version() == true);
     CHECK(header->version() == 0x11223344);
+    CHECK(header->has_key_phase() == false);
   }
 
-  SECTION("Short Header")
+  SECTION("Long Header (build)")
+  {
+    const uint8_t expected[] = {0x11, 0x22, 0x33, 0x44, 0x55};
+    ats_unique_buf payload   = ats_unique_malloc(sizeof(expected));
+    memcpy(payload.get(), expected, sizeof(expected));
+
+    QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::CLIENT_INITIAL, 0x0102030405060708, 0x12345678, 0,
+                                                       0xa0a0a0a0, std::move(payload), 32);
+
+    CHECK(header->size() == 17);
+    CHECK(header->has_key_phase() == false);
+    CHECK(header->packet_size() == 0);
+    CHECK(header->type() == QUICPacketType::CLIENT_INITIAL);
+    CHECK(header->has_connection_id() == true);
+    CHECK(header->connection_id() == 0x0102030405060708);
+    CHECK(header->packet_number() == 0x12345678);
+    CHECK(header->has_version() == true);
+    CHECK(header->version() == 0xa0a0a0a0);
+  }
+
+  SECTION("Short Header (load)")
   {
     const uint8_t input[] = {
       0x43,                                           // Short header, with Connection ID, KeyPhse 0, Type
@@ -58,8 +81,32 @@ TEST_CASE("QUICPacketHeader", "[quic]")
     QUICPacketHeader *header = QUICPacketHeader::load(input, sizeof(input), 0);
     CHECK(header->size() == 13);
     CHECK(header->packet_size() == 15);
+    CHECK(header->has_key_phase() == true);
+    CHECK(header->key_phase() == QUICKeyPhase::PHASE_0);
+    CHECK(header->has_connection_id() == true);
     CHECK(header->connection_id() == 0x0102030405060708);
     CHECK(header->packet_number() == 0x12345678);
+    CHECK(header->has_version() == false);
+  }
+
+  SECTION("Short Header (build)")
+  {
+    const uint8_t expected[] = {0x11, 0x22, 0x33, 0x44, 0x55};
+    ats_unique_buf payload   = ats_unique_malloc(sizeof(expected));
+    memcpy(payload.get(), expected, sizeof(expected));
+
+    QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, 0x0102030405060708,
+                                                       0x12345678, 0, std::move(payload), 32);
+
+    CHECK(header->size() == 13);
+    CHECK(header->packet_size() == 0);
+    CHECK(header->has_key_phase() == true);
+    CHECK(header->key_phase() == QUICKeyPhase::PHASE_0);
+    CHECK(header->type() == QUICPacketType::PROTECTED);
+    CHECK(header->has_connection_id() == true);
+    CHECK(header->connection_id() == 0x0102030405060708);
+    CHECK(header->packet_number() == 0x12345678);
+    CHECK(header->has_version() == false);
   }
 }
 
