@@ -23,9 +23,10 @@ if sys.version_info < (3, 5, 0):
     host.WriteError(
         "You need python 3.5 or later to run these tests\n", show_stack=False)
 
-if AuTestVersion() < "1.4.0":
+autest_version ="1.4.1"
+if AuTestVersion() < autest_version:
     host.WriteError(
-        "Tests need AuTest version 1.4.0 or better\n Please update AuTest:\n  pip install --upgrade autest\n", show_stack=False)
+        "Tests need AuTest version {ver} or better\n Please update AuTest:\n  pip install --upgrade autest\n".format(ver=autest_version), show_stack=False)
 
 
 Settings.path_argument(["--ats-bin"],
