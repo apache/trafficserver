@@ -91,7 +91,8 @@ def build_domain_mappings(path):
             records[domain_name] = [A(x) for x in domain[domain_name]]
             print(records[domain_name])
 
-    default_records.extend([A(d) for d in zone_file['otherwise']])
+    if 'otherwise' in zone_file:
+        default_records.extend([A(d) for d in zone_file['otherwise']])
 
 
 def add_authoritative_records(reply, domain):
@@ -135,10 +136,15 @@ def dns_response(data):
     # else if a specific mapping is not found, return default A-records
     if not found_specific:
         for a in default_records:
+            found_specific = True
             reply.add_answer(RR(rname=qname, rtype=QTYPE.A, rclass=1, ttl=TTL, rdata=a))
 
         if round_robin:
             default_records = default_records[1:] + default_records[:1]
+
+    if not found_specific:
+        reply.header.set_rcode(3)
+
     print("---- Reply: ----\n", reply)
     return reply.pack()
 

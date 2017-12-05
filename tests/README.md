@@ -195,10 +195,11 @@ ts.Disk.remap_config.AddLine(
 ```
 
 ## Setting up DNS
-### Test.MakeDNServer(name)
+### Test.MakeDNServer(name, default=None)
  * name - A name for this instance of the DNS.
+ * default - if a list argument is provided, uDNS will reply with the list contents instead of NXDOMAIN if a DNS can't be found for a partcular entry
 
- This function returns a AuTest process object that launches the python-based microDNS (uDNS). uDNS is a mock DNS which responds to DNS queries. uDNS needs to be setup for the tests that require made-up domains. The server reads a JSON-formatted data file that contains mappings of domain to IP addresses. uDNS responds with the approriate IP addresses if the requested domain is in uDNS' mappings, otherwise responds with default IP address 127.0.0.1.  
+ This function returns a AuTest process object that launches the python-based microDNS (uDNS). uDNS is a mock DNS which responds to DNS queries. uDNS needs to be setup for the tests that require made-up domains. The server reads a JSON-formatted data file that contains mappings of domain to IP addresses. uDNS responds with the approriate IP addresses if the requested domain is in uDNS' mappings.
 
  * addRecords(records=None, jsonFile=None)
  
@@ -219,16 +220,17 @@ ts.Disk.remap_config.AddLine(
  ### Examples
  There are 3 ways to utilize uDNS -
 
- Easy way if everything is done on localhost:  
- *uDNS by default returns 127.0.0.1 for any unknown mappings*
+ Easy way if everything is done on localhost - by adding default option to Test.MakeDNServer:  
+ *uDNS by default returns NXDOMAIN for any unknown mappings*
 
  ```python
     # create TrafficServer and uDNS processes
     ts = Test.MakeATSProcess("ts")
-    dns = Test.MakeDNServer("dns")
+    dns = Test.MakeDNServer("dns", default=['127.0.0.1'])
 
     ts.Disk.records_config.update({
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port), # let TrafficServer know where the DNS is located
+        'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.url_remap.remap_required': 0  # need this so TrafficServer won't return error upon not finding the domain in its remap file
     })
  ```
@@ -241,10 +243,11 @@ ts.Disk.remap_config.AddLine(
 
     ts.Disk.records_config.update({
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port), # let TrafficServer know where the DNS is located
+        'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.url_remap.remap_required': 0  # need this so TrafficServer won't return error upon not finding the domain in its remap file
     })
 
-    dns.addRecords(records={"foo.com":["127.0.0.1", "127.0.1.1"]})
+    dns.addRecords(records={"foo.com.":["127.0.0.1", "127.0.1.1"]})
     # AND/OR
     dns.addRecords(jsonFile="zone.json") # where zone.json is in the format described above
  ```
@@ -256,6 +259,7 @@ ts.Disk.remap_config.AddLine(
     dns = Test.MakeDNServer("dns")
 
     ts.Disk.records_config.update({
+        'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port) # let TrafficServer know where the DNS is located
     })
 
@@ -264,7 +268,7 @@ ts.Disk.remap_config.AddLine(
         'map http://example.com http://foo.com'
     )
 
-    dns.addRecords(records={"foo.com":["127.0.0.1", "127.0.1.1"]})
+    dns.addRecords(records={"foo.com.":["127.0.0.1", "127.0.1.1"]})
  ```
 
 ## Condition Testing
