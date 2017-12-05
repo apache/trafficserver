@@ -52,8 +52,8 @@ dest_response_header = {"headers": "HTTP/1.1 204 No Content\r\n\r\n", "timestamp
 redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_response_header)
 dest_serv.addResponse("sessionfile.log", dest_request_header, dest_response_header)
 
-# we don't really need these two lines, since DNS by default will redirect any unknown domains back to 127.0.0.1
-# dns.addRecords(records={"iwillredirect.com":["127.0.0.1"]})
+
+dns.addRecords(records={"iwillredirect.com.": ["127.0.0.1"]})
 # dns.addRecords(jsonFile="zone.json")
 
 # if we don't disable remap_required, we can also just remap a domain to the domain recognized by DNS

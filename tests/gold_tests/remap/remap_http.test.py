@@ -61,6 +61,8 @@ ts.Disk.remap_config.AddLine(
     'map http://testDNS.com http://audrey.hepburn.com:{0}'.format(server.Variables.Port)
 )
 
+dns.addRecords(records={"audrey.hepburn.com.": ["127.0.0.1"]})
+
 # call localhost straight
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/" --verbose'.format(ts.Variables.port)

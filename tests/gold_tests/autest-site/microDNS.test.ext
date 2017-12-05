@@ -64,7 +64,7 @@ def addRecords(self, records=None, jsonFile=None):
         f.write(json.dumps(jsondata))
 
 
-def MakeDNServer(obj, name, filename="dns_file.json", port=False, IP='127.0.0.1', rr=False, options={}):
+def MakeDNServer(obj, name, filename="dns_file.json", port=False, IP='127.0.0.1', rr=False, default=None, options={}):
     server_path = os.path.join(obj.Variables.AtsTestToolsDir, 'microDNS/uDNS.py')
     data_dir = os.path.join(obj.RunDirectory, name)
     filepath = os.path.join(data_dir, filename)
@@ -74,7 +74,10 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, IP='127.0.0.1'
     if not os.path.exists(os.path.dirname(filepath)):
         os.makedirs(os.path.dirname(filepath))
 
-        jsondata = {'otherwise': ['127.0.0.1'], 'mappings': []}
+        jsondata = {'mappings': []}
+
+        if default:
+            jsondata['otherwise'] = default
 
         with open(filepath, 'w') as f:
             f.write(json.dumps(jsondata))
