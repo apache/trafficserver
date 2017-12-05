@@ -437,6 +437,17 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
   }
   ua_txn = client_vc;
 
+  // It seems to be possible that the ua_txn pointer will go stale before log entries for this HTTP transaction are
+  // generated.  Therefore, collect information that may be needed for logging from the ua_txn object at this point.
+  //
+  _client_transaction_id = ua_txn->get_transaction_id();
+  {
+    auto p = ua_txn->get_parent();
+    if (p) {
+      _client_connection_id = p->connection_id();
+    }
+  }
+
   // Collect log & stats information
   client_tcp_reused         = !(ua_txn->is_first_transaction());
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
