@@ -102,7 +102,8 @@ public:
     LINK(QUICAckFrame::AckBlock, link);
 
   private:
-    uint64_t _data = 0;
+    uint8_t _gap     = 0;
+    uint64_t _length = 0;
   };
 
   class AckBlockSection
@@ -121,7 +122,8 @@ public:
         ++(this->_index);
 
         if (this->_buf) {
-          // TODO Parse Ack Block
+          this->_current_block =
+            AckBlock(this->_buf + this->_ack_block_length + (1 + this->_ack_block_length) * this->_index, this->_ack_block_length);
         } else {
           if (this->_ack_blocks->size() == this->_index) {
             this->_current_block = {static_cast<uint8_t>(0), 0ULL};
@@ -148,6 +150,7 @@ public:
     private:
       uint8_t _index;
       const uint8_t *_buf;
+      uint8_t _ack_block_length;
       const std::vector<QUICAckFrame::AckBlock> *_ack_blocks = nullptr;
       QUICAckFrame::AckBlock _current_block                  = {static_cast<uint8_t>(0), 0ULL};
     };

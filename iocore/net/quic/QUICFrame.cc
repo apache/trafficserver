@@ -496,26 +496,26 @@ QUICAckFrame::AckBlockSection::AckBlockSection(uint64_t first_ack_block_length)
 
 QUICAckFrame::AckBlock::AckBlock(const uint8_t *buf, uint8_t ack_block_length)
 {
-  uint8_t gap     = buf[0];
-  uint64_t length = QUICTypeUtil::read_nbytes_as_uint(buf + 1, ack_block_length);
-  this->_data     = (static_cast<uint64_t>(gap) << 56) + length;
+  this->_gap    = buf[0];
+  this->_length = QUICTypeUtil::read_nbytes_as_uint(buf + 1, ack_block_length);
 }
 
 QUICAckFrame::AckBlock::AckBlock(uint8_t gap, uint64_t length)
 {
-  this->_data = (static_cast<uint64_t>(gap) << 56) + length;
+  this->_gap    = gap;
+  this->_length = length;
 }
 
 uint8_t
 QUICAckFrame::AckBlock::gap() const
 {
-  return this->_data >> 56;
+  return this->_gap;
 }
 
 uint64_t
 QUICAckFrame::AckBlock::length() const
 {
-  return this->_data & 0x0000FFFFFFFFFFFF;
+  return this->_length;
 }
 
 uint8_t
@@ -558,7 +558,11 @@ QUICAckFrame::AckBlockSection::store(uint8_t *buf, size_t *len) const
 uint64_t
 QUICAckFrame::AckBlockSection::first_ack_block_length() const
 {
-  return this->_first_ack_block_length;
+  if (this->_buf) {
+    return QUICTypeUtil::read_nbytes_as_uint(this->_buf, this->_ack_block_length);
+  } else {
+    return this->_first_ack_block_length;
+  }
 }
 
 void
@@ -590,9 +594,14 @@ QUICAckFrame::AckBlockSection::end() const
 QUICAckFrame::AckBlockSection::const_iterator::const_iterator(uint8_t index, const uint8_t *buf, uint8_t num_blocks,
                                                               uint8_t ack_block_length)
 {
-  this->_index         = index;
-  this->_buf           = buf;
-  this->_current_block = AckBlock(buf, ack_block_length);
+  this->_index            = index;
+  this->_buf              = buf;
+  this->_ack_block_length = ack_block_length;
+  if (index < num_blocks) {
+    this->_current_block = AckBlock(buf + ack_block_length + (1 + ack_block_length) * index, ack_block_length);
+  } else {
+    this->_current_block = {static_cast<uint8_t>(0), 0ULL};
+  }
 }
 
 QUICAckFrame::AckBlockSection::const_iterator::const_iterator(uint8_t index, const std::vector<QUICAckFrame::AckBlock> *ack_block)
