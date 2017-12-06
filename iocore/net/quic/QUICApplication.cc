@@ -71,10 +71,22 @@ QUICStreamIO::write(IOBufferReader *r, int64_t alen, int64_t offset)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());
 
-  int64_t bytes_add = this->_write_buffer->write(r, alen, offset);
-  this->_write_vio->nbytes += bytes_add;
+  if (this->_write_buffer->write_avail() > 0) {
+    int64_t bytes_add = this->_write_buffer->write(r, alen, offset);
 
-  return bytes_add;
+    return bytes_add;
+
+  } else {
+    Debug(tag, "write buffer is full");
+
+    return 0;
+  }
+}
+
+void
+QUICStreamIO::set_write_vio_nbytes(int64_t nbytes)
+{
+  this->_write_vio->nbytes += nbytes;
 }
 
 void
@@ -99,6 +111,12 @@ void
 QUICStreamIO::shutdown()
 {
   return this->_stream->shutdown();
+}
+
+uint32_t
+QUICStreamIO::get_transaction_id() const
+{
+  return this->_stream->id();
 }
 
 //

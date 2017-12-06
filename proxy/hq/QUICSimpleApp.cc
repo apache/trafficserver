@@ -76,7 +76,10 @@ QUICSimpleApp::main_event_handler(int event, Event *data)
   }
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE: {
-    // Nothing to do
+    HQClientTransaction *trans = this->_client_session->get_transaction(stream->id());
+
+    trans->handleEvent(event);
+
     break;
   }
   case VC_EVENT_EOS:

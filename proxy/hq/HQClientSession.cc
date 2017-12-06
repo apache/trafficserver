@@ -143,3 +143,15 @@ HQClientSession::add_transaction(HQClientTransaction *trans)
   this->_transaction_list.enqueue(trans);
   return;
 }
+
+// this->_transaction_list should be map?
+HQClientTransaction *
+HQClientSession::get_transaction(QUICStreamId id)
+{
+  for (HQClientTransaction *t = this->_transaction_list.head; t; t = static_cast<HQClientTransaction *>(t->link.next)) {
+    if (t->get_transaction_id() == static_cast<int>(id)) {
+      return t;
+    }
+  }
+  return nullptr;
+}

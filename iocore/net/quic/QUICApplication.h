@@ -43,16 +43,12 @@ public:
   int64_t read(uint8_t *buf, int64_t len);
   int64_t write(const uint8_t *buf, int64_t len);
   int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
+  void set_write_vio_nbytes(int64_t);
   void read_reenable();
   void write_reenable();
   IOBufferReader *get_read_buffer_reader();
   void shutdown();
-
-  int
-  get_transaction_id() const
-  {
-    return _stream->id();
-  }
+  uint32_t get_transaction_id() const;
 
 private:
   QUICStream *_stream = nullptr;

@@ -101,6 +101,10 @@ QUICStream::main_event_handler(int event, void *data)
     this->_signal_write_event(true);
     this->_write_event = nullptr;
 
+    QUICStreamDebug("wvio.nbytes=%" PRId64 " wvio.ndone=%" PRId64 " wvio.read_avail=%" PRId64 " wvio.write_avail=%" PRId64,
+                    this->_write_vio.nbytes, this->_write_vio.ndone, this->_write_vio.get_reader()->read_avail(),
+                    this->_write_vio.get_writer()->write_avail());
+
     break;
   }
   case VC_EVENT_EOS:
@@ -257,6 +261,11 @@ QUICStream::_signal_read_event(bool direct)
 void
 QUICStream::_signal_write_event(bool direct)
 {
+  if (this->_write_vio.get_writer()->write_avail() == 0) {
+    QUICStreamDebug("wvio.write_avail=0");
+    return;
+  }
+
   int event          = (this->_write_vio.ntodo() == 0) ? VC_EVENT_WRITE_COMPLETE : VC_EVENT_WRITE_READY;
   Continuation *cont = this->_write_vio._cont;
 
@@ -334,7 +343,11 @@ QUICStream::recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame)
   QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
                     this->_remote_flow_controller->current_limit());
 
-  this->reenable(&this->_write_vio);
+  // restart sending
+  QUICStreamDebug("restart sending");
+
+  this->_send();
+  this->_signal_write_event(false);
 
   return QUICErrorUPtr(new QUICNoError());
 }
@@ -348,6 +361,7 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame)
 
 /**
  * @brief Send STREAM DATA from _response_buffer
+ * @detail Call _signal_write_event() to indicate event upper layer
  */
 QUICErrorUPtr
 QUICStream::_send()

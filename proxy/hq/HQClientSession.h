@@ -54,6 +54,7 @@ public:
 
   // HQClientSession specific methods
   void add_transaction(HQClientTransaction *);
+  HQClientTransaction *get_transaction(QUICStreamId);
 
 private:
   NetVConnection *_client_vc = nullptr;

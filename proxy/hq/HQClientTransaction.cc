@@ -28,6 +28,10 @@
 #include "HQClientSession.h"
 #include "HttpSM.h"
 
+// XXX this->parent->connection_id() is Session ID of HQClientSession. Should this be QUIC Connection ID?
+#define HQTransDebug(fmt, ...) \
+  Debug("hq_trans", "[%" PRId64 "] [%" PRIx32 "] " fmt, this->parent->connection_id(), this->get_transaction_id(), ##__VA_ARGS__)
+
 static void
 dump_io_buffer(IOBufferReader *reader)
 {
@@ -110,6 +114,11 @@ HQClientTransaction::main_event_handler(int event, void *edata)
     if (this->_write_vio.get_reader()->read_avail()) {
       this->_write_response();
     }
+
+    HQTransDebug("wvio.nbytes=%" PRId64 " wvio.ndone=%" PRId64 " wvio.read_avail=%" PRId64 " wvio.write_avail=%" PRId64,
+                 this->_write_vio.nbytes, this->_write_vio.ndone, this->_write_vio.get_reader()->read_avail(),
+                 this->_write_vio.get_writer()->write_avail());
+
     break;
   }
   default:
@@ -241,6 +250,8 @@ static constexpr char http_1_1_version[] = "HTTP/1.1";
 void
 HQClientTransaction::_write_response()
 {
+  SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
+
   IOBufferReader *reader = this->_write_vio.get_reader();
 
   if (memcmp(reader->start(), http_1_1_version, sizeof(http_1_1_version) - 1) == 0) {
@@ -249,6 +260,8 @@ HQClientTransaction::_write_response()
     int64_t headers_size   = headers->read_avail();
     reader->consume(headers_size);
     this->_write_vio.ndone += headers_size;
+    // The size of respons to client
+    this->_stream_io->set_write_vio_nbytes(this->_write_vio.nbytes - headers_size);
   }
 
   // Write HTTP/1.1 response body
@@ -256,6 +269,9 @@ HQClientTransaction::_write_response()
   int64_t total_written = 0;
   while (total_written < bytes_avail) {
     int64_t bytes_written = this->_stream_io->write(reader, bytes_avail);
+    if (bytes_written == 0) {
+      break;
+    }
     reader->consume(bytes_written);
     this->_write_vio.ndone += bytes_written;
     total_written += bytes_written;
