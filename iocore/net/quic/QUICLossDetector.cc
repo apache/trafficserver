@@ -336,7 +336,11 @@ QUICLossDetector::_set_loss_detection_alarm()
     QUICLDDebug("RTO alarm will be set");
   }
 
-  this->_loss_detection_alarm_at = Thread::get_hrtime() + alarm_duration;
+  if (this->_loss_detection_alarm_at) {
+    this->_loss_detection_alarm_at = std::min(this->_loss_detection_alarm_at, Thread::get_hrtime() + alarm_duration);
+  } else {
+    this->_loss_detection_alarm_at = Thread::get_hrtime() + alarm_duration;
+  }
   QUICLDDebug("Loss detection alarm has been set to %" PRId64, alarm_duration);
 
   if (!this->_loss_detection_alarm) {
