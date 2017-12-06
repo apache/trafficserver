@@ -92,8 +92,8 @@ private:
   ink_hrtime _loss_time = 0;
   std::map<QUICPacketNumber, std::unique_ptr<PacketInfo>> _sent_packets;
 
-  uint32_t _handshake_outstanding       = 0;
-  uint32_t _retransmittable_outstanding = 0;
+  std::atomic<uint32_t> _handshake_outstanding;
+  std::atomic<uint32_t> _retransmittable_outstanding;
   void _decrement_packet_count(QUICPacketNumber packet_number);
 
   /*

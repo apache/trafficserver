@@ -40,6 +40,9 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter) : _transm
     this->_time_reordering_fraction = INFINITY;
   }
 
+  this->_handshake_outstanding       = 0;
+  this->_retransmittable_outstanding = 0;
+
   SET_HANDLER(&QUICLossDetector::event_handler);
 }
 
@@ -195,13 +198,26 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
     }
     this->_update_rtt(this->_latest_rtt);
   }
+
+  QUICLDDebug("Unacked packets %lu (handshake pkt %u, retransmittable %u, other %lu)", this->_sent_packets.size(),
+              this->_handshake_outstanding.load(), this->_retransmittable_outstanding.load(),
+              this->_sent_packets.size() - (this->_handshake_outstanding.load() + this->_retransmittable_outstanding.load()));
+
   // Find all newly acked packets.
   for (auto acked_packet_number : this->_determine_newly_acked_packets(*ack_frame)) {
     this->_on_packet_acked(acked_packet_number);
   }
 
+  QUICLDDebug("Unacked packets %lu (handshake pkt %u, retransmittable %u, other %lu)", this->_sent_packets.size(),
+              this->_handshake_outstanding.load(), this->_retransmittable_outstanding.load(),
+              this->_sent_packets.size() - (this->_handshake_outstanding.load() + this->_retransmittable_outstanding.load()));
+
   this->_detect_lost_packets(ack_frame->largest_acknowledged());
-  QUICLDDebug("Unacked handshake pkt %u, retransmittable pkt %u", this->_handshake_outstanding, this->_retransmittable_outstanding);
+
+  QUICLDDebug("Unacked packets %lu (handshake pkt %u, retransmittable %u, other %lu)", this->_sent_packets.size(),
+              this->_handshake_outstanding.load(), this->_retransmittable_outstanding.load(),
+              this->_sent_packets.size() - (this->_handshake_outstanding.load() + this->_retransmittable_outstanding.load()));
+
   this->_set_loss_detection_alarm();
 }
 
@@ -249,18 +265,19 @@ QUICLossDetector::_on_loss_detection_alarm()
     this->_detect_lost_packets(this->_largest_acked_packet);
   } else if (this->_tlp_count < this->_MAX_TLPS) {
     // Tail Loss Probe.
-    this->_send_one_packet();
+    // this->_send_one_packet();
     this->_tlp_count++;
   } else {
     // RTO.
     if (this->_rto_count == 0) {
       this->_largest_sent_before_rto = this->_largest_sent_packet;
     }
-    this->_send_two_packets();
+    // this->_send_two_packets();
     this->_rto_count++;
   }
-  QUICLDDebug("Unacked packets %lu (handshake pkt %u, retransmittable pkt %u)", this->_sent_packets.size(),
-              this->_handshake_outstanding.load(), this->_retransmittable_outstanding.load());
+  QUICLDDebug("Unacked packets %lu (handshake pkt %u, retransmittable %u, other %lu)", this->_sent_packets.size(),
+              this->_handshake_outstanding.load(), this->_retransmittable_outstanding.load(),
+              this->_sent_packets.size() - (this->_handshake_outstanding.load() + this->_retransmittable_outstanding.load()));
   this->_set_loss_detection_alarm();
 }
 
