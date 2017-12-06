@@ -199,24 +199,21 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
     this->_update_rtt(this->_latest_rtt);
   }
 
-  QUICLDDebug("Unacked packets %lu (handshake pkt %u, retransmittable %u, other %lu)", this->_sent_packets.size(),
-              this->_handshake_outstanding.load(), this->_retransmittable_outstanding.load(),
-              this->_sent_packets.size() - (this->_handshake_outstanding.load() + this->_retransmittable_outstanding.load()));
+  QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
+              this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
 
   // Find all newly acked packets.
   for (auto acked_packet_number : this->_determine_newly_acked_packets(*ack_frame)) {
     this->_on_packet_acked(acked_packet_number);
   }
 
-  QUICLDDebug("Unacked packets %lu (handshake pkt %u, retransmittable %u, other %lu)", this->_sent_packets.size(),
-              this->_handshake_outstanding.load(), this->_retransmittable_outstanding.load(),
-              this->_sent_packets.size() - (this->_handshake_outstanding.load() + this->_retransmittable_outstanding.load()));
+  QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
+              this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
 
   this->_detect_lost_packets(ack_frame->largest_acknowledged());
 
-  QUICLDDebug("Unacked packets %lu (handshake pkt %u, retransmittable %u, other %lu)", this->_sent_packets.size(),
-              this->_handshake_outstanding.load(), this->_retransmittable_outstanding.load(),
-              this->_sent_packets.size() - (this->_handshake_outstanding.load() + this->_retransmittable_outstanding.load()));
+  QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
+              this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
 
   this->_set_loss_detection_alarm();
 }
