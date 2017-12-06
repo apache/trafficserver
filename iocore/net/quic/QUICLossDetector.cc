@@ -189,8 +189,9 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
   auto pi = this->_sent_packets.find(ack_frame->largest_acknowledged());
   if (pi != this->_sent_packets.end()) {
     this->_latest_rtt = Thread::get_hrtime() - pi->second->time;
-    if (this->_latest_rtt > ack_frame->ack_delay()) {
-      this->_latest_rtt -= ack_frame->ack_delay();
+    // _latest_rtt is nanosecond but ack_frame->ack_delay is millisecond
+    if (this->_latest_rtt > HRTIME_MSECONDS(ack_frame->ack_delay())) {
+      this->_latest_rtt -= HRTIME_MSECONDS(ack_frame->ack_delay());
     }
     this->_update_rtt(this->_latest_rtt);
   }
@@ -248,22 +249,23 @@ QUICLossDetector::_on_loss_detection_alarm()
     this->_detect_lost_packets(this->_largest_acked_packet);
   } else if (this->_tlp_count < this->_MAX_TLPS) {
     // Tail Loss Probe.
-    // eventProcessor.schedule_imm(this->_handler, ET_CALL, QUIC_EVENT_RETRANSMIT_ONE_PACKET);
+    this->_send_one_packet();
     this->_tlp_count++;
   } else {
     // RTO.
     if (this->_rto_count == 0) {
       this->_largest_sent_before_rto = this->_largest_sent_packet;
     }
-    // eventProcessor.schedule_imm(this->_handler, ET_CALL, QUIC_EVENT_RETRANSMIT_TWO_PACKET);
+    this->_send_two_packets();
     this->_rto_count++;
   }
-  QUICLDDebug("Unacked handshake pkt %u, retransmittable pkt %u", this->_handshake_outstanding, this->_retransmittable_outstanding);
+  QUICLDDebug("Unacked packets %lu (handshake pkt %u, retransmittable pkt %u)", this->_sent_packets.size(),
+              this->_handshake_outstanding.load(), this->_retransmittable_outstanding.load());
   this->_set_loss_detection_alarm();
 }
 
 void
-QUICLossDetector::_update_rtt(uint32_t latest_rtt)
+QUICLossDetector::_update_rtt(ink_hrtime latest_rtt)
 {
   // Based on {{RFC6298}}.
   if (this->_smoothed_rtt == 0) {

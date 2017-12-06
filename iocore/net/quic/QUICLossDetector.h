@@ -86,7 +86,7 @@ private:
   uint32_t _time_of_last_sent_packet = 0;
   ink_hrtime _latest_rtt             = 0;
   ink_hrtime _smoothed_rtt           = 0;
-  uint32_t _rttvar                   = 0;
+  ink_hrtime _rttvar                 = 0;
   uint32_t _reordering_threshold;
   double _time_reordering_fraction;
   ink_hrtime _loss_time = 0;
@@ -106,7 +106,7 @@ private:
                        QUICPacketUPtr packet);
   void _on_ack_received(const std::shared_ptr<const QUICAckFrame> &ack_frame);
   void _on_packet_acked(QUICPacketNumber acked_packet_number);
-  void _update_rtt(uint32_t latest_rtt);
+  void _update_rtt(ink_hrtime latest_rtt);
   void _detect_lost_packets(QUICPacketNumber largest_acked);
   void _set_loss_detection_alarm();
   void _on_loss_detection_alarm();
