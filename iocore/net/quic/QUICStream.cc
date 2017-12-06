@@ -343,11 +343,13 @@ QUICStream::recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame)
   QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
                     this->_remote_flow_controller->current_limit());
 
-  // restart sending
-  QUICStreamDebug("restart sending");
+  if (this->_write_vio.op == VIO::WRITE) {
+    // restart sending
+    QUICStreamDebug("restart sending");
 
-  this->_send();
-  this->_signal_write_event(false);
+    this->_send();
+    this->_signal_write_event(false);
+  }
 
   return QUICErrorUPtr(new QUICNoError());
 }
