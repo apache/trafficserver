@@ -76,17 +76,17 @@ private:
   ink_hrtime _DEFAULT_INITIAL_RTT  = HRTIME_MSECONDS(100);
 
   // 3.2.2.  Variables of interest
-  Action *_loss_detection_alarm      = nullptr;
-  uint32_t _handshake_count          = 0;
-  uint32_t _tlp_count                = 0;
-  uint32_t _rto_count                = 0;
-  uint32_t _largest_sent_before_rto  = 0;
-  uint32_t _largest_sent_packet      = 0;
-  uint32_t _largest_acked_packet     = 0;
-  uint32_t _time_of_last_sent_packet = 0;
-  ink_hrtime _latest_rtt             = 0;
-  ink_hrtime _smoothed_rtt           = 0;
-  ink_hrtime _rttvar                 = 0;
+  Action *_loss_detection_alarm        = nullptr;
+  uint32_t _handshake_count            = 0;
+  uint32_t _tlp_count                  = 0;
+  uint32_t _rto_count                  = 0;
+  uint32_t _largest_sent_before_rto    = 0;
+  uint32_t _largest_sent_packet        = 0;
+  uint32_t _largest_acked_packet       = 0;
+  ink_hrtime _time_of_last_sent_packet = 0;
+  ink_hrtime _latest_rtt               = 0;
+  ink_hrtime _smoothed_rtt             = 0;
+  ink_hrtime _rttvar                   = 0;
   uint32_t _reordering_threshold;
   double _time_reordering_fraction;
   ink_hrtime _loss_time = 0;
