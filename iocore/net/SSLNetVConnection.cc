@@ -1096,16 +1096,16 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         if (retval < 0) {
           if (retval == -EAGAIN) {
             // No data at the moment, hang tight
-            SSLDebugVC(this, "SSL handshake: EAGAIN");
+            SSLVCDebug(this, "SSL handshake: EAGAIN");
             return SSL_HANDSHAKE_WANT_READ;
           } else {
             // An error, make us go away
-            SSLDebugVC(this, "SSL handshake error: read_retval=%d", retval);
+            SSLVCDebug(this, "SSL handshake error: read_retval=%d", retval);
             return EVENT_ERROR;
           }
         } else if (retval == 0) {
           // EOF, go away, we stopped in the handshake
-          SSLDebugVC(this, "SSL handshake error: EOF");
+          SSLVCDebug(this, "SSL handshake error: EOF");
           return EVENT_ERROR;
         }
       } else {
@@ -1119,12 +1119,12 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   if (ssl_error != SSL_ERROR_NONE) {
     err = errno;
-    SSLDebugVC(this, "SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
+    SSLVCDebug(this, "SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
 
     // start a blind tunnel if tr-pass is set and data does not look like ClientHello
     char *buf = handShakeBuffer ? handShakeBuffer->buf() : nullptr;
     if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
-      SSLDebugVC(this, "Data does not look like SSL handshake, starting blind tunnel");
+      SSLVCDebug(this, "Data does not look like SSL handshake, starting blind tunnel");
       this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       sslHandShakeComplete = false;
       return EVENT_CONT;

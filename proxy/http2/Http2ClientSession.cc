@@ -27,11 +27,11 @@
 
 #define STATE_ENTER(state_name, event)                                                       \
   do {                                                                                       \
-    DebugSsn(this, "http2_cs", "[%" PRId64 "] [%s, %s]", this->connection_id(), #state_name, \
+    SsnDebug(this, "http2_cs", "[%" PRId64 "] [%s, %s]", this->connection_id(), #state_name, \
              HttpDebugNames::get_event_name(event));                                         \
   } while (0)
 
-#define DebugHttp2Ssn(fmt, ...) DebugSsn(this, "http2_cs", "[%" PRId64 "] " fmt, this->connection_id(), ##__VA_ARGS__)
+#define Http2SsnDebug(fmt, ...) SsnDebug(this, "http2_cs", "[%" PRId64 "] " fmt, this->connection_id(), ##__VA_ARGS__)
 
 #define HTTP2_SET_SESSION_HANDLER(handler) \
   do {                                     \
@@ -67,7 +67,7 @@ Http2ClientSession::destroy()
 {
   if (!in_destroy) {
     in_destroy = true;
-    DebugHttp2Ssn("session destroy");
+    Http2SsnDebug("session destroy");
     // Let everyone know we are going down
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
   }
@@ -94,7 +94,7 @@ Http2ClientSession::free()
     return;
   }
 
-  DebugHttp2Ssn("session free");
+  Http2SsnDebug("session free");
 
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
 
@@ -177,7 +177,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   this->connection_state.mutex = new_ProxyMutex();
 
-  DebugHttp2Ssn("session born, netvc %p", this->client_vc);
+  Http2SsnDebug("session born, netvc %p", this->client_vc);
 
   this->client_vc->set_tcp_congestion_control(CLIENT_SIDE);
 
@@ -257,7 +257,7 @@ Http2ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http2ClientSession::do_io_close(int alerrno)
 {
-  DebugHttp2Ssn("session closed");
+  Http2SsnDebug("session closed");
 
   ink_assert(this->mutex->thread_holding == this_ethread());
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
@@ -289,7 +289,7 @@ void
 Http2ClientSession::set_half_close_local_flag(bool flag)
 {
   if (!half_close_local && flag) {
-    DebugHttp2Ssn("session half-close local");
+    Http2SsnDebug("session half-close local");
   }
   half_close_local = flag;
 }
@@ -345,7 +345,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     break;
 
   default:
-    DebugHttp2Ssn("unexpected event=%d edata=%p", event, edata);
+    Http2SsnDebug("unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
     retval = 0;
     break;
@@ -373,12 +373,12 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
     ink_release_assert(nbytes == HTTP2_CONNECTION_PREFACE_LEN);
 
     if (memcmp(HTTP2_CONNECTION_PREFACE, buf, nbytes) != 0) {
-      DebugHttp2Ssn("invalid connection preface");
+      Http2SsnDebug("invalid connection preface");
       this->do_io_close();
       return 0;
     }
 
-    DebugHttp2Ssn("received connection preface");
+    Http2SsnDebug("received connection preface");
     this->sm_reader->consume(nbytes);
     HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
 
@@ -421,16 +421,16 @@ Http2ClientSession::do_start_frame_read(Http2ErrorCode &ret_error)
   uint8_t buf[HTTP2_FRAME_HEADER_LEN];
   unsigned nbytes;
 
-  DebugHttp2Ssn("receiving frame header");
+  Http2SsnDebug("receiving frame header");
   nbytes = copy_from_buffer_reader(buf, this->sm_reader, sizeof(buf));
 
   if (!http2_parse_frame_header(make_iovec(buf), this->current_hdr)) {
-    DebugHttp2Ssn("frame header parse failure");
+    Http2SsnDebug("frame header parse failure");
     this->do_io_close();
     return -1;
   }
 
-  DebugHttp2Ssn("frame header length=%u, type=%u, flags=0x%x, streamid=%u", (unsigned)this->current_hdr.length,
+  Http2SsnDebug("frame header length=%u, type=%u, flags=0x%x, streamid=%u", (unsigned)this->current_hdr.length,
                 (unsigned)this->current_hdr.type, (unsigned)this->current_hdr.flags, this->current_hdr.streamid);
 
   this->sm_reader->consume(nbytes);
@@ -467,7 +467,7 @@ Http2ClientSession::state_complete_frame_read(int event, void *edata)
     vio->reenable();
     return 0;
   }
-  DebugHttp2Ssn("completed frame read, %" PRId64 " bytes available", this->sm_reader->read_avail());
+  Http2SsnDebug("completed frame read, %" PRId64 " bytes available", this->sm_reader->read_avail());
 
   return state_process_frame_read(event, vio, true);
 }
