@@ -27,11 +27,11 @@
 #include "Http2Stream.h"
 #include "Http2DebugNames.h"
 
-#define DebugHttp2Con(ua_session, fmt, ...) \
-  DebugSsn(ua_session, "http2_con", "[%" PRId64 "] " fmt, ua_session->connection_id(), ##__VA_ARGS__);
+#define Http2ConDebug(ua_session, fmt, ...) \
+  SsnDebug(ua_session, "http2_con", "[%" PRId64 "] " fmt, ua_session->connection_id(), ##__VA_ARGS__);
 
 #define Http2StreamDebug(ua_session, stream_id, fmt, ...) \
-  DebugSsn(ua_session, "http2_con", "[%" PRId64 "] [%u] " fmt, ua_session->connection_id(), stream_id, ##__VA_ARGS__);
+  SsnDebug(ua_session, "http2_con", "[%" PRId64 "] [%u] " fmt, ua_session->connection_id(), stream_id, ##__VA_ARGS__);
 
 using http2_frame_dispatch = Http2Error (*)(Http2ConnectionState &, const Http2Frame &);
 
@@ -951,7 +951,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   } break;
 
   default:
-    DebugHttp2Con(ua_session, "unexpected event=%d edata=%p", event, edata);
+    Http2ConDebug(ua_session, "unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
     break;
   }
@@ -1671,7 +1671,7 @@ Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint
 void
 Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 {
-  DebugHttp2Con(ua_session, "Send GOAWAY frame, last_stream_id: %d", id);
+  Http2ConDebug(ua_session, "Send GOAWAY frame, last_stream_id: %d", id);
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CONNECTION_ERRORS_COUNT, this_ethread());
@@ -1723,7 +1723,7 @@ Http2ConnectionState::_adjust_concurrent_stream()
   int64_t current_client_streams = 0;
   RecGetRawStatSum(http2_rsb, HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, &current_client_streams);
 
-  DebugHttp2Con(ua_session, "current client streams: %" PRId64, current_client_streams);
+  Http2ConDebug(ua_session, "current client streams: %" PRId64, current_client_streams);
 
   if (current_client_streams >= Http2::max_active_streams_in) {
     if (!Http2::throttling) {

@@ -339,7 +339,7 @@ extern inkcoreapi Diags *diags;
     }                                                                                                     \
   } while (0)
 
-#define DebugSpecific(flag, tag, ...)                                                                       \
+#define SpecificDebug(flag, tag, ...)                                                                       \
   do {                                                                                                      \
     if (unlikely(diags->on())) {                                                                            \
       const SourceLocation loc = MakeSourceLocation();                                                      \
@@ -358,7 +358,7 @@ extern inkcoreapi Diags *diags;
 #define Diag(tag, fmt, ...)
 #define Debug(tag, fmt, ...)
 #define DiagSpecific(flag, tag, ...)
-#define DebugSpecific(flag, tag, ...)
+#define SpecificDebug(flag, tag, ...)
 
 #define is_debug_tag_set(_t) 0
 #define is_action_tag_set(_t) 0
