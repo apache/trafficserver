@@ -458,6 +458,10 @@ TransformVConnection::do_io_close(int error)
 {
   Debug("transform", "TransformVConnection do_io_close: %d [0x%lx]", error, (long)this);
 
+  if (m_closed != 0) {
+    return;
+  }
+
   if (error != -1) {
     m_closed = TS_VC_CLOSE_ABORT;
   } else {
@@ -465,6 +469,7 @@ TransformVConnection::do_io_close(int error)
   }
 
   m_transform->do_io_close(error);
+  m_transform = nullptr;
 }
 
 /*-------------------------------------------------------------------------

@@ -1177,6 +1177,7 @@ INKVConnInternal::do_io_close(int error)
 
   if (m_output_vc) {
     m_output_vc->do_io_close(error);
+    m_output_vc = nullptr;
   }
 
   eventProcessor.schedule_imm(this, ET_NET);
