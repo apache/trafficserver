@@ -31,91 +31,103 @@
 
 static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 
-//
-// QUICTransportParameterValue
-//
-QUICTransportParameterValue::QUICTransportParameterValue(ats_unique_buf d, uint16_t l) : _data(std::move(d)), _len(l){};
-
-QUICTransportParameterValue::QUICTransportParameterValue(const uint8_t *raw_data, uint16_t l)
+QUICTransportParameters::Value::Value(const uint8_t *data, uint16_t len) : _len(len)
 {
-  this->_data = ats_unique_malloc(l);
-  this->_len  = l;
-  memcpy(this->_data.get(), raw_data, l);
+  this->_data = static_cast<uint8_t *>(ats_malloc(len));
+  memcpy(this->_data, data, len);
 }
 
-QUICTransportParameterValue::QUICTransportParameterValue(uint64_t raw_data, uint16_t l)
+QUICTransportParameters::Value::~Value()
 {
-  this->_data = ats_unique_malloc(l);
-  size_t len  = 0;
-  QUICTypeUtil::write_uint_as_nbytes(raw_data, l, this->_data.get(), &len);
-  this->_len = len;
-};
+  ats_free(this->_data);
+  this->_data = nullptr;
+}
 
-QUICTransportParameterValue::QUICTransportParameterValue(const uint64_t raw_data[2], uint16_t l)
+bool
+QUICTransportParameters::is_valid() const
 {
-  this->_data = ats_unique_malloc(l);
-  size_t len  = 0;
-  if (l > 8) {
-    QUICTypeUtil::write_uint_as_nbytes(raw_data[0], 8, this->_data.get(), &len);
-    this->_len += len;
-    QUICTypeUtil::write_uint_as_nbytes(raw_data[1], l - 8, this->_data.get() + 8, &len);
-    this->_len += len;
-  } else {
-    QUICTypeUtil::write_uint_as_nbytes(raw_data[0], l, this->_data.get(), &len);
-    this->_len += len;
-  }
+  return this->_valid;
 }
 
 const uint8_t *
-QUICTransportParameterValue::data() const
+QUICTransportParameters::Value::data() const
 {
-  return this->_data.get();
+  return this->_data;
 }
 
 uint16_t
-QUICTransportParameterValue::len() const
+QUICTransportParameters::Value::len() const
 {
   return this->_len;
 }
 
-//
-// QUICTransportParameters
-//
-
-QUICTransportParameters::QUICTransportParameters(const uint8_t *buf, size_t len)
+QUICTransportParameters::~QUICTransportParameters()
 {
-  this->_buf = ats_unique_malloc(len);
-  memcpy(this->_buf.get(), buf, len);
+  for (auto p : this->_parameters) {
+    delete p.second;
+  }
+}
+
+void
+QUICTransportParameters::_load(const uint8_t *buf, size_t len)
+{
+  bool has_error   = false;
+  const uint8_t *p = buf + this->_parameters_offset(buf);
+
+  // Read size of parameters field
+  uint16_t nbytes = (p[0] << 8) + p[1];
+  p += 2;
+
+  // Read parameters
+  const uint8_t *end = p + nbytes;
+  while (p < end) {
+    // Read ID
+    uint16_t id = 0;
+    if (end - p >= 2) {
+      id = (p[0] << 8) + p[1];
+      p += 2;
+    } else {
+      has_error = true;
+      break;
+    }
+
+    // Check duplication
+    // An endpoint MUST treat receipt of duplicate transport parameters as a connection error of type TRANSPORT_PARAMETER_ERROR
+    if (this->_parameters.find(id) != this->_parameters.end()) {
+      has_error = true;
+      break;
+    }
+
+    // Read length of value
+    uint16_t len = 0;
+    if (end - p >= 2) {
+      len = (p[0] << 8) + p[1];
+      p += 2;
+    } else {
+      has_error = true;
+      break;
+    }
+
+    // Store parameter
+    if (end - p >= len) {
+      this->_parameters.insert(std::make_pair(id, new Value(p, len)));
+      p += len;
+    } else {
+      has_error = true;
+      break;
+    }
+  }
+
+  this->_valid = !has_error;
 }
 
 const uint8_t *
-QUICTransportParameters::get(QUICTransportParameterId tpid, uint16_t &len) const
+QUICTransportParameters::getAsBytes(QUICTransportParameterId tpid, uint16_t &len) const
 {
-  if (this->_buf) {
-    const uint8_t *p = this->_buf.get() + this->_parameters_offset();
-
-    uint16_t n = (p[0] << 8) + p[1];
-    p += 2;
-    while (n > 0) {
-      uint16_t _id = (p[0] << 8) + p[1];
-      p += 2;
-      n -= 2;
-      uint16_t _value_len = (p[0] << 8) + p[1];
-      p += 2;
-      n -= 2;
-      if (tpid == _id) {
-        len = _value_len;
-        return p;
-      }
-      p += _value_len;
-      n -= _value_len;
-    }
-  } else {
-    auto p = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
-    if (p != this->_parameters.end()) {
-      len = p->second->len();
-      return p->second->data();
-    }
+  auto p = this->_parameters.find(tpid);
+  if (p != this->_parameters.end()) {
+    len = p->second->len();
+    return p->second->data();
   }
 
   len = 0;
@@ -123,27 +135,42 @@ QUICTransportParameters::get(QUICTransportParameterId tpid, uint16_t &len) const
 }
 
 uint32_t
-QUICTransportParameters::initial_max_stream_data() const
+QUICTransportParameters::getAsUInt32(QUICTransportParameterId tpid) const
 {
-  uint16_t len        = 0;
-  const uint8_t *data = this->get(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, len);
-
-  return static_cast<uint32_t>(QUICTypeUtil::read_nbytes_as_uint(data, len));
-}
-
-uint32_t
-QUICTransportParameters::initial_max_data() const
-{
-  uint16_t len        = 0;
-  const uint8_t *data = this->get(QUICTransportParameterId::INITIAL_MAX_DATA, len);
-
-  return static_cast<uint32_t>(QUICTypeUtil::read_nbytes_as_uint(data, len));
+  uint16_t len         = 0;
+  const uint8_t *value = this->getAsBytes(tpid, len);
+  if (value) {
+    return QUICTypeUtil::read_nbytes_as_uint(value, 4);
+  } else {
+    return 0;
+  }
 }
 
 void
-QUICTransportParameters::add(QUICTransportParameterId id, std::unique_ptr<QUICTransportParameterValue> value)
+QUICTransportParameters::set(QUICTransportParameterId id, const uint8_t *value, uint16_t value_len)
 {
-  this->_parameters.insert(std::pair<QUICTransportParameterId, std::unique_ptr<QUICTransportParameterValue>>(id, std::move(value)));
+  if (this->_parameters.find(id) != this->_parameters.end()) {
+    this->_parameters.erase(id);
+  }
+  this->_parameters.insert(std::make_pair(id, new Value(value, value_len)));
+}
+
+void
+QUICTransportParameters::set(QUICTransportParameterId id, uint16_t value)
+{
+  uint8_t v[2];
+  size_t n;
+  QUICTypeUtil::write_uint_as_nbytes(value, 2, v, &n);
+  this->set(id, v, 2);
+}
+
+void
+QUICTransportParameters::set(QUICTransportParameterId id, uint32_t value)
+{
+  uint8_t v[4];
+  size_t n;
+  QUICTypeUtil::write_uint_as_nbytes(value, 4, v, &n);
+  this->set(id, v, 4);
 }
 
 void
@@ -164,12 +191,11 @@ QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
     p[0] = (it.first & 0xff00) >> 8;
     p[1] = it.first & 0xff;
     p += 2;
-    const QUICTransportParameterValue *value = it.second.get();
-    p[0]                                     = (value->len() & 0xff00) >> 8;
-    p[1]                                     = value->len() & 0xff;
+    p[0] = (it.second->len() & 0xff00) >> 8;
+    p[1] = it.second->len() & 0xff;
     p += 2;
-    memcpy(p, value->data(), value->len());
-    p += value->len();
+    memcpy(p, it.second->data(), it.second->len());
+    p += it.second->len();
   }
 
   ptrdiff_t n = p - parameters_size - sizeof(uint16_t);
@@ -185,29 +211,22 @@ QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
 //
 
 QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const uint8_t *buf, size_t len)
-  : QUICTransportParameters(buf, len)
 {
+  this->_load(buf, len);
+  this->_negotiated_version = QUICTypeUtil::read_QUICVersion(buf);
+  this->_initial_version    = QUICTypeUtil::read_QUICVersion(buf + sizeof(QUICVersion));
+
   // Print all parameters
-  const uint8_t *p = this->_buf.get() + this->_parameters_offset();
-  uint16_t n       = (p[0] << 8) + p[1];
-  p += 2;
-  while (n > 0) {
-    uint16_t _id = (p[0] << 8) + p[1];
-    p += 2;
-    n -= 2;
-    uint16_t _value_len = (p[0] << 8) + p[1];
-    p += 2;
-    n -= 2;
-    if (_value_len == 0) {
-      Debug("quic_handsahke", "%s: (no value)", QUICDebugNames::transport_parameter_id(_id));
-    } else if (_value_len <= 8) {
-      Debug("quic_handsahke", "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(_id),
-            QUICTypeUtil::read_nbytes_as_uint(p, _value_len), QUICTypeUtil::read_nbytes_as_uint(p, _value_len));
+  for (auto &p : this->_parameters) {
+    if (p.second->len() == 0) {
+      Debug("quic_handsahke", "%s: (no value)", QUICDebugNames::transport_parameter_id(p.first));
+    } else if (p.second->len() <= 8) {
+      Debug("quic_handsahke", "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first),
+            QUICTypeUtil::read_nbytes_as_uint(p.second->data(), p.second->len()),
+            QUICTypeUtil::read_nbytes_as_uint(p.second->data(), p.second->len()));
     } else {
-      Debug("quic_handsahke", "%s: (long data)", QUICDebugNames::transport_parameter_id(_id));
+      Debug("quic_handsahke", "%s: (long data)", QUICDebugNames::transport_parameter_id(p.first));
     }
-    p += _value_len;
-    n -= _value_len;
   }
 }
 
@@ -224,7 +243,7 @@ QUICTransportParametersInClientHello::_store(uint8_t *buf, uint16_t *len) const
 }
 
 std::ptrdiff_t
-QUICTransportParametersInClientHello::_parameters_offset() const
+QUICTransportParametersInClientHello::_parameters_offset(const uint8_t *) const
 {
   return 8; // sizeof(QUICVersion) + sizeof(QUICVersion)
 }
@@ -232,26 +251,23 @@ QUICTransportParametersInClientHello::_parameters_offset() const
 QUICVersion
 QUICTransportParametersInClientHello::negotiated_version() const
 {
-  if (this->_buf) {
-    return QUICTypeUtil::read_QUICVersion(this->_buf.get());
-  } else {
-    return this->_negotiated_version;
-  }
+  return this->_negotiated_version;
 }
 
 QUICVersion
 QUICTransportParametersInClientHello::initial_version() const
 {
-  if (this->_buf) {
-    return QUICTypeUtil::read_QUICVersion(this->_buf.get() + sizeof(QUICVersion));
-  } else {
-    return this->_initial_version;
-  }
+  return this->_initial_version;
 }
 
 //
 // QUICTransportParametersInEncryptedExtensions
 //
+
+QUICTransportParametersInEncryptedExtensions::QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len)
+{
+  this->_load(buf, len);
+}
 
 void
 QUICTransportParametersInEncryptedExtensions::_store(uint8_t *buf, uint16_t *len) const
@@ -268,14 +284,6 @@ QUICTransportParametersInEncryptedExtensions::_store(uint8_t *buf, uint16_t *len
   *len = p - buf;
 }
 
-const uint8_t *
-QUICTransportParametersInEncryptedExtensions::supported_versions_len(uint16_t *n) const
-{
-  uint8_t *b = this->_buf.get();
-  *n         = b[0];
-  return b + 1;
-}
-
 void
 QUICTransportParametersInEncryptedExtensions::add_version(QUICVersion version)
 {
@@ -283,10 +291,9 @@ QUICTransportParametersInEncryptedExtensions::add_version(QUICVersion version)
 }
 
 std::ptrdiff_t
-QUICTransportParametersInEncryptedExtensions::_parameters_offset() const
+QUICTransportParametersInEncryptedExtensions::_parameters_offset(const uint8_t *buf) const
 {
-  const uint8_t *b = this->_buf.get();
-  return sizeof(uint8_t) + b[0];
+  return 1 + buf[0];
 }
 
 //

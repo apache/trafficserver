@@ -24,7 +24,7 @@
 #pragma once
 
 #include <map>
-// #include "ts/Map.h"
+#include <ts/ink_memory.h>
 
 #include <openssl/ssl.h>
 #include "QUICTypes.h"
@@ -64,39 +64,45 @@ private:
   uint16_t _id = 0;
 };
 
-class QUICTransportParameterValue
-{
-public:
-  QUICTransportParameterValue(ats_unique_buf d, uint16_t l);
-  QUICTransportParameterValue(const uint8_t *raw_data, uint16_t l);
-  QUICTransportParameterValue(uint64_t raw_data, uint16_t l);
-  QUICTransportParameterValue(const uint64_t raw_data[2], uint16_t l);
-
-  const uint8_t *data() const;
-  uint16_t len() const;
-
-private:
-  ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
-  uint16_t _len        = 0;
-};
-
 class QUICTransportParameters
 {
 public:
   QUICTransportParameters(const uint8_t *buf, size_t len);
-  const uint8_t *get(QUICTransportParameterId id, uint16_t &len) const;
-  uint32_t initial_max_stream_data() const;
-  uint32_t initial_max_data() const;
-  void add(QUICTransportParameterId id, std::unique_ptr<QUICTransportParameterValue> value);
+  ~QUICTransportParameters();
+
+  bool is_valid() const;
+
+  const uint8_t *getAsBytes(QUICTransportParameterId id, uint16_t &len) const;
+  uint32_t getAsUInt32(QUICTransportParameterId id) const;
+
+  void set(QUICTransportParameterId id, const uint8_t *value, uint16_t value_len);
+  void set(QUICTransportParameterId id, uint16_t value);
+  void set(QUICTransportParameterId id, uint32_t value);
+
   void store(uint8_t *buf, uint16_t *len) const;
 
 protected:
-  QUICTransportParameters(){};
-  virtual std::ptrdiff_t _parameters_offset() const = 0;
-  virtual void _store(uint8_t *buf, uint16_t *len) const = 0;
-  ats_unique_buf _buf = {nullptr, [](void *p) { ats_free(p); }};
+  class Value
+  {
+  public:
+    Value(const uint8_t *data, uint16_t len);
+    ~Value();
+    const uint8_t *data() const;
+    uint16_t len() const;
 
-  std::map<QUICTransportParameterId, std::unique_ptr<QUICTransportParameterValue>> _parameters;
+  private:
+    uint8_t *_data = nullptr;
+    uint16_t _len  = 0;
+  };
+
+  QUICTransportParameters(){};
+  void _load(const uint8_t *buf, size_t len);
+  bool _valid = false;
+
+  virtual std::ptrdiff_t _parameters_offset(const uint8_t *buf) const = 0;
+  virtual void _store(uint8_t *buf, uint16_t *len) const = 0;
+
+  std::map<QUICTransportParameterId, Value *> _parameters;
 };
 
 class QUICTransportParametersInClientHello : public QUICTransportParameters
@@ -109,7 +115,7 @@ public:
   QUICVersion initial_version() const;
 
 protected:
-  std::ptrdiff_t _parameters_offset() const override;
+  std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
   void _store(uint8_t *buf, uint16_t *len) const override;
 
 private:
@@ -121,12 +127,11 @@ class QUICTransportParametersInEncryptedExtensions : public QUICTransportParamet
 {
 public:
   QUICTransportParametersInEncryptedExtensions() : QUICTransportParameters(){};
-  QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len) : QUICTransportParameters(buf, len){};
-  const uint8_t *supported_versions_len(uint16_t *n) const;
+  QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len);
   void add_version(QUICVersion version);
 
 protected:
-  std::ptrdiff_t _parameters_offset() const override;
+  std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
   void _store(uint8_t *buf, uint16_t *len) const override;
 
   uint8_t _n_versions        = 0;

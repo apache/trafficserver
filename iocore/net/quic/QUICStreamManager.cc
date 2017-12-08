@@ -57,23 +57,19 @@ QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTran
     uint32_t local_initial_max_stream_data  = 0;
     uint32_t remote_initial_max_stream_data = 0;
     if (this->_local_tp) {
-      local_initial_max_stream_data = local_tp->initial_max_stream_data();
+      local_initial_max_stream_data = local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
     }
     if (this->_remote_tp) {
-      remote_initial_max_stream_data = remote_tp->initial_max_stream_data();
+      remote_initial_max_stream_data = remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
     }
     stream->init_flow_control_params(local_initial_max_stream_data, remote_initial_max_stream_data);
   }
 
-  uint16_t len;
-  const uint8_t *tp_value;
   if (this->_local_tp) {
-    tp_value                       = this->_local_tp->get(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, len);
-    this->_local_maximum_stream_id = QUICTypeUtil::read_QUICStreamId(tp_value, len);
+    this->_local_maximum_stream_id = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_ID);
   }
   if (this->_remote_tp) {
-    tp_value                        = this->_remote_tp->get(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, len);
-    this->_remote_maximum_stream_id = QUICTypeUtil::read_QUICStreamId(tp_value, len);
+    this->_remote_maximum_stream_id = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_ID);
   }
 }
 
@@ -208,14 +204,13 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
     stream = new (THREAD_ALLOC(quicStreamAllocator, this_ethread())) QUICStream();
     if (stream_id == STREAM_ID_FOR_HANDSHAKE) {
       // XXX rece/send max_stream_data are going to be set by init_flow_control_params()
-      stream->init(this->_tx, this->_connection_id, stream_id, this->_local_tp->initial_max_stream_data());
+      stream->init(this->_tx, this->_connection_id, stream_id,
+                   this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA));
     } else {
-      const QUICTransportParameters &local_tp  = *this->_local_tp;
-      const QUICTransportParameters &remote_tp = *this->_remote_tp;
-
       // TODO: check local_tp and remote_tp is initialized
-      stream->init(this->_tx, this->_connection_id, stream_id, local_tp.initial_max_stream_data(),
-                   remote_tp.initial_max_stream_data());
+      stream->init(this->_tx, this->_connection_id, stream_id,
+                   this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA),
+                   this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA));
     }
 
     stream->start();

@@ -284,22 +284,11 @@ QUICHandshake::_load_local_transport_parameters()
   // MUSTs
   QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions();
 
-  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
-          std::unique_ptr<QUICTransportParameterValue>(
-            new QUICTransportParameterValue(params->initial_max_stream_data(), sizeof(params->initial_max_stream_data()))));
-
-  tp->add(QUICTransportParameterId::INITIAL_MAX_DATA, std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(
-                                                        params->initial_max_data(), sizeof(params->initial_max_data()))));
-
-  tp->add(QUICTransportParameterId::INITIAL_MAX_STREAM_ID,
-          std::unique_ptr<QUICTransportParameterValue>(
-            new QUICTransportParameterValue(params->initial_max_stream_id(), sizeof(params->initial_max_stream_id()))));
-
-  tp->add(QUICTransportParameterId::IDLE_TIMEOUT, std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(
-                                                    params->no_activity_timeout_in(), sizeof(uint16_t))));
-
-  tp->add(QUICTransportParameterId::STATELESS_RETRY_TOKEN,
-          std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(this->_token.buf(), 16)));
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, params->initial_max_stream_id());
+  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
+  tp->set(QUICTransportParameterId::STATELESS_RETRY_TOKEN, this->_token.buf(), 16);
 
   tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
   // MAYs

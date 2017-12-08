@@ -27,50 +27,72 @@
 
 TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
 {
-  uint8_t buf[] = {
-    0x01, 0x02, 0x03, 0x04, // negotiated version
-    0x05, 0x06, 0x07, 0x08, // iinitial version
-    0x00, 0x1e,             // size of parameters
-    0x00, 0x00,             // parameter id
-    0x00, 0x04,             // length of value
-    0x11, 0x22, 0x33, 0x44, // value
-    0x00, 0x01,             // parameter id
-    0x00, 0x04,             // length of value
-    0x12, 0x34, 0x56, 0x78, // value
-    0x00, 0x02,             // parameter id
-    0x00, 0x04,             // length of value
-    0x0a, 0x0b, 0x0c, 0x0d, // value
-    0x00, 0x03,             // parameter id
-    0x00, 0x02,             // length of value
-    0xab, 0xcd,             // value
-  };
+  SECTION("OK")
+  {
+    uint8_t buf[] = {
+      0x01, 0x02, 0x03, 0x04, // negotiated version
+      0x05, 0x06, 0x07, 0x08, // iinitial version
+      0x00, 0x1e,             // size of parameters
+      0x00, 0x00,             // parameter id
+      0x00, 0x04,             // length of value
+      0x11, 0x22, 0x33, 0x44, // value
+      0x00, 0x01,             // parameter id
+      0x00, 0x04,             // length of value
+      0x12, 0x34, 0x56, 0x78, // value
+      0x00, 0x02,             // parameter id
+      0x00, 0x04,             // length of value
+      0x0a, 0x0b, 0x0c, 0x0d, // value
+      0x00, 0x03,             // parameter id
+      0x00, 0x02,             // length of value
+      0xab, 0xcd,             // value
+    };
 
-  QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
-  CHECK(params_in_ch.negotiated_version() == 0x01020304);
-  CHECK(params_in_ch.initial_version() == 0x05060708);
+    QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
+    CHECK(params_in_ch.is_valid());
+    CHECK(params_in_ch.negotiated_version() == 0x01020304);
+    CHECK(params_in_ch.initial_version() == 0x05060708);
 
-  uint16_t len        = 0;
-  const uint8_t *data = nullptr;
+    uint16_t len        = 0;
+    const uint8_t *data = nullptr;
 
-  data = params_in_ch.get(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, len);
-  CHECK(len == 4);
-  CHECK(memcmp(data, "\x11\x22\x33\x44", 4) == 0);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, len);
+    CHECK(len == 4);
+    CHECK(memcmp(data, "\x11\x22\x33\x44", 4) == 0);
 
-  data = params_in_ch.get(QUICTransportParameterId::INITIAL_MAX_DATA, len);
-  CHECK(len == 4);
-  CHECK(memcmp(data, "\x12\x34\x56\x78", 4) == 0);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::INITIAL_MAX_DATA, len);
+    CHECK(len == 4);
+    CHECK(memcmp(data, "\x12\x34\x56\x78", 4) == 0);
 
-  data = params_in_ch.get(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, len);
-  CHECK(len == 4);
-  CHECK(memcmp(data, "\x0a\x0b\x0c\x0d", 4) == 0);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, len);
+    CHECK(len == 4);
+    CHECK(memcmp(data, "\x0a\x0b\x0c\x0d", 4) == 0);
 
-  data = params_in_ch.get(QUICTransportParameterId::IDLE_TIMEOUT, len);
-  CHECK(len == 2);
-  CHECK(memcmp(data, "\xab\xcd", 2) == 0);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
+    CHECK(len == 2);
+    CHECK(memcmp(data, "\xab\xcd", 2) == 0);
 
-  data = params_in_ch.get(QUICTransportParameterId::MAX_PACKET_SIZE, len);
-  CHECK(len == 0);
-  CHECK(data == nullptr);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::MAX_PACKET_SIZE, len);
+    CHECK(len == 0);
+    CHECK(data == nullptr);
+  }
+
+  SECTION("Duplicate parameters")
+  {
+    uint8_t buf[] = {
+      0x01, 0x02, 0x03, 0x04, // negotiated version
+      0x05, 0x06, 0x07, 0x08, // iinitial version
+      0x00, 0x10,             // size of parameters
+      0x00, 0x00,             // parameter id
+      0x00, 0x04,             // length of value
+      0x11, 0x22, 0x33, 0x44, // value
+      0x00, 0x00,             // parameter id
+      0x00, 0x04,             // length of value
+      0x12, 0x34, 0x56, 0x78, // value
+    };
+
+    QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
+    CHECK(!params_in_ch.is_valid());
+  }
 }
 
 TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
@@ -97,18 +119,14 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   QUICTransportParametersInClientHello params_in_ch(0x01020304, 0x05060708);
 
   uint32_t max_stream_data = 0x11223344;
-  params_in_ch.add(
-    QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
-    std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(max_stream_data, sizeof(max_stream_data))));
+  params_in_ch.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, max_stream_data);
 
   uint16_t max_packet_size = 0xabcd;
-  params_in_ch.add(
-    QUICTransportParameterId::MAX_PACKET_SIZE,
-    std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(max_packet_size, sizeof(max_packet_size))));
+  params_in_ch.set(QUICTransportParameterId::MAX_PACKET_SIZE, max_packet_size);
 
-  uint64_t stateless_retry_token[2] = {0x0011223344556677, 0x0011223344556677};
-  params_in_ch.add(QUICTransportParameterId::STATELESS_RETRY_TOKEN,
-                   std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(stateless_retry_token, 16)));
+  uint8_t stateless_retry_token[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                                       0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77};
+  params_in_ch.set(QUICTransportParameterId::STATELESS_RETRY_TOKEN, stateless_retry_token, 16);
 
   params_in_ch.store(buf, &len);
   CHECK(len == 44);
@@ -117,53 +135,70 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
 
 TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
 {
-  uint8_t buf[] = {
-    0x04,                   // size of supported versions
-    0x01, 0x02, 0x03, 0x04, //
-    0x00, 0x1e,             // size of parameters
-    0x00, 0x00,             // parameter id
-    0x00, 0x04,             // length of value
-    0x11, 0x22, 0x33, 0x44, // value
-    0x00, 0x01,             // parameter id
-    0x00, 0x04,             // length of value
-    0x12, 0x34, 0x56, 0x78, // value
-    0x00, 0x02,             // parameter id
-    0x00, 0x04,             // length of value
-    0x0a, 0x0b, 0x0c, 0x0d, // value
-    0x00, 0x03,             // parameter id
-    0x00, 0x02,             // length of value
-    0xab, 0xcd,             // value
-  };
+  SECTION("OK")
+  {
+    uint8_t buf[] = {
+      0x04,                   // size of supported versions
+      0x01, 0x02, 0x03, 0x04, //
+      0x00, 0x1e,             // size of parameters
+      0x00, 0x00,             // parameter id
+      0x00, 0x04,             // length of value
+      0x11, 0x22, 0x33, 0x44, // value
+      0x00, 0x01,             // parameter id
+      0x00, 0x04,             // length of value
+      0x12, 0x34, 0x56, 0x78, // value
+      0x00, 0x02,             // parameter id
+      0x00, 0x04,             // length of value
+      0x0a, 0x0b, 0x0c, 0x0d, // value
+      0x00, 0x03,             // parameter id
+      0x00, 0x02,             // length of value
+      0xab, 0xcd,             // value
+    };
 
-  QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
-  const uint8_t *versions;
-  uint16_t vlen;
-  versions = params_in_ee.supported_versions_len(&vlen);
-  CHECK(vlen == 4);
-  CHECK(memcmp(versions, "\x01\x02\x03\x04", 4) == 0);
+    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
+    CHECK(params_in_ee.is_valid());
 
-  uint16_t len        = 0;
-  const uint8_t *data = nullptr;
+    uint16_t len        = 0;
+    const uint8_t *data = nullptr;
 
-  data = params_in_ee.get(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, len);
-  CHECK(len == 4);
-  CHECK(memcmp(data, "\x11\x22\x33\x44", 4) == 0);
+    data = params_in_ee.getAsBytes(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, len);
+    CHECK(len == 4);
+    CHECK(memcmp(data, "\x11\x22\x33\x44", 4) == 0);
 
-  data = params_in_ee.get(QUICTransportParameterId::INITIAL_MAX_DATA, len);
-  CHECK(len == 4);
-  CHECK(memcmp(data, "\x12\x34\x56\x78", 4) == 0);
+    data = params_in_ee.getAsBytes(QUICTransportParameterId::INITIAL_MAX_DATA, len);
+    CHECK(len == 4);
+    CHECK(memcmp(data, "\x12\x34\x56\x78", 4) == 0);
 
-  data = params_in_ee.get(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, len);
-  CHECK(len == 4);
-  CHECK(memcmp(data, "\x0a\x0b\x0c\x0d", 4) == 0);
+    data = params_in_ee.getAsBytes(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, len);
+    CHECK(len == 4);
+    CHECK(memcmp(data, "\x0a\x0b\x0c\x0d", 4) == 0);
 
-  data = params_in_ee.get(QUICTransportParameterId::IDLE_TIMEOUT, len);
-  CHECK(len == 2);
-  CHECK(memcmp(data, "\xab\xcd", 2) == 0);
+    data = params_in_ee.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
+    CHECK(len == 2);
+    CHECK(memcmp(data, "\xab\xcd", 2) == 0);
 
-  data = params_in_ee.get(QUICTransportParameterId::MAX_PACKET_SIZE, len);
-  CHECK(len == 0);
-  CHECK(data == nullptr);
+    data = params_in_ee.getAsBytes(QUICTransportParameterId::MAX_PACKET_SIZE, len);
+    CHECK(len == 0);
+    CHECK(data == nullptr);
+  }
+
+  SECTION("Duplicate parameters")
+  {
+    uint8_t buf[] = {
+      0x04,                   // size of supported versions
+      0x01, 0x02, 0x03, 0x04, //
+      0x00, 0x1e,             // size of parameters
+      0x00, 0x00,             // parameter id
+      0x00, 0x04,             // length of value
+      0x01, 0x02, 0x03, 0x04, // value
+      0x00, 0x00,             // parameter id
+      0x00, 0x04,             // length of value
+      0x12, 0x34, 0x56, 0x78, // value
+    };
+
+    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
+    CHECK(!params_in_ee.is_valid());
+  }
 }
 
 TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
@@ -187,14 +222,10 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
   QUICTransportParametersInEncryptedExtensions params_in_ee;
 
   uint32_t max_stream_data = 0x11223344;
-  params_in_ee.add(
-    QUICTransportParameterId::INITIAL_MAX_STREAM_DATA,
-    std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(max_stream_data, sizeof(max_stream_data))));
+  params_in_ee.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, max_stream_data);
 
   uint16_t max_packet_size = 0xabcd;
-  params_in_ee.add(
-    QUICTransportParameterId::MAX_PACKET_SIZE,
-    std::unique_ptr<QUICTransportParameterValue>(new QUICTransportParameterValue(max_packet_size, sizeof(max_packet_size))));
+  params_in_ee.set(QUICTransportParameterId::MAX_PACKET_SIZE, max_packet_size);
 
   params_in_ee.add_version(0x01020304);
   params_in_ee.add_version(0x05060708);

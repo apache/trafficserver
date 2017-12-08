@@ -863,10 +863,10 @@ QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTr
   uint32_t local_initial_max_data  = 0;
   uint32_t remote_initial_max_data = 0;
   if (local_tp) {
-    local_initial_max_data = local_tp->initial_max_data();
+    local_initial_max_data = local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_DATA);
   }
   if (remote_tp) {
-    remote_initial_max_data = remote_tp->initial_max_data();
+    remote_initial_max_data = remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_DATA);
   }
 
   this->_local_flow_controller->forward_limit(local_initial_max_data * 1024);
