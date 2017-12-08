@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "I_VConnection.h"
 #include "ProxyClientTransaction.h"
 
 class QUICStreamIO;
@@ -35,11 +36,6 @@ public:
 
   HQClientTransaction(HQClientSession *session, QUICStreamIO *stream_io);
 
-  // Implement VConnection interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
-  void do_io_close(int lerrno = -1) override;
-
   // Implement ProxyClienTransaction interface
   void set_active_timeout(ink_hrtime timeout_in) override;
   void set_inactivity_timeout(ink_hrtime timeout_in) override;
@@ -47,22 +43,35 @@ public:
   void transaction_done() override;
   bool allow_half_open() const override;
   void destroy() override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
   void release(IOBufferReader *r) override;
   int get_transaction_id() const override;
 
+  // VConnection interface
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t) override;
+  void reenable(VIO *) override;
+
+  void set_read_vio_nbytes(int64_t nbytes);
+  void set_write_vio_nbytes(int64_t nbytes);
+
   // HQClientTransaction specific methods
-  int main_event_handler(int event, void *edata);
+  int state_stream_open(int, void *);
+  int state_stream_closed(int event, void *data);
 
 private:
-  void _read_request();
-  void _write_response();
+  Event *_send_tracked_event(Event *, int, VIO *);
+  void _signal_read_event();
+  void _signal_write_event();
+  int64_t _process_read_vio();
+  int64_t _process_write_vio();
 
-  MIOBuffer _read_vio_buf = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  MIOBuffer _read_vio_buf  = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  QUICStreamIO *_stream_io = nullptr;
+
   VIO _read_vio;
   VIO _write_vio;
-  QUICStreamIO *_stream_io = nullptr;
-  Event *_read_event       = nullptr;
-  Event *_write_event      = nullptr;
+  Event *_read_event  = nullptr;
+  Event *_write_event = nullptr;
 };

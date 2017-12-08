@@ -36,7 +36,7 @@ class QUICFrame
 public:
   QUICFrame(const uint8_t *buf, size_t len) : _buf(buf), _len(len){};
   virtual QUICFrameType type() const;
-  virtual size_t size() const = 0;
+  virtual size_t size() const                         = 0;
   virtual void store(uint8_t *buf, size_t *len) const = 0;
   virtual void reset(const uint8_t *buf, size_t len);
   static QUICFrameType type(const uint8_t *buf);

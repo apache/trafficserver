@@ -205,31 +205,31 @@ TEST_CASE("QUICStream", "[quic]")
 
     const char data[1024] = {0};
     write_buffer->write(data, 1024);
-    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 1);
 
     write_buffer->write(data, 1024);
-    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 2);
 
     write_buffer->write(data, 1024);
-    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 3);
 
     write_buffer->write(data, 1024);
-    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 4);
 
     // This should not send a frame because of flow control
     write_buffer->write(data, 1024);
-    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 4);
 
     // Update window
     stream->recv(std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5120));
 
     // This should send a frame
-    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 5);
 
     // Update window
@@ -237,16 +237,16 @@ TEST_CASE("QUICStream", "[quic]")
 
     // This should send a frame
     write_buffer->write(data, 1024);
-    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 6);
 
-    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 6);
 
     // Update window
     stream->recv(std::make_shared<QUICMaxStreamDataFrame>(stream_id, 6144));
 
-    stream->main_event_handler(VC_EVENT_WRITE_READY, nullptr);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM)] == 7);
   }
 }

@@ -46,22 +46,26 @@ class QUICStream : public VConnection
 {
 public:
   QUICStream() : VConnection(nullptr), _received_stream_frame_buffer(this) {}
-  ~QUICStream() {}
+  ~QUICStream();
   void init(QUICFrameTransmitter *tx, QUICConnectionId cid, QUICStreamId id, uint64_t recv_max_stream_data = 0,
             uint64_t send_max_stream_data = 0);
-  void start();
+  // void start();
+  int state_stream_open(int event, void *data);
+  int state_stream_closed(int event, void *data);
+
   void init_flow_control_params(uint32_t recv_max_stream_data, uint32_t send_max_stream_data);
-  int main_event_handler(int event, void *data);
 
   QUICStreamId id() const;
   QUICOffset final_offset();
 
-  // Implement VConnection interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
+  // Implement VConnection Interface.
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
   VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
+  void set_read_vio_nbytes(int64_t);
+  void set_write_vio_nbytes(int64_t);
 
   QUICErrorUPtr recv(const std::shared_ptr<const QUICStreamFrame> frame);
   QUICErrorUPtr recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame);
@@ -78,20 +82,15 @@ public:
   LINK(QUICStream, link);
 
 private:
-  QUICStreamState _state;
-
-  QUICErrorUPtr _send();
+  int64_t _process_read_vio();
+  int64_t _process_write_vio();
+  void _signal_read_event();
+  void _signal_write_event();
+  Event *_send_tracked_event(Event *, int, VIO *);
 
   void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
-  // NOTE: Those are called update_read_request/update_write_request in Http2Stream
-  // void _read_from_net(uint64_t read_len, bool direct);
-  // void _write_to_net(IOBufferReader *buf_reader, int64_t write_len, bool direct);
 
-  void _signal_read_event(bool call_update);
-  void _signal_write_event(bool call_update);
-
-  Event *_send_tracked_event(Event *event, int send_event, VIO *vio);
-
+  QUICStreamState _state;
   bool _fin                       = false;
   QUICConnectionId _connection_id = 0;
   QUICStreamId _id                = 0;
@@ -111,6 +110,5 @@ private:
   // TODO: Consider to replace with ts/RbTree.h or other data structure
   QUICIncomingFrameBuffer _received_stream_frame_buffer;
 
-  QUICStreamManager *_stream_manager = nullptr;
-  QUICFrameTransmitter *_tx          = nullptr;
+  QUICFrameTransmitter *_tx = nullptr;
 };

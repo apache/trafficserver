@@ -52,7 +52,7 @@ HQClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *bu
 void
 HQClientSession::do_io_close(int lerrno)
 {
-  ink_assert(false);
+  // TODO
   return;
 }
 

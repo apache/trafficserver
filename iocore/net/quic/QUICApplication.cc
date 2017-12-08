@@ -31,14 +31,16 @@ static constexpr char tag[] = "quic_app";
 //
 QUICStreamIO::QUICStreamIO(QUICApplication *app, QUICStream *stream) : _stream(stream)
 {
-  this->_read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
-  this->_write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
+  this->_read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+  this->_write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
 
   this->_read_buffer_reader  = _read_buffer->alloc_reader();
   this->_write_buffer_reader = _write_buffer->alloc_reader();
 
-  this->_read_vio  = stream->do_io_read(app, 0, _read_buffer);
-  this->_write_vio = stream->do_io_write(app, 0, _write_buffer_reader);
+  this->_read_vio = stream->do_io_read(app, INT64_MAX, this->_read_buffer);
+  this->_read_vio->buffer.reader_for(this->_read_buffer_reader);
+
+  this->_write_vio = stream->do_io_write(app, INT64_MAX, this->_write_buffer_reader);
 }
 
 int64_t
@@ -71,14 +73,16 @@ QUICStreamIO::write(IOBufferReader *r, int64_t alen, int64_t offset)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());
 
-  if (this->_write_buffer->write_avail() > 0) {
-    int64_t bytes_add = this->_write_buffer->write(r, alen, offset);
+  int64_t bytes_avail = this->_write_buffer->write_avail();
+  Debug(tag, "nbytes=%" PRId64 " ndone=%" PRId64 " write_avail=%" PRId64 " write_len=%" PRId64, this->_write_vio->nbytes,
+        this->_write_vio->ndone, bytes_avail, alen);
 
-    return bytes_add;
+  if (bytes_avail > 0) {
+    int64_t len         = std::min(bytes_avail, alen);
+    int64_t bytes_added = this->_write_buffer->write(r, len, offset);
 
+    return bytes_added;
   } else {
-    Debug(tag, "write buffer is full");
-
     return 0;
   }
 }
@@ -86,7 +90,7 @@ QUICStreamIO::write(IOBufferReader *r, int64_t alen, int64_t offset)
 void
 QUICStreamIO::set_write_vio_nbytes(int64_t nbytes)
 {
-  this->_write_vio->nbytes += nbytes;
+  this->_write_vio->nbytes = nbytes;
 }
 
 void
@@ -117,6 +121,12 @@ uint32_t
 QUICStreamIO::get_transaction_id() const
 {
   return this->_stream->id();
+}
+
+bool
+QUICStreamIO::is_vio(VIO *vio)
+{
+  return (this->_read_vio == vio || this->_write_vio == vio);
 }
 
 //
@@ -177,4 +187,28 @@ QUICApplication::_find_stream_io(QUICStreamId id)
   } else {
     return result->second;
   }
+}
+
+QUICStreamIO *
+QUICApplication::_find_stream_io(VIO *vio)
+{
+  for (auto i : this->_stream_map) {
+    if (i.second->is_vio(vio)) {
+      return i.second;
+    }
+  }
+
+  return nullptr;
+}
+
+QUICStreamId
+QUICApplication::_find_stream_id(VIO *vio)
+{
+  for (auto i : this->_stream_map) {
+    if (i.second->is_vio(vio)) {
+      return i.first;
+    }
+  }
+
+  return 0;
 }

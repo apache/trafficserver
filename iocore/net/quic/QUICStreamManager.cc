@@ -40,7 +40,10 @@ std::vector<QUICFrameType>
 QUICStreamManager::interests()
 {
   return {
-    QUICFrameType::STREAM, QUICFrameType::RST_STREAM, QUICFrameType::MAX_STREAM_DATA, QUICFrameType::MAX_STREAM_ID,
+    QUICFrameType::STREAM,
+    QUICFrameType::RST_STREAM,
+    QUICFrameType::MAX_STREAM_DATA,
+    QUICFrameType::MAX_STREAM_ID,
   };
 }
 
@@ -147,13 +150,7 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamFrame> &f
   if (!application->is_stream_set(stream)) {
     application->set_stream(stream);
   }
-
-  size_t nbytes_to_read = stream->nbytes_to_read();
-  QUICErrorUPtr error   = stream->recv(frame);
-  // Prevent trigger read events multiple times
-  if (nbytes_to_read == 0) {
-    this_ethread()->schedule_imm(application, VC_EVENT_READ_READY, stream);
-  }
+  QUICErrorUPtr error = stream->recv(frame);
 
   return error;
 }
@@ -212,8 +209,6 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
                    this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA),
                    this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA));
     }
-
-    stream->start();
 
     this->stream_list.push(stream);
   }
