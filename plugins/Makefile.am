@@ -52,6 +52,7 @@ include test_cppapi/Makefile.inc
 
 if BUILD_EXPERIMENTAL_PLUGINS
 
+include experimental/access_control/Makefile.inc
 include experimental/acme/Makefile.inc
 include experimental/balancer/Makefile.inc
 include experimental/buffer_upload/Makefile.inc

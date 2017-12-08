@@ -1,0 +1,1 @@
+The access_control plugin covers common use-cases related to providing access control to the objects stored in CDN cache, for more details please see [Access Control Plugin documentation](../../../doc/admin-guide/plugins/access_control.en.rst)
