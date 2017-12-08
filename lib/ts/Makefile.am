@@ -28,7 +28,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/lib
 
 lib_LTLIBRARIES = libtsutil.la
 
-libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
+libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@ @LIBTOOL_LINK_FLAGS@
 libtsutil_la_LIBADD = \
   @HWLOC_LIBS@ \
   @LIBOBJS@ \
