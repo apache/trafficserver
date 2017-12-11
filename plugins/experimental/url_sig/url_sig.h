@@ -35,6 +35,7 @@
 #define EXP_STRLEN 16
 #define PAR_STRLEN 16
 #define MAX_PARTS 32
+#define MAX_SEGMENTS 64
 
 #define MAX_HTTP_REQUEST_SIZE 8192 //
 
