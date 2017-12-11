@@ -265,7 +265,7 @@ private:
 
   void _handle_idle_timeout();
 
-  QUICStatelessToken _token;
+  QUICStatelessResetToken _reset_token;
 };
 
 extern ClassAllocator<QUICNetVConnection> quicNetVCAllocator;

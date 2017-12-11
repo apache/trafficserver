@@ -136,7 +136,7 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
 
     // Send stateless reset if the packet is not a initial packet
     if (!QUICTypeUtil::hasLongHeader(reinterpret_cast<const uint8_t *>(block->buf()))) {
-      QUICStatelessToken token;
+      QUICStatelessResetToken token;
       {
         QUICConfig::scoped_config params;
         token.generate(cid ^ params->server_id());

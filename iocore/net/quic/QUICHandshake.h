@@ -50,7 +50,7 @@ class SSLNextProtocolSet;
 class QUICHandshake : public QUICApplication
 {
 public:
-  QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessToken token);
+  QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token);
   ~QUICHandshake();
 
   QUICErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
@@ -90,5 +90,5 @@ private:
 
   void _abort_handshake(QUICTransErrorCode code);
 
-  QUICStatelessToken _token;
+  QUICStatelessResetToken _reset_token;
 };

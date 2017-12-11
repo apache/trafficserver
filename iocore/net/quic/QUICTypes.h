@@ -200,7 +200,7 @@ using QUICErrorUPtr           = std::unique_ptr<QUICError>;
 using QUICConnectionErrorUPtr = std::unique_ptr<QUICConnectionError>;
 using QUICStreamErrorUPtr     = std::unique_ptr<QUICStreamError>;
 
-class QUICStatelessToken
+class QUICStatelessResetToken
 {
 public:
   void

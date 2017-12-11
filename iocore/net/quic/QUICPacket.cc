@@ -723,7 +723,7 @@ QUICPacketFactory::create_client_initial_packet(QUICConnectionId connection_id, 
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token)
+QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessResetToken stateless_reset_token)
 {
   std::random_device rnd;
 

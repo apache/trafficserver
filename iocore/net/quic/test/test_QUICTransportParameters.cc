@@ -124,9 +124,9 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   uint16_t max_packet_size = 0xabcd;
   params_in_ch.set(QUICTransportParameterId::MAX_PACKET_SIZE, max_packet_size);
 
-  uint8_t stateless_retry_token[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+  uint8_t stateless_reset_token[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                                        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77};
-  params_in_ch.set(QUICTransportParameterId::STATELESS_RETRY_TOKEN, stateless_retry_token, 16);
+  params_in_ch.set(QUICTransportParameterId::STATELESS_RESET_TOKEN, stateless_reset_token, 16);
 
   params_in_ch.store(buf, &len);
   CHECK(len == 44);

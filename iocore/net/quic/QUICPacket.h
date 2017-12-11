@@ -298,7 +298,8 @@ public:
                                                 ats_unique_buf payload, size_t len, bool retransmittable);
   QUICPacketUPtr create_client_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                               QUICVersion version, ats_unique_buf payload, size_t len);
-  static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessToken stateless_reset_token);
+  static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id,
+                                                      QUICStatelessResetToken stateless_reset_token);
   void set_version(QUICVersion negotiated_version);
   void set_crypto_module(QUICCrypto *crypto);
 

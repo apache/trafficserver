@@ -40,7 +40,7 @@ public:
     IDLE_TIMEOUT,
     OMIT_CONNECTION_ID,
     MAX_PACKET_SIZE,
-    STATELESS_RETRY_TOKEN,
+    STATELESS_RESET_TOKEN,
   };
 
   explicit operator bool() const { return true; }
