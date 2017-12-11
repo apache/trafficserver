@@ -152,7 +152,7 @@ will hand back to the client for redirection.
 
 Client IP
     The IP address of the client being redirected. This must be their IP as it
-    will appear to your |TS| cache::
+    will appear to your |TS| cache.  Both IP v4 and v6 addresses are supported::
 
         C=<ip address>
 
@@ -241,6 +241,19 @@ Signature
     For an example implementation of signing which may be adapted for your own
     portal, refer to the file ``sign.pl`` included with the source code of this
     plugin.
+
+Signature query parameters embedded in the URL path.
+
+    Optionally signature query parameters may be embedded in an opaque base64 encoded container
+    embedded in the URL path.  The format is  a semicolon, siganchor string, base64 encoded 
+    string.  ``url_sig`` automatically detects the use of embedded path parameters. The 
+    following example shows how to generate an embedded path parameters with ``sign.pl``::
+
+      ./sign.pl --url "http://test-remap.domain.com/vod/t/prog_index.m3u8?appid=2&t=1" --useparts 1 \
+      --algorithm 1 --duration 86400 --key kSCE1_uBREdGI3TPnr_dXKc9f_J4ZV2f --pathparams --siganchor urlsig
+
+      curl -s -o /dev/null -v --max-redirs 0 'http://test-remap.domain.com/vod/t;urlsig=O0U9MTQ2MzkyOTM4NTtBPTE7Sz0zO1A9MTtTPTIxYzk2YWRiZWZk'
+
 
 Edge Cache Debugging
 ====================
