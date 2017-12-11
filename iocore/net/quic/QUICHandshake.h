@@ -88,5 +88,7 @@ private:
   QUICErrorUPtr _process_client_finished();
   QUICErrorUPtr _process_handshake_complete();
 
+  void _abort_handshake(QUICTransErrorCode code);
+
   QUICStatelessToken _token;
 };

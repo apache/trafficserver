@@ -162,6 +162,13 @@ QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *l
 void
 QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters> tp)
 {
+  // An endpoint MUST treat receipt of duplicate transport parameters as a connection error of type TRANSPORT_PARAMETER_ERROR.
+  if (!tp->is_valid()) {
+    QUICHSDebug("Transport parameter is not valid");
+    this->_abort_handshake(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR);
+    return;
+  }
+
   this->_remote_transport_parameters = std::move(tp);
 
   const QUICTransportParametersInClientHello *tp_in_ch =
@@ -169,9 +176,8 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters>
   if (tp_in_ch) {
     // Version revalidation
     if (this->_version_negotiator->revalidate(tp_in_ch) != QUICVersionNegotiationStatus::REVALIDATED) {
-      this->_client_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR)));
-      QUICHSDebug("Enter state_closed");
-      SET_HANDLER(&QUICHandshake::state_closed);
+      QUICHSDebug("Version revalidation failed");
+      this->_abort_handshake(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
       return;
     }
     QUICHSDebug("Version negotiation revalidated: %x", tp_in_ch->negotiated_version());
@@ -214,13 +220,13 @@ QUICHandshake::state_read_client_hello(int event, Event *data)
   }
 
   if (error->cls != QUICErrorClass::NONE) {
+    QUICTransErrorCode code;
     if (dynamic_cast<QUICConnectionError *>(error.get()) != nullptr) {
-      this->_client_qc->close(QUICConnectionErrorUPtr(static_cast<QUICConnectionError *>(error.release())));
+      code = error->trans_error_code;
     } else {
-      this->_client_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION)));
+      code = QUICTransErrorCode::PROTOCOL_VIOLATION;
     }
-    QUICHSDebug("Enter state_closed");
-    SET_HANDLER(&QUICHandshake::state_closed);
+    this->_abort_handshake(code);
   }
 
   return EVENT_CONT;
@@ -242,13 +248,13 @@ QUICHandshake::state_read_client_finished(int event, Event *data)
   }
 
   if (error->cls != QUICErrorClass::NONE) {
+    QUICTransErrorCode code;
     if (dynamic_cast<QUICConnectionError *>(error.get()) != nullptr) {
-      this->_client_qc->close(QUICConnectionErrorUPtr(static_cast<QUICConnectionError *>(error.release())));
+      code = error->trans_error_code;
     } else {
-      this->_client_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION)));
+      code = QUICTransErrorCode::PROTOCOL_VIOLATION;
     }
-    QUICHSDebug("Enter state_closed");
-    SET_HANDLER(&QUICHandshake::state_closed);
+    this->_abort_handshake(code);
   }
 
   return EVENT_CONT;
@@ -394,4 +400,12 @@ QUICHandshake::_process_handshake_complete()
   }
 
   return QUICErrorUPtr(new QUICNoError());
+}
+
+void
+QUICHandshake::_abort_handshake(QUICTransErrorCode code)
+{
+  this->_client_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
+  QUICHSDebug("Enter state_closed");
+  SET_HANDLER(&QUICHandshake::state_closed);
 }
