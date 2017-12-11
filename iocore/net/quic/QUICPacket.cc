@@ -675,7 +675,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     new (packet) QUICPacket(header, std::move(plain_txt), plain_txt_len);
   }
 
-  return QUICPacketFactory::create_null_packet();
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 
 QUICPacketUPtr
@@ -761,7 +761,7 @@ QUICPacketFactory::_create_unprotected_packet(QUICPacketHeader *header)
   QUICPacket *packet = quicPacketAllocator.alloc();
   new (packet) QUICPacket(header, std::move(cleartext), cleartext_len, false);
 
-  return QUICPacketFactory::create_null_packet();
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 
 QUICPacketUPtr
@@ -779,7 +779,7 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header, bool retra
     new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, retransmittable);
   }
 
-  return QUICPacketFactory::create_null_packet();
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 
 void
