@@ -38,8 +38,10 @@ By default this is named :file:`ssl_server_name.config`. The file can be changed
 :option:`traffic_ctl config reload` if the file has been modified since process start.
 
 The configuration file is Lua based. After parsing and executing the Lua code, the global Lua
-variable :code:`server_config` is examined. Its value should be a list of tables. Each table is set
-of key / value pairs that create a configuration item.
+variable :code:`server_config` is examined. Its value should be a list of tables. Each table is a set
+of key / value pairs that create a configuration item. This configuration file accepts wildcard entries. To apply an SNI based
+setting on all the servernames with a common upper level domain name, the user needs to enter the fqdn in the configuration 
+with a ``*.`` followed by the common domain name. (``*.yahoo.com`` for e.g.,).
 
 ======================= ==============================================================================
 Key                     Meaning
@@ -76,10 +78,7 @@ Client verification, via ``verify_client``, correponds to setting
    Do not request a client certificate, ignore it if one is provided.
 
 :code:`MODERATE` - ``1``
-   Request a client certificate and do verification if one is provided, but do not enforce
-   verification. If the verification fails the failure is logged to :file:`diags.log` but the
-   connection is allowed.
-
+   Request a client certificate and do verification if one is provided. The connection is denied if the verification of the client provided certificate fails.
 :code:`STRICT` - ``2``
    Request a client certificate and require one to be provided and verified.
    If the verification fails the failure is logged to :file:`diags.log` and the connection is
@@ -113,13 +112,13 @@ Disable HTTP/2 for ``no-http2.example.com``.
 
    server_config = {{ fqdn="no-http2.example.com", disable_h2=true }}
 
-Require client certificate verification for ``example.com`` and ``yahoo.com``.
+Require client certificate verification for ``example.com`` and any server name ending with ``.yahoo.com``. Therefore, client request for a server name ending with yahoo.com (for e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify the client certificate. By contrast, |TS| will allow a client certficate to be provided for ``example.com`` and if it is, |TS| will require the certificate to be valid.
 
 .. code-block:: Lua
 
    server_config = {
-      { fqdn="example.com", verify_client=STRICT },
-      { fqdn="yahoo.com", verify_client=STRICT }
+      { fqdn="example.com", verify_client=MODERATE },
+      { fqdn="*.yahoo.com", verify_client=STRICT }
    }
 
 Disable outbound server certificate verification for ``trusted.example.com`` and require a valid
