@@ -4676,7 +4676,7 @@ TSHttpTxnSsnGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  return reinterpret_cast<TSHttpSsn>(sm->ua_session ? (TSHttpSsn)sm->ua_session->get_parent() : nullptr);
+  return reinterpret_cast<TSHttpSsn>(sm->ua_txn ? (TSHttpSsn)sm->ua_txn->get_parent() : nullptr);
 }
 
 // TODO: Is this still necessary ??
@@ -5552,8 +5552,8 @@ TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
 
-  sm->ua_session->set_outbound_port(ats_ip_port_host_order(addr));
-  sm->ua_session->set_outbound_ip(IpAddr(addr));
+  sm->ua_txn->set_outbound_port(ats_ip_port_host_order(addr));
+  sm->ua_txn->set_outbound_ip(IpAddr(addr));
   return TS_ERROR;
 }
 
@@ -5582,11 +5582,11 @@ TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
   }
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  if (nullptr == sm || nullptr == sm->ua_session) {
+  if (nullptr == sm || nullptr == sm->ua_txn) {
     return TS_ERROR;
   }
 
-  sm->ua_session->set_outbound_transparent(flag);
+  sm->ua_txn->set_outbound_transparent(flag);
   return TS_SUCCESS;
 }
 
@@ -5595,11 +5595,11 @@ TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
-  if (nullptr == sm->ua_session) {
+  if (nullptr == sm->ua_txn) {
     return TS_ERROR;
   }
 
-  NetVConnection *vc = sm->ua_session->get_netvc();
+  NetVConnection *vc = sm->ua_txn->get_netvc();
   if (nullptr == vc) {
     return TS_ERROR;
   }
@@ -5616,8 +5616,8 @@ TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the mark on an active server session
-  if (nullptr != sm->ua_session) {
-    HttpServerSession *ssn = sm->ua_session->get_server_session();
+  if (nullptr != sm->ua_txn) {
+    HttpServerSession *ssn = sm->ua_txn->get_server_session();
     if (nullptr != ssn) {
       NetVConnection *vc = ssn->get_netvc();
       if (vc != nullptr) {
@@ -5637,11 +5637,11 @@ TSHttpTxnClientPacketTosSet(TSHttpTxn txnp, int tos)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
-  if (nullptr == sm->ua_session) {
+  if (nullptr == sm->ua_txn) {
     return TS_ERROR;
   }
 
-  NetVConnection *vc = sm->ua_session->get_netvc();
+  NetVConnection *vc = sm->ua_txn->get_netvc();
   if (nullptr == vc) {
     return TS_ERROR;
   }
@@ -5658,8 +5658,8 @@ TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the tos on an active server session
-  if (nullptr != sm->ua_session) {
-    HttpServerSession *ssn = sm->ua_session->get_server_session();
+  if (nullptr != sm->ua_txn) {
+    HttpServerSession *ssn = sm->ua_txn->get_server_session();
     if (nullptr != ssn) {
       NetVConnection *vc = ssn->get_netvc();
       if (vc != nullptr) {
@@ -5679,11 +5679,11 @@ TSHttpTxnClientPacketDscpSet(TSHttpTxn txnp, int dscp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
-  if (nullptr == sm->ua_session) {
+  if (nullptr == sm->ua_txn) {
     return TS_ERROR;
   }
 
-  NetVConnection *vc = sm->ua_session->get_netvc();
+  NetVConnection *vc = sm->ua_txn->get_netvc();
   if (nullptr == vc) {
     return TS_ERROR;
   }
@@ -5700,8 +5700,8 @@ TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the tos on an active server session
-  if (nullptr != sm->ua_session) {
-    HttpServerSession *ssn = sm->ua_session->get_server_session();
+  if (nullptr != sm->ua_txn) {
+    HttpServerSession *ssn = sm->ua_txn->get_server_session();
     if (nullptr != ssn) {
       NetVConnection *vc = ssn->get_netvc();
       if (vc != nullptr) {
@@ -7683,7 +7683,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   }
 
   HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
-  Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_session);
+  Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
   if (stream) {
     Http2ClientSession *parent = static_cast<Http2ClientSession *>(stream->get_parent());
     if (!parent->is_url_pushed(url, url_len)) {
@@ -8987,7 +8987,7 @@ TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
   HttpSM *sm = (HttpSM *)txnp;
   if (should_close) {
     sm->t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
-    if (sm->ua_session) {
+    if (sm->ua_txn) {
       sm->set_ua_half_close_flag();
     }
   }
