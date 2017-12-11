@@ -620,6 +620,12 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 // QUICPacketFactory
 //
 QUICPacketUPtr
+QUICPacketFactory::create_null_packet()
+{
+  return {nullptr, &QUICPacketDeleter::delete_null_packet};
+}
+
+QUICPacketUPtr
 QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number, QUICPacketCreationResult &result)
 {
   size_t max_plain_txt_len = 2048;

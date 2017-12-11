@@ -43,7 +43,7 @@ QUICAckFrameCreator::update(QUICPacketNumber packet_number, bool acknowledgable)
 std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
 QUICAckFrameCreator::create()
 {
-  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = {nullptr, QUICFrameDeleter::delete_null_frame};
+  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = QUICFrameFactory::create_null_ack_frame();
   if (this->_can_send) {
     ack_frame           = this->_create_ack_frame();
     this->_can_send     = false;
@@ -69,7 +69,7 @@ QUICAckFrameCreator::_sort_packet_numbers()
 std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
 QUICAckFrameCreator::_create_ack_frame()
 {
-  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = {nullptr, QUICFrameDeleter::delete_null_frame};
+  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = QUICFrameFactory::create_null_ack_frame();
   this->_packet_numbers.sort();
   QUICPacketNumber largest_ack_number = this->_packet_numbers.largest_ack_number();
   QUICPacketNumber last_ack_number    = largest_ack_number;

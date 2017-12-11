@@ -244,8 +244,8 @@ QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
   uint16_t size          = packet.header()->payload_size();
   const uint8_t *payload = packet.header()->payload();
 
-  QUICFrameUPtr frame(nullptr, &QUICFrameDeleter::delete_null_frame);
-  uint16_t cursor = 0;
+  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+  uint16_t cursor     = 0;
 
   while (cursor < size) {
     frame = QUICFrameFactory::create(payload + cursor, size - cursor);
@@ -833,7 +833,7 @@ QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPac
 QUICPacketUPtr
 QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmittable, QUICPacketType type)
 {
-  QUICPacketUPtr packet(nullptr, &QUICPacketDeleter::delete_null_packet);
+  QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
 
   switch (type) {
   case QUICPacketType::SERVER_CLEARTEXT:
@@ -903,7 +903,7 @@ QUICNetVConnection::_handle_error(QUICErrorUPtr error)
 QUICPacketUPtr
 QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
 {
-  QUICPacketUPtr quic_packet = QUICPacketUPtr(nullptr, &QUICPacketDeleter::delete_null_packet);
+  QUICPacketUPtr quic_packet = QUICPacketFactory::create_null_packet();
   UDPPacket *udp_packet      = this->_packet_recv_queue.dequeue();
   if (!udp_packet) {
     result = QUICPacketCreationResult::NOT_READY;

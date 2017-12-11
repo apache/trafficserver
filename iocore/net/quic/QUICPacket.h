@@ -278,6 +278,7 @@ public:
   static void
   delete_null_packet(QUICPacket *packet)
   {
+    ink_assert(packet == nullptr);
   }
 
   static void
@@ -290,6 +291,8 @@ public:
 class QUICPacketFactory
 {
 public:
+  static QUICPacketUPtr create_null_packet();
+
   QUICPacketUPtr create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number, QUICPacketCreationResult &result);
   QUICPacketUPtr create_version_negotiation_packet(const QUICPacket *packet_sent_by_client, QUICPacketNumber base_packet_number);
   QUICPacketUPtr create_server_cleartext_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,

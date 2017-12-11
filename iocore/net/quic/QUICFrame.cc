@@ -1253,6 +1253,18 @@ QUICRetransmissionFrame::packet_type() const
 //
 
 QUICFrameUPtr
+QUICFrameFactory::create_null_frame()
+{
+  return {nullptr, &QUICFrameDeleter::delete_null_frame};
+}
+
+std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_null_ack_frame()
+{
+  return {nullptr, &QUICFrameDeleter::delete_null_frame};
+}
+
+QUICFrameUPtr
 QUICFrameFactory::create(const uint8_t *buf, size_t len)
 {
   QUICFrame *frame;
@@ -1321,7 +1333,7 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
   default:
     // Unknown frame
     Debug("quic_frame_factory", "Unknown frame type %x", buf[0]);
-    return QUICFrameUPtr(nullptr, &QUICFrameDeleter::delete_null_frame);
+    return QUICFrameFactory::create_null_frame();
   }
 }
 

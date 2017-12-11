@@ -488,6 +488,7 @@ public:
   static void
   delete_null_frame(QUICFrame *frame)
   {
+    ink_assert(frame == nullptr);
   }
 
   static void
@@ -594,6 +595,13 @@ public:
 class QUICFrameFactory
 {
 public:
+  /*
+   * This is for an empty QUICFrameUptr.
+   * Empty frames are used for variable initialization and return value of frame creation failure
+   */
+  static QUICFrameUPtr create_null_frame();
+  static std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create_null_ack_frame();
+
   /*
    * This is used for creating a QUICFrame object based on received data.
    */
