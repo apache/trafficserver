@@ -386,7 +386,7 @@ bool
 QUICPacketShortHeader::has_connection_id() const
 {
   if (this->_buf) {
-    return (this->_buf[0] & 0x40) != 0;
+    return (this->_buf[0] & 0x40) == 0;
   } else {
     return this->_has_connection_id;
   }

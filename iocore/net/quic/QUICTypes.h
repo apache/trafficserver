@@ -76,10 +76,10 @@ enum class QUICPacketType : uint8_t {
 
 // To detect length of Packet Number
 enum class QUICPacketShortHeaderType : int {
-  ONE = 1,
-  TWO,
-  THREE,
-  UNINITIALIZED,
+  ONE           = 0x1F,
+  TWO           = 0x1E,
+  THREE         = 0x1D,
+  UNINITIALIZED = 0x1C,
 };
 
 // XXX If you add or remove QUICFrameType, you might also need to change QUICFrame::type(const uint8_t *)
