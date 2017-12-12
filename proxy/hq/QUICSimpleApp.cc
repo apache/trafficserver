@@ -56,34 +56,37 @@ QUICSimpleApp::main_event_handler(int event, Event *data)
 {
   Debug(tag, "%s", QUICDebugNames::vc_event(event));
 
-  VIO *vio = reinterpret_cast<VIO *>(data);
-
+  VIO *vio                = reinterpret_cast<VIO *>(data);
   QUICStreamIO *stream_io = this->_find_stream_io(vio);
-  QUICStreamId stream_id  = this->_find_stream_id(vio);
 
   if (stream_io == nullptr) {
     Debug(tag, "Unknown Stream");
     return -1;
   }
 
+  QUICStreamId stream_id   = stream_io->get_transaction_id();
+  HQClientTransaction *txn = this->_client_session->get_transaction(stream_id);
+
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
-    // TODO: lookup transaction if support POST request
-    if (stream_io->read_avail()) {
-      HQClientTransaction *trans = new HQClientTransaction(this->_client_session, stream_io);
-      SCOPED_MUTEX_LOCK(lock, trans->mutex, this_ethread());
+    if (stream_io->is_read_avail_more_than(0)) {
+      if (txn == nullptr) {
+        txn = new HQClientTransaction(this->_client_session, stream_io);
+        SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
 
-      trans->new_transaction();
-    } else {
-      Debug(tag, "No MSG");
+        txn->new_transaction();
+      } else {
+        txn->handleEvent(event);
+      }
+      break;
     }
-    break;
   }
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE: {
-    HQClientTransaction *trans = this->_client_session->get_transaction(stream_id);
-    trans->handleEvent(event);
+    if (txn != nullptr) {
+      txn->handleEvent(event);
+    }
 
     break;
   }

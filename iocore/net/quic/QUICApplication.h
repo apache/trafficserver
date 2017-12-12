@@ -40,6 +40,7 @@ public:
   QUICStreamIO(QUICApplication *app, QUICStream *stream);
 
   int64_t read_avail();
+  bool is_read_avail_more_than(int64_t size);
   int64_t read(uint8_t *buf, int64_t len);
   int64_t write(const uint8_t *buf, int64_t len);
   int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
@@ -49,7 +50,6 @@ public:
   IOBufferReader *get_read_buffer_reader();
   void shutdown();
   uint32_t get_transaction_id() const;
-  bool is_vio(VIO *);
 
 private:
   QUICStream *_stream = nullptr;
@@ -81,9 +81,7 @@ public:
 
 protected:
   QUICStreamIO *_find_stream_io(QUICStreamId id);
-  // TODO: return pair
   QUICStreamIO *_find_stream_io(VIO *vio);
-  QUICStreamId _find_stream_id(VIO *vio);
 
   QUICConnection *_client_qc = nullptr;
 
