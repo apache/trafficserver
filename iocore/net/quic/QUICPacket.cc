@@ -240,16 +240,17 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   buf[0] = 0x80;
   buf[0] += static_cast<uint8_t>(this->_type);
   *len += 1;
+
   QUICTypeUtil::write_QUICConnectionId(this->_connection_id, 8, buf + *len, &n);
+  *len += n;
+
+  QUICTypeUtil::write_QUICVersion(this->_version, buf + *len, &n);
   *len += n;
 
   QUICPacketNumber dst = 0;
   size_t dst_len       = 4;
   QUICPacket::encode_packet_number(dst, this->_packet_number, dst_len);
   QUICTypeUtil::write_QUICPacketNumber(dst, dst_len, buf + *len, &n);
-  *len += n;
-
-  QUICTypeUtil::write_QUICVersion(this->_version, buf + *len, &n);
   *len += n;
 }
 
@@ -699,9 +700,10 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
     p += n;
   }
 
-  QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(),
-                                                     packet_sent_by_client->packet_number(), base_packet_number,
-                                                     packet_sent_by_client->version(), std::move(versions), len);
+  QUICPacketHeader *header =
+    QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(),
+                            packet_sent_by_client->packet_number(), base_packet_number, 0x00, std::move(versions), len);
+
   return QUICPacketFactory::_create_unprotected_packet(header);
 }
 

@@ -35,8 +35,8 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   uint8_t client_initial_packet_header[] = {
     0x82,                                           // Type
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection id
-    0x00, 0x00, 0x00, 0x00,                         // Packet number
     0xaa, 0xbb, 0xcc, 0xdd,                         // Version
+    0x00, 0x00, 0x00, 0x00,                         // Packet number
   };
   uint8_t client_initial_packet_payload[] = {
     0x00 // Payload
