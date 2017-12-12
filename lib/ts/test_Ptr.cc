@@ -95,5 +95,5 @@ REGRESSION_TEST(Ptr_bool)(RegressionTest *t, int /* atype ATS_UNUSED */, int *ps
   Ptr<PtrObject> some = make_ptr(new PtrObject(&alive));
 
   box.check(!none, "Empty Ptr<T> is false");
-  box.check(some, "Non-empty Ptr<T> is true");
+  box.check(bool(some), "Non-empty Ptr<T> is true");
 }

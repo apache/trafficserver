@@ -25,7 +25,8 @@ Test basic post redirection
 MAX_REDIRECT = 99
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
+    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
+    Condition.HasProgram("truncate", "truncate need to be installed on system for this test to work")
 )
 
 Test.ContinueOnFail = True
@@ -63,7 +64,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -i http://127.0.0.1:{0}/redirect1'.format(ts.Variables.port)
+tr.Processes.Default.Command = 'touch largefile.txt && truncate largefile.txt -s 50M && curl -i http://127.0.0.1:{0}/redirect1 -F "filename=@./largefile.txt" && rm -f largefile.txt'.format(ts.Variables.port)
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(redirect_serv1)
 tr.Processes.Default.StartBefore(redirect_serv2)

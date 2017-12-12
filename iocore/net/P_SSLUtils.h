@@ -143,11 +143,11 @@ ssl_error_t SSLConnect(SSL *ssl);
 #define SSLErrorVC(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), false, (vc), fmt, ##__VA_ARGS__)
 // Log a SSL diagnostic using the "ssl" diagnostic tag.
 #define SSLDebug(fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, nullptr, fmt, ##__VA_ARGS__)
-#define SSLDebugVC(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, (vc), fmt, ##__VA_ARGS__)
+#define SSLVCDebug(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, (vc), fmt, ##__VA_ARGS__)
 
 #define SSL_CLR_ERR_INCR_DYN_STAT(vc, x, fmt, ...) \
   do {                                             \
-    SSLDebugVC((vc), fmt, ##__VA_ARGS__);          \
+    SSLVCDebug((vc), fmt, ##__VA_ARGS__);          \
     RecIncrRawStat(ssl_rsb, nullptr, (int)x, 1);   \
   } while (0)
 

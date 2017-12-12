@@ -27,7 +27,7 @@
 #include "../http/HttpSM.h"
 
 #define Http2StreamDebug(fmt, ...) \
-  DebugSsn(parent, "http2_stream", "[%" PRId64 "] [%u] " fmt, parent->connection_id(), this->get_id(), ##__VA_ARGS__);
+  SsnDebug(parent, "http2_stream", "[%" PRId64 "] [%u] " fmt, parent->connection_id(), this->get_id(), ##__VA_ARGS__);
 
 ClassAllocator<Http2Stream> http2StreamAllocator("http2StreamAllocator");
 

@@ -1,5 +1,3 @@
-'''
-'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -16,19 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
+pkglib_LTLIBRARIES += experimental/system_stats/system_stats.la
 
-import sys
-if sys.version_info < (3, 5, 0):
-    host.WriteError(
-        "You need python 3.5 or later to run these tests\n", show_stack=False)
-
-autest_version ="1.4.1"
-if AuTestVersion() < autest_version:
-    host.WriteError(
-        "Tests need AuTest version {ver} or better\n Please update AuTest:\n  pip install --upgrade autest\n".format(ver=autest_version), show_stack=False)
-
-
-Settings.path_argument(["--ats-bin"],
-                       required=True,
-                       help="A user provided directory to ATS bin")
+experimental_system_stats_system_stats_la_SOURCES = \
+experimental/system_stats/system_stats.c

@@ -29,7 +29,8 @@ pip_packages = [
     "autest",
     "hyper",
     "requests",
-    "dnslib"
+    "dnslib",
+    "httpbin",
 ]
 
 
