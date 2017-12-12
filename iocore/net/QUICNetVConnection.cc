@@ -93,12 +93,12 @@ QUICNetVConnection::startEvent(int /*event ATS_UNUSED */, Event *e)
 void
 QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 {
-  // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   {
     QUICConfig::scoped_config params;
-    this->_reset_token.generate(_quic_connection_id ^ params->server_id());
+    this->_reset_token.generate(this->_quic_connection_id, params->server_id());
   }
 
+  // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   this->_handshake_handler = new QUICHandshake(this, ssl_ctx, this->_reset_token);
   this->_application_map   = new QUICApplicationMap();
   this->_application_map->set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
@@ -667,6 +667,8 @@ QUICNetVConnection::_state_common_receive_packet()
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   QUICPacketCreationResult result;
+
+  // Receive a QUIC packet
   QUICPacketUPtr p = this->_dequeue_recv_packet(result);
   if (result == QUICPacketCreationResult::FAILED) {
     return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
@@ -675,6 +677,25 @@ QUICNetVConnection::_state_common_receive_packet()
   }
   net_activity(this, this_ethread());
 
+  // Check connection migration
+  if (p->connection_id() != this->_quic_connection_id) {
+    for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
+      AltConnectionInfo &info = this->_alt_quic_connection_ids[i];
+      if (info.id == p->connection_id()) {
+        // Migrate connection
+        // TODO Address Validation
+        // TODO Adjust expected packet number with a gap computed based on info.seq_num
+        // TODO Unregister the old connection id (Should we wait for a while?)
+        this->_quic_connection_id = info.id;
+        this->_reset_token        = info.token;
+        this->_update_alt_connection_ids(i);
+        break;
+      }
+    }
+    ink_assert(p->connection_id() == this->_quic_connection_id);
+  }
+
+  // Process the packet
   switch (p->type()) {
   case QUICPacketType::PROTECTED:
     error = this->_state_connection_established_process_packet(std::move(p));
@@ -1012,6 +1033,7 @@ QUICNetVConnection::_switch_to_established_state()
   if (this->_complete_handshake_if_possible() == 0) {
     QUICConDebug("Enter state_connection_established");
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
+    this->_update_alt_connection_ids(countof(this->_alt_quic_connection_ids) - 1);
   } else {
     // Illegal state change
     ink_assert(!"Handshake has to be completed");
@@ -1051,4 +1073,29 @@ QUICNetVConnection::_handle_idle_timeout()
   this->close(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
 
   // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
+}
+
+void
+QUICNetVConnection::_update_alt_connection_ids(uint8_t chosen)
+{
+  QUICConfig::scoped_config params;
+  int n       = sizeof(this->_alt_quic_connection_ids);
+  int current = this->_alt_quic_connection_id_seq_num % n;
+  int delta   = chosen - current;
+  int count   = (n + delta) % n + 1;
+
+  for (int i = 0; i < count; ++i) {
+    int index = (current + i) % n;
+    QUICConnectionId conn_id;
+    QUICStatelessResetToken token;
+
+    conn_id.randomize();
+    token.generate(conn_id, params->server_id());
+    this->_alt_quic_connection_ids[index] = {this->_alt_quic_connection_id_seq_num + i, conn_id, token};
+    this->_packet_handler->registerAltConnectionId(conn_id, this);
+    this->transmit_frame(QUICFrameFactory::create_new_connection_id_frame(this->_alt_quic_connection_ids[index].seq_num,
+                                                                          this->_alt_quic_connection_ids[index].id,
+                                                                          this->_alt_quic_connection_ids[index].token));
+  }
+  this->_alt_quic_connection_id_seq_num += count;
 }

@@ -1107,10 +1107,10 @@ QUICStreamIdNeededFrame::store(uint8_t *buf, size_t *len) const
 // NEW_CONNECTION_ID frame
 //
 
-QUICNewConnectionIdFrame::QUICNewConnectionIdFrame(uint16_t sequence, QUICConnectionId connection_id)
+QUICNewConnectionIdFrame::QUICNewConnectionIdFrame(uint16_t sequence, QUICConnectionId connection_i,
+                                                   QUICStatelessResetToken stateless_reset_token)
+  : _sequence(sequence), _connection_id(connection_i), _stateless_reset_token(stateless_reset_token)
 {
-  this->_sequence      = sequence;
-  this->_connection_id = connection_id;
 }
 
 QUICFrameType
@@ -1136,6 +1136,8 @@ QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len) const
   p += n;
   QUICTypeUtil::write_QUICConnectionId(this->_connection_id, 8, p, &n);
   p += n;
+  memcpy(p, this->_stateless_reset_token.buf(), QUICStatelessResetToken::LEN);
+  p += QUICStatelessResetToken::LEN;
 
   *len = p - buf;
 }
@@ -1157,6 +1159,16 @@ QUICNewConnectionIdFrame::connection_id() const
     return QUICTypeUtil::read_QUICConnectionId(this->_buf + 3, 8);
   } else {
     return this->_connection_id;
+  }
+}
+
+QUICStatelessResetToken
+QUICNewConnectionIdFrame::stateless_reset_token() const
+{
+  if (this->_buf) {
+    return QUICStatelessResetToken(this->_buf + 11);
+  } else {
+    return this->_stateless_reset_token;
   }
 }
 
@@ -1469,6 +1481,15 @@ QUICFrameFactory::create_stop_sending_frame(QUICStreamId stream_id, QUICAppError
   QUICStopSendingFrame *frame = quicStopSendingFrameAllocator.alloc();
   new (frame) QUICStopSendingFrame(stream_id, error_code);
   return std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stop_sending_frame);
+}
+
+std::unique_ptr<QUICNewConnectionIdFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_new_connection_id_frame(uint32_t sequence, QUICConnectionId connectoin_id,
+                                                 QUICStatelessResetToken stateless_reset_token)
+{
+  QUICNewConnectionIdFrame *frame = quicNewConnectionIdFrameAllocator.alloc();
+  new (frame) QUICNewConnectionIdFrame(sequence, connectoin_id, stateless_reset_token);
+  return std::unique_ptr<QUICNewConnectionIdFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_new_connection_id_frame);
 }
 
 std::unique_ptr<QUICRetransmissionFrame, QUICFrameDeleterFunc>

@@ -36,7 +36,7 @@ class QUICFrame
 public:
   QUICFrame(const uint8_t *buf, size_t len) : _buf(buf), _len(len){};
   virtual QUICFrameType type() const;
-  virtual size_t size() const                         = 0;
+  virtual size_t size() const = 0;
   virtual void store(uint8_t *buf, size_t *len) const = 0;
   virtual void reset(const uint8_t *buf, size_t len);
   static QUICFrameType type(const uint8_t *buf);
@@ -407,16 +407,18 @@ class QUICNewConnectionIdFrame : public QUICFrame
 public:
   QUICNewConnectionIdFrame() : QUICFrame() {}
   QUICNewConnectionIdFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICNewConnectionIdFrame(uint16_t sequence, QUICConnectionId connection_id);
+  QUICNewConnectionIdFrame(uint16_t sequence, QUICConnectionId connection_id, QUICStatelessResetToken stateless_reset_token);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
   uint16_t sequence() const;
   QUICConnectionId connection_id() const;
+  QUICStatelessResetToken stateless_reset_token() const;
 
 private:
   uint16_t _sequence              = 0;
   QUICConnectionId _connection_id = 0;
+  QUICStatelessResetToken _stateless_reset_token;
 };
 
 //
@@ -676,6 +678,12 @@ public:
    */
   static std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc> create_stop_sending_frame(QUICStreamId stream_id,
                                                                                                QUICAppErrorCode error_code);
+
+  /*
+   * Creates a NEW_CONNECTION_ID frame.
+   */
+  static std::unique_ptr<QUICNewConnectionIdFrame, QUICFrameDeleterFunc> create_new_connection_id_frame(
+    uint32_t sequence, QUICConnectionId connectoin_id, QUICStatelessResetToken stateless_reset_token);
 
   /*
    * Creates a retransmission frame, which is very special.

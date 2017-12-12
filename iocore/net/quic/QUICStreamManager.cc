@@ -40,10 +40,7 @@ std::vector<QUICFrameType>
 QUICStreamManager::interests()
 {
   return {
-    QUICFrameType::STREAM,
-    QUICFrameType::RST_STREAM,
-    QUICFrameType::MAX_STREAM_DATA,
-    QUICFrameType::MAX_STREAM_ID,
+    QUICFrameType::STREAM, QUICFrameType::RST_STREAM, QUICFrameType::MAX_STREAM_DATA, QUICFrameType::MAX_STREAM_ID,
   };
 }
 

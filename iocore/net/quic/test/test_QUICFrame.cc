@@ -720,9 +720,11 @@ TEST_CASE("Store StreamIdNeeded Frame", "[quic]")
 TEST_CASE("Load NewConnectionId Frame", "[quic]")
 {
   uint8_t buf1[] = {
-    0x0b,                                          // Type
-    0x01, 0x02,                                    // Sequence
-    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Connection ID
+    0x0b,                                           // Type
+    0x01, 0x02,                                     // Sequence
+    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
+    0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
+    0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::NEW_CONNECTION_ID);
@@ -732,6 +734,7 @@ TEST_CASE("Load NewConnectionId Frame", "[quic]")
   CHECK(newConnectionIdFrame1 != nullptr);
   CHECK(newConnectionIdFrame1->sequence() == 0x0102);
   CHECK(newConnectionIdFrame1->connection_id() == 0x1122334455667788ULL);
+  CHECK(memcmp(newConnectionIdFrame1->stateless_reset_token().buf(), buf1 + 11, 16) == 0);
 }
 
 TEST_CASE("Store NewConnectionId Frame", "[quic]")
@@ -739,14 +742,13 @@ TEST_CASE("Store NewConnectionId Frame", "[quic]")
   uint8_t buf[65535];
   size_t len;
 
-  uint8_t expected[] = {
-    0x0b,                                          // Type
-    0x01, 0x02,                                    // Sequence
-    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Connection ID
-  };
-  QUICNewConnectionIdFrame newConnectionIdFrame(0x0102, 0x1122334455667788ULL);
+  uint8_t expected[] = {0x0b,                                           // Type
+                        0x01, 0x02,                                     // Sequence
+                        0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
+                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
+  QUICNewConnectionIdFrame newConnectionIdFrame(0x0102, 0x1122334455667788ULL, {expected + 11});
   newConnectionIdFrame.store(buf, &len);
-  CHECK(len == 11);
+  CHECK(len == 27);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 

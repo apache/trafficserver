@@ -43,6 +43,8 @@ public:
   void send_packet(const QUICPacket &packet, QUICNetVConnection *vc);
   void send_packet(const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu);
 
+  void registerAltConnectionId(QUICConnectionId id, QUICNetVConnection *vc);
+
 private:
   void _recv_packet(int event, UDPPacket *udpPacket);
   bool _read_connection_id(QUICConnectionId &cid, IOBufferBlock *block);

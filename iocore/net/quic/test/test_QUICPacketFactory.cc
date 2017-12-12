@@ -78,7 +78,7 @@ TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
   MockQUICCrypto crypto;
   factory.set_crypto_module(&crypto);
   QUICStatelessResetToken token;
-  token.generate(12345);
+  token.generate(12345, 67890);
   uint8_t expected_output[] = {
     0x41,                                           // 0CK0001
     0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, // Connection ID

@@ -200,27 +200,6 @@ using QUICErrorUPtr           = std::unique_ptr<QUICError>;
 using QUICConnectionErrorUPtr = std::unique_ptr<QUICConnectionError>;
 using QUICStreamErrorUPtr     = std::unique_ptr<QUICStreamError>;
 
-class QUICStatelessResetToken
-{
-public:
-  void
-  generate(uint64_t data)
-  {
-    this->_gen_token(data);
-  }
-
-  const uint8_t *
-  buf() const
-  {
-    return _token;
-  }
-
-private:
-  uint8_t _token[16] = {0};
-
-  void _gen_token(uint64_t data);
-};
-
 class QUICConnectionId
 {
 public:
@@ -238,6 +217,32 @@ public:
 
 private:
   uint64_t _id;
+};
+
+class QUICStatelessResetToken
+{
+public:
+  constexpr static int8_t LEN = 16;
+
+  QUICStatelessResetToken() {}
+  QUICStatelessResetToken(const uint8_t *buf) { memcpy(this->_token, buf, QUICStatelessResetToken::LEN); }
+
+  void
+  generate(QUICConnectionId conn_id, uint32_t server_id)
+  {
+    this->_gen_token(conn_id ^ server_id);
+  }
+
+  const uint8_t *
+  buf() const
+  {
+    return _token;
+  }
+
+private:
+  uint8_t _token[16] = {0};
+
+  void _gen_token(uint64_t data);
 };
 
 enum class QUICStreamType { SERVER, CLIENT, HANDSHAKE };

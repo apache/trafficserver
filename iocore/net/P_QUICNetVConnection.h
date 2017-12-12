@@ -189,9 +189,22 @@ public:
   QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame> frame) override;
 
 private:
+  class AltConnectionInfo
+  {
+  public:
+    int seq_num;
+    QUICConnectionId id;
+    QUICStatelessResetToken token;
+  };
+
   std::random_device _rnd;
+
   QUICConnectionId _original_quic_connection_id;
   QUICConnectionId _quic_connection_id;
+
+  AltConnectionInfo _alt_quic_connection_ids[3];
+  int8_t _alt_quic_connection_id_seq_num = 0;
+
   QUICPacketNumber _largest_received_packet_number = 0;
   UDPConnection *_udp_con                          = nullptr;
   QUICPacketHandler *_packet_handler               = nullptr;
@@ -264,6 +277,7 @@ private:
   void _switch_to_close_state();
 
   void _handle_idle_timeout();
+  void _update_alt_connection_ids(uint8_t chosen);
 
   QUICStatelessResetToken _reset_token;
 };
