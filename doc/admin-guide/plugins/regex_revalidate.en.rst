@@ -58,11 +58,18 @@ two required arguments: the path to a rules file, and the path to a log file::
 
 The rule configuration file format is described below in `Revalidation Rules`_.
 
-The plugin regularly (every 60 seconds) checks its rules configuration file for
-changes. If the file has been modified since its last scan, the contents are
-read and the in-memory rules list is updated. Thus, new rules may be added and
-existing ones modified without requiring a service restart every time (as long
-as the delay of up to 60 seconds is acceptable).
+By default The plugin regularly (every 60 seconds) checks its rules configuration
+file for changes and it will also check for changes when ``traffic_ctl config reload``
+is run. If the file has been modified since its last scan, the contents 
+are read and the in-memory rules list is updated. Thus, new rules may be added and
+existing ones modified without requiring a service restart.
+
+The configuration parameter `--disable-timed-updates` or `-d` may be used to configure
+the plugin to disable timed config file change checks.  With timed checks disabled,
+config file changes are checked are only when ``traffic_ctl config reload`` is run.::
+
+    regex_revalidate.so -d -c <path to rules> -l <path to log>
+
 
 Revalidation Rules
 ==================
