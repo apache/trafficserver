@@ -842,6 +842,11 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
         for (; idx < cookies_len && cookies[idx] != ';'; idx++) {
           ;
         }
+        // If we have not reached the end and there is a space after the
+        // semi-colon, advance one char
+        if (idx < cookies_len && std::isspace(cookies[idx + 1])) {
+          idx++;
+        }
         // cookie value is found
         size_t value_end_idx = idx;
         if (CookieHelper::COOKIE_OP_SET == cookie_op) {
