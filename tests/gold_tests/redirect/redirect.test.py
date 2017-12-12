@@ -35,7 +35,6 @@ dest_serv = Test.MakeOriginServer("dest_server")
 dns = Test.MakeDNServer("dns")
 
 ts.Disk.records_config.update({
-    'proxy.config.http.redirection_enabled': 1,
     'proxy.config.http.number_of_redirections': MAX_REDIRECT,
     'proxy.config.http.cache.http': 0,
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
