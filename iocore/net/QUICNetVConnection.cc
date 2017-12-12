@@ -596,10 +596,10 @@ QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (packet->type()) {
-  case QUICPacketType::CLIENT_INITIAL:
+  case QUICPacketType::INITIAL:
     error = this->_state_handshake_process_initial_client_packet(std::move(packet));
     break;
-  case QUICPacketType::CLIENT_CLEARTEXT:
+  case QUICPacketType::HANDSHAKE:
     error = this->_state_handshake_process_client_cleartext_packet(std::move(packet));
     break;
   case QUICPacketType::ZERO_RTT_PROTECTED:
@@ -700,7 +700,7 @@ QUICNetVConnection::_state_common_receive_packet()
   case QUICPacketType::PROTECTED:
     error = this->_state_connection_established_process_packet(std::move(p));
     break;
-  case QUICPacketType::CLIENT_CLEARTEXT:
+  case QUICPacketType::HANDSHAKE:
     // FIXME Just ignore for now but it has to be acked (GitHub#2609)
     break;
   default:
@@ -857,17 +857,17 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
 
   switch (type) {
-  case QUICPacketType::SERVER_CLEARTEXT:
-    packet = this->_packet_factory.create_server_cleartext_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
-                                                                  std::move(buf), len, retransmittable);
+  case QUICPacketType::HANDSHAKE:
+    packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
+                                                           std::move(buf), len, retransmittable);
     break;
   default:
     if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
       packet = this->_packet_factory.create_server_protected_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
                                                                     std::move(buf), len, retransmittable);
     } else {
-      packet = this->_packet_factory.create_server_cleartext_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
-                                                                    std::move(buf), len, retransmittable);
+      packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
+                                                             std::move(buf), len, retransmittable);
     }
     break;
   }

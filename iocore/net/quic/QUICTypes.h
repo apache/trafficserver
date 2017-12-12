@@ -62,16 +62,16 @@ constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
 };
 constexpr QUICStreamId STREAM_ID_FOR_HANDSHAKE = 0;
 
-enum class QUICPacketType : int {
-  VERSION_NEGOTIATION = 1,
-  CLIENT_INITIAL,
-  SERVER_STATELESS_RETRY,
-  SERVER_CLEARTEXT,
-  CLIENT_CLEARTEXT,
-  ZERO_RTT_PROTECTED,
-  PROTECTED,       // Not on the spec. but just for convenience
-  STATELESS_RESET, // Not on the spec. but just for convenience
-  UNINITIALIZED,   // Not on the spec. but just for convenience
+// Devide to QUICPacketType and QUICPacketLongHeaderType ?
+enum class QUICPacketType : uint8_t {
+  VERSION_NEGOTIATION = 0,
+  PROTECTED,                 // Not on the spec. but just for convenience // should be short header
+  STATELESS_RESET,           // Not on the spec. but just for convenience
+  INITIAL            = 0x7F, // draft-08 version-specific type
+  RETRY              = 0x7E, // draft-08 version-specific type
+  HANDSHAKE          = 0x7D, // draft-08 version-specific type
+  ZERO_RTT_PROTECTED = 0x7C, // draft-08 version-specific type
+  UNINITIALIZED      = 0xFF, // Not on the spec. but just for convenience
 };
 
 // To detect length of Packet Number

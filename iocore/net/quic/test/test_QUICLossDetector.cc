@@ -40,8 +40,8 @@ TEST_CASE("QUICLossDetector_Loss_in_Handshake", "[quic]")
   ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
   memcpy(payload.get(), raw, sizeof(raw));
 
-  QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::SERVER_CLEARTEXT, 0xffddbb9977553311ULL, 0x00000001, 0,
-                                                     0x00112233, std::move(payload), sizeof(raw));
+  QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::HANDSHAKE, 0xffddbb9977553311ULL, 0x00000001, 0, 0x00112233,
+                                                     std::move(payload), sizeof(raw));
   QUICPacketUPtr packet =
     QUICPacketUPtr(new QUICPacket(header, std::move(payload), sizeof(raw), true), [](QUICPacket *p) { delete p; });
   detector.on_packet_sent(std::move(packet));

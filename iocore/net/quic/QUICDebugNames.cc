@@ -30,14 +30,12 @@ QUICDebugNames::packet_type(QUICPacketType type)
   switch (type) {
   case QUICPacketType::VERSION_NEGOTIATION:
     return "VERSION_NEGOTIATION";
-  case QUICPacketType::CLIENT_INITIAL:
-    return "CLIENT_INITIAL";
-  case QUICPacketType::SERVER_STATELESS_RETRY:
-    return "SERVER_STATELESS_RETRY";
-  case QUICPacketType::SERVER_CLEARTEXT:
-    return "SERVER_CLEARTEXT";
-  case QUICPacketType::CLIENT_CLEARTEXT:
-    return "CLIENT_CLEARTEXT";
+  case QUICPacketType::INITIAL:
+    return "INITIAL";
+  case QUICPacketType::RETRY:
+    return "RETRY";
+  case QUICPacketType::HANDSHAKE:
+    return "HANDSHAKE";
   case QUICPacketType::ZERO_RTT_PROTECTED:
     return "ZERO_RTT_PROTECTED";
   case QUICPacketType::PROTECTED:

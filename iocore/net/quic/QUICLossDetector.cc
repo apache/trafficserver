@@ -150,9 +150,9 @@ QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
 
   bool is_handshake   = false;
   QUICPacketType type = packet->type();
+
   // XXX: Should QUICPacketType::SERVER_STATELESS_RETRY be included?
-  if (type == QUICPacketType::CLIENT_INITIAL || type == QUICPacketType::SERVER_CLEARTEXT ||
-      type == QUICPacketType::CLIENT_CLEARTEXT) {
+  if (type == QUICPacketType::INITIAL || type == QUICPacketType::HANDSHAKE) {
     is_handshake = true;
   }
 

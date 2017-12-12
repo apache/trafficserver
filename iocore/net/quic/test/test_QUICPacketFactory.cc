@@ -53,7 +53,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   CHECK(memcmp(packet->payload(), "\xff\x00\x00\x07", 4) == 0);
 }
 
-TEST_CASE("QUICPacketFactory_Create_ServerCleartextPacket", "[quic]")
+TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
 {
   QUICPacketFactory factory;
   MockQUICCrypto crypto;
@@ -64,8 +64,8 @@ TEST_CASE("QUICPacketFactory_Create_ServerCleartextPacket", "[quic]")
   ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
   memcpy(payload.get(), raw, sizeof(raw));
 
-  QUICPacketUPtr packet = factory.create_server_cleartext_packet(0x01020304, 0, std::move(payload), sizeof(raw), true);
-  CHECK(packet->type() == QUICPacketType::SERVER_CLEARTEXT);
+  QUICPacketUPtr packet = factory.create_handshake_packet(0x01020304, 0, std::move(payload), sizeof(raw), true);
+  CHECK(packet->type() == QUICPacketType::HANDSHAKE);
   CHECK(packet->connection_id() == 0x01020304);
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
   CHECK((packet->packet_number() & 0xFFFFFFFF80000000) == 0);

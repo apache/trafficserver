@@ -27,20 +27,41 @@
 
 TEST_CASE("QUICPacketHeader", "[quic]")
 {
+  SECTION("Long Header (load) Version Negotiation Packet")
+  {
+    const uint8_t input[] = {
+      0x80,                                           // Long header, Type: NONE
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection ID
+      0x00, 0x00, 0x00, 0x00,                         // Version
+      0x00, 0x00, 0x00, 0x08,                         // Supported Version 1
+      0x00, 0x00, 0x00, 0x09,                         // Supported Version 1
+    };
+
+    QUICPacketHeader *header = QUICPacketHeader::load(input, sizeof(input), 0);
+    CHECK(header->size() == 13);
+    CHECK(header->packet_size() == 21);
+    CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
+    CHECK(header->has_connection_id() == true);
+    CHECK(header->connection_id() == 0x0102030405060708);
+    CHECK(header->has_version() == true);
+    CHECK(header->version() == 0x00000000);
+    CHECK(header->has_key_phase() == false);
+  }
+
   SECTION("Long Header (load)")
   {
     const uint8_t input[] = {
-      0x81,                                           // Long header, Type
+      0xFF,                                           // Long header, Type: INITIAL
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection ID
-      0x12, 0x34, 0x56, 0x78,                         // Packet number
       0x11, 0x22, 0x33, 0x44,                         // Version
+      0x12, 0x34, 0x56, 0x78,                         // Packet number
       0xff, 0xff,                                     // Payload (dummy)
     };
 
     QUICPacketHeader *header = QUICPacketHeader::load(input, sizeof(input), 0);
     CHECK(header->size() == 17);
     CHECK(header->packet_size() == 19);
-    CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
+    CHECK(header->type() == QUICPacketType::INITIAL);
     CHECK(header->has_connection_id() == true);
     CHECK(header->connection_id() == 0x0102030405060708);
     CHECK(header->packet_number() == 0x12345678);
@@ -55,13 +76,13 @@ TEST_CASE("QUICPacketHeader", "[quic]")
     ats_unique_buf payload   = ats_unique_malloc(sizeof(expected));
     memcpy(payload.get(), expected, sizeof(expected));
 
-    QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::CLIENT_INITIAL, 0x0102030405060708, 0x12345678, 0,
-                                                       0xa0a0a0a0, std::move(payload), 32);
+    QUICPacketHeader *header =
+      QUICPacketHeader::build(QUICPacketType::INITIAL, 0x0102030405060708, 0x12345678, 0, 0xa0a0a0a0, std::move(payload), 32);
 
     CHECK(header->size() == 17);
     CHECK(header->has_key_phase() == false);
     CHECK(header->packet_size() == 0);
-    CHECK(header->type() == QUICPacketType::CLIENT_INITIAL);
+    CHECK(header->type() == QUICPacketType::INITIAL);
     CHECK(header->has_connection_id() == true);
     CHECK(header->connection_id() == 0x0102030405060708);
     CHECK(header->packet_number() == 0x12345678);
@@ -108,14 +129,6 @@ TEST_CASE("QUICPacketHeader", "[quic]")
     CHECK(header->packet_number() == 0x12345678);
     CHECK(header->has_version() == false);
   }
-}
-
-TEST_CASE("Loading Unknown Packet", "[quic]")
-{
-  const uint8_t buf[]      = {0xff};
-  QUICPacketHeader *header = QUICPacketHeader::load(buf, sizeof(buf), 0);
-
-  CHECK(header->type() == QUICPacketType::UNINITIALIZED);
 }
 
 TEST_CASE("Encoded Packet Number Length", "[quic]")
