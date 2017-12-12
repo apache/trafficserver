@@ -55,10 +55,10 @@ using QUICStreamId     = uint32_t;
 using QUICOffset       = uint64_t;
 
 // TODO: Update version number
-// Note: You also need to update tests for VersionNegotiationPacket, if you change the number of versions
+// Note: You also need to update tests for VersionNegotiationPacket creation, if you change the number of versions
 // Prefix for drafts (0xff000000) + draft number
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
-  0xff000007,
+  0xff000008,
 };
 constexpr QUICStreamId STREAM_ID_FOR_HANDSHAKE = 0;
 
