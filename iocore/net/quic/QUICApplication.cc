@@ -66,10 +66,7 @@ QUICStreamIO::write(const uint8_t *buf, int64_t len)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());
 
-  int64_t bytes_add = this->_write_buffer->write(buf, len);
-  this->_write_vio->nbytes += bytes_add;
-
-  return bytes_add;
+  return this->_write_buffer->write(buf, len);
 }
 
 int64_t
@@ -82,10 +79,8 @@ QUICStreamIO::write(IOBufferReader *r, int64_t alen, int64_t offset)
         this->_write_vio->ndone, bytes_avail, alen);
 
   if (bytes_avail > 0) {
-    int64_t len         = std::min(bytes_avail, alen);
-    int64_t bytes_added = this->_write_buffer->write(r, len, offset);
-
-    return bytes_added;
+    int64_t len = std::min(bytes_avail, alen);
+    return this->_write_buffer->write(r, len, offset);
   } else {
     return 0;
   }

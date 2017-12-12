@@ -29,6 +29,7 @@
 #include "QUICVersionNegotiator.h"
 #include "QUICConfig.h"
 #include "P_SSLNextProtocolSet.h"
+#include "P_VConnection.h"
 
 static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";
 
@@ -271,7 +272,7 @@ QUICHandshake::state_address_validation(int event, void *data)
 int
 QUICHandshake::state_complete(int event, void *data)
 {
-  QUICHSDebug("event: %d", event);
+  QUICHSDebug("%s", get_vc_event_name(event));
   QUICHSDebug("Got an event on complete state. Ignoring it for now.");
 
   return EVENT_CONT;
