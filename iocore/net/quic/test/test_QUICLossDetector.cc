@@ -27,33 +27,127 @@
 #include "QUICEvents.h"
 #include "Mock.h"
 
-TEST_CASE("QUICLossDetector_Loss_in_Handshake", "[quic]")
+TEST_CASE("QUICLossDetector_Loss", "[quic]")
 {
-  MockQUICPacketTransmitter *tx = new MockQUICPacketTransmitter();
-  QUICLossDetector detector(tx);
+  MockQUICCrypto crypto;
+  QUICPacketFactory pf;
+  pf.set_crypto_module(&crypto);
 
-  // Check initial state
-  CHECK(tx->_retransmit_count == 0);
+  QUICAckFrameCreator *afc         = new QUICAckFrameCreator();
+  QUICConnectionId connection_id   = 1;
+  MockQUICPacketTransmitter *tx    = new MockQUICPacketTransmitter();
+  MockQUICCongestionController *cc = new MockQUICCongestionController();
+  QUICLossDetector detector(tx, cc);
+  ats_unique_buf payload              = ats_unique_malloc(16);
+  size_t payload_len                  = 16;
+  QUICPacketUPtr packet               = QUICPacketFactory::create_null_packet();
+  std::shared_ptr<QUICAckFrame> frame = QUICFrameFactory::create_null_ack_frame();
+  uint16_t ack_delay                  = 50;
 
-  // Send SERVER_CLEARTEXT (Handshake message)
-  uint8_t raw[4]         = {0};
-  ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
-  memcpy(payload.get(), raw, sizeof(raw));
+  SECTION("Handshake")
+  {
+    // Check initial state
+    CHECK(tx->retransmitted.size() == 0);
 
-  QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::HANDSHAKE, 0xffddbb9977553311ULL, 0x00000001, 0, 0x00112233,
-                                                     std::move(payload), sizeof(raw));
-  QUICPacketUPtr packet =
-    QUICPacketUPtr(new QUICPacket(header, std::move(payload), sizeof(raw), true), [](QUICPacket *p) { delete p; });
-  detector.on_packet_sent(std::move(packet));
-  ink_hrtime_sleep(HRTIME_MSECONDS(1000));
-  CHECK(tx->_retransmit_count > 0);
+    // Send SERVER_CLEARTEXT (Handshake message)
+    uint8_t raw[4]         = {0};
+    ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
+    memcpy(payload.get(), raw, sizeof(raw));
 
-  // Receive ACK
-  std::shared_ptr<QUICAckFrame> frame = std::make_shared<QUICAckFrame>(0x01, 20, 0);
-  frame->ack_block_section()->add_ack_block({0, 1ULL});
-  detector.handle_frame(frame);
-  ink_hrtime_sleep(HRTIME_MSECONDS(1500));
-  int retransmit_count = tx->_retransmit_count;
-  ink_hrtime_sleep(HRTIME_MSECONDS(1500));
-  CHECK(tx->_retransmit_count == retransmit_count);
+    QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::HANDSHAKE, 0xffddbb9977553311ULL, 0x00000001, 0, 0x00112233,
+                                                       std::move(payload), sizeof(raw));
+    QUICPacketUPtr packet =
+      QUICPacketUPtr(new QUICPacket(header, std::move(payload), sizeof(raw), true), [](QUICPacket *p) { delete p; });
+    detector.on_packet_sent(std::move(packet));
+    ink_hrtime_sleep(HRTIME_MSECONDS(1000));
+    CHECK(tx->retransmitted.size() > 0);
+
+    // Receive ACK
+    std::shared_ptr<QUICAckFrame> frame = std::make_shared<QUICAckFrame>(0x01, 20, 0);
+    frame->ack_block_section()->add_ack_block({0, 1ULL});
+    detector.handle_frame(frame);
+    ink_hrtime_sleep(HRTIME_MSECONDS(1500));
+    int retransmit_count = tx->retransmitted.size();
+    ink_hrtime_sleep(HRTIME_MSECONDS(1500));
+    CHECK(tx->retransmitted.size() == retransmit_count);
+  }
+
+  SECTION("1-RTT")
+  {
+    // Check initial state
+    CHECK(tx->retransmitted.size() == 0);
+
+    // Send packet (1) to (7)
+    payload                = ats_unique_malloc(16);
+    QUICPacketUPtr packet1 = pf.create_server_protected_packet(connection_id, detector.largest_acked_packet_number(),
+                                                               std::move(payload), payload_len, true);
+    payload                = ats_unique_malloc(16);
+    QUICPacketUPtr packet2 = pf.create_server_protected_packet(connection_id, detector.largest_acked_packet_number(),
+                                                               std::move(payload), payload_len, true);
+    payload                = ats_unique_malloc(16);
+    QUICPacketUPtr packet3 = pf.create_server_protected_packet(connection_id, detector.largest_acked_packet_number(),
+                                                               std::move(payload), payload_len, true);
+    payload                = ats_unique_malloc(16);
+    QUICPacketUPtr packet4 = pf.create_server_protected_packet(connection_id, detector.largest_acked_packet_number(),
+                                                               std::move(payload), payload_len, true);
+    payload                = ats_unique_malloc(16);
+    QUICPacketUPtr packet5 = pf.create_server_protected_packet(connection_id, detector.largest_acked_packet_number(),
+                                                               std::move(payload), payload_len, true);
+    payload                = ats_unique_malloc(16);
+    QUICPacketUPtr packet6 = pf.create_server_protected_packet(connection_id, detector.largest_acked_packet_number(),
+                                                               std::move(payload), payload_len, true);
+    payload                = ats_unique_malloc(16);
+    QUICPacketUPtr packet7 = pf.create_server_protected_packet(connection_id, detector.largest_acked_packet_number(),
+                                                               std::move(payload), payload_len, true);
+    payload                = ats_unique_malloc(16);
+    QUICPacketUPtr packet8 = pf.create_server_protected_packet(connection_id, detector.largest_acked_packet_number(),
+                                                               std::move(payload), payload_len, true);
+    payload                = ats_unique_malloc(16);
+    QUICPacketUPtr packet9 = pf.create_server_protected_packet(connection_id, detector.largest_acked_packet_number(),
+                                                               std::move(payload), payload_len, true);
+
+    QUICPacketNumber pn1 = packet1->packet_number();
+    QUICPacketNumber pn2 = packet2->packet_number();
+    QUICPacketNumber pn3 = packet3->packet_number();
+    QUICPacketNumber pn4 = packet4->packet_number();
+    QUICPacketNumber pn5 = packet5->packet_number();
+    QUICPacketNumber pn6 = packet6->packet_number();
+    QUICPacketNumber pn7 = packet7->packet_number();
+    QUICPacketNumber pn8 = packet8->packet_number();
+    QUICPacketNumber pn9 = packet9->packet_number();
+
+    detector.on_packet_sent(std::move(packet1));
+    detector.on_packet_sent(std::move(packet2));
+    detector.on_packet_sent(std::move(packet3));
+    detector.on_packet_sent(std::move(packet4));
+    detector.on_packet_sent(std::move(packet5));
+    detector.on_packet_sent(std::move(packet6));
+    detector.on_packet_sent(std::move(packet7));
+    detector.on_packet_sent(std::move(packet8));
+    detector.on_packet_sent(std::move(packet9));
+
+    ink_hrtime_sleep(HRTIME_MSECONDS(10000));
+
+    // Receive an ACK for (1) (4) (5) (7) (8) (9)
+    afc->update(pn1, true);
+    afc->update(pn4, true);
+    afc->update(pn5, true);
+    afc->update(pn7, true);
+    afc->update(pn8, true);
+    afc->update(pn9, true);
+    frame = afc->create();
+    detector.handle_frame(frame);
+
+    CHECK(cc->lost_packets.size() == 3);
+
+    CHECK(cc->lost_packets.find(pn1) == cc->lost_packets.end());
+    CHECK(cc->lost_packets.find(pn2) != cc->lost_packets.end());
+    CHECK(cc->lost_packets.find(pn3) != cc->lost_packets.end());
+    CHECK(cc->lost_packets.find(pn4) == cc->lost_packets.end());
+    CHECK(cc->lost_packets.find(pn5) == cc->lost_packets.end());
+    CHECK(cc->lost_packets.find(pn6) != cc->lost_packets.end());
+    CHECK(cc->lost_packets.find(pn7) == cc->lost_packets.end());
+    CHECK(cc->lost_packets.find(pn8) == cc->lost_packets.end());
+    CHECK(cc->lost_packets.find(pn9) == cc->lost_packets.end());
+  }
 }

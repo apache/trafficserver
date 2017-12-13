@@ -177,7 +177,7 @@ public:
   QUICPacketNumber largest_acked_packet_number() override;
 
   // QUICConnection (QUICPacketTransmitter)
-  virtual void transmit_packet(QUICPacketUPtr packet) override;
+  virtual uint32_t transmit_packet(QUICPacketUPtr packet) override;
   virtual void retransmit_packet(const QUICPacket &packet) override;
   virtual Ptr<ProxyMutex> get_packet_transmitter_mutex() override;
 
@@ -229,8 +229,8 @@ private:
   QUICRemoteFlowController *_remote_flow_controller = nullptr;
   QUICLocalFlowController *_local_flow_controller   = nullptr;
 
-  Queue<UDPPacket> _packet_recv_queue;
-  Queue<QUICPacket> _packet_send_queue;
+  CountQueue<UDPPacket> _packet_recv_queue;
+  CountQueue<QUICPacket> _packet_send_queue;
   std::queue<QUICPacketUPtr> _quic_packet_recv_queue;
   // `_frame_send_queue` is the queue for any type of frame except STREAM frame.
   // The flow contorl doesn't blcok frames in this queue.
@@ -243,7 +243,7 @@ private:
   void _close_packet_write_ready(Event *data);
   Event *_packet_write_ready = nullptr;
 
-  void _transmit_packet(QUICPacketUPtr);
+  uint32_t _transmit_packet(QUICPacketUPtr);
   void _transmit_frame(QUICFrameUPtr);
 
   void _store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,

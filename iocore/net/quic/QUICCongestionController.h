@@ -23,7 +23,9 @@
 
 #pragma once
 
-#include <QUICFrameHandler.h>
+#include <set>
+#include "QUICTypes.h"
+#include "QUICFrameHandler.h"
 
 // TODO Implement congestion controll.
 // Congestion controller will be required after the 2nd implementation draft.
@@ -32,6 +34,11 @@ class QUICCongestionController : public QUICFrameHandler
 public:
   virtual std::vector<QUICFrameType> interests() override;
   virtual QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame>) override;
+
+  void on_packet_sent();
+  void on_packet_acked();
+  virtual void on_packets_lost(std::set<QUICPacketNumber> packets);
+  void on_rto_verified();
 
 private:
 };

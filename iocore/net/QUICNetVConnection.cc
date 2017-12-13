@@ -110,7 +110,7 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   // Create frame handlers
   this->_stream_manager         = new QUICStreamManager(this->connection_id(), this, this->_application_map);
   this->_congestion_controller  = new QUICCongestionController();
-  this->_loss_detector          = new QUICLossDetector(this);
+  this->_loss_detector          = new QUICLossDetector(this, this->_congestion_controller);
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(0, this);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(0, this);
 
@@ -216,7 +216,7 @@ QUICNetVConnection::stream_manager()
   return this->_stream_manager;
 }
 
-void
+uint32_t
 QUICNetVConnection::_transmit_packet(QUICPacketUPtr packet)
 {
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
@@ -225,13 +225,15 @@ QUICNetVConnection::_transmit_packet(QUICPacketUPtr packet)
                packet->size());
   // TODO Remove const_cast
   this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
+  return this->_packet_send_queue.size;
 }
 
-void
+uint32_t
 QUICNetVConnection::transmit_packet(QUICPacketUPtr packet)
 {
-  this->_transmit_packet(std::move(packet));
+  uint32_t npackets = this->_transmit_packet(std::move(packet));
   this->_schedule_packet_write_ready();
+  return npackets;
 }
 
 void

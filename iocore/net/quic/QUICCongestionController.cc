@@ -49,3 +49,23 @@ QUICCongestionController::handle_frame(std::shared_ptr<const QUICFrame> frame)
 
   return error;
 }
+
+void
+QUICCongestionController::on_packet_sent()
+{
+}
+
+void
+QUICCongestionController::on_packet_acked()
+{
+}
+
+void
+QUICCongestionController::on_packets_lost(std::set<QUICPacketNumber> packets)
+{
+}
+
+void
+QUICCongestionController::on_rto_verified()
+{
+}

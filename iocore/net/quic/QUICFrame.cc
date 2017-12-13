@@ -607,6 +607,7 @@ QUICAckFrame::AckBlockSection::const_iterator::const_iterator(uint8_t index, con
 QUICAckFrame::AckBlockSection::const_iterator::const_iterator(uint8_t index, const std::vector<QUICAckFrame::AckBlock> *ack_block)
 {
   this->_index      = index;
+  this->_buf        = nullptr;
   this->_ack_blocks = ack_block;
   if (this->_ack_blocks->size()) {
     if (this->_ack_blocks->size() == this->_index) {

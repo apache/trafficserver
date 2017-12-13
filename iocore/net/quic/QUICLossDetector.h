@@ -37,11 +37,12 @@
 #include "QUICFrame.h"
 #include "QUICFrameHandler.h"
 #include "QUICPacketTransmitter.h"
+#include "QUICCongestionController.h"
 
 class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
-  QUICLossDetector(QUICPacketTransmitter *transmitter);
+  QUICLossDetector(QUICPacketTransmitter *transmitter, QUICCongestionController *cc);
 
   int event_handler(int event, Event *edata);
 
@@ -116,4 +117,5 @@ private:
   void _retransmit_handshake_packets();
 
   QUICPacketTransmitter *_transmitter = nullptr;
+  QUICCongestionController *_cc       = nullptr;
 };

@@ -28,7 +28,8 @@
 #define QUICLDDebug(fmt, ...) \
   Debug("quic_loss_detector", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_connection_id), ##__VA_ARGS__)
 
-QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter) : _transmitter(transmitter)
+QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICCongestionController *cc)
+  : _transmitter(transmitter), _cc(cc)
 {
   this->mutex = new_ProxyMutex();
 
@@ -133,7 +134,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
   // Inform the congestion controller of lost packets and
   // lets it decide whether to retransmit immediately.
   if (!lost_packets.empty()) {
-    // TODO cc->on_packets_lost(lost_packets);
+    this->_cc->on_packets_lost(lost_packets);
     for (auto packet_number : lost_packets) {
       this->_decrement_packet_count(packet_number);
       this->_sent_packets.erase(packet_number);
@@ -350,12 +351,16 @@ QUICLossDetector::_determine_newly_acked_packets(const QUICAckFrame &ack_frame)
 {
   std::set<QUICPacketNumber> packets;
   QUICPacketNumber x = ack_frame.largest_acknowledged();
-  packets.insert(x);
+  for (uint64_t i = 0; i <= ack_frame.ack_block_section()->first_ack_block_length(); ++i) {
+    packets.insert(x--);
+  }
   for (auto &&block : *(ack_frame.ack_block_section())) {
-    for (int i = 0; i < block.gap(); ++i) {
-      packets.insert(++x);
+    for (uint64_t i = 0; i <= block.gap(); ++i) {
+      x--;
     }
-    x += block.length();
+    for (uint64_t i = 0; i <= block.length(); ++i) {
+      packets.insert(x--);
+    }
   }
 
   return packets;

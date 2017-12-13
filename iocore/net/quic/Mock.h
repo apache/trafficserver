@@ -157,10 +157,11 @@ public:
     return 0;
   }
 
-  void
+  uint32_t
   transmit_packet(QUICPacketUPtr packet) override
   {
     ++_transmit_count;
+    return 1;
   }
 
   void
@@ -275,16 +276,21 @@ class MockQUICPacketTransmitter : public QUICPacketTransmitter
 {
 public:
   MockQUICPacketTransmitter() : QUICPacketTransmitter() { this->_mutex = new_ProxyMutex(); };
-  void
+
+  uint32_t
   transmit_packet(QUICPacketUPtr packet) override
   {
-    ++_transmit_count;
+    if (packet) {
+      this->transmitted.insert(packet->packet_number());
+      return 1;
+    }
+    return 0;
   }
 
   void
   retransmit_packet(const QUICPacket &packet) override
   {
-    ++_retransmit_count;
+    this->retransmitted.insert(packet.packet_number());
   }
 
   Ptr<ProxyMutex>
@@ -293,9 +299,10 @@ public:
     return this->_mutex;
   }
 
-  int _transmit_count   = 0;
-  int _retransmit_count = 0;
   Ptr<ProxyMutex> _mutex;
+
+  std::set<QUICPacketNumber> transmitted;
+  std::set<QUICPacketNumber> retransmitted;
 };
 
 class MockQUICFrameTransmitter : public QUICFrameTransmitter
@@ -316,25 +323,9 @@ public:
   int frameCount[256] = {0};
 };
 
-class MockQUICLossDetector : public QUICLossDetector
-{
-public:
-  MockQUICLossDetector() : QUICLossDetector(new MockQUICPacketTransmitter()) {}
-  void
-  rcv_frame(std::shared_ptr<const QUICFrame>)
-  {
-  }
-
-  void
-  on_packet_sent(QUICPacketUPtr packet)
-  {
-  }
-};
-
 class MockQUICCongestionController : public QUICCongestionController
 {
 public:
-  MockQUICCongestionController() : QUICCongestionController() {}
   // Override
   virtual QUICErrorUPtr
   handle_frame(std::shared_ptr<const QUICFrame> f) override
@@ -343,6 +334,14 @@ public:
     ++_totalFrameCount;
 
     return QUICErrorUPtr(new QUICNoError());
+  }
+
+  virtual void
+  on_packets_lost(std::set<QUICPacketNumber> packets) override
+  {
+    for (auto pn : packets) {
+      lost_packets.insert(pn);
+    }
   }
 
   // for Test
@@ -370,9 +369,26 @@ public:
     return _totalFrameCount;
   }
 
+  std::set<QUICPacketNumber> lost_packets;
+
 private:
   int _totalFrameCount = 0;
   int _frameCount[256] = {0};
+};
+
+class MockQUICLossDetector : public QUICLossDetector
+{
+public:
+  MockQUICLossDetector() : QUICLossDetector(new MockQUICPacketTransmitter(), new MockQUICCongestionController()) {}
+  void
+  rcv_frame(std::shared_ptr<const QUICFrame>)
+  {
+  }
+
+  void
+  on_packet_sent(QUICPacketUPtr packet)
+  {
+  }
 };
 
 class MockQUICApplication : public QUICApplication
