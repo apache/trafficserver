@@ -50,11 +50,11 @@ QUICFrame::type() const
 QUICFrameType
 QUICFrame::type(const uint8_t *buf)
 {
-  if (buf[0] >= static_cast<uint8_t>(QUICFrameType::STREAM)) {
+  if (buf[0] >= static_cast<uint8_t>(QUICFrameType::UNKNOWN)) {
+    return QUICFrameType::UNKNOWN;
+  } else if (buf[0] >= static_cast<uint8_t>(QUICFrameType::STREAM)) {
     return QUICFrameType::STREAM;
-  } else if (buf[0] >= static_cast<uint8_t>(QUICFrameType::ACK)) {
-    return QUICFrameType::ACK;
-  } else if (buf[0] > static_cast<uint8_t>(QUICFrameType::STOP_SENDING)) {
+  } else if (buf[0] > static_cast<uint8_t>(QUICFrameType::ACK)) {
     return QUICFrameType::UNKNOWN;
   } else {
     return static_cast<QUICFrameType>(buf[0]);
@@ -439,7 +439,7 @@ QUICAckFrame::_get_largest_acknowledged_length() const
    * 1 -> 2 byte
    * 2 -> 4 byte
    * 3 -> 8 byte
-  */
+   */
   int n = (this->_buf[0] & 0x0c) >> 2;
   return 0x01 << n;
 }
@@ -465,7 +465,7 @@ QUICAckFrame::_get_ack_block_length() const
    * 1 -> 2 byte
    * 2 -> 4 byte
    * 3 -> 8 byte
-  */
+   */
   int n = this->_buf[0] & 0x03;
   return 0x01 << n;
 }

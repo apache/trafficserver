@@ -42,15 +42,16 @@ TEST_CASE("QUICFrame Type", "[quic]")
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0a")) == QUICFrameType::STREAM_ID_NEEDED);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0b")) == QUICFrameType::NEW_CONNECTION_ID);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0c")) == QUICFrameType::STOP_SENDING);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0d")) == QUICFrameType::PONG);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0e")) == QUICFrameType::ACK);
   // Undefined ragne
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0d")) == QUICFrameType::UNKNOWN);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x9f")) == QUICFrameType::UNKNOWN);
-  // Range of ACK
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xa0")) == QUICFrameType::ACK);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xbf")) == QUICFrameType::ACK);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0f")) == QUICFrameType::UNKNOWN);
   // Range of STREAM
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xc0")) == QUICFrameType::STREAM);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xff")) == QUICFrameType::STREAM);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x10")) == QUICFrameType::STREAM);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x17")) == QUICFrameType::STREAM);
+  // Undefined ragne
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x18")) == QUICFrameType::UNKNOWN);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xff")) == QUICFrameType::UNKNOWN);
 }
 
 TEST_CASE("Construct QUICFrame", "[quic]")

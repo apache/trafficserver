@@ -97,9 +97,10 @@ enum class QUICFrameType : int {
   STREAM_ID_NEEDED,
   NEW_CONNECTION_ID,
   STOP_SENDING,
-  ACK     = 0xA0,
-  STREAM  = 0xC0,
-  UNKNOWN = 0x100,
+  PONG,
+  ACK,
+  STREAM  = 0x10, // 0x10 - 0x17
+  UNKNOWN = 0x18,
 };
 
 enum class QUICVersionNegotiationStatus {
