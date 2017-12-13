@@ -51,7 +51,7 @@ ats_unique_buf ats_unique_malloc(size_t size);
 
 using QUICPacketNumber = uint64_t;
 using QUICVersion      = uint32_t;
-using QUICStreamId     = uint32_t;
+using QUICStreamId     = uint64_t;
 using QUICOffset       = uint64_t;
 
 // TODO: Update version number
@@ -273,4 +273,13 @@ public:
   static void write_uint_as_nbytes(uint64_t value, uint8_t n, uint8_t *buf, size_t *len);
 
 private:
+};
+
+class QUICVariableInt
+{
+public:
+  static size_t size(const uint8_t *src);
+  static size_t size(uint64_t src);
+  static int encode(uint8_t *dst, size_t dst_len, size_t &len, uint64_t src);
+  static int decode(uint64_t &dst, size_t &len, const uint8_t *src, size_t src_len);
 };

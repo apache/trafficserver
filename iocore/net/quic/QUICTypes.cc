@@ -167,3 +167,75 @@ QUICError::code()
 {
   return static_cast<uint16_t>(this->trans_error_code);
 }
+
+size_t
+QUICVariableInt::size(const uint8_t *src)
+{
+  return 1 << (src[0] >> 6);
+}
+
+size_t
+QUICVariableInt::size(uint64_t src)
+{
+  uint8_t flag = 0;
+  if (src > 4611686018427387903) {
+    // max usable bits is 62
+    return 0;
+  } else if (src > 1073741823) {
+    flag = 0x03;
+  } else if (src > 16383) {
+    flag = 0x02;
+  } else if (src > 63) {
+    flag = 0x01;
+  } else {
+    flag = 0x00;
+  }
+
+  return 1 << flag;
+}
+
+int
+QUICVariableInt::encode(uint8_t *dst, size_t dst_len, size_t &len, uint64_t src)
+{
+  uint8_t flag = 0;
+  if (src > 4611686018427387903) {
+    // max usable bits is 62
+    return 1;
+  } else if (src > 1073741823) {
+    flag = 0x03;
+  } else if (src > 16383) {
+    flag = 0x02;
+  } else if (src > 63) {
+    flag = 0x01;
+  } else {
+    flag = 0x00;
+  }
+
+  len = 1 << flag;
+  if (len > dst_len) {
+    return 1;
+  }
+
+  size_t dummy = 0;
+  QUICTypeUtil::write_uint_as_nbytes(src, len, dst, &dummy);
+  dst[0] |= (flag << 6);
+
+  return 0;
+}
+
+int
+QUICVariableInt::decode(uint64_t &dst, size_t &len, const uint8_t *src, size_t src_len)
+{
+  len = 1 << (src[0] >> 6);
+  if (src_len < len) {
+    return 1;
+  }
+
+  uint8_t buf[8] = {0};
+  memcpy(buf, src, len);
+  buf[0] &= 0x3f;
+
+  dst = QUICTypeUtil::read_nbytes_as_uint(buf, len);
+
+  return 0;
+}

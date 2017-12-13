@@ -67,3 +67,110 @@ TEST_CASE("QUICTypeUtil", "[quic]")
   INFO("2 byte to 8 byte");
   CHECK(memcmp(buf, "\x00\x00\x00\x00\x00\x00\x11\xff", 8) == 0);
 }
+
+TEST_CASE("Variable Length - encoding 1", "[quic]")
+{
+  uint8_t dst[8]   = {0};
+  uint64_t src     = 151288809941952652;
+  size_t len       = 0;
+  uint8_t expect[] = {0xc2, 0x19, 0x7c, 0x5e, 0xff, 0x14, 0xe8, 0x8c};
+
+  QUICVariableInt::encode(dst, sizeof(dst), len, src);
+
+  CHECK(len == 8);
+  CHECK(memcmp(dst, expect, 8) == 0);
+}
+
+TEST_CASE("Variable Length - encoding 2", "[quic]")
+{
+  uint8_t dst[8]   = {0};
+  uint64_t src     = 494878333;
+  size_t len       = 0;
+  uint8_t expect[] = {0x9d, 0x7f, 0x3e, 0x7d};
+
+  QUICVariableInt::encode(dst, sizeof(dst), len, src);
+
+  CHECK(len == 4);
+  CHECK(memcmp(dst, expect, 4) == 0);
+}
+
+TEST_CASE("Variable Length - encoding 3", "[quic]")
+{
+  uint8_t dst[8]   = {0};
+  uint64_t src     = 15293;
+  size_t len       = 0;
+  uint8_t expect[] = {0x7b, 0xbd};
+
+  QUICVariableInt::encode(dst, sizeof(dst), len, src);
+
+  CHECK(len == 2);
+  CHECK(memcmp(dst, expect, 2) == 0);
+}
+
+TEST_CASE("Variable Length - encoding 4", "[quic]")
+{
+  uint8_t dst[8]   = {0};
+  uint64_t src     = 37;
+  size_t len       = 0;
+  uint8_t expect[] = {0x25};
+
+  QUICVariableInt::encode(dst, sizeof(dst), len, src);
+
+  CHECK(len == 1);
+  CHECK(memcmp(dst, expect, 1) == 0);
+}
+
+TEST_CASE("Variable Length - decoding 1", "[quic]")
+{
+  uint8_t src[] = {0xc2, 0x19, 0x7c, 0x5e, 0xff, 0x14, 0xe8, 0x8c};
+  uint64_t dst  = 0;
+  size_t len    = 0;
+  QUICVariableInt::decode(dst, len, src, sizeof(src));
+
+  CHECK(dst == 151288809941952652);
+  CHECK(len == 8);
+}
+
+TEST_CASE("Variable Length - decoding 2", "[quic]")
+{
+  uint8_t src[] = {0x9d, 0x7f, 0x3e, 0x7d, 0x00, 0x00, 0x00, 0x00};
+  uint64_t dst  = 0;
+  size_t len    = 0;
+  QUICVariableInt::decode(dst, len, src, sizeof(src));
+
+  CHECK(dst == 494878333);
+  CHECK(len == 4);
+}
+
+TEST_CASE("Variable Length - decoding 3", "[quic]")
+{
+  uint8_t src[] = {0x7b, 0xbd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  uint64_t dst  = 0;
+  size_t len    = 0;
+  QUICVariableInt::decode(dst, len, src, sizeof(src));
+
+  CHECK(dst == 15293);
+  CHECK(len == 2);
+}
+
+TEST_CASE("Variable Length - decoding 4", "[quic]")
+{
+  uint8_t src[] = {0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  uint64_t dst  = 0;
+  size_t len    = 0;
+  QUICVariableInt::decode(dst, len, src, sizeof(src));
+
+  CHECK(dst == 37);
+  CHECK(len == 1);
+}
+
+TEST_CASE("Variable Length - decoding 5", "[quic]")
+{
+  uint8_t src[] = {0x40, 0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  uint64_t dst  = 0;
+  size_t len    = 0;
+  QUICVariableInt::decode(dst, len, src, sizeof(src));
+
+  CHECK(dst == 37);
+  CHECK(len == 2);
+}
