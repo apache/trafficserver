@@ -31,6 +31,9 @@ pip_packages = [
     "requests",
     "dnslib",
     "httpbin",
+    "twisted",
+    "pyopenssl",
+    "service_identity",
 ]
 
 

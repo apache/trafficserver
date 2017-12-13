@@ -26,6 +26,7 @@ Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
 Test.ContinueOnFail = True
+
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server")
@@ -91,6 +92,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.http2.active_timeout_in': 3,
     'proxy.config.http2.max_concurrent_streams_in': 65535,
+    'proxy.config.stop.shutdown_timeout': 3,
 })
 
 big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")
@@ -101,6 +103,7 @@ ts.Setup.CopyAs('h2client.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2bigclient.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2chunked.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2active_timeout.py', Test.RunDirectory)
+ts.Setup.CopyAs('h2drain.py', Test.RunDirectory)
 
 # Test Case 1:  basic H2 interaction
 tr = Test.AddTestRun()
@@ -135,7 +138,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/replay.gold"
 tr.StillRunningAfter = server
 
-# Test Case 5:h2_active_timeout
+# Test Case 5: Active Timeout
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'python3 h2active_timeout.py -p {0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
@@ -159,3 +162,9 @@ tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @b
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
+
+# Test Case 8: H2 Drain Test
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'python3 h2drain.py -p {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = Testers.ContainsExpression('PASS', 'PASS if the client received GOAWAY')
