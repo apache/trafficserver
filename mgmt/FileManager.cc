@@ -76,6 +76,7 @@ FileManager::~FileManager()
 
   ink_hash_table_destroy(bindings);
 
+  ink_mutex_release(&accessLock);
   ink_mutex_destroy(&accessLock);
   ink_mutex_destroy(&cbListLock);
 }
