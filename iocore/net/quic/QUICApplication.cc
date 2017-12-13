@@ -154,7 +154,7 @@ QUICApplication::reenable(QUICStream *stream)
     stream_io->read_reenable();
     stream_io->write_reenable();
   } else {
-    Debug(tag, "Unknown Stream, id: %d", stream->id());
+    Debug(tag, "Unknown Stream, id: %" PRIx64, stream->id());
   }
 
   return;

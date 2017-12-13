@@ -36,7 +36,7 @@ class QUICFrame
 public:
   QUICFrame(const uint8_t *buf, size_t len) : _buf(buf), _len(len){};
   virtual QUICFrameType type() const;
-  virtual size_t size() const = 0;
+  virtual size_t size() const                         = 0;
   virtual void store(uint8_t *buf, size_t *len) const = 0;
   virtual void reset(const uint8_t *buf, size_t len);
   static QUICFrameType type(const uint8_t *buf);
@@ -66,8 +66,9 @@ public:
   QUICStreamId stream_id() const;
   QUICOffset offset() const;
   const uint8_t *data() const;
-  size_t data_length() const;
-  bool has_data_length_field() const;
+  uint64_t data_length() const;
+  bool has_offset_field() const;
+  bool has_length_field() const;
   bool has_fin_flag() const;
 
   LINK(QUICStreamFrame, link);
@@ -78,11 +79,14 @@ private:
   QUICStreamId _stream_id = 0;
   QUICOffset _offset      = 0;
   bool _fin               = false;
-  size_t _get_data_offset() const;
-  size_t _get_stream_id_offset() const;
-  size_t _get_offset_offset() const;
-  size_t _get_stream_id_len() const;
-  size_t _get_offset_len() const;
+  size_t _get_stream_id_field_offset() const;
+  size_t _get_offset_field_offset() const;
+  size_t _get_length_field_offset() const;
+  size_t _get_data_field_offset() const;
+
+  size_t _get_stream_id_field_len() const;
+  size_t _get_offset_field_len() const;
+  size_t _get_length_field_len() const;
 };
 
 //

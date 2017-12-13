@@ -90,11 +90,7 @@ QUICStreamFrame::type() const
 size_t
 QUICStreamFrame::size() const
 {
-  if (this->_buf) {
-    return this->_get_data_offset() + this->data_length();
-  } else {
-    return 1 + 4 + 8 + 2 + this->data_length();
-  }
+  return this->_get_data_field_offset() + this->data_length();
 }
 
 void
@@ -106,53 +102,41 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len) const
 void
 QUICStreamFrame::store(uint8_t *buf, size_t *len, bool include_length_field) const
 {
-  size_t n;
-  // Build Frame Type: "11FSSOOD"
+  // Build Frame Type: "0b0010OLF"
   buf[0] = static_cast<uint8_t>(QUICFrameType::STREAM);
   *len   = 1;
 
-  // "F" of "11FSSOOD"
-  if (this->has_fin_flag()) {
-    buf[0] += (0x01 << 5);
+  // Stream ID (i)
+  size_t stream_id_field_len;
+
+  // FIXME: check length of buf
+  QUICVariableInt::encode(buf + *len, 8, stream_id_field_len, this->_stream_id);
+  *len += stream_id_field_len;
+
+  // [Offset (i)] "O" of "0b0010OLF"
+  if (this->has_offset_field()) {
+    size_t offset_field_len;
+    // FIXME: check length of buf
+    QUICVariableInt::encode(buf + *len, 8, offset_field_len, this->_offset);
+    *len += offset_field_len;
+    buf[0] += 0x04;
   }
 
-  // "SS" of "11FSSOOD"
-  uint8_t stream_id_width = 0;
-  if (this->_stream_id > 0xFFFFFF) {
-    stream_id_width = 3;
-  } else if (this->_stream_id > 0xFFFF) {
-    stream_id_width = 2;
-  } else if (this->_stream_id > 0xFF) {
-    stream_id_width = 1;
-  } else {
-    stream_id_width = 0;
-  }
-  buf[0] += (stream_id_width << 3);
-  QUICTypeUtil::write_QUICStreamId(this->stream_id(), stream_id_width + 1, buf + *len, &n);
-  *len += n;
-
-  // "OO" of "11FSSOOD"
-  uint8_t offset_width = 0;
-  if (this->offset() > 0xFFFFFFFF) {
-    offset_width = 3;
-  } else if (this->offset() > 0xFFFF) {
-    offset_width = 2;
-  } else if (this->offset() > 0x00) {
-    offset_width = 1;
-  } else {
-    offset_width = 0;
-  }
-  buf[0] += (offset_width << 1);
-  QUICTypeUtil::write_QUICOffset(this->offset(), offset_width ? 1 << offset_width : 0, buf + *len, &n);
-  *len += n;
-
-  // "D" of "11FSSOOD"
+  // [Length (i)] "L of "0b0010OLF"
   if (include_length_field) {
-    buf[0] += 0x01;
-    QUICTypeUtil::write_uint_as_nbytes(this->data_length(), 2, buf + *len, &n);
-    *len += n;
+    size_t length_field_len;
+    // FIXME: check length of buf
+    QUICVariableInt::encode(buf + *len, 8, length_field_len, this->_data_len);
+    *len += length_field_len;
+    buf[0] += 0x02;
   }
 
+  // "F" of "0b0010OLF"
+  if (this->has_fin_flag()) {
+    buf[0] += 0x01;
+  }
+
+  // Stream Data (*)
   memcpy(buf + *len, this->data(), this->data_length());
   *len += this->data_length();
 }
@@ -161,7 +145,11 @@ QUICStreamId
 QUICStreamFrame::stream_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICStreamId(this->_buf + this->_get_stream_id_offset(), this->_get_stream_id_len());
+    uint64_t stream_id;
+    size_t encoded_len;
+    QUICVariableInt::decode(stream_id, encoded_len, this->_buf + this->_get_stream_id_field_offset(),
+                            this->_len - this->_get_stream_id_field_offset());
+    return static_cast<QUICStreamId>(stream_id);
   } else {
     return this->_stream_id;
   }
@@ -171,9 +159,35 @@ QUICOffset
 QUICStreamFrame::offset() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICOffset(this->_buf + this->_get_offset_offset(), this->_get_offset_len());
+    if (this->has_offset_field()) {
+      uint64_t offset;
+      size_t encoded_len;
+      QUICVariableInt::decode(offset, encoded_len, this->_buf + this->_get_stream_id_field_offset(),
+                              this->_len - this->_get_stream_id_field_offset());
+      return static_cast<QUICOffset>(offset);
+    } else {
+      return 0;
+    }
   } else {
     return this->_offset;
+  }
+}
+
+uint64_t
+QUICStreamFrame::data_length() const
+{
+  if (this->_buf) {
+    if (this->has_length_field()) {
+      uint64_t data_len;
+      size_t encoded_len;
+      QUICVariableInt::decode(data_len, encoded_len, this->_buf + this->_get_length_field_offset(),
+                              this->_len - this->_get_length_field_offset());
+      return data_len;
+    } else {
+      return this->_len - this->_get_data_field_offset();
+    }
+  } else {
+    return this->_data_len;
   }
 }
 
@@ -181,96 +195,124 @@ const uint8_t *
 QUICStreamFrame::data() const
 {
   if (this->_buf) {
-    return this->_buf + this->_get_data_offset();
+    return this->_buf + this->_get_data_field_offset();
   } else {
     return this->_data.get();
   }
 }
 
-size_t
-QUICStreamFrame::data_length() const
+/**
+ * "O" of "0b00010OLF"
+ */
+bool
+QUICStreamFrame::has_offset_field() const
 {
   if (this->_buf) {
-    if (this->has_data_length_field()) {
-      return QUICTypeUtil::read_nbytes_as_uint(this->_buf + this->_get_offset_offset() + this->_get_offset_len(), 2);
-    } else {
-      return this->_len - this->_get_data_offset();
-    }
+    return (this->_buf[0] & 0x40) != 0;
   } else {
-    return this->_data_len;
+    return this->_offset != 0;
   }
 }
 
 /**
- * "D" of "11FSSOOD"
+ * "L" of "0b00010OLF"
  */
 bool
-QUICStreamFrame::has_data_length_field() const
+QUICStreamFrame::has_length_field() const
 {
-  return (this->_buf[0] & 0x01) != 0;
+  if (this->_buf) {
+    return (this->_buf[0] & 0x02) != 0;
+  } else {
+    // This depends on `include_length_field` arg of QUICStreamFrame::store.
+    // Returning true for just in case.
+    return true;
+  }
 }
 
 /**
- * "F" of "11FSSOOD"
+ * "F" of "0b00010OLF"
  */
 bool
 QUICStreamFrame::has_fin_flag() const
 {
   if (this->_buf) {
-    return (this->_buf[0] & 0x20) != 0;
+    return (this->_buf[0] & 0x01) != 0;
   } else {
     return this->_fin;
   }
 }
 
 size_t
-QUICStreamFrame::_get_stream_id_offset() const
+QUICStreamFrame::_get_stream_id_field_offset() const
 {
   return 1;
 }
 
 size_t
-QUICStreamFrame::_get_offset_offset() const
+QUICStreamFrame::_get_offset_field_offset() const
 {
-  return this->_get_stream_id_offset() + this->_get_stream_id_len();
+  size_t offset_field_offset = this->_get_stream_id_field_offset();
+  offset_field_offset += this->_get_stream_id_field_len();
+
+  return offset_field_offset;
 }
 
 size_t
-QUICStreamFrame::_get_data_offset() const
+QUICStreamFrame::_get_length_field_offset() const
+{
+  size_t length_field_offset = this->_get_stream_id_field_offset();
+  length_field_offset += this->_get_stream_id_field_len();
+  length_field_offset += this->_get_offset_field_len();
+
+  return length_field_offset;
+}
+
+size_t
+QUICStreamFrame::_get_data_field_offset() const
+{
+  size_t data_field_offset = this->_get_stream_id_field_offset();
+  data_field_offset += this->_get_stream_id_field_len();
+  data_field_offset += this->_get_offset_field_len();
+  data_field_offset += this->_get_length_field_len();
+
+  return data_field_offset;
+}
+
+size_t
+QUICStreamFrame::_get_stream_id_field_len() const
 {
   if (this->_buf) {
-    if (this->has_data_length_field()) {
-      return this->_get_offset_offset() + this->_get_offset_len() + 2;
-    } else {
-      return this->_get_offset_offset() + this->_get_offset_len();
-    }
+    return QUICVariableInt::size(this->_buf + this->_get_stream_id_field_offset());
   } else {
-    return 0;
+    return QUICVariableInt::size(this->_stream_id);
   }
 }
 
-/**
- * "SS" of "11FSSOOD"
- * The value 00, 01, 02, and 03 indicate lengths of 8, 16, 24, and 32 bits long respectively.
- */
 size_t
-QUICStreamFrame::_get_stream_id_len() const
+QUICStreamFrame::_get_offset_field_len() const
 {
-  return ((this->_buf[0] & 0x18) >> 3) + 1;
+  if (this->_buf) {
+    if (this->has_offset_field()) {
+      return QUICVariableInt::size(this->_buf + this->_get_offset_field_offset());
+    } else {
+      return 0;
+    }
+  } else {
+    return QUICVariableInt::size(this->_offset);
+  }
 }
 
-/**
- * "OO" of "11FSSOOD"
- * The values 00, 01, 02, and 03 indicate lengths of 0, 16, 32, and 64 bits long respectively.
- */
 size_t
-QUICStreamFrame::_get_offset_len() const
+QUICStreamFrame::_get_length_field_len() const
 {
-  int OO_bits = (this->_buf[0] & 0x06) >> 1;
-  if (OO_bits == 0) {
-    return 0;
+  if (this->_buf) {
+    if (this->has_length_field()) {
+      return QUICVariableInt::size(this->_buf + this->_get_length_field_offset());
+    } else {
+      return 0;
+    }
   } else {
-    return 0x01 << OO_bits;
+    return QUICVariableInt::size(this->_data_len);
   }
 }
 

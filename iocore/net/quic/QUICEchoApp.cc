@@ -41,7 +41,7 @@ QUICEchoApp::main_event_handler(int event, Event *data)
   QUICStream *stream      = reinterpret_cast<QUICStream *>(data->cookie);
   QUICStreamIO *stream_io = this->_find_stream_io(stream->id());
   if (stream_io == nullptr) {
-    Debug(tag, "Unknown Stream, id: %d", stream->id());
+    Debug(tag, "Unknown Stream, id: %" PRIx64, stream->id());
     return -1;
   }
 

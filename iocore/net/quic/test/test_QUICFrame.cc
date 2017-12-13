@@ -54,30 +54,10 @@ TEST_CASE("QUICFrame Type", "[quic]")
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xff")) == QUICFrameType::UNKNOWN);
 }
 
-TEST_CASE("Construct QUICFrame", "[quic]")
-{
-  uint8_t raw[]          = "foo";
-  ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
-  memcpy(payload.get(), raw, sizeof(raw));
-
-  uint8_t buf[65536];
-  size_t len;
-
-  QUICStreamFrame frame1(std::move(payload), sizeof(raw), 0xffcc9966, 0xffddbb9977553311);
-  frame1.store(buf, &len);
-  CHECK(frame1.type() == QUICFrameType::STREAM);
-  CHECK(frame1.size() == 19);
-  CHECK(frame1.stream_id() == 0xffcc9966);
-  CHECK(frame1.offset() == 0xffddbb9977553311);
-  CHECK(frame1.data_length() == 4);
-  CHECK(memcmp(frame1.data(), "foo\0", 4) == 0);
-  CHECK(frame1.has_fin_flag() == false);
-}
-
 TEST_CASE("Load STREAM Frame 1", "[quic]")
 {
   uint8_t buf1[] = {
-    0xC0,                   // 11FSSOOD
+    0x10,                   // 0b00010OLF (OLF=000)
     0x01,                   // Stream ID
     0x01, 0x02, 0x03, 0x04, // Stream Data
   };
@@ -95,14 +75,14 @@ TEST_CASE("Load STREAM Frame 1", "[quic]")
 TEST_CASE("Load STREAM Frame 2", "[quic]")
 {
   uint8_t buf1[] = {
-    0xC1,                         // 11FSSOOD
+    0x12,                         // 0b00010OLF (OLF=010)
     0x01,                         // Stream ID
-    0x00, 0x05,                   // Data Length
+    0x05,                         // Data Length
     0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::STREAM);
-  CHECK(frame1->size() == 9);
+  CHECK(frame1->size() == 8);
   std::shared_ptr<const QUICStreamFrame> streamFrame1 = std::dynamic_pointer_cast<const QUICStreamFrame>(frame1);
   CHECK(streamFrame1->stream_id() == 0x01);
   CHECK(streamFrame1->offset() == 0x00);
@@ -113,127 +93,173 @@ TEST_CASE("Load STREAM Frame 2", "[quic]")
 
 TEST_CASE("Store STREAM Frame", "[quic]")
 {
-  uint8_t buf[65535];
-  size_t len;
+  SECTION("8bit stream id, 0bit offset")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+    uint8_t expected1[] = {
+      0x12,                         // 0b00010OLF (OLF=010)
+      0x01,                         // Stream ID
+      0x05,                         // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
+    };
 
-  // 8bit stream id, 0bit offset
-  uint8_t expected1[] = {
-    0xC1,                         // 11FSSOOD
-    0x01,                         // Stream ID
-    0x00, 0x05,                   // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
-  };
+    uint8_t raw1[]          = "\x01\x02\x03\x04\x05";
+    ats_unique_buf payload1 = ats_unique_malloc(5);
+    memcpy(payload1.get(), raw1, 5);
 
-  uint8_t raw1[]          = "\x01\x02\x03\x04\x05";
-  ats_unique_buf payload1 = ats_unique_malloc(5);
-  memcpy(payload1.get(), raw1, 5);
+    QUICStreamFrame streamFrame1(std::move(payload1), 5, 0x01, 0x00);
+    streamFrame1.store(buf, &len);
+    CHECK(len == 8);
+    CHECK(memcmp(buf, expected1, len) == 0);
+  }
 
-  QUICStreamFrame streamFrame1(std::move(payload1), 5, 0x01, 0x00);
-  streamFrame1.store(buf, &len);
-  CHECK(len == 9);
-  CHECK(memcmp(buf, expected1, len) == 0);
+  SECTION("8bit stream id, 16bit offset")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+    uint8_t expected2[] = {
+      0x16,                         // 0b00010OLF (OLF=110)
+      0x01,                         // Stream ID
+      0x01,                         // Offset
+      0x05,                         // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
+    };
+    uint8_t raw2[]          = "\x01\x02\x03\x04\x05";
+    ats_unique_buf payload2 = ats_unique_malloc(5);
+    memcpy(payload2.get(), raw2, 5);
 
-  // 8bit stream id, 16bit offset
-  uint8_t expected2[] = {
-    0xC3,                         // 11FSSOOD
-    0x01,                         // Stream ID
-    0x00, 0x01,                   // Offset
-    0x00, 0x05,                   // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
-  };
-  uint8_t raw2[]          = "\x01\x02\x03\x04\x05";
-  ats_unique_buf payload2 = ats_unique_malloc(5);
-  memcpy(payload2.get(), raw2, 5);
+    QUICStreamFrame streamFrame2(std::move(payload2), 5, 0x01, 0x01);
+    streamFrame2.store(buf, &len);
+    CHECK(len == 9);
+    CHECK(memcmp(buf, expected2, len) == 0);
+  }
 
-  QUICStreamFrame streamFrame2(std::move(payload2), 5, 0x01, 0x01);
-  streamFrame2.store(buf, &len);
-  CHECK(len == 11);
-  CHECK(memcmp(buf, expected2, len) == 0);
+  SECTION("8bit stream id, 32bit offset")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+    uint8_t expected3[] = {
+      0x16,                         // 0b00010OLF (OLF=110)
+      0x01,                         // Stream ID
+      0x80, 0x01, 0x00, 0x00,       // Offset
+      0x05,                         // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
+    };
+    uint8_t raw3[]          = "\x01\x02\x03\x04\x05";
+    ats_unique_buf payload3 = ats_unique_malloc(5);
+    memcpy(payload3.get(), raw3, 5);
 
-  // 8bit stream id, 32bit offset
-  uint8_t expected3[] = {
-    0xC5,                         // 11FSSOOD
-    0x01,                         // Stream ID
-    0x00, 0x01, 0x00, 0x00,       // Offset
-    0x00, 0x05,                   // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
-  };
-  uint8_t raw3[]          = "\x01\x02\x03\x04\x05";
-  ats_unique_buf payload3 = ats_unique_malloc(5);
-  memcpy(payload3.get(), raw3, 5);
+    QUICStreamFrame streamFrame3(std::move(payload3), 5, 0x01, 0x010000);
+    streamFrame3.store(buf, &len);
+    CHECK(len == 12);
+    CHECK(memcmp(buf, expected3, len) == 0);
+  }
 
-  QUICStreamFrame streamFrame3(std::move(payload3), 5, 0x01, 0x010000);
-  streamFrame3.store(buf, &len);
-  CHECK(len == 13);
-  CHECK(memcmp(buf, expected3, len) == 0);
+  SECTION("8bit stream id, 64bit offset")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+    uint8_t expected4[] = {
+      0x16,                                           // 0b00010OLF (OLF=110)
+      0x01,                                           // Stream ID
+      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+      0x05,                                           // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+    };
+    uint8_t raw4[]          = "\x01\x02\x03\x04\x05";
+    ats_unique_buf payload4 = ats_unique_malloc(5);
+    memcpy(payload4.get(), raw4, 5);
 
-  // 8bit stream id, 64bit offset
-  uint8_t expected4[] = {
-    0xC7,                                           // 11FSSOOD
-    0x01,                                           // Stream ID
-    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
-    0x00, 0x05,                                     // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
-  };
-  uint8_t raw4[]          = "\x01\x02\x03\x04\x05";
-  ats_unique_buf payload4 = ats_unique_malloc(5);
-  memcpy(payload4.get(), raw4, 5);
+    QUICStreamFrame streamFrame4(std::move(payload4), 5, 0x01, 0x0100000000);
+    streamFrame4.store(buf, &len);
+    CHECK(len == 16);
+    CHECK(memcmp(buf, expected4, len) == 0);
+  }
 
-  QUICStreamFrame streamFrame4(std::move(payload4), 5, 0x01, 0x0100000000);
-  streamFrame4.store(buf, &len);
-  CHECK(len == 17);
-  CHECK(memcmp(buf, expected4, len) == 0);
+  SECTION("16bit stream id, 64bit offset")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+    uint8_t expected5[] = {
+      0x16,                                           // 0b00010OLF (OLF=110)
+      0x41, 0x00,                                     // Stream ID
+      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+      0x05,                                           // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+    };
+    uint8_t raw5[]          = "\x01\x02\x03\x04\x05";
+    ats_unique_buf payload5 = ats_unique_malloc(5);
+    memcpy(payload5.get(), raw5, 5);
 
-  // 16bit stream id, 64bit offset
-  uint8_t expected5[] = {
-    0xCF,                                           // 11FSSOOD
-    0x01, 0x00,                                     // Stream ID
-    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
-    0x00, 0x05,                                     // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
-  };
-  uint8_t raw5[]          = "\x01\x02\x03\x04\x05";
-  ats_unique_buf payload5 = ats_unique_malloc(5);
-  memcpy(payload5.get(), raw5, 5);
+    QUICStreamFrame streamFrame5(std::move(payload5), 5, 0x0100, 0x0100000000);
+    streamFrame5.store(buf, &len);
+    CHECK(len == 17);
+    CHECK(memcmp(buf, expected5, len) == 0);
+  }
 
-  QUICStreamFrame streamFrame5(std::move(payload5), 5, 0x0100, 0x0100000000);
-  streamFrame5.store(buf, &len);
-  CHECK(len == 18);
-  CHECK(memcmp(buf, expected5, len) == 0);
+  SECTION("24bit stream id, 64bit offset")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+    uint8_t expected6[] = {
+      0x16,                                           // 0b00010OLF (OLF=110)
+      0x80, 0x01, 0x00, 0x00,                         // Stream ID
+      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+      0x05,                                           // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+    };
+    uint8_t raw6[]          = "\x01\x02\x03\x04\x05";
+    ats_unique_buf payload6 = ats_unique_malloc(5);
+    memcpy(payload6.get(), raw6, 5);
 
-  // 24bit stream id, 64bit offset
-  uint8_t expected6[] = {
-    0xD7,                                           // 11FSSOOD
-    0x01, 0x00, 0x00,                               // Stream ID
-    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
-    0x00, 0x05,                                     // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
-  };
-  uint8_t raw6[]          = "\x01\x02\x03\x04\x05";
-  ats_unique_buf payload6 = ats_unique_malloc(5);
-  memcpy(payload6.get(), raw6, 5);
+    QUICStreamFrame streamFrame6(std::move(payload6), 5, 0x010000, 0x0100000000);
+    streamFrame6.store(buf, &len);
+    CHECK(len == 19);
+    CHECK(memcmp(buf, expected6, len) == 0);
+  }
 
-  QUICStreamFrame streamFrame6(std::move(payload6), 5, 0x010000, 0x0100000000);
-  streamFrame6.store(buf, &len);
-  CHECK(len == 19);
-  CHECK(memcmp(buf, expected6, len) == 0);
+  SECTION("32bit stream id, 64bit offset")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+    uint8_t expected7[] = {
+      0x16,                                           // 0b00010OLF (OLF=110)
+      0x81, 0x00, 0x00, 0x00,                         // Stream ID
+      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+      0x05,                                           // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+    };
+    uint8_t raw7[]          = "\x01\x02\x03\x04\x05";
+    ats_unique_buf payload7 = ats_unique_malloc(5);
+    memcpy(payload7.get(), raw7, 5);
 
-  // 32bit stream id, 64bit offset
-  uint8_t expected7[] = {
-    0xDF,                                           // 11FSSOOD
-    0x01, 0x00, 0x00, 0x00,                         // Stream ID
-    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
-    0x00, 0x05,                                     // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
-  };
-  uint8_t raw7[]          = "\x01\x02\x03\x04\x05";
-  ats_unique_buf payload7 = ats_unique_malloc(5);
-  memcpy(payload7.get(), raw7, 5);
+    QUICStreamFrame streamFrame7(std::move(payload7), 5, 0x01000000, 0x0100000000);
+    streamFrame7.store(buf, &len);
+    CHECK(len == 19);
+    CHECK(memcmp(buf, expected7, len) == 0);
+  }
 
-  QUICStreamFrame streamFrame7(std::move(payload7), 5, 0x01000000, 0x0100000000);
-  streamFrame7.store(buf, &len);
-  CHECK(len == 20);
-  CHECK(memcmp(buf, expected7, len) == 0);
+  SECTION("32bit stream id, 64bit offset, FIN bit")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+    uint8_t expected[] = {
+      0x17,                                           // 0b00010OLF (OLF=111)
+      0x81, 0x00, 0x00, 0x00,                         // Stream ID
+      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+      0x05,                                           // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+    };
+    uint8_t raw[]          = "\x01\x02\x03\x04\x05";
+    ats_unique_buf payload = ats_unique_malloc(5);
+    memcpy(payload.get(), raw, 5);
+
+    QUICStreamFrame streamFrame(std::move(payload), 5, 0x01000000, 0x0100000000, true);
+    streamFrame.store(buf, &len);
+    CHECK(len == 19);
+    CHECK(memcmp(buf, expected, len) == 0);
+  }
 }
 
 TEST_CASE("Load Ack Frame 1", "[quic]")
