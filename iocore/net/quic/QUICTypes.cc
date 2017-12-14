@@ -30,9 +30,15 @@ ats_unique_malloc(size_t size)
 }
 
 bool
-QUICTypeUtil::hasLongHeader(const uint8_t *buf)
+QUICTypeUtil::has_long_header(const uint8_t *buf)
 {
   return (buf[0] & 0x80) != 0;
+}
+
+bool
+QUICTypeUtil::has_connection_id(const uint8_t *buf)
+{
+  return (buf[0] & 0x40) == 0;
 }
 
 QUICStreamType

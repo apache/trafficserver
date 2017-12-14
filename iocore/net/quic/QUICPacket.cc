@@ -64,7 +64,7 @@ QUICPacketHeader::packet_size() const
 QUICPacketHeader *
 QUICPacketHeader::load(const uint8_t *buf, size_t len, QUICPacketNumber base)
 {
-  if (QUICTypeUtil::hasLongHeader(buf)) {
+  if (QUICTypeUtil::has_long_header(buf)) {
     QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
     new (long_header) QUICPacketLongHeader(buf, len, base);
     return long_header;
@@ -387,7 +387,7 @@ bool
 QUICPacketShortHeader::has_connection_id() const
 {
   if (this->_buf) {
-    return (this->_buf[0] & 0x40) == 0;
+    return QUICTypeUtil::has_connection_id(this->_buf);
   } else {
     return this->_has_connection_id;
   }

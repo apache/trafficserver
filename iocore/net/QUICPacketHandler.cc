@@ -97,13 +97,13 @@ QUICPacketHandler::_read_connection_id(QUICConnectionId &cid, IOBufferBlock *blo
   const uint8_t cid_offset = 1;
   const uint8_t cid_len    = 8;
 
-  if (QUICTypeUtil::hasLongHeader(buf)) {
+  if (QUICTypeUtil::has_long_header(buf)) {
     cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
   } else {
-    if (buf[0] & 0x40) {
-      cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
-    } else {
+    if (QUICTypeUtil::has_connection_id(buf)) {
       return false;
+    } else {
+      cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
     }
   }
 
@@ -135,7 +135,7 @@ QUICPacketHandler::_recv_packet(int event, UDPPacket *udpPacket)
     con.setRemote(&udpPacket->from.sa);
 
     // Send stateless reset if the packet is not a initial packet
-    if (!QUICTypeUtil::hasLongHeader(reinterpret_cast<const uint8_t *>(block->buf()))) {
+    if (!QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) {
       QUICStatelessResetToken token;
       {
         QUICConfig::scoped_config params;

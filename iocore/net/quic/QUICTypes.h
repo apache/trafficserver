@@ -251,7 +251,8 @@ enum class QUICStreamType { CLIENT_BIDI, SERVER_BIDI, CLIENT_UNI, SERVER_UNI, HA
 class QUICTypeUtil
 {
 public:
-  static bool hasLongHeader(const uint8_t *buf);
+  static bool has_long_header(const uint8_t *buf);
+  static bool has_connection_id(const uint8_t *buf);
   static QUICStreamType detect_stream_type(QUICStreamId id);
 
   static QUICConnectionId read_QUICConnectionId(const uint8_t *buf, uint8_t n);
