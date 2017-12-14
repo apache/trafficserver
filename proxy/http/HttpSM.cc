@@ -7737,14 +7737,14 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 
     if (tmpOrigHost) {
       memcpy(origHost, tmpOrigHost, origHost_len);
-      origHost[origHost_len] = '\0';
+      origHost[std::min(origHost_len, MAXDNAME-1)] = '\0';
     } else {
       valid_origHost = false;
     }
 
     char *tmpOrigMethod = (char *)t_state.hdr_info.server_request.method_get(&origMethod_len);
     if (tmpOrigMethod) {
-      memcpy(origMethod, tmpOrigMethod, origMethod_len);
+      memcpy(origMethod, tmpOrigMethod, std::min(origMethod_len, 255));
     } else {
       valid_origHost = false;
     }
@@ -7766,6 +7766,24 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 
   // redirectUrl.user_set(redirect_url, redirect_len);
   redirectUrl.parse(redirect_url, redirect_len);
+  {
+    int _scheme_len = -1;
+    int _host_len   = -1;
+    if (redirectUrl.scheme_get(&_scheme_len) == nullptr &&
+        redirectUrl.host_get(&_host_len) != nullptr &&
+        redirect_url[0] != '/') {
+      // RFC7230 § 5.5
+      // The redirect URL lacked a scheme and so it is a relative URL.
+      // The redirect URL did not begin with a slash, so we parsed some or all
+      // of the the relative URI path as the host.
+      // Prepend a slash and parse again.
+      char redirect_url_leading_slash[redirect_len+1];
+      redirect_url_leading_slash[0] = '/';
+      memcpy(redirect_url_leading_slash+1, redirect_url, redirect_len+1);
+      url_nuke_proxy_stuff(redirectUrl.m_url_impl);
+      redirectUrl.parse(redirect_url_leading_slash, redirect_len+1);
+    }
+  }
 
   // copy the client url to the original url
   URL &origUrl = t_state.redirect_info.original_url;
@@ -7814,6 +7832,13 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   }
 
   bool noPortInHost = HttpConfig::m_master.redirection_host_no_port;
+
+  bool isRedirectUrlOriginForm =
+          clientUrl.m_url_impl->m_len_scheme <= 0 &&
+          clientUrl.m_url_impl->m_len_user <= 0 &&
+          clientUrl.m_url_impl->m_len_password <= 0 &&
+          clientUrl.m_url_impl->m_len_host <= 0 &&
+          clientUrl.m_url_impl->m_len_port <= 0;
 
   // check to see if the client request passed a host header, if so copy the host and port from the redirect url and
   // make a new host header
@@ -7887,10 +7912,17 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
         // Cleanup of state etc.
         url_nuke_proxy_stuff(clientUrl.m_url_impl);
         url_nuke_proxy_stuff(t_state.hdr_info.client_request.m_url_cached.m_url_impl);
-        t_state.hdr_info.client_request.method_set(origMethod, origMethod_len);
+        t_state.hdr_info.client_request.method_set(origMethod, std::min(origMethod_len, 255));
         t_state.hdr_info.client_request.m_target_cached = false;
         t_state.hdr_info.server_request.m_target_cached = false;
         clientUrl.scheme_set(scheme_str, scheme_len);
+        if (isRedirectUrlOriginForm) {
+          // build the rest of the effictive URL: the authority part
+          clientUrl.user_set(origUrl.m_url_impl->m_ptr_user, origUrl.m_url_impl->m_len_user);
+          clientUrl.password_set(origUrl.m_url_impl->m_ptr_password, origUrl.m_url_impl->m_len_password);
+          clientUrl.host_set(origUrl.m_url_impl->m_ptr_host, origUrl.m_url_impl->m_len_host);
+          clientUrl.port_set(origUrl.port_get());
+        }
       } else {
       LhostError:
         // the server request didn't have a host, so remove it from the headers
