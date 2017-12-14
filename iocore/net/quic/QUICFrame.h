@@ -462,16 +462,22 @@ class QUICNewConnectionIdFrame : public QUICFrame
 public:
   QUICNewConnectionIdFrame() : QUICFrame() {}
   QUICNewConnectionIdFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICNewConnectionIdFrame(uint16_t sequence, QUICConnectionId connection_id, QUICStatelessResetToken stateless_reset_token);
+  QUICNewConnectionIdFrame(uint64_t seq, QUICConnectionId id, QUICStatelessResetToken token)
+      : _sequence(seq), _connection_id(id), _stateless_reset_token(token) {};
+
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
-  uint16_t sequence() const;
+
+  uint64_t sequence() const;
   QUICConnectionId connection_id() const;
   QUICStatelessResetToken stateless_reset_token() const;
 
 private:
-  uint16_t _sequence              = 0;
+  size_t _get_sequence_field_length() const;
+  size_t _get_connection_id_field_offset() const;
+
+  uint64_t _sequence              = 0;
   QUICConnectionId _connection_id = 0;
   QUICStatelessResetToken _stateless_reset_token;
 };
@@ -486,15 +492,20 @@ public:
   QUICStopSendingFrame() : QUICFrame() {}
   QUICStopSendingFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
   QUICStopSendingFrame(QUICStreamId stream_id, QUICAppErrorCode error_code);
+
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
+
   QUICStreamId stream_id() const;
   QUICAppErrorCode error_code() const;
 
 private:
+  size_t _get_stream_id_field_length() const;
+  size_t _get_error_code_field_offset() const;
+
   QUICStreamId _stream_id = 0;
-  QUICAppErrorCode _error_code;
+  QUICAppErrorCode _error_code = 0;
 };
 
 using QUICFrameDeleterFunc = void (*)(QUICFrame *p);

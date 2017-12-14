@@ -757,14 +757,14 @@ TEST_CASE("Load NewConnectionId Frame", "[quic]")
 {
   uint8_t buf1[] = {
     0x0b,                                           // Type
-    0x01, 0x02,                                     // Sequence
+    0x41, 0x02,                                     // Sequence
     0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
     0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
     0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::NEW_CONNECTION_ID);
-  CHECK(frame1->size() == 11);
+  CHECK(frame1->size() == 27);
   std::shared_ptr<const QUICNewConnectionIdFrame> newConnectionIdFrame1 =
     std::dynamic_pointer_cast<const QUICNewConnectionIdFrame>(frame1);
   CHECK(newConnectionIdFrame1 != nullptr);
@@ -775,13 +775,16 @@ TEST_CASE("Load NewConnectionId Frame", "[quic]")
 
 TEST_CASE("Store NewConnectionId Frame", "[quic]")
 {
-  uint8_t buf[65535];
+  uint8_t buf[32];
   size_t len;
 
-  uint8_t expected[] = {0x0b,                                           // Type
-                        0x01, 0x02,                                     // Sequence
-                        0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
-                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
+  uint8_t expected[] = {
+    0x0b,                                           // Type
+    0x41, 0x02,                                     // Sequence
+    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Stateless Reset Token
+    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+  };
   QUICNewConnectionIdFrame newConnectionIdFrame(0x0102, 0x1122334455667788ULL, {expected + 11});
   newConnectionIdFrame.store(buf, &len);
   CHECK(len == 27);
@@ -792,7 +795,7 @@ TEST_CASE("Load STOP_SENDING Frame", "[quic]")
 {
   uint8_t buf[] = {
     0x0c,                   // Type
-    0x12, 0x34, 0x56, 0x78, // Stream ID
+    0x92, 0x34, 0x56, 0x78, // Stream ID
     0x00, 0x01,             // Error Code
   };
   std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
@@ -812,7 +815,7 @@ TEST_CASE("Store STOP_SENDING Frame", "[quic]")
 
   uint8_t expected[] = {
     0x0c,                   // Type
-    0x12, 0x34, 0x56, 0x78, // Stream ID
+    0x92, 0x34, 0x56, 0x78, // Stream ID
     0x00, 0x01,             // Error Code
   };
   QUICStopSendingFrame stop_sending_frame(0x12345678, static_cast<QUICAppErrorCode>(0x01));

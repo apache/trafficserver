@@ -1355,12 +1355,6 @@ QUICStreamIdBlockedFrame::_get_stream_id_field_length() const
 // NEW_CONNECTION_ID frame
 //
 
-QUICNewConnectionIdFrame::QUICNewConnectionIdFrame(uint16_t sequence, QUICConnectionId connection_i,
-                                                   QUICStatelessResetToken stateless_reset_token)
-  : _sequence(sequence), _connection_id(connection_i), _stateless_reset_token(stateless_reset_token)
-{
-}
-
 QUICFrameType
 QUICNewConnectionIdFrame::type() const
 {
@@ -1370,7 +1364,7 @@ QUICNewConnectionIdFrame::type() const
 size_t
 QUICNewConnectionIdFrame::size() const
 {
-  return 11;
+  return sizeof(QUICFrameType) + this->_get_sequence_field_length() + sizeof(QUICConnectionId) + 16;
 }
 
 void
@@ -1380,7 +1374,7 @@ QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
   ++p;
-  QUICTypeUtil::write_uint_as_nbytes(this->_sequence, 2, p, &n);
+  QUICTypeUtil::write_QUICVariableInt(this->_sequence, p, &n);
   p += n;
   QUICTypeUtil::write_QUICConnectionId(this->_connection_id, 8, p, &n);
   p += n;
@@ -1390,11 +1384,11 @@ QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len) const
   *len = p - buf;
 }
 
-uint16_t
+uint64_t
 QUICNewConnectionIdFrame::sequence() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + 1, 2);
+    return QUICTypeUtil::read_QUICVariableInt(this->_buf + sizeof(QUICFrameType));
   } else {
     return this->_sequence;
   }
@@ -1404,7 +1398,7 @@ QUICConnectionId
 QUICNewConnectionIdFrame::connection_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICConnectionId(this->_buf + 3, 8);
+    return QUICTypeUtil::read_QUICConnectionId(this->_buf + this->_get_connection_id_field_offset(), 8);
   } else {
     return this->_connection_id;
   }
@@ -1414,10 +1408,26 @@ QUICStatelessResetToken
 QUICNewConnectionIdFrame::stateless_reset_token() const
 {
   if (this->_buf) {
-    return QUICStatelessResetToken(this->_buf + 11);
+    return QUICStatelessResetToken(this->_buf + this->_get_connection_id_field_offset() + sizeof(QUICConnectionId));
   } else {
     return this->_stateless_reset_token;
   }
+}
+
+size_t
+QUICNewConnectionIdFrame::_get_sequence_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + sizeof(QUICFrameType));
+  } else {
+    return QUICVariableInt::size(this->_sequence);
+  }
+}
+
+size_t
+QUICNewConnectionIdFrame::_get_connection_id_field_offset() const
+{
+  return sizeof(QUICFrameType) + this->_get_sequence_field_length();
 }
 
 //
@@ -1438,7 +1448,7 @@ QUICStopSendingFrame::type() const
 size_t
 QUICStopSendingFrame::size() const
 {
-  return 7;
+  return sizeof(QUICFrameType) + this->_get_stream_id_field_length() + sizeof(QUICAppErrorCode);
 }
 
 void
@@ -1460,7 +1470,7 @@ QUICAppErrorCode
 QUICStopSendingFrame::error_code() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICAppErrorCode(this->_buf + 5);
+    return QUICTypeUtil::read_QUICAppErrorCode(this->_buf + this->_get_error_code_field_offset());
   } else {
     return this->_error_code;
   }
@@ -1470,10 +1480,26 @@ QUICStreamId
 QUICStopSendingFrame::stream_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICStreamId(this->_buf + 1);
+    return QUICTypeUtil::read_QUICStreamId(this->_buf + sizeof(QUICFrameType));
   } else {
     return this->_stream_id;
   }
+}
+
+size_t
+QUICStopSendingFrame::_get_stream_id_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + sizeof(QUICFrameType));
+  } else {
+    return QUICVariableInt::size(this->_stream_id);
+  }
+}
+
+size_t
+QUICStopSendingFrame::_get_error_code_field_offset() const
+{
+  return sizeof(QUICFrameType) + this->_get_stream_id_field_length();
 }
 
 //
