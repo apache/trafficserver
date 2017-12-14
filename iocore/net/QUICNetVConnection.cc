@@ -118,9 +118,6 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   this->_frame_dispatcher->add_handler(this->_stream_manager);
   this->_frame_dispatcher->add_handler(this->_congestion_controller);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
-
-  this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
-                                  this->_handshake_handler->remote_transport_parameters());
 }
 
 void
