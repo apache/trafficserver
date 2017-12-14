@@ -365,9 +365,9 @@ TEST_CASE("Load RST_STREAM Frame", "[quic]")
 {
   uint8_t buf1[] = {
     0x01,                                          // Type
-    0x12, 0x34, 0x56, 0x78,                        // Stream ID
+    0x92, 0x34, 0x56, 0x78,                        // Stream ID
     0x00, 0x01,                                    // Error Code
-    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
+    0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::RST_STREAM);
@@ -386,9 +386,9 @@ TEST_CASE("Store RST_STREAM Frame", "[quic]")
 
   uint8_t expected[] = {
     0x01,                                          // Type
-    0x12, 0x34, 0x56, 0x78,                        // Stream ID
+    0x92, 0x34, 0x56, 0x78,                        // Stream ID
     0x00, 0x01,                                    // Error Code
-    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
+    0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
   };
   QUICRstStreamFrame rst_stream_frame(0x12345678, 0x0001, 0x1122334455667788);
   rst_stream_frame.store(buf, &len);

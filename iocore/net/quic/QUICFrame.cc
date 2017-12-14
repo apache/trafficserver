@@ -106,28 +106,23 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, bool include_length_field) con
   buf[0] = static_cast<uint8_t>(QUICFrameType::STREAM);
   *len   = 1;
 
-  // Stream ID (i)
-  size_t stream_id_field_len;
+  size_t n;
 
-  // FIXME: check length of buf
-  QUICVariableInt::encode(buf + *len, 8, stream_id_field_len, this->_stream_id);
-  *len += stream_id_field_len;
+  // Stream ID (i)
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, buf + *len, &n);
+  *len += n;
 
   // [Offset (i)] "O" of "0b0010OLF"
   if (this->has_offset_field()) {
-    size_t offset_field_len;
-    // FIXME: check length of buf
-    QUICVariableInt::encode(buf + *len, 8, offset_field_len, this->_offset);
-    *len += offset_field_len;
+    QUICTypeUtil::write_QUICOffset(this->_offset, buf + *len, &n);
+    *len += n;
     buf[0] += 0x04;
   }
 
   // [Length (i)] "L of "0b0010OLF"
   if (include_length_field) {
-    size_t length_field_len;
-    // FIXME: check length of buf
-    QUICVariableInt::encode(buf + *len, 8, length_field_len, this->_data_len);
-    *len += length_field_len;
+    QUICTypeUtil::write_QUICVariableInt(this->_data_len, buf + *len, &n);
+    *len += n;
     buf[0] += 0x02;
   }
 
@@ -145,11 +140,7 @@ QUICStreamId
 QUICStreamFrame::stream_id() const
 {
   if (this->_buf) {
-    uint64_t stream_id;
-    size_t encoded_len;
-    QUICVariableInt::decode(stream_id, encoded_len, this->_buf + this->_get_stream_id_field_offset(),
-                            this->_len - this->_get_stream_id_field_offset());
-    return static_cast<QUICStreamId>(stream_id);
+    return QUICTypeUtil::read_QUICStreamId(this->_buf + _get_stream_id_field_offset());
   } else {
     return this->_stream_id;
   }
@@ -160,11 +151,7 @@ QUICStreamFrame::offset() const
 {
   if (this->_buf) {
     if (this->has_offset_field()) {
-      uint64_t offset;
-      size_t encoded_len;
-      QUICVariableInt::decode(offset, encoded_len, this->_buf + this->_get_stream_id_field_offset(),
-                              this->_len - this->_get_stream_id_field_offset());
-      return static_cast<QUICOffset>(offset);
+      return QUICTypeUtil::read_QUICOffset(this->_buf + _get_offset_field_offset());
     } else {
       return 0;
     }
@@ -178,11 +165,7 @@ QUICStreamFrame::data_length() const
 {
   if (this->_buf) {
     if (this->has_length_field()) {
-      uint64_t data_len;
-      size_t encoded_len;
-      QUICVariableInt::decode(data_len, encoded_len, this->_buf + this->_get_length_field_offset(),
-                              this->_len - this->_get_length_field_offset());
-      return data_len;
+      return QUICTypeUtil::read_QUICVariableInt(this->_buf + this->_get_length_field_offset());
     } else {
       return this->_len - this->_get_data_field_offset();
     }
@@ -675,11 +658,10 @@ QUICRstStreamFrame::type() const
   return QUICFrameType::RST_STREAM;
 }
 
-// 8 + 32 + 16 + 64 bit
 size_t
 QUICRstStreamFrame::size() const
 {
-  return 15;
+  return 1 + this->_get_stream_id_field_length() + sizeof(QUICAppErrorCode) + this->_get_final_offset_field_length();
 }
 
 void
@@ -689,33 +671,33 @@ QUICRstStreamFrame::store(uint8_t *buf, size_t *len) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::RST_STREAM);
   ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, 4, p, &n);
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
   p += n;
   QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
   p += n;
-  QUICTypeUtil::write_QUICOffset(this->_final_offset, 8, p, &n);
+  QUICTypeUtil::write_QUICOffset(this->_final_offset, p, &n);
   p += n;
 
   *len = p - buf;
-}
-
-QUICAppErrorCode
-QUICRstStreamFrame::error_code() const
-{
-  if (this->_buf) {
-    return QUICTypeUtil::read_QUICAppErrorCode(this->_buf + 5);
-  } else {
-    return this->_error_code;
-  }
 }
 
 QUICStreamId
 QUICRstStreamFrame::stream_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICStreamId(this->_buf + 1, 4);
+    return QUICTypeUtil::read_QUICStreamId(this->_buf + this->_get_stream_id_field_offset());
   } else {
     return this->_stream_id;
+  }
+}
+
+QUICAppErrorCode
+QUICRstStreamFrame::error_code() const
+{
+  if (this->_buf) {
+    return QUICTypeUtil::read_QUICAppErrorCode(this->_buf + this->_get_error_code_field_offset());
+  } else {
+    return this->_error_code;
   }
 }
 
@@ -723,9 +705,47 @@ QUICOffset
 QUICRstStreamFrame::final_offset() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICOffset(this->_buf + 7, 8);
+    return QUICTypeUtil::read_QUICOffset(this->_buf + this->_get_final_offset_field_offset());
   } else {
     return this->_final_offset;
+  }
+}
+
+size_t
+QUICRstStreamFrame::_get_stream_id_field_offset() const
+{
+  return 1;
+}
+
+size_t
+QUICRstStreamFrame::_get_stream_id_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + this->_get_stream_id_field_offset());
+  } else {
+    return QUICVariableInt::size(this->_stream_id);
+  }
+}
+
+size_t
+QUICRstStreamFrame::_get_error_code_field_offset() const
+{
+  return this->_get_stream_id_field_offset() + this->_get_stream_id_field_length();
+}
+
+size_t
+QUICRstStreamFrame::_get_final_offset_field_offset() const
+{
+  return this->_get_error_code_field_offset() + sizeof(QUICAppErrorCode);
+}
+
+size_t
+QUICRstStreamFrame::_get_final_offset_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + this->_get_final_offset_field_offset());
+  } else {
+    return QUICVariableInt::size(this->_final_offset);
   }
 }
 
@@ -988,9 +1008,9 @@ QUICMaxStreamDataFrame::store(uint8_t *buf, size_t *len) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_DATA);
   ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, 4, p, &n);
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
   p += n;
-  QUICTypeUtil::write_uint_as_nbytes(this->_maximum_stream_data, 8, p, &n);
+  QUICTypeUtil::write_QUICMaxData(this->_maximum_stream_data, p, &n);
   p += n;
 
   *len = p - buf;
@@ -1108,7 +1128,7 @@ QUICStreamBlockedFrame::store(uint8_t *buf, size_t *len) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::STREAM_BLOCKED);
   ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, 4, p, &n);
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
   p += n;
 
   *len = p - buf;
@@ -1118,7 +1138,7 @@ QUICStreamId
 QUICStreamBlockedFrame::stream_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICStreamId(this->_buf + 1, 4);
+    return QUICTypeUtil::read_QUICStreamId(this->_buf + 1);
   } else {
     return this->_stream_id;
   }
@@ -1243,7 +1263,7 @@ QUICStopSendingFrame::store(uint8_t *buf, size_t *len) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::STOP_SENDING);
   ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, 4, p, &n);
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
   p += n;
   QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
   p += n;
@@ -1265,7 +1285,7 @@ QUICStreamId
 QUICStopSendingFrame::stream_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICStreamId(this->_buf + 1, 4);
+    return QUICTypeUtil::read_QUICStreamId(this->_buf + 1);
   } else {
     return this->_stream_id;
   }

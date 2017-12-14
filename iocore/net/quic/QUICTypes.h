@@ -257,18 +257,23 @@ public:
   static QUICConnectionId read_QUICConnectionId(const uint8_t *buf, uint8_t n);
   static QUICPacketNumber read_QUICPacketNumber(const uint8_t *buf, uint8_t n);
   static QUICVersion read_QUICVersion(const uint8_t *buf);
-  static QUICStreamId read_QUICStreamId(const uint8_t *buf, uint8_t n);
-  static QUICOffset read_QUICOffset(const uint8_t *buf, uint8_t n);
+  static QUICStreamId read_QUICStreamId(const uint8_t *buf);
+  static QUICOffset read_QUICOffset(const uint8_t *buf);
   static QUICTransErrorCode read_QUICTransErrorCode(const uint8_t *buf);
   static QUICAppErrorCode read_QUICAppErrorCode(const uint8_t *buf);
+
+  static uint64_t read_QUICVariableInt(const uint8_t *buf);
 
   static void write_QUICConnectionId(QUICConnectionId connection_id, uint8_t n, uint8_t *buf, size_t *len);
   static void write_QUICPacketNumber(QUICPacketNumber packet_number, uint8_t n, uint8_t *buf, size_t *len);
   static void write_QUICVersion(QUICVersion version, uint8_t *buf, size_t *len);
-  static void write_QUICStreamId(QUICStreamId stream_id, uint8_t n, uint8_t *buf, size_t *len);
-  static void write_QUICOffset(QUICOffset offset, uint8_t n, uint8_t *buf, size_t *len);
+  static void write_QUICStreamId(QUICStreamId stream_id, uint8_t *buf, size_t *len);
+  static void write_QUICOffset(QUICOffset offset, uint8_t *buf, size_t *len);
   static void write_QUICTransErrorCode(QUICTransErrorCode error_code, uint8_t *buf, size_t *len);
   static void write_QUICAppErrorCode(QUICAppErrorCode error_code, uint8_t *buf, size_t *len);
+  static void write_QUICMaxData(uint64_t max_data, uint8_t *buf, size_t *len);
+
+  static void write_QUICVariableInt(uint64_t data, uint8_t *buf, size_t *len);
 
   static uint64_t read_nbytes_as_uint(const uint8_t *buf, uint8_t n);
   static void write_uint_as_nbytes(uint64_t value, uint8_t n, uint8_t *buf, size_t *len);
@@ -282,5 +287,5 @@ public:
   static size_t size(const uint8_t *src);
   static size_t size(uint64_t src);
   static int encode(uint8_t *dst, size_t dst_len, size_t &len, uint64_t src);
-  static int decode(uint64_t &dst, size_t &len, const uint8_t *src, size_t src_len);
+  static int decode(uint64_t &dst, size_t &len, const uint8_t *src, size_t src_len = 8);
 };

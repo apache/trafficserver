@@ -66,15 +66,21 @@ QUICTypeUtil::read_QUICVersion(const uint8_t *buf)
 }
 
 QUICStreamId
-QUICTypeUtil::read_QUICStreamId(const uint8_t *buf, uint8_t len)
+QUICTypeUtil::read_QUICStreamId(const uint8_t *buf)
 {
-  return static_cast<QUICStreamId>(read_nbytes_as_uint(buf, len));
+  uint64_t stream_id = 0;
+  size_t len         = 0;
+  QUICVariableInt::decode(stream_id, len, buf, 8);
+  return static_cast<QUICStreamId>(stream_id);
 }
 
 QUICOffset
-QUICTypeUtil::read_QUICOffset(const uint8_t *buf, uint8_t len)
+QUICTypeUtil::read_QUICOffset(const uint8_t *buf)
 {
-  return static_cast<QUICOffset>(read_nbytes_as_uint(buf, len));
+  uint64_t offset = 0;
+  size_t len      = 0;
+  QUICVariableInt::decode(offset, len, buf, 8);
+  return static_cast<QUICOffset>(offset);
 }
 
 QUICTransErrorCode
@@ -87,6 +93,15 @@ QUICAppErrorCode
 QUICTypeUtil::read_QUICAppErrorCode(const uint8_t *buf)
 {
   return static_cast<QUICAppErrorCode>(read_nbytes_as_uint(buf, 2));
+}
+
+uint64_t
+QUICTypeUtil::read_QUICVariableInt(const uint8_t *buf)
+{
+  uint64_t dst = 0;
+  size_t len   = 0;
+  QUICVariableInt::decode(dst, len, buf, 8);
+  return dst;
 }
 
 uint64_t
@@ -116,15 +131,15 @@ QUICTypeUtil::write_QUICVersion(QUICVersion version, uint8_t *buf, size_t *len)
 }
 
 void
-QUICTypeUtil::write_QUICStreamId(QUICStreamId stream_id, uint8_t n, uint8_t *buf, size_t *len)
+QUICTypeUtil::write_QUICStreamId(QUICStreamId stream_id, uint8_t *buf, size_t *len)
 {
-  write_uint_as_nbytes(static_cast<uint64_t>(stream_id), n, buf, len);
+  QUICVariableInt::encode(buf, 8, *len, stream_id);
 }
 
 void
-QUICTypeUtil::write_QUICOffset(QUICOffset offset, uint8_t n, uint8_t *buf, size_t *len)
+QUICTypeUtil::write_QUICOffset(QUICOffset offset, uint8_t *buf, size_t *len)
 {
-  write_uint_as_nbytes(static_cast<uint64_t>(offset), n, buf, len);
+  QUICVariableInt::encode(buf, 8, *len, offset);
 }
 
 void
@@ -137,6 +152,18 @@ void
 QUICTypeUtil::write_QUICAppErrorCode(QUICAppErrorCode error_code, uint8_t *buf, size_t *len)
 {
   write_uint_as_nbytes(static_cast<uint64_t>(error_code), 2, buf, len);
+}
+
+void
+QUICTypeUtil::write_QUICMaxData(uint64_t max_data, uint8_t *buf, size_t *len)
+{
+  QUICVariableInt::encode(buf, 8, *len, max_data);
+}
+
+void
+QUICTypeUtil::write_QUICVariableInt(uint64_t data, uint8_t *buf, size_t *len)
+{
+  QUICVariableInt::encode(buf, 8, *len, data);
 }
 
 void
