@@ -101,9 +101,9 @@ QUICPacketHandler::_read_connection_id(QUICConnectionId &cid, IOBufferBlock *blo
     cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
   } else {
     if (QUICTypeUtil::has_connection_id(buf)) {
-      return false;
-    } else {
       cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
+    } else {
+      return false;
     }
   }
 
