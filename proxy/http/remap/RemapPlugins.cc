@@ -118,12 +118,7 @@ RemapPlugins::run_single_remap()
     return 1;
   }
 
-  if (_cur > MAX_REMAP_PLUGIN_CHAIN) {
-    Error("called %s more than %u times; stopping this remap insanity now", __func__, MAX_REMAP_PLUGIN_CHAIN);
-    return 1;
-  }
-
-  if (_cur >= map->_plugin_count) {
+  if (_cur >= map->plugin_count()) {
     // Normally, we would callback into this function but we dont have anything more to do!
     Debug("url_rewrite", "completed all remap plugins for rule id %d", map->map_id);
     return 1;
