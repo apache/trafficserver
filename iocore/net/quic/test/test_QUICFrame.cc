@@ -453,28 +453,28 @@ TEST_CASE("Load ConnectionClose Frame", "[quic]")
   uint8_t buf1[] = {
     0x02,                        // Type
     0x00, 0x0A,                  // Error Code
-    0x00, 0x05,                  // Reason Phrase Length
+    0x05,                        // Reason Phrase Length
     0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::CONNECTION_CLOSE);
-  CHECK(frame1->size() == 10);
+  CHECK(frame1->size() == 9);
   std::shared_ptr<const QUICConnectionCloseFrame> connectionCloseFrame1 =
     std::dynamic_pointer_cast<const QUICConnectionCloseFrame>(frame1);
   CHECK(connectionCloseFrame1 != nullptr);
   CHECK(connectionCloseFrame1->error_code() == QUICTransErrorCode::PROTOCOL_VIOLATION);
   CHECK(connectionCloseFrame1->reason_phrase_length() == 5);
-  CHECK(memcmp(connectionCloseFrame1->reason_phrase(), buf1 + 5, 5) == 0);
+  CHECK(memcmp(connectionCloseFrame1->reason_phrase(), buf1 + 4, 5) == 0);
 
   // No reason phrase
   uint8_t buf2[] = {
     0x02,       // Type
     0x00, 0x0A, // Error Code
-    0x00, 0x00, // Reason Phrase Length
+    0x00,       // Reason Phrase Length
   };
   std::shared_ptr<const QUICFrame> frame2 = QUICFrameFactory::create(buf2, sizeof(buf1));
   CHECK(frame2->type() == QUICFrameType::CONNECTION_CLOSE);
-  CHECK(frame2->size() == 5);
+  CHECK(frame2->size() == 4);
   std::shared_ptr<const QUICConnectionCloseFrame> connectionCloseFrame2 =
     std::dynamic_pointer_cast<const QUICConnectionCloseFrame>(frame2);
   CHECK(connectionCloseFrame2 != nullptr);
@@ -490,22 +490,22 @@ TEST_CASE("Store ConnectionClose Frame", "[quic]")
   uint8_t expected1[] = {
     0x02,                        // Type
     0x00, 0x0A,                  // Error Code
-    0x00, 0x05,                  // Reason Phrase Length
+    0x05,                        // Reason Phrase Length
     0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
   };
   QUICConnectionCloseFrame connectionCloseFrame1(QUICTransErrorCode::PROTOCOL_VIOLATION, 5, "ABCDE");
   connectionCloseFrame1.store(buf, &len);
-  CHECK(len == 10);
+  CHECK(len == 9);
   CHECK(memcmp(buf, expected1, len) == 0);
 
   uint8_t expected2[] = {
     0x02,       // Type
     0x00, 0x0A, // Error Code
-    0x00, 0x00, // Reason Phrase Length
+    0x00,       // Reason Phrase Length
   };
   QUICConnectionCloseFrame connectionCloseFrame2(QUICTransErrorCode::PROTOCOL_VIOLATION, 0, nullptr);
   connectionCloseFrame2.store(buf, &len);
-  CHECK(len == 5);
+  CHECK(len == 4);
   CHECK(memcmp(buf, expected2, len) == 0);
 }
 
@@ -514,28 +514,28 @@ TEST_CASE("Load ApplicationClose Frame", "[quic]")
   uint8_t buf1[] = {
     0x03,                        // Type
     0x00, 0x01,                  // Error Code
-    0x00, 0x05,                  // Reason Phrase Length
+    0x05,                        // Reason Phrase Length
     0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::APPLICATION_CLOSE);
-  CHECK(frame1->size() == 10);
+  CHECK(frame1->size() == 9);
   std::shared_ptr<const QUICApplicationCloseFrame> applicationCloseFrame1 =
     std::dynamic_pointer_cast<const QUICApplicationCloseFrame>(frame1);
   CHECK(applicationCloseFrame1 != nullptr);
   CHECK(applicationCloseFrame1->error_code() == static_cast<QUICAppErrorCode>(0x01));
   CHECK(applicationCloseFrame1->reason_phrase_length() == 5);
-  CHECK(memcmp(applicationCloseFrame1->reason_phrase(), buf1 + 5, 5) == 0);
+  CHECK(memcmp(applicationCloseFrame1->reason_phrase(), buf1 + 4, 5) == 0);
 
   // No reason phrase
   uint8_t buf2[] = {
     0x03,       // Type
     0x00, 0x01, // Error Code
-    0x00, 0x00, // Reason Phrase Length
+    0x00,       // Reason Phrase Length
   };
   std::shared_ptr<const QUICFrame> frame2 = QUICFrameFactory::create(buf2, sizeof(buf1));
   CHECK(frame2->type() == QUICFrameType::APPLICATION_CLOSE);
-  CHECK(frame2->size() == 5);
+  CHECK(frame2->size() == 4);
   std::shared_ptr<const QUICApplicationCloseFrame> applicationCloseFrame2 =
     std::dynamic_pointer_cast<const QUICApplicationCloseFrame>(frame2);
   CHECK(applicationCloseFrame2 != nullptr);
@@ -551,22 +551,22 @@ TEST_CASE("Store ApplicationClose Frame", "[quic]")
   uint8_t expected1[] = {
     0x03,                        // Type
     0x00, 0x01,                  // Error Code
-    0x00, 0x05,                  // Reason Phrase Length
+    0x05,                        // Reason Phrase Length
     0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
   };
   QUICApplicationCloseFrame applicationCloseFrame1(static_cast<QUICAppErrorCode>(0x01), 5, "ABCDE");
   applicationCloseFrame1.store(buf, &len);
-  CHECK(len == 10);
+  CHECK(len == 9);
   CHECK(memcmp(buf, expected1, len) == 0);
 
   uint8_t expected2[] = {
     0x03,       // Type
     0x00, 0x01, // Error Code
-    0x00, 0x00, // Reason Phrase Length
+    0x00,       // Reason Phrase Length
   };
   QUICApplicationCloseFrame applicationCloseFrame2(static_cast<QUICAppErrorCode>(0x01), 0, nullptr);
   applicationCloseFrame2.store(buf, &len);
-  CHECK(len == 5);
+  CHECK(len == 4);
   CHECK(memcmp(buf, expected2, len) == 0);
 }
 
@@ -574,7 +574,7 @@ TEST_CASE("Load MaxData Frame", "[quic]")
 {
   uint8_t buf1[] = {
     0x04,                                          // Type
-    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
+    0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::MAX_DATA);
@@ -591,7 +591,7 @@ TEST_CASE("Store MaxData Frame", "[quic]")
 
   uint8_t expected[] = {
     0x04,                                          // Type
-    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
+    0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
   };
   QUICMaxDataFrame maxDataFrame(0x1122334455667788);
   maxDataFrame.store(buf, &len);
@@ -603,8 +603,8 @@ TEST_CASE("Load MaxStreamData Frame", "[quic]")
 {
   uint8_t buf1[] = {
     0x05,                                          // Type
-    0x01, 0x02, 0x03, 0x04,                        // Stream ID
-    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
+    0x81, 0x02, 0x03, 0x04,                        // Stream ID
+    0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::MAX_STREAM_DATA);
@@ -623,8 +623,8 @@ TEST_CASE("Store MaxStreamData Frame", "[quic]")
 
   uint8_t expected[] = {
     0x05,                                          // Type
-    0x01, 0x02, 0x03, 0x04,                        // Stream ID
-    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
+    0x81, 0x02, 0x03, 0x04,                        // Stream ID
+    0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
   };
   QUICMaxStreamDataFrame maxStreamDataFrame(0x01020304, 0x1122334455667788ULL);
   maxStreamDataFrame.store(buf, &len);
@@ -636,7 +636,7 @@ TEST_CASE("Load MaxStreamId Frame", "[quic]")
 {
   uint8_t buf1[] = {
     0x06,                   // Type
-    0x01, 0x02, 0x03, 0x04, // Stream ID
+    0x81, 0x02, 0x03, 0x04, // Stream ID
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::MAX_STREAM_ID);
@@ -653,7 +653,7 @@ TEST_CASE("Store MaxStreamId Frame", "[quic]")
 
   uint8_t expected[] = {
     0x06,                   // Type
-    0x01, 0x02, 0x03, 0x04, // Stream ID
+    0x81, 0x02, 0x03, 0x04, // Stream ID
   };
   QUICMaxStreamIdFrame maxStreamIdFrame(0x01020304);
   maxStreamIdFrame.store(buf, &len);
@@ -827,11 +827,11 @@ TEST_CASE("QUICFrameFactory Fast Create Frame", "[quic]")
 
   uint8_t buf1[] = {
     0x06,                   // Type
-    0x01, 0x02, 0x03, 0x04, // Stream Data
+    0x81, 0x02, 0x03, 0x04, // Stream Data
   };
   uint8_t buf2[] = {
     0x06,                   // Type
-    0x05, 0x06, 0x07, 0x08, // Stream Data
+    0x85, 0x06, 0x07, 0x08, // Stream Data
   };
   std::shared_ptr<const QUICFrame> frame1 = factory.fast_create(buf1, sizeof(buf1));
   CHECK(frame1 != nullptr);

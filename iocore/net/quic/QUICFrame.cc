@@ -796,7 +796,7 @@ QUICPaddingFrame::store(uint8_t *buf, size_t *len) const
 //
 // CONNECTION_CLOSE frame
 //
-QUICConnectionCloseFrame::QUICConnectionCloseFrame(QUICTransErrorCode error_code, uint16_t reason_phrase_length,
+QUICConnectionCloseFrame::QUICConnectionCloseFrame(QUICTransErrorCode error_code, uint64_t reason_phrase_length,
                                                    const char *reason_phrase)
 {
   this->_error_code           = error_code;
@@ -813,7 +813,8 @@ QUICConnectionCloseFrame::type() const
 size_t
 QUICConnectionCloseFrame::size() const
 {
-  return 5 + this->reason_phrase_length();
+  return sizeof(QUICFrameType) + sizeof(QUICTransErrorCode) + this->_get_reason_phrase_length_field_length() +
+         this->reason_phrase_length();
 }
 
 void
@@ -825,7 +826,7 @@ QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len) const
   ++p;
   QUICTypeUtil::write_QUICTransErrorCode(this->_error_code, p, &n);
   p += n;
-  QUICTypeUtil::write_uint_as_nbytes(this->_reason_phrase_length, 2, p, &n);
+  QUICTypeUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
   p += n;
   if (this->_reason_phrase_length > 0) {
     memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
@@ -845,11 +846,11 @@ QUICConnectionCloseFrame::error_code() const
   }
 }
 
-uint16_t
+uint64_t
 QUICConnectionCloseFrame::reason_phrase_length() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + 3, 2);
+    return QUICTypeUtil::read_QUICVariableInt(this->_buf + this->_get_reason_phrase_length_field_offset());
   } else {
     return this->_reason_phrase_length;
   }
@@ -859,16 +860,38 @@ const char *
 QUICConnectionCloseFrame::reason_phrase() const
 {
   if (this->_buf) {
-    return reinterpret_cast<const char *>(this->_buf + 5);
+    return reinterpret_cast<const char *>(this->_buf + this->_get_reason_phrase_field_offset());
   } else {
     return this->_reason_phrase;
   }
 }
 
+size_t
+QUICConnectionCloseFrame::_get_reason_phrase_length_field_offset() const
+{
+  return sizeof(QUICFrameType) + sizeof(QUICTransErrorCode);
+}
+
+size_t
+QUICConnectionCloseFrame::_get_reason_phrase_length_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + this->_get_reason_phrase_length_field_offset());
+  } else {
+    return QUICVariableInt::size(this->_reason_phrase_length);
+  }
+}
+
+size_t
+QUICConnectionCloseFrame::_get_reason_phrase_field_offset() const
+{
+  return this->_get_reason_phrase_length_field_offset() + this->_get_reason_phrase_length_field_length();
+}
+
 //
 // APPLICATION_CLOSE frame
 //
-QUICApplicationCloseFrame::QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint16_t reason_phrase_length,
+QUICApplicationCloseFrame::QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint64_t reason_phrase_length,
                                                      const char *reason_phrase)
 {
   this->_error_code           = error_code;
@@ -885,7 +908,8 @@ QUICApplicationCloseFrame::type() const
 size_t
 QUICApplicationCloseFrame::size() const
 {
-  return 5 + this->reason_phrase_length();
+  return sizeof(QUICFrameType) + sizeof(QUICAppErrorCode) + this->_get_reason_phrase_length_field_length() +
+         this->reason_phrase_length();
 }
 
 void
@@ -897,7 +921,7 @@ QUICApplicationCloseFrame::store(uint8_t *buf, size_t *len) const
   ++p;
   QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
   p += n;
-  QUICTypeUtil::write_uint_as_nbytes(this->_reason_phrase_length, 2, p, &n);
+  QUICTypeUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
   p += n;
   if (this->_reason_phrase_length > 0) {
     memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
@@ -917,11 +941,11 @@ QUICApplicationCloseFrame::error_code() const
   }
 }
 
-uint16_t
+uint64_t
 QUICApplicationCloseFrame::reason_phrase_length() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + 3, 2);
+    return QUICTypeUtil::read_QUICVariableInt(this->_buf + this->_get_reason_phrase_length_field_offset());
   } else {
     return this->_reason_phrase_length;
   }
@@ -931,10 +955,32 @@ const char *
 QUICApplicationCloseFrame::reason_phrase() const
 {
   if (this->_buf) {
-    return reinterpret_cast<const char *>(this->_buf + 5);
+    return reinterpret_cast<const char *>(this->_buf + this->_get_reason_phrase_field_offset());
   } else {
     return this->_reason_phrase;
   }
+}
+
+size_t
+QUICApplicationCloseFrame::_get_reason_phrase_length_field_offset() const
+{
+  return sizeof(QUICFrameType) + sizeof(QUICTransErrorCode);
+}
+
+size_t
+QUICApplicationCloseFrame::_get_reason_phrase_length_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + this->_get_reason_phrase_length_field_offset());
+  } else {
+    return QUICVariableInt::size(this->_reason_phrase_length);
+  }
+}
+
+size_t
+QUICApplicationCloseFrame::_get_reason_phrase_field_offset() const
+{
+  return this->_get_reason_phrase_length_field_offset() + this->_get_reason_phrase_length_field_length();
 }
 
 //
@@ -954,7 +1000,7 @@ QUICMaxDataFrame::type() const
 size_t
 QUICMaxDataFrame::size() const
 {
-  return 9;
+  return sizeof(QUICFrameType) + this->_get_max_data_field_length();
 }
 
 void
@@ -964,7 +1010,7 @@ QUICMaxDataFrame::store(uint8_t *buf, size_t *len) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::MAX_DATA);
   ++p;
-  QUICTypeUtil::write_uint_as_nbytes(this->_maximum_data, 8, p, &n);
+  QUICTypeUtil::write_QUICMaxData(this->_maximum_data, p, &n);
   p += n;
 
   *len = p - buf;
@@ -974,9 +1020,19 @@ uint64_t
 QUICMaxDataFrame::maximum_data() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + 1, 8);
+    return QUICTypeUtil::read_QUICMaxData(this->_buf + sizeof(QUICFrameType));
   } else {
     return this->_maximum_data;
+  }
+}
+
+size_t
+QUICMaxDataFrame::_get_max_data_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + sizeof(QUICFrameType));
+  } else {
+    return QUICVariableInt::size(this->_maximum_data);
   }
 }
 
@@ -998,7 +1054,7 @@ QUICMaxStreamDataFrame::type() const
 size_t
 QUICMaxStreamDataFrame::size() const
 {
-  return 13;
+  return sizeof(QUICFrameType) + this->_get_stream_id_field_length() + this->_get_max_stream_data_field_length();
 }
 
 void
@@ -1020,7 +1076,7 @@ QUICStreamId
 QUICMaxStreamDataFrame::stream_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + 1, 4);
+    return QUICTypeUtil::read_QUICStreamId(this->_buf + sizeof(QUICFrameType));
   } else {
     return this->_stream_id;
   }
@@ -1030,9 +1086,41 @@ uint64_t
 QUICMaxStreamDataFrame::maximum_stream_data() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + 5, 8);
+    return QUICTypeUtil::read_QUICMaxData(this->_buf + this->_get_max_stream_data_field_offset());
   } else {
     return this->_maximum_stream_data;
+  }
+}
+
+size_t
+QUICMaxStreamDataFrame::_get_stream_id_field_offset() const
+{
+  return sizeof(QUICFrameType);
+}
+
+size_t
+QUICMaxStreamDataFrame::_get_stream_id_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + this->_get_stream_id_field_offset());
+  } else {
+    return QUICVariableInt::size(this->_stream_id);
+  }
+}
+
+size_t
+QUICMaxStreamDataFrame::_get_max_stream_data_field_offset() const
+{
+  return sizeof(QUICFrameType) + this->_get_stream_id_field_length();
+}
+
+size_t
+QUICMaxStreamDataFrame::_get_max_stream_data_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + this->_get_max_stream_data_field_offset());
+  } else {
+    return QUICVariableInt::size(this->_stream_id);
   }
 }
 
@@ -1053,7 +1141,7 @@ QUICMaxStreamIdFrame::type() const
 size_t
 QUICMaxStreamIdFrame::size() const
 {
-  return 5;
+  return sizeof(QUICFrameType) + this->_get_max_stream_id_field_length();
 }
 
 void
@@ -1063,7 +1151,7 @@ QUICMaxStreamIdFrame::store(uint8_t *buf, size_t *len) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_ID);
   ++p;
-  QUICTypeUtil::write_uint_as_nbytes(this->_maximum_stream_id, 4, p, &n);
+  QUICTypeUtil::write_QUICStreamId(this->_maximum_stream_id, p, &n);
   p += n;
 
   *len = p - buf;
@@ -1073,9 +1161,19 @@ QUICStreamId
 QUICMaxStreamIdFrame::maximum_stream_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + 1, 4);
+    return QUICTypeUtil::read_QUICStreamId(this->_buf + sizeof(QUICFrameType));
   } else {
     return this->_maximum_stream_id;
+  }
+}
+
+size_t
+QUICMaxStreamIdFrame::_get_max_stream_id_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + sizeof(QUICFrameType));
+  } else {
+    return QUICVariableInt::size(this->_maximum_stream_id);
   }
 }
 

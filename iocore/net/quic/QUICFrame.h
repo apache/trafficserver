@@ -36,7 +36,7 @@ class QUICFrame
 public:
   QUICFrame(const uint8_t *buf, size_t len) : _buf(buf), _len(len){};
   virtual QUICFrameType type() const;
-  virtual size_t size() const = 0;
+  virtual size_t size() const                         = 0;
   virtual void store(uint8_t *buf, size_t *len) const = 0;
   virtual void reset(const uint8_t *buf, size_t len);
   static QUICFrameType type(const uint8_t *buf);
@@ -228,7 +228,7 @@ private:
   size_t _get_error_code_field_offset() const;
   size_t _get_final_offset_field_offset() const;
   size_t _get_final_offset_field_length() const;
-
+  
   QUICStreamId _stream_id      = 0;
   QUICAppErrorCode _error_code = 0;
   QUICOffset _final_offset     = 0;
@@ -269,17 +269,21 @@ class QUICConnectionCloseFrame : public QUICFrame
 public:
   QUICConnectionCloseFrame() : QUICFrame() {}
   QUICConnectionCloseFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICConnectionCloseFrame(QUICTransErrorCode error_code, uint16_t reason_phrase_length, const char *reason_phrase);
+  QUICConnectionCloseFrame(QUICTransErrorCode error_code, uint64_t reason_phrase_length, const char *reason_phrase);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
   QUICTransErrorCode error_code() const;
-  uint16_t reason_phrase_length() const;
+  uint64_t reason_phrase_length() const;
   const char *reason_phrase() const;
 
 private:
+  size_t _get_reason_phrase_length_field_offset() const;
+  size_t _get_reason_phrase_length_field_length() const;
+  size_t _get_reason_phrase_field_offset() const;
+  
   QUICTransErrorCode _error_code;
-  uint16_t _reason_phrase_length = 0;
+  uint64_t _reason_phrase_length = 0;
   const char *_reason_phrase     = nullptr;
 };
 
@@ -292,17 +296,21 @@ class QUICApplicationCloseFrame : public QUICFrame
 public:
   QUICApplicationCloseFrame() : QUICFrame() {}
   QUICApplicationCloseFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint16_t reason_phrase_length, const char *reason_phrase);
+  QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint64_t reason_phrase_length, const char *reason_phrase);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
   QUICAppErrorCode error_code() const;
-  uint16_t reason_phrase_length() const;
+  uint64_t reason_phrase_length() const;
   const char *reason_phrase() const;
 
 private:
+  size_t _get_reason_phrase_length_field_offset() const;
+  size_t _get_reason_phrase_length_field_length() const;
+  size_t _get_reason_phrase_field_offset() const;
+
   QUICAppErrorCode _error_code   = 0;
-  uint16_t _reason_phrase_length = 0;
+  uint64_t _reason_phrase_length = 0;
   const char *_reason_phrase     = nullptr;
 };
 
@@ -322,6 +330,8 @@ public:
   uint64_t maximum_data() const;
 
 private:
+  size_t _get_max_data_field_length() const;
+
   uint64_t _maximum_data = 0;
 };
 
@@ -342,6 +352,11 @@ public:
   uint64_t maximum_stream_data() const;
 
 private:
+  size_t _get_stream_id_field_offset() const;
+  size_t _get_stream_id_field_length() const;
+  size_t _get_max_stream_data_field_offset() const;
+  size_t _get_max_stream_data_field_length() const;
+
   QUICStreamId _stream_id       = 0;
   uint64_t _maximum_stream_data = 0;
 };
@@ -362,6 +377,8 @@ public:
   QUICStreamId maximum_stream_id() const;
 
 private:
+  size_t _get_max_stream_id_field_length() const;
+
   QUICStreamId _maximum_stream_id = 0;
 };
 
@@ -376,6 +393,8 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
+private:
+  size_t _get_max_data_field_length() const;
 };
 
 //

@@ -83,7 +83,7 @@ enum class QUICPacketShortHeaderType : int {
 };
 
 // XXX If you add or remove QUICFrameType, you might also need to change QUICFrame::type(const uint8_t *)
-enum class QUICFrameType : int {
+enum class QUICFrameType : uint8_t {
   PADDING = 0x00,
   RST_STREAM,
   CONNECTION_CLOSE,
@@ -261,7 +261,7 @@ public:
   static QUICOffset read_QUICOffset(const uint8_t *buf);
   static QUICTransErrorCode read_QUICTransErrorCode(const uint8_t *buf);
   static QUICAppErrorCode read_QUICAppErrorCode(const uint8_t *buf);
-
+  static uint64_t read_QUICMaxData(const uint8_t *buf);
   static uint64_t read_QUICVariableInt(const uint8_t *buf);
 
   static void write_QUICConnectionId(QUICConnectionId connection_id, uint8_t n, uint8_t *buf, size_t *len);

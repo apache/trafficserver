@@ -96,6 +96,15 @@ QUICTypeUtil::read_QUICAppErrorCode(const uint8_t *buf)
 }
 
 uint64_t
+QUICTypeUtil::read_QUICMaxData(const uint8_t *buf)
+{
+  uint64_t max_data = 0;
+  size_t len        = 0;
+  QUICVariableInt::decode(max_data, len, buf, 8);
+  return max_data;
+}
+
+uint64_t
 QUICTypeUtil::read_QUICVariableInt(const uint8_t *buf)
 {
   uint64_t dst = 0;
