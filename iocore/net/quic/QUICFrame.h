@@ -390,11 +390,18 @@ class QUICBlockedFrame : public QUICFrame
 public:
   QUICBlockedFrame() : QUICFrame() {}
   QUICBlockedFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICBlockedFrame(QUICOffset offset) : _offset(offset) {};
+  
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
+
+  QUICOffset offset() const;
+
 private:
-  size_t _get_max_data_field_length() const;
+  size_t _get_offset_field_length() const;
+
+  QUICOffset _offset = 0;
 };
 
 //
@@ -406,27 +413,44 @@ class QUICStreamBlockedFrame : public QUICFrame
 public:
   QUICStreamBlockedFrame() : QUICFrame() {}
   QUICStreamBlockedFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICStreamBlockedFrame(QUICStreamId stream_id);
+  QUICStreamBlockedFrame(QUICStreamId s, QUICOffset o): _stream_id(s), _offset(o) {};
+
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
+
   QUICStreamId stream_id() const;
+  QUICOffset offset() const;
 
 private:
-  QUICStreamId _stream_id;
+  size_t _get_stream_id_field_length() const;
+  size_t _get_offset_field_offset() const;
+  size_t _get_offset_field_length() const;
+
+  QUICStreamId _stream_id = 0;
+  QUICOffset _offset = 0;  
 };
 
 //
-// STREAM_ID_NEEDED
+// STREAM_ID_BLOCKED
 //
-class QUICStreamIdNeededFrame : public QUICFrame
+class QUICStreamIdBlockedFrame : public QUICFrame
 {
 public:
-  QUICStreamIdNeededFrame() : QUICFrame() {}
-  QUICStreamIdNeededFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICStreamIdBlockedFrame() : QUICFrame() {}
+  QUICStreamIdBlockedFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICStreamIdBlockedFrame(QUICStreamId s) : _stream_id(s) {}
+
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
+
+  QUICStreamId stream_id() const;
+
+private:
+  size_t _get_stream_id_field_length() const;
+
+  QUICStreamId _stream_id = 0;
 };
 
 //
@@ -509,7 +533,7 @@ extern ClassAllocator<QUICMaxStreamIdFrame> quicMaxStreamIdFrameAllocator;
 extern ClassAllocator<QUICPingFrame> quicPingFrameAllocator;
 extern ClassAllocator<QUICBlockedFrame> quicBlockedFrameAllocator;
 extern ClassAllocator<QUICStreamBlockedFrame> quicStreamBlockedFrameAllocator;
-extern ClassAllocator<QUICStreamIdNeededFrame> quicStreamIdNeededFrameAllocator;
+extern ClassAllocator<QUICStreamIdBlockedFrame> quicStreamIdBlockedFrameAllocator;
 extern ClassAllocator<QUICNewConnectionIdFrame> quicNewConnectionIdFrameAllocator;
 extern ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator;
 extern ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator;
@@ -598,9 +622,9 @@ public:
   }
 
   static void
-  delete_stream_id_needed_frame(QUICFrame *frame)
+  delete_stream_id_blocked_frame(QUICFrame *frame)
   {
-    quicStreamIdNeededFrameAllocator.free(static_cast<QUICStreamIdNeededFrame *>(frame));
+    quicStreamIdBlockedFrameAllocator.free(static_cast<QUICStreamIdBlockedFrame *>(frame));
   }
 
   static void
@@ -689,12 +713,17 @@ public:
   /*
    * Creates a BLOCKED frame.
    */
-  static std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc> create_blocked_frame();
+  static std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc> create_blocked_frame(QUICOffset offset);
 
   /*
    * Creates a STREAM_BLOCKED frame.
    */
-  static std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc> create_stream_blocked_frame(QUICStreamId stream_id);
+  static std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc> create_stream_blocked_frame(QUICStreamId stream_id, QUICOffset offset);
+
+  /*
+   * Creates a STREAM_ID_BLOCKED frame.
+   */
+  static std::unique_ptr<QUICStreamIdBlockedFrame, QUICFrameDeleterFunc> create_stream_id_blocked_frame(QUICStreamId stream_id);
 
   /*
    * Creates a RST_STREAM frame.

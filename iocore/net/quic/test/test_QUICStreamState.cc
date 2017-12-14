@@ -33,7 +33,7 @@ TEST_CASE("QUICStreamState_Idle", "[quic]")
   auto stream_frame          = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("foo"), 4, 1, 0);
   auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
   auto max_stream_data_frame = QUICFrameFactory::create_max_stream_data_frame(0, 0);
-  auto stream_blocked_frame  = QUICFrameFactory::create_stream_blocked_frame(0);
+  auto stream_blocked_frame  = QUICFrameFactory::create_stream_blocked_frame(0, 0);
 
   // Case1. Send STREAM
   QUICStreamState ss1;

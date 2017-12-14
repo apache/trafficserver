@@ -120,7 +120,7 @@ QUICLocalFlowController::forward_limit(QUICOffset offset)
 QUICFrameUPtr
 QUICRemoteConnectionFlowController::_create_frame()
 {
-  return QUICFrameFactory::create_blocked_frame();
+  return QUICFrameFactory::create_blocked_frame(this->_offset);
 }
 
 QUICFrameUPtr
@@ -132,7 +132,7 @@ QUICLocalConnectionFlowController::_create_frame()
 QUICFrameUPtr
 QUICRemoteStreamFlowController::_create_frame()
 {
-  return QUICFrameFactory::create_stream_blocked_frame(this->_stream_id);
+  return QUICFrameFactory::create_stream_blocked_frame(this->_stream_id, this->_offset);
 }
 
 QUICFrameUPtr

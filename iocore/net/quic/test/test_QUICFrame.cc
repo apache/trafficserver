@@ -39,7 +39,7 @@ TEST_CASE("QUICFrame Type", "[quic]")
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x07")) == QUICFrameType::PING);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x08")) == QUICFrameType::BLOCKED);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x09")) == QUICFrameType::STREAM_BLOCKED);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0a")) == QUICFrameType::STREAM_ID_NEEDED);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0a")) == QUICFrameType::STREAM_ID_BLOCKED);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0b")) == QUICFrameType::NEW_CONNECTION_ID);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0c")) == QUICFrameType::STOP_SENDING);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0d")) == QUICFrameType::PONG);
@@ -665,12 +665,14 @@ TEST_CASE("Load Blocked Frame", "[quic]")
 {
   uint8_t buf1[] = {
     0x08, // Type
+    0x07, // Offset
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::BLOCKED);
-  CHECK(frame1->size() == 1);
+  CHECK(frame1->size() == 2);
   std::shared_ptr<const QUICBlockedFrame> blockedStreamFrame1 = std::dynamic_pointer_cast<const QUICBlockedFrame>(frame1);
   CHECK(blockedStreamFrame1 != nullptr);
+  CHECK(blockedStreamFrame1->offset() == 0x07);
 }
 
 TEST_CASE("Store Blocked Frame", "[quic]")
@@ -680,10 +682,11 @@ TEST_CASE("Store Blocked Frame", "[quic]")
 
   uint8_t expected[] = {
     0x08, // Type
+    0x07, // Offset
   };
-  QUICBlockedFrame blockedStreamFrame;
+  QUICBlockedFrame blockedStreamFrame(0x07);
   blockedStreamFrame.store(buf, &len);
-  CHECK(len == 1);
+  CHECK(len == 2);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
@@ -691,15 +694,17 @@ TEST_CASE("Load StreamBlocked Frame", "[quic]")
 {
   uint8_t buf1[] = {
     0x09,                   // Type
-    0x01, 0x02, 0x03, 0x04, // Stream ID
+    0x81, 0x02, 0x03, 0x04, // Stream ID
+    0x07,                   // Offset
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::STREAM_BLOCKED);
-  CHECK(frame1->size() == 5);
+  CHECK(frame1->size() == 6);
   std::shared_ptr<const QUICStreamBlockedFrame> streamBlockedFrame1 =
     std::dynamic_pointer_cast<const QUICStreamBlockedFrame>(frame1);
   CHECK(streamBlockedFrame1 != nullptr);
   CHECK(streamBlockedFrame1->stream_id() == 0x01020304);
+  CHECK(streamBlockedFrame1->offset() == 0x07);
 }
 
 TEST_CASE("Store StreamBlocked Frame", "[quic]")
@@ -709,38 +714,42 @@ TEST_CASE("Store StreamBlocked Frame", "[quic]")
 
   uint8_t expected[] = {
     0x09,                   // Type
-    0x01, 0x02, 0x03, 0x04, // Stream ID
+    0x81, 0x02, 0x03, 0x04, // Stream ID
+    0x07,                   // Offset
   };
-  QUICStreamBlockedFrame streamBlockedFrame(0x01020304);
+  QUICStreamBlockedFrame streamBlockedFrame(0x01020304, 0x07);
   streamBlockedFrame.store(buf, &len);
-  CHECK(len == 5);
+  CHECK(len == 6);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
-TEST_CASE("Load StreamIdNeeded Frame", "[quic]")
+TEST_CASE("Load StreamIdBlocked Frame", "[quic]")
 {
   uint8_t buf1[] = {
-    0x0a, // Type
+    0x0a,       // Type
+    0x41, 0x02, // Stream ID
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::STREAM_ID_NEEDED);
-  CHECK(frame1->size() == 1);
-  std::shared_ptr<const QUICStreamIdNeededFrame> streamIdNeededFrame1 =
-    std::dynamic_pointer_cast<const QUICStreamIdNeededFrame>(frame1);
-  CHECK(streamIdNeededFrame1 != nullptr);
+  CHECK(frame1->type() == QUICFrameType::STREAM_ID_BLOCKED);
+  CHECK(frame1->size() == 3);
+  std::shared_ptr<const QUICStreamIdBlockedFrame> streamIdBlockedFrame1 =
+    std::dynamic_pointer_cast<const QUICStreamIdBlockedFrame>(frame1);
+  CHECK(streamIdBlockedFrame1 != nullptr);
+  CHECK(streamIdBlockedFrame1->stream_id() == 0x0102);
 }
 
-TEST_CASE("Store StreamIdNeeded Frame", "[quic]")
+TEST_CASE("Store StreamIdBlocked Frame", "[quic]")
 {
   uint8_t buf[65535];
   size_t len;
 
   uint8_t expected[] = {
-    0x0a, // Type
+    0x0a,       // Type
+    0x41, 0x02, // Stream ID
   };
-  QUICStreamIdNeededFrame streamIdNeededStreamFrame;
-  streamIdNeededStreamFrame.store(buf, &len);
-  CHECK(len == 1);
+  QUICStreamIdBlockedFrame streamIdBlockedStreamFrame(0x0102);
+  streamIdBlockedStreamFrame.store(buf, &len);
+  CHECK(len == 3);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 

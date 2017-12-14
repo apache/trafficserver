@@ -70,8 +70,8 @@ QUICDebugNames::frame_type(QUICFrameType type)
     return "BLOCKED";
   case QUICFrameType::STREAM_BLOCKED:
     return "STREAM_BLOCKED";
-  case QUICFrameType::STREAM_ID_NEEDED:
-    return "STREAM_ID_NEEDED";
+  case QUICFrameType::STREAM_ID_BLOCKED:
+    return "STREAM_ID_BLOCKED";
   case QUICFrameType::NEW_CONNECTION_ID:
     return "NEW_CONNECTION_ID";
   case QUICFrameType::ACK:
