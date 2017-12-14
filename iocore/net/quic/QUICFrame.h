@@ -36,7 +36,7 @@ class QUICFrame
 public:
   QUICFrame(const uint8_t *buf, size_t len) : _buf(buf), _len(len){};
   virtual QUICFrameType type() const;
-  virtual size_t size() const                         = 0;
+  virtual size_t size() const = 0;
   virtual void store(uint8_t *buf, size_t *len) const = 0;
   virtual void reset(const uint8_t *buf, size_t len);
   static QUICFrameType type(const uint8_t *buf);
@@ -228,7 +228,7 @@ private:
   size_t _get_error_code_field_offset() const;
   size_t _get_final_offset_field_offset() const;
   size_t _get_final_offset_field_length() const;
-  
+
   QUICStreamId _stream_id      = 0;
   QUICAppErrorCode _error_code = 0;
   QUICOffset _final_offset     = 0;

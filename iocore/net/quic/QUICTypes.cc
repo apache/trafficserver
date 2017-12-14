@@ -38,10 +38,10 @@ QUICTypeUtil::hasLongHeader(const uint8_t *buf)
 QUICStreamType
 QUICTypeUtil::detect_stream_type(QUICStreamId id)
 {
-  uint8_t type = (id & 0x01);
-  if (type == 0) {
+  if (id == 0) {
     return QUICStreamType::HANDSHAKE;
   } else {
+    uint8_t type = (id & 0x03);
     return static_cast<QUICStreamType>(type);
   }
 }

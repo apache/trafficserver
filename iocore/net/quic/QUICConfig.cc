@@ -62,9 +62,15 @@ QUICConfigParams::initial_max_stream_data() const
 }
 
 uint32_t
-QUICConfigParams::initial_max_stream_id() const
+QUICConfigParams::initial_max_stream_id_bidi() const
 {
-  return this->_initial_max_stream_id;
+  return this->_initial_max_stream_id_bidi;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_id_uni() const
+{
+  return this->_initial_max_stream_id_uni;
 }
 
 //

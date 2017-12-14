@@ -93,7 +93,6 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
   this->_version_negotiator = new QUICVersionNegotiator();
 
   this->_crypto->initialize_key_materials(this->_client_qc->original_connection_id());
-  this->_load_local_transport_parameters();
 
   SET_HANDLER(&QUICHandshake::state_read_client_hello);
 }
@@ -114,6 +113,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
     if (initial_packet->version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
         QUICHSDebug("Version negotiation succeeded: %x", initial_packet->version());
+        this->_load_local_transport_parameters(initial_packet->version());
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
         this->_client_qc->transmit_packet(
@@ -182,7 +182,7 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters>
       this->_abort_handshake(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
       return;
     }
-    QUICHSDebug("Version negotiation revalidated: %x", tp_in_ch->negotiated_version());
+    QUICHSDebug("Version negotiation revalidated: %x", tp_in_ch->initial_version());
     return;
   }
 
@@ -285,16 +285,17 @@ QUICHandshake::state_closed(int event, void *data)
 }
 
 void
-QUICHandshake::_load_local_transport_parameters()
+QUICHandshake::_load_local_transport_parameters(QUICVersion negotiated_version)
 {
   QUICConfig::scoped_config params;
 
   // MUSTs
-  QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions();
+  QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions(negotiated_version);
 
   tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
   tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, params->initial_max_stream_id());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni());
   tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
   tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), 16);
 

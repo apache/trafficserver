@@ -82,7 +82,7 @@ private:
 
   QUICVersionNegotiator *_version_negotiator = nullptr;
 
-  void _load_local_transport_parameters();
+  void _load_local_transport_parameters(QUICVersion negotiated_version);
 
   QUICErrorUPtr _process_client_hello();
   QUICErrorUPtr _process_client_finished();

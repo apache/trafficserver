@@ -42,7 +42,7 @@ TEST_CASE("QUICVersionNegotiator_Normal", "[quic]")
   CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
 
   // Revalidate version
-  QUICTransportParametersInClientHello tp(QUIC_SUPPORTED_VERSIONS[0], QUIC_SUPPORTED_VERSIONS[0]);
+  QUICTransportParametersInClientHello tp(QUIC_SUPPORTED_VERSIONS[0]);
   vn.revalidate(&tp);
   CHECK(vn.status() == QUICVersionNegotiationStatus::REVALIDATED);
   CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);

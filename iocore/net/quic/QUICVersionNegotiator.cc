@@ -43,18 +43,7 @@ QUICVersionNegotiator::negotiate(const QUICPacket *initial_packet)
 QUICVersionNegotiationStatus
 QUICVersionNegotiator::revalidate(const QUICTransportParametersInClientHello *tp)
 {
-  QUICVersion version = tp->negotiated_version();
-  if (this->_negotiated_version == version) {
-    if (tp->negotiated_version() != tp->initial_version()) {
-      // FIXME Check initial_version
-      /* If the initial version is different from the negotiated_version, a
-       * stateless server MUST check that it would have sent a version
-       * negotiation packet if it had received a packet with the indicated
-       * initial_version. (Draft-04 7.3.4. Version Negotiation Validation)
-       */
-      this->_status             = QUICVersionNegotiationStatus::FAILED;
-      this->_negotiated_version = 0;
-    }
+  if (this->_negotiated_version == tp->initial_version()) {
     this->_status = QUICVersionNegotiationStatus::REVALIDATED;
   } else {
     this->_status             = QUICVersionNegotiationStatus::FAILED;

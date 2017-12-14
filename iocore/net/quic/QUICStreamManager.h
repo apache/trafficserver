@@ -69,7 +69,9 @@ private:
   QUICApplicationMap *_app_map                              = nullptr;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
   std::shared_ptr<const QUICTransportParameters> _remote_tp = nullptr;
-  QUICStreamId _local_maximum_stream_id                     = 0;
-  QUICStreamId _remote_maximum_stream_id                    = 0;
+  QUICStreamId _local_maximum_stream_id_bidi                = 0;
+  QUICStreamId _local_maximum_stream_id_uni                 = 0;
+  QUICStreamId _remote_maximum_stream_id_bidi               = 0;
+  QUICStreamId _remote_maximum_stream_id_uni                = 0;
   uint64_t _total_offset_sent                               = 0;
 };

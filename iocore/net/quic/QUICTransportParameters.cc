@@ -212,9 +212,8 @@ QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
 
 QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const uint8_t *buf, size_t len)
 {
+  this->_initial_version = QUICTypeUtil::read_QUICVersion(buf);
   this->_load(buf, len);
-  this->_negotiated_version = QUICTypeUtil::read_QUICVersion(buf);
-  this->_initial_version    = QUICTypeUtil::read_QUICVersion(buf + sizeof(QUICVersion));
 
   // Print all parameters
   for (auto &p : this->_parameters) {
@@ -235,9 +234,6 @@ QUICTransportParametersInClientHello::_store(uint8_t *buf, uint16_t *len) const
 {
   size_t l;
   *len = 0;
-  QUICTypeUtil::write_QUICVersion(this->_negotiated_version, buf, &l);
-  buf += l;
-  *len += l;
   QUICTypeUtil::write_QUICVersion(this->_initial_version, buf, &l);
   *len += l;
 }
@@ -245,13 +241,7 @@ QUICTransportParametersInClientHello::_store(uint8_t *buf, uint16_t *len) const
 std::ptrdiff_t
 QUICTransportParametersInClientHello::_parameters_offset(const uint8_t *) const
 {
-  return 8; // sizeof(QUICVersion) + sizeof(QUICVersion)
-}
-
-QUICVersion
-QUICTransportParametersInClientHello::negotiated_version() const
-{
-  return this->_negotiated_version;
+  return 4; // sizeof(QUICVersion)
 }
 
 QUICVersion
@@ -266,6 +256,11 @@ QUICTransportParametersInClientHello::initial_version() const
 
 QUICTransportParametersInEncryptedExtensions::QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len)
 {
+  this->_negotiated_version = QUICTypeUtil::read_QUICVersion(buf);
+  this->_n_versions         = buf[4] / 4;
+  for (int i = 0; i < this->_n_versions; ++i) {
+    this->_versions[i] = QUICTypeUtil::read_QUICVersion(buf + 5 + (i * 4));
+  }
   this->_load(buf, len);
 }
 
@@ -275,6 +270,11 @@ QUICTransportParametersInEncryptedExtensions::_store(uint8_t *buf, uint16_t *len
   uint8_t *p = buf;
   size_t l;
 
+  // negotiated_version
+  QUICTypeUtil::write_QUICVersion(this->_negotiated_version, buf, &l);
+  p += l;
+
+  // supported_versions
   p[0] = this->_n_versions * sizeof(uint32_t);
   ++p;
   for (int i = 0; i < this->_n_versions; ++i) {
@@ -282,6 +282,12 @@ QUICTransportParametersInEncryptedExtensions::_store(uint8_t *buf, uint16_t *len
     p += l;
   }
   *len = p - buf;
+}
+
+QUICVersion
+QUICTransportParametersInEncryptedExtensions::negotiated_version() const
+{
+  return this->_negotiated_version;
 }
 
 void
@@ -293,7 +299,7 @@ QUICTransportParametersInEncryptedExtensions::add_version(QUICVersion version)
 std::ptrdiff_t
 QUICTransportParametersInEncryptedExtensions::_parameters_offset(const uint8_t *buf) const
 {
-  return 1 + buf[0];
+  return 4 + 1 + buf[4];
 }
 
 //

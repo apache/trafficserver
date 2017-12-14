@@ -36,11 +36,13 @@ public:
   enum {
     INITIAL_MAX_STREAM_DATA = 0,
     INITIAL_MAX_DATA,
-    INITIAL_MAX_STREAM_ID,
+    INITIAL_MAX_STREAM_ID_BIDI,
     IDLE_TIMEOUT,
     OMIT_CONNECTION_ID,
     MAX_PACKET_SIZE,
     STATELESS_RESET_TOKEN,
+    ACK_DELAY_EXPONENT,
+    INITIAL_MAX_STREAM_ID_UNI
   };
 
   explicit operator bool() const { return true; }
@@ -108,10 +110,9 @@ protected:
 class QUICTransportParametersInClientHello : public QUICTransportParameters
 {
 public:
-  QUICTransportParametersInClientHello(QUICVersion negotiated_version, QUICVersion initial_version)
-    : QUICTransportParameters(), _negotiated_version(negotiated_version), _initial_version(initial_version){};
+  QUICTransportParametersInClientHello(QUICVersion initial_version)
+    : QUICTransportParameters(), _initial_version(initial_version){};
   QUICTransportParametersInClientHello(const uint8_t *buf, size_t len);
-  QUICVersion negotiated_version() const;
   QUICVersion initial_version() const;
 
 protected:
@@ -119,23 +120,25 @@ protected:
   void _store(uint8_t *buf, uint16_t *len) const override;
 
 private:
-  QUICVersion _negotiated_version = 0;
-  QUICVersion _initial_version    = 0;
+  QUICVersion _initial_version = 0;
 };
 
 class QUICTransportParametersInEncryptedExtensions : public QUICTransportParameters
 {
 public:
-  QUICTransportParametersInEncryptedExtensions() : QUICTransportParameters(){};
+  QUICTransportParametersInEncryptedExtensions(QUICVersion negotiated_version)
+    : QUICTransportParameters(), _negotiated_version(negotiated_version){};
   QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len);
+  QUICVersion negotiated_version() const;
   void add_version(QUICVersion version);
 
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
   void _store(uint8_t *buf, uint16_t *len) const override;
 
-  uint8_t _n_versions        = 0;
-  QUICVersion _versions[256] = {};
+  QUICVersion _negotiated_version = 0;
+  uint8_t _n_versions             = 0;
+  QUICVersion _versions[256]      = {};
 };
 
 class QUICTransportParametersHandler

@@ -268,7 +268,7 @@ public:
   int _frameCount[256] = {0};
   MockQUICStreamManager _stream_manager;
 
-  QUICTransportParametersInEncryptedExtensions dummy_transport_parameters;
+  QUICTransportParametersInEncryptedExtensions dummy_transport_parameters();
   NetVConnectionContext_t _direction;
 };
 

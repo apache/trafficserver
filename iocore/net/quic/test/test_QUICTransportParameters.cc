@@ -30,7 +30,6 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
   SECTION("OK")
   {
     uint8_t buf[] = {
-      0x01, 0x02, 0x03, 0x04, // negotiated version
       0x05, 0x06, 0x07, 0x08, // iinitial version
       0x00, 0x1e,             // size of parameters
       0x00, 0x00,             // parameter id
@@ -49,7 +48,6 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
 
     QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
     CHECK(params_in_ch.is_valid());
-    CHECK(params_in_ch.negotiated_version() == 0x01020304);
     CHECK(params_in_ch.initial_version() == 0x05060708);
 
     uint16_t len        = 0;
@@ -63,7 +61,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
     CHECK(len == 4);
     CHECK(memcmp(data, "\x12\x34\x56\x78", 4) == 0);
 
-    data = params_in_ch.getAsBytes(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, len);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, len);
     CHECK(len == 4);
     CHECK(memcmp(data, "\x0a\x0b\x0c\x0d", 4) == 0);
 
@@ -79,7 +77,6 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
   SECTION("Duplicate parameters")
   {
     uint8_t buf[] = {
-      0x01, 0x02, 0x03, 0x04, // negotiated version
       0x05, 0x06, 0x07, 0x08, // iinitial version
       0x00, 0x10,             // size of parameters
       0x00, 0x00,             // parameter id
@@ -101,7 +98,6 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   uint16_t len;
 
   uint8_t expected[] = {
-    0x01, 0x02, 0x03, 0x04,                         // negotiated version
     0x05, 0x06, 0x07, 0x08,                         // iinitial version
     0x00, 0x22,                                     // size of parameters
     0x00, 0x00,                                     // parameter id
@@ -116,7 +112,7 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
     0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, // value
   };
 
-  QUICTransportParametersInClientHello params_in_ch(0x01020304, 0x05060708);
+  QUICTransportParametersInClientHello params_in_ch(0x05060708);
 
   uint32_t max_stream_data = 0x11223344;
   params_in_ch.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, max_stream_data);
@@ -129,7 +125,7 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   params_in_ch.set(QUICTransportParameterId::STATELESS_RESET_TOKEN, stateless_reset_token, 16);
 
   params_in_ch.store(buf, &len);
-  CHECK(len == 44);
+  CHECK(len == 40);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
@@ -138,6 +134,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
   SECTION("OK")
   {
     uint8_t buf[] = {
+      0x01, 0x02, 0x03, 0x04, // negotiated version
       0x04,                   // size of supported versions
       0x01, 0x02, 0x03, 0x04, //
       0x00, 0x1e,             // size of parameters
@@ -157,6 +154,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
 
     QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
     CHECK(params_in_ee.is_valid());
+    CHECK(params_in_ee.negotiated_version() == 0x01020304);
 
     uint16_t len        = 0;
     const uint8_t *data = nullptr;
@@ -169,7 +167,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
     CHECK(len == 4);
     CHECK(memcmp(data, "\x12\x34\x56\x78", 4) == 0);
 
-    data = params_in_ee.getAsBytes(QUICTransportParameterId::INITIAL_MAX_STREAM_ID, len);
+    data = params_in_ee.getAsBytes(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, len);
     CHECK(len == 4);
     CHECK(memcmp(data, "\x0a\x0b\x0c\x0d", 4) == 0);
 
@@ -185,6 +183,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
   SECTION("Duplicate parameters")
   {
     uint8_t buf[] = {
+      0x01, 0x02, 0x03, 0x04, // negotiated version
       0x04,                   // size of supported versions
       0x01, 0x02, 0x03, 0x04, //
       0x00, 0x1e,             // size of parameters
@@ -207,6 +206,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
   uint16_t len;
 
   uint8_t expected[] = {
+    0x01, 0x02, 0x03, 0x04, // negotiated version
     0x08,                   // size of supported versions
     0x01, 0x02, 0x03, 0x04, // version 1
     0x05, 0x06, 0x07, 0x08, // version 2
@@ -219,7 +219,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     0xab, 0xcd,             // value
   };
 
-  QUICTransportParametersInEncryptedExtensions params_in_ee;
+  QUICTransportParametersInEncryptedExtensions params_in_ee(0x01020304);
 
   uint32_t max_stream_data = 0x11223344;
   params_in_ee.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, max_stream_data);
@@ -230,6 +230,6 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
   params_in_ee.add_version(0x01020304);
   params_in_ee.add_version(0x05060708);
   params_in_ee.store(buf, &len);
-  CHECK(len == 25);
+  CHECK(len == 29);
   CHECK(memcmp(buf, expected, len) == 0);
 }
