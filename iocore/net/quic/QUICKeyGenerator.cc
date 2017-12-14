@@ -29,8 +29,8 @@
 constexpr static uint8_t QUIC_VERSION_1_SALT[] = {
   0xaf, 0xc8, 0x24, 0xec, 0x5f, 0xc7, 0x7e, 0xca, 0x1e, 0x9d, 0x36, 0xf3, 0x7f, 0xb2, 0xd4, 0x65, 0x18, 0xc3, 0x66, 0x39,
 };
-constexpr static ts::string_view LABEL_FOR_CLIENT_CLEARTEXT_SECRET("QUIC client cleartext Secret"_sv);
-constexpr static ts::string_view LABEL_FOR_SERVER_CLEARTEXT_SECRET("QUIC server cleartext Secret"_sv);
+constexpr static ts::string_view LABEL_FOR_CLIENT_CLEARTEXT_SECRET("QUIC client handshake secret"_sv);
+constexpr static ts::string_view LABEL_FOR_SERVER_CLEARTEXT_SECRET("QUIC server handshake secret"_sv);
 constexpr static ts::string_view LABEL_FOR_CLIENT_PP_SECRET("EXPORTER-QUIC client 1-RTT Secret"_sv);
 constexpr static ts::string_view LABEL_FOR_SERVER_PP_SECRET("EXPORTER-QUIC server 1-RTT Secret"_sv);
 constexpr static ts::string_view LABEL_FOR_KEY("key"_sv);
