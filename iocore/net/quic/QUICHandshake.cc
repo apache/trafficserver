@@ -108,7 +108,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
 {
   // Negotiate version
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
-    if (initial_packet->type() != QUICPacketType::HANDSHAKE) {
+    if (initial_packet->type() != QUICPacketType::INITIAL) {
       return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
     }
     if (initial_packet->version()) {
