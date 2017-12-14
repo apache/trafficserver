@@ -43,7 +43,7 @@ private:
   uint32_t _initial_max_data           = 100; // in units of 1024 octets
   uint32_t _initial_max_stream_data    = 2048;
   uint32_t _initial_max_stream_id_bidi = 100;
-  uint32_t _initial_max_stream_id_uni  = 100;
+  uint32_t _initial_max_stream_id_uni  = 102;
   uint32_t _server_id                  = 0;
 };
 
