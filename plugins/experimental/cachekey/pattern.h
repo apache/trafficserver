@@ -46,7 +46,7 @@ public:
   Pattern();
   virtual ~Pattern();
 
-  bool init(const String &pattern, const String &replacenemt);
+  bool init(const String &pattern, const String &replacenemt, bool replace);
   bool init(const String &config);
   bool empty() const;
   bool match(const String &subject);
@@ -64,6 +64,9 @@ private:
 
   String _pattern;     /**< @brief PCRE pattern string, containing PCRE patterns and capturing groups. */
   String _replacement; /**< @brief PCRE replacement string, containing $0..$9 to be replaced with content of the capturing groups */
+
+  bool _replace; /**< @brief true if a replacement is needed, false if not, this is to distinguish between an empty replacement
+                    string and no replacement needed case */
 
   int _tokenCount;              /**< @brief number of replacements $0..$9 found in the replacement string if not empty */
   int _tokens[TOKENCOUNT];      /**< @brief replacement index 0..9, since they can be used in the replacement string in any order */

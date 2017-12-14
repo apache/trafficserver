@@ -27,6 +27,11 @@
 #include "pattern.h"
 #include "common.h"
 
+enum CacheKeyUriType {
+  REMAP,
+  PRISTINE,
+};
+
 /**
  * @brief Plug-in configuration elements (query / headers / cookies).
  *
@@ -137,6 +142,36 @@ public:
    */
   bool finalize();
 
+  /**
+   * @brief Tells the caller if the prefix is to be removed (not processed at all).
+   */
+  bool prefixToBeRemoved();
+
+  /**
+   * @brief Tells the caller if the path is to be removed (not processed at all).
+   */
+  bool pathToBeRemoved();
+
+  /**
+   * @brief set the cache key elements separator string.
+   */
+  void setSeparator(const char *arg);
+
+  /**
+   * @brief get the cache key elements separator string.
+   */
+  const String &getSeparator();
+
+  /**
+   * @brief sets the URI Type.
+   */
+  void setUriType(const char *arg);
+
+  /**
+   * @brief get URI type.
+   */
+  CacheKeyUriType getUriType();
+
   /* Make the following members public to avoid unnecessary accessors */
   ConfigQuery _query;        /**< @brief query parameter related configuration */
   ConfigHeaders _headers;    /**< @brief headers related configuration */
@@ -157,6 +192,11 @@ private:
    * @return true if successful, false otherwise.
    */
   bool loadClassifiers(const String &args, bool blacklist = true);
+
+  bool _prefixToBeRemoved  = false; /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
+  bool _pathToBeRemoved    = false; /**< @brief instructs the path not to added to the cache key */
+  String _separator        = "/";   /**< @brief a separator used to separate the cache key elements extracted from the URI */
+  CacheKeyUriType _uriType = REMAP; /**< @brief shows which URI the cache key will be based on */
 };
 
 #endif // PLUGINS_EXPERIMENTAL_CACHEKEY_CONFIGS_H_
