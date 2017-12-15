@@ -297,8 +297,8 @@ ts_lua_del_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
     }
 
     lua_pushlightuserdata(L, conf);
-    lua_pushnil(L);
-    lua_rawset(L, LUA_REGISTRYINDEX); /* L[REG][conf] = nil */
+    lua_pushvalue(L, LUA_GLOBALSINDEX);
+    lua_rawset(L, LUA_REGISTRYINDEX); /* L[REG][conf] = L[GLOBAL] */
 
     lua_newtable(L);
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY  */
