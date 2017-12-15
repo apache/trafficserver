@@ -191,7 +191,7 @@ bool
 QUICStreamFrame::has_offset_field() const
 {
   if (this->_buf) {
-    return (this->_buf[0] & 0x40) != 0;
+    return (this->_buf[0] & 0x04) != 0;
   } else {
     return this->_offset != 0;
   }

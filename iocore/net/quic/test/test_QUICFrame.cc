@@ -54,41 +54,86 @@ TEST_CASE("QUICFrame Type", "[quic]")
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xff")) == QUICFrameType::UNKNOWN);
 }
 
-TEST_CASE("Load STREAM Frame 1", "[quic]")
+TEST_CASE("Load STREAM Frame", "[quic]")
 {
-  uint8_t buf1[] = {
-    0x10,                   // 0b00010OLF (OLF=000)
-    0x01,                   // Stream ID
-    0x01, 0x02, 0x03, 0x04, // Stream Data
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::STREAM);
-  CHECK(frame1->size() == 6);
-  std::shared_ptr<const QUICStreamFrame> streamFrame1 = std::dynamic_pointer_cast<const QUICStreamFrame>(frame1);
-  CHECK(streamFrame1->stream_id() == 0x01);
-  CHECK(streamFrame1->offset() == 0x00);
-  CHECK(streamFrame1->data_length() == 4);
-  CHECK(memcmp(streamFrame1->data(), "\x01\x02\x03\x04", 4) == 0);
-  CHECK(streamFrame1->has_fin_flag() == false);
-}
+  SECTION("OLF=000")
+  {
+    uint8_t buf1[] = {
+      0x10,                   // 0b00010OLF (OLF=000)
+      0x01,                   // Stream ID
+      0x01, 0x02, 0x03, 0x04, // Stream Data
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM);
+    CHECK(frame1->size() == 6);
+    std::shared_ptr<const QUICStreamFrame> streamFrame1 = std::dynamic_pointer_cast<const QUICStreamFrame>(frame1);
+    CHECK(streamFrame1->stream_id() == 0x01);
+    CHECK(streamFrame1->offset() == 0x00);
+    CHECK(streamFrame1->data_length() == 4);
+    CHECK(memcmp(streamFrame1->data(), "\x01\x02\x03\x04", 4) == 0);
+    CHECK(streamFrame1->has_fin_flag() == false);
+  }
 
-TEST_CASE("Load STREAM Frame 2", "[quic]")
-{
-  uint8_t buf1[] = {
-    0x12,                         // 0b00010OLF (OLF=010)
-    0x01,                         // Stream ID
-    0x05,                         // Data Length
-    0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::STREAM);
-  CHECK(frame1->size() == 8);
-  std::shared_ptr<const QUICStreamFrame> streamFrame1 = std::dynamic_pointer_cast<const QUICStreamFrame>(frame1);
-  CHECK(streamFrame1->stream_id() == 0x01);
-  CHECK(streamFrame1->offset() == 0x00);
-  CHECK(streamFrame1->data_length() == 5);
-  CHECK(memcmp(streamFrame1->data(), "\x01\x02\x03\x04\x05", 5) == 0);
-  CHECK(streamFrame1->has_fin_flag() == false);
+  SECTION("OLF=010")
+  {
+    uint8_t buf1[] = {
+      0x12,                         // 0b00010OLF (OLF=010)
+      0x01,                         // Stream ID
+      0x05,                         // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM);
+    CHECK(frame1->size() == 8);
+    std::shared_ptr<const QUICStreamFrame> streamFrame1 = std::dynamic_pointer_cast<const QUICStreamFrame>(frame1);
+    CHECK(streamFrame1->stream_id() == 0x01);
+    CHECK(streamFrame1->offset() == 0x00);
+    CHECK(streamFrame1->data_length() == 5);
+    CHECK(memcmp(streamFrame1->data(), "\x01\x02\x03\x04\x05", 5) == 0);
+    CHECK(streamFrame1->has_fin_flag() == false);
+  }
+
+  SECTION("OLF=110")
+  {
+    uint8_t buf1[] = {
+      0x16,                         // 0b00010OLF (OLF=110)
+      0x01,                         // Stream ID
+      0x02,                         // Data Length
+      0x05,                         // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM);
+    CHECK(frame1->size() == 9);
+
+    std::shared_ptr<const QUICStreamFrame> streamFrame1 = std::dynamic_pointer_cast<const QUICStreamFrame>(frame1);
+    CHECK(streamFrame1->stream_id() == 0x01);
+    CHECK(streamFrame1->offset() == 0x02);
+    CHECK(streamFrame1->data_length() == 5);
+    CHECK(memcmp(streamFrame1->data(), "\x01\x02\x03\x04\x05", 5) == 0);
+    CHECK(streamFrame1->has_fin_flag() == false);
+  }
+
+  SECTION("OLF=111")
+  {
+    uint8_t buf1[] = {
+      0x17,                         // 0b00010OLF (OLF=110)
+      0x01,                         // Stream ID
+      0x02,                         // Data Length
+      0x05,                         // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM);
+    CHECK(frame1->size() == 9);
+
+    std::shared_ptr<const QUICStreamFrame> streamFrame1 = std::dynamic_pointer_cast<const QUICStreamFrame>(frame1);
+    CHECK(streamFrame1->stream_id() == 0x01);
+    CHECK(streamFrame1->offset() == 0x02);
+    CHECK(streamFrame1->data_length() == 5);
+    CHECK(memcmp(streamFrame1->data(), "\x01\x02\x03\x04\x05", 5) == 0);
+    CHECK(streamFrame1->has_fin_flag() == true);
+  }
 }
 
 TEST_CASE("Store STREAM Frame", "[quic]")
