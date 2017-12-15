@@ -118,7 +118,73 @@ QUICTransportParameters::_load(const uint8_t *buf, size_t len)
     }
   }
 
-  this->_valid = !has_error;
+  if (has_error) {
+    this->_valid = false;
+    return;
+  }
+
+  // Validate parameters
+  this->_valid = (this->_validate_parameters() == 0);
+}
+
+int
+QUICTransportParameters::_validate_parameters() const
+{
+  decltype(this->_parameters)::const_iterator ite;
+
+  // MUSTs
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -1;
+    }
+  } else {
+    return -1;
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_DATA)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -1;
+    }
+  } else {
+    return -1;
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::IDLE_TIMEOUT)) != this->_parameters.end()) {
+    if (ite->second->len() != 2) {
+      return -1;
+    }
+    if (QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 600) {
+      return -1;
+    }
+  } else {
+    return -1;
+  }
+
+  // MAYs
+  if ((ite = this->_parameters.find(QUICTransportParameterId::OMIT_CONNECTION_ID)) != this->_parameters.end()) {
+    if (ite->second->len() != 0) {
+      return -1;
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_PACKET_SIZE)) != this->_parameters.end()) {
+    if (ite->second->len() != 2) {
+      return -1;
+    }
+    if (QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) < 1200) {
+      return -1;
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::ACK_DELAY_EXPONENT)) != this->_parameters.end()) {
+    if (ite->second->len() != 1) {
+      return -1;
+    }
+    if (QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 20) {
+      return -1;
+    }
+  }
+  return 0;
 }
 
 const uint8_t *
@@ -244,6 +310,42 @@ QUICTransportParametersInClientHello::_parameters_offset(const uint8_t *) const
   return 4; // sizeof(QUICVersion)
 }
 
+int
+QUICTransportParametersInClientHello::_validate_parameters() const
+{
+  if (QUICTransportParameters::_validate_parameters() < 0) {
+    return 0;
+  }
+
+  decltype(this->_parameters)::const_iterator ite;
+
+  // MUST NOTs
+  if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
+    return -1;
+  }
+
+  // MAYs
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -1;
+    }
+    if ((QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) & 0x03) != 1) {
+      return -1;
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -1;
+    }
+    if ((QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) & 0x03) != 3) {
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
 QUICVersion
 QUICTransportParametersInClientHello::initial_version() const
 {
@@ -300,6 +402,46 @@ std::ptrdiff_t
 QUICTransportParametersInEncryptedExtensions::_parameters_offset(const uint8_t *buf) const
 {
   return 4 + 1 + buf[4];
+}
+
+int
+QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
+{
+  if (QUICTransportParameters::_validate_parameters() < 0) {
+    return 0;
+  }
+
+  decltype(this->_parameters)::const_iterator ite;
+
+  // MUSTs
+  if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
+    if (ite->second->len() != 2) {
+      return -1;
+    }
+  } else {
+    return -1;
+  }
+
+  // MAYs
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -1;
+    }
+    if ((QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) & 0x03) != 1) {
+      return -1;
+    }
+  }
+
+  if (auto p = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -1;
+    }
+    if ((QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) & 0x03) != 3) {
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
 //

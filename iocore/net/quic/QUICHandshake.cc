@@ -294,13 +294,14 @@ QUICHandshake::_load_local_transport_parameters(QUICVersion negotiated_version)
 
   tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
   tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
+  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
+  // These two are MUSTs if this is a server
+  tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), 16);
+  tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
+
+  // MAYs
   tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi());
   tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni());
-  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
-  tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), 16);
-
-  tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
-  // MAYs
   // this->_local_transport_parameters.add(QUICTransportParameterId::OMIT_CONNECTION_ID, {});
   // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
   this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);

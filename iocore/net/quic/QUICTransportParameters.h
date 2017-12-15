@@ -102,6 +102,7 @@ protected:
   bool _valid = false;
 
   virtual std::ptrdiff_t _parameters_offset(const uint8_t *buf) const = 0;
+  virtual int _validate_parameters() const;
   virtual void _store(uint8_t *buf, uint16_t *len) const = 0;
 
   std::map<QUICTransportParameterId, Value *> _parameters;
@@ -117,6 +118,7 @@ public:
 
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
+  int _validate_parameters() const override;
   void _store(uint8_t *buf, uint16_t *len) const override;
 
 private:
@@ -134,6 +136,7 @@ public:
 
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
+  int _validate_parameters() const override;
   void _store(uint8_t *buf, uint16_t *len) const override;
 
   QUICVersion _negotiated_version = 0;
