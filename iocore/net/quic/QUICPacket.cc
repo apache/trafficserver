@@ -445,7 +445,7 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
   size_t n;
   *len   = 0;
   buf[0] = 0x00;
-  if (this->_has_connection_id) {
+  if (!this->_has_connection_id) {
     buf[0] += 0x40;
   }
   if (this->_key_phase == QUICKeyPhase::PHASE_1) {
