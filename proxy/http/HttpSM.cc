@@ -1780,6 +1780,10 @@ HttpSM::state_http_server_open(int event, void *data)
       do_http_server_open();
     }
     break;
+  default:
+    // log unexpected event and handle it as an error in production. debug builds will drop a core and call abort.
+    Error("[HttpSM::state_http_server_open] Unknown event: %d", event);
+    ink_assert(!"Unexpected event");
   case VC_EVENT_ERROR:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
@@ -1813,11 +1817,6 @@ HttpSM::state_http_server_open(int event, void *data)
   case CONGESTION_EVENT_CONGESTED_ON_M:
     t_state.current.state = HttpTransact::CONGEST_CONTROL_CONGESTED_ON_M;
     call_transact_and_set_next_state(HttpTransact::HandleResponse);
-    return 0;
-
-  default:
-    Error("[HttpSM::state_http_server_open] Unknown event: %d", event);
-    ink_release_assert(0);
     return 0;
   }
 
