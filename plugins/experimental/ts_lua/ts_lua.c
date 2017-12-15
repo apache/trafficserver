@@ -166,7 +166,9 @@ TSRemapDeleteInstance(void *ih)
   int states = ((ts_lua_instance_conf *)ih)->states;
   ts_lua_del_module((ts_lua_instance_conf *)ih, ts_lua_main_ctx_array, states);
   ts_lua_del_instance(ih);
-  TSfree(ih);
+  // because we now reuse ts_lua_instance_conf / ih for remap rules sharing the same lua script
+  // we cannot safely free it in this function during the configuration reloads
+  // we therefore are leaking memory on configuration reloads
   return;
 }
 
