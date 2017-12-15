@@ -99,15 +99,23 @@ public:
   class AckBlock
   {
   public:
-    AckBlock(const uint8_t *buf, uint8_t ack_block_length);
-    AckBlock(uint8_t gap, uint64_t length);
-    uint8_t gap() const;
+    AckBlock(const uint8_t *b) : _buf(b) {}
+    AckBlock(uint64_t g, uint64_t l) : _gap(g), _length(l) {}
+
+    uint64_t gap() const;
     uint64_t length() const;
+    size_t size() const;
+    const uint8_t *buf() const;
+
     LINK(QUICAckFrame::AckBlock, link);
 
   private:
-    uint8_t _gap     = 0;
-    uint64_t _length = 0;
+    size_t _get_gap_size() const;
+    size_t _get_length_size() const;
+
+    const uint8_t *_buf = nullptr;
+    uint64_t _gap       = 0;
+    uint64_t _length    = 0;
   };
 
   class AckBlockSection
@@ -116,51 +124,24 @@ public:
     class const_iterator : public std::iterator<std::input_iterator_tag, QUICAckFrame::AckBlock>
     {
     public:
-      const_iterator(uint8_t index, const uint8_t *buf, uint8_t num_blocks, uint8_t ack_block_length);
+      const_iterator(uint8_t index, const uint8_t *buf, uint8_t ack_block_count);
       const_iterator(uint8_t index, const std::vector<QUICAckFrame::AckBlock> *ack_blocks);
 
       const QUICAckFrame::AckBlock &operator*() const { return this->_current_block; };
       const QUICAckFrame::AckBlock *operator->() const { return &this->_current_block; };
-      const QUICAckFrame::AckBlock &operator++()
-      {
-        ++(this->_index);
-
-        if (this->_buf) {
-          this->_current_block =
-            AckBlock(this->_buf + this->_ack_block_length + (1 + this->_ack_block_length) * this->_index, this->_ack_block_length);
-        } else {
-          if (this->_ack_blocks->size() == this->_index) {
-            this->_current_block = {static_cast<uint8_t>(0), 0ULL};
-          } else {
-            this->_current_block = this->_ack_blocks->at(this->_index);
-          }
-        }
-
-        return this->_current_block;
-      };
-
-      const bool
-      operator!=(const const_iterator &ite) const
-      {
-        return this->_index != ite._index;
-      };
-
-      const bool
-      operator==(const const_iterator &ite) const
-      {
-        return this->_index == ite._index;
-      };
+      const QUICAckFrame::AckBlock &operator++();
+      const bool operator!=(const const_iterator &ite) const;
+      const bool operator==(const const_iterator &ite) const;
 
     private:
-      uint8_t _index;
-      const uint8_t *_buf;
-      uint8_t _ack_block_length;
+      uint8_t _index                                         = 0;
+      const uint8_t *_buf                                    = nullptr;
+      QUICAckFrame::AckBlock _current_block                  = {UINT64_C(0), UINT64_C(0)};
       const std::vector<QUICAckFrame::AckBlock> *_ack_blocks = nullptr;
-      QUICAckFrame::AckBlock _current_block                  = {static_cast<uint8_t>(0), 0ULL};
     };
 
-    AckBlockSection(uint64_t first_ack_block_length);
-    AckBlockSection(const uint8_t *buf, uint8_t num_blocks, uint8_t ack_block_length);
+    AckBlockSection(uint64_t first_ack_block_length) : _first_ack_block_length(first_ack_block_length) {}
+    AckBlockSection(const uint8_t *buf, uint8_t ack_block_count) : _buf(buf), _ack_block_count(ack_block_count) {}
     uint8_t count() const;
     size_t size() const;
     void store(uint8_t *buf, size_t *len) const;
@@ -170,36 +151,41 @@ public:
     const_iterator end() const;
 
   private:
+    size_t _get_first_ack_block_length_size() const;
+
     const uint8_t *_buf              = nullptr;
     uint64_t _first_ack_block_length = 0;
-    uint8_t _num_blocks              = 0;
-    uint8_t _ack_block_length        = 0;
+    uint8_t _ack_block_count         = 0;
     std::vector<QUICAckFrame::AckBlock> _ack_blocks;
   };
 
   QUICAckFrame() : QUICFrame() {}
   QUICAckFrame(const uint8_t *buf, size_t len);
   QUICAckFrame(QUICPacketNumber largest_acknowledged, uint16_t ack_delay, uint64_t first_ack_block_length);
+
   virtual ~QUICAckFrame();
   virtual void reset(const uint8_t *buf, size_t len) override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
-  uint8_t num_blocks() const;
+
   QUICPacketNumber largest_acknowledged() const;
-  uint16_t ack_delay() const;
+  uint64_t ack_delay() const;
+  uint64_t ack_block_count() const;
   const AckBlockSection *ack_block_section() const;
   AckBlockSection *ack_block_section();
-  bool has_ack_blocks() const;
 
 private:
   size_t _get_largest_acknowledged_offset() const;
   size_t _get_largest_acknowledged_length() const;
-  size_t _get_ack_block_length() const;
   size_t _get_ack_delay_offset() const;
+  size_t _get_ack_delay_length() const;
+  size_t _get_ack_block_count_offset() const;
+  size_t _get_ack_block_count_length() const;
   size_t _get_ack_block_section_offset() const;
+
   QUICPacketNumber _largest_acknowledged = 0;
-  uint16_t _ack_delay                    = 0;
+  uint64_t _ack_delay                    = 0;
   AckBlockSection *_ack_block_section    = nullptr;
 };
 
@@ -228,7 +214,7 @@ private:
   size_t _get_error_code_field_offset() const;
   size_t _get_final_offset_field_offset() const;
   size_t _get_final_offset_field_length() const;
-  
+
   QUICStreamId _stream_id      = 0;
   QUICAppErrorCode _error_code = 0;
   QUICOffset _final_offset     = 0;
@@ -281,7 +267,7 @@ private:
   size_t _get_reason_phrase_length_field_offset() const;
   size_t _get_reason_phrase_length_field_length() const;
   size_t _get_reason_phrase_field_offset() const;
-  
+
   QUICTransErrorCode _error_code;
   uint64_t _reason_phrase_length = 0;
   const char *_reason_phrase     = nullptr;
@@ -390,8 +376,8 @@ class QUICBlockedFrame : public QUICFrame
 public:
   QUICBlockedFrame() : QUICFrame() {}
   QUICBlockedFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICBlockedFrame(QUICOffset offset) : _offset(offset) {};
-  
+  QUICBlockedFrame(QUICOffset offset) : _offset(offset){};
+
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
@@ -413,7 +399,7 @@ class QUICStreamBlockedFrame : public QUICFrame
 public:
   QUICStreamBlockedFrame() : QUICFrame() {}
   QUICStreamBlockedFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICStreamBlockedFrame(QUICStreamId s, QUICOffset o): _stream_id(s), _offset(o) {};
+  QUICStreamBlockedFrame(QUICStreamId s, QUICOffset o) : _stream_id(s), _offset(o){};
 
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -428,7 +414,7 @@ private:
   size_t _get_offset_field_length() const;
 
   QUICStreamId _stream_id = 0;
-  QUICOffset _offset = 0;  
+  QUICOffset _offset      = 0;
 };
 
 //
@@ -463,7 +449,7 @@ public:
   QUICNewConnectionIdFrame() : QUICFrame() {}
   QUICNewConnectionIdFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
   QUICNewConnectionIdFrame(uint64_t seq, QUICConnectionId id, QUICStatelessResetToken token)
-      : _sequence(seq), _connection_id(id), _stateless_reset_token(token) {};
+    : _sequence(seq), _connection_id(id), _stateless_reset_token(token){};
 
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -504,7 +490,7 @@ private:
   size_t _get_stream_id_field_length() const;
   size_t _get_error_code_field_offset() const;
 
-  QUICStreamId _stream_id = 0;
+  QUICStreamId _stream_id      = 0;
   QUICAppErrorCode _error_code = 0;
 };
 
@@ -729,7 +715,8 @@ public:
   /*
    * Creates a STREAM_BLOCKED frame.
    */
-  static std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc> create_stream_blocked_frame(QUICStreamId stream_id, QUICOffset offset);
+  static std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc> create_stream_blocked_frame(QUICStreamId stream_id,
+                                                                                                   QUICOffset offset);
 
   /*
    * Creates a STREAM_ID_BLOCKED frame.

@@ -267,98 +267,128 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0xA0,       // 101NLLMM
+      0x0e,       // Type
       0x12,       // Largest Acknowledged
-      0x34, 0x56, // Ack Delay
+      0x74, 0x56, // Ack Delay
+      0x00,       // Ack Block Count
       0x00,       // Ack Block Section
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
     CHECK(frame1->type() == QUICFrameType::ACK);
-    CHECK(frame1->size() == 5);
+    CHECK(frame1->size() == 6);
     std::shared_ptr<const QUICAckFrame> ackFrame1 = std::dynamic_pointer_cast<const QUICAckFrame>(frame1);
     CHECK(ackFrame1 != nullptr);
-    CHECK(ackFrame1->has_ack_blocks() == false);
+    CHECK(ackFrame1->ack_block_count() == 0);
     CHECK(ackFrame1->largest_acknowledged() == 0x12);
     CHECK(ackFrame1->ack_delay() == 0x3456);
+  }
+
+  SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
+  {
+    uint8_t buf1[] = {
+      0x0e,                   // Type
+      0x80, 0x00, 0x00, 0x01, // Largest Acknowledged
+      0x41, 0x71,             // Ack Delay
+      0x00,                   // Ack Block Count
+      0x80, 0x00, 0x00, 0x01, // Ack Block Section (First ACK Block Length)
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::ACK);
+    CHECK(frame1->size() == 12);
+
+    std::shared_ptr<const QUICAckFrame> ackFrame1 = std::dynamic_pointer_cast<const QUICAckFrame>(frame1);
+    CHECK(ackFrame1 != nullptr);
+    CHECK(ackFrame1->largest_acknowledged() == 0x01);
+    CHECK(ackFrame1->ack_delay() == 0x0171);
+    CHECK(ackFrame1->ack_block_count() == 0);
+
+    const QUICAckFrame::AckBlockSection *section = ackFrame1->ack_block_section();
+    CHECK(section->first_ack_block_length() == 0x01);
   }
 
   SECTION("2 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0xB0,       // 101NLLMM
-      0x02,       // Num Blocks
-      0x12,       // Largest Acknowledged
-      0x34, 0x56, // Ack Delay
-      0x01,       // Ack Block Section (First ACK Block Length)
-      0x02,       // Ack Block Section (Gap 1)
-      0x03,       // Ack Block Section (ACK Block 1 Length)
-      0x04,       // Ack Block Section (Gap 2)
-      0x05,       // Ack Block Section (ACK Block 2 Length)
+      0x0e,                                           // Type
+      0x12,                                           // Largest Acknowledged
+      0x74, 0x56,                                     // Ack Delay
+      0x02,                                           // Ack Block Count
+      0x01,                                           // Ack Block Section (First ACK Block Length)
+      0x02,                                           // Ack Block Section (Gap 1)
+      0x43, 0x04,                                     // Ack Block Section (ACK Block 1 Length)
+      0x85, 0x06, 0x07, 0x08,                         // Ack Block Section (Gap 2)
+      0xc9, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, // Ack Block Section (ACK Block 2 Length)
     };
 
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
     CHECK(frame1->type() == QUICFrameType::ACK);
-    CHECK(frame1->size() == 10);
+    CHECK(frame1->size() == 21);
     std::shared_ptr<const QUICAckFrame> ackFrame1 = std::dynamic_pointer_cast<const QUICAckFrame>(frame1);
     CHECK(ackFrame1 != nullptr);
     CHECK(ackFrame1->largest_acknowledged() == 0x12);
     CHECK(ackFrame1->ack_delay() == 0x3456);
-    CHECK(ackFrame1->num_blocks() == 2);
-    CHECK(ackFrame1->has_ack_blocks() == true);
+    CHECK(ackFrame1->ack_block_count() == 2);
+
     const QUICAckFrame::AckBlockSection *section = ackFrame1->ack_block_section();
     CHECK(section->first_ack_block_length() == 0x01);
     auto ite = section->begin();
     CHECK(ite != section->end());
-    CHECK(ite->gap() == 2);
-    CHECK(ite->length() == 3);
+    CHECK(ite->gap() == 0x02);
+    CHECK(ite->length() == 0x0304);
     ++ite;
     CHECK(ite != section->end());
-    CHECK(ite->gap() == 4);
-    CHECK(ite->length() == 5);
+    CHECK(ite->gap() == 0x05060708);
+    CHECK(ite->length() == 0x090a0b0c0d0e0f10);
     ++ite;
     CHECK(ite == section->end());
   }
 }
 
-TEST_CASE("Load Ack Frame 2", "[quic]")
-{
-  // 0 Ack Block, 8 bit packet number length, 8 bit block length
-  uint8_t buf1[] = {
-    0xAA,                   // 101NLLMM '0b10101010' { N: 0, LL: 10, MM:10 }
-    0x00, 0x00, 0x00, 0x01, // Largest Acknowledged
-    0x01, 0x71,             // Ack Delay
-    0x00, 0x00, 0x00, 0x01, // ACK Block
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::ACK);
-  CHECK(frame1->size() == 11);
-  std::shared_ptr<const QUICAckFrame> ackFrame1 = std::dynamic_pointer_cast<const QUICAckFrame>(frame1);
-  CHECK(ackFrame1 != nullptr);
-  CHECK(ackFrame1->has_ack_blocks() == false);
-  CHECK(ackFrame1->largest_acknowledged() == 0x01);
-  CHECK(ackFrame1->ack_delay() == 0x0171);
-
-  // TODO: 1 Ack Block
-}
-
 TEST_CASE("Store Ack Frame", "[quic]")
 {
-  uint8_t buf[65535];
-  size_t len;
+  SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
 
-  // 0 Ack Block, 8 bit packet number length, 8 bit block length
-  uint8_t expected[] = {
-    0xA2,                   // 101NLLMM
-    0x12,                   // Largest Acknowledged
-    0x34, 0x56,             // Ack Delay
-    0x00, 0x00, 0x00, 0x00, // Ack Block Section
-  };
-  QUICAckFrame ackFrame(0x12, 0x3456, 0);
-  ackFrame.store(buf, &len);
-  CHECK(len == 8);
-  CHECK(memcmp(buf, expected, len) == 0);
+    uint8_t expected[] = {
+      0x0e,       // Type
+      0x12,       // Largest Acknowledged
+      0x74, 0x56, // Ack Delay
+      0x00,       // Ack Block Count
+      0x00,       // Ack Block Section
+    };
+    QUICAckFrame ackFrame(0x12, 0x3456, 0);
+    ackFrame.store(buf, &len);
+    CHECK(len == 6);
+    CHECK(memcmp(buf, expected, len) == 0);
+  }
 
-  // TODO: Add ack blocks
+  SECTION("2 Ack Block, 8 bit packet number length, 8 bit block length")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+
+    uint8_t expected[] = {
+      0x0e,                                           // Type
+      0x12,                                           // Largest Acknowledged
+      0x74, 0x56,                                     // Ack Delay
+      0x02,                                           // Ack Block Count
+      0x01,                                           // Ack Block Section (First ACK Block Length)
+      0x02,                                           // Ack Block Section (Gap 1)
+      0x43, 0x04,                                     // Ack Block Section (ACK Block 1 Length)
+      0x85, 0x06, 0x07, 0x08,                         // Ack Block Section (Gap 2)
+      0xc9, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, // Ack Block Section (ACK Block 2 Length)
+    };
+    QUICAckFrame ackFrame(0x12, 0x3456, 0x01);
+    QUICAckFrame::AckBlockSection *section = ackFrame.ack_block_section();
+    section->add_ack_block({0x02, 0x0304});
+    section->add_ack_block({0x05060708, 0x090a0b0c0d0e0f10});
+
+    ackFrame.store(buf, &len);
+    CHECK(len == 21);
+    CHECK(memcmp(buf, expected, len) == 0);
+  }
 }
 
 TEST_CASE("Load RST_STREAM Frame", "[quic]")

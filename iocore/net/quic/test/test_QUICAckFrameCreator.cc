@@ -39,7 +39,7 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   creator.update(1, true);
   frame = creator.create();
   CHECK(frame != nullptr);
-  CHECK(frame->num_blocks() == 0);
+  CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 1);
   CHECK(frame->ack_block_section()->first_ack_block_length() == 0);
 
@@ -53,7 +53,7 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   creator.update(4, true);
   frame = creator.create();
   CHECK(frame != nullptr);
-  CHECK(frame->num_blocks() == 0);
+  CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 5);
   CHECK(frame->ack_block_section()->first_ack_block_length() == 3);
 
@@ -63,7 +63,7 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   creator.update(10, true);
   frame = creator.create();
   CHECK(frame != nullptr);
-  CHECK(frame->num_blocks() == 1);
+  CHECK(frame->ack_block_count() == 1);
   CHECK(frame->largest_acknowledged() == 10);
   CHECK(frame->ack_block_section()->first_ack_block_length() == 0);
   CHECK(frame->ack_block_section()->begin()->gap() == 1);
@@ -86,7 +86,7 @@ TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
 
   frame = creator.create();
   CHECK(frame != nullptr);
-  CHECK(frame->num_blocks() == 2);
+  CHECK(frame->ack_block_count() == 2);
   CHECK(frame->largest_acknowledged() == 9);
   CHECK(frame->ack_block_section()->first_ack_block_length() == 1);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
@@ -98,7 +98,7 @@ TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
   creator.update(4, true);
   frame = creator.create();
   CHECK(frame != nullptr);
-  CHECK(frame->num_blocks() == 1);
+  CHECK(frame->ack_block_count() == 1);
   CHECK(frame->largest_acknowledged() == 7);
   CHECK(frame->ack_block_section()->first_ack_block_length() == 0);
   CHECK(frame->ack_block_section()->begin()->gap() == 1);

@@ -194,7 +194,7 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
   if (pi != this->_sent_packets.end()) {
     this->_latest_rtt = Thread::get_hrtime() - pi->second->time;
     // _latest_rtt is nanosecond but ack_frame->ack_delay is millisecond
-    if (this->_latest_rtt > HRTIME_MSECONDS(ack_frame->ack_delay())) {
+    if (this->_latest_rtt > static_cast<ink_hrtime>(HRTIME_MSECONDS(ack_frame->ack_delay()))) {
       this->_latest_rtt -= HRTIME_MSECONDS(ack_frame->ack_delay());
     }
     this->_update_rtt(this->_latest_rtt);
