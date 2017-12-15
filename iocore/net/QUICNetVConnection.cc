@@ -325,7 +325,7 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
 
   switch (frame->type()) {
   case QUICFrameType::MAX_DATA:
-    this->_remote_flow_controller->forward_limit(std::static_pointer_cast<const QUICMaxDataFrame>(frame)->maximum_data() * 1024);
+    this->_remote_flow_controller->forward_limit(std::static_pointer_cast<const QUICMaxDataFrame>(frame)->maximum_data());
     Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
           static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
           this->_remote_flow_controller->current_limit());

@@ -126,7 +126,7 @@ QUICRemoteConnectionFlowController::_create_frame()
 QUICFrameUPtr
 QUICLocalConnectionFlowController::_create_frame()
 {
-  return QUICFrameFactory::create_max_data_frame(this->_limit / 1024);
+  return QUICFrameFactory::create_max_data_frame(this->_limit);
 }
 
 QUICFrameUPtr

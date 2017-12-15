@@ -40,7 +40,7 @@ public:
 private:
   // FIXME Fill appropriate values
   uint32_t _no_activity_timeout_in     = 0;
-  uint32_t _initial_max_data           = 100; // in units of 1024 octets
+  uint32_t _initial_max_data           = 131072;
   uint32_t _initial_max_stream_data    = 2048;
   uint32_t _initial_max_stream_id_bidi = 100;
   uint32_t _initial_max_stream_id_uni  = 102;
