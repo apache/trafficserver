@@ -247,11 +247,15 @@ HQClientTransaction::reenable(VIO *vio)
 {
   if (vio->op == VIO::READ) {
     int64_t len = this->_process_read_vio();
+    this->_stream_io->read_reenable();
+
     if (len > 0) {
       this->_signal_read_event();
     }
   } else if (vio->op == VIO::WRITE) {
     int64_t len = this->_process_write_vio();
+    this->_stream_io->write_reenable();
+
     if (len > 0) {
       this->_signal_write_event();
     }
