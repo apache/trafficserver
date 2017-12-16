@@ -42,10 +42,6 @@ public:
   void
   push_back(const SourceLocation &location, int event, int reentrant = NO_REENTRANT)
   {
-    if (overflowed()) {
-      return;
-    }
-
     int pos                 = history_pos++ % Count;
     history[pos].location   = location;
     history[pos].event      = (unsigned short)event;
