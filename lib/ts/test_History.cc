@@ -95,7 +95,7 @@ REGRESSION_TEST(History_test)(RegressionTest *t, int /* atype ATS_UNUSED */, int
   tb.check(sm2->history.size() == 2, "Checking that history size is 2");
   tb.check(sm2->history.overflowed() == true, "Checking that history overflowed 4");
 
-  tb.check(strncmp(sm2->history[0].location.str(buf, 128), "test_History.cc:88 (RegressionTest_History_test)",
+  tb.check(strncmp(sm2->history[0].location.str(buf, 128), "test_History.cc:94 (RegressionTest_History_test)",
                    strlen("test_History.cc:88 (RegressionTest_History_test)")) == 0,
            "Checking history string");
 
