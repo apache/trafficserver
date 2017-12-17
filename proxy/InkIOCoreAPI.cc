@@ -88,7 +88,7 @@ sdk_sanity_check_iocore_structure(void *data)
 
 // From InkAPI.cc
 TSReturnCode sdk_sanity_check_continuation(TSCont cont);
-TSReturnCode sdk_sanity_check_null_ptr(void *ptr);
+TSReturnCode sdk_sanity_check_null_ptr(void const *ptr);
 
 ////////////////////////////////////////////////////////////////////
 //
