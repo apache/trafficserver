@@ -670,12 +670,9 @@ sdk_sanity_check_ssl_hook_id(TSHttpHookID id)
 }
 
 TSReturnCode
-sdk_sanity_check_null_ptr(void *ptr)
+sdk_sanity_check_null_ptr(void const *ptr)
 {
-  if (ptr == nullptr) {
-    return TS_ERROR;
-  }
-  return TS_SUCCESS;
+  return ptr == nullptr ? TS_ERROR : TS_SUCCESS;
 }
 
 // Plugin metric IDs index the plugin RSB, so bounds check against that.
