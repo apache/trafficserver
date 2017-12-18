@@ -119,14 +119,14 @@ QUICIncomingFrameBuffer::_check_and_set_fin_flag(QUICOffset offset, size_t len, 
   // FINAL_OFFSET_ERROR error, even after a stream is closed.
   if (fin_flag) {
     if (this->_fin_offset != UINT64_MAX) {
-      if (this->_fin_offset == offset) {
+      if (this->_fin_offset == offset + len) {
         // dup fin frame
         return QUICErrorUPtr(new QUICNoError());
       }
       return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICTransErrorCode::FINAL_OFFSET_ERROR));
     }
 
-    this->_fin_offset = offset;
+    this->_fin_offset = offset + len;
 
     if (this->_max_offset >= this->_fin_offset) {
       return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICTransErrorCode::FINAL_OFFSET_ERROR));
@@ -135,8 +135,7 @@ QUICIncomingFrameBuffer::_check_and_set_fin_flag(QUICOffset offset, size_t len, 
   } else if (this->_fin_offset != UINT64_MAX && this->_fin_offset <= offset) {
     return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICTransErrorCode::FINAL_OFFSET_ERROR));
   }
-
-  this->_max_offset = std::max(offset, this->_max_offset);
+  this->_max_offset = std::max(offset + len, this->_max_offset);
 
   return QUICErrorUPtr(new QUICNoError());
 }

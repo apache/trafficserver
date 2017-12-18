@@ -35,31 +35,42 @@ TEST_CASE("QUICIncomingFrameBuffer_fin_offset", "[quic]")
 
   uint8_t data[1024] = {0};
 
-  std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_1_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 1024);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_2_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 2048, true);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_3_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 3072, true);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_4_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 4096);
+  SECTION("single frame")
+  {
+    std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0, true);
 
-  buffer.insert(stream1_frame_0_r);
-  buffer.insert(stream1_frame_1_r);
-  buffer.insert(stream1_frame_2_r);
-  err = buffer.insert(stream1_frame_3_r);
-  CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
+    err = buffer.insert(stream1_frame_0_r);
+    CHECK(err->trans_error_code != QUICTransErrorCode::FINAL_OFFSET_ERROR);
+  }
 
-  QUICIncomingFrameBuffer buffer2(stream);
+  SECTION("multiple frames")
+  {
+    std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
+    std::shared_ptr<QUICStreamFrame> stream1_frame_1_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 1024);
+    std::shared_ptr<QUICStreamFrame> stream1_frame_2_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 2048, true);
+    std::shared_ptr<QUICStreamFrame> stream1_frame_3_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 3072, true);
+    std::shared_ptr<QUICStreamFrame> stream1_frame_4_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 4096);
 
-  buffer2.insert(stream1_frame_3_r);
-  buffer2.insert(stream1_frame_0_r);
-  buffer2.insert(stream1_frame_1_r);
-  err = buffer2.insert(stream1_frame_2_r);
-  CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
+    buffer.insert(stream1_frame_0_r);
+    buffer.insert(stream1_frame_1_r);
+    buffer.insert(stream1_frame_2_r);
+    err = buffer.insert(stream1_frame_3_r);
+    CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
 
-  QUICIncomingFrameBuffer buffer3(stream);
+    QUICIncomingFrameBuffer buffer2(stream);
 
-  buffer3.insert(stream1_frame_4_r);
-  err = buffer3.insert(stream1_frame_3_r);
-  CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
+    buffer2.insert(stream1_frame_3_r);
+    buffer2.insert(stream1_frame_0_r);
+    buffer2.insert(stream1_frame_1_r);
+    err = buffer2.insert(stream1_frame_2_r);
+    CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
+
+    QUICIncomingFrameBuffer buffer3(stream);
+
+    buffer3.insert(stream1_frame_4_r);
+    err = buffer3.insert(stream1_frame_3_r);
+    CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
+  }
 
   delete stream;
 }
