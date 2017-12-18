@@ -844,7 +844,7 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
         }
         // If we have not reached the end and there is a space after the
         // semi-colon, advance one char
-        if (idx < cookies_len && std::isspace(cookies[idx + 1])) {
+        if (idx + 1 < cookies_len && std::isspace(cookies[idx + 1])) {
           idx++;
         }
         // cookie value is found
