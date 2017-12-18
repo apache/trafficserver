@@ -534,7 +534,7 @@ init_system()
   //
   // Delimit file Descriptors
   //
-  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE, true, false);
+  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE);
 }
 
 static void
@@ -1147,12 +1147,12 @@ adjust_sys_settings()
     }
   }
 
-  ink_max_out_rlimit(RLIMIT_STACK, true, true);
-  ink_max_out_rlimit(RLIMIT_DATA, true, true);
-  ink_max_out_rlimit(RLIMIT_FSIZE, true, false);
+  ink_max_out_rlimit(RLIMIT_STACK);
+  ink_max_out_rlimit(RLIMIT_DATA);
+  ink_max_out_rlimit(RLIMIT_FSIZE);
 
 #ifdef RLIMIT_RSS
-  ink_max_out_rlimit(RLIMIT_RSS, true, true);
+  ink_max_out_rlimit(RLIMIT_RSS);
 #endif
 }
 
