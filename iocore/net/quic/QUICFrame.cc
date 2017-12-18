@@ -519,7 +519,7 @@ QUICAckFrame::AckBlock::_get_length_size() const
   if (this->_buf) {
     return QUICVariableInt::size(this->_buf + this->_get_gap_size());
   } else {
-    return QUICVariableInt::size(this->_gap);
+    return QUICVariableInt::size(this->_length);
   }
 }
 
@@ -1149,7 +1149,7 @@ QUICMaxStreamDataFrame::_get_max_stream_data_field_length() const
   if (this->_buf) {
     return QUICVariableInt::size(this->_buf + this->_get_max_stream_data_field_offset());
   } else {
-    return QUICVariableInt::size(this->_stream_id);
+    return QUICVariableInt::size(this->_maximum_stream_data);
   }
 }
 
@@ -1267,7 +1267,7 @@ QUICStreamBlockedFrame::type() const
 size_t
 QUICStreamBlockedFrame::size() const
 {
-  return sizeof(QUICFrameType) + this->_get_stream_id_field_length() + _get_offset_field_length();
+  return sizeof(QUICFrameType) + this->_get_stream_id_field_length() + this->_get_offset_field_length();
 }
 
 void
@@ -1327,7 +1327,7 @@ QUICStreamBlockedFrame::_get_offset_field_length() const
   if (this->_buf) {
     return QUICVariableInt::size(this->_buf + this->_get_offset_field_offset());
   } else {
-    return QUICVariableInt::size(this->_stream_id);
+    return QUICVariableInt::size(this->_offset);
   }
 }
 
