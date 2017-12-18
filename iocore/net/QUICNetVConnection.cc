@@ -218,10 +218,12 @@ QUICNetVConnection::_transmit_packet(QUICPacketUPtr packet)
 {
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
 
-  QUICConDebug("Packet Number=%" PRIu64 " Type=%s Size=%hu", packet->packet_number(), QUICDebugNames::packet_type(packet->type()),
-               packet->size());
-  // TODO Remove const_cast
-  this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
+  if (packet) {
+    QUICConDebug("Packet Number=%" PRIu64 " Type=%s Size=%hu", packet->packet_number(), QUICDebugNames::packet_type(packet->type()),
+                 packet->size());
+    // TODO Remove const_cast
+    this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
+  }
   return this->_packet_send_queue.size;
 }
 

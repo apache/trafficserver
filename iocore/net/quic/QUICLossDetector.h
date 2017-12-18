@@ -115,6 +115,8 @@ private:
   std::set<QUICPacketNumber> _determine_newly_acked_packets(const QUICAckFrame &ack_frame);
 
   void _retransmit_handshake_packets();
+  void _send_one_packet();
+  void _send_two_packets();
 
   QUICPacketTransmitter *_transmitter = nullptr;
   QUICCongestionController *_cc       = nullptr;

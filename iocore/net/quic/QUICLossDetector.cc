@@ -263,14 +263,16 @@ QUICLossDetector::_on_loss_detection_alarm()
     this->_detect_lost_packets(this->_largest_acked_packet);
   } else if (this->_tlp_count < this->_MAX_TLPS) {
     // Tail Loss Probe.
-    // this->_send_one_packet();
+    QUICLDDebug("TLP");
+    this->_send_one_packet();
     this->_tlp_count++;
   } else {
     // RTO.
     if (this->_rto_count == 0) {
       this->_largest_sent_before_rto = this->_largest_sent_packet;
     }
-    // this->_send_two_packets();
+    QUICLDDebug("RTO");
+    this->_send_two_packets();
     this->_rto_count++;
   }
   QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
@@ -384,5 +386,31 @@ QUICLossDetector::_retransmit_handshake_packets()
     this->_sent_packets.erase(packet_number);
     --this->_handshake_outstanding;
     --this->_retransmittable_outstanding;
+  }
+}
+
+void
+QUICLossDetector::_send_one_packet()
+{
+  if (this->_transmitter->transmit_packet() < 1) {
+    auto ite = this->_sent_packets.rbegin();
+    if (ite != this->_sent_packets.rend()) {
+      this->_transmitter->retransmit_packet(*ite->second->packet);
+    }
+  }
+}
+
+void
+QUICLossDetector::_send_two_packets()
+{
+  auto ite = this->_sent_packets.rbegin();
+  if (ite != this->_sent_packets.rend()) {
+    this->_transmitter->retransmit_packet(*ite->second->packet);
+    ite++;
+    if (ite != this->_sent_packets.rend()) {
+      this->_transmitter->retransmit_packet(*ite->second->packet);
+    }
+  } else {
+    this->_transmitter->transmit_packet();
   }
 }
