@@ -109,19 +109,19 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, bool include_length_field) con
   size_t n;
 
   // Stream ID (i)
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, buf + *len, &n);
+  QUICTypeUtil::write_QUICStreamId(this->stream_id(), buf + *len, &n);
   *len += n;
 
   // [Offset (i)] "O" of "0b0010OLF"
   if (this->has_offset_field()) {
-    QUICTypeUtil::write_QUICOffset(this->_offset, buf + *len, &n);
+    QUICTypeUtil::write_QUICOffset(this->offset(), buf + *len, &n);
     *len += n;
     buf[0] += 0x04;
   }
 
   // [Length (i)] "L of "0b0010OLF"
   if (include_length_field) {
-    QUICTypeUtil::write_QUICVariableInt(this->_data_len, buf + *len, &n);
+    QUICTypeUtil::write_QUICVariableInt(this->data_length(), buf + *len, &n);
     *len += n;
     buf[0] += 0x02;
   }
