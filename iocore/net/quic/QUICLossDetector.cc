@@ -273,9 +273,8 @@ QUICLossDetector::_on_loss_detection_alarm()
     // this->_send_two_packets();
     this->_rto_count++;
   }
-  QUICLDDebug("Unacked packets %lu (handshake pkt %u, retransmittable %u, other %lu)", this->_sent_packets.size(),
-              this->_handshake_outstanding.load(), this->_retransmittable_outstanding.load(),
-              this->_sent_packets.size() - (this->_handshake_outstanding.load() + this->_retransmittable_outstanding.load()));
+  QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
+              this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
   this->_set_loss_detection_alarm();
 }
 
