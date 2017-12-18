@@ -228,7 +228,7 @@ QUICStreamFrame::has_fin_flag() const
 size_t
 QUICStreamFrame::_get_stream_id_field_offset() const
 {
-  return 1;
+  return sizeof(QUICFrameType);
 }
 
 size_t
@@ -281,7 +281,11 @@ QUICStreamFrame::_get_offset_field_len() const
       return 0;
     }
   } else {
-    return QUICVariableInt::size(this->_offset);
+    if (this->_offset != 0) {
+      return QUICVariableInt::size(this->_offset);
+    } else {
+      return 0;
+    }
   }
 }
 
