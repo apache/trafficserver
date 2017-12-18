@@ -343,7 +343,7 @@ QUICLossDetector::_set_loss_detection_alarm()
   QUICLDDebug("Loss detection alarm has been set to %" PRId64, alarm_duration);
 
   if (!this->_loss_detection_alarm) {
-    this->_loss_detection_alarm = eventProcessor.schedule_every(this, HRTIME_MSECONDS(100));
+    this->_loss_detection_alarm = eventProcessor.schedule_every(this, HRTIME_MSECONDS(25));
   }
 }
 
