@@ -78,6 +78,8 @@ QUICDebugNames::frame_type(QUICFrameType type)
     return "ACK";
   case QUICFrameType::STREAM:
     return "STREAM";
+  case QUICFrameType::PONG:
+    return "PONG";
   case QUICFrameType::UNKNOWN:
   default:
     return "UNKNOWN";

@@ -39,6 +39,7 @@ ClassAllocator<QUICStreamBlockedFrame> quicStreamBlockedFrameAllocator("quicStre
 ClassAllocator<QUICStreamIdBlockedFrame> quicStreamIdBlockedFrameAllocator("quicStreamIdBlockedFrameAllocator");
 ClassAllocator<QUICNewConnectionIdFrame> quicNewConnectionIdFrameAllocator("quicNewConnectionIdFrameAllocator");
 ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator("quicStopSendingFrameAllocator");
+ClassAllocator<QUICPongFrame> quicPongFrameAllocator("quicPongFrameAllocator");
 ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator("quicRetransmissionFrameAllocator");
 
 QUICFrameType
@@ -795,19 +796,48 @@ QUICPingFrame::type() const
 size_t
 QUICPingFrame::size() const
 {
-  return 1;
+  return this->_data_offset() + this->data_length();
 }
 
 void
 QUICPingFrame::store(uint8_t *buf, size_t *len) const
 {
+  *len = this->size();
+
   if (this->_buf) {
-    *len = this->size();
     memcpy(buf, this->_buf, *len);
   } else {
     buf[0] = static_cast<uint8_t>(QUICFrameType::PING);
-    *len   = 1;
+    buf[1] = this->data_length();
+
+    memcpy(buf + this->_data_offset(), this->data(), this->data_length());
   }
+}
+
+const uint8_t *
+QUICPingFrame::data() const
+{
+  if (this->_buf) {
+    return this->_buf + this->_data_offset();
+  } else {
+    return this->_data.get();
+  }
+}
+
+uint8_t
+QUICPingFrame::data_length() const
+{
+  if (this->_buf) {
+    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + sizeof(QUICFrameType), 1);
+  } else {
+    return this->_data_len;
+  }
+}
+
+const size_t
+QUICPingFrame::_data_offset() const
+{
+  return sizeof(QUICFrameType) + sizeof(this->_data_len);
 }
 
 //
@@ -1592,6 +1622,62 @@ QUICStopSendingFrame::_get_error_code_field_offset() const
 }
 
 //
+// PONG frame
+//
+QUICFrameType
+QUICPongFrame::type() const
+{
+  return QUICFrameType::PONG;
+}
+
+size_t
+QUICPongFrame::size() const
+{
+  return this->_data_offset() + this->data_length();
+}
+
+void
+QUICPongFrame::store(uint8_t *buf, size_t *len) const
+{
+  *len = this->size();
+
+  if (this->_buf) {
+    memcpy(buf, this->_buf, *len);
+  } else {
+    buf[0] = static_cast<uint8_t>(QUICFrameType::PONG);
+    buf[1] = this->data_length();
+
+    memcpy(buf + this->_data_offset(), this->data(), this->data_length());
+  }
+}
+
+const uint8_t *
+QUICPongFrame::data() const
+{
+  if (this->_buf) {
+    return this->_buf + this->_data_offset();
+  } else {
+    return this->_data.get();
+  }
+}
+
+uint8_t
+QUICPongFrame::data_length() const
+{
+  if (this->_buf) {
+    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + sizeof(QUICFrameType), 1);
+  } else {
+    return this->_data_len;
+  }
+}
+
+const size_t
+QUICPongFrame::_data_offset() const
+{
+  return sizeof(QUICFrameType) + sizeof(this->_data_len);
+}
+
+//
 // QUICRetransmissionFrame
 //
 QUICRetransmissionFrame::QUICRetransmissionFrame(QUICFrameUPtr original_frame, const QUICPacket &original_packet)
@@ -1705,6 +1791,10 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     frame = quicStopSendingFrameAllocator.alloc();
     new (frame) QUICStopSendingFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_stop_sending_frame);
+  case QUICFrameType::PONG:
+    frame = quicPongFrameAllocator.alloc();
+    new (frame) QUICPongFrame(buf, len);
+    return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_pong_frame);
   default:
     // Unknown frame
     Debug("quic_frame_factory", "Unknown frame type %x", buf[0]);

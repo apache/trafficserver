@@ -59,9 +59,11 @@ public:
   QUICStreamFrame() : QUICFrame() {}
   QUICStreamFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
   QUICStreamFrame(ats_unique_buf buf, size_t len, QUICStreamId streamid, QUICOffset offset, bool last = false);
+
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
+
   void store(uint8_t *buf, size_t *len, bool include_length_field) const;
   QUICStreamId stream_id() const;
   QUICOffset offset() const;
@@ -229,9 +231,20 @@ class QUICPingFrame : public QUICFrame
 public:
   QUICPingFrame() : QUICFrame() {}
   QUICPingFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICPingFrame(ats_unique_buf data, size_t data_len) : _data(std::move(data)), _data_len(data_len) {}
+
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
+
+  const uint8_t *data() const;
+  uint8_t data_length() const;
+
+private:
+  const size_t _data_offset() const;
+
+  ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
+  uint8_t _data_len    = 0;
 };
 
 // PADDING
@@ -499,6 +512,31 @@ using QUICFrameUPtr        = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
 using QUICStreamFrameUPtr  = std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>;
 
 //
+// PONG
+//
+
+class QUICPongFrame : public QUICFrame
+{
+public:
+  QUICPongFrame() : QUICFrame() {}
+  QUICPongFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICPongFrame(ats_unique_buf data, size_t data_len) : _data(std::move(data)), _data_len(data_len) {}
+
+  virtual QUICFrameType type() const override;
+  virtual size_t size() const override;
+  virtual void store(uint8_t *buf, size_t *len) const override;
+
+  const uint8_t *data() const;
+  uint8_t data_length() const;
+
+private:
+  const size_t _data_offset() const;
+
+  ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
+  uint8_t _data_len    = 0;
+};
+
+//
 // Retransmission Frame
 //
 
@@ -533,6 +571,7 @@ extern ClassAllocator<QUICStreamBlockedFrame> quicStreamBlockedFrameAllocator;
 extern ClassAllocator<QUICStreamIdBlockedFrame> quicStreamIdBlockedFrameAllocator;
 extern ClassAllocator<QUICNewConnectionIdFrame> quicNewConnectionIdFrameAllocator;
 extern ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator;
+extern ClassAllocator<QUICPongFrame> quicPongFrameAllocator;
 extern ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator;
 
 class QUICFrameDeleter
@@ -634,6 +673,12 @@ public:
   delete_stop_sending_frame(QUICFrame *frame)
   {
     quicStopSendingFrameAllocator.free(static_cast<QUICStopSendingFrame *>(frame));
+  }
+
+  static void
+  delete_pong_frame(QUICFrame *frame)
+  {
+    quicPongFrameAllocator.free(static_cast<QUICPongFrame *>(frame));
   }
 
   static void
