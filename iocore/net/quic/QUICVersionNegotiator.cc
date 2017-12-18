@@ -41,13 +41,17 @@ QUICVersionNegotiator::negotiate(const QUICPacket *initial_packet)
 }
 
 QUICVersionNegotiationStatus
-QUICVersionNegotiator::revalidate(const QUICTransportParametersInClientHello *tp)
+QUICVersionNegotiator::validate(const QUICTransportParametersInClientHello *tp)
 {
   if (this->_negotiated_version == tp->initial_version()) {
-    this->_status = QUICVersionNegotiationStatus::REVALIDATED;
+    this->_status = QUICVersionNegotiationStatus::VALIDATED;
   } else {
-    this->_status             = QUICVersionNegotiationStatus::FAILED;
-    this->_negotiated_version = 0;
+    if (this->_is_supported(tp->initial_version())) {
+      this->_status             = QUICVersionNegotiationStatus::FAILED;
+      this->_negotiated_version = 0;
+    } else {
+      this->_status = QUICVersionNegotiationStatus::VALIDATED;
+    }
   }
   return this->_status;
 }

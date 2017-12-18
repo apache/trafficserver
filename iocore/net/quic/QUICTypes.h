@@ -106,7 +106,7 @@ enum class QUICFrameType : uint8_t {
 enum class QUICVersionNegotiationStatus {
   NOT_NEGOTIATED, // Haven't negotiated yet
   NEGOTIATED,     // Negotiated
-  REVALIDATED,    // Revalidated in cryptographic handshake
+  VALIDATED,      // Validated with a one in transport parameters
   FAILED,         // Negotiation failed
 };
 

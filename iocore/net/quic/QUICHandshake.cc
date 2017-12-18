@@ -177,12 +177,12 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters>
     dynamic_cast<const QUICTransportParametersInClientHello *>(this->_remote_transport_parameters.get());
   if (tp_in_ch) {
     // Version revalidation
-    if (this->_version_negotiator->revalidate(tp_in_ch) != QUICVersionNegotiationStatus::REVALIDATED) {
+    if (this->_version_negotiator->validate(tp_in_ch) != QUICVersionNegotiationStatus::VALIDATED) {
       QUICHSDebug("Version revalidation failed");
       this->_abort_handshake(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
       return;
     }
-    QUICHSDebug("Version negotiation revalidated: %x", tp_in_ch->initial_version());
+    QUICHSDebug("Version negotiation validated: %x", tp_in_ch->initial_version());
     return;
   }
 
