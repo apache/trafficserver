@@ -696,18 +696,23 @@ QUICRstStreamFrame::size() const
 void
 QUICRstStreamFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::RST_STREAM);
-  ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICOffset(this->_final_offset, p, &n);
-  p += n;
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
+    *p         = static_cast<uint8_t>(QUICFrameType::RST_STREAM);
+    ++p;
+    QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
+    p += n;
+    QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
+    p += n;
+    QUICTypeUtil::write_QUICOffset(this->_final_offset, p, &n);
+    p += n;
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 QUICStreamId
@@ -796,8 +801,13 @@ QUICPingFrame::size() const
 void
 QUICPingFrame::store(uint8_t *buf, size_t *len) const
 {
-  buf[0] = static_cast<uint8_t>(QUICFrameType::PING);
-  *len   = 1;
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    buf[0] = static_cast<uint8_t>(QUICFrameType::PING);
+    *len   = 1;
+  }
 }
 
 //
@@ -849,20 +859,25 @@ QUICConnectionCloseFrame::size() const
 void
 QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::CONNECTION_CLOSE);
-  ++p;
-  QUICTypeUtil::write_QUICTransErrorCode(this->_error_code, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
-  p += n;
-  if (this->_reason_phrase_length > 0) {
-    memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
-    p += this->_reason_phrase_length;
-  }
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
+    *p         = static_cast<uint8_t>(QUICFrameType::CONNECTION_CLOSE);
+    ++p;
+    QUICTypeUtil::write_QUICTransErrorCode(this->_error_code, p, &n);
+    p += n;
+    QUICTypeUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
+    p += n;
+    if (this->_reason_phrase_length > 0) {
+      memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
+      p += this->_reason_phrase_length;
+    }
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 QUICTransErrorCode
@@ -944,20 +959,25 @@ QUICApplicationCloseFrame::size() const
 void
 QUICApplicationCloseFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::APPLICATION_CLOSE);
-  ++p;
-  QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
-  p += n;
-  if (this->_reason_phrase_length > 0) {
-    memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
-    p += this->_reason_phrase_length;
-  }
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
+    *p         = static_cast<uint8_t>(QUICFrameType::APPLICATION_CLOSE);
+    ++p;
+    QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
+    p += n;
+    QUICTypeUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
+    p += n;
+    if (this->_reason_phrase_length > 0) {
+      memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
+      p += this->_reason_phrase_length;
+    }
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 QUICAppErrorCode
@@ -1035,14 +1055,19 @@ QUICMaxDataFrame::size() const
 void
 QUICMaxDataFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::MAX_DATA);
-  ++p;
-  QUICTypeUtil::write_QUICMaxData(this->_maximum_data, p, &n);
-  p += n;
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
+    *p         = static_cast<uint8_t>(QUICFrameType::MAX_DATA);
+    ++p;
+    QUICTypeUtil::write_QUICMaxData(this->_maximum_data, p, &n);
+    p += n;
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 uint64_t
@@ -1089,16 +1114,21 @@ QUICMaxStreamDataFrame::size() const
 void
 QUICMaxStreamDataFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_DATA);
-  ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICMaxData(this->_maximum_stream_data, p, &n);
-  p += n;
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
+    *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_DATA);
+    ++p;
+    QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
+    p += n;
+    QUICTypeUtil::write_QUICMaxData(this->_maximum_stream_data, p, &n);
+    p += n;
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 QUICStreamId
@@ -1176,14 +1206,19 @@ QUICMaxStreamIdFrame::size() const
 void
 QUICMaxStreamIdFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_ID);
-  ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_maximum_stream_id, p, &n);
-  p += n;
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
+    *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_ID);
+    ++p;
+    QUICTypeUtil::write_QUICStreamId(this->_maximum_stream_id, p, &n);
+    p += n;
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 QUICStreamId
@@ -1224,15 +1259,20 @@ QUICBlockedFrame::size() const
 void
 QUICBlockedFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
 
-  *p = static_cast<uint8_t>(QUICFrameType::BLOCKED);
-  ++p;
-  QUICTypeUtil::write_QUICOffset(this->_offset, p, &n);
-  p += n;
+    *p = static_cast<uint8_t>(QUICFrameType::BLOCKED);
+    ++p;
+    QUICTypeUtil::write_QUICOffset(this->_offset, p, &n);
+    p += n;
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 QUICOffset
@@ -1273,16 +1313,21 @@ QUICStreamBlockedFrame::size() const
 void
 QUICStreamBlockedFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::STREAM_BLOCKED);
-  ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICOffset(this->_offset, p, &n);
-  p += n;
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
+    *p         = static_cast<uint8_t>(QUICFrameType::STREAM_BLOCKED);
+    ++p;
+    QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
+    p += n;
+    QUICTypeUtil::write_QUICOffset(this->_offset, p, &n);
+    p += n;
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 QUICStreamId
@@ -1349,15 +1394,20 @@ QUICStreamIdBlockedFrame::size() const
 void
 QUICStreamIdBlockedFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
 
-  *p = static_cast<uint8_t>(QUICFrameType::STREAM_ID_BLOCKED);
-  ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
-  p += n;
+    *p = static_cast<uint8_t>(QUICFrameType::STREAM_ID_BLOCKED);
+    ++p;
+    QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
+    p += n;
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 QUICStreamId
@@ -1399,18 +1449,23 @@ QUICNewConnectionIdFrame::size() const
 void
 QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
-  ++p;
-  QUICTypeUtil::write_QUICVariableInt(this->_sequence, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICConnectionId(this->_connection_id, 8, p, &n);
-  p += n;
-  memcpy(p, this->_stateless_reset_token.buf(), QUICStatelessResetToken::LEN);
-  p += QUICStatelessResetToken::LEN;
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
+    *p         = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
+    ++p;
+    QUICTypeUtil::write_QUICVariableInt(this->_sequence, p, &n);
+    p += n;
+    QUICTypeUtil::write_QUICConnectionId(this->_connection_id, 8, p, &n);
+    p += n;
+    memcpy(p, this->_stateless_reset_token.buf(), QUICStatelessResetToken::LEN);
+    p += QUICStatelessResetToken::LEN;
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 uint64_t
@@ -1483,16 +1538,21 @@ QUICStopSendingFrame::size() const
 void
 QUICStopSendingFrame::store(uint8_t *buf, size_t *len) const
 {
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::STOP_SENDING);
-  ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
-  p += n;
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    size_t n;
+    uint8_t *p = buf;
+    *p         = static_cast<uint8_t>(QUICFrameType::STOP_SENDING);
+    ++p;
+    QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
+    p += n;
+    QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
+    p += n;
 
-  *len = p - buf;
+    *len = p - buf;
+  }
 }
 
 QUICAppErrorCode

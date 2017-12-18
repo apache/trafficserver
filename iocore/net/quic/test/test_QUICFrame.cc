@@ -1053,3 +1053,246 @@ TEST_CASE("QUICFrameFactory Create RST_STREAM with a QUICStreamError", "[quic]")
   CHECK(rst_stream_frame1->stream_id() == 0x1234);
   CHECK(rst_stream_frame1->final_offset() == 0);
 }
+
+TEST_CASE("Retransmit", "[quic][frame][retransmit]")
+{
+  QUICPacketFactory factory;
+  MockQUICCrypto crypto;
+  factory.set_crypto_module(&crypto);
+  QUICPacketUPtr packet = factory.create_server_protected_packet(0x01020304, 0, {nullptr, [](void *p) { ats_free(p); }}, 0, true);
+
+  SECTION("STREAM frame")
+  {
+    uint8_t frame_buf[] = {
+      0x12,                         // Type, 0b00010OLF (OLF=010)
+      0x01,                         // Stream ID
+      0x05,                         // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 8);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("RST_STREAM frame")
+  {
+    uint8_t frame_buf[] = {
+      0x01,                                          // Type
+      0x92, 0x34, 0x56, 0x78,                        // Stream ID
+      0x00, 0x01,                                    // Error Code
+      0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 15);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("CONNECTION_CLOSE frame")
+  {
+    uint8_t frame_buf[] = {
+      0x02,                        // Type
+      0x00, 0x0A,                  // Error Code
+      0x05,                        // Reason Phrase Length
+      0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 9);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("APPLICATION_CLOSE frame")
+  {
+    uint8_t frame_buf[] = {
+      0x03,                        // Type
+      0x00, 0x01,                  // Error Code
+      0x05,                        // Reason Phrase Length
+      0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 9);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("MAX_DATA frame")
+  {
+    uint8_t frame_buf[] = {
+      0x04,                                          // Type
+      0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 9);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("MAX_STREAM_DATA frame")
+  {
+    uint8_t frame_buf[] = {
+      0x05,                                          // Type
+      0x81, 0x02, 0x03, 0x04,                        // Stream ID
+      0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 13);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("MAX_STREAM_ID frame")
+  {
+    uint8_t frame_buf[] = {
+      0x06,                   // Type
+      0x81, 0x02, 0x03, 0x04, // Stream ID
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 5);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("PING frame")
+  {
+    // TODO
+  }
+
+  SECTION("BLOCKED frame")
+  {
+    uint8_t frame_buf[] = {
+      0x08, // Type
+      0x07, // Offset
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 2);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("STREAM_BLOCKED frame")
+  {
+    uint8_t frame_buf[] = {
+      0x09,                   // Type
+      0x81, 0x02, 0x03, 0x04, // Stream ID
+      0x07,                   // Offset
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 6);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("STREAM_ID_BLOCKED frame")
+  {
+    uint8_t frame_buf[] = {
+      0x0a,       // Type
+      0x41, 0x02, // Stream ID
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 3);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("NEW_CONNECTION_ID frame")
+  {
+    uint8_t frame_buf[] = {
+      0x0b,                                           // Type
+      0x41, 0x02,                                     // Sequence
+      0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
+      0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
+      0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 27);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("STOP_SENDING frame")
+  {
+    uint8_t frame_buf[] = {
+      0x0c,                   // Type
+      0x92, 0x34, 0x56, 0x78, // Stream ID
+      0x00, 0x01,             // Error Code
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 7);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+}
