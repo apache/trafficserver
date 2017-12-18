@@ -1047,6 +1047,11 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   if (this->_complete_handshake_if_possible() != 0) {
     QUICConDebug("Switching state without handshake completion");
   }
+  if (error->msg) {
+    QUICConDebug("Reason: %.*s", static_cast<int>(strlen(error->msg)), error->msg);
+  } else {
+    QUICConDebug("Reason was not provided");
+  }
   if (error->cls == QUICErrorClass::APPLICATION) {
     this->transmit_frame(QUICFrameFactory::create_application_close_frame(std::move(error)));
   } else {
