@@ -155,11 +155,14 @@ will leave the header intact if the client provided it.
 supported-algorithms
 ----------------------
 
-Provides the compression algorithms that are supported. This will allow |TS| to selectively
-support gzip, deflate, and brotli compression. The default is gzip. Multiple algorthims can be selected using ',' delimiter,
-for instance, ``supported-algorithms deflate,gzip,br``. Note that if
-ts:cv:`proxy.config.http.normalize_ae` is ``1``, only gzip will be
-considered, and if it is ``2``, only br or gzip will be considered.
+Provides the compression algorithms that are supported, a comma separate list
+of values. This will allow |TS| to selectively support ``gzip``, ``deflate``,
+and brotli (``br``) compression. The default is ``gzip``. Multiple algorithms can
+be selected using ',' delimiter, for instance, ``supported-algorithms
+deflate,gzip,br``. Note that this list must **not** contain any white-spaces!
+
+Note that if :ts:cv:`proxy.config.http.normalize_ae` is ``1``, only gzip will
+be considered, and if it is ``2``, only br or gzip will be considered.
 
 Examples
 ========
