@@ -625,18 +625,7 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPt
   // Start handshake
   QUICErrorUPtr error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
   if (this->_handshake_handler->is_version_negotiated()) {
-    bool should_send_ack;
-    error = this->_frame_dispatcher->receive_frames(packet->payload(), packet->payload_size(), should_send_ack);
-    if (error->cls != QUICErrorClass::NONE) {
-      return error;
-    }
-    int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
-    Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64,
-          static_cast<uint64_t>(this->_quic_connection_id), this->_local_flow_controller->current_offset(),
-          this->_local_flow_controller->current_limit());
-    if (ret != 0) {
-      return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
-    }
+    error = this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
   } else {
     // Perhaps response packets for initial client packet were lost, but no need to start handshake again because loss detector will
     // retransmit the packets.
