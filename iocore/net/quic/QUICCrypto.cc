@@ -34,6 +34,18 @@
 
 constexpr static char tag[] = "quic_crypto";
 
+static void
+to_hex(uint8_t *out, uint8_t *in, int in_len)
+{
+  for (int i = 0; i < in_len; ++i) {
+    int u4 = in[i] / 16;
+    int l4 = in[i] % 16;
+    out [i * 2]     = (u4 < 10) ? ('0' + u4) : ('A' + u4 - 10);
+    out [i * 2 + 1] = (l4 < 10) ? ('0' + l4) : ('A' + l4 - 10);
+  }
+  out[in_len * 2] = 0;
+}
+
 //
 // QUICPacketProtection
 //
@@ -161,11 +173,22 @@ QUICCryptoTls::is_handshake_finished() const
 int
 QUICCryptoTls::initialize_key_materials(QUICConnectionId cid)
 {
+
   // Generate keys
+  uint8_t print_buf[512];
   std::unique_ptr<KeyMaterial> km;
   km = this->_keygen_for_client.generate(cid);
+  to_hex(print_buf, km->key, km->key_len);
+  Debug("vv_quic_crypto", "client key 0x%s", print_buf);
+  to_hex(print_buf, km->iv, km->iv_len);
+  Debug("vv_quic_crypto", "client iv 0x%s", print_buf);
   this->_client_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
+
   km = this->_keygen_for_server.generate(cid);
+  to_hex(print_buf, km->key, km->key_len);
+  Debug("vv_quic_crypto", "server key 0x%s", print_buf);
+  to_hex(print_buf, km->iv, km->iv_len);
+  Debug("vv_quic_crypto", "server iv 0x%s", print_buf);
   this->_server_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
 
   // Update algorithm
@@ -197,10 +220,19 @@ QUICCryptoTls::update_key_materials()
   }
 
   // Generate keys
+  uint8_t print_buf[512];
   std::unique_ptr<KeyMaterial> km;
   km = this->_keygen_for_client.generate(this->_ssl);
+  to_hex(print_buf, km->key, km->key_len);
+  Debug("vv_quic_crypto", "client key 0x%s", print_buf);
+  to_hex(print_buf, km->iv, km->iv_len);
+  Debug("vv_quic_crypto", "client iv 0x%s", print_buf);
   this->_client_pp->set_key(std::move(km), next_key_phase);
   km = this->_keygen_for_server.generate(this->_ssl);
+  to_hex(print_buf, km->key, km->key_len);
+  Debug("vv_quic_crypto", "server key 0x%s", print_buf);
+  to_hex(print_buf, km->iv, km->iv_len);
+  Debug("vv_quic_crypto", "server iv 0x%s", print_buf);
   this->_server_pp->set_key(std::move(km), next_key_phase);
 
   // Update algorithm
