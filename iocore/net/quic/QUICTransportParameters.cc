@@ -432,7 +432,7 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
     }
   }
 
-  if (auto p = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI)) != this->_parameters.end()) {
     if (ite->second->len() != 4) {
       return -1;
     }
