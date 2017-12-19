@@ -68,5 +68,5 @@ tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(redirect_serv1)
 tr.Processes.Default.StartBefore(redirect_serv2)
 tr.Processes.Default.StartBefore(dest_serv)
-tr.Processes.Default.Streams.stdout = "gold/redirect.gold"
+tr.Processes.Default.Streams.stdout = "gold/redirect_post.gold"
 tr.Processes.Default.ReturnCode = 0
