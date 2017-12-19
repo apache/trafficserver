@@ -1,4 +1,6 @@
 Changes with Apache Traffic Server 7.1.2
+  #1808 - Coverity - 1021688 Uninitialized scalar field.
+  #1843 - Coverity 1021688: Uninitialized scalar field
   #1933 - Coredump with server_session
   #2038 - tsxs generation uses AM_C*FLAGS instead of C*FLAGS
   #2339 - Fix the queue when reprioritize
@@ -61,3 +63,12 @@ Changes with Apache Traffic Server 7.1.2
   #2874 - Cleans up some build issue and unecessary casts
   #2876 - header_rewrite - Delete cookies if they are empty in rm-cookie operat…
   #2884 - Deprecates the coallapsed_connection plugin, use collapsed_forwarding…
+  #2902 - Crash in Via response header (again)
+  #2907 - TransformVC may be double closed because there is a issue within HttpTunnel::chain_abort_all
+  #2913 - Assertion with gzip plugin enabled together with escalation
+  #2928 - Only allow the gzip/brotli transformation on 200 OK responses
+  #2929 - Stop ATS from crashing on kernel 4.14
+  #2934 - Removes the limit on the number of remap plugins per rule
+  #2936 - Increase write_vio.ndone only if sending DATA frame is succeeded
+  #2943 - logging: fix incorrect use of LogAccess::strlen()
+  #2945 - Build: Fix WCCP link error for 'make check' in traffic_manager.
