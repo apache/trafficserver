@@ -26,24 +26,63 @@
 #include "quic/QUICVersionNegotiator.h"
 #include "quic/Mock.h"
 
-TEST_CASE("QUICVersionNegotiator_Normal", "[quic]")
+TEST_CASE("QUICVersionNegotiator", "[quic]")
 {
   QUICPacketFactory packet_factory;
   MockQUICCrypto crypto;
   packet_factory.set_crypto_module(&crypto);
   QUICVersionNegotiator vn;
 
-  // Check initial state
-  CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
+  SECTION("Normal case")
+  {
+    // Check initial state
+    CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
-  // Negotiate version
-  QUICPacketUPtr initial_packet = packet_factory.create_initial_packet({}, 0, QUIC_SUPPORTED_VERSIONS[0], ats_unique_malloc(0), 0);
-  vn.negotiate(initial_packet.get());
-  CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
+    // Negotiate version
+    QUICPacketUPtr initial_packet =
+      packet_factory.create_initial_packet({}, 0, QUIC_SUPPORTED_VERSIONS[0], ats_unique_malloc(0), 0);
+    vn.negotiate(initial_packet.get());
+    CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
 
-  // Revalidate version
-  QUICTransportParametersInClientHello tp(QUIC_SUPPORTED_VERSIONS[0]);
-  vn.revalidate(&tp);
-  CHECK(vn.status() == QUICVersionNegotiationStatus::REVALIDATED);
-  CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
+    // Validate version
+    QUICTransportParametersInClientHello tp(QUIC_SUPPORTED_VERSIONS[0]);
+    vn.validate(&tp);
+    CHECK(vn.status() == QUICVersionNegotiationStatus::VALIDATED);
+    CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
+  }
+
+  SECTION("Negotiation case")
+  {
+    // Check initial state
+    CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
+
+    // Negotiate version
+    QUICPacketUPtr initial_packet =
+      packet_factory.create_initial_packet({}, 0, QUIC_SUPPORTED_VERSIONS[0], ats_unique_malloc(0), 0);
+    vn.negotiate(initial_packet.get());
+    CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
+
+    // Validate version
+    QUICTransportParametersInClientHello tp(0xbabababa);
+    vn.validate(&tp);
+    CHECK(vn.status() == QUICVersionNegotiationStatus::VALIDATED);
+    CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
+  }
+
+  SECTION("Downgrade case")
+  {
+    // Check initial state
+    CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
+
+    // Negotiate version
+    QUICPacketUPtr initial_packet = packet_factory.create_initial_packet({}, 0, 0xbabababa, ats_unique_malloc(0), 0);
+    vn.negotiate(initial_packet.get());
+    CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
+
+    // Validate version
+    QUICTransportParametersInClientHello tp(QUIC_SUPPORTED_VERSIONS[0]);
+    vn.validate(&tp);
+    CHECK(vn.status() == QUICVersionNegotiationStatus::FAILED);
+    CHECK(vn.negotiated_version() != QUIC_SUPPORTED_VERSIONS[0]);
+  }
 }
