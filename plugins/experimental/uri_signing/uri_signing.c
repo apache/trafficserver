@@ -156,7 +156,19 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   const char *package = "URISigningPackage";
   int url_ct          = 0;
-  const char *url     = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &url_ct);
+  const char *url     = NULL;
+
+  TSMBuffer mbuf;
+  TSMLoc ul;
+  TSReturnCode rc = TSHttpTxnPristineUrlGet(txnp, &mbuf, &ul);
+  if (rc != TS_SUCCESS) {
+    PluginError("Failed call to TSHttpTxnPristineUrlGet()");
+    goto fail;
+  }
+  url = TSUrlStringGet(mbuf, ul, &url_ct);
+
+  PluginDebug("Processing request for %.*s.", url_ct, url);
+
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
   }
