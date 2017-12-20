@@ -28,7 +28,7 @@ Test gzip plugin
 #
 Test.SkipUnless(Condition.PluginExists('gzip.so'))
 Test.SkipUnless(Condition.PluginExists('conf_remap.so'))
-Test.SkipUnless(Condition.HasProgram("netstat", "netstat need to be installed on system for this test to work"))
+Test.SkipUnless(Condition.HasProgram("ss", "ss needs to be installed on system for this test to work"))
 
 server = Test.MakeOriginServer("server", options={'--load': '{}/gzip_observer.py'.format(Test.TestDirectory)})
 
@@ -53,7 +53,7 @@ for i in range(3):
 # Ask the OS if the port is ready for connect()
 #
 def CheckPort(Port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
+    return lambda: 0 == subprocess.call('ss --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
 
 def oneTs(name, AeHdr1='gzip, deflate, sdch, br'):
     global waitForServer
