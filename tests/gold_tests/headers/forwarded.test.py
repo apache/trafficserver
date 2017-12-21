@@ -159,11 +159,8 @@ ts.Disk.remap_config.AddLine(
 
 # Ask the OS if the port is ready for connect()
 #
-
-
-def CheckPort(Port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
-
+def CheckPort(port):
+    return lambda: 0 == subprocess.call('lsof -iTCP:{} -sTCP:LISTEN'.format(port), shell=True, stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb'))
 
 # Basic HTTP 1.1 -- No Forwarded by default
 tr = Test.AddTestRun()

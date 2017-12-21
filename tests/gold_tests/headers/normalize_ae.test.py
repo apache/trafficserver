@@ -82,12 +82,10 @@ baselineTsSetup(ts)
 normalize_ae_log_id = Test.Disk.File("normalize_ae.log")
 normalize_ae_log_id.Content = "normalize_ae.gold"
 
-# ask the os if the port is ready for connect()
+# Ask the os if the port is ready for connect()
 #
-
-
 def CheckPort(port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(port), shell=True)
+    return lambda: 0 == subprocess.call('lsof -iTCP:{} -sTCP:LISTEN'.format(port), shell=True, stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb'))
 
 # Try various Accept-Encoding header fields for a particular traffic server and host.
 
