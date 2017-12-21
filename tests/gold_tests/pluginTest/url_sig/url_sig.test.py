@@ -24,6 +24,7 @@ Test url_sig plugin
 
 Test.SkipUnless(
     Condition.HasATSFeature('TS_USE_TLS_ALPN'),
+    Condition.HasProgram("netstat", "netstat needs to be installed on system for this test to work")
 )
 
 # Skip if plugins not present.
