@@ -25,7 +25,7 @@
 // including: make directory (with parents), copy directory (recursively), remove directory (recursively)
 
 #include "ts/ink_error.h"
-
+#include "ts/I_Layout.h"
 #include "file_system.h"
 
 #include <iostream>
@@ -34,11 +34,11 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <ts/I_Layout.h>
 
 // global variables for copy function
 static std::string dst_root;
 static std::string src_root;
+static std::string remove_path;
 
 void
 append_slash(std::string &path)
@@ -121,6 +121,28 @@ remove_function(const char *path, const struct stat *s, int flag, struct FTW *f)
   return 0;
 }
 
+static int
+remove_inside_function(const char *path, const struct stat *s, int flag, struct FTW *f)
+{
+  std::string path_to_remove = path;
+  if (path_to_remove != remove_path) {
+    switch (flag) {
+    default:
+      if (remove(path) != 0) {
+        ink_error("unable to remove: %s", path);
+        return -1;
+      }
+      break;
+    case FTW_DP:
+      if (!remove_directory(path_to_remove)) {
+        ink_error("unable to remove: %s", path);
+        return -1;
+      }
+    }
+  }
+  return 0;
+}
+
 // remove directory recursively using nftw to iterate
 bool
 remove_directory(const std::string &dir)
@@ -128,6 +150,19 @@ remove_directory(const std::string &dir)
   std::string path = dir;
   remove_slash(path);
   if (nftw(path.c_str(), remove_function, OPEN_MAX_FILE, FTW_DEPTH))
+    return false;
+  else
+    return true;
+}
+
+// remove everything inside this directory
+bool
+remove_inside_directory(const std::string &dir)
+{
+  std::string path = dir;
+  remove_slash(path);
+  remove_path = path;
+  if (nftw(path.c_str(), remove_inside_function, OPEN_MAX_FILE, FTW_DEPTH))
     return false;
   else
     return true;
@@ -153,6 +188,12 @@ copy_function(const char *src_path, const struct stat *sb, int flag)
       ink_fatal("create directory failed during copy");
     break;
   case FTW_F:
+    // if the file already exist, overwrite it
+    if (exists(dst_path)) {
+      if (remove(dst_path.c_str())) {
+        ink_error("overwrite file falied during copy");
+      }
+    }
     // for files if bin executable mode, symlink
     if (sb->st_mode == BIN_MODE) {
       if (symlink(src_path, dst_path.c_str()) != 0) {

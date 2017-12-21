@@ -34,7 +34,7 @@ Need a yaml file in the sandbox with key value pairs of all directory locations 
 
 Directories needed in the yaml file:
 prefix, exec_prefix, includedir, localstatedir, bindir, logdir, mandir, sbindir, sysconfdir,
-datadir, libexecdir, libdir, runtimedir, infodir, cachedir.
+datadir, libexecdir, libdir, runtimedir, cachedir.
 */
 
 #include "ts/ink_error.h"
@@ -45,6 +45,8 @@ datadir, libexecdir, libdir, runtimedir, infodir, cachedir.
 #include <fstream>
 #include <set>
 #include <unistd.h>
+
+static std::string using_runroot = {};
 
 // the function for the checking of the yaml file in parent path
 // if found return the parent path containing the yaml file
@@ -106,7 +108,7 @@ runroot_handler(const char **argv, bool json)
     if (yaml_checkfile.good()) {
       if (!json)
         ink_notice("using command line path as RUNROOT");
-      setenv("USING_RUNROOT", path.c_str(), true);
+      using_runroot = path;
       return;
     } else {
       if (!json)
@@ -116,22 +118,70 @@ runroot_handler(const char **argv, bool json)
   // 2. argv provided invalid/no yaml file, then check env variable
   char *env_val = getenv("TS_RUNROOT");
   if ((env_val != nullptr) && is_directory(env_val)) {
-    setenv("USING_RUNROOT", env_val, true);
+    using_runroot = env_val;
     if (!json)
       ink_notice("using the environment variable TS_RUNROOT");
     return;
   }
   // 3. find parent path of bin/pwd to check
-  char cwd[MAX_CWD_LEN]      = {0};
+  char cwd[PATH_MAX]         = {0};
   char RealBinPath[PATH_MAX] = {0};
   if ((argv[0] != nullptr) && (getcwd(cwd, sizeof(cwd)) != nullptr) && (realpath(argv[0], RealBinPath) != nullptr)) {
     std::vector<std::string> TwoPath = {RealBinPath, cwd};
     for (auto it : TwoPath) {
       std::string path = check_parent_path(it);
       if (!path.empty()) {
-        setenv("USING_RUNROOT", path.c_str(), true);
+        using_runroot = path;
         return;
       }
     }
   }
+}
+
+// return a map of all path in runroot_path.yml
+std::unordered_map<std::string, std::string>
+runroot_map(std::string &yaml_path, std::string &prefix)
+{
+  std::ifstream file;
+  file.open(yaml_path);
+  if (!file.good()) {
+    ink_warning("Bad env path, continue with default value");
+    return std::unordered_map<std::string, std::string>{};
+  }
+
+  std::ifstream yamlfile(yaml_path);
+  std::unordered_map<std::string, std::string> runroot_map;
+  std::string str;
+  while (std::getline(yamlfile, str)) {
+    int pos = str.find(':');
+    runroot_map[str.substr(0, pos)] = str.substr(pos + 2);
+  }
+
+  // change it to absolute path in the map
+  for (auto it : runroot_map) {
+    if (it.second[0] != '/') {
+      runroot_map[it.first] = Layout::relative_to(prefix, it.second);
+    }
+  }
+  return runroot_map;
+}
+
+// check for the using of runroot
+// a map of all path will be returned
+// if we do not use runroot, a empty map will be returned.
+std::unordered_map<std::string, std::string>
+check_runroot()
+{
+  if (using_runroot.empty()) {
+    return std::unordered_map<std::string, std::string>{};
+  }
+
+  std::string env_path = using_runroot;
+  int len              = env_path.size();
+  if ((len + 1) > PATH_NAME_MAX) {
+    ink_fatal("TS_RUNROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
+  }
+  std::string yaml_path = Layout::relative_to(env_path, "runroot_path.yml");
+
+  return runroot_map(yaml_path, env_path);
 }

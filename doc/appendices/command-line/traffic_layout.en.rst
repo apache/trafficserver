@@ -33,51 +33,58 @@ is for the setup of traffic server runroot. It will create a runtime sandbox for
 traffic server to run under.
 
 #. Use :program:`traffic_layout` to create sandbox.
-#. Run any program use the sandbox with ``--run-root=/path/to/file`` or ``--run-root``.
+#. Run any program using the sandbox with ``--run-root=/path/to/file`` or ``--run-root``.
 
 How it works:
 --------------
 
-#. Create a sandbox directory for programs to run under
-#. Copy and symlink build time directories and files to sandbox, allowing users to modify freely.
-#. Emit a yaml file that defines layout structure for other programs to use.
+#. Create a sandbox directory for programs to run under.
+#. Copy and symlink build time directories and files to the sandbox, allowing users to modify freely.
+#. Emit a yaml file that defines layout structure for other programs to use (relative path).
 
 Options:
 =============
 
 #. Initialize the runroot: ::
 
-      traffic_layout --init /path/to/sandbox/
+      traffic_layout init (--path /path/to/sandbox/)
 
-   If no path is found, it will find :envvar:`TS_RUNROOT`.
+   Use the current working directory or specific path to create runroot.
 
 #. Remove the runroot: ::
 
-      traffic_layout --remove /path/to/sandbox/
+      traffic_layout remove --path /path/to/sandbox/
 
    Remove the sandbox we created(check yaml file).
-   If no path provided, it will find :envvar:`TS_RUNROOT`.
-   If :envvar:`TS_RUNROOT` not found, it will find bin executing path & current working directory.
+   If no path provided, it will check bin executing path and current working directory to clean.
 
-#. Force flag for creating: ::
+#. Use Force flag for creating: ::
 
-      traffic_runroot --force --init /path/to/sandbox
+      traffic_layout init --force (--path /path/to/sandbox)
+      traffic_layout remove --force --path /path/to/sandbox
 
-   Force create sandbox and overwrite existing directory
+   Force create sandbox and overwrite existing directory when directory is not empty or has a yaml file in it.
+   Force removing a directory when directory has no yaml file.
+
+#. Use absolute flag for creating: ::
+
+      traffic_layout init --absolute (--path /path/to/sandbox)
+
+   create sandbox and put directories in the yaml file with absolute path form.
 
 Usage for other programs:
 ==============================================
 
+Use command line path or use :envvar:`TS_RUNROOT`.
+If command line path and envvar are not found, program will try to find the current executing program bin path or current working directory to use as runroot if the yaml file is found. 
+For bin path and cwd, it can go one level up to the parent directory to find the yaml file. ::
 
-Use pass in path or use :envvar:`TS_RUNROOT`.
-If both not found, program will try to find bin path & current working directory. ::
-
-   trafficserver --run-root=/path/to/runroot
-   trafficserver --run-root
+   trafficserver --run-root=/path/to/runroot (use /path/to/runroot as runroot)
+   trafficserver --run-root                  (use $TS_RUNROOT as runroot)
 
 .. envvar:: TS_RUNROOT
 
-   Path to run root file.
+   The path to run root directory.
 
 Notes
 ==========
