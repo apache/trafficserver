@@ -26,15 +26,19 @@
 #include <algorithm>
 
 int
-QUICAckFrameCreator::update(QUICPacketNumber packet_number, bool acknowledgable)
+QUICAckFrameCreator::update(QUICPacketNumber packet_number, bool should_send)
 {
   if (this->_packet_numbers.size() == MAXIMUM_PACKET_COUNT) {
     return -1;
   }
 
   this->_packet_numbers.push_back(packet_number);
-  if (acknowledgable && !this->_can_send) {
+
+  if (!this->_can_send) {
     this->_can_send = true;
+  }
+  if (should_send) {
+    this->_should_send = true;
   }
 
   return 0;
@@ -47,6 +51,7 @@ QUICAckFrameCreator::create()
   if (this->_can_send) {
     ack_frame           = this->_create_ack_frame();
     this->_can_send     = false;
+    this->_should_send  = false;
     this->_packet_count = 0;
     this->_packet_numbers.clear();
   }
@@ -56,8 +61,11 @@ QUICAckFrameCreator::create()
 std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
 QUICAckFrameCreator::create_if_needed()
 {
-  // TODO What would be criteria?
-  return this->create();
+  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = QUICFrameFactory::create_null_ack_frame();
+  if (this->_should_send) {
+    ack_frame = this->create();
+  }
+  return ack_frame;
 }
 
 void

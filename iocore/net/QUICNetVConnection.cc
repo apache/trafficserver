@@ -279,20 +279,21 @@ QUICNetVConnection::push_packet(UDPPacket *packet)
 void
 QUICNetVConnection::_transmit_frame(QUICFrameUPtr frame)
 {
-  QUICConDebug("Frame Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
-
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
-  if (frame->type() == QUICFrameType::STREAM) {
-    QUICStreamFrame &stream_frame = static_cast<QUICStreamFrame &>(*frame);
-    // XXX: Stream 0 is exempt from the connection-level flow control window.
-    if (stream_frame.stream_id() == STREAM_ID_FOR_HANDSHAKE) {
-      this->_frame_send_queue.push(std::move(frame));
+  if (frame) {
+    QUICConDebug("Frame Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+    if (frame->type() == QUICFrameType::STREAM) {
+      QUICStreamFrame &stream_frame = static_cast<QUICStreamFrame &>(*frame);
+      // XXX: Stream 0 is exempt from the connection-level flow control window.
+      if (stream_frame.stream_id() == STREAM_ID_FOR_HANDSHAKE) {
+        this->_frame_send_queue.push(std::move(frame));
+      } else {
+        this->_stream_frame_send_queue.push(std::move(frame));
+      }
     } else {
-      this->_stream_frame_send_queue.push(std::move(frame));
+      this->_frame_send_queue.push(std::move(frame));
     }
-  } else {
-    this->_frame_send_queue.push(std::move(frame));
   }
 }
 
@@ -770,6 +771,16 @@ QUICNetVConnection::_packetize_frames()
 
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
+  QUICFrameUPtr ack_frame = QUICFrameFactory::create_null_ack_frame();
+  if (this->_frame_send_queue.size() || this->_stream_frame_send_queue.size()) {
+    ack_frame = this->_ack_frame_creator.create();
+  } else {
+    ack_frame = this->_ack_frame_creator.create_if_needed();
+  }
+  if (ack_frame != nullptr) {
+    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(ack_frame));
+  }
+
   while (this->_frame_send_queue.size() > 0) {
     frame = std::move(this->_frame_send_queue.front());
     this->_frame_send_queue.pop();
@@ -830,13 +841,9 @@ QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPac
   if (ret != 0) {
     return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
   }
-  // this->_local_flow_controller->forward_limit();
 
   this->_ack_frame_creator.update(packet_num, should_send_ack);
-  QUICFrameUPtr ack_frame = this->_ack_frame_creator.create_if_needed();
-  if (ack_frame != nullptr) {
-    this->transmit_frame(std::move(ack_frame));
-  }
+  static_cast<QUICConnection *>(this)->transmit_frame();
 
   return error;
 }

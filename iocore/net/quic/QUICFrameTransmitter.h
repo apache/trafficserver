@@ -33,6 +33,6 @@ public:
    *
    * This schedules QUIC_PACKET_WRITE_READY event.
    */
-  virtual void transmit_frame(QUICFrameUPtr frame)  = 0;
+  virtual void transmit_frame(QUICFrameUPtr frame = QUICFrameUPtr(nullptr, &QUICFrameDeleter::delete_null_frame)) = 0;
   virtual uint32_t maximum_stream_frame_data_size() = 0;
 };

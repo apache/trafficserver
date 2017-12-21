@@ -59,25 +59,24 @@ public:
    * All packet numbers ATS received need to be passed to this method.
    * Returns 0 if updated successfully.
    */
-  int update(QUICPacketNumber packet_number, bool acknowledgable);
+  int update(QUICPacketNumber packet_number, bool should_send);
 
   /*
    * Returns QUICAckFrame only if ACK frame is able to be sent.
    * Caller must send the ACK frame to the peer if it was returned.
-   * Usually you should use create_if_needed() instead, but you may want to
-   * call this when ATS receives PING frame.
    */
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create();
 
   /*
    * Returns QUICAckFrame only if ACK frame need to be sent,
-   * because sending an ACK frame per incoming ACK-able packet isn't sufficient.
+   * because sending an ACK only packet against an ACK only packet is prohibited.
    * Caller must send the ACK frame to the peer if it was returned.
    */
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create_if_needed();
 
 private:
-  bool _can_send = false;
+  bool _can_send    = false;
+  bool _should_send = false;
 
   QUICAckPacketNumbers _packet_numbers;
   uint16_t _packet_count = 0;
