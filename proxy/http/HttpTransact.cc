@@ -3465,13 +3465,6 @@ HttpTransact::handle_response_from_server(State *s)
     s->current.server->clear_connect_fail();
     handle_forward_server_connection_open(s);
     break;
-  case CONGEST_CONTROL_CONGESTED_ON_F:
-  case CONGEST_CONTROL_CONGESTED_ON_M:
-    TxnDebug("http_trans", "[handle_response_from_server] Error. congestion control -- congested.");
-    SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    s->current.server->set_connect_fail(EUSERS); // too many users
-    handle_server_connection_not_open(s);
-    break;
   case OPEN_RAW_ERROR:
   /* fall through */
   case CONNECTION_ERROR:
@@ -3495,9 +3488,6 @@ HttpTransact::handle_response_from_server(State *s)
     } else {
       // server not yet negative cached - use default number of retries
       max_connect_retries = s->txn_conf->connect_attempts_max_retries;
-    }
-    if (s->pCongestionEntry != nullptr) {
-      max_connect_retries = s->pCongestionEntry->connect_retries();
     }
 
     if (is_request_retryable(s) && s->current.attempts < max_connect_retries) {
@@ -7355,16 +7345,6 @@ HttpTransact::handle_server_died(State *s)
   // FIX: all the body types below need to be filled in //
   ////////////////////////////////////////////////////////
 
-  //
-  // congestion control
-  //
-  if (s->pCongestionEntry != nullptr) {
-    s->congestion_congested_or_failed = 1;
-    if (s->current.state != CONGEST_CONTROL_CONGESTED_ON_F && s->current.state != CONGEST_CONTROL_CONGESTED_ON_M) {
-      s->pCongestionEntry->failed_at(s->current.now);
-    }
-  }
-
   switch (s->current.state) {
   case CONNECTION_ALIVE: /* died while alive for unknown reason */
     ink_release_assert(s->hdr_info.response_error != NO_RESPONSE_HEADER_ERROR);
@@ -7409,26 +7389,6 @@ HttpTransact::handle_server_died(State *s)
     reason    = "Invalid HTTP Response";
     body_type = "response#bad_response";
     break;
-  case CONGEST_CONTROL_CONGESTED_ON_F:
-    status = HTTP_STATUS_SERVICE_UNAVAILABLE;
-    reason = "Origin server congested";
-    if (s->pCongestionEntry) {
-      body_type = s->pCongestionEntry->getErrorPage();
-    } else {
-      body_type = "congestion#retryAfter";
-    }
-    s->hdr_info.response_error = TOTAL_RESPONSE_ERROR_TYPES;
-    break;
-  case CONGEST_CONTROL_CONGESTED_ON_M:
-    status = HTTP_STATUS_SERVICE_UNAVAILABLE;
-    reason = "Too many users";
-    if (s->pCongestionEntry) {
-      body_type = s->pCongestionEntry->getErrorPage();
-    } else {
-      body_type = "congestion#retryAfter";
-    }
-    s->hdr_info.response_error = TOTAL_RESPONSE_ERROR_TYPES;
-    break;
   case STATE_UNDEFINED:
   case TRANSACTION_COMPLETE:
   default: /* unknown death */
@@ -7439,14 +7399,6 @@ HttpTransact::handle_server_died(State *s)
     break;
   }
 
-  if (s->pCongestionEntry && s->pCongestionEntry->F_congested() && status != HTTP_STATUS_SERVICE_UNAVAILABLE) {
-    s->pCongestionEntry->stat_inc_F();
-    CONGEST_SUM_GLOBAL_DYN_STAT(congested_on_F_stat, 1);
-    status                     = HTTP_STATUS_SERVICE_UNAVAILABLE;
-    reason                     = "Service Unavailable";
-    body_type                  = s->pCongestionEntry->getErrorPage();
-    s->hdr_info.response_error = TOTAL_RESPONSE_ERROR_TYPES;
-  }
   ////////////////////////////////////////////////////////
   // FIX: comment stuff above and below here, not clear //
   ////////////////////////////////////////////////////////
@@ -7901,15 +7853,13 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status_code, reason_phrase);
 
   if (status_code == HTTP_STATUS_SERVICE_UNAVAILABLE) {
-    if (s->pCongestionEntry != nullptr) {
-      int ret_tmp;
-      int retry_after = s->pCongestionEntry->client_retry_after();
+    int ret_tmp;
+    int retry_after = 0;
 
-      s->congestion_control_crat = retry_after;
-      if (s->hdr_info.client_response.value_get(MIME_FIELD_RETRY_AFTER, MIME_LEN_RETRY_AFTER, &ret_tmp) == nullptr) {
-        s->hdr_info.client_response.value_set_int(MIME_FIELD_RETRY_AFTER, MIME_LEN_RETRY_AFTER, retry_after);
-      }
+    if (s->hdr_info.client_response.value_get(MIME_FIELD_RETRY_AFTER, MIME_LEN_RETRY_AFTER, &ret_tmp) != nullptr) {
+      retry_after = ret_tmp;
     }
+    s->congestion_control_crat = retry_after;
   }
 
   // Add a bunch of headers to make sure that caches between

@@ -399,7 +399,6 @@ protected:
   int state_auth_callback(int event, void *data);
   int state_add_to_list(int event, void *data);
   int state_remove_from_list(int event, void *data);
-  int state_congestion_control_lookup(int event, void *data);
 
   // Y! ebalsa: remap handlers
   int state_remap_request(int event, void *data);
@@ -455,8 +454,6 @@ protected:
 #ifdef PROXY_DRAIN
   void do_drain_request_body();
 #endif
-
-  bool do_congestion_control_lookup();
 
   virtual void handle_api_return();
   void handle_server_setup_error(int event, void *data);

@@ -88,7 +88,6 @@ extern "C" int plock(int);
 #include "Plugin.h"
 #include "DiagsConfig.h"
 #include "CoreUtils.h"
-#include "congest/Congestion.h"
 #include "RemapProcessor.h"
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
@@ -1840,7 +1839,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     remapProcessor.start(num_remap_threads, stacksize);
     RecProcessStart();
     initCacheControl();
-    initCongestionControl();
     IpAllow::startup();
     ParentConfig::startup();
 #ifdef SPLIT_DNS
