@@ -639,38 +639,6 @@ To alter the limit on the number of alternates:
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
-.. _using-congestion-control:
-
-Using Congestion Control
-========================
-
-The *Congestion Control* option enables you to configure Traffic
-Server to stop forwarding HTTP requests to origin servers when they
-become congested. Traffic Server then sends the client a message to
-retry the congested origin server later.
-
-To enable this option:
-
-#. Set :ts:cv:`proxy.config.http.congestion_control.enabled` to ``1`` in
-   :file:`records.config`. ::
-
-        CONFIG proxy.config.http.congestion_control.enabled INT 1
-
-#. Create rules in :file:`congestion.config` to specify:
-
-   -  Which origin servers Traffic Server tracks for congestion.
-
-   -  The timeouts Traffic Server uses, depending on whether a server is
-      congested.
-
-   -  The page Traffic Server sends to the client when a server becomes
-      congested.
-
-   -  Whether Traffic Server tracks the origin servers by IP address or by
-      hostname.
-
-#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
-
 .. _transaction-buffering-control:
 
 Using Transaction Buffering Control

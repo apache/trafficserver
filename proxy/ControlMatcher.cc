@@ -45,7 +45,6 @@
 #include "P_Net.h"
 #include "P_Cache.h"
 #include "P_SplitDNS.h"
-#include "congest/Congestion.h"
 
 /****************************************************************
  *   Place all template instantiations at the bottom of the file
@@ -1004,10 +1003,3 @@ template class HostMatcher<CacheControlRecord, CacheControlResult>;
 template class RegexMatcher<CacheControlRecord, CacheControlResult>;
 template class UrlMatcher<CacheControlRecord, CacheControlResult>;
 template class IpMatcher<CacheControlRecord, CacheControlResult>;
-
-template class ControlMatcher<CongestionControlRecord, CongestionControlRule>;
-template class HostMatcher<CongestionControlRecord, CongestionControlRule>;
-template class HostRegexMatcher<CongestionControlRecord, CongestionControlRule>;
-template class RegexMatcher<CongestionControlRecord, CongestionControlRule>;
-template class UrlMatcher<CongestionControlRecord, CongestionControlRule>;
-template class IpMatcher<CongestionControlRecord, CongestionControlRule>;

@@ -46,7 +46,6 @@
 #include "IPAllow.h"
 //#include "I_Auth.h"
 //#include "HttpAuthParams.h"
-#include "congest/Congestion.h"
 #include "ts/I_Layout.h"
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
@@ -1090,10 +1089,6 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 
   case NET_EVENT_OPEN:
 
-    if (t_state.pCongestionEntry != nullptr) {
-      t_state.pCongestionEntry->connection_opened();
-      t_state.congestion_connection_opened = 1;
-    }
     // Record the VC in our table
     server_entry     = vc_table.new_entry();
     server_entry->vc = netvc = (NetVConnection *)data;
@@ -1106,21 +1101,9 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 
   case VC_EVENT_ERROR:
   case NET_EVENT_OPEN_FAILED:
-    if (t_state.pCongestionEntry != nullptr) {
-      t_state.current.state = HttpTransact::CONNECTION_ERROR;
-      call_transact_and_set_next_state(HttpTransact::HandleResponse);
-      return 0;
-    } else {
-      t_state.current.state = HttpTransact::OPEN_RAW_ERROR;
-      // use this value just to get around other values
-      t_state.hdr_info.response_error = HttpTransact::STATUS_CODE_SERVER_ERROR;
-    }
-    break;
-  case CONGESTION_EVENT_CONGESTED_ON_F:
-    t_state.current.state = HttpTransact::CONGEST_CONTROL_CONGESTED_ON_F;
-    break;
-  case CONGESTION_EVENT_CONGESTED_ON_M:
-    t_state.current.state = HttpTransact::CONGEST_CONTROL_CONGESTED_ON_M;
+    t_state.current.state = HttpTransact::OPEN_RAW_ERROR;
+    // use this value just to get around other values
+    t_state.hdr_info.response_error = HttpTransact::STATUS_CODE_SERVER_ERROR;
     break;
 
   default:
@@ -1805,14 +1788,6 @@ HttpSM::state_http_server_open(int event, void *data)
     } else {
       call_transact_and_set_next_state(HttpTransact::HandleResponse);
     }
-    return 0;
-  case CONGESTION_EVENT_CONGESTED_ON_F:
-    t_state.current.state = HttpTransact::CONGEST_CONTROL_CONGESTED_ON_F;
-    call_transact_and_set_next_state(HttpTransact::HandleResponse);
-    return 0;
-  case CONGESTION_EVENT_CONGESTED_ON_M:
-    t_state.current.state = HttpTransact::CONGEST_CONTROL_CONGESTED_ON_M;
-    call_transact_and_set_next_state(HttpTransact::HandleResponse);
     return 0;
 
   default:
@@ -4735,23 +4710,6 @@ HttpSM::do_http_server_open(bool raw)
     }
   }
 
-  // Congestion Check
-  if (t_state.pCongestionEntry != nullptr) {
-    if (t_state.pCongestionEntry->F_congested() &&
-        (!t_state.pCongestionEntry->proxy_retry(milestones[TS_MILESTONE_SERVER_CONNECT]))) {
-      t_state.congestion_congested_or_failed = 1;
-      t_state.pCongestionEntry->stat_inc_F();
-      CONGEST_INCREMENT_DYN_STAT(congested_on_F_stat);
-      handleEvent(CONGESTION_EVENT_CONGESTED_ON_F, nullptr);
-      return;
-    } else if (t_state.pCongestionEntry->M_congested(ink_hrtime_to_sec(milestones[TS_MILESTONE_SERVER_CONNECT]))) {
-      t_state.pCongestionEntry->stat_inc_M();
-      t_state.congestion_congested_or_failed = 1;
-      CONGEST_INCREMENT_DYN_STAT(congested_on_M_stat);
-      handleEvent(CONGESTION_EVENT_CONGESTED_ON_M, nullptr);
-      return;
-    }
-  }
   // If this is not a raw connection, we try to get a session from the
   //  shared session pool.  Raw connections are for SSLs tunnel and
   //  require a new connection
@@ -5028,8 +4986,6 @@ HttpSM::do_http_server_open(bool raw)
       connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
     } else if (t_state.current.server == &t_state.parent_info) {
       connect_timeout = t_state.txn_conf->parent_connect_timeout;
-    } else if (t_state.pCongestionEntry != nullptr) {
-      connect_timeout = t_state.pCongestionEntry->connect_timeout();
     } else {
       connect_timeout = t_state.txn_conf->connect_attempts_timeout;
     }
@@ -5370,13 +5326,6 @@ HttpSM::handle_http_server_open()
       vc->options.packet_tos             = t_state.txn_conf->sock_packet_tos_out;
       vc->options.clientVerificationFlag = t_state.txn_conf->ssl_client_verify_server;
       vc->apply_options();
-    }
-  }
-
-  if (t_state.pCongestionEntry != nullptr) {
-    if (t_state.congestion_connection_opened == 0) {
-      t_state.congestion_connection_opened = 1;
-      t_state.pCongestionEntry->connection_opened();
     }
   }
 
@@ -5923,9 +5872,6 @@ HttpSM::attach_server_session(HttpServerSession *s)
     connect_timeout = t_state.txn_conf->parent_connect_timeout;
   } else {
     connect_timeout = t_state.txn_conf->connect_attempts_timeout;
-  }
-  if (t_state.pCongestionEntry != nullptr) {
-    connect_timeout = t_state.pCongestionEntry->connect_timeout();
   }
 
   if (t_state.api_txn_connect_timeout_value != -1) {
@@ -6850,12 +6796,6 @@ HttpSM::kill_this()
       plugin_tunnel = nullptr;
     }
 
-    if (t_state.pCongestionEntry != nullptr) {
-      if (t_state.congestion_congested_or_failed != 1) {
-        t_state.pCongestionEntry->go_alive();
-      }
-    }
-
     ink_assert(pending_action == nullptr);
     ink_release_assert(vc_table.is_table_clear() == true);
     ink_release_assert(tunnel.is_tunnel_active() == false);
@@ -7334,13 +7274,6 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN: {
-    if (congestionControlEnabled && (t_state.congest_saved_next_action == HttpTransact::SM_ACTION_UNDEFINED)) {
-      t_state.congest_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
-      HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_congestion_control_lookup);
-      if (!do_congestion_control_lookup()) {
-        break;
-      }
-    }
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_http_server_open);
 
     // We need to close the previous attempt
@@ -7530,14 +7463,6 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN: {
-    if (congestionControlEnabled && (t_state.congest_saved_next_action == HttpTransact::SM_ACTION_UNDEFINED)) {
-      t_state.congest_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN;
-      HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_congestion_control_lookup);
-      if (!do_congestion_control_lookup()) {
-        break;
-      }
-    }
-
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_raw_http_server_open);
 
     ink_assert(server_entry == nullptr);
@@ -7618,43 +7543,6 @@ HttpSM::set_next_state()
 void
 clear_http_handler_times()
 {
-}
-
-bool
-HttpSM::do_congestion_control_lookup()
-{
-  ink_assert(pending_action == nullptr);
-
-  Action *congestion_control_action_handle = get_congest_entry(this, &t_state.request_data, &t_state.pCongestionEntry);
-  if (congestion_control_action_handle != ACTION_RESULT_DONE) {
-    pending_action = congestion_control_action_handle;
-    return false;
-  }
-
-  return true;
-}
-
-int
-HttpSM::state_congestion_control_lookup(int event, void *data)
-{
-  STATE_ENTER(&HttpSM::state_congestion_control_lookup, event);
-  if (event == CONGESTION_EVENT_CONTROL_LOOKUP_DONE) {
-    pending_action                = nullptr;
-    t_state.next_action           = t_state.congest_saved_next_action;
-    t_state.transact_return_point = nullptr;
-    set_next_state();
-  } else {
-    if (pending_action != nullptr) {
-      pending_action->cancel();
-      pending_action = nullptr;
-    }
-    if (t_state.congest_saved_next_action == HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN) {
-      return state_http_server_open(event, data);
-    } else if (t_state.congest_saved_next_action == HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN) {
-      return state_raw_http_server_open(event, data);
-    }
-  }
-  return 0;
 }
 
 // YTS Team, yamsat Plugin

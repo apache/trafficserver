@@ -26,7 +26,6 @@ Configuration Files
    :hidden:
 
    cache.config.en
-   congestion.config.en
    hosting.config.en
    ip_allow.config.en
    log_hosts.config.en
@@ -46,10 +45,6 @@ Configuration Files
 :doc:`cache.config.en`
    Defines if, how, and for what durations |TS| caches objects, based on
    destinations, clients, URL components, and more.
-
-:doc:`congestion.config.en`
-   Defines network conditions under which clients will receive retry messages
-   instead of |TS| contacting origin servers.
 
 :doc:`hosting.config.en`
    Allows |TS| administrators to assign cache volumes to specific origin
