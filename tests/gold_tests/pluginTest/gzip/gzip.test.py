@@ -80,7 +80,7 @@ def oneTs(name, AeHdr1='gzip, deflate, sdch, br'):
     ts.Disk.remap_config.AddLine(
         'map http://ae-2/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
         ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2' +
-        ' @plugin=gzip.so @pparam={}/gzip.config'.format(Test.TestDirectory)
+        ' @plugin=gzip.so @pparam={}/gzip2.config'.format(Test.TestDirectory)
     )
 
     def curl(idx, encodingList):

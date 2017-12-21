@@ -25,7 +25,6 @@
 #include <fstream>
 #include <algorithm>
 #include <vector>
-#include <sstream>
 #include <fnmatch.h>
 
 namespace Gzip
@@ -63,28 +62,38 @@ trim_if(string &s, int (*fp)(int))
   rtrim_if(s, fp);
 }
 
-vector<string>
-tokenize(const string &s, int (*fp)(int))
+string
+extractFirstToken(string &s, int (*fp)(int))
 {
-  vector<string> r;
-  string tmp;
+  int startTok{-1}, endTok{-1}, idx{0};
 
-  for (char i : s) {
-    if (fp(i)) {
-      if (tmp.size()) {
-        r.push_back(tmp);
-        tmp = "";
+  for (;; ++idx) {
+    if (idx == int(s.length())) {
+      if (endTok < 0) {
+        endTok = idx;
       }
-    } else {
-      tmp += i;
+      break;
+    } else if (fp(s[idx])) {
+      if ((startTok >= 0) and (endTok < 0)) {
+        endTok = idx;
+      }
+    } else if (endTok > 0) {
+      break;
+    } else if (startTok < 0) {
+      startTok = idx;
     }
   }
 
-  if (tmp.size()) {
-    r.push_back(tmp);
+  string tmp;
+  if (startTok >= 0) {
+    tmp = string(s, startTok, endTok - startTok);
   }
 
-  return r;
+  if (idx > 0) {
+    s = string(s, idx, s.length() - idx);
+  }
+
+  return tmp;
 }
 
 enum ParserState {
@@ -95,7 +104,6 @@ enum ParserState {
   kParseCache,
   kParseDisallow,
   kParseFlush,
-  kParseAlgorithms,
   kParseAllow
 };
 
@@ -207,22 +215,29 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
   return is_match;
 }
 
-void
-HostConfiguration::add_compression_algorithms(const string &algorithms)
+int
+isCommaOrSpace(int ch)
 {
-  istringstream compress_algo(algorithms);
-  string token;
+  return (ch == ',') or isspace(ch);
+}
+
+void
+HostConfiguration::add_compression_algorithms(string &line)
+{
   compression_algorithms_ = ALGORITHM_DEFAULT; // remove the default gzip.
-  while (getline(compress_algo, token, ',')) {
-    if (token.find("br") != string::npos) {
+  for (;;) {
+    string token = extractFirstToken(line, isCommaOrSpace);
+    if (token.empty()) {
+      break;
+    } else if (token == "br") {
 #ifdef HAVE_BROTLI_ENCODE_H
       compression_algorithms_ |= ALGORITHM_BROTLI;
 #else
       error("supported-algorithms: brotli support not compiled in.");
 #endif
-    } else if (token.find("gzip") != string::npos) {
+    } else if (token == "gzip") {
       compression_algorithms_ |= ALGORITHM_GZIP;
-    } else if (token.find("deflate") != string::npos) {
+    } else if (token == "deflate") {
       compression_algorithms_ |= ALGORITHM_DEFLATE;
     } else {
       error("Unknown compression type. Supported compression-algorithms <br,gzip,deflate>.");
@@ -280,18 +295,15 @@ Configuration::Parse(const char *path)
     ++lineno;
 
     trim_if(line, isspace);
-    if (line.size() == 0) {
+    if (line.empty()) {
       continue;
     }
 
-    vector<string> v = tokenize(line, isspace);
+    for (;;) {
+      string token = extractFirstToken(line, isspace);
 
-    for (auto token : v) {
-      trim_if(token, isspace);
-
-      // should not happen
-      if (!token.size()) {
-        continue;
+      if (token.empty()) {
+        break;
       }
 
       // once a comment is encountered, we are done processing the line
@@ -318,7 +330,8 @@ Configuration::Parse(const char *path)
         } else if (token == "flush") {
           state = kParseFlush;
         } else if (token == "supported-algorithms") {
-          state = kParseAlgorithms;
+          current_host_configuration->add_compression_algorithms(line);
+          state = kParseStart;
         } else if (token == "allow") {
           state = kParseAllow;
         } else {
@@ -347,10 +360,6 @@ Configuration::Parse(const char *path)
         break;
       case kParseFlush:
         current_host_configuration->set_flush(token == "true");
-        state = kParseStart;
-        break;
-      case kParseAlgorithms:
-        current_host_configuration->add_compression_algorithms(token);
         state = kParseStart;
         break;
       case kParseAllow:
