@@ -32,7 +32,9 @@ traffic_layout_SOURCES = \
   file_system.cc \
   file_system.h \
   engine.cc \
-  engine.h
+  engine.h \
+  info.cc \
+  info.h
 
 traffic_layout_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \

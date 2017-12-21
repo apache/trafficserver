@@ -44,12 +44,6 @@ struct Layout {
   ~Layout();
 
   /**
-   return use runroot or not
-
-  */
-  bool check_runroot();
-
-  /**
    Return file path relative to Layout->prefix
 
   */
@@ -103,7 +97,6 @@ struct Layout {
   std::string runtimedir;
   std::string logdir;
   std::string mandir;
-  std::string infodir;
   std::string cachedir;
 };
 

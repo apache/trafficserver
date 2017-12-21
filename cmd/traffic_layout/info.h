@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file prefix
+  A brief file description
 
   @section license License
 
@@ -19,22 +19,10 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-*/
+ */
 
-// runroot handler for TS_RUNROOT
-// detailed information in runroot.cc
+// header file for traffic layout info
 
-#pragma once
+void produce_features(bool json);
 
-#include <string>
-#include <unordered_map>
-
-std::string check_parent_path(const std::string &path, bool json = false);
-
-void runroot_handler(const char **argv, bool json = false);
-
-// get runroot map from yaml path and prefix
-std::unordered_map<std::string, std::string> runroot_map(std::string &yaml_path, std::string &prefix);
-
-// help check runroot for layout
-std::unordered_map<std::string, std::string> check_runroot();
+void produce_layout(bool json);
