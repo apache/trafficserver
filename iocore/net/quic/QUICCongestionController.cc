@@ -51,17 +51,22 @@ QUICCongestionController::handle_frame(std::shared_ptr<const QUICFrame> frame)
 }
 
 void
-QUICCongestionController::on_packet_sent()
+QUICCongestionController::on_packet_sent(size_t sent_bytes)
 {
 }
 
 void
-QUICCongestionController::on_packet_acked()
+QUICCongestionController::on_packet_acked(QUICPacketNumber acked_packet_number)
 {
 }
 
 void
 QUICCongestionController::on_packets_lost(std::set<QUICPacketNumber> packets)
+{
+}
+
+void
+QUICCongestionController::on_retransmission_timeout_verified()
 {
 }
 

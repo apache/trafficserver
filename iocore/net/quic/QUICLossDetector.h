@@ -57,7 +57,7 @@ private:
   struct PacketInfo {
     QUICPacketNumber packet_number;
     ink_hrtime time;
-    bool retransmittable;
+    bool ack_only;
     bool handshake;
     size_t bytes;
     QUICPacketUPtr packet;
@@ -67,35 +67,32 @@ private:
 
   // TODO QUICCongestionController *cc = nullptr;
 
-  // 3.2.1.  Constants of interest
-  uint32_t _MAX_TLPS               = 2;
-  uint32_t _REORDERING_THRESHOLD   = 3;
-  double _TIME_REORDERING_FRACTION = 1 / 8;
-  ink_hrtime _MIN_TLP_TIMEOUT      = HRTIME_MSECONDS(10);
-  ink_hrtime _MIN_RTO_TIMEOUT      = HRTIME_MSECONDS(200);
-  ink_hrtime _DELAYED_ACK_TIMEOUT  = HRTIME_MSECONDS(25);
-  ink_hrtime _DEFAULT_INITIAL_RTT  = HRTIME_MSECONDS(100);
-
-  // 3.2.2.  Variables of interest
+  // 3.4.2.  Variables of interest (draft-08)
+  // Keep the order as the same as the spec so that we can see the difference easily.
   Action *_loss_detection_alarm        = nullptr;
   uint32_t _handshake_count            = 0;
   uint32_t _tlp_count                  = 0;
   uint32_t _rto_count                  = 0;
   uint32_t _largest_sent_before_rto    = 0;
+  ink_hrtime _time_of_last_sent_packet = 0;
   uint32_t _largest_sent_packet        = 0;
   uint32_t _largest_acked_packet       = 0;
-  ink_hrtime _time_of_last_sent_packet = 0;
   ink_hrtime _latest_rtt               = 0;
   ink_hrtime _smoothed_rtt             = 0;
   ink_hrtime _rttvar                   = 0;
+  ink_hrtime _min_rtt                  = 0;
+  ink_hrtime _max_ack_delay            = 0;
   uint32_t _reordering_threshold;
   double _time_reordering_fraction;
   ink_hrtime _loss_time = 0;
   std::map<QUICPacketNumber, std::unique_ptr<PacketInfo>> _sent_packets;
 
+  // These are not defined on the spec but expected to be count
+  // These counter have to be updated when inserting / erasing packets from _sent_packets with following functions.
   std::atomic<uint32_t> _handshake_outstanding;
   std::atomic<uint32_t> _retransmittable_outstanding;
-  void _decrement_packet_count(QUICPacketNumber packet_number);
+  void _add_to_sent_packet_list(QUICPacketNumber packet_number, std::unique_ptr<PacketInfo> packet_info);
+  void _remove_from_sent_packet_list(QUICPacketNumber packet_number);
 
   /*
    * Because this alarm will be reset on every packet transmission, to reduce number of events,
@@ -103,11 +100,11 @@ private:
    */
   ink_hrtime _loss_detection_alarm_at = 0;
 
-  void _on_packet_sent(QUICPacketNumber packet_number, bool is_retransmittable, bool is_handshake, size_t sent_bytes,
+  void _on_packet_sent(QUICPacketNumber packet_number, bool is_ack_only, bool is_handshake, size_t sent_bytes,
                        QUICPacketUPtr packet);
   void _on_ack_received(const std::shared_ptr<const QUICAckFrame> &ack_frame);
   void _on_packet_acked(QUICPacketNumber acked_packet_number);
-  void _update_rtt(ink_hrtime latest_rtt);
+  void _update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay, QUICPacketNumber largest_acked);
   void _detect_lost_packets(QUICPacketNumber largest_acked);
   void _set_loss_detection_alarm();
   void _on_loss_detection_alarm();

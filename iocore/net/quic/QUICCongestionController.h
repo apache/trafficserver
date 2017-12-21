@@ -35,10 +35,11 @@ public:
   virtual std::vector<QUICFrameType> interests() override;
   virtual QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame>) override;
 
-  void on_packet_sent();
-  void on_packet_acked();
+  void on_packet_sent(size_t sent_bytes);
+  void on_packet_acked(QUICPacketNumber acked_packet_number);
   virtual void on_packets_lost(std::set<QUICPacketNumber> packets);
   void on_rto_verified();
+  void on_retransmission_timeout_verified();
 
 private:
 };
