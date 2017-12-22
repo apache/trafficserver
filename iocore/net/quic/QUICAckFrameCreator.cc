@@ -97,7 +97,7 @@ QUICAckFrameCreator::_create_ack_frame()
     if (ack_frame) {
       ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1});
     } else {
-      uint16_t delay = (Thread::get_hrtime() - this->_packet_numbers.largest_ack_received_time()) / 1000; // TODO Milliseconds?
+      uint64_t delay = this->_calculate_delay();
       ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1);
     }
 
@@ -109,10 +109,20 @@ QUICAckFrameCreator::_create_ack_frame()
   if (ack_frame) {
     ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1});
   } else {
-    uint16_t delay = (Thread::get_hrtime() - this->_packet_numbers.largest_ack_received_time()) / 1000; // TODO Milliseconds?
+    uint64_t delay = this->_calculate_delay();
     ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1);
   }
   return ack_frame;
+}
+
+uint64_t
+QUICAckFrameCreator::_calculate_delay()
+{
+  // Ack delay is in microseconds and scaled
+  uint64_t delay = (Thread::get_hrtime() - this->_packet_numbers.largest_ack_received_time()) / 1000;
+  // FXIME ack delay exponent has to be read from transport parameters
+  uint8_t ack_delay_exponent = 3;
+  return delay >> ack_delay_exponent;
 }
 
 void

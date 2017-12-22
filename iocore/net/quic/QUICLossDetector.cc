@@ -164,8 +164,11 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
   auto pi = this->_sent_packets.find(ack_frame->largest_acknowledged());
   if (pi != this->_sent_packets.end()) {
     this->_latest_rtt = Thread::get_hrtime() - pi->second->time;
-    // _latest_rtt is nanosecond but ack_frame->ack_delay is millisecond
-    this->_update_rtt(this->_latest_rtt, HRTIME_MSECONDS(ack_frame->ack_delay()), ack_frame->largest_acknowledged());
+    // _latest_rtt is nanosecond but ack_frame->ack_delay is microsecond and scaled
+    // FIXME ack delay exponent has to be read from transport parameters
+    uint8_t ack_delay_exponent = 3;
+    ink_hrtime delay           = HRTIME_USECONDS(ack_frame->ack_delay() << ack_delay_exponent);
+    this->_update_rtt(this->_latest_rtt, delay, ack_frame->largest_acknowledged());
   }
 
   QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),

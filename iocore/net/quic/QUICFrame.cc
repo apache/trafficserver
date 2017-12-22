@@ -313,7 +313,7 @@ QUICAckFrame::QUICAckFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len)
   this->reset(buf, len);
 }
 
-QUICAckFrame::QUICAckFrame(QUICPacketNumber largest_acknowledged, uint16_t ack_delay, uint64_t first_ack_block_length)
+QUICAckFrame::QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block_length)
 {
   this->_largest_acknowledged = largest_acknowledged;
   this->_ack_delay            = ack_delay;

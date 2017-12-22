@@ -36,7 +36,7 @@ class QUICFrame
 public:
   QUICFrame(const uint8_t *buf, size_t len) : _buf(buf), _len(len){};
   virtual QUICFrameType type() const;
-  virtual size_t size() const                         = 0;
+  virtual size_t size() const = 0;
   virtual void store(uint8_t *buf, size_t *len) const = 0;
   virtual void reset(const uint8_t *buf, size_t len);
   static QUICFrameType type(const uint8_t *buf);
@@ -724,7 +724,7 @@ public:
    * need to ack.
    */
   static std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create_ack_frame(QUICPacketNumber largest_acknowledged,
-                                                                              uint16_t ack_delay, uint64_t first_ack_block_length);
+                                                                              uint64_t ack_delay, uint64_t first_ack_block_length);
   /*
    * Creates a CONNECTION_CLOSE frame.
    */

@@ -83,4 +83,5 @@ private:
 
   void _sort_packet_numbers();
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _create_ack_frame();
+  uint64_t _calculate_delay();
 };
