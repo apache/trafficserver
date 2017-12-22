@@ -200,6 +200,30 @@ QUICTransportParameters::getAsBytes(QUICTransportParameterId tpid, uint16_t &len
   return nullptr;
 }
 
+uint8_t
+QUICTransportParameters::getAsUInt8(QUICTransportParameterId tpid) const
+{
+  uint16_t len         = 0;
+  const uint8_t *value = this->getAsBytes(tpid, len);
+  if (value) {
+    return QUICTypeUtil::read_nbytes_as_uint(value, 1);
+  } else {
+    return 0;
+  }
+}
+
+uint16_t
+QUICTransportParameters::getAsUInt16(QUICTransportParameterId tpid) const
+{
+  uint16_t len         = 0;
+  const uint8_t *value = this->getAsBytes(tpid, len);
+  if (value) {
+    return QUICTypeUtil::read_nbytes_as_uint(value, 2);
+  } else {
+    return 0;
+  }
+}
+
 uint32_t
 QUICTransportParameters::getAsUInt32(QUICTransportParameterId tpid) const
 {

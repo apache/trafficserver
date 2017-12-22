@@ -75,6 +75,8 @@ public:
   bool is_valid() const;
 
   const uint8_t *getAsBytes(QUICTransportParameterId id, uint16_t &len) const;
+  uint8_t getAsUInt8(QUICTransportParameterId id) const;
+  uint32_t getAsUInt16(QUICTransportParameterId id) const;
   uint32_t getAsUInt32(QUICTransportParameterId id) const;
 
   void set(QUICTransportParameterId id, const uint8_t *value, uint16_t value_len);
