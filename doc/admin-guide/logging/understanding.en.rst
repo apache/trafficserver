@@ -131,7 +131,7 @@ The aggregating functions available are:
 =========== ===================================================================
 Function    Description
 =========== ===================================================================
-``AVERAGE`` Average (mean) of the given field's value from all events within
+``AVG``     Average (mean) of the given field's value from all events within
             the interval. May only be used on numeric fields.
 ``COUNT``   The total count of events which occurred within the interval. No
             field name is necessary (``COUNT(*)`` may be used instead).
