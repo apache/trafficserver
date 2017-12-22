@@ -22,11 +22,6 @@
  */
 
 #include "QUICFrameDispatcher.h"
-#include "QUICConnection.h"
-#include "QUICStreamManager.h"
-#include "QUICCongestionController.h"
-#include "QUICLossDetector.h"
-#include "QUICEvents.h"
 #include "QUICDebugNames.h"
 
 static constexpr char tag[] = "quic_frame_handler";

@@ -22,55 +22,63 @@
  */
 
 #include <ts/Diags.h>
-#include <QUICCongestionController.h>
+#include <QUICLossDetector.h>
 
-static constexpr char tag[] = "quic_congestion_controller";
+// 4.7.1.  Constants of interest
+constexpr static uint16_t DEFAULT_MSS         = 1460;
+constexpr static uint32_t INITIAL_WINDOW      = 10 * DEFAULT_MSS;
+constexpr static uint32_t MINIMUM_WINDOW      = 2 * DEFAULT_MSS;
+constexpr static double LOSS_REDUCTION_FACTOR = 0.5;
 
-std::vector<QUICFrameType>
-QUICCongestionController::interests()
+QUICCongestionController::QUICCongestionController()
 {
-  return {QUICFrameType::ACK, QUICFrameType::STREAM};
+  this->_congestion_window = INITIAL_WINDOW;
 }
 
-QUICErrorUPtr
-QUICCongestionController::handle_frame(std::shared_ptr<const QUICFrame> frame)
+void
+QUICCongestionController::on_packet_sent(size_t bytes_sent)
 {
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  this->_bytes_in_flight += bytes_sent;
+}
 
-  switch (frame->type()) {
-  case QUICFrameType::STREAM:
-  case QUICFrameType::ACK:
-    break;
-  default:
-    Debug(tag, "Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
-    ink_assert(false);
-    break;
+void
+QUICCongestionController::on_packet_acked(QUICPacketNumber acked_packet_number, size_t acked_packet_size)
+{
+  // Remove from bytes_in_flight.
+  this->_bytes_in_flight -= acked_packet_size;
+  if (acked_packet_number < this->_end_of_recovery) {
+    // Do not increase congestion window in recovery period.
+    return;
   }
-
-  return error;
+  if (this->_congestion_window < this->_ssthresh) {
+    // Slow start.
+    this->_congestion_window += acked_packet_size;
+  } else {
+    // Congestion avoidance.
+    this->_congestion_window += DEFAULT_MSS * acked_packet_size / this->_congestion_window;
+  }
 }
 
 void
-QUICCongestionController::on_packet_sent(size_t sent_bytes)
+QUICCongestionController::on_packets_lost(std::map<QUICPacketNumber, PacketInfo &> lost_packets)
 {
-}
-
-void
-QUICCongestionController::on_packet_acked(QUICPacketNumber acked_packet_number)
-{
-}
-
-void
-QUICCongestionController::on_packets_lost(std::set<QUICPacketNumber> packets)
-{
+  // Remove lost packets from bytes_in_flight.
+  for (auto &lost_packet : lost_packets) {
+    this->_bytes_in_flight -= lost_packet.second.bytes;
+  }
+  QUICPacketNumber largest_lost_packet = lost_packets.rbegin()->first;
+  // Start a new recovery epoch if the lost packet is larger
+  // than the end of the previous recovery epoch.
+  if (this->_end_of_recovery < largest_lost_packet) {
+    this->_end_of_recovery = largest_lost_packet;
+    this->_congestion_window *= LOSS_REDUCTION_FACTOR;
+    this->_congestion_window = std::max(this->_congestion_window, MINIMUM_WINDOW);
+    this->_ssthresh          = this->_congestion_window;
+  }
 }
 
 void
 QUICCongestionController::on_retransmission_timeout_verified()
 {
-}
-
-void
-QUICCongestionController::on_rto_verified()
-{
+  this->_congestion_window = MINIMUM_WINDOW;
 }

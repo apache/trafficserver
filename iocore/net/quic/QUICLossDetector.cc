@@ -169,7 +169,10 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
 
   // Find all newly acked packets.
   for (auto acked_packet_number : this->_determine_newly_acked_packets(*ack_frame)) {
-    this->_on_packet_acked(acked_packet_number);
+    auto pi = this->_sent_packets.find(acked_packet_number);
+    if (pi != this->_sent_packets.end()) {
+      this->_on_packet_acked(pi->first, pi->second->bytes);
+    }
   }
 
   QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
@@ -208,11 +211,11 @@ QUICLossDetector::_update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay, QUICP
 }
 
 void
-QUICLossDetector::_on_packet_acked(QUICPacketNumber acked_packet_number)
+QUICLossDetector::_on_packet_acked(QUICPacketNumber acked_packet_number, size_t acked_packet_size)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  QUICLDDebug("Packet number %" PRIu64 " has been acked", acked_packet_number);
-  this->_cc->on_packet_acked(acked_packet_number);
+  // QUICLDDebug("Packet number %" PRIu64 " has been acked", acked_packet_number);
+  this->_cc->on_packet_acked(acked_packet_number, acked_packet_size);
   // If a packet sent prior to RTO was acked, then the RTO
   // was spurious.  Otherwise, inform congestion control.
   if (this->_rto_count > 0 && acked_packet_number > this->_largest_sent_before_rto) {
@@ -309,7 +312,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   this->_loss_time = 0;
-  std::set<QUICPacketNumber> lost_packets;
+  std::map<QUICPacketNumber, PacketInfo &> lost_packets;
   double delay_until_lost = INFINITY;
 
   if (this->_time_loss_detection) {
@@ -326,9 +329,9 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
     ink_hrtime time_since_sent = Thread::get_hrtime() - unacked.second->time;
     uint64_t packet_delta      = largest_acked_packet_number - unacked.second->packet_number;
     if (time_since_sent > delay_until_lost) {
-      lost_packets.insert(unacked.first);
+      lost_packets.insert({unacked.first, *unacked.second});
     } else if (packet_delta > this->_reordering_threshold) {
-      lost_packets.insert(unacked.first);
+      lost_packets.insert({unacked.first, *unacked.second});
     } else if (this->_loss_time == 0 && delay_until_lost != INFINITY) {
       this->_loss_time = Thread::get_hrtime() + delay_until_lost - time_since_sent;
     }
@@ -338,8 +341,8 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
   // lets it decide whether to retransmit immediately.
   if (!lost_packets.empty()) {
     this->_cc->on_packets_lost(lost_packets);
-    for (auto packet_number : lost_packets) {
-      this->_remove_from_sent_packet_list(packet_number);
+    for (auto lost_packet : lost_packets) {
+      this->_remove_from_sent_packet_list(lost_packet.first);
     }
   }
 }

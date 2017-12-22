@@ -54,7 +54,6 @@
 #include "quic/QUICAckFrameCreator.h"
 #include "quic/QUICLossDetector.h"
 #include "quic/QUICStreamManager.h"
-#include "quic/QUICCongestionController.h"
 #include "quic/QUICApplicationMap.h"
 
 // These are included here because older OpenQUIC libraries don't have them.
