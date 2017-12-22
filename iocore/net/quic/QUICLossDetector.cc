@@ -123,6 +123,10 @@ QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
   bool is_handshake   = false;
   QUICPacketType type = packet->type();
 
+  if (type == QUICPacketType::VERSION_NEGOTIATION) {
+    return;
+  }
+
   if (type == QUICPacketType::INITIAL || type == QUICPacketType::HANDSHAKE) {
     is_handshake = true;
   }
@@ -130,7 +134,7 @@ QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
   QUICPacketNumber packet_number = packet->packet_number();
   bool is_ack_only               = !packet->is_retransmittable();
   size_t sent_bytes              = packet->size();
-  return this->_on_packet_sent(packet_number, is_ack_only, is_handshake, sent_bytes, std::move(packet));
+  this->_on_packet_sent(packet_number, is_ack_only, is_handshake, sent_bytes, std::move(packet));
 }
 
 void
