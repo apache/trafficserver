@@ -354,21 +354,31 @@ HQClientTransaction::_process_read_vio()
 
   IOBufferReader *client_vio_reader = this->_stream_io->get_read_buffer_reader();
   int64_t bytes_avail               = client_vio_reader->read_avail();
+  MIOBuffer *writer                 = this->_read_vio.get_writer();
 
-  // Copy only "GET /path/"
-  // Check CRLF or LF
-  int n = 2;
-  if (bytes_avail > 2 && client_vio_reader->start()[bytes_avail - 2] != '\r') {
-    n = 1;
+  if (!this->_client_req_header_complete) {
+    int n = 2;
+    // Check client request is complete or not
+    if (bytes_avail < 2 || client_vio_reader->start()[bytes_avail - 1] != '\n') {
+      return 0;
+    }
+    this->_client_req_header_complete = true;
+
+    // Check "CRLF" or "LF"
+    if (client_vio_reader->start()[bytes_avail - 2] != '\r') {
+      n = 1;
+    }
+
+    writer->write(client_vio_reader, bytes_avail - n);
+    client_vio_reader->consume(bytes_avail);
+
+    // FIXME: Get hostname from SNI?
+    const char version[] = " HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    writer->write(version, sizeof(version));
+  } else {
+    writer->write(client_vio_reader, bytes_avail);
+    client_vio_reader->consume(bytes_avail);
   }
-
-  MIOBuffer *writer = this->_read_vio.get_writer();
-  writer->write(client_vio_reader, bytes_avail - n);
-  client_vio_reader->consume(bytes_avail);
-
-  // FIXME: Get hostname from SNI?
-  const char version[] = " HTTP/1.1\r\nHost: localhost\r\n\r\n";
-  writer->write(version, sizeof(version));
 
   return bytes_avail;
 }

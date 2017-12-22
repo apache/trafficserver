@@ -74,4 +74,6 @@ private:
   VIO _write_vio;
   Event *_read_event  = nullptr;
   Event *_write_event = nullptr;
+
+  bool _client_req_header_complete = false;
 };
