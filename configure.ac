@@ -1104,8 +1104,20 @@ AC_CHECK_LIB([resolv],[__putlong],[AC_SUBST([LIBRESOLV],["-lresolv"])])
 # ncurses compile tests does not generate unused variable warnings.
 __saved_CFLAGS="$CFLAGS"
 TS_REMOVEFROM(CFLAGS, -Werror)
+
+dnl Red Hat 6 requires special flags for curses to work.
+if test -r /etc/system-release ; then
+  case `cat /etc/system-release` in
+    Red\ Hat*release\ 6.*)
+      TS_ADDTO(CFLAGS, [-Wl,--add-needed])
+      curses_ldflags="-Wl,--add-needed"
+    ;;
+  esac
+fi
+
 AX_WITH_CURSES
 CFLAGS="$__saved_CFLAGS"
+AC_SUBST([CURSES_LDFLAGS],[$curses_ldflags])
 
 #
 # Check for SSL presence and usability

@@ -317,32 +317,27 @@ void
 Http2Stream::do_io_close(int /* flags */)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  super::release(nullptr);
 
   if (!closed) {
-    if (parent && this->is_client_state_writeable()) {
-      // Make sure any trailing end of stream frames are sent
-      // Wee will be removed at send_data_frames or closing connection phase
-      Http2SendDataFrameResult result = static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
-      if (result == Http2SendDataFrameResult::NO_WINDOW) {
-        Http2StreamDebug("cancel closing");
-        return;
-      } else {
-        Http2StreamDebug("continue closing");
-      }
-    }
+    Http2StreamDebug("do_io_close");
 
     // When we get here, the SM has initiated the shutdown.  Either it received a WRITE_COMPLETE, or it is shutting down.  Any
     // remaining IO operations back to client should be abandoned.  The SM-side buffers backing these operations will be deleted
     // by the time this is called from transaction_done.
     closed = true;
 
+    if (parent && this->is_client_state_writeable()) {
+      // Make sure any trailing end of stream frames are sent
+      // Wee will be removed at send_data_frames or closing connection phase
+      static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
+    }
+
     clear_timers();
     clear_io_events();
 
     // Wait until transaction_done is called from HttpSM to signal that the TXN_CLOSE hook has been executed
   }
-
-  super::release(nullptr);
 }
 
 /*
@@ -541,8 +536,8 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   // WRITE_COMPLETE event
   SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
   int64_t total_added = 0;
-  if (write_vio.nbytes > 0 && write_vio.ndone < write_vio.nbytes) {
-    int64_t num_to_write = write_vio.nbytes - write_vio.ndone;
+  if (write_vio.nbytes > 0 && write_vio.ntodo() > 0) {
+    int64_t num_to_write = write_vio.ntodo();
     if (num_to_write > write_len) {
       num_to_write = write_len;
     }
@@ -567,21 +562,41 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     }
   }
 
+  IOBufferReader *response_reader = this->response_get_data_reader();
+  int64_t response_buffer_size    = response_reader->read_avail();
+  Http2StreamDebug("write_vio.nbytes=%" PRId64 ", write_vio.ndone=%" PRId64 ", buf_reader.read_avail=%" PRId64
+                   ", total_added=%" PRId64 ", response_buffer=%" PRId64,
+                   write_vio.nbytes, write_vio.ndone, buf_reader->read_avail(), total_added, response_buffer_size);
+
   bool is_done = false;
   this->response_process_data(is_done);
   if (total_added > 0 || is_done) {
-    write_vio.ndone += total_added;
-    int send_event = (write_vio.nbytes == write_vio.ndone || is_done) ? VC_EVENT_WRITE_COMPLETE : VC_EVENT_WRITE_READY;
+    int send_event = (write_vio.ntodo() == response_buffer_size || is_done) ? VC_EVENT_WRITE_COMPLETE : VC_EVENT_WRITE_READY;
 
     // Process the new data
     if (!this->response_header_done) {
       // Still parsing the response_header
       int bytes_used = 0;
       int state      = this->response_header.parse_resp(&http_parser, this->response_reader, &bytes_used, false);
-      // this->response_reader->consume(bytes_used);
+      // HTTPHdr::parse_resp() consumed the response_reader in above
+      write_vio.ndone += this->response_header.length_get();
+
       switch (state) {
       case PARSE_RESULT_DONE: {
         this->response_header_done = true;
+
+        // Schedule session shutdown if response header has "Connection: close"
+        MIMEField *field = this->response_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+        if (field) {
+          int len;
+          const char *value = field->value_get(&len);
+          if (memcmp(HTTP_VALUE_CLOSE, value, HTTP_LEN_CLOSE) == 0) {
+            SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+            if (parent->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
+              parent->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
+            }
+          }
+        }
 
         // Send the response header back
         parent->connection_state.send_headers_frame(this);
@@ -661,7 +676,6 @@ Http2Stream::send_response_body()
   if (Http2::stream_priority_enabled) {
     parent->connection_state.schedule_stream(this);
   } else {
-    // Send DATA frames directly
     parent->connection_state.send_data_frames(this);
   }
   inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;

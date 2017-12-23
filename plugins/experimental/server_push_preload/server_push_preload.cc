@@ -106,6 +106,9 @@ public:
             linkUrl.setHost(clientUrl.getHost());
             linkUrl.setScheme(clientUrl.getScheme());
           }
+          if (0 != clientUrl.getPort()) {
+            linkUrl.setPort(clientUrl.getPort());
+          }
           string lu = linkUrl.getUrlString();
           TSDebug(PLUGIN_NAME, "Push preloaded content: %s", lu.c_str());
           TSHttpTxnServerPush(txnp, lu.c_str(), lu.length());

@@ -331,8 +331,8 @@ protected:
   void remove_ua_entry();
 
 public:
-  ProxyClientTransaction *ua_session = nullptr;
-  BackgroundFill_t background_fill   = BACKGROUND_FILL_NONE;
+  ProxyClientTransaction *ua_txn   = nullptr;
+  BackgroundFill_t background_fill = BACKGROUND_FILL_NONE;
   // AuthHttpAdapter authAdapter;
   void set_http_schedule(Continuation *);
   int get_http_schedule(int event, void *data);
@@ -682,8 +682,7 @@ HttpSM::add_cache_sm()
 inline bool
 HttpSM::is_transparent_passthrough_allowed()
 {
-  return (t_state.client_info.is_transparent && ua_session->is_transparent_passthrough_allowed() &&
-          ua_session->get_transact_count() == 1);
+  return (t_state.client_info.is_transparent && ua_txn->is_transparent_passthrough_allowed() && ua_txn->get_transact_count() == 1);
 }
 
 inline int64_t

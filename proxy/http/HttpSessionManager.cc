@@ -264,7 +264,7 @@ HttpSessionManager::purge_keepalives()
 
 HSMresult_t
 HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockaddr const *ip, const char *hostname,
-                                    ProxyClientTransaction *ua_session, HttpSM *sm)
+                                    ProxyClientTransaction *ua_txn, HttpSM *sm)
 {
   HttpServerSession *to_return = nullptr;
   TSServerSessionSharingMatchType match_style =
@@ -276,9 +276,9 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
 
   // First check to see if there is a server session bound
   //   to the user agent session
-  to_return = ua_session->get_server_session();
+  to_return = ua_txn->get_server_session();
   if (to_return != nullptr) {
-    ua_session->attach_server_session(nullptr);
+    ua_txn->attach_server_session(nullptr);
 
     // Since the client session is reusing the same server session, it seems that the SNI should match
     // Will the client make requests to different hosts over the same SSL session? Though checking

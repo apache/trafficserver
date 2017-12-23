@@ -706,18 +706,18 @@ TSPluginInit(int argc, const char *argv[])
     TSDebug(PLUGIN_NAME, "Plugin registration succeeded");
   }
 
-  plugin_config = TSmalloc(sizeof(config_t));
-
-  plugin_config->troot                           = NULL;
-  plugin_config->troot_mutex                     = TSMutexCreate();
-  plugin_config->stale_if_error_override         = 0;
-  plugin_config->log_info.object                 = NULL;
-  plugin_config->log_info.all                    = false;
-  plugin_config->log_info.stale_if_error         = false;
-  plugin_config->log_info.stale_while_revalidate = false;
-  plugin_config->log_info.filename               = PLUGIN_NAME;
-
   if (argc > 1) {
+    plugin_config = TSmalloc(sizeof(config_t));
+
+    plugin_config->troot                           = NULL;
+    plugin_config->troot_mutex                     = TSMutexCreate();
+    plugin_config->stale_if_error_override         = 0;
+    plugin_config->log_info.object                 = NULL;
+    plugin_config->log_info.all                    = false;
+    plugin_config->log_info.stale_if_error         = false;
+    plugin_config->log_info.stale_while_revalidate = false;
+    plugin_config->log_info.filename               = PLUGIN_NAME;
+
     int c;
     static const struct option longopts[] = {{"log-all", no_argument, NULL, 'a'},
                                              {"log-stale-while-revalidate", no_argument, NULL, 'r'},
@@ -758,7 +758,7 @@ TSPluginInit(int argc, const char *argv[])
     }
 
     // proxy.config.http.insert_age_in_response
-    TSHttpArgIndexReserve(PLUGIN_NAME, "txn state info", &(plugin_config->txn_slot));
+    TSHttpTxnArgIndexReserve(PLUGIN_NAME, "txn state info", &(plugin_config->txn_slot));
     main_cont = TSContCreate(main_plugin, NULL);
     TSContDataSet(main_cont, (void *)plugin_config);
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, main_cont);

@@ -95,6 +95,7 @@ public:
   static void add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
   static void remove_privacy_headers_from_request(HttpConfigParams *http_config_param, OverridableHttpConfigParams *http_txn_conf,
                                                   HTTPHdr *header);
+  static void add_connection_close(HTTPHdr *header);
 
   static int nstrcpy(char *d, const char *as);
 };

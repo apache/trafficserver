@@ -1044,7 +1044,7 @@ LogAccess::unmarshal_int_to_date_str(char **buf, char *dest, int len)
 
   int64_t value = unmarshal_int(buf);
   char *strval  = LogUtils::timestamp_to_date_str(value);
-  int strlen    = LogAccess::strlen(strval);
+  int strlen    = (int)::strlen(strval);
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -1059,7 +1059,7 @@ LogAccess::unmarshal_int_to_time_str(char **buf, char *dest, int len)
 
   int64_t value = unmarshal_int(buf);
   char *strval  = LogUtils::timestamp_to_time_str(value);
-  int strlen    = LogAccess::strlen(strval);
+  int strlen    = (int)::strlen(strval);
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -1074,7 +1074,7 @@ LogAccess::unmarshal_int_to_netscape_str(char **buf, char *dest, int len)
 
   int64_t value = unmarshal_int(buf);
   char *strval  = LogUtils::timestamp_to_netscape_str(value);
-  int strlen    = LogAccess::strlen(strval);
+  int strlen    = (int)::strlen(strval);
 
   memcpy(dest, strval, strlen);
   return strlen;

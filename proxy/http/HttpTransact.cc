@@ -805,12 +805,12 @@ HttpTransact::EndRemapRequest(State *s)
     }
   }
   s->reverse_proxy              = true;
-  s->server_info.is_transparent = s->state_machine->ua_session ? s->state_machine->ua_session->is_outbound_transparent() : false;
+  s->server_info.is_transparent = s->state_machine->ua_txn ? s->state_machine->ua_txn->is_outbound_transparent() : false;
 
 done:
   // We now set the active-timeout again, since it might have been changed as part of the remap rules.
-  if (s->state_machine->ua_session) {
-    s->state_machine->ua_session->set_active_timeout(HRTIME_SECONDS(s->txn_conf->transaction_active_timeout_in));
+  if (s->state_machine->ua_txn) {
+    s->state_machine->ua_txn->set_active_timeout(HRTIME_SECONDS(s->txn_conf->transaction_active_timeout_in));
   }
 
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
@@ -1744,10 +1744,10 @@ HttpTransact::StartAccessControl(State *s)
   HandleRequestAuthorized(s);
   //  return;
   // }
-  // ua_session is NULL for scheduled updates.
+  // ua_txn is NULL for scheduled updates.
   // Don't use req_flavor to do the test because if updated
   // urls are remapped, the req_flavor is changed to REV_PROXY.
-  // if (s->state_machine->ua_session == NULL) {
+  // if (s->state_machine->ua_txn == NULL) {
   // Scheduled updates should always be allowed
   // return;
   //}
@@ -3513,7 +3513,7 @@ HttpTransact::handle_response_from_server(State *s)
         // Force host resolution to have the same family as the client.
         // Because this is a transparent connection, we can't switch address
         // families - that is locked in by the client source address.
-        s->state_machine->ua_session->set_host_res_style(ats_host_res_match(&s->current.server->dst_addr.sa));
+        s->state_machine->ua_txn->set_host_res_style(ats_host_res_match(&s->current.server->dst_addr.sa));
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
       } else if ((s->dns_info.srv_lookup_success || s->host_db_info.is_rr_elt()) &&
                  (s->txn_conf->connect_attempts_rr_retries > 0) &&
@@ -5425,8 +5425,8 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
 
   NetVConnection *vc = nullptr;
-  if (s->state_machine->ua_session) {
-    vc = s->state_machine->ua_session->get_netvc();
+  if (s->state_machine->ua_txn) {
+    vc = s->state_machine->ua_txn->get_netvc();
   }
 
   if (vc) {
@@ -5435,7 +5435,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
 
   // If this is an internal request, never keep alive
-  if (!s->txn_conf->keep_alive_enabled_in || (s->state_machine->ua_session && s->state_machine->ua_session->ignore_keep_alive())) {
+  if (!s->txn_conf->keep_alive_enabled_in || (s->state_machine->ua_txn && s->state_machine->ua_txn->ignore_keep_alive())) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else if (vc && vc->get_is_internal_request()) {
     // Following the trail of JIRAs back from TS-4960, there can be issues with
@@ -5565,7 +5565,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
       TxnDebug("http_hdrs", "[initialize_state_variables_from_response]"
                             "Server is keep-alive.");
     }
-  } else if (s->state_machine->ua_session && s->state_machine->ua_session->is_outbound_transparent() &&
+  } else if (s->state_machine->ua_txn && s->state_machine->ua_txn->is_outbound_transparent() &&
              s->state_machine->t_state.http_config_param->use_client_source_port) {
     /* If we are reusing the client<->ATS 4-tuple for ATS<->server then if the server side is closed, we can't
        re-open it because the 4-tuple may still be in the processing of shutting down. So if the server isn't
@@ -6397,8 +6397,8 @@ HttpTransact::process_quick_http_filter(State *s, int method)
     return;
   }
 
-  if (s->state_machine->ua_session) {
-    const AclRecord *acl_record = s->state_machine->ua_session->get_acl_record();
+  if (s->state_machine->ua_txn) {
+    const AclRecord *acl_record = s->state_machine->ua_txn->get_acl_record();
     bool deny_request           = (acl_record == nullptr);
     if (acl_record && (acl_record->_method_mask != AclRecord::ALL_METHOD_MASK)) {
       if (method != -1) {
@@ -7523,6 +7523,11 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
         base_request->url_get()->copy(o_url);
       }
     }
+
+    // Peform any configured normalization (including per-remap-rule configuration overrides) of the Accept-Encoding header
+    // field (if any).  This has to be done in the request from the client, for the benefit of the gzip plugin.
+    //
+    HttpTransactHeaders::normalize_accept_encoding(s->txn_conf, base_request);
   }
 
   HttpTransactHeaders::copy_header_fields(base_request, outgoing_request, s->txn_conf->fwd_proxy_auth_to_parent);
@@ -7623,12 +7628,9 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     TxnDebug("http_trans", "[build_request] request expect 100-continue headers removed");
   }
 
-  // Peform any configured normalization (including per-remap-rule configuration overrides) of the Accept-Encoding header
-  // field (if any).
-  HttpTransactHeaders::normalize_accept_encoding(s->txn_conf, outgoing_request);
-
   s->request_sent_time = ink_local_time();
   s->current.now       = s->request_sent_time;
+
   // The assert is backwards in this case because request is being (re)sent.
   ink_assert(s->request_sent_time >= s->response_received_time);
 
@@ -7772,6 +7774,10 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
 
+  if (s->state_machine->ua_txn && s->state_machine->ua_txn->get_parent()->is_draining()) {
+    HttpTransactHeaders::add_connection_close(outgoing_response);
+  }
+
   if (!s->cop_test_page && is_debug_tag_set("http_hdrs")) {
     if (base_response) {
       DUMP_HEADER("http_hdrs", base_response, s->state_machine_id, "Base Header for Building Response");
@@ -7839,7 +7845,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   }
   // If transparent and the forward server connection looks unhappy don't
   // keep alive the ua connection.
-  if ((s->state_machine->ua_session && s->state_machine->ua_session->is_outbound_transparent()) &&
+  if ((s->state_machine->ua_txn && s->state_machine->ua_txn->is_outbound_transparent()) &&
       (status_code == HTTP_STATUS_INTERNAL_SERVER_ERROR || status_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
        status_code == HTTP_STATUS_BAD_GATEWAY || status_code == HTTP_STATUS_SERVICE_UNAVAILABLE)) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;

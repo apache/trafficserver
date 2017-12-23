@@ -152,7 +152,7 @@ class HttpSessionManager
 public:
   HttpSessionManager() : m_g_pool(NULL) {}
   ~HttpSessionManager() {}
-  HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, ProxyClientTransaction *ua_session,
+  HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, ProxyClientTransaction *ua_txn,
                               HttpSM *sm);
   HSMresult_t release_session(HttpServerSession *to_release);
   void purge_keepalives();

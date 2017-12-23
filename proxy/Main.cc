@@ -76,6 +76,7 @@ extern "C" int plock(int);
 #include "ProxyConfig.h"
 #include "HttpProxyServerMain.h"
 #include "HttpBodyFactory.h"
+#include "ProxyClientSession.h"
 #include "logging/Log.h"
 #include "CacheControl.h"
 #include "IPAllow.h"
@@ -282,10 +283,16 @@ public:
       signal_received[SIGINT]  = false;
 
       RecInt timeout = 0;
-      REC_ReadConfigInteger(timeout, "proxy.config.stop.shutdown_timeout");
-
-      if (timeout) {
-        http2_drain = true;
+      if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout &&
+          !http_client_session_draining) {
+        http_client_session_draining = true;
+        if (!remote_management_flag) {
+          // Close listening sockets here only if TS is running standalone
+          RecInt close_sockets = 0;
+          if (RecGetRecordInt("proxy.config.restart.stop_listening", &close_sockets) == REC_ERR_OKAY && close_sockets) {
+            stop_HttpProxyServer();
+          }
+        }
       }
 
       Debug("server", "received exit signal, shutting down in %" PRId64 "secs", timeout);
@@ -531,7 +538,7 @@ init_system()
   //
   // Delimit file Descriptors
   //
-  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE, true, false);
+  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE);
 }
 
 static void
@@ -1144,12 +1151,12 @@ adjust_sys_settings()
     }
   }
 
-  ink_max_out_rlimit(RLIMIT_STACK, true, true);
-  ink_max_out_rlimit(RLIMIT_DATA, true, true);
-  ink_max_out_rlimit(RLIMIT_FSIZE, true, false);
+  ink_max_out_rlimit(RLIMIT_STACK);
+  ink_max_out_rlimit(RLIMIT_DATA);
+  ink_max_out_rlimit(RLIMIT_FSIZE);
 
 #ifdef RLIMIT_RSS
-  ink_max_out_rlimit(RLIMIT_RSS, true, true);
+  ink_max_out_rlimit(RLIMIT_RSS);
 #endif
 }
 

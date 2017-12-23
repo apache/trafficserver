@@ -357,3 +357,10 @@ start_HttpProxyServerBackDoor(int port, int accept_threads)
   // The backdoor only binds the loopback interface
   netProcessor.main_accept(new HttpSessionAccept(ha_opt), NO_FD, opt);
 }
+
+void
+stop_HttpProxyServer()
+{
+  sslNetProcessor.stop_accept();
+  netProcessor.stop_accept();
+}

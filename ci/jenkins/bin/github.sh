@@ -27,9 +27,9 @@ autoreconf -if
             --enable-experimental-plugins \
             --enable-example-plugins \
             --enable-ccache \
-            --enable-debug \
-	    --enable-wccp \
-            --enable-werror
+            ${enable_wccp} \
+            ${enable_werror} \
+            ${enable_debug}
 
 # Build and run regressions
 ${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=

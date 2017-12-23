@@ -48,7 +48,9 @@ if ( !defined($key) || !defined($url) || !defined($duration) || !defined($keyind
 	exit(1);
 }
 
-$url =~ s/^http:\/\///;
+my $url_prefix = $url;
+$url_prefix =~ s/^([^:]*:\/\/).*$/$1/;
+$url =~ s/^[^:]+:\/\///;
 my $i              = 0;
 my $part_active    = 0;
 my $j              = 0;
@@ -97,13 +99,13 @@ else {
 if ($urlHasParams == -1) {
   my $qstring = ( split( /\?/, $string ) )[1];
 
-  print "curl -s -o /dev/null -v --max-redirs 0 'http://" . $url . "?" . $qstring . $digest . "'\n";
+  print "curl -s -o /dev/null -v --max-redirs 0 '" . $url_prefix . $url . "?" . $qstring . $digest . "'\n";
 }
 else {
   my $url_noparams = ( split( /\?/, $url ) )[0];
   my $qstring = ( split( /\?/, $string ) )[1];
 
-  print "curl -s -o /dev/null -v --max-redirs 0 'http://" . $url_noparams . "?" . $qstring . $digest . "'\n";
+  print "curl -s -o /dev/null -v --max-redirs 0 '" . $url_prefix . $url_noparams . "?" . $qstring . $digest . "'\n";
 }
 
 sub help {

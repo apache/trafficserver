@@ -406,7 +406,7 @@ TSPluginInit(int argc, const char *argv[])
 
   TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, rrh_contp);
 
-  if (TSHttpArgIndexReserve(DEBUG_TAG, "will save plugin-enable flag here", &arg_idx) != TS_SUCCESS) {
+  if (TSHttpTxnArgIndexReserve(DEBUG_TAG, "will save plugin-enable flag here", &arg_idx) != TS_SUCCESS) {
     LOG_ERROR("failed to reserve private data slot");
     return;
   } else {

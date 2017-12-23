@@ -1,0 +1,19 @@
+ts/0/gzip, deflate, sdch, br
+ts/0/gzip
+ts/0/deflate
+ts/1/gzip, deflate, sdch, br
+ts/1/br
+ts/2/gzip, deflate, sdch, br
+ts/2/gzip
+ts/2/deflate
+ts2/0/gzip
+ts2/0/br
+ts2/0/deflate
+ts2/1/gzip
+ts2/1/br
+ts2/2/gzip
+ts2/2/br
+ts2/2/deflate
+ts3/0/deflate
+ts3/1/deflate
+ts3/2/deflate

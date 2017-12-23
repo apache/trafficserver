@@ -32,13 +32,14 @@
 class Http2ClientSession;
 
 enum class Http2SendDataFrameResult {
-  NO_ERROR   = 0,
-  NO_WINDOW  = 1,
-  NO_PAYLOAD = 2,
-  DONE       = 3,
+  NO_ERROR = 0,
+  NO_WINDOW,
+  NO_PAYLOAD,
+  ERROR,
+  DONE,
 };
 
-enum Http2ShutdownState { NOT_INITIATED, INITIATED, IN_PROGRESS };
+enum Http2ShutdownState { HTTP2_SHUTDOWN_NONE, HTTP2_SHUTDOWN_NOT_INITIATED, HTTP2_SHUTDOWN_INITIATED, HTTP2_SHUTDOWN_IN_PROGRESS };
 
 class Http2ConnectionSettings
 {
@@ -138,6 +139,9 @@ public:
   void
   destroy()
   {
+    if (shutdown_cont_event) {
+      shutdown_cont_event->cancel();
+    }
     cleanup_streams();
 
     mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
@@ -218,7 +222,7 @@ public:
   // HTTP/2 frame sender
   void schedule_stream(Http2Stream *stream);
   void send_data_frames_depends_on_priority();
-  Http2SendDataFrameResult send_data_frames(Http2Stream *stream);
+  void send_data_frames(Http2Stream *stream);
   Http2SendDataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(Http2Stream *stream);
   void send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
@@ -301,7 +305,8 @@ private:
   bool _scheduled                   = false;
   bool fini_received                = false;
   int recursion                     = 0;
-  Http2ShutdownState shutdown_state = NOT_INITIATED;
+  Http2ShutdownState shutdown_state = HTTP2_SHUTDOWN_NONE;
+  Event *shutdown_cont_event        = nullptr;
 };
 
 #endif // __HTTP2_CONNECTION_STATE_H__

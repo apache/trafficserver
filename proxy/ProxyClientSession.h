@@ -31,6 +31,8 @@
 #include "InkAPIInternal.h"
 #include "http/HttpServerSession.h"
 
+extern bool http_client_session_draining;
+
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session
 // member function.
@@ -118,6 +120,12 @@ public:
   is_active() const
   {
     return m_active;
+  }
+
+  bool
+  is_draining() const
+  {
+    return http_client_session_draining;
   }
 
   // Initiate an API hook invocation.
@@ -254,7 +262,7 @@ private:
   TSHttpHookID api_hookid = TS_HTTP_READ_REQUEST_HDR_HOOK;
   APIHook *api_current    = nullptr;
   HttpAPIHooks api_hooks;
-  void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
+  void *user_args[TS_HTTP_MAX_USER_ARG];
 
   // for DI. An active connection is one that a request has
   // been successfully parsed (PARSE_DONE) and it remains to

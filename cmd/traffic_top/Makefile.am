@@ -28,6 +28,7 @@ AM_CPPFLAGS += \
   @CURSES_CFLAGS@
 
 AM_LDFLAGS += \
+  @CURSES_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
 bin_PROGRAMS = traffic_top

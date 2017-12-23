@@ -993,7 +993,7 @@ getCcPlugin()
     data->keep_pass_list        = new UsecList();
     data->seq_id                = 0;
     data->global_config         = nullptr;
-    TSHttpArgIndexReserve(PLUGIN_NAME, "reserve txn_data slot", &(data->txn_slot));
+    TSHttpTxnArgIndexReserve(PLUGIN_NAME, "reserve txn_data slot", &(data->txn_slot));
 
     if (TS_SUCCESS == TSMgmtIntGet("proxy.config.cache.enable_read_while_writer", &read_while_writer) && read_while_writer > 0) {
       data->read_while_writer = true;

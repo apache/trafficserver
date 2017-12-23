@@ -1100,11 +1100,6 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
 
   thread = t;
 
-  if (action_.cancelled) {
-    free(thread);
-    return EVENT_DONE;
-  }
-
   // Send this NetVC to NetHandler and start to polling read & write event.
   if (h->startIO(this) < 0) {
     free(t);

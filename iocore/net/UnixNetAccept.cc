@@ -202,6 +202,15 @@ NetAccept::init_accept_per_thread()
   }
 }
 
+void
+NetAccept::stop_accept()
+{
+  if (!action_->cancelled) {
+    action_->cancel();
+  }
+  server.close();
+}
+
 int
 NetAccept::do_listen(bool non_blocking)
 {

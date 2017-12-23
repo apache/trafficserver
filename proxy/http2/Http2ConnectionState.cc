@@ -927,21 +927,22 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Initiate a gracefull shutdown
   case HTTP2_SESSION_EVENT_SHUTDOWN_INIT: {
-    ink_assert(shutdown_state == NOT_INITIATED);
-    shutdown_state = INITIATED;
+    ink_assert(shutdown_state == HTTP2_SHUTDOWN_NOT_INITIATED);
+    shutdown_state = HTTP2_SHUTDOWN_INITIATED;
     // [RFC 7540] 6.8.  GOAWAY
     // A server that is attempting to gracefully shut down a
     // connection SHOULD send an initial GOAWAY frame with the last stream
     // identifier set to 2^31-1 and a NO_ERROR code.
     send_goaway_frame(INT32_MAX, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
     // After allowing time for any in-flight stream creation (at least one round-trip time),
-    this_ethread()->schedule_in((Continuation *)this, HRTIME_SECONDS(2), HTTP2_SESSION_EVENT_SHUTDOWN_CONT);
+    shutdown_cont_event = this_ethread()->schedule_in((Continuation *)this, HRTIME_SECONDS(2), HTTP2_SESSION_EVENT_SHUTDOWN_CONT);
   } break;
 
   // Continue a gracefull shutdown
   case HTTP2_SESSION_EVENT_SHUTDOWN_CONT: {
-    ink_assert(shutdown_state == INITIATED);
-    shutdown_state = IN_PROGRESS;
+    ink_assert(shutdown_state == HTTP2_SHUTDOWN_INITIATED);
+    shutdown_cont_event = nullptr;
+    shutdown_state      = HTTP2_SHUTDOWN_IN_PROGRESS;
     // [RFC 7540] 6.8.  GOAWAY
     // ..., the server can send another GOAWAY frame with an updated last stream identifier
     send_goaway_frame(latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
@@ -1187,7 +1188,7 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
         // We were shutting down, go ahead and terminate the session
         ua_session->destroy();
         ua_session = nullptr;
-      } else if (shutdown_state == IN_PROGRESS) {
+      } else if (shutdown_state == HTTP2_SHUTDOWN_IN_PROGRESS) {
         this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
       }
     }
@@ -1271,6 +1272,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
   const size_t write_available_size = std::min(buf_len, static_cast<size_t>(window_size));
   size_t read_available_size        = 0;
+  payload_length                    = 0;
 
   uint8_t flags = 0x00;
   uint8_t payload_buffer[buf_len];
@@ -1280,16 +1282,21 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   if (current_reader) {
     read_available_size = static_cast<size_t>(current_reader->read_avail());
+  } else {
+    Http2StreamDebug(this->ua_session, stream->get_id(), "couldn't get data reader");
+    return Http2SendDataFrameResult::ERROR;
   }
 
   // Select appropriate payload length
   if (read_available_size > 0) {
     // We only need to check for window size when there is a payload
     if (window_size <= 0) {
+      Http2StreamDebug(this->ua_session, stream->get_id(), "No window");
       return Http2SendDataFrameResult::NO_WINDOW;
     }
     // Copy into the payload buffer. Seems like we should be able to skip this copy step
-    payload_length = current_reader->read(payload_buffer, write_available_size);
+    payload_length = std::min(read_available_size, write_available_size);
+    current_reader->memcpy(payload_buffer, static_cast<int64_t>(payload_length));
   } else {
     payload_length = 0;
   }
@@ -1298,6 +1305,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   // If we return here, we never send the END_STREAM in the case of a early terminating OS.
   // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
   if (!stream->is_body_done() && payload_length == 0) {
+    Http2StreamDebug(this->ua_session, stream->get_id(), "No payload");
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
@@ -1310,8 +1318,8 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   stream->client_rwnd -= payload_length;
 
   // Create frame
-  Http2StreamDebug(ua_session, stream->get_id(), "Send a DATA frame - client window con: %zd stream: %zd payload: %zd", client_rwnd,
-                   stream->client_rwnd, payload_length);
+  Http2StreamDebug(ua_session, stream->get_id(), "Send a DATA frame - client window con: %5zd stream: %5zd payload: %5zd",
+                   client_rwnd, stream->client_rwnd, payload_length);
 
   Http2Frame data(HTTP2_FRAME_TYPE_DATA, stream->get_id(), flags);
   data.alloc(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
@@ -1319,6 +1327,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   data.finalize(payload_length);
 
   stream->update_sent_count(payload_length);
+  current_reader->consume(payload_length);
 
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
@@ -1336,7 +1345,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   return Http2SendDataFrameResult::NO_ERROR;
 }
 
-Http2SendDataFrameResult
+void
 Http2ConnectionState::send_data_frames(Http2Stream *stream)
 {
   // To follow RFC 7540 must not send more frames other than priority on
@@ -1345,7 +1354,7 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
       stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
     Http2StreamDebug(this->ua_session, stream->get_id(), "Shutdown half closed local stream");
     this->delete_stream(stream);
-    return Http2SendDataFrameResult::NO_ERROR;
+    return;
   }
 
   size_t len                      = 0;
@@ -1363,7 +1372,7 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
     }
   }
 
-  return result;
+  return;
 }
 
 void

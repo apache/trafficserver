@@ -26,9 +26,10 @@
 #include "ts/ink_defs.h"
 #include "ts/ink_assert.h"
 #include "ts/ink_sys_control.h"
+#include "ts/Diags.h"
 
 rlim_t
-ink_max_out_rlimit(int which, bool max_it, bool unlim_it)
+ink_max_out_rlimit(int which)
 {
   struct rlimit rl;
 
@@ -38,30 +39,21 @@ ink_max_out_rlimit(int which, bool max_it, bool unlim_it)
 #define MAGIC_CAST(x) x
 #endif
 
-  if (max_it) {
-    ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
-    if (rl.rlim_cur != rl.rlim_max) {
+  ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
+  if (rl.rlim_cur != rl.rlim_max) {
 #if defined(darwin)
-      if (which == RLIMIT_NOFILE)
-        rl.rlim_cur = (OPEN_MAX < rl.rlim_max) ? OPEN_MAX : rl.rlim_max;
-      else
-        rl.rlim_cur = rl.rlim_max;
-#else
+    if (which == RLIMIT_NOFILE) {
+      rl.rlim_cur = (OPEN_MAX < rl.rlim_max) ? OPEN_MAX : rl.rlim_max;
+    } else {
       rl.rlim_cur = rl.rlim_max;
+    }
+#else
+    rl.rlim_cur = rl.rlim_max;
 #endif
-      ink_release_assert(setrlimit(MAGIC_CAST(which), &rl) >= 0);
+    if (setrlimit(MAGIC_CAST(which), &rl) != 0) {
+      Warning("Failed to set Limit : %s", strerror(errno));
     }
   }
-
-#if !(defined(darwin) || defined(freebsd))
-  if (unlim_it) {
-    ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
-    if (rl.rlim_cur != (rlim_t)RLIM_INFINITY) {
-      rl.rlim_cur = (rl.rlim_max = RLIM_INFINITY);
-      ink_release_assert(setrlimit(MAGIC_CAST(which), &rl) >= 0);
-    }
-  }
-#endif
   ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
   return rl.rlim_cur;
 }

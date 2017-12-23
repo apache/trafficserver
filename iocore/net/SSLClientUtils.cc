@@ -148,7 +148,7 @@ SSLInitClientContext(const SSLConfigParams *params)
     clientKeyPtr = params->clientCertPath;
   }
 
-  if (params->clientCertPath != nullptr) {
+  if (params->clientCertPath != nullptr && params->clientCertPath[0] != '\0') {
     if (!SSL_CTX_use_certificate_chain_file(client_ctx, params->clientCertPath)) {
       SSLError("failed to load client certificate from %s", params->clientCertPath);
       goto fail;

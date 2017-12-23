@@ -25,14 +25,6 @@
 #include "UrlMapping.h"
 #include "I_RecCore.h"
 #include "ts/ink_cap.h"
-/**
- *
-**/
-url_mapping::url_mapping()
-{
-  memset(_plugin_list, 0, sizeof(_plugin_list));
-  memset(_instance_data, 0, sizeof(_instance_data));
-}
 
 /**
  *
@@ -40,13 +32,8 @@ url_mapping::url_mapping()
 bool
 url_mapping::add_plugin(remap_plugin_info *i, void *ih)
 {
-  if (_plugin_count >= MAX_REMAP_PLUGIN_CHAIN) {
-    return false;
-  }
-
-  _plugin_list[_plugin_count]   = i;
-  _instance_data[_plugin_count] = ih;
-  ++_plugin_count;
+  _plugin_list.push_back(i);
+  _instance_data.push_back(ih);
 
   return true;
 }
@@ -55,14 +42,22 @@ url_mapping::add_plugin(remap_plugin_info *i, void *ih)
  *
 **/
 remap_plugin_info *
-url_mapping::get_plugin(unsigned int index) const
+url_mapping::get_plugin(std::size_t index) const
 {
-  Debug("url_rewrite", "get_plugin says we have %d plugins and asking for plugin %d", _plugin_count, index);
-  if ((_plugin_count == 0) || unlikely(index > _plugin_count)) {
-    return nullptr;
+  Debug("url_rewrite", "get_plugin says we have %zu plugins and asking for plugin %zu", plugin_count(), index);
+  if (index < _plugin_list.size()) {
+    return _plugin_list[index];
   }
+  return nullptr;
+}
 
-  return _plugin_list[index];
+void *
+url_mapping::get_instance(std::size_t index) const
+{
+  if (index < _instance_data.size()) {
+    return _instance_data[index];
+  }
+  return nullptr;
 }
 
 /**
@@ -101,8 +96,10 @@ url_mapping::~url_mapping()
     delete rc;
   }
 
-  // Delete all instance data
-  for (unsigned int i = 0; i < _plugin_count; ++i) {
+  // Delete all instance data, this gets ugly because to delete the instance data, we also
+  // must know which plugin this is associated with. Hence, looping with index instead of a
+  // normal iterator. ToDo: Maybe we can combine them into another container.
+  for (std::size_t i = 0; i < plugin_count(); ++i) {
     delete_instance(i);
   }
 
@@ -124,8 +121,8 @@ url_mapping::Print()
 
   fromURL.string_get_buf(from_url_buf, (int)sizeof(from_url_buf));
   toUrl.string_get_buf(to_url_buf, (int)sizeof(to_url_buf));
-  printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %u plugins]\n", from_url_buf, unique ? "(unique)" : "",
-         to_url_buf, homePageRedirect ? "(R)" : "", tag ? tag : "", _plugin_count > 0 ? "are" : "not", _plugin_count);
+  printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %zu plugins]\n", from_url_buf, unique ? "(unique)" : "",
+         to_url_buf, homePageRedirect ? "(R)" : "", tag ? tag : "", plugin_count() > 0 ? "are" : "not", plugin_count());
 }
 
 /**
