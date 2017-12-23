@@ -18,6 +18,21 @@
 
 INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
 
+# Optional settings
+CCACHE=""; WERROR=""; DEBUG=""; WCCP=""
+[ "1" == "$enable_ccache" ] && CCACHE="--enable-ccache"
+[ "1" == "$enable_werror" ] && WERROR="--enable-werror"
+[ "1" == "$enable_debug" ] && DEBUG="--enable-debug"
+[ "1" == "$enable_wccp" ] && WCCP="--enable-wccp"
+
+# Check for clang
+if [ "1" == "$enable_clang" ]; then
+    export CC="clang"
+    export CXX="clang++"
+    export CXXFLAGS="-Qunused-arguments -std=c++11"
+    export WITH_LIBCPLUSPLUS="yes"
+fi
+
 mkdir -p ${INSTALL}
 cd src
 autoreconf -if
@@ -26,10 +41,10 @@ autoreconf -if
             --with-user=jenkins \
             --enable-experimental-plugins \
             --enable-example-plugins \
-            --enable-ccache \
-            ${enable_wccp} \
-            ${enable_werror} \
-            ${enable_debug}
+            ${CCACHE} \
+            ${WCCP} \
+            ${WERROR} \
+            ${DEBUG}
 
 # Build and run regressions
 ${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=

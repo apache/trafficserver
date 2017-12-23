@@ -26,8 +26,7 @@ autoreconf -fi
     --enable-debug \
     --enable-werror \
     --enable-experimental-plugins \
-    --enable-example-plugins \
-    --enable-test-tools
+    --enable-example-plugins
 
 ${ATS_MAKE} asf-dist
 

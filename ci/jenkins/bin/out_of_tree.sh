@@ -28,7 +28,6 @@ mkdir -p BUILDS && cd BUILDS
     --enable-werror \
     --enable-experimental-plugins \
     --enable-example-plugins \
-    --enable-test-tools \
     --enable-wccp
 
 ${ATS_MAKE} -j5 V=1
