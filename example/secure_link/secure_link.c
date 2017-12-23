@@ -66,9 +66,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       do {
         if ((val = strchr(ptr, '=')) != NULL) {
           *val++ = '\0';
-          if (strcmp(ptr, "st") == 0) {
+          if (strncmp(ptr, "st", 3) == 0) {
             tokenptr = val;
-          } else if (strcmp(ptr, "ex") == 0) {
+          } else if (strncmp(ptr, "ex", 3) == 0) {
             expireptr = val;
           }
         } else {
