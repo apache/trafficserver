@@ -163,7 +163,7 @@ public:
 
   QUICAckFrame() : QUICFrame() {}
   QUICAckFrame(const uint8_t *buf, size_t len);
-  QUICAckFrame(QUICPacketNumber largest_acknowledged, uint16_t ack_delay, uint64_t first_ack_block_length);
+  QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block_length);
 
   virtual ~QUICAckFrame();
   virtual void reset(const uint8_t *buf, size_t len) override;

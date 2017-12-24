@@ -1835,7 +1835,7 @@ QUICFrameFactory::create_stream_frame(const uint8_t *data, size_t data_len, QUIC
 }
 
 std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_ack_frame(QUICPacketNumber largest_acknowledged, uint16_t ack_delay, uint64_t first_ack_block_length)
+QUICFrameFactory::create_ack_frame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block_length)
 {
   QUICAckFrame *frame = quicAckFrameAllocator.alloc();
   new (frame) QUICAckFrame(largest_acknowledged, ack_delay, first_ack_block_length);
