@@ -20,10 +20,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#include "P_Net.h"
 
 #include "QUICApplication.h"
 #include "QUICStreamManager.h"
-#include "QUICCongestionController.h"
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
 #include "QUICPacketTransmitter.h"
@@ -327,20 +327,11 @@ class MockQUICCongestionController : public QUICCongestionController
 {
 public:
   // Override
-  virtual QUICErrorUPtr
-  handle_frame(std::shared_ptr<const QUICFrame> f) override
-  {
-    ++_frameCount[static_cast<int>(f->type())];
-    ++_totalFrameCount;
-
-    return QUICErrorUPtr(new QUICNoError());
-  }
-
   virtual void
-  on_packets_lost(std::set<QUICPacketNumber> packets) override
+  on_packets_lost(std::map<QUICPacketNumber, PacketInfo &> packets) override
   {
-    for (auto pn : packets) {
-      lost_packets.insert(pn);
+    for (auto &p : packets) {
+      lost_packets.insert(p.first);
     }
   }
 
