@@ -35,9 +35,7 @@
 
 QUICNetProcessor quic_NetProcessor;
 
-QUICNetProcessor::QUICNetProcessor()
-{
-}
+QUICNetProcessor::QUICNetProcessor() {}
 
 QUICNetProcessor::~QUICNetProcessor()
 {
@@ -79,7 +77,7 @@ QUICNetProcessor::start(int, size_t stacksize)
 
   if (SSL_CTX_check_private_key(this->_ssl_ctx) != 1) {
     Error("check private key failed");
-    ink_assert(false);
+    // ink_assert(false);
   }
 
   return 0;
@@ -107,6 +105,45 @@ QUICNetProcessor::allocate_vc(EThread *t)
   }
 
   return vc;
+}
+
+Action *
+QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opt)
+{
+  Debug("quic_ps", "connect to server");
+
+  EThread *t = cont->mutex->thread_holding;
+  ink_assert(t);
+
+  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(this->allocate_vc(t));
+
+  // Setup QUICNetVConnection
+  // TODO: randomize
+  QUICConnectionId id = 0x00;
+  UDPConnection *con  = new UnixUDPConnection(NO_FD);
+  AcceptOptions const accept_opt;
+  QUICPacketHandler *ph = new QUICPacketHandler(accept_opt, this->_ssl_ctx);
+
+  vc->init(id, con, ph);
+
+  if (opt) {
+    vc->options = *opt;
+  } else {
+    opt = &vc->options;
+  }
+
+  vc->set_context(NET_VCONNECTION_OUT);
+  vc->con.setRemote(addr);
+  vc->id          = net_next_connection_number();
+  vc->submit_time = Thread::get_hrtime();
+  vc->mutex       = cont->mutex;
+  vc->action_     = cont;
+
+  vc->start(this->_ssl_ctx);
+
+  vc->action_.continuation->handleEvent(NET_EVENT_OPEN, this);
+
+  return ACTION_RESULT_DONE;
 }
 
 Action *

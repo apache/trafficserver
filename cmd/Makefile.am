@@ -27,7 +27,9 @@ SUBDIRS = \
 TESTS = $(check_PROGRAMS)
 
 if BUILD_WCCP
-
 SUBDIRS += traffic_wccp
+endif
 
+if ENABLE_QUIC
+SUBDIRS += traffic_quic
 endif

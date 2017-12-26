@@ -2015,6 +2015,7 @@ AC_CONFIG_FILES([
   cmd/traffic_ctl/Makefile
   cmd/traffic_layout/Makefile
   cmd/traffic_manager/Makefile
+  cmd/traffic_quic/Makefile
   cmd/traffic_top/Makefile
   cmd/traffic_via/Makefile
   cmd/traffic_wccp/Makefile

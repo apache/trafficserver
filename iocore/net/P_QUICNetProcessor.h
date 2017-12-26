@@ -58,6 +58,9 @@ public:
 
   virtual int start(int, size_t stacksize) override;
   void cleanup();
+  // TODO: refactoring NetProcessor::connect_re and UnixNetProcessor::connect_re_internal
+  // Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts) override;
+  Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts);
 
   virtual NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt) override;
   virtual NetVConnection *allocate_vc(EThread *t) override;
