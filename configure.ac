@@ -1200,11 +1200,18 @@ TS_CHECK_LZMA
 if test "x$enable_system_luajit" == "xyes"; then
     saveLIBS=$LIBS
     LIBS=""
-    AC_CHECK_HEADER(lua.h, ,
-                    [AC_MSG_ERROR([*** system luajit requested and lua.h not found ***])])
+    AC_CHECK_HEADER(lua.h, [],
+                    [LUAJIT_PKGCONFIG=1])
     AC_CHECK_LIB(luajit-5.1, luaL_newstate, [],
-                 [AC_MSG_ERROR([*** system luajit requested and libluajit-5.1 not found ***])])
-    AC_SUBST([LIBLUAJIT], [$LIBS])
+                 [LUAJIT_PKGCONFIG=1])
+    if test "x$LUAJIT_PKGCONFIG" != "x"; then
+        PKG_CHECK_MODULES([LUAJIT], [luajit < 2.1.0, luajit >= 2.0.0], [
+            AC_SUBST([LIBLUAJIT], [$LUAJIT_LIBS])
+            TS_ADDTO(AM_CPPFLAGS, [$LUAJIT_CFLAGS])
+        ], [AC_MSG_ERROR([*** system luajit requested but either libluajit-5.1 or lua.h cannot be found ***])])
+    else
+        AC_SUBST([LIBLUAJIT], [$LIBS])
+    fi
     LIBS=$saveLIBS
 fi
 
