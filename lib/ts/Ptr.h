@@ -111,10 +111,8 @@ public:
 
   T *operator->() const { return (m_ptr); }
   T &operator*() const { return (*m_ptr); }
-
   // Making this explicit avoids unwanted conversions.  See https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Safe_bool .
   explicit operator bool() const { return m_ptr != nullptr; }
-
   int
   operator==(const T *p)
   {
