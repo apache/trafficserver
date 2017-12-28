@@ -33,7 +33,8 @@ check_PROGRAMS = \
   test_QUICAckFrameCreator \
   test_QUICVersionNegotiator \
   test_QUICFlowController \
-  test_QUICIncomingFrameBuffer
+  test_QUICIncomingFrameBuffer \
+  test_QUICHandshake
 
 
 AM_CPPFLAGS += \
@@ -573,6 +574,32 @@ test_QUICIncomingFrameBuffer_SOURCES = \
   test_QUICIncomingFrameBuffer.cc
 
 test_QUICIncomingFrameBuffer_LDADD = \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  @LIBTCL@ \
+  @HWLOC_LIBS@
+
+#
+# test_QUICHandshake
+#
+test_QUICHandshake_CPPFLAGS = \
+  $(AM_CPPFLAGS)
+
+test_QUICHandshake_LDFLAGS = \
+  @AM_LDFLAGS@
+
+test_QUICHandshake_SOURCES = \
+  event_processor_main.cc \
+  test_QUICHandshake.cc \
+  ../QUICHandshake.cc \
+  ../../SSLNextProtocolSet.cc
+
+test_QUICHandshake_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/iocore/net/quic/libquic.a \

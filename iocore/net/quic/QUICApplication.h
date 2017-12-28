@@ -38,6 +38,7 @@ class QUICStreamIO
 {
 public:
   QUICStreamIO(QUICApplication *app, QUICStream *stream);
+  virtual ~QUICStreamIO(){};
 
   int64_t read_avail();
   bool is_read_avail_more_than(int64_t size);
@@ -45,20 +46,21 @@ public:
   int64_t write(const uint8_t *buf, int64_t len);
   int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
   void set_write_vio_nbytes(int64_t);
-  void read_reenable();
-  void write_reenable();
+  virtual void read_reenable();
+  virtual void write_reenable();
   IOBufferReader *get_read_buffer_reader();
   void shutdown();
   uint32_t get_transaction_id() const;
 
-private:
-  QUICStream *_stream = nullptr;
-
+protected:
   MIOBuffer *_read_buffer  = nullptr;
   MIOBuffer *_write_buffer = nullptr;
 
   IOBufferReader *_read_buffer_reader  = nullptr;
   IOBufferReader *_write_buffer_reader = nullptr;
+
+private:
+  QUICStream *_stream = nullptr;
 
   VIO *_read_vio  = nullptr;
   VIO *_write_vio = nullptr;
@@ -74,7 +76,7 @@ public:
   QUICApplication(QUICConnection *qc);
   virtual ~QUICApplication(){};
 
-  void set_stream(QUICStream *stream);
+  void set_stream(QUICStream *stream, QUICStreamIO *stream_io = nullptr);
   bool is_stream_set(QUICStream *stream);
   void reenable(QUICStream *stream);
   void unset_stream(QUICStream *stream);

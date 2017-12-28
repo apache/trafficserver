@@ -82,8 +82,8 @@ public:
   LINK(QUICStream, link);
 
 private:
-  int64_t _process_read_vio();
-  int64_t _process_write_vio();
+  virtual int64_t _process_read_vio();
+  virtual int64_t _process_write_vio();
   void _signal_read_event();
   void _signal_write_event();
   Event *_send_tracked_event(Event *, int, VIO *);

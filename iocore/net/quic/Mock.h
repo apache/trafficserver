@@ -406,6 +406,48 @@ public:
   }
 };
 
+class MockQUICStream : public QUICStream
+{
+private:
+  int64_t
+  _process_read_vio() override
+  {
+    return 0;
+  }
+
+  int64_t
+  _process_write_vio() override
+  {
+    return 0;
+  }
+};
+
+class MockQUICStreamIO : public QUICStreamIO
+{
+public:
+  MockQUICStreamIO(QUICApplication *app, QUICStream *stream) : QUICStreamIO(app, stream) {}
+  ~MockQUICStreamIO() {}
+
+  int64_t
+  transfer()
+  {
+    int64_t n = this->_write_buffer_reader->read_avail();
+    this->_read_buffer->write(this->_write_buffer_reader, n);
+    this->_write_buffer_reader->consume(n);
+    return n;
+  }
+
+private:
+  void
+  read_reenable() override
+  {
+  }
+  void
+  write_reenable() override
+  {
+  }
+};
+
 class MockQUICCrypto : public QUICCrypto
 {
 public:

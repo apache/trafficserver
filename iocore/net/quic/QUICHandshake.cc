@@ -89,12 +89,13 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
   this->_ssl = SSL_new(ssl_ctx);
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_qc_index, qc);
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_hs_index, this);
+  this->_netvc_context      = qc->direction();
   this->_crypto             = new QUICCryptoTls(this->_ssl, qc->direction());
   this->_version_negotiator = new QUICVersionNegotiator();
 
   this->_crypto->initialize_key_materials(this->_client_qc->original_connection_id());
 
-  SET_HANDLER(&QUICHandshake::state_read_client_hello);
+  SET_HANDLER(&QUICHandshake::state_initial);
 }
 
 QUICHandshake::~QUICHandshake()
@@ -207,17 +208,27 @@ QUICHandshake::remote_transport_parameters()
 }
 
 int
-QUICHandshake::state_read_client_hello(int event, Event *data)
+QUICHandshake::state_initial(int event, Event *data)
 {
-  QUICErrorUPtr error;
+  QUICHSDebug("event: %d", event);
+
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
-    error = this->_process_client_hello();
+    if (this->_netvc_context == NET_VCONNECTION_IN) {
+      error = this->_process_client_hello();
+    }
+    break;
+  }
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE: {
+    if (this->_netvc_context == NET_VCONNECTION_OUT) {
+      error = this->_process_initial();
+    }
     break;
   }
   default:
-    QUICHSDebug("event: %d", event);
     break;
   }
 
@@ -231,21 +242,56 @@ QUICHandshake::state_read_client_hello(int event, Event *data)
     this->_abort_handshake(code);
   }
 
-  return EVENT_CONT;
+  return EVENT_DONE;
 }
 
 int
-QUICHandshake::state_read_client_finished(int event, Event *data)
+QUICHandshake::state_key_exchange(int event, Event *data)
 {
+  QUICHSDebug("event: %d", event);
+
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
-    error = this->_process_client_finished();
+    ink_assert(this->_netvc_context == NET_VCONNECTION_OUT);
+
+    // FIXME: client could recv ServerHello and HelloRetryRequest
+    error = this->_process_server_hello();
     break;
   }
   default:
-    QUICHSDebug("event: %d", event);
+    break;
+  }
+
+  if (error->cls != QUICErrorClass::NONE) {
+    QUICTransErrorCode code;
+    if (dynamic_cast<QUICConnectionError *>(error.get()) != nullptr) {
+      code = error->trans_error_code;
+    } else {
+      code = QUICTransErrorCode::PROTOCOL_VIOLATION;
+    }
+    this->_abort_handshake(code);
+  }
+
+  return EVENT_DONE;
+}
+
+int
+QUICHandshake::state_auth(int event, Event *data)
+{
+  QUICHSDebug("event: %d", event);
+
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  switch (event) {
+  case VC_EVENT_READ_READY:
+  case VC_EVENT_READ_COMPLETE: {
+    ink_assert(this->_netvc_context == NET_VCONNECTION_IN);
+
+    error = this->_process_finished();
+    break;
+  }
+  default:
     break;
   }
 
@@ -266,7 +312,7 @@ int
 QUICHandshake::state_address_validation(int event, void *data)
 {
   // TODO Address validation should be implemented for the 2nd implementation draft
-  return EVENT_CONT;
+  return EVENT_DONE;
 }
 
 int
@@ -275,13 +321,13 @@ QUICHandshake::state_complete(int event, void *data)
   QUICHSDebug("%s", get_vc_event_name(event));
   QUICHSDebug("Got an event on complete state. Ignoring it for now.");
 
-  return EVENT_CONT;
+  return EVENT_DONE;
 }
 
 int
 QUICHandshake::state_closed(int event, void *data)
 {
-  return EVENT_CONT;
+  return EVENT_DONE;
 }
 
 void
@@ -308,85 +354,34 @@ QUICHandshake::_load_local_transport_parameters(QUICVersion negotiated_version)
 }
 
 QUICErrorUPtr
-QUICHandshake::_process_client_hello()
+QUICHandshake::_do_handshake(bool initial)
 {
+  // TODO: pass stream_io
   QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
 
-  // Complete message should fit in a packet and be able to read
-  uint8_t msg[UDP_MAXIMUM_PAYLOAD_SIZE] = {0};
-  int64_t msg_len                       = stream_io->read_avail();
-  stream_io->read(msg, msg_len);
+  uint8_t in[UDP_MAXIMUM_PAYLOAD_SIZE] = {0};
+  int64_t in_len                       = 0;
 
-  if (msg_len <= 0) {
-    QUICHSDebug("No message");
-    return QUICErrorUPtr(new QUICNoError());
+  if (!initial) {
+    // Complete message should fit in a packet and be able to read
+    in_len = stream_io->read_avail();
+    stream_io->read(in, in_len);
+
+    if (in_len <= 0) {
+      QUICHSDebug("No message");
+      return QUICErrorUPtr(new QUICNoError());
+    }
+    I_WANNA_DUMP_THIS_BUF(in, in_len);
   }
-
-  // ----- DEBUG ----->
-  I_WANNA_DUMP_THIS_BUF(msg, msg_len);
-  // <----- DEBUG -----
-
-  uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
-  size_t server_hello_len                     = 0;
-  bool result                                 = false;
-  result = this->_crypto->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, msg, msg_len);
-
-  if (result) {
-    // ----- DEBUG ----->
-    I_WANNA_DUMP_THIS_BUF(server_hello, static_cast<int64_t>(server_hello_len));
-    // <----- DEBUG -----
-
-    QUICHSDebug("Enter state_read_client_finished");
-    SET_HANDLER(&QUICHandshake::state_read_client_finished);
-
-    stream_io->write(server_hello, server_hello_len);
-    stream_io->write_reenable();
-    stream_io->read_reenable();
-
-    return QUICErrorUPtr(new QUICNoError());
-  } else {
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
-  }
-}
-
-QUICErrorUPtr
-QUICHandshake::_process_client_finished()
-{
-  QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
-
-  // Complete message should fit in a packet and be able to read
-  uint8_t msg[UDP_MAXIMUM_PAYLOAD_SIZE] = {0};
-  int64_t msg_len                       = stream_io->read_avail();
-  stream_io->read(msg, msg_len);
-
-  if (msg_len <= 0) {
-    QUICHSDebug("No message");
-    return QUICErrorUPtr(new QUICNoError());
-  }
-
-  // ----- DEBUG ----->
-  I_WANNA_DUMP_THIS_BUF(msg, msg_len);
-  // <----- DEBUG -----
 
   uint8_t out[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t out_len                     = 0;
   bool result                        = false;
-  result                             = this->_crypto->handshake(out, out_len, MAX_HANDSHAKE_MSG_LEN, msg, msg_len);
+  result                             = this->_crypto->handshake(out, out_len, MAX_HANDSHAKE_MSG_LEN, in, in_len);
 
   if (result) {
-    // ----- DEBUG ----->
     I_WANNA_DUMP_THIS_BUF(out, static_cast<int64_t>(out_len));
-    // <----- DEBUG -----
-
-    _process_handshake_complete();
-    QUICHSDebug("Handshake has been completed");
-
-    QUICHSDebug("Enter state_complete");
-    SET_HANDLER(&QUICHandshake::state_complete);
-
     stream_io->write(out, out_len);
-    stream_io->write_reenable();
-    stream_io->read_reenable();
 
     return QUICErrorUPtr(new QUICNoError());
   } else {
@@ -395,21 +390,97 @@ QUICHandshake::_process_client_finished()
 }
 
 QUICErrorUPtr
-QUICHandshake::_process_handshake_complete()
+QUICHandshake::_process_initial()
 {
-  if (this->_crypto->update_key_materials()) {
+  QUICErrorUPtr error = _do_handshake(true);
+
+  if (error->cls == QUICErrorClass::NONE) {
+    QUICHSDebug("Enter state_key_exchange");
+    SET_HANDLER(&QUICHandshake::state_key_exchange);
+  }
+
+  return error;
+}
+
+QUICErrorUPtr
+QUICHandshake::_process_client_hello()
+{
+  QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
+  QUICErrorUPtr error     = _do_handshake();
+
+  if (error->cls == QUICErrorClass::NONE) {
+    QUICHSDebug("Enter state_auth");
+    SET_HANDLER(&QUICHandshake::state_auth);
+
+    stream_io->write_reenable();
+  } else {
+    stream_io->read_reenable();
+  }
+
+  return error;
+}
+
+QUICErrorUPtr
+QUICHandshake::_process_server_hello()
+{
+  QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
+  QUICErrorUPtr error     = _do_handshake();
+
+  if (error->cls == QUICErrorClass::NONE) {
+    int res = this->_complete_handshake();
+    if (res) {
+      stream_io->write_reenable();
+    } else {
+      this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
+    }
+  } else {
+    stream_io->read_reenable();
+  }
+
+  return error;
+}
+
+QUICErrorUPtr
+QUICHandshake::_process_finished()
+{
+  QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
+  QUICErrorUPtr error     = _do_handshake();
+
+  if (error->cls == QUICErrorClass::NONE) {
+    int res = this->_complete_handshake();
+    if (res) {
+      stream_io->write_reenable();
+    } else {
+      this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
+    }
+  } else {
+    stream_io->read_reenable();
+  }
+
+  return error;
+}
+
+int
+QUICHandshake::_complete_handshake()
+{
+  QUICHSDebug("Enter state_complete");
+  SET_HANDLER(&QUICHandshake::state_complete);
+
+  int res = this->_crypto->update_key_materials();
+  if (res) {
     QUICHSDebug("Keying Materials are exported");
   } else {
     QUICHSDebug("Failed to export Keying Materials");
   }
 
-  return QUICErrorUPtr(new QUICNoError());
+  return res;
 }
 
 void
 QUICHandshake::_abort_handshake(QUICTransErrorCode code)
 {
   this->_client_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
+
   QUICHSDebug("Enter state_closed");
   SET_HANDLER(&QUICHandshake::state_closed);
 }

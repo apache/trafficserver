@@ -132,9 +132,11 @@ QUICApplication::QUICApplication(QUICConnection *qc) : Continuation(new_ProxyMut
 
 // @brief Bind stream and application
 void
-QUICApplication::set_stream(QUICStream *stream)
+QUICApplication::set_stream(QUICStream *stream, QUICStreamIO *stream_io)
 {
-  QUICStreamIO *stream_io = new QUICStreamIO(this, stream);
+  if (stream_io == nullptr) {
+    stream_io = new QUICStreamIO(this, stream);
+  }
   this->_stream_map.insert(std::make_pair(stream->id(), stream_io));
 }
 
@@ -166,7 +168,6 @@ QUICApplication::unset_stream(QUICStream *stream)
   QUICStreamIO *stream_io = this->_find_stream_io(stream->id());
   if (stream_io) {
     this->_stream_map.erase(stream->id());
-    delete stream_io;
   }
 }
 
