@@ -35,7 +35,9 @@
 
 QUICNetProcessor quic_NetProcessor;
 
-QUICNetProcessor::QUICNetProcessor() {}
+QUICNetProcessor::QUICNetProcessor()
+{
+}
 
 QUICNetProcessor::~QUICNetProcessor()
 {

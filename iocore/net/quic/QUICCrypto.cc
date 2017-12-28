@@ -50,7 +50,9 @@ to_hex(uint8_t *out, uint8_t *in, int in_len)
 // QUICPacketProtection
 //
 
-QUICPacketProtection::~QUICPacketProtection() {}
+QUICPacketProtection::~QUICPacketProtection()
+{
+}
 
 void
 QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phase)
