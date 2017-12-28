@@ -25,11 +25,14 @@
 
 #include "Mock.h"
 #include "QUICHandshake.h"
+#include "QUICConfig.h"
 
 #include "./server_cert.h"
 
 TEST_CASE("1-RTT handshake ", "[quic]")
 {
+  QUICConfig::startup();
+
   // setup client
   QUICConnection *client_qc = new MockQUICConnection(NET_VCONNECTION_OUT);
 

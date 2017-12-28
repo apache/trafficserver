@@ -153,6 +153,24 @@ QUICNetVConnection::reenable(VIO *vio)
   return;
 }
 
+int
+QUICNetVConnection::connectUp(EThread *t, int fd)
+{
+  // create stream 0
+  // FIXME: integration w/ QUICStreamManager
+  QUICStream *stream = new (THREAD_ALLOC(quicStreamAllocator, this_ethread())) QUICStream();
+  stream->init(this, this->connection_id(), STREAM_ID_FOR_HANDSHAKE);
+  if (!this->_handshake_handler->is_stream_set(stream)) {
+    this->_handshake_handler->set_stream(stream);
+  }
+
+  // start QUIC handshake
+  this->_handshake_handler->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+
+  // action_.continuation->handleEvent(NET_EVENT_OPEN, this);
+  return CONNECT_SUCCESS;
+}
+
 QUICConnectionId
 QUICNetVConnection::original_connection_id()
 {
@@ -853,6 +871,11 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
 
   switch (type) {
+  case QUICPacketType::INITIAL:
+    ink_assert(this->get_context() == NET_VCONNECTION_OUT);
+    packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->largest_acked_packet_number(),
+                                                         QUIC_SUPPORTED_VERSIONS[0], std::move(buf), len);
+    break;
   case QUICPacketType::HANDSHAKE:
     packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
                                                            std::move(buf), len, retransmittable);
@@ -862,8 +885,15 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
       packet = this->_packet_factory.create_server_protected_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
                                                                     std::move(buf), len, retransmittable);
     } else {
-      packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
-                                                             std::move(buf), len, retransmittable);
+      // FIXME: remove this flag
+      if (this->get_context() == NET_VCONNECTION_OUT && this->_is_initial) {
+        this->_is_initial = false;
+        packet            = this->_packet_factory.create_initial_packet(
+          this->_original_quic_connection_id, this->largest_acked_packet_number(), QUIC_SUPPORTED_VERSIONS[0], std::move(buf), len);
+      } else {
+        packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
+                                                               std::move(buf), len, retransmittable);
+      }
     }
     break;
   }

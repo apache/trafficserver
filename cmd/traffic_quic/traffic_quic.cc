@@ -1,3 +1,4 @@
+
 /** @file
  *
  *  A brief file description
@@ -33,6 +34,7 @@
 
 constexpr size_t stacksize = 1048576;
 
+// copy from iocore/utils/diags.i
 static void
 reconfigure_diags()
 {
@@ -94,7 +96,7 @@ init_diags(const char *bdt, const char *bat)
   char diags_logpath[500];
   strcpy(diags_logpath, DIAGS_LOG_FILE);
 
-  diags = new Diags("tq", bdt, bat, new BaseLogFile(diags_logpath));
+  diags = new Diags("Client", bdt, bat, new BaseLogFile(diags_logpath));
   Status("opened %s", diags_logpath);
 
   reconfigure_diags();
@@ -152,7 +154,7 @@ int
 main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   Layout::create();
-  init_diags("udp|quic", nullptr);
+  init_diags("quic|udp", nullptr);
   RecProcessInit(RECM_STAND_ALONE);
 
   SSLInitializeLibrary();
@@ -168,6 +170,8 @@ main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 
   QUICClient client;
   client.start();
+
+  main_thread->execute();
 }
 
 //

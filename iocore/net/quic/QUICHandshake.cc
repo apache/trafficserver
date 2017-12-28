@@ -94,6 +94,8 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
   this->_version_negotiator = new QUICVersionNegotiator();
 
   this->_crypto->initialize_key_materials(this->_client_qc->original_connection_id());
+  // for client initial
+  this->_load_local_transport_parameters(QUIC_SUPPORTED_VERSIONS[0]);
 
   SET_HANDLER(&QUICHandshake::state_initial);
 }
@@ -392,11 +394,14 @@ QUICHandshake::_do_handshake(bool initial)
 QUICErrorUPtr
 QUICHandshake::_process_initial()
 {
-  QUICErrorUPtr error = _do_handshake(true);
+  QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
+  QUICErrorUPtr error     = _do_handshake(true);
 
   if (error->cls == QUICErrorClass::NONE) {
     QUICHSDebug("Enter state_key_exchange");
     SET_HANDLER(&QUICHandshake::state_key_exchange);
+
+    stream_io->write_reenable();
   }
 
   return error;

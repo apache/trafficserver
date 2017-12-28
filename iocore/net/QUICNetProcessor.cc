@@ -115,16 +115,24 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *addr, NetVCOpti
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t);
 
-  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(this->allocate_vc(t));
+  // Setup UDPConnection
+  // FIXME: use udpNet.CreateUDPSocket
+  int fd                 = socket(AF_INET, SOCK_DGRAM, 0);
+  UnixUDPConnection *con = new UnixUDPConnection(fd);
+  AcceptOptions const accept_opt;
+  QUICPacketHandler *packet_handler = new QUICPacketHandler(accept_opt, this->_ssl_ctx);
+  con->setBinding(addr);
+  con->bindToThread(packet_handler);
+
+  PollCont *pc       = get_UDPPollCont(con->ethread);
+  PollDescriptor *pd = pc->pollDescriptor;
+  con->ep.start(pd, con, EVENTIO_READ);
 
   // Setup QUICNetVConnection
-  // TODO: randomize
-  QUICConnectionId id = 0x00;
-  UDPConnection *con  = new UnixUDPConnection(NO_FD);
-  AcceptOptions const accept_opt;
-  QUICPacketHandler *ph = new QUICPacketHandler(accept_opt, this->_ssl_ctx);
-
-  vc->init(id, con, ph);
+  QUICConnectionId cid;
+  cid.randomize();
+  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(this->allocate_vc(t));
+  vc->init(cid, con, packet_handler);
 
   if (opt) {
     vc->options = *opt;
@@ -132,16 +140,16 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *addr, NetVCOpti
     opt = &vc->options;
   }
 
+  // Connection ID will be changed
+  vc->id = net_next_connection_number();
   vc->set_context(NET_VCONNECTION_OUT);
   vc->con.setRemote(addr);
-  vc->id          = net_next_connection_number();
   vc->submit_time = Thread::get_hrtime();
   vc->mutex       = cont->mutex;
   vc->action_     = cont;
 
   vc->start(this->_ssl_ctx);
-
-  vc->action_.continuation->handleEvent(NET_EVENT_OPEN, this);
+  vc->connectUp(t, NO_FD);
 
   return ACTION_RESULT_DONE;
 }

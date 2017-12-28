@@ -38,10 +38,10 @@ static void
 to_hex(uint8_t *out, uint8_t *in, int in_len)
 {
   for (int i = 0; i < in_len; ++i) {
-    int u4 = in[i] / 16;
-    int l4 = in[i] % 16;
-    out [i * 2]     = (u4 < 10) ? ('0' + u4) : ('A' + u4 - 10);
-    out [i * 2 + 1] = (l4 < 10) ? ('0' + l4) : ('A' + l4 - 10);
+    int u4         = in[i] / 16;
+    int l4         = in[i] % 16;
+    out[i * 2]     = (u4 < 10) ? ('0' + u4) : ('A' + u4 - 10);
+    out[i * 2 + 1] = (l4 < 10) ? ('0' + l4) : ('A' + l4 - 10);
   }
   out[in_len * 2] = 0;
 }
@@ -50,9 +50,7 @@ to_hex(uint8_t *out, uint8_t *in, int in_len)
 // QUICPacketProtection
 //
 
-QUICPacketProtection::~QUICPacketProtection()
-{
-}
+QUICPacketProtection::~QUICPacketProtection() {}
 
 void
 QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phase)
@@ -173,7 +171,6 @@ QUICCryptoTls::is_handshake_finished() const
 int
 QUICCryptoTls::initialize_key_materials(QUICConnectionId cid)
 {
-
   // Generate keys
   uint8_t print_buf[512];
   std::unique_ptr<KeyMaterial> km;

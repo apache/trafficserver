@@ -30,6 +30,8 @@
 #include "QUICFrame.h"
 #include "QUICFrameTransmitter.h"
 
+extern ClassAllocator<QUICStream> quicStreamAllocator;
+
 class QUICTransportParameters;
 
 class QUICStreamManager : public QUICFrameHandler
