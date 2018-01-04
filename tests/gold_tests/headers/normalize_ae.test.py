@@ -25,9 +25,8 @@ Test normalizations of the Accept-Encoding header field.
 '''
 
 Test.SkipUnless(
-    Condition.HasProgram(
-        "curl", "Curl need to be installed on system for this test to work"),
-    Condition.HasProgram("netstat", "netstat need to be installed on system for this test to work")
+    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
+    Condition.HasATSFeature('TS_HAS_BROTLI')
 )
 
 Test.ContinueOnFail = True
@@ -47,7 +46,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.ae-2.com\r\n\r\n", "ti
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # Define first ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts")
 
 
 def baselineTsSetup(ts):
@@ -82,13 +81,6 @@ baselineTsSetup(ts)
 normalize_ae_log_id = Test.Disk.File("normalize_ae.log")
 normalize_ae_log_id.Content = "normalize_ae.gold"
 
-# ask the os if the port is ready for connect()
-#
-
-
-def CheckPort(port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(port), shell=True)
-
 # Try various Accept-Encoding header fields for a particular traffic server and host.
 
 
@@ -98,12 +90,12 @@ def allAEHdrs(shouldWaitForUServer, shouldWaitForTs, ts, host):
 
     if shouldWaitForUServer:
         # wait for the micro server
-        tr.Processes.Default.StartBefore(server, ready=CheckPort(server.Variables.Port))
+        tr.Processes.Default.StartBefore(server)
 
     if shouldWaitForTs:
         # wait for the micro server
         # delay on readiness of port
-        tr.Processes.Default.StartBefore(ts, ready=CheckPort(ts.Variables.port))
+        tr.Processes.Default.StartBefore(ts)
 
     baseCurl = 'curl --verbose --ipv4 --http1.1 --proxy localhost:{} '.format(ts.Variables.port)
 
@@ -146,9 +138,7 @@ def perTsTest(shouldWaitForUServer, ts):
 perTsTest(True, ts)
 
 # Define second ATS
-ts2 = Test.MakeATSProcess("ts2", select_ports=False)
-
-ts2.Variables.port += 1
+ts2 = Test.MakeATSProcess("ts2")
 
 baselineTsSetup(ts2)
 
