@@ -56,8 +56,8 @@ ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     # 'proxy.config.diags.debug.enabled': 1,
     # 'proxy.config.diags.debug.tags': 'http|url_sig',
-    'proxy.config.http.cache.http': 0, # Make sure each request is forwarded to the origin server.
-    'proxy.config.proxy_name': 'Poxy_Proxy', # This will be the server name.
+    'proxy.config.http.cache.http': 0,  # Make sure each request is forwarded to the origin server.
+    'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.http.server_ports': (
@@ -97,11 +97,6 @@ ts.Disk.remap_config.AddLine(
     ' @plugin=url_sig.so @pparam={}/url_sig.config @pparam=PristineUrl'.format(Test.TestDirectory)
 )
 
-# Ask the OS if the port is ready for connect()
-#
-def CheckPort(Port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
-
 # Validation failure tests.
 
 LogTee = " 2>&1 | tee -a {}/url_sig_long.log".format(Test.RunDirectory)
@@ -109,8 +104,8 @@ LogTee = " 2>&1 | tee -a {}/url_sig_long.log".format(Test.RunDirectory)
 # Bad client / MD5 / P=101 / URL pristine / URL altered.
 #
 tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(ts, ready=CheckPort(ts.Variables.ssl_port))
-tr.Processes.Default.StartBefore(server, ready=CheckPort(server.Variables.Port))
+tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
     "curl --verbose --proxy http://127.0.0.1:{} 'http://seven.eight.nine/".format(ts.Variables.port) +
