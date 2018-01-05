@@ -334,9 +334,9 @@ RunrootEngine::clean_runroot()
         remove_directory(dir);
       }
       // coverity issue need check on value
-      if (yaml_file.size()){
+      if (yaml_file.size()) {
         remove(yaml_file.c_str());
-    }
+      }
       if (cur_working_dir != path) {
         // if the runroot is empty, remove it
         remove(clean_root.c_str());
