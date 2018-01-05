@@ -37,6 +37,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <system_error>
 #include <ftw.h>
 
 std::string directory_check = "";
@@ -117,11 +118,15 @@ path_handler(std::string &path)
   }
   if (path.empty()) {
     char cwd[PATH_MAX];
-    getcwd(cwd, sizeof(cwd));
+    if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+      ink_fatal("unexcepted failure from getcwd() code=%d", errno);
+    }
     return cwd;
   }
   char resolved_path[PATH_MAX];
-  realpath(path.c_str(), resolved_path);
+  if (realpath(path.c_str(), resolved_path) == nullptr) {
+    ink_fatal("unexcepted failure from realpath() code=%d", errno);
+  }
 
   return resolved_path;
 }
@@ -257,10 +262,14 @@ const static std::string
 clean_parent(const std::string &bin_path)
 {
   char cwd[PATH_MAX];
-  getcwd(cwd, sizeof(cwd));
+  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+    ink_fatal("unexcepted failure from getcwd() code=%d", errno);
+  }
 
   char resolved_binpath[PATH_MAX];
-  realpath(bin_path.c_str(), resolved_binpath); // bin path
+  if (realpath(bin_path.c_str(), resolved_binpath) == nullptr) { // bin path
+    ink_fatal("unexcepted failure from realpath() code=%d", errno);
+  }
   std::string RealBinPath = resolved_binpath;
 
   std::vector<std::string> TwoPath = {RealBinPath, cwd};
@@ -280,7 +289,9 @@ RunrootEngine::clean_runroot()
   std::string clean_root = path;
 
   char cwd[PATH_MAX];
-  getcwd(cwd, sizeof(cwd));
+  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+    ink_fatal("unexcepted failure from getcwd() code=%d", errno);
+  }
   std::string cur_working_dir = cwd;
 
   if (force_flag) {
@@ -322,7 +333,10 @@ RunrootEngine::clean_runroot()
         dir                   = Layout::relative_to(clean_root, later_dir.substr(0, later_dir.find_first_of("/")));
         remove_directory(dir);
       }
-      remove(yaml_file.c_str());
+      // coverity issue need check on value
+      if (yaml_file.size()){
+        remove(yaml_file.c_str());
+    }
       if (cur_working_dir != path) {
         // if the runroot is empty, remove it
         remove(clean_root.c_str());
