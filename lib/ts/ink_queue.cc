@@ -320,6 +320,11 @@ static void
 malloc_free(InkFreeList *f, void *item)
 {
   if (f->alignment) {
+#ifdef MADV_DODUMP
+    if (f->advice && (INK_ALIGN((uint64_t)item, ats_pagesize()) == (uint64_t)item)) {
+      ats_madvise((caddr_t)item, INK_ALIGN(f->type_size, f->alignment), MADV_DODUMP);
+    }
+#endif
     ats_memalign_free(item);
   } else {
     ats_free(item);
@@ -389,6 +394,11 @@ malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
   if (f->alignment) {
     for (size_t i = 0; i < num_item && item; ++i, item = next) {
       next = *(void **)item; // find next item before freeing current item
+#ifdef MADV_DODUMP
+      if (f->advice && (INK_ALIGN((uint64_t)item, ats_pagesize()) == (uint64_t)item)) {
+        ats_madvise((caddr_t)item, INK_ALIGN(f->type_size, f->alignment), MADV_DODUMP);
+      }
+#endif
       ats_memalign_free(item);
     }
   } else {

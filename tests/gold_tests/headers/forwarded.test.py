@@ -28,7 +28,6 @@ Test.SkipUnless(
     Condition.HasATSFeature('TS_USE_TLS_ALPN'),
     Condition.HasCurlFeature('http2'),
     Condition.HasCurlFeature('IPv6'),
-    Condition.HasProgram("netstat", "netstat need to be installed on system for this test to work")
 )
 Test.ContinueOnFail = True
 
@@ -157,20 +156,12 @@ ts.Disk.remap_config.AddLine(
     ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=connection=full'
 )
 
-# Ask the OS if the port is ready for connect()
-#
-
-
-def CheckPort(Port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
-
-
 # Basic HTTP 1.1 -- No Forwarded by default
 tr = Test.AddTestRun()
 # Wait for the micro server
-tr.Processes.Default.StartBefore(server, ready=CheckPort(server.Variables.Port))
+tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 # Delay on readiness of our ssl ports
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=CheckPort(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 #
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts.Variables.port)
@@ -225,7 +216,7 @@ ts2.Disk.remap_config.AddLine(
 # Forwarded header with UUID of 2nd ATS.
 tr = Test.AddTestRun()
 # Delay on readiness of our ssl ports
-tr.Processes.Default.StartBefore(Test.Processes.ts2, ready=CheckPort(ts2.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts2, ready=When.PortOpen(ts2.Variables.ssl_port))
 #
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.port)

@@ -19,6 +19,7 @@
 import socket
 import subprocess
 import os
+import platform
 
 import hosts.output as host
 
@@ -61,10 +62,20 @@ def setup_port_queue(amount=1000):
         # some docker setups don't have sbin setup correctly
         new_env = os.environ.copy()
         new_env['PATH'] = "/sbin:/usr/sbin:" + new_env['PATH']
-        dmin, dmax = subprocess.check_output(
-            ["sysctl", "net.ipv4.ip_local_port_range"],
-            env=new_env
-        ).decode().split("=")[1].split()
+        if 'Darwin' == platform.system():
+            dmin = subprocess.check_output(
+                ["sysctl", "net.inet.ip.portrange.first"],
+                env=new_env
+            ).decode().split(":")[1].split()[0]
+            dmax = subprocess.check_output(
+                ["sysctl", "net.inet.ip.portrange.last"],
+                env=new_env
+            ).decode().split(":")[1].split()[0]
+        else:
+            dmin, dmax = subprocess.check_output(
+                ["sysctl", "net.ipv4.ip_local_port_range"],
+                env=new_env
+            ).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
     except:

@@ -30,7 +30,7 @@ path = os.path.join(p.Env['TS_ROOT'], "runroot")
 
 # normal init from pass in path
 tr = Test.AddTestRun("Test traffic_layout init")
-tr.Processes.Default.Command = "$ATS_BIN/traffic_layout --init " + path
+tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path
 tr.Processes.Default.ReturnCode = 0
 d = tr.Disk.Directory(path)
 d.Exists = True
@@ -39,31 +39,31 @@ f.Exists = True
 
 # remove from pass in path
 tr = Test.AddTestRun("Test traffoc_layout remove")
-tr.Processes.Default.Command = "$ATS_BIN/traffic_layout --remove " + path
+tr.Processes.Default.Command = "$ATS_BIN/traffic_layout remove --path " + path
 tr.Processes.Default.ReturnCode = 0
 d = tr.Disk.Directory(path)
 d.Exists = False
 f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
 f.Exists = False
 
-path += '/'
+# path += '/'
 
-#use env variable to init
-tr = Test.AddTestRun("Test traffic_layout ENV init")
-tr.Processes.Default.Env["TS_RUNROOT"] = path
-tr.Processes.Default.Command = "$ATS_BIN/traffic_layout --init"
-tr.Processes.Default.ReturnCode = 0
-d = tr.Disk.Directory(path)
-d.Exists = True
-f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
-f.Exists = True
+# #use env variable to init
+# tr = Test.AddTestRun("Test traffic_layout ENV init")
+# tr.Processes.Default.Env["TS_RUNROOT"] = path
+# tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init"
+# tr.Processes.Default.ReturnCode = 0
+# d = tr.Disk.Directory(path)
+# d.Exists = True
+# f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
+# f.Exists = True
 
-#use env variable to remove
-tr = Test.AddTestRun("Test traffic_layout ENV remove")
-tr.Processes.Default.Env["TS_RUNROOT"] = path
-tr.Processes.Default.Command = "$ATS_BIN/traffic_layout --remove"
-tr.Processes.Default.ReturnCode = 0
-d = tr.Disk.Directory(path)
-d.Exists = False
-f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
-f.Exists = False
+# #use env variable to remove
+# tr = Test.AddTestRun("Test traffic_layout ENV remove")
+# tr.Processes.Default.Env["TS_RUNROOT"] = path
+# tr.Processes.Default.Command = "$ATS_BIN/traffic_layout remove"
+# tr.Processes.Default.ReturnCode = 0
+# d = tr.Disk.Directory(path)
+# d.Exists = False
+# f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
+# f.Exists = False
