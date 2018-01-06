@@ -2,11 +2,18 @@ Changes with Apache Traffic Server 7.1.2
   #1808 - Coverity - 1021688 Uninitialized scalar field.
   #1843 - Coverity 1021688: Uninitialized scalar field
   #1933 - Coredump with server_session
+  #2017 - Update IMS handling table to include INM
   #2038 - tsxs generation uses AM_C*FLAGS instead of C*FLAGS
+  #2041 - volume.config doesn't differentiate http/https
+  #2135 - adds clarifications on plugin use
+  #2317 - Add example command to generate session ticket
+  #2333 - Doc: Fix warning for footnote in cache arch docs.
   #2339 - Fix the queue when reprioritize
+  #2375 - Session ticket resumption needs consistent CA-certificate version
   #2400 - corrects HTTP status 0 to 302 on redirect
   #2430 - Delay creation of transaction until user agent sends request.
   #2461 - Fix logging of cache stale miss connecton error being reported as
+  #2463 - Explain how # of parents relates to fail_threshold total_connect_attempts
   #2482 - only default cert matches signature_algorithm extension
   #2496 - updates pre-commit hook to use specific clang-format
   #2509 - TLS crashes in 7.1.1
@@ -18,6 +25,7 @@ Changes with Apache Traffic Server 7.1.2
   #2574 - Optimize: Use a positive number as the timeout of DNSEntry.
   #2580 - Update s3auth test, removed cpp file and added the Catch main define in the unit test file
   #2601 - Doc: Tweak makefiles to not build man pages for install if doc building is disabled.
+  #2615 - Fixed typo in cachekey plugin documentation
   #2631 - Fix mem leak related to do_os_response() function
   #2641 - Add flag to ignore out of bounds compile error for test
   #2653 - 7.1.x Avoid sending duplicate push promise on same client session 
@@ -74,3 +82,5 @@ Changes with Apache Traffic Server 7.1.2
   #2942 - header_rewrite - Delete space after semi colon when deleting cookies from a list
   #2943 - logging: fix incorrect use of LogAccess::strlen()
   #2945 - Build: Fix WCCP link error for 'make check' in traffic_manager.
+  #2973 - Fix race condition during testing rc2.
+  #2980 - Fix naming of average aggregate function
