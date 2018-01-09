@@ -126,7 +126,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     detector.on_packet_sent(std::move(packet8));
     detector.on_packet_sent(std::move(packet9));
 
-    ink_hrtime_sleep(HRTIME_MSECONDS(10000));
+    ink_hrtime_sleep(HRTIME_MSECONDS(1000));
 
     // Receive an ACK for (1) (4) (5) (7) (8) (9)
     afc->update(pn1, true);
@@ -135,8 +135,10 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     afc->update(pn7, true);
     afc->update(pn8, true);
     afc->update(pn9, true);
+    ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     frame = afc->create();
     detector.handle_frame(frame);
+    ink_hrtime_sleep(HRTIME_MSECONDS(5000));
 
     CHECK(cc->lost_packets.size() == 3);
 
