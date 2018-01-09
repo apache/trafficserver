@@ -1,0 +1,65 @@
+'''
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+def HasOpenSSLVersion(self, version):
+    return self.EnsureVersion(["openssl","version"],min_version=version)
+
+def HasCurlFeature(self, feature):
+
+    def default(output):
+        FEATURE_TAG = 'Features:'
+        tag = feature.lower()
+        for line in output.splitlines():
+            # look for line with starting with the Features
+            if line.startswith(FEATURE_TAG):
+                # get a features and lower case then for safety
+                line = line[len(FEATURE_TAG):].lower()
+                tokens = line.split()
+                for t in tokens:
+                    if t == tag:
+                        return True
+        return False
+
+    return self.CheckOutput(
+        ['curl', '--version'],
+        default,
+        "Curl needs to support feature: {feature}".format(feature=feature)
+    )
+
+
+def HasATSFeature(self, feature):
+
+    val = self.Variables.get(feature, None)
+
+    return self.Condition(
+        lambda: val == True,
+        "ATS feature not enabled: {feature}".format(feature=feature)
+    )
+
+#test if a plugin exists in the libexec folder
+def PluginExists(self, pluginname):
+
+    path = os.path.join(self.Variables.PLUGINDIR, pluginname)
+    return self.Condition(lambda: os.path.isfile(path) == True, path + " not found." )
+
+
+ExtendCondition(HasOpenSSLVersion)
+ExtendCondition(HasATSFeature)
+ExtendCondition(HasCurlFeature)
+ExtendCondition(PluginExists)
+

@@ -33,8 +33,9 @@ import argparse
 import ssl
 import socket
 import importlib.util
-
+import time
 test_mode_enabled = True
+lookup_key_ = "{PATH}"
 __version__ = "1.0"
 
 
@@ -51,6 +52,7 @@ import sessionvalidation.sessionvalidation as sv
 
 
 SERVER_PORT = 5005  # default port
+SERVER_DELAY = 0 # default delay
 HTTP_VERSION = 'HTTP/1.1'
 G_replay_dict = {}
 
@@ -151,6 +153,7 @@ class SSLServer(ThreadingMixIn, HTTPServer):
 
         self.server_bind()
         self.server_activate()
+        print("Port Configured for SSL communication")
 
 
 class MyHandler(BaseHTTPRequestHandler):
@@ -166,17 +169,43 @@ class MyHandler(BaseHTTPRequestHandler):
         else:
             readChunks()
 
-    def getTestName(self, requestline):
-        key = None
-        keys = requestline.split(" ")
-        # print(keys)
-        if keys:
-            rkey = keys[1]
-        key = rkey.split("/", 1)[1]
-        if key + "/" in G_replay_dict:
-            key = key + "/"
-        elif len(key) > 1 and key[:-1] in G_replay_dict:
-            key = key[:-1]
+    def getLookupKey(self, requestline):
+        global lookup_key_
+        kpath= ""
+        path = ""
+        url_part = requestline.split(" ")
+        if url_part:
+            if url_part[1].startswith("http"):
+                path = url_part[1].split("/",2)[2]
+                host_, path = path.split("/",1)
+            else:
+                path = url_part[1].split("/",1)[1]
+        argsList = []
+        keyslist = lookup_key_.split("}")
+        for keystr in keyslist:            
+            if keystr == '{PATH':
+                kpath = kpath+path
+                continue # do not include path in the list of header fields
+            if keystr == '{HOST':
+                kpath = kpath+host_
+                continue
+            stringk = keystr.replace("{%","")
+            argsList.append(stringk)
+        KeyList = []
+        for argsL in argsList:
+            print("args",argsL,len(argsL))
+            if len(argsL)>0:
+                val = self.headers.get(argsL)
+                if val:
+                    field_val,__ = cgi.parse_header(val)
+                else:
+                    field_val=None
+                if field_val!=None:
+                    KeyList.append(field_val)
+        key = "".join(KeyList)+kpath
+        print("lookup key",key, len(key))
+
+
         return key
 
     def parseRequestline(self, requestline):
@@ -196,8 +225,11 @@ class MyHandler(BaseHTTPRequestHandler):
         return int(header.split(' ')[1])
 
     def generator(self):
-        yield 'microserver'
-        yield 'yahoo'
+        yield 'micro'
+        yield 'server'
+        yield 'apache'
+        yield 'traffic'
+        yield 'server'
 
     def send_response(self, code, message=None):
         ''' Override `send_response()`'s tacking on of server and date header lines. '''
@@ -364,7 +396,8 @@ class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         global G_replay_dict, test_mode_enabled
         if test_mode_enabled:
-            request_hash = self.getTestName(self.requestline)
+            time.sleep(time_delay)
+            request_hash = self.getLookupKey(self.requestline)
         else:
             request_hash, __ = cgi.parse_header(self.headers.get('Content-MD5'))
         # print("key:",request_hash)
@@ -439,7 +472,7 @@ class MyHandler(BaseHTTPRequestHandler):
     def do_HEAD(self):
         global G_replay_dict, test_mode_enabled
         if test_mode_enabled:
-            request_hash = self.getTestName(self.requestline)
+            request_hash = self.getLookupKey(self.requestline)
         else:
             request_hash, __ = cgi.parse_header(self.headers.get('Content-MD5'))
 
@@ -477,7 +510,7 @@ class MyHandler(BaseHTTPRequestHandler):
         chunkedResponse = False
         global G_replay_dict, test_mode_enabled
         if test_mode_enabled:
-            request_hash = self.getTestName(self.requestline)
+            request_hash = self.getLookupKey(self.requestline)
         else:
             request_hash, __ = cgi.parse_header(self.headers.get('Content-MD5'))
         try:
@@ -599,12 +632,6 @@ def main():
                         help="Directory with data file"
                         )
 
-    parser.add_argument("--public", "-P",
-                        type=_bool,
-                        default=False,
-                        help="Bind server to public IP 0.0.0.0 vs private IP of 127.0.0.1"
-                        )
-
     parser.add_argument("--ip_address", "-ip",
                         type=str,
                         default='',
@@ -615,6 +642,11 @@ def main():
                         type=int,
                         default=SERVER_PORT,
                         help="Port to use")
+
+    parser.add_argument("--delay", "-dy",
+                        type=float,
+                        default=SERVER_DELAY,
+                        help="Response delay")
 
     parser.add_argument("--timeout", "-t",
                         type=float,
@@ -627,10 +659,10 @@ def main():
                         type=str,
                         default="test",
                         help="Mode of operation")
-    parser.add_argument("--connection", "-c",
+    parser.add_argument("--ssl", "-ssl",
                         type=str,
-                        default="nonSSL",
-                        help="use SSL")
+                        default="False",
+                        help="SSL port")
     parser.add_argument("--key", "-k",
                         type=str,
                         default="ssl/server.pem",
@@ -648,9 +680,20 @@ def main():
                         type=str,
                         default='',
                         help="A file which will install observers on hooks")
+    parser.add_argument("--lookupkey",
+                        type=str,
+                        default="{PATH}",
+                        help="format string used as a key for response lookup: \
+                        example: \"{%Host}{%Server}{PATH}\", \"{HOST}{PATH}\", \"{PATH}\"\
+                        All the args preceded by % are header fields in the request\
+                        The only two acceptable arguments which are not header fields are : fqdn (represented by HOST) and the url path (represented by PATH) in a request line.\
+                        Example: given a client request as  << GET /some/resource/location HTTP/1.1\nHost: hahaha.com\n\n >>, if the user wishes the host field and the path to be used for the response lookup\
+                        then the required format will be {%Host}{PATH}")
 
     args = parser.parse_args()
     options = args
+    global time_delay
+    time_delay = options.delay
 
     # set up global dictionary of {uuid (string): response (Response object)}
     s = sv.SessionValidator(args.data_dir)
@@ -661,9 +704,10 @@ def main():
     try:
         socket_timeout = args.timeout
         test_mode_enabled = args.mode == "test"
-
+        global lookup_key_
+        lookup_key_ = args.lookupkey
         MyHandler.protocol_version = HTTP_VERSION
-        if options.connection == 'ssl':
+        if options.ssl == "True" or options.ssl == "true":
             server = SSLServer((options.ip_address, options.port), MyHandler, options)
         else:
             server = ThreadingServer((options.ip_address, options.port), MyHandler, options)

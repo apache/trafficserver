@@ -16,19 +16,32 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
-import sys
-if sys.version_info < (3, 5, 0):
-    host.WriteError(
-        "You need python 3.5 or later to run these tests\n", show_stack=False)
-
-autest_version ="1.4.2"
-if AuTestVersion() < autest_version:
-    host.WriteError(
-        "Tests need AuTest version {ver} or better\n Please update AuTest:\n  pip install --upgrade autest\n".format(ver=autest_version), show_stack=False)
+from ports import get_port
 
 
-Settings.path_argument(["--ats-bin"],
-                       required=True,
-                       help="A user provided directory to ATS bin")
+def MakeHttpBinServer(obj, name, port=False, ip=False, delay=False, public_ip=False, ssl=False, options={}):
+    data_dir = os.path.join(obj.RunDirectory, name)
+    # create Process
+    p = obj.Processes.Process(name)
+    if (port == False):
+        port = get_port(p, "Port")
+    if (ip == False):
+        ip = '127.0.0.1'
+    if (delay == False):
+        delay = 0
+
+    command = "gunicorn -b {0}:{1} httpbin:app".format(ip, port)
+    for flag, value in options.items():
+        command += " {} {}".format(flag, value)
+
+    # create process
+    p.Command = command
+    p.Setup.MakeDir(data_dir)
+    p.Variables.DataDir = data_dir
+    p.Ready = When.PortOpen(port, ip)
+    p.ReturnCode = Any(None, 0)
+
+    return p
+
+
+ExtendTest(MakeHttpBinServer, name="MakeHttpBinServer")

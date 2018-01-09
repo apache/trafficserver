@@ -164,3 +164,7 @@ tools/trafficserver.pc
 BUILDS
 DEBUG
 RELEASE
+
+# autest
+tests/env-test/
+tests/_sandbox/

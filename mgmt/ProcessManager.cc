@@ -206,7 +206,8 @@ ProcessManager::initLMConnection()
   }
 
   if ((connect(local_manager_sockfd, (struct sockaddr *)&serv_addr, servlen)) < 0) {
-    mgmt_fatal(errno, "[ProcessManager::initLMConnection] failed to connect management socket '%s'\n", (const char *)sockpath);
+    mgmt_fatal(errno, "[ProcessManager::initLMConnection] failed to connect management socket '%s'\n",
+               (const char *)sockpath.c_str());
   }
 
   data_len          = sizeof(pid_t);
