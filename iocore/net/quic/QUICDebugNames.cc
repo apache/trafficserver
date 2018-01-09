@@ -158,33 +158,6 @@ QUICDebugNames::quic_event(int event)
 }
 
 const char *
-QUICDebugNames::vc_event(int event)
-{
-  switch (event) {
-  case VC_EVENT_READ_READY:
-    return "VC_EVENT_READ_READY";
-  case VC_EVENT_READ_COMPLETE:
-    return "VC_EVENT_READ_COMPLETE";
-  case VC_EVENT_WRITE_READY:
-    return "VC_EVENT_WRITE_READY";
-  case VC_EVENT_WRITE_COMPLETE:
-    return "VC_EVENT_WRITE_COMPLETE";
-  case VC_EVENT_EOS:
-    return "VC_EVENT_EOS";
-  case VC_EVENT_ERROR:
-    return "VC_EVENT_ERROR";
-  case VC_EVENT_INACTIVITY_TIMEOUT:
-    return "VC_EVENT_INACTIVITY_TIMEOUT";
-  case VC_EVENT_ACTIVE_TIMEOUT:
-    return "VC_EVENT_ACTIVE_TIMEOUT";
-  case VC_EVENT_OOB_COMPLETE:
-    return "VC_EVENT_OOB_COMPLETE";
-  default:
-    return "UNKNOWN";
-  }
-}
-
-const char *
 QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
 {
   switch (id) {

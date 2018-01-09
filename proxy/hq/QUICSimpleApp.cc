@@ -24,6 +24,7 @@
 #include "QUICSimpleApp.h"
 
 #include "P_Net.h"
+#include "P_VConnection.h"
 #include "QUICDebugNames.h"
 
 #include "HQClientSession.h"
@@ -54,7 +55,7 @@ QUICSimpleApp::~QUICSimpleApp()
 int
 QUICSimpleApp::main_event_handler(int event, Event *data)
 {
-  Debug(tag, "%s", QUICDebugNames::vc_event(event));
+  Debug(tag, "%s", get_vc_event_name(event));
 
   VIO *vio                = reinterpret_cast<VIO *>(data);
   QUICStreamIO *stream_io = this->_find_stream_io(vio);

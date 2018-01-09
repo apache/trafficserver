@@ -225,7 +225,7 @@ QUICHandshake::remote_transport_parameters()
 int
 QUICHandshake::state_initial(int event, Event *data)
 {
-  QUICHSDebug("event: %d", event);
+  QUICHSDebug("%s", get_vc_event_name(event));
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
@@ -263,7 +263,7 @@ QUICHandshake::state_initial(int event, Event *data)
 int
 QUICHandshake::state_key_exchange(int event, Event *data)
 {
-  QUICHSDebug("event: %d", event);
+  QUICHSDebug("%s", get_vc_event_name(event));
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
@@ -295,7 +295,7 @@ QUICHandshake::state_key_exchange(int event, Event *data)
 int
 QUICHandshake::state_auth(int event, Event *data)
 {
-  QUICHSDebug("event: %d", event);
+  QUICHSDebug("%s", get_vc_event_name(event));
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {

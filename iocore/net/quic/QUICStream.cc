@@ -24,6 +24,7 @@
 #include "QUICStream.h"
 
 #include "I_Event.h"
+#include "P_VConnection.h"
 #include "QUICStreamManager.h"
 #include "QUICDebugNames.h"
 #include "QUICConfig.h"
@@ -93,7 +94,7 @@ QUICStream::final_offset()
 int
 QUICStream::state_stream_open(int event, void *data)
 {
-  QUICStreamDebug("%s", QUICDebugNames::vc_event(event));
+  QUICStreamDebug("%s", get_vc_event_name(event));
   QUICErrorUPtr error = std::unique_ptr<QUICError>(new QUICNoError());
 
   switch (event) {
@@ -153,7 +154,7 @@ QUICStream::state_stream_open(int event, void *data)
 int
 QUICStream::state_stream_closed(int event, void *data)
 {
-  QUICStreamDebug("%s", QUICDebugNames::vc_event(event));
+  QUICStreamDebug("%s", get_vc_event_name(event));
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -399,7 +400,7 @@ QUICStream::_signal_read_event()
     this_ethread()->schedule_imm(this->_read_vio._cont, event, &this->_read_vio);
   }
 
-  QUICStreamDebug("%s", QUICDebugNames::vc_event(event));
+  QUICStreamDebug("%s", get_vc_event_name(event));
 }
 
 /**
@@ -421,7 +422,7 @@ QUICStream::_signal_write_event()
     this_ethread()->schedule_imm(this->_write_vio._cont, event, &this->_write_vio);
   }
 
-  QUICStreamDebug("%s", QUICDebugNames::vc_event(event));
+  QUICStreamDebug("%s", get_vc_event_name(event));
 }
 
 int64_t

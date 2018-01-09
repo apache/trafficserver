@@ -38,7 +38,4 @@ public:
   static const char *transport_parameter_id(QUICTransportParameterId id);
   static const char *stream_state(QUICStreamState state);
   static const char *quic_event(int event);
-
-  // TODO: move to somewhere
-  static const char *vc_event(int event);
 };
