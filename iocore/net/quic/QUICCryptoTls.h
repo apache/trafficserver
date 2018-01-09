@@ -60,12 +60,8 @@ private:
   void _gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, const uint8_t *iv, size_t iv_len) const;
 #ifdef OPENSSL_IS_BORINGSSL
   const EVP_AEAD *_get_evp_aead() const;
-  size_t _get_aead_key_len(const EVP_AEAD *aead) const;
-  size_t _get_aead_nonce_len(const EVP_AEAD *aead) const;
 #else
   const EVP_CIPHER *_get_evp_aead() const;
-  size_t _get_aead_key_len(const EVP_CIPHER *aead) const;
-  size_t _get_aead_nonce_len(const EVP_CIPHER *aead) const;
 #endif // OPENSSL_IS_BORINGSSL
   size_t _get_aead_tag_len() const;
 

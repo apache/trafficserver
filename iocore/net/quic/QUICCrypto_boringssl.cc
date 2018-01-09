@@ -71,18 +71,6 @@ QUICCryptoTls::_get_aead_tag_len(const SSL_CIPHER * /* cipher */) const
   return EVP_AEAD_DEFAULT_TAG_LENGTH;
 }
 
-size_t
-QUICCryptoTls::_get_aead_key_len(const EVP_AEAD *aead) const
-{
-  return EVP_AEAD_key_length(aead);
-}
-
-size_t
-QUICCryptoTls::_get_aead_nonce_len(const EVP_AEAD *aead) const
-{
-  return EVP_AEAD_nonce_length(aead);
-}
-
 int
 QUICCryptoTls::_hkdf_expand_label(uint8_t *dst, size_t dst_len, const uint8_t *secret, size_t secret_len, const char *label,
                                   size_t label_len, const EVP_MD *digest) const

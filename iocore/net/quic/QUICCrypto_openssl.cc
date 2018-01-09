@@ -76,18 +76,6 @@ QUICCryptoTls::_get_aead_tag_len() const
   }
 }
 
-size_t
-QUICCryptoTls::_get_aead_key_len(const EVP_CIPHER *aead) const
-{
-  return EVP_CIPHER_key_length(aead);
-}
-
-size_t
-QUICCryptoTls::_get_aead_nonce_len(const EVP_CIPHER *aead) const
-{
-  return EVP_CIPHER_iv_length(aead);
-}
-
 bool
 QUICCryptoTls::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
                         uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, size_t tag_len) const
