@@ -177,17 +177,21 @@ QUICCryptoTls::initialize_key_materials(QUICConnectionId cid)
   uint8_t print_buf[512];
   std::unique_ptr<KeyMaterial> km;
   km = this->_keygen_for_client.generate(cid);
-  to_hex(print_buf, km->key, km->key_len);
-  Debug("vv_quic_crypto", "client key 0x%s", print_buf);
-  to_hex(print_buf, km->iv, km->iv_len);
-  Debug("vv_quic_crypto", "client iv 0x%s", print_buf);
+  if (is_debug_tag_set("vv_quic_crypto")) {
+    to_hex(print_buf, km->key, km->key_len);
+    Debug("vv_quic_crypto", "client key 0x%s", print_buf);
+    to_hex(print_buf, km->iv, km->iv_len);
+    Debug("vv_quic_crypto", "client iv 0x%s", print_buf);
+  }
   this->_client_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
 
   km = this->_keygen_for_server.generate(cid);
-  to_hex(print_buf, km->key, km->key_len);
-  Debug("vv_quic_crypto", "server key 0x%s", print_buf);
-  to_hex(print_buf, km->iv, km->iv_len);
-  Debug("vv_quic_crypto", "server iv 0x%s", print_buf);
+  if (is_debug_tag_set("vv_quic_crypto")) {
+    to_hex(print_buf, km->key, km->key_len);
+    Debug("vv_quic_crypto", "server key 0x%s", print_buf);
+    to_hex(print_buf, km->iv, km->iv_len);
+    Debug("vv_quic_crypto", "server iv 0x%s", print_buf);
+  }
   this->_server_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
 
   // Update algorithm
@@ -222,16 +226,20 @@ QUICCryptoTls::update_key_materials()
   uint8_t print_buf[512];
   std::unique_ptr<KeyMaterial> km;
   km = this->_keygen_for_client.generate(this->_ssl);
-  to_hex(print_buf, km->key, km->key_len);
-  Debug("vv_quic_crypto", "client key 0x%s", print_buf);
-  to_hex(print_buf, km->iv, km->iv_len);
-  Debug("vv_quic_crypto", "client iv 0x%s", print_buf);
+  if (is_debug_tag_set("vv_quic_crypto")) {
+    to_hex(print_buf, km->key, km->key_len);
+    Debug("vv_quic_crypto", "client key 0x%s", print_buf);
+    to_hex(print_buf, km->iv, km->iv_len);
+    Debug("vv_quic_crypto", "client iv 0x%s", print_buf);
+  }
   this->_client_pp->set_key(std::move(km), next_key_phase);
   km = this->_keygen_for_server.generate(this->_ssl);
-  to_hex(print_buf, km->key, km->key_len);
-  Debug("vv_quic_crypto", "server key 0x%s", print_buf);
-  to_hex(print_buf, km->iv, km->iv_len);
-  Debug("vv_quic_crypto", "server iv 0x%s", print_buf);
+  if (is_debug_tag_set("vv_quic_crypto")) {
+    to_hex(print_buf, km->key, km->key_len);
+    Debug("vv_quic_crypto", "server key 0x%s", print_buf);
+    to_hex(print_buf, km->iv, km->iv_len);
+    Debug("vv_quic_crypto", "server iv 0x%s", print_buf);
+  }
   this->_server_pp->set_key(std::move(km), next_key_phase);
 
   // Update algorithm
