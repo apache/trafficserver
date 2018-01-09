@@ -142,16 +142,29 @@ QUICHandshake::is_completed()
   return this->handler == &QUICHandshake::state_complete;
 }
 
+QUICCrypto *
+QUICHandshake::crypto_module()
+{
+  return this->_crypto;
+}
+
 QUICVersion
 QUICHandshake::negotiated_version()
 {
   return this->_version_negotiator->negotiated_version();
 }
 
-QUICCrypto *
-QUICHandshake::crypto_module()
+// Similar to SSLNetVConnection::getSSLCipherSuite()
+const char *
+QUICHandshake::negotiated_cipher_suite()
 {
-  return this->_crypto;
+  // FIXME Generalize and remove dynamic_cast
+  QUICCryptoTls *crypto_tls = dynamic_cast<QUICCryptoTls *>(this->_crypto);
+  if (crypto_tls) {
+    return SSL_get_cipher_name(crypto_tls->ssl_handle());
+  }
+
+  return nullptr;
 }
 
 void

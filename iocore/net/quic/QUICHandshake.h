@@ -67,6 +67,7 @@ public:
   // Getters
   QUICCrypto *crypto_module();
   QUICVersion negotiated_version();
+  const char *negotiated_cipher_suite();
   void negotiated_application_name(const uint8_t **name, unsigned int *len);
   std::shared_ptr<const QUICTransportParameters> local_transport_parameters();
   std::shared_ptr<const QUICTransportParameters> remote_transport_parameters();

@@ -1058,7 +1058,9 @@ QUICNetVConnection::_switch_to_established_state()
 {
   if (this->_complete_handshake_if_possible() == 0) {
     QUICConDebug("Enter state_connection_established");
+    QUICConDebug("%s", this->_handshake_handler->negotiated_cipher_suite());
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
+
     this->_update_alt_connection_ids(countof(this->_alt_quic_connection_ids) - 1);
   } else {
     // Illegal state change
