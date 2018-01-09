@@ -307,7 +307,7 @@ public:
   void set_crypto_module(QUICCrypto *crypto);
 
 private:
-  QUICVersion _version = 0;
+  QUICVersion _version = QUIC_SUPPORTED_VERSIONS[0];
   QUICCrypto *_crypto  = nullptr;
   QUICPacketNumberGenerator _packet_number_generator;
 

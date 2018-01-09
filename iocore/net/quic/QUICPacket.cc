@@ -794,7 +794,6 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header, bool retra
 void
 QUICPacketFactory::set_version(QUICVersion negotiated_version)
 {
-  ink_assert(this->_version == 0);
   this->_version = negotiated_version;
 }
 
