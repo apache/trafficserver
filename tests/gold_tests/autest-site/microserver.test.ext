@@ -19,103 +19,157 @@
 from ports import get_port
 import json
 
-def addMethod(self,testName, request_header, functionName):
+
+def addMethod(self, testName, request_header, functionName):
     return
 
 # creates the full request or response block using headers and message data
-def httpObject(self,header,data):
-    r=dict()
-    r["timestamp"]=""
-    r["headers"]=header
-    r["body"]=data
+
+
+def httpObject(self, header, data):
+    r = dict()
+    r["timestamp"] = ""
+    r["headers"] = header
+    r["body"] = data
     return r
 
 # addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
-def addResponse(self,filename, testName, request_header, response_header):
+
+
+def addResponse(self, filename, testName, request_header, response_header):
 
     txn = dict()
     txn["timestamp"] = ""
     txn["uuid"] = testName
     txn["request"] = request_header
     txn["response"] = response_header
-    print("data dir",self.Variables.DataDir)
-    addTransactionToSession(txn,filename)
-    absFilepath=os.path.abspath(filename)
-    self.Setup.CopyAs(absFilepath,self.Variables.DataDir)
+
+    addTransactionToSession(txn, filename)
+    absFilepath = os.path.abspath(filename)
+    self.Setup.CopyAs(absFilepath, self.Variables.DataDir)
     return
 
-
-
-# addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
-def addResponse(self,filename, request_header, response_header):
+def getHeaderFieldVal(request_header, field):
     requestline = request_header["headers"].split("\r\n")[0]
     requestline = requestline.split(" ")[1]
-    resourceLocation = requestline.split("/",1)
-    if len(resourceLocation)>1:
-        rl = resourceLocation[1]
-    else:
-        rl = ""
+    field = field+':'
+    valField = request_header["headers"].split(field,1);
+    val=""
+    if len(valField)>1:
+            field_v = valField[1].split("\r\n",1)
+            if len(field_v)>0:
+                val = field_v[0].strip()
+    return val
+
+# addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
+def addResponse(self, filename, request_header, response_header):
+    requestline = request_header["headers"].split("\r\n")[0]
+    host_ = ""
+    path_ = ""
+    if requestline:
+        url_part = requestline.split(" ")
+        if len(url_part)>1:
+            if url_part[1].startswith("http"):
+                path_ = url_part[1].split("/",2)[2]
+                host_,path_ = path_.split("/",1)
+            else:
+                path_ = url_part[1].split("/",1)[1]
+
+    kpath = ""
+    #print("Format of lookup key",self.Variables.lookup_key)
+    
+    argsList = []
+    keyslist = self.Variables.lookup_key.split("}")
+    for keystr in keyslist:
+        if keystr == '{PATH':
+            kpath = kpath+path_
+            continue
+        if keystr == '{HOST':
+            kpath = kpath + host_
+            continue
+        if keystr == '': #empty
+            continue
+        stringk = keystr.replace("{%","")
+        argsList.append(stringk)
+    KeyList = []
+    for argsL in argsList:
+        field_val = getHeaderFieldVal(request_header,argsL)
+        if field_val!=None:
+            KeyList.append(field_val)
+    rl = "".join(KeyList)+kpath
     txn = dict()
     txn["timestamp"] = ""
     txn["uuid"] = rl
     txn["request"] = request_header
     txn["response"] = response_header
     absFilepath = os.path.join(self.Variables.DataDir, filename)
-    addTransactionToSession(txn,absFilepath)
-    #absFilepath=os.path.abspath(filename)
-    #self.Setup.CopyAs(absFilepath,self.Variables.DataDir)
+    addTransactionToSession(txn, absFilepath)
+    # absFilepath=os.path.abspath(filename)
+    # self.Setup.CopyAs(absFilepath,self.Variables.DataDir)
     return
 
-#adds transaction in json format to the specified file
-def addTransactionToSession(txn,JFile):
-    jsondata=None
+# adds transaction in json format to the specified file
+
+
+def addTransactionToSession(txn, JFile):
+    jsondata = None
     if not os.path.exists(os.path.dirname(JFile)):
         os.makedirs(os.path.dirname(JFile))
     if os.path.exists(JFile):
-        jf = open(JFile,'r')
+        jf = open(JFile, 'r')
         jsondata = json.load(jf)
 
     if jsondata == None:
         jsondata = dict()
-        jsondata["version"]='0.1'
-        jsondata["timestamp"]="1234567890.098"
-        jsondata["encoding"]="url_encoded"
-        jsondata["txns"]=list()
+        jsondata["version"] = '0.1'
+        jsondata["timestamp"] = "1234567890.098"
+        jsondata["encoding"] = "url_encoded"
+        jsondata["txns"] = list()
         jsondata["txns"].append(txn)
     else:
         jsondata["txns"].append(txn)
-    with open(JFile,'w+') as jf:
+    with open(JFile, 'w+') as jf:
         jf.write(json.dumps(jsondata))
 
 
-#make headers with the key and values provided
-def makeHeader(self,requestString, **kwargs):
-    headerStr = requestString+'\r\n'
-    for k,v in kwargs.iteritems():
-        headerStr += k+': '+v+'\r\n'
-    headerStr = headerStr+'\r\n'
+# make headers with the key and values provided
+def makeHeader(self, requestString, **kwargs):
+    headerStr = requestString + '\r\n'
+    for k, v in kwargs.iteritems():
+        headerStr += k + ': ' + v + '\r\n'
+    headerStr = headerStr + '\r\n'
     return headerStr
 
 
-def MakeOriginServer(obj, name,public_ip=False,options={}):
-    server_path= os.path.join(obj.Variables.AtsTestToolsDir,'microServer/uWServer.py')
+def MakeOriginServer(obj, name, port=False, ip=False, delay=False, ssl=False, lookup_key='{PATH}', options={}):
+    server_path = os.path.join(obj.Variables.AtsTestToolsDir, 'microServer/uWServer.py')
     data_dir = os.path.join(obj.RunDirectory, name)
     # create Process
     p = obj.Processes.Process(name)
-    port=get_port(p,"Port")
-    command = "python3 {0} --data-dir {1} --port {2} --public {3} -m test".format(server_path, data_dir, port, public_ip)
-    for flag,value in options.items() :
-        command += " {} {}".format(flag,value)
+    if (port == False):
+        port = get_port(p, "Port")
+    if (ip == False):
+        ip = '127.0.0.1'
+    if (delay == False):
+        delay = 0
+    command = "python3 {0} --data-dir {1} --port {2} --ip_address {3} --delay {4} -m test --ssl {5} --lookupkey '{6}'".format(
+        server_path, data_dir, port, ip, delay, ssl,lookup_key)
+    for flag, value in options.items():
+        command += " {} {}".format(flag, value)
 
     # create process
     p.Command = command
     p.Setup.MakeDir(data_dir)
     p.Variables.DataDir = data_dir
-    p.Ready = When.PortOpen(port)
-    AddMethodToInstance(p,addResponse)
-    AddMethodToInstance(p,addTransactionToSession)
+    p.Variables.lookup_key = lookup_key
+    p.Ready = When.PortOpen(port, ip)
+    p.ReturnCode = Any(None,0)
+    AddMethodToInstance(p, addResponse)
+    AddMethodToInstance(p, addTransactionToSession)
 
     return p
 
-AddTestRunSet(MakeOriginServer,name="MakeOriginServer")
-AddTestRunSet(MakeOriginServer,name="MakeOrigin")
+
+ExtendTest(MakeOriginServer, name="MakeOriginServer")
+ExtendTest(MakeOriginServer, name="MakeOrigin")
+

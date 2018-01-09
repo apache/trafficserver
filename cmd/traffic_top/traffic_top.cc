@@ -54,6 +54,7 @@
 #include "stats.h"
 
 #include "ts/I_Layout.h"
+#include "ts/ink_args.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
 
@@ -424,29 +425,16 @@ main(int argc, const char **argv)
     break;
   }
 
-  Layout::create();
-  RecProcessInit(RECM_STAND_ALONE, nullptr /* diags */);
-  LibRecordsConfigInit();
-
-  string url = "";
+  case 1:
 #if HAS_CURL
     url = file_arguments[0];
 #else
     usage(argument_descriptions, countof(argument_descriptions), USAGE);
 #endif
+    break;
 
-    ats_scoped_str rundir(RecConfigReadRuntimeDir());
-
-    if (TS_ERR_OKAY != TSInit(rundir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS))) {
-#if HAS_CURL
-      fprintf(stderr, "Error: missing URL on command line or error connecting to the local manager\n");
-#else
-      fprintf(stderr, "Error: error connecting to the local manager\n");
-#endif
-      usage();
-    }
-  } else {
-    url = argv[optind];
+  default:
+    usage(argument_descriptions, countof(argument_descriptions), USAGE);
   }
 
   Stats stats(url);

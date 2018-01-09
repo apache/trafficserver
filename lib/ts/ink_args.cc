@@ -229,6 +229,7 @@ process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argume
           }
           break;
         }
+      }
       if (i >= n_argument_descriptions) {
         return false;
       }
