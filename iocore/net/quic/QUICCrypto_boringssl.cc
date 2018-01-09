@@ -49,22 +49,6 @@ QUICCryptoTls::_get_evp_aead(const SSL_CIPHER *cipher) const
   }
 }
 
-// SSL_HANDSHAKE_MAC_SHA256, SSL_HANDSHAKE_MAC_SHA384 are defind in `ssl/internal.h` of BoringSSL
-const EVP_MD *
-QUICCryptoTls::_get_handshake_digest(const SSL_CIPHER *cipher) const
-{
-  switch (cipher->algorithm_prf) {
-  case 0x2:
-    // SSL_HANDSHAKE_MAC_SHA256:
-    return EVP_sha256();
-  case 0x4:
-    // SSL_HANDSHAKE_MAC_SHA384:
-    return EVP_sha384();
-  default:
-    return nullptr;
-  }
-}
-
 size_t
 QUICCryptoTls::_get_aead_tag_len(const SSL_CIPHER * /* cipher */) const
 {
