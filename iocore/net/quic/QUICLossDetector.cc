@@ -32,7 +32,7 @@
 // Keep the order as the same as the spec so that we can see the difference easily.
 constexpr static uint32_t MAX_TLPS               = 2;
 constexpr static uint32_t REORDERING_THRESHOLD   = 3;
-constexpr static double TIME_REORDERING_FRACTION = 1 / 8;
+constexpr static double TIME_REORDERING_FRACTION = 1.0 / 8.0;
 constexpr static ink_hrtime MIN_TLP_TIMEOUT      = HRTIME_MSECONDS(10);
 constexpr static ink_hrtime MIN_RTO_TIMEOUT      = HRTIME_MSECONDS(200);
 // This is defined on the spec but not used
@@ -210,10 +210,10 @@ QUICLossDetector::_update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay, QUICP
   // Based on {{RFC6298}}.
   if (this->_smoothed_rtt == 0) {
     this->_smoothed_rtt = latest_rtt;
-    this->_rttvar       = latest_rtt / 2;
+    this->_rttvar       = latest_rtt / 2.0;
   } else {
-    this->_rttvar       = 3 / 4 * this->_rttvar + 1 / 4 * ABS(this->_smoothed_rtt - latest_rtt);
-    this->_smoothed_rtt = 7 / 8 * this->_smoothed_rtt + 1 / 8 * latest_rtt;
+    this->_rttvar       = 3.0 / 4.0 * this->_rttvar + 1.0 / 4.0 * ABS(this->_smoothed_rtt - latest_rtt);
+    this->_smoothed_rtt = 7.0 / 8.0 * this->_smoothed_rtt + 1.0 / 8.0 * latest_rtt;
   }
 }
 
@@ -326,7 +326,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
     delay_until_lost = (1 + this->_time_reordering_fraction) * std::max(this->_latest_rtt, this->_smoothed_rtt);
   } else if (largest_acked_packet_number == this->_largest_sent_packet) {
     // Early retransmit alarm.
-    delay_until_lost = 5 / 4 * std::max(this->_latest_rtt, this->_smoothed_rtt);
+    delay_until_lost = 5.0 / 4.0 * std::max(this->_latest_rtt, this->_smoothed_rtt);
   }
 
   for (auto &unacked : this->_sent_packets) {
