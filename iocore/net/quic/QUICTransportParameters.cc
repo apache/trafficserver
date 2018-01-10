@@ -296,16 +296,9 @@ QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
   *len = (p - buf);
 }
 
-//
-// QUICTransportParametersInClientHello
-//
-
-QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const uint8_t *buf, size_t len)
+void
+QUICTransportParameters::_print() const
 {
-  this->_initial_version = QUICTypeUtil::read_QUICVersion(buf);
-  this->_load(buf, len);
-
-  // Print all parameters
   for (auto &p : this->_parameters) {
     if (p.second->len() == 0) {
       Debug("quic_handsahke", "%s: (no value)", QUICDebugNames::transport_parameter_id(p.first));
@@ -317,6 +310,17 @@ QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const
       Debug("quic_handsahke", "%s: (long data)", QUICDebugNames::transport_parameter_id(p.first));
     }
   }
+}
+
+//
+// QUICTransportParametersInClientHello
+//
+
+QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const uint8_t *buf, size_t len)
+{
+  this->_initial_version = QUICTypeUtil::read_QUICVersion(buf);
+  this->_load(buf, len);
+  this->_print();
 }
 
 void
@@ -351,19 +355,19 @@ QUICTransportParametersInClientHello::_validate_parameters() const
   // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI)) != this->_parameters.end()) {
     if (ite->second->len() != 4) {
-      return -1;
+      return -2;
     }
     if ((QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) & 0x03) != 1) {
-      return -1;
+      return -3;
     }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI)) != this->_parameters.end()) {
     if (ite->second->len() != 4) {
-      return -1;
+      return -4;
     }
     if ((QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) & 0x03) != 3) {
-      return -1;
+      return -5;
     }
   }
 
@@ -388,6 +392,7 @@ QUICTransportParametersInEncryptedExtensions::QUICTransportParametersInEncrypted
     this->_versions[i] = QUICTypeUtil::read_QUICVersion(buf + 5 + (i * 4));
   }
   this->_load(buf, len);
+  this->_print();
 }
 
 void
@@ -494,7 +499,12 @@ QUICTransportParametersHandler::parse(SSL *s, unsigned int ext_type, unsigned in
                                       X509 *x, size_t chainidx, int *al, void *parse_arg)
 {
   QUICHandshake *hs = static_cast<QUICHandshake *>(SSL_get_ex_data(s, QUIC::ssl_quic_hs_index));
-  hs->set_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(in, inlen));
+
+  if (hs->netvc_context() == NET_VCONNECTION_IN) {
+    hs->set_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(in, inlen));
+  } else {
+    hs->set_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(in, inlen));
+  }
 
   return 1;
 }

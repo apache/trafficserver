@@ -178,7 +178,7 @@ QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *l
 }
 
 void
-QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters> tp)
+QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersInClientHello> tp)
 {
   // An endpoint MUST treat receipt of duplicate transport parameters as a connection error of type TRANSPORT_PARAMETER_ERROR.
   if (!tp->is_valid()) {
@@ -187,27 +187,33 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParameters>
     return;
   }
 
-  this->_remote_transport_parameters = std::move(tp);
+  this->_remote_transport_parameters = tp;
 
-  const QUICTransportParametersInClientHello *tp_in_ch =
-    dynamic_cast<const QUICTransportParametersInClientHello *>(this->_remote_transport_parameters.get());
-  if (tp_in_ch) {
-    // Version revalidation
-    if (this->_version_negotiator->validate(tp_in_ch) != QUICVersionNegotiationStatus::VALIDATED) {
-      QUICHSDebug("Version revalidation failed");
-      this->_abort_handshake(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
-      return;
-    }
-    QUICHSDebug("Version negotiation validated: %x", tp_in_ch->initial_version());
+  // Version revalidation
+  if (this->_version_negotiator->validate(tp.get()) != QUICVersionNegotiationStatus::VALIDATED) {
+    QUICHSDebug("Version revalidation failed");
+    this->_abort_handshake(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
     return;
   }
 
-  const QUICTransportParametersInEncryptedExtensions *tp_in_ee =
-    dynamic_cast<const QUICTransportParametersInEncryptedExtensions *>(this->_remote_transport_parameters.get());
-  if (tp_in_ee) {
-    // TODO Add client side implementation
+  QUICHSDebug("Version negotiation validated: %x", tp->initial_version());
+  return;
+}
+
+void
+QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersInEncryptedExtensions> tp)
+{
+  // An endpoint MUST treat receipt of duplicate transport parameters as a connection error of type TRANSPORT_PARAMETER_ERROR.
+  if (!tp->is_valid()) {
+    QUICHSDebug("Transport parameter is not valid");
+    this->_abort_handshake(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR);
     return;
   }
+
+  this->_remote_transport_parameters = tp;
+
+  // TODO Add client side implementation
+  ink_assert(false);
 }
 
 std::shared_ptr<const QUICTransportParameters>
@@ -220,6 +226,12 @@ std::shared_ptr<const QUICTransportParameters>
 QUICHandshake::remote_transport_parameters()
 {
   return this->_remote_transport_parameters;
+}
+
+NetVConnectionContext_t
+QUICHandshake::netvc_context()
+{
+  return this->_netvc_context;
 }
 
 int
@@ -346,26 +358,43 @@ QUICHandshake::state_closed(int event, void *data)
 }
 
 void
-QUICHandshake::_load_local_transport_parameters(QUICVersion negotiated_version)
+QUICHandshake::_load_local_transport_parameters(QUICVersion version)
 {
   QUICConfig::scoped_config params;
 
-  // MUSTs
-  QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions(negotiated_version);
+  if (this->_netvc_context == NET_VCONNECTION_IN) {
+    QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions(version);
 
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
-  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
-  // These two are MUSTs if this is a server
-  tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), 16);
-  tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
+    // MUSTs
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
+    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
+    tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
 
-  // MAYs
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni());
-  // this->_local_transport_parameters.add(QUICTransportParameterId::OMIT_CONNECTION_ID, {});
-  // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
-  this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
+    // These two are MUSTs if this is a server
+    tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
+    tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
+
+    // MAYs
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_in());
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_in());
+    // this->_local_transport_parameters.add(QUICTransportParameterId::OMIT_CONNECTION_ID, {});
+    // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
+
+    this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
+  } else {
+    QUICTransportParametersInClientHello *tp = new QUICTransportParametersInClientHello(version);
+
+    // MUSTs
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
+    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
+    tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_out()));
+
+    // MAYs
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_out());
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_out());
+
+    this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
+  }
 }
 
 QUICErrorUPtr

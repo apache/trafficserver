@@ -31,20 +31,26 @@ public:
   void initialize();
 
   uint32_t no_activity_timeout_in() const;
+  uint32_t no_activity_timeout_out() const;
   uint32_t initial_max_data() const;
   uint32_t initial_max_stream_data() const;
-  uint32_t initial_max_stream_id_bidi() const;
-  uint32_t initial_max_stream_id_uni() const;
+  uint32_t initial_max_stream_id_bidi_in() const;
+  uint32_t initial_max_stream_id_bidi_out() const;
+  uint32_t initial_max_stream_id_uni_in() const;
+  uint32_t initial_max_stream_id_uni_out() const;
   uint32_t server_id() const;
 
 private:
   // FIXME Fill appropriate values
-  uint32_t _no_activity_timeout_in     = 0;
-  uint32_t _initial_max_data           = 131072;
-  uint32_t _initial_max_stream_data    = 2048;
-  uint32_t _initial_max_stream_id_bidi = 100;
-  uint32_t _initial_max_stream_id_uni  = 102;
-  uint32_t _server_id                  = 0;
+  uint32_t _no_activity_timeout_in         = 30;
+  uint32_t _no_activity_timeout_out        = 30;
+  uint32_t _initial_max_data               = 131072;
+  uint32_t _initial_max_stream_data        = 2048;
+  uint32_t _initial_max_stream_id_bidi_in  = 100;
+  uint32_t _initial_max_stream_id_bidi_out = 101;
+  uint32_t _initial_max_stream_id_uni_in   = 102;
+  uint32_t _initial_max_stream_id_uni_out  = 103;
+  uint32_t _server_id                      = 0;
 };
 
 class QUICConfig

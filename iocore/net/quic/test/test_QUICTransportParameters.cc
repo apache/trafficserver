@@ -30,7 +30,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
   SECTION("OK")
   {
     uint8_t buf[] = {
-      0x05, 0x06, 0x07, 0x08, // iinitial version
+      0x05, 0x06, 0x07, 0x08, // initial version
       0x00, 0x1e,             // size of parameters
       0x00, 0x00,             // parameter id
       0x00, 0x04,             // length of value
@@ -77,7 +77,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
   SECTION("Duplicate parameters")
   {
     uint8_t buf[] = {
-      0x05, 0x06, 0x07, 0x08, // iinitial version
+      0x05, 0x06, 0x07, 0x08, // initial version
       0x00, 0x10,             // size of parameters
       0x00, 0x00,             // parameter id
       0x00, 0x04,             // length of value
@@ -98,7 +98,7 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   uint16_t len;
 
   uint8_t expected[] = {
-    0x05, 0x06, 0x07, 0x08,                         // iinitial version
+    0x05, 0x06, 0x07, 0x08,                         // initial version
     0x00, 0x22,                                     // size of parameters
     0x00, 0x00,                                     // parameter id
     0x00, 0x04,                                     // length of value

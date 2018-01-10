@@ -34,6 +34,7 @@ void
 QUICConfigParams::initialize()
 {
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
+  REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_out, "proxy.config.quic.no_activity_timeout_out");
   REC_EstablishStaticConfigInt32U(this->_server_id, "proxy.config.quic.server_id");
 }
 
@@ -41,6 +42,12 @@ uint32_t
 QUICConfigParams::no_activity_timeout_in() const
 {
   return this->_no_activity_timeout_in;
+}
+
+uint32_t
+QUICConfigParams::no_activity_timeout_out() const
+{
+  return this->_no_activity_timeout_out;
 }
 
 uint32_t
@@ -62,15 +69,27 @@ QUICConfigParams::initial_max_stream_data() const
 }
 
 uint32_t
-QUICConfigParams::initial_max_stream_id_bidi() const
+QUICConfigParams::initial_max_stream_id_bidi_in() const
 {
-  return this->_initial_max_stream_id_bidi;
+  return this->_initial_max_stream_id_bidi_in;
 }
 
 uint32_t
-QUICConfigParams::initial_max_stream_id_uni() const
+QUICConfigParams::initial_max_stream_id_bidi_out() const
 {
-  return this->_initial_max_stream_id_uni;
+  return this->_initial_max_stream_id_bidi_out;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_id_uni_in() const
+{
+  return this->_initial_max_stream_id_uni_in;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_id_uni_out() const
+{
+  return this->_initial_max_stream_id_uni_out;
 }
 
 //
