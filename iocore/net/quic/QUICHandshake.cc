@@ -228,12 +228,6 @@ QUICHandshake::remote_transport_parameters()
   return this->_remote_transport_parameters;
 }
 
-NetVConnectionContext_t
-QUICHandshake::netvc_context()
-{
-  return this->_netvc_context;
-}
-
 int
 QUICHandshake::state_initial(int event, Event *data)
 {

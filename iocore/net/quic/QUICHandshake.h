@@ -71,7 +71,6 @@ public:
   void negotiated_application_name(const uint8_t **name, unsigned int *len);
   std::shared_ptr<const QUICTransportParameters> local_transport_parameters();
   std::shared_ptr<const QUICTransportParameters> remote_transport_parameters();
-  NetVConnectionContext_t netvc_context();
 
   bool is_version_negotiated();
   bool is_completed();

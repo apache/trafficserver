@@ -30,6 +30,7 @@
 #include "../P_QUICNetVConnection.h"
 
 static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
+static constexpr char tag[]                            = "quic_handshake";
 
 QUICTransportParameters::Value::Value(const uint8_t *data, uint16_t len) : _len(len)
 {
@@ -301,13 +302,13 @@ QUICTransportParameters::_print() const
 {
   for (auto &p : this->_parameters) {
     if (p.second->len() == 0) {
-      Debug("quic_handsahke", "%s: (no value)", QUICDebugNames::transport_parameter_id(p.first));
+      Debug(tag, "%s: (no value)", QUICDebugNames::transport_parameter_id(p.first));
     } else if (p.second->len() <= 8) {
-      Debug("quic_handsahke", "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first),
+      Debug(tag, "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first),
             QUICTypeUtil::read_nbytes_as_uint(p.second->data(), p.second->len()),
             QUICTypeUtil::read_nbytes_as_uint(p.second->data(), p.second->len()));
     } else {
-      Debug("quic_handsahke", "%s: (long data)", QUICDebugNames::transport_parameter_id(p.first));
+      Debug(tag, "%s: (long data)", QUICDebugNames::transport_parameter_id(p.first));
     }
   }
 }
@@ -448,25 +449,25 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
       return -1;
     }
   } else {
-    return -1;
+    return -2;
   }
 
   // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI)) != this->_parameters.end()) {
     if (ite->second->len() != 4) {
-      return -1;
+      return -3;
     }
     if ((QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) & 0x03) != 1) {
-      return -1;
+      return -4;
     }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI)) != this->_parameters.end()) {
     if (ite->second->len() != 4) {
-      return -1;
+      return -5;
     }
     if ((QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) & 0x03) != 3) {
-      return -1;
+      return -6;
     }
   }
 
@@ -500,10 +501,18 @@ QUICTransportParametersHandler::parse(SSL *s, unsigned int ext_type, unsigned in
 {
   QUICHandshake *hs = static_cast<QUICHandshake *>(SSL_get_ex_data(s, QUIC::ssl_quic_hs_index));
 
-  if (hs->netvc_context() == NET_VCONNECTION_IN) {
+  switch (context) {
+  case SSL_EXT_CLIENT_HELLO: {
     hs->set_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(in, inlen));
-  } else {
+    break;
+  }
+  case SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS: {
     hs->set_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(in, inlen));
+    break;
+  }
+  default:
+    // Do nothing
+    break;
   }
 
   return 1;

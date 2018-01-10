@@ -154,9 +154,7 @@ public:
 
   static int add(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char **out, size_t *outlen, X509 *x,
                  size_t chainidx, int *al, void *add_arg);
-
   static void free(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *out, void *add_arg);
-
   static int parse(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *in, size_t inlen, X509 *x,
                    size_t chainidx, int *al, void *parse_arg);
 };
